@@ -404,6 +404,17 @@ regionfolk(
 	{ wiki = false, ghost = true }
 )
 
+-- S108: Frost Peaks side arc NPCs (Data/Quests/Side arcs fp_*), on the places of Areas/frostpeak npcSpots with a small
+-- camp behind each (Logic/FrostpeakGen/SideCamps); off the wiki until S109.
+local SIDE_FP = { wiki = false }
+regionfolk("frostpeak", "cairn_ingrid", "cairn", { body = "#5A4A5E", accent = "#C9A45C" }, "🎗", SIDE_FP)
+regionfolk("frostpeak", "hornblower_eskil", "horn", { body = "#4A5A6B", accent = "#B8862E" }, "📯", SIDE_FP)
+regionfolk("frostpeak", "skald_ragnvald", "skald", { body = "#6B3A2A", accent = "#D8C8A0" }, "📜", SIDE_FP)
+regionfolk("frostpeak", "icefisher_torvi", "icefisher", { body = "#3E5A6B", accent = "#9FC8D8" }, "🎣", SIDE_FP)
+regionfolk("frostpeak", "bonecarver_gunnar", "bonecarver", { body = "#5A5046", accent = "#E8DCC0" }, "🦴", SIDE_FP)
+regionfolk("frostpeak", "squire_asmund", "squire", { body = "#5E6670", accent = "#7A1F2B" }, "🛡", SIDE_FP)
+regionfolk("frostpeak", "scholar_vigdis", "scholar", { body = "#2E3A5A", accent = "#C9A45C" }, "📖", SIDE_FP)
+
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do
 	byId[def.id] = def

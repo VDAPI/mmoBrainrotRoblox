@@ -11,9 +11,9 @@
 --     Mammoth Graveyard and the tusk arch, the hunting camp, erratics), Temple (the Dragon Stairs and terrace walls,
 --     the sanctuary, offering altars, the cult), Fortress (the Ice Watch), Wyrm (the skeleton, burrows, obelisk, snow
 --     plumes), Mouths (Ice Grotto, Frozen Hold, Glacier Heart),
---   * wooden bridges over the frozen Ice Brook (Logic/WorldGen/Structures), snow poles along the trails, rocks, and
---     the trees last (Logic/WorldGen/Flora: snowy spruces, frost-killed trees, ice spikes; none above ~y 62 but the
---     spikes).
+--   * wooden bridges over the frozen Ice Brook (Logic/WorldGen/Structures), snow poles along the trails, rocks, the
+--     camps of the side arc NPCs (SideCamps, S108) and the trees last (Logic/WorldGen/Flora: snowy spruces,
+--     frost-killed trees, ice spikes; none above ~y 62 but the spikes).
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
@@ -29,6 +29,7 @@ local Pass = require("@self/Pass")
 local Props = require("@self/Props")
 local Rng = require("./Rng")
 local Shapes = require("../Data/Terrain")
+local SideCamps = require("@self/SideCamps")
 local Slopes = require("@self/Slopes")
 local Structures = require("./WorldGen/Structures")
 local Temple = require("@self/Temple")
@@ -277,6 +278,9 @@ function FrostpeakGen.all(): { Build }
 	end
 	poles(e, out)
 	rocks(e, out)
+	-- S108: the side arc NPCs' camps after the rocks (a clearing before them would reshuffle every later rock) and
+	-- before the trees, which keep out of their clearings
+	SideCamps.all(e, out)
 	local tiles, trees = Flora.forest({
 		ctx = e.ctx,
 		ground = e.T :: any,

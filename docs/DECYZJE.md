@@ -3233,3 +3233,40 @@
 - **S107 podpowiedź `partners`:** punkt przed sztolnią kopalni (`ASH_SITES.mineMouth`, z + 26 = −560 / −719, przybycie
   jaskini), nie w ścianie grani (−560 / −745 z planu L3). Woda `water` studni leży na y 0.42 nad kopcem piasku propa
   `buriedWell` (szczyt 0.35, prop zostaje), inaczej znika w kopcu.
+- **S108 poboczne Szczytów:** 8 łuków / 25 zadań na 70–99 w `Data/Quests/Side` (blok „Frost Peaks” za Pustkowiami),
+  id `side_fp_*`, łuki `fp_cairn`, `fp_trappers`, `fp_horn`, `fp_saga`, `fp_icefish`, `fp_bones`, `fp_squire`,
+  `fp_wyrms` na końcu `ARCS`; konstruktor `fp(def)` ustawia `wiki = false`, typ definicji nazwany (`SideDef`).
+- **S108 miejsca:** 7 miejsc NPC w istniejących kołach `avoid`, 10+ studs od osi dróg; 25 kotwic `fp_*` w kołach
+  `avoid` albo 12+ studs od każdej grupy, 6+ od kotwic S105, 8+ w obrębie jednego celu; `avoid` bez zmian (38 kół),
+  grupy (57), węzły (50), drzewa (326) i 365 budowli co do bitu (`build/s108_before.json`).
+- **S108 obozy NPC:** nowy `Logic/FrostpeakGen/SideCamps` (`SideCamp_<klucz>`, tag `camp`, 5 studs za NPC, polana r 5
+  w kole `avoid` + 6) wołany po skałach, a przed lasem (nie po `Harpy`, jak w planie): polana przed skałami przestawiała
+  40 skał (strumień `Rng` skał), drzew w obozach i tak nie było. Test: brak drzewa, skały i węzła w obozie.
+- **S108 EXP:** reguła S106 bez zmian (`settleBands`, `BAND_SCALE[70]` = 0,05669, wagi 1 / 1,8, bez `expShare`):
+  zwykłe 0,057, finał 0,102 `expToNext`, poboczne 70–99 = 6,0% `bandExp(70)`; złoto `gold × GOLD_FROM_20`.
+- **S108 `minLevel = 70`** na `side_fp_flask` (70) i `side_fp_ribbons` (71): mapa ma `minLevel` 70.
+- **S108 wymagania fabuły (id S105):** `side_fp_snares` ← `trappersCamp`, `side_fp_ledge` ← `side_fp_snares` +
+  `iceGrotto`, `side_fp_squire` ← `iceWatch`, `side_fp_letter` ← `dragonTemple`.
+- **S108 Asmund:** łuk G nie zależy od ducha Halgrima (po `oathWords` może go nie być): daje i odbiera zawsze Asmund,
+  `done` mówi „jeśli brat Halgrim wciąż czuwa…”.
+- **S108 nazwy:** prefiksy `fp_` (kotwice, łuki) i `side_fp_` (zadania); efekty `cairnOffering`, `ribbons`, `snare`,
+  `sledgeRunner`, `dugHorn`, `toppled`, `runeRubbing`, `runeCarving`, `iceChipped` (łódź i skarbiec), `tuskPost`,
+  `juniper`, `eggShards`; `fp_watch_gate` z istniejącym `candles`.
+- **S108 wiki:** zadania, 7 NPC, 25 kotwic i 7 miejsc NPC z `wiki = false` (filtr S103), zdejmuje S109.
+- **S108 teksty:** bez imienia Ilvara, Ciernia i serca smoka; strony 94–99 nie mówią, czy smok żyje (test w
+  `sidequests.spec`). Zakon po angielsku „the Order of the Frost Watch” jak w `coldFire`.
+- **S108 przejęte z S106/S107:** `regionfolk`, `NpcSpot.wiki` / `QuestAnchor.wiki`, `settleBands` / `BAND_SCALE`,
+  `GOLD_FROM_20`, konstruktor kotwic `free`, wpisy księgi `byArc.<łuk>*`, test „każdy `FX` ma builder”, przypadek wiki.
+- **S108 rozmowy:** mechanizmy S101b; cel 1 `escort` w `side_fp_ledge` (Sigrun prowadzi, zamiast `reachPlace`) i
+  `side_fp_boat` (Torvi, `during` 1–2), `follow` Ragnvalda w `side_fp_thrones` (cele 1–2); upominki `potion_hp_5` × 2
+  (`sledge`, `warhorn`) i `potion_mana_5` × 2 (`colossi`) zamiast mikstur 1. stopnia z planu (limit 2 w
+  `Config.Dialogue.gifts`, jak S103–S107).
+- **S108 przesunięcia z planu:** Asmund 563 / 554 (plan 540 / 566 na drodze patrolowej; brama stoi na x 576, nie 562),
+  tarcze Strażnicy 569 / 538, 569 / 600, 569 / 620 przy murze (plan x 552–556 na drodze), brama 567 / 570; kolos północny
+  94 / −66 (stoi na ostrodze, z przodu ściana), południowy 80 / 56, Wyjąca Skała −695 / 275, skarbiec 100 / 673,
+  85 / 668, 84 / 651 (plan dotykał brył). Trasa Torviego 190 / 432, 238 / 472, 226 / 512 (brzeg jeziora to stroma skarpa,
+  jedyne łagodne zejście na lód przy x 236).
+- **S108 `/side list [prefiks]`:** drugi argument filtruje łuki po początku id (`/side list fp_`), rejestr bez zmian
+  (`str("id", true)`).
+- **S108 test znaków NPC:** `npcmarks.spec` „po 99. zleceniu tablica bez znaku” oddaje też zadania poboczne zwiadowców
+  (Halvar daje teraz `side_fp_flask`).

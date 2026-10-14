@@ -962,6 +962,18 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   (6%, `BAND_SCALE[45]`: ok. 5% poziomu za zwykłe i 8,5% za finał), złoto `gold(poziom) × 0,8`, na końcu łuku wybór
   1 z 3 przedmiotów klasy; bicie oddaje różnicę (`monsterExpMul` 45–69 o ok. 4% niżej), czas na poziom bez zmian. Na
   wiki od S109.
+- **Poboczne Lodowych Szczytów (S108, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 25 zadań na 70–99
+  (`Data/Quests/Side`, łuki `fp_*`): „Kopiec z rogami” 70–73 (Stara Ingrid przy kopcu, od Halvara), „Ostatni łup
+  traperów” 74–78 (Traperka Sigrun, po `trappersCamp` i `iceGrotto`), „Róg Lawinowy” 77–80 (Eskil Trębacz, Zbocza Yeti),
+  „Saga olbrzymów” 82–86 (Skald Ragnvald przy Bramie Olbrzymów), „Przerębel” 85–89 (Torvi Przeręblarz, Zamarznięte
+  Jezioro), „Cmentarzysko mamutów” 87–91 (Gunnar Kościarz), „Giermek Strażnicy” 90–93 (Asmund, po `iceWatch`), „Kości
+  wyrmów” 94–99 (Uczona Vigdis, od Brata Anzelma po `dragonTemple`, koniec u Anzelma). Siedmiu nowych NPC z małymi
+  obozami (`Logic/FrostpeakGen/SideCamps`) i 25 kotwic `fp_*` stoi w istniejących kołach `avoid` albo 12+ studs od grup
+  (teren, grupy, węzły, skały i drzewa bez zmian), dwanaście nowych efektów po użyciu; Sigrun prowadzi na Lamparcią
+  Półkę, Torvi po lodzie do łodzi ojca, Ragnvald idzie z graczem do Sali Tronów. EXP z budżetu pasma 70–99 mechanizmem
+  S106 (6%, `BAND_SCALE[70]`: ok. 5,7% poziomu za zwykłe i 10,2% za finał), złoto `gold(poziom) × 0,8`, na końcu łuku
+  wybór 1 z 3 przedmiotów klasy; bicie oddaje różnicę (`monsterExpMul` 70–99 o ok. 4% niżej), czas na poziom bez zmian.
+  Na wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

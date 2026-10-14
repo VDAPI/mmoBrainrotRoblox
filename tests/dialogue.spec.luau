@@ -119,6 +119,34 @@ local NEW_QUESTS: { [string]: { string } } = {
 		"side_ash_avenue",
 		"side_ash_mirror",
 	},
+	-- S108: the Frost Peaks side arcs
+	S108 = {
+		"side_fp_flask",
+		"side_fp_ribbons",
+		"side_fp_howl",
+		"side_fp_snares",
+		"side_fp_ledge",
+		"side_fp_sledge",
+		"side_fp_horn",
+		"side_fp_boulders",
+		"side_fp_matriarch",
+		"side_fp_colossi",
+		"side_fp_thrones",
+		"side_fp_verse",
+		"side_fp_icehole",
+		"side_fp_boat",
+		"side_fp_hoard",
+		"side_fp_tusks",
+		"side_fp_stampede",
+		"side_fp_warhorn",
+		"side_fp_squire",
+		"side_fp_shields",
+		"side_fp_spurs",
+		"side_fp_letter",
+		"side_fp_clutches",
+		"side_fp_bonetrail",
+		"side_fp_treatise",
+	},
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -132,6 +160,8 @@ local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S105f = { { chapter = 5 } },
 	S106 = { { map = "duskwood" } },
 	S107 = { { map = "ashen" } }, -- Orren (side_ash_wells) and Ezra (side_ash_king) lead
+	-- Sigrun (side_fp_ledge) and Torvi (side_fp_boat) lead, Ragnvald follows (side_fp_thrones)
+	S108 = { { map = "frostpeak" } },
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.

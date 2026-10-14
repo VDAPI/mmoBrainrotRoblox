@@ -12,6 +12,7 @@
 -- (Logic/FrostpeakGen builds them); `lakes` are only the two ice holes (open water in the frozen lakes).
 -- S105 (story chapter IV and the finale): the Rite Circle at the foot of the Wyrm Spire's horn (`summitRite`), the
 -- places of the story NPCs (`npcSpots`) and the quest anchors (`questAnchors`), all inside existing avoid circles.
+-- S108 (the side arcs): seven more NPC places and 25 fp_* anchors, never added to `avoid` (groups and nodes stay).
 
 local Types = require("./Types")
 
@@ -88,6 +89,23 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 	-- the ghost of Brother Halgrim in the Ice Watch's courtyard before the keep's west door (x ~637), facing the gate,
 	-- 14 studs from the frozen weapon racks (Logic/FrostpeakGen/Fortress keep)
 	halgrim = { x = 628, z = 570, facing = 90, wiki = false },
+	-- S108: places of the side arc NPCs (Data/Npcs regionfolk), each inside an existing avoid circle (a site, a respawn
+	-- point or the scout), 6+ studs from a road's edge, with a small camp behind it (Logic/FrostpeakGen/SideCamps);
+	-- hidden from the wiki until S109 (tests/frostpeak.spec S108).
+	-- Ingrid between the horned cairn and the scout's brazier, facing the road
+	cairn = { x = -676, z = -24, facing = 180, wiki = false },
+	-- Eskil on the lower bench of the Yeti Slopes (respawn point), facing the road up to the Grotto
+	horn = { x = -226, z = -360, facing = 90, wiki = false },
+	-- Ragnvald by the Giants' Gate, north of the road, facing it
+	skald = { x = 100, z = -32, facing = 180, wiki = false },
+	-- Torvi on the Frozen Lake's north shore (respawn point), off the ice, facing the lake
+	icefisher = { x = 128, z = 412, facing = 180, wiki = false },
+	-- Gunnar at the edge of the Mammoth Graveyard on the side of the road to the Frozen Hold, facing the road
+	bonecarver = { x = 262, z = -488, facing = 270, wiki = false },
+	-- Asmund between the patrol road and the Ice Watch's barred gate (the gatehouse stands at x 576), facing west
+	squire = { x = 563, z = 554, facing = 90, wiki = false },
+	-- Vigdis at the foot of the Dragon Stairs (respawn point), south of the main road, facing it
+	scholar = { x = 442, z = 30, facing = 0, wiki = false },
 }
 
 -- Quest objects of the story (S105): invisible parts tagged QuestAnchor, inside the existing avoid circles; never added
@@ -95,6 +113,12 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
 	local x, z = atSite(site, lx, lz)
 	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+end
+
+-- S108: an anchor of the side arcs at a map point of its own (like Areas/ashen `free`); `rot` turns the frame of its
+-- client effect (local -Z towards the thing it stands by).
+local function free(id: string, x: number, z: number, y: number, rot: number): Types.QuestAnchor
+	return { id = id, x = x, z = z, y = y, wiki = false, rot = rot }
 end
 
 local QUEST_ANCHORS: { Types.QuestAnchor } = {
@@ -110,6 +134,34 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	-- the Heart of Winter (the altar's front at local z -2); 5 studs apart, no prompt over the other
 	anchor("summit_rite", "summitRite", 0, -9, 1.5),
 	anchor("summit_thorn", "summitRite", 0, -4, 2),
+	-- Quest objects of the Frost Peaks side arcs (S108): invisible parts tagged QuestAnchor, inside the existing avoid
+	-- circles or 12+ studs from every group; never added to `avoid` (groups and nodes stay as they are).
+	free("fp_cairn_ribbons", -651, -26, 1.5, 270), -- before the horned cairn (its front looks west)
+	free("fp_howl_offering", -695, 275, 1, 204), -- at the Howling Rock, on the side of the trail to the Harpy Tarn
+	free("fp_snare_1", -566, -180, 1, 0), -- three snares at the edge of the trappers' camp
+	free("fp_snare_2", -540, -188, 1, 0),
+	free("fp_snare_3", -528, -160, 1, 0),
+	free("fp_trapper_sledge", -561, -165, 1, 297), -- beside the sledge with the cracked runner
+	free("fp_avalanche_horn", -94, -537, 1, 341), -- the foot of the avalanche cone, off its blocks of snow
+	free("fp_boulders_1", -374, -528, 1, 0), -- round the heaps of throwing boulders on the middle bench
+	free("fp_boulders_2", -374, -512, 1, 0),
+	free("fp_boulders_3", -361, -520, 1, 0),
+	-- the north colossus sits on the spur (no ground to stand on before it): its foot on the gentle south side
+	free("fp_colossus_north", 94, -66, 1.5, 0),
+	free("fp_colossus_south", 80, 56, 1.5, 270), -- before the south colossus's plinth
+	free("fp_saga_stone", 78, 0, 1.5, 166), -- the colossus's fallen head by the road
+	free("fp_frozen_boat", 201, 565, 1, 101), -- by the frozen boat's side, on the lake's ice
+	free("fp_hoard_1", 100, 673, 1, 15), -- by the blocks of the hoard in the ice: the chest
+	free("fp_hoard_2", 85, 668, 1, 304), -- the shield
+	free("fp_hoard_3", 84, 651, 1, 230), -- the sword
+	free("fp_tusk_arch", 270, -472, 1, 252), -- by the west foot of the tusk arch over the road
+	free("fp_watch_shield_1", 569, 538, 2, 270), -- the Ice Watch's outer west wall, north of the gate
+	free("fp_watch_shield_2", 569, 600, 2, 270), -- south of the gate
+	free("fp_watch_shield_3", 569, 620, 2, 270), -- further south
+	free("fp_watch_gate", 567, 570, 1, 270), -- before the barred gate, where the lake road ends
+	free("fp_brood_1", 566, -707, 1, 30), -- before the mouths of the three wyrm burrows
+	free("fp_brood_2", 590, -691, 1, 50),
+	free("fp_brood_3", 614, -703, 1, 70),
 }
 
 local data: Types.MapAreas = {
@@ -225,8 +277,8 @@ local data: Types.MapAreas = {
 		{ cave = "frostpeak_cave", x = 745, z = 0, rot = 90 },
 	},
 	sites = SITES,
-	npcSpots = NPC_SPOTS, -- S105
-	questAnchors = QUEST_ANCHORS, -- S105
+	npcSpots = NPC_SPOTS, -- S105, S108
+	questAnchors = QUEST_ANCHORS, -- S105, S108
 	areas = {
 		{
 			id = "frostpeak_valley",

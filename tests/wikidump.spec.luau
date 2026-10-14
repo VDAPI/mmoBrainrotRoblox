@@ -485,6 +485,46 @@ T.describe("Wiki export: consistency", function()
 		T.expect(next(ashen.npcSpots)).toBeNil()
 	end)
 
+	-- S108: the Frost Peaks side arcs (25 quests, seven NPCs, the fp_* anchors, their NPC places) wait for S109
+	T.it("leaves the Frost Peaks side arcs out: quests, NPCs, anchors and places (S108)", function()
+		local npcIds = {
+			"cairn_ingrid",
+			"hornblower_eskil",
+			"skald_ragnvald",
+			"icefisher_torvi",
+			"bonecarver_gunnar",
+			"squire_asmund",
+			"scholar_vigdis",
+		}
+		local hiddenIds = table.clone(npcIds)
+		for _, quest in Quests.Side.list do
+			if string.sub(quest.id, 1, 8) == "side_fp_" then
+				table.insert(hiddenIds, quest.id)
+			end
+		end
+		T.expect(#hiddenIds).toBe(25 + 7)
+		local all = Visibility.collect()
+		for _, id in hiddenIds do
+			T.expect(`{id} {all[id] == true}`).toBe(`{id} true`)
+		end
+		for _, file in fs.readDir("wiki/src/data") do
+			if string.match(file, "%.json$") then
+				local text = fs.readFile(`wiki/src/data/{file}`)
+				for _, id in hiddenIds do
+					if string.find(text, `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+				if string.find(text, `"fp_`, 1, true) then
+					error(`{file} names an fp_ anchor or arc`, 0)
+				end
+			end
+		end
+		local peaks = d.areas.maps.frostpeak
+		T.expect(#peaks.questAnchors).toBe(0)
+		T.expect(next(peaks.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do

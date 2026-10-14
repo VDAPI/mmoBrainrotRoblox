@@ -191,6 +191,12 @@ describe("NpcMarks", function()
 		for _, q in Quests.Boss.list do
 			bossDone[q.id] = true
 		end
+		-- S108: and the side quests the scouts give (Halvar's flask on the Peaks)
+		for _, q in Quests.Side.list do
+			if string.sub(q.giver, 1, 6) == "scout_" then
+				bossDone[q.id] = true
+			end
+		end
 		s.side = { active = {}, done = bossDone }
 		s.contract = { done = done, active = active }
 		return s

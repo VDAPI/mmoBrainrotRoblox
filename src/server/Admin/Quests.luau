@@ -153,13 +153,17 @@ commands.questmarks = function(player)
 	end)
 end
 
--- S27: /side list | give <id> | complete <id> | reset [id] | arc <id>
+-- S27: /side list [prefix] | give <id> | complete <id> | reset [id] | arc <id> (S108: the arc prefix filter)
 commands.side = function(player, args)
 	local action, id = args[1], args[2]
 	withCharacter(player, function()
 		local char = PlayerStateService.GetCharacter(player)
 		if action == "list" then
+			-- S108: `/side list <prefix>` shows only the arcs whose id starts with it (`fp_`: the Frost Peaks)
 			for _, arc in Quests.Side.ARCS do
+				if id and id ~= "" and string.sub(arc, 1, #id) ~= id then
+					continue
+				end
 				local lines = {}
 				local list: { Quests.SideQuest } = Quests.Side.byArc[arc] or {}
 				for _, quest in list do

@@ -12,6 +12,8 @@
 -- geometry from Logic/FrostpeakGen/Rite, the Thorn and Ilvar's statue from Util/StoryProps, the flowers of the spring
 -- in Vaelthorn from Logic/TownGen/Spring.
 -- S106: lamp, smoke, wreath, cage, ward and spill (the Duskwood side arcs; at the anchor's prop when it has one).
+-- S108: cairnOffering, ribbons, snare, sledgeRunner, dugHorn, toppled, runeRubbing, runeCarving, iceChipped, tuskPost,
+-- juniper and eggShards (the Frost Peaks side arcs; drawn in the anchor's frame, local -Z towards its thing).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -1166,6 +1168,268 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 			Enum.PartType.Cylinder
 		)
 		shield.Reflectance = 0.5
+	end,
+	-- S108 (the Frost Peaks side arcs; local -Z of the anchor's frame looks at the thing it stands by) --------------
+	-- tallow and a bone on a flat stone for the Wolf of the Pass, a small warm flame (cairnOffering, Howling Rock)
+	cairnOffering = function(model, base)
+		local stone = base * CFrame.new(0, 0, -1.2)
+		part(model, Vector3.new(2, 0.3, 1.4), stone * CFrame.new(0, 0.15, 0), "#4A4744", Enum.Material.Slate)
+		part(
+			model,
+			Vector3.new(0.3, 0.8, 0.8),
+			stone * CFrame.new(-0.4, 0.45, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#6B5038",
+			Enum.Material.Wood,
+			Enum.PartType.Cylinder
+		)
+		part(
+			model,
+			Vector3.new(0.5, 0.2, 0.5),
+			stone * CFrame.new(-0.4, 0.6, 0),
+			"#E8DCB8",
+			Enum.Material.SmoothPlastic
+		)
+		part(
+			model,
+			Vector3.new(1.1, 0.22, 0.22),
+			stone * CFrame.new(0.5, 0.42, 0.1) * CFrame.Angles(0, math.rad(30), 0),
+			"#DCD4BE",
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
+		local flame = part(
+			model,
+			Vector3.new(0.16, 0.3, 0.16),
+			stone * CFrame.new(-0.4, 0.85, 0),
+			"#FFB347",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		light(flame, "#FFB347", 8, 1.2)
+	end,
+	-- a stick planted before the cairn with four ribbons tied on it, red, blue, gold and grey (ribbons)
+	ribbons = function(model, base)
+		local stick = base * CFrame.new(0, 0, -1.5)
+		part(model, Vector3.new(0.2, 2.6, 0.2), stick * CFrame.new(0, 1.3, 0), "#5A4632", Enum.Material.Wood)
+		for k, color in { "#A3282A", "#2E5A8A", "#C9A45C", "#6E6A64" } do
+			part(
+				model,
+				Vector3.new(0.12, 1, 0.3),
+				stick
+					* CFrame.new(0, 2.5 - k * 0.32, 0)
+					* CFrame.Angles(0, k * 1.6, 0)
+					* CFrame.new(0, 0, 0.3)
+					* CFrame.Angles(math.rad(25), 0, 0),
+				color,
+				Enum.Material.Fabric
+			)
+		end
+	end,
+	-- a stake with a loop of wire and a red rag knotted on top (snare)
+	snare = function(model, base)
+		part(model, Vector3.new(0.25, 1.4, 0.25), base * CFrame.new(0, 0.7, 0), "#5A4632", Enum.Material.Wood)
+		local loop = part(
+			model,
+			Vector3.new(0.08, 1.2, 1.2),
+			base * CFrame.new(0, 0.62, -0.75) * CFrame.Angles(0, math.rad(90), 0),
+			"#8A8E94",
+			Enum.Material.Metal,
+			Enum.PartType.Cylinder
+		)
+		loop.Transparency = 0.2
+		part(model, Vector3.new(0.4, 0.5, 0.06), base * CFrame.new(0.15, 1.25, 0), "#A3282A", Enum.Material.Fabric)
+	end,
+	-- a new, pale runner laid beside the sledge, two rope lashings over it (sledgeRunner)
+	sledgeRunner = function(model, base)
+		local runner = base * CFrame.new(0, 0.18, -1.2)
+		part(model, Vector3.new(0.3, 0.3, 4.4), runner, "#C9A06A", Enum.Material.Wood)
+		part(
+			model,
+			Vector3.new(0.3, 0.3, 1),
+			runner * CFrame.new(0, 0.32, -2.2) * CFrame.Angles(math.rad(35), 0, 0),
+			"#C9A06A",
+			Enum.Material.Wood
+		)
+		for _, z in { -1, 1.1 } do
+			part(model, Vector3.new(0.45, 0.4, 0.14), runner * CFrame.new(0, 0, z), "#8A7A58", Enum.Material.Fabric)
+		end
+	end,
+	-- the pit dug out at the cone's foot, two banks of snow and the great horn of dark wood with an iron band (dugHorn)
+	dugHorn = function(model, base)
+		local pit = base * CFrame.new(0, 0, -1.6)
+		part(
+			model,
+			Vector3.new(0.1, 3.2, 3.2),
+			pit * CFrame.new(0, 0.04, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#5E6A74",
+			Enum.Material.Slate,
+			Enum.PartType.Cylinder
+		)
+		for _, x in { -2, 2 } do
+			part(model, Vector3.new(1.2, 0.8, 3), pit * CFrame.new(x, 0.3, 0), "#EEF3F7", Enum.Material.Snow)
+		end
+		local horn = pit * CFrame.new(0, 0.5, 0) * CFrame.Angles(0, math.rad(20), math.rad(8))
+		part(model, Vector3.new(4.4, 0.5, 0.5), horn, "#3A2A1E", Enum.Material.Wood, Enum.PartType.Cylinder)
+		part(
+			model,
+			Vector3.new(0.9, 0.9, 0.9),
+			horn * CFrame.new(2.4, 0.08, 0),
+			"#3A2A1E",
+			Enum.Material.Wood,
+			Enum.PartType.Cylinder
+		)
+		part(
+			model,
+			Vector3.new(0.25, 0.65, 0.65),
+			horn * CFrame.new(0.6, 0, 0),
+			"#4A4E56",
+			Enum.Material.CorrodedMetal,
+			Enum.PartType.Cylinder
+		)
+	end,
+	-- three boulders rolled off the heap and the darker track of their slide (toppled)
+	toppled = function(model, base)
+		part(
+			model,
+			Vector3.new(1.6, 0.06, 5),
+			base * CFrame.new(0, 0.03, -2.2) * CFrame.Angles(0, math.rad(15), 0),
+			"#AFC0CC",
+			Enum.Material.Snow
+		)
+		for k, p in { { -0.6, -3.6, 1.5 }, { 0.9, -4.6, 1.1 }, { -1.4, -5.2, 0.9 } } do
+			part(
+				model,
+				Vector3.new(p[3], p[3] * 0.8, p[3]),
+				base * CFrame.new(p[1], p[3] * 0.38, p[2]) * CFrame.Angles(math.rad(k * 20), math.rad(k * 50), 0),
+				"#8E9CA8",
+				Enum.Material.Slate
+			)
+		end
+	end,
+	-- a sheet of parchment pinned to a stone with two dark lines of charcoal (runeRubbing, the colossi's plinths)
+	runeRubbing = function(model, base)
+		local stone = base * CFrame.new(0, 0, -1.4)
+		part(model, Vector3.new(1.8, 1.2, 0.8), stone * CFrame.new(0, 0.6, 0), "#8E9CA8", Enum.Material.Slate)
+		local sheet = stone * CFrame.new(0, 0.75, 0.42)
+		part(model, Vector3.new(1.3, 0.9, 0.04), sheet, "#D8C8A0", Enum.Material.SmoothPlastic)
+		for _, y in { 0.18, -0.12 } do
+			part(
+				model,
+				Vector3.new(0.9, 0.08, 0.02),
+				sheet * CFrame.new(0, y, 0.03),
+				"#2A2622",
+				Enum.Material.SmoothPlastic
+			)
+		end
+	end,
+	-- a slab with the new verse carved in, the signs glowing pale blue (runeCarving, the fallen head)
+	runeCarving = function(model, base)
+		local slab = base * CFrame.new(0, 0, -1.4) * CFrame.Angles(math.rad(-12), 0, 0)
+		part(model, Vector3.new(2.2, 1.4, 0.4), slab * CFrame.new(0, 0.7, 0), "#8E9CA8", Enum.Material.Slate)
+		for k = -1, 1 do
+			local sign = part(
+				model,
+				Vector3.new(0.12, 0.7, 0.05),
+				slab * CFrame.new(k * 0.55, 0.75, 0.22),
+				"#9FE0FF",
+				Enum.Material.Neon
+			)
+			if k == 0 then
+				light(sign, "#9FE0FF", 6, 0.6)
+			end
+		end
+	end,
+	-- four blocks of ice chipped away, a pick leaning on the biggest (iceChipped: the boat and the hoard)
+	iceChipped = function(model, base)
+		for k, p in { { -1.2, -1, 1.1 }, { 0.4, -1.6, 0.8 }, { 1.4, -0.6, 0.7 }, { -0.2, -0.2, 0.6 } } do
+			local block = part(
+				model,
+				Vector3.new(p[3], p[3] * 0.8, p[3] * 1.1),
+				base * CFrame.new(p[1], p[3] * 0.4, p[2]) * CFrame.Angles(math.rad(k * 13), math.rad(k * 40), 0),
+				"#BFE6F7",
+				Enum.Material.Ice
+			)
+			block.Transparency = 0.25
+		end
+		local pick = base * CFrame.new(-1.2, 0.9, -0.3) * CFrame.Angles(0, 0, math.rad(60))
+		part(model, Vector3.new(0.18, 1.8, 0.18), pick, "#6B5038", Enum.Material.Wood)
+		part(model, Vector3.new(1.2, 0.16, 0.16), pick * CFrame.new(0, 0.9, 0), "#4A4E56", Enum.Material.Metal)
+	end,
+	-- a new post by the arch with two tusks lashed on with leather (tuskPost)
+	tuskPost = function(model, base)
+		local post = base * CFrame.new(0, 0, -1.2)
+		part(model, Vector3.new(0.5, 3.4, 0.5), post * CFrame.new(0, 1.7, 0), "#5A4632", Enum.Material.Wood)
+		for _, side in { -1, 1 } do
+			part(
+				model,
+				Vector3.new(0.35, 2.6, 0.35),
+				post * CFrame.new(side * 0.45, 2.3, 0) * CFrame.Angles(0, 0, math.rad(side * -18)),
+				"#E8DCC0",
+				Enum.Material.SmoothPlastic
+			)
+		end
+		for _, y in { 1.4, 2.6 } do
+			part(model, Vector3.new(1.3, 0.2, 0.6), post * CFrame.new(0, y, 0), "#6B4A2E", Enum.Material.Fabric)
+		end
+	end,
+	-- a sprig of juniper laid under the shields on the wall and a small candle (juniper)
+	juniper = function(model, base)
+		local spot = base * CFrame.new(0, 0, -1.6)
+		part(
+			model,
+			Vector3.new(1.1, 0.35, 0.5),
+			spot * CFrame.new(-0.3, 0.18, 0) * CFrame.Angles(0, math.rad(20), 0),
+			"#2F5A3A",
+			Enum.Material.Grass
+		)
+		part(
+			model,
+			Vector3.new(0.7, 0.3, 0.4),
+			spot * CFrame.new(0.2, 0.15, 0.25) * CFrame.Angles(0, math.rad(-35), 0),
+			"#3A6B44",
+			Enum.Material.Grass
+		)
+		part(
+			model,
+			Vector3.new(0.5, 0.24, 0.24),
+			spot * CFrame.new(0.7, 0.25, -0.2) * CFrame.Angles(0, 0, math.rad(90)),
+			"#EADFC4",
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
+		local flame = part(
+			model,
+			Vector3.new(0.15, 0.26, 0.15),
+			spot * CFrame.new(0.7, 0.62, -0.2),
+			"#FFB347",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		light(flame, "#FFB347", 8, 1)
+	end,
+	-- the clutch smashed: pale blue shells tilted on the snow round a dark stain (eggShards)
+	eggShards = function(model, base)
+		local nest = base * CFrame.new(0, 0, -1.8)
+		part(
+			model,
+			Vector3.new(0.06, 2.4, 2.4),
+			nest * CFrame.new(0, 0.03, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#2A3440",
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
+		for k = 0, 3 do
+			local a = k * math.pi / 2 + 0.4
+			part(
+				model,
+				Vector3.new(0.7, 0.08, 0.5),
+				nest
+					* CFrame.new(math.cos(a) * 0.8, 0.15, math.sin(a) * 0.8)
+					* CFrame.Angles(math.rad(25 + k * 10), -a, math.rad(15)),
+				"#7FD4FF",
+				Enum.Material.SmoothPlastic
+			)
+		end
 	end,
 }
 

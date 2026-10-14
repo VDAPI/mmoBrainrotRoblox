@@ -3127,6 +3127,56 @@ return {
 				why = "S107: Ashen side arc ashCaravans: the Salt Caravans 64-67 (Bogna; Ash Road); kills 10-12, drops 5 at 0.4, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
 			},
 		},
+		-- S108 (docs/DESIGN-15.md §3.4): the Frost Peaks side arcs; EXP from the band budget (TARGET.side of 70-99 by
+		-- expToNext x weight, S106 settleBands), gold(level) x GOLD_FROM_20, 3-4 quests per arc
+		["Quests/Side:byArc.fp_cairn*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_cairn: the Horned Cairn 70-73 (Halvar, Ingrid; Ice Wolf Valley); kills 10, drops 6 at 0.4, a delivery, uses 2-3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_trappers*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_trappers: the Trappers' Last Catch 74-78 (Sigrun after trappersCamp and iceGrotto; Ice Wolf Valley, Yeti Slopes); kills 8-10, a drop at 0.3, an escort, uses 2-3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_horn*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_horn: the Avalanche Horn 77-80 (Eskil; Yeti Slopes, Ice Grotto); kills 8-10, Elites in the Grotto, uses 2-3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_saga*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_saga: the Giants' Saga 82-86 (Ragnvald; Giants' Pass); kills 10, drops 3-4 at 0.35-0.4, a companion, uses 3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_icefish*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_icefish: the Ice Hole 85-89 (Torvi; Frozen Lake); fishing 3, kills 8, drops 4 at 0.4, an escort, uses 2-3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_bones*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_bones: the Mammoth Graveyard 87-91 (Gunnar; Mammoth Tundra, Frozen Hold); kills 6-12, drops 5 at 0.4, Elites in the Hold, uses 2 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_squire*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_squire: the Squire of the Watch 90-93 (Asmund after iceWatch; Ice Watch); kills 8-10, drops 4 at 0.35, uses 2-3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.fp_wyrms*"] = {
+			{
+				session = "S108",
+				why = "S108: Frost Peaks side arc fp_wyrms: Wyrm Bones 94-99 (Anzelm after dragonTemple, Vigdis; Wyrm Spire); kills 10-12, drops 3 at 0.35, two deliveries, uses 3 s; EXP from the 70-99 band's side budget (S106 settleBands, BAND_SCALE[70]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
 		["Quests/Side:BAND_FROM"] = {
 			{
 				session = "S106",
@@ -3147,6 +3197,10 @@ return {
 			{
 				session = "S107",
 				why = "S107: BAND_SCALE[45] derived by settleBands (band 45-69: 6% of its EXP, 26 Ashen side quests by expToNext x weight, no fixed quests)",
+			},
+			{
+				session = "S108",
+				why = "S108: BAND_SCALE[70] derived by settleBands (band 70-99: 6% of its EXP, 25 Frost Peaks side quests by expToNext x weight, no fixed quests)",
 			},
 		},
 		["Quests/Side:GOLD_FROM_20"] = {
@@ -3317,6 +3371,10 @@ return {
 			{
 				session = "S107",
 				why = "regenerated: Ashen side arcs (26 quests, 45-68, 6% of the band's EXP); 45-69 0.73-0.92 (was 0.76-0.96), no new clamp, 1-44 and 70-99 unchanged",
+			},
+			{
+				session = "S108",
+				why = "regenerated: Frost Peaks side arcs (25 quests, 6% of band 70-99); 70-99 0.51-0.87 (was 0.55-0.91), no new clamp, 1-69 unchanged",
 			},
 		},
 		["Quests/Main:STORY_STEP"] = {

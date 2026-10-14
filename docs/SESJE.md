@@ -7785,3 +7785,130 @@ Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/ashen.luau`, `
 
 Uproszczenia: runa snu (`rune` z S104) to płyta na ziemi przy sarkofagu i przy wrotach, nie znak na wieku; skóra bębna
 leży oparta o róg podestu (pozycja liczona od kotwicy `ash_war_drum`), kikut kolumny bez kolizji.
+
+### S108: Questy poboczne: Lodowe Szczyty (70–99)
+
+Start na `7f3284c` (S107): commit i sekcje S107, S106, S105, S101b, pliki rozmów i budżetu, id S105 (`trappersCamp`,
+`iceGrotto`, `iceWatch`, `dragonTemple`, `trapper_sigrun`, `ghost_halgrim`, `place.wyrmBones`) na miejscu;
+`scripts/check` zielony (6343 testy), `quest_budget check` aktualne. Migawki przed: `build/s108_before.json` (grupy,
+jaskinie, węzły, łowiska, drzewa, budowle), `build/s108_budget_before.txt`, `build/s108_QuestBudget.before.luau`.
+Mechanizmy S102–S107 użyte bez zmian (lista w „Przejęte”). Zgodnie z poleceniem przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Zadania (B):** 25 zadań w ośmiu łukach `fp_*` w `Data/Quests/Side` (tabela niżej), konstruktor `fp(def)` (`wiki =
+  false`), nazwany typ definicji `SideDef`, pomocniki `reachPlace`, `reachCave`, `caveExit`, `sitePoint`; `ARCS` + 8
+  (109 zadań, 34 łuki). Dwanaście nowych `FX` (`cairnOffering`, `ribbons`, `snare`, `sledgeRunner`, `dugHorn`,
+  `toppled`, `runeRubbing`, `runeCarving`, `iceChipped`, `tuskPost`, `juniper`, `eggShards`), brama Strażnicy z `candles`.
+- **NPC (C1):** Stara Ingrid (🎗), Eskil Trębacz (📯), Skald Ragnvald (📜), Torvi Przeręblarz (🎣), Gunnar Kościarz (🦴),
+  Asmund (🛡), Uczona Vigdis (📖) przez `regionfolk("frostpeak", …, { wiki = false })`, ikony bez zamian (jak S106/S107);
+  teksty `name/role/greeting/line1..3/where` PL i EN, dopisane `npc.scout_frostpeak.where` (Halvar daje `side_fp_flask`).
+- **Mapa (A):** 7 miejsc NPC w `NPC_SPOTS` i 25 kotwic `fp_*` w `QUEST_ANCHORS` (`free(id, x, z, y, rot)`, `rot` =
+  ramka efektu, lokalne −Z do rzeczy) w `Data/Areas/frostpeak`; `avoid`, `SITES`, obszary i jaskinie bez zmian.
+- **Obozy (C3):** nowy `Logic/FrostpeakGen/SideCamps` (7 obozów `SideCamp_<klucz>`, tag `camp`, 5 studs za NPC,
+  obrót jak NPC, polana r 5), wywołanie po skałach i przed lasem (`FrostpeakGen.all`): Ingrid stołek, kosz wstążek,
+  latarenka; Eskil osłona ze skór, pusty stojak rogu, koksownik; Ragnvald posłanie, ognisko, deska na kamieniu, tuba;
+  Torvi sanie ze skrzynkami ryb, dwa świdry, suszarnia; Gunnar namiot na kościach, ława, kły, figurki; Asmund szałas z
+  płaszcza i tarczy, ognisko; Vigdis namiot, skrzynia ksiąg, sztaluga z łuską, latarnia.
+- **Klient (D):** buildery 12 efektów w `QuestAnchorController` (3–7 części, światła małego zasięgu przy ogniu, świecy i
+  runach); moduły trackera, dziennika i mapy czytają dane (lista map w `UI/QuestText` miała już `frostpeak`).
+- **Admin (E2):** `/side list [prefiks]` filtruje łuki po początku id (`/side list fp_`), `admin.usage.side` PL i EN.
+- **Rozmowy (J):** wybór (2–3 odpowiedzi) i komentarze `accept` / `half` (Σ n ≥ 2) / `done` (+ `near`, `death`,
+  `stuck` według planu) we wszystkich 25; `recall`: `howl.done` ← `ribbons`, `sledge.done` ← `ledge`, `matriarch.done` ←
+  `horn`, `verse.p1` ← `thrones`, `hoard.done` ← `icehole`, `warhorn.done` ← `stampede`, `spurs.done` ← `squire`,
+  `treatise.p1` ← `clutches`; podpowiedzi: Wyjąca Skała, stożek lawiny, wyjście Lodowej Groty (−300 / −723), łódź w
+  lodzie, wyjście Zamarzniętej Twierdzy (300 / −723), miejsce Vigdis, nory wyrmów; upominki `potion_hp_5` × 2
+  (`sledge`, `warhorn`), `potion_mana_5` × 2 (`colossi`). Towarzysze: Sigrun prowadzi na Lamparcią Półkę, Torvi po lodzie
+  do łodzi (cele 1–2), Ragnvald idzie z graczem (`follow`, cele 1–2).
+- **Teksty (F):** PL i EN wszystkich stron, `progress`, `done`, wariantów, odpowiedzi, komentarzy, linii towarzyszy,
+  8 łuków, 13 akcji, 13 przedmiotów, 6 miejsc (`place.leopardLedge`, `thrones`, `frozenBoat`, `howlRock`, `avalanche`,
+  `wyrmBurrows`; żadnego nie było), 7 NPC.
+
+| łuk | NPC | poz. | zadania (★ finał) |
+|---|---|---|---|
+| `fp_cairn` | scout_frostpeak → cairn_ingrid | 70–73 | `side_fp_flask` 70, `side_fp_ribbons` 71, `side_fp_howl` ★ 73 |
+| `fp_trappers` | trapper_sigrun | 74–78 | `side_fp_snares` 74, `side_fp_ledge` 76, `side_fp_sledge` ★ 78 |
+| `fp_horn` | hornblower_eskil | 77–80 | `side_fp_horn` 77, `side_fp_boulders` 79, `side_fp_matriarch` ★ 80 |
+| `fp_saga` | skald_ragnvald | 82–86 | `side_fp_colossi` 82, `side_fp_thrones` 84, `side_fp_verse` ★ 86 |
+| `fp_icefish` | icefisher_torvi | 85–89 | `side_fp_icehole` 85, `side_fp_boat` 87, `side_fp_hoard` ★ 89 |
+| `fp_bones` | bonecarver_gunnar | 87–91 | `side_fp_tusks` 87, `side_fp_stampede` 89, `side_fp_warhorn` ★ 91 |
+| `fp_squire` | squire_asmund | 90–93 | `side_fp_squire` 90, `side_fp_shields` 92, `side_fp_spurs` ★ 93 |
+| `fp_wyrms` | brother_anzelm → scholar_vigdis → brother_anzelm | 94–99 | `side_fp_letter` 94, `side_fp_clutches` 96, `side_fp_bonetrail` 97, `side_fp_treatise` ★ 99 |
+
+Poziomy rodzajów i obszarów po S94 pasują do planu (`levels` w [L − 6, L + 6], obszar w [`lv.min` − 3, `lv.max` + 2]),
+żadnego obszaru nie zmieniono.
+
+Miejsca końcowe (`wiki = false`; skaner `build/s108_scan.luau`, trasy `build/s108_route.luau`, `s108_path.luau`):
+
+| id | punkt | koło `avoid` / uwagi |
+|---|---|---|
+| NPC `cairn` (Ingrid) | −676 / −24, 180° | zwiadowca; obóz −676 / −29 |
+| NPC `horn` (Eskil) | −226 / −360, 90° | odrodzenie −236 / −340; obóz −221 / −360 |
+| NPC `skald` (Ragnvald) | 100 / −32, 180° | `giantsGate`; obóz 100 / −37 |
+| NPC `icefisher` (Torvi) | 128 / 412, 180° | odrodzenie 108 / 420; obóz 128 / 407 |
+| NPC `bonecarver` (Gunnar) | 262 / −488, 270° | `mammothGraveyard`; obóz 257 / −488 |
+| NPC `squire` (Asmund) | 563 / 554, 90° | `icewatchGate` (plan 540 / 566 na drodze patrolowej); obóz 568 / 554 |
+| NPC `scholar` (Vigdis) | 442 / 30, 0° | odrodzenie 430 / 44; obóz 442 / 35 |
+| `fp_cairn_ribbons`, `fp_howl_offering` | −651 / −26; −695 / 275 | `entryCairn`; `howlRock` (plan −698 / 273 poza kołem) |
+| `fp_snare_1..3`, `fp_trapper_sledge` | −566 / −180, −540 / −188, −528 / −160; −561 / −165 | `trapperCamp` |
+| `fp_avalanche_horn`, `fp_boulders_1..3` | −94 / −537; −374 / −528, −374 / −512, −361 / −520 | `avalanche`, `yetiBoulders` |
+| `fp_colossus_north`, `_south` | 94 / −66; 80 / 56 | poza kołami, 12+ od grup (północny kolos na ostrodze: stopa od południa) |
+| `fp_saga_stone` | 78 / 0 | `giantsGate`, przy strąconej głowie |
+| `fp_frozen_boat`, `fp_hoard_1..3` | 201 / 565; 100 / 673, 85 / 668, 84 / 651 | lód jeziora (`frozenBoat`, `iceHoard`) |
+| `fp_tusk_arch` | 270 / −472 | poza kołem, 12+ od grup |
+| `fp_watch_shield_1..3`, `fp_watch_gate` | 569 / 538, 569 / 600, 569 / 620; 567 / 570 | przy zachodnim murze (x 576) i bramie |
+| `fp_brood_1..3` | 566 / −707, 590 / −691, 614 / −703 | przed norami wyrmów |
+
+Trasy (F-T6): Sigrun −534 / −160 → −556 / −204 → −568 / −240 → −578 / −268 → −582 / −286 (r 14; odcinki 49, 37, 29, 18);
+Torvi 128 / 412 → 190 / 432 → 238 / 472 → 226 / 512 → 192 / 550 (r 10; 65, 62, 41, 50; brzeg jeziora to stroma skarpa,
+łagodne zejście na lód tylko przy x ok. 236, plan 140 / 456 → 178 / 500 szedł przez skarpę); Ragnvald 100 / −32 →
+Sala Tronów 196 / 104 (166).
+
+Budżet (G): `BAND_SCALE[70]` = 0,056690; poboczne 70–99 = 332 938 EXP = 6,0% `bandExp(70)` (5 549 188); zwykłe 0,057,
+finał 0,102 `expToNext` (70: 7268, 99: 25 272); złoto 25 zadań 38 729 (× 0,8). Udział `side` w paśmie 70–99: model
+0,0% → 3,0%, gracz robi wszystko 0,0% → 6,0%; razem zadania 70–99 (model) 24,4% → 27,4%. `monsterExpMul` przed → po:
+L70 0,856 → 0,823; L75 0,887 → 0,853; L80 0,848 → 0,815; L85 0,831 → 0,799; L90 0,807 → 0,775; L95 0,802 → 0,768;
+L99 0,546 → 0,512 (zmiana tylko na 70–99, przycięcia bez zmian (3), godziny bicia 70–99 × 1,0000). Komendy:
+`lune run tools/quest_budget.luau --session S108`, `check` (aktualne), `allowed --why "S108: Frost Peaks side quests"`
+(222 wpisy: 0 nowych, 0 zmienionych), `contracts_gen.luau check` (aktualne), `lune run tools/balance_report.luau`.
+Księga: `byArc.fp_*` × 8, `BAND_SCALE*` i `MONSTER_EXP_MUL*` z wpisami S108, `Areas/frostpeak` bez wpisu (zrzut tylko
+`lv`), bez „BRAK POWODU”; `docs/BALANS.md` przeliczony.
+
+Porównanie (`build/s108_snapshot.luau`, `s108_before.json` / `s108_after.json`): 57 grup, spawnery trzech jaskiń, 50
+węzłów, 2 łowiska, 326 drzew i 365 budowli (nazwy, pozycje, części) identyczne. `FrostpeakGen.counts()`: budowle 365 →
+372, shell 1052 → 1056 (dwa namioty), detail 6672 → 6751, fine 3832 → 3863, światła 42 → 47.
+
+Wiki: `npm run data` zmienia tylko `wiki/src/data/meta.json` (commit i data, `dataHash` bez zmian), `frostpeak.svg`
+bez zmian, `quests.json`, `npcs.json`, `areas.json`, `gather.json`, `search.json`, `mapsearch.json` bez zmian,
+`wiki_keys_diff` pusty. EXP potworów na wiki nie bierze `MONSTER_EXP_MUL`.
+
+Testy: `sidequests.spec` (109 / 34, węzły Szczytów, „Frost Peaks NPCs stand on frostpeak npcSpots”, blok S108 1–10 i
+punkty, reguły, plotki, tajemnice fabuły; blok S107 szuka swoich łuków przed łukami Szczytów), `frostpeak.spec` (blok
+S108: F-T1/F-T2 miejsca NPC, F-T1/F-T3 kotwice, F-T4 części stałe (prostokąt z obrotem na wysokości 0,5–3,5, jak S107),
+obozy, F-T6 trasy; F-T1/F-T2 S105 tylko na swoich punktach, trasy S108 w teście dojścia pieszo), `dialogue.spec`
+(`NEW_QUESTS.S108`, `COMPANION_GROUPS.S108`), `wikidump.spec` (przypadek S108), `npcmarks.spec` (zwiadowca bez znaku
+zleceń oddaje też swoje poboczne). `scripts/check` zielony (6364 testy).
+
+Przejęte z S106/S107: `regionfolk` + `NpcDef.wiki`, `NpcSpot.wiki` / `QuestAnchor.wiki` z filtrem S103, `settleBands`
+/ `BAND_SCALE` / `WEIGHT` / `GOLD_FROM_20`, konstruktor kotwic jak `free`, wpisy księgi `byArc.<łuk>*`, test „każdy
+`FX` ma builder”, przypadek wiki z odczytem `wiki/src/data`, `touchesSolid` z `ashen.spec`, `mainDone` z indeksu
+wymaganego questu. Nie było: filtra `/side list` (dodany), rekwizytów obozów NPC (nowy `SideCamps`).
+
+Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/frostpeak.luau`,
+`src/shared/Data/{Npcs,QuestBudget,AdminCommands}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/FrostpeakGen/{init,SideCamps}.luau` (`SideCamps` nowy), `src/client/Controllers/QuestAnchorController.luau`,
+`src/server/Admin/Quests.luau`, `tests/{sidequests,frostpeak,dialogue,wikidump,npcmarks}.spec.luau`,
+`tools/balance_reasons.luau`, `wiki/src/data/meta.json`, `docs/{BALANS,DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+
+#### Dla S109
+
+- Zadania `side_fp_*` (25), łuki `fp_cairn`, `fp_trappers`, `fp_horn`, `fp_saga`, `fp_icefish`, `fp_bones`,
+  `fp_squire`, `fp_wyrms`; NPC `cairn_ingrid`, `hornblower_eskil`, `skald_ragnvald`, `icefisher_torvi`,
+  `bonecarver_gunnar`, `squire_asmund`, `scholar_vigdis`; miejsca `cairn`, `horn`, `skald`, `icefisher`, `bonecarver`,
+  `squire`, `scholar`; 25 kotwic `fp_*`. Zdjąć `wiki = false` (w `fp(def)`, `SIDE_FP` w `Data/Npcs`, `NPC_SPOTS` /
+  `free` w `Areas/frostpeak`) i przypadek S108 w `tests/wikidump.spec`.
+- Budżet do audytu: reguła S106 na trzech pasmach (`BAND_SCALE` 20 / 45 / 70), poboczne 70–99 6,0% (model 3,0%),
+  zadania 70–99 w modelu 27,4%; `monsterExpMul` L99 0,512 (dwa zadania fabuły i finał poboczny na 99).
+- Wszystkie łuki regionów (S106–S108) są w `ARCS` po kolei; `NEW_QUESTS.S106–S108` w `tests/dialogue.spec` do audytu.
+
+Uproszczenia: brak (obozy i efekty w pełnym planie). Efekt `iceChipped` jest ten sam przy łodzi i w skarbcu (bryły i
+kilof), bez osobnej łodzi wykutej z lodu.

@@ -9,6 +9,7 @@ local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local DuskwoodGen = require("../src/shared/Logic/DuskwoodGen")
 local Exp = require("../src/shared/Logic/Exp")
+local FrostpeakGen = require("../src/shared/Logic/FrostpeakGen")
 local Items = require("../src/shared/Data/Items")
 local MeadowsGen = require("../src/shared/Logic/MeadowsGen")
 local Monsters = require("../src/shared/Data/Monsters")
@@ -39,7 +40,7 @@ local KNOWN_TYPES = {
 	reach = true,
 	use = true,
 	deliver = true,
-	escort = true, -- S106: side_boneTree (Wanda leads); S107: side_ash_wells, side_ash_king
+	escort = true, -- S106: side_boneTree (Wanda leads); S107: side_ash_wells, side_ash_king; S108: side_fp_ledge, side_fp_boat
 }
 
 local function hasKey(key: string): boolean
@@ -72,10 +73,10 @@ end
 
 describe("Side quest data", function()
 	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice; S106: + 27 quests in 8 Duskwood arcs;
-	-- S107: + 26 quests in 8 Ashen arcs
-	it("has 84 quests in 26 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
-		expect(#Quests.Side.list).toBe(84)
-		expect(#Quests.Side.ARCS).toBe(26)
+	-- S107: + 26 quests in 8 Ashen arcs; S108: + 25 quests in 8 Frost Peaks arcs
+	it("has 109 quests in 34 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
+		expect(#Quests.Side.list).toBe(109)
+		expect(#Quests.Side.ARCS).toBe(34)
 		for _, arc in Quests.Side.ARCS do
 			local list = assert(Quests.Side.byArc[arc], arc)
 			local finals = 0
@@ -132,7 +133,7 @@ describe("Side quest data", function()
 
 	-- S106: anchors of every map, gathering nodes of the quest's map (the map of its areas, anchors or `where`)
 	it("objectives point at existing anchors, monsters, areas, nodes and NPCs", function()
-		local nodesOf: { [string]: { [string]: boolean } } = { meadows = {}, duskwood = {}, ashen = {} }
+		local nodesOf: { [string]: { [string]: boolean } } = { meadows = {}, duskwood = {}, ashen = {}, frostpeak = {} }
 		for _, node in MeadowsGen.nodes() do
 			nodesOf.meadows[node.kind] = true
 		end
@@ -141,6 +142,9 @@ describe("Side quest data", function()
 		end
 		for _, node in AshenGen.nodes() do -- S107
 			nodesOf.ashen[node.kind] = true
+		end
+		for _, node in FrostpeakGen.nodes() do -- S108
+			nodesOf.frostpeak[node.kind] = true
 		end
 		local function mapOf(quest: SideQuest): string
 			if quest.where then
@@ -282,6 +286,38 @@ describe("Side quest data", function()
 			end
 		end
 		expect(count).toBe(6)
+	end)
+
+	-- S108: every NPC of the Frost Peaks but the scout stands on a place of Areas/frostpeak npcSpots (position, facing)
+	it("Frost Peaks NPCs stand on frostpeak npcSpots", function()
+		local spots = Areas.byMap.frostpeak.npcSpots or {}
+		local seen: { [string]: boolean } = {}
+		for _, npc in Npcs.list do
+			if npc.map == "frostpeak" and npc.id ~= "scout_frostpeak" then
+				local found = false
+				for _, spot in spots do
+					found = found
+						or (spot.x == npc.position.x and spot.z == npc.position.z and spot.facing == npc.facing)
+				end
+				if not found then
+					error(`{npc.id} is not on an npc spot`)
+				end
+				seen[npc.id] = true
+			end
+		end
+		for _, id in
+			{
+				"cairn_ingrid",
+				"hornblower_eskil",
+				"skald_ragnvald",
+				"icefisher_torvi",
+				"bonecarver_gunnar",
+				"squire_asmund",
+				"scholar_vigdis",
+			}
+		do
+			expect(`{id} {seen[id] == true}`).toBe(`{id} true`)
+		end
 	end)
 end)
 
@@ -799,9 +835,12 @@ describe("Ashen side arcs (S107)", function()
 
 	it("26 quests side_ash_* in eight arcs at the end of ARCS, levels 45-68, hidden from the wiki", function()
 		expect(#ash).toBe(26)
+		-- S108: the Frost Peaks arcs follow them at the end of ARCS
 		local arcs = Quests.Side.ARCS
+		local first = assert(table.find(arcs, ASH_ARCS[1]), "ashen arcs")
+		expect(first).toBe(#arcs - #ASH_ARCS - 8 + 1)
 		for i, arc in ASH_ARCS do
-			expect(arcs[#arcs - #ASH_ARCS + i]).toBe(arc)
+			expect(arcs[first + i - 1]).toBe(arc)
 		end
 		for _, quest in ash do
 			expect(string.sub(quest.id, 1, 9)).toBe("side_ash_")
@@ -1080,6 +1119,349 @@ describe("Ashen side arcs (S107)", function()
 		end
 		for _, key in { "cairn", "water", "incense", "drum", "mirror" } do
 			expect(Quests.Side.FX[key]).toBe(true)
+		end
+	end)
+end)
+
+-- S108: the Frost Peaks side arcs (levels 70-99) ------------------------------------------------------------------
+
+local FP_ARCS = { "fp_cairn", "fp_trappers", "fp_horn", "fp_saga", "fp_icefish", "fp_bones", "fp_squire", "fp_wyrms" }
+local FP_NEW = {
+	"cairn_ingrid",
+	"hornblower_eskil",
+	"skald_ragnvald",
+	"icefisher_torvi",
+	"bonecarver_gunnar",
+	"squire_asmund",
+	"scholar_vigdis",
+}
+-- NPCs of the arcs that are not new (S105's Sigrun, the scout, Brother Anzelm in the city)
+local FP_OLD = { trapper_sigrun = true, scout_frostpeak = true, brother_anzelm = true }
+local FP_STORY = { fp_trappers = "trappersCamp", fp_squire = "iceWatch", fp_wyrms = "dragonTemple" }
+local FP_BANNED_PL = { "Ilvar", "Morvane", "Vael", "Cierń", "Ciernia", "serce", "Serce" }
+local FP_BANNED_EN = { "Ilvar", "Morvane", "Vael", "Thorn", "heart", "Heart" }
+
+local function fpQuests(): { SideQuest }
+	local out = {}
+	for _, quest in Quests.Side.list do
+		if string.sub(quest.id, 1, 8) == "side_fp_" then
+			table.insert(out, quest)
+		end
+	end
+	return out
+end
+
+describe("Frost Peaks side arcs (S108)", function()
+	local fp = fpQuests()
+
+	it("1: eight fp_ arcs at the end of ARCS, 25 quests side_fp_*, 3-4 an arc, levels rising within 70-99", function()
+		expect(#fp).toBe(25)
+		local arcs = Quests.Side.ARCS
+		for i, arc in FP_ARCS do
+			expect(arcs[#arcs - #FP_ARCS + i]).toBe(arc)
+			expect(hasKey(`quest.arc.{arc}`)).toBe(true)
+			local list = assert(Quests.Side.byArc[arc], arc)
+			expect(#list >= 3 and #list <= 4).toBe(true)
+			for k, quest in list do
+				expect(string.sub(quest.id, 1, 8)).toBe("side_fp_")
+				if k > 1 then
+					expect(quest.level >= list[k - 1].level).toBe(true)
+				end
+				expect(quest.reward.choice == "final").toBe(k == #list)
+			end
+		end
+		for _, quest in fp do
+			expect(table.find(FP_ARCS, quest.arc) ~= nil).toBe(true)
+			expect(quest.level >= 70 and quest.level <= 99).toBe(true)
+		end
+		local count = 0
+		for _, arc in arcs do
+			if string.sub(arc, 1, 3) == "fp_" then
+				count += 1
+			end
+		end
+		expect(count).toBe(8)
+	end)
+
+	it("2-3: a quest every two levels from 70 to 99, none taken before 70", function()
+		for from = 70, 98, 2 do
+			local found = false
+			for _, quest in fp do
+				found = found or (quest.level >= from and quest.level <= from + 1)
+			end
+			if not found then
+				error(`no Frost Peaks side quest for levels {from}-{from + 1}`)
+			end
+		end
+		for _, quest in fp do
+			expect(`{quest.id} {SideQuests.minLevel(quest) >= 70}`).toBe(`{quest.id} true`)
+		end
+		expect(assert(Quests.Side.get("side_fp_flask")).minLevel).toBe(70)
+		expect(assert(Quests.Side.get("side_fp_ribbons")).minLevel).toBe(70)
+	end)
+
+	it("4: hidden from the wiki, side, with gold and EXP of at most 0.7 of the level", function()
+		for _, quest in fp do
+			expect(quest.wiki).toBe(false)
+			expect(quest.category).toBe("side")
+			expect(quest.reward.gold > 0).toBe(true)
+			expect(quest.reward.exp > 0 and quest.reward.exp <= Exp.expToNext(quest.level) * 0.7).toBe(true)
+			expect(quest.reward.items).toBeNil()
+			expect(quest.reward.mount).toBeNil()
+			expect(quest.reward.gold).toBe(
+				math.floor(math.floor((60 + quest.level * 45) * 0.5) * Quests.Side.GOLD_FROM_20)
+			)
+		end
+	end)
+
+	it("5: the band 70-99 holds TARGET.side of its EXP, by expToNext x weight (the arc's end 1.8)", function()
+		local scale = assert(Quests.Side.BAND_SCALE[70], "BAND_SCALE[70]")
+		local total = 0
+		for _, quest in Quests.Side.list do
+			if quest.level >= 70 and quest.level <= 99 and quest.category == "side" then
+				total += quest.reward.exp
+			end
+		end
+		local share = total / QuestBudget.bandExp(70)
+		local target = QuestBudgetData.TARGET.side
+		expect(share >= target - 0.003 and share <= target).toBe(true)
+		for _, quest in fp do
+			local w = if quest.reward.choice then Quests.Side.WEIGHT.final else Quests.Side.WEIGHT.normal
+			expect(quest.reward.exp).toBe(math.floor(Exp.expToNext(quest.level) * w * scale))
+		end
+		local tusks = assert(Quests.Side.get("side_fp_tusks"))
+		local boat = assert(Quests.Side.get("side_fp_boat"))
+		expect(tusks.level).toBe(boat.level)
+		expect(tusks.reward.exp).toBe(boat.reward.exp)
+		local hoard = assert(Quests.Side.get("side_fp_hoard"))
+		local stampede = assert(Quests.Side.get("side_fp_stampede"))
+		expect(hoard.level).toBe(stampede.level)
+		expect(math.abs(hoard.reward.exp / stampede.reward.exp - 1.8) <= 0.01).toBe(true)
+	end)
+
+	it("6: kills and drops in areas of the Peaks whose monsters fit the quest's level (+-6)", function()
+		for _, quest in fp do
+			for _, objective in quest.objectives do
+				if (objective.type == "kill" or objective.type == "collect") and objective.area then
+					local area, mapId = Areas.areaById(objective.area)
+					expect(`{quest.id} {mapId}`).toBe(`{quest.id} frostpeak`)
+					local monster = objective.monster :: string
+					expect(table.find(assert(area).kinds, monster) ~= nil).toBe(true)
+					local levels = assert(Monsters.get(monster)).levels
+					local fits = levels.min <= quest.level + 6 and levels.max >= quest.level - 6
+					expect(`{quest.id} {monster} {fits}`).toBe(`{quest.id} {monster} true`)
+				end
+				if objective.type == "reach" and objective.map and objective.map ~= "frostpeak" then
+					expect(assert(Areas.caves.get(objective.map)).region).toBe("frostpeak")
+				end
+			end
+		end
+	end)
+
+	it("7: every anchor of a use objective lies on the Peaks and serves one quest only", function()
+		local used: { [string]: string } = {}
+		for _, quest in fp do
+			for _, objective in quest.objectives do
+				if objective.type == "use" then
+					for _, id in objective.anchors or { objective.anchor :: string } do
+						local anchor, mapId = Areas.anchorById(id)
+						expect(`{id} {anchor ~= nil and mapId == "frostpeak"}`).toBe(`{id} true`)
+						expect(`{id} {used[id]}`).toBe(`{id} nil`)
+						used[id] = quest.id
+					end
+				end
+			end
+		end
+		local n = 0
+		for _ in used do
+			n += 1
+		end
+		expect(n).toBe(25)
+	end)
+
+	it("8: givers and turn-in NPCs: the seven new people, Sigrun, the scout and Brother Anzelm", function()
+		for _, quest in fp do
+			for _, npcId in { quest.giver, quest.turnIn } do
+				local npc = assert(Npcs.get(npcId), npcId)
+				local known = table.find(FP_NEW, npcId) ~= nil or FP_OLD[npcId] == true
+				expect(`{npcId} {known}`).toBe(`{npcId} true`)
+				expect(npc.map == "frostpeak" or npcId == "brother_anzelm").toBe(true)
+			end
+			expect(`{quest.giver} {hasKey(`npc.{quest.giver}.where`)}`).toBe(`{quest.giver} true`)
+		end
+		for _, id in FP_NEW do
+			local npc = assert(Npcs.get(id), id)
+			expect(npc.services).toEqual({ "talk" })
+			expect(npc.lines).toBe(3)
+			expect(npc.wiki).toBe(false)
+			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+				expect(`{id}.{key} {hasKey(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+		end
+		expect(assert(Quests.Side.get("side_fp_letter")).giver).toBe("brother_anzelm")
+		expect(assert(Quests.Side.get("side_fp_treatise")).turnIn).toBe("brother_anzelm")
+		expect(assert(Quests.Side.get("side_fp_flask")).giver).toBe("scout_frostpeak")
+	end)
+
+	it(
+		"9: the arcs of Sigrun, Asmund and Vigdis wait for their story quest of S105; the rest chain in the arc",
+		function()
+			for _, arc in FP_ARCS do
+				for i, quest in Quests.Side.byArc[arc] do
+					if i == 1 then
+						if FP_STORY[arc] then
+							expect(quest.requires).toEqual({ FP_STORY[arc] })
+						else
+							expect(quest.requires).toBeNil()
+						end
+					elseif quest.id == "side_fp_ledge" then
+						expect(quest.requires).toEqual({ "side_fp_snares", "iceGrotto" })
+					else
+						expect(quest.requires).toEqual({ Quests.Side.byArc[arc][i - 1].id })
+					end
+				end
+			end
+			for _, id in { "trappersCamp", "iceGrotto", "iceWatch", "dragonTemple" } do
+				expect(`{id} {Quests.Main.indexOf[id] ~= nil}`).toBe(`{id} true`)
+			end
+			local snares = assert(Quests.Side.get("side_fp_snares"))
+			local camp = Quests.Main.indexOf.trappersCamp
+			expect((SideQuests.canAccept(quests(nil, camp), SideQuests.minLevel(snares), snares))).toBe(true)
+			local _, reason = SideQuests.canAccept(quests(nil, camp - 1), SideQuests.minLevel(snares), snares)
+			expect(reason).toBe("requires")
+			-- the knife waits for the Grotto too
+			local ledge = assert(Quests.Side.get("side_fp_ledge"))
+			local grotto = Quests.Main.indexOf.iceGrotto
+			local done = { side_fp_snares = true }
+			expect((SideQuests.canAccept(quests({ active = {}, done = done }, grotto), 76, ledge))).toBe(true)
+			_, reason = SideQuests.canAccept(quests({ active = {}, done = done }, grotto - 1), 76, ledge)
+			expect(reason).toBe("requires")
+		end
+	)
+
+	it("10: the twelve new anchor effects are in the data (each has a builder: the S107 case above)", function()
+		for _, key in
+			{
+				"cairnOffering",
+				"ribbons",
+				"snare",
+				"sledgeRunner",
+				"dugHorn",
+				"toppled",
+				"runeRubbing",
+				"runeCarving",
+				"iceChipped",
+				"tuskPost",
+				"juniper",
+				"eggShards",
+			}
+		do
+			expect(Quests.Side.FX[key]).toBe(true)
+		end
+		local gate = assert(Quests.Side.get("side_fp_spurs")).objectives[1]
+		expect(gate.anchor).toBe("fp_watch_gate")
+		expect(gate.fx).toBe("candles")
+	end)
+
+	it(
+		"reach, escort and hint points: the Hall of Thrones, the wyrm's bones, the boat and named places on dry ground",
+		function()
+			local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+			local T = assert(RegionTerrain.get("frostpeak"))
+			local sites = assert(Areas.byMap.frostpeak.sites, "frostpeak sites")
+			local thrones = assert(Quests.Side.get("side_fp_thrones")).objectives[1]
+			expect(thrones.type).toBe("reach")
+			expect(thrones.x).toBe(sites.thrones.x)
+			expect(thrones.z).toBe(sites.thrones.z)
+			expect(thrones.place).toBe("place.thrones")
+			local bones = assert(Quests.Side.get("side_fp_bonetrail")).objectives[1]
+			expect(bones.x).toBe(sites.wyrmBones.x)
+			expect(bones.z).toBe(sites.wyrmBones.z)
+			expect(bones.place).toBe("place.wyrmBones")
+			expect(assert(Quests.Side.get("side_fp_ledge")).objectives[1].place).toBe("place.leopardLedge")
+			expect(assert(Quests.Side.get("side_fp_boat")).objectives[1].place).toBe("place.frozenBoat")
+			local hints = 0
+			for _, quest in fp do
+				for _, option in (if quest.choices then quest.choices.options else {}) :: { any } do
+					local effect = option.effect
+					if effect and effect.kind == "hint" then
+						hints += 1
+						expect(effect.map).toBe("frostpeak")
+						expect(hasKey(effect.place)).toBe(true)
+						local tag = `{quest.id} {option.id}`
+						expect(`{tag} {T.isWater(effect.x, effect.z) or T.mountainAt(effect.x, effect.z)}`).toBe(
+							`{tag} false`
+						)
+					end
+				end
+			end
+			expect(hints).toBe(7)
+		end
+	)
+
+	it("rules on the Frost Peaks quests: an escort, three snares, a reach, a deliver at the city", function()
+		local rng = Rng.new(8)
+		-- side_fp_ledge: Sigrun's escort is objective 1, the knife objective 2
+		local ledge = assert(Quests.Side.get("side_fp_ledge"))
+		local l = SideQuests.newEntry(ledge)
+		expect(#SideQuests.advance(l, ledge, "escort", { npc = "icefisher_torvi" }, rng)).toBe(0)
+		expect(SideQuests.advance(l, ledge, "escort", { npc = "trapper_sigrun" }, rng)).toEqual({ 1 })
+		-- side_fp_snares: each snare once
+		local snares = assert(Quests.Side.get("side_fp_snares"))
+		local s = SideQuests.newEntry(snares)
+		expect(SideQuests.advance(s, snares, "use", { anchor = "fp_snare_1" }, rng)).toEqual({ 1 })
+		expect(#SideQuests.advance(s, snares, "use", { anchor = "fp_snare_1" }, rng)).toBe(0)
+		expect(#SideQuests.advance(s, snares, "use", { anchor = "fp_trapper_sledge" }, rng)).toBe(0)
+		-- side_fp_thrones: the Hall of Thrones needs the position
+		local thrones = assert(Quests.Side.get("side_fp_thrones"))
+		local t = SideQuests.newEntry(thrones)
+		expect(#SideQuests.advance(t, thrones, "reach", { map = "frostpeak", x = 100, z = -32 }, rng)).toBe(0)
+		expect(#SideQuests.advance(t, thrones, "reach", { map = "frostpeak", x = 196, z = 110 }, rng)).toBe(1)
+		-- side_fp_stampede: mammoths of the lake do not count, those of the tundra do
+		local stampede = assert(Quests.Side.get("side_fp_stampede"))
+		local m = SideQuests.newEntry(stampede)
+		expect(#SideQuests.advance(m, stampede, "kill", { monsterId = "iceMammoth", areaId = "frostpeak_lake" }, rng)).toBe(
+			0
+		)
+		expect(#SideQuests.advance(m, stampede, "kill", { monsterId = "iceMammoth", areaId = "frostpeak_tundra" }, rng)).toBe(
+			1
+		)
+		-- the marks: "!" at Ingrid at 71 once the flask is handed in, "?" at Brother Anzelm with the treatise done
+		local done = { side_fp_flask = true }
+		expect(NpcMarks.all(quests({ active = {}, done = done }), 71).cairn_ingrid).toBe("available")
+		local treatise = assert(Quests.Side.get("side_fp_treatise"))
+		local entry = SideQuests.newEntry(treatise)
+		for i, objective in treatise.objectives do
+			entry.progress[i] = objective.n
+		end
+		local q = quests({ active = { side_fp_treatise = entry }, done = {} })
+		expect(NpcMarks.all(q, 99).brother_anzelm).toBe("turnIn")
+	end)
+
+	it("the innkeeper hears of the Peaks people; the scout offers the flask from 70, not before", function()
+		local q = quests()
+		local givers = SideQuests.giversWithWork(q, 85)
+		expect(table.find(givers, "skald_ragnvald") ~= nil).toBe(true)
+		expect(table.find(givers, "icefisher_torvi") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(q, 70, "scout_frostpeak")), "side_fp_flask") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(q, 69, "scout_frostpeak")), "side_fp_flask")).toBeNil()
+		expect(#SideQuests.available(q, 90, "squire_asmund")).toBe(0) -- iceWatch not done
+	end)
+
+	it("no page names a secret of the story (Ilvar, the Thorn, the dragon's heart)", function()
+		for _, quest in fp do
+			for _, lang in { { pl, FP_BANNED_PL }, { en, FP_BANNED_EN } } do
+				local tbl: any, banned = lang[1], lang[2]
+				for key, text in tbl do
+					if string.sub(key, 1, #quest.id + 7) == `quest.{quest.id}.` then
+						for _, word in banned do
+							if string.find(text, word, 1, true) then
+								error(`{key}: {word}`)
+							end
+						end
+					end
+				end
+			end
 		end
 	end)
 end)

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S107 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S108 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -147,6 +147,11 @@ S107 poboczne Spalonych Pustkowi: osiem łuków, 26 zadań na 45–68 u pięciu 
 Wiesława, Ezra, Bogna) oraz Kesry, Ghashy i Kaspara, 28 kotwic `ash_*` (9 z rekwizytami `AshenGen/Quest`), pięć
 efektów, Orren i Ezra jako towarzysze, wybór przedmiotu na końcu łuku, EXP z budżetu pasma (6%), złoto ×0,8,
 `monsterExpMul` 45–69 o ok. 4% niżej, czas na poziom bez zmian; ukryte na wiki do S109.
+S108 poboczne Lodowych Szczytów: osiem łuków, 25 zadań na 70–99 u siedmiu nowych mieszkańców Szczytów (Ingrid,
+Eskil, Ragnvald, Torvi, Gunnar, Asmund, Vigdis; każdy z małym obozem z `FrostpeakGen/SideCamps`) oraz Sigrun, Halvara i
+Brata Anzelma, 25 kotwic `fp_*`, dwanaście efektów, Sigrun, Torvi i Ragnvald jako towarzysze, wybór przedmiotu na końcu
+łuku, EXP z budżetu pasma (6%), złoto ×0,8, `monsterExpMul` 70–99 o ok. 4% niżej, czas na poziom bez zmian, `/side list
+[prefiks]`; ukryte na wiki do S109.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -179,7 +184,7 @@ zakończone; testy i decyzje właściciela po nich.
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
   bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty od 20.
-  (po S107: 20–44 27%, 45–69 26%, 70–99 24%; poboczne S108 brakują; audyt S109).
+  (po S108: 20–44 27%, 45–69 26%, 70–99 27%; audyt S109).
 - **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
   (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
   Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
@@ -204,7 +209,8 @@ zakończone; testy i decyzje właściciela po nich.
 - **Fabuła (S105)**: uproszczenia: sceny bez dźwięków (ryk, dzwony, ptaki tylko jako `hint` w `Data/Ambience`; sceny
   nie mają pola dźwięku), kamera `firstSpring` przybliża się bez opadania, rycerze w `thornWhole` rozsypują się bez
   klękania, skin `mountskin_spring` bez płatków z grzywy (skin nie ma cząstek). `monsterExpMul` L99 0,546
-  (`dragonsBrood` i `voiceOfWinter` na 99): kto pomija te questy, bije 99. poziom dłużej (audyt S109).
+  (`dragonsBrood` i `voiceOfWinter` na 99; po S108 z finałem pobocznym `side_fp_treatise` 0,512): kto pomija te
+  questy, bije 99. poziom dłużej (audyt S109).
 - **Poboczne Boru (S106)**: uproszczenia wyglądu: efekt `spill` przykrywa stojący kocioł wiedźmy przewróconą bryłą
   (zielone światło kotła generatora zostaje), `ward` przy słupach z urokiem stawia deszczułkę obok, urok rekwizytu
   nie znika.

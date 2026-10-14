@@ -19,9 +19,12 @@
 -- Data/Areas/duskwood (dw_* anchors).
 -- S107: Ashen Wastes side arcs (levels 45–68) on the same band budget (band 45–69, BAND_SCALE[45]); anchors and NPC
 -- places in Data/Areas/ashen (ash_* anchors), props in Logic/AshenGen/Quest.
+-- S108: Frost Peaks side arcs (levels 70–99) on the same band budget (band 70–99, BAND_SCALE[70]); anchors and NPC
+-- places in Data/Areas/frostpeak (fp_* anchors), the NPCs' camps in Logic/FrostpeakGen/SideCamps.
 
 local AshenAreas = require("../Areas/ashen")
 local Exp = require("../../Logic/Exp")
+local FrostAreas = require("../Areas/frostpeak")
 local QuestBudget = require("../../Logic/QuestBudget")
 local QuestBudgetData = require("../QuestBudget")
 local Talk = require("./Talk")
@@ -92,6 +95,19 @@ local FX = {
 	incense = true, -- S107: smouldering herbs on stones
 	drum = true, -- S107: the war drum's skin slashed
 	mirror = true, -- S107: a polished shield on a stake facing the den
+	-- S108 (the Frost Peaks side arcs; fp_watch_gate uses `candles`):
+	cairnOffering = true, -- S108: a flat stone with a bowl of tallow, a bone and a small flame at the Howling Rock
+	ribbons = true, -- S108: a stick in the cairn with four cloth ribbons (red, blue, gold, grey)
+	snare = true, -- S108: a stake with a wire loop and a red rag
+	sledgeRunner = true, -- S108: a new, pale runner beside the sledge, two rope lashings
+	dugHorn = true, -- S108: a pit dug in the snow, two snow banks and the long dark horn with its iron band
+	toppled = true, -- S108: three scattered boulders and the dark track of their slide
+	runeRubbing = true, -- S108: a sheet of parchment pinned to a stone with two lines of charcoal
+	runeCarving = true, -- S108: a slab with carved signs glowing pale blue
+	iceChipped = true, -- S108: four chipped blocks of ice and a pick leaning on one
+	tuskPost = true, -- S108: a post with two tusks lashed on with leather
+	juniper = true, -- S108: a sprig of juniper and a small candle
+	eggShards = true, -- S108: pale blue eggshells and a dark stain
 }
 
 local list: { SideQuest } = {}
@@ -99,31 +115,32 @@ local list: { SideQuest } = {}
 local pending: { [SideQuest]: number } = {}
 local BAND_SCALE: { [number]: number } = {}
 
-local function side(
-	def: {
-		id: string,
-		level: number,
-		giver: string,
-		turnIn: string,
-		arc: string,
-		pages: number,
-		requires: { string }?,
-		objectives: { Objective },
-		final: boolean?,
-		where: { map: string, area: string?, x: number?, z: number? }?,
-		expShare: number?, -- S96: EXP share of the quest level instead of NORMAL_EXP / FINAL_EXP
-		mount: string?, -- S96: a mount on hand-in (the arc's end without an item choice)
-		cosmetic: string?, -- S97: an account cosmetic on hand-in (Reward.cosmetic)
-		minLevel: number?, -- S96
-		wiki: boolean?, -- S96
-		category: Types.Category?, -- S98: "side" when nil (the S96 stable arc too)
-		-- S101b (DESIGN-15 §3.5): answers, page variants by an earlier answer, comments, companion
-		choices: Types.ChoicePage?,
-		recall: { [string]: string }?,
-		barks: Types.BarkSet?,
-		companion: Types.CompanionDef?,
-	}
-)
+-- The fields of one side quest's definition (S108: named, so the regional constructors keep the types).
+type SideDef = {
+	id: string,
+	level: number,
+	giver: string,
+	turnIn: string,
+	arc: string,
+	pages: number,
+	requires: { string }?,
+	objectives: { Objective },
+	final: boolean?,
+	where: { map: string, area: string?, x: number?, z: number? }?,
+	expShare: number?, -- S96: EXP share of the quest level instead of NORMAL_EXP / FINAL_EXP
+	mount: string?, -- S96: a mount on hand-in (the arc's end without an item choice)
+	cosmetic: string?, -- S97: an account cosmetic on hand-in (Reward.cosmetic)
+	minLevel: number?, -- S96
+	wiki: boolean?, -- S96
+	category: Types.Category?, -- S98: "side" when nil (the S96 stable arc too)
+	-- S101b (DESIGN-15 §3.5): answers, page variants by an earlier answer, comments, companion
+	choices: Types.ChoicePage?,
+	recall: { [string]: string }?,
+	barks: Types.BarkSet?,
+	companion: Types.CompanionDef?,
+}
+
+local function side(def: SideDef)
 	local final = def.final == true
 	local share = def.expShare or (if final then FINAL_EXP else NORMAL_EXP)
 	-- S106: from BAND_FROM on, quests without expShare get their EXP from the band's budget (settleBands)
@@ -1628,6 +1645,506 @@ side({
 	recall = { done = "side_ash_wagons" },
 })
 
+-- Frost Peaks (S108, 70–99): eight arcs, docs/DESIGN-15.md §3.4 ------------------------------------------------------
+-- Seven new NPCs on Areas/frostpeak npcSpots (camps in Logic/FrostpeakGen/SideCamps), Sigrun of S105 and two NPCs of
+-- the city / the scout; anchors in Areas/frostpeak questAnchors (fp_*). EXP from the 70–99 band's side budget (S106
+-- settleBands, BAND_SCALE[70], DESIGN-15 §3.2 TARGET.side); the S98 model counts SIDE_SHARE of it and compensates
+-- monster EXP. Every Frost Peaks arc is off the wiki until S109 (`wiki = false`, set by `fp`).
+local FP_SITES = assert(FrostAreas.sites, "Side: frostpeak sites")
+local FP_SPOTS = assert(FrostAreas.npcSpots, "Side: frostpeak npc spots")
+
+local function fp(def: SideDef)
+	def.wiki = false
+	side(def)
+end
+
+-- A `reach` objective with a named place on a map.
+local function reachPlace(map: string, x: number, z: number, radius: number, place: string): Objective
+	return { type = "reach", n = 1, map = map, x = x, z = z, radius = radius, place = place }
+end
+
+-- A `reach` objective of a cave (the elites of the next objectives live there).
+local function reachCave(map: string): Objective
+	return { type = "reach", n = 1, map = map }
+end
+
+-- Where a player comes out of a cave mouth of the Peaks (22 studs before it, tests/frostpeak.spec standingPlaces).
+local function caveExit(cave: string): (number, number)
+	for _, c in FrostAreas.caves do
+		if c.cave == cave then
+			local a = math.rad(c.rot)
+			return c.x - math.sin(a) * 22, c.z - math.cos(a) * 22
+		end
+	end
+	error(`Side: no frostpeak cave {cave}`)
+end
+
+local function sitePoint(name: string): (number, number)
+	local s = FP_SITES[name]
+	return s.x, s.z
+end
+
+-- A. The Horned Cairn (70–73), Ice Wolf Valley: Old Ingrid keeps the ribbons of those who went up the mountains ------
+fp({
+	id = "side_fp_flask",
+	level = 70,
+	minLevel = 70,
+	giver = "scout_frostpeak",
+	turnIn = "cairn_ingrid",
+	arc = "fp_cairn",
+	pages = 2,
+	objectives = { deliver("halvarFlask") },
+	barks = { accept = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("drink"), Talk.answer("who"), Talk.answer("word") }),
+})
+fp({
+	id = "side_fp_ribbons",
+	level = 71,
+	minLevel = 70,
+	giver = "cairn_ingrid",
+	turnIn = "cairn_ingrid",
+	arc = "fp_cairn",
+	pages = 3,
+	requires = { "side_fp_flask" },
+	objectives = {
+		kill(10, "iceWolf", "frostpeak_valley"),
+		collect(6, "cairnRibbon", "iceWolf", 0.4, "frostpeak_valley"),
+	},
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("wolves"), Talk.answer("first", Talk.focus(2)) }),
+})
+local HOWL_X, HOWL_Z = sitePoint("howlRock")
+fp({
+	id = "side_fp_howl",
+	level = 73,
+	giver = "cairn_ingrid",
+	turnIn = "cairn_ingrid",
+	arc = "fp_cairn",
+	pages = 3,
+	requires = { "side_fp_ribbons" },
+	objectives = {
+		use({ "fp_howl_offering" }, "quest.use.offering", 3, "cairnOffering"),
+		use({ "fp_cairn_ribbons" }, "quest.use.ribbons", 2, "ribbons"),
+	},
+	final = true,
+	barks = { accept = 1, near = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("believe"),
+		Talk.answer("little"),
+		Talk.answer("road", Talk.hint("frostpeak", HOWL_X, HOWL_Z, "place.howlRock")),
+	}),
+	recall = { done = "side_fp_ribbons" },
+})
+
+-- B. The Trappers' Last Catch (74–78), the trappers' camp and the Leopards' Ledge: Sigrun of S105 after the Grotto ----
+fp({
+	id = "side_fp_snares",
+	level = 74,
+	giver = "trapper_sigrun",
+	turnIn = "trapper_sigrun",
+	arc = "fp_trappers",
+	pages = 3,
+	requires = { "trappersCamp" },
+	objectives = {
+		use({ "fp_snare_1", "fp_snare_2", "fp_snare_3" }, "quest.use.snare", 2, "snare"),
+		kill(8, "snowLeopard", "frostpeak_valley"),
+	},
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, { Talk.answer("eat"), Talk.answer("learn"), Talk.answer("which", Talk.focus(2)) }),
+})
+fp({
+	id = "side_fp_ledge",
+	level = 76,
+	giver = "trapper_sigrun",
+	turnIn = "trapper_sigrun",
+	arc = "fp_trappers",
+	pages = 3,
+	requires = { "side_fp_snares", "iceGrotto" },
+	objectives = {
+		-- Sigrun leads south along the brook's east bank, off its ice (route checked in tests/frostpeak.spec S108)
+		Talk.escort("trapper_sigrun", "frostpeak", -582, -286, 14, "place.leopardLedge", {
+			{ x = -556, z = -204 },
+			{ x = -568, z = -240 },
+			{ x = -578, z = -268 },
+		}),
+		collect(1, "arneKnife", "snowLeopard", 0.3, "frostpeak_valley"),
+	},
+	barks = { accept = 1, near = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("knife"), Talk.answer("alone"), Talk.answer("lead") }),
+	companion = Talk.lead("trapper_sigrun", "frostpeak", { 1 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
+})
+fp({
+	id = "side_fp_sledge",
+	level = 78,
+	giver = "trapper_sigrun",
+	turnIn = "trapper_sigrun",
+	arc = "fp_trappers",
+	pages = 4,
+	requires = { "side_fp_ledge" },
+	objectives = {
+		use({ "fp_trapper_sledge" }, "quest.use.sledge", 3, "sledgeRunner"),
+		kill(10, "snowLeopard", "frostpeak_slopes"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("bury"),
+		Talk.answer("stay"),
+		Talk.answer("rope", Talk.gift("potion_hp_5", 2)),
+	}),
+	recall = { done = "side_fp_ledge" },
+})
+
+-- C. The Avalanche Horn (77–80), the Yeti Slopes and the Ice Grotto: Eskil, whose kin blow the warning horn ---------
+local CONE_X, CONE_Z = sitePoint("avalanche")
+local GROTTO_X, GROTTO_Z = caveExit("frostpeak_grotto")
+fp({
+	id = "side_fp_horn",
+	level = 77,
+	giver = "hornblower_eskil",
+	turnIn = "hornblower_eskil",
+	arc = "fp_horn",
+	pages = 3,
+	objectives = {
+		use({ "fp_avalanche_horn" }, "quest.use.digHorn", 3, "dugHorn"),
+		kill(10, "yeti", "frostpeak_slopes"),
+	},
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("count"),
+		Talk.answer("why"),
+		Talk.answer("where", Talk.hint("frostpeak", CONE_X, CONE_Z, "place.avalanche")),
+	}),
+})
+fp({
+	id = "side_fp_boulders",
+	level = 79,
+	giver = "hornblower_eskil",
+	turnIn = "hornblower_eskil",
+	arc = "fp_horn",
+	pages = 3,
+	requires = { "side_fp_horn" },
+	objectives = {
+		use({ "fp_boulders_1", "fp_boulders_2", "fp_boulders_3" }, "quest.use.topple", 2, "toppled"),
+		kill(8, "snowLeopard", "frostpeak_slopes"),
+	},
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, { Talk.answer("purpose"), Talk.answer("nobody"), Talk.answer("cats", Talk.focus(2)) }),
+})
+fp({
+	id = "side_fp_matriarch",
+	level = 80,
+	giver = "hornblower_eskil",
+	turnIn = "hornblower_eskil",
+	arc = "fp_horn",
+	pages = 3,
+	requires = { "side_fp_boulders" },
+	objectives = {
+		reachCave("frostpeak_grotto"),
+		kill(3, "yeti", nil, "elite"),
+		collect(1, "hornMouthpiece", "yeti", 1, nil, "elite"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("trinkets"),
+		Talk.answer("flee"),
+		Talk.answer("cave", Talk.hint("frostpeak", GROTTO_X, GROTTO_Z, "map.frostpeak_grotto.name")),
+	}),
+	recall = { done = "side_fp_horn" },
+})
+
+-- D. The Giants' Saga (82–86), the Giants' Pass: Ragnvald the skald and the runes of the colossi and the thrones -----
+local THRONES_X, THRONES_Z = sitePoint("thrones")
+fp({
+	id = "side_fp_colossi",
+	level = 82,
+	giver = "skald_ragnvald",
+	turnIn = "skald_ragnvald",
+	arc = "fp_saga",
+	pages = 3,
+	objectives = {
+		use({ "fp_colossus_north", "fp_colossus_south" }, "quest.use.rubbing", 3, "runeRubbing"),
+		kill(10, "frostGiant", "frostpeak_pass"),
+	},
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("sing"),
+		Talk.answer("giants"),
+		Talk.answer("charcoal", Talk.gift("potion_mana_5", 2)),
+	}),
+})
+fp({
+	id = "side_fp_thrones",
+	level = 84,
+	giver = "skald_ragnvald",
+	turnIn = "skald_ragnvald",
+	arc = "fp_saga",
+	pages = 3,
+	requires = { "side_fp_colossi" },
+	objectives = {
+		reachPlace("frostpeak", THRONES_X, THRONES_Z, 22, "place.thrones"),
+		collect(3, "throneRune", "frostGiant", 0.35, "frostpeak_pass"),
+	},
+	barks = { accept = 1, near = 1, half = 1, done = 1, death = 1, stuck = 1 },
+	choices = Talk.onPage(2, { Talk.answer("come"), Talk.answer("danger"), Talk.answer("why") }),
+	-- Ragnvald walks with the player from the Gate to the Hall of Thrones and stays while the runes are taken
+	companion = Talk.follow("skald_ragnvald", "frostpeak", { 1, 2 }, { join = 2, back = 1 }),
+})
+fp({
+	id = "side_fp_verse",
+	level = 86,
+	giver = "skald_ragnvald",
+	turnIn = "skald_ragnvald",
+	arc = "fp_saga",
+	pages = 4,
+	requires = { "side_fp_thrones" },
+	objectives = {
+		collect(4, "sagaPage", "peakHarpy", 0.4, "frostpeak_pass"),
+		use({ "fp_saga_stone" }, "quest.use.carve", 3, "runeCarving"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("write"), Talk.answer("harpies"), Talk.answer("truth") }),
+	recall = { p1 = "side_fp_thrones" },
+})
+
+-- E. The Ice Hole (85–89), the Frozen Lake: Torvi, his father's boat in the ice and the drowned village's hoard -------
+local BOAT_X, BOAT_Z = sitePoint("frozenBoat")
+fp({
+	id = "side_fp_icehole",
+	level = 85,
+	giver = "icefisher_torvi",
+	turnIn = "icefisher_torvi",
+	arc = "fp_icefish",
+	pages = 2,
+	objectives = {
+		{ type = "fish", n = 3 },
+		kill(8, "iceElemental", "frostpeak_lake"),
+	},
+	where = { map = "frostpeak", area = "frostpeak_lake" },
+	barks = { accept = 1, near = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, {
+		Talk.answer("bait"),
+		Talk.answer("why"),
+		Talk.answer("where", Talk.hint("frostpeak", BOAT_X, BOAT_Z, "place.frozenBoat")),
+	}),
+})
+fp({
+	id = "side_fp_boat",
+	level = 87,
+	giver = "icefisher_torvi",
+	turnIn = "icefisher_torvi",
+	arc = "fp_icefish",
+	pages = 3,
+	requires = { "side_fp_icehole" },
+	objectives = {
+		-- Torvi leads east along the shore, down the gentle cut onto the ice and round to the boat, 30+ studs from the
+		-- ice hole (tests/frostpeak.spec S108)
+		Talk.escort("icefisher_torvi", "frostpeak", 192, 550, 10, "place.frozenBoat", {
+			{ x = 190, z = 432 },
+			{ x = 238, z = 472 },
+			{ x = 226, z = 512 },
+		}),
+		use({ "fp_frozen_boat" }, "quest.use.chipIce", 3, "iceChipped"),
+		collect(4, "frostCore", "iceElemental", 0.4, "frostpeak_lake"),
+	},
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("lead"), Talk.answer("father"), Talk.answer("straight") }),
+	companion = Talk.lead("icefisher_torvi", "frostpeak", { 1, 2 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
+})
+fp({
+	id = "side_fp_hoard",
+	level = 89,
+	giver = "icefisher_torvi",
+	turnIn = "icefisher_torvi",
+	arc = "fp_icefish",
+	pages = 3,
+	requires = { "side_fp_boat" },
+	objectives = {
+		use({ "fp_hoard_1", "fp_hoard_2", "fp_hoard_3" }, "quest.use.chipIce", 2, "iceChipped"),
+		kill(8, "iceMammoth", "frostpeak_lake"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("families"), Talk.answer("keep"), Talk.answer("mammoths", Talk.focus(2)) }),
+	recall = { done = "side_fp_icehole" },
+})
+
+-- F. The Mammoth Graveyard (87–91), the Mammoth Tundra and the Frozen Hold: Gunnar and the herds driven to war ------
+local HOLD_X, HOLD_Z = caveExit("frostpeak_hold")
+fp({
+	id = "side_fp_tusks",
+	level = 87,
+	giver = "bonecarver_gunnar",
+	turnIn = "bonecarver_gunnar",
+	arc = "fp_bones",
+	pages = 3,
+	objectives = {
+		collect(5, "mammothTusk", "iceMammoth", 0.4, "frostpeak_tundra"),
+		use({ "fp_tusk_arch" }, "quest.use.tusks", 2, "tuskPost"),
+	},
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("rule"), Talk.answer("carve"), Talk.answer("arch") }),
+})
+fp({
+	id = "side_fp_stampede",
+	level = 89,
+	giver = "bonecarver_gunnar",
+	turnIn = "bonecarver_gunnar",
+	arc = "fp_bones",
+	pages = 3,
+	requires = { "side_fp_tusks" },
+	objectives = {
+		kill(12, "iceMammoth", "frostpeak_tundra"),
+		kill(6, "frostGiant", "frostpeak_tundra"),
+	},
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, { Talk.answer("war"), Talk.answer("pity", Talk.focus(2)), Talk.answer("many") }),
+})
+fp({
+	id = "side_fp_warhorn",
+	level = 91,
+	giver = "bonecarver_gunnar",
+	turnIn = "bonecarver_gunnar",
+	arc = "fp_bones",
+	pages = 3,
+	requires = { "side_fp_stampede" },
+	objectives = {
+		reachCave("frostpeak_hold"),
+		kill(3, "frostGiant", nil, "elite"),
+		collect(1, "giantHorn", "frostGiant", 1, nil, "elite"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("horn", Talk.hint("frostpeak", HOLD_X, HOLD_Z, "map.frostpeak_hold.name")),
+		Talk.answer("cold", Talk.gift("potion_hp_5", 2)),
+		Talk.answer("hang"),
+	}),
+	recall = { done = "side_fp_stampede" },
+})
+
+-- G. The Squire of the Watch (90–93), the Ice Watch: Asmund, who ran on the night the frost came (no jests) ---------
+-- The arc does not depend on Brother Halgrim's ghost (he may be gone after oathWords): Asmund gives and takes it all.
+fp({
+	id = "side_fp_squire",
+	level = 90,
+	giver = "squire_asmund",
+	turnIn = "squire_asmund",
+	arc = "fp_squire",
+	pages = 4,
+	requires = { "iceWatch" },
+	objectives = { kill(10, "frozenKnight", "frostpeak_icewatch") },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, { Talk.answer("why"), Talk.answer("know"), Talk.answer("how") }),
+})
+fp({
+	id = "side_fp_shields",
+	level = 92,
+	giver = "squire_asmund",
+	turnIn = "squire_asmund",
+	arc = "fp_squire",
+	pages = 3,
+	requires = { "side_fp_squire" },
+	objectives = {
+		use({ "fp_watch_shield_1", "fp_watch_shield_2", "fp_watch_shield_3" }, "quest.use.juniper", 2, "juniper"),
+		collect(4, "knightSigil", "frozenKnight", 0.35, "frostpeak_icewatch"),
+	},
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("juniper"), Talk.answer("seals", Talk.focus(2)) }),
+})
+fp({
+	id = "side_fp_spurs",
+	level = 93,
+	giver = "squire_asmund",
+	turnIn = "squire_asmund",
+	arc = "fp_squire",
+	pages = 3,
+	requires = { "side_fp_shields" },
+	objectives = {
+		use({ "fp_watch_gate" }, "quest.use.spurs", 3, "candles"),
+		kill(8, "iceElemental", "frostpeak_icewatch"),
+	},
+	final = true,
+	barks = { accept = 1, near = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("forgive"), Talk.answer("enter"), Talk.answer("wind") }),
+	recall = { done = "side_fp_squire" },
+})
+
+-- H. Wyrm Bones (94–99), the Wyrm Spire: Vigdis the scholar, Brother Anzelm's letters and the treatise on the brood ---
+-- (the pages hold before and after vaelgrath: they never say whether the dragon lives)
+local SCHOLAR = FP_SPOTS.scholar
+local BURROWS_X, BURROWS_Z = sitePoint("wyrmBurrows")
+local BONES_X, BONES_Z = sitePoint("wyrmBones")
+fp({
+	id = "side_fp_letter",
+	level = 94,
+	giver = "brother_anzelm",
+	turnIn = "scholar_vigdis",
+	arc = "fp_wyrms",
+	pages = 2,
+	requires = { "dragonTemple" },
+	objectives = { deliver("anzelmLetter") },
+	barks = { accept = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("who"),
+		Talk.answer("warn"),
+		Talk.answer("where", Talk.hint("frostpeak", SCHOLAR.x, SCHOLAR.z, "place.dragonStairs")),
+	}),
+})
+fp({
+	id = "side_fp_clutches",
+	level = 96,
+	giver = "scholar_vigdis",
+	turnIn = "scholar_vigdis",
+	arc = "fp_wyrms",
+	pages = 3,
+	requires = { "side_fp_letter" },
+	objectives = {
+		use({ "fp_brood_1", "fp_brood_2", "fp_brood_3" }, "quest.use.brood", 3, "eggShards"),
+		kill(12, "dragonspawn", "frostpeak_wyrmspire"),
+	},
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("spawn"),
+		Talk.answer("eggs"),
+		Talk.answer("burrows", Talk.hint("frostpeak", BURROWS_X, BURROWS_Z, "place.wyrmBurrows")),
+	}),
+})
+fp({
+	id = "side_fp_bonetrail",
+	level = 97,
+	giver = "scholar_vigdis",
+	turnIn = "scholar_vigdis",
+	arc = "fp_wyrms",
+	pages = 3,
+	requires = { "side_fp_clutches" },
+	objectives = {
+		reachPlace("frostpeak", BONES_X, BONES_Z, 24, "place.wyrmBones"),
+		collect(3, "wyrmScale", "frostWyrm", 0.35, "frostpeak_wyrmspire"),
+	},
+	barks = { accept = 1, near = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("age"), Talk.answer("scales", Talk.focus(2)), Talk.answer("trail") }),
+})
+fp({
+	id = "side_fp_treatise",
+	level = 99,
+	giver = "scholar_vigdis",
+	turnIn = "brother_anzelm",
+	arc = "fp_wyrms",
+	pages = 4,
+	requires = { "side_fp_bonetrail" },
+	objectives = {
+		kill(10, "frostWyrm", "frostpeak_wyrmspire"),
+		deliver("vigdisTreatise"),
+	},
+	final = true,
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, { Talk.answer("title"), Talk.answer("down"), Talk.answer("blood") }),
+	recall = { p1 = "side_fp_clutches" },
+})
+
 -- S106: the EXP of the quests waiting in `pending`: for each band holding one, TARGET.side of the band's EXP minus the
 -- fixed rewards of its other side quests from BAND_FROM (the stable arc), split by expToNext(level) × weight.
 local function settleBands()
@@ -1694,6 +2211,15 @@ local ARCS = {
 	"ashCrags",
 	"ashTombs",
 	"ashCaravans",
+	-- S108: the Frost Peaks arcs by level
+	"fp_cairn",
+	"fp_trappers",
+	"fp_horn",
+	"fp_saga",
+	"fp_icefish",
+	"fp_bones",
+	"fp_squire",
+	"fp_wyrms",
 }
 
 local byId: { [string]: SideQuest } = {}

@@ -5,6 +5,8 @@
 -- every area, the places a player stands on, the walk from the portal to everything, every group on safe ground,
 -- the generator (budget, Builds on the ground, cave mouths, nodes by the areas' character, fishing spots, life and
 -- sketch) and the mood (day and night, ambience, decoration themes, wind everywhere).
+-- S108: NPC spots and quest anchors of the side arcs (with the camps and the companions' routes): places a player must
+-- stand on and walk to, see the last block.
 
 local Ambience = require("../src/shared/Data/Ambience")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
@@ -715,6 +717,43 @@ end)
 
 -- S105 (story chapter IV and the finale): the places of Sigrun and Halgrim, the quest anchors, the Rite Circle ------------
 
+-- S108: the routes of the side arcs' companions: Sigrun to the Leopards' Ledge, Torvi over the ice to the boat (start =
+-- the NPC's place, the escort's waypoints and goal), Ragnvald from his place to the Hall of Thrones (the player leads).
+local function sideRoutes(): { [string]: { { x: number, z: number } } }
+	local Quests = require("../src/shared/Data/Quests")
+	local spots = assert(DATA.npcSpots, "npcSpots")
+	local out: { [string]: { { x: number, z: number } } } = {}
+	for _, item in { { "side_fp_ledge", "trapper" }, { "side_fp_boat", "icefisher" } } do
+		local quest = assert(Quests.Side.get(item[1]), item[1])
+		local spot = assert(spots[item[2]], item[2])
+		local route = { { x = spot.x, z = spot.z } }
+		for _, objective in quest.objectives do
+			if objective.type == "escort" then
+				for _, v in objective.via or {} do
+					table.insert(route, { x = v.x, z = v.z })
+				end
+				table.insert(route, { x = objective.x :: number, z = objective.z :: number })
+			end
+		end
+		out[item[1]] = route
+	end
+	local skald = assert(spots.skald, "skald")
+	out.side_fp_thrones = { { x = skald.x, z = skald.z }, { x = SITES.thrones.x, z = SITES.thrones.z } }
+	return out
+end
+
+local function sideRoutePoints(): { { name: string, x: number, z: number } }
+	local out = {}
+	for id, route in sideRoutes() do
+		for i, p in route do
+			if i > 1 then
+				table.insert(out, { name = `{id} point {i}`, x = p.x, z = p.z })
+			end
+		end
+	end
+	return out
+end
+
 describe("Frost Peaks: story places (S105)", function()
 	local Kit = require("../src/shared/Logic/WorldGen/Kit")
 	local Npcs = require("../src/shared/Data/Npcs")
@@ -769,7 +808,13 @@ describe("Frost Peaks: story places (S105)", function()
 	end
 
 	it("F-T1/F-T2: NPC places and anchors on firm, gentle ground inside the avoid circle of their site", function()
-		local list = places()
+		-- S108: the places and anchors of the side arcs have their own block below
+		local list = {}
+		for _, p in places() do
+			if OWNER[p.name] then
+				table.insert(list, p)
+			end
+		end
 		expect(#list).toBe(10)
 		for _, p in list do
 			local tag = `{p.name} at {math.floor(p.x)}, {math.floor(p.z)}`
@@ -940,6 +985,11 @@ describe("Frost Peaks: story places (S105)", function()
 			for _, p in { { 277, -336 }, { 300, -556 }, { 532, -528 } } do
 				table.insert(targets, { name = `companion {p[1]}, {p[2]}`, x = p[1], z = p[2], anchor = false })
 			end
+			-- S108: the waypoints and goals of the side arcs' companions (Sigrun, Torvi; Ragnvald's goal is a site);
+			-- places() already holds every NPC place and anchor of the side arcs
+			for _, p in sideRoutePoints() do
+				table.insert(targets, { name = p.name, x = p.x, z = p.z, anchor = false })
+			end
 			for _, t in targets do
 				if not reached(t.x, t.z) then
 					error(`{t.name} at {math.floor(t.x)}, {math.floor(t.z)} cannot be reached on foot`)
@@ -1036,5 +1086,283 @@ describe("Frost Peaks: story places (S105)", function()
 		local chapel = anchors[2]
 		expect(chapel.id).toBe("hold_chapel")
 		expect(math.abs(chapel.z - -78) - 1.5 >= 4).toBe(true)
+	end)
+end)
+
+-- S108: the side arcs of the Peaks: seven NPC places with their camps, 25 fp_* anchors and three companions' routes,
+-- all without a new avoid circle (the groups and the gathering nodes of S47 stay; F-T4 of S105 checks their sums) ------
+
+local S108_SPOTS = {
+	cairn = "cairn_ingrid",
+	horn = "hornblower_eskil",
+	skald = "skald_ragnvald",
+	icefisher = "icefisher_torvi",
+	bonecarver = "bonecarver_gunnar",
+	squire = "squire_asmund",
+	scholar = "scholar_vigdis",
+}
+-- anchors on the walkable ice of the Frozen Lake (the boat and the hoard); no other anchor stands on ice
+local ON_LAKE_ICE = { fp_frozen_boat = true, fp_hoard_1 = true, fp_hoard_2 = true, fp_hoard_3 = true }
+-- anchors of one objective (8+ studs apart so their prompts never overlap)
+local SAME_OBJECTIVE = {
+	{ "fp_snare_1", "fp_snare_2", "fp_snare_3" },
+	{ "fp_boulders_1", "fp_boulders_2", "fp_boulders_3" },
+	{ "fp_colossus_north", "fp_colossus_south" },
+	{ "fp_hoard_1", "fp_hoard_2", "fp_hoard_3" },
+	{ "fp_watch_shield_1", "fp_watch_shield_2", "fp_watch_shield_3" },
+	{ "fp_brood_1", "fp_brood_2", "fp_brood_3" },
+}
+
+local function dist(ax: number, az: number, bx: number, bz: number): number
+	return math.sqrt((ax - bx) ^ 2 + (az - bz) ^ 2)
+end
+
+-- The avoid circle a point lies in (2 studs inside its edge), nil: none.
+local function avoidOf(x: number, z: number): { x: number, z: number, r: number }?
+	for _, c in DATA.avoid do
+		if dist(x, z, c.x, c.z) <= c.r - 2 then
+			return c
+		end
+	end
+	return nil
+end
+
+-- F-T4: the name of a Build whose solid piece (shell or colliding; trees aside) a player standing at (x, z) would
+-- touch within `margin` studs: its rotated box at 0.5-3.5 studs over the ground (a horizontal-only check would forbid
+-- the ground under the gatehouse's arch, which nobody touches), nil: none.
+local function touchesSolid(x: number, z: number, margin: number): string?
+	for _, b in FrostpeakGen.all() do
+		if b.tag ~= "trees" and (b.at.x - x) ^ 2 + (b.at.z - z) ^ 2 < 150 * 150 then
+			local r = math.rad(b.at.rot)
+			local c, s = math.cos(r), math.sin(r)
+			local dx, dz = x - b.at.x, z - b.at.z
+			local lx, lz = c * dx - s * dz, s * dx + c * dz
+			local g = T.height(x, z) - b.at.y
+			for _, p in b.bp.pieces do
+				if p.lod == "shell" or p.col then
+					for _, h in { 0.5, 2, 3.5 } do
+						local vx, vy, vz = lx - p.p[1], g + h - p.p[2], lz - p.p[3]
+						local R = p.r
+						local ux = R[1] * vx + R[4] * vy + R[7] * vz
+						local uy = R[2] * vx + R[5] * vy + R[8] * vz
+						local uz = R[3] * vx + R[6] * vy + R[9] * vz
+						if
+							math.abs(ux) < p.size[1] / 2 + margin
+							and math.abs(uy) < p.size[2] / 2 + 0.5
+							and math.abs(uz) < p.size[3] / 2 + margin
+						then
+							return b.name
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local function sideAnchors(): { any }
+	local out = {}
+	for _, a in assert(DATA.questAnchors, "questAnchors") do
+		if string.sub(a.id, 1, 3) == "fp_" then
+			table.insert(out, a)
+		end
+	end
+	return out
+end
+
+local function groundProblem(x: number, z: number, r: number): string?
+	if T.isWater(x, z) then
+		return "water"
+	elseif T.crevasseDistance(x, z) <= 10 then
+		return "crevasse"
+	elseif T.glacierAt(x, z) then
+		return "glacier"
+	elseif T.mountainAt(x, z) then
+		return "mountain"
+	elseif slopeAround(x, z, r) >= MAX_SLOPE then
+		return `slope {math.floor(math.deg(math.atan(slopeAround(x, z, r))))}`
+	end
+	return nil
+end
+
+describe("Frost Peaks: side quest places (S108)", function()
+	local SideCamps = require("../src/shared/Logic/FrostpeakGen/SideCamps")
+	local Npcs = require("../src/shared/Data/Npcs")
+	local Config = require("../src/shared/Config")
+
+	it(
+		"F-T1/F-T2: the seven NPC places stand on firm ground inside an avoid circle, off the roads, 5+ apart",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			for key, npcId in S108_SPOTS do
+				local spot = assert(spots[key], key)
+				local tag = `{key} at {spot.x}, {spot.z}`
+				expect(`{tag} {groundProblem(spot.x, spot.z, 6)}`).toBe(`{tag} nil`)
+				expect(`{tag} ice {T.ice(spot.x, spot.z) == nil}`).toBe(`{tag} ice true`)
+				expect(`{tag} avoid {avoidOf(spot.x, spot.z) ~= nil}`).toBe(`{tag} avoid true`)
+				expect(`{tag} road {AreaSpawns.nearRoad(DATA.roads, spot.x, spot.z, 6)}`).toBe(`{tag} road false`)
+				expect(spot.facing >= 0 and spot.facing <= 359).toBe(true)
+				expect(spot.wiki).toBe(false)
+				for other, o in spots do
+					if other ~= key then
+						expect(`{key}/{other} {dist(spot.x, spot.z, o.x, o.z) >= 5}`).toBe(`{key}/{other} true`)
+					end
+				end
+				for _, a in assert(DATA.questAnchors, "questAnchors") do
+					expect(`{key}/{a.id} {dist(spot.x, spot.z, a.x, a.z) >= 5}`).toBe(`{key}/{a.id} true`)
+				end
+				local npc = assert(Npcs.get(npcId), npcId)
+				expect(npc.position.x).toBe(spot.x)
+				expect(npc.position.z).toBe(spot.z)
+				expect(npc.facing).toBe(spot.facing)
+			end
+		end
+	)
+
+	it("F-T1/F-T3: the 25 fp_* anchors: firm ground, in an avoid circle or 12+ studs from every group", function()
+		local anchors = sideAnchors()
+		expect(#anchors).toBe(25)
+		local groups = AreaSpawns.region(DATA, MAP.size)
+		for _, a in anchors do
+			local tag = `{a.id} at {a.x}, {a.z}`
+			expect(`{tag} {groundProblem(a.x, a.z, 3)}`).toBe(`{tag} nil`)
+			if T.ice(a.x, a.z) ~= nil then
+				-- the lake's ice only, never the frozen brook's
+				expect(`{tag} lake ice {ON_LAKE_ICE[a.id] == true and T.streamDistance(a.x, a.z) > 30}`).toBe(
+					`{tag} lake ice true`
+				)
+			end
+			if not avoidOf(a.x, a.z) then
+				for _, g in groups do
+					local d = dist(a.x, a.z, g.position.x, g.position.z)
+					expect(`{tag} group {g.id} {d >= 12}`).toBe(`{tag} group {g.id} true`)
+				end
+			end
+			for _, lake in DATA.lakes do
+				expect(`{tag} hole {dist(a.x, a.z, lake.x, lake.z) >= lake.r + 4}`).toBe(`{tag} hole true`)
+			end
+			local found, mapId = Areas.anchorById(a.id)
+			expect(found).toBe(a)
+			expect(mapId).toBe("frostpeak")
+			expect(a.wiki).toBe(false)
+			-- 6+ studs from the story's anchors of S105, 4+ from every other anchor
+			for _, other in assert(DATA.questAnchors, "questAnchors") do
+				if other ~= a then
+					local d = dist(a.x, a.z, other.x, other.z)
+					local least = if string.sub(other.id, 1, 3) == "fp_" then 4 else 6
+					expect(`{a.id}/{other.id} {d >= least}`).toBe(`{a.id}/{other.id} true`)
+				end
+			end
+		end
+		for _, group in SAME_OBJECTIVE do
+			for i, id in group do
+				for k = i + 1, #group do
+					local a, b = assert(Areas.anchorById(id)), assert(Areas.anchorById(group[k]))
+					expect(`{id}/{group[k]} {dist(a.x, a.z, b.x, b.z) >= 8}`).toBe(`{id}/{group[k]} true`)
+				end
+			end
+		end
+		-- no new avoid circle: the 38 of S105
+		expect(#DATA.avoid).toBe(38)
+	end)
+
+	it("F-T4: NPC places and anchors keep out of the solid parts of every generator Build (the camps too)", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for key in S108_SPOTS do
+			local spot = spots[key]
+			expect(`{key} {touchesSolid(spot.x, spot.z, 2)}`).toBe(`{key} nil`)
+		end
+		for _, a in sideAnchors() do
+			expect(`{a.id} {touchesSolid(a.x, a.z, 1)}`).toBe(`{a.id} nil`)
+		end
+	end)
+
+	it(
+		"C3: a camp behind each new NPC, on the ground, few parts and one light, its clearing in the avoid circle + 6",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			local camps: { [string]: any } = {}
+			local others = 0
+			local rocks: { any } = {}
+			for _, b in FrostpeakGen.all() do
+				local key = string.match(b.name, "^SideCamp_(.+)$")
+				if key then
+					camps[key] = b
+				else
+					others += 1
+				end
+				if b.tag == "rocks" then
+					table.insert(rocks, b)
+				end
+			end
+			-- the Builds before S108 (build/s108_before.json: 365, names, places and parts unchanged)
+			expect(others).toBe(365)
+			expect(#SideCamps.keys()).toBe(7)
+			for _, key in SideCamps.keys() do
+				expect(S108_SPOTS[key] ~= nil).toBe(true)
+				local b = assert(camps[key], key)
+				local spot = spots[key]
+				local x, z = SideCamps.at(spot)
+				expect(b.at.x).toBe(x)
+				expect(b.at.z).toBe(z)
+				expect(b.at.rot).toBe(spot.facing)
+				expect(b.tag).toBe("camp")
+				expect(dist(x, z, spot.x, spot.z) >= 3 and dist(x, z, spot.x, spot.z) <= 6).toBe(true)
+				expect(math.abs(b.at.y - T.height(x, z)) <= 1).toBe(true)
+				expect(#b.bp.pieces <= 30).toBe(true)
+				expect(#b.bp.lights <= 1).toBe(true)
+				local inside = false
+				for _, c in DATA.avoid do
+					inside = inside or dist(x, z, c.x, c.z) + SideCamps.CLEAR <= c.r + 6
+				end
+				expect(`{key} clearing {inside}`).toBe(`{key} clearing true`)
+				for _, t in FrostpeakGen.trees() do
+					expect(`{key} tree {dist(x, z, t.x, t.z) >= SideCamps.CLEAR}`).toBe(`{key} tree true`)
+				end
+				for _, r in rocks do
+					expect(`{key} rock {dist(x, z, r.at.x, r.at.z) >= SideCamps.CLEAR + 2}`).toBe(`{key} rock true`)
+				end
+				for _, node in FrostpeakGen.nodes() do
+					expect(dist(x, z, node.x, node.z) >= SideCamps.CLEAR + 4).toBe(true)
+				end
+			end
+		end
+	)
+
+	it("F-T6: the companions' routes run on firm ground, legs <= legMax, never over a hole or a crevasse", function()
+		for id, route in sideRoutes() do
+			expect(#route >= 2).toBe(true)
+			for i, p in route do
+				local tag = `{id} {i} at {p.x}, {p.z}`
+				expect(`{tag} {MapTerrain.walkable("frostpeak", p.x, p.z, 4)}`).toBe(`{tag} true`)
+				expect(`{tag} {groundProblem(p.x, p.z, 3)}`).toBe(`{tag} nil`)
+				-- the lake's ice only on Torvi's way to the boat
+				if T.ice(p.x, p.z) ~= nil then
+					expect(`{tag} ice {id == "side_fp_boat"}`).toBe(`{tag} ice true`)
+				end
+				if i > 1 then
+					local a = route[i - 1]
+					local leg = dist(a.x, a.z, p.x, p.z)
+					expect(`{tag} leg {leg <= Config.Companion.legMax}`).toBe(`{tag} leg true`)
+					local n = math.max(1, math.floor(leg / 4))
+					for k = 0, n do
+						local x, z = a.x + (p.x - a.x) * k / n, a.z + (p.z - a.z) * k / n
+						for _, lake in DATA.lakes do
+							expect(`{tag} hole {dist(x, z, lake.x, lake.z) >= lake.r + 4}`).toBe(`{tag} hole true`)
+						end
+						expect(`{tag} mountain {T.mountainAt(x, z)}`).toBe(`{tag} mountain false`)
+						expect(`{tag} crevasse {T.crevasseDistance(x, z) > 4}`).toBe(`{tag} crevasse true`)
+					end
+				end
+			end
+		end
+		-- Torvi keeps 30+ studs from the ice hole by the boat; Sigrun's goal is the Leopards' Ledge
+		for _, p in sideRoutes().side_fp_boat do
+			expect(dist(p.x, p.z, DATA.lakes[1].x, DATA.lakes[1].z) >= 30).toBe(true)
+		end
+		local ledge = sideRoutes().side_fp_ledge
+		local goal = ledge[#ledge]
+		expect(dist(goal.x, goal.z, SITES.leopardLedge.x, SITES.leopardLedge.z) <= 14).toBe(true)
 	end)
 end)
