@@ -7441,7 +7441,7 @@ return {
 	["quest.side_fp_clutches.bark.half1"] = "Skorupy cienkie jak szkło. Zanotuję.",
 	["quest.side_fp_clutches.bark.done1"] = "Tej wiosny nic się tu nie wykluje.",
 	["quest.side_fp_clutches.bark.death1"] = "Wstań. Notatki prowadzę, nekrologów nie.",
-	["quest.side_fp_bonetrail.title"] = "Szlak Kości",
+	["quest.side_fp_bonetrail.title"] = "Żebra wyrma",
 	["quest.side_fp_bonetrail.p1"] = "Szkielet na Szlaku Kości to wyrm starszy niż pamięć ludzi. Żebra tworzą nad drogą bramę.",
 	["quest.side_fp_bonetrail.p2"] = "Chcę go porównać z łuskami żywych wyrmów. Jeśli rosną tak samo, mam odpowiedź, której się boję.",
 	["quest.side_fp_bonetrail.p3"] = "Idź do szkieletu i obejrzyj żebra. Potem przynieś trzy łuski. Żywych, proszę, martwe już mam.",

@@ -7443,7 +7443,7 @@ return {
 	["quest.side_fp_clutches.bark.half1"] = "Shells thin as glass. Noted.",
 	["quest.side_fp_clutches.bark.done1"] = "Nothing will hatch here this spring.",
 	["quest.side_fp_clutches.bark.death1"] = "Get up. I keep notes, not obituaries.",
-	["quest.side_fp_bonetrail.title"] = "The Bone Trail",
+	["quest.side_fp_bonetrail.title"] = "The Wyrm's Ribs",
 	["quest.side_fp_bonetrail.p1"] = "The skeleton on the Bone Trail is a wyrm older than human memory. Its ribs make a gate over the road.",
 	["quest.side_fp_bonetrail.p2"] = "I want to compare it with the scales of living wyrms. If they grow alike, I have an answer I'm afraid of.",
 	["quest.side_fp_bonetrail.p3"] = "Go to the skeleton and look at the ribs. Then bring three scales. From living ones, please, I have dead ones already.",
