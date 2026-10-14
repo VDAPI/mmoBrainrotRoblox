@@ -301,6 +301,9 @@ local Config = {
 		maxBurst = { desktop = 40, touch = 20 },
 		decalFade = 0.35,
 		spinStep = 0.6,
+		-- S114 (DESIGN-16 §2.8): what one cast's impact may hold at once at its peak (holders and lights of
+		-- Vfx/Library, tests/SkillLooks.PIECE_COST); a skill over it loses trail pieces first, never its core
+		perCast = { emitters = 6, beams = 3, lights = 2, decals = 3 },
 	},
 	-- Sound effects (S111, DESIGN-16 §3, Data/Sfx, SfxController): positional voices at once (a phone is touch without a
 	-- keyboard), 2D interface voices, the same key again within `repeatWindow` s is dropped, nothing positional

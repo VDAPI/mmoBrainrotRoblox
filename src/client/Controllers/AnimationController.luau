@@ -909,10 +909,28 @@ end
 -- Plays a skill's motion on a character (S28). `loopUntil`: seconds a channel lasts (its loop repeats till then).
 -- Returns the motion (nil when the skill has none) so callers can time effects on its events. S113: a skill with a
 -- real clip (SkillMotions `clip`, never with `loop`) plays it when it loaded, fitted to SkillMotions.hitDelay.
-function AnimationController.Skill(model: Model, skillId: string, loopUntil: number?): SkillMotions.Motion?
-	local motion = SkillMotions.get(skillId)
-	if not motion then
+-- S114: `ctx` (waves `hits` and walking `move` of the cast event) and the family of the model's weapon (attribute
+-- "WeaponType" of VaelthornWeapon, AttackMotions.byWeapon) pick a variant (SkillPose.pick); the returned motion is the
+-- one that plays. A clip plays only when no variant was picked (a variant is always procedural).
+function AnimationController.Skill(
+	model: Model,
+	skillId: string,
+	loopUntil: number?,
+	ctx: { hits: number?, move: boolean? }?
+): SkillMotions.Motion?
+	local base = SkillMotions.get(skillId)
+	if not base then
 		return nil
+	end
+	local motion = base
+	if base.variants then
+		local weapon = model:FindFirstChild("VaelthornWeapon")
+		local weaponType = if weapon then weapon:GetAttribute("WeaponType") else nil
+		motion = SkillPose.pick(base, {
+			weapon = if type(weaponType) == "string" then AttackMotions.byWeapon[weaponType] else nil,
+			hits = ctx and ctx.hits,
+			move = ctx and ctx.move,
+		})
 	end
 	if monsters[model] then
 		AnimationController.MonsterAttack(model, nil, true)
@@ -931,7 +949,7 @@ function AnimationController.Skill(model: Model, skillId: string, loopUntil: num
 		attack.clip.stop(0.08)
 	end
 	local play: CharacterClips.Play? = nil
-	local clip = motion.clip
+	local clip = if motion == base then motion.clip else nil
 	if clip and not motion.loop and not rig.r6 and nearCamera(model) then
 		play = CharacterClips.play(
 			model,

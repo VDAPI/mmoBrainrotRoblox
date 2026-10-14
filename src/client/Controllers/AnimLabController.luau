@@ -1164,6 +1164,19 @@ local function playPiece(
 		Library.meteor(at, 6, 0.6, color)
 	elseif string.sub(name, 1, 10) == "lingering:" then
 		Library.lingering(at, 4, string.sub(name, 11), color, 2)
+	elseif name == "shieldArc" then
+		local look = Vector3.new(at.X, from.Y, at.Z)
+		Library.shieldArc(
+			CFrame.lookAt(from, if (look - from).Magnitude > 0.1 then look else from - Vector3.zAxis),
+			6,
+			color
+		)
+	elseif name == "wings" then
+		local who = model or caster
+		if not who then
+			return false
+		end
+		Library.wings(who, color, 1.5)
 	end
 	return true
 end

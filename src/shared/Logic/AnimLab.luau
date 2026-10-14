@@ -98,6 +98,8 @@ AnimLab.VFX_PIECES = {
 	"lingering:burn",
 	"lingering:frost",
 	"lingering:poison",
+	"shieldArc", -- S114
+	"wings", -- S114
 }
 -- `vfx` sub-commands that are not a piece.
 AnimLab.VFX_TOOLS = { "all", "tex", "stats" }

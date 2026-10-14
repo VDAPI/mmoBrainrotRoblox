@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S113, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S114, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -188,7 +188,13 @@ S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `
 `Data/UiArt` + id `Data/UiArtSheets`, `Logic/UiArt`, `UI/UiArtState`, komponent `ArtIcon` z dawnym znakiem jako
 zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
 świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
-`/icongrid ui <atlas>`. Seria DESIGN-16 bez S114–S117 (w kolejce).
+`/icongrid ui <atlas>`. Seria DESIGN-16 bez S115–S117 (w kolejce; S116 czeka na modele właściciela).
+S114 umiejętności Wojownika i Kapłana: pin czasów serwera wszystkich umiejętności (`tests/fixtures/skill_timing.luau`),
+bramka fal `Logic/SkillFxWave` (drugi cel i łańcuch leczenia widoczne), warianty ruchu `SkillMotions.variants` +
+`SkillPose.pick` (broń, liczba fal z pola `w` zdarzenia `cast`, rzut w ruchu), 35 umiejętności w trzech warstwach na
+teksturach S112 (`SkillVfx.tex`, `coreDelay`, `landsAfter`, składniki `shieldArc`, `wings`, kostki `die`), poprawione
+ruchy (Szarża, Wir Ostrzy, Potężne Uderzenie, Rozpłatanie, …), klucze `skill.<id>` i `skill.<id>.cast`, podpis i budżet
+rzutu w testach (`tests/SkillLooks`, `Config.Vfx.perCast`).
 IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
 częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
@@ -200,7 +206,7 @@ zakończone; testy i decyzje właściciela po nich.
 ## Niedokończone (kod)
 
 - **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
-  puste klucze `Data/Sfx` (60 z 90: 24 `mob.*`, 16 `boss.*`, 16 `skill.<id>`, `hit.armor/wood/stone`, `bow.draw`; lista:
+  puste klucze `Data/Sfx` (66 ze 123: 24 `mob.*`, 16 `boss.*`, 22 `skill.*`, `hit.armor/wood/stone`, `bow.draw`; lista:
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
   decyzja właściciela); muzyka `music = ""` w `Data/Maps`; kosmetyki (stroje, aury, ślady) to Party.
 - **Grafika (S52), czeka na właściciela**: Import 3D 121 modeli broni i `assets/Weapons/Meadows.rbxm` (lista w
@@ -319,7 +325,7 @@ zakończone; testy i decyzje właściciela po nich.
   tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
 - **Dźwięki (S111):** 30 dźwięków nieodsłuchanych (wybór po nazwie i długości, `docs/ASSETS.md` → „Dźwięki (S111)”;
   `skill.default.heal` i `.buff` słabe); koszt dźwięku w `/animlab stress 20` nie zmierzony (Studio bez postaci); rzucenie
-  umiejętności (`onCast`) bez dźwięku do S114 / S115.
+  umiejętności Łowcy i Maga (`onCast`) bez dźwięku do S115.
 - **S112: przegląd w Studio nie zrobiony (MCP bez obrazu 3D):** tekstury wgrane i wczytane, składniki odegrane w Play
   bez błędów, koszt zmierzony, ale nieobejrzane: strona łuku cięcia (`SLASH_SIDE` w `Vfx/Library`: jasna krawędź ma być
   na końcu zamachu), płaszczyzna płaskiego łuku (`Beam` leży w płaszczyźnie XZ attachmentów), rozmiary iskier i dymu
@@ -329,10 +335,27 @@ zakończone; testy i decyzje właściciela po nich.
   3D nie wczytuje tekstury do karty. Sprawdzić przy widocznym oknie; gdyby zostało, flipbook pokaże cały arkusz.
 - **S112:** limity telefonu (`Pool.isTouch`) nie sprawdzone w Play (`execute_luau` dostaje osobną kopię modułów, więc
   podmiana `Pool.isTouch` nie działa na grę); wymuszony zły ID (G4) też nie (ta sama przyczyna; ścieżka ta sama co puste
-  ID). `sealRune`, `telegraph`, `banner`, `dash`, `shield`, `cone`, `tether` bez tekstur (S114, S115, S117).
+  ID). `sealRune`, `telegraph`, `banner`, `shield`, `cone` bez tekstur (S115, S117; `dash` i `tether` z kluczem od S114).
 - **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
   Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
   questów nie obejrzane w grze.
+- **S114: przegląd w Studio nie zrobiony (MCP bez obrazu 3D):** wszystkie 35 umiejętności Wojownika i Kapłana zagrane
+  w AnimLab bez błędów, dźwięki wczytane, koszt zmierzony zbiorczo (bez zestawu ośmiu najcięższych J1), ale ruchy i
+  efekty ocenione z danych i testów; render `posedump` tylko dla Potężnego Uderzenia (reszta podstawy i zwieńczeń bez). Do
+  obejrzenia przy widocznym oknie: nowe pozy (Potężne Uderzenie, Szarża, Wir Ostrzy i jego warianty, Rozpłatanie, Krąg
+  Światła, Wskrzeszenie), `shieldArc` (tarcze na promieniu 15 st. mogą wyglądać na oderwane), `wings`, kostki `die`,
+  promień nieba `skyBolt` z `beamHoly`, aura dymu Rzezi. Niska jakość i limity telefonu nie zmierzone (`execute_luau` ma
+  osobną kopię modułów).
+- **S114: dźwięki bez ID** (twórca Roblox nie ma głosów, chórów, organów): `skill.<id>` dla `advanceOrder`,
+  `auraOfEndurance`, `battleCry`, `bloodlust`, `brandOfLight`, `carnage`, `guardianAngel`, `prayer`, `purify`, `renew`,
+  `sanctuary`, `wheelOfFortune` oraz `skill.guardianAngel.cast` i `.save` (grają zapas rodzaju albo nic); 23 klucze z
+  ID to pliki S111 w innej wysokości, nieodsłuchane. `SfxController` bez pętli: łopot sztandaru i szept Modlitwy bez
+  dźwięku ciągłego.
+- **S114: przełomy bez wyglądu** (klient nie wie o przełomie z samego zdarzenia): krwawienie Potężnego Uderzenia 10B i
+  Rozpłatania 10A, kości na końcu Modlitwy 5B, kolory kręgu Sztandaru 5B / 10B, nadleczenie Leczenia 10A, pękanie Tarczy
+  Wiary; Piętno Światła ma runę na ziemi, nie pionową nad celem; Szarża bez pyłu w punkcie startu (pył przy hamowaniu).
+  Brak też: szarego dymu pecha na wrogach i segmentów w kolorach ścian kości Koła Fortuny (zdarzenie nie zna wrogów),
+  złotej tarczy nietykalności Wskrzeszenia 10A (zdarzenie bez przełomu).
 - **S113: przegląd w Studio nie zrobiony:** przez całą sesję trwał Play (nie zatrzymywany), a MCP i tak nie daje obrazu
   3D; nowe pozy ocenione z pozycji dłoni i czubka broni liczonych z danych i renderów `posedump attack:*`. Do obejrzenia
   w AnimLab: `attack <typ> combo` każdego ruchu, smuga od `VaelthornTrailBase`, iskry (`hit <materiał>`), reakcja

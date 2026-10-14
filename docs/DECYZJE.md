@@ -3570,3 +3570,44 @@
 - **S113** Strzał czy cios w efektach ataku wybiera styl zdarzenia (`st ~= "melee"`), nie ruch: Łowca i Mag bez broni
   (ruch `unarmed`) dalej wypuszczają magiczny pocisk w chwili trafienia, bez smugi pięści. Liczby wyglądu z kontrolera
   w danych: `HitFx.smashTint`, `ClipFit.SWING_LEAD` (0,06 s) i `ClipFit.TRAIL_AFTER` (0,08 s).
+- **S114** Pin czasów serwera: `tests/fixtures/skill_timing.luau` (67 aktywnych umiejętności czterech klas: `hitDelay`,
+  `hit`, `release`, `land`, `loop`, `lock`; `projectile` i `waves` każdej `circleTarget`) zapisany raz skryptem spoza
+  repo, nigdy nie generowany ponownie; nowa umiejętność dostaje wiersz ręcznie. Test w `skillmotion.spec`.
+- **S114** Bramka fal w `Logic/SkillFxWave.of(typ, waves, n)`: `n` to numer fali tylko dla `circleSelf` i `circleTarget`
+  z `waves`; przy `circleTarget` bez `waves` to liczba fal jednego zdarzenia (`arrowRain` czyta ją z `n`); przy reszcie
+  numer celu: drugi cel i łańcuch Leczenia, Odnowa i Tarcza Wiary na drugim celu grają pełny zestaw. Promień celu `n ≥ 2`
+  biegnie od poprzedniego celu tego rzutu (pamięć 0,5 s na rzucającego), kolejne ogniwa co 0,06 s; dźwięk tylko raz.
+- **S114** Warianty ruchu (`SkillMotions.<id>.variants`: `weapon` = rodzina z `AttackMotions.byWeapon`, `hits` = co
+  najmniej tyle fal, `move` = rzut w ruchu) mają tylko klucze, `recover` i smugę; zdarzenia zawsze z ruchu bazowego
+  (`SkillPose.pick`, wynik raz na wariant). Klip S113 gra tylko, gdy wybrano bazę: wariant jest zawsze proceduralny.
+- **S114** Pole `w = skill.hits` (fale po przełomach i węzłach) w zwykłym zdarzeniu `cast` (`SkillService`), czysto
+  wizualne (DESIGN-16 §0.2.3); `SkillFx` nie ma schematu pól w `Net/Definitions`. Klient podaje `hits` i `move = mv ~= nil`
+  do `AnimationController.Skill`, a ten dokłada rodzinę broni z atrybutu `WeaponType`.
+- **S114** Wpis `SkillVfx`: `tex` (składnik → klucz `VfxTextures`), `flash` (rozmiar błysku), `pillar` (promień i
+  wysokość słupa), `coreDelay` (rdzeń, hitstop i dźwięk później niż zdarzenie), `landsAfter` (`circleTarget`: cios po `d`
+  zdarzenia, od razu tylko `magicCircle` / `rune` i telegraf). `skyBolt` z `tex` to prosty promień tekstury zamiast
+  błyskawicy (Sąd, Młot Niebios). Domyślne składniki późniejszych fal dostały `ringWave` i `groundDecal`.
+- **S114** Warstwy i podpis (`tests/SkillLooks`): każdy składnik ma warstwę (rdzeń `impactFlash` / `burst`, ciało,
+  ślad); umiejętność Wojownika i Kapłana ma wszystkie trzy (wyjątki z powodem w `LAYER_EXCEPT`). Podpis = sylwetka w
+  chwili `hit` (gdy > 0), inaczej `release` / początku pętli / pierwszego klucza (6 stawów co 30°, uniesienie co 0,5 st.)
+  + flagi całego ciała + zbiór składników; duplikat w klasie = test czerwony, sama sylwetka = raport.
+- **S114** Nowe składniki `shieldArc` (Mur Tarcz: półkole 6 tarcz ForceField na promieniu `r` przed Strażnikiem,
+  wyrastają w 0,15 s) i `wings` (Anioł Stróż i jego ocalenie: dwa skrzydła z klinów Neon za plecami, pióra), kształt
+  pocisku `die` (Rzut Kośćmi: dwie kostki z brzegiem `SelectionBox`), `Library.aura/tether/dash/slash` z kluczem tekstury.
+- **S114** Szarża: uderzenie barkiem w kluczu 0,30 (obrażenia 0,15 s po zdarzeniu `hit` 0,15, które przenosi ciało);
+  `hit` bez zmian, rdzeń, hitstop i dźwięk czekają `coreDelay = 0,15`. Wir Ostrzy: ostrze mija przód przy każdej fali
+  (obrót na falę zamiast dwóch obrotów na trzy fale), wariant 10B z czwartą falą 0,78; Gniew Tytana 10B czwarty skok 1,65.
+- **S114** Budżet jednego rzutu `Config.Vfx.perCast` (emitery 6, promienie 3, światła 2, ślady i koła 3) liczony z
+  `SkillLooks.PIECE_COST` w teście; Sąd stracił `pillar` (promień nieba jest słupem, trzy światła przekraczały budżet).
+- **S114** Odrębność: pary o tej samej sylwetce w chwili trafienia, ale innych efektach zostają (Szarża / Przechwycenie:
+  kolor, lina, tarcza na sojuszniku; Leczenie / Piętno Światła: kolor, cel sojusznik / wróg, promień / runa; Sąd / Młot
+  Niebios: jeden cel / obszar z kręgiem i telegrafem); Krąg Światła dostał ramiona nisko (Koło Fortuny oburącz nad głową).
+- **S114** Dźwięki: 35 kluczy `skill.<id>` (+5 `skill.<id>.cast`, 4 z dźwiękiem, i `skill.guardianAngel.save`); 23 z ID wziętymi z listy
+  S111 (te same pliki Roblox w innej wysokości), 12 pustych (głosy, chóry, organy: twórca Roblox ich nie ma; gra zapas
+  rodzaju). `SfxController` nie ma pętli: bez `skill.<id>.loop` (Modlitwa, Sztandar).
+- **S114** Pole `al` (tylko wygląd) dostały też zdarzenia `groupBuff` (sojusznicy bez rzucającego: skrzydła Anioła Stróża)
+  i `buff` z węzłem `bastionCover` (sojusznicy za plecami: tarcze Ostatniego Bastionu). Przechwycenie: tarcza na `t`
+  (chroniony albo sam Wojownik), drugi sojusznik 10A z liną i tarczą. `SkillVfx.markRadius`: pęknięcia Muru Tarcz (3) i
+  ślad Sztandaru (2,5) w miejscu wbicia, nie na całym promieniu.
+- **S114** Koszt (J1 / J3) odbiega od planu: `/animlab stress 20` krąży po wszystkich aktywnych umiejętnościach, bez
+  zestawu ośmiu najcięższych i bez niskiej jakości; tabela J3 ma tylko koszt jednego rzutu z `SkillLooks.costOf`.

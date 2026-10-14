@@ -1099,6 +1099,8 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		-- S80: a beam walks at channelMove % (5B) and loops its motion for the whole beam
 		mv = if isBeam then skill.channelMove else behaviour.castMove,
 		d = if isBeam then Skills.beamTicks(skill) * (skill.interval or 0.5) else nil,
+		-- S114 (DESIGN-16 §0.2.3): the waves after breakpoints and nodes, looks only (the motion's variant)
+		w = skill.hits,
 	})
 	if delay <= 0 then
 		return run()

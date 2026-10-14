@@ -245,7 +245,7 @@ czubek) i słupkiem celu 4 st. przed sobą.
 | łuk, kusza, różdżka | `bow.draw`, `bow.release`, `crossbow.release`, `wand.cast` | 0,5 | 70 |
 | trafienie | `hit.flesh`, `hit.armor`, `hit.wood`, `hit.stone`, `hit.bone`, `hit.slime`, `hit.crit` (razem z materiałem) | 0,6 / 0,7 | 70 |
 | obrona | `block` (też pochłonięte i odporność, ×0,6), `miss` (też unik) | 0,55 / 0,4 | 60 |
-| umiejętność | `skill.default.strike/cast/blast/heal/buff/dash/trap/call`, `skill.<id>` (16 z próbki S110) | 0,6 / 0,65 | 90 |
+| umiejętność | `skill.default.strike/cast/blast/heal/buff/dash/trap/call`, `skill.<id>` (16 z próbki S110; S114: wszystkie Wojownika i Kapłana, `skill.<id>.cast` przy rzuceniu) | 0,6 / 0,65 | 90 |
 | potwór | `mob.<rodzina>.attack/hurt/death/aggro` (6 rodzin; `hurt` co 0,35 s, `aggro` co 4 s na potwora) | 0,45–0,6 | 80 |
 | boss | `boss.<id>.roar/attack/death/phase` (`roar` co 3 s) | 0,8 | 200 |
 | telegraf | `telegraph.warn` | 0,55 | 120 |
@@ -363,7 +363,7 @@ zmieniony plik trzeba wgrać ponownie i wpisać nowe ID.
 także przy manekinach), `vfx tex` (wczytanie każdego ID i flipbooków, 10 s), `vfx tex on|off` (porównanie przed / po),
 `vfx stats` (efekty, uchwyty i światła wobec limitów; też w `state`). Składniki: `impactFlash`, `sparks`, `groundDecal`,
 `smokePuff`, `magicCircle`, `ringWave`, `burst`, `shockwave`, `cracks`, `slash`, `projectile`, `lightning`, `pillar`,
-`rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`.
+`rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`, `shieldArc`, `wings` (S114).
 
 ## 9. Ikony przedmiotów (S118)
 
@@ -409,3 +409,76 @@ Sesja może wgrać sama przez MCP jak w §8: `python -m http.server 8765 --bind 
 (`build/upload`), `upload_image` z adresami `http://127.0.0.1:8765/<plik>`. Przed startem sprawdź, czy port 8765 nie
 jest zajęty przez stary serwer (S119: odpowiadał serwer z poprzedniej sesji). Odpowiedź `403 User is moderated` znaczy, że
 konto ma blokadę moderacji: przerwij wgrywanie i napisz właścicielowi (S119).
+
+## 11. Umiejętności Wojownika i Kapłana (S114)
+
+**Zasady klasy.** Wojownik: kolor klasy (Wir, Potężne Uderzenie, Szarża), złoto Strażnika i Tytana (`#E8C25A`),
+czerwień okrzyków i Furii; stal i kurz przy broni i ziemi (`slashNarrow` / `slashWide`, `spark`, `darkSpark`, `dust`,
+`smoke`, `cracks`, `ring`); dźwięki stali, uderzeń, ziemi. Kapłan: światło z góry i z dłoni (`holy` `#FFE7A0`, `heal`
+`#4FD16B`, złoto Fortuny), mało kurzu (`glow`, `star`, `beamHoly`, runa Kapłana, `ring`); dźwięki dzwonków i akordów
+interfejsu Roblox (chórów twórca Roblox nie ma). Leczenie: ciało efektu na celu, na Kapłanie tylko blask dłoni.
+
+**Trzy warstwy** (`tests/SkillLooks.PIECE_LAYER`): rdzeń `impactFlash` / `burst`; ciało (kształt: `slash`, `whirl`,
+`ringWave`, `pillar`, `skyBolt`, `magicCircle`, `rune`, `shield`, `aura`, `beam`, `dash`, `tether`, `shieldArc`, `wings`,
+obiekt, pocisk); ślad (`sparks`, `dust`, `smokePuff`, `groundDecal`, `cracks`, `sparkle`). Nowy składnik dostaje warstwę
+i koszt (`PIECE_COST`) w `tests/SkillLooks.luau`, inaczej test pada. Jeden rzut mieści się w `Config.Vfx.perCast`.
+
+| Umiejętność | Sylwetka | Trafienie serwera (s) | Rdzeń / ciało / ślad | Dźwięk |
+|---|---|---|---|---|
+| `mightyStrike` | zamach nad prawym barkiem, wykrok, ukośne cięcie | 0,3 | błysk / łuk `slashNarrow` / iskry, pył | swordslash, swordlunge |
+| `charge` | pochylony bieg, bark w 0,30 | 0,15 (obrażenia 0,30) | błysk (+0,15 s) / smuga `trailStreak` / pył, dym | collide |
+| `bladeWhirl` | niski obrót, ostrze z przodu przy każdej fali | 0,18 / 0,38 / 0,58 | błysk / wir `slashWide` / iskry, pył | swoosh, whoosh |
+| `taunt` | wdech, ramiona rozrzucone, pierś do przodu | 0,2 | błysk / fala czerwona / iskry, pył | unsheath |
+| `bloodlust` | zgarbienie, ryk bez broni w górze | 0,4 | błysk / aura / dym | — |
+| `earthquake` | przysiad, skok z bronią oburącz, uderzenie w ziemię | 0,48 | błysk / fala / pęknięcia, pył, dym, odłamki | bass; zamach swoosh |
+| `intercept` | sprint, lądowanie w gardzie | 0,15 | błysk / smuga, lina `beamHoly`, tarcza sojusznika (10A: drugi z liną i tarczą) / pył | whoosh, unsheath |
+| `lastBastion` | niska garda, wbicie się w ziemię | 0,18 | błysk / tarcza (i sojusznicy za plecami) / pył, ślad | unsheath |
+| `shieldWall` | tarcza w górę, krawędź w ziemię | 0,46 | błysk / półkole tarcz `shieldArc` / pył, pęknięcia przy tarczy (`markRadius`) | unsheath, bass |
+| `cleave` | szeroki zamach oburącz, środek stożka w 0,27 | 0,27 | błysk / łuk `slashWide` / `darkSpark`, pył | swordslash, swoosh |
+| `rend` | zamach oburącz nad głową, pionowe cięcie | 0,32 | błysk / łuk pionowy / `darkSpark` | swordslash |
+| `titansWrath` | trzy skoki z obrotem 0°, 35°, −35° | 0,3 / 0,75 / 1,2 | błysk / fala, szeroki słup / pęknięcia, pył | bass; zamach swoosh |
+| `carnage` | zgarbienie, ryk z bronią nad głową w rozkroku | 0,4 | błysk / aura dymu / dym, `darkSpark` (rdzeń `furyConsume` rośnie ze stosami) | — |
+| `battleCry` | broń w górę jedną ręką, okrzyk | 0,3 | błysk / fala, aura / iskry | — |
+| `warBanner` | drzewce oburącz, przyklęk, wbicie | 0,4 | błysk / fala, sztandar / pył, ślad pod drzewcem (`markRadius`) | collide |
+| `crushingBlow` | podskok, cios oburącz z góry | 0,4 | duży błysk / mała fala / pęknięcia, pył, iskry | bass, collide |
+| `advanceOrder` | okrzyk, cios w ziemię | 0,54 | błysk / fala, aura sojuszników / pył, iskry | — |
+| `holyStrike` | buzdygan z góry, lewa dłoń do celu | 0,25 | błysk / wąski słup / iskry | Select 02 |
+| `heal` | lewa dłoń do sojusznika, krok | 0,25 | błysk / promień / iskierki | Cute_Goodbye |
+| `radiance` | buzdygan w górę, uniesienie na palcach | 0,3 | błysk / fala, słup / iskry | Tonal_Stinger |
+| `circleOfLight` | obrót z ramionami nisko | 0,5 | błysk / runa Kapłana, fala / iskierki | Select 01 |
+| `shieldOfFaith` | buzdygan przed twarzą, dłoń pchnięta | 0,2 | błysk / tarcza / iskierki | Select 02 |
+| `judgement` | skok, cios w ziemię | 0,36 | błysk / promień nieba `beamHoly` / pęknięcia, pył | bass; zamach whoosh |
+| `renew` | dłonie nisko, uniesione jak przy nalewaniu | 0,35 | błysk / aura / iskierki | — |
+| `sanctuary` | dłonie przyciśnięte w dół | 0,4 | błysk / koło Kapłana na czas strefy / iskierki | — |
+| `divineIntervention` | ramiona szeroko w górę, uniesienie | 0,45 | duży błysk / słup, fala 30 st. / gwiazdki | Tonal_Stinger |
+| `guardianAngel` | przyklęk, wstanie z ramionami w górze | 0,45 | błysk / skrzydła `wings` (też za plecami sojuszników z `al`) / gwiazdki | — |
+| `resurrection` | ręce w górę od razu, przyklęk, wstanie | 0 (natychmiast) | blask / wysoki słup / gwiazdki | Tonal_Stinger |
+| `fortuneDice` | rzut spod ręki | 0,25 (release) | błysk / dwie kostki `die`, runa / iskierki | snap |
+| `prayer` | przyklęk, dłonie złożone (pętla) | 0,4 | błysk / koło Kapłana, aura / iskierki | — |
+| `wheelOfFortune` | obrót oburącz nad głową | 0,5 | błysk / złote koło, słup / iskry | — |
+| `purify` | dłonie skrzyżowane, rozrzucone | 0,3 | błysk biały / mała fala / iskry, jasny dym | — |
+| `brandOfLight` | dłonie skrzyżowane, lewa pchnięta do wroga | 0,25 | błysk / runa / iskry | — |
+| `auraOfEndurance` | ramiona powoli w górę | 0,4 | błysk / fala, aura / iskierki | — |
+| `hammerOfHeaven` | długi skok, cios z nieba; młot po `delay` | 0,5 (+0,5 lot) | koło od razu; po `d`: błysk / promień nieba, fala / pęknięcia, pył | bass; zamach whoosh |
+
+**Warianty ruchu.** `SkillMotions.<id>.variants = { variant({ weapon?, hits?, move?, keys, recover?, trail? }) }`:
+`weapon` = rodzina broni z `AttackMotions.byWeapon` (`slash2h`, `thrust`, `smash`, …), `hits` = co najmniej tyle fal
+(pole `w` zdarzenia `cast`, przełomy i węzły), `move` = rzut w ruchu (`mv`, np. `castMove`). `Logic/SkillPose.pick`
+bierze pierwszy wariant, którego podane warunki pasują; zdarzenia (`hit`, `release`, `land`, `loop`, `lock`) zawsze z
+ruchu bazowego, więc czas serwera się nie zmienia (`tests/fixtures/skill_timing.luau`). Klip gra tylko dla bazy. Dziś:
+`bladeWhirl` (`hits = 4` z ruchem i bez, `move`, `slash2h`), `titansWrath` (`hits = 4`), `mightyStrike` (`slash2h`).
+Wariant w ruchu nie ma kluczy bioder i kolan (nogi idą z animacji chodu).
+
+**Pole `w`.** Zwykłe zdarzenie `cast` niesie `w = skill.hits` (po przełomach i węzłach); jedyne nowe pole serii w
+`SkillFx` (DESIGN-16 §0.2.3).
+
+**Podpis** (`tests/SkillLooks.signature`): sylwetka w chwili trafienia (6 stawów co 30°, uniesienie co 0,5 st.), flagi
+całego ciała (skok, przysiad, przyklęk, obrót, salto, wykrok, pętla) i zbiór składników z pociskiem, obiektem i
+telegrafem. Dwie umiejętności jednej klasy nie mogą mieć równych wszystkich trzech; ta sama sylwetka z innymi efektami
+trafia do raportu testu. Nowa umiejętność: inna poza w chwili trafienia albo inny zestaw składników.
+
+**Wskazówki do klipów (§6).** Najwięcej zyskają: `mightyStrike` (ciężar zamachu, odbicie ostrza), `earthquake` (skok
+oburącz), `titansWrath` (trzy skoki; znacznik `Hit` tylko na pierwszym lądowaniu 0,3 s, kolejne fale co 0,45 s same) i
+`judgement` (skok z buzdyganem). Długość klipu: ruch umiejętności z `/animlab skill <id>` (`end`), trafienie zgodne z
+tabelą wyżej. ID wpisz w `src/shared/Data/SkillMotions.luau` przy ruchu: `clip = { id = "rbxassetid://…", hit = "Hit",
+hitTime = … }` (linia z `/animlab clip <id> skill <id>`); warianty grają dalej z kodu.

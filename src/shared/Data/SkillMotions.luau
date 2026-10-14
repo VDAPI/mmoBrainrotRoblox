@@ -16,6 +16,11 @@
 -- `trail` shows the weapon trail from..to (seconds).
 -- `clip` (S113): a real clip `{ id, hit = "Hit", speed?, hitTime? }` plays instead of the keys; its marker is fitted to
 -- the motion's `hit` (or `release`) (Logic/ClipFit); the keys stay as the fallback. Never on a channel (`loop`).
+-- `variants` (S114): other keys for a weapon family (Data/AttackMotions.byWeapon: "slash2h", "thrust", …), a number of
+-- waves of the cast (the `w` of the cast event: breakpoints and nodes adding hits) or a cast while walking (castMove,
+-- the `mv` of the cast event). A variant has no events: hit / release / land / loop / lock always come from the motion
+-- itself, so the server's times never change (tests/fixtures/skill_timing). Logic/SkillPose.pick chooses the first
+-- variant whose given conditions all hold (`hits` = at least that many waves); a clip plays only for the motion itself.
 
 export type Joint = string
 export type Pose = { [Joint]: { number } }
@@ -24,6 +29,16 @@ export type Key = { t: number, pose: Pose, ease: Ease? }
 -- A real clip (same shape as Data/AttackMotions.Clip, Logic/ClipFit): "rbxassetid://<digits>", the marker name, the
 -- speed without a marker time, the marker's time at speed 1.
 export type Clip = { id: string, hit: string?, speed: number?, hitTime: number? }
+
+-- S114: other keys of a motion under a condition (no events: those stay the motion's).
+export type Variant = {
+	weapon: string?, -- weapon family (AttackMotions.byWeapon value) of the caster's weapon
+	hits: number?, -- at least this many waves (cast event `w`)
+	move: boolean?, -- the cast lets the caster walk (cast event `mv`)
+	keys: { Key },
+	recover: number?,
+	trail: { from: number, to: number }?,
+}
 
 export type Motion = {
 	keys: { Key },
@@ -35,6 +50,7 @@ export type Motion = {
 	lock: boolean?,
 	trail: { from: number, to: number }?,
 	clip: Clip?, -- S113: e.g. clip = { id = "rbxassetid://1234567890", hit = "Hit", hitTime = 0.42 }
+	variants: { Variant }?, -- S114
 }
 
 local SkillMotions = {}
@@ -201,40 +217,72 @@ local function k(t: number, pose: Pose, ease: Ease?): Key
 	return { t = t, pose = pose, ease = ease }
 end
 
+-- S114: a typed variant (the checker cannot unify table literals with different optional fields in one list).
+local function variant(def: Variant): Variant
+	return def
+end
+
 local motions: { [string]: Motion } = {}
 
 -- Warrior ----------------------------------------------------------------------------------------------------
 
--- Mighty Strike: the blade raised high over the right shoulder, a lunge and a heavy diagonal cut.
+-- Mighty Strike: the blade raised high over the right shoulder (weight on the back leg), a lunge and a heavy diagonal
+-- cut: the arm crosses the shoulder line exactly at the hit (0.3), the blade runs on low to the left hip and bounces back
+-- a little. S114: a two-handed weapon (slash2h) holds the hilt with both hands and winds up a little longer.
+local MIGHTY_WINDUP: Pose = {
+	root = { 4, -8, 0, -0.25 },
+	rHip = { 8, 0, 4 },
+	lHip = { -14, 0, -4 },
+	rKnee = { 18 },
+	lKnee = { 30 },
+	rShoulder = { 170, 0, 25 },
+	rElbow = { 60, 0, 0 },
+	rWrist = { -20, 0, 0 },
+	lShoulder = { 40, 0, -15 },
+	waist = { 10, -18, 0 },
+}
+local MIGHTY_CUT: Pose = merge(lunge(0.9), {
+	rShoulder = { 95, 0, -12 },
+	rElbow = { 10, 0, 0 },
+	rWrist = { 10, 0, 0 },
+	lShoulder = { 0, 0, -12 },
+	waist = { -10, 14, 0 },
+})
+local MIGHTY_LOW: Pose = merge(lunge(1), {
+	rShoulder = { 20, 0, -40 },
+	rElbow = { 4, 0, 0 },
+	rWrist = { 22, 0, 0 },
+	lShoulder = { -10, 0, -10 },
+	waist = { -15, 24, 0 },
+})
+local MIGHTY_BOUNCE: Pose =
+	merge(lunge(1), { rShoulder = { 28, 0, -30 }, rWrist = { 12, 0, 0 }, waist = { -12, 18, 0 } })
+-- The left hand on the hilt of a two-handed weapon (S114 variant): the left arm follows the right one.
+local function twoHanded(pose: Pose, left: { number }, elbow: number): Pose
+	return merge(pose, { lShoulder = left, lElbow = { elbow, 0, 0 } })
+end
 motions.mightyStrike = {
 	keys = {
-		k(
-			0.22,
-			merge(STAND, {
-				rShoulder = { 170, 0, 25 },
-				rElbow = { 60, 0, 0 },
-				rWrist = { -20, 0, 0 },
-				lShoulder = { 40, 0, -15 },
-				waist = { 10, -18, 0 },
-			}),
-			"out"
-		),
-		k(
-			0.32,
-			merge(lunge(1), {
-				rShoulder = { 30, 0, -35 },
-				rElbow = { 5, 0, 0 },
-				rWrist = { 20, 0, 0 },
-				lShoulder = { -10, 0, -10 },
-				waist = { -14, 22, 0 },
-			}),
-			"in"
-		),
-		k(0.42, merge(lunge(1), { rShoulder = { 25, 0, -30 }, waist = { -12, 18, 0 } })),
+		k(0.22, MIGHTY_WINDUP, "out"),
+		k(0.3, MIGHTY_CUT, "in"),
+		k(0.4, MIGHTY_LOW, "out"),
+		k(0.46, MIGHTY_BOUNCE),
 	},
 	recover = 0.3,
 	hit = 0.3,
-	trail = { from = 0.2, to = 0.36 },
+	trail = { from = 0.2, to = 0.4 },
+	variants = {
+		variant({
+			weapon = "slash2h",
+			keys = {
+				k(0.25, twoHanded(MIGHTY_WINDUP, { 158, 0, 34 }, 70), "out"),
+				k(0.3, twoHanded(MIGHTY_CUT, { 88, 0, 14 }, 30), "in"),
+				k(0.4, twoHanded(MIGHTY_LOW, { 26, 0, -14 }, 12), "out"),
+				k(0.46, twoHanded(MIGHTY_BOUNCE, { 32, 0, -8 }, 14)),
+			},
+			trail = { from = 0.24, to = 0.4 },
+		}),
+	},
 }
 
 -- Battle Cry: weapon raised, the body arched back, a roar.
@@ -258,63 +306,77 @@ motions.battleCry = {
 	lock = true,
 }
 
--- Charge: bent forward running at the target (the server moves the body), a shoulder bash at the end.
+-- Charge: bent forward running at the target (the server moves the body at 0.15), a shoulder bash at the end. S114:
+-- the server deals the damage 0.15 s after the event (Movement.charge), so the bash peaks at 0.30 (the run held to
+-- 0.27); the hit stays 0.15 (the event).
+local BASH: Pose = {
+	root = { -18, -28, 0, -0.2 },
+	waist = { -6, -25, 0 },
+	lShoulder = { 70, 30, -40 },
+	lElbow = { 100, 0, 0 },
+	rShoulder = { -20, 0, 20 },
+	rElbow = { 30, 0, 0 },
+	rHip = { 20, 0, 0 },
+	lHip = { 10, 0, 0 },
+	rKnee = { 25 },
+	lKnee = { 30 },
+}
 motions.charge = {
 	keys = {
 		k(0.12, CHARGE_RUN, "out"),
-		k(0.24, {
-			root = { -18, -28, 0, -0.2 },
-			waist = { -6, -25, 0 },
-			lShoulder = { 70, 30, -40 },
-			lElbow = { 100, 0, 0 },
-			rShoulder = { -20, 0, 20 },
-			rElbow = { 30, 0, 0 },
-			rHip = { 20, 0, 0 },
-			lHip = { 10, 0, 0 },
-			rKnee = { 25 },
-			lKnee = { 30 },
-		}, "in"),
+		k(0.27, merge(CHARGE_RUN, { root = { -24, -8, 0, -0.35 }, waist = { -12, -10, 0 } })),
+		k(0.3, BASH, "in"),
+		k(0.4, merge(BASH, { root = { -8, -18, 0, -0.1 }, waist = { 0, -16, 0 }, lShoulder = { 55, 25, -30 } }), "out"),
 	},
 	recover = 0.3,
 	hit = 0.15,
 }
 
--- Blade Whirl: the blade out to the side, two full turns of the body (720°) in a low stance.
+-- Blade Whirl: the blade out to the side, turns of the body in a low stance. S114: the blade (right arm out to the
+-- right) passes the front (turn 90°) at every server wave (0.18 / 0.38 / 0.58, `interval` 0.2), one turn per wave,
+-- easing out to a stop at a whole number of turns minus the 20° of the wind-up. Variants: 4 waves (10B, the 4th at
+-- 0.78), walking (5A castMove: arms and turns only, the default animation walks the legs), two-handed (slash2h).
+local WHIRL_STEP = 0.2 -- seconds between two waves (Data/Skills/Warrior bladeWhirl interval)
+local function whirl(waves: number, legs: boolean, twoHands: boolean): { Key }
+	local function at(yaw: number): Pose
+		local pose: Pose = {
+			rShoulder = { 10, 0, 92 },
+			rElbow = { 5, 0, 0 },
+			rWrist = { 0, 0, 0 },
+			lShoulder = if twoHands then { 40, 60, 0 } else { 10, 0, -70 },
+			lElbow = if twoHands then { 70, 0, 0 } else { 20, 0, 0 },
+			waist = { -6, -25, 0 },
+			root = { 0, yaw, 0, if legs then -0.35 else 0 },
+		}
+		return if legs then merge(crouch(0.35), pose) else pose
+	end
+	local keys = { k(0.1, at(-20), "out") }
+	for wave = 1, waves do
+		table.insert(
+			keys,
+			k(0.18 + (wave - 1) * WHIRL_STEP, at(90 + 360 * (wave - 1)), if wave == 1 then "in" else "linear")
+		)
+	end
+	local last = 0.18 + (waves - 1) * WHIRL_STEP
+	table.insert(keys, k(last + 0.12, at(360 * waves - 20), "out"))
+	return keys
+end
 motions.bladeWhirl = {
-	keys = {
-		k(
-			0.1,
-			merge(crouch(0.35), {
-				rShoulder = { 10, 0, 92 },
-				rElbow = { 5, 0, 0 },
-				rWrist = { 0, 0, 0 },
-				lShoulder = { 10, 0, -70 },
-				lElbow = { 20, 0, 0 },
-				waist = { -6, -25, 0 },
-				root = { 0, -20, 0, -0.35 },
-			}),
-			"out"
-		),
-		k(
-			0.7,
-			merge(crouch(0.35), {
-				rShoulder = { 10, 0, 92 },
-				rElbow = { 5, 0, 0 },
-				lShoulder = { 10, 0, -70 },
-				lElbow = { 20, 0, 0 },
-				waist = { -6, -25, 0 },
-				root = { 0, 700, 0, -0.35 },
-			}),
-			"linear"
-		),
-	},
+	keys = whirl(3, true, false),
 	recover = 0.25,
 	hit = 0.18,
 	lock = true,
 	trail = { from = 0.1, to = 0.7 },
+	variants = {
+		variant({ hits = 4, move = true, keys = whirl(4, false, false), trail = { from = 0.1, to = 0.9 } }),
+		variant({ hits = 4, keys = whirl(4, true, false), trail = { from = 0.1, to = 0.9 } }),
+		variant({ move = true, keys = whirl(3, false, false) }),
+		variant({ weapon = "slash2h", keys = whirl(3, true, true) }),
+	},
 }
 
--- Cleave: a wide horizontal sweep from left to right.
+-- Cleave: a wide two-handed horizontal sweep from left to right (the Berserker's two-handed weapon is the base). S114:
+-- the blade crosses the middle of the cone exactly at the hit (0.27), runs on to the right and slows (0.36).
 motions.cleave = {
 	keys = {
 		k(
@@ -322,34 +384,61 @@ motions.cleave = {
 			merge(STAND, {
 				rShoulder = { 85, 65, 0 },
 				rElbow = { 35, 0, 0 },
-				lShoulder = { 20, 0, -20 },
+				lShoulder = { 80, 55, 0 },
+				lElbow = { 45, 0, 0 },
 				waist = { 0, 38, 0 },
 				root = { 0, 10, 0, -0.2 },
 			}),
 			"out"
 		),
 		k(
-			0.32,
-			merge(lunge(0.6), {
-				rShoulder = { 85, -85, 0 },
-				rElbow = { 5, 0, 0 },
-				lShoulder = { 10, 0, -30 },
-				waist = { -4, -42, 0 },
-				root = { -4, -10, 0, -0.3 },
+			0.27,
+			merge(lunge(0.4), {
+				rShoulder = { 88, -8, 0 },
+				rElbow = { 8, 0, 0 },
+				lShoulder = { 84, 2, 0 },
+				lElbow = { 22, 0, 0 },
+				waist = { -2, 0, 0 },
+				root = { -2, 0, 0, -0.25 },
 			}),
 			"in"
+		),
+		k(
+			0.36,
+			merge(lunge(0.6), {
+				rShoulder = { 82, -88, 0 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 76, -70, 0 },
+				lElbow = { 20, 0, 0 },
+				waist = { -4, -44, 0 },
+				root = { -4, -12, 0, -0.3 },
+			}),
+			"out"
 		),
 	},
 	recover = 0.3,
 	hit = 0.27,
-	trail = { from = 0.18, to = 0.34 },
+	trail = { from = 0.18, to = 0.36 },
 }
 
--- Taunt: arms thrown wide, chest out, a challenge.
+-- Taunt: a breath in (S114: the upper body draws back for 0.1 s), then the arms thrown wide, chest out, a challenge
+-- peaking at the hit (0.2).
 motions.taunt = {
 	keys = {
 		k(
-			0.18,
+			0.1,
+			merge(STAND, {
+				rShoulder = { 35, 0, 30 },
+				rElbow = { 50, 0, 0 },
+				lShoulder = { 35, 0, -30 },
+				lElbow = { 50, 0, 0 },
+				waist = { -6, 0, 0 },
+				root = { -3, 0, 0, -0.1 },
+			}),
+			"out"
+		),
+		k(
+			0.2,
 			merge(STAND, {
 				rShoulder = { 20, 0, 100 },
 				rElbow = { 20, 0, 0 },
@@ -358,7 +447,7 @@ motions.taunt = {
 				waist = { 16, 0, 0 },
 				root = { 4, 0, 0, 0 },
 			}),
-			"out"
+			"in"
 		),
 		k(
 			0.55,
@@ -398,7 +487,7 @@ motions.bloodlust = {
 	keys = {
 		k(0.16, HUNCH, "out"),
 		k(
-			0.42,
+			0.4,
 			merge(STAND, {
 				waist = { 26, 0, 0 },
 				root = { 8, 0, 0, 0.2 },
@@ -499,12 +588,14 @@ motions.rend = {
 	trail = { from = 0.18, to = 0.36 },
 }
 
--- Carnage: the Bloodlust hunch, then a roar with the weapon raised over the head.
+-- Carnage: the Bloodlust hunch, then a roar with the weapon raised over the head in a wide stance (S114: unlike
+-- Bloodlust the weapon goes up and the feet apart; the roar peaks at the hit, 0.4).
+local WIDE: Pose = { rHip = { 0, 0, 16 }, lHip = { 0, 0, -16 } }
 motions.carnage = {
 	keys = {
 		k(0.16, HUNCH, "out"),
-		k(0.42, merge(STAND, OVERHEAD, { waist = { 24, 0, 0 }, root = { 8, 0, 0, 0.2 } }), "out"),
-		k(0.75, merge(STAND, OVERHEAD, { waist = { 20, 0, 0 } })),
+		k(0.4, merge(STAND, OVERHEAD, WIDE, { waist = { 24, 0, 0 }, root = { 8, 0, 0, 0.1 } }), "out"),
+		k(0.75, merge(STAND, OVERHEAD, WIDE, { waist = { 20, 0, 0 }, root = { 0, 0, 0, -0.1 } })),
 	},
 	recover = 0.3,
 	hit = 0.4,
@@ -548,17 +639,27 @@ local function leap(base: number, yaw: number): { Key }
 		k(base + 0.3, merge(crouch(1), SLAMMED, { waist = { -26, 0, 0 }, root = { -10, yaw, 0, -0.9 } }), "in"),
 	}
 end
-do
+-- S114: 4 waves (10B) leap a fourth time straight ahead, landing at 1.65 (hit + 3 x interval).
+local function leaps(yaws: { number }): { Key }
 	local keys = {}
-	for i, yaw in { 0, 35, -35 } do
+	for i, yaw in yaws do
 		for _, key in leap((i - 1) * 0.45, yaw) do
 			table.insert(keys, key)
 		end
 	end
-	table.insert(keys, k(1.45, merge(crouch(0.8), SLAMMED, { waist = { -20, 0, 0 } })))
-	motions.titansWrath =
-		{ keys = keys, recover = 0.35, hit = 0.3, land = 0.3, lock = true, trail = { from = 0.2, to = 1.2 } }
+	local last = (#yaws - 1) * 0.45 + 0.3
+	table.insert(keys, k(last + 0.25, merge(crouch(0.8), SLAMMED, { waist = { -20, 0, 0 } })))
+	return keys
 end
+motions.titansWrath = {
+	keys = leaps({ 0, 35, -35 }),
+	recover = 0.35,
+	hit = 0.3,
+	land = 0.3,
+	lock = true,
+	trail = { from = 0.2, to = 1.2 },
+	variants = { variant({ hits = 4, keys = leaps({ 0, 35, -35, 0 }), trail = { from = 0.2, to = 1.65 } }) },
+}
 
 -- Hunter -----------------------------------------------------------------------------------------------------
 
@@ -1458,7 +1559,8 @@ motions.arcaneTorrent = {
 
 -- Cleric -------------------------------------------------------------------------------------------------------
 
--- Holy Strike: the mace raised high and brought down.
+-- Holy Strike: the mace raised high and brought down in a half lunge at the hit (0.25), the left palm opening towards
+-- the target (S114), the mace running on low.
 motions.holyStrike = {
 	keys = {
 		k(
@@ -1470,38 +1572,61 @@ motions.holyStrike = {
 			"out"
 		),
 		k(
-			0.27,
-			merge(
-				lunge(0.5),
-				{ rShoulder = { 30, 0, -10 }, rElbow = { 5, 0, 0 }, lShoulder = { 10, 0, -15 }, waist = { -16, 8, 0 } }
-			),
+			0.25,
+			merge(lunge(0.5), {
+				rShoulder = { 45, 0, -10 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 75, 0, -8 },
+				lElbow = { 8, 0, 0 },
+				lWrist = { -40, 0, 0 },
+				waist = { -14, 8, 0 },
+			}),
 			"in"
+		),
+		k(
+			0.33,
+			merge(lunge(0.5), {
+				rShoulder = { 22, 0, -14 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 80, 0, -8 },
+				lElbow = { 6, 0, 0 },
+				lWrist = { -45, 0, 0 },
+				waist = { -16, 8, 0 },
+			}),
+			"out"
 		),
 	},
 	recover = 0.3,
 	hit = 0.25,
-	trail = { from = 0.16, to = 0.28 },
+	trail = { from = 0.16, to = 0.3 },
 }
 
--- Heal: the left hand stretched out towards the ally, the mace at the chest.
+-- Heal: the left hand stretched out towards the ally, the mace at the chest, a step towards the ally (S114).
 motions.heal = {
 	keys = {
-		k(0.22, {
-			lShoulder = { 95, 10, 0 },
-			lElbow = { 0, 0, 0 },
-			lWrist = { -30, 0, 0 },
-			rShoulder = { 45, 40, 0 },
-			rElbow = { 100, 0, 0 },
-			waist = { 0, 10, 0 },
-		}, "out"),
-		k(0.5, {
-			lShoulder = { 100, 10, 0 },
-			lElbow = { 0, 0, 0 },
-			lWrist = { -35, 0, 0 },
-			rShoulder = { 45, 40, 0 },
-			rElbow = { 100, 0, 0 },
-			waist = { 2, 10, 0 },
-		}),
+		k(
+			0.22,
+			merge(lunge(0.3), {
+				lShoulder = { 95, 10, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -30, 0, 0 },
+				rShoulder = { 45, 40, 0 },
+				rElbow = { 100, 0, 0 },
+				waist = { 0, 10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.5,
+			merge(lunge(0.25), {
+				lShoulder = { 100, 10, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -35, 0, 0 },
+				rShoulder = { 45, 40, 0 },
+				rElbow = { 100, 0, 0 },
+				waist = { 2, 10, 0 },
+			})
+		),
 	},
 	recover = 0.25,
 	hit = 0.25,
@@ -1541,7 +1666,7 @@ motions.radiance = {
 			"out"
 		),
 		k(
-			0.32,
+			0.3,
 			merge(STAND, {
 				rShoulder = { 178, 0, 15 },
 				lShoulder = { 30, 0, -80 },
@@ -1550,28 +1675,31 @@ motions.radiance = {
 			}),
 			"out"
 		),
+		k(0.42, merge(STAND, { rShoulder = { 172, 0, 14 }, lShoulder = { 34, 0, -72 }, waist = { 14, 0, 0 } })),
 	},
 	recover = 0.3,
 	hit = 0.3,
 }
 
--- Circle of Light: the mace raised, one slow turn of the body.
+-- Circle of Light: one slow turn of the body with the arms spread low (the mace in one hand), the circle growing as it
+-- turns. S114: low open arms, unlike Wheel of Fortune (both hands over the head).
 motions.circleOfLight = {
 	keys = {
 		k(
 			0.15,
 			merge(
 				STAND,
-				{ rShoulder = { 176, 0, 10 }, rElbow = { 10, 0, 0 }, lShoulder = { 60, 0, -50 }, waist = { 10, 0, 0 } }
+				{ rShoulder = { 30, 0, 72 }, rElbow = { 12, 0, 0 }, lShoulder = { 30, 0, -72 }, waist = { 6, 0, 0 } }
 			),
 			"out"
 		),
 		k(
 			0.6,
 			merge(STAND, {
-				rShoulder = { 176, 0, 10 },
-				lShoulder = { 60, 0, -50 },
-				waist = { 10, 0, 0 },
+				rShoulder = { 40, 0, 78 },
+				rElbow = { 8, 0, 0 },
+				lShoulder = { 40, 0, -78 },
+				waist = { 8, 0, 0 },
 				root = { 0, 360, 0, 0.2 },
 			}),
 			"inOut"
@@ -1625,9 +1753,11 @@ motions.auraOfEndurance = {
 	lock = true,
 }
 
--- Resurrection: kneeling with a hand down to the fallen, then rising with the arms up.
+-- Resurrection: the hands go up at once (S114: the server raises the fallen at 0, so the first 0.1 s is the call),
+-- kneeling with a hand down to the fallen, then rising with the arms up.
 motions.resurrection = {
 	keys = {
+		k(0.1, merge(STAND, { rShoulder = { 140, 0, 25 }, lShoulder = { 140, 0, -25 }, waist = { 8, 0, 0 } }), "out"),
 		k(
 			0.3,
 			merge(KNEEL, {

@@ -12,6 +12,7 @@
 -- Keys: swing.<light|heavy|blunt|thrust>, bow.draw, bow.release, crossbow.release, wand.cast,
 -- hit.<material> and hit.crit (played together with the material), block, miss (also a dodge),
 -- skill.default.<strike|cast|blast|heal|buff|dash|trap|call>, skill.<skillId> (SkillVfx.sound names a key),
+-- skill.<skillId>.cast (S114: at the cast event, a long wind-up), skill.guardianAngel.save (S114: the angel's save),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error>. S112-S117 call sounds by these keys.
 
@@ -186,6 +187,89 @@ local SKILL_HINTS: { [string]: string } = {
 for _, id in Sfx.SKILL_SAMPLE do
 	defs["skill." .. id] = d(SKILL_HINTS[id] or "magic skill impact", 0.65, 90)
 end
+
+-- S114: every active skill of the Warrior and the Cleric has its own key (DESIGN-16 §6). Ids only from the S111 list
+-- (Creator Store, creator Roblox, checked in Play, docs/ASSETS.md "Dźwięki (S111)"), taken again for another skill at
+-- its own pitch; keys without a fitting Roblox sound stay empty (the kind's default plays) and wait for the owner's
+-- choice (docs/PROGRESS.md). roll: melee 70, areas 110.
+local SWORDSLASH = "rbxassetid://12222216"
+local SWORDLUNGE = "rbxassetid://12222208"
+local SWOOSH = "rbxassetid://12222200"
+local WHOOSH_01 = "rbxassetid://15675024286"
+local WHOOSH_02 = "rbxassetid://15675028888"
+local WHOOSH_04 = "rbxassetid://15675012262"
+local COLLIDE = "rbxassetid://12221984"
+local BASS = "rbxassetid://12221944"
+local UNSHEATH = "rbxassetid://12222225"
+local SNAP = "rbxassetid://12222140"
+local CUTE_GOODBYE = "rbxassetid://15675081158"
+local TONAL_STINGER = "rbxassetid://15675043410"
+local SELECT_01 = "rbxassetid://10128760939"
+local SELECT_02 = "rbxassetid://10066968815"
+local LOW = { 0.85, 0.9 }
+local HEAVY = { 0.86, 0.94 }
+local MID = { 0.92, 1.0 }
+
+type Own = { hint: string, roll: number, ids: { string }?, pitch: { number }?, volume: number? }
+local OWN: { [string]: Own } = {
+	-- Warrior
+	mightyStrike = {
+		hint = "heavy sword strike impact low",
+		roll = 70,
+		ids = { SWORDSLASH, SWORDLUNGE },
+		pitch = HEAVY,
+	},
+	charge = { hint = "running footsteps shoulder bash armor thud", roll = 70, ids = { COLLIDE }, pitch = LOW },
+	bladeWhirl = { hint = "sword spin whirlwind three whooshes", roll = 80, ids = { SWOOSH, WHOOSH_01 } },
+	taunt = { hint = "short roar shield bang", roll = 110, ids = { UNSHEATH }, pitch = MID },
+	bloodlust = { hint = "low roar heartbeat rage", roll = 70 },
+	earthquake = { hint = "earthquake ground slam rumble rocks", roll = 110, ids = { BASS }, pitch = LOW },
+	intercept = { hint = "quick steps shield clang", roll = 80, ids = { WHOOSH_02, UNSHEATH }, pitch = MID },
+	lastBastion = { hint = "heavy stomp low metal bell", roll = 70, ids = { UNSHEATH }, pitch = LOW },
+	shieldWall = { hint = "shield slam stone short shout chorus", roll = 110, ids = { UNSHEATH, BASS }, pitch = LOW },
+	cleave = { hint = "wide sword slash cleave tear", roll = 80, ids = { SWORDSLASH, SWOOSH }, pitch = HEAVY },
+	rend = { hint = "heavy cut wet tear", roll = 70, ids = { SWORDSLASH }, pitch = LOW },
+	titansWrath = { hint = "three ground thunder slams", roll = 120, ids = { BASS }, pitch = LOW },
+	carnage = { hint = "roar metallic reverb rage", roll = 80 },
+	battleCry = { hint = "war cry shout voice no words", roll = 110 },
+	warBanner = { hint = "pole planted ground cloth flap", roll = 110, ids = { COLLIDE }, pitch = HEAVY },
+	crushingBlow = { hint = "heavy armor crush impact", roll = 70, ids = { BASS, COLLIDE }, pitch = LOW },
+	advanceOrder = { hint = "war horn blow ground hit", roll = 120 },
+	-- Cleric
+	holyStrike = { hint = "holy bell strike chime", roll = 80, ids = { SELECT_02 }, pitch = MID },
+	heal = { hint = "warm healing chord chime", roll = 80, ids = { CUTE_GOODBYE } },
+	radiance = { hint = "bright holy chord shimmer", roll = 110, ids = { TONAL_STINGER } },
+	circleOfLight = { hint = "short choir healing circle", roll = 110, ids = { SELECT_01 } },
+	shieldOfFaith = { hint = "glass bell shield", roll = 80, ids = { SELECT_02 }, pitch = { 1.02, 1.1 } },
+	judgement = { hint = "thunder with choir holy", roll = 110, ids = { BASS }, pitch = HEAVY },
+	renew = { hint = "soft water flow healing", roll = 80 },
+	sanctuary = { hint = "choir warm drone holy ground", roll = 110 },
+	divineIntervention = { hint = "full choir with bell", roll = 120, ids = { TONAL_STINGER }, pitch = HEAVY },
+	guardianAngel = { hint = "harp and choir angel", roll = 120 },
+	resurrection = { hint = "rising choir revive", roll = 110, ids = { TONAL_STINGER }, pitch = MID },
+	fortuneDice = { hint = "dice rattle roll", roll = 80, ids = { SNAP }, pitch = { 1.04, 1.12 } },
+	prayer = { hint = "quiet choir whisper prayer", roll = 80 },
+	wheelOfFortune = { hint = "spinning wheel rattle gong", roll = 120 },
+	purify = { hint = "hiss clean pure tone", roll = 80 },
+	brandOfLight = { hint = "searing hiss small bell", roll = 80 },
+	auraOfEndurance = { hint = "low organ chord", roll = 110 },
+	hammerOfHeaven = { hint = "rising whoosh thunder impact divine", roll = 120, ids = { BASS }, pitch = LOW },
+}
+-- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
+local CAST: { [string]: Own } = {
+	earthquake = { hint = "jump whoosh heavy", roll = 90, ids = { SWOOSH }, pitch = LOW },
+	titansWrath = { hint = "jump whoosh heavy", roll = 90, ids = { SWOOSH }, pitch = LOW },
+	judgement = { hint = "jump whoosh holy rising", roll = 90, ids = { WHOOSH_04 }, pitch = MID },
+	hammerOfHeaven = { hint = "rising whoosh from the sky", roll = 110, ids = { WHOOSH_04 }, pitch = LOW },
+	guardianAngel = { hint = "angel rising choir short", roll = 110 },
+}
+for id, own in OWN do
+	defs["skill." .. id] = d(own.hint, own.volume or 0.65, own.roll, { ids = own.ids, pitch = own.pitch })
+end
+for id, own in CAST do
+	defs[`skill.{id}.cast`] = d(own.hint, own.volume or 0.55, own.roll, { ids = own.ids, pitch = own.pitch })
+end
+defs["skill.guardianAngel.save"] = d("angel save harp choir burst", 0.7, 120)
 
 -- Monsters: one set per family (DESIGN-16 §3); the attack plays at the attacker, the rest at the monster.
 local MOB_HINTS: { [string]: { attack: string, hurt: string, death: string, aggro: string } } = {

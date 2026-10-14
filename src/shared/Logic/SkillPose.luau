@@ -161,6 +161,55 @@ function SkillPose.sample(motion: Motion, t: number, options: Options?): (Pose, 
 	return out, weight, false
 end
 
+-- S114: what the cast event says about the cast (weapon family of the caster's weapon, waves `w`, walking `mv`).
+export type PickContext = { weapon: string?, hits: number?, move: boolean? }
+
+local function matches(variant: SkillMotions.Variant, ctx: PickContext): boolean
+	if variant.weapon ~= nil and variant.weapon ~= ctx.weapon then
+		return false
+	end
+	if variant.hits ~= nil and (ctx.hits == nil or ctx.hits < variant.hits) then
+		return false
+	end
+	if variant.move ~= nil and variant.move ~= (ctx.move == true) then
+		return false
+	end
+	return true
+end
+
+-- The motion of a variant: its keys, recover and trail with the events of the motion (made once per variant).
+local picked: { [SkillMotions.Variant]: Motion } = {}
+
+-- S114 (B1): the first variant of `motion` whose conditions all hold, as a motion with the motion's own events
+-- (hit, release, land, loop, lock never change), or the motion itself (no variant fits, no variants). No new table
+-- after the first call per variant.
+function SkillPose.pick(motion: Motion, ctx: PickContext?): Motion
+	local variants = motion.variants
+	if not variants or not ctx then
+		return motion
+	end
+	for _, variant in variants do
+		if matches(variant, ctx) then
+			local cached = picked[variant]
+			if not cached then
+				cached = {
+					keys = variant.keys,
+					recover = variant.recover or motion.recover,
+					hit = motion.hit,
+					release = motion.release,
+					land = motion.land,
+					loop = motion.loop,
+					lock = motion.lock,
+					trail = variant.trail or motion.trail,
+				}
+				picked[variant] = cached
+			end
+			return cached :: Motion
+		end
+	end
+	return motion
+end
+
 -- Seconds after the start of an event ("hit" / "release" / "land"), scaled by the speed; nil when absent.
 function SkillPose.event(motion: Motion, name: string, speed: number?): number?
 	local t = (motion :: any)[name]

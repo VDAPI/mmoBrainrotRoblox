@@ -128,6 +128,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   Prawdziwy klip (S113): `SkillMotions.<id>.clip` / `AttackMotions.motions.<ruch>.clips` / `clipsByWeapon` (`{ id, hit =
   "Hit", hitTime? }`, znacznik `Hit`, prędkość z `Logic/ClipFit`, zapas: poza z kodu; `docs/ANIMACJE.md` §6); czas
   trafienia ataku tylko z `AttackMotions.SERVER_HIT`, pozy ataku podgląda `lune run tools/posedump.luau out.json attack:all`.
+  S114: czasy serwera przypięte w `tests/fixtures/skill_timing.luau` (wiersz nowej umiejętności dopisuje się ręcznie);
+  warianty ruchu `SkillMotions.<id>.variants` (`variant({ weapon?, hits?, move?, keys })`, bez zdarzeń, `SkillPose.pick`);
+  wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
+  warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);

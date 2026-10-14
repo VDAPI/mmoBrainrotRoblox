@@ -1,6 +1,8 @@
 --!strict
 -- S28: skill animations (Data/SkillMotions + Logic/SkillPose), skill visuals (Data/SkillVfx), breakpoints
--- (Logic/Skills.breakpointsAt / effective) and knockback (Logic/Knockback).
+-- (Logic/Skills.breakpointsAt / effective) and knockback (Logic/Knockback). S114: the server's times pinned
+-- (tests/fixtures/skill_timing), motion variants (SkillPose.pick), the three layers and the signature of the Warrior's
+-- and the Cleric's skills (tests/SkillLooks), the meaning of an impact's `n` (Logic/SkillFxWave).
 
 local Knockback = require("../src/shared/Logic/Knockback")
 local SkillData = require("../src/shared/Data/Skills")
@@ -68,6 +70,9 @@ for _, name in
 		"smokePuff",
 		"magicCircle",
 		"ringWave",
+		-- S114
+		"shieldArc",
+		"wings",
 	}
 do
 	VFX_PIECES[name] = true
@@ -513,6 +518,339 @@ describe("Mage S80 motions and looks", function()
 				expect({ id, entry.projectile ~= nil }).toEqual({ id, true })
 			end
 		end
+	end)
+end)
+
+describe("Warrior and Cleric looks (S114)", function()
+	local Config = require("../src/shared/Config")
+	local Sfx = require("../src/shared/Data/Sfx")
+	local SkillFxWave = require("../src/shared/Logic/SkillFxWave")
+	local SkillLooks = require("./SkillLooks")
+	local Timing = require("./fixtures/skill_timing")
+	local VfxTextures = require("../src/shared/Data/VfxTextures")
+
+	local CLASSES = { Warrior = true, Cleric = true }
+	local function classSkills(): { SkillData.SkillDef }
+		local out = {}
+		for _, skill in actives() do
+			if CLASSES[skill.class] then
+				table.insert(out, skill)
+			end
+		end
+		return out
+	end
+	local EVENTS = { "hit", "release", "land", "loop", "lock" }
+
+	it("keeps the server's time of every active skill (tests/fixtures/skill_timing)", function()
+		local seen: { [string]: boolean } = {}
+		for _, skill in actives() do
+			local id = skill.id
+			seen[id] = true
+			local pin = Timing.skills[id]
+			if not pin then
+				error(`{id}: not in the pin (a new skill: add its row by hand, never regenerate the file)`)
+			end
+			local m = assert(SkillMotions.get(id))
+			local now: { [string]: any } = {
+				hitDelay = SkillMotions.hitDelay(id),
+				hit = m.hit or false,
+				release = m.release or false,
+				land = m.land or false,
+				loopFrom = if m.loop then m.loop.from else false,
+				loopTo = if m.loop then m.loop.to else false,
+				lock = m.lock == true,
+			}
+			for field, was in pin :: any do
+				if now[field] ~= was then
+					error(`{id}.{field}: was {tostring(was)}, is {tostring(now[field])}`)
+				end
+			end
+		end
+		for id in Timing.skills do
+			expect({ id, seen[id] == true }).toEqual({ id, true })
+		end
+	end)
+
+	it("keeps the projectile and waves of every circleTarget (Offense.circleTarget reads them)", function()
+		for _, skill in actives() do
+			if skill.type == "circleTarget" then
+				local pin = Timing.circleTarget[skill.id]
+				local entry = SkillVfx[skill.id]
+				expect({ skill.id, pin ~= nil }).toEqual({ skill.id, true })
+				expect({ skill.id, entry.projectile or false, entry.waves == true }).toEqual({
+					skill.id,
+					pin.projectile,
+					pin.waves,
+				})
+			end
+		end
+	end)
+
+	it("variants: ordered keys of known joints, from rest to rest, no events, not shorter than the motion", function()
+		local count = 0
+		for id, motion in SkillMotions.motions do
+			for i, variant in motion.variants or {} do
+				count += 1
+				local label = `{id}[{i}]`
+				for _, event in EVENTS do
+					expect({ label, event, (variant :: any)[event] }).toEqual({ label, event, nil })
+				end
+				expect({ label, variant.weapon ~= nil or variant.hits ~= nil or variant.move ~= nil }).toEqual({
+					label,
+					true,
+				})
+				local last = 0
+				for _, key in variant.keys do
+					expect({ label, key.t > last }).toEqual({ label, true })
+					last = key.t
+					for joint, v in key.pose do
+						if not KNOWN_JOINTS[joint] then
+							error(`{label}: unknown joint {joint}`)
+						end
+						expect({ label, joint, #v }).toEqual({ label, joint, SkillMotions.SIZE[joint] or 3 })
+					end
+				end
+				for _, event in { "hit", "release", "land" } do
+					local t = (motion :: any)[event]
+					if t then
+						expect({ label, event, last >= t }).toEqual({ label, event, true })
+					end
+				end
+				local picked = SkillPose.pick(motion, {
+					weapon = variant.weapon,
+					hits = variant.hits,
+					move = variant.move,
+				})
+				expect({ label, picked.keys == variant.keys }).toEqual({ label, true })
+				for _, event in EVENTS do
+					expect({ label, event, (picked :: any)[event] == (motion :: any)[event] }).toEqual({
+						label,
+						event,
+						true,
+					})
+				end
+				local total = SkillPose.duration(picked)
+				local startPose, startWeight = SkillPose.sample(picked, 0)
+				expect(startWeight).toBe(0)
+				for _, v in startPose do
+					for _, x in v do
+						expect(x).toBe(0)
+					end
+				end
+				for step = 0, 30 do
+					local pose = SkillPose.sample(picked, total * step / 30)
+					for joint, v in pose do
+						for _, x in v do
+							if not finite(x) then
+								error(`{label}: {joint} not finite`)
+							end
+						end
+					end
+				end
+				local _, endWeight, done = SkillPose.sample(picked, total + 0.01)
+				expect({ label, done, endWeight }).toEqual({ label, true, 0 })
+			end
+		end
+		expect(count >= 5).toBe(true)
+	end)
+
+	it("pick: the variant whose conditions hold, else the motion", function()
+		local whirl = assert(SkillMotions.get("bladeWhirl"))
+		local titans = assert(SkillMotions.get("titansWrath"))
+		local mighty = assert(SkillMotions.get("mightyStrike"))
+		expect(SkillPose.pick(whirl, nil)).toBe(whirl)
+		expect(SkillPose.pick(whirl, {})).toBe(whirl)
+		expect(SkillPose.pick(whirl, { hits = 3 })).toBe(whirl)
+		local moving = SkillPose.pick(whirl, { move = true, hits = 3 })
+		expect(moving ~= whirl and moving.keys[2].pose.rHip == nil).toBe(true)
+		local four = SkillPose.pick(whirl, { hits = 4 })
+		expect(four ~= whirl and four.keys[2].pose.rHip ~= nil and #four.keys == #whirl.keys + 1).toBe(true)
+		local fourMoving = SkillPose.pick(whirl, { hits = 4, move = true })
+		expect(fourMoving ~= four and fourMoving.keys[2].pose.rHip == nil).toBe(true)
+		expect(SkillPose.pick(whirl, { hits = 4 })).toBe(four) -- made once
+		expect(SkillPose.pick(whirl, { weapon = "slash2h" }) ~= whirl).toBe(true)
+		expect(SkillPose.pick(whirl, { weapon = "nope" })).toBe(whirl)
+		expect(SkillPose.pick(mighty, { weapon = "slash2h" }) ~= mighty).toBe(true)
+		expect(SkillPose.pick(mighty, { weapon = "slash1h" })).toBe(mighty)
+		expect(SkillPose.pick(titans, { hits = 3 })).toBe(titans)
+		local titans4 = SkillPose.pick(titans, { hits = 4 })
+		expect(titans4 ~= titans).toBe(true)
+		-- the 4th blow lands at hit + 3 x interval (Titan's Wrath 0.45, Blade Whirl 0.2)
+		local function keyNear(motion: SkillMotions.Motion, t: number): boolean
+			for _, key in motion.keys do
+				if math.abs(key.t - t) <= 0.03 then
+					return true
+				end
+			end
+			return false
+		end
+		local titansDef = assert(SkillData.get("titansWrath")) :: any
+		local whirlDef = assert(SkillData.get("bladeWhirl")) :: any
+		expect(keyNear(titans4, (titans.hit :: number) + 3 * titansDef.interval)).toBe(true)
+		expect(keyNear(titans4, 1.65)).toBe(true)
+		expect(keyNear(four, (whirl.hit :: number) + 3 * whirlDef.interval)).toBe(true)
+		expect(keyNear(four, 0.78)).toBe(true)
+		-- the blade passes the front (turn 90 mod 360) at every wave of the motion and of the 4-wave variant
+		for _, m in { whirl, four } do
+			local waves = if m == four then 4 else 3
+			for wave = 1, waves do
+				local t = (whirl.hit :: number) + (wave - 1) * whirlDef.interval
+				local yaw = SkillPose.sample(m, t).root[2]
+				expect({ wave, math.abs(((yaw - 90) + 180) % 360 - 180) < 1 }).toEqual({ wave, true })
+			end
+		end
+	end)
+
+	it("Charge bashes at the server's damage (event + 0.15 s), its event stays 0.15", function()
+		local charge = assert(SkillMotions.get("charge"))
+		expect(charge.hit).toBe(0.15)
+		local found = false
+		for _, key in charge.keys do
+			if math.abs(key.t - 0.3) < 1e-9 then
+				found = true
+			end
+		end
+		expect(found).toBe(true)
+		expect(SkillVfx.charge.coreDelay).toBe(0.15)
+	end)
+
+	it("every skill of both classes: motion, look, its own sound key", function()
+		local empty = {}
+		for _, skill in classSkills() do
+			local id = skill.id
+			local entry = SkillVfx[id]
+			expect({ id, SkillMotions.get(id) ~= nil, entry ~= nil }).toEqual({ id, true, true })
+			expect({ id, entry.sound == "" or entry.sound == "skill." .. id }).toEqual({ id, true })
+			expect({ id, Sfx.has("skill." .. id) }).toEqual({ id, true })
+			if not Sfx.playable("skill." .. id) then
+				table.insert(empty, id)
+			end
+		end
+		for _, key in Sfx.keys("skill.") do
+			local id, suffix = string.match(key, "^skill%.([%w]+)%.(%a+)$")
+			if id and suffix and id ~= "default" then
+				local skill = SkillData.get(id)
+				expect({ key, skill ~= nil and skill.type ~= "passive" }).toEqual({ key, true })
+				expect({ key, suffix == "cast" or key == "skill.guardianAngel.save" }).toEqual({ key, true })
+			end
+		end
+		table.sort(empty)
+		print(`  S114: skill keys without a sound ({#empty}): {table.concat(empty, ", ")}`)
+	end)
+
+	it("three layers (core, body, trail) for every skill of both classes; every piece has a layer", function()
+		for name in VFX_PIECES do
+			expect({ name, SkillLooks.PIECE_LAYER[name] ~= nil, SkillLooks.PIECE_COST[name] ~= nil }).toEqual({
+				name,
+				true,
+				true,
+			})
+		end
+		for name in SkillLooks.PIECE_LAYER do
+			expect({ name, VFX_PIECES[name] == true }).toEqual({ name, true })
+		end
+		for _, skill in classSkills() do
+			if not SkillLooks.LAYER_EXCEPT[skill.id] then
+				local layers = SkillLooks.layersOf(SkillVfx[skill.id])
+				expect({ skill.id, layers.core, layers.body, layers.trail }).toEqual({ skill.id, true, true, true })
+			end
+		end
+		for id, why in SkillLooks.LAYER_EXCEPT do
+			expect({ id, SkillVfx[id] ~= nil, #why > 0 }).toEqual({ id, true, true })
+		end
+	end)
+
+	it("one cast stays within Config.Vfx.perCast", function()
+		local budget = Config.Vfx.perCast
+		for _, skill in classSkills() do
+			local cost = SkillLooks.costOf(SkillVfx[skill.id])
+			expect({
+				skill.id,
+				cost.emitters <= budget.emitters,
+				cost.beams <= budget.beams,
+				cost.lights <= budget.lights,
+				cost.decals <= budget.decals,
+			}).toEqual({ skill.id, true, true, true, true })
+		end
+	end)
+
+	it("textures: every key exists, every textured piece is in the entry", function()
+		for id, entry in SkillVfx do
+			for _, key in { entry.sparks or "spark", entry.decal or "cracks", entry.circle or "magicCircle" } do
+				expect({ id, key, VfxTextures.get(key :: string) ~= nil }).toEqual({ id, key, true })
+			end
+			local listed: { [string]: boolean } = {}
+			for _, name in SkillLooks.pieces(entry) do
+				listed[name] = true
+			end
+			for name, key in entry.tex or {} do
+				expect({ id, name, listed[name] == true, VfxTextures.get(key) ~= nil }).toEqual({ id, name, true, true })
+			end
+		end
+	end)
+
+	it("no two skills of one class look alike (silhouette, whole-body flags, pieces)", function()
+		local byClass: { [string]: { { id: string, sig: any } } } = {}
+		for _, skill in classSkills() do
+			byClass[skill.class] = byClass[skill.class] or {}
+			table.insert(byClass[skill.class], { id = skill.id, sig = SkillLooks.signature(skill.id) })
+		end
+		for class, list in byClass do
+			for i = 1, #list do
+				for j = i + 1, #list do
+					local a, b = list[i], list[j]
+					local sameBody = a.sig.silhouette == b.sig.silhouette and a.sig.flags == b.sig.flags
+					if sameBody and a.sig.effects == b.sig.effects then
+						error(`{class}: {a.id} and {b.id} look the same`)
+					elseif sameBody then
+						print(`  S114 same silhouette ({class}): {a.id} / {b.id}`)
+					end
+				end
+			end
+		end
+	end)
+
+	it("area skills outline their area (telegraph of the right shape)", function()
+		-- reasons a skill shows no outline
+		local EXCEPT: { [string]: string } = {
+			bladeWhirl = "the whirl itself spins on the radius every wave; a ring would hide it",
+		}
+		for _, skill in classSkills() do
+			local def: any = skill
+			local damage = def.values ~= nil and def.values.dmg ~= nil
+			local want: string? = nil
+			if skill.type == "cone" then
+				want = "cone"
+			elseif skill.type == "circleSelf" or skill.type == "circleTarget" or skill.type == "healZone" then
+				want = if damage or skill.type == "healZone" then "circle" else nil
+			elseif skill.type == "shout" and damage then
+				want = "circle"
+			end
+			if want and not EXCEPT[skill.id] then
+				expect({ skill.id, SkillVfx[skill.id].telegraph }).toEqual({ skill.id, want })
+			end
+		end
+	end)
+
+	it("SkillFxWave: a wave only for circleSelf and per-wave circleTarget", function()
+		local heal = SkillFxWave.of("heal", nil, 2)
+		expect({ heal.wave, heal.target, heal.count }).toEqual({ 1, 2, nil })
+		local self2 = SkillFxWave.of("circleSelf", nil, 2)
+		expect({ self2.wave, self2.target }).toEqual({ 2, 1 })
+		local rain = SkillFxWave.of("circleTarget", false, 4)
+		expect({ rain.wave, rain.count, rain.target }).toEqual({ 1, 4, 1 })
+		local cataclysm = SkillFxWave.of("circleTarget", true, 3)
+		expect({ cataclysm.wave, cataclysm.count }).toEqual({ 3, nil })
+		local chain = SkillFxWave.of("heal", nil, 4)
+		expect({ chain.wave, chain.target }).toEqual({ 1, 4 })
+		for _, kind in { "hot", "shield", "trap", "target" } do
+			local w = SkillFxWave.of(kind, nil, 2)
+			expect({ kind, w.wave, w.target }).toEqual({ kind, 1, 2 })
+		end
+		local none = SkillFxWave.of("circleSelf", nil, nil)
+		expect({ none.wave, none.target }).toEqual({ 1, 1 })
+		local bad = SkillFxWave.of("heal", nil, 0 / 0)
+		expect(bad.target).toBe(1)
 	end)
 end)
 

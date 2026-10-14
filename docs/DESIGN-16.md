@@ -97,6 +97,20 @@ Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia)
 - Priorytet: najczęściej używane (podstawa 8 klasy), potem ścieżki.
 - Bez zmian obszarów, czasów i liczb umiejętności.
 
+### 6.1. Ustalenia S114
+
+- Czas serwera każdej aktywnej umiejętności (wszystkie klasy) przypięty w `tests/fixtures/skill_timing.luau` (zdarzenia
+  `SkillMotions`, `projectile` i `waves` `circleTarget`); plik się nie regeneruje.
+- Pole `w` (fale po przełomach i węzłach) w zwykłym zdarzeniu `cast`; klient wybiera nim wariant ruchu
+  (`SkillMotions.variants`, `SkillPose.pick`: `weapon` = rodzina broni z `WeaponType`, `hits`, `move` = `mv`). Wariant
+  nie ma zdarzeń; klip gra tylko dla ruchu bazowego.
+- Znaczenie `n` zdarzenia trafienia: `Logic/SkillFxWave` (fala `circleSelf` i `circleTarget` z `waves`, liczba fal
+  jednego zdarzenia `circleTarget`, cel reszty typów).
+- Warstwy (rdzeń, ciało, ślad) i podpis umiejętności: `tests/SkillLooks.luau`; Wojownik i Kapłan mają trzy warstwy, zero
+  duplikatów w klasie; budżet jednego rzutu `Config.Vfx.perCast`. Pola wpisu `SkillVfx`: `tex`, `flash`, `pillar`,
+  `coreDelay`, `landsAfter`, `markRadius`; składniki `shieldArc`, `wings`, pocisk `die`.
+- S115 używa tych samych narzędzi; dopisuje warstwy Łowcy i Maga (wyjątek `chainLightning` już w `LAYER_EXCEPT`).
+
 ## 7. Modele z Tripo (S116 + `docs/sessions/IMPORT-MODELI.md`)
 
 Instrukcja dla właściciela: `Graphics/TRIPO-ANIMACJE.md` (kopia `docs/TRIPO-ANIMACJE.md`). Folder grafik: `D:\Users\vdapi\Downloads\Graphics` (zmienna `VAELTHORN_GRAPHICS` może go nadpisać). Modele: `modele_3d/potwory/<id>/model/<id>.fbx` i klipy `<id>@<slot>.fbx`, `uwagi.txt` („bez kości”, brakujące ruchy); NPC w `modele_3d/npc/<id>/model/`.

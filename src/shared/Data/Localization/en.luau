@@ -2935,7 +2935,7 @@ return {
 	["animlab.error.npc"] = "give an NPC id and a state (idle, talk, wave, work).",
 	["animlab.error.sfx"] = "sfx <key> [variant], sfx list [prefix], sfx all [prefix] or sfx try <id>.",
 	["animlab.error.sfxId"] = "sfx try: give a numeric Creator Store sound id.",
-	["animlab.error.vfx"] = "vfx <piece> [colour], vfx all [stress], vfx tex [on|off] or vfx stats (pieces: impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave, burst, shockwave, cracks, slash, projectile, lightning, pillar, rune, sparkle, aura, glow, weaponTrail, falcon, beam, dust, meteor, lingering:burn|frost|poison).",
+	["animlab.error.vfx"] = "vfx <piece> [colour], vfx all [stress], vfx tex [on|off] or vfx stats (pieces: impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave, burst, shockwave, cracks, slash, projectile, lightning, pillar, rune, sparkle, aura, glow, weaponTrail, falcon, beam, dust, meteor, lingering:burn|frost|poison, shieldArc, wings).",
 	["animlab.error.vfxColor"] = "colour: #RRGGBB or class:<class> (e.g. class:Mage).",
 	["animlab.error.time"] = "the time t is a number from 0 to 10 s with a dot (e.g. 0.21).",
 	["animlab.error.step"] = "the step dt is a number from -1 to 1 s, not 0.",

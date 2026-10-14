@@ -95,8 +95,9 @@ local function flatOf(position: Vector3): Paths.Flat
 end
 
 -- S73 behindEffect (Party Bastion, S75): allies other than the caster standing behind it at the cast, the same
--- geometry as a "behind" aura (S61). Without a monster as the anchor nobody gets it.
-local function behind(ctx: Ctx)
+-- geometry as a "behind" aura (S61). Without a monster as the anchor nobody gets it. Adds the covered allies' entity
+-- ids to `ids` (fx `al`, S114: Last Bastion's ally shields).
+local function behind(ctx: Ctx, ids: { string })
 	local effect = ctx.bp.behindEffect
 	if not effect then
 		return
@@ -112,6 +113,9 @@ local function behind(ctx: Ctx)
 		local at = entity and Entity.Position(entity)
 		if entity and at and Paths.inAura({ shape = "behind" }, owner, flatOf(at), threat, monsters) then
 			ctx.applyEffect(entity, effect)
+			if not table.find(ids, entity.id) then
+				table.insert(ids, entity.id)
+			end
 		end
 	end
 end
@@ -122,7 +126,7 @@ Support.buff = function(ctx)
 	end
 	ctx.applyEffects(ctx.caster, "self")
 	local allies = allyPass(ctx)
-	behind(ctx)
+	behind(ctx, allies)
 	ctx.fx({ t = ctx.caster.id, d = ctx.scaled(ctx.skill.duration), al = if #allies > 0 then allies else nil })
 	-- Camouflage: monsters forget the hunter.
 	if ctx.skill.id == "camouflage" then
@@ -376,8 +380,16 @@ end
 Support.groupBuff = function(ctx)
 	local radius = ctx.skill.radius or 30
 	local allies = ctx.alliesInCircle(ctx.root.Position, radius)
-	ctx.fx({ p = ctx.root.Position, r = radius })
 	local Entity = ctx.services.Entity
+	-- S114: the allies other than the caster (fx `al`, looks only: Guardian Angel's wings)
+	local ids: { string } = {}
+	for _, ally in allies do
+		local entity = if ally ~= ctx.player then Entity.GetPlayerEntity(ally) else nil
+		if entity then
+			table.insert(ids, entity.id)
+		end
+	end
+	ctx.fx({ p = ctx.root.Position, r = radius, al = if #ids > 0 then ids else nil })
 	for _, ally in allies do
 		local entity = Entity.GetPlayerEntity(ally)
 		if entity then

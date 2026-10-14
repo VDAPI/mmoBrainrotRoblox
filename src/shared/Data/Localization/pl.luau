@@ -2933,7 +2933,7 @@ return {
 	["animlab.error.npc"] = "podaj id NPC i stan (idle, talk, wave, work).",
 	["animlab.error.sfx"] = "sfx <klucz> [wariant], sfx list [prefiks], sfx all [prefiks] albo sfx try <id>.",
 	["animlab.error.sfxId"] = "sfx try: podaj liczbowe ID dźwięku z Creator Store.",
-	["animlab.error.vfx"] = "vfx <składnik> [kolor], vfx all [stress], vfx tex [on|off] albo vfx stats (składniki: impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave, burst, shockwave, cracks, slash, projectile, lightning, pillar, rune, sparkle, aura, glow, weaponTrail, falcon, beam, dust, meteor, lingering:burn|frost|poison).",
+	["animlab.error.vfx"] = "vfx <składnik> [kolor], vfx all [stress], vfx tex [on|off] albo vfx stats (składniki: impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave, burst, shockwave, cracks, slash, projectile, lightning, pillar, rune, sparkle, aura, glow, weaponTrail, falcon, beam, dust, meteor, lingering:burn|frost|poison, shieldArc, wings).",
 	["animlab.error.vfxColor"] = "kolor: #RRGGBB albo class:<klasa> (np. class:Mage).",
 	["animlab.error.time"] = "czas t to liczba od 0 do 10 s z kropką (np. 0.21).",
 	["animlab.error.step"] = "krok dt to liczba od -1 do 1 s, różna od 0.",

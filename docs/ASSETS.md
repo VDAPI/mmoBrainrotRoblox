@@ -107,6 +107,25 @@ Puste klucze: `/animlab sfx list`.
 | `ui.click` | `rbxassetid://15675032796` | Roblox_UI_Small_Click | Roblox | 0,13 | Creator Store, twórca Roblox | 2026-10-14 | zastępuje `volume_slider.ogg` |
 | `ui.error` | `rbxassetid://15675075163` | Roblox_UI_Delete | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
 
+S114 (umiejętności Wojownika i Kapłana): nowych ID nie ma; klucze `skill.<id>` biorą pliki z tabeli wyżej w innej
+wysokości (sprawdzone w Play `/animlab sfx skill.<klucz>`: `loaded = true`). Puste klucze: `docs/PROGRESS.md`.
+
+| Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `skill.mightyStrike` | `rbxassetid://12222216`, `rbxassetid://12222208` | swordslash.wav, swordlunge.wav | Roblox | 0,56 / 0,70 | Creator Store, twórca Roblox | 2026-10-14 | S114, plik z listy S111, `pitch` 0,86–0,94 |
+| `skill.charge`, `skill.warBanner` | `rbxassetid://12221984` | collide.wav | Roblox | 1,00 | Creator Store, twórca Roblox | 2026-10-14 | S114, nisko (0,85–0,94) |
+| `skill.bladeWhirl` | `rbxassetid://12222200`, `rbxassetid://15675024286` | swoosh.wav, Roblox_UI_Whoosh_01 | Roblox | 0,20 / 0,85 | Creator Store, twórca Roblox | 2026-10-14 | S114 |
+| `skill.taunt`, `skill.lastBastion`, `skill.intercept`, `skill.shieldWall` | `rbxassetid://12222225` | unsheath.wav | Roblox | 0,65 | Creator Store, twórca Roblox | 2026-10-14 | S114; przechwycenie także Whoosh_02 (`15675028888`), mur także bass |
+| `skill.earthquake`, `skill.titansWrath`, `skill.judgement`, `skill.hammerOfHeaven`, `skill.crushingBlow`, `skill.shieldWall` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-10-14 | S114, nisko; miażdżący cios także collide |
+| `skill.cleave`, `skill.rend` | `rbxassetid://12222216` | swordslash.wav | Roblox | 0,56 | Creator Store, twórca Roblox | 2026-10-14 | S114; rozpłatanie także swoosh |
+| `skill.holyStrike`, `skill.shieldOfFaith` | `rbxassetid://10066968815` | RBLX UI Select 02 (SFX) | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-14 | S114, dzwonek zastępczy |
+| `skill.heal` | `rbxassetid://15675081158` | Roblox_UI_Cute_Goodbye | Roblox | 0,28 | Creator Store, twórca Roblox | 2026-10-14 | S114, słaby wybór (jak `skill.default.heal`) |
+| `skill.radiance`, `skill.divineIntervention`, `skill.resurrection` | `rbxassetid://15675043410` | Roblox_UI_Tonal_Stinger | Roblox | 1,47 | Creator Store, twórca Roblox | 2026-10-14 | S114, akord zastępczy |
+| `skill.circleOfLight` | `rbxassetid://10128760939` | RBLX UI Select 01 (SFX) | Roblox | 0,58 | Creator Store, twórca Roblox | 2026-10-14 | S114 |
+| `skill.fortuneDice` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-14 | S114, wyżej (1,04–1,12) jak grzechot |
+| `skill.earthquake.cast`, `skill.titansWrath.cast` | `rbxassetid://12222200` | swoosh.wav | Roblox | 0,20 | Creator Store, twórca Roblox | 2026-10-14 | S114, świst skoku |
+| `skill.judgement.cast`, `skill.hammerOfHeaven.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-14 | S114, świst skoku |
+
 ## Wierzchowce (S96)
 
 Prawdziwy model zastępuje wygląd z generatora (plan `horse`, `docs/MODELE.md` §8) dla wierzchowca:

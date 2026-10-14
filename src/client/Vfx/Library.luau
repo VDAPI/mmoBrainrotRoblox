@@ -48,6 +48,7 @@ export type FxOpts = {
 
 local rng = Random.new()
 local DUST_COLOR = Color3.fromHex("#B8AA90")
+local DIE_COLOR = Color3.fromHex("#F2EAD8") -- S114: the dice of Roll of the Dice
 local CRACK_DARK = Color3.fromHex("#2A2420")
 -- The ring of the `ring` texture lies at 0.44 of its width: a ring wave of radius r ends 2.2 r wide.
 local RING_END = 2.2
@@ -581,15 +582,16 @@ function Library.slash(
 	to: number,
 	color: Color3,
 	tilt: number?,
-	simple: boolean?
+	simple: boolean?,
+	textureKey: string?
 )
 	local count = if simple then 6 else 12
 	local sweep = 0.12
 	local roll = CFrame.Angles(0, 0, math.rad(tilt or 0))
 	-- S112: a flat Beam with the arc texture in the arc's plane (slashWide from 120 degrees, else slashNarrow), the
 	-- beam running forwards from the origin through the middle of the arc; it appears over the sweep and fades in 0.25 s.
-	-- Beside it every second segment (an edge), none on low quality.
-	local key = if math.abs(from - to) >= 120 then "slashWide" else "slashNarrow"
+	-- Beside it every second segment (an edge), none on low quality. S114: `textureKey` picks the arc (SkillVfx.tex).
+	local key = textureKey or (if math.abs(from - to) >= 120 then "slashWide" else "slashNarrow")
 	local holder = if Textures.id(key) then Pool.holder("beam", key) else nil
 	local beam = if holder then setupBeam(holder, color, radius * 2, false, simple) else nil
 	if holder and beam then
@@ -633,7 +635,7 @@ end
 
 -- Projectile -------------------------------------------------------------------------------------------------
 
-type Shape = "orb" | "arrow" | "shard" | "bolt" | "rock"
+type Shape = "orb" | "arrow" | "shard" | "bolt" | "rock" | "die"
 
 local function projectilePart(shape: Shape, color: Color3, size: number): BasePart
 	if shape == "arrow" then
@@ -645,6 +647,16 @@ local function projectilePart(shape: Shape, color: Color3, size: number): BasePa
 		return Pool.part("Block", color, Vector3.new(0.3, 0.3, 2.2) * size, Enum.Material.Neon, 0)
 	elseif shape == "rock" then
 		return Pool.part("Ball", color, Vector3.one * 1.6 * size, Enum.Material.Basalt, 0)
+	elseif shape == "die" then
+		-- S114: a small ivory die (Roll of the Dice) with a glowing edge of the skill's colour
+		-- (a pooled part loses its children when released, so the edge is made per throw)
+		local die = Pool.part("Block", DIE_COLOR, Vector3.one * 1.6 * size, Enum.Material.SmoothPlastic, 0)
+		local edge = Instance.new("SelectionBox")
+		edge.LineThickness = 0.04
+		edge.Color3 = color
+		edge.Adornee = die
+		edge.Parent = die
+		return die
 	end
 	return Pool.part("Ball", color, Vector3.one * size, Enum.Material.Neon, 0.05)
 end
@@ -967,8 +979,9 @@ function Library.shield(model: Model, color: Color3, seconds: number)
 	end
 end
 
--- Aura: particles rising around a character for `seconds`.
-function Library.aura(model: Model, color: Color3, seconds: number, simple: boolean?)
+-- Aura: particles rising around a character for `seconds`. S114: `key` = the particle texture (default glow; e.g.
+-- "smoke" for a dark cloud around the body, SkillVfx.tex).
+function Library.aura(model: Model, color: Color3, seconds: number, simple: boolean?, key: string?)
 	local holder = Pool.part("Block", color, Vector3.new(3, 5, 3), Enum.Material.Neon, 1)
 	if not attach(model, holder) then
 		return
@@ -983,8 +996,21 @@ function Library.aura(model: Model, color: Color3, seconds: number, simple: bool
 		e.SpreadAngle = Vector2.new(20, 20)
 		e.Size = NumberSequence.new(0.35, 0)
 		e.Transparency = NumberSequence.new(0.2, 1)
-		if Textures.particle(e, "glow") then -- S112: soft glows, a little bigger than the old dots
-			e.Size = NumberSequence.new(0.7, 0)
+		local texture = key or "glow"
+		if texture ~= "glow" then
+			e.Lifetime = NumberRange.new(1, 1.4) -- S114: before the texture (a flipbook plays over the particle's life)
+		end
+		if Textures.particle(e, texture, if texture == "glow" then nil else 0) then
+			if texture == "glow" then -- S112: soft glows, a little bigger than the old dots
+				e.Size = NumberSequence.new(0.7, 0)
+			else
+				-- S114: a cloud (smoke) around the body: fewer, bigger, slower particles, lit by the scene
+				e.Rate = 6
+				e.Speed = NumberRange.new(0.6, 1.2)
+				e.Size = NumberSequence.new({ kp(0, 1.2), kp(1, 2.6) })
+				e.Transparency = NumberSequence.new({ kp(0, 0.45), kp(1, 1) })
+				e.Rotation = NumberRange.new(0, 360)
+			end
 		end
 		e.Parent = holder
 		Clock.track(e)
@@ -1302,8 +1328,8 @@ function Library.orbit(model: Model, count: number, color: Color3, simple: boole
 	end
 end
 
--- Afterimages along a dash.
-function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
+-- Afterimages along a dash. S114: `key` = the texture of the streak along the ground (default beamHoly).
+function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?, key: string?)
 	local count = if simple then 2 else 5
 	for i = 1, count do
 		local u = i / (count + 1)
@@ -1312,7 +1338,7 @@ function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
 		tween(ghost, 0.35 + u * 0.2, { Transparency = 1 })
 		Pool.later(ghost, 0.6)
 	end
-	Library.beam(a, b, color, 0.6, 0.35)
+	Library.beam(a, b, color, 0.6, 0.35, if key then { key = key } else nil)
 end
 
 -- Dust puff at the feet (landings, slams).
@@ -1698,7 +1724,8 @@ function Library.banner(anchor: BasePart, pieces: { any }, radius: number, color
 end
 
 -- S74: a thin line from `a` to `b` (roots) for `seconds`, gone early when either model disappears (Intercept).
-function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
+-- S114: `key` = a beam texture flowing along the line (Vfx/Textures; the plain line without it).
+function Library.tether(a: Model, b: Model, color: Color3, seconds: number, key: string?)
 	local rootA = a:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local rootB = b:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not rootA or not rootB then
@@ -1717,6 +1744,10 @@ function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
 	beam.LightEmission = 1
 	beam.FaceCamera = true
 	beam.Transparency = NumberSequence.new(0.2)
+	if key and Textures.beam(beam, key, { speed = 4, length = 2 }) then
+		beam.Width0 = 0.3
+		beam.Width1 = 0.3
+	end
 	beam.Parent = rootA
 	Clock.track(beam)
 	local function clear()
@@ -1731,6 +1762,71 @@ function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
 		end
 		clear()
 	end)
+end
+
+-- S114 (Shield Wall): a half ring of see-through tower shields on the radius in front of `frame` (its look), rising
+-- out of the ground in 0.15 s, held, then sinking and fading (6 shields, 3 when simple). Pooled parts only.
+local SHIELD_SIZE = Vector3.new(2.4, 3.4, 0.35)
+
+function Library.shieldArc(frame: CFrame, radius: number, color: Color3, simple: boolean?)
+	local count = if simple then 3 else 6
+	local base = ground(frame.Position)
+	local rise, hold, sink = 0.15, 0.55, 0.3
+	for i = 1, count do
+		-- from -80 to +80 degrees around the look, the shields facing outwards
+		local yaw = math.rad(-80 + 160 * (i - 1) / math.max(1, count - 1))
+		local dir = (frame.Rotation * CFrame.Angles(0, yaw, 0)).LookVector
+		local spot = base + Vector3.new(dir.X, 0, dir.Z).Unit * radius
+		local up = CFrame.lookAt(spot + Vector3.new(0, SHIELD_SIZE.Y / 2, 0), spot + Vector3.new(dir.X, 0, dir.Z) * 2)
+		local down = up - Vector3.new(0, SHIELD_SIZE.Y, 0)
+		local shield = Pool.part("Block", color, SHIELD_SIZE, Enum.Material.ForceField, 0.15)
+		shield.CFrame = down
+		tween(shield, rise, { CFrame = up }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		Clock.after(rise + hold, function()
+			tween(shield, sink, { CFrame = down, Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end)
+		Pool.later(shield, rise + hold + sink + 0.05)
+	end
+end
+
+-- S114 (Guardian Angel): two wings of light spreading behind a character's back for `seconds` (wedges welded to the
+-- root, a soft glow shed from them when not simple), then fading.
+local WING_SIZE = Vector3.new(0.2, 3.6, 2.6)
+
+function Library.wings(model: Model, color: Color3, seconds: number, simple: boolean?)
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	for _, side in { -1, 1 } do
+		local wing = Pool.part("Wedge", color, WING_SIZE, Enum.Material.Neon, 0.35)
+		local folded = CFrame.new(side * 0.6, 1.2, 0.7) * CFrame.Angles(0, math.rad(side * 15), 0)
+		local spread = CFrame.new(side * 1.6, 1.6, 0.9) * CFrame.Angles(0, math.rad(side * 70), math.rad(-side * 25))
+		wing.Anchored = false
+		wing.Massless = true
+		wing.CFrame = root.CFrame * folded
+		local weld = Instance.new("Weld")
+		weld.Part0 = root
+		weld.Part1 = wing
+		weld.C0 = folded
+		weld.Parent = wing
+		Clock.tween(weld, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { C0 = spread })
+		if not simple then
+			local e = Instance.new("ParticleEmitter")
+			e.Color = ColorSequence.new(color)
+			e.LightEmission = 1
+			e.Rate = 10
+			e.Lifetime = NumberRange.new(0.5, 0.9)
+			e.Speed = NumberRange.new(0.5, 1.5)
+			e.Acceleration = Vector3.new(0, -2, 0)
+			e.Size = NumberSequence.new(0.5, 0)
+			e.Transparency = NumberSequence.new(0.2, 1)
+			Textures.particle(e, "feather")
+			e.Parent = wing -- goes with the wing when the pool takes it back
+			Clock.track(e)
+		end
+		detachLater(wing, math.max(0.3, seconds))
+	end
 end
 
 -- S77: the Falcon (Scout). A bird of three pooled parts (a body and two wedge wings) circling over its hunter;

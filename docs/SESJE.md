@@ -8896,3 +8896,126 @@ Pliki: `src/shared/Data/{AttackMotions,HitFx,SkillMotions,AdminCommands}.luau`,
 `src/client/Controllers/{Animation,CombatFx,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`,
 `tools/{posedump,motionkeys,balance_reasons}.luau`, `tests/{attackpose,clipfit,motionkeys,sfx,skillmotion}.spec.luau`,
 `docs/{ANIMACJE,DESIGN,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.
+
+### S114: Umiejętności Wojownika i Kapłana: ruch, efekty i dźwięk
+
+Start na `0c13f45` (S113; przed nią S118, S119, FIX i IMPORT-GRAFIK): commit i sekcja S113 oraz wszystkie elementy
+serii na miejscu; S115 nie zrobiona, więc wspólne narzędzia B1–B6 powstały tutaj. Zgodnie z poleceniem przebiegu bez
+commita i pusha.
+
+Co zrobiono:
+- **Pin czasów (A2):** `tests/fixtures/skill_timing.luau` (67 aktywnych, wszystkie klasy, plus `projectile` / `waves`
+  ośmiu `circleTarget`), testy „keeps the server's time…” i „…circleTarget”; odczyt `SkillMotions.hitDelay` w Play
+  równy pinowi (12 umiejętności).
+- **Błędy widoczności (A3):** `Logic/SkillFxWave.of` (czysta funkcja z testem), `VfxController.onImpact` gra pełny zestaw
+  na każdym celu leczenia, `arrowRain` czyta liczbę fal z `n`, łańcuch Leczenia 10B rysuje promień od poprzedniego celu.
+- **Wspólne narzędzia (B):** `SkillMotions.variants` + `SkillPose.pick`, `AnimationController.Skill(model, id, loopUntil,
+  { hits, move })` z rodziną broni z `WeaponType` (klip tylko dla bazy), pole `w` w `cast` (`SkillService`), pola
+  `SkillVfx` `tex`, `flash`, `pillar`, `coreDelay`, `landsAfter`, składniki `shieldArc` i `wings` (też w `/animlab vfx`),
+  pocisk `die`, tekstury w `Library.aura/tether/dash/slash`, `tests/SkillLooks.luau` (warstwy, podpis, koszt),
+  `Config.Vfx.perCast`, klucze `Data/Sfx` `skill.<id>` (35), `skill.<id>.cast` (5, grane w `onCast`),
+  `skill.guardianAngel.save` (grany przy ocaleniu, ze skrzydłami na ocalonym).
+- **Wygląd (D–G):** 35 wpisów `SkillVfx` w trzech warstwach na teksturach S112, telegrafy obszarów, ruchy poprawione
+  według §2 (tabela niżej).
+- **Testy:** `skillmotion.spec` blok „Warrior and Cleric looks (S114)” (12 testów: pin, warianty, `pick`, Szarża, klucze
+  dźwięku, warstwy, budżet, tekstury, odrębność, telegrafy, `SkillFxWave`); `VFX_PIECES` z nowymi składnikami.
+- **Fixture balansu:** `tests/fixtures/balance_paths.json` przeliczony (`--fixture-paths`): zmienił się tylko skrót
+  danych (`SkillMotions`), 0 wartości.
+
+Studio przez MCP: połączone, Rojo zsynchronizował (`SkillFxWave`, `variant` w `SkillMotions`). `screen_capture` dalej
+pokazuje sam interfejs na ciemnym tle (Edit i Play), więc zrzutów „przed / po” nie ma: przegląd ruchu z danych, testów
+i renderu `posedump` (`mightyStrike`). W Play (Studio był w Edit, postać przez „Graj”): `/animlab on`, `skill <id>`
+wszystkich 35 umiejętności bez błędu w konsoli (klatki kontrolne w Output), dźwięki, koszt; Play zatrzymany, miejsce
+niezapisane, folder przesłuchań nieużywany (bez nowych ID).
+
+1) Nazwy serii (plan → kod): wszystkie jak w planie (`docs/ANIMACJE.md`, `Data/Sfx`, `SfxController`, `Data/VfxTextures`,
+`/animlab`, `SkillMotions.<id>.clip`, `Vfx/Clock`, `MotionKeys.skill`); `SfxController` bez pętli i zatrzymania.
+
+2) Ruch (klatki obejrzane: „dane” = liczby i testy, „posedump” = render; Studio bez obrazu 3D):
+
+| Umiejętność | Co było źle | Co zmieniono | Klatki |
+|---|---|---|---|
+| `mightyStrike` | szczyt cięcia w 0,32 (po trafieniu 0,3), bez odbicia, ciężar na obu nogach | zamach z ciężarem na tylnej nodze, ręka w linii barków w 0,30, nisko do 0,40, odbicie 0,46; wariant `slash2h` oburącz | posedump, dane |
+| `charge` | uderzenie barkiem 0,24, a obrażenia 0,30 | bieg do 0,27, bark w 0,30, wyprost 0,40; rdzeń i hitstop +0,15 s | dane |
+| `bladeWhirl` | ostrze mijało przód w przypadkowych chwilach fal, 10B kończyło przed czwartą falą, 5A ślizg stóp | obrót na falę (przód w 0,18 / 0,38 / 0,58), warianty `hits = 4` (0,78), `move`, `slash2h` | dane |
+| `cleave` | środek łuku ok. 0,29, lewa ręka luźno | środek stożka w 0,27, wybrzmienie 0,36, obie dłonie na broni | dane |
+| `taunt` | bez zapowiedzi (od razu ramiona) | wdech 0,1 s, szczyt 0,20 | dane |
+| `bloodlust`, `carnage` | szczyt ryku 0,42 przy trafieniu 0,40; Rzeź bez rozkroku | szczyt 0,40; Rzeź w szerokim rozkroku | dane |
+| `titansWrath` | 10B: trzy skoki na cztery fale | wariant `hits = 4` (czwarty skok 1,65, koniec 1,9) | dane |
+| `holyStrike` | szczyt 0,27, lewa dłoń bez gestu | szczyt 0,25, lewa dłoń otwarta do celu, wybrzmienie 0,33 | dane |
+| `heal` | stoi w miejscu | krok w stronę sojusznika | dane |
+| `radiance` | uniesienie na palcach 0,32 | 0,30 + wybrzmienie 0,42 | dane |
+| `circleOfLight` | ta sama sylwetka co Koło Fortuny | obrót z ramionami nisko i szeroko | dane |
+| `resurrection` | ręce w górę dopiero 0,3 (serwer wskrzesza od razu) | ręce w górę w 0,1, potem przyklęk | dane |
+| reszta (21) | bez uwag z danych (szczyt przy trafieniu ±0,03) | tylko efekty i dźwięk | dane |
+
+3) Dźwięki (ID z listy S111, sprawdzone w Play `sfx skill.<klucz>`: wszystkie `loaded`):
+
+| Klucz | ID (wysokość) | Długość (s) |
+|---|---|---|
+| `skill.mightyStrike` | swordslash, swordlunge (0,86–0,94) | 0,56 / 0,70 |
+| `skill.charge`, `skill.warBanner` | collide (0,85–0,9 / 0,86–0,94) | 1,00 |
+| `skill.bladeWhirl` | swoosh, Roblox_UI_Whoosh_01 | 0,20 / 0,85 |
+| `skill.taunt`, `skill.lastBastion`, `skill.intercept` (+Whoosh_02), `skill.shieldWall` (+bass) | unsheath | 0,65 |
+| `skill.earthquake`, `skill.titansWrath`, `skill.judgement`, `skill.hammerOfHeaven`, `skill.crushingBlow` (+collide) | bass (0,85–0,94) | 0,78 |
+| `skill.cleave`, `skill.rend` | swordslash (+swoosh) | 0,56 |
+| `skill.holyStrike`, `skill.shieldOfFaith` | RBLX UI Select 02 | 0,49 |
+| `skill.heal` | Roblox_UI_Cute_Goodbye | 0,28 |
+| `skill.radiance`, `skill.divineIntervention`, `skill.resurrection` | Roblox_UI_Tonal_Stinger | 1,47 |
+| `skill.circleOfLight` | RBLX UI Select 01 | 0,58 |
+| `skill.fortuneDice` | snap (1,04–1,12) | 0,26 |
+| `skill.earthquake.cast`, `skill.titansWrath.cast` | swoosh (0,85–0,9) | 0,20 |
+| `skill.judgement.cast`, `skill.hammerOfHeaven.cast` | Roblox_UI_Whoosh_04 | 0,35 |
+| `advanceOrder`, `auraOfEndurance`, `battleCry`, `bloodlust`, `brandOfLight`, `carnage`, `guardianAngel` (+`.cast`, `.save`), `prayer`, `purify`, `renew`, `sanctuary`, `wheelOfFortune` | brak (Niedokończone) | — |
+
+4) Tekstury: nazwy robocze planu = klucze `VfxTextures.ORDER` (bez różnic); użyte `slashNarrow` / `slashWide` (łuki),
+`trailStreak` (szarża, przechwycenie), `beamHoly` (lina przechwycenia, promień nieba Sądu i Młota), `smoke` (aura Rzezi),
+`darkSpark` (iskry Rozpłatania, Rozdarcia, Rzezi), `glow` (błysk Wskrzeszenia), `magicCircle` (Koło Fortuny), runa Kapłana
+domyślnie (`magicCircle` / `rune`).
+
+5) Przełomy i warianty (H4):
+
+| Umiejętność | Przełom / węzeł | Co zmienia w wyglądzie | Jak |
+|---|---|---|---|
+| `bladeWhirl` | 5A `castMove`, 10B +1 fala, broń dwuręczna | nogi z animacji chodu; czwarty obrót; obie dłonie | wariant (`move`, `hits`, `weapon`) |
+| `titansWrath` | 10B +1 fala | czwarty skok | wariant `hits` |
+| `mightyStrike` | broń dwuręczna | obie dłonie, dłuższy zamach | wariant `weapon` |
+| `heal` | 5A drugi cel, 10B łańcuch | pełny zestaw na każdym celu, promień od celu do celu co 0,06 s | zdarzenie (A3) |
+| `renew` 5B, `shieldOfFaith` 10A, `purify` 10A | drugi cel | pełny zestaw | zdarzenie (A3) |
+| obszary (`taunt` 5A, `cleave` 5A, `charge` 5A, `radiance` 5A, `circleOfLight` 5B, `sanctuary` 5A, `hammerOfHeaven` 5A, …) | promień / kąt / zasięg | rozmiar ze zdarzenia (`r`, `a`, `from`→`p`) | nic |
+| dodatki (`splash`, `echo`, `stunBurst`, `pull`, `lingering`) | 5A–10B | wygląd S112 w kolorze wpisu | nic |
+| `guardianAngel` | ocalenie | skrzydła na ocalonym, słup, `skill.guardianAngel.save` | zdarzenie `angelSave` |
+| `mightyStrike` 10B, `cleave` 10A (krwawienie), `prayer` 5B (kości na końcu kanału), `warBanner` 5B / 10B (kolor kręgu) | — | klient nie dostaje przełomu w zdarzeniu | nic (Niedokończone) |
+
+6) Odrębność (I): zero duplikatów podpisu w obu klasach. Ta sama sylwetka w chwili trafienia, inne efekty:
+`charge` / `intercept` (zostaje: kolor klasy i pył wobec złotej liny i tarczy na sojuszniku), `heal` / `brandOfLight`
+(zostaje: zielony promień na sojusznika wobec złotej runy na wrogu), `judgement` / `hammerOfHeaven` (zostaje: jeden cel
+bez kręgu wobec obszaru z kręgiem, telegrafem i opóźnionym ciosem). Rozdzielone w tej sesji: `circleOfLight` /
+`wheelOfFortune` (ramiona nisko wobec oburącz nad głową), `bloodlust` / `carnage` (rozkrok, broń w górze); `lastBastion`
+/ `intercept` / `shieldWall`, `battleCry` / `advanceOrder`, `purify` / `brandOfLight`, `renew` / `sanctuary` różnią się
+już sylwetką.
+
+7) Koszt (J, Play, `/animlab stress 20` przez 12 s po 8 s rozbiegu, odczyt co 2 s): efekty 40 / 40 (limit trzyma),
+emitery 27 / 48, promienie 2 / 20, ślady 4 / 24, koła na ziemi 6, `HeartbeatTimeMs` średnio 0,39 ms, najwyżej 0,64 ms,
+60 FPS fizyki. Budżet jednego rzutu `Config.Vfx.perCast` (6 / 3 / 2 / 3) sprawdza test dla 35 umiejętności (najcięższe:
+`hammerOfHeaven` 6 emiterów, 2 światła, 3 ślady; `earthquake` 6 emiterów, 1 światło, 2 ślady). Niska jakość i telefon nie zmierzone:
+`execute_luau` dostaje osobną kopię modułów (jak S112).
+Koszt jednego rzutu (J3, `SkillLooks.costOf`: emitery / promienie / światła / ślady; składniki `allies` dochodzą na
+każdego sojusznika, np. skrzydła 2 emitery): `hammerOfHeaven` 6/1/2/3, `earthquake` 6/0/1/2, `advanceOrder` 5/0/1/1,
+`guardianAngel` 5/0/1/0, `titansWrath` 4/1/2/2, `shieldWall` 4/0/1/1, `wheelOfFortune` i `divineIntervention` 3/1/2/1.
+Szczyt przy 20 manekinach tylko zbiorczy (wyżej), bez zestawu ośmiu najcięższych (J1) i bez niskiej jakości (DECYZJE).
+
+8) A3: druga i kolejne zdarzenia leczenia (`n` = cel) przechodziły przez bramkę fal i grały tylko fale; `circleTarget`
+bez `waves` z `n = hits > 1` gubił pełny zestaw. Teraz `SkillFxWave.of` rozróżnia falę, liczbę fal i cel.
+
+Po przeglądzie: Przechwycenie znów pokazuje tarczę na chronionym (i na Wojowniku bez sojusznika), drugi sojusznik 10A
+ma linę i tarczę; Ostatni Bastion z `bastionCover` i Anioł Stróż wysyłają `al` (tarcze za plecami, skrzydła sojuszników);
+pęknięcia Muru Tarcz i ślad Sztandaru w miejscu wbicia (`markRadius`), nie na promieniu 15; rdzeń `furyConsume` rośnie
+ze stosami; pamięć poprzedniego celu łańcucha czyszczona po 0,5 s.
+
+9) Pliki: `src/shared/Logic/{SkillFxWave,SkillPose,AnimLab}.luau`, `src/shared/Data/{SkillMotions,SkillVfx,Sfx}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Config.luau`, `src/server/Services/SkillService.luau`,
+`src/server/Skills/Types/Support.luau`,
+`src/client/Controllers/{Vfx,Animation,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`, `tests/SkillLooks.luau`,
+`tests/fixtures/{skill_timing.luau,balance_paths.json}`, `tests/skillmotion.spec.luau`,
+`docs/{ANIMACJE,ASSETS,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.
