@@ -3328,3 +3328,39 @@
 - **S109 tempo „bez zadań” i „wszystko + dodatki”** tylko w raporcie (`docs/BALANS.md`, „Audyt questów (S109)”): 1→100
   122,9 h bez zadań, 78,6 h ze wszystkimi zadaniami, 52,1 h z dodatkami (−38% wobec 84,1 h); decyzja o dziennych i
   tygodniowych (poza budżetem) u właściciela.
+
+### S110: AnimLab, Studio przez MCP i zasady przeglądu ruchu
+
+- **S110** `/animlab` w kategorii `combat` ze `studioOnly` (kategorii „Dev” nie ma w `Data/AdminCommands`); serwer
+  sprawdza wywołanie `Logic/AnimLab.parse` i wysyła listę argumentów przez istniejący `AdminClient`.
+- **S110** Scena 250 st. nad adminem zamiast „obok spawnu” (bez terenu, miasta i potworów wokół); `on` od razu ustawia
+  kamerę `threequarter`, bo efekty modeli dalej niż `Config.Vfx.simpleBeyond` od kamery grają wersję uproszczoną.
+- **S110** Piąta kamera `game` (za i nad aktorem, jak kamera gry; DESIGN-16 §2 każe oceniać z kamery gry).
+- **S110** Rozszerzenia listy DESIGN-16 §1: `cam`, `play`, `stress`, `state` (i `keys` jako osobna akcja).
+- **S110** MCP woła AnimLab przez lokalny `BindableFunction` `LocalPlayer.AnimLabCall` (linia → JSON), nie przez sieć:
+  kod z `execute_luau` nie dostaje tych samych instancji modułów co gra.
+- **S110** Zegar efektów `client/Vfx/Clock`: opóźnienia, tweeny, emitery, smugi i pętle efektów `Library`, `Pool`,
+  `VfxController`, `CombatFxController` idą przez niego; każde nowe opóźnienie, tween i emiter efektu też. Blokada ruchu
+  własnej postaci (`lock`) i liczby obrażeń zostają na czasie rzeczywistym. `Debris` w efektach walki zastąpione
+  `Clock.after` + `Destroy`.
+- **S110** Liczby sceny i limity argumentów AnimLab w `Config.AnimLab` (nie w `Logic/AnimLab`, jak w planie E2: liczby
+  wyglądu tylko w `Data` / `Config`; `Config.AnimLab` jest poza księgą balansu); `AnimLab.LAYOUT` to odnośnik.
+- **S110** `Gait.stateMotion(slot, t, options)` i stałe `Gait.HIT_SECONDS` / `DEATH_SECONDS` / `SPAWN_SECONDS` /
+  `WALK_SPEED` / `RUN_SPEED` (wartości jak dotąd); `AnimationController.SPAWN_SECONDS = 1.2` zostaje lokalne (okno klipu
+  `spawn`). MobViz liczy cykl `walk` od początku stanu zamiast narastająco (różnica niewidoczna).
+- **S110** Klatki kontrolne (`Logic/MotionKeys`, definicje w nagłówku i `docs/ANIMACJE.md` §3); dodatki do planu: `peak`
+  umiejętności bez klucza przed trafieniem = chwila trafienia, `MotionKeys.still()` dla ruchów bez klatek (idle, NPC bez
+  klipu), przy równych czasach kolejność nazw stała (`MotionKeys.ORDER`). AnimLab liczy klatki umiejętności z tym
+  samym `loopUntil` co podgląd (`VfxController.PreviewLoopUntil`: wiązka 2 s, kanał 2,5 s, inaczej `castTime`).
+- **S110** „Ubiór klasy” manekinów to kolor klasy na tułowiu i rękach (ubrania i `BodyColors` usunięte z kopii; w grze nie
+  ma strojów klas). Broń umiejętności: główna broń ścieżki, inaczej startowa broń klasy (`AnimLab.weaponForSkill`).
+- **S110** `Util/WeaponBuild` (budowa broni z części i z prawdziwego modelu, `modelFor`, `attach`) wydzielone z
+  `EquipmentService`; serwis dokłada tylko światło cennych rzadkości. AnimLab buduje broń najwyższego progu typu (model
+  najbliższego niższego progu albo części).
+- **S110** `mob <id> attack1` gra zwykły atak potwora (start późno w zamachu, jak `MonsterAttack` ze `strikeNow`),
+  `attack2` z `Gait.DEFAULT_WINDUP`, `cast` z `Config.AnimLab.castWindup` 1,2 s; `boss` jak telegraf serwera (koło /
+  pierścień `self` wokół bossa, inne koła na aktorze, stożek i linia od bossa do aktora).
+- **S110** `freeze` czeka najwyżej `Config.AnimLab.settle` (2 s), aż wybrzmią efekty poprzedniego odegrania, potem gra od
+  nowa; poza zatrzymana dokładnie (`LabHold`, bez hitstopu), efekty z dokładnością do klatki.
+- **S110** Przegląd bazowy (H) nie zrobiony: MCP działało, Rojo zsynchronizował, ale Studio nie ma dostępu do DataStore
+  (zapis w pamięci, 0 postaci), a postaci nie wolno tworzyć z sesji; tabela w SESJE z klatkami z danych.

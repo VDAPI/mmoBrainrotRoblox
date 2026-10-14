@@ -65,6 +65,13 @@ export type Pose = { rx: number, ry: number, rz: number, x: number, y: number, z
 Gait.STRIKE_SECONDS = 0.14
 Gait.RECOVER_SECONDS = 0.35
 Gait.DEFAULT_WINDUP = 0.22
+-- S110: reaction lengths shared by AnimationController, MobVizController and AnimLab (the same values as before).
+Gait.HIT_SECONDS = 0.25 -- the flinch after taking damage fades over this
+Gait.DEATH_SECONDS = 0.55 -- the collapse
+Gait.SPAWN_SECONDS = 0.55 -- the collapse played backwards when a preview "spawns"
+-- S110: default speeds of the walk / run states (studs per second).
+Gait.WALK_SPEED = 8
+Gait.RUN_SPEED = 16
 -- Stride length (studs at scale 1): one full cycle covers this distance.
 Gait.STRIDE = 4.5
 
@@ -204,6 +211,36 @@ function Gait.pose(joint: Joint, m: Motion): Pose
 		return pose(0, 0, joint.side * flap * amp * alive - joint.side * m.dead * 0.6, 0, 0, 0)
 	end
 	return pose(0, 0, 0, 0, 0, 0)
+end
+
+-- S110 (AnimLab, docs/ANIMACJE.md): what a generated monster does `t` seconds into a state, as one Motion.
+export type Slot = "idle" | "walk" | "run" | "attack1" | "attack2" | "cast" | "hit" | "death" | "spawn"
+export type StateOptions = {
+	windup: number?, -- attack slots: seconds of the windup (default DEFAULT_WINDUP)
+	speed: number?, -- walk / run: studs per second (default WALK_SPEED / RUN_SPEED)
+	scale: number?, -- walk / run: rig scale for the stride (default 1)
+	seed: number?, -- offset of the idle clock (default 0)
+}
+
+-- The motion of a generated monster `t` seconds into `slot` (pure: the same arguments give the same motion). The walk
+-- cycle is advanced in one step from 0 (Gait.advance is linear modulo 2*pi, so it equals the sum of small steps).
+function Gait.stateMotion(slot: Slot, t: number, options: StateOptions?): Motion
+	local o: StateOptions = options or {}
+	local m: Motion = { cycle = 0, move = 0, time = t + (o.seed or 0), raise = 0, strike = 0, hit = 0, dead = 0 }
+	if slot == "walk" or slot == "run" then
+		local speed = o.speed or (if slot == "run" then Gait.RUN_SPEED else Gait.WALK_SPEED)
+		m.move = 1
+		m.cycle = Gait.advance(0, t, speed, o.scale or 1)
+	elseif slot == "attack1" or slot == "attack2" or slot == "cast" then
+		m.raise, m.strike = Gait.attack(t, o.windup or Gait.DEFAULT_WINDUP)
+	elseif slot == "hit" then
+		m.hit = math.max(0, 1 - t / Gait.HIT_SECONDS)
+	elseif slot == "death" then
+		m.dead = math.clamp(t / Gait.DEATH_SECONDS, 0, 1)
+	elseif slot == "spawn" then
+		m.dead = 1 - math.clamp(t / Gait.SPAWN_SECONDS, 0, 1)
+	end
+	return m
 end
 
 -- True when a pose leaves the joint at rest (used by the client to skip work and by tests).

@@ -2,13 +2,14 @@
 -- Skill visual pieces (S28): shock waves, cutting arcs, ground cracks, projectiles with tails, lightning, light
 -- pillars, runes, shields, auras, area outlines, meteors, weapon trails, hand glows. Built from pooled parts (Vfx/Pool)
 -- and tweens; nothing is created per frame. `simple` (far away or low graphics) skips the costly bits (trails,
--- particles, extra segments). Data/SkillVfx says which skill uses which pieces.
+-- particles, extra segments). Data/SkillVfx says which skill uses which pieces. S110: every delay, tween, emitter, trail
+-- and loop runs on the effect clock (Vfx/Clock), so AnimLab can freeze an effect at any moment.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 
+local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Pool = require(script.Parent.Pool)
 
@@ -21,11 +22,11 @@ local function tween(
 	style: Enum.EasingStyle?,
 	direction: Enum.EasingDirection?
 )
-	TweenService:Create(
+	Clock.tween(
 		instance,
 		TweenInfo.new(seconds, style or Enum.EasingStyle.Quad, direction or Enum.EasingDirection.Out),
 		goal
-	):Play()
+	)
 end
 
 local function light(p: BasePart, color: Color3, range: number, brightness: number?)
@@ -57,6 +58,7 @@ local function emit(p: BasePart, color: Color3, count: number, options: { [strin
 	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
 	e.EmissionDirection = o.direction or Enum.NormalId.Top
 	e.Parent = p
+	Clock.track(e)
 	local n = if o.low then math.max(1, math.floor(count * Config.Vfx.lowParticles)) else count
 	e:Emit(n)
 	return e
@@ -146,7 +148,7 @@ function Library.cracks(at: Vector3, radius: number, color: Color3, seconds: num
 		slab.CFrame = CFrame.lookAt(mid, mid + dir) * CFrame.Angles(0, 0, random:NextNumber(-0.1, 0.1))
 		local core = Pool.part("Block", color, Vector3.new(0.3, 0.18, length * 0.9), Enum.Material.Neon, 0.1)
 		core.CFrame = slab.CFrame + Vector3.new(0, 0.03, 0)
-		task.delay(s * 0.6, function()
+		Clock.after(s * 0.6, function()
 			tween(slab, s * 0.4, { Transparency = 1 })
 			tween(core, s * 0.4, { Transparency = 1 })
 		end)
@@ -176,7 +178,7 @@ function Library.slash(
 		local inner, outer = radius * 0.35, radius
 		local seg = Pool.part("Block", color, Vector3.new(0.25, 0.25, outer - inner), Enum.Material.Neon, 1)
 		seg.CFrame = frame * CFrame.new(0, 0, -(inner + outer) / 2)
-		task.delay(sweep * u, function()
+		Clock.after(sweep * u, function()
 			seg.Transparency = 0.15
 			tween(seg, 0.25, { Transparency = 1, Size = Vector3.new(0.05, 0.05, outer - inner) })
 		end)
@@ -237,6 +239,7 @@ function Library.projectile(
 		trail.Transparency = NumberSequence.new(0.2, 1)
 		trail.WidthScale = NumberSequence.new(1, 0)
 		trail.Parent = p
+		Clock.track(trail)
 		if shape ~= "arrow" then
 			light(p, color, 10, 1.5)
 			local e = Instance.new("ParticleEmitter")
@@ -248,6 +251,7 @@ function Library.projectile(
 			e.Size = NumberSequence.new(0.4 * size, 0)
 			e.Transparency = NumberSequence.new(0.2, 1)
 			e.Parent = p
+			Clock.track(e)
 		end
 	end
 	local elapsed = 0
@@ -262,7 +266,7 @@ function Library.projectile(
 	local total = math.clamp(distance / speed, 0.05, 0.8)
 	local connection: RBXScriptConnection
 	connection = RunService.Heartbeat:Connect(function(dt: number)
-		elapsed += dt
+		elapsed += Clock.dt(dt)
 		local to = goal()
 		local u = math.min(1, elapsed / total)
 		local at = from:Lerp(to, u)
@@ -295,7 +299,7 @@ function Library.lightning(a: Vector3, b: Vector3, color: Color3, width: number?
 	end
 	table.insert(points, b)
 	for flicker = 0, 1 do
-		task.delay(flicker * 0.06, function()
+		Clock.after(flicker * 0.06, function()
 			for i = 1, #points - 1 do
 				local p, q = points[i], points[i + 1]
 				local seg = Pool.part(
@@ -323,7 +327,7 @@ function Library.pillar(at: Vector3, radius: number, height: number, color: Colo
 		Size = Vector3.new(height, radius * 2, radius * 2),
 		CFrame = CFrame.new(base + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
 	})
-	task.delay(s * 0.35, function()
+	Clock.after(s * 0.35, function()
 		tween(col, s * 0.65, { Transparency = 1, Size = Vector3.new(height, radius * 0.4, radius * 0.4) })
 	end)
 	light(col, color, radius * 4 + 6, 2.5)
@@ -343,14 +347,14 @@ function Library.rune(at: Vector3, radius: number, color: Color3, seconds: numbe
 		spoke.CFrame = CFrame.new(base + Vector3.new(0, 0.03, 0)) * CFrame.Angles(0, i / count * math.pi, 0)
 	end
 	local angle = 0
-	local started = os.clock()
+	local started = Clock.now()
 	local connection: RBXScriptConnection
 	connection = RunService.Heartbeat:Connect(function(dt: number)
-		angle += dt * 1.2
+		angle += Clock.dt(dt) * 1.2
 		for i, spoke in spokes do
 			spoke.CFrame = CFrame.new(base + Vector3.new(0, 0.03, 0)) * CFrame.Angles(0, angle + i / count * math.pi, 0)
 		end
-		if os.clock() - started >= seconds then
+		if Clock.now() - started >= seconds then
 			connection:Disconnect()
 			tween(disc, 0.3, { Transparency = 1 })
 			Pool.later(disc, 0.35)
@@ -380,10 +384,10 @@ local function attach(model: Model, p: BasePart): boolean
 end
 
 local function detachLater(p: BasePart, seconds: number)
-	task.delay(seconds, function()
+	Clock.after(seconds, function()
 		if p.Parent then
 			tween(p, 0.3, { Transparency = 1 })
-			task.delay(0.32, function()
+			Clock.after(0.32, function()
 				p.Anchored = true
 				Pool.release(p)
 			end)
@@ -416,6 +420,7 @@ function Library.aura(model: Model, color: Color3, seconds: number, simple: bool
 		e.Size = NumberSequence.new(0.35, 0)
 		e.Transparency = NumberSequence.new(0.2, 1)
 		e.Parent = holder
+		Clock.track(e)
 		light(holder, color, 8, 0.8)
 	end
 	detachLater(holder, math.max(0.5, seconds))
@@ -499,10 +504,11 @@ function Library.meteor(at: Vector3, radius: number, delay: number, color: Color
 		e.Size = NumberSequence.new(2.2, 0)
 		e.Transparency = NumberSequence.new(0.1, 1)
 		e.Parent = rock
+		Clock.track(e)
 		light(rock, color, 16, 2)
 	end
 	tween(rock, math.max(0.2, delay), { CFrame = CFrame.new(landing) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	task.delay(math.max(0.2, delay), function()
+	Clock.after(math.max(0.2, delay), function()
 		Pool.release(rock)
 		Library.burst(landing + Vector3.new(0, 1, 0), radius * 1.2, color, 0.4)
 		Library.shockwave(landing, radius, color, 0.45, simple)
@@ -557,10 +563,10 @@ function Library.aimLine(caster: Model, target: Model?, point: Vector3?, color: 
 		p.Size = Vector3.new(0.15, 0.15, length)
 		p.CFrame = CFrame.lookAt((from + to) / 2, to)
 	end
-	local ends = os.clock() + seconds
+	local ends = Clock.now() + seconds
 	place()
 	connection = RunService.Heartbeat:Connect(function()
-		if os.clock() >= ends then
+		if Clock.now() >= ends then
 			stop()
 			return
 		end
@@ -600,7 +606,7 @@ function Library.sealRune(model: Model, color: Color3, simple: boolean?): () -> 
 		if not root.Parent then
 			return
 		end
-		angle += dt * 0.8
+		angle += Clock.dt(dt) * 0.8
 		local base = root.Position - Vector3.new(0, drop, 0)
 		disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
 		for i, spoke in spokes do
@@ -646,7 +652,7 @@ function Library.orbit(model: Model, count: number, color: Color3, simple: boole
 		if not root.Parent then
 			return
 		end
-		angle += dt * math.pi * 2 / ORBIT_TURN
+		angle += Clock.dt(dt) * math.pi * 2 / ORBIT_TURN
 		local centreAt = root.Position + Vector3.new(0, 0.6, 0)
 		for i, orb in orbs do
 			local a = angle + (i - 1) / count * math.pi * 2
@@ -733,6 +739,7 @@ function Library.glow(
 				e.Size = NumberSequence.new(0.35, 0)
 				e.Transparency = NumberSequence.new(0.2, 1)
 				e.Parent = orb
+				Clock.track(e)
 			end
 			tween(orb, seconds, { Size = Vector3.one * 1.6 })
 			detachLater(orb, seconds)
@@ -765,14 +772,14 @@ function Library.weaponTrail(model: Model, color: Color3, from: number, to: numb
 		created.Parent = weapon
 		trail = created
 	end
-	local t = trail :: Trail
+	local t = Clock.track(trail :: Trail)
 	t.Color = ColorSequence.new(color)
-	task.delay(math.max(0, from), function()
+	Clock.after(math.max(0, from), function()
 		if t.Parent then
 			t.Enabled = true
 		end
 	end)
-	task.delay(math.max(from + 0.05, to), function()
+	Clock.after(math.max(from + 0.05, to), function()
 		if t.Parent then
 			t.Enabled = false
 		end
@@ -812,9 +819,10 @@ function Library.lingering(at: Vector3, radius: number, kind: string, color: Col
 		e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 		e.EmissionDirection = Enum.NormalId.Right -- the disc is rolled: its +X points up
 		e.Parent = disc
+		Clock.track(e)
 		light(disc, tint, radius * 2 + 4, 1)
 	end
-	task.delay(seconds, function()
+	Clock.after(seconds, function()
 		tween(disc, 0.4, { Transparency = 1 })
 	end)
 	Pool.later(disc, seconds + 0.45)
@@ -854,9 +862,9 @@ function Library.banner(anchor: BasePart, pieces: { any }, radius: number, color
 	end
 	local connection: RBXScriptConnection? = nil
 	if not simple then
-		local started = os.clock()
+		local started = Clock.now()
 		connection = RunService.Heartbeat:Connect(function()
-			local t = os.clock() - started
+			local t = Clock.now() - started
 			local c = cloth
 			if c then
 				-- the free edge sways around the pole side (a gentle wave, no physics)
@@ -913,14 +921,15 @@ function Library.tether(a: Model, b: Model, color: Color3, seconds: number)
 	beam.FaceCamera = true
 	beam.Transparency = NumberSequence.new(0.2)
 	beam.Parent = rootA
+	Clock.track(beam)
 	local function clear()
 		beam:Destroy()
 		from:Destroy()
 		to:Destroy()
 	end
-	local ending = os.clock() + math.max(0.3, seconds)
+	local ending = Clock.now() + math.max(0.3, seconds)
 	task.spawn(function()
-		while os.clock() < ending and rootA.Parent and rootB.Parent and beam.Parent do
+		while Clock.now() < ending and rootA.Parent and rootB.Parent and beam.Parent do
 			task.wait(0.2)
 		end
 		clear()
@@ -955,7 +964,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 		Pool.part("Wedge", color, Vector3.new(0.1, 0.45, 1.3), Enum.Material.SmoothPlastic, 0),
 		Pool.part("Wedge", color, Vector3.new(0.1, 0.45, 1.3), Enum.Material.SmoothPlastic, 0),
 	}
-	local born = os.clock()
+	local born = Clock.now()
 	local keepUntil = born + 2
 	local legs: { Leg } = {}
 	local leaving: { from: Vector3, start: number }? = nil
@@ -989,7 +998,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 
 	local function leave()
 		if not leaving and not finished then
-			leaving = { from = position, start = os.clock() }
+			leaving = { from = position, start = Clock.now() }
 			table.clear(legs)
 		end
 	end
@@ -1011,7 +1020,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 	end
 
 	connection = RunService.Heartbeat:Connect(function()
-		local t = os.clock()
+		local t = Clock.now()
 		local nextPosition: Vector3? = nil
 		local away = leaving
 		if away then
@@ -1060,7 +1069,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 
 	local falcon: Falcon = {
 		keep = function(seconds: number)
-			keepUntil = math.max(keepUntil, os.clock() + seconds)
+			keepUntil = math.max(keepUntil, Clock.now() + seconds)
 		end,
 		strike = function(target: Model?, dive: boolean)
 			if finished or leaving or not target or not target.Parent then
@@ -1069,7 +1078,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 			local function at(): Vector3?
 				return if target.Parent then centre(target) + Vector3.new(0, 1, 0) else nil
 			end
-			local now = os.clock()
+			local now = Clock.now()
 			table.clear(legs)
 			local start = position
 			if dive then
@@ -1101,7 +1110,7 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 			table.insert(legs, {
 				from = start,
 				to = function(): Vector3?
-					return circlePoint(os.clock())
+					return circlePoint(Clock.now())
 				end,
 				start = now,
 				dur = 0.35,

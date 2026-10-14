@@ -8177,3 +8177,123 @@ Pliki: `src/shared/Data/Quests/{Main,Side,Contracts,Types}.luau`, `src/shared/Da
   zadaniami (historia dalej pod spoilerem, przerywniki tylko w grze).
 - Czekają na Ciebie: dzienne i tygodniowe poza budżetem EXP, wyższy mnożnik EXP potworów na 20–36, wierzchowiec premium,
   imię bankiera i start zleceń starych postaci (lista wyżej).
+
+### S110: AnimLab, Studio przez MCP i zasady przeglądu ruchu
+
+Start na `5a0e6e4` (S109): commit i sekcja S109 oraz wszystkie pliki z listy wejścia na miejscu; `scripts/check`
+zielony na nietkniętym drzewie (6382 testy). Zgodnie z poleceniem przebiegu bez commita i pusha.
+
+Notatka A1:
+- `AnimationController`: zegar to wszędzie `os.clock()` (potwory `step`, wierzchowce `stepMounts`, postacie
+  `stepCharacters`, `Hitstop`); S96 dołożyła wierzchowce (`VaelthornMount`, `MountRig`) i pozę jeźdźca
+  (`RiderPose`, atrybut `Mount`) w tym samym `PreSimulation`. Nie ruszane.
+- Miejsc do przepięcia na zegar efektów (grep `task.delay|Heartbeat|TweenService|ParticleEmitter` w `Vfx`,
+  `VfxController`, `CombatFxController`): 65.
+- `AdminClient` słucha osiem kontrolerów (Ambience, CitySeason, Icon, Nav, RegionLight, Vfx, World, WorldLife); nowy
+  `AnimLabController` dziewiąty.
+- Kategorii `dev` w `Data/AdminCommands` nie ma: `/animlab` w `combat`.
+- AttackPose / SkillPose: poza w chwili t istniała (`sample`), zamrożenie robi klient (D1).
+
+Co zrobiono:
+- **Klatki kontrolne (F):** `Logic/MotionKeys` (`attack`, `skill`, `monster`, `boss`, `ability`, `clip`, `still`, `at`),
+  narzędzie `lune run tools/motionkeys.luau [attack|skill|boss|ability|all] [id]`.
+- **Stan w chwili t (B):** `Gait.stateMotion` i stałe `HIT_SECONDS`, `DEATH_SECONDS`, `SPAWN_SECONDS`, `WALK_SPEED`,
+  `RUN_SPEED` (czytają je `AnimationController` i `MobVizController`, MobViz liczy stan przez `stateMotion`),
+  `LookAnim.clipTime`.
+- **Zegar efektów (C, D2–D4):** `client/Vfx/Clock` (jedno połączenie `Heartbeat` tylko, gdy coś czeka; słabe
+  referencje); `Library` (tweeny, emitery, smugi, `Beam`, opóźnienia, pętle `Heartbeat` i czas sokoła, celownika,
+  sztandaru, `tether`), `Pool.later` / `Pool.done`, opóźnienia `VfxController` (bez blokady ruchu `lock`), w
+  `CombatFxController` ślad broni, kurz, błysk, strzały w locie, telegraf (tweeny, sprzątanie `Clock.after` zamiast
+  `Debris`), błysk trafienia. Liczby obrażeń i napisy na czasie rzeczywistym. Czasy i wygląd bez zmian.
+- **Zamrożenie (D1, D5):** `AnimationController.LabHold(model, t?)` / `LabClear(model)` (tylko modele
+  `VaelthornPreview`, bez drżenia przy trzymaniu), `CombatFxController.PreviewTelegraph(event)`,
+  `PreviewAttack(weaponType?, model?)`.
+- **AnimLab (E):** `/animlab` (`Data/AdminCommands`, `Admin/Combat`, `studioOnly`), `Logic/AnimLab` (parser z kluczem
+  błędu na każdą odmowę, `weaponForSkill`, `activeSkills`), `Config.AnimLab` (układ sceny, kamery, limity),
+  `AnimLabController` (scena z siatką, trzy ściany, pięć kamer `AnimLabCam_*`, aktor w kolorze klasy, cel, 19 manekinów
+  z bronią, potwory i bossowie z `Gait.stateMotion` albo klipami, telegraf bossa, kopie NPC, `loop`, `freeze`, `step`,
+  `play`, `keys`, `cam`, `stress`, `state`; pętla klatek podłączona tylko przy istniejącej scenie), `AnimLabCall`
+  (lokalny `BindableFunction`), teksty `admin.usage.animlab`, `admin.animlab.*`, `animlab.*` (PL, EN); przestrzeń
+  `animlab` w teście kluczy z kodu (`data.spec`).
+- **Broń (E5):** `Util/WeaponBuild` (`attach`, `modelFor`; części i prawdziwe modele z `ReplicatedStorage.Assets.Weapons`)
+  wydzielone z `EquipmentService`, który tylko wybiera przedmiot i dokłada światło.
+- **Testy:** `tests/motionkeys.spec.luau` (punkty 1–11 planu i broń każdej aktywnej umiejętności); `gait.spec` i
+  `admin.spec` bez zmian.
+- **Dokumentacja (I–K):** `docs/ANIMACJE.md` (nowy), `CLAUDE.md` (wyjątek fazy dla S110–S119 i „Podgląd ruchu”),
+  `docs/DESIGN-16.md` (§1 poprawione, §11 „Ustalenia S110”); `docs/sessions/DALEJ.md` miał już wyjątek w punkcie 4
+  w docelowym brzmieniu, bez zmian.
+- **Poprawki po przeglądzie:** `freeze` zeruje czekające zamrożenie poprzedniego `freeze` / `step`; `Clock.track`
+  nie nadpisuje zapamiętanego `Lifetime` smugi / `TimeScale` emitera przy ponownym śledzeniu w zamrożeniu; klatki
+  umiejętności z `loopUntil` podglądu (`VfxController.PreviewLoopUntil`); ruch drukuje klatki w czacie i konsoli;
+  `AnimLabCall` przy odmowie `freeze` / `step` (brak sceny, ruchu) zwraca błąd od razu.
+
+Studio przez MCP: działało (`list_roblox_studios`: jedno Studio, miejsce `10042026_1`). Studio było w Play: zatrzymane,
+w Edit odczyt potwierdził synchronizację Rojo (`MotionKeys`, `AnimLab`, `AnimLabController`, `Gait.stateMotion`), potem
+Play: wszystkie moduły klienta i serwera wczytane bez błędów, `AnimLabCall` w `LocalPlayer` odpowiada (`state`,
+`freeze 0,2` → `animlab.error.time`, `on` → brak postaci). Do świata nie dało się wejść: Studio nie ma dostępu do
+DataStore (DataService na zapisie w pamięci, profil z 0 postaci, ekran wyboru z trzema wolnymi miejscami), a sesji nie
+wolno tworzyć postaci. Przegląd H pominięty; Play zatrzymany, miejsce niezapisane.
+
+#### Przegląd bazowy (S110)
+
+Bez obejrzenia: kolumna „Klatki” z `tools/motionkeys.luau` (r = release), oceny „—”; dla potworów i bossa trafienie
+liczbowo z klatek (sP = strikePeak).
+
+| Ruch | Rodzaj | Klatki (s): start / peak / hit lub release / follow / end | Zapowiedź | Trafienie | Wybrzmienie | Ciężar i łuki | Efekt (rdzeń / ciało / ślad) | Ocena 1–5 | Co źle (1 linia) | Dla sesji |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `sword1h` | atak | 0 / 0,12 / 0,18 / 0,295 / 0,47 | — | — | — | — | — | — | — | S113 |
+| `sword2h` | atak | 0 / 0,14 / 0,212 / 0,34 / 0,55 | — | — | — | — | — | — | — | S113 |
+| `spear2h` | atak | 0 / 0,12 / 0,183 / 0,285 / 0,46 | — | — | — | — | — | — | — | S113 |
+| `hammer2h` | atak | 0 / 0,16 / 0,235 / 0,35 / 0,56 | — | — | — | — | — | — | — | S113 |
+| `bow` | atak | 0 / 0,2 / 0,2 (r) / 0,355 / 0,53 | — | — | — | — | — | — | — | S113 |
+| `staff` | atak | 0 / 0,14 / 0,167 (r) / 0,305 / 0,48 | — | — | — | — | — | — | — | S113 |
+| `crossbow` | atak | 0 / 0,12 / 0,12 (r) / 0,275 / 0,45 | — | — | — | — | — | — | — | S113 |
+| `wand` | atak | 0 / 0,12 / 0,136 (r) / 0,266 / 0,42 | — | — | — | — | — | — | — | S113 |
+| `unarmed` | atak | 0 / 0,1 / 0,156 / 0,24 / 0,38 | — | — | — | — | — | — | — | S113 |
+| `mightyStrike` | umiejętność | 0 / 0,22 / 0,3 / 0,447 / 0,72 | — | — | — | — | — | — | — | S114 |
+| `bladeWhirl` | umiejętność | 0 / 0,1 / 0,18 / 0,449 / 0,95 | — | — | — | — | — | — | — | S114 |
+| `earthquake` | umiejętność | 0 / 0,36 / 0,48 / 0,651 / 0,97 | — | — | — | — | — | — | — | S114 |
+| `cleave` | umiejętność | 0 / 0,2 / 0,27 / 0,393 / 0,62 | — | — | — | — | — | — | — | S114 |
+| `aimedShot` | umiejętność | 0 / 0,55 / 0,58 (r) / 0,699 / 0,92 | — | — | — | — | — | — | — | S115 |
+| `arrowRain` | umiejętność | 0 / 0,25 / 0,3 / 0,412 / 0,62 | — | — | — | — | — | — | — | S115 |
+| `volley` | umiejętność | 0 / 0,18 / 0,22 / 0,374 / 0,66 | — | — | — | — | — | — | — | S115 |
+| `frostTrap` | umiejętność | 0 / 0,22 / 0,35 / 0,49 / 0,75 | — | — | — | — | — | — | — | S115 |
+| `firebolt` | umiejętność | 0 / 0,1 / 0,16 (r) / 0,244 / 0,4 | — | — | — | — | — | — | — | S115 |
+| `fireball` | umiejętność | 0 / 0,28 / 0,38 / 0,492 / 0,7 | — | — | — | — | — | — | — | S115 |
+| `chainLightning` | umiejętność | 0 / 0,18 / 0,26 / 0,369 / 0,57 | — | — | — | — | — | — | — | S115 |
+| `frostNova` | umiejętność | 0 / 0,16 / 0,34 / 0,518 / 0,85 | — | — | — | — | — | — | — | S115 |
+| `holyStrike` | umiejętność | 0 / 0,18 / 0,25 / 0,362 / 0,57 | — | — | — | — | — | — | — | S114 |
+| `radiance` | umiejętność | 0 / 0,2 / 0,3 / 0,412 / 0,62 | — | — | — | — | — | — | — | S114 |
+| `circleOfLight` | umiejętność | 0 / 0,15 / 0,5 / 0,622 / 0,85 | — | — | — | — | — | — | — | S114 |
+| `hammerOfHeaven` | umiejętność | 0 / 0,38 / 0,5 / 0,692 / 1,05 | — | — | — | — | — | — | — | S114 |
+| `wolf attack1` | potwór | 0 / 0,06 / 0 / sP 0,2 / 0,305 / 0,55 | — | `strikePeak − hit` = 0,2 s | — | — | — | — | uderzenie 0,2 s po obrażeniach (zwykły atak bez zamachu) | S117 |
+| `bandit attack1` | potwór | 0 / 0,06 / 0 / sP 0,2 / 0,305 / 0,55 | — | `strikePeak − hit` = 0,2 s | — | — | — | — | uderzenie 0,2 s po obrażeniach (zwykły atak bez zamachu) | S117 |
+| `caveSpider attack1` | potwór | 0 / 0,06 / 0 / sP 0,2 / 0,305 / 0,55 | — | `strikePeak − hit` = 0,2 s | — | — | — | — | uderzenie 0,2 s po obrażeniach (zwykły atak bez zamachu) | S117 |
+| `fireGolem attack1` | potwór | 0 / 0,06 / 0 / sP 0,2 / 0,305 / 0,55 | — | `strikePeak − hit` = 0,2 s | — | — | — | — | uderzenie 0,2 s po obrażeniach (zwykły atak bez zamachu) | S117 |
+| `grimrok sweep` | boss | 0 / 1,2 / 1,2 / sP 1,34 / 1,445 / 1,69 | — | `strikePeak − hit` = 0,14 s | — | — | — | — | uderzenie 0,14 s po końcu telegrafu | S117 |
+
+Wzorce (z danych, bez obejrzenia):
+- Potwory z generatora uderzają po obrażeniach: `strikePeak − hit` 0,14 s przy telegrafie (wszystkie ataki bossów i
+  zdolności Elity II) i 0,2 s przy zwykłym ataku, wobec ±0,03 s.
+- Zwykły atak potwora nie ma zapowiedzi: start 0,06 s przed końcem zamachu (§2 pkt 1 wymaga ≥ 0,1 s).
+- Ataki podstawowe mają krótki zamach 0,1–0,2 s i wybrzmienie 0,22–0,3 s; ciężkie (`hammer2h` 0,16 s) niewiele wolniejsze
+  niż jednoręczne (0,12 s): do oceny ciężaru w S113.
+- `bow` i `crossbow` wypuszczają strzałę dokładnie w końcu zamachu (`peak = release`): bez chwili trzymania cięciwy.
+
+Koszt (H3): nie zmierzony (brak postaci).
+
+Dla S111–S117:
+- S111: `/animlab sfx` dziś odpowiada `animlab.notYet`; podpiąć `Data/Sfx` w `AnimLabController.run`.
+- S112: podkomendy `vfx`, `hit`, `flinch`, `clip` w `Logic/AnimLab.parse`; nowe emitery i smugi przez `Clock.track`.
+- S113: wiersze ataków z tabeli (ciężar, zapowiedź łuków i kusz), przegląd w Studio wszystkich typów broni.
+- S114 / S115: wiersze umiejętności; klatki wszystkich aktywnych w `lune run tools/motionkeys.luau skill`.
+- S116: klipy NPC (`Data/Npcs.asset.anims`) czyta już `/animlab npc`; pole `a` w zdarzeniu `tele`.
+- S117: usterka `strikePeak − hit` i brak zapowiedzi zwykłego ataku potworów; telegrafy w AnimLab przez `boss`.
+- Wszystkie: przegląd H z S110 do zrobienia, gdy Studio ma dostęp do API i postać (`docs/ANIMACJE.md` §2 pkt 4).
+
+Pliki: `src/shared/Logic/{MotionKeys,AnimLab,Gait,LookAnim}.luau`, `src/shared/Util/WeaponBuild.luau`,
+`src/shared/Config.luau`, `src/shared/Data/AdminCommands.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Admin/Combat.luau`, `src/server/Services/EquipmentService.luau`, `src/client/Vfx/{Clock,Library,Pool}.luau`,
+`src/client/Controllers/{AnimLab,Animation,Vfx,CombatFx,MobViz}Controller.luau`, `tools/motionkeys.luau`,
+`tests/motionkeys.spec.luau`, `tests/data.spec.luau`, `docs/ANIMACJE.md`, `docs/DESIGN-16.md`, `CLAUDE.md`,
+`docs/DECYZJE.md`, `docs/PROGRESS.md`.

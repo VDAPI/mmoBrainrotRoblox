@@ -44,6 +44,7 @@ end
 -- Namespaces whose string literals are localization keys.
 local NAMESPACES = {
 	"admin",
+	"animlab", -- S110
 	"paths",
 	"title",
 	"bp",

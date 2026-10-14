@@ -39,7 +39,6 @@ local folder: Folder? = nil
 local previews: { Preview } = {}
 local animate = false
 local started = 0
-local cycle = 0
 
 local function items(target: string, variant: string): { Item }
 	local out: { Item } = {}
@@ -206,7 +205,12 @@ local function show(target: string, variant: string, anim: boolean)
 	started = os.clock()
 end
 
-local function step(dt: number)
+local STATE_SLOTS: { [string]: Gait.Slot } =
+	{ idle = "idle", walk = "walk", attack = "attack1", hit = "hit", death = "death", spawn = "spawn" }
+local ATTACK_WINDUP = 0.6
+
+-- S110: the state motion comes from Gait.stateMotion (the walk cycle counts from the start of the state).
+local function step()
 	if not animate or #previews == 0 then
 		return
 	end
@@ -214,22 +218,8 @@ local function step(dt: number)
 	local index = math.floor(t / STATE_SECONDS) % #STATES + 1
 	local state = STATES[index]
 	local phaseTime = t % STATE_SECONDS
-	local motion: Gait.Motion = { cycle = 0, move = 0, time = os.clock(), raise = 0, strike = 0, hit = 0, dead = 0 }
-	if state == "walk" then
-		cycle = Gait.advance(cycle, dt, 8, 1)
-		motion.move = 1
-	elseif state == "attack" then
-		local raise, strike = Gait.attack(phaseTime, 0.6)
-		motion.raise = raise
-		motion.strike = strike
-	elseif state == "hit" then
-		motion.hit = math.max(0, 1 - phaseTime / 0.25)
-	elseif state == "death" then
-		motion.dead = math.clamp(phaseTime / 0.55, 0, 1)
-	elseif state == "spawn" then
-		motion.dead = 1 - math.clamp(phaseTime / 0.55, 0, 1)
-	end
-	motion.cycle = cycle
+	local motion = Gait.stateMotion(STATE_SLOTS[state], phaseTime, { windup = ATTACK_WINDUP, speed = Gait.WALK_SPEED })
+	motion.time = os.clock()
 	for _, preview in previews do
 		for _, j in preview.joints do
 			local p = Gait.pose(j.joint, motion)

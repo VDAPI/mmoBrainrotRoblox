@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S109 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S110 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -159,6 +159,11 @@ przeliczone (`monsterExpMul` bez przycięć, 45–71 0,844, 72–99 0,803, 20–
 zlecenia 1–3 bez EXP; czas na poziom jak S94 (1 → 100 84,1 h w modelu); pełny dochód (`Balance.fullIncome`, T-EC2…T-EC7);
 nowa baza 1–20 (`meta.session = "S109"`, `ALLOWED_1_20_DIFFS` pusta); questy na wiki: fabuła w rozdziałach z nowymi
 zadaniami, zlecenia łowieckie, poboczne wszystkich krain, bossowe i tygodniowe; ukrycie S102–S108 zdjęte.
+S110 (pierwsza z DESIGN-16, animacje): AnimLab `/animlab` (Studio, admin; scena z kamerami, manekiny z bronią, potwory,
+bossowie z telegrafem, NPC, `freeze` / `step` / `keys` / `cam` / `stress`, `AnimLabCall` dla MCP), klatki kontrolne
+`Logic/MotionKeys` i `tools/motionkeys.luau`, zegar efektów `client/Vfx/Clock`, `Gait.stateMotion`,
+`LookAnim.clipTime`, `Util/WeaponBuild`, zasady oceny ruchu w `docs/ANIMACJE.md`; Studio przez MCP dozwolone dla
+S110–S119 (`CLAUDE.md`).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -279,6 +284,11 @@ zakończone; testy i decyzje właściciela po nich.
 - **Świat (kosmetyka, niski priorytet)**: listy „nie zrobione z planu” S45–S51 w `docs/SESJE.md` (reakcje sal na fazy
   bossów, drobne animacje dekoracji, nowe szablony `DecorController`, `crackFields`, `spurs`, zaspy w rzeźbie).
   Wspólne `Logic/TerrainLines` (algorytmy skopiowane między generatorami) i Łąki na `WorldLifeController`.
+- **S110: przegląd w Studio nie zrobiony (brak postaci w zapisie Studio):** miejsce bez dostępu do DataStore (zapis w
+  pamięci, 0 postaci); tabela bazowa w `docs/SESJE.md` → S110 ma tylko klatki z danych, koszt `stress 20` nie zmierzony.
+  Właściciel: Game Settings → Security → dostęp do API i raz utworzyć postać (`docs/ANIMACJE.md` §2 pkt 4).
+- **AnimLab (S110):** `sfx` czeka na S111 (`animlab.notYet`); `npc` bez klipów do S116 (kopia stoi); zdolności Elity II
+  tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

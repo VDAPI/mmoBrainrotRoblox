@@ -4,6 +4,7 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local AnimLab = require(Shared.Logic.AnimLab)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
@@ -258,6 +259,26 @@ commands.anim = function(player, args)
 	end
 	Net.Fire(player, "AdminClient", "anim", kind)
 	reply(player, "admin.anim.ok", { kind = kind })
+end
+
+-- S110: /animlab [action] [a] [b]: the AnimLab stage and its motions on the admin's client (Studio only, checked by
+-- AdminService through `studioOnly`). Logic/AnimLab parses the call; the client runs it (AnimLabController).
+commands.animlab = function(player, args)
+	local list: { string } = {}
+	for i = 1, 3 do
+		local value = args[i]
+		if type(value) == "string" and value ~= "" then
+			table.insert(list, value)
+		end
+	end
+	local command, errKey = AnimLab.parse(list)
+	if not command then
+		reply(player, "admin.animlab.bad", { why = `@{errKey or "animlab.error.action"}` })
+		reply(player, "admin.usage.animlab")
+		return
+	end
+	Net.Fire(player, "AdminClient", "animlab", list)
+	reply(player, "admin.animlab.ok", { action = command.action })
 end
 
 -- S28: /skillpreview <id>: the skill's animation and effect on your character (nothing is cast).

@@ -20,14 +20,16 @@
 --       picks the pieces of later waves, `waves` (Cataclysm) gets one event per wave; a pull raises dust. Arcane
 --       Charges circle every player who has them (orbs from the "Effects" attribute).
 -- Pieces come from client/Vfx/Library (pooled parts, Config.Vfx.maxActive at once); effects of other players far
--- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment
--- (hitstop) and big skills shake the camera of players nearby (setting "Camera shake").
+-- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment (hitstop)
+-- and big skills shake the camera of players nearby (setting "Camera shake"). S110: every delay of an effect runs on
+-- the effect clock (Vfx/Clock, AnimLab freezes it); only the local movement lock stays on task.delay.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Library = require(script.Parent.Parent.Vfx.Library)
@@ -84,6 +86,9 @@ local lockLocked = 0
 -- S80: the beam's ray (looks only): width of the first tick and growth per tick; the Arcane Charge orbs' colour.
 local BEAM_WIDTH = 0.25
 local BEAM_WIDTH_STEP = 0.06
+-- Preview (S28/S80): how long a beam / channel preview loops its motion.
+local PREVIEW_BEAM_SECONDS = 2
+local PREVIEW_CHANNEL_SECONDS = 2.5
 local CHARGE_COLOR = Color3.fromHex("#B07CFF")
 
 -- Helpers ---------------------------------------------------------------------------------------------------
@@ -247,7 +252,7 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			Library.glow(caster, entry.glow.hand, color, entry.glow.dur, simple)
 		end
 		if entry.land and motion.land then
-			task.delay(motion.land, function()
+			Clock.after(motion.land, function()
 				local land: { string } = entry.land or {}
 				for _, piece in land do
 					if piece == "dust" then
@@ -260,7 +265,7 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		-- server/Skills/Types/Offense CIRCLE_PROJECTILE_*: the damage lands when the orb arrives).
 		if entry.projectile and skill.type == "circleTarget" and typeof(data.p) == "Vector3" then
 			local release = math.max(0, (motion.release or motion.hit or 0) - 0.05)
-			task.delay(release, function()
+			Clock.after(release, function()
 				local from = centre(caster) + Vector3.new(0, 1, 0)
 				Library.projectile(
 					from,
@@ -274,7 +279,7 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		-- S70 Roll of the Dice: two small golden dice thrown to the ground in front (one in the simple mode)
 		if entry.projectile and skill.type == "groupBuff" then
 			local release = math.max(0, (motion.release or motion.hit or 0) - 0.05)
-			task.delay(release, function()
+			Clock.after(release, function()
 				local root = caster:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if not root then
 					return
@@ -313,6 +318,7 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			lockLocked = locked
 			local seconds = (motion.keys[#motion.keys].t + motion.recover * 0.5)
 				+ (if loopUntil and motion.loop then math.max(0, loopUntil - motion.loop.to) else 0)
+			-- S110: the movement lock stays on real time (it is gameplay, not an effect)
 			task.delay(seconds, function()
 				-- S63: the server may have changed the speed meanwhile (a slow, stun or root started or ended): restore
 				-- the server's last value, not a comparison with `locked` (a stun's 0 equals a full lock's 0).
@@ -443,7 +449,7 @@ local function piece(
 			local waves = skill.hits or 1
 			local random = Random.new()
 			for wave = 1, waves do
-				task.delay((wave - 1) * (skill.interval or 0.5), function()
+				Clock.after((wave - 1) * (skill.interval or 0.5), function()
 					for _ = 1, if simple then 4 else 9 do
 						local a = random:NextNumber() * math.pi * 2
 						local d = math.sqrt(random:NextNumber()) * radius
@@ -469,7 +475,7 @@ local function piece(
 				local yaw = math.rad(-angle / 2 + angle * (i - 0.5) / count)
 				local dir = (frame * CFrame.Angles(0, yaw, 0)).LookVector
 				local from = frame.Position + Vector3.new(0, 1, 0)
-				task.delay(i * 0.04, function()
+				Clock.after(i * 0.04, function()
 					Library.projectile(from, from + dir * radius, "arrow", color, { speed = 110, simple = simple })
 				end)
 			end
@@ -569,7 +575,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			for i = 1, #path - 1 do
 				local a, b = findModel(path[i]), findModel(path[i + 1])
 				if a and b then
-					task.delay((i - 1) * 0.06, function()
+					Clock.after((i - 1) * 0.06, function()
 						Library.lightning(centre(a), centre(b), color, 0.3, simple)
 						Library.burst(centre(b), 3, color)
 					end)
@@ -682,7 +688,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		if caster then
 			local stop = Library.aimLine(caster, findModel(data.t), at, AIM_COLOR, tonumber(data.d) or 1.5)
 			aimLines[id] = stop
-			task.delay((tonumber(data.d) or 1.5) + 0.5, function()
+			Clock.after((tonumber(data.d) or 1.5) + 0.5, function()
 				if aimLines[id] == stop then
 					aimLines[id] = nil
 				end
@@ -788,6 +794,41 @@ end
 
 -- Admin /skillpreview and the skill window preview (S28): the animation and the impact of a skill on a model,
 -- without a server event (a self-centred impact for area skills, a point in front for the rest).
+-- The def a preview plays. S56: the character's rank (base from the level, path skills from their node; a locked
+-- skill previews at rank 1); always option A, no nodes (ROZWOJ 2.7)
+local function previewDef(skill: SkillData.SkillDef): SkillData.SkillDef
+	local rank = math.max(
+		1,
+		Paths.skillRank({
+			class = State.Get({ "character", "class" }) or "",
+			level = State.Get({ "character", "level" }) or 1,
+			path = State.Get({ "character", "path" }),
+			hotbar = State.Get({ "character", "hotbar" }),
+			equipment = State.Get({ "character", "equipment" }),
+		}, skill.id)
+	)
+	return (Skills.effective(skill, rank, nil, nil))
+end
+
+-- The loopUntil a preview's onCast hands AnimationController.Skill (beam / channel time, otherwise castTime).
+local function previewLoop(skill: SkillData.SkillDef, def: SkillData.SkillDef): number?
+	if skill.type == "beam" then
+		return PREVIEW_BEAM_SECONDS
+	elseif skill.type == "channel" then
+		return PREVIEW_CHANNEL_SECONDS
+	end
+	return if (def.castTime or 0) > 0 then def.castTime else nil
+end
+
+-- AnimLab (S110): the loopUntil Preview plays the skill's motion with, for its control frames.
+function VfxController.PreviewLoopUntil(skillId: string): number?
+	local skill = SkillData.get(skillId)
+	if not skill or skill.type == "passive" then
+		return nil
+	end
+	return previewLoop(skill, previewDef(skill))
+end
+
 function VfxController.Preview(model: Model, skillId: string)
 	local skill = SkillData.get(skillId)
 	if not skill or skill.type == "passive" then
@@ -797,27 +838,16 @@ function VfxController.Preview(model: Model, skillId: string)
 	local id = if type(entity) == "string" then entity else nil
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local front = if root then root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12) else nil
-	-- S56: the character's rank (base from the level, path skills from their node; a locked skill previews at rank 1);
-	-- always option A, no nodes (ROZWOJ 2.7)
-	local rank = math.max(
-		1,
-		Paths.skillRank({
-			class = State.Get({ "character", "class" }) or "",
-			level = State.Get({ "character", "level" }) or 1,
-			path = State.Get({ "character", "path" }),
-			hotbar = State.Get({ "character", "hotbar" }),
-			equipment = State.Get({ "character", "equipment" }),
-		}, skillId)
-	)
-	local def = Skills.effective(skill, rank, nil, nil)
+	local def = previewDef(skill)
+	local loopUntil = previewLoop(skill, def)
 	local motion = SkillMotions.get(skillId)
 	-- S80: a beam loops its motion for 2 s with three rays from the weapon's tip to a point 10 studs ahead
 	if skill.type == "beam" then
-		onCast({ s = skillId, c = id, d = 2 }, skill, model)
+		onCast({ s = skillId, c = id, d = loopUntil }, skill, model)
 		local entry = SkillVfx[skill.id]
 		local color = colorOf(skill, entry, nil)
 		for i = 1, 3 do
-			task.delay((i - 1) * 0.5 + (if motion then motion.hit or 0 else 0), function()
+			Clock.after((i - 1) * 0.5 + (if motion then motion.hit or 0 else 0), function()
 				local base = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if base then
 					local ahead = base.Position + base.CFrame.LookVector * 10
@@ -830,7 +860,7 @@ function VfxController.Preview(model: Model, skillId: string)
 	-- S77: an aimed skill loops its draw for castTime and lands after it
 	local castTime = if (def.castTime or 0) > 0 then def.castTime else nil
 	onCast(
-		{ s = skillId, c = id, p = front, d = if skill.type == "channel" then 2.5 else nil, ct = castTime },
+		{ s = skillId, c = id, p = front, d = if skill.type == "channel" then loopUntil else nil, ct = castTime },
 		skill,
 		model
 	)
@@ -838,7 +868,7 @@ function VfxController.Preview(model: Model, skillId: string)
 		then castTime
 		elseif motion then math.min(motion.hit or motion.release or 0, SkillMotions.MAX_HIT)
 		else 0
-	task.delay(delay, function()
+	Clock.after(delay, function()
 		local data: { [string]: any } =
 			{ s = skillId, c = id, r = def.radius, a = def.angle, l = def.length, w = def.width }
 		if skill.type == "circleTarget" or skill.type == "trap" or skill.type == "healZone" then

@@ -84,4 +84,17 @@ function LookAnim.pick(state: State, available: { [string]: boolean }): Pick?
 	return if slot then { slot = slot, looped = true, fade = 0.25, speed = 1 } else nil
 end
 
+-- S110 (AnimLab): TimePosition of a clip of `length` seconds `t` seconds after it started at `speed`: looped clips
+-- wrap, one-shot clips stop just before the end (TimePosition = length would end the track).
+function LookAnim.clipTime(t: number, length: number, looped: boolean, speed: number?): number
+	if length <= 0 then
+		return 0
+	end
+	local at = math.max(0, t * (speed or 1))
+	if looped then
+		return at % length
+	end
+	return math.max(0, math.min(at, length - 1 / 60))
+end
+
 return LookAnim

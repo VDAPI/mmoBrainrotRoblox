@@ -16,7 +16,9 @@
 --   * mounts (S96): every model tagged "VaelthornMount" (Util/MountLook, welded under a rider) walks its Gait_* legs
 --     in step with the rider's speed (stride x Data/Mounts.RIDER.stride), a real model with MountRig "animator"
 --     plays its clips (Data/Mounts.assets anims) and "static" stands; the rider (character attribute Mount) sits
---     astride with the legs of Logic/RiderPose (the arms stay free for the basic attack).
+--     astride with the legs of Logic/RiderPose (the arms stay free for the basic attack);
+--   AnimLab (S110): LabHold samples the attack and the skill of a preview model at a fixed time t and keeps them past
+--     their end (no flinch meanwhile), LabClear drops them; only models with the attribute VaelthornPreview.
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -42,10 +44,10 @@ local AnimationController = {
 }
 
 local MonsterView: any = nil
-local HIT_SECONDS = 0.25
-local SPAWN_SECONDS = 1.2
+local HIT_SECONDS = Gait.HIT_SECONDS -- S110: shared with MobViz and AnimLab
+local SPAWN_SECONDS = 1.2 -- window in which a real model plays its "spawn" clip (not Gait.SPAWN_SECONDS)
 local PICK_EVERY = 0.25 -- seconds between choosing which monsters animate
-local DEATH_SECONDS = 0.55
+local DEATH_SECONDS = Gait.DEATH_SECONDS
 
 type JointState = { motor: Motor6D, joint: Gait.Joint, scale: number }
 
@@ -508,6 +510,9 @@ local rigs: { [Model]: Rig } = {}
 local attacks: { [Model]: Attack } = {}
 local skills: { [Model]: SkillPlay } = {}
 local flinches: { [Model]: number } = {}
+-- S110 AnimLab: preview models held at a motion time (seconds from the start of their attack / skill).
+local labHeld: { [Model]: number } = {}
+local labWarned = false
 -- Guard against stacking: the last Transform we wrote and the animation's own value under it.
 local written: { [any]: CFrame } = {}
 local under: { [any]: CFrame } = {}
@@ -544,6 +549,7 @@ local function rigOf(model: Model): Rig?
 		attacks[model] = nil
 		flinches[model] = nil
 		skills[model] = nil
+		labHeld[model] = nil
 	end)
 	return created
 end
@@ -585,11 +591,14 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 	local skillPose: AttackPose.Pose? = nil
 	local skillWeight = 0
 	local play = skills[model]
+	local hold = labHeld[model] -- S110: AnimLab holds this model at a fixed motion time
 	if play then
-		local t = (play.frozenAt or now) - play.start
+		local t = hold or (play.frozenAt or now) - play.start
 		local p, w, done = SkillPose.sample(play.motion, t, { from = play.from, loopUntil = play.loopUntil })
 		if done then
-			skills[model] = nil
+			if not hold then
+				skills[model] = nil
+			end
 		else
 			skillPose, skillWeight = p, w
 			play.pose = p
@@ -599,9 +608,11 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 	local pose: AttackPose.Pose? = nil
 	local weight = 0
 	if attack then
-		local p, phase, w = AttackPose.sample(attack.motion, now - attack.start, attack.interval, attack.from)
+		local p, phase, w = AttackPose.sample(attack.motion, hold or now - attack.start, attack.interval, attack.from)
 		if phase == "rest" then
-			attacks[model] = nil
+			if not hold then
+				attacks[model] = nil
+			end
 		else
 			pose, weight = p, w
 			attack.pose = p
@@ -609,7 +620,9 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 	end
 	local flinchAt = flinches[model]
 	local flinch = 0
-	if flinchAt then
+	if flinchAt and hold then
+		flinches[model] = nil
+	elseif flinchAt then
 		local t = (now - flinchAt) / FLINCH_SECONDS
 		if t >= 1 then
 			flinches[model] = nil
@@ -802,6 +815,49 @@ end
 function AnimationController.CharacterHit(model: Model)
 	if rigOf(model) then
 		flinches[model] = os.clock()
+	end
+end
+
+-- S110 AnimLab: holds the attack and the skill motion of a preview model (attribute VaelthornPreview) at `t` seconds
+-- from their start, also past their end; nil lets them play on from there (their start moves by the time held).
+function AnimationController.LabHold(model: Model, t: number?)
+	if model:GetAttribute("VaelthornPreview") ~= true then
+		if not labWarned then
+			labWarned = true
+			warn("[AnimationController] LabHold works only on preview models (VaelthornPreview)")
+		end
+		return
+	end
+	if t then
+		labHeld[model] = math.max(0, t)
+		rigOf(model)
+		return
+	end
+	local held = labHeld[model]
+	labHeld[model] = nil
+	if held then
+		local now = os.clock()
+		local attack = attacks[model]
+		if attack then
+			attack.start = now - held
+		end
+		local play = skills[model]
+		if play then
+			play.start = now - held
+			play.frozenAt = nil
+		end
+	end
+end
+
+-- S110 AnimLab: drops every motion of a preview model and gives its joints back to the default animation.
+function AnimationController.LabClear(model: Model)
+	labHeld[model] = nil
+	attacks[model] = nil
+	skills[model] = nil
+	flinches[model] = nil
+	local rig = rigs[model]
+	if rig then
+		release(rig)
 	end
 end
 

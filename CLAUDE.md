@@ -13,6 +13,11 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Faza: gameplay.** Priorytet to poprawny, kompletny kod. Nie uruchamiaj gry, nie pisz instrukcji testu ani list
   „do sprawdzenia w Studio” (testy robi właściciel po etapie gameplayu). Lune: tylko istniejące testy w `check`; nowe
   testy wtedy, gdy logika jest nietrywialna i czysta.
+- **Wyjątek: seria S110–S119 (animacje i grafiki), `docs/sessions/IMPORT-MODELI.md` i `docs/sessions/IMPORT-GRAFIK.md`**
+  (`docs/DESIGN-16.md` §0.1): sesja może przez serwer MCP Roblox Studio uruchomić Play, oglądać i robić zrzuty (AnimLab,
+  `docs/ANIMACJE.md`), czytać konsolę i (S111, S112) wstawiać dźwięki i tekstury. Kod zmienia się tylko w repo (Rojo);
+  bez edycji skryptów w Studio, zapisu i publikacji miejsca. Bez MCP sesja robi kod i wpisuje brak przeglądu do
+  „Niedokończone”.
 - Po pracy: `scripts/check.ps1` (Windows) lub `bash scripts/check.sh` musi przejść. Dokumentacja krótko: decyzje
   (1–3 linie każda) na końcu `docs/DECYZJE.md`, sekcja sesji (co zrobiono, pliki) na końcu `docs/SESJE.md`, w
   `docs/PROGRESS.md` tylko stan i realne braki w kodzie.
@@ -144,6 +149,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).
+- **Podgląd ruchu** (S110): `/animlab` (Studio, admin), klatki kontrolne `Logic/MotionKeys`, zegar efektów
+  `client/Vfx/Clock` (każde nowe opóźnienie, tween i emiter efektu przez `Clock`), `docs/ANIMACJE.md`.
 - **Tytuł ścieżki** (S59): wpis w `Data/Titles` (`id = "path_<pathId>"`, `req = { kind = "mainPath", path = "<pathId>" }`)
   i `title.path_<pathId>` (PL, EN); okno umiejętności rysuje ścieżkę samo z `Data/Paths` (`Logic/PathView`), opis
   węzła dostaje argumenty z `Paths.nodeArgs`.

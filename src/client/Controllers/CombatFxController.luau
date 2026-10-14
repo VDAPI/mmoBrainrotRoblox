@@ -14,8 +14,9 @@
 --   reward : "+EXP · +gold" above our character
 -- Damage numbers: setting "all / mine and received / off" (settings.dmgMode, DamageText.mode; the old
 -- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
+-- S110: the attack and telegraph visuals run on the effect clock (Vfx/Clock: delays, tweens, trails, flights), so
+-- AnimLab freezes them with the pose; damage numbers and floating texts stay on real time (they are not motion).
 
-local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -35,6 +36,7 @@ local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Library = require(script.Parent.Parent.Vfx.Library)
 
 local CombatFxController = {
@@ -439,7 +441,7 @@ local function flash(model: Model, color: Color3?)
 	local h = e.highlight
 	h.FillColor = color or Color3.new(1, 1, 1)
 	h.FillTransparency = 0.35
-	TweenService:Create(h, TweenInfo.new(0.15), { FillTransparency = 1 }):Play()
+	Clock.tween(h, TweenInfo.new(0.15), { FillTransparency = 1 })
 end
 
 -- Attack visuals ----------------------------------------------------------------------------------------
@@ -462,6 +464,13 @@ local function effectPart(name: string, size: Vector3, color: Color3, shape: Enu
 	return part
 end
 
+-- Destroys an effect part after `seconds` of the effect clock (S110: instead of Debris).
+local function destroyLater(instance: Instance, seconds: number)
+	Clock.after(seconds, function()
+		instance:Destroy()
+	end)
+end
+
 local function lowQuality(): boolean
 	return State.Get({ "account", "settings", "quality" }) == "low"
 end
@@ -481,11 +490,11 @@ local function impact(model: Model, crit: boolean)
 	)
 	ball.Transparency = 0.2
 	ball.CFrame = CFrame.new(at + Vector3.new((math.random() - 0.5) * 0.8, 0.5, (math.random() - 0.5) * 0.8))
-	TweenService:Create(ball, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	Clock.tween(ball, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		Size = Vector3.one * size,
 		Transparency = 1,
-	}):Play()
-	Debris:AddItem(ball, 0.2)
+	})
+	destroyLater(ball, 0.2)
 end
 
 -- Short camera kick when we take a heavy (critical) hit or a big skill lands nearby (S28). Scaled by the setting
@@ -519,11 +528,11 @@ local function swing(attacker: Model, target: Model)
 	arc.Transparency = 0.3
 	local base = CFrame.lookAt(from, from + direction) * CFrame.new(0, 0.5, -2.2)
 	arc.CFrame = base * CFrame.Angles(0, math.rad(-50), math.rad(20))
-	TweenService:Create(arc, TweenInfo.new(0.15), {
+	Clock.tween(arc, TweenInfo.new(0.15), {
 		CFrame = base * CFrame.Angles(0, math.rad(50), math.rad(-20)),
 		Transparency = 1,
-	}):Play()
-	Debris:AddItem(arc, 0.2)
+	})
+	destroyLater(arc, 0.2)
 end
 
 -- Projectiles (S22): pooled parts moved every frame, homing on the target's centre; arrows fly an arc and
@@ -589,6 +598,7 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 			trail.LightEmission = 1
 			trail.Transparency = NumberSequence.new(0.2, 1)
 			trail.Parent = orb
+			Clock.track(trail)
 			part = orb
 		end
 	end
@@ -653,7 +663,7 @@ local function launch(kind: string, from: Vector3, target: Model, color: Color3?
 		kind = kind,
 		from = from,
 		target = target,
-		start = os.clock(),
+		start = Clock.now(),
 		duration = flightTime(kind, distance),
 		arc = if kind == "arrow" then math.min(4, distance * 0.08) else 0,
 		onArrive = onArrive,
@@ -664,7 +674,7 @@ local function stepFlights()
 	if #flights == 0 then
 		return
 	end
-	local now = os.clock()
+	local now = Clock.now()
 	for i = #flights, 1, -1 do
 		local f = flights[i]
 		local to = if f.target.Parent then centre(f.target) else f.part.Position
@@ -688,7 +698,7 @@ local function stepFlights()
 			if kind == "arrow" and not lowQuality() and f.target.Parent then
 				-- Stuck in the target for a moment, then gone.
 				part.CFrame = part.CFrame * CFrame.new(0, 0, -0.6)
-				task.delay(0.6, function()
+				Clock.after(0.6, function()
 					giveBack(kind, part)
 				end)
 			else
@@ -696,9 +706,8 @@ local function stepFlights()
 					local burst = effectPart("Burst", Vector3.one * 0.6, part.Color, Enum.PartType.Ball)
 					burst.CFrame = part.CFrame
 					burst.Transparency = 0.2
-					TweenService:Create(burst, TweenInfo.new(0.18), { Size = Vector3.one * 2.4, Transparency = 1 })
-						:Play()
-					Debris:AddItem(burst, 0.2)
+					Clock.tween(burst, TweenInfo.new(0.18), { Size = Vector3.one * 2.4, Transparency = 1 })
+					destroyLater(burst, 0.2)
 				end
 				giveBack(kind, part)
 			end
@@ -750,13 +759,13 @@ local function weaponTrail(weapon: BasePart, timing: AttackPose.Timing)
 		created.Parent = weapon
 		trail = created
 	end
-	local t = trail :: Trail
-	task.delay(math.max(0, timing.windup - 0.02), function()
+	local t = Clock.track(trail :: Trail)
+	Clock.after(math.max(0, timing.windup - 0.02), function()
 		if t.Parent then
 			t.Enabled = true
 		end
 	end)
-	task.delay(timing.windup + timing.strike + 0.04, function()
+	Clock.after(timing.windup + timing.strike + 0.04, function()
 		if t.Parent then
 			t.Enabled = false
 		end
@@ -772,8 +781,8 @@ local function charge(weapon: BasePart?, color: Color3, seconds: number)
 	local spark = effectPart("Charge", Vector3.one * 0.2, color, Enum.PartType.Ball)
 	spark.CFrame = CFrame.new(at)
 	spark.Transparency = 0.3
-	TweenService:Create(spark, TweenInfo.new(seconds), { Size = Vector3.one * 0.9, Transparency = 0.1 }):Play()
-	Debris:AddItem(spark, seconds)
+	Clock.tween(spark, TweenInfo.new(seconds), { Size = Vector3.one * 0.9, Transparency = 0.1 })
+	destroyLater(spark, seconds)
 end
 
 -- Dust ring at the target (hammer / mace blows).
@@ -786,8 +795,8 @@ local function dust(target: Model)
 	ring.Material = Enum.Material.SmoothPlastic
 	ring.Transparency = 0.35
 	ring.CFrame = CFrame.new(at) * CFrame.Angles(0, 0, math.rad(90))
-	TweenService:Create(ring, TweenInfo.new(0.3), { Size = Vector3.new(0.2, 7, 7), Transparency = 1 }):Play()
-	Debris:AddItem(ring, 0.35)
+	Clock.tween(ring, TweenInfo.new(0.3), { Size = Vector3.new(0.2, 7, 7), Transparency = 1 })
+	destroyLater(ring, 0.35)
 end
 
 -- Bright flash at the target (priest weapons).
@@ -803,8 +812,8 @@ local function holyFlash(target: Model)
 	light.Range = 14
 	light.Brightness = 3
 	light.Parent = ball
-	TweenService:Create(ball, TweenInfo.new(0.25), { Size = Vector3.one * 4, Transparency = 1 }):Play()
-	Debris:AddItem(ball, 0.3)
+	Clock.tween(ball, TweenInfo.new(0.25), { Size = Vector3.one * 4, Transparency = 1 })
+	destroyLater(ball, 0.3)
 end
 
 local HOLY = { holystaff = true, scepter = true }
@@ -822,15 +831,15 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	local motion = AttackPose.motionFor(weaponType)
 	if event.st == "melee" then
 		if motion == "unarmed" or not weapon then
-			task.delay(timing.hitAt * 0.7, swing, attacker, target)
+			Clock.after(timing.hitAt * 0.7, swing, attacker, target)
 		else
 			weaponTrail(weapon, timing)
 			if motion == "smash" then
-				task.delay(timing.hitAt, dust, target)
+				Clock.after(timing.hitAt, dust, target)
 			end
 		end
 		if weaponType and HOLY[weaponType] then
-			task.delay(timing.hitAt, holyFlash, target)
+			Clock.after(timing.hitAt, holyFlash, target)
 		end
 		return
 	end
@@ -840,7 +849,7 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	if kind == "magic" then
 		charge(weapon, color, timing.hitAt)
 	end
-	task.delay(timing.hitAt, function()
+	Clock.after(timing.hitAt, function()
 		if not attacker.Parent or not target.Parent then
 			return
 		end
@@ -873,7 +882,7 @@ local function telegraph(event: { [string]: any })
 		local fill = groundDisc("TelegraphFill", 0.05, area, 0.45)
 		outline.Color = color
 		fill.Color = color
-		TweenService:Create(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) }):Play()
+		Clock.tween(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) })
 		table.insert(parts, outline)
 		table.insert(parts, fill)
 	elseif event.sh == "cone" then
@@ -891,10 +900,10 @@ local function telegraph(event: { [string]: any })
 			fill.Material = Enum.Material.SmoothPlastic
 			fill.Transparency = 0.45
 			fill.CFrame = area * CFrame.Angles(0, -yaw, 0) * CFrame.new(0, 0.16, 0)
-			TweenService:Create(fill, info, {
+			Clock.tween(fill, info, {
 				Size = Vector3.new(width * 0.95, 0.14, radius),
 				CFrame = area * CFrame.Angles(0, -yaw, 0) * CFrame.new(0, 0.16, -radius / 2),
-			}):Play()
+			})
 			table.insert(parts, slice)
 			table.insert(parts, fill)
 		end
@@ -909,7 +918,7 @@ local function telegraph(event: { [string]: any })
 		fill.Color = color
 		safe.Color = Theme.Colors.Success
 		safe.CFrame = safe.CFrame + Vector3.new(0, 0.05, 0)
-		TweenService:Create(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) }):Play()
+		Clock.tween(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) })
 		table.insert(parts, outline)
 		table.insert(parts, fill)
 		table.insert(parts, safe)
@@ -924,18 +933,18 @@ local function telegraph(event: { [string]: any })
 		fill.Material = Enum.Material.SmoothPlastic
 		fill.Transparency = 0.45
 		fill.CFrame = area * CFrame.new(0, 0.16, 0)
-		TweenService:Create(fill, info, {
+		Clock.tween(fill, info, {
 			Size = Vector3.new(width * 0.95, 0.14, length),
 			CFrame = area * CFrame.new(0, 0.16, -length / 2),
-		}):Play()
+		})
 		table.insert(parts, outline)
 		table.insert(parts, fill)
 	end
 
-	task.delay(windup, function()
+	Clock.after(windup, function()
 		for _, part in parts do
-			TweenService:Create(part, TweenInfo.new(0.2), { Transparency = 1 }):Play()
-			Debris:AddItem(part, 0.25)
+			Clock.tween(part, TweenInfo.new(0.2), { Transparency = 1 })
+			destroyLater(part, 0.25)
 		end
 	end)
 end
@@ -1117,9 +1126,10 @@ function CombatFxController.Init(registry)
 	end
 end
 
--- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage).
-function CombatFxController.PreviewAttack(weaponType: string?)
-	local character = player.Character
+-- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage). S110: `model` (an AnimLab
+-- mannequin) instead of our character.
+function CombatFxController.PreviewAttack(weaponType: string?, model: Model?)
+	local character = model or player.Character
 	if not character then
 		return
 	end
@@ -1129,6 +1139,11 @@ function CombatFxController.PreviewAttack(weaponType: string?)
 	if weapon and not AttackPose.timing(motion).ranged and motion ~= "unarmed" then
 		weaponTrail(weapon, timing)
 	end
+end
+
+-- S110 AnimLab: the ground telegraph of a "tele" event (boss / Elite II attacks) without the server.
+function CombatFxController.PreviewTelegraph(event: { [string]: any })
+	telegraph(event)
 end
 
 local WARN_EVERY = 2

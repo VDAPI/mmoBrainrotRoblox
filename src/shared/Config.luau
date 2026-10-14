@@ -290,6 +290,45 @@ local Config = {
 		simpleBeyond = 60,
 		lowParticles = 0.5,
 	},
+	-- S110 AnimLab (docs/ANIMACJE.md, Studio + admin only): the stage floats `layout.height` studs above the admin;
+	-- offsets in studs from its centre C (the actor stands in C facing -Z). Limits of the /animlab arguments.
+	AnimLab = {
+		layout = {
+			height = 250,
+			floor = {
+				size = { 48, 1, 32 },
+				color = "#8A8A8F",
+				line = "#5A5A60",
+				major = "#3E3E44",
+				step = 1,
+				majorEvery = 5,
+			},
+			backdrop = { color = "#6E6E73", height = 20 }, -- three walls: back (+Z), left, right
+			actor = { 0, 0, 0 },
+			target = { 0, 0, -6 }, -- dummy / monster facing the actor
+			row = { from = { -20, 0, 10 }, gap = 2.2 }, -- the idle row of weapon mannequins behind the actor
+			cameras = {
+				front = { pos = { 0, 3, -14 }, look = { 0, 2.5, 0 } },
+				side = { pos = { 14, 3, 0 }, look = { 0, 2.5, 0 } },
+				threequarter = { pos = { 10, 5, -10 }, look = { 0, 2.5, 0 } },
+				top = { pos = { 0, 22, 0.01 }, look = { 0, 0, 0 } },
+				game = { pos = { 0, 9, 16 }, look = { 0, 2, -6 } }, -- behind and above, like the default game camera
+			},
+		},
+		freezeMax = 10, -- seconds: freeze <t> accepts 0..freezeMax
+		stepMax = 1, -- seconds: step <dt> accepts -stepMax..stepMax (not 0)
+		stressMax = 30, -- mannequins of stress <n>
+		stressEvery = 1.5, -- seconds between two skills of one stress mannequin
+		loopGap = 0.6, -- seconds between the end of a looped motion and its next start
+		freezeWait = 12, -- seconds AnimLabCall waits for a freeze before it answers
+		settle = 2, -- seconds a replay waits at most for the effects of the previous one to end
+		castWindup = 1.2, -- seconds of the windup of `mob <id> cast` (AnimationController: windup > 1 is a cast)
+		stressRadius = 10, -- studs: the circle of the stress mannequins around the actor
+		cameraPart = 0.4, -- studs: the invisible AnimLabCam_* parts
+		lineWidth = 0.06, -- studs: grid lines (major lines twice as wide)
+		wallThickness = 1,
+		dummyColor = "#9A9AA0", -- the target mannequin
+	},
 	-- Bosses (S30, DESIGN §16): every character may kill one boss `dailyRuns` times per UTC day.
 	Boss = {
 		dailyRuns = 3,

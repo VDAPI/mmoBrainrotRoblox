@@ -44,7 +44,7 @@ Nie wolno: edytować skryptów w Studio (`multi_edit`, zapis do `Script.Source`)
 
 Scena do oglądania ruchu, dostępna tylko w Studio i tylko dla admina (`RunService:IsStudio()` + uprawnienia S23).
 
-- Komenda `/animlab` (kategoria Dev w `Data/AdminCommands`): stawia scenę obok spawnu gracza (płaska podłoga z siatką 1 st., neutralne światło, tło, 4 kamery `AnimLabCam_Front`, `_Side`, `_ThreeQuarter`, `_Top` jako `Part`y z nazwą), manekiny R15 ubrane jak postaci klas, z każdą bronią z `WeaponLooks`, i manekiny celów (potwór generatora albo modelu).
+- Komenda `/animlab` (kategoria `combat` ze `studioOnly` w `Data/AdminCommands`; S110): stawia scenę 250 st. nad adminem (płaska podłoga z siatką 1 st., neutralne światło, tło, 5 kamer `AnimLabCam_Front`, `_Side`, `_ThreeQuarter`, `_Top`, `_Game` jako `Part`y z nazwą), manekiny R15 ubrane jak postaci klas, z każdą bronią z `WeaponLooks`, i manekiny celów (potwór generatora albo modelu).
 - Podkomendy: `attack <weaponType>`, `skill <skillId>`, `mob <kind> <slot>`, `boss <bossId> <attackId>`, `npc <npcId> <slot>`, `sfx <key>`, `loop`, `freeze <t>` (ustawia pozę i efekt na czas `t` w sekundach i trzyma), `step <dt>`, `off`.
 - `freeze` wymaga, żeby ruch był funkcją czasu: `AttackPose`, `SkillPose`, `Gait` i `LookAnim` dostają (jeśli nie mają) wejście „poza w chwili t”, a `Vfx/Library` tryb „stop-klatki” (zatrzymanie tweenów i emiterów w chwili t). Klipy `AnimationTrack` przez `TimePosition` + `AdjustSpeed(0)`.
 - Każdy ruch ma **klatki kontrolne** liczone z danych: start, szczyt zamachu, trafienie, wybrzmienie, koniec. `/animlab … keys` drukuje ich czasy, a sesja robi `screen_capture` z kamer dla każdej klatki kontrolnej.
@@ -143,3 +143,25 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
 2. S112: jeśli MCP nie wgra tekstur, Bulk Import w Asset Managerze (sesja poda pliki).
 3. Modele: według `Graphics/TRIPO-ANIMACJE.md`; przy imporcie: Import 3D, Publish klipów, Save to File.
 4. Opcjonalnie: własne klipy ataków i umiejętności w Moon Animator 2 albo Animation Editor (`docs/ANIMACJE.md`).
+
+## 11. Ustalenia S110
+
+- MCP: `AnimLabCall` (lokalny `BindableFunction` w `LocalPlayer`, linia → JSON) i `/animlab` (kategoria `combat`,
+  `studioOnly`); składnia i dokładność zamrożenia w `docs/ANIMACJE.md` §4. Nowe podkomendy S111–S117 dopisują w
+  `Logic/AnimLab.parse` (akcja + klucz `animlab.error.*`) i w `run` `AnimLabController`.
+- Klatki kontrolne: `MotionKeys.attack/skill/monster/boss/ability/clip/still/at`; `lune run tools/motionkeys.luau`.
+- Zegar efektów: `Clock.now/after/tween/track/dt/freeze/resume` (`client/Vfx/Clock`). Każde nowe opóźnienie, tween,
+  emiter i smuga efektu przez `Clock`; liczby obrażeń zostają na czasie rzeczywistym.
+- Ruch: `AnimationController.LabHold(model, t?)` / `LabClear(model)` (tylko modele `VaelthornPreview`),
+  `Gait.stateMotion(slot, t, options)` i stałe `Gait.HIT_SECONDS`, `DEATH_SECONDS`, `SPAWN_SECONDS`, `WALK_SPEED`,
+  `RUN_SPEED`, `LookAnim.clipTime(t, length, looped, speed?)`.
+- Podgląd: `CombatFxController.PreviewTelegraph(event)`, `PreviewAttack(weaponType?, model?)`,
+  `Util/WeaponBuild.attach(model, weaponType, accent, name, def?)` (broń z części albo prawdziwy model, wspólna z
+  `EquipmentService`).
+- Usterka do S117: potwór z generatora uderza w `strikePeak`, serwer zadaje obrażenia w `hit`: 0,14 s po telegrafie,
+  0,2 s przy zwykłym ataku (tolerancja ±0,03 s).
+- Zdarzenie `tele` (`CombatService.telegraph`) nie ma id ataku: pole `a` dodaje S116, S117 wybiera nim pozę albo klip
+  ataku bossa.
+- Przegląd w Studio w S110 nie zrobiony: miejsce bez dostępu do DataStore (zapis w pamięci, brak postaci); tabela
+  bazowa w `docs/SESJE.md` ma klatki z danych. S111+ robi przegląd, gdy właściciel włączy dostęp i utworzy postać
+  (`docs/ANIMACJE.md` §2 pkt 4).

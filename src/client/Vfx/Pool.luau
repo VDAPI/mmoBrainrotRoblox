@@ -6,6 +6,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local Pool = {}
@@ -90,9 +91,9 @@ function Pool.release(p: BasePart)
 	end
 end
 
--- Releases after `seconds`.
+-- Releases after `seconds` (S110: on the effect clock, so a frozen effect stays).
 function Pool.later(p: BasePart, seconds: number)
-	task.delay(seconds, Pool.release, p)
+	Clock.after(seconds, Pool.release, p)
 end
 
 -- Effect budget: true when one more effect may start (call done() when it ends).
@@ -106,7 +107,7 @@ end
 
 function Pool.done(seconds: number?)
 	if seconds and seconds > 0 then
-		task.delay(seconds, function()
+		Clock.after(seconds, function()
 			active = math.max(0, active - 1)
 		end)
 	else
