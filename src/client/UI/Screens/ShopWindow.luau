@@ -1,6 +1,8 @@
 --!strict
 -- Shop window (DESIGN §9, §18): Buy, Sell (click backpack items to select, total, confirmation for Epic and better)
--- and Buy back (last 10 sold). Gold always visible. Prices come from ItemValue.buyPrice (S31; the tooltip shows the
+-- and Buy back (last 10 sold). FIX 2026-10-15 (owner): on the Sell tab the items are marked right in the backpack
+-- next to the shop (DragDrop.MarkHandler / Marked: a click or tap toggles the check mark); the tab lists what is
+-- marked (a click removes it), the total and "Sell marked". No second copy of the backpack in the shop any more. Gold always visible. Prices come from ItemValue.buyPrice (S31; the tooltip shows the
 -- same price).
 -- FIX 2026-10-14 (owner): Buy is a grid of icons grouped by kind (Logic/ShopGroups: weapons, off-hand, armour
 -- pieces, jewellery, potions, ...) with a small header per group; hovering an icon (PC) or tapping it (touch) shows
@@ -459,7 +461,9 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	local inventory = State.Value({ "character", "inventory" })
 	local gold = State.Value({ "character", "gold" })
 	local buyback = State.Value({ "buyback" })
-	local selected = scope:Value({} :: { [string]: boolean })
+	-- FIX 2026-10-15: the marks live on the backpack slots ("inv:N" -> uid), shared through DragDrop.
+	local selected = DragDrop.Marked
+	selected:set({})
 
 	local npcId = scope:Computed(function(use): string?
 		return use(props.NpcId)
@@ -470,13 +474,20 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	local sellTotal = scope:Computed(function(use): number
 		local inv = use(inventory) or {}
 		local total = 0
-		for key in use(selected) do
-			local item = inv[key]
-			if item then
+		for slotId, uid in use(selected) do
+			local item = inv[string.sub(slotId, 5)]
+			if item and item.uid == uid then
 				total += ItemRoll.sellPrice(item)
 			end
 		end
 		return total
+	end)
+	local markedCount = scope:Computed(function(use): number
+		local n = 0
+		for _ in use(selected) do
+			n += 1
+		end
+		return n
 	end)
 
 	-- Sells backpack slots (keys "1".."N"): the selection, or one item dropped on the window (S17).
@@ -556,11 +567,62 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 
 	local function sellSelected()
 		local keys = {}
-		for key in Fusion.peek(selected) do
-			table.insert(keys, key)
+		for slotId in Fusion.peek(selected) do
+			table.insert(keys, string.sub(slotId, 5))
 		end
 		sellKeys(keys)
 	end
+
+	local function unmark(slotId: string)
+		local copy = table.clone(Fusion.peek(selected))
+		copy[slotId] = nil
+		selected:set(copy)
+	end
+
+	-- A click on a backpack slot while the Sell tab is open toggles its mark (locked items say why not).
+	DragDrop.MarkHandler = function(slotId: string): boolean
+		if Fusion.peek(tab) ~= "sell" then
+			return false
+		end
+		local inv = Fusion.peek(inventory) or {}
+		local item = inv[string.sub(slotId, 5)]
+		if not item then
+			return false
+		end
+		local copy = table.clone(Fusion.peek(selected))
+		if copy[slotId] then
+			copy[slotId] = nil
+		elseif item.locked then
+			Toast.push(Text.now("shop.error.locked"), "warning")
+			return true
+		else
+			copy[slotId] = item.uid
+		end
+		selected:set(copy)
+		return true
+	end
+	-- Marks follow the items: a slot whose item changed (sold, moved, sorted) loses its mark; leaving Sell clears them.
+	scope:Observer(inventory):onChange(function()
+		local inv = Fusion.peek(inventory) or {}
+		local copy = {}
+		local changed = false
+		for slotId, uid in Fusion.peek(selected) do
+			local item = inv[string.sub(slotId, 5)]
+			if item and item.uid == uid then
+				copy[slotId] = uid
+			else
+				changed = true
+			end
+		end
+		if changed then
+			selected:set(copy)
+		end
+	end)
+	scope:Observer(tab):onChange(function()
+		if Fusion.peek(tab) ~= "sell" then
+			selected:set({})
+		end
+	end)
 
 	-- Dragging (or tapping, after selecting it) a backpack item onto the drop zone sells it.
 	DragDrop.SellHandler = function(index: number)
@@ -570,6 +632,8 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 	ItemTooltip.setMerchantOpen(true)
 	table.insert(scope, function()
 		DragDrop.SellHandler = nil
+		DragDrop.MarkHandler = nil
+		DragDrop.Marked:set({})
 		ItemTooltip.setMerchantOpen(false)
 	end)
 
@@ -652,6 +716,8 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 				s:New("TextLabel")({
 					LayoutOrder = 0,
 					Size = UDim2.new(1, 0, 0, 24),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					TextWrapped = true,
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "shop.sellHint"),
 					FontFace = Theme.Fonts.Body,
@@ -691,13 +757,19 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			if bar then
 				table.insert(list, bar)
 			end
-			local grid = {}
-			local keys = {}
-			for key in use(inventory) or {} do
-				table.insert(keys, tonumber(key) :: number)
+			-- What is marked in the backpack (a click here removes the mark).
+			local inv = use(inventory) or {}
+			local marked = {}
+			for slotId, uid in use(selected) do
+				local index = tonumber(string.sub(slotId, 5))
+				local item = inv[string.sub(slotId, 5)]
+				if index and item and item.uid == uid then
+					table.insert(marked, index)
+				end
 			end
-			table.sort(keys)
-			for _, index in keys do
+			table.sort(marked)
+			local grid = {}
+			for _, index in marked do
 				local key = tostring(index)
 				table.insert(
 					grid,
@@ -706,24 +778,33 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 						LayoutOrder = index,
 						TooltipCtx = { merchantOpen = true },
 						Item = s:Computed(function(use2): Types.ItemInstance?
-							local inv = use2(inventory)
-							return if inv then inv[key] else nil
+							local current = use2(inventory)
+							return if current then current[key] else nil
 						end),
-						Selected = s:Computed(function(use2): boolean
-							return use2(selected)[key] == true
-						end),
+						Selected = true,
 						OnToggle = function()
-							local copy = table.clone(Fusion.peek(selected))
-							copy[key] = if copy[key] then nil :: any else true
-							selected:set(copy)
+							unmark(`inv:{key}`)
 						end,
 					})
 				)
 			end
 			table.insert(
 				list,
-				s:New("Frame")({
+				s:New("TextLabel")({
 					LayoutOrder = 1,
+					Size = UDim2.new(1, 0, 0, 24),
+					BackgroundTransparency = 1,
+					Text = Text.get(use, if #marked == 0 then "shop.markedNone" else "shop.marked", { n = #marked }),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				})
+			)
+			table.insert(
+				list,
+				s:New("Frame")({
+					LayoutOrder = 2,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -933,7 +1014,9 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					Position = UDim2.fromScale(1, 0),
 					Size = UDim2.fromOffset(240, 50),
 					Variant = "primary",
-					Text = Text.T(scope, "shop.sell"),
+					Text = scope:Computed(function(use): string
+						return Text.get(use, "shop.sellMarked", { n = use(markedCount) })
+					end),
 					Disabled = scope:Computed(function(use): boolean
 						return next(use(selected)) == nil
 					end),

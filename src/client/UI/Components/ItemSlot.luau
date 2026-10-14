@@ -110,6 +110,10 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 	local dragging = scope:Computed(function(use): boolean
 		return use(DragDrop.Dragging) == props.SlotId
 	end)
+	-- FIX 2026-10-15: marked for selling in an open shop (DragDrop.Marked).
+	local marked = scope:Computed(function(use): boolean
+		return use(DragDrop.Marked)[props.SlotId] ~= nil
+	end)
 	local hint = scope:Computed(function(use): string?
 		return if props.DropHint ~= nil then use(props.DropHint) else nil
 	end)
@@ -267,6 +271,31 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				end),
 				ZIndex = 3,
 				Label = { TextScaled = true },
+			}),
+			-- Marked for selling (FIX 2026-10-15): gold veil, outline and a check mark, as in SelectableSlot.
+			scope:New("Frame")({
+				Name = "SellMark",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Colors.GoldBright,
+				BackgroundTransparency = 0.75,
+				Visible = marked,
+				ZIndex = 4,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIStroke")({ Color = Theme.Colors.GoldBright, Thickness = 3 }),
+					scope:New("TextLabel")({
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.new(1, -2, 0, 0),
+						Size = UDim2.fromOffset(20, 20),
+						BackgroundTransparency = 1,
+						Text = "✔",
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 18,
+						TextColor3 = Theme.Colors.GoldBright,
+						TextStrokeTransparency = 0.3,
+						ZIndex = 5,
+					}),
+				},
 			}),
 			-- Bound lock
 			ArtIcon(scope, {

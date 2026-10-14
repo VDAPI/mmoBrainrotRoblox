@@ -68,6 +68,9 @@ local getters: { [string]: () -> ItemInstance? } = {}
 -- Root of the layer the tooltip is mounted in (FIX 2026-10-14: GUI points are measured from it, Scale.toLayer).
 local layerRoot: GuiObject? = nil
 local ctxGetters: { [string]: () -> TooltipModel.Ctx? } = {}
+-- FIX 2026-10-15: while a modal is open (e.g. "bind and equip?") no item tooltip is shown; slots under the
+-- modal still get MouseEnter and the panel covered the question.
+local blocked = false
 
 -- S68: the open details panel and the PC pin.
 type OpenDetail = {
@@ -428,6 +431,14 @@ function ItemTooltip.hide()
 	hide(nil)
 end
 
+-- WindowManager: true while a modal is visible (hides the tooltip and keeps it hidden).
+function ItemTooltip.setBlocked(value: boolean)
+	blocked = value
+	if value then
+		hide(nil)
+	end
+end
+
 function ItemTooltip.attach(
 	scope: Scope,
 	object: GuiObject,
@@ -443,7 +454,7 @@ function ItemTooltip.attach(
 				overOwner = true
 			end
 			-- S68: a pinned tooltip stays on its item while the mouse travels to its lines.
-			if UserInputService.MouseEnabled and not Fusion.peek(pinned) then
+			if UserInputService.MouseEnabled and not Fusion.peek(pinned) and not blocked then
 				local text = if empty then Fusion.peek(empty) else nil
 				local item = getItem()
 				if item or text then
@@ -512,7 +523,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		local selected = Fusion.peek(DragDrop.Selected)
 		local getter = selected and getters[selected]
 		local item = getter and getter()
-		if item then
+		if item and not blocked then
 			local screen = Fusion.peek(Scale.VirtualSize)
 			owner = nil
 			shownSlot:set(selected)

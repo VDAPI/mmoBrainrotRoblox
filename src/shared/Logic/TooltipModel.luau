@@ -245,6 +245,23 @@ function TooltipModel.categoryKey(def: ItemDef): string
 	return `itemCat.{def.category}`
 end
 
+-- Second line of the tooltip (FIX 2026-10-15): rarity · the item's kind (Miecz, Kurta ...) · its category (Broń
+-- jednoręczna, Zbroja ...); the kind is left out when it says the same as the category (Pierścień · Pierścień).
+function TooltipModel.typeLine(item: ItemInstance, d: ItemDef, lang: string): string
+	local rarity = Rarities.get(item.rarity)
+	local parts = { `<font color="{rarity.textHex}"><b>{Locale.T(rarity.nameKey, nil, lang)}</b></font>` }
+	local category = Locale.T(TooltipModel.categoryKey(d), nil, lang)
+	local baseKey = if d.category == "equipment" and d.type then `itemBase.{d.type}` else nil
+	if baseKey and Locale.has(baseKey, lang) then
+		local base = Locale.T(baseKey, nil, lang)
+		if string.lower(base) ~= string.lower(category) then
+			table.insert(parts, `<b>{base}</b>`)
+		end
+	end
+	table.insert(parts, category)
+	return table.concat(parts, " · ")
+end
+
 -- Weapon damage per second: the higher of physical / magic damage times attacks per second.
 function TooltipModel.dps(weapon: { dmg: number, mdmg: number, speed: number }): number
 	return math.max(weapon.dmg, weapon.mdmg) * weapon.speed
@@ -406,10 +423,10 @@ local function comparable(item: ItemInstance): { [string]: number }
 	return values
 end
 
--- Equipment header block: item level, element, then weapon damage / speed / DPS or the base stats.
+-- Equipment main block: element, then weapon damage / speed / DPS or the base stats (FIX 2026-10-15: the item
+-- level moved to the footer, the one- / two-handed and ranged tags to the type line under the name).
 local function equipmentStats(b: Builder, item: ItemInstance, stats: ItemRoll.ItemStats, lang: string)
 	local element = ItemRoll.elementOf(item)
-	b.add("ilvl", Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), "muted")
 	if element then
 		b.add(
 			"element",
@@ -431,14 +448,7 @@ local function equipmentStats(b: Builder, item: ItemInstance, stats: ItemRoll.It
 				{ size = "body", font = "bold" }
 			)
 		end
-		local tags = { Locale.T("tooltip.speed", { speed = decimal(w.speed, 2, lang) }, lang) }
-		if w.twoHanded then
-			table.insert(tags, Locale.T("tooltip.twoHanded", nil, lang))
-		end
-		if w.ranged then
-			table.insert(tags, Locale.T("tooltip.ranged", nil, lang))
-		end
-		b.add("speed", table.concat(tags, " · "), "muted")
+		b.add("speed", Locale.T("tooltip.speed", { speed = decimal(w.speed, 2, lang) }, lang), "dark")
 		b.add("dps", Locale.T("tooltip.dps", { dps = decimal(TooltipModel.dps(w), 1, lang) }, lang), "dark")
 	end
 	local keys = {}
@@ -448,6 +458,14 @@ local function equipmentStats(b: Builder, item: ItemInstance, stats: ItemRoll.It
 	table.sort(keys)
 	for _, stat in keys do
 		b.add("stat", `{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat], lang)}</b>`)
+	end
+	-- FIX 2026-10-15 (owner): what the rarity adds, said outright (base x Rarities.baseMul, already inside the numbers
+	-- above); named boss items carry their own fixed numbers.
+	local def = Items.get(item.id)
+	local rarity = Rarities.get(item.rarity)
+	if def and def.fixedBonuses == nil and rarity.baseMul > 1 then
+		local pct = math.floor((rarity.baseMul - 1) * 100 + 0.5)
+		b.add("rarityBonus", Locale.T("tooltip.rarityBonus", { pct = pct }, lang), "muted", { size = "small" })
 	end
 end
 
@@ -478,6 +496,10 @@ local function bonusLines(b: Builder, stats: ItemRoll.ItemStats, lang: string)
 	local order: { number } = {}
 	for index in stats.bonuses do
 		table.insert(order, index)
+	end
+	-- FIX 2026-10-15: a small title, so the random lines read apart from the item's own stats.
+	if #order > 0 then
+		b.add("bonusTitle", Locale.T("tooltip.bonuses", nil, lang), "muted", { size = "small", font = "bold" })
 	end
 	table.sort(order, function(x: number, y: number): boolean
 		local tx = TooltipModel.TIER_ORDER[tierOf(stats.bonuses[x].id)]
@@ -747,15 +769,7 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		"rarity",
 		{ hex = rarity.textHex, size = "large", font = "heading" }
 	)
-	b.add(
-		"type",
-		`<font color="{rarity.textHex}"><b>{Locale.T(rarity.nameKey, nil, lang)}</b></font> · {Locale.T(
-			TooltipModel.categoryKey(d),
-			nil,
-			lang
-		)}`,
-		"muted"
-	)
+	b.add("type", TooltipModel.typeLine(item, d, lang), "muted")
 
 	-- Statistics / effect
 	local described = false
@@ -826,6 +840,10 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 	end
 	if item.n > 1 then
 		b.add("stack", Locale.T("tooltip.stack", { n = item.n }, lang), "muted")
+	end
+	-- FIX 2026-10-15: the item level is a detail (the requirement above says what matters): footer, small.
+	if d.category == "equipment" then
+		b.add("ilvl", Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), "muted", { size = "small" })
 	end
 
 	-- Value and context price

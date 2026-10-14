@@ -244,6 +244,7 @@ export type DeathState = {
 	deadline: number,
 	cost: number,
 	dungeon: boolean?,
+	hereCost: number?, -- FIX 2026-10-15: gold for "respawn here" (0 or nil: free)
 }
 
 export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil: number? }

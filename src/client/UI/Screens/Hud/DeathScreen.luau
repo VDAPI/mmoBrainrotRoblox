@@ -3,6 +3,7 @@
 -- Shards or Robux. Visible while the state branch `death` exists. S22: once the countdown ends (or after a
 -- paid skip) two choices replace it: "Respawn in the city" [1] and "Respawn here" [2] (in a dungeon: at its
 -- entrance); without a choice the server picks the city at `deadline`. Keys 1 and 2 are local to this screen.
+-- FIX 2026-10-15: "Respawn here" shows its gold price (`death.hereCost`) and is disabled without enough gold.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -60,6 +61,7 @@ end
 local function DeathScreen(scope: Scope): Instance
 	local death = State.Value({ "death" })
 	local shards = State.Value({ "account", "dragonShards" })
+	local gold = State.Value({ "character", "gold" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local busy = scope:Value(false)
 
@@ -87,6 +89,10 @@ local function DeathScreen(scope: Scope): Instance
 	local cost = scope:Computed(function(use): number
 		local d = use(death)
 		return if d then d.cost else 0
+	end)
+	local hereCost = scope:Computed(function(use): number
+		local d = use(death)
+		return if d and type(d.hereCost) == "number" then d.hereCost else 0
 	end)
 	local counting = scope:Computed(function(use): boolean
 		return not use(choosing)
@@ -257,13 +263,21 @@ local function DeathScreen(scope: Scope): Instance
 						LayoutOrder = 7,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 						Visible = choosing,
-						Disabled = busy,
+						Disabled = scope:Computed(function(use): boolean
+							local owned = use(gold)
+							return use(busy)
+								or (use(hereCost) > 0 and (type(owned) ~= "number" or owned < use(hereCost)))
+						end),
 						Text = scope:Computed(function(use): string
 							local d = use(death)
-							return Text.get(
-								use,
-								if d and d.dungeon then "death.respawnEntrance" else "death.respawnHere"
-							)
+							if d and d.dungeon then
+								return Text.get(use, "death.respawnEntrance")
+							end
+							local price = use(hereCost)
+							if price > 0 then
+								return Text.get(use, "death.respawnHereCost", { gold = Format.number(price) })
+							end
+							return Text.get(use, "death.respawnHere")
 						end),
 						OnClick = function()
 							choose("here")
@@ -273,8 +287,10 @@ local function DeathScreen(scope: Scope): Instance
 						Name = "Shards",
 						LayoutOrder = 8,
 						Size = UDim2.new(1, 0, 0, 22),
-						Visible = counting,
 						Text = scope:Computed(function(use): string
+							if use(choosing) then
+								return Text.get(use, "death.goldOwned", { gold = Format.number(use(gold) or 0) })
+							end
 							return Text.get(use, "death.shardsOwned", { shards = Format.number(use(shards) or 0) })
 						end),
 						TextSize = Theme.TextSize.Small,

@@ -56,3 +56,13 @@ describe("Respawn.searchOffsets", function()
 		end
 	end)
 end)
+
+describe("Respawn.hereCost (FIX 2026-10-15)", function()
+	it("grows with the level, has a floor and is free in a dungeon", function()
+		expect(Respawn.hereCost(1, "grass")).toBe(15)
+		expect(Respawn.hereCost(20, "grass")).toBe(300)
+		expect(Respawn.hereCost(100, "cave") > Respawn.hereCost(50, "cave")).toBe(true)
+		expect(Respawn.hereCost(0, "grass") >= 10).toBe(true)
+		expect(Respawn.hereCost(40, "dungeon")).toBe(0)
+	end)
+end)

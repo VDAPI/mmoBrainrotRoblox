@@ -6,7 +6,18 @@
 --   "spawnPoint" : the nearest spawn point of the map (under or off the map, or blocked with no free spot),
 --   "here"       : where the character fell (or the free spot nearby when that place is water or a wall).
 
+local Config = require("../Config")
+
 local Respawn = {}
+
+-- FIX 2026-10-15: gold price of "respawn here" for a character of `level` (0 in a dungeon: that choice is the
+-- entrance). DeathService charges it only when the character really comes back at the death spot.
+function Respawn.hereCost(level: number, biome: string?): number
+	if biome == "dungeon" then
+		return 0
+	end
+	return math.max(Config.RespawnHereGoldMin, math.floor(math.max(1, level) * Config.RespawnHereGoldPerLevel + 0.5))
+end
 
 export type Choice = "city" | "here"
 export type Place = "city" | "entrance" | "spawnPoint" | "here"

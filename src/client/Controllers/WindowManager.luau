@@ -16,12 +16,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
 local Modal = require(script.Parent.Parent.UI.Components.Modal)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
+local Tooltip = require(script.Parent.Parent.UI.Components.Tooltip)
 local Device = require(script.Parent.Parent.UI.Device)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Window = require(script.Parent.Parent.UI.Components.Window)
@@ -339,9 +341,17 @@ function WindowManager.HasModal(): boolean
 end
 
 local function showNextModal()
-	if modalScope or #modalQueue == 0 then
+	if modalScope then
 		return
 	end
+	if #modalQueue == 0 then
+		ItemTooltip.setBlocked(false)
+		Tooltip.hide()
+		return
+	end
+	-- The question must not sit under an item tooltip (FIX 2026-10-15).
+	ItemTooltip.setBlocked(true)
+	Tooltip.hide()
 	local spec = table.remove(modalQueue, 1) :: Modal.Spec
 	local scope = rootScope:innerScope()
 	modalScope = scope
@@ -380,6 +390,7 @@ function WindowManager.DismissModals()
 		modalCancel = nil
 		Fusion.doCleanup(scope)
 	end
+	ItemTooltip.setBlocked(false)
 end
 
 function WindowManager.SetHotkeysEnabled(enabled: boolean)

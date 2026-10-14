@@ -68,7 +68,7 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - **Nic nie tracisz.** Ekran śmierci z licznikiem.
 - Czas odrodzenia: `5 + 0.3 × poziom` sekund (poz. 1 → 5 s, poz. 100 → 35 s).
 - Przycisk „Odródź natychmiast” za Smoczą Walutę (lub Developer Product za Robux) pomija licznik.
-- Po liczniku gracz wybiera: **„Odródź w mieście”** albo **„Odródź tutaj”** (w miejscu śmierci). Brak wyboru przez 60 s oznacza miasto.
+- Po liczniku gracz wybiera: **„Odródź w mieście”** (za darmo) albo **„Odródź tutaj”** (w miejscu śmierci, za złoto: `max(10, 15 × poziom)`, poprawka 2026-10-15). Brak wyboru przez 60 s oznacza miasto.
 - Wyjątki od „tutaj”:
   - w lochu: przed wejściem do lochu;
   - pod mapą albo poza nią: najbliższy punkt odrodzenia mapy;
@@ -292,7 +292,7 @@ unik, pech wroga i blok razem najwyżej 40% (S61).
   odpoczynkiem (model okna Wojownika: 2,6 / 14,4 / 26,1 / 41,0 h na pasma 1–20 / 20–45 / 45–70 / 70–100; cel D4 82 h
   ±15%). Tabela `expDoNastępnego`: poz. 20 → 11 918, 45 → 55 416, 70 → 128 218, 80 → 165 230, 90 → 206 655,
   99 → 247 669 (100. poziom to koniec).
-- EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×4, Elita II ×12, boss ×60; od S32 razy wytrzymałość rodzaju
+- EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×1,5, Elita II ×4 (poprawka 2026-10-15: Elity są dla dropu, nie do expienia; było ×4 / ×12), boss ×60; od S32 razy wytrzymałość rodzaju
   `hpMul^0.75 × (atkMul × szybkość)^0.25` (niedźwiedź brunatny ×1,26, królik ×0,57, wrona ×0,86; bossy ×1).
 - Różnica poziomów (gracz − potwór = d): d ≤ 5 → 100%; d > 5 → `−15%` za każdy poziom ponad 5, min 5%. Potwór wyżej: `+4%` za poziom, max +20%.
 - Grupa: EXP potwora **dzielony przez liczbę członków grupy w zasięgu 80 studów** (każdy dostaje równą część, potem własna kara/bonus za różnicę poziomu).

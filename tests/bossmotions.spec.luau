@@ -62,3 +62,19 @@ T.describe("BossMotions (S117)", function()
 		end
 	end)
 end)
+
+T.describe("BossTuning.extra (FIX 2026-10-15)", function()
+	T.it("shield and kiting attacks borrow a motion of their own boss and have sane numbers", function()
+		local BossTuning = require("../src/shared/Data/BossTuning")
+		for bossId, extra in BossTuning.extra :: any do
+			T.expect({ bossId, Bosses.get(bossId) ~= nil }).toEqual({ bossId, true })
+			for kind, spec in extra do
+				local tag = `{bossId}.{kind}`
+				T.expect({ tag, BossMotions.attack(bossId, spec.look) ~= nil }).toEqual({ tag, true })
+				T.expect({ tag, spec.windup >= 1 and spec.damage > 0 }).toEqual({ tag, true })
+				T.expect({ tag, (spec.every or spec.cooldown or 0) >= 3 }).toEqual({ tag, true })
+				T.expect({ tag, spec.shape == "line" or spec.shape == "circle" }).toEqual({ tag, true })
+			end
+		end
+	end)
+end)
