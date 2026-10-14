@@ -1212,7 +1212,12 @@ function VfxController.Start()
 	end
 	Players.PlayerAdded:Connect(watchPlayer)
 	task.spawn(function()
-		local folder = Workspace:WaitForChild("Vaelthorn_Banners")
+		-- The server creates this folder with the first War Banner, possibly never in a session.
+		local folder = Workspace:FindFirstChild("Vaelthorn_Banners")
+		while not folder do
+			Workspace.ChildAdded:Wait()
+			folder = Workspace:FindFirstChild("Vaelthorn_Banners")
+		end
 		folder.ChildAdded:Connect(watchBanner)
 		for _, child in folder:GetChildren() do
 			watchBanner(child)

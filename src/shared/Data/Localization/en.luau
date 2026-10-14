@@ -27,6 +27,7 @@ return {
 	-- Character selection
 	["charSelect.subtitle"] = "Choose your character",
 	["charSelect.loading"] = "Loading your characters…",
+	["charSelect.stalled"] = "The server is not responding. Please try rejoining in a moment.",
 	["charSelect.mockWarning"] = "Test mode: no DataStore access, progress will not be saved after this session.",
 	["charSelect.emptySlot"] = "Empty slot",
 	["charSelect.createButton"] = "Create character",

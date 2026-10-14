@@ -39,6 +39,19 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 		return use(phase) ~= "select"
 	end)
 
+	-- The server answers within seconds; if it never does (server failed to start), say so instead of
+	-- leaving "Loading your characters" up forever.
+	local SERVER_TIMEOUT = 45
+	local stalled = scope:Value(false)
+	task.delay(SERVER_TIMEOUT, function()
+		if Fusion.peek(phase) ~= "select" then
+			pcall(function()
+				stalled:set(true)
+			end)
+			warn(`[CharacterSelect] no character list from the server after {SERVER_TIMEOUT} s`)
+		end
+	end)
+
 	local function play(slot: number)
 		if Fusion.peek(busy) then
 			return
@@ -164,7 +177,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					if use(loading) then
-						return Text.get(use, "charSelect.loading")
+						return Text.get(use, if use(stalled) then "charSelect.stalled" else "charSelect.loading")
 					end
 					if use(creating) then
 						return Text.get(use, "charSelect.create.title", { slot = use(creating) })

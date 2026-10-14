@@ -27,6 +27,7 @@ return {
 	-- Character selection
 	["charSelect.subtitle"] = "Wybierz postać",
 	["charSelect.loading"] = "Wczytywanie postaci…",
+	["charSelect.stalled"] = "Serwer nie odpowiada. Spróbuj dołączyć ponownie za chwilę.",
 	["charSelect.mockWarning"] = "Tryb testowy: brak dostępu do DataStore, postęp nie zostanie zapisany po tej sesji.",
 	["charSelect.emptySlot"] = "Wolny slot",
 	["charSelect.createButton"] = "Utwórz postać",

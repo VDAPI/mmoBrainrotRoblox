@@ -336,7 +336,12 @@ local function safeBuild(model: Instance)
 end
 
 function MonsterPlateController.Start()
-	local monsters = Workspace:WaitForChild("Monsters")
+	-- No timeout warning spam: the folder comes from the server's MonsterService and may arrive late.
+	local monsters = Workspace:FindFirstChild("Monsters")
+	while not monsters do
+		Workspace.ChildAdded:Wait()
+		monsters = Workspace:FindFirstChild("Monsters")
+	end
 	for _, child in monsters:GetChildren() do
 		task.spawn(safeBuild, child)
 	end
