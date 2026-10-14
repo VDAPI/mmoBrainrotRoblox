@@ -951,6 +951,17 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   istniejących budowlach), sześć nowych efektów po użyciu; Wanda prowadzi do Drzewa Kości, Dobrawa idzie z graczem po
   żywicę i płatki. Zadania od 20. poziomu (`minLevel`), bicie oddaje różnicę (`monsterExpMul`), czas na poziom bez
   zmian. Na wiki od S109.
+- **Poboczne Spalonych Pustkowi (S107, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 26 zadań na 45–68
+  (`Data/Quests/Side` S–Z): „Ogień w pęknięciach” 45–48 (Zwiadowczyni Kesra, od Ysolde), „Ostatnia woda” 46–49
+  (Studniarz Orren, od karczmarza), „Krew i popiół” 50–53 (Szamanka Ghasha, po `warcampCages`), „Srebro i mithril” 50–56
+  (Poszukiwacz Dragan, koniec u Dorgana), „Imiona zmarłych” 57–61 (Brat Kaspar, po `burntTemple`, koniec u Brata
+  Anzelma), „Łowy na turniach” 58–62 (Łowczyni Wiesława, przez Ysolde), „Sen królów” 63–68 (Strażnik Ezra), „Solne
+  karawany” 64–67 (Woźnica Bogna). Pięciu nowych NPC i 28 kotwic `ash_*` stoi wyłącznie w istniejących kołach `avoid`
+  (teren, grupy i węzły bez zmian), 9 z rekwizytem „przed” z `Logic/AshenGen/Quest`, pięć nowych efektów po użyciu;
+  Orren prowadzi do łodzi na suchym dnie, Ezra do Pogrzebanego Króla. EXP z budżetu pasma 45–69 mechanizmem S106
+  (6%, `BAND_SCALE[45]`: ok. 5% poziomu za zwykłe i 8,5% za finał), złoto `gold(poziom) × 0,8`, na końcu łuku wybór
+  1 z 3 przedmiotów klasy; bicie oddaje różnicę (`monsterExpMul` 45–69 o ok. 4% niżej), czas na poziom bez zmian. Na
+  wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S106 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S107 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -143,6 +143,10 @@ S106 poboczne Mrocznego Boru: osiem łuków, 27 zadań na 20–44 u ośmiu nowyc
 Dobrawa, Zbyszko, Ołdrzych, Kalina, Wojsław), 30 kotwic `dw_*` (16 z rekwizytami generatora), sześć efektów, wybór
 przedmiotu na końcu łuku, skin `mountskin_lantern`, EXP z budżetu pasma (6%, `settleBands`), złoto ×0,8,
 `monsterExpMul` 20–44 o ok. 3–4% niżej, czas na poziom bez zmian; ukryte na wiki do S109.
+S107 poboczne Spalonych Pustkowi: osiem łuków, 26 zadań na 45–68 u pięciu nowych mieszkańców Pustkowi (Orren, Dragan,
+Wiesława, Ezra, Bogna) oraz Kesry, Ghashy i Kaspara, 28 kotwic `ash_*` (9 z rekwizytami `AshenGen/Quest`), pięć
+efektów, Orren i Ezra jako towarzysze, wybór przedmiotu na końcu łuku, EXP z budżetu pasma (6%), złoto ×0,8,
+`monsterExpMul` 45–69 o ok. 4% niżej, czas na poziom bez zmian; ukryte na wiki do S109.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -175,7 +179,7 @@ zakończone; testy i decyzje właściciela po nich.
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
   bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty od 20.
-  (po S106: 20–44 27%, 45–69 23%, 70–99 24%; poboczne S107–S108 brakują; audyt S109).
+  (po S107: 20–44 27%, 45–69 26%, 70–99 24%; poboczne S108 brakują; audyt S109).
 - **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
   (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
   Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
@@ -204,6 +208,9 @@ zakończone; testy i decyzje właściciela po nich.
 - **Poboczne Boru (S106)**: uproszczenia wyglądu: efekt `spill` przykrywa stojący kocioł wiedźmy przewróconą bryłą
   (zielone światło kotła generatora zostaje), `ward` przy słupach z urokiem stawia deszczułkę obok, urok rekwizytu
   nie znika.
+- **Poboczne Pustkowi (S107)**: uproszczenia wyglądu: runa snu (efekt `rune` z S104) to płyta na ziemi przy sarkofagu
+  i przy wrotach piramidy, nie znak na wieku; przecięta skóra bębna leży oparta o róg podestu (pozycja liczona od
+  kotwicy), kikut kolumny bez kolizji.
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

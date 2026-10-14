@@ -75,7 +75,10 @@ return {
 		{ path = "Data/Quests/Contracts", omit = { "penalty" } },
 		{ path = "Data/Quests/Daily" },
 		-- S101b: dialogue fields, not balance (answers, page variants, comment and companion-line counts, routes)
-		{ path = "Data/Quests/Main", omit = { "choices", "recall", "barks", "companion", "pages", "via", "CHAPTERS", "chapterOf" } },
+		{
+			path = "Data/Quests/Main",
+			omit = { "choices", "recall", "barks", "companion", "pages", "via", "CHAPTERS", "chapterOf" },
+		},
 		{ path = "Data/Quests/Side", omit = { "choices", "recall", "barks", "companion" } },
 		{ path = "Data/Quests/Weekly" },
 		{ path = "Data/Rarities", omit = LOOKS },
@@ -3074,16 +3077,76 @@ return {
 				why = "S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
 			},
 		},
+		-- S107 (docs/DESIGN-15.md §3.4): the Ashen side arcs; EXP from the band budget (TARGET.side of 45-69 by
+		-- expToNext x weight, S106 settleBands), gold(level) x GOLD_FROM_20, 2-4 quests per arc
+		["Quests/Side:byArc.ashSalamanders*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashSalamanders: Fire in the Cracks 45-48 (Kesra, Ysolde; Salamander Flats); kills 12, drops 6 at 0.5, a delivery, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashOasis*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashOasis: the Last Water 46-49 (Orren, Wacław; Dead Oasis); kills 8, drops 5 at 0.4, a delivery, an escort, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashSpring*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashSpring: Blood and Ash 50-53 (Ghasha after warcampCages; Hot Spring, Ash Orc Warcamp); kills 8-10, gathers 4, uses 3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashProspector*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashProspector: Silver and Mithril 50-56 (Dragan, Dorgan; Ash Orc Warcamp, Abandoned Mine, Golem Fields); kills 8-10, drops 3 at 0.5 (Elites in the mine), gathers 4-6, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashRuins*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashRuins: Names of the Dead 57-61 (Kaspar after burntTemple, Anzelm; Burnt Ruins); kills 8-10, drops 5 at 0.4, a delivery, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashCrags*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashCrags: the Crag Hunt 58-62 (Wiesława, Ysolde; Wyvern Crags); kills 10, drops 4 at 0.4, a delivery, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashTombs*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashTombs: the Sleep of Kings 63-68 (Ezra; Scorpion Dunes, Desert Tombs); kills 8-12, drops 3 at 0.35, an escort, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
+		["Quests/Side:byArc.ashCaravans*"] = {
+			{
+				session = "S107",
+				why = "S107: Ashen side arc ashCaravans: the Salt Caravans 64-67 (Bogna; Ash Road); kills 10-12, drops 5 at 0.4, uses 2-3 s; EXP from the 45-69 band's side budget (S106 settleBands, BAND_SCALE[45]), gold half of the story's x GOLD_FROM_20",
+			},
+		},
 		["Quests/Side:BAND_FROM"] = {
-			{ session = "S106", why = "S106: side quest EXP from the band budget from level 20 (the Meadows 1-19 keep their shares)" },
+			{
+				session = "S106",
+				why = "S106: side quest EXP from the band budget from level 20 (the Meadows 1-19 keep their shares)",
+			},
 		},
 		["Quests/Side:WEIGHT*"] = {
-			{ session = "S106", why = "S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25)" },
+			{
+				session = "S106",
+				why = "S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25)",
+			},
 		},
 		["Quests/Side:BAND_SCALE*"] = {
 			{
 				session = "S106",
 				why = "S106: derived by settleBands (band 20-44: 6% of its EXP minus the stable arc, by expToNext x weight)",
+			},
+			{
+				session = "S107",
+				why = "S107: BAND_SCALE[45] derived by settleBands (band 45-69: 6% of its EXP, 26 Ashen side quests by expToNext x weight, no fixed quests)",
 			},
 		},
 		["Quests/Side:GOLD_FROM_20"] = {
@@ -3251,6 +3314,10 @@ return {
 				session = "S106",
 				why = "regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP)",
 			},
+			{
+				session = "S107",
+				why = "regenerated: Ashen side arcs (26 quests, 45-68, 6% of the band's EXP); 45-69 0.73-0.92 (was 0.76-0.96), no new clamp, 1-44 and 70-99 unchanged",
+			},
 		},
 		["Quests/Main:STORY_STEP"] = {
 			{
@@ -3295,7 +3362,10 @@ return {
 			{ session = "S102", why = "S102: list positions shifted by inserted story quests, values unchanged" },
 			{ session = "S103", why = "S103: list positions shifted by the nine chapter II quests, values unchanged" },
 			{ session = "S104", why = "S104: list positions shifted by the ten chapter III quests, values unchanged" },
-			{ session = "S105", why = "S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged" },
+			{
+				session = "S105",
+				why = "S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged",
+			},
 		},
 		["Quests/Main:byId.frostRuins*"] = {
 			{
@@ -3383,16 +3453,28 @@ return {
 		},
 		-- S104 (docs/FABULA.md §2.4): story chapter III and the band 45-69 on the story rule
 		["Quests/Main:byId.ashen.reward.exp"] = {
-			{ session = "S104", why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)" },
+			{
+				session = "S104",
+				why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)",
+			},
 		},
 		["Quests/Main:byId.orcs.reward.exp"] = {
-			{ session = "S104", why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)" },
+			{
+				session = "S104",
+				why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)",
+			},
 		},
 		["Quests/Main:byId.golems.reward.exp"] = {
-			{ session = "S104", why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)" },
+			{
+				session = "S104",
+				why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)",
+			},
 		},
 		["Quests/Main:byId.deepforge.reward.exp"] = {
-			{ session = "S104", why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)" },
+			{
+				session = "S104",
+				why = "S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight)",
+			},
 		},
 		["Quests/Main:byId.deadOasis*"] = {
 			{

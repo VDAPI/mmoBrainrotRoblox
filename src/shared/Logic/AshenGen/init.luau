@@ -12,7 +12,8 @@
 --     Wyvern, the rock arch), Road (Avenue of Kings, stone caravan, robbed wagons, milestones, basilisk pit),
 --     Necropolis (pyramid, procession avenue, courtyards, rock tombs), Mouths (mine, lair, Deepforge),
 --   * stone bridges over the lava (Logic/WorldGen/Structures), braziers by the roads, rocks, dead trees last
---     (Logic/WorldGen/Flora: charred stumps, burnt trees, dead palms; they keep clear of everything above).
+--     (Logic/WorldGen/Flora: charred stumps, burnt trees, dead palms; they keep clear of everything above),
+--   * S107: the props of the side quest anchors (Quest) after the trees, so nothing before them moves.
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
@@ -29,6 +30,7 @@ local Mouths = require("@self/Mouths")
 local Necropolis = require("@self/Necropolis")
 local Oasis = require("@self/Oasis")
 local Props = require("@self/Props")
+local Quest = require("@self/Quest")
 local Rng = require("./Rng")
 local Road = require("@self/Road")
 local Ruins = require("@self/Ruins")
@@ -266,6 +268,9 @@ function AshenGen.all(): { Build }
 	for _, b in tiles do
 		table.insert(out, b :: any)
 	end
+	-- S107: props of the side quest anchors, last and without clearings of their own (the frozen Wastes keep every
+	-- earlier Build, tree and node where it was)
+	Quest.all(e, out)
 	treeCache = trees
 	cache = out
 	return out

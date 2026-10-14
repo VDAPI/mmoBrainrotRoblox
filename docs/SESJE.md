@@ -7672,3 +7672,116 @@ Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/duskwood.luau`
 
 Uproszczenia: efekt `spill` przykrywa stojący kocioł wiedźmy przewróconą bryłą (kocioł generatora zostaje pod nią,
 jego zielone światło też); `ward` przy słupach z urokiem stawia deszczułkę obok, urok rekwizytu nie znika.
+
+### S107: Questy poboczne: Spalone Pustkowia (45–70)
+
+Start na `e4f5b2a` (S106): commit i sekcja S106, pliki z listy przerwania, `warcampCages` / `burntTemple` i
+`shaman_ghasha` / `hermit_kaspar` na miejscu. Mechanizmy S102–S106 sprawdzone grepem i użyte bez zmian:
+`regionfolk` + `NpcDef.wiki`, `NpcSpot.wiki` / `QuestAnchor.wiki` z filtrem S103,
+pętla polan S104 w `AshenGen.dataClearings`, `side(def)` z budżetem pasma S106 (`settleBands`, `BAND_SCALE`,
+`GOLD_FROM_20`), `Talk.*`, konstruktor `free` jak w `Areas/duskwood`. Migawki przed: `build/s107_before.json` (grupy,
+węzły, drzewa, budowle), `build/s107_budget_before.txt`, `build/s107_QuestBudget.before.luau`.
+
+Co zrobiono:
+- **Zadania (D):** 26 zadań w ośmiu łukach S–Z w `Data/Quests/Side` (tabela niżej), `wiki = false`, wymagania w
+  obrębie łuku, Ghasha od `warcampCages`, Kaspar od `burntTemple`; finał z wyborem przedmiotu (ilvl = poziom); `ARCS`
+  + 8 (84 zadania, 26 łuków). Pięć nowych `FX`: `cairn`, `water`, `incense`, `drum`, `mirror` (+ `rune` z S104).
+- **NPC (C):** Studniarz Orren (💧), Poszukiwacz Dragan (⚒), Łowczyni Wiesława (🏹), Strażnik Ezra (⚱), Woźnica Bogna
+  (🐂), `services = { "talk" }`, 3 linie, ikony bez zamian; `npc.scout_ashen.where`, `npc.alchemist.where`.
+- **Mapa (B, G):** 5 miejsc NPC i 28 kotwic `ash_*` w `Areas/ashen` (wszystko w kołach `avoid`), 9 rekwizytów w nowym
+  `Logic/AshenGen/Quest` (`basaltRubble`, `buriedWell`, `flatStones`, `columnStump`, `stoneHeap`; 2–8 kawałków
+  detail/fine bez kolizji), wywołanie na końcu `AshenGen.all()`.
+- **Klient (F):** buildery `cairn`, `water`, `incense` (na ołtarzu dziedzińca przez promień), `drum`, `mirror` (tarcza
+  obrócona do jamy) w `QuestAnchorController`; `mark` i `tracks` rysują się na rekwizycie Pustkowi (`ashSpot`).
+- **Rozmowy (L):** wybory 2–3 odpowiedzi i komentarze `accept` / `half` / `done` (+ `near`, `death`, `stuck` według
+  planu) w 26 zadaniach; `recall`: `den.done` ← `glands`, `seals.p1` ← `wells`, `fang.done` ← `rite`, `claim.done` ←
+  `silver`, `names.p2` ← `chimneys`, `nest.done` ← `lookout`, `wards.p1` i `masks.p4` ← `king`, `mirror.done` ←
+  `wagons`; podpowiedź w `partners` przed sztolnią kopalni (−560 / −719, `map.ashen_mine.name`); upominki
+  `potion_hp_4` × 2 (`salve`, `altar`), `potion_mana_3` × 2 (`eyes`). Towarzysze: Orren prowadzi z pomostu (−546 / 528)
+  przez −600 / 570 do łodzi (−630 / 630, r 12; odcinki 69, 67), Ezra z drogi procesyjnej (594 / 127) przez 560 / 10,
+  420 / −6, 290 / 50, 360 / 215, 420 / 360, 490 / 460 do Pogrzebanego Króla (560 / 560, r 24; odcinki 122–179).
+- **Teksty (E, J):** PL i EN wszystkich stron, `progress`, `done`, wariantów, odpowiedzi, komentarzy, linii towarzyszy,
+  8 łuków, 11 przedmiotów, 16 akcji (`quest.use.wagon` z Łąk), 3 miejsc (`place.buriedKing`, `place.kingsAvenue`,
+  `place.strandedBoat`), NPC.
+
+| łuk | id (poziom, ★ finał) | daje → oddaje |
+|---|---|---|
+| `ashSalamanders` | `side_ash_salve` 45, `side_ash_glands` 46, `side_ash_den` ★ 48 | alchemist → scout_ashen, scout_ashen |
+| `ashOasis` | `side_ash_cask` 46, `side_ash_wells` 47, `side_ash_seals` ★ 49 | innkeeper → waterkeeper_orren, Orren |
+| `ashSpring` | `side_ash_rite` 50, `side_ash_drum` 51, `side_ash_fang` ★ 53 | shaman_ghasha (od `warcampCages`) |
+| `ashProspector` | `side_ash_silver` 50, `side_ash_partners` 52, `side_ash_columns` 54, `side_ash_claim` ★ 56 | prospector_dragan, finał → blacksmith |
+| `ashRuins` | `side_ash_chimneys` 57, `side_ash_heirlooms` 59, `side_ash_names` ★ 61 | hermit_kaspar (od `burntTemple`), finał → brother_anzelm |
+| `ashCrags` | `side_ash_lookout` 58, `side_ash_eyes` 60, `side_ash_nest` ★ 62 | wyvernhunter_wieslawa → alchemist → Wiesława |
+| `ashTombs` | `side_ash_king` 63, `side_ash_wards` 64, `side_ash_altar` 66, `side_ash_masks` ★ 68 | tombwarden_ezra |
+| `ashCaravans` | `side_ash_wagons` 64, `side_ash_avenue` 65, `side_ash_mirror` ★ 67 | wagoner_bogna |
+
+Poziomy obszarów po S93 pasują do wszystkich zadań (`[lv.min − 2, lv.max + 3]`), żadnego poziomu nie przesunięto.
+
+Budżet (H): `BAND_SCALE[45]` = 0,046982; poboczne 45–69 = 131 969 EXP = 6,0% `bandExp(45)` (2 199 696); zwykłe
+0,047, finał 0,085 `expToNext` (45: 2603, 68: 10 262); złoto 26 zadań 26 911 (× 0,8). Udział `side` w paśmie 45–69:
+model 0,0% → 3,0%, gracz robi wszystko 0,0% → 6,0%; razem zadania 45–69 (model) 23,1% → 26,1%. `monsterExpMul` przed
+→ po: L45 0,936 → 0,900; L50 0,958 → 0,921; L55 0,896 → 0,861; L60 0,896 → 0,861; L65 0,855 → 0,822; L69 0,856 →
+0,823 (całe 45–69 0,73–0,92, bez nowych przycięć; godziny bicia 45–69 × 1,0001, tempo 45→70 w `balance.spec`
+zielone). Komendy: `lune run tools/quest_budget.luau --session S107`, `lune run tools/quest_budget.luau check`
+(aktualne), `lune run tools/quest_budget.luau allowed --why "S107: Ashen side arcs"` (222 wpisy: 0 nowych, 0
+zmienionych), `lune run tests/run.luau`, `lune run tools/balance_report.luau`. Księga: `byArc.<łuk>*` × 8,
+`BAND_SCALE*` i `MONSTER_EXP_MUL*` z wpisami S107, bez „BRAK POWODU”.
+
+Miejsca końcowe (wszystko w kołach `avoid`, `wiki = false`; skaner `build/s107_scan.luau`, `s107_grid.luau`):
+
+| id | punkt | koło / przy czym |
+|---|---|---|
+| NPC `waterkeeper` (Orren) | −546 / 528, 170° | `oasisJetty`, na dnie u nasady pomostu (plan −546 / 514 na skarpie) |
+| NPC `prospector` (Dragan) | −238 / −312, 270° | odrodzenie −226 / −300 |
+| NPC `wyvernhunter` (Wiesława) | 665 / −602, 270° | `stoneArch` (plan 664 / −596 dotykał łuku) |
+| NPC `tombwarden` (Ezra) | 594 / 127, 270° | `pyramid`, koniec drogi procesyjnej |
+| NPC `wagoner` (Bogna) | 478 / −190, 90° | odrodzenie 470 / −212, twarzą do wozów |
+| `ash_cairn_1..3` | −547 / −116, −594 / −162, −624 / −22 | `fissures`, `glowPit` (plan nad lawą), `ribcage`; rekwizyt |
+| `ash_hyena_skull` | −598 / −49 | `hyenaDen`, przed pyskiem czaszki |
+| `ash_stranded_boat`, `ash_well_1..3` | −640 / 642; −662 / 636, −584 / 548, −452 / 622 | `strandedBoat`, `oasisJetty`, `caravanGrave`; studnie z rekwizytem |
+| `ash_spring_stones` | −646 / 286 | `hotSpring` (plan −656 / 292 na stoku), 15 studs od Ghashy; rekwizyt |
+| `ash_war_drum`, `ash_chief_tent` | −240 / −631, −350 / −618 | `warDrum`, `chiefTent` |
+| `ash_columns_sample`, `ash_dragan_claim` | 196 / 318, 232 / 344 | `basaltColumns`; próbka z rekwizytem |
+| `ash_hearth_1..3` | 76 / 596, 96 / 596, 106 / 604 | `chimneyRow`, przy podstawach kominów |
+| `ash_dry_fountain` | 10 / 600 | `ruinsSquare` (plan 8 / 600 na drodze) |
+| `ash_wyvern_lookout`, `ash_great_nest` | 590 / −352, 712 / −492 | `wyvernStone` (rekwizyt), `nestMesa` (na stole, skała) |
+| `ash_sarcophagus_1..3` | 610 / 517, 619 / 535, 634 / 520 | `sarcophagi`, przy trzech sarkofagach |
+| `ash_courtyard_altar`, `ash_pyramid_door` | 724 / 200, 608 / 142 | `courtyardEast`, `pyramid` |
+| `ash_wagon_1..3` | 445 / −184, 460 / −204, 444 / −206 | `robbedWagons` |
+| `ash_basilisk_den` | 146 / −246 | `basiliskDen`, wschodni skraj jamy przy skałach |
+
+Porównanie (`build/s107_snapshot.luau`): 56 grup, spawnery trzech jaskiń, 50 węzłów, 2 łowiska, 178 drzew i 527
+budowli (nazwy, pozycje, części stałe) identyczne; części serwera 944 bez zmian, +9 budowli (detail +28, fine +16).
+
+Wiki: `npm run data` zmienia tylko `wiki/src/data/meta.json` (commit i data, `dataHash` bez zmian), mapy SVG bez
+zmian, `wiki_keys_diff` pusty. EXP potworów na wiki nie bierze `MONSTER_EXP_MUL`.
+
+Testy: `sidequests.spec` (84 / 26, węzły Pustkowi, cel `escort` z miejscem, `mainDone` dla wymagań fabuły, blok S107:
+łuki, mapy celów i miejsca z `sites`, poziomy i co dwa poziomy 45–68, wymagania, budżet i złoto, NPC, reguły na
+przykładach, plotki, teksty bez tajemnic, test „każdy `fx` ma builder”), `ashen.spec` (blok S107: miejsca NPC, 28
+kotwic, rzeczy przy kotwicach, grupy, rekwizyty i 527 budowli, trasy Orrena i Ezry; kotwice i trasy w teście pieszo;
+nazwy `/tparea`; bloki S104 tylko na swoich punktach), `dialogue.spec` (`NEW_QUESTS.S107`, `COMPANION_GROUPS.S107`),
+`wikidump.spec`. `scripts/check` zielony (6343 testy).
+
+Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/ashen.luau`, `src/shared/Data/{Npcs,QuestBudget}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/AshenGen/{init,Quest}.luau`,
+`src/client/Controllers/QuestAnchorController.luau`, `tests/{sidequests,ashen,dialogue,wikidump}.spec.luau`,
+`tools/balance_reasons.luau`, `wiki/src/data/meta.json`, `docs/{BALANS,DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+
+#### Dla S108 i S109
+
+- Zadania `side_ash_*` (26), łuki `ashSalamanders`, `ashOasis`, `ashSpring`, `ashProspector`, `ashRuins`, `ashCrags`,
+  `ashTombs`, `ashCaravans`; NPC `waterkeeper_orren`, `prospector_dragan`, `wyvernhunter_wieslawa`, `tombwarden_ezra`,
+  `wagoner_bogna`; miejsca `waterkeeper`, `prospector`, `wyvernhunter`, `tombwarden`, `wagoner`; 28 kotwic `ash_*`.
+- Budżet: pasmo 70–99 zadziała samo (`BAND_SCALE[70]`), bez `expShare`; `GOLD_FROM_20` wspólne (sprawdź ekonomię).
+- Efekty `cairn`, `water`, `incense`, `drum`, `mirror`; `ashSpot` w `QuestAnchorController` (S108: analogicznie dla
+  rekwizytów Szczytów, `FrostpeakGen/SideCamps.luau`); rekwizyty w `Logic/AshenGen/Quest` (`PROPS`, `spotOf`).
+- Zasada miejsc: wszystko w kołach `avoid` (≤ r − 2), 3+ studs od części stałych (prostokąt z obrotem, pomocnik
+  `touchesSolid` w `tests/ashen.spec`), 8+ studs między kotwicami i miejscami; skaner `build/s107_scan.luau`.
+- Rozmowy: `NEW_QUESTS.S107` / `COMPANION_GROUPS.S107` w `tests/dialogue.spec.luau`; trasy `escort` sprawdzane
+  w `tests/ashen.spec` (`MapTerrain.walkable(…, 4)`, `legMax`, cel i punkty `via` w teście pieszo).
+- S109: zdjąć `wiki = false` z 26 zadań, 5 NPC, 28 kotwic `ash_*` i 5 miejsc NPC; zdjąć przypadek S107 w
+  `tests/wikidump.spec`.
+
+Uproszczenia: runa snu (`rune` z S104) to płyta na ziemi przy sarkofagu i przy wrotach, nie znak na wieku; skóra bębna
+leży oparta o róg podestu (pozycja liczona od kotwicy `ash_war_drum`), kikut kolumny bez kolizji.

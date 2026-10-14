@@ -90,6 +90,35 @@ local NEW_QUESTS: { [string]: { string } } = {
 		"side_batRoost",
 		"side_apprentice",
 	},
+	-- S107: the Ashen side arcs
+	S107 = {
+		"side_ash_salve",
+		"side_ash_glands",
+		"side_ash_den",
+		"side_ash_cask",
+		"side_ash_wells",
+		"side_ash_seals",
+		"side_ash_rite",
+		"side_ash_drum",
+		"side_ash_fang",
+		"side_ash_silver",
+		"side_ash_partners",
+		"side_ash_columns",
+		"side_ash_claim",
+		"side_ash_chimneys",
+		"side_ash_heirlooms",
+		"side_ash_names",
+		"side_ash_lookout",
+		"side_ash_eyes",
+		"side_ash_nest",
+		"side_ash_king",
+		"side_ash_wards",
+		"side_ash_altar",
+		"side_ash_masks",
+		"side_ash_wagons",
+		"side_ash_avenue",
+		"side_ash_mirror",
+	},
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -102,6 +131,7 @@ local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S105 = { { chapter = 4 } },
 	S105f = { { chapter = 5 } },
 	S106 = { { map = "duskwood" } },
+	S107 = { { map = "ashen" } }, -- Orren (side_ash_wells) and Ezra (side_ash_king) lead
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.

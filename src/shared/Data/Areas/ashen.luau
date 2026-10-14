@@ -95,6 +95,18 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 	shaman = { x = -642, z = 300, facing = 270, wiki = false },
 	-- Kaspar before the west door of the burnt temple (the nave's front at x 181), beside the door, facing the square
 	hermit = { x = 175, z = 634, facing = 90, wiki = false },
+	-- S107: places of the Ashen side arc NPCs (Data/Npcs regionfolk), inside the avoid circles of existing sites and
+	-- respawn points, so no monster group or gathering node moves (tests/ashen.spec); hidden from the wiki until S109.
+	-- Orren on the dry bed at the root of the old jetty (the bowl's rim behind him is too steep), facing the last pond
+	waterkeeper = { x = -546, z = 528, facing = 170, wiki = false },
+	-- Dragan's camp by the respawn point at the fork to the mine and the warcamp, facing the road
+	prospector = { x = -238, z = -312, facing = 270, wiki = false },
+	-- Wiesława under the rock arch over the road on the Wyvern Crags, facing the road
+	wyvernhunter = { x = 665, z = -602, facing = 270, wiki = false },
+	-- Ezra at the end of the procession road before the pyramid, facing the road
+	tombwarden = { x = 594, z = 127, facing = 270, wiki = false },
+	-- Bogna by the robbed wagons on the Ash Road (respawn point), facing the wagons
+	wagoner = { x = 478, z = -190, facing = 90, wiki = false },
 }
 
 -- S104: quest anchors of the story (chapter III), each by its landmark and inside the landmark's avoid circle; `rot` =
@@ -102,6 +114,11 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
 	local x, z = atSite(site, lx, lz)
 	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+end
+
+-- S107: an anchor at a map point of its own (like Areas/duskwood `free`), `rot` = the yaw of its prop and effect.
+local function free(id: string, x: number, z: number, rot: number): Types.QuestAnchor
+	return { id = id, x = x, z = z, y = 2, wiki = false, rot = rot }
 end
 
 local QUEST_ANCHORS: { Types.QuestAnchor } = {
@@ -112,6 +129,38 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	{ id = "colossus_eyes", x = -126, z = 102, y = 2, wiki = false, rot = 270 },
 	anchor("temple_bell", "belltower", -7, 0, 1.5), -- beside the cracked bell at the tower's foot (the flat east side)
 	anchor("stone_caravan", "stoneCaravan", 6, -2, 2), -- beside the stone wagon, not before the oxen
+	-- S107: anchors of the Ashen side arcs (ash_*), each inside the avoid circle of its landmark, 8+ studs from every
+	-- other anchor and NPC place, 3+ studs from every solid part (tests/ashen.spec). Those of Logic/AshenGen/Quest PROPS
+	-- have a small prop 1.8 studs along their local +Z (`rot`); the others stand by an existing build.
+	free("ash_cairn_1", -547, -116, 30), -- the basking slabs by the cracks (fissures)
+	free("ash_cairn_2", -594, -162, 0), -- over the Glowing Pit, on its north rim
+	free("ash_cairn_3", -624, -22, 90), -- under the Ribcage Gate, south of the road
+	free("ash_hyena_skull", -598, -49, 180), -- before the face of the skull over the hyenas' den
+	free("ash_stranded_boat", -640, 642, 30), -- beside the stranded boat's hull
+	free("ash_well_1", -662, 636, 30), -- the boat's side of the dry bed
+	free("ash_well_2", -584, 548, 0), -- by the old jetty
+	free("ash_well_3", -452, 622, 200), -- by the caravan graveyard
+	free("ash_spring_stones", -646, 286, 270), -- the Hot Spring's sulphur rim, south of Ghasha
+	free("ash_war_drum", -240, -631, 180), -- before the war drum's dais
+	free("ash_chief_tent", -350, -618, 135), -- before the warchief's tent
+	free("ash_columns_sample", 196, 318, 0), -- the edge of the basalt columns
+	free("ash_dragan_claim", 232, 344, 0), -- bare ground among the columns
+	free("ash_hearth_1", 76, 596, 0), -- in the chimney alley, at the foot of a chimney
+	free("ash_hearth_2", 96, 596, 0),
+	free("ash_hearth_3", 106, 604, 0),
+	free("ash_dry_fountain", 10, 600, 0), -- the east rim of the dry fountain on the square
+	free("ash_wyvern_lookout", 590, -352, 250), -- at the foot of the Stone Wyvern's spire
+	-- on the nest mesa's top (its cap is rock: walkable, the rock rule of the other places waived), by the great nest
+	free("ash_great_nest", 712, -492, 270),
+	free("ash_sarcophagus_1", 610, 517, 20), -- three of the sarcophagi laid bare by the wind
+	free("ash_sarcophagus_2", 619, 535, 20),
+	free("ash_sarcophagus_3", 634, 520, 20),
+	free("ash_courtyard_altar", 724, 200, 0), -- before the altar of the east courtyard
+	free("ash_pyramid_door", 608, 142, 0), -- before the pyramid's turquoise door (its north face)
+	free("ash_wagon_1", 445, -184, 250), -- by the robbed wagons
+	free("ash_wagon_2", 460, -204, 250),
+	free("ash_wagon_3", 444, -206, 250),
+	free("ash_basilisk_den", 146, -246, 0), -- the east rim of the basilisk's pit, by its rocks
 }
 
 local data: Types.MapAreas = {

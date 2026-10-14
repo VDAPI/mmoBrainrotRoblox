@@ -3195,3 +3195,41 @@
 - **S106 wioska kultystów i moczary:** kotwice klatek liczone wprost od środka wioski (wioska stoi bez obrotu), punkt
   podpowiedzi `place.cultCages` 535 / −577; ziele `bush_moonpetal` rośnie tylko na mokradłach i Księżycowej Polanie, więc
   Dobrawa w `side_rotSap` posyła po płatki „na mokradła wzdłuż Czarnego Strumienia”, a `where` wskazuje Serce Puszczy.
+- **S107 poboczne Pustkowi:** 8 łuków / 26 zadań na 45–68 w `Data/Quests/Side` (bloki S–Z, jak Bór w tym samym
+  pliku), id `side_ash_*`, łuki `ashSalamanders`, `ashOasis`, `ashSpring`, `ashProspector`, `ashRuins`, `ashCrags`,
+  `ashTombs`, `ashCaravans` na końcu `ARCS`; `where` w każdym poza dwoma zadaniami samego `deliver`.
+- **S107 nagrody:** EXP z budżetu pasma 45–69 mechanizmem S106 bez zmian (`settleBands`, `BAND_SCALE[45]` = 0,04698,
+  wagi 1 / 1,8; zwykłe 0,047, finał 0,085 `expToNext`), udział pobocznych w paśmie 6,0% (131 969 / 2 199 696); złoto
+  `gold(poziom) × GOLD_FROM_20` (0,8, ta sama stała co Bór; ekonomia 45–70 w `balance.spec` zielona bez mnożnika).
+- **S107 wymagania fabuły:** łuk Ghashy wymaga `warcampCages`, łuk Kaspara `burntTemple` (id S104, bez wariantu
+  zastępczego); łuk Bogny ma klucz `ashCaravans`, nie `ashRoad` (quest fabularny S104). Wspólny test „można przyjąć na
+  minimalnym poziomie” podaje `mainDone` z indeksu wymaganego questu fabuły.
+- **S107 miejsca:** 5 miejsc NPC i 28 kotwic `ash_*` wyłącznie wewnątrz istniejących kół `avoid` (≤ r − 2), 8+ studs od
+  siebie i od kotwic S104, 3+ studs od każdej części stałej (prostokąt części z obrotem, nie koło z planu T1: koło
+  z największego wymiaru zamykało całe aleje kominów i piramidę). Grupy, węzły, drzewa i 527 budowli bez zmian.
+- **S107 przesunięcia:** Orren −546 / 528 (plan −546 / 514 na skarpie misy, 20° w promieniu 10), Wiesława 665 / −602
+  (dotykała łuku skalnego), Ezra 594 / 127 (pół studsa poza kołem piramidy); kotwice: kopce −547 / −116 i −594 / −162
+  (lawa Żarzącego Leja), czaszka −598 / −49 (przed pyskiem), kamienie źródła −646 / 286 (15 studs od Ghashy), bęben
+  −240 / −631, kominy 76 / 596, 96 / 596, 106 / 604 (przy podstawach kominów w alei), fontanna 10 / 600 (droga),
+  sarkofagi 610 / 517, 619 / 535, 634 / 520, wozy 445 / −184, 460 / −204, jama bazyliszka 146 / −246 (przy skałach).
+- **S107 gniazdo na stole:** cały wierzch stołu gniazda to skała (`rockAt`), ale jest przechodni; `ash_great_nest`
+  stoi na stole 712 / −492 (14 studs od gniazda) z jedynym wyjątkiem od reguły „nie na skale”.
+- **S107 rekwizyty:** nowy `Logic/AshenGen/Quest.luau` (wzór S103/S106: `PROPS`, `QuestProp_<id>`, tag `questprop`,
+  `SIDE_OFFSET` 1,8 wzdłuż +Z kotwicy, budowla stoi na tym punkcie) na końcu `AshenGen.all()`, bez własnych polan
+  (polany daje pętla S104 w `dataClearings`); 9 rekwizytów, same detail/fine bez kolizji, także kikut kolumny (plan:
+  `shell`; część stała 1,5–3 studs od kotwicy łamałaby regułę 3 studs, jak w S106 bez kolizji).
+- **S107 efekty:** pięć nowych (`cairn`, `water`, `incense`, `drum`, `mirror`), `rune` z S104 na sarkofagach i wrotach,
+  `incense` także na ołtarzu dziedzińca (na wierzchu ołtarza przez promień w dół); `mark` i `tracks` rysują się na
+  rekwizycie, gdy kotwica Pustkowi go ma (kotwice Łąk i Boru bez zmian). Test: każdy klucz `FX` ma builder.
+- **S107 wiki:** `wiki = false` na 26 zadaniach, 5 NPC, 28 kotwicach i 5 miejscach NPC (pola S102/S103, filtr S103);
+  `npm run data` zmienia tylko `meta.json` (commit i data, `dataHash` bez zmian); zdejmuje to S109.
+- **S107 NPC:** pięciu przez `regionfolk("ashen", …, { wiki = false })`, ikony z planu bez zamian (⚒ jak u Wojsława);
+  dopisane `npc.scout_ashen.where` i `npc.alchemist.where` (dający questy Pustkowi, plotki karczmarza).
+- **S107 rozmowy:** wybory i komentarze we wszystkich 26 (`NEW_QUESTS.S107`), towarzysze Orren (`side_ash_wells`, nowy
+  cel 1 `escort` do łodzi −630 / 630 przez −600 / 570) i Ezra (`side_ash_king`, `escort` do Pogrzebanego Króla zamiast
+  `reach`, trasa z planu); bez `half` w `salve` i `cask` (Σ n = 1, walidator S101b). Upominki mikstur regionu
+  (`potion_hp_4` × 2 w `salve` i `altar`, `potion_mana_3` × 2 w `eyes`) zamiast 1. stopnia z planu (jak S103–S106).
+- **S107 ALLOWED_1_20_DIFFS:** 222 → 222 (0 nowych, 0 zmienionych); `monsterExpMul` zmienia się tylko na 45–69.
+- **S107 podpowiedź `partners`:** punkt przed sztolnią kopalni (`ASH_SITES.mineMouth`, z + 26 = −560 / −719, przybycie
+  jaskini), nie w ścianie grani (−560 / −745 z planu L3). Woda `water` studni leży na y 0.42 nad kopcem piasku propa
+  `buriedWell` (szczyt 0.35, prop zostaje), inaczej znika w kopcu.

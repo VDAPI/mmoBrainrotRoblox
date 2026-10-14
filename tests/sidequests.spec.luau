@@ -4,6 +4,7 @@
 
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Areas = require("../src/shared/Data/Areas")
+local AshenGen = require("../src/shared/Logic/AshenGen")
 local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local DuskwoodGen = require("../src/shared/Logic/DuskwoodGen")
@@ -21,6 +22,7 @@ local Quests = require("../src/shared/Data/Quests")
 local Rng = require("../src/shared/Logic/Rng")
 local SideQuests = require("../src/shared/Logic/SideQuests")
 local Test = require("./Test")
+local fs = require("@lune/fs")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -37,7 +39,7 @@ local KNOWN_TYPES = {
 	reach = true,
 	use = true,
 	deliver = true,
-	escort = true, -- S106: side_boneTree (Wanda leads)
+	escort = true, -- S106: side_boneTree (Wanda leads); S107: side_ash_wells, side_ash_king
 }
 
 local function hasKey(key: string): boolean
@@ -69,10 +71,11 @@ local function doneUpTo(id: string): { [string]: boolean }
 end
 
 describe("Side quest data", function()
-	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice; S106: + 27 quests in 8 Duskwood arcs
-	it("has 58 quests in 18 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
-		expect(#Quests.Side.list).toBe(58)
-		expect(#Quests.Side.ARCS).toBe(18)
+	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice; S106: + 27 quests in 8 Duskwood arcs;
+	-- S107: + 26 quests in 8 Ashen arcs
+	it("has 84 quests in 26 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
+		expect(#Quests.Side.list).toBe(84)
+		expect(#Quests.Side.ARCS).toBe(26)
 		for _, arc in Quests.Side.ARCS do
 			local list = assert(Quests.Side.byArc[arc], arc)
 			local finals = 0
@@ -129,12 +132,15 @@ describe("Side quest data", function()
 
 	-- S106: anchors of every map, gathering nodes of the quest's map (the map of its areas, anchors or `where`)
 	it("objectives point at existing anchors, monsters, areas, nodes and NPCs", function()
-		local nodesOf: { [string]: { [string]: boolean } } = { meadows = {}, duskwood = {} }
+		local nodesOf: { [string]: { [string]: boolean } } = { meadows = {}, duskwood = {}, ashen = {} }
 		for _, node in MeadowsGen.nodes() do
 			nodesOf.meadows[node.kind] = true
 		end
 		for _, node in DuskwoodGen.nodes() do
 			nodesOf.duskwood[node.kind] = true
+		end
+		for _, node in AshenGen.nodes() do -- S107
+			nodesOf.ashen[node.kind] = true
 		end
 		local function mapOf(quest: SideQuest): string
 			if quest.where then
@@ -209,7 +215,7 @@ describe("Side quest data", function()
 						error(`{what}: elite {objective.monster} not in the quest's cave`)
 					end
 				end
-				if objective.type == "reach" and objective.x then
+				if (objective.type == "reach" or objective.type == "escort") and objective.x then
 					expect(objective.place ~= nil and hasKey(objective.place :: string)).toBe(true)
 				end
 			end
@@ -292,10 +298,15 @@ describe("Side quest levels and balance", function()
 		end
 	end)
 
+	-- S107: a quest that requires a story quest (Ghasha's and Kaspar's arcs) is taken with that story quest done
 	it("can be taken once the earlier ones are done, at their minimum level", function()
 		for _, quest in Quests.Side.list do
+			local mainDone = 0
+			for _, req in quest.requires or {} do
+				mainDone = math.max(mainDone, Quests.Main.indexOf[req] or 0)
+			end
 			local ok, reason = SideQuests.canAccept(
-				quests({ active = {}, done = doneUpTo(quest.id) }),
+				quests({ active = {}, done = doneUpTo(quest.id) }, mainDone),
 				SideQuests.minLevel(quest),
 				quest
 			)
@@ -733,6 +744,343 @@ describe("Duskwood side arcs (S106)", function()
 		expect(#SideQuests.available(q, 20, "huntress_wanda")).toBe(0)
 		expect(table.find(ids(SideQuests.available(q, 20, "sergeant")), "side_moonOil") ~= nil).toBe(true)
 		expect(table.find(ids(SideQuests.available(q, 19, "sergeant")), "side_moonOil")).toBeNil()
+	end)
+end)
+
+-- S107: the Ashen side arcs (levels 45-68) ------------------------------------------------------------------------
+
+local ASH_ARCS = {
+	"ashSalamanders",
+	"ashOasis",
+	"ashSpring",
+	"ashProspector",
+	"ashRuins",
+	"ashCrags",
+	"ashTombs",
+	"ashCaravans",
+}
+-- NPCs of the Wastes that are not side arc NPCs of S107 (the scout and the story NPCs of S104)
+local ASH_OTHERS = { scout_ashen = true, runesmith_brokk = true, shaman_ghasha = true, hermit_kaspar = true }
+local ASH_NEW =
+	{ "waterkeeper_orren", "prospector_dragan", "wyvernhunter_wieslawa", "tombwarden_ezra", "wagoner_bogna" }
+local ASH_CITY = { alchemist = true, innkeeper = true, blacksmith = true, brother_anzelm = true }
+local ASH_BANNED_PL = { "Ilvar", "Morvane", "Vael", "Cierń", "Ciernia" }
+local ASH_BANNED_EN = { "Ilvar", "Morvane", "Vael", "Thorn" }
+
+local function ashQuests(): { SideQuest }
+	local out = {}
+	for _, arc in ASH_ARCS do
+		for _, quest in Quests.Side.byArc[arc] or {} do
+			table.insert(out, quest)
+		end
+	end
+	return out
+end
+
+-- The map an objective of an Ashen quest points at (anchor, area or the cave of a `reach`), nil when none.
+local function objectiveMap(objective: any): string?
+	if objective.type == "use" then
+		local list: { string } = objective.anchors or { objective.anchor }
+		local _, mapId = Areas.anchorById(list[1])
+		return mapId
+	end
+	if objective.area then
+		local _, mapId = Areas.areaById(objective.area)
+		return mapId
+	end
+	if (objective.type == "reach" or objective.type == "escort") and objective.map then
+		return objective.map
+	end
+	return nil
+end
+
+describe("Ashen side arcs (S107)", function()
+	local ash = ashQuests()
+
+	it("26 quests side_ash_* in eight arcs at the end of ARCS, levels 45-68, hidden from the wiki", function()
+		expect(#ash).toBe(26)
+		local arcs = Quests.Side.ARCS
+		for i, arc in ASH_ARCS do
+			expect(arcs[#arcs - #ASH_ARCS + i]).toBe(arc)
+		end
+		for _, quest in ash do
+			expect(string.sub(quest.id, 1, 9)).toBe("side_ash_")
+			expect(quest.level >= 45 and quest.level <= 68).toBe(true)
+			expect(quest.wiki).toBe(false)
+			expect(quest.category).toBe("side")
+			expect(quest.reward.items).toBeNil()
+			expect(quest.reward.mount).toBeNil()
+			for _, npcId in { quest.giver, quest.turnIn } do
+				local npc = assert(Npcs.get(npcId), npcId)
+				expect(`{npcId} {npc.map == "ashen" or ASH_CITY[npcId] == true}`).toBe(`{npcId} true`)
+			end
+			local reachMap: string? = nil
+			for _, objective in quest.objectives do
+				local mapId = objectiveMap(objective)
+				if mapId and mapId ~= "ashen" then
+					local cave = assert(Areas.caves.get(mapId), mapId)
+					expect(cave.region).toBe("ashen")
+					reachMap = mapId
+				end
+			end
+			if quest.id == "side_ash_salve" or quest.id == "side_ash_cask" then
+				expect(quest.where).toBeNil()
+			else
+				local where = assert(quest.where, quest.id)
+				expect(`{quest.id} {where.map == "ashen" or where.map == reachMap}`).toBe(`{quest.id} true`)
+			end
+		end
+		for _, other in Quests.Side.list do
+			if string.sub(other.id, 1, 9) == "side_ash_" then
+				expect(table.find(ASH_ARCS, other.arc) ~= nil).toBe(true)
+			end
+		end
+	end)
+
+	it(
+		"every objective points at the Wastes: anchors, areas, nodes, the mine's elites, the places of the sites",
+		function()
+			local sites = assert(Areas.byMap.ashen.sites, "ashen sites")
+			for _, quest in ash do
+				for _, objective in quest.objectives do
+					local mapId = objectiveMap(objective)
+					if objective.type == "use" or objective.area then
+						expect(`{quest.id} {mapId}`).toBe(`{quest.id} ashen`)
+					end
+				end
+			end
+			-- the reach of the Avenue and the escort to the Buried King are the sites themselves (Areas/ashen SITES)
+			local avenue = assert(Quests.Side.get("side_ash_avenue")).objectives[1]
+			expect(avenue.type).toBe("reach")
+			expect(avenue.x).toBe(sites.kingsAvenue.x)
+			expect(avenue.z).toBe(sites.kingsAvenue.z)
+			expect(avenue.place).toBe("place.kingsAvenue")
+			local king = assert(Quests.Side.get("side_ash_king")).objectives[1]
+			expect(king.type).toBe("escort")
+			expect(king.x).toBe(sites.buriedKing.x)
+			expect(king.z).toBe(sites.buriedKing.z)
+			expect(king.place).toBe("place.buriedKing")
+			local wells = assert(Quests.Side.get("side_ash_wells")).objectives[1]
+			expect(wells.type).toBe("escort")
+			expect(wells.place).toBe("place.strandedBoat")
+		end
+	)
+
+	it(
+		"areas of the kill and collect objectives fit the quest's level; a quest every two levels from 45 to 68",
+		function()
+			local slack = Config.SideQuest.levelSlack
+			for _, quest in ash do
+				for _, objective in quest.objectives do
+					if objective.area then
+						local area = assert(Areas.areaById(objective.area), objective.area)
+						local fits = area.lv[1] <= quest.level + 3 and area.lv[2] >= quest.level - slack
+						expect(`{quest.id} {objective.area} {fits}`).toBe(`{quest.id} {objective.area} true`)
+					end
+				end
+			end
+			for from = 45, 67, 2 do
+				local found = false
+				for _, quest in ash do
+					found = found or (quest.level >= from and quest.level <= from + 1)
+				end
+				if not found then
+					error(`no Ashen side quest for levels {from}-{from + 1}`)
+				end
+			end
+		end
+	)
+
+	it("each quest after the first of its arc requires the one before; Ghasha's and Kaspar's arcs the story", function()
+		local STORY = { ashSpring = "warcampCages", ashRuins = "burntTemple" }
+		for _, arc in ASH_ARCS do
+			for i, quest in Quests.Side.byArc[arc] do
+				if i == 1 then
+					if STORY[arc] then
+						expect(quest.requires).toEqual({ STORY[arc] })
+						expect(Quests.Main.get(STORY[arc]) ~= nil).toBe(true)
+					else
+						expect(quest.requires).toBeNil()
+					end
+				else
+					expect(quest.requires).toEqual({ Quests.Side.byArc[arc][i - 1].id })
+					expect(quest.level >= Quests.Side.byArc[arc][i - 1].level).toBe(true)
+				end
+			end
+		end
+		local rite = assert(Quests.Side.get("side_ash_rite"))
+		local cages = Quests.Main.indexOf.warcampCages
+		expect((SideQuests.canAccept(quests(nil, cages), SideQuests.minLevel(rite), rite))).toBe(true)
+		local _, reason = SideQuests.canAccept(quests(nil, cages - 1), SideQuests.minLevel(rite), rite)
+		expect(reason).toBe("requires")
+		local chimneys = assert(Quests.Side.get("side_ash_chimneys"))
+		local temple = Quests.Main.indexOf.burntTemple
+		expect((SideQuests.canAccept(quests(nil, temple), SideQuests.minLevel(chimneys), chimneys))).toBe(true)
+		_, reason = SideQuests.canAccept(quests(nil, temple - 1), SideQuests.minLevel(chimneys), chimneys)
+		expect(reason).toBe("requires")
+	end)
+
+	it("the band 45-69 holds TARGET.side of its EXP, by expToNext x weight; gold of the banded quests", function()
+		local scale = assert(Quests.Side.BAND_SCALE[45], "BAND_SCALE[45]")
+		local total, need = 0, 0
+		for _, quest in Quests.Side.list do
+			if quest.level >= 45 and quest.level <= 69 and quest.category == "side" then
+				total += quest.reward.exp
+			end
+		end
+		for level = 45, 69 do
+			need += Exp.expToNext(level)
+		end
+		local share = total / need
+		local target = QuestBudgetData.TARGET.side
+		expect(share >= target - 0.003 and share <= target).toBe(true)
+		expect(share >= 0.05 and share <= 0.07).toBe(true)
+		expect(math.abs(QuestBudget.bandExp(45) - need) < 1).toBe(true)
+		for _, quest in ash do
+			local w = if quest.reward.choice then Quests.Side.WEIGHT.final else Quests.Side.WEIGHT.normal
+			expect(quest.reward.exp).toBe(math.floor(Exp.expToNext(quest.level) * w * scale))
+			expect(quest.reward.exp > 0 and quest.reward.exp <= Exp.expToNext(quest.level) * 0.7).toBe(true)
+			expect(quest.reward.gold > 0).toBe(true)
+			expect(quest.reward.gold).toBe(
+				math.floor(math.floor((60 + quest.level * 45) * 0.5) * Quests.Side.GOLD_FROM_20)
+			)
+		end
+	end)
+
+	it("the five new people of the Wastes stand on its npc spots, talk and stay off the wiki", function()
+		local spots = Areas.byMap.ashen.npcSpots or {}
+		local count, onSpots = 0, 0
+		for _, npc in Npcs.list do
+			if npc.map == "ashen" and npc.id ~= "scout_ashen" then
+				onSpots += 1
+				local found = false
+				for _, spot in spots do
+					found = found or (spot.x == npc.position.x and spot.z == npc.position.z)
+				end
+				if not found then
+					error(`{npc.id} is not on an npc spot`)
+				end
+				if not ASH_OTHERS[npc.id] then
+					count += 1
+					expect(table.find(ASH_NEW, npc.id) ~= nil).toBe(true)
+				end
+			end
+		end
+		expect(onSpots).toBe(3 + 5)
+		expect(count).toBe(5)
+		for _, id in ASH_NEW do
+			local npc = assert(Npcs.get(id), id)
+			expect(npc.services).toEqual({ "talk" })
+			expect(npc.lines).toBe(3)
+			expect(npc.wiki).toBe(false)
+			expect(npc.showFrom).toBeNil()
+			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+				expect(`{id}.{key} {hasKey(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+		end
+		for _, quest in ash do
+			expect(`{quest.giver} {hasKey(`npc.{quest.giver}.where`)}`).toBe(`{quest.giver} true`)
+		end
+	end)
+
+	it(
+		"rules on the Ashen quests: three anchors, two use objectives and an escort, a place, an area, a deliver",
+		function()
+			local rng = Rng.new(3)
+			-- side_ash_glands: every cairn counts once, the skull of the next quest does not
+			local glands = assert(Quests.Side.get("side_ash_glands"))
+			local g = SideQuests.newEntry(glands)
+			expect(SideQuests.advance(g, glands, "use", { anchor = "ash_cairn_1" }, rng)).toEqual({ 2 })
+			expect(#SideQuests.advance(g, glands, "use", { anchor = "ash_cairn_1" }, rng)).toBe(0)
+			expect(#SideQuests.advance(g, glands, "use", { anchor = "ash_hyena_skull" }, rng)).toBe(0)
+			SideQuests.advance(g, glands, "use", { anchor = "ash_cairn_2" }, rng)
+			SideQuests.advance(g, glands, "use", { anchor = "ash_cairn_3" }, rng)
+			g.progress[1] = 6
+			expect(SideQuests.isComplete(g, glands)).toBe(true)
+			local gq = quests({ active = { side_ash_glands = g }, done = {} })
+			expect(SideQuests.doneAnchors(gq).ash_cairn_2).toBe("cairn")
+			-- side_ash_wells: Orren's escort is objective 1, the boat objective 2, the wells objective 3
+			local wells = assert(Quests.Side.get("side_ash_wells"))
+			local w = SideQuests.newEntry(wells)
+			expect(SideQuests.advance(w, wells, "escort", { npc = "waterkeeper_orren" }, rng)).toEqual({ 1 })
+			expect(SideQuests.advance(w, wells, "use", { anchor = "ash_stranded_boat" }, rng)).toEqual({ 2 })
+			expect(SideQuests.advance(w, wells, "use", { anchor = "ash_well_1" }, rng)).toEqual({ 3 })
+			-- side_ash_avenue: the Avenue of Kings needs the position
+			local avenue = assert(Quests.Side.get("side_ash_avenue"))
+			local a = SideQuests.newEntry(avenue)
+			expect(#SideQuests.advance(a, avenue, "reach", { map = "ashen", x = 220, z = 0 }, rng)).toBe(0)
+			expect(#SideQuests.advance(a, avenue, "reach", { map = "ashen", x = 220, z = -153 }, rng)).toBe(1)
+			-- side_ash_mirror: basilisks of the Crags do not count, those of the Ash Road do
+			local mirror = assert(Quests.Side.get("side_ash_mirror"))
+			local m = SideQuests.newEntry(mirror)
+			expect(#SideQuests.advance(m, mirror, "kill", { monsterId = "basilisk", areaId = "ashen_crags" }, rng)).toBe(
+				0
+			)
+			expect(#SideQuests.advance(m, mirror, "kill", { monsterId = "basilisk", areaId = "ashen_ashroad" }, rng)).toBe(
+				1
+			)
+			-- side_ash_names: the list goes to Brother Anzelm, not back to Kaspar
+			local names = assert(Quests.Side.get("side_ash_names"))
+			local n = SideQuests.newEntry(names)
+			expect(#SideQuests.advance(n, names, "talk", { npc = "hermit_kaspar" }, rng)).toBe(0)
+			expect(SideQuests.advance(n, names, "talk", { npc = "brother_anzelm" }, rng)).toEqual({ 2 })
+			-- marks: "!" at Orren at 47 once the cask is handed in, "?" once the wells are done
+			local done = { side_ash_cask = true }
+			expect(NpcMarks.all(quests({ active = {}, done = done }), 47).waterkeeper_orren).toBe("available")
+			local entry = SideQuests.newEntry(wells)
+			for i, objective in wells.objectives do
+				entry.progress[i] = objective.n
+			end
+			local q = quests({ active = { side_ash_wells = entry }, done = done })
+			expect(NpcMarks.all(q, 47).waterkeeper_orren).toBe("turnIn")
+		end
+	)
+
+	it("the innkeeper hears of the Ashen people; the alchemist offers the salve from 43", function()
+		local q = quests()
+		local givers = SideQuests.giversWithWork(q, 62)
+		expect(table.find(givers, "wyvernhunter_wieslawa") ~= nil).toBe(true)
+		expect(table.find(givers, "wagoner_bogna") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(q, 43, "alchemist")), "side_ash_salve") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(q, 42, "alchemist")), "side_ash_salve")).toBeNil()
+		expect(#SideQuests.available(q, 66, "shaman_ghasha")).toBe(0) -- warcampCages not done
+	end)
+
+	it("no page names a secret of the story", function()
+		for _, quest in ash do
+			for _, lang in { { pl, ASH_BANNED_PL }, { en, ASH_BANNED_EN } } do
+				local tbl: any, banned = lang[1], lang[2]
+				for key, text in tbl do
+					if string.sub(key, 1, #quest.id + 7) == `quest.{quest.id}.` then
+						for _, word in banned do
+							if string.find(text, word, 1, true) then
+								error(`{key}: {word}`)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	-- F3: an anchor effect without a client builder would silently draw nothing
+	it("every anchor effect of the data has a builder in QuestAnchorController", function()
+		local source = fs.readFile("src/client/Controllers/QuestAnchorController.luau")
+		for key in Quests.Side.FX do
+			if not string.find(source, `\n\t{key} = function(model`, 1, true) then
+				error(`no builder for the anchor effect {key}`)
+			end
+		end
+		for _, quest in Quests.Side.list do
+			for _, objective in quest.objectives do
+				if objective.type == "use" then
+					expect(Quests.Side.FX[objective.fx :: string]).toBe(true)
+				end
+			end
+		end
+		for _, key in { "cairn", "water", "incense", "drum", "mirror" } do
+			expect(Quests.Side.FX[key]).toBe(true)
+		end
 	end)
 end)
 

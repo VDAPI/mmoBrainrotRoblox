@@ -382,6 +382,15 @@ regionfolk(
 )
 regionfolk("ashen", "hermit_kaspar", "hermit", { body = "#4A4236", accent = "#C9A45C" }, "✝", { wiki = false })
 
+-- S107: Ashen side arc NPCs (Data/Quests/Side arcs S-Z), on the places of Areas/ashen npcSpots; off the wiki until
+-- S109.
+local SIDE_ASH = { wiki = false }
+regionfolk("ashen", "waterkeeper_orren", "waterkeeper", { body = "#5A6B7A", accent = "#C9B98A" }, "💧", SIDE_ASH)
+regionfolk("ashen", "prospector_dragan", "prospector", { body = "#6B5A48", accent = "#C9A45C" }, "⚒", SIDE_ASH)
+regionfolk("ashen", "wyvernhunter_wieslawa", "wyvernhunter", { body = "#6B3A2A", accent = "#B8C0C8" }, "🏹", SIDE_ASH)
+regionfolk("ashen", "tombwarden_ezra", "tombwarden", { body = "#B8A47A", accent = "#3A6B6B" }, "⚱", SIDE_ASH)
+regionfolk("ashen", "wagoner_bogna", "wagoner", { body = "#7A5A3A", accent = "#3A2A1A" }, "🐂", SIDE_ASH)
+
 -- Story NPCs of the Frost Peaks (S105, docs/FABULA.md §2.5), on the places of Areas/frostpeak npcSpots. Both always
 -- stand there (no showFrom): Sigrun in the abandoned trappers' camp, the ghost of Brother Halgrim before the Ice Watch's
 -- keep, also after the oath (one NPC for everyone; his lines hold before and after it). S108 gives Sigrun side arcs.

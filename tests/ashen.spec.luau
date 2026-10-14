@@ -10,11 +10,14 @@ local Ambience = require("../src/shared/Data/Ambience")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
 local AshenGen = require("../src/shared/Logic/AshenGen")
+local Config = require("../src/shared/Config")
 local Fixture = require("./fixtures/ashenHeights")
+local Kit = require("../src/shared/Logic/WorldGen/Kit")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local Maps = require("../src/shared/Data/Maps")
 local MeadowsTerrain = require("../src/shared/Logic/MeadowsTerrain")
 local Portals = require("../src/shared/Data/Portals")
+local Quest = require("../src/shared/Logic/AshenGen/Quest")
 local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
 local Shapes = require("../src/shared/Data/Terrain")
 local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
@@ -29,6 +32,14 @@ local SITES = assert(DATA.sites, "ashen sites")
 local MAP = assert(Maps.get("ashen"))
 local MAX_SLOPE = math.tan(math.rad(15))
 local CLEAR = RegionTerrain.LAVA_CLEARANCE
+-- S107: the NPC places of the side arcs (key -> NPC); the S104 cases below look at the story's places only
+local S107_SPOTS = {
+	waterkeeper = "waterkeeper_orren",
+	prospector = "prospector_dragan",
+	wyvernhunter = "wyvernhunter_wieslawa",
+	tombwarden = "tombwarden_ezra",
+	wagoner = "wagoner_bogna",
+}
 
 -- The areas of the brief (S46 "Obszary"): id, levels, kinds, groups, profile.
 local BRIEF = {
@@ -99,6 +110,148 @@ local function standingPlaces(): { { name: string, x: number, z: number, anchor:
 end
 
 local ANCHOR_SLOPE = math.tan(math.rad(20))
+
+-- S107 (side arcs of the Wastes): the places of the five new NPCs, the 28 ash_* anchors, their props and the routes of
+-- the two companions, all on the frozen map ---------------------------------------------------------------------------
+
+local function dist(ax: number, az: number, bx: number, bz: number): number
+	return math.sqrt((ax - bx) ^ 2 + (az - bz) ^ 2)
+end
+
+local function inAvoid(x: number, z: number): boolean
+	for _, c in DATA.avoid do
+		if dist(x, z, c.x, c.z) <= c.r - 2 then
+			return true
+		end
+	end
+	return false
+end
+
+-- The name of a Build whose solid piece (shell or colliding) a player standing at (x, z) would touch within `margin`
+-- studs (its rotated box, 0.5-3.5 studs over the ground), nil: none.
+local function touchesSolid(x: number, z: number, margin: number): string?
+	for _, b in AshenGen.all() do
+		if b.tag ~= "trees" and (b.at.x - x) ^ 2 + (b.at.z - z) ^ 2 < 150 * 150 then
+			local r = math.rad(b.at.rot)
+			local c, s = math.cos(r), math.sin(r)
+			local dx, dz = x - b.at.x, z - b.at.z
+			local lx, lz = c * dx - s * dz, s * dx + c * dz
+			local g = T.height(x, z) - b.at.y
+			for _, p in b.bp.pieces do
+				if p.lod == "shell" or p.col then
+					for _, h in { 0.5, 2, 3.5 } do
+						local vx, vy, vz = lx - p.p[1], g + h - p.p[2], lz - p.p[3]
+						local R = p.r
+						local ux = R[1] * vx + R[4] * vy + R[7] * vz
+						local uy = R[2] * vx + R[5] * vy + R[8] * vz
+						local uz = R[3] * vx + R[6] * vy + R[9] * vz
+						if
+							math.abs(ux) < p.size[1] / 2 + margin
+							and math.abs(uy) < p.size[2] / 2 + 0.5
+							and math.abs(uz) < p.size[3] / 2 + margin
+						then
+							return b.name
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+local S107_ANCHORS = {
+	"ash_cairn_1",
+	"ash_cairn_2",
+	"ash_cairn_3",
+	"ash_hyena_skull",
+	"ash_stranded_boat",
+	"ash_well_1",
+	"ash_well_2",
+	"ash_well_3",
+	"ash_spring_stones",
+	"ash_war_drum",
+	"ash_chief_tent",
+	"ash_columns_sample",
+	"ash_dragan_claim",
+	"ash_hearth_1",
+	"ash_hearth_2",
+	"ash_hearth_3",
+	"ash_dry_fountain",
+	"ash_wyvern_lookout",
+	"ash_great_nest",
+	"ash_sarcophagus_1",
+	"ash_sarcophagus_2",
+	"ash_sarcophagus_3",
+	"ash_courtyard_altar",
+	"ash_pyramid_door",
+	"ash_wagon_1",
+	"ash_wagon_2",
+	"ash_wagon_3",
+	"ash_basilisk_den",
+}
+-- anchors standing by an existing build: the build and how far its nearest solid piece may be (the prompt sits by the
+-- thing the text names, Config.SideQuest.useRange is 10)
+local AT_THING: { [string]: string } = {
+	ash_hyena_skull = "hyenaDen",
+	ash_stranded_boat = "strandedBoat",
+	ash_war_drum = "warDrum",
+	ash_chief_tent = "chiefTent",
+	ash_hearth_1 = "chimneyRow",
+	ash_hearth_2 = "chimneyRow",
+	ash_hearth_3 = "chimneyRow",
+	ash_dry_fountain = "ruinsSquare",
+	ash_great_nest = "nestMesa",
+	ash_sarcophagus_1 = "sarcophagi",
+	ash_sarcophagus_2 = "sarcophagi",
+	ash_sarcophagus_3 = "sarcophagi",
+	ash_courtyard_altar = "courtyardEast",
+	ash_pyramid_door = "pyramid",
+	ash_wagon_1 = "robbedWagons",
+	ash_wagon_2 = "robbedWagons",
+	ash_wagon_3 = "robbedWagons",
+	ash_basilisk_den = "basiliskDen",
+}
+-- the nest mesa's top is rock (walkable): the one place where the rock rule is waived
+local ON_ROCK = { ash_great_nest = true }
+
+local function standingProblems(x: number, z: number, rock: boolean?): string?
+	if math.abs(x) > 770 or math.abs(z) > 770 then
+		return "outside the map"
+	elseif not T.walkable(x, z) then
+		return "not walkable"
+	elseif slopeAround(x, z, 6) >= MAX_SLOPE then
+		return `slope {math.floor(math.deg(math.atan(slopeAround(x, z, 6))))}`
+	elseif T.isWater(x, z) then
+		return "water"
+	elseif T.lavaDistance(x, z) < CLEAR then
+		return "lava"
+	elseif not rock and T.rockAt(x, z) then
+		return "rock"
+	elseif T.roadDistance(x, z) <= 4 then
+		return "road"
+	elseif not inAvoid(x, z) then
+		return "outside the avoid circles"
+	end
+	return nil
+end
+
+local function escortPoints(): { { name: string, x: number, z: number } }
+	local Quests = require("../src/shared/Data/Quests")
+	local out = {}
+	for _, id in { "side_ash_wells", "side_ash_king" } do
+		local quest = assert(Quests.Side.get(id), id)
+		for _, objective in quest.objectives do
+			if objective.type == "escort" then
+				for i, v in objective.via or {} do
+					table.insert(out, { name = `{id} via {i}`, x = v.x, z = v.z })
+				end
+				table.insert(out, { name = `{id} goal`, x = objective.x :: number, z = objective.z :: number })
+			end
+		end
+	end
+	return out
+end
 
 describe("Ashen Wastes: data", function()
 	it("keeps the areas of the brief (ids, levels, kinds, groups, profiles; 56 groups) without overlaps", function()
@@ -195,6 +348,37 @@ describe("Ashen Wastes: data", function()
 		end
 		for _, name in { "ribcage", "strandedBoat", "bloodPit", "colossus", "belltower", "buriedKing", "pyramid" } do
 			expect(seen[name]).toBe("ashen")
+		end
+		-- S107: its NPC place keys (npc:<key>) and anchor ids are unique among the sites, areas, NPC places and anchors
+		-- of every map too (/tparea looks them up on all maps)
+		local names: { [string]: string } = {}
+		local count: { [string]: number } = {}
+		local function add(name: string, what: string)
+			names[name] = what
+			count[name] = (count[name] or 0) + 1
+		end
+		for mapId, data in Areas.byMap do
+			for name in (data.sites or {}) :: { [string]: any } do
+				add(name, `site of {mapId}`)
+			end
+			for _, area in data.areas do
+				add(area.id, `area of {mapId}`)
+			end
+			for key in (data.npcSpots or {}) :: { [string]: any } do
+				add(key, `npc place of {mapId}`)
+			end
+			for _, a in data.questAnchors or {} do
+				add(a.id, `anchor of {mapId}`)
+			end
+		end
+		for key in S107_SPOTS do
+			expect(names[key]).toBe("npc place of ashen")
+			expect(`{key} {count[key]}`).toBe(`{key} 1`)
+		end
+		for _, a in DATA.questAnchors or {} do
+			if string.sub(a.id, 1, 4) == "ash_" then
+				expect(`{a.id} {count[a.id]}`).toBe(`{a.id} 1`)
+			end
 		end
 	end)
 end)
@@ -489,6 +673,10 @@ describe("Ashen Wastes: terrain", function()
 			return false
 		end
 		local targets = standingPlaces()
+		-- S107: the waypoints and goals of Orren's and Ezra's escorts
+		for _, p in escortPoints() do
+			table.insert(targets, p)
+		end
 		-- sites on top of a spire or in a wall are seen, not walked to
 		local aloft = { wyvernStone = true, nestMesa = false, lairMouth = true, mineMouth = true, forgeGate = true }
 		for name, s in SITES do
@@ -709,11 +897,15 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 			local anchors = assert(DATA.questAnchors, "questAnchors")
 			local points: { { name: string, x: number, z: number } } = {}
 			for name, spot in spots do
-				table.insert(points, { name = name, x = spot.x, z = spot.z })
+				if not S107_SPOTS[name] then
+					table.insert(points, { name = name, x = spot.x, z = spot.z })
+				end
 				expect(spot.wiki).toBe(false)
 			end
 			for _, a in anchors do
-				table.insert(points, { name = a.id, x = a.x, z = a.z })
+				if string.sub(a.id, 1, 4) ~= "ash_" then -- S107's anchors: the side arc block below
+					table.insert(points, { name = a.id, x = a.x, z = a.z })
+				end
 				expect(a.wiki).toBe(false)
 			end
 			expect(#points).toBe(8)
@@ -744,6 +936,9 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 
 	it("stands every anchor by its landmark, never in its middle", function()
 		for _, a in assert(DATA.questAnchors, "questAnchors") do
+			if string.sub(a.id, 1, 4) == "ash_" then
+				continue -- S107 (the side arc block below)
+			end
 			local near = assert(NEAR[a.id], a.id)
 			local d = math.sqrt((a.x - near.x) ^ 2 + (a.z - near.z) ^ 2)
 			expect(`{a.id} {d <= near.max and d >= 2.5}`).toBe(`{a.id} true`)
@@ -800,4 +995,191 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 			expect(found).toEqual({ RunesmithCamp = true, ShamanRest = true, HermitThreshold = true })
 		end
 	)
+end)
+
+describe("Ashen Wastes: side quest places (S107)", function()
+	it("the five NPC places: standing ground inside avoid circles, off roads and solid parts, hidden", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for key, npcId in S107_SPOTS do
+			local spot = assert(spots[key], key)
+			expect(`{key} {standingProblems(spot.x, spot.z)}`).toBe(`{key} nil`)
+			expect(`{key} {touchesSolid(spot.x, spot.z, 3)}`).toBe(`{key} nil`)
+			expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
+			expect(spot.wiki).toBe(false)
+			for other, o in spots do
+				if other ~= key then
+					expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+				end
+			end
+			local npc = assert(require("../src/shared/Data/Npcs").get(npcId), npcId)
+			expect(npc.position.x).toBe(spot.x)
+			expect(npc.position.z).toBe(spot.z)
+			expect(npc.facing).toBe(spot.facing)
+		end
+	end)
+
+	it("the 28 ash_* anchors: unique, standing ground in avoid circles, 8+ apart, 3+ from solid parts", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		local anchors = assert(DATA.questAnchors, "questAnchors")
+		local n = 0
+		for _, a in anchors do
+			if string.sub(a.id, 1, 4) == "ash_" then
+				n += 1
+				expect(table.find(S107_ANCHORS, a.id) ~= nil).toBe(true)
+				local found, mapId = Areas.anchorById(a.id)
+				expect(found).toBe(a)
+				expect(mapId).toBe("ashen")
+				expect(a.wiki).toBe(false)
+				expect(`{a.id} {standingProblems(a.x, a.z, ON_ROCK[a.id])}`).toBe(`{a.id} nil`)
+				expect(`{a.id} {touchesSolid(a.x, a.z, 3)}`).toBe(`{a.id} nil`)
+				for mapName, data in Areas.byMap do
+					for _, other in data.questAnchors or {} do
+						if other ~= a then
+							expect(other.id ~= a.id).toBe(true)
+							if mapName == "ashen" then
+								expect(`{a.id}-{other.id} {dist(a.x, a.z, other.x, other.z) >= 8}`).toBe(
+									`{a.id}-{other.id} true`
+								)
+							end
+						end
+					end
+				end
+				for key, spot in spots do
+					expect(`{a.id}-{key} {dist(a.x, a.z, spot.x, spot.z) >= 8}`).toBe(`{a.id}-{key} true`)
+				end
+			end
+		end
+		expect(n).toBe(#S107_ANCHORS)
+	end)
+
+	it("anchors without a prop stand by their thing: a solid piece of that build within reach of the prompt", function()
+		local all = AshenGen.all()
+		for id, name in AT_THING do
+			local a = assert(Areas.anchorById(id), id)
+			local best = math.huge
+			for _, b in all do
+				if b.name == name then
+					for _, p in b.bp.pieces do
+						if p.lod == "shell" or p.col then
+							local px, _, pz = Kit.worldOf(b, p.p[1], p.p[2], p.p[3])
+							best = math.min(best, dist(a.x, a.z, px, pz) - math.max(p.size[1], p.size[3]) / 2)
+						end
+					end
+				end
+			end
+			expect(`{id} {best <= Config.SideQuest.useRange}`).toBe(`{id} true`)
+			expect(Quest.kindOf(id)).toBeNil()
+		end
+	end)
+
+	it("monster groups keep 12+ studs from the new places; the S46 data stays (52 circles, 56 groups)", function()
+		local points: { { name: string, x: number, z: number } } = {}
+		for key in S107_SPOTS do
+			local spot = assert(DATA.npcSpots)[key]
+			table.insert(points, { name = key, x = spot.x, z = spot.z })
+		end
+		for _, id in S107_ANCHORS do
+			local a = assert(Areas.anchorById(id), id)
+			table.insert(points, { name = id, x = a.x, z = a.z })
+		end
+		for _, g in AreaSpawns.region(DATA, MAP.size) do
+			for _, p in points do
+				if dist(p.x, p.z, g.position.x, g.position.z) < 12 then
+					error(`group {g.id} stands {dist(p.x, p.z, g.position.x, g.position.z)} studs from {p.name}`)
+				end
+			end
+		end
+		expect(#DATA.avoid).toBe(52)
+		expect(#AreaSpawns.region(DATA, MAP.size)).toBe(56)
+	end)
+
+	it(
+		"a prop at the nine anchors of AshenGen/Quest, on the ground by its anchor, clear of trees, rocks and nodes",
+		function()
+			local all = AshenGen.all()
+			local rocks: { any } = {}
+			local props = 0
+			local others = 0
+			for _, b in all do
+				if b.tag == "rocks" then
+					table.insert(rocks, b)
+				end
+				if string.match(b.name, "^QuestProp_") then
+					props += 1
+				else
+					others += 1
+				end
+			end
+			-- the Builds before S107 (build/s107_before.json: 527, names and places unchanged)
+			expect(others).toBe(527)
+			expect(props).toBe(9)
+			for _, id in S107_ANCHORS do
+				local a = assert(Areas.anchorById(id), id)
+				if Quest.kindOf(id) then
+					local build: any = nil
+					for _, b in all do
+						if b.name == `QuestProp_{id}` then
+							build = b
+						end
+					end
+					local b = assert(build, `QuestProp_{id}`)
+					expect(b.tag).toBe("questprop")
+					local d = dist(a.x, a.z, b.at.x, b.at.z)
+					expect(`{id} {d >= 1 and d <= 4}`).toBe(`{id} true`)
+					expect(math.abs(b.at.y - T.height(b.at.x, b.at.z)) <= 1).toBe(true)
+					expect(T.lavaDistance(b.at.x, b.at.z) >= 8).toBe(true)
+					expect(T.isWater(b.at.x, b.at.z)).toBe(false)
+					expect(#b.bp.pieces <= 8).toBe(true)
+					for _, piece in b.bp.pieces do
+						expect(piece.col).toBe(false)
+						expect(piece.lod ~= "shell").toBe(true)
+					end
+					for _, t in AshenGen.trees() do
+						expect(`{id} {dist(b.at.x, b.at.z, t.x, t.z) >= 4}`).toBe(`{id} true`)
+					end
+					for _, r in rocks do
+						expect(`{id} {dist(b.at.x, b.at.z, r.at.x, r.at.z) >= 4}`).toBe(`{id} true`)
+					end
+					for _, node in AshenGen.nodes() do
+						expect(dist(b.at.x, b.at.z, node.x, node.z) >= 4).toBe(true)
+					end
+				end
+			end
+		end
+	)
+
+	it("Orren and Ezra lead on walkable, dry ground away from lava, legs within legMax", function()
+		local Companion = require("../src/shared/Logic/Companion")
+		local Quests = require("../src/shared/Data/Quests")
+		local Npcs = require("../src/shared/Data/Npcs")
+		for id, npcId in { side_ash_wells = "waterkeeper_orren", side_ash_king = "tombwarden_ezra" } do
+			local quest = assert(Quests.Side.get(id), id)
+			local def = assert(quest.companion, id)
+			expect(def.mode).toBe("lead")
+			expect(def.npc).toBe(npcId)
+			expect(def.during).toEqual({ 1 })
+			local escort, index = Companion.escortOf(quest)
+			local e = assert(escort, id)
+			expect(index).toBe(1)
+			local start = assert(Companion.fromOf(def))
+			local npc = assert(Npcs.get(npcId))
+			expect(start.x).toBe(npc.position.x)
+			expect(start.z).toBe(npc.position.z)
+			local route = Companion.route(def, e, start)
+			expect(#route >= 3).toBe(true)
+			for i, p in route do
+				expect(`{id} {i} {MapTerrain.walkable("ashen", p.x, p.z, 4)}`).toBe(`{id} {i} true`)
+				expect(T.isWater(p.x, p.z)).toBe(false)
+				expect(T.lavaDistance(p.x, p.z) >= CLEAR).toBe(true)
+				expect(T.rockAt(p.x, p.z)).toBe(false)
+				for _, lake in DATA.lakes do
+					expect(dist(p.x, p.z, lake.x, lake.z) > lake.r).toBe(true)
+				end
+				if i > 1 then
+					local before = route[i - 1]
+					expect(dist(p.x, p.z, before.x, before.z) <= Config.Companion.legMax).toBe(true)
+				end
+			end
+		end
+	end)
 end)

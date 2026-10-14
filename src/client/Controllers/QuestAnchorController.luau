@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local AshenQuest = require(ReplicatedStorage.Shared.Logic.AshenGen.Quest)
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DuskwoodQuest = require(ReplicatedStorage.Shared.Logic.DuskwoodGen.Quest)
@@ -118,6 +119,15 @@ end
 local function sideSpot(base: CFrame, anchorId: string): CFrame
 	if DuskwoodQuest.kindOf(anchorId) then
 		return base * CFrame.new(0, 0, DuskwoodQuest.SIDE_OFFSET)
+	end
+	return base
+end
+
+-- S107: where an Ashen side quest prop stands (Logic/AshenGen/Quest.SIDE_OFFSET along the anchor's +Z); the anchor
+-- itself when it has none (it stands by an existing build).
+local function ashSpot(base: CFrame, anchorId: string): CFrame
+	if AshenQuest.kindOf(anchorId) then
+		return base * CFrame.new(0, 0, AshenQuest.SIDE_OFFSET)
 	end
 	return base
 end
@@ -291,8 +301,11 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 			Enum.Material.Wood
 		)
 	end,
-	mark = function(model, base)
-		local at = base * CFrame.new(0, 1.6, 0)
+	mark = function(model, base, anchorId)
+		-- S107: on the face of the cracked column of ash_columns_sample (Logic/AshenGen/Quest columnStump)
+		local at = if AshenQuest.kindOf(anchorId) == "columnStump"
+			then ashSpot(base, anchorId) * CFrame.new(0, 1.4, -0.66)
+			else base * CFrame.new(0, 1.6, 0)
 		for _, r in { 45, -45 } do
 			part(
 				model,
@@ -373,15 +386,17 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 		smoke.Parent = core
 		light(core, "#FF8A3A", 24, 2)
 	end,
-	tracks = function(model, base)
+	tracks = function(model, base, anchorId)
+		-- S107: driven into the stone heap of ash_wyvern_lookout (Logic/AshenGen/Quest stoneHeap)
+		local foot = if AshenQuest.kindOf(anchorId) then ashSpot(base, anchorId) * CFrame.new(0, 1, 0) else base
 		part(
 			model,
 			Vector3.new(0.22, 4, 0.22),
-			base * CFrame.new(0, 2, 0) * CFrame.Angles(0, 0, math.rad(6)),
+			foot * CFrame.new(0, 2, 0) * CFrame.Angles(0, 0, math.rad(6)),
 			"#6B5038",
 			Enum.Material.Wood
 		)
-		part(model, Vector3.new(0.9, 0.7, 0.05), base * CFrame.new(0.5, 3.6, 0), "#A3282A", Enum.Material.Fabric)
+		part(model, Vector3.new(0.9, 0.7, 0.05), foot * CFrame.new(0.5, 3.6, 0), "#A3282A", Enum.Material.Fabric)
 	end,
 	-- S96: where the wild stallion was calmed: a stake, a coil of cut halter rope and a patch of trampled grass
 	halter = function(model, base)
@@ -996,6 +1011,161 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 				Enum.Material.Glass
 			)
 		end
+	end,
+	-- S107 (the Ashen side arcs) -------------------------------------------------------------------------------------
+	-- a basalt warning cairn with a red rag on a stick, raised from the loose lumps of its prop (glands)
+	cairn = function(model, base, anchorId)
+		local spot = ashSpot(base, anchorId)
+		local y = 0
+		for k, s in { 1.4, 1.1, 0.85, 0.6 } do
+			local h = s * 0.5
+			part(
+				model,
+				Vector3.new(s, h, s * 0.85),
+				spot * CFrame.new(0, y + h / 2, 0) * CFrame.Angles(0, k * 0.6, math.rad((k % 2) * 4 - 2)),
+				"#2E2A28",
+				Enum.Material.Slate
+			)
+			y += h
+		end
+		part(model, Vector3.new(0.15, 1, 0.15), spot * CFrame.new(0, y + 0.45, 0), "#6B5038", Enum.Material.Wood)
+		part(model, Vector3.new(0.8, 0.5, 0.05), spot * CFrame.new(0.42, y + 0.7, 0), "#A3282A", Enum.Material.Fabric)
+	end,
+	-- the well dug out: a ring of six stones round dark water with a glint, a wooden bucket beside it (wells); the
+	-- water lies above the prop's sand mound (top at 0.35, Logic/AshenGen/Quest buriedWell), which stays in the map
+	water = function(model, base, anchorId)
+		local spot = ashSpot(base, anchorId)
+		for k = 0, 5 do
+			local a = k / 6 * math.pi * 2
+			part(
+				model,
+				Vector3.new(0.9, 0.6, 0.7),
+				spot * CFrame.new(math.cos(a) * 1.6, 0.3, math.sin(a) * 1.6) * CFrame.Angles(0, -a, 0),
+				"#3A3630",
+				Enum.Material.Slate
+			)
+		end
+		local pool = part(
+			model,
+			Vector3.new(0.15, 3, 3),
+			spot * CFrame.new(0, 0.42, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#24414E",
+			Enum.Material.Glass,
+			Enum.PartType.Cylinder
+		)
+		pool.Transparency = 0.2
+		part(
+			model,
+			Vector3.new(0.1, 0.6, 0.6),
+			spot * CFrame.new(0.4, 0.5, -0.3) * CFrame.Angles(0, 0, math.rad(90)),
+			"#7FB8D8",
+			Enum.Material.Neon,
+			Enum.PartType.Cylinder
+		)
+		part(
+			model,
+			Vector3.new(0.8, 0.75, 0.75),
+			spot * CFrame.new(2.5, 0.4, 0.4) * CFrame.Angles(0, 0, math.rad(90)),
+			"#7A5A3A",
+			Enum.Material.WoodPlanks,
+			Enum.PartType.Cylinder
+		)
+	end,
+	-- three clay bowls of smouldering herbs on a flat stone, smoke from the middle one (rite at the Hot Spring; altar
+	-- on the top of the east courtyard's altar, 6 studs along the anchor's +Z, Necropolis courtyardEast)
+	incense = function(model, base, anchorId)
+		local spot = ashSpot(base, anchorId)
+		if anchorId == "ash_courtyard_altar" then
+			local p = (base * CFrame.new(0, 0, 6)).Position
+			local top = surfaceY(p, p.Y + 3)
+			if top then
+				spot = CFrame.new(p.X, top, p.Z) * base.Rotation
+			end
+		end
+		part(model, Vector3.new(2.2, 0.25, 1.4), spot * CFrame.new(0, 0.12, 0), "#5A5650", Enum.Material.Slate)
+		for k = -1, 1 do
+			local bowl = spot * CFrame.new(k * 0.65, 0.4, 0)
+			part(
+				model,
+				Vector3.new(0.3, 0.8, 0.8),
+				bowl * CFrame.Angles(0, 0, math.rad(90)),
+				"#6B5038",
+				Enum.Material.Slate,
+				Enum.PartType.Cylinder
+			)
+			local ember = part(
+				model,
+				Vector3.new(0.2, 0.2, 0.2),
+				bowl * CFrame.new(0, 0.16, 0),
+				"#FF8A3A",
+				Enum.Material.Neon,
+				Enum.PartType.Ball
+			)
+			if k == 0 then
+				local smoke = Instance.new("Smoke")
+				smoke.Color = Color3.fromHex("#B8A878")
+				smoke.Opacity = 0.2
+				smoke.RiseVelocity = 3
+				smoke.Size = 0.8
+				smoke.Parent = ember
+				light(ember, "#FF9A4A", 10, 1)
+			end
+		end
+	end,
+	-- the war drum's skin slashed: a flap of hide hanging at 40 degrees against the dais, a smaller one on the ground
+	-- and the broken drumstick (drum; the dais's near corner is about 5 / 5 studs from the anchor, Warcamp warDrum)
+	drum = function(model, base)
+		local corner = base * CFrame.new(4.2, 0, 4.2) * CFrame.Angles(0, math.rad(45), 0)
+		part(
+			model,
+			Vector3.new(2.6, 0.1, 1.6),
+			corner * CFrame.new(0, 1, -0.4) * CFrame.Angles(math.rad(40), 0, 0),
+			"#5A3A2A",
+			Enum.Material.Fabric
+		)
+		part(
+			model,
+			Vector3.new(1.4, 0.08, 1),
+			base * CFrame.new(1.6, 0.05, 1.2) * CFrame.Angles(0, math.rad(30), 0),
+			"#5A3A2A",
+			Enum.Material.Fabric
+		)
+		for k = 0, 1 do
+			part(
+				model,
+				Vector3.new(0.25, 1, 0.25),
+				base
+					* CFrame.new(0.6 + k * 0.7, 0.13, -0.6 + k * 0.4)
+					* CFrame.Angles(0, math.rad(20 + k * 70), math.rad(90)),
+				"#6B5038",
+				Enum.Material.Wood
+			)
+		end
+	end,
+	-- the polished shield on a stake by the basilisk's pit, tilted and turned to face the pit (mirror)
+	mirror = function(model, base, anchorId)
+		local data = Areas.anchorById(anchorId)
+		local sites = Areas.byMap.ashen.sites
+		local den = if sites then sites.basiliskDen else nil
+		local stake = base * CFrame.new(0, 1.5, 0)
+		part(model, Vector3.new(0.3, 3, 0.3), stake, "#6B5038", Enum.Material.Wood)
+		local top = (base * CFrame.new(0, 2.4, 0)).Position
+		local target = top + (base * CFrame.new(0, 0, -4)).Position - base.Position
+		if data and den then
+			target = top + Vector3.new(den.x - data.x, 0, den.z - data.z)
+		end
+		local shield = part(
+			model,
+			Vector3.new(0.15, 2.2, 2.2),
+			CFrame.lookAt(top, Vector3.new(target.X, top.Y, target.Z))
+				* CFrame.new(0, 0, -0.2)
+				* CFrame.Angles(math.rad(-15), 0, 0)
+				* CFrame.Angles(0, math.rad(90), 0),
+			"#C9A45C",
+			Enum.Material.Metal,
+			Enum.PartType.Cylinder
+		)
+		shield.Reflectance = 0.5
 	end,
 }
 

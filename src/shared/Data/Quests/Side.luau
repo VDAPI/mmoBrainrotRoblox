@@ -17,7 +17,10 @@
 -- explicit fraction (the S96 stable arc) keep it and count against the same budget. The Meadows numbers (levels 1–19)
 -- do not change. Gold of the banded quests: gold(level) × GOLD_FROM_20. Anchors and NPC places of the Duskwood arcs:
 -- Data/Areas/duskwood (dw_* anchors).
+-- S107: Ashen Wastes side arcs (levels 45–68) on the same band budget (band 45–69, BAND_SCALE[45]); anchors and NPC
+-- places in Data/Areas/ashen (ash_* anchors), props in Logic/AshenGen/Quest.
 
+local AshenAreas = require("../Areas/ashen")
 local Exp = require("../../Logic/Exp")
 local QuestBudget = require("../../Logic/QuestBudget")
 local QuestBudgetData = require("../QuestBudget")
@@ -83,6 +86,12 @@ local FX = {
 	cage = true, -- S106: a cage door hanging open, the rope cut
 	ward = true, -- S106: a hex charm burnt, a small white-painted ward board in its place
 	spill = true, -- S106: the witches' cauldron knocked over, the brew soaking into the mud
+	-- S107 (the Ashen side arcs; drawn at the anchor's prop when Logic/AshenGen/Quest has one):
+	cairn = true, -- S107: a basalt warning cairn with a red rag
+	water = true, -- S107: a dug-out well with dark water
+	incense = true, -- S107: smouldering herbs on stones
+	drum = true, -- S107: the war drum's skin slashed
+	mirror = true, -- S107: a polished shield on a stake facing the den
 }
 
 local list: { SideQuest } = {}
@@ -1126,6 +1135,499 @@ side({
 	choices = Talk.onPage(4, { Talk.answer("lay"), Talk.answer("bring") }),
 })
 
+-- Ashen Wastes (S107, docs/DESIGN-15.md §3.4): eight arcs, one per corner of the Wastes, with five new NPCs on
+-- Areas/ashen npcSpots and the chapter III NPCs of S104 (Ghasha, Kaspar); anchors in Areas/ashen questAnchors (ash_*).
+-- EXP from the 45–69 band's side budget (S106 settleBands, DESIGN-15 §3.2 TARGET.side); the S98 model counts
+-- SIDE_SHARE of it and compensates monster EXP. Every Ashen arc is off the wiki until S109 (`wiki = false`).
+local ASH_SITES = assert(AshenAreas.sites, "Side: ashen sites")
+local MINE = ASH_SITES.mineMouth
+
+-- S. Fire in the Cracks (45–48), Salamander Flats: Kesra's scouts burnt by the cracks, hyenas hunting the wounded ---
+side({
+	id = "side_ash_salve",
+	level = 45,
+	giver = "alchemist",
+	turnIn = "scout_ashen",
+	arc = "ashSalamanders",
+	pages = 2,
+	objectives = { deliver("emberSalve") },
+	wiki = false,
+	barks = { accept = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("hurry"), Talk.answer("enough", Talk.gift("potion_hp_4", 2)) }),
+})
+side({
+	id = "side_ash_glands",
+	level = 46,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	arc = "ashSalamanders",
+	pages = 3,
+	requires = { "side_ash_salve" },
+	objectives = {
+		collect(6, "fireGland", "salamander", 0.5, "ashen_flats"),
+		use({ "ash_cairn_1", "ash_cairn_2", "ash_cairn_3" }, "quest.use.cairn", 2, "cairn"),
+	},
+	where = { map = "ashen", area = "ashen_flats" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("rag"),
+		Talk.answer("cairns", Talk.focus(2)),
+		Talk.answer("glands", Talk.focus(1)),
+	}),
+})
+side({
+	id = "side_ash_den",
+	level = 48,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	arc = "ashSalamanders",
+	pages = 3,
+	requires = { "side_ash_glands" },
+	objectives = {
+		kill(12, "wasteHyena", "ashen_flats"),
+		use({ "ash_hyena_skull" }, "quest.use.smoke", 3, "fire"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_flats" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("pitch"),
+		Talk.answer("count"),
+		Talk.answer("smoke", Talk.focus(2)),
+	}),
+	recall = { done = "side_ash_glands" },
+})
+
+-- T. The Last Water (46–49), Dead Oasis: old Orren, the wells under the sand and the merchants' seals --------------
+side({
+	id = "side_ash_cask",
+	level = 46,
+	giver = "innkeeper",
+	turnIn = "waterkeeper_orren",
+	arc = "ashOasis",
+	pages = 2,
+	objectives = { deliver("waterCask") },
+	wiki = false,
+	barks = { accept = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("wine"), Talk.answer("who") }),
+})
+side({
+	id = "side_ash_wells",
+	level = 47,
+	giver = "waterkeeper_orren",
+	turnIn = "waterkeeper_orren",
+	arc = "ashOasis",
+	pages = 3,
+	requires = { "side_ash_cask" },
+	objectives = {
+		-- Orren leads from the jetty over the dry bed to the stranded boat (route checked in tests/ashen.spec S107)
+		Talk.escort("waterkeeper_orren", "ashen", -630, 630, 12, "place.strandedBoat", { { x = -600, z = 570 } }),
+		use({ "ash_stranded_boat" }, "quest.use.boat", 2, "search"),
+		use({ "ash_well_1", "ash_well_2", "ash_well_3" }, "quest.use.well", 3, "water"),
+	},
+	where = { map = "ashen", area = "ashen_oasis" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(1, { Talk.answer("dead"), Talk.answer("boat"), Talk.answer("alone") }),
+	companion = Talk.lead("waterkeeper_orren", "ashen", { 1 }, { join = 1, wait = 2, arrive = 1, back = 1 }),
+})
+side({
+	id = "side_ash_seals",
+	level = 49,
+	giver = "waterkeeper_orren",
+	turnIn = "waterkeeper_orren",
+	arc = "ashOasis",
+	pages = 3,
+	requires = { "side_ash_wells" },
+	objectives = {
+		kill(8, "wasteHyena", "ashen_oasis"),
+		collect(5, "caravanSeal", "ashVulture", 0.4, "ashen_oasis"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_oasis" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("families"), Talk.answer("wells", Talk.focus(1)) }),
+	recall = { p1 = "side_ash_wells" },
+})
+
+-- U. Blood and Ash (50–53), the Hot Spring and the Ash Orc Warcamp: Ghasha (freed in warcampCages) and the young ----
+side({
+	id = "side_ash_rite",
+	level = 50,
+	giver = "shaman_ghasha",
+	turnIn = "shaman_ghasha",
+	arc = "ashSpring",
+	pages = 3,
+	requires = { "warcampCages" },
+	objectives = {
+		use({ "ash_spring_stones" }, "quest.use.rite", 3, "incense"),
+		{ type = "gather", n = 4, node = "bush_firebloom" },
+	},
+	where = { map = "ashen", area = "ashen_flats" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("smell"), Talk.answer("cage"), Talk.answer("herbs", Talk.focus(2)) }),
+})
+side({
+	id = "side_ash_drum",
+	level = 51,
+	giver = "shaman_ghasha",
+	turnIn = "shaman_ghasha",
+	arc = "ashSpring",
+	pages = 3,
+	requires = { "side_ash_rite" },
+	objectives = {
+		kill(10, "ashOrc", "ashen_warcamp"),
+		use({ "ash_war_drum" }, "quest.use.drum", 3, "drum"),
+	},
+	where = { map = "ashen", area = "ashen_warcamp" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(1, { Talk.answer("gold"), Talk.answer("chief") }),
+})
+side({
+	id = "side_ash_fang",
+	level = 53,
+	giver = "shaman_ghasha",
+	turnIn = "shaman_ghasha",
+	arc = "ashSpring",
+	pages = 4,
+	requires = { "side_ash_drum" },
+	objectives = {
+		kill(8, "ashOrc", "ashen_warcamp"),
+		use({ "ash_chief_tent" }, "quest.use.tent", 3, "search"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_warcamp" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("pledge"), Talk.answer("young") }),
+	recall = { done = "side_ash_rite" },
+})
+
+-- V. Silver and Mithril (50–56), the warcamp's dump, the Abandoned Mine and the Golem Fields: Dragan's debts ---------
+side({
+	id = "side_ash_silver",
+	level = 50,
+	giver = "prospector_dragan",
+	turnIn = "prospector_dragan",
+	arc = "ashProspector",
+	pages = 2,
+	objectives = {
+		{ type = "gather", n = 6, node = "vein_silver" },
+		kill(8, "ashVulture", "ashen_warcamp"),
+	},
+	where = { map = "ashen", area = "ashen_warcamp" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("debt"), Talk.answer("town"), Talk.answer("vultures", Talk.focus(2)) }),
+})
+side({
+	id = "side_ash_partners",
+	level = 52,
+	giver = "prospector_dragan",
+	turnIn = "prospector_dragan",
+	arc = "ashProspector",
+	pages = 3,
+	requires = { "side_ash_silver" },
+	objectives = {
+		{ type = "reach", n = 1, map = "ashen_mine" },
+		collect(3, "minerTag", "wasteHyena", 0.5, nil, "elite"),
+	},
+	where = { map = "ashen_mine" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	-- the hint: the ground before the mine's adit (the cave arrival, 26 studs out of the mouth)
+	choices = Talk.onPage(1, {
+		Talk.answer("names"),
+		Talk.answer("way", Talk.hint("ashen", MINE.x, MINE.z + 26, "map.ashen_mine.name")),
+	}),
+})
+side({
+	id = "side_ash_columns",
+	level = 54,
+	giver = "prospector_dragan",
+	turnIn = "prospector_dragan",
+	arc = "ashProspector",
+	pages = 3,
+	requires = { "side_ash_partners" },
+	objectives = {
+		kill(10, "fireGolem", "ashen_golemfields"),
+		use({ "ash_columns_sample" }, "quest.use.sample", 3, "mark"),
+	},
+	where = { map = "ashen", area = "ashen_golemfields" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("dream"), Talk.answer("sample", Talk.focus(2)) }),
+})
+side({
+	id = "side_ash_claim",
+	level = 56,
+	giver = "prospector_dragan",
+	turnIn = "blacksmith",
+	arc = "ashProspector",
+	pages = 3,
+	requires = { "side_ash_columns" },
+	objectives = {
+		{ type = "gather", n = 4, node = "vein_mithril" },
+		use({ "ash_dragan_claim" }, "quest.use.claim", 2, "tracks"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_golemfields" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("share"), Talk.answer("dorgan") }),
+	recall = { done = "side_ash_silver" },
+})
+
+-- W. Names of the Dead (57–61), Burnt Ruins: Kaspar (after burntTemple) writes down the dead and the taken -----------
+side({
+	id = "side_ash_chimneys",
+	level = 57,
+	giver = "hermit_kaspar",
+	turnIn = "hermit_kaspar",
+	arc = "ashRuins",
+	pages = 3,
+	requires = { "burntTemple" },
+	objectives = {
+		kill(10, "fireImp", "ashen_burntruins"),
+		use({ "ash_hearth_1", "ash_hearth_2", "ash_hearth_3" }, "quest.use.names", 2, "candles"),
+	},
+	where = { map = "ashen", area = "ashen_burntruins" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("why"), Talk.answer("knew"), Talk.answer("imps", Talk.focus(1)) }),
+})
+side({
+	id = "side_ash_heirlooms",
+	level = 59,
+	giver = "hermit_kaspar",
+	turnIn = "hermit_kaspar",
+	arc = "ashRuins",
+	pages = 3,
+	requires = { "side_ash_chimneys" },
+	objectives = {
+		use({ "ash_dry_fountain" }, "quest.use.fountain", 3, "search"),
+		collect(5, "heirloom", "desertScorpion", 0.4, "ashen_burntruins"),
+	},
+	where = { map = "ashen", area = "ashen_burntruins" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("water"), Talk.answer("drifts", Talk.focus(2)) }),
+})
+side({
+	id = "side_ash_names",
+	level = 61,
+	giver = "hermit_kaspar",
+	turnIn = "brother_anzelm",
+	arc = "ashRuins",
+	pages = 3,
+	requires = { "side_ash_heirlooms" },
+	objectives = { kill(8, "desertScorpion", "ashen_burntruins"), deliver("kasparList") },
+	final = true,
+	where = { map = "ashen", area = "ashen_burntruins" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("forge"), Talk.answer("anzelm") }),
+	recall = { p2 = "side_ash_chimneys" },
+})
+
+-- X. The Crag Hunt (58–62), Wyvern Crags: Wiesława, Mirko turning to stone, the great nest --------------------------
+side({
+	id = "side_ash_lookout",
+	level = 58,
+	giver = "wyvernhunter_wieslawa",
+	turnIn = "wyvernhunter_wieslawa",
+	arc = "ashCrags",
+	pages = 3,
+	objectives = {
+		kill(10, "wyvern", "ashen_crags"),
+		use({ "ash_wyvern_lookout" }, "quest.use.lookout", 2, "tracks"),
+	},
+	where = { map = "ashen", area = "ashen_crags" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(1, { Talk.answer("bold"), Talk.answer("driven"), Talk.answer("mark", Talk.focus(2)) }),
+})
+side({
+	id = "side_ash_eyes",
+	level = 60,
+	giver = "wyvernhunter_wieslawa",
+	turnIn = "alchemist",
+	arc = "ashCrags",
+	pages = 3,
+	requires = { "side_ash_lookout" },
+	objectives = { collect(4, "basiliskEye", "basilisk", 0.4, "ashen_crags") },
+	where = { map = "ashen", area = "ashen_crags" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("mirko"), Talk.answer("road", Talk.gift("potion_mana_3", 2)) }),
+})
+side({
+	id = "side_ash_nest",
+	level = 62,
+	giver = "alchemist",
+	turnIn = "wyvernhunter_wieslawa",
+	arc = "ashCrags",
+	pages = 3,
+	requires = { "side_ash_eyes" },
+	objectives = {
+		deliver("stoneDraught"),
+		use({ "ash_great_nest" }, "quest.use.nest", 3, "fire"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_crags" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("draught", Talk.focus(1)), Talk.answer("nest", Talk.focus(2)) }),
+	recall = { done = "side_ash_lookout" },
+})
+
+-- Y. The Sleep of Kings (63–68), Scorpion Dunes and Desert Tombs: Ezra, the masks of the Ash Kings ----------------
+local KING = ASH_SITES.buriedKing
+side({
+	id = "side_ash_king",
+	level = 63,
+	giver = "tombwarden_ezra",
+	turnIn = "tombwarden_ezra",
+	arc = "ashTombs",
+	pages = 3,
+	objectives = {
+		-- Ezra leads along the main road and up the sand road's cut, away from the courtyards (tests/ashen.spec S107)
+		Talk.escort("tombwarden_ezra", "ashen", KING.x, KING.z, 24, "place.buriedKing", {
+			{ x = 560, z = 10 },
+			{ x = 420, z = -6 },
+			{ x = 290, z = 50 },
+			{ x = 360, z = 215 },
+			{ x = 420, z = 360 },
+			{ x = 490, z = 460 },
+		}),
+		kill(12, "desertMummy", "ashen_dunes"),
+	},
+	where = { map = "ashen", area = "ashen_dunes" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
+	choices = Talk.onPage(1, { Talk.answer("faces"), Talk.answer("legs"), Talk.answer("lead") }),
+	companion = Talk.lead("tombwarden_ezra", "ashen", { 1 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
+})
+side({
+	id = "side_ash_wards",
+	level = 64,
+	giver = "tombwarden_ezra",
+	turnIn = "tombwarden_ezra",
+	arc = "ashTombs",
+	pages = 3,
+	requires = { "side_ash_king" },
+	objectives = {
+		use({ "ash_sarcophagus_1", "ash_sarcophagus_2", "ash_sarcophagus_3" }, "quest.use.ward", 2, "rune"),
+		kill(8, "desertScorpion", "ashen_dunes"),
+	},
+	where = { map = "ashen", area = "ashen_dunes" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("sign"), Talk.answer("scorp", Talk.focus(2)) }),
+	recall = { p1 = "side_ash_king" },
+})
+side({
+	id = "side_ash_altar",
+	level = 66,
+	giver = "tombwarden_ezra",
+	turnIn = "tombwarden_ezra",
+	arc = "ashTombs",
+	pages = 3,
+	requires = { "side_ash_wards" },
+	objectives = {
+		kill(10, "desertMummy", "ashen_tombs"),
+		use({ "ash_courtyard_altar" }, "quest.use.altar", 3, "incense"),
+	},
+	where = { map = "ashen", area = "ashen_tombs" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("priest"), Talk.answer("potions", Talk.gift("potion_hp_4", 2)) }),
+})
+side({
+	id = "side_ash_masks",
+	level = 68,
+	giver = "tombwarden_ezra",
+	turnIn = "tombwarden_ezra",
+	arc = "ashTombs",
+	pages = 4,
+	requires = { "side_ash_altar" },
+	objectives = {
+		collect(3, "funeralMask", "desertMummy", 0.35, "ashen_tombs"),
+		use({ "ash_pyramid_door" }, "quest.use.door", 3, "rune"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_tombs" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, { Talk.answer("door"), Talk.answer("after") }),
+	recall = { p4 = "side_ash_king" },
+})
+
+-- Z. The Salt Caravans (64–67), Ash Road: Bogna's caravan, the toll coins and the shield at the basilisk's pit ------
+-- (not `ashRoad`: that is the story quest of S104; Bogna's is another, later caravan)
+local AVENUE = ASH_SITES.kingsAvenue
+side({
+	id = "side_ash_wagons",
+	level = 64,
+	giver = "wagoner_bogna",
+	turnIn = "wagoner_bogna",
+	arc = "ashCaravans",
+	pages = 3,
+	objectives = {
+		use({ "ash_wagon_1", "ash_wagon_2", "ash_wagon_3" }, "quest.use.wagon", 2, "crate"),
+		kill(10, "basilisk", "ashen_ashroad"),
+	},
+	where = { map = "ashen", area = "ashen_ashroad" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("oxen"),
+		Talk.answer("husband"),
+		Talk.answer("basilisks", Talk.focus(2)),
+	}),
+})
+side({
+	id = "side_ash_avenue",
+	level = 65,
+	giver = "wagoner_bogna",
+	turnIn = "wagoner_bogna",
+	arc = "ashCaravans",
+	pages = 2,
+	requires = { "side_ash_wagons" },
+	objectives = {
+		{ type = "reach", n = 1, map = "ashen", x = AVENUE.x, z = AVENUE.z, radius = 24, place = "place.kingsAvenue" },
+		collect(5, "tollCoin", "wyvern", 0.4, "ashen_ashroad"),
+	},
+	where = { map = "ashen", area = "ashen_ashroad" },
+	wiki = false,
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("kings"), Talk.answer("toll") }),
+})
+side({
+	id = "side_ash_mirror",
+	level = 67,
+	giver = "wagoner_bogna",
+	turnIn = "wagoner_bogna",
+	arc = "ashCaravans",
+	pages = 3,
+	requires = { "side_ash_avenue" },
+	objectives = {
+		kill(12, "basilisk", "ashen_ashroad"),
+		use({ "ash_basilisk_den" }, "quest.use.mirror", 3, "mirror"),
+	},
+	final = true,
+	where = { map = "ashen", area = "ashen_ashroad" },
+	wiki = false,
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("shield"), Talk.answer("faith") }),
+	recall = { done = "side_ash_wagons" },
+})
+
 -- S106: the EXP of the quests waiting in `pending`: for each band holding one, TARGET.side of the band's EXP minus the
 -- fixed rewards of its other side quests from BAND_FROM (the stable arc), split by expToNext(level) × weight.
 local function settleBands()
@@ -1183,6 +1685,15 @@ local ARCS = {
 	"ferry",
 	"charms",
 	"masons",
+	-- S107: the Ashen arcs by level
+	"ashSalamanders",
+	"ashOasis",
+	"ashSpring",
+	"ashProspector",
+	"ashRuins",
+	"ashCrags",
+	"ashTombs",
+	"ashCaravans",
 }
 
 local byId: { [string]: SideQuest } = {}

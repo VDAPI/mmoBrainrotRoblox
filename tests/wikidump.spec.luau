@@ -447,6 +447,44 @@ T.describe("Wiki export: consistency", function()
 		T.expect(next(dusk.npcSpots)).toBeNil()
 	end)
 
+	-- S107: the Ashen side arcs (26 quests, five NPCs, the ash_* anchors, the NPC places) wait for S109
+	T.it("leaves the Ashen side arcs out: quests, NPCs, anchors and places (S107)", function()
+		local npcIds = {
+			"waterkeeper_orren",
+			"prospector_dragan",
+			"wyvernhunter_wieslawa",
+			"tombwarden_ezra",
+			"wagoner_bogna",
+		}
+		local hiddenIds = table.clone(npcIds)
+		for _, quest in Quests.Side.list do
+			if string.sub(quest.id, 1, 9) == "side_ash_" then
+				table.insert(hiddenIds, quest.id)
+			end
+		end
+		T.expect(#hiddenIds).toBe(26 + 5)
+		local all = Visibility.collect()
+		for _, id in hiddenIds do
+			T.expect(`{id} {all[id] == true}`).toBe(`{id} true`)
+		end
+		for _, file in fs.readDir("wiki/src/data") do
+			if string.match(file, "%.json$") then
+				local text = fs.readFile(`wiki/src/data/{file}`)
+				for _, id in hiddenIds do
+					if string.find(text, `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+				if string.find(text, `"ash_`, 1, true) then
+					error(`{file} names an ash_ anchor`, 0)
+				end
+			end
+		end
+		local ashen = d.areas.maps.ashen
+		T.expect(#ashen.questAnchors).toBe(0)
+		T.expect(next(ashen.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do
