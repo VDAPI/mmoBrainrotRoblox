@@ -40,7 +40,6 @@ local ICONS: { [string]: Cell } = {
 	["hud/dead"] = { atlas = "hud", s = 1, x = 256, y = 0, h = "ba56335df0eb" },
 	["hud/lock"] = { atlas = "hud", s = 1, x = 384, y = 0, h = "a6c4203b93f4" },
 	["hud/mail"] = { atlas = "hud", s = 1, x = 512, y = 0, h = "5c9d632811f0" },
-	["hud/menu_character"] = { atlas = "hud", s = 1, x = 640, y = 0, h = "10ad99c1cb1d" },
 	["hud/menu_guild"] = { atlas = "hud", s = 1, x = 768, y = 0, h = "e34437a83c0c" },
 	["hud/menu_inventory"] = { atlas = "hud", s = 1, x = 896, y = 0, h = "444e7c658885" },
 	["hud/menu_map"] = { atlas = "hud", s = 1, x = 0, y = 128, h = "2d463e725f9e" },

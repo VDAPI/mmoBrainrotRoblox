@@ -53,7 +53,6 @@ UiArt.FIXED = table.freeze({
 
 -- Ids of the HUD menu (Controllers/ScreenController MENU; tests/uiart.spec checks they match).
 UiArt.MENUS = table.freeze({
-	"character",
 	"inventory",
 	"skills",
 	"map",

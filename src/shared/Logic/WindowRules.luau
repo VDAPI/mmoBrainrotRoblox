@@ -2,7 +2,8 @@
 -- Window pairing rules (S29, ARCHITECTURE §9). Pure state machine used by the client's WindowManager; no
 -- Roblox API, tested in Lune (tests/windowrules.spec.luau).
 --
---   * "character" is the main window: equipment, backpack and statistics in one (B and C open it).
+--   * "character" is the main window: equipment, backpack and statistics in one (B opens it; FIX 2026-10-14: the
+--     separate "Character" button and its C key are gone, the window is the backpack).
 --   * "inventory" is only the companion backpack next to a service window (shop, forge, trade, ...).
 --     Without a service that brings the backpack, opening "inventory" opens "character" instead.
 --   * A service opened by the player brings the backpack along (`inventoryByCompanion`). When the last

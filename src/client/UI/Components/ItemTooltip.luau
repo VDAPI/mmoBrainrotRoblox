@@ -65,6 +65,8 @@ local shownSlot = moduleScope:Value(nil :: string?)
 local GAP = 8
 local owner: GuiObject? = nil
 local getters: { [string]: () -> ItemInstance? } = {}
+-- Root of the layer the tooltip is mounted in (FIX 2026-10-14: GUI points are measured from it, Scale.toLayer).
+local layerRoot: GuiObject? = nil
 local ctxGetters: { [string]: () -> TooltipModel.Ctx? } = {}
 
 -- S68: the open details panel and the PC pin.
@@ -244,15 +246,19 @@ end
 local function openDetail(ref: TooltipModel.DetailRef, item: ItemInstance, ctx: TooltipModel.Ctx, anchor: GuiObject)
 	local panel = panelOf(anchor)
 	local group = panel and panel.Parent
-	local edge = if panel then Scale.toVirtual(panel.AbsolutePosition + panel.AbsoluteSize).X else 0
-	local left = if group and group:IsA("GuiObject") then Scale.toVirtual(group.AbsolutePosition).X else 0
+	local root = layerRoot
+	local function toLayer(point: Vector2): Vector2
+		return if root then Scale.toLayer(point, root) else Scale.toVirtual(point)
+	end
+	local edge = if panel then toLayer(panel.AbsolutePosition + panel.AbsoluteSize).X else 0
+	local left = if group and group:IsA("GuiObject") then toLayer(group.AbsolutePosition).X else 0
 	detail:set({
 		ref = ref,
 		item = item,
 		ctx = ctx,
 		anchor = anchor,
 		side = if Fusion.peek(Device.Touch) then "below" else "right",
-		at = Scale.toVirtual(anchor.AbsolutePosition),
+		at = toLayer(anchor.AbsolutePosition),
 		size = Scale.toVirtual(anchor.AbsoluteSize),
 		edge = edge,
 		left = left,
@@ -485,8 +491,12 @@ function ItemTooltip.attach(
 		scope,
 		object:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
 			if owner == object and Fusion.peek(Device.Touch) then
-				local p = Scale.toVirtual(object.AbsolutePosition)
-				position:set(p)
+				local root = layerRoot
+				position:set(
+					if root
+						then Scale.toLayer(object.AbsolutePosition, root)
+						else Scale.toVirtual(object.AbsolutePosition)
+				)
 			end
 		end)
 	)
@@ -494,6 +504,7 @@ end
 
 -- Builds the floating panel inside `parent` (Tooltip layer root).
 function ItemTooltip.mount(scope: Scope, parent: Instance)
+	layerRoot = if parent:IsA("GuiObject") then parent else nil
 	scope:Observer(DragDrop.Selected):onChange(function()
 		if not Fusion.peek(Device.Touch) then
 			return

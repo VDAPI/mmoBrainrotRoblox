@@ -125,6 +125,8 @@ local BODY = Vector3.new(2, 4.5, 2)
 -- Geometry surfaces within STEP_UP over the terrain count as floor (porch, stairs, a square's paving, a bridge
 -- deck low over the bank); the ray starts there, so roofs and awnings higher up never catch it.
 local STEP_UP = 7
+-- How far a ray hit may lie under the plan height (voxel rounding of the smooth terrain on slopes).
+local FLOOR_SLACK = 0.5
 local SEARCH_RADIUS = 30
 
 -- Terrain plus this map's own geometry: no NPCs (World.Npcs), gathering nodes, monsters or characters.
@@ -168,7 +170,17 @@ function WorldService.FloorAt(mapId: string, x: number, z: number, fromY: number
 		start = y + STEP_UP
 	end
 	local top = castDown(Vector3.new(origin.X + x, start, origin.Z + z), STEP_UP + 40, geometry, false)
-	local y = if top then top.Position.Y else start - STEP_UP
+	-- FIX 2026-10-14: on a map with a plan height the floor is never under the plan. Terrain written in this frame
+	-- (the city, built in WorldService.Init just before NpcService.Start) does not take rays yet: the ray missed
+	-- and the fallback `start - STEP_UP` put every city NPC 1 stud under the ground.
+	local planned = MapTerrain.height(mapId, x, z)
+	local y: number
+	if planned then
+		local plan = origin.Y + planned
+		y = if top then math.max(top.Position.Y, plan - FLOOR_SLACK) else plan
+	else
+		y = if top then top.Position.Y else start - STEP_UP
+	end
 	return Vector3.new(origin.X + x, y, origin.Z + z)
 end
 

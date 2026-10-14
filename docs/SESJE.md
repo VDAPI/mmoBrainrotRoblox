@@ -8695,3 +8695,24 @@ animacji. Kolejne grafiki: `docs/sessions/IMPORT-GRAFIK.md` (przedmioty i interf
 krwiste efekty) i czy złagodzić prompty przed kolejnym wgraniem; (2) czy robić widok całego świata dla `mapy/world`;
 (3) prompty dla kluczy bez obrazków (efekty `frostbite`, `fury`, `nextBasic`, `runeSeal`, `thornbearer`, wierzchowce);
 (4) kolejność S113–S117.
+
+### Poprawki 2026-10-14 (zgłoszenia właściciela)
+
+| # | Zgłoszenie | Przyczyna | Poprawka |
+|---|---|---|---|
+| 1 | Przeciągany przedmiot w ekwipunku „ucieka do góry” zamiast iść za myszką | Duch przeciągania brał `InputObject.Position` (przestrzeń GUI, pod paskiem Robloxa) i rysował go w warstwie z `IgnoreGuiInset` (początek u góry ekranu), więc wisiał o wysokość paska nad kursorem | `Scale.toLayer(point, root)` liczy punkt względem `AbsolutePosition` korzenia warstwy (pasek i bezpieczny obszar telefonu naraz); duch, dymek przytrzymania i panel szczegółów przedmiotu na telefonie (ten sam błąd przy `AbsolutePosition`) liczą przez nią; duch dostaje pozycję przed pokazaniem |
+| 2 | Tablice Ratusz / Skarbiec, NPC od depozytu i większość NPC na placu wchodzą w podłogę | Miasto pisze teren w `WorldService.Init`, a promień w terenie zapisanym w tej samej klatce najpewniej nie trafia: drogowskazy usług i punkt odrodzenia brały y = 0 (plac ma 4, górne miasto 12 / 20), NPC zapas `start - STEP_UP`, czyli 1 stud pod planem | Layout miasta ustawia `ctx.height = TownTerrain.heightAt` (rekwizyty stoją na planie, jak budynki); `WorldService.FloorAt` na mapie z wysokością planu nigdy nie schodzi niżej niż plan − 0,5 (bez trafienia: plan). Dotyczy wszystkich NPC i rekwizytów miasta, łąk i krain z planem |
+| 3 | Kupowanie u handlarzy: zamiast listy same ikony w wierszach według rodzaju, nazwa i staty po najechaniu | (zmiana wyglądu) | Zakładka „Kup”: siatka ikon w grupach (`Logic/ShopGroups`: broń, druga ręka, hełmy, zbroje, rękawice, buty, biżuteria, mikstury, inne do użycia, zwoje, kamienie, materiały, narzędzia, plecaki, inne) z małym nagłówkiem; dymek przedmiotu po najechaniu (PC) albo stuknięciu (telefon); klik / stuknięcie (palec puszczony bez przesunięcia, przewijanie siatki nie zmienia wyboru) wybiera przedmiot do paska kupna pod siatką (nazwa, cena, „Tylko dla” / „Wymaga poziomu” na czerwono, ilość −/+/Max, „Kup”). U sprzedawcy klasy progi rosną w każdej grupie. Sprzedaż i odkup bez zmian |
+| 4 | Plecak i Postać to to samo okno | (zmiana) | Przycisk „Postać” i klawisz C usunięte; okno z ekwipunkiem, plecakiem i statystykami otwiera B i ma tytuł „Plecak”; teksty z „(C)” i „okno Postaci” poprawione (questy, przewodnik, dymki, admin, wiki) |
+| 5 | Drzewka umiejętności jak drzewka, opisy dopiero po kliknięciu | (zmiana wyglądu) | Zakładka ścieżki: krótki nagłówek (nazwa ⓘ, broń, ścieżka główna), pod nim drzewo: rzędy kafelków węzłów, pień przez środek i gałęzie do węzłów (złote, gdy rząd otwarty albo węzeł kupiony), romb dla rzędu z wyborem, poziom rzędu z lewej (⚠ przy złej broni, szczegóły w dymku), kropki rang, zielony „+” gdy można kupić. Opis, Kup i Zwróć dopiero po kliknięciu węzła (panel szczegółów PC, arkusz na telefonie); klik nazwy ścieżki pokazuje jej opis, rolę, broń i tytuł |
+
+Testy: `tests/shopgroups.spec` (każdy wpis każdego sklepu w jednej znanej grupie, kolejność grup, progi rosnąco, nagłówki
+PL / EN), `tests/data.spec` bez okna „character”. Wiki: `npm run data` (skróty klawiszy bez C, tekst questu „Ekwipunek”,
+odcisk danych), `statystyki.mdx` / `stats.mdx` na okno Plecaka, obraz `keybind/win_character` usunięty (`art.json`, webp, mapa w
+`art-core.mjs`). Bez Studio (konto moderowane): przegląd w grze niezrobiony.
+
+Pliki: `src/client/UI/{Scale,DragDrop}.luau`, `src/client/UI/Components/{Tooltip,ItemTooltip}.luau`,
+`src/client/Controllers/{UIController,ScreenController,WindowManager}.luau`, `src/client/UI/Screens/{ShopWindow.luau,Hud/init.luau,CharacterWindow/init.luau}`,
+`src/client/UI/Screens/SkillsWindow/{PathTab,NodeCard,Details,Context,Sheet,init}.luau`,
+`src/server/Services/WorldService.luau`, `src/server/World/Layouts/city.luau`, `src/shared/Logic/{ShopGroups,UiArt,WindowRules}.luau`,
+`src/shared/Data/{Keybinds,UiArt}.luau`, `art/ui/ui_art.json`, lokalizacja, `tests/{shopgroups,data}.spec.luau`, dane i teksty wiki.

@@ -59,6 +59,13 @@ function Scale.toVirtual(point: Vector2): Vector2
 	return point / Scale.get()
 end
 
+-- FIX 2026-10-14: a point in GUI space (InputObject.Position, AbsolutePosition: below the Roblox top bar) ->
+-- virtual pixels inside a layer's Root frame. The layers ignore the top bar inset (IgnoreGuiInset) and sit inside
+-- the device safe area, so their origin is not GUI space's origin: measuring from the Root itself covers both.
+function Scale.toLayer(point: Vector2, root: GuiObject): Vector2
+	return (point - root.AbsolutePosition) / Scale.get()
+end
+
 -- Builds the scaled Root frame for a layer.
 function Scale.root(s: Fusion.Scope<typeof(Fusion)>, parent: Instance, name: string?): Frame
 	return s:New("Frame")({

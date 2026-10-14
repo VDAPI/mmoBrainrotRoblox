@@ -15,7 +15,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Scale = require(script.Parent.Scale)
 local Sounds = require(script.Parent.Sounds)
 
 local DragDrop = {}
@@ -28,9 +27,12 @@ local LONG_PRESS_SLOP = 12 -- pixels the finger may move meanwhile
 local scope = Fusion.scoped(Fusion)
 -- Currently selected slot id (highlighted; the inventory action bar acts on it).
 DragDrop.Selected = scope:Value(nil :: string?)
+-- Pixels a touch may move and still count as a tap (FIX 2026-10-14: shop grid picks on a tap, not on a scroll).
+DragDrop.TAP_SLOP = LONG_PRESS_SLOP
 -- Set by an open shop window (S17): a backpack item dropped on "shopsell:*" is sold through it.
 DragDrop.SellHandler = nil :: ((index: number) -> ())?
--- Slot id being dragged and the ghost position (virtual pixels) for the drag preview.
+-- Slot id being dragged and the pointer position for the drag preview, in GUI space (InputObject.Position); the
+-- ghost converts it into its layer with Scale.toLayer (FIX 2026-10-14: the layers ignore the top bar inset).
 DragDrop.Dragging = scope:Value(nil :: string?)
 DragDrop.GhostPosition = scope:Value(Vector2.zero)
 
@@ -56,6 +58,11 @@ end
 local function blocked(position: Vector2): boolean
 	local fn = blocker
 	return fn ~= nil and fn(position)
+end
+
+-- FIX 2026-10-14: for views that pick a slot on their own (the shop's Buy grid): a touch on an open tooltip.
+function DragDrop.IsBlocked(position: Vector2): boolean
+	return blocked(position)
 end
 
 -- Item getters of registered slots (ItemSlot passes the same getter as its tooltip), for the view slots.
@@ -210,11 +217,13 @@ UserInputService.InputChanged:Connect(function(input)
 	local press = pressed
 	if press and Fusion.peek(DragDrop.Dragging) == nil then
 		if (position - press.at).Magnitude >= DRAG_THRESHOLD and hasItem(press.slotId) then
+			-- Position first: the ghost appears under the pointer, not where the last drag ended.
+			DragDrop.GhostPosition:set(position)
 			DragDrop.Dragging:set(press.slotId)
 		end
 	end
 	if Fusion.peek(DragDrop.Dragging) then
-		DragDrop.GhostPosition:set(Scale.toVirtual(position))
+		DragDrop.GhostPosition:set(position)
 	end
 end)
 

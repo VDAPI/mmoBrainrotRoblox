@@ -186,12 +186,6 @@
    "i": 4,
    "src": "tylko_2d/hud/mail.png"
   },
-  "hud/menu_character": {
-   "atlas": "hud",
-   "h": "10ad99c1cb1d",
-   "i": 5,
-   "src": "tylko_2d/hud/menu_character.png"
-  },
   "hud/menu_guild": {
    "atlas": "hud",
    "h": "e34437a83c0c",

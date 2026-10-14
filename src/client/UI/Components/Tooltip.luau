@@ -23,6 +23,8 @@ local moduleScope = Fusion.scoped(Fusion)
 local currentText = moduleScope:Value(nil :: string?)
 local position = moduleScope:Value(Vector2.zero)
 local owner: GuiObject? = nil
+-- Layer root (FIX 2026-10-14): AbsolutePosition is measured below the top bar, the layer from the screen top.
+local layerRoot: GuiObject? = nil
 
 local function show(guiObject: GuiObject, text: string, at: Vector2)
 	owner = guiObject
@@ -82,7 +84,9 @@ function Tooltip.attach(scope: Fusion.Scope<typeof(Fusion)>, guiObject: GuiObjec
 			task.delay(LONG_PRESS, function()
 				if token == pressToken and guiObject.Parent then
 					local p = guiObject.AbsolutePosition
-					show(guiObject, resolve(), Scale.toVirtual(Vector2.new(p.X, p.Y)) - Vector2.new(0, 60))
+					local root = layerRoot
+					local at = if root then Scale.toLayer(p, root) else Scale.toVirtual(p)
+					show(guiObject, resolve(), at - Vector2.new(0, 60))
 				end
 			end)
 		end)
@@ -103,6 +107,7 @@ end
 
 -- Builds the floating tooltip inside `parent` (a scaled layer Root, see UI/Scale).
 function Tooltip.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
+	layerRoot = if parent:IsA("GuiObject") then parent else nil
 	scope:New("TextLabel")({
 		Name = "Tooltip",
 		Parent = parent,

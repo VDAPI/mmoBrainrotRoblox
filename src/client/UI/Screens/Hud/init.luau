@@ -264,7 +264,12 @@ local function menu(scope: Scope, props: Props): Instance
 				ArtKey = UiArt.menu(entry.id), -- S119
 				Hotkey = if entry.hotkey then Keybinds.Label(scope, `win_{entry.id}`) else nil,
 				Tooltip = Text.T(scope, entry.tooltipKey),
-				Active = props.IsOpen(entry.id),
+				-- FIX 2026-10-14: B's button stays lit for the backpack window itself (window id "character").
+				Active = if entry.id == "inventory"
+					then scope:Computed(function(use): boolean
+						return use(props.IsOpen("inventory")) or use(props.IsOpen("character"))
+					end)
+					else props.IsOpen(entry.id),
 				Badge = if entry.badge then entry.badge(scope) else nil,
 				Visible = if entry.visible then scope:Computed(entry.visible) else nil,
 				OnClick = function()

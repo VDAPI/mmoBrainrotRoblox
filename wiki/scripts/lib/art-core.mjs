@@ -15,7 +15,6 @@ export const SKIP_DIRS = new Set(["_duplikaty", "szkic", "model"]);
 
 /** HUD buttons of the game windows -> keybind ids of mechanics.keybinds. */
 const KEYBIND_FILES = {
-  "menu_character.png": "win_character",
   "menu_inventory.png": "win_inventory",
   "menu_skills.png": "win_skills",
   "menu_map.png": "win_map",

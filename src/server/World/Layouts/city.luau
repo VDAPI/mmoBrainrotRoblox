@@ -53,6 +53,10 @@ return function(ctx: Build.Context)
 	local started = os.clock()
 	local blocks = TownTerrainWriter.write(ctx.origin, half, false)
 	log:info("terrain: %d blocks in %.2f s", blocks, os.clock() - started)
+	-- FIX 2026-10-14: props read the ground from the plan (as the buildings do), not by a ray. The voxels written a
+	-- moment ago do not take rays yet in this frame, so the ray missed and the service signs and the spawn point
+	-- stood at y = 0, under the market square (y = 4) and the upper town (12 / 20).
+	ctx.height = TownTerrain.heightAt
 
 	-- Building shells, grouped by tag (house, wall, tower, gate, special, ...).
 	started = os.clock()

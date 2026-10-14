@@ -6,7 +6,7 @@
 -- Esc closes the modal, then the top window, and otherwise opens the game menu (while playing).
 -- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows open together
 -- with the companion backpack, side by side on desktop. S29: the pairing rules (what closes with what, the
--- B/C alias of the character window) live in Shared/Logic/WindowRules; every way of closing goes through them.
+-- B alias of the backpack window "character") live in Shared/Logic/WindowRules; every way of closing goes through them.
 -- Hotkeys only work while enabled (ScreenController enables them in the "playing" phase).
 -- S23: `overlay` windows (the dev panel) neither close other windows nor get closed by them; on desktop they
 -- open at the right edge. Esc closes the normal windows first and overlays last. Overlay hotkeys win over
@@ -53,7 +53,7 @@ local WindowManager = {
 	Deps = { "UIController" },
 	-- Window id opened by Esc when nothing else is open.
 	MenuWindowId = "menu",
-	-- S29: which part of the character window B / C asked for ("backpack" | "stats"), set on open.
+	-- S29: which part of the backpack window ("character") the open request asked for ("backpack" | "stats").
 	FocusHint = nil :: any,
 }
 

@@ -1,10 +1,10 @@
 --!strict
--- Character window (C and B), DESIGN §23. S29: equipment, backpack and statistics in one window, so items
--- drag straight from the backpack onto the gear.
+-- Backpack window (B; window id "character"), DESIGN §23. S29: equipment, backpack and statistics in one window,
+-- so items drag straight from the backpack onto the gear. FIX 2026-10-14: no separate "Character" button / C key.
 --   desktop (1240 x 700): left 260 (name, class / level, title, equipment, Unequip), middle 500 (the
 --     backpack panel, same component as the companion backpack), right (stat points, derived stats);
 --   touch (full screen): equipment on the left (56 px slots), a "Backpack | Statistics" switch on the right.
--- `Focus` ("backpack" | "stats") is the tab B / C asked for (WindowManager.FocusHint).
+-- `Focus` ("backpack" | "stats") is the touch tab the open request asked for (WindowManager.FocusHint).
 -- S58 (ROZWOJ 2.9, 4): a build set switch under class / level (no "Copy" here: it lives in the skills window); the
 -- stat reservation belongs to a set and clears on a switch.
 

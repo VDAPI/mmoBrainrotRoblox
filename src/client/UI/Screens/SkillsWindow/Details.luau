@@ -22,6 +22,7 @@ local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
@@ -31,6 +32,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 type SkillDef = SkillData.SkillDef
 
 export type Resolved = {
+	path: PathData.PathDef?, -- FIX 2026-10-14: a selected path (its description)
 	skill: SkillDef?,
 	node: PathData.PathNode?,
 	view: PathView.NodeView?,
@@ -48,6 +50,8 @@ function Details.resolve(use: Fusion.Use, ctx: Context.Ctx): Resolved
 	end
 	if sel.kind == "skill" then
 		return { skill = SkillData.get(sel.id) }
+	elseif sel.kind == "path" then
+		return { path = PathData.get(sel.id) }
 	end
 	local node, def = Paths.findNode(sel.id)
 	local character = use(ctx.character)
@@ -122,6 +126,54 @@ function Details.actions(use: Fusion.Use, ctx: Context.Ctx, actions: Actions.Act
 		})
 	end
 	return out
+end
+
+-- FIX 2026-10-14: the path's description (moved off the tree): name, role, description, weapon, title, main path
+-- and the wrong-weapon warning.
+function Details.pathLines(
+	use: Fusion.Use,
+	character: Paths.Char,
+	def: PathData.PathDef,
+	weapons: Paths.WeaponTypes,
+	lang: string,
+	line: (text: string, color: Color3?, size: number?, font: Font?) -> (),
+	heading: (text: string) -> ()
+)
+	local view = PathView.path(character, def.id, weapons)
+	heading(Text.get(use, def.nameKey))
+	line(Text.get(use, `paths.role.{def.role}`), Theme.Colors.Parchment, nil, Theme.Fonts.BodyBold)
+	line(Text.get(use, def.descKey))
+	local weaponOk = view == nil or view.weaponOk
+	local weaponText = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
+	line(
+		`{if weaponOk then "✓" else "✗"} {weaponText}`,
+		if weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover,
+		nil,
+		Theme.Fonts.BodyBold
+	)
+	if not weaponOk then
+		line(Text.get(use, "paths.weapon.missing"), Theme.Colors.DangerHover)
+	end
+	if view then
+		for _, row in view.rows do
+			if row.weaponBlocked then
+				line(Text.get(use, "paths.weapon.bar"), Theme.Colors.Warning)
+				break
+			end
+		end
+	end
+	local title = TitleData.get(def.titleId)
+	if title then
+		line(Text.get(use, "paths.title", { title = Text.get(use, title.nameKey) }), Theme.Colors.Parchment)
+	end
+	local main = if view then view.main else nil
+	if main and main.reason == "paths.error.sameMain" then
+		line(Text.get(use, "paths.isMain"), Theme.Colors.Success, nil, Theme.Fonts.BodyBold)
+	elseif main and main.reason == "paths.error.mainLevel" then
+		line(Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }), Theme.Colors.TextMuted)
+	elseif main and not main.ok and main.reason then
+		line(Text.get(use, main.reason), Theme.Colors.TextMuted)
+	end
 end
 
 -- The detail lines of the selection (instances in the inner scope `s`).
@@ -200,12 +252,20 @@ function Details.lines(
 	local character = use(ctx.character)
 	local resolved = Details.resolve(use, ctx)
 	local skill, node, view, row = resolved.skill, resolved.node, resolved.view, resolved.row
-	if not character or (not skill and not node) then
-		line(Text.get(use, "skills.dragHint"), Theme.Colors.TextMuted)
-		return out
-	end
 	local lang = use(Text.Lang)
 	local weapons = use(ctx.weapons)
+	local pathDef = resolved.path
+	if character and pathDef then
+		Details.pathLines(use, character, pathDef, weapons, lang, line, heading)
+		return out
+	end
+	if not character or (not skill and not node) then
+		-- FIX 2026-10-14: a tree tab shows nothing until a node (or the path's name) is clicked
+		local tab = use(ctx.activeTab)
+		local onTree = tab ~= "base" and tab ~= "soon"
+		line(Text.get(use, if onTree then "paths.tree.hint" else "skills.dragHint"), Theme.Colors.TextMuted)
+		return out
+	end
 
 	if skill then
 		local rank = Paths.skillRank(character, skill.id)
@@ -283,6 +343,20 @@ function Details.lines(
 
 	if node and view then
 		local rank = view.rank
+		-- FIX 2026-10-14: the row's place in the tree (the tree shows only its level)
+		if row then
+			local head = if row.need == 0
+				then Text.get(use, "paths.rowFree", { row = row.index, level = row.level })
+				else Text.get(
+					use,
+					"paths.row",
+					{ row = row.index, level = row.level, have = row.have, need = row.need }
+				)
+			if row.kind ~= "normal" then
+				head ..= ` · {Text.get(use, `paths.row.{row.kind}`)}`
+			end
+			line(head, Theme.Colors.TextMuted, 14)
+		end
 		if skill then
 			-- the skill's node: only its own part (the skill text is above)
 			line(

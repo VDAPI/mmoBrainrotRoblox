@@ -57,7 +57,6 @@ local LoginRewardController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
-	{ id = "character", icon = "♜", hotkey = "C", tooltipKey = "hud.menu.character" },
 	{ id = "inventory", icon = "▣", hotkey = "B", tooltipKey = "hud.menu.inventory" },
 	{ id = "skills", icon = "✦", hotkey = "K", tooltipKey = "hud.menu.skills", badge = SkillsAttention.badge },
 	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map" },
@@ -80,7 +79,6 @@ local MENU: { Hud.MenuEntry } = {
 }
 
 local HOTKEYS: { [string]: Enum.KeyCode } = {
-	character = Enum.KeyCode.C,
 	inventory = Enum.KeyCode.B,
 	skills = Enum.KeyCode.K,
 	map = Enum.KeyCode.M,
@@ -111,24 +109,7 @@ local function registerWindows()
 		end,
 	}
 	for _, entry in MENU do
-		if entry.id == "character" then
-			-- S29: equipment + backpack + statistics in one window (B and C, WindowRules alias).
-			WindowManager.Register({
-				id = "character",
-				titleKey = "window.character.title",
-				size = Vector2.new(1240, 700),
-				hotkey = HOTKEYS.character,
-				build = function(scope: Scope)
-					return CharacterWindow(scope, {
-						Focus = WindowManager.FocusHint,
-						Backpack = backpackActions,
-						Unequip = function(slot: string)
-							ItemController.Unequip(slot, nil)
-						end,
-					})
-				end,
-			})
-		elseif entry.id == "skills" then
+		if entry.id == "skills" then
 			WindowManager.Register({
 				id = "skills",
 				titleKey = "window.skills.title",
@@ -139,7 +120,24 @@ local function registerWindows()
 				end,
 			})
 		elseif entry.id == "inventory" then
-			-- The companion backpack next to service windows (without a service B opens "character").
+			-- S29: the backpack window: equipment + backpack + statistics in one (WindowRules.MAIN, opened by B
+			-- without a service). FIX 2026-10-14: the separate "Character" button and its C key are gone; the
+			-- window has the backpack's title.
+			WindowManager.Register({
+				id = "character",
+				titleKey = "window.inventory.title",
+				size = Vector2.new(1240, 700),
+				build = function(scope: Scope)
+					return CharacterWindow(scope, {
+						Focus = WindowManager.FocusHint,
+						Backpack = backpackActions,
+						Unequip = function(slot: string)
+							ItemController.Unequip(slot, nil)
+						end,
+					})
+				end,
+			})
+			-- The companion backpack next to service windows.
 			WindowManager.Register({
 				id = "inventory",
 				titleKey = "window.inventory.title",

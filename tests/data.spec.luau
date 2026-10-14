@@ -499,7 +499,7 @@ T.describe("Localization keys used in code", function()
 	end)
 
 	T.it("every HUD window has a title", function()
-		for _, id in { "menu", "character", "inventory", "skills", "map", "quests", "guild", "party" } do
+		for _, id in { "menu", "inventory", "skills", "map", "quests", "guild", "party" } do
 			T.expect({ id = id, ok = hasKey(`window.{id}.title`) }).toEqual({ id = id, ok = true })
 		end
 	end)

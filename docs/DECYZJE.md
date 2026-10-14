@@ -3498,3 +3498,16 @@
   `403 User is moderated` (konto VDaPii ma blokadę moderacji); 18 map malowanych bez id. Pliki dodane przez właściciela w
   trakcie sesji (5 ikon umiejętności Wojownika, 19 obrazków materiałów i unikatów krain 2–4) nie są importowane, bo zmieniłyby
   wgrane atlasy (`ui_skills_01`, `items_8`) bez możliwości ponownego wgrania: zrobi to `IMPORT-GRAFIK.md`.
+- **FIX 2026-10-14** Punkty z przestrzeni GUI (`InputObject.Position`, `AbsolutePosition`) do warstw interfejsu tylko
+  przez `Scale.toLayer(point, root)` (względem korzenia warstwy); `Scale.toVirtual` zostaje dla współrzędnych
+  `MouseEnter` / `MouseMoved` (te liczą od góry ekranu).
+- **FIX 2026-10-14** Na mapie z wysokością planu (`MapTerrain.height`) podłoga z `WorldService.FloorAt` nie leży niżej
+  niż plan − 0,5; layout miasta czyta grunt z `TownTerrain.heightAt`, nie promieniem (teren zapisany w tej klatce).
+- **FIX 2026-10-14** Okno „Postać” usunięte, klawisz C wolny (nie przemapowany na plecak: B już otwiera to samo okno).
+  Okno ma dalej id `character` (`WindowRules.MAIN`), tytuł „Plecak”; ikona `hud/menu_character` wyjęta z rejestru UiArt.
+- **FIX 2026-10-14** Sklep, zakładka Kup: siatka ikon w grupach `Logic/ShopGroups` (kolejność stała, w grupie rosnąco
+  poziomem); kupno przez pasek pod siatką po kliknięciu ikony (dymek po najechaniu / stuknięciu). Filtr slotów i
+  przewijanie do progu gracza u sprzedawcy klasy usunięte (grupy je zastępują).
+- **FIX 2026-10-14** Okno umiejętności, zakładka ścieżki: drzewo kafelków bez tekstu (pień, gałęzie, romb wyboru,
+  poziom rzędu); opis, Kup i Zwróć tylko w szczegółach po kliknięciu węzła; opis ścieżki po kliknięciu jej nazwy
+  (`Selection.kind = "path"`). Najechanie na PC pokazuje tylko nazwę węzła.

@@ -1,10 +1,14 @@
 --!strict
--- A path tab of the skills window (S59, ROZWOJ 4), drawn only from Logic/PathView.path: the path header (name, role,
--- description, the weapon ✓ / ✗, the path title, "Choose as main" / "Change path (scroll)" or why not), one warning
--- bar before the first row the wrong weapon blocks, then the rows from the top ("Row 4 · lv. 26 · 4/6 points in the
--- path", the row kind, a closed row grey with its reason) with their node cards (any number per row; "or" between the
--- cards of a choice row) and "Refund all nodes" at the end. PC: cards side by side in a 510 px list; phone: cards
--- one under another at full width.
+-- A path tab of the skills window (S59, ROZWOJ 4), drawn only from Logic/PathView.path.
+-- FIX 2026-10-14 (owner: "skill trees should look like trees, descriptions only after a click, before that only
+-- connected pictures"): a short header (the path name, a click on it shows the path's description in the details;
+-- the weapon ✓ / ✗; "Choose as main" / "Change path (scroll)", or the path is the main one, or a disabled button
+-- with its reason in a tooltip), then the tree: one row of node tiles (NodeCard) per path row from the top, a trunk
+-- down the middle with a branch to every node, gold where the row is open or the node bought, a diamond on the trunk
+-- for a choice row ("pick one"), a knot where branches meet, and the row's level on the left ("⚠" when the wrong
+-- weapon blocks it; the row's points and kind in its tooltip). No description text on the tree: a click / tap on a
+-- node shows it in the PC details panel or the phone sheet (Buy / Refund there). "Refund all nodes" at the end.
+-- Same tree on PC (510 px list) and phone (full width, bigger tiles).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,21 +21,39 @@ local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
-local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local PathTab = {}
 
 PathTab.LIST_WIDTH = 510
-local GAP = 6
-local OR_WIDTH = 44
-local OR_HEIGHT = 24
+local TOP_PAD = 12
+local LINE = 3 -- connector thickness
+local KNOT = 10 -- knot / diamond on the trunk
+local LEVEL_WIDTH = 44
+
+-- Text of a row's tooltip: "Row 4 · lv. 26 · 4/6 points in the path · pick one" and why it is closed.
+local function rowText(use: Fusion.Use, row: PathView.RowView): string
+	local head = if row.need == 0
+		then Text.get(use, "paths.rowFree", { row = row.index, level = row.level })
+		else Text.get(use, "paths.row", { row = row.index, level = row.level, have = row.have, need = row.need })
+	if row.kind ~= "normal" then
+		head ..= ` · {Text.get(use, `paths.row.{row.kind}`)}`
+	end
+	if row.closedKey then
+		head ..= `\n{Text.get(use, row.closedKey, row.closedArgs)}`
+	end
+	return head
+end
 
 function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): Fusion.Computed<any>
 	local buttonHeight = if touch then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+	local tileSize = if touch then NodeCard.TILE_TOUCH else NodeCard.TILE
+	local rowHeight = tileSize + NodeCard.PIPS + (if touch then 30 else 24)
+	local spread = if touch then 124 else 112 -- distance between the centres of neighbouring nodes
 
 	return scope:Computed(function(use, s: Scope): { Instance }
 		local tab = use(ctx.activeTab)
@@ -63,160 +85,198 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
 		end
-		local function button(text: string, enabled: boolean, run: () -> ())
-			add(Button(s, {
+		local function button(text: string, enabled: boolean, reason: string?, run: () -> ())
+			local b = Button(s, {
 				Size = UDim2.fromOffset(260, buttonHeight),
 				TextSize = Theme.TextSize.Small,
 				Variant = "primary",
 				Text = text,
 				Disabled = not enabled,
 				OnClick = run,
-			}))
+			})
+			if not enabled and reason then
+				Tooltip.attach(s, b :: GuiObject, reason)
+			end
+			add(b)
 		end
 
-		-- Path header
-		label(Text.get(use, def.nameKey), Theme.Colors.Gold, Theme.Fonts.Heading, Theme.TextSize.Large)
-		label(Text.get(use, `paths.role.{def.role}`), Theme.Colors.Parchment, Theme.Fonts.BodyBold)
-		label(Text.get(use, def.descKey), Theme.Colors.Text)
+		-- Header: the name (a click shows the path's description), the weapon, the main path.
+		local pathSelected = s:Computed(function(use2): boolean
+			local sel = use2(ctx.selected)
+			return sel ~= nil and sel.kind == "path" and sel.id == def.id
+		end)
+		add(s:New("TextButton")({
+			Name = "PathName",
+			Size = UDim2.new(1, -8, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			AutoButtonColor = false,
+			BackgroundTransparency = 1,
+			Text = `{Text.get(use, def.nameKey)}  ⓘ`,
+			TextWrapped = true,
+			FontFace = Theme.Fonts.Heading,
+			TextSize = Theme.TextSize.Large,
+			TextColor3 = s:Computed(function(use2): Color3
+				return if use2(pathSelected) then Theme.Colors.GoldBright else Theme.Colors.Gold
+			end),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			[OnEvent("Activated")] = function()
+				ctx.selected:set({ kind = "path", id = def.id })
+				if touch then
+					ctx.previewOpen:set(false)
+					ctx.sheet:set(true)
+				end
+			end,
+		}))
 		local weapons = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
 		label(
 			`{if view.weaponOk then "✓" else "✗"} {weapons}`,
 			if view.weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover,
 			Theme.Fonts.BodyBold
 		)
-		if not view.weaponOk then
-			label(Text.get(use, "paths.weapon.missing"), Theme.Colors.DangerHover)
-		end
-		local title = TitleData.get(def.titleId)
-		if title then
-			label(Text.get(use, "paths.title", { title = Text.get(use, title.nameKey) }), Theme.Colors.Parchment)
-		end
 		local main = view.main
 		if main.ok then
 			local cost: ("free" | "scroll")? = main.cost
-			button(Text.get(use, if cost == "scroll" then "paths.changeMain" else "paths.chooseMain"), true, function()
-				actions.chooseMain(def.id, cost)
-			end)
+			button(
+				Text.get(use, if cost == "scroll" then "paths.changeMain" else "paths.chooseMain"),
+				true,
+				nil,
+				function()
+					actions.chooseMain(def.id, cost)
+				end
+			)
 		elseif main.reason == "paths.error.sameMain" then
 			label(Text.get(use, "paths.isMain"), Theme.Colors.Success, Theme.Fonts.BodyBold)
 		elseif main.reason == "paths.error.mainLevel" then
-			button(Text.get(use, "paths.chooseMain"), false, function() end)
-			label(Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }), Theme.Colors.TextMuted)
+			button(
+				Text.get(use, "paths.chooseMain"),
+				false,
+				Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }),
+				function() end
+			)
 		else
-			button(Text.get(use, "paths.chooseMain"), false, function() end)
-			label(Text.get(use, main.reason or "error.internal"), Theme.Colors.TextMuted)
+			button(
+				Text.get(use, "paths.chooseMain"),
+				false,
+				Text.get(use, main.reason or "error.internal"),
+				function() end
+			)
 		end
 
-		-- Rows
-		local warned = false
-		for _, row in view.rows do
-			if row.weaponBlocked and not warned then
-				warned = true
-				add(s:New("TextLabel")({
-					Name = "WeaponBar",
-					Size = UDim2.new(1, -8, 0, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = Theme.Colors.Background,
-					Text = Text.get(use, "paths.weapon.bar"),
-					TextWrapped = true,
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 14,
-					TextColor3 = Theme.Colors.Warning,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					[Children] = {
-						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-						s:New("UIStroke")({ Color = Theme.Colors.Warning, Thickness = 1 }),
-						s:New("UIPadding")({
-							PaddingTop = UDim.new(0, 6),
-							PaddingBottom = UDim.new(0, 6),
-							PaddingLeft = UDim.new(0, 8),
-							PaddingRight = UDim.new(0, 8),
-						}),
-					},
-				}))
-			end
-			local head = if row.need == 0
-				then Text.get(use, "paths.rowFree", { row = row.index, level = row.level })
-				else Text.get(
-					use,
-					"paths.row",
-					{ row = row.index, level = row.level, have = row.have, need = row.need }
-				)
-			if row.kind ~= "normal" then
-				head ..= ` · {Text.get(use, `paths.row.{row.kind}`)}`
-			end
-			label(head, if row.open then Theme.Colors.Parchment else Theme.Colors.TextMuted, Theme.Fonts.BodyBold)
-			if row.closedKey then
-				label(Text.get(use, row.closedKey, row.closedArgs), Theme.Colors.TextMuted, nil, 14)
-			end
-			local n = #row.nodes
-			local ors = if row.choice then n - 1 else 0
-			local function orLabel(size: UDim2): Instance
-				return s:New("TextLabel")({
-					BackgroundTransparency = 1,
-					Size = size,
-					Text = Text.get(use, "paths.row.or"),
-					FontFace = Theme.Fonts.Body,
-					TextSize = 14,
-					TextColor3 = Theme.Colors.TextMuted,
+		-- The tree.
+		local rows = view.rows
+		local parts: { Instance } = {}
+		local function centreY(i: number): number
+			return TOP_PAD + (i - 1) * rowHeight + tileSize / 2
+		end
+		local function bar(name: string, x: number, y: number, w: number, h: number, color: Color3, lit: boolean)
+			table.insert(
+				parts,
+				s:New("Frame")({
+					Name = name,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(0.5, x, 0, y),
+					Size = UDim2.fromOffset(w, h),
+					BackgroundColor3 = color,
+					BackgroundTransparency = if lit then 0 else 0.35,
+					BorderSizePixel = 0,
+					ZIndex = 1,
 				})
+			)
+		end
+		for i, row in rows do
+			local y = centreY(i)
+			local n = #row.nodes
+			-- trunk down to the next row: gold once that row is open
+			local nextRow = rows[i + 1]
+			if nextRow then
+				local length = rowHeight
+				bar(
+					`Trunk{i}`,
+					0,
+					y + length / 2,
+					LINE,
+					length,
+					if nextRow.open then Theme.Colors.Gold else Theme.Colors.Border,
+					nextRow.open
+				)
 			end
-			if touch then
-				for i, nodeView in row.nodes do
-					if i > 1 and row.choice then
-						add(orLabel(UDim2.new(1, -8, 0, OR_HEIGHT)))
-					end
-					add(
-						NodeCard.new(
-							s,
-							use,
-							ctx,
-							actions,
-							nodeView,
-							row.open,
-							true,
-							UDim2.new(1, -8, 0, NodeCard.HEIGHT_TOUCH)
-						)
+			local anyBought = false
+			for j, nodeView in row.nodes do
+				local dx = (j - (n + 1) / 2) * spread
+				if nodeView.rank > 0 then
+					anyBought = true
+				end
+				if dx ~= 0 then
+					local lit = nodeView.rank > 0
+					bar(
+						`Branch{i}_{j}`,
+						dx / 2,
+						y,
+						math.abs(dx),
+						LINE,
+						if lit then Theme.Colors.Gold elseif row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						lit or row.open
 					)
 				end
-			else
-				local items = n + ors
-				local width = (PathTab.LIST_WIDTH - 12 - (items - 1) * GAP - ors * OR_WIDTH) / math.max(1, n)
-				local children: { Instance } = {}
-				for i, nodeView in row.nodes do
-					if i > 1 and row.choice then
-						local item = orLabel(UDim2.fromOffset(OR_WIDTH, NodeCard.HEIGHT));
-						(item :: any).LayoutOrder = #children + 1
-						table.insert(children, item)
-					end
-					local card = NodeCard.new(
-						s,
-						use,
-						ctx,
-						actions,
-						nodeView,
-						row.open,
-						false,
-						UDim2.fromOffset(width, NodeCard.HEIGHT)
-					);
-					(card :: any).LayoutOrder = #children + 1
-					table.insert(children, card)
-				end
-				add(s:New("Frame")({
-					Name = `Row{row.index}`,
-					BackgroundTransparency = 1,
-					Size = UDim2.new(1, -8, 0, NodeCard.HEIGHT),
-					[Children] = {
-						s:New("UIListLayout")({
-							FillDirection = Enum.FillDirection.Horizontal,
-							SortOrder = Enum.SortOrder.LayoutOrder,
-							Padding = UDim.new(0, GAP),
-						}),
-						children :: any,
-					},
-				}))
+				table.insert(
+					parts,
+					NodeCard.new(s, use, ctx, nodeView, row.open, touch, UDim2.new(0.5, dx, 0, y - tileSize / 2))
+				)
 			end
+			-- where the branches meet: a diamond for a choice row ("pick one"), a knot otherwise
+			if row.choice or n % 2 == 0 then
+				table.insert(
+					parts,
+					s:New("Frame")({
+						Name = `Knot{i}`,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = UDim2.new(0.5, 0, 0, y),
+						Size = UDim2.fromOffset(KNOT, KNOT),
+						Rotation = if row.choice then 45 else 0,
+						BackgroundColor3 = if anyBought
+							then Theme.Colors.GoldBright
+							elseif row.open then Theme.Colors.GoldDim
+							else Theme.Colors.Border,
+						BorderSizePixel = 0,
+						ZIndex = 2,
+						[Children] = if row.choice then nil else s:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					})
+				)
+			end
+			-- the row's level on the left; its points, kind and why it is closed in the tooltip
+			local blocked = row.weaponBlocked
+			local level = s:New("TextLabel")({
+				Name = `Level{i}`,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.fromOffset(0, y),
+				Size = UDim2.fromOffset(LEVEL_WIDTH, 24),
+				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundTransparency = 0.3,
+				Text = if blocked then `⚠{row.level}` else tostring(row.level),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = 14,
+				TextColor3 = if blocked
+					then Theme.Colors.Warning
+					elseif row.open then Theme.Colors.Parchment
+					else Theme.Colors.TextMuted,
+				ZIndex = 2,
+				[Children] = {
+					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					s:New("UIStroke")({
+						Color = if row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						Thickness = 1,
+					}),
+				},
+			})
+			Tooltip.attach(s, level :: GuiObject, rowText(use, row))
+			table.insert(parts, level)
 		end
+		add(s:New("Frame")({
+			Name = "Tree",
+			Size = UDim2.new(1, -8, 0, TOP_PAD * 2 + #rows * rowHeight - (rowHeight - tileSize - NodeCard.PIPS)),
+			BackgroundTransparency = 1,
+			[Children] = parts :: any,
+		}))
 
 		-- Footer
 		add(Button(s, {

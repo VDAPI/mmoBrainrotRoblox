@@ -5,7 +5,8 @@
 
 ## Stan
 
-S01–S112, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S112, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
+tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -333,6 +334,8 @@ zakończone; testy i decyzje właściciela po nich.
   skiny wierzchowców.
 - **S119:** `mapy/world` bez miejsca w grze (brak widoku świata); wiki bez obrazków tytułów, efektów i portretów bossów
   (WIKI-GRAFIKA ma resztę); ikona gry, miniatury i ikony przepustek tylko instrukcją (`docs/ASSETS.md`).
+- **FIX 2026-10-14: przegląd w grze nie zrobiony** (konto moderowane, bez Studio): duch przeciągania, NPC i tablice
+  miasta, siatka sklepu i drzewka ścieżek (PC i telefon) sprawdzone tylko w kodzie i testach Lune.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

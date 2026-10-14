@@ -1997,15 +1997,6 @@
       "hash": "553983de61a87d87",
       "mask": true
     },
-    "keybind/win_character": {
-      "file": "keybind/win_character",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "3e7d97ae93306a4c",
-      "mask": true
-    },
     "keybind/win_guild": {
       "file": "keybind/win_guild",
       "sizes": [

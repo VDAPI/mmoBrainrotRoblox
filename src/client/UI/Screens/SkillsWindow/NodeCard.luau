@@ -1,15 +1,16 @@
 --!strict
--- A path node card (S59, ROZWOJ 4), shared by PC and phone: the glyph tile (gold frame once bought), the name, rank
--- dots, "+" / "−" (off with the reason in the tooltip), the strength mark "33%" for team nodes outside the main
--- path, "⚠" when the node's weapon does not fit and a red frame when a bought node does not work now. Greyed in a
--- closed row or when the other node of a choice row was taken. Everything comes from a PathView.NodeView.
--- PC: a card in a horizontal row (84 px high); phone: a full-width card with 44 x 44 buttons.
+-- A node of a path tree (FIX 2026-10-14, owner: the path tabs look like trees and show descriptions only after a
+-- click; before it the S59 card with text and "+" / "−"). Only pictures on the tree: the tile (S119 skill picture or
+-- the glyph), a gold frame once bought, a white frame while selected, a red frame when a bought node does not work
+-- now, a green "+" corner while a rank can be bought, and the rank pips under it ("●●○", "33%" for team nodes outside
+-- the main path, "⚠" when the node's weapon does not fit). Greyed in a closed row or when the other node of a choice
+-- row was taken. A click / tap selects it: the PC details panel or the phone sheet show its text with Buy / Refund
+-- (Details). PC hover shows only the name. A bought active skill node drags onto the bar. Everything comes from a
+-- PathView.NodeView.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Actions = require(script.Parent.Actions)
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
-local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -27,90 +28,107 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local NodeCard = {}
 
-NodeCard.HEIGHT = 84
-NodeCard.HEIGHT_TOUCH = 68
+NodeCard.TILE = 56
+NodeCard.TILE_TOUCH = 60
+NodeCard.PIPS = 18 -- the rank line under the tile
+NodeCard.WIDTH = 92 -- the node's frame (the pips line may be wider than the tile)
 
 local WARN_HEX = "#E0A23B"
 local DANGER_HEX = "#CC5248"
+local SELECTED = Color3.new(1, 1, 1)
 
 -- "●●○  33%  ⚠" (RichText).
 local function dots(view: PathView.NodeView): string
 	local text = string.rep("●", view.rank) .. string.rep("○", math.max(0, view.node.maxRank - view.rank))
 	if view.scale < 1 then
-		text ..= `  <font color="{WARN_HEX}">{math.floor(view.scale * 100 + 0.5)}%</font>`
+		text ..= ` <font color="{WARN_HEX}">{math.floor(view.scale * 100 + 0.5)}%</font>`
 	end
 	if not view.weaponOk then
-		text ..= `  <font color="{DANGER_HEX}">⚠</font>`
+		text ..= ` <font color="{DANGER_HEX}">⚠</font>`
 	end
 	return text
 end
 
+-- The node at `position` (its top centre; AnchorPoint 0.5, 0).
 function NodeCard.new(
 	s: Scope,
 	use: Fusion.Use,
 	ctx: Context.Ctx,
-	actions: Actions.Actions,
 	view: PathView.NodeView,
 	rowOpen: boolean,
 	touch: boolean,
-	size: UDim2
+	position: UDim2
 ): Instance
 	local node = view.node
 	local dim = view.taken or not rowOpen
 	local bought = view.rank > 0
 	local broken = bought and not view.active
-	local buttonSize = if touch then Theme.Size.MinTouch else 28
-	local tileSize = if touch then 44 else 36
-
-	local function step(text: string, ok: boolean, reason: string?, x: number, run: () -> ()): Instance
-		local button = Button(s, {
-			AnchorPoint = Vector2.new(1, if touch then 0.5 else 1),
-			Position = if touch then UDim2.new(1, x, 0.5, 0) else UDim2.new(1, x, 1, -6),
-			Size = UDim2.fromOffset(buttonSize, buttonSize),
-			Variant = "secondary",
-			TextSize = Theme.TextSize.Small,
-			Text = text,
-			Disabled = not ok,
-			OnClick = run,
-		})
-		if not ok and reason then
-			Tooltip.attach(s, button :: GuiObject, Text.get(use, reason))
-		end
-		return button
-	end
+	local tileSize = if touch then NodeCard.TILE_TOUCH else NodeCard.TILE
+	local selected = s:Computed(function(use2): boolean
+		local sel = use2(ctx.selected)
+		return sel ~= nil and sel.kind == "node" and sel.id == node.id
+	end)
 
 	-- S119: a skill node shows its skill's picture once loaded (other nodes have no pictures: glyph).
 	local artKey = if node.kind == "skill" and node.skill then UiArt.skill(node.skill) else nil
 	local artShown = ArtIcon.Shown(s, artKey)
-	local tile = s:New("Frame")({
+	local tile = s:New("TextButton")({
 		Name = "Tile",
-		Position = if touch
-			then UDim2.fromOffset(8, (NodeCard.HEIGHT_TOUCH - tileSize) / 2)
-			else UDim2.fromOffset(8, 8),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.fromScale(0.5, 0),
 		Size = UDim2.fromOffset(tileSize, tileSize),
-		BackgroundColor3 = if bought then Theme.Colors.PanelRaised else Theme.Colors.Background,
+		AutoButtonColor = false,
+		Text = "",
+		BackgroundColor3 = s:Computed(function(use2): Color3
+			if use2(selected) then
+				return Theme.Colors.PanelHover
+			end
+			return if bought then Theme.Colors.PanelRaised else Theme.Colors.Background
+		end),
+		BackgroundTransparency = if dim then 0.45 else 0,
+		ZIndex = 3,
+		[OnEvent("Activated")] = function()
+			ctx.selected:set({ kind = "node", id = node.id })
+			if touch then
+				ctx.previewOpen:set(false)
+				ctx.sheet:set(true)
+			end
+		end,
 		[Children] = {
-			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			s:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = 2,
-				Color = if bought then Theme.Colors.Gold else Theme.Colors.Border,
+				Thickness = s:Computed(function(use2): number
+					return if use2(selected) or broken then 3 else 2
+				end),
+				Color = s:Computed(function(use2): Color3
+					if use2(selected) then
+						return SELECTED
+					elseif broken then
+						return Theme.Colors.Danger
+					end
+					return if bought then Theme.Colors.Gold else Theme.Colors.Border
+				end),
+				Transparency = if dim and not bought then 0.5 else 0,
 			}),
 			ArtIcon.Image(s, {
 				Key = artKey,
-				Corner = Theme.Corner.Small,
+				Corner = Theme.Corner.Medium,
 				ImageColor = if bought then nil else Color3.fromRGB(150, 150, 150),
-				Transparency = if bought then 0 else 0.35,
+				Transparency = if bought then 0 elseif dim then 0.65 else 0.35,
+				ZIndex = 4,
 			}),
 			s:New("TextLabel")({
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 1),
-				Text = s:Computed(function(use): string
-					return if use(artShown) then "" else node.glyph
+				Text = s:Computed(function(use2): string
+					return if use2(artShown) then "" else node.glyph
 				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = if bought then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+				TextTransparency = if dim then 0.5 else 0,
+				ZIndex = 4,
 				[Children] = s:New("UIPadding")({
 					PaddingTop = UDim.new(0.18, 0),
 					PaddingBottom = UDim.new(0.18, 0),
@@ -118,8 +136,27 @@ function NodeCard.new(
 					PaddingRight = UDim.new(0.18, 0),
 				}),
 			}),
+			-- a rank can be bought now: a green "+" on the corner
+			s:New("TextLabel")({
+				Name = "CanBuy",
+				Visible = view.canBuy,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.fromOffset(20, 20),
+				BackgroundColor3 = Theme.Colors.Success,
+				Text = "+",
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = 16,
+				TextColor3 = Theme.Colors.Text,
+				ZIndex = 5,
+				[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+			}),
 		},
 	})
+	-- PC: the name on hover (the description only after a click).
+	if not touch then
+		Tooltip.attach(s, tile :: GuiObject, Text.get(use, node.nameKey))
+	end
 	-- a bought skill node with an active skill can be dragged onto the bar like a base row
 	if node.kind == "skill" and node.skill and bought then
 		local skill = SkillData.get(node.skill)
@@ -129,77 +166,31 @@ function NodeCard.new(
 		end
 	end
 
-	local textLeft = 8 + tileSize + 8
-	local buttonsWidth = 2 * buttonSize + 12
-	local card = s:New("TextButton")({
+	return s:New("Frame")({
 		Name = node.id,
-		Size = size,
-		AutoButtonColor = false,
-		BackgroundColor3 = s:Computed(function(use2): Color3
-			local sel = use2(ctx.selected)
-			return if sel and sel.id == node.id then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
-		end),
-		BackgroundTransparency = if dim then 0.75 else (if bought then 0.15 else 0.5),
-		Text = "",
-		[OnEvent("Activated")] = function()
-			ctx.selected:set({ kind = "node", id = node.id })
-			if touch then
-				ctx.previewOpen:set(false)
-				ctx.sheet:set(true)
-			end
-		end,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = position,
+		Size = UDim2.fromOffset(NodeCard.WIDTH, tileSize + NodeCard.PIPS),
+		BackgroundTransparency = 1,
+		ZIndex = 3,
 		[Children] = {
-			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			s:New("UIStroke")({
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = if broken then 2 else 1,
-				Color = if broken then Theme.Colors.Danger else Theme.Colors.Border,
-				Transparency = if broken then 0 else 0.4,
-			}),
 			tile,
 			s:New("TextLabel")({
-				Name = "Name",
-				Position = UDim2.fromOffset(textLeft, if touch then 8 else 6),
-				Size = if touch
-					then UDim2.new(1, -(textLeft + buttonsWidth + 8), 0, 26)
-					else UDim2.new(1, -(textLeft + 6), 0, 38),
-				BackgroundTransparency = 1,
-				Text = Text.get(use, node.nameKey),
-				TextWrapped = not touch,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
-				TextColor3 = if dim then Theme.Colors.TextMuted else Theme.Colors.Parchment,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Top,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			s:New("TextLabel")({
 				Name = "Ranks",
-				Position = if touch then UDim2.fromOffset(textLeft, 36) else UDim2.new(0, 8, 1, -30),
-				Size = if touch
-					then UDim2.new(1, -(textLeft + buttonsWidth + 8), 0, 22)
-					else UDim2.new(1, -(buttonsWidth + 16), 0, 22),
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = UDim2.fromScale(0.5, 1),
+				Size = UDim2.new(1, 0, 0, NodeCard.PIPS),
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = dots(view),
 				FontFace = Theme.Fonts.Body,
-				TextSize = 14,
+				TextSize = 13,
 				TextColor3 = if bought then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextTransparency = if dim and not bought then 0.4 else 0,
+				ZIndex = 3,
 			}),
-			step("−", view.canRefund, view.refundReason, -(buttonSize + 12), function()
-				actions.refund(node.id)
-			end),
-			step("+", view.canBuy, view.buyReason, -6, function()
-				actions.buy(node.id)
-			end),
 		},
 	})
-	if broken then
-		Tooltip.attach(s, card :: GuiObject, Text.get(use, "paths.node.inactive"))
-	end
-	return card
 end
 
 return NodeCard

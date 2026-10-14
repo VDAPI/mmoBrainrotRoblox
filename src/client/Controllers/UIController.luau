@@ -86,9 +86,12 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		Parent = parent,
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.fromOffset(56, 56),
+		-- FIX 2026-10-14: the pointer is in GUI space (below the top bar), the layer starts at the screen top.
 		Position = scope:Computed(function(use): UDim2
 			local p: Vector2 = use(DragDrop.GhostPosition)
-			return UDim2.fromOffset(p.X, p.Y)
+			use(Scale.Value)
+			local at = if parent:IsA("GuiObject") then Scale.toLayer(p, parent) else Scale.toVirtual(p)
+			return UDim2.fromOffset(at.X, at.Y)
 		end),
 		Visible = scope:Computed(function(use): boolean
 			return use(visual) ~= nil

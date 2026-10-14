@@ -64,6 +64,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 		local key = if resolved.skill
 			then resolved.skill.nameKey
 			elseif resolved.node then resolved.node.nameKey
+			elseif resolved.path then resolved.path.nameKey
 			else nil
 		return if key then Text.get(use, key) else ""
 	end)

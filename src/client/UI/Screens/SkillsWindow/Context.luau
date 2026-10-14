@@ -14,7 +14,8 @@ local State = require(script.Parent.Parent.Parent.State)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-export type Selection = { kind: "skill" | "node", id: string }
+-- FIX 2026-10-14: "path" = the path's own description (a click on its name in the tree tab).
+export type Selection = { kind: "skill" | "node" | "path", id: string }
 export type BpError = { key: string, err: string } -- key = Skills.choiceKey of the refused breakpoint
 export type Props = {
 	ShowModal: (spec: any) -> (),

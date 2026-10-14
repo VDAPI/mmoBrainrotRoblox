@@ -1,8 +1,9 @@
 --!strict
 -- Skills window (K), DESIGN §23, ROZWOJ 4 (S59; S56-S58 built the rules underneath). Header: build sets (S58), free
 -- path points, the main path. Tabs: "Base" and one per path of the class ("Paths soon" without paths). Base: a row
--- per skill (rank, next rank's level, breakpoint badges, "To bar"); a path tab: header, rows and node cards. Details
--- of the selection: the skill or the node, A / B breakpoint cards, the 3D preview (S28), Buy / Refund / To bar.
+-- per skill (rank, next rank's level, breakpoint badges, "To bar"); a path tab: a short header and the tree of node
+-- pictures (FIX 2026-10-14, PathTab). Details of the selection (a click): the skill, the node or the path's own
+-- description, A / B breakpoint cards, the 3D preview (S28), Buy / Refund / To bar.
 -- Two layouts: PC 920 x 640 (list 510 px on the left, details 354 px on the right); touch full screen (one column,
 -- a tap opens the details sheet). A full bar opens the 2 x 5 slot picker. Data only from Logic/Paths,
 -- Logic/PathView and UI/SkillInfo; the window computes nothing itself.

@@ -11,7 +11,6 @@ export type Action = {
 }
 
 local actions: { Action } = {
-	{ id = "win_character", default = "C", labelKey = "hud.menu.character", group = "windows" },
 	{ id = "win_inventory", default = "B", labelKey = "hud.menu.inventory", group = "windows" },
 	{ id = "win_skills", default = "K", labelKey = "hud.menu.skills", group = "windows" },
 	{ id = "win_map", default = "M", labelKey = "hud.menu.map", group = "windows" },
