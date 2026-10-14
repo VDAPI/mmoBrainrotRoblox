@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S114, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -188,13 +188,19 @@ S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `
 `Data/UiArt` + id `Data/UiArtSheets`, `Logic/UiArt`, `UI/UiArtState`, komponent `ArtIcon` z dawnym znakiem jako
 zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
 świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
-`/icongrid ui <atlas>`. Seria DESIGN-16 bez S115–S117 (w kolejce; S116 czeka na modele właściciela).
+`/icongrid ui <atlas>`. Seria DESIGN-16 bez S116–S117 (w kolejce; S116 czeka na modele właściciela).
 S114 umiejętności Wojownika i Kapłana: pin czasów serwera wszystkich umiejętności (`tests/fixtures/skill_timing.luau`),
 bramka fal `Logic/SkillFxWave` (drugi cel i łańcuch leczenia widoczne), warianty ruchu `SkillMotions.variants` +
 `SkillPose.pick` (broń, liczba fal z pola `w` zdarzenia `cast`, rzut w ruchu), 35 umiejętności w trzech warstwach na
 teksturach S112 (`SkillVfx.tex`, `coreDelay`, `landsAfter`, składniki `shieldArc`, `wings`, kostki `die`), poprawione
 ruchy (Szarża, Wir Ostrzy, Potężne Uderzenie, Rozpłatanie, …), klucze `skill.<id>` i `skill.<id>.cast`, podpis i budżet
 rzutu w testach (`tests/SkillLooks`, `Config.Vfx.perCast`).
+S115 umiejętności Łowcy i Maga: strzały z jednej funkcji na parę póz (`ShotRig`, łuk pionowo w lewej dłoni, warianty
+kuszy), puszczenie w chwili `release` serwera, warianty fal (Podwójny 3, Salwa 8, Magiczny Pocisk 2), kostur, Inwokacja
+w marszu, 32 wpisy w trzech warstwach (pocisk z dłoni / czubka broni z czasem serwera, `launch`, `strike`, `toss`,
+`rim`, składniki `snare` i `stormCloud`, meteor z lądowaniem po `d`, sokół z rdzeniem w chwili obrażeń, sidła lądujące w
+chwili postawienia), klucze `skill.<id>`, `.cast`, `.trigger`, `.wave`, `skill.falcon.strike`, `/animlab skill <id>
+[typ broni]`, zero par o tej samej sylwetce w obu klasach.
 IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
 częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
@@ -325,7 +331,7 @@ zakończone; testy i decyzje właściciela po nich.
   tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
 - **Dźwięki (S111):** 30 dźwięków nieodsłuchanych (wybór po nazwie i długości, `docs/ASSETS.md` → „Dźwięki (S111)”;
   `skill.default.heal` i `.buff` słabe); koszt dźwięku w `/animlab stress 20` nie zmierzony (Studio bez postaci); rzucenie
-  umiejętności Łowcy i Maga (`onCast`) bez dźwięku do S115.
+  umiejętności Łowcy i Maga (`onCast`) bez dźwięku do S115 (od S115 `skill.<id>.cast`, gdy ma ID).
 - **S112: przegląd w Studio nie zrobiony (MCP bez obrazu 3D):** tekstury wgrane i wczytane, składniki odegrane w Play
   bez błędów, koszt zmierzony, ale nieobejrzane: strona łuku cięcia (`SLASH_SIDE` w `Vfx/Library`: jasna krawędź ma być
   na końcu zamachu), płaszczyzna płaskiego łuku (`Beam` leży w płaszczyźnie XZ attachmentów), rozmiary iskier i dymu
@@ -335,7 +341,7 @@ zakończone; testy i decyzje właściciela po nich.
   3D nie wczytuje tekstury do karty. Sprawdzić przy widocznym oknie; gdyby zostało, flipbook pokaże cały arkusz.
 - **S112:** limity telefonu (`Pool.isTouch`) nie sprawdzone w Play (`execute_luau` dostaje osobną kopię modułów, więc
   podmiana `Pool.isTouch` nie działa na grę); wymuszony zły ID (G4) też nie (ta sama przyczyna; ścieżka ta sama co puste
-  ID). `sealRune`, `telegraph`, `banner`, `shield`, `cone` bez tekstur (S115, S117; `dash` i `tether` z kluczem od S114).
+  ID). `sealRune`, `telegraph`, `banner`, `shield`, `cone` bez tekstur (S117; `dash` i `tether` z kluczem od S114).
 - **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
   Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
   questów nie obejrzane w grze.
@@ -356,6 +362,21 @@ zakończone; testy i decyzje właściciela po nich.
   Wiary; Piętno Światła ma runę na ziemi, nie pionową nad celem; Szarża bez pyłu w punkcie startu (pył przy hamowaniu).
   Brak też: szarego dymu pecha na wrogach i segmentów w kolorach ścian kości Koła Fortuny (zdarzenie nie zna wrogów),
   złotej tarczy nietykalności Wskrzeszenia 10A (zdarzenie bez przełomu).
+- **S115: przegląd w Studio częściowy:** `screen_capture` z `camera_position` daje już obraz 3D; obejrzane tylko
+  Celny Strzał z łukiem i kuszą, Kula Ognia (kostur) i Pole Sideł (lot sideł, runa z góry); reszta z danych, testów i
+  przebiegu wszystkich 32 umiejętności w AnimLab bez błędów. Do obejrzenia: łuk pionowo (`lWrist` −60) przy naciągu,
+  kusza w każdym wariancie, sidła `snare`, chmura `stormCloud` (wysokość 14 st.), strzały wbite w ziemię, sokół z
+  rdzeniem przed dolotem, kamienie Kataklizmu i Gniewu Żywiołów (lądują 0,2 / 0,15 s po obrażeniach: serwer nie
+  zapowiada punktu). Niska jakość, telefon i zestaw ośmiu najcięższych (J1) nie zmierzone.
+- **S115: dźwięki i braki wyglądu:** `skill.aimedShot.cast` i `skill.heartseeker.cast` bez ID (twórca Roblox nie ma
+  naciągu cięciwy, jak `bow.draw`); pozostałe klucze to pliki S111 w innej wysokości, nieodsłuchane. Bez pętli
+  (`SfxController`): Strumień Arkanów, Inwokacja, Wir Żywiołów, skrzydła sokoła. Wysokość dźwięku Wyładowania Arkanów
+  nie zależy od Ładunków (`SfxController.Play` bez wysokości). Pocisk Magicznego Pocisku bez tekstury żywiołu (kula
+  `glow` w kolorze), wiru `vortex` brak (wir to `whirl` co falę), linia celowania bez tekstury (pulsuje), Strumień Arkanów
+  bez odrzutu ramion co tyk (pętla przypięta 0,7 s). Sidła pierścienia lecą do punktów liczonych na kliencie z bazowego `ringRadius`.
+  Brak też: lotu Ładunków z orbity do czubka broni przy Wyładowaniu Arkanów (gest jest tylko w pozie), smugi `iceShard`
+  Lodowego Odłamka (smuga `trailSoft`) i lodowej skorupy zamrożenia 5A, runy `runeHunter` na szczycie słupa Znaku Łowcy
+  i znaków 5B (słupy albo `ringWave` r 6) na wrogach wokół.
 - **S113: przegląd w Studio nie zrobiony:** przez całą sesję trwał Play (nie zatrzymywany), a MCP i tak nie daje obrazu
   3D; nowe pozy ocenione z pozycji dłoni i czubka broni liczonych z danych i renderów `posedump attack:*`. Do obejrzenia
   w AnimLab: `attack <typ> combo` każdego ruchu, smuga od `VaelthornTrailBase`, iskry (`hit <materiał>`), reakcja

@@ -126,6 +126,25 @@ wysokości (sprawdzone w Play `/animlab sfx skill.<klucz>`: `loaded = true`). Pu
 | `skill.earthquake.cast`, `skill.titansWrath.cast` | `rbxassetid://12222200` | swoosh.wav | Roblox | 0,20 | Creator Store, twórca Roblox | 2026-10-14 | S114, świst skoku |
 | `skill.judgement.cast`, `skill.hammerOfHeaven.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-14 | S114, świst skoku |
 
+S115 (umiejętności Łowcy i Maga): nowych ID nie ma (wyszukiwanie `search_asset` nie dało dźwięków twórcy Roblox poza
+listą S111); klucze biorą pliki z tabel wyżej w innej wysokości (w Play `/animlab sfx <klucz>`: `loaded = true`). Puste:
+`skill.aimedShot.cast`, `skill.heartseeker.cast` (naciąg cięciwy, jak `bow.draw`).
+
+| Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `skill.aimedShot`, `skill.doubleShot`, `skill.venomArrow`, `skill.volley`, `skill.piercingArrow`, `skill.heartseeker`, `skill.iceShard`, `skill.frostNova`, `skill.chainLightning`, `skill.frostTrap.trigger`, `skill.firewall.wave` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-14 | S115, cięciwa i trzask lodu w różnej wysokości; salwa także swoosh, łańcuch także ping |
+| `skill.stormArrow` (+`.cast`), `skill.fireball`, `skill.meteor`, `skill.firewall`, `skill.meteorStorm` (+`.wave`), `skill.cataclysm` (+`.wave`), `skill.arcaneDischarge` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-10-14 | S115, wybuchy i grzmoty zastępcze |
+| `skill.frostTrap`, `skill.drawBead`, `skill.snarefield` (+`.trigger`), `skill.venomSnare.trigger` | `rbxassetid://12222170` | switch.wav | Roblox | 0,15 | Creator Store, twórca Roblox | 2026-10-14 | S115, mechanizm pułapki |
+| `skill.venomSnare` | `rbxassetid://12222152` | splat.wav | Roblox | 0,22 | Creator Store, twórca Roblox | 2026-10-14 | S115, sidła na ziemi |
+| `skill.falcon`, `skill.huntersMark` | `rbxassetid://15675062723` | Roblox_UI_Whistle_Low | Roblox | 0,33 | Creator Store, twórca Roblox | 2026-10-14 | S115, znak wyżej |
+| `skill.camouflage` | `rbxassetid://15675037413` | Roblox_UI_Paper_Swipe | Roblox | 0,62 | Creator Store, twórca Roblox | 2026-10-14 | S115, szelest |
+| `skill.firebolt`, `skill.arcaneTorrent` | `rbxassetid://15675046931` | Roblox_UI_Sweep | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-14 | S115 |
+| `skill.disengage` | `rbxassetid://15675028888` | Roblox_UI_Whoosh_02 | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-14 | S115 |
+| `skill.arrowRain`, `skill.drive`, `skill.elementalVortex`, `skill.falcon.strike` | `rbxassetid://15674975792`, `rbxassetid://12222200`, `rbxassetid://15675024286` | Roblox_UI_Whoosh_03, swoosh.wav, Roblox_UI_Whoosh_01 | Roblox | 1,10 / 0,20 / 0,85 | Creator Store, twórca Roblox | 2026-10-14 | S115, świst strzał i wiru |
+| `skill.blink`, `skill.fireball.cast`, `skill.meteor.cast`, `skill.meteorStorm.cast`, `skill.cataclysm.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-14 | S115, wezwanie czaru nisko |
+| `skill.evocation`, `skill.manaShield` | `rbxassetid://10128760939`, `rbxassetid://10066968815` | RBLX UI Select 01 / 02 (SFX) | Roblox | 0,58 / 0,49 | Creator Store, twórca Roblox | 2026-10-14 | S115, nisko |
+| `skill.chainLightning` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-10-14 | S115, wyładowanie zastępcze |
+
 ## Wierzchowce (S96)
 
 Prawdziwy model zastępuje wygląd z generatora (plan `horse`, `docs/MODELE.md` §8) dla wierzchowca:

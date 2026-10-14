@@ -88,12 +88,14 @@ local function armWeight(pose: SkillMotions.Pose): number
 	return sum
 end
 
--- A skill's motion (nil when the skill has none); `loopUntil` stretches a channel like SkillPose.duration.
-function MotionKeys.skill(skillId: string, loopUntil: number?): Keys?
-	local motion = SkillMotions.get(skillId)
-	if not motion then
+-- A skill's motion (nil when the skill has none); `loopUntil` stretches a channel like SkillPose.duration. S115: `ctx`
+-- (weapon family, waves, walking) picks the variant the character plays (SkillPose.pick); the events stay the base's.
+function MotionKeys.skill(skillId: string, loopUntil: number?, ctx: SkillPose.PickContext?): Keys?
+	local base = SkillMotions.get(skillId)
+	if not base then
 		return nil
 	end
+	local motion = SkillPose.pick(base, ctx)
 	local hit = if motion.hit then SkillMotions.hitDelay(skillId) else nil
 	local release = motion.release
 	local first: number? = nil

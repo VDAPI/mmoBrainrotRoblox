@@ -29,6 +29,16 @@
 --     magicCircle / rune show at once); markRadius = the size of groundDecal / cracks instead of the event's radius (a
 --     mark at the pole or the shield, not over the whole area); new pieces shieldArc (a half ring of shields on the radius) and wings (wings of
 --     light behind the target); projectile "die" (two dice). The sound stays "" = skill.<id> (Data/Sfx, S114 keys).
+--   S115 (Hunter and Mage): launch = where a projectile leaves ("l" / "r" / "both" hands, "weapon" = the weapon's tip;
+--     default the glow's hand, else the tip); tex.projectile = the texture of its trail (default trailSoft);
+--     strike = pieces of every storm strike (the lightningBurst / meteorImpact events of Thunderstorm and Wrath of
+--     Elements); toss = { from, to } seconds after the cast when the snares leave the hand (they fly to the trap
+--     points and land at the motion's hit); rim = arrowRain lands on the circle's rim (The Drive) instead of inside;
+--     new pieces snare (a trap on the ground for the event's `d`, gone when it springs; tex.snare = iceShard for a
+--     crystal) and stormCloud (a dark cloud over the circle for the event's `d`); meteor is now only the falling rock
+--     (its entry lists the landing pieces and has landsAfter). Phase sounds skill.<id>.cast /
+--     .trigger / .wave and skill.falcon.strike (Data/Sfx) play when they have an id. leadStrike = the main sound and
+--     the shake (`shake`) play with the first strike of the cast, later strikes shake 0.3 (Wrath of Elements).
 
 export type Entry = {
 	color: string,
@@ -59,6 +69,11 @@ export type Entry = {
 	coreDelay: number?, -- S114: core pieces, hitstop and sound wait this long after the event
 	landsAfter: boolean?, -- S114: circleTarget, the blow (all but magicCircle / rune, the shake and the sound) waits `d`
 	markRadius: number?, -- S114: groundDecal / cracks size (a local mark) instead of the event's radius
+	launch: ("l" | "r" | "both" | "weapon")?, -- S115: where a projectile leaves (default the glow's hand, else the tip)
+	strike: { string }?, -- S115: pieces of every storm strike (lightningBurst / meteorImpact)
+	leadStrike: boolean?, -- S115: the main sound and the shake wait the first strike instead of the event
+	toss: { from: number, to: number }?, -- S115: snares leave the hand between these seconds, land at the hit
+	rim: boolean?, -- S115: arrowRain lands on the rim of the circle (The Drive)
 }
 
 local function e(def: Entry): Entry
@@ -212,67 +227,177 @@ local SkillVfx: { [string]: Entry } = {
 		telegraph = "circle",
 		shake = 0.4,
 	}),
-	-- Hunter
+	-- Hunter (S115): the class colour, forest green and brown; arrows with a thin bright streak (trailStreak), sparks,
+	-- dust and feathers; magic light only on Storm Arrow and the marks. Arrows leave the bow in the left hand.
 	aimedShot = e({
 		color = "class",
 		sound = "",
 		glow = { hand = "l", dur = 0.55 },
 		projectile = "arrow",
-		impact = { "burst" },
+		launch = "l",
+		impact = { "impactFlash", "sparks", "dust" },
+		tex = { projectile = "trailStreak" },
+		flash = 1.8,
 		size = 0.6,
 	}),
-	doubleShot = e({ color = "class", sound = "", projectile = "arrow", impact = { "burst" }, size = 0.4 }),
-	disengage = e({ color = "class", sound = "", impact = { "dash", "dust" }, land = { "dust" } }),
-	arrowRain = e({ color = "class", sound = "", impact = { "arrowRain" }, telegraph = "circle" }),
-	venomArrow = e({ color = "element", sound = "", projectile = "arrow", impact = { "cloud", "burst" }, size = 0.6 }),
-	frostTrap = e({ color = "element", sound = "", impact = { "rune" } }),
+	doubleShot = e({
+		color = "class",
+		sound = "",
+		projectile = "arrow",
+		launch = "l",
+		impact = { "impactFlash", "sparks" },
+		tex = { projectile = "trailStreak" },
+		flash = 1.2,
+		size = 0.4,
+	}),
+	disengage = e({
+		color = "class",
+		sound = "",
+		impact = { "dash", "impactFlash", "sparks", "dust" },
+		land = { "dust" },
+		tex = { dash = "trailStreak" },
+		sparks = "feather",
+		flash = 1.5,
+	}),
+	arrowRain = e({
+		color = "class",
+		sound = "",
+		impact = { "arrowRain", "impactFlash", "dust" },
+		coreDelay = 0.15, -- the first arrows reach the ground (Vfx/Library.projectile, ARROW_FALL)
+		telegraph = "circle",
+		flash = 2,
+	}),
+	venomArrow = e({
+		color = "element",
+		sound = "",
+		projectile = "arrow",
+		launch = "l",
+		impact = { "impactFlash", "cloud" },
+		tex = { projectile = "beamPoison" },
+		flash = 1.6,
+		size = 0.6,
+	}),
+	frostTrap = e({
+		color = "element",
+		sound = "",
+		impact = { "impactFlash", "snare", "rune" },
+		trigger = { "impactFlash", "ringWave", "sparks", "groundDecal" },
+		tex = { snare = "iceShard" },
+		sparks = "iceShard",
+		flash = 1.5,
+		size = 0.5,
+	}),
 	piercingArrow = e({
 		color = "class",
 		sound = "",
 		glow = { hand = "l", dur = 0.4 },
-		impact = { "lineBeam" },
+		impact = { "impactFlash", "lineBeam", "groundDecal", "sparks" },
+		tex = { lineBeam = "trailStreak" },
 		telegraph = "line",
+		markRadius = 2.5,
+		flash = 2,
 		shake = 0.2,
 	}),
-	huntersMark = e({ color = "#E2483A", sound = "", impact = { "pillar", "burst" }, size = 0.5 }),
-	volley = e({ color = "class", sound = "", impact = { "fan" }, telegraph = "cone" }),
-	camouflage = e({ color = "#5F7A4A", sound = "", impact = { "smoke", "aura" } }),
+	huntersMark = e({
+		color = "#E2483A",
+		sound = "",
+		impact = { "impactFlash", "pillar", "sparkle" },
+		pillar = { radius = 0.5, height = 10 },
+		flash = 1.5,
+		size = 0.5,
+	}),
+	volley = e({
+		color = "class",
+		sound = "",
+		impact = { "fan", "impactFlash", "sparks" },
+		coreDelay = 0.12, -- the first arrows reach the cone
+		telegraph = "cone",
+		flash = 1.6,
+	}),
+	camouflage = e({
+		color = "#5F7A4A",
+		sound = "",
+		impact = { "smokePuff", "aura", "dust" },
+		tex = { aura = "smoke" },
+	}),
 	stormArrow = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "l", dur = 0.6 },
 		projectile = "bolt",
-		impact = { "skyBolt", "burst" },
+		launch = "l",
+		impact = { "impactFlash", "skyBolt", "sparks" },
+		tex = { projectile = "beamLightning" },
+		flash = 2.4,
 		shake = 0.35,
 	}),
 	-- S77 (ROZWOJ 11.3-11.5): path skills of the Hunter
-	drawBead = e({ color = "#E2483A", sound = "", impact = { "rune", "sparkle" }, size = 0.5 }),
+	drawBead = e({
+		color = "#E2483A",
+		sound = "",
+		impact = { "impactFlash", "rune", "sparkle" },
+		flash = 1.2,
+		size = 0.5,
+	}),
 	heartseeker = e({
 		color = "#E2483A",
 		sound = "",
-		glow = { hand = "l", dur = 1.5 },
+		glow = { hand = "l", dur = 1.5 }, -- an aimed cast lasts the event's `ct` instead
 		projectile = "arrow",
-		impact = { "beam", "burst" },
+		launch = "l",
+		impact = { "impactFlash", "beam", "sparks" },
+		tex = { projectile = "trailStreak", beam = "trailStreak" },
+		sparks = "darkSpark",
+		flash = 3,
 		shake = 0.3,
 		size = 0.8,
 	}),
-	venomSnare = e({ color = "element", sound = "", impact = { "rune" }, trigger = { "cloud", "burst" } }),
-	snarefield = e({ color = "class", sound = "", impact = { "rune" }, trigger = { "cracks", "burst" } }),
-	falcon = e({ color = "#C8A060", sound = "", impact = { "dust", "sparkle", "falcon" }, size = 0.6 }),
+	venomSnare = e({
+		color = "element",
+		sound = "",
+		toss = { from = 0.14, to = 0.14 },
+		impact = { "impactFlash", "snare", "rune" },
+		trigger = { "impactFlash", "cloud", "sparks" },
+		flash = 1.4,
+		size = 0.5,
+	}),
+	snarefield = e({
+		color = "class",
+		sound = "",
+		toss = { from = 0.2, to = 0.4 },
+		impact = { "impactFlash", "snare", "rune" },
+		trigger = { "impactFlash", "groundDecal", "sparks" },
+		flash = 1.2,
+		size = 0.4,
+	}),
+	falcon = e({
+		color = "#C8A060",
+		sound = "",
+		impact = { "impactFlash", "falcon", "sparks", "dust" },
+		sparks = "feather",
+		flash = 1.2,
+		size = 0.6,
+	}),
 	drive = e({
 		color = "class",
 		sound = "",
-		impact = { "arrowRain", "shockwave", "dust" },
+		rim = true,
+		impact = { "arrowRain", "impactFlash", "ringWave", "dust" },
+		coreDelay = 0.15,
 		telegraph = "circle",
+		flash = 2.4,
 		shake = 0.25,
 	}),
-	-- Mage
+	-- Mage (S115): the weapon's element (adaptive) or the skill's, arcane violet and blue; energy gathers in the hands or
+	-- at the weapon's tip and the bolt leaves from there
 	firebolt = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.18 },
 		projectile = "orb",
-		impact = { "burst" },
+		launch = "weapon",
+		impact = { "impactFlash", "sparks" },
+		flash = 2,
 		size = 0.7,
 	}),
 	iceShard = e({
@@ -280,79 +405,126 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		glow = { hand = "both", dur = 0.28 },
 		projectile = "shard",
-		impact = { "burst" },
+		launch = "both",
+		impact = { "impactFlash", "sparks", "groundDecal" },
+		sparks = "iceShard",
+		markRadius = 2,
+		flash = 2,
 		size = 0.7,
 	}),
-	blink = e({ color = "#B07CFF", sound = "", impact = { "dash", "burst" } }),
+	blink = e({
+		color = "#B07CFF",
+		sound = "",
+		impact = { "dash", "impactFlash", "sparks", "smokePuff" },
+		tex = { dash = "beamArcane" },
+		flash = 2,
+	}),
 	fireball = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.4 },
 		projectile = "orb",
-		impact = { "burst", "shockwave", "cracks" },
+		launch = "both",
+		impact = { "impactFlash", "ringWave", "groundDecal", "smokePuff", "sparks" },
+		landsAfter = true, -- the orb flies the event's `d` (Offense.circleTarget, CIRCLE_PROJECTILE_SPEED)
 		telegraph = "circle",
+		flash = 4,
 		shake = 0.35,
 		size = 1.4,
 	}),
-	chainLightning = e({ color = "element", sound = "", glow = { hand = "r", dur = 0.27 }, impact = {} }),
-	manaShield = e({ color = "#6FA8FF", sound = "", impact = { "shield" } }),
+	-- the body is the lightning of every link (VfxController chain branch); these pieces play on every target
+	chainLightning = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "r", dur = 0.27 },
+		impact = { "impactFlash", "sparks" },
+	}),
+	manaShield = e({ color = "#6FA8FF", sound = "", impact = { "impactFlash", "shield", "sparkle" }, flash = 2 }),
 	frostNova = e({
 		color = "element",
 		sound = "",
-		impact = { "shockwave", "cracks", "burst" },
+		impact = { "impactFlash", "ringWave", "groundDecal", "sparks" },
+		sparks = "iceShard",
 		telegraph = "circle",
+		flash = 3,
 		shake = 0.3,
 	}),
 	meteor = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.9 },
-		impact = { "meteor", "rune" },
+		impact = { "magicCircle", "meteor", "impactFlash", "ringWave", "groundDecal", "smokePuff" },
+		landsAfter = true, -- the rock falls the event's `d` (1 s, 0.5 s with 5A): the blow, the shake and the sound then
 		telegraph = "circle",
+		flash = 5,
 		shake = 0.8,
 	}),
 	firewall = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.4 },
-		impact = { "rune" },
+		impact = { "stormCloud", "magicCircle" },
+		strike = { "impactFlash", "groundDecal", "sparks" },
 		telegraph = "circle",
+		markRadius = 2.5,
+		flash = 2,
 	}),
-	evocation = e({ color = "#6FA8FF", sound = "", impact = { "aura", "rune" } }),
+	evocation = e({
+		color = "#6FA8FF",
+		sound = "",
+		impact = { "impactFlash", "magicCircle", "aura", "sparkle" },
+		flash = 1.5,
+	}),
 	meteorStorm = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
-		impact = { "rune" },
+		impact = { "magicCircle" },
+		strike = { "impactFlash", "ringWave", "smokePuff" },
+		leadStrike = true,
 		telegraph = "circle",
+		flash = 3,
 		shake = 0.5,
 	}),
 	-- S80 (ROZWOJ 12.4, 12.5)
 	elementalVortex = e({
 		color = "element",
 		sound = "",
-		impact = { "rune", "whirl", "aura" },
-		everyWave = { "whirl", "aura" },
+		impact = { "impactFlash", "whirl", "aura", "sparks" },
+		everyWave = { "whirl", "sparks" },
+		tex = { whirl = "slashWide" },
+		flash = 2,
 	}),
 	cataclysm = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.8 },
-		impact = { "meteor", "shockwave", "cracks", "rune" },
+		impact = { "magicCircle", "meteor", "impactFlash", "ringWave", "cracks", "smokePuff" },
+		everyWave = { "ringWave", "cracks" },
 		telegraph = "circle",
 		waves = true,
+		landsAfter = true, -- every wave's rock falls the wave event's `d` (0.2 s)
+		flash = 5,
 		shake = 0.7,
 	}),
 	arcaneDischarge = e({
 		color = "#B07CFF",
 		sound = "",
-		glow = { hand = "both", dur = 0.35 },
+		glow = { hand = "weapon", dur = 0.4 },
 		projectile = "orb",
+		launch = "weapon",
 		size = 0.8,
 		chargeSize = 0.15,
-		impact = { "burst", "sparkle", "shockwave" },
+		impact = { "impactFlash", "ringWave", "sparks" },
+		flash = 2.4,
 	}),
-	arcaneTorrent = e({ color = "#B07CFF", sound = "", impact = { "beam", "sparkle", "aura" } }),
+	arcaneTorrent = e({
+		color = "#B07CFF",
+		sound = "",
+		impact = { "impactFlash", "beam", "sparkle", "sparks" },
+		tex = { beam = "beamArcane" },
+		flash = 0.9,
+	}),
 	-- Cleric (S114): light from above and from the hands, little dust; holy gold, heal green, the Cleric's rune
 	holyStrike = e({
 		color = "holy",

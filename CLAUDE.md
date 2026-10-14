@@ -128,6 +128,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   Prawdziwy klip (S113): `SkillMotions.<id>.clip` / `AttackMotions.motions.<ruch>.clips` / `clipsByWeapon` (`{ id, hit =
   "Hit", hitTime? }`, znacznik `Hit`, prędkość z `Logic/ClipFit`, zapas: poza z kodu; `docs/ANIMACJE.md` §6); czas
   trafienia ataku tylko z `AttackMotions.SERVER_HIT`, pozy ataku podgląda `lune run tools/posedump.luau out.json attack:all`.
+  Strzały Łowcy (S115): funkcja kluczy na `ShotRig` (`BOW`, `CROSSBOW`, wariant `crossbowOf`), puszczenie w `release`;
+  pola `SkillVfx` `launch` / `strike` / `toss` / `rim`, składniki `snare` / `stormCloud`, dźwięki faz `skill.<id>.trigger` /
+  `.wave` (`docs/ANIMACJE.md` §12).
   S114: czasy serwera przypięte w `tests/fixtures/skill_timing.luau` (wiersz nowej umiejętności dopisuje się ręcznie);
   warianty ruchu `SkillMotions.<id>.variants` (`variant({ weapon?, hits?, move?, keys })`, bez zdarzeń, `SkillPose.pick`);
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje

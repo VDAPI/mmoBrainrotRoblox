@@ -79,7 +79,7 @@ sprawdza wywołanie (`Logic/AnimLab.parse`) i wysyła je przez `AdminClient` do 
 | `/animlab hit <materiał> [crit]` | S113: iskry, dźwięk i reakcja trafienia ataku podstawowego w cel sceny od strony aktora (materiały `Data/HitFx`: `flesh`, `armor`, `wood`, `stone`, `bone`, `slime`) |
 | `/animlab flinch <front\|back\|left\|right> [crit]` | S113: reakcja manekina celu na cios z tej strony (`AttackPose.flinch`) |
 | `/animlab clip <id> [attack <typ> [krok] \| skill <id>]` | S113: wczytuje klip na aktorze, drukuje wczytanie, długość, znacznik `Hit`, trafienie serwera, prędkość, linię do wklejenia i gra klip w pętli (§6) |
-| `/animlab skill <id>` | aktor dostaje broń ścieżki albo startową broń klasy i gra umiejętność (`VfxController.Preview`) |
+| `/animlab skill <id> [typ broni]` | aktor dostaje broń ścieżki albo startową broń klasy (S115: albo podany typ, np. `crossbow`, `staff`) i gra umiejętność (`VfxController.Preview`) |
 | `/animlab mob <id> [slot]` | wygląd potwora (albo bossa) w miejscu celu i stan `slot` (`idle`, `walk`, `run`, `attack1`, `attack2`, `cast`, `hit`, `death`, `spawn`; domyślnie `attack1` jak zwykły atak) |
 | `/animlab boss <boss> <atak>` | boss w miejscu celu, telegraf ataku wycelowany w aktora i zamach (`windup > 1` → `cast`, inaczej `attack2`) |
 | `/animlab npc <id> [idle\|talk\|wave\|work]` | kopia NPC z `Workspace.Npcs`; klipy NPC od S116, do tego czasu stoi |
@@ -245,7 +245,7 @@ czubek) i słupkiem celu 4 st. przed sobą.
 | łuk, kusza, różdżka | `bow.draw`, `bow.release`, `crossbow.release`, `wand.cast` | 0,5 | 70 |
 | trafienie | `hit.flesh`, `hit.armor`, `hit.wood`, `hit.stone`, `hit.bone`, `hit.slime`, `hit.crit` (razem z materiałem) | 0,6 / 0,7 | 70 |
 | obrona | `block` (też pochłonięte i odporność, ×0,6), `miss` (też unik) | 0,55 / 0,4 | 60 |
-| umiejętność | `skill.default.strike/cast/blast/heal/buff/dash/trap/call`, `skill.<id>` (16 z próbki S110; S114: wszystkie Wojownika i Kapłana, `skill.<id>.cast` przy rzuceniu) | 0,6 / 0,65 | 90 |
+| umiejętność | `skill.default.strike/cast/blast/heal/buff/dash/trap/call`, `skill.<id>` (16 z próbki S110; S114: wszystkie Wojownika i Kapłana, `skill.<id>.cast` przy rzuceniu; S115: Łowca i Mag, `.trigger`, `.wave`, `skill.falcon.strike`) | 0,6 / 0,65 | 90 |
 | potwór | `mob.<rodzina>.attack/hurt/death/aggro` (6 rodzin; `hurt` co 0,35 s, `aggro` co 4 s na potwora) | 0,45–0,6 | 80 |
 | boss | `boss.<id>.roar/attack/death/phase` (`roar` co 3 s) | 0,8 | 200 |
 | telegraf | `telegraph.warn` | 0,55 | 120 |
@@ -363,7 +363,7 @@ zmieniony plik trzeba wgrać ponownie i wpisać nowe ID.
 także przy manekinach), `vfx tex` (wczytanie każdego ID i flipbooków, 10 s), `vfx tex on|off` (porównanie przed / po),
 `vfx stats` (efekty, uchwyty i światła wobec limitów; też w `state`). Składniki: `impactFlash`, `sparks`, `groundDecal`,
 `smokePuff`, `magicCircle`, `ringWave`, `burst`, `shockwave`, `cracks`, `slash`, `projectile`, `lightning`, `pillar`,
-`rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`, `shieldArc`, `wings` (S114).
+`rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`, `shieldArc`, `wings` (S114), `snare`, `stormCloud` (S115).
 
 ## 9. Ikony przedmiotów (S118)
 
@@ -482,3 +482,80 @@ oburącz), `titansWrath` (trzy skoki; znacznik `Hit` tylko na pierwszym lądowan
 `judgement` (skok z buzdyganem). Długość klipu: ruch umiejętności z `/animlab skill <id>` (`end`), trafienie zgodne z
 tabelą wyżej. ID wpisz w `src/shared/Data/SkillMotions.luau` przy ruchu: `clip = { id = "rbxassetid://…", hit = "Hit",
 hitTime = … }` (linia z `/animlab clip <id> skill <id>`); warianty grają dalej z kodu.
+
+## 12. Umiejętności Łowcy i Maga (S115)
+
+**Zasady klasy.** Łowca: kolor klasy, zieleń i brąz lasu, cienka jasna smuga strzały (`trailStreak`), iskry, pył, pióra
+(`feather`), runa Łowcy; magiczne światło tylko przy Strzale Burzy (`beamLightning`) i znakach (czerwień `#E2483A`). Łuk i
+kusza zawsze w **lewej** dłoni; strzała wylatuje z lewej dłoni (`SkillVfx.launch = "l"`) w chwili `release` serwera.
+Mag: kolor żywiołu broni (umiejętności adaptacyjne) albo umiejętności, arkana `#B07CFF` / `#6FA8FF`; energia zbiera się
+w dłoniach albo na czubku broni (`launch = "both"` / `"weapon"`, atrybut `VaelthornTip`) i stamtąd wylatuje. Dźwięki:
+pliki S111 w innej wysokości (`snap` = cięciwa i lód, `bass` = wybuchy i grzmoty, `switch` = pułapki, gwizd = sokół i
+znak, `Whoosh_04` = wezwanie czaru).
+
+**Czasy.** Pocisk na kliencie leci z prędkością i limitem serwera (strzały i pociski 90 st./s, najwyżej
+`Config.Vfx.shotMaxTime` = 0,6 s; kula Kuli Ognia 140 st./s, najwyżej 0,8 s od `release`), więc rdzeń na celu wypada z
+obrażeniami. Obszar z `landsAfter` (Meteor, Kula Ognia, Kataklizm) pokazuje od razu tylko koło, telegraf i spadający
+kamień, a rdzeń, falę, ślad, wstrząs i dźwięk po `d` zdarzenia.
+
+| Umiejętność | Sylwetka | Wylot / uderzenie (s) | Rdzeń / ciało / ślad | Dźwięk |
+|---|---|---|---|---|
+| `aimedShot` | bokiem do celu, długi naciąg, drżenie łokcia, puszczenie | 0,58 | błysk / strzała `trailStreak` / iskry, pył | snap nisko (`.cast` pusty) |
+| `doubleShot` | dwa szybkie naciągi, dłoń do kołczanu między nimi | 0,16 / 0,31 (/ 0,46) | błysk / strzały / iskry | snap |
+| `disengage` | przysiad, salto w tył, lądowanie z łukiem uniesionym | 0,05 (ląd. 0,5) | błysk / smuga `trailStreak` / pióra, pył | Whoosh_02 |
+| `arrowRain` | łuk w niebo, odchylenie, puszczenie | 0,3 (fale co 0,5) | błysk (+0,15) / strzały wbite 0,6 s, co trzecia błyska / pył | Whoosh_03, swoosh |
+| `venomArrow` | sięgnięcie do kołczanu nisko, naciąg w przysiadzie | 0,36 | błysk / strzała `beamPoison` / chmura bąbli | snap wyżej |
+| `volley` | naciąg w lewo, obrót w prawo do ostatniej strzały | 0,22 + 0,06 × strzały | błysk / wachlarz strzał (co druga błyska) / iskry | snap, swoosh |
+| `piercingArrow` | szeroki rozkrok bokiem, naciąg znad głowy | 0,4 | błysk przy łuku / pas `trailStreak` / ślad, iskry | snap nisko |
+| `drawBead` | łuk wycelowany, cięciwa przy oku, powolny naciąg | 0,25 | błysk / runa Łowcy pod celem / iskierki | switch |
+| `stormArrow` | strzała w niebo, wykrok, pełny naciąg | 0,58 | błysk / bełt `beamLightning`, piorun z nieba / iskry | bass (`.cast` grzmot) |
+| `heartseeker` | klęk, naciąg trzymany przez `ct`, puszczenie | koniec `ct` (+0,02) | błysk / strzała, promień `trailStreak` / `darkSpark` | snap nisko (`.cast` pusty) |
+| `frostTrap` | klęk, dłoń na ziemi | 0,35 | błysk / sidła z kryształów, runa / — ; wyzwolenie: błysk, fala, odłamki, szron | switch; `.trigger` snap |
+| `venomSnare` | klęk, rzut sideł spod ręki (wylot 0,14) | 0,34 (lądowanie) | błysk / sidła, runa; wyzwolenie: błysk, chmura, iskry | splat; `.trigger` switch |
+| `camouflage` | przysiad, płaszcz przez twarz | 0,2 | kłąb dymu / aura dymu / pył (wyjątek warstw) | Paper_Swipe |
+| `snarefield` | przysiad, rozrzut sideł od prawej do lewej (0,2–0,4) | 0,45 (lądowanie) | błysk / 5 sideł na pierścieniu, runy; wyzwolenie: błysk, pęknięcia, iskry | switch; `.trigger` |
+| `falcon` | lewe przedramię w górę, wypuszczenie ptaka | 0,35; uderzenia ze zdarzeniem | błysk / sokół / pióra, pył; uderzenie: błysk, pióra (nurkowanie: fala) | Whistle_Low; `skill.falcon.strike` |
+| `huntersMark` | goła lewa ręka wskazuje ofiarę, skinienie | 0,22 | błysk / wąski słup / iskierki | gwizd wysoko |
+| `drive` | łuk w niebo, zamach od zewnątrz do środka | 0,38 | błysk (+0,15) / strzały na obwodzie, fala / pył | Whoosh_01, swoosh |
+| `firebolt` | machnięcie bronią, czubek do celu (10B: drugie 0,31) | 0,16 | błysk / kula / iskry | Roblox_UI_Sweep |
+| `fireball` | energia przy biodrze, pchnięcie z wykrokiem | 0,38 + lot | koło, telegraf; po locie: błysk / fala / krater, dym, iskry | bass (`.cast` Whoosh_04) |
+| `iceShard` | dłonie przy piersi, pchnięcie obiema | 0,26 | błysk / odłamek / odłamki lodu, szron | snap wysoko |
+| `chainLightning` | ramię wysoko w tył, rzut | 0,26 | błyskawica każdego skoku (kod) / błysk, iskry na każdym celu | ping, snap |
+| `blink` | spięcie, zniknięcie, pochylenie | 0,1 | błysk / smuga `beamArcane` / iskry, dym | Whoosh_04 wysoko |
+| `frostNova` | ręce w górę, przysiad z dłońmi w ziemi | 0,34 | błysk / fala / szron, odłamki | snap nisko |
+| `meteor` | ramiona wysoko (najwyżej 0,6), sprowadzenie do punktu | 0,6 + `d` | koło, telegraf, kamień; po `d`: błysk / fala / krater, dym | bass nisko (`.cast` Whoosh_04) |
+| `firewall` | broń do chmur, lewa ściąga burzę | 0,42; pioruny co 0,5 | chmura `stormCloud`, koło; piorun: błysk / — / ślad, iskry | bass; `.wave` snap |
+| `elementalVortex` | dłonie krążą przy pasie | 0,3; fale co 0,4 | błysk / wir `slashWide`, aura / iskry | swoosh |
+| `meteorStorm` | ramiona w górę, rozkrok, zgarnięcie na boki | 0,55; meteory od +0,8 co 0,4 | koło, telegraf; meteor: błysk / fala / dym | bass i wstrząs 0,5 z pierwszym meteorem (`leadStrike`); `.wave` |
+| `cataclysm` | długie wezwanie, przysiad z uderzeniem dłońmi | 0,6; fale co 0,6 (+0,2) | koło, kamień; po 0,2: błysk / fala / pęknięcia, dym; kolejne fale: fala, pęknięcia | bass; `.wave` |
+| `manaShield` | ramiona łukiem nad głową | 0,28 | błysk / tarcza / iskierki | Select 02 nisko |
+| `arcaneDischarge` | broń pionowo, lewa ściąga Ładunki, pchnięcie czubkiem | 0,4 | błysk / kula `+0,15 × ch`, fala / iskry | bass |
+| `evocation` | uniesienie, dłonie krążą (5B: idzie po ziemi) | kanał | błysk / koło (5B: idzie z magiem), aura / iskierki | Select 01 nisko |
+| `arcaneTorrent` | broń oburącz przed piersią | tyk co 0,5 | błysk co tyk / promień `beamArcane` / iskierki, iskry przy czubku | Sweep nisko |
+
+**Łuk i kusza** (`Data/SkillMotions`, `ShotRig`): strzał pisze się raz jako funkcja `(rig) -> { Key }` z poz `rig.aim`,
+`rig.full`, `rig.loose`, `rig.after`, `rig.reach` i obrotu `body(rig, pochylenie, dodatkowy obrót)`; ruch bierze
+`BOW`, a `crossbowOf(funkcja, hits?)` daje wariant kuszy. Nowa strzała: funkcja z kluczem `rig.loose` dokładnie w
+`release`, `motions.<id> = { keys = f(BOW), release = …, variants = { crossbowOf(f) } }`. Obrót całego ciała (`root`)
+oddaj tułowiem (`body(rig, …, +obrót)`), żeby broń dalej celowała w cel.
+
+**Pułapki.** Sidła (`snare`) leżą na ziemi przez czas życia `d` i znikają, gdy serwer wyśle `trapTrigger` (najbliższe sidła
+tego rzucającego); wyzwolenie gra `trigger` wpisu i `skill.<id>.trigger`. Rzucane sidła (`SkillVfx.toss = { from, to }`)
+wylatują z prawej dłoni między `from` i `to` i lądują w chwili `hit` (Trujące Sidła: jedne do punktu; Pole Sideł: `w` na
+pierścieniu `ringRadius` jak `Movement.trap`).
+
+**Sokół.** Zdarzenie `falconStrike` / `falconDive` przychodzi razem z obrażeniami: rdzeń, pióra i dźwięk grają od razu,
+ptak pojawia się 2,5 st. od celu i dolatuje w 0,06 s.
+
+**Fale i liczba.** `n` zdarzenia: `Logic/SkillFxWave` (S114). `w` zdarzenia `cast` (także celowania): wariant ruchu
+(Podwójny 3, Salwa 8, Magiczny Pocisk 2) i liczba strzał wachlarza Salwy. `everyWave`: Wir Żywiołów (wir, iskry),
+Kataklizm (fala, pęknięcia; koło trwa przez wszystkie fale). Burza i Gniew: składniki `strike` na każde uderzenie.
+
+**Wskazówki do klipów (§6).** Najwięcej zyskają: `aimedShot` (naciąg i drżenie; znacznik `Hit` w chwili puszczenia 0,58),
+`stormArrow` (strzała w niebo i wykrok, `Hit` 0,58), `fireball` (zbieranie i pchnięcie, `Hit` 0,38) i `meteor` (wezwanie,
+`Hit` 0,6 na szczycie ramion). Nie dla `heartseeker`, `evocation`, `arcaneTorrent` (pętla: klip się nie gra). ID w
+`src/shared/Data/SkillMotions.luau` przy ruchu (`clip = { id = "rbxassetid://…", hit = "Hit", hitTime = … }`, linia z
+`/animlab clip <id> skill <id>`, dopasowanie `Logic/ClipFit`); warianty (kusza, kostur) grają dalej z kodu.
+
+**AnimLab:** `/animlab skill <id> [typ broni]` (np. `skill aimedShot crossbow`, `skill fireball staff`); `vfx snare`,
+`vfx stormCloud`.

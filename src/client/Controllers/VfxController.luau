@@ -34,6 +34,15 @@
 -- Heaven); the cast event's `w` (waves) and `mv` (walking) and the caster's weapon pick a motion variant
 -- (AnimationController.Skill, SkillPose.pick); the cast plays skill.<id>.cast when it has a sound. New pieces
 -- shieldArc (Shield Wall) and wings (Guardian Angel).
+-- S115 (Hunter and Mage): a projectile leaves the hand or the weapon's tip (SkillVfx launch) at the server's speed and
+-- cap (Offense: 90 studs/s up to Config.Vfx.shotMaxTime; Fireball's orb 140 up to 0.8 from the release), with the
+-- skill's trail (tex.projectile); snares fly from the hand (SkillVfx toss) and land at the motion's hit, lie on the
+-- ground as `snare` until the trap springs (trapTrigger takes the nearest snare of that caster); an aimed cast's
+-- glowing hand lasts the event's `ct`; the falcon's core (flash, feathers, skill.falcon.strike) plays with its strike
+-- event, when the server deals the damage; a storm's strikes play the entry's `strike` pieces; Arrow Rain's arrows
+-- stick in the ground (The Drive: on the rim), Volley's fan shoots the cast's `w` arrows; `meteor` is the falling rock
+-- only (landsAfter: the landing pieces, the shake and the sound wait the event's `d`). Phase sounds skill.<id>.trigger,
+-- .wave (later waves, storm strikes) and skill.falcon.strike.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -54,6 +63,7 @@ local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
 local SkillFxWave = require(ReplicatedStorage.Shared.Logic.SkillFxWave)
+local SkillGeom = require(ReplicatedStorage.Shared.Logic.SkillGeom)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local VfxTextures = require(ReplicatedStorage.Shared.Data.VfxTextures)
@@ -114,6 +124,21 @@ local MARKS: { [string]: boolean } = { magicCircle = true, rune = true }
 local CHAIN_MEMORY = 0.5
 local CHAIN_STEP = 0.06 -- seconds between two links of a chain (looks only)
 local lastTargets: { [string]: { model: Model, at: number } } = {}
+-- S115: pieces that start with the event even when the blow lands `d` later (the falling rock itself)
+local FALLS: { [string]: boolean } = { meteor = true }
+-- S115: the snares lying on the ground per caster id (a trapTrigger takes the nearest one away)
+type Snare = { at: Vector3, stop: () -> (), ends: number }
+local snares: { [string]: { Snare } } = {}
+-- S115: the waves (`w`) of each caster's last cast, for impacts that do not carry them (Volley's arrows, Cataclysm's
+-- circle); `move` = cast while walking (`mv`), `struck` = the storm's first strike came (SkillVfx.leadStrike)
+type CastInfo = { skill: string, w: number, move: boolean, struck: boolean? }
+local castWaves: { [string]: CastInfo } = {}
+-- S115: the per-wave event's `d` of Offense.circleTarget (Cataclysm: the rock lands with the wave's damage)
+local WAVE_LAND = 0.2
+-- S115: Arrow Rain's arrows fall from this height; the flash plays on every n-th arrow (cost)
+local RAIN_HEIGHT = 26
+local RAIN_FLASH_EVERY = 3
+local FAN_STEP = 0.06 -- seconds between two arrows of Volley (Offense.cone)
 
 -- Helpers ---------------------------------------------------------------------------------------------------
 
@@ -151,6 +176,29 @@ local function weaponTip(model: Model): Vector3
 		return tip.WorldPosition
 	end
 	return centre(model) + Vector3.new(0, 0.5, 0)
+end
+
+-- S115: a hand of a model (R15 LeftHand / RightHand), nil when missing.
+local function handOf(model: Model, name: string): BasePart?
+	local part = model:FindFirstChild(name, true)
+	return if part and part:IsA("BasePart") then part else nil
+end
+
+-- S115: where a projectile leaves the caster: SkillVfx launch, else the glow's hand, else the weapon's tip.
+local function launchPoint(caster: Model, entry: SkillVfx.Entry?): Vector3
+	local where = if entry then entry.launch or (if entry.glow then entry.glow.hand else nil) else nil
+	if where == "l" or where == "r" then
+		local hand = handOf(caster, if where == "l" then "LeftHand" else "RightHand")
+		if hand then
+			return hand.Position
+		end
+	elseif where == "both" then
+		local left, right = handOf(caster, "LeftHand"), handOf(caster, "RightHand")
+		if left and right then
+			return (left.Position + right.Position) / 2
+		end
+	end
+	return weaponTip(caster)
 end
 
 -- The last walk speed the server set (StatService.applyWalkSpeed), else `fallback`.
@@ -246,6 +294,111 @@ local function playSound(
 	end
 end
 
+-- S114 / S115: a phase sound of the skill (skill.<id>.<phase>: cast, trigger, wave; or a full key such as
+-- skill.falcon.strike) at `at` or the caster, when it has an id. Silent for the skills-window preview.
+local function phaseSound(
+	skill: SkillData.SkillDef,
+	phase: string,
+	at: Vector3?,
+	caster: Model?,
+	data: { [string]: any }
+)
+	if caster and not caster:IsDescendantOf(Workspace) then
+		return
+	end
+	local key = `skill.{skill.id}.{phase}`
+	local where: (Vector3 | Model)? = at or caster
+	if where and Sfx.playable(key) then
+		SfxController.Play(key, where, SfxController.WhoOf(caster), casterKey(data))
+	end
+end
+
+-- S115: a snare lying at `at` for `seconds` (Library.snare), remembered under the caster's id.
+local function laySnare(id: string?, at: Vector3, color: Color3, seconds: number, simple: boolean, key: string?)
+	local stop = Library.snare(at, color, seconds, simple, key)
+	if not id then
+		return
+	end
+	local list = snares[id] or {}
+	local now = Clock.now()
+	for i = #list, 1, -1 do
+		if list[i].ends <= now then
+			table.remove(list, i)
+		end
+	end
+	table.insert(list, { at = at, stop = stop, ends = now + seconds })
+	snares[id] = list
+end
+
+-- S115: the trap of `id` nearest to `at` (within its radius + 2 studs) sprang: its snare goes.
+local function springSnare(id: string?, at: Vector3, radius: number)
+	local list = if id then snares[id] else nil
+	if not list then
+		return
+	end
+	local best, bestDistance = nil, radius + 2
+	for i, snare in list do
+		local distance = Library.flat(snare.at - at).Magnitude
+		if distance <= bestDistance then
+			best, bestDistance = i, distance
+		end
+	end
+	if best then
+		local snare = table.remove(list, best) :: Snare
+		snare.stop()
+	end
+end
+
+-- S115: snares thrown from the hand to the trap points of the cast, landing at the motion's hit (SkillVfx toss): one
+-- at the point, or `w` on the skill's ring around it (Logic/SkillGeom, as Movement.trap; the real snares lie where
+-- the server's set events say).
+local function tossSnares(
+	data: { [string]: any },
+	skill: SkillData.SkillDef,
+	entry: SkillVfx.Entry,
+	motion: SkillMotions.Motion,
+	caster: Model,
+	color: Color3,
+	simple: boolean
+)
+	local toss = entry.toss
+	local point = data.p
+	local hit = motion.hit
+	if not toss or typeof(point) ~= "Vector3" or not hit then
+		return
+	end
+	local count = math.max(1, math.floor((tonumber(data.w) or skill.hits or 1) + 0.5))
+	local spots: { Vector3 } = { point }
+	local ring = skill.ringRadius or 0
+	if count > 1 and ring > 0 then
+		local origin = centre(caster)
+		spots = {}
+		local angle = SkillGeom.angle(origin.X, origin.Z, point.X, point.Z)
+		for _, p in SkillGeom.ringPoints(point.X, point.Z, ring, count, angle) do
+			table.insert(spots, Vector3.new(p.x, point.Y, p.z))
+		end
+	end
+	if simple then
+		spots = { spots[1] }
+	end
+	for i, spot in spots do
+		local share = if #spots > 1 then (i - 1) / (#spots - 1) else 0
+		local leave = math.min(toss.from + (toss.to - toss.from) * share, hit - 0.05)
+		Clock.after(leave, function()
+			if not caster.Parent then
+				return
+			end
+			local hand = handOf(caster, "RightHand")
+			local from = if hand then hand.Position else centre(caster)
+			Library.projectile(from, Library.ground(spot) + Vector3.new(0, 0.2, 0), "snare", color, {
+				time = math.max(0.05, hit - leave),
+				arc = Config.Vfx.tossArc,
+				simple = true,
+			})
+		end)
+	end
+end
+
 -- S77: the falcon of `casterId` kept for `seconds` (created when missing, e.g. a player who came later).
 local function falconOf(
 	casterId: string?,
@@ -282,11 +435,11 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 	)
 	local simple = simpleAt(centre(caster), caster)
 	-- S114: the wind-up sound of a skill that has one (skill.<id>.cast), at the caster
-	if caster:IsDescendantOf(Workspace) then
-		local castKey = `skill.{skill.id}.cast`
-		if Sfx.playable(castKey) then
-			SfxController.Play(castKey, caster, SfxController.WhoOf(caster), casterKey(data))
-		end
+	phaseSound(skill, "cast", nil, caster, data)
+	-- S115: the waves of this cast for impacts that do not carry them (Volley's fan)
+	local id = casterKey(data)
+	if id then
+		castWaves[id] = { skill = skill.id, w = tonumber(data.w) or skill.hits or 1, move = tonumber(data.mv) ~= nil }
 	end
 	if not Pool.take() then
 		return
@@ -297,7 +450,12 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 			Library.weaponTrail(caster, color, motion.trail.from, motion.trail.to)
 		end
 		if entry.glow then
-			Library.glow(caster, entry.glow.hand, color, entry.glow.dur, simple)
+			-- S115: an aimed cast glows for its aim (`ct`, shorter with Heartseeker's sniper node)
+			local aim = tonumber(data.ct)
+			Library.glow(caster, entry.glow.hand, color, if aim then aim + 0.05 else entry.glow.dur, simple)
+		end
+		if entry.toss then
+			tossSnares(data, skill, entry, motion, caster, color, simple)
 		end
 		if entry.land and motion.land then
 			Clock.after(motion.land, function()
@@ -309,19 +467,18 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 				end
 			end)
 		end
-		-- Projectile skills: the shot leaves the hand at the motion's release (speed 140 and the 0.8 s cap match
-		-- server/Skills/Types/Offense CIRCLE_PROJECTILE_*: the damage lands when the orb arrives).
+		-- Projectile skills: the shot leaves the hands at the motion's release, when the server starts its flight
+		-- (speed 140 and the 0.8 s cap match server/Skills/Types/Offense CIRCLE_PROJECTILE_*: the damage lands when
+		-- the orb arrives; S115: from the hands / the weapon's tip, SkillVfx launch, not from the chest).
 		if entry.projectile and skill.type == "circleTarget" and typeof(data.p) == "Vector3" then
-			local release = math.max(0, (motion.release or motion.hit or 0) - 0.05)
+			local release = motion.release or motion.hit or 0
 			Clock.after(release, function()
-				local from = centre(caster) + Vector3.new(0, 1, 0)
-				Library.projectile(
-					from,
-					data.p,
-					entry.projectile :: any,
-					color,
-					{ size = 1.2, speed = 140, simple = simple }
-				)
+				Library.projectile(launchPoint(caster, entry), data.p, entry.projectile :: any, color, {
+					size = 1.2,
+					speed = 140,
+					simple = simple,
+					trail = if entry.tex then entry.tex.projectile else nil,
+				})
 			end)
 		end
 		-- S70 Roll of the Dice: two small golden dice thrown to the ground in front (one in the simple mode)
@@ -434,7 +591,8 @@ local function piece(
 	from: Model?
 )
 	local at = impactPoint(data, caster, target)
-	local scale = entry.size or 1
+	-- S115: Arcane Discharge's pieces grow with the charges it spent (`ch`), like its bolt
+	local scale = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
 	local radius = tonumber(data.r) or skill.radius or (6 * scale)
 	local seconds = tonumber(data.d) or 1
 	-- S114: a local mark (the pole, the shield) keeps its own size instead of the area's radius
@@ -528,12 +686,21 @@ local function piece(
 	elseif name == "magicCircle" then
 		local where = at or (if caster then centre(caster) else nil)
 		if where then
+			-- S115: a per-wave skill (Cataclysm) keeps its circle for all the cast's waves (`w`: cataclysm2 adds some);
+			-- a channel cast while walking (Evocation 5B) carries its circle under the caster
+			local id = casterKey(data)
+			local cast = if id then castWaves[id] else nil
+			local own = cast ~= nil and cast.skill == skill.id
+			local waves = if own and cast then cast.w else (skill.hits or 1)
+			local lasts = if entry.waves then waves * (skill.interval or 0.5) + 0.3 else seconds
+			local root = if caster then caster:FindFirstChild("HumanoidRootPart") :: BasePart? else nil
+			local follow = if skill.type == "channel" and own and cast and cast.move then root else nil
 			Library.magicCircle(
 				where,
 				radius,
 				color,
-				math.max(0.8, seconds),
-				{ simple = simple, key = tex or circleOf(skill, entry) }
+				math.max(0.8, lasts),
+				{ simple = simple, key = tex or circleOf(skill, entry), follow = follow }
 			)
 		end
 	elseif name == "ringWave" then
@@ -575,22 +742,35 @@ local function piece(
 		end
 	elseif name == "arrowRain" then
 		if at then
-			-- S114: the waves of the one event come with it (`n`), breakpoints included
+			-- S114: the waves of the one event come with it (`n`), breakpoints included (S115: else the cast's `w`)
 			local waves = SkillFxWave.of(skill.type, entry.waves, tonumber(data.n)).count or skill.hits or 1
 			local random = Random.new()
+			local count = if simple then 4 else 9
 			for wave = 1, waves do
 				Clock.after((wave - 1) * (skill.interval or 0.5), function()
-					for _ = 1, if simple then 4 else 9 do
-						local a = random:NextNumber() * math.pi * 2
-						local d = math.sqrt(random:NextNumber()) * radius
+					for i = 1, count do
+						-- S115: arrows stick in the ground a moment; every third one flashes; The Drive (rim) lands
+						-- them on the circle's edge in order, Arrow Rain anywhere inside
+						local a = if entry.rim then (i / count) * math.pi * 2 else random:NextNumber() * math.pi * 2
+						local d = if entry.rim then radius else math.sqrt(random:NextNumber()) * radius
 						local spot = at + Vector3.new(math.cos(a) * d, 0, math.sin(a) * d)
 						local ground = Library.ground(spot)
+						local flash = not simple and i % RAIN_FLASH_EVERY == 0
 						Library.projectile(
-							ground + Vector3.new(random:NextNumber(-3, 3), 26, random:NextNumber(-3, 3)),
+							ground + Vector3.new(random:NextNumber(-3, 3), RAIN_HEIGHT, random:NextNumber(-3, 3)),
 							ground,
 							"arrow",
 							color,
-							{ speed = 120, simple = true }
+							{
+								speed = Config.Vfx.rainSpeed,
+								simple = true,
+								stick = Config.Vfx.rainStick,
+								onArrive = if flash
+									then function(spotAt: Vector3)
+										Library.impactFlash(spotAt, 0.9, color, { simple = simple })
+									end
+									else nil,
+							}
 						)
 					end
 				end)
@@ -600,13 +780,28 @@ local function piece(
 		local frame = facing(caster, target, data)
 		if frame then
 			local angle = tonumber(data.a) or skill.angle or 60
-			local count = if simple then 3 else (skill.hits or 5)
+			-- S115: the cast's arrows (`w`: 5A adds one), one every FAN_STEP like the server, sweeping left to right
+			-- with the body; every second one flashes where it lands
+			local id = casterKey(data)
+			local cast = if id then castWaves[id] else nil
+			local arrows = if cast and cast.skill == skill.id then cast.w else (skill.hits or 5)
+			local count = if simple then 3 else arrows
 			for i = 1, count do
-				local yaw = math.rad(-angle / 2 + angle * (i - 0.5) / count)
+				local yaw = math.rad(angle / 2 - angle * (i - 0.5) / count)
 				local dir = (frame * CFrame.Angles(0, yaw, 0)).LookVector
-				local start = frame.Position + Vector3.new(0, 1, 0)
-				Clock.after(i * 0.04, function()
-					Library.projectile(start, start + dir * radius, "arrow", color, { speed = 110, simple = simple })
+				local start = if caster then launchPoint(caster, entry) else frame.Position + Vector3.new(0, 1, 0)
+				local flash = not simple and i % 2 == 0
+				Clock.after((i - 1) * FAN_STEP, function()
+					Library.projectile(start, start + dir * radius, "arrow", color, {
+						speed = 140,
+						simple = simple,
+						trail = "trailStreak",
+						onArrive = if flash
+							then function(spotAt: Vector3)
+								Library.impactFlash(spotAt, 1, color, { simple = simple })
+							end
+							else nil,
+					})
 				end)
 			end
 		end
@@ -615,8 +810,15 @@ local function piece(
 			local length = tonumber(data.l) or skill.length or 20
 			local start = data.cf.Position + Vector3.new(0, 1, 0)
 			local finish = start + data.cf.LookVector * length
-			Library.beam(start, finish, color, math.max(0.6, (tonumber(data.w) or 4) * 0.3), 0.45)
-			Library.projectile(start, finish, "arrow", color, { speed = 160, size = 1.6, simple = simple })
+			Library.beam(
+				start,
+				finish,
+				color,
+				math.max(0.6, (tonumber(data.w) or 4) * 0.3),
+				0.45,
+				if tex then { key = tex } else nil
+			)
+			Library.projectile(start, finish, "arrow", color, { speed = 160, size = 1.6, simple = simple, trail = tex })
 		end
 	elseif name == "skyBolt" then
 		local where = if target then centre(target) else at
@@ -631,7 +833,16 @@ local function piece(
 		end
 	elseif name == "meteor" then
 		if at then
-			Library.meteor(at, radius, math.max(0.2, seconds), color, simple)
+			-- S115: only the falling rock; the entry's landing pieces wait the event's `d` (landsAfter)
+			Library.meteor(at, radius, seconds, color, simple, true)
+		end
+	elseif name == "snare" then
+		if at then
+			laySnare(casterKey(data), at, color, seconds, simple, tex)
+		end
+	elseif name == "stormCloud" then
+		if at then
+			Library.stormCloud(at, radius, color, math.max(1, seconds + 0.5), simple)
 		end
 	elseif name == "smoke" then
 		local model = target or caster
@@ -672,15 +883,21 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 		if caster and target then
 			local n = tonumber(data.n) or 1
 			local interval = skill.interval or 0.5
+			local tip = weaponTip(caster)
+			-- S115: the ray flows to the target in the entry's texture; a small core on the target every tick, sparkles
+			-- there and sparks at the tip
+			local key = if entry.tex then entry.tex.beam else nil
 			Library.beam(
-				weaponTip(caster),
+				tip,
 				centre(target),
 				color,
 				BEAM_WIDTH + BEAM_WIDTH_STEP * (n - 1),
-				interval + 0.05
+				interval + 0.05,
+				if key then { key = key } else nil
 			)
+			Library.impactFlash(centre(target), entry.flash or 1, color, { simple = simple })
 			Library.sparkle(target, color, simple)
-			Library.aura(caster, color, interval + 0.1, simple)
+			Library.sparks(tip, color, { simple = simple, key = entry.sparks, count = 4 })
 			if n == 1 then
 				playSound(skill, entry, at, caster, data)
 			end
@@ -688,13 +905,19 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 		return
 	end
 	-- Projectiles fly to the target; the pieces play on arrival.
-	if kind == "projectile" and caster and target then
-		local from = centre(caster) + Vector3.new(0, 0.8, 0)
+	-- (S115: a preview's shot flies to the point in front, `p`, when there is no target model)
+	local aimAt: (Model | Vector3)? = target or (if typeof(data.p) == "Vector3" then data.p else nil)
+	if kind == "projectile" and caster and aimAt then
+		-- S115: from the hand / the weapon's tip (SkillVfx launch) at the server's speed and cap, so the core lands
+		-- with the damage (Offense.projectile: 90 studs/s, at most Config.Vfx.shotMaxTime)
+		local from = launchPoint(caster, entry)
 		-- S80: Arcane Discharge grows with the charges it spent
 		local size = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
-		Library.projectile(from, target, entry.projectile or "orb", color, {
+		Library.projectile(from, aimAt, entry.projectile or "orb", color, {
 			size = size,
 			simple = simple,
+			maxTime = Config.Vfx.shotMaxTime,
+			trail = if entry.tex then entry.tex.projectile else nil,
 			onArrive = function()
 				for _, name in entry.impact do
 					piece(name, skill, entry, data, color, caster, target, simple)
@@ -713,7 +936,10 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				if a and b then
 					Clock.after((i - 1) * 0.06, function()
 						Library.lightning(centre(a), centre(b), color, 0.3, simple)
-						Library.burst(centre(b), 3, color, nil, simple)
+						-- S115: the entry's pieces (core and trail) on every target of the chain
+						for _, name in entry.impact do
+							piece(name, skill, entry, data, color, a, b, simple)
+						end
 					end)
 				end
 			end
@@ -756,7 +982,9 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				or name == "groundDecal"
 				or name == "pillar"
 		if wave == 1 or again then
-			local wait = linkDelay + (if MARKS[name] then 0 else landDelay) + (if CORE[name] then coreDelay else 0)
+			local wait = linkDelay
+				+ (if MARKS[name] or FALLS[name] then 0 else landDelay)
+				+ (if CORE[name] then coreDelay else 0)
 			if wait > 0 then
 				Clock.after(wait, piece, name, skill, entry, data, color, caster, target, simple, previous)
 			else
@@ -802,12 +1030,22 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			stop()
 		end
 	end
+	-- S115: later waves shake half as hard; a storm with leadStrike shakes (and sounds) with its first strike
+	local shake = if entry.leadStrike then nil elseif entry.shake and wave > 1 then entry.shake * 0.5 else entry.shake
 	if landDelay > 0 then
-		Clock.after(landDelay, shakeNear, at, entry.shake)
+		Clock.after(landDelay, shakeNear, at, shake)
 	else
-		shakeNear(at, entry.shake)
+		shakeNear(at, shake)
 	end
-	if wave == 1 and info.target == 1 then
+	if wave > 1 then
+		-- S115: a later wave's own sound (skill.<id>.wave), when it has one
+		if landDelay > 0 then
+			Clock.after(landDelay, phaseSound, skill, "wave", at, caster, data)
+		else
+			phaseSound(skill, "wave", at, caster, data)
+		end
+	end
+	if wave == 1 and info.target == 1 and not entry.leadStrike then
 		local soundDelay = landDelay + coreDelay
 		if soundDelay > 0 then
 			Clock.after(soundDelay, playSound, skill, entry, at, caster, data)
@@ -896,15 +1134,25 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			Library.burst(centre(model), 4 + stacks * 0.4, color, nil, far)
 		end
 	elseif v == "falconStrike" or v == "falconDive" then
-		-- S77: the bird flies to the target and back (a dive starts high above it)
+		-- S77: the bird flies to the target and back (a dive starts high above it). S115: the server deals the damage
+		-- with this event, so the core (flash, feathers, a ring for a dive) and skill.falcon.strike play now and the
+		-- bird reaches the target within 0.06 s, its claws a trail
+		local target = findModel(data.t)
+		local dive = v == "falconDive"
+		if target then
+			local hit = centre(target) + Vector3.new(0, 1, 0)
+			local far = simpleAt(hit, caster)
+			local flash = (if entry then entry.flash else nil) or 1.2
+			Library.impactFlash(hit, flash * (if dive then 2 else 1), color, { simple = far })
+			Library.sparks(hit, color, { simple = far, key = if entry then entry.sparks else nil, count = 4 })
+			if dive then
+				Library.ringWave(hit, 3, color, { simple = far })
+			end
+			phaseSound(skill, "strike", hit, caster, data)
+		end
 		local falcon = falconOf(casterKey(data), caster, color, simple, tonumber(data.d) or 4)
 		if falcon then
-			falcon.strike(findModel(data.t), v == "falconDive")
-		else
-			local target = findModel(data.t)
-			if target then
-				Library.burst(centre(target), 3, color, nil, simple)
-			end
+			falcon.strike(target, dive)
 		end
 	elseif v == "falconCircle" then
 		falconOf(casterKey(data), caster, color, simple, tonumber(data.d) or 4)
@@ -929,14 +1177,57 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			SfxController.Play("skill.guardianAngel.save", at, SfxController.WhoOf(caster), casterKey(data))
 		end
 	elseif v == "lightningBurst" then
-		Library.lightning(at + Vector3.new(0, 28, 0), at, ELEMENT_COLORS.lightning, 0.5, simple)
-		Library.shockwave(at, radius, ELEMENT_COLORS.lightning, 0.35, simple)
+		local strike = entry and entry.strike
+		if entry and strike then
+			-- S115 (Thunderstorm): a bolt from the cloud, the entry's strike pieces and the bolt's own sound
+			Library.lightning(at + Vector3.new(0, Config.Vfx.cloudHeight, 0), at, color, 0.5, simple)
+			for _, name in strike do
+				piece(name, skill, entry, data, color, caster, nil, simple)
+			end
+			phaseSound(skill, "wave", at, caster, data)
+		else
+			Library.lightning(at + Vector3.new(0, 28, 0), at, ELEMENT_COLORS.lightning, 0.5, simple)
+			Library.shockwave(at, radius, ELEMENT_COLORS.lightning, 0.35, simple)
+		end
 	elseif v == "meteorImpact" then
-		Library.meteor(at, radius, 0.5, color, simple)
-		shakeNear(at, 0.3)
+		local strike = entry and entry.strike
+		if entry and strike then
+			-- S115 (Wrath of Elements): the rock falls fast (the server's points are random: it lands just after the
+			-- damage), then the entry's strike pieces and a shake; the cast's first strike (leadStrike) brings the main
+			-- sound and the entry's shake, the later ones their own sound and a smaller shake
+			local fall = Config.Vfx.stormFall
+			local id = casterKey(data)
+			local cast = if id then castWaves[id] else nil
+			local first = entry.leadStrike == true and cast ~= nil and cast.skill == skill.id and not cast.struck
+			if first and cast then
+				cast.struck = true
+			end
+			Library.meteor(at, radius, fall, color, simple, true)
+			Clock.after(fall, function()
+				for _, name in strike do
+					piece(name, skill, entry, data, color, caster, nil, simple)
+				end
+				if first then
+					shakeNear(at, entry.shake or 0.3)
+					playSound(skill, entry, at, caster, data)
+				else
+					shakeNear(at, 0.3)
+					phaseSound(skill, "wave", at, caster, data)
+				end
+			end)
+		else
+			Library.meteor(at, radius, 0.5, color, simple)
+			shakeNear(at, 0.3)
+		end
 	elseif v == "trapSet" then
-		Library.rune(at, radius, color, math.min(tonumber(data.d) or 8, 30), simple, circleOf(skill, entry))
+		-- S115: the breakpoint trap of a blink (Disengage, Blink 10B) lies as a snare too
+		local seconds = math.min(tonumber(data.d) or 8, 30)
+		Library.rune(at, radius, color, seconds, simple, circleOf(skill, entry))
+		laySnare(casterKey(data), at, color, seconds, simple, nil)
 	elseif v == "trapTrigger" then
+		-- S115: the snare of this trap goes, the trap's own sound plays
+		springSnare(casterKey(data), at, radius)
+		phaseSound(skill, "trigger", at, caster, data)
 		local trigger = entry and entry.trigger
 		if entry and trigger then
 			-- S77: the trap's own pieces (Venom Snare's cloud, Snarefield's cracks)
@@ -1023,6 +1314,15 @@ function VfxController.PreviewLoopUntil(skillId: string): number?
 	return previewLoop(skill, previewDef(skill))
 end
 
+-- AnimLab (S115): the waves (`w`) Preview casts the skill with, for the variant's control frames.
+function VfxController.PreviewHits(skillId: string): number?
+	local skill = SkillData.get(skillId)
+	if not skill or skill.type == "passive" then
+		return nil
+	end
+	return previewDef(skill).hits
+end
+
 function VfxController.Preview(model: Model, skillId: string)
 	local skill = SkillData.get(skillId)
 	if not skill or skill.type == "passive" then
@@ -1068,9 +1368,20 @@ function VfxController.Preview(model: Model, skillId: string)
 	Clock.after(delay, function()
 		local data: { [string]: any } =
 			{ s = skillId, c = id, r = def.radius, a = def.angle, l = def.length, w = def.width }
-		if skill.type == "circleTarget" or skill.type == "trap" or skill.type == "healZone" then
+		if skill.type == "projectile" then
+			data.p = front -- S115: the shot flies from the hand to the point in front (AnimLab, skills window)
+		elseif skill.type == "circleTarget" or skill.type == "trap" or skill.type == "healZone" then
 			data.p = front
 			data.d = def.delay
+			-- S115: an orb's flight from the release (Fireball), as the server's event says it; a per-wave skill's
+			-- wave lands WAVE_LAND after its event (Cataclysm's rock)
+			local entry = SkillVfx[skill.id]
+			if entry and entry.projectile and skill.type == "circleTarget" and root and front then
+				data.d = math.clamp((front - root.Position).Magnitude / 140, 0.05, 0.8)
+			elseif entry and entry.waves and skill.type == "circleTarget" then
+				data.d = WAVE_LAND
+				data.n = 1
+			end
 		elseif skill.type == "cone" or skill.type == "line" then
 			data.cf = if root then root.CFrame else nil
 		elseif skill.type == "circleSelf" or skill.type == "groupHeal" or skill.type == "groupBuff" then
@@ -1105,6 +1416,19 @@ function VfxController.Preview(model: Model, skillId: string)
 				end
 				data.c = PREVIEW_FALCON
 			end
+		end
+		-- S115: a ring of traps (Snarefield) sets one trap per point of its ring, as Movement.trap does
+		local count = math.floor((def.hits or 1) + 0.5)
+		local ring = def.ringRadius or 0
+		if skill.type == "trap" and count > 1 and ring > 0 and root and front then
+			local angle = SkillGeom.angle(root.Position.X, root.Position.Z, front.X, front.Z)
+			for i, point in SkillGeom.ringPoints(front.X, front.Z, ring, count, angle) do
+				local one = table.clone(data)
+				one.p = Vector3.new(point.x, front.Y, point.z)
+				one.n = i
+				onImpact(one, skill, model)
+			end
+			return
 		end
 		onImpact(data, skill, model)
 	end)

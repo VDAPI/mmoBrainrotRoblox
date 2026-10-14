@@ -100,6 +100,8 @@ AnimLab.VFX_PIECES = {
 	"lingering:poison",
 	"shieldArc", -- S114
 	"wings", -- S114
+	"snare", -- S115
+	"stormCloud", -- S115
 }
 -- `vfx` sub-commands that are not a piece.
 AnimLab.VFX_TOOLS = { "all", "tex", "stats" }
@@ -238,11 +240,15 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		end
 		return nil, "animlab.error.clip"
 	elseif action == "skill" then
+		-- S115: skill <id> [weapon type] (the actor's weapon: a crossbow, a staff …; default the path's or the class's)
 		local skill = a and Skills.get(a)
-		if not a or not skill or skill.type == "passive" or b ~= nil then
+		if not a or not skill or skill.type == "passive" or c ~= nil then
 			return nil, "animlab.error.skill"
 		end
-		return make("skill", a), nil
+		if b ~= nil and AttackMotions.byWeapon[b] == nil then
+			return nil, "animlab.error.skill"
+		end
+		return make("skill", a, b), nil
 	elseif action == "mob" then
 		if not a or not hasLook(a) then
 			return nil, "animlab.error.mob"

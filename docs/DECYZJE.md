@@ -3611,3 +3611,48 @@
   ślad Sztandaru (2,5) w miejscu wbicia, nie na całym promieniu.
 - **S114** Koszt (J1 / J3) odbiega od planu: `/animlab stress 20` krąży po wszystkich aktywnych umiejętnościach, bez
   zestawu ośmiu najcięższych i bez niskiej jakości; tabela J3 ma tylko koszt jednego rzutu z `SkillLooks.costOf`.
+- **S115** Pin czasów (`tests/fixtures/skill_timing.luau`) i bramka fal (`Logic/SkillFxWave`) z S114 obejmują już Łowcę i
+  Maga; S115 ich nie zmienia. Deszcz Strzał, runa i telegraf Burzy Piorunów i Gniewu Żywiołów były widoczne od S114
+  (fale z `n`); S115 dokłada wygląd.
+- **S115** Strzały Łowcy z jednej funkcji na parę póz (`ShotRig`: `aim`, `full`, `loose`, `after`, `reach`, `yaw`): łuk
+  (`BOW`, łuk pionowo w lewej dłoni, `lWrist` −60 jak atak podstawowy) i kusza (`CROSSBOW`, kąty ataku podstawowego S113,
+  odrzut barków 8° i lufy 6°) dają te same klucze; wariant `weapon = "crossbow"` dla 10 strzał (`crossbowOf`). Klucz
+  puszczenia zawsze w chwili `release` z serwera (Celny Strzał 0,58, Podwójny 0,16 / 0,31 / 0,46, Salwa od 0,22).
+- **S115** Salwa 5A daje od S90 +1 strzałę (8), nie +3: wariant `hits = 8` z obrotem do 0,70 (0,22 + 0,06 × strzały);
+  Podwójny Strzał `hits = 3`, Magiczny Pocisk `hits = 2`. Pole `w` (S114) dostało też zdarzenie `cast` celowania (`ct`).
+- **S115** Pocisk wylatuje z dłoni albo czubka broni (`SkillVfx.launch`, domyślnie dłoń z `glow`), z prędkością i limitem
+  lotu serwera (90 st./s, `Config.Vfx.shotMaxTime` 0,6 s; kula Kuli Ognia 140 / 0,8 od `release`, bez dawnego
+  wyprzedzenia 0,05 s), ze smugą `tex.projectile` (strzały `trailStreak`, Zatruta `beamPoison`, Burza `beamLightning`).
+- **S115** `meteor` to tylko spadający kamień: wpis wymienia składniki lądowania i ma `landsAfter` (Meteor: rdzeń, fala,
+  krater, dym, wstrząs i dźwięk po `d` = 1 / 0,5 s; Kataklizm: po `d` = 0,2 s fali; Kula Ognia: po locie kuli). Meteory
+  Gniewu Żywiołów spadają `Config.Vfx.stormFall` = 0,15 s po zdarzeniu (serwer losuje punkty i od razu zadaje obrażenia).
+- **S115** Nowe pola `SkillVfx`: `launch`, `strike` (składniki każdego uderzenia burzy: piorun `lightningBurst`, meteor
+  `meteorImpact`), `toss` (sidła lecą z dłoni po łuku i lądują w chwili `hit`; punkty pierścienia z `SkillGeom` jak
+  serwer), `rim` (Nagonka: strzały na obwodzie, nie w kole). Nowe składniki `snare` (sidła na ziemi przez `d`, znikają
+  przy `trapTrigger` najbliższe od tego rzucającego; też pułapka `trapSet` Odskoku 5A i Błysku 10B) i `stormCloud`
+  (chmura dymu nad Burzą Piorunów, pioruny z jej wysokości). Wiru (`vortex`) nie dodano: wir to `whirl` co falę.
+- **S115** Sokół: rdzeń (błysk, pióra, pierścień nurkowania) i `skill.falcon.strike` grają ze zdarzeniem
+  `falconStrike` / `falconDive` (wtedy serwer zadaje obrażenia); ptak pojawia się 2,5 st. obok celu (nurkowanie 6 st.
+  nad nim) i dolatuje w 0,06 s, pazury to ślad.
+- **S115** Strzał w Serce: świecąca dłoń trwa `ct` zdarzenia (+0,05 s), pętla naciągu ma te same pozy na końcach (bez
+  skoku przy zawinięciu), puszczenie 0,02 s po końcu pętli; linia celowania pulsuje szybciej pod koniec (część Neon, bez
+  tekstury). Strumień Arkanów: pętla 0,25–0,95 jest przypięta, więc odrzut co tyk widać w promieniu, nie w ramionach.
+- **S115** Wyładowanie Arkanów ma własną sylwetkę (broń pionowo jedną ręką, lewa ściąga Ładunki do czubka, pchnięcie
+  czubkiem z obrotem tułowia) i składniki rosnące z `ch` jak pocisk. Kostur: warianty `staff` Magicznego Pocisku, Kuli
+  Ognia i Wyładowania; Inwokacja 5B (`mv`) bez nóg i uniesienia.
+- **S115** Odrębność: zero duplikatów i zero par o tej samej sylwetce w Łowcy i Magu. Rozdzielone: Celny Strzał bokiem
+  (`root` −30°), Strzała Burzy w wykroku, Przebijająca w szerokim rozkroku bokiem; Namierzenie celuje łukiem, Znak Łowcy
+  wskazuje gołą ręką i kiwa głową; Gniew Żywiołów w rozkroku z ramionami na boki (Meteor: ramiona prosto).
+- **S115** Kamuflaż bez błysku (wyjątek warstw: rdzeniem jest kłąb dymu); Wir Żywiołów bez telegrafu (wir idzie za magiem).
+- **S115** Dźwięki: 32 klucze `skill.<id>` Łowcy i Maga, 7 `skill.<id>.cast`, `.trigger` trzech pułapek, `.wave` Burzy,
+  Gniewu i Kataklizmu, `skill.falcon.strike`; ID tylko z listy S111 w innej wysokości (twórca Roblox nie ma cięciw,
+  wybuchów ani grzmotów), puste: `skill.aimedShot.cast`, `skill.heartseeker.cast` (brak naciągu, jak `bow.draw`).
+  `SfxController` bez pętli: bez `.loop`. Wysokości w granicach testu S111 (0,85–1,15).
+- **S115** `/animlab skill <id> [typ broni]` (kusza, kostur …); podgląd pocisku leci do punktu przed postacią, sidła
+  pierścienia stają w każdym punkcie, kula Kuli Ognia z czasem lotu. Koszt: budżet `perCast` S114 bez zmian.
+- **S115** Gniew Żywiołów: dźwięk główny `skill.meteorStorm` i wstrząs 0,5 grają z pierwszym meteorem rzutu (pole
+  `SkillVfx.leadStrike`, pierwszy `meteorImpact` po zdarzeniu `cast` tego rzucającego), kolejne meteory `.wave` i 0,3.
+  Koło Kataklizmu trwa `w` fal (węzeł `cataclysm2`); koło Inwokacji 5B (`mv`) idzie za magiem.
+- **S115** `roll` dźwięków: strzały 80–100, obszary 100–120 st. (Meteor, Burza, Gniew i Kataklizm przycięte do 120);
+  ciche buffy (Kamuflaż 60, Namierzenie 70) poza tymi widełkami. Strumień Arkanów bez wariantu kosturu: ruch już trzyma
+  broń oburącz przed piersią (chwyt kosturu), wariant byłby kopią.

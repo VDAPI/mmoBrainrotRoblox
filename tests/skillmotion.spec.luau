@@ -1,8 +1,9 @@
 --!strict
 -- S28: skill animations (Data/SkillMotions + Logic/SkillPose), skill visuals (Data/SkillVfx), breakpoints
 -- (Logic/Skills.breakpointsAt / effective) and knockback (Logic/Knockback). S114: the server's times pinned
--- (tests/fixtures/skill_timing), motion variants (SkillPose.pick), the three layers and the signature of the Warrior's
--- and the Cleric's skills (tests/SkillLooks), the meaning of an impact's `n` (Logic/SkillFxWave).
+-- (tests/fixtures/skill_timing), motion variants (SkillPose.pick), the three layers and the signature of every class's
+-- skills (tests/SkillLooks; S114 Warrior and Cleric, S115 Hunter and Mage), the meaning of an impact's `n`
+-- (Logic/SkillFxWave). S115: shots and their crossbow variants, waves of arrows and bolts, snares, phase sounds.
 
 local Knockback = require("../src/shared/Logic/Knockback")
 local SkillData = require("../src/shared/Data/Skills")
@@ -73,6 +74,9 @@ for _, name in
 		-- S114
 		"shieldArc",
 		"wings",
+		-- S115
+		"snare",
+		"stormCloud",
 	}
 do
 	VFX_PIECES[name] = true
@@ -207,6 +211,12 @@ describe("Skill data (S28)", function()
 			local ally = entry.allyColor
 			expect(ally == nil or (string.sub(ally, 1, 1) == "#" and #ally == 7)).toBe(true)
 			expect(entry.object == nil or (entry.object == "banner" and id == "warBanner")).toBe(true)
+			-- S115: storm strike pieces
+			for _, name in entry.strike or {} do
+				if not VFX_PIECES[name] then
+					error(`{id}: unknown strike piece {name}`)
+				end
+			end
 			-- S77: trap trigger pieces, only on traps
 			local trigger = entry.trigger
 			if trigger then
@@ -521,7 +531,7 @@ describe("Mage S80 motions and looks", function()
 	end)
 end)
 
-describe("Warrior and Cleric looks (S114)", function()
+describe("Skill looks of every class (S114 Warrior and Cleric, S115 Hunter and Mage)", function()
 	local Config = require("../src/shared/Config")
 	local Sfx = require("../src/shared/Data/Sfx")
 	local SkillFxWave = require("../src/shared/Logic/SkillFxWave")
@@ -529,7 +539,7 @@ describe("Warrior and Cleric looks (S114)", function()
 	local Timing = require("./fixtures/skill_timing")
 	local VfxTextures = require("../src/shared/Data/VfxTextures")
 
-	local CLASSES = { Warrior = true, Cleric = true }
+	local CLASSES = { Warrior = true, Cleric = true, Hunter = true, Mage = true }
 	local function classSkills(): { SkillData.SkillDef }
 		local out = {}
 		for _, skill in actives() do
@@ -731,7 +741,13 @@ describe("Warrior and Cleric looks (S114)", function()
 			if id and suffix and id ~= "default" then
 				local skill = SkillData.get(id)
 				expect({ key, skill ~= nil and skill.type ~= "passive" }).toEqual({ key, true })
-				expect({ key, suffix == "cast" or key == "skill.guardianAngel.save" }).toEqual({ key, true })
+				-- S114 cast, S115 trigger (traps), wave (later waves, storm strikes), strike (the falcon)
+				local known = suffix == "cast"
+					or (suffix == "trigger" and skill ~= nil and skill.type == "trap")
+					or suffix == "wave"
+					or key == "skill.falcon.strike"
+					or key == "skill.guardianAngel.save"
+				expect({ key, known }).toEqual({ key, true })
 			end
 		end
 		table.sort(empty)
@@ -783,6 +799,8 @@ describe("Warrior and Cleric looks (S114)", function()
 			for _, name in SkillLooks.pieces(entry) do
 				listed[name] = true
 			end
+			-- S115: `projectile` is the trail of the entry's projectile
+			listed.projectile = entry.projectile ~= nil
 			for name, key in entry.tex or {} do
 				expect({ id, name, listed[name] == true, VfxTextures.get(key) ~= nil }).toEqual({ id, name, true, true })
 			end
@@ -814,6 +832,7 @@ describe("Warrior and Cleric looks (S114)", function()
 		-- reasons a skill shows no outline
 		local EXCEPT: { [string]: string } = {
 			bladeWhirl = "the whirl itself spins on the radius every wave; a ring would hide it",
+			elementalVortex = "the vortex follows the mage every wave; an outline at the start would mislead",
 		}
 		for _, skill in classSkills() do
 			local def: any = skill
@@ -821,6 +840,8 @@ describe("Warrior and Cleric looks (S114)", function()
 			local want: string? = nil
 			if skill.type == "cone" then
 				want = "cone"
+			elseif skill.type == "line" and damage then
+				want = "line"
 			elseif skill.type == "circleSelf" or skill.type == "circleTarget" or skill.type == "healZone" then
 				want = if damage or skill.type == "healZone" then "circle" else nil
 			elseif skill.type == "shout" and damage then
@@ -851,6 +872,188 @@ describe("Warrior and Cleric looks (S114)", function()
 		expect({ none.wave, none.target }).toEqual({ 1, 1 })
 		local bad = SkillFxWave.of("heal", nil, 0 / 0)
 		expect(bad.target).toBe(1)
+	end)
+end)
+
+describe("Hunter and Mage looks (S115)", function()
+	local Sfx = require("../src/shared/Data/Sfx")
+	local Timing = require("./fixtures/skill_timing")
+
+	local function keyNear(motion: SkillMotions.Motion, t: number, tolerance: number?): boolean
+		for _, key in motion.keys do
+			if math.abs(key.t - t) <= (tolerance or 0.03) then
+				return true
+			end
+		end
+		return false
+	end
+
+	local SHOTS = {
+		"aimedShot",
+		"doubleShot",
+		"venomArrow",
+		"volley",
+		"piercingArrow",
+		"stormArrow",
+		"heartseeker",
+		"drawBead",
+		"arrowRain",
+		"drive",
+	}
+
+	it("the pin covers every active skill of both classes", function()
+		for _, skill in actives() do
+			if skill.class == "Hunter" or skill.class == "Mage" then
+				expect({ skill.id, Timing.skills[skill.id] ~= nil }).toEqual({ skill.id, true })
+			end
+		end
+	end)
+
+	it("every shot of the Hunter has a crossbow variant; pick chooses it only for the crossbow", function()
+		for _, id in SHOTS do
+			local motion = assert(SkillMotions.get(id))
+			local crossbow = SkillPose.pick(motion, { weapon = "crossbow" })
+			expect({ id, crossbow ~= motion }).toEqual({ id, true })
+			expect({ id, SkillPose.pick(motion, { weapon = "bow" }) == motion }).toEqual({ id, true })
+		end
+		local aimed = assert(SkillMotions.get("aimedShot"))
+		expect(SkillPose.pick(aimed, { weapon = "crossbow" }) ~= aimed).toBe(true)
+		expect(SkillPose.pick(aimed, { weapon = "bow" })).toBe(aimed)
+		expect(SkillPose.pick(aimed, nil)).toBe(aimed)
+	end)
+
+	it("the arrow leaves at the release: a key at every server shot (bow and crossbow)", function()
+		local RELEASES: { [string]: { number } } = {
+			aimedShot = { 0.58 },
+			doubleShot = { 0.16, 0.31 },
+			venomArrow = { 0.36 },
+			stormArrow = { 0.58 },
+			piercingArrow = { 0.4 },
+			volley = { 0.22 },
+		}
+		for id, times in RELEASES do
+			local motion = assert(SkillMotions.get(id))
+			for _, m in { motion, SkillPose.pick(motion, { weapon = "crossbow" }) } do
+				for _, t in times do
+					expect({ id, t, keyNear(m, t) }).toEqual({ id, t, true })
+				end
+			end
+			-- the first release is the server's (the pin)
+			expect({ id, motion.release }).toEqual({ id, times[1] })
+		end
+		-- Heartseeker: the release just after the aim's loop ends (the server shoots then)
+		local heart = assert(SkillMotions.get("heartseeker"))
+		local loop = assert(heart.loop, "heartseeker loops its draw")
+		local released = false
+		for _, key in heart.keys do
+			if key.t > loop.to and key.t <= loop.to + 0.03 then
+				released = true
+			end
+		end
+		expect(released).toBe(true)
+		expect({ heart.hit, heart.release, heart.lock }).toEqual({ nil, nil, nil })
+	end)
+
+	it("waves of shots: Double Shot 3, Volley 8, Arcane Bolt 2; Evocation walking keeps its feet", function()
+		local double = assert(SkillMotions.get("doubleShot"))
+		local three = SkillPose.pick(double, { hits = 3 })
+		expect(three ~= double).toBe(true)
+		expect(keyNear(three, 0.46)).toBe(true)
+		expect(keyNear(double, 0.46)).toBe(false)
+		local volley = assert(SkillMotions.get("volley"))
+		local volleyDef: any = assert(SkillData.get("volley"))
+		local function turnEnd(m: SkillMotions.Motion): number
+			return m.keys[#m.keys - 1].t
+		end
+		expect(turnEnd(volley) >= 0.22 + 0.06 * volleyDef.hits - 1e-9).toBe(true)
+		local eight = SkillPose.pick(volley, { hits = 8 })
+		expect(eight ~= volley and turnEnd(eight) >= 0.7 - 1e-9).toBe(true)
+		local bolt = assert(SkillMotions.get("firebolt"))
+		local two = SkillPose.pick(bolt, { hits = 2 })
+		expect(two ~= bolt and keyNear(two, 0.31)).toBe(true)
+		expect(SkillPose.pick(bolt, { hits = 2, weapon = "staff" }) ~= two).toBe(true)
+		local evocation = assert(SkillMotions.get("evocation"))
+		local walking = SkillPose.pick(evocation, { move = true })
+		expect(walking ~= evocation).toBe(true)
+		for _, key in walking.keys do
+			for _, joint in { "rHip", "lHip", "rKnee", "lKnee", "root" } do
+				expect({ key.t, joint, key.pose[joint] }).toEqual({ key.t, joint, nil })
+			end
+		end
+	end)
+
+	it("a staff has its own Arcane Bolt, Fireball and Arcane Discharge", function()
+		for _, id in { "firebolt", "fireball", "arcaneDischarge" } do
+			local motion = assert(SkillMotions.get(id))
+			expect({ id, SkillPose.pick(motion, { weapon = "staff" }) ~= motion }).toEqual({ id, true })
+			expect({ id, SkillPose.pick(motion, { weapon = "wand" }) == motion }).toEqual({ id, true })
+		end
+	end)
+
+	it("looks of the two classes: launch, toss, strike, rim, falling rocks", function()
+		for id, entry in SkillVfx do
+			local skill = assert(SkillData.get(id))
+			local launch = entry.launch
+			if launch then
+				local valid = launch == "l" or launch == "r" or launch == "both" or launch == "weapon"
+				expect({ id, valid, entry.projectile ~= nil }).toEqual({ id, true, true })
+			end
+			local toss = entry.toss
+			if toss then
+				local motion = assert(SkillMotions.get(id))
+				local hit = motion.hit or 0
+				expect({ id, skill.type == "trap", toss.from <= toss.to, toss.to < hit }).toEqual({
+					id,
+					true,
+					true,
+					true,
+				})
+				expect({ id, table.find(entry.impact, "snare") ~= nil }).toEqual({ id, true })
+			end
+			if entry.strike then
+				expect({ id, skill.type == "circleTarget" }).toEqual({ id, true })
+			end
+			if entry.rim then
+				expect({ id, table.find(entry.impact, "arrowRain") ~= nil }).toEqual({ id, true })
+			end
+			-- the rock falls the event's `d`: its landing waits for it
+			if table.find(entry.impact, "meteor") then
+				expect({ id, entry.landsAfter == true }).toEqual({ id, true })
+			end
+		end
+		-- every trap of the Trapper lies as a snare and springs with its own pieces and core
+		for _, id in { "frostTrap", "venomSnare", "snarefield" } do
+			local entry = SkillVfx[id]
+			expect({ id, table.find(entry.impact, "snare") ~= nil }).toEqual({ id, true })
+			expect({ id, table.find(entry.trigger or {}, "impactFlash") ~= nil }).toEqual({ id, true })
+		end
+	end)
+
+	it("sounds: an own key for every skill, the phase keys the client plays", function()
+		for _, skill in actives() do
+			if skill.class == "Hunter" or skill.class == "Mage" then
+				expect({ skill.id, Sfx.has("skill." .. skill.id) }).toEqual({ skill.id, true })
+			end
+		end
+		for _, key in
+			{
+				"skill.aimedShot.cast",
+				"skill.stormArrow.cast",
+				"skill.heartseeker.cast",
+				"skill.meteor.cast",
+				"skill.meteorStorm.cast",
+				"skill.cataclysm.cast",
+				"skill.frostTrap.trigger",
+				"skill.venomSnare.trigger",
+				"skill.snarefield.trigger",
+				"skill.falcon.strike",
+				"skill.firewall.wave",
+				"skill.meteorStorm.wave",
+				"skill.cataclysm.wave",
+			}
+		do
+			expect({ key, Sfx.has(key) }).toEqual({ key, true })
+		end
 	end)
 end)
 

@@ -13,6 +13,8 @@
 -- hit.<material> and hit.crit (played together with the material), block, miss (also a dodge),
 -- skill.default.<strike|cast|blast|heal|buff|dash|trap|call>, skill.<skillId> (SkillVfx.sound names a key),
 -- skill.<skillId>.cast (S114: at the cast event, a long wind-up), skill.guardianAngel.save (S114: the angel's save),
+-- skill.<skillId>.trigger / .wave and skill.falcon.strike (S115: a trap springing, a later wave or a storm's strike,
+-- the falcon's strike),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error>. S112-S117 call sounds by these keys.
 
@@ -206,6 +208,14 @@ local CUTE_GOODBYE = "rbxassetid://15675081158"
 local TONAL_STINGER = "rbxassetid://15675043410"
 local SELECT_01 = "rbxassetid://10128760939"
 local SELECT_02 = "rbxassetid://10066968815"
+-- S115: more files of the S111 list (docs/ASSETS.md "Dźwięki (S111)")
+local WHOOSH_03 = "rbxassetid://15674975792"
+local SPLAT = "rbxassetid://12222152"
+local SWITCH = "rbxassetid://12222170"
+local SWEEP = "rbxassetid://15675046931"
+local WHISTLE_LOW = "rbxassetid://15675062723"
+local PING = "rbxassetid://12221990"
+local PAPER_SWIPE = "rbxassetid://15675037413"
 local LOW = { 0.85, 0.9 }
 local HEAVY = { 0.86, 0.94 }
 local MID = { 0.92, 1.0 }
@@ -254,6 +264,46 @@ local OWN: { [string]: Own } = {
 	brandOfLight = { hint = "searing hiss small bell", roll = 80 },
 	auraOfEndurance = { hint = "low organ chord", roll = 110 },
 	hammerOfHeaven = { hint = "rising whoosh thunder impact divine", roll = 120, ids = { BASS }, pitch = LOW },
+	-- Hunter (S115): a shot plays at the release (the hit's material comes with its damage), an area at its blow.
+	-- roll: shots 80-100, areas 100-120 (S115 B5)
+	aimedShot = { hint = "powerful bow release deep twang", roll = 90, ids = { SNAP }, pitch = { 0.85, 0.87 } },
+	doubleShot = { hint = "bow release quick twang", roll = 90, ids = { SNAP }, pitch = { 1, 1.08 } },
+	disengage = { hint = "jump flip whoosh soft landing", roll = 80, ids = { WHOOSH_02 }, pitch = MID },
+	arrowRain = { hint = "many arrows whistle rain impact", roll = 110, ids = { WHOOSH_03, SWOOSH }, pitch = MID },
+	venomArrow = { hint = "bow release with hiss poison", roll = 90, ids = { SNAP }, pitch = { 1.04, 1.12 } },
+	volley = { hint = "rapid series of bow releases", roll = 100, ids = { SNAP, SWOOSH }, pitch = { 1.06, 1.14 } },
+	piercingArrow = { hint = "heavy bow release whoosh through", roll = 100, ids = { SNAP }, pitch = { 0.85, 0.87 } },
+	drawBead = { hint = "quiet click bow string tension", roll = 70, ids = { SWITCH }, pitch = { 0.9, 0.98 } },
+	stormArrow = { hint = "thunder crack lightning arrow", roll = 110, ids = { BASS }, pitch = { 0.95, 1.05 } },
+	heartseeker = { hint = "mighty bow release deep twang", roll = 100, ids = { SNAP }, pitch = { 0.85, 0.87 } },
+	frostTrap = { hint = "trap click ice crackle", roll = 80, ids = { SWITCH }, pitch = { 0.86, 0.94 } },
+	venomSnare = { hint = "thrown net splat on ground", roll = 80, ids = { SPLAT }, pitch = MID },
+	camouflage = { hint = "leaves rustle cloak", roll = 60, ids = { PAPER_SWIPE }, pitch = { 0.85, 0.88 } },
+	snarefield = { hint = "metal snares rattle clicks", roll = 90, ids = { SWITCH }, pitch = { 1.05, 1.15 } },
+	falcon = { hint = "falcon screech bird call", roll = 110, ids = { WHISTLE_LOW }, pitch = { 1, 1.08 } },
+	huntersMark = { hint = "short hunter whistle", roll = 90, ids = { WHISTLE_LOW }, pitch = { 1.13, 1.15 } },
+	drive = { hint = "hunting horn and arrows whistle", roll = 120, ids = { WHOOSH_01, SWOOSH }, pitch = HEAVY },
+	-- Mage (S115): the element is heard in the hit (hit.<material>); spells by their shape
+	firebolt = { hint = "magic bolt fsst short", roll = 90, ids = { SWEEP }, pitch = { 1.02, 1.1 } },
+	fireball = { hint = "fireball explosion impact", roll = 120, ids = { BASS }, pitch = HEAVY },
+	iceShard = { hint = "glass whoosh ice crack", roll = 90, ids = { SNAP }, pitch = { 1.13, 1.15 } },
+	chainLightning = { hint = "electric zap chain crackle", roll = 100, ids = { PING, SNAP }, pitch = { 0.85, 0.9 } },
+	blink = { hint = "teleport fump magic", roll = 80, ids = { WHOOSH_04 }, pitch = { 1.1, 1.15 } },
+	frostNova = { hint = "ice freeze crackle burst", roll = 110, ids = { SNAP }, pitch = { 0.85, 0.88 } },
+	meteor = { hint = "meteor impact huge explosion", roll = 120, ids = { BASS }, pitch = { 0.85, 0.87 } },
+	firewall = { hint = "rising thunder rumble storm", roll = 120, ids = { BASS }, pitch = { 0.85, 0.87 } },
+	evocation = { hint = "arcane hum rising energy", roll = 80, ids = { SELECT_01 }, pitch = { 0.85, 0.87 } },
+	meteorStorm = { hint = "meteor shower impacts", roll = 120, ids = { BASS }, pitch = { 0.85, 0.9 } },
+	elementalVortex = {
+		hint = "magic wind vortex whoosh",
+		roll = 100,
+		ids = { SWOOSH, WHOOSH_01 },
+		pitch = { 0.9, 0.98 },
+	},
+	cataclysm = { hint = "massive magic explosion rumble", roll = 120, ids = { BASS }, pitch = { 0.85, 0.87 } },
+	manaShield = { hint = "glass hum magic shield", roll = 80, ids = { SELECT_02 }, pitch = { 0.85, 0.9 } },
+	arcaneDischarge = { hint = "arcane discharge blast", roll = 110, ids = { BASS }, pitch = { 0.94, 1.02 } },
+	arcaneTorrent = { hint = "arcane beam start hum", roll = 100, ids = { SWEEP }, pitch = { 0.85, 0.87 } },
 }
 -- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
 local CAST: { [string]: Own } = {
@@ -262,6 +312,42 @@ local CAST: { [string]: Own } = {
 	judgement = { hint = "jump whoosh holy rising", roll = 90, ids = { WHOOSH_04 }, pitch = MID },
 	hammerOfHeaven = { hint = "rising whoosh from the sky", roll = 110, ids = { WHOOSH_04 }, pitch = LOW },
 	guardianAngel = { hint = "angel rising choir short", roll = 110 },
+	-- S115: the draw of a long shot (no Roblox bow creak: bow.draw is empty too) and the call of a big spell
+	aimedShot = { hint = "bow string draw creak long", roll = 70 },
+	stormArrow = { hint = "distant thunder rumble", roll = 100, ids = { BASS }, pitch = { 0.85, 0.87 } },
+	heartseeker = { hint = "bow string draw creak long tense", roll = 70 },
+	fireball = { hint = "rising fire hiss", roll = 90, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
+	meteor = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
+	meteorStorm = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
+	cataclysm = { hint = "deep earth rumble summoning", roll = 120, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
+}
+-- S115: phase sounds: a trap springing (.trigger), a later wave or a storm's strike (.wave), the falcon's strike.
+local PHASE: { [string]: Own } = {
+	["frostTrap.trigger"] = { hint = "trap snap ice shatter", roll = 90, ids = { SNAP }, pitch = { 1.1, 1.15 } },
+	["venomSnare.trigger"] = { hint = "trap snap poison hiss", roll = 90, ids = { SWITCH }, pitch = { 0.85, 0.88 } },
+	["snarefield.trigger"] = { hint = "trap snap metal jaws", roll = 90, ids = { SWITCH }, pitch = { 0.86, 0.94 } },
+	["falcon.strike"] = { hint = "bird dive whoosh talons", roll = 90, ids = { SWOOSH }, pitch = { 1.1, 1.15 } },
+	["firewall.wave"] = {
+		hint = "lightning bolt crack",
+		roll = 110,
+		ids = { SNAP },
+		pitch = { 0.85, 0.87 },
+		volume = 0.5,
+	},
+	["meteorStorm.wave"] = {
+		hint = "small meteor impact",
+		roll = 110,
+		ids = { BASS },
+		pitch = { 1, 1.1 },
+		volume = 0.45,
+	},
+	["cataclysm.wave"] = {
+		hint = "explosion rumble wave",
+		roll = 120,
+		ids = { BASS },
+		pitch = { 0.85, 0.88 },
+		volume = 0.5,
+	},
 }
 for id, own in OWN do
 	defs["skill." .. id] = d(own.hint, own.volume or 0.65, own.roll, { ids = own.ids, pitch = own.pitch })
@@ -270,6 +356,9 @@ for id, own in CAST do
 	defs[`skill.{id}.cast`] = d(own.hint, own.volume or 0.55, own.roll, { ids = own.ids, pitch = own.pitch })
 end
 defs["skill.guardianAngel.save"] = d("angel save harp choir burst", 0.7, 120)
+for key, own in PHASE do
+	defs[`skill.{key}`] = d(own.hint, own.volume or 0.55, own.roll, { ids = own.ids, pitch = own.pitch })
+end
 
 -- Monsters: one set per family (DESIGN-16 §3); the attack plays at the attacker, the rest at the monster.
 local MOB_HINTS: { [string]: { attack: string, hurt: string, death: string, aggro: string } } = {

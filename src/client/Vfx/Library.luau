@@ -18,6 +18,10 @@
 --   old part segments by a texture as each piece says                           none
 -- Glowing circles on the ground (magicCircle, ringWave, rune) are an unlit image on a flat part's top face (any turn
 -- of a round image is right); a cutting arc is a flat Beam (double-sided) running forwards from the blow's origin.
+-- S115 (Hunter and Mage): projectile options (trail texture, flight cap, fixed time, lob, arrows stuck in the ground),
+-- a thrown "snare" shape, `snare` (a trap lying on the ground, plain parts), `stormCloud` (smoke puffs over a circle),
+-- `meteor` with `bare` (the falling rock only), the falcon reaching its target 0.06 s after the strike event (the core
+-- plays in VfxController with the event) and the aiming line pulsing faster as the aim runs out.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -44,6 +48,7 @@ export type FxOpts = {
 	speed: { number }?, -- S113 sparks: { min, max } studs/s (default 10..22)
 	life: { number }?, -- S113 sparks: { min, max } seconds (default 0.18..0.4)
 	gravity: number?, -- S113 sparks: studs/s² down (default 40)
+	follow: BasePart?, -- S115 magicCircle: the circle moves with this part (a channel cast while walking)
 }
 
 local rng = Random.new()
@@ -635,7 +640,7 @@ end
 
 -- Projectile -------------------------------------------------------------------------------------------------
 
-type Shape = "orb" | "arrow" | "shard" | "bolt" | "rock" | "die"
+type Shape = "orb" | "arrow" | "shard" | "bolt" | "rock" | "die" | "snare"
 
 local function projectilePart(shape: Shape, color: Color3, size: number): BasePart
 	if shape == "arrow" then
@@ -657,9 +662,34 @@ local function projectilePart(shape: Shape, color: Color3, size: number): BasePa
 		edge.Adornee = die
 		edge.Parent = die
 		return die
+	elseif shape == "snare" then
+		-- S115: a thrown snare (a flat dark net with the trap's colour), turning in flight
+		return Pool.part(
+			"Block",
+			color:Lerp(Color3.fromHex("#2A2420"), 0.5),
+			Vector3.new(1.1, 0.12, 1.1) * size,
+			Enum.Material.Metal,
+			0
+		)
 	end
 	return Pool.part("Ball", color, Vector3.one * size, Enum.Material.Neon, 0.05)
 end
+
+-- Options of a projectile. S115: `trail` = the trail's texture key (default trailSoft), `maxTime` = the cap of the
+-- flight (default 0.8; Offense.projectile's 0.6 for the shots of projectile skills), `time` = a fixed flight time
+-- (thrown snares land at the motion's hit), `arc` = the height of a lob, `stick` = seconds the arrow stays stuck where
+-- it lands (Arrow Rain).
+export type ProjectileOpts = {
+	size: number?,
+	speed: number?,
+	simple: boolean?,
+	onArrive: ((at: Vector3) -> ())?,
+	trail: string?,
+	maxTime: number?,
+	time: number?,
+	arc: number?,
+	stick: number?,
+}
 
 -- Flies from `from` to the target model (homing on its centre) or a point; calls onArrive at the end.
 function Library.projectile(
@@ -667,9 +697,9 @@ function Library.projectile(
 	target: Model | Vector3,
 	shape: Shape,
 	color: Color3,
-	options: { size: number?, speed: number?, simple: boolean?, onArrive: ((at: Vector3) -> ())? }?
+	options: ProjectileOpts?
 )
-	local o: { size: number?, speed: number?, simple: boolean?, onArrive: ((at: Vector3) -> ())? } = options or {}
+	local o: ProjectileOpts = options or {}
 	local size = o.size or 1
 	local speed = o.speed or 90
 	local p = projectilePart(shape, color, size)
@@ -686,13 +716,13 @@ function Library.projectile(
 		trail.Attachment1 = a1
 		trail.Color = ColorSequence.new(color)
 		trail.LightEmission = 1
-		trail.Lifetime = if shape == "arrow" then 0.12 else 0.25
+		trail.Lifetime = if shape == "arrow" then 0.14 else 0.25
 		trail.Transparency = NumberSequence.new(0.2, 1)
 		trail.WidthScale = NumberSequence.new(1, 0)
-		Textures.trail(trail, "trailSoft") -- S112
+		Textures.trail(trail, o.trail or "trailSoft") -- S112; S115: the skill's own streak (SkillVfx tex.projectile)
 		trail.Parent = p
 		Clock.track(trail)
-		if shape ~= "arrow" then
+		if shape ~= "arrow" and shape ~= "snare" then
 			light(p, color, 10, 1.5)
 			local e = Instance.new("ParticleEmitter")
 			e.Color = ColorSequence.new(color)
@@ -725,21 +755,36 @@ function Library.projectile(
 		return if m.Parent then centre(m) else from
 	end
 	local distance = (goal() - from).Magnitude
-	local total = math.clamp(distance / speed, 0.05, 0.8)
+	local total = o.time or math.clamp(distance / speed, 0.05, o.maxTime or 0.8)
+	local arc = o.arc or 0
+	local spinning = shape == "snare"
 	local connection: RBXScriptConnection
 	connection = RunService.Heartbeat:Connect(function(dt: number)
 		elapsed += Clock.dt(dt)
 		local to = goal()
 		local u = math.min(1, elapsed / total)
-		local at = from:Lerp(to, u)
-		if (to - at).Magnitude > 0.05 then
+		local at = from:Lerp(to, u) + Vector3.new(0, arc * 4 * u * (1 - u), 0)
+		if spinning then
+			p.CFrame = CFrame.new(at) * CFrame.Angles(0, elapsed * 14, 0.3)
+		elseif (to - at).Magnitude > 0.05 then
 			p.CFrame = CFrame.lookAt(at, to)
 		else
 			p.CFrame = CFrame.new(at) * p.CFrame.Rotation
 		end
 		if u >= 1 then
 			connection:Disconnect()
-			Pool.release(p)
+			if o.stick and o.stick > 0 then
+				-- S115: the arrow stays stuck in the ground a moment, its trail gone
+				for _, child in p:GetChildren() do
+					if child:IsA("Trail") then
+						child.Enabled = false
+					end
+				end
+				tween(p, o.stick, { Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+				Pool.later(p, o.stick + 0.02)
+			else
+				Pool.release(p)
+			end
 			if o.onArrive then
 				o.onArrive(to)
 			end
@@ -844,9 +889,12 @@ local function circleSurface(
 	color: Color3,
 	seconds: number,
 	key: string,
-	spin: number
+	spin: number,
+	follow: BasePart?
 ): (() -> ())?
 	local base = ground(at) + Vector3.new(0, SURFACE_LIFT, 0)
+	-- S115: a followed circle keeps its offset under the part (no raycast per frame)
+	local offset = if follow then base - follow.Position else nil
 	local holder, image = surfaceAt(key, CFrame.new(base), radius * 2, color)
 	if not holder or not image then
 		return nil
@@ -869,6 +917,9 @@ local function circleSurface(
 		if done then
 			return true
 		end
+		if follow and offset and follow.Parent then
+			base = follow.Position + offset
+		end
 		part.CFrame = CFrame.new(base) * CFrame.Angles(0, turn + (now - started) * spin, 0)
 		if now - started >= seconds then
 			finish()
@@ -890,11 +941,13 @@ function Library.rune(at: Vector3, radius: number, color: Color3, seconds: numbe
 end
 
 -- S112 E5: the body of magic and heal effects (later magic telegraphs, S117): a textured circle of opts.key (default
--- magicCircle) lying on the ground, turning at opts.spin (default Config.Vfx.spinStep), gone after `seconds`.
--- Returns its stop function. Without the texture: the old rune (no stop: it ends by itself).
+-- magicCircle) lying on the ground, turning at opts.spin (default Config.Vfx.spinStep), gone after `seconds`
+-- (S115: moving with opts.follow). Returns its stop function. Without the texture: the old rune (no stop: it ends by
+-- itself, in place).
 function Library.magicCircle(at: Vector3, radius: number, color: Color3, seconds: number, opts: FxOpts?): () -> ()
 	local o: FxOpts = opts or {}
-	local stop = circleSurface(at, radius, color, seconds, o.key or "magicCircle", o.spin or Config.Vfx.spinStep)
+	local stop =
+		circleSurface(at, radius, color, seconds, o.key or "magicCircle", o.spin or Config.Vfx.spinStep, o.follow)
 	if stop then
 		return stop
 	end
@@ -908,6 +961,84 @@ function Library.ringWave(at: Vector3, radius: number, color: Color3, opts: FxOp
 	local o: FxOpts = opts or {}
 	if not ringSurface(at, radius, color, o.seconds or 0.4, o.key) then
 		Library.shockwave(at, radius, color, 0.45, true)
+	end
+end
+
+-- S115: a snare of the Trapper lying on the ground for `seconds`: a dark iron plate with teeth of the trap's colour
+-- around it (`key` = "iceShard": ice crystals instead of teeth). Returns the function that takes it away at once (the
+-- trap sprang). Plain parts, no emitters; the simple version has half the teeth.
+local SNARE_PLATE = Color3.fromHex("#3A3530")
+function Library.snare(at: Vector3, color: Color3, seconds: number, simple: boolean?, key: string?): () -> ()
+	local base = ground(at) + Vector3.new(0, 0.1, 0)
+	local parts: { BasePart } = {}
+	local plate = Pool.part("Cylinder", SNARE_PLATE, Vector3.new(0.2, 1.9, 1.9), Enum.Material.Metal, 0)
+	plate.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
+	table.insert(parts, plate)
+	local crystal = key == "iceShard"
+	local teeth = if simple then 4 else 8
+	for i = 1, teeth do
+		local a = i / teeth * math.pi * 2
+		local tooth = if crystal
+			then Pool.part("Block", color, Vector3.new(0.28, 0.9, 0.28), Enum.Material.Glass, 0.15)
+			else Pool.part("Wedge", color, Vector3.new(0.14, 0.5, 0.34), Enum.Material.Metal, 0)
+		local spot = base + Vector3.new(math.cos(a) * 0.85, if crystal then 0.4 else 0.25, math.sin(a) * 0.85)
+		-- teeth lean inwards over the plate, crystals stand tilted outwards
+		tooth.CFrame = CFrame.lookAt(spot, base + Vector3.new(0, 0.25, 0))
+			* CFrame.Angles(math.rad(if crystal then -20 else 25), 0, 0)
+		table.insert(parts, tooth)
+	end
+	local done = false
+	local function stop()
+		if done then
+			return
+		end
+		done = true
+		for _, part in parts do
+			tween(part, 0.25, { Transparency = 1 })
+			Pool.later(part, 0.3)
+		end
+	end
+	Clock.after(math.max(0.5, seconds), stop)
+	return stop
+end
+
+-- S115: a dark storm cloud hanging Config.Vfx.cloudHeight studs over the circle for `seconds` (Thunderstorm): puffs of
+-- the smoke flipbook every 0.5 s across 1.4 r; without the texture one dark disc fading out.
+local CLOUD_DARK = Color3.fromHex("#2E3038")
+local CLOUD_EVERY = 0.5
+function Library.stormCloud(at: Vector3, radius: number, color: Color3, seconds: number, simple: boolean?)
+	local base = ground(at) + Vector3.new(0, Config.Vfx.cloudHeight, 0)
+	local tint = CLOUD_DARK:Lerp(color, 0.15)
+	if not Textures.id("smoke") then
+		local disc =
+			Pool.part("Cylinder", tint, Vector3.new(1.2, radius * 1.6, radius * 1.6), Enum.Material.SmoothPlastic, 0.45)
+		disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
+		Clock.after(seconds, function()
+			tween(disc, 0.5, { Transparency = 1 })
+		end)
+		Pool.later(disc, seconds + 0.55)
+		return
+	end
+	for i = 0, math.floor(seconds / CLOUD_EVERY) do
+		Clock.after(i * CLOUD_EVERY, function()
+			local holder = textured("smoke", CFrame.new(base))
+			if not holder then
+				return
+			end
+			burstFrom(holder, "smoke", tint, if simple then 2 else 4, {
+				simple = simple,
+				area = Vector3.new(radius * 1.4, 0.8, radius * 1.4),
+				speedMin = 0.2,
+				speedMax = 0.8,
+				lifeMin = 1.2,
+				lifeMax = 1.5,
+				rotation = NumberRange.new(0, 360),
+				rotSpeed = NumberRange.new(-12, 12),
+				sizeSeq = NumberSequence.new({ kp(0, radius * 0.45), kp(1, radius * 0.7) }),
+				transparency = NumberSequence.new({ kp(0, 0.7), kp(0.3, 0.3), kp(1, 1) }),
+				emission = 0,
+			})
+		end)
 	end
 end
 
@@ -1095,8 +1226,9 @@ function Library.telegraph(kind: "circle" | "cone" | "line", at: CFrame, a: numb
 	end
 end
 
--- Meteor: a burning rock falls on the point, then the impact.
-function Library.meteor(at: Vector3, radius: number, delay: number, color: Color3, simple: boolean?)
+-- Meteor: a burning rock falls on the point, then the impact. S115: `bare` = only the falling rock (the skill's entry
+-- lists its own landing pieces, SkillVfx landsAfter).
+function Library.meteor(at: Vector3, radius: number, delay: number, color: Color3, simple: boolean?, bare: boolean?)
 	local landing = ground(at)
 	local rock = Pool.part(
 		"Ball",
@@ -1123,9 +1255,17 @@ function Library.meteor(at: Vector3, radius: number, delay: number, color: Color
 		Clock.track(e)
 		light(rock, color, 16, 2)
 	end
-	tween(rock, math.max(0.2, delay), { CFrame = CFrame.new(landing) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-	Clock.after(math.max(0.2, delay), function()
+	-- S115: a fall shorter than 0.2 s (a wave's rock) starts lower, so it still reads as a fall
+	local fall = if bare then math.max(0.08, delay) else math.max(0.2, delay)
+	if fall < 0.2 then
+		rock.CFrame = CFrame.new(landing + Vector3.new(-6, 16, -3))
+	end
+	tween(rock, fall, { CFrame = CFrame.new(landing) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	Clock.after(fall, function()
 		Pool.release(rock)
+		if bare then
+			return
+		end
 		Library.smokePuff(landing, math.clamp(radius * 0.4, 1, 3), DUST_COLOR, { simple = simple }) -- S112
 		Library.burst(landing + Vector3.new(0, 1, 0), radius * 1.2, color, 0.4, simple)
 		Library.shockwave(landing, radius, color, 0.45, simple)
@@ -1203,13 +1343,22 @@ function Library.aimLine(caster: Model, target: Model?, point: Vector3?, color: 
 		p.Size = Vector3.new(0.15, 0.15, length)
 		p.CFrame = CFrame.lookAt((from + to) / 2, to)
 	end
-	local ends = Clock.now() + seconds
+	local started = Clock.now()
+	local ends = started + seconds
+	local phase = 0
+	local last = started
 	place()
 	connection = RunService.Heartbeat:Connect(function()
-		if Clock.now() >= ends then
+		local now = Clock.now()
+		if now >= ends then
 			stop()
 			return
 		end
+		-- S115: the line pulses faster as the aim runs out (6 -> 22 rad/s)
+		local u = math.clamp((now - started) / math.max(0.1, seconds), 0, 1)
+		phase += (now - last) * (6 + 16 * u * u)
+		last = now
+		p.Transparency = 0.15 + 0.35 * (0.5 + 0.5 * math.sin(phase))
 		place()
 	end)
 	return stop
@@ -1844,6 +1993,7 @@ local FALCON_RADIUS = 4
 local FALCON_HEIGHT = 8
 local FALCON_SPEED = 1.4 -- rad/s around the hunter
 local FALCON_FLAP = math.rad(25)
+local FALCON_REACH = 0.06 -- S115: seconds from beside the target to it (the damage came with the event)
 
 type Leg = { from: Vector3, to: () -> Vector3?, start: number, dur: number, done: (() -> ())? }
 
@@ -1974,18 +2124,20 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 			local now = Clock.now()
 			table.clear(legs)
 			local start = position
-			if dive then
-				local above = at()
-				if above then
-					start = above + Vector3.new(0, 14, 0)
-					position = start
-				end
+			-- S115: the server deals the damage with the event and the controller flashes the core then; the bird
+			-- appears right by the target (a dive just above it) and reaches it within FALCON_REACH, its claws a trail
+			local hitAt = at()
+			if hitAt then
+				local away = position - hitAt
+				local side = if away.Magnitude > 0.1 then away.Unit else Vector3.new(0, 1, 0)
+				start = if dive then hitAt + Vector3.new(0, 6, 0) else hitAt + side * 2.5
+				position = start
 			end
 			table.insert(legs, {
 				from = start,
 				to = at,
 				start = now,
-				dur = if dive then 0.18 else 0.22,
+				dur = if dive then FALCON_REACH + 0.02 else FALCON_REACH,
 				done = function()
 					local hit = at()
 					if not hit then
@@ -1993,7 +2145,6 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 					end
 					local look = if heading.Magnitude > 0.01 then heading.Unit else Vector3.new(0, 0, -1)
 					Library.slash(CFrame.lookAt(hit, hit + look), 2, 60, -60, color, 30, simple)
-					Library.burst(hit, 3, color, nil, simple)
 					-- S112: three feathers drifting down
 					local feathers = textured("feather", CFrame.new(hit))
 					if feathers then
@@ -2011,10 +2162,6 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 							rotSpeed = NumberRange.new(-120, 120),
 							emission = 0,
 						})
-					end
-					if dive then
-						Library.burst(hit, 6, color, nil, simple)
-						Library.shockwave(hit, 3, color, 0.35, simple)
 					end
 				end,
 			})

@@ -2,7 +2,8 @@
 -- Test helper (S114, B4): the three layers of a skill's look (DESIGN-16 §2.6) and the signature that tells two skills
 -- of one class apart (§2.7). Not a spec: tests/skillmotion.spec reads it.
 --   PIECE_LAYER  every SkillVfx piece -> "core" (the flash), "body" (the skill's shape) or "trail" (what stays a moment)
---   layersOf     the layers of an entry: every list (impact, land, trigger, allies), an object and a projectile (body)
+--   layersOf     the layers of an entry: every list (impact, land, trigger, allies, strike), an object and a projectile
+--                (body)
 --   LAYER_EXCEPT skills allowed to miss a layer, with the reason
 --   signature    silhouette at the event (6 joints, angles to 30°, the lift to 0.5 stud), whole-body flags over all keys
 --                and the set of pieces; a duplicate = two skills of one class equal in all three
@@ -42,6 +43,8 @@ SkillLooks.PIECE_LAYER = {
 	falcon = "body",
 	shieldArc = "body", -- S114
 	wings = "body", -- S114
+	snare = "body", -- S115
+	stormCloud = "body", -- S115
 	-- trail: what stays for 0.3-1.5 s
 	sparks = "trail",
 	dust = "trail",
@@ -53,9 +56,11 @@ SkillLooks.PIECE_LAYER = {
 	cloud = "trail",
 } :: { [string]: Layer }
 
--- Skills allowed to miss a layer (reason). Only Warrior and Cleric are held to three layers in S114 (S115: the rest).
+-- Skills allowed to miss a layer (reason). Every class is held to three layers (S114 Warrior and Cleric, S115 Hunter
+-- and Mage).
 SkillLooks.LAYER_EXCEPT = {
-	chainLightning = "the chain is drawn in code (VfxController chain branch: lightning + burst per link)",
+	chainLightning = "the body is the lightning of every link, drawn in code (VfxController chain branch)",
+	camouflage = "no flash: the core is the short smoke puff the hunter vanishes into",
 } :: { [string]: string }
 
 -- What a piece may hold at once at its peak on a PC near the camera (emitter / beam / light / decal-or-ground-image
@@ -75,7 +80,7 @@ SkillLooks.PIECE_COST = {
 	beam = c(0, 1, 0, 0),
 	lineBeam = c(2, 1, 1, 0),
 	skyBolt = c(2, 1, 1, 0),
-	meteor = c(3, 0, 2, 2),
+	meteor = c(1, 0, 1, 0), -- S115: the falling rock only (the entry lists its landing pieces)
 	arrowRain = c(0, 0, 0, 0),
 	fan = c(0, 0, 0, 0),
 	rune = c(0, 0, 0, 1),
@@ -87,6 +92,8 @@ SkillLooks.PIECE_COST = {
 	falcon = c(1, 0, 0, 0),
 	shieldArc = c(0, 0, 0, 0),
 	wings = c(2, 0, 0, 0),
+	snare = c(0, 0, 0, 0), -- S115: plain parts
+	stormCloud = c(4, 0, 0, 0), -- S115: a smoke burst every 0.5 s living 1.5 s
 	sparks = c(1, 0, 0, 0),
 	dust = c(2, 0, 0, 0),
 	smokePuff = c(1, 0, 0, 0),
@@ -107,7 +114,7 @@ local function pieces(entry: SkillVfx.Entry): { string }
 			table.insert(out, name)
 		end
 	end
-	for _, list in { entry.impact, entry.land or {}, entry.trigger or {}, entry.allies or {} } do
+	for _, list in { entry.impact, entry.land or {}, entry.trigger or {}, entry.allies or {}, entry.strike or {} } do
 		for _, name in list do
 			add(name)
 		end

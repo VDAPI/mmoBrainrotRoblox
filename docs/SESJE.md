@@ -9019,3 +9019,121 @@ ze stosami; pamięć poprzedniego celu łańcucha czyszczona po 0,5 s.
 `src/client/Controllers/{Vfx,Animation,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`, `tests/SkillLooks.luau`,
 `tests/fixtures/{skill_timing.luau,balance_paths.json}`, `tests/skillmotion.spec.luau`,
 `docs/{ANIMACJE,ASSETS,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.
+
+### S115: Umiejętności Łowcy i Maga: ruch, efekty i dźwięk
+
+Start na `56aa7d8` (S114; S113 i elementy serii na miejscu). S114 zrobiła wspólne narzędzia B1–B6, więc ta sesja ich
+używa i dopisuje warunki Łowcy i Maga. Zgodnie z poleceniem przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Ruch (`Data/SkillMotions`):** strzały Łowcy z jednej funkcji na parę póz (`ShotRig`: `BOW`, `CROSSBOW`,
+  `crossbowOf`), klucz puszczenia w chwili `release` serwera, warianty kuszy dla 10 strzał, `doubleShot` 3 strzały,
+  `volley` 8 strzał, `firebolt` 2 pociski i kostur, kostur Kuli Ognia i Wyładowania Arkanów, Inwokacja w marszu; nowe
+  sylwetki (Wyładowanie Arkanów, Celny Strzał bokiem, Strzała Burzy w wykroku, Znak Łowcy, Gniew Żywiołów w rozkroku).
+- **Wygląd (`Data/SkillVfx`, `Vfx/Library`, `VfxController`):** 32 wpisy w trzech warstwach na teksturach S112; pocisk
+  z dłoni / czubka broni z prędkością i limitem serwera; pola `launch`, `strike`, `toss`, `rim`; składniki `snare` i
+  `stormCloud`; `meteor` jako sam kamień z lądowaniem po `d`; sokół z rdzeniem w chwili obrażeń; sidła lecące do chwili
+  `hit`; strzały deszczu wbite w ziemię; świecąca dłoń celowania z `ct`; pulsująca linia celowania; wachlarz Salwy z `w`.
+- **Serwer:** `w = skill.hits` w zdarzeniu `cast` celowania (`SkillService`, tylko wygląd).
+- **Dźwięk (`Data/Sfx`):** 32 klucze `skill.<id>`, 7 `.cast`, 3 `.trigger`, 3 `.wave`, `skill.falcon.strike`; grane w
+  `VfxController` (`phaseSound`).
+- **AnimLab:** `skill <id> [typ broni]`, `vfx snare`, `vfx stormCloud`; podgląd pocisków, pierścienia sideł i lotu kuli.
+- **Po przeglądzie:** Gniew Żywiołów gra dźwięk główny i wstrząs 0,5 z pierwszym meteorem (`SkillVfx.leadStrike`), nie
+  przy zdarzeniu; koło Kataklizmu trwa przez fale z `w` (węzeł `cataclysm2`); podgląd Kataklizmu z `d` = 0,2 fali;
+  koło Inwokacji 5B idzie z magiem (`FxOpts.follow`); nurkowanie sokoła z podwójnym błyskiem; klatki kontrolne AnimLab
+  z wariantu aktora (`MotionKeys.skill(id, loop, ctx)`); `roll` obszarów najwyżej 120 st.
+- **Testy:** blok „Skill looks of every class (S114 Warrior and Cleric, S115 Hunter and Mage)” obejmuje teraz cztery
+  klasy (warstwy, budżet, tekstury, odrębność, telegrafy, klucze dźwięku); nowy blok „Hunter and Mage looks (S115)”
+  (pin, kusza, puszczenia, warianty fal, kostur, pola wpisu, klucze faz); `motionkeys.spec` (argument broni).
+- **Fixture balansu:** `tests/fixtures/balance_paths.json` przeliczony (`--fixture-paths`): tylko skrót danych.
+
+Studio przez MCP: połączone, Rojo zsynchronizowany. Tym razem `screen_capture` z `camera_position` pokazuje obraz 3D
+(w S110–S114 był sam interfejs), więc część klatek obejrzana na zrzutach (`build/` nie powstał: zrzuty tylko w rozmowie).
+Play przez „Graj” (postać Łowcy poziomu 1), `/animlab on`, wszystkie 32 umiejętności `skill <id>` bez błędu w konsoli
+(klatki kontrolne w Output, `release` / `hit` równe pinowi), dźwięki `sfx <klucz>` wczytane, koszt `stress 20`; Play
+zatrzymany, miejsce niezapisane, folder przesłuchań nieużywany.
+
+1) Nazwy serii (plan → kod): wszystkie jak w planie i w S114 (`docs/ANIMACJE.md`, `Data/Sfx`, `SfxController`,
+`Data/VfxTextures`, `/animlab`, `SkillMotions.<id>.clip`, `Vfx/Clock`, `MotionKeys.skill`, `SkillPose.pick`,
+`Logic/SkillFxWave`, `tests/SkillLooks`, `Config.Vfx.perCast`); `SfxController` bez pętli i zatrzymania.
+
+2) Ruch (klatki: „zrzut” = obejrzane w Studio, „dane” = liczby i testy):
+
+| Umiejętność | Co było źle | Co zmieniono | Klatki |
+|---|---|---|---|
+| `aimedShot` | puszczenie 0,62 przy wylocie 0,58; łuk leżał (`lWrist` 0) | puszczenie 0,58, ręka za ucho 0,66, drżenie łokcia, bokiem do celu, łuk pionowo; kusza | zrzut (0,5 / 0,58, łuk i kusza), dane |
+| `doubleShot` | puszczenia 0,18 / 0,35 przy strzałach 0,16 / 0,31; 5A bez trzeciego naciągu | puszczenia 0,16 / 0,31 (/ 0,46), dłoń do kołczanu (kusza: korba) między nimi | dane |
+| `disengage` | lądowanie z rękami na boki | lądowanie z łukiem uniesionym | dane |
+| `arrowRain` | puszczenie 0,32; strzały niewidoczne do S114 | puszczenie 0,30, wybrzmienie, strzały wbite 0,6 s, błyski co trzecia | dane |
+| `venomArrow` | puszczenie 0,38 przy 0,36 | 0,36, wybrzmienie 0,44 | dane |
+| `volley` | obrót kończył się 0,36, strzały do 0,64 | obrót do ostatniej strzały (0,64 / 0,70 z 5A), wachlarz od lewej do prawej co 0,06 | dane |
+| `piercingArrow` | celował 27° w prawo | szeroki rozkrok bokiem z tułowiem ku celowi, naciąg znad głowy 0,2; ciężka kusza z klęku | dane |
+| `drawBead` | ta sama sylwetka co Znak Łowcy (wskazanie) | łuk wycelowany i cięciwa przy oku w 0,25 | dane |
+| `stormArrow` | puszczenie 0,60; sylwetka jak Celny Strzał | puszczenie 0,58, wykrok | dane |
+| `heartseeker` | pętla zawijała się ze skokiem pozy; puszczenie 0,86; świecąca dłoń stałe 1,5 s | końce pętli te same, oddech w środku, puszczenie 0,82, dłoń przez `ct` | dane |
+| `frostTrap` | dłoń na ziemi 0,45, zdarzenie 0,35 | dotknięcie ziemi w 0,35 | dane |
+| `venomSnare` | runa w punkcie bez lotu | rzut 0,14, sidła lecą i lądują w 0,34 | dane |
+| `snarefield` | j.w. | sidła wylatują 0,2–0,4 i lądują na pierścieniu w 0,45 | zrzut (0,36 lot, 0,7 góra), dane |
+| `falcon` | błysk i pazury 0,22 s po obrażeniach | rdzeń ze zdarzeniem, ptak dolatuje w 0,06 s | dane |
+| `huntersMark` | ta sama sylwetka co Namierzenie | goła ręka wysoko, skinienie 0,32 | dane |
+| `firebolt` | wylot bez celowania czubkiem | czubek do celu (kąty ataku różdżki S113), 10B drugi wylot 0,31, kostur | dane |
+| `fireball` | kula 0,05 s przed wylotem z piersi; wybuch przed doleceniem kuli | kula z dłoni w 0,38, wybuch po locie (`landsAfter`), kostur | zrzut (0,46), dane |
+| `iceShard`, `chainLightning`, `blink`, `frostNova` | bez wybrzmienia | wybrzmienie; łańcuch gra rdzeń i ślad na każdym celu | dane |
+| `meteor` | wstrząs i dźwięk przy zdarzeniu, upadek 1 s później | szczyt ramion 0,6, opuszczenie 0,8; rdzeń, wstrząs, dźwięk po `d` | dane |
+| `firewall` | runa bez chmury | chmura `stormCloud`, pioruny z chmury ze śladem i dźwiękiem | dane |
+| `meteorStorm` | sylwetka jak Meteor | rozkrok, ramiona na boki; meteory 0,15 s z rdzeniem i falą | dane |
+| `cataclysm` | meteor i fala każdej fali przed upadkiem | kamień pierwszej fali, reszta po 0,2 s; koło przez wszystkie fale, słabszy wstrząs | dane |
+| `arcaneDischarge` | sylwetka jak Kula Ognia | broń pionowo, ściąganie Ładunków, pchnięcie czubkiem; kostur | dane |
+| `evocation` | 5B: sunięcie w powietrzu | wariant `move` bez nóg i uniesienia | dane |
+| `arcaneTorrent` | promień bez tekstury | `beamArcane`, błysk co tyk, iskry przy czubku (pętla przypięta) | dane |
+| reszta (`camouflage`, `manaShield`, `elementalVortex`, `drive`) | bez uwag z danych | tylko efekty i dźwięk | dane |
+
+3) Dźwięki: tabela w `docs/ASSETS.md` → „Dźwięki (S111)” (S115); 2 klucze puste (`skill.aimedShot.cast`,
+`skill.heartseeker.cast`), reszta z ID (wczytane w Play).
+
+4) Tekstury: nazwy robocze planu = klucze `VfxTextures.ORDER`; użyte `trailStreak` (strzały, pas Przebijającej, promień
+Strzału w Serce, smuga Odskoku), `beamPoison` (Zatruta Strzała), `beamLightning` (Strzała Burzy), `beamArcane` (Błysk,
+Strumień), `iceShard` (sidła lodu, odłamki), `feather` (Odskok, sokół), `darkSpark` (Strzał w Serce), `slashWide` (Wir),
+`smoke` (Kamuflaż, chmura), runy klas (`rune`, `magicCircle`).
+
+5) Przełomy i warianty (H6):
+
+| Umiejętność | Przełom / broń | Co zmienia w wyglądzie | Jak |
+|---|---|---|---|
+| 10 strzał Łowcy | kusza / ciężka kusza | kolba przy policzku, odrzut, korba | wariant `weapon = "crossbow"` |
+| `doubleShot` | 5A +1 strzała | trzeci naciąg 0,46 | wariant `hits = 3` (z `w`) |
+| `volley` | 5A +1 strzała (od S90; plan zakładał +3) | obrót do 0,70, 8 strzał w wachlarzu | wariant `hits = 8`, `w` w wachlarzu |
+| `firebolt` | 10B +1 pocisk, kostur | drugie machnięcie 0,31; pchnięcie czubkiem | wariant `hits = 2`, `weapon = "staff"` |
+| `fireball`, `arcaneDischarge` | kostur | kostur pionowo / oburącz | wariant `weapon = "staff"` |
+| `evocation` | 5B `channelMove` | dłonie krążą, nogi idą | wariant `move` |
+| `arcaneTorrent` | 5B `channelMove` | ruch już bez nóg | nic |
+| `arrowRain` 10B, `firewall` 5A, `meteorStorm` 5A, `cataclysm` / `elementalVortex` węzły, `snarefield` węzeł, `frostTrap` 10B | więcej fal / pułapek | liczba z `n` / `w` / zdarzeń | zdarzenie |
+| obszary 5A / 10A (`arrowRain`, `stormArrow`, `frostNova`, `drive`, …) | promień | rozmiar ze zdarzenia | nic |
+| `heartseeker` węzeł `sniper` | krótsze celowanie | pętla i świecąca dłoń z `ct` | zdarzenie |
+| `meteor` 5A | szybszy upadek | `d` zdarzenia | zdarzenie |
+| `disengage` 5A, `blink` 10B | pułapka w punkcie startu | sidła i runa (`trapSet`) | zdarzenie |
+| dodatki (`pierce`, `splash`, `echo`, `lingering`, `pull`, `split`) | 5A–10B | wygląd S112 w kolorze wpisu | nic |
+
+6) Odrębność (I): zero duplikatów i zero par o tej samej sylwetce w chwili trafienia w Łowcy i Magu (raport testu).
+Rozdzielone w tej sesji: `aimedShot` / `doubleShot` / `stormArrow` (bokiem / stojąc / wykrok), `piercingArrow` /
+`venomArrow` (rozkrok bokiem / przysiad), `drawBead` / `huntersMark` (łuk wycelowany / goła ręka i skinienie),
+`fireball` / `arcaneDischarge` (biodro / broń pionowo i pchnięcie czubkiem), `meteor` / `meteorStorm` (ramiona prosto /
+rozkrok i na boki). `arrowRain` / `drive` różnią się obrotem tułowia i strzałami na obwodzie; pułapki kształtem sideł
+(kryształy lodu / zielone szczęki / szczęki klasy), kolorem i wyzwoleniem.
+
+7) Koszt (J, Play, `/animlab stress 20` przez 12 s po 8 s rozbiegu, odczyt co 2 s): efekty 34–38 / 40, emitery 17–33 / 48,
+promienie 0–3 / 20, ślady 1–6 / 24, koła na ziemi 0–6, światła 0 (manekiny daleko od kamery: wersja prosta),
+`HeartbeatTimeMs` średnio 0,56 ms, najwyżej 0,78 ms, 60 FPS fizyki. Jeden rzut (`SkillLooks.costOf`: emitery / promienie /
+światła / ślady; budżet `perCast` 6 / 3 / 2 / 3): `falcon` 6/0/1/0, `aimedShot`, `stormArrow`, `piercingArrow`,
+`disengage` 5/≤1/≤2/≤1, `meteor` i `cataclysm` 4/0/2/3, `fireball` 4/0/1/2, `firewall` 4/0/0/1 (+ uderzenia), reszta ≤ 4.
+Zestawu ośmiu najcięższych (J1) i niskiej jakości nie zmierzono (jak S114: `stress` krąży po wszystkich umiejętnościach,
+`execute_luau` ma osobną kopię modułów).
+
+8) A3: bramka fal i fale Deszczu Strzał z `n` były już w S114 (`Logic/SkillFxWave`); runa i telegraf Burzy Piorunów i
+Gniewu Żywiołów grały od S114 w pierwszym (jedynym) zdarzeniu. S115 dodała strzały wbite w ziemię i wachlarz z `w`.
+
+9) Pliki: `src/shared/Data/{SkillMotions,SkillVfx,Sfx}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Config.luau`, `src/shared/Logic/{AnimLab,MotionKeys}.luau`, `src/server/Services/SkillService.luau`,
+`src/client/Controllers/{Vfx,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`, `tests/SkillLooks.luau`,
+`tests/{skillmotion,motionkeys}.spec.luau`, `tests/fixtures/balance_paths.json`,
+`docs/{ANIMACJE,ASSETS,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.

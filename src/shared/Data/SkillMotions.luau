@@ -155,24 +155,6 @@ local SLAMMED: Pose = {
 	lElbow = { 10, 0, 0 },
 }
 
--- Bow (left hand): drawn to the cheek / released.
-local BOW_DRAW: Pose = {
-	lShoulder = { 90, 28, 0 },
-	lElbow = { 0, 0, 0 },
-	lWrist = { 0, 0, 0 },
-	rShoulder = { 90, -45, 0 },
-	rElbow = { 120, 0, 0 },
-	rWrist = { 0, 0, 0 },
-	waist = { 0, -28, 0 },
-}
-local BOW_LOOSE: Pose = {
-	lShoulder = { 95, 28, 0 },
-	lElbow = { 0, 0, 0 },
-	rShoulder = { 88, -68, 0 },
-	rElbow = { 150, 0, 0 },
-	waist = { 0, -28, 0 },
-}
-
 -- Warrior poses shared by several motions (S74).
 -- Battle Cry: the weapon thrust up, the roar.
 local ROAR: Pose = merge(STAND, {
@@ -663,31 +645,193 @@ motions.titansWrath = {
 
 -- Hunter -----------------------------------------------------------------------------------------------------
 
--- Aimed Shot: a long draw, a still moment of aiming, release.
-motions.aimedShot = {
-	keys = {
-		k(0.4, merge(BOW_DRAW, { rElbow = { 135, 0, 0 }, waist = { 0, -32, 0 } }), "out"),
-		k(0.55, merge(BOW_DRAW, { rElbow = { 140, 0, 0 }, rShoulder = { 90, -50, 0 }, waist = { 0, -32, 0 } })),
-		k(0.62, merge(BOW_LOOSE, { waist = { 4, -32, 0 } }), "out"),
+-- S115 (DESIGN-16 §6): every shot is built by one function from a shooting rig, so a crossbow plays the same shot with
+-- its own hold (a `weapon = "crossbow"` variant, never a copy of the keys). The bow stands upright in the LEFT hand
+-- (lWrist -60 as the basic attack, Data/AttackMotions bow): `aim` = the string half drawn, `full` = drawn to the cheek,
+-- `loose` = the right hand snapped back past the ear (the arrow leaves: a key exactly at the release), `after` = the
+-- hand settling behind the ear, `reach` = the right hand at the quiver over the right shoulder (the next arrow). The
+-- crossbow (Data/AttackMotions crossbow): the stock at the cheek, the left hand under the fore-end, the right on the
+-- trigger (`aim` / `full`), `loose` = the kick (shoulders back 8°, the bolt up 6°), `reach` = the right hand cranking at
+-- the stock. `yaw` = how far the upper body turns side-on.
+export type ShotRig = { aim: Pose, full: Pose, loose: Pose, after: Pose, reach: Pose, yaw: number }
+
+local BOW: ShotRig = {
+	aim = {
+		lShoulder = { 90, 28, 0 },
+		lElbow = { 0, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		rShoulder = { 90, -45, 0 },
+		rElbow = { 120, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		waist = { 0, -28, 0 },
 	},
+	full = {
+		lShoulder = { 90, 28, 0 },
+		lElbow = { 0, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		rShoulder = { 90, -50, 0 },
+		rElbow = { 140, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		waist = { 0, -28, 0 },
+	},
+	loose = {
+		lShoulder = { 95, 28, 0 },
+		lElbow = { 0, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		rShoulder = { 88, -68, 0 },
+		rElbow = { 150, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		waist = { 0, -28, 0 },
+	},
+	after = {
+		lShoulder = { 94, 28, 0 },
+		lElbow = { 0, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		rShoulder = { 85, -80, 0 },
+		rElbow = { 140, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		waist = { 0, -28, 0 },
+	},
+	reach = {
+		lShoulder = { 82, 28, 0 },
+		lElbow = { 0, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		rShoulder = { 150, -10, 25 },
+		rElbow = { 120, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		waist = { 0, -24, 0 },
+	},
+	yaw = -28,
+}
+
+local CROSSBOW: ShotRig = {
+	aim = {
+		rShoulder = { 55, 30, 0 },
+		rElbow = { 60, 0, 0 },
+		rWrist = { -40, 0, 0 },
+		lShoulder = { 60, 12, 0 },
+		lElbow = { 10, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		waist = { 0, -8, 0 },
+	},
+	full = {
+		rShoulder = { 62, 30, 0 },
+		rElbow = { 65, 0, 0 },
+		rWrist = { -40, 0, 0 },
+		lShoulder = { 66, 12, 0 },
+		lElbow = { 10, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		waist = { 0, -8, 0 },
+	},
+	loose = {
+		rShoulder = { 68, 30, 0 },
+		rElbow = { 65, 0, 0 },
+		rWrist = { -40, 0, 0 },
+		lShoulder = { 72, 12, 0 },
+		lElbow = { 10, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		waist = { 8, -8, 0 },
+	},
+	after = {
+		rShoulder = { 64, 30, 0 },
+		rElbow = { 65, 0, 0 },
+		rWrist = { -40, 0, 0 },
+		lShoulder = { 68, 12, 0 },
+		lElbow = { 10, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		waist = { 4, -8, 0 },
+	},
+	reach = {
+		rShoulder = { 35, 10, 0 },
+		rElbow = { 95, 0, 0 },
+		rWrist = { 0, 0, 0 },
+		lShoulder = { 50, 12, 0 },
+		lElbow = { 20, 0, 0 },
+		lWrist = { -60, 0, 0 },
+		waist = { -6, -8, 0 },
+	},
+	yaw = -8,
+}
+
+-- The upper body of a shot: leaning back by `lean` (+ back) and turned `extra` degrees past the rig's side-on yaw.
+local function body(rig: ShotRig, lean: number, extra: number?): Pose
+	return { waist = { lean, rig.yaw + (extra or 0), 0 } }
+end
+
+-- Both arms raised by `deg` (a shot at the sky, a bow lifted to the clouds).
+local function lifted(pose: Pose, deg: number): Pose
+	local out = table.clone(pose)
+	for _, joint in { "lShoulder", "rShoulder" } do
+		local v = pose[joint]
+		if v then
+			out[joint] = { v[1] + deg, v[2], v[3] }
+		end
+	end
+	return out
+end
+
+-- The drawing elbow a little tighter (the tremble of a held draw).
+local function tremble(pose: Pose, deg: number): Pose
+	local v = pose.rElbow or { 0, 0, 0 }
+	return merge(pose, { rElbow = { v[1] + deg, v[2], v[3] } })
+end
+
+-- The crossbow variant of a shot built by `build` (and of its waves, `hits`).
+local function crossbowOf(build: (ShotRig) -> { Key }, hits: number?): Variant
+	return variant({ weapon = "crossbow", hits = hits, keys = build(CROSSBOW) })
+end
+
+-- Aimed Shot: a long draw to the cheek (0.4), a still moment with the elbow trembling, the release exactly at the
+-- server's release (0.58), the right hand thrown back behind the ear (0.66).
+-- The whole body stands side-on (root turned 30° right, the chest turned back so the weapon still aims at the target).
+local SIDE_ON: Pose = { root = { 0, -30, 0, 0 } }
+local function aimedShotKeys(rig: ShotRig): { Key }
+	return {
+		k(0.4, merge(rig.full, body(rig, 0, 30), SIDE_ON), "out"),
+		k(0.48, merge(tremble(rig.full, 3), body(rig, 0, 30), SIDE_ON), "inOut"),
+		k(0.55, merge(rig.full, body(rig, 0, 30), SIDE_ON), "inOut"),
+		k(0.58, merge(rig.loose, body(rig, 3, 30), SIDE_ON), "out"),
+		k(0.66, merge(rig.after, body(rig, 4, 30), SIDE_ON), "out"),
+	}
+end
+motions.aimedShot = {
+	keys = aimedShotKeys(BOW),
 	recover = 0.3,
 	release = 0.58,
 	lock = true,
+	variants = { crossbowOf(aimedShotKeys) },
 }
 
--- Double Shot: two quick draws.
+-- Double Shot: quick draws without the full stretch; each arrow leaves at its server shot (release 0.16, then every
+-- `interval` 0.15: 0.31, 0.46 with 5A), the right hand at the quiver (a crossbow: the crank) between two shots.
+local DOUBLE_STEP = 0.15 -- seconds between two arrows (Data/Skills/Hunter doubleShot interval)
+local function doubleShotKeys(shots: number): (ShotRig) -> { Key }
+	return function(rig: ShotRig): { Key }
+		local keys = { k(0.12, rig.full, "out"), k(0.16, rig.loose, "out") }
+		local last = 0.16
+		for shot = 2, shots do
+			last = 0.16 + (shot - 1) * DOUBLE_STEP
+			table.insert(keys, k(last - 0.09, rig.reach, "out"))
+			table.insert(keys, k(last - 0.04, rig.full, "out"))
+			table.insert(keys, k(last, rig.loose, "out"))
+		end
+		table.insert(keys, k(last + 0.08, rig.after, "out"))
+		return keys
+	end
+end
 motions.doubleShot = {
-	keys = {
-		k(0.13, BOW_DRAW, "out"),
-		k(0.18, BOW_LOOSE, "out"),
-		k(0.3, BOW_DRAW, "out"),
-		k(0.35, BOW_LOOSE, "out"),
-	},
+	keys = doubleShotKeys(2)(BOW),
 	recover = 0.25,
 	release = 0.16,
+	variants = {
+		crossbowOf(doubleShotKeys(3), 3),
+		crossbowOf(doubleShotKeys(2)),
+		variant({ hits = 3, keys = doubleShotKeys(3)(BOW) }),
+	},
 }
 
--- Disengage: a crouch and a backflip (the server moves the body back at once).
+-- Disengage: a crouch and a backflip (the server moves the body back at once), landing crouched with the bow already
+-- raised at the enemy (0.5).
 motions.disengage = {
 	keys = {
 		k(
@@ -707,7 +851,15 @@ motions.disengage = {
 		),
 		k(
 			0.52,
-			merge(crouch(0.8), { root = { 360, 0, 0, -0.7 }, rShoulder = { 40, 0, 40 }, lShoulder = { 40, 0, -40 } }),
+			merge(crouch(0.8), {
+				root = { 360, 0, 0, -0.7 },
+				rShoulder = { 70, -30, 20 },
+				rElbow = { 90, 0, 0 },
+				lShoulder = { 82, 25, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { 0, -20, 0 },
+			}),
 			"out"
 		),
 	},
@@ -716,73 +868,70 @@ motions.disengage = {
 	land = 0.5,
 }
 
--- Arrow Rain: the bow aimed at the sky, the body leaning back.
+-- Arrow Rain: the bow aimed high at the sky, the body leaning back, the release at the event (0.3) and the eyes up.
+local function arrowRainKeys(rig: ShotRig): { Key }
+	return {
+		k(0.2, merge(STAND, lifted(rig.aim, 70), body(rig, 22, 8), { root = { 6, 0, 0, 0 } }), "out"),
+		k(0.27, merge(STAND, lifted(rig.full, 75), body(rig, 26, 8), { root = { 7, 0, 0, 0 } }), "inOut"),
+		k(0.3, merge(STAND, lifted(rig.loose, 75), body(rig, 28, 8), { root = { 7, 0, 0, 0 } }), "out"),
+		k(0.42, merge(STAND, lifted(rig.after, 70), body(rig, 24, 8), { root = { 5, 0, 0, 0 } }), "out"),
+	}
+end
 motions.arrowRain = {
-	keys = {
-		k(
-			0.25,
-			merge(STAND, {
-				lShoulder = { 165, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 150, -35, 0 },
-				rElbow = { 120, 0, 0 },
-				waist = { 25, -20, 0 },
-				root = { 6, 0, 0, 0 },
-			}),
-			"out"
-		),
-		k(
-			0.32,
-			merge(STAND, {
-				lShoulder = { 170, 20, 0 },
-				rShoulder = { 140, -60, 0 },
-				rElbow = { 150, 0, 0 },
-				waist = { 28, -20, 0 },
-			}),
-			"out"
-		),
-	},
+	keys = arrowRainKeys(BOW),
 	recover = 0.3,
 	release = 0.3,
 	hit = 0.3,
+	variants = { crossbowOf(arrowRainKeys) },
 }
 
--- Venom Arrow: the arrow dipped low from the quiver, a crouched shot.
-motions.venomArrow = {
-	keys = {
+-- Venom Arrow: the arrow dipped low at the quiver in a crouch (0.14), the crouched draw and the release (0.36).
+local function venomArrowKeys(rig: ShotRig): { Key }
+	return {
 		k(
 			0.14,
-			merge(crouch(0.5), {
-				rShoulder = { -25, 0, 20 },
-				rElbow = { 40, 0, 0 },
-				lShoulder = { 60, 28, 0 },
-				waist = { -10, -10, 0 },
-			}),
+			merge(crouch(0.5), rig.aim, { rShoulder = { -25, 0, 20 }, rElbow = { 40, 0, 0 }, waist = { -10, -10, 0 } }),
 			"out"
 		),
-		k(0.32, merge(crouch(0.5), BOW_DRAW), "out"),
-		k(0.38, merge(crouch(0.5), BOW_LOOSE), "out"),
-	},
+		k(0.3, merge(crouch(0.5), rig.full), "out"),
+		k(0.36, merge(crouch(0.5), rig.loose), "out"),
+		k(0.44, merge(crouch(0.45), rig.after), "out"),
+	}
+end
+motions.venomArrow = {
+	keys = venomArrowKeys(BOW),
 	recover = 0.3,
 	release = 0.36,
+	variants = { crossbowOf(venomArrowKeys) },
 }
 
--- Frost Trap: kneeling, the trap set on the ground.
+-- Frost Trap: a kneel, the trap laid on the ground: the palm touches the ground at the set (0.35), then up.
 motions.frostTrap = {
 	keys = {
 		k(
-			0.22,
+			0.2,
 			merge(
 				KNEEL,
-				{ rShoulder = { 55, 0, 10 }, rElbow = { 25, 0, 0 }, lShoulder = { 30, 0, -20 }, waist = { -25, 0, 0 } }
+				{ rShoulder = { 60, 0, 10 }, rElbow = { 35, 0, 0 }, lShoulder = { 30, 0, -20 }, waist = { -22, 0, 0 } }
 			),
 			"out"
 		),
 		k(
-			0.45,
+			0.35,
+			merge(KNEEL, {
+				rShoulder = { 38, 0, 8 },
+				rElbow = { 8, 0, 0 },
+				rWrist = { 20, 0, 0 },
+				lShoulder = { 35, 0, -20 },
+				waist = { -32, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.5,
 			merge(
 				KNEEL,
-				{ rShoulder = { 45, 0, 10 }, rElbow = { 15, 0, 0 }, lShoulder = { 35, 0, -20 }, waist = { -28, 0, 0 } }
+				{ rShoulder = { 45, 0, 10 }, rElbow = { 20, 0, 0 }, lShoulder = { 35, 0, -20 }, waist = { -26, 0, 0 } }
 			)
 		),
 	},
@@ -791,81 +940,81 @@ motions.frostTrap = {
 	lock = true,
 }
 
--- Piercing Arrow: a wide stance, a full draw side-on and a heavy release.
+-- Piercing Arrow (Marksman): a wide stance side-on, the draw brought down from over the head to the line (0.36), a heavy
+-- release with the shoulders kicked back (0.4). A heavy crossbow shoots kneeling.
+local WIDE_STANCE: Pose = {
+	root = { 0, -30, 0, -0.4 },
+	rHip = { 10, 0, 18 },
+	lHip = { 10, 0, -18 },
+	rKnee = { 25 },
+	lKnee = { 25 },
+}
+local function piercingKeys(stance: Pose, turn: number): (ShotRig) -> { Key }
+	-- `turn` = the chest turned back by the stance's own turn, so the weapon still aims at the target
+	return function(rig: ShotRig): { Key }
+		return {
+			k(0.2, merge(lifted(rig.aim, 50), stance, body(rig, 10, turn)), "out"),
+			k(0.36, merge(rig.full, stance, body(rig, -4, turn)), "inOut"),
+			k(0.4, merge(rig.loose, stance, body(rig, 8, turn)), "out"),
+			k(0.52, merge(rig.after, stance, body(rig, 6, turn)), "out"),
+		}
+	end
+end
 motions.piercingArrow = {
-	keys = {
-		k(
-			0.35,
-			merge(BOW_DRAW, {
-				rElbow = { 145, 0, 0 },
-				waist = { -4, -40, 0 },
-				root = { 0, -15, 0, -0.4 },
-				rHip = { 10, 0, 18 },
-				lHip = { 10, 0, -18 },
-				rKnee = { 25 },
-				lKnee = { 25 },
-			}),
-			"out"
-		),
-		k(
-			0.42,
-			merge(BOW_LOOSE, {
-				waist = { 8, -40, 0 },
-				root = { 3, -15, 0, -0.4 },
-				rHip = { 10, 0, 18 },
-				lHip = { 10, 0, -18 },
-				rKnee = { 25 },
-				lKnee = { 25 },
-			}),
-			"out"
-		),
-	},
+	keys = piercingKeys(WIDE_STANCE, 30)(BOW),
 	recover = 0.35,
 	hit = 0.4,
 	release = 0.4,
 	lock = true,
+	variants = { crossbowOf(piercingKeys(KNEEL, 0)) },
 }
 
--- Hunter's Mark: the left hand points at the prey, the right at the eye.
+-- Hunter's Mark (Scout): the left arm straight and high at the prey, the right hand at the eye (0.22), a short nod.
+local MARK_POINT: Pose = {
+	lShoulder = { 110, 20, 0 },
+	lElbow = { 0, 0, 0 },
+	lWrist = { 0, 0, 0 },
+	rShoulder = { 125, 25, 0 },
+	rElbow = { 135, 0, 0 },
+	waist = { 0, -15, 0 },
+}
 motions.huntersMark = {
 	keys = {
-		k(
-			0.2,
-			merge(STAND, {
-				lShoulder = { 95, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 125, 25, 0 },
-				rElbow = { 135, 0, 0 },
-				waist = { 0, -15, 0 },
-			}),
-			"out"
-		),
-		k(
-			0.5,
-			merge(STAND, {
-				lShoulder = { 98, 20, 0 },
-				rShoulder = { 125, 25, 0 },
-				rElbow = { 135, 0, 0 },
-				waist = { 0, -15, 0 },
-			})
-		),
+		k(0.22, merge(STAND, MARK_POINT), "out"),
+		k(0.32, merge(STAND, MARK_POINT, { waist = { -8, -15, 0 }, root = { -4, 0, 0, 0 } }), "inOut"),
+		k(0.5, merge(STAND, MARK_POINT, { lShoulder = { 106, 20, 0 } })),
 	},
 	recover = 0.25,
 	hit = 0.22,
 }
 
--- Volley: drawn to the left, three arrows loosed in a sweep to the right.
+-- Volley: drawn to the left (0.18), the first arrow at the event (0.22), then the body turns right while the arrows
+-- fly (the server's arrows every 0.06 s: the turn ends with the last one, 0.64 for 7, 0.70 for 8 with 5A).
+local VOLLEY_STEP = 0.06 -- seconds between two arrows of the server (Offense.cone)
+local function volleyKeys(arrows: number): (ShotRig) -> { Key }
+	return function(rig: ShotRig): { Key }
+		local last = 0.22 + VOLLEY_STEP * arrows
+		return {
+			k(0.18, merge(rig.full, body(rig, 0, 15), { root = { 0, 25, 0, 0 } }), "out"),
+			k(0.22, merge(rig.loose, body(rig, 2, 12), { root = { 0, 20, 0, 0 } }), "out"),
+			k(last, merge(rig.loose, body(rig, 2, -22), { root = { 0, -25, 0, 0 } }), "linear"),
+			k(last + 0.1, merge(rig.after, body(rig, 3, -24), { root = { 0, -27, 0, 0 } }), "out"),
+		}
+	end
+end
 motions.volley = {
-	keys = {
-		k(0.18, merge(BOW_DRAW, { waist = { 0, 15, 0 }, root = { 0, 25, 0, 0 } }), "out"),
-		k(0.36, merge(BOW_LOOSE, { waist = { 0, -50, 0 }, root = { 0, -25, 0, 0 } }), "linear"),
-	},
+	keys = volleyKeys(7)(BOW),
 	recover = 0.3,
 	release = 0.22,
 	hit = 0.22,
+	variants = {
+		crossbowOf(volleyKeys(8), 8),
+		crossbowOf(volleyKeys(7)),
+		variant({ hits = 8, keys = volleyKeys(8)(BOW) }),
+	},
 }
 
--- Camouflage: a crouch, the cloak pulled around.
+-- Camouflage: a crouch, the cloak pulled across the face (0.2), still.
 motions.camouflage = {
 	keys = {
 		k(
@@ -894,75 +1043,70 @@ motions.camouflage = {
 	hit = 0.2,
 }
 
--- Storm Arrow: the arrow raised to the sky to catch the storm, then a full draw forward.
+-- Storm Arrow (Marksman): the arrow raised to the sky to catch the storm (0.25), the full draw forward, a held breath,
+-- the release exactly at the server's release (0.58).
+local function stormArrowKeys(rig: ShotRig): { Key }
+	-- leaning into the shot over the forward right leg (unlike Aimed Shot's still, side-on stance)
+	local low: Pose = merge(lunge(0.9), { root = { -5, 0, 0, -0.45 } })
+	return {
+		k(0.25, merge(STAND, lifted(rig.aim, 70), body(rig, 18, 18)), "out"),
+		k(0.5, merge(rig.full, body(rig, 0, 0), low), "inOut"),
+		k(0.55, merge(tremble(rig.full, 2), body(rig, 0, 0), low), "inOut"),
+		k(0.58, merge(rig.loose, body(rig, 6, 0), low), "out"),
+		k(0.68, merge(rig.after, body(rig, 5, 0), low), "out"),
+	}
+end
 motions.stormArrow = {
-	keys = {
-		k(
-			0.25,
-			merge(STAND, {
-				lShoulder = { 160, 20, 0 },
-				rShoulder = { 165, -20, 0 },
-				rElbow = { 30, 0, 0 },
-				waist = { 18, -10, 0 },
-			}),
-			"out"
-		),
-		k(
-			0.52,
-			merge(BOW_DRAW, { rElbow = { 145, 0, 0 }, waist = { 0, -35, 0 }, root = { 0, -10, 0, -0.2 } }),
-			"inOut"
-		),
-		k(0.6, merge(BOW_LOOSE, { waist = { 6, -35, 0 } }), "out"),
-	},
+	keys = stormArrowKeys(BOW),
 	recover = 0.35,
 	release = 0.58,
 	lock = true,
+	variants = { crossbowOf(stormArrowKeys) },
 }
 
 -- S77 (ROZWOJ 11.3-11.5): path skills of the Hunter.
--- Draw a Bead: the prey pointed out, then a slow draw held still.
+-- Draw a Bead (Marksman): the bow levelled at the prey and the string to the eye at the mark (0.25), then a slow draw
+-- held still (0.55-0.7). Unlike Hunter's Mark the weapon aims (Mark: a bare pointing arm and a nod).
+local function drawBeadKeys(rig: ShotRig): { Key }
+	return {
+		k(0.25, merge(STAND, rig.aim, body(rig, 0, 4)), "out"),
+		k(0.55, merge(STAND, rig.full, body(rig, 0, -4)), "inOut"),
+		k(0.7, merge(STAND, tremble(rig.full, 2), body(rig, 0, -4))),
+	}
+end
 motions.drawBead = {
-	keys = {
-		k(
-			0.2,
-			merge(STAND, {
-				lShoulder = { 95, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 125, 25, 0 },
-				rElbow = { 135, 0, 0 },
-				waist = { 0, -15, 0 },
-			}),
-			"out"
-		),
-		k(0.55, merge(STAND, BOW_DRAW, { rElbow = { 140, 0, 0 }, waist = { 0, -32, 0 } }), "inOut"),
-		k(0.7, merge(STAND, BOW_DRAW, { rElbow = { 142, 0, 0 }, waist = { 0, -32, 0 } })),
-	},
+	keys = drawBeadKeys(BOW),
 	recover = 0.3,
 	hit = 0.25,
+	variants = { crossbowOf(drawBeadKeys) },
 }
 
--- Heartseeker: kneeling, a full draw held (the loop lasts the aim, castTime), then the release. The shot comes from
--- the server at the end of the aim: no hit, no release, no lock (moving cancels the aim).
+-- Heartseeker (Marksman, capstone): kneeling, a full draw held for the whole aim (the loop lasts castTime, its ends the
+-- same pose so the loop does not jump; a breath of the elbow in the middle), the release 0.02 s after the loop's end,
+-- when the server's shot comes. No hit, no release, no lock (moving cancels the aim; the pin and the S77 test).
+local function heartseekerKeys(rig: ShotRig): { Key }
+	return {
+		k(0.3, merge(KNEEL, rig.aim, body(rig, -4, 0)), "out"),
+		k(0.5, merge(KNEEL, rig.full, body(rig, -4, -2)), "inOut"),
+		k(0.65, merge(KNEEL, tremble(rig.full, 2), body(rig, -4, -3)), "inOut"),
+		k(0.8, merge(KNEEL, rig.full, body(rig, -4, -2)), "inOut"),
+		k(0.82, merge(KNEEL, rig.loose, body(rig, 6, -2)), "out"),
+		k(0.92, merge(KNEEL, rig.after, body(rig, 5, -2)), "out"),
+	}
+end
 motions.heartseeker = {
-	keys = {
-		k(0.3, merge(KNEEL, BOW_DRAW, { waist = { -4, -40, 0 } }), "out"),
-		k(
-			0.5,
-			merge(KNEEL, BOW_DRAW, { rElbow = { 145, 0, 0 }, rShoulder = { 90, -50, 0 }, waist = { -4, -42, 0 } }),
-			"inOut"
-		),
-		k(0.8, merge(KNEEL, BOW_DRAW, { rElbow = { 147, 0, 0 }, rShoulder = { 90, -51, 0 }, waist = { -4, -43, 0 } })),
-		k(0.86, merge(KNEEL, BOW_LOOSE, { waist = { 6, -42, 0 } }), "out"),
-	},
+	keys = heartseekerKeys(BOW),
 	recover = 0.4,
 	loop = { from = 0.5, to = 0.8 },
+	variants = { crossbowOf(heartseekerKeys) },
 }
 
--- Venom Snare: kneeling, the snare thrown underhand.
+-- Venom Snare (Trapper): kneeling, the snare thrown underhand: it leaves the hand at 0.14 (SkillVfx toss) and lands on
+-- the point at the set (0.34), the arm following through.
 motions.venomSnare = {
 	keys = {
 		k(
-			0.16,
+			0.08,
 			merge(KNEEL, {
 				rShoulder = { -35, 0, 15 },
 				rElbow = { 45, 0, 0 },
@@ -972,9 +1116,9 @@ motions.venomSnare = {
 			"out"
 		),
 		k(
-			0.34,
+			0.14,
 			merge(KNEEL, {
-				rShoulder = { 75, 0, 10 },
+				rShoulder = { 80, 0, 10 },
 				rElbow = { 10, 0, 0 },
 				lShoulder = { 30, 0, -20 },
 				waist = { -25, -10, 0 },
@@ -982,10 +1126,18 @@ motions.venomSnare = {
 			"out"
 		),
 		k(
+			0.34,
+			merge(
+				KNEEL,
+				{ rShoulder = { 65, 0, 10 }, rElbow = { 15, 0, 0 }, lShoulder = { 32, 0, -20 }, waist = { -24, -8, 0 } }
+			),
+			"inOut"
+		),
+		k(
 			0.5,
 			merge(
 				KNEEL,
-				{ rShoulder = { 60, 0, 10 }, rElbow = { 15, 0, 0 }, lShoulder = { 32, 0, -20 }, waist = { -22, -8, 0 } }
+				{ rShoulder = { 55, 0, 10 }, rElbow = { 20, 0, 0 }, lShoulder = { 32, 0, -20 }, waist = { -20, -6, 0 } }
 			)
 		),
 	},
@@ -994,7 +1146,8 @@ motions.venomSnare = {
 	lock = true,
 }
 
--- Snarefield: crouched, the snares scattered in a sweep from right to left.
+-- Snarefield (Trapper, capstone): crouched, the snares scattered in a sweep from right to left (0.15-0.45); they leave
+-- the hand one by one along the sweep (SkillVfx toss 0.2-0.4) and land on the ring at the set (0.45).
 motions.snarefield = {
 	keys = {
 		k(
@@ -1035,7 +1188,7 @@ motions.snarefield = {
 	lock = true,
 }
 
--- Falcon: the left forearm raised, the bird released upwards.
+-- Falcon (Scout): the left forearm raised (0.15), the bird released upwards (0.35), the arm left up a moment.
 motions.falcon = {
 	keys = {
 		k(
@@ -1075,71 +1228,90 @@ motions.falcon = {
 	hit = 0.35,
 }
 
--- The Drive: the bow raised to the sky, a sweep of arrows driving the quarry in.
+-- The Drive (Scout, capstone): the bow raised to the sky, a sweep from the outside in (the drive), the release (0.38).
+-- Unlike Arrow Rain the body turns through the sweep and the arrows land on the rim (SkillVfx rim).
+local function driveKeys(rig: ShotRig): { Key }
+	return {
+		k(0.2, merge(STAND, lifted(rig.aim, 75), body(rig, 25, 43), { root = { 6, 25, 0, 0 } }), "out"),
+		k(0.38, merge(STAND, lifted(rig.loose, 75), body(rig, 28, -17), { root = { 6, -25, 0, 0 } }), "linear"),
+		k(0.5, merge(STAND, lifted(rig.after, 73), body(rig, 26, -14), { root = { 5, -22, 0, 0 } })),
+	}
+end
 motions.drive = {
-	keys = {
-		k(
-			0.2,
-			merge(STAND, {
-				lShoulder = { 165, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 150, -35, 0 },
-				rElbow = { 120, 0, 0 },
-				waist = { 25, 15, 0 },
-				root = { 6, 25, 0, 0 },
-			}),
-			"out"
-		),
-		k(
-			0.38,
-			merge(STAND, {
-				lShoulder = { 170, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 140, -60, 0 },
-				rElbow = { 150, 0, 0 },
-				waist = { 28, -45, 0 },
-				root = { 6, -25, 0, 0 },
-			}),
-			"linear"
-		),
-		k(
-			0.5,
-			merge(STAND, {
-				lShoulder = { 168, 20, 0 },
-				lElbow = { 0, 0, 0 },
-				rShoulder = { 140, -58, 0 },
-				rElbow = { 148, 0, 0 },
-				waist = { 26, -42, 0 },
-				root = { 5, -22, 0, 0 },
-			})
-		),
-	},
+	keys = driveKeys(BOW),
 	recover = 0.3,
 	release = 0.38,
 	hit = 0.38,
+	variants = { crossbowOf(driveKeys) },
 }
 
 -- Mage ---------------------------------------------------------------------------------------------------------
 
--- Arcane Bolt (firebolt): a quick flick of the weapon.
-motions.firebolt = {
-	keys = {
-		k(
-			0.1,
-			{ rShoulder = { 60, 0, 22 }, rElbow = { 85, 0, 0 }, rWrist = { -20, 0, 0 }, waist = { 0, -14, 0 } },
-			"out"
-		),
-		k(
-			0.18,
-			{ rShoulder = { 98, 0, 0 }, rElbow = { 0, 0, 0 }, rWrist = { 12, 0, 0 }, waist = { -4, 12, 0 } },
-			"out"
-		),
+-- S115: a bolt leaves the tip of the weapon pointed at the target. A wand (one hand, a flick of the wrist; the angles
+-- of the basic attack, Data/AttackMotions wand: the tip at the target with the wrist at -60) or a staff upright in the
+-- right hand, the left hand guiding the spell (Data/AttackMotions staff): `back` = the wind-up, `point` = the tip at the
+-- target (the release), `after` = the wrist finishing.
+export type CastRig = { back: Pose, point: Pose, after: Pose }
+
+local WAND: CastRig = {
+	back = { rShoulder = { 50, 0, 20 }, rElbow = { 80, 0, 0 }, rWrist = { -20, 0, 0 }, waist = { 0, -12, 0 } },
+	point = { rShoulder = { 80, 0, 0 }, rElbow = { 0, 0, 0 }, rWrist = { -60, 0, 0 }, waist = { -4, 10, 0 } },
+	after = { rShoulder = { 83, 0, -2 }, rElbow = { 0, 0, 0 }, rWrist = { -50, 0, 0 }, waist = { -4, 12, 0 } },
+}
+local STAFF: CastRig = {
+	back = {
+		rShoulder = { 35, 0, 15 },
+		rElbow = { 60, 0, 0 },
+		rWrist = { -10, 0, 0 },
+		lShoulder = { 30, 0, 20 },
+		lElbow = { 70, 0, 0 },
+		waist = { 2, -12, 0 },
 	},
-	recover = 0.22,
-	release = 0.16,
+	point = {
+		rShoulder = { 25, 0, 5 },
+		rElbow = { 0, 0, 0 },
+		rWrist = { -60, 0, 0 },
+		lShoulder = { 20, 0, 25 },
+		lElbow = { 30, 0, 0 },
+		waist = { -6, 8, 0 },
+	},
+	after = {
+		rShoulder = { 28, 0, 5 },
+		rElbow = { 0, 0, 0 },
+		rWrist = { -55, 0, 0 },
+		lShoulder = { 22, 0, 25 },
+		lElbow = { 30, 0, 0 },
+		waist = { -6, 10, 0 },
+	},
 }
 
--- Ice Shard: the hands brought together at the chest, then both pushed forward.
+-- Arcane Bolt (firebolt): a quick flick of the weapon, the tip at the target at the release (0.16); with 10B a second
+-- flick for the second bolt (0.31 = release + interval 0.15). A staff pushes its tip instead.
+local BOLT_STEP = 0.15 -- seconds between two bolts (Offense.projectile default interval)
+local function fireboltKeys(rig: CastRig, bolts: number): { Key }
+	local keys = { k(0.1, rig.back, "out"), k(0.16, rig.point, "out") }
+	local last = 0.16
+	for bolt = 2, bolts do
+		last = 0.16 + (bolt - 1) * BOLT_STEP
+		table.insert(keys, k(last - 0.07, rig.back, "out"))
+		table.insert(keys, k(last, rig.point, "out"))
+	end
+	table.insert(keys, k(last + 0.08, rig.after, "out"))
+	return keys
+end
+motions.firebolt = {
+	keys = fireboltKeys(WAND, 1),
+	recover = 0.22,
+	release = 0.16,
+	variants = {
+		variant({ weapon = "staff", hits = 2, keys = fireboltKeys(STAFF, 2) }),
+		variant({ weapon = "staff", keys = fireboltKeys(STAFF, 1) }),
+		variant({ hits = 2, keys = fireboltKeys(WAND, 2) }),
+	},
+}
+
+-- Ice Shard: the hands brought together at the chest (0.18, the shard grows between them), both pushed forward at
+-- the release (0.26), held a moment.
 motions.iceShard = {
 	keys = {
 		k(0.18, {
@@ -1149,19 +1321,26 @@ motions.iceShard = {
 			lElbow = { 105, 0, 0 },
 			waist = { 4, 0, 0 },
 		}, "out"),
-		k(0.28, {
+		k(0.26, {
 			rShoulder = { 95, 10, 0 },
 			rElbow = { 0, 0, 0 },
 			lShoulder = { 95, -10, 0 },
 			lElbow = { 0, 0, 0 },
 			waist = { -8, 0, 0 },
 		}, "out"),
+		k(0.34, {
+			rShoulder = { 92, 12, 0 },
+			rElbow = { 5, 0, 0 },
+			lShoulder = { 92, -12, 0 },
+			lElbow = { 5, 0, 0 },
+			waist = { -9, 0, 0 },
+		}, "out"),
 	},
 	recover = 0.25,
 	release = 0.26,
 }
 
--- Blink: a short tense hunch before vanishing.
+-- Blink: a short tense hunch before vanishing (0.1), appearing leaning a little forward.
 motions.blink = {
 	keys = {
 		k(
@@ -1175,45 +1354,56 @@ motions.blink = {
 			}),
 			"out"
 		),
-		k(0.2, merge(STAND, { rShoulder = { 20, 0, 40 }, lShoulder = { 20, 0, -40 } }), "out"),
+		k(0.2, merge(STAND, { rShoulder = { 20, 0, 40 }, lShoulder = { 20, 0, -40 }, waist = { -6, 0, 0 } }), "out"),
 	},
 	recover = 0.2,
 	hit = 0.1,
 }
 
--- Fireball: energy gathered at the hip with both hands, then pushed forward.
+-- Fireball: energy gathered at the hip with both hands (0.28), pushed forward in a lunge at the release (0.38), the
+-- orb leaving the hands. A staff keeps the staff upright in the right hand and pushes its tip with the left palm.
+local FIREBALL_GATHER: Pose = merge(STAND, {
+	rShoulder = { 30, 20, 35 },
+	rElbow = { 95, 0, 0 },
+	lShoulder = { 35, -40, 10 },
+	lElbow = { 95, 0, 0 },
+	waist = { 0, -28, 0 },
+	root = { 0, -8, 0, -0.2 },
+})
+local FIREBALL_PUSH: Pose = merge(lunge(0.5), {
+	rShoulder = { 92, 5, 0 },
+	rElbow = { 0, 0, 0 },
+	lShoulder = { 92, -5, 0 },
+	lElbow = { 0, 0, 0 },
+	waist = { -6, 18, 0 },
+})
+local FIREBALL_AFTER: Pose =
+	merge(lunge(0.55), { rShoulder = { 88, 6, 0 }, lShoulder = { 88, -6, 0 }, waist = { -8, 22, 0 } })
+local STAFF_HOLD: Pose = { rShoulder = { 30, 0, 15 }, rElbow = { 60, 0, 0 }, rWrist = { -10, 0, 0 } }
+local STAFF_TIP: Pose = { rShoulder = { 60, 0, 5 }, rElbow = { 0, 0, 0 }, rWrist = { -60, 0, 0 } }
 motions.fireball = {
 	keys = {
-		k(
-			0.28,
-			merge(STAND, {
-				rShoulder = { 30, 20, 35 },
-				rElbow = { 95, 0, 0 },
-				lShoulder = { 35, -40, 10 },
-				lElbow = { 95, 0, 0 },
-				waist = { 0, -28, 0 },
-				root = { 0, -8, 0, -0.2 },
-			}),
-			"inOut"
-		),
-		k(
-			0.4,
-			merge(lunge(0.5), {
-				rShoulder = { 92, 5, 0 },
-				rElbow = { 0, 0, 0 },
-				lShoulder = { 92, -5, 0 },
-				lElbow = { 0, 0, 0 },
-				waist = { -6, 18, 0 },
-			}),
-			"out"
-		),
+		k(0.28, FIREBALL_GATHER, "inOut"),
+		k(0.38, FIREBALL_PUSH, "out"),
+		k(0.46, FIREBALL_AFTER, "out"),
 	},
 	recover = 0.3,
 	release = 0.38,
 	hit = 0.38,
+	variants = {
+		variant({
+			weapon = "staff",
+			keys = {
+				k(0.28, merge(FIREBALL_GATHER, STAFF_HOLD), "inOut"),
+				k(0.38, merge(FIREBALL_PUSH, STAFF_TIP), "out"),
+				k(0.46, merge(FIREBALL_AFTER, STAFF_TIP), "out"),
+			},
+		}),
+	},
 }
 
--- Chain Lightning: the arm thrown back high and hurled forward.
+-- Chain Lightning: the arm thrown back high (0.18), hurled forward with the fingers spread at the release (0.26), the
+-- arm running on down.
 motions.chainLightning = {
 	keys = {
 		k(
@@ -1222,9 +1412,14 @@ motions.chainLightning = {
 			"out"
 		),
 		k(
-			0.27,
-			{ rShoulder = { 85, 15, 0 }, rElbow = { 0, 0, 0 }, lShoulder = { 20, 0, -20 }, waist = { -8, 24, 0 } },
+			0.26,
+			{ rShoulder = { 88, 15, 0 }, rElbow = { 0, 0, 0 }, lShoulder = { 20, 0, -20 }, waist = { -8, 24, 0 } },
 			"in"
+		),
+		k(
+			0.34,
+			{ rShoulder = { 70, 18, 0 }, rElbow = { 5, 0, 0 }, lShoulder = { 18, 0, -20 }, waist = { -10, 28, 0 } },
+			"out"
 		),
 	},
 	recover = 0.3,
@@ -1276,7 +1471,8 @@ motions.frostNova = {
 	lock = true,
 }
 
--- Meteor: both arms raised high for a long call, then brought down.
+-- Meteor: both arms raised high for a long call (0.45), highest at the event (0.6: the rock starts falling for the
+-- event's `d`), then brought down at the point (0.8).
 motions.meteor = {
 	keys = {
 		k(
@@ -1292,16 +1488,19 @@ motions.meteor = {
 			"inOut"
 		),
 		k(
-			0.8,
+			0.6,
 			merge(STAND, {
 				rShoulder = { 178, 0, 25 },
+				rElbow = { 4, 0, 0 },
 				lShoulder = { 178, 0, -25 },
-				waist = { 22, 0, 0 },
+				lElbow = { 4, 0, 0 },
+				waist = { 24, 0, 0 },
 				root = { 5, 0, 0, 0.35 },
-			})
+			}),
+			"inOut"
 		),
 		k(
-			0.95,
+			0.8,
 			merge(STAND, {
 				rShoulder = { 90, 0, 10 },
 				rElbow = { 0, 0, 0 },
@@ -1311,13 +1510,23 @@ motions.meteor = {
 			}),
 			"in"
 		),
+		k(
+			0.95,
+			merge(STAND, {
+				rShoulder = { 82, 0, 10 },
+				rElbow = { 4, 0, 0 },
+				lShoulder = { 82, 0, -10 },
+				lElbow = { 4, 0, 0 },
+				waist = { -12, 0, 0 },
+			})
+		),
 	},
 	recover = 0.3,
 	hit = 0.6,
 	lock = true,
 }
 
--- Thunderstorm (firewall): the weapon raised to the clouds, the left hand calling them down.
+-- Thunderstorm (firewall): the weapon raised to the clouds (0.3), the left hand calling them down at the event (0.42).
 motions.firewall = {
 	keys = {
 		k(
@@ -1336,17 +1545,29 @@ motions.firewall = {
 			),
 			"in"
 		),
+		k(
+			0.55,
+			merge(
+				STAND,
+				{ rShoulder = { 170, 0, 8 }, lShoulder = { 35, 0, -28 }, lElbow = { 25, 0, 0 }, waist = { 2, 0, 0 } }
+			),
+			"out"
+		),
 	},
 	recover = 0.3,
 	hit = 0.42,
 }
 
--- Evocation (channel): rising off the ground, legs loose, the hands circling.
-motions.evocation = {
-	keys = {
+-- Evocation (channel): rising off the ground, legs loose, the hands circling. S115: walking (5B channelMove, the cast
+-- event's `mv`) keeps the hands circling with the feet on the ground (no lift, no legs: the walk animation moves them).
+local function evocationKeys(airborne: boolean): { Key }
+	local function at(lift: number, arms: Pose): Pose
+		return if airborne then merge(air(lift, 0.4), arms) else arms
+	end
+	return {
 		k(
 			0.4,
-			merge(air(1, 0.4), {
+			at(1, {
 				rShoulder = { 60, 0, 40 },
 				rElbow = { 60, 0, 0 },
 				lShoulder = { 60, 0, -40 },
@@ -1357,49 +1578,82 @@ motions.evocation = {
 		),
 		k(
 			0.8,
-			merge(air(1.2, 0.4), {
+			at(1.2, {
 				rShoulder = { 100, 30, 20 },
 				rElbow = { 40, 0, 0 },
 				lShoulder = { 30, -30, -20 },
 				lElbow = { 80, 0, 0 },
+				waist = { 8, 0, 0 },
 			}),
 			"inOut"
 		),
 		k(
 			1.2,
-			merge(
-				air(1.3, 0.4),
-				{ rShoulder = { 60, 0, 40 }, rElbow = { 60, 0, 0 }, lShoulder = { 60, 0, -40 }, lElbow = { 60, 0, 0 } }
-			),
+			at(1.3, {
+				rShoulder = { 60, 0, 40 },
+				rElbow = { 60, 0, 0 },
+				lShoulder = { 60, 0, -40 },
+				lElbow = { 60, 0, 0 },
+				waist = { 8, 0, 0 },
+			}),
 			"inOut"
 		),
 		k(
 			1.6,
-			merge(air(1.2, 0.4), {
+			at(1.2, {
 				rShoulder = { 30, 30, 20 },
 				rElbow = { 80, 0, 0 },
 				lShoulder = { 100, -30, -20 },
 				lElbow = { 40, 0, 0 },
+				waist = { 8, 0, 0 },
 			}),
 			"inOut"
 		),
 		k(
 			2,
-			merge(
-				air(1, 0.4),
-				{ rShoulder = { 60, 0, 40 }, rElbow = { 60, 0, 0 }, lShoulder = { 60, 0, -40 }, lElbow = { 60, 0, 0 } }
-			),
+			at(1, {
+				rShoulder = { 60, 0, 40 },
+				rElbow = { 60, 0, 0 },
+				lShoulder = { 60, 0, -40 },
+				lElbow = { 60, 0, 0 },
+				waist = { 8, 0, 0 },
+			}),
 			"inOut"
 		),
-		k(2.4, merge(STAND, { rShoulder = { 20, 0, 20 }, lShoulder = { 20, 0, -20 } }), "inOut"),
-	},
+		k(
+			2.4,
+			if airborne
+				then merge(STAND, {
+					rShoulder = { 20, 0, 20 },
+					rElbow = { 0, 0, 0 },
+					lShoulder = { 20, 0, -20 },
+					lElbow = { 0, 0, 0 },
+					waist = { 0, 0, 0 },
+				})
+				else {
+					rShoulder = { 20, 0, 20 },
+					rElbow = { 0, 0, 0 },
+					lShoulder = { 20, 0, -20 },
+					lElbow = { 0, 0, 0 },
+					waist = { 0, 0, 0 },
+				},
+			"inOut"
+		),
+	}
+end
+motions.evocation = {
+	keys = evocationKeys(true),
 	recover = 0.3,
 	hit = 0.4,
 	loop = { from = 0.4, to = 2 },
 	lock = true,
+	variants = { variant({ move = true, keys = evocationKeys(false) }) },
 }
 
--- Elemental Fury (meteorStorm): both arms raised, then swept down across the area.
+-- Elemental Fury (meteorStorm): both arms raised (0.38), then swept down and out across the area in a wide stance at
+-- the event (0.55). Unlike Meteor (straight arms, one call) the arms open sideways and the feet stand wide.
+local STORM_STANCE: Pose =
+	{ root = { -6, 0, 0, -0.3 }, rHip = { 6, 0, 20 }, lHip = { 6, 0, -20 }, rKnee = { 20 }, lKnee = { 20 } }
 motions.meteorStorm = {
 	keys = {
 		k(
@@ -1414,8 +1668,23 @@ motions.meteorStorm = {
 		),
 		k(
 			0.55,
-			merge(lunge(0.6), { rShoulder = { 70, -50, 0 }, lShoulder = { 70, 50, 0 }, waist = { -15, 0, 0 } }),
+			merge(STORM_STANCE, {
+				rShoulder = { 70, -50, 30 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 70, 50, -30 },
+				lElbow = { 5, 0, 0 },
+				waist = { -15, 0, 0 },
+			}),
 			"in"
+		),
+		k(
+			0.7,
+			merge(STORM_STANCE, {
+				rShoulder = { 55, -55, 40 },
+				lShoulder = { 55, 55, -40 },
+				waist = { -12, 0, 0 },
+			}),
+			"out"
 		),
 	},
 	recover = 0.35,
@@ -1487,39 +1756,67 @@ motions.cataclysm = {
 	lock = true,
 }
 
--- Arcane Discharge: energy gathered with both hands at the hip, pushed forward hard.
+-- Arcane Discharge (S115, its own silhouette): the weapon held upright before the body in one hand while the left hand
+-- draws the orbiting charges to its tip (0.3), then the tip alone thrust at the target with a turn of the upper body
+-- at the release (0.4). No gathering at the hip (that is Fireball). A staff is held in both hands, the tip at the
+-- target.
+local DISCHARGE_DRAW: Pose = merge(STAND, {
+	rShoulder = { 70, 0, 8 },
+	rElbow = { 50, 0, 0 },
+	rWrist = { 0, 0, 0 },
+	lShoulder = { 95, -35, 0 },
+	lElbow = { 40, 0, 0 },
+	waist = { 0, -22, 0 },
+	root = { 0, -6, 0, 0 },
+})
+local DISCHARGE_THRUST: Pose = merge(lunge(0.4), {
+	rShoulder = { 90, 8, 0 },
+	rElbow = { 0, 0, 0 },
+	rWrist = { -60, 0, 0 },
+	lShoulder = { 40, 0, -35 },
+	lElbow = { 60, 0, 0 },
+	waist = { -6, 30, 0 },
+})
+local DISCHARGE_AFTER: Pose = merge(lunge(0.45), {
+	rShoulder = { 88, 10, 0 },
+	rElbow = { 0, 0, 0 },
+	rWrist = { -55, 0, 0 },
+	lShoulder = { 35, 0, -35 },
+	lElbow = { 60, 0, 0 },
+	waist = { -8, 34, 0 },
+})
+local BOTH_ON_STAFF: Pose = { lShoulder = { 72, -20, 0 }, lElbow = { 40, 0, 0 } }
 motions.arcaneDischarge = {
 	keys = {
-		k(
-			0.3,
-			merge(STAND, {
-				rShoulder = { 30, 20, 35 },
-				rElbow = { 95, 0, 0 },
-				lShoulder = { 35, -40, 10 },
-				lElbow = { 95, 0, 0 },
-				waist = { 0, -32, 0 },
-				root = { 0, -10, 0, -0.25 },
-			}),
-			"inOut"
-		),
-		k(
-			0.42,
-			merge(lunge(0.6), {
-				rShoulder = { 95, 5, 0 },
-				rElbow = { 0, 0, 0 },
-				lShoulder = { 95, -5, 0 },
-				lElbow = { 0, 0, 0 },
-				waist = { -8, 20, 0 },
-			}),
-			"out"
-		),
+		k(0.3, DISCHARGE_DRAW, "inOut"),
+		k(0.4, DISCHARGE_THRUST, "out"),
+		k(0.5, DISCHARGE_AFTER, "out"),
 	},
 	recover = 0.3,
 	release = 0.4,
 	hit = 0.4,
+	variants = {
+		variant({
+			weapon = "staff",
+			keys = {
+				k(0.3, merge(DISCHARGE_DRAW, { rWrist = { -10, 0, 0 } }), "inOut"),
+				k(
+					0.4,
+					merge(DISCHARGE_THRUST, { rShoulder = { 75, 10, 0 }, rElbow = { 20, 0, 0 } }, BOTH_ON_STAFF),
+					"out"
+				),
+				k(
+					0.5,
+					merge(DISCHARGE_AFTER, { rShoulder = { 73, 12, 0 }, rElbow = { 20, 0, 0 } }, BOTH_ON_STAFF),
+					"out"
+				),
+			},
+		}),
+	},
 }
 
 -- Arcane Torrent: the weapon held in both hands before the chest for the whole beam (no legs: with 5B the mage walks).
+-- The loop (0.25-0.95) is pinned by the server's time; the ticks (every 0.5 s) pulse in the ray, not in the arms.
 motions.arcaneTorrent = {
 	keys = {
 		k(0.25, {

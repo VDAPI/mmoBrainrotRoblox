@@ -152,6 +152,20 @@ T.describe("MotionKeys: skills", function()
 		end
 	end)
 
+	T.it("a picked variant gives its own keys with the base's events (S115)", function()
+		local base = MotionKeys.skill("doubleShot") :: MotionKeys.Keys
+		local three = MotionKeys.skill("doubleShot", nil, { hits = 3 }) :: MotionKeys.Keys
+		local motion = SkillMotions.get("doubleShot") :: SkillMotions.Motion
+		local picked = SkillPose.pick(motion, { hits = 3 })
+		T.expect(picked ~= motion).toBe(true)
+		T.expect(MotionKeys.at(three, "end")).toBeNear(SkillPose.duration(picked), EPS)
+		T.expect((MotionKeys.at(three, "end") :: number) > (MotionKeys.at(base, "end") :: number)).toBe(true)
+		T.expect(MotionKeys.at(three, "release")).toBe(MotionKeys.at(base, "release"))
+		-- no variant fits: the base keys
+		local none = MotionKeys.skill("doubleShot", nil, { hits = 2 }) :: MotionKeys.Keys
+		T.expect(MotionKeys.at(none, "end")).toBeNear(MotionKeys.at(base, "end") :: number, EPS)
+	end)
+
 	T.it("passive and unknown skills have none", function()
 		for id, def in Skills.byId do
 			if def.type == "passive" then
@@ -303,6 +317,9 @@ T.describe("AnimLab", function()
 		local step = AnimLab.parse({ "attack", "sword1h", "2" }) :: AnimLab.Command
 		T.expect({ step.id, step.n, step.slot }).toEqual({ "sword1h", 2, nil })
 		T.expect((AnimLab.parse({ "attack", "bow", "combo" }) :: AnimLab.Command).slot).toBe("combo")
+		-- S115: a skill with the actor's weapon type
+		local shot = AnimLab.parse({ "skill", "aimedShot", "crossbow" }) :: AnimLab.Command
+		T.expect({ shot.action, shot.id, shot.slot }).toEqual({ "skill", "aimedShot", "crossbow" })
 		local clip = AnimLab.parse({ "clip", "99", "attack", "axe1h", "3" }) :: AnimLab.Command
 		T.expect({ clip.id, clip.slot, clip.ref, clip.n }).toEqual({ "99", "attack", "axe1h", 3 })
 		T.expect(AnimLab.stepsOf("sword1h")).toBe(3)
@@ -317,6 +334,8 @@ T.describe("AnimLab", function()
 			{ { "attack" }, "animlab.error.weapon" },
 			{ { "skill", "steelSkin" }, "animlab.error.skill" },
 			{ { "skill", "nope" }, "animlab.error.skill" },
+			{ { "skill", "aimedShot", "katana" }, "animlab.error.skill" },
+			{ { "skill", "aimedShot", "crossbow", "x" }, "animlab.error.args" },
 			{ { "mob", "nope" }, "animlab.error.mob" },
 			{ { "mob", "wolf", "dance" }, "animlab.error.slot" },
 			{ { "boss", "grimrok", "nope" }, "animlab.error.boss" },

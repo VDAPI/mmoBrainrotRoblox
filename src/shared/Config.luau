@@ -304,6 +304,16 @@ local Config = {
 		-- S114 (DESIGN-16 §2.8): what one cast's impact may hold at once at its peak (holders and lights of
 		-- Vfx/Library, tests/SkillLooks.PIECE_COST); a skill over it loses trail pieces first, never its core
 		perCast = { emitters = 6, beams = 3, lights = 2, decals = 3 },
+		-- S115 (Hunter and Mage, looks only): Thunderstorm's cloud height over the ground (its bolts start there), the
+		-- lob of a thrown snare, how long an arrow of Arrow Rain stays stuck in the ground and its fall speed (studs/s),
+		-- the cap of a projectile skill's flight (server/Skills/Types/Offense: 90 studs/s up to 0.6 s), the fall of a
+		-- storm meteor after its event (the server's points are random: the rock falls after the damage)
+		cloudHeight = 14,
+		tossArc = 2.5,
+		rainStick = 0.6,
+		rainSpeed = 180,
+		shotMaxTime = 0.6,
+		stormFall = 0.15,
 	},
 	-- Sound effects (S111, DESIGN-16 §3, Data/Sfx, SfxController): positional voices at once (a phone is touch without a
 	-- keyboard), 2D interface voices, the same key again within `repeatWindow` s is dropped, nothing positional

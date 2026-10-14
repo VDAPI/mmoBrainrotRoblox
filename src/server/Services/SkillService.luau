@@ -1066,6 +1066,7 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 			p = point,
 			mv = behaviour.castMove,
 			ct = castTime,
+			w = skill.hits, -- S115 (DESIGN-16 §0.2.3): the aimed cast's motion variant, looks only
 		})
 		startChannel(ctx, function()
 			if skill.target == "enemy" and not ctx.isEnemy(ctx.target) then

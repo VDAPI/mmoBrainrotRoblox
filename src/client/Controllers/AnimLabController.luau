@@ -881,14 +881,18 @@ local function play(command: Command)
 		clearSubject()
 		local id = command.id :: string
 		local skill = Skills.get(id)
-		local weaponType = AnimLab.weaponForSkill(id)
+		local weaponType = command.slot or AnimLab.weaponForSkill(id) -- S115: `skill <id> [weapon type]`
 		if actorWeapon ~= weaponType then
 			giveWeapon(a, weaponType, classColor(if skill then skill.class else myClass()))
 			actorWeapon = weaponType
 		end
 		Vfx.Preview(a, id)
-		-- the same loopUntil the preview's motion plays with (beam, channel, castTime)
-		lastKeys = MotionKeys.skill(id, Vfx.PreviewLoopUntil(id))
+		-- the same loopUntil the preview's motion plays with (beam, channel, castTime); S115: and the variant the
+		-- actor plays (its weapon's family, the previewed rank's waves)
+		lastKeys = MotionKeys.skill(id, Vfx.PreviewLoopUntil(id), {
+			weapon = if weaponType then AttackMotions.byWeapon[weaponType] else nil,
+			hits = Vfx.PreviewHits(id),
+		})
 	elseif action == "mob" then
 		playMob(command)
 		lastKeys = if subject then subject.keys else nil
@@ -1177,6 +1181,13 @@ local function playPiece(
 			return false
 		end
 		Library.wings(who, color, 1.5)
+	elseif name == "snare" then
+		Library.snare(at, color, 2)
+	elseif name == "stormCloud" then
+		Library.stormCloud(at, 6, color, 2)
+		Clock.after(0.6, function()
+			Library.lightning(at + Vector3.new(0, Config.Vfx.cloudHeight, 0), at, color, 0.5)
+		end)
 	end
 	return true
 end

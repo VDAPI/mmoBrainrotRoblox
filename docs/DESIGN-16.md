@@ -111,6 +111,18 @@ Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia)
   `coreDelay`, `landsAfter`, `markRadius`; składniki `shieldArc`, `wings`, pocisk `die`.
 - S115 używa tych samych narzędzi; dopisuje warstwy Łowcy i Maga (wyjątek `chainLightning` już w `LAYER_EXCEPT`).
 
+### 6.2. Ustalenia S115
+
+- Łowca i Mag używają narzędzi S114 bez zmian (pin czasów, `SkillFxWave`, `variants` + `SkillPose.pick`, `tex`,
+  `landsAfter`, `tests/SkillLooks`, `Config.Vfx.perCast`); pole `w` niesie też zdarzenie `cast` celowania (`ct`).
+- Strzały z jednej funkcji na parę póz (`ShotRig` w `Data/SkillMotions`: `BOW`, `CROSSBOW`, `crossbowOf`); kostur
+  przez warianty `weapon = "staff"` (Magiczny Pocisk, Kula Ognia, Wyładowanie Arkanów).
+- Pola `SkillVfx`: `launch` (skąd wylatuje pocisk), `strike` (składniki uderzeń burzy), `toss` (rzucane sidła),
+  `rim` (strzały na obwodzie); składniki `snare`, `stormCloud`; `meteor` to sam kamień (lądowanie we wpisie z
+  `landsAfter`). Wiru `vortex` nie ma (`whirl` co falę).
+- Dźwięki faz: `skill.<id>.trigger`, `skill.<id>.wave`, `skill.falcon.strike` (obok `.cast` z S114).
+- `/animlab skill <id> [typ broni]`; podgląd strzela do punktu przed postacią i stawia każde sidła pierścienia.
+
 ## 7. Modele z Tripo (S116 + `docs/sessions/IMPORT-MODELI.md`)
 
 Instrukcja dla właściciela: `Graphics/TRIPO-ANIMACJE.md` (kopia `docs/TRIPO-ANIMACJE.md`). Folder grafik: `D:\Users\vdapi\Downloads\Graphics` (zmienna `VAELTHORN_GRAPHICS` może go nadpisać). Modele: `modele_3d/potwory/<id>/model/<id>.fbx` i klipy `<id>@<slot>.fbx`, `uwagi.txt` („bez kości”, brakujące ruchy); NPC w `modele_3d/npc/<id>/model/`.
