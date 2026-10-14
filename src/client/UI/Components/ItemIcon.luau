@@ -8,6 +8,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.ArtIcon)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.IconState)
@@ -24,6 +25,7 @@ export type Props = {
 	Def: UsedAs<Items.ItemDef?>,
 	Element: UsedAs<string?>?, -- mage weapon element (ItemRoll.elementOf)
 	Fallback: UsedAs<string?>?, -- glyph when there is no item (empty equipment slot)
+	FallbackArt: UsedAs<string?>?, -- S119: interface picture key of the empty slot (silhouette in the glyph colour)
 	Size: UsedAs<UDim2>?,
 	Position: UsedAs<UDim2>?,
 	AnchorPoint: UsedAs<Vector2>?,
@@ -95,6 +97,15 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 		)
 	end
 
+	-- S119: key of the empty-slot picture while there is no item (and no picture of an item).
+	local emptyKey = scope:Computed(function(use): string?
+		if use(props.Def) ~= nil or props.FallbackArt == nil then
+			return nil
+		end
+		return use(props.FallbackArt)
+	end)
+	local fallbackArt = ArtIcon.Shown(scope, emptyKey)
+
 	return scope:New("Frame")({
 		Name = props.Name or "Icon",
 		AnchorPoint = props.AnchorPoint or Vector2.new(0.5, 0.5),
@@ -142,6 +153,16 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
+			-- S119: the empty slot's silhouette (Border colour, like the glyph) once loaded.
+			ArtIcon.Image(scope, {
+				Name = "EmptyArt",
+				Key = emptyKey,
+				Tint = Theme.Colors.Border,
+				Size = UDim2.fromScale(0.8, 0.8),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				ZIndex = MAX_LAYERS + 1,
+			}),
 			scope:New("TextLabel")({
 				Name = "Glyph",
 				BackgroundTransparency = 1,
@@ -154,6 +175,9 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 					local def = use(props.Def)
 					if def then
 						return def.icon.glyph
+					end
+					if use(fallbackArt) then
+						return ""
 					end
 					return if props.Fallback ~= nil then use(props.Fallback) or "" else ""
 				end),

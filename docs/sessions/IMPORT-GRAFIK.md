@@ -1,10 +1,10 @@
-# IMPORT-GRAFIK: nowe ikony przedmiotów z folderu grafik
+# IMPORT-GRAFIK: nowe ikony przedmiotów i grafiki interfejsu z folderu grafik
 
 > Prompt do wklejenia w nowej sesji Claude Code (w folderze repozytorium `D:\Dev\mmoBrainrotRoblox`, na komputerze
-> właściciela), gdy właściciel dorobił albo poprawił obrazki przedmiotów (np. ikony krain 2–4). **Poza kolejką
-> `DALEJ.md`.** Kod systemu jest gotowy (S52, S118); ta sesja tylko importuje, wgrywa i sprawdza. Studio przez MCP wolno
-> jak w `docs/DESIGN-16.md` §0.1 (wgrywanie `upload_image`, Play do sprawdzenia, bez edycji skryptów, zapisu i publikacji
-> miejsca).
+> właściciela), gdy właściciel dorobił albo poprawił obrazki przedmiotów (np. ikony krain 2–4) albo grafiki interfejsu
+> (S119, część na końcu). **Poza kolejką `DALEJ.md`.** Kod systemu jest gotowy (S52, S118, S119); ta sesja tylko
+> importuje, wgrywa i sprawdza. Studio przez MCP wolno jak w `docs/DESIGN-16.md` §0.1 (wgrywanie `upload_image`, Play do
+> sprawdzenia, bez edycji skryptów, zapisu i publikacji miejsca).
 
 Jesteś Claude Code w repozytorium gry **Vaelthorn** (Roblox, Luau, Rojo). Właściciel dodał obrazki do folderu grafik
 (`VAELTHORN_GRAPHICS`, domyślnie `D:\Users\vdapi\Downloads\Graphics`). Folder grafik jest **tylko do odczytu**.
@@ -48,4 +48,26 @@ Jesteś Claude Code w repozytorium gry **Vaelthorn** (Roblox, Luau, Rojo). Wła�
 
 ## Grafiki interfejsu (S119)
 
-Dopisze S119.
+Ten sam przebieg robi też grafiki interfejsu (umiejętności, efekty, klasy, HUD, mapa, sklep, kosmetyki, tytuły, bossowie,
+lochy, mapy malowane). Kod jest gotowy (S119); sesja tylko importuje, wgrywa i sprawdza.
+
+Nazwy (pełna lista w `BRAKI-GRAFIK.md` i `BRAKI-GRAFIK-2.md` w folderze grafik): `tylko_2d/umiejetnosci/<klasa>/skill_<id>.png`,
+`efekty/effect_<kind>.png`, `zywioly/element_<el>.png`, `profile/profile_<id>.png`, `gildia/guild_<id>.png`,
+`klasy/class_<klasa>.png` i `portrait_<klasa>.png`, `tytuly/title_<id>.png`, `hud/menu_<id>.png`, `hud/slot_<slot>.png`,
+`hud/<nazwa>.png`, `mapa/map_<rodzaj>.png`, `service_<usługa>.png`, `mark_<id>.png`, `mapy/<mapId>.png` (kwadrat, kadr
+jak wzór `_uklad`), `sklep/<klucz>.png`, `kosmetyki/<id>.png`, `bossowie/boss_<id>.png`, `lochy/dungeon_<bossId>.png`.
+Sylwetki (`hud`, `mapa`) białe na przezroczystym tle, medaliony i obiekty z alfą, kafelki wypełniają kwadrat.
+
+1. Po krokach 2–3 (przedmioty): `py -3 tools/icons/import_ui.py` (raport `build/ui/import_ui.md`: dopasowane,
+   odrzucone z powodem, pliki z BRAKI jeszcze bez obrazka; nowe i zmienione pliki dostają puste ID).
+2. Obejrzyj `build/ui/import_preview.png`: kafelki 56 i 28 px, sylwetki w złotym kolorze, miniatury map i portretów.
+3. Wgraj pliki z `build/ui/do_wgrania.txt` (MCP jak w kroku 5: kopie z `art/ui` i `art/ui/single` do `build/upload`,
+   `upload_image` z `http://127.0.0.1:8765/<plik>`), ID do `src/shared/Data/UiArtSheets.luau` w wiersz o tej samej
+   nazwie pliku. Najpierw sprawdź, czy port 8765 jest wolny. Odpowiedź `403 User is moderated`: przerwij i napisz
+   właścicielowi. Bez MCP: właściciel, `docs/ANIMACJE.md` §10.
+4. `py -3 tools/icons/import_ui.py --check-ids` (kod 0).
+5. Z MCP: Play, `/icons ui` (pliki „Success”), `/icongrid ui skills` (i inne atlasy), pasek umiejętności, mapa świata;
+   Stop.
+6. `bash scripts/check.sh`, w `wiki/` `npm run data` i `npm run art` (ikony umiejętności, herby, portrety klas na wiki).
+7. Commit `Grafiki: <kategorie> (<n> nowych)` z jawnie dodanymi plikami (`art/ui/**`, `src/shared/Data/UiArt.luau`,
+   `UiArtSheets.luau`, dane wiki), bez plików z folderu grafik.

@@ -27,6 +27,8 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UI.UiArtState)
 local UnbindPicker = require(script.Parent.Parent.UI.Screens.UnbindPicker)
 
 local NpcController = {
@@ -260,6 +262,8 @@ local function decorate(model: Model)
 	icon.TextColor3 = Theme.Colors.GoldBright
 	icon.TextStrokeTransparency = 0.4
 	icon.Parent = gui
+	-- S119: the silhouette of the NPC's service (Logic/UiArt.serviceOfNpc) once loaded.
+	UiArtState.decorate(icon, UiArt.serviceOfNpc(def), { size = 24 })
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
 	name.Position = UDim2.fromOffset(0, 26)

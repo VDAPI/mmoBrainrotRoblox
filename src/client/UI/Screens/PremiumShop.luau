@@ -7,6 +7,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
@@ -22,6 +23,8 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -54,7 +57,8 @@ local function card(
 	icon: string,
 	title: Fusion.UsedAs<string>,
 	subtitle: Fusion.UsedAs<string>,
-	button: Instance
+	button: Instance,
+	art: string? -- S119: picture key of the entry (Logic/UiArt.shop)
 ): Instance
 	return scope:New("Frame")({
 		LayoutOrder = order,
@@ -67,7 +71,9 @@ local function card(
 				Position = UDim2.fromOffset(10, 8),
 				Size = UDim2.fromOffset(54, 54),
 				BackgroundColor3 = Theme.Colors.Panel,
-				Text = icon,
+				Text = scope:Computed(function(use): string
+					return if UiArtState.ready(use, art) then "" else icon
+				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = Theme.Colors.GoldBright,
@@ -78,6 +84,12 @@ local function card(
 						PaddingBottom = UDim.new(0, 8),
 						PaddingLeft = UDim.new(0, 8),
 						PaddingRight = UDim.new(0, 8),
+					}),
+					-- S119: the owner's picture (objects like the item icons) over the square once loaded.
+					ArtIcon.Image(scope, {
+						Key = art,
+						Size = UDim2.new(1, 12, 1, 12),
+						Position = UDim2.fromOffset(-6, -6),
 					}),
 				},
 			}),
@@ -141,7 +153,8 @@ local function currencyTab(scope: Scope): { Instance }
 				Text.T(scope, "premium.pack.desc"),
 				buyButton(scope, `R$ {pack.robux}`, nil, function()
 					invoke("BuyProduct", pack.key)
-				end)
+				end),
+				UiArt.shop(pack.key)
 			)
 		)
 	end
@@ -167,7 +180,8 @@ local function currencyTab(scope: Scope): { Instance }
 					function()
 						invoke("BuyPass", pass.key)
 					end
-				)
+				),
+				UiArt.shop(pass.key)
 			)
 		)
 	end
@@ -244,7 +258,8 @@ local function servicesTab(scope: Scope, props: Props): { Instance }
 								end,
 							})
 						end
-					)
+					),
+					UiArt.shop("rename")
 				)
 			)
 		end
@@ -298,7 +313,8 @@ local function servicesTab(scope: Scope, props: Props): { Instance }
 			"♛",
 			Text.T(scope, "window.wardrobe.title"),
 			Text.T(scope, "premium.wardrobe.desc"),
-			buyButton(scope, Text.T(scope, "premium.openWardrobe"), nil, props.OpenWardrobe)
+			buyButton(scope, Text.T(scope, "premium.openWardrobe"), nil, props.OpenWardrobe),
+			UiArt.shop("wardrobe")
 		)
 	)
 	return list

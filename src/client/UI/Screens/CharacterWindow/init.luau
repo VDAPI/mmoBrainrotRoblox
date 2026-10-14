@@ -10,6 +10,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BackpackPanel = require(script.Parent.BackpackPanel)
 local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -27,6 +28,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -58,6 +60,11 @@ local function TitlePicker(scope: Scope, order: number): Instance
 		local c = use(character)
 		return if c then Titles.shown(c) else nil
 	end)
+	local medal = scope:Computed(function(use): string?
+		local id = use(current)
+		return if id then UiArt.title(id) else nil
+	end)
+	local medalShown = ArtIcon.Shown(scope, medal)
 	local function step(delta: number)
 		local list = Fusion.peek(unlocked)
 		if #list == 0 then
@@ -92,9 +99,20 @@ local function TitlePicker(scope: Scope, order: number): Instance
 					step(-1)
 				end,
 			}),
+			-- S119: the title's medallion before its name once loaded (the name moves right by its width).
+			ArtIcon.Image(scope, {
+				Key = medal,
+				Size = UDim2.fromOffset(24, 24),
+				Position = UDim2.new(0, 40, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+			}),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(38, 0),
-				Size = UDim2.new(1, -76, 1, 0),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(if use(medalShown) then 66 else 38, 0)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, if use(medalShown) then -104 else -76, 1, 0)
+				end),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local id = use(current)

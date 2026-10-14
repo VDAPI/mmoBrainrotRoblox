@@ -29,6 +29,7 @@ local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Gestures = require(script.Gestures)
 local GroundMenu = require(script.GroundMenu)
+local IconState = require(script.Parent.Parent.IconState)
 local MapSearch = require(ReplicatedStorage.Shared.Logic.MapSearch)
 local MapSketch = require(script.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -45,6 +46,7 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -622,6 +624,8 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		end
 	end)
 	scope:Observer(onlyRecommended):onChange(refreshView)
+	scope:Observer(UiArtState.Loaded):onChange(refreshView) -- S119: the "recommended" badge
+	scope:Observer(IconState.Mode):onChange(refreshView)
 	scope:Observer(showProfiles):onChange(refreshView)
 	scope:Observer(highlight):onChange(refreshView)
 	scope:Observer(NpcMarkState.Marks):onChange(function()

@@ -28,6 +28,8 @@ local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Shops = require(Shared.Data.Shops)
 local TooltipModel = require(Shared.Logic.TooltipModel)
+local UiArt = require(Shared.Logic.UiArt)
+local UiArtKeys = require(Shared.Logic.UiArtKeys)
 local WeaponLooks = require(Shared.Data.WeaponLooks)
 
 local Context = require(script.Parent.Context)
@@ -138,7 +140,7 @@ commands.lootsim = function(player, args)
 	})
 end
 
--- S35: /icons [status|glyph|art]: the atlas state (server side: ids, items without an icon) and the client's own
+-- S35: /icons [status|glyph|art|ui]: the atlas state (server side: ids, items without an icon) and the client's own
 -- preload result; glyph / art switches the client (not saved).
 commands.icons = function(player, args)
 	local mode = args[1] or "status"
@@ -169,14 +171,54 @@ commands.icons = function(player, args)
 		stale = #cov.waiting,
 		files = if #files > 0 then table.concat(files, ", ") else "-",
 	})
+	-- S119: interface pictures per category: keys the game asks for, keys with a picture, pictures uploaded.
+	if mode == "ui" then
+		local parts = {}
+		local byCategory = UiArtKeys.byCategory()
+		local names = {}
+		for cat in byCategory do
+			table.insert(names, cat)
+		end
+		table.sort(names)
+		for _, cat in names do
+			local withArt, uploaded = 0, 0
+			for _, key in byCategory[cat] do
+				local file = UiArt.fileOf(key)
+				if file then
+					withArt += 1
+					if UiArt.idOf(file) then
+						uploaded += 1
+					end
+				end
+			end
+			table.insert(parts, `{cat} {uploaded}/{withArt}/{#byCategory[cat]}`)
+		end
+		local waiting = {}
+		for _, list in { UiArt.atlasFiles(), UiArt.singleFiles() } do
+			for _, file in list do
+				if not UiArt.idOf(file) then
+					table.insert(waiting, file)
+				end
+			end
+		end
+		reply(player, "admin.icons.ui", {
+			categories = table.concat(parts, ", "),
+			stale = #waiting,
+			files = if #waiting > 0 then table.concat(waiting, ", ") else "-",
+		})
+	end
 	Net.Fire(player, "AdminClient", "icons", mode)
 end
 
--- S35: /icongrid [eq|uniq|mat|pot|misc|art|tiers <type>]: preview window of a group of icons on the client (S118: art =
--- every item with its own picture).
+-- S35: /icongrid [eq|uniq|mat|pot|misc|art|tiers <type>|ui <atlas>]: preview window of a group of icons on the client
+-- (S118: art = every item with its own picture; S119: ui <atlas> = every key of an interface atlas).
 commands.icongrid = function(player, args)
 	local group = args[1] or "eq"
 	if group == "tiers" and not Items.bases.byType[args[2] or ""] then
+		reply(player, "admin.usage.icongrid")
+		return
+	end
+	if group == "ui" and not table.find(UiArt.ATLAS_NAMES, args[2] or "") then
 		reply(player, "admin.usage.icongrid")
 		return
 	end

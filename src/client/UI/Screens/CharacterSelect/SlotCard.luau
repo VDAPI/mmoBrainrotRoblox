@@ -4,6 +4,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -11,6 +12,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -55,13 +57,14 @@ local function emblem(scope: Scope, class: Classes.ClassDef?, layoutOrder: numbe
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 			scope:New("UIStroke")({ Thickness = Theme.Stroke.Thick, Color = color }),
-			scope:New("TextLabel")({
-				BackgroundTransparency = 1,
+			-- S119: the class emblem once loaded (glyph or "+" otherwise).
+			ArtIcon(scope, {
+				Key = if class then UiArt.classEmblem(class.id) else nil,
+				Glyph = if class then class.icon else "+",
+				GlyphColor = color,
+				ImageScale = 0.8,
 				Size = UDim2.fromScale(1, 1),
-				Text = if class then class.icon else "+",
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 44,
-				TextColor3 = color,
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
 			}),
 		},
 	})

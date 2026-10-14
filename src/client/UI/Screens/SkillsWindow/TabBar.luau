@@ -6,6 +6,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -15,6 +16,7 @@ local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -36,7 +38,17 @@ type Entry = { id: string, name: string, state: string?, stateColor: Color3?, ic
 function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 	local height = if touch then TabBar.HEIGHT_TOUCH else TabBar.HEIGHT
 
-	local function glyph(s: Scope, text: string, color: Color3): Instance
+	-- S119: with `key` the picture (class emblem) replaces the glyph once loaded.
+	local function glyph(s: Scope, text: string, color: Color3, key: string?): Instance
+		if key then
+			return ArtIcon(s, {
+				Key = key,
+				Glyph = text,
+				GlyphColor = color,
+				Size = UDim2.fromOffset(24, 24),
+				Label = { TextScaled = true, FontFace = Theme.Fonts.BodyBold },
+			})
+		end
 		return s:New("TextLabel")({
 			BackgroundTransparency = 1,
 			Size = UDim2.fromOffset(24, 24),
@@ -160,8 +172,9 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 		local class = Classes.get(character.class)
 		local classGlyph = if class then class.icon else "✦"
 		local classColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+		local emblem = if class then UiArt.classEmblem(class.id) else nil
 		local entries: { Entry } = {
-			{ id = "base", name = Text.get(use, "paths.tab.base"), icon = glyph(s, classGlyph, classColor) },
+			{ id = "base", name = Text.get(use, "paths.tab.base"), icon = glyph(s, classGlyph, classColor, emblem) },
 		}
 		local paths = use(ctx.paths)
 		if #paths == 0 then
@@ -177,7 +190,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			local item = if weaponType then Items.get(`{weaponType}_1`) else nil
 			local icon = if item
 				then ItemIcon(s, { Def = item, Size = UDim2.fromOffset(24, 24) })
-				else glyph(s, classGlyph, classColor)
+				else glyph(s, classGlyph, classColor, emblem)
 			table.insert(entries, {
 				id = def.id,
 				name = Text.get(use, def.nameKey),

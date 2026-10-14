@@ -6,12 +6,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Actions = require(script.Parent.Actions)
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -38,6 +40,13 @@ local function BarPicker(
 			local skill = id and SkillData.get(id)
 			return if skill then skill.glyph else ""
 		end)
+		-- S119: the picture of the skill on that slot once loaded (the glyph otherwise).
+		local artKey = scope:Computed(function(use): string?
+			local bar = use(ctx.hotbar)
+			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			return if id and SkillData.get(id) then UiArt.skill(id) else nil
+		end)
+		local artShown = ArtIcon.Shown(scope, artKey)
 		table.insert(
 			cells,
 			scope:New("TextButton")({
@@ -56,10 +65,19 @@ local function BarPicker(
 						Thickness = 2,
 						Color = Theme.Colors.GoldDim,
 					}),
+					ArtIcon.Image(scope, {
+						Key = artKey,
+						Size = UDim2.fromScale(0.8, 0.8),
+						Position = UDim2.fromScale(0.5, 0.5),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Corner = Theme.Corner.Small,
+					}),
 					scope:New("TextLabel")({
 						BackgroundTransparency = 1,
 						Size = UDim2.fromScale(1, 1),
-						Text = glyph,
+						Text = scope:Computed(function(use): string
+							return if use(artShown) then "" else use(glyph)
+						end),
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
 						TextColor3 = Theme.Colors.Parchment,

@@ -8571,3 +8571,127 @@ Pliki: `tools/icons/{ids.luau,import_graphics.py,import_png.py,README.md}`, `src
 `tests/{itemicons,artassets,wikidump}.spec.luau`, `art/icons/items_7.png`, `art/icons/items_8.png`, `art/icons/src/{misc,pot,quest}/*`,
 dane i obrazy wiki, `docs/{ANIMACJE,ASSETS,DESIGN,DESIGN-16,DECYZJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`,
 `docs/sessions/IMPORT-GRAFIK.md`.
+
+### S119: Grafiki interfejsu
+
+Ostatnia sesja serii DESIGN-16, po S118 (`9b95038`; S113–S117 nie zrobione, S119 ich nie potrzebuje). Start:
+`scripts/check` zielony (111 plików, 6432 testy), `import_png.py --check-ids` 8/8. Na prośbę właściciela (2026-10-14)
+najpierw import obrazków przedmiotów dodanych po S118: `herb_frostleaf`, `herb_moonpetal` (koniec `items_8.png`).
+- **Wejście:** `tools/icons/ids.luau` z sekcją `ui` (`Logic/UiArtKeys.ids`: umiejętności z klasą, efekty z tekstów
+  `effect.<kind>`, żywioły, profile, gildia, klasy, tytuły, sloty, menu, mapy + `world`, znaczniki, usługi NPC,
+  kosmetyki, sklep, bossowie, stałe listy `Logic/UiArt.FIXED`).
+- **Importer:** `tools/icons/import_ui.py` (`--src`, `--dry-run`, `--prune`, `--key`, `--ids`, `--only`, `--report`,
+  `--check-ids`, `--selftest`): mapowanie z walidacją i podpowiedzią, style kafelek / medalion / sylwetka / obiekt /
+  pojedynczy, atlasy `art/ui/ui_<atlas>_<NN>.png` (skills, status, emblems, hud, map, shop), pojedyncze
+  `art/ui/single/*.jpg`, stan `art/ui/ui_art.json`, rejestr `Data/UiArt.luau`, id `Data/UiArtSheets.luau`, raport
+  `build/ui/import_ui.md` (z listami z `BRAKI-GRAFIK*.md`), podgląd `build/ui/import_preview.png` (obejrzany: kafelki z
+  zaokrąglonymi rogami, sylwetki białe i wyśrodkowane, mapy i portrety bez przycięcia ważnych części), lista
+  `build/ui/do_wgrania.txt`. `--selftest` OK, drugi przebieg bez zmian.
+- **Gra:** `Logic/UiArt` (klucze, rejestr, `idOf`, `STYLE`), `Logic/UiArtKeys`, `UI/UiArtState` (atlasy przy starcie,
+  pojedyncze obrazy na żądanie, `look` / `ready`, `decorate` / `retarget` / `fade` dla etykiet bez Fusion),
+  `UI/Components/ArtIcon` (ramka z obrazkiem i dzisiejszym znakiem; `ArtIcon.Image`, `ArtIcon.Shown`), duch przeciągania
+  umiejętności (`DragVisual.art`), malowane mapy na mapie świata (`Canvas.paint`, szkic chowany albo nierysowany) i
+  minimapie, `IconButton.ArtKey`, `ItemSlot.PlaceholderArt` / `ItemIcon.FallbackArt`, `DetailCard` (`spec.art`,
+  `Line.art`). `/icons glyph` wyłącza też obrazki interfejsu.
+- **Admin:** `/icons ui` (serwer: na kategorię wgrane / z plikiem / kluczy w grze i pliki do wgrania; klient: stan
+  każdego pliku), `/icongrid ui <atlas>` (każdy klucz atlasu jako `ArtIcon` 52 px z podpisem).
+- **Testy:** nowy `uiart.spec` (rejestr i kategorie, efekty z tekstów PL i EN, komórki bez nakładania, wiersze id i
+  rozmiary plików PNG / JPEG, funkcje klucza, `serviceOfNpc`, menu = `ScreenController`, zapas, kadry map, każde
+  `ArtIcon(` ma `Glyph`), `admin.spec` (`icons ui`, `icongrid ui`). Księga balansu: `Data/UiArt` i `Data/UiArtSheets` w
+  `NOT_BALANCE` („generowane”).
+
+Inwentarz (folder grafik 2026-10-14, stan w grze po sesji):
+
+| Kategoria | Plików | Dopasowanych | Odrzuconych | Kluczy w grze | Z obrazkiem w grze |
+|---|---|---|---|---|---|
+| umiejętności | 61 | 61 | 0 | 78 | 56 (+5 dodanych w trakcie sesji, do importu) |
+| efekty | 21 | 21 | 0 | 33 | 21 |
+| żywioły | 4 | 4 | 0 | 4 | 4 |
+| profile | 3 | 3 | 0 | 3 | 3 |
+| gildia | 5 | 5 | 0 | 5 | 5 |
+| herby klas | 4 | 4 | 0 | 4 | 4 |
+| portrety klas | 4 | 4 | 0 | 4 | 4 |
+| tytuły | 11 | 11 | 0 | 23 | 11 |
+| menu HUD | 10 | 10 | 0 | 11 | 10 |
+| puste sloty | 10 | 10 | 0 | 10 | 10 |
+| HUD | 10 | 10 | 0 | 10 | 10 |
+| ikony mapy | 16 | 16 | 0 | 16 | 16 |
+| usługi NPC | 11 | 11 | 0 | 13 | 11 |
+| znaczniki | 6 | 6 | 0 | 6 | 6 |
+| mapy malowane | 18 | 18 | 0 | 22 | 18 (`world` bez miejsca) |
+| sklep | 12 | 12 | 0 | 12 | 12 |
+| kosmetyki | 23 | 23 | 0 | 33 | 23 |
+| portrety bossów | 4 | 4 | 0 | 4 | 4 |
+| banery lochów | 4 | 4 | 0 | 4 | 4 |
+
+Pominięte foldery: `questy` (S118), `sklep_roblox` (Creator Dashboard, instrukcja w ASSETS), `mapy/_uklad` (wzory),
+`wiki` (do `wiki/public/img/og`). Z BRAKI jeszcze bez pliku (36): efekty 8 (`arcaneCharge`, `attackSlow`, `carnage`,
+`empowered`, `guardianAngel`, `intercept`, `sighted`, `weaken`), tytuły ścieżek 11, umiejętności ścieżek 17 (Kapłan 6,
+Łowca 6, Mag 4, Wojownik `advanceOrder`). Klucze gry bez promptu (zostają znakami; propozycja promptów
+dla właściciela): efekty `frostbite`, `fury`, `nextBasic`, `runeSeal`; tytuł `thornbearer`; `menu_mounts`;
+`service_mounts`, `service_vendors`; mapy lochów `dungeon_<region>` (4); skiny wierzchowców `mountskin_*` (10).
+
+Miejsca (podpięte = `ArtIcon` / `ArtIcon.Image` / `UiArtState.decorate`, znak jako zapas):
+
+| Miejsce | Kategoria | Stan |
+|---|---|---|
+| `Hud/SkillBar`, `Hud/MobileSkills`, `SkillsWindow/BaseList`, `BarPicker`, `NodeCard` (węzeł `skill`), duch (`UIController`) | umiejętności | podpięte |
+| `SkillsWindow/Details` (nagłówek 48 px, linia żywiołu 20 px) | umiejętności, żywioły | podpięte (wiersz z obrazkiem tylko po wczytaniu) |
+| `Hud/EffectIcons` (portret i `TargetFrame`) | efekty | podpięte; licznik Furii bez zmian |
+| `Hud/init` (portret), `CharacterSelect/SlotCard`, `Creator` (herb + portret tła), `PartyFrames`, `PartyWindow`, `GuildWindow/Members`, `SkillsWindow/TabBar`, `CharacterWindow/Equipment` (sylwetka), `WorldMap/Cards` (członek grupy) | klasy | podpięte |
+| `ProfileWindow` linia nazwy, `BossReward` nazwy w podsumowaniu | klasy | zasada 5 |
+| `Hud/init` menu (`IconButton.ArtKey`), `PvpToggle`, `AttackButton`, `SprintButton`, `PotionBar`, `ItemSlot` (kłódka, związanie), `PvpDot` | HUD | podpięte |
+| `PartyFrames` ♛ / ☠ | HUD | podpięte jako znaczki na herbie (znak znika z nazwy) |
+| `MarketController` koperta poczty, `NameplateController` korona VIP przed plakietką | HUD | podpięte |
+| `CharacterWindow/Equipment` puste sloty | sloty | podpięte (`PlaceholderArt`) |
+| `WorldMap/Canvas` (jaskinie, lochy, portale, węzły, NPC, ★ polecanego obszaru), `Overlay` (gracz, quest, cel, grupa, znaczniki), `Minimap` (ikony szkicu, NPC, quest, cel, grupa, gracz, znaczniki) | mapa | podpięte |
+| `WorldMap/Cards` (NPC, portal, obszar: profil albo `map_area`, węzeł, znacznik), `CreatureCards` (potwór, Elita, jaskinia, boss), `Search`, `GroundMenu` | mapa, usługi, znaczniki | podpięte; Elita II bez pliku (♛) |
+| `NpcController` ikona nad głową | usługi | podpięte |
+| `Cards` chipy usług, `Panels` ★ w liście obszarów, `Panels` chipy filtra usług w legendzie (znak i etykieta w jednym tekście), `AreaProfileText` | usługi, mapa, profile | zasada 5 |
+| `MonsterPlateController` profil łowiska, `WorldMap/DetailCard` (karta obszaru), `GuildWindow/Skills` | profile, gildia | podpięte |
+| `Hud/AreaBanner` (tag profilu), `Minimap` nazwa obszaru | profile | zasada 5 |
+| `CreatureCards` linia żywiołu, `ItemTooltip` linia „Żywioł:” | żywioły | podpięte |
+| `CharacterWindow/init` wybór tytułu | tytuły | podpięte (medalion 24 px) |
+| `ProfileWindow` tytuł, tabliczki nad głową | tytuły | zasada 5 |
+| `PremiumShop` (paczki, przepustki, zmiana nazwy, garderoba), `Hud/DeathScreen` (respawn za Robux), `Wardrobe` | sklep, kosmetyki | podpięte; skiny wierzchowców bez plików |
+| `DungeonWindow` (baner), `CreatureCards` (portret bossa), `BossReward` (portret 96 px) | bossowie, lochy | podpięte |
+| `WorldMap/Preview` (podgląd 3D), `TargetFrame` (boss ma pasek u góry) | bossowie | bez zmian (model 3D, brak etykiety portretu) |
+| `NpcDialog` znaki questów, `QuestAnchorController` ✦, wydarzenie świata ⚔ | — | brak plików |
+
+Wgranie (MCP, `upload_image` z `python -m http.server 8765 --bind 127.0.0.1`, kopie w `build/upload`; stary serwer S118 na
+tym samym porcie zatrzymany): `items_8.png` `71572013880956`, `ui_skills_01` `98255153969390`, `ui_status_01`
+`127300661693271`, `ui_emblems_01` `90219814652043`, `ui_hud_01` `137020428772073`, `ui_map_01` `128368350205709`,
+`ui_shop_01` `106308221751331`, portrety bossów, portrety klas i banery lochów (12, id w `Data/UiArtSheets.luau`). Potem
+każde wgranie: `403 User is moderated` (konto VDaPii zablokowane przez moderację Roblox): 18 map malowanych bez id, nic
+więcej nie wysyłane. W Play wszystkie zasoby (także stare `items_7`, dźwięki, DataStore) odpowiadają 403, więc wczytania
+nie dało się sprawdzić; Play zatrzymany. Przeglądu D11 nie było (te same 403, Rojo niepołączony jak w S118).
+`import_ui.py --check-ids`: 18/36, `import_png.py --check-ids`: 8/8.
+
+W trakcie sesji właściciel dodał 5 ikon umiejętności Wojownika (`carnage`, `intercept`, `rend`, `shieldWall`,
+`warBanner`) i 19 obrazków przedmiotów (materiały i unikaty krain 2–4): nie importowane, bo zmieniłyby wgrane
+`ui_skills_01.png` i `items_8.png`, a wgrać ich nie można (atlas zostałby bez id). Robi to `IMPORT-GRAFIK.md`.
+
+Wiki: `npm run data` (ikony 290: `herb_frostleaf`, `herb_moonpetal`), `npm test` (133), `npm run build` bez błędów;
+`wiki/public/img/og/base.png` i `default-art.png` z `tylko_2d/wiki` (1200×630). `npm run art` nie uruchamiany (pokazałby
+na wiki ikony umiejętności, których gra jeszcze nie ma).
+
+Pliki: `tools/icons/{import_ui.py,ids.luau,README.md}`, `tools/balance_reasons.luau`,
+`src/shared/Logic/{UiArt,UiArtKeys}.luau`, `src/shared/Data/{UiArt,UiArtSheets,AdminCommands,ItemIconAtlas,ItemIconSheets}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/{UiArtState.luau,Components/ArtIcon.luau}` i podpięte ekrany
+(lista w tabeli), `src/client/Controllers/{IconController,UIController,SkillController,NpcController,MonsterPlateController,MarketController,NameplateController}.luau`,
+`src/server/Admin/Items.luau`, `tests/{uiart,admin}.spec.luau`, `art/ui/**`, `art/icons/items_8.png`,
+`art/icons/src/mat/herb_{frostleaf,moonpetal}.png`, dane i obrazy wiki, `docs/{ANIMACJE,ASSETS,DESIGN,DESIGN-16,DECYZJE,PROGRESS,PRZEDMIOTY}.md`,
+`CLAUDE.md`, `docs/sessions/IMPORT-GRAFIK.md`.
+
+**Seria DESIGN-16 (S110–S119) dla właściciela.** Zrobione: AnimLab i przegląd ruchu przez MCP (S110), dźwięki walki,
+potworów i interfejsu (S111), tekstury efektów (S112), ikony przedmiotów z Twoich PNG (S118) i grafiki interfejsu
+(S119). Nie zrobione: S113 (ataki podstawowe i hak na klipy), S114–S115 (umiejętności klas), S116 (modele z Tripo),
+S117 (potwory i bossowie w walce): czekają w kolejce `DALEJ.md` po Twojej decyzji. Bez Twojej pracy działa: wszystko w
+kodzie ma zapas (znaki, ikony rysowane kodem, szkice map, efekty bez tekstur), więc gra wygląda jak dawniej tam, gdzie
+pliku nie ma. Czeka na Ciebie: zdjęcie blokady konta Roblox (moderacja zatrzymała wgrywanie), 18 map malowanych do
+wgrania, nowe ikony umiejętności i przedmiotów (import + wgranie), 60 dźwięków bez ID, modele broni do Studio, klipy
+animacji. Kolejne grafiki: `docs/sessions/IMPORT-GRAFIK.md` (przedmioty i interfejs w jednym przebiegu), modele:
+`docs/sessions/IMPORT-MODELI.md`. Decyzje: (1) który obrazek mógł wywołać moderację (portrety bossów, banery lochów,
+krwiste efekty) i czy złagodzić prompty przed kolejnym wgraniem; (2) czy robić widok całego świata dla `mapy/world`;
+(3) prompty dla kluczy bez obrazków (efekty `frostbite`, `fury`, `nextBasic`, `runeSeal`, `thornbearer`, wierzchowce);
+(4) kolejność S113–S117.

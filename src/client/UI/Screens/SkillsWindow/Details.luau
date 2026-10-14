@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Actions = require(script.Parent.Actions)
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Breakpoints = require(script.Parent.Breakpoints)
 local Context = require(script.Parent.Context)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
@@ -21,6 +22,10 @@ local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 type SkillDef = SkillData.SkillDef
@@ -146,6 +151,45 @@ function Details.lines(
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}))
 	end
+	-- S119: a line with a picture in front (skill heading, element) only while that picture is loaded; the plain
+	-- line otherwise.
+	local function pictureLine(key: string, side: number, text: string, color: Color3, size: number?, font: Font?)
+		if not UiArtState.ready(use, key) then
+			line(text, color, size, font)
+			return
+		end
+		add(s:New("Frame")({
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			[Children] = {
+				s:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 8),
+				}),
+				ArtIcon.Image(s, {
+					Key = key,
+					Size = UDim2.fromOffset(side, side),
+					Corner = Theme.Corner.Small,
+				}),
+				s:New("TextLabel")({
+					LayoutOrder = 2,
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, -side - 8, 0, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Text = text,
+					RichText = true,
+					TextWrapped = true,
+					FontFace = font or Theme.Fonts.Body,
+					TextSize = size or Theme.TextSize.Small,
+					TextColor3 = color,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+			},
+		}))
+	end
 	local function heading(text: string)
 		line(text, Theme.Colors.Gold, Theme.TextSize.Large, Theme.Fonts.Heading)
 	end
@@ -174,7 +218,14 @@ function Details.lines(
 			cdr = SkillInfo.cdr(use), -- S64
 			hooks = SkillInfo.hooks(use), -- S76: trapCost
 		}
-		heading(Text.get(use, skill.nameKey))
+		pictureLine(
+			UiArt.skill(skill.id),
+			48,
+			Text.get(use, skill.nameKey),
+			Theme.Colors.Gold,
+			Theme.TextSize.Large,
+			Theme.Fonts.Heading
+		)
 		local header = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
 		if skill.type == "passive" then
 			header ..= ` · {Text.get(use, "skills.passive")}`
@@ -195,7 +246,9 @@ function Details.lines(
 		if element then
 			local weapon = use(ctx.weapon)
 			local fits = type(weapon) == "table" and weapon.element == element
-			line(
+			pictureLine(
+				UiArt.element(element),
+				20,
 				Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
 				if fits then Color3.fromHex(Elements.COLORS[element]) else Theme.Colors.DangerHover
 			)

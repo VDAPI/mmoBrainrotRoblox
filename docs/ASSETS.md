@@ -18,6 +18,7 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `art/icons/src/**`, `art/icons/items_4..8.png` (287 ikon: 269 przedmiotów, 18 przedmiotów questowych) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12, S118 2026-10-14 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 | `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
 | `art/vfx/*.png` (25 tekstur efektów) | własne, wygenerowane (`tools/vfx/make_textures.py`) | własne | S112, 2026-10-14 | — | przebudowa i wgranie: `docs/ANIMACJE.md` → „Tekstury efektów” |
+| `art/ui/**` (232 grafiki interfejsu: 6 atlasów, 30 obrazów JPEG), `wiki/public/img/og/{base,default-art}.png` | własne, ChatGPT / Codex (właściciel, folder Graphics, `BRAKI-GRAFIK*.md`) | własne (warunki OpenAI) | S119, 2026-10-14 | — | `tools/icons/import_ui.py` (128 px, JPEG 90), oryginały poza repo |
 
 ## Gdzie co leży
 
@@ -28,6 +29,8 @@ właściciel (`docs/GRAFIKA.md` 6).
 - `assets/Mounts/<model>.rbxm` → `ReplicatedStorage.Assets.Mounts.<model>` (S96: model wierzchowca z wpisem w
   `Data/Mounts.assets`, sekcja „Wierzchowce”).
 - `art/icons/src/<grupa>/<klucz>.png` → atlasy `art/icons/items_<n>.png` (packer `tools/icons/import_png.py`).
+- `art/ui/ui_<atlas>_<NN>.png`, `art/ui/single/*.jpg` ← folder grafik (`tools/icons/import_ui.py`, S119); ID w
+  `src/shared/Data/UiArtSheets.luau`.
 - Foldery mają `init.meta.json` z `ignoreUnknownInstances`, więc model wklejony ręcznie w Studio nie znika przy `rojo serve`. Żeby trafił do repozytorium, zapisz go jako `.rbxm` w odpowiednim folderze.
 
 ## Broń (S52)
@@ -177,9 +180,47 @@ obrazków, które się wczytują; `UI/IconState` wczytuje więc instancje `Image
 **Stan (2026-10-14, S118):** `items_7.png` (zmieniony) i nowy `items_8.png` wgrane przez Studio MCP (`upload_image`, konto
 VDaPii): items_7 `116647103065980`, items_8 `90447876547035` (ostatnie wgranie po dograniu 14 obrazków zapisanych w
 trakcie sesji: plecaki 80–200 i premium, `stone_dungeon_frostpeak`, rudy srebra, mithrilu i adamantytu,
-`herb_nightshade`, `herb_firebloom`); items_7 i pierwsze items_8 w Play `Success` i `IsLoaded`. Osierocone (nieużywane, można usunąć w
+`herb_nightshade`, `herb_firebloom`); items_7 i pierwsze items_8 w Play `Success` i `IsLoaded`. S119: items_8 z
+`herb_frostleaf` i `herb_moonpetal` wgrany ponownie, `71572013880956`. Osierocone (nieużywane, można usunąć w
 Creator Hub): stare items_7 `72500852503959`, wcześniejsze items_8 `126086041830482`, `71377522475295`,
 `70653203214194`, `136046578378635`.
+
+## Grafiki interfejsu (S119)
+
+| Folder (`tylko_2d/`) | Klucz w kodzie (`Logic/UiArt`) | Styl | Atlas |
+|---|---|---|---|
+| `umiejetnosci/<klasa>/skill_<id>` | `UiArt.skill(id)` | kafelek | `skills` |
+| `efekty/effect_<kind>`, `zywioly/element_<el>`, `profile/profile_<id>`, `gildia/guild_<id>` | `effect`, `element`, `profile`, `guildSkill` | kafelek | `status` |
+| `klasy/class_<klasa>`, `tytuly/title_<id>` | `classEmblem`, `title` | medalion | `emblems` |
+| `hud/menu_<id>`, `hud/slot_<slot>`, `hud/<nazwa>` | `menu`, `slot`, `hud` | sylwetka (barwiona) | `hud` |
+| `mapa/map_<rodzaj>`, `mapa/service_<usługa>`, `mapa/mark_<id>` | `mapIcon`, `service` / `serviceOfNpc`, `mark` | sylwetka (barwiona) | `map` |
+| `sklep/<klucz>`, `kosmetyki/<id>` | `shop`, `cosmetic` | obiekt | `shop` |
+| `klasy/portrait_<klasa>`, `bossowie/boss_<id>`, `lochy/dungeon_<bossId>`, `mapy/<mapId>` | `classPortrait`, `boss`, `dungeon`, `map` | pojedynczy JPEG (512×768, 512×512, 1024×512, 1024×1024) | — |
+
+- **Zapas:** plik bez ID albo niewczytany → dzisiejszy znak (ten sam tekst, kolor, rozmiar). Sylwetki są białe i gra
+  barwi je kolorem znaku, który zastępują.
+- **Mapy malowane:** kadr = `viewBox` SVG wiki (`wiki/public/img/maps/<mapId>.svg`, cały szkic mapy), zastępują rysunek
+  terenu na mapie świata i minimapie (obszary i ikony zostają). Poprawka kadru: `tools/icons/map_frames_override.json`
+  (`{ "<mapId>": { "x0": …, "z0": …, "size": … } }`, dziś niepotrzebna). `mapy/world` nie ma jeszcze miejsca w grze.
+- **Import i wgranie:** `py -3 tools/icons/import_ui.py`, potem `docs/ANIMACJE.md` §10 (kolejność: `skills`, `status`,
+  `emblems`, `hud`, `map`, `shop`, pojedyncze). Każdy plik działa od razu po wpisaniu swojego ID. Sprawdzenie: `/icons ui`,
+  `/icongrid ui <atlas>`.
+
+**Stan (2026-10-14, S119):** wgrane przez Studio MCP (konto VDaPii) atlasy `ui_skills_01` `98255153969390`,
+`ui_status_01` `127300661693271`, `ui_emblems_01` `90219814652043`, `ui_hud_01` `137020428772073`, `ui_map_01`
+`128368350205709`, `ui_shop_01` `106308221751331`, portrety bossów, portrety klas i banery lochów (id w
+`Data/UiArtSheets.luau`) oraz `items_8.png` `71572013880956`. Potem Roblox odpowiadał `403 User is moderated`: 18 map
+malowanych czeka na wgranie, wczytania wgranych nie dało się sprawdzić (Play: 403 na każdy zasób). Osierocone: items_8
+`90447876547035`.
+
+## Ikona gry i miniatury
+
+Pliki `tylko_2d/sklep_roblox/*` nie trafiają do repo ani do kodu. Creator Dashboard (create.roblox.com) → gra →
+Configure → **Places / Experience**: **Icon** = `game_icon.png` (512×512; Roblox przycina ją miejscami do koła, ważne
+elementy w środku), **Thumbnails** = `thumbnail_1..5.png` (1920×1080, kolejność według uznania), zapis; moderacja trwa
+zwykle kilka minut. `logo.png` i `loading.png`: gra nie ma ekranu ładowania z obrazkiem (osobna mała sesja). Ikony
+przepustek i produktów (Monetization → Passes / Developer Products) można wgrać z `sklep/pass_*.png` i
+`sklep/shards_*.png`, tych samych, które gra pokazuje w sklepie.
 
 ## Dodanie modelu potwora (skrót `docs/MODELE.md` §5)
 

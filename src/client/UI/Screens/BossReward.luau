@@ -10,6 +10,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -26,6 +27,8 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -187,6 +190,8 @@ local function BossReward(scope: Scope, props: Props): Instance
 	local boss = if reward.boss then Bosses.get(reward.boss) else nil
 	local legendary = Rarities.get(Rarities.LEGENDARY)
 	local mythic = Rarities.get(Rarities.MYTHIC)
+	local portrait = if boss then UiArt.boss(boss.id) else nil
+	UiArtState.ensureKey(portrait)
 	local accent = if reward.gotMyth then mythic.color elseif reward.gotLeg then legendary.color else Theme.Colors.Gold
 
 	local function label(order: number, text: Fusion.UsedAs<string>, color: Color3, size: number, font: Font): Instance
@@ -321,6 +326,13 @@ local function BossReward(scope: Scope, props: Props): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				Padding = UDim.new(0, 4),
+			}),
+			-- S119: the boss portrait above the title once loaded (an invisible item takes no room in the list).
+			ArtIcon.Image(scope, {
+				Name = "Portrait",
+				Key = portrait,
+				Size = UDim2.fromOffset(96, 96),
+				Corner = Theme.Corner.Medium,
 			}),
 			label(
 				1,

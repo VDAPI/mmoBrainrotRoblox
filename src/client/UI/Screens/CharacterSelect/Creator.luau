@@ -4,6 +4,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -15,6 +16,8 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -38,6 +41,9 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 	end)
 	local hovered = scope:Value(false)
 	local color = Color3.fromHex(class.color)
+	local portrait = UiArt.classPortrait(class.id)
+	UiArtState.ensureKey(portrait)
+	local portraitShown = ArtIcon.Shown(scope, portrait)
 
 	return scope:New("TextButton")({
 		Name = class.id,
@@ -72,58 +78,86 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 					return if use(isSelected) then Theme.Colors.GoldBright else Theme.Colors.Border
 				end),
 			}),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, Theme.Padding.Medium),
-				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
-				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-				PaddingRight = UDim.new(0, Theme.Padding.Medium),
+			-- S119: the class portrait (2:3) as the card background, darkened, once loaded; without it the card is as
+			-- before. The content sits in its own frame so the list layout does not move the portrait.
+			ArtIcon.Image(scope, {
+				Name = "Portrait",
+				Key = portrait,
+				ScaleType = Enum.ScaleType.Crop,
+				Corner = Theme.Corner.Medium,
 			}),
-			scope:New("UIListLayout")({
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				HorizontalAlignment = Enum.HorizontalAlignment.Center,
-				Padding = UDim.new(0, Theme.Padding.Tiny),
+			scope:New("Frame")({
+				Name = "Shade",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Color3.new(0, 0, 0),
+				BackgroundTransparency = scope:Computed(function(use): number
+					if use(isSelected) then
+						return 0.45
+					end
+					return if use(hovered) then 0.4 else 0.3
+				end),
+				Visible = portraitShown,
+				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			}),
-			scope:New("TextLabel")({
-				Name = "Icon",
-				LayoutOrder = 1,
+			scope:New("Frame")({
+				Name = "Content",
+				Size = UDim2.fromScale(1, 1),
 				BackgroundTransparency = 1,
-				Size = UDim2.fromOffset(64, 64),
-				Text = class.icon,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 48,
-				TextColor3 = color,
-			}),
-			scope:New("TextLabel")({
-				Name = "ClassName",
-				LayoutOrder = 2,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 32),
-				Text = Text.T(scope, class.nameKey),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = Theme.TextSize.Large + 2,
-				TextColor3 = Theme.Colors.Gold,
-			}),
-			scope:New("TextLabel")({
-				Name = "Role",
-				LayoutOrder = 3,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 22),
-				Text = Text.T(scope, class.roleKey),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = color,
-			}),
-			scope:New("TextLabel")({
-				Name = "Description",
-				LayoutOrder = 4,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 110),
-				Text = Text.T(scope, class.descKey),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
-				TextWrapped = true,
-				TextYAlignment = Enum.TextYAlignment.Top,
+				[Children] = {
+					scope:New("UIPadding")({
+						PaddingTop = UDim.new(0, Theme.Padding.Medium),
+						PaddingBottom = UDim.new(0, Theme.Padding.Medium),
+						PaddingLeft = UDim.new(0, Theme.Padding.Medium),
+						PaddingRight = UDim.new(0, Theme.Padding.Medium),
+					}),
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						Padding = UDim.new(0, Theme.Padding.Tiny),
+					}),
+					-- S119: the class emblem once loaded (glyph otherwise).
+					ArtIcon(scope, {
+						Name = "Icon",
+						LayoutOrder = 1,
+						Key = UiArt.classEmblem(class.id),
+						Glyph = class.icon,
+						GlyphColor = color,
+						Size = UDim2.fromOffset(64, 64),
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 48 },
+					}),
+					scope:New("TextLabel")({
+						Name = "ClassName",
+						LayoutOrder = 2,
+						BackgroundTransparency = 1,
+						Size = UDim2.new(1, 0, 0, 32),
+						Text = Text.T(scope, class.nameKey),
+						FontFace = Theme.Fonts.Heading,
+						TextSize = Theme.TextSize.Large + 2,
+						TextColor3 = Theme.Colors.Gold,
+					}),
+					scope:New("TextLabel")({
+						Name = "Role",
+						LayoutOrder = 3,
+						BackgroundTransparency = 1,
+						Size = UDim2.new(1, 0, 0, 22),
+						Text = Text.T(scope, class.roleKey),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = color,
+					}),
+					scope:New("TextLabel")({
+						Name = "Description",
+						LayoutOrder = 4,
+						BackgroundTransparency = 1,
+						Size = UDim2.new(1, 0, 0, 110),
+						Text = Text.T(scope, class.descKey),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.TextMuted,
+						TextWrapped = true,
+						TextYAlignment = Enum.TextYAlignment.Top,
+					}),
+				},
 			}),
 		},
 	})

@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -18,6 +19,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -35,6 +37,22 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 		base[key] = value
 	end
 	return scope:New("TextLabel")(base :: any)
+end
+
+-- S119: the product's picture at the left end of a button once loaded (the button text stays centred).
+local function withArt(scope: Scope, button: Instance, key: string): Instance
+	local image = ArtIcon.Image(scope, {
+		Key = key,
+		Size = UDim2.new(1, -6, 1, -6),
+		Position = UDim2.new(0, 4, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		ZIndex = 2,
+	})
+	local ratio = Instance.new("UIAspectRatioConstraint")
+	ratio.AspectRatio = 1
+	ratio.Parent = image
+	image.Parent = button
+	return button
 end
 
 local function DeathScreen(scope: Scope): Instance
@@ -196,17 +214,21 @@ local function DeathScreen(scope: Scope): Instance
 							invoke("RespawnNow")
 						end,
 					}),
-					Button(scope, {
-						Name = "RespawnRobux",
-						LayoutOrder = 5,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
-						Visible = counting,
-						Text = Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
-						Disabled = busy,
-						OnClick = function()
-							invoke("BuyProduct", Products.respawn.key)
-						end,
-					}),
+					withArt(
+						scope,
+						Button(scope, {
+							Name = "RespawnRobux",
+							LayoutOrder = 5,
+							Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+							Visible = counting,
+							Text = Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
+							Disabled = busy,
+							OnClick = function()
+								invoke("BuyProduct", Products.respawn.key)
+							end,
+						}),
+						UiArt.shop(Products.respawn.key)
+					),
 					-- Choice.
 					Button(scope, {
 						Name = "RespawnCity",

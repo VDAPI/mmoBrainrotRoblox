@@ -4,11 +4,13 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -20,9 +22,11 @@ export type Props = {
 	Riding: Fusion.UsedAs<any>?, -- S96
 }
 
+local ART = UiArt.hud("sprint") -- S119
 local SIZE = 64
 
 local function SprintButton(scope: Scope, props: Props): Instance
+	local artShown = ArtIcon.Shown(scope, ART)
 	return scope:New("TextButton")({
 		Name = "SprintButton",
 		AnchorPoint = Vector2.new(0, 1),
@@ -38,7 +42,12 @@ local function SprintButton(scope: Scope, props: Props): Instance
 		BackgroundTransparency = 0.15,
 		Text = Text.T(scope, "hud.sprint"),
 		FontFace = Theme.Fonts.BodyBold,
-		TextSize = Theme.TextSize.Small,
+		TextSize = scope:Computed(function(use): number
+			return if use(artShown) then 12 else Theme.TextSize.Small
+		end),
+		TextYAlignment = scope:Computed(function(use): Enum.TextYAlignment
+			return if use(artShown) then Enum.TextYAlignment.Bottom else Enum.TextYAlignment.Center
+		end),
 		TextColor3 = Theme.Colors.Text,
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
@@ -46,6 +55,19 @@ local function SprintButton(scope: Scope, props: Props): Instance
 		end,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+			-- S119: the silhouette above a smaller caption once loaded (the caption alone otherwise).
+			scope:New("UIPadding")({
+				PaddingBottom = scope:Computed(function(use): UDim
+					return if use(artShown) then UDim.new(0.14, 0) else UDim.new()
+				end),
+			}),
+			ArtIcon.Image(scope, {
+				Key = ART,
+				Tint = Theme.Colors.Text,
+				Size = UDim2.fromScale(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.4),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+			}),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thin,

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S112 i S118 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S112, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -175,6 +175,11 @@ S118 (przed S113–S117, na prośbę właściciela) ikony przedmiotów z PNG: im
 (`tools/icons/ids.luau`, raport, `--check-ids`), 287 obrazków w atlasach `items_4..8` (wszystkie wgrane), 913 z 934
 przedmiotów z obrazkiem (broń maga z klejnotem żywiołu), obrazki przedmiotów questowych w dzienniku, `/icons`,
 `/icongrid art`, `docs/sessions/IMPORT-GRAFIK.md` do ponownego importu.
+S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `art/ui`, mapy i portrety JPEG), rejestr
+`Data/UiArt` + id `Data/UiArtSheets`, `Logic/UiArt`, `UI/UiArtState`, komponent `ArtIcon` z dawnym znakiem jako
+zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
+świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
+`/icongrid ui <atlas>`. Seria DESIGN-16 bez S113–S117 (w kolejce).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -188,9 +193,7 @@ zakończone; testy i decyzje właściciela po nich.
   `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1`
   do usunięcia.
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
-  jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`); obrazki
-  umiejętności, efektów, HUD, mapy, klas, gildii, żywiołów, bossów, lochów, kosmetyków, sklepu i tytułów nie mają haka w
-  UI gry (S119; na wiki część jest od WIKI-GRAFIKA).
+  jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`).
 - **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
   Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
   zabicie bez umiejętności); Instynkt Drapieżnika od S90 oddaje część szybkości (17 → 34%).
@@ -316,9 +319,20 @@ zakończone; testy i decyzje właściciela po nich.
 - **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
   Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
   questów nie obejrzane w grze.
-- **S118:** bez obrazka (właściciel dorysowuje materiały; nowe pliki: `docs/sessions/IMPORT-GRAFIK.md`): 12 materiałów, 9 unikatów bossów
-  Azgora, Morvane i Vaelgratha, 50 przedmiotów questowych (krainy 2–4); krainy 2–4 ekwipunku biorą obrazek progu 20.
-  Wiki: broń maga z obrazkiem bez klejnotu żywiołu; okno rozmowy questa i śledzik HUD bez obrazków przedmiotów.
+- **S118:** bez obrazka (właściciel dorysowuje materiały; nowe pliki: `docs/sessions/IMPORT-GRAFIK.md`): 10 materiałów
+  (S119: +2 zioła), 9 unikatów bossów Azgora, Morvane i Vaelgratha, 50 przedmiotów questowych (krainy 2–4); krainy 2–4
+  ekwipunku biorą obrazek progu 20. Wiki: broń maga z obrazkiem bez klejnotu żywiołu; okno rozmowy questa i śledzik HUD bez obrazków przedmiotów.
+- **S119: wgrywanie przerwane przez moderację konta:** po 19 plikach (6 atlasów interfejsu, `items_8.png`, 12 portretów
+  i banerów) Roblox odpowiada `403 User is moderated` (konto VDaPii). Czeka 18 map malowanych (`import_ui.py --check-ids`:
+  18/36). Wczytania wgranych plików nie dało się sprawdzić (w Play 403 na każdy zasób); przegląd w Studio (D11, też
+  telefon) nie zrobiony. Właściciel: zdjąć blokadę na roblox.com, potem `docs/sessions/IMPORT-GRAFIK.md`.
+- **S119: do importu (dodane w trakcie sesji):** 5 ikon umiejętności Wojownika (`carnage`, `intercept`, `rend`,
+  `shieldWall`, `warBanner`) i 19 obrazków przedmiotów (materiały i unikaty krain 2–4); nie importowane, bo zmieniłyby
+  wgrane atlasy. Bez plików (BRAKI): 17 umiejętności ścieżek, 8 efektów, 11 tytułów ścieżek; bez promptów: efekty
+  `frostbite`, `fury`, `nextBasic`, `runeSeal`, tytuł `thornbearer`, menu i usługa wierzchowców, `vendors`, mapy lochów,
+  skiny wierzchowców.
+- **S119:** `mapy/world` bez miejsca w grze (brak widoku świata); wiki bez obrazków tytułów, efektów i portretów bossów
+  (WIKI-GRAFIKA ma resztę); ikona gry, miniatury i ikony przepustek tylko instrukcją (`docs/ASSETS.md`).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

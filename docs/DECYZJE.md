@@ -3452,3 +3452,49 @@
   (`docs/ANIMACJE.md` §9). Zadziałało MCP: `items_7.png` i `items_8.png` wgrane i wczytane w Play.
 - **S118** Folder grafik ma też `bossowie`, `kosmetyki`, `lochy`, `sklep`, `sklep_roblox`, `tytuly`, `wiki`: żaden obrazek
   stamtąd nie jest przedmiotem (`Items.byId`), więc wszystkie idą do S119 (lista w raporcie importu).
+- **S119** Grafiki interfejsu mają osobny system obok ikon przedmiotów (S52/S118): importer `tools/icons/import_ui.py`
+  (wspólne funkcje z `import_png.py` i `import_graphics.py`; planowanego `artlib.py` nie ma, S118 go nie zrobiła),
+  rejestr `Data/UiArt` (generowany), id `Data/UiArtSheets` (wiersz na plik, klucz = nazwa pliku), klucze tylko w
+  `Logic/UiArt`, listy id gry w `Logic/UiArtKeys` (eksport `tools/icons/ids.luau`, sekcja `ui`).
+- **S119** Klucz obrazka = ścieżka z `BRAKI-GRAFIK.md` bez `tylko_2d/` i `.png` (`umiejetnosci/skill_<id>`: podfolder klasy
+  tylko porządkuje, zła klasa = ostrzeżenie). Atlasy osobno na kategorię (`skills`, `status`, `emblems`, `hud`, `map`,
+  `shop`), stałe komórki jak S118: nowa ikona umiejętności nie zmienia atlasu HUD.
+- **S119** Sylwetki (`hud`, `mapa`) zapisywane jako biel z alfą obrazka i barwione w grze kolorem znaku, który zastępują
+  (`ImageColor3`); kafelki (umiejętności, efekty, żywioły, profile, gildia) przycięte do kwadratu z zaokrąglonymi rogami
+  (10%); medaliony i obiekty jak ikony przedmiotów (przycięcie do alfy, margines 4% / 6%).
+- **S119** Pojedyncze obrazy (portrety klas 512×768, bossów 512×512, banery lochów 1024×512, mapy 1024×1024) jako JPEG
+  jakości 90 (`art/ui/single/<folder>__<nazwa>.jpg`, bez przezroczystości): ok. 8 MB zamiast ok. 30 MB w PNG. Wczytywane
+  dopiero przy otwarciu okna (`UiArtState.ensure`): mapa świata i minimapa (bieżąca mapa), kreator postaci, okno lochu,
+  karta bossa, nagroda za bossa.
+- **S119** Efekty do walidacji: klucze tekstów `effect.<kind>` (bez `effect.withValue`), bo `EffectKind` jest tylko typem.
+- **S119** Zapas wszędzie: bez wgranego i wczytanego pliku miejsce wygląda jak przed sesją (ten sam znak, kolor, rozmiar).
+  Nowe dodatki pojawiają się tylko z obrazkiem: kropka żywiołu jako zapas `ElementBadge` z planu odpada (linia żywiołu
+  w karcie potwora, szczegółach umiejętności i tooltipie przedmiotu dostaje obrazek tylko po wczytaniu), osobny komponent
+  `ElementBadge` niepotrzebny (`ArtIcon.Image` w linii).
+- **S119** Napisy złożone zostają tekstem: `AreaProfileText` (tag, mnożniki, ikona profilu w nazwie obszaru i w banerze),
+  linia profilu gracza z klasą i tytułem (`ProfileWindow`), nazwy w `BossReward`, linia członka w `PartyWindow`, chipy usług
+  w karcie NPC i chipy filtra usług w legendzie mapy, ★ w liście obszarów (`Panels`), ✉ / ★ VIP w czacie, `⚔` przed wrogim nickiem, 🔒 w `AreaPicker`.
+  Wyjątki prostego układu: ♛ / ☠ w ramkach grupy (obrazki na herbie klasy, nazwa traci znak), ★ obszaru polecanego na
+  mapie świata (znaczek w rogu obszaru), licznik poczty (koperta z lewej, liczba z prawej).
+- **S119** Usługa NPC na mapie, minimapie i nad głową = pierwsza usługa poza `talk` (`story` → `service_story`); NPC bez
+  usług poza rozmową → `map_npc`; usługi bez pliku (`mounts`, `vendors`) zostają znakiem NPC.
+- **S119** Kadr malowanych map = `viewBox` SVG wiki (`wiki/public/img/maps/<mapId>.svg`, kwadrat = cały szkic); wzory
+  `_uklad` sprawdzone na `meadows`, `duskwood_cave` i `city`: ten sam kadr, `tools/icons/map_frames_override.json`
+  niepotrzebny (importer go czyta, gdy powstanie). Malowana mapa zastępuje rysunek terenu (szkic nierysowany, gdy obraz
+  już jest; inaczej chowany po wczytaniu), obszary, ikony i nakładka zostają nad nią. Gra nie ma widoku całego świata:
+  `mapy/world` czeka w rejestrze nieużyty.
+- **S119** Baner lochu leży pod nagłówkiem okna lochu (106 px, przyciemniony gradientem) zamiast nad nim: układ okna
+  560×520 się nie przesuwa, lista członków nie maleje. Portret klasy w kreatorze = tło karty klasy z przyciemnieniem.
+- **S119** Ikona umiejętności (pasek, telefon, okno, wybór slotu, duch, węzeł ścieżki rodzaju `skill`) wypełnia cały
+  slot; zablokowana albo niekupiona: szara (`ImageColor3` 150, przezroczystość 0,35). Węzły ścieżek bez umiejętności
+  zostają znakami (brak plików w BRAKI).
+- **S119** Wiki: bez nowego eksportu (H z planu): WIKI-GRAFIKA (`npm run art`) pokazuje już herby, portrety klas,
+  umiejętności, żywioły, gildię, profile, usługi i przyciski HUD; tytuły, efekty i portrety bossów na wiki zostają na
+  później. Sklep, HUD, mapy malowane i banery lochów nie idą na wiki. Obrazki udostępniania `og_base` / `og_default_art`
+  (nowsze od plików wiki) skopiowane do `wiki/public/img/og/` (1200×630).
+- **S119** Ikona gry, miniatury, logo i ekran ładowania (`sklep_roblox/`): bez kodu, tylko instrukcja w `docs/ASSETS.md`
+  (Creator Dashboard); gra nie ma ekranu ładowania z obrazkiem.
+- **S119** Wgrywanie przez MCP przerwane: po 19 plikach (6 atlasów, `items_8.png`, 12 pojedynczych) Roblox odpowiada
+  `403 User is moderated` (konto VDaPii ma blokadę moderacji); 18 map malowanych bez id. Pliki dodane przez właściciela w
+  trakcie sesji (5 ikon umiejętności Wojownika, 19 obrazków materiałów i unikatów krain 2–4) nie są importowane, bo zmieniłyby
+  wgrane atlasy (`ui_skills_01`, `items_8`) bez możliwości ponownego wgrania: zrobi to `IMPORT-GRAFIK.md`.

@@ -4,6 +4,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Common = require(script.Parent.Common)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
@@ -14,6 +15,8 @@ local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -44,7 +47,9 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 				Position = UDim2.fromOffset(10, 10),
 				Size = UDim2.fromOffset(64, 64),
 				BackgroundColor3 = Theme.Colors.Panel,
-				Text = def.icon,
+				Text = scope:Computed(function(use): string
+					return if UiArtState.ready(use, UiArt.guildSkill(def.id)) then "" else def.icon
+				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = Theme.Colors.GoldBright,
@@ -55,6 +60,13 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 						PaddingBottom = UDim.new(0, 8),
 						PaddingLeft = UDim.new(0, 8),
 						PaddingRight = UDim.new(0, 8),
+					}),
+					-- S119: the guild skill's tile over the whole square (past the padding) once loaded.
+					ArtIcon.Image(scope, {
+						Key = UiArt.guildSkill(def.id),
+						Size = UDim2.new(1, 16, 1, 16),
+						Position = UDim2.fromOffset(-8, -8),
+						Corner = Theme.Corner.Small,
 					}),
 				},
 			}),

@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Actions = require(script.Parent.Actions)
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
@@ -18,6 +19,7 @@ local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -77,6 +79,9 @@ function NodeCard.new(
 		return button
 	end
 
+	-- S119: a skill node shows its skill's picture once loaded (other nodes have no pictures: glyph).
+	local artKey = if node.kind == "skill" and node.skill then UiArt.skill(node.skill) else nil
+	local artShown = ArtIcon.Shown(s, artKey)
 	local tile = s:New("Frame")({
 		Name = "Tile",
 		Position = if touch
@@ -91,10 +96,18 @@ function NodeCard.new(
 				Thickness = 2,
 				Color = if bought then Theme.Colors.Gold else Theme.Colors.Border,
 			}),
+			ArtIcon.Image(s, {
+				Key = artKey,
+				Corner = Theme.Corner.Small,
+				ImageColor = if bought then nil else Color3.fromRGB(150, 150, 150),
+				Transparency = if bought then 0 else 0.35,
+			}),
 			s:New("TextLabel")({
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 1),
-				Text = node.glyph,
+				Text = s:Computed(function(use): string
+					return if use(artShown) then "" else node.glyph
+				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = if bought then Theme.Colors.GoldBright else Theme.Colors.TextMuted,

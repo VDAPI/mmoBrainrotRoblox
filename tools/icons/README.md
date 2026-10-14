@@ -83,3 +83,31 @@ py -3 tools/icons/import_png.py --check-ids
   wiersze `ItemIconSheets.luau` (`""` albo `rbxassetid://<cyfry>`, jeden na atlas) i drukuje „Wgrane: n/m atlasów”.
 - Wgranie: `docs/ANIMACJE.md` §9 (MCP `upload_image` przez lokalny `http.server` albo Bulk Import właściciela).
 - `build_final.py` (SVG S35) nie dotyka atlasów obrazków (`items_<n>.png` po `SVG_SHEETS`) poza pełną przebudową.
+
+## Grafiki interfejsu (S119)
+
+Wymaga: Python 3 + Pillow, Lune (lista id gry: `lune run tools/icons/ids.luau`, sekcja `ui`). Z katalogu repo:
+
+```
+py -3 tools/icons/import_ui.py [--src <Graphics>] [--dry-run] [--prune] [--key FF00FF] [--ids ids.json] [--only <folder>]
+py -3 tools/icons/import_ui.py --report | --check-ids | --selftest
+```
+
+- Czyta `tylko_2d/` (bez `questy`, `sklep_roblox`, `mapy/_uklad`; `wiki/` tylko do `wiki/public/img/og`). Klucz = ścieżka
+  bez `tylko_2d/` i `.png` (`umiejetnosci/<klasa>/skill_<id>.png` → `umiejetnosci/skill_<id>`), sprawdzony z grą; zły plik
+  jest odrzucany z powodem i podpowiedzią.
+- Style: **kafelek** (umiejętności, efekty, żywioły, profile, gildia: środkowy kwadrat, 128 px, zaokrąglone rogi 10%),
+  **medalion** (herby klas, tytuły: przycięcie do alfy, margines 4%), **sylwetka** (`hud`, `mapa`: biel z alfą, margines
+  8%, gra barwi kolorem znaku), **obiekt** (`sklep`, `kosmetyki`: jak ikony przedmiotów), **pojedynczy** (portrety klas
+  512×768, bossów 512×512, banery lochów 1024×512, mapy 1024×1024 tylko kwadratowe; JPEG jakości 90).
+- Wyjście: atlasy `art/ui/ui_<atlas>_<NN>.png` (osobno `skills`, `status`, `emblems`, `hud`, `map`, `shop`, stałe komórki:
+  zmieniony klucz w swojej komórce, nowe na koniec, `--prune` czyści komórki kluczy bez pliku), `art/ui/single/*.jpg`,
+  stan `art/ui/ui_art.json`, rejestr `src/shared/Data/UiArt.luau` (z `MAP_FRAMES`), id `src/shared/Data/UiArtSheets.luau`
+  (`""` dla nowych i zmienionych plików, reszta zostaje), raport `build/ui/import_ui.md` (z listą plików z
+  `BRAKI-GRAFIK*.md`, których jeszcze nie ma), podgląd `build/ui/import_preview.png`, lista `build/ui/do_wgrania.txt`.
+- Kadr map malowanych: `viewBox` z `wiki/public/img/maps/<mapId>.svg` (najpierw `lune run tools/wikimap.luau`, gdy mapy
+  się zmieniły); poprawka w `tools/icons/map_frames_override.json`.
+- `--check-ids` (nic nie pisze): wiersz na plik, `""` albo `rbxassetid://<cyfry>`, pliki istnieją; „Wgrane: n/m”.
+- `--selftest`: sztuczny folder w `build/ui/selftest` (mapowanie, odrzucenia, sylwetka, rogi kafelka, mapa niekwadratowa,
+  stałe komórki, determinizm, id).
+- Wgranie: `docs/ANIMACJE.md` §10.

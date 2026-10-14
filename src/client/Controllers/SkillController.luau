@@ -30,6 +30,7 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local SkillController = {
@@ -529,7 +530,11 @@ function SkillController.Init(registry)
 		local skill = skillId and SkillData.get(skillId)
 		if skill then
 			local class = Classes.get(skill.class)
-			return { glyph = skill.glyph, color = if class then class.color else nil }
+			return {
+				glyph = skill.glyph,
+				color = if class then class.color else nil,
+				art = UiArt.skill(skill.id),
+			}
 		end
 		return nil
 	end)

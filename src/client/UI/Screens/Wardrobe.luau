@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
 local CosmeticLook = require(ReplicatedStorage.Shared.Util.CosmeticLook)
@@ -25,6 +26,8 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 local WardrobeStart = require(script.Parent.Parent.WardrobeStart)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -256,12 +259,16 @@ local function Wardrobe(scope: Scope): Fusion.Child
 							Position = UDim2.fromOffset(8, 8),
 							Size = UDim2.fromOffset(48, 48),
 							BackgroundColor3 = Color3.fromHex(def.color),
-							Text = def.icon,
+							Text = if UiArtState.ready(use, UiArt.cosmetic(def.id)) then "" else def.icon,
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
 							TextColor3 = Color3.new(1, 1, 1),
 							TextStrokeTransparency = 0.4,
-							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+							[Children] = {
+								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+								-- S119: the cosmetic's picture on its colour once loaded (mount skins: no files, glyph).
+								ArtIcon.Image(s, { Key = UiArt.cosmetic(def.id), Corner = Theme.Corner.Small }),
+							},
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(66, 8),

@@ -178,11 +178,13 @@ cmd("items", "lootsim", {
 })
 cmd("items", "rarities", {})
 -- S35: item icon atlases (client preview, glyph / picture switch).
-cmd("items", "icons", { enum("mode", { "status", "glyph", "art" }, true, "status") })
+-- S119: "ui" = the interface pictures (counts per category on the server, the state of every file on the client);
+-- /icongrid ui <atlas> = every key of one interface atlas.
+cmd("items", "icons", { enum("mode", { "status", "glyph", "art", "ui" }, true, "status") })
 cmd(
 	"items",
 	"icongrid",
-	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "art", "tiers" }, true, "eq"), str("type", true) }
+	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "art", "tiers", "ui" }, true, "eq"), str("type", true) }
 )
 -- S52: real art (weapon models, picture icons): coverage and a look in the hand without an item.
 cmd("items", "artcoverage", {})

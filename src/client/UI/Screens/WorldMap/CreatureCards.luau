@@ -34,6 +34,8 @@ local State = require(script.Parent.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local CardKit = require(script.Parent.CardKit)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -72,6 +74,17 @@ local function homes(kind: string): { string }
 		end
 	end
 	return out
+end
+
+-- S119: a boss card shows the boss portrait (loaded when the card is built) when the owner made one, else the boss
+-- silhouette of the map atlas.
+local function bossArt(bossId: string): string
+	local key = UiArt.boss(bossId)
+	if UiArt.single(key) then
+		UiArtState.ensureKey(key)
+		return key
+	end
+	return UiArt.mapIcon("boss")
 end
 
 function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
@@ -141,6 +154,7 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 		table.insert(statLines, {
 			text = T("worldmap.card.element", { element = T(Elements.nameKey(def.element)) }),
 			color = Color3.fromHex(Elements.COLORS[def.element] or "#FFFFFF"),
+			art = UiArt.element(def.element), -- S119
 		})
 	end
 	if def.passive then
@@ -222,6 +236,11 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 	return {
 		icon = if variant == "elite2" then "♛" elseif variant == "elite" then "★" else "⚔",
 		iconColor = if variant == "normal" then color else Theme.Colors.GoldBright,
+		-- S119: Elite II has no picture of its own (glyph).
+		art = if variant == "elite2"
+			then nil
+			elseif variant == "elite" then UiArt.mapIcon("elite")
+			else UiArt.mapIcon("monster"),
 		title = T((def.nameKeys :: any)[variant] or def.nameKeys.normal),
 		subtitle = T("worldmap.card.levels", { min = lv[1], max = lv[2] }),
 		subtitleColor = color,
@@ -299,6 +318,7 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 	return {
 		icon = "⛰",
 		iconColor = Theme.Colors.ZoneRed,
+		art = UiArt.mapIcon("cave"), -- S119
 		title = T(cave.nameKey),
 		subtitle = `{T("worldmap.card.levels", { min = cave.levels[1], max = cave.levels[2] })} · {T("zone.red")}`,
 		subtitleColor = color,
@@ -395,6 +415,7 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	return {
 		icon = "☠",
 		iconColor = Theme.Colors.Danger,
+		art = bossArt(boss.id), -- S119
 		title = T(boss.nameKey),
 		subtitle = `{T(`map.dungeon_{region}.name`)} · {T("worldmap.card.bossLevel", { level = boss.level })}`,
 		subtitleColor = Theme.Colors.DangerHover,

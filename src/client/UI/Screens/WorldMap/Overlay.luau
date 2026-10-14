@@ -5,6 +5,7 @@
 -- (`step`). Hit areas keep Canvas.HIT pixels at every zoom and the hint is counter-scaled. S101: the world event's
 -- glyph (a label, not a button) with its time to the start / end under it. S101b: a target with a `place` (the hint
 -- of a dialogue answer) shows the place's name under the star.
+-- S119: player, quest, guide, party and own marks get the owner's silhouettes (UiArtState.decorate) once loaded.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,6 +22,8 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -92,6 +95,9 @@ function Overlay.new(scope: Scope): Api
 	questPlace.Size = UDim2.fromOffset(160, 16)
 	questPlace.Visible = false
 	local nav = label(frame, "◆", Color3.fromHex("#F2E28A"), 16, 11)
+	UiArtState.decorate(player, UiArt.mapIcon("player"), { size = 20 })
+	UiArtState.decorate(quest, UiArt.mapIcon("quest"), { size = 18 })
+	UiArtState.decorate(nav, UiArt.mapIcon("guide"), { size = 16 })
 	-- S101: the world event on this map (warning: faded) and its time to the start / end.
 	local eventMarker = label(frame, "⚔", Theme.Colors.GoldBright, 20, 11)
 	eventMarker.Visible = false
@@ -103,10 +109,12 @@ function Overlay.new(scope: Scope): Api
 	local partyIds: { number? } = {}
 	for i = 1, PARTY do
 		partyMarkers[i] = marker(frame, "●", Color3.fromHex("#4A8FE7"), 14, 10)
+		UiArtState.decorate(partyMarkers[i]:FindFirstChild("Glyph") :: TextLabel, UiArt.mapIcon("party"), { size = 14 })
 	end
 	local markButtons: { TextButton } = {}
 	for i = 1, MARKS do
 		markButtons[i] = marker(frame, "⚑", Theme.Colors.GoldBright, 16, 10)
+		UiArtState.decorate(markButtons[i]:FindFirstChild("Glyph") :: TextLabel, nil, { size = 16 })
 	end
 
 	-- Selection ring: one looping tween, no per-frame work.
@@ -217,6 +225,7 @@ function Overlay.new(scope: Scope): Api
 						local glyph = button:FindFirstChild("Glyph") :: TextLabel
 						glyph.Text = if icon then icon.glyph else "⚑"
 						glyph.TextColor3 = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright
+						UiArtState.retarget(glyph, if icon then UiArt.mark(icon.id) else nil, glyph.TextColor3)
 						local p = Canvas.toPixel(cached, mark.x, mark.z)
 						button.Position = UDim2.fromOffset(p.X, p.Y)
 						button:SetAttribute("Index", index)

@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local BlessingMark = require(ReplicatedStorage.Shared.Logic.BlessingMark)
 local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
@@ -22,6 +23,7 @@ local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local PvpState = require(script.Parent.Parent.UI.PvpState)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -34,6 +36,7 @@ local NameplateController = {
 local MAX_DISTANCE = 80
 local HP_LINGER = 4 -- seconds the bar stays after the last hit at full HP
 local CLOCK_TICK = 0.25 -- seconds between blessing clock updates shared by all nameplates
+local VIP_ART = UiArt.hud("vip") -- S119
 local rootScope: Scope = Fusion.scoped(Fusion)
 local folder: Folder
 -- Shared by every nameplate: the real-time clock and the last-minute blink phase.
@@ -285,10 +288,21 @@ local function build(model: Model)
 						end),
 						TextStrokeTransparency = 0.35,
 					}),
+					-- S119: the VIP crown silhouette before the badge once loaded.
+					ArtIcon.Image(scope, {
+						Name = "VipArt",
+						Key = VIP_ART,
+						Tint = Theme.Colors.GoldBright,
+						Size = UDim2.fromOffset(18, 18),
+						LayoutOrder = 4,
+						Visible = scope:Computed(function(use): boolean
+							return use(vip) == true
+						end),
+					}),
 					-- VIP badge (FIX 2026-10-09): shown on every VIP's plate, your own included.
 					scope:New("TextLabel")({
 						Name = "Vip",
-						LayoutOrder = 4,
+						LayoutOrder = 5,
 						AutomaticSize = Enum.AutomaticSize.X,
 						Size = UDim2.fromOffset(0, 18),
 						Visible = scope:Computed(function(use): boolean

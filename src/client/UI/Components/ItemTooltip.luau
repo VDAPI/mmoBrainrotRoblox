@@ -18,6 +18,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local ArtIcon = require(script.Parent.ArtIcon)
 local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -36,6 +37,8 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
@@ -355,6 +358,21 @@ local function build(
 			local label = line(s, order, entry.text, color, size, font) :: TextLabel
 			if icon then
 				label.Size = UDim2.new(1, -(ICON + 4), 0, 0)
+			end
+			-- S119: the element's tile in front of the "Element:" line once loaded.
+			local element = if entry.role == "element" and item then ItemRoll.elementOf(item) else nil
+			if element and UiArtState.lookNow(UiArt.element(element)) then
+				local padding = Instance.new("UIPadding")
+				padding.PaddingLeft = UDim.new(0, 22)
+				padding.Parent = label
+				local art = ArtIcon.Image(s, {
+					Key = UiArt.element(element),
+					Size = UDim2.fromOffset(16, 16),
+					Position = UDim2.new(0, -21, 0.5, 0),
+					AnchorPoint = Vector2.new(0, 0.5),
+					Corner = UDim.new(0, 3),
+				})
+				art.Parent = label
 			end
 			row = label
 		end

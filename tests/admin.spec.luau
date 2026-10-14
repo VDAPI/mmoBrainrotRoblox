@@ -186,6 +186,25 @@ describe("S102 /scene and /quest info", function()
 	end)
 end)
 
+describe("S119 /icons ui and /icongrid ui", function()
+	it("has the new values, the texts in both languages and the implementation", function()
+		local icons = assert(AdminCommands.get("icons"), "icons")
+		expect(table.find(icons.args[1].options, "ui") ~= nil).toBe(true)
+		local grid = assert(AdminCommands.get("icongrid"), "icongrid")
+		expect(table.find(grid.args[1].options, "ui") ~= nil).toBe(true)
+		for _, key in { "admin.icons.ui", "admin.icons.uiClient", "admin.usage.icons", "admin.usage.icongrid" } do
+			expect(type((pl :: any)[key])).toBe("string")
+			expect(type((en :: any)[key])).toBe("string")
+		end
+		expect(string.find((pl :: any)["admin.usage.icongrid"], "ui <atlas>", 1, true) ~= nil).toBe(true)
+		local fs = require("@lune/fs")
+		local source = fs.readFile("src/server/Admin/Items.luau")
+		expect(string.find(source, 'mode == "ui"', 1, true) ~= nil).toBe(true)
+		local client = fs.readFile("src/client/Controllers/IconController.luau")
+		expect(string.find(client, "openUiGrid", 1, true) ~= nil).toBe(true)
+	end)
+end)
+
 describe("DevPreset", function()
 	it("gives every class a full usable set at several levels", function()
 		for _, class in { "Warrior", "Hunter", "Mage", "Cleric" } do

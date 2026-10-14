@@ -1,9 +1,11 @@
 --!strict
 -- Square button with a glyph icon (placeholder until real icons exist), optional hotkey badge and
 -- tooltip text. Minimum size respects the 44 px touch target. S59: optional "!" badge in the top-right corner.
+-- S119: optional `ArtKey` (Logic/UiArt): the white silhouette in the glyph colour replaces the glyph once loaded.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Theme = require(script.Parent.Parent.Theme)
@@ -26,11 +28,13 @@ export type Props = {
 	Badge: UsedAs<boolean>?, -- S59: red "!" in the corner (something waits in the window)
 	Visible: UsedAs<boolean>?, -- S97: hidden while false (the mounts entry below the mount level)
 	Name: string?,
+	ArtKey: UsedAs<string?>?, -- S119
 }
 
 local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local hovered = scope:Value(false)
 	local size = Theme.Size.IconButton
+	local artShown = ArtIcon.Shown(scope, props.ArtKey)
 
 	local button = scope:New("TextButton")({
 		Name = props.Name or "IconButton",
@@ -50,7 +54,9 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 			Theme.Anim.Fast
 		),
 		BackgroundTransparency = 0.05,
-		Text = props.Icon,
+		Text = scope:Computed(function(use): string
+			return if use(artShown) then "" else use(props.Icon)
+		end),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = 26,
 		TextColor3 = Theme.Colors.Gold,
@@ -80,6 +86,13 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 			}),
 			scope:New("UISizeConstraint")({
 				MinSize = Vector2.new(Theme.Size.MinTouch, Theme.Size.MinTouch),
+			}),
+			ArtIcon.Image(scope, {
+				Key = props.ArtKey,
+				Tint = Theme.Colors.Gold,
+				Size = UDim2.fromScale(0.62, 0.62),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
 			}),
 			if props.Hotkey
 				then scope:New("TextLabel")({

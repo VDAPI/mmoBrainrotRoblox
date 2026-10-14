@@ -46,6 +46,7 @@ local Spawns = require(ReplicatedStorage.Shared.Data.Spawns)
 local State = require(script.Parent.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -324,6 +325,7 @@ function Cards.npc(ctx: Context, npcId: string): Spec?
 	}
 	return {
 		icon = def.icon,
+		art = UiArt.serviceOfNpc(def), -- S119
 		title = T(def.nameKey),
 		subtitle = `{T(`npc.{def.id}.role`)} · {mapName(def.map)}`,
 		subtitleColor = Theme.Colors.Gold,
@@ -389,6 +391,7 @@ function Cards.portal(ctx: Context, portalId: string): Spec?
 	return {
 		icon = "◎",
 		iconColor = Color3.fromHex("#B9A8FF"),
+		art = UiArt.mapIcon("portal"), -- S119
 		title = T(target.nameKey),
 		subtitle = if open then `{T("worldmap.card.portalTo")} · {levelsOf(target)}` else T("worldmap.soon"),
 		accent = if open then ZONE_COLORS[target.zone] else Theme.Colors.Border,
@@ -452,6 +455,8 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 	return {
 		icon = "⚔",
 		iconColor = color,
+		-- S119: the hunting ground profile's tile, else the area silhouette.
+		art = if found.profile then UiArt.profile(found.profile) else UiArt.mapIcon("area"),
 		title = T(found.nameKey),
 		subtitle = T("worldmap.card.levels", { min = found.lv[1], max = found.lv[2] }),
 		subtitleColor = color,
@@ -509,6 +514,9 @@ function Cards.node(ctx: Context, mapId: string, kindId: string, x: number, z: n
 	return {
 		icon = if kind.category == "fishing" then "≈" elseif kind.category == "herb" then "❀" else "⛏",
 		iconColor = Color3.fromHex(kind.look.color),
+		art = UiArt.mapIcon(
+			if kind.category == "fishing" then "fishing" elseif kind.category == "herb" then "herb" else "vein"
+		), -- S119
 		title = T(kind.nameKey),
 		subtitle = mapName(mapId),
 		accent = Color3.fromHex(kind.look.color),
@@ -575,6 +583,7 @@ function Cards.party(ctx: Context, userId: number): Spec?
 			return {
 				icon = if class then class.icon else "●",
 				iconColor = Theme.Colors.Accent,
+				art = if class then UiArt.classEmblem(class.id) else UiArt.mapIcon("party"), -- S119
 				title = member.name,
 				subtitle = if map then mapName(map.id) else "",
 				accent = Theme.Colors.Accent,
@@ -619,6 +628,7 @@ function Cards.mark(ctx: Context, index: number): Spec?
 	return {
 		icon = if icon then icon.glyph else "⚑",
 		iconColor = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright,
+		art = if icon then UiArt.mark(icon.id) else nil, -- S119
 		title = name,
 		subtitle = `{if icon then T(icon.nameKey) else ""} · {mapName(mark.map)}`,
 		accent = if icon then Color3.fromHex(icon.color) else nil,

@@ -7,6 +7,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local MapSearch = require(ReplicatedStorage.Shared.Logic.MapSearch)
@@ -15,6 +16,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent, OnChange = Fusion.Children, Fusion.OnEvent, Fusion.OnChange
 
@@ -31,6 +33,29 @@ local KIND_ICONS: { [string]: string } = {
 	boss = "☠",
 	node = "●",
 }
+
+-- S119: map silhouettes of the result kinds (none for whole maps).
+local KIND_ART: { [string]: string } = {
+	npc = UiArt.mapIcon("npc"),
+	cave = UiArt.mapIcon("cave"),
+	area = UiArt.mapIcon("area"),
+	monster = UiArt.mapIcon("monster"),
+	boss = UiArt.mapIcon("boss"),
+}
+
+-- Gathering results take the silhouette of their category (as Cards.node), never the vein for all.
+local function resultArt(result: MapSearch.Result): string?
+	if result.kind ~= "node" then
+		return KIND_ART[result.kind]
+	end
+	local kind = GatherNodes.get(result.id)
+	if not kind then
+		return nil
+	end
+	return UiArt.mapIcon(
+		if kind.category == "fishing" then "fishing" elseif kind.category == "herb" then "herb" else "vein"
+	)
+end
 
 local indexes: { [string]: MapSearch.Index } = {}
 
@@ -232,15 +257,15 @@ function Search.new(scope: Scope, props: Props): Api
 					end,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-						s:New("TextLabel")({
+						ArtIcon(s, {
+							Key = resultArt(result), -- S119
+							Glyph = KIND_ICONS[result.kind] or "•",
+							GlyphColor = Theme.Colors.Gold,
 							Position = UDim2.fromOffset(6, 0),
 							Size = UDim2.new(0, 24, 1, 0),
-							BackgroundTransparency = 1,
-							Text = KIND_ICONS[result.kind] or "•",
-							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 18,
-							TextColor3 = Theme.Colors.Gold,
+							ImageScale = 0.8,
 							ZIndex = 7,
+							Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 18 },
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(34, 3),

@@ -7,12 +7,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -51,6 +53,12 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			local bar = use(hotbar)
 			return if type(bar) == "table" then bar[tostring(use(slot))] else nil
 		end)
+		-- S119: the skill's picture fills the round button once loaded (the glyph or slot number otherwise).
+		local artKey = scope:Computed(function(use): string?
+			local id = use(skillId)
+			return if id and SkillData.get(id) then UiArt.skill(id) else nil
+		end)
+		local artShown = ArtIcon.Shown(scope, artKey)
 		local rad = math.rad(angle)
 		local offset = Vector2.new(math.cos(rad), -math.sin(rad)) * RADIUS
 		local button = scope:New("TextButton")({
@@ -64,6 +72,9 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			Text = scope:Computed(function(use): string
 				local id = use(skillId)
 				local skill = id and SkillData.get(id)
+				if skill and use(artShown) then
+					return ""
+				end
 				return if skill then skill.glyph else tostring(use(slot) % 10)
 			end),
 			TextScaled = true,
@@ -127,6 +138,14 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 					PaddingBottom = UDim.new(0.2, 0),
 					PaddingLeft = UDim.new(0.2, 0),
 					PaddingRight = UDim.new(0.2, 0),
+				}),
+				-- Inside the 20% padding: 1 / 0.6 of the content box = the whole button.
+				ArtIcon.Image(scope, {
+					Key = artKey,
+					Size = UDim2.fromScale(1 / 0.6, 1 / 0.6),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Corner = UDim.new(0.5, 0),
 				}),
 			},
 		})

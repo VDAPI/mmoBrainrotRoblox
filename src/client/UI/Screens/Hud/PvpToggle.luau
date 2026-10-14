@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -15,12 +16,14 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 64
+local ART = UiArt.hud("pvp") -- S119
 
 local function PvpToggle(scope: Scope): Instance
 	local enabled = State.Value({ "character", "pvpEnabled" })
@@ -83,6 +86,13 @@ local function PvpToggle(scope: Scope): Instance
 		end)
 	end
 
+	local glyphColor = scope:Computed(function(use): Color3
+		if use(zoneType) == "green" then
+			return Theme.Colors.TextMuted
+		end
+		return if use(isOn) then Theme.Colors.Text else Theme.Colors.Gold
+	end)
+	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
 		Name = "PvpToggle",
 		AnchorPoint = Vector2.new(1, 1),
@@ -98,18 +108,23 @@ local function PvpToggle(scope: Scope): Instance
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(zoneType) == "green" then 0.45 else 0.05
 		end),
-		Text = "⚔",
+		Text = scope:Computed(function(use): string
+			return if use(artShown) then "" else "⚔"
+		end),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = 34,
-		TextColor3 = scope:Computed(function(use): Color3
-			if use(zoneType) == "green" then
-				return Theme.Colors.TextMuted
-			end
-			return if use(isOn) then Theme.Colors.Text else Theme.Colors.Gold
-		end),
+		TextColor3 = glyphColor,
 		[OnEvent("Activated")] = click,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+			-- S119: the PvP silhouette in the colour of the state once loaded.
+			ArtIcon.Image(scope, {
+				Key = ART,
+				Tint = glyphColor,
+				Size = UDim2.fromScale(0.6, 0.6),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+			}),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = scope:Computed(function(use): number

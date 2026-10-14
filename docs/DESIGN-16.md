@@ -221,3 +221,20 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
   w raporcie `import_graphics.py` („Grafiki interfejsu”).
 - Wgranie przez MCP jak S112: `upload_image` z lokalnego `http.server`; S118 wgrała `items_7.png` (zmieniony) i
   `items_8.png` (kilka razy: po dograniu obrazków zapisanych w trakcie sesji).
+
+## 15. Ustalenia S119
+
+- Osobny system obok ikon przedmiotów: `tools/icons/import_ui.py` → atlasy `art/ui/ui_<atlas>_<NN>.png` (`skills`,
+  `status`, `emblems`, `hud`, `map`, `shop`) i pojedyncze `art/ui/single/*.jpg`, rejestr `Data/UiArt` (generowany), id
+  `Data/UiArtSheets` (klucz = nazwa pliku), klucze tylko `Logic/UiArt`, listy id gry `Logic/UiArtKeys`.
+- API klienta: `UI/UiArtState` (`Loaded`, `Status`, `load`, `ensure` / `ensureKey`, `look` / `ready` / `lookNow`, `apply`,
+  `decorate` / `retarget` / `fade` dla etykiet bez Fusion), komponent `UI/Components/ArtIcon` (`ArtIcon(scope, props)` z
+  `Glyph` jako zapasem, `ArtIcon.Image`, `ArtIcon.Shown`); `IconButton.ArtKey`, `ItemSlot.PlaceholderArt`,
+  `DetailCard` `spec.art` i `Line.art`, `DragVisual.art`.
+- Zapas zawsze dawny znak; pojedyncze obrazy wczytywane przy otwarciu okna; malowane mapy w kadrze `viewBox` SVG wiki.
+- Admin: `/icons ui`, `/icongrid ui <atlas>`.
+- Wgranie przez MCP przerwane odpowiedzią `403 User is moderated` (konto VDaPii): 6 atlasów, `items_8.png` i 12 obrazów
+  wgrane, 18 map czeka. Szczegóły i lista miejsc: `docs/SESJE.md` → S119.
+
+**Zamknięcie serii.** Zrobione S110, S111, S112, S118, S119; S113–S117 czekają w `DALEJ.md`. Grafiki i modele dochodzą
+bez programowania: `docs/sessions/IMPORT-GRAFIK.md` (przedmioty i interfejs), `docs/sessions/IMPORT-MODELI.md` (modele).

@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
+local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.UI.IconState)
@@ -16,6 +17,7 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local Tooltip = require(script.Parent.Parent.UI.Components.Tooltip)
+local UiArtState = require(script.Parent.Parent.UI.UiArtState)
 
 export type LayerName = "Screens" | "Windows" | "Modals" | "Toasts" | "Tooltip"
 
@@ -42,8 +44,9 @@ end
 
 -- Icon following the mouse while something is dragged (UI/DragDrop). Controllers register providers that
 -- return the visual for slot ids they own: a glyph with its colour (skills) or, S35, an item definition (and the
--- element of a mage weapon) drawn with UI/Components/ItemIcon.
-export type DragVisual = { glyph: string, color: string?, def: Items.ItemDef?, element: string? }
+-- element of a mage weapon) drawn with UI/Components/ItemIcon. S119: `art` = interface picture key (skills), drawn
+-- over the glyph once loaded.
+export type DragVisual = { glyph: string, color: string?, def: Items.ItemDef?, element: string?, art: string? }
 
 local dragVisuals: { (slotId: string) -> DragVisual? } = {}
 
@@ -73,6 +76,11 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		local v = use(visual)
 		return if v then v.def else nil
 	end)
+	local artKey = scope:Computed(function(use): string?
+		local v = use(visual)
+		return if v and not v.def then v.art else nil
+	end)
+	local artShown = ArtIcon.Shown(scope, artKey)
 	scope:New("TextLabel")({
 		Name = "DragGhost",
 		Parent = parent,
@@ -93,10 +101,11 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 			return if v and v.color then Color3.fromHex(v.color) else Theme.Colors.Panel
 		end),
 		BackgroundTransparency = 0.3,
-		-- Items draw their icon (atlas or glyph tile) on top; skills keep the glyph text.
+		-- Items draw their icon (atlas or glyph tile) on top; skills keep the glyph text (S119: their picture once
+		-- loaded, the glyph hidden).
 		Text = scope:Computed(function(use): string
 			local v = use(visual)
-			return if v and not v.def then v.glyph else ""
+			return if v and not v.def and not use(artShown) then v.glyph else ""
 		end),
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
@@ -114,6 +123,7 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 				Size = UDim2.fromScale(0.86, 0.86),
 				ZIndex = 301,
 			}),
+			ArtIcon.Image(scope, { Key = artKey, ZIndex = 301, Corner = Theme.Corner.Small }),
 		},
 	})
 end
@@ -162,6 +172,8 @@ function UIController.Init()
 	UIController.MountDragGhost(scope, roots.Tooltip)
 	-- S35: item icon atlases (glyphs until they are uploaded and loaded).
 	task.spawn(IconState.load)
+	-- S119: interface picture atlases (single pictures load when their window opens).
+	task.spawn(UiArtState.load)
 	-- S111: the effects volume (settings.volume) is the "Effects" sound group (SettingsController, SfxController).
 end
 

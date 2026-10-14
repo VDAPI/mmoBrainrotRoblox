@@ -7,6 +7,9 @@
 -- with the zoom like the rest of the drawing. At the smallest zoom overlapping icons keep only the most
 -- important one (NPC with a quest > portal > dungeon > NPC > node); the hidden ones stay reachable by search.
 -- The window wires one set of connections for the shown map (WorldMap/init).
+-- S119: icons get the owner's silhouettes (UiArtState.decorate, glyph colour) once the map atlas is loaded; a map with
+-- a painted picture (Logic/UiArt.map, frame from the wiki SVG viewBox) shows it instead of the sketch's terrain once
+-- loaded (the sketch is not drawn when the picture is already there; otherwise it hides when the picture arrives).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,6 +17,8 @@ local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local IconState = require(script.Parent.Parent.Parent.IconState)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -23,6 +28,8 @@ local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Canvas = {}
 
@@ -59,6 +66,7 @@ export type AreaEntry = {
 	pill: Frame,
 	name: TextLabel,
 	levels: TextLabel,
+	star: ImageLabel, -- S119: "recommended" badge in the area's corner (the ★ leaves the name while it shows)
 }
 
 export type Cached = {
@@ -71,12 +79,16 @@ export type Cached = {
 	icons: { Icon },
 	npcIcons: { [string]: Icon },
 	captions: { TextLabel },
+	painted: ImageLabel?, -- S119
+	sketchLayer: Frame?, -- S119: the drawn terrain (nil when the painted map replaced it at build time)
 }
 
 local PRIORITY: { [IconKind]: number } = { portal = 40, cave = 40, dungeon = 30, npc = 20, node = 10 }
 local NODE_COLORS: { [string]: string } = { vein = "#E8C25A", bush = "#6FCF5A", fishing = "#5AA8E8" }
 
 local cache: { [string]: Cached } = {}
+local artScope = Fusion.scoped(Fusion)
+local paint: (cached: Cached) -> ()
 
 local function layer(parent: Instance, name: string, z: number): Frame
 	local f = Instance.new("Frame")
@@ -124,7 +136,8 @@ local function icon(
 	z: number,
 	glyph: string,
 	color: Color3,
-	size: number
+	size: number,
+	art: string? -- S119: interface picture key (silhouette tinted with `color`)
 ): Icon
 	local pixel = MapSketch.toPixel(cached.sketch, cached.scale, x, z)
 	local button = Instance.new("TextButton")
@@ -139,6 +152,9 @@ local function icon(
 	button.Parent = parent
 	local label = text(button, glyph, color, size, parent.ZIndex + 2)
 	label.Size = UDim2.fromOffset(size + 8, size + 6)
+	if art then
+		UiArtState.decorate(label, art, { tint = color, size = math.max(size, 12) })
+	end
 	local entry: Icon = {
 		kind = kind,
 		id = id,
@@ -187,8 +203,18 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 		local levels = if target.id == "city" then "" else ` {target.minLevel}–{target.maxLevel}`
 		if portal.kind == "cave" then
 			local cave = Areas.caves.get(portal.target)
-			local entry =
-				icon(cached, layers.icons, "cave", portal.target, portal.x, portal.z, "⛰", Theme.Colors.ZoneRed, 20)
+			local entry = icon(
+				cached,
+				layers.icons,
+				"cave",
+				portal.target,
+				portal.x,
+				portal.z,
+				"⛰",
+				Theme.Colors.ZoneRed,
+				20,
+				UiArt.mapIcon("cave")
+			)
 			entry.target = portal.target
 			caption(
 				cached,
@@ -201,8 +227,18 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 			)
 		elseif portal.kind == "dungeon" then
 			local region = string.match(portal.target, "^dungeon_(.+)$") or ""
-			local entry =
-				icon(cached, layers.icons, "dungeon", region, portal.x, portal.z, "☠", Theme.Colors.Danger, 20)
+			local entry = icon(
+				cached,
+				layers.icons,
+				"dungeon",
+				region,
+				portal.x,
+				portal.z,
+				"☠",
+				Theme.Colors.Danger,
+				20,
+				UiArt.mapIcon("dungeon")
+			)
 			entry.target = portal.target
 			local key = bossOf(region)
 			if key then
@@ -218,7 +254,8 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.z,
 				"◎",
 				Color3.fromHex("#B9A8FF"),
-				18
+				18,
+				UiArt.mapIcon("portal")
 			)
 			entry.target = portal.target
 			caption(cached, entry, target.nameKey, levels, Color3.fromHex("#D8CCFF"), 11, 14)
@@ -238,7 +275,8 @@ local function npcIcons(cached: Cached, layers: { [string]: Frame })
 				npc.position.z,
 				npc.icon,
 				Theme.Colors.Parchment,
-				15
+				15,
+				UiArt.serviceOfNpc(npc)
 			)
 			caption(cached, entry, npc.nameKey, nil, Theme.Colors.Parchment, 10, 13)
 			local mark = text(entry.button, "", Theme.Colors.GoldBright, 17, entry.button.ZIndex + 2)
@@ -258,8 +296,19 @@ local function nodeIcons(cached: Cached, layers: { [string]: Frame })
 		if item.t == "node" and item.id then
 			local family = string.match(item.id, "^(%a+)_") or "vein"
 			local color = Color3.fromHex(NODE_COLORS[family] or "#E8C25A")
-			local entry = icon(cached, layers.nodes, "node", item.id, item.x, item.z, "●", color, 7)
-			entry.glyph.TextStrokeTransparency = 0.6
+			local entry = icon(
+				cached,
+				layers.nodes,
+				"node",
+				item.id,
+				item.x,
+				item.z,
+				"●",
+				color,
+				7,
+				UiArt.mapIcon("node", family)
+			)
+			UiArtState.fade(entry.glyph, 0, 0.6)
 		end
 	end
 end
@@ -326,9 +375,19 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		name.RichText = true -- S33: the profile icon in its colour
 		local levels = line(2, 17, Theme.Fonts.Heading)
 		pill.Parent = f
+		local star = Instance.new("ImageLabel")
+		star.Name = "Recommended"
+		star.AnchorPoint = Vector2.new(1, 0)
+		star.Position = UDim2.new(1, -4, 0, 4)
+		star.Size = UDim2.fromOffset(18, 18)
+		star.BackgroundTransparency = 1
+		star.ImageColor3 = Theme.Colors.GoldBright
+		star.ZIndex = 4
+		star.Visible = false
+		star.Parent = f
 		table.insert(
 			cached.areas,
-			{ frame = f, area = area, stroke = stroke, pill = pill, name = name, levels = levels }
+			{ frame = f, area = area, stroke = stroke, pill = pill, name = name, levels = levels, star = star }
 		)
 	end
 end
@@ -391,9 +450,9 @@ function Canvas.applyFilter(cached: Cached, services: { [string]: boolean }?)
 			end
 		end
 		local filtering = services ~= nil and next(services) ~= nil
-		entry.glyph.TextTransparency = if match then 0 else 0.75
-		entry.glyph.TextStrokeTransparency = if match then 0.25 else 0.85
-		entry.glyph.TextColor3 = if filtering and match then Theme.Colors.GoldBright else entry.color
+		local color = if filtering and match then Theme.Colors.GoldBright else entry.color
+		entry.glyph.TextColor3 = color
+		UiArtState.fade(entry.glyph, if match then 0 else 0.75, if match then 0.25 else 0.85, color)
 		if entry.caption then
 			entry.caption.TextTransparency = if match then 0 else 0.8
 			entry.caption.TextStrokeTransparency = if match then 0.25 else 0.9
@@ -441,8 +500,14 @@ function Canvas.refresh(cached: Cached, level: number, view: View)
 		entry.stroke.Transparency = if dim then 0.7 else 0
 		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.2
 		local icon = if view.profiles ~= false then AreaProfileText.iconRich(area.profile, nil) else ""
+		local starLook = if recommended then UiArtState.lookNow(UiArt.mapIcon("recommended")) else nil
+		entry.star.Visible = starLook ~= nil
+		if starLook then
+			UiArtState.apply(entry.star, starLook)
+			entry.star.ImageTransparency = if dim then 0.6 else 0
+		end
 		entry.name.Text = (if icon ~= "" then icon .. " " else "")
-			.. (if recommended then "★ " else "")
+			.. (if recommended and not starLook then "★ " else "")
 			.. AreaProfileText.escape(Text.now(area.nameKey))
 		entry.name.TextColor3 = color
 		entry.name.TextTransparency = if dim then 0.6 else 0
@@ -458,6 +523,36 @@ function Canvas.refresh(cached: Cached, level: number, view: View)
 		end
 	end
 end
+
+-- S119: painted picture or sketch, by the load state of the picture (the sketch is drawn late only if the picture
+-- disappears again: /icons glyph after a build with the picture).
+function paint(cached: Cached)
+	local image = cached.painted
+	if not image then
+		return
+	end
+	local look = UiArtState.lookNow(UiArt.map(cached.mapId))
+	if look then
+		UiArtState.apply(image, look)
+	end
+	image.Visible = look ~= nil
+	if not look and not cached.sketchLayer then
+		local sketchLayer = layer(cached.canvas:FindFirstChild("Terrain") :: Frame, "Sketch", 1)
+		MapSketch.draw(sketchLayer, cached.sketch, cached.scale)
+		cached.sketchLayer = sketchLayer
+	end
+	if cached.sketchLayer then
+		cached.sketchLayer.Visible = look == nil
+	end
+end
+
+local function paintAll()
+	for _, cached in cache do
+		paint(cached)
+	end
+end
+artScope:Observer(UiArtState.Loaded):onChange(paintAll)
+artScope:Observer(IconState.Mode):onChange(paintAll)
 
 -- Static layer of a map (cached), or nil when the map has no sketch yet.
 function Canvas.get(mapId: string): Cached?
@@ -478,7 +573,30 @@ function Canvas.get(mapId: string): Cached?
 	canvas.BackgroundColor3 = MapSketch.background(map.biome)
 	canvas.BorderSizePixel = 0
 	local terrain = layer(canvas, "Terrain", 1)
-	MapSketch.draw(terrain, sketch, scale)
+	terrain.ClipsDescendants = true
+	-- S119: the painted map (if the owner made one) instead of the drawn terrain.
+	local frame = UiArt.mapFrame(mapId)
+	local paintedKey = UiArt.map(mapId)
+	local painted: ImageLabel? = nil
+	local sketchLayer: Frame? = nil
+	if frame then
+		UiArtState.ensureKey(paintedKey)
+		local corner = MapSketch.toPixel(sketch, scale, frame.x0, frame.z0)
+		local image = Instance.new("ImageLabel")
+		image.Name = "Painted"
+		image.Position = UDim2.fromOffset(corner.X, corner.Y)
+		image.Size = UDim2.fromOffset(frame.size * scale, frame.size * scale)
+		image.BackgroundTransparency = 1
+		image.ScaleType = Enum.ScaleType.Stretch
+		image.ZIndex = 1
+		image.Visible = false
+		image.Parent = terrain
+		painted = image
+	end
+	if not (frame and UiArtState.lookNow(paintedKey)) then
+		sketchLayer = layer(terrain, "Sketch", 1)
+		MapSketch.draw(sketchLayer :: Frame, sketch, scale)
+	end
 	local layers = {
 		areas = layer(canvas, "Areas", 2),
 		nodes = layer(canvas, "Nodes", 4),
@@ -495,7 +613,10 @@ function Canvas.get(mapId: string): Cached?
 		icons = {},
 		npcIcons = {},
 		captions = {},
+		painted = painted,
+		sketchLayer = sketchLayer,
 	}
+	paint(cached)
 	areaFrames(cached, layers)
 	portalIcons(cached, layers)
 	npcIcons(cached, layers)

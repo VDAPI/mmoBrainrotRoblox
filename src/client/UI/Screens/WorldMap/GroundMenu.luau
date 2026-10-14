@@ -5,10 +5,13 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -111,7 +114,9 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 				LayoutOrder = i,
 				Size = UDim2.fromOffset(40, 40),
 				BackgroundColor3 = Theme.Colors.PanelRaised,
-				Text = icon.glyph,
+				Text = scope:Computed(function(use): string
+					return if UiArtState.ready(use, UiArt.mark(icon.id)) then "" else icon.glyph
+				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = 22,
 				TextColor3 = Color3.fromHex(icon.color),
@@ -119,7 +124,18 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 				[OnEvent("Activated")] = take(function(p: Point)
 					props.OnMark(p, icon.id)
 				end),
-				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					-- S119: the mark's silhouette in its colour once loaded.
+					ArtIcon.Image(scope, {
+						Key = UiArt.mark(icon.id),
+						Tint = Color3.fromHex(icon.color),
+						Size = UDim2.fromScale(0.6, 0.6),
+						Position = UDim2.fromScale(0.5, 0.5),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						ZIndex = 47,
+					}),
+				},
 			})
 		)
 	end

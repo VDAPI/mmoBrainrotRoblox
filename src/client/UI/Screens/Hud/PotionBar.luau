@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
@@ -19,6 +20,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -147,20 +149,21 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					end),
 					Visible = showArt,
 				}),
-				scope:New("TextLabel")({
+				-- S119: without the potion's own picture, the empty-flask silhouette in the potion colour once loaded.
+				ArtIcon(scope, {
 					Name = "Icon",
-					BackgroundTransparency = 1,
+					Key = UiArt.hud("potion_empty"),
+					Glyph = "⚗",
+					GlyphColor = entry.color,
+					ImageScale = 0.6,
 					Size = UDim2.fromScale(1, 1),
 					Visible = scope:Computed(function(use): boolean
 						return not use(showArt)
 					end),
-					Text = "⚗",
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 30,
-					TextColor3 = entry.color,
-					TextTransparency = scope:Computed(function(use): number
+					Transparency = scope:Computed(function(use): number
 						return if use(amount) > 0 then 0 else 0.7
 					end),
+					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 30 },
 				}),
 				scope:New("TextLabel")({
 					Name = "Quality",

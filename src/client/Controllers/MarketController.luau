@@ -7,12 +7,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local AuctionWindow = require(script.Parent.Parent.UI.Screens.AuctionWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MailWindow = require(script.Parent.Parent.UI.Screens.MailWindow)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local State = require(script.Parent.Parent.UI.State)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -43,7 +45,10 @@ function MarketController.OpenMail()
 	WindowManager.Open("mail")
 end
 
+local MAIL_ART = UiArt.hud("mail") -- S119
+
 local function envelope(): Instance
+	local mailShown = ArtIcon.Shown(scope, MAIL_ART)
 	local count = scope:Computed(function(use): number
 		local mail = use(State.Value({ "mail" }))
 		return if type(mail) == "table" then mail.count or 0 else 0
@@ -59,8 +64,12 @@ local function envelope(): Instance
 		Visible = scope:Computed(function(use): boolean
 			return use(count) > 0 and use(State.Value({ "session", "phase" })) == "playing"
 		end),
+		-- S119: the envelope silhouette on the left and the count on the right once loaded ("✉ n" otherwise).
 		Text = scope:Computed(function(use): string
-			return `✉ {use(count)}`
+			return if use(mailShown) then `{use(count)}` else `✉ {use(count)}`
+		end),
+		TextXAlignment = scope:Computed(function(use): Enum.TextXAlignment
+			return if use(mailShown) then Enum.TextXAlignment.Right else Enum.TextXAlignment.Center
 		end),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Large,
@@ -71,6 +80,18 @@ local function envelope(): Instance
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIPadding")({
+				PaddingRight = scope:Computed(function(use): UDim
+					return if use(mailShown) then UDim.new(0, 14) else UDim.new()
+				end),
+			}),
+			ArtIcon.Image(scope, {
+				Key = MAIL_ART,
+				Tint = Theme.Colors.GoldBright,
+				Size = UDim2.fromOffset(34, 34),
+				Position = UDim2.new(0, 10, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+			}),
 		},
 	})
 end

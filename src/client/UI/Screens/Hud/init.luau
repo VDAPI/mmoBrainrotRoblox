@@ -6,6 +6,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaBanner = require(script.AreaBanner)
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
@@ -38,6 +39,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local TargetFrame = require(script.TargetFrame)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local ZoneBanner = require(script.ZoneBanner)
 
 local Children = Fusion.Children
@@ -131,19 +133,23 @@ local function portrait(scope: Scope): Instance
 							return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
 						end),
 					}),
-					scope:New("TextLabel")({
-						BackgroundTransparency = 1,
-						Size = UDim2.fromScale(1, 1),
-						Text = scope:Computed(function(use): string
+					-- S119: the class emblem (medallion) once loaded, the glyph otherwise.
+					ArtIcon(scope, {
+						Key = scope:Computed(function(use): string?
+							local c = use(class)
+							return if c then UiArt.classEmblem(c.id) else nil
+						end),
+						Glyph = scope:Computed(function(use): string
 							local c = use(class)
 							return if c then c.icon else ""
 						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 44,
-						TextColor3 = scope:Computed(function(use): Color3
+						GlyphColor = scope:Computed(function(use): Color3
 							local c = use(class)
 							return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
 						end),
+						ImageScale = 0.8,
+						Size = UDim2.fromScale(1, 1),
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
 					}),
 				},
 			}),
@@ -255,6 +261,7 @@ local function menu(scope: Scope, props: Props): Instance
 				Name = entry.id,
 				LayoutOrder = index,
 				Icon = entry.icon,
+				ArtKey = UiArt.menu(entry.id), -- S119
 				Hotkey = if entry.hotkey then Keybinds.Label(scope, `win_{entry.id}`) else nil,
 				Tooltip = Text.T(scope, entry.tooltipKey),
 				Active = props.IsOpen(entry.id),

@@ -7,6 +7,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
@@ -16,12 +17,14 @@ local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-export type Line = { text: string, color: Color3?, size: number?, bold: boolean?, italic: boolean? }
+-- S119: `art` = a small picture (element) in front of the line once loaded (the line alone otherwise).
+export type Line = { text: string, color: Color3?, size: number?, bold: boolean?, italic: boolean?, art: string? }
 export type Row = { text: string, sub: string?, color: Color3?, icon: string?, onClick: (() -> ())? }
 -- `tooltip`: extra tooltip context (S31, e.g. the shop entry so the tooltip shows the same price).
 export type ItemRow = {
@@ -48,6 +51,7 @@ export type Action = { text: string, onClick: () -> (), primary: boolean?, dange
 export type Spec = {
 	icon: string,
 	iconColor: Color3?,
+	art: string?, -- S119: interface picture key (Logic/UiArt) drawn instead of `icon` once loaded
 	title: string,
 	subtitle: string?,
 	subtitleColor: Color3?,
@@ -185,25 +189,28 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				end),
 				false
 			),
-			scope:New("TextLabel")({
+			ArtIcon(scope, {
 				Name = "Icon",
+				Key = scope:Computed(function(use): string?
+					local s = use(spec)
+					return if s then s.art else nil
+				end),
 				Position = scope:Computed(function(use): UDim2
 					local s = use(spec)
 					return UDim2.fromOffset(if s and s.back then 50 else 0, 2)
 				end),
 				Size = UDim2.fromOffset(40, 40),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
+				Glyph = scope:Computed(function(use): string
 					local s = use(spec)
 					return if s then s.icon else ""
 				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 30,
-				TextColor3 = scope:Computed(function(use): Color3
+				GlyphColor = scope:Computed(function(use): Color3
 					local s = use(spec)
 					return if s and s.iconColor then s.iconColor else Theme.Colors.Parchment
 				end),
-				TextStrokeTransparency = 0.4,
+				GlyphStroke = 0.4,
+				Corner = Theme.Corner.Small,
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 30 },
 			}),
 			scope:New("Frame")({
 				Name = "Titles",
@@ -325,6 +332,21 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			TextSize = line.size or 15,
 			TextColor3 = line.color or Theme.Colors.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			[Children] = if line.art
+				then {
+					s:New("UIPadding")({
+						PaddingLeft = s:Computed(function(use): UDim
+							return if UiArtState.ready(use, line.art) then UDim.new(0, 24) else UDim.new()
+						end),
+					}),
+					ArtIcon.Image(s, {
+						Key = line.art,
+						Size = UDim2.fromOffset(18, 18),
+						Position = UDim2.fromOffset(-24, 0),
+						Corner = UDim.new(0, 4),
+					}),
+				}
+				else nil,
 		})
 	end
 

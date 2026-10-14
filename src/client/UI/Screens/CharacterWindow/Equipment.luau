@@ -8,6 +8,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Device = require(script.Parent.Parent.Parent.Device)
@@ -19,6 +20,8 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -71,6 +74,10 @@ local function Equipment(scope: Scope, props: Props): Instance
 	local inventory = State.Value({ "character", "inventory" })
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
+	local emblem = scope:Computed(function(use): string?
+		local c = use(classId)
+		return if type(c) == "string" and c ~= "" then UiArt.classEmblem(c) else nil
+	end)
 
 	-- What is being moved: the dragged slot, or on touch the selected one (tap item, then tap slot).
 	local source = scope:Computed(function(use): string?
@@ -117,6 +124,7 @@ local function Equipment(scope: Scope, props: Props): Instance
 				SlotId = `eq:{entry.id}`,
 				Size = slot,
 				Placeholder = entry.glyph,
+				PlaceholderArt = UiArt.slot(entry.id), -- S119: the empty slot silhouette once loaded
 				Position = UDim2.fromOffset((entry.col - 1) * (slot + gap), (entry.row - 1) * (slot + gap)),
 				Item = scope:Computed(function(use): Types.ItemInstance?
 					local eq = use(equipment)
@@ -179,7 +187,7 @@ local function Equipment(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 0.5,
 				Text = scope:Computed(function(use): string
 					local class = Classes.get(use(classId) or "")
-					return if class then class.icon else ""
+					return if class and not UiArtState.ready(use, use(emblem)) then class.icon else ""
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = math.floor(slot * 0.9),
@@ -188,6 +196,15 @@ local function Equipment(scope: Scope, props: Props): Instance
 				ZIndex = 0,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
+					-- S119: the class emblem, as faint as the glyph, once loaded.
+					ArtIcon.Image(scope, {
+						Key = emblem,
+						Transparency = 0.8,
+						Size = UDim2.fromOffset(math.floor(slot * 1.2), math.floor(slot * 1.2)),
+						Position = UDim2.fromScale(0.5, 0.5),
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						ZIndex = 0,
+					}),
 				},
 			}),
 			slots :: any,

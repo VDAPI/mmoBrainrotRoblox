@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -22,6 +23,8 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
 
@@ -121,7 +124,40 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		return list
 	end)
 
+	-- S119: the dungeon banner behind the header lines (name, levels, state), darkened, once loaded; the layout
+	-- does not move, without the banner the window is as before.
+	local banner = scope:Computed(function(use): string?
+		local region = use(props.Region)
+		local boss = if region then Bosses.forRegion(region) else nil
+		return if boss then UiArt.dungeon(boss.id) else nil
+	end)
+	scope:Observer(banner):onBind(function()
+		UiArtState.ensureKey(Fusion.peek(banner))
+	end)
+	local bannerShown = ArtIcon.Shown(scope, banner)
+
 	return {
+		ArtIcon.Image(scope, {
+			Name = "Banner",
+			Key = banner,
+			Size = UDim2.new(1, 0, 0, 106),
+			ScaleType = Enum.ScaleType.Crop,
+			Corner = Theme.Corner.Small,
+		}) :: any,
+		scope:New("Frame")({
+			Name = "BannerShade",
+			Size = UDim2.new(1, 0, 0, 106),
+			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundTransparency = 0.35,
+			Visible = bannerShown,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIGradient")({
+					Rotation = 90,
+					Transparency = NumberSequence.new(0.6, 0),
+				}),
+			},
+		}),
 		scope:New("TextLabel")({
 			Size = UDim2.new(1, 0, 0, 40),
 			BackgroundTransparency = 1,

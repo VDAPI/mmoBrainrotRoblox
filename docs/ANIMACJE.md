@@ -318,3 +318,26 @@ rysowane kodem (S35). ID leżą w `src/shared/Data/ItemIconSheets.luau`, jeden w
 
 Sesja może wgrać sama przez MCP jak w §8: `python -m http.server 8765 --bind 127.0.0.1` w folderze z kopiami atlasów
 (np. `build/upload`), potem `upload_image` z adresami `http://127.0.0.1:8765/items_<n>.png`.
+
+## 10. Grafiki interfejsu (S119)
+
+**Co to jest.** Atlasy `art/ui/ui_<atlas>_<NN>.png` (1024 × 1024, komórki 128 px: `skills`, `status`, `emblems`, `hud`,
+`map`, `shop`) i pojedyncze obrazy `art/ui/single/<folder>__<nazwa>.jpg` (mapy malowane, portrety klas i bossów, banery
+lochów) z folderu grafik właściciela. Gra działa bez nich: plik bez ID albo niewczytany zostawia w swoich miejscach
+dzisiejsze znaki. ID leżą w `src/shared/Data/UiArtSheets.luau`, jeden wiersz na plik (`["<nazwa pliku>"] = "..."`).
+
+**Wgranie (te same kroki co §9):**
+1. Studio z miejscem gry, zalogowany jako właściciel gry (VDaPii).
+2. Widok → **Asset Manager** → **Bulk Import** → pliki z listy „do wgrania” (drukuje ją
+   `py -3 tools/icons/import_ui.py --check-ids`, zapisuje `build/ui/do_wgrania.txt`; w grze `/icons ui`). Kolejność:
+   atlasy `skills`, `status`, `emblems`, `hud`, potem `map`, `shop`, na końcu pojedyncze obrazy.
+3. Prawy klik na każdym → **Copy Asset ID** → wklej do `src/shared/Data/UiArtSheets.luau` w wiersz z tą samą nazwą
+   pliku (`"rbxassetid://<liczba>"`), zapisz.
+4. Moderacja trwa zwykle kilka minut; do tego czasu w danym miejscu zostaje znak.
+5. Sprawdzenie: Play → `/icons ui` (każdy plik „Success”), `/icongrid ui <atlas>`.
+6. Po ponownym imporcie `import_ui.py` sam czyści ID zmienionych plików: wgrywasz tylko listę „do wgrania”.
+
+Sesja może wgrać sama przez MCP jak w §8: `python -m http.server 8765 --bind 127.0.0.1` w folderze z kopiami plików
+(`build/upload`), `upload_image` z adresami `http://127.0.0.1:8765/<plik>`. Przed startem sprawdź, czy port 8765 nie
+jest zajęty przez stary serwer (S119: odpowiadał serwer z poprzedniej sesji). Odpowiedź `403 User is moderated` znaczy, że
+konto ma blokadę moderacji: przerwij wgrywanie i napisz właścicielowi (S119).

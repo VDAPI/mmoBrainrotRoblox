@@ -122,6 +122,8 @@ return {
 		["Data/Ambience"] = "wygląd",
 		["Data/Sfx"] = "wygląd", -- S111: sound effect keys (ids, volume, pitch, roll-off)
 		["Data/VfxTextures"] = "wygląd", -- S112: effect texture ids, sizes and flipbooks
+		["Data/UiArt"] = "generowane", -- S119: interface picture registry (tools/icons/import_ui.py)
+		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",

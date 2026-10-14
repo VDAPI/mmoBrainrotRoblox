@@ -12,6 +12,8 @@
 -- Without the node (bonus 0) nothing changes. Only monsters the client has streamed in can be shown.
 -- S101: the world event of this map (its glyph and colour, faded during the warning) while inside the disc (like
 -- the quest star, no edge marker).
+-- S119: the owner's silhouettes on the markers and icons (UiArtState.decorate / retarget: pooled labels only change
+-- properties) and the painted map instead of the drawn sketch once its picture is loaded (same frame as the world map).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,8 +24,10 @@ local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
+local IconState = require(script.Parent.Parent.Parent.IconState)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -39,6 +43,8 @@ local State = require(script.Parent.Parent.Parent.State)
 local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -64,6 +70,8 @@ local ICONS: { [string]: { glyph: string, color: string } } = {
 	node = { glyph = "•", color = "#E8C25A" },
 	spawn = { glyph = "", color = "#C9A45C" },
 }
+
+local PLAYER_ART = UiArt.mapIcon("player")
 
 local function glyph(parent: Instance, text: string, color: string, position: Vector2, size: number, z: number?)
 	local label = Instance.new("TextLabel")
@@ -117,8 +125,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 	-- Pools of the moving markers (S25): created once, only moved and shown / hidden.
 	local questStar = glyph(dynamic, "★", "#E8C25A", Vector2.zero, 20, 6)
 	questStar.Visible = false
+	UiArtState.decorate(questStar, UiArt.mapIcon("quest"))
 	local navGlyph = glyph(dynamic, "◆", "#F2E28A", Vector2.zero, 18, 7)
 	navGlyph.Visible = false
+	UiArtState.decorate(navGlyph, UiArt.mapIcon("guide"))
 	local navArrow = glyph(dynamic, "▲", "#F2E28A", Vector2.zero, 20, 8)
 	navArrow.TextStrokeTransparency = 0
 	navArrow.Visible = false
@@ -126,6 +136,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 	for i = 1, MAX_MARKS do
 		markPool[i] = glyph(dynamic, "⚑", "#E8C25A", Vector2.zero, 16, 6)
 		markPool[i].Visible = false
+		UiArtState.decorate(markPool[i], nil)
 	end
 	local eventGlyph = glyph(dynamic, "⚔", "#E0564A", Vector2.zero, 20, 6)
 	eventGlyph.Visible = false
@@ -133,6 +144,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 	for i = 1, 4 do
 		partyPool[i] = glyph(dynamic, "●", "#4A8FE7", Vector2.zero, 14, 5)
 		partyPool[i].Visible = false
+		UiArtState.decorate(partyPool[i], UiArt.mapIcon("party"))
 	end
 	-- S78: Elites beyond the disc (Scout's Eye), nearest first.
 	local elitePins: { TextLabel } = {}
@@ -180,6 +192,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 	local currentScale = 0
 	local currentMap = ""
 	local currentLevel = 0
+	local paintedShown = false -- S119: whether the disc shows the painted map (repaint only when this flips)
 	local level = State.Value({ "character", "level" })
 	-- S78: own Scout's Eye from narrow branches only (`character` changes with every HP change, as UI/GroupLuck).
 	local pathState = State.Value({ "character", "path" })
@@ -209,13 +222,33 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 		end
 		currentMap, currentScale = id, s
+		paintedShown = false
 		current = MapSketch.get(id)
 		local sketch = current
 		if not sketch then
 			return
 		end
 		canvas.Size = UDim2.fromOffset(sketch.size.x * s, sketch.size.z * s)
-		MapSketch.draw(canvas, sketch, s)
+		-- S119: the painted map in the sketch's place once loaded (same frame as the world map), else the sketch.
+		local frame = UiArt.mapFrame(id)
+		local paintedKey = UiArt.map(id)
+		UiArtState.ensureKey(if frame then paintedKey else nil)
+		local look = if frame then UiArtState.lookNow(paintedKey) else nil
+		paintedShown = frame ~= nil and look ~= nil
+		if frame and look then
+			local corner = MapSketch.toPixel(sketch, s, frame.x0, frame.z0)
+			local image = Instance.new("ImageLabel")
+			image.Name = "Painted"
+			image.Position = UDim2.fromOffset(corner.X, corner.Y)
+			image.Size = UDim2.fromOffset(frame.size * s, frame.size * s)
+			image.BackgroundTransparency = 1
+			image.ScaleType = Enum.ScaleType.Stretch
+			image.ZIndex = 1
+			UiArtState.apply(image, look)
+			image.Parent = canvas
+		else
+			MapSketch.draw(canvas, sketch, s)
+		end
 		-- Monster areas tinted by level difference (S20; S22: band of the nearest end of the range, ~30% fill,
 		-- level ranges at the closest zoom), under the icons.
 		local data = Areas.byMap[id]
@@ -246,13 +279,19 @@ local function Minimap(scope: Scope, props: Props): Instance
 		for _, icon in sketch.icons do
 			local style = ICONS[icon.t]
 			if style and style.glyph ~= "" then
-				glyph(
+				local label = glyph(
 					canvas,
 					style.glyph,
 					style.color,
 					MapSketch.toPixel(sketch, s, icon.x, icon.z),
 					if icon.t == "node" then 10 else 18,
 					2
+				)
+				local family = if icon.id then string.match(icon.id, "^(%a+)_") else nil
+				UiArtState.decorate(
+					label,
+					UiArt.mapIcon(icon.t, family),
+					{ size = if icon.t == "node" then 12 else 18 }
 				)
 			end
 		end
@@ -262,6 +301,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			if npc.map == id and not npc.decoration then
 				local p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z)
 				npcGlyphs[npc.id] = glyph(canvas, npc.icon, "#F2E8C9", p, 18, 2)
+				UiArtState.decorate(npcGlyphs[npc.id], UiArt.serviceOfNpc(npc), { size = 16 })
 				local mark = glyph(canvas, "", "#E8C25A", p - Vector2.new(0, 14), 18, 3)
 				mark.FontFace = Theme.Fonts.Heading
 				mark.TextStrokeTransparency = 0.1
@@ -275,6 +315,17 @@ local function Minimap(scope: Scope, props: Props): Instance
 	scope:Observer(mapId):onChange(redraw)
 	scope:Observer(scale):onChange(redraw)
 	scope:Observer(level):onChange(redraw)
+	-- S119: redraw only when this map's painted picture appears or goes (its file loaded, /icons glyph | art);
+	-- other pictures loading (portraits, banners) leave the disc alone, the decorated icons refresh themselves.
+	local function repaint()
+		local shown = UiArt.mapFrame(currentMap) ~= nil and UiArtState.lookNow(UiArt.map(currentMap)) ~= nil
+		if shown ~= paintedShown then
+			currentMap = ""
+			redraw()
+		end
+	end
+	scope:Observer(UiArtState.Loaded):onChange(repaint)
+	scope:Observer(IconState.Mode):onChange(repaint)
 
 	local arrowRotation = scope:Value(0)
 	local accumulator = 0
@@ -374,6 +425,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 						local icon = MapMarks.get(mark.icon)
 						label.Text = if icon then icon.glyph else "⚑"
 						label.TextColor3 = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright
+						UiArtState.retarget(label, if icon then UiArt.mark(icon.id) else nil, label.TextColor3)
 						local p = at(mark.x, mark.z)
 						label.Position = UDim2.fromOffset(p.X, p.Y)
 						label.Visible = true
@@ -540,12 +592,19 @@ local function Minimap(scope: Scope, props: Props): Instance
 						Position = UDim2.fromScale(0.5, 0.5),
 						Size = UDim2.fromOffset(22, 22),
 						BackgroundTransparency = 1,
-						Text = "▲",
+						Text = scope:Computed(function(use): string
+							return if UiArtState.ready(use, PLAYER_ART) then "" else "▲"
+						end),
 						TextScaled = true,
 						TextColor3 = Theme.Colors.Accent,
 						TextStrokeTransparency = 0,
 						Rotation = arrowRotation,
 						ZIndex = 10,
+						-- S119: the player silhouette (turns with the label) once loaded.
+						[Children] = ArtIcon.Image(
+							scope,
+							{ Key = PLAYER_ART, Tint = Theme.Colors.Accent, ZIndex = 10 }
+						),
 					}),
 					scope:New("TextLabel")({
 						Name = "North",

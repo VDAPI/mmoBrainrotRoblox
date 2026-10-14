@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
@@ -20,6 +21,7 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -128,6 +130,11 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			return { resource = resource, range = range, element = element }
 		end)
 
+		local artKey = scope:Computed(function(use): string?
+			local id = use(skillId)
+			return if id then UiArt.skill(id) else nil
+		end)
+		local artShown = ArtIcon.Shown(scope, artKey)
 		local key = Keybinds.Label(scope, `skill_{index}`)
 		local slot = scope:New("TextButton")({
 			Name = `Skill{index}`,
@@ -160,13 +167,15 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					end),
 					Transparency = 0.2,
 				}),
+				-- S119: the skill's picture over the whole slot once loaded (glyph hidden), frame and overlays on top.
+				ArtIcon.Image(scope, { Key = artKey, Corner = Theme.Corner.Small }),
 				scope:New("TextLabel")({
 					Name = "Icon",
 					BackgroundTransparency = 1,
 					Size = UDim2.fromScale(1, 1),
 					Text = scope:Computed(function(use): string
 						local s = use(skill)
-						return if s then s.glyph else ""
+						return if s and not use(artShown) then s.glyph else ""
 					end),
 					TextScaled = true,
 					FontFace = Theme.Fonts.BodyBold,

@@ -5,10 +5,12 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local ArtIcon = require(script.Parent.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -61,16 +63,17 @@ local function PvpDot(scope: Scope, props: Props): Frame
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
 			scope:New("UIStroke")({ Color = Theme.Colors.Background, Thickness = 1.5 }),
-			scope:New("TextLabel")({
+			ArtIcon(scope, {
 				Name = "Lock",
-				BackgroundTransparency = 1,
+				Key = UiArt.hud("lock"), -- S119
+				Glyph = "🔒",
+				GlyphColor = Theme.Colors.Text,
+				ImageScale = 0.75,
 				Size = UDim2.fromScale(1, 1),
 				Visible = scope:Computed(function(use): boolean
 					return use(props.State) == "locked"
 				end),
-				Text = "🔒",
-				TextScaled = true,
-				TextColor3 = Theme.Colors.Text,
+				Label = { TextScaled = true },
 			}),
 		},
 	}) :: Frame

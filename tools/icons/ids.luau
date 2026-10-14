@@ -6,6 +6,9 @@
 --   questItems   { [item] = true }: `item` of every quest objective (any quest list) and every quest.item.* text key
 --   unusedQuestItems  { item }: text keys without an objective (allowed, listed in the report)
 --   blessingLines     { line }
+--   ui           S119: game ids of every interface picture category (Logic/UiArtKeys.ids: skills, effects, elements,
+--                profiles, guildSkills, classes, titles, slots, menus, maps, marks, services, cosmetics, shop, bosses,
+--                fixed) for tools/icons/import_ui.py
 -- The Python tools never parse Luau themselves (tools/icons/import_graphics.py --ids).
 
 local fs = require("@lune/fs")
@@ -16,6 +19,7 @@ local Blessings = require("../../src/shared/Data/Blessings")
 local Items = require("../../src/shared/Data/Items")
 local Pl = require("../../src/shared/Data/Localization/pl")
 local Quests = require("../../src/shared/Data/Quests")
+local UiArtKeys = require("../../src/shared/Logic/UiArtKeys")
 
 local function groupOf(def: Items.ItemDef): string
 	if string.sub(def.id, 1, 7) == "unique_" then
@@ -94,6 +98,7 @@ local out = serde.encode("json", {
 	questItems = questItems,
 	unusedQuestItems = unused,
 	blessingLines = lines,
+	ui = UiArtKeys.ids(),
 }, false)
 
 local path = process.args[1]

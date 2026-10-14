@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Actions = require(script.Parent.Actions)
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Context = require(script.Parent.Context)
@@ -17,6 +18,7 @@ local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -30,7 +32,8 @@ local DANGER_HEX = "#CC5248"
 
 local BaseList = {}
 
--- The skill tile: glyph in the class colour, round for passives, greyed while the weapon element does not fit.
+-- The skill tile: glyph in the class colour (S119: the skill's picture once loaded), round for passives, greyed while
+-- the weapon element does not fit.
 function BaseList.tile(
 	s: Scope,
 	ctx: Context.Ctx,
@@ -40,6 +43,7 @@ function BaseList.tile(
 	size: number
 ): Instance
 	local corner = if skill.type == "passive" then Theme.Corner.Round else Theme.Corner.Small
+	local shown = ArtIcon.Shown(s, UiArt.skill(skill.id))
 	local tile = s:New("Frame")({
 		Name = "Tile",
 		Size = UDim2.fromOffset(size, size),
@@ -64,10 +68,20 @@ function BaseList.tile(
 				end),
 				[Children] = s:New("UICorner")({ CornerRadius = corner }),
 			}),
+			-- S119: the skill's picture over the whole tile once loaded (dimmed while locked), the glyph otherwise.
+			ArtIcon.Image(s, {
+				Key = UiArt.skill(skill.id),
+				ZIndex = 2,
+				Corner = corner,
+				ImageColor = if unlocked then nil else Color3.fromRGB(150, 150, 150),
+				Transparency = if unlocked then 0 else 0.35,
+			}),
 			s:New("TextLabel")({
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 1),
-				Text = skill.glyph,
+				Text = s:Computed(function(use): string
+					return if use(shown) then "" else skill.glyph
+				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = if unlocked then accent else Theme.Colors.Border,

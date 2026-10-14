@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local ArtIcon = require(script.Parent.ArtIcon)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.ItemIcon)
@@ -18,6 +19,7 @@ local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -29,6 +31,7 @@ export type Props = {
 	Item: UsedAs<ItemInstance?>,
 	Size: number?,
 	Placeholder: string?, -- glyph shown when empty (equipment slots)
+	PlaceholderArt: string?, -- S119: its interface picture key (Logic/UiArt.slot)
 	LayoutOrder: UsedAs<number>?,
 	Position: UsedAs<UDim2>?,
 	Visible: UsedAs<boolean>?,
@@ -210,6 +213,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					return if current then ItemRoll.elementOf(current) else nil
 				end),
 				Fallback = props.Placeholder,
+				FallbackArt = props.PlaceholderArt,
 				Transparency = scope:Computed(function(use): number
 					return if use(dragging) then 0.7 else 0
 				end),
@@ -248,37 +252,37 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			-- Padlock (S20): protected from selling, dismantling and trading
-			scope:New("TextLabel")({
+			-- S119: both marks as silhouettes in the glyph colour once loaded.
+			ArtIcon(scope, {
 				Name = "Locked",
+				Key = UiArt.hud("lock"),
+				Glyph = "🔒",
+				GlyphColor = Theme.Colors.GoldBright,
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -2, 0, 1),
 				Size = UDim2.fromOffset(14, 14),
-				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					local i = use(item)
 					return i ~= nil and i.locked == true
 				end),
-				Text = "🔒",
-				TextScaled = true,
-				TextColor3 = Theme.Colors.GoldBright,
 				ZIndex = 3,
+				Label = { TextScaled = true },
 			}),
 			-- Bound lock
-			scope:New("TextLabel")({
+			ArtIcon(scope, {
 				Name = "Bound",
+				Key = UiArt.hud("bound"),
+				Glyph = "⚿",
+				GlyphColor = Theme.Colors.TextMuted,
 				AnchorPoint = Vector2.new(0, 1),
 				Position = UDim2.new(0, 3, 1, -1),
 				Size = UDim2.fromOffset(14, 14),
-				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					local i = use(item)
 					local d = use(def)
 					return i ~= nil and i.bound and d ~= nil and d.category == "equipment"
 				end),
-				Text = "⚿",
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.TextMuted,
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 13 },
 			}),
 		},
 	})

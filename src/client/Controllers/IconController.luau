@@ -2,10 +2,12 @@
 -- Item icon admin helpers on the client (S35): /icons (atlas state and the preload result of every sheet),
 -- /icons glyph | art (switch between the old glyphs and the pictures, not saved), /icongrid <group> (a preview window
 -- of every icon of a group in Common slots; "tiers <type>" = the 21 tiers of one base side by side; S118: "art" =
--- every item with its own picture).
+-- every item with its own picture). S119: /icons ui = the load state of every interface picture file, /icongrid ui
+-- <atlas> = every key of one interface atlas as an ArtIcon (silhouettes in gold).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.UI.IconState)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
@@ -18,6 +20,8 @@ local Rng = require(ReplicatedStorage.Shared.Logic.Rng)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UI.UiArtState)
 
 local Children = Fusion.Children
 local OnEvent = Fusion.OnEvent
@@ -165,6 +169,125 @@ local function openGrid(group: string, baseType: string?)
 	})
 end
 
+local UI_CELL = 52
+
+-- S119: /icongrid ui <atlas>: every key of the atlas, its picture (or "?" while not loaded) and the key under it.
+local function openUiGrid(atlas: string)
+	closeGrid()
+	local keys = UiArt.keysOf(atlas)
+	if #keys == 0 then
+		Toast.push(Text.now("admin.icongrid.empty", { group = `ui {atlas}` }), "warning")
+		return
+	end
+	local scope = Fusion.scoped(Fusion)
+	gridScope = scope
+	local cells = {}
+	for i, key in keys do
+		table.insert(
+			cells,
+			scope:New("Frame")({
+				LayoutOrder = i,
+				BackgroundColor3 = Theme.Colors.PanelRaised,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					ArtIcon(scope, {
+						Key = key,
+						Glyph = "?",
+						GlyphColor = Theme.Colors.TextMuted,
+						Tint = Theme.Colors.GoldBright,
+						Size = UDim2.fromOffset(UI_CELL, UI_CELL),
+						Position = UDim2.new(0.5, 0, 0, 4),
+						AnchorPoint = Vector2.new(0.5, 0),
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 24 },
+					}),
+					scope:New("TextLabel")({
+						Position = UDim2.new(0, 2, 1, -18),
+						Size = UDim2.new(1, -4, 0, 16),
+						BackgroundTransparency = 1,
+						Text = string.match(key, "/(.+)$") or key,
+						FontFace = Theme.Fonts.Body,
+						TextSize = 11,
+						TextColor3 = Theme.Colors.Parchment,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+				},
+			})
+		)
+	end
+	scope:New("Frame")({
+		Name = "IconGrid",
+		Parent = UIController.GetLayer("Modals"),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(720, 520),
+		BackgroundColor3 = Theme.Colors.Panel,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+			scope:New("TextLabel")({
+				Position = UDim2.fromOffset(16, 8),
+				Size = UDim2.new(1, -80, 0, 32),
+				BackgroundTransparency = 1,
+				Text = Text.now("admin.icongrid.title", { group = `ui {atlas}`, n = #keys }),
+				FontFace = Theme.Fonts.Heading,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Colors.GoldBright,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			scope:New("TextButton")({
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -10, 0, 8),
+				Size = UDim2.fromOffset(36, 32),
+				BackgroundColor3 = Theme.Colors.PanelRaised,
+				Text = "✕",
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = 18,
+				TextColor3 = Theme.Colors.Text,
+				[OnEvent("Activated")] = closeGrid,
+				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			}),
+			scope:New("ScrollingFrame")({
+				Position = UDim2.fromOffset(12, 48),
+				Size = UDim2.new(1, -24, 1, -60),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollBarThickness = 6,
+				[Children] = {
+					scope:New("UIGridLayout")({
+						CellSize = UDim2.fromOffset(UI_CELL + 30, UI_CELL + 26),
+						CellPadding = UDim2.fromOffset(6, 6),
+						SortOrder = Enum.SortOrder.LayoutOrder,
+					}),
+					cells :: any,
+				},
+			}),
+		},
+	})
+end
+
+-- S119: /icons ui on the client: preload result of every interface picture file.
+local function uiStatus()
+	local parts = {}
+	for _, list in { UiArt.atlasFiles(), UiArt.singleFiles() } do
+		for _, file in list do
+			table.insert(
+				parts,
+				`{file} {UiArtState.Status[file] or (if UiArt.idOf(file) then "not requested" else "none")}`
+			)
+		end
+	end
+	Toast.push(
+		Text.now("admin.icons.uiClient", {
+			mode = Fusion.peek(IconState.Mode),
+			files = if #parts > 0 then table.concat(parts, " · ") else "-",
+		}),
+		"info",
+		10
+	)
+end
+
 local function status()
 	local parts = {}
 	for n = 1, ItemIcons.SHEETS do
@@ -189,9 +312,17 @@ function IconController.Init(registry)
 			if arg == "glyph" or arg == "art" then
 				IconState.Mode:set(arg)
 			end
-			status()
+			if arg == "ui" then
+				uiStatus()
+			else
+				status()
+			end
 		elseif action == "icongrid" and type(arg) == "table" then
-			openGrid(tostring(arg[1] or "eq"), if arg[2] then tostring(arg[2]) else nil)
+			if arg[1] == "ui" then
+				openUiGrid(tostring(arg[2] or "skills"))
+			else
+				openGrid(tostring(arg[1] or "eq"), if arg[2] then tostring(arg[2]) else nil)
+			end
 		end
 	end)
 end

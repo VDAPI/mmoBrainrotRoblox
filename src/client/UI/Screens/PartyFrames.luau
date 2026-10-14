@@ -5,12 +5,15 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -19,6 +22,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local FAR = 80
 local WIDTH = 260
 local HEIGHT = 58
+
+local LEADER_ART = UiArt.hud("party_leader") -- S119
+local DEAD_ART = UiArt.hud("dead")
 
 local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Instance
 	local party = State.Value({ "party" })
@@ -32,6 +38,8 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 			return list
 		end
 		local myRoot = me.Character and me.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local leaderArt = UiArtState.ready(use, LEADER_ART)
+		local deadArt = UiArtState.ready(use, DEAD_ART)
 		local order = 0
 		for _, member in p.members do
 			if member.id ~= me.UserId then
@@ -64,22 +72,42 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 								Color = if member.id == p.leader then Theme.Colors.Gold else Theme.Colors.Border,
 								Thickness = 1.5,
 							}),
-							s:New("TextLabel")({
+							-- S119: class emblem once loaded (glyph otherwise).
+							ArtIcon(s, {
+								Key = if class then UiArt.classEmblem(class.id) else nil,
+								Glyph = if class then class.icon else "?",
+								GlyphColor = Theme.Colors.GoldBright,
 								Position = UDim2.fromOffset(6, 6),
 								Size = UDim2.fromOffset(28, 28),
-								BackgroundTransparency = 1,
-								Text = if class then class.icon else "?",
-								TextScaled = true,
-								FontFace = Theme.Fonts.BodyBold,
-								TextColor3 = Theme.Colors.GoldBright,
+								Label = { TextScaled = true, FontFace = Theme.Fonts.BodyBold },
 							}),
 							PathBadge.new(s, use, member.path, 14, UDim2.fromOffset(22, 22)) :: any,
+							-- S119: leader crown and death skull as badges on the class emblem once loaded (out of the
+							-- name line, which then keeps its place; the bars do not move).
+							if member.id == p.leader and leaderArt
+								then ArtIcon.Image(s, {
+									Key = LEADER_ART,
+									Tint = Theme.Colors.GoldBright,
+									Size = UDim2.fromOffset(14, 14),
+									Position = UDim2.fromOffset(2, 2),
+									ZIndex = 3,
+								}) :: any
+								else nil,
+							if member.dead and deadArt
+								then ArtIcon.Image(s, {
+									Key = DEAD_ART,
+									Tint = Theme.Colors.DangerHover,
+									Size = UDim2.fromOffset(22, 22),
+									Position = UDim2.fromOffset(9, 9),
+									ZIndex = 3,
+								}) :: any
+								else nil,
 							s:New("TextLabel")({
 								Position = UDim2.fromOffset(40, 4),
 								Size = UDim2.new(1, -46, 0, 20),
 								BackgroundTransparency = 1,
-								Text = `{if member.id == p.leader then "♛ " else ""}{member.name} · {member.level}{if member.dead
-									then " ☠"
+								Text = `{if member.id == p.leader and not leaderArt then "♛ " else ""}{member.name} · {member.level}{if member.dead
+									then (if deadArt then "" else " ☠")
 									elseif far then ` · {Text.get(use, "party.far")}`
 									else ""}`,
 								FontFace = Theme.Fonts.BodyBold,

@@ -1024,6 +1024,18 @@ pasek mikstur, tooltip (44 px w prawym górnym rogu), eliksiry w pasku efektów.
 licznik złota w plecaku mają ikonki walut. Puste sloty ekwipunku zostają podpowiedzią-symbolem, ✶ błogosławieństwa
 przy nicku zostaje znakiem. Admin: `/icons [glyph|art]`, `/icongrid <grupa>`.
 
+### Grafiki interfejsu (S119)
+
+HUD, okna i mapy rysują obrazki właściciela z rejestru (`Logic/UiArt`, `Data/UiArt`): ikony umiejętności (pasek,
+telefon, okno umiejętności, duch przeciągania), efektów, żywiołów, profili łowisk, umiejętności gildii, herby i portrety
+klas (kreator: portret jako tło karty), przyciski menu, PvP, atak i bieg na telefonie, puste sloty ekwipunku i mikstur,
+kłódki, ikony mapy świata i minimapy, usługi NPC (mapa i tabliczka nad głową), własne znaczniki, sklep premium,
+garderoba, medaliony tytułów, portrety bossów i banery lochów. Zasada: plik wgrany i wczytany → obrazek; inaczej dokładnie
+dawny znak (ten sam tekst, kolor i rozmiar). Sylwetki (HUD, mapa) są białe i przyjmują kolor znaku. Malowana mapa
+(gdy plik jest) zastępuje rysunek terenu na mapie świata i minimapie w tym samym kadrze (obszary i ikony nad nią).
+Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają tekstem. Admin: `/icons ui`,
+`/icongrid ui <atlas>`; `/icons glyph` wyłącza też grafiki interfejsu.
+
 ## 24. Sterowanie i kamera
 
 - Klasyczna kamera Roblox (3. osoba, zoom 8–30).

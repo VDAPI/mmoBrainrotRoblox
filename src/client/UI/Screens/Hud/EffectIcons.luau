@@ -5,16 +5,19 @@
 -- portrait and in the target frame.
 -- S76: stacks above 1 (poison, bleed, armour break) show as a small number in the icon's bottom-right corner.
 -- S72: the "Fury" / "FuryMax" attributes (Fury of the Berserker) add a counter "7/10" first in the row, gold when full.
+-- S119: the owner's picture of the effect (Logic/UiArt.effect) once its atlas is loaded, the glyph otherwise.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
@@ -140,6 +143,9 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 					elseif info.lasting then ""
 					elseif entry.left >= 10 then tostring(math.floor(entry.left))
 					else string.format("%.1f", entry.left)
+				-- S119: the effect's picture inside the good / bad frame once loaded (glyph otherwise).
+				local artKey = UiArt.effect(entry.kind)
+				local artShown = ArtIcon.Shown(s, artKey)
 				local icon = s:New("Frame")({
 					Name = entry.kind,
 					Size = UDim2.fromOffset(size, size + 14),
@@ -149,12 +155,15 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							Size = UDim2.fromOffset(size, size),
 							BackgroundColor3 = Theme.Colors.Panel,
 							BackgroundTransparency = 0.15,
-							Text = info.glyph,
+							Text = s:Computed(function(use): string
+								return if use(artShown) then "" else info.glyph
+							end),
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
 							TextColor3 = if info.good then Theme.Colors.Success else Theme.Colors.DangerHover,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+								ArtIcon.Image(s, { Key = artKey, Corner = Theme.Corner.Small }),
 								s:New("UIStroke")({
 									Color = if full
 										then Theme.Colors.GoldBright

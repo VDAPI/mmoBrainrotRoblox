@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
+local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.UI.GroupColors)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -14,6 +15,8 @@ local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiArtState = require(script.Parent.Parent.UI.UiArtState)
 
 local Children = Fusion.Children
 
@@ -214,12 +217,24 @@ local function build(model: Model)
 							Size = UDim2.fromOffset(18, 16),
 							BackgroundColor3 = Theme.Colors.Background,
 							BackgroundTransparency = 0.1,
-							Text = areaProfile.icon,
+							Text = scope:Computed(function(use): string
+								return if UiArtState.ready(use, UiArt.profile(areaProfile.id))
+									then ""
+									else areaProfile.icon
+							end),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = 12,
 							TextColor3 = Color3.fromHex(areaProfile.color),
 							[Children] = {
 								scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+								-- S119: the profile's tile once loaded.
+								ArtIcon.Image(scope, {
+									Key = UiArt.profile(areaProfile.id),
+									Size = UDim2.fromOffset(16, 16),
+									Position = UDim2.fromScale(0.5, 0.5),
+									AnchorPoint = Vector2.new(0.5, 0.5),
+									Corner = UDim.new(0, 3),
+								}),
 							},
 						})
 						else nil :: any,

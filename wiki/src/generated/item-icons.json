@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "atlasHash": "5466c1727e0b8400",
+  "atlasHash": "782b77c83dce41a8",
   "files": {
     "armor_heavy_1": "eq-armor_heavy_1",
     "armor_heavy_10": "eq-armor_heavy_10",
@@ -459,9 +459,9 @@
     "helmet_medium_90": "eq-helmet_medium_20",
     "helmet_medium_95": "eq-helmet_medium_20",
     "herb_firebloom": "mat-herb_firebloom",
-    "herb_frostleaf": "mat-herb-9fe0ff",
+    "herb_frostleaf": "mat-herb_frostleaf",
     "herb_meadowsweet": "mat-herb_meadowsweet",
-    "herb_moonpetal": "mat-herb-e8e8ff",
+    "herb_moonpetal": "mat-herb_moonpetal",
     "herb_nightshade": "mat-herb_nightshade",
     "holystaff_1": "eq-holystaff_1",
     "holystaff_10": "eq-holystaff_10",
