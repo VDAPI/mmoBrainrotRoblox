@@ -45,6 +45,10 @@ local FX = {
 	tracks = true, -- a hunter's marker stick with a red rag
 	halter = true, -- a stake with a cut halter rope and trampled grass where the stallion was calmed (S96)
 	frost = true, -- S102: rime crust and a frosted crest on the tower ruins (story quest frostRuins)
+	-- S103 (story chapter II; drawn in the frame of the anchor's prop, Logic/DuskwoodGen/Quest):
+	frostbreak = true, -- the frost rune on the Moon Glade's menhir cracked, rime scattered, the silver light back
+	heartglow = true, -- a warm golden glow in the Elder Tree's crack, the ice shard melted into a puddle
+	sealbreak = true, -- the cult's seal on the Crypt Gate shattered on the ground, a torn chain
 }
 
 local list: { SideQuest } = {}

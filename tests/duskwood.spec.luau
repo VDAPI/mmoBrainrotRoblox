@@ -210,3 +210,198 @@ describe("Duskwood", function()
 		expect(clock[1] >= 16 and clock[2] <= 19 and clock[1] < clock[2]).toBe(true)
 	end)
 end)
+
+-- S103: places of the story chapter II (NPC spots, quest anchors, the props of DuskwoodGen/Quest) ------------------
+
+local Kit = require("../src/shared/Logic/WorldGen/Kit")
+local Npcs = require("../src/shared/Data/Npcs")
+local Quest = require("../src/shared/Logic/DuskwoodGen/Quest")
+local Spawns = require("../src/shared/Data/Spawns")
+
+local SITES = assert(DATA.sites, "sites")
+-- spot -> NPC, site of its avoid circle and the local point of the plan (D3)
+local SPOTS = {
+	radomir = { npc = "forester_radomir", site = "ravagedCamp", lx = -6, lz = -11 },
+	oswin = { npc = "ghost_oswin", site = "chapel", lx = 3, lz = -14 },
+	jorund = { npc = "defector_jorund", site = "wayShrine", lx = -5, lz = -6 },
+	ragna = { npc = "witch_ragna", site = "stiltVillage" },
+}
+-- anchor -> site and local point (D4)
+local ANCHORS = {
+	moonstone_rune = { site = "moonstone", lx = 0, lz = -4 },
+	lost_camp = { site = "lostCamp", lx = -3, lz = -7 },
+	chapel_window = { site = "chapel", lx = 0, lz = 4 },
+	family_crypt = { site = "familyCrypt", lx = 0, lz = -8 },
+	elder_tree = { site = "elderTree", lx = 0, lz = -9 },
+	crypt_seal = { site = "cryptGate", lx = 15, lz = -21 },
+}
+
+local function avoidRadius(site: string): number
+	local s = SITES[site]
+	for _, c in DATA.avoid do
+		if c.x == s.x and c.z == s.z then
+			return c.r
+		end
+	end
+	error(`no avoid circle at {site}`)
+end
+
+local function dist(ax: number, az: number, bx: number, bz: number): number
+	return math.sqrt((ax - bx) ^ 2 + (az - bz) ^ 2)
+end
+
+-- The name of a Build whose colliding piece a player standing at (x, z) would touch within `margin` (nil: none).
+local function blockedBy(x: number, z: number, margin: number): string?
+	for _, b in DuskwoodGen.all() do
+		if b.tag ~= "trees" and (b.at.x - x) ^ 2 + (b.at.z - z) ^ 2 < 120 * 120 then
+			local r = math.rad(b.at.rot)
+			local c, s = math.cos(r), math.sin(r)
+			local dx, dz = x - b.at.x, z - b.at.z
+			local lx, lz = c * dx - s * dz, s * dx + c * dz
+			local g = T.height(x, z) - b.at.y
+			for _, p in b.bp.pieces do
+				if p.col then
+					for _, h in { 0.5, 2, 3.5, 5 } do
+						local vx, vy, vz = lx - p.p[1], g + h - p.p[2], lz - p.p[3]
+						local R = p.r
+						local ux = R[1] * vx + R[4] * vy + R[7] * vz
+						local uy = R[2] * vx + R[5] * vy + R[8] * vz
+						local uz = R[3] * vx + R[6] * vy + R[9] * vz
+						if
+							math.abs(ux) < p.size[1] / 2 + margin
+							and math.abs(uy) < p.size[2] / 2
+							and math.abs(uz) < p.size[3] / 2 + margin
+						then
+							return b.name
+						end
+					end
+				end
+			end
+		end
+	end
+	return nil
+end
+
+describe("Duskwood story places (S103)", function()
+	it(
+		"the four NPC places: in their site's avoid circle, on dry walkable ground, apart, hidden from the wiki",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			local list = {}
+			for key, plan in SPOTS do
+				local spot = assert(spots[key], key)
+				local site = SITES[plan.site]
+				expect(`{key} {dist(spot.x, spot.z, site.x, site.z) < avoidRadius(plan.site)}`).toBe(`{key} true`)
+				expect(`{key} {MapTerrain.walkable("duskwood", spot.x, spot.z, 2)}`).toBe(`{key} true`)
+				expect(T.dryAround(spot.x, spot.z, 3)).toBe(true)
+				expect(T.water(spot.x, spot.z)).toBeNil()
+				expect(T.streamDistance(spot.x, spot.z) >= 6).toBe(true)
+				expect(`{key} {blockedBy(spot.x, spot.z, 2)}`).toBe(`{key} nil`)
+				expect(dist(spot.x, spot.z, -690, -36) >= 8).toBe(true)
+				expect(spot.wiki).toBe(false)
+				local npc = assert(Npcs.get(plan.npc), plan.npc)
+				expect(npc.position.x).toBe(spot.x)
+				expect(npc.position.z).toBe(spot.z)
+				expect(npc.facing).toBe(spot.facing)
+				table.insert(list, spot)
+			end
+			for i, a in list do
+				for k, b in list do
+					if k > i then
+						expect(dist(a.x, a.z, b.x, b.z) >= 8).toBe(true)
+					end
+				end
+			end
+		end
+	)
+
+	it("the six anchors: in their site's avoid circle, dry, walkable, apart from every anchor and NPC place", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for id, plan in ANCHORS do
+			local anchor, mapId = Areas.anchorById(id)
+			local a = assert(anchor, id)
+			expect(mapId).toBe("duskwood")
+			local site = SITES[plan.site]
+			expect(`{id} {dist(a.x, a.z, site.x, site.z) < avoidRadius(plan.site)}`).toBe(`{id} true`)
+			expect(T.water(a.x, a.z)).toBeNil()
+			expect(`{id} {MapTerrain.walkable("duskwood", a.x, a.z, 2)}`).toBe(`{id} true`)
+			expect(a.wiki).toBe(false)
+			expect(a.rot).toBe(site.rot)
+			for mapName, data in Areas.byMap do
+				for _, other in data.questAnchors or {} do
+					if other ~= a then
+						expect(other.id ~= id).toBe(true)
+						expect(`{id}-{mapName}:{other.id} {dist(a.x, a.z, other.x, other.z) >= 6}`).toBe(
+							`{id}-{mapName}:{other.id} true`
+						)
+					end
+				end
+			end
+			for key, spot in spots do
+				expect(`{id}-{key} {dist(a.x, a.z, spot.x, spot.z) >= 5}`).toBe(`{id}-{key} true`)
+			end
+		end
+		-- the seal's prompt clear of the Crypt's mouth; the window inside the chapel
+		local seal = assert(Areas.anchorById("crypt_seal"))
+		local cave = assert(Areas.entranceOf("duskwood_cave"))
+		expect(dist(seal.x, seal.z, cave.x, cave.z) >= 12).toBe(true)
+		local plan = ANCHORS.chapel_window
+		expect(math.abs(plan.lx) < 5 and plan.lz > -8 and plan.lz < 5).toBe(true)
+	end)
+
+	it("atSite of Areas/duskwood agrees with Kit.toWorld", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for key, plan in SPOTS do
+			if plan.lx then
+				local s = SITES[plan.site]
+				local x, z = Kit.toWorld(s.x, s.z, s.rot, plan.lx :: number, plan.lz :: number)
+				expect(math.abs(spots[key].x - x) < 1e-9 and math.abs(spots[key].z - z) < 1e-9).toBe(true)
+			end
+		end
+		for id, plan in ANCHORS do
+			local s = SITES[plan.site]
+			local x, z = Kit.toWorld(s.x, s.z, s.rot, plan.lx, plan.lz)
+			local a = assert(Areas.anchorById(id))
+			expect(math.abs(a.x - x) < 1e-9 and math.abs(a.z - z) < 1e-9).toBe(true)
+		end
+	end)
+
+	it("one prop of at most 8 pieces at every anchor of DuskwoodGen/Quest, without collisions", function()
+		local found: { [string]: number } = {}
+		for _, b in DuskwoodGen.all() do
+			local id = string.match(b.name, "^QuestProp_(.+)$")
+			if id then
+				found[id] = (found[id] or 0) + 1
+				expect(b.tag).toBe("questprop")
+				expect(#b.bp.pieces <= 8).toBe(true)
+				for _, piece in b.bp.pieces do
+					expect(piece.col).toBe(false)
+					expect(piece.lod ~= "shell").toBe(true)
+				end
+			end
+		end
+		for _, id in { "moonstone_rune", "elder_tree", "crypt_seal" } do
+			expect(found[id]).toBe(1)
+			expect(Quest.kindOf(id) ~= nil).toBe(true)
+			expect(Quest.frame(id) ~= nil).toBe(true)
+		end
+		expect(Quest.frame("lost_camp")).toBeNil()
+	end)
+
+	it("monster groups and gathering nodes are those of before S103 (count and position checksum)", function()
+		local groups = Spawns.byMap.duskwood
+		local gs = 0
+		for _, g in groups do
+			gs += g.position.x + 3 * g.position.z
+		end
+		expect(#groups).toBe(57)
+		expect(string.format("%.3f", gs)).toBe("7475.000")
+		local nodes = DuskwoodGen.nodes()
+		local ns = 0
+		for _, n in nodes do
+			ns += n.x + 3 * n.z
+		end
+		expect(#nodes).toBe(50)
+		expect(string.format("%.3f", ns)).toBe("12269.000")
+	end)
+end)

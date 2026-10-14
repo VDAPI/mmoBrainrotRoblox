@@ -3,7 +3,8 @@
 -- shot, built on the client from plain parts (no HumanoidDescription): a robe of two cut cylinders, shoulders, a hood
 -- (a cut ball and a flat flap), a trim ring at the hem and a dark face. `fade` lets one vanish in frost: pale flakes
 -- for 1.5 s and the parts fading out over the last seconds of the shot. Everything anchored, no collisions, no
--- queries.
+-- queries. S103: a look with `crown` wears a ring of thorns on the hood (the young queen Morvane); a `ghost` figure
+-- (Ilvar's projection, the queen's spirit) is half-transparent and smooth, with a cold light in its trim's colour.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -37,8 +38,13 @@ local function part(
 	return p
 end
 
+-- S103: a ghost's parts (looks only).
+local GHOST_TRANSPARENCY = 0.45
+local GHOST_RANGE = 12
+local GHOST_BRIGHTNESS = 1
+
 -- A standing robed figure at `cframe` (its feet on the ground at the CFrame's position, facing its look vector).
-function CutsceneFigure.build(look: string, cframe: CFrame): Model
+function CutsceneFigure.build(look: string, cframe: CFrame, ghost: boolean?): Model
 	local colors = CutsceneData.FIGURES[look] or CutsceneData.FIGURES.ilvar
 	local robe, hood, trim = Color3.fromHex(colors.robe), Color3.fromHex(colors.hood), Color3.fromHex(colors.trim)
 	local model = Instance.new("Model")
@@ -68,6 +74,46 @@ function CutsceneFigure.build(look: string, cframe: CFrame): Model
 		nil,
 		Enum.Material.SmoothPlastic
 	)
+	-- S103: a crown of thorns: a thin band and seven slanted spikes around the hood
+	if colors.crown then
+		local crown = Color3.fromHex(colors.crown)
+		part(
+			model,
+			Vector3.new(0.18, 1.75, 1.75),
+			cframe * CFrame.new(0, 6.2, 0.1) * up,
+			crown,
+			Enum.PartType.Cylinder,
+			Enum.Material.Wood
+		)
+		for i = 0, 6 do
+			local a = i / 7 * math.pi * 2
+			part(
+				model,
+				Vector3.new(0.12, 0.7, 0.12),
+				cframe
+					* CFrame.new(math.cos(a) * 0.82, 6.5, 0.1 + math.sin(a) * 0.82)
+					* CFrame.Angles(math.sin(a) * 0.35, 0, -math.cos(a) * 0.35),
+				crown,
+				nil,
+				Enum.Material.Wood
+			)
+		end
+	end
+	if ghost then
+		for _, child in model:GetChildren() do
+			if child:IsA("BasePart") then
+				child.Transparency = GHOST_TRANSPARENCY
+				child.CastShadow = false
+				child.Material = Enum.Material.SmoothPlastic
+			end
+		end
+		local light = Instance.new("PointLight")
+		light.Color = trim
+		light.Range = GHOST_RANGE
+		light.Brightness = GHOST_BRIGHTNESS
+		light.Shadows = false
+		light.Parent = model:FindFirstChildWhichIsA("BasePart")
+	end
 	return model
 end
 
@@ -79,9 +125,11 @@ function CutsceneFigure.fade(model: Model, kind: string?, startIn: number, secon
 	end
 	local alive = true
 	local parts: { BasePart } = {}
+	local from: { number } = {} -- S103: a ghost starts half-transparent
 	for _, child in model:GetChildren() do
 		if child:IsA("BasePart") then
 			table.insert(parts, child)
+			table.insert(from, child.Transparency)
 		end
 	end
 	local anchor = parts[1]
@@ -107,8 +155,8 @@ function CutsceneFigure.fade(model: Model, kind: string?, startIn: number, secon
 		local started = os.clock()
 		connection = RunService.RenderStepped:Connect(function()
 			local t = math.clamp((os.clock() - started) / math.max(seconds, 0.1), 0, 1)
-			for _, p in parts do
-				p.Transparency = t
+			for i, p in parts do
+				p.Transparency = from[i] + (1 - from[i]) * t
 			end
 			if t >= 1 and connection then
 				connection:Disconnect()

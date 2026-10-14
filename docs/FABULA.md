@@ -136,20 +136,20 @@ miasta).
 | 20 | `toDuskwood` | 20 | captain → Borin | reach(duskwood) | w głąb Boru, latarnie | ▣ „Rozdział II: Zapomniany Ród” (brama ostrzegawcza, niebieskie latarnie) | Borin |
 | 21 | `werewolves` | 21 | Borin → Borin | kill 15 werewolf | wycie | | Borin |
 | 22 | ✚ `moonstone` | 22 | Borin → forester_radomir | talk(forester_radomir); use(`moonstone_rune`, 3 s); kill 8 werewolf (area `duskwood_werethicket`) | Radomir przeżył napad na obóz myśliwych. Na Księżycowym Kamieniu ktoś wyrył runę szronu, od której wilkołaki szaleją przy pełni. Gracz ją skuwa | ◆ menhir nocą: srebrny blask gaśnie, runa pęka | Borin, Radomir |
-| 23 | ✚ `lostHunters` | 23 | forester_radomir → Borin | use(`lost_camp`, 3 s); kill 8 blackBear (area `duskwood_bearhollow`) | Syn Radomira przepadł w Niedźwiedzim Jarze. Jego notatki: ludzie w szarości nieśli w stronę Ruin zamarzniętą trumnę | | Radomir, Borin |
+| 23 | ✚ `lostHunters` | 23 | forester_radomir → Borin | escort(forester_radomir → obóz zaginionych; S103); use(`lost_camp`, 3 s); kill 8 blackBear (area `duskwood_bearhollow`) | Syn Radomira przepadł w Niedźwiedzim Jarze. Jego notatki: ludzie w szarości nieśli w stronę Ruin zamarzniętą trumnę | | Radomir, Borin |
 | 24 | `ruins` | 24 | Borin → Borin | kill 12 forestWraith; collect 5 wraithEssence | „ktoś ją związał. Krypta” | | Borin |
 | 25 | ✚ `houseOfVael` | 25 | Borin → Borin | reach(duskwood, place.manor); use(`chapel_window`, 2 s), use(`family_crypt`, 2 s); talk(ghost_oswin) | W dworze rodu Vael witraż pokazuje królową, która przebija smoka włócznią. Duch zarządcy Oswina: to Morvane, ostatnia z rodu. Kult wyniósł z krypty rodowej jej trumnę | ◆ kamera na witraż, światło przez szkło, imię „Morvane” pierwszy raz | Borin, Oswin |
 | 26 | `ents` | 27 | Borin → Borin | kill 10 rotEnt; gather 4 bush_nightshade | gnijące serce lasu | | Borin |
-| 27 | ✚ `elderHeart` | 28 | Borin → Borin | use(`elder_tree`, 3 s); kill 8 ghoul (area `duskwood_heart`); gałąź `heartBranch` dochodzi jako przedmiot fabularny przy oddaniu | W szczelinie Pradrzewa tkwi odłamek lodu, którym kult zatruł las. Po jego wyrwaniu drzewo oddaje gałąź z serca. Gałąź jest ciepła i cicho brzęczy. Nikt jeszcze nie wie, czym jest | ◆ szczelina Pradrzewa gaśnie z zimnego błękitu na złoto | Borin |
+| 27 | ✚ `elderHeart` | 28 | Borin → Borin | use(`elder_tree`, 3 s); kill 8 ghoul (area `duskwood_heart`); gałąź gracz nosi od oddania (strony i `done`), jako przedmiot `heartBranch` widać ją w `queensLegacy` (S103) | W szczelinie Pradrzewa tkwi odłamek lodu, którym kult zatruł las. Po jego wyrwaniu drzewo oddaje gałąź z serca. Gałąź jest ciepła i cicho brzęczy. Nikt jeszcze nie wie, czym jest | ◆ szczelina Pradrzewa gaśnie z zimnego błękitu na złoto | Borin |
 | 28 | `cult` | 30 | Borin → captain | kill 15 darkCultist; collect 3 cultSigil | „Czczą Vaelgratha” | ◆ Aldric i Anzelm nad pieczęciami; Anzelm: „Ilvar. On jest ich Głosem” | Aldric, Anzelm |
 | 29 | ✚ `turncoat` | 31 | captain → captain | reach(duskwood, place.wayShrine); talk(defector_jorund); kill 10 darkCultist (area `duskwood_crossroads`); zeznanie Jorunda niesie się w tekście oddania | Jorund, zbiegły kultysta, ukrywa się przy kapliczce na Mglistym Rozstaju. Ujawnia plan Ilvara: trzy pieczęcie snu (Krew, Runa, Straż). Kult ma ciało królowej i chce je wskrzesić w Kurhanie | ◆ mgła, latarnia kapliczki, Jorund mówi szeptem | Aldric, Jorund |
 | 30 | `swamp` | 33 | captain → Borin | kill 12 swampTroll; fish 3 | Czarne Bagno, ryby dla garnizonu | | Borin |
 | 31 | ✚ `barrow` | 35 | Borin → Borin | reach(duskwood_barrow); kill 4 darkCultist (elite); collect 1 riteBook ← darkCultist (0,2) | W Sercu Kurhanu obrzęd już się dokonał. Księga Obrzędów: „Królowa wstała i wiąże umarłych dla Zimy” | ◆ pusty ołtarz, fioletowy ogień gaśnie | Borin |
 | 32 | `crypt` | 37 | Borin → Borin | reach(duskwood_cave); kill 5 skeletonGuard (elite) | Krypta Zapomnianych | | Borin |
 | 33 | ✚ `witchCounsel` | 39 | Borin → Borin | talk(witch_ragna); kill 8 marshWitch (area `duskwood_witchmarsh`); collect 3 boneChime ← marshWitch (0,4) | Ragna, pustelnica z opuszczonej wioski na palach, nie należy do sabatu, który służy kultowi. Z kościanych dzwonków warzy Wywar Prawdziwego Imienia: królowa, która usłyszy swoje imię, przypomni sobie, kim była | | Borin, Ragna |
-| 34 | ✚ `cryptGate` | 41 | Borin → Borin | reach(duskwood, place.cryptGate); use(`crypt_seal`, 3 s); kill 4 specter (elite) | Pod Bramą Krypty wisi pieczęć kultu. Po jej rozbiciu pojawia się widmo Ilvara: „Spóźniłeś się. Królowa już śpiewa dla Zimy” | ◆ Ilvar pierwszy raz w scenie (projekcja w szronie), znika | Borin, Ilvar |
+| 34 | ✚ `cryptGate` | 41 | Borin → Borin | reach(duskwood, place.cryptGate); use(`crypt_seal`, 3 s); kill 4 specter (elite) | Pod Bramą Krypty wisi pieczęć kultu. Po jej rozbiciu pojawia się widmo Ilvara: „Za późno. Królowa już śpiewa dla Zimy” (S103) | ◆ Ilvar pierwszy raz w scenie (projekcja w szronie), znika | Borin, Ilvar |
 | 35 | `morvane` | 43 | Borin → captain | boss morvane | Morvane pokonana, gracz wypowiada jej imię, umarli odpoczywają | ◆ Grobowiec Morvane: duch młodej królowej przy pustym sarkofagu oddaje pierścień | Morvane, Aldric |
-| 36 | ✚ `queensLegacy` | 44 | captain → captain | deliver(queenRing → brother_anzelm); talk(alchemist) | Pierścień otwiera ostatnią kartę kroniki. Cierń Vaela pękł na trzy części: drzewce oddano lasowi (gałąź z Pradrzewa), grot krasnoludom, przysięgę Straży. Ysolde: na wschodzie ognie płoną jaśniej | ◆ koniec rozdziału II: Anzelm kładzie gałąź obok pierścienia, gałąź świeci | Aldric, Anzelm, Ysolde |
+| 36 | ✚ `queensLegacy` | 44 | captain → captain | deliver(queenRing → brother_anzelm); deliver(heartBranch → brother_anzelm; S103); talk(alchemist) | Pierścień otwiera ostatnią kartę kroniki. Cierń Vaela pękł na trzy części: drzewce oddano lasowi (gałąź z Pradrzewa), grot krasnoludom, przysięgę Straży. Ysolde: na wschodzie ognie płoną jaśniej | ◆ koniec rozdziału II: Anzelm kładzie gałąź obok pierścienia, gałąź świeci | Aldric, Anzelm, Ysolde |
 
 Nowe kotwice i miejsca (`Areas/duskwood`): `moonstone_rune` (`moonstone`), `lost_camp` (`lostCamp`),
 `chapel_window` (`chapel`), `family_crypt` (`familyCrypt`), `elder_tree` (`elderTree`), `crypt_seal` (`cryptGate`);
@@ -162,9 +162,9 @@ Pradrzewa), `riteBook` (Księga Obrzędów), `boneChime` (Kościany Dzwonek),
 | id | Imię | Gdzie stoi | Rola |
 |---|---|---|---|
 | `forester_radomir` | Leśniczy Radomir | rozszarpany obóz myśliwych (`ravagedCamp`, Wilcze Ostępy) | ocalały, szuka syna; potem łuk poboczny S106 |
-| `ghost_oswin` | Duch Zarządcy Oswina | kaplica (`chapel`, Nawiedzone Ruiny), widoczny tylko nocą albo zawsze półprzezroczysty | pamięć rodu Vael |
+| `ghost_oswin` | Duch Zarządcy Oswina | kaplica (`chapel`, Nawiedzone Ruiny), zawsze półprzezroczysty (S103) | pamięć rodu Vael |
 | `defector_jorund` | Jorund Odstępca | kapliczka z latarnią (`wayShrine`, Mglisty Rozstaj) | zbiegły kultysta, zna plan trzech pieczęci |
-| `witch_ragna` | Ragna z Palów | opuszczona wioska na palach (`stiltVillage`, Trolle Bagno) | pustelnica, wywar imienia |
+| `witch_ragna` | Ragna z Palów | suchy brzeg przy opuszczonej wiosce na palach (`stiltVillage`, Trolle Bagno; S103) | pustelnica, wywar imienia |
 
 ### 2.4 Rozdział III: Zimny Ogień (Spalone Pustkowia, 45–70), S104
 
@@ -248,6 +248,7 @@ wpływu na walkę. Bez pay2win.
 | Kowal Dorgan, Alchemiczka Ysolde, Lekarka Mirela | I, II, III | miasto rozpoznaje dowody: runy, łuskę, odmrożenia |
 | Ilvar, Głos Zimy | I (imię, cień), II (projekcja), III (wspomnienie, list), IV (spotkanie), finał | przeciwnik, tylko w scenach |
 | Morvane | II | z ofiary stała się narzędziem; po wypowiedzeniu imienia jest wolna |
+| Ragna z Palów | II | nie należy do sabatu, ale kiedyś należała (sama nastroiła jego dzwonki, S103); zna tylko wywar, nie plan Ilvara |
 | Brokk, Halgrim | III, IV | strażnicy dwóch pozostałych części Ciernia |
 
 ### 2.7 Liczby kontrolne

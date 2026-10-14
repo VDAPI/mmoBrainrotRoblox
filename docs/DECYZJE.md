@@ -3022,3 +3022,53 @@
   (`text`); odpowiedzi ze stron numerowanych tylko przy ofercie (jak klient).
 - **Przegląd S102 przerywniki:** zgłoszona scena czeka na `scenes[id] = true` (albo zniknięcie) i znów może zagrać po
   `/scene play` / `/scene reset` w tej samej sesji; scena przerwana zmianą postaci nie jest zgłaszana.
+- **S103 mechanizmy:** z S102 użyte bez zmian `MainQuest.pages` / `wiki`, `Objective.line`, pomocnicy celów w
+  `Main.luau` (`collect` dostał opcjonalny `variant`), `settleStory` / `STORY_*`, `StoryProgress` (`mainLast`,
+  `apply`, bez migracji), `Data/Cutscenes` + `CutsceneController`, `regionfolk`, `NpcDef.wiki`, `QuestAnchor.wiki`;
+  z S101b `choices` / `recall` / `barks` / `companion` + `escort`. Dodane ogólnie: `NpcSpot.wiki` (filtr w
+  `WikiData/World`), `NpcDef.ghost` (wygląd w `NpcService.Figure`), `QuestAnchor.rot` (rama rekwizytu i efektu),
+  `atSite` w `Areas/duskwood`, `Logic/DuskwoodGen/Quest` (`PROPS`, `Quest.frame`), pętle `npcSpots` / `questAnchors`
+  w `dataClearings`, `Figure.ghost` i korona w `FIGURES` (`queen`), mówca `WHO.queen`, grunt sceny z
+  `CaveTerrain.floor` na mapach jaskiń i lochów.
+- **S103 budżet fabuły 20–44:** `20` w `STORY_BANDS`, stałe tylko `toDuskwood` i `morvane`, sześć starych questów
+  rozdziału na regule. Wagi poza zakresem A3 (0,8–1,6): model tempa S94 ma EXP fabuły pasma na 21–26 (dźwignie S92:
+  bicie daje tam 48–57% poziomu), więc przy wagach 1 / 1,2 / 1,5 kompensacja przycinała 21–26 i 31–32 do `MUL_MAX`
+  (tempo 20 → 45 19,7 h, krok h(21)/h(20) 2,6). Teraz 21–23 po 1,8, `ruins` 1,6, `houseOfVael` 2,2 (okno 25–26 jednego
+  questu), `turncoat` 1,4 (okno 31–32), `queensLegacy` 1,5, reszta 0,8; żaden poziom 20–44 nie przycięty (najwyżej 1,237).
+- **S103 model bazowy:** `tests/Balance.LEGACY_EXP` trzyma EXP sześciu starych questów z S94, więc
+  `questSources(budget = false)` zostaje modelem S94 bit w bit (S104 / S105 dopisują swoje stare questy).
+- **S103 dochód poziomu:** `Balance.levelIncome` liczy zabicia poziomu z modelu okien (`questCreditByLevel`, te same, które
+  trzyma kompensacja S98), nie ze średniej EXP zadań pasma: po przeniesieniu EXP fabuły w paśmie średnia pokazywała
+  poziom 20 o 34% bogatszy (stopień wierzchowca 2 na 0,28 dochodu). `G9.up9` na 40 (11,06 < 12, złoto nowych questów,
+  `Config.Upgrade` globalne) w `GLOBAL_REPORT_ONLY` do decyzji właściciela.
+- **S103 gałąź z Pradrzewa:** `heartBranch` to cel `deliver` w `queensLegacy` (dostaje się ją przy przyjęciu, jak każdy
+  `deliver`), nie przedmiot przy oddaniu `elderHeart`: gra nie ma przedmiotów fabularnych poza celami. Strony i `done`
+  `elderHeart` mówią, że gracz ją nosi.
+- **S103 Oswin:** zawsze półprzezroczysty (`ghost = true`), nie tylko nocą: nocny NPC byłby martwym celem `talk` w dzień.
+- **S103 Ragna:** stoi na suchym zachodnim brzegu przy wiosce na palach (416 / 592, pierwszy punkt planu, który
+  przechodzi testy gruntu), nie na pomostach.
+- **S103 miejsca i kotwice tylko w istniejących okręgach `avoid`**, bez płaszczyzn: grupy, spawnery jaskiń, węzły i
+  łowiska Boru bez zmian (test: liczba i suma kontrolna pozycji).
+- **S103 postęp graczy:** wstawki rozdziału II przelicza `StoryProgress.apply` (`mainLast`), bez migracji 9; zaliczone
+  bez nagrody tylko wstawki przed miejscem gracza, aktywny quest z postępem nietknięty.
+- **S103 sceny:** grają tam, gdzie jest gracz (strumień S102); `barrow` z ujęciem `self` (jaskinia generowana),
+  `morvane` w absydzie Grobowca z gruntem z `CaveTerrain`, Oswin w `houseOfVael` tylko głosem, Anzelm w scenach `cult` i
+  `queensLegacy` jako figura obok kapitana; Ilvar tylko jako projekcja (`ghost`) w scenie `cryptGate`.
+- **S103 nagrody:** przedmioty z planu A4 bez zamienników (wszystkie id istnieją); złoto `gold(poziom)`, `queensLegacy`
+  `gold(44) × 2`.
+- **S103 Miłosz:** syn Radomira (EN „Milosz”); nacięcie na kolbie mówi, że przeżył napad i poszedł za ludźmi w szarości,
+  los zostaje otwarty (S106 też go nie rozstrzyga).
+- **S103 zmiany wobec FABULA §2.3:** `lostHunters` zaczyna się celem `escort` (Radomir prowadzi do jaru);
+  `queensLegacy` ma dwa `deliver` u Anzelma (pierścień i gałąź); poziomy, liczby zabić i `cryptGate` 41 (jaskinia 38–45)
+  jak w planie. FABULA poprawiona w tym samym miejscu.
+- **S103 rozmowy:** wybory na ostatniej stronie oferty, `recall` w `lostHunters` (p1 ← `moonstone`, done ←
+  `lostHunters`), `elderHeart.p1` ← `houseOfVael`, `turncoat.done`; Radomir `lead` z celem `escort` (trasa przez trakt
+  i rampę przy Powalonym Olbrzymie, środkowy punkt rampy pominięty, bo `walkable(4)` go nie przepuszcza), Ragna `follow`
+  na celach 2–3; `Config.Dialogue.gifts` + `potion_hp_3`, `potion_hp_4`, `potion_mana_3` (po 2); zwrot: Ragna dawniej
+  należała do sabatu (FABULA §2.6).
+- **S103 linia imienia (F2):** klient pokazuje `story.morvane.name` 3,5 s po ogłoszeniu ostatniej fazy Morvane
+  (`BossAnnounce` z kluczem `boss.morvane.phase3`, ten sam komponent), tylko z aktywnym questem `morvane`; walka bez zmian.
+- **S103 wiki:** ukryci NPC (`wiki = false`) nie trafiają też do wyszukiwarki mapy (`WikiData/Places.mapsearch`, filtr
+  przed wektorami) ani na obraz mapy (`WikiMaps.npcMarkers`).
+- **S103 teksty bez rodzaju gracza:** zdania z planu w czasie przeszłym 2. osoby („Widziałeś go”, „Spóźniłeś się”)
+  przepisane bez rodzaju („Więc to on”, „Za późno”).

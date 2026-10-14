@@ -206,7 +206,8 @@ T.describe("wikimap: ids the wiki links to", function()
 		end
 		for _, n in Npcs.list do
 			if not n.decoration and files[n.map] then
-				T.expect(idsOf(n.map)[`npc-{n.id}`]).toBe(true)
+				-- S103: an NPC hidden from the wiki (wiki = false) has no marker
+				T.expect(idsOf(n.map)[`npc-{n.id}`]).toBe(if n.wiki == false then nil else true)
 			end
 		end
 	end)
@@ -280,8 +281,18 @@ T.describe("wikidump: places (S37)", function()
 		local index = MapSearch.build(function(key: string): string
 			return key
 		end)
-		T.expect(#data.pl).toBe(#index.entries)
-		T.expect(#data.en).toBe(#index.entries)
+		-- S103: without the NPCs hidden from the wiki (wiki = false)
+		local Npcs = require("../src/shared/Data/Npcs")
+		local shown = 0
+		for _, item in index.entries do
+			local npc = if item.entry.kind == "npc" then Npcs.get(item.entry.id) else nil
+			if not (npc and npc.wiki == false) then
+				shown += 1
+			end
+		end
+		T.expect(shown < #index.entries).toBe(true)
+		T.expect(#data.pl).toBe(shown)
+		T.expect(#data.en).toBe(shown)
 		local laki = data.vectors[1]
 		T.expect(laki.query).toBe("laki")
 		T.expect(laki.results[1]).toBe("map:meadows")

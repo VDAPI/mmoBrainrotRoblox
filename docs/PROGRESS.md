@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S102 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S103 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -125,6 +125,10 @@ odpowiedzi gracza na stronie dialogu z drobnymi skutkami i pamięcią NPC (`Logi
 Wit i Borys na Łąkach), komentarze NPC w dymku albo okienku z portretem (`Logic/Barks`, `BarkController`, wyłącznik
 w ustawieniach; fabuła 1–20, poboczne Łąk, stajnia), towarzysz `follow` / `lead` z celem `escort` (`Logic/Companion`,
 `CompanionService`; Borys w `side_den`), minima treści dla S102–S108 w `tests/dialogue.spec.luau`. S102 fabuła rozdział I „Znak Mrozu”: stabilny postęp (`quests.mainLast`, `Logic/StoryProgress`, migracja 8), strony dialogu fabuły, cele `use` / `deliver` / miejsca w fabule, przerywniki (`Data/Cutscenes`, `CutsceneController`, powtórka w dzienniku), cztery nowe questy z wyborami i towarzyszami (Mira, Dobiesław), kotwice w jaskiniach, `regionfolk`, reguła EXP fabuły.
+S103 fabuła rozdział II „Zapomniany Ród”: 17 questów w Borze (9 nowych), czterech NPC (Radomir, duch Oswina,
+Jorund, Ragna), sześć kotwic z rekwizytami i efektami, dziesięć przerywników (Ilvar jako projekcja, duch Morvane),
+towarzysze Radomir (`lead`) i Ragna (`follow`), fabuła 20–44 na regule budżetu (10% pasma, `monsterExpMul` 21–36 do 1,24),
+nowe rzeczy ukryte na wiki do S109.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -156,8 +160,8 @@ zakończone; testy i decyzje właściciela po nich.
   `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
-  bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty powyżej 45.
-  (po S99: 20–44 42%, 45–69 27%, 70–99 24%; fabuła S102–S105, poboczne S106–S108; audyt S109).
+  bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty od 20.
+  (po S103: 20–44 24%, 45–69 27%, 70–99 24%; poboczne S106–S108 brakują; audyt S109).
 - **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
   (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
   Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
@@ -173,7 +177,10 @@ zakończone; testy i decyzje właściciela po nich.
   zamiast towarzysza.
 - **Fabuła (S102)**: nowe questy rozdziału I dają mało EXP (`STORY_STEP` 0,05, 83–586 EXP), bo fabuła 1–19 ma już
   41,8% EXP pasma przy celu 10% (decyzja właściciela / audyt S109).
-  Rozdziały II–IV mają w dzienniku tylko nazwę (treść S103–S105).
+  Rozdziały III–IV mają w dzienniku tylko nazwę (treść S104–S105).
+- **Fabuła (S103)**: `G9.up9` na 40 (+1…+9 broni z ochroną = 11,06 poziomu dochodu, pasmo 12–25) w trybie raportu:
+  złoto nowych questów rozdziału II, `Config.Upgrade` globalne (decyzja właściciela). Wagi fabuły 20–44 poza zakresem
+  planu (do 2,2), bo model tempa S94 trzyma EXP fabuły na 21–26 (`docs/DECYZJE.md` S103; audyt S109).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

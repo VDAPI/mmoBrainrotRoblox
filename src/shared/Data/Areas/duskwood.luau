@@ -50,6 +50,49 @@ local SITES: { [string]: Site } = {
 	batRoost = { x = 616, z = -40, rot = 270 }, -- overhang with bat nests in the wall
 }
 
+-- S103: a point given in a site's local frame (same formula as Logic/WorldGen/Kit.toWorld; tests compare them).
+local function atSite(name: string, lx: number, lz: number): (number, number)
+	local s = SITES[name]
+	local r = math.rad(s.rot)
+	local c, sn = math.cos(r), math.sin(r)
+	return s.x + c * lx + sn * lz, s.z - sn * lx + c * lz
+end
+
+-- S103: places of the Duskwood story NPCs (Data/Npcs regionfolk), inside the avoid circles of existing sites, so no
+-- monster group or gathering node moves.
+local function spot(site: string, lx: number, lz: number, facing: number): Types.NpcSpot
+	local x, z = atSite(site, lx, lz)
+	return { x = x, z = z, facing = facing, wiki = false }
+end
+
+local NPC_SPOTS: { [string]: Types.NpcSpot } = {
+	-- by the cold fire of the ravaged hunters' camp, facing the road
+	radomir = spot("ravagedCamp", -6, -11, 160),
+	-- before the chapel's door, facing the cemetery the player comes from
+	oswin = spot("chapel", 3, -14, 180),
+	-- beside the wayside shrine, under its little roof
+	jorund = spot("wayShrine", -5, -6, 230),
+	-- on the dry west shore by the stilt village (the village itself stands in the water; the first of the planned
+	-- points 416 / 592, 418 / 566, 424 / 612 that passes the ground checks of tests/duskwood.spec)
+	ragna = { x = 416, z = 592, facing = 0, wiki = false },
+}
+
+-- S103: quest anchors of the story (chapter II), inside the avoid circles of their sites; `rot` = the site's yaw (the
+-- frame of the props of Logic/DuskwoodGen/Quest and of the client effects).
+local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
+	local x, z = atSite(site, lx, lz)
+	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+end
+
+local QUEST_ANCHORS: { Types.QuestAnchor } = {
+	anchor("moonstone_rune", "moonstone", 0, -4, 2.5), -- the face of the menhir on the Moon Glade
+	anchor("lost_camp", "lostCamp", -3, -7, 1.5), -- the broken chest and the crossbow on the gorge floor
+	anchor("chapel_window", "chapel", 0, 4, 2), -- inside the chapel, before the altar, facing the stained glass
+	anchor("family_crypt", "familyCrypt", 0, -8, 1.5), -- the crypt's mouth with the grate swung aside
+	anchor("elder_tree", "elderTree", 0, -9, 2.5), -- before the crack of the Elder Tree
+	anchor("crypt_seal", "cryptGate", 15, -21, 3), -- before the right niche of skulls, 15 studs from the Crypt's mouth
+}
+
 -- The Black Stream and its head on the cliffs (typed apart: only the first has shallows).
 local STREAMS: { Types.Stream } = {
 	{
@@ -192,6 +235,8 @@ local data: Types.MapAreas = {
 		{ cave = "duskwood_cave", x = 745, z = 0, rot = 90 },
 	},
 	sites = SITES,
+	npcSpots = NPC_SPOTS, -- S103
+	questAnchors = QUEST_ANCHORS, -- S103
 	areas = {
 		{
 			id = "duskwood_werethicket",

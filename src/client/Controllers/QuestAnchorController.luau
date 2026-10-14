@@ -5,7 +5,8 @@
 -- cast bar shows it). Once used, the anchor shows its change to this player only (lit candles, a fresh fence board,
 -- the net on the shore, a burning totem, ...): built from the character's quest state, so it looks the same after
 -- relogging, while the quest runs and after it is handed in. S102: the anchors of the active story quest too (the
--- frosted crest of frostRuins).
+-- frosted crest of frostRuins). S103: an anchor with `rot` turns the effect's frame; the effects at a generator prop
+-- (frostbreak, heartglow, sealbreak) are drawn in the prop's frame (Logic/DuskwoodGen/Quest.frame) and cover it.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
+local DuskwoodQuest = require(ReplicatedStorage.Shared.Logic.DuskwoodGen.Quest)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -91,8 +93,21 @@ local function light(at: BasePart, color: string, range: number, brightness: num
 	l.Parent = at
 end
 
+-- S103: the frame of the thing a generator prop sits on (Logic/DuskwoodGen/Quest.frame), from the anchor's base.
+local function thingFrame(base: CFrame, anchorId: string): CFrame
+	local f = DuskwoodQuest.frame(anchorId)
+	if not f then
+		return base
+	end
+	return base * CFrame.new(f.x, f.y, f.z) * CFrame.Angles(math.rad(f.rx), math.rad(f.ry), math.rad(f.rz))
+end
+
+local function at(point: { x: number, y: number, z: number }): CFrame
+	return CFrame.new(point.x, point.y, point.z)
+end
+
 -- Builds the "done" look of an anchor around `base` (the ground under it, facing the anchor's yaw).
-local BUILDERS: { [string]: (model: Model, base: CFrame) -> () } = {
+local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> () } = {
 	candles = function(model, base)
 		for i = 1, 5 do
 			local a = i / 5 * math.pi * 2
@@ -318,12 +333,92 @@ local BUILDERS: { [string]: (model: Model, base: CFrame) -> () } = {
 		)
 		light(crest, "#BFE3FF", 6, 0.8)
 	end,
+	-- S103: the frost rune on the menhir cracked in two darkened halves over the bare stone, rime scattered on the
+	-- ground before it, the stone's silver light back (moonstone)
+	frostbreak = function(model, base, anchorId)
+		local rune = thingFrame(base, anchorId) * at(DuskwoodQuest.RUNE)
+		part(model, Vector3.new(2.7, 3.3, 0.05), rune * CFrame.new(0, 0, -0.05), "#6E6C6A", Enum.Material.Slate)
+		for _, side in { -1, 1 } do
+			for k, angle in { 0, 60 } do
+				part(
+					model,
+					Vector3.new(0.16, 1, 0.05),
+					rune
+						* CFrame.new(side * (0.35 + k * 0.15), side * 0.1 - k * 0.2, -0.1)
+						* CFrame.Angles(0, 0, math.rad(side * (angle + 12))),
+					"#5A6A7A",
+					Enum.Material.SmoothPlastic
+				)
+			end
+		end
+		for i = 1, 5 do
+			local a = i * 1.3
+			local lump = part(
+				model,
+				Vector3.new(0.5 + (i % 2) * 0.3, 0.35, 0.5),
+				base * CFrame.new(math.cos(a) * 1.8, 0.15, 1.6 + math.sin(a) * 0.9),
+				"#EAF6FF",
+				Enum.Material.Ice,
+				Enum.PartType.Ball
+			)
+			lump.Transparency = 0.2
+		end
+		local glow = part(model, Vector3.new(0.2, 0.2, 0.2), rune * CFrame.new(0, 0, -1.5), "#CFE0FF")
+		glow.Transparency = 1
+		light(glow, "#CFE0FF", 10, 1)
+	end,
+	-- S103: the ice shard gone from the Elder Tree's crack: bark over where it was, a warm golden glow in the crack and
+	-- a puddle of melt water at the player's feet (elderHeart)
+	heartglow = function(model, base, anchorId)
+		local shard = thingFrame(base, anchorId) * at(DuskwoodQuest.SHARD)
+		part(model, Vector3.new(1.8, 3.8, 1.4), shard * CFrame.new(0, 0, 0.1), "#3A2E24", Enum.Material.Wood)
+		local gold =
+			part(model, Vector3.new(1, 4, 0.1), shard * CFrame.new(-0.2, 0, -0.65), "#E8C25A", Enum.Material.Neon)
+		local puddle = part(
+			model,
+			Vector3.new(0.08, 3.2, 3.2),
+			base * CFrame.new(0.2, 0.04, 2.6) * CFrame.Angles(0, 0, math.rad(90)),
+			"#6A8AA0",
+			Enum.Material.Glass,
+			Enum.PartType.Cylinder
+		)
+		puddle.Transparency = 0.3
+		light(gold, "#E8C25A", 14, 1.4)
+	end,
+	-- S103: the cult's seal shattered: the niche bare again, violet shards and a torn chain on the ground (cryptGate)
+	sealbreak = function(model, base, anchorId)
+		local seal = thingFrame(base, anchorId) * at(DuskwoodQuest.SEAL)
+		part(model, Vector3.new(3.4, 3.4, 0.05), seal * CFrame.new(0, 0, -0.08), "#6E2F2A", Enum.Material.Sandstone)
+		part(model, Vector3.new(2.6, 2.6, 0.05), seal * CFrame.new(0, 0, -0.12), "#08080A", Enum.Material.SmoothPlastic)
+		for i = 1, 5 do
+			local shard = part(
+				model,
+				Vector3.new(0.5 + (i % 3) * 0.2, 0.12, 0.35),
+				base * CFrame.new(-1.2 + i * 0.5, 0.08, 2.2 + (i % 2) * 0.8) * CFrame.Angles(0, i * 1.1, math.rad(8)),
+				"#7A4AA0",
+				Enum.Material.Neon
+			)
+			shard.Transparency = 0.15
+		end
+		for k = 0, 3 do
+			part(
+				model,
+				Vector3.new(0.5, 0.12, 0.25),
+				base * CFrame.new(1.6 + k * 0.42, 0.08, 1.4 + k * 0.2) * CFrame.Angles(0, math.rad(k * 35), 0),
+				"#4A4A4E",
+				Enum.Material.Metal
+			)
+		end
+		part(model, Vector3.new(0.12, 1.4, 0.12), seal * CFrame.new(1.4, 1.9, 0.4), "#4A4A4E", Enum.Material.Metal)
+	end,
 }
 
 local function groundUnder(anchor: Anchor): CFrame
 	local data = Areas.anchorById(anchor.id)
 	local lift = if data and data.y then data.y else 2
-	return CFrame.new(anchor.part.Position - Vector3.new(0, lift, 0))
+	-- S103: the anchor's yaw (the frame of a generator prop)
+	local yaw = if data and data.rot then math.rad(data.rot) else 0
+	return CFrame.new(anchor.part.Position - Vector3.new(0, lift, 0)) * CFrame.Angles(0, yaw, 0)
 end
 
 local function setFx(anchor: Anchor, kind: string?)
@@ -341,7 +436,7 @@ local function setFx(anchor: Anchor, kind: string?)
 	end
 	local model = Instance.new("Model")
 	model.Name = `QuestFx_{anchor.id}`
-	builder(model, groundUnder(anchor))
+	builder(model, groundUnder(anchor), anchor.id)
 	model.Parent = folder()
 	anchor.fx = model
 end

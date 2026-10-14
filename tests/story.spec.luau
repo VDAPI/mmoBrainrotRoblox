@@ -31,6 +31,17 @@ local indexOf = Main.indexOf
 -- Story quests inserted after S101b, per session in Main.list order (S103-S105 add theirs).
 local EXPECTED_INSERTS: { [string]: { string } } = {
 	S102 = { "frostRuins", "frostSign", "warrenCharms", "warCouncil" },
+	S103 = {
+		"moonstone",
+		"lostHunters",
+		"houseOfVael",
+		"elderHeart",
+		"turncoat",
+		"barrow",
+		"witchCounsel",
+		"cryptGate",
+		"queensLegacy",
+	},
 }
 
 -- Rewards of the quests that keep fixed EXP (the old 1-19, toDuskwood and the boss quests), as before S102.
@@ -57,7 +68,9 @@ local FIXED_EXP: { [string]: number } = {
 }
 
 -- Quests whose gold is not gold(level) (S103-S105 add their x2 / x3 rewards here).
-local GOLD_EXCEPTIONS: { [string]: boolean } = {}
+local GOLD_EXCEPTIONS: { [string]: boolean } = {
+	queensLegacy = true, -- S103: gold(44) x 2 (the end of chapter II)
+}
 
 local function has(key: string): boolean
 	return Locale.has(key, "pl") and Locale.has(key, "en")
@@ -243,14 +256,19 @@ describe("Story progress: sync and apply (S102 T2)", function()
 		StoryProgress.apply(active, list)
 		expect(active.mainDone).toBe(index.ruins - 1)
 		expect(active.mainDone >= index.testMoonstone and active.mainDone >= index.testLostHunters).toBe(true)
-		expect(StoryProgress.inserted(list)).toEqual({
-			"frostRuins",
-			"frostSign",
-			"warrenCharms",
-			"warCouncil",
-			"testMoonstone",
-			"testLostHunters",
-		})
+		-- the real insertions in list order, the two test quests where they stand
+		local expected: { string } = {}
+		for _, entry in list do
+			if
+				entry.id == "testMoonstone"
+				or entry.id == "testLostHunters"
+				or table.find(StoryProgress.inserted(), entry.id)
+			then
+				table.insert(expected, entry.id)
+			end
+		end
+		expect(StoryProgress.inserted(list)).toEqual(expected)
+		expect(table.find(expected, "testMoonstone") ~= nil and table.find(expected, "frostRuins") == 1).toBe(true)
 	end)
 end)
 
@@ -411,7 +429,8 @@ describe("Story pages and chapters (S102 T5)", function()
 				end
 			end
 		end
-		for i = indexOf.arrival, indexOf.warCouncil do
+		-- S103: and the whole chapter II
+		for i = indexOf.arrival, indexOf.queensLegacy do
 			local quest = Main.list[i]
 			expect(`{quest.id} {quest.pages ~= nil}`).toBe(`{quest.id} true`)
 		end
@@ -428,6 +447,8 @@ describe("Story pages and chapters (S102 T5)", function()
 		expect(Main.chapterOf("arrival")).toBe(1)
 		expect(Main.chapterOf("warCouncil")).toBe(1)
 		expect(Main.chapterOf("toDuskwood")).toBe(2)
+		expect(Main.chapterOf("queensLegacy")).toBe(2)
+		expect(Main.chapterOf("ashen")).toBe(3)
 		expect(Main.chapterOf("vaelgrath")).toBe(4)
 		expect(Main.chapterOf("nope")).toBe(1)
 		expect(has("story.chapter.1.end")).toBe(true)
@@ -441,7 +462,7 @@ describe("Story cutscenes (S102 T6)", function()
 		expect(Cutscenes.validate()).toEqual({})
 	end)
 
-	it("has the seven scenes of chapter I with their triggers, in playing order", function()
+	it("has the seven scenes of chapter I and the ten of chapter II with their triggers, in playing order", function()
 		local want = {
 			{ "ch1_open", "arrival", "accept" },
 			{ "portal_gate", "portal", "objective", 1 },
@@ -450,7 +471,19 @@ describe("Story cutscenes (S102 T6)", function()
 			{ "frost_sign", "frostSign", "objective", 3 },
 			{ "grimrok_end", "grimrok", "objective", 1 },
 			{ "ch1_close", "warCouncil", "turnIn" },
+			-- S103: chapter II
+			{ "ch2_title", "toDuskwood", "objective", 1 },
+			{ "moonstone", "moonstone", "objective", 2 },
+			{ "houseOfVael", "houseOfVael", "objective", 2 },
+			{ "elderHeart", "elderHeart", "objective", 1 },
+			{ "cult", "cult", "turnIn" },
+			{ "turncoat", "turncoat", "objective", 2 },
+			{ "barrow", "barrow", "objective", 3 },
+			{ "cryptGate", "cryptGate", "objective", 2 },
+			{ "morvane", "morvane", "objective", 1 },
+			{ "queensLegacy", "queensLegacy", "turnIn" },
 		}
+		expect(#CutsceneData.list).toBe(#want)
 		for i, row in want do
 			local scene = CutsceneData.list[i]
 			expect(scene.id).toBe(row[1])
@@ -650,5 +683,363 @@ describe("Story EXP rule (S102 T10)", function()
 		local council = assert(Main.get("warCouncil"))
 		local plain = math.floor(Main.STORY_SCALE[QuestBudget.bandOf(council.level)] * Exp.expToNext(council.level))
 		expect(council.reward.exp > plain).toBe(true)
+	end)
+end)
+
+-- S103 (docs/FABULA.md §2.3): chapter II "The Forgotten House" ----------------------------------------------------
+
+local CHAPTER_II = {
+	"toDuskwood",
+	"werewolves",
+	"moonstone",
+	"lostHunters",
+	"ruins",
+	"houseOfVael",
+	"ents",
+	"elderHeart",
+	"cult",
+	"turncoat",
+	"swamp",
+	"barrow",
+	"crypt",
+	"witchCounsel",
+	"cryptGate",
+	"morvane",
+	"queensLegacy",
+}
+local OLD_II = { "toDuskwood", "werewolves", "ruins", "ents", "cult", "swamp", "crypt", "morvane" }
+
+describe("Chapter II: quests (S103)", function()
+	it("has the 17 quests in the order of the plan, levels 20-44, ashen right after", function()
+		local first = indexOf.toDuskwood
+		for k, id in CHAPTER_II do
+			local quest = Main.list[first + k - 1]
+			expect(quest.id).toBe(id)
+			expect(quest.level >= 20 and quest.level <= 44).toBe(true)
+		end
+		expect(Main.list[indexOf.queensLegacy + 1].id).toBe("ashen")
+		expect(Main.list[indexOf.queensLegacy + 1].level).toBe(45)
+	end)
+
+	it("every story quest is taken where the last one was handed in", function()
+		for i = 2, #Main.list do
+			local quest, before = Main.list[i], Main.list[i - 1]
+			expect(`{quest.id} {quest.giver}`).toBe(`{quest.id} {before.turnIn}`)
+		end
+	end)
+
+	it("new quests: main, hidden from the wiki, 2-4 pages with texts; the old eight 2-3 pages", function()
+		for _, id in EXPECTED_INSERTS.S103 do
+			local quest = assert(Main.get(id), id)
+			expect(quest.category).toBe("main")
+			expect(quest.wiki).toBe(false)
+			local pages = assert(quest.pages, id)
+			expect(pages >= 2 and pages <= 4).toBe(true)
+			for _, key in { "title", "text", "done" } do
+				expect(`{id}.{key} {has(`quest.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+		end
+		for _, id in OLD_II do
+			local quest = assert(Main.get(id), id)
+			local pages = assert(quest.pages, id)
+			expect(pages >= 2 and pages <= 3).toBe(true)
+			for i = 1, pages do
+				expect(has(`quest.{id}.p{i}`)).toBe(true)
+			end
+			expect(quest.wiki).toBeNil()
+		end
+	end)
+
+	it(
+		"objectives: anchors on Duskwood with texts and effects, places on walkable ground, areas with their kinds",
+		function()
+			local MapTerrain = require("../src/shared/Logic/MapTerrain")
+			for _, id in CHAPTER_II do
+				local quest = assert(Main.get(id))
+				for i, objective in quest.objectives do
+					local tag = `{id}#{i}`
+					if objective.type == "use" then
+						local anchor, mapId = Areas.anchorById(objective.anchor :: string)
+						expect(`{tag} {anchor ~= nil and mapId == "duskwood"}`).toBe(`{tag} true`)
+						expect(has(objective.action :: string)).toBe(true)
+						expect(Side.FX[objective.fx :: string]).toBe(true)
+					elseif objective.type == "reach" and objective.x then
+						expect(has(objective.place :: string)).toBe(true)
+						local walkable = MapTerrain.walkable(
+							objective.map :: string,
+							objective.x :: number,
+							objective.z :: number,
+							6
+						)
+						expect(`{tag} {walkable}`).toBe(`{tag} true`)
+					elseif (objective.type == "kill" or objective.type == "collect") and objective.area then
+						local area, mapId = Areas.areaById(objective.area)
+						local cave = Areas.caves.get(objective.area)
+						if area then
+							expect(mapId).toBe("duskwood")
+							expect(`{tag} {table.find(area.kinds, objective.monster) ~= nil}`).toBe(`{tag} true`)
+						else
+							local c = assert(cave, `{tag} {objective.area}`)
+							expect(c.region).toBe("duskwood")
+						end
+						if objective.variant == "elite" then
+							local c = assert(cave, `{tag}: an elite objective in a cave`)
+							expect(`{tag} {table.find(c.elites, objective.monster) ~= nil}`).toBe(`{tag} true`)
+						end
+					elseif objective.type == "deliver" then
+						expect(has(`quest.item.{objective.item}`)).toBe(true)
+						expect(Npcs.get(objective.npc :: string) ~= nil).toBe(true)
+					end
+					if objective.type == "collect" then
+						expect(has(`quest.item.{objective.item}`)).toBe(true)
+					end
+				end
+			end
+			-- the elites of the plan: the cultists of the Barrow, the specters of the Crypt
+			local barrow = assert(Main.get("barrow")).objectives
+			expect(barrow[2].area).toBe("duskwood_barrow")
+			expect(barrow[3].variant).toBe("elite")
+			expect(assert(Main.get("cryptGate")).objectives[3].area).toBe("duskwood_cave")
+		end
+	)
+
+	it("queensLegacy: one talk with Anzelm hands in both deliveries, Ysolde apart", function()
+		local quest = assert(Main.get("queensLegacy"))
+		local progress = QuestLogic.emptyProgress(quest.objectives)
+		local rng = Rng.new(3)
+		expect(QuestLogic.advance(progress, quest.objectives, "talk", { npc = "brother_anzelm" }, rng)).toEqual({ 1, 2 })
+		expect(progress).toEqual({ 1, 1, 0 })
+		expect(QuestLogic.advance(progress, quest.objectives, "talk", { npc = "alchemist" }, rng)).toEqual({ 3 })
+		expect(QuestLogic.isComplete(progress, quest.objectives)).toBe(true)
+	end)
+
+	it("moonstone: talking to Radomir alone does not finish it", function()
+		local quest = assert(Main.get("moonstone"))
+		local progress = QuestLogic.emptyProgress(quest.objectives)
+		local rng = Rng.new(4)
+		expect(QuestLogic.advance(progress, quest.objectives, "talk", { npc = "forester_radomir" }, rng)).toEqual({ 1 })
+		expect(QuestLogic.isComplete(progress, quest.objectives)).toBe(false)
+		-- a werewolf from another area does not count
+		expect(
+			QuestLogic.advance(
+				progress,
+				quest.objectives,
+				"kill",
+				{ monsterId = "werewolf", areaId = "duskwood_bearhollow" },
+				rng
+			)
+		).toEqual({})
+	end)
+
+	it("barrow: the Book of Rites drops only from elites", function()
+		local quest = assert(Main.get("barrow"))
+		local book = quest.objectives[3]
+		expect(QuestLogic.amount(book, "kill", { monsterId = "darkCultist", areaId = "duskwood_barrow" }, 0)).toBe(0)
+		expect(
+			QuestLogic.amount(
+				book,
+				"kill",
+				{ monsterId = "darkCultist", areaId = "duskwood_barrow", variant = "elite" },
+				0
+			)
+		).toBe(1)
+	end)
+
+	it("EXP of the new quests: 5-70% of their level, the chapter's end above a plain quest of its level", function()
+		for _, id in EXPECTED_INSERTS.S103 do
+			local quest = assert(Main.get(id))
+			local e = Exp.expToNext(quest.level)
+			local share = quest.reward.exp / e
+			expect(`{id} {share >= 0.05 and share <= 0.7}`).toBe(`{id} true`)
+		end
+		local legacy = assert(Main.get("queensLegacy"))
+		local plain = math.floor(Main.STORY_SCALE[20] * Exp.expToNext(legacy.level) * 1)
+		expect(legacy.reward.exp > plain).toBe(true)
+		expect(table.find(Main.STORY_BANDS, 20) ~= nil).toBe(true)
+		-- every reward item exists
+		local Items = require("../src/shared/Data/Items")
+		for _, id in EXPECTED_INSERTS.S103 do
+			for _, item in assert(Main.get(id)).reward.items or {} do
+				expect(`{item.id} {Items.get(item.id) ~= nil}`).toBe(`{item.id} true`)
+			end
+		end
+	end)
+end)
+
+describe("Chapter II: players in the middle of the story (S103, A6)", function()
+	local function migrated(fields: { [string]: any }): any
+		local c: any = AccountSchema.characterTemplate()
+		c.id, c.name, c.level = "x", "x", 30
+		for key, value in fields do
+			c.quests[key] = value
+		end
+		local data: any = AccountSchema.accountTemplate()
+		data.schema = 7
+		data.characters = { x = c }
+		AccountSchema.migrate(data)
+		return data.characters.x.quests
+	end
+
+	it("(a) werewolves handed in (old save): moonstone is offered", function()
+		local q = applied({ mainLast = StoryProgress.legacyId(17), mainDone = 17 })
+		expect(q.mainLast).toBe("werewolves")
+		expect(q.mainDone).toBe(indexOf.werewolves)
+		expect((QuestLogic.nextMain(q.mainDone, 22))).toBe(Main.get("moonstone"))
+	end)
+
+	it("(b) an active ruins keeps its progress; moonstone and lostHunters count as handed in", function()
+		local q = applied({ mainDone = 17, main = { id = "ruins", progress = { 7, 2 } } })
+		expect(q.mainDone).toBe(indexOf.ruins - 1)
+		expect(q.main.progress).toEqual({ 7, 2 })
+		expect(StoryProgress.isDone(q, "moonstone")).toBe(true)
+		expect(StoryProgress.isDone(q, "lostHunters")).toBe(true)
+		expect(StoryProgress.isDone(q, "houseOfVael")).toBe(false)
+	end)
+
+	it("(c) morvane handed in, ashen not taken: queensLegacy, open from level 42", function()
+		local q = applied({ mainLast = "morvane", mainDone = 23 })
+		local quest, ready = QuestLogic.nextMain(q.mainDone, 42)
+		expect(quest).toBe(Main.get("queensLegacy"))
+		expect(ready).toBe(true)
+		expect((select(2, QuestLogic.nextMain(q.mainDone, 41)))).toBe(false)
+	end)
+
+	it("(d) past chapter II: every insertion handed in, the next quest unchanged", function()
+		local active = applied({ mainDone = 24, main = { id = "ashen", progress = { 1, 3 } } })
+		local last = applied({ mainLast = "orcs", mainDone = 25 })
+		for _, id in EXPECTED_INSERTS.S103 do
+			expect(StoryProgress.isDone(active, id)).toBe(true)
+			expect(StoryProgress.isDone(last, id)).toBe(true)
+		end
+		expect(active.main.id).toBe("ashen")
+		expect(active.main.progress).toEqual({ 1, 3 })
+		expect((QuestLogic.nextMain(last.mainDone, 60))).toBe(Main.get("golems"))
+	end)
+
+	it("(e) in chapter I nothing of chapter II counts", function()
+		local q = applied({ mainDone = 12, main = { id = "goblinCamp", progress = { 4 } } })
+		expect(q.mainDone).toBe(indexOf.goblinCamp - 1)
+		for _, id in EXPECTED_INSERTS.S103 do
+			expect(StoryProgress.isDone(q, id)).toBe(false)
+		end
+	end)
+
+	it("(f) saved after S102, before S103: cult handed in, crypt or morvane active", function()
+		local cult = applied({ mainLast = "cult", mainDone = 24 })
+		expect(cult.mainDone).toBe(indexOf.cult)
+		expect((QuestLogic.nextMain(cult.mainDone, 31))).toBe(Main.get("turncoat"))
+		local crypt = applied({ mainLast = "swamp", mainDone = 25, main = { id = "crypt", progress = { 1, 2 } } })
+		expect(crypt.mainDone).toBe(indexOf.crypt - 1)
+		expect(crypt.mainLast).toBe("barrow")
+		expect(crypt.main.progress).toEqual({ 1, 2 })
+		local morvane = applied({ mainLast = "crypt", mainDone = 26, main = { id = "morvane", progress = { 0 } } })
+		expect(morvane.mainDone).toBe(indexOf.morvane - 1)
+		expect(morvane.mainLast).toBe("cryptGate")
+		expect(StoryProgress.isDone(morvane, "witchCounsel")).toBe(true)
+		expect(StoryProgress.isDone(morvane, "queensLegacy")).toBe(false)
+	end)
+
+	it("(g) a schema 7 save through the migration: same places, CURRENT stays 8", function()
+		expect(AccountSchema.CURRENT).toBe(8)
+		local wolves = migrated({ mainDone = 17 })
+		expect(wolves.mainLast).toBe("werewolves")
+		expect(wolves.mainDone).toBe(indexOf.werewolves)
+		local queen = migrated({ mainDone = 23 })
+		expect((QuestLogic.nextMain(queen.mainDone, 44))).toBe(Main.get("queensLegacy"))
+		local ruins = migrated({ mainDone = 17, main = { id = "ruins", progress = { 2, 0 } } })
+		expect(ruins.mainDone).toBe(indexOf.ruins - 1)
+		expect(ruins.main.progress).toEqual({ 2, 0 })
+	end)
+
+	it("(h) idempotent, and mainDone never past the list", function()
+		for _, fields in
+			{
+				{ mainLast = "werewolves" },
+				{ mainDone = 17, main = { id = "ruins", progress = { 1, 0 } } },
+				{ mainLast = "morvane" },
+				{ mainDone = 999 },
+			}
+		do
+			local q = applied(fields)
+			local d, l = q.mainDone, q.mainLast
+			StoryProgress.apply(q)
+			expect(q.mainDone).toBe(d)
+			expect(q.mainLast).toBe(l)
+			expect(q.mainDone <= #Main.list).toBe(true)
+		end
+	end)
+
+	it("titles mean what they meant before the insertions", function()
+		local TitleData = require("../src/shared/Data/Titles")
+		for _, title in TitleData.list do
+			local req: any = title.req
+			if title.id == "sentinel" then
+				expect(req.value).toBe(indexOf.herbs)
+			elseif title.id == "dragonbane" then
+				expect(req.value).toBe(indexOf.vaelgrath)
+			end
+		end
+	end)
+end)
+
+describe("Chapter II: NPCs, places and scenes (S103)", function()
+	it("the four story NPCs of Duskwood: hidden from the wiki, texts in both languages, Oswin a ghost", function()
+		for _, id in { "forester_radomir", "ghost_oswin", "defector_jorund", "witch_ragna" } do
+			local npc = assert(Npcs.get(id), id)
+			expect(npc.map).toBe("duskwood")
+			expect(npc.wiki).toBe(false)
+			expect(npc.lines).toBe(3)
+			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+				expect(`{id}.{key} {has(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+			expect(npc.ghost == true).toBe(id == "ghost_oswin")
+		end
+	end)
+
+	it("Ilvar appears only as a figure; the scenes of chapter II sit on their maps", function()
+		local Maps = require("../src/shared/Data/Maps")
+		local chapter2 = {
+			ch2_title = true,
+			moonstone = true,
+			houseOfVael = true,
+			elderHeart = true,
+			cult = true,
+			turncoat = true,
+			barrow = true,
+			cryptGate = true,
+			morvane = true,
+			queensLegacy = true,
+		}
+		local withIlvar: { string } = {}
+		for _, scene in CutsceneData.list do
+			if chapter2[scene.id] then
+				local seen = false
+				for _, line in scene.lines do
+					seen = seen or line.who == "ilvar"
+				end
+				for _, fig in scene.figures or {} do
+					seen = seen or fig.look == "ilvar"
+				end
+				if seen then
+					table.insert(withIlvar, scene.id)
+				end
+			end
+			local shot = scene.shot
+			if shot.kind == "point" then
+				local map = assert(Maps.get(shot.map :: string))
+				expect(math.abs(shot.x :: number) <= map.size.x / 2 and math.abs(shot.z :: number) <= map.size.z / 2).toBe(
+					true
+				)
+			end
+		end
+		expect(table.concat(withIlvar, ",")).toBe("cryptGate")
+		expect(Npcs.get("ilvar")).toBeNil()
+		local gate = assert(CutsceneData.get("cryptGate"))
+		expect((gate.figures :: any)[1].look).toBe("ilvar")
+		expect((gate.figures :: any)[1].ghost).toBe(true)
+		expect(assert(CutsceneData.get("ch2_title")).kind).toBe("chapter")
+		expect(assert(CutsceneData.get("ch2_title")).subtitle).toBe("story.chapter.2")
+		expect(assert(CutsceneData.get("queensLegacy")).title).toBe("story.chapter.2.end")
+		expect(has("story.morvane.name")).toBe(true)
 	end)
 end)

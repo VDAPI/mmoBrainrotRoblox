@@ -314,7 +314,10 @@ function World.areasData(): any
 		local spots = Json.object({})
 		for _, key in Clean.keys(data.npcSpots or {}) do
 			local spot = (data.npcSpots :: any)[key]
-			spots[key] = { x = spot.x, z = spot.z, facing = spot.facing }
+			-- S103: unpublished NPC places (S109 publishes)
+			if spot.wiki ~= false then
+				spots[key] = { x = spot.x, z = spot.z, facing = spot.facing }
+			end
 		end
 		local roads = {}
 		for _, r in data.roads do

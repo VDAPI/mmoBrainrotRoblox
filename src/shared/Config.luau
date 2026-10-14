@@ -195,7 +195,14 @@ local Config = {
 	-- id -> at most this many in one gift, once per character and quest. Small consumables only: no equipment, no
 	-- currency (better gear stays in the drops).
 	Dialogue = {
-		gifts = { potion_hp_1 = 3, potion_mana_1 = 3 },
+		gifts = {
+			potion_hp_1 = 3,
+			potion_mana_1 = 3,
+			-- S103: chapter II of the story (Duskwood, 20-45): the potions of its level, below the quest rewards
+			potion_hp_3 = 2,
+			potion_hp_4 = 2,
+			potion_mana_3 = 2,
+		},
 	},
 	-- NPC comments during quests (S101b, Logic/Barks + BarkController; client only, no effect on play). Seconds
 	-- between any two comments (`gap`) and between the same quest + event (`sameEvent`), at most `perMinute` in a

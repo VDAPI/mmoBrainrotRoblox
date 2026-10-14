@@ -907,6 +907,17 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   Szary „!” przy zaległości ponad `greyGap`. Zlecenie jest w dzienniku („Łowieckie”), trackerze („Śledź”, strzałka),
   na tablicy, mapie świata i w oknie portalu („◈ Zlecenie”). Lista jest generowana: `lune run
   tools/contracts_gen.luau`, potem `tools/quest_budget.luau`. Na wiki od S109.
+- **Fabuła, rozdział II (S103, `docs/FABULA.md` §2.3)**: 17 questów w Mrocznym Borze na 20–44 (`toDuskwood`,
+  `werewolves`, `moonstone`, `lostHunters`, `ruins`, `houseOfVael`, `ents`, `elderHeart`, `cult`, `turncoat`, `swamp`,
+  `barrow`, `crypt`, `witchCounsel`, `cryptGate`, `morvane`, `queensLegacy`), co 1–2 poziomy, każdy ze stronami
+  opowieści. Czterech NPC Boru na miejscach przy istniejących budowlach (Leśniczy Radomir w rozszarpanym obozie, duch
+  zarządcy Oswina przy kaplicy, zawsze półprzezroczysty, Jorund Odstępca przy kapliczce na Mglistym Rozstaju, Ragna z
+  Palów przy wiosce na palach), sześć kotwic `use` (trzy z rekwizytami: runa na menhirze, odłamek lodu w Pradrzewie,
+  pieczęć kultu na Bramie Krypty) i trzy miejsca `reach`; dziesięć przerywników (napis rozdziału, Ilvar jako projekcja
+  w szronie, duch Morvane po walce, koniec rozdziału u kapitana). Radomir prowadzi gracza do obozu w Niedźwiedzim
+  Jarze, Ragna idzie z nim na Wiedźmie Moczary. EXP fabuły pasma 20–44 = 10% EXP pasma (reguła S102, wagi questów),
+  stałe tylko `toDuskwood` i `morvane`; bicie oddaje różnicę (`monsterExpMul`), więc czas na poziom bez zmian. Nowe
+  questy, NPC, kotwice i miejsca NPC na wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

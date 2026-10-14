@@ -42,6 +42,7 @@ export type NpcDef = {
 	lines: number?,
 	gossip: boolean?,
 	wiki: boolean?, -- S102: false = left out of the wiki (NPCs of story quests before S109)
+	ghost: boolean?, -- S103: a pale, half-transparent figure with a cold light (NpcService)
 }
 
 local LIST: { NpcDef } = {}
@@ -271,7 +272,7 @@ townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { se
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
 
 -- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
--- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk.
+-- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`.
 local function regionfolk(
 	map: string,
 	id: string,
@@ -297,6 +298,7 @@ local function regionfolk(
 		icon = icon,
 		lines = 3,
 		wiki = e.wiki,
+		ghost = e.ghost,
 	})
 end
 
@@ -323,6 +325,26 @@ meadowsfolk(
 	{ services = { "talk", "shop" }, shop = "miner" }
 )
 meadowsfolk("hunter_borys", "hunter", { body = "#4F5A2E", accent = "#6B4A2B" }, "🏹")
+
+-- Story NPCs of Duskwood (S103, docs/FABULA.md §2.3), on the places of Areas/duskwood npcSpots.
+regionfolk(
+	"duskwood",
+	"forester_radomir",
+	"radomir",
+	{ body = "#4A5236", accent = "#6B4A2B" },
+	"🌲",
+	{ wiki = false }
+)
+regionfolk(
+	"duskwood",
+	"ghost_oswin",
+	"oswin",
+	{ body = "#B8D4D0", accent = "#6E8C9A" },
+	"⚜",
+	{ wiki = false, ghost = true }
+)
+regionfolk("duskwood", "defector_jorund", "jorund", { body = "#4A4A52", accent = "#7A4AA0" }, "🕯", { wiki = false })
+regionfolk("duskwood", "witch_ragna", "ragna", { body = "#3E4A36", accent = "#8A7A5A" }, "🌿", { wiki = false })
 
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do

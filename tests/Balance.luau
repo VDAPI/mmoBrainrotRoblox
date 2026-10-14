@@ -1905,12 +1905,29 @@ local CREDIT_RULES: { [string]: { share: number, spread: string } } = {
 }
 Balance.CREDIT_RULES = CREDIT_RULES
 
+-- S103: the S94 EXP of the old story quests a story session put on the story rule (Data/Quests/Main settleStory):
+-- the base model reads these, so it stays the S94 model bit for bit (tests/questbudget.spec). S104 / S105 add the old
+-- quests of their chapters.
+-- stylua: ignore
+local LEGACY_EXP: { [string]: number } = table.freeze({
+	werewolves = 22219, ruins = 23557, ents = 23136, cult = 30817, swamp = 39997, crypt = 61156, -- S103 (exp(L, f) of S92)
+})
+Balance.LEGACY_EXP = LEGACY_EXP
+
 local function questSources(budget: boolean): { QuestSource }
 	if not budget then
 		-- S102: the S94 story = the 32 quests of StoryProgress.LEGACY_ORDER (later story insertions are budget)
 		local legacy = {}
 		for _, id in StoryProgress.LEGACY_ORDER do
-			table.insert(legacy, Quests.Main.get(id))
+			local quest: any = Quests.Main.get(id)
+			local old = LEGACY_EXP[id]
+			if old then
+				-- S103: a copy with its S94 reward (the live quest gets its EXP from the story rule)
+				quest = table.clone(quest)
+				quest.reward = table.clone(quest.reward)
+				quest.reward.exp = old
+			end
+			table.insert(legacy, quest)
 		end
 		return { { list = legacy }, { list = Quests.Side.list, below = 20 } }
 	end
@@ -5246,6 +5263,13 @@ do
 			"S92",
 			"poza zasięgiem dźwigni S92: 11.36 < 12 at 25 (Config.Upgrade global, an owner decision)"
 		)
+		-- S103: the income of 40 counts the kills of the window model (Balance.levelIncome) and the gold of the nine new
+		-- story quests of the band (gold(level), FABULA §2.3); the upgrade gold is global (Config.Upgrade)
+		add(
+			`G9.up9|{c} 40: +1…+9 z ochroną (poziomy dochodu)`,
+			"S103",
+			"poza zasięgiem dźwigni S103: 11.06 < 12 at 40 (11.91 with the window kills before S103; the gold of the new story quests of 20-44; Config.Upgrade global, an owner decision)"
+		)
 	end
 	-- S88 (E4): T-SK5 at 30 with Anointment 5 % (8 before; band 0.04-0.06 in `dungeon`): the heal anchors 21-44.
 	-- S92: asserted again (Heal's rank 6 knot and the heal anchor 25: 0.269 at 30, 0.254 at 25)
@@ -6853,8 +6877,8 @@ end
 
 local incomes: { [string]: number } = {}
 -- Gold of a level for G9 (S84): kill gold + drop sales per hour (economyAt) x the hours of the level, with the quest
--- EXP and gold of its band (BANDS, questsAt without bosses) spread over the band's levels by the EXP they need, like
--- the S32 income (questRewards) and the diagnosis. Quests on their own level (paceAt) give levels of ~0 hours.
+-- gold of its band (BANDS, questsAt without bosses) spread over the band's levels by the EXP they need, like the S32
+-- income (questRewards) and the diagnosis. S103: the hours from the kills of the pace window model (see below).
 function Balance.levelIncome(classId: string, level: number): number
 	local key = `{classId}|{level}`
 	local cached = incomes[key]
@@ -6862,16 +6886,18 @@ function Balance.levelIncome(classId: string, level: number): number
 		return cached
 	end
 	local band = Balance.BANDS[Balance.regionAt(level)]
-	local exp, gold, need = 0, 0, 0
+	local gold, need = 0, 0
 	for l = band[1], band[2] - 1 do
-		local q = Balance.questsAt(l)
-		exp += q.exp
-		gold += q.gold
+		gold += Balance.questsAt(l).gold
 		need += Exp.expToNext(l)
 	end
 	local share = Exp.expToNext(level) / math.max(1, need)
 	local e = Balance.economyAt(classId, level)
-	local kills = math.max(0, Exp.expToNext(level) - exp * share) / e.pace.expPerKill
+	-- S103: the kills of the level are those of the pace window model (the EXP left after the quest credit of its
+	-- window, Balance.questCreditByLevel), the same the S98 compensation keeps per level; the band average of the
+	-- quest EXP (`exp * share`, S84) read a band whose story moved its EXP between levels (chapter II: 27.5% -> 10% of
+	-- the band, the monsters' multiplier up on 21-36) as 34% more kills on level 20.
+	local kills = creditRows({})[level].need / e.pace.expPerKill
 	local income = e.incomePerHour * kills * e.pace.secondsPerKill / 3600 + gold * share
 	incomes[key] = income
 	return income

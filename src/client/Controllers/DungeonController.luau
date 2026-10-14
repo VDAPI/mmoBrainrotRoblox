@@ -2,7 +2,9 @@
 -- Dungeons on the client (DESIGN §16): the gate prompt and window (tag "DungeonEntrance"), the boss HP bar at
 -- the top of the screen (state `boss`: name, phase, HP, time left, enrage / shield) and big centred
 -- messages of the fight (BossAnnounce: countdown, phases, victory, wipe); the post-fight reward card with the
--- grind progress (S30, ShowReward from the CombatFx "reward" event).
+-- grind progress (S30, ShowReward from the CombatFx "reward" event). S103 (FABULA §2.3): when Morvane enters her last
+-- phase and the player is on the story quest `morvane`, the same message speaks her true name a moment later (text
+-- only: the fight does not change).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -188,6 +190,25 @@ local function showAnnouncement(text: string)
 end
 DungeonController._announceToken = 0
 
+-- S103: the story's line in the last phase of a boss, for a player on the story quest of that boss (boss id -> quest
+-- id, text key); seconds after the phase message.
+local STORY_NAME: { [string]: { quest: string, key: string } } =
+	{ morvane = { quest = "morvane", key = "story.morvane.name" } }
+local STORY_NAME_DELAY = 3.5
+
+local function storyName(key: string)
+	for bossId, story in STORY_NAME do
+		local boss = Bosses.get(bossId)
+		if boss and key == `boss.{bossId}.phase{#boss.phases + 1}` then
+			if State.Get({ "character", "quests", "main", "id" }) == story.quest then
+				task.delay(STORY_NAME_DELAY, function()
+					showAnnouncement(Text.now(story.key))
+				end)
+			end
+		end
+	end
+end
+
 local function decorate(instance: Instance)
 	if not instance:IsA("Model") then
 		return
@@ -304,6 +325,7 @@ function DungeonController.Start()
 	Net.On("BossAnnounce", function(key: string, args: { [string]: any }?)
 		Sounds.play("levelUp")
 		showAnnouncement(Text.now(key, args))
+		storyName(key)
 	end)
 end
 

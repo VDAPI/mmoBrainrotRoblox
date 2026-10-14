@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 7e2a1ab0 (`wiki/src/data/meta.json`).
+> Odcisk danych 67124954 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 

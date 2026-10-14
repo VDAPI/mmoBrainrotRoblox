@@ -83,6 +83,25 @@ describe("NpcMarks", function()
 		expect(NpcMarks.all(nil, 1)).toEqual({})
 	end)
 
+	it("story chapter II (S103): the marks over Borin, Radomir, the captain and Jorund", function()
+		local indexOf = Quests.Main.indexOf
+		expect(NpcMarks.of("scout_duskwood", state(nil, indexOf.werewolves), 22)).toBe("available")
+		local moonstone = assert(Quests.Main.get("moonstone"))
+		local full = {}
+		for i, objective in moonstone.objectives do
+			full[i] = objective.n
+		end
+		local ready = state({ id = "moonstone", progress = full }, indexOf.moonstone - 1)
+		expect(NpcMarks.of("forester_radomir", ready, 22)).toBe("turnIn")
+		expect(NpcMarks.of("forester_radomir", state(nil, indexOf.moonstone), 23)).toBe("available")
+		local turncoat = assert(Quests.Main.get("turncoat"))
+		local running =
+			state({ id = "turncoat", progress = QuestLogic.emptyProgress(turncoat.objectives) }, indexOf.cult)
+		expect(NpcMarks.of("captain", running, 31)).toBe("active")
+		local jorund = NpcMarks.of("defector_jorund", running, 31)
+		expect(jorund ~= "available" and jorund ~= "availableLow").toBe(true)
+	end)
+
 	it("priority orders turn-in over available over active", function()
 		expect(NpcMarks.priority("turnIn") > NpcMarks.priority("available")).toBe(true)
 		expect(NpcMarks.priority("available") > NpcMarks.priority("availableLow")).toBe(true)

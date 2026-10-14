@@ -438,3 +438,44 @@ describe("Companions of story chapter I (S102 T12)", function()
 		expect(want({ 1, 1, 0 })).toBeNil()
 	end)
 end)
+
+describe("Companions of story chapter II (S103)", function()
+	local MapTerrain = require("../src/shared/Logic/MapTerrain")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local T = assert(RegionTerrain.get("duskwood"))
+
+	it("lostHunters: Radomir's route through Duskwood is walkable, dry and in legs of at most legMax", function()
+		local quest = assert(Quests.Main.get("lostHunters"))
+		local def = assert(quest.companion, "companion")
+		local escort = assert(Companion.escortOf(quest))
+		local start = assert(Companion.fromOf(def))
+		local route = Companion.route(def, escort, start)
+		expect(#route >= 3).toBe(true)
+		for i, point in route do
+			expect(`{i} {MapTerrain.walkable("duskwood", point.x, point.z, 4)}`).toBe(`{i} true`)
+			expect(T.water(point.x, point.z)).toBeNil()
+			if i > 1 then
+				local before = route[i - 1]
+				local leg = math.sqrt((point.x - before.x) ^ 2 + (point.z - before.z) ^ 2)
+				expect(leg <= Config.Companion.legMax).toBe(true)
+			end
+		end
+		-- the goal before the lost camp, 12+ studs from its anchor
+		local Areas = require("../src/shared/Data/Areas")
+		local anchor = assert(Areas.anchorById("lost_camp"))
+		local gx, gz = escort.x :: number, escort.z :: number
+		expect(math.sqrt((gx - anchor.x) ^ 2 + (gz - anchor.z) ^ 2) >= 12).toBe(true)
+		expect(Companion.validate()).toEqual({})
+	end)
+
+	it("witchCounsel: Ragna joins at her place by the stilt village and follows during the marsh objectives", function()
+		local quest = assert(Quests.Main.get("witchCounsel"))
+		local def = assert(quest.companion, "companion")
+		local from = assert(Companion.fromOf(def))
+		local npc = assert(require("../src/shared/Data/Npcs").get("witch_ragna"))
+		expect(from.x).toBe(npc.position.x)
+		expect(from.z).toBe(npc.position.z)
+		expect(quest.objectives[2].area).toBe("duskwood_witchmarsh")
+		expect(quest.objectives[3].area).toBe("duskwood_witchmarsh")
+	end)
+end)

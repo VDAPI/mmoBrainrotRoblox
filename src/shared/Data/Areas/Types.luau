@@ -27,11 +27,18 @@ export type Stream = {
 
 -- Place prepared for an NPC of a later session (S26 -> S27): standing point and facing (yaw, degrees; the front
 -- is (-sin, -cos) like the city plan). Flat ground, dry, outside every monster group (listed in `avoid`).
-export type NpcSpot = { x: number, z: number, facing: number }
+export type NpcSpot = {
+	x: number,
+	z: number,
+	facing: number,
+	wiki: boolean?, -- S103: false = left out of the wiki export (tools/WikiData/World) until published (S109)
+}
 
 -- Invisible quest object (S26 -> S27): a part tagged "QuestAnchor" with the attribute AnchorId, `y` studs over
--- the ground (default 2). S102: `wiki = false` keeps it off the wiki (story anchors until S109).
-export type QuestAnchor = { id: string, x: number, z: number, y: number?, wiki: boolean? }
+-- the ground (default 2). S102: `wiki = false` keeps it off the wiki (story anchors until S109). S103: `rot` = yaw of
+-- the anchor's frame in degrees (front (-sin, -cos) like the sites; default 0): the frame of a generator prop at the
+-- anchor (Logic/DuskwoodGen/Quest) and of the client effect after its use (QuestAnchorController).
+export type QuestAnchor = { id: string, x: number, z: number, y: number?, wiki: boolean?, rot: number? }
 
 -- Place of a building or landmark built by a layout (S26): yaw `rot` in degrees, front = (-sin rot, -cos rot).
 export type Site = { x: number, z: number, rot: number }

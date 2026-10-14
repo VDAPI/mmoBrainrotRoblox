@@ -261,6 +261,40 @@ T.describe("Wiki export: consistency", function()
 		end
 	end)
 
+	-- S103: chapter II's quests, its four NPCs, anchors and NPC places wait for S109 too
+	T.it("leaves story chapter II out: quests, NPCs, anchors and NPC places of Duskwood (S103)", function()
+		local hiddenIds = {
+			"moonstone_rune",
+			"lost_camp",
+			"chapel_window",
+			"family_crypt",
+			"elder_tree",
+			"crypt_seal",
+			"forester_radomir",
+			"ghost_oswin",
+			"defector_jorund",
+			"witch_ragna",
+		}
+		for _, id in hiddenIds do
+			for _, file in fs.readDir("wiki/src/data") do
+				if string.match(file, "%.json$") then
+					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+			end
+		end
+		for _, q in d.quests.main do
+			T.expect(Quests.Main.get(q.id).wiki).toBeNil()
+		end
+		for _, npc in d.npcs.npcs do
+			T.expect(table.find(hiddenIds, (npc :: any).id)).toBeNil()
+		end
+		local dusk = d.areas.maps.duskwood
+		T.expect(#dusk.questAnchors).toBe(0)
+		T.expect(next(dusk.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do

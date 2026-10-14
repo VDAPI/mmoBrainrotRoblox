@@ -106,6 +106,16 @@ function Places.mapsearch(_ctx: any): any
 	local indexes = {}
 	for _, lang in { "pl", "en" } do
 		local index = MapSearch.build(translator(lang))
+		-- S103: NPCs hidden from the wiki (wiki = false: the story NPCs until S109) stay out of the search, the vectors
+		-- below run on the same filtered index
+		local kept = {}
+		for _, item in index.entries do
+			local npc = if item.entry.kind == "npc" then Npcs.get(item.entry.id) else nil
+			if not (npc and npc.wiki == false) then
+				table.insert(kept, item)
+			end
+		end
+		index.entries = kept
 		indexes[lang] = index
 		local list = {}
 		for _, item in index.entries do

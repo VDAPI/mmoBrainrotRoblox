@@ -22,6 +22,17 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 -- NEW_QUESTS.S102 = { "frostSign", ... }: each has a page with 2-3 answers and every event of Barks.required.
 local NEW_QUESTS: { [string]: { string } } = {
 	S102 = { "frostRuins", "frostSign", "warrenCharms", "warCouncil" },
+	S103 = {
+		"moonstone",
+		"lostHunters",
+		"houseOfVael",
+		"elderHeart",
+		"turncoat",
+		"barrow",
+		"witchCounsel",
+		"cryptGate",
+		"queensLegacy",
+	},
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -29,6 +40,7 @@ local NEW_QUESTS: { [string]: { string } } = {
 -- (side quests whose companion walks on that map).
 local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S102 = { { chapter = 1 } },
+	S103 = { { chapter = 2 } },
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.
@@ -84,6 +96,8 @@ local BARKS_ONLY: { [string]: { string } } = {
 		"side_stable_stallion",
 		"side_stable_ride",
 	},
+	-- S103: the old quests of story chapter II
+	S103 = { "toDuskwood", "werewolves", "ruins", "ents", "cult", "swamp", "crypt", "morvane" },
 }
 
 -- Existing quests that got answers, page variants and a companion in S101b (every effect kind is in the data).
@@ -760,5 +774,82 @@ describe("Dialogue in story chapter I (S102 T11)", function()
 		expect(select(2, Dialogue.canSay(running, frostRuins.level, "main", frostRuins, "go", frostRuins.turnIn))).toBe(
 			"quest.say.notOffered"
 		)
+	end)
+end)
+
+describe("Dialogue in story chapter II (S103)", function()
+	local Locale = require("../src/shared/Util/Locale")
+	local Maps = require("../src/shared/Data/Maps")
+	local function has(key: string): boolean
+		return Locale.has(key, "pl") and Locale.has(key, "en")
+	end
+
+	it("the answers of the plan: effects, hints on Duskwood with named places, gifts of Config.Dialogue", function()
+		local want: { [string]: { [string]: string } } = {
+			moonstone = { believe = "hint", wolves = "item" },
+			lostHunters = { bears = "item" },
+			houseOfVael = { way = "hint" },
+			elderHeart = { ghouls = "focus", path = "hint" },
+			turncoat = { hunters = "focus" },
+			barrow = { book = "focus", supplies = "item" },
+			witchCounsel = { way = "hint" },
+			cryptGate = { supplies = "item" },
+			queensLegacy = { east = "focus" },
+		}
+		for id, effects in want do
+			local quest = assert(Quests.Main.get(id), id)
+			local page = assert(Dialogue.choicePage(quest), id)
+			expect(page.page).toBe(quest.pages)
+			for _, option in page.options do
+				local effect: any = option.effect
+				expect(`{id}.{option.id} {if effect then effect.kind else "none"}`).toBe(
+					`{id}.{option.id} {effects[option.id] or "none"}`
+				)
+				if effect and effect.kind == "hint" then
+					local map = assert(Maps.get(effect.map))
+					expect(effect.map).toBe("duskwood")
+					expect(math.abs(effect.x) <= map.size.x / 2 and math.abs(effect.z) <= map.size.z / 2).toBe(true)
+					expect(has(effect.place)).toBe(true)
+				elseif effect and effect.kind == "item" then
+					expect(Config.Dialogue.gifts[effect.id] ~= nil).toBe(true)
+				end
+			end
+		end
+	end)
+
+	it("recall picks the variants of lostHunters, elderHeart and turncoat", function()
+		local lostHunters = assert(Quests.Main.get("lostHunters"))
+		local elderHeart = assert(Quests.Main.get("elderHeart"))
+		local turncoat = assert(Quests.Main.get("turncoat"))
+		expect(Dialogue.pageKey(lostHunters, "p1", quests({ said = { moonstone = "doubt" } }), has)).toBe(
+			"quest.lostHunters.p1.doubt"
+		)
+		expect(Dialogue.pageKey(lostHunters, "p1", quests({ said = { moonstone = "believe" } }), has)).toBe(
+			"quest.lostHunters.p1"
+		)
+		expect(Dialogue.pageKey(lostHunters, "done", quests({ said = { lostHunters = "son" } }), has)).toBe(
+			"quest.lostHunters.done.son"
+		)
+		expect(Dialogue.pageKey(elderHeart, "p1", quests({ said = { houseOfVael = "ghosts" } }), has)).toBe(
+			"quest.elderHeart.p1.ghosts"
+		)
+		expect(Dialogue.pageKey(turncoat, "done", quests({ said = { turncoat = "trust" } }), has)).toBe(
+			"quest.turncoat.done.trust"
+		)
+	end)
+
+	it("Radomir leads lostHunters, Ragna follows witchCounsel; Barks of the old eight", function()
+		local lostHunters = assert(Quests.Main.get("lostHunters"))
+		local radomir = assert(lostHunters.companion, "Radomir")
+		expect(radomir.npc).toBe("forester_radomir")
+		expect(radomir.mode).toBe("lead")
+		expect(radomir.during).toEqual({ 1 })
+		expect(lostHunters.objectives[1].type).toBe("escort")
+		local ragna = assert(assert(Quests.Main.get("witchCounsel")).companion, "Ragna")
+		expect(ragna.npc).toBe("witch_ragna")
+		expect(ragna.mode).toBe("follow")
+		expect(ragna.during).toEqual({ 2, 3 })
+		expect(Barks.validate()).toEqual({})
+		expect(#BARKS_ONLY.S103).toBe(8)
 	end)
 end)

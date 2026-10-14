@@ -10,10 +10,12 @@
 --     signpost), Swamp (sunken tower, troll village, jetty, stilt village, causeways), Witch (hut, hanging tree),
 --     Cliffs (Crypt Gate, overhangs, scree, the black waterfall),
 --   * bridges and the ford (Logic/WorldGen/Structures), cold blue road lanterns, rock outcrops, trees last
---     (Logic/WorldGen/Flora: they keep clear of everything above).
+--     (Logic/WorldGen/Flora: they keep clear of everything above),
+--   * S103: props of the quest anchors (Quest: the frost rune, the ice shard, the cult seal).
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
+local AreaTypes = require("../Data/Areas/Types")
 local Cliffs = require("@self/Cliffs")
 local Crossroads = require("@self/Crossroads")
 local Cult = require("@self/Cult")
@@ -23,6 +25,7 @@ local Heart = require("@self/Heart")
 local Hollow = require("@self/Hollow")
 local Kit = require("./WorldGen/Kit")
 local Maps = require("../Data/Maps")
+local Quest = require("@self/Quest")
 local Rng = require("./Rng")
 local Ruins = require("@self/Ruins")
 local Shapes = require("../Data/Terrain")
@@ -71,6 +74,15 @@ local function dataClearings(e: Env.Env)
 	local map = Maps.get("duskwood")
 	for _, s in AreaSpawns.region(e.areas, if map then map.size else { x = 1600, z = 1600 }) do
 		Env.clear(e, s.position.x, s.position.z, 9)
+	end
+	-- S103: NPC places and quest anchors (no tree, rock or prop on them); S106 adds its places to the same tables
+	local spots: { [string]: AreaTypes.NpcSpot } = e.areas.npcSpots or {}
+	for _, spot in spots do
+		Env.clear(e, spot.x, spot.z, 8)
+	end
+	local anchors: { AreaTypes.QuestAnchor } = e.areas.questAnchors or {}
+	for _, anchor in anchors do
+		Env.clear(e, anchor.x, anchor.z, 6)
 	end
 end
 
@@ -228,6 +240,7 @@ function DuskwoodGen.all(): { Build }
 	Swamp.all(e, out)
 	Witch.all(e, out)
 	Cliffs.all(e, out)
+	Quest.all(e, out) -- S103: props of the story's quest anchors
 	Structures.bridges(e.ctx, e.T, out, Kit.COLD)
 	Structures.banks(e.ctx, e.T, out, 1, 80, Kit.mossyStone)
 	lanterns(e, out)

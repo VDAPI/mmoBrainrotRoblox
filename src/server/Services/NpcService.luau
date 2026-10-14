@@ -37,6 +37,33 @@ local WorldService: any = nil
 
 local positions: { [string]: Vector3 } = {}
 
+-- S103: the look of a ghost NPC (NpcDef.ghost; looks, not balance): every visible part half-transparent, smooth and
+-- without a shadow, and a cold light in the chest, the same "wraith" colour as the Tomb of Morvane (CaveDress/Tomb).
+-- On the Figure, so a companion clone and the world map preview look the same.
+local GHOST_TRANSPARENCY = 0.45
+local GHOST_LIGHT = Color3.fromHex("#9FE0C9")
+local GHOST_RANGE = 10
+local GHOST_BRIGHTNESS = 0.8
+
+local function ghostLook(npc: Model)
+	for _, part in npc:GetDescendants() do
+		if part:IsA("BasePart") and part.Transparency < 1 then
+			part.Transparency = math.max(part.Transparency, GHOST_TRANSPARENCY)
+			part.CastShadow = false
+			part.Material = Enum.Material.SmoothPlastic
+		end
+	end
+	local chest = (npc:FindFirstChild("UpperTorso") or npc:FindFirstChild("HumanoidRootPart")) :: BasePart?
+	if chest then
+		local light = Instance.new("PointLight")
+		light.Color = GHOST_LIGHT
+		light.Range = GHOST_RANGE
+		light.Brightness = GHOST_BRIGHTNESS
+		light.Shadows = false
+		light.Parent = chest
+	end
+end
+
 -- Ground point under the NPC (the world is built in WorldService.Init, before Start): the top surface of the
 -- terrain or the map's geometry under a ray from just over the plan height (Logic/MapTerrain: the city, S26 the
 -- Meadows; y = 0 elsewhere). S29: NPCs and characters are ignored (WorldService.FloorAt), so a figure never
@@ -154,6 +181,9 @@ function NpcService.Figure(def: Npcs.NpcDef): Model?
 		weld.Part1 = hat
 		weld.Parent = hat
 		hat.Parent = npc
+	end
+	if def.ghost then
+		ghostLook(npc)
 	end
 	return npc
 end

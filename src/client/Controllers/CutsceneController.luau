@@ -9,7 +9,8 @@
 -- map change end it at once like a skip. When the shot cannot be set up (unknown NPC, no ground under the point after
 -- streaming) the same texts show as a card over the dimmed view and the camera stays with the player. At the end the
 -- server hears CutsceneDone(id) (skipped counts as watched); Play(id) replays a watched scene from the journal without
--- the server.
+-- the server. S103: on a cave map (the Tomb of Morvane) the ground under the focus and the figures comes from
+-- Logic/CaveTerrain (a ray from the sky would land on the rock over the cave); ghost figures (Data/Cutscenes).
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -21,6 +22,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Areas = require(Shared.Data.Areas)
+local CaveTerrain = require(Shared.Logic.CaveTerrain)
 local Config = require(Shared.Config)
 local CutsceneData = require(Shared.Data.Cutscenes)
 local CutsceneFigure = require(script.Parent.Parent.Vfx.CutsceneFigure)
@@ -143,7 +145,16 @@ local function rayParams(folder: Instance?): RaycastParams
 	return params
 end
 
-local function ground(point: Vector3, folder: Instance?): number?
+local function ground(point: Vector3, folder: Instance?, mapId: string?): number?
+	-- S103: a cave or a boss chamber knows its floor (the rock over it would stop a ray from the sky)
+	local cave = if mapId then CaveTerrain.get(mapId) else nil
+	local offset = offsetOf(mapId)
+	if cave and offset then
+		local floor = cave.floor(point.X - offset.X, point.Z - offset.Z)
+		if floor then
+			return offset.Y + floor
+		end
+	end
 	local hit = Workspace:Raycast(point + Vector3.new(0, 400, 0), Vector3.new(0, -900, 0), rayParams(folder))
 	return if hit then hit.Position.Y else nil
 end
@@ -236,17 +247,17 @@ local function stream(point: Vector3)
 end
 
 -- The focus on the ground (+ lift) after streaming; nil = card mode.
-local function settleFocus(shot: Shot, rough: Vector3, folder: Instance): Vector3?
+local function settleFocus(shot: Shot, rough: Vector3, folder: Instance, mapId: string?): Vector3?
 	local c = Config.Cutscene
 	if shot.kind == "self" then
 		return rough
 	elseif shot.kind == "city" then
 		return rough + Vector3.new(0, Town.city.selectCamera.look[2], 0)
 	elseif shot.kind == "npc" and npcModel(shot.npc or "") then
-		local y = ground(rough, folder)
+		local y = ground(rough, folder, mapId)
 		return if y then Vector3.new(rough.X, y + (shot.lift or c.lift), rough.Z) else rough
 	end
-	local y = ground(rough, folder)
+	local y = ground(rough, folder, mapId)
 	if not y then
 		return nil
 	end
@@ -490,7 +501,7 @@ local function play(scene: Scene, replay: boolean)
 		if finished then
 			return
 		end
-		focus = settleFocus(shot, rough, folder)
+		focus = settleFocus(shot, rough, folder, shotMap)
 	end
 	local steps = stepsOf(scene)
 	local total = 0
@@ -506,10 +517,11 @@ local function play(scene: Scene, replay: boolean)
 		local figures: { CutsceneData.Figure } = scene.figures or {}
 		for _, figure in figures do
 			local base = offset + Vector3.new(figure.x, 0, figure.z)
-			local y = ground(base, folder) or focus.Y
+			local y = ground(base, folder, shotMap) or focus.Y
 			local model = CutsceneFigure.build(
 				figure.look,
-				CFrame.new(base.X, y, base.Z) * CFrame.Angles(0, math.rad(figure.facing), 0)
+				CFrame.new(base.X, y, base.Z) * CFrame.Angles(0, math.rad(figure.facing), 0),
+				figure.ghost
 			)
 			model.Parent = folder
 			local lastStep = steps[#steps]

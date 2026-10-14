@@ -7095,3 +7095,154 @@ Poprawki z przeglądu S102:
 Pliki: `src/client/UI/QuestText.luau`, `src/client/Controllers/CutsceneController.luau`,
 `src/client/UI/Screens/QuestJournal.luau`, `src/shared/Logic/Dialogue.luau`, `tests/story.spec.luau`,
 `tests/dialogue.spec.luau`. Wiki bez zmian danych.
+
+### S103: Fabuła, rozdział II „Zapomniany Ród” (Mroczny Bór, 20–45)
+
+Mechanizmy S101b/S102 użyte: `MainQuest.pages` / `wiki`, `Objective.line`, pomocnicy celów `Main.luau` (`talk`, `use`,
+`deliver`, `kill`, `collect` + `variant`, `reach`), `settleStory` / `STORY_BANDS` / `STORY_SCALE` / `STORY_WEIGHT`,
+`Logic/StoryProgress` (`mainLast`, `apply`, `EXPECTED_INSERTS`), `Data/Cutscenes` (`Scene`, `Shot`, `Figure`, `WHO`,
+`FIGURES`) + `CutsceneController`, `regionfolk`, `NpcDef.wiki`, `QuestAnchor.wiki`, `Talk.onPage` / `answer` / `hint` /
+`focus` / `gift` / `lead` / `follow` / `escort`, `recall`, `barks`, `NEW_QUESTS` / `COMPANION_GROUPS` / `BARKS_ONLY`.
+
+Start na `e83a476` (S102 z poprawkami): commit i sekcja S102 oraz S101b, `docs/FABULA.md`, `Data/QuestBudget`,
+`Logic/QuestBudget`, `tools/quest_budget.luau`, `tools/balance_reasons.luau` na miejscu; wszystkie mechanizmy z tabeli
+„Co sprawdzić w S102” są. Zrzuty przed w `build/` (`s103_main_before.json`, `s103_dusk_before.json`,
+`s103_budget_before.txt`).
+
+Co zrobiono:
+- **Questy (A):** rozdział II ma 17 questów (9 nowych, `wiki = false`, `category = "main"`, strony 2–3), łańcuch giver →
+  turnIn bez przerw, `ashen` dalej na 45. Strony `p1..pN` wszystkich 17 (stare: `.title` / `.text` / `.done` bez zmian),
+  `line` celów `talk` / `deliver` (Radomir, Oswin, Jorund, Ragna, Anzelm, Ysolde). Komentarz i nagłówek bloku w
+  `Main.luau`. Kodu rozmów S101b nie ruszano.
+- **NPC (C):** Leśniczy Radomir, Duch Zarządcy Oswina (`ghost`: części 0,45 przezroczyste, gładkie, bez cienia,
+  `PointLight` #9FE0C9 w torsie; na `Figure`, więc towarzysz i podgląd mapy wyglądają tak samo), Jorund Odstępca, Ragna
+  z Palów; `regionfolk("duskwood", …, { wiki = false })`, teksty `npc.<id>.*` PL/EN.
+- **Mapa (D):** `atSite`, `NPC_SPOTS` (4) i `QUEST_ANCHORS` (6, z `rot` = obrót miejsca) w `Areas/duskwood`; polany
+  w `dataClearings`; rekwizyty `Logic/DuskwoodGen/Quest.luau` (`frostRune`, `iceShard`, `cultSeal`, 5–7 kawałków
+  detail/fine, bez kolizji i szkicu); efekty `frostbreak`, `heartglow`, `sealbreak` w `Side.FX` i
+  `QuestAnchorController` (w ramie rekwizytu, `Quest.frame`; zakrywają runę, odłamek i pieczęć tylko u gracza, który
+  użył kotwicy).
+- **Przerywniki (E):** dziesięć scen (lista niżej), `Figure.ghost` (półprzezroczysta z poświatą lamówki, zanikanie od
+  bieżącej przezroczystości), wygląd `queen` z koroną z cierni i `anzelm`, mówca `cutscene.who.queen`; grunt ujęcia i
+  figur na mapie jaskini / lochu z `CaveTerrain.floor`.
+- **F2:** linia imienia Morvane 3,5 s po ogłoszeniu ostatniej fazy (`DungeonController`, klient, tylko z aktywnym
+  `morvane`).
+- **Budżet (G):** `20` w `STORY_BANDS`, wagi (DECYZJE), `MONSTER_EXP_MUL` przeliczony (`--session S103`, `check` = 0),
+  `allowed`: 0 nowych, 0 zmienionych; `tests/Balance.LEGACY_EXP` (model bazowy S94), `Balance.levelIncome` z zabić modelu
+  okien, `G9.up9` na 40 w `GLOBAL_REPORT_ONLY`; księga: wpisy S103 (`MONSTER_EXP_MUL*`, `STORY_BANDS*`, `STORY_SCALE*`,
+  `STORY_WEIGHT*`, `indexOf*`, sześć `reward.exp`, dziewięć `byId.<nowy>*`), bez „BRAK POWODU”; `docs/BALANS.md`
+  przeliczony.
+- **Wiki (H):** filtr `NpcSpot.wiki` w `WikiData/World`, ukryci NPC poza wyszukiwarką mapy (`Places.mapsearch`) i
+  obrazem mapy (`WikiMaps`). `npm run data`: zmienione tylko EXP sześciu starych questów rozdziału w `quests.json`,
+  `dragonbane` 36 → 45 w `titles.json` (indeks `vaelgrath`, jak w S102), `meta.json` i odcisk w `docs/PRZEDMIOTY.md`;
+  `areas.json`, `npcs.json`, `mapsearch.json`, `duskwood.svg` bez zmian, `wiki_keys_diff` pusty.
+
+Rozdział II (EXP przed → po; złoto; przedmioty):
+
+| # | id | poz. | daje → oddaje | EXP | złoto | przedmioty |
+|---|---|---|---|---|---|---|
+| 20 | `toDuskwood` | 20 | captain → scout_duskwood | 7150 → 7150 | 960 | `backpack_60` |
+| 21 | `werewolves` | 21 | scout → scout | 22219 → 3423 | 1005 | — |
+| 22 | ✚ `moonstone` | 22 | scout → forester_radomir | — → 3738 | 1050 | `potion_hp_3` × 5 |
+| 23 | ✚ `lostHunters` | 23 | forester_radomir → scout | — → 4067 | 1095 | `blessing_hunter_2` |
+| 24 | `ruins` | 24 | scout → scout | 23557 → 3918 | 1140 | — |
+| 25 | ✚ `houseOfVael` | 25 | scout → scout | — → 5820 | 1185 | `stone_map` × 2 |
+| 26 | `ents` | 27 | scout → scout | 23136 → 2448 | 1275 | `blessing_guardian_2` |
+| 27 | ✚ `elderHeart` | 28 | scout → scout | — → 2623 | 1320 | `essence_shard` × 2 |
+| 28 | `cult` | 30 | scout → captain | 30817 → 2990 | 1410 | `backpack_80` |
+| 29 | ✚ `turncoat` | 31 | captain → captain | — → 5568 | 1455 | `potion_mana_3` × 5 |
+| 30 | `swamp` | 33 | captain → scout | 39997 → 3582 | 1545 | — |
+| 31 | ✚ `barrow` | 35 | scout → scout | — → 4005 | 1635 | `blessing_warrior_3` |
+| 32 | `crypt` | 37 | scout → scout | 61156 → 4450 | 1725 | `blessing_sage_3` |
+| 33 | ✚ `witchCounsel` | 39 | scout → scout | — → 4917 | 1815 | `potion_hp_4` × 5 |
+| 34 | ✚ `cryptGate` | 41 | scout → scout | — → 5407 | 1905 | `stone_return` × 2 |
+| 35 | `morvane` | 43 | scout → captain | 66499 → 66499 | 6255 | `stone_dungeon_duskwood` |
+| 36 | ✚ `queensLegacy` | 44 | captain → captain | — → 11592 | 4080 | `blessing_fortune_3`, `essence_crystal` × 2 |
+
+`STORY_SCALE[20]` = 0,14554 (EXP fabuły pasma = 10,0% `bandExp(20)`). `monsterExpMul` przed → po: L20 0,643 → 0,643;
+L22 0,704 → 1,236; L25 0,749 → 1,237; L30 0,772 → 1,187; L35 0,797 → 1,141; L40 0,829 → 0,962; L44 0,829 → 0,768; żaden
+poziom 20–44 nie przycięty, godziny bicia pasma ×1,0001. Udział `main` w 20–44: 27,5% → 10,0% (całe zadania pasma
+41,7% → 24,3%). `ALLOWED_1_20_DIFFS`: 222 → 222 (0 nowych, 0 odświeżonych: `monsterExpMul(20)` bez zmian). Tempo 20 → 45
+14,38 h (bez zmian), kroki h(L)/h(L − 1) zielone.
+
+Kotwice i miejsca (wszystko w okręgach `avoid` istniejących miejsc, `wiki = false`):
+
+| id | punkt | przy czym | rekwizyt / efekt |
+|---|---|---|---|
+| `moonstone_rune` | `atSite("moonstone", 0, −4)` = −606 / −266 | lico menhiru | `frostRune` / `frostbreak` |
+| `lost_camp` | `atSite("lostCamp", −3, −7)` ≈ −632,1 / 659,4 | połamana skrzynia i kusza | obóz / `tracks` |
+| `chapel_window` | `atSite("chapel", 0, 4)` = 4 / −590 | wnętrze kaplicy przed ołtarzem | kaplica / `candles` |
+| `family_crypt` | `atSite("familyCrypt", 0, −8)` = 62 / −560 | wejście krypty | krypta / `search` |
+| `elder_tree` | `atSite("elderTree", 0, −9)` = 150 / 381 | przed szczeliną | `iceShard` / `heartglow` |
+| `crypt_seal` | `atSite("cryptGate", 15, −21)` = 747 / −15 | prawa nisza, 15,1 od wylotu Krypty | `cultSeal` / `sealbreak` |
+| NPC `radomir` | `atSite("ravagedCamp", −6, −11)` ≈ −596,1 / −63,6, 160° | zimne ognisko | |
+| NPC `oswin` | `atSite("chapel", 3, −14)` = 1 / −572, 180° | drzwi kaplicy | |
+| NPC `jorund` | `atSite("wayShrine", −5, −6)` ≈ 399,8 / −78,0, 230° | obok kapliczki | |
+| NPC `ragna` | 416 / 592, 0° (pierwszy punkt planu) | suchy brzeg przy wiosce na palach | |
+| `place.manor` | −130 / −436, r 30 | dwór | |
+| `place.wayShrine` | 392 / −78, r 18 | kapliczka | |
+| `place.cryptGate` | 742 / 0, r 22 | dziedziniec przed bramą | |
+
+Sceny: ▣ `ch2_title` (cel 1 `toDuskwood`, Brama Zmierzchu od zachodu), ◆ `moonstone` (cel 2, menhir nocą),
+`houseOfVael` (cel 2, witraż od drzwi kaplicy, głos Oswina), `elderHeart` (cel 1, szczelina), `cult` (oddanie u
+kapitana, figura Anzelma), `turncoat` (cel 2, Jorund przy latarni), `barrow` (cel 3, ujęcie `self`), `cryptGate`
+(cel 2, projekcja Ilvara), `morvane` (cel 1, duch królowej w absydzie Grobowca), `queensLegacy` (oddanie, Anzelm, koniec
+rozdziału II).
+
+Porównanie D9 (`build/s103_snapshot.luau`): 57 grup, spawnery trzech jaskiń Boru, 50 węzłów i 2 łowiska identyczne
+jak przed sesją; drzew 929 (bez zmian), części serwera 2235 (bez zmian), rekwizyty +17 kawałków detail/fine i 2 światła.
+
+Przeliczenie postępu (C6, test `story.spec` „players in the middle of the story”): stary zapis z oddanym `werewolves`
+→ oferta `moonstone`; aktywny `ruins` → `mainDone = indexOf.ruins − 1`, `moonstone` i `lostHunters` zaliczone bez
+nagrody, postęp `ruins` nietknięty; oddany `morvane` → `queensLegacy` (od 42.); aktywny `ashen` → wszystkie dziewięć
+zaliczone; aktywny `goblinCamp` → nic z rozdziału II; zapis po S102 (`mainLast`) z oddanym `cult` → `turncoat`, z
+aktywnym `crypt` → `mainLast = barrow`, z aktywnym `morvane` → `mainLast = cryptGate`; zapis `schema = 7` przez
+`AccountSchema.migrate` tak samo (`CURRENT = 8`); idempotentne.
+
+Rozmowy: wybory na ostatniej stronie oferty (efekty z planu B2.2), `recall` w `lostHunters` (p1, done), `elderHeart.p1`,
+`turncoat.done`; komentarze dziewięciu nowych i ośmiu starych questów; Radomir `lead` (trasa ok. 760 st., 8 odcinków,
+najdłuższy 168), Ragna `follow` na celach 2–3. Różnica z kodem rozmów: mówca komentarza bez `by` to towarzysz, gdy jest
+obok, więc „Ten dzwonek nastroiłam ja” mówi Ragna tylko w jej obecności (zwykle tak jest na celach 2–3).
+
+Testy: `story.spec` (kolejność, łańcuch całej fabuły, strony, cele, `queensLegacy` jedną rozmową, `moonstone` bez
+kotwicy niegotowy, Elity Kurhanu, EXP 5–70%, przypadki A6, tytuły, NPC i sceny), `duskwood.spec` (miejsca, kotwice,
+`atSite` = `Kit.toWorld`, rekwizyty, grupy i węzły), `dialogue.spec` (`NEW_QUESTS.S103`, `COMPANION_GROUPS.S103`,
+`BARKS_ONLY.S103`, efekty, `recall`), `companion.spec` (trasa Radomira terenem Boru, Ragna), `npcmarks.spec`,
+`wikidump.spec`, `wikimap.spec`. `scripts/check` zielony (6247 testów).
+
+Pliki: `src/shared/Data/Quests/{Main,Side}.luau`, `src/shared/Data/Areas/{Types,duskwood}.luau`,
+`src/shared/Data/{Npcs,Cutscenes,QuestBudget}.luau`, `src/shared/Config.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/DuskwoodGen/{init,Quest}.luau` (`Quest` nowy),
+`src/server/Services/NpcService.luau`, `src/client/Controllers/{QuestAnchor,Cutscene,Dungeon}Controller.luau`,
+`src/client/Vfx/CutsceneFigure.luau`, `tests/{story,duskwood,dialogue,companion,npcmarks,wikidump,wikimap}.spec.luau`,
+`tests/{Balance,BalanceTables}.luau`, `tools/balance_reasons.luau`, `tools/WikiData/{World,Places}.luau`,
+`tools/WikiMaps/init.luau`, dane wiki, `docs/{BALANS,PRZEDMIOTY,FABULA,DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+
+#### Dla S104–S108
+
+- Budżet fabuły: S104 dopisuje `45` do `STORY_BANDS`, S105 `70`; wagi w `q(def)`, nic więcej. Model tempa S94 trzyma
+  część EXP pasma w starych questach o wysokim ułamku (S92–S94): sprawdź `quest_budget report` (przycięcia) i dobierz
+  wagi oknami, jak w S103; stare questy, które przechodzą na regułę, dopisz z EXP S94 do `tests/Balance.LEGACY_EXP`.
+- `Balance.levelIncome` liczy zabicia z modelu okien; złoto nowych questów podnosi dochód pasma (G9).
+- `regionfolk(map, …, { wiki = false, ghost = true })` (S105: `ghost_halgrim`), `NpcDef.ghost`; `NpcSpot.wiki` i
+  `QuestAnchor.wiki` z jednym filtrem w `WikiData/World`; ukryci NPC poza `mapsearch` i obrazem mapy bez zmian kodu.
+- `atSite` w danych mapy (S104 / S105 powtarzają w `ashen.luau` / `frostpeak.luau`), kotwice z `rot` = obrót miejsca.
+- Rekwizyty: `Logic/DuskwoodGen/Quest.luau` (`PROPS`, `THINGS`, `Quest.frame`; S106 dopisuje swoje), odpowiednik w
+  `AshenGen` / `FrostpeakGen`; efekt kotwicy w ramie rekwizytu (`BUILDERS[kind](model, base, anchorId)`).
+- Polany `dataClearings` dla `npcSpots` / `questAnchors` już są (S106 ich nie dodaje drugi raz).
+- Efekty `frostbreak`, `heartglow`, `sealbreak`; figury scen z `ghost`, wygląd z `crown`; `WHO.queen`; sceny w jaskini
+  lub lochu z ujęciem `point` biorą grunt z `CaveTerrain`.
+- Postęp bez migracji: tylko `EXPECTED_INSERTS` i przypadki testu; złoto ×2 do `GOLD_EXCEPTIONS`.
+- Rozmowy: wybór na ostatniej stronie oferty, `recall` do wcześniejszego wyboru, `lead` z trasą sprawdzoną
+  `MapTerrain.walkable(…, 4)` (wąskie rampy przepuść jednym odcinkiem), `follow` bez trasy; `Config.Dialogue.gifts`
+  mają mikstury 3.–4. stopnia (S104 / S105 dopisują wyższe).
+- Zajęte nazwy: questy `moonstone`, `lostHunters`, `houseOfVael`, `elderHeart`, `turncoat`, `barrow`, `witchCounsel`,
+  `cryptGate`, `queensLegacy`; NPC `forester_radomir`, `ghost_oswin`, `defector_jorund`, `witch_ragna`; miejsca NPC
+  `radomir`, `oswin`, `jorund`, `ragna`; kotwice `moonstone_rune`, `lost_camp`, `chapel_window`, `family_crypt`,
+  `elder_tree`, `crypt_seal`; przedmioty `heartBranch`, `riteBook`, `boneChime`, `queenRing`; miejsca `place.manor`,
+  `place.wayShrine`, `place.cryptGate`, `place.lostCamp`, `place.moonGlade`, `place.chapel`, `place.elderTree`,
+  `place.stiltVillage`; sceny `ch2_title`, `moonstone`, `houseOfVael`, `elderHeart`, `cult`, `turncoat`, `barrow`,
+  `cryptGate`, `morvane`, `queensLegacy`.
+
+Uproszczenia: linia imienia (F2) czyta klucz ogłoszenia ostatniej fazy zamiast atrybutu `Phase` (ten sam moment, ten
+sam komponent); Oswin w scenie `houseOfVael` tylko głosem (figury NPC w scenach nie ma).
