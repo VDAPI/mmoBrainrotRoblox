@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S112, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S113, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -173,6 +173,13 @@ S112 tekstury efektów: generator `tools/vfx/make_textures.py` (25 tekstur w `ar
 `Data/VfxTextures`), `client/Vfx/Textures`, uchwyty w `Vfx/Pool` z limitami telefonu, tekstury na starych składnikach
 `Library` z dawnym wyglądem jako zapasem, sześć nowych składników (`impactFlash`, `sparks`, `groundDecal`, `smokePuff`,
 `magicCircle`, `ringWave`), pola `SkillVfx` `decal` / `circle` / `sparks`, `/animlab vfx`.
+S113 ataki podstawowe: czas trafienia przypięty w `AttackMotions.SERVER_HIT` (te same liczby, test), kroki z pozami
+kontaktu i wybrzmienia (`Logic/AttackPose`), wszystkie ruchy przerobione tak, żeby broń w chwili trafienia celowała w
+przeciwnika, serie 2–3 ciosów w oknie 1,5 s (tylko wygląd), smuga z teksturą, iskry według materiału (`Data/HitFx`),
+reakcja trafionego z kierunkiem i obrót tułowia potwora (`hitDir` dla S117), hitstop ciężkich broni, dźwięki z
+`AttackMotions.SFX`, hak na prawdziwe klipy ze znacznikiem `Hit` (`Logic/ClipFit`, `client/Anim/CharacterClips`,
+instrukcja w `docs/ANIMACJE.md` §6, listy klipów puste), AnimLab `attack … [krok|combo]`, `hit`, `flinch`, `clip`,
+`posedump attack:*`.
 S118 (przed S113–S117, na prośbę właściciela) ikony przedmiotów z PNG: import z folderu grafik sprawdzany z grą
 (`tools/icons/ids.luau`, raport, `--check-ids`), 287 obrazków w atlasach `items_4..8` (wszystkie wgrane), 913 z 934
 przedmiotów z obrazkiem (broń maga z klejnotem żywiołu), obrazki przedmiotów questowych w dzienniku, `/icons`,
@@ -181,7 +188,7 @@ S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `
 `Data/UiArt` + id `Data/UiArtSheets`, `Logic/UiArt`, `UI/UiArtState`, komponent `ArtIcon` z dawnym znakiem jako
 zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
 świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
-`/icongrid ui <atlas>`. Seria DESIGN-16 bez S113–S117 (w kolejce).
+`/icongrid ui <atlas>`. Seria DESIGN-16 bez S114–S117 (w kolejce).
 IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
 częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
@@ -326,6 +333,14 @@ zakończone; testy i decyzje właściciela po nich.
 - **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
   Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
   questów nie obejrzane w grze.
+- **S113: przegląd w Studio nie zrobiony:** przez całą sesję trwał Play (nie zatrzymywany), a MCP i tak nie daje obrazu
+  3D; nowe pozy ocenione z pozycji dłoni i czubka broni liczonych z danych i renderów `posedump attack:*`. Do obejrzenia
+  w AnimLab: `attack <typ> combo` każdego ruchu, smuga od `VaelthornTrailBase`, iskry (`hit <materiał>`), reakcja
+  (`flinch`), hitstop. Próba F6 (klip tymczasowy) i ostrzeżenia `CharacterClips` niesprawdzone w grze (pierwszy klip
+  właściciela: `/animlab clip <id>`).
+- **S113:** `holystaff` gra `smash` (ruch ułożony pod broń w poprzek dłoni, kostur kapłana stoi wzdłuż ręki): bez
+  własnego ruchu, droga przez `clipsByWeapon.holystaff`. R6 nie ma nadgarstka: broń postaci R6 w chwili trafienia
+  nie celuje w przeciwnika (postacie graczy są R15).
 - **Przedmioty bez obrazka** (po IMPORT-GRAFIK 2026-10-14): materiał `werewolf_claw` i unikaty Grimroka (`cleaver`,
   `fang`, `totem`) zablokowane (krew, do poprawy przez właściciela), 52 z 68 przedmiotów questowych (w tym zablokowane
   `ledger`, `boarHaunch`); ekwipunek krain 2–4 bierze obrazek progu 20 (własny ma tylko `sword1h_25`). Wiki: broń maga z

@@ -153,6 +153,32 @@ describe("Skill data (S28)", function()
 		end
 	end)
 
+	it("clips (S113): valid ids and markers, never on a channel, the keys stay as the fallback", function()
+		local ClipFit = require("../src/shared/Logic/ClipFit")
+		for id, motion in SkillMotions.motions do
+			local clip = motion.clip
+			if clip then
+				expect({ id, ClipFit.validId(clip.id), clip.hit == nil or clip.hit ~= "" }).toEqual({ id, true, true })
+				if clip.speed then
+					expect({ id, clip.speed >= ClipFit.MIN_SPEED and clip.speed <= ClipFit.MAX_SPEED }).toEqual({
+						id,
+						true,
+					})
+				end
+				if clip.hitTime then
+					expect({ id, clip.hitTime > 0 }).toEqual({ id, true })
+				end
+				expect({ id, motion.loop == nil }).toEqual({ id, true })
+				expect({ id, #motion.keys > 0 }).toEqual({ id, true })
+			end
+			-- the server's hit time of every skill stays the motion's hit (or release), capped (S28 rule, unchanged)
+			expect(SkillMotions.hitDelay(id)).toBeNear(
+				math.clamp(motion.hit or motion.release or 0, 0, SkillMotions.MAX_HIT),
+				1e-12
+			)
+		end
+	end)
+
 	it("visuals use known pieces and colours", function()
 		for id, entry in SkillVfx do
 			for _, name in entry.impact do

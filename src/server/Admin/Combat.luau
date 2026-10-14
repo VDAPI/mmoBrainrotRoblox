@@ -263,9 +263,10 @@ end
 
 -- S110: /animlab [action] [a] [b]: the AnimLab stage and its motions on the admin's client (Studio only, checked by
 -- AdminService through `studioOnly`). Logic/AnimLab parses the call; the client runs it (AnimLabController).
+-- S113: up to five words (`clip <id> attack <type> <step>`).
 commands.animlab = function(player, args)
 	local list: { string } = {}
-	for i = 1, 3 do
+	for i = 1, 5 do
 		local value = args[i]
 		if type(value) == "string" and value ~= "" then
 			table.insert(list, value)

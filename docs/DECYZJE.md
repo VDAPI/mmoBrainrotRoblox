@@ -3521,3 +3521,52 @@
 - **IMPORT-GRAFIK 2026-10-14** Zablokowane obrazki już wgrane w S118–S119: ich atlasy (`items_7`, `items_8`,
   `ui_skills_01`, `ui_status_01`, `ui_emblems_01`) wgrane od nowa bez nich, pojedyncze (portret Grimroka, portret
   Wojownika, loch Grimroka) usunięte z rejestru; gra pokazuje zapas (znak, ikona SVG, szkic).
+- **S113** Czas trafienia ataku podstawowego: `AttackMotions.SERVER_HIT` (slash1h 0,18, slash2h 0,2115, thrust 0,183,
+  smash 0,235, bow 0,2, crossbow 0,12, wand 0,136, staff 0,167, unarmed 0,156) jest jedynym źródłem
+  `AttackPose.hitDelay`; liczby te same co przed sesją (test 20 typów × 7 odległości × 2, migawka z 12 cyframi i
+  tolerancją 1e-9 zamiast 6 miejsc: 6 miejsc nie mieści się w 1e-9). DESIGN-16 §0.2 poprawione.
+- **S113** `hit` kroku nie ma w danych: `AttackPose.timing` wylicza go z `(SERVER_HIT − windup) / strike`. Kroki
+  serii mają te same `SERVER_HIT`; różnią się pozami i podziałem zamachu i ciosu (wolno: czas serwera stoi).
+- **S113** Pozy `pass` (kontakt w chwili trafienia, dojście z przyspieszeniem t²) i `follow` (wybrzmienie). Odcinek
+  `pass` → `strike` to krzywa Hermite'a: startuje z prędkością ease-out i kończy z prędkością, od której zaczyna się
+  wybrzmienie (bez zatrzymania w końcu ciosu). Waga ataku 1 przez całe wybrzmienie, spada dopiero w powrocie.
+- **S113** „Główny staw” testów §2 to bark (prawy albo lewy, który rusza się bardziej), nie łokieć: przy pchnięciach
+  łokieć zmienia się bardziej, a wybrzmienie łokcia za 0° nie istnieje. Łuk dłoni: ≥ 0,15 długości ręki 2,0 (0,3).
+- **S113** Broń w grze leży w poprzek dłoni (WeaponLooks: czubek wzdłuż −Z dłoni; kostury i łuki wzdłuż +Y), więc
+  nachylenie broni = bark + łokieć + nadgarstek. Pozy z S22 (i punkty startowe z planu S113) w chwili trafienia
+  trzymały ostrze pionowo w górę (miecz, włócznia, różdżka, kusza), kostur głowicą w dół za plecami, łuk poziomo wzdłuż
+  ręki. Nowe pozy celują bronią w przeciwnika nadgarstkiem do −60° (granica testu S22); test „points the weapon at the
+  target” pilnuje nachylenia w chwili trafienia (broń w poprzek −10…45°, kostur −60…0°, łuk 0…35°). Kąty z tabeli
+  planu (D2) zmienione według tej zasady, kolejność ciosów jak w planie; test kuszy S22 „lShoulder ≥ 80” zamieniony na
+  „kolba poziomo ±20°, ramię ≥ 45°”.
+- **S113** Trzeci cios włóczni to wysokie pchnięcie z barku zamiast „oburącz z góry”: z bronią w poprzek dłoni grot
+  nad głową nie da się skierować w dół.
+- **S113** `holystaff` gra `smash` (ruch pod broń w poprzek dłoni, kostur stoi wzdłuż ręki); własny ruch nie powstał,
+  bo nowy ruch z tym samym `SERVER_HIT` to tylko wygląd, ale bez przeglądu obrazu byłby zgadywaniem. Droga:
+  `clipsByWeapon.holystaff`.
+- **S113** Serię liczy każdy klient sam z kolejnych zdarzeń `atk` (okno 1,5 s od startu poprzedniego ataku, ten sam
+  ruch); gracz, który wszedł w zasięg w połowie serii, widzi krok 1. Bez nowych pól zdarzeń i remote'ów.
+- **S113** Iskry tylko przy trafieniach bez `sk` i bez `dot` (atak podstawowy, ciosy potworów, ciernie) i tylko w
+  `Config.EffectRadius`; bez tekstury zostaje dawny błysk `impact`. Materiał: reguła S111 (`Logic/SfxRules.material`
+  przez `SfxController.Mob`), gracz `HitFx.player` = `armor` także dla dźwięku (pusty `hit.armor` gra `hit.flesh`).
+- **S113** Reakcja postaci z kierunkiem (`AttackPose.flinch`: talia od ciosu, barki lekko do tyłu, barki tylko gdy
+  nic innego nie pozuje rąk); potwory z generatora: `MonsterState.hitDir` (dla S117) i obrót stawu `body` ≤ 6° od
+  atakującego z obwiednią `Gait.HIT_SECONDS`, bez zmian w `Logic/Gait`.
+- **S113** Świst na początku ciosu (`windup` kroku; z klipem 0,06 s przed trafieniem), wypuszczenie i efekty chwili
+  trafienia (pył i dym młota, błysk świętej broni, pocisk) jako `onHit` w chwili trafienia, dźwięk trafienia przy `dmg`.
+  Mapa ruch → klucz przeniesiona z `SfxRules` do `AttackMotions.SFX` (klucz `draw` → `start`).
+- **S113** Klipy: tekst albo `{ id, hit, speed?, hitTime? }`, `clipsByWeapon` nad klipami ruchu, seria z klipami ma
+  `#clips` ciosów (≤ 3); priorytety `Action` (ataki) / `Action2` (umiejętności); klip przy `Length == 0` gra pozę i
+  czeka w tle 3 s, potem jedno ostrzeżenie i zawsze poza; bez klipów w kanałach (`loop`). Klip nie gra na kopii poza
+  Workspace (podgląd w oknie umiejętności), na R6 ani poza `EffectRadius`; manekin AnimLab może.
+- **S113** Klip zagrany przez gracza na własnej postaci replikuje się do innych, a oni grają go lokalnie z tego samego
+  zdarzenia: na cudzych postaciach zreplikowana ścieżka znanego klipu jest zatrzymywana (`AnimationPlayed`).
+- **S113** F3: `KeyframeSequenceProvider:GetKeyframeSequenceAsync` działa w Play na kliencie w Studio (sprawdzone na
+  klipie Roblox 507766388, 227 klatek; zły ID daje błąd w `pcall`); w opublikowanej grze może nie mieć dostępu, więc
+  `docs/ANIMACJE.md` każe wpisać `hitTime` z `/animlab clip`. F6 (próba z tymczasowym `KeyframeSequence`) nie zrobiona:
+  w Studio trwał Play właściciela.
+- **S113** Hitstop ataku: `hitstop` kroku (slash2h i smash kroki 1–2: 0,035 s) zatrzymuje pozę po trafieniu przez
+  `AnimationController.Hitstop` (rozszerzony o ataki i klipy); trafienie się nie przesuwa, powrót kończy się później.
+- **S113** Strzał czy cios w efektach ataku wybiera styl zdarzenia (`st ~= "melee"`), nie ruch: Łowca i Mag bez broni
+  (ruch `unarmed`) dalej wypuszczają magiczny pocisk w chwili trafienia, bez smugi pięści. Liczby wyglądu z kontrolera
+  w danych: `HitFx.smashTint`, `ClipFit.SWING_LEAD` (0,06 s) i `ClipFit.TRAIL_AFTER` (0,08 s).

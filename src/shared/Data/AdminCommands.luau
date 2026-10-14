@@ -341,7 +341,12 @@ cmd("combat", "die", {})
 cmd("combat", "shield", { int("seconds", 1, 600, true) })
 cmd("combat", "anim", { str("kind") })
 -- S110: AnimLab (docs/ANIMACJE.md): the motion lab of the Studio review series (DESIGN-16 §1).
-cmd("combat", "animlab", { str("action", true), str("a", true), str("b", true) }, { studioOnly = true })
+cmd(
+	"combat",
+	"animlab",
+	{ str("action", true), str("a", true), str("b", true), str("c", true), str("d", true) },
+	{ studioOnly = true }
+)
 -- S61: the party effect engine before any class has nodes or skills that use it.
 cmd("combat", "intercept", { int("share", 1, 100, true, "30"), int("seconds", 1, 600, true, "10") })
 cmd("combat", "misfortune", { int("value", 1, 100, true, "15"), int("seconds", 1, 600, true, "10") })

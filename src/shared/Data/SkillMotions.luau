@@ -14,11 +14,16 @@
 -- `release` (projectile leaves), `land` (end of a jump). `loop` repeats a stretch while a channel lasts; `lock`
 -- holds the character still while the motion plays (unless a breakpoint lets it move, Data/Skills castMove);
 -- `trail` shows the weapon trail from..to (seconds).
+-- `clip` (S113): a real clip `{ id, hit = "Hit", speed?, hitTime? }` plays instead of the keys; its marker is fitted to
+-- the motion's `hit` (or `release`) (Logic/ClipFit); the keys stay as the fallback. Never on a channel (`loop`).
 
 export type Joint = string
 export type Pose = { [Joint]: { number } }
 export type Ease = "linear" | "in" | "out" | "inOut"
 export type Key = { t: number, pose: Pose, ease: Ease? }
+-- A real clip (same shape as Data/AttackMotions.Clip, Logic/ClipFit): "rbxassetid://<digits>", the marker name, the
+-- speed without a marker time, the marker's time at speed 1.
+export type Clip = { id: string, hit: string?, speed: number?, hitTime: number? }
 
 export type Motion = {
 	keys: { Key },
@@ -29,6 +34,7 @@ export type Motion = {
 	loop: { from: number, to: number }?,
 	lock: boolean?,
 	trail: { from: number, to: number }?,
+	clip: Clip?, -- S113: e.g. clip = { id = "rbxassetid://1234567890", hit = "Hit", hitTime = 0.42 }
 }
 
 local SkillMotions = {}

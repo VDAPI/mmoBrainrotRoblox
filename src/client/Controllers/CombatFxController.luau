@@ -19,6 +19,13 @@
 -- S111: sounds through SfxController (Data/Sfx): a basic attack's draw / swing / release on the effect clock, the
 -- hit's material plus hit.crit, block, miss, a monster's attack and pain, the telegraph warning and the caster's attack
 -- after the windup, the gold clink of a reward.
+-- S113 (DESIGN-16 §5): a basic attack plays its combo step (AnimationController.Attack); the effects of the moment of
+-- the hit (dust and smoke of a smash, the holy flash, the shot of a ranged weapon, the release sound) run once as
+-- `onHit` at the server's hit time (a clip's "Hit" marker or AttackMotions.SERVER_HIT), the swing sounds at the start
+-- of the blow and the weapon trail (Vfx/Library.weaponTrail basic) by the step's timing; keys from
+-- AttackMotions.SFX through Logic/SfxRules.attackKeys. A basic hit (dmg without `sk`) sprays sparks by the target's
+-- material (Data/HitFx, the material rule of the hit sounds; players are "armor") back towards the attacker, and the
+-- struck character leans away from the blow, a generated monster turns its body away (AnimationController).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,12 +33,15 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local HitFx = require(ReplicatedStorage.Shared.Data.HitFx)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
@@ -42,6 +52,7 @@ local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Library = require(script.Parent.Parent.Vfx.Library)
+local Textures = require(script.Parent.Parent.Vfx.Textures)
 
 local CombatFxController = {
 	Name = "CombatFxController",
@@ -745,45 +756,6 @@ local function attachmentPosition(weapon: BasePart?, name: string): Vector3?
 	return if a and a:IsA("Attachment") then a.WorldPosition else nil
 end
 
--- Blade trail between the grip and the tip, in the weapon's rarity colour, during the strike phase.
-local function weaponTrail(weapon: BasePart, timing: AttackPose.Timing)
-	if lowQuality() then
-		return
-	end
-	local trail = weapon:FindFirstChild("VaelthornTrail") :: Trail?
-	if not trail then
-		local grip = weapon:FindFirstChild("VaelthornGrip")
-		local tip = weapon:FindFirstChild("VaelthornTip")
-		if not grip or not tip or not grip:IsA("Attachment") or not tip:IsA("Attachment") then
-			return
-		end
-		local created = Instance.new("Trail")
-		created.Name = "VaelthornTrail"
-		created.Attachment0 = grip
-		created.Attachment1 = tip
-		created.Lifetime = 0.16
-		created.MinLength = 0.05
-		created.LightEmission = 0.7
-		created.Transparency = NumberSequence.new(0.25, 1)
-		local accent = weapon:GetAttribute("Accent")
-		created.Color = ColorSequence.new(if typeof(accent) == "Color3" then accent else Color3.new(1, 1, 1))
-		created.Enabled = false
-		created.Parent = weapon
-		trail = created
-	end
-	local t = Clock.track(trail :: Trail)
-	Clock.after(math.max(0, timing.windup - 0.02), function()
-		if t.Parent then
-			t.Enabled = true
-		end
-	end)
-	Clock.after(timing.windup + timing.strike + 0.04, function()
-		if t.Parent then
-			t.Enabled = false
-		end
-	end)
-end
-
 -- Small glow growing at the tip of a wand / staff during the windup.
 local function charge(weapon: BasePart?, color: Color3, seconds: number)
 	local at = attachmentPosition(weapon, "VaelthornTip")
@@ -829,6 +801,7 @@ local function holyFlash(target: Model)
 end
 
 local HOLY = { holystaff = true, scepter = true }
+local DUST_TINT = Color3.fromHex(HitFx.smashTint) -- S113: the smoke of a smash
 
 -- S111: the entity id of a model (the per-source cooldown of its sounds), else its name.
 local function sourceOf(model: Model): string
@@ -836,63 +809,175 @@ local function sourceOf(model: Model): string
 	return if type(id) == "string" then id else model.Name
 end
 
--- S111: the sounds of a basic attack on the effect clock: the draw at 0, the swing at the start of the blow (end of
--- the windup), the release of an arrow / bolt / spell at the hit time (AttackPose.timing, Logic/SfxRules.attackKeys).
-local function attackSounds(attacker: Model, motion: string, timing: AttackPose.Timing)
-	local keys = SfxRules.attackKeys(motion)
+-- S111 / S113: the sounds of a basic attack on the effect clock (keys: Logic/SfxRules.attackKeys of the combo step):
+-- `start` at 0, the swing at the start of the blow (the end of the windup; with a clip just before the hit). The
+-- release plays with the hit itself (onHit in attackFx). With a clip: ClipFit.SWING_LEAD / TRAIL_AFTER.
+
+local function attackSounds(attacker: Model, keys: SfxRules.AttackKeys, timing: AttackPose.Timing, clipped: boolean)
 	local who = SfxController.WhoOf(attacker)
 	local source = sourceOf(attacker)
-	if keys.draw then
-		SfxController.After(0, keys.draw, attacker, who, source)
+	if keys.start then
+		SfxController.After(0, keys.start, attacker, who, source)
 	end
 	if keys.swing then
-		SfxController.After(timing.windup, keys.swing, attacker, who, source)
-	end
-	if keys.release then
-		SfxController.After(timing.hitAt, keys.release, attacker, who, source)
+		local at = if clipped then math.max(0, timing.hitAt - ClipFit.SWING_LEAD) else timing.windup
+		SfxController.After(at, keys.swing, attacker, who, source)
 	end
 end
 
--- A player's basic attack (S22): the pose and the weapon effects. FIX 2026-10-09: the server sends the damage
--- when the blow lands or the shot arrives (AttackPose.hitDelay), so numbers are no longer held back here.
+-- The rarity colour of a held weapon (attribute Accent), white without one.
+local function accentOf(weapon: BasePart?): Color3
+	local accent = weapon and weapon:GetAttribute("Accent")
+	return if typeof(accent) == "Color3" then accent else Color3.new(1, 1, 1)
+end
+
+-- S113: the basic attack's weapon trail (Vfx/Library.weaponTrail basic): the step's window, or the default one
+-- (windup - 0.02 .. windup + strike + 0.04); with a clip from the start until just after the hit. None on low quality.
+local function attackTrail(
+	attacker: Model,
+	weapon: BasePart,
+	motion: string,
+	timing: AttackPose.Timing,
+	clipped: boolean
+)
+	if lowQuality() then
+		return
+	end
+	local step = AttackPose.step(motion, timing.step)
+	local from, to
+	if clipped then
+		from, to = 0, timing.hitAt + ClipFit.TRAIL_AFTER
+	elseif step.trail then
+		local k = if step.windup > 0 then timing.windup / step.windup else 1
+		from, to = step.trail.from * k, step.trail.to * k
+	else
+		from, to = math.max(0, timing.windup - 0.02), timing.windup + timing.strike + 0.04
+	end
+	Library.weaponTrail(attacker, accentOf(weapon), from, to, {
+		basic = true,
+		base = AttackMotions.TRAIL.baseByMotion[motion] or AttackMotions.TRAIL.base,
+	})
+end
+
+-- A character's basic attack (S22): the pose and the weapon effects. FIX 2026-10-09: the server sends the damage
+-- when the blow lands or the shot arrives (AttackPose.hitDelay), so numbers are no longer held back here. S113: the
+-- combo step and the effects of the hit's moment as onHit; `target` nil in previews (no target effects, no shot);
+-- `step` forces a combo step (AnimLab).
+local function attackFx(
+	attacker: Model,
+	target: Model?,
+	weaponType: string?,
+	melee: boolean,
+	element: string?,
+	step: number?
+)
+	local weapon = weaponOf(attacker)
+	local motion = AttackPose.motionFor(weaponType)
+	-- the event's style decides (a weaponless Hunter / Mage shoots too: motion "unarmed", kind "magic")
+	local ranged = not melee
+	local kind = if motion == "bow" then "arrow" elseif motion == "crossbow" then "bolt" else "magic"
+	local color = ELEMENT_COLORS[element or ""] or Theme.Colors.Accent
+	local release: string? = nil
+	local function onHit()
+		if release then
+			SfxController.Play(release, attacker, SfxController.WhoOf(attacker), sourceOf(attacker))
+		end
+		if not target or not target.Parent or not attacker.Parent then
+			return
+		end
+		if ranged then
+			-- arrows from the bow's grip, bolts and magic from the tip, at the release moment
+			local from = attachmentPosition(
+				weaponOf(attacker),
+				if kind == "arrow" then "VaelthornGrip" else "VaelthornTip"
+			) or centre(attacker) + Vector3.new(0, 0.8, 0)
+			launch(kind, from, target, color, nil)
+			return
+		end
+		if motion == "smash" then
+			dust(target)
+			if not lowQuality() then
+				Library.smokePuff(centre(target), HitFx.puffSize, DUST_TINT)
+			end
+		end
+		if weaponType and HOLY[weaponType] then
+			holyFlash(target)
+		end
+	end
+	local timing, clipped = AnimationController.Attack(attacker, weaponType, nil, onHit, step)
+	local keys = SfxRules.attackKeys(motion, timing.step)
+	release = keys.release
+	attackSounds(attacker, keys, timing, clipped)
+	if ranged or AttackPose.projectile(motion) then
+		if kind == "magic" and AttackPose.projectile(motion) then
+			charge(weapon, color, timing.hitAt)
+		end
+		return
+	end
+	if motion == "unarmed" or not weapon then
+		if target then
+			Clock.after(timing.hitAt * 0.7, swing, attacker, target)
+		end
+	else
+		attackTrail(attacker, weapon, motion, timing, clipped)
+	end
+end
+
 local function playerAttack(attacker: Model, target: Model, event: { [string]: any })
 	local camera = Workspace.CurrentCamera
 	if camera and (centre(attacker) - camera.CFrame.Position).Magnitude > Config.EffectRadius then
 		return
 	end
 	local weaponType = if type(event.w) == "string" then event.w else nil
-	local timing = AnimationController.Attack(attacker, weaponType)
-	local weapon = weaponOf(attacker)
-	local motion = AttackPose.motionFor(weaponType)
-	attackSounds(attacker, motion, timing)
-	if event.st == "melee" then
-		if motion == "unarmed" or not weapon then
-			Clock.after(timing.hitAt * 0.7, swing, attacker, target)
-		else
-			weaponTrail(weapon, timing)
-			if motion == "smash" then
-				Clock.after(timing.hitAt, dust, target)
-			end
-		end
-		if weaponType and HOLY[weaponType] then
-			Clock.after(timing.hitAt, holyFlash, target)
-		end
-		return
+	attackFx(attacker, target, weaponType, event.st == "melee", if type(event.el) == "string" then event.el else nil)
+end
+
+-- S113 hit sparks ----------------------------------------------------------------------------------------------
+
+-- The hit material of a model: a monster's (SfxController.Mob: look, family, else flesh), a player's HitFx.player.
+local function materialOf(model: Model): string
+	local info = SfxController.Mob(model)
+	if info then
+		return info.material
 	end
-	-- Ranged: arrows from the bow's grip, bolts and magic from the tip, at the release moment.
-	local kind = if motion == "bow" then "arrow" elseif motion == "crossbow" then "bolt" else "magic"
-	local color = ELEMENT_COLORS[event.el or ""] or Theme.Colors.Accent
-	if kind == "magic" then
-		charge(weapon, color, timing.hitAt)
+	return if model:GetAttribute("MonsterId") ~= nil then HitFx.default else HitFx.player
+end
+
+-- Sparks of a basic hit by the target's material, sprayed back towards the attacker and up from the target's surface
+-- on the attacker's side; a gold flash on a critical. Returns false when the texture is missing (the caller keeps
+-- the old impact burst).
+local function hitSparks(model: Model, from: Vector3?, material: string, crit: boolean): boolean
+	local spark = HitFx.byMaterial[material] or HitFx.byMaterial[HitFx.default]
+	if not Textures.id(spark.key) then
+		return false
 	end
-	Clock.after(timing.hitAt, function()
-		if not attacker.Parent or not target.Parent then
-			return
-		end
-		local from = attachmentPosition(weaponOf(attacker), if kind == "arrow" then "VaelthornGrip" else "VaelthornTip")
-			or centre(attacker) + Vector3.new(0, 0.8, 0)
-		launch(kind, from, target, color, nil)
-	end)
+	local root = model:FindFirstChild("HumanoidRootPart")
+	local middle = centre(model)
+	local radius = if root and root:IsA("BasePart") then math.max(root.Size.X, root.Size.Z) / 2 else 1
+	local away = if from then Vector3.new(middle.X - from.X, 0, middle.Z - from.Z) else Vector3.zero
+	local d = if away.Magnitude > 0.05 then away.Unit else Vector3.zero
+	local at = middle - d * HitFx.surface * radius + Vector3.new(0, 0.4, 0)
+	local dir = (-d + Vector3.new(0, 0.6, 0)).Unit
+	local simple = lowQuality()
+	local count = spark.count * (if crit then HitFx.crit.countMul else 1)
+	Library.sparks(at, Color3.fromHex(spark.color), {
+		key = spark.key,
+		dir = dir,
+		count = math.max(1, math.floor(count + 0.5)),
+		simple = simple,
+		speed = spark.speed,
+		life = spark.life,
+		gravity = spark.gravity,
+	})
+	if crit then
+		Library.impactFlash(at, HitFx.flashSize * HitFx.crit.flashScale, Theme.Colors.GoldBright, { simple = simple })
+	elseif spark.flash then
+		Library.impactFlash(at, HitFx.flashSize, Color3.new(1, 1, 1), { simple = simple })
+	end
+	if spark.puff and not simple then
+		Library.smokePuff(at, HitFx.puffSize, Color3.fromHex(spark.color))
+	end
+	return true
 end
 
 -- Telegraphs -----------------------------------------------------------------------------------------------
@@ -1013,8 +1098,8 @@ end
 local NAME_EVERY = 1.2
 local namedAt: { [string]: number } = {}
 
--- S111: the sound of a hit: the target's material (monster family / look, players flesh; a material without a sound
--- falls back to hit.flesh) plus hit.crit on a
+-- S111: the sound of a hit: the target's material (monster family / look; S113: players HitFx.player; a material
+-- without a sound falls back to hit.flesh) plus hit.crit on a
 -- critical, the pain of a monster that survived (bosses roar only on phases); blocked -> block, a dodge or a miss ->
 -- miss, absorbed / immune -> a quieter block. DoT ticks and heals are silent. The priority is the higher of the
 -- target's and the attacker's (a hit on us is ours).
@@ -1025,7 +1110,7 @@ local function hitSounds(model: Model, event: { [string]: any }, result: DamageT
 	local who = SfxController.Higher(SfxController.WhoOf(model), SfxController.WhoOf(findModel(attackerId)))
 	if result.amount > 0 and not event.dot then
 		local info = SfxController.Mob(model)
-		SfxController.Play(SfxRules.hitKey(if info then info.material else "flesh", Sfx.playable), model, who)
+		SfxController.Play(SfxRules.hitKey(materialOf(model), Sfx.playable), model, who)
 		if event.c then
 			SfxController.Play("hit.crit", model, who)
 		end
@@ -1056,10 +1141,21 @@ local function onDamage(event: { [string]: any })
 	if amount > 0 and not event.dot then
 		-- A critical skill hit flashes gold (S28).
 		flash(model, if skill and event.c then Theme.Colors.GoldBright else nil)
-		impact(model, event.c == true)
-		AnimationController.MonsterHit(model)
+		-- S113: the attacker's position turns the reaction away from the blow and aims the sparks of a basic hit
+		local attacker = findModel(if type(event.s) == "string" then event.s else nil)
+		local from = if attacker then centre(attacker) else nil
+		local camera = Workspace.CurrentCamera
+		local near = not camera or (centre(model) - camera.CFrame.Position).Magnitude <= Config.EffectRadius
+		local sparked = false
+		if event.sk == nil and near then
+			sparked = hitSparks(model, from, materialOf(model), event.c == true)
+		end
+		if not sparked then
+			impact(model, event.c == true)
+		end
+		AnimationController.MonsterHit(model, from)
 		if model:GetAttribute("MonsterId") == nil then
-			AnimationController.CharacterHit(model)
+			AnimationController.CharacterHit(model, from, event.c == true)
 		end
 		if isMe and event.c then
 			shake(0.35)
@@ -1223,19 +1319,33 @@ function CombatFxController.Init(registry)
 end
 
 -- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage). S110: `model` (an AnimLab
--- mannequin) instead of our character.
-function CombatFxController.PreviewAttack(weaponType: string?, model: Model?)
+-- mannequin) instead of our character. S113: calls within AttackMotions.COMBO_WINDOW play the combo; `step` forces a
+-- step (AnimLab `attack <type> <step>`); `target` (the AnimLab target) gets the hit's effects and the shot.
+function CombatFxController.PreviewAttack(weaponType: string?, model: Model?, step: number?, target: Model?)
 	local character = model or player.Character
 	if not character then
 		return
 	end
-	local timing = AnimationController.Attack(character, weaponType)
-	local weapon = weaponOf(character)
 	local motion = AttackPose.motionFor(weaponType)
-	if weapon and not AttackPose.timing(motion).ranged and motion ~= "unarmed" then
-		weaponTrail(weapon, timing)
+	attackFx(character, target, weaponType, AttackPose.projectile(motion) == nil, nil, step)
+end
+
+-- S113 AnimLab `hit <material> [crit]`: the sparks, the sound and the reaction of a basic hit on `target` struck from
+-- `from`, as if a dmg event arrived (no number).
+function CombatFxController.PreviewHit(target: Model, from: Vector3, material: string, crit: boolean)
+	local who = SfxController.WhoOf(target)
+	SfxController.Play(SfxRules.hitKey(material, Sfx.playable), target, who)
+	if crit then
+		SfxController.Play("hit.crit", target, who)
 	end
-	attackSounds(character, motion, timing)
+	flash(target, nil)
+	if not hitSparks(target, from, material, crit) then
+		impact(target, crit)
+	end
+	AnimationController.MonsterHit(target, from)
+	if target:GetAttribute("MonsterId") == nil then
+		AnimationController.CharacterHit(target, from, crit)
+	end
 end
 
 -- S110 AnimLab: the ground telegraph of a "tele" event (boss / Elite II attacks) without the server. S111: with its

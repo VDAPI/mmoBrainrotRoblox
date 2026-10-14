@@ -2,14 +2,20 @@
 -- Skill animation preview without Studio (S28): an R15 dummy posed by Logic/SkillPose with the same joint transforms as
 -- AnimationController, dumped as world-space pieces for docs/miasto/tools/render3d.py.
 --   lune run tools/posedump.luau out.json <skillId|class:Warrior> [frames]
+--   lune run tools/posedump.luau out.json attack:<motion>[:<step>] | attack:all   (S113: basic attacks)
 -- Every skill is two rows (along X: the frames over the motion's length; the front row faces -Z towards a camera in
 -- front, the row behind shows the same frames from the right side); skills go back along +Z (16 studs each). R15 sizes and rig attachments are the default avatar's (read from Studio).
+-- S113 attacks: the frames are the control keys of a combo step (start, peak, hit / release, strikePeak, follow, end;
+-- Logic/MotionKeys.attack), the dummy holds a weapon stick along the hand's -Z (the WeaponLooks "FORWARD" mount; staffs
+-- and bows "UPRIGHT", +Y) with a red tip, and a grey target post stands 4 studs in front of every frame.
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 local roblox = require("@lune/roblox")
 local serde = require("@lune/serde")
 
+local AttackMotions = require("../src/shared/Data/AttackMotions")
+local AttackPose = require("../src/shared/Logic/AttackPose")
 local SkillData = require("../src/shared/Data/Skills")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
 local SkillPose = require("../src/shared/Logic/SkillPose")
@@ -123,12 +129,45 @@ end
 
 local pieces = {}
 
-local function dummy(pose: { [string]: { number } }, origin: any)
+-- Weapon of a motion for the attack frames: hand ("RightHand" / "LeftHand"), length, along "-Z" or "+Y" of the hand.
+local WEAPONS: { [string]: { hand: string, length: number, axis: string } } = {
+	slash1h = { hand = "RightHand", length = 3, axis = "-Z" },
+	slash2h = { hand = "RightHand", length = 4.2, axis = "-Z" },
+	thrust = { hand = "RightHand", length = 5, axis = "-Z" },
+	smash = { hand = "RightHand", length = 3.4, axis = "-Z" },
+	bow = { hand = "LeftHand", length = 4, axis = "+Y" },
+	crossbow = { hand = "LeftHand", length = 2.2, axis = "-Z" },
+	wand = { hand = "RightHand", length = 1.4, axis = "-Z" },
+	staff = { hand = "RightHand", length = 5, axis = "+Y" },
+}
+
+local function dummy(pose: { [string]: { number } }, origin: any, weapon: string?)
 	local cf: { [string]: any } = { HumanoidRootPart = origin }
 	for _, link in CHAIN do
 		local parent, child = PARTS[link[2]], PARTS[link[3]]
 		local T = transform(link[4], pose[link[4] or ""])
 		cf[link[3]] = cf[link[2]] * at(parent.att[link[1]]) * T * at(child.att[link[1]]):Inverse()
+	end
+	local held = weapon and WEAPONS[weapon]
+	if held then
+		local palm = cf[held.hand] * CFrame.new(0, -0.16, 0)
+		local along = if held.axis == "+Y" then Vector3.new(0, 1, 0) else Vector3.new(0, 0, -1)
+		local centre = palm * CFrame.new(along * (held.length * 0.4))
+		local size = if held.axis == "+Y" then { 0.2, held.length, 0.2 } else { 0.2, 0.2, held.length }
+		local tip = palm * CFrame.new(along * (held.length * 0.9))
+		for _, item in { { centre, size, "#C9CED6" }, { tip, { 0.35, 0.35, 0.35 }, "#E03030" } } do
+			local c = item[1]
+			local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = c:GetComponents()
+			table.insert(pieces, {
+				s = "box",
+				size = item[2],
+				p = { x, y, z },
+				r = { r00, r01, r02, r10, r11, r12, r20, r21, r22 },
+				c = item[3],
+				m = "SmoothPlastic",
+				lod = "shell",
+			})
+		end
 	end
 	for name, part in PARTS do
 		if name ~= "HumanoidRootPart" then
@@ -152,31 +191,94 @@ local out = args[1] or "poses.json"
 local frames = tonumber(args[3]) or 7
 local ids = {}
 local which = args[2] or "class:Warrior"
-if string.sub(which, 1, 6) == "class:" then
-	for _, skill in SkillData.byClass[string.sub(which, 7)] or {} do
-		if SkillMotions.get(skill.id) then
-			table.insert(ids, skill.id)
-		end
-	end
-else
-	for id in string.gmatch(which, "[^,]+") do
-		table.insert(ids, id)
-	end
+local rows = {}
+
+local function post(at: any)
+	table.insert(pieces, {
+		s = "box",
+		size = { 0.6, 5, 0.6 },
+		p = { at.X, 2.5, at.Z },
+		r = { 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+		c = "#7A7A7A",
+		m = "SmoothPlastic",
+		lod = "shell",
+	})
 end
 
-local rows = {}
-for row, id in ids do
-	local motion = assert(SkillMotions.get(id), id)
-	local loopUntil = if motion.loop then motion.loop.to + 0.3 else nil
-	local total = SkillPose.duration(motion, loopUntil)
-	for i = 0, frames - 1 do
-		local t = total * i / (frames - 1) * 0.94
-		local pose = SkillPose.sample(motion, t, { loopUntil = loopUntil })
-		-- front row (facing the camera at -Z) and, behind it, the same frame seen from the right side
-		dummy(pose, CFrame.new(-i * 6, 3, (row - 1) * 16))
-		dummy(pose, CFrame.new(-i * 6, 3, (row - 1) * 16 + 7) * CFrame.Angles(0, math.rad(90), 0))
+if string.sub(which, 1, 7) == "attack:" then
+	-- S113: combo steps of basic attacks at their control frames
+	local spec = string.sub(which, 8)
+	local list: { { string | number } } = {}
+	if spec == "all" then
+		local names = {}
+		for name in AttackMotions.motions do
+			table.insert(names, name)
+		end
+		table.sort(names)
+		for _, name in names do
+			for i in AttackMotions.motions[name].steps do
+				table.insert(list, { name, i })
+			end
+		end
+	else
+		local name, step = string.match(spec, "^(%a+%d*%a*):?(%d*)$")
+		assert(name and AttackMotions.motions[name], `unknown motion {spec}`)
+		if step and step ~= "" then
+			table.insert(list, { name, tonumber(step) :: number })
+		else
+			for i in AttackMotions.motions[name].steps do
+				table.insert(list, { name, i })
+			end
+		end
 	end
-	table.insert(rows, `{row}:{id} ({string.format("%.2f", total)} s)`)
+	for row, entry in list do
+		local name, step = entry[1] :: string, entry[2] :: number
+		local timing = AttackPose.timing(name, nil, step)
+		local times = {
+			0,
+			timing.windup,
+			timing.hitAt,
+			timing.windup + timing.strike,
+			timing.followAt,
+			timing.total - 0.08,
+		}
+		for i, t in times do
+			local pose = AttackPose.sample(name, t, nil, nil, step)
+			local z = (row - 1) * 16
+			dummy(pose, CFrame.new(-(i - 1) * 6, 3, z), name)
+			post(Vector3.new(-(i - 1) * 6, 0, z - 4))
+			dummy(pose, CFrame.new(-(i - 1) * 6, 3, z + 7) * CFrame.Angles(0, math.rad(90), 0), name)
+		end
+		frames = #times
+		table.insert(rows, `{row}:{name}:{step}`)
+	end
+	ids = list
+else
+	if string.sub(which, 1, 6) == "class:" then
+		for _, skill in SkillData.byClass[string.sub(which, 7)] or {} do
+			if SkillMotions.get(skill.id) then
+				table.insert(ids, skill.id)
+			end
+		end
+	else
+		for id in string.gmatch(which, "[^,]+") do
+			table.insert(ids, id)
+		end
+	end
+
+	for row, id in ids do
+		local motion = assert(SkillMotions.get(id), id)
+		local loopUntil = if motion.loop then motion.loop.to + 0.3 else nil
+		local total = SkillPose.duration(motion, loopUntil)
+		for i = 0, frames - 1 do
+			local t = total * i / (frames - 1) * 0.94
+			local pose = SkillPose.sample(motion, t, { loopUntil = loopUntil })
+			-- front row (facing the camera at -Z) and, behind it, the same frame seen from the right side
+			dummy(pose, CFrame.new(-i * 6, 3, (row - 1) * 16))
+			dummy(pose, CFrame.new(-i * 6, 3, (row - 1) * 16 + 7) * CFrame.Angles(0, math.rad(90), 0))
+		end
+		table.insert(rows, `{row}:{id} ({string.format("%.2f", total)} s)`)
+	end
 end
 table.insert(pieces, {
 	s = "box",

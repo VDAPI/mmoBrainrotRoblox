@@ -23,6 +23,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Pool = require(script.Parent.Pool)
@@ -40,6 +41,9 @@ export type FxOpts = {
 	seconds: number?,
 	spin: number?, -- rad/s (circles)
 	yaw: number?, -- fixed rotation in radians (decals); random when nil
+	speed: { number }?, -- S113 sparks: { min, max } studs/s (default 10..22)
+	life: { number }?, -- S113 sparks: { min, max } seconds (default 0.18..0.4)
+	gravity: number?, -- S113 sparks: studs/s² down (default 40)
 }
 
 local rng = Random.new()
@@ -1384,7 +1388,8 @@ function Library.dust(at: Vector3, size: number, low: boolean?)
 end
 
 -- S112 E2: a trail layer of sparks or splinters flying from a blow along opts.dir (default up): key opts.key or
--- "spark" (S113: darkSpark, iceShard, feather, dust by material), streaks along their flight for spark / darkSpark.
+-- "spark" (S113: by the target's material, Data/HitFx: `speed`, `life`, `gravity`), streaks along their flight for spark /
+-- darkSpark.
 -- Without the texture the same emitter with the default particle; in a ViewportFrame (skills window) small neon parts.
 function Library.sparks(at: Vector3, color: Color3, opts: FxOpts?)
 	local o: FxOpts = opts or {}
@@ -1411,12 +1416,12 @@ function Library.sparks(at: Vector3, color: Color3, opts: FxOpts?)
 		simple = o.simple,
 		direction = Enum.NormalId.Front,
 		spread = 35,
-		speedMin = 10,
-		speedMax = 22,
-		accel = Vector3.new(0, -40, 0),
+		speedMin = if o.speed then o.speed[1] else 10,
+		speedMax = if o.speed then o.speed[2] else 22,
+		accel = Vector3.new(0, -(o.gravity or 40), 0),
 		drag = 3,
-		lifeMin = 0.18,
-		lifeMax = 0.4,
+		lifeMin = if o.life then o.life[1] else 0.18,
+		lifeMax = if o.life then o.life[2] else 0.4,
 		orient = if streak then "parallel" else nil,
 		sizeSeq = NumberSequence.new({ kp(0, 0.215, 0.065), kp(1, 0.13, 0.04) }),
 		transparency = NumberSequence.new({ kp(0, 0), kp(0.7, 0.2), kp(1, 1) }),
@@ -1470,8 +1475,32 @@ function Library.glow(
 	end
 end
 
--- Weapon trail between the grip and the tip of the held weapon, from..to seconds after now.
-function Library.weaponTrail(model: Model, color: Color3, from: number, to: number)
+-- Options of a weapon trail (S113): `basic` = a basic attack's trail ("VaelthornTrail", Data/AttackMotions.TRAIL: from
+-- `base` of the weapon's length to the tip, the streak texture narrowing to the base, the rarity colour fading to
+-- white); without it the skill trail ("VaelthornSkillTrail", grip to tip) of S28 / S112. `lifetime` overrides.
+export type TrailOpts = { basic: boolean?, base: number?, lifetime: number? }
+
+-- The base attachment of a basic attack's trail: `share` of the way from the grip to the tip (made once per weapon,
+-- moved when the share changes).
+local function trailBase(weapon: BasePart, grip: Attachment, tip: Attachment, share: number): Attachment
+	local base = weapon:FindFirstChild("VaelthornTrailBase")
+	local at = grip.Position + (tip.Position - grip.Position) * share
+	if base and base:IsA("Attachment") then
+		if (base.Position - at).Magnitude > 1e-3 then
+			base.Position = at
+		end
+		return base
+	end
+	local created = Instance.new("Attachment")
+	created.Name = "VaelthornTrailBase"
+	created.Position = at
+	created.Parent = weapon
+	return created
+end
+
+-- Weapon trail of the held weapon, from..to seconds after now (S28 skills, S113 basic attacks: TrailOpts).
+function Library.weaponTrail(model: Model, color: Color3, from: number, to: number, opts: TrailOpts?)
+	local o: TrailOpts = opts or {}
 	local weapon = model:FindFirstChild("VaelthornWeapon")
 	if not weapon or not weapon:IsA("BasePart") then
 		return
@@ -1481,28 +1510,49 @@ function Library.weaponTrail(model: Model, color: Color3, from: number, to: numb
 	if not grip or not tip or not grip:IsA("Attachment") or not tip:IsA("Attachment") then
 		return
 	end
-	local trail = weapon:FindFirstChild("VaelthornSkillTrail") :: Trail?
+	local basic = o.basic == true
+	local spec = AttackMotions.TRAIL
+	local name = if basic then "VaelthornTrail" else "VaelthornSkillTrail"
+	local start: Attachment = if basic then trailBase(weapon, grip, tip, o.base or spec.base) else grip
+	local trail = weapon:FindFirstChild(name) :: Trail?
 	if not trail then
 		local created = Instance.new("Trail")
-		created.Name = "VaelthornSkillTrail"
-		created.Attachment0 = grip
+		created.Name = name
 		created.Attachment1 = tip
-		created.Lifetime = 0.22
 		created.MinLength = 0.05
-		created.LightEmission = 0.9
-		created.Transparency = NumberSequence.new(0.15, 1)
 		created.Enabled = false
 		created.Parent = weapon
 		trail = created
 	end
 	local t = Clock.track(trail :: Trail)
-	t.Color = ColorSequence.new(color)
-	-- S112: the streak texture narrowing towards the tail (the trail is reused: the texture may have been switched off)
-	if Textures.trail(t, "trailStreak") then
-		t.WidthScale = NumberSequence.new(1, 0.3)
+	t.Attachment0 = start
+	if basic then
+		t.Lifetime = o.lifetime or spec.lifetime
+		t.LightEmission = 0.8
+		t.Color = ColorSequence.new(color, Color3.new(1, 1, 1))
+		if Textures.trail(t, spec.key) then
+			t.LightInfluence = 0.2
+			t.WidthScale = NumberSequence.new(spec.widthTip, spec.widthBase)
+			t.Transparency = NumberSequence.new(0, 1)
+		else
+			-- the look before S113: white-ish streak fading out
+			t.Texture = ""
+			t.LightInfluence = 0
+			t.WidthScale = NumberSequence.new(1)
+			t.Transparency = NumberSequence.new(0.25, 1)
+		end
 	else
-		t.Texture = ""
-		t.WidthScale = NumberSequence.new(1)
+		t.Lifetime = o.lifetime or 0.22
+		t.LightEmission = 0.9
+		t.Transparency = NumberSequence.new(0.15, 1)
+		t.Color = ColorSequence.new(color)
+		-- S112: the streak texture narrowing towards the tail (the trail is reused: the texture may have been switched off)
+		if Textures.trail(t, "trailStreak") then
+			t.WidthScale = NumberSequence.new(1, 0.3)
+		else
+			t.Texture = ""
+			t.WidthScale = NumberSequence.new(1)
+		end
 	end
 	Clock.after(math.max(0, from), function()
 		if t.Parent then

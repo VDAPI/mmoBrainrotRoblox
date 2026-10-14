@@ -34,7 +34,7 @@ Nie wolno: edytować skryptów w Studio (`multi_edit`, zapis do `Script.Source`)
 ### 0.2. Inne zasady serii
 
 1. Faza gameplay obowiązuje dalej we wszystkim innym: bez „Instrukcji testu”, bez pytania właściciela w trakcie, `scripts/check` zielony, decyzje w `docs/DECYZJE.md`, sekcja `### S1xx` w `docs/SESJE.md`, commit `S1xx: …` i push.
-2. Bez zmian balansu: czasy, które serwer liczy (windup, cooldown, moment trafienia ataku podstawowego `AttackPose.hitDelay` = windup + strike × hit z `Data/AttackMotions`, 0,12–0,235 s plus lot pocisku; S113 przypina je w `AttackMotions.SERVER_HIT`), zostają. Animacja dopasowuje się do serwera, nigdy odwrotnie. Wyjątek: czysto wizualne czasy klienta (długość smugi, hitstop, wstrząs).
+2. Bez zmian balansu: czasy, które serwer liczy (windup, cooldown, moment trafienia ataku podstawowego `AttackPose.hitDelay`: od S113 `AttackMotions.SERVER_HIT` ruchu, 0,12–0,235 s, plus lot pocisku; te same liczby co dawne windup + strike × hit, test `attackpose.spec`), zostają. Animacja dopasowuje się do serwera, nigdy odwrotnie. Wyjątek: czysto wizualne czasy klienta (długość smugi, hitstop, wstrząs).
 3. Wszystko na kliencie, bez nowych remote'ów (wyjątki nazwane w sesji: komendy AnimLab to komendy admina S23; pole `w` w zdarzeniu `SkillFx` z S114/S115 i id ataku w zdarzeniu `tele` z S117 to czysto wizualne pola istniejących zdarzeń). Uwaga: część czasów serwera czyta pola z `SkillMotions`/`SkillVfx`/`AttackMotions`; są przypięte testami (`AttackMotions.SERVER_HIT`, `tests/fixtures/skill_timing.luau`) i nie wolno ich zmieniać.
 4. Wydajność telefonu: limity z `Config.Vfx` i `Config.MonsterLook.maxAnimated` obowiązują; nowe limity w `Config.Sfx` i `Config.Vfx`. Niska jakość efektów: połowa cząsteczek, bez smug, dźwięki innych graczy ciszej.
 5. Liczby wyglądu w `Data/*` i `Config.luau`. Kod po angielsku, `--!strict`, `Logic` i `Data` bez API Roblox (testy Lune).
@@ -88,7 +88,7 @@ Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia)
 ## 5. Ataki podstawowe gracza i hak na klipy (S113)
 
 - Przegląd w AnimLab wszystkich typów broni z `WeaponLooks` (lista typów w kodzie), poprawki `Data/AttackMotions` według §2, **serie 2–3 ciosów** (naprzemienne cięcia, druga strona, pchnięcie na koniec) wybierane po kolei przy kolejnych atakach w oknie 1,5 s, smuga broni z teksturą (S112), iskry trafienia według materiału, reakcja trafionego z kierunkiem ciosu.
-- **Hak na klipy** (kształt ostateczny w S113: `motions.<motion>.clips`, `clipsByWeapon.<weaponType>`, `Logic/ClipFit`): `AttackMotions.<type>.clips = { "rbxassetid://…", … }` i `SkillMotions.<skillId>.clip = { id, hit = "Hit", speed? }`. Gdy klip jest, `AnimationController` gra `AnimationTrack` na `Animator` postaci (R15) zamiast pozy proceduralnej, trafienie i efekty wyzwala znacznik `Hit` (`GetMarkerReachedSignal`), prędkość dopasowana tak, żeby `Hit` wypadł w chwili trafienia z serwera. Gdy klip się nie wczytał (brak uprawnień, moderacja), wraca poza proceduralna (jedno ostrzeżenie). Test Lune: format ID i obecność pól.
+- **Hak na klipy** (S113): `AttackMotions.motions.<motion>.clips` i `AttackMotions.clipsByWeapon.<weaponType>` (lista: tekst `"rbxassetid://…"` albo `{ id, hit = "Hit", speed?, hitTime? }`, pozycja i = cios i serii, najwyżej 3) oraz `SkillMotions.motions.<skillId>.clip = { id, hit = "Hit", speed?, hitTime? }` (nie przy `loop`); zasady w `Logic/ClipFit`, granie w `client/Anim/CharacterClips`. Gdy klip jest, `AnimationController` gra `AnimationTrack` na `Animator` postaci (R15) zamiast pozy proceduralnej, trafienie i efekty wyzwala znacznik `Hit` (`GetMarkerReachedSignal`), prędkość dopasowana tak, żeby `Hit` wypadł w chwili trafienia z serwera. Gdy klip się nie wczytał (brak uprawnień, moderacja), wraca poza proceduralna (jedno ostrzeżenie). Test Lune: format ID i obecność pól.
 - `docs/ANIMACJE.md`: jak właściciel robi klip w **Moon Animator 2** (płatny dodatek) albo **Animation Editor** (wbudowany) na manekinie z AnimLab, ustawia znacznik `Hit`, publikuje i wpisuje ID.
 
 ## 6. Umiejętności (S114: Wojownik i Kapłan, S115: Łowca i Mag)
@@ -238,3 +238,25 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
 
 **Zamknięcie serii.** Zrobione S110, S111, S112, S118, S119; S113–S117 czekają w `DALEJ.md`. Grafiki i modele dochodzą
 bez programowania: `docs/sessions/IMPORT-GRAFIK.md` (przedmioty i interfejs), `docs/sessions/IMPORT-MODELI.md` (modele).
+
+## 16. Ustalenia S113
+
+- Czas serwera ataku: `AttackMotions.SERVER_HIT` (te same liczby co przed S113, test na 20 typach broni × 7 odległości ×
+  2); `hit` kroku wylicza `AttackPose.timing`, w danych go nie ma. Kroki serii mają ten sam `SERVER_HIT`.
+- Format kroku: `steps = { { windup, strike, recover, follow?, poses = { windup, pass?, strike, follow? }, trail?, sfx?,
+  hitstop? } }`; krzywe: zamach `smooth`, do `pass` przyspieszenie (t²), od `pass` hamowanie do prędkości wybrzmienia,
+  `follow` ease-out, powrót `smooth`.
+- Broń leży w poprzek dłoni (WeaponLooks: czubek wzdłuż −Z dłoni, kostur i łuk wzdłuż +Y), więc nachylenie ostrza to suma
+  kątów barku, łokcia i nadgarstka; pozy S113 celują ostrzem w przeciwnika w chwili trafienia (nadgarstek do −60°),
+  test „points the weapon at the target”.
+- API: `AttackPose.step/stepCount/nextStep/flinch/flinchStrength`, `Timing.hit/followAt/step`, `AttackMotions.COMBO_WINDOW`,
+  `FOLLOW_SHARE`, `SFX`, `FLINCH`, `TRAIL`, `clipsByWeapon`, `Data/HitFx`, `Logic/ClipFit` (`validId`, `normalize`,
+  `speed`, `attackClips`, `attackClip`, `allIds`), `client/Anim/CharacterClips` (`play`, `markerTime`, `measureNow`,
+  `preload`, `failed`, `status`, `retry`), `AnimationController.Attack(model, type, interval?, onHit?, step?) ->
+  (timing, clipped)`, `CharacterHit(model, from?, crit?)`, `MonsterHit(model, from?)` (`MonsterState.hitDir` dla S117),
+  `ResetCombo`, `Library.weaponTrail(model, color, from, to, { basic?, base?, lifetime? })`,
+  `CombatFxController.PreviewAttack(type?, model?, step?, target?)`, `PreviewHit`, `MotionKeys.attack(type, interval?,
+  step?)` ze `strikePeak`, `MotionKeys.clip(length, marker?, speed?)`, AnimLab `attack <typ> [krok|combo]`, `hit`,
+  `flinch`, `clip`.
+- `holystaff` (kostur pionowo w dłoni) gra `smash` jak młoty: ruch liczony pod broń w poprzek dłoni; własny ruch albo klip
+  dla kostura kapłana to praca na później (`clipsByWeapon.holystaff`).

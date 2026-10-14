@@ -57,7 +57,12 @@ local function attacks()
 	table.insert(list, "unarmed")
 	for _, weaponType in list do
 		if not only or only == weaponType then
-			row(weaponType, `atak ({AttackMotions.byWeapon[weaponType] or "unarmed"})`, MotionKeys.attack(weaponType))
+			-- S113: every combo step of the weapon's motion
+			local motion = AttackMotions.byWeapon[weaponType] or "unarmed"
+			for step in AttackMotions.motions[motion].steps do
+				local label = if step > 1 then `atak ({motion}, krok {step})` else `atak ({motion})`
+				row(weaponType, label, MotionKeys.attack(weaponType, nil, step))
+			end
 		end
 	end
 end

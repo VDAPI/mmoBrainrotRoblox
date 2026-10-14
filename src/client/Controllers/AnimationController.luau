@@ -18,7 +18,12 @@
 --     plays its clips (Data/Mounts.assets anims) and "static" stands; the rider (character attribute Mount) sits
 --     astride with the legs of Logic/RiderPose (the arms stay free for the basic attack);
 --   AnimLab (S110): LabHold samples the attack and the skill of a preview model at a fixed time t and keeps them past
---     their end (no flinch meanwhile), LabClear drops them; only models with the attribute VaelthornPreview.
+--     their end (a flinch at the same t), LabClear drops them; only models with the attribute VaelthornPreview;
+--   S113 (DESIGN-16 §5): attacks within AttackMotions.COMBO_WINDOW play the next combo step (each client counts the
+--     steps it sees; looks only), a step may hold its pose a moment at the hit (hitstop), a hit tilts the upper body away
+--     from the attacker (AttackPose.flinch) and turns a generated monster's body away (MonsterState.hitDir, the base for
+--     S117); real clips (AttackMotions clips / clipsByWeapon, SkillMotions clip) play through client/Anim/CharacterClips
+--     instead of the poses when they loaded, fitted to the server's hit, and the poses stay the fallback.
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -28,6 +33,9 @@ local Workspace = game:GetService("Workspace")
 
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
+local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
+local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
@@ -74,6 +82,7 @@ type MonsterState = {
 	attackStart: number,
 	attackWindup: number,
 	hitAt: number,
+	hitDir: Vector3?, -- S113: flat unit direction of the last blow (from the attacker to the monster; S117 reads it)
 	deadAt: number?,
 }
 
@@ -190,6 +199,7 @@ local function track(model: Instance)
 		attackStart = -math.huge,
 		attackWindup = Gait.DEFAULT_WINDUP,
 		hitAt = -math.huge,
+		hitDir = nil,
 		deadAt = nil,
 	}
 	refresh(model)
@@ -256,6 +266,30 @@ local function stepClips(s: MonsterState, clips: Clips, now: number, speed: numb
 	clip:AdjustSpeed(pick.speed)
 end
 
+-- S113: the blow's push on a generated monster's body: a turn of at most FLINCH.monsterDegrees away from the attacker
+-- with the sine envelope of Gait.HIT_SECONDS (the axis in world space; nil when there is none now).
+local function hitTwist(s: MonsterState, now: number): Vector3?
+	local dir = s.hitDir
+	local t = now - s.hitAt
+	if not dir or t <= 0 or t >= HIT_SECONDS then
+		return nil
+	end
+	local angle = math.rad(AttackMotions.FLINCH.monsterDegrees) * math.sin(math.pi * t / HIT_SECONDS)
+	-- the body's top moves along the push: rotation about up x push
+	return Vector3.new(0, 1, 0):Cross(dir) * angle
+end
+
+-- The world-space turn `twist` (axis * angle) as a rotation in the joint's own frame (Part0 * C0).
+local function bodyTwist(motor: Motor6D, twist: Vector3): CFrame
+	local angle = twist.Magnitude
+	local part0 = motor.Part0
+	if angle < 1e-4 or not part0 then
+		return CFrame.identity
+	end
+	local axis = (part0.CFrame * motor.C0):VectorToObjectSpace(twist.Unit)
+	return CFrame.fromAxisAngle(axis, angle)
+end
+
 local function step(dt: number)
 	local camera = Workspace.CurrentCamera
 	if not camera then
@@ -298,10 +332,15 @@ local function step(dt: number)
 		motion.hit = math.max(0, 1 - (now - s.hitAt) / HIT_SECONDS)
 		motion.dead = if s.deadAt then math.clamp((now - s.deadAt) / DEATH_SECONDS, 0, 1) else 0
 
+		local twist = hitTwist(s, now)
 		for _, j in s.joints do
 			local p = Gait.pose(j.joint, motion)
 			local k = j.scale
-			j.motor.Transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+			local transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+			if twist and j.joint.role == "body" then
+				transform = bodyTwist(j.motor, twist) * transform
+			end
+			j.motor.Transform = transform
 		end
 	end
 end
@@ -320,10 +359,14 @@ function AnimationController.MonsterAttack(model: Model, windup: number?, strike
 	s.attackStart = os.clock() - (if strikeNow then math.max(0, w - 0.06) else 0)
 end
 
-function AnimationController.MonsterHit(model: Model)
+-- A monster was hit; `from` (the attacker's position) gives the direction of the blow (S113: MonsterState.hitDir).
+function AnimationController.MonsterHit(model: Model, from: Vector3?)
 	local s = monsters[model]
 	if s then
 		s.hitAt = os.clock()
+		local push = if from then s.root.Position - from else nil
+		local flat = if push then Vector3.new(push.X, 0, push.Z) else nil
+		s.hitDir = if flat and flat.Magnitude > 0.05 then flat.Unit else nil
 	end
 end
 
@@ -469,11 +512,16 @@ type JointRef = { motor: any, rot: CFrame }
 type Rig = { joints: { [AttackPose.Joint]: JointRef }, r6: boolean }
 type Attack = {
 	motion: AttackPose.MotionName,
+	step: number, -- S113: combo step
 	start: number,
 	interval: number?,
 	from: AttackPose.Pose?,
 	pose: AttackPose.Pose?,
+	frozenAt: number?, -- S113 hitstop: the motion clock stands still since then
+	clip: CharacterClips.Play?, -- S113: a real clip plays instead of the pose
 }
+-- S113: a hit reaction: when, the direction of the push in the character's frame, the strength (critical hits more).
+type Flinch = { at: number, push: { x: number, z: number }, strength: number }
 
 local JOINT_NAMES: { [AttackPose.Joint]: { string } } = {
 	rShoulder = { "RightShoulder", "Right Shoulder" },
@@ -492,8 +540,6 @@ local JOINT_NAMES: { [AttackPose.Joint]: { string } } = {
 }
 -- Joints the basic attack poses own (the skill motions add the rest).
 local ATTACK_JOINTS = { "rShoulder", "rElbow", "rWrist", "lShoulder", "lElbow", "lWrist", "waist" }
-local FLINCH_SECONDS = 0.15
-local FLINCH_DEGREES = 3
 local R6_ELBOW_SHARE = 0.35 -- R6 has no elbows: part of the elbow bend goes to the shoulder
 
 type SkillPlay = {
@@ -504,12 +550,15 @@ type SkillPlay = {
 	pose: AttackPose.Pose?,
 	frozenUntil: number, -- hitstop: the motion clock stands still until then
 	frozenAt: number?,
+	clip: CharacterClips.Play?, -- S113: a real clip plays instead of the keys
 }
 
 local rigs: { [Model]: Rig } = {}
 local attacks: { [Model]: Attack } = {}
 local skills: { [Model]: SkillPlay } = {}
-local flinches: { [Model]: number } = {}
+local flinches: { [Model]: Flinch } = {}
+-- S113: the last basic attack of every character as its combo remembers it (each client counts what it sees).
+local combos: { [Model]: AttackPose.ComboState } = {}
 -- S110 AnimLab: preview models held at a motion time (seconds from the start of their attack / skill).
 local labHeld: { [Model]: number } = {}
 local labWarned = false
@@ -550,6 +599,7 @@ local function rigOf(model: Model): Rig?
 		flinches[model] = nil
 		skills[model] = nil
 		labHeld[model] = nil
+		combos[model] = nil
 	end)
 	return created
 end
@@ -586,51 +636,92 @@ local function jointTransform(joint: string, a: { number }, ref: JointRef, r6: b
 	return ref.rot:Inverse() * q * ref.rot
 end
 
+-- S113: a clip track held at `t` seconds of the motion (AnimLab freeze) or playing on.
+local function holdClip(play: CharacterClips.Play, t: number?)
+	local track = play.track
+	if t then
+		track.TimePosition = math.clamp(t * play.speed, 0, math.max(0, track.Length - 1e-3))
+		track:AdjustSpeed(0)
+	elseif track.Speed == 0 then
+		track:AdjustSpeed(play.speed)
+	end
+end
+
 local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPose.Pose?)
 	-- A skill motion owns its joints; the basic attack the rest of the arms (S28).
 	local skillPose: AttackPose.Pose? = nil
 	local skillWeight = 0
+	local skillClip = false
 	local play = skills[model]
 	local hold = labHeld[model] -- S110: AnimLab holds this model at a fixed motion time
 	if play then
-		local t = hold or (play.frozenAt or now) - play.start
-		local p, w, done = SkillPose.sample(play.motion, t, { from = play.from, loopUntil = play.loopUntil })
-		if done then
-			if not hold then
+		local clip = play.clip
+		if clip then
+			-- S113: a real clip owns the arms while its track plays
+			if hold then
+				holdClip(clip, hold)
+			end
+			if clip.track.IsPlaying then
+				skillClip = true
+			elseif not hold then
 				skills[model] = nil
 			end
 		else
-			skillPose, skillWeight = p, w
-			play.pose = p
+			local t = hold or (play.frozenAt or now) - play.start
+			local p, w, done = SkillPose.sample(play.motion, t, { from = play.from, loopUntil = play.loopUntil })
+			if done then
+				if not hold then
+					skills[model] = nil
+				end
+			else
+				skillPose, skillWeight = p, w
+				play.pose = p
+			end
 		end
 	end
 	local attack = attacks[model]
 	local pose: AttackPose.Pose? = nil
 	local weight = 0
+	local attackClip = false
 	if attack then
-		local p, phase, w = AttackPose.sample(attack.motion, hold or now - attack.start, attack.interval, attack.from)
-		if phase == "rest" then
-			if not hold then
+		local clip = attack.clip
+		if clip then
+			if hold then
+				holdClip(clip, hold)
+			end
+			if clip.track.IsPlaying then
+				attackClip = true
+			elseif not hold then
 				attacks[model] = nil
 			end
 		else
-			pose, weight = p, w
-			attack.pose = p
+			local t = hold or (attack.frozenAt or now) - attack.start
+			local p, phase, w = AttackPose.sample(attack.motion, t, attack.interval, attack.from, attack.step)
+			if phase == "rest" then
+				if not hold then
+					attacks[model] = nil
+				end
+			else
+				pose, weight = p, w
+				attack.pose = p
+			end
 		end
 	end
-	local flinchAt = flinches[model]
-	local flinch = 0
-	if flinchAt and hold then
-		flinches[model] = nil
-	elseif flinchAt then
-		local t = (now - flinchAt) / FLINCH_SECONDS
-		if t >= 1 then
-			flinches[model] = nil
+	-- S113: the hit reaction leans away from the blow (AnimLab: sampled at the held time)
+	local flinch = flinches[model]
+	local flinchPose: AttackPose.Pose? = nil
+	if flinch then
+		local t = hold or (now - flinch.at)
+		if t >= AttackMotions.FLINCH.seconds then
+			if not hold then
+				flinches[model] = nil
+			end
 		else
-			flinch = math.rad(FLINCH_DEGREES) * math.sin(t * math.pi)
+			flinchPose = AttackPose.flinch(flinch.push, flinch.strength, t)
 		end
 	end
-	if not pose and not skillPose and flinch == 0 and not ride then
+	local busy = pose ~= nil or skillPose ~= nil or attackClip or skillClip
+	if not busy and not flinchPose and not ride then
 		release(rig)
 		return
 	end
@@ -640,6 +731,11 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 		local fromRide = if ride and not fromSkill and table.find(RiderPose.JOINTS, joint) then ride[joint] else nil
 		local a = fromSkill or fromRide or (if pose then pose[joint] else nil)
 		local isAttackJoint = table.find(ATTACK_JOINTS, joint) ~= nil
+		-- the flinch of this joint: the waist always, the shoulders only while nothing else poses the arms
+		local f = flinchPose and flinchPose[joint]
+		if f and joint ~= "waist" and busy then
+			f = nil
+		end
 		local own: number
 		if fromSkill then
 			own = if joint == "waist" then skillWeight * 0.85 else skillWeight
@@ -647,14 +743,17 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 			own = 1
 		elseif isAttackJoint and pose then
 			own = if joint == "waist" then weight * 0.6 else weight
-		elseif joint == "waist" and flinch ~= 0 then
-			own = 0
+		elseif f then
+			own = 0 -- on top of the default animation (or of a clip)
 		else
-			continue -- not moved by anything now (legs and root outside skill motions)
+			continue -- not moved by anything now (legs and root outside skill motions; arms under a clip)
+		end
+		if (attackClip or skillClip) and isAttackJoint and not fromSkill and not f then
+			continue -- S113: the clip's track poses these joints
 		end
 		local q = if a then jointTransform(joint, a, ref, rig.r6, skillPose or pose) else CFrame.identity
-		if joint == "waist" and flinch ~= 0 then
-			q = ref.rot:Inverse() * CFrame.Angles(flinch, 0, 0) * ref.rot * q
+		if f then
+			q = jointTransform(joint, f, ref, rig.r6, nil) * q
 		end
 		local motor = ref.motor
 		local anim = motor.Transform
@@ -671,6 +770,17 @@ end
 
 -- S96: characters posed as riders last frame (released once when they dismount).
 local riders: { [Model]: boolean } = {}
+
+local function dropClips(model: Model)
+	local attack = attacks[model]
+	if attack and attack.clip then
+		attack.clip.stop(0.1)
+	end
+	local play = skills[model]
+	if play and play.clip then
+		play.clip.stop(0.1)
+	end
+end
 
 local function stepCharacters()
 	local camera = Workspace.CurrentCamera
@@ -707,6 +817,7 @@ local function stepCharacters()
 		elseif
 			model:GetAttribute("VaelthornPreview") ~= true and (root.Position - eye).Magnitude > Config.EffectRadius
 		then
+			dropClips(model)
 			attacks[model] = nil
 			flinches[model] = nil
 			skills[model] = nil
@@ -724,28 +835,80 @@ local function stepCharacters()
 	end
 end
 
+-- Whether a character is near enough to animate (Config.EffectRadius; AnimLab and preview copies always).
+local function nearCamera(model: Model): boolean
+	if model:GetAttribute("VaelthornPreview") == true then
+		return true
+	end
+	local camera = Workspace.CurrentCamera
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not camera or not root or not root:IsA("BasePart") then
+		return false
+	end
+	return (root.Position - camera.CFrame.Position).Magnitude <= Config.EffectRadius
+end
+
 -- Plays the basic attack of `weaponType` (Items type, nil = fists) on a character. A running attack is
 -- interrupted smoothly (the new one starts from the pose the old one had reached). Returns the timing (when
--- the blow lands / the shot leaves) even when the character is too far away to animate.
-function AnimationController.Attack(model: Model, weaponType: string?, interval: number?): AttackPose.Timing
+-- the blow lands / the shot leaves) even when the character is too far away to animate, and whether a real clip
+-- plays. S113: the combo step follows the previous attack within AttackMotions.COMBO_WINDOW (`step` forces one,
+-- AnimLab); `onHit` runs exactly once at the server's hit time: the clip's "Hit" marker, else Vfx/Clock after
+-- timing.hitAt (AnimLab freezes it). A step's hitstop holds the pose there for a moment.
+function AnimationController.Attack(
+	model: Model,
+	weaponType: string?,
+	interval: number?,
+	onHit: (() -> ())?,
+	step: number?
+): (AttackPose.Timing, boolean)
 	local motion = AttackPose.motionFor(weaponType)
-	local timing = AttackPose.timing(motion, interval)
+	local now = os.clock()
+	local count = AttackPose.stepCount(motion, weaponType)
+	local chosen = step or AttackPose.nextStep(combos[model], motion, now, count)
+	combos[model] = { motion = motion, step = chosen, at = now }
+	local timing = AttackPose.timing(motion, interval, chosen)
+	local stepDef = AttackPose.step(motion, chosen)
 	local rig = rigOf(model)
+	local running = attacks[model]
+	if running and running.clip then
+		running.clip.stop(0.08)
+	end
+	local play: CharacterClips.Play? = nil
+	if rig and not rig.r6 and nearCamera(model) then
+		local clip = ClipFit.attackClip(weaponType, chosen)
+		if clip then
+			play = CharacterClips.play(model, clip, timing.hitAt, Enum.AnimationPriority.Action, onHit)
+		end
+	end
 	if rig then
-		local running = attacks[model]
 		attacks[model] = {
 			motion = motion,
-			start = os.clock(),
+			step = chosen,
+			start = now,
 			interval = interval,
-			from = if running then running.pose else nil,
+			from = if running and not running.clip then running.pose else nil,
 			pose = nil,
+			frozenAt = nil,
+			clip = play,
 		}
 	end
-	return timing
+	if not play then
+		local hitstop = stepDef.hitstop
+		Clock.after(timing.hitAt, function()
+			if hitstop and rig and attacks[model] and attacks[model].start == now then
+				AnimationController.Hitstop(model, hitstop)
+			end
+			if onHit then
+				onHit()
+			end
+		end)
+	end
+	return timing, play ~= nil
 end
 
 -- Plays a skill's motion on a character (S28). `loopUntil`: seconds a channel lasts (its loop repeats till then).
--- Returns the motion (nil when the skill has none) so callers can time effects on its events.
+-- Returns the motion (nil when the skill has none) so callers can time effects on its events. S113: a skill with a
+-- real clip (SkillMotions `clip`, never with `loop`) plays it when it loaded, fitted to SkillMotions.hitDelay.
 function AnimationController.Skill(model: Model, skillId: string, loopUntil: number?): SkillMotions.Motion?
 	local motion = SkillMotions.get(skillId)
 	if not motion then
@@ -755,28 +918,54 @@ function AnimationController.Skill(model: Model, skillId: string, loopUntil: num
 		AnimationController.MonsterAttack(model, nil, true)
 		return motion
 	end
-	if not rigOf(model) then
+	local rig = rigOf(model)
+	if not rig then
 		return motion
 	end
 	local running = skills[model]
 	local attack = attacks[model]
+	if running and running.clip then
+		running.clip.stop(0.08)
+	end
+	if attack and attack.clip then
+		attack.clip.stop(0.08)
+	end
+	local play: CharacterClips.Play? = nil
+	local clip = motion.clip
+	if clip and not motion.loop and not rig.r6 and nearCamera(model) then
+		play = CharacterClips.play(
+			model,
+			ClipFit.normalize(clip),
+			SkillMotions.hitDelay(skillId),
+			Enum.AnimationPriority.Action2,
+			nil
+		)
+	end
 	-- A skill takes over from the basic attack, starting from the pose it reached.
 	attacks[model] = nil
 	skills[model] = {
 		motion = motion,
 		start = os.clock(),
 		loopUntil = loopUntil,
-		from = if running then running.pose elseif attack then attack.pose else nil,
+		from = if running and not running.clip
+			then running.pose
+			elseif attack and not attack.clip then attack.pose
+			else nil,
 		pose = nil,
 		frozenUntil = 0,
 		frozenAt = nil,
+		clip = play,
 	}
 	return motion
 end
 
 -- Stops a skill motion at once (stun, death, interrupted channel); the joints go back to the default animation.
 function AnimationController.StopSkill(model: Model)
-	if skills[model] then
+	local play = skills[model]
+	if play then
+		if play.clip then
+			play.clip.stop(0.1)
+		end
 		skills[model] = nil
 		local rig = rigs[model]
 		if rig then
@@ -785,16 +974,41 @@ function AnimationController.StopSkill(model: Model)
 	end
 end
 
--- Hitstop (S28): the skill motion of `model` (and a monster's attack) stands still for `seconds`.
+-- Hitstop (S28): the skill motion of `model` (and a monster's attack) stands still for `seconds`. S113: also the basic
+-- attack (its pose, or its clip's track) and a skill's clip.
 function AnimationController.Hitstop(model: Model, seconds: number)
 	local play = skills[model]
 	local now = os.clock()
 	if play and not play.frozenAt then
 		play.frozenAt = now
+		local clip = play.clip
+		if clip then
+			clip.track:AdjustSpeed(0)
+		end
 		task.delay(seconds, function()
 			if skills[model] == play and play.frozenAt then
 				play.start += os.clock() - (play.frozenAt :: number)
 				play.frozenAt = nil
+				if clip and labHeld[model] == nil then
+					clip.track:AdjustSpeed(clip.speed)
+				end
+			end
+		end)
+	end
+	local attack = attacks[model]
+	if attack and not attack.frozenAt and not play then
+		attack.frozenAt = now
+		local clip = attack.clip
+		if clip then
+			clip.track:AdjustSpeed(0)
+		end
+		task.delay(seconds, function()
+			if attacks[model] == attack and attack.frozenAt then
+				attack.start += os.clock() - (attack.frozenAt :: number)
+				attack.frozenAt = nil
+				if clip and labHeld[model] == nil then
+					clip.track:AdjustSpeed(clip.speed)
+				end
 			end
 		end)
 	end
@@ -811,15 +1025,32 @@ function AnimationController.SkillLock(model: Model): boolean
 	return play ~= nil and play.motion.lock == true
 end
 
--- A short tilt of the upper body when a character is hit.
-function AnimationController.CharacterHit(model: Model)
-	if rigOf(model) then
-		flinches[model] = os.clock()
+-- A short lean of the upper body away from the blow when a character is hit (S113): `from` is the attacker's
+-- position (nil: pushed straight back), `crit` a stronger lean (AttackPose.flinch).
+function AnimationController.CharacterHit(model: Model, from: Vector3?, crit: boolean?)
+	if not rigOf(model) then
+		return
 	end
+	local push = { x = 0, z = 1 }
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if from and root and root:IsA("BasePart") then
+		local world = root.Position - from
+		local flat = Vector3.new(world.X, 0, world.Z)
+		if flat.Magnitude > 0.05 then
+			local localDir = root.CFrame:VectorToObjectSpace(flat.Unit)
+			local planar = Vector3.new(localDir.X, 0, localDir.Z)
+			if planar.Magnitude > 0.05 then
+				planar = planar.Unit
+				push = { x = planar.X, z = planar.Z }
+			end
+		end
+	end
+	flinches[model] = { at = os.clock(), push = push, strength = AttackPose.flinchStrength(crit) }
 end
 
 -- S110 AnimLab: holds the attack and the skill motion of a preview model (attribute VaelthornPreview) at `t` seconds
 -- from their start, also past their end; nil lets them play on from there (their start moves by the time held).
+-- S113: a clip track is held through its TimePosition, a flinch at the same t.
 function AnimationController.LabHold(model: Model, t: number?)
 	if model:GetAttribute("VaelthornPreview") ~= true then
 		if not labWarned then
@@ -840,17 +1071,29 @@ function AnimationController.LabHold(model: Model, t: number?)
 		local attack = attacks[model]
 		if attack then
 			attack.start = now - held
+			attack.frozenAt = nil
+			if attack.clip then
+				holdClip(attack.clip, nil)
+			end
 		end
 		local play = skills[model]
 		if play then
 			play.start = now - held
 			play.frozenAt = nil
+			if play.clip then
+				holdClip(play.clip, nil)
+			end
+		end
+		local flinch = flinches[model]
+		if flinch then
+			flinch.at = now - held
 		end
 	end
 end
 
 -- S110 AnimLab: drops every motion of a preview model and gives its joints back to the default animation.
 function AnimationController.LabClear(model: Model)
+	dropClips(model)
 	labHeld[model] = nil
 	attacks[model] = nil
 	skills[model] = nil
@@ -859,6 +1102,11 @@ function AnimationController.LabClear(model: Model)
 	if rig then
 		release(rig)
 	end
+end
+
+-- S113 AnimLab: forgets a model's combo, so its next attack is step 1.
+function AnimationController.ResetCombo(model: Model)
+	combos[model] = nil
 end
 
 -- Motion names (for /anim).
@@ -878,6 +1126,14 @@ function AnimationController.Init(registry: any)
 end
 
 function AnimationController.Start()
+	-- S113: an Animation object for every clip id in the data (none until the owner adds clips)
+	local skillClips: { [string]: ClipFit.Clip } = {}
+	for id, m in SkillMotions.motions do
+		if m.clip then
+			skillClips[id] = m.clip
+		end
+	end
+	CharacterClips.preload(ClipFit.allIds(skillClips))
 	MonsterView.Changed:Connect(function(model: Model)
 		if monsters[model] then
 			refresh(model)

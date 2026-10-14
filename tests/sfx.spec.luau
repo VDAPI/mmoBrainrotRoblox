@@ -216,7 +216,7 @@ describe("SfxRules keys (S111)", function()
 		for name, motion in AttackMotions.motions do
 			local keys = SfxRules.attackKeys(name)
 			local any = false
-			for _, key in { keys.draw, keys.swing, keys.release } do
+			for _, key in { keys.start, keys.swing, keys.release } do
 				if key then
 					any = true
 					expect({ name, key, Sfx.has(key) }).toEqual({ name, key, true })
@@ -229,7 +229,9 @@ describe("SfxRules keys (S111)", function()
 				expect({ name, keys.swing ~= nil }).toEqual({ name, true })
 			end
 		end
-		expect(SfxRules.attackKeys("bow").draw).toBe("bow.draw")
+		expect(SfxRules.attackKeys("bow").start).toBe("bow.draw")
+		expect(SfxRules.attackKeys("slash1h", 3).swing).toBe("swing.thrust") -- S113: a step overrides the motion
+		expect(SfxRules.attackKeys("slash1h", 1).swing).toBe("swing.light")
 		expect(SfxRules.attackKeys("nope").swing).toBe("swing.light")
 	end)
 

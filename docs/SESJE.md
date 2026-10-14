@@ -8792,3 +8792,107 @@ Pliki: `tools/icons/{content_block.py,content_block.json,import_graphics.py,impo
 `src/shared/Data/{ItemIconAtlas,ItemIconSheets,UiArt,UiArtSheets}.luau`, dane i obrazy wiki, `docs/{PRZEDMIOTY,DECYZJE,
 ASSETS,PROGRESS,SESJE}.md`, `docs/sessions/IMPORT-GRAFIK.md`, `CLAUDE.md`
 (stare id z zablokowanymi obrazkami: ASSETS, „Osierocone”).
+
+### S113: Ataki podstawowe gracza, serie ciosów i hak na klipy
+
+Start na `eef2459` (IMPORT-GRAFIK; przed nim S118, S119, FIX 2026-10-14): commity i sekcje S111 i S112 oraz wszystkie
+pliki z listy wejścia na miejscu; `scripts/check` zielony. Zgodnie z poleceniem przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Kontrakt czasu (B):** `AttackMotions.SERVER_HIT` jedynym źródłem `AttackPose.hitDelay`; `hit` kroku wyliczany
+  (`Timing.hit`), pole `hit` usunięte z danych. Test „server hit timing unchanged (S113)”: migawka A2 dosłownie (20 typów
+  broni z bronią bez broni × 7 odległości × wręcz / dystans) i `hitAt == SERVER_HIT` w każdym kroku. `CombatService` bez
+  zmian.
+- **AttackPose 2.0 (C):** format kroku (`steps`, pozy `pass` / `follow`, `trail`, `sfx`, `hitstop`), krzywe (do kontaktu
+  t², po kontakcie Hermite do prędkości wybrzmienia, `follow` ease-out), `step`, `stepCount`, `nextStep`, `flinch`,
+  `flinchStrength`, `Timing.followAt` / `step`; `MotionKeys.attack(typ, interwał?, krok?)` ze `strikePeak` i końcem
+  wybrzmienia, `MotionKeys.clip(długość, znacznik?, prędkość?)`; `Logic/ClipFit`; `SkillMotions.Motion.clip`;
+  `tools/posedump.luau attack:<ruch>[:<krok>]` / `attack:all` (kij broni, słupek celu), `tools/motionkeys.luau` z
+  krokami serii.
+- **Ruchy i serie (D):** wszystkie ruchy przerobione według §2 i ułożenia broni w dłoni (tabela niżej); serie:
+  `slash1h` 3, `slash2h` 3, `thrust` 3, `smash` 2, `unarmed` 3, `wand` 2, `staff` 2, `bow` / `crossbow` 1.
+- **Efekty i dźwięk (E):** smuga ataku przeniesiona do `Library.weaponTrail(..., { basic, base, lifetime })` (tekstura
+  `trailStreak` od `VaelthornTrailBase` do czubka, kolor rzadkości → biel, młoty od 0,6 długości); `Data/HitFx` i iskry
+  według materiału (krytyk: złoty błysk, ×1,5 iskier; zbroja: biały błysk; kamień: dym); reakcja postaci z kierunkiem
+  i siłą krytyku, `MonsterHit(model, from)` z `hitDir` i obrotem tułowia; dźwięki z `AttackMotions.SFX`, świst na
+  początku ciosu, wypuszczenie w trafieniu; hitstop ataku.
+- **Hak na klipy (F):** `client/Anim/CharacterClips` (ścieżka na `Animator`, znacznik `Hit` z zapasem po 0,1 s, prędkość
+  z `ClipFit.speed`, zapas przy `Length == 0` z jednym ostrzeżeniem, zatrzymywanie zreplikowanych duplikatów), podpięte w
+  `AnimationController.Attack` / `Skill` / `StopSkill` / `Hitstop` / `LabHold`; `CombatFxController` daje efekty chwili
+  trafienia jako `onHit`. Wszystkie listy klipów w danych puste.
+- **AnimLab (E6):** `attack <typ> [krok|combo]` (cios w cel sceny, seria co 0,6 s), `hit <materiał> [crit]`,
+  `flinch <front|back|left|right> [crit]`, `clip <id> [attack <typ> [krok] | skill <id>]`; `/animlab` przyjmuje 5
+  słów; teksty PL i EN; `/anim` gra serię (kolejne wywołania w oknie 1,5 s).
+- **Dokumentacja (G, H):** `docs/ANIMACJE.md` §6 „Własne klipy ataków i umiejętności (S113)” z tabelą serii, §3 i §4;
+  `docs/DESIGN.md` §24, `docs/DESIGN-16.md` §0.2, §5, §16, `CLAUDE.md`.
+- **Testy:** `attackpose.spec` (snapshot czasu, §2 p. 1–6, liczby kroków, seria, reakcja, klucze dźwięków i `HitFx`,
+  okna smug, nachylenie broni w trafieniu), `clipfit.spec` (nowy), `skillmotion.spec` (klipy, `hitDelay` bez zmian),
+  `motionkeys.spec` (parser AnimLab S113), `sfx.spec` (`attackKeys` z krokiem).
+
+Studio: w Studio przez całą sesję trwał Play (właściciela albo zostawiony), więc zgodnie z poleceniem nie był
+zatrzymany: przegląd w AnimLab (A3, D), zrzuty i próba F6 nie zrobione (wpis w PROGRESS). Jedyny odczyt w Play
+(`execute_luau`, klient): `GetKeyframeSequenceAsync` działa na kliencie (klip Roblox 507766388: 227 klatek; zły ID:
+błąd w `pcall`). Przegląd zastąpiły pozycje dłoni i czubka broni liczone z póz (`build/blade.luau`, łańcuch R15
+`posedump`) i rendery `posedump attack:*` (poza repo).
+
+Czasy serwera (B), przed = po (`AttackPose.hitDelay`, s; dystans: + lot 0,06–0,4 s jak przed sesją):
+
+| Ruch | Bronie | przed | po |
+|---|---|---|---|
+| `slash1h` | sword1h, saber1h, axe1h, scepter | 0,18 | 0,18 |
+| `slash2h` | sword2h, axe2h | 0,2115 | 0,2115 |
+| `thrust` | spear2h | 0,183 | 0,183 |
+| `smash` | mace1h, flail1h, hammer2h, holystaff | 0,235 | 0,235 |
+| `bow` | bow, shortbow, longbow | 0,2 + lot | 0,2 + lot |
+| `crossbow` | crossbow, heavycrossbow | 0,12 + lot | 0,12 + lot |
+| `wand` | wand | 0,136 + lot | 0,136 + lot |
+| `staff` | staff, runestaff | 0,167 + lot | 0,167 + lot |
+| `unarmed` | bez broni | 0,156 | 0,156 |
+
+Przegląd §2 (D; z pozycji czubka broni w chwili trafienia, „przód” = w stronę celu):
+
+| Ruch / krok | Co było źle | Co zmieniono |
+|---|---|---|
+| `slash1h` 1 | ostrze w chwili trafienia pionowo w górę nad dłonią (broń w poprzek dłoni, nadgarstek +20), cios kończył się ostrzem w górę; ruch zwalniał już przed trafieniem (ease-out) | kontakt `pass`: ostrze poziomo na wysokości piersi 4 st. przed postacią, koniec ukośnie w dół w lewo, `follow`; przyspieszenie do trafienia |
+| `slash1h` 2 | — (nowy) | cięcie odwrotne od lewej do prawej, tylko prawa ręka (tarcza w lewej) |
+| `slash1h` 3 | — (nowy; plan: pchnięcie z barku, ostrze byłoby pionowe) | pchnięcie z biodra, ostrze poziomo przez cały ruch, smuga tylko w drugiej połowie, `swing.thrust` |
+| `slash2h` 1 | ostrze w trafieniu w górę i do przodu (0,91 w pionie), cios bez wybrzmienia | ostrze poziomo w trafieniu, koniec w dół przed sobą (nie w ziemię), hitstop 0,035 |
+| `slash2h` 2–3 | — (nowe) | zamach poziomy z prawej w lewo (hitstop), cięcie wznoszące z lewego dołu nad prawy bark |
+| `thrust` 1 | włócznia w trafieniu pionowo w górę (grot 5 st. nad dłonią) | grot poziomo w cel przez cały ruch, ręka z biodra do przodu, łuk w bok |
+| `thrust` 2–3 | — (nowe; plan „oburącz z góry” niemożliwy przy broni w poprzek dłoni) | zamach drzewcem, wysokie pchnięcie z barku |
+| `smash` 1 | głowica w trafieniu w górę i do przodu (0,43), szczyt prędkości przed trafieniem | głowica poziomo w trafieniu, uderzenie w dół przed sobą, `strike` 0,12 (ciągłość < 16° na 1/240 s), hitstop, dym przy celu |
+| `smash` 2 | — (nowy) | ciężki zamach boczny, hitstop |
+| `unarmed` 1 | zamach (bark 65°) szybszy niż cios, pięść po prostej | gardę niżej (bark 35°), łuk przez obrót barku, `follow` |
+| `unarmed` 2–3 | — (nowe) | prosty lewą, podbródkowy prawą |
+| `bow` | łuk leżał poziomo wzdłuż ręki (cięciwa w stronę łucznika) | łuk stoi (nadgarstek −60, odchylony 30° do tyłu), prawa ręka odskakuje po strzale (`follow`) |
+| `crossbow` | kusza w strzale skierowana w górę (0,95) | kusza poziomo na wysokości piersi, krótki odrzut w górę |
+| `wand` 1 | różdżka w chwili strzału w górę (pocisk wychodził z czubka nad głową) | zamach 0,1 / cios 0,06, różdżka w strzale skierowana w cel; krok 2: smagnięcie z lewej |
+| `staff` 1 | głowica kostura w strzale w dół za plecami | głowica odchylona do tyłu w zamachu, w strzale przechylona w stronę celu; krok 2: uniesienie przed sobą i przechylenie |
+
+Wynik F6: nie zrobione (Play właściciela). Sprawdzenie na pierwszym klipie właściciela: `/animlab clip <id>`.
+
+Dla S114–S117 (nazwy):
+- `AttackMotions.SERVER_HIT`, `Step` (`windup`, `strike`, `recover`, `follow?`, `poses.pass?` / `poses.follow?`,
+  `trail?`, `sfx?`, `hitstop?`), `COMBO_WINDOW`, `FOLLOW_SHARE`, `SFX`, `FLINCH` (`monsterDegrees`), `TRAIL`
+  (`baseByMotion`), `motions.<ruch>.clips`, `clipsByWeapon`.
+- `AttackPose.step / stepCount / nextStep / flinch / flinchStrength`, `Timing.hit / followAt / step`,
+  `ComboState`; `MotionKeys.attack(typ, interwał?, krok?)`, `MotionKeys.clip(długość, znacznik?, prędkość?)`.
+- `Logic/ClipFit` (`MARKER`, `MIN_SPEED`, `MAX_SPEED`, `TOLERANCE`, `MAX_CLIPS`, `LOAD_SECONDS`, `FALLBACK_LATE`,
+  `SWING_LEAD`, `TRAIL_AFTER`, `validId`, `normalize`, `speed`, `attackClips`, `attackClip`, `allIds`), `client/Anim/CharacterClips` (`play`,
+  `markerTime`, `measureNow`, `preload`, `failed`, `status`, `retry`), `SkillMotions.<id>.clip` (S114 / S115: klipy
+  umiejętności, priorytet `Action2`, `Hitstop` zatrzymuje ścieżkę).
+- `Data/HitFx` (`byMaterial`, `default`, `player`, `crit`, `flashSize`, `puffSize`, `smashTint`, `surface`), reguła materiału
+  `Logic/SfxRules.material` przez `SfxController.Mob`, `CombatFxController.PreviewHit`.
+- `AnimationController.Attack(model, typ, interwał?, onHit?, krok?) -> (timing, clipped)`, `CharacterHit(model, from?,
+  crit?)`, `MonsterHit(model, from?)` i `MonsterState.hitDir` (S117: reakcja według planu ciała), `ResetCombo`.
+- `Library.weaponTrail(model, color, from, to, { basic?, base?, lifetime? })` (umiejętności dalej bez `opts`),
+  `FxOpts.speed / life / gravity` iskier.
+- AnimLab: `attack <typ> [krok|combo]`, `hit <materiał> [crit]`, `flinch <strona> [crit]`, `clip <id> [attack <typ>
+  [krok] | skill <id>]`, `Config.AnimLab.comboGap` / `hitShow`, `AnimLab.FLINCH_SIDES`, `AnimLab.stepsOf`.
+
+Pliki: `src/shared/Data/{AttackMotions,HitFx,SkillMotions,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{AttackPose,ClipFit,MotionKeys,SfxRules,AnimLab}.luau`,
+`src/shared/Config.luau`, `src/server/Admin/Combat.luau`, `src/client/Anim/CharacterClips.luau`,
+`src/client/Controllers/{Animation,CombatFx,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`,
+`tools/{posedump,motionkeys,balance_reasons}.luau`, `tests/{attackpose,clipfit,motionkeys,sfx,skillmotion}.spec.luau`,
+`docs/{ANIMACJE,DESIGN,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.

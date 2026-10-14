@@ -42,7 +42,7 @@ Chwile, w których AnimLab zatrzymuje ruch i sesja robi zrzuty. Liczone tylko z 
 
 | Ruch | start | peak | hit / release | strikePeak | follow | end |
 |---|---|---|---|---|---|---|
-| atak podstawowy (`MotionKeys.attack(typ, interwał?)`) | 0 | `windup` | `hit = windup + strike × hit` (czas serwera, `AttackPose.hitDelay`); ruch dystansowy: ta sama chwila jako `release`, bez `hit` | — | `windup + strike + 0,3 × recover` | `total` |
+| atak podstawowy (`MotionKeys.attack(typ, interwał?, krok?)`, S113 krok serii) | 0 | `windup` | `hit = AttackMotions.SERVER_HIT` ruchu (czas serwera, `AttackPose.hitDelay`, ten sam w każdym kroku); ruch dystansowy: ta sama chwila jako `release`, bez `hit` | `windup + strike` (koniec ciosu) | koniec wybrzmienia: `windup + strike + follow × recover` (`follow` kroku, domyślnie 0,35; krok bez pozy `follow`: 0,3) | `total` |
 | umiejętność (`MotionKeys.skill(id, loopUntil?)`) | 0 | ostatni klucz przed pierwszym z `hit` / `release` (bez nich: klucz z największymi kątami ramion) | `hit = SkillMotions.hitDelay` (≤ 0,6 s), `release`, `land` z ruchu | — | `h + 0,35 × (end − h)`, `h` = hit albo release albo peak | `SkillPose.duration` |
 | potwór z generatora (`MotionKeys.monster(windup?, strikeNow?)`) | 0 | `w` | `hit = w` (obrażenia telegrafu) | `w + 0,14` (`Gait.STRIKE_SECONDS`) | `strikePeak + 0,3 × 0,35` | `Gait.attackLength(w)` |
 | boss / Elita II (`MotionKeys.boss`, `MotionKeys.ability`) | jak potwór z `w = windup` ataku | | | | | |
@@ -55,9 +55,9 @@ Przykłady (`lune run tools/motionkeys.luau attack`):
 
 | Broń | start | peak | hit / release | follow | end |
 |---|---|---|---|---|---|
-| `sword1h` (slash1h) | 0 | 0,12 | 0,18 hit | 0,295 | 0,47 |
-| `hammer2h` (smash) | 0 | 0,16 | 0,235 hit | 0,35 | 0,56 |
-| `bow` | 0 | 0,2 | 0,2 release | 0,355 | 0,53 |
+| `sword1h` (slash1h, krok 1) | 0 | 0,12 | 0,18 hit | 0,307 | 0,47 |
+| `hammer2h` (smash, krok 1) | 0 | 0,16 | 0,235 hit | 0,385 | 0,58 |
+| `bow` | 0 | 0,2 | 0,2 release | 0,368 | 0,53 |
 
 **Znana usterka potworów:** w generatorze ruch naprawdę uderza w `strikePeak`, a serwer zadaje obrażenia w `hit`.
 Różnica `strikePeak − hit` to 0,14 s przy telegrafie (bossowie, Elity II) i 0,2 s przy zwykłym ataku, wobec tolerancji
@@ -75,7 +75,10 @@ sprawdza wywołanie (`Logic/AnimLab.parse`) i wysyła je przez `AdminClient` do 
 |---|---|
 | `/animlab` albo `/animlab on` | stawia scenę 250 st. nad adminem (podłoga z siatką 1 st., gruba linia co 5, trzy ściany, kamery `AnimLabCam_*`, rząd manekinów z każdym typem broni, aktor w kolorze klasy, szary cel) i ustawia kamerę `threequarter` (efekty daleko od kamery grają wersję uproszczoną) |
 | `/animlab off` | usuwa scenę, puszcza zamrożenie, oddaje kamerę |
-| `/animlab attack <typ broni>` | aktor dostaje broń typu (`Util/WeaponBuild`) i gra atak podstawowy; każdy ruch (`attack`, `skill`, `mob`, `boss`, `npc`) drukuje klatki kontrolne jak `keys` |
+| `/animlab attack <typ broni> [krok\|combo]` | aktor dostaje broń typu (`Util/WeaponBuild`) i gra atak podstawowy w cel sceny (S113: `krok` 1–3 jeden cios serii, `combo` całą serię co `Config.AnimLab.comboGap` = 0,6 s); każdy ruch (`attack`, `skill`, `mob`, `boss`, `npc`) drukuje klatki kontrolne jak `keys` |
+| `/animlab hit <materiał> [crit]` | S113: iskry, dźwięk i reakcja trafienia ataku podstawowego w cel sceny od strony aktora (materiały `Data/HitFx`: `flesh`, `armor`, `wood`, `stone`, `bone`, `slime`) |
+| `/animlab flinch <front\|back\|left\|right> [crit]` | S113: reakcja manekina celu na cios z tej strony (`AttackPose.flinch`) |
+| `/animlab clip <id> [attack <typ> [krok] \| skill <id>]` | S113: wczytuje klip na aktorze, drukuje wczytanie, długość, znacznik `Hit`, trafienie serwera, prędkość, linię do wklejenia i gra klip w pętli (§6) |
 | `/animlab skill <id>` | aktor dostaje broń ścieżki albo startową broń klasy i gra umiejętność (`VfxController.Preview`) |
 | `/animlab mob <id> [slot]` | wygląd potwora (albo bossa) w miejscu celu i stan `slot` (`idle`, `walk`, `run`, `attack1`, `attack2`, `cast`, `hit`, `death`, `spawn`; domyślnie `attack1` jak zwykły atak) |
 | `/animlab boss <boss> <atak>` | boss w miejscu celu, telegraf ataku wycelowany w aktora i zamach (`windup > 1` → `cast`, inaczej `attack2`) |
@@ -155,17 +158,82 @@ Tabela przeglądu w `docs/SESJE.md` (wzór S110):
 | Ruch | Rodzaj | Klatki (s): start / peak / hit lub release / follow / end | Zapowiedź | Trafienie | Wybrzmienie | Ciężar i łuki | Efekt (rdzeń / ciało / ślad) | Ocena 1–5 | Co źle (1 linia) | Dla sesji |
 |---|---|---|---|---|---|---|---|---|---|---|
 
-## 6. Własny klip (dla właściciela; szczegóły i pola dopisze S113)
+## 6. Własne klipy ataków i umiejętności (S113)
 
-1. W trybie Edit wstaw rig R15: zakładka Avatar → Rig Builder (scena AnimLab żyje tylko w Play, jej manekin to kopia
-   postaci).
-2. Ruch w **Moon Animator 2** (płatny dodatek) albo we wbudowanym **Animation Editor**. Długość i chwila trafienia z
-   `/animlab keys` (albo `lune run tools/motionkeys.luau`): w klatce `hit` dodaj znacznik (Animation Event) o nazwie
-   `Hit`.
-3. Publish to Roblox, skopiuj ID (`rbxassetid://…`).
-4. Wpis: atak podstawowy w `Data/AttackMotions` (pole klipów broni, S113), umiejętność w `Data/SkillMotions.<id>.clip`
-   (`{ id, hit = "Hit", speed? }`, S113). Gra dopasuje prędkość tak, żeby `Hit` wypadł w chwili trafienia serwera; bez
-   klipu zostaje poza proceduralna.
+1. **Po co.** Klip zastępuje ruch z kodu dla jednego rodzaju broni (np. wszystkich mieczy jednoręcznych), jednego typu
+   broni (np. tylko toporów) albo jednej umiejętności. Gdy się nie wczyta, gra sama wraca do ruchu z kodu. Obrażenia i
+   czasy się nie zmieniają: gra przyspiesza albo zwalnia klip tak, żeby jego znacznik `Hit` wypadł w chwili trafienia z
+   serwera.
+2. **Manekin.** W Play `/animlab attack sword1h` (dowolny typ broni). W Explorerze zaznacz manekina `AnimLabActor` w
+   folderze `Workspace.AnimLab` (ma broń przyspawaną do dłoni), **Ctrl+C**, zatrzymaj grę (Stop), zaznacz `Workspace`,
+   **Ctrl+V**. Manekin ma `Humanoid`, `Animator`, zakotwiczony `HumanoidRootPart` i broń, która rusza się z ręką. Bez
+   broni wystarczy: zakładka Avatar → **Rig Builder** → R15 → Block Rig.
+3. **Czasy.** `/animlab attack <typ> [krok]` wypisuje klatki kontrolne ruchu z kodu (start, szczyt zamachu, trafienie,
+   koniec ciosu, wybrzmienie, koniec). Klip nie musi ich trzymać, ale gra zmienia jego prędkość tylko w granicach
+   0,5×–2,5×. Najlepiej: trafienie 0,15–0,45 s od początku klipu, cały klip krótszy niż 0,8 s (ataki) albo krótszy niż
+   ruch umiejętności. Broń w grze leży w poprzek dłoni (czubek wzdłuż −Z dłoni): w chwili trafienia ostrze ma celować w
+   przeciwnika, więc nadgarstek zwykle mocno się zgina.
+4. **Animation Editor (wbudowany).** Avatar → **Animation Editor** → kliknij manekina → nazwij (np. `atk_sword1h_1`).
+   Ustaw klatki rąk, tułowia (`UpperTorso`) i głowy; **nie kluczuj nóg, `LowerTorso` ani `HumanoidRootPart`**
+   (inaczej postać przestanie iść w czasie ataku). Znacznik: koło zębate → **Show Animation Events** → prawy klik na osi
+   w klatce trafienia → **Add Animation Event** → nazwa **`Hit`** (dokładnie tak). Priorytet: **⋯** → **Set Animation
+   Priority** → **Action** (ataki) albo **Action2** (umiejętności). Pętla wyłączona. Zapisz (**⋯ → Save**).
+5. **Moon Animator 2 (płatny dodatek).** File → New Animation → wybierz manekina; klucze tylko rąk, tułowia i głowy
+   (jak wyżej); znacznik dodaj jako zdarzenie (event / marker) o nazwie `Hit` w klatce trafienia; eksport: File →
+   Export → Rig Animation (powstaje `KeyframeSequence`). Sprawdź w Explorerze, że pod właściwym `Keyframe` jest
+   `KeyframeMarker` o nazwie `Hit`; jeśli nie, otwórz tę sekwencję w Animation Editorze (Import → z `KeyframeSequence`)
+   i dodaj zdarzenie jak w punkcie 4. Menu Moon Animatora różnią się między wersjami: liczy się wynik w Explorerze.
+6. **Publikacja.** Animation Editor → **⋯** → **Publish to Roblox**, jako **właściciel gry (konto VDaPii albo grupa
+   gry)**: klip opublikowany z innego konta nie wczyta się w grze. Skopiuj ID z okna po publikacji (albo Asset Manager →
+   Animations → prawy klik → Copy Asset ID).
+7. **Sprawdzenie i czas znacznika.** Play → `/animlab` → `/animlab clip <ID> attack sword1h 1` (albo
+   `/animlab clip <ID> skill <id umiejętności>`): wypisze, czy klip się wczytał, jego długość, czas znacznika `Hit`,
+   trafienie serwera, wyliczoną prędkość, czy mieści się w 0,5–2,5×, i gotową linię do wklejenia
+   (`{ id = "rbxassetid://…", hit = "Hit", hitTime = 0.31 }`), a potem gra klip w pętli (`freeze`, `step`, kamery
+   działają jak przy każdym ruchu).
+8. **Gdzie wkleić.** `src/shared/Data/AttackMotions.luau`:
+   - wszystkie bronie ruchu: `motions.slash1h.clips = { { id = "rbxassetid://…", hit = "Hit", hitTime = 0.31 } }`
+     (pozycja 1 = pierwszy cios serii, 2 = drugi, 3 = trzeci; seria ma tyle ciosów, ile klipów, najwyżej 3);
+   - jeden typ broni: `clipsByWeapon.axe1h = { … }` (ma pierwszeństwo przed klipami ruchu);
+   - umiejętność: `src/shared/Data/SkillMotions.luau` → przy jej ruchu pole
+     `clip = { id = "rbxassetid://…", hit = "Hit", hitTime = 0.42 }` (nie dla umiejętności z kanałem, czyli z `loop`).
+   Sam tekst `"rbxassetid://…"` też działa (znacznik `Hit`), ale `hitTime` z punktu 7 jest pewniejszy.
+
+   | Ruch | Typy broni (`byWeapon`) |
+   |---|---|
+   | `slash1h` | `sword1h`, `saber1h`, `axe1h`, `scepter` |
+   | `slash2h` | `sword2h`, `axe2h` |
+   | `thrust` | `spear2h` |
+   | `smash` | `mace1h`, `flail1h`, `hammer2h`, `holystaff` |
+   | `bow` | `bow`, `shortbow`, `longbow` |
+   | `crossbow` | `crossbow`, `heavycrossbow` |
+   | `wand` | `wand` |
+   | `staff` | `staff`, `runestaff` |
+   | `unarmed` | bez broni |
+9. **Gdy klip się nie wczytał.** W Output jedno ostrzeżenie `[CharacterClips] clip … did not load`: zły ID (ma być ID
+   animacji, nie modelu), publikacja z innego konta albo moderacja (odczekaj kilka minut). Gra działa dalej na ruchu z
+   kodu. Ostrzeżenie `… cannot meet the server hit` znaczy, że znacznik jest za daleko od trafienia nawet przy 0,5× albo
+   2,5×: przesuń znacznik albo skróć / wydłuż klip.
+10. **Rejestr.** Wiersz w `docs/ASSETS.md` (własny klip, narzędzie, data) i commit.
+
+**Serie ciosów ataku podstawowego (S113).** Kolejne ataki w ciągu 1,5 s (`AttackMotions.COMBO_WINDOW`, liczone od
+startu poprzedniego) grają następny cios; po przerwie, zmianie broni albo ruchu seria zaczyna się od 1. Każdy klient
+liczy serię sam z kolejnych zdarzeń ataku (to tylko wygląd), każdy cios trafia w tym samym czasie serwera.
+
+| Ruch | Cios 1 | Cios 2 | Cios 3 |
+|---|---|---|---|
+| `slash1h` | cięcie ukośne znad prawego barku | cięcie odwrotne od lewej do prawej | pchnięcie z biodra |
+| `slash2h` | cięcie oburącz z góry | zamach poziomy z prawej w lewo | cięcie wznoszące z lewego dołu |
+| `thrust` | pchnięcie z biodra | zamach drzewcem z prawej w lewo | wysokie pchnięcie z barku |
+| `smash` | uderzenie z góry | ciężki zamach boczny | — |
+| `unarmed` | prosty prawą | prosty lewą | podbródkowy prawą |
+| `wand` | wskazanie różdżką | smagnięcie z lewej | — |
+| `staff` | pchnięcie głowicą | uniesienie i przechylenie na cel | — |
+| `bow`, `crossbow` | strzał | — | — |
+
+Podgląd bez Studio: `lune run tools/posedump.luau out.json attack:<ruch>[:<krok>]` (albo `attack:all`) +
+`python docs/miasto/tools/render3d.py out.json out.png`: manekin w klatkach kontrolnych kroku z kijem broni (czerwony
+czubek) i słupkiem celu 4 st. przed sobą.
 
 ## 7. Dźwięk (S111)
 
@@ -193,8 +261,8 @@ inaczej rodzina (`Sfx.FAMILY_MATERIAL`); materiał bez dźwięku gra `hit.flesh`
 leczenie `heal`, wzmocnienia `buff`, doskok `dash`, pułapka `trap`, sokół `call`) → cisza. Interfejs: `UI/Sounds`
 pyta router (`click`, `error`, `open`, `levelUp` → `ui.*`); klucz bez dźwięku gra dawny placeholder.
 
-**Gdzie gra:** `CombatFxController` (atak podstawowy: `draw` w 0, zamach w `timing.windup`, wypuszczenie w
-`timing.hitAt`, przez `Vfx/Clock`; trafienie, krytyk, blok, unik; atak i ból potwora; `telegraph.warn` w środku obszaru i
+**Gdzie gra:** `CombatFxController` (atak podstawowy, S113: klucze `AttackMotions.SFX` i `sfx` kroku serii, `start` w 0,
+zamach na początku ciosu, wypuszczenie w chwili trafienia (`onHit`), przez `Vfx/Clock`; trafienie, krytyk, blok, unik; atak i ból potwora; `telegraph.warn` w środku obszaru i
 atak rzucającego po `windup`; `ui.coin` przy złocie nagrody), `VfxController` (umiejętność w chwili uderzenia, pocisk
 przy wystrzale), `SfxController` (śmierć, agresja na nas, ryk przy pierwszej agresji bossa, ryk i `phase` przy zmianie
 fazy), `EffectsController` / `QuestController` / `LootController` (`ui.levelup`, `ui.quest`, `ui.loot*`).

@@ -3,6 +3,7 @@
 -- (Lune): random numbers come in as u in [0, 1) from the caller (SfxController uses client randomness, not Logic/Rng),
 -- times as seconds, the config as Config.Sfx.
 
+local AttackMotions = require("../Data/AttackMotions")
 local Sfx = require("../Data/Sfx")
 local SkillTypes = require("../Data/Skills/Types")
 
@@ -11,7 +12,7 @@ local SfxRules = {}
 export type Who = "own" | "party" | "other"
 -- One positional voice of the pool (SfxController keeps its Sound beside it).
 export type Voice = { busy: boolean, priority: number, startedAt: number }
-export type AttackKeys = { draw: string?, swing: string?, release: string? }
+export type AttackKeys = { start: string?, swing: string?, release: string? }
 -- A skill as far as its sound goes (Data/Skills SkillDef fits).
 export type SkillLike = { id: string, type: SkillTypes.SkillType, delivery: ("melee" | "ranged")? }
 -- The part of Config.Sfx the volume reads.
@@ -20,23 +21,15 @@ export type MixConfig = { priorityVolume: { [string]: number }, lowQualityOther:
 -- Priority of a sound by who caused it: our own beats the party's, the party's beats everyone else's.
 SfxRules.PRIORITY = table.freeze({ own = 3, party = 2, other = 1 }) :: { [string]: number }
 
--- Basic attack motion (Data/AttackMotions) -> its keys: `draw` at 0, `swing` at the start of the blow (windup end),
--- `release` when the arrow / bolt / spell leaves (the hit time).
-local ATTACK_KEYS: { [string]: AttackKeys } = {
-	slash1h = { swing = "swing.light" },
-	unarmed = { swing = "swing.light" },
-	slash2h = { swing = "swing.heavy" },
-	smash = { swing = "swing.blunt" },
-	thrust = { swing = "swing.thrust" },
-	bow = { draw = "bow.draw", release = "bow.release" },
-	crossbow = { release = "crossbow.release" },
-	wand = { release = "wand.cast" },
-	staff = { release = "wand.cast" },
-}
-
-function SfxRules.attackKeys(motion: string): AttackKeys
-	local keys = ATTACK_KEYS[motion] or ATTACK_KEYS.unarmed
-	return { draw = keys.draw, swing = keys.swing, release = keys.release }
+-- Keys of a basic attack (S113: one source, Data/AttackMotions.SFX, a combo step's `sfx` over it): `start` at the
+-- start of the windup, `swing` at the start of the blow (windup end), `release` when the arrow / bolt / spell leaves
+-- (SERVER_HIT). An unknown motion sounds like fists.
+function SfxRules.attackKeys(motion: string, step: number?): AttackKeys
+	local base = AttackMotions.SFX[motion] or AttackMotions.SFX.unarmed
+	local def = AttackMotions.motions[motion]
+	local own = if def and step then def.steps[((math.max(1, math.floor(step)) - 1) % #def.steps) + 1].sfx else nil
+	local o: AttackKeys = own or {}
+	return { start = o.start or base.start, swing = o.swing or base.swing, release = o.release or base.release }
 end
 
 -- Material of a monster hit: the look's hitSound, else the family's, else "flesh".

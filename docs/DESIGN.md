@@ -1044,6 +1044,12 @@ Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają
 - **Sprint: przytrzymanie Ctrl** (zmienialne; na telefonie przycisk przełączający) = szybkość ruchu ×1.35. Bez kosztu; wyłącza się przy śmierci i przy rzucaniu kanałowanych umiejętności.
 - Nad potworami zawsze imię, poziom (kolor wg różnicy poziomów: szary/zielony/biały/żółty/czerwony) i pasek HP, **zawsze na wierzchu** (nie chowają się za modelem ani drzewami), widoczne do 130 st.; nad graczami kropka PvP, tytuł, imię, poziom i klasa oraz pasek HP po obrażeniach.
 - **Animacje ataku** (S22, proceduralne, bez assetów): każdy atak podstawowy ma ruch zgodny z bronią w ręce: cięcie znad barku ze smugą w kolorze rzadkości (miecz, topór, szabla), cięcie oburącz z góry, pchnięcie włócznią, uderzenie młotem z pyłem, łuk w lewej ręce naciągany prawą (strzała leci z łuku po łuku paraboli i na chwilę zostaje w celu), kusza podniesiona do ramienia (bełt po prostej), pchnięcie różdżką lub kosturem (pocisk z czubka w kolorze żywiołu), cios pięścią. Obrażenia serwer zadaje od razu; błysk i liczba pokazują się w chwili ciosu albo dolotu (najwyżej 0,5 s później). Trafiona postać lekko się odchyla.
+  **S113:** kolejne ataki w ciągu 1,5 s grają serię 2–3 różnych ciosów (np. miecz: cięcie ukośne, cięcie odwrotne,
+  pchnięcie); to tylko wygląd na kliencie, serwer, obrażenia i tempo ataku zostają bez zmian, a chwila trafienia każdego
+  ciosu to czas serwera (`AttackMotions.SERVER_HIT`). Trafienie ataku podstawowego sypie iskry według materiału celu
+  (zbroja, kamień, drewno, kość, ciało, śluz), trafiona postać odchyla się od strony ciosu, a potwór z generatora
+  odwraca tułów. Właściciel może podmienić ruch prawdziwym klipem animacji ze znacznikiem `Hit` (`docs/ANIMACJE.md`);
+  gdy klip się nie wczyta, gra wraca do ruchu z kodu.
 - Skille: na cel, a umiejętności obszarowe bez celu w kierunku patrzenia/kursora.
 - E = interakcja (NPC, łup, węzły), F = podnieś łup.
 - **H = wierzchowiec** (dosiądź / zsiądź, zmienialne; S96): na PC slot za miksturami, na telefonie przycisk na prawo od

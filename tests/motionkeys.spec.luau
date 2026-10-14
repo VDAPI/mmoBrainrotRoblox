@@ -280,6 +280,16 @@ T.describe("AnimLab", function()
 			{ "cam", "off" },
 			{ "stress", "20" },
 			{ "state" },
+			-- S113
+			{ "attack", "sword1h", "3" },
+			{ "attack", "hammer2h", "combo" },
+			{ "hit", "armor" },
+			{ "hit", "slime", "crit" },
+			{ "flinch", "left" },
+			{ "flinch", "front", "crit" },
+			{ "clip", "1234567" },
+			{ "clip", "1234567", "attack", "sword1h", "2" },
+			{ "clip", "1234567", "skill", "mightyStrike" },
 		}
 		for _, args in good do
 			local command, err = AnimLab.parse(args)
@@ -290,6 +300,13 @@ T.describe("AnimLab", function()
 		T.expect(mob.slot).toBe("attack1")
 		T.expect((AnimLab.parse({ "freeze", "0.21" }) :: AnimLab.Command).t).toBe(0.21)
 		T.expect((AnimLab.parse({}) :: AnimLab.Command).action).toBe("on")
+		local step = AnimLab.parse({ "attack", "sword1h", "2" }) :: AnimLab.Command
+		T.expect({ step.id, step.n, step.slot }).toEqual({ "sword1h", 2, nil })
+		T.expect((AnimLab.parse({ "attack", "bow", "combo" }) :: AnimLab.Command).slot).toBe("combo")
+		local clip = AnimLab.parse({ "clip", "99", "attack", "axe1h", "3" }) :: AnimLab.Command
+		T.expect({ clip.id, clip.slot, clip.ref, clip.n }).toEqual({ "99", "attack", "axe1h", 3 })
+		T.expect(AnimLab.stepsOf("sword1h")).toBe(3)
+		T.expect(AnimLab.stepsOf(nil)).toBe(3)
 	end)
 
 	T.it("refuses bad calls with their own key", function()
@@ -316,6 +333,22 @@ T.describe("AnimLab", function()
 			{ { "stress", "31" }, "animlab.error.stress" },
 			{ { "stress", "0" }, "animlab.error.stress" },
 			{ { "stress", "2.5" }, "animlab.error.stress" },
+			-- S113
+			{ { "attack", "sword1h", "4" }, "animlab.error.weapon" },
+			{ { "attack", "bow", "2" }, "animlab.error.weapon" },
+			{ { "attack", "sword1h", "x" }, "animlab.error.weapon" },
+			{ { "attack", "sword1h", "1", "2" }, "animlab.error.args" },
+			{ { "hit" }, "animlab.error.hit" },
+			{ { "hit", "glass" }, "animlab.error.hit" },
+			{ { "hit", "armor", "big" }, "animlab.error.hit" },
+			{ { "flinch", "up" }, "animlab.error.flinch" },
+			{ { "flinch" }, "animlab.error.flinch" },
+			{ { "clip" }, "animlab.error.clip" },
+			{ { "clip", "abc" }, "animlab.error.clip" },
+			{ { "clip", "12", "attack", "katana" }, "animlab.error.clip" },
+			{ { "clip", "12", "attack", "sword1h", "4" }, "animlab.error.clip" },
+			{ { "clip", "12", "skill", "steelSkin" }, "animlab.error.clip" },
+			{ { "clip", "12", "dance" }, "animlab.error.clip" },
 		}
 		for _, case in bad do
 			local command, err = AnimLab.parse(case[1])

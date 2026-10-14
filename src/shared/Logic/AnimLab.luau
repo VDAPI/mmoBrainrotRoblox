@@ -13,6 +13,7 @@ local MonsterLooks = require("../Data/MonsterLooks")
 local Monsters = require("../Data/Monsters")
 local Npcs = require("../Data/Npcs")
 local PathData = require("../Data/Paths")
+local Sfx = require("../Data/Sfx")
 local Skills = require("../Data/Skills")
 
 local AnimLab = {}
@@ -27,6 +28,9 @@ export type Action =
 	| "npc"
 	| "sfx"
 	| "vfx"
+	| "hit"
+	| "flinch"
+	| "clip"
 	| "loop"
 	| "freeze"
 	| "step"
@@ -35,7 +39,8 @@ export type Action =
 	| "cam"
 	| "stress"
 	| "state"
-export type Command = { action: Action, id: string?, slot: string?, t: number?, n: number? }
+-- `ref` (S113): the weapon type or skill id a `clip` is fitted to.
+export type Command = { action: Action, id: string?, slot: string?, t: number?, n: number?, ref: string? }
 
 AnimLab.ACTIONS = {
 	"on",
@@ -47,6 +52,9 @@ AnimLab.ACTIONS = {
 	"npc",
 	"sfx",
 	"vfx",
+	"hit",
+	"flinch",
+	"clip",
 	"loop",
 	"freeze",
 	"step",
@@ -59,7 +67,9 @@ AnimLab.ACTIONS = {
 AnimLab.CAMERAS = { "front", "side", "threequarter", "top", "game" }
 AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
 -- Motions a freeze / loop / keys can replay (the others are tools).
-AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx" } :: { Action }
+AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx", "hit", "flinch", "clip" } :: { Action }
+-- S113: the sides a `flinch <side> [crit]` comes from.
+AnimLab.FLINCH_SIDES = { "front", "back", "left", "right" }
 -- S112: pieces `vfx <piece> [color]` plays (Vfx/Library: the six new ones first, then the old ones and the three
 -- lasting areas of breakpoints); `vfx all` plays them in this order.
 AnimLab.VFX_PIECES = {
@@ -110,10 +120,13 @@ AnimLab.ERRORS = {
 	"animlab.error.step",
 	"animlab.error.cam",
 	"animlab.error.stress",
+	"animlab.error.hit",
+	"animlab.error.flinch",
+	"animlab.error.clip",
 }
 
-local function make(action: Action, id: string?, slot: string?, t: number?, n: number?): Command
-	return { action = action, id = id, slot = slot, t = t, n = n }
+local function make(action: Action, id: string?, slot: string?, t: number?, n: number?, ref: string?): Command
+	return { action = action, id = id, slot = slot, t = t, n = n, ref = ref }
 end
 
 local NO_ARGS: { [string]: boolean } = { on = true, off = true, loop = true, play = true, keys = true, state = true }
@@ -146,12 +159,22 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 	if not table.find(AnimLab.ACTIONS, action :: Action) then
 		return nil, "animlab.error.action"
 	end
-	local a: string?, b: string? = args[2], args[3]
+	local a: string?, b: string?, c: string?, d: string? = args[2], args[3], args[4], args[5]
 	if a == "" then
 		a = nil
 	end
 	if b == "" then
 		b = nil
+	end
+	if c == "" then
+		c = nil
+	end
+	if d == "" then
+		d = nil
+	end
+	-- only `clip` takes more than two arguments (S113)
+	if action ~= "clip" and (c ~= nil or d ~= nil or args[6] ~= nil) then
+		return nil, "animlab.error.args"
 	end
 	if NO_ARGS[action] then
 		if a ~= nil then
@@ -161,10 +184,57 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 	end
 	local limits = Config.AnimLab
 	if action == "attack" then
-		if not a or (a ~= "unarmed" and AttackMotions.byWeapon[a] == nil) or b ~= nil then
+		-- S113: attack <type> [step|combo]
+		if not a or (a ~= "unarmed" and AttackMotions.byWeapon[a] == nil) then
 			return nil, "animlab.error.weapon"
 		end
-		return make("attack", a), nil
+		if b == "combo" then
+			return make("attack", a, "combo"), nil
+		end
+		local step = if b then number(b) else nil
+		if b and (not step or step ~= math.floor(step) or step < 1 or step > AnimLab.stepsOf(a)) then
+			return nil, "animlab.error.weapon"
+		end
+		return make("attack", a, nil, nil, step), nil
+	elseif action == "hit" then
+		-- S113: hit <material> [crit]
+		if not a or not table.find(Sfx.MATERIALS, a) or (b ~= nil and b ~= "crit") then
+			return nil, "animlab.error.hit"
+		end
+		return make("hit", a, b), nil
+	elseif action == "flinch" then
+		-- S113: flinch <front|back|left|right> [crit]
+		if not a or not table.find(AnimLab.FLINCH_SIDES, a) or (b ~= nil and b ~= "crit") then
+			return nil, "animlab.error.flinch"
+		end
+		return make("flinch", a, b), nil
+	elseif action == "clip" then
+		-- S113: clip <assetId> [attack <type> [step] | skill <skillId>]
+		if not a or not string.match(a, "^%d+$") or #a > 20 or args[6] ~= nil then
+			return nil, "animlab.error.clip"
+		end
+		if b == nil then
+			if c ~= nil or d ~= nil then
+				return nil, "animlab.error.clip"
+			end
+			return make("clip", a), nil
+		elseif b == "attack" then
+			if not c or (c ~= "unarmed" and AttackMotions.byWeapon[c] == nil) then
+				return nil, "animlab.error.clip"
+			end
+			local step = if d then number(d) else nil
+			if d and (not step or step ~= math.floor(step) or step < 1 or step > 3) then
+				return nil, "animlab.error.clip"
+			end
+			return make("clip", a, "attack", nil, step, c), nil
+		elseif b == "skill" then
+			local skill = c and Skills.get(c)
+			if not c or not skill or skill.type == "passive" or d ~= nil then
+				return nil, "animlab.error.clip"
+			end
+			return make("clip", a, "skill", nil, nil, c), nil
+		end
+		return nil, "animlab.error.clip"
 	elseif action == "skill" then
 		local skill = a and Skills.get(a)
 		if not a or not skill or skill.type == "passive" or b ~= nil then
@@ -285,6 +355,12 @@ end
 -- S112: true for a `vfx` command that plays a piece (a motion AnimLab can freeze), false for its tools.
 function AnimLab.isVfxPiece(command: Command): boolean
 	return command.action == "vfx" and command.id ~= nil and table.find(AnimLab.VFX_PIECES, command.id) ~= nil
+end
+
+-- S113: combo steps of a weapon type's motion (nil / "unarmed" = fists).
+function AnimLab.stepsOf(weaponType: string?): number
+	local motion = if weaponType then AttackMotions.byWeapon[weaponType] or "unarmed" else "unarmed"
+	return #AttackMotions.motions[motion].steps
 end
 
 -- Splits a typed line ("freeze 0.21") into arguments and parses it.

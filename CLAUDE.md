@@ -125,6 +125,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   Tekstury efektów (S112): rejestr `Data/VfxTextures` (generator `tools/vfx/make_textures.py`, `art/vfx/`), właściwości
   tylko przez `client/Vfx/Textures`, uchwyty `Pool.holder`; nowe składniki `impactFlash`, `sparks`, `groundDecal`,
   `smokePuff`, `magicCircle`, `ringWave`, pola `SkillVfx` `decal` / `circle` / `sparks` (`docs/ANIMACJE.md` §8).
+  Prawdziwy klip (S113): `SkillMotions.<id>.clip` / `AttackMotions.motions.<ruch>.clips` / `clipsByWeapon` (`{ id, hit =
+  "Hit", hitTime? }`, znacznik `Hit`, prędkość z `Logic/ClipFit`, zapas: poza z kodu; `docs/ANIMACJE.md` §6); czas
+  trafienia ataku tylko z `AttackMotions.SERVER_HIT`, pozy ataku podgląda `lune run tools/posedump.luau out.json attack:all`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);

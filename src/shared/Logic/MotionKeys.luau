@@ -1,10 +1,11 @@
 --!strict
 -- Control frames of a motion (S110, docs/ANIMACJE.md §3): the moments AnimLab freezes and the Studio review screenshots,
 -- computed from the data alone. Pure (Lune). Times in seconds from the start of the motion.
---   basic attack (timing = AttackPose.timing(motionFor(weaponType), interval)):
---     start 0; peak = windup (end of the raise); hit = hitAt (the server's AttackPose.hitDelay for melee; a ranged
---     motion calls the same moment `release` and has no `hit`: it depends on the flight); follow = windup + strike +
---     0.3 * recover; end = total
+--   basic attack (timing = AttackPose.timing(motionFor(weaponType), interval, step), S113 per combo step):
+--     start 0; peak = windup (end of the raise); hit = hitAt (AttackMotions.SERVER_HIT, the server's
+--     AttackPose.hitDelay for melee; a ranged motion calls the same moment `release` and has no `hit`: it depends on
+--     the flight); strikePeak = windup + strike (end of the blow); follow = end of the follow-through (windup +
+--     strike + follow share * recover; 0.3 * recover without a follow pose); end = total
 --   skill (SkillMotions.get(id), nil without a motion): start 0; hit = SkillMotions.hitDelay(id) when the motion has a
 --     hit (the server's time, capped at MAX_HIT); release, land from the motion; peak = the last key before the first of
 --     hit / release (h itself when no key is earlier; without both: the key with the most arm angle); follow = h + 0.35
@@ -14,7 +15,8 @@
 --     strikePeak + 0.3 * RECOVER_SECONDS; end = Gait.attackLength(w). `strikeNow` (a basic attack, damage with the
 --     event) moves everything by -(w - 0.06) (AnimationController.MonsterAttack), cut at 0, and hit = 0
 --   boss attack / Elite II ability: a monster with w = attack.windup / ability.windup
---   clip: start 0, hit = the marker (when given), end = length
+--   clip: start 0, hit = the marker (when given), end = length; a clip played at `speed` (S113, Logic/ClipFit) divides
+--     both by it
 
 local AttackPose = require("./AttackPose")
 local Bosses = require("../Data/Bosses")
@@ -32,7 +34,6 @@ export type Keys = { Key } -- sorted by t, names unique
 -- Order of names at the same time (a bow's peak and release coincide).
 MotionKeys.ORDER = { "start", "peak", "release", "hit", "strikePeak", "land", "follow", "end" } :: { KeyName }
 
-local FOLLOW_ATTACK = 0.3 -- share of the recovery
 local FOLLOW_SKILL = 0.35 -- share of the time from the hit to the end
 local FOLLOW_MONSTER = 0.3 -- share of Gait.RECOVER_SECONDS
 local STRIKE_NOW_LEAD = 0.06 -- AnimationController.MonsterAttack: a strikeNow attack starts this much before the end of the windup
@@ -59,15 +60,17 @@ local function build(entries: { [string]: number? }): Keys
 	return out
 end
 
--- The basic attack of a weapon type (nil / unknown = fists); `interval` squeezes it like AttackPose.timing.
-function MotionKeys.attack(weaponType: string?, interval: number?): Keys
-	local timing = AttackPose.timing(AttackPose.motionFor(weaponType), interval)
+-- The basic attack of a weapon type (nil / unknown = fists), combo step `step` (default 1); `interval` squeezes it
+-- like AttackPose.timing.
+function MotionKeys.attack(weaponType: string?, interval: number?, step: number?): Keys
+	local timing = AttackPose.timing(AttackPose.motionFor(weaponType), interval, step)
 	return build({
 		start = 0,
 		peak = timing.windup,
 		hit = if timing.ranged then nil else timing.hitAt,
 		release = if timing.ranged then timing.hitAt else nil,
-		follow = timing.windup + timing.strike + FOLLOW_ATTACK * timing.recover,
+		strikePeak = timing.windup + timing.strike,
+		follow = timing.followAt,
 		["end"] = timing.total,
 	})
 end
@@ -176,9 +179,11 @@ function MotionKeys.ability(abilityId: string): Keys?
 	return MotionKeys.monster(ability.windup)
 end
 
--- An animation clip of `length` seconds with an optional "Hit" marker.
-function MotionKeys.clip(length: number, hitMarker: number?): Keys
-	return build({ start = 0, hit = hitMarker, ["end"] = length })
+-- An animation clip of `length` seconds with an optional "Hit" marker, played at `speed` (default 1: S113 fits the
+-- speed with Logic/ClipFit.speed so the marker meets the server hit).
+function MotionKeys.clip(length: number, hitMarker: number?, speed: number?): Keys
+	local k = if speed and speed > 0 then speed else 1
+	return build({ start = 0, hit = if hitMarker then hitMarker / k else nil, ["end"] = length / k })
 end
 
 -- A motion without frames of its own (idle, walk, an NPC without a clip): only the start.

@@ -15,6 +15,11 @@
 -- Config.AnimLab.vfxEvery; without the stage once in front of the camera), `vfx all [stress]` every piece in turn,
 -- `vfx tex [on|off]` checks / switches the effect textures (Vfx/Textures), `vfx stats` the effect pool's holders and
 -- limits (also in `state`).
+-- S113: `attack <type> [step|combo]` plays one combo step or the whole combo (steps Config.AnimLab.comboGap apart),
+-- `hit <material> [crit]` the sparks, sound and reaction of a basic hit on the target, `flinch <side> [crit]` the
+-- target's reaction to a blow from that side, `clip <assetId> [attack <type> [step] | skill <id>]` loads a real clip on
+-- the actor, prints its load state, "Hit" marker, the server's hit time, the fitted speed (Logic/ClipFit) and the line
+-- to paste into the data, and plays it in a loop (freeze through TimePosition).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -24,6 +29,9 @@ local Workspace = game:GetService("Workspace")
 
 local AnimLab = require(ReplicatedStorage.Shared.Logic.AnimLab)
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
+local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
+local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
@@ -40,6 +48,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
+local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
 local Skills = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -125,6 +134,10 @@ local playing = 0 -- token of the running replay (a newer command cancels an old
 local sfxRun = 0 -- S111: token of `sfx all` (any newer command stops it)
 local vfxRun = 0 -- S112: token of `vfx all` (any newer command stops it)
 local playVfx: (Command) -> () -- S112, below
+-- S113: the combo being played (`attack <type> combo`): steps and the gap between their starts.
+local combo: { count: number, gap: number }? = nil
+-- S113: the real clip `clip` plays on the actor, driven by the motion time (TimePosition each frame).
+local clipRun: { track: AnimationTrack, speed: number, length: number, marker: number? }? = nil
 
 -- Helpers ----------------------------------------------------------------------------------------------------
 
@@ -150,6 +163,12 @@ local function describe(command: Command?): string
 	end
 	if command.slot then
 		table.insert(parts, command.slot)
+	end
+	if command.ref then
+		table.insert(parts, command.ref)
+	end
+	if command.n and (command.action == "attack" or command.action == "clip") then
+		table.insert(parts, tostring(command.n))
 	end
 	return table.concat(parts, " ")
 end
@@ -357,16 +376,54 @@ end
 
 local step: (dt: number) -> ()
 
-local function teardown()
-	playing += 1
-	loopOn = false
-	pendingT = nil
-	heldT = nil
-	Clock.resume()
+local function stopClip()
+	local run = clipRun
+	if run then
+		run.track:Stop(0)
+		run.track:Destroy()
+		clipRun = nil
+	end
+end
+
+-- S113: holds the actor and the target dummy at motion time `t` (nil plays on): the actor's attack at its own time in
+-- a combo (the step that started last before t), the dummy's flinch at t.
+local function labHold(t: number?)
+	local a = actor
+	if a then
+		local own = t
+		local c = combo
+		if own and c then
+			local index = math.clamp(math.floor(own / c.gap) + 1, 1, c.count)
+			own = own - (index - 1) * c.gap
+		end
+		Animation.LabHold(a, own)
+	end
+	local d = dummy
+	if d then
+		Animation.LabHold(d, t)
+	end
+end
+
+local function labClear()
 	local a = actor
 	if a then
 		Animation.LabClear(a)
 	end
+	local d = dummy
+	if d then
+		Animation.LabClear(d)
+	end
+end
+
+local function teardown()
+	playing += 1
+	loopOn = false
+	stopClip()
+	combo = nil
+	pendingT = nil
+	heldT = nil
+	Clock.resume()
+	labClear()
 	clearSubject()
 	clearStress()
 	setCamera(nil)
@@ -748,10 +805,14 @@ local function play(command: Command)
 	if not a then
 		return
 	end
-	Animation.LabClear(a)
+	labClear()
 	heldT = nil
 	pendingT = nil
+	combo = nil
 	local action = command.action
+	if action ~= "clip" then
+		stopClip()
+	end
 	if action == "attack" then
 		clearSubject()
 		local weaponType = command.id :: string
@@ -759,8 +820,63 @@ local function play(command: Command)
 			giveWeapon(a, weaponType, classColor(myClass()))
 			actorWeapon = weaponType
 		end
-		Combat.PreviewAttack(if weaponType == "unarmed" then nil else weaponType, a)
-		lastKeys = MotionKeys.attack(weaponType)
+		local wt = if weaponType == "unarmed" then nil else weaponType
+		Animation.ResetCombo(a)
+		if command.slot == "combo" then
+			-- S113: every step in turn, comboGap apart (inside the combo window)
+			local count = AttackPose.stepCount(AttackPose.motionFor(wt), wt)
+			local gap = LAB.comboGap
+			combo = { count = count, gap = gap }
+			local token = playing -- a newer command cancels the remaining steps
+			for i = 1, count do
+				Clock.after((i - 1) * gap, function()
+					if token == playing and actor == a then
+						Combat.PreviewAttack(wt, a, i, dummy)
+					end
+				end)
+			end
+			local keys = MotionKeys.attack(wt, nil, 1)
+			local last = AttackPose.timing(AttackPose.motionFor(wt), nil, count)
+			for _, key in keys do
+				if key.name == "end" then
+					key.t = (count - 1) * gap + last.total
+				end
+			end
+			lastKeys = keys
+		else
+			Combat.PreviewAttack(wt, a, command.n or 1, dummy)
+			lastKeys = MotionKeys.attack(wt, nil, command.n or 1)
+		end
+	elseif action == "hit" or action == "flinch" then
+		-- S113: on the target (the dummy, or the monster standing in its place)
+		local s = subject
+		local target = if s then s.model else dummy
+		local root = target and target:FindFirstChild("HumanoidRootPart")
+		if target and root and root:IsA("BasePart") then
+			local crit = command.slot == "crit"
+			if action == "hit" then
+				Combat.PreviewHit(
+					target,
+					centre + vec(LAYOUT.actor) + Vector3.new(0, 2.5, 0),
+					command.id :: string,
+					crit
+				)
+			else
+				local frame = root.CFrame
+				local side = command.id
+				local offset = if side == "back"
+					then -frame.LookVector
+					elseif side == "left" then -frame.RightVector
+					elseif side == "right" then frame.RightVector
+					else frame.LookVector
+				Animation.CharacterHit(target, root.Position + offset * 4, crit)
+			end
+		end
+		lastKeys = MotionKeys.clip(LAB.hitShow)
+	elseif action == "clip" then
+		-- S113: the clip loaded by runClip, from its start (the frame loop drives its TimePosition)
+		local run = clipRun
+		lastKeys = if run then MotionKeys.clip(run.length, run.marker, run.speed) else MotionKeys.still()
 	elseif action == "skill" then
 		clearSubject()
 		local id = command.id :: string
@@ -810,10 +926,11 @@ step = function(_dt: number)
 		heldT = pending
 		pendingT = nil
 		t = pending
-		local a = actor
-		if a then
-			Animation.LabHold(a, pending)
-		end
+		labHold(pending)
+	end
+	local run = clipRun
+	if run and run.length > 0 then
+		run.track.TimePosition = LookAnim.clipTime(t * run.speed, run.length, true)
 	end
 	local s = subject
 	if s then
@@ -855,11 +972,8 @@ local function freezeAt(t: number)
 	playing += 1
 	local token = playing
 	Clock.resume()
-	local a = actor
-	if a then
-		Animation.LabHold(a, nil)
-		Animation.LabClear(a)
-	end
+	labHold(nil)
+	labClear()
 	heldT = nil
 	pendingT = nil -- an earlier freeze / step must not stop the clock while this one waits
 	local waitUntil = playedAt + LAB.settle
@@ -873,9 +987,7 @@ local function freezeAt(t: number)
 	if t <= 0 then
 		Clock.freeze()
 		heldT = 0
-		if a then
-			Animation.LabHold(a, 0)
-		end
+		labHold(0)
 	else
 		pendingT = t
 	end
@@ -889,10 +1001,7 @@ local function resume()
 	end
 	heldT = nil
 	Clock.resume()
-	local a = actor
-	if a then
-		Animation.LabHold(a, nil)
-	end
+	labHold(nil)
 	-- the motion time goes on from where it was held
 	startedAt = Clock.now() - held
 end
@@ -1258,6 +1367,91 @@ local function runSfx(command: Command): { [string]: any }
 	return result
 end
 
+-- S113 `clip <assetId> [attack <type> [step] | skill <id>]`: loads the clip on the actor (yields up to
+-- ClipFit.LOAD_SECONDS), reads its "Hit" marker (KeyframeSequenceProvider, Studio), fits the speed to the server's hit
+-- of the attack step or the skill (Logic/ClipFit) and plays it in a loop; the answer has the line to paste.
+local function runClip(command: Command): { [string]: any }
+	local a = actor
+	local humanoid = a and a:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not a or not animator then
+		return { ok = false, error = "no animator" }
+	end
+	stopClip()
+	local id = "rbxassetid://" .. (command.id :: string)
+	CharacterClips.retry(id)
+	local serverHit: number
+	local what: string
+	if command.slot == "skill" then
+		serverHit = SkillMotions.hitDelay(command.ref :: string)
+		what = `skill {command.ref}`
+	else
+		local weaponType = command.ref or actorWeapon or "sword1h"
+		local wt = if weaponType == "unarmed" then nil else weaponType
+		serverHit = AttackPose.timing(AttackPose.motionFor(wt), nil, command.n or 1).hitAt
+		what = `attack {weaponType} {command.n or 1}`
+		if command.ref and actorWeapon ~= weaponType then
+			giveWeapon(a, wt, classColor(myClass()))
+			actorWeapon = weaponType
+		end
+	end
+	local animation = Instance.new("Animation")
+	animation.AnimationId = id
+	local ok, loaded = pcall(function()
+		return (animator :: Animator):LoadAnimation(animation)
+	end)
+	if not ok or not loaded then
+		notify("animlab.clip.failed", { id = id })
+		return { ok = false, error = "load", id = id }
+	end
+	local track = loaded :: AnimationTrack
+	local deadline = os.clock() + ClipFit.LOAD_SECONDS
+	while os.clock() < deadline and track.Length <= 0 do
+		task.wait(0.1)
+	end
+	if track.Length <= 0 then
+		track:Destroy()
+		notify("animlab.clip.failed", { id = id })
+		return { ok = false, error = "not loaded", id = id, loaded = false }
+	end
+	local clip: ClipFit.Clip = { id = id, hit = ClipFit.MARKER }
+	local marker = CharacterClips.measureNow(clip)
+	local speed, fits = ClipFit.speed(clip, serverHit, marker)
+	track.Looped = true
+	track.Priority = Enum.AnimationPriority.Action
+	track:Play(0)
+	track:AdjustSpeed(0)
+	clipRun = { track = track, speed = speed, length = track.Length, marker = marker }
+	local line = if marker
+		then `\{ id = "{id}", hit = "Hit", hitTime = {round(marker)} \}`
+		else `\{ id = "{id}", hit = "Hit" \}`
+	notify("animlab.clip.info", {
+		id = id,
+		length = round(track.Length),
+		marker = if marker then round(marker) else Text.now("animlab.none"),
+		what = what,
+		hit = round(serverHit),
+		speed = round(speed),
+		fits = yesNo(fits),
+	})
+	notify("animlab.clip.line", { line = line })
+	local result = {
+		ok = true,
+		id = id,
+		loaded = true,
+		length = round(track.Length),
+		marker = if marker then round(marker) else nil,
+		serverHit = round(serverHit),
+		speed = round(speed),
+		fits = fits,
+		minSpeed = ClipFit.MIN_SPEED,
+		maxSpeed = ClipFit.MAX_SPEED,
+		line = line,
+	}
+	print("[AnimLab] clip", HttpService:JSONEncode(result))
+	return result
+end
+
 -- Runs a command; returns the result for AnimLabCall (always with `ok`).
 local function run(command: Command): { [string]: any }
 	local action = command.action
@@ -1303,6 +1497,16 @@ local function run(command: Command): { [string]: any }
 		notify("animlab.noStage")
 		return { ok = false, error = "no stage" }
 	end
+	local loadedClip: { [string]: any }? = nil
+	if action == "clip" then
+		playing += 1
+		Clock.resume()
+		local result = runClip(command)
+		if result.ok ~= true then
+			return result
+		end
+		loadedClip = result
+	end
 	if
 		action == "attack"
 		or action == "skill"
@@ -1310,13 +1514,20 @@ local function run(command: Command): { [string]: any }
 		or action == "boss"
 		or action == "npc"
 		or action == "vfx"
+		or action == "hit"
+		or action == "flinch"
+		or action == "clip"
 	then
-		playing += 1
-		Clock.resume()
+		if action ~= "clip" then
+			playing += 1
+			Clock.resume()
+		end
 		play(command)
 		notify("animlab.playing", { what = describe(command) })
 		local keys = lastKeys
-		local result = { ok = true, motion = describe(command), keys = if keys then keysJson(keys) else nil }
+		local result: { [string]: any } = loadedClip or { ok = true }
+		result.motion = describe(command)
+		result.keys = if keys then keysJson(keys) else nil
 		if keys then
 			-- E3: a motion prints its control frames
 			notify("animlab.keys", { what = describe(command), keys = keysText(keys) })
