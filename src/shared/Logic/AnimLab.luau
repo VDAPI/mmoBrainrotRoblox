@@ -69,6 +69,7 @@ AnimLab.ERRORS = {
 	"animlab.error.boss",
 	"animlab.error.npc",
 	"animlab.error.sfx",
+	"animlab.error.sfxId",
 	"animlab.error.time",
 	"animlab.error.step",
 	"animlab.error.cam",
@@ -161,10 +162,24 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		end
 		return make("npc", a, slot), nil
 	elseif action == "sfx" then
-		if not a or b ~= nil then
+		-- S111: sfx <key> [n] | sfx list [prefix] | sfx all [prefix] | sfx try <assetId>; the key itself is checked by
+		-- the client (Data/Sfx): an unknown key answers animlab.sfx.unknown
+		if not a then
 			return nil, "animlab.error.sfx"
 		end
-		return make("sfx", a), nil
+		if a == "try" then
+			if not b or not string.match(b, "^%d+$") or #b > 20 then
+				return nil, "animlab.error.sfxId"
+			end
+			return make("sfx", "try", b), nil
+		elseif a == "list" or a == "all" then
+			return make("sfx", a, b), nil
+		end
+		local n = if b then number(b) else nil
+		if b and (not n or n ~= math.floor(n) or n < 1) then
+			return nil, "animlab.error.sfx"
+		end
+		return make("sfx", a, nil, nil, n), nil
 	elseif action == "freeze" then
 		local t = number(a)
 		if not t or t < 0 or t > limits.freezeMax or b ~= nil then

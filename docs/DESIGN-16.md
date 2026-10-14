@@ -67,11 +67,11 @@ Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia)
 
 ## 3. Dźwięki (S111)
 
-- `Data/Sfx.luau`: klucz → `{ ids = { "rbxassetid://…", … }, volume, pitch = { min, max }, roll = maxDistance, cooldown? }`. Kilka wariantów na klucz i losowa wysokość ±5–8% (losowość klienta, nie `Logic/Rng`).
+- `Data/Sfx.luau`: klucz → `{ ids = { "rbxassetid://…", … }, volume, pitch = { min, max }, roll = maxDistance, cooldown?, hint, ui? }` (`hint`: słowa do wyszukiwarki, zostają po wpisaniu ID). Kilka wariantów na klucz i losowa wysokość ±5–8% (losowość klienta, nie `Logic/Rng`).
 - Klucze (minimum): `swing.light|heavy|blunt|thrust`, `bow.draw|release`, `crossbow.release`, `wand.cast`, `hit.flesh|armor|wood|stone|bone|slime|crit`, `block`, `miss`, `skill.<skillId>` (pole `SkillVfx.sound` zmienia się z ID na klucz `Sfx`; puste = domyślny dźwięk rodzaju umiejętności), `mob.<family>.attack|hurt|death|aggro`, `boss.<bossId>.roar|attack|death|phase`, `telegraph.warn`, `ui.loot|loot.rare|loot.legendary|levelup|quest|coin|click|error`, `step.<material>` opcjonalnie.
 - Materiał trafienia z rodziny potwora (`Data/Families`) albo pola `hitSound` wyglądu.
-- `SfxController`: pula `Sound` na częściach-kotwicach (bez `Instance.new` w pętli klatek), 3D w miejscu zdarzenia, `RollOffMaxDistance` z danych, limit jednoczesnych (`Config.Sfx.maxVoices`: PC 16, telefon 10), priorytet: własne > drużyna > reszta, tłumienie powtórzeń tego samego klucza w 0,05 s. Nowa grupa `SoundGroup` „Efekty” z suwakiem w ustawieniach obok muzyki i otoczenia.
-- Podpięcie: `VfxController.playSound`, ataki podstawowe (`AnimationController` w klatce trafienia), `CombatFxController` (trafienie, krytyk, blok, unik), potwory (atak, ból, śmierć), bossowie (ryk przy zmianie fazy, ostrzeżenie telegrafu), UI (łup, poziom, quest).
+- `SfxController`: pula `Sound` na częściach-kotwicach (bez `Instance.new` w pętli klatek), 3D w miejscu zdarzenia, `RollOffMaxDistance` z danych, limit jednoczesnych (`Config.Sfx.maxVoices`: PC 16, telefon 10), priorytet: własne > drużyna > reszta, tłumienie powtórzeń tego samego klucza w 0,05 s. Nowa grupa `SoundGroup` „Efekty” (`VaelthornSfxGroup`) na istniejącym suwaku „Głośność efektów” (`settings.volume`), który stoi już obok muzyki i otoczenia (S111: bez nowego pola zapisu).
+- Podpięcie: `VfxController.playSound`, ataki podstawowe (S111: w `CombatFxController.playerAttack`, który zna `timing` z `AnimationController.Attack`; zamach w `timing.windup`, wypuszczenie w `timing.hitAt`), `CombatFxController` (trafienie, krytyk, blok, unik), potwory (atak, ból, śmierć), bossowie (ryk przy zmianie fazy, ostrzeżenie telegrafu), UI (łup, poziom, quest).
 - **Wybór ID:** sesja szuka przez MCP `search_asset` (audio, twórca Roblox), sprawdza długość i nazwę, wstawia przez `insert_asset` do `AnimLab` i odtwarza `/animlab sfx <key>`, czyta `IsLoaded`/`TimeLength` (dźwięk musi się wczytać w Play). Nie zgaduje ID z pamięci. Bez MCP: pola puste, lista kluczy do uzupełnienia w „Niedokończone”, gra działa bez dźwięku jak dziś.
 
 ## 4. Efekty 2.0 (S112)
@@ -165,3 +165,23 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
 - Przegląd w Studio w S110 nie zrobiony: miejsce bez dostępu do DataStore (zapis w pamięci, brak postaci); tabela
   bazowa w `docs/SESJE.md` ma klatki z danych. S111+ robi przegląd, gdy właściciel włączy dostęp i utworzy postać
   (`docs/ANIMACJE.md` §2 pkt 4).
+
+## 12. Ustalenia S111
+
+- API: `Data/Sfx` (`defs`, `get`, `has`, `playable`, `keys(prefix?)`, `MATERIALS`, `FAMILY_MATERIAL`, `SKILL_SAMPLE`),
+  `Logic/SfxRules` (`attackKeys`, `material`, `hitKey`, `KIND_DEFAULT`, `kindDefault`, `skillKey`, `pickVoice`,
+  `allowed`, `sourceKey`, `pitch`, `variant`, `volume`, `higher`, `PRIORITY`), `Config.Sfx` (`maxVoices`, `uiVoices`,
+  `repeatWindow`, `maxDistance`, `priorityVolume`, `lowQualityOther`, `previewWait`, `allEvery`),
+  `SfxController.Play(key, at, who?, source?, volumeMul?)`, `Ui(key, volumeMul?)`, `After(seconds, key, at, ...)`,
+  `WhoOf`, `Higher`, `Mob`, `MobKey`, `Preview`, `Audition`, `Stats`; `SettingsController.SfxGroup()`;
+  `UI/Sounds.setGroup` / `setRouter`; `MonsterLooks.hitSound`; `CombatFxController.PreviewTelegraph(event, caster?)`.
+- `SkillVfx.sound` to klucz `Data/Sfx` (`skill.<id>` albo `skill.default.*`) albo `""` (= `skill.<id>`, gdy ma
+  dźwięk, inaczej zapas rodzaju). Wartości w danych zostają `""`.
+- Klucze: §3 plus `skill.<id>` dla 16 umiejętności próbki S110 (`Sfx.SKILL_SAMPLE`); pełna lista i procedura doboru w
+  `docs/ANIMACJE.md` §7, ID w `docs/ASSETS.md` → „Dźwięki (S111)”. 30 z 90 kluczy ma dźwięk (twórca Roblox ma tylko
+  klasyczne `*.wav` i dźwięki interfejsu: potwory, bossowie, `hit.armor/wood/stone`, `bow.draw` i `skill.<id>` puste).
+- Dźwięk tylko z tego, co klient już dostaje; czasy z `AttackPose.timing`, `windup` telegrafu; jeden klucz ataku na
+  bossa (`tele` bez id ataku do S116). Zamrożenie AnimLab pauzuje grające głosy (sprawdzane co `Heartbeat`).
+- Dla S112–S117: S114 / S115 dopisują `skill.<id>` reszcie umiejętności i ewentualnie `skill.<id>.cast` przy rzuceniu
+  (`VfxController.onCast` dziś cichy); S117 może przejść na `boss.<id>.<atak>` po polu `a` w `tele`; `step.*` na
+  życzenie właściciela.

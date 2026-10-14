@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S110 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S111 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -164,14 +164,18 @@ bossowie z telegrafem, NPC, `freeze` / `step` / `keys` / `cam` / `stress`, `Anim
 `Logic/MotionKeys` i `tools/motionkeys.luau`, zegar efektów `client/Vfx/Clock`, `Gait.stateMotion`,
 `LookAnim.clipTime`, `Util/WeaponBuild`, zasady oceny ruchu w `docs/ANIMACJE.md`; Studio przez MCP dozwolone dla
 S110–S119 (`CLAUDE.md`).
+S111 dźwięki: rejestr `Data/Sfx` (90 kluczy, 30 z ID twórcy Roblox sprawdzonymi w Play), `SfxController` (pula głosów
+3D, priorytety, okno powtórzeń, cooldowny), grupa „Efekty” na „Głośności efektów”, podpięcia walki, potworów, bossów,
+telegrafów i interfejsu, `/animlab sfx`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`) i
-  `sound` w `Data/SkillVfx`; muzyka `music = ""` w `Data/Maps`; dźwięki UI w `UI/Sounds.luau` to placeholdery;
-  kosmetyki (stroje, aury, ślady) to Party.
+- **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
+  puste klucze `Data/Sfx` (60 z 90: 24 `mob.*`, 16 `boss.*`, 16 `skill.<id>`, `hit.armor/wood/stone`, `bow.draw`; lista:
+  `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
+  decyzja właściciela); muzyka `music = ""` w `Data/Maps`; kosmetyki (stroje, aury, ślady) to Party.
 - **Grafika (S52), czeka na właściciela**: Import 3D 121 modeli broni i `assets/Weapons/Meadows.rbxm` (lista w
   `docs/ASSETS.md` → „Broń”), wgranie atlasów `items_4..7.png` i ich id w `ItemIconSheets.luau`; `IMPORT_YAW` niesprawdzony
   (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1` do usunięcia.
@@ -287,8 +291,11 @@ zakończone; testy i decyzje właściciela po nich.
 - **S110: przegląd w Studio nie zrobiony (brak postaci w zapisie Studio):** miejsce bez dostępu do DataStore (zapis w
   pamięci, 0 postaci); tabela bazowa w `docs/SESJE.md` → S110 ma tylko klatki z danych, koszt `stress 20` nie zmierzony.
   Właściciel: Game Settings → Security → dostęp do API i raz utworzyć postać (`docs/ANIMACJE.md` §2 pkt 4).
-- **AnimLab (S110):** `sfx` czeka na S111 (`animlab.notYet`); `npc` bez klipów do S116 (kopia stoi); zdolności Elity II
+- **AnimLab (S110):** `npc` bez klipów do S116 (kopia stoi); zdolności Elity II
   tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
+- **Dźwięki (S111):** 30 dźwięków nieodsłuchanych (wybór po nazwie i długości, `docs/ASSETS.md` → „Dźwięki (S111)”;
+  `skill.default.heal` i `.buff` słabe); koszt dźwięku w `/animlab stress 20` nie zmierzony (Studio bez postaci); rzucenie
+  umiejętności (`onCast`) bez dźwięku do S114 / S115.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

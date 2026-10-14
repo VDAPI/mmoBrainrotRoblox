@@ -8297,3 +8297,85 @@ Pliki: `src/shared/Logic/{MotionKeys,AnimLab,Gait,LookAnim}.luau`, `src/shared/U
 `src/client/Controllers/{AnimLab,Animation,Vfx,CombatFx,MobViz}Controller.luau`, `tools/motionkeys.luau`,
 `tests/motionkeys.spec.luau`, `tests/data.spec.luau`, `docs/ANIMACJE.md`, `docs/DESIGN-16.md`, `CLAUDE.md`,
 `docs/DECYZJE.md`, `docs/PROGRESS.md`.
+
+### S111: Dźwięki walki, potworów, bossów i interfejsu
+
+Start na `19bab52` (S110): commit i sekcja S110 oraz wszystkie pliki z listy wejścia na miejscu. Zgodnie z poleceniem
+przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Rejestr (A):** `Data/Sfx` (90 kluczy: 4 zamachy, łuk / kusza / różdżka, 7 trafień, `block`, `miss`, 8
+  `skill.default.*`, 16 `skill.<id>` próbki S110, 24 `mob.*`, 16 `boss.*`, `telegraph.warn`, 8 `ui.*`; każdy z `hint`),
+  `Config.Sfx` (głosy PC 16 / telefon 10, 4 głosy 2D, okno 0,05 s, 150 st., priorytety głośności, niska jakość),
+  `MonsterLooks.hitSound` (`rotEnt` `wood`, `swampToad` `slime`), `Data/Sfx` w `NOT_BALANCE` („wygląd”).
+- **Reguły (B):** `Logic/SfxRules` (`attackKeys`, `material`, `hitKey`, `KIND_DEFAULT` / `kindDefault`, `skillKey`,
+  `pickVoice`, `allowed`, `pitch`, `variant`, `volume`, `higher`); `SkillVfx.sound` = klucz `Data/Sfx` (komentarz).
+- **Kontroler i grupa (C):** `SfxController` (pula głosów na częściach-kotwicach w `Workspace.Vaelthorn_Sfx`, 4 głosy 2D,
+  wczytanie wszystkich ID przy starcie, pauza przy zamrożeniu AnimLab, obserwacja `Workspace.Monsters`),
+  `SettingsController.SfxGroup()` (`VaelthornSfxGroup` na `settings.volume`), `UI/Sounds.setGroup` / `setRouter`.
+- **Podpięcia (E):** umiejętności (`VfxController.playSound` z zapasem rodzaju, klik usunięty), ataki podstawowe i podgląd
+  `/anim` (zamach / wypuszczenie na zegarze efektów), trafienie z materiałem + krytyk, blok, unik, pochłonięte /
+  odporność (cichy blok), atak i ból potwora, śmierć, agresja, ryk i faza bossa, `telegraph.warn` i atak po `windup`
+  (także w AnimLab), `ui.levelup`, `ui.quest`, `ui.loot` / `.rare` / `.legendary`, `ui.coin`; router UI.
+- **AnimLab (F):** `sfx <klucz> [n]`, `sfx list [prefiks]`, `sfx all [prefiks]`, `sfx try <id>` (działa bez sceny),
+  `state` z `sfx` (statystyki puli); parser z `animlab.error.sfxId`; teksty PL i EN.
+- **Testy:** `tests/sfx.spec.luau` (punkty 1–9 planu, `hitKey`, rodzaje umiejętności czytane z typu `SkillType`);
+  `skillmotion.spec` komentarz; `data.spec` pomija klucze `Data/Sfx` w teście kluczy tekstów.
+
+Studio przez MCP (D): działało (`list_roblox_studios`, Rojo zsynchronizował `Data/Sfx`, `SfxRules`, `SfxController`).
+Wyszukiwanie (`search_asset`, Audio, `creator_store`): 19 zapytań po 5–20 wyników; zapytania słowne („sword swing”,
+„sounds wav hit”, „Roblox sword”, „Rocket explosion wav”, „sounds”, „Official Roblox sound effect”) dały 0 wyników
+od twórcy Roblox (odrzucone wszystkie: twórcy społeczności, `ProSoundEffects`, `APMOfficial`, `DistrokidOfficial`);
+dźwięki Roblox wyciągnęły
+zapytania „wav” (16 z 20), „Roblox UI” (18 z 20), „RBLX SFX” (10 z 20), „Roblox” (11 z 20) i nazwy plików
+(`swordslash`, `swordlunge`, `unsheath`: po 1). Wśród dźwięków Roblox odrzucone po nazwie: pętle i muzyka
+(`Roblox_UI_Loop_*`), `Official OOF`, `Kid saying Ouch`, `glassbreak`, `Launching rocket`, `Rocket shot`, `bass`
+poza krytykiem / wybuchem. 30 kandydatów wstawionych do `SoundService.Vaelthorn_Audition` (wszystkie się wstawiły),
+27 sprawdzonych w Play (`sfx try`: `loaded = true` wszystkie), 3 odrzucone za długość (`Roblox_UI_Indicator` 3,37 s,
+`Roblox_UI_Piano_Hello` 4,04 s, `Roblox_UI_Cute_Pop` 2,70 s). Po wpisaniu ID: `sfx <klucz> <n>` dla 33 wariantów 30
+kluczy, wszystkie `loaded = true`; `state`: 16 głosów, wczytane 27 / 27 ID. Folder przesłuchań usunięty, Play
+zatrzymany, miejsce niezapisane. Dźwięków nikt nie odsłuchał: wybór po nazwie i długości (kolumna Uwagi w
+`docs/ASSETS.md`).
+
+| Grupa | Klucze z dźwiękiem (warianty) | Puste | Sprawdzone w Play |
+|---|---|---|---|
+| zamach | `swing.light` (2), `swing.heavy`, `swing.blunt`, `swing.thrust` | — | tak |
+| łuk, kusza, różdżka | `bow.release`, `crossbow.release`, `wand.cast` | `bow.draw` | tak |
+| trafienie | `hit.flesh`, `hit.bone`, `hit.slime`, `hit.crit` | `hit.armor`, `hit.wood`, `hit.stone` (grają `hit.flesh`) | tak |
+| obrona | `block`, `miss` | — | tak |
+| umiejętność | 8 `skill.default.*` (`strike` 2) | 16 `skill.<id>` | tak |
+| potwór | — | 24 `mob.*` | — |
+| boss | — | 16 `boss.*` | — |
+| telegraf | `telegraph.warn` | — | tak |
+| interfejs | 8 `ui.*` (`ui.loot` 2) | — | tak |
+
+Razem 30 z 90 kluczy z dźwiękiem, 60 pustych (lista: `/animlab sfx list`).
+
+Koszt: `SfxController.Stats()` po 60 s walki w AnimLab (`stress 20`) nie zmierzony: Studio nadal bez dostępu do
+DataStore (0 postaci, `on` wymaga postaci). Pula jest stała (16 / 10 głosów, `Sound` tylko przy starcie), limit i
+priorytety pilnuje `sfx.spec` (`pickVoice`).
+
+Miejsca, które przez router grają teraz `ui.levelup` (`Sounds.play("levelUp")`, bez zmian w kodzie, do oceny
+właściciela): `NpcController`, `PartyController`, `SocialController`, `GatherController`, `DungeonController`,
+`AlchemyWindow`, `AuctionWindow` (kupno, wystawienie), `BackpackShop`, `BlacksmithWindow` (kucie, rozbiórka,
+ulepszenie), `DungeonWindow`, `GuildFound`, `GuildWindow`, `LegendReveal`, `LoginReward`, `MailWindow`, `MountWindow`,
+`PremiumShop`, `QuestBoard`, `QuestDialog`, `UnbindPicker`, `Wardrobe`. `open` gra cichy `ui.click`; `hit` (zbieranie,
+tyknięcia kowala) zostaje placeholderem.
+
+Dla S112–S117:
+- S114 / S115: `skill.<id>` dla reszty umiejętności (dziś zapas rodzaju), ewentualny dźwięk rzucenia
+  (`VfxController.onCast` cichy); wiązka gra tylko pierwszy tik.
+- S116 / S117: `boss.<id>.<atak>` po polu `a` w `tele`; dźwięki potworów i bossów czekają na ID (twórca Roblox ich nie
+  ma; biblioteka Pro Sound Effects to decyzja właściciela); `step.*` na życzenie właściciela.
+- Wszystkie: koszt dźwięku w `stress 20`, gdy Studio będzie miało postać.
+
+Pliki: `src/shared/Data/Sfx.luau`, `src/shared/Logic/SfxRules.luau`, `src/client/Controllers/SfxController.luau`,
+`src/shared/Config.luau`, `src/shared/Data/{MonsterLooks,SkillVfx}.luau`, `src/shared/Logic/AnimLab.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/Sounds.luau`,
+`src/client/Controllers/{Settings,UI,Vfx,CombatFx,AnimLab,Effects,Quest,Loot}Controller.luau`,
+`tools/balance_reasons.luau`, `tests/sfx.spec.luau`, `tests/{skillmotion,data}.spec.luau`, `docs/ANIMACJE.md`,
+`docs/ASSETS.md`, `docs/DESIGN-16.md`, `docs/DECYZJE.md`, `docs/PROGRESS.md`, `CLAUDE.md`.
+
+Po przeglądzie: śmierć potwora walczącego z nami gra jak drużyna (pamięć utraty `AggroUserId`), podgląd umiejętności w
+oknie jest cichy (`VfxController.playSound`), klucz `animlab.notYet` usunięty, pusty `hit.armor` i niższe `pitch`
+wspólnych plików zapisane w DECYZJE.

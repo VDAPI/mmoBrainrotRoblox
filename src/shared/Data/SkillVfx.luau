@@ -11,7 +11,8 @@
 --   allies (S74): pieces played on every ally of the event's `al` list, in allyColor (default: color)
 --   object (S74): "banner" = the skill leaves a server object the client draws (Vfx/Library.banner)
 --   shake: camera shake strength (0..1) for players near the impact (setting "Camera shake"), hitstop: melee freeze
---   sound: rbxassetid or "" (none yet: PROGRESS "Niedokończone" lists what to attach)
+--   sound (S111): Data/Sfx key ("skill.<id>" or a "skill.default.*" key) or "" (= "skill.<id>" when playable, else
+--     the default of the skill's kind, Logic/SfxRules.skillKey)
 --   S80: everyWave = impact pieces every wave plays (default: shockwave, whirl, cracks, pillar; the first wave plays
 --     all); waves = circleTarget sends one impact event per wave (`n` = the wave) instead of one at the start;
 --     chargeSize = the projectile grows by this much per Arcane Charge spent (`ch` of the event)

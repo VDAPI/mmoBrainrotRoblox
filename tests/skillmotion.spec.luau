@@ -157,7 +157,7 @@ describe("Skill data (S28)", function()
 			expect(
 				c == "class" or c == "element" or c == "holy" or c == "heal" or (string.sub(c, 1, 1) == "#" and #c == 7)
 			).toBe(true)
-			expect(type(entry.sound)).toBe("string")
+			expect(type(entry.sound)).toBe("string") -- S111: the key is checked in sfx.spec
 			expect((entry.shake or 0) >= 0 and (entry.shake or 0) <= 1).toBe(true)
 			expect((entry.hitstop or 0) <= 0.08).toBe(true)
 			-- S74: pieces on allies, their colour and the server object

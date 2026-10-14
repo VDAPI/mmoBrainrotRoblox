@@ -26,8 +26,10 @@ local Library = require(script.Parent.Parent.Vfx.Library)
 
 local EffectsController = {
 	Name = "EffectsController",
-	Deps = { "UIController" },
+	Deps = { "UIController", "SfxController" },
 }
+
+local SfxController: any
 
 local PILLAR_HEIGHT = 80
 local PILLAR_SECONDS = 2.2
@@ -85,7 +87,8 @@ local function pillar(model: Model)
 	Debris:AddItem(ring, PILLAR_SECONDS + 0.2)
 end
 
-function EffectsController.Init()
+function EffectsController.Init(registry: any)
+	SfxController = registry.Get("SfxController")
 	folder = Instance.new("Folder")
 	folder.Name = "Vaelthorn_Effects"
 	folder.Parent = Workspace
@@ -247,7 +250,10 @@ function EffectsController.Start()
 				pillar(model)
 			end
 			if player == Players.LocalPlayer then
-				Sounds.play("levelUp")
+				-- S111: ui.levelup, the old placeholder while it has no sound
+				if not SfxController.Ui("ui.levelup") then
+					Sounds.play("levelUp")
+				end
 				Toast.push(Text.now("toast.levelUp", { level = level, stat = statPoints }), "success", 5)
 				progressToasts(if type(fromLevel) == "number" then fromLevel else level - 1, level, pathPoints)
 			end

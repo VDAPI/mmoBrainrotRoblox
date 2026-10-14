@@ -26,7 +26,8 @@ zsynchronizował). Potem `start_stop_play(true)`, w kliencie czekanie na `LocalP
 `camera_position` / `look_at_position`), `execute_luau` w `Client` / `Server` do odczytu i wywołań AnimLab (zmiany w
 Play znikają po Stop), `execute_luau` w `Edit` tylko do odczytu, `user_keyboard_input` (komendy w czacie),
 `user_mouse_input` tylko do kliknięcia „Graj”; S111–S112: `search_asset`, `insert_asset`, `store_image`,
-`upload_image` (DESIGN-16 §0.1).
+`upload_image` (DESIGN-16 §0.1; `insert_asset` dźwięku tylko do folderu przesłuchań `SoundService.Vaelthorn_Audition`,
+usuwanego przed końcem sesji, §7).
 **Nie wolno:** `multi_edit`, zapisu do `Script.Source`, zapisu i publikacji miejsca, zmian ustawień gry, ruszania
 DataStore, tworzenia postaci kodem serwera. Kod zmienia się tylko w repo; Studio dostaje go przez Rojo. Na koniec sesji
 Play zatrzymany.
@@ -79,7 +80,7 @@ sprawdza wywołanie (`Logic/AnimLab.parse`) i wysyła je przez `AdminClient` do 
 | `/animlab mob <id> [slot]` | wygląd potwora (albo bossa) w miejscu celu i stan `slot` (`idle`, `walk`, `run`, `attack1`, `attack2`, `cast`, `hit`, `death`, `spawn`; domyślnie `attack1` jak zwykły atak) |
 | `/animlab boss <boss> <atak>` | boss w miejscu celu, telegraf ataku wycelowany w aktora i zamach (`windup > 1` → `cast`, inaczej `attack2`) |
 | `/animlab npc <id> [idle\|talk\|wave\|work]` | kopia NPC z `Workspace.Npcs`; klipy NPC od S116, do tego czasu stoi |
-| `/animlab sfx <klucz>` | S111 |
+| `/animlab sfx <klucz> [n]`, `sfx list [prefiks]`, `sfx all [prefiks]`, `sfx try <id>` | dźwięki `Data/Sfx` (S111, §7); działa też bez sceny |
 | `/animlab loop` | powtarza ostatni ruch co koniec + 0,6 s |
 | `/animlab freeze <t>` | odgrywa ostatni ruch od nowa i zatrzymuje pozę i efekty w chwili `t` |
 | `/animlab step <dt>` | przesuwa zamrożenie o `dt` (−1…1 s; ujemne odgrywa od nowa do `t + dt`) |
@@ -166,11 +167,73 @@ Tabela przeglądu w `docs/SESJE.md` (wzór S110):
    (`{ id, hit = "Hit", speed? }`, S113). Gra dopasuje prędkość tak, żeby `Hit` wypadł w chwili trafienia serwera; bez
    klipu zostaje poza proceduralna.
 
-## 7. Dźwięk (szkic; uzupełnia S111)
+## 7. Dźwięk (S111)
 
-Klucze w `Data/Sfx` (`swing.*`, `hit.*`, `skill.<id>`, `mob.<rodzina>.*`, `boss.<id>.*`, `ui.*`), tylko dźwięki z
-Creator Store z twórcą Roblox albo oznaczone jako darmowe; podgląd `/animlab sfx <klucz>`; każdy dźwięk ma wiersz w
-`docs/ASSETS.md` (źródło, licencja, data).
+**Klucze** (`src/shared/Data/Sfx.luau`; nazwy są kontraktem dla S112–S117):
+
+| Grupa | Klucze | Głośność | Zasięg (st.) |
+|---|---|---|---|
+| zamach | `swing.light`, `swing.heavy`, `swing.blunt`, `swing.thrust` | 0,45 | 60 |
+| łuk, kusza, różdżka | `bow.draw`, `bow.release`, `crossbow.release`, `wand.cast` | 0,5 | 70 |
+| trafienie | `hit.flesh`, `hit.armor`, `hit.wood`, `hit.stone`, `hit.bone`, `hit.slime`, `hit.crit` (razem z materiałem) | 0,6 / 0,7 | 70 |
+| obrona | `block` (też pochłonięte i odporność, ×0,6), `miss` (też unik) | 0,55 / 0,4 | 60 |
+| umiejętność | `skill.default.strike/cast/blast/heal/buff/dash/trap/call`, `skill.<id>` (16 z próbki S110) | 0,6 / 0,65 | 90 |
+| potwór | `mob.<rodzina>.attack/hurt/death/aggro` (6 rodzin; `hurt` co 0,35 s, `aggro` co 4 s na potwora) | 0,45–0,6 | 80 |
+| boss | `boss.<id>.roar/attack/death/phase` (`roar` co 3 s) | 0,8 | 200 |
+| telegraf | `telegraph.warn` | 0,55 | 120 |
+| interfejs (2D) | `ui.loot`, `ui.loot.rare`, `ui.loot.legendary`, `ui.levelup`, `ui.quest`, `ui.coin`, `ui.click`, `ui.error` | 0,4–0,7 | — |
+
+Wpis: `ids` (warianty), `volume`, `pitch = { min, max }` (losowo: zwykle ±6%, zamachy ±8%, bossowie ±4%,
+klik i błąd stałe; `swing.heavy`, `swing.blunt`, `crossbow.release` niżej, 0,86–0,94), `roll` (`RollOffMaxDistance`),
+`cooldown?`, `hint` (słowa do wyszukiwarki), `ui?`. Materiał trafienia: `MonsterLooks.hitSound` (drzewiec `wood`, ropucha `slime`),
+inaczej rodzina (`Sfx.FAMILY_MATERIAL`); materiał bez dźwięku gra `hit.flesh`. `step.<materiał>` (kroki) poza S111.
+
+**Łańcuch zapasu umiejętności** (`Logic/SfxRules.skillKey`): `SkillVfx.sound` (klucz `skill.*`, gdy ma dźwięk) →
+`skill.<id>` → `skill.default.<rodzaj>` (`SfxRules.KIND_DEFAULT`: wręcz `strike`, czary `cast`, obszary `blast`,
+leczenie `heal`, wzmocnienia `buff`, doskok `dash`, pułapka `trap`, sokół `call`) → cisza. Interfejs: `UI/Sounds`
+pyta router (`click`, `error`, `open`, `levelUp` → `ui.*`); klucz bez dźwięku gra dawny placeholder.
+
+**Gdzie gra:** `CombatFxController` (atak podstawowy: `draw` w 0, zamach w `timing.windup`, wypuszczenie w
+`timing.hitAt`, przez `Vfx/Clock`; trafienie, krytyk, blok, unik; atak i ból potwora; `telegraph.warn` w środku obszaru i
+atak rzucającego po `windup`; `ui.coin` przy złocie nagrody), `VfxController` (umiejętność w chwili uderzenia, pocisk
+przy wystrzale), `SfxController` (śmierć, agresja na nas, ryk przy pierwszej agresji bossa, ryk i `phase` przy zmianie
+fazy), `EffectsController` / `QuestController` / `LootController` (`ui.levelup`, `ui.quest`, `ui.loot*`).
+
+**Miks** (`Config.Sfx`, `Logic/SfxRules`): pula `maxVoices` głosów 3D (PC 16, telefon 10) tworzona raz przy starcie;
+pełna pula oddaje głos o najniższym priorytecie, potem najstarszy (własne 3 > drużyna 2 > reszta 1), a gdy wszystkie są
+ważniejsze, nowy dźwięk przepada; ten sam klucz w 0,05 s przepada; klucze z `cooldown` czekają osobno na każde źródło;
+nic dalej niż 150 st. od kamery; głośność × 1 / 0,85 / 0,6 (własne / drużyna / reszta), na niskiej jakości reszta jeszcze
+× 0,5. Potwór walczący z nami liczy się jak drużyna. Wszystko przez grupę `VaelthornSfxGroup` („Głośność efektów”,
+`settings.volume`). Zamrożenie AnimLab pauzuje grające głosy.
+
+**AnimLab:** `/animlab sfx <klucz> [n]` (wariant n albo losowy; `ui.*` w 2D), `sfx list [prefiks]` (ile kluczy, ile z
+dźwiękiem, lista pustych), `sfx all [prefiks]` (co 1,5 s każdy klucz z dźwiękiem; stop: `off` albo inna komenda),
+`sfx try <id>` (surowe ID, odpowiedź `{ id, loaded, length }`). Działa też bez sceny i bez postaci. `state` ma
+`sfx = SfxController.Stats()` (`voices`, `busy`, `dropped`, `played`, `preloaded`).
+
+**Jak dobrać dźwięk (procedura sesji, MCP):**
+1. `search_asset(studio_id, query = <hint>, assetType = "Audio", scope = "creator_store", maxResults = 20,
+   audioMaxDuration = <limit>)`; bierz tylko `creatorName == "Roblox"`. Limity: zamach, trafienie, blok, pudło, klik
+   ≤ 1,5 s; umiejętności i potwory ≤ 3 s; ryk i śmierć bossa ≤ 6 s; interfejs ≤ 2,5 s (`ui.levelup`,
+   `ui.loot.legendary` ≤ 4 s). Wyszukiwarka stawia twórców społeczności wyżej: zapytania z `wav`, `Roblox_UI`,
+   `RBLX SFX` albo nazwą pliku (`swordslash`) wyciągają dźwięki Roblox.
+2. Edit: folder `SoundService.Vaelthorn_Audition` (`execute_luau`), `insert_asset(..., assetType = "Audio",
+   assetName = "<klucz>_<n>", parentPath = "game.SoundService.Vaelthorn_Audition")`; nieudane wstawienie odrzuca
+   kandydata.
+3. Play: `execute_luau(Client)`:
+   ```lua
+   local call = game:GetService("Players").LocalPlayer:WaitForChild("AnimLabCall", 30)
+   return call:Invoke("sfx try 12222216") -- {"ok":true,"loaded":true,"length":0.562,...}
+   ```
+   Odrzuć `loaded = false`, `length = 0` i długość poza limitem.
+4. ID do `ids` klucza w `Data/Sfx`, potem `call:Invoke("sfx <klucz> <n>")` dla każdego wariantu (`loaded = true`) i
+   wiersz w `docs/ASSETS.md` → „Dźwięki (S111)”.
+5. Stop Play, w Edit `game.SoundService.Vaelthorn_Audition:Destroy()`, miejsca nie zapisywać.
+
+**Właściciel podmienia dźwięk:** wpisuje ID w `ids` klucza w `src/shared/Data/Sfx.luau` (kilka ID = losowe warianty),
+dodaje wiersz w `docs/ASSETS.md`, sprawdza `/animlab sfx <klucz>` w Studio. Dźwięk spoza twórcy Roblox (np. biblioteka
+Pro Sound Effects / APM w Creator Store, bogata w trafienia, ryki i wybuchy) to jego decyzja; nigdy dźwięki z cudzych
+gier.
 
 ## 8. Tekstura efektu (szkic; uzupełnia S112)
 

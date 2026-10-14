@@ -23,6 +23,8 @@
 -- away and low graphics quality use the simple versions. Melee impacts freeze both animations for a moment (hitstop)
 -- and big skills shake the camera of players nearby (setting "Camera shake"). S110: every delay of an effect runs on
 -- the effect clock (Vfx/Clock, AnimLab freezes it); only the local movement lock stays on task.delay.
+-- S111: the impact (the first wave / tick; a projectile when it leaves) plays the skill's Data/Sfx key through
+-- SfxController (Logic/SfxRules.skillKey: SkillVfx.sound, skill.<id>, then the default of the skill's kind).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -39,17 +41,19 @@ local Pool = require(script.Parent.Parent.Vfx.Pool)
 local WeaponLooks = require(ReplicatedStorage.Shared.Data.WeaponLooks)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
+local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
+local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
-local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 
 local VfxController = {
 	Name = "VfxController",
-	Deps = { "AnimationController" },
+	Deps = { "AnimationController", "SfxController" },
 }
 
 local AnimationController: any
+local SfxController: any
 local player = Players.LocalPlayer
 
 local ELEMENT_COLORS: { [string]: Color3 } = {
@@ -196,18 +200,30 @@ local function shakeNear(at: Vector3?, strength: number?)
 	end
 end
 
-local function playSound(entry: SkillVfx.Entry?, caster: Model?)
-	if entry and entry.sound ~= "" then
-		Sounds.playId(entry.sound)
-	elseif caster == player.Character then
-		Sounds.play("click")
-	end
-end
-
 -- Cast ---------------------------------------------------------------------------------------------------------
 
 local function casterKey(data: { [string]: any }): string?
 	return if type(data.c) == "string" then data.c else nil
+end
+
+-- S111: the skill's sound (Data/Sfx key: SkillVfx.sound, else skill.<id>, else the default of its kind, Logic/SfxRules)
+-- at the impact point, or at the caster when there is none. A caster outside Workspace (the skills-window preview)
+-- is silent: its points are viewport coordinates, not world ones.
+local function playSound(
+	skill: SkillData.SkillDef,
+	entry: SkillVfx.Entry?,
+	at: Vector3?,
+	caster: Model?,
+	data: { [string]: any }
+)
+	if caster and not caster:IsDescendantOf(Workspace) then
+		return
+	end
+	local key = SfxRules.skillKey(skill, if entry then entry.sound else nil, Sfx.playable)
+	local where: (Vector3 | Model)? = at or caster
+	if key and where then
+		SfxController.Play(key, where, SfxController.WhoOf(caster), casterKey(data))
+	end
 end
 
 -- S77: the falcon of `casterId` kept for `seconds` (created when missing, e.g. a player who came later).
@@ -547,7 +563,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			Library.sparkle(target, color, simple)
 			Library.aura(caster, color, interval + 0.1, simple)
 			if n == 1 then
-				playSound(entry, caster)
+				playSound(skill, entry, at, caster, data)
 			end
 		end
 		return
@@ -566,7 +582,8 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				end
 			end,
 		})
-		playSound(entry, caster)
+		-- the cast sound at the caster when the projectile leaves (the hit's material comes with its dmg event)
+		playSound(skill, entry, nil, caster, data)
 		return
 	end
 	if kind == "chain" then
@@ -582,7 +599,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				end
 			end
 		end
-		playSound(entry, caster)
+		playSound(skill, entry, at, caster, data)
 		return
 	end
 	-- Circle waves of the same cast: only the first plays the full set (later waves: the ring). S77: `n` of a trap
@@ -629,7 +646,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 	end
 	shakeNear(at, entry.shake)
 	if wave == 1 then
-		playSound(entry, caster)
+		playSound(skill, entry, at, caster, data)
 	end
 end
 
@@ -999,6 +1016,7 @@ end
 
 function VfxController.Init(registry)
 	AnimationController = registry.Get("AnimationController")
+	SfxController = registry.Get("SfxController")
 end
 
 function VfxController.Start()

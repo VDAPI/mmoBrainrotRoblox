@@ -2,8 +2,9 @@
 -- Applies the options (S14) on the client: effects quality (low = particle rates cut to a third on every
 -- ParticleEmitter in the world, original rate remembered in an attribute), music volume (SoundGroup
 -- "Music", used by the map music), ambience volume (S26, SoundGroup of AmbienceController's loops), camera
--- sensitivity (UserInputService.MouseDeltaSensitivity).
--- Effects volume, damage numbers, quick cast and confirmations are read where they are used.
+-- sensitivity (UserInputService.MouseDeltaSensitivity), effects volume (S111: SoundGroup "Effects" of every combat,
+-- monster and interface sound, SfxController and UI/Sounds; the existing settings.volume row "Effects volume").
+-- Damage numbers, quick cast and confirmations are read where they are used.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -22,6 +23,7 @@ local LOW_FACTOR = 1 / 3
 local scope = Fusion.scoped(Fusion)
 local musicGroup: SoundGroup
 local ambientGroup: SoundGroup
+local sfxGroup: SoundGroup
 
 -- Sound group the map music plays through (WorldController).
 function SettingsController.MusicGroup(): SoundGroup
@@ -31,6 +33,11 @@ end
 -- Sound group of the area ambience loops (S26, AmbienceController).
 function SettingsController.AmbientGroup(): SoundGroup
 	return ambientGroup
+end
+
+-- S111: sound group of the sound effects (SfxController, UI/Sounds), volume settings.volume.
+function SettingsController.SfxGroup(): SoundGroup
+	return sfxGroup
 end
 
 local function lowQuality(): boolean
@@ -63,6 +70,10 @@ function SettingsController.Init()
 	ambientGroup.Name = "VaelthornAmbientGroup"
 	ambientGroup.Volume = 0.7
 	ambientGroup.Parent = SoundService
+	sfxGroup = Instance.new("SoundGroup")
+	sfxGroup.Name = "VaelthornSfxGroup"
+	sfxGroup.Volume = 0.8
+	sfxGroup.Parent = SoundService
 end
 
 function SettingsController.Start()
@@ -79,6 +90,10 @@ function SettingsController.Start()
 	scope:Observer(State.Value({ "account", "settings", "ambientVolume" })):onBind(function()
 		local value = State.Get({ "account", "settings", "ambientVolume" })
 		ambientGroup.Volume = if type(value) == "number" then value else 0.7
+	end)
+	scope:Observer(State.Value({ "account", "settings", "volume" })):onBind(function()
+		local value = State.Get({ "account", "settings", "volume" })
+		sfxGroup.Volume = if type(value) == "number" then value else 0.8
 	end)
 	scope:Observer(State.Value({ "account", "settings", "cameraSens" })):onBind(function()
 		local value = State.Get({ "account", "settings", "cameraSens" })

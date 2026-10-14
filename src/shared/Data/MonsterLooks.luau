@@ -36,6 +36,8 @@ export type Look = {
 	elite2: { string }?,
 	phases: { [number]: Phase }?,
 	asset: AssetLook?,
+	-- S111: hit sound material (one of Data/Sfx.MATERIALS) where the family's (Sfx.FAMILY_MATERIAL) is wrong
+	hitSound: string?,
 }
 
 export type Region = { tint: string, amount: number, glow: string?, fx: string? }
@@ -85,6 +87,7 @@ local LOOKS: { [string]: any } = {
 	},
 	swampToad = {
 		plan = "toad",
+		hitSound = "slime",
 		colors = { base = "#5E7A3A", accent = "#C9C25A", detail = "#3A4A24" },
 		materials = { base = "SmoothPlastic" },
 		elite = { "spikesBack", "eliteHorns" },
@@ -171,6 +174,7 @@ local LOOKS: { [string]: any } = {
 	},
 	rotEnt = {
 		plan = "treant",
+		hitSound = "wood",
 		colors = { base = "#4B3A26", accent = "#5F7D3A", detail = "#2E2418" },
 		materials = { base = "Wood", accent = "Grass", detail = "Wood" },
 		parts = { "mushrooms" },

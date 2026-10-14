@@ -3364,3 +3364,40 @@
   nowa; poza zatrzymana dokładnie (`LabHold`, bez hitstopu), efekty z dokładnością do klatki.
 - **S110** Przegląd bazowy (H) nie zrobiony: MCP działało, Rojo zsynchronizował, ale Studio nie ma dostępu do DataStore
   (zapis w pamięci, 0 postaci), a postaci nie wolno tworzyć z sesji; tabela w SESJE z klatkami z danych.
+- **S111** Głośność „Efekty” to istniejące `settings.volume` (wiersz „Głośność efektów” obok muzyki i otoczenia): nowa
+  grupa `VaelthornSfxGroup` w `SettingsController`, bez nowego pola zapisu i migracji.
+- **S111** `UI/Sounds` gra przez grupę „Efekty” (`setGroup`, `master` = 1, obserwator w `UIController` usunięty) i pyta
+  router `SfxController` (`click`, `error` → `ui.click` / `ui.error`, `open` → `ui.click` × 0,6, `levelUp` →
+  `ui.levelup`); klucz bez dźwięku gra dawny placeholder. Pozostałe `Sounds.play("levelUp")` (kowal, aukcja, poczta,
+  sklepy, gildia…) brzmią przez router jak `ui.levelup`.
+- **S111** Kroki `step.<materiał>` poza sesją (DESIGN-16: opcjonalne).
+- **S111** Dźwięk ataku podstawowego w `CombatFxController.playerAttack` (zna `timing` z `AnimationController.Attack`),
+  nie w `AnimationController`: `draw` w 0, zamach w `timing.windup`, wypuszczenie w `timing.hitAt`, przez `Vfx/Clock`.
+  Stary `Sounds.play("hit")` przy `atk` usunięty (zastępuje go dźwięk trafienia z `dmg`).
+- **S111** Umiejętność bez dźwięku nie klika już dla własnej postaci (dawny zapas): gra `skill.<id>` albo zapas rodzaju
+  (`SfxRules.KIND_DEFAULT`); `target` dystansowy → `skill.default.cast`, `charge` bez `melee` → `skill.default.dash`.
+  Żadna umiejętność nie dzieli dźwięku przez `SkillVfx.sound` (wszystkie `""`).
+- **S111** Jeden klucz ataku na bossa (`boss.<id>.attack` po `windup` telegrafu): zdarzenie `tele` nie ma id ataku do S116.
+  Zwykły atak bossa gra `mob.<rodzina>.attack`; boss nie ma `hurt` (ryk przy pierwszej agresji na nas i przy fazie).
+- **S111** Potwór walczący z nami (`AggroUserId` = my) i podgląd AnimLab liczą się jak drużyna / własne (`WhoOf`);
+  priorytet zdarzenia = wyższy z celu i atakującego.
+- **S111** Pochłonięte i odporność grają `block` ciszej przez parametr `volumeMul` (0,6) w `SfxController.Play`, nie
+  osobny klucz. Materiał bez dźwięku gra `hit.flesh` (`SfxRules.hitKey`).
+- **S111** `MonsterLooks.hitSound` (materiał trafienia wyglądu): drzewiec `rotEnt` `wood`, ropucha `swampToad` `slime`;
+  golemy i duchy zostają przy rodzinie. Podgląd AnimLab dostaje atrybut `PreviewMonsterId` (dźwięki bossa na scenie).
+- **S111** Zamrożenie AnimLab pauzuje grające głosy: `SfxController` sprawdza `Clock.frozen()` co `Heartbeat` (prostsze
+  niż `Clock.onChanged`; `Clock` bez zmian); nowe dźwięki nie startują w zamrożeniu, opóźnione czekają w `Clock.after`.
+- **S111** Dźwięki tylko od twórcy Roblox: Creator Store ma od niego klasyczne `*.wav` i dźwięki interfejsu, więc 30 z 90
+  kluczy ma ID (część wspólnych, np. `snap.wav` dla łuku, kuszy i kości), potwory, bossowie i `skill.<id>` puste.
+  Biblioteka `ProSoundEffects` / `APMOfficial` („Courtesy of Pro Sound Effects”) nie jest twórcą Roblox: decyzja
+  właściciela.
+- **S111** Test kluczy tekstów (`data.spec`) pomija literały będące kluczami `Data/Sfx` (`"skill.default.cast"` ma
+  przestrzeń `skill` tekstów).
+- **S111** `hit.armor` (Priorytet 1 D4) zostaje pusty, tak jak `hit.wood`, `hit.stone` i `bow.draw`: twórca Roblox nie
+  ma metalicznego trafienia poza `unsheath.wav` (już `block`), a ten sam plik zlałby trafienie w bandytę z blokiem.
+  Opancerzone cele (humanoidy, smoki) grają `hit.flesh` (`SfxRules.hitKey`).
+- **S111** `swing.heavy`, `swing.blunt` i `crossbow.release` grają niżej (`HEAVY_PITCH` 0,86–0,94) zamiast ±8% / ±6%
+  z planu A2: cięższe ujęcie lekkich plików (`swordslash`, `swoosh`, `snap` dzielony z łukiem).
+- **S111** Śmierć potwora, który do chwili śmierci walczył z nami, gra jak drużyna: serwer zeruje `AggroUserId` tuż
+  przed `Dead`, więc `SfxController` pamięta utratę agresji na nas (okno 1 s). Podgląd umiejętności w oknie (rzucający
+  poza `Workspace`) jest cichy.

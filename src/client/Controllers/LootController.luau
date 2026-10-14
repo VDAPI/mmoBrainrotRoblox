@@ -30,7 +30,7 @@ type ItemInstance = Types.ItemInstance
 
 local LootController = {
 	Name = "LootController",
-	Deps = { "UIController", "ItemController" },
+	Deps = { "UIController", "ItemController", "SfxController" },
 }
 
 type BagView = {
@@ -43,6 +43,7 @@ type BagView = {
 
 local UIController: any
 local ItemController: any
+local SfxController: any
 local folder: Folder
 local bags: { [string]: BagView } = {}
 local busy: { [string]: boolean } = {}
@@ -252,11 +253,18 @@ local function spawnBag(data: { [string]: any })
 			shine = item
 		end
 	end
+	if not (shine or data.legendary) then
+		-- S111: a new bag (Heroic or better: the rare sound)
+		SfxController.Ui(if best and best.rarity >= Rarities.HEROIC then "ui.loot.rare" else "ui.loot")
+	end
 	if shine or data.legendary then
 		local rarity =
 			Rarities.get(if shine then shine.rarity elseif data.mythic then Rarities.MYTHIC else Rarities.LEGENDARY)
 		pillar(model, position, rarity)
-		Sounds.play("levelUp")
+		-- S111: ui.loot.legendary, the old placeholder while it has no sound
+		if not SfxController.Ui("ui.loot.legendary") then
+			Sounds.play("levelUp")
+		end
 		flashScreen(rarity.id >= Rarities.MYTHIC)
 	end
 
@@ -340,6 +348,7 @@ end
 
 function LootController.Init(registry)
 	UIController = registry.Get("UIController")
+	SfxController = registry.Get("SfxController")
 	ItemController = registry.Get("ItemController")
 	folder = Instance.new("Folder")
 	folder.Name = "Vaelthorn_Loot"

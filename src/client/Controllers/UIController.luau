@@ -14,8 +14,6 @@ local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Scale = require(script.Parent.Parent.UI.Scale)
-local Sounds = require(script.Parent.Parent.UI.Sounds)
-local State = require(script.Parent.Parent.UI.State)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local Tooltip = require(script.Parent.Parent.UI.Components.Tooltip)
 
@@ -164,13 +162,7 @@ function UIController.Init()
 	UIController.MountDragGhost(scope, roots.Tooltip)
 	-- S35: item icon atlases (glyphs until they are uploaded and loaded).
 	task.spawn(IconState.load)
-
-	scope:Observer(State.Value({ "account", "settings", "volume" })):onBind(function()
-		local volume = Fusion.peek(State.Value({ "account", "settings", "volume" }))
-		if type(volume) == "number" then
-			Sounds.setVolume(volume)
-		end
-	end)
+	-- S111: the effects volume (settings.volume) is the "Effects" sound group (SettingsController, SfxController).
 end
 
 return UIController

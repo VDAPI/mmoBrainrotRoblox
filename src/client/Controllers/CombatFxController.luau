@@ -16,6 +16,9 @@
 -- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
 -- S110: the attack and telegraph visuals run on the effect clock (Vfx/Clock: delays, tweens, trails, flights), so
 -- AnimLab freezes them with the pose; damage numbers and floating texts stay on real time (they are not motion).
+-- S111: sounds through SfxController (Data/Sfx): a basic attack's draw / swing / release on the effect clock, the
+-- hit's material plus hit.crit, block, miss, a monster's attack and pain, the telegraph warning and the caster's attack
+-- after the windup, the gold clink of a reward.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,8 +34,9 @@ local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
+local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
-local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -41,10 +45,18 @@ local Library = require(script.Parent.Parent.Vfx.Library)
 
 local CombatFxController = {
 	Name = "CombatFxController",
-	Deps = { "EffectsController", "AnimationController", "MonsterViewController", "VfxController", "DungeonController" },
+	Deps = {
+		"EffectsController",
+		"AnimationController",
+		"MonsterViewController",
+		"VfxController",
+		"DungeonController",
+		"SfxController",
+	},
 }
 
 local AnimationController: any
+local SfxController: any
 local MonsterView: any
 local DungeonController: any = nil
 
@@ -818,6 +830,29 @@ end
 
 local HOLY = { holystaff = true, scepter = true }
 
+-- S111: the entity id of a model (the per-source cooldown of its sounds), else its name.
+local function sourceOf(model: Model): string
+	local id = model:GetAttribute("EntityId")
+	return if type(id) == "string" then id else model.Name
+end
+
+-- S111: the sounds of a basic attack on the effect clock: the draw at 0, the swing at the start of the blow (end of
+-- the windup), the release of an arrow / bolt / spell at the hit time (AttackPose.timing, Logic/SfxRules.attackKeys).
+local function attackSounds(attacker: Model, motion: string, timing: AttackPose.Timing)
+	local keys = SfxRules.attackKeys(motion)
+	local who = SfxController.WhoOf(attacker)
+	local source = sourceOf(attacker)
+	if keys.draw then
+		SfxController.After(0, keys.draw, attacker, who, source)
+	end
+	if keys.swing then
+		SfxController.After(timing.windup, keys.swing, attacker, who, source)
+	end
+	if keys.release then
+		SfxController.After(timing.hitAt, keys.release, attacker, who, source)
+	end
+end
+
 -- A player's basic attack (S22): the pose and the weapon effects. FIX 2026-10-09: the server sends the damage
 -- when the blow lands or the shot arrives (AttackPose.hitDelay), so numbers are no longer held back here.
 local function playerAttack(attacker: Model, target: Model, event: { [string]: any })
@@ -829,6 +864,7 @@ local function playerAttack(attacker: Model, target: Model, event: { [string]: a
 	local timing = AnimationController.Attack(attacker, weaponType)
 	local weapon = weaponOf(attacker)
 	local motion = AttackPose.motionFor(weaponType)
+	attackSounds(attacker, motion, timing)
 	if event.st == "melee" then
 		if motion == "unarmed" or not weapon then
 			Clock.after(timing.hitAt * 0.7, swing, attacker, target)
@@ -867,6 +903,28 @@ local function groundDisc(name: string, radius: number, at: CFrame, transparency
 	disc.Transparency = transparency
 	disc.CFrame = at * CFrame.new(0, 0.15, 0) * CFrame.Angles(0, 0, math.rad(90))
 	return disc
+end
+
+-- S111: the warning at the centre of the area (louder when we stand in it) and the attack sound of the caster when
+-- the windup ends (one key per boss: the event carries no attack id until S116).
+local function telegraphSounds(event: { [string]: any }, caster: Model?)
+	local area = event.cf
+	local windup = math.clamp(tonumber(event.t) or 1, 0.2, 5)
+	if typeof(area) == "CFrame" then
+		local who: SfxRules.Who = "other"
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		local reach = tonumber(event.r) or tonumber(event.l) or 8
+		if root and root:IsA("BasePart") and (root.Position - area.Position).Magnitude < reach then
+			who = "party"
+		end
+		SfxController.Play("telegraph.warn", area.Position, who, if type(event.e) == "string" then event.e else nil)
+	end
+	local info = if caster then SfxController.Mob(caster) else nil
+	if caster and info then
+		local key = if info.boss then `boss.{info.boss}.attack` else `mob.{info.family}.attack`
+		SfxController.After(windup, key, caster, SfxController.WhoOf(caster), sourceOf(caster))
+	end
 end
 
 local function telegraph(event: { [string]: any })
@@ -955,6 +1013,34 @@ end
 local NAME_EVERY = 1.2
 local namedAt: { [string]: number } = {}
 
+-- S111: the sound of a hit: the target's material (monster family / look, players flesh; a material without a sound
+-- falls back to hit.flesh) plus hit.crit on a
+-- critical, the pain of a monster that survived (bosses roar only on phases); blocked -> block, a dodge or a miss ->
+-- miss, absorbed / immune -> a quieter block. DoT ticks and heals are silent. The priority is the higher of the
+-- target's and the attacker's (a hit on us is ours).
+local ABSORBED_VOLUME = 0.6
+
+local function hitSounds(model: Model, event: { [string]: any }, result: DamageText.Result)
+	local attackerId = if type(event.s) == "string" then event.s elseif type(event.by) == "string" then event.by else nil
+	local who = SfxController.Higher(SfxController.WhoOf(model), SfxController.WhoOf(findModel(attackerId)))
+	if result.amount > 0 and not event.dot then
+		local info = SfxController.Mob(model)
+		SfxController.Play(SfxRules.hitKey(if info then info.material else "flesh", Sfx.playable), model, who)
+		if event.c then
+			SfxController.Play("hit.crit", model, who)
+		end
+		if info and not info.boss and model:GetAttribute("Dead") ~= true then
+			SfxController.Play(`mob.{info.family}.hurt`, model, who, sourceOf(model))
+		end
+	elseif result.style == "blocked" then
+		SfxController.Play("block", model, who)
+	elseif result.style == "dodge" then
+		SfxController.Play("miss", model, who)
+	elseif result.style == "absorbed" or result.style == "immune" then
+		SfxController.Play("block", model, who, nil, ABSORBED_VOLUME)
+	end
+end
+
 local function onDamage(event: { [string]: any })
 	local model = findModel(event.e)
 	if not model then
@@ -965,6 +1051,7 @@ local function onDamage(event: { [string]: any })
 	local result = DamageText.format(event, me)
 	local amount = result.amount
 	local skill = if type(event.sk) == "string" then SkillData.get(event.sk) else nil
+	hitSounds(model, event, result)
 	-- DoT ticks get no flash or hit reaction, just the small number.
 	if amount > 0 and not event.dot then
 		-- A critical skill hit flashes gold (S28).
@@ -1057,11 +1144,14 @@ local function handle(event: { [string]: any })
 				else
 					projectile(attacker, target, event.st)
 				end
+				-- S111: the family's attack sound at once (a basic monster attack lands with the event)
+				local info = SfxController.Mob(attacker)
+				if info then
+					local who = SfxController.Higher(SfxController.WhoOf(attacker), SfxController.WhoOf(target))
+					SfxController.Play(`mob.{info.family}.attack`, attacker, who, sourceOf(attacker))
+				end
 			else
 				playerAttack(attacker, target, event)
-			end
-			if attacker == player.Character or target == player.Character then
-				Sounds.play("hit")
 			end
 		end
 	elseif kind == "trait" then
@@ -1069,11 +1159,16 @@ local function handle(event: { [string]: any })
 	elseif kind == "tele" then
 		telegraph(event)
 		local caster = findModel(event.e)
+		telegraphSounds(event, caster)
 		if caster then
 			AnimationController.MonsterAttack(caster, tonumber(event.t))
 		end
 	elseif kind == "reward" then
 		local character = player.Character
+		-- S111: the gold of the reward clinks once
+		if (tonumber(event.gold) or 0) > 0 then
+			SfxController.Ui("ui.coin")
+		end
 		if character then
 			-- S109: a reward without EXP (contracts 1-3, firstSpring) shows the gold alone
 			local exp = tonumber(event.exp) or 0
@@ -1114,6 +1209,7 @@ function CombatFxController.Init(registry)
 	DungeonController = registry.Get("DungeonController")
 	MonsterView = registry.Get("MonsterViewController")
 	AnimationController = registry.Get("AnimationController")
+	SfxController = registry.Get("SfxController")
 	registry.Get("VfxController").SetShake(shake)
 	fxFolder = Instance.new("Folder")
 	fxFolder.Name = "Vaelthorn_CombatFx"
@@ -1139,11 +1235,14 @@ function CombatFxController.PreviewAttack(weaponType: string?, model: Model?)
 	if weapon and not AttackPose.timing(motion).ranged and motion ~= "unarmed" then
 		weaponTrail(weapon, timing)
 	end
+	attackSounds(character, motion, timing)
 end
 
--- S110 AnimLab: the ground telegraph of a "tele" event (boss / Elite II attacks) without the server.
-function CombatFxController.PreviewTelegraph(event: { [string]: any })
+-- S110 AnimLab: the ground telegraph of a "tele" event (boss / Elite II attacks) without the server. S111: with its
+-- sounds (`caster`: the stage's boss, attribute PreviewMonsterId).
+function CombatFxController.PreviewTelegraph(event: { [string]: any }, caster: Model?)
 	telegraph(event)
+	telegraphSounds(event, caster)
 end
 
 local WARN_EVERY = 2

@@ -290,6 +290,20 @@ local Config = {
 		simpleBeyond = 60,
 		lowParticles = 0.5,
 	},
+	-- Sound effects (S111, DESIGN-16 §3, Data/Sfx, SfxController): positional voices at once (a phone is touch without a
+	-- keyboard), 2D interface voices, the same key again within `repeatWindow` s is dropped, nothing positional
+	-- farther than `maxDistance` studs from the camera (= EffectRadius); volume factor by who caused the sound and an
+	-- extra factor for others' sounds on low quality (DESIGN-16 §0.2.4). Looks, not balance.
+	Sfx = {
+		maxVoices = { desktop = 16, touch = 10 },
+		uiVoices = 4,
+		repeatWindow = 0.05,
+		maxDistance = 150,
+		priorityVolume = { own = 1, party = 0.85, other = 0.6 } :: { [string]: number },
+		lowQualityOther = 0.5,
+		previewWait = 3, -- seconds AnimLab `sfx` / `sfx try` waits for a sound to load before it answers
+		allEvery = 1.5, -- seconds between two keys of AnimLab `sfx all`
+	},
 	-- S110 AnimLab (docs/ANIMACJE.md, Studio + admin only): the stage floats `layout.height` studs above the admin;
 	-- offsets in studs from its centre C (the actor stands in C facing -Z). Limits of the /animlab arguments.
 	AnimLab = {

@@ -120,6 +120,7 @@ return {
 		["Data/SkillVfx"] = "wygląd",
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
+		["Data/Sfx"] = "wygląd", -- S111: sound effect keys (ids, volume, pitch, roll-off)
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",

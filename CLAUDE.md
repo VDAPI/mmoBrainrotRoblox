@@ -151,6 +151,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).
 - **Podgląd ruchu** (S110): `/animlab` (Studio, admin), klatki kontrolne `Logic/MotionKeys`, zegar efektów
   `client/Vfx/Clock` (każde nowe opóźnienie, tween i emiter efektu przez `Clock`), `docs/ANIMACJE.md`.
+- **Dźwięk** (S111): klucz w `Data/Sfx` (`ids`, `hint`; ID tylko twórca Roblox, sprawdzone `/animlab sfx try`, wiersz w
+  `docs/ASSETS.md`), wybór klucza w `Logic/SfxRules`, granie `SfxController.Play/Ui/After` (nigdy `Instance.new("Sound")`
+  w efektach); skill: `SkillVfx.sound` = klucz albo `""` (`docs/ANIMACJE.md` §7).
 - **Tytuł ścieżki** (S59): wpis w `Data/Titles` (`id = "path_<pathId>"`, `req = { kind = "mainPath", path = "<pathId>" }`)
   i `title.path_<pathId>` (PL, EN); okno umiejętności rysuje ścieżkę samo z `Data/Paths` (`Logic/PathView`), opis
   węzła dostaje argumenty z `Paths.nodeArgs`.

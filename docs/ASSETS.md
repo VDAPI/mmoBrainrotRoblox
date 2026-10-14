@@ -1,4 +1,4 @@
-# Vaelthorn: rejestr assetów (modele, animacje)
+# Vaelthorn: rejestr assetów (modele, animacje, dźwięki)
 
 **Zasada: żadnego modelu ani animacji w grze bez wpisu w tej tabeli.** Bez licencji nie wgrywamy. Preferowane CC0 (KayKit, Quaternius), szczegóły i źródła w `docs/MODELE.md` §3.
 
@@ -16,6 +16,7 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | test, zastąpiony przez `sword1h_1` (S52), do usunięcia; 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
 | `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
 | `art/icons/src/**`, `art/icons/items_4..7.png` (246 ikon przedmiotów) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
+| `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
 
 ## Gdzie co leży
 
@@ -55,6 +56,52 @@ atrybuty i światło jak klockom. Limit Roblox: 20 tys. trójkątów na MeshPart
 7. Commit `assets/Weapons/Meadows.rbxm` (bez `.glb`).
 8. Ikony: wgraj w Asset Manager tylko atlasy z pustym id w `src/shared/Data/ItemIconSheets.luau` (dziś `items_4.png` ..
    `items_7.png`) i wklej ich id w tej samej kolejności; commit.
+
+## Dźwięki (S111)
+
+Tylko Creator Store z twórcą **Roblox** (pole `creatorName`), znalezione przez MCP Studio `search_asset` (Audio,
+`creator_store`), wstawione do tymczasowego folderu przesłuchań (`insert_asset`, wszystkie się wstawiły) i sprawdzone w
+Play: `IsLoaded = true`, `TimeLength > 0` (`/animlab sfx try <id>`, potem `/animlab sfx <klucz> <n>` dla każdego
+wariantu). Dźwięków nie odsłuchano (sesja nie słyszy): wybór po nazwie, opisie (`\sounds\*.wav` to klasyczne dźwięki
+klienta Roblox) i długości. Podmiana: ID w `src/shared/Data/Sfx.luau` (`ids` klucza) + wiersz tutaj; dźwięk spoza
+twórcy Roblox (np. biblioteka `ProSoundEffects` / `APMOfficial` dostępna w Creator Store) tylko z decyzji właściciela.
+Puste klucze: `/animlab sfx list`.
+
+| Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `swing.light` (1) | `rbxassetid://12222216` | swordslash.wav | Roblox | 0,56 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `swing.light` (2) | `rbxassetid://15675024286` | Roblox_UI_Whoosh_01 | Roblox | 0,85 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `swing.heavy` | `rbxassetid://12222216` | swordslash.wav | Roblox | 0,56 | Creator Store, twórca Roblox | 2026-10-14 | niżej (`pitch` 0,86–0,94) |
+| `swing.blunt` | `rbxassetid://12222200` | swoosh.wav | Roblox | 0,20 | Creator Store, twórca Roblox | 2026-10-14 | niżej (`pitch` 0,86–0,94) |
+| `swing.thrust` | `rbxassetid://12222208` | swordlunge.wav | Roblox | 0,70 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `bow.release` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-14 | trzask cięciwy, wybór po nazwie |
+| `crossbow.release` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-14 | niżej (`pitch` 0,86–0,94) |
+| `wand.cast` | `rbxassetid://15675046931` | Roblox_UI_Sweep | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `hit.flesh` | `rbxassetid://12221984` | collide.wav | Roblox | 1,00 | Creator Store, twórca Roblox | 2026-10-14 | także zapas pustych materiałów (`SfxRules.hitKey`) |
+| `hit.bone` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `hit.slime` | `rbxassetid://12222152` | splat.wav | Roblox | 0,22 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `hit.crit` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-10-14 | gra razem z materiałem |
+| `block` | `rbxassetid://12222225` | unsheath.wav | Roblox | 0,65 | Creator Store, twórca Roblox | 2026-10-14 | metaliczny zgrzyt, wybór po nazwie |
+| `miss` | `rbxassetid://15674975792` | Roblox_UI_Whoosh_03 | Roblox | 1,10 | Creator Store, twórca Roblox | 2026-10-14 | także unik |
+| `telegraph.warn` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-10-14 | Roblox_UI_Indicator odrzucony (3,37 s) |
+| `skill.default.strike` (1) | `rbxassetid://12222216` | swordslash.wav | Roblox | 0,56 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `skill.default.strike` (2) | `rbxassetid://12222208` | swordlunge.wav | Roblox | 0,70 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `skill.default.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `skill.default.blast` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-10-14 | brak wybuchu od twórcy Roblox |
+| `skill.default.heal` | `rbxassetid://15675081158` | Roblox_UI_Cute_Goodbye | Roblox | 0,28 | Creator Store, twórca Roblox | 2026-10-14 | słaby wybór (brak dzwonka leczenia od Roblox) |
+| `skill.default.buff` | `rbxassetid://10066931761` | RBLX UI Hover 01 (SFX) | Roblox | 0,20 | Creator Store, twórca Roblox | 2026-10-14 | słaby wybór, do podmiany |
+| `skill.default.dash` | `rbxassetid://15675028888` | Roblox_UI_Whoosh_02 | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `skill.default.trap` | `rbxassetid://12222170` | switch.wav | Roblox | 0,15 | Creator Store, twórca Roblox | 2026-10-14 | mechaniczny klik |
+| `skill.default.call` | `rbxassetid://15675062723` | Roblox_UI_Whistle_Low | Roblox | 0,33 | Creator Store, twórca Roblox | 2026-10-14 | gwizd na sokoła |
+| `ui.loot` (1) | `rbxassetid://15675037413` | Roblox_UI_Paper_Swipe | Roblox | 0,62 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `ui.loot` (2) | `rbxassetid://10128766965` | RBLX UI Swipe (SFX) | Roblox | 0,62 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `ui.loot.rare` | `rbxassetid://10066968815` | RBLX UI Select 02 (SFX) | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-14 | Roblox_UI_Cute_Pop odrzucony (2,70 s) |
+| `ui.loot.legendary` | `rbxassetid://15675043410` | Roblox_UI_Tonal_Stinger | Roblox | 1,47 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `ui.levelup` | `rbxassetid://12222253` | victory.wav | Roblox | 1,21 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `ui.quest` | `rbxassetid://10128760939` | RBLX UI Select 01 (SFX) | Roblox | 0,58 | Creator Store, twórca Roblox | 2026-10-14 | Roblox_UI_Piano_Hello odrzucony (4,04 s) |
+| `ui.coin` | `rbxassetid://10066947742` | RBLX UI Purchase (SFX) | Roblox | 0,87 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
+| `ui.click` | `rbxassetid://15675032796` | Roblox_UI_Small_Click | Roblox | 0,13 | Creator Store, twórca Roblox | 2026-10-14 | zastępuje `volume_slider.ogg` |
+| `ui.error` | `rbxassetid://15675075163` | Roblox_UI_Delete | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-14 | nieodsłuchane, wybór po nazwie |
 
 ## Wierzchowce (S96)
 

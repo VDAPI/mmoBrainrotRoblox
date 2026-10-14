@@ -32,12 +32,13 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local QuestController = {
 	Name = "QuestController",
-	Deps = { "WindowManager", "UIController", "NavController", "NotificationController" },
+	Deps = { "WindowManager", "UIController", "NavController", "NotificationController", "SfxController" },
 }
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local NotificationController: any
+local SfxController: any
 local dialogNpc = scope:Value(nil :: string?)
 local dialogRow = scope:Value(nil :: NpcQuests.Row?)
 
@@ -132,6 +133,7 @@ end
 
 function QuestController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	SfxController = registry.Get("SfxController")
 	NotificationController = registry.Get("NotificationController")
 	local UIController = registry.Get("UIController")
 	WindowManager.Register({
@@ -253,7 +255,10 @@ function QuestController.Start()
 	end)
 	-- S99: (titleKey, args?) the hunting contract title has arguments ("@key" values resolved)
 	Net.On("QuestCompleted", function(titleKey: string, args: any)
-		Sounds.play("levelUp")
+		-- S111: ui.quest, the old placeholder while it has no sound
+		if not SfxController.Ui("ui.quest") then
+			Sounds.play("levelUp")
+		end
 		local title = Text.now(titleKey, NotificationController.ResolveArgs(args))
 		Toast.push(Text.now("quest.completed", { title = title }), "success", 5)
 	end)

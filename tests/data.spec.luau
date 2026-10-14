@@ -13,6 +13,7 @@ local Items = require("../src/shared/Data/Items")
 local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
 local Rarities = require("../src/shared/Data/Rarities")
+local Sfx = require("../src/shared/Data/Sfx")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local Monsters = require("../src/shared/Data/Monsters")
 local PathData = require("../src/shared/Data/Paths")
@@ -481,7 +482,8 @@ T.describe("Localization keys used in code", function()
 			local text = fs.readFile(path)
 			for literal in string.gmatch(text, '"([%w_]+%.[%w_.]+)"') do
 				local namespace = string.match(literal, "^([%w_]+)%.")
-				if namespace and table.find(NAMESPACES, namespace) and not hasKey(literal) then
+				-- S111: Data/Sfx sound keys ("skill.default.cast") are not texts
+				if namespace and table.find(NAMESPACES, namespace) and not hasKey(literal) and not Sfx.has(literal) then
 					table.insert(missing, `{literal} ({path})`)
 				end
 			end

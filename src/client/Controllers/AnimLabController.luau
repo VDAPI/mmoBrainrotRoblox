@@ -9,6 +9,8 @@
 -- LookAnim.clipTime), boss telegraphs (CombatFxController.PreviewTelegraph) and NPC copies. `freeze t` replays the last
 -- motion and stops the pose (AnimationController.LabHold, exact) and every effect (Vfx/Clock, within a frame) at t.
 -- Nothing here runs outside Studio or without the stage (the frame loop is connected only while the stage exists).
+-- S111: `sfx` plays Data/Sfx keys and raw Creator Store ids (SfxController.Preview / Audition), also without the
+-- stage; `state` carries the sound pool's numbers (SfxController.Stats).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -32,6 +34,7 @@ local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
+local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local Skills = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -45,6 +48,7 @@ local AnimLabController = {
 		"CombatFxController",
 		"MonsterViewController",
 		"NotificationController",
+		"SfxController",
 	},
 }
 
@@ -90,6 +94,7 @@ local Vfx: any
 local Combat: any
 local MonsterView: any
 local Notifications: any
+local SfxCtl: any
 local player = Players.LocalPlayer
 
 local stage: Folder? = nil
@@ -110,6 +115,7 @@ local loopOn = false
 local cameraOn = false
 local frame: RBXScriptConnection? = nil
 local playing = 0 -- token of the running replay (a newer command cancels an older wait)
+local sfxRun = 0 -- S111: token of `sfx all` (any newer command stops it)
 
 -- Helpers ----------------------------------------------------------------------------------------------------
 
@@ -572,6 +578,7 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 	local at = centre
 		+ Vector3.new(target.X, info.hipHeight + info.rootHalf, target.Z - math.max(0, info.width / 2 - 1))
 	model:PivotTo(CFrame.lookAt(at, Vector3.new(centre.X, at.Y, centre.Z)))
+	model:SetAttribute("PreviewMonsterId", id) -- S111: SfxController.Mob (family, boss, hit material)
 	for _, item in model:GetDescendants() do
 		if item:IsA("BasePart") then
 			item.CanQuery = false
@@ -668,7 +675,7 @@ local function playBoss(command: Command)
 		w = attack.width,
 		t = attack.windup,
 		el = attack.element,
-	})
+	}, model)
 end
 
 local function playNpc(command: Command)
@@ -915,12 +922,97 @@ local function stateOf(): { [string]: any }
 		animated = Animation.AnimatedCount(),
 		dummies = #row + #stressed + (if actor then 1 else 0) + (if dummy then 1 else 0),
 		clockPending = Clock.pending(),
+		sfx = SfxCtl.Stats(),
 	}
+end
+
+-- S111: where `sfx` plays: in front of the actor (C + (0, 3, -3)), without the stage in front of the camera.
+local function sfxAt(): Vector3?
+	if stage then
+		return centre + Vector3.new(0, 3, -3)
+	end
+	local camera = Workspace.CurrentCamera
+	return if camera then camera.CFrame.Position + camera.CFrame.LookVector * 4 else nil
+end
+
+local function yesNo(value: any): string
+	return Text.now(if value == true then "animlab.yes" else "animlab.no")
+end
+
+-- S111: sfx <key> [n] | sfx list [prefix] | sfx all [prefix] | sfx try <assetId> (works without the stage too).
+local function runSfx(command: Command): { [string]: any }
+	local sub = command.id :: string
+	local prefix = command.slot
+	if sub == "try" then
+		local result = SfxCtl.Audition("rbxassetid://" .. (command.slot :: string), sfxAt())
+		notify("animlab.sfx.try", { id = result.id, loaded = yesNo(result.loaded), length = result.length })
+		print("[AnimLab] sfx", HttpService:JSONEncode(result))
+		return result
+	elseif sub == "list" then
+		local keys = Sfx.keys(prefix)
+		local empty: { string } = {}
+		for _, key in keys do
+			if not Sfx.playable(key) then
+				table.insert(empty, key)
+			end
+		end
+		local result = { ok = true, total = #keys, playable = #keys - #empty, empty = empty }
+		notify("animlab.sfx.list", {
+			prefix = prefix or "*",
+			total = #keys,
+			playable = #keys - #empty,
+			empty = if #empty > 0 then table.concat(empty, ", ") else Text.now("animlab.none"),
+		})
+		print("[AnimLab] sfx", HttpService:JSONEncode(result))
+		return result
+	elseif sub == "all" then
+		local list: { string } = {}
+		for _, key in Sfx.keys(prefix) do
+			if Sfx.playable(key) then
+				table.insert(list, key)
+			end
+		end
+		local token = sfxRun
+		task.spawn(function()
+			for _, key in list do
+				if token ~= sfxRun then
+					return
+				end
+				local result = SfxCtl.Preview(key, nil, sfxAt())
+				print("[AnimLab] sfx", HttpService:JSONEncode(result))
+				task.wait(Config.Sfx.allEvery)
+			end
+		end)
+		notify("animlab.sfx.all", { n = #list, prefix = prefix or "*", every = Config.Sfx.allEvery })
+		return { ok = true, keys = list }
+	end
+	if not Sfx.has(sub) then
+		notify("animlab.sfx.unknown", { key = sub })
+		return { ok = false, error = "unknown", key = sub }
+	end
+	if not Sfx.playable(sub) then
+		notify("animlab.sfx.empty", { key = sub })
+		return { ok = false, error = "empty", key = sub }
+	end
+	local result = SfxCtl.Preview(sub, command.n, sfxAt())
+	notify("animlab.sfx.played", {
+		key = sub,
+		n = result.n,
+		id = result.id,
+		loaded = yesNo(result.loaded),
+		length = result.length,
+	})
+	print("[AnimLab] sfx", HttpService:JSONEncode(result))
+	return result
 end
 
 -- Runs a command; returns the result for AnimLabCall (always with `ok`).
 local function run(command: Command): { [string]: any }
 	local action = command.action
+	sfxRun += 1
+	if action == "sfx" then
+		return runSfx(command)
+	end
 	if action == "on" then
 		if not build() then
 			return { ok = false, error = "no character" }
@@ -965,9 +1057,6 @@ local function run(command: Command): { [string]: any }
 			print("[AnimLab] keys", HttpService:JSONEncode(result))
 		end
 		return result
-	elseif action == "sfx" then
-		notify("animlab.notYet", { session = "S111" })
-		return { ok = false, error = "notYet" }
 	elseif action == "cam" then
 		local pos, look = setCamera(command.id)
 		if not pos or not look then
@@ -1063,6 +1152,7 @@ function AnimLabController.Init(registry: any)
 	Combat = registry.Get("CombatFxController")
 	MonsterView = registry.Get("MonsterViewController")
 	Notifications = registry.Get("NotificationController")
+	SfxCtl = registry.Get("SfxController")
 end
 
 function AnimLabController.Start()
