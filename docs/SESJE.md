@@ -7548,3 +7548,127 @@ Uproszczenia: brak dźwięku ryku, dzwonów i ptaków w scenach (dźwięki tylko
 pola dźwięku); kamera sceny `firstSpring` przybliża się, ale nie opada (stała wysokość ujęcia `point`); rycerze w
 `thornWhole` nie klękają, tylko rozsypują się w szron; skin finału bez płatków z grzywy (skin zmienia kolory i części,
 nie cząstki); `frozenFigure` z planu F1 zastąpiona figurą sceny z `ice = true`.
+
+### S106: Questy poboczne Mrocznego Boru (20–44)
+
+Start na `1fbd573` (S105): commit i sekcja S105 oraz S101b, wszystkie pliki z listy przerwania na miejscu. Mechanizmy
+S102/S103 sprawdzone grepem i użyte bez zmian (nazwy w `build/s106_notes.md`): `regionfolk` + `NpcDef.wiki`,
+`NpcSpot.wiki` / `QuestAnchor.wiki` z jednym filtrem w `tools/WikiData/World`, `atSite`, `spot`, `anchor`, `NPC_SPOTS`
+/ `QUEST_ANCHORS` w `Areas/duskwood`, `PROPS` / `Quest.frame` / `Quest.all` w `DuskwoodGen/Quest`, polany
+`npcSpots` / `questAnchors` w `dataClearings`, `expShare` / `cosmetic` / `minLevel` / `wiki` w `side(def)`, `Talk.*`.
+
+Co zrobiono:
+- **Zadania (A, B):** 27 zadań w ośmiu łukach K–R w `Data/Quests/Side` (tabela niżej), `requires` w obrębie łuku,
+  `wiki = false`, `minLevel = 20` dla 20–21, finał z wyborem przedmiotu (Heroiczne, `ilvl` = poziom); `ARCS` + 8
+  łuków (58 zadań, 18 łuków). Budżet pasma: `BAND_FROM`, `WEIGHT`, `settleBands`, eksport `BAND_SCALE`; złoto
+  `gold × GOLD_FROM_20` (0,8, E5). Sześć nowych `FX` (`lamp`, `smoke`, `wreath`, `cage`, `ward`, `spill`).
+- **NPC (B1):** Myśliwa Wanda (🏮, Brama Zmierzchu), Bartnik Maciej (🐝, Powalony Olbrzym), Grabarz Bogumił (⚰, brama
+  cmentarza), Zielarka Dobrawa (🌿, kotlina Pradrzewa), Strażnik Traktu Zbyszko (🛡, szubienica), Przewoźnik Ołdrzych
+  (🛶, pomost), Siostra Kalina (🕯, wisielcze drzewo), Kamieniarz Wojsław (⚒, płaskowyż Krwawych Urwisk); ikony bez
+  zamian (znaczniki NPC to zwykły tekst, emoji jak u Łąk). Teksty `name/role/greeting/line1..3/where` PL i EN.
+- **Mapa (C):** 8 miejsc NPC i 30 kotwic `dw_*` w `Areas/duskwood` (konstruktor `free` dla punktów spoza miejsc), 16
+  rekwizytów w `DuskwoodGen/Quest` (`lanternPost`, `wildHive`, `ossuary`, `waymark`, `eelTrap`, `charmPole`,
+  `shoring`; 5–8 kawałków detail/fine, bez kolizji, w ramie kotwicy, `Quest.SIDE_OFFSET` 1,8), efekty w
+  `QuestAnchorController` (przy rekwizycie, gdy kotwica go ma).
+- **Skin (B10):** `mountskin_lantern` „Czaprak straży latarń” (`obtain.quest = side_lampLighter`, cena 0, `wiki =
+  false`), finał łuku latarników daje go obok wyboru przedmiotu.
+- **Rozmowy (B13–B14):** wybór (2–3 odpowiedzi) i komentarze `accept` / `half` / `done` (+ `near`, `death`, `stuck`
+  według planu) we wszystkich 27; `recall` w `side_lampLighter.p1`, `side_oldShaggy.p1`, `side_restingPlace.done`,
+  `side_rotCure.done`, `side_cultCages.done`, `side_witchCauldron.p1`; podpowiedzi `place.cultCages` (535 / −577) i
+  `place.trollVillage`; upominki `potion_hp_3` / `potion_mana_3` po 2. Wanda prowadzi (`lead`, cel 1 `escort` z Bramy
+  Zmierzchu −628 / 28 przez −600 / 70, −572 / 140 do −540 / 200; odcinki 51, 75, 68), Dobrawa idzie (`follow`, cele 1–2).
+- **Teksty (D1):** wszystkie strony, `progress`, `done`, odpowiedzi, warianty, komentarze, linie towarzyszy, łuki,
+  14 przedmiotów, 12 akcji (+ `quest.use.cage` z S104), 5 miejsc (`place.boneTree`, `trollVillage`, `witchHut`,
+  `batRoost`, `cultCages`; żadnego nie było), skin. Plotka karczmarza: „Słyszałem, że Myśliwa Wanda przy Bramie
+  Zmierzchu w Mrocznym Borze szuka kogoś do roboty”.
+- **Budżet (E):** `--session S106`, `check` = 0, `allowed` 0 nowych, 6 odświeżonych, księga (`MONSTER_EXP_MUL*`,
+  `byArc.<łuk>*` ×8, `BAND_FROM`, `WEIGHT*`, `BAND_SCALE*`, `GOLD_FROM_20`), `docs/BALANS.md` przeliczony.
+
+| id | łuk | poz. | daje → oddaje | EXP | złoto |
+|---|---|---|---|---|---|
+| `side_moonOil` | lanterns | 20 | sergeant → huntress_wanda | 515 | 384 |
+| `side_darkLanterns` | lanterns | 21 | huntress_wanda → huntress_wanda | 565 | 401 |
+| `side_boneTree` | lanterns | 23 | huntress_wanda → huntress_wanda | 671 | 437 |
+| `side_lampLighter` ★ | lanterns | 24 | huntress_wanda → huntress_wanda | 1309 | 456 |
+| `side_clayJars` | apiary | 22 | innkeeper → beekeeper_maciej | 617 | 420 |
+| `side_smokedHives` | apiary | 23 | beekeeper_maciej → beekeeper_maciej | 671 | 437 |
+| `side_stolenHoney` | apiary | 25 | beekeeper_maciej → innkeeper | 785 | 473 |
+| `side_oldShaggy` ★ | apiary | 27 | innkeeper → beekeeper_maciej | 1636 | 509 |
+| `side_nameless` | cemetery | 24 | gravedigger_bogumil → gravedigger_bogumil | 727 | 456 |
+| `side_servantTokens` | cemetery | 26 | gravedigger_bogumil → gravedigger_bogumil | 846 | 492 |
+| `side_householdRoll` | cemetery | 27 | gravedigger_bogumil → brother_anzelm | 909 | 509 |
+| `side_restingPlace` ★ | cemetery | 29 | brother_anzelm → gravedigger_bogumil | 1874 | 545 |
+| `side_rotSap` | rot | 27 | herbalist_dobrawa → herbalist_dobrawa | 909 | 509 |
+| `side_ghoulBurrows` | rot | 29 | herbalist_dobrawa → herbalist_dobrawa | 1041 | 545 |
+| `side_rotCure` ★ | rot | 31 | herbalist_dobrawa → alchemist | 2126 | 581 |
+| `side_falseMarks` | waymarks | 30 | warden_zbyszko → warden_zbyszko | 1110 | 564 |
+| `side_lostLetters` | waymarks | 32 | warden_zbyszko → warden_zbyszko | 1254 | 600 |
+| `side_cultCages` ★ | waymarks | 34 | warden_zbyszko → warden_zbyszko | 2533 | 636 |
+| `side_eelTraps` | ferry | 34 | ferryman_oldrzych → ferryman_oldrzych | 1407 | 636 |
+| `side_trollToll` | ferry | 36 | ferryman_oldrzych → ferryman_oldrzych | 1568 | 672 |
+| `side_trollHoard` ★ | ferry | 38 | ferryman_oldrzych → ferryman_oldrzych | 3128 | 708 |
+| `side_hexCharms` | charms | 37 | exorcist_kalina → exorcist_kalina | 1652 | 689 |
+| `side_hexPouches` | charms | 39 | exorcist_kalina → brother_anzelm | 1826 | 725 |
+| `side_witchCauldron` ★ | charms | 40 | brother_anzelm → exorcist_kalina | 3448 | 744 |
+| `side_roadCut` | masons | 41 | mason_wojslaw → mason_wojslaw | 2007 | 761 |
+| `side_batRoost` | masons | 42 | mason_wojslaw → mason_wojslaw | 2101 | 780 |
+| `side_apprentice` ★ | masons | 44 | mason_wojslaw → mason_wojslaw | 4132 | 816 |
+
+Budżet pasma (E1): `BAND_SCALE[20]` = 0,043234; poboczne 20–44 (27 zadań + stajnia 4041) = 45 408 EXP = 5,998%
+`bandExp(20)` (757 042). Zwykłe / finał: poziom 20 515 / 927, 30 1110 / 1998, 44 2295 / 4132. Złoto 27 zadań 15 485
+(z × 0,8). Udział `side` w paśmie 20–44: model 0,3% → 3,0%, gracz robi wszystko 0,5% → 6,0%; razem zadania 20–44
+24,3% → 27,0% (model).
+
+`monsterExpMul` przed → po: L20 0,643 → 0,575; L25 1,237 → 1,189; L30 1,187 → 1,143; L35 1,141 → 1,102; L40 0,962 →
+0,929; L44 0,768 → 0,735 (zmiana tylko na 20–44, żaden nowy poziom nie przycięty; godziny bicia 20–44 ×1,0002; tempo
+20 → 45 14,38 h bez zmian). `ALLOWED_1_20_DIFFS`: 222 → 222 (0 nowych, 6 odświeżonych: EXP potworów gracza 20.).
+
+Porównanie C1/C8 (`build/s106_snapshot.luau`): 57 grup, spawnery trzech jaskiń, 50 węzłów i 2 łowiska identyczne;
+drzewa 929 (bez zmian, po przesunięciu `dw_lantern_2`), części serwera 2235 (bez zmian), +16 budowli (rekwizyty),
+detail +33, fine +55. Punkty końcowe różne od planu: `dw_lantern_2` −516 / 9, `dw_lantern_3` −440 / 16, `dw_burrow_*`
+−2,5 / 363,5, 201 / 520, 35 / 230, `dw_troll_hoard` `atSite(−11, −8)`, `dw_trap_*` 572 / 502 i 606 / 500,
+`dw_shore_*` 590 / 5, 604 / −4, 634 / 4; reszta z planu (miejsca NPC wszystkie z pierwszego punktu).
+
+Wiki: `npm run data` zmienia tylko `wiki/src/data/meta.json` (commit i data; `dataHash` bez zmian), `duskwood.svg`
+bez zmian, `wiki_keys_diff` pusty. EXP potworów na wiki nie bierze `MONSTER_EXP_MUL`, więc bez zmian.
+
+Testy: `sidequests.spec` (58 / 18, kotwice wszystkich map, węzły mapy zadania, cel `escort`, blok S106: łuki, poziomy,
+NPC na miejscach, co dwa poziomy 20–43, budżet i wzór EXP, wymagania, Łąki i stajnia bez zmian, teksty bez tajemnic
+fabuły, skin, plotki), `duskwood.spec` (miejsca, 30 kotwic, zajętość, rekwizyty i budowle, `atSite`),
+`npcmarks.spec`, `wikidump.spec`, `dialogue.spec` (`NEW_QUESTS.S106`, `COMPANION_GROUPS.S106`), `companion.spec`
+(trasa Wandy, Dobrawa). `scripts/check` zielony (6326 testów).
+
+Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/duskwood.luau`,
+`src/shared/Data/{Npcs,Cosmetics,QuestBudget}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/DuskwoodGen/Quest.luau`, `src/client/Controllers/QuestAnchorController.luau`,
+`tests/{sidequests,duskwood,npcmarks,wikidump,dialogue,companion}.spec.luau`, `tests/BalanceTables.luau`,
+`tools/balance_reasons.luau`, `wiki/src/data/meta.json`, `docs/{BALANS,DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+
+#### Dla S107 i S108
+
+- Budżet: `side(def)` liczy EXP zadań z poziomem ≥ 20 bez `expShare` z budżetu pasma (`settleBands`; pasma 45–69 i
+  70–99 działają same, `BAND_SCALE[45]` / `[70]`), wagi `WEIGHT` (1 / 1,8), złoto `gold × GOLD_FROM_20` (sprawdź
+  G9 swojego pasma; stała jest jedna dla wszystkich pasm). Bez `expShare` w nowych zadaniach.
+- NPC: `regionfolk(map, id, spot, colors, icon, { wiki = false })`; miejsca jako klucze `NPC_SPOTS` (`NpcSpot.wiki`),
+  kotwice w `QUEST_ANCHORS` (`QuestAnchor.wiki`, `rot`); jeden filtr S103 w `WikiData/World`, nic tam nie dopisujesz.
+  Prefiksy kotwic: `dw_` (Bór), `ash_` (Pustkowia), `fp_` (Szczyty). Punkty spoza miejsc: konstruktor jak `free`.
+- Rekwizyty: `DuskwoodGen/Quest.luau` (`PROPS`, `QuestProp_<id>`, tag `questprop`, rodzaje bez `THINGS` w ramie
+  kotwicy, `SIDE_OFFSET`); S107 `AshenGen/Quest.luau`, S108 `FrostpeakGen/SideCamps.luau`. Polany robią pętle
+  `dataClearings` (kotwica r 6, miejsce r 8): sprawdź, czy polana nie zabiera drzewa, które rysuje mapa wiki
+  (`duskwood.svg` zmieniło się od jednego drzewa przy kotwicy 2 studs obok).
+- Zrzut grup, węzłów, łowisk i drzew przed i po (`build/s106_snapshot.luau`, `build/s106_trees.luau`).
+- Komendy: `lune run tools/quest_budget.luau --session S10x`, `check`, `allowed --why "S10x: …"` (wiersze poziomu 45 /
+  70 mogą się odświeżyć tylko, gdy fixture je ma; 1–20 zamrożone), `tools/balance_report.luau`, `npm run data`.
+- Zasada: łuki nie nazywają tajemnic fabuły (test tekstów S106 na wzór); rozmowy S101b: wybór + `accept` / `half` /
+  `done` w każdym, ≥ 2 towarzyszy w regionie (`COMPANION_GROUPS.S10x = { { map = … } }`), trasy `lead` sprawdzane
+  `MapTerrain.walkable(…, 4)` i `legMax`; `half` tylko przy Σ n ≥ 2.
+- Zajęte nazwy: łuki `lanterns`, `apiary`, `cemetery`, `rot`, `waymarks`, `ferry`, `charms`, `masons`; NPC i miejsca z
+  tabeli; przedmioty `moonOil`, `stachLantern`, `clayJars`, `wildHoneycomb`, `fatherBell`, `servantToken`,
+  `householdRoll`, `rotSap`, `rotTincture`, `travellerLetter`, `ferryCoin`, `hexPouch`, `apprenticeChisel`,
+  `apprenticeRing`; akcje `quest.use.{lantern,trophies,hive,grave,tablet,burrow,waymark,trap,hoard,charm,cauldron,
+  shore}`; efekty `lamp`, `smoke`, `wreath`, `cage`, `ward`, `spill`; skin `mountskin_lantern`.
+- S109: zdjąć `wiki = false` z 27 zadań, 8 NPC, skina, kotwic `dw_*` i 8 miejsc NPC, zdjąć przypadek S106 w
+  `tests/wikidump.spec`.
+
+Uproszczenia: efekt `spill` przykrywa stojący kocioł wiedźmy przewróconą bryłą (kocioł generatora zostaje pod nią,
+jego zielone światło też); `ward` przy słupach z urokiem stawia deszczułkę obok, urok rekwizytu nie znika.

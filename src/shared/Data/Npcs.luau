@@ -349,6 +349,18 @@ regionfolk(
 regionfolk("duskwood", "defector_jorund", "jorund", { body = "#4A4A52", accent = "#7A4AA0" }, "🕯", { wiki = false })
 regionfolk("duskwood", "witch_ragna", "ragna", { body = "#3E4A36", accent = "#8A7A5A" }, "🌿", { wiki = false })
 
+-- S106: Duskwood side arc NPCs (Data/Quests/Side arcs K-R), on the places of Areas/duskwood npcSpots; off the wiki
+-- until S109.
+local SIDE_DUSK = { wiki = false }
+regionfolk("duskwood", "huntress_wanda", "huntress", { body = "#3A4A5A", accent = "#7FB8FF" }, "🏮", SIDE_DUSK)
+regionfolk("duskwood", "beekeeper_maciej", "beekeeper", { body = "#6B5A2E", accent = "#D8A43A" }, "🐝", SIDE_DUSK)
+regionfolk("duskwood", "gravedigger_bogumil", "gravedigger", { body = "#3A3A3E", accent = "#8A7A5E" }, "⚰", SIDE_DUSK)
+regionfolk("duskwood", "herbalist_dobrawa", "herbalist", { body = "#4A5A3A", accent = "#B8C08A" }, "🌿", SIDE_DUSK)
+regionfolk("duskwood", "warden_zbyszko", "warden", { body = "#5A5650", accent = "#7A1F2B" }, "🛡", SIDE_DUSK)
+regionfolk("duskwood", "ferryman_oldrzych", "ferryman", { body = "#3E4A3A", accent = "#8A7A58" }, "🛶", SIDE_DUSK)
+regionfolk("duskwood", "exorcist_kalina", "exorcist", { body = "#E8E2D0", accent = "#5A4A3A" }, "🕯", SIDE_DUSK)
+regionfolk("duskwood", "mason_wojslaw", "mason", { body = "#6E6A64", accent = "#6E2F2A" }, "⚒", SIDE_DUSK)
+
 -- Story NPCs of the Ashen Wastes (S104, docs/FABULA.md §2.4), on the places of Areas/ashen npcSpots. Brokk reaches
 -- Kesra's camp with deadOasis, Ghasha the Hot Spring once freed in warcampCages (NpcDef.showFrom); Kaspar always stands
 -- before his temple.

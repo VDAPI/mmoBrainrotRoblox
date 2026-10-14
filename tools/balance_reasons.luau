@@ -3024,6 +3024,74 @@ return {
 		["Quests/Side:STABLE_MIN"] = {
 			{ session = "S96", why = "the stable arc is offered from level 20 (= Config.Mount.minLevel)" },
 		},
+		-- S106 (docs/DESIGN-15.md §3.4): the Duskwood side arcs; EXP from the band budget (TARGET.side of 20-44 by
+		-- expToNext x weight, the stable arc fixed and counted), gold(level) x GOLD_FROM_20, 3-4 quests per arc
+		["Quests/Side:byArc.lanterns*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.apiary*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.cemetery*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.rot*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.waymarks*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.ferry*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.charms*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:byArc.masons*"] = {
+			{
+				session = "S106",
+				why = "S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave",
+			},
+		},
+		["Quests/Side:BAND_FROM"] = {
+			{ session = "S106", why = "S106: side quest EXP from the band budget from level 20 (the Meadows 1-19 keep their shares)" },
+		},
+		["Quests/Side:WEIGHT*"] = {
+			{ session = "S106", why = "S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25)" },
+		},
+		["Quests/Side:BAND_SCALE*"] = {
+			{
+				session = "S106",
+				why = "S106: derived by settleBands (band 20-44: 6% of its EXP minus the stable arc, by expToNext x weight)",
+			},
+		},
+		["Quests/Side:GOLD_FROM_20"] = {
+			{
+				session = "S106",
+				why = "S106 E5: gold of the banded side quests x0.8 (with 1.0 G9.up3 at 40 is 0.449 < 0.45; 0.9 leaves 0.4507)",
+			},
+		},
 		-- S97 (DESIGN-15 §2): mounts 2 (upgrades, boss and premium mounts); income = Balance.levelIncome at the step's
 		-- character level (S84 model, mean of the classes), table in docs/BALANS.md "Wierzchowce (S97)"
 		["Mounts:UPGRADE[2]*"] = {
@@ -3178,6 +3246,10 @@ return {
 			{
 				session = "S105",
 				why = "regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged",
+			},
+			{
+				session = "S106",
+				why = "regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP)",
 			},
 		},
 		["Quests/Main:STORY_STEP"] = {

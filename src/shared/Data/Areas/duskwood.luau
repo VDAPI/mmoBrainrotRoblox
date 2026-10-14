@@ -75,6 +75,16 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 	-- on the dry west shore by the stilt village (the village itself stands in the water; the first of the planned
 	-- points 416 / 592, 418 / 566, 424 / 612 that passes the ground checks of tests/duskwood.spec)
 	ragna = { x = 416, z = 592, facing = 0, wiki = false },
+	-- S106: places of the Duskwood side arc NPCs (Data/Npcs regionfolk), inside the avoid circles of existing sites, so
+	-- no monster group or gathering node moves.
+	huntress = { x = -628, z = 28, facing = 200, wiki = false }, -- the north edge of the Dusk Gate, off the road
+	beekeeper = { x = -494, z = 548, facing = 45, wiki = false }, -- the gorge's lip at the end of the Fallen Giant
+	gravedigger = spot("cemetery", 6, -22, 200), -- before the gap in the cemetery fence
+	herbalist = { x = 147.4, z = 342.1, facing = 0, wiki = false }, -- 30 studs before the Elder Tree, between roots
+	warden = { x = 304, z = -66, facing = 180, wiki = false }, -- between the gallows and the road
+	ferryman = { x = 582, z = 496, facing = 135, wiki = false }, -- on land at the foot of the jetty
+	exorcist = { x = 74, z = 60, facing = 160, wiki = false }, -- a dry tussock before the hanging tree
+	mason = { x = 668, z = 30, facing = 270, wiki = false }, -- on the Blood Cliffs plateau, off the Crypt's yard
 }
 
 -- S103: quest anchors of the story (chapter II), inside the avoid circles of their sites; `rot` = the site's yaw (the
@@ -84,6 +94,11 @@ local function anchor(id: string, site: string, lx: number, lz: number, y: numbe
 	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
 end
 
+-- S106: an anchor at a map point of its own (no site frame), `rot` = the yaw of its prop.
+local function free(id: string, x: number, z: number, rot: number): Types.QuestAnchor
+	return { id = id, x = x, z = z, y = 2, wiki = false, rot = rot }
+end
+
 local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	anchor("moonstone_rune", "moonstone", 0, -4, 2.5), -- the face of the menhir on the Moon Glade
 	anchor("lost_camp", "lostCamp", -3, -7, 1.5), -- the broken chest and the crossbow on the gorge floor
@@ -91,6 +106,43 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	anchor("family_crypt", "familyCrypt", 0, -8, 1.5), -- the crypt's mouth with the grate swung aside
 	anchor("elder_tree", "elderTree", 0, -9, 2.5), -- before the crack of the Elder Tree
 	anchor("crypt_seal", "cryptGate", 15, -21, 3), -- before the right niche of skulls, 15 studs from the Crypt's mouth
+	-- S106: anchors of the Duskwood side arcs (dw_*). Those away from a site stand 10+ studs from every monster group;
+	-- `rot` turns their prop (Logic/DuskwoodGen/Quest, local +Z = away from the road or towards the water).
+	free("dw_lantern_1", -596, 21, 0), -- the main road through the Werewolf Thicket, north verge
+	free("dw_lantern_2", -516, 9, 180), -- south verge, clear of the forest's trees
+	free("dw_lantern_3", -440, 16, 0), -- north verge, 10 studs from the road's own lantern
+	anchor("dw_bonetree", "boneTree", 0, -6, 2), -- before the Bone Tree's trophies
+	free("dw_hive_1", -686, 334, 0), -- by the fallen hive at the Thicket's edge (Thicket Beehive)
+	free("dw_hive_2", -470, 600, 0), -- Bear Hollow, on the gorge's floor
+	free("dw_hive_3", -600, 700, 0), -- Bear Hollow, the west end of the gorge
+	anchor("dw_grave_1", "cemetery", -16, -10.5, 1.5), -- grave n = 1 (row 1, column 1)
+	anchor("dw_grave_2", "cemetery", 16, -10.5, 1.5), -- grave n = 5
+	anchor("dw_grave_3", "cemetery", 8, -3.5, 1.5), -- grave n = 9
+	anchor("dw_grave_4", "cemetery", 16, 10.5, 1.5), -- grave n = 20
+	anchor("dw_ossuary", "cemetery", 0, 22, 1.5), -- behind the back fence: the servants' common grave
+	free("dw_burrow_1", -2.5, 363.5, 0), -- at the mouth of ghoul burrow 1 (Heart BURROWS[1])
+	free("dw_burrow_2", 201, 520, 0), -- burrow 3
+	free("dw_burrow_3", 35, 230, 0), -- burrow 4
+	free("dw_waymark_1", 416, -202, 73), -- the road to the Cultist Village, east verge
+	free("dw_waymark_2", 440, -283, 73),
+	free("dw_waymark_3", 475, -380, 68),
+	-- before the two cages of the Cultist Village (local -30/-14 and -20/-30 of a village built without a turn, so not
+	-- atSite: SITES.cultVillage.rot is the yaw of its avoid circle only)
+	free("dw_cage_1", SITES.cultVillage.x - 30, SITES.cultVillage.z - 9.5, 0),
+	free("dw_cage_2", SITES.cultVillage.x - 20, SITES.cultVillage.z - 25.5, 0),
+	-- the Troll Swamp's reed shore is soft marsh; the traps stand on the nearest firm ground by the jetty, the prop
+	-- towards the water
+	free("dw_trap_1", 572, 502, 296),
+	free("dw_trap_2", 606, 500, 45),
+	anchor("dw_troll_hoard", "trollVillage", -11, -8, 1.5), -- before the heap of bones by the great cauldron
+	anchor("dw_charm_1", "hangingTree", 0, -6, 2), -- under the hanging tree
+	free("dw_charm_2", 143, 104, 306), -- the path through the Witch Marsh, west verge
+	free("dw_charm_3", 203, 119, 345), -- north verge, before the ford
+	anchor("dw_cauldron", "witchHut", 11, -1, 1.5), -- 3 studs before the witches' cauldron
+	-- the road's cut up the Blood Cliffs, on the verge (the props lean on the cut's wall)
+	free("dw_shore_1", 590, 5, 0),
+	free("dw_shore_2", 604, -4, 180),
+	free("dw_shore_3", 634, 4, 0),
 }
 
 -- The Black Stream and its head on the cliffs (typed apart: only the first has shallows).

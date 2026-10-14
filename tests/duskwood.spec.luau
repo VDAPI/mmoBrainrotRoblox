@@ -405,3 +405,188 @@ describe("Duskwood story places (S103)", function()
 		expect(string.format("%.3f", ns)).toBe("12269.000")
 	end)
 end)
+
+-- S106: places of the Duskwood side arcs (NPC spots, dw_* anchors, the props of DuskwoodGen/Quest) -------------------
+
+-- spot -> NPC of the side arcs
+local SIDE_SPOTS = {
+	huntress = "huntress_wanda",
+	beekeeper = "beekeeper_maciej",
+	gravedigger = "gravedigger_bogumil",
+	herbalist = "herbalist_dobrawa",
+	warden = "warden_zbyszko",
+	ferryman = "ferryman_oldrzych",
+	exorcist = "exorcist_kalina",
+	mason = "mason_wojslaw",
+}
+-- dw_* anchors without a prop of their own -> the generator Build they stand at
+local AT_BUILD = {
+	dw_bonetree = "boneTree",
+	dw_hive_1 = "Beehive",
+	dw_grave_1 = "cemetery",
+	dw_grave_2 = "cemetery",
+	dw_grave_3 = "cemetery",
+	dw_grave_4 = "cemetery",
+	dw_burrow_1 = "GhoulBurrow_1",
+	dw_burrow_2 = "GhoulBurrow_3",
+	dw_burrow_3 = "GhoulBurrow_4",
+	dw_cage_1 = "CultVillage",
+	dw_cage_2 = "CultVillage",
+	dw_troll_hoard = "trollVillage",
+	dw_charm_1 = "hangingTree",
+	dw_cauldron = "witchHut",
+}
+
+local function inAvoid(x: number, z: number): boolean
+	for _, c in DATA.avoid do
+		if dist(x, z, c.x, c.z) < c.r then
+			return true
+		end
+	end
+	return false
+end
+
+local function sideAnchors(): { [string]: any }
+	local out = {}
+	for _, a in DATA.questAnchors or {} do
+		if string.sub(a.id, 1, 3) == "dw_" then
+			out[a.id] = a
+		end
+	end
+	return out
+end
+
+describe("Duskwood side arc places (S106)", function()
+	it("the eight NPC places: inside avoid circles, dry walkable ground, apart, clear of builds, hidden", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for key, npcId in SIDE_SPOTS do
+			local spot = assert(spots[key], key)
+			expect(math.abs(spot.x) < 800 and math.abs(spot.z) < 800).toBe(true)
+			expect(`{key} {inAvoid(spot.x, spot.z)}`).toBe(`{key} true`)
+			expect(`{key} {MapTerrain.walkable("duskwood", spot.x, spot.z, 2)}`).toBe(`{key} true`)
+			expect(`{key} {T.dryAround(spot.x, spot.z, 3)}`).toBe(`{key} true`)
+			expect(T.streamDistance(spot.x, spot.z) >= 6).toBe(true)
+			expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
+			expect(`{key} {blockedBy(spot.x, spot.z, 1)}`).toBe(`{key} nil`)
+			expect(`{key} {AreaSpawns.nearRoad(DATA.roads, spot.x, spot.z, 6)}`).toBe(`{key} false`)
+			expect(dist(spot.x, spot.z, -690, -36) >= 8).toBe(true)
+			expect(spot.wiki).toBe(false)
+			for other, o in spots do
+				if other ~= key then
+					expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+				end
+			end
+			local npc = assert(Npcs.get(npcId), npcId)
+			expect(npc.map).toBe("duskwood")
+			expect(npc.position.x).toBe(spot.x)
+			expect(npc.position.z).toBe(spot.z)
+			expect(npc.facing).toBe(spot.facing)
+			expect(npc.wiki).toBe(false)
+		end
+	end)
+
+	it("the 30 dw_* anchors: unique, dry, walkable, in an avoid circle or 10+ studs from groups, apart", function()
+		local anchors = sideAnchors()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		local groups = AreaSpawns.region(DATA, MAP.size)
+		local n = 0
+		for id, a in anchors do
+			n += 1
+			local found, mapId = Areas.anchorById(id)
+			expect(found).toBe(a)
+			expect(mapId).toBe("duskwood")
+			expect(math.abs(a.x) < 800 and math.abs(a.z) < 800).toBe(true)
+			expect(T.water(a.x, a.z)).toBeNil()
+			expect(`{id} {MapTerrain.walkable("duskwood", a.x, a.z, 2)}`).toBe(`{id} true`)
+			expect(a.wiki).toBe(false)
+			if not inAvoid(a.x, a.z) then
+				for _, g in groups do
+					if dist(a.x, a.z, g.position.x, g.position.z) < 10 then
+						error(`{id} is {dist(a.x, a.z, g.position.x, g.position.z)} studs from group {g.id}`)
+					end
+				end
+			end
+			for mapName, data in Areas.byMap do
+				for _, other in data.questAnchors or {} do
+					if other ~= a then
+						expect(other.id ~= id).toBe(true)
+						if mapName == "duskwood" then
+							expect(`{id}-{other.id} {dist(a.x, a.z, other.x, other.z) >= 6}`).toBe(
+								`{id}-{other.id} true`
+							)
+						end
+					end
+				end
+			end
+			for key, spot in spots do
+				expect(`{id}-{key} {dist(a.x, a.z, spot.x, spot.z) >= 5}`).toBe(`{id}-{key} true`)
+			end
+			expect(`{id} {blockedBy(a.x, a.z, 0.5)}`).toBe(`{id} nil`)
+		end
+		expect(n).toBe(30)
+	end)
+
+	it("a prop of DuskwoodGen/Quest at 16 anchors, an existing build at the other 14", function()
+		local anchors = sideAnchors()
+		local all = DuskwoodGen.all()
+		local props = 0
+		for id, a in anchors do
+			if Quest.kindOf(id) then
+				props += 1
+				local found = 0
+				for _, b in all do
+					if b.name == `QuestProp_{id}` then
+						found += 1
+						expect(b.tag).toBe("questprop")
+						expect(dist(a.x, a.z, b.at.x, b.at.z) <= 3).toBe(true)
+						expect(#b.bp.pieces <= 8).toBe(true)
+						for _, piece in b.bp.pieces do
+							expect(piece.col).toBe(false)
+							expect(piece.lod ~= "shell").toBe(true)
+						end
+					end
+				end
+				expect(`{id} {found}`).toBe(`{id} 1`)
+			else
+				local name = AT_BUILD[id]
+				if not name then
+					error(`{id}: neither a prop nor a build`)
+				end
+				local near = false
+				for _, b in all do
+					if b.name == name then
+						for _, piece in b.bp.pieces do
+							local px, _, pz = Kit.worldOf(b, piece.p[1], piece.p[2], piece.p[3])
+							near = near or dist(a.x, a.z, px, pz) <= 6
+						end
+					end
+				end
+				expect(`{id} {near}`).toBe(`{id} true`)
+			end
+		end
+		expect(props).toBe(16)
+	end)
+
+	it("the anchors at sites agree with Kit.toWorld", function()
+		local plan = {
+			dw_bonetree = { "boneTree", 0, -6 },
+			dw_grave_1 = { "cemetery", -16, -10.5 },
+			dw_grave_4 = { "cemetery", 16, 10.5 },
+			dw_ossuary = { "cemetery", 0, 22 },
+			dw_troll_hoard = { "trollVillage", -11, -8 },
+			dw_cauldron = { "witchHut", 11, -1 },
+		}
+		for id, p in plan do
+			local s = SITES[p[1]]
+			local x, z = Kit.toWorld(s.x, s.z, s.rot, p[2], p[3])
+			local a = assert(Areas.anchorById(id), id)
+			expect(math.abs(a.x - x) < 0.01 and math.abs(a.z - z) < 0.01).toBe(true)
+			expect(a.rot).toBe(s.rot)
+		end
+		-- the cages: the village is built without a turn
+		local v = SITES.cultVillage
+		local cage = assert(Areas.anchorById("dw_cage_1"))
+		expect(cage.x).toBe(v.x - 30)
+		expect(cage.z).toBe(v.z - 9.5)
+	end)
+end)

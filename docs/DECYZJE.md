@@ -3154,3 +3154,44 @@
   mikstury 5. stopnia `potion_hp_5` i `potion_mana_5`, po 2 (`Config.Dialogue.gifts`).
 - **S105 wiosna, budżet części:** kępy kwiatów po 3–4 kulki (2 przy niskim detalu), najwyżej 7 kęp na ogród (4 przy
   niskim), bez kęp na ulicy: 2273 części (986 przy niskim) wobec limitu 2500 / 1200.
+- **S106 EXP pobocznych od 20.:** zadanie bez `expShare` z poziomem ≥ `BAND_FROM` (20) dostaje udział w budżecie pasma:
+  `floor(TARGET.side × bandExp) − stałe` (łuk stajni 4041 EXP) dzielone przez `Σ expToNext × waga` (zwykłe 1, koniec
+  łuku 1,8; `settleBands`, `Side.BAND_SCALE`). `BAND_SCALE[20]` = 0,04323: zwykłe ok. 4,3% poziomu, finał 7,8%;
+  poboczne 20–44 = 5,998% `bandExp(20)`. Łąki 1–19 i stajnia bez zmian co do jednostki (test).
+- **S106 poziomy:** łuki na 20–44 (45 to pasmo Pustkowi), `minLevel = 20` dla zadań 20–21 (`side_moonOil`,
+  `side_darkLanterns`); poniżej 20. poziomu Bór nie daje pobocznych.
+- **S106 złoto:** `gold(poziom) × GOLD_FROM_20` (0,8) dla zadań z budżetu pasma (stajnia bez zmian): z pełnym złotem
+  G9.up3 na 40 spada do 0,449 < 0,45 (dochód poziomu rośnie o złoto pobocznych), z 0,9 zostaje 0,4507; 0,8 daje 0,4526.
+- **S106 NPC:** ośmiu nowych mieszkańców tylko w Borze (`regionfolk("duskwood", …, { wiki = false })`), na miejscach
+  w okręgach `avoid` istniejących budowli i punktu odrodzenia (Wojsław), bez nowych `avoid`, płaszczyzn i dróg; grupy,
+  spawnery jaskiń, węzły i łowiska bez zmian (zrzut przed/po), drzewa też (929). Łuki zaczynają i kończą się u
+  istniejących ludzi miasta: sierżant, karczmarz, Brat Anzelm, alchemiczka.
+- **S106 fabuła:** łuki nie mają wymagań fabularnych i nie nazywają Ilvara, Morvane, rodu, Ciernia ani pieczęci (test
+  tekstów; wyjątek zapisek Leszka „Kują pieczęć” w `side_batRoost.done`). FABULA 2.3 zapowiada łuk poboczny Radomira:
+  wątek ocalałych myśliwych podejmuje Wanda (latarnie), Radomir zostaje przy fabule, bo poboczne nie zależą od S103.
+- **S106 imiona NPC:** Wanda, Maciej i Wojsław zamiast Jagny, Ignacego i Radosława (kolizje z Rybaczką Jagną,
+  Zarządcą Ignacym, stajennym Radoszem w mieście i leśniczym Radomirem z S103); ikony bez zamian.
+- **S106 kotwice i rekwizyty:** prefiks `dw_`, 30 kotwic; 16 rekwizytów jako wpisy `PROPS` w `DuskwoodGen/Quest`
+  (siedem rodzajów: `lanternPost`, `wildHive`, `ossuary`, `waymark`, `eelTrap`, `charmPole`, `shoring`) w ramie
+  własnej kotwicy (bez `THINGS`, `Quest.frame` = tożsamość, `Quest.SIDE_OFFSET` 1,8 wzdłuż +Z kotwicy), po 5–8
+  kawałków detail/fine bez kolizji (jak test S103: ≤ 8, plan dopuszczał 10); 14 kotwic przy istniejących budowlach;
+  kotwice spoza miejsc przez nowy konstruktor `free(id, x, z, rot)` obok S103 `anchor`. Mechanizmy S102/S103 bez zmian.
+- **S106 przesunięcia punktów:** `dw_lantern_2` −530 / 8 → −516 / 9 (polana kotwicy zabierała drzewo −530,4 / 5,8,
+  które rysuje mapa wiki), `dw_lantern_3` −450 / 21 → −440 / 16 (latarnia traktu 1,5 studs obok), nory ghuli 5 studs
+  od środka nory (środek koliduje z kopcem), `dw_troll_hoard` `atSite(−11, −8)` zamiast (−10, −8) (kopiec koliduje),
+  szalunki 590 / 5, 604 / −4, 634 / 4 (626 i 608 / −5 nie są przechodnie), więcierze 572 / 502 i 606 / 500: brzeg
+  Trollego Bagna to miękkie mokradło, więc kotwice stoją na najbliższym twardym gruncie przy pomoście (ok. 13 studs od
+  otwartej wody), rekwizyt w stronę wody.
+- **S106 wiki:** `wiki = false` na 27 zadaniach, 8 NPC, skinie, 30 kotwicach i 8 miejscach NPC (pola S102/S103, jeden
+  filtr S103 w `WikiData/World`); `npm run data`: zmienia się tylko `meta.json` (commit i data), S109 zdejmie flagi.
+- **S106 rozmowy:** wybory i komentarze we wszystkich 27 (`NEW_QUESTS.S106`), towarzysze Wanda (`side_boneTree`,
+  `lead`, nowy cel 1 `escort` −540 / 200 przez −600 / 70 i −572 / 140; trasa przechodnia w promieniu 4) i Dobrawa
+  (`side_rotSap`, `follow` na celach 1–2). Upominki: mikstury poziomu regionu (`potion_hp_3`, `potion_mana_3`, po 2)
+  zamiast 1. stopnia z planu (jak S103 / S105). Bez `half` w zadaniach z jednym celem `deliver` (Σ n = 1).
+- **S106 skin:** `mountskin_lantern` (popielata sierść, granatowy czaprak ze srebrną lamówką, czarna uprząż, chłodna
+  grzywa) za `side_lampLighter` przez `Reward.cosmetic` i `obtain.quest` (S97), cena 0, bez wpływu na walkę i szybkość.
+- **S106 ALLOWED_1_20_DIFFS:** 222 → 222, 0 nowych, 6 odświeżonych (wiersze EXP potworów gracza 20. poziomu:
+  `monsterExpMul(20)` 0,643 → 0,575).
+- **S106 wioska kultystów i moczary:** kotwice klatek liczone wprost od środka wioski (wioska stoi bez obrotu), punkt
+  podpowiedzi `place.cultCages` 535 / −577; ziele `bush_moonpetal` rośnie tylko na mokradłach i Księżycowej Polanie, więc
+  Dobrawa w `side_rotSap` posyła po płatki „na mokradła wzdłuż Czarnego Strumienia”, a `where` wskazuje Serce Puszczy.

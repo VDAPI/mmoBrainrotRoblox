@@ -5,6 +5,8 @@
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Areas = require("../src/shared/Data/Areas")
 local Config = require("../src/shared/Config")
+local Cosmetics = require("../src/shared/Data/Cosmetics")
+local DuskwoodGen = require("../src/shared/Logic/DuskwoodGen")
 local Exp = require("../src/shared/Logic/Exp")
 local Items = require("../src/shared/Data/Items")
 local MeadowsGen = require("../src/shared/Logic/MeadowsGen")
@@ -13,6 +15,8 @@ local Mounts = require("../src/shared/Data/Mounts")
 local NpcMarks = require("../src/shared/Logic/NpcMarks")
 local Npcs = require("../src/shared/Data/Npcs")
 local QuestLogic = require("../src/shared/Logic/QuestLogic")
+local QuestBudget = require("../src/shared/Logic/QuestBudget")
+local QuestBudgetData = require("../src/shared/Data/QuestBudget")
 local Quests = require("../src/shared/Data/Quests")
 local Rng = require("../src/shared/Logic/Rng")
 local SideQuests = require("../src/shared/Logic/SideQuests")
@@ -33,6 +37,7 @@ local KNOWN_TYPES = {
 	reach = true,
 	use = true,
 	deliver = true,
+	escort = true, -- S106: side_boneTree (Wanda leads)
 }
 
 local function hasKey(key: string): boolean
@@ -64,10 +69,10 @@ local function doneUpTo(id: string): { [string]: boolean }
 end
 
 describe("Side quest data", function()
-	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice
-	it("has 31 quests in 10 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
-		expect(#Quests.Side.list).toBe(31)
-		expect(#Quests.Side.ARCS).toBe(10)
+	-- S96: the stable arc (3 quests) ends with a mount instead of an item choice; S106: + 27 quests in 8 Duskwood arcs
+	it("has 58 quests in 18 arcs, every arc with exactly one final quest (choice or mount) at its end", function()
+		expect(#Quests.Side.list).toBe(58)
+		expect(#Quests.Side.ARCS).toBe(18)
 		for _, arc in Quests.Side.ARCS do
 			local list = assert(Quests.Side.byArc[arc], arc)
 			local finals = 0
@@ -122,16 +127,34 @@ describe("Side quest data", function()
 		end
 	end)
 
+	-- S106: anchors of every map, gathering nodes of the quest's map (the map of its areas, anchors or `where`)
 	it("objectives point at existing anchors, monsters, areas, nodes and NPCs", function()
-		local anchors: { [string]: boolean } = {}
-		for _, anchor in Areas.byMap.meadows.questAnchors or {} do
-			anchors[anchor.id] = true
-		end
-		local nodes: { [string]: boolean } = {}
+		local nodesOf: { [string]: { [string]: boolean } } = { meadows = {}, duskwood = {} }
 		for _, node in MeadowsGen.nodes() do
-			nodes[node.kind] = true
+			nodesOf.meadows[node.kind] = true
+		end
+		for _, node in DuskwoodGen.nodes() do
+			nodesOf.duskwood[node.kind] = true
+		end
+		local function mapOf(quest: SideQuest): string
+			if quest.where then
+				return quest.where.map
+			end
+			for _, objective in quest.objectives do
+				if objective.area then
+					local _, mapId = Areas.areaById(objective.area)
+					return mapId or "meadows"
+				end
+				local list: { string } = objective.anchors or { objective.anchor :: string }
+				if objective.type == "use" and list[1] then
+					local _, mapId = Areas.anchorById(list[1])
+					return mapId or "meadows"
+				end
+			end
+			return "meadows"
 		end
 		for _, quest in Quests.Side.list do
+			local nodes = nodesOf[mapOf(quest)] or {}
 			-- the cave of a "reach" objective (elite kills must live there)
 			local cave: any = nil
 			for _, objective in quest.objectives do
@@ -147,7 +170,7 @@ describe("Side quest data", function()
 					local list: { string } = objective.anchors or { objective.anchor :: string }
 					expect(#list).toBe(objective.n)
 					for _, id in list do
-						if not anchors[id] then
+						if not Areas.anchorById(id) then
 							error(`{what}: unknown anchor {id}`)
 						end
 					end
@@ -169,7 +192,7 @@ describe("Side quest data", function()
 				end
 				if objective.type == "gather" and objective.node then
 					if not nodes[objective.node] then
-						error(`{what}: no {objective.node} node on the Meadows`)
+						error(`{what}: no {objective.node} node on the quest's map`)
 					end
 				end
 				if objective.monster then
@@ -404,8 +427,9 @@ describe("SideQuests rules", function()
 		expect(#SideQuests.available(q, 1, "farmer_bartosz")).toBe(0)
 		-- side_totem (15) is later; side_wanted needs side_goods first and is not listed at all
 		local later = SideQuests.later(q, 1, "sergeant")
-		expect(#later).toBe(1)
+		expect(#later).toBe(2) -- S106: side_moonOil (20) too
 		expect(later[1].id).toBe("side_totem")
+		expect(later[2].id).toBe("side_moonOil")
 		local givers = SideQuests.giversWithWork(q, 1, "innkeeper")
 		expect(table.find(givers, "granary_keeper") ~= nil).toBe(true)
 		expect(table.find(givers, "innkeeper")).toBeNil()
@@ -528,6 +552,187 @@ describe("SideQuests rules", function()
 		local done, total = SideQuests.arcProgress(quests({ active = {}, done = doneUpTo("side_sheep") }), "farm")
 		expect(done).toBe(3)
 		expect(total).toBe(5)
+	end)
+end)
+
+-- S106: the Duskwood side arcs (levels 20-44) ---------------------------------------------------------------------
+
+local DUSK_ARCS = { "lanterns", "apiary", "cemetery", "rot", "waymarks", "ferry", "charms", "masons" }
+-- NPCs of Duskwood that are not side arc NPCs (the scout and the story NPCs of S103)
+local DUSK_OTHERS = { scout_duskwood = true, forester_radomir = true, ghost_oswin = true, defector_jorund = true }
+DUSK_OTHERS.witch_ragna = true
+local CITY_GIVERS = { sergeant = true, innkeeper = true, brother_anzelm = true, alchemist = true }
+local BANNED_PL = { "Ilvar", "Morvane", "Vael", "Vaelgrath", "Cierń", "Ciernia", "pieczęci" }
+local BANNED_EN = { "Ilvar", "Morvane", "Vael", "Thorn" }
+
+local function duskQuests(): { SideQuest }
+	local out = {}
+	for _, arc in DUSK_ARCS do
+		for _, quest in Quests.Side.byArc[arc] or {} do
+			table.insert(out, quest)
+		end
+	end
+	return out
+end
+
+local function ids(list: { SideQuest }): { string }
+	local out = {}
+	for _, quest in list do
+		table.insert(out, quest.id)
+	end
+	return out
+end
+
+describe("Duskwood side arcs (S106)", function()
+	local dusk = duskQuests()
+
+	it("27 quests in eight arcs at the end of ARCS, levels 20-44, from 20, hidden from the wiki", function()
+		expect(#dusk).toBe(27)
+		for i, arc in DUSK_ARCS do
+			expect(Quests.Side.ARCS[10 + i]).toBe(arc)
+		end
+		for _, quest in dusk do
+			expect(quest.level >= 20 and quest.level <= 44).toBe(true)
+			expect(SideQuests.minLevel(quest) >= 20).toBe(true)
+			expect(quest.wiki).toBe(false)
+			expect(quest.category).toBe("side")
+			for _, npcId in { quest.giver, quest.turnIn } do
+				local npc = assert(Npcs.get(npcId), npcId)
+				expect(`{npcId} {npc.map == "duskwood" or CITY_GIVERS[npcId] == true}`).toBe(`{npcId} true`)
+			end
+			for _, objective in quest.objectives do
+				if objective.area then
+					local _, mapId = Areas.areaById(objective.area)
+					expect(`{quest.id} {mapId}`).toBe(`{quest.id} duskwood`)
+				end
+				if objective.type == "reach" and objective.map and objective.map ~= "duskwood" then
+					local cave = assert(Areas.caves.get(objective.map), objective.map)
+					expect(cave.region).toBe("duskwood")
+				end
+			end
+		end
+	end)
+
+	it("the new people of the Duskwood stand on its npc spots, hidden from the wiki", function()
+		local spots = Areas.byMap.duskwood.npcSpots or {}
+		local count = 0
+		for _, npc in Npcs.list do
+			if npc.map == "duskwood" and not DUSK_OTHERS[npc.id] then
+				count += 1
+				expect(npc.wiki).toBe(false)
+				local found = false
+				for _, spot in spots do
+					found = found or (spot.x == npc.position.x and spot.z == npc.position.z)
+				end
+				if not found then
+					error(`{npc.id} is not on an npc spot`)
+				end
+				for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+					expect(`{npc.id}.{key} {hasKey(`npc.{npc.id}.{key}`)}`).toBe(`{npc.id}.{key} true`)
+				end
+			end
+		end
+		expect(count).toBe(8)
+	end)
+
+	it("a side quest every two levels from 20 to 43 (with the stable arc)", function()
+		for from = 20, 43, 2 do
+			local found = false
+			for _, quest in Quests.Side.list do
+				found = found or (quest.level >= from and quest.level <= from + 1)
+			end
+			if not found then
+				error(`no side quest for levels {from}-{from + 1}`)
+			end
+		end
+	end)
+
+	it("the band 20-44 holds TARGET.side of its EXP, by expToNext x weight", function()
+		local scale = assert(Quests.Side.BAND_SCALE[20], "BAND_SCALE[20]")
+		local total = 0
+		for _, quest in Quests.Side.list do
+			if quest.level >= 20 and quest.level <= 44 then
+				total += quest.reward.exp
+			end
+		end
+		local share = total / QuestBudget.bandExp(20)
+		local target = QuestBudgetData.TARGET.side
+		expect(share >= target - 0.003 and share <= target).toBe(true)
+		for _, quest in dusk do
+			local w = if quest.reward.choice then Quests.Side.WEIGHT.final else Quests.Side.WEIGHT.normal
+			expect(quest.reward.exp).toBe(math.floor(Exp.expToNext(quest.level) * w * scale))
+			expect(quest.reward.exp > 0).toBe(true)
+			expect(
+				math.floor(Exp.expToNext(quest.level) * Quests.Side.WEIGHT.final * scale) > quest.reward.exp or w > 1
+			).toBe(true)
+			expect(quest.reward.exp <= Exp.expToNext(quest.level) * 0.7).toBe(true)
+			expect(quest.reward.gold > 0).toBe(true)
+		end
+	end)
+
+	it("each quest after the first of its arc requires the one before; none requires a story quest", function()
+		for _, arc in DUSK_ARCS do
+			for i, quest in Quests.Side.byArc[arc] do
+				if i == 1 then
+					expect(quest.requires).toBeNil()
+				else
+					expect(quest.requires).toEqual({ Quests.Side.byArc[arc][i - 1].id })
+				end
+				for _, req in quest.requires or {} do
+					expect(Quests.Main.get(req)).toBeNil()
+				end
+			end
+		end
+	end)
+
+	it("the Meadows and the stable arc keep their rewards", function()
+		for _, quest in Quests.Side.list do
+			if quest.level < 20 then
+				local share = if quest.reward.choice == "final" then 0.45 else 0.25
+				expect(`{quest.id} {quest.reward.exp}`).toBe(
+					`{quest.id} {math.floor(Exp.expToNext(quest.level) * share)}`
+				)
+			elseif quest.arc == "stable" then
+				expect(quest.reward.exp).toBe(math.floor(Exp.expToNext(quest.level) * 0.1))
+			end
+		end
+	end)
+
+	it("no page names a secret of the story", function()
+		for _, quest in dusk do
+			for _, lang in { { pl, BANNED_PL }, { en, BANNED_EN } } do
+				local tbl: any, banned = lang[1], lang[2]
+				for key, text in tbl do
+					if string.sub(key, 1, #quest.id + 7) == `quest.{quest.id}.` then
+						for _, word in banned do
+							if string.find(text, word, 1, true) then
+								error(`{key}: {word}`)
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	it("the lantern arc ends with the Lantern Warden's caparison", function()
+		local lamp = assert(Quests.Side.get("side_lampLighter"))
+		expect(lamp.reward.cosmetic).toBe("mountskin_lantern")
+		expect(lamp.reward.choice).toBe("final")
+		local skin = assert(Cosmetics.get("mountskin_lantern"))
+		expect((skin.obtain :: any).quest).toBe("side_lampLighter")
+		expect(skin.price).toBe(0)
+		expect(skin.wiki).toBe(false)
+	end)
+
+	it("the innkeeper hears of the Duskwood people; the sergeant offers the oil from 20", function()
+		local q = quests()
+		local givers = SideQuests.giversWithWork(q, 30)
+		expect(table.find(givers, "herbalist_dobrawa") ~= nil).toBe(true)
+		expect(table.find(givers, "warden_zbyszko") ~= nil).toBe(true)
+		expect(#SideQuests.available(q, 20, "huntress_wanda")).toBe(0)
+		expect(table.find(ids(SideQuests.available(q, 20, "sergeant")), "side_moonOil") ~= nil).toBe(true)
+		expect(table.find(ids(SideQuests.available(q, 19, "sergeant")), "side_moonOil")).toBeNil()
 	end)
 end)
 

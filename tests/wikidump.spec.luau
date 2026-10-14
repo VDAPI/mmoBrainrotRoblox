@@ -388,6 +388,65 @@ T.describe("Wiki export: consistency", function()
 		T.expect(next(frost.npcSpots)).toBeNil()
 	end)
 
+	-- S106: the Duskwood side arcs (27 quests, eight NPCs, the dw_* anchors, the NPC places, the lantern skin) wait
+	-- for S109
+	T.it("leaves the Duskwood side arcs out: quests, NPCs, anchors, places and the lantern skin (S106)", function()
+		local hiddenIds = {
+			"side_moonOil",
+			"side_darkLanterns",
+			"side_boneTree",
+			"side_lampLighter",
+			"side_clayJars",
+			"side_smokedHives",
+			"side_stolenHoney",
+			"side_oldShaggy",
+			"side_nameless",
+			"side_servantTokens",
+			"side_householdRoll",
+			"side_restingPlace",
+			"side_rotSap",
+			"side_ghoulBurrows",
+			"side_rotCure",
+			"side_falseMarks",
+			"side_lostLetters",
+			"side_cultCages",
+			"side_eelTraps",
+			"side_trollToll",
+			"side_trollHoard",
+			"side_hexCharms",
+			"side_hexPouches",
+			"side_witchCauldron",
+			"side_roadCut",
+			"side_batRoost",
+			"side_apprentice",
+			"huntress_wanda",
+			"beekeeper_maciej",
+			"gravedigger_bogumil",
+			"herbalist_dobrawa",
+			"warden_zbyszko",
+			"ferryman_oldrzych",
+			"exorcist_kalina",
+			"mason_wojslaw",
+			"mountskin_lantern",
+		}
+		for _, file in fs.readDir("wiki/src/data") do
+			if string.match(file, "%.json$") then
+				local text = fs.readFile(`wiki/src/data/{file}`)
+				for _, id in hiddenIds do
+					if string.find(text, `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+				if string.find(text, `"dw_`, 1, true) then
+					error(`{file} names a dw_ anchor`, 0)
+				end
+			end
+		end
+		local dusk = d.areas.maps.duskwood
+		T.expect(#dusk.questAnchors).toBe(0)
+		T.expect(next(dusk.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do

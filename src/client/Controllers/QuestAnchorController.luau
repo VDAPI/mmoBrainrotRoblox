@@ -11,6 +11,7 @@
 -- S105: shroud, armor, shatter, snuff, oath, rite and thorn (the Frost Peaks and the Frozen Hold); the Rite Circle's
 -- geometry from Logic/FrostpeakGen/Rite, the Thorn and Ilvar's statue from Util/StoryProps, the flowers of the spring
 -- in Vaelthorn from Logic/TownGen/Spring.
+-- S106: lamp, smoke, wreath, cage, ward and spill (the Duskwood side arcs; at the anchor's prop when it has one).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -110,6 +111,15 @@ local function thingFrame(base: CFrame, anchorId: string): CFrame
 		return base
 	end
 	return base * CFrame.new(f.x, f.y, f.z) * CFrame.Angles(math.rad(f.rx), math.rad(f.ry), math.rad(f.rz))
+end
+
+-- S106: where a side quest prop stands (Logic/DuskwoodGen/Quest.SIDE_OFFSET along the anchor's +Z); the anchor
+-- itself when it has no prop (it stands at an existing build).
+local function sideSpot(base: CFrame, anchorId: string): CFrame
+	if DuskwoodQuest.kindOf(anchorId) then
+		return base * CFrame.new(0, 0, DuskwoodQuest.SIDE_OFFSET)
+	end
+	return base
 end
 
 local function at(point: { x: number, y: number, z: number }): CFrame
@@ -819,6 +829,171 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 				Spring.FLOWERS[(k - 1) % #Spring.FLOWERS + 1],
 				Enum.Material.SmoothPlastic,
 				Enum.PartType.Ball
+			)
+		end
+	end,
+
+	-- S106: Duskwood side arcs
+	-- a road lantern set up again on its stump: a new post, the arm and the cage with a cold blue flame (darkLanterns)
+	lamp = function(model, base, anchorId)
+		local at = sideSpot(base, anchorId)
+		part(model, Vector3.new(0.45, 5, 0.45), at * CFrame.new(0, 2.5, 0), "#5A4632", Enum.Material.Wood)
+		part(model, Vector3.new(1.5, 0.25, 0.25), at * CFrame.new(0.6, 4.9, 0), "#2E2A28", Enum.Material.Metal)
+		local cage =
+			part(model, Vector3.new(0.9, 1.1, 0.9), at * CFrame.new(1.2, 4.15, 0), "#3A3E44", Enum.Material.Metal)
+		cage.Transparency = 0.5
+		local flame = part(
+			model,
+			Vector3.new(0.45, 0.6, 0.45),
+			at * CFrame.new(1.2, 4.15, 0),
+			"#7FB8FF",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		light(flame, "#7FB8FF", 16, 1.5)
+	end,
+	-- a smudge pot smoking under the hive, an ember glowing in it (smokedHives)
+	smoke = function(model, base, anchorId)
+		local at = sideSpot(base, anchorId) * CFrame.new(0.9, 0, -1.2)
+		part(
+			model,
+			Vector3.new(0.7, 0.8, 0.8),
+			at * CFrame.new(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#8A5A3A",
+			Enum.Material.Slate,
+			Enum.PartType.Cylinder
+		)
+		local ember = part(
+			model,
+			Vector3.new(0.4, 0.4, 0.4),
+			at * CFrame.new(0, 0.75, 0),
+			"#FF8A3A",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		local smoke = Instance.new("Smoke")
+		smoke.Color = Color3.fromHex("#C8C4BC")
+		smoke.Opacity = 0.25
+		smoke.RiseVelocity = 3
+		smoke.Size = 1.2
+		smoke.Parent = ember
+		light(ember, "#FF8A3A", 6, 0.8)
+	end,
+	-- a heather wreath on the cleaned grave and one lit candle beside it (nameless)
+	wreath = function(model, base)
+		for i = 1, 6 do
+			local a = i / 6 * math.pi * 2
+			part(
+				model,
+				Vector3.new(0.45, 0.35, 0.45),
+				base * CFrame.new(math.cos(a) * 0.6, 0.2, 0.8 + math.sin(a) * 0.6),
+				if i % 2 == 0 then "#8A4A7A" else "#6A3A62",
+				Enum.Material.Grass,
+				Enum.PartType.Ball
+			)
+		end
+		part(
+			model,
+			Vector3.new(0.6, 0.28, 0.28),
+			base * CFrame.new(1.3, 0.3, 0.4) * CFrame.Angles(0, 0, math.rad(90)),
+			"#EADFC4",
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
+		local flame = part(
+			model,
+			Vector3.new(0.18, 0.3, 0.18),
+			base * CFrame.new(1.3, 0.75, 0.4),
+			"#FFB347",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		light(flame, "#FFB347", 10, 1.2)
+	end,
+	-- the cage's door swung open by 70 degrees on its hinge, the rope that tied it cut on the ground (cultCages)
+	cage = function(model, base)
+		local hinge = base * CFrame.new(-1.1, 1.25, -2)
+		local door = hinge * CFrame.Angles(0, math.rad(70), 0) * CFrame.new(1.1, 0, 0)
+		local frame = part(model, Vector3.new(2.2, 2.4, 0.12), door, "#2E2A28", Enum.Material.Metal)
+		frame.Transparency = 0.6
+		for _, x in { -0.6, 0, 0.6 } do
+			part(model, Vector3.new(0.12, 2.4, 0.14), door * CFrame.new(x, 0, 0), "#3A3632", Enum.Material.Metal)
+		end
+		for k = 0, 1 do
+			part(
+				model,
+				Vector3.new(1, 0.1, 0.1),
+				base * CFrame.new(0.3 + k * 0.8, 0.06, -0.9 + k * 0.3) * CFrame.Angles(0, math.rad(25 + k * 50), 0),
+				"#8A7A58",
+				Enum.Material.Fabric
+			)
+		end
+	end,
+	-- the hex charm burnt to a pile of ash and a small white ward board with the temple's sign on a stake (hexCharms)
+	ward = function(model, base, anchorId)
+		local at = sideSpot(base, anchorId) * CFrame.new(0.6, 0, -0.9)
+		part(model, Vector3.new(0.18, 1.6, 0.18), at * CFrame.new(0, 0.8, 0), "#6B5038", Enum.Material.Wood)
+		local board = part(
+			model,
+			Vector3.new(0.9, 0.65, 0.08),
+			at * CFrame.new(0, 1.6, 0),
+			"#EDEBE4",
+			Enum.Material.SmoothPlastic
+		)
+		for _, r in { 0, 90 } do
+			part(
+				model,
+				Vector3.new(0.08, 0.45, 0.04),
+				board.CFrame * CFrame.new(0, 0, -0.06) * CFrame.Angles(0, 0, math.rad(r)),
+				"#5A4A3A",
+				Enum.Material.SmoothPlastic
+			)
+		end
+		part(
+			model,
+			Vector3.new(1.4, 0.18, 1),
+			at * CFrame.new(-0.9, 0.06, 0.2),
+			"#3A3634",
+			Enum.Material.Slate,
+			Enum.PartType.Ball
+		)
+	end,
+	-- the witches' cauldron knocked on its side, its mouth to the player, the green brew soaking into the mud
+	-- (witchCauldron; the cauldron stands 3 studs behind the anchor, Logic/DuskwoodGen/Witch)
+	spill = function(model, base)
+		local pot = base * CFrame.new(0, 1.5, -3)
+		part(
+			model,
+			Vector3.new(4.3, 3.7, 4.3),
+			pot * CFrame.Angles(math.rad(75), 0, 0),
+			"#24221F",
+			Enum.Material.Metal,
+			Enum.PartType.Ball
+		)
+		part(
+			model,
+			Vector3.new(0.1, 2.8, 2.8),
+			pot * CFrame.new(0, 0.2, 2) * CFrame.Angles(0, math.rad(90), 0),
+			"#0E0E0C",
+			Enum.Material.SmoothPlastic,
+			Enum.PartType.Cylinder
+		)
+		local puddle = part(
+			model,
+			Vector3.new(0.08, 4.6, 3.4),
+			base * CFrame.new(0, 0.05, -0.4) * CFrame.Angles(0, math.rad(90), math.rad(90)),
+			"#5AE07A",
+			Enum.Material.Glass,
+			Enum.PartType.Cylinder
+		)
+		puddle.Transparency = 0.25
+		for i = 1, 3 do
+			part(
+				model,
+				Vector3.new(0.7, 0.12, 0.5),
+				base * CFrame.new(-1.6 + i * 0.8, 0.06, 1.2 + (i % 2) * 0.4) * CFrame.Angles(0, i, 0),
+				"#3E8A4A",
+				Enum.Material.Glass
 			)
 		end
 	end,

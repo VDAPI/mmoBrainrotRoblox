@@ -2578,6 +2578,8 @@ BalanceTables.ALLOWED_1_20_DIFFS = {
 	-- S99: the hunting contracts 1-19 and the regenerated MONSTER_EXP_MUL (14 new keys, 208 refreshed).
 	-- S102: the chapter I story quests (frostRuins, frostSign, warrenCharms, warCouncil) and the regenerated
 	-- MONSTER_EXP_MUL (0 new keys, 174 refreshed).
+	-- S106: the Duskwood side quests (20-44) lower monsterExpMul(20): 0 new keys, 6 refreshed (monster EXP rows of a
+	-- level 20 player).
 	["Drop: poziom przedmiotów i rzadkości|10|Unikatowe do klasy/poziom"] = {
 		before = 0.6118137264,
 		after = 0.5024365673,
@@ -2640,28 +2642,28 @@ BalanceTables.ALLOWED_1_20_DIFFS = {
 	},
 	["Kara złota za różnicę poziomów (gracz 20)|10|EXP"] = {
 		before = 28.75,
-		after = 18.48625,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 16.53125,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Kara złota za różnicę poziomów (gracz 20)|14|EXP"] = {
 		before = 144.5,
-		after = 92.9135,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 83.0875,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Kara złota za różnicę poziomów (gracz 20)|15|EXP"] = {
 		before = 185,
-		after = 118.955,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 106.375,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Kara złota za różnicę poziomów (gracz 20)|18|EXP"] = {
 		before = 230,
-		after = 147.89,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 132.25,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Kara złota za różnicę poziomów (gracz 20)|20|EXP"] = {
 		before = 262,
-		after = 168.466,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 150.65,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Tempo (Wojownik): zabicia i czas na poziom|1 wolf|godziny"] = {
 		before = 0.01351414868,
@@ -3255,8 +3257,8 @@ BalanceTables.ALLOWED_1_20_DIFFS = {
 	},
 	["Zwykły potwór (mnożniki rodzaju 1)|20|EXP"] = {
 		before = 262,
-		after = 168.466,
-		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget",
+		after = 150.65,
+		why = "S98+ quest budget: boss quests 2% of each band; S99 hunting contracts: quest budget; S106: Duskwood side quests",
 	},
 	["Zwykły potwór (mnożniki rodzaju 1)|3|EXP"] = {
 		before = 32,

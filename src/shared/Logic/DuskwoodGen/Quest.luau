@@ -1,6 +1,7 @@
 --!strict
 -- S103: props of the Duskwood quest anchors (Data/Areas/duskwood questAnchors with an entry in PROPS); the other
--- anchors stand at existing builds. S106 adds its side quest props here.
+-- anchors stand at existing builds. S106: side quest anchors dw_* with an entry in PROPS; the other dw_* anchors stand
+-- at existing builds (their props stand in the anchor's own frame, SIDE_OFFSET along +Z).
 -- A prop is one Build at its anchor (`QuestProp_<anchorId>`, tag "questprop": the anchor's x / z, the ground there,
 -- the anchor's `rot`) whose pieces sit in the frame of the thing they are on (`Quest.frame`: the menhir of the Moon
 -- Glade, the Elder Tree, the Crypt Gate; the same numbers as Thicket / Heart / Cliffs). The client effect after the
@@ -28,7 +29,28 @@ local PROPS: { [string]: string } = {
 	moonstone_rune = "frostRune",
 	elder_tree = "iceShard",
 	crypt_seal = "cultSeal",
+	-- S106: Duskwood side quest anchors (dw_*)
+	dw_lantern_1 = "lanternPost",
+	dw_lantern_2 = "lanternPost",
+	dw_lantern_3 = "lanternPost",
+	dw_hive_2 = "wildHive",
+	dw_hive_3 = "wildHive",
+	dw_ossuary = "ossuary",
+	dw_waymark_1 = "waymark",
+	dw_waymark_2 = "waymark",
+	dw_waymark_3 = "waymark",
+	dw_trap_1 = "eelTrap",
+	dw_trap_2 = "eelTrap",
+	dw_charm_2 = "charmPole",
+	dw_charm_3 = "charmPole",
+	dw_shore_1 = "shoring",
+	dw_shore_2 = "shoring",
+	dw_shore_3 = "shoring",
 }
+
+-- S106: the side quest props stand in their anchor's own frame (no THINGS entry), this far along local +Z (away from
+-- the road, towards the water), so the "[E]" prompt sits just before them; the client effects use the same offset.
+Quest.SIDE_OFFSET = 1.8
 
 -- What each kind sits on: a site and, inside it, the thing's own frame over the site's ground.
 local THINGS: { [string]: { site: string, y: number?, rx: number?, ry: number?, rz: number? } } = {
@@ -72,6 +94,13 @@ local function sign(bp: BP, at: { x: number, y: number, z: number }, size: numbe
 		{ c = thorn, m = "Neon", lod = "detail", col = false, jitter = 0 }
 	)
 end
+
+-- S106: swatches of the side quest props
+local HONEY = { c = "#D8A43A", m = "SmoothPlastic" }
+local WAX = { c = "#EADFC4", m = "SmoothPlastic" }
+local PAINT = { c = "#8A4AC0", m = "SmoothPlastic" }
+local WICKER = { c = "#8A6A3E", m = "Fabric" }
+local FRESH = { c = "#C9A06A", m = "Wood" }
 
 local BUILD: { [string]: (bp: BP) -> () } = {
 	-- a fresh frost rune on the menhir's face (cold blue light instead of the silver) and rime at the stone's foot
@@ -134,6 +163,94 @@ local BUILD: { [string]: (bp: BP) -> () } = {
 		end
 		bp:light(s.x, s.y, s.z - 1.2, Kit.VIOLET, 8, 0.6)
 	end,
+
+	-- S106: Duskwood side quest anchors (dw_*); every piece SIDE_OFFSET along +Z, detail / fine, no collisions.
+	-- a road lantern knocked down: the post's stump with claw marks, the broken post and the dark cage in the mud
+	lanternPost = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:box(0.5, 1.2, 0.5, 0, 0.6, z, o(Kit.timber, "detail"))
+		bp:rbox(0.45, 4.6, 0.45, 1.6, 0.25, z + 0.8, 0, 20, 86, o(Kit.timber, "detail"))
+		bp:rbox(0.9, 1.1, 0.9, -1.1, 0.45, z + 0.6, 0, 25, 70, o(Kit.iron, "detail"))
+		bp:rbox(0.6, 0.7, 0.6, -1.1, 0.45, z + 0.6, 0, 25, 70, o({ c = "#2A3440", m = "Glass" }, "fine", { t = 0.2 }))
+		for k = -1, 1 do
+			bp:rbox(
+				0.06,
+				0.8,
+				0.05,
+				k * 0.13,
+				0.7,
+				z - 0.27,
+				0,
+				0,
+				14 + k * 4,
+				o({ c = "#D8CFC0", m = "Wood" }, "fine")
+			)
+		end
+	end,
+	-- a wild hive in a hollow standing trunk: the dark mouth of the hive, a board pulled off, combs on the ground
+	wildHive = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:add("cyl", 4.6, 2.2, 2.2, 0, 2.3, z, 0, 0, 90, o(Kit.darkBark, "detail"))
+		bp:box(0.8, 1.3, 0.3, 0, 2.7, z - 1.05, o(Kit.dark, "detail"))
+		bp:rbox(0.9, 1.4, 0.15, 1.1, 0.7, z - 1, -15, 20, 0, o(Kit.planks, "fine"))
+		for k = 1, 3 do
+			bp:rbox(1.1, 0.2, 0.8, -1.5 + k * 0.9, 0.1, z - 1.6 - (k % 2) * 0.4, 0, k * 50, 0, o(HONEY, "fine"))
+		end
+	end,
+	-- the servants' common grave behind the fence: a low cairn, an empty board on a pole, candle stubs gone out
+	ossuary = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:add("ball", 3.6, 1.4, 2.6, 0, 0.4, z, 0, 0, 0, o(Kit.mossyStone, "detail"))
+		bp:add("ball", 1.2, 0.9, 1.1, 1.6, 0.35, z - 0.6, 0, 30, 0, o(Kit.stone, "fine"))
+		bp:box(0.25, 2.8, 0.25, 0, 1.4, z + 1.4, o(Kit.timber, "detail"))
+		bp:box(1.6, 1, 0.12, 0, 2.3, z + 1.25, o(Kit.greyPlanks, "detail"))
+		for k = -1, 1 do
+			bp:add("cyl", 0.3, 0.22, 0.22, k * 0.7, 1.15 - math.abs(k) * 0.2, z - 0.7, 0, 0, 90, o(WAX, "fine"))
+		end
+	end,
+	-- a wayside stone with a false waymark in violet paint (the road's own sign, a cross and an arrow) and the pot
+	waymark = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:rbox(1.4, 2.2, 0.9, 0, 1, z, 0, 0, 4, o(Kit.mossyStone, "detail"))
+		for _, a in { 30, -30 } do
+			bp:rbox(0.14, 1.1, 0.05, 0, 1.3, z - 0.47, 0, 0, a, o(PAINT, "fine"))
+		end
+		bp:rbox(0.14, 0.6, 0.05, 0.35, 1.85, z - 0.47, 0, 0, 90, o(PAINT, "fine"))
+		bp:add("cyl", 0.5, 0.55, 0.55, 0.9, 0.25, z - 1, 0, 0, 90, o({ c = "#5A4636", m = "Slate" }, "fine"))
+		bp:add("cyl", 0.04, 0.45, 0.45, 0.9, 0.51, z - 1, 0, 0, 90, o(PAINT, "fine"))
+	end,
+	-- two wicker eel traps by a mooring pole, the rope to the pole and a gnawed net on the ground
+	eelTrap = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:box(0.3, 3, 0.3, 0, 1.5, z + 0.4, o(Kit.timber, "detail"))
+		bp:add("cyl", 2.2, 0.9, 0.9, -0.5, 0.45, z - 0.4, 0, 20, 0, o(WICKER, "detail"))
+		bp:add("cyl", 1.8, 0.8, 0.8, 0.9, 0.4, z + 1.1, 0, -30, 0, o(WICKER, "detail"))
+		bp:beam(0, 1.2, z + 0.4, -0.5, 0.6, z - 0.2, 0.06, o(Kit.rope, "fine"))
+		bp:rbox(1.6, 0.08, 1.2, 0.7, 0.05, z - 1, 0, 25, 0, o(Kit.rope, "fine", { t = 0.3 }))
+	end,
+	-- a crooked pole by the marsh path with a crossbar, a charm of bone, hair and string hanging from it
+	charmPole = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:rbox(0.3, 3.6, 0.3, 0, 1.8, z, 0, 0, 4, o(Kit.blackBark, "detail"))
+		bp:box(1.5, 0.18, 0.18, 0.1, 3.2, z, o(Kit.darkBark, "detail"))
+		for _, x in { -0.5, 0.6 } do
+			bp:beam(x, 3.1, z, x, 2.4, z, 0.04, o(Kit.rope, "fine"))
+		end
+		bp:rbox(0.15, 0.7, 0.15, -0.5, 2.1, z, 0, 0, 20, o(Kit.bone, "fine"))
+		bp:add("ball", 0.5, 0.5, 0.5, 0.6, 2.2, z, 0, 0, 0, o(Kit.oldBone, "fine"))
+		bp:add("ball", 0.45, 0.6, 0.3, 0.1, 2.9, z - 0.2, 0, 0, 0, o({ c = "#2A2420", m = "Fabric" }, "fine"))
+	end,
+	-- three beams of the cut's shoring cracked against the wall, one cut straight through, a waler and fresh chips
+	shoring = function(bp)
+		local z = Quest.SIDE_OFFSET
+		bp:rbox(0.5, 4, 0.5, -1.6, 1.8, z + 0.4, -15, 0, 0, o(Kit.timber, "detail"))
+		bp:rbox(0.5, 4, 0.5, 0, 1.8, z + 0.4, -15, 0, 0, o(Kit.timber, "detail"))
+		bp:rbox(0.5, 2, 0.5, 1.6, 1, z + 0.2, -15, 0, 0, o(Kit.timber, "detail"))
+		bp:rbox(0.5, 2, 0.5, 1.9, 0.25, z - 0.8, 0, 10, 80, o(Kit.timber, "detail"))
+		bp:box(4.2, 0.4, 0.25, 0, 2.8, z + 0.9, o(Kit.planks, "detail"))
+		bp:rbox(0.54, 0.25, 0.54, 0, 1.3, z + 0.27, -15, 0, 0, o(FRESH, "fine"))
+		bp:rbox(0.6, 0.08, 0.4, 0.4, 0.04, z - 0.6, 0, 35, 0, o(FRESH, "fine"))
+	end,
 }
 
 local function anchorOf(id: string): AreaTypes.QuestAnchor?
@@ -159,6 +276,10 @@ function Quest.frame(anchorId: string): Frame?
 		return nil
 	end
 	local thing = THINGS[kind]
+	if not thing then
+		-- S106: a side quest prop stands in its anchor's own frame
+		return { x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0 }
+	end
 	local sites = assert(Areas.sites, "duskwood sites")
 	local site = assert(sites[thing.site], thing.site)
 	assert((anchor.rot or 0) == site.rot, `{anchorId}: rot {anchor.rot} is not the yaw of {thing.site}`)

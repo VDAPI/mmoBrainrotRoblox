@@ -131,96 +131,97 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `QuestBudget:MONSTER_EXP_MUL[12]` | 0,65 | 0,592 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[13]` | 0,65 | 0,592 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[14]` | 0,65 | 0,592 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[15]` | 0,65 | 0,592 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[16]` | 0,652 | 0,613 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[17]` | 0,652 | 0,613 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[18]` | 0,652 | 0,613 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[19]` | 0,652 | 0,613 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[21]` | 0,704 | 1,236 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[22]` | 0,704 | 1,236 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[23]` | 0,704 | 1,236 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[24]` | 0,749 | 1,099 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[25]` | 0,749 | 1,237 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[26]` | 0,749 | 1,237 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[27]` | 0,783 | 1,126 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[28]` | 0,783 | 1,217 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[29]` | 0,783 | 1,217 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[30]` | 0,772 | 1,187 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[31]` | 0,772 | 1,215 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[32]` | 0,772 | 1,215 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[33]` | 0,797 | 1,141 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[34]` | 0,797 | 1,141 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[35]` | 0,797 | 1,141 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[36]` | 0,797 | 1,141 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[37]` | 0,829 | 0,962 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[38]` | 0,829 | 0,962 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[39]` | 0,829 | 0,962 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[40]` | 0,829 | 0,962 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[41]` | 0,829 | 0,986 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[42]` | 0,829 | 0,986 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[43]` | 0,829 | 0,986 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[44]` | 0,829 | 0,768 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[45]` | 0,832 | 0,936 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[46]` | 0,832 | 0,936 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[47]` | 0,832 | 0,935 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[48]` | 0,832 | 0,935 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[49]` | 0,832 | 0,797 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[50]` | 0,828 | 0,958 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[51]` | 0,828 | 0,958 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[52]` | 0,828 | 0,857 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[53]` | 0,828 | 0,939 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[54]` | 0,828 | 0,939 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[55]` | 0,839 | 0,896 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[56]` | 0,839 | 0,896 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[57]` | 0,839 | 0,878 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[58]` | 0,839 | 0,878 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[59]` | 0,839 | 0,896 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[60]` | 0,839 | 0,896 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[61]` | 0,839 | 0,764 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[62]` | 0,847 | 0,855 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[63]` | 0,847 | 0,855 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[64]` | 0,847 | 0,855 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[65]` | 0,847 | 0,855 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[66]` | 0,847 | 0,873 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[67]` | 0,847 | 0,873 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[68]` | 0,847 | 0,873 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[69]` | 0,847 | 0,856 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[70]` | 0,847 | 0,856 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[71]` | 0,847 | 0,856 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[72]` | 0,842 | 0,87 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[73]` | 0,842 | 0,87 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[74]` | 0,842 | 0,887 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[75]` | 0,842 | 0,887 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[76]` | 0,842 | 0,87 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[77]` | 0,842 | 0,87 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[78]` | 0,842 | 0,887 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[79]` | 0,842 | 0,887 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[7]` | 0,652 | 0,621 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[80]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[81]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[82]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[83]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[84]` | 0,849 | 0,831 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[85]` | 0,849 | 0,831 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[86]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[87]` | 0,849 | 0,848 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[88]` | 0,849 | 0,847 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[89]` | 0,849 | 0,847 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[8]` | 0,652 | 0,62 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[90]` | 0,849 | 0,807 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[91]` | 0,849 | 0,807 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[92]` | 0,842 | 0,872 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[93]` | 0,842 | 0,872 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[94]` | 0,842 | 0,751 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[95]` | 0,842 | 0,802 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[96]` | 0,842 | 0,906 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[97]` | 0,842 | 0,906 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[98]` | 0,842 | 0,837 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[99]` | 0,842 | 0,546 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
-| `QuestBudget:MONSTER_EXP_MUL[9]` | 0,652 | 0,62 | S105 | regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
+| `QuestBudget:MONSTER_EXP_MUL[12]` | 0,65 | 0,592 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[13]` | 0,65 | 0,592 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[14]` | 0,65 | 0,592 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[15]` | 0,65 | 0,592 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[16]` | 0,652 | 0,613 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[17]` | 0,652 | 0,613 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[18]` | 0,652 | 0,613 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[19]` | 0,652 | 0,613 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[20]` | 0,643 | 0,575 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[21]` | 0,704 | 1,18 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[22]` | 0,704 | 1,18 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[23]` | 0,704 | 1,179 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[24]` | 0,749 | 1,051 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[25]` | 0,749 | 1,189 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[26]` | 0,749 | 1,189 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[27]` | 0,783 | 1,085 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[28]` | 0,783 | 1,176 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[29]` | 0,783 | 1,176 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[30]` | 0,772 | 1,143 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[31]` | 0,772 | 1,171 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[32]` | 0,772 | 1,171 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[33]` | 0,797 | 1,102 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[34]` | 0,797 | 1,102 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[35]` | 0,797 | 1,102 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[36]` | 0,797 | 1,102 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[37]` | 0,829 | 0,929 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[38]` | 0,829 | 0,929 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[39]` | 0,829 | 0,929 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[40]` | 0,829 | 0,929 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[41]` | 0,829 | 0,953 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[42]` | 0,829 | 0,953 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[43]` | 0,829 | 0,953 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[44]` | 0,829 | 0,735 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[45]` | 0,832 | 0,936 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[46]` | 0,832 | 0,936 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[47]` | 0,832 | 0,935 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[48]` | 0,832 | 0,935 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[49]` | 0,832 | 0,797 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[50]` | 0,828 | 0,958 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[51]` | 0,828 | 0,958 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[52]` | 0,828 | 0,857 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[53]` | 0,828 | 0,939 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[54]` | 0,828 | 0,939 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[55]` | 0,839 | 0,896 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[56]` | 0,839 | 0,896 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[57]` | 0,839 | 0,878 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[58]` | 0,839 | 0,878 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[59]` | 0,839 | 0,896 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[60]` | 0,839 | 0,896 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[61]` | 0,839 | 0,764 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[62]` | 0,847 | 0,855 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[63]` | 0,847 | 0,855 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[64]` | 0,847 | 0,855 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[65]` | 0,847 | 0,855 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[66]` | 0,847 | 0,873 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[67]` | 0,847 | 0,873 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[68]` | 0,847 | 0,873 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[69]` | 0,847 | 0,856 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[70]` | 0,847 | 0,856 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[71]` | 0,847 | 0,856 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[72]` | 0,842 | 0,87 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[73]` | 0,842 | 0,87 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[74]` | 0,842 | 0,887 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[75]` | 0,842 | 0,887 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[76]` | 0,842 | 0,87 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[77]` | 0,842 | 0,87 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[78]` | 0,842 | 0,887 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[79]` | 0,842 | 0,887 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[7]` | 0,652 | 0,621 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[80]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[81]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[82]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[83]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[84]` | 0,849 | 0,831 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[85]` | 0,849 | 0,831 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[86]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[87]` | 0,849 | 0,848 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[88]` | 0,849 | 0,847 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[89]` | 0,849 | 0,847 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[8]` | 0,652 | 0,62 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[90]` | 0,849 | 0,807 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[91]` | 0,849 | 0,807 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[92]` | 0,842 | 0,872 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[93]` | 0,842 | 0,872 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[94]` | 0,842 | 0,751 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[95]` | 0,842 | 0,802 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[96]` | 0,842 | 0,906 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[97]` | 0,842 | 0,906 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[98]` | 0,842 | 0,837 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[99]` | 0,842 | 0,546 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
+| `QuestBudget:MONSTER_EXP_MUL[9]` | 0,652 | 0,62 | S106 | regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
 | `Quests/Main:byId.ashen.reward.exp` | 4,987e+04 | 8988 | S104 | S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.crypt.reward.exp` | 6,116e+04 | 4450 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.cult.reward.exp` | 3,082e+04 | 2990 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
@@ -555,6 +556,212 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:indexOf.witchCounsel` | 33 | S105 | S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
 | `Quests/Main:indexOf.wyrmSpire` | 64 | S105 | S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
 | `Quests/Main:indexOf.wyvernLair` | 45 | S105 | S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
+| `Quests/Side:BAND_FROM` | 20 | S106 | S106: side quest EXP from the band budget from level 20 (the Meadows 1-19 keep their shares) |
+| `Quests/Side:BAND_SCALE[20]` | 0,04323 | S106 | S106: derived by settleBands (band 20-44: 6% of its EXP minus the stable arc, by expToNext x weight) |
+| `Quests/Side:GOLD_FROM_20` | 0,8 | S106 | S106 E5: gold of the banded side quests x0.8 (with 1.0 G9.up3 at 40 is 0.449 < 0.45; 0.9 leaves 0.4507) |
+| `Quests/Side:WEIGHT.final` | 1,8 | S106 | S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25) |
+| `Quests/Side:WEIGHT.normal` | 1 | S106 | S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25) |
+| `Quests/Side:byArc.apiary[side_clayJars].level` | 22 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].objectives[1].n` | 1 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].pages` | 2 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].reward.exp` | 617 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].reward.gold` | 420 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].level` | 27 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[1].n` | 1 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[2].n` | 2 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[3].chance` | 1 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[3].n` | 1 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].pages` | 4 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].reward.exp` | 1636 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].reward.gold` | 509 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].level` | 23 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[1].hold` | 2,5 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[1].n` | 3 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[2].n` | 8 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].pages` | 3 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].reward.exp` | 671 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].reward.gold` | 437 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].level` | 25 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].objectives[1].chance` | 0,4 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].objectives[1].n` | 6 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].pages` | 3 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].reward.exp` | 785 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].reward.gold` | 473 | S106 | S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].level` | 27 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].objectives[1].n` | 1 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].pages` | 2 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].reward.exp` | 909 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].reward.gold` | 509 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].level` | 24 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[1].hold` | 2 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[1].n` | 4 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[2].n` | 8 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].pages` | 3 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].reward.exp` | 727 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].reward.gold` | 456 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].level` | 29 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[1].hold` | 3 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[1].n` | 1 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[2].n` | 10 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].pages` | 4 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].reward.exp` | 1874 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].reward.gold` | 545 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].level` | 26 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].objectives[1].chance` | 0,4 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].objectives[1].n` | 6 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].pages` | 3 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].reward.exp` | 846 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].reward.gold` | 492 | S106 | S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].level` | 37 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[1].hold` | 2,5 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[1].n` | 3 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[2].n` | 8 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].pages` | 3 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].reward.exp` | 1652 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].reward.gold` | 689 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].level` | 39 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].objectives[1].chance` | 0,4 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].objectives[1].n` | 5 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].pages` | 3 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].reward.exp` | 1826 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].reward.gold` | 725 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].level` | 40 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].n` | 1 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].radius` | 18 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].x` | -66 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].z` | 122 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[2].hold` | 3 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[2].n` | 1 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[3].n` | 6 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].pages` | 4 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].reward.exp` | 3448 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].reward.gold` | 744 | S106 | S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].level` | 34 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[1].hold` | 2,5 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[1].n` | 2 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[2].n` | 8 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].pages` | 3 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].reward.exp` | 1407 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].reward.gold` | 636 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].level` | 38 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].n` | 1 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].radius` | 24 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].x` | 702 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].z` | 612 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[2].hold` | 3 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[2].n` | 1 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[3].n` | 8 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].pages` | 4 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].reward.exp` | 3128 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].reward.gold` | 708 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].level` | 36 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].objectives[1].chance` | 0,4 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].objectives[1].n` | 6 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].pages` | 3 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].reward.exp` | 1568 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].reward.gold` | 672 | S106 | S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].level` | 23 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].radius` | 10 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[1].x` | -600 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[1].z` | 70 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[2].x` | -572 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[2].z` | 140 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].x` | -540 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].z` | 200 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[2].hold` | 3 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[2].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[3].n` | 6 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].pages` | 3 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].reward.exp` | 671 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].reward.gold` | 437 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].level` | 21 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].minLevel` | 20 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[1].hold` | 2,5 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[1].n` | 3 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[2].n` | 8 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].pages` | 3 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].reward.exp` | 565 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].reward.gold` | 401 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].level` | 24 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[1].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[2].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[3].chance` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[3].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].pages` | 4 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].reward.exp` | 1309 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].reward.gold` | 456 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].level` | 20 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].minLevel` | 20 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].objectives[1].n` | 1 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].pages` | 2 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].reward.exp` | 515 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].reward.gold` | 384 | S106 | S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].level` | 44 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[1].n` | 1 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[2].n` | 2 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[3].chance` | 1 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[3].n` | 1 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].pages` | 4 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].reward.exp` | 4132 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].reward.gold` | 816 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].level` | 42 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].n` | 1 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].radius` | 20 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].x` | 616 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].z` | -40 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[2].chance` | 0,35 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[2].n` | 5 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].pages` | 3 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].reward.exp` | 2101 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].reward.gold` | 780 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].level` | 41 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[1].hold` | 3 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[1].n` | 3 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[2].n` | 10 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].pages` | 3 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].reward.exp` | 2007 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].reward.gold` | 761 | S106 | S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].level` | 29 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[1].hold` | 3 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[1].n` | 3 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[2].n` | 10 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].pages` | 3 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].reward.exp` | 1041 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].reward.gold` | 545 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].level` | 31 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].objectives[1].n` | 1 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].objectives[2].n` | 8 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].pages` | 3 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].reward.exp` | 2126 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].reward.gold` | 581 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].level` | 27 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[1].chance` | 0,4 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[1].n` | 5 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[2].n` | 4 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].pages` | 3 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].reward.exp` | 909 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].reward.gold` | 509 | S106 | S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].level` | 34 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[1].hold` | 3 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[1].n` | 2 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[2].n` | 10 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].pages` | 4 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].reward.exp` | 2533 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].reward.gold` | 636 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].level` | 30 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[1].hold` | 2 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[1].n` | 3 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[2].n` | 8 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].pages` | 3 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].reward.exp` | 1110 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].reward.gold` | 564 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].level` | 32 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].objectives[1].chance` | 0,35 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].objectives[1].n` | 5 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].pages` | 3 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].reward.exp` | 1254 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].reward.gold` | 600 | S106 | S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
 | `WorldEvents:kinds.champion.duration` | 900 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
 | `WorldEvents:kinds.champion.leash` | 100 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
 | `WorldEvents:kinds.champion.nearbyAreas` | 3 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
@@ -627,7 +834,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-3651 kluczy zmienionych od bazy, 0 bez powodu.
+3857 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -1466,7 +1673,193 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:indexOf.witchCounsel` | – | 33 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged; S105: S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
 | `Quests/Main:indexOf.wyrmSpire` | – | 64 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged; S105: S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
 | `Quests/Main:indexOf.wyvernLair` | – | 45 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged; S105: S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged |
+| `Quests/Side:BAND_FROM` | – | 20 | nowy od S106 | S106: S106: side quest EXP from the band budget from level 20 (the Meadows 1-19 keep their shares) |
+| `Quests/Side:BAND_SCALE[20]` | – | 0,04323 | nowy od S106 | S106: S106: derived by settleBands (band 20-44: 6% of its EXP minus the stable arc, by expToNext x weight) |
+| `Quests/Side:GOLD_FROM_20` | – | 0,8 | nowy od S106 | S106: S106 E5: gold of the banded side quests x0.8 (with 1.0 G9.up3 at 40 is 0.449 < 0.45; 0.9 leaves 0.4507) |
 | `Quests/Side:STABLE_MIN` | – | 20 | nowy od S96 | S96: the stable arc is offered from level 20 (= Config.Mount.minLevel) |
+| `Quests/Side:WEIGHT.final` | – | 1,8 | nowy od S106 | S106: S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25) |
+| `Quests/Side:WEIGHT.normal` | – | 1 | nowy od S106 | S106: S106: weights of the band budget, normal 1, the arc's end 1.8 (as the Meadows 0.45 / 0.25) |
+| `Quests/Side:byArc.apiary[side_clayJars].level` | – | 22 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].pages` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].reward.exp` | – | 617 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_clayJars].reward.gold` | – | 420 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].level` | – | 27 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[2].n` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[3].chance` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].objectives[3].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].reward.exp` | – | 1636 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_oldShaggy].reward.gold` | – | 509 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].level` | – | 23 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[1].hold` | – | 2,5 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].reward.exp` | – | 671 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_smokedHives].reward.gold` | – | 437 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].level` | – | 25 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].objectives[1].chance` | – | 0,4 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].objectives[1].n` | – | 6 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].reward.exp` | – | 785 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.apiary[side_stolenHoney].reward.gold` | – | 473 | nowy od S106 | S106: S106: Duskwood side arc apiary: the Ravine Hives 22-27 (Maciej; Bear Hollow, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].level` | – | 27 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].pages` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].reward.exp` | – | 909 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_householdRoll].reward.gold` | – | 509 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].level` | – | 24 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[1].hold` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[1].n` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].reward.exp` | – | 727 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_nameless].reward.gold` | – | 456 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].level` | – | 29 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[1].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].objectives[2].n` | – | 10 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].reward.exp` | – | 1874 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_restingPlace].reward.gold` | – | 545 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].level` | – | 26 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].objectives[1].chance` | – | 0,4 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].objectives[1].n` | – | 6 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].reward.exp` | – | 846 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.cemetery[side_servantTokens].reward.gold` | – | 492 | nowy od S106 | S106: S106: Duskwood side arc cemetery: the Nameless 24-29 (Bogumił; Haunted Ruins); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].level` | – | 37 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[1].hold` | – | 2,5 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].reward.exp` | – | 1652 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexCharms].reward.gold` | – | 689 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].level` | – | 39 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].objectives[1].chance` | – | 0,4 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].objectives[1].n` | – | 5 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].reward.exp` | – | 1826 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_hexPouches].reward.gold` | – | 725 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].level` | – | 40 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].radius` | – | 18 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].x` | – | -66 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[1].z` | – | 122 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[2].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[2].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].objectives[3].n` | – | 6 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].reward.exp` | – | 3448 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.charms[side_witchCauldron].reward.gold` | – | 744 | nowy od S106 | S106: S106: Duskwood side arc charms: Hexes of the Marsh 37-40 (Kalina; Witch Marsh); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].level` | – | 34 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[1].hold` | – | 2,5 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[1].n` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].reward.exp` | – | 1407 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_eelTraps].reward.gold` | – | 636 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].level` | – | 38 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].radius` | – | 24 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].x` | – | 702 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[1].z` | – | 612 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[2].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[2].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].objectives[3].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].reward.exp` | – | 3128 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollHoard].reward.gold` | – | 708 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].level` | – | 36 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].objectives[1].chance` | – | 0,4 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].objectives[1].n` | – | 6 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].reward.exp` | – | 1568 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.ferry[side_trollToll].reward.gold` | – | 672 | nowy od S106 | S106: S106: Duskwood side arc ferry: the Swamp Toll 34-38 (Ołdrzych; Troll Swamp); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].level` | – | 23 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].radius` | – | 10 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[1].x` | – | -600 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[1].z` | – | 70 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[2].x` | – | -572 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].via[2].z` | – | 140 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].x` | – | -540 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[1].z` | – | 200 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[2].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[2].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].objectives[3].n` | – | 6 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].reward.exp` | – | 671 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_boneTree].reward.gold` | – | 437 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].level` | – | 21 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].minLevel` | – | 20 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[1].hold` | – | 2,5 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].reward.exp` | – | 565 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_darkLanterns].reward.gold` | – | 401 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].level` | – | 24 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[2].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[3].chance` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].objectives[3].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].reward.exp` | – | 1309 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_lampLighter].reward.gold` | – | 456 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].level` | – | 20 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].minLevel` | – | 20 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].pages` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].reward.exp` | – | 515 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.lanterns[side_moonOil].reward.gold` | – | 384 | nowy od S106 | S106: S106: Duskwood side arc lanterns: the Dusk Lanterns 20-24 (Wanda; Werewolf Thicket, Wolfden Hollow); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].level` | – | 44 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[2].n` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[3].chance` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].objectives[3].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].reward.exp` | – | 4132 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_apprentice].reward.gold` | – | 816 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].level` | – | 42 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].radius` | – | 20 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].x` | – | 616 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[1].z` | – | -40 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[2].chance` | – | 0,35 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].objectives[2].n` | – | 5 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].reward.exp` | – | 2101 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_batRoost].reward.gold` | – | 780 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].level` | – | 41 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[1].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].objectives[2].n` | – | 10 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].reward.exp` | – | 2007 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.masons[side_roadCut].reward.gold` | – | 761 | nowy od S106 | S106: S106: Duskwood side arc masons: the Stonemason's Apprentice 41-44 (Wojsław; Blood Cliffs, Crypt of the Forgotten); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].level` | – | 29 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[1].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].objectives[2].n` | – | 10 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].reward.exp` | – | 1041 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_ghoulBurrows].reward.gold` | – | 545 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].level` | – | 31 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].objectives[1].n` | – | 1 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].reward.exp` | – | 2126 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotCure].reward.gold` | – | 581 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].level` | – | 27 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[1].chance` | – | 0,4 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[1].n` | – | 5 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].objectives[2].n` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].reward.exp` | – | 909 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.rot[side_rotSap].reward.gold` | – | 509 | nowy od S106 | S106: S106: Duskwood side arc rot: the Cold Rot 27-31 (Dobrawa; Forest Heart); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
 | `Quests/Side:byArc.stable[side_stable_harness].level` | – | 21 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_harness].minLevel` | – | 20 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_harness].objectives[1].chance` | – | 0,4 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
@@ -1491,6 +1884,26 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Side:byArc.stable[side_stable_stallion].pages` | – | 3 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_stallion].reward.exp` | – | 1307 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_stallion].reward.gold` | – | 502 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
+| `Quests/Side:byArc.waymarks[side_cultCages].level` | – | 34 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[1].hold` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[1].n` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].objectives[2].n` | – | 10 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].pages` | – | 4 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].reward.exp` | – | 2533 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_cultCages].reward.gold` | – | 636 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].level` | – | 30 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[1].hold` | – | 2 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[1].n` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].objectives[2].n` | – | 8 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].reward.exp` | – | 1110 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_falseMarks].reward.gold` | – | 564 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].level` | – | 32 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].objectives[1].chance` | – | 0,35 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].objectives[1].n` | – | 5 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].reward.exp` | – | 1254 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Quests/Side:byArc.waymarks[side_lostLetters].reward.gold` | – | 600 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
 | `Rarities:twoHandedBonusMul` | – | 2,7 | nowy od S87 | S87: C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237) |
 | `Rarities:upgradeStatPerLevelTwoHanded` | – | 0,066 | nowy od S87 | S87: C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %) |
 | `Recipes:byId.blessing_fortune_3.ingredients[crow_feather].n` | – | 3 | nowy od S92 | S92: Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
@@ -1721,7 +2134,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | LoginReward | 37 | S100: new module: login reward 7-day streak (DESIGN-15 §5); week 0.27-0.47 h of income at 10-99 (0.33-0.39 h at 45, 0.27-0.30 h at 99), dearest day <= 0.11 h; Great potions from 70, shards instead of crystals (a crystal ~3 900 gold), chest Unique 85 / Heroic 15 (T-LR5 <= 5% of D5) |
 | Maps | 42 | S94: E1: the Ice Grotto's map from 71 |
 | Mounts | 44 | S97: new table: flat personal rolls of every winner, no kills-today ladder or luck: mounts 2 / 1.5 / 1.2 / 1% (50 / 67 / 83 / 100 kills, 17-33 days at 3 kills a day), Morvane's and Azgor's skins 3% (33 kills); S97: new table: level 10 (x2.0, the cap of every mount) from 90, gold 32000 = 0.70 of the level-90 income, 20 yeti fur + 15 frost scales (~45 / 34 kills); 1 -> 10 = 112 500 gold, about 5.2 levels of income over levels 20-90; S97: new table: mount level 2 from character level 20 (= Config.Mount.minLevel), gold 1500 = 0.48 of the level-20 income (0.4 rounded up to 500), 15 goblin ears + 10 thick hides (late Meadows / bears, ~34 kills); S97: new table: level 3 from 25, gold 2000 = 0.45 of the level-25 income, 12 werewolf claws (~27 kills); S97: new table: level 4 from 30, gold 2500 = 0.46 of the level-30 income, 20 werewolf claws + 10 ectoplasm (~45 kills); S97: new table: level 5 (mounting 1.0 s) from 40, gold 6000 = 0.59 of the level-40 income (0.55 rounded up), 20 ectoplasm (~45 kills); S97: new table: level 6 from 50, gold 8500 = 0.56 of the level-50 income, 15 salamander scales (~34 kills); S97: new table: level 7 from 60, gold 12500 = 0.57 of the level-60 income, 15 salamander scales + 15 magma shards (~34 kills each); S97: new table: level 8 from 70, gold 22000 = 0.71 of the level-70 income (0.7 rounded up), 20 magma shards + 10 yeti fur (~45 / 23 kills); S97: new table: level 9 from 80, gold 25500 = 0.71 of the level-80 income, 25 yeti fur (~56 kills); S97: new boss mount: starts at mount level 5 (DESIGN-15 §2); S97: new boss mount: starts at mount level 3 (DESIGN-15 §2); S96: new module: the stablemaster's bay horse starts at mount level 1 (x1.6 walk speed, DESIGN-15 §2); S97: new boss mount: starts at mount level 4 (DESIGN-15 §2); S97: new premium mount (Data/Products.mounts, disabled): starts at mount level 4 like Morvane's, below the best boss mount (6), the same speed cap; S97: new boss mount: starts at mount level 6 (DESIGN-15 §2) |
-| QuestBudget | 113 | S98: S98: new quest EXP budget; MONSTER_EXP_MUL generated by tools/quest_budget.luau (boss quests 2% of each band); S102: S102: compensation for the chapter I story quests (frostRuins, frostSign, warrenCharms, warCouncil); time per level unchanged (regenerated by tools/quest_budget.luau); S103: regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped; S105: regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged |
+| QuestBudget | 113 | S98: S98: new quest EXP budget; MONSTER_EXP_MUL generated by tools/quest_budget.luau (boss quests 2% of each band); S102: S102: compensation for the chapter I story quests (frostRuins, frostSign, warrenCharms, warCouncil); time per level unchanged (regenerated by tools/quest_budget.luau); S103: regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped; S105: regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged; S106: regenerated: 27 Duskwood side quests (levels 20-44, 6% of the band's EXP) |
 | Quests/Boss | 28 | S98: new module: one Slayer quest per boss from the dungeon entry level (15 / 40 / 65 / 95), EXP = 2% of the band's EXP (QuestBudget.bossQuestExp), gold 1.5x the main-quest gold, 2 dungeon stones of the region |
 | Quests/Contracts | 446 | S98: new module: the empty skeleton of the S99 hunting contracts (MAX_LEVEL 99); S99: S99: hunting contracts 1-99 generated from the hunting grounds (Logic/ContractGen), 12% expToNext(L) (QuestBudget.TARGET.contract), gold 20 + 4 L (12 per level broke G9.up3 at 25), kills 10 -> 30 on 1-20 and 30 -> 60 on 20-99, a fortune blessing and stones every 10th; DESIGN-15 §3.3 |
 | Quests/Weekly | 117 | S98: new module: 3 weekly contracts (0.30 of expToNext = 2x the daily, gold 2x, a blessing one rarity above the daily, essences) and the boss contract (2 wins, 0.50 of expToNext, gold 5x the daily, a fortune blessing 3 / 4, essences; no Legend Cores or dungeon stones), outside the quest EXP budget |
@@ -1884,7 +2297,7 @@ DPS z 1–2 umiejętnościami (×1,2) przeciw zwykłemu potworowi tego samego po
 | 17 | 1145 | 34,3 | 170 | 140 → 132 | 51,0 | 8768 |
 | 18 | 1246 | 35,8 | 180 | 150 → 141 | 54,0 | 9767 |
 | 19 | 1350 | 37,4 | 190 | 160 → 151 | 57,0 | 10 817 |
-| 20 | 1458 | 38,9 | 200 | 168 | 60,0 | 11 918 |
+| 20 | 1458 | 38,9 | 200 | 168 → 151 | 60,0 | 11 918 |
 
 ### 1 na 1 z potworem na poziomie gracza
 
@@ -2118,11 +2531,11 @@ Ulepszanie broni ilvl = poziom − 2, oczekiwana liczba prób (bez spadków).
 
 | poziom potwora | złoto | EXP |
 | --- | --: | --: |
-| 10 | 18,8 | 18,5 |
-| 14 | 38,9 | 92,9 |
-| 15 | 45,0 | 119,0 |
-| 18 | 54,0 | 147,9 |
-| 20 | 60,0 | 168,5 |
+| 10 | 18,8 | 18,5 → 16,5 |
+| 14 | 38,9 | 92,9 → 83,1 |
+| 15 | 45,0 | 119,0 → 106,4 |
+| 18 | 54,0 | 147,9 → 132,2 |
+| 20 | 60,0 | 168,5 → 150,6 |
 
 ### Rodzaje Łąk: nagroda względem wytrzymałości
 
@@ -2155,7 +2568,7 @@ Wojownik. Elity: walka + odpoczynek do pełna + marsz; Unikatowe ze zwykłych po
 | 10 | 9,0 | 100% | 9,0 | 9,0 | 10,1 → 9,9 | 0,52 → 0,50 | 0,94 |
 | 15 | 14,0 | 100% | 14,0 | 14,0 | 16,7 → 17,4 | 0,85 → 0,89 | 1,05 |
 | 18 | 17,0 | 100% | 17,0 | 17,0 | 22,0 → 22,7 | 1,12 → 1,16 | 1,09 |
-| 20 | 19,0 | 100% | 19,0 | 19,0 | 25,6 → 26,0 | 1,30 → 1,33 | 1,10 |
+| 20 | 19,0 | 100% | 19,0 | 19,0 | 25,6 → 27,0 | 1,30 → 1,38 | 1,10 |
 
 ### Elita II: przedmioty na zabicie
 
@@ -2321,8 +2734,8 @@ Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywka
 | 17 | 0,22 | 0,20 | 1,05 | 6467 → 6606 | 0 | 1,04 |
 | 18 | 0,22 | 0,21 | 1,04 | 7204 → 7358 | 0 | 1,04 |
 | 19 | 0,23 | 0,21 | 1,04 | 7979 → 8149 | 0 | 1,03 |
-| 20 | 0,23 | 0,22 | 1,03 | 8850 | 0 | 1,01 |
-| 21 | 0,29 | 0,24 | 1,08 | 8639 → 5287 | 0 | 1,25 |
+| 20 | 0,23 | 0,22 | 1,03 | 8850 → 9176 | 0 | 1,01 |
+| 21 | 0,29 | 0,24 | 1,08 | 8639 → 5644 | 0 | 1,25 |
 | suma 1–19 | 2,60 | – | – | – | – |
 | suma 1–19 z zadaniem Grimroka | 1,74 → 1,72 | – |
 | suma 1–19 z rodzajami Łąk (`kindAt`) | 2,76 | – |
@@ -4186,11 +4599,11 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 20 | 1458 | 38,9 | 200 | 168 | 60,0 | 11 918 |
-| 25 | 2142 | 47,3 | 250 | 257 → 424 | 75,0 | 18 179 |
-| 30 | 2941 | 55,7 | 300 | 331 → 509 | 90,0 | 25 681 |
-| 35 | 3849 | 64,0 | 350 | 414 → 592 | 105,0 | 34 399 |
-| 40 | 4864 | 72,3 | 400 | 507 → 589 | 120,0 | 44 316 |
+| 20 | 1458 | 38,9 | 200 | 168 → 151 | 60,0 | 11 918 |
+| 25 | 2142 | 47,3 | 250 | 257 → 408 | 75,0 | 18 179 |
+| 30 | 2941 | 55,7 | 300 | 331 → 490 | 90,0 | 25 681 |
+| 35 | 3849 | 64,0 | 350 | 414 → 572 | 105,0 | 34 399 |
+| 40 | 4864 | 72,3 | 400 | 507 → 569 | 120,0 | 44 316 |
 | 45 | 5982 | 80,5 | 450 | 588 → 662 | 135,0 | 55 416 |
 
 ### 1 na 1 z potworem poziomu (G1) (20-45)
@@ -4256,13 +4669,13 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 20 werewolf | 185 | 53,5 | 0,27 | 72% | 79% | 0,23 | 0,06 | 0,25 |
-| 25 werewolf | 283 → 467 | 54,8 | 0,39 → 0,33 | 12% → 44% | 79% | 0,33 → 0,28 | 0,08 → 0,07 | 0,37 → 0,31 |
-| 30 rotEnt | 531 → 816 | 61,4 | 0,00 → 0,41 | 100% → 24% | 74% | 0,00 → 0,38 | 0,00 → 0,11 | 0,00 → 0,51 |
-| 35 swampTroll | 627 → 898 | 66,3 | 0,89 → 0,54 | 12% → 24% | 76% | 0,87 → 0,53 | 0,21 → 0,13 | 0,98 → 0,59 |
-| 40 marshWitch | 449 → 521 | 49,7 | 0,73 → 0,63 | 46% | 80% | 0,54 → 0,46 | 0,15 → 0,13 | 0,63 → 0,54 |
+| 20 werewolf | 185 → 166 | 53,5 | 0,27 → 0,28 | 72% → 74% | 79% | 0,23 → 0,24 | 0,06 | 0,25 → 0,26 |
+| 25 werewolf | 283 → 449 | 54,8 | 0,39 → 0,33 | 12% → 46% | 79% | 0,33 → 0,28 | 0,08 → 0,07 | 0,37 → 0,31 |
+| 30 rotEnt | 531 → 786 | 61,4 | 0,00 → 0,41 | 100% → 26% | 74% | 0,00 → 0,39 | 0,00 → 0,11 | 0,00 → 0,52 |
+| 35 swampTroll | 627 → 867 | 66,3 | 0,89 → 0,56 | 12% → 24% | 76% | 0,87 → 0,54 | 0,21 → 0,13 | 0,98 → 0,61 |
+| 40 marshWitch | 449 → 503 | 49,7 | 0,73 → 0,61 | 46% → 50% | 80% | 0,54 → 0,44 | 0,15 → 0,12 | 0,63 → 0,52 |
 | suma pasma | – | – | 14,9 → 15,0 | – | – | 13,2 | 3,2 → 3,3 | 14,1 → 14,4 |
-| suma z bossami w zadaniach | – | – | 12,9 → 13,2 | – | – | – | – | – |
+| suma z bossami w zadaniach | – | – | 12,9 → 13,1 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 14,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (20-45)
@@ -4271,24 +4684,31 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
-| 20 | 7150 | 0 | 0 | 5361 | 45% | 1060 |
-| 21 | 22 219 → 3423 | 1307 | 0 | 5880 | 45% | 1611 |
-| 22 | 0 → 3738 | 714 | 0 | 6420 | 45% | 371 → 1421 |
-| 23 | 4067 | 0 | 0 | 6984 | 45% | 1207 |
-| 24 | 23 557 → 3918 | 0 | 0 | 7572 | 45% | 1256 |
-| 25 | 0 → 5820 | 0 | 0 | 8178 | 45% | 120 → 1305 |
-| 27 | 23 136 → 2448 | 0 | 0 | 9462 | 45% | 1403 |
+| 20 | 7150 | 0 → 258 | 0 | 5361 | 45% | 1060 → 1252 |
+| 21 | 22 219 → 3423 | 1307 → 1590 | 0 | 5880 | 45% | 1611 → 1812 |
+| 22 | 0 → 3738 | 714 → 1022 | 0 | 6420 | 45% | 371 → 1631 |
+| 23 | 4067 | 671 | 0 | 6984 | 45% | 1644 |
+| 24 | 23 557 → 3918 | 0 → 1018 | 0 | 7572 | 45% | 1256 → 1712 |
+| 25 | 0 → 5820 | 0 → 393 | 0 | 8178 | 45% | 120 → 1542 |
+| 26 | 0 | 423 | 0 | 8811 | 45% | 370 |
+| 27 | 23 136 → 2448 | 0 → 1727 | 0 | 9462 | 45% | 1403 → 2167 |
 | 28 | 2623 | 0 | 0 | 10 137 | 45% | 1452 |
-| 30 | 30 817 → 2990 | 0 | 0 | 11 556 | 45% | 1550 |
-| 31 | 5568 | 0 | 0 | 12 297 | 45% | 1599 |
+| 29 | 0 | 1458 | 0 | 10 836 | 45% | 681 |
+| 30 | 30 817 → 2990 | 0 → 555 | 0 | 11 556 | 45% | 1550 → 1832 |
+| 31 | 5568 | 1063 | 0 | 12 297 | 45% | 1890 |
+| 32 | 0 | 627 | 0 | 13 059 | 45% | 448 |
 | 33 | 39 997 → 3582 | 0 | 0 | 13 845 | 45% | 1697 |
+| 34 | 0 | 1970 | 0 | 14 649 | 45% | 792 |
 | 35 | 0 → 4005 | 0 | 0 | 15 477 | 45% | 160 → 1795 |
-| 37 | 61 156 → 4450 | 0 | 0 | 17 199 | 45% | 1893 |
-| 39 | 4917 | 0 | 0 | 19 005 | 45% | 1991 |
-| 40 | 0 | 0 | 0 | 19 941 | 45% | 2970 |
-| 41 | 5407 | 0 | 0 | 20 898 | 45% | 2089 |
+| 36 | 0 | 784 | 0 | 16 329 | 45% | 500 |
+| 37 | 61 156 → 4450 | 0 → 826 | 0 | 17 199 | 45% | 1893 → 2238 |
+| 38 | 0 | 1564 | 0 | 18 093 | 45% | 526 |
+| 39 | 4917 | 913 | 0 | 19 005 | 45% | 2354 |
+| 40 | 0 | 0 → 1724 | 0 | 19 941 | 45% | 2970 → 3342 |
+| 41 | 5407 | 1004 | 0 | 20 898 | 45% | 2470 |
+| 42 | 0 | 1051 | 0 | 21 876 | 45% | 578 |
 | 43 | 0 | 0 | 66 499 | 22 875 | 45% | 6447 |
-| 44 | 11 592 | 0 | 0 | 23 895 | 45% | 4276 |
+| 44 | 11 592 | 2066 | 0 | 23 895 | 45% | 4684 |
 
 ### Premia za różne klasy (poziom 30) (20-45)
 
@@ -4296,10 +4716,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 31 135 → 47 872 | 14,9 → 15,0 |
-| 3 × Wojownik | 1,00 | 31 135 → 47 872 | 14,9 → 15,0 |
-| Wojownik + Łowca + Mag | 1,10 | 34 275 → 52 700 | 13,5 → 13,6 |
-| cztery klasy | 1,15 | 36 895 → 56 729 | 12,6 → 12,8 |
+| solo (Wojownik) | 1,00 | 31 135 → 46 097 | 14,9 → 15,0 |
+| 3 × Wojownik | 1,00 | 31 135 → 46 097 | 14,9 → 15,0 |
+| Wojownik + Łowca + Mag | 1,10 | 34 275 → 50 747 | 13,5 → 13,6 |
+| cztery klasy | 1,15 | 36 895 → 54 626 | 12,6 → 12,8 |
 
 ### Ekonomia (Wojownik) (20-45)
 
@@ -4307,11 +4727,11 @@ Na godzinę expienia w tempie z tabeli „Tempo” (bez ulepszeń i materiałów
 
 | poziom | złoto z zabić/h | sprzedaż dropu/h | mikstury/h | mikstury ÷ dochód | drop ÷ zabicia | złoto zadań poziomu | łańcuch: mikstury ÷ dochód |
 | --- | --: | --: | --: | --: | --: | --: | --: |
-| 20 | 4441 | 2218 | 209 | 3% | 0,50 | 1060 | 19% |
-| 25 | 5417 | 2517 | 204 | 3% | 0,46 | 120 → 1305 | 26% |
-| 30 | 8461 | 2563 | 287 | 3% | 0,30 | 1550 | 23% |
+| 20 | 4441 | 2218 | 209 | 3% | 0,50 | 1060 → 1252 | 19% |
+| 25 | 5417 | 2517 | 204 | 3% | 0,46 | 120 → 1542 | 26% |
+| 30 | 8461 | 2563 | 287 | 3% | 0,30 | 1550 → 1832 | 23% |
 | 35 | 8643 | 2663 | 398 | 4% | 0,31 | 160 → 1795 | 38% |
-| 40 | 7700 | 4074 | 274 | 2% | 0,53 | 2970 | 49% |
+| 40 | 7700 | 4074 | 274 | 2% | 0,53 | 2970 → 3342 | 49% |
 | 45 | 9676 | 5018 | 264 | 2% | 0,52 | 2285 | 38% |
 
 ### Mikstury (Wojownik, łańcuch zamiast odpoczynku) (20-45)
@@ -4583,7 +5003,7 @@ Globalne (G): 164/164 w paśmie; regionu: 192/192 w paśmie.
 | grimrok faza 3: leap (tempo / odnowienie) | 1,00 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | grimrok faza 3: whirlwind (tempo / odnowienie) | 0,77 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 25–99: spadki h/poziom rodzaju ogólnego bez zadań (Wojownik) | 0,00 | ≤ 0,00 | w paśmie | S87 (asertowane) |
-| 20–45: godzin (cel D4 14 h) | 15,03 | 10,50–17,50 | w paśmie | S87 (asertowane) |
+| 20–45: godzin (cel D4 14 h) | 15,01 | 10,50–17,50 | w paśmie | S87 (asertowane) |
 | duskwood_den werewolf 21 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S92 (asertowane) |
 | duskwood_den werewolf 21 Warrior: spotkanie Elit (q = 0.25) | 1,01 | ≤ 1,10 | w paśmie | S92 (asertowane) |
 | duskwood_den werewolf 21 Hunter: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S92 (asertowane) |
@@ -4799,11 +5219,11 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Expowiska na 43–44 | 1 | 2 / 2 | ≥ 2 |
 | Rodzaje: EXP/s ÷ zwykły (najmniej) | 0,80 (rotEnt) | 0,90 | 0,85–1,20 |
 | Tempo 20 → 45 (okno): h | 16,07 | 14,38 | 11,9–16,1 |
-| G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h | 17,98 | 15,03 | 10,5–17,5 |
+| G13: pasmo 20–45 (rodzaje regionu, zadania na swoim poziomie): h | 17,98 | 15,01 | 10,5–17,5 |
 | Tempo: h(44) / największy krok h(L) / h(L − 1) | 0,93 / 1,89 (L21) | 0,86 / 1,25 | 0,72–0,98 / ≤ 1,30 |
-| Plecak 100 (od 35.): poziomy dochodu | 11,4 | 6,4 | 3–8 |
-| Plecak 80 (od 25.): poziomy dochodu | 6,5 | 7,4 | 3–8 |
-| +1…+3 broni / dochód poziomu (21–45) | 0,44–0,69 | 0,45–0,61 | ≤ 1,05 |
+| Plecak 100 (od 35.): poziomy dochodu | 11,4 | 6,1 | 3–8 |
+| Plecak 80 (od 25.): poziomy dochodu | 6,5 | 7,0 | 3–8 |
+| +1…+3 broni / dochód poziomu (21–45) | 0,44–0,69 | 0,44–0,58 | ≤ 1,05 |
 | D5 (K0): Unikaty dla klasy na h expienia | 2,3–4,5 | 2,26–3,84 | 2–4 |
 | Części: rodzaje z częścią / części w przepisach 20–45 | 8/13 / 0/5 | 13/13 / 5/5 | 13/13 / 5/5 |
 
@@ -4947,114 +5367,114 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Mage 44: Heroiki dla klasy na h Elit | 0,88 | 0,50–1,50 | w paśmie | S92 (asertowane) |
 | Cleric 44: Unikaty dla klasy na h expienia | 3,32 | 2,00–4,00 | w paśmie | S92 (asertowane) |
 | Cleric 44: Heroiki dla klasy na h Elit | 0,94 | 0,50–1,50 | w paśmie | S92 (asertowane) |
-| Warrior 21: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 21: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 21: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 21: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 22: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 22: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 22: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 22: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 23: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 23: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 23: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 23: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 24: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 24: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 24: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 24: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 25: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 25: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 25: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 25: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 26: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 26: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 26: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 26: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 27: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 27: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 27: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 27: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 28: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 28: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 28: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 28: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 29: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 29: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 29: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 29: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 30: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 30: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 30: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 30: +1…+3 / dochód poziomu | 0,60 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 31: +1…+3 / dochód poziomu | 0,61 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 31: +1…+3 / dochód poziomu | 0,61 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 31: +1…+3 / dochód poziomu | 0,61 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 31: +1…+3 / dochód poziomu | 0,61 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 32: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 32: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 32: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 32: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 33: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 33: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 33: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 33: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 34: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 34: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 34: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 34: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 35: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 35: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 35: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 35: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 36: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 36: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 36: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 36: +1…+3 / dochód poziomu | 0,59 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 37: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 37: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 37: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 37: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 38: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 38: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 38: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 38: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 39: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 39: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 39: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 39: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 40: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 40: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 40: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 40: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 41: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 41: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 41: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 41: +1…+3 / dochód poziomu | 0,47 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 42: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 42: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 42: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 42: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 43: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 43: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 43: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 43: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 21: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 21: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 21: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 21: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 22: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 22: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 22: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 22: +1…+3 / dochód poziomu | 0,55 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 23: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 23: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 23: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 23: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 24: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 24: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 24: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 24: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 25: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 25: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 25: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 25: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 26: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 26: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 26: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 26: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 27: +1…+3 / dochód poziomu | 0,44 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 27: +1…+3 / dochód poziomu | 0,44 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 27: +1…+3 / dochód poziomu | 0,44 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 27: +1…+3 / dochód poziomu | 0,44 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 28: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 28: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 28: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 28: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 29: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 29: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 29: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 29: +1…+3 / dochód poziomu | 0,54 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 30: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 30: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 30: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 30: +1…+3 / dochód poziomu | 0,57 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 31: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 31: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 31: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 31: +1…+3 / dochód poziomu | 0,58 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 32: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 32: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 32: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 32: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 33: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 33: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 33: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 33: +1…+3 / dochód poziomu | 0,52 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 34: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 34: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 34: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 34: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 35: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 35: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 35: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 35: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 36: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 36: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 36: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 36: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 37: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 37: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 37: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 37: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 38: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 38: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 38: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 38: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 39: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 39: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 39: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 39: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 40: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 40: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 40: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 40: +1…+3 / dochód poziomu | 0,45 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 41: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 41: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 41: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 41: +1…+3 / dochód poziomu | 0,46 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 42: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 42: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 42: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 42: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 43: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 43: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 43: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 43: +1…+3 / dochód poziomu | 0,49 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 44: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 44: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 44: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 44: +1…+3 / dochód poziomu | 0,50 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Warrior 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Hunter 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Mage 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Cleric 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Hunter: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Mage: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Cleric: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Warrior: backpack_100 (od 35.) / dochód poziomu | 6,38 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Hunter: backpack_100 (od 35.) / dochód poziomu | 6,38 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Mage: backpack_100 (od 35.) / dochód poziomu | 6,38 | 3,00–8,00 | w paśmie | S92 (asertowane) |
-| Cleric: backpack_100 (od 35.) / dochód poziomu | 6,38 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Warrior: backpack_80 (od 25.) / dochód poziomu | 7,04 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Hunter: backpack_80 (od 25.) / dochód poziomu | 7,04 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Mage: backpack_80 (od 25.) / dochód poziomu | 7,04 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Cleric: backpack_80 (od 25.) / dochód poziomu | 7,04 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Warrior: backpack_100 (od 35.) / dochód poziomu | 6,11 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Hunter: backpack_100 (od 35.) / dochód poziomu | 6,11 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Mage: backpack_100 (od 35.) / dochód poziomu | 6,11 | 3,00–8,00 | w paśmie | S92 (asertowane) |
+| Cleric: backpack_100 (od 35.) / dochód poziomu | 6,11 | 3,00–8,00 | w paśmie | S92 (asertowane) |
 | werewolf: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
 | forestWraith: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
 | rotEnt: część potwora | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
@@ -5126,7 +5546,7 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Morvane |
 | --- | --: | --: | --: | --: | --: |
 | 19 | 0,23 | 1,03 | 0,21 | 0,27 | 0,00 |
-| 20 | 0,23 | 1,01 | 0,22 | 0,25 | 0,21 |
+| 20 | 0,23 | 1,01 | 0,22 | 0,25 | 0,20 |
 | 21 | 0,29 | 1,25 | 0,24 | 0,31 | 0,29 |
 | 22 | 0,31 | 1,04 | 0,26 | 0,32 | 0,31 |
 | 23 | 0,32 | 1,04 | 0,28 | 0,34 | 0,32 |
@@ -5150,19 +5570,19 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | 41 | 0,82 | 1,02 | 0,80 | 0,96 | 0,80 |
 | 42 | 0,84 | 1,02 | 0,81 | 1,03 | 0,81 |
 | 43 | 0,85 | 1,02 | 0,82 | 1,05 | 0,00 |
-| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,28 |
+| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,22 |
 | 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
 
-Suma 20 → 45: 14,38 h (rodzaj regionu 15,06 h, z Morvane 12,88 h); h(45) / h(44) = 1,01 (rodzaje Pustkowi: S93).
+Suma 20 → 45: 14,38 h (rodzaj regionu 15,06 h, z Morvane 12,81 h); h(45) / h(44) = 1,01 (rodzaje Pustkowi: S93).
 
 ### Premia za różne klasy (tylko raport, S92)
 
 | drużyna 3 osób | mnożnik EXP | EXP/h członka |
 | --- | --: | --: |
-| 30: Warrior + Warrior + Warrior | 1,00 | 4,787e+04 |
-| 30: Warrior + Hunter + Mage | 1,10 | 5,27e+04 |
-| 40: Warrior + Warrior + Warrior | 1,00 | 3,778e+04 |
-| 40: Warrior + Hunter + Mage | 1,10 | 4,471e+04 |
+| 30: Warrior + Warrior + Warrior | 1,00 | 4,61e+04 |
+| 30: Warrior + Hunter + Mage | 1,10 | 5,075e+04 |
+| 40: Warrior + Warrior + Warrior | 1,00 | 3,648e+04 |
+| 40: Warrior + Hunter + Mage | 1,10 | 4,318e+04 |
 
 ### Mikstury łańcuchowe ÷ dochód (S92, I3; dolna granica 15% tylko raport)
 
@@ -6131,7 +6551,7 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 
 | poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Azgorem |
 | --- | --: | --: | --: | --: | --: |
-| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,28 |
+| 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,22 |
 | 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
 | 46 | 0,89 | 1,02 | 0,86 | 0,93 | 0,89 |
 | 47 | 0,90 | 1,02 | 0,87 | 0,94 | 0,90 |
@@ -7293,10 +7713,10 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | pasmo | h (bez bossów) | h z zadaniami bossów |
 | --- | --: | --: |
 | 1 → 20 | 2,60 | 1,72 |
-| 20 → 45 | 14,38 | 12,88 |
+| 20 → 45 | 14,38 | 12,81 |
 | 45 → 70 | 26,14 | 24,20 |
 | 70 → 100 | 40,96 | 38,06 |
-| 1 → 100 | 84,09 | 76,86 |
+| 1 → 100 | 84,09 | 76,79 |
 
 Zadanie `vaelgrath` oddaje 371 503 EXP (z Vaelgrathem w oknie −2,91 h na 70 → 100); okno zadania `deepforge` (62–71) daje na 70.–71. 23% EXP zadań tego okna.
 
@@ -8404,26 +8824,26 @@ Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.le
 
 | klasa · poziom | dochód poziomu | +1…+3 / dochód | +1…+6 / dochód | +1…+9 z ochroną (poziomy) | +1…+9 bez ochrony (poziomy) | zestaw +9 bez ochrony (poziomy) | goldEq +9 z ochroną (poziomy) | zwoje +9 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Wojownik · 20 | 3964 → 2140 | 0,38 → 0,71 | 2,07 → 3,84 | 9,0 → 16,7 | 64,4 → 119,3 | 644 → 1193 | 61,0 → 113,0 | 18,3 |
-| Łowca · 20 | 3964 → 2140 | 0,38 → 0,71 | 2,07 → 3,84 | 9,0 → 16,7 | 64,4 → 119,3 | 644 → 1193 | 61,0 → 113,0 | 18,3 |
-| Mag · 20 | 3964 → 2140 | 0,38 → 0,71 | 2,07 → 3,84 | 9,0 → 16,7 | 64,4 → 119,3 | 644 → 1193 | 61,0 → 113,0 | 18,3 |
-| Kapłan · 20 | 3964 → 2140 | 0,38 → 0,71 | 2,07 → 3,84 | 9,0 → 16,7 | 64,4 → 119,3 | 644 → 1193 | 61,0 → 113,0 | 18,3 |
-| Wojownik · 25 | 4920 → 4075 | 0,45 → 0,54 | 2,45 → 2,96 | 10,6 → 12,8 | 76,3 → 92,1 | 763 → 921 | 52,6 → 63,5 | 18,3 |
-| Łowca · 25 | 4920 → 4075 | 0,45 → 0,54 | 2,45 → 2,96 | 10,6 → 12,8 | 76,3 → 92,1 | 763 → 921 | 52,6 → 63,5 | 18,3 |
-| Mag · 25 | 4920 → 4075 | 0,45 → 0,54 | 2,45 → 2,96 | 10,6 → 12,8 | 76,3 → 92,1 | 763 → 921 | 52,6 → 63,5 | 18,3 |
-| Kapłan · 25 | 4920 → 4075 | 0,45 → 0,54 | 2,45 → 2,96 | 10,6 → 12,8 | 76,3 → 92,1 | 763 → 921 | 52,6 → 63,5 | 18,3 |
-| Wojownik · 30 | 5851 → 5462 | 0,56 → 0,60 | 3,06 → 3,27 | 13,3 → 14,2 | 95,0 → 101,8 | 950 → 1018 | 48,5 → 52,0 | 18,3 |
-| Łowca · 30 | 5851 → 5462 | 0,56 → 0,60 | 3,06 → 3,27 | 13,3 → 14,2 | 95,0 → 101,8 | 950 → 1018 | 48,5 → 52,0 | 18,3 |
-| Mag · 30 | 5851 → 5462 | 0,56 → 0,60 | 3,06 → 3,27 | 13,3 → 14,2 | 95,0 → 101,8 | 950 → 1018 | 48,5 → 52,0 | 18,3 |
-| Kapłan · 30 | 5851 → 5462 | 0,56 → 0,60 | 3,06 → 3,27 | 13,3 → 14,2 | 95,0 → 101,8 | 950 → 1018 | 48,5 → 52,0 | 18,3 |
-| Wojownik · 35 | 7396 → 7836 | 0,62 → 0,58 | 3,36 → 3,17 | 14,6 → 13,8 | 104,4 → 98,6 | 1044 → 986 | 42,5 → 40,1 | 18,3 |
-| Łowca · 35 | 7396 → 7836 | 0,62 → 0,58 | 3,36 → 3,17 | 14,6 → 13,8 | 104,4 → 98,6 | 1044 → 986 | 42,5 → 40,1 | 18,3 |
-| Mag · 35 | 7396 → 7836 | 0,62 → 0,58 | 3,36 → 3,17 | 14,6 → 13,8 | 104,4 → 98,6 | 1044 → 986 | 42,5 → 40,1 | 18,3 |
-| Kapłan · 35 | 7396 → 7836 | 0,62 → 0,58 | 3,36 → 3,17 | 14,6 → 13,8 | 104,4 → 98,6 | 1044 → 986 | 42,5 → 40,1 | 18,3 |
-| Wojownik · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
-| Łowca · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
-| Mag · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
-| Kapłan · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
+| Wojownik · 20 | 3964 → 2261 | 0,38 → 0,67 | 2,07 → 3,63 | 9,0 → 15,8 | 64,4 → 112,9 | 644 → 1129 | 61,0 → 107,0 | 18,3 |
+| Łowca · 20 | 3964 → 2261 | 0,38 → 0,67 | 2,07 → 3,63 | 9,0 → 15,8 | 64,4 → 112,9 | 644 → 1129 | 61,0 → 107,0 | 18,3 |
+| Mag · 20 | 3964 → 2261 | 0,38 → 0,67 | 2,07 → 3,63 | 9,0 → 15,8 | 64,4 → 112,9 | 644 → 1129 | 61,0 → 107,0 | 18,3 |
+| Kapłan · 20 | 3964 → 2261 | 0,38 → 0,67 | 2,07 → 3,63 | 9,0 → 15,8 | 64,4 → 112,9 | 644 → 1129 | 61,0 → 107,0 | 18,3 |
+| Wojownik · 25 | 4920 → 4261 | 0,45 → 0,52 | 2,45 → 2,83 | 10,6 → 12,3 | 76,3 → 88,1 | 763 → 881 | 52,6 → 60,7 | 18,3 |
+| Łowca · 25 | 4920 → 4261 | 0,45 → 0,52 | 2,45 → 2,83 | 10,6 → 12,3 | 76,3 → 88,1 | 763 → 881 | 52,6 → 60,7 | 18,3 |
+| Mag · 25 | 4920 → 4261 | 0,45 → 0,52 | 2,45 → 2,83 | 10,6 → 12,3 | 76,3 → 88,1 | 763 → 881 | 52,6 → 60,7 | 18,3 |
+| Kapłan · 25 | 4920 → 4261 | 0,45 → 0,52 | 2,45 → 2,83 | 10,6 → 12,3 | 76,3 → 88,1 | 763 → 881 | 52,6 → 60,7 | 18,3 |
+| Wojownik · 30 | 5851 → 5726 | 0,56 → 0,57 | 3,06 → 3,12 | 13,3 → 13,6 | 95,0 → 97,1 | 950 → 971 | 48,5 → 49,6 | 18,3 |
+| Łowca · 30 | 5851 → 5726 | 0,56 → 0,57 | 3,06 → 3,12 | 13,3 → 13,6 | 95,0 → 97,1 | 950 → 971 | 48,5 → 49,6 | 18,3 |
+| Mag · 30 | 5851 → 5726 | 0,56 → 0,57 | 3,06 → 3,12 | 13,3 → 13,6 | 95,0 → 97,1 | 950 → 971 | 48,5 → 49,6 | 18,3 |
+| Kapłan · 30 | 5851 → 5726 | 0,56 → 0,57 | 3,06 → 3,12 | 13,3 → 13,6 | 95,0 → 97,1 | 950 → 971 | 48,5 → 49,6 | 18,3 |
+| Wojownik · 35 | 7396 → 8188 | 0,62 → 0,56 | 3,36 → 3,03 | 14,6 → 13,2 | 104,4 → 94,3 | 1044 → 943 | 42,5 → 38,3 | 18,3 |
+| Łowca · 35 | 7396 → 8188 | 0,62 → 0,56 | 3,36 → 3,03 | 14,6 → 13,2 | 104,4 → 94,3 | 1044 → 943 | 42,5 → 38,3 | 18,3 |
+| Mag · 35 | 7396 → 8188 | 0,62 → 0,56 | 3,36 → 3,03 | 14,6 → 13,2 | 104,4 → 94,3 | 1044 → 943 | 42,5 → 38,3 | 18,3 |
+| Kapłan · 35 | 7396 → 8188 | 0,62 → 0,56 | 3,36 → 3,03 | 14,6 → 13,2 | 104,4 → 94,3 | 1044 → 943 | 42,5 → 38,3 | 18,3 |
+| Wojownik · 40 | 10 292 → 13 376 | 0,59 → 0,45 | 3,20 → 2,46 | **13,9 → 10,7** | 99,5 → 76,6 | 995 → 766 | 33,9 → 26,1 | 18,3 |
+| Łowca · 40 | 10 292 → 13 376 | 0,59 → 0,45 | 3,20 → 2,46 | **13,9 → 10,7** | 99,5 → 76,6 | 995 → 766 | 33,9 → 26,1 | 18,3 |
+| Mag · 40 | 10 292 → 13 376 | 0,59 → 0,45 | 3,20 → 2,46 | **13,9 → 10,7** | 99,5 → 76,6 | 995 → 766 | 33,9 → 26,1 | 18,3 |
+| Kapłan · 40 | 10 292 → 13 376 | 0,59 → 0,45 | 3,20 → 2,46 | **13,9 → 10,7** | 99,5 → 76,6 | 995 → 766 | 33,9 → 26,1 | 18,3 |
 | Wojownik · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
 | Łowca · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
 | Mag · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
@@ -8844,10 +9264,10 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Cleric holystaff legendary +9 L100: z cechami | 4,42 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff mythic +0 L100: z cechami | 4,40 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L100: z cechami | 4,25 | 0,97–1,06 | **poza** | raport → S88 |
-| Warrior 40: +1…+9 z ochroną (poziomy dochodu) | 11,06 | 12,00–25,00 | **poza** | raport → S103 |
-| Hunter 40: +1…+9 z ochroną (poziomy dochodu) | 11,06 | 12,00–25,00 | **poza** | raport → S103 |
-| Mage 40: +1…+9 z ochroną (poziomy dochodu) | 11,06 | 12,00–25,00 | **poza** | raport → S103 |
-| Cleric 40: +1…+9 z ochroną (poziomy dochodu) | 11,06 | 12,00–25,00 | **poza** | raport → S103 |
+| Warrior 40: +1…+9 z ochroną (poziomy dochodu) | 10,68 | 12,00–25,00 | **poza** | raport → S103 |
+| Hunter 40: +1…+9 z ochroną (poziomy dochodu) | 10,68 | 12,00–25,00 | **poza** | raport → S103 |
+| Mage 40: +1…+9 z ochroną (poziomy dochodu) | 10,68 | 12,00–25,00 | **poza** | raport → S103 |
+| Cleric 40: +1…+9 z ochroną (poziomy dochodu) | 10,68 | 12,00–25,00 | **poza** | raport → S103 |
 
 ## Łup i szczęście (S84)
 
@@ -9600,16 +10020,16 @@ Ulepszanie u stajennego (`Data/Mounts.UPGRADE`, ten sam koszt dla każdego wierz
 
 | poziom wierzchowca | poziom postaci | złoto | dochód poziomu | udział | części (rodzaj: zabicia) | szybkość | wsiadanie s |
 | --- | --: | --: | --: | --: | --: | --: | --: |
-| 1 → 2 | 20 | 1500 | 2140 | 0,70 | 15 goblin_ear (bandit: 34), 10 thick_hide (brownBear: 23) | ×1,64 | 1,5 |
-| 2 → 3 | 25 | 2000 | 4075 | 0,49 | 12 werewolf_claw (werewolf: 27) | ×1,69 | 1,5 |
-| 3 → 4 | 30 | 2500 | 5462 | 0,46 | 20 werewolf_claw (werewolf: 45), 10 ectoplasm (forestWraith: 23) | ×1,73 | 1,5 |
-| 4 → 5 | 40 | 6000 | 12 921 | 0,46 | 20 ectoplasm (forestWraith: 45) | ×1,78 | 1,0 |
+| 1 → 2 | 20 | 1500 | 2261 | 0,66 | 15 goblin_ear (bandit: 34), 10 thick_hide (brownBear: 23) | ×1,64 | 1,5 |
+| 2 → 3 | 25 | 2000 | 4261 | 0,47 | 12 werewolf_claw (werewolf: 27) | ×1,69 | 1,5 |
+| 3 → 4 | 30 | 2500 | 5726 | 0,44 | 20 werewolf_claw (werewolf: 45), 10 ectoplasm (forestWraith: 23) | ×1,73 | 1,5 |
+| 4 → 5 | 40 | 6000 | 13 376 | 0,45 | 20 ectoplasm (forestWraith: 45) | ×1,78 | 1,0 |
 | 5 → 6 | 50 | 8500 | 15 598 | 0,54 | 15 salamander_scale (salamander: 34) | ×1,82 | 1,0 |
 | 6 → 7 | 60 | 12 500 | 23 811 | 0,52 | 15 salamander_scale (salamander: 34), 15 magma_shard (ashOrc: 34) | ×1,87 | 1,0 |
 | 7 → 8 | 70 | 22 000 | 33 026 | 0,67 | 20 magma_shard (fireGolem: 45), 10 yeti_fur (iceWolf: 23) | ×1,91 | 1,0 |
 | 8 → 9 | 80 | 25 500 | 39 032 | 0,65 | 25 yeti_fur (iceWolf: 56) | ×1,96 | 1,0 |
 | 9 → 10 | 90 | 32 000 | 49 501 | 0,65 | 20 yeti_fur (yeti: 45), 15 frost_scale (iceElemental: 34) | ×2,00 | 1,0 |
-| 1 → 10 |  | 112 500 |  | 5,15 |  |  |  |
+| 1 → 10 |  | 112 500 |  | 5,05 |  |  |  |
 
 Wierzchowce z bossów (`Data/Mounts.BOSS_DROPS`): osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i bez szczęścia.
 
@@ -9629,7 +10049,7 @@ Udział EXP zadań w paśmie, model (poboczne × SIDE_SHARE):
 | pasmo | fabuła | poboczne | bossowe | zlecenia | razem |
 | --- | --: | --: | --: | --: | --: |
 | 1–19 | 42% | 20% | 2% | 12% | 76% |
-| 20–44 | 10% | 0% | 2% | 12% | 24% |
+| 20–44 | 10% | 3% | 2% | 12% | 27% |
 | 45–69 | 9% | 0% | 2% | 12% | 23% |
 | 70–99 | 10% | 0% | 2% | 12% | 24% |
 | cel | 10% | 6% | 2% | 12% | 30% |
@@ -9639,7 +10059,7 @@ Udział EXP zadań w paśmie, gracz robi wszystko (poboczne w całości):
 | pasmo | fabuła | poboczne | bossowe | zlecenia | razem |
 | --- | --: | --: | --: | --: | --: |
 | 1–19 | 42% | 40% | 2% | 12% | 95% |
-| 20–44 | 10% | 1% | 2% | 12% | 25% |
+| 20–44 | 10% | 6% | 2% | 12% | 30% |
 | 45–69 | 9% | 0% | 2% | 12% | 23% |
 | 70–99 | 10% | 0% | 2% | 12% | 24% |
 | cel | 10% | 6% | 2% | 12% | 30% |
@@ -9653,11 +10073,11 @@ Poza budżetem (w ułamku `expToNext` poziomu postaci, nagroda liczona przy odbi
 | 10 | 0.651 | 0,45 | 0,90 |
 | 15 | 0.592 | 0,45 | 1,40 |
 | 19 | 0.613 | 0,45 | 1,40 |
-| 20 | 0.643 | 0,45 | 1,40 |
-| 25 | 1.237 | 0,45 | 1,40 |
-| 30 | 1.187 | 0,45 | 1,40 |
-| 35 | 1.141 | 0,45 | 1,40 |
-| 40 | 0.962 | 0,45 | 1,40 |
+| 20 | 0.575 | 0,45 | 1,40 |
+| 25 | 1.189 | 0,45 | 1,40 |
+| 30 | 1.143 | 0,45 | 1,40 |
+| 35 | 1.102 | 0,45 | 1,40 |
+| 40 | 0.929 | 0,45 | 1,40 |
 | 45 | 0.936 | 0,45 | 1,40 |
 | 50 | 0.958 | 0,45 | 1,40 |
 | 55 | 0.896 | 0,45 | 1,40 |
@@ -9714,9 +10134,9 @@ Nagroda za wydarzenie (`Logic/WorldEvents.reward`, zwycięstwo, poziom wydarzeni
 | poziom | klasa | EXP nagrody | udział EXP | złoto | złoto / 2 h dochodu | minuty bicia |
 | --- | --: | --: | --: | --: | --: | --: |
 | 10 | Mag | 219 | 2,13% | 360 | 5,72% | 2,6 |
-| 20 | Mag | 498 | 2,21% | 720 | 5,98% | 2,6 |
-| 30 | Mag | 815 | 0,87% | 1080 | 5,03% | 1,0 |
-| 40 | Wojownik | 1163 | 1,54% | 1440 | 6,12% | 1,8 |
+| 20 | Mag | 498 | 2,47% | 720 | 5,98% | 3,0 |
+| 30 | Mag | 815 | 0,91% | 1080 | 5,03% | 1,1 |
+| 40 | Wojownik | 1163 | 1,59% | 1440 | 6,12% | 1,9 |
 | 50 | Mag | 1531 | 1,58% | 1800 | 6,95% | 1,9 |
 | 60 | Mag | 1919 | 1,67% | 2160 | 6,44% | 2,0 |
 | 70 | Mag | 2324 | 1,68% | 2520 | 5,90% | 2,0 |
@@ -13472,7 +13892,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 19,7 s.
+Tabele S86 liczą się 19,6 s.
 
 ## Poprawki globalne (S87)
 
@@ -13667,9 +14087,9 @@ G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0
 
 | poziom | +1…+3 / dochód | +1…+9 z ochroną | +1…+9 z materiałami |
 | --- | --: | --: | --: |
-| 20 | 0,71 | 16,7 | 113,0 |
-| 25 | 0,54 | 12,8 | 63,5 |
-| 30 | 0,60 | 14,2 | 52,0 |
+| 20 | 0,67 | 15,8 | 107,0 |
+| 25 | 0,52 | 12,3 | 60,7 |
+| 30 | 0,57 | 13,6 | 49,6 |
 | 45 | 0,53 | 12,5 | 26,7 |
 | 60 | 0,59 | 14,0 | 22,6 |
 | 70 | 0,59 | 13,9 | 20,1 |

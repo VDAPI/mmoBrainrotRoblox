@@ -128,6 +128,22 @@ describe("NpcMarks", function()
 		expect(NpcMarks.of(q.giver, sideState(), q.level + gap + 1)).toBe("availableLow")
 	end)
 
+	-- S106: the Duskwood side arcs on the same marks
+	it("the sergeant offers the moon oil from 20; Wanda's next lantern quest turns grey seven levels on", function()
+		local done: { [string]: boolean } = {}
+		for _, quest in Quests.Side.list do
+			if quest.giver == "sergeant" and quest.id ~= "side_moonOil" then
+				done[quest.id] = true
+			end
+		end
+		expect(NpcMarks.of("sergeant", sideState(done), 20)).toBe("available")
+		expect(NpcMarks.of("sergeant", sideState(done), 19)).toBeNil()
+		expect(NpcMarks.of("huntress_wanda", sideState(), 20)).toBeNil()
+		local oil = { side_moonOil = true }
+		expect(NpcMarks.of("huntress_wanda", sideState(oil), 26)).toBe("available")
+		expect(NpcMarks.of("huntress_wanda", sideState(oil), 28)).toBe("availableLow")
+	end)
+
 	it("a gold offer wins over a grey one at the same NPC", function()
 		-- the stablemaster: side_wagon (10) is grey at 21, the stable arc's first quest (21) is gold
 		local wagon = Quests.Side.get("side_wagon")

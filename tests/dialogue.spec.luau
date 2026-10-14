@@ -60,6 +60,36 @@ local NEW_QUESTS: { [string]: { string } } = {
 		"eveOfBattle",
 	},
 	S105f = { "snowInSummer", "dragonsBrood", "voiceOfWinter", "firstSpring" },
+	-- S106: the Duskwood side arcs
+	S106 = {
+		"side_moonOil",
+		"side_darkLanterns",
+		"side_boneTree",
+		"side_lampLighter",
+		"side_clayJars",
+		"side_smokedHives",
+		"side_stolenHoney",
+		"side_oldShaggy",
+		"side_nameless",
+		"side_servantTokens",
+		"side_householdRoll",
+		"side_restingPlace",
+		"side_rotSap",
+		"side_ghoulBurrows",
+		"side_rotCure",
+		"side_falseMarks",
+		"side_lostLetters",
+		"side_cultCages",
+		"side_eelTraps",
+		"side_trollToll",
+		"side_trollHoard",
+		"side_hexCharms",
+		"side_hexPouches",
+		"side_witchCauldron",
+		"side_roadCut",
+		"side_batRoost",
+		"side_apprentice",
+	},
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -71,6 +101,7 @@ local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S104 = { { chapter = 3 } },
 	S105 = { { chapter = 4 } },
 	S105f = { { chapter = 5 } },
+	S106 = { { map = "duskwood" } },
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.

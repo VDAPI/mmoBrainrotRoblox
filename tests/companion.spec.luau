@@ -611,3 +611,46 @@ describe("Companions of story chapter IV and the finale (S105)", function()
 		end
 	)
 end)
+
+describe("Companions of the Duskwood side arcs (S106)", function()
+	local MapTerrain = require("../src/shared/Logic/MapTerrain")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local Npcs = require("../src/shared/Data/Npcs")
+	local T = assert(RegionTerrain.get("duskwood"))
+
+	it("side_boneTree: Wanda leads from the Dusk Gate to the Bone Tree, walkable, dry, legs <= legMax", function()
+		local quest = assert(Quests.Side.get("side_boneTree"))
+		local def = assert(quest.companion, "companion")
+		expect(def.mode).toBe("lead")
+		local escort, index = Companion.escortOf(quest)
+		local e = assert(escort, "escort")
+		expect(table.find(def.during, index :: number) ~= nil).toBe(true)
+		local start = assert(Companion.fromOf(def))
+		local wanda = assert(Npcs.get("huntress_wanda"))
+		expect(start.x).toBe(wanda.position.x)
+		expect(start.z).toBe(wanda.position.z)
+		local route = Companion.route(def, e, start)
+		expect(#route >= 3).toBe(true)
+		for i, point in route do
+			expect(`{i} {MapTerrain.walkable("duskwood", point.x, point.z, 4)}`).toBe(`{i} true`)
+			expect(T.water(point.x, point.z)).toBeNil()
+			if i > 1 then
+				local before = route[i - 1]
+				local leg = math.sqrt((point.x - before.x) ^ 2 + (point.z - before.z) ^ 2)
+				expect(leg <= Config.Companion.legMax).toBe(true)
+			end
+		end
+		expect(Companion.validate()).toEqual({})
+	end)
+
+	it("side_rotSap: Dobrawa joins at her place and follows the sap and the petals", function()
+		local quest = assert(Quests.Side.get("side_rotSap"))
+		local def = assert(quest.companion, "companion")
+		expect(def.mode).toBe("follow")
+		expect(def.during).toEqual({ 1, 2 })
+		local from = assert(Companion.fromOf(def))
+		local dobrawa = assert(Npcs.get("herbalist_dobrawa"))
+		expect(from.x).toBe(dobrawa.position.x)
+		expect(from.z).toBe(dobrawa.position.z)
+	end)
+end)

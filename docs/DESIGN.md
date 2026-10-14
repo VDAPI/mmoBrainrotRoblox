@@ -938,6 +938,19 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   mieście wynika z postępu fabuły (bez pola zapisu, tylko u klienta tej postaci): śnieg w środku lata po smoku, wiosna
   (kwiaty, wieniec przy fontannie, słup wiosny, płatki z sadów, ciepły nastrój) po finale; `/season` do testów. EXP
   fabuły 70–99 = 10% EXP pasma (wagi), stały tylko `vaelgrath`; czas na poziom bez zmian. Nowe rzeczy na wiki od S109.
+- **Poboczne Mrocznego Boru (S106, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 27 zadań na 20–44 (`Data/Quests/Side`
+  K–R): „Latarnie Zmierzchu” 20–24 (Myśliwa Wanda), „Barć w jarze” 22–27 (Bartnik Maciej), „Bezimienni” 24–29
+  (Grabarz Bogumił), „Zimna zgnilizna” 27–31 (Zielarka Dobrawa), „Fałszywe drogowskazy” 30–34 (Strażnik Traktu
+  Zbyszko), „Myto na bagnie” 34–38 (Przewoźnik Ołdrzych), „Uroki z moczarów” 37–40 (Siostra Kalina), „Czeladnik
+  kamieniarza” 41–44 (Kamieniarz Wojsław); łuki zaczynają się też u sierżanta, karczmarza, Brata Anzelma i kończą u
+  alchemiczki. Od 20. poziomu EXP pobocznych to udział w budżecie pasma: `TARGET.side` (6%) × `bandExp` minus stały łuk
+  stajni, dzielone proporcjonalnie do `expToNext(poziom) × waga` (zwykłe 1, koniec łuku 1,8; `settleBands`,
+  `BAND_SCALE`), czyli ok. 4% poziomu za zwykłe i 8% za finał; Łąki 1–19 bez zmian. Złoto `gold(poziom) × 0,8`
+  (`GOLD_FROM_20`), na końcu łuku wybór 1 z 3 przedmiotów klasy (Heroiczne, `ilvl` = poziom), łuk latarników daje też
+  skin `mountskin_lantern`. 30 kotwic `dw_*` (16 z rekwizytami generatora w `Logic/DuskwoodGen/Quest`, 14 przy
+  istniejących budowlach), sześć nowych efektów po użyciu; Wanda prowadzi do Drzewa Kości, Dobrawa idzie z graczem po
+  żywicę i płatki. Zadania od 20. poziomu (`minLevel`), bicie oddaje różnicę (`monsterExpMul`), czas na poziom bez
+  zmian. Na wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

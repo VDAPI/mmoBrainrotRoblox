@@ -206,6 +206,18 @@ add("mountskin_spring", "mountskin", 0, "❀", "#B8E07A", {
 	},
 })
 
+-- S106: the reward of the Dusk Lanterns arc (side_lampLighter): ash-grey coat, a navy caparison with a silver lantern
+-- trim, black tack and a cold bluish mane; off the wiki like its quest until S109
+add("mountskin_lantern", "mountskin", 0, "🏮", "#8A8884", {
+	color2 = "#7FB8FF",
+	obtain = { quest = "side_lampLighter" },
+	wiki = false,
+	skin = {
+		colors = { base = "#8A8884", accent = "#9FB8D8", detail = "#1A1A1E", cloth = "#1E2A4A", trim = "#C8CCD4" },
+		parts = { "caparison" },
+	},
+})
+
 local byId: { [string]: Def } = {}
 for _, def in LIST do
 	byId[def.id] = def
