@@ -2,7 +2,8 @@
 -- Search box of the world map (S25): a text field over the map list ("Search…", the system keyboard on touch)
 -- and up to 12 results from Logic/MapSearch under it; a click (or Enter for the first result) hands the result
 -- to the window, which switches the map, zooms to the thing and opens its card. The index is built once per
--- language; gathering nodes come from the map sketches the client already has.
+-- language; gathering nodes come from the map sketches the client already has. S104: NPCs the character does not
+-- see yet (NpcMarkState.Hidden) are dropped from the results, not from the cached index.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local MapSearch = require(ReplicatedStorage.Shared.Logic.MapSearch)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
@@ -95,10 +97,21 @@ function Search.new(scope: Scope, props: Props): Api
 	local results = scope:Computed(function(use): { MapSearch.Result }
 		local text = use(query)
 		use(Text.Lang)
+		local hidden = use(NpcMarkState.Hidden)
 		if string.match(text, "^%s*$") then
 			return {}
 		end
-		return MapSearch.search(Search.index(), text)
+		local extra = 0
+		for _ in hidden do
+			extra += 1
+		end
+		local out: { MapSearch.Result } = {}
+		for _, result in MapSearch.search(Search.index(), text, MapSearch.LIMIT + extra) do
+			if not (result.kind == "npc" and hidden[result.id]) and #out < MapSearch.LIMIT then
+				table.insert(out, result)
+			end
+		end
+		return out
 	end)
 	local active = scope:Computed(function(use): boolean
 		return not string.match(use(query), "^%s*$")

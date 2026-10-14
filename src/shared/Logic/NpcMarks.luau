@@ -6,10 +6,12 @@
 -- every quest taken at an NPC (Data/Quests.npcList: side arcs and the boss quests of the scouts). One rule for the
 -- plates over the NPCs in the world, the world map and the minimap. The quest board shows "turnIn" when a daily,
 -- weekly or boss contract is done and not collected, "active" while some are still open. S99: the hunting contract
--- marks the board and the scout of its region (gold / grey ! to take, ? to hand in, grey ? in progress). Pure (Lune).
+-- marks the board and the scout of its region (gold / grey ! to take, ? to hand in, grey ? in progress). S104: an NPC
+-- hidden from the character (Logic/NpcVisibility, NpcDef.showFrom) has no mark. Pure (Lune).
 
 local Config = require("../Config")
 local Contracts = require("./Contracts")
+local NpcVisibility = require("./NpcVisibility")
 local QuestLogic = require("./QuestLogic")
 local Quests = require("../Data/Quests")
 local SideQuests = require("./SideQuests")
@@ -98,6 +100,10 @@ function NpcMarks.all(quests: any, level: number): { [string]: Mark }
 				put(npcId, mark)
 			end
 		end
+	end
+	-- S104: no mark over an NPC the character does not see yet
+	for npcId in NpcVisibility.hiddenIds(quests) do
+		marks[npcId] = nil
 	end
 	return marks
 end

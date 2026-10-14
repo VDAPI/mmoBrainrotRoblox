@@ -295,6 +295,45 @@ T.describe("Wiki export: consistency", function()
 		T.expect(next(dusk.npcSpots)).toBeNil()
 	end)
 
+	-- S104: chapter III's quests, its three NPCs, anchors (map and Deepforge) and NPC places wait for S109 too
+	T.it("leaves story chapter III out: quests, NPCs, anchors and NPC places of the Ashen Wastes (S104)", function()
+		local hiddenIds = {
+			"deadOasis",
+			"warcampCages",
+			"mineDepths",
+			"emberCores",
+			"burntTemple",
+			"wyvernLair",
+			"ashRoad",
+			"runesOfBinding",
+			"forgeChains",
+			"coldFire",
+			"caravan_chest",
+			"orc_cage",
+			"colossus_eyes",
+			"temple_bell",
+			"stone_caravan",
+			"forge_chain_1",
+			"forge_chain_2",
+			"forge_chain_3",
+			"runesmith_brokk",
+			"shaman_ghasha",
+			"hermit_kaspar",
+		}
+		for _, id in hiddenIds do
+			for _, file in fs.readDir("wiki/src/data") do
+				if string.match(file, "%.json$") then
+					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+			end
+		end
+		local ashen = d.areas.maps.ashen
+		T.expect(#ashen.questAnchors).toBe(0)
+		T.expect(next(ashen.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do

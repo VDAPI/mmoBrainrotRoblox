@@ -16,6 +16,7 @@
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
+local AreaTypes = require("../Data/Areas/Types")
 local Crags = require("@self/Crags")
 local Dunes = require("@self/Dunes")
 local Env = require("@self/Env")
@@ -60,7 +61,7 @@ local function envOf(): Env.Env
 end
 
 -- Clearings that come from data: portals, the landing from the Frost Peaks, cave mouths, respawn points, the scout,
--- crossings, monster groups.
+-- S104 the story NPCs' places and the quest anchors, crossings, monster groups.
 local function dataClearings(e: Env.Env)
 	for _, p in { { -770, 0 }, { -770, 160 }, { 740, -740 }, { 690, -690 } } do
 		Env.clear(e, p[1], p[2], 22)
@@ -72,6 +73,15 @@ local function dataClearings(e: Env.Env)
 		Env.clear(e, r.x, r.z, 10)
 	end
 	Env.clear(e, -690, -36, 9)
+	-- S104: the places of the story NPCs and the quest anchors (no rock, tree or brazier on them)
+	local spots: { [string]: AreaTypes.NpcSpot } = e.areas.npcSpots or {}
+	for _, spot in spots do
+		Env.clear(e, spot.x, spot.z, 6)
+	end
+	local anchors: { AreaTypes.QuestAnchor } = e.areas.questAnchors or {}
+	for _, anchor in anchors do
+		Env.clear(e, anchor.x, anchor.z, 4)
+	end
 	for _, c in e.T.crossings() do
 		Env.clear(e, c.x, c.z, c.span / 2 + 8)
 	end

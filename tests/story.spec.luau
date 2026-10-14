@@ -42,6 +42,18 @@ local EXPECTED_INSERTS: { [string]: { string } } = {
 		"cryptGate",
 		"queensLegacy",
 	},
+	S104 = {
+		"deadOasis",
+		"warcampCages",
+		"mineDepths",
+		"emberCores",
+		"burntTemple",
+		"wyvernLair",
+		"ashRoad",
+		"runesOfBinding",
+		"forgeChains",
+		"coldFire",
+	},
 }
 
 -- Rewards of the quests that keep fixed EXP (the old 1-19, toDuskwood and the boss quests), as before S102.
@@ -462,7 +474,7 @@ describe("Story cutscenes (S102 T6)", function()
 		expect(Cutscenes.validate()).toEqual({})
 	end)
 
-	it("has the seven scenes of chapter I and the ten of chapter II with their triggers, in playing order", function()
+	it("has the scenes of chapters I-III with their triggers, in playing order", function()
 		local want = {
 			{ "ch1_open", "arrival", "accept" },
 			{ "portal_gate", "portal", "objective", 1 },
@@ -482,6 +494,16 @@ describe("Story cutscenes (S102 T6)", function()
 			{ "cryptGate", "cryptGate", "objective", 2 },
 			{ "morvane", "morvane", "objective", 1 },
 			{ "queensLegacy", "queensLegacy", "turnIn" },
+			-- S104: chapter III
+			{ "ch3_title", "ashen", "objective", 1 },
+			{ "ch3_cages", "warcampCages", "objective", 1 },
+			{ "ch3_bell", "burntTemple", "objective", 3 },
+			{ "ch3_wyvern", "wyvernLair", "turnIn" },
+			{ "ch3_forge", "deepforge", "objective", 1 },
+			{ "ch3_runes", "runesOfBinding", "turnIn" },
+			{ "ch3_freed", "forgeChains", "objective", 1 },
+			{ "ch3_azgor", "azgor", "objective", 1 },
+			{ "ch3_end", "coldFire", "turnIn" },
 		}
 		expect(#CutsceneData.list).toBe(#want)
 		for i, row in want do
@@ -913,7 +935,8 @@ describe("Chapter II: players in the middle of the story (S103, A6)", function()
 		end
 		expect(active.main.id).toBe("ashen")
 		expect(active.main.progress).toEqual({ 1, 3 })
-		expect((QuestLogic.nextMain(last.mainDone, 60))).toBe(Main.get("golems"))
+		-- S104: chapter III inserted mineDepths and emberCores between orcs and golems
+		expect((QuestLogic.nextMain(last.mainDone, 60))).toBe(Main.get("mineDepths"))
 	end)
 
 	it("(e) in chapter I nothing of chapter II counts", function()
@@ -1041,5 +1064,481 @@ describe("Chapter II: NPCs, places and scenes (S103)", function()
 		expect(assert(CutsceneData.get("ch2_title")).subtitle).toBe("story.chapter.2")
 		expect(assert(CutsceneData.get("queensLegacy")).title).toBe("story.chapter.2.end")
 		expect(has("story.morvane.name")).toBe(true)
+	end)
+end)
+
+-- S104 (docs/FABULA.md §2.4): chapter III "Cold Fire" -------------------------------------------------------------
+
+local CHAPTER_III = {
+	"ashen",
+	"deadOasis",
+	"warcampCages",
+	"orcs",
+	"mineDepths",
+	"emberCores",
+	"golems",
+	"burntTemple",
+	"wyvernLair",
+	"ashRoad",
+	"deepforge",
+	"runesOfBinding",
+	"forgeChains",
+	"azgor",
+	"coldFire",
+}
+local LEVELS_III = { 45, 47, 49, 50, 52, 53, 55, 57, 59, 61, 62, 64, 66, 68, 69 }
+local PAGES_III = { 3, 3, 3, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 4 }
+local OLD_III = { "ashen", "orcs", "golems", "deepforge", "azgor" }
+
+-- The five old quests as they were before S104 (e5f2074 / S94): giver, turn-in, objectives, gold, items.
+local OLD_III_DATA: { [string]: any } = {
+	ashen = {
+		giver = "captain",
+		turnIn = "scout_ashen",
+		objectives = { { type = "reach", n = 1, map = "ashen" }, { type = "kill", n = 15, monster = "salamander" } },
+		gold = 60 + 45 * 45,
+		items = { { id = "backpack_100", n = 1 } },
+	},
+	orcs = {
+		giver = "scout_ashen",
+		turnIn = "scout_ashen",
+		objectives = {
+			{ type = "kill", n = 20, monster = "ashOrc" },
+			{ type = "gather", n = 5, node = "vein_silver" },
+		},
+		gold = 60 + 45 * 50,
+	},
+	golems = {
+		giver = "scout_ashen",
+		turnIn = "scout_ashen",
+		objectives = {
+			{ type = "kill", n = 15, monster = "fireGolem" },
+			{ type = "kill", n = 10, monster = "desertScorpion" },
+		},
+		gold = 60 + 45 * 55,
+		items = { { id = "elixir_resFire", n = 3 } },
+	},
+	deepforge = {
+		giver = "scout_ashen",
+		turnIn = "scout_ashen",
+		objectives = {
+			{ type = "reach", n = 1, map = "ashen_cave" },
+			{ type = "kill", n = 6, monster = "renegadeDwarf", variant = "elite" },
+		},
+		gold = 60 + 45 * 62,
+		items = { { id = "backpack_130", n = 1 } },
+	},
+	azgor = {
+		giver = "scout_ashen",
+		turnIn = "captain",
+		objectives = { { type = "boss", n = 1, boss = "azgor" } },
+		gold = (60 + 45 * 70) * 3,
+		items = { { id = "stone_dungeon_ashen", n = 1 } },
+	},
+}
+
+-- The map (region or cave) of every anchor the chapter's texts speak of.
+local ANCHOR_MAP: { [string]: string } = {
+	caravan_chest = "ashen",
+	orc_cage = "ashen",
+	colossus_eyes = "ashen",
+	temple_bell = "ashen",
+	stone_caravan = "ashen",
+	forge_chain_1 = "ashen_cave",
+	forge_chain_2 = "ashen_cave",
+	forge_chain_3 = "ashen_cave",
+}
+
+local NPCS_III = { "runesmith_brokk", "shaman_ghasha", "hermit_kaspar" }
+
+local function fullProgress(quest: Quests.MainQuest): { number }
+	local out = {}
+	for i, objective in quest.objectives do
+		out[i] = objective.n
+	end
+	return out
+end
+
+describe("Main story, chapter III (S104)", function()
+	it("1. has the 15 quests in the order and at the levels of the plan, coldFire right before frostpeak", function()
+		local first = indexOf.ashen
+		for k, id in CHAPTER_III do
+			local quest = Main.list[first + k - 1]
+			expect(quest.id).toBe(id)
+			expect(`{id} {quest.level}`).toBe(`{id} {LEVELS_III[k]}`)
+			expect(`{id} {quest.pages}`).toBe(`{id} {PAGES_III[k]}`)
+			if k > 1 then
+				local gap = quest.level - Main.list[first + k - 2].level
+				expect(gap >= 0 and gap <= 2).toBe(true)
+			end
+		end
+		expect(Main.list[indexOf.ashen - 1].id).toBe("queensLegacy")
+		expect(Main.list[indexOf.coldFire + 1].id).toBe("frostpeak")
+		expect(Main.chapterOf("coldFire")).toBe(3)
+		expect(Main.chapterOf("frostpeak")).toBe(4)
+	end)
+
+	it("2-3. the old five keep their givers, objectives, gold and items; EXP of four by the story rule", function()
+		for _, id in OLD_III do
+			local quest = assert(Main.get(id), id)
+			local old = OLD_III_DATA[id]
+			expect(quest.giver).toBe(old.giver)
+			expect(quest.turnIn).toBe(old.turnIn)
+			expect(quest.objectives).toEqual(old.objectives)
+			expect(quest.reward.gold).toBe(old.gold)
+			expect(quest.reward.items).toEqual(old.items)
+			expect(quest.wiki).toBeNil()
+			for i = 1, assert(quest.pages, id) do
+				expect(has(`quest.{id}.p{i}`)).toBe(true)
+			end
+		end
+		expect(Main.get("azgor").reward.exp).toBe(153861) -- exp(70, 1.2), as S94 left it
+		expect(Main.STORY_WEIGHT.azgor).toBeNil()
+		for _, id in { "ashen", "orcs", "golems", "deepforge" } do
+			local quest = assert(Main.get(id))
+			expect(Main.STORY_WEIGHT[id]).toBe(1)
+			expect(quest.reward.exp).toBe(math.floor(Main.STORY_SCALE[45] * Exp.expToNext(quest.level)))
+		end
+		expect(table.find(Main.STORY_BANDS, 45) ~= nil).toBe(true)
+	end)
+
+	it("4. the ten new quests: main, off the wiki, 3 pages (coldFire 4), 5-70% of a level, gold(level)", function()
+		for _, id in EXPECTED_INSERTS.S104 do
+			local quest = assert(Main.get(id), id)
+			expect(quest.category).toBe("main")
+			expect(quest.wiki).toBe(false)
+			expect(quest.pages).toBe(if id == "coldFire" then 4 else 3)
+			local share = quest.reward.exp / Exp.expToNext(quest.level)
+			expect(`{id} {share > 0 and share <= 0.7}`).toBe(`{id} true`)
+			expect(quest.reward.gold).toBe(60 + 45 * quest.level)
+		end
+		local cold = assert(Main.get("coldFire"))
+		local plain = math.floor(Main.STORY_SCALE[45] * Exp.expToNext(cold.level) * 1)
+		expect(cold.reward.exp > plain).toBe(true)
+		expect(cold.reward.items).toEqual({ { id = "blessing_guardian_4", n = 1 } })
+		expect(Main.get("mineDepths").reward.items).toEqual({ { id = "stone_map", n = 2 } })
+		expect(Main.get("burntTemple").reward.items).toEqual({ { id = "blessing_sage_3", n = 1 } })
+		expect(Main.get("wyvernLair").reward.items).toEqual({ { id = "blessing_hunter_3", n = 1 } })
+		expect(Main.get("forgeChains").reward.items).toEqual({ { id = "elixir_resFire", n = 3 } })
+	end)
+
+	it("5. every NPC, anchor, area and node of the chapter exists where the texts say", function()
+		local AshenGen = require("../src/shared/Logic/AshenGen")
+		local mithril = 0
+		for _, node in AshenGen.nodes() do
+			if node.kind == "vein_mithril" then
+				mithril += 1
+			end
+		end
+		expect(mithril > 0).toBe(true)
+		for _, id in CHAPTER_III do
+			local quest = assert(Main.get(id))
+			expect(Npcs.get(quest.giver) ~= nil and Npcs.get(quest.turnIn) ~= nil).toBe(true)
+			local reached: string? = nil
+			for _, objective in quest.objectives do
+				if objective.type == "reach" then
+					reached = objective.map
+				end
+			end
+			for i, objective in quest.objectives do
+				local tag = `{id}#{i}`
+				if objective.type == "deliver" then
+					expect(Npcs.get(objective.npc :: string) ~= nil).toBe(true)
+				elseif objective.type == "talk" then
+					local npc = assert(Npcs.get(objective.npc :: string), tag)
+					local talks = table.find(npc.services, "talk") ~= nil or table.find(npc.services, "story") ~= nil
+					expect(`{tag} {talks}`).toBe(`{tag} true`)
+				elseif objective.type == "use" then
+					for _, anchorId in objective.anchors or { objective.anchor :: string } do
+						local anchor, mapId = Areas.anchorById(anchorId)
+						expect(`{anchorId} {anchor ~= nil and mapId == ANCHOR_MAP[anchorId]}`).toBe(`{anchorId} true`)
+					end
+				elseif objective.type == "kill" or objective.type == "collect" then
+					local monster = objective.monster :: string
+					if objective.area then
+						local area = Areas.areaById(objective.area)
+						local cave = Areas.caves.get(objective.area)
+						local kinds: { string } = if area
+							then area.kinds
+							else (if cave then table.clone(cave.normal) else {})
+						if cave then
+							for _, elite in cave.elites do
+								table.insert(kinds, elite)
+							end
+							expect(cave.region).toBe("ashen")
+						end
+						expect(`{tag} {table.find(kinds, monster) ~= nil}`).toBe(`{tag} true`)
+					end
+					if objective.variant == "elite" then
+						local caveId = objective.area or reached
+						local cave = assert(Areas.caves.get(caveId :: string), `{tag}: an elite objective in a cave`)
+						expect(`{tag} {table.find(cave.elites, monster) ~= nil}`).toBe(`{tag} true`)
+						if reached then
+							expect(cave.id).toBe(reached)
+						end
+					end
+				end
+			end
+		end
+		expect(table.find(assert(Areas.caves.get("ashen_cave")).normal, "flameSmith") ~= nil).toBe(true)
+		expect(Main.get("mineDepths").objectives[1].map).toBe("ashen_mine")
+		expect(Main.get("wyvernLair").objectives[1].map).toBe("ashen_lair")
+		expect(Main.get("mineDepths").objectives[3].variant).toBe("elite")
+		expect(Main.get("wyvernLair").objectives[3].variant).toBe("elite")
+	end)
+
+	it("6. every kill and collect has its monster within 3 levels of the quest", function()
+		for _, id in CHAPTER_III do
+			local quest = assert(Main.get(id))
+			for i, objective in quest.objectives do
+				if (objective.type == "kill" or objective.type == "collect") and objective.area then
+					local area = Areas.areaById(objective.area)
+					local cave = Areas.caves.get(objective.area)
+					local lv: { number } = if area then area.lv else (assert(cave, objective.area)).levels
+					local off = math.max(lv[1] - quest.level, quest.level - lv[2], 0)
+					expect(`{id}#{i} {off <= 3}`).toBe(`{id}#{i} true`)
+				end
+			end
+		end
+	end)
+
+	it("7. every effect of the chapter is a known fx with a builder on the client", function()
+		local fs = require("@lune/fs")
+		local text = fs.readFile("src/client/Controllers/QuestAnchorController.luau")
+		local seen: { [string]: boolean } = {}
+		for _, id in CHAPTER_III do
+			for _, objective in assert(Main.get(id)).objectives do
+				if objective.type == "use" then
+					local fx = objective.fx :: string
+					seen[fx] = true
+					expect(Side.FX[fx]).toBe(true)
+					expect(`{fx} {string.find(text, "\n\t" .. fx .. " = function", 1, true) ~= nil}`).toBe(`{fx} true`)
+				end
+			end
+		end
+		for _, fx in { "search", "cageOpen", "rune", "candles", "chains" } do
+			expect(seen[fx]).toBe(true)
+		end
+	end)
+
+	it("8. texts of the 15 quests, the NPCs, items, actions and cutscenes exist in both languages", function()
+		for _, id in CHAPTER_III do
+			local quest = assert(Main.get(id))
+			for _, key in { "title", "text", "done" } do
+				expect(`{id}.{key} {has(`quest.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+			for i = 1, assert(quest.pages, id) do
+				expect(`{id}.p{i} {has(`quest.{id}.p{i}`)}`).toBe(`{id}.p{i} true`)
+			end
+			for _, objective in quest.objectives do
+				if objective.line then
+					expect(has(objective.line)).toBe(true)
+				end
+			end
+		end
+		for _, id in NPCS_III do
+			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+				expect(`{id}.{key} {has(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+		end
+		for _, item in { "supplyLedger", "emberCore", "cultHarness", "spearhead" } do
+			expect(has(`quest.item.{item}`)).toBe(true)
+		end
+		for _, action in { "chest", "cage", "eyes", "bell", "stoneWagon", "shackles" } do
+			expect(has(`quest.use.{action}`)).toBe(true)
+		end
+		for _, place in { "caravanRemains", "orcCages", "kasparThreshold", "mithrilVein" } do
+			expect(has(`place.{place}`)).toBe(true)
+		end
+		local scenes = 0
+		for _, scene in CutsceneData.list do
+			if string.sub(scene.id, 1, 4) == "ch3_" then
+				scenes += 1
+				for _, item in scene.lines do
+					expect(has(item.key)).toBe(true)
+				end
+			end
+		end
+		expect(scenes).toBe(9)
+		expect(has("story.chapter.3.end")).toBe(true)
+		expect(has("quest.obj.collectFrom")).toBe(true)
+		expect(assert(CutsceneData.get("ch3_end")).title).toBe("story.chapter.3.end")
+		expect(assert(CutsceneData.get("ch3_title")).subtitle).toBe("story.chapter.3")
+	end)
+
+	it("9. the rules on the chapter's data (QuestLogic, NpcMarks)", function()
+		local nextQuest, ready = QuestLogic.nextMain(indexOf.ashen, 44)
+		expect(nextQuest).toBe(Main.get("deadOasis"))
+		expect(ready).toBe(false)
+		expect((select(2, QuestLogic.nextMain(indexOf.ashen, 45)))).toBe(true)
+		local ledger = assert(Main.get("mineDepths")).objectives[3]
+		local orc = { monsterId = "ashOrc", areaId = "ashen_mine" }
+		expect(QuestLogic.amount(ledger, "kill", orc, 0)).toBe(0)
+		local elite = { monsterId = "ashOrc", areaId = "ashen_mine", variant = "elite" }
+		expect(QuestLogic.amount(ledger, "kill", elite, 0.2)).toBe(1)
+		expect(QuestLogic.amount(ledger, "kill", elite, 0.3)).toBe(0)
+		local chains = assert(Main.get("forgeChains")).objectives[1]
+		expect(QuestLogic.amount(chains, "use", { anchor = "forge_chain_2", used = {} }, 0)).toBe(1)
+		expect(QuestLogic.amount(chains, "use", { anchor = "forge_chain_2", used = { "forge_chain_2" } }, 0)).toBe(0)
+		expect(QuestLogic.amount(chains, "use", { anchor = "orc_cage", used = {} }, 0)).toBe(0)
+		local hyenas = assert(Main.get("deadOasis")).objectives[3]
+		expect(QuestLogic.amount(hyenas, "kill", { monsterId = "wasteHyena", areaId = "ashen_flats" }, 0)).toBe(0)
+		expect(QuestLogic.amount(hyenas, "kill", { monsterId = "wasteHyena", areaId = "ashen_oasis" }, 0)).toBe(1)
+		-- marks: Brokk offers warcampCages, takes runesOfBinding back
+		local NpcMarks = require("../src/shared/Logic/NpcMarks")
+		local function state(main: any, mainDone: number, contractDone: number?): any
+			return {
+				main = main,
+				mainDone = mainDone,
+				daily = { day = 1, list = {}, rerolls = 0 },
+				contract = { done = contractDone or Quests.Contracts.MAX_LEVEL },
+			}
+		end
+		expect(NpcMarks.of("runesmith_brokk", state(nil, indexOf.deadOasis), 49)).toBe("available")
+		local runes = assert(Main.get("runesOfBinding"))
+		local handing = state({ id = "runesOfBinding", progress = fullProgress(runes) }, indexOf.runesOfBinding - 1)
+		expect(NpcMarks.of("runesmith_brokk", handing, 64)).toBe("turnIn")
+		-- Kesra with a grey story offer and a gold hunting contract shows the higher mark (S98 / S99)
+		local both = state(nil, indexOf.ashen, 59)
+		expect(NpcMarks.isLow(Main.get("deadOasis").level, 60)).toBe(true)
+		expect(NpcMarks.of("scout_ashen", both, 60)).toBe("available")
+	end)
+
+	it("10. Brokk and Ghasha appear with their quests (NpcDef.showFrom, Logic/NpcVisibility); Kaspar always", function()
+		local NpcVisibility = require("../src/shared/Logic/NpcVisibility")
+		local brokk = assert(Npcs.get("runesmith_brokk"))
+		local ghasha = assert(Npcs.get("shaman_ghasha"))
+		local kaspar = assert(Npcs.get("hermit_kaspar"))
+		expect(brokk.showFrom).toBe("deadOasis")
+		expect(ghasha.showFrom).toBe("warcampCages")
+		expect(kaspar.showFrom).toBeNil()
+		local before = quests({ mainDone = indexOf.ashen })
+		expect(NpcVisibility.visible(brokk, before)).toBe(false)
+		expect(NpcVisibility.visible(ghasha, before)).toBe(false)
+		expect(NpcVisibility.visible(kaspar, before)).toBe(true)
+		expect(NpcVisibility.visible(kaspar, nil)).toBe(true)
+		local oasis = quests({ mainDone = indexOf.ashen, main = { id = "deadOasis", progress = { 0, 0, 0 } } })
+		expect(NpcVisibility.visible(brokk, oasis)).toBe(true)
+		expect(NpcVisibility.visible(ghasha, oasis)).toBe(false)
+		expect(NpcVisibility.visible(brokk, quests({ mainDone = indexOf.deadOasis }))).toBe(true)
+		expect(NpcVisibility.visible(ghasha, quests({ mainDone = indexOf.deadOasis }))).toBe(false)
+		local cages = quests({ mainDone = indexOf.deadOasis, main = { id = "warcampCages", progress = { 0, 0, 0 } } })
+		expect(NpcVisibility.visible(ghasha, cages)).toBe(true)
+		expect(NpcVisibility.visible(ghasha, quests({ mainDone = indexOf.vaelgrath }))).toBe(true)
+		expect(NpcVisibility.hiddenIds(before)).toEqual({ runesmith_brokk = true, shaman_ghasha = true })
+		expect(NpcVisibility.visibleIds(before).hermit_kaspar).toBe(true)
+		-- no mark over a hidden NPC; every other NPC is never hidden
+		for _, npc in Npcs.list do
+			if npc.showFrom == nil then
+				expect(NpcVisibility.visible(npc, before)).toBe(true)
+			else
+				expect(Main.indexOf[npc.showFrom] ~= nil).toBe(true)
+			end
+		end
+		local NpcMarks = require("../src/shared/Logic/NpcMarks")
+		expect(NpcMarks.all(before, 45).runesmith_brokk).toBeNil()
+	end)
+
+	it("11. what S107 builds on: warcampCages, burntTemple, Ghasha and Kaspar", function()
+		expect(indexOf.warcampCages < indexOf.orcs).toBe(true)
+		expect(indexOf.burntTemple > indexOf.golems).toBe(true)
+		for _, id in { "shaman_ghasha", "hermit_kaspar" } do
+			local npc = assert(Npcs.get(id), id)
+			expect(npc.map).toBe("ashen")
+			expect(table.find(npc.services, "talk") ~= nil).toBe(true)
+			expect(npc.wiki).toBe(false)
+		end
+		local arc: any = { id = "test_s107", requires = { "warcampCages" } }
+		expect(SideQuests.requirementsMet(applied({ mainLast = "warcampCages" }), arc)).toBe(true)
+		expect(SideQuests.requirementsMet(applied({ mainLast = "deadOasis" }), arc)).toBe(false)
+	end)
+end)
+
+describe("Main story, chapter III: players in the middle of the story (S104, F3)", function()
+	local function migrated(fields: { [string]: any }): any
+		local c: any = AccountSchema.characterTemplate()
+		c.id, c.name, c.level = "x", "x", 60
+		for key, value in fields do
+			c.quests[key] = value
+		end
+		local data: any = AccountSchema.accountTemplate()
+		data.schema = 7
+		data.characters = { x = c }
+		AccountSchema.migrate(data)
+		return data.characters.x.quests
+	end
+
+	it("the old numbers of the chapter", function()
+		expect(StoryProgress.legacyId(24)).toBe("ashen")
+		expect(StoryProgress.legacyId(25)).toBe("orcs")
+		expect(StoryProgress.legacyId(28)).toBe("azgor")
+		expect(StoryProgress.legacyId(29)).toBe("frostpeak")
+		expect(AccountSchema.CURRENT).toBe(8)
+	end)
+
+	it("1. old mainDone 24 (ashen handed in): deadOasis next", function()
+		for _, q in { migrated({ mainDone = 24 }), applied({ mainLast = StoryProgress.legacyId(24), mainDone = 24 }) } do
+			expect(q.mainDone).toBe(indexOf.ashen)
+			expect((QuestLogic.nextMain(q.mainDone, 47))).toBe(Main.get("deadOasis"))
+		end
+	end)
+
+	it("2. old mainDone 25 (orcs): deadOasis and warcampCages handed in without reward, mineDepths next", function()
+		local q = migrated({ mainDone = 25 })
+		expect(q.mainDone).toBe(indexOf.orcs)
+		expect(StoryProgress.isDone(q, "deadOasis")).toBe(true)
+		expect(StoryProgress.isDone(q, "warcampCages")).toBe(true)
+		expect(StoryProgress.isDone(q, "mineDepths")).toBe(false)
+		expect((QuestLogic.nextMain(q.mainDone, 52))).toBe(Main.get("mineDepths"))
+	end)
+
+	it("3. old mainDone 25 with an active golems keeps it and its progress", function()
+		local q = migrated({ mainDone = 25, main = { id = "golems", progress = { 7, 2 } } })
+		expect(q.mainDone).toBe(indexOf.golems - 1)
+		expect(q.main.id).toBe("golems")
+		expect(q.main.progress).toEqual({ 7, 2 })
+		expect(StoryProgress.isDone(q, "emberCores")).toBe(true)
+	end)
+
+	it("4. azgor handed in: coldFire next; frostpeak handed in: coldFire counts as done", function()
+		local azgor = migrated({ mainDone = 28 })
+		expect(azgor.mainDone).toBe(indexOf.azgor)
+		expect((QuestLogic.nextMain(azgor.mainDone, 69))).toBe(Main.get("coldFire"))
+		local frost = migrated({ mainDone = 29 })
+		expect(frost.mainDone).toBe(indexOf.frostpeak)
+		expect(StoryProgress.isDone(frost, "coldFire")).toBe(true)
+		for _, id in EXPECTED_INSERTS.S104 do
+			expect(StoryProgress.isDone(frost, id)).toBe(true)
+		end
+	end)
+
+	it("5. old mainDone 32: vaelgrath", function()
+		expect(migrated({ mainDone = 32 }).mainDone).toBe(indexOf.vaelgrath)
+	end)
+
+	it("6. saved after S103 (mainLast) with an active orcs: the same place, twice the same", function()
+		local q = applied({ mainLast = "ashen", mainDone = 37, main = { id = "orcs", progress = { 4, 1 } } })
+		expect(q.mainDone).toBe(indexOf.orcs - 1)
+		expect(q.mainLast).toBe("warcampCages")
+		expect(q.main.progress).toEqual({ 4, 1 })
+		local d, l = q.mainDone, q.mainLast
+		StoryProgress.apply(q)
+		expect(q.mainDone).toBe(d)
+		expect(q.mainLast).toBe(l)
+		local golems = applied({ mainLast = "orcs", mainDone = 38, main = { id = "golems", progress = { 7, 2 } } })
+		expect(golems.mainDone).toBe(indexOf.golems - 1)
+		expect(golems.main.progress).toEqual({ 7, 2 })
+	end)
+
+	it("7. an active ashen keeps its progress; an unknown active quest falls back to the anchor", function()
+		local q = applied({ mainLast = "queensLegacy", main = { id = "ashen", progress = { 1, 6 } } })
+		expect(q.mainDone).toBe(indexOf.ashen - 1)
+		expect(q.main.progress).toEqual({ 1, 6 })
+		for _, id in EXPECTED_INSERTS.S104 do
+			expect(StoryProgress.isDone(q, id)).toBe(false)
+		end
+		local broken = applied({ mainLast = "orcs", main = { id = "noSuchQuest", progress = {} } })
+		expect(broken.main).toBeNil()
+		expect(broken.mainDone).toBe(indexOf.orcs)
 	end)
 end)

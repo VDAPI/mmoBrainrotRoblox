@@ -27,6 +27,7 @@ local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
+local NpcVisibility = require(Shared.Logic.NpcVisibility)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Quests = require(Shared.Data.Quests)
 local Rng = require(Shared.Logic.Rng)
@@ -205,7 +206,8 @@ local function accept(player: Player, questId: string): (boolean, string?)
 	if not char or not quest then
 		return false, "error.badRequest"
 	end
-	if not NpcService.Near(player, quest.giver) then
+	-- S104: not at an NPC the character does not see yet (NpcDef.showFrom)
+	if not NpcService.Near(player, quest.giver) or not NpcVisibility.visibleId(quest.giver, char.quests) then
 		return false, "npc.error.tooFar"
 	end
 	local ok, reason = SideQuests.canAccept(char.quests, char.level, quest)
@@ -234,7 +236,7 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	if not entry then
 		return false, "error.badRequest"
 	end
-	if not NpcService.Near(player, quest.turnIn) then
+	if not NpcService.Near(player, quest.turnIn) or not NpcVisibility.visibleId(quest.turnIn, char.quests) then
 		return false, "npc.error.tooFar"
 	end
 	-- Talking to the turn-in NPC counts first (talk / deliver objectives that end here).

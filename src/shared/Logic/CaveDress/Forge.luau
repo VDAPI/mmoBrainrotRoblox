@@ -23,7 +23,11 @@
 --     four kings raising their hammers to the Heart,
 --   8 the Antechamber of the Furnace ("wow"): Azgor's horned flame over the gate with lava in its grooves and a small
 --     fall into a bowl, kneeling chained kings by the gate, a row of fire baskets, a pile of dwarven helmets and broken
---     hammers as an offering, shimmering air before the gate. Pure.
+--     hammers as an offering, shimmering air before the gate,
+--   S104 (story chapter III): the posts of the chained captives by the cave's quest anchors (Data/Areas/Caves
+--     ashen_cave questAnchors: the Smelter, the Armoury, the Heart, under the cage of chains that the story calls the
+--     Chains of Winter): an iron post with two hoops, a chain hanging to the floor and a wooden bowl; detail only,
+--     built last so nothing above moves. Pure.
 
 local Kit = require("./Kit")
 
@@ -783,6 +787,24 @@ local function antechamber(env: Env, out: { Build })
 	Kit.life(env.ctx, "drips", 220, 20, 0, 20)
 end
 
+-- S104: one post per quest anchor of the cave, 1.6 studs north of it (the anchor is where the player stands).
+local function captivePosts(env: Env, out: { Build })
+	local anchors: { any } = if env.cave then env.cave.questAnchors or {} else {}
+	for _, anchor in anchors do
+		local b = Kit.build(env, `CaptivePost_{anchor.id}`, "traces", anchor.x, anchor.z - 1.6, 0)
+		local bp = b.bp
+		local y = Kit.gy(env, b, 0, 0)
+		local free = { col = false }
+		bp:box(0.6, 5, 0.6, 0, y + 2.5, 0, o(IRON, "detail", free))
+		for _, h in { 3.6, 1.4 } do
+			bp:add("cyl", 0.25, 1.1, 1.1, 0, y + h, 0, 0, 0, 90, o(IRON, "detail", free))
+		end
+		bp:rbox(0.18, 3.4, 0.18, 0.5, y + 1.8, 0.5, 12, 0, -8, o(IRON, "fine", free))
+		bp:add("cyl", 0.35, 1.2, 1.2, -1, y + 0.18, 0.8, 0, 0, 90, o(Kit.wood, "detail", free))
+		table.insert(out, b)
+	end
+end
+
 function Forge.all(env: Env, out: { Build })
 	gate(env, out)
 	greatForge(env, out)
@@ -793,6 +815,7 @@ function Forge.all(env: Env, out: { Build })
 	armory(env, out)
 	heart(env, out)
 	antechamber(env, out)
+	captivePosts(env, out) -- S104
 end
 
 return Forge

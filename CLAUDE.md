@@ -134,6 +134,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `q(def)` (`settleStory`, `STORY_BANDS`); przerywniki w `Data/Cutscenes` (kolejka `QuestService`, gra
   `CutsceneController`, `quests.scenes`; komentarze milkną przez `BarkController.SetQuiet`); questy fabuły używają pól
   rozmów S101b (`choices` na numerze strony, gdy mają `pages`).
+- **NPC widoczny od questu** (S104): `NpcDef.showFrom` = id questu fabuły (`regionfolk(..., { showFrom = ... })`);
+  reguła tylko w `Logic/NpcVisibility`, klient (figura, mapy, znaki) i serwer (rozmowa) czytają ją same.
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i

@@ -77,6 +77,43 @@ local function at(name: string, r: number): Types.Circle
 	return { x = s.x, z = s.z, r = r }
 end
 
+-- S104: a point given in a site's local frame (same formula as Logic/WorldGen/Kit.toWorld, like Areas/duskwood).
+local function atSite(name: string, lx: number, lz: number): (number, number)
+	local s = SITES[name]
+	local r = math.rad(s.rot)
+	local c, sn = math.cos(r), math.sin(r)
+	return s.x + c * lx + sn * lz, s.z - sn * lx + c * lz
+end
+
+-- S104: places of the story NPCs of chapter III (Data/Npcs regionfolk), inside the avoid circles of the scout and of
+-- existing sites, so no monster group or gathering node moves (tests/ashen.spec). Names differ from the sites (/tparea).
+local NPC_SPOTS: { [string]: Types.NpcSpot } = {
+	-- Brokk beside Kesra, facing west (the portals); his camp behind him (Logic/AshenGen/Flats RunesmithCamp)
+	runesmith = { x = -682, z = -42, facing = 90, wiki = false },
+	-- Ghasha on the east rim of the Hot Spring's bowl, facing east (the trail to the oasis); the first point east of the
+	-- pool whose ground passes the standing checks (the bowl's walls are steeper than 15 degrees closer to the water)
+	shaman = { x = -642, z = 300, facing = 270, wiki = false },
+	-- Kaspar before the west door of the burnt temple (the nave's front at x 181), beside the door, facing the square
+	hermit = { x = 175, z = 634, facing = 90, wiki = false },
+}
+
+-- S104: quest anchors of the story (chapter III), each by its landmark and inside the landmark's avoid circle; `rot` =
+-- the site's yaw (the frame of the client effects).
+local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
+	local x, z = atSite(site, lx, lz)
+	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+end
+
+local QUEST_ANCHORS: { Types.QuestAnchor } = {
+	anchor("caravan_chest", "caravanChest", 0, -4, 1.5), -- before the chest's front on the bed of the Dead Oasis
+	anchor("orc_cage", "orcCages", 6, 0, 2), -- beside the middle cage, on the side of the warcamp's yard
+	-- the Sleeping Colossus: its head (about -143 / 92, the face looking east) lies on the hill's 40-degree flank, so
+	-- the anchor stands at the hill's foot before the face, still inside the colossus circle (51 studs from it)
+	{ id = "colossus_eyes", x = -126, z = 102, y = 2, wiki = false, rot = 270 },
+	anchor("temple_bell", "belltower", -7, 0, 1.5), -- beside the cracked bell at the tower's foot (the flat east side)
+	anchor("stone_caravan", "stoneCaravan", 6, -2, 2), -- beside the stone wagon, not before the oxen
+}
+
 local data: Types.MapAreas = {
 	map = "ashen",
 	roads = {
@@ -166,6 +203,8 @@ local data: Types.MapAreas = {
 		{ cave = "ashen_cave", x = 745, z = 0, rot = 90 },
 	},
 	sites = SITES,
+	npcSpots = NPC_SPOTS, -- S104
+	questAnchors = QUEST_ANCHORS, -- S104
 	areas = {
 		{
 			id = "ashen_flats",

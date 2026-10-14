@@ -1911,6 +1911,7 @@ Balance.CREDIT_RULES = CREDIT_RULES
 -- stylua: ignore
 local LEGACY_EXP: { [string]: number } = table.freeze({
 	werewolves = 22219, ruins = 23557, ents = 23136, cult = 30817, swamp = 39997, crypt = 61156, -- S103 (exp(L, f) of S92)
+	ashen = 49874, orcs = 67684, golems = 81109, deepforge = 101826, -- S104 (exp(L, f) of S94)
 })
 Balance.LEGACY_EXP = LEGACY_EXP
 

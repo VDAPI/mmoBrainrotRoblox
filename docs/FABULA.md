@@ -166,19 +166,19 @@ Pradrzewa), `riteBook` (Księga Obrzędów), `boneChime` (Kościany Dzwonek),
 | `defector_jorund` | Jorund Odstępca | kapliczka z latarnią (`wayShrine`, Mglisty Rozstaj) | zbiegły kultysta, zna plan trzech pieczęci |
 | `witch_ragna` | Ragna z Palów | suchy brzeg przy opuszczonej wiosce na palach (`stiltVillage`, Trolle Bagno; S103) | pustelnica, wywar imienia |
 
-### 2.4 Rozdział III: Zimny Ogień (Spalone Pustkowia, 45–70), S104
+### 2.4 Rozdział III: Zimny Ogień (Spalone Pustkowia, 45–70), S104 (zrobione)
 
 | # | id | Poz. | Daje → oddaje | Cele | Treść | Scena | Postacie |
 |---|---|---|---|---|---|---|---|
 | 37 | `ashen` | 45 | captain → Kesra | reach(ashen); kill 15 salamander | Spalone Pustkowia | ▣ „Rozdział III: Zimny Ogień” (Brama z Żeber, łuna Żarzącego Leja) | Kesra |
-| 38 | ✚ `deadOasis` | 47 | Kesra → runesmith_brokk | use(`caravan_chest`, 3 s); kill 10 wasteHyena (area `ashen_oasis`) | Krasnoludzka karawana zginęła na dnie Martwej Oazy. Ranny runmistrz Brokk dotarł do obozu Kesry i prosi o swoją skrzynię. W środku są notatki o Kajdanach Zimy | | Kesra, Brokk |
+| 38 | ✚ `deadOasis` | 47 | Kesra → runesmith_brokk | escort(runesmith_brokk → szczątki karawany; S104); use(`caravan_chest`, 3 s); kill 10 wasteHyena (area `ashen_oasis`) | Krasnoludzka karawana zginęła na dnie Martwej Oazy. Ranny runmistrz Brokk dotarł do obozu Kesry i prosi o swoją skrzynię. W środku są notatki o Kajdanach Zimy | | Kesra, Brokk |
 | 39 | ✚ `warcampCages` | 49 | runesmith_brokk → Kesra | use(`orc_cage`, 3 s); kill 8 ashOrc (area `ashen_warcamp`); talk(shaman_ghasha) | W klatkach obozu orków są jeńcy z karawany i szamanka Ghasha, która nie chciała kultowego złota. Uwolniona ucieka do Gorącego Źródła. Mówi, że wódz bierze od szarych ludzi topory z zimnego żelaza | ◆ klatka się otwiera, bęben wojenny milknie na chwilę | Brokk, Ghasha, Kesra |
 | 40 | `orcs` | 50 | Kesra → Kesra | kill 20 ashOrc; gather 5 vein_silver | orkowie popiołu | | Kesra |
-| 41 | ✚ `mineDepths` | 52 | Kesra → Kesra | reach(ashen_mine); kill 4 ashOrc (elite); collect 1 supplyLedger ← ashOrc (0,25) | W Opuszczonej Kopalni orkowie przeładowują zimne żelazo. Spis dostaw: szybem do Kuźni Głębin, stamtąd na północ | | Kesra |
+| 41 | ✚ `mineDepths` | 52 | Kesra → Kesra | reach(ashen_mine); kill 4 ashOrc (elite); collect 1 supplyLedger ← ashOrc (0,25, tylko Elity z `ashen_mine`; S104) | W Opuszczonej Kopalni orkowie przeładowują zimne żelazo. Spis dostaw: szybem do Kuźni Głębin, stamtąd na północ | | Kesra |
 | 42 | ✚ `emberCores` | 53 | Kesra → Kesra | collect 4 emberCore ← fireGolem (0,4); use(`colossus_eyes`, 3 s); talk(runesmith_brokk) | Brokk potrzebuje żarzących się rdzeni golemów, żeby rozgrzać swoje runy. Oczy Śpiącego Kolosa świecą tym samym ogniem co Azgor | | Kesra, Brokk |
 | 43 | `golems` | 55 | Kesra → Kesra | kill 15 fireGolem; kill 10 desertScorpion | droga do Kuźni otwarta | | Kesra |
 | 44 | ✚ `burntTemple` | 57 | Kesra → Kesra | talk(hermit_kaspar); kill 12 fireImp (area `ashen_burntruins`); use(`temple_bell`, 3 s) | Brat Kaspar pilnuje pękniętego dzwonu spalonego miasteczka. Płomień Azgora spalił je w jedną noc, a ocalałych zabrano do Kuźni. Widział człowieka w szarym płaszczu, któremu ogień schodził z drogi. Gracz bije w dzwon za zmarłych | ◆ dzwon nad ruinami, dzwonnica przestaje się tlić | Kesra, Kaspar, Ilvar (wspomnienie) |
-| 45 | ✚ `wyvernLair` | 59 | Kesra → Kesra | reach(ashen_lair); kill 4 wyvern (elite); collect 2 cultHarness ← wyvern (0,35) | W Leżu Wywerny wywerny noszą uprzęże kultu. To podniebny szlak broni na Lodowe Szczyty | ◆ wywerna z ładunkiem odlatuje na północ | Kesra |
+| 45 | ✚ `wyvernLair` | 59 | Kesra → Kesra | reach(ashen_lair); kill 4 wyvern (elite); collect 2 cultHarness ← wyvern (0,35, tylko Elity z `ashen_lair`; S104) | W Leżu Wywerny wywerny noszą uprzęże kultu. To podniebny szlak broni na Lodowe Szczyty | ◆ wywerna z ładunkiem odlatuje na północ | Kesra |
 | 46 | ✚ `ashRoad` | 61 | Kesra → Kesra | use(`stone_caravan`, 3 s); kill 10 basilisk (area `ashen_ashroad`) | W skamieniałej karawanie na Szlaku Popiołu leży list Ilvara do przywódcy renegatów: obiecuje smoczy skarb za stopienie Kajdan. List jest podpisany „Głos Zimy” | | Kesra, Ilvar (list) |
 | 47 | `deepforge` | 62 | Kesra → Kesra | reach(ashen_cave); kill 6 renegadeDwarf (elite) | renegaci kują broń dla smoka | ▣ krótki napis „Kuźnia Głębin” przy wrotach (opcjonalnie) | Kesra |
 | 48 | ✚ `runesOfBinding` | 64 | Kesra → runesmith_brokk | gather 5 vein_mithril; kill 4 magmaGolem (elite); talk(runesmith_brokk) | Kajdany Zimy w Sercu Kuźni są w połowie stopione. Leży przy nich grot Ciernia, którego ogień nie ruszył. Brokk z mithrilu i run wykuwa oprawę, żeby dało się go wynieść | ◆ Brokk przy Bramie z Żeber, runy na grocie zapalają się błękitem | Kesra, Brokk |
@@ -186,17 +186,19 @@ Pradrzewa), `riteBook` (Księga Obrzędów), `boneChime` (Kościany Dzwonek),
 | 50 | `azgor` | 68 | Kesra → captain | boss azgor | „Ogień zgasł. Został tylko chłód, i nadchodzi” | ◆ Palenisko Azgora gaśnie, fosa lawy czernieje | Azgor, Aldric |
 | 51 | ✚ `coldFire` | 69 | captain → captain | deliver(spearhead → blacksmith); talk(brother_anzelm) | Dorgan osadza grot na gałęzi z Pradrzewa. Anzelm: Cierniowi brakuje tylko przysięgi Straży, a zakon zamarzł na posterunku | ◆ koniec rozdziału III: kuźnia Dorgana nocą, iskry, Cierń w całości oprócz runy przysięgi | Aldric, Dorgan, Anzelm |
 
-Nowe kotwice (`Areas/ashen`): `caravan_chest` (`caravanChest`), `orc_cage` (`orcCages`), `colossus_eyes`
-(`colossus`), `temple_bell` (`belltower`), `stone_caravan` (`stoneCaravan`). W jaskini `ashen_cave`: `forge_chain_1..3`
+Nowe kotwice (`Areas/ashen`): `caravan_chest` (`caravanChest`, efekt `search`), `orc_cage` (`orcCages`, `cageOpen`),
+`colossus_eyes` (u stóp wzgórza `colossus` przed twarzą, `rune`; S104), `temple_bell` (`belltower`, `candles`),
+`stone_caravan` (`stoneCaravan`, `search`); w Kuźni efekt `chains`. W jaskini `ashen_cave`: `forge_chain_1..3`
 (Huta, Zbrojownia, przy Sercu Kuźni). Przedmioty fabularne: `supplyLedger` (Spis Dostaw), `emberCore` (Żarzący
 Rdzeń), `cultHarness` (Uprząż Kultu), `spearhead` (Grot Ciernia).
 
-**Nowi NPC, Spalone Pustkowia** (S104 dodaje `npcSpots`):
+**Nowi NPC, Spalone Pustkowia** (S104 dodała `npcSpots` `runesmith`, `shaman`, `hermit`; Brokk widoczny od
+`deadOasis`, Ghasha od `warcampCages`, `NpcDef.showFrom`):
 
 | id | Imię | Gdzie stoi | Rola |
 |---|---|---|---|
 | `runesmith_brokk` | Runmistrz Brokk | obóz Kesry przy Bramie z Żeber (`ribcage`, Równiny Salamander), obok zwiadowczyni | ostatni wierny runmistrz Kuźni, przewodnik rozdziału |
-| `shaman_ghasha` | Szamanka Ghasha | Gorące Źródło (`hotSpring`, Równiny Salamander) | orczyca, przeciwniczka kultowego złota; łuk S107 |
+| `shaman_ghasha` | Szamanka Ghasha | wschodni skraj niecki Gorącego Źródła (`hotSpring`, Równiny Salamander; S104) | orczyca, przeciwniczka kultowego złota; łuk S107 |
 | `hermit_kaspar` | Brat Kaspar | świątynia z zapadniętą kopułą (`burntTemple`, Spalone Ruiny) | pustelnik spalonego miasteczka, świadek Ilvara |
 
 ### 2.5 Rozdział IV: Długa Zima (Lodowe Szczyty, 70–97) i finał: Pierwsza Wiosna (97–100), S105

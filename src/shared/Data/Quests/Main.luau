@@ -11,6 +11,9 @@
 -- houseOfVael, elderHeart, turncoat, barrow, witchCounsel, cryptGate, queensLegacy; wiki = false until S109) between
 -- the eight old ones, and the whole band 20-44 on the story rule (STORY_BANDS 20: the chapter shares TARGET.main of
 -- the band by weight; fixed rewards only on toDuskwood and the boss quest morvane).
+-- S104 (docs/FABULA.md §2.4): chapter III "Cold Fire" on the Ashen Wastes: ten new quests (deadOasis, warcampCages,
+-- mineDepths, emberCores, burntTemple, wyvernLair, ashRoad, runesOfBinding, forgeChains, coldFire; wiki = false until
+-- S109) between the five old ones, and the band 45-69 on the story rule (STORY_BANDS 45; azgor keeps its reward).
 
 local Exp = require("../../Logic/Exp")
 local QuestBudget = require("../../Logic/QuestBudget")
@@ -92,6 +95,12 @@ end
 local function use(anchor: string, action: string, hold: number, fx: string): Objective
 	assert(Side.FX[fx], `unknown anchor fx {fx}`)
 	return { type = "use", n = 1, anchor = anchor, action = action, hold = hold, fx = fx }
+end
+
+-- S104: one `use` objective over several anchors (progress = distinct anchors done, S27).
+local function useAll(anchors: { string }, action: string, hold: number, fx: string): Objective
+	assert(Side.FX[fx], `unknown anchor fx {fx}`)
+	return { type = "use", n = #anchors, anchors = anchors, action = action, hold = hold, fx = fx }
 end
 
 local function deliver(item: string, npc: string?, line: string?): Objective
@@ -693,52 +702,292 @@ q({
 	choices = Talk.onPage(3, { Talk.answer("rest"), Talk.answer("anzelm"), Talk.answer("east", Talk.focus(3)) }),
 })
 
--- Ashen Wastes and Deepforge ---------------------------------------------------------------------------
+-- Chapter III: Cold Fire (Ashen Wastes and Deepforge, 45–70; docs/FABULA.md §2.4, S104). Brokk, Ghasha and Kaspar stand
+-- on Areas/ashen npcSpots; anchors in Areas/ashen and in the ashen_cave cave. The whole band 45-69 is on the story rule
+-- (STORY_BANDS 45: the chapter shares TARGET.main of the band by weight); only azgor (the boss quest, outside the pace
+-- model) keeps its fixed reward. Ten new quests (wiki = false until S109) between the five old ones.
 q({
 	id = "ashen",
 	level = 45,
 	giver = "captain",
 	turnIn = "scout_ashen",
+	pages = 3,
 	objectives = { { type = "reach", n = 1, map = "ashen" }, { type = "kill", n = 15, monster = "salamander" } },
-	reward = { exp = exp(45, 0.9), gold = gold(45), items = { { id = "backpack_100", n = 1 } } },
+	weight = 1,
+	reward = { gold = gold(45), items = { { id = "backpack_100", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S104 chapter III: Brokk leads the player down to his caravan on the dry bed of the Dead Oasis
+q({
+	id = "deadOasis",
+	level = 47,
+	giver = "scout_ashen",
+	turnIn = "runesmith_brokk",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		-- Brokk's camp by the Ribcage Gate -> the main road -> the caravan trail south (Areas/ashen roads) -> down the
+		-- oasis rim -> the caravan graveyard (inside its avoid circle: no monster group there), ~55 studs from the chest
+		Talk.escort("runesmith_brokk", "ashen", -448, 628, 12, "place.caravanRemains", {
+			{ x = -520, z = 0 },
+			{ x = -526, z = 200 },
+			{ x = -520, z = 380 },
+			{ x = -548, z = 480 },
+			{ x = -500, z = 560 },
+		}),
+		use("caravan_chest", "quest.use.chest", 3, "search"),
+		kill(10, "wasteHyena", "ashen_oasis"),
+	},
+	weight = 1,
+	reward = { gold = gold(47) },
+	barks = { by = "runesmith_brokk", accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, { Talk.answer("notes"), Talk.answer("hands"), Talk.answer("count") }),
+	companion = Talk.lead("runesmith_brokk", "ashen", { 1 }, { join = 1, wait = 3, arrive = 2, back = 1 }),
+})
+-- S104 chapter III: the captives of the caravan and Ghasha in the cages of the ash orcs' warcamp
+q({
+	id = "warcampCages",
+	level = 49,
+	giver = "runesmith_brokk",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		use("orc_cage", "quest.use.cage", 3, "cageOpen"),
+		kill(8, "ashOrc", "ashen_warcamp"),
+		talk("shaman_ghasha", "quest.warcampCages.ghasha"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(49) },
+	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("gate", Talk.focus(2)),
+		-- the cages of Areas/ashen SITES.orcCages, at the anchor orc_cage
+		Talk.answer("cages", Talk.hint("ashen", -350, -526, "place.orcCages")),
+		Talk.answer("why"),
+	}),
+	recall = { p1 = "deadOasis" },
 })
 q({
 	id = "orcs",
 	level = 50,
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
+	pages = 2,
 	objectives = { { type = "kill", n = 20, monster = "ashOrc" }, { type = "gather", n = 5, node = "vein_silver" } },
-	reward = { exp = exp(50, 1), gold = gold(50) },
+	weight = 1,
+	reward = { gold = gold(50) },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S104 chapter III: the cold iron in the Abandoned Mine (the supply ledger of the orc overseers, Elites only)
+q({
+	id = "mineDepths",
+	level = 52,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		reach("ashen_mine"),
+		kill(4, "ashOrc", "ashen_mine", "elite"),
+		collect(1, "supplyLedger", "ashOrc", 0.25, "ashen_mine", "elite"),
+	},
+	weight = 1,
+	reward = { gold = gold(52), items = { { id = "stone_map", n = 2 } } },
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, { Talk.answer("frost"), Talk.answer("dark"), Talk.answer("quick") }),
+})
+-- S104 chapter III: the ember cores of the fire golems and the eyes of the Sleeping Colossus
+q({
+	id = "emberCores",
+	level = 53,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		collect(4, "emberCore", "fireGolem", 0.4, "ashen_golemfields"),
+		use("colossus_eyes", "quest.use.eyes", 3, "rune"),
+		talk("runesmith_brokk", "quest.emberCores.brokk"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(53) },
+	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(1, { Talk.answer("how"), Talk.answer("colossus", Talk.focus(2)), Talk.answer("why") }),
+	recall = { p3 = "deadOasis" },
 })
 q({
 	id = "golems",
 	level = 55,
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
+	pages = 2,
 	objectives = {
 		{ type = "kill", n = 15, monster = "fireGolem" },
 		{ type = "kill", n = 10, monster = "desertScorpion" },
 	},
-	reward = { exp = exp(55, 1), gold = gold(55), items = { { id = "elixir_resFire", n = 3 } } },
+	weight = 1,
+	reward = { gold = gold(55), items = { { id = "elixir_resFire", n = 3 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S104 chapter III: Brother Kaspar and the cracked bell of the burnt town (a witness of Ilvar)
+q({
+	id = "burntTemple",
+	level = 57,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		talk("hermit_kaspar", "quest.burntTemple.kaspar"),
+		kill(12, "fireImp", "ashen_burntruins"),
+		use("temple_bell", "quest.use.bell", 3, "candles"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(57), items = { { id = "blessing_sage_3", n = 1 } } },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("empty"),
+		-- Kaspar's threshold before the burnt temple (Areas/ashen npcSpots.hermit)
+		Talk.answer("way", Talk.hint("ashen", 175, 634, "place.kasparThreshold")),
+		Talk.answer("candles"),
+	}),
+})
+-- S104 chapter III: the cult's harnesses on the wyverns of the Wyvern Lair (the sky road north)
+q({
+	id = "wyvernLair",
+	level = 59,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		reach("ashen_lair"),
+		kill(4, "wyvern", "ashen_lair", "elite"),
+		collect(2, "cultHarness", "wyvern", 0.35, "ashen_lair", "elite"),
+	},
+	weight = 1,
+	reward = { gold = gold(59), items = { { id = "blessing_hunter_3", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("dead"),
+		Talk.answer("heat", Talk.gift("elixir_resFire", 1)),
+		Talk.answer("north"),
+	}),
+})
+-- S104 chapter III: Ilvar's letter in the stone caravan on the Ash Road
+q({
+	id = "ashRoad",
+	level = 61,
+	giver = "scout_ashen",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		use("stone_caravan", "quest.use.stoneWagon", 3, "search"),
+		kill(10, "basilisk", "ashen_ashroad"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(61) },
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(3, { Talk.answer("what"), Talk.answer("stone"), Talk.answer("hunt", Talk.focus(2)) }),
 })
 q({
 	id = "deepforge",
 	level = 62,
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
+	pages = 3,
 	objectives = {
 		{ type = "reach", n = 1, map = "ashen_cave" },
 		{ type = "kill", n = 6, monster = "renegadeDwarf", variant = "elite" },
 	},
-	reward = { exp = exp(62, 1), gold = gold(62), items = { { id = "backpack_130", n = 1 } } },
+	weight = 1,
+	reward = { gold = gold(62), items = { { id = "backpack_130", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S104 chapter III: the Thorn's spearhead by the half-molten Chains of Winter; Brokk forges a setting of mithril
+q({
+	id = "runesOfBinding",
+	level = 64,
+	giver = "scout_ashen",
+	turnIn = "runesmith_brokk",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		{ type = "gather", n = 5, node = "vein_mithril" },
+		kill(4, "magmaGolem", "ashen_cave", "elite"),
+		talk("runesmith_brokk", "quest.runesOfBinding.brokk"),
+	},
+	weight = 1,
+	reward = { gold = gold(64) },
+	barks = { by = "runesmith_brokk", accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		-- the vein_mithril node nearest to the Ribcage Gate (AshenGen.nodes())
+		Talk.answer("where", Talk.hint("ashen", 31, 169, "place.mithrilVein")),
+		Talk.answer("spear"),
+		Talk.answer("who"),
+	}),
+	recall = { done = "emberCores" },
+})
+-- S104 chapter III: Brokk walks through Deepforge with the player and unlocks the chained captives (a red zone)
+q({
+	id = "forgeChains",
+	level = 66,
+	giver = "runesmith_brokk",
+	turnIn = "scout_ashen",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		-- the Smelter, the Renegades' Armoury and the Heart of the Forge (Areas/Caves ashen_cave questAnchors)
+		useAll({ "forge_chain_1", "forge_chain_2", "forge_chain_3" }, "quest.use.shackles", 3, "chains"),
+		kill(10, "flameSmith", "ashen_cave"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(66), items = { { id = "elixir_resFire", n = 3 } } },
+	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 3, death = 1, done = 1 },
+	choices = Talk.onPage(2, { Talk.answer("alone"), Talk.answer("smiths", Talk.focus(2)), Talk.answer("keys") }),
+	recall = { p1 = "warcampCages" },
+	-- by the cave's respawn point (-240 / 0): Brokk does not stand on the cave map
+	companion = Talk.follow(
+		"runesmith_brokk",
+		"ashen_cave",
+		{ 1 },
+		{ join = 1, wait = 1, back = 1 },
+		{ x = -232, z = 8 }
+	),
 })
 q({
 	id = "azgor",
 	level = 68,
 	giver = "scout_ashen",
 	turnIn = "captain",
+	pages = 3,
 	objectives = { { type = "boss", n = 1, boss = "azgor" } },
 	reward = { exp = exp(70, 1.2), gold = gold(70) * 3, items = { { id = "stone_dungeon_ashen", n = 1 } } },
+	barks = { accept = 1, done = 1 },
+})
+-- S104 chapter III end: the Thorn's spearhead to Dorgan (the shaft from the Elder Tree waits in his forge), then Anzelm
+q({
+	id = "coldFire",
+	level = 69,
+	giver = "captain",
+	turnIn = "captain",
+	pages = 4,
+	wiki = false,
+	objectives = {
+		deliver("spearhead", "blacksmith", "quest.coldFire.blacksmith"),
+		talk("brother_anzelm", "quest.coldFire.anzelm"),
+	},
+	weight = 1.5,
+	reward = { gold = gold(69), items = { { id = "blessing_guardian_4", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("dorgan", Talk.focus(1)),
+		Talk.answer("anzelm", Talk.focus(2)),
+		Talk.answer("tired"),
+	}),
+	recall = { p3 = "burntTemple" },
 })
 
 -- Frostpeak and the Glacier Heart ------------------------------------------------------------------------
@@ -796,6 +1045,7 @@ q({
 local STORY_STEP = 0.05
 local STORY_BANDS: { number } = {
 	20, -- S103: chapter II
+	45, -- S104: chapter III
 }
 local STORY_SCALE: { [number]: number } = {}
 

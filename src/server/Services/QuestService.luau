@@ -31,6 +31,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
+local NpcVisibility = require(Shared.Logic.NpcVisibility)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local QuestLogic = require(Shared.Logic.QuestLogic)
 local Quests = require(Shared.Data.Quests)
@@ -295,8 +296,14 @@ function QuestService.Handle(player: Player, kind: string, data: { [string]: any
 	handle(player, kind, data or {})
 end
 
+-- S104: an NPC hidden from the character (NpcDef.showFrom, Logic/NpcVisibility) cannot be talked to either.
+local function seen(player: Player, npcId: string): boolean
+	local char = character(player)
+	return NpcVisibility.visibleId(npcId, if char then char.quests else nil)
+end
+
 local function near(player: Player, npcId: string): boolean
-	return Npcs.get(npcId) ~= nil and NpcService.Near(player, npcId)
+	return Npcs.get(npcId) ~= nil and NpcService.Near(player, npcId) and seen(player, npcId)
 end
 
 -- Counts what the character already has when a quest starts (current map, level).
@@ -425,7 +432,7 @@ local function say(player: Player, questId: string, choiceId: string): (boolean,
 	local err: string? = "npc.error.tooFar"
 	local ok = false
 	for _, npcId in { quest.giver, quest.turnIn } do
-		if Npcs.get(npcId) and NpcService.Near(player, npcId) then
+		if near(player, npcId) then
 			local allowed, reason = Dialogue.canSay(char.quests, char.level, kind, quest, choiceId, npcId)
 			if allowed then
 				ok = true

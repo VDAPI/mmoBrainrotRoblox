@@ -479,3 +479,59 @@ describe("Companions of story chapter II (S103)", function()
 		expect(quest.objectives[3].area).toBe("duskwood_witchmarsh")
 	end)
 end)
+
+describe("Companions of story chapter III (S104)", function()
+	local MapTerrain = require("../src/shared/Logic/MapTerrain")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local Areas = require("../src/shared/Data/Areas")
+	local T = assert(RegionTerrain.get("ashen"))
+
+	it("deadOasis: Brokk's route to his caravan is walkable, dry, away from lava, legs <= legMax", function()
+		local quest = assert(Quests.Main.get("deadOasis"))
+		local def = assert(quest.companion, "companion")
+		local escort = assert(Companion.escortOf(quest))
+		local start = assert(Companion.fromOf(def))
+		local npc = assert(require("../src/shared/Data/Npcs").get("runesmith_brokk"))
+		expect(start.x).toBe(npc.position.x)
+		expect(start.z).toBe(npc.position.z)
+		local route = Companion.route(def, escort, start)
+		expect(#route >= 3).toBe(true)
+		for i, point in route do
+			expect(`{i} {MapTerrain.walkable("ashen", point.x, point.z, 4)}`).toBe(`{i} true`)
+			expect(T.isWater(point.x, point.z)).toBe(false)
+			expect(T.lavaDistance(point.x, point.z) >= RegionTerrain.LAVA_CLEARANCE).toBe(true)
+			for _, lake in Areas.byMap.ashen.lakes do
+				expect(math.sqrt((point.x - lake.x) ^ 2 + (point.z - lake.z) ^ 2) > lake.r).toBe(true)
+			end
+			if i > 1 then
+				local before = route[i - 1]
+				local leg = math.sqrt((point.x - before.x) ^ 2 + (point.z - before.z) ^ 2)
+				expect(leg <= Config.Companion.legMax).toBe(true)
+			end
+		end
+		-- the goal lies in the caravan graveyard's avoid circle (no monster group there)
+		local grave = assert(Areas.byMap.ashen.sites).caravanGrave
+		local gx, gz = escort.x :: number, escort.z :: number
+		expect(math.sqrt((gx - grave.x) ^ 2 + (gz - grave.z) ^ 2) <= 34 - 2).toBe(true)
+		expect(Companion.validate()).toEqual({})
+	end)
+
+	it("forgeChains: Brokk joins by the cave's respawn point on the cave floor and follows the posts", function()
+		local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
+		local Maps = require("../src/shared/Data/Maps")
+		local quest = assert(Quests.Main.get("forgeChains"))
+		local def = assert(quest.companion, "companion")
+		local from = assert(Companion.fromOf(def))
+		local cave = assert(CaveTerrain.get("ashen_cave"))
+		expect(cave.floor(from.x, from.z) ~= nil).toBe(true)
+		expect(cave.liquid(from.x, from.z)).toBeNil()
+		local spawn = assert(Maps.get("ashen_cave")).spawn
+		expect(math.sqrt((from.x - spawn.x) ^ 2 + (from.z - spawn.z) ^ 2) <= Config.Companion.rejoin).toBe(true)
+		local function want(progress: { number }): any
+			return Companion.want(quests({ main = { id = "forgeChains", progress = progress } }))
+		end
+		local w = want({ 1, 0 })
+		expect(w and w.def.npc).toBe("runesmith_brokk")
+		expect(want({ 3, 0 })).toBeNil()
+	end)
+end)

@@ -1,7 +1,10 @@
 --!strict
 -- City NPCs on the client: localized nameplates with the service icon and a "Talk [E]" prompt on every NPC
 -- model (attribute NpcId). Talking opens the dialog window; its buttons open the service windows (shop,
--- vault, forge, backpacks). Walking away closes them. Services from later sessions say "soon".
+-- vault, forge, backpacks). Walking away closes them. Services from later sessions say "soon". S104: an NPC the
+-- character does not see yet (NpcDef.showFrom, Logic/NpcVisibility) is invisible here, without plate and prompt, and
+-- appears as soon as its quest starts (the server refuses to talk with it meanwhile). While hidden its parts do not
+-- collide and are not hit by raycasts for this client (the originals come back when it appears).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +18,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
+local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local ShopWindow = require(script.Parent.Parent.UI.Screens.ShopWindow)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
@@ -183,6 +187,55 @@ function NpcController.OpenUnbind()
 	WindowManager.Open("unbind")
 end
 
+-- S104: decorated figures by NPC id, shown or hidden for the character (NpcMarkState.Hidden).
+-- `physics` keeps each hidden part's original CanCollide / CanQuery until the NPC is shown again.
+type Figure = {
+	model: Model,
+	gui: BillboardGui,
+	prompt: ProximityPrompt?,
+	physics: { [BasePart]: { collide: boolean, query: boolean } },
+}
+local figures: { [string]: Figure } = {}
+
+local function applyVisibility(npcId: string)
+	local entry = figures[npcId]
+	local def = Npcs.get(npcId)
+	-- only an NPC with showFrom can ever be hidden; the others are left exactly as built
+	if not entry or not entry.model.Parent or not def or def.showFrom == nil then
+		return
+	end
+	local hidden = NpcMarkState.isHidden(npcId)
+	for _, part in entry.model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.LocalTransparencyModifier = if hidden then 1 else 0
+			if hidden and not entry.physics[part] then
+				entry.physics[part] = { collide = part.CanCollide, query = part.CanQuery }
+				part.CanCollide = false
+				part.CanQuery = false
+			end
+		elseif part:IsA("Decal") then
+			part.LocalTransparencyModifier = if hidden then 1 else 0
+		elseif part:IsA("Light") then
+			part.Enabled = not hidden
+		end
+	end
+	if not hidden then
+		for part, saved in entry.physics do
+			part.CanCollide = saved.collide
+			part.CanQuery = saved.query
+		end
+		table.clear(entry.physics)
+	end
+	entry.gui.Enabled = not hidden
+	if entry.prompt then
+		entry.prompt.Enabled = not hidden
+	end
+	if hidden and Fusion.peek(NpcController.Current) == npcId then
+		closeServiceWindows()
+		NpcController.Current:set(nil)
+	end
+end
+
 local function decorate(model: Model)
 	local npcId = model:GetAttribute("NpcId")
 	local def = if type(npcId) == "string" then Npcs.get(npcId) else nil
@@ -220,7 +273,9 @@ local function decorate(model: Model)
 	scope:Observer(Text.Lang):onChange(function()
 		name.Text = Text.now(def.nameKey)
 	end)
+	figures[def.id] = { model = model, gui = gui, prompt = nil, physics = {} }
 	if def.decoration then
+		applyVisibility(def.id)
 		return
 	end
 	local root = model:FindFirstChild("HumanoidRootPart") or head
@@ -239,6 +294,8 @@ local function decorate(model: Model)
 		prompt.ActionText = Text.now("npc.talk")
 		prompt.ObjectText = Text.now(def.nameKey)
 	end)
+	figures[def.id].prompt = prompt
+	applyVisibility(def.id)
 end
 
 local function registerWindows()
@@ -333,6 +390,12 @@ function NpcController.Init(registry)
 end
 
 function NpcController.Start()
+	-- S104: NPCs appear (or hide) when the character's story moves
+	scope:Observer(NpcMarkState.Hidden):onChange(function()
+		for npcId in figures do
+			applyVisibility(npcId)
+		end
+	end)
 	-- A mounts window closed by hand and reopened with J no longer belongs to the stablemaster.
 	local mountsOpen = WindowManager.IsOpen("mounts")
 	scope:Observer(mountsOpen):onChange(function()

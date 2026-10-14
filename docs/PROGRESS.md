@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S103 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S104 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -129,6 +129,10 @@ S103 fabuła rozdział II „Zapomniany Ród”: 17 questów w Borze (9 nowych),
 Jorund, Ragna), sześć kotwic z rekwizytami i efektami, dziesięć przerywników (Ilvar jako projekcja, duch Morvane),
 towarzysze Radomir (`lead`) i Ragna (`follow`), fabuła 20–44 na regule budżetu (10% pasma, `monsterExpMul` 21–36 do 1,24),
 nowe rzeczy ukryte na wiki do S109.
+S104 fabuła rozdział III „Zimny Ogień”: 15 questów na Pustkowiach (10 nowych), Runmistrz Brokk, Szamanka Ghasha i Brat
+Kaspar, NPC widoczni od swojego questu (`NpcDef.showFrom`, `Logic/NpcVisibility`), pięć kotwic na mapie i trzy w Kuźni
+Głębin (efekty `cageOpen`, `rune`, `chains`), dziewięć przerywników, Brokk jako towarzysz (`lead`, `follow` w Kuźni),
+fabuła 45–69 na regule budżetu (10% pasma, `monsterExpMul` 45–69 0,76–0,96), nowe rzeczy ukryte na wiki do S109.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -161,7 +165,7 @@ zakończone; testy i decyzje właściciela po nich.
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
   bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty od 20.
-  (po S103: 20–44 24%, 45–69 27%, 70–99 24%; poboczne S106–S108 brakują; audyt S109).
+  (po S104: 20–44 24%, 45–69 23%, 70–99 24%; poboczne S106–S108 brakują; audyt S109).
 - **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
   (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
   Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
@@ -177,10 +181,13 @@ zakończone; testy i decyzje właściciela po nich.
   zamiast towarzysza.
 - **Fabuła (S102)**: nowe questy rozdziału I dają mało EXP (`STORY_STEP` 0,05, 83–586 EXP), bo fabuła 1–19 ma już
   41,8% EXP pasma przy celu 10% (decyzja właściciela / audyt S109).
-  Rozdziały III–IV mają w dzienniku tylko nazwę (treść S104–S105).
+  Rozdział IV ma w dzienniku tylko nazwę (treść S105).
 - **Fabuła (S103)**: `G9.up9` na 40 (+1…+9 broni z ochroną = 11,06 poziomu dochodu, pasmo 12–25) w trybie raportu:
   złoto nowych questów rozdziału II, `Config.Upgrade` globalne (decyzja właściciela). Wagi fabuły 20–44 poza zakresem
   planu (do 2,2), bo model tempa S94 trzyma EXP fabuły na 21–26 (`docs/DECYZJE.md` S103; audyt S109).
+- **Fabuła (S104)**: uproszczenia: scena odlotu wywerny (`ch3_wyvern`) bez figury wywerny, sama kamera i linie;
+  komentarz Brokka przy słupach jeńców losuje jedną z trzech linii (bez wariantu na kotwicę). Okno `coldFire` (69)
+  sięga 71, więc raport okien S98 pokazuje fabułę 45–69 jako 9,1% (wg poziomu questów 10%; audyt S109).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

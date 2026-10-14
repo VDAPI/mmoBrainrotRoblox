@@ -5,7 +5,10 @@
 --     bridge,
 --   * the temple with a fallen dome and the bell tower that still smoulders (the landmark): its windows glow at
 --     night, smoke rises from it, the cracked bell lies at its foot,
---   * sand from the dunes drifting into the streets from the east, scorpion burrows and shed carapaces in it. Pure.
+--   * sand from the dunes drifting into the streets from the east, scorpion burrows and shed carapaces in it,
+--   * S104 (story chapter III): Brother Kaspar's threshold at the temple's west door: a row of candles on the step
+--     before the wall right of the door (one warm light), his bedding inside the nave by the door, a small box; detail
+--     only, no collision (inside the temple's clearing). Pure.
 
 local Env = require("./Env")
 local Kit = require("../WorldGen/Kit")
@@ -295,6 +298,27 @@ local function nests(env: Env.Env, out: { Build })
 	table.insert(out, b)
 end
 
+-- S104: Kaspar's threshold, in the temple's frame (front = west; the front wall at local z -15, the door between local
+-- x -4 and 4; Kaspar stands at about local 6 / -21, Data/Areas/ashen npcSpots.hermit).
+local function hermitThreshold(env: Env.Env, out: { Build })
+	local ctx = env.ctx
+	local site = env.sites.burntTemple
+	local x, z = Kit.toWorld(site.x, site.z, site.rot, 7, -16.2)
+	local b = Kit.build(ctx, "HermitThreshold", "traces", x, z, site.rot)
+	local bp = b.bp
+	local free = { col = false }
+	-- the candles on the step before the wall, and their light
+	for k = 0, 3 do
+		local lx = -1.8 + k * 1.2
+		Kit.candle(bp, lx, Kit.gy(ctx, b, lx, 0) + 0.05, 0, 0.5 + (k % 2) * 0.3, "#FFB347")
+	end
+	bp:light(0, Kit.gy(ctx, b, 0, 0) + 1.4, -0.6, "#FFB347", 12, 1.2)
+	-- his bedding inside the nave by the door and a small box
+	bp:box(2, 0.25, 3.6, 0, Kit.gy(ctx, b, 0, 3.8) + 0.12, 3.8, o(Kit.rag, "detail", free))
+	bp:box(1, 0.7, 0.8, 2, Kit.gy(ctx, b, 2, 3.2) + 0.35, 3.2, o(Kit.planks, "detail", free))
+	table.insert(out, b)
+end
+
 function Ruins.all(env: Env.Env, out: { Build })
 	gate(env, out)
 	square(env, out)
@@ -304,6 +328,7 @@ function Ruins.all(env: Env.Env, out: { Build })
 		house(env, out, i, h[1], h[2], h[3])
 	end
 	nests(env, out)
+	hermitThreshold(env, out) -- S104
 end
 
 return Ruins

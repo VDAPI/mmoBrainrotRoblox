@@ -86,6 +86,15 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 			count = count,
 		})
 	elseif t == "collect" then
+		-- S104: loot of Elites only ("Get: Supply Ledger (Ash Orc Overseer) 0/1"), named like the elite kills
+		local def = if objective.variant == "elite" and objective.monster then Monsters.get(objective.monster) else nil
+		if def then
+			return Text.get(use, "quest.obj.collectFrom", {
+				item = Text.get(use, `quest.item.{objective.item}`),
+				monster = Text.get(use, def.nameKeys.elite),
+				count = count,
+			}) .. where
+		end
 		return Text.get(
 			use,
 			"quest.obj.collect",

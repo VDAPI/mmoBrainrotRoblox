@@ -7,6 +7,7 @@
 -- relogging, while the quest runs and after it is handed in. S102: the anchors of the active story quest too (the
 -- frosted crest of frostRuins). S103: an anchor with `rot` turns the effect's frame; the effects at a generator prop
 -- (frostbreak, heartglow, sealbreak) are drawn in the prop's frame (Logic/DuskwoodGen/Quest.frame) and cover it.
+-- S104: cageOpen, rune and chains (the Ashen Wastes and the posts of the captives in Deepforge).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -410,6 +411,78 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 			)
 		end
 		part(model, Vector3.new(0.12, 1.4, 0.12), seal * CFrame.new(1.4, 1.9, 0.4), "#4A4A4E", Enum.Material.Metal)
+	end,
+	-- S104: the door of an orc cage torn off its hinges and leant on the ground at 70 degrees, a broken padlock beside
+	-- it; the bones stay inside the cage (warcampCages)
+	cageOpen = function(model, base)
+		local door = base * CFrame.new(0, 0, 0.6) * CFrame.Angles(math.rad(-20), 0, 0)
+		part(model, Vector3.new(4.4, 4.4, 0.3), door * CFrame.new(0, 2.1, 0), "#5A4632", Enum.Material.Wood)
+		for i = -1, 1 do
+			part(
+				model,
+				Vector3.new(0.22, 4.6, 0.22),
+				door * CFrame.new(i * 1.4, 2.1, -0.25),
+				"#3A3A40",
+				Enum.Material.Metal
+			)
+		end
+		local lock = base * CFrame.new(1.6, 0.15, -1.2) * CFrame.Angles(0, math.rad(35), 0)
+		part(model, Vector3.new(0.7, 0.5, 0.25), lock, "#3A3A40", Enum.Material.Metal)
+		part(
+			model,
+			Vector3.new(0.12, 0.6, 0.12),
+			lock * CFrame.new(0.5, 0.05, 0.2) * CFrame.Angles(0, 0, math.rad(70)),
+			"#3A3A40",
+			Enum.Material.Metal
+		)
+	end,
+	-- S104: a slate with a glowing blue rune and its light (emberCores at the Sleeping Colossus; S107 uses it too)
+	rune = function(model, base)
+		local slate = part(model, Vector3.new(2, 0.2, 2), base * CFrame.new(0, 0.1, 0), "#3A3630", Enum.Material.Slate)
+		local top = base * CFrame.new(0, 0.23, 0)
+		for _, r in { 35, -35 } do
+			part(
+				model,
+				Vector3.new(1.6, 0.06, 0.16),
+				top * CFrame.Angles(0, math.rad(r), 0),
+				"#7FC8FF",
+				Enum.Material.Neon
+			)
+		end
+		part(model, Vector3.new(0.9, 0.06, 0.16), top * CFrame.new(0, 0, 0.55), "#7FC8FF", Enum.Material.Neon)
+		light(slate, "#7FC8FF", 8, 1.2)
+	end,
+	-- S104: two open shackles on the ground (one broken in halves) and a run of links from the captive's post
+	-- (forgeChains in Deepforge)
+	chains = function(model, base)
+		part(
+			model,
+			Vector3.new(0.3, 1.1, 1.1),
+			base * CFrame.new(-0.9, 0.15, 0.8) * CFrame.Angles(0, 0, math.rad(90)),
+			"#3A3A40",
+			Enum.Material.Metal,
+			Enum.PartType.Cylinder
+		)
+		for _, side in { -1, 1 } do
+			part(
+				model,
+				Vector3.new(0.3, 0.55, 1.1),
+				base * CFrame.new(0.9 + side * 0.45, 0.15, 0.9) * CFrame.Angles(0, math.rad(side * 25), 0),
+				"#3A3A40",
+				Enum.Material.Metal
+			)
+		end
+		for k = 0, 4 do
+			part(
+				model,
+				Vector3.new(0.35, 0.18, 0.55),
+				base
+					* CFrame.new(0.2 - k * 0.25, 0.1 + (4 - k) * 0.35, -0.6 - k * 0.1)
+					* CFrame.Angles(math.rad(k * 40), 0, 0),
+				"#3A3A40",
+				Enum.Material.Metal
+			)
+		end
 	end,
 }
 

@@ -49,6 +49,7 @@ export type Icon = {
 	priority: number,
 	crowded: boolean,
 	target: string?, -- portals: map they lead to
+	hidden: boolean?, -- S104: an NPC the character does not see yet (NpcMarkState.Hidden)
 }
 
 export type AreaEntry = {
@@ -344,7 +345,7 @@ function Canvas.declutter(cached: Cached)
 	local kept: { Icon } = {}
 	for _, entry in order do
 		entry.crowded = false
-		if entry.kind ~= "node" then
+		if entry.kind ~= "node" and not entry.hidden then
 			for _, other in kept do
 				if (other.pixel - entry.pixel).Magnitude < CROWD then
 					entry.crowded = true
@@ -361,6 +362,7 @@ end
 -- Quest marks over the NPC icons (and their importance on the map).
 function Canvas.applyMarks(cached: Cached, marks: { [string]: NpcMarks.Mark })
 	for npcId, entry in cached.npcIcons do
+		entry.hidden = NpcMarkState.isHidden(npcId) -- S104 (applyZoom hides the icon)
 		local mark: any = marks[npcId]
 		local style = NpcMarkState.style(mark)
 		if entry.mark then
@@ -412,7 +414,7 @@ function Canvas.applyZoom(cached: Cached, zoomIndex: number, toggles: Toggles)
 	local hit = Canvas.HIT / zoom
 	for _, entry in cached.icons do
 		entry.button.Size = UDim2.fromOffset(hit, hit)
-		entry.button.Visible = not (zoomIndex == 1 and entry.crowded)
+		entry.button.Visible = not (zoomIndex == 1 and entry.crowded) and not entry.hidden
 		if entry.kind == "npc" and entry.caption then
 			entry.caption.Visible = detail
 		end

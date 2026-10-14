@@ -918,6 +918,15 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   Jarze, Ragna idzie z nim na Wiedźmie Moczary. EXP fabuły pasma 20–44 = 10% EXP pasma (reguła S102, wagi questów),
   stałe tylko `toDuskwood` i `morvane`; bicie oddaje różnicę (`monsterExpMul`), więc czas na poziom bez zmian. Nowe
   questy, NPC, kotwice i miejsca NPC na wiki od S109.
+- **Fabuła, rozdział III (S104, `docs/FABULA.md` §2.4)**: 15 questów na Spalonych Pustkowiach na 45–69 (`ashen`,
+  `deadOasis`, `warcampCages`, `orcs`, `mineDepths`, `emberCores`, `golems`, `burntTemple`, `wyvernLair`, `ashRoad`,
+  `deepforge`, `runesOfBinding`, `forgeChains`, `azgor`, `coldFire`), razem 55 questów fabuły. Runmistrz Brokk przy
+  Bramie z Żeber (prowadzi gracza do szczątków karawany, idzie z nim przez Kuźnię Głębin), Szamanka Ghasha przy Gorącym
+  Źródle i Brat Kaspar przed spaloną świątynią; Brokk i Ghasha pojawiają się dopiero od swojego questu
+  (`NpcDef.showFrom`). Pięć kotwic na mapie (skrzynia karawany, klatki orków, oczy Śpiącego Kolosa, pęknięty dzwon,
+  skamieniały wóz) i trzy słupy jeńców w Kuźni (kotwice jaskini z S102), dziewięć przerywników (napis rozdziału, Kuźnia
+  Głębin, koniec rozdziału w kuźni Dorgana). Grot Ciernia trafia na drzewce z Pradrzewa. EXP fabuły 45–69 = 10% EXP
+  pasma (wagi), stały tylko `azgor`; czas na poziom bez zmian. Nowe questy, NPC, kotwice i miejsca na wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

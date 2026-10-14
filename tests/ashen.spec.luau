@@ -66,8 +66,9 @@ local function nearCrossing(x: number, z: number, extra: number): boolean
 end
 
 -- Places a player must be able to stand on: portals, the landing from the Frost Peaks, the arrivals in front of the
--- cave mouths, respawn points, the scout, the areas' arrivals.
-local function standingPlaces(): { { name: string, x: number, z: number } }
+-- cave mouths, respawn points, the scout, the areas' arrivals; S104: the story NPCs' places and the quest anchors
+-- (`anchor` = true: an anchor stands by its landmark, on a 20-degree slope at most within 4 studs).
+local function standingPlaces(): { { name: string, x: number, z: number, anchor: boolean? } }
 	local list = {}
 	for _, p in Portals.onMap("ashen") do
 		-- cave portals stand in the mouths at the walls' feet; players arrive in front of them (below)
@@ -88,8 +89,16 @@ local function standingPlaces(): { { name: string, x: number, z: number } }
 		local a = assert(area.arrive, area.id)
 		table.insert(list, { name = `arrive {area.id}`, x = a.x, z = a.z })
 	end
+	for name, spot in DATA.npcSpots or {} do
+		table.insert(list, { name = `npc {name}`, x = spot.x, z = spot.z })
+	end
+	for _, a in DATA.questAnchors or {} do
+		table.insert(list, { name = `anchor {a.id}`, x = a.x, z = a.z, anchor = true })
+	end
 	return list
 end
+
+local ANCHOR_SLOPE = math.tan(math.rad(20))
 
 describe("Ashen Wastes: data", function()
 	it("keeps the areas of the brief (ids, levels, kinds, groups, profiles; 56 groups) without overlaps", function()
@@ -350,8 +359,9 @@ describe("Ashen Wastes: terrain", function()
 		"gives portals, cave exits, the landing, respawns, the scout and arrivals dry, gentle ground away from lava",
 		function()
 			for _, p in standingPlaces() do
-				local slope = slopeAround(p.x, p.z, 10)
-				if slope >= MAX_SLOPE or T.isWater(p.x, p.z) or T.lavaDistance(p.x, p.z) < CLEAR then
+				local slope = if p.anchor then slopeAround(p.x, p.z, 4) else slopeAround(p.x, p.z, 10)
+				local limit = if p.anchor then ANCHOR_SLOPE else MAX_SLOPE
+				if slope >= limit or T.isWater(p.x, p.z) or T.lavaDistance(p.x, p.z) < CLEAR then
 					error(
 						`{p.name} at {math.floor(p.x)}, {math.floor(p.z)}: slope {math.deg(math.atan(slope))} deg, lava {T.lavaDistance(
 							p.x,
@@ -675,6 +685,119 @@ describe("Ashen Wastes: generator", function()
 				end
 			end
 			expect(lavaLights >= 12).toBe(true)
+		end
+	)
+end)
+
+-- S104 (story chapter III): the places of Brokk, Ghasha and Kaspar and the quest anchors on the frozen map --------------
+
+describe("Ashen Wastes: story places of chapter III (S104)", function()
+	local NEAR: { [string]: { x: number, z: number, max: number } } = {
+		caravan_chest = { x = SITES.caravanChest.x, z = SITES.caravanChest.z, max = 12 },
+		orc_cage = { x = SITES.orcCages.x, z = SITES.orcCages.z, max = 12 },
+		-- the Colossus's head (-143 / 92) lies on the hill's 40-degree flank: the anchor stands at its foot before the
+		-- face (the nearest gentle ground inside the colossus circle is 20 studs from the head)
+		colossus_eyes = { x = -143, z = 92, max = 22 },
+		temple_bell = { x = SITES.belltower.x, z = SITES.belltower.z, max = 12 },
+		stone_caravan = { x = SITES.stoneCaravan.x, z = SITES.stoneCaravan.z, max = 12 },
+	}
+
+	it(
+		"puts every NPC place and anchor inside an avoid circle, off the water; circles, areas and groups unchanged",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			local anchors = assert(DATA.questAnchors, "questAnchors")
+			local points: { { name: string, x: number, z: number } } = {}
+			for name, spot in spots do
+				table.insert(points, { name = name, x = spot.x, z = spot.z })
+				expect(spot.wiki).toBe(false)
+			end
+			for _, a in anchors do
+				table.insert(points, { name = a.id, x = a.x, z = a.z })
+				expect(a.wiki).toBe(false)
+			end
+			expect(#points).toBe(8)
+			for _, p in points do
+				local inside = false
+				for _, c in DATA.avoid do
+					if math.sqrt((p.x - c.x) ^ 2 + (p.z - c.z) ^ 2) <= c.r - 2 then
+						inside = true
+					end
+				end
+				expect(`{p.name} {inside}`).toBe(`{p.name} true`)
+				expect(T.isWater(p.x, p.z)).toBe(false)
+				for _, lake in DATA.lakes do
+					expect(math.sqrt((p.x - lake.x) ^ 2 + (p.z - lake.z) ^ 2) > lake.r).toBe(true)
+				end
+			end
+			-- the S46 data (tests above pin the areas and their 56 groups): the avoid circles stay 52
+			expect(#DATA.avoid).toBe(52)
+			expect(#AreaSpawns.region(DATA, MAP.size)).toBe(56)
+			-- NPC places are named apart from every site of every map (/tparea looks at npcSpots first)
+			for name in spots do
+				for _, data in Areas.byMap do
+					expect(`{name} {(data.sites or {} :: any)[name] == nil}`).toBe(`{name} true`)
+				end
+			end
+		end
+	)
+
+	it("stands every anchor by its landmark, never in its middle", function()
+		for _, a in assert(DATA.questAnchors, "questAnchors") do
+			local near = assert(NEAR[a.id], a.id)
+			local d = math.sqrt((a.x - near.x) ^ 2 + (a.z - near.z) ^ 2)
+			expect(`{a.id} {d <= near.max and d >= 2.5}`).toBe(`{a.id} true`)
+		end
+	end)
+
+	it("keeps the cave anchors on the floor of their rooms in Deepforge", function()
+		local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
+		local cave = assert(Areas.caves.get("ashen_cave"))
+		local terrain = assert(CaveTerrain.get("ashen_cave"))
+		local rooms = { forge_chain_1 = 4, forge_chain_2 = 6, forge_chain_3 = 7 }
+		local anchors = assert(cave.questAnchors, "questAnchors")
+		expect(#anchors).toBe(3)
+		for _, a in anchors do
+			local room = assert(cave.rooms)[assert(rooms[a.id], a.id)]
+			expect(terrain.floor(a.x, a.z) ~= nil).toBe(true)
+			expect(terrain.liquid(a.x, a.z)).toBeNil()
+			expect(math.sqrt((a.x - room.x) ^ 2 + (a.z - room.z) ^ 2) <= 0.65 * room.r).toBe(true)
+			local _, mapId = Areas.anchorById(a.id)
+			expect(mapId).toBe("ashen_cave")
+		end
+	end)
+
+	it(
+		"keeps the gathering nodes of S46 and builds the camp, the rest and the threshold inside their circles",
+		function()
+			-- the nodes before S104 (build/s104_nodes_before.json): 50 nodes, coordinate sums -11331 / 1059
+			local sx, sz = 0, 0
+			local nodes = AshenGen.nodes()
+			for _, n in nodes do
+				sx += n.x
+				sz += n.z
+			end
+			expect(#nodes).toBe(50)
+			expect(sx).toBe(-11331)
+			expect(sz).toBe(1059)
+			local found: { [string]: boolean } = {}
+			for _, b in AshenGen.all() do
+				if b.name == "RunesmithCamp" or b.name == "ShamanRest" or b.name == "HermitThreshold" then
+					found[b.name] = true
+					local inside = false
+					for _, c in DATA.avoid do
+						if math.sqrt((b.at.x - c.x) ^ 2 + (b.at.z - c.z) ^ 2) <= c.r - 4 then
+							inside = true
+						end
+					end
+					expect(`{b.name} {inside}`).toBe(`{b.name} true`)
+					for _, piece in b.bp.pieces do
+						expect(piece.col).toBe(false)
+						expect(piece.lod ~= "shell").toBe(true)
+					end
+				end
+			end
+			expect(found).toEqual({ RunesmithCamp = true, ShamanRest = true, HermitThreshold = true })
 		end
 	)
 end)

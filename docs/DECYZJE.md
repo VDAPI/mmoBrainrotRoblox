@@ -3072,3 +3072,42 @@
   przed wektorami) ani na obraz mapy (`WikiMaps.npcMarkers`).
 - **S103 teksty bez rodzaju gracza:** zdania z planu w czasie przeszłym 2. osoby („Widziałeś go”, „Spóźniłeś się”)
   przepisane bez rodzaju („Więc to on”, „Za późno”).
+- **S104 mechanizmy:** z S101b–S103 użyte bez zmian strony, `wiki`, pomocnicy celów, `settleStory` / `STORY_*`,
+  `StoryProgress` (bez migracji), `Data/Cutscenes`, `regionfolk`, `NpcSpot.wiki`, `QuestAnchor.wiki` / `rot`,
+  `Cave.questAnchors`, rozmowy. Nowe ogólne: `NpcDef.showFrom` + `Logic/NpcVisibility` (D3), pomocnik `useAll` w
+  `Main.luau` (cel `use` z kilkoma kotwicami), klucz `quest.obj.collectFrom` (łup tylko z Elit w trackerze).
+- **S104 `collect` z Elit:** `mineDepths` i `wyvernLair` zbierają łup tylko z Elit (`variant = "elite"`) i z `area` =
+  jaskinia (`ashen_mine`, `ashen_lair`), jak `barrow` w S103; tracker pisze nazwę elity („Zdobądź: Spis dostaw (…)”).
+- **S104 miejsca NPC:** `runesmith`, `shaman`, `hermit` (nazwy różne od `sites`). Brokk przy Kesrze (−682 / −42; plan
+  −680 / −48 przesunięty, żeby obóz za nim zmieścił się w kole zwiadowczyni), Ghasha na wschodnim skraju niecki
+  Gorącego Źródła (−642 / 300, 38 st. od stawu: bliżej ściany niecki mają ponad 15°), Kaspar jak w planie (175 / 634).
+- **S104 kotwica Kolosa:** głowa leży na zboczu wzgórza (40°), więc `colossus_eyes` stoi u jego stóp przed twarzą
+  (−126 / 102, 20 st. od głowy, w kole `colossus`); test „przy obiekcie” ma dla niej próg 22 zamiast 12. Dzwon:
+  kotwica po płaskiej, wschodniej stronie dzwonu (214 / 611), nie od strony nasypu.
+- **S104 EXP 45–69:** `45` w `STORY_BANDS`, wagi z planu bez zmian (1 / 1,2 / 1,5), `ashen`, `orcs`, `golems`,
+  `deepforge` na regule (waga 1), `azgor` stały. Kompensacja 0,76–0,96, bez przycięć; okno `coldFire` (69) sięga 71,
+  więc raport okien pokazuje fabułę 45–69 jako 9,1% (wg poziomu questów 10,0%, test T10), a 70–71 dostają 0,856.
+- **S104 postęp graczy:** wstawki rozdziału III przelicza `StoryProgress.apply` (`mainLast`), bez migracji; zaliczone bez
+  nagrody tylko wstawki przed miejscem gracza.
+- **S104 widoczność NPC:** Brokk od `deadOasis`, Ghasha od `warcampCages` (aktywny albo oddany); Kaspar zawsze. Ukrycie
+  kosmetyczne u klienta (`LocalTransparencyModifier`, tabliczka, monit, mapa, minimapa, karta, znak), rozmowę z ukrytym
+  odrzuca serwer (`npc.error.tooFar`, `QuestService` i `SideQuestService`). Strony oferty `deadOasis` mówi Kesra
+  (Brokk jeszcze nie stoi), więc odpowiedzi z planu „głosem Brokka” Kesra przekazuje („Mówi, że…”).
+- **S104 `/tparea`:** szuka też kotwic jaskiń (`Areas.anchorById`), np. `/tparea forge_chain_2`.
+- **S104 efekty:** nowe `cageOpen` (drzwi klatki i kłódka), `rune` (płyta z błękitną runą, S107 jej używa), `chains`
+  (rozwarte obręcze i ogniwa); `search` przy skrzyni i skamieniałym wozie, `candles` przy dzwonie.
+- **S104 nagrody:** przedmioty z planu bez zamienników (`stone_map` × 2, `blessing_sage_3`, `blessing_hunter_3`,
+  `elixir_resFire` × 3, `blessing_guardian_4`); złoto `gold(poziom)`; `elixir_resFire = 1` w `Config.Dialogue.gifts`
+  (test upominków dopuszcza eliksiry).
+- **S104 przerywniki:** `ch3_title` na celu `reach ashen`, `ch3_forge` na `reach ashen_cave`, `ch3_azgor` z ujęciem
+  `self` (arena lochu), `ch3_wyvern` bez figury wywerny (kamera i linie), `ch3_end` z Anzelmem jako figurą obok Dorgana.
+- **S104 PvP w Kuźni:** `forgeChains` rozkuwa się w czerwonej strefie jaskini; ostrzega strona p3 Brokka. Towarzysz
+  Brokk nie jest encją, więc PvP go nie dotyczy.
+- **S104 rozmowy:** `deadOasis` zaczyna się celem `escort` (Brokk prowadzi do szczątków karawany i liczy zabitych, z
+  tego wynika strona 1 `warcampCages`); Brokk `follow` w `forgeChains` od punktu odrodzenia Kuźni; komentarz `near`
+  przy trzech słupach losuje jedną z trzech linii (S101b nie ma wariantu na kotwicę), linie pisane tak, by pasowały
+  przy każdym słupie.
+- **S104 rekwizyty:** obóz Brokka, legowisko Ghashy i próg Kaspara jako Buildy detail / fine bez kolizji; słupy jeńców
+  na końcu `CaveDress/Forge` (nic wcześniej się nie przesuwa). Węzły i grupy Pustkowi bez zmian (test sumy).
+- **S104 teksty bez rodzaju gracza:** zdania planu w 2. osobie czasu przeszłego i z rodzajem przepisane bez niego („Z
+  Serca Kuźni przyszła wieść”, „zanim ktokolwiek zdążył”, odpowiedź „Pójdę bez ciebie”, „kiedy przyjdzie pora”).

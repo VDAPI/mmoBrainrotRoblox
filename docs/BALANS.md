@@ -163,65 +163,118 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `QuestBudget:MONSTER_EXP_MUL[42]` | 0,829 | 0,986 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
 | `QuestBudget:MONSTER_EXP_MUL[43]` | 0,829 | 0,986 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
 | `QuestBudget:MONSTER_EXP_MUL[44]` | 0,829 | 0,768 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[45]` | 0,832 | 0,936 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[46]` | 0,832 | 0,936 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[47]` | 0,832 | 0,935 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[48]` | 0,832 | 0,935 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[49]` | 0,832 | 0,797 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[50]` | 0,828 | 0,958 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[51]` | 0,828 | 0,958 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[52]` | 0,828 | 0,857 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[53]` | 0,828 | 0,939 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[54]` | 0,828 | 0,939 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[55]` | 0,839 | 0,896 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[56]` | 0,839 | 0,896 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[57]` | 0,839 | 0,878 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[58]` | 0,839 | 0,878 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[59]` | 0,839 | 0,896 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[60]` | 0,839 | 0,896 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[61]` | 0,839 | 0,764 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[62]` | 0,847 | 0,855 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[63]` | 0,847 | 0,855 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[64]` | 0,847 | 0,855 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[65]` | 0,847 | 0,855 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[66]` | 0,847 | 0,873 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[67]` | 0,847 | 0,873 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[68]` | 0,847 | 0,873 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[69]` | 0,847 | 0,856 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[70]` | 0,847 | 0,856 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `QuestBudget:MONSTER_EXP_MUL[71]` | 0,847 | 0,856 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
 | `QuestBudget:MONSTER_EXP_MUL[7]` | 0,652 | 0,621 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
 | `QuestBudget:MONSTER_EXP_MUL[8]` | 0,652 | 0,62 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
 | `QuestBudget:MONSTER_EXP_MUL[9]` | 0,652 | 0,62 | S103 | regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped |
+| `Quests/Main:byId.ashen.reward.exp` | 4,987e+04 | 8988 | S104 | S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.crypt.reward.exp` | 6,116e+04 | 4450 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.cult.reward.exp` | 3,082e+04 | 2990 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
+| `Quests/Main:byId.deepforge.reward.exp` | 1,018e+05 | 1,652e+04 | S104 | S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.ents.reward.exp` | 2,314e+04 | 2448 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
+| `Quests/Main:byId.golems.reward.exp` | 8,111e+04 | 1,316e+04 | S104 | S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
+| `Quests/Main:byId.orcs.reward.exp` | 6,768e+04 | 1,098e+04 | S104 | S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.ruins.reward.exp` | 2,356e+04 | 3918 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.swamp.reward.exp` | 4e+04 | 3582 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.werewolves.reward.exp` | 2,222e+04 | 3423 | S103 | S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
-| `Quests/Main:indexOf.ashen` | 24 | 37 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.azgor` | 28 | 41 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.banditOrders` | 12 | 13 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.banditRoad` | 11 | 12 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.crypt` | 22 | 32 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.cult` | 20 | 28 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.deepforge` | 27 | 40 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.ents` | 19 | 26 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostpeak` | 29 | 42 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.giants` | 30 | 43 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.glacier` | 31 | 44 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.goblinCamp` | 13 | 15 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.golems` | 26 | 39 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.grimrok` | 15 | 18 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.morvane` | 23 | 35 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.mosshollow` | 14 | 17 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.orcs` | 25 | 38 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.ruins` | 18 | 24 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.swamp` | 21 | 30 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.toDuskwood` | 16 | 20 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.vaelgrath` | 32 | 45 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.werewolves` | 17 | 21 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
+| `Quests/Main:indexOf.ashen` | 24 | 37 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.azgor` | 28 | 50 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.banditOrders` | 12 | 13 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.banditRoad` | 11 | 12 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.crypt` | 22 | 32 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.cult` | 20 | 28 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.deepforge` | 27 | 47 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.ents` | 19 | 26 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostpeak` | 29 | 52 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.giants` | 30 | 53 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.glacier` | 31 | 54 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.goblinCamp` | 13 | 15 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.golems` | 26 | 43 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.grimrok` | 15 | 18 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.morvane` | 23 | 35 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.mosshollow` | 14 | 17 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.orcs` | 25 | 40 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.ruins` | 18 | 24 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.swamp` | 21 | 30 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.toDuskwood` | 16 | 20 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.vaelgrath` | 32 | 55 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.werewolves` | 17 | 21 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Quests/Main:STORY_BANDS[1]` | 20 | S103 | S103 (A3): band 20-44 on the story rule (chapter II) |
-| `Quests/Main:STORY_SCALE[1]` | 0,05 | S103 | S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight) |
-| `Quests/Main:STORY_SCALE[20]` | 0,1455 | S103 | S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight) |
+| `Quests/Main:STORY_BANDS[1]` | 20 | S104 | S104 (E1): band 45-69 on the story rule (chapter III) |
+| `Quests/Main:STORY_BANDS[2]` | 45 | S104 | S104 (E1): band 45-69 on the story rule (chapter III) |
+| `Quests/Main:STORY_SCALE[1]` | 0,05 | S104 | S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
+| `Quests/Main:STORY_SCALE[20]` | 0,1455 | S104 | S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
+| `Quests/Main:STORY_SCALE[45]` | 0,1622 | S104 | S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
 | `Quests/Main:STORY_STEP` | 0,05 | S102 | S102 (B2a): story EXP step of the band 1-19 = 0.05 of expToNext per weight (0.25 and 0.15 clamped the window model at MUL_MIN, 0.10 dropped S32.drops.unique.10 to 0.468 < 0.5; 1-19 main is already 42 percent of the band) |
-| `Quests/Main:STORY_WEIGHT.barrow` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.crypt` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.cryptGate` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.cult` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.elderHeart` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.ents` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.frostRuins` | 1 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.frostSign` | 1 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.houseOfVael` | 2,2 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.lostHunters` | 1,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.moonstone` | 1,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.queensLegacy` | 1,5 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.ruins` | 1,6 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.swamp` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.turncoat` | 1,4 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.warCouncil` | 1,5 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.warrenCharms` | 1 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.werewolves` | 1,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.witchCounsel` | 0,8 | S103 | S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
+| `Quests/Main:STORY_WEIGHT.ashRoad` | 1,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ashen` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.barrow` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.burntTemple` | 1,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.coldFire` | 1,5 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.crypt` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.cryptGate` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.cult` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.deadOasis` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.deepforge` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.elderHeart` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.emberCores` | 1,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ents` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.forgeChains` | 1,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.frostRuins` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.frostSign` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.golems` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.houseOfVael` | 2,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.lostHunters` | 1,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.mineDepths` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.moonstone` | 1,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.orcs` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.queensLegacy` | 1,5 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ruins` | 1,6 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.runesOfBinding` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.swamp` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.turncoat` | 1,4 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warCouncil` | 1,5 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warcampCages` | 1,2 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warrenCharms` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.werewolves` | 1,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.witchCounsel` | 0,8 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.wyvernLair` | 1 | S104 | S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:byId.ashRoad.level` | 61 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[1].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[2].n` | 10 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.reward.exp` | 1,922e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.reward.gold` | 2805 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.barrow.level` | 35 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.barrow.objectives[1].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.barrow.objectives[2].n` | 4 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -230,6 +283,20 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.barrow.reward.exp` | 4005 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.barrow.reward.gold` | 1635 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.barrow.reward.items[blessing_warrior_3].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.level` | 57 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[2].n` | 12 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[3].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.exp` | 1,689e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.gold` | 2625 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.items[blessing_sage_3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.level` | 69 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.objectives[2].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.exp` | 3,035e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.gold` | 3165 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.items[blessing_guardian_4].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.level` | 41 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.objectives[1].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.objectives[1].radius` | 22 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -241,6 +308,16 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.cryptGate.reward.exp` | 5407 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.reward.gold` | 1905 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.reward.items[stone_return].n` | 2 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.level` | 47 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].radius` | 12 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].x` | -448 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].z` | 628 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[2].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[2].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[3].n` | 10 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.reward.exp` | 9761 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.reward.gold` | 2175 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.level` | 28 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.objectives[1].hold` | 3 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.objectives[1].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -248,6 +325,21 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.elderHeart.reward.exp` | 2623 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.reward.gold` | 1320 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.reward.items[essence_shard].n` | 2 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.level` | 53 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[1].chance` | 0,4 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[1].n` | 4 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[2].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[2].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.reward.exp` | 1,471e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.reward.gold` | 2445 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.level` | 66 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[1].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[1].n` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[2].n` | 10 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.exp` | 2,232e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.gold` | 3030 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.items[elixir_resFire].n` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.frostRuins.level` | 7 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.frostRuins.objectives[1].n` | 1 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.frostRuins.objectives[1].radius` | 25 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
@@ -291,6 +383,14 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.lostHunters.reward.exp` | 4067 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.lostHunters.reward.gold` | 1095 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.lostHunters.reward.items[blessing_hunter_2].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.level` | 52 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[2].n` | 4 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[3].chance` | 0,25 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.exp` | 1,183e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.gold` | 2400 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.items[stone_map].n` | 2 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.level` | 22 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.objectives[1].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.objectives[2].hold` | 3 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -307,6 +407,12 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.queensLegacy.reward.gold` | 4080 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.queensLegacy.reward.items[blessing_fortune_3].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.queensLegacy.reward.items[essence_crystal].n` | 2 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.level` | 64 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[1].n` | 5 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[2].n` | 4 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.reward.exp` | 1,754e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.reward.gold` | 2940 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.turncoat.level` | 31 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.turncoat.objectives[1].n` | 1 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.turncoat.objectives[1].radius` | 18 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -323,6 +429,13 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.warCouncil.reward.exp` | 586 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warCouncil.reward.gold` | 780 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warCouncil.reward.items[blessing_hunter_2].n` | 1 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
+| `Quests/Main:byId.warcampCages.level` | 49 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[1].hold` | 3 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[2].n` | 8 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.reward.exp` | 1,268e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.reward.gold` | 2265 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.warrenCharms.level` | 14 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warrenCharms.objectives[1].n` | 1 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warrenCharms.objectives[2].n` | 4 | S102 | S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
@@ -338,19 +451,37 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Quests/Main:byId.witchCounsel.reward.exp` | 4917 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.witchCounsel.reward.gold` | 1815 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.witchCounsel.reward.items[potion_hp_4].n` | 5 | S103 | S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
-| `Quests/Main:indexOf.barrow` | 31 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.cryptGate` | 34 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.elderHeart` | 27 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostRuins` | 11 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostSign` | 14 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.houseOfVael` | 25 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.lostHunters` | 23 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.moonstone` | 22 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.queensLegacy` | 36 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.turncoat` | 29 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.warCouncil` | 19 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.warrenCharms` | 16 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.witchCounsel` | 33 | S103 | S103: list positions shifted by the nine chapter II quests, values unchanged |
+| `Quests/Main:byId.wyvernLair.level` | 59 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[1].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[2].n` | 4 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[3].chance` | 0,35 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[3].n` | 2 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.exp` | 1,503e+04 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.gold` | 2715 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.items[blessing_hunter_3].n` | 1 | S104 | S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:indexOf.ashRoad` | 46 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.barrow` | 31 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.burntTemple` | 44 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.coldFire` | 51 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.cryptGate` | 34 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.deadOasis` | 38 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.elderHeart` | 27 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.emberCores` | 42 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.forgeChains` | 49 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostRuins` | 11 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostSign` | 14 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.houseOfVael` | 25 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.lostHunters` | 23 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.mineDepths` | 41 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.moonstone` | 22 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.queensLegacy` | 36 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.runesOfBinding` | 48 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.turncoat` | 29 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warCouncil` | 19 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warcampCages` | 39 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warrenCharms` | 16 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.witchCounsel` | 33 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.wyvernLair` | 45 | S104 | S104: list positions shifted by the ten chapter III quests, values unchanged |
 | `WorldEvents:kinds.champion.duration` | 900 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
 | `WorldEvents:kinds.champion.leash` | 100 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
 | `WorldEvents:kinds.champion.nearbyAreas` | 3 | S101 | new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound |
@@ -423,7 +554,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-3386 kluczy zmienionych od bazy, 0 bez powodu.
+3490 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -916,29 +1047,52 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]` | 12 | 18 | S89 | S89: R6: 12 -> 18 % |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[1]` | 4 | 3 | S89 | S89: R6: 4 -> 3 % max HP (first third 1.56 -> 1.29 of the mean) |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]` | 12 | 9 | S89 | S89: R6: 12 -> 9 % |
-| `Quests/Main:STORY_BANDS[1]` | – | 20 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II) |
-| `Quests/Main:STORY_SCALE[1]` | – | 0,05 | nowy od S102 | S102: S102 (B2a): derived by settleStory (band 1-19 = STORY_STEP); S103: S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight) |
-| `Quests/Main:STORY_SCALE[20]` | – | 0,1455 | nowy od S102 | S102: S102 (B2a): derived by settleStory (band 1-19 = STORY_STEP); S103: S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight) |
+| `Quests/Main:STORY_BANDS[1]` | – | 20 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III) |
+| `Quests/Main:STORY_BANDS[2]` | – | 45 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III) |
+| `Quests/Main:STORY_SCALE[1]` | – | 0,05 | nowy od S102 | S102: S102 (B2a): derived by settleStory (band 1-19 = STORY_STEP); S103: S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight); S104: S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
+| `Quests/Main:STORY_SCALE[20]` | – | 0,1455 | nowy od S102 | S102: S102 (B2a): derived by settleStory (band 1-19 = STORY_STEP); S103: S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight); S104: S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
+| `Quests/Main:STORY_SCALE[45]` | – | 0,1622 | nowy od S102 | S102: S102 (B2a): derived by settleStory (band 1-19 = STORY_STEP); S103: S103: band 20-44 derived by settleStory (TARGET.main of the band minus toDuskwood, by weight); S104: S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted) |
 | `Quests/Main:STORY_STEP` | – | 0,05 | nowy od S102 | S102: S102 (B2a): story EXP step of the band 1-19 = 0.05 of expToNext per weight (0.25 and 0.15 clamped the window model at MUL_MIN, 0.10 dropped S32.drops.unique.10 to 0.468 < 0.5; 1-19 main is already 42 percent of the band) |
-| `Quests/Main:STORY_WEIGHT.barrow` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.crypt` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.cryptGate` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.cult` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.elderHeart` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.ents` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.frostRuins` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.frostSign` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.houseOfVael` | – | 2,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.lostHunters` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.moonstone` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.queensLegacy` | – | 1,5 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.ruins` | – | 1,6 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.swamp` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.turncoat` | – | 1,4 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.warCouncil` | – | 1,5 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.warrenCharms` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.werewolves` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
-| `Quests/Main:STORY_WEIGHT.witchCounsel` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32 |
+| `Quests/Main:STORY_WEIGHT.ashRoad` | – | 1,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ashen` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.barrow` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.burntTemple` | – | 1,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.coldFire` | – | 1,5 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.crypt` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.cryptGate` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.cult` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.deadOasis` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.deepforge` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.elderHeart` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.emberCores` | – | 1,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ents` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.forgeChains` | – | 1,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.frostRuins` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.frostSign` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.golems` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.houseOfVael` | – | 2,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.lostHunters` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.mineDepths` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.moonstone` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.orcs` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.queensLegacy` | – | 1,5 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.ruins` | – | 1,6 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.runesOfBinding` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.swamp` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.turncoat` | – | 1,4 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warCouncil` | – | 1,5 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warcampCages` | – | 1,2 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.warrenCharms` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.werewolves` | – | 1,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.witchCounsel` | – | 0,8 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:STORY_WEIGHT.wyvernLair` | – | 1 | nowy od S102 | S102: S102 (B2a): weights of the chapter I quests: 1 a plain quest, 1.5 the chapter's end (warCouncil); S103: S103 (A3): weights of chapter II: 21-24 1.6-1.8 and houseOfVael 2.2 (the S94 pace model has the band's story EXP on 21-26: monsters give 48-57% there), turncoat 1.4 (window 31-32), queensLegacy 1.5, the rest 0.8; with 1 / 1.2 / 1.5 the compensation hit MUL_MAX on 21-26 and 31-32; S104: S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp |
+| `Quests/Main:byId.ashRoad.level` | – | 61 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[1].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.objectives[2].n` | – | 10 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.reward.exp` | – | 1,922e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashRoad.reward.gold` | – | 2805 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.ashen.reward.exp` | 4,987e+04 | 8988 | S104 | S104: S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.banditOrders.reward.exp` | 4097 | 3961 | S91 | S91: 4097 -> 3961: F1 tempo: banditOrders 0.9 -> 0.87 of level 12 (window 12-13, share 0.61 -> 0.6) |
 | `Quests/Main:byId.banditOrders.reward.gold` | 600 | 1200 | S91 | S91: 600 -> 1200: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
 | `Quests/Main:byId.banditRoad.reward.exp` | 2589 | 2848 | S91 | S91: 2589 -> 2848: F1 tempo: banditRoad 0.8 -> 0.88 of level 10 (window 10-11, share 0.56 -> 0.6) |
@@ -953,6 +1107,20 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.barrow.reward.items[blessing_warrior_3].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.boars.reward.exp` | 1011 | 505 | S91 | S91: 1011 -> 505: F1 tempo: boars 0.8 -> 0.4 of level 6 (level 6 was paid in full, h(6) 0 -> 0.10 h) |
 | `Quests/Main:byId.boars.reward.gold` | 330 | 660 | S91 | S91: 330 -> 660: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
+| `Quests/Main:byId.burntTemple.level` | – | 57 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[2].n` | – | 12 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[3].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.objectives[3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.exp` | – | 1,689e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.gold` | – | 2625 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.burntTemple.reward.items[blessing_sage_3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.level` | – | 69 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.objectives[2].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.exp` | – | 3,035e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.gold` | – | 3165 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.coldFire.reward.items[blessing_guardian_4].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.crypt.reward.exp` | 3,822e+04 | 4450 | S92 | S92: fraction 1 -> 1.6 (F3): h(44) 0.93 -> 0.86 (0.72-0.98), h(37) / h(36) 1.21; S103: S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.cryptGate.level` | – | 41 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.objectives[1].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -966,6 +1134,17 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.cryptGate.reward.gold` | – | 1905 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cryptGate.reward.items[stone_return].n` | – | 2 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.cult.reward.exp` | 2,568e+04 | 2990 | S92 | S92: fraction 1 -> 1.2 (F2, F3): pace 20 -> 45 15.3 -> 14.4 h with swamp and crypt; S103: S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
+| `Quests/Main:byId.deadOasis.level` | – | 47 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].radius` | – | 12 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].x` | – | -448 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[1].z` | – | 628 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[2].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[2].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.objectives[3].n` | – | 10 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.reward.exp` | – | 9761 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deadOasis.reward.gold` | – | 2175 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.deepforge.reward.exp` | 1,018e+05 | 1,652e+04 | S104 | S104: S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.elderHeart.level` | – | 28 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.objectives[1].hold` | – | 3 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.objectives[1].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -973,7 +1152,22 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.elderHeart.reward.exp` | – | 2623 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.reward.gold` | – | 1320 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.elderHeart.reward.items[essence_shard].n` | – | 2 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.level` | – | 53 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[1].chance` | – | 0,4 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[1].n` | – | 4 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[2].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[2].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.objectives[3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.reward.exp` | – | 1,471e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.emberCores.reward.gold` | – | 2445 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.ents.reward.exp` | 2,103e+04 | 2448 | S92 | S92: fraction 1 -> 1.1 (F2): h(27) / h(26) <= 1.19; S103: S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
+| `Quests/Main:byId.forgeChains.level` | – | 66 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[1].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[1].n` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.objectives[2].n` | – | 10 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.exp` | – | 2,232e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.gold` | – | 3030 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.forgeChains.reward.items[elixir_resFire].n` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.frostRuins.level` | – | 7 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.frostRuins.objectives[1].n` | – | 1 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.frostRuins.objectives[1].radius` | – | 25 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
@@ -996,6 +1190,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.gearUp.reward.exp` | 125 | 83 | S91 | S91: 125 -> 83: F1 tempo of the window model: gearUp 0.6 -> 0.4 of level 2 (h(3) > 0, m(8) / m(7) 1.58 -> 1.20) |
 | `Quests/Main:byId.goblinCamp.reward.exp` | 5472 | 5229 | S91 | S91: 5472 -> 5229: F1 tempo: goblinCamp 0.9 -> 0.86 of level 14 (window 14-15, share 0.62 -> 0.6) |
 | `Quests/Main:byId.goblinCamp.reward.gold` | 690 | 1380 | S91 | S91: 690 -> 1380: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
+| `Quests/Main:byId.golems.reward.exp` | 8,111e+04 | 1,316e+04 | S104 | S104: S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.grimrok.reward.exp` | 1,43e+04 | 9534 | S91 | S91: 14301 -> 9534: F1 report variant with the boss quest: grimrok 1.2 -> 0.8 of level 20 (h(20) / h(19) 6.7 -> 1.2, levels 18-19 not free) |
 | `Quests/Main:byId.herbs.reward.exp` | 1338 | 2593 | S91 | S91: 1338 -> 2593: F1 tempo: herbs 0.8 -> 1.55 of level 7 (window 7-9, quest share 0.4 -> 0.6) |
 | `Quests/Main:byId.herbs.reward.gold` | 375 | 750 | S91 | S91: 375 -> 750: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
@@ -1023,6 +1218,14 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.lostHunters.reward.exp` | – | 4067 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.lostHunters.reward.gold` | – | 1095 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.lostHunters.reward.items[blessing_hunter_2].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.level` | – | 52 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[2].n` | – | 4 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[3].chance` | – | 0,25 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.objectives[3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.exp` | – | 1,183e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.gold` | – | 2400 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.mineDepths.reward.items[stone_map].n` | – | 2 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.level` | – | 22 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.objectives[1].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.moonstone.objectives[2].hold` | – | 3 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -1033,6 +1236,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.moonstone.reward.items[potion_hp_3].n` | – | 5 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.mosshollow.reward.exp` | 7820 | 1,486e+04 | S91 | S91: 7820 -> 14858: F1 tempo: mosshollow 1 -> 1.9 of level 16 (window 16-19 without the boss quest, share 0.41 -> 0.6; h(16..19) 0.30-0.34 -> 0.21-0.23 h) |
 | `Quests/Main:byId.mosshollow.reward.gold` | 780 | 1560 | S91 | S91: 780 -> 1560: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
+| `Quests/Main:byId.orcs.reward.exp` | 6,768e+04 | 1,098e+04 | S104 | S104: S104: story budget, chapter III (share of TARGET.main of band 45-69 by weight) |
 | `Quests/Main:byId.queensLegacy.level` | – | 44 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.queensLegacy.objectives[1].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.queensLegacy.objectives[2].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -1042,6 +1246,12 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.queensLegacy.reward.items[blessing_fortune_3].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.queensLegacy.reward.items[essence_crystal].n` | – | 2 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.ruins.reward.exp` | 1,683e+04 | 3918 | S92 | S92: fraction 1 -> 1.4 (F2): h(24) / h(23) 1.32 -> 1.22; S103: S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
+| `Quests/Main:byId.runesOfBinding.level` | – | 64 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[1].n` | – | 5 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[2].n` | – | 4 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.objectives[3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.reward.exp` | – | 1,754e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.runesOfBinding.reward.gold` | – | 2940 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.swamp.reward.exp` | 3,077e+04 | 3582 | S92 | S92: fraction 1 -> 1.3 (F2, F3): h(33) / h(32) 1.15; S103: S103: story budget, chapter II (share of TARGET.main of band 20-44 by weight) |
 | `Quests/Main:byId.turncoat.level` | – | 31 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
 | `Quests/Main:byId.turncoat.objectives[1].n` | – | 1 | nowy od S103 | S103: S103 main story: chapter II quest (docs/FABULA.md §2.3), reward = STORY_SCALE[20] x expToNext(level) x weight (settleStory), gold(level) (queensLegacy gold(44) x 2), items of the plan (A4); level between the old quests of the chapter |
@@ -1059,6 +1269,13 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.warCouncil.reward.exp` | – | 586 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warCouncil.reward.gold` | – | 780 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warCouncil.reward.items[blessing_hunter_2].n` | – | 1 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
+| `Quests/Main:byId.warcampCages.level` | – | 49 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[1].hold` | – | 3 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[2].n` | – | 8 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.objectives[3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.reward.exp` | – | 1,268e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.warcampCages.reward.gold` | – | 2265 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
 | `Quests/Main:byId.warrenCharms.level` | – | 14 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warrenCharms.objectives[1].n` | – | 1 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
 | `Quests/Main:byId.warrenCharms.objectives[2].n` | – | 4 | nowy od S102 | S102: S102 main story: chapter I quest (docs/FABULA.md §2.2), reward = STORY_STEP x expToNext(level) x weight (settleStory), gold(level); level = the window start of the quest before it (herbs 7, banditOrders 12, goblinCamp 14, mosshollow 16) so the pace windows of the old story stay whole |
@@ -1078,41 +1295,59 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Main:byId.wolfFangs.reward.exp` | 493 | 617 | S91 | S91: 493 -> 617: F1 tempo: wolfFangs 0.8 -> 1 of level 4 (quest share of 4-5 about 0.6, as every window from 4) |
 | `Quests/Main:byId.wolfFangs.reward.gold` | 240 | 480 | S91 | S91: 240 -> 480: F4 gold(L) x2 of the quests 4-16 (more quest EXP = fewer kills: +1..+3 / level income at 4-8 1.06-1.19 -> 0.88-0.99, band <= 1.05) |
 | `Quests/Main:byId.wolves.reward.exp` | 268 | 76 | S91 | S91: 268 -> 76: F1 tempo: wolves 0.7 -> 0.2 of level 3 (the tutorial pays 1.6 levels; h(3) 0 -> 0.05 h, m(8) / m(7) <= 1.30) |
-| `Quests/Main:indexOf.ashen` | 24 | 37 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.azgor` | 28 | 41 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.banditOrders` | 12 | 13 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.banditRoad` | 11 | 12 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.barrow` | – | 31 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.crypt` | 22 | 32 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.cryptGate` | – | 34 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.cult` | 20 | 28 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.deepforge` | 27 | 40 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.elderHeart` | – | 27 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.ents` | 19 | 26 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostRuins` | – | 11 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostSign` | – | 14 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.frostpeak` | 29 | 42 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.giants` | 30 | 43 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.glacier` | 31 | 44 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.goblinCamp` | 13 | 15 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.golems` | 26 | 39 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.grimrok` | 15 | 18 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.houseOfVael` | – | 25 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.lostHunters` | – | 23 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.moonstone` | – | 22 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.morvane` | 23 | 35 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.mosshollow` | 14 | 17 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.orcs` | 25 | 38 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.queensLegacy` | – | 36 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.ruins` | 18 | 24 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.swamp` | 21 | 30 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.toDuskwood` | 16 | 20 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.turncoat` | – | 29 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.vaelgrath` | 32 | 45 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.warCouncil` | – | 19 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.warrenCharms` | – | 16 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.werewolves` | 17 | 21 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
-| `Quests/Main:indexOf.witchCounsel` | – | 33 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged |
+| `Quests/Main:byId.wyvernLair.level` | – | 59 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[1].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[2].n` | – | 4 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[3].chance` | – | 0,35 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.objectives[3].n` | – | 2 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.exp` | – | 1,503e+04 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.gold` | – | 2715 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:byId.wyvernLair.reward.items[blessing_hunter_3].n` | – | 1 | nowy od S104 | S104: S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter |
+| `Quests/Main:indexOf.ashRoad` | – | 46 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.ashen` | 24 | 37 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.azgor` | 28 | 50 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.banditOrders` | 12 | 13 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.banditRoad` | 11 | 12 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.barrow` | – | 31 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.burntTemple` | – | 44 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.coldFire` | – | 51 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.crypt` | 22 | 32 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.cryptGate` | – | 34 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.cult` | 20 | 28 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.deadOasis` | – | 38 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.deepforge` | 27 | 47 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.elderHeart` | – | 27 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.emberCores` | – | 42 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.ents` | 19 | 26 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.forgeChains` | – | 49 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostRuins` | – | 11 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostSign` | – | 14 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.frostpeak` | 29 | 52 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.giants` | 30 | 53 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.glacier` | 31 | 54 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.goblinCamp` | 13 | 15 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.golems` | 26 | 43 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.grimrok` | 15 | 18 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.houseOfVael` | – | 25 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.lostHunters` | – | 23 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.mineDepths` | – | 41 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.moonstone` | – | 22 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.morvane` | 23 | 35 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.mosshollow` | 14 | 17 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.orcs` | 25 | 40 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.queensLegacy` | – | 36 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.ruins` | 18 | 24 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.runesOfBinding` | – | 48 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.swamp` | 21 | 30 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.toDuskwood` | 16 | 20 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.turncoat` | – | 29 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.vaelgrath` | 32 | 55 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warCouncil` | – | 19 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warcampCages` | – | 39 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.warrenCharms` | – | 16 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.werewolves` | 17 | 21 | S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.witchCounsel` | – | 33 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
+| `Quests/Main:indexOf.wyvernLair` | – | 45 | nowy od S102 | S102: S102: list positions shifted by inserted story quests, values unchanged; S103: S103: list positions shifted by the nine chapter II quests, values unchanged; S104: S104: list positions shifted by the ten chapter III quests, values unchanged |
 | `Quests/Side:STABLE_MIN` | – | 20 | nowy od S96 | S96: the stable arc is offered from level 20 (= Config.Mount.minLevel) |
 | `Quests/Side:byArc.stable[side_stable_harness].level` | – | 21 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
 | `Quests/Side:byArc.stable[side_stable_harness].minLevel` | – | 20 | nowy od S96 | S96: new stable arc 21-22 (taken from 20 through minLevel, 1-20 untouched): 0.1 of a level's EXP per quest (the mount is the reward; S98 budgets the arc), gold as side quests (gold(level)), 3 harness pieces at 40%, 6 bears, a 3 s use, reach the stable within 14 studs |
@@ -3838,7 +4073,7 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 | 30 | 2941 | 55,7 | 300 | 331 → 509 | 90,0 | 25 681 |
 | 35 | 3849 | 64,0 | 350 | 414 → 592 | 105,0 | 34 399 |
 | 40 | 4864 | 72,3 | 400 | 507 → 589 | 120,0 | 44 316 |
-| 45 | 5982 | 80,5 | 450 | 588 | 135,0 | 55 416 |
+| 45 | 5982 | 80,5 | 450 | 588 → 662 | 135,0 | 55 416 |
 
 ### 1 na 1 z potworem poziomu (G1) (20-45)
 
@@ -4690,10 +4925,10 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Hunter 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Mage 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Cleric 44: +1…+3 / dochód poziomu | 0,51 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Warrior 45: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Hunter 45: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Mage 45: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
-| Cleric 45: +1…+3 / dochód poziomu | 0,56 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Warrior 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Hunter 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Mage 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
+| Cleric 45: +1…+3 / dochód poziomu | 0,53 | ≤ 1,05 | w paśmie | S92 (asertowane) |
 | Warrior: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
 | Hunter: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
 | Mage: backpack_80 (od 25.) / dochód poziomu | 7,36 | 3,00–8,00 | w paśmie | S92 (asertowane) |
@@ -4961,12 +5196,12 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 45 | 5982 | 80,5 | 450 | 588 | 135,0 | 55 416 |
-| 50 | 7193 | 88,7 | 500 | 667 | 150,0 | 67 684 |
-| 55 | 8500 | 96,8 | 550 | 761 | 165,0 | 81 109 |
-| 60 | 9901 | 105,0 | 600 | 847 | 180,0 | 95 680 |
-| 65 | 11 395 | 113,0 | 650 | 944 | 195,0 | 111 386 |
-| 70 | 12 979 | 121,1 | 700 | 1036 | 210,0 | 128 218 |
+| 45 | 5982 | 80,5 | 450 | 588 → 662 | 135,0 | 55 416 |
+| 50 | 7193 | 88,7 | 500 | 667 → 772 | 150,0 | 67 684 |
+| 55 | 8500 | 96,8 | 550 | 761 → 813 | 165,0 | 81 109 |
+| 60 | 9901 | 105,0 | 600 | 847 → 905 | 180,0 | 95 680 |
+| 65 | 11 395 | 113,0 | 650 | 944 → 953 | 195,0 | 111 386 |
+| 70 | 12 979 | 121,1 | 700 | 1036 → 1047 | 210,0 | 128 218 |
 
 ### 1 na 1 z potworem poziomu (G1) (45-70)
 
@@ -5031,13 +5266,13 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 45 salamander | 602 | 51,4 | 0,00 | 100% | 78% | 0,00 | 0,00 | 0,00 |
-| 50 wasteHyena | 698 | 54,6 | 0,00 | 100% | 80% | 0,00 | 0,00 | 0,00 |
-| 55 fireGolem | 1461 | 67,3 | 0,00 | 100% | 73% | 0,00 | 0,00 | 0,00 |
-| 60 desertScorpion | 887 | 53,8 | 1,42 | 12% | 80% | 1,10 | 0,29 | 1,30 |
-| 65 basilisk | 1083 | 57,2 | 0,79 | 51% | 77% | 0,70 | 0,18 | 0,74 |
-| suma pasma | – | – | 26,2 | – | – | 23,5 | 5,8 | 25,6 |
-| suma z bossami w zadaniach | – | – | 24,2 | – | – | – | – | – |
+| 45 salamander | 602 → 678 | 51,4 | 0,00 → 0,84 | 100% → 28% | 78% | 0,00 → 0,75 | 0,00 → 0,18 | 0,00 → 0,80 |
+| 50 wasteHyena | 698 → 808 | 54,6 | 0,00 → 0,91 | 100% → 28% | 80% | 0,00 → 0,79 | 0,00 → 0,18 | 0,00 → 0,84 |
+| 55 fireGolem | 1461 → 1560 | 67,3 | 0,00 → 0,70 | 100% → 28% | 73% | 0,00 → 0,80 | 0,00 → 0,19 | 0,00 → 0,95 |
+| 60 desertScorpion | 887 → 947 | 53,8 | 1,42 → 1,33 | 12% | 80% | 1,10 → 1,03 | 0,29 → 0,27 | 1,30 → 1,22 |
+| 65 basilisk | 1083 → 1093 | 57,2 | 0,79 | 51% | 77% | 0,70 → 0,69 | 0,18 | 0,74 |
+| suma pasma | – | – | 26,2 → 26,3 | – | – | 23,5 → 23,8 | 5,8 → 5,9 | 25,6 → 25,9 |
+| suma z bossami w zadaniach | – | – | 24,2 → 24,4 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 25,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (45-70)
@@ -5046,13 +5281,23 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
-| 45 | 49 874 | 0 | 0 | 24 936 | 45% | 2285 |
-| 50 | 67 684 | 0 | 0 | 30 456 | 45% | 2530 |
-| 55 | 81 109 | 0 | 0 | 36 498 | 45% | 2775 |
+| 45 | 49 874 → 8988 | 0 | 0 | 24 936 | 45% | 2285 |
+| 47 | 9761 | 0 | 0 | 27 081 | 45% | 2383 |
+| 49 | 12 677 | 0 | 0 | 29 310 | 45% | 2481 |
+| 50 | 67 684 → 10 977 | 0 | 0 | 30 456 | 45% | 2530 |
+| 52 | 11 826 | 0 | 0 | 32 811 | 45% | 2628 |
+| 53 | 14 714 | 0 | 0 | 34 020 | 45% | 2677 |
+| 55 | 81 109 → 13 155 | 0 | 0 | 36 498 | 45% | 2775 |
+| 57 | 16 894 | 0 | 0 | 39 060 | 45% | 2873 |
+| 59 | 15 030 | 0 | 0 | 41 703 | 45% | 2971 |
 | 60 | 0 | 0 | 0 | 43 056 | 45% | 260 |
-| 62 | 101 826 | 0 | 0 | 45 819 | 45% | 3118 |
+| 61 | 19 215 | 0 | 0 | 44 427 | 45% | 3069 |
+| 62 | 101 826 → 16 515 | 0 | 0 | 45 819 | 45% | 3118 |
+| 64 | 17 541 | 0 | 0 | 48 669 | 45% | 3216 |
 | 65 | 0 | 0 | 0 | 50 121 | 45% | 4757 |
+| 66 | 22 316 | 0 | 0 | 51 597 | 45% | 3314 |
 | 68 | 0 | 0 | 153 861 | 54 606 | 45% | 9922 |
+| 69 | 30 353 | 0 | 0 | 56 142 | 45% | 3461 |
 
 ### Premia za różne klasy (poziom 55) (45-70)
 
@@ -5060,10 +5305,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 78 146 | 26,2 |
-| 3 × Wojownik | 1,00 | 78 146 | 26,2 |
-| Wojownik + Łowca + Mag | 1,10 | 89 262 | 24,0 |
-| cztery klasy | 1,15 | 96 428 | 22,5 |
+| solo (Wojownik) | 1,00 | 78 146 → 83 455 | 26,2 → 26,3 |
+| 3 × Wojownik | 1,00 | 78 146 → 83 455 | 26,2 → 26,3 |
+| Wojownik + Łowca + Mag | 1,10 | 89 262 → 95 326 | 24,0 → 24,1 |
+| cztery klasy | 1,15 | 96 428 → 102 979 | 22,5 → 22,6 |
 
 ### Ekonomia (Wojownik) (45-70)
 
@@ -5353,7 +5598,7 @@ Globalne (G): 163/163 w paśmie; regionu: 179/179 w paśmie.
 | morvane faza 3: shadowBoltFast (tempo / odnowienie) | 0,57 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | morvane faza 3: curseField (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | morvane faza 3: deathRing (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| 45–70: godzin (cel D4 25 h) | 26,16 | 18,75–31,25 | w paśmie | S87 (asertowane) |
+| 45–70: godzin (cel D4 25 h) | 26,29 | 18,75–31,25 | w paśmie | S87 (asertowane) |
 | ashen_mine ashOrc 46 Warrior: Elita HP | 0,77 | 0,45–1,10 | w paśmie | S93 (asertowane) |
 | ashen_mine ashOrc 46 Warrior: spotkanie Elit (q = 0.25) | 1,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
 | ashen_mine ashOrc 46 Hunter: Elita HP | 0,77 | 0,45–1,10 | w paśmie | S93 (asertowane) |
@@ -5562,8 +5807,8 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 | Ognisty Chochlik: HP/EXP ÷ średnia regionu | 1,14 | 1,12 | ≤ 1,25 |
 | Tempo 45 → 70 (okno): h | 26,14 | 26,14 | 21,25–28,75 |
 | Tempo: h(69) / największy krok h(L) / h(L − 1) | 1,23 / 1,07 (L55) | 1,23 / 1,07 | 0,98–1,32 / ≤ 1,30 |
-| Plecak 130 (od 50.): poziomy dochodu | 13,2 | 5,1 | 3–8 |
-| +1…+3 broni / dochód poziomu (46–69) | 0,56–0,74 | 0,55–0,70 | ≤ 1,05 |
+| Plecak 130 (od 50.): poziomy dochodu | 13,2 | 4,9 | 3–8 |
+| +1…+3 broni / dochód poziomu (46–69) | 0,56–0,74 | 0,53–0,66 | ≤ 1,05 |
 | Mikstury łańcuchowe / dochód (46–69) | 0,36–1,00 | 0,28–0,82 | 0,15–0,30 (górna: raport) |
 | D5 (K0): Unikaty dla klasy na h expienia | 2,90–4,17 | 2,61–3,68 | 2–4 |
 | Części: rodzaje z częścią / części w przepisach 45–70 / eliksir ognia | 8/13 / 0/6 / 30 | 13/13 / 6/6 / 45 | 13/13 / 6/6 / 45 |
@@ -5771,41 +6016,41 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | 44 | 0,86 | 1,02 | 0,84 | 1,07 | 0,28 |
 | 45 | 0,87 | 1,01 | 0,85 | 0,91 | 0,87 |
 | 46 | 0,89 | 1,02 | 0,86 | 0,93 | 0,89 |
-| 47 | 0,90 | 1,01 | 0,87 | 0,94 | 0,90 |
+| 47 | 0,90 | 1,02 | 0,87 | 0,94 | 0,90 |
 | 48 | 0,91 | 1,01 | 0,89 | 0,95 | 0,91 |
 | 49 | 0,93 | 1,01 | 0,90 | 1,01 | 0,93 |
 | 50 | 0,91 | 0,98 | 0,91 | 0,99 | 0,91 |
 | 51 | 0,92 | 1,01 | 0,91 | 0,87 | 0,92 |
 | 52 | 0,93 | 1,01 | 0,92 | 1,02 | 0,93 |
-| 53 | 0,95 | 1,01 | 0,93 | 1,03 | 0,95 |
+| 53 | 0,94 | 1,01 | 0,93 | 1,03 | 0,94 |
 | 54 | 0,96 | 1,01 | 0,93 | 1,04 | 0,96 |
 | 55 | 1,03 | 1,07 | 0,96 | 0,76 | 1,03 |
 | 56 | 1,04 | 1,01 | 0,98 | 0,77 | 1,04 |
 | 57 | 1,05 | 1,01 | 1,00 | 0,78 | 1,05 |
-| 58 | 1,07 | 1,01 | 1,03 | 1,17 | 1,07 |
+| 58 | 1,06 | 1,01 | 1,03 | 1,17 | 1,06 |
 | 59 | 1,08 | 1,01 | 1,05 | 1,17 | 1,08 |
 | 60 | 1,08 | 1,00 | 1,06 | 1,18 | 1,08 |
 | 61 | 1,09 | 1,01 | 1,07 | 1,17 | 1,09 |
-| 62 | 1,16 | 1,06 | 1,09 | 1,24 | 1,06 |
-| 63 | 1,17 | 1,01 | 1,12 | 1,25 | 1,07 |
-| 64 | 1,18 | 1,01 | 1,14 | 1,26 | 1,08 |
-| 65 | 1,18 | 1,00 | 1,16 | 1,26 | 1,08 |
-| 66 | 1,20 | 1,01 | 1,18 | 1,28 | 1,09 |
-| 67 | 1,21 | 1,01 | 1,19 | 1,16 | 1,10 |
-| 68 | 1,22 | 1,01 | 1,20 | 1,18 | 0,88 |
-| 69 | 1,23 | 1,01 | 1,21 | 1,19 | 0,89 |
-| 70 | 1,23 | 1,00 | 1,22 | 1,32 | 0,89 |
+| 62 | 1,16 | 1,06 | 1,09 | 1,24 | 1,16 |
+| 63 | 1,17 | 1,01 | 1,12 | 1,25 | 1,17 |
+| 64 | 1,18 | 1,01 | 1,14 | 1,26 | 1,18 |
+| 65 | 1,18 | 1,00 | 1,16 | 1,26 | 1,18 |
+| 66 | 1,20 | 1,01 | 1,18 | 1,28 | 1,15 |
+| 67 | 1,21 | 1,01 | 1,19 | 1,17 | 1,16 |
+| 68 | 1,22 | 1,01 | 1,20 | 1,18 | 0,00 |
+| 69 | 1,23 | 1,01 | 1,21 | 1,19 | 0,61 |
+| 70 | 1,23 | 1,00 | 1,22 | 1,32 | 1,23 |
 
-Suma 45 → 70: 26,14 h (rodzaj regionu 26,50 h, z Azgorem 24,84 h); h(70) / h(69) = 1,00 (stosunki 70–99: S94).
+Suma 45 → 70: 26,14 h (rodzaj regionu 26,50 h, z Azgorem 24,20 h); h(70) / h(69) = 1,00 (stosunki 70–99: S94).
 
 ### Premia za różne klasy (tylko raport, S93)
 
 | drużyna 3 osób | mnożnik EXP | EXP/h członka |
 | --- | --: | --: |
-| 55: Warrior + Warrior + Warrior | 1,00 | 7,815e+04 |
-| 55: Warrior + Hunter + Mage | 1,10 | 8,926e+04 |
-| 65: Warrior + Warrior + Warrior | 1,00 | 6,811e+04 |
-| 65: Warrior + Hunter + Mage | 1,10 | 7,47e+04 |
+| 55: Warrior + Warrior + Warrior | 1,00 | 8,346e+04 |
+| 55: Warrior + Hunter + Mage | 1,10 | 9,533e+04 |
+| 65: Warrior + Warrior + Warrior | 1,00 | 6,875e+04 |
+| 65: Warrior + Hunter + Mage | 1,10 | 7,54e+04 |
 
 ### Mikstury łańcuchowe ÷ dochód (S93, I2; górna granica 30% w raporcie, dolna 15% asertowana)
 
@@ -5830,8 +6075,8 @@ Chroniony +9 Legendarnej broni Wojownika (`Balance.protectedFlow`): złoto uleps
 
 | ilvl | złoto ulepszeń | zwoje | Rdzenie Legendy | złoto zwojów | poziomy dochodu |
 | --- | --: | --: | --: | --: | --: |
-| 50 | 247 414 | 18,3 | 8,3 | 57 430 | 20,6 |
-| 60 | 356 283 | 18,3 | 8,3 | 57 430 | 18,3 |
+| 50 | 247 414 | 18,3 | 8,3 | 57 430 | 19,5 |
+| 60 | 356 283 | 18,3 | 8,3 | 57 430 | 17,4 |
 | 70 | 484 941 | 18,3 | 8,3 | 57 430 | 17,2 |
 
 ### D5 ze szczęściem (tylko raport, S93)
@@ -5975,7 +6220,7 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 70 | 12 979 | 121,1 | 700 | 1036 | 210,0 | 128 218 |
+| 70 | 12 979 | 121,1 | 700 | 1036 → 1047 | 210,0 | 128 218 |
 | 75 | 14 740 | 129,1 | 750 | 1122 | 225,0 | 146 169 |
 | 80 | 16 603 | 137,0 | 800 | 1226 | 240,0 | 165 230 |
 | 85 | 18 568 | 144,9 | 850 | 1322 | 255,0 | 185 394 |
@@ -6052,13 +6297,13 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 70 iceWolf | 1073 | 51,3 | 1,50 | 12% | 79% | 1,59 | 0,32 | 1,41 |
+| 70 iceWolf | 1073 → 1084 | 51,3 | 1,50 → 1,48 | 12% | 79% | 1,59 → 1,58 | 0,32 → 0,31 | 1,41 → 1,39 |
 | 75 snowLeopard | 1186 | 59,5 | 1,79 | 12% | 80% | 1,46 | 0,35 | 1,47 |
 | 80 peakHarpy | 1136 | 49,3 | 0,00 | 100% | 79% | 0,00 | 0,00 | 0,00 |
 | 85 iceMammoth | 1909 | 59,6 | 1,42 | 12% | 76% | 1,23 | 0,35 | 1,57 |
 | 90 dragonspawn | 1684 | 63,6 | 1,91 | 12% | 80% | 1,55 | 0,39 | 1,63 |
 | 95 frostWyrm | 2016 | 60,5 | 0,75 | 60% | 77% | 0,71 | 0,17 | 0,76 |
-| suma pasma | – | – | 42,6 | – | – | 37,6 | 9,4 | 41,1 |
+| suma pasma | – | – | 42,6 | – | – | 37,6 → 37,5 | 9,4 | 41,1 → 41,0 |
 | suma z bossami w zadaniach | – | – | 39,6 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 41,0 | – | – | – | – | – |
 
@@ -6456,7 +6701,7 @@ Globalne (G): 240/240 w paśmie; regionu: 188/188 w paśmie.
 | vaelgrath faza 3: tailSwipe (tempo / odnowienie) | 0,60 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 3: blizzard (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 3: glacialRing (tempo / odnowienie) | 0,53 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| 70–100: godzin (cel D4 41 h) | 42,62 | 30,75–51,25 | w paśmie | S87 (asertowane) |
+| 70–100: godzin (cel D4 41 h) | 42,59 | 30,75–51,25 | w paśmie | S87 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S94 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: spotkanie Elit (q = 0.25) | 1,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
 | frostpeak_grotto yeti 71 Hunter: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S94 (asertowane) |
@@ -6678,8 +6923,8 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Lodowy Żywiołak: HP/EXP ÷ średnia regionu | 1,11 | 1,20 | ≤ 1,25 |
 | Tempo 70 → 100 (okno): h | 40,89 | 40,96 | 34,9–47,2 |
 | Tempo: h(99) / największy krok h(L) / h(L − 1) na 70–99 | 1,66 / (h(92) = 0: okno `glacier` tylko na 92.) | 1,47 / 1,05 | 1,36–1,84 / ≤ 1,30 |
-| Tempo 1 → 100 (okno): h | 84,05 | 84,09 | 69,7–94,3 |
-| Plecak 160 (od 65.) / 200 (od 80.): poziomy dochodu | 21,7 / 33,8 | 7,5 / 7,7 | 5–12 |
+| Tempo 1 → 100 (okno): h | 84,05 | 84,08 | 69,7–94,3 |
+| Plecak 160 (od 65.) / 200 (od 80.): poziomy dochodu | 21,7 / 33,8 | 7,1 / 7,7 | 5–12 |
 | +1…+3 broni / dochód poziomu (71–99) | 0,63–0,84 | 0,62–0,82 | ≤ 1,05 |
 | Mikstury łańcuchowe / dochód (71–99) | 0,38–1,45 | 0,33–1,04 | 0,15–0,30 (górna: raport) |
 | Złoto za 1 HP: Potężna − Wielka | 0,125 | 0,005 | ≥ 0 |
@@ -6883,9 +7128,9 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 
 | poziom | h | h / h(L − 1) | m | h rodzaj regionu | h z Vaelgrathem |
 | --- | --: | --: | --: | --: | --: |
-| 69 | 1,23 | 1,01 | 1,21 | 1,19 | 0,89 |
-| 70 | 1,23 | 1,00 | 1,22 | 1,32 | 0,89 |
-| 71 | 1,24 | 1,01 | 1,23 | 1,33 | 0,90 |
+| 69 | 1,23 | 1,01 | 1,21 | 1,19 | 0,61 |
+| 70 | 1,23 | 1,00 | 1,22 | 1,32 | 1,23 |
+| 71 | 1,25 | 1,01 | 1,23 | 1,33 | 1,25 |
 | 72 | 1,22 | 0,98 | 1,23 | 1,30 | 1,22 |
 | 73 | 1,23 | 1,01 | 1,23 | 1,32 | 1,23 |
 | 74 | 1,24 | 1,01 | 1,24 | 1,33 | 1,24 |
@@ -6920,11 +7165,11 @@ h = godziny na poziom (rodzaj zwykły, odpoczynek, zadania główne bez bossów 
 | --- | --: | --: |
 | 1 → 20 | 2,60 | 1,72 |
 | 20 → 45 | 14,38 | 12,88 |
-| 45 → 70 | 26,14 | 24,84 |
-| 70 → 100 | 40,96 | 37,23 |
-| 1 → 100 | 84,09 | 76,68 |
+| 45 → 70 | 26,14 | 24,20 |
+| 70 → 100 | 40,96 | 37,93 |
+| 1 → 100 | 84,08 | 76,73 |
 
-Zadanie `vaelgrath` oddaje 371 503 EXP (z Vaelgrathem w oknie −3,73 h na 70 → 100); okno zadania `deepforge` (62–71) daje na 70.–71. 22% EXP zadań tego okna.
+Zadanie `vaelgrath` oddaje 371 503 EXP (z Vaelgrathem w oknie −3,03 h na 70 → 100); okno zadania `deepforge` (62–71) daje na 70.–71. 23% EXP zadań tego okna.
 
 ### Premia za różne klasy (tylko raport, S94)
 
@@ -8050,30 +8295,30 @@ Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.le
 | Łowca · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
 | Mag · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
 | Kapłan · 40 | 10 292 → 12 921 | 0,59 → 0,47 | 3,20 → 2,55 | **13,9 → 11,1** | 99,5 → 79,3 | 995 → 793 | 33,9 → 27,0 | 18,3 |
-| Wojownik · 45 | 14 487 → 13 927 | 0,54 → 0,56 | 2,91 → 3,03 | 12,6 → 13,1 | 90,5 → 94,2 | 905 → 942 | 26,9 → 27,9 | 18,3 |
-| Łowca · 45 | 14 487 → 13 927 | 0,54 → 0,56 | 2,91 → 3,03 | 12,6 → 13,1 | 90,5 → 94,2 | 905 → 942 | 26,9 → 27,9 | 18,3 |
-| Mag · 45 | 14 487 → 13 927 | 0,54 → 0,56 | 2,91 → 3,03 | 12,6 → 13,1 | 90,5 → 94,2 | 905 → 942 | 26,9 → 27,9 | 18,3 |
-| Kapłan · 45 | 14 487 → 13 927 | 0,54 → 0,56 | 2,91 → 3,03 | 12,6 → 13,1 | 90,5 → 94,2 | 905 → 942 | 26,9 → 27,9 | 18,3 |
-| Wojownik · 50 | 15 806 → 14 779 | 0,61 → 0,65 | 3,32 → 3,56 | 14,4 → 15,4 | 103,4 → 110,6 | 1034 → 1106 | 27,5 → 29,4 | 18,3 |
-| Łowca · 50 | 15 806 → 14 779 | 0,61 → 0,65 | 3,32 → 3,56 | 14,4 → 15,4 | 103,4 → 110,6 | 1034 → 1106 | 27,5 → 29,4 | 18,3 |
-| Mag · 50 | 15 806 → 14 779 | 0,61 → 0,65 | 3,32 → 3,56 | 14,4 → 15,4 | 103,4 → 110,6 | 1034 → 1106 | 27,5 → 29,4 | 18,3 |
-| Kapłan · 50 | 15 806 → 14 779 | 0,61 → 0,65 | 3,32 → 3,56 | 14,4 → 15,4 | 103,4 → 110,6 | 1034 → 1106 | 27,5 → 29,4 | 18,3 |
-| Wojownik · 55 | 17 057 → 17 228 | 0,69 → 0,68 | 3,76 → 3,72 | 16,3 → 16,1 | 116,8 → 115,6 | 1168 → 1156 | 28,4 → 28,1 | 18,3 |
-| Łowca · 55 | 17 057 → 17 228 | 0,69 → 0,68 | 3,76 → 3,72 | 16,3 → 16,1 | 116,8 → 115,6 | 1168 → 1156 | 28,4 → 28,1 | 18,3 |
-| Mag · 55 | 17 057 → 17 228 | 0,69 → 0,68 | 3,76 → 3,72 | 16,3 → 16,1 | 116,8 → 115,6 | 1168 → 1156 | 28,4 → 28,1 | 18,3 |
-| Kapłan · 55 | 17 057 → 17 228 | 0,69 → 0,68 | 3,76 → 3,72 | 16,3 → 16,1 | 116,8 → 115,6 | 1168 → 1156 | 28,4 → 28,1 | 18,3 |
-| Wojownik · 60 | 22 441 → 22 667 | 0,63 → 0,62 | 3,42 → 3,38 | 14,8 → 14,7 | 106,3 → 105,3 | 1063 → 1053 | 24,0 → 23,8 | 18,3 |
-| Łowca · 60 | 22 441 → 22 667 | 0,63 → 0,62 | 3,42 → 3,38 | 14,8 → 14,7 | 106,3 → 105,3 | 1063 → 1053 | 24,0 → 23,8 | 18,3 |
-| Mag · 60 | 22 441 → 22 667 | 0,63 → 0,62 | 3,42 → 3,38 | 14,8 → 14,7 | 106,3 → 105,3 | 1063 → 1053 | 24,0 → 23,8 | 18,3 |
-| Kapłan · 60 | 22 441 → 22 667 | 0,63 → 0,62 | 3,42 → 3,38 | 14,8 → 14,7 | 106,3 → 105,3 | 1063 → 1053 | 24,0 → 23,8 | 18,3 |
-| Wojownik · 65 | 23 297 → 24 811 | 0,71 → 0,67 | 3,89 → 3,65 | 16,9 → 15,8 | 120,8 → 113,5 | 1208 → 1135 | 25,7 → 24,1 | 18,3 |
-| Łowca · 65 | 23 297 → 24 811 | 0,71 → 0,67 | 3,89 → 3,65 | 16,9 → 15,8 | 120,8 → 113,5 | 1208 → 1135 | 25,7 → 24,1 | 18,3 |
-| Mag · 65 | 23 297 → 24 811 | 0,71 → 0,67 | 3,89 → 3,65 | 16,9 → 15,8 | 120,8 → 113,5 | 1208 → 1135 | 25,7 → 24,1 | 18,3 |
-| Kapłan · 65 | 23 297 → 24 811 | 0,71 → 0,67 | 3,89 → 3,65 | 16,9 → 15,8 | 120,8 → 113,5 | 1208 → 1135 | 25,7 → 24,1 | 18,3 |
-| Wojownik · 70 | 31 285 → 31 508 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,1 | 1048 → 1041 | 21,2 → 21,1 | 18,3 |
-| Łowca · 70 | 31 285 → 31 508 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,1 | 1048 → 1041 | 21,2 → 21,1 | 18,3 |
-| Mag · 70 | 31 285 → 31 508 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,1 | 1048 → 1041 | 21,2 → 21,1 | 18,3 |
-| Kapłan · 70 | 31 285 → 31 508 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,1 | 1048 → 1041 | 21,2 → 21,1 | 18,3 |
+| Wojownik · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
+| Łowca · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
+| Mag · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
+| Kapłan · 45 | 14 487 → 14 586 | 0,54 → 0,53 | 2,91 → 2,89 | 12,6 → 12,5 | 90,5 → 89,9 | 905 → 899 | 26,9 → 26,7 | 18,3 |
+| Wojownik · 50 | 15 806 → 15 598 | 0,61 → 0,62 | 3,32 → 3,37 | 14,4 → 14,6 | 103,4 → 104,8 | 1034 → 1048 | 27,5 → 27,8 | 18,3 |
+| Łowca · 50 | 15 806 → 15 598 | 0,61 → 0,62 | 3,32 → 3,37 | 14,4 → 14,6 | 103,4 → 104,8 | 1034 → 1048 | 27,5 → 27,8 | 18,3 |
+| Mag · 50 | 15 806 → 15 598 | 0,61 → 0,62 | 3,32 → 3,37 | 14,4 → 14,6 | 103,4 → 104,8 | 1034 → 1048 | 27,5 → 27,8 | 18,3 |
+| Kapłan · 50 | 15 806 → 15 598 | 0,61 → 0,62 | 3,32 → 3,37 | 14,4 → 14,6 | 103,4 → 104,8 | 1034 → 1048 | 27,5 → 27,8 | 18,3 |
+| Wojownik · 55 | 17 057 → 18 200 | 0,69 → 0,65 | 3,76 → 3,52 | 16,3 → 15,3 | 116,8 → 109,5 | 1168 → 1095 | 28,4 → 26,6 | 18,3 |
+| Łowca · 55 | 17 057 → 18 200 | 0,69 → 0,65 | 3,76 → 3,52 | 16,3 → 15,3 | 116,8 → 109,5 | 1168 → 1095 | 28,4 → 26,6 | 18,3 |
+| Mag · 55 | 17 057 → 18 200 | 0,69 → 0,65 | 3,76 → 3,52 | 16,3 → 15,3 | 116,8 → 109,5 | 1168 → 1095 | 28,4 → 26,6 | 18,3 |
+| Kapłan · 55 | 17 057 → 18 200 | 0,69 → 0,65 | 3,76 → 3,52 | 16,3 → 15,3 | 116,8 → 109,5 | 1168 → 1095 | 28,4 → 26,6 | 18,3 |
+| Wojownik · 60 | 22 441 → 23 811 | 0,63 → 0,59 | 3,42 → 3,22 | 14,8 → 14,0 | 106,3 → 100,2 | 1063 → 1002 | 24,0 → 22,6 | 18,3 |
+| Łowca · 60 | 22 441 → 23 811 | 0,63 → 0,59 | 3,42 → 3,22 | 14,8 → 14,0 | 106,3 → 100,2 | 1063 → 1002 | 24,0 → 22,6 | 18,3 |
+| Mag · 60 | 22 441 → 23 811 | 0,63 → 0,59 | 3,42 → 3,22 | 14,8 → 14,0 | 106,3 → 100,2 | 1063 → 1002 | 24,0 → 22,6 | 18,3 |
+| Kapłan · 60 | 22 441 → 23 811 | 0,63 → 0,59 | 3,42 → 3,22 | 14,8 → 14,0 | 106,3 → 100,2 | 1063 → 1002 | 24,0 → 22,6 | 18,3 |
+| Wojownik · 65 | 23 297 → 26 162 | 0,71 → 0,64 | 3,89 → 3,46 | 16,9 → 15,0 | 120,8 → 107,6 | 1208 → 1076 | 25,7 → 22,9 | 18,3 |
+| Łowca · 65 | 23 297 → 26 162 | 0,71 → 0,64 | 3,89 → 3,46 | 16,9 → 15,0 | 120,8 → 107,6 | 1208 → 1076 | 25,7 → 22,9 | 18,3 |
+| Mag · 65 | 23 297 → 26 162 | 0,71 → 0,64 | 3,89 → 3,46 | 16,9 → 15,0 | 120,8 → 107,6 | 1208 → 1076 | 25,7 → 22,9 | 18,3 |
+| Kapłan · 65 | 23 297 → 26 162 | 0,71 → 0,64 | 3,89 → 3,46 | 16,9 → 15,0 | 120,8 → 107,6 | 1208 → 1076 | 25,7 → 22,9 | 18,3 |
+| Wojownik · 70 | 31 285 → 31 519 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,0 | 1048 → 1040 | 21,2 → 21,1 | 18,3 |
+| Łowca · 70 | 31 285 → 31 519 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,0 | 1048 → 1040 | 21,2 → 21,1 | 18,3 |
+| Mag · 70 | 31 285 → 31 519 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,0 | 1048 → 1040 | 21,2 → 21,1 | 18,3 |
+| Kapłan · 70 | 31 285 → 31 519 | 0,62 | 3,37 → 3,35 | 14,6 → 14,5 | 104,8 → 104,0 | 1048 → 1040 | 21,2 → 21,1 | 18,3 |
 | Wojownik · 75 | 31 626 → 30 775 | 0,71 → 0,73 | 3,84 → 3,95 | 16,7 → 17,1 | 119,5 → 122,8 | 1195 → 1228 | 23,2 → 23,8 | 18,3 |
 | Łowca · 75 | 31 626 → 30 775 | 0,71 → 0,73 | 3,84 → 3,95 | 16,7 → 17,1 | 119,5 → 122,8 | 1195 → 1228 | 23,2 → 23,8 | 18,3 |
 | Mag · 75 | 31 626 → 30 775 | 0,71 → 0,73 | 3,84 → 3,95 | 16,7 → 17,1 | 119,5 → 122,8 | 1195 → 1228 | 23,2 → 23,8 | 18,3 |
@@ -9230,12 +9475,12 @@ Ulepszanie u stajennego (`Data/Mounts.UPGRADE`, ten sam koszt dla każdego wierz
 | 2 → 3 | 25 | 2000 | 4075 | 0,49 | 12 werewolf_claw (werewolf: 27) | ×1,69 | 1,5 |
 | 3 → 4 | 30 | 2500 | 5462 | 0,46 | 20 werewolf_claw (werewolf: 45), 10 ectoplasm (forestWraith: 23) | ×1,73 | 1,5 |
 | 4 → 5 | 40 | 6000 | 12 921 | 0,46 | 20 ectoplasm (forestWraith: 45) | ×1,78 | 1,0 |
-| 5 → 6 | 50 | 8500 | 14 779 | 0,58 | 15 salamander_scale (salamander: 34) | ×1,82 | 1,0 |
-| 6 → 7 | 60 | 12 500 | 22 667 | 0,55 | 15 salamander_scale (salamander: 34), 15 magma_shard (ashOrc: 34) | ×1,87 | 1,0 |
-| 7 → 8 | 70 | 22 000 | 31 508 | 0,70 | 20 magma_shard (fireGolem: 45), 10 yeti_fur (iceWolf: 23) | ×1,91 | 1,0 |
+| 5 → 6 | 50 | 8500 | 15 598 | 0,54 | 15 salamander_scale (salamander: 34) | ×1,82 | 1,0 |
+| 6 → 7 | 60 | 12 500 | 23 811 | 0,52 | 15 salamander_scale (salamander: 34), 15 magma_shard (ashOrc: 34) | ×1,87 | 1,0 |
+| 7 → 8 | 70 | 22 000 | 31 519 | 0,70 | 20 magma_shard (fireGolem: 45), 10 yeti_fur (iceWolf: 23) | ×1,91 | 1,0 |
 | 8 → 9 | 80 | 25 500 | 37 106 | 0,69 | 25 yeti_fur (iceWolf: 56) | ×1,96 | 1,0 |
 | 9 → 10 | 90 | 32 000 | 47 059 | 0,68 | 20 yeti_fur (yeti: 45), 15 frost_scale (iceElemental: 34) | ×2,00 | 1,0 |
-| 1 → 10 |  | 112 500 |  | 5,31 |  |  |  |
+| 1 → 10 |  | 112 500 |  | 5,25 |  |  |  |
 
 Wierzchowce z bossów (`Data/Mounts.BOSS_DROPS`): osobny rzut każdego zwycięzcy, bez drabiny zabić dnia i bez szczęścia.
 
@@ -9256,7 +9501,7 @@ Udział EXP zadań w paśmie, model (poboczne × SIDE_SHARE):
 | --- | --: | --: | --: | --: | --: |
 | 1–19 | 42% | 20% | 2% | 12% | 76% |
 | 20–44 | 10% | 0% | 2% | 12% | 24% |
-| 45–69 | 13% | 0% | 2% | 12% | 27% |
+| 45–69 | 9% | 0% | 2% | 12% | 23% |
 | 70–99 | 10% | 0% | 2% | 12% | 24% |
 | cel | 10% | 6% | 2% | 12% | 30% |
 
@@ -9266,7 +9511,7 @@ Udział EXP zadań w paśmie, gracz robi wszystko (poboczne w całości):
 | --- | --: | --: | --: | --: | --: |
 | 1–19 | 42% | 40% | 2% | 12% | 95% |
 | 20–44 | 10% | 1% | 2% | 12% | 25% |
-| 45–69 | 13% | 0% | 2% | 12% | 27% |
+| 45–69 | 9% | 0% | 2% | 12% | 23% |
 | 70–99 | 10% | 0% | 2% | 12% | 24% |
 | cel | 10% | 6% | 2% | 12% | 30% |
 
@@ -9284,12 +9529,12 @@ Poza budżetem (w ułamku `expToNext` poziomu postaci, nagroda liczona przy odbi
 | 30 | 1.187 | 0,45 | 1,40 |
 | 35 | 1.141 | 0,45 | 1,40 |
 | 40 | 0.962 | 0,45 | 1,40 |
-| 45 | 0.832 | 0,45 | 1,40 |
-| 50 | 0.828 | 0,45 | 1,40 |
-| 55 | 0.839 | 0,45 | 1,40 |
-| 60 | 0.839 | 0,45 | 1,40 |
-| 65 | 0.847 | 0,45 | 1,40 |
-| 70 | 0.847 | 0,45 | 1,40 |
+| 45 | 0.936 | 0,45 | 1,40 |
+| 50 | 0.958 | 0,45 | 1,40 |
+| 55 | 0.896 | 0,45 | 1,40 |
+| 60 | 0.896 | 0,45 | 1,40 |
+| 65 | 0.855 | 0,45 | 1,40 |
+| 70 | 0.856 | 0,45 | 1,40 |
 | 75 | 0.842 | 0,45 | 1,40 |
 | 80 | 0.849 | 0,45 | 1,40 |
 | 85 | 0.849 | 0,45 | 1,40 |
@@ -9343,9 +9588,9 @@ Nagroda za wydarzenie (`Logic/WorldEvents.reward`, zwycięstwo, poziom wydarzeni
 | 20 | Mag | 498 | 2,21% | 720 | 5,98% | 2,6 |
 | 30 | Mag | 815 | 0,87% | 1080 | 5,03% | 1,0 |
 | 40 | Wojownik | 1163 | 1,54% | 1440 | 6,12% | 1,8 |
-| 50 | Mag | 1531 | 1,83% | 1800 | 6,95% | 2,2 |
-| 60 | Mag | 1919 | 1,78% | 2160 | 6,44% | 2,1 |
-| 70 | Mag | 2324 | 1,70% | 2520 | 5,90% | 2,0 |
+| 50 | Mag | 1531 | 1,58% | 1800 | 6,95% | 1,9 |
+| 60 | Mag | 1919 | 1,67% | 2160 | 6,44% | 2,0 |
+| 70 | Mag | 2324 | 1,68% | 2520 | 5,90% | 2,0 |
 | 80 | Mag | 2744 | 1,81% | 2880 | 6,83% | 2,2 |
 | 90 | Mag | 3175 | 1,80% | 3240 | 6,48% | 2,2 |
 | 100 | Mag | 3620 | 1,27% | 3600 | 5,65% | 1,5 |
@@ -13098,7 +13343,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 20,2 s.
+Tabele S86 liczą się 19,7 s.
 
 ## Poprawki globalne (S87)
 
@@ -13296,8 +13541,8 @@ G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0
 | 20 | 0,71 | 16,7 | 113,0 |
 | 25 | 0,54 | 12,8 | 63,5 |
 | 30 | 0,60 | 14,2 | 52,0 |
-| 45 | 0,56 | 13,1 | 27,9 |
-| 60 | 0,62 | 14,7 | 23,8 |
+| 45 | 0,53 | 12,5 | 26,7 |
+| 60 | 0,59 | 14,0 | 22,6 |
 | 70 | 0,62 | 14,5 | 21,1 |
 | 80 | 0,69 | 16,2 | 21,8 |
 | 100 | 0,70 | 16,5 | 20,1 |
@@ -13315,7 +13560,7 @@ Legenda +9: Rdzenie Legendy od +7 → od +8 i zwoje ochrony:
 | pasmo | godzin (Wojownik, z zadaniami) | cel D4 ±25% |
 | --- | --: | --: |
 | 20–45 | 15,0 | 10,5–17,5 |
-| 45–70 | 26,2 | 18,8–31,2 |
+| 45–70 | 26,3 | 18,8–31,2 |
 | 70–100 | 42,6 | 30,8–51,2 |
 
 Krzywa `expToNext` zostaje neutralna (1 / 1 / 1): sama krzywa potworów wydłużyła pasma; 20–45 ponad celem idzie do S92 (kotwica 45 nie może zejść poniżej 1).

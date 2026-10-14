@@ -159,9 +159,14 @@ local function Minimap(scope: Scope, props: Props): Instance
 
 	local current: MapSketch.Sketch? = nil
 	local npcMarks: { [string]: TextLabel } = {}
-	-- Quest marks over the NPC glyphs (S25), refreshed when the quests change.
+	local npcGlyphs: { [string]: TextLabel } = {}
+	-- Quest marks over the NPC glyphs (S25), refreshed when the quests change. S104: NPCs the character does not see
+	-- yet (NpcMarkState.Hidden) have no glyph.
 	local function applyMarks()
 		local marks = Fusion.peek(NpcMarkState.Marks)
+		for npcId, label in npcGlyphs do
+			label.Visible = not NpcMarkState.isHidden(npcId)
+		end
 		for npcId, label in npcMarks do
 			local style = NpcMarkState.style(marks[npcId] :: any)
 			label.Visible = style ~= nil
@@ -252,10 +257,11 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 		end
 		table.clear(npcMarks)
+		table.clear(npcGlyphs)
 		for _, npc in Npcs.list do
 			if npc.map == id and not npc.decoration then
 				local p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z)
-				glyph(canvas, npc.icon, "#F2E8C9", p, 18, 2)
+				npcGlyphs[npc.id] = glyph(canvas, npc.icon, "#F2E8C9", p, 18, 2)
 				local mark = glyph(canvas, "", "#E8C25A", p - Vector2.new(0, 14), 18, 3)
 				mark.FontFace = Theme.Fonts.Heading
 				mark.TextStrokeTransparency = 0.1

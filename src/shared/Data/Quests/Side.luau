@@ -49,6 +49,10 @@ local FX = {
 	frostbreak = true, -- the frost rune on the Moon Glade's menhir cracked, rime scattered, the silver light back
 	heartglow = true, -- a warm golden glow in the Elder Tree's crack, the ice shard melted into a puddle
 	sealbreak = true, -- the cult's seal on the Crypt Gate shattered on the ground, a torn chain
+	-- S104 (story chapter III, the Ashen Wastes and Deepforge):
+	cageOpen = true, -- the door of an orc cage torn off and leant on the ground, a broken padlock
+	rune = true, -- a slate with a glowing blue rune and its light (the Sleeping Colossus; S107 uses it too)
+	chains = true, -- two open shackles on the ground, one broken in halves, and a run of links from the post
 }
 
 local list: { SideQuest } = {}

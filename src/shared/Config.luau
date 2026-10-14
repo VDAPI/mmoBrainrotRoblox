@@ -202,6 +202,8 @@ local Config = {
 			potion_hp_3 = 2,
 			potion_hp_4 = 2,
 			potion_mana_3 = 2,
+			-- S104: chapter III (the Ashen Wastes, 45-70): one fire resistance elixir before the Wyvern Lair
+			elixir_resFire = 1,
 		},
 	},
 	-- NPC comments during quests (S101b, Logic/Barks + BarkController; client only, no effect on play). Seconds

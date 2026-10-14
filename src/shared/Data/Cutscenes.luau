@@ -7,6 +7,8 @@
 -- or a spirit, half-transparent in a cold light) and wear a crown (FIGURES.queen); Brother Anzelm stands by the
 -- captain as a figure (the city NPC stays in the temple). Shots on a cave map (the Tomb of Morvane) take the ground
 -- from Logic/CaveTerrain, not a ray from the sky.
+-- S104: the nine scenes of chapter III "Cold Fire" (the Ashen Wastes and Deepforge); speakers without an NPC: the freed
+-- smith and the freed villager of the burnt town (WHO); Brother Anzelm stands by the smith Dorgan at the chapter's end.
 
 local Npcs = require("./Npcs")
 
@@ -54,6 +56,9 @@ export type Scene = {
 local WHO: { [string]: string } = {
 	ilvar = "cutscene.who.ilvar",
 	queen = "cutscene.who.queen", -- S103: the spirit of Queen Morvane after the fight (not the boss any more)
+	-- S104: the captives freed in Deepforge (forgeChains)
+	freedSmith = "cutscene.who.freedSmith",
+	freedVillager = "cutscene.who.freedVillager",
 }
 
 -- Looks of the figures (colours of the robe, the hood and the trim).
@@ -79,17 +84,22 @@ local function figure(
 	return { look = look, x = x, z = z, facing = facing, fade = fade, ghost = ghost }
 end
 
--- S103: Brother Anzelm as a figure 3.5 studs to the captain's left (both facing the camera of an "npc" shot).
-local function besideCaptain(): Figure
-	local captain = assert(Npcs.get("captain"), "captain")
-	local r = math.rad(captain.facing)
-	-- the captain's left: his front (-sin, -cos) turned 90 degrees
+-- S103: Brother Anzelm as a figure 3.5 studs to an NPC's left (both facing the camera of an "npc" shot); S104: by any
+-- city NPC (the smith Dorgan at the end of chapter III).
+local function anzelmBeside(npcId: string): Figure
+	local npc = assert(Npcs.get(npcId), npcId)
+	local r = math.rad(npc.facing)
+	-- the NPC's left: its front (-sin, -cos) turned 90 degrees
 	local lx, lz = -math.cos(r), math.sin(r)
-	return figure("anzelm", captain.position.x + lx * 3.5, captain.position.z + lz * 3.5, captain.facing, "none")
+	return figure("anzelm", npc.position.x + lx * 3.5, npc.position.z + lz * 3.5, npc.facing, "none")
 end
 
--- The seven scenes of chapter I "The Frost Sign" and (S103) the ten of chapter II "The Forgotten House" (order =
--- playing order when several are queued).
+local function besideCaptain(): Figure
+	return anzelmBeside("captain")
+end
+
+-- The seven scenes of chapter I "The Frost Sign", (S103) the ten of chapter II "The Forgotten House" and (S104) the
+-- nine of chapter III "Cold Fire" (order = playing order when several are queued).
 local list: { Scene } = {
 	{
 		-- the chapter card over the city when the first quest is taken
@@ -367,6 +377,175 @@ local list: { Scene } = {
 			line("captain", "cutscene.queensLegacy.l4"),
 		},
 		title = "story.chapter.2.end",
+	},
+	-- S104: chapter III "Cold Fire" (the Ashen Wastes and Deepforge) -----------------------------------------------
+	{
+		-- the chapter card over the Ribcage Gate, the eye from the south-west over the portals' road, the glow of the
+		-- Glowing Pit behind the ribs
+		id = "ch3_title",
+		kind = "chapter",
+		quest = "ashen",
+		on = "objective",
+		index = 1,
+		shot = {
+			kind = "point",
+			map = "ashen",
+			x = -612,
+			z = 0,
+			yaw = 145,
+			dist = 44,
+			height = 12,
+			lift = 8,
+			push = 10,
+			orbit = 6,
+		},
+		title = "cutscene.ch3_title.title",
+		subtitle = "story.chapter.3",
+		lines = { line(nil, "cutscene.ch3_title.l1"), line(nil, "cutscene.ch3_title.l2") },
+	},
+	{
+		-- the cages from the warcamp's yard side, the war drum behind them
+		id = "ch3_cages",
+		kind = "scene",
+		quest = "warcampCages",
+		on = "objective",
+		index = 1,
+		shot = { kind = "point", map = "ashen", x = -350, z = -520, yaw = 140, dist = 30, height = 9, lift = 3 },
+		lines = {
+			line("shaman_ghasha", "cutscene.ch3_cages.l1"),
+			line("shaman_ghasha", "cutscene.ch3_cages.l2"),
+			line(nil, "cutscene.ch3_cages.l3"),
+		},
+	},
+	{
+		-- the bell tower seen from the square, the smoke over it thinning
+		id = "ch3_bell",
+		kind = "scene",
+		quest = "burntTemple",
+		on = "objective",
+		index = 3,
+		shot = {
+			kind = "point",
+			map = "ashen",
+			x = 214,
+			z = 604,
+			yaw = 90,
+			dist = 48,
+			height = 10,
+			lift = 14,
+			orbit = 4,
+			push = 8,
+		},
+		lines = {
+			line("hermit_kaspar", "cutscene.ch3_bell.l1"),
+			line("hermit_kaspar", "cutscene.ch3_bell.l2"),
+			line(nil, "cutscene.ch3_bell.l3"),
+		},
+	},
+	{
+		-- the nest mesa seen from the Wyvern Crags at dusk (no figure: the camera and the lines)
+		id = "ch3_wyvern",
+		kind = "scene",
+		quest = "wyvernLair",
+		on = "turnIn",
+		shot = {
+			kind = "point",
+			map = "ashen",
+			x = 724,
+			z = -500,
+			yaw = 133,
+			dist = 70,
+			height = 24,
+			lift = 16,
+			orbit = 8,
+		},
+		clock = 20,
+		lines = { line("scout_ashen", "cutscene.ch3_wyvern.l1"), line("scout_ashen", "cutscene.ch3_wyvern.l2") },
+	},
+	{
+		-- a short card at the Gate of the Deep: the eye in the first hall looking west at the gate and the stone kings
+		id = "ch3_forge",
+		kind = "chapter",
+		quest = "deepforge",
+		on = "objective",
+		index = 1,
+		shot = {
+			kind = "point",
+			map = "ashen_cave",
+			x = -250,
+			z = 0,
+			yaw = 270,
+			dist = 30,
+			height = 7,
+			lift = 6,
+			orbit = 4,
+			push = 6,
+		},
+		title = "cutscene.ch3_forge.title",
+		subtitle = "cutscene.ch3_forge.subtitle",
+		lines = { line(nil, "cutscene.ch3_forge.l1") },
+	},
+	{
+		-- Brokk by the Ribcage Gate, the runes on the spearhead lighting up blue, the ribs behind him
+		id = "ch3_runes",
+		kind = "scene",
+		quest = "runesOfBinding",
+		on = "turnIn",
+		shot = { kind = "npc", npc = "runesmith_brokk", dist = 9, height = 3, lift = 4.5, orbit = 10 },
+		light = { color = "#6FB8FF", range = 14 },
+		lines = {
+			line("runesmith_brokk", "cutscene.ch3_runes.l1"),
+			line("runesmith_brokk", "cutscene.ch3_runes.l2"),
+			line(nil, "cutscene.ch3_runes.l3"),
+		},
+	},
+	{
+		-- the freed captives walking from the Heart of the Forge towards the Great Forge and the way out
+		id = "ch3_freed",
+		kind = "scene",
+		quest = "forgeChains",
+		on = "objective",
+		index = 1,
+		shot = {
+			kind = "point",
+			map = "ashen_cave",
+			x = 60,
+			z = 0,
+			yaw = 270,
+			dist = 46,
+			height = 9,
+			lift = 5,
+			orbit = 0,
+			push = 10,
+		},
+		lines = { line("freedSmith", "cutscene.ch3_freed.l1"), line("freedVillager", "cutscene.ch3_freed.l2") },
+	},
+	{
+		-- Azgor's furnace goes out (the arena of the dungeon: the shot is over the player)
+		id = "ch3_azgor",
+		kind = "scene",
+		quest = "azgor",
+		on = "objective",
+		index = 1,
+		shot = { kind = "self", dist = 22, height = 14, orbit = 40 },
+		lines = { line(nil, "cutscene.ch3_azgor.l1"), line("boss:azgor", "cutscene.ch3_azgor.l2") },
+	},
+	{
+		-- the end of chapter III: Dorgan's forge at night, sparks, the spearhead on the shaft, Anzelm beside him
+		id = "ch3_end",
+		kind = "scene",
+		quest = "coldFire",
+		on = "turnIn",
+		shot = { kind = "npc", npc = "blacksmith", dist = 10, height = 3, lift = 4.5, orbit = 8 },
+		figures = { anzelmBeside("blacksmith") },
+		light = { color = "#FF8A3A", range = 16 },
+		clock = 22,
+		lines = {
+			line("blacksmith", "cutscene.ch3_end.l1"),
+			line("brother_anzelm", "cutscene.ch3_end.l2"),
+			line("captain", "cutscene.ch3_end.l3"),
+		},
+		title = "story.chapter.3.end",
 	},
 }
 

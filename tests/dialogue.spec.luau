@@ -33,6 +33,18 @@ local NEW_QUESTS: { [string]: { string } } = {
 		"cryptGate",
 		"queensLegacy",
 	},
+	S104 = {
+		"deadOasis",
+		"warcampCages",
+		"mineDepths",
+		"emberCores",
+		"burntTemple",
+		"wyvernLair",
+		"ashRoad",
+		"runesOfBinding",
+		"forgeChains",
+		"coldFire",
+	},
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -41,6 +53,7 @@ local NEW_QUESTS: { [string]: { string } } = {
 local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S102 = { { chapter = 1 } },
 	S103 = { { chapter = 2 } },
+	S104 = { { chapter = 3 } },
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.
@@ -98,6 +111,8 @@ local BARKS_ONLY: { [string]: { string } } = {
 	},
 	-- S103: the old quests of story chapter II
 	S103 = { "toDuskwood", "werewolves", "ruins", "ents", "cult", "swamp", "crypt", "morvane" },
+	-- S104: the old quests of story chapter III
+	S104 = { "ashen", "orcs", "golems", "deepforge", "azgor" },
 }
 
 -- Existing quests that got answers, page variants and a companion in S101b (every effect kind is in the data).
@@ -348,7 +363,8 @@ describe("Dialogue: answers (S101b T1)", function()
 
 	it("every gift is a small consumable that exists", function()
 		for id, n in Config.Dialogue.gifts do
-			expect(string.match(id, "^potion_") ~= nil).toBe(true)
+			-- S104: an elixir too (elixir_resFire before the Wyvern Lair)
+			expect(string.match(id, "^potion_") ~= nil or string.match(id, "^elixir_") ~= nil).toBe(true)
 			expect(n >= 1 and n <= 5).toBe(true)
 		end
 	end)
@@ -851,5 +867,88 @@ describe("Dialogue in story chapter II (S103)", function()
 		expect(ragna.during).toEqual({ 2, 3 })
 		expect(Barks.validate()).toEqual({})
 		expect(#BARKS_ONLY.S103).toBe(8)
+	end)
+end)
+
+describe("Dialogue in story chapter III (S104)", function()
+	local Locale = require("../src/shared/Util/Locale")
+	local Maps = require("../src/shared/Data/Maps")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local T = assert(RegionTerrain.get("ashen"))
+	local function has(key: string): boolean
+		return Locale.has(key, "pl") and Locale.has(key, "en")
+	end
+
+	it("the answers of the plan: pages, effects, hints on dry ground of the Wastes, the elixir gift", function()
+		local want: { [string]: { page: number, effects: { [string]: string } } } = {
+			deadOasis = { page = 2, effects = {} },
+			warcampCages = { page = 2, effects = { gate = "focus", cages = "hint" } },
+			mineDepths = { page = 2, effects = {} },
+			emberCores = { page = 1, effects = { colossus = "focus" } },
+			burntTemple = { page = 2, effects = { way = "hint" } },
+			wyvernLair = { page = 2, effects = { heat = "item" } },
+			ashRoad = { page = 3, effects = { hunt = "focus" } },
+			runesOfBinding = { page = 2, effects = { where = "hint" } },
+			forgeChains = { page = 2, effects = { smiths = "focus" } },
+			coldFire = { page = 2, effects = { dorgan = "focus", anzelm = "focus" } },
+		}
+		for id, row in want do
+			local quest = assert(Quests.Main.get(id), id)
+			local page = assert(Dialogue.choicePage(quest), id)
+			expect(`{id} {page.page}`).toBe(`{id} {row.page}`)
+			for _, option in page.options do
+				local effect: any = option.effect
+				expect(`{id}.{option.id} {if effect then effect.kind else "none"}`).toBe(
+					`{id}.{option.id} {row.effects[option.id] or "none"}`
+				)
+				if effect and effect.kind == "hint" then
+					local map = assert(Maps.get(effect.map))
+					expect(effect.map).toBe("ashen")
+					expect(math.abs(effect.x) <= map.size.x / 2 and math.abs(effect.z) <= map.size.z / 2).toBe(true)
+					expect(T.isWater(effect.x, effect.z)).toBe(false)
+					expect(T.walkable(effect.x, effect.z)).toBe(true)
+					expect(has(effect.place)).toBe(true)
+				elseif effect and effect.kind == "item" then
+					expect(Config.Dialogue.gifts[effect.id] ~= nil).toBe(true)
+				end
+			end
+		end
+		expect(Config.Dialogue.gifts.elixir_resFire).toBe(1)
+	end)
+
+	it("recall picks the variants of warcampCages, emberCores, runesOfBinding, forgeChains and coldFire", function()
+		local function key(id: string, page: string, said: { [string]: string }): string
+			return Dialogue.pageKey(assert(Quests.Main.get(id)), page, quests({ said = said }), has)
+		end
+		expect(key("warcampCages", "p1", { deadOasis = "count" })).toBe("quest.warcampCages.p1.count")
+		expect(key("warcampCages", "p1", { deadOasis = "notes" })).toBe("quest.warcampCages.p1")
+		expect(key("emberCores", "p3", { deadOasis = "notes" })).toBe("quest.emberCores.p3.notes")
+		expect(key("runesOfBinding", "done", { emberCores = "why" })).toBe("quest.runesOfBinding.done.why")
+		expect(key("forgeChains", "p1", { warcampCages = "gate" })).toBe("quest.forgeChains.p1.gate")
+		expect(key("coldFire", "p3", { burntTemple = "empty" })).toBe("quest.coldFire.p3.empty")
+		expect(key("coldFire", "p3", { burntTemple = "way" })).toBe("quest.coldFire.p3")
+	end)
+
+	it("Brokk leads deadOasis and follows forgeChains in Deepforge; comments of the old five", function()
+		local oasis = assert(Quests.Main.get("deadOasis"))
+		local lead = assert(oasis.companion, "lead")
+		expect(lead.npc).toBe("runesmith_brokk")
+		expect(lead.mode).toBe("lead")
+		expect(lead.during).toEqual({ 1 })
+		expect(lead.map).toBe("ashen")
+		expect(oasis.objectives[1].type).toBe("escort")
+		expect(oasis.objectives[1].npc).toBe("runesmith_brokk")
+		local chains = assert(Quests.Main.get("forgeChains"))
+		local follow = assert(chains.companion, "follow")
+		expect(follow.npc).toBe("runesmith_brokk")
+		expect(follow.mode).toBe("follow")
+		expect(follow.map).toBe("ashen_cave")
+		expect(follow.from ~= nil).toBe(true)
+		expect(Barks.validate()).toEqual({})
+		expect(Dialogue.validate()).toEqual({})
+		expect(#BARKS_ONLY.S104).toBe(5)
+		-- the companion lines of both (S101b: one variant picked per event)
+		expect(Barks.compCount(oasis, "arrive")).toBe(2)
+		expect(Barks.compCount(chains, "join")).toBe(1)
 	end)
 end)

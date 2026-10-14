@@ -62,8 +62,8 @@ local function standable(mapId: string, x: number, z: number): (number, number)
 	return x, z
 end
 
--- Map and point of a target name: an area id, an NPC place ("farmer" or "npc:farmer"), a quest anchor id or a
--- building site of a map with sites.
+-- Map and point of a target name: an area id, an NPC place ("farmer" or "npc:farmer"), a quest anchor id (S104: also
+-- in a cave) or a building site of a map with sites.
 local function resolve(target: string): (string?, number?, number?)
 	local name = string.gsub(target, "^npc:", "")
 	for mapId, data in Areas.byMap do
@@ -92,6 +92,11 @@ local function resolve(target: string): (string?, number?, number?)
 			return mapId, x, z
 		end
 	end
+	-- S104: the quest anchors inside caves (Areas.anchorById: the map is the cave), e.g. /tparea forge_chain_2
+	local anchor, caveId = Areas.anchorById(target)
+	if anchor and caveId then
+		return caveId, anchor.x + 3, anchor.z + 3
+	end
 	return nil, nil, nil
 end
 
@@ -113,6 +118,11 @@ commands.tparea = function(player, args)
 			end
 			for name in (data.sites or {}) :: { [string]: Areas.Site } do
 				table.insert(names, name)
+			end
+		end
+		for _, cave in Areas.caves.list do
+			for _, anchor in (cave.questAnchors or {}) :: { Areas.QuestAnchor } do
+				table.insert(names, anchor.id)
 			end
 		end
 		table.sort(names)

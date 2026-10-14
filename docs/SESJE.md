@@ -7246,3 +7246,139 @@ Pliki: `src/shared/Data/Quests/{Main,Side}.luau`, `src/shared/Data/Areas/{Types,
 
 Uproszczenia: linia imienia (F2) czyta klucz ogłoszenia ostatniej fazy zamiast atrybutu `Phase` (ten sam moment, ten
 sam komponent); Oswin w scenie `houseOfVael` tylko głosem (figury NPC w scenach nie ma).
+
+### S104: Fabuła, rozdział III „Zimny Ogień” (Spalone Pustkowia, 45–70)
+
+Start na `43b9e74` (S103): commity i sekcje S101b, S102, S103, pliki `FABULA.md`, `DESIGN-15.md`, `Data/QuestBudget`,
+`tools/quest_budget.luau`, `tools/balance_reasons.luau` na miejscu; `scripts/check` zielony (6247 testów). Mechanizmy
+S101b–S103 użyte bez przebudowy (lista w DECYZJE „S104 mechanizmy”); różnica wobec planu: komentarz `near` nie ma
+wariantu na kotwicę, więc trzy linie Brokka przy słupach losują się i pasują przy każdym słupie. Migawki przed w
+`build/` (`s104_budget_before.txt`, `s104_nodes_before.json`, `s104_wikidump_before.txt`).
+
+Co zrobiono:
+- **Questy (B1):** rozdział III ma 15 questów (10 nowych, `wiki = false`, strony 3, `coldFire` 4), pięć starych z tymi
+  samymi id, celami, dającymi, złotem i przedmiotami, ze stronami i komentarzami; pomocnik `useAll` (cel `use` z
+  trzema kotwicami Kuźni); łańcuch giver → turnIn od `queensLegacy` do `frostpeak` bez przerwy.
+- **NPC (B6, D3):** Runmistrz Brokk (`story`), Szamanka Ghasha i Brat Kaspar (`talk`) przez `regionfolk("ashen", …)`;
+  nowe `NpcDef.showFrom` i czysty `Logic/NpcVisibility` (`visible`, `visibleId`, `hiddenIds`, `visibleIds`): Brokk od
+  `deadOasis`, Ghasha od `warcampCages`. Klient: `NpcMarkState.Hidden`, `NpcController` (przezroczystość lokalna,
+  tabliczka, monit, zamknięcie okien), mapa świata (`Canvas`, karta `Cards.npc`), minimapa; `NpcMarks` bez znaku nad
+  ukrytym; serwer: `QuestService` (`talk`, `accept`, `turnIn`, `say`) i `SideQuestService` odrzucają ukrytego NPC.
+- **Mapa i jaskinia (B3–B5, D1, D2):** `atSite`, `npcSpots` (3) i `questAnchors` (5) w `Areas/ashen` (wszystko w
+  istniejących kołach `avoid`), kotwice `forge_chain_1..3` w `Areas/Caves` (`ashen_cave`); polany w `dataClearings`;
+  rekwizyty `RunesmithCamp`, `ShamanRest` (`AshenGen/Flats`), `HermitThreshold` (`AshenGen/Ruins`), słupy jeńców
+  `CaptivePost_*` na końcu `CaveDress/Forge` (pozycje z `questAnchors` jaskini); `/tparea` znajduje kotwice jaskiń.
+- **Efekty (D5):** `cageOpen`, `rune`, `chains` w `Side.FX` i `QuestAnchorController`.
+- **Przerywniki (C2):** dziewięć scen w `Data/Cutscenes`, mówcy `WHO.freedSmith` / `freedVillager`, pomocnik
+  `anzelmBeside(npcId)` (Anzelm obok Dorgana), `story.chapter.3.end`.
+- **Rozmowy (H):** wybory i komentarze dziesięciu nowych questów, komentarze pięciu starych, Brokk `lead` w `deadOasis`
+  (cel `escort`) i `follow` w `forgeChains` (Kuźnia), `recall` w `warcampCages` (p1), `emberCores` (p3),
+  `runesOfBinding` (done), `forgeChains` (p1), `coldFire` (p3); `elixir_resFire = 1` w `Config.Dialogue.gifts`.
+- **Tracker (D6):** cel `collect` tylko z Elit pisze nazwę elity (`quest.obj.collectFrom`).
+- **Teksty (C):** PL i EN wszystkich stron, `.title` / `.text` / `.done` nowych questów, linii celów, NPC, przedmiotów,
+  akcji, miejsc, scen, wyborów i komentarzy.
+
+Rozdział III (EXP przed → po, ułamek `expToNext(poziom)`; złoto; przedmioty):
+
+| # | id | poz. | daje → oddaje | EXP (ułamek) | złoto | przedmioty |
+|---|---|---|---|---|---|---|
+| 37 | `ashen` | 45 | captain → scout_ashen | 49874 → 8988 (0,162) | 2085 | `backpack_100` |
+| 38 | ✚ `deadOasis` | 47 | scout_ashen → runesmith_brokk | 9761 (0,162) | 2175 | — |
+| 39 | ✚ `warcampCages` | 49 | runesmith_brokk → scout_ashen | 12677 (0,195) | 2265 | — |
+| 40 | `orcs` | 50 | scout_ashen → scout_ashen | 67684 → 10977 (0,162) | 2310 | — |
+| 41 | ✚ `mineDepths` | 52 | scout_ashen → scout_ashen | 11826 (0,162) | 2400 | `stone_map` × 2 |
+| 42 | ✚ `emberCores` | 53 | scout_ashen → scout_ashen | 14714 (0,195) | 2445 | — |
+| 43 | `golems` | 55 | scout_ashen → scout_ashen | 81109 → 13155 (0,162) | 2535 | `elixir_resFire` × 3 |
+| 44 | ✚ `burntTemple` | 57 | scout_ashen → scout_ashen | 16894 (0,195) | 2625 | `blessing_sage_3` |
+| 45 | ✚ `wyvernLair` | 59 | scout_ashen → scout_ashen | 15030 (0,162) | 2715 | `blessing_hunter_3` |
+| 46 | ✚ `ashRoad` | 61 | scout_ashen → scout_ashen | 19215 (0,195) | 2805 | — |
+| 47 | `deepforge` | 62 | scout_ashen → scout_ashen | 101826 → 16515 (0,162) | 2850 | `backpack_130` |
+| 48 | ✚ `runesOfBinding` | 64 | scout_ashen → runesmith_brokk | 17541 (0,162) | 2940 | — |
+| 49 | ✚ `forgeChains` | 66 | runesmith_brokk → scout_ashen | 22316 (0,195) | 3030 | `elixir_resFire` × 3 |
+| 50 | `azgor` | 68 | scout_ashen → captain | 153861 (bez zmian) | 9630 | `stone_dungeon_ashen` |
+| 51 | ✚ `coldFire` | 69 | captain → captain | 30353 (0,243) | 3165 | `blessing_guardian_4` |
+
+`STORY_SCALE[45]` = 0,16219 (EXP fabuły bez bossa na poziomach 45–69 = 10,0% `bandExp(45)`). Udział `main` w 45–69 z
+raportu okien: 12,6% → 9,1% (okno `coldFire` sięga 71, część EXP liczy się w 70–99; wg poziomu questów 10,0%, T10).
+`monsterExpMul` przed → po: L45 0,832 → 0,936; L50 0,828 → 0,958; L55 0,839 → 0,896; L60 0,839 → 0,896; L65 0,847 →
+0,855; L69 0,847 → 0,856 (całe 45–69: 0,764–0,958, 70–71 0,856), żaden poziom nie przycięty, godziny bicia 45–69 ×0,9999,
+tempo `ashen` w `balance.spec` zielone. `tests/Balance.LEGACY_EXP` + EXP S94 czterech starych questów. Komendy:
+`lune run tools/quest_budget.luau --session S104`, `lune run tools/quest_budget.luau check` (aktualne),
+`lune run tools/quest_budget.luau allowed --why "S104: main story chapter III"` (222 wpisy: 0 nowych, 0 zmienionych),
+`lune run tools/balance_report.luau`. Księga: wpisy S104 (`MONSTER_EXP_MUL*`, `STORY_BANDS*`, `STORY_SCALE*`,
+`STORY_WEIGHT*`, `indexOf*`, cztery `reward.exp`, dziesięć `byId.<nowy>*`), bez „BRAK POWODU”.
+
+Miejsca i kotwice (wszystko w kołach `avoid`, `wiki = false`; sprawdzenie `build/s104_points.luau`, `s104_scan.luau`):
+
+| id | punkt | przy czym |
+|---|---|---|
+| NPC `runesmith` (Brokk) | −682 / −42, 90° | obok Kesry; obóz `RunesmithCamp` 5 st. za nim (−677 / −42) |
+| NPC `shaman` (Ghasha) | −642 / 300, 270° | wschodni skraj niecki Gorącego Źródła; `ShamanRest` −645 / 303,5 |
+| NPC `hermit` (Kaspar) | 175 / 634, 90° | przed zachodnimi drzwiami świątyni; `HermitThreshold` 179,8 / 633 |
+| `caravan_chest` | `atSite("caravanChest", 0, −4)` ≈ −501,4 / 603,8 | przed frontem skrzyni |
+| `orc_cage` | `atSite("orcCages", 6, 0)` = −350 / −526 | środkowa klatka od strony dziedzińca |
+| `colossus_eyes` | −126 / 102 | u stóp wzgórza przed twarzą Kolosa (20 st. od głowy) |
+| `temple_bell` | `atSite("belltower", −7, 0)` = 214 / 611 | 4 st. od pękniętego dzwonu |
+| `stone_caravan` | `atSite("stoneCaravan", 6, −2)` ≈ 355,9 / −163,0 | z boku skamieniałego wozu |
+| `forge_chain_1..3` | −80 / 180, 78 / 162, 96 / 18 (`ashen_cave`) | Huta, Zbrojownia, Serce Kuźni |
+| wskazówka `place.mithrilVein` | 31 / 169 | węzeł `vein_mithril` najbliżej Bramy z Żeber |
+
+Trasa Brokka (`deadOasis`): obóz (−682 / −42) → (−520 / 0) → (−526 / 200) → (−520 / 380) → (−548 / 480) → (−500 / 560)
+→ cel (−448 / 628, w kole `caravanGrave`), odcinki ≤ 200 (`legMax` 220), wszystkie punkty `walkable(4)`, suche, z dala
+od lawy. `forgeChains`: Brokk dołącza przy punkcie odrodzenia Kuźni (−232 / 8).
+
+Porównanie D1 (`build/s104_nodes.luau`): 50 węzłów identycznych (suma −11331 / 1059), 178 drzew, części serwera
+(`shell`) 944 bez zmian, Buildy +3 (detail +13, fine +20, 1 światło); Kuźnia +3 Buildy (detail +12, fine +3).
+
+Przeliczenie postępu (F3, `story.spec`): stary `mainDone = 24` → `deadOasis`; 25 → `mineDepths` (`deadOasis`,
+`warcampCages` zaliczone bez nagrody); 25 z aktywnym `golems` → `mainDone = indexOf.golems − 1`, postęp nietknięty;
+28 (`azgor`) → `coldFire`; 29 (`frostpeak`) → wszystkie wstawki zaliczone; 32 → `vaelgrath`; zapis po S103 z
+aktywnym `orcs` → `mainLast = warcampCages`; idempotentne; `CURRENT = 8`.
+
+Wiki (`npm run data`): zmienione tylko EXP czterech starych questów w `quests.json`, `dragonbane` 45 → 55 w
+`titles.json` (indeks `vaelgrath`, jak w S102–S103), `meta.json` i odcisk w `docs/PRZEDMIOTY.md`; `areas.json`,
+`npcs.json`, `mapsearch.json`, obrazy map bez zmian, `wiki_keys_diff` pusty. EXP potworów eksport nie pokazuje.
+
+Testy: `story.spec` (rozdział III: kolejność, stare pięć, nowe dziesięć, odwołania, poziomy potworów, efekty, teksty,
+reguły i znaki, widoczność, zgodność z S107; przypadki F3; `EXPECTED_INSERTS.S104`, lista scen, (d) S103 →
+`mineDepths`), `ashen.spec` (miejsca NPC i kotwice w `standingPlaces`, w kołach `avoid`, przy obiektach, kotwice
+Kuźni, węzły i rekwizyty), `dialogue.spec` (`NEW_QUESTS` / `COMPANION_GROUPS` / `BARKS_ONLY.S104`, efekty, `recall`,
+upominek z eliksirem), `companion.spec` (trasa Brokka, `from` w Kuźni), `wikidump.spec`; `tests/Balance.LEGACY_EXP`.
+`scripts/check` zielony (6275 testów).
+
+Pliki: `src/shared/Data/Quests/{Main,Side}.luau`, `src/shared/Data/Areas/{ashen,Caves}.luau`,
+`src/shared/Data/{Npcs,Cutscenes,QuestBudget}.luau`, `src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/NpcVisibility.luau` (nowy), `src/shared/Logic/NpcMarks.luau`, `src/shared/Logic/AshenGen/{init,Flats,Ruins}.luau`,
+`src/shared/Logic/CaveDress/Forge.luau`, `src/server/Services/{Quest,SideQuest}Service.luau`, `src/server/Admin/Terrain.luau`,
+`src/client/Controllers/{Npc,QuestAnchor}Controller.luau`, `src/client/UI/{NpcMarkState,QuestText}.luau`,
+`src/client/UI/Screens/Hud/Minimap.luau`, `src/client/UI/Screens/WorldMap/{Canvas,Cards}.luau`,
+`tests/{story,ashen,dialogue,companion,wikidump}.spec.luau`, `tests/Balance.luau`, `tools/balance_reasons.luau`, dane
+wiki, `docs/{BALANS,PRZEDMIOTY,FABULA,DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+#### Dla S105 i S107
+
+- Questy: `deadOasis`, `warcampCages`, `mineDepths`, `emberCores`, `burntTemple`, `wyvernLair`, `ashRoad`,
+  `runesOfBinding`, `forgeChains`, `coldFire` (69, captain → captain, bezpośrednio przed `frostpeak`; S105 wstawia
+  swoje dalej). `warcampCages` < `orcs`, `burntTemple` > `golems` w `Main.indexOf`.
+- NPC: `runesmith_brokk` (`story`, miejsce `runesmith` −682 / −42, `showFrom = "deadOasis"`), `shaman_ghasha` (`talk`,
+  `shaman` −642 / 300, `showFrom = "warcampCages"`), `hermit_kaspar` (`talk`, `hermit` 175 / 634, zawsze widoczny);
+  wszyscy `wiki = false`. Łuki S107 u Ghashy wymagają `warcampCages` (ona i tak jest wtedy widoczna).
+- Widoczność: `NpcDef.showFrom` (id questu fabuły) + `Logic/NpcVisibility` (`visible(def, quests)`, `visibleId`,
+  `hiddenIds`); `regionfolk(map, …, { showFrom = "<quest>" })`; klient i serwer działają same (S105: Halgrim);
+  ukryta figura u klienta bez kolizji i trafień promieniem, wyszukiwarka mapy pomija ukrytych.
+- Kotwice (S107 ich nie używa): `caravan_chest`, `orc_cage`, `colossus_eyes`, `temple_bell`, `stone_caravan`,
+  `forge_chain_1..3` (`Cave.questAnchors` S102 w `ashen_cave`; S105: `frostpeak_hold` tym samym polem; słupy w
+  `CaveDress/Forge` czytają kotwice jaskini).
+- Efekty: `cageOpen`, `rune` (S107 używa, nie dodaje), `chains`; przedmioty `supplyLedger`, `emberCore`, `cultHarness`,
+  `spearhead`; pomocnik `useAll(anchors, action, hold, fx)` w `Main.luau`.
+- Budżet: `45` w `STORY_BANDS`, wagi 1 / 1,2 / 1,5; `monsterExpMul` 45–69 0,76–0,96; `tests/Balance.LEGACY_EXP` z EXP S94
+  `ashen`, `orcs`, `golems`, `deepforge` (S105 dopisuje swoje stare questy, `70` w `STORY_BANDS`).
+- Rozmowy: towarzysz Brokk (`deadOasis` `lead`, `forgeChains` `follow` z `from` w Kuźni); wybory do `recall`:
+  `deadOasis` (`notes` / `hands` / `count`), `warcampCages` (`gate` / `cages` / `why`), `burntTemple` (`empty` / `way` /
+  `candles`); `elixir_resFire` w `Config.Dialogue.gifts`.
+- Zajęte nazwy: miejsca NPC `runesmith`, `shaman`, `hermit`; sceny `ch3_title`, `ch3_cages`, `ch3_bell`, `ch3_wyvern`,
+  `ch3_forge`, `ch3_runes`, `ch3_freed`, `ch3_azgor`, `ch3_end`; mówcy `WHO.freedSmith`, `WHO.freedVillager`; miejsca
+  `place.caravanRemains`, `place.orcCages`, `place.kasparThreshold`, `place.mithrilVein`; Buildy `RunesmithCamp`,
+  `ShamanRest`, `HermitThreshold`, `CaptivePost_*`.
+
+Uproszczenia: scena `ch3_wyvern` bez figury wywerny (kamera i linie), `ch3_azgor` z ujęciem `self`.

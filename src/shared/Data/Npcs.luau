@@ -43,6 +43,8 @@ export type NpcDef = {
 	gossip: boolean?,
 	wiki: boolean?, -- S102: false = left out of the wiki (NPCs of story quests before S109)
 	ghost: boolean?, -- S103: a pale, half-transparent figure with a cold light (NpcService)
+	-- S104: id of a main quest; the NPC is shown to a character once that quest is active or done (Logic/NpcVisibility)
+	showFrom: string?,
 }
 
 local LIST: { NpcDef } = {}
@@ -272,7 +274,7 @@ townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { se
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
 
 -- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
--- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`.
+-- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`; S104: `extra.showFrom`.
 local function regionfolk(
 	map: string,
 	id: string,
@@ -299,6 +301,7 @@ local function regionfolk(
 		lines = 3,
 		wiki = e.wiki,
 		ghost = e.ghost,
+		showFrom = e.showFrom,
 	})
 end
 
@@ -345,6 +348,27 @@ regionfolk(
 )
 regionfolk("duskwood", "defector_jorund", "jorund", { body = "#4A4A52", accent = "#7A4AA0" }, "🕯", { wiki = false })
 regionfolk("duskwood", "witch_ragna", "ragna", { body = "#3E4A36", accent = "#8A7A5A" }, "🌿", { wiki = false })
+
+-- Story NPCs of the Ashen Wastes (S104, docs/FABULA.md §2.4), on the places of Areas/ashen npcSpots. Brokk reaches
+-- Kesra's camp with deadOasis, Ghasha the Hot Spring once freed in warcampCages (NpcDef.showFrom); Kaspar always stands
+-- before his temple.
+regionfolk(
+	"ashen",
+	"runesmith_brokk",
+	"runesmith",
+	{ body = "#4A3A2E", accent = "#6FB8FF" },
+	"✦",
+	{ services = { "story" }, wiki = false, showFrom = "deadOasis" }
+)
+regionfolk(
+	"ashen",
+	"shaman_ghasha",
+	"shaman",
+	{ body = "#4A5A3A", accent = "#A3282A" },
+	"☽",
+	{ wiki = false, showFrom = "warcampCages" }
+)
+regionfolk("ashen", "hermit_kaspar", "hermit", { body = "#4A4236", accent = "#C9A45C" }, "✝", { wiki = false })
 
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do

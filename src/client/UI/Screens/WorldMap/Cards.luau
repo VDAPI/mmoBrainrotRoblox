@@ -32,6 +32,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
+local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local NpcQuests = require(script.Parent.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -286,7 +287,8 @@ end
 
 function Cards.npc(ctx: Context, npcId: string): Spec?
 	local def = Npcs.get(npcId)
-	if not def then
+	-- S104: no card for an NPC the character does not see yet (NpcDef.showFrom)
+	if not def or NpcMarkState.isHidden(npcId) then
 		return nil
 	end
 	local map = Maps.get(def.map)
@@ -588,7 +590,7 @@ end
 function Cards.markName(mark: Types.MapMark): string
 	local best, bestDistance = nil :: Npcs.NpcDef?, 60
 	for _, npc in Npcs.list do
-		if npc.map == mark.map and not npc.decoration then
+		if npc.map == mark.map and not npc.decoration and not NpcMarkState.isHidden(npc.id) then
 			local d = math.sqrt((npc.position.x - mark.x) ^ 2 + (npc.position.z - mark.z) ^ 2)
 			if d < bestDistance then
 				best, bestDistance = npc, d
