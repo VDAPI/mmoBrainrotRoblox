@@ -290,7 +290,8 @@ T.describe("wikidump: places (S37)", function()
 				shown += 1
 			end
 		end
-		T.expect(shown < #index.entries).toBe(true)
+		-- S109: every NPC of the series is published (none hidden any more)
+		T.expect(shown <= #index.entries).toBe(true)
 		T.expect(#data.pl).toBe(shown)
 		T.expect(#data.en).toBe(shown)
 		local laki = data.vectors[1]

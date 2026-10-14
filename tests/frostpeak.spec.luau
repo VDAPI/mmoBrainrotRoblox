@@ -850,10 +850,10 @@ describe("Frost Peaks: story places (S105)", function()
 		-- no new avoid circle (the Rite Circle lies inside the summit's), the groups and nodes of S47 stay
 		expect(#DATA.avoid).toBe(38)
 		for _, spot in DATA.npcSpots :: any do
-			expect(spot.wiki).toBe(false)
+			expect(spot.wiki).toBeNil() -- S109: published on the wiki
 		end
 		for _, a in DATA.questAnchors :: any do
-			expect(a.wiki).toBe(false)
+			expect(a.wiki).toBeNil() -- S109: published on the wiki
 		end
 	end)
 
@@ -1074,7 +1074,7 @@ describe("Frost Peaks: story places (S105)", function()
 		local anchors = assert(cave.questAnchors, "questAnchors")
 		expect(#anchors).toBe(2)
 		for _, a in anchors do
-			expect(a.wiki).toBe(false)
+			expect(a.wiki).toBeNil() -- S109: published on the wiki
 			expect(terrain.floor(a.x, a.z) ~= nil).toBe(true)
 			expect(terrain.liquid(a.x, a.z)).toBeNil()
 			expect(terrain.headroom(a.x, a.z) >= 8).toBe(true)
@@ -1203,7 +1203,7 @@ describe("Frost Peaks: side quest places (S108)", function()
 				expect(`{tag} avoid {avoidOf(spot.x, spot.z) ~= nil}`).toBe(`{tag} avoid true`)
 				expect(`{tag} road {AreaSpawns.nearRoad(DATA.roads, spot.x, spot.z, 6)}`).toBe(`{tag} road false`)
 				expect(spot.facing >= 0 and spot.facing <= 359).toBe(true)
-				expect(spot.wiki).toBe(false)
+				expect(spot.wiki).toBeNil() -- S109: published on the wiki
 				for other, o in spots do
 					if other ~= key then
 						expect(`{key}/{other} {dist(spot.x, spot.z, o.x, o.z) >= 5}`).toBe(`{key}/{other} true`)
@@ -1245,7 +1245,7 @@ describe("Frost Peaks: side quest places (S108)", function()
 			local found, mapId = Areas.anchorById(a.id)
 			expect(found).toBe(a)
 			expect(mapId).toBe("frostpeak")
-			expect(a.wiki).toBe(false)
+			expect(a.wiki).toBeNil() -- S109: published on the wiki
 			-- 6+ studs from the story's anchors of S105, 4+ from every other anchor
 			for _, other in assert(DATA.questAnchors, "questAnchors") do
 				if other ~= a then

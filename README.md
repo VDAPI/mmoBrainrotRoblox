@@ -60,12 +60,17 @@ Na Linux/macOS/CI: `bash scripts/check.sh`.
 
 Formatowanie automatycznie: `stylua src tests`.
 
-## Balans (S32, S83)
+## Balans
 
 ```powershell
-lune run tools/balance_report.luau                 # generuje docs/BALANS.md 1–100 (księga, przed → po)
-lune run tools/balance_report.luau snapshot [S<n>] # migawka „przed” { meta, tables, data } (tools/balance_before.json)
-lune run tools/balance_report.luau fixture [S<n>]  # fixture 1–20 (tests/fixtures/balance_1_20.json)
+lune run tools/balance_report.luau                 # docs/BALANS.md 1–100 (księga, przed → po); snapshot [S<n>] = migawka „przed”
+lune run tools/balance_report.luau fixture S<n> "<opis>"  # baza 1–20 (tests/fixtures/balance_1_20.json), tylko za decyzją właściciela; ostatnio S109
+# po każdej zmianie danych questów (budżet EXP, docs/DESIGN-15.md §3.2):
+lune run tools/quest_budget.luau                   # przelicza MONSTER_EXP_MUL, drukuje linię do balance_reasons
+lune run tools/quest_budget.luau check             # 0 = aktualne
+lune run tools/quest_budget.luau audit             # 0 = cele audytu S109 (T-QB1…T-QB7) spełnione
+lune run tools/quest_budget.luau allowed --why "S<n>: <co zmieniono>"   # wpisy ALLOWED_1_20_DIFFS
+lune run tests/run.luau
 ```
 Model liczbowy: `tests/Balance.luau` (moduły gry, wartości oczekiwane), tabele: `tests/BalanceTables.luau`, cele:
 `tests/balance.spec.luau`, `tests/balance1_20.spec.luau`, `tests/balancemodel.spec.luau`; powody zmian liczb:

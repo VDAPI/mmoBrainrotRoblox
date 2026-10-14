@@ -651,7 +651,7 @@ side({
 
 -- K. The Dusk Lanterns (20–24), Werewolf Thicket and the Wolf Den ------------------------------------------------
 -- S106 (docs/DESIGN-15.md §3.4): Wanda keeps the cold lanterns by the road; her brother Stach is the werewolf who
--- knocks them down. Every Duskwood arc is off the wiki until S109 (`wiki = false`).
+-- knocks them down. Every Duskwood arc is on the wiki since S109.
 side({
 	id = "side_moonOil",
 	level = 20,
@@ -661,7 +661,6 @@ side({
 	pages = 2,
 	objectives = { deliver("moonOil") },
 	minLevel = 20,
-	wiki = false,
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("why"), Talk.answer("quick") }),
 })
@@ -678,7 +677,6 @@ side({
 		kill(8, "werewolf", "duskwood_werethicket"),
 	},
 	minLevel = 20,
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("lanterns", Talk.focus(1)),
@@ -708,7 +706,6 @@ side({
 		use({ "dw_bonetree" }, "quest.use.trophies", 3, "tracks"),
 		kill(6, "blackBear", "duskwood_werethicket"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(3, { Talk.answer("brother"), Talk.answer("silent") }),
 	companion = Talk.lead("huntress_wanda", "duskwood", { 1 }, { join = 1, wait = 2, arrive = 1, back = 1 }),
@@ -728,7 +725,6 @@ side({
 	},
 	final = true,
 	cosmetic = "mountskin_lantern", -- S106: the Lantern Warden's caparison (Data/Cosmetics, obtain.quest)
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(4, {
 		Talk.answer("promise"),
@@ -746,7 +742,6 @@ side({
 	arc = "apiary",
 	pages = 2,
 	objectives = { deliver("clayJars") },
-	wiki = false,
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("mead"), Talk.answer("maciej") }),
 })
@@ -763,7 +758,6 @@ side({
 		use({ "dw_hive_1", "dw_hive_2", "dw_hive_3" }, "quest.use.hive", 2.5, "smoke"),
 		kill(8, "blackBear", "duskwood_bearhollow"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("hive", Talk.focus(1)),
@@ -780,7 +774,6 @@ side({
 	pages = 3,
 	requires = { "side_smokedHives" },
 	objectives = { collect(6, "wildHoneycomb", "blackBear", 0.4, "duskwood_bearhollow") },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(3, { Talk.answer("fur"), Talk.answer("shaggy") }),
 })
@@ -798,7 +791,6 @@ side({
 		collect(1, "fatherBell", "blackBear", 1, nil, "elite"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(4, {
 		Talk.answer("bell", Talk.gift("potion_hp_3", 2)),
@@ -819,7 +811,6 @@ side({
 		use({ "dw_grave_1", "dw_grave_2", "dw_grave_3", "dw_grave_4" }, "quest.use.grave", 2, "wreath"),
 		kill(8, "ghoul", "duskwood_ruins"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("graves", Talk.focus(1)),
@@ -836,7 +827,6 @@ side({
 	pages = 3,
 	requires = { "side_nameless" },
 	objectives = { collect(6, "servantToken", "forestWraith", 0.4, "duskwood_ruins") },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("numbers"), Talk.answer("fear") }),
 })
@@ -849,7 +839,6 @@ side({
 	pages = 2,
 	requires = { "side_servantTokens" },
 	objectives = { deliver("householdRoll") },
-	wiki = false,
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("careful"), Talk.answer("why") }),
 })
@@ -866,7 +855,6 @@ side({
 		kill(10, "forestWraith", "duskwood_ruins"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(4, {
 		Talk.answer("keep", Talk.gift("potion_mana_3", 2)),
@@ -888,7 +876,6 @@ side({
 		{ type = "gather", n = 4, node = "bush_moonpetal" },
 	},
 	where = { map = "duskwood", area = "duskwood_heart" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(3, {
 		Talk.answer("sap", Talk.focus(1)),
@@ -910,7 +897,6 @@ side({
 		use({ "dw_burrow_1", "dw_burrow_2", "dw_burrow_3" }, "quest.use.burrow", 3, "seal"),
 		kill(10, "ghoul", "duskwood_heart"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("burrows", Talk.focus(1)),
@@ -928,7 +914,6 @@ side({
 	requires = { "side_ghoulBurrows" },
 	objectives = { deliver("rotTincture"), kill(8, "rotEnt", "duskwood_heart") },
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("test"), Talk.answer("drink") }),
 	recall = { done = "side_rotSap" },
@@ -946,7 +931,6 @@ side({
 		use({ "dw_waymark_1", "dw_waymark_2", "dw_waymark_3" }, "quest.use.waymark", 2, "mark"),
 		kill(8, "bogSerpent", "duskwood_crossroads"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(2, { Talk.answer("chalk"), Talk.answer("follow") }),
 })
@@ -959,7 +943,6 @@ side({
 	pages = 3,
 	requires = { "side_falseMarks" },
 	objectives = { collect(5, "travellerLetter", "darkCultist", 0.35, "duskwood_crossroads") },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("read") }),
 })
@@ -976,7 +959,6 @@ side({
 		kill(10, "darkCultist", "duskwood_cultvillage"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	-- the hint: the yard between the two cages, west of the village's centre
 	choices = Talk.onPage(4, {
@@ -998,7 +980,6 @@ side({
 		use({ "dw_trap_1", "dw_trap_2" }, "quest.use.trap", 2.5, "net"),
 		kill(8, "bogSerpent", "duskwood_swamp"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("traps", Talk.focus(1)),
@@ -1015,7 +996,6 @@ side({
 	pages = 3,
 	requires = { "side_eelTraps" },
 	objectives = { collect(6, "ferryCoin", "swampTroll", 0.4, "duskwood_swamp") },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, { Talk.answer("pay"), Talk.answer("guard") }),
 })
@@ -1033,7 +1013,6 @@ side({
 		kill(8, "swampTroll", "duskwood_swamp"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(3, {
 		Talk.answer("island", Talk.hint("duskwood", 702, 612, "place.trollVillage")),
@@ -1053,7 +1032,6 @@ side({
 		use({ "dw_charm_1", "dw_charm_2", "dw_charm_3" }, "quest.use.charm", 2.5, "ward"),
 		kill(8, "marshWitch", "duskwood_witchmarsh"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("bare"),
@@ -1069,7 +1047,6 @@ side({
 	pages = 3,
 	requires = { "side_hexCharms" },
 	objectives = { collect(5, "hexPouch", "marshWitch", 0.4, "duskwood_witchmarsh") },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("burn") }),
 })
@@ -1087,7 +1064,6 @@ side({
 		kill(6, "swampTroll", "duskwood_witchmarsh"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(3, {
 		Talk.answer("cauldron", Talk.focus(2)),
@@ -1109,7 +1085,6 @@ side({
 		use({ "dw_shore_1", "dw_shore_2", "dw_shore_3" }, "quest.use.shore", 3, "plank"),
 		kill(10, "bloodBat", "duskwood_bloodcliffs"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("beams", Talk.focus(1)),
@@ -1129,7 +1104,6 @@ side({
 		{ type = "reach", n = 1, map = "duskwood", x = 616, z = -40, radius = 20, place = "place.batRoost" },
 		collect(5, "apprenticeChisel", "bloodBat", 0.35, "duskwood_bloodcliffs"),
 	},
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("leszek"), Talk.answer("bats") }),
 })
@@ -1147,7 +1121,6 @@ side({
 		collect(1, "apprenticeRing", "skeletonGuard", 1, nil, "elite"),
 	},
 	final = true,
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(4, { Talk.answer("lay"), Talk.answer("bring") }),
 })
@@ -1155,7 +1128,7 @@ side({
 -- Ashen Wastes (S107, docs/DESIGN-15.md §3.4): eight arcs, one per corner of the Wastes, with five new NPCs on
 -- Areas/ashen npcSpots and the chapter III NPCs of S104 (Ghasha, Kaspar); anchors in Areas/ashen questAnchors (ash_*).
 -- EXP from the 45–69 band's side budget (S106 settleBands, DESIGN-15 §3.2 TARGET.side); the S98 model counts
--- SIDE_SHARE of it and compensates monster EXP. Every Ashen arc is off the wiki until S109 (`wiki = false`).
+-- SIDE_SHARE of it and compensates monster EXP. Every Ashen arc is on the wiki since S109.
 local ASH_SITES = assert(AshenAreas.sites, "Side: ashen sites")
 local MINE = ASH_SITES.mineMouth
 
@@ -1168,7 +1141,6 @@ side({
 	arc = "ashSalamanders",
 	pages = 2,
 	objectives = { deliver("emberSalve") },
-	wiki = false,
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("hurry"), Talk.answer("enough", Talk.gift("potion_hp_4", 2)) }),
 })
@@ -1185,7 +1157,6 @@ side({
 		use({ "ash_cairn_1", "ash_cairn_2", "ash_cairn_3" }, "quest.use.cairn", 2, "cairn"),
 	},
 	where = { map = "ashen", area = "ashen_flats" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("rag"),
@@ -1207,7 +1178,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_flats" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("pitch"),
@@ -1226,7 +1196,6 @@ side({
 	arc = "ashOasis",
 	pages = 2,
 	objectives = { deliver("waterCask") },
-	wiki = false,
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("wine"), Talk.answer("who") }),
 })
@@ -1245,7 +1214,6 @@ side({
 		use({ "ash_well_1", "ash_well_2", "ash_well_3" }, "quest.use.well", 3, "water"),
 	},
 	where = { map = "ashen", area = "ashen_oasis" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(1, { Talk.answer("dead"), Talk.answer("boat"), Talk.answer("alone") }),
 	companion = Talk.lead("waterkeeper_orren", "ashen", { 1 }, { join = 1, wait = 2, arrive = 1, back = 1 }),
@@ -1264,7 +1232,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_oasis" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("families"), Talk.answer("wells", Talk.focus(1)) }),
 	recall = { p1 = "side_ash_wells" },
@@ -1284,7 +1251,6 @@ side({
 		{ type = "gather", n = 4, node = "bush_firebloom" },
 	},
 	where = { map = "ashen", area = "ashen_flats" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("smell"), Talk.answer("cage"), Talk.answer("herbs", Talk.focus(2)) }),
 })
@@ -1301,7 +1267,6 @@ side({
 		use({ "ash_war_drum" }, "quest.use.drum", 3, "drum"),
 	},
 	where = { map = "ashen", area = "ashen_warcamp" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(1, { Talk.answer("gold"), Talk.answer("chief") }),
 })
@@ -1319,7 +1284,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_warcamp" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("pledge"), Talk.answer("young") }),
 	recall = { done = "side_ash_rite" },
@@ -1338,7 +1302,6 @@ side({
 		kill(8, "ashVulture", "ashen_warcamp"),
 	},
 	where = { map = "ashen", area = "ashen_warcamp" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("debt"), Talk.answer("town"), Talk.answer("vultures", Talk.focus(2)) }),
 })
@@ -1355,7 +1318,6 @@ side({
 		collect(3, "minerTag", "wasteHyena", 0.5, nil, "elite"),
 	},
 	where = { map = "ashen_mine" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	-- the hint: the ground before the mine's adit (the cave arrival, 26 studs out of the mouth)
 	choices = Talk.onPage(1, {
@@ -1376,7 +1338,6 @@ side({
 		use({ "ash_columns_sample" }, "quest.use.sample", 3, "mark"),
 	},
 	where = { map = "ashen", area = "ashen_golemfields" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("dream"), Talk.answer("sample", Talk.focus(2)) }),
 })
@@ -1394,7 +1355,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_golemfields" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("share"), Talk.answer("dorgan") }),
 	recall = { done = "side_ash_silver" },
@@ -1414,7 +1374,6 @@ side({
 		use({ "ash_hearth_1", "ash_hearth_2", "ash_hearth_3" }, "quest.use.names", 2, "candles"),
 	},
 	where = { map = "ashen", area = "ashen_burntruins" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("why"), Talk.answer("knew"), Talk.answer("imps", Talk.focus(1)) }),
 })
@@ -1431,7 +1390,6 @@ side({
 		collect(5, "heirloom", "desertScorpion", 0.4, "ashen_burntruins"),
 	},
 	where = { map = "ashen", area = "ashen_burntruins" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("water"), Talk.answer("drifts", Talk.focus(2)) }),
 })
@@ -1446,7 +1404,6 @@ side({
 	objectives = { kill(8, "desertScorpion", "ashen_burntruins"), deliver("kasparList") },
 	final = true,
 	where = { map = "ashen", area = "ashen_burntruins" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("forge"), Talk.answer("anzelm") }),
 	recall = { p2 = "side_ash_chimneys" },
@@ -1465,7 +1422,6 @@ side({
 		use({ "ash_wyvern_lookout" }, "quest.use.lookout", 2, "tracks"),
 	},
 	where = { map = "ashen", area = "ashen_crags" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(1, { Talk.answer("bold"), Talk.answer("driven"), Talk.answer("mark", Talk.focus(2)) }),
 })
@@ -1479,7 +1435,6 @@ side({
 	requires = { "side_ash_lookout" },
 	objectives = { collect(4, "basiliskEye", "basilisk", 0.4, "ashen_crags") },
 	where = { map = "ashen", area = "ashen_crags" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("mirko"), Talk.answer("road", Talk.gift("potion_mana_3", 2)) }),
 })
@@ -1497,7 +1452,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_crags" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("draught", Talk.focus(1)), Talk.answer("nest", Talk.focus(2)) }),
 	recall = { done = "side_ash_lookout" },
@@ -1525,7 +1479,6 @@ side({
 		kill(12, "desertMummy", "ashen_dunes"),
 	},
 	where = { map = "ashen", area = "ashen_dunes" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(1, { Talk.answer("faces"), Talk.answer("legs"), Talk.answer("lead") }),
 	companion = Talk.lead("tombwarden_ezra", "ashen", { 1 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
@@ -1543,7 +1496,6 @@ side({
 		kill(8, "desertScorpion", "ashen_dunes"),
 	},
 	where = { map = "ashen", area = "ashen_dunes" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("sign"), Talk.answer("scorp", Talk.focus(2)) }),
 	recall = { p1 = "side_ash_king" },
@@ -1561,7 +1513,6 @@ side({
 		use({ "ash_courtyard_altar" }, "quest.use.altar", 3, "incense"),
 	},
 	where = { map = "ashen", area = "ashen_tombs" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("priest"), Talk.answer("potions", Talk.gift("potion_hp_4", 2)) }),
 })
@@ -1579,7 +1530,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_tombs" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("door"), Talk.answer("after") }),
 	recall = { p4 = "side_ash_king" },
@@ -1600,7 +1550,6 @@ side({
 		kill(10, "basilisk", "ashen_ashroad"),
 	},
 	where = { map = "ashen", area = "ashen_ashroad" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("oxen"),
@@ -1621,7 +1570,6 @@ side({
 		collect(5, "tollCoin", "wyvern", 0.4, "ashen_ashroad"),
 	},
 	where = { map = "ashen", area = "ashen_ashroad" },
-	wiki = false,
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("kings"), Talk.answer("toll") }),
 })
@@ -1639,7 +1587,6 @@ side({
 	},
 	final = true,
 	where = { map = "ashen", area = "ashen_ashroad" },
-	wiki = false,
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("shield"), Talk.answer("faith") }),
 	recall = { done = "side_ash_wagons" },
@@ -1649,14 +1596,9 @@ side({
 -- Seven new NPCs on Areas/frostpeak npcSpots (camps in Logic/FrostpeakGen/SideCamps), Sigrun of S105 and two NPCs of
 -- the city / the scout; anchors in Areas/frostpeak questAnchors (fp_*). EXP from the 70–99 band's side budget (S106
 -- settleBands, BAND_SCALE[70], DESIGN-15 §3.2 TARGET.side); the S98 model counts SIDE_SHARE of it and compensates
--- monster EXP. Every Frost Peaks arc is off the wiki until S109 (`wiki = false`, set by `fp`).
+-- monster EXP. Every Frost Peaks arc is on the wiki since S109.
 local FP_SITES = assert(FrostAreas.sites, "Side: frostpeak sites")
 local FP_SPOTS = assert(FrostAreas.npcSpots, "Side: frostpeak npc spots")
-
-local function fp(def: SideDef)
-	def.wiki = false
-	side(def)
-end
 
 -- A `reach` objective with a named place on a map.
 local function reachPlace(map: string, x: number, z: number, radius: number, place: string): Objective
@@ -1685,7 +1627,7 @@ local function sitePoint(name: string): (number, number)
 end
 
 -- A. The Horned Cairn (70–73), Ice Wolf Valley: Old Ingrid keeps the ribbons of those who went up the mountains ------
-fp({
+side({
 	id = "side_fp_flask",
 	level = 70,
 	minLevel = 70,
@@ -1697,7 +1639,7 @@ fp({
 	barks = { accept = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("drink"), Talk.answer("who"), Talk.answer("word") }),
 })
-fp({
+side({
 	id = "side_fp_ribbons",
 	level = 71,
 	minLevel = 70,
@@ -1714,7 +1656,7 @@ fp({
 	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("wolves"), Talk.answer("first", Talk.focus(2)) }),
 })
 local HOWL_X, HOWL_Z = sitePoint("howlRock")
-fp({
+side({
 	id = "side_fp_howl",
 	level = 73,
 	giver = "cairn_ingrid",
@@ -1737,7 +1679,7 @@ fp({
 })
 
 -- B. The Trappers' Last Catch (74–78), the trappers' camp and the Leopards' Ledge: Sigrun of S105 after the Grotto ----
-fp({
+side({
 	id = "side_fp_snares",
 	level = 74,
 	giver = "trapper_sigrun",
@@ -1752,7 +1694,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, { Talk.answer("eat"), Talk.answer("learn"), Talk.answer("which", Talk.focus(2)) }),
 })
-fp({
+side({
 	id = "side_fp_ledge",
 	level = 76,
 	giver = "trapper_sigrun",
@@ -1773,7 +1715,7 @@ fp({
 	choices = Talk.onPage(2, { Talk.answer("knife"), Talk.answer("alone"), Talk.answer("lead") }),
 	companion = Talk.lead("trapper_sigrun", "frostpeak", { 1 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
 })
-fp({
+side({
 	id = "side_fp_sledge",
 	level = 78,
 	giver = "trapper_sigrun",
@@ -1798,7 +1740,7 @@ fp({
 -- C. The Avalanche Horn (77–80), the Yeti Slopes and the Ice Grotto: Eskil, whose kin blow the warning horn ---------
 local CONE_X, CONE_Z = sitePoint("avalanche")
 local GROTTO_X, GROTTO_Z = caveExit("frostpeak_grotto")
-fp({
+side({
 	id = "side_fp_horn",
 	level = 77,
 	giver = "hornblower_eskil",
@@ -1816,7 +1758,7 @@ fp({
 		Talk.answer("where", Talk.hint("frostpeak", CONE_X, CONE_Z, "place.avalanche")),
 	}),
 })
-fp({
+side({
 	id = "side_fp_boulders",
 	level = 79,
 	giver = "hornblower_eskil",
@@ -1831,7 +1773,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(2, { Talk.answer("purpose"), Talk.answer("nobody"), Talk.answer("cats", Talk.focus(2)) }),
 })
-fp({
+side({
 	id = "side_fp_matriarch",
 	level = 80,
 	giver = "hornblower_eskil",
@@ -1856,7 +1798,7 @@ fp({
 
 -- D. The Giants' Saga (82–86), the Giants' Pass: Ragnvald the skald and the runes of the colossi and the thrones -----
 local THRONES_X, THRONES_Z = sitePoint("thrones")
-fp({
+side({
 	id = "side_fp_colossi",
 	level = 82,
 	giver = "skald_ragnvald",
@@ -1874,7 +1816,7 @@ fp({
 		Talk.answer("charcoal", Talk.gift("potion_mana_5", 2)),
 	}),
 })
-fp({
+side({
 	id = "side_fp_thrones",
 	level = 84,
 	giver = "skald_ragnvald",
@@ -1891,7 +1833,7 @@ fp({
 	-- Ragnvald walks with the player from the Gate to the Hall of Thrones and stays while the runes are taken
 	companion = Talk.follow("skald_ragnvald", "frostpeak", { 1, 2 }, { join = 2, back = 1 }),
 })
-fp({
+side({
 	id = "side_fp_verse",
 	level = 86,
 	giver = "skald_ragnvald",
@@ -1911,7 +1853,7 @@ fp({
 
 -- E. The Ice Hole (85–89), the Frozen Lake: Torvi, his father's boat in the ice and the drowned village's hoard -------
 local BOAT_X, BOAT_Z = sitePoint("frozenBoat")
-fp({
+side({
 	id = "side_fp_icehole",
 	level = 85,
 	giver = "icefisher_torvi",
@@ -1930,7 +1872,7 @@ fp({
 		Talk.answer("where", Talk.hint("frostpeak", BOAT_X, BOAT_Z, "place.frozenBoat")),
 	}),
 })
-fp({
+side({
 	id = "side_fp_boat",
 	level = 87,
 	giver = "icefisher_torvi",
@@ -1953,7 +1895,7 @@ fp({
 	choices = Talk.onPage(2, { Talk.answer("lead"), Talk.answer("father"), Talk.answer("straight") }),
 	companion = Talk.lead("icefisher_torvi", "frostpeak", { 1, 2 }, { join = 1, wait = 1, arrive = 1, back = 1 }),
 })
-fp({
+side({
 	id = "side_fp_hoard",
 	level = 89,
 	giver = "icefisher_torvi",
@@ -1973,7 +1915,7 @@ fp({
 
 -- F. The Mammoth Graveyard (87–91), the Mammoth Tundra and the Frozen Hold: Gunnar and the herds driven to war ------
 local HOLD_X, HOLD_Z = caveExit("frostpeak_hold")
-fp({
+side({
 	id = "side_fp_tusks",
 	level = 87,
 	giver = "bonecarver_gunnar",
@@ -1987,7 +1929,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("rule"), Talk.answer("carve"), Talk.answer("arch") }),
 })
-fp({
+side({
 	id = "side_fp_stampede",
 	level = 89,
 	giver = "bonecarver_gunnar",
@@ -2002,7 +1944,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(2, { Talk.answer("war"), Talk.answer("pity", Talk.focus(2)), Talk.answer("many") }),
 })
-fp({
+side({
 	id = "side_fp_warhorn",
 	level = 91,
 	giver = "bonecarver_gunnar",
@@ -2027,7 +1969,7 @@ fp({
 
 -- G. The Squire of the Watch (90–93), the Ice Watch: Asmund, who ran on the night the frost came (no jests) ---------
 -- The arc does not depend on Brother Halgrim's ghost (he may be gone after oathWords): Asmund gives and takes it all.
-fp({
+side({
 	id = "side_fp_squire",
 	level = 90,
 	giver = "squire_asmund",
@@ -2039,7 +1981,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("why"), Talk.answer("know"), Talk.answer("how") }),
 })
-fp({
+side({
 	id = "side_fp_shields",
 	level = 92,
 	giver = "squire_asmund",
@@ -2054,7 +1996,7 @@ fp({
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("names"), Talk.answer("juniper"), Talk.answer("seals", Talk.focus(2)) }),
 })
-fp({
+side({
 	id = "side_fp_spurs",
 	level = 93,
 	giver = "squire_asmund",
@@ -2077,7 +2019,7 @@ fp({
 local SCHOLAR = FP_SPOTS.scholar
 local BURROWS_X, BURROWS_Z = sitePoint("wyrmBurrows")
 local BONES_X, BONES_Z = sitePoint("wyrmBones")
-fp({
+side({
 	id = "side_fp_letter",
 	level = 94,
 	giver = "brother_anzelm",
@@ -2093,7 +2035,7 @@ fp({
 		Talk.answer("where", Talk.hint("frostpeak", SCHOLAR.x, SCHOLAR.z, "place.dragonStairs")),
 	}),
 })
-fp({
+side({
 	id = "side_fp_clutches",
 	level = 96,
 	giver = "scholar_vigdis",
@@ -2112,7 +2054,7 @@ fp({
 		Talk.answer("burrows", Talk.hint("frostpeak", BURROWS_X, BURROWS_Z, "place.wyrmBurrows")),
 	}),
 })
-fp({
+side({
 	id = "side_fp_bonetrail",
 	level = 97,
 	giver = "scholar_vigdis",
@@ -2127,7 +2069,7 @@ fp({
 	barks = { accept = 1, near = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("age"), Talk.answer("scales", Talk.focus(2)), Talk.answer("trail") }),
 })
-fp({
+side({
 	id = "side_fp_treatise",
 	level = 99,
 	giver = "scholar_vigdis",

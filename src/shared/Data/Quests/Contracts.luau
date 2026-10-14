@@ -21,6 +21,9 @@ local RULES = table.freeze({
 	kills = { { 1, 10 }, { 10, 20 }, { 20, 30 }, { 99, 60 } },
 	-- floor(base + perLevel * L); S99: perLevel 12 -> 4 keeps G9 (+1..+3 upgrades >= 0.45 of the income of level 25)
 	gold = { base = 20, perLevel = 4 },
+	-- S109 (audit D3): contracts below this level give gold only. The tutorial pays levels 1-2 in full (the S94 base
+	-- grinds nothing there), so their contract EXP only carried into level 3 and clamped its monsterExpMul at MUL_MIN.
+	expFrom = 4,
 	minGroups = 4, -- hunting grounds with fewer monster groups are never picked
 	-- rotation weights (Logic/ContractGen.pick): never the previous area when another fits
 	penalty = { previous = 100, beforePrevious = 10, perUse = 2, sameProfile = 1 },
@@ -51,7 +54,7 @@ local LIST: { Types.ContractQuest } = {
 		map = "meadows",
 		area = "meadows_rabbitfields",
 		objectives = { { type = "kill", n = 10, area = "meadows_rabbitfields" } },
-		reward = { exp = 12, gold = 24 },
+		reward = { exp = 0, gold = 24 },
 	},
 	{
 		id = "contract_2",
@@ -60,7 +63,7 @@ local LIST: { Types.ContractQuest } = {
 		map = "meadows",
 		area = "meadows_rabbitfields",
 		objectives = { { type = "kill", n = 11, area = "meadows_rabbitfields" } },
-		reward = { exp = 25, gold = 28 },
+		reward = { exp = 0, gold = 28 },
 	},
 	{
 		id = "contract_3",
@@ -69,7 +72,7 @@ local LIST: { Types.ContractQuest } = {
 		map = "meadows",
 		area = "meadows_wolfhills",
 		objectives = { { type = "kill", n = 12, area = "meadows_wolfhills" } },
-		reward = { exp = 45, gold = 32 },
+		reward = { exp = 0, gold = 32 },
 	},
 	{
 		id = "contract_4",

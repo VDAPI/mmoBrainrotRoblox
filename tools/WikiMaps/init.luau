@@ -139,7 +139,7 @@ end
 local function npcMarkers(mapId: string): { string }
 	local out = {}
 	for _, n in Npcs.list do
-		-- S103: NPCs hidden from the wiki (wiki = false: the story NPCs until S109) get no marker
+		-- S103: NPCs hidden from the wiki (wiki = false; none since S109) get no marker
 		if n.map == mapId and not n.decoration and n.wiki ~= false then
 			table.insert(
 				out,

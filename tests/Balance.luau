@@ -1913,6 +1913,7 @@ local LEGACY_EXP: { [string]: number } = table.freeze({
 	werewolves = 22219, ruins = 23557, ents = 23136, cult = 30817, swamp = 39997, crypt = 61156, -- S103 (exp(L, f) of S92)
 	ashen = 49874, orcs = 67684, golems = 81109, deepforge = 101826, -- S104 (exp(L, f) of S94)
 	frostpeak = 135265, giants = 165230, glacier = 215466, -- S105 (exp(L, 1) of S94)
+	toDuskwood = 7150, -- S109 (exp(20, 0.6) of S94: the bridge over level 20 joined the story rule, T-QB3 / T-QB5)
 })
 Balance.LEGACY_EXP = LEGACY_EXP
 
@@ -1939,6 +1940,11 @@ local function questSources(budget: boolean): { QuestSource }
 		{ list = Quests.Boss.list },
 		{ list = Quests.Contracts.list },
 	}
+end
+
+-- S109 (audit T-QB7): the quest lists the credit model reads (budget = false: the S94 lists), for the completeness check.
+function Balance.questSourceLists(budget: boolean?): { { list: { any }, below: number? } }
+	return questSources(budget ~= false)
 end
 
 local creditCache: { [string]: { QuestCreditRow } } = {}
@@ -8300,6 +8306,372 @@ function Balance.worldEventRow(level: number): WorldEventRow
 		gold = r.gold,
 		goldShare = r.gold / Balance.WORLD_EVENT_HOURS / income,
 		minutes = r.exp / math.max(1, Exp.expToNext(level)) * hours * 60,
+	}
+end
+
+-- Full income (S109, docs/sessions/S109.md E1) ------------------------------------------------------------------------
+-- The one-time quest gold in the distribution of the quest EXP credit, the gold of the extras outside economyAt and
+-- the pace model (daily and weekly contracts, the boss contract, the login reward, world events) per hour of play, and
+-- the full income of a player who does everything.
+
+-- S109 (E1): the assumed player profile of the report and of the full-income targets; it is not a game number.
+Balance.PLAY_PROFILE = table.freeze({
+	hoursPerDay = 2, -- hours of play a day
+	dailies = 3, -- daily contracts a day (Daily.PER_DAY)
+	weekly = true, -- the weekly contracts (Weekly.PER_WEEK)
+	bossContract = true, -- the weekly boss contract (from the first boss's entry level)
+	login = true, -- the 7-day login streak
+	eventsPer2h = 1, -- world events joined per 2 hours of play
+})
+export type PlayProfile = {
+	hoursPerDay: number,
+	dailies: number,
+	weekly: boolean,
+	bossContract: boolean,
+	login: boolean,
+	eventsPer2h: number,
+}
+
+export type QuestGoldRow = { main: number, side: number, boss: number, contract: number, total: number }
+
+local questGoldCache: { [number]: QuestGoldRow }? = nil
+-- S109 (E1): the gold of the one-time quests per level 1..99 in the distribution of questCreditByLevel (the story in
+-- its windows without the boss objectives, SIDE_SHARE of the side quests over their band, the boss quests over their
+-- band, the contract on its level; no carry). questsAt(L).gold (economyAt, levelIncome) keeps the quests on their own
+-- level and levelIncome spreads them over the band: the band sums are the same (DECYZJE S109).
+function Balance.questGoldByLevel(): { [number]: QuestGoldRow }
+	if questGoldCache then
+		return questGoldCache
+	end
+	local out: { [number]: QuestGoldRow } = {}
+	for L = 1, Config.MaxLevel - 1 do
+		out[L] = { main = 0, side = 0, boss = 0, contract = 0, total = 0 }
+	end
+	local function add(L: number, category: string, value: number)
+		local row: any = out[L]
+		if not row then
+			return
+		end
+		row[category] += value
+		row.total += value
+	end
+	local sources = questSources(true)
+	local starts: { number } = {}
+	for _, source in sources do
+		for _, q in source.list do
+			if CREDIT_RULES[q.category or "main"].spread == "window" and not hasBoss(q) then
+				if not table.find(starts, q.level) then
+					table.insert(starts, q.level)
+				end
+			end
+		end
+	end
+	table.sort(starts)
+	for _, source in sources do
+		for _, q in source.list do
+			local category: string = q.category or "main"
+			local rule = CREDIT_RULES[category]
+			local gold = q.reward.gold or 0
+			if rule.spread == "window" then
+				if not hasBoss(q) then
+					local i = table.find(starts, q.level) :: number
+					local last = if starts[i + 1] then starts[i + 1] - 1 else math.max(q.level, Config.MaxLevel - 1)
+					local need = 0
+					for L = q.level, last do
+						need += Exp.expToNext(L)
+					end
+					for L = q.level, last do
+						add(L, category, gold * Exp.expToNext(L) / need)
+					end
+				end
+			elseif rule.spread == "band" then
+				if q.level < Config.MaxLevel then
+					local lo, hi = QuestBudget.bandOf(q.level)
+					local need = 0
+					for L = lo, hi do
+						need += Exp.expToNext(L)
+					end
+					for L = lo, hi do
+						add(L, category, gold * rule.share * Exp.expToNext(L) / need)
+					end
+				end
+			else
+				add(q.level, category, gold * rule.share)
+			end
+		end
+	end
+	questGoldCache = out
+	return out
+end
+
+-- Hours of grinding of `level` for `classId` (the kills of the pace window model at the economyAt pace, like
+-- levelIncome).
+function Balance.levelHours(classId: string, level: number): number
+	local e = Balance.economyAt(classId, level)
+	return creditRows({})[level].need / e.pace.expPerKill * e.pace.secondsPerKill / 3600
+end
+
+export type Extras = {
+	daily: number,
+	weekly: number,
+	bossContract: number,
+	login: number,
+	events: number,
+	total: number,
+}
+
+local function profileOf(profile: PlayProfile?): PlayProfile
+	return profile or (Balance.PLAY_PROFILE :: any)
+end
+
+-- S109 (E1): gold per hour of play from the extras outside economyAt. Gold only: the reward items (blessings,
+-- essences, potions, stones, the chests) are consumables, not income, like the chest items of S100 / S101.
+function Balance.extrasPerHour(classId: string, level: number, profile: PlayProfile?): Extras
+	local p = profileOf(profile)
+	local hpd = p.hoursPerDay
+	local function value(r: any): number
+		return r.gold or 0
+	end
+	local daily = p.dailies * value(Quests.Daily.reward(level)) / hpd
+	local weekly = if p.weekly then Quests.Weekly.PER_WEEK * value(Quests.Weekly.reward(level)) / (7 * hpd) else 0
+	local boss = if p.bossContract and QuestLogic.bossContractFor(level) ~= nil
+		then value(Quests.Weekly.bossReward(level)) / (7 * hpd)
+		else 0
+	local login = if p.login then Balance.loginWeek(classId, level).gold / (7 * hpd) else 0
+	local events = p.eventsPer2h / 2 * WorldEvents.reward(level, level, true).gold
+	return {
+		daily = daily,
+		weekly = weekly,
+		bossContract = boss,
+		login = login,
+		events = events,
+		total = daily + weekly + boss + login + events,
+	}
+end
+
+-- S109 (C2): EXP per hour of play from the extras (daily, weekly, the boss contract, world events; the login reward
+-- gives no EXP).
+function Balance.extrasExpPerHour(level: number, profile: PlayProfile?): Extras
+	local p = profileOf(profile)
+	local hpd = p.hoursPerDay
+	local daily = p.dailies * (Quests.Daily.reward(level).exp or 0) / hpd
+	local weekly = if p.weekly then Quests.Weekly.PER_WEEK * (Quests.Weekly.reward(level).exp or 0) / (7 * hpd) else 0
+	local boss = if p.bossContract and QuestLogic.bossContractFor(level) ~= nil
+		then (Quests.Weekly.bossReward(level).exp or 0) / (7 * hpd)
+		else 0
+	local events = p.eventsPer2h / 2 * WorldEvents.reward(level, level, true).exp
+	return {
+		daily = daily,
+		weekly = weekly,
+		bossContract = boss,
+		login = 0,
+		events = events,
+		total = daily + weekly + boss + events,
+	}
+end
+
+-- S109 (E1): gold per hour of a player who does everything (grinding + extras).
+function Balance.fullIncome(classId: string, level: number): number
+	return Balance.economyAt(classId, level).incomePerHour + Balance.extrasPerHour(classId, level).total
+end
+
+-- S109 (T-EC4, T-EC5): the gold of a level for a player who does everything: levelIncome plus the extras over the
+-- hours of grinding of the level.
+function Balance.fullLevelIncome(classId: string, level: number): number
+	return Balance.levelIncome(classId, level)
+		+ Balance.extrasPerHour(classId, level).total * Balance.levelHours(classId, level)
+end
+
+-- S109 (E2): the full-income targets (test tooling, not game numbers). The new gold only lowers relative costs, so
+-- the upper bounds of S84 / S92-S94 (upgrades, potions) stay on the grinding income and the lower ones (sinks:
+-- backpacks, the +9 set, the chain potions' floor) are checked on the full income.
+Balance.FULL_INCOME = table.freeze({
+	questGold = 0.25, -- T-EC2: one-time quest gold / grinding income of the level, mean of 5 levels, L 21..99 (max)
+	-- S109: T-EC2 poza zasięgiem dźwigni S109 na 21-32: złoto fabuły gold(level) (S27/S32, poza E4); rozdział II ma
+	-- zadanie prawie co poziom, a poziom trwa 0,3-0,6 h (raport; od 33. asercja)
+	questGoldReportTo = 32,
+	extras = 0.35, -- T-EC3: extras / grinding income per hour, mean of the band 20-44, 45-69, 70-99 (max)
+	backpacks = {
+		{ id = "backpack_80", level = 25 },
+		{ id = "backpack_100", level = 35 },
+		{ id = "backpack_130", level = 50 },
+	},
+	backpackLevels = 3, -- T-EC4: levels of full income (min; the max 8 stays on the grinding income)
+	bigBackpacks = { { id = "backpack_160", level = 65 }, { id = "backpack_200", level = 80 } },
+	bigBackpackLevels = 5, -- T-EC5 (min; the max 12 stays on the grinding income)
+	set9Hours = 150, -- T-EC6: the protected +9 set at L99, hours at full income (min; the max 300 on the ground alone)
+	chainPotions = 0.15, -- T-EC7: chain potions / full income where S93 / S94 assert the 15% floor (min)
+	chainLevels = { { 46, 69 }, { 71, 99 } }, -- the levels of the S93 / S94 chainLow rows
+	reportLevels = { 10, 20, 30, 45, 60, 70, 85, 99 }, -- T-EC8
+	reportClasses = { "Warrior", "Mage" },
+})
+
+export type IncomeRow = {
+	id: string,
+	label: string,
+	value: number,
+	band: { lo: number?, hi: number? },
+	ok: boolean,
+	report: boolean,
+	why: string?,
+	worst: string?, -- where the value comes from (class, level)
+}
+
+-- S109 (E2): the T-EC rows (T-EC2..T-EC7 asserted, one row per target with its worst value).
+local fullIncomeCache: { IncomeRow }? = nil
+function Balance.fullIncomeRows(): { IncomeRow }
+	if fullIncomeCache then
+		return fullIncomeCache
+	end
+	local F = Balance.FULL_INCOME
+	local rows: { IncomeRow } = {}
+	local function row(id: string, label: string, value: number, lo: number?, hi: number?, worst: string?)
+		local ok = (lo == nil or value >= lo) and (hi == nil or value <= hi)
+		table.insert(rows, {
+			id = id,
+			label = label,
+			value = value,
+			band = { lo = lo, hi = hi },
+			ok = ok,
+			report = false,
+			worst = worst,
+		})
+	end
+	-- T-EC2: one-time quest gold / grinding income of the level, moving mean of 5 levels (the worst class); 21..
+	-- questGoldReportTo in the report (FULL_INCOME), the rest asserted
+	local gold = Balance.questGoldByLevel()
+	local worst = { { value = -1, at = "-" }, { value = -1, at = "-" } }
+	for _, c in Balance.CLASSES do
+		local share: { [number]: number } = {}
+		for L = 20, 99 do
+			local e = Balance.economyAt(c, L)
+			share[L] = gold[L].total / math.max(1e-9, e.incomePerHour * Balance.levelHours(c, L))
+		end
+		for L = 21, 99 do
+			local sum, n = 0, 0
+			for k = math.max(20, L - 2), math.min(99, L + 2) do
+				sum += share[k]
+				n += 1
+			end
+			local part = worst[if L <= F.questGoldReportTo then 1 else 2]
+			if sum / n > part.value then
+				part.value, part.at = sum / n, `{c} {L}`
+			end
+		end
+	end
+	local cut = F.questGoldReportTo
+	row(
+		"T-EC2.21",
+		`złoto zadań jednorazowych / dochód poziomu z gry (średnia 5 poziomów, 21–{cut})`,
+		worst[1].value,
+		nil,
+		F.questGold,
+		worst[1].at
+	)
+	rows[#rows].report = true
+	rows[#rows].why =
+		`poza zasięgiem dźwigni S109: złoto fabuły gold(level) (S27/S32) poza E4; rozdział II ma zadanie prawie co poziom, a poziom trwa 0,3–0,6 h`
+	row(
+		`T-EC2.{cut + 1}`,
+		`złoto zadań jednorazowych / dochód poziomu z gry (średnia 5 poziomów, {cut + 1}–99)`,
+		worst[2].value,
+		nil,
+		F.questGold,
+		worst[2].at
+	)
+	-- T-EC3: extras / grinding income per hour, mean over the band's levels (the worst class)
+	for _, band in { { 20, 44 }, { 45, 69 }, { 70, 99 } } do
+		local w, at = -1, "-"
+		for _, c in Balance.CLASSES do
+			local sum, n = 0, 0
+			for L = band[1], band[2] do
+				sum += Balance.extrasPerHour(c, L).total / math.max(1e-9, Balance.economyAt(c, L).incomePerHour)
+				n += 1
+			end
+			if sum / n > w then
+				w, at = sum / n, c
+			end
+		end
+		row(`T-EC3.{band[1]}`, `dodatki / dochód z gry na godzinę, {band[1]}–{band[2]}`, w, nil, F.extras, at)
+	end
+	-- T-EC4 / T-EC5: backpacks in levels of full income at the shop level (the lowest class)
+	local function bags(id: string, list: { any }, min: number)
+		for _, b in list do
+			local item = Items.get(b.id) :: any
+			local low, at = math.huge, "-"
+			for _, c in Balance.CLASSES do
+				local levels = item.buyPrice / math.max(1e-9, Balance.fullLevelIncome(c, b.level))
+				if levels < low then
+					low, at = levels, c
+				end
+			end
+			row(`{id}.{b.id}`, `{b.id} (od {b.level}.) w poziomach pełnego dochodu`, low, min, nil, `{at} {b.level}`)
+		end
+	end
+	bags("T-EC4", F.backpacks, F.backpackLevels)
+	bags("T-EC5", F.bigBackpacks, F.bigBackpackLevels)
+	-- T-EC6: the protected +9 set at L99 at full income on the best gold ground (Warrior, like S94)
+	do
+		local set = Balance.protectedSet("Warrior", 99)
+		local hours = set.goldEq / math.max(1e-9, set.perHour + Balance.extrasPerHour("Warrior", 99).total)
+		row(
+			"T-EC6",
+			`komplet +9 z ochroną (L99) przy pełnym dochodzie ({set.area}): h`,
+			hours,
+			F.set9Hours,
+			nil,
+			"Warrior 99"
+		)
+	end
+	-- T-EC7: chain potions / full income on the levels where S93 / S94 assert the floor (the lowest)
+	do
+		local low, at = math.huge, "-"
+		for _, range in F.chainLevels do
+			for L = range[1], range[2] do
+				for _, c in Balance.CLASSES do
+					local e = Balance.economyAt(c, L, { potions = "chain" })
+					local share = e.potionGold / math.max(1e-9, e.incomePerHour + Balance.extrasPerHour(c, L).total)
+					if share < low then
+						low, at = share, `{c} {L}`
+					end
+				end
+			end
+		end
+		row(
+			"T-EC7",
+			"mikstury łańcuchowe / pełny dochód (poziomy dolnej granicy S93 / S94)",
+			low,
+			F.chainPotions,
+			nil,
+			at
+		)
+	end
+	fullIncomeCache = rows
+	return rows
+end
+
+export type FullIncomeReport = {
+	classId: string,
+	level: number,
+	grind: number, -- gold per hour of grinding (economyAt)
+	quests: number, -- one-time quest gold per hour of the level (questGoldByLevel over the level's hours)
+	extras: Extras,
+	total: number,
+}
+
+-- S109 (T-EC8): one report row (gold per hour of play).
+function Balance.fullIncomeReport(classId: string, level: number): FullIncomeReport
+	local grind = Balance.economyAt(classId, level).incomePerHour
+	local hours = math.max(1e-9, Balance.levelHours(classId, level))
+	local quests = Balance.questGoldByLevel()[math.min(level, Config.MaxLevel - 1)].total / hours
+	local extras = Balance.extrasPerHour(classId, level)
+	return {
+		classId = classId,
+		level = level,
+		grind = grind,
+		quests = quests,
+		extras = extras,
+		total = grind + quests + extras.total,
 	}
 end
 

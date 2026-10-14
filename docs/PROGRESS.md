@@ -5,7 +5,8 @@
 
 ## Stan
 
-S01–S108 gotowe (lista i zakres w `docs/SESJE.md`). Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
+S01–S109 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
 postaci (`Skills.rankFor`, drabina przejściowa ROZWOJ 2.6), zapis w schemacie 6 (darmowy reset statystyk, pasek
@@ -128,30 +129,36 @@ w ustawieniach; fabuła 1–20, poboczne Łąk, stajnia), towarzysz `follow` / `
 S103 fabuła rozdział II „Zapomniany Ród”: 17 questów w Borze (9 nowych), czterech NPC (Radomir, duch Oswina,
 Jorund, Ragna), sześć kotwic z rekwizytami i efektami, dziesięć przerywników (Ilvar jako projekcja, duch Morvane),
 towarzysze Radomir (`lead`) i Ragna (`follow`), fabuła 20–44 na regule budżetu (10% pasma, `monsterExpMul` 21–36 do 1,24),
-nowe rzeczy ukryte na wiki do S109.
+nowe rzeczy na wiki od S109.
 S104 fabuła rozdział III „Zimny Ogień”: 15 questów na Pustkowiach (10 nowych), Runmistrz Brokk, Szamanka Ghasha i Brat
 Kaspar, NPC widoczni od swojego questu (`NpcDef.showFrom`, `Logic/NpcVisibility`), pięć kotwic na mapie i trzy w Kuźni
 Głębin (efekty `cageOpen`, `rune`, `chains`), dziewięć przerywników, Brokk jako towarzysz (`lead`, `follow` w Kuźni),
-fabuła 45–69 na regule budżetu (10% pasma, `monsterExpMul` 45–69 0,76–0,96), nowe rzeczy ukryte na wiki do S109.
+fabuła 45–69 na regule budżetu (10% pasma, `monsterExpMul` 45–69 0,76–0,96), nowe rzeczy na wiki od S109.
 S105 fabuła rozdział IV „Długa Zima” i finał „Pierwsza Wiosna”: 19 questów na Szczytach (15 nowych, 70 questów fabuły,
 ostatni `firstSpring` z celem 100. poziomu), Traperka Sigrun i duch Brata Halgrima, Krąg Obrzędu z Sercem Zimy u stóp
 Iglicy, osiem kotwic na mapie i dwie w Zamarzniętej Twierdzy (efekty z lodowym posągiem Ilvara i Cierniem),
 czternaście przerywników, Sigrun i Halvar jako towarzysze, tytuł „Cierń Vaelthornu” i skin finału, pora roku w mieście
-z postępu fabuły (śnieg po smoku, wiosna po finale, `/season`), fabuła 70–99 na regule budżetu; nowe rzeczy ukryte na
-wiki do S109.
+z postępu fabuły (śnieg po smoku, wiosna po finale, `/season`), fabuła 70–99 na regule budżetu; nowe rzeczy na
+wiki od S109.
 S106 poboczne Mrocznego Boru: osiem łuków, 27 zadań na 20–44 u ośmiu nowych mieszkańców Boru (Wanda, Maciej, Bogumił,
 Dobrawa, Zbyszko, Ołdrzych, Kalina, Wojsław), 30 kotwic `dw_*` (16 z rekwizytami generatora), sześć efektów, wybór
 przedmiotu na końcu łuku, skin `mountskin_lantern`, EXP z budżetu pasma (6%, `settleBands`), złoto ×0,8,
-`monsterExpMul` 20–44 o ok. 3–4% niżej, czas na poziom bez zmian; ukryte na wiki do S109.
+`monsterExpMul` 20–44 o ok. 3–4% niżej, czas na poziom bez zmian; na wiki od S109.
 S107 poboczne Spalonych Pustkowi: osiem łuków, 26 zadań na 45–68 u pięciu nowych mieszkańców Pustkowi (Orren, Dragan,
 Wiesława, Ezra, Bogna) oraz Kesry, Ghashy i Kaspara, 28 kotwic `ash_*` (9 z rekwizytami `AshenGen/Quest`), pięć
 efektów, Orren i Ezra jako towarzysze, wybór przedmiotu na końcu łuku, EXP z budżetu pasma (6%), złoto ×0,8,
-`monsterExpMul` 45–69 o ok. 4% niżej, czas na poziom bez zmian; ukryte na wiki do S109.
+`monsterExpMul` 45–69 o ok. 4% niżej, czas na poziom bez zmian; na wiki od S109.
 S108 poboczne Lodowych Szczytów: osiem łuków, 25 zadań na 70–99 u siedmiu nowych mieszkańców Szczytów (Ingrid,
 Eskil, Ragnvald, Torvi, Gunnar, Asmund, Vigdis; każdy z małym obozem z `FrostpeakGen/SideCamps`) oraz Sigrun, Halvara i
 Brata Anzelma, 25 kotwic `fp_*`, dwanaście efektów, Sigrun, Torvi i Ragnvald jako towarzysze, wybór przedmiotu na końcu
 łuku, EXP z budżetu pasma (6%), złoto ×0,8, `monsterExpMul` 70–99 o ok. 4% niżej, czas na poziom bez zmian, `/side list
-[prefiks]`; ukryte na wiki do S109.
+[prefiks]`; na wiki od S109.
+S109 audyt questów 1–100: zadania dają 30,0% EXP poziomu w każdym paśmie 20–99 (zlecenie 12 / fabuła 10 / poboczne 6 /
+bossowe 2), cele T-QB1…T-QB7 asertowane (`QuestBudgetGen.audit`, `lune run tools/quest_budget.luau audit`), wagi fabuły
+przeliczone (`monsterExpMul` bez przycięć, 45–71 0,844, 72–99 0,803, 20–44 0,90–1,23), `toDuskwood` na regule fabuły,
+zlecenia 1–3 bez EXP; czas na poziom jak S94 (1 → 100 84,1 h w modelu); pełny dochód (`Balance.fullIncome`, T-EC2…T-EC7);
+nowa baza 1–20 (`meta.session = "S109"`, `ALLOWED_1_20_DIFFS` pusta); questy na wiki: fabuła w rozdziałach z nowymi
+zadaniami, zlecenia łowieckie, poboczne wszystkich krain, bossowe i tygodniowe; ukrycie S102–S108 zdjęte.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -183,12 +190,16 @@ zakończone; testy i decyzje właściciela po nich.
   `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
   `docs/SESJE.md` → S95); cel `deliver` do sprzedawcy klasy bez tekstu na wiki (pierwszy taki quest).
 - **Questy (S98)**: uproszczenia wyglądu: plakietka kategorii w dialogu bez tła, karta zlecenia na bossa bez glifu
-  bossa, pasek zakładek dziennika przewijany bez strzałek. Cel budżetu 30% EXP z questów nieosiągnięty od 20.
-  (po S108: 20–44 27%, 45–69 26%, 70–99 27%; audyt S109).
-- **Zlecenia łowieckie (S99)**: na 1–19 questy dają w modelu 74% EXP poziomu, więc `monsterExpMul` spadł tam do ok. 0,65
-  (L3 przycięte do `MUL_MIN` 0,5): kto pomija zlecenia na 1–19, bije ok. 1,5× dłużej (decyzja właściciela / audyt S109).
-  Zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów). Zlecenia bez eksportu na wiki (S109).
-  EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,5× ponad serwer (L3 2×), od 45. ok. 1,2× (S109).
+  bossa, pasek zakładek dziennika przewijany bez strzałek.
+- **Questy (S109)**: budżet EXP audytowany (30% na 20–99); dzienne i tygodniowe poza budżetem (z nimi 1 → 100 ok. 52 h
+  przy 2 h dziennie; decyzja właściciela: `docs/SESJE.md` → S109). Wiersze w raporcie: `monsterExpMul` 20–44 do 1,23
+  (T-QB5 maks. 1,00; zadania dają tam mniej niż fabuła S94) i złoto zadań na 21–32 do 0,64 dochodu z gry (T-EC2, złoto
+  fabuły `gold(level)`). Łąki 1–19 z zadaniami ok. 95% EXP poziomu z założenia (`monsterExpMul` ok. 0,6: kto pomija
+  zadania, bije tam ok. 1,6× dłużej).
+- **Zlecenia łowieckie (S99)**: zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów); zlecenia 1–3
+  bez EXP od S109. EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,6× ponad serwer, na 20–36 mniej
+  (mnożnik 1,04–1,23), od 45. ok. 1,2× więcej (decyzja właściciela).
+- **Wiki questów (S109)**: uproszczenie: strony krain bez questów bossowych (są tylko w indeksie zadań, strona bossa ich nie pokazuje).
 - **Nagroda za logowanie (S100)**: liczby skrzyni (85 / 15 zamiast planowanych 65 / 35) i to, czy dzień bez odbioru
   przerywa serię, do decyzji właściciela (`docs/SESJE.md` → S100); nagroda bez strony na wiki. Uproszczenie wyglądu:
   karty dni w siatce równej szerokości (karta 7 nie jest szersza), bez dźwięku „reward” (jest `levelUp`).
@@ -198,19 +209,13 @@ zakończone; testy i decyzje właściciela po nich.
   wydarzenia i na liście map; znak nie jest klikalny (bez karty). Uproszczenie: minimapa bez pulsowania znaku.
 - **Rozmowy w questach (S101b)**: strzałka celu `escort`, gdy figury towarzysza nie ma w strumieniu, wskazuje cel
   zamiast towarzysza.
-- **Fabuła (S102)**: nowe questy rozdziału I dają mało EXP (`STORY_STEP` 0,05, 83–586 EXP), bo fabuła 1–19 ma już
-  41,8% EXP pasma przy celu 10% (decyzja właściciela / audyt S109).
 - **Fabuła (S103)**: `G9.up9` na 40 (+1…+9 broni z ochroną = 11,06 poziomu dochodu, pasmo 12–25) w trybie raportu:
-  złoto nowych questów rozdziału II, `Config.Upgrade` globalne (decyzja właściciela). Wagi fabuły 20–44 poza zakresem
-  planu (do 2,2), bo model tempa S94 trzyma EXP fabuły na 21–26 (`docs/DECYZJE.md` S103; audyt S109).
+  złoto nowych questów rozdziału II, `Config.Upgrade` globalne (decyzja właściciela).
 - **Fabuła (S104)**: uproszczenia: scena odlotu wywerny (`ch3_wyvern`) bez figury wywerny, sama kamera i linie;
-  komentarz Brokka przy słupach jeńców losuje jedną z trzech linii (bez wariantu na kotwicę). Okno `coldFire` (69)
-  sięga 71, więc raport okien S98 pokazuje fabułę 45–69 jako 9,1% (wg poziomu questów 10%; audyt S109).
+  komentarz Brokka przy słupach jeńców losuje jedną z trzech linii (bez wariantu na kotwicę).
 - **Fabuła (S105)**: uproszczenia: sceny bez dźwięków (ryk, dzwony, ptaki tylko jako `hint` w `Data/Ambience`; sceny
   nie mają pola dźwięku), kamera `firstSpring` przybliża się bez opadania, rycerze w `thornWhole` rozsypują się bez
-  klękania, skin `mountskin_spring` bez płatków z grzywy (skin nie ma cząstek). `monsterExpMul` L99 0,546
-  (`dragonsBrood` i `voiceOfWinter` na 99; po S108 z finałem pobocznym `side_fp_treatise` 0,512): kto pomija te
-  questy, bije 99. poziom dłużej (audyt S109).
+  klękania, skin `mountskin_spring` bez płatków z grzywy (skin nie ma cząstek).
 - **Poboczne Boru (S106)**: uproszczenia wyglądu: efekt `spill` przykrywa stojący kocioł wiedźmy przewróconą bryłą
   (zielone światło kotła generatora zostaje), `ward` przy słupach z urokiem stawia deszczułkę obok, urok rekwizytu
   nie znika.

@@ -73,7 +73,8 @@ local EXPECTED_INSERTS: { [string]: { string } } = {
 	},
 }
 
--- Rewards of the quests that keep fixed EXP (the old 1-19, toDuskwood and the boss quests), as before S102.
+-- Rewards of the quests that keep fixed EXP (the old 1-19 and the boss quests), as before S102. S109: toDuskwood joined
+-- the story rule (its 60% of level 20 broke the audit's T-QB3 / T-QB5 on 20-23).
 local FIXED_EXP: { [string]: number } = {
 	arrival = 30,
 	healer = 40,
@@ -90,7 +91,6 @@ local FIXED_EXP: { [string]: number } = {
 	goblinCamp = 5229,
 	mosshollow = 14858,
 	grimrok = 9534,
-	toDuskwood = 7150,
 	morvane = 66499,
 	azgor = 153861,
 	vaelgrath = 371503,
@@ -396,7 +396,7 @@ describe("Story chain and data (S102 T4)", function()
 				if list[i + 1] then
 					expect(`{id} turnIn {quest.turnIn}`).toBe(`{id} turnIn {list[i + 1].giver}`)
 				end
-				expect(quest.wiki).toBe(false)
+				expect(quest.wiki).toBeNil() -- S109: published on the wiki
 				expect(quest.category).toBe("main")
 			end
 		end
@@ -797,11 +797,11 @@ describe("Chapter II: quests (S103)", function()
 		end
 	end)
 
-	it("new quests: main, hidden from the wiki, 2-4 pages with texts; the old eight 2-3 pages", function()
+	it("new quests: main, on the wiki (S109), 2-4 pages with texts; the old eight 2-3 pages", function()
 		for _, id in EXPECTED_INSERTS.S103 do
 			local quest = assert(Main.get(id), id)
 			expect(quest.category).toBe("main")
-			expect(quest.wiki).toBe(false)
+			expect(quest.wiki).toBeNil() -- S109: published on the wiki
 			local pages = assert(quest.pages, id)
 			expect(pages >= 2 and pages <= 4).toBe(true)
 			for _, key in { "title", "text", "done" } do
@@ -1053,11 +1053,11 @@ describe("Chapter II: players in the middle of the story (S103, A6)", function()
 end)
 
 describe("Chapter II: NPCs, places and scenes (S103)", function()
-	it("the four story NPCs of Duskwood: hidden from the wiki, texts in both languages, Oswin a ghost", function()
+	it("the four story NPCs of Duskwood: on the wiki (S109), texts in both languages, Oswin a ghost", function()
 		for _, id in { "forester_radomir", "ghost_oswin", "defector_jorund", "witch_ragna" } do
 			local npc = assert(Npcs.get(id), id)
 			expect(npc.map).toBe("duskwood")
-			expect(npc.wiki).toBe(false)
+			expect(npc.wiki).toBeNil() -- S109: published on the wiki
 			expect(npc.lines).toBe(3)
 			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
 				expect(`{id}.{key} {has(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
@@ -1242,32 +1242,36 @@ describe("Main story, chapter III (S104)", function()
 		expect(Main.get("azgor").reward.exp).toBe(153861) -- exp(70, 1.2), as S94 left it
 		expect(Main.STORY_WEIGHT.azgor).toBeNil()
 		for _, id in { "ashen", "orcs", "golems", "deepforge" } do
+			-- S109: the weights shape monsterExpMul (audit T-QB5), no longer 1
 			local quest = assert(Main.get(id))
-			expect(Main.STORY_WEIGHT[id]).toBe(1)
-			expect(quest.reward.exp).toBe(math.floor(Main.STORY_SCALE[45] * Exp.expToNext(quest.level)))
+			local weight = assert(Main.STORY_WEIGHT[id], id)
+			expect(quest.reward.exp).toBe(math.floor(Main.STORY_SCALE[45] * Exp.expToNext(quest.level) * weight))
 		end
 		expect(table.find(Main.STORY_BANDS, 45) ~= nil).toBe(true)
 	end)
 
-	it("4. the ten new quests: main, off the wiki, 3 pages (coldFire 4), 5-70% of a level, gold(level)", function()
-		for _, id in EXPECTED_INSERTS.S104 do
-			local quest = assert(Main.get(id), id)
-			expect(quest.category).toBe("main")
-			expect(quest.wiki).toBe(false)
-			expect(quest.pages).toBe(if id == "coldFire" then 4 else 3)
-			local share = quest.reward.exp / Exp.expToNext(quest.level)
-			expect(`{id} {share > 0 and share <= 0.7}`).toBe(`{id} true`)
-			expect(quest.reward.gold).toBe(60 + 45 * quest.level)
+	it(
+		"4. the ten new quests: main, on the wiki (S109), 3 pages (coldFire 4), 5-70% of a level, gold(level)",
+		function()
+			for _, id in EXPECTED_INSERTS.S104 do
+				local quest = assert(Main.get(id), id)
+				expect(quest.category).toBe("main")
+				expect(quest.wiki).toBeNil() -- S109: published on the wiki
+				expect(quest.pages).toBe(if id == "coldFire" then 4 else 3)
+				local share = quest.reward.exp / Exp.expToNext(quest.level)
+				expect(`{id} {share > 0 and share <= 0.7}`).toBe(`{id} true`)
+				expect(quest.reward.gold).toBe(60 + 45 * quest.level)
+			end
+			local cold = assert(Main.get("coldFire"))
+			local plain = math.floor(Main.STORY_SCALE[45] * Exp.expToNext(cold.level) * 1)
+			expect(cold.reward.exp > plain).toBe(true)
+			expect(cold.reward.items).toEqual({ { id = "blessing_guardian_4", n = 1 } })
+			expect(Main.get("mineDepths").reward.items).toEqual({ { id = "stone_map", n = 2 } })
+			expect(Main.get("burntTemple").reward.items).toEqual({ { id = "blessing_sage_3", n = 1 } })
+			expect(Main.get("wyvernLair").reward.items).toEqual({ { id = "blessing_hunter_3", n = 1 } })
+			expect(Main.get("forgeChains").reward.items).toEqual({ { id = "elixir_resFire", n = 3 } })
 		end
-		local cold = assert(Main.get("coldFire"))
-		local plain = math.floor(Main.STORY_SCALE[45] * Exp.expToNext(cold.level) * 1)
-		expect(cold.reward.exp > plain).toBe(true)
-		expect(cold.reward.items).toEqual({ { id = "blessing_guardian_4", n = 1 } })
-		expect(Main.get("mineDepths").reward.items).toEqual({ { id = "stone_map", n = 2 } })
-		expect(Main.get("burntTemple").reward.items).toEqual({ { id = "blessing_sage_3", n = 1 } })
-		expect(Main.get("wyvernLair").reward.items).toEqual({ { id = "blessing_hunter_3", n = 1 } })
-		expect(Main.get("forgeChains").reward.items).toEqual({ { id = "elixir_resFire", n = 3 } })
-	end)
+	)
 
 	it("5. every NPC, anchor, area and node of the chapter exists where the texts say", function()
 		local AshenGen = require("../src/shared/Logic/AshenGen")
@@ -1493,7 +1497,7 @@ describe("Main story, chapter III (S104)", function()
 			local npc = assert(Npcs.get(id), id)
 			expect(npc.map).toBe("ashen")
 			expect(table.find(npc.services, "talk") ~= nil).toBe(true)
-			expect(npc.wiki).toBe(false)
+			expect(npc.wiki).toBeNil() -- S109: published on the wiki
 		end
 		local arc: any = { id = "test_s107", requires = { "warcampCages" } }
 		expect(SideQuests.requirementsMet(applied({ mainLast = "warcampCages" }), arc)).toBe(true)
@@ -1859,10 +1863,10 @@ describe("Story chapter IV and the finale (S105)", function()
 		expect(skin.kind).toBe("mountskin")
 		expect(skin.price).toBe(0)
 		expect((skin.obtain :: any).quest).toBe("firstSpring")
-		expect(skin.wiki).toBe(false)
+		expect(skin.wiki).toBeNil() -- S109: published on the wiki
 		local title = assert(TitleData.get("thornbearer"))
 		expect(title.req).toEqual({ kind = "mainDone", value = indexOf.firstSpring })
-		expect(title.wiki).toBe(false)
+		expect(title.wiki).toBeNil() -- S109: published on the wiki
 	end)
 
 	it("B-T8: the scenes of the chapter and the finale; Ilvar only as a figure", function()
@@ -1896,13 +1900,13 @@ describe("Story chapter IV and the finale (S105)", function()
 		end
 	end)
 
-	it("the two story NPCs of the Peaks: hidden from the wiki, texts in both languages, Halgrim a ghost", function()
+	it("the two story NPCs of the Peaks: on the wiki (S109), texts in both languages, Halgrim a ghost", function()
 		local spots = assert(Areas.byMap.frostpeak.npcSpots, "npcSpots")
 		for id, spotId in { trapper_sigrun = "trapper", ghost_halgrim = "halgrim" } do
 			local npc = assert(Npcs.get(id), id)
 			local spot = assert(spots[spotId], spotId)
 			expect(npc.map).toBe("frostpeak")
-			expect(npc.wiki).toBe(false)
+			expect(npc.wiki).toBeNil() -- S109: published on the wiki
 			expect(npc.showFrom).toBeNil()
 			expect(npc.position.x).toBe(spot.x)
 			expect(npc.position.z).toBe(spot.z)

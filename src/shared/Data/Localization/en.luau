@@ -385,6 +385,7 @@ return {
 	["combat.immune"] = "Immune",
 	["combat.distance"] = "{distance} m",
 	["combat.reward"] = "+{exp} EXP · +{gold} gold",
+	["combat.rewardGold"] = "+{gold} gold",
 	["combat.elite2Spawned"] = "{name} has appeared nearby!",
 	["combat.attack"] = "Attack",
 	["combat.noTarget"] = "No target nearby.",

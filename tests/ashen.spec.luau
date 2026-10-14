@@ -900,13 +900,13 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 				if not S107_SPOTS[name] then
 					table.insert(points, { name = name, x = spot.x, z = spot.z })
 				end
-				expect(spot.wiki).toBe(false)
+				expect(spot.wiki).toBeNil() -- S109: published on the wiki
 			end
 			for _, a in anchors do
 				if string.sub(a.id, 1, 4) ~= "ash_" then -- S107's anchors: the side arc block below
 					table.insert(points, { name = a.id, x = a.x, z = a.z })
 				end
-				expect(a.wiki).toBe(false)
+				expect(a.wiki).toBeNil() -- S109: published on the wiki
 			end
 			expect(#points).toBe(8)
 			for _, p in points do
@@ -998,25 +998,28 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 end)
 
 describe("Ashen Wastes: side quest places (S107)", function()
-	it("the five NPC places: standing ground inside avoid circles, off roads and solid parts, hidden", function()
-		local spots = assert(DATA.npcSpots, "npcSpots")
-		for key, npcId in S107_SPOTS do
-			local spot = assert(spots[key], key)
-			expect(`{key} {standingProblems(spot.x, spot.z)}`).toBe(`{key} nil`)
-			expect(`{key} {touchesSolid(spot.x, spot.z, 3)}`).toBe(`{key} nil`)
-			expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
-			expect(spot.wiki).toBe(false)
-			for other, o in spots do
-				if other ~= key then
-					expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+	it(
+		"the five NPC places: standing ground inside avoid circles, off roads and solid parts, on the wiki (S109)",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			for key, npcId in S107_SPOTS do
+				local spot = assert(spots[key], key)
+				expect(`{key} {standingProblems(spot.x, spot.z)}`).toBe(`{key} nil`)
+				expect(`{key} {touchesSolid(spot.x, spot.z, 3)}`).toBe(`{key} nil`)
+				expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
+				expect(spot.wiki).toBeNil() -- S109: published on the wiki
+				for other, o in spots do
+					if other ~= key then
+						expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+					end
 				end
+				local npc = assert(require("../src/shared/Data/Npcs").get(npcId), npcId)
+				expect(npc.position.x).toBe(spot.x)
+				expect(npc.position.z).toBe(spot.z)
+				expect(npc.facing).toBe(spot.facing)
 			end
-			local npc = assert(require("../src/shared/Data/Npcs").get(npcId), npcId)
-			expect(npc.position.x).toBe(spot.x)
-			expect(npc.position.z).toBe(spot.z)
-			expect(npc.facing).toBe(spot.facing)
 		end
-	end)
+	)
 
 	it("the 28 ash_* anchors: unique, standing ground in avoid circles, 8+ apart, 3+ from solid parts", function()
 		local spots = assert(DATA.npcSpots, "npcSpots")
@@ -1029,7 +1032,7 @@ describe("Ashen Wastes: side quest places (S107)", function()
 				local found, mapId = Areas.anchorById(a.id)
 				expect(found).toBe(a)
 				expect(mapId).toBe("ashen")
-				expect(a.wiki).toBe(false)
+				expect(a.wiki).toBeNil() -- S109: published on the wiki
 				expect(`{a.id} {standingProblems(a.x, a.z, ON_ROCK[a.id])}`).toBe(`{a.id} nil`)
 				expect(`{a.id} {touchesSolid(a.x, a.z, 3)}`).toBe(`{a.id} nil`)
 				for mapName, data in Areas.byMap do

@@ -1066,9 +1066,11 @@ local function handle(event: { [string]: any })
 	elseif kind == "reward" then
 		local character = player.Character
 		if character then
+			-- S109: a reward without EXP (contracts 1-3, firstSpring) shows the gold alone
+			local exp = tonumber(event.exp) or 0
 			local text = Text.now(
-				"combat.reward",
-				{ exp = Format.number(event.exp or 0), gold = Format.number(event.gold or 0) }
+				if exp > 0 then "combat.reward" else "combat.rewardGold",
+				{ exp = Format.number(exp), gold = Format.number(event.gold or 0) }
 			)
 			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, { rise = 4 })
 		end

@@ -31,11 +31,11 @@ export type NpcSpot = {
 	x: number,
 	z: number,
 	facing: number,
-	wiki: boolean?, -- S103: false = left out of the wiki export (tools/WikiData/World) until published (S109)
+	wiki: boolean?, -- S103: false = left out of the wiki export (tools/WikiData/World) until published
 }
 
 -- Invisible quest object (S26 -> S27): a part tagged "QuestAnchor" with the attribute AnchorId, `y` studs over
--- the ground (default 2). S102: `wiki = false` keeps it off the wiki (story anchors until S109). S103: `rot` = yaw of
+-- the ground (default 2). S102: `wiki = false` keeps it off the wiki (none since S109). S103: `rot` = yaw of
 -- the anchor's frame in degrees (front (-sin, -cos) like the sites; default 0): the frame of a generator prop at the
 -- anchor (Logic/DuskwoodGen/Quest) and of the client effect after its use (QuestAnchorController).
 export type QuestAnchor = { id: string, x: number, z: number, y: number?, wiki: boolean?, rot: number? }

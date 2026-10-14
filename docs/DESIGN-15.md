@@ -10,7 +10,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 2. **Bez pay2win.** Nic kupionego za Robuxy ani Smocze Odłamki nie daje przewagi w walce ani szybkości ponad to, co da się zdobyć grą.
 3. **Księga balansu (S83):** każda zmieniona liczba w module z `BALANCE_MODULES` ma wpis w `tools/balance_reasons.luau` z `session = "SXX"`. Nowe moduły z liczbami tempa/ekonomii (np. `Data/Mounts`, `Data/Quests/Contracts`, `Data/WorldEvents`, `Data/LoginReward`, `Data/QuestBudget`) dopisz do `BALANCE_MODULES` (albo uzasadnij `NOT_BALANCE`).
 4. **Poziomy 1–20 są zamrożone od S91** (`tests/fixtures/balance_1_20.json`, `ALLOWED_1_20_DIFFS` pusta). Sesja, która celowo zmienia liczby 1–20 (questy na 1–19, kompensacja EXP potworów), dopisuje każdą różnicę do `ALLOWED_1_20_DIFFS` z `why` i odpowiednim wpisem księgi; fixture regeneruje tylko sesja, która to wprost mówi (S109).
-5. **Wiki:** eksport tylko z listy dozwolonych. Questy, wierzchowce i wydarzenia trafiają na wiki dopiero w sesjach, które to mówią; niewydane rzeczy nigdy. `tools/wiki_keys_diff.luau` przepuszcza zmianę kształtu tylko przez `WIKI_KEYS_ALLOW` opisany w SESJE.
+5. **Wiki:** eksport tylko z listy dozwolonych. Questy, wierzchowce i wydarzenia trafiają na wiki dopiero w sesjach, które to mówią; niewydane rzeczy nigdy. `tools/wiki_keys_diff.luau` przepuszcza zmianę kształtu tylko przez `WIKI_KEYS_ALLOW` opisany w SESJE. S109: fabuła na wiki zachowuje strony i pola questów głównych (dochodzi tylko `chapter`), lista jest pogrupowana w rozdziały z `Main.CHAPTERS`, nowe questy S102–S105 mają ten sam kształt (strony jako `text`), przerywniki zostają tylko w grze.
 6. **Zapis:** nowe pola dodawaj z wartościami domyślnymi przez istniejący mechanizm uzupełniania profilu (sprawdź `Logic/AccountSchema`, `DataService`, `CharacterFactory`). Migracja tylko wtedy, gdy trzeba przebudować istniejący kształt; numer = następny po ostatnim w kodzie (po S56 to 7). Wtedy test migracji.
 7. Nic nie udaje działania: żadnych martwych przycisków. Rzecz, której treść dopiero przyjdzie w późniejszej sesji, jest ukryta, a nie pusta.
 
@@ -52,6 +52,17 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 - `Data/QuestBudget.luau`: docelowy udział EXP z questów w EXP poziomu, łącznie ok. **30%** na poziom dla gracza, który robi zlecenie + fabułę + poboczne (dzienne i tygodniowe poza budżetem, jak dziś w modelu `questsAt`). Podział orientacyjny: zlecenie 12%, fabuła 10%, poboczne 6%, bossowe 2%.
 - **Kompensacja:** EXP z potworów na poziomie L mnożony przez `monsterExpMul(L)`, wyliczany narzędziem z rzeczywistych danych questów (model `Balance.questsAt` z S83) tak, żeby czas na poziom w modelu tempa (`paceAt`/`paceBand`) został w celach S91–S94 (±tolerancja z S94). Tabela jest generowana (`tools/quest_budget.luau` → `Data/QuestBudget` sekcja wygenerowana) i test pilnuje, że jest aktualna względem danych questów. **Każda sesja dodająca questy regeneruje tabelę** i opisuje zmianę w księdze; S109 robi audyt końcowy.
 - Na 1–20 to zmienia liczby zamrożone: wpisy `ALLOWED_1_20_DIFFS` z `why = "S98+ quest budget"`.
+- **Ustalenia S109 (audyt):**
+  - wynik: zadania dają 30,0% EXP poziomu w każdym paśmie 20–44, 45–69, 70–99 (zlecenie 12,0 / fabuła 10,0 / poboczne
+    6,0 / bossowe 2,0%; wariant „gracz robi wszystko”, po poziomie zadania); cele T-QB1…T-QB7 asertowane
+    (`QuestBudgetGen.AUDIT`), `monsterExpMul` bez przycięć, płaski w paśmie (45–71 0,844, 72–99 0,803), na 20–44 0,90–1,23
+    (fabuła S94 dawała tam więcej, więc maks. 1,00 tylko w raporcie); godziny bicia jak S94 (1 → 100 84,1 h w modelu);
+  - plik bazowy `tests/fixtures/quest_budget_base.json` (S98) jest stały: tryb `base` go nie nadpisuje;
+  - Łąki 1–19 poza celem 30% z założenia (samouczek S32, łuki S27, ok. 95%); zlecenia 1–3 bez EXP (`RULES.expFrom`);
+  - pełny dochód zakłada `Balance.PLAY_PROFILE` (2 h dziennie, dzienne, tygodniowe, zlecenie na bossa, logowanie, jedno
+    wydarzenie na 2 h): dodatki to ok. 30% dochodu z gry, cele T-EC2…T-EC7 (górne granice na dochodzie z gry, dolne na
+    pełnym); dzienne i tygodniowe zostają poza budżetem EXP do decyzji właściciela (z nimi 1 → 100 ok. 52 h);
+  - nowa baza 1–20: `tests/fixtures/balance_1_20.json` z `meta.session = "S109"`, `ALLOWED_1_20_DIFFS` pusta.
 
 ### 3.3 Zlecenia łowieckie (S99)
 - **Jedno zlecenie na każdy poziom 1–99** (`Data/Quests/Contracts`, generowane z danych łowisk: `Data/Areas`, `Data/Spawns`, `AreaProfiles`), cel `kill` n potworów z łowiska pasującego do poziomu (S99: n 10 → 30 na 1–20 i 30 → 60 na 20–99, bo na niskich poziomach poziom to kilkanaście–kilkadziesiąt potworów; łowisko w zasięgu poziomu, tylko łowiska otwartych regionów, bez jaskiń i lochów, rotacja, żeby nie powtarzać jednego miejsca). Nagroda: EXP wg budżetu (12% `expToNext(L)`), złoto (S99: 20 + 4·L, żeby nie zepsuć G9), co 10 poziomów błogosławieństwo Fortuny i kamienie (S99: bez plecaków, to zlew złota).

@@ -101,37 +101,42 @@ describe("Contracts: data (S99)", function()
 		end
 	end)
 
-	it("numbers: n grows 10 -> 30 -> 60, EXP is the budget share, gold 20 + 4 L, items every 10th", function()
-		local last = 0
-		for L = 1, Data.MAX_LEVEL do
-			local c = Data.list[L]
-			local n = c.objectives[1].n
-			expect(n >= last).toBe(true)
-			expect(n >= 10 and n <= 60).toBe(true)
-			last = n
-			expect(c.reward.exp).toBe(math.floor(Exp.expToNext(L) * SHARE))
-			expect(c.reward.gold).toBe(math.floor(RULES.gold.base + RULES.gold.perLevel * L))
-			expect(c.reward.exp > 0 and c.reward.gold > 0).toBe(true)
-			local items = c.reward.items
-			if L % 10 == 0 then
-				assert(items and #items > 0, `contract_{L}: milestone items`)
-				for _, item in items do
-					local def = Items.get(item.id)
-					assert(def, `contract_{L}: unknown item {item.id}`)
-					expect(def.slot).toBeNil()
-					expect(item.n > 0).toBe(true)
+	it(
+		"numbers: n grows 10 -> 30 -> 60, EXP is the budget share (none below expFrom), gold 20 + 4 L, items every 10th",
+		function()
+			local last = 0
+			for L = 1, Data.MAX_LEVEL do
+				local c = Data.list[L]
+				local n = c.objectives[1].n
+				expect(n >= last).toBe(true)
+				expect(n >= 10 and n <= 60).toBe(true)
+				last = n
+				-- S109 (audit D3): no EXP below RULES.expFrom (the tutorial pays levels 1-2 in full)
+				local exp = if L >= RULES.expFrom then math.floor(Exp.expToNext(L) * SHARE) else 0
+				expect(c.reward.exp).toBe(exp)
+				expect(c.reward.gold).toBe(math.floor(RULES.gold.base + RULES.gold.perLevel * L))
+				expect((L < RULES.expFrom or c.reward.exp > 0) and c.reward.gold > 0).toBe(true)
+				local items = c.reward.items
+				if L % 10 == 0 then
+					assert(items and #items > 0, `contract_{L}: milestone items`)
+					for _, item in items do
+						local def = Items.get(item.id)
+						assert(def, `contract_{L}: unknown item {item.id}`)
+						expect(def.slot).toBeNil()
+						expect(item.n > 0).toBe(true)
+					end
+				else
+					expect(items).toBeNil()
 				end
-			else
-				expect(items).toBeNil()
 			end
+			expect(Data.list[1].objectives[1].n).toBe(10)
+			expect(Data.list[10].objectives[1].n).toBe(20)
+			expect(Data.list[20].objectives[1].n).toBe(30)
+			expect(Data.list[99].objectives[1].n).toBe(60)
+			expect(RULES.gold.base).toBe(20)
+			expect(RULES.gold.perLevel).toBe(4)
 		end
-		expect(Data.list[1].objectives[1].n).toBe(10)
-		expect(Data.list[10].objectives[1].n).toBe(20)
-		expect(Data.list[20].objectives[1].n).toBe(30)
-		expect(Data.list[99].objectives[1].n).toBe(60)
-		expect(RULES.gold.base).toBe(20)
-		expect(RULES.gold.perLevel).toBe(4)
-	end)
+	)
 
 	it("rotation: never the previous area when two fit, at most 2 in 5, every hunting ground used", function()
 		for L = 2, Data.MAX_LEVEL do

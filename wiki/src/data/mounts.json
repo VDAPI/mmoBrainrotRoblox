@@ -27,6 +27,8 @@
     {"boss":"morvane","chance":0.03,"id":"mountskin_shade","name":{"en":"Morvane's Shroud","pl":"Całun Morvane"},"source":"boss"},
     {"boss":"azgor","chance":0.03,"id":"mountskin_cinder","name":{"en":"Azgor's Cinders","pl":"Popiół Azgora"},"source":"boss"},
     {"id":"mountskin_meadow","name":{"en":"Meadow Colours","pl":"Barwy Łąk"},"quest":{"en":"The First Ride","pl":"Pierwsza jazda"},"source":"quest"},
-    {"id":"mountskin_dragonslayer","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"},"quest":{"en":"Vaelgrath","pl":"Vaelgrath"},"source":"quest"}
+    {"id":"mountskin_dragonslayer","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"},"quest":{"en":"Vaelgrath","pl":"Vaelgrath"},"source":"quest"},
+    {"id":"mountskin_spring","name":{"en":"First Spring Tack","pl":"Rząd Pierwszej Wiosny"},"quest":{"en":"The First Spring","pl":"Pierwsza Wiosna"},"source":"quest"},
+    {"id":"mountskin_lantern","name":{"en":"Lantern Warden's Caparison","pl":"Czaprak straży latarń"},"quest":{"en":"The Lamplighter","pl":"Latarnik"},"source":"quest"}
   ]
 }

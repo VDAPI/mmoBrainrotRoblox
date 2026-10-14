@@ -20,8 +20,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - Liczby balansu tylko w `src/shared/Data/*` i `src/shared/Config.luau`.
 - Questy (S98+): każda zmiana danych questów → `lune run tools/quest_budget.luau` (przelicza
   `Data/QuestBudget.MONSTER_EXP_MUL`, drukuje linię do `tools/balance_reasons.luau`), potem wpisy `ALLOWED_1_20_DIFFS` dla
-  różnic 1–20; `tests/questbudget.spec.luau` pada przy nieaktualnej tabeli. Plik bazowy
-  `tests/fixtures/quest_budget_base.json` zmienia tylko S109.
+  różnic 1–20; `tests/questbudget.spec.luau` pada przy nieaktualnej tabeli. Plik bazowy (S98) jest stały: tryb `base`
+  go nie nadpisuje (S109). `lune run tools/quest_budget.luau audit`: cele udziałów questów (S109); pada przy questach
+  poza budżetem.
 - Serwer jest autorytetem: każdy remote ma typy argumentów i rate-limit w `Net/Definitions.luau`.
 - Liczba w module z `BALANCE_MODULES` (`tools/balance_reasons.luau`) zmienia się tylko z wpisem powodu `{ session, why }`;
   sesje balansu S83–S94 zaczynają od `lune run tools/balance_report.luau snapshot`; `tools/wiki_keys_diff.luau` musi być

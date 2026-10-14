@@ -237,6 +237,17 @@ export interface BossAttack {
   windup: number;
 }
 
+export interface BossContract {
+  byLevel: BossContractLevel[];
+  n: number;
+}
+
+export interface BossContractLevel {
+  boss: string; // id in bosses.json
+  level: number;
+  reward: QuestReward;
+}
+
 export interface BossItemChance {
   chance: number;
   id: string; // id in items.json
@@ -263,6 +274,16 @@ export interface BossMaterial {
 export interface BossPersonal {
   legendary: PityLine;
   mythic: PityLine;
+}
+
+export interface BossQuest {
+  boss: string; // id in bosses.json
+  giver: string; // id in npcs.json
+  id: string;
+  level: number;
+  reward: QuestReward;
+  title: Name;
+  where?: PlaceRef;
 }
 
 export interface BossScale {
@@ -352,6 +373,23 @@ export interface ClassInfo {
 
 export interface ClassesFile {
   classes: ClassInfo[];
+}
+
+export interface Contract {
+  area: string; // id in areas.json
+  label: Name;
+  level: number;
+  map: string; // id in maps.json
+  n: number;
+  reward: QuestReward;
+}
+
+export interface Contracts {
+  board: string; // id in npcs.json
+  list: Contract[];
+  max: number;
+  milestoneEvery: number;
+  scouts: string[]; // ids in npcs.json
 }
 
 export interface Cosmetic {
@@ -691,6 +729,7 @@ export interface MailRules {
 }
 
 export interface MainQuest {
+  chapter: number;
   done?: Name;
   giver: string; // id in npcs.json
   id: string;
@@ -1081,6 +1120,15 @@ export interface QuestAnchorInfo {
   z: number;
 }
 
+export interface QuestChapter {
+  final?: boolean;
+  from: number;
+  map: string; // id in maps.json
+  n: number;
+  title: Name;
+  to: number;
+}
+
 export interface QuestObjective {
   anchor?: string;
   anchors?: string[];
@@ -1132,6 +1180,9 @@ export interface QuestWhere {
 }
 
 export interface QuestsFile {
+  bossQuests: BossQuest[];
+  chapters: QuestChapter[];
+  contracts: Contracts;
   daily: DailyQuests;
   levelSlack: number;
   main: MainQuest[];
@@ -1139,6 +1190,7 @@ export interface QuestsFile {
   sideChoice: SideChoice;
   sideLevelSlack: number;
   sideMaxActive: number;
+  weekly: WeeklyQuests;
 }
 
 export interface RaritiesFile {
@@ -1609,6 +1661,19 @@ export interface VariantInfo {
   levelAdd: number;
   name?: Name;
   scale: number;
+}
+
+export interface WeeklyQuests {
+  bossContract: BossContract;
+  perWeek: number;
+  templates: WeeklyTemplate[];
+}
+
+export interface WeeklyTemplate {
+  byLevel: DailyLevel[];
+  id: string;
+  minLevel: number;
+  title: Name;
 }
 
 export interface WorldEventKind {

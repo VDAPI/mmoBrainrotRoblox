@@ -7912,3 +7912,268 @@ Pliki: `src/shared/Data/Quests/Side.luau`, `src/shared/Data/Areas/frostpeak.luau
 
 Uproszczenia: brak (obozy i efekty w pełnym planie). Efekt `iceChipped` jest ten sam przy łodzi i w skarbcu (bryły i
 kilof), bez osobnej łodzi wykutej z lodu.
+
+### S109: Audyt questów 1–100, nowa baza 1–20 i wiki questów
+
+Start na `46b15f3` (S108): commit i sekcja S108, pliki budżetu, zleceń, nagród, wydarzeń, rozdziałów (`CHAPTERS`,
+`chapterOf`) i `tests/dialogue.spec.luau` na miejscu; `scripts/check` zielony (6363 testy), `quest_budget check`
+aktualne, migawka `lune run tools/balance_report.luau snapshot S109` (`tools/balance_before.json`), zrzuty przed w
+`build/s109_before/` (raport budżetu, `BALANS.md`, dane wiki, `QuestBudget`, `Main`, `BalanceTables`, fixture 1–20).
+Zgodnie z poleceniem przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Audyt (B):** `QuestBudgetGen.AUDIT` i `QuestBudgetGen.audit()` (pasma w wariantach `model` i `all`, poziomy 1–99 z
+  udziałami, średnią kroczącą, `s₀`, `s`, mnożnikiem i godzinami, godziny pasm w pięciu wariantach, wiersze T-QB1…T-QB7
+  jako jedno źródło dla specu, CLI i raportu), tryb `lune run tools/quest_budget.luau audit` (kod 1 przy wierszu POZA),
+  `report` z tabelą audytu, blok „Quest budget audit (S109)” w `tests/questbudget.spec.luau`, sekcja „Audyt questów
+  (S109)” w `docs/BALANS.md`. Plik bazowy stały: `base` odmawia przy istniejącym pliku także z `--force` (D4).
+- **Poprawki danymi (D):** wagi fabuły 20–99 (tabela niżej), `toDuskwood` na regule fabuły, zlecenia 1–3 bez EXP
+  (`Contracts.RULES.expFrom = 4`); `MONSTER_EXP_MUL` przeliczone (`--session S109`), księga: `STORY_WEIGHT*`,
+  `STORY_SCALE*`, `MONSTER_EXP_MUL*`, `byId.<id>.reward.exp` (50 kluczy), `RULES.expFrom`, `contract_1..3`.
+- **Złoto (E):** `Balance.questGoldByLevel`, `PLAY_PROFILE`, `extrasPerHour`, `extrasExpPerHour`, `fullIncome`,
+  `fullLevelIncome`, `levelHours`, `FULL_INCOME`, `fullIncomeRows`, `fullIncomeReport`; blok „Full income (S109)” w
+  `tests/balance.spec.luau`, sekcja „Pełny dochód (S109)” w `docs/BALANS.md`. Nagród złota nie zmieniano.
+- **Nowa baza 1–20 (F):** lista `ALLOWED_1_20_DIFFS` kompletna na starym fixture (208 wpisów, 14 martwych usunięto),
+  potem `lune run tools/balance_report.luau fixture S109 "1-20 baseline after the quest series S95-S109 (DESIGN-15 §0.4)"`
+  i pusta lista; `balance1_20.spec` sprawdza `meta.session = "S109"`.
+- **Rozmowy (A5):** blok „Dialogue audit (S109)” w `tests/dialogue.spec.luau` (po całych danych); braków nie było, dane
+  i teksty bez zmian.
+- **Wiki (G):** eksport `chapters`, `main[].chapter` (strony `p1..pN` jako `text` nowych questów fabuły), `bossQuests`,
+  `weekly`, `contracts`; etykiety celów jak w grze (`killArea`, `killElite2`, `collectFrom`, `gatherAny`); ukrycie zdjęte
+  (tabela A3), `Visibility.collect` czyta też `Quests.Boss.list` i `Quests.Contracts.list`; testy G6 w
+  `tests/wikidump.spec.luau` (przypadki S102–S108 „zostaw poza wiki” zastąpione). Kod wiki: `lib/quests.ts`
+  (`mainChapters`, `chapters`, `chapterOf`, `contractsByMap`, `bossQuests`, `weeklyTemplates`, `sideByLand`,
+  `questRegion` z krainą rozdziału, `neighboursOf` w rozdziale), `lib/links.ts` (`chapterHref`), indeks zadań (Fabuła w
+  rozdziałach, Zlecenia łowieckie po krainach, Poboczne po krainach i NPC z licznikiem łuków, Bossowe z tygodniowym
+  zleceniem na bossa, Tygodniowe na chipach poziomów, Dzienne), strona questu głównego z wierszem „Rozdział”, strona
+  krainy z linią „Fabuła: Rozdział … (od–do)”, teksty `quests.*` PL i EN, wpis aktualizacji `2026-10-14-zadania`.
+- **Testy z przypięciem `wiki == false`** (ashen, duskwood, frostpeak, meadows, sidequests, story, titles, wikimap) i
+  liczb zmienionych w D1 (`story.spec` wagi czterech starych questów III, `FIXED_EXP` bez `toDuskwood`; `contracts.spec`
+  EXP od `RULES.expFrom`) poprawione na wartości z danych.
+
+#### A2: listy „Dla S109”
+
+| pozycja | źródło | rozstrzygnięcie |
+|---|---|---|
+| cel 30% asertowany | S98 (SESJE, DECYZJE) | zrobione: T-QB1/T-QB2 (B) |
+| `base --force` w audycie | S98 | nieaktualne: plik bazowy stały (D4), `base` zawsze odmawia |
+| fixture 1–20 do regeneracji | S98, S99 | zrobione (F) |
+| eksport zleceń na wiki | S99 | zrobione: `contracts` (G2) |
+| 1–19: 74% EXP z zadań, L3 przycięte | S99 | zrobione: T-QB4 (zlecenia asercja, reszta raport), L3 0,500 → 0,875 (D3) |
+| EXP potworów na wiki bez `monsterExpMul` | S99 | „Dla właściciela” (poza zakresem G; liczby niżej) |
+| fabuła 1–19 mało EXP (`STORY_STEP`) | S102 | nieaktualne: 1–19 poza celem z założenia (T-QB4 raport) |
+| wagi 20–44 poza planem | S103 | zrobione: wagi przeliczone w D1 |
+| okno `coldFire` 69–71 (9,1% fabuły 45–69) | S104 | zrobione: audyt liczy udział pasma po poziomie zadania (10,0%) |
+| L99 0,546 / 0,512 | S105, S108 | zrobione: 0,804 (wagi `dragonsBrood`, `voiceOfWinter`) |
+| zdjęcie `wiki = false` (questy, NPC, miejsca, kotwice, tytuł, skiny) | S102–S108 | zrobione (G3, tabela A3) |
+| przypadki S102–S108 w `wikidump.spec` | S105–S108 | zrobione: zastąpione testami G6 |
+| budżet pobocznych na trzech pasmach | S106–S108 | zrobione: T-QB2 poboczne 6,0% w każdym paśmie |
+| `NEW_QUESTS.S106–S108` do audytu rozmów | S108 | zrobione (A5) |
+
+Znaczniki w kodzie: komentarze „until S109” / „S109 publishes” zamienione na opis stanu (Main, Side, Npcs, Areas,
+Cosmetics, Titles, Types, `WikiData/{Quests,World,Places}`, `WikiMaps`); `TARGET` w `Data/QuestBudget`: „S109 audited:
+TARGET met, see docs/BALANS.md”.
+
+#### A3: ukryte treści
+
+| id | sesja | rodzaj | decyzja |
+|---|---|---|---|
+| `frostRuins`, `frostSign`, `warrenCharms`, `warCouncil`; `tower_crest` | S102 | questy, kotwica | publikuj |
+| 9 questów rozdziału II; `forester_radomir`, `ghost_oswin`, `defector_jorund`, `witch_ragna` z miejscami; 6 kotwic | S103 | questy, NPC, miejsca, kotwice | publikuj |
+| 10 questów rozdziału III; `runesmith_brokk`, `shaman_ghasha`, `hermit_kaspar` z miejscami; 5 kotwic mapy, `forge_chain_1..3` | S104 | questy, NPC, miejsca, kotwice | publikuj |
+| 15 questów IV i finału; `trapper_sigrun`, `ghost_halgrim` z miejscami; 8 kotwic mapy, `frost_bloom`, `hold_chapel`; `thornbearer`; `mountskin_spring` | S105 | questy, NPC, miejsca, kotwice, tytuł, kosmetyk | publikuj |
+| 27 questów Boru; 8 NPC, 8 miejsc; 30 kotwic `dw_*`; `mountskin_lantern` | S106 | questy, NPC, miejsca, kotwice, kosmetyk | publikuj |
+| 26 questów `side_ash_*`; 5 NPC, 5 miejsc; 28 kotwic `ash_*` | S107 | questy, NPC, miejsca, kotwice | publikuj |
+| 25 questów `side_fp_*`; 7 NPC, 7 miejsc; 25 kotwic `fp_*` | S108 | questy, NPC, miejsca, kotwice | publikuj |
+| `mount_royal` | S97 | wierzchowiec (premium) | zostaw: produkt wyłączony, poza wiki na zawsze |
+| `armorPen` | przed serią | linia przedmiotu | zostaw: linia zastąpiona przez `pierce` (S62) |
+| ścieżki klas (`PathDef.wiki`) | S71–S90 | ścieżki | zostaw: inna seria, decyzja właściciela |
+
+Razem: 38 questów fabuły, 78 pobocznych, 29 NPC, 29 miejsc NPC, 108 kotwic (103 na mapach, 5 w jaskiniach), 2 skiny,
+1 tytuł. Żaden NPC bez miejsca ani quest bez dawcy: test G6.5 „hides nothing that the game released” (`HIDDEN_OK` pusta).
+
+#### A4: stan narzędzi
+
+`QuestBudgetGen.credit` widzi cztery kategorie (`main`, `side`, `boss`, `contract`) przez `Balance.questSources` i
+`CREDIT_RULES`; rozbicie na kategorie jest w wierszach (`byCategory`). `questsAt(L).gold` (`economyAt.questGold`,
+`levelIncome`) liczy złoto wszystkich kategorii, ale na własnym poziomie zadania (fabuła bez celu `boss`, poboczne ×
+`SIDE_SHARE`), a `levelIncome` rozkłada je po paśmie; rozkładu EXP (okna, pasmo, poziom) nie ma, więc doszło
+`Balance.questGoldByLevel` (T-EC2, raport), bez przepinania `questsAt` (DECYZJE). Reguły EXP serii są dokładnie dwie:
+fabuła `settleStory` (S102; `STORY_STEP` to skala pasma 1–19 tej samej reguły) i poboczne `settleBands` (S106);
+`ASHEN_EXP`, `REGION_WEIGHT`, `budgetPass` nie istnieją.
+
+#### A5: audyt rozmów
+
+| grupa | zadania | z wyborem | ze skutkiem | z `recall` | `follow` | `lead` |
+|---|--:|--:|--:|--:|--:|--:|
+| rozdział 1 | 19 | 4 | 3 | 2 | 1 | 1 |
+| rozdział 2 | 17 | 9 | 9 | 3 | 1 | 1 |
+| rozdział 3 | 15 | 10 | 8 | 5 | 1 | 1 |
+| rozdział 4 | 15 | 11 | 8 | 3 | 1 | 1 |
+| finał (rozdział 5) | 4 | 4 | 3 | 2 | 1 | 1 |
+| poboczne miasto i Łąki | 40 | 12 | 9 | 5 | 1 | 0 |
+| poboczne Bór | 22 | 22 | 11 | 3 | 1 | 1 |
+| poboczne Pustkowia | 23 | 23 | 14 | 8 | 0 | 2 |
+| poboczne Szczyty | 24 | 24 | 15 | 8 | 1 | 2 |
+
+Krainę pobocznych liczę po mapie dawcy (łuki zaczynające się w mieście liczą się do miasta). Każdy z 38 nowych questów fabuły i 78
+pobocznych od 20. poziomu jest w `NEW_QUESTS`, ma stronę z 2–3 odpowiedziami i komentarze `Barks.required`; każdy
+rozdział i region ma ≥ 2 questy z towarzyszem; walidatory S101b puste. Braków nie było.
+
+#### D6: mnożniki, udziały, poprawione questy
+
+| L | 1 | 3 | 5 | 10 | 15 | 19 | 20 | 30 | 45 | 60 | 70 | 85 | 99 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| przed | 1,000 | 0,500 | 0,649 | 0,651 | 0,592 | 0,613 | 0,575 | 1,143 | 0,900 | 0,861 | 0,823 | 0,799 | 0,512 |
+| po | 1,000 | 0,875 | 0,649 | 0,651 | 0,592 | 0,613 | 1,231 | 1,043 | 0,844 | 0,844 | 0,844 | 0,804 | 0,804 |
+
+Zakresy po: 20–44 0,902–1,231 (skok ≤ 0,091), 45–71 0,843–0,844, 72–99 0,803–0,804; żaden poziom nie jest przycięty
+(przed: L3). Udziały pasm (`all`, po poziomie zadania) przed → po: 1–19 95,4% → 95,3%; 20–44 30,0% → 30,0%; 45–69
+29,1% (w oknach) → 30,0%; 70–99 30,4% (w oknach) → 30,0%; fabuła / poboczne / bossowe / zlecenia w każdym paśmie
+20–99: 10,0 / 6,0 / 2,0 / 12,0%. Godziny bicia: pasma ×1,000, poziomy 0,999–1,001 bazy.
+
+Poprawione questy (waga przed → po, EXP przed → po): `toDuskwood` stała → 6,76 (7 150 → 4 023), `werewolves`,
+`moonstone`, `lostHunters` 1,8 → 5,52 (3 423 → 3 603, 3 738 → 3 934, 4 067 → 4 280), `ruins` 1,6 → 4,55 (3 918 → 3 823),
+`houseOfVael` 2,2 → 9,45 (5 820 → 8 580), `ents` 0,8 → 2,88 (2 448 → 3 025), `elderHeart` 0,8 → 5,95 (2 623 → 6 696),
+`cult` 0,8 → 3,58 (2 990 → 4 591), `turncoat` 1,4 → 7,38 (5 568 → 10 072), `swamp` 0,8 → 4,05 (3 582 → 6 223), `barrow`
+0,8 → 4,04 (4 005 → 6 940), `crypt` 0,8 → 0,6 (4 450 → 1 145), `witchCounsel` i `cryptGate` 0,8 → 1,02 (4 917 → 2 151,
+5 407 → 2 365), `queensLegacy` 1,5 → 1,6 (11 592 → 4 243); `ashen` 1 → 2,06 (8 988 → 14 267), `deadOasis` 1 → 2,06
+(9 761 → 15 495), `warcampCages` 1,2 → 1,01 (12 677 → 8 222), `orcs` 1 → 2,33 (10 977 → 19 710), `mineDepths` 1 → 1,14
+(11 826 → 10 389), `emberCores` 1,2 → 2,33 (14 714 → 22 016), `golems` 1 → 1,55 (13 155 → 15 712), `burntTemple` 1,2 → 1,55
+(16 894 → 16 815), `wyvernLair` 1 → 1,55 (15 030 → 17 953), `ashRoad` 1,2 → 0,76 (19 215 → 9 378), `deepforge` 1 → 0,98
+(16 515 → 12 472), `runesOfBinding` 1 → 0,98 (17 541 → 13 247), `forgeChains` 1,2 → 1,48 (22 316 → 21 209), `coldFire`
+1,5 → 1,48 (30 353 → 23 078); `frostpeak` 1,2 → 2 (24 507 → 32 455), `trappersCamp` 1 → 2 (21 513 → 34 189), `iceGrotto`
+1,2 → 2 (27 157 → 35 965), `harpyRocks` 1 → 2 (23 775 → 37 784), `giants`, `mammothTundra`, `frozenLake`, `iceWatch` 1 →
+1,44 (24 946 → 28 544, 26 144 → 29 915, 28 619 → 32 747, 29 897 → 34 209), `frozenHold` 1,2 → 1,44 (32 842 → 31 316),
+`oathWords` 1,5 → 1,44 (46 801 → 35 701), `glacier` 1,2 → 2,02 (39 037 → 52 216), `dragonTemple` 1,3 → 1 (44 054 →
+26 927), `wyrmSpire` 1 (34 575 → 27 474), `eveOfBattle` 0,8 → 2,02 (28 216 → 56 612), `snowInSummer` 0,8 → 1 (29 343 →
+29 145), `dragonsBrood` 1 → 0,4 (37 393 → 11 885), `voiceOfWinter` 1,5 → 0,6 (56 090 → 17 827). Zlecenia 1–3: EXP 12 / 25
+/ 45 → 0 (złoto bez zmian). Narzędzie doboru: `build/s109_solve.luau` (nie w repo).
+
+#### C3: tempo (Wojownik, model okien)
+
+| pasmo | model S94 | teraz | bez zadań (S94 bez zadań) | wszystko | wszystko + dodatki |
+|---|--:|--:|--:|--:|--:|
+| 1 → 20 | 2,6 h | 2,6 h | 10,8 h (6,7 h) | 0,5 h | 0,4 h |
+| 20 → 45 | 14,4 h | 14,4 h | 20,2 h (20,7 h) | 13,8 h | 10,7 h |
+| 45 → 70 | 26,1 h | 26,1 h | 35,7 h (30,1 h) | 25,1 h | 16,9 h |
+| 70 → 100 | 41,0 h | 41,0 h | 56,3 h (45,4 h) | 39,3 h | 24,2 h |
+| 1 → 100 | 84,1 h | 84,1 h | 122,9 h (102,9 h) | 78,6 h | 52,1 h (−38%) |
+
+Asercje tempa S91–S94 (okna, h(44), h(69), h(99), h(L)/h(L − 1), G13) zielone bez zmiany progów.
+
+#### E: pełny dochód
+
+| wiersz | wartość | cel | wynik |
+|---|--:|--:|---|
+| T-EC2 21–32 (złoto zadań / dochód poziomu z gry, średnia 5) | 0,64 (Wojownik 21) | ≤ 0,25 | raport (złoto fabuły `gold(level)`) |
+| T-EC2 33–99 | 0,23 (Wojownik 33) | ≤ 0,25 | OK |
+| T-EC3 20–44 / 45–69 / 70–99 (dodatki / dochód z gry) | 0,31 / 0,31 / 0,30 (Mag) | ≤ 0,35 | OK |
+| T-EC4 plecaki 80 / 100 / 130 (poziomy pełnego dochodu) | 5,60 / 4,90 / 3,61 | ≥ 3 | OK |
+| T-EC5 plecaki 160 / 200 | 5,33 / 5,46 | ≥ 5 | OK |
+| T-EC6 komplet +9 (L99, pełny dochód) | 287 h | ≥ 150 h | OK |
+| T-EC7 mikstury łańcuchowe / pełny dochód | 0,27 (Łowca 51) | ≥ 0,15 | OK |
+
+Pomiar przed poprawkami = po (nagród nie zmieniano). Z wyceną przedmiotów jak S100 G2 dodatki byłyby 0,40–0,46 dochodu
+z gry (T-EC3 poza celem), dlatego dodatki liczone samym złotem (DECYZJE). Tabela T-EC8 (Wojownik, Mag; L 10–99) w
+`docs/BALANS.md` → „Pełny dochód (S109)”: dodatki 26–33% dochodu z gry (dzienne ok. 15%), złoto zadań 6–12% na 45–85.
+
+#### F2: archiwum `ALLOWED_1_20_DIFFS` (208 wpisów zastąpionych bazą)
+
+| sesja w `why` | wpisy | rodzaj | 3 największe różnice (klucz, przed → po) |
+|---|--:|---|---|
+| S98 | 208 | tempo 72, złoto 1→20 79, okna S91 22, EXP potworów 18, drop 12, kara złota 5 | `Tempo…|2 wolf|zabicia` 2,527 → 1,111; `Złoto 1→20…|1|z zabić` 5,904 → 2,595; `Tempo…|1 wolf|zabicia` 1,90 → 0,835 |
+| S99 | 208 | jak S98 (zlecenia 1–19, przeliczona tabela) | jak S98 (−56%) |
+| S102 | 174 | tempo 60, złoto 79, okna 12, EXP 11, drop 12 | jak S98 (−56%) |
+| S106 | 6 | kara złota gracza 20 (5), EXP 1 | `Kara złota…(gracz 20)|15|EXP` 185 → 227,7; `…|14|EXP` 144,5 → 177,9; `…|18|EXP` 230 → 283,1 |
+| S109 | 117 | tempo 40, złoto 58, drop 6, okna 6, kara złota 5, EXP 2 | jak S98 (−56%; L3–8 okien wróciły do fixture'u: 14 martwych) |
+
+Pełna lista: historia gita (`tests/BalanceTables.luau` przed S109).
+
+F5 (próba trybu ścisłego): `Contracts.RULES.gold.base` 20 → 21 mieści się w tolerancji 0,5% (0 różnic), 20 → 200 daje
+20 różnic „Złoto 1→20 (Wojownik)|L|z questów” (+18%) i czytelny błąd `balance1_20.spec`; cofnięte (`contracts_gen
+check` aktualne).
+
+#### G7: `WIKI_KEYS_ALLOW`
+
+Wydruk `wiki_keys_diff` bez zmiennej: 94 dodane klucze w `quests.json` i `types.ts`, **0 usuniętych**; `npcs.json`,
+`areas.json`, `cosmetics.json`, `mounts.json`, `titles.json`, `items.json`, `search.json`, `mapsearch.json` tylko z nowymi
+elementami, bez nowych kluczy. Dodane: `chapters` (z polami `n`, `title`, `from`, `to`, `map`, `final`), `main[].chapter`,
+`bossQuests` (z polami), `weekly` (z polami), `contracts` (z polami) oraz klucze opcjonalne celów fabuły już w schemacie,
+które ujawniły questy S102–S105 (`main[].objectives[].anchor`, `anchors`, `anchors[]`, `area`, `hold`, `level`, `place`,
+`radius`, `x`, `z`: cele `use`, `reach`, `level` nowych questów). Wartość (z nią `wiki_keys_diff` 0, 95 dozwolonych):
+
+```
+WIKI_KEYS_ALLOW="quests:quests.bossQuests,quests:quests.bossQuests[],quests:quests.bossQuests[].boss,quests:quests.bossQuests[].giver,quests:quests.bossQuests[].id,quests:quests.bossQuests[].level,quests:quests.bossQuests[].reward,quests:quests.bossQuests[].reward.exp,quests:quests.bossQuests[].reward.gold,quests:quests.bossQuests[].reward.items,quests:quests.bossQuests[].reward.items[],quests:quests.bossQuests[].reward.items[].id,quests:quests.bossQuests[].reward.items[].n,quests:quests.bossQuests[].title,quests:quests.bossQuests[].where,quests:quests.bossQuests[].where.map,quests:quests.chapters,quests:quests.chapters[],quests:quests.chapters[].final,quests:quests.chapters[].from,quests:quests.chapters[].map,quests:quests.chapters[].n,quests:quests.chapters[].title,quests:quests.chapters[].to,quests:quests.contracts,quests:quests.contracts.board,quests:quests.contracts.list,quests:quests.contracts.list[],quests:quests.contracts.list[].area,quests:quests.contracts.list[].label,quests:quests.contracts.list[].level,quests:quests.contracts.list[].map,quests:quests.contracts.list[].n,quests:quests.contracts.list[].reward,quests:quests.contracts.list[].reward.exp,quests:quests.contracts.list[].reward.gold,quests:quests.contracts.list[].reward.items,quests:quests.contracts.list[].reward.items[],quests:quests.contracts.list[].reward.items[].id,quests:quests.contracts.list[].reward.items[].n,quests:quests.contracts.max,quests:quests.contracts.milestoneEvery,quests:quests.contracts.scouts,quests:quests.contracts.scouts[],quests:quests.main[].chapter,quests:quests.main[].objectives[].anchor,quests:quests.main[].objectives[].anchors,quests:quests.main[].objectives[].anchors[],quests:quests.main[].objectives[].area,quests:quests.main[].objectives[].hold,quests:quests.main[].objectives[].level,quests:quests.main[].objectives[].place,quests:quests.main[].objectives[].radius,quests:quests.main[].objectives[].x,quests:quests.main[].objectives[].z,quests:quests.weekly,quests:quests.weekly.bossContract,quests:quests.weekly.bossContract.byLevel,quests:quests.weekly.bossContract.byLevel[],quests:quests.weekly.bossContract.byLevel[].boss,quests:quests.weekly.bossContract.byLevel[].level,quests:quests.weekly.bossContract.byLevel[].reward,quests:quests.weekly.bossContract.byLevel[].reward.exp,quests:quests.weekly.bossContract.byLevel[].reward.gold,quests:quests.weekly.bossContract.byLevel[].reward.items,quests:quests.weekly.bossContract.byLevel[].reward.items[],quests:quests.weekly.bossContract.byLevel[].reward.items[].id,quests:quests.weekly.bossContract.byLevel[].reward.items[].n,quests:quests.weekly.bossContract.n,quests:quests.weekly.perWeek,quests:quests.weekly.templates,quests:quests.weekly.templates[],quests:quests.weekly.templates[].byLevel,quests:quests.weekly.templates[].byLevel[],quests:quests.weekly.templates[].byLevel[].level,quests:quests.weekly.templates[].byLevel[].objective,quests:quests.weekly.templates[].byLevel[].objective.label,quests:quests.weekly.templates[].byLevel[].objective.n,quests:quests.weekly.templates[].byLevel[].objective.region,quests:quests.weekly.templates[].byLevel[].objective.type,quests:quests.weekly.templates[].byLevel[].objective.up,quests:quests.weekly.templates[].byLevel[].objective.variant,quests:quests.weekly.templates[].byLevel[].objective.where,quests:quests.weekly.templates[].byLevel[].objective.where.map,quests:quests.weekly.templates[].byLevel[].reward,quests:quests.weekly.templates[].byLevel[].reward.exp,quests:quests.weekly.templates[].byLevel[].reward.gold,quests:quests.weekly.templates[].byLevel[].reward.items,quests:quests.weekly.templates[].byLevel[].reward.items[],quests:quests.weekly.templates[].byLevel[].reward.items[].id,quests:quests.weekly.templates[].byLevel[].reward.items[].n,quests:quests.weekly.templates[].id,quests:quests.weekly.templates[].minLevel,quests:quests.weekly.templates[].title,types.ts"
+```
+
+Wiki: Node jest; `npm run data` (dane, mapy SVG Boru, Pustkowi i Szczytów z nowymi NPC i kotwicami), `npm test` (133
+testy), `astro check` (0 błędów), `npm run build` (2518 stron, w tym strony 38 nowych questów fabuły i 78 pobocznych),
+`check-links` (314 418 linków), `eslint` zmienionych plików: zielone.
+
+Poprawki po przeglądzie: nowe questy fabuły (poza `StoryProgress.LEGACY_ORDER`) eksportują jako `text` strony
+`p1..pN`, a nie podsumowanie z dziennika `.text` (test porównuje dokładny tekst w PL i EN); `Gen.audit(true)` liczy audyt
+bez pamięci podręcznej, test determinizmu porównuje dwa wyliczenia wiersz po wierszu (wiersze, pasma, poziomy, godziny);
+napis nagrody bez EXP (zlecenia 1–3, `firstSpring`) pokazuje samo złoto (`combat.rewardGold`); usunięte nieużywany klucz
+wiki `quests.byLand` i pusty wrapper `fp` w `Side.luau`; questy bossowe na wiki tylko w indeksie zadań (DECYZJE, PROGRESS).
+
+Testy: `scripts/check` zielony (6382 testy) z `WIKI_KEYS_ALLOW` z G7; `quest_budget check` i `audit` kod 0,
+`contracts_gen check` aktualne, `balance1_20` 0 różnic, `allowed` 0 wpisów.
+
+Pliki: `src/shared/Data/Quests/{Main,Side,Contracts,Types}.luau`, `src/shared/Data/{QuestBudget,Npcs,Cosmetics,Titles}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/client/Controllers/CombatFxController.luau`,
+`src/shared/Data/Areas/{meadows,duskwood,ashen,frostpeak,Caves,Types}.luau`, `src/shared/Logic/ContractGen.luau`,
+`tests/{Balance,BalanceTables}.luau`, `tests/fixtures/balance_1_20.json`,
+`tests/{questbudget,balance,balance1_20,dialogue,wikidump,wikimap,contracts,story,sidequests,titles,ashen,duskwood,frostpeak,meadows}.spec.luau`,
+`tools/{QuestBudgetGen,quest_budget,balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+`tools/WikiData/{Quests,Visibility,World,Places}.luau`, `tools/WikiMaps/init.luau`, `wiki/src/lib/{quests,links}.ts`,
+`wiki/src/lib/quests.test.ts`, `wiki/src/views/QuestsSection.astro`, `wiki/src/views/regions/RegionPage.astro`,
+`wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/updates/{pl,en}/2026-10-14-zadania.md` (nowe), `wiki/src/data/*`
+(wygenerowane), `wiki/public/img/maps/{duskwood,ashen,frostpeak}.svg`,
+`docs/{BALANS,PRZEDMIOTY,DESIGN,DESIGN-15,WIKI,DECYZJE,SESJE,PROGRESS}.md`,
+`README.md`, `CLAUDE.md`.
+
+#### Dla właściciela
+
+- **Dzienne i tygodniowe poza budżetem EXP** (domyślnie: zostają poza). Z profilem 2 h dziennie 1→100 trwa 52,1 h zamiast
+  84,1 h (−38%); opcja: wliczyć je do kompensacji przy założonym profilu (gracz bez dziennych bije wtedy wolniej).
+- **20–44: `monsterExpMul` do 1,23** (T-QB5 maks. 1,00 w raporcie): kto pomija zadania na 20–36, leveluje szybciej niż w
+  S94; opcja: `TARGET.contract` w górę albo fabuła 20–23 bliżej S94 (wtedy T-QB3 > 0,50).
+- **T-EC2 na 21–32** (złoto zadań do 0,64 dochodu z gry): złoto fabuły `gold(level)` rozdziału II; opcja: mniejsze złoto
+  questów 21–32 (zmiana fixture'u nie dotyczy, to 21+).
+- **EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`** (S99): na 1–19 wiki pokazuje ok. 1,6× więcej niż serwer,
+  na 20–36 mniej (mnożnik 1,04–1,23), od 45. ok. 1,2× więcej; opcja: kolumna z mnożnikiem poziomu postaci.
+- **Wierzchowiec premium i produkt w sklepie** (domyślnie: wyłączone, `enabled = false`).
+- **Start zleceń postaci sprzed S99** (`poziom − 2` zaliczone, bez nagród; domyślnie: zostaje).
+- **Łup dowódcy inwazji** (S101: zwykły łup Elity II przez `CombatService`; domyślnie: zostaje) i **EXP wydarzenia**
+  1,9 zwykłego potwora (limit ≤ 3% czasu poziomu).
+- **Bankier „Depozytariusz Wincenty”** (S102, zamiast „Aldric” przez kolizję z kapitanem; domyślnie: zostaje).
+- **Skrzynia logowania 85 / 15** i przerwanie serii dniem bez odbioru (S100; domyślnie: jak jest).
+- **Sprzedawcy klas** (S95): remis rękawic progu 5 z Unikatem (`TIE_OK`) i komplet tańszy niż kuźnia z kupionymi rudami
+  (domyślnie: zostaje).
+
+#### Seria DESIGN-15 (S95–S109): podsumowanie dla właściciela
+
+- Sprzedawcy klas stoją w zamku, przed świątynią, przed nową Lożą Łowców i przed nową Wieżą Magów; sprzedają tylko
+  Zwykły sprzęt klasy, zawsze słabszy od dropu.
+- Od 20. poziomu każda postać dostaje konia z łuku trzech zadań u stajennego; wierzchowca ulepsza się do 10. poziomu,
+  cztery rzadkie wierzchowce wypadają z bossów, wygląd zmienia się skinami w garderobie (sześć do zdobycia w grze).
+- Jest 99 zleceń łowieckich, po jednym na każdy poziom, z tablicy w mieście albo od zwiadowcy krainy.
+- Fabuła ma 70 zadań w czterech rozdziałach i finale, ze stronami rozmów, wyborami i przerywnikami, aż do 100. poziomu.
+- Zadania poboczne są w każdej krainie: 109 zadań w 34 łukach (Łąki, stajnia, Bór 27, Pustkowia 26, Szczyty 25).
+- Każdy boss ma zadanie „Pogromca” u zwiadowcy, a raz w tygodniu tablica daje zlecenie na bossa i trzy zlecenia
+  tygodniowe.
+- Nagroda za logowanie idzie serią 7 dni, a mniej więcej co godzinę w krainie z graczami trwa wydarzenie świata.
+- NPC w zadaniach komentują postęp, odpowiadają na wybory gracza i czasem idą z nim jako towarzysze.
+- Zadania dają ok. 30% EXP poziomu na 20–99 (zlecenie 12%, fabuła 10%, poboczne 6%, bossowe 2%); na Łąkach z założenia
+  więcej.
+- Czas na poziom został jak po S94: 1→100 w modelu 84,1 h, bo potwory dają odpowiednio mniej EXP.
+- Gracz, który nie robi zadań, leveluje 1→100 ok. 123 h (o 46% dłużej); kto robi wszystkie zadania, 78,6 h.
+- Kto robi też dzienne, tygodniowe i wydarzenia (2 h dziennie), dochodzi do 100. w ok. 52 h (o 38% szybciej).
+- Pełny dochód (z dziennymi, tygodniowymi, logowaniem i wydarzeniami) to ok. 1,3× dochodu z samej gry; plecaki i
+  komplet +9 dalej kosztują swoje (najtańszy plecak 3,6 poziomu pełnego dochodu, komplet +9 287 h).
+- Poziomy 1–20 mają nową bazę z całą serią questów; każda kolejna zmiana 1–20 wymaga wpisu i decyzji.
+- Wiki pokazuje zlecenia łowieckie, poboczne wszystkich krain, bossowe i tygodniowe, a fabułę w rozdziałach z nowymi
+  zadaniami (historia dalej pod spoilerem, przerywniki tylko w grze).
+- Czekają na Ciebie: dzienne i tygodniowe poza budżetem EXP, wyższy mnożnik EXP potworów na 20–36, wierzchowiec premium,
+  imię bankiera i start zleceń starych postaci (lista wyżej).

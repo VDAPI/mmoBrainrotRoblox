@@ -85,11 +85,7 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	{ id = "wild_stallion", x = 560, z = 200 },
 }
 -- S102 story (frostRuins): the frosted crest on the tower ruins
-do
-	local crest = anchor("tower_crest", SITES.ruins, 8, 0, 2)
-	crest.wiki = false
-	table.insert(QUEST_ANCHORS, crest)
-end
+table.insert(QUEST_ANCHORS, anchor("tower_crest", SITES.ruins, 8, 0, 2))
 
 local function avoidSpots(): { Types.Circle }
 	local list: { Types.Circle } = {

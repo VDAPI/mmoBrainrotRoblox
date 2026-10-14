@@ -2,6 +2,10 @@
 -- quests.json (S34): the main story (order, level, giver / turn-in NPCs, texts, objectives with labels built from
 -- the game's quest.obj.<type> texts like UI/QuestText.objective, rewards), the side quests (S27: arcs, pages,
 -- requirements) and the daily contracts (objective and reward on levels 1, 5, 10, ..., 100).
+-- S109 (DESIGN-15 §0.5, G2): only keys added. `chapters` (Main.CHAPTERS, the one source of the story's chapters),
+-- `main[].chapter` (Main.chapterOf; a quest with offer pages exports them as `text`, the pages joined by a blank
+-- line), `bossQuests` (Data/Quests/Boss), `weekly` (the templates on the daily levels, the boss contract on the levels
+-- with a boss) and `contracts` (Data/Quests/Contracts without the generator's rules). The cutscenes stay off the wiki.
 
 local Bosses = require("../../src/shared/Data/Bosses")
 local Clean = require("./Clean")
@@ -17,6 +21,7 @@ local Areas = require("../../src/shared/Data/Areas")
 local Basics = require("./Basics")
 local Places = require("./Places")
 local Schema = require("./Schema")
+local StoryProgress = require("../../src/shared/Logic/StoryProgress")
 
 local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
@@ -64,6 +69,8 @@ local Reward = rec("QuestReward", {
 	["cosmetic?"] = "ref:cosmetics", -- S97: a mount skin
 })
 
+local DailyLevel = rec("DailyLevel", { level = "int", objective = Objective, reward = Reward })
+
 S.file(
 	"quests",
 	rec("QuestsFile", {
@@ -78,6 +85,16 @@ S.file(
 			["done?"] = "name",
 			objectives = arr(Objective),
 			reward = Reward,
+			chapter = "int", -- S109: Main.chapterOf
+		})),
+		-- S109: the story's chapters (Main.CHAPTERS): levels of their quests, region, the finale
+		chapters = arr(rec("QuestChapter", {
+			n = "int",
+			title = "name",
+			from = "int",
+			to = "int",
+			map = "ref:maps",
+			["final?"] = "bool",
 		})),
 		side = arr(rec("SideQuest", {
 			id = "string",
@@ -104,7 +121,46 @@ S.file(
 				id = "string",
 				minLevel = "int",
 				title = "name",
-				byLevel = arr(rec("DailyLevel", { level = "int", objective = Objective, reward = Reward })),
+				byLevel = arr(DailyLevel),
+			})),
+		}),
+		-- S109: the first defeat of every boss (Data/Quests/Boss), given and handed in by the land's scout
+		bossQuests = arr(rec("BossQuest", {
+			id = "string",
+			level = "int",
+			giver = "ref:npcs",
+			boss = "ref:bosses",
+			title = "name",
+			reward = Reward,
+			["where?"] = Places.Where,
+		})),
+		-- S109: the weekly contracts (Data/Quests/Weekly) and the weekly boss contract
+		weekly = rec("WeeklyQuests", {
+			perWeek = "int",
+			templates = arr(rec("WeeklyTemplate", {
+				id = "string",
+				minLevel = "int",
+				title = "name",
+				byLevel = arr(DailyLevel),
+			})),
+			bossContract = rec("BossContract", {
+				n = "int",
+				byLevel = arr(rec("BossContractLevel", { level = "int", boss = "ref:bosses", reward = Reward })),
+			}),
+		}),
+		-- S109: the hunting contracts 1-99 (Data/Quests/Contracts; RULES stay the generator's)
+		contracts = rec("Contracts", {
+			max = "int",
+			board = "ref:npcs",
+			scouts = arr("ref:npcs"),
+			milestoneEvery = "int",
+			list = arr(rec("Contract", {
+				level = "int",
+				map = "ref:maps",
+				area = "ref:areas",
+				n = "int",
+				label = "name",
+				reward = Reward,
 			})),
 		}),
 		levelSlack = "int",
@@ -149,10 +205,26 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 			local key = if def then (if o.variant == "elite" then def.nameKeys.elite else def.nameKeys.normal) else nil
 			return Names.T("quest.obj.kill", { monster = textOf(key, lang), count = count }, lang) .. where
 		end
+		-- S109 (as UI/QuestText): only an area (the hunting contracts), Elite II (the weekly contracts)
+		if area and not o.region and not o.variant then
+			return Names.T("quest.obj.killArea", { area = textOf(area.nameKey, lang), count = count }, lang)
+		end
 		local map = Maps.get(Quests.REGION_MAPS[o.region or 1] or "")
-		local key = if o.variant == "elite" then "quest.obj.killElite" else "quest.obj.killRegion"
+		local key = if o.variant == "elite2"
+			then "quest.obj.killElite2"
+			elseif o.variant == "elite" then "quest.obj.killElite"
+			else "quest.obj.killRegion"
 		return Names.T(key, { region = textOf(map and map.nameKey, lang), count = count }, lang)
 	elseif t == "collect" then
+		-- S109 (as UI/QuestText, S104): the loot of Elites only
+		local def = if o.variant == "elite" and o.monster then Monsters.get(o.monster) else nil
+		if def then
+			return Names.T("quest.obj.collectFrom", {
+				item = textOf(`quest.item.{o.item}`, lang),
+				monster = textOf(def.nameKeys.elite, lang),
+				count = count,
+			}, lang) .. where
+		end
 		return Names.T("quest.obj.collect", { item = textOf(`quest.item.{o.item}`, lang), count = count }, lang)
 			.. where
 	elseif t == "gather" then
@@ -160,7 +232,11 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 			local kind = GatherNodes.get(o.node)
 			return Names.T("quest.obj.gather", { node = textOf(kind and kind.nameKey, lang), count = count }, lang)
 		end
-		local key = if o.category == "ore" then "quest.obj.gatherOre" else "quest.obj.gatherHerb"
+		-- S109 (as UI/QuestText, S98): no node and no category = herbs or ore (the weekly "gather" contract)
+		local key = if o.category == "ore"
+			then "quest.obj.gatherOre"
+			elseif o.category == "herb" then "quest.obj.gatherHerb"
+			else "quest.obj.gatherAny"
 		return Names.T(key, { count = count }, lang)
 	elseif t == "reach" then
 		if o.place then
@@ -179,7 +255,7 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 	elseif t == "level" then
 		return Names.T("quest.obj.level", { level = o.level or 1 }, lang)
 	elseif t == "escort" then
-		-- S101b: walk with the leading companion (no quest with it is on the wiki before S109)
+		-- S101b: walk with the leading companion
 		return Names.T("quest.obj.escort", { npc = npcName(o.npc), place = textOf(o.place, lang) }, lang)
 	end
 	return Names.T(`quest.obj.{t}`, { count = count }, lang)
@@ -242,6 +318,27 @@ local function reward(r: any, hidden: { [string]: boolean }): any
 	}
 end
 
+local LEGACY: { [string]: boolean } = {}
+for _, id in StoryProgress.LEGACY_ORDER do
+	LEGACY[id] = true
+end
+
+-- S109 (G2): the story text of a main quest: the 32 quests of StoryProgress.LEGACY_ORDER keep `quest.<id>.text`;
+-- a later one with offer pages exports p1..pN joined by a blank line (its `.text` is only the journal summary);
+-- nil when neither exists.
+function Quests.storyText(q: any): any?
+	if LEGACY[q.id] or not q.pages then
+		return Names.opt(`quest.{q.id}.text`)
+	end
+	return Names.combine(function(lang: string): string
+		local parts = {}
+		for i = 1, q.pages do
+			table.insert(parts, Names.T(`quest.{q.id}.p{i}`, nil, lang))
+		end
+		return table.concat(parts, "\n\n")
+	end)
+end
+
 function Quests.sideChoice(): any
 	local rarity = {}
 	for kind, id in Config.SideQuest.choiceRarity do
@@ -259,12 +356,17 @@ function Quests.build(ctx: any): any
 		end
 	end
 	local main = {}
-	-- S102: `order` counts the exported story quests only (the hidden ones of S102-S105 wait for S109)
+	-- S102: `order` counts the exported story quests only (a hidden one stays out)
 	local order = 0
+	local chapterLevels: { [number]: { number } } = {}
 	for _, q in QuestData.Main.list do
 		if not ctx.hidden[q.id] then
 			noteItems(q.id, q.reward)
 			order += 1
+			local chapter = QuestData.Main.chapterOf(q.id)
+			local levels = chapterLevels[chapter] or {}
+			chapterLevels[chapter] = levels
+			table.insert(levels, q.level)
 			table.insert(main, {
 				id = q.id,
 				order = order,
@@ -272,10 +374,25 @@ function Quests.build(ctx: any): any
 				giver = q.giver,
 				turnIn = q.turnIn,
 				title = Names.of(`quest.{q.id}.title`),
-				text = Names.opt(`quest.{q.id}.text`),
+				text = Quests.storyText(q),
 				done = Names.opt(`quest.{q.id}.done`),
 				objectives = objectives(q.objectives, q.turnIn, q.level),
 				reward = reward(q.reward, ctx.hidden),
+				chapter = chapter,
+			})
+		end
+	end
+	local chapters = {}
+	for _, c in QuestData.Main.CHAPTERS do
+		local levels = chapterLevels[c.n]
+		if levels and #levels > 0 then
+			table.insert(chapters, {
+				n = c.n,
+				title = Names.of(`story.chapter.{c.n}`),
+				from = math.min(table.unpack(levels)),
+				to = math.max(table.unpack(levels)),
+				map = c.region or "city",
+				final = if c.final then true else nil,
 			})
 		end
 	end
@@ -325,10 +442,100 @@ function Quests.build(ctx: any): any
 			byLevel = byLevel,
 		})
 	end
+	-- S109: boss quests (the boss objective's dungeon as the place)
+	local bossQuests = {}
+	for _, q in QuestData.Boss.list do
+		local o = q.objectives[1]
+		if not ctx.hidden[q.id] and o and o.boss and not ctx.hidden[o.boss] then
+			table.insert(bossQuests, {
+				id = q.id,
+				level = q.level,
+				giver = q.giver,
+				boss = o.boss,
+				title = Names.of(`quest.{q.id}.title`),
+				reward = reward(q.reward, ctx.hidden),
+				where = Places.objectiveWhere(o, q.level, q.turnIn),
+			})
+		end
+	end
+	-- S109: weekly templates on the daily levels from their minLevel; the boss contract where a boss can be entered
+	local weeklyTemplates = {}
+	for _, t in QuestData.Weekly.templates do
+		if (t :: any).hidden ~= true then
+			local byLevel = {}
+			for _, level in Quests.DAILY_LEVELS do
+				if level >= t.minLevel then
+					table.insert(byLevel, {
+						level = level,
+						objective = objectives({ t.objective(level) }, nil, level)[1],
+						reward = reward(QuestData.Weekly.reward(level), ctx.hidden),
+					})
+				end
+			end
+			table.insert(weeklyTemplates, {
+				id = t.id,
+				minLevel = t.minLevel,
+				title = Names.of(`weekly.{t.id}.title`),
+				byLevel = byLevel,
+			})
+		end
+	end
+	local bossLevels = {}
+	for _, level in Quests.DAILY_LEVELS do
+		local boss = QuestLogic.bossContractFor(level)
+		if boss and not ctx.hidden[boss] then
+			table.insert(
+				bossLevels,
+				{ level = level, boss = boss, reward = reward(QuestData.Weekly.bossReward(level), ctx.hidden) }
+			)
+		end
+	end
+	-- S109: the hunting contracts (the board in the city and the scout of every land take them)
+	local Contracts = QuestData.Contracts
+	local scouts = {}
+	for _, mapId in Quests.REGION_MAPS do
+		if Npcs.get(`scout_{mapId}`) and not ctx.hidden[`scout_{mapId}`] then
+			table.insert(scouts, `scout_{mapId}`)
+		end
+	end
+	local contractList = {}
+	for _, c in Contracts.list do
+		if not ctx.hidden[c.id] then
+			local o = c.objectives[1]
+			table.insert(contractList, {
+				level = c.level,
+				map = c.map,
+				area = c.area,
+				n = o.n,
+				label = Names.combine(function(lang: string): string
+					return Quests.label(o, nil, lang)
+				end),
+				reward = reward(c.reward, ctx.hidden),
+			})
+		end
+	end
+	local every = math.huge
+	for level in Contracts.RULES.milestones do
+		every = math.min(every, level)
+	end
 	return {
 		main = main,
+		chapters = chapters,
 		side = side,
 		daily = { perDay = QuestData.Daily.PER_DAY, templates = templates },
+		bossQuests = bossQuests,
+		weekly = {
+			perWeek = QuestData.Weekly.PER_WEEK,
+			templates = weeklyTemplates,
+			bossContract = { n = QuestData.Weekly.bossContract.n, byLevel = bossLevels },
+		},
+		contracts = {
+			max = Contracts.MAX_LEVEL,
+			board = "questboard",
+			scouts = scouts,
+			milestoneEvery = if every == math.huge then 10 else every,
+			list = contractList,
+		},
 		levelSlack = QuestData.Main.LEVEL_SLACK,
 		sideLevelSlack = Config.SideQuest.levelSlack,
 		sideMaxActive = Config.SideQuest.maxActive,

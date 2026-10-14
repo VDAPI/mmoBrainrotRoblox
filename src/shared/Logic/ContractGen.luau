@@ -133,12 +133,13 @@ function ContractGen.picks(rules: Rules): { Pick }
 	return out
 end
 
--- The contracts 1..MAX_LEVEL; `share` = Data/QuestBudget.TARGET.contract (the EXP of a level's requirement).
+-- The contracts 1..MAX_LEVEL; `share` = Data/QuestBudget.TARGET.contract (the EXP of a level's requirement), no EXP
+-- below rules.expFrom (S109).
 function ContractGen.build(rules: Rules, share: number): { QuestTypes.ContractQuest }
 	local out: { QuestTypes.ContractQuest } = {}
 	for level, pick in ContractGen.picks(rules) do
 		local reward: QuestTypes.Reward = {
-			exp = math.floor(Exp.expToNext(level) * share),
+			exp = if level >= rules.expFrom then math.floor(Exp.expToNext(level) * share) else 0,
 			gold = math.floor(rules.gold.base + rules.gold.perLevel * level),
 			items = copyItems(rules.milestones[level]),
 		}

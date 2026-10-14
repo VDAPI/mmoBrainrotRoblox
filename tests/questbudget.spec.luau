@@ -66,6 +66,7 @@ describe("Quest EXP budget (S98)", function()
 
 	it("the base file is the S98 base of 99 levels", function()
 		local file = serde.decode("json", fs.readFile(Gen.BASE_PATH))
+		-- S109 (D4): for ever S98, the permanent S94 reference ("time per level = S94"); `base` never rebases it
 		expect(file.meta.session).toBe("S98")
 		local n = 0
 		for _ in file.levels do
@@ -156,6 +157,146 @@ describe("Quest EXP budget (S98)", function()
 			n += 1
 		end
 		expect(#r.entries).toBe(n)
+	end)
+end)
+
+-- S109 (docs/DESIGN-15.md §3.2): the final audit of the quest series. Targets in QuestBudgetGen.AUDIT (measuring
+-- tools, not game numbers); the rows are the ones `lune run tools/quest_budget.luau audit` prints.
+describe("Quest budget audit (S109)", function()
+	local audit = Gen.audit()
+	local function rowsOf(prefix: string): { Gen.AuditRow }
+		local out = {}
+		for _, r in audit.rows do
+			if string.sub(r.id, 1, #prefix) == prefix then
+				table.insert(out, r)
+			end
+		end
+		expect(#out > 0).toBe(true)
+		return out
+	end
+	local function check(prefix: string)
+		for _, r in rowsOf(prefix) do
+			if r.report then
+				continue
+			end
+			if not r.ok then
+				error(
+					`{r.id} {r.label}: {Gen.fmtAuditValue(r.id, r.value)} outside {Gen.fmtAuditBand(r)}`
+						.. (
+							if #r.outliers > 0
+								then ` ({table.concat(r.outliers, ", ", 1, math.min(10, #r.outliers))})`
+								else ""
+						),
+					0
+				)
+			end
+		end
+	end
+
+	it("T-QB1: all quests 27-33% of every band 20-44, 45-69, 70-99", function()
+		check("T-QB1")
+		expect(#rowsOf("T-QB1")).toBe(3)
+	end)
+
+	it("T-QB2: the categories in their bands (contract, story and side by construction, boss)", function()
+		check("T-QB2")
+		expect(#rowsOf("T-QB2")).toBe(12)
+	end)
+
+	it("T-QB3: the moving mean of the quest share stays in 15-50% on 21-97", function()
+		check("T-QB3")
+	end)
+
+	it("T-QB4: contracts 1-19 in their band (story, side and total of the Meadows reported)", function()
+		check("T-QB4")
+		for _, id in { "T-QB4.main", "T-QB4.side", "T-QB4.total" } do
+			local found = false
+			for _, r in audit.rows do
+				if r.id == id then
+					found = true
+					expect(r.report).toBe(true)
+				end
+			end
+			expect(found).toBe(true)
+		end
+	end)
+
+	it("T-QB5: no level clamped, monsterExpMul 0.55-1.00 from 20, steps <= 0.10", function()
+		check("T-QB5")
+		expect(#Gen.compute().clamped).toBe(0)
+	end)
+
+	it("T-QB6: the hours of grinding of every band and level stay those of the S94 base", function()
+		check("T-QB6")
+	end)
+
+	it("T-QB7: every quest is seen by the credit model exactly once, contracts 1-99 without gaps", function()
+		check("T-QB7")
+	end)
+
+	it("S109 audit report rows", function()
+		local n = 0
+		for _, r in audit.rows do
+			if r.report then
+				n += 1
+				expect(r.why ~= nil and #(r.why :: string) > 0).toBe(true)
+				print(`  {r.id} {r.label}: {Gen.fmtAuditValue(r.id, r.value)} (cel {Gen.fmtAuditBand(r)}) — {r.why}`)
+			end
+		end
+		expect(n > 0).toBe(true)
+	end)
+
+	it("the base is never rebased (the mode refuses even with --force)", function()
+		local allowed, why = Gen.baseAllowed(true, true)
+		expect(allowed).toBe(false)
+		expect(why).toBe(Gen.BASE_REFUSAL)
+		expect((Gen.baseAllowed(true, false))).toBe(false)
+		expect((Gen.baseAllowed(false, false))).toBe(true)
+		local cli = fs.readFile("tools/quest_budget.luau")
+		expect(string.find(cli, "Gen.baseAllowed", 1, true) ~= nil).toBe(true)
+	end)
+
+	it("is deterministic and its rows are the printed ones", function()
+		local text = Gen.auditText(audit)
+		for _, r in audit.rows do
+			local line = `{r.id} {r.label}: {Gen.fmtAuditValue(r.id, r.value)}`
+			if not string.find(text, line, 1, true) then
+				error(`the audit text has no row "{line}"`, 0)
+			end
+		end
+		expect(Gen.auditOk(audit)).toBe(true)
+		-- a second computation from the data gives the same numbers (the cache is only a speed-up)
+		local again = Gen.audit(true)
+		expect(again ~= audit).toBe(true)
+		expect(#again.rows).toBe(#audit.rows)
+		for i, r in audit.rows do
+			local b = again.rows[i]
+			expect(`{b.id} {b.value} {b.ok}`).toBe(`{r.id} {r.value} {r.ok}`)
+		end
+		expect(#again.bands).toBe(#audit.bands)
+		for i, band in audit.bands do
+			local b = again.bands[i]
+			expect(b.model.total).toBe(band.model.total)
+			expect(b.all.total).toBe(band.all.total)
+			for cat, v in band.model.byCategory do
+				expect(b.model.byCategory[cat]).toBe(v)
+			end
+			for cat, v in band.all.byCategory do
+				expect(b.all.byCategory[cat]).toBe(v)
+			end
+		end
+		expect(#again.levels).toBe(#audit.levels)
+		for i, lvl in audit.levels do
+			local b = again.levels[i]
+			expect(`{b.level} {b.total} {b.avg} {b.mul} {b.hoursNow}`).toBe(
+				`{lvl.level} {lvl.total} {lvl.avg} {lvl.mul} {lvl.hoursNow}`
+			)
+		end
+		expect(#again.hours).toBe(#audit.hours)
+		for i, h in audit.hours do
+			local b = again.hours[i]
+			expect(`{b.lo} {b.s94} {b.now} {b.allQuests}`).toBe(`{h.lo} {h.s94} {h.now} {h.allQuests}`)
+		end
 	end)
 end)
 

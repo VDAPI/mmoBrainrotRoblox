@@ -633,7 +633,7 @@ end
 describe("Duskwood side arcs (S106)", function()
 	local dusk = duskQuests()
 
-	it("27 quests in eight arcs at the end of ARCS, levels 20-44, from 20, hidden from the wiki", function()
+	it("27 quests in eight arcs at the end of ARCS, levels 20-44, from 20, on the wiki (S109)", function()
 		expect(#dusk).toBe(27)
 		for i, arc in DUSK_ARCS do
 			expect(Quests.Side.ARCS[10 + i]).toBe(arc)
@@ -641,7 +641,7 @@ describe("Duskwood side arcs (S106)", function()
 		for _, quest in dusk do
 			expect(quest.level >= 20 and quest.level <= 44).toBe(true)
 			expect(SideQuests.minLevel(quest) >= 20).toBe(true)
-			expect(quest.wiki).toBe(false)
+			expect(quest.wiki).toBeNil() -- S109: published on the wiki
 			expect(quest.category).toBe("side")
 			for _, npcId in { quest.giver, quest.turnIn } do
 				local npc = assert(Npcs.get(npcId), npcId)
@@ -660,13 +660,13 @@ describe("Duskwood side arcs (S106)", function()
 		end
 	end)
 
-	it("the new people of the Duskwood stand on its npc spots, hidden from the wiki", function()
+	it("the new people of the Duskwood stand on its npc spots, on the wiki (S109)", function()
 		local spots = Areas.byMap.duskwood.npcSpots or {}
 		local count = 0
 		for _, npc in Npcs.list do
 			if npc.map == "duskwood" and not DUSK_OTHERS[npc.id] then
 				count += 1
-				expect(npc.wiki).toBe(false)
+				expect(npc.wiki).toBeNil() -- S109: published on the wiki
 				local found = false
 				for _, spot in spots do
 					found = found or (spot.x == npc.position.x and spot.z == npc.position.z)
@@ -769,7 +769,7 @@ describe("Duskwood side arcs (S106)", function()
 		local skin = assert(Cosmetics.get("mountskin_lantern"))
 		expect((skin.obtain :: any).quest).toBe("side_lampLighter")
 		expect(skin.price).toBe(0)
-		expect(skin.wiki).toBe(false)
+		expect(skin.wiki).toBeNil() -- S109: published on the wiki
 	end)
 
 	it("the innkeeper hears of the Duskwood people; the sergeant offers the oil from 20", function()
@@ -833,7 +833,7 @@ end
 describe("Ashen side arcs (S107)", function()
 	local ash = ashQuests()
 
-	it("26 quests side_ash_* in eight arcs at the end of ARCS, levels 45-68, hidden from the wiki", function()
+	it("26 quests side_ash_* in eight arcs at the end of ARCS, levels 45-68, on the wiki (S109)", function()
 		expect(#ash).toBe(26)
 		-- S108: the Frost Peaks arcs follow them at the end of ARCS
 		local arcs = Quests.Side.ARCS
@@ -845,7 +845,7 @@ describe("Ashen side arcs (S107)", function()
 		for _, quest in ash do
 			expect(string.sub(quest.id, 1, 9)).toBe("side_ash_")
 			expect(quest.level >= 45 and quest.level <= 68).toBe(true)
-			expect(quest.wiki).toBe(false)
+			expect(quest.wiki).toBeNil() -- S109: published on the wiki
 			expect(quest.category).toBe("side")
 			expect(quest.reward.items).toBeNil()
 			expect(quest.reward.mount).toBeNil()
@@ -986,7 +986,7 @@ describe("Ashen side arcs (S107)", function()
 		end
 	end)
 
-	it("the five new people of the Wastes stand on its npc spots, talk and stay off the wiki", function()
+	it("the five new people of the Wastes stand on its npc spots, talk and are on the wiki (S109)", function()
 		local spots = Areas.byMap.ashen.npcSpots or {}
 		local count, onSpots = 0, 0
 		for _, npc in Npcs.list do
@@ -1011,7 +1011,7 @@ describe("Ashen side arcs (S107)", function()
 			local npc = assert(Npcs.get(id), id)
 			expect(npc.services).toEqual({ "talk" })
 			expect(npc.lines).toBe(3)
-			expect(npc.wiki).toBe(false)
+			expect(npc.wiki).toBeNil() -- S109: published on the wiki
 			expect(npc.showFrom).toBeNil()
 			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
 				expect(`{id}.{key} {hasKey(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
@@ -1200,9 +1200,9 @@ describe("Frost Peaks side arcs (S108)", function()
 		expect(assert(Quests.Side.get("side_fp_ribbons")).minLevel).toBe(70)
 	end)
 
-	it("4: hidden from the wiki, side, with gold and EXP of at most 0.7 of the level", function()
+	it("4: on the wiki (S109), side, with gold and EXP of at most 0.7 of the level", function()
 		for _, quest in fp do
-			expect(quest.wiki).toBe(false)
+			expect(quest.wiki).toBeNil() -- S109: published on the wiki
 			expect(quest.category).toBe("side")
 			expect(quest.reward.gold > 0).toBe(true)
 			expect(quest.reward.exp > 0 and quest.reward.exp <= Exp.expToNext(quest.level) * 0.7).toBe(true)
@@ -1293,7 +1293,7 @@ describe("Frost Peaks side arcs (S108)", function()
 			local npc = assert(Npcs.get(id), id)
 			expect(npc.services).toEqual({ "talk" })
 			expect(npc.lines).toBe(3)
-			expect(npc.wiki).toBe(false)
+			expect(npc.wiki).toBeNil() -- S109: published on the wiki
 			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
 				expect(`{id}.{key} {hasKey(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
 			end

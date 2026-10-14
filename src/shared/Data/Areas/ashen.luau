@@ -89,36 +89,36 @@ end
 -- existing sites, so no monster group or gathering node moves (tests/ashen.spec). Names differ from the sites (/tparea).
 local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 	-- Brokk beside Kesra, facing west (the portals); his camp behind him (Logic/AshenGen/Flats RunesmithCamp)
-	runesmith = { x = -682, z = -42, facing = 90, wiki = false },
+	runesmith = { x = -682, z = -42, facing = 90 },
 	-- Ghasha on the east rim of the Hot Spring's bowl, facing east (the trail to the oasis); the first point east of the
 	-- pool whose ground passes the standing checks (the bowl's walls are steeper than 15 degrees closer to the water)
-	shaman = { x = -642, z = 300, facing = 270, wiki = false },
+	shaman = { x = -642, z = 300, facing = 270 },
 	-- Kaspar before the west door of the burnt temple (the nave's front at x 181), beside the door, facing the square
-	hermit = { x = 175, z = 634, facing = 90, wiki = false },
+	hermit = { x = 175, z = 634, facing = 90 },
 	-- S107: places of the Ashen side arc NPCs (Data/Npcs regionfolk), inside the avoid circles of existing sites and
-	-- respawn points, so no monster group or gathering node moves (tests/ashen.spec); hidden from the wiki until S109.
+	-- respawn points, so no monster group or gathering node moves (tests/ashen.spec); on the wiki since S109.
 	-- Orren on the dry bed at the root of the old jetty (the bowl's rim behind him is too steep), facing the last pond
-	waterkeeper = { x = -546, z = 528, facing = 170, wiki = false },
+	waterkeeper = { x = -546, z = 528, facing = 170 },
 	-- Dragan's camp by the respawn point at the fork to the mine and the warcamp, facing the road
-	prospector = { x = -238, z = -312, facing = 270, wiki = false },
+	prospector = { x = -238, z = -312, facing = 270 },
 	-- Wiesława under the rock arch over the road on the Wyvern Crags, facing the road
-	wyvernhunter = { x = 665, z = -602, facing = 270, wiki = false },
+	wyvernhunter = { x = 665, z = -602, facing = 270 },
 	-- Ezra at the end of the procession road before the pyramid, facing the road
-	tombwarden = { x = 594, z = 127, facing = 270, wiki = false },
+	tombwarden = { x = 594, z = 127, facing = 270 },
 	-- Bogna by the robbed wagons on the Ash Road (respawn point), facing the wagons
-	wagoner = { x = 478, z = -190, facing = 90, wiki = false },
+	wagoner = { x = 478, z = -190, facing = 90 },
 }
 
 -- S104: quest anchors of the story (chapter III), each by its landmark and inside the landmark's avoid circle; `rot` =
 -- the site's yaw (the frame of the client effects).
 local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
 	local x, z = atSite(site, lx, lz)
-	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+	return { id = id, x = x, z = z, y = y, rot = SITES[site].rot }
 end
 
 -- S107: an anchor at a map point of its own (like Areas/duskwood `free`), `rot` = the yaw of its prop and effect.
 local function free(id: string, x: number, z: number, rot: number): Types.QuestAnchor
-	return { id = id, x = x, z = z, y = 2, wiki = false, rot = rot }
+	return { id = id, x = x, z = z, y = 2, rot = rot }
 end
 
 local QUEST_ANCHORS: { Types.QuestAnchor } = {
@@ -126,7 +126,7 @@ local QUEST_ANCHORS: { Types.QuestAnchor } = {
 	anchor("orc_cage", "orcCages", 6, 0, 2), -- beside the middle cage, on the side of the warcamp's yard
 	-- the Sleeping Colossus: its head (about -143 / 92, the face looking east) lies on the hill's 40-degree flank, so
 	-- the anchor stands at the hill's foot before the face, still inside the colossus circle (51 studs from it)
-	{ id = "colossus_eyes", x = -126, z = 102, y = 2, wiki = false, rot = 270 },
+	{ id = "colossus_eyes", x = -126, z = 102, y = 2, rot = 270 },
 	anchor("temple_bell", "belltower", -7, 0, 1.5), -- beside the cracked bell at the tower's foot (the flat east side)
 	anchor("stone_caravan", "stoneCaravan", 6, -2, 2), -- beside the stone wagon, not before the oxen
 	-- S107: anchors of the Ashen side arcs (ash_*), each inside the avoid circle of its landmark, 8+ studs from every

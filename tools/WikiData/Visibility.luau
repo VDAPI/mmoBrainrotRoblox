@@ -82,6 +82,8 @@ function Visibility.collect(): { [string]: boolean }
 		Npcs.list,
 		Quests.Main.list,
 		Quests.Side.list,
+		Quests.Boss.list, -- S109: the boss quests and the contracts are on the wiki; a future hidden one stays off
+		Quests.Contracts.list,
 		SkillData.byId,
 		Titles.list,
 		Blessings.list,

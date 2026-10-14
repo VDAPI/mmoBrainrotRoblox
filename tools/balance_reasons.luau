@@ -3376,6 +3376,10 @@ return {
 				session = "S108",
 				why = "regenerated: Frost Peaks side arcs (25 quests, 6% of band 70-99); 70-99 0.51-0.87 (was 0.55-0.91), no new clamp, 1-69 unchanged",
 			},
+			{
+				session = "S109",
+				why = "regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000",
+			},
 		},
 		["Quests/Main:STORY_STEP"] = {
 			{
@@ -3397,6 +3401,10 @@ return {
 				session = "S105",
 				why = "S105: band 70-99 derived by settleStory (TARGET.main of the band, every quest without a boss weighted; firstSpring at 100 outside)",
 			},
+			{
+				session = "S109",
+				why = "S109: derived by settleStory from the audit weights (20: 0.0499, 45: 0.1250, 70: 0.1200; toDuskwood joined the rule of band 20)",
+			},
 		},
 		["Quests/Main:STORY_WEIGHT*"] = {
 			{
@@ -3414,6 +3422,10 @@ return {
 			{
 				session = "S105",
 				why = "S105 (C1): weights of chapter IV and the finale as planned: 1 a plain quest (and the old giants), 1.2 a discovery (the old frostpeak and glacier, iceGrotto, frozenHold), 1.3 dragonTemple, 1.5 the ends (oathWords, voiceOfWinter), 0.8 the talks (eveOfBattle, snowInSummer); no clamp",
+			},
+			{
+				session = "S109",
+				why = "S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main)",
 			},
 		},
 		["Quests/Main:indexOf*"] = {
@@ -3692,6 +3704,313 @@ return {
 			{
 				session = "S105",
 				why = "S105 story finale (docs/FABULA.md §2.5): firstSpring at level 100 (the objective `level` 100; level 100 earns no EXP, so exp = 0 and no weight), gold(100) x 3, the title thornbearer and the skin mountskin_spring; the Thorn's anchor held 5 s",
+			},
+		},
+		-- S109 (docs/DESIGN-15.md §3.2): the audit of quests 1-100 (D1 story weights, D3 contracts 1-3 without EXP)
+		["Quests/Contracts:byId.contract_1.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN)",
+			},
+		},
+		["Quests/Contracts:byId.contract_2.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN)",
+			},
+		},
+		["Quests/Contracts:byId.contract_3.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN)",
+			},
+		},
+		["Quests/Main:byId.ashRoad.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.ashen.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.barrow.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.burntTemple.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.coldFire.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.crypt.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.cryptGate.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.cult.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.deadOasis.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.deepforge.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.dragonTemple.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.dragonsBrood.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.elderHeart.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.emberCores.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.ents.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.eveOfBattle.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.forgeChains.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.frostpeak.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.frozenHold.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.frozenLake.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.giants.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.glacier.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.golems.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.harpyRocks.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.houseOfVael.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.iceGrotto.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.iceWatch.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.lostHunters.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.mammothTundra.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.mineDepths.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.moonstone.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.oathWords.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.orcs.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.queensLegacy.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.ruins.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.runesOfBinding.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.snowInSummer.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.swamp.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.toDuskwood.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.trappersCamp.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.turncoat.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.voiceOfWinter.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.warcampCages.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.werewolves.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.witchCounsel.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.wyrmSpire.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Main:byId.wyvernLair.reward.exp"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule",
+			},
+		},
+		["Quests/Contracts:RULES.expFrom"] = {
+			{
+				session = "S109",
+				why = "S109 audit (D3): contracts 1-3 give gold only; the tutorial pays levels 1-2 in full (no grinding in the S94 base), so their EXP (12 + 25 + 45) only carried into level 3 and clamped monsterExpMul(3) at MUL_MIN (raw 0.14); now 0.875 as in S98",
 			},
 		},
 	} :: { [string]: { Reason } },

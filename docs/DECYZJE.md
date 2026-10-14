@@ -3270,3 +3270,61 @@
   (`str("id", true)`).
 - **S108 test znaków NPC:** `npcmarks.spec` „po 99. zleceniu tablica bez znaku” oddaje też zadania poboczne zwiadowców
   (Halvar daje teraz `side_fp_flask`).
+- **S109 audyt (cele):** `QuestBudgetGen.AUDIT`, wiersze T-QB1…T-QB7 (`QuestBudgetGen.audit`, tryb `audit`, blok
+  „Quest budget audit (S109)”). Łącznie (wariant `all`) 27–33% w pasmach 20–44 / 45–69 / 70–99 (`TARGET` = 30%, ±10%
+  na zaokrąglenia i rytm); zlecenie 10,5–12,5% (wzór); fabuła i poboczne [cel − 0,003; cel] (udział pasma z konstrukcji,
+  S102 / S106); bossowe 1,5–2,5% (liczba bossów pasma); średnia krocząca (5 poziomów) 15–50% na 21–97; mnożnik bez
+  przycięć, 0,55–1,00 od 20., skok ≤ 0,10 w paśmie; godziny bicia pasma 0,99–1,01, poziomu 0,97–1,03; kompletność.
+- **S109 audyt (pomiar):** udziały pasm w `all` liczone po poziomie zadania (fabuła bez celu `boss`, jak model S91 / S98:
+  finały rozdziałów poza modelem tempa), poziomy i średnia krocząca w rozkładzie zaliczenia (okna fabuły). Okno
+  `coldFire` 69–71 pokazuje w modelu 9,3% fabuły na 45–69 i 10,3% na 70–99, po poziomie zadania równe 10,0%.
+- **S109 Łąki 1–19 poza celem 30% z założenia** (samouczek S32, łuki S27, zamrożone 1–20): T-QB4 asertuje tylko
+  zlecenia (11,9%), fabuła 41,8%, poboczne 39,6% i razem 95,3% w raporcie.
+- **S109 plik bazowy stały (D4):** `tests/fixtures/quest_budget_base.json` (`meta.session = "S98"`) to jedyne odniesienie
+  „czas na poziom = S94”; tryb `base` nie nadpisuje istniejącego pliku nawet z `--force` (`QuestBudgetGen.baseAllowed`).
+  Regeneracja liczyłaby `budget = false` na 70 questach fabuły zamiast 32 i gra by przyspieszyła.
+- **S109 wagi fabuły (D1):** wagi wszystkich questów fabuły 20–99 przeliczone tak, by `monsterExpMul` był płaski w
+  paśmie i bez skoków (udział pasma bez zmian, `TARGET.main`): 45–69 0,844, 70–99 0,803 (L99 0,512 → 0,804), 20–44
+  według udziałów bicia S94 (1,23 na 20, 1,15 na 21–23, 1,06 na 24–26, 1,04 na 27–36, 0,97–0,98 na 37–43, 0,90 na 44).
+  Jednostka wagi: 0,05 / 0,125 / 0,12 EXP poziomu; koniec rozdziału dalej waży > 1 (`queensLegacy` 1,6, `coldFire` 1,48).
+- **S109 `toDuskwood` na regule fabuły (D1, „jedyna droga”):** stałe 7 150 EXP (60% poziomu 20) dawało średnią kroczącą
+  udziału na 21 ≥ 0,54 (T-QB3 ≤ 0,50) i skok mnożnika 0,575 → ≥ 0,9 na 21 (T-QB5 ≤ 0,10) przy każdych wagach; teraz waga
+  6,76 (4 023 EXP), `Balance.LEGACY_EXP.toDuskwood = 7150` trzyma model S94 bit w bit. Wpisy 1–20 przed F.
+- **S109 zlecenia 1–3 bez EXP (D3, `Contracts.RULES.expFrom = 4`):** samouczek płaci poziomy 1–2 w całości (baza S94 nie
+  bije tam nic), więc EXP zleceń 1–3 (12 + 25 + 45) przechodził nadmiarem na 3. i przycinał `monsterExpMul(3)` do
+  `MUL_MIN` (surowo 0,14; `MUL_MIN` 0,4 by nie wystarczył). Teraz 0,875 jak w S98; złoto zleceń bez zmian.
+- **S109 nagroda bez EXP:** napis nad postacią przy oddaniu zlecenia 1–3 (i `firstSpring`) pokazuje samo złoto
+  (`combat.rewardGold`), jak dziennik i tablica.
+- **S109 T-QB5 maks. 1,00 na 20–44 w trybie raportu:** poza zasięgiem dźwigni S109: zadania dają w modelu 27,0% pasma
+  wobec 27,5% fabuły S94, więc mnożnik jest średnio ≥ 1; T-QB3 trzyma fabułę 20–23 poniżej S94 (1,23 na 20). Kto pomija
+  zadania na 20–36, bije szybciej niż w S94; czas z zadaniami jak S94.
+- **S109 model złota:** `Balance.questGoldByLevel` (złoto zadań w rozkładzie zaliczenia EXP) tylko do T-EC2 i raportu;
+  `questsAt(L).gold` / `levelIncome` bez zmian (sumy pasm te same, przepięcie ruszyłoby G9 i fixture przedmiotów S84).
+  `Balance.PLAY_PROFILE` (2 h dziennie, 3 dzienne, tygodniowe, zlecenie na bossa, logowanie, 1 wydarzenie na 2 h; założenie
+  raportu, nie liczba gry), `extrasPerHour`, `extrasExpPerHour`, `fullIncome`, `fullLevelIncome`.
+- **S109 dodatki liczone samym złotem:** przedmioty z nagród dziennych, tygodniowych i logowania (błogosławieństwa,
+  esencje, mikstury, kamienie, skrzynie) to zużywalne, nie dochód (jak skrzynie S100 / S101); z wyceną S100 G2 dodatki
+  byłyby 40–46% dochodu z gry.
+- **S109 cele T-EC:** górne granice S84 / S92–S94 (ulepszenia, mikstury) zostają na dochodzie z gry, dolne (plecaki ≥ 3 /
+  ≥ 5 poziomów, komplet +9 ≥ 150 h, mikstury łańcuchowe ≥ 15%) na pełnym; T-EC2 ≤ 25% i T-EC3 ≤ 35% (`Balance.FULL_INCOME`).
+  Nagród złota nie zmieniano (wszystkie asertowane wiersze w celu).
+- **S109 T-EC2 na 21–32 w trybie raportu:** poza zasięgiem dźwigni S109: złoto fabuły `gold(level)` (S27 / S32, poza E4);
+  rozdział II ma zadanie prawie co poziom, a poziom trwa 0,3–0,6 h (najgorzej 0,64 na 21); od 33. asercja (0,23).
+- **S109 nowa baza 1–20:** `tests/fixtures/balance_1_20.json` z `meta.session = "S109"`, `ALLOWED_1_20_DIFFS` pusta; bazą
+  zastąpiono 208 wpisów (S98–S109, tabela w SESJE).
+- **S109 wiki (G1, decyzja właściciela):** strony i pola questów głównych bez zmian, dochodzi tylko `chapter`; lista
+  fabuły w rozdziałach z `Main.CHAPTERS` (jedno źródło), nowe questy S102–S105 w tym samym kształcie: `text` = strony
+  `p1..pN` złączone pustą linią, `done` jak dotąd; przerywniki poza wiki. Tytuły rozdziałów z gry mają już numer
+  („Rozdział I: …”, „Finał: …”), więc wiki pokazuje je wprost, bez kluczy `quests.chapter` / `quests.chapterOf`.
+- **S109 wiki (eksport):** nowe klucze `chapters`, `main[].chapter`, `bossQuests`, `weekly`, `contracts` (bez
+  `RULES.kills`, `minGroups`, `penalty`); zlecenia, bossowe i tygodniowe bez stron i bez wpisów w wyszukiwarce; etykiety
+  celów jak `UI/QuestText` (`killArea`, `killElite2`, `collectFrom`, `gatherAny`).
+- **S109 ukrycie zdjęte:** 38 questów fabuły, 78 pobocznych, 29 NPC, 29 miejsc NPC, 108 kotwic (103 na mapach z
+  `tower_crest`, 5 w jaskiniach), skiny `mountskin_spring` i `mountskin_lantern`, tytuł `thornbearer`; mechanizm
+  `wiki = false` (typy i filtr `WikiData/World`) zostaje na przyszłe treści.
+  Zostają ukryte: `mount_royal` (premium), `armorPen` (linia zastąpiona przed serią), ścieżki klas (inna seria).
+- **S109 wiki (uproszczenie):** strony krain pokazują linię rozdziału fabuły i questy z celami jak dotąd, bez questów
+  bossowych (te są tylko w indeksie zadań; strona bossa bez questu).
+- **S109 tempo „bez zadań” i „wszystko + dodatki”** tylko w raporcie (`docs/BALANS.md`, „Audyt questów (S109)”): 1→100
+  122,9 h bez zadań, 78,6 h ze wszystkimi zadaniami, 52,1 h z dodatkami (−38% wobec 84,1 h); decyzja o dziennych i
+  tygodniowych (poza budżetem) u właściciela.

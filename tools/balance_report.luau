@@ -170,6 +170,8 @@ local function fmtValue(value: number, fmt: string): string
 	local text
 	if fmt == "%" then
 		text = string.format("%d%%", math.floor(value * 100 + 0.5))
+	elseif fmt == "1%" then
+		text = string.format("%.1f%%", value * 100) -- S109
 	elseif fmt == "1" or fmt == "s" then
 		text = string.format("%.1f", value)
 	elseif fmt == "2" then
@@ -2587,7 +2589,7 @@ do
 	add("## Budżet EXP zadań (S98)")
 	add()
 	add(
-		"Kontrakt `docs/DESIGN-15.md` §3.2: zadania zastępują część bicia, czas na poziom zostaje z S94. Udział = EXP kategorii zaliczony poziomom pasma w modelu okien (`Balance.questCreditByLevel`) / suma `expToNext` pasma; cel `Data/QuestBudget.TARGET` (razem 30%, asertuje S109). Kompensacja: `MONSTER_EXP_MUL` z `lune run tools/quest_budget.luau` (udział bicia `s / s₀` wobec pliku bazowego `tests/fixtures/quest_budget_base.json`)."
+		"Kontrakt `docs/DESIGN-15.md` §3.2: zadania zastępują część bicia, czas na poziom zostaje z S94. Udział = EXP kategorii zaliczony poziomom pasma w modelu okien (`Balance.questCreditByLevel`) / suma `expToNext` pasma; cel `Data/QuestBudget.TARGET` (razem 30%; audyt i asercje: sekcja „Audyt questów (S109)”). Kompensacja: `MONSTER_EXP_MUL` z `lune run tools/quest_budget.luau` (udział bicia `s / s₀` wobec pliku bazowego `tests/fixtures/quest_budget_base.json`)."
 	)
 	add()
 	local cats = QuestBudgetGen.CATEGORIES
@@ -2746,6 +2748,179 @@ do
 	end
 	add(`Najgorszy poziom 1–99: {worstLevel} ({BalanceTables.CLASS_PL[worstClass]}), {pct2(worst)} (limit 3%).`)
 	add()
+end
+
+-- Quest audit (S109) ----------------------------------------------------------------------------------------------
+
+do
+	add("## Audyt questów (S109)")
+	add()
+	add(
+		"Audyt końcowy serii S98–S108 (`QuestBudgetGen.audit`, cele `QuestBudgetGen.AUDIT`; asercje w `tests/questbudget.spec.luau`, „Quest budget audit (S109)”; wydruk `lune run tools/quest_budget.luau audit`). Wariant **model** = zaliczenie modelu okien (poboczne × `SIDE_SHARE`, jak kompensacja), wariant **all** = gracz robi zlecenie, fabułę, wszystkie poboczne i bossowe; udziały pasm w `all` liczone po poziomie zadania (fabuła bez zadań z celem `boss`: finały rozdziałów poza modelem tempa, jak S91 / S98)."
+	)
+	add()
+	local audit = QuestBudgetGen.audit()
+	local cats = QuestBudgetGen.CATEGORIES
+	for _, variant in { "model", "all" } do
+		add(`Udział EXP zadań w paśmie ({variant}):`)
+		add()
+		local rows: { { string } } = {}
+		for _, band in audit.bands do
+			local shares = (band :: any)[variant]
+			local row = { `{band.lo}–{band.hi}` }
+			for _, cat in cats do
+				table.insert(row, fmtValue(shares.byCategory[cat] or 0, "1%"))
+			end
+			table.insert(row, fmtValue(shares.total, "1%"))
+			table.insert(rows, row)
+		end
+		local target = { "cel" }
+		local sum = 0
+		for _, cat in cats do
+			local t = QuestBudgetData.TARGET[cat] or 0
+			sum += t
+			table.insert(target, fmtValue(t, "1%"))
+		end
+		table.insert(target, fmtValue(sum, "1%"))
+		table.insert(rows, target)
+		tableOut({ "pasmo", "fabuła", "poboczne", "bossowe", "zlecenia", "razem" }, rows)
+	end
+	add(
+		"Poziomy co 5 (`all` w rozkładzie zaliczenia, średnia krocząca z 5 poziomów w paśmie; godziny bicia Wojownika):"
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, L in { 1, 5, 10, 15, 19, 20, 25, 30, 35, 40, 44, 45, 50, 55, 60, 65, 69, 70, 75, 80, 85, 90, 95, 99 } do
+		local lv = audit.levels[L]
+		table.insert(rows, {
+			tostring(L),
+			fmtValue(lv.exp, "i"),
+			fmtValue(lv.all.main or 0, "1%"),
+			fmtValue(lv.all.side or 0, "1%"),
+			fmtValue(lv.all.boss or 0, "1%"),
+			fmtValue(lv.all.contract or 0, "1%"),
+			fmtValue(lv.total, "1%"),
+			fmtValue(lv.avg, "1%"),
+			(string.gsub(string.format("%.3f", lv.mul), "%.", ",")),
+			fmtValue(lv.hoursBase, "2"),
+			fmtValue(lv.hoursNow, "2"),
+		})
+	end
+	tableOut({
+		"L",
+		"`expToNext`",
+		"fabuła",
+		"poboczne",
+		"bossowe",
+		"zlecenie",
+		"razem",
+		"średnia 5",
+		"`mul`",
+		"h baza",
+		"h teraz",
+	}, rows)
+	add("Wiersze celu (T-QB1…T-QB7):")
+	add()
+	local targetRows: { { string } } = {}
+	for _, r in audit.rows do
+		local note = r.why or ""
+		if #r.outliers > 0 and not r.report then
+			note = table.concat(r.outliers, ", ", 1, math.min(8, #r.outliers))
+		end
+		table.insert(targetRows, {
+			`{r.id} {r.label}`,
+			(string.gsub(QuestBudgetGen.fmtAuditValue(r.id, r.value), "%.", ",")),
+			(string.gsub(QuestBudgetGen.fmtAuditBand(r), "%.", ",")),
+			QuestBudgetGen.auditVerdict(r),
+			note,
+		})
+	end
+	tableOut({ "wiersz", "wartość", "cel", "wynik", "uwagi" }, targetRows)
+	add(
+		"Tempo w pięciu wariantach (Wojownik, model okien; godziny pasm jak cele S91–S94): **S94** = udział bicia z pliku bazowego, **teraz** = `paceWindowAt` (asercje S91–S94), **bez zadań** = cały poziom z potworów z mnożnikiem (w nawiasie gracz bez zadań w S94, bez mnożnika), **wszystko** = zlecenie, fabuła, wszystkie poboczne i bossowe w pełnej wartości, **wszystko + dodatki** = do tego dzienne, tygodniowe, zlecenie na bossa i wydarzenia według `Balance.PLAY_PROFILE` (EXP dodatków na godzinę gry dodany do tempa bicia)."
+	)
+	add()
+	local hourRows: { { string } } = {}
+	for _, h in audit.hours do
+		table.insert(hourRows, {
+			`{h.lo} → {h.hi}`,
+			fmtValue(h.s94, "1"),
+			fmtValue(h.now, "1"),
+			`{fmtValue(h.noQuests, "1")} ({fmtValue(h.noQuestsS94, "1")})`,
+			fmtValue(h.allQuests, "1"),
+			fmtValue(h.allExtras, "1"),
+		})
+	end
+	tableOut({ "pasmo", "S94 h", "teraz h", "bez zadań h (S94)", "wszystko h", "wszystko + dodatki h" }, hourRows)
+	add(
+		`Pominięte w modelu (zadania fabuły z celem \`boss\`): {table.concat(audit.skipped, ", ")}. Plik bazowy \`tests/fixtures/quest_budget_base.json\` (S98) jest stały: tryb \`base\` go nie nadpisuje (S109).`
+	)
+	add()
+end
+
+-- Full income (S109) ------------------------------------------------------------------------------------------------
+
+do
+	add("## Pełny dochód (S109)")
+	add()
+	add(
+		"Złoto na godzinę gry gracza, który robi wszystko (`Balance.fullIncomeReport`): dochód z gry (`economyAt`: monety i sprzedaż dropu), złoto zadań jednorazowych w rozkładzie zaliczenia EXP (`Balance.questGoldByLevel`) na godziny bicia poziomu, dodatki (`Balance.extrasPerHour`, samo złoto: przedmioty z nagród to zużywalne, jak skrzynie S100 / S101). Asercje w `balance.spec` („Full income (S109)”): górne granice S84 / S92–S94 dalej na dochodzie z gry, dolne (plecaki, komplet +9, mikstury łańcuchowe) na pełnym dochodzie."
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, c in B.FULL_INCOME.reportClasses do
+		for _, L in B.FULL_INCOME.reportLevels do
+			local r = B.fullIncomeReport(c, L)
+			table.insert(rows, {
+				BalanceTables.CLASS_PL[c],
+				tostring(L),
+				fmtValue(r.grind, "i"),
+				fmtValue(r.quests, "i"),
+				fmtValue(r.extras.daily, "i"),
+				fmtValue(r.extras.weekly, "i"),
+				fmtValue(r.extras.bossContract, "i"),
+				fmtValue(r.extras.login, "i"),
+				fmtValue(r.extras.events, "i"),
+				fmtValue(r.total, "i"),
+				fmtValue(r.quests / math.max(1e-9, r.grind), "%"),
+				fmtValue(r.extras.total / math.max(1e-9, r.grind), "%"),
+			})
+		end
+	end
+	tableOut({
+		"klasa",
+		"L",
+		"z gry / h",
+		"zadania / h",
+		"dzienne",
+		"tygodniowe",
+		"boss",
+		"logowanie",
+		"wydarzenia",
+		"razem / h",
+		"zadania / gra",
+		"dodatki / gra",
+	}, rows)
+	add(
+		`Dzienne, tygodniowe, logowanie i wydarzenia są poza \`economyAt\` i modelem tempa; pełny dochód zakłada \`PLAY_PROFILE\` ({B.PLAY_PROFILE.hoursPerDay} h dziennie).`
+	)
+	add()
+	local targetRows: { { string } } = {}
+	for _, r in B.fullIncomeRows() do
+		local band = if r.band.lo and r.band.hi
+			then `{fmtValue(r.band.lo, "2")}–{fmtValue(r.band.hi, "2")}`
+			elseif r.band.lo then `≥ {fmtValue(r.band.lo, "2")}`
+			else `≤ {fmtValue(r.band.hi or 0, "2")}`
+		table.insert(targetRows, {
+			`{r.id} {r.label}`,
+			fmtValue(r.value, "2"),
+			band,
+			if r.report then "raport" elseif r.ok then "OK" else "POZA",
+			r.worst or "",
+			r.why or "",
+		})
+	end
+	tableOut({ "wiersz", "wartość", "cel", "wynik", "gdzie", "uwagi" }, targetRows)
 end
 
 -- Skills on the reference builds (S85) ----------------------------------------------------------------------------
@@ -3229,7 +3404,8 @@ do
 			table.insert(cells, if #rep > 0 then table.concat(rep, ", ") .. " (70)" else "–")
 			local reportOnly = row.reportWhy ~= nil
 				and (
-					row.reportElements == nil or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil)
+					row.reportElements == nil
+					or (v.element ~= nil and table.find(row.reportElements, v.element) ~= nil)
 				)
 			-- S89: `reportAt` makes only some levels report-only (the rest stays asserted, as in SkillModel.targetsS88)
 			local reportLevels = {}

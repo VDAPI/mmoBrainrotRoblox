@@ -1,22 +1,43 @@
 import { describe, expect, it } from "vitest";
 import { load } from "./data";
-import { mechanicsHref, guideHref, npcHref } from "./links";
-import { arcQuests, mainGroups, mainQuests, neighboursOf, npcLabel, npcName, questRegion, sideGroups, sideOrdered } from "./quests";
+import { chapterHref, mechanicsHref, guideHref, npcHref, questHref } from "./links";
+import { arcQuests, bossQuests, chapters, contractsByMap, mainChapters, mainQuests, neighboursOf, npcLabel, npcName, questRegion, sideByLand, sideGroups, sideOrdered, weeklyTemplates } from "./quests";
 import { contentEntry } from "./content";
 
 describe("quests", () => {
-  it("keeps the main chain in the game's order and groups it by region without reordering", () => {
+  it("keeps the main chain in the game's order and groups it by chapter without reordering (S109)", () => {
     const chain = mainQuests();
     expect(chain.map((q) => q.order)).toEqual([...chain].map((q) => q.order).sort((a, b) => a - b));
-    expect(mainGroups().flatMap((g) => g.quests.map((q) => q.id))).toEqual(chain.map((q) => q.id));
-    for (const g of mainGroups()) expect(["city", "region"]).toContain(load("maps").maps.find((m) => m.id === g.region)?.kind);
+    const groups = mainChapters();
+    expect(groups.flatMap((g) => g.quests.map((q) => q.id))).toEqual(chain.map((q) => q.id));
+    expect(groups.map((g) => g.chapter.n)).toEqual(chapters().map((c) => c.n));
+    expect(groups.length).toBe(load("quests").chapters.length);
+    for (const g of groups) {
+      expect(["city", "region"]).toContain(load("maps").maps.find((m) => m.id === g.chapter.map)?.kind);
+      for (const q of g.quests) expect(q.level >= g.chapter.from && q.level <= g.chapter.to).toBe(true);
+    }
+    expect(chapterHref("pl", 2)).toMatch(/#chapter-2$/);
   });
 
-  it("links previous and next in the chain", () => {
-    const chain = mainQuests();
-    expect(neighboursOf(chain[0].id).prev).toBeUndefined();
-    expect(neighboursOf(chain[0].id).next?.id).toBe(chain[1].id);
-    expect(neighboursOf(chain[chain.length - 1].id).next).toBeUndefined();
+  it("links previous and next in the chain within a chapter; a main quest keeps its own page", () => {
+    for (const g of mainChapters()) {
+      expect(neighboursOf(g.quests[0].id).prev).toBeUndefined();
+      if (g.quests.length > 1) expect(neighboursOf(g.quests[0].id).next?.id).toBe(g.quests[1].id);
+      expect(neighboursOf(g.quests[g.quests.length - 1].id).next).toBeUndefined();
+    }
+    const first = mainQuests()[0];
+    expect(questHref("pl", first.id)).toBe(`/pl/zadania/${first.id}/`);
+  });
+
+  it("gives every hunting contract once, the boss quests and the weekly templates (S109)", () => {
+    const contracts = contractsByMap().flatMap((g) => g.contracts);
+    expect(contracts.length).toBe(load("quests").contracts.max);
+    expect(new Set(contracts.map((c) => c.level)).size).toBe(contracts.length);
+    expect(bossQuests().length).toBe(load("quests").bossQuests.length);
+    expect(weeklyTemplates().length).toBeGreaterThan(0);
+    const lands = sideByLand();
+    expect(lands.reduce((n, l) => n + l.count, 0)).toBe(load("quests").side.length);
+    for (const l of lands) expect(l.arcs).toBeGreaterThan(0);
   });
 
   it("orders side quests after their requirements and keeps arcs together", () => {

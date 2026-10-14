@@ -38,7 +38,7 @@ export type Def = {
 	flies: boolean?,
 	skin: Skin?, -- S97: mountskin
 	obtain: Obtain?, -- S97: a boss drop (Data/Mounts.BOSS_DROPS) or a quest reward (Reward.cosmetic), not for sale
-	wiki: boolean?, -- S105: false = left out of the wiki until S109 (tools/WikiData/Visibility)
+	wiki: boolean?, -- S105: false = left out of the wiki until published (tools/WikiData/Visibility)
 }
 
 local LIST: { Def } = {}
@@ -195,11 +195,10 @@ add("mountskin_dragonslayer", "mountskin", 0, "🐉", "#8E949C", {
 	},
 })
 -- S105: the reward of the story's finale (firstSpring): pale green cloth with white flowers, a wreath of field flowers
--- by the bridle; off the wiki like its quest until S109
+-- by the bridle
 add("mountskin_spring", "mountskin", 0, "❀", "#B8E07A", {
 	color2 = "#F4F0E8",
 	obtain = { quest = "firstSpring" },
-	wiki = false,
 	skin = {
 		colors = { cloth = "#9CCB6A", trim = "#F4F0E8", accent = "#E8D8B0" },
 		parts = { "caparison", "wreath" },
@@ -207,11 +206,10 @@ add("mountskin_spring", "mountskin", 0, "❀", "#B8E07A", {
 })
 
 -- S106: the reward of the Dusk Lanterns arc (side_lampLighter): ash-grey coat, a navy caparison with a silver lantern
--- trim, black tack and a cold bluish mane; off the wiki like its quest until S109
+-- trim, black tack and a cold bluish mane
 add("mountskin_lantern", "mountskin", 0, "🏮", "#8A8884", {
 	color2 = "#7FB8FF",
 	obtain = { quest = "side_lampLighter" },
-	wiki = false,
 	skin = {
 		colors = { base = "#8A8884", accent = "#9FB8D8", detail = "#1A1A1E", cloth = "#1E2A4A", trim = "#C8CCD4" },
 		parts = { "caparison" },

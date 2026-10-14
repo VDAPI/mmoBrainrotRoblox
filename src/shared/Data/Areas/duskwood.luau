@@ -62,7 +62,7 @@ end
 -- monster group or gathering node moves.
 local function spot(site: string, lx: number, lz: number, facing: number): Types.NpcSpot
 	local x, z = atSite(site, lx, lz)
-	return { x = x, z = z, facing = facing, wiki = false }
+	return { x = x, z = z, facing = facing }
 end
 
 local NPC_SPOTS: { [string]: Types.NpcSpot } = {
@@ -74,29 +74,29 @@ local NPC_SPOTS: { [string]: Types.NpcSpot } = {
 	jorund = spot("wayShrine", -5, -6, 230),
 	-- on the dry west shore by the stilt village (the village itself stands in the water; the first of the planned
 	-- points 416 / 592, 418 / 566, 424 / 612 that passes the ground checks of tests/duskwood.spec)
-	ragna = { x = 416, z = 592, facing = 0, wiki = false },
+	ragna = { x = 416, z = 592, facing = 0 },
 	-- S106: places of the Duskwood side arc NPCs (Data/Npcs regionfolk), inside the avoid circles of existing sites, so
 	-- no monster group or gathering node moves.
-	huntress = { x = -628, z = 28, facing = 200, wiki = false }, -- the north edge of the Dusk Gate, off the road
-	beekeeper = { x = -494, z = 548, facing = 45, wiki = false }, -- the gorge's lip at the end of the Fallen Giant
+	huntress = { x = -628, z = 28, facing = 200 }, -- the north edge of the Dusk Gate, off the road
+	beekeeper = { x = -494, z = 548, facing = 45 }, -- the gorge's lip at the end of the Fallen Giant
 	gravedigger = spot("cemetery", 6, -22, 200), -- before the gap in the cemetery fence
-	herbalist = { x = 147.4, z = 342.1, facing = 0, wiki = false }, -- 30 studs before the Elder Tree, between roots
-	warden = { x = 304, z = -66, facing = 180, wiki = false }, -- between the gallows and the road
-	ferryman = { x = 582, z = 496, facing = 135, wiki = false }, -- on land at the foot of the jetty
-	exorcist = { x = 74, z = 60, facing = 160, wiki = false }, -- a dry tussock before the hanging tree
-	mason = { x = 668, z = 30, facing = 270, wiki = false }, -- on the Blood Cliffs plateau, off the Crypt's yard
+	herbalist = { x = 147.4, z = 342.1, facing = 0 }, -- 30 studs before the Elder Tree, between roots
+	warden = { x = 304, z = -66, facing = 180 }, -- between the gallows and the road
+	ferryman = { x = 582, z = 496, facing = 135 }, -- on land at the foot of the jetty
+	exorcist = { x = 74, z = 60, facing = 160 }, -- a dry tussock before the hanging tree
+	mason = { x = 668, z = 30, facing = 270 }, -- on the Blood Cliffs plateau, off the Crypt's yard
 }
 
 -- S103: quest anchors of the story (chapter II), inside the avoid circles of their sites; `rot` = the site's yaw (the
 -- frame of the props of Logic/DuskwoodGen/Quest and of the client effects).
 local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
 	local x, z = atSite(site, lx, lz)
-	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+	return { id = id, x = x, z = z, y = y, rot = SITES[site].rot }
 end
 
 -- S106: an anchor at a map point of its own (no site frame), `rot` = the yaw of its prop.
 local function free(id: string, x: number, z: number, rot: number): Types.QuestAnchor
-	return { id = id, x = x, z = z, y = 2, wiki = false, rot = rot }
+	return { id = id, x = x, z = z, y = 2, rot = rot }
 end
 
 local QUEST_ANCHORS: { Types.QuestAnchor } = {

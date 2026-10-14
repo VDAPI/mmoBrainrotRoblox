@@ -63,7 +63,7 @@ T.describe("Titles", function()
 		T.expect(Titles.isUnlocked(done(Main.indexOf.firstSpring), "thornbearer")).toBe(true)
 		local def = assert(TitleData.get("thornbearer"))
 		T.expect(def.req).toEqual({ kind = "mainDone", value = Main.indexOf.firstSpring })
-		T.expect(def.wiki).toBe(false)
+		T.expect(def.wiki).toBeNil() -- S109: published on the wiki
 		-- right after Dragonbane on the list
 		local at: { [string]: number } = {}
 		for i, t in TitleData.list do

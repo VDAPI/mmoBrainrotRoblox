@@ -298,7 +298,7 @@ describe("Duskwood story places (S103)", function()
 				expect(T.streamDistance(spot.x, spot.z) >= 6).toBe(true)
 				expect(`{key} {blockedBy(spot.x, spot.z, 2)}`).toBe(`{key} nil`)
 				expect(dist(spot.x, spot.z, -690, -36) >= 8).toBe(true)
-				expect(spot.wiki).toBe(false)
+				expect(spot.wiki).toBeNil() -- S109: published on the wiki
 				local npc = assert(Npcs.get(plan.npc), plan.npc)
 				expect(npc.position.x).toBe(spot.x)
 				expect(npc.position.z).toBe(spot.z)
@@ -325,7 +325,7 @@ describe("Duskwood story places (S103)", function()
 			expect(`{id} {dist(a.x, a.z, site.x, site.z) < avoidRadius(plan.site)}`).toBe(`{id} true`)
 			expect(T.water(a.x, a.z)).toBeNil()
 			expect(`{id} {MapTerrain.walkable("duskwood", a.x, a.z, 2)}`).toBe(`{id} true`)
-			expect(a.wiki).toBe(false)
+			expect(a.wiki).toBeNil() -- S109: published on the wiki
 			expect(a.rot).toBe(site.rot)
 			for mapName, data in Areas.byMap do
 				for _, other in data.questAnchors or {} do
@@ -457,33 +457,36 @@ local function sideAnchors(): { [string]: any }
 end
 
 describe("Duskwood side arc places (S106)", function()
-	it("the eight NPC places: inside avoid circles, dry walkable ground, apart, clear of builds, hidden", function()
-		local spots = assert(DATA.npcSpots, "npcSpots")
-		for key, npcId in SIDE_SPOTS do
-			local spot = assert(spots[key], key)
-			expect(math.abs(spot.x) < 800 and math.abs(spot.z) < 800).toBe(true)
-			expect(`{key} {inAvoid(spot.x, spot.z)}`).toBe(`{key} true`)
-			expect(`{key} {MapTerrain.walkable("duskwood", spot.x, spot.z, 2)}`).toBe(`{key} true`)
-			expect(`{key} {T.dryAround(spot.x, spot.z, 3)}`).toBe(`{key} true`)
-			expect(T.streamDistance(spot.x, spot.z) >= 6).toBe(true)
-			expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
-			expect(`{key} {blockedBy(spot.x, spot.z, 1)}`).toBe(`{key} nil`)
-			expect(`{key} {AreaSpawns.nearRoad(DATA.roads, spot.x, spot.z, 6)}`).toBe(`{key} false`)
-			expect(dist(spot.x, spot.z, -690, -36) >= 8).toBe(true)
-			expect(spot.wiki).toBe(false)
-			for other, o in spots do
-				if other ~= key then
-					expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+	it(
+		"the eight NPC places: inside avoid circles, dry walkable ground, apart, clear of builds, on the wiki (S109)",
+		function()
+			local spots = assert(DATA.npcSpots, "npcSpots")
+			for key, npcId in SIDE_SPOTS do
+				local spot = assert(spots[key], key)
+				expect(math.abs(spot.x) < 800 and math.abs(spot.z) < 800).toBe(true)
+				expect(`{key} {inAvoid(spot.x, spot.z)}`).toBe(`{key} true`)
+				expect(`{key} {MapTerrain.walkable("duskwood", spot.x, spot.z, 2)}`).toBe(`{key} true`)
+				expect(`{key} {T.dryAround(spot.x, spot.z, 3)}`).toBe(`{key} true`)
+				expect(T.streamDistance(spot.x, spot.z) >= 6).toBe(true)
+				expect(spot.facing >= 0 and spot.facing < 360).toBe(true)
+				expect(`{key} {blockedBy(spot.x, spot.z, 1)}`).toBe(`{key} nil`)
+				expect(`{key} {AreaSpawns.nearRoad(DATA.roads, spot.x, spot.z, 6)}`).toBe(`{key} false`)
+				expect(dist(spot.x, spot.z, -690, -36) >= 8).toBe(true)
+				expect(spot.wiki).toBeNil() -- S109: published on the wiki
+				for other, o in spots do
+					if other ~= key then
+						expect(`{key}-{other} {dist(spot.x, spot.z, o.x, o.z) >= 8}`).toBe(`{key}-{other} true`)
+					end
 				end
+				local npc = assert(Npcs.get(npcId), npcId)
+				expect(npc.map).toBe("duskwood")
+				expect(npc.position.x).toBe(spot.x)
+				expect(npc.position.z).toBe(spot.z)
+				expect(npc.facing).toBe(spot.facing)
+				expect(npc.wiki).toBeNil() -- S109: published on the wiki
 			end
-			local npc = assert(Npcs.get(npcId), npcId)
-			expect(npc.map).toBe("duskwood")
-			expect(npc.position.x).toBe(spot.x)
-			expect(npc.position.z).toBe(spot.z)
-			expect(npc.facing).toBe(spot.facing)
-			expect(npc.wiki).toBe(false)
 		end
-	end)
+	)
 
 	it("the 30 dw_* anchors: unique, dry, walkable, in an avoid circle or 10+ studs from groups, apart", function()
 		local anchors = sideAnchors()
@@ -498,7 +501,7 @@ describe("Duskwood side arc places (S106)", function()
 			expect(math.abs(a.x) < 800 and math.abs(a.z) < 800).toBe(true)
 			expect(T.water(a.x, a.z)).toBeNil()
 			expect(`{id} {MapTerrain.walkable("duskwood", a.x, a.z, 2)}`).toBe(`{id} true`)
-			expect(a.wiki).toBe(false)
+			expect(a.wiki).toBeNil() -- S109: published on the wiki
 			if not inAvoid(a.x, a.z) then
 				for _, g in groups do
 					if dist(a.x, a.z, g.position.x, g.position.z) < 10 then

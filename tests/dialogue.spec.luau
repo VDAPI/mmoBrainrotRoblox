@@ -3,7 +3,7 @@
 -- comments (Logic/Barks: events, limiter, speaker, picks, validation), the texts of both languages and the content
 -- minimums every quest session fills in: S102-S105 add their story quests to NEW_QUESTS.S10x and their chapter to
 -- COMPANION_GROUPS.S10x (S103-S105 also BARKS_ONLY.S10x: the chapter's existing quests), S106-S108 their side quests
--- and region. S109 audits the whole.
+-- and region. S109 audits the whole data ("Dialogue audit (S109)" at the end).
 
 local Barks = require("../src/shared/Logic/Barks")
 local Config = require("../src/shared/Config")
@@ -1155,5 +1155,178 @@ describe("Dialogue in story chapter IV and the finale (S105)", function()
 		expect(#BARKS_ONLY.S105).toBe(4)
 		expect(Barks.compCount(assert(Quests.Main.get("dragonsBrood")), "join")).toBe(2)
 		expect(Barks.compCount(assert(Quests.Main.get("dragonsBrood")), "wait")).toBe(2)
+	end)
+end)
+
+-- S109 (DESIGN-15 §3.5): the audit of the whole data, not of the session tables. Every story quest inserted after
+-- S101b and every side quest from level 20 (but the S96 stable arc of BARKS_ONLY) is in NEW_QUESTS, has a page with
+-- 2-3 answers and every required comment; every story chapter (Main.chapterOf, the finale as its own chapter 5 like
+-- S105) and every side region (the giver's map) has two quests with a companion. The report prints the table.
+describe("Dialogue audit (S109)", function()
+	local Companion = require("../src/shared/Logic/Companion")
+	local Npcs = require("../src/shared/Data/Npcs")
+	local StoryProgress = require("../src/shared/Logic/StoryProgress")
+
+	local listed: { [string]: string } = {}
+	for session, ids in NEW_QUESTS do
+		for _, id in ids do
+			listed[id] = session
+		end
+	end
+	local barksOnly: { [string]: boolean } = {}
+	for _, ids in BARKS_ONLY do
+		for _, id in ids do
+			barksOnly[id] = true
+		end
+	end
+	local REGIONS = { "duskwood", "ashen", "frostpeak" }
+	local function regionOf(quest: any): string?
+		local npc = Npcs.get(quest.giver)
+		return npc and npc.map
+	end
+	-- the new side quests of the series: every side quest from 20 on a region map, but the stable arc (S96, S101b)
+	local function newSide(): { any }
+		local out = {}
+		for _, quest in Quests.Side.list do
+			if quest.level >= 20 and not barksOnly[quest.id] then
+				table.insert(out, quest)
+			end
+		end
+		return out
+	end
+
+	it("every story quest inserted after S101b and every side quest from 20 is in NEW_QUESTS", function()
+		local missing = {}
+		for _, id in StoryProgress.inserted() do
+			if not listed[id] then
+				table.insert(missing, id)
+			end
+		end
+		for _, quest in newSide() do
+			if not listed[quest.id] then
+				table.insert(missing, quest.id)
+			end
+		end
+		expect(missing).toEqual({})
+	end)
+
+	it("each of them has a page with 2-3 answers and every required comment", function()
+		local problems = {}
+		local quests: { any } = {}
+		for _, id in StoryProgress.inserted() do
+			table.insert(quests, (assert(Quests.Main.get(id), id)))
+		end
+		for _, quest in newSide() do
+			table.insert(quests, quest)
+		end
+		for _, quest in quests do
+			local page = Dialogue.choicePage(quest)
+			local options = if page then #page.options else 0
+			if options < 2 or options > 3 then
+				table.insert(problems, `{quest.id}: {options} answers`)
+			end
+			local missing = missingEvents(quest)
+			if #missing > 0 then
+				table.insert(problems, `{quest.id}: no {table.concat(missing, ",")}`)
+			end
+		end
+		expect(problems).toEqual({})
+		expect(#quests >= 38 + 78).toBe(true)
+	end)
+
+	it("every story chapter and every side region has two quests with a companion", function()
+		local byChapter: { [number]: number } = {}
+		for _, quest in Quests.Main.list do
+			if quest.companion then
+				local n = Quests.Main.chapterOf(quest.id)
+				byChapter[n] = (byChapter[n] or 0) + 1
+			end
+		end
+		for _, chapter in Quests.Main.CHAPTERS do
+			expect(`chapter {chapter.n}: {(byChapter[chapter.n] or 0) >= 2}`).toBe(`chapter {chapter.n}: true`)
+		end
+		local byRegion: { [string]: number } = {}
+		for _, quest in Quests.Side.list do
+			local region = regionOf(quest)
+			if quest.companion and region then
+				byRegion[region] = (byRegion[region] or 0) + 1
+			end
+		end
+		for _, region in REGIONS do
+			expect(`{region}: {(byRegion[region] or 0) >= 2}`).toBe(`{region}: true`)
+		end
+	end)
+
+	it("the comments-only quests keep their comments; the S101b validators find nothing", function()
+		for _, ids in BARKS_ONLY do
+			for _, id in ids do
+				local quest = questOf(id)
+				expect(`{id}: {table.concat(missingEvents(quest), ",")}`).toBe(`{id}: `)
+			end
+		end
+		expect(Dialogue.validate()).toEqual({})
+		expect(Barks.validate()).toEqual({})
+		expect(Companion.validate()).toEqual({})
+	end)
+
+	it("S109 dialogue report", function()
+		type Row = {
+			name: string,
+			quests: number,
+			choice: number,
+			effect: number,
+			recall: number,
+			follow: number,
+			lead: number,
+		}
+		local rows: { Row } = {}
+		local function rowFor(name: string): Row
+			for _, r in rows do
+				if r.name == name then
+					return r
+				end
+			end
+			local r = { name = name, quests = 0, choice = 0, effect = 0, recall = 0, follow = 0, lead = 0 }
+			table.insert(rows, r)
+			return r
+		end
+		local function count(r: Row, quest: any)
+			r.quests += 1
+			local page = Dialogue.choicePage(quest)
+			if page then
+				r.choice += 1
+				for _, option in page.options do
+					if option.effect then
+						r.effect += 1
+						break
+					end
+				end
+			end
+			if quest.recall then
+				r.recall += 1
+			end
+			if quest.companion then
+				if quest.companion.mode == "lead" then
+					r.lead += 1
+				else
+					r.follow += 1
+				end
+			end
+		end
+		for _, quest in Quests.Main.list do
+			count(rowFor(`rozdział {Quests.Main.chapterOf(quest.id)}`), quest)
+		end
+		for _, quest in Quests.Side.list do
+			local region = regionOf(quest) or "?"
+			if region == "city" or region == "meadows" then
+				region = "meadows/city"
+			end
+			count(rowFor(`poboczne {region}`), quest)
+		end
+		print("  | grupa | zadania | z wyborem | ze skutkiem | z recall | follow | lead |")
+		for _, r in rows do
+			print(`  | {r.name} | {r.quests} | {r.choice} | {r.effect} | {r.recall} | {r.follow} | {r.lead} |`)
+		end
+		expect(#rows >= 8).toBe(true)
 	end)
 end)

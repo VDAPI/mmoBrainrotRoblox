@@ -41,7 +41,7 @@ export type NpcDef = {
 	-- S27: random lines in the dialog instead of the greeting (npc.<id>.line1..N); the innkeeper adds gossip.
 	lines: number?,
 	gossip: boolean?,
-	wiki: boolean?, -- S102: false = left out of the wiki (NPCs of story quests before S109)
+	wiki: boolean?, -- S102: false = left out of the wiki until published (the series S102-S108 published in S109)
 	ghost: boolean?, -- S103: a pale, half-transparent figure with a cold light (NpcService)
 	-- S104: id of a main quest; the NPC is shown to a character once that quest is active or done (Logic/NpcVisibility)
 	showFrom: string?,
@@ -330,36 +330,20 @@ meadowsfolk(
 meadowsfolk("hunter_borys", "hunter", { body = "#4F5A2E", accent = "#6B4A2B" }, "🏹")
 
 -- Story NPCs of Duskwood (S103, docs/FABULA.md §2.3), on the places of Areas/duskwood npcSpots.
-regionfolk(
-	"duskwood",
-	"forester_radomir",
-	"radomir",
-	{ body = "#4A5236", accent = "#6B4A2B" },
-	"🌲",
-	{ wiki = false }
-)
-regionfolk(
-	"duskwood",
-	"ghost_oswin",
-	"oswin",
-	{ body = "#B8D4D0", accent = "#6E8C9A" },
-	"⚜",
-	{ wiki = false, ghost = true }
-)
-regionfolk("duskwood", "defector_jorund", "jorund", { body = "#4A4A52", accent = "#7A4AA0" }, "🕯", { wiki = false })
-regionfolk("duskwood", "witch_ragna", "ragna", { body = "#3E4A36", accent = "#8A7A5A" }, "🌿", { wiki = false })
+regionfolk("duskwood", "forester_radomir", "radomir", { body = "#4A5236", accent = "#6B4A2B" }, "🌲")
+regionfolk("duskwood", "ghost_oswin", "oswin", { body = "#B8D4D0", accent = "#6E8C9A" }, "⚜", { ghost = true })
+regionfolk("duskwood", "defector_jorund", "jorund", { body = "#4A4A52", accent = "#7A4AA0" }, "🕯")
+regionfolk("duskwood", "witch_ragna", "ragna", { body = "#3E4A36", accent = "#8A7A5A" }, "🌿")
 
--- S106: Duskwood side arc NPCs (Data/Quests/Side arcs K-R), on the places of Areas/duskwood npcSpots; off the wiki
--- until S109.
-local SIDE_DUSK = { wiki = false }
-regionfolk("duskwood", "huntress_wanda", "huntress", { body = "#3A4A5A", accent = "#7FB8FF" }, "🏮", SIDE_DUSK)
-regionfolk("duskwood", "beekeeper_maciej", "beekeeper", { body = "#6B5A2E", accent = "#D8A43A" }, "🐝", SIDE_DUSK)
-regionfolk("duskwood", "gravedigger_bogumil", "gravedigger", { body = "#3A3A3E", accent = "#8A7A5E" }, "⚰", SIDE_DUSK)
-regionfolk("duskwood", "herbalist_dobrawa", "herbalist", { body = "#4A5A3A", accent = "#B8C08A" }, "🌿", SIDE_DUSK)
-regionfolk("duskwood", "warden_zbyszko", "warden", { body = "#5A5650", accent = "#7A1F2B" }, "🛡", SIDE_DUSK)
-regionfolk("duskwood", "ferryman_oldrzych", "ferryman", { body = "#3E4A3A", accent = "#8A7A58" }, "🛶", SIDE_DUSK)
-regionfolk("duskwood", "exorcist_kalina", "exorcist", { body = "#E8E2D0", accent = "#5A4A3A" }, "🕯", SIDE_DUSK)
-regionfolk("duskwood", "mason_wojslaw", "mason", { body = "#6E6A64", accent = "#6E2F2A" }, "⚒", SIDE_DUSK)
+-- S106: Duskwood side arc NPCs (Data/Quests/Side arcs K-R), on the places of Areas/duskwood npcSpots.
+regionfolk("duskwood", "huntress_wanda", "huntress", { body = "#3A4A5A", accent = "#7FB8FF" }, "🏮")
+regionfolk("duskwood", "beekeeper_maciej", "beekeeper", { body = "#6B5A2E", accent = "#D8A43A" }, "🐝")
+regionfolk("duskwood", "gravedigger_bogumil", "gravedigger", { body = "#3A3A3E", accent = "#8A7A5E" }, "⚰")
+regionfolk("duskwood", "herbalist_dobrawa", "herbalist", { body = "#4A5A3A", accent = "#B8C08A" }, "🌿")
+regionfolk("duskwood", "warden_zbyszko", "warden", { body = "#5A5650", accent = "#7A1F2B" }, "🛡")
+regionfolk("duskwood", "ferryman_oldrzych", "ferryman", { body = "#3E4A3A", accent = "#8A7A58" }, "🛶")
+regionfolk("duskwood", "exorcist_kalina", "exorcist", { body = "#E8E2D0", accent = "#5A4A3A" }, "🕯")
+regionfolk("duskwood", "mason_wojslaw", "mason", { body = "#6E6A64", accent = "#6E2F2A" }, "⚒")
 
 -- Story NPCs of the Ashen Wastes (S104, docs/FABULA.md §2.4), on the places of Areas/ashen npcSpots. Brokk reaches
 -- Kesra's camp with deadOasis, Ghasha the Hot Spring once freed in warcampCages (NpcDef.showFrom); Kaspar always stands
@@ -370,7 +354,7 @@ regionfolk(
 	"runesmith",
 	{ body = "#4A3A2E", accent = "#6FB8FF" },
 	"✦",
-	{ services = { "story" }, wiki = false, showFrom = "deadOasis" }
+	{ services = { "story" }, showFrom = "deadOasis" }
 )
 regionfolk(
 	"ashen",
@@ -378,42 +362,32 @@ regionfolk(
 	"shaman",
 	{ body = "#4A5A3A", accent = "#A3282A" },
 	"☽",
-	{ wiki = false, showFrom = "warcampCages" }
+	{ showFrom = "warcampCages" }
 )
-regionfolk("ashen", "hermit_kaspar", "hermit", { body = "#4A4236", accent = "#C9A45C" }, "✝", { wiki = false })
+regionfolk("ashen", "hermit_kaspar", "hermit", { body = "#4A4236", accent = "#C9A45C" }, "✝")
 
--- S107: Ashen side arc NPCs (Data/Quests/Side arcs S-Z), on the places of Areas/ashen npcSpots; off the wiki until
--- S109.
-local SIDE_ASH = { wiki = false }
-regionfolk("ashen", "waterkeeper_orren", "waterkeeper", { body = "#5A6B7A", accent = "#C9B98A" }, "💧", SIDE_ASH)
-regionfolk("ashen", "prospector_dragan", "prospector", { body = "#6B5A48", accent = "#C9A45C" }, "⚒", SIDE_ASH)
-regionfolk("ashen", "wyvernhunter_wieslawa", "wyvernhunter", { body = "#6B3A2A", accent = "#B8C0C8" }, "🏹", SIDE_ASH)
-regionfolk("ashen", "tombwarden_ezra", "tombwarden", { body = "#B8A47A", accent = "#3A6B6B" }, "⚱", SIDE_ASH)
-regionfolk("ashen", "wagoner_bogna", "wagoner", { body = "#7A5A3A", accent = "#3A2A1A" }, "🐂", SIDE_ASH)
+-- S107: Ashen side arc NPCs (Data/Quests/Side arcs S-Z), on the places of Areas/ashen npcSpots.
+regionfolk("ashen", "waterkeeper_orren", "waterkeeper", { body = "#5A6B7A", accent = "#C9B98A" }, "💧")
+regionfolk("ashen", "prospector_dragan", "prospector", { body = "#6B5A48", accent = "#C9A45C" }, "⚒")
+regionfolk("ashen", "wyvernhunter_wieslawa", "wyvernhunter", { body = "#6B3A2A", accent = "#B8C0C8" }, "🏹")
+regionfolk("ashen", "tombwarden_ezra", "tombwarden", { body = "#B8A47A", accent = "#3A6B6B" }, "⚱")
+regionfolk("ashen", "wagoner_bogna", "wagoner", { body = "#7A5A3A", accent = "#3A2A1A" }, "🐂")
 
 -- Story NPCs of the Frost Peaks (S105, docs/FABULA.md §2.5), on the places of Areas/frostpeak npcSpots. Both always
 -- stand there (no showFrom): Sigrun in the abandoned trappers' camp, the ghost of Brother Halgrim before the Ice Watch's
 -- keep, also after the oath (one NPC for everyone; his lines hold before and after it). S108 gives Sigrun side arcs.
-regionfolk("frostpeak", "trapper_sigrun", "trapper", { body = "#6B5A44", accent = "#C9C2B0" }, "🐾", { wiki = false })
-regionfolk(
-	"frostpeak",
-	"ghost_halgrim",
-	"halgrim",
-	{ body = "#BFD3E0", accent = "#2F3A4A" },
-	"⛨",
-	{ wiki = false, ghost = true }
-)
+regionfolk("frostpeak", "trapper_sigrun", "trapper", { body = "#6B5A44", accent = "#C9C2B0" }, "🐾")
+regionfolk("frostpeak", "ghost_halgrim", "halgrim", { body = "#BFD3E0", accent = "#2F3A4A" }, "⛨", { ghost = true })
 
 -- S108: Frost Peaks side arc NPCs (Data/Quests/Side arcs fp_*), on the places of Areas/frostpeak npcSpots with a small
--- camp behind each (Logic/FrostpeakGen/SideCamps); off the wiki until S109.
-local SIDE_FP = { wiki = false }
-regionfolk("frostpeak", "cairn_ingrid", "cairn", { body = "#5A4A5E", accent = "#C9A45C" }, "🎗", SIDE_FP)
-regionfolk("frostpeak", "hornblower_eskil", "horn", { body = "#4A5A6B", accent = "#B8862E" }, "📯", SIDE_FP)
-regionfolk("frostpeak", "skald_ragnvald", "skald", { body = "#6B3A2A", accent = "#D8C8A0" }, "📜", SIDE_FP)
-regionfolk("frostpeak", "icefisher_torvi", "icefisher", { body = "#3E5A6B", accent = "#9FC8D8" }, "🎣", SIDE_FP)
-regionfolk("frostpeak", "bonecarver_gunnar", "bonecarver", { body = "#5A5046", accent = "#E8DCC0" }, "🦴", SIDE_FP)
-regionfolk("frostpeak", "squire_asmund", "squire", { body = "#5E6670", accent = "#7A1F2B" }, "🛡", SIDE_FP)
-regionfolk("frostpeak", "scholar_vigdis", "scholar", { body = "#2E3A5A", accent = "#C9A45C" }, "📖", SIDE_FP)
+-- camp behind each (Logic/FrostpeakGen/SideCamps).
+regionfolk("frostpeak", "cairn_ingrid", "cairn", { body = "#5A4A5E", accent = "#C9A45C" }, "🎗")
+regionfolk("frostpeak", "hornblower_eskil", "horn", { body = "#4A5A6B", accent = "#B8862E" }, "📯")
+regionfolk("frostpeak", "skald_ragnvald", "skald", { body = "#6B3A2A", accent = "#D8C8A0" }, "📜")
+regionfolk("frostpeak", "icefisher_torvi", "icefisher", { body = "#3E5A6B", accent = "#9FC8D8" }, "🎣")
+regionfolk("frostpeak", "bonecarver_gunnar", "bonecarver", { body = "#5A5046", accent = "#E8DCC0" }, "🦴")
+regionfolk("frostpeak", "squire_asmund", "squire", { body = "#5E6670", accent = "#7A1F2B" }, "🛡")
+regionfolk("frostpeak", "scholar_vigdis", "scholar", { body = "#2E3A5A", accent = "#C9A45C" }, "📖")
 
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do

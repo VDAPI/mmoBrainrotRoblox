@@ -2,6 +2,7 @@
 // Region / city page (/pl/krainy/<mapId>/, S37, Kraina-* mock-up): the map with a legend on the left; title, level
 // and zone badges, description and PvP rule, areas, monsters (row <-> map highlight), caves, quests, neighbouring
 // regions and the way from the city on the right. The city lists its characters and gates instead of monsters.
+// S109: over the quests, a line per story chapter of the land with a link to the chapter on the quests page.
 import Base from "../../layouts/Base.astro";
 import ArtIcon from "../../components/ArtIcon.astro";
 import Crumbs from "../../components/Crumbs.astro";
@@ -15,6 +16,7 @@ import { href, type Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
 import { name, t } from "../../lib/i18n";
 import { cardsFor, legendFor } from "../../lib/mapcards";
+import { chapterHref } from "../../lib/links";
 import { searchHref, sectionHref } from "../../lib/sections";
 import { areasOf, bossOfCave, cavesOf, getMapInfo, levels, mapDescription, mapHref, monstersOn, neighbours, npcs, placeHref, questsAt } from "../../lib/world";
 
@@ -32,6 +34,7 @@ const areaList = areasOf(id);
 const monsterList = monstersOn(id);
 const caveList = cavesOf(id);
 const quests = questsAt({ map: id });
+const storyChapters = load("quests").chapters.filter((c) => c.map === id);
 const near = neighbours(id)
   .map((m) => getMapInfo(m))
   .filter((m): m is NonNullable<typeof m> => !!m && (m.kind === "region" || m.kind === "city"));
@@ -159,6 +162,11 @@ const title = name(map.name, lang);
       <div class="two">
         <section>
           <SectionTitle as="h2" id="quests">{t(lang, "region.quests")}</SectionTitle>
+          {storyChapters.map((c) => {
+            const text = t(lang, "quests.storyInRegion", { title: name(c.title, lang), from: c.from, to: c.to });
+            const h = chapterHref(lang, c.n);
+            return <p class="story">{h ? <a href={h}>{text}</a> : text}</p>;
+          })}
           <QuestCards lang={lang} quests={quests} place={{ map: id }} />
         </section>
         <section>
@@ -199,6 +207,7 @@ const title = name(map.name, lang);
   .muted { color: var(--vw-text-muted); }
   .soft { color: var(--vw-text-soft); }
   .small { font-size: 14px; }
+  .story { margin: 0 0 12px; font-weight: 700; }
   .nowrap { white-space: nowrap; }
   .list tr { cursor: pointer; }
   .list tr:global(.is-sel) td, .mlist li:global(.is-sel), .card:global(.is-sel) { background: color-mix(in srgb, var(--vw-gold) 10%, var(--vw-panel)); }

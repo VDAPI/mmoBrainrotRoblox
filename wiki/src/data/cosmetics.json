@@ -30,7 +30,9 @@
     {"color":"#4A4850","color2":"#9FE0B8","icon":"☾","id":"mountskin_shade","kind":"mountskin","name":{"en":"Morvane's Shroud","pl":"Całun Morvane"}},
     {"color":"#6A6460","color2":"#FF7A2A","icon":"♨","id":"mountskin_cinder","kind":"mountskin","name":{"en":"Azgor's Cinders","pl":"Popiół Azgora"}},
     {"color":"#8A4A26","color2":"#4E7A34","icon":"❦","id":"mountskin_meadow","kind":"mountskin","name":{"en":"Meadow Colours","pl":"Barwy Łąk"}},
-    {"color":"#8E949C","color2":"#9FD8F5","icon":"🐉","id":"mountskin_dragonslayer","kind":"mountskin","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"}}
+    {"color":"#8E949C","color2":"#9FD8F5","icon":"🐉","id":"mountskin_dragonslayer","kind":"mountskin","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"}},
+    {"color":"#B8E07A","color2":"#F4F0E8","icon":"❀","id":"mountskin_spring","kind":"mountskin","name":{"en":"First Spring Tack","pl":"Rząd Pierwszej Wiosny"}},
+    {"color":"#8A8884","color2":"#7FB8FF","icon":"🏮","id":"mountskin_lantern","kind":"mountskin","name":{"en":"Lantern Warden's Caparison","pl":"Czaprak straży latarń"}}
   ],
   "kinds": [
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},

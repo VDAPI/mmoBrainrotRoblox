@@ -22,6 +22,12 @@ export function questHref(lang: Lang, id: string): string | null {
   return sectionHref(lang, "quests", id);
 }
 
+/** A chapter of the story on the quests index (S109: the heading `#chapter-<n>`). */
+export function chapterHref(lang: Lang, n: number): string | null {
+  const base = sectionHref(lang, "quests");
+  return base ? `${base}#chapter-${n}` : null;
+}
+
 /** NPC: the city topic's card (#npc-<id>) once the `city` article exists (S43), otherwise the world map. */
 export function npcHref(lang: Lang, npcId: string): string | null {
   const npc = load("npcs").npcs.find((n) => n.id === npcId);

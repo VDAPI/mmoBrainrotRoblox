@@ -206,23 +206,19 @@ T.describe("Wiki export: consistency", function()
 	T.it("has as many records as the game data", function()
 		T.expect(#d.items.items).toBe(count(Items.byId))
 		T.expect(#d.monsters.monsters).toBe(#Monsters.list)
-		-- S57: skills of unpublished or missing paths are hidden; S96: side quests with wiki = false too; S102: story
-		-- quests with wiki = false too
+		-- S57: skills of unpublished or missing paths are hidden. S109 (G6.1): every quest is released, so the story,
+		-- the side quests and the boss quests are all on the wiki, the contracts 1..MAX_LEVEL without a gap
 		local hiddenSet = Visibility.collect()
-		local mainShown = 0
-		for _, quest in Quests.Main.list do
-			if quest.wiki ~= false then
-				mainShown += 1
-			end
+		T.expect(#d.quests.main).toBe(#Quests.Main.list)
+		T.expect(#d.quests.side).toBe(#Quests.Side.list)
+		T.expect(#d.quests.bossQuests).toBe(#Quests.Boss.list)
+		T.expect(#d.quests.contracts.list).toBe(Quests.Contracts.MAX_LEVEL)
+		for i, c in d.quests.contracts.list do
+			T.expect(c.level).toBe(i)
 		end
-		T.expect(#d.quests.main).toBe(mainShown)
-		local sideShown = 0
-		for _, quest in Quests.Side.list do
-			if not hiddenSet[quest.id] then
-				sideShown += 1
-			end
-		end
-		T.expect(#d.quests.side).toBe(sideShown)
+		T.expect(d.quests.contracts.max).toBe(Quests.Contracts.MAX_LEVEL)
+		T.expect(#d.quests.weekly.templates > 0).toBe(true)
+		T.expect(#d.quests.weekly.bossContract.byLevel > 0).toBe(true)
 		local shown = 0
 		for id in SkillData.byId do
 			if not hiddenSet[id] then
@@ -232,306 +228,222 @@ T.describe("Wiki export: consistency", function()
 		T.expect(#d.skills.skills).toBe(shown)
 	end)
 
-	-- S102 (T9): the new story quests and their anchor wait for S109; the 32 old ones keep order 1..32
-	T.it("leaves the hidden story quests and their anchors out (S102)", function()
+	-- S109 (G6): the story keeps the shape of its records (only `chapter` added), every story quest is exported (the
+	-- old ones with their text and done, the new ones with their pages as the text) and the cutscenes stay off
+	T.it("Wiki export: main quests keep their shape (S109)", function()
+		local Locale = require("../src/shared/Util/Locale")
+		local StoryProgress = require("../src/shared/Logic/StoryProgress")
+		local SHAPE: { [string]: boolean } = {
+			id = true,
+			order = true,
+			level = true,
+			giver = true,
+			turnIn = true,
+			title = true,
+			objectives = true,
+			reward = true,
+			chapter = true,
+		}
+		local OPTIONAL: { [string]: boolean } = { text = true, done = true }
+		T.expect(#d.quests.main).toBe(#Quests.Main.list)
 		for i, q in d.quests.main do
 			T.expect(q.order).toBe(i)
+			for key in SHAPE do
+				T.expect(`{q.id} {key} {(q :: any)[key] ~= nil}`).toBe(`{q.id} {key} true`)
+			end
+			for key in q :: any do
+				T.expect(`{q.id} {key} {SHAPE[key] == true or OPTIONAL[key] == true}`).toBe(`{q.id} {key} true`)
+			end
 		end
-		local hiddenIds = { "tower_crest" }
+		local byId: { [string]: any } = {}
+		for _, q in d.quests.main do
+			byId[q.id] = q
+		end
+		-- the 32 quests of e5f2074: text and done exactly as before S109 (quest.<id>.text / .done)
+		for _, id in StoryProgress.LEGACY_ORDER do
+			local q = assert(byId[id], id)
+			for _, lang in { "pl", "en" } do
+				for _, field in { "text", "done" } do
+					local key = `quest.{id}.{field}`
+					local want = if Locale.has(key, lang) then Locale.T(key, nil, lang) else nil
+					local got = if q[field] then q[field][lang] else nil
+					T.expect(`{id}.{field}.{lang} {got == want}`).toBe(`{id}.{field}.{lang} true`)
+				end
+			end
+		end
+		-- the new ones with pages: exactly their pages p1..pN joined by a blank line (not the journal summary .text)
+		local legacy: { [string]: boolean } = {}
+		for _, id in StoryProgress.LEGACY_ORDER do
+			legacy[id] = true
+		end
+		local paged = 0
 		for _, quest in Quests.Main.list do
-			if quest.wiki == false then
-				table.insert(hiddenIds, quest.id)
-			end
-		end
-		T.expect(#hiddenIds >= 5).toBe(true)
-		for _, file in fs.readDir("wiki/src/data") do
-			if string.match(file, "%.json$") then
-				local text = fs.readFile(`wiki/src/data/{file}`)
-				for _, id in hiddenIds do
-					if string.find(text, `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
+			if quest.pages and not legacy[quest.id] then
+				paged += 1
+				local q = assert(byId[quest.id], quest.id)
+				for _, lang in { "pl", "en" } do
+					local parts = {}
+					for i = 1, quest.pages do
+						table.insert(parts, Locale.T(`quest.{quest.id}.p{i}`, nil, lang))
 					end
+					local want = table.concat(parts, "\n\n")
+					local got = if q.text then q.text[lang] else nil
+					T.expect(`{quest.id}.{lang} {got == want}`).toBe(`{quest.id}.{lang} true`)
 				end
 			end
 		end
-		for _, title in d.titles.titles do
-			if title.id == "dragonbane" then
-				T.expect(title.req.value).toBe(Quests.Main.indexOf.vaelgrath)
+		T.expect(paged > 0).toBe(true)
+		-- no cutscene text (cutscene.<id>.title / .l<n>) in any wiki file nor in the search index
+		local Cutscenes = require("../src/shared/Data/Cutscenes")
+		local texts: { string } = {}
+		-- (the scenes' titles are place and chapter names, which the wiki shows on its own)
+		for _, scene in (Cutscenes :: any).list do
+			for _, line in scene.lines or {} do
+				local text = Locale.T(line.key, nil, "pl")
+				if #text >= 24 then
+					table.insert(texts, text)
+				end
+			end
+		end
+		T.expect(#texts > 20).toBe(true)
+		for _, file in fs.readDir("wiki/src/data") do
+			if string.match(file, "%.json$") then
+				local text = fs.readFile(`wiki/src/data/{file}`)
+				if string.find(text, '"cutscene.', 1, true) then
+					error(`{file} names a cutscene key`, 0)
+				end
+				for _, line in texts do
+					if string.find(text, Json.encode(line), 1, true) then
+						error(`{file} holds a cutscene line: {line}`, 0)
+					end
+				end
 			end
 		end
 	end)
 
-	-- S103: chapter II's quests, its four NPCs, anchors and NPC places wait for S109 too
-	T.it("leaves story chapter II out: quests, NPCs, anchors and NPC places of Duskwood (S103)", function()
-		local hiddenIds = {
-			"moonstone_rune",
-			"lost_camp",
-			"chapel_window",
-			"family_crypt",
-			"elder_tree",
-			"crypt_seal",
-			"forester_radomir",
-			"ghost_oswin",
-			"defector_jorund",
-			"witch_ragna",
-		}
-		for _, id in hiddenIds do
-			for _, file in fs.readDir("wiki/src/data") do
-				if string.match(file, "%.json$") then
-					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
-					end
-				end
-			end
+	-- S109 (G6.3): the chapters come from Main.CHAPTERS; every story quest carries its chapter
+	T.it("exports the story's chapters from Main.CHAPTERS (S109)", function()
+		local chapters = d.quests.chapters
+		T.expect(#chapters).toBe(#Quests.Main.CHAPTERS)
+		local maps: { [string]: boolean } = {}
+		for _, m in d.maps.maps do
+			maps[(m :: any).id] = true
 		end
+		local levels: { [number]: { number } } = {}
 		for _, q in d.quests.main do
-			T.expect(Quests.Main.get(q.id).wiki).toBeNil()
+			T.expect(q.chapter).toBe(Quests.Main.chapterOf(q.id))
+			local list = levels[q.chapter] or {}
+			levels[q.chapter] = list
+			table.insert(list, q.level)
 		end
-		for _, npc in d.npcs.npcs do
-			T.expect(table.find(hiddenIds, (npc :: any).id)).toBeNil()
+		for i, c in chapters do
+			T.expect(c.n).toBe(Quests.Main.CHAPTERS[i].n)
+			if i > 1 then
+				T.expect(c.n > chapters[i - 1].n).toBe(true)
+				-- consecutive chapters share at most their border level
+				T.expect(c.from >= chapters[i - 1].to).toBe(true)
+			end
+			local list = assert(levels[c.n], `chapter {c.n}`)
+			T.expect(c.from).toBe(math.min(table.unpack(list)))
+			T.expect(c.to).toBe(math.max(table.unpack(list)))
+			T.expect(maps[c.map]).toBe(true)
+			T.expect(c.final == true).toBe(Quests.Main.CHAPTERS[i].final == true)
 		end
-		local dusk = d.areas.maps.duskwood
-		T.expect(#dusk.questAnchors).toBe(0)
-		T.expect(next(dusk.npcSpots)).toBeNil()
+		T.expect(chapters[#chapters].final).toBe(true)
 	end)
 
-	-- S104: chapter III's quests, its three NPCs, anchors (map and Deepforge) and NPC places wait for S109 too
-	T.it("leaves story chapter III out: quests, NPCs, anchors and NPC places of the Ashen Wastes (S104)", function()
-		local hiddenIds = {
-			"deadOasis",
-			"warcampCages",
-			"mineDepths",
-			"emberCores",
-			"burntTemple",
-			"wyvernLair",
-			"ashRoad",
-			"runesOfBinding",
-			"forgeChains",
-			"coldFire",
-			"caravan_chest",
-			"orc_cage",
-			"colossus_eyes",
-			"temple_bell",
-			"stone_caravan",
-			"forge_chain_1",
-			"forge_chain_2",
-			"forge_chain_3",
-			"runesmith_brokk",
-			"shaman_ghasha",
-			"hermit_kaspar",
-		}
-		for _, id in hiddenIds do
-			for _, file in fs.readDir("wiki/src/data") do
-				if string.match(file, "%.json$") then
-					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
-					end
-				end
-			end
-		end
-		local ashen = d.areas.maps.ashen
-		T.expect(#ashen.questAnchors).toBe(0)
-		T.expect(next(ashen.npcSpots)).toBeNil()
-	end)
-
-	-- S105: chapter IV and the finale (quests, Sigrun, Halgrim, the anchors of the Peaks and the Frozen Hold, the NPC
-	-- places, the finale's title and mount skin) wait for S109 too
-	T.it("leaves story chapter IV and the finale out: quests, NPCs, anchors, places, title and skin (S105)", function()
-		local hiddenIds = {
-			"trappersCamp",
-			"iceGrotto",
-			"harpyRocks",
-			"mammothTundra",
-			"frozenHold",
-			"frozenLake",
-			"iceWatch",
-			"oathWords",
-			"dragonTemple",
-			"wyrmSpire",
-			"eveOfBattle",
-			"snowInSummer",
-			"dragonsBrood",
-			"voiceOfWinter",
-			"firstSpring",
-			"climbers_camp",
-			"hunting_camp",
-			"crystal_garden",
-			"temple_altars",
-			"temple_colossus",
-			"wyrm_obelisk",
-			"summit_rite",
-			"summit_thorn",
-			"frost_bloom",
-			"hold_chapel",
-			"trapper_sigrun",
-			"ghost_halgrim",
-			"thornbearer",
-			"mountskin_spring",
-		}
-		for _, id in hiddenIds do
-			for _, file in fs.readDir("wiki/src/data") do
-				if string.match(file, "%.json$") then
-					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
-					end
-				end
-			end
-		end
-		for _, q in d.quests.main do
-			T.expect(q.id ~= "firstSpring" and q.id ~= "trappersCamp").toBe(true)
-		end
-		for _, npc in d.npcs.npcs do
-			T.expect((npc :: any).id ~= "trapper_sigrun").toBe(true)
-		end
-		local frost = d.areas.maps.frostpeak
-		T.expect(#frost.questAnchors).toBe(0)
-		T.expect(next(frost.npcSpots)).toBeNil()
-	end)
-
-	-- S106: the Duskwood side arcs (27 quests, eight NPCs, the dw_* anchors, the NPC places, the lantern skin) wait
-	-- for S109
-	T.it("leaves the Duskwood side arcs out: quests, NPCs, anchors, places and the lantern skin (S106)", function()
-		local hiddenIds = {
-			"side_moonOil",
-			"side_darkLanterns",
-			"side_boneTree",
-			"side_lampLighter",
-			"side_clayJars",
-			"side_smokedHives",
-			"side_stolenHoney",
-			"side_oldShaggy",
-			"side_nameless",
-			"side_servantTokens",
-			"side_householdRoll",
-			"side_restingPlace",
-			"side_rotSap",
-			"side_ghoulBurrows",
-			"side_rotCure",
-			"side_falseMarks",
-			"side_lostLetters",
-			"side_cultCages",
-			"side_eelTraps",
-			"side_trollToll",
-			"side_trollHoard",
-			"side_hexCharms",
-			"side_hexPouches",
-			"side_witchCauldron",
-			"side_roadCut",
-			"side_batRoost",
-			"side_apprentice",
-			"huntress_wanda",
-			"beekeeper_maciej",
-			"gravedigger_bogumil",
-			"herbalist_dobrawa",
-			"warden_zbyszko",
-			"ferryman_oldrzych",
-			"exorcist_kalina",
-			"mason_wojslaw",
-			"mountskin_lantern",
-		}
-		for _, file in fs.readDir("wiki/src/data") do
-			if string.match(file, "%.json$") then
-				local text = fs.readFile(`wiki/src/data/{file}`)
-				for _, id in hiddenIds do
-					if string.find(text, `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
-					end
-				end
-				if string.find(text, `"dw_`, 1, true) then
-					error(`{file} names a dw_ anchor`, 0)
-				end
-			end
-		end
-		local dusk = d.areas.maps.duskwood
-		T.expect(#dusk.questAnchors).toBe(0)
-		T.expect(next(dusk.npcSpots)).toBeNil()
-	end)
-
-	-- S107: the Ashen side arcs (26 quests, five NPCs, the ash_* anchors, the NPC places) wait for S109
-	T.it("leaves the Ashen side arcs out: quests, NPCs, anchors and places (S107)", function()
-		local npcIds = {
-			"waterkeeper_orren",
-			"prospector_dragan",
-			"wyvernhunter_wieslawa",
-			"tombwarden_ezra",
-			"wagoner_bogna",
-		}
-		local hiddenIds = table.clone(npcIds)
-		for _, quest in Quests.Side.list do
-			if string.sub(quest.id, 1, 9) == "side_ash_" then
-				table.insert(hiddenIds, quest.id)
-			end
-		end
-		T.expect(#hiddenIds).toBe(26 + 5)
+	-- S109 (G6.5): nothing released is hidden (HIDDEN_OK: the exceptions with their reason; none)
+	T.it("hides nothing that the game released (S109)", function()
+		local Areas = require("../src/shared/Data/Areas")
+		local Cosmetics = require("../src/shared/Data/Cosmetics")
+		local Npcs = require("../src/shared/Data/Npcs")
+		local HIDDEN_OK: { [string]: string } = {}
 		local all = Visibility.collect()
-		for _, id in hiddenIds do
-			T.expect(`{id} {all[id] == true}`).toBe(`{id} true`)
+		local wrong = {}
+		local function check(id: string?, what: string)
+			if id and all[id] and not HIDDEN_OK[id] then
+				table.insert(wrong, `{what} {id}`)
+			end
 		end
-		for _, file in fs.readDir("wiki/src/data") do
-			if string.match(file, "%.json$") then
-				local text = fs.readFile(`wiki/src/data/{file}`)
-				for _, id in hiddenIds do
-					if string.find(text, `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
+		for _, list in { Quests.Main.list, Quests.Side.list, Quests.Boss.list } do
+			for _, q in list :: { any } do
+				check(q.id, "quest")
+				if not all[q.id] then
+					check(q.giver, "giver")
+					check(q.turnIn, "turnIn")
+					for _, o in q.objectives do
+						if o.type == "talk" or o.type == "deliver" then
+							check(o.npc, "objective npc")
+						end
 					end
 				end
-				if string.find(text, `"ash_`, 1, true) then
-					error(`{file} names an ash_ anchor`, 0)
+			end
+		end
+		for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
+			local data = Areas.byMap[mapId] :: any
+			for spotId, spot in data.npcSpots or {} do
+				if spot.wiki == false then
+					table.insert(wrong, `npc spot {mapId}.{spotId}`)
+				end
+			end
+			for _, a in data.questAnchors or {} do
+				if a.wiki == false then
+					table.insert(wrong, `anchor {a.id}`)
 				end
 			end
 		end
-		local ashen = d.areas.maps.ashen
-		T.expect(#ashen.questAnchors).toBe(0)
-		T.expect(next(ashen.npcSpots)).toBeNil()
-	end)
-
-	-- S108: the Frost Peaks side arcs (25 quests, seven NPCs, the fp_* anchors, their NPC places) wait for S109
-	T.it("leaves the Frost Peaks side arcs out: quests, NPCs, anchors and places (S108)", function()
-		local npcIds = {
-			"cairn_ingrid",
-			"hornblower_eskil",
-			"skald_ragnvald",
-			"icefisher_torvi",
-			"bonecarver_gunnar",
-			"squire_asmund",
-			"scholar_vigdis",
-		}
-		local hiddenIds = table.clone(npcIds)
-		for _, quest in Quests.Side.list do
-			if string.sub(quest.id, 1, 8) == "side_fp_" then
-				table.insert(hiddenIds, quest.id)
+		for _, cave in Areas.caves.list do
+			for _, a in (cave :: any).questAnchors or {} do
+				if a.wiki == false then
+					table.insert(wrong, `anchor {a.id}`)
+				end
 			end
 		end
-		T.expect(#hiddenIds).toBe(25 + 7)
-		local all = Visibility.collect()
-		for _, id in hiddenIds do
-			T.expect(`{id} {all[id] == true}`).toBe(`{id} true`)
+		for _, c in Cosmetics.list do
+			local obtain = (c :: any).obtain
+			if obtain and obtain.quest then
+				check(c.id, "cosmetic")
+			end
 		end
+		for _, npc in Npcs.list do
+			if npc.map ~= "city" then
+				check(npc.id, "npc")
+			end
+		end
+		T.expect(wrong).toEqual({})
+		-- the premium mount stays off for ever
 		for _, file in fs.readDir("wiki/src/data") do
 			if string.match(file, "%.json$") then
-				local text = fs.readFile(`wiki/src/data/{file}`)
-				for _, id in hiddenIds do
-					if string.find(text, `"{id}"`, 1, true) then
-						error(`{file} names hidden {id}`, 0)
-					end
-				end
-				if string.find(text, `"fp_`, 1, true) then
-					error(`{file} names an fp_ anchor or arc`, 0)
-				end
+				T.expect(`{file} {string.find(fs.readFile(`wiki/src/data/{file}`), "mount_royal", 1, true) == nil}`)
+					.toBe(`{file} true`)
 			end
 		end
-		local peaks = d.areas.maps.frostpeak
-		T.expect(#peaks.questAnchors).toBe(0)
-		T.expect(next(peaks.npcSpots)).toBeNil()
 	end)
 
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
+		local function clean(label: any, where: string)
+			if string.find(label.pl, "{", 1, true) or string.find(label.en, "{", 1, true) then
+				error(`{where}: {label.pl}`)
+			end
+		end
+		-- S109 (G6.4): the story, the side quests, the weekly templates and the contracts
 		for _, q in d.quests.main do
 			for _, o in q.objectives do
-				if string.find(o.label.pl, "{", 1, true) or string.find(o.label.en, "{", 1, true) then
-					error(`{q.id}: {o.label.pl}`)
-				end
+				clean(o.label, q.id)
 			end
+		end
+		for _, q in d.quests.side do
+			for _, o in q.objectives do
+				clean(o.label, q.id)
+			end
+		end
+		for _, t in d.quests.weekly.templates do
+			for _, b in t.byLevel do
+				clean(b.objective.label, `weekly {t.id} {b.level}`)
+			end
+		end
+		for _, c in d.quests.contracts.list do
+			clean(c.label, `contract {c.level}`)
 		end
 		for _, m in d.monsters.monsters do
 			for _, variant in m.variants do

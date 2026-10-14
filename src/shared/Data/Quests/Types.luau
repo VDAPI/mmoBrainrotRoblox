@@ -113,7 +113,7 @@ export type MainQuest = {
 	category: Category?, -- S98: "main" (set by Main.luau's q)
 	-- S102: story pages (FABULA §2.1) and wiki visibility
 	pages: number?, -- offer pages quest.<id>.p1..pN; nil = the single page quest.<id>.text
-	wiki: boolean?, -- false = left out of the wiki (new story quests until S109)
+	wiki: boolean?, -- false = left out of the wiki until published (S102-S105 published in S109)
 	-- S101b (DESIGN-15 §3.5): at most one page with answers, page variants by an earlier answer, comments, companion
 	choices: ChoicePage?,
 	recall: { [string]: string }?, -- page key ("p1".."pN", "text", "progress", "done") -> quest whose answer picks

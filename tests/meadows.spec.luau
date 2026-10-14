@@ -106,7 +106,7 @@ describe("Meadows data (S26)", function()
 		local crest, mapId = Areas.anchorById("tower_crest")
 		local a = assert(crest, "tower_crest")
 		expect(mapId).toBe("meadows")
-		expect(a.wiki).toBe(false)
+		expect(a.wiki).toBeNil() -- S109: published on the wiki
 		local ruins = { x = -150, z = -380 }
 		expect(math.sqrt((a.x - ruins.x) ^ 2 + (a.z - ruins.z) ^ 2) <= 12).toBe(true)
 		expect(MeadowsTerrain.isWater(a.x, a.z)).toBe(false)

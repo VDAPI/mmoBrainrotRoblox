@@ -2204,3 +2204,63 @@ T.describe("World events (S101)", function()
 		end
 	end)
 end)
+
+-- S109 (docs/DESIGN-15.md §3.2, E2): the full income of a player who does everything (Balance.PLAY_PROFILE). The upper
+-- bounds of S84 / S92-S94 stay on the grinding income (economyAt, the blocks above); the sinks (backpacks, the +9 set,
+-- the chain potions' floor) are checked on the full income here. Targets: Balance.FULL_INCOME (test tooling).
+T.describe("Full income (S109)", function()
+	local rows = B.fullIncomeRows()
+	local function check(prefix: string)
+		local n = 0
+		for _, r in rows do
+			if string.sub(r.id, 1, #prefix) == prefix then
+				n += 1
+				if not r.report and not r.ok then
+					error(
+						`{r.id} {r.label}: {string.format("%.3f", r.value)} outside [{r.band.lo or "-"}, {r.band.hi or "-"}] ({r.worst or "-"})`,
+						0
+					)
+				end
+			end
+		end
+		T.expect(n > 0).toBe(true)
+	end
+
+	T.it("T-EC2: one-time quest gold <= 25% of the grinding income of a level (mean of 5 levels)", function()
+		check("T-EC2")
+	end)
+	T.it("T-EC3: the extras <= 35% of the grinding income per hour in every band 20-99", function()
+		check("T-EC3")
+	end)
+	T.it("T-EC4: backpacks 80 / 100 / 130 cost >= 3 levels of full income", function()
+		check("T-EC4")
+	end)
+	T.it("T-EC5: backpacks 160 / 200 cost >= 5 levels of full income", function()
+		check("T-EC5")
+	end)
+	T.it("T-EC6: the protected +9 set at L99 takes >= 150 h at full income", function()
+		check("T-EC6")
+	end)
+	T.it("T-EC7: chain potions >= 15% of the full income where S93 / S94 assert the floor", function()
+		check("T-EC7")
+	end)
+	T.it("T-EC8 report: the full income at 10-99 (Warrior, Mage) and the report rows", function()
+		for _, r in rows do
+			if r.report then
+				T.expect(r.why ~= nil).toBe(true)
+				print(`  {r.id} {r.label}: {string.format("%.3f", r.value)} (raport) — {r.why}`)
+			end
+		end
+		for _, c in B.FULL_INCOME.reportClasses do
+			for _, L in B.FULL_INCOME.reportLevels do
+				local r = B.fullIncomeReport(c, L)
+				T.expect(r.total >= r.grind).toBe(true)
+				T.expect(r.extras.total > 0).toBe(true)
+			end
+		end
+		-- the profile is an assumption of the report, not a game number
+		T.expect(B.PLAY_PROFILE.hoursPerDay).toBe(2)
+		T.expect(B.fullIncome("Warrior", 50))
+			.toBeNear(B.economyAt("Warrior", 50).incomePerHour + B.extrasPerHour("Warrior", 50).total, 1e-6)
+	end)
+end)

@@ -864,116 +864,56 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 
 ## 20. Questy
 
-- **Główna linia**: krótka, prowadzi przez wszystkie mapy (ok. 30 questów: idź do NPC, zabij X, zbierz Y, pokonaj bossa). Nagrody: EXP, złoto, przedmioty, kamienie teleportu, plecak.
-- **Zlecenia dzienne** z tablicy w mieście: 3 losowe na dzień dopasowane do poziomu (zabij 40 X, zbierz 10 ziół, złów 5 ryb, pokonaj 3 elity). Nagrody: EXP, złoto, błogosławieństwa, materiały.
-- Śledzenie w HUD (prawa strona), znacznik nad NPC (!, ?), strzałka kierunku do celu.
-- **Każdy quest to osobny blok** z tytułem, linią „Od: {NPC}” (a gdy gotowy: „Oddaj: {NPC}”) i własnymi celami; zlecenia dzienne mają własny nagłówek „Zlecenia: Tablica Zleceń” i tytuł każdego zlecenia. Nic nie zlewa się w jedną listę. To samo w dzienniku questów.
-- Zaprojektowane pod przyszłą rozbudowę (dane questów w `Data/Quests`, typy celów rozszerzalne).
-- **Questy poboczne (S27)**: miasto zleca, mapa jest miejscem roboty. Każdy obszar Szepczących Łąk ma swój wątek
-  (2–5 questów, `Data/Quests/Side`) z NPC, który tam mieszka; zleceniodawcy stoją w mieście przy swoich budynkach.
-  Do 10 aktywnych naraz, przyjęcie od poziomu questa − 2, kolejne questy wątku po kolei (`requires`). Tekst na 2–4
-  stronach z imieniem i portretem NPC; linia „w trakcie” i podziękowanie. Nagroda: EXP 0,25 poziomu (koniec wątku
-  0,45; wszystkie poboczne Łąk ≤ 40% EXP na 1→20), połowa bazowego złota questa głównego (`60 + 45·poziom`; główne
-  na 4–16 płacą od S91 ×2, czyli poboczne tam ¼), a na końcu wątku **wybór 1 z 3 przedmiotów dla klasy** (Rzadkie,
-  `ilvl` = poziom questa). Poboczne nigdy nie blokują fabuły.
-- **Typy celów (S27)**: `use` — interakcja z obiektem w świecie (trzymanie 1,5–3 s, przerywa ruch i obrażenia; po
-  wykonaniu obiekt zmienia się tylko dla gracza: zapalone świece, nowa deska w płocie, płonący totem); `deliver` —
-  zanieś wirtualny przedmiot NPC; `kill` / `collect` z `area` — tylko potwory z danego obszaru; `reach` z punktem
-  (`x`, `z`, `radius`, nazwa miejsca).
-- Dziennik: zakładki Główne / Poboczne / Dzienne; poboczne po wątkach z postępem („2/5”), śledzenie jednego questa
-  naraz (strzałka, minimapa), porzucanie z potwierdzeniem. Karczmarz w plotkach wskazuje NPC, u których jest robota.
-- **Kategorie (S98, `docs/DESIGN-15.md` §3)**: `main`, `side` (także łuk stajennego), `contract` (zlecenia łowieckie
-  S99), `boss`, `daily`, `weekly`; dziennik ma zakładkę na kategorię w tej kolejności (przewijany pasek na telefonie;
-  zakładka zleceń łowieckich nazywa się „Łowieckie”, bo „zlecenia” to też dzienne i tygodniowe).
+Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` §3, `docs/FABULA.md`, `docs/BALANS.md`.
+
+- **Kategorie i dziennik (S98)**: `main` (fabuła), `contract` (zlecenia łowieckie), `side` (poboczne, także łuk
+  stajennego), `boss`, `weekly`, `daily`; dziennik ma zakładkę na kategorię w tej kolejności (na telefonie pasek
+  przewijany; zakładka zleceń łowieckich nazywa się „Łowieckie”). Każdy quest to osobny blok z tytułem, linią „Od:
+  {NPC}” (gotowy: „Oddaj: {NPC}”) i własnymi celami; poboczne po wątkach z postępem („2/5”), śledzenie jednego questa
+  naraz (strzałka, minimapa, „➤” prowadzenie), porzucanie z potwierdzeniem. Karczmarz w plotkach wskazuje NPC z robotą.
 - **Znaki nad NPC i na mapach (S98)**: złoty „!” nowy quest, szary „!” quest o więcej niż `Config.Quest.greyGap = 6`
   poziomów poniżej postaci (dialog dopisuje, że płaci mniej niż bicie), złoty „?” do oddania, szary „?” w toku.
-- **Tygodniowe (S98)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 2× dzienna i
-  błogosławieństwo o stopień wyższe; szablon „wydarzenia świata” czeka na S101. Do tego **zlecenie na bossa**: raz na
-  tydzień pokonaj najwyższego dostępnego bossa 2 razy (od 15. poziomu), odbiór na tablicy.
-- **Questy bossowe „Pogromca” (S98)**: po jednym na bossa i jego loch, u zwiadowcy regionu, od poziomu wejścia do
-  lochu. Postęp i zlecenie na bossa liczą tylko wygrane biegi, więc dzienny limit bossów (`Config.Boss.dailyRuns`)
-  obowiązuje zawsze.
-- **Budżet EXP (S98)**: questy zastępują część bicia, czas na poziom zostaje z S94. EXP potworów na poziomie postaci L
-  mnoży `monsterExpMul(L) = s(L) / s₀(L)` (udział bicia w EXP poziomu teraz / w modelu S94), który generuje
-  `lune run tools/quest_budget.luau` z danych questów; cel `Data/QuestBudget.TARGET` ok. 30% EXP poziomu z questów
-  (zlecenie 12%, fabuła 10%, poboczne 6%, bossowe 2%), dzienne i tygodniowe poza budżetem.
-- **Zlecenia łowieckie (S99, `docs/DESIGN-15.md` §3.3)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`):
-  ubij n dowolnych potworów na łowisku otwartego regionu, którego przedział obejmuje poziom (bez jaskiń i lochów,
-  rotacja łowisk, nigdy to samo dwa razy z rzędu, gdy jest wybór). n rośnie 10 → 30 na 1–20 i 30 → 60 na 20–99;
-  nagroda 12% EXP poziomu (`QuestBudget.TARGET.contract`) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo Fortuny
-  i kamienie (powrotu, mapy, lochu; bez ekwipunku i plecaków). Przyjmuje się je i oddaje przy tablicy zleceń w mieście
-  i u zwiadowcy regionu zlecenia; jedno aktywne, zlecenie L wymaga poziomu L, zaległe idą po kolei, a przy oddaniu kolejne przyjmuje
-  się samo, gdy poziom pozwala. Postacie sprzed S99 zaczynają 2 poziomy pod swoim (migracja 7, bez nagród za pominięte).
-  Szary „!” przy zaległości ponad `greyGap`. Zlecenie jest w dzienniku („Łowieckie”), trackerze („Śledź”, strzałka),
-  na tablicy, mapie świata i w oknie portalu („◈ Zlecenie”). Lista jest generowana: `lune run
-  tools/contracts_gen.luau`, potem `tools/quest_budget.luau`. Na wiki od S109.
-- **Fabuła, rozdział II (S103, `docs/FABULA.md` §2.3)**: 17 questów w Mrocznym Borze na 20–44 (`toDuskwood`,
-  `werewolves`, `moonstone`, `lostHunters`, `ruins`, `houseOfVael`, `ents`, `elderHeart`, `cult`, `turncoat`, `swamp`,
-  `barrow`, `crypt`, `witchCounsel`, `cryptGate`, `morvane`, `queensLegacy`), co 1–2 poziomy, każdy ze stronami
-  opowieści. Czterech NPC Boru na miejscach przy istniejących budowlach (Leśniczy Radomir w rozszarpanym obozie, duch
-  zarządcy Oswina przy kaplicy, zawsze półprzezroczysty, Jorund Odstępca przy kapliczce na Mglistym Rozstaju, Ragna z
-  Palów przy wiosce na palach), sześć kotwic `use` (trzy z rekwizytami: runa na menhirze, odłamek lodu w Pradrzewie,
-  pieczęć kultu na Bramie Krypty) i trzy miejsca `reach`; dziesięć przerywników (napis rozdziału, Ilvar jako projekcja
-  w szronie, duch Morvane po walce, koniec rozdziału u kapitana). Radomir prowadzi gracza do obozu w Niedźwiedzim
-  Jarze, Ragna idzie z nim na Wiedźmie Moczary. EXP fabuły pasma 20–44 = 10% EXP pasma (reguła S102, wagi questów),
-  stałe tylko `toDuskwood` i `morvane`; bicie oddaje różnicę (`monsterExpMul`), więc czas na poziom bez zmian. Nowe
-  questy, NPC, kotwice i miejsca NPC na wiki od S109.
-- **Fabuła, rozdział III (S104, `docs/FABULA.md` §2.4)**: 15 questów na Spalonych Pustkowiach na 45–69 (`ashen`,
-  `deadOasis`, `warcampCages`, `orcs`, `mineDepths`, `emberCores`, `golems`, `burntTemple`, `wyvernLair`, `ashRoad`,
-  `deepforge`, `runesOfBinding`, `forgeChains`, `azgor`, `coldFire`), razem 55 questów fabuły. Runmistrz Brokk przy
-  Bramie z Żeber (prowadzi gracza do szczątków karawany, idzie z nim przez Kuźnię Głębin), Szamanka Ghasha przy Gorącym
-  Źródle i Brat Kaspar przed spaloną świątynią; Brokk i Ghasha pojawiają się dopiero od swojego questu
-  (`NpcDef.showFrom`). Pięć kotwic na mapie (skrzynia karawany, klatki orków, oczy Śpiącego Kolosa, pęknięty dzwon,
-  skamieniały wóz) i trzy słupy jeńców w Kuźni (kotwice jaskini z S102), dziewięć przerywników (napis rozdziału, Kuźnia
-  Głębin, koniec rozdziału w kuźni Dorgana). Grot Ciernia trafia na drzewce z Pradrzewa. EXP fabuły 45–69 = 10% EXP
-  pasma (wagi), stały tylko `azgor`; czas na poziom bez zmian. Nowe questy, NPC, kotwice i miejsca na wiki od S109.
-- **Fabuła, rozdział IV i finał (S105, `docs/FABULA.md` §2.5)**: 19 questów na Lodowych Szczytach na 72–100
-  (`frostpeak`, `trappersCamp`, `iceGrotto`, `harpyRocks`, `giants`, `mammothTundra`, `frozenHold`, `frozenLake`,
-  `iceWatch`, `oathWords`, `glacier`, `dragonTemple`, `wyrmSpire`, `eveOfBattle`, `vaelgrath`, `snowInSummer`,
-  `dragonsBrood`, `voiceOfWinter`, `firstSpring`), razem 70 questów fabuły; finał od `snowInSummer` (rozdział 5).
-  Traperka Sigrun w opuszczonym obozie i duch Brata Halgrima przed donżonem Lodowej Strażnicy; Sigrun idzie z graczem
-  do Groty, prowadzi Szlakiem Kości i do Kręgu Obrzędu, Halvar prowadzi do Wyłomu Olbrzymów. Krąg Obrzędu z Sercem Zimy
-  u stóp rogu Iglicy Wyrmów; osiem kotwic na mapie i dwie w Zamarzniętej Twierdzy, czternaście przerywników. Ostatni
-  quest wymaga 100. poziomu (cel `level`), daje złoto, tytuł „Cierń Vaelthornu” i skin wierzchowca, bez EXP. Pora roku w
-  mieście wynika z postępu fabuły (bez pola zapisu, tylko u klienta tej postaci): śnieg w środku lata po smoku, wiosna
-  (kwiaty, wieniec przy fontannie, słup wiosny, płatki z sadów, ciepły nastrój) po finale; `/season` do testów. EXP
-  fabuły 70–99 = 10% EXP pasma (wagi), stały tylko `vaelgrath`; czas na poziom bez zmian. Nowe rzeczy na wiki od S109.
-- **Poboczne Mrocznego Boru (S106, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 27 zadań na 20–44 (`Data/Quests/Side`
-  K–R): „Latarnie Zmierzchu” 20–24 (Myśliwa Wanda), „Barć w jarze” 22–27 (Bartnik Maciej), „Bezimienni” 24–29
-  (Grabarz Bogumił), „Zimna zgnilizna” 27–31 (Zielarka Dobrawa), „Fałszywe drogowskazy” 30–34 (Strażnik Traktu
-  Zbyszko), „Myto na bagnie” 34–38 (Przewoźnik Ołdrzych), „Uroki z moczarów” 37–40 (Siostra Kalina), „Czeladnik
-  kamieniarza” 41–44 (Kamieniarz Wojsław); łuki zaczynają się też u sierżanta, karczmarza, Brata Anzelma i kończą u
-  alchemiczki. Od 20. poziomu EXP pobocznych to udział w budżecie pasma: `TARGET.side` (6%) × `bandExp` minus stały łuk
-  stajni, dzielone proporcjonalnie do `expToNext(poziom) × waga` (zwykłe 1, koniec łuku 1,8; `settleBands`,
-  `BAND_SCALE`), czyli ok. 4% poziomu za zwykłe i 8% za finał; Łąki 1–19 bez zmian. Złoto `gold(poziom) × 0,8`
-  (`GOLD_FROM_20`), na końcu łuku wybór 1 z 3 przedmiotów klasy (Heroiczne, `ilvl` = poziom), łuk latarników daje też
-  skin `mountskin_lantern`. 30 kotwic `dw_*` (16 z rekwizytami generatora w `Logic/DuskwoodGen/Quest`, 14 przy
-  istniejących budowlach), sześć nowych efektów po użyciu; Wanda prowadzi do Drzewa Kości, Dobrawa idzie z graczem po
-  żywicę i płatki. Zadania od 20. poziomu (`minLevel`), bicie oddaje różnicę (`monsterExpMul`), czas na poziom bez
-  zmian. Na wiki od S109.
-- **Poboczne Spalonych Pustkowi (S107, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 26 zadań na 45–68
-  (`Data/Quests/Side` S–Z): „Ogień w pęknięciach” 45–48 (Zwiadowczyni Kesra, od Ysolde), „Ostatnia woda” 46–49
-  (Studniarz Orren, od karczmarza), „Krew i popiół” 50–53 (Szamanka Ghasha, po `warcampCages`), „Srebro i mithril” 50–56
-  (Poszukiwacz Dragan, koniec u Dorgana), „Imiona zmarłych” 57–61 (Brat Kaspar, po `burntTemple`, koniec u Brata
-  Anzelma), „Łowy na turniach” 58–62 (Łowczyni Wiesława, przez Ysolde), „Sen królów” 63–68 (Strażnik Ezra), „Solne
-  karawany” 64–67 (Woźnica Bogna). Pięciu nowych NPC i 28 kotwic `ash_*` stoi wyłącznie w istniejących kołach `avoid`
-  (teren, grupy i węzły bez zmian), 9 z rekwizytem „przed” z `Logic/AshenGen/Quest`, pięć nowych efektów po użyciu;
-  Orren prowadzi do łodzi na suchym dnie, Ezra do Pogrzebanego Króla. EXP z budżetu pasma 45–69 mechanizmem S106
-  (6%, `BAND_SCALE[45]`: ok. 5% poziomu za zwykłe i 8,5% za finał), złoto `gold(poziom) × 0,8`, na końcu łuku wybór
-  1 z 3 przedmiotów klasy; bicie oddaje różnicę (`monsterExpMul` 45–69 o ok. 4% niżej), czas na poziom bez zmian. Na
-  wiki od S109.
-- **Poboczne Lodowych Szczytów (S108, `docs/DESIGN-15.md` §3.4)**: osiem łuków, 25 zadań na 70–99
-  (`Data/Quests/Side`, łuki `fp_*`): „Kopiec z rogami” 70–73 (Stara Ingrid przy kopcu, od Halvara), „Ostatni łup
-  traperów” 74–78 (Traperka Sigrun, po `trappersCamp` i `iceGrotto`), „Róg Lawinowy” 77–80 (Eskil Trębacz, Zbocza Yeti),
-  „Saga olbrzymów” 82–86 (Skald Ragnvald przy Bramie Olbrzymów), „Przerębel” 85–89 (Torvi Przeręblarz, Zamarznięte
-  Jezioro), „Cmentarzysko mamutów” 87–91 (Gunnar Kościarz), „Giermek Strażnicy” 90–93 (Asmund, po `iceWatch`), „Kości
-  wyrmów” 94–99 (Uczona Vigdis, od Brata Anzelma po `dragonTemple`, koniec u Anzelma). Siedmiu nowych NPC z małymi
-  obozami (`Logic/FrostpeakGen/SideCamps`) i 25 kotwic `fp_*` stoi w istniejących kołach `avoid` albo 12+ studs od grup
-  (teren, grupy, węzły, skały i drzewa bez zmian), dwanaście nowych efektów po użyciu; Sigrun prowadzi na Lamparcią
-  Półkę, Torvi po lodzie do łodzi ojca, Ragnvald idzie z graczem do Sali Tronów. EXP z budżetu pasma 70–99 mechanizmem
-  S106 (6%, `BAND_SCALE[70]`: ok. 5,7% poziomu za zwykłe i 10,2% za finał), złoto `gold(poziom) × 0,8`, na końcu łuku
-  wybór 1 z 3 przedmiotów klasy; bicie oddaje różnicę (`monsterExpMul` 70–99 o ok. 4% niżej), czas na poziom bez zmian.
-  Na wiki od S109.
+- **Typy celów (S27, S98–S105)**: `kill` / `collect` (z `area`: tylko potwory obszaru; `variant` Elita / Elita II),
+  `talk`, `deliver` (wirtualny przedmiot do NPC), `use` (interakcja z obiektem w świecie, trzymanie 1,5–5 s, przerywa
+  ruch i obrażenia; po wykonaniu obiekt zmienia się tylko dla gracza), `reach` (mapa albo punkt z nazwą miejsca),
+  `boss`, `upgrade`, `level`, `escort` (idź za prowadzącym towarzyszem), `gather`, `fish`, `event` i inne liczniki.
+- **Fabuła (S102–S105, `docs/FABULA.md`)**: 70 questów w rozdziałach po krainach: I „Znak Mrozu” (Łąki, 1–20), II
+  „Zapomniany Ród” (Mroczny Bór, 20–44), III „Zimny Ogień” (Spalone Pustkowia, 45–69), IV „Długa Zima” (Lodowe
+  Szczyty, 72–97) i finał „Pierwsza Wiosna” (98–100, ostatni quest wymaga 100. poziomu i daje tytuł „Cierń Vaelthornu”
+  oraz skin wierzchowca). Rozmowy na stronach (`pages`) z wyborami, przerywniki (napisy rozdziałów, sceny z kamerą),
+  NPC fabuły w krainach (Radomir, duch Oswina, Jorund, Ragna; Brokk, Ghasha, Kaspar; Sigrun, duch Halgrima), kotwice z
+  rekwizytami i efektami, pora roku w mieście z postępu fabuły. Postęp zapisany jako ostatni oddany quest
+  (`quests.mainLast`), więc nowe questy wstawia się w dowolne miejsce. Przyjęcie od poziomu questa − 2.
+- **Zlecenia łowieckie (S99)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`, generowane z łowisk): ubij n
+  potworów na łowisku otwartej krainy pasującym do poziomu (n 10 → 30 na 1–20, 30 → 60 na 20–99, rotacja łowisk).
+  Nagroda 12% EXP poziomu (od 4. poziomu; 1–3 tylko złoto, S109) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo
+  Fortuny i kamienie. Bierze się je przy tablicy zleceń w mieście i u zwiadowcy krainy; jedno aktywne, zaległe po
+  kolei, kolejne przyjmuje się samo przy oddaniu, gdy poziom pozwala. Postacie sprzed S99 zaczynają 2 poziomy pod
+  swoim (migracja 7).
+- **Poboczne (S27, S96, S106–S108)**: 109 zadań w 34 łukach: Szepczące Łąki (S27, zleceniodawcy w mieście i na Łąkach),
+  łuk stajennego (konia od 20. poziomu, S96), Mroczny Bór (8 łuków, 27 zadań, 20–44), Spalone Pustkowia (8 łuków, 26
+  zadań, 45–68), Lodowe Szczyty (8 łuków, 25 zadań, 70–99), każdy łuk u NPC, który mieszka w krainie. Do 10 aktywnych
+  naraz, przyjęcie od poziomu − 2 (od 20. poziomu najwcześniej od `minLevel`), kolejne questy wątku po kolei
+  (`requires`), tekst na 2–4 stronach z portretem NPC, na końcu łuku **wybór 1 z 3 przedmiotów dla klasy** (Łąki
+  Rzadkie, od 20. Heroiczne). Złoto: Łąki połowa złota questa głównego, od 20. `gold(poziom) × 0,8`. Nigdy nie blokują
+  fabuły.
+- **Bossowe (S98)**: zadanie „Pogromca” na każdego bossa i jego loch, u zwiadowcy krainy, od poziomu wejścia do lochu.
+  Do tego **zlecenie tygodniowe na bossa**: raz w tygodniu pokonaj najwyższego dostępnego bossa 2 razy (od 15.
+  poziomu). Liczą się tylko wygrane biegi, więc dzienny limit bossów (`Config.Boss.dailyRuns`) obowiązuje zawsze.
+- **Tygodniowe (S98, S101)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 2×
+  dzienna i błogosławieństwo o stopień wyższe; jeden z szablonów to udział w wydarzeniu świata. **Dzienne**: 3 losowe na
+  dzień z tablicy, dopasowane do poziomu (nagroda 0,15 EXP poziomu, złoto, błogosławieństwo, esencja).
+- **Rozmowy (S101b, DESIGN-15 §3.5)**: odpowiedzi gracza na stronie dialogu (drobne skutki: podpowiedź na mapie,
+  kolejność celów, mikstura), NPC pamięta wybór, komentarze NPC w trakcie (wyłączalne), towarzysz `follow` / `lead`.
+- **Budżet EXP (S98, audyt S109)**: questy jednorazowe dają ok. 30% EXP poziomu na 20–99 (zlecenie 12%, fabuła 10%,
+  poboczne 6%, bossowe 2%; fabuła i poboczne jako udział pasma rozdzielony wagami: `settleStory`, `settleBands`), a
+  EXP potworów na poziomie postaci L mnoży `monsterExpMul(L) = s(L) / s₀(L)` (udział bicia teraz / w modelu S94,
+  `lune run tools/quest_budget.luau`), więc czas na poziom zostaje z S94 (1 → 100 ok. 84 h w modelu). Dzienne,
+  tygodniowe, logowanie i wydarzenia są poza budżetem. Audyt S109: 30,0% w każdym paśmie 20–99, mnożnik bez przycięć
+  (45–71 0,844, 72–99 0,803, 20–44 0,90–1,23); Łąki 1–19 z założenia ok. 95% (samouczek, łuki S27).
+- **Wiki (S109)**: fabuła pogrupowana w rozdziały (strony questów głównych jak dotąd, nowe w tym samym kształcie, historia
+  pod spoilerem, przerywniki tylko w grze), zlecenia łowieckie po krainach, poboczne wszystkich krain, bossowe z
+  tygodniowym zleceniem na bossa, tygodniowe i dzienne na chipach poziomów.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 
@@ -1048,7 +988,9 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   losowany): Grimrok 2% (start 3), Morvane 1,5% (4), Azgor 1,2% (5), Vaelgrath 1% (6); skiny Morvane i Azgora 3%.
   Wierzchowiec premium `mount_royal` (start 4) czeka w `Data/Products.mounts` z `enabled = false` (niewidoczny i nie do
   kupienia do decyzji właściciela). Skiny wierzchowców w garderobie (rodzaj `mountskin`): cztery za Smoczą Walutę
-  (350–900), dwa z bossów, dwa z zadań (finał łuku stajni, główne zadanie `vaelgrath`).
+  (350–900), dwa z bossów, cztery z zadań (finał łuku stajni, `vaelgrath`, finał fabuły `firstSpring` S105 i łuk
+  latarników Boru `side_lampLighter` S106; łuki Pustkowi i Szczytów skinów nie dają). Na wiki od S97 (skiny z zadań
+  S105 / S106 od S109).
 
 ## 23. Interfejs
 

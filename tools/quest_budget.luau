@@ -3,10 +3,12 @@
 --   lune run tools/quest_budget.luau            recomputes Data/QuestBudget.MONSTER_EXP_MUL (only the GENERATED block)
 --                                               and prints the line for tools/balance_reasons.luau
 --   lune run tools/quest_budget.luau check      exit 1 when the table is out of date (= tests/questbudget.spec)
---   lune run tools/quest_budget.luau report     prints only
+--   lune run tools/quest_budget.luau report     prints only (with the S109 audit)
+--   lune run tools/quest_budget.luau audit      S109: the audit rows T-QB1..T-QB7 (QuestBudgetGen.AUDIT); exit 1 when
+--                                               an asserted row misses its target (= tests/questbudget.spec)
 --   lune run tools/quest_budget.luau allowed --why "S<n>: <what came>"   the ALLOWED_1_20_DIFFS block to paste
---   lune run tools/quest_budget.luau base [--force]   writes tests/fixtures/quest_budget_base.json (S98; only the
---                                               final audit S109 may rebase it with --force)
+--   lune run tools/quest_budget.luau base       writes tests/fixtures/quest_budget_base.json only when it is missing:
+--                                               the S98 base is the permanent S94 reference (S109, D4), --force too
 --   --session S<n>   the session of the printed ledger line (default: the last "### S<n>" of docs/SESJE.md + 1)
 -- Logic in tools/QuestBudgetGen.luau.
 
@@ -33,7 +35,7 @@ while i <= #args do
 		i += 1
 	elseif a == "--force" then
 		force = true
-	elseif a == "check" or a == "report" or a == "base" or a == "allowed" then
+	elseif a == "check" or a == "report" or a == "base" or a == "allowed" or a == "audit" then
 		mode = a
 	else
 		error(`quest_budget: unknown argument {a}`, 0)
@@ -60,8 +62,9 @@ local function printShares()
 end
 
 if mode == "base" then
-	if fs.isFile(Gen.BASE_PATH) and not force then
-		print("base exists; only the final audit (S109) may rebase it")
+	local allowed, why = Gen.baseAllowed(fs.isFile(Gen.BASE_PATH), force)
+	if not allowed then
+		print(`base exists: {why}`)
 		process.exit(1)
 	end
 	local git = process.exec("git", { "rev-parse", "HEAD" })
@@ -86,6 +89,17 @@ if mode == "allowed" then
 		)})`
 	)
 	process.exit(0)
+end
+
+if mode == "audit" then
+	local audit = Gen.audit()
+	print(Gen.auditText(audit))
+	if Gen.auditOk(audit) then
+		print("audit: every asserted row meets its target")
+		process.exit(0)
+	end
+	print("audit: an asserted row misses its target (POZA)")
+	process.exit(1)
 end
 
 local computed = Gen.compute()
@@ -116,6 +130,9 @@ print(
 		else "none"}`
 )
 printShares()
+if mode == "report" then
+	print(Gen.auditText(Gen.audit()))
+end
 for _, g in Gen.grind(computed.mul) do
 	print(
 		string.format("grind %d-%d: base %.0f EXP-units, now %.0f (x%.4f)", g.lo, g.hi, g.base, g.now, g.now / g.base)

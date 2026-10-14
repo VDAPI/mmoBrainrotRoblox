@@ -306,7 +306,7 @@ function World.areasData(): any
 		end
 		local anchors = {}
 		for _, q in data.questAnchors or {} do
-			-- S102: an anchor with wiki = false (the story's until S109) stays off the map too
+			-- S102: an anchor with wiki = false (none since S109) stays off the map too
 			if not secretAnchors[q.id] and (q :: any).wiki ~= false then
 				table.insert(anchors, { id = q.id, x = q.x, z = q.z })
 			end
@@ -314,7 +314,7 @@ function World.areasData(): any
 		local spots = Json.object({})
 		for _, key in Clean.keys(data.npcSpots or {}) do
 			local spot = (data.npcSpots :: any)[key]
-			-- S103: unpublished NPC places (S109 publishes)
+			-- S103: unpublished NPC places (wiki = false; none since S109)
 			if spot.wiki ~= false then
 				spots[key] = { x = spot.x, z = spot.z, facing = spot.facing }
 			end

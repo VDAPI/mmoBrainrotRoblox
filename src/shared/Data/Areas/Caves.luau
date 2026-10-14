@@ -178,9 +178,9 @@ local list: { Types.Cave } = {
 		-- S104: the posts of the chained captives (story quest forgeChains; props in Logic/CaveDress/Forge): the Smelter
 		-- (room 4), the Renegades' Armoury (room 6) and the Heart of the Forge (room 7), each in its room's core
 		questAnchors = {
-			{ id = "forge_chain_1", x = -80, z = 180, y = 2, wiki = false },
-			{ id = "forge_chain_2", x = 78, z = 162, y = 2, wiki = false },
-			{ id = "forge_chain_3", x = 96, z = 18, y = 2, wiki = false },
+			{ id = "forge_chain_1", x = -80, z = 180, y = 2 },
+			{ id = "forge_chain_2", x = 78, z = 162, y = 2 },
+			{ id = "forge_chain_3", x = 96, z = 18, y = 2 },
 		},
 		boss = true,
 	},
@@ -219,8 +219,8 @@ local list: { Types.Cave } = {
 		-- of CaveGen.generate(4102); the well stands west, the crystals on the diagonals), and before the steps of the
 		-- chapel's altar with the order's sword in the ice (130 / -78, room 4)
 		questAnchors = {
-			{ id = "frost_bloom", x = 7, z = 1, y = 2, wiki = false },
-			{ id = "hold_chapel", x = 130, z = -71, y = 2, wiki = false },
+			{ id = "frost_bloom", x = 7, z = 1, y = 2 },
+			{ id = "hold_chapel", x = 130, z = -71, y = 2 },
 		},
 		boss = false,
 	},

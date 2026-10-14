@@ -4,19 +4,21 @@
 -- gear, stat points, skills). Texts: quest.<id>.title / .text / .done (Localization).
 -- S101b (DESIGN-15 §3.5): comments during the quests 1-20 (`barks`, quest.<id>.bark.<event><n>; Logic/Barks).
 -- S102 (docs/FABULA.md §2): chapters by region (CHAPTERS, chapterOf), offer pages (`pages`: quest.<id>.p1..pN), the
--- four new quests of chapter I "The Frost Sign" (frostRuins, frostSign, warrenCharms, warCouncil; wiki = false until
+-- four new quests of chapter I "The Frost Sign" (frostRuins, frostSign, warrenCharms, warCouncil; on the wiki since
 -- S109) and one EXP rule for the story quests (`weight`, settleStory). New story quests are inserted anywhere in the
 -- list: the save keeps the last quest handed in (quests.mainLast, Logic/StoryProgress), never a position.
 -- S103 (docs/FABULA.md §2.3): chapter II "The Forgotten House" in Duskwood: nine new quests (moonstone, lostHunters,
--- houseOfVael, elderHeart, turncoat, barrow, witchCounsel, cryptGate, queensLegacy; wiki = false until S109) between
+-- houseOfVael, elderHeart, turncoat, barrow, witchCounsel, cryptGate, queensLegacy; on the wiki since S109) between
 -- the eight old ones, and the whole band 20-44 on the story rule (STORY_BANDS 20: the chapter shares TARGET.main of
--- the band by weight; fixed rewards only on toDuskwood and the boss quest morvane).
+-- the band by weight; a fixed reward only on the boss quest morvane, S109 put toDuskwood on the rule too).
 -- S104 (docs/FABULA.md §2.4): chapter III "Cold Fire" on the Ashen Wastes: ten new quests (deadOasis, warcampCages,
--- mineDepths, emberCores, burntTemple, wyvernLair, ashRoad, runesOfBinding, forgeChains, coldFire; wiki = false until
+-- mineDepths, emberCores, burntTemple, wyvernLair, ashRoad, runesOfBinding, forgeChains, coldFire; on the wiki since
 -- S109) between the five old ones, and the band 45-69 on the story rule (STORY_BANDS 45; azgor keeps its reward).
 -- S105 (docs/FABULA.md §2.5): chapter IV "The Long Winter" and the finale "The First Spring" on the Frost Peaks: fifteen
 -- new quests between the four old ones (70 quests in all, firstSpring last: reach level 100), the band 70-99 on the
 -- story rule (STORY_BANDS 70; vaelgrath keeps its reward, firstSpring gives no EXP).
+-- S109 (the audit of quests 1-100): weights reshaped per band (monsterExpMul without clamping, steps <= 0.10), the
+-- quests of S102-S105 on the wiki (quests.json `chapters` from CHAPTERS, `main[].chapter`).
 
 local Exp = require("../../Logic/Exp")
 local QuestBudget = require("../../Logic/QuestBudget")
@@ -50,7 +52,9 @@ type MainDef = {
 		items: { { id: string, n: number } }?,
 		cosmetic: string?,
 	},
-	weight: number?, -- S102: share of the story EXP rule (1 a plain quest, 1.2 a discovery, 1.5 a chapter's end)
+	-- S102: share of the story EXP rule (planned 1 a plain quest, 1.2 a discovery, 1.5 a chapter's end); S109: the
+	-- weights shape monsterExpMul inside the band (the audit), a chapter's end still weighs more than 1
+	weight: number?,
 	pages: number?,
 	wiki: boolean?,
 	choices: Types.ChoicePage?,
@@ -238,7 +242,6 @@ q({
 	giver = "healer",
 	turnIn = "scout_meadows",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("meadows", -150, -380, 25, "place.towerRuins"),
 		use("tower_crest", "quest.use.crest", 2, "frost"),
@@ -283,7 +286,6 @@ q({
 	giver = "captain",
 	turnIn = "captain",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("sergeant", "quest.frostSign.sergeant"),
 		-- the guardhouse by the east gate -> the market street -> past the fountain -> the temple (every point
@@ -323,7 +325,6 @@ q({
 	giver = "scout_meadows",
 	turnIn = "scout_meadows",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("meadows_burrow"),
 		kill(4, "goblinScout", "meadows_burrow", "elite"),
@@ -368,7 +369,6 @@ q({
 	giver = "captain",
 	turnIn = "captain",
 	pages = 4,
-	wiki = false,
 	objectives = {
 		talk("blacksmith", "quest.warCouncil.blacksmith"),
 		deliver("frostCharm", "alchemist", "quest.warCouncil.alchemist"),
@@ -386,14 +386,15 @@ q({
 
 -- Chapter II: The Forgotten House (Duskwood, 20–45), docs/FABULA.md §2.3 ----------------------------------------
 -- S92 (F2) raised werewolves .. crypt to 1.1-1.7 of their level's EXP; S103 puts the whole chapter on the story rule
--- (`weight`, settleStory: TARGET.main of the band 20-44), only toDuskwood (the bridge over level 20) and morvane (the
--- boss quest, outside the pace model) keep fixed rewards. Nine new quests (wiki = false until S109) between the eight
--- old ones; the story NPCs of Duskwood stand on Areas/duskwood npcSpots, the anchors and props are S103's.
--- S103 weights: the pace model of S94 has most story EXP of the band on 21-26 (S92's levers on werewolves and ruins:
--- monsters give only 48-57% of those levels), so the quests of 21-26 weigh 1.6-2.2 (houseOfVael 2.2: the window
--- 25-26 of one quest), turncoat 1.4 (window 31-32), queensLegacy 1.5 and the rest 0.8: tools/quest_budget.luau then
--- compensates every level 20-44 without clamping at MUL_MAX (worst 1.237 on 25-26; with 1 / 1.2 / 1.5 levels 21-26
--- and 31-32 hit 1.25 and the pace of 20 -> 45 broke).
+-- (`weight`, settleStory: TARGET.main of the band 20-44), only morvane (the boss quest, outside the pace model) keeps
+-- a fixed reward (S109: toDuskwood, the bridge over level 20, joined the rule). Nine new quests (on the wiki since
+-- S109) between the eight old ones; the story NPCs of Duskwood stand on Areas/duskwood npcSpots, the anchors and props
+-- are S103's.
+-- S109 weights (the audit, docs/DESIGN-15.md §3.2): the weights only move the band's story EXP between its windows,
+-- so they shape monsterExpMul. In 20-44 the S94 story paid 60% of level 20 and 52% of 21-23 and little on 37-44, so the
+-- weights follow the S94 kill shares (unit: 0.05 of a level), with 20-23 kept below the S94 story (audit T-QB3:
+-- moving mean of the quest share <= 0.50); monsterExpMul 1.23 / 1.15 / 1.06 / 1.04 / 0.97-0.98 / 0.90 over the band.
+-- Chapters III and IV: flat 0.844 (unit 0.125) and 0.803 (unit 0.12).
 q({
 	id = "toDuskwood",
 	level = 20,
@@ -401,7 +402,8 @@ q({
 	turnIn = "scout_duskwood",
 	pages = 3,
 	objectives = { { type = "reach", n = 1, map = "duskwood" } },
-	reward = { exp = exp(20, 0.6), gold = gold(20), items = { { id = "backpack_60", n = 1 } } },
+	weight = 6.76,
+	reward = { gold = gold(20), items = { { id = "backpack_60", n = 1 } } },
 	barks = { accept = 1, done = 1 },
 })
 q({
@@ -411,7 +413,7 @@ q({
 	turnIn = "scout_duskwood",
 	pages = 2,
 	objectives = { { type = "kill", n = 15, monster = "werewolf" } },
-	weight = 1.8,
+	weight = 5.52,
 	reward = { gold = gold(21) },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -422,13 +424,12 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "forester_radomir",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("forester_radomir", "quest.moonstone.radomir"),
 		use("moonstone_rune", "quest.use.moonRune", 3, "frostbreak"),
 		kill(8, "werewolf", "duskwood_werethicket"),
 	},
-	weight = 1.8,
+	weight = 5.52,
 	reward = { gold = gold(22), items = { { id = "potion_hp_3", n = 5 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(3, {
@@ -445,7 +446,6 @@ q({
 	giver = "forester_radomir",
 	turnIn = "scout_duskwood",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		-- the ravaged camp -> the main road by the dusk gate -> the road into Bear Hollow -> down the ramp by the
 		-- fallen giant -> along the gorge floor to the lost camp (S103 build/s103_route.luau: every point
@@ -463,7 +463,7 @@ q({
 		use("lost_camp", "quest.use.searchCamp", 3, "tracks"),
 		kill(8, "blackBear", "duskwood_bearhollow"),
 	},
-	weight = 1.8,
+	weight = 5.52,
 	reward = { gold = gold(23), items = { { id = "blessing_hunter_2", n = 1 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(3, {
@@ -484,7 +484,7 @@ q({
 		{ type = "kill", n = 12, monster = "forestWraith" },
 		{ type = "collect", n = 5, monster = "forestWraith", item = "wraithEssence", chance = 0.4 },
 	},
-	weight = 1.6,
+	weight = 4.55,
 	reward = { gold = gold(24) },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -495,14 +495,13 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("duskwood", -130, -436, 30, "place.manor"), -- Areas/duskwood SITES.manor
 		use("chapel_window", "quest.use.stainedGlass", 2, "candles"),
 		use("family_crypt", "quest.use.examineCrypt", 2, "search"),
 		talk("ghost_oswin", "quest.houseOfVael.oswin"),
 	},
-	weight = 2.2,
+	weight = 9.45,
 	reward = { gold = gold(25), items = { { id = "stone_map", n = 2 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(3, {
@@ -519,7 +518,7 @@ q({
 	turnIn = "scout_duskwood",
 	pages = 2,
 	objectives = { { type = "kill", n = 10, monster = "rotEnt" }, { type = "gather", n = 4, node = "bush_nightshade" } },
-	weight = 0.8,
+	weight = 2.88,
 	reward = { gold = gold(27), items = { { id = "blessing_guardian_2", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -530,12 +529,11 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		use("elder_tree", "quest.use.iceShard", 3, "heartglow"),
 		kill(8, "ghoul", "duskwood_heart"),
 	},
-	weight = 0.8,
+	weight = 5.95,
 	reward = { gold = gold(28), items = { { id = "essence_shard", n = 2 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -556,7 +554,7 @@ q({
 		{ type = "kill", n = 15, monster = "darkCultist" },
 		{ type = "collect", n = 3, monster = "darkCultist", item = "cultSigil", chance = 0.3 },
 	},
-	weight = 0.8,
+	weight = 3.58,
 	reward = { gold = gold(30), items = { { id = "backpack_80", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -567,13 +565,12 @@ q({
 	giver = "captain",
 	turnIn = "captain",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("duskwood", 392, -78, 18, "place.wayShrine"), -- Areas/duskwood SITES.wayShrine
 		talk("defector_jorund", "quest.turncoat.jorund"),
 		kill(10, "darkCultist", "duskwood_crossroads"),
 	},
-	weight = 1.4,
+	weight = 7.38,
 	reward = { gold = gold(31), items = { { id = "potion_mana_3", n = 5 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("trust"), Talk.answer("bring"), Talk.answer("hunters", Talk.focus(3)) }),
@@ -586,7 +583,7 @@ q({
 	turnIn = "scout_duskwood",
 	pages = 2,
 	objectives = { { type = "kill", n = 12, monster = "swampTroll" }, { type = "fish", n = 3 } },
-	weight = 0.8,
+	weight = 4.05,
 	reward = { gold = gold(33) },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -597,13 +594,12 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		reach("duskwood_barrow"),
 		kill(4, "darkCultist", "duskwood_barrow", "elite"),
 		collect(1, "riteBook", "darkCultist", 0.2, "duskwood_barrow", "elite"),
 	},
-	weight = 0.8,
+	weight = 4.04,
 	reward = { gold = gold(35), items = { { id = "blessing_warrior_3", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1, death = 1, stuck = 1 },
 	choices = Talk.onPage(2, {
@@ -622,7 +618,7 @@ q({
 		{ type = "reach", n = 1, map = "duskwood_cave" },
 		{ type = "kill", n = 5, monster = "skeletonGuard", variant = "elite" },
 	},
-	weight = 0.8,
+	weight = 0.6,
 	reward = { gold = gold(37), items = { { id = "blessing_sage_3", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -633,13 +629,12 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("witch_ragna", "quest.witchCounsel.ragna"),
 		kill(8, "marshWitch", "duskwood_witchmarsh"),
 		collect(3, "boneChime", "marshWitch", 0.4, "duskwood_witchmarsh"),
 	},
-	weight = 0.8,
+	weight = 1.02,
 	reward = { gold = gold(39), items = { { id = "potion_hp_4", n = 5 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(3, {
@@ -657,13 +652,12 @@ q({
 	giver = "scout_duskwood",
 	turnIn = "scout_duskwood",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		reach("duskwood", 742, 0, 22, "place.cryptGate"), -- the courtyard before the gate (Data/Terrain/duskwood flat)
 		use("crypt_seal", "quest.use.breakSeal", 3, "sealbreak"),
 		kill(4, "specter", "duskwood_cave", "elite"),
 	},
-	weight = 0.8,
+	weight = 1.02,
 	reward = { gold = gold(41), items = { { id = "stone_return", n = 2 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, {
@@ -690,13 +684,12 @@ q({
 	giver = "captain",
 	turnIn = "captain",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		deliver("queenRing", "brother_anzelm", "quest.queensLegacy.anzelm"),
 		deliver("heartBranch", "brother_anzelm"),
 		talk("alchemist", "quest.queensLegacy.alchemist"),
 	},
-	weight = 1.5,
+	weight = 1.6,
 	reward = {
 		gold = gold(44) * 2,
 		items = { { id = "blessing_fortune_3", n = 1 }, { id = "essence_crystal", n = 2 } },
@@ -708,7 +701,7 @@ q({
 -- Chapter III: Cold Fire (Ashen Wastes and Deepforge, 45–70; docs/FABULA.md §2.4, S104). Brokk, Ghasha and Kaspar stand
 -- on Areas/ashen npcSpots; anchors in Areas/ashen and in the ashen_cave cave. The whole band 45-69 is on the story rule
 -- (STORY_BANDS 45: the chapter shares TARGET.main of the band by weight); only azgor (the boss quest, outside the pace
--- model) keeps its fixed reward. Ten new quests (wiki = false until S109) between the five old ones.
+-- model) keeps its fixed reward. Ten new quests (on the wiki since S109) between the five old ones.
 q({
 	id = "ashen",
 	level = 45,
@@ -716,7 +709,7 @@ q({
 	turnIn = "scout_ashen",
 	pages = 3,
 	objectives = { { type = "reach", n = 1, map = "ashen" }, { type = "kill", n = 15, monster = "salamander" } },
-	weight = 1,
+	weight = 2.06,
 	reward = { gold = gold(45), items = { { id = "backpack_100", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -727,7 +720,6 @@ q({
 	giver = "scout_ashen",
 	turnIn = "runesmith_brokk",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		-- Brokk's camp by the Ribcage Gate -> the main road -> the caravan trail south (Areas/ashen roads) -> down the
 		-- oasis rim -> the caravan graveyard (inside its avoid circle: no monster group there), ~55 studs from the chest
@@ -741,7 +733,7 @@ q({
 		use("caravan_chest", "quest.use.chest", 3, "search"),
 		kill(10, "wasteHyena", "ashen_oasis"),
 	},
-	weight = 1,
+	weight = 2.06,
 	reward = { gold = gold(47) },
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, { Talk.answer("notes"), Talk.answer("hands"), Talk.answer("count") }),
@@ -754,13 +746,12 @@ q({
 	giver = "runesmith_brokk",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		use("orc_cage", "quest.use.cage", 3, "cageOpen"),
 		kill(8, "ashOrc", "ashen_warcamp"),
 		talk("shaman_ghasha", "quest.warcampCages.ghasha"),
 	},
-	weight = 1.2,
+	weight = 1.01,
 	reward = { gold = gold(49) },
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(2, {
@@ -778,7 +769,7 @@ q({
 	turnIn = "scout_ashen",
 	pages = 2,
 	objectives = { { type = "kill", n = 20, monster = "ashOrc" }, { type = "gather", n = 5, node = "vein_silver" } },
-	weight = 1,
+	weight = 2.33,
 	reward = { gold = gold(50) },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -789,13 +780,12 @@ q({
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("ashen_mine"),
 		kill(4, "ashOrc", "ashen_mine", "elite"),
 		collect(1, "supplyLedger", "ashOrc", 0.25, "ashen_mine", "elite"),
 	},
-	weight = 1,
+	weight = 1.14,
 	reward = { gold = gold(52), items = { { id = "stone_map", n = 2 } } },
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, { Talk.answer("frost"), Talk.answer("dark"), Talk.answer("quick") }),
@@ -807,13 +797,12 @@ q({
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		collect(4, "emberCore", "fireGolem", 0.4, "ashen_golemfields"),
 		use("colossus_eyes", "quest.use.eyes", 3, "rune"),
 		talk("runesmith_brokk", "quest.emberCores.brokk"),
 	},
-	weight = 1.2,
+	weight = 2.33,
 	reward = { gold = gold(53) },
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(1, { Talk.answer("how"), Talk.answer("colossus", Talk.focus(2)), Talk.answer("why") }),
@@ -829,7 +818,7 @@ q({
 		{ type = "kill", n = 15, monster = "fireGolem" },
 		{ type = "kill", n = 10, monster = "desertScorpion" },
 	},
-	weight = 1,
+	weight = 1.55,
 	reward = { gold = gold(55), items = { { id = "elixir_resFire", n = 3 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -840,13 +829,12 @@ q({
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("hermit_kaspar", "quest.burntTemple.kaspar"),
 		kill(12, "fireImp", "ashen_burntruins"),
 		use("temple_bell", "quest.use.bell", 3, "candles"),
 	},
-	weight = 1.2,
+	weight = 1.55,
 	reward = { gold = gold(57), items = { { id = "blessing_sage_3", n = 1 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -863,13 +851,12 @@ q({
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("ashen_lair"),
 		kill(4, "wyvern", "ashen_lair", "elite"),
 		collect(2, "cultHarness", "wyvern", 0.35, "ashen_lair", "elite"),
 	},
-	weight = 1,
+	weight = 1.55,
 	reward = { gold = gold(59), items = { { id = "blessing_hunter_3", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -885,12 +872,11 @@ q({
 	giver = "scout_ashen",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		use("stone_caravan", "quest.use.stoneWagon", 3, "search"),
 		kill(10, "basilisk", "ashen_ashroad"),
 	},
-	weight = 1.2,
+	weight = 0.76,
 	reward = { gold = gold(61) },
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(3, { Talk.answer("what"), Talk.answer("stone"), Talk.answer("hunt", Talk.focus(2)) }),
@@ -905,7 +891,7 @@ q({
 		{ type = "reach", n = 1, map = "ashen_cave" },
 		{ type = "kill", n = 6, monster = "renegadeDwarf", variant = "elite" },
 	},
-	weight = 1,
+	weight = 0.98,
 	reward = { gold = gold(62), items = { { id = "backpack_130", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -916,13 +902,12 @@ q({
 	giver = "scout_ashen",
 	turnIn = "runesmith_brokk",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		{ type = "gather", n = 5, node = "vein_mithril" },
 		kill(4, "magmaGolem", "ashen_cave", "elite"),
 		talk("runesmith_brokk", "quest.runesOfBinding.brokk"),
 	},
-	weight = 1,
+	weight = 0.98,
 	reward = { gold = gold(64) },
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -940,13 +925,12 @@ q({
 	giver = "runesmith_brokk",
 	turnIn = "scout_ashen",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		-- the Smelter, the Renegades' Armoury and the Heart of the Forge (Areas/Caves ashen_cave questAnchors)
 		useAll({ "forge_chain_1", "forge_chain_2", "forge_chain_3" }, "quest.use.shackles", 3, "chains"),
 		kill(10, "flameSmith", "ashen_cave"),
 	},
-	weight = 1.2,
+	weight = 1.48,
 	reward = { gold = gold(66), items = { { id = "elixir_resFire", n = 3 } } },
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 3, death = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("alone"), Talk.answer("smiths", Talk.focus(2)), Talk.answer("keys") }),
@@ -977,12 +961,11 @@ q({
 	giver = "captain",
 	turnIn = "captain",
 	pages = 4,
-	wiki = false,
 	objectives = {
 		deliver("spearhead", "blacksmith", "quest.coldFire.blacksmith"),
 		talk("brother_anzelm", "quest.coldFire.anzelm"),
 	},
-	weight = 1.5,
+	weight = 1.48,
 	reward = { gold = gold(69), items = { { id = "blessing_guardian_4", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -997,7 +980,7 @@ q({
 -- §2.5, S105. Sigrun and the ghost of Halgrim stand on Areas/frostpeak npcSpots; the anchors are in Areas/frostpeak and
 -- in the frostpeak_hold cave. The band 70-99 is on the story rule (STORY_BANDS 70: the chapter shares TARGET.main of
 -- the band by weight, the old frostpeak, giants and glacier too); vaelgrath (the boss quest) keeps the reward S97
--- pinned, firstSpring (level 100, nothing left to earn) gives no EXP. Fifteen new quests (wiki = false until S109)
+-- pinned, firstSpring (level 100, nothing left to earn) gives no EXP. Fifteen new quests (on the wiki since S109)
 -- between the four old ones; their ids are a contract with S108 (trappersCamp, iceGrotto, iceWatch, dragonTemple).
 q({
 	id = "frostpeak",
@@ -1010,7 +993,7 @@ q({
 		{ type = "kill", n = 20, monster = "iceWolf" },
 		{ type = "kill", n = 15, monster = "yeti" },
 	},
-	weight = 1.2,
+	weight = 2,
 	reward = { gold = gold(72), items = { { id = "backpack_160", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -1021,13 +1004,12 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "trapper_sigrun",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("frostpeak", -548, -168, 24, "place.trapperCamp"), -- Areas/frostpeak SITES.trapperCamp
 		kill(10, "snowLeopard", "frostpeak_valley"),
 		talk("trapper_sigrun", "quest.trappersCamp.sigrun"),
 	},
-	weight = 1,
+	weight = 2,
 	reward = { gold = gold(74), items = { { id = "elixir_resIce", n = 2 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(3, {
@@ -1043,13 +1025,12 @@ q({
 	giver = "trapper_sigrun",
 	turnIn = "scout_frostpeak",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("frostpeak_grotto"),
 		kill(4, "yeti", "frostpeak_grotto", "elite"),
 		collect(1, "trapperJournal", "yeti", 0.3, "frostpeak_grotto", "elite"),
 	},
-	weight = 1.2,
+	weight = 2,
 	reward = { gold = gold(76), items = { { id = "stone_return", n = 3 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(3, {
@@ -1068,13 +1049,12 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		use("climbers_camp", "quest.use.burial", 3, "shroud"),
 		kill(10, "peakHarpy", "frostpeak_harpyrocks"),
 		collect(1, "orderSeal", "peakHarpy", 0.3, "frostpeak_harpyrocks"),
 	},
-	weight = 1,
+	weight = 2,
 	reward = { gold = gold(78), items = { { id = "stone_map", n = 2 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -1091,7 +1071,7 @@ q({
 	turnIn = "scout_frostpeak",
 	pages = 2,
 	objectives = { { type = "kill", n = 15, monster = "frostGiant" }, { type = "upgrade", n = 1, up = 5 } },
-	weight = 1,
+	weight = 1.44,
 	reward = { gold = gold(80), items = { { id = "elixir_resIce", n = 3 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -1102,12 +1082,11 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		use("hunting_camp", "quest.use.gatherArmor", 3, "armor"),
 		kill(12, "iceMammoth", "frostpeak_tundra"),
 	},
-	weight = 1,
+	weight = 1.44,
 	reward = { gold = gold(82) },
 	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
 	choices = Talk.onPage(2, {
@@ -1123,7 +1102,6 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		-- the tundra's map stone -> the road across the tundra (Areas/frostpeak roads, past the Mammoth Graveyard's
 		-- tusks) -> 55 studs before the Hold's gate (build/s105_scan.luau: every point MapTerrain.walkable(4), dry)
@@ -1135,7 +1113,7 @@ q({
 		reach("frostpeak_hold"),
 		kill(4, "frostGiant", "frostpeak_hold", "elite"),
 	},
-	weight = 1.2,
+	weight = 1.44,
 	reward = { gold = gold(84), items = { { id = "elixir_resIce", n = 2 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("order"), Talk.answer("breach") }),
@@ -1155,12 +1133,11 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		kill(12, "iceElemental", "frostpeak_lake"),
 		use("crystal_garden", "quest.use.shatter", 3, "shatter"),
 	},
-	weight = 1,
+	weight = 1.44,
 	reward = { gold = gold(86) },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
@@ -1177,13 +1154,12 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "ghost_halgrim",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		reach("frostpeak", 628, 570, 30, "place.keep"), -- Areas/frostpeak npcSpots.halgrim (before the keep)
 		kill(12, "frozenKnight", "frostpeak_icewatch"),
 		deliver("orderSeal", nil, "quest.iceWatch.halgrim"),
 	},
-	weight = 1,
+	weight = 1.44,
 	reward = { gold = gold(88) },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("light"), Talk.answer("seal") }),
@@ -1196,13 +1172,12 @@ q({
 	giver = "ghost_halgrim",
 	turnIn = "scout_frostpeak",
 	pages = 4,
-	wiki = false,
 	objectives = {
 		use("frost_bloom", "quest.use.shatter", 3, "shatter"),
 		use("hold_chapel", "quest.use.oath", 5, "oath"),
 		kill(4, "frozenKnight", "frostpeak_hold", "elite"),
 	},
-	weight = 1.5,
+	weight = 1.44,
 	reward = { gold = gold(90) * 2, items = { { id = "blessing_guardian_4", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1, death = 1 },
 	choices = Talk.onPage(4, { Talk.answer("brothers"), Talk.answer("you"), Talk.answer("words") }),
@@ -1218,7 +1193,7 @@ q({
 		{ type = "reach", n = 1, map = "frostpeak_cave" },
 		{ type = "kill", n = 8, monster = "crystalGuardian", variant = "elite" },
 	},
-	weight = 1.2,
+	weight = 2.02,
 	reward = { gold = gold(92), items = { { id = "backpack_200", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 })
@@ -1229,13 +1204,12 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		kill(15, "dragonspawn", "frostpeak_temple"),
 		use("temple_altars", "quest.use.snuff", 3, "snuff"),
 		use("temple_colossus", "quest.use.snuff", 3, "snuff"),
 	},
-	weight = 1.3,
+	weight = 1,
 	reward = { gold = gold(94), items = { { id = "stone_dungeon_frostpeak", n = 1 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, { Talk.answer("song"), Talk.answer("cult"), Talk.answer("fires", Talk.focus(2)) }),
@@ -1247,7 +1221,6 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		kill(10, "frostWyrm", "frostpeak_wyrmspire"),
 		use("wyrm_obelisk", "quest.use.shatter", 3, "shatter"),
@@ -1268,13 +1241,12 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("captain", "quest.eveOfBattle.captain"),
 		talk("brother_anzelm", "quest.eveOfBattle.anzelm"),
 		reach("frostpeak", 560, 0, 24, "place.dragonStairs"), -- Areas/frostpeak SITES.dragonStairs
 	},
-	weight = 0.8,
+	weight = 2.02,
 	reward = { gold = gold(96), items = { { id = "stone_return", n = 5 } } },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, {
@@ -1306,12 +1278,11 @@ q({
 	giver = "captain",
 	turnIn = "scout_frostpeak",
 	pages = 3,
-	wiki = false,
 	objectives = {
 		talk("brother_anzelm", "quest.snowInSummer.anzelm"),
 		reach("frostpeak_cave"),
 	},
-	weight = 0.8,
+	weight = 1,
 	reward = { gold = gold(98) },
 	barks = { accept = 1, half = 1, done = 1 },
 	choices = Talk.onPage(3, {
@@ -1328,7 +1299,6 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 2,
-	wiki = false,
 	objectives = {
 		kill(6, "youngFrostDragon", "frostpeak_cave", "elite"),
 		-- the fork of the tundra road and the Bone Trail -> along the trail (Areas/frostpeak roads) -> before the ribs of
@@ -1339,7 +1309,7 @@ q({
 			{ x = 490, z = -530 },
 		}),
 	},
-	weight = 1,
+	weight = 0.4,
 	reward = { gold = gold(99) },
 	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
 	choices = Talk.onPage(2, {
@@ -1363,14 +1333,13 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
 	pages = 4,
-	wiki = false,
 	objectives = {
 		reach("frostpeak", 628, -574, 24, "place.summit"), -- Areas/frostpeak SITES.summitRite
 		kill(8, "dragonspawn", "frostpeak_wyrmspire"),
 		kill(8, "frostWyrm", "frostpeak_wyrmspire"),
 		use("summit_rite", "quest.use.breakRite", 5, "rite"),
 	},
-	weight = 1.5,
+	weight = 0.6,
 	reward = { gold = gold(99) * 2, items = { { id = "blessing_sage_4", n = 1 } } },
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(4, {
@@ -1394,7 +1363,6 @@ q({
 	giver = "scout_frostpeak",
 	turnIn = "captain",
 	pages = 4,
-	wiki = false,
 	objectives = {
 		use("summit_thorn", "quest.use.thorn", 5, "thorn"),
 		{ type = "level", n = 1, level = 100 },
@@ -1410,7 +1378,8 @@ q({
 -- where scale is STORY_STEP in the band 1-19 (frozen in S91: the old story already gives more than TARGET.main there)
 -- and, in every band listed in STORY_BANDS (S103 adds 20, S104 45, S105 70), the share that makes the band's story
 -- EXP (the fixed rewards of its quests without a boss objective plus the weighted ones) equal TARGET.main of the
--- band's EXP. Fixed rewards stay only on the boss quests (chapter finales), the old quests 1-19 and toDuskwood.
+-- band's EXP. Fixed rewards stay only on the boss quests (chapter finales) and the old quests 1-19 (S109:
+-- toDuskwood weighted too).
 local STORY_STEP = 0.05
 local STORY_BANDS: { number } = {
 	20, -- S103: chapter II
@@ -1510,7 +1479,7 @@ return table.freeze({
 	end,
 	CHAPTERS = table.freeze(CHAPTERS),
 	chapterOf = chapterOf,
-	-- S102 (B2a): the story EXP rule (tests and the S109 report read it)
+	-- S102 (B2a): the story EXP rule (tests and the S109 audit read it)
 	STORY_STEP = STORY_STEP,
 	STORY_BANDS = table.freeze(STORY_BANDS),
 	STORY_SCALE = table.freeze(STORY_SCALE),
