@@ -5,6 +5,7 @@
 
 local AttackMotions = require("../Data/AttackMotions")
 local Bosses = require("../Data/Bosses")
+local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Items = require("../Data/Items")
 local LookAnim = require("./LookAnim")
@@ -25,6 +26,7 @@ export type Action =
 	| "boss"
 	| "npc"
 	| "sfx"
+	| "vfx"
 	| "loop"
 	| "freeze"
 	| "step"
@@ -44,6 +46,7 @@ AnimLab.ACTIONS = {
 	"boss",
 	"npc",
 	"sfx",
+	"vfx",
 	"loop",
 	"freeze",
 	"step",
@@ -56,7 +59,38 @@ AnimLab.ACTIONS = {
 AnimLab.CAMERAS = { "front", "side", "threequarter", "top", "game" }
 AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
 -- Motions a freeze / loop / keys can replay (the others are tools).
-AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc" } :: { Action }
+AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx" } :: { Action }
+-- S112: pieces `vfx <piece> [color]` plays (Vfx/Library: the six new ones first, then the old ones and the three
+-- lasting areas of breakpoints); `vfx all` plays them in this order.
+AnimLab.VFX_PIECES = {
+	"impactFlash",
+	"sparks",
+	"groundDecal",
+	"smokePuff",
+	"magicCircle",
+	"ringWave",
+	"burst",
+	"shockwave",
+	"cracks",
+	"slash",
+	"projectile",
+	"lightning",
+	"pillar",
+	"rune",
+	"sparkle",
+	"aura",
+	"glow",
+	"weaponTrail",
+	"falcon",
+	"beam",
+	"dust",
+	"meteor",
+	"lingering:burn",
+	"lingering:frost",
+	"lingering:poison",
+}
+-- `vfx` sub-commands that are not a piece.
+AnimLab.VFX_TOOLS = { "all", "tex", "stats" }
 AnimLab.LAYOUT = Config.AnimLab.layout
 -- Every refusal key (tests check PL and EN).
 AnimLab.ERRORS = {
@@ -70,6 +104,8 @@ AnimLab.ERRORS = {
 	"animlab.error.npc",
 	"animlab.error.sfx",
 	"animlab.error.sfxId",
+	"animlab.error.vfx",
+	"animlab.error.vfxColor",
 	"animlab.error.time",
 	"animlab.error.step",
 	"animlab.error.cam",
@@ -180,6 +216,34 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 			return nil, "animlab.error.sfx"
 		end
 		return make("sfx", a, nil, nil, n), nil
+	elseif action == "vfx" then
+		-- S112: vfx <piece> [color] | vfx all [stress] | vfx tex [on|off] | vfx stats
+		if not a then
+			return nil, "animlab.error.vfx"
+		end
+		if a == "all" then
+			if b ~= nil and b ~= "stress" then
+				return nil, "animlab.error.vfx"
+			end
+			return make("vfx", "all", b), nil
+		elseif a == "tex" then
+			if b ~= nil and b ~= "on" and b ~= "off" then
+				return nil, "animlab.error.vfx"
+			end
+			return make("vfx", "tex", b), nil
+		elseif a == "stats" then
+			if b ~= nil then
+				return nil, "animlab.error.args"
+			end
+			return make("vfx", "stats"), nil
+		end
+		if not table.find(AnimLab.VFX_PIECES, a) then
+			return nil, "animlab.error.vfx"
+		end
+		if b and not AnimLab.vfxColor(b) then
+			return nil, "animlab.error.vfxColor"
+		end
+		return make("vfx", a, b), nil
 	elseif action == "freeze" then
 		local t = number(a)
 		if not t or t < 0 or t > limits.freezeMax or b ~= nil then
@@ -205,6 +269,22 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		return make("stress", nil, nil, nil, n), nil
 	end
 	return nil, "animlab.error.action"
+end
+
+-- S112: the colour of `vfx <piece> [color]`: "#RRGGBB" or "class:<Class>" (Data/Classes) as a hex text, nil when
+-- neither.
+function AnimLab.vfxColor(text: string): string?
+	if string.match(text, "^#%x%x%x%x%x%x$") then
+		return string.upper(text)
+	end
+	local class = string.match(text, "^class:(%a+)$")
+	local def = class and Classes.get(class)
+	return if def then def.color else nil
+end
+
+-- S112: true for a `vfx` command that plays a piece (a motion AnimLab can freeze), false for its tools.
+function AnimLab.isVfxPiece(command: Command): boolean
+	return command.action == "vfx" and command.id ~= nil and table.find(AnimLab.VFX_PIECES, command.id) ~= nil
 end
 
 -- Splits a typed line ("freeze 0.21") into arguments and parses it.

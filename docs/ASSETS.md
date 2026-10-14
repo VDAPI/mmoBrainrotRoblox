@@ -17,6 +17,7 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
 | `art/icons/src/**`, `art/icons/items_4..7.png` (246 ikon przedmiotów) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 | `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
+| `art/vfx/*.png` (25 tekstur efektów) | własne, wygenerowane (`tools/vfx/make_textures.py`) | własne | S112, 2026-10-14 | — | przebudowa i wgranie: `docs/ANIMACJE.md` → „Tekstury efektów” |
 
 ## Gdzie co leży
 
@@ -120,6 +121,16 @@ Prawdziwy model zastępuje wygląd z generatora (plan `horse`, `docs/MODELE.md` 
 5. Skin wierzchowca (S97, `Data/Cosmetics` rodzaj `mountskin`) na prawdziwym modelu zmienia tylko kolor części nazwanych
    jak role kolorów: `Base` (sierść), `Accent` (grzywa i ogon), `Detail` (siodło), `Cloth` (czaprak), `Trim` (okucia).
    Ten sam hak działa dla wierzchowców bossów (`mount_grimrok`, `mount_morvane`, `mount_azgor`, `mount_vaelgrath`).
+
+## Tekstury efektów (S112)
+
+25 białych tekstur na przezroczystym tle w `art/vfx/` (manifest `art/vfx/manifest.json`), rysowanych kodem przez
+`tools/vfx/make_textures.py`; gra barwi je kolorem efektu. ID w `src/shared/Data/VfxTextures.luau` (puste = dawny wygląd
+z neonowych części). Przebudowa, podmiana na własną teksturę i wgranie: `docs/ANIMACJE.md` → „Tekstury efektów (S112)”.
+
+**Stan (2026-10-14):** wszystkie 25 wgrane przez Studio MCP (`upload_image`, konto VDaPii) i wpisane; w Play wszystkie
+`IsLoaded` (`/animlab vfx tex`). Osierocone wgrania z tej sesji (nieużywane, można usunąć w Creator Hub):
+`132519633221746` (bąbel 512 px), `82964945104988` i `82584722869054` (łuki cięcia w pierwszym ułożeniu).
 
 ## Ikony przedmiotów (S35)
 

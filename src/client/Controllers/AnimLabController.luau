@@ -11,6 +11,10 @@
 -- Nothing here runs outside Studio or without the stage (the frame loop is connected only while the stage exists).
 -- S111: `sfx` plays Data/Sfx keys and raw Creator Store ids (SfxController.Preview / Audition), also without the
 -- stage; `state` carries the sound pool's numbers (SfxController.Stats).
+-- S112: `vfx <piece> [color]` plays a Vfx/Library piece at the target as a motion (freeze, step, loop every
+-- Config.AnimLab.vfxEvery; without the stage once in front of the camera), `vfx all [stress]` every piece in turn,
+-- `vfx tex [on|off]` checks / switches the effect textures (Vfx/Textures), `vfx stats` the effect pool's holders and
+-- limits (also in `state`).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -23,6 +27,7 @@ local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
+local Library = require(script.Parent.Parent.Vfx.Library)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -38,6 +43,8 @@ local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local Skills = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
+local Textures = require(script.Parent.Parent.Vfx.Textures)
+local VfxTextures = require(ReplicatedStorage.Shared.Data.VfxTextures)
 local WeaponBuild = require(ReplicatedStorage.Shared.Util.WeaponBuild)
 
 local AnimLabController = {
@@ -116,6 +123,8 @@ local cameraOn = false
 local frame: RBXScriptConnection? = nil
 local playing = 0 -- token of the running replay (a newer command cancels an older wait)
 local sfxRun = 0 -- S111: token of `sfx all` (any newer command stops it)
+local vfxRun = 0 -- S112: token of `vfx all` (any newer command stops it)
+local playVfx: (Command) -> () -- S112, below
 
 -- Helpers ----------------------------------------------------------------------------------------------------
 
@@ -773,6 +782,9 @@ local function play(command: Command)
 	elseif action == "npc" then
 		playNpc(command)
 		lastKeys = if subject then subject.keys else nil
+	elseif action == "vfx" then
+		playVfx(command)
+		lastKeys = MotionKeys.still()
 	end
 	last = command
 	startedAt = Clock.now()
@@ -780,6 +792,10 @@ local function play(command: Command)
 end
 
 local function motionLength(): number
+	local command = last
+	if command and command.action == "vfx" then
+		return LAB.vfxEvery - LAB.loopGap -- S112: a piece repeats every vfxEvery seconds
+	end
 	local keys = lastKeys
 	return if keys then MotionKeys.at(keys, "end") or 0 else 0
 end
@@ -910,6 +926,245 @@ local function stress(n: number)
 	end
 end
 
+local function yesNo(value: any): string
+	return Text.now(if value == true then "animlab.yes" else "animlab.no")
+end
+
+-- S112: where `vfx` plays: the target's spot on the stage, else 12 studs in front of the camera.
+local function vfxAt(): Vector3?
+	if stage then
+		return centre + vec(LAYOUT.target)
+	end
+	local camera = Workspace.CurrentCamera
+	return if camera then camera.CFrame.Position + camera.CFrame.LookVector * 12 else nil
+end
+
+-- The blow comes from the actor (or the camera without the stage).
+local function vfxFrom(): Vector3
+	if stage then
+		return centre + vec(LAYOUT.actor)
+	end
+	local camera = Workspace.CurrentCamera
+	return if camera then camera.CFrame.Position else Vector3.zero
+end
+
+-- The colour of a `vfx` command (white by default) and the rune of its class ("class:Mage" -> runeMage).
+local function vfxLook(text: string?): (Color3, string)
+	local hex = if text then AnimLab.vfxColor(text) else nil
+	local class = if text then string.match(text, "^class:(%a+)$") else nil
+	return if hex then Color3.fromHex(hex) else Color3.new(1, 1, 1), VfxTextures.runeOf(class)
+end
+
+-- Plays one piece of AnimLab.VFX_PIECES at the floor point `at`, struck from `from`; false when it needs a model and
+-- there is none (sparkle, aura, glow, weaponTrail, falcon without the stage). `model` is the target, `caster` the one
+-- who glows, swings or keeps the falcon (default: `model`).
+local function playPiece(
+	name: string,
+	at: Vector3,
+	from: Vector3,
+	color: Color3,
+	rune: string,
+	model: Model?,
+	caster: Model?
+): boolean
+	local up = at + Vector3.new(0, 2.5, 0)
+	local hand = from + Vector3.new(0, 2.5, 0)
+	local away = Vector3.new(at.X - from.X, 0, at.Z - from.Z)
+	local dir = if away.Magnitude > 0.1 then away.Unit + Vector3.new(0, 0.6, 0) else Vector3.yAxis
+	if name == "impactFlash" then
+		Library.impactFlash(up, 3, color)
+	elseif name == "sparks" then
+		Library.sparks(up, color, { dir = dir })
+	elseif name == "groundDecal" then
+		Library.groundDecal(at, 4, "cracks", Library.crackTint(color), 1.4)
+	elseif name == "smokePuff" then
+		Library.smokePuff(at, 1.2, color)
+	elseif name == "magicCircle" then
+		Library.magicCircle(at, 5, color, 2, { key = rune })
+	elseif name == "ringWave" then
+		Library.ringWave(at, 8, color)
+	elseif name == "burst" then
+		Library.burst(up, 5, color)
+	elseif name == "shockwave" then
+		Library.shockwave(at, 8, color, 0.45)
+	elseif name == "cracks" then
+		Library.cracks(at, 5, color, 1.4)
+	elseif name == "slash" then
+		local look = if (up - hand).Magnitude > 0.1 then up else hand + Vector3.new(0, 0, -1)
+		Library.slash(CFrame.lookAt(hand, look), 7, 70, -70, color, 55)
+	elseif name == "projectile" then
+		Library.projectile(hand, up, "orb", color, { size = 1.2, speed = 60 })
+	elseif name == "lightning" then
+		Library.lightning(up + Vector3.new(0, 20, 0), up, color, 0.4)
+	elseif name == "pillar" then
+		Library.pillar(at, 1.5, 14, color, 0.7)
+	elseif name == "rune" then
+		Library.rune(at, 5, color, 2, false, rune)
+	elseif name == "sparkle" or name == "aura" then
+		if not model then
+			return false
+		end
+		if name == "sparkle" then
+			Library.sparkle(model, color)
+		else
+			Library.aura(model, color, 2)
+		end
+	elseif name == "glow" or name == "weaponTrail" or name == "falcon" then
+		local who = caster or model
+		if not who then
+			return false
+		end
+		if name == "glow" then
+			Library.glow(who, "both", color, 1.5)
+		elseif name == "weaponTrail" then
+			-- the streak on the held weapon (a sword when it holds none) over a swing of the whole model and back
+			if not who:FindFirstChild(WEAPON_NAME) then
+				giveWeapon(who, "sword1h", color)
+				if who == actor then
+					actorWeapon = "sword1h"
+				end
+			end
+			local root = who:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if root then
+				local frame = root.CFrame
+				Library.weaponTrail(who, color, 0, 0.6)
+				Clock.tween(
+					root,
+					TweenInfo.new(0.3, Enum.EasingStyle.Quad),
+					{ CFrame = frame * CFrame.Angles(0, -2.5, 0) }
+				)
+				Clock.after(0.3, function()
+					Clock.tween(root, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { CFrame = frame })
+				end)
+			end
+		else
+			local falcon = Library.falcon(who, color, false)
+			if falcon then
+				falcon.keep(3)
+				local target = if model ~= who then model else nil
+				Clock.after(1, function()
+					falcon.strike(target, false)
+				end)
+			end
+		end
+	elseif name == "beam" then
+		Library.beam(hand, up, color, 0.35, 0.6)
+	elseif name == "dust" then
+		Library.dust(at, 1.2)
+	elseif name == "meteor" then
+		Library.meteor(at, 6, 0.6, color)
+	elseif string.sub(name, 1, 10) == "lingering:" then
+		Library.lingering(at, 4, string.sub(name, 11), color, 2)
+	end
+	return true
+end
+
+-- The piece of a `vfx` motion at the target (play / freeze / loop replay it).
+playVfx = function(command: Command)
+	local at = vfxAt()
+	if not at then
+		return
+	end
+	local color, rune = vfxLook(command.slot)
+	if not playPiece(command.id :: string, at, vfxFrom(), color, rune, dummy or actor, actor) then
+		notify("animlab.vfx.noModel", { piece = command.id })
+	end
+end
+
+-- Holders, lights and limits of the effect pool (`vfx stats`, `state`).
+local function vfxStats(): { [string]: any }
+	return {
+		active = Pool.activeCount(),
+		maxActive = Config.Vfx.maxActive,
+		emitters = Pool.holderCount("emitter"),
+		beams = Pool.holderCount("beam"),
+		surfaces = Pool.holderCount("surface"),
+		decals = Pool.holderCount("decal"),
+		lights = Pool.lightCount(),
+		limits = {
+			emitters = Pool.limit("emitters"),
+			beams = Pool.limit("beams"),
+			decals = Pool.limit("decals"),
+			lights = Pool.limit("lights"),
+		},
+		touch = Pool.isTouch(),
+		textures = Textures.enabled,
+	}
+end
+
+-- S112: vfx all [stress] | vfx tex [on|off] | vfx stats (also without the stage).
+local function runVfxTool(command: Command): { [string]: any }
+	local sub = command.id :: string
+	if sub == "tex" then
+		if command.slot then
+			Textures.enabled = command.slot == "on"
+			if Textures.enabled then
+				Textures.clearFailed()
+			end
+			notify("animlab.vfx.texSet", { state = yesNo(Textures.enabled) })
+			return { ok = true, enabled = Textures.enabled }
+		end
+		local result = Textures.check()
+		local good, bad = 0, {}
+		for key, value in result do
+			if value == "ok" then
+				good += 1
+			elseif not string.find(key, "%.flipbook$") and value ~= "empty" then
+				table.insert(bad, key)
+			end
+		end
+		table.sort(bad)
+		notify("animlab.vfx.tex", {
+			ok = good,
+			total = #VfxTextures.ORDER,
+			bad = if #bad > 0 then table.concat(bad, ", ") else Text.now("animlab.none"),
+		})
+		print("[AnimLab] vfx tex", HttpService:JSONEncode(result))
+		local out: { [string]: any } = { ok = true, result = result }
+		return out
+	elseif sub == "stats" then
+		local stats = vfxStats()
+		notify("animlab.vfx.stats", {
+			active = `{stats.active}/{stats.maxActive}`,
+			emitters = `{stats.emitters}/{stats.limits.emitters}`,
+			beams = `{stats.beams + stats.surfaces}/{stats.limits.beams}`,
+			decals = `{stats.decals}/{stats.limits.decals}`,
+			lights = `{stats.lights}/{stats.limits.lights}`,
+		})
+		print("[AnimLab] vfx stats", HttpService:JSONEncode(stats))
+		stats.ok = true
+		return stats
+	end
+	-- all [stress]: every piece in turn at the target (and at every stress mannequin with `stress`)
+	local token = vfxRun
+	local stress = command.slot == "stress"
+	task.spawn(function()
+		for _, name in AnimLab.VFX_PIECES do
+			if token ~= vfxRun then
+				return
+			end
+			local at = vfxAt()
+			if at then
+				notify("animlab.vfx.piece", { piece = name })
+				local color = classColor(myClass())
+				playPiece(name, at, vfxFrom(), color, VfxTextures.runeOf(myClass()), dummy or actor, actor)
+				if stress then
+					for _, entry in stressed do
+						local root = entry.model:FindFirstChild("HumanoidRootPart") :: BasePart?
+						if root then
+							local spot = root.Position - Vector3.new(0, rootHeight(entry.model), 0)
+							playPiece(name, spot + root.CFrame.LookVector * 3, spot, color, "magicCircle", entry.model)
+						end
+					end
+				end
+			end
+			task.wait(LAB.vfxEvery)
+		end
+	end)
+	notify("animlab.vfx.all", { n = #AnimLab.VFX_PIECES, every = LAB.vfxEvery })
+	return { ok = true, pieces = AnimLab.VFX_PIECES, stress = stress }
+end
+
 local function stateOf(): { [string]: any }
 	return {
 		stage = stage ~= nil,
@@ -923,6 +1178,7 @@ local function stateOf(): { [string]: any }
 		dummies = #row + #stressed + (if actor then 1 else 0) + (if dummy then 1 else 0),
 		clockPending = Clock.pending(),
 		sfx = SfxCtl.Stats(),
+		vfx = vfxStats(),
 	}
 end
 
@@ -933,10 +1189,6 @@ local function sfxAt(): Vector3?
 	end
 	local camera = Workspace.CurrentCamera
 	return if camera then camera.CFrame.Position + camera.CFrame.LookVector * 4 else nil
-end
-
-local function yesNo(value: any): string
-	return Text.now(if value == true then "animlab.yes" else "animlab.no")
 end
 
 -- S111: sfx <key> [n] | sfx list [prefix] | sfx all [prefix] | sfx try <assetId> (works without the stage too).
@@ -1010,8 +1262,15 @@ end
 local function run(command: Command): { [string]: any }
 	local action = command.action
 	sfxRun += 1
+	vfxRun += 1
 	if action == "sfx" then
 		return runSfx(command)
+	elseif action == "vfx" and not AnimLab.isVfxPiece(command) then
+		return runVfxTool(command)
+	elseif action == "vfx" and not stage then
+		-- without the stage a piece plays once in front of the camera (no freeze, no loop)
+		playVfx(command)
+		return { ok = true, motion = describe(command), stage = false }
 	end
 	if action == "on" then
 		if not build() then
@@ -1044,7 +1303,14 @@ local function run(command: Command): { [string]: any }
 		notify("animlab.noStage")
 		return { ok = false, error = "no stage" }
 	end
-	if action == "attack" or action == "skill" or action == "mob" or action == "boss" or action == "npc" then
+	if
+		action == "attack"
+		or action == "skill"
+		or action == "mob"
+		or action == "boss"
+		or action == "npc"
+		or action == "vfx"
+	then
 		playing += 1
 		Clock.resume()
 		play(command)

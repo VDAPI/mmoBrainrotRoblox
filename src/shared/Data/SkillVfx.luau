@@ -16,6 +16,10 @@
 --   S80: everyWave = impact pieces every wave plays (default: shockwave, whirl, cracks, pillar; the first wave plays
 --     all); waves = circleTarget sends one impact event per wave (`n` = the wave) instead of one at the start;
 --     chargeSize = the projectile grows by this much per Arcane Charge spent (`ch` of the event)
+--   S112 (Data/VfxTextures): impact pieces impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave (the new
+--     Vfx/Library pieces); decal = texture key of groundDecal (default cracks), circle = texture key of magicCircle and
+--     rune (default the rune of the skill's class for every color, VfxTextures.runeOf(skill.class), magicCircle when
+--     the class has none), sparks = texture key of sparks (default spark)
 
 export type Entry = {
 	color: string,
@@ -37,6 +41,9 @@ export type Entry = {
 	everyWave: { string }?, -- S80: pieces of every wave (subset of impact)
 	waves: boolean?, -- S80: circleTarget, one impact event per wave
 	chargeSize: number?, -- S80: projectile size per Arcane Charge spent
+	decal: string?, -- S112: Data/VfxTextures key of groundDecal (kind decal)
+	circle: string?, -- S112: Data/VfxTextures key of magicCircle / rune (kind beam)
+	sparks: string?, -- S112: Data/VfxTextures key of sparks (kind particle)
 }
 
 local function e(def: Entry): Entry

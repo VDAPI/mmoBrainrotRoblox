@@ -61,6 +61,13 @@ for _, name in
 		"cloud",
 		"tether", -- S74
 		"falcon", -- S77
+		-- S112
+		"impactFlash",
+		"sparks",
+		"groundDecal",
+		"smokePuff",
+		"magicCircle",
+		"ringWave",
 	}
 do
 	VFX_PIECES[name] = true

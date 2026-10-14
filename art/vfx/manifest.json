@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "generator": "tools/vfx/make_textures.py",
+  "textures": [
+    {
+      "key": "glow",
+      "file": "glow.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "8686d32d2c68aca5",
+      "custom": false
+    },
+    {
+      "key": "spark",
+      "file": "spark.png",
+      "w": 128,
+      "h": 128,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "2742e1eab5ae0d34",
+      "custom": false
+    },
+    {
+      "key": "star",
+      "file": "star.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "ca56e4a3389883a1",
+      "custom": false
+    },
+    {
+      "key": "smoke",
+      "file": "smoke.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "particle",
+      "grid": "4x4",
+      "frames": 16,
+      "hash": "91aa38945d851e6d",
+      "custom": false
+    },
+    {
+      "key": "fire",
+      "file": "fire.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "particle",
+      "grid": "4x4",
+      "frames": 16,
+      "hash": "f793eaea91d2c61c",
+      "custom": false
+    },
+    {
+      "key": "dust",
+      "file": "dust.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "aab21606382472a4",
+      "custom": false
+    },
+    {
+      "key": "slashWide",
+      "file": "slash_wide.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "45ecf2aabad24775",
+      "custom": false
+    },
+    {
+      "key": "slashNarrow",
+      "file": "slash_narrow.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "282b6dffa5a54fd8",
+      "custom": false
+    },
+    {
+      "key": "ring",
+      "file": "ring.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "87b33e28c72206c2",
+      "custom": false
+    },
+    {
+      "key": "cracks",
+      "file": "cracks.png",
+      "w": 512,
+      "h": 512,
+      "kind": "decal",
+      "grid": null,
+      "frames": null,
+      "hash": "d921868dd315e1e3",
+      "custom": false
+    },
+    {
+      "key": "runeWarrior",
+      "file": "rune_warrior.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "08711ab9b6f39254",
+      "custom": false
+    },
+    {
+      "key": "runeHunter",
+      "file": "rune_hunter.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "1c15f60ab015d55b",
+      "custom": false
+    },
+    {
+      "key": "runeMage",
+      "file": "rune_mage.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "8252d146a19491f7",
+      "custom": false
+    },
+    {
+      "key": "runeCleric",
+      "file": "rune_cleric.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "3bbc13e40cd75d75",
+      "custom": false
+    },
+    {
+      "key": "magicCircle",
+      "file": "magic_circle.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "1fae3ac9acde0cc9",
+      "custom": false
+    },
+    {
+      "key": "beamLightning",
+      "file": "beam_lightning.png",
+      "w": 256,
+      "h": 128,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "894d2fe0d99eff28",
+      "custom": false
+    },
+    {
+      "key": "beamHoly",
+      "file": "beam_holy.png",
+      "w": 256,
+      "h": 128,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "07a58b4efddacf3f",
+      "custom": false
+    },
+    {
+      "key": "beamArcane",
+      "file": "beam_arcane.png",
+      "w": 256,
+      "h": 128,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "a425b0922c395c96",
+      "custom": false
+    },
+    {
+      "key": "beamPoison",
+      "file": "beam_poison.png",
+      "w": 256,
+      "h": 128,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "b2f6a14b93147359",
+      "custom": false
+    },
+    {
+      "key": "trailSoft",
+      "file": "trail_soft.png",
+      "w": 256,
+      "h": 64,
+      "kind": "trail",
+      "grid": null,
+      "frames": null,
+      "hash": "cdff3057945bb20c",
+      "custom": false
+    },
+    {
+      "key": "trailStreak",
+      "file": "trail_streak.png",
+      "w": 256,
+      "h": 64,
+      "kind": "trail",
+      "grid": null,
+      "frames": null,
+      "hash": "182818eb5ac035e6",
+      "custom": false
+    },
+    {
+      "key": "iceShard",
+      "file": "ice_shard.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "9bb2a30625759b8f",
+      "custom": false
+    },
+    {
+      "key": "poisonBubble",
+      "file": "poison_bubble.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "particle",
+      "grid": "4x4",
+      "frames": 16,
+      "hash": "26637a9fa14c5a7a",
+      "custom": false
+    },
+    {
+      "key": "feather",
+      "file": "feather.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "7a3e91993d3ca869",
+      "custom": false
+    },
+    {
+      "key": "darkSpark",
+      "file": "dark_spark.png",
+      "w": 128,
+      "h": 128,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "6cec78b5065e9b75",
+      "custom": false
+    }
+  ]
+}

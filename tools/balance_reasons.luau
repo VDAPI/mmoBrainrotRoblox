@@ -121,6 +121,7 @@ return {
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
 		["Data/Sfx"] = "wygląd", -- S111: sound effect keys (ids, volume, pitch, roll-off)
+		["Data/VfxTextures"] = "wygląd", -- S112: effect texture ids, sizes and flipbooks
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",

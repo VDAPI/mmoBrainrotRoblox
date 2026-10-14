@@ -3401,3 +3401,32 @@
 - **S111** Śmierć potwora, który do chwili śmierci walczył z nami, gra jak drużyna: serwer zeruje `AggroUserId` tuż
   przed `Dead`, więc `SfxController` pamięta utratę agresji na nas (okno 1 s). Podgląd umiejętności w oknie (rzucający
   poza `Workspace`) jest cichy.
+- **S112** Generator tekstur efektów: tylko Python + Pillow, losowość z `random.Random(sha256(klucz))`, własny szum
+  wartości; manifest trzyma skrót pikseli (`sha256(img.tobytes())`), nie pliku PNG, więc inna wersja Pillow, która inaczej
+  kompresuje, nie zmienia `--check`.
+- **S112** 25 tekstur zamiast listy DESIGN-16 §4: łuk cięcia i gradient smugi mają po dwie (`slashWide` / `slashNarrow`,
+  `trailSoft` / `trailStreak`). Flipbooki mają 1024 × 1024 (`poisonBubble` też, zamiast 512 z planu): Roblox rysuje
+  flipbook tylko z takiej tekstury (`FlipbookIncompatible`), test tego pilnuje.
+- **S112** Okrągłe koła na ziemi (runy, koło magiczne, fala) to obraz bez oświetlenia na górnej ścianie płaskiej części
+  (`SurfaceGui`, `LightInfluence = 0`), nie płaska `Beam`: obrót okrągłego obrazu na ścianie nie ma znaczenia, a orientacji
+  płaskiej `Beam` nie dało się obejrzeć (MCP bez obrazu 3D). Promienie (błyskawica, słup, leczenie) to `Beam` zwrócona do
+  kamery, łuk cięcia płaska `Beam` (dwustronna), ciemne ślady `Decal`. Uchwyt `surface` liczy się do limitu `maxBeams`.
+- **S112** Łuk cięcia ma przód wzdłuż +U (tekstura obrócona względem planu B5): płaska `Beam` biegnie od zadającego do
+  przodu, więc niepewna zostaje tylko strona jasnej krawędzi (`SLASH_SIDE` w `Vfx/Library`), nie kierunek łuku.
+- **S112** Warstwy z teksturą żyją na uchwytach puli (`Pool.holder`: część z gotowym emiterem / `Beam` / `Decal` /
+  `SurfaceGui`, zwrot czyści dziecko zamiast je niszczyć), nie na `Instance.new` przy każdym efekcie; tekstura nakładana
+  przy każdym pobraniu (przełącznik `tex off` i nieudane wczytanie działają od razu). `Pool.release` na uchwycie oddaje go
+  przez `releaseHolder`.
+- **S112** Każdy składnik ma zapas bez tekstury (dawny wygląd); `Textures.id` daje `nil` przy pustym ID, `tex off`,
+  kluczu, którego `Textures.check` nie wczytał, i w podglądzie `ViewportFrame` (`Pool.inViewport`), więc okno
+  umiejętności rysuje dawne części; `sparks` ma tam wersję z neonowych odłamków.
+- **S112** Pola `SkillVfx`: `decal`, `circle`, `sparks` (klucze tekstur, test rodzaju). Runa umiejętności to koło jej
+  klasy (`VfxTextures.runeOf(skill.class)`) dla każdego koloru, nie tylko `"class"` (plan E8): modlitwa Kapłana ma
+  kolor `"holy"`, a przegląd G2 zakłada koło Kapłana.
+- **S112** Limity `Config.Vfx` bez zmian po pomiarze (`stress 20` + `vfx all stress`: efekty 40 / 40, emitery 48 / 48,
+  światła 12 / 12, promienie i koła 10 / 20, ślady 4 / 24; `HeartbeatTimeMs` średnio 0,94 ms, najwyżej 1,38 ms).
+- **S112** Tekstury wgrane przez Studio MCP: `upload_image` przyjmuje tylko adresy http(s), więc pliki podaje lokalny
+  `python -m http.server` na `127.0.0.1`; `store_image` daje identyfikator `IMAGEID_…` tylko dla innych narzędzi MCP.
+  Wszystkie 25 ID wpisane (konto VDaPii), w Play `IsLoaded`.
+- **S112** `/animlab vfx <składnik>` to ruch AnimLab (działa z nim `freeze`, `step`, `loop` co `Config.AnimLab.vfxEvery`);
+  bez sceny gra raz przed kamerą. Narzędzia `vfx all [stress]`, `vfx tex [on|off]`, `vfx stats` działają bez sceny.

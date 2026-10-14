@@ -80,6 +80,10 @@ Sesja zapisuje w `docs/SESJE.md` krótką tabelę: ruch, co było źle (1 linia)
 - Wgranie: przez MCP `store_image` + `upload_image`, jeśli przyjmuje lokalny plik; inaczej właściciel: Asset Manager → Bulk Import (`docs/ANIMACJE.md`). ID w `Data/VfxTextures.luau`; puste ID = dzisiejszy wygląd (neon, domyślna cząsteczka).
 - `Vfx/Library`: `ParticleEmitter.Texture` + `FlipbookLayout`/`FlipbookMode`, `Beam.Texture` + `TextureSpeed`/`TextureLength`, `Trail.Texture`, `Decal` na pęknięcia, `LightInfluence = 0` i `LightEmission` dla poświaty. Nowe składniki: `impactFlash`, `sparks`, `groundDecal`, `smokePuff`, `magicCircle`, `ringWave`. Stare nazwy składników w `SkillVfx` działają dalej.
 - Właściciel może później podmienić dowolną teksturę na własną (ta sama nazwa pliku, nowe ID).
+- Poprawka S112: łuk cięcia i gradient smugi to po dwie tekstury (`slashWide` / `slashNarrow`, `trailSoft` /
+  `trailStreak`), razem 25; rozmiary 128–1024 px (flipbooki 1024 × 1024, tego wymaga Roblox); łuk cięcia ma przód wzdłuż
+  +U (płaski `Beam` biegnie od zadającego do przodu). Okrągłe koła na ziemi (runy, koło magiczne, fala) to obraz bez
+  oświetlenia na płaskiej części (`SurfaceGui`), nie płaska `Beam`; promienie i łuki zostają `Beam`.
 
 ## 5. Ataki podstawowe gracza i hak na klipy (S113)
 
@@ -185,3 +189,21 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
 - Dla S112–S117: S114 / S115 dopisują `skill.<id>` reszcie umiejętności i ewentualnie `skill.<id>.cast` przy rzuceniu
   (`VfxController.onCast` dziś cichy); S117 może przejść na `boss.<id>.<atak>` po polu `a` w `tele`; `step.*` na
   życzenie właściciela.
+
+## 13. Ustalenia S112
+
+- API: `Data/VfxTextures` (`list`, `ORDER`, `RUNE_OF_CLASS`, `get`, `idOf(key, from?)`, `runeOf(class?)`),
+  `client/Vfx/Textures` (`enabled`, `id`, `particle`, `plainParticle`, `beam`, `trail`, `decal`, `check`, `clearFailed`),
+  `Pool.holder(kind, key)` (`emitter`, `beam`, `decal`, `surface`), `Pool.child`, `releaseHolder`,
+  `holderLater`, `holderCount`, `inViewport`, `isTouch`, `limit`, `takeLight` / `dropLight` / `lightCount`,
+  `Config.Vfx` (`textures`, `holdersPerKey`, `maxEmitters`, `maxBeams`, `maxDecals`, `maxLights`, `maxBurst`, `decalFade`,
+  `spinStep`), `Config.AnimLab.vfxEvery`, `Logic/AnimLab.VFX_PIECES` / `vfxColor` / `isVfxPiece`.
+- Składniki `Library`: `impactFlash(at, size, color, opts?)`, `sparks(at, color, opts?)`, `groundDecal(at, radius, key,
+  color, seconds, opts?) -> stop`, `smokePuff(at, size, color, opts?)`, `magicCircle(at, radius, color, seconds, opts?) ->
+  stop`, `ringWave(at, radius, color, opts?)`; `FxOpts = { simple, key, dir, count, seconds, spin, yaw }`;
+  `rune(..., simple, key?)` i `beam(..., seconds, opts?)` mają nowy ostatni parametr.
+- `SkillVfx`: pola `decal`, `circle`, `sparks` (klucze tekstur); runa umiejętności to koło klasy (`runeOf(skill.class)`),
+  chyba że `circle` mówi inaczej.
+- Nieobejrzane (MCP w tej sesji nie dawał obrazu 3D, `screen_capture` pokazuje tylko interfejs): strona łuku cięcia
+  (`Library.SLASH_SIDE`), płaszczyzna płaskiej `Beam` (normalna = oś Y attachmentów), `FlipbookIncompatible` (Studio
+  zgłaszał go także dla plików 1024 × 1024).

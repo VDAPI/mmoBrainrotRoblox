@@ -25,6 +25,8 @@
 -- the effect clock (Vfx/Clock, AnimLab freezes it); only the local movement lock stays on task.delay.
 -- S111: the impact (the first wave / tick; a projectile when it leaves) plays the skill's Data/Sfx key through
 -- SfxController (Logic/SfxRules.skillKey: SkillVfx.sound, skill.<id>, then the default of the skill's kind).
+-- S112: the new pieces impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave (Vfx/Library) and the texture
+-- keys of SkillVfx (decal, circle, sparks); a rune shows the circle of the skill's class (Data/VfxTextures).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,6 +48,7 @@ local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.UI.State)
+local VfxTextures = require(ReplicatedStorage.Shared.Data.VfxTextures)
 
 local VfxController = {
 	Name = "VfxController",
@@ -380,6 +383,11 @@ local function facing(caster: Model?, target: Model?, data: { [string]: any }): 
 	return nil
 end
 
+-- S112: the circle texture of a skill: SkillVfx.circle, else the rune of its class, else magicCircle.
+local function circleOf(skill: SkillData.SkillDef, entry: SkillVfx.Entry?): string
+	return if entry and entry.circle then entry.circle else VfxTextures.runeOf(skill.class)
+end
+
 local function piece(
 	name: string,
 	skill: SkillData.SkillDef,
@@ -396,7 +404,7 @@ local function piece(
 	local seconds = tonumber(data.d) or 1
 	if name == "burst" then
 		if at then
-			Library.burst(at, 5 * scale, color)
+			Library.burst(at, 5 * scale, color, nil, simple)
 		end
 	elseif name == "shockwave" then
 		if at then
@@ -444,7 +452,42 @@ local function piece(
 	elseif name == "rune" then
 		local where = at or (if caster then centre(caster) else nil)
 		if where then
-			Library.rune(where, radius, color, math.max(0.8, seconds), simple)
+			Library.rune(where, radius, color, math.max(0.8, seconds), simple, circleOf(skill, entry))
+		end
+	elseif name == "impactFlash" then
+		if at then
+			Library.impactFlash(at, 3 * scale, color, { simple = simple })
+		end
+	elseif name == "sparks" then
+		if at then
+			local from = if caster then centre(caster) else nil
+			local away = if from and (at - from).Magnitude > 0.1 then (at - from).Unit + Vector3.new(0, 0.6, 0) else nil
+			Library.sparks(at, color, { simple = simple, key = entry.sparks, dir = away })
+		end
+	elseif name == "groundDecal" then
+		if at then
+			local mark = entry.decal or "cracks"
+			local tint = if mark == "cracks" then Library.crackTint(color) else color
+			Library.groundDecal(at, math.max(3, radius * 0.8), mark, tint, 1.4, { simple = simple })
+		end
+	elseif name == "smokePuff" then
+		if at then
+			Library.smokePuff(at, scale, color, { simple = simple })
+		end
+	elseif name == "magicCircle" then
+		local where = at or (if caster then centre(caster) else nil)
+		if where then
+			Library.magicCircle(
+				where,
+				radius,
+				color,
+				math.max(0.8, seconds),
+				{ simple = simple, key = circleOf(skill, entry) }
+			)
+		end
+	elseif name == "ringWave" then
+		if at then
+			Library.ringWave(at, radius, color, { simple = simple })
 		end
 	elseif name == "slash" or name == "whirl" then
 		local frame = facing(caster, target, data)
@@ -508,7 +551,7 @@ local function piece(
 		local where = if target then centre(target) else at
 		if where then
 			Library.lightning(where + Vector3.new(0, 30, 0), where, color, 0.5, simple)
-			Library.burst(where, 4, color)
+			Library.burst(where, 4, color, nil, simple)
 		end
 	elseif name == "meteor" then
 		if at then
@@ -594,7 +637,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				if a and b then
 					Clock.after((i - 1) * 0.06, function()
 						Library.lightning(centre(a), centre(b), color, 0.3, simple)
-						Library.burst(centre(b), 3, color)
+						Library.burst(centre(b), 3, color, nil, simple)
 					end)
 				end
 			end
@@ -722,8 +765,9 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		-- S74 (ROZWOJ 10.4): the Fury spent by Rend / Carnage
 		local model = findModel(data.t) or caster
 		if model then
-			Library.aura(model, color, 0.6, simpleAt(centre(model), model))
-			Library.burst(centre(model), 4, color)
+			local far = simpleAt(centre(model), model)
+			Library.aura(model, color, 0.6, far)
+			Library.burst(centre(model), 4, color, nil, far)
 		end
 	elseif v == "falconStrike" or v == "falconDive" then
 		-- S77: the bird flies to the target and back (a dive starts high above it)
@@ -733,7 +777,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		else
 			local target = findModel(data.t)
 			if target then
-				Library.burst(centre(target), 3, color)
+				Library.burst(centre(target), 3, color, nil, simple)
 			end
 		end
 	elseif v == "falconCircle" then
@@ -749,7 +793,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		return
 	elseif v == "angelSave" then
 		-- S70: Guardian Angel saved this ally from death
-		Library.burst(at, 6, HOLY)
+		Library.burst(at, 6, HOLY, nil, simple)
 		Library.pillar(at, 3, 12, HOLY, 0.8)
 	elseif v == "lightningBurst" then
 		Library.lightning(at + Vector3.new(0, 28, 0), at, ELEMENT_COLORS.lightning, 0.5, simple)
@@ -758,7 +802,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		Library.meteor(at, radius, 0.5, color, simple)
 		shakeNear(at, 0.3)
 	elseif v == "trapSet" then
-		Library.rune(at, radius, color, math.min(tonumber(data.d) or 8, 30), simple)
+		Library.rune(at, radius, color, math.min(tonumber(data.d) or 8, 30), simple, circleOf(skill, entry))
 	elseif v == "trapTrigger" then
 		local trigger = entry and entry.trigger
 		if entry and trigger then
@@ -768,12 +812,12 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			end
 		else
 			Library.shockwave(at, radius, color, 0.5, simple)
-			Library.burst(at, 6, color)
+			Library.burst(at, 6, color, nil, simple)
 		end
 	elseif v == "lingering" then
 		Library.lingering(at, radius, tostring(data.k or "burn"), color, tonumber(data.d) or 3, simple)
 	elseif v == "splitImpact" then
-		Library.burst(at, 4, color)
+		Library.burst(at, 4, color, nil, simple)
 		Library.shockwave(at, radius, color, 0.3, true)
 	elseif v == "echo" then
 		Library.shockwave(at, radius, color, 0.5, simple)
@@ -783,10 +827,10 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		Library.shockwave(at, radius, color, 0.3, true)
 	elseif v == "stunBurst" then
 		Library.shockwave(at, radius, Color3.fromHex("#F2E85A"), 0.35, simple)
-		Library.burst(at, 3, Color3.fromHex("#F2E85A"))
+		Library.burst(at, 3, Color3.fromHex("#F2E85A"), nil, simple)
 	elseif v == "pull" then
 		Library.shockwave(at, radius, color, 0.35, simple)
-		Library.rune(at, radius * 0.5, color, 0.5, true)
+		Library.rune(at, radius * 0.5, color, 0.5, true, circleOf(skill, entry))
 		Library.dust(at, 1, simple) -- S80 (ROZWOJ 12.4): dust of the dragged enemies
 	end
 end

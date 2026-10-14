@@ -4,6 +4,20 @@
 -- and tweens; nothing is created per frame. `simple` (far away or low graphics) skips the costly bits (trails,
 -- particles, extra segments). Data/SkillVfx says which skill uses which pieces. S110: every delay, tween, emitter, trail
 -- and loop runs on the effect clock (Vfx/Clock), so AnimLab can freeze an effect at any moment.
+-- S112 (DESIGN-16 §4, docs/ANIMACJE.md "Tekstury efektów"): textures from Data/VfxTextures (Vfx/Textures) on the old
+-- pieces and six new ones (impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave). Every piece keeps its
+-- old look as the fallback when Textures.id(key) is nil (no id, `tex off`, an image that did not load, the skills-window
+-- ViewportFrame). Textured layers live on pooled holders (Pool.holder) within the device limits of Config.Vfx:
+--   layer                          PC, near              simple (far / low)      low quality
+--   textured particles             full (<= maxBurst)    half                    half (lowParticles)
+--   flipbooks                      yes                   yes (one particle)      yes, half the particles
+--   Trail (projectiles, weapons)   yes                   no                      no
+--   Beam (rays, arcs)              yes                   yes, Segments 1         yes
+--   Decal / ground images          yes                   yes                     yes
+--   PointLight of the new pieces   yes (<= maxLights)    no                      no
+--   old part segments by a texture as each piece says                           none
+-- Glowing circles on the ground (magicCircle, ringWave, rune) are an unlit image on a flat part's top face (any turn
+-- of a round image is right); a cutting arc is a flat Beam (double-sided) running forwards from the blow's origin.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,8 +26,31 @@ local RunService = game:GetService("RunService")
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Pool = require(script.Parent.Pool)
+local State = require(script.Parent.Parent.UI.State)
+local Textures = require(script.Parent.Textures)
 
 local Library = {}
+
+-- Options of the new pieces (S112).
+export type FxOpts = {
+	simple: boolean?, -- far away or low quality (the table in the header)
+	key: string?, -- texture key override (Data/VfxTextures)
+	dir: Vector3?, -- main direction (sparks: away from the blow)
+	count: number?, -- particles (before the halving)
+	seconds: number?,
+	spin: number?, -- rad/s (circles)
+	yaw: number?, -- fixed rotation in radians (decals); random when nil
+}
+
+local rng = Random.new()
+local DUST_COLOR = Color3.fromHex("#B8AA90")
+local CRACK_DARK = Color3.fromHex("#2A2420")
+-- The ring of the `ring` texture lies at 0.44 of its width: a ring wave of radius r ends 2.2 r wide.
+local RING_END = 2.2
+-- Which side of a cutting arc's flat Beam carries the texture's leading edge (+V). Flip to -1 if a slash in AnimLab
+-- shows its bright edge where the blade starts instead of where it ends.
+local SLASH_SIDE = 1
+local SURFACE_LIFT = 0.1 -- studs a ground image floats over the ground
 
 local function tween(
 	instance: Instance,
@@ -39,9 +76,190 @@ local function light(p: BasePart, color: Color3, range: number, brightness: numb
 	return l
 end
 
--- Particle burst from a part (count halved on low quality).
+local function kp(t: number, v: number, envelope: number?): NumberSequenceKeypoint
+	return NumberSequenceKeypoint.new(t, v, envelope or 0)
+end
+
+local function lowQuality(): boolean
+	return State.Get({ "account", "settings", "quality" }) == "low"
+end
+
+-- Particles of one Emit after the halving (simple or low quality) and the device cap (Config.Vfx.maxBurst).
+local function particleCount(count: number, reduced: boolean?): number
+	local n = count
+	if reduced or lowQuality() then
+		n *= Config.Vfx.lowParticles
+	end
+	local cap = if Pool.isTouch() then Config.Vfx.maxBurst.touch else Config.Vfx.maxBurst.desktop
+	return math.max(1, math.floor(math.min(n, cap)))
+end
+
+-- One Heartbeat connection for every running animation of the new pieces (spinning circles, beam fades); a ticker
+-- gets Clock.now() and returns true when it is finished. Nothing runs while the effect clock is frozen.
+type Ticker = (now: number) -> boolean
+local tickers: { Ticker } = {}
+local tickConnection: RBXScriptConnection? = nil
+
+local function animate(fn: Ticker)
+	table.insert(tickers, fn)
+	if tickConnection then
+		return
+	end
+	tickConnection = RunService.Heartbeat:Connect(function()
+		if Clock.frozen() then
+			return
+		end
+		local now = Clock.now()
+		for i = #tickers, 1, -1 do
+			local ok, finished = pcall(tickers[i], now)
+			if not ok then
+				warn(`[Vfx.Library] {tostring(finished)}`)
+			end
+			if not ok or finished then
+				table.remove(tickers, i)
+			end
+		end
+		local connection = tickConnection
+		if #tickers == 0 and connection then
+			connection:Disconnect()
+			tickConnection = nil
+		end
+	end)
+end
+
+-- A Beam's transparency from `from` to `to` over `seconds` (NumberSequence does not tween).
+local function fadeBeam(beam: Beam, from: number, to: number, seconds: number)
+	local started = Clock.now()
+	beam.Transparency = NumberSequence.new(from)
+	animate(function(now: number): boolean
+		local u = if seconds > 0 then math.clamp((now - started) / seconds, 0, 1) else 1
+		beam.Transparency = NumberSequence.new(from + (to - from) * u)
+		return u >= 1
+	end)
+end
+
+-- The beam of a beam holder set up for one use (every property a previous use may have changed).
+local function setupBeam(holder: BasePart, color: Color3, width: number, faceCamera: boolean, simple: boolean?): Beam?
+	local beam = Pool.child(holder)
+	if not beam or not beam:IsA("Beam") then
+		Pool.releaseHolder(holder)
+		return nil
+	end
+	beam.Color = ColorSequence.new(color)
+	beam.Width0 = width
+	beam.Width1 = width
+	beam.FaceCamera = faceCamera
+	beam.Segments = if simple then 1 else 10
+	beam.CurveSize0 = 0
+	beam.CurveSize1 = 0
+	beam.ZOffset = 0
+	beam.Transparency = NumberSequence.new(1)
+	return beam
+end
+
+local function attachments(holder: BasePart): (Attachment, Attachment)
+	return holder:FindFirstChild("A0") :: Attachment, holder:FindFirstChild("A1") :: Attachment
+end
+
+-- A PointLight on `p` for `seconds` when the device's light budget allows (Pool.takeLight).
+local function flashLight(p: BasePart, color: Color3, range: number, brightness: number, seconds: number)
+	if not Pool.takeLight() then
+		return
+	end
+	local l = light(p, color, range, brightness)
+	Clock.after(seconds, function()
+		l:Destroy()
+		Pool.dropLight()
+	end)
+end
+
+-- The CFrame at `at` whose front (-Z) looks along `dir` (straight up / down handled).
+local function facingFrame(at: Vector3, dir: Vector3): CFrame
+	if math.abs(dir.Unit.Y) > 0.98 then
+		return CFrame.new(at) * CFrame.Angles(if dir.Y > 0 then math.pi / 2 else -math.pi / 2, 0, 0)
+	end
+	return CFrame.lookAt(at, at + dir)
+end
+
+-- Emits from an emitter holder (Pool.holder("emitter", key)) placed by the caller, sets every property of the use
+-- from `o` (colour, size, speed, life, direction, orientation), puts the texture on (Vfx/Textures; without it the
+-- default particle with LightEmission o.emission or 0.8), halves the count by the header's table and gives the
+-- holder back after the longest life. The only place that sets up a textured burst.
+local function burstFrom(holder: BasePart, key: string, color: Color3, count: number, o: { [string]: any })
+	local e = Pool.child(holder)
+	if not e or not e:IsA("ParticleEmitter") then
+		Pool.releaseHolder(holder)
+		return
+	end
+	local lifeMin: number = o.lifeMin or 0.3
+	local lifeMax: number = o.lifeMax or 0.7
+	holder.Size = o.area or Vector3.new(0.2, 0.2, 0.2) -- particles start anywhere in the holder's box
+	e.Color = ColorSequence.new(color, o.to or color)
+	e.Lifetime = NumberRange.new(lifeMin, lifeMax)
+	e.Speed = NumberRange.new(o.speedMin or 0, o.speedMax or o.speedMin or 0)
+	e.SpreadAngle = Vector2.new(o.spread or 180, o.spread or 180)
+	e.Acceleration = o.accel or Vector3.zero
+	e.Drag = o.drag or 0
+	e.Size = o.sizeSeq or NumberSequence.new({ kp(0, o.size or 0.6), kp(1, o.sizeEnd or 0) })
+	e.Transparency = o.transparency or NumberSequence.new({ kp(0, 0.1), kp(1, 1) })
+	e.EmissionDirection = o.direction or Enum.NormalId.Top
+	e.Orientation = if o.orient == "parallel"
+		then Enum.ParticleOrientation.VelocityParallel
+		else Enum.ParticleOrientation.FacingCamera
+	e.Squash = NumberSequence.new(o.squash or 0)
+	e.Rotation = o.rotation or NumberRange.new(0)
+	e.RotSpeed = o.rotSpeed or NumberRange.new(0)
+	e.ZOffset = o.zOffset or 0
+	e.Brightness = o.brightness or 1
+	e.LockedToPart = false
+	e.TimeScale = if Clock.frozen() then 0 else 1
+	if not Textures.particle(e, key, o.emission) then
+		Textures.plainParticle(e)
+		e.LightEmission = o.emission or 0.8
+	end
+	e:Emit(if o.exact then count else particleCount(count, o.simple))
+	Pool.holderLater(holder, lifeMax + 0.1)
+end
+
+-- An emitter holder of `key` at `frame`, nil without its texture (the caller keeps the old look) or past the limit.
+local function textured(key: string, frame: CFrame): BasePart?
+	if not Textures.id(key) then
+		return nil
+	end
+	local holder = Pool.holder("emitter", key)
+	if holder then
+		holder.CFrame = frame
+	end
+	return holder
+end
+
+-- Particle burst from a part (count halved on low quality). S112: `o.texture` (a Data/VfxTextures key) emits from a
+-- textured holder at the part instead (`o.orient = "parallel"`, `o.squash`), the old emitter without it.
 local function emit(p: BasePart, color: Color3, count: number, options: { [string]: any }?)
 	local o: { [string]: any } = options or {}
+	local key = o.texture
+	if type(key) == "string" then
+		local holder = textured(key, p.CFrame)
+		if holder then
+			burstFrom(holder, key, color, count, {
+				to = o.to,
+				emission = o.emission,
+				lifeMin = o.lifeMin,
+				lifeMax = o.lifeMax,
+				speedMin = o.speedMin or 4,
+				speedMax = o.speedMax or 10,
+				spread = o.spread,
+				accel = o.accel,
+				drag = o.drag or 2,
+				size = o.size,
+				direction = o.direction,
+				orient = o.orient,
+				squash = o.squash,
+				simple = o.low,
+			})
+			return
+		end
+	end
 	local e = Instance.new("ParticleEmitter")
 	e.Color = ColorSequence.new(color, o.to or color)
 	e.LightEmission = o.emission or 0.8
@@ -61,7 +279,6 @@ local function emit(p: BasePart, color: Color3, count: number, options: { [strin
 	Clock.track(e)
 	local n = if o.low then math.max(1, math.floor(count * Config.Vfx.lowParticles)) else count
 	e:Emit(n)
-	return e
 end
 
 local function flat(v: Vector3): Vector3
@@ -97,19 +314,114 @@ Library.centre = centre
 
 -- Flash -----------------------------------------------------------------------------------------------------
 
-function Library.burst(at: Vector3, size: number, color: Color3, seconds: number?)
-	local s = seconds or 0.35
-	local ball = Pool.part("Ball", color, Vector3.one * math.max(0.5, size * 0.25), Enum.Material.Neon, 0.1)
-	ball.CFrame = CFrame.new(at)
-	tween(ball, s, { Size = Vector3.one * size, Transparency = 1 })
-	Pool.later(ball, s + 0.05)
+local function ball(at: Vector3, size: number, color: Color3, s: number)
+	local orb = Pool.part("Ball", color, Vector3.one * math.max(0.5, size * 0.25), Enum.Material.Neon, 0.1)
+	orb.CFrame = CFrame.new(at)
+	tween(orb, s, { Size = Vector3.one * size, Transparency = 1 })
+	Pool.later(orb, s + 0.05)
 end
 
--- Shock wave: a ring of segments running outwards over the ground.
+-- S112 E1: the core of a hit (0.05-0.1 s): a star flash and a soft glow from textured holders, a short light; without
+-- the texture a neon ball growing 0.3 -> size in 0.08 s.
+function Library.impactFlash(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local key = o.key or "star"
+	local star = textured(key, CFrame.new(at))
+	if not star then
+		local orb = Pool.part("Ball", color, Vector3.one * math.max(0.3, size * 0.3), Enum.Material.Neon, 0.05)
+		orb.CFrame = CFrame.new(at)
+		tween(orb, 0.08, { Size = Vector3.one * size, Transparency = 1 })
+		Pool.later(orb, 0.12)
+		return
+	end
+	burstFrom(star, key, color, 1, {
+		exact = true,
+		lifeMin = 0.08,
+		lifeMax = 0.08,
+		sizeSeq = NumberSequence.new({ kp(0, size * 0.6), kp(1, size * 1.15) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.6, 0.2), kp(1, 1) }),
+		rotation = NumberRange.new(0, 360),
+		zOffset = 1,
+		emission = 1,
+	})
+	local glow = textured("glow", CFrame.new(at))
+	if glow then
+		burstFrom(glow, "glow", color, 1, {
+			exact = true,
+			lifeMin = 0.12,
+			lifeMax = 0.12,
+			sizeSeq = NumberSequence.new(size * 1.6),
+			transparency = NumberSequence.new({ kp(0, 0.35), kp(1, 1) }),
+			emission = 1,
+		})
+	end
+	if not o.simple and not lowQuality() then
+		flashLight(star, color, size * 3, 3, 0.1)
+	end
+end
+
+-- S112: with the star texture the core is impactFlash and the neon ball is smaller and shorter (none on low quality).
+-- `simple` (far away) passes on to impactFlash: no PointLight (the header table).
+function Library.burst(at: Vector3, size: number, color: Color3, seconds: number?, simple: boolean?)
+	local s = seconds or 0.35
+	if Textures.id("star") then
+		Library.impactFlash(at, size * 0.5, color, { simple = simple })
+		if not lowQuality() then
+			ball(at, size * 0.6, color, s * 0.6)
+		end
+		return
+	end
+	ball(at, size, color, s)
+end
+
+-- A ground image (a holder "surface") of `key`, `size` studs wide, at `frame`, tinted and still hidden; nil without the
+-- texture or past the limit.
+local function surfaceAt(key: string, frame: CFrame, size: number, color: Color3): (BasePart?, ImageLabel?)
+	if not Textures.id(key) then
+		return nil, nil
+	end
+	local holder = Pool.holder("surface", key)
+	if not holder then
+		return nil, nil
+	end
+	local gui = Pool.child(holder)
+	local image = gui and gui:FindFirstChild("Image")
+	if not image or not image:IsA("ImageLabel") then
+		Pool.releaseHolder(holder)
+		return nil, nil
+	end
+	holder.Size = Vector3.new(size, 0.05, size)
+	holder.CFrame = frame
+	image.ImageColor3 = color
+	image.ImageTransparency = 1
+	return holder, image
+end
+
+-- The textured ring of a shock wave: grows from 0.3 r to RING_END r wide in `seconds`, fading. False without it.
+local function ringSurface(at: Vector3, radius: number, color: Color3, seconds: number, key: string?): boolean
+	local base = ground(at) + Vector3.new(0, SURFACE_LIFT + 0.02, 0)
+	local holder, image = surfaceAt(key or "ring", CFrame.new(base), radius * 0.3, color)
+	if not holder or not image then
+		return false
+	end
+	image.ImageTransparency = 0.1
+	local final = radius * RING_END
+	tween(holder, seconds, { Size = Vector3.new(final, 0.05, final) })
+	tween(image, seconds, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	Pool.holderLater(holder, seconds + 0.05)
+	return true
+end
+
+-- Shock wave: a ring of segments running outwards over the ground. S112: with the ring texture the textured ring and
+-- 10 segments (none on low quality), no disc.
 function Library.shockwave(at: Vector3, radius: number, color: Color3, seconds: number?, simple: boolean?)
 	local s = seconds or 0.45
+	local ringed = ringSurface(at, radius, color, s)
+	if ringed and lowQuality() then
+		return
+	end
 	local base = ground(at) + Vector3.new(0, 0.25, 0)
-	local count = if simple then 10 else 20
+	local count = if simple or ringed then 10 else 20
 	for i = 1, count do
 		local a = (i / count) * math.pi * 2
 		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
@@ -124,7 +436,7 @@ function Library.shockwave(at: Vector3, radius: number, color: Color3, seconds: 
 		})
 		Pool.later(seg, s + 0.05)
 	end
-	if not simple then
+	if not simple and not ringed then
 		local disc = Pool.part("Cylinder", color, Vector3.new(0.15, 1, 1), Enum.Material.Neon, 0.55)
 		disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
 		tween(disc, s * 0.8, { Size = Vector3.new(0.15, radius * 2, radius * 2), Transparency = 1 })
@@ -132,8 +444,108 @@ function Library.shockwave(at: Vector3, radius: number, color: Color3, seconds: 
 	end
 end
 
--- Ground cracks: dark slabs with a glowing core radiating from a point.
+-- S112 E3: dark marks on the ground (cracks; later scorch marks and telegraph cracks, S117). A decal holder
+-- radius * 2 wide on the ground, turned by opts.yaw or at random, Decal.Color3 = color (dark: the caller picks it),
+-- 1 -> 0.1 transparent in 0.06 s, held, gone over the last Config.Vfx.decalFade s. Returns a function that takes it
+-- down at once. Past maxDecals the oldest mark goes out at once and the new one appears. Without the texture: the old
+-- part cracks for "cracks", nothing for other keys (a new layer, not a replacement).
+local decalQueue: { () -> () } = {} -- stop functions of the live marks, oldest first
+
+local crackParts: (Vector3, number, Color3, number?, boolean?) -> ()
+
+function Library.groundDecal(
+	at: Vector3,
+	radius: number,
+	key: string,
+	color: Color3,
+	seconds: number,
+	opts: FxOpts?
+): () -> ()
+	local o: FxOpts = opts or {}
+	if not Textures.id(key) then
+		if key == "cracks" then
+			crackParts(at, radius / 1.05, color, seconds, o.simple)
+		end
+		return function() end
+	end
+	local holder = Pool.holder("decal", key)
+	local oldest = if not holder then decalQueue[1] else nil
+	if oldest then
+		oldest() -- takes itself out of the queue
+		holder = Pool.holder("decal", key)
+	end
+	if not holder then
+		return function() end
+	end
+	local part = holder :: BasePart
+	local decal = Pool.child(part)
+	if not decal or not decal:IsA("Decal") then
+		Pool.releaseHolder(part)
+		return function() end
+	end
+	part.Size = Vector3.new(radius * 2, 0.05, radius * 2)
+	part.CFrame = CFrame.new(ground(at) + Vector3.new(0, 0.06, 0))
+		* CFrame.Angles(0, o.yaw or rng:NextNumber(0, math.pi * 2), 0)
+	decal.Color3 = color
+	decal.Transparency = 1
+	tween(decal, 0.06, { Transparency = 0.1 })
+	local done = false
+	local stop: () -> ()
+	stop = function()
+		if done then
+			return
+		end
+		done = true
+		local i = table.find(decalQueue, stop)
+		if i then
+			table.remove(decalQueue, i)
+		end
+		Pool.releaseHolder(part)
+	end
+	table.insert(decalQueue, stop)
+	local fade = Config.Vfx.decalFade
+	Clock.after(math.max(0.06, seconds - fade), function()
+		if not done then
+			tween(decal, fade, { Transparency = 1 })
+		end
+	end)
+	Clock.after(seconds + 0.05, stop)
+	return stop
+end
+
+-- The tint of the cracks texture: dark rock with a touch of the skill's colour (skills, AnimLab, Library.cracks).
+function Library.crackTint(color: Color3): Color3
+	return CRACK_DARK:Lerp(color, 0.2)
+end
+
+-- Ground cracks: dark slabs with a glowing core radiating from a point. S112: with the cracks texture a dark decal
+-- radius * 2.1 wide and two Slate slabs for depth (only the decal when simple, no neon core).
 function Library.cracks(at: Vector3, radius: number, color: Color3, seconds: number?, simple: boolean?)
+	local s = seconds or 1.4
+	if not Textures.id("cracks") then
+		crackParts(at, radius, color, s, simple)
+		return
+	end
+	Library.groundDecal(at, radius * 1.05, "cracks", Library.crackTint(color), s, { simple = simple })
+	if simple or lowQuality() then
+		return
+	end
+	local base = ground(at) + Vector3.new(0, 0.05, 0)
+	for i = 1, 2 do
+		local a = rng:NextNumber(0, math.pi * 2) + i * math.pi
+		local length = radius * rng:NextNumber(0.5, 0.8)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local mid = base + dir * length / 2
+		local slab = Pool.part("Block", CRACK_DARK, Vector3.new(0.7, 0.12, length), Enum.Material.Slate, 0)
+		slab.CFrame = CFrame.lookAt(mid, mid + dir) * CFrame.Angles(0, 0, rng:NextNumber(-0.1, 0.1))
+		Clock.after(s * 0.6, function()
+			tween(slab, s * 0.4, { Transparency = 1 })
+		end)
+		Pool.later(slab, s + 0.05)
+	end
+end
+
+crackParts = function(at: Vector3, radius: number, color: Color3, seconds: number?, simple: boolean?)
 	local s = seconds or 1.4
 	local base = ground(at) + Vector3.new(0, 0.08, 0)
 	local count = if simple then 4 else 7
@@ -143,8 +555,7 @@ function Library.cracks(at: Vector3, radius: number, color: Color3, seconds: num
 		local length = radius * random:NextNumber(0.55, 1)
 		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
 		local mid = base + dir * length / 2
-		local slab =
-			Pool.part("Block", Color3.fromHex("#2A2420"), Vector3.new(0.9, 0.15, length), Enum.Material.Slate, 0)
+		local slab = Pool.part("Block", CRACK_DARK, Vector3.new(0.9, 0.15, length), Enum.Material.Slate, 0)
 		slab.CFrame = CFrame.lookAt(mid, mid + dir) * CFrame.Angles(0, 0, random:NextNumber(-0.1, 0.1))
 		local core = Pool.part("Block", color, Vector3.new(0.3, 0.18, length * 0.9), Enum.Material.Neon, 0.1)
 		core.CFrame = slab.CFrame + Vector3.new(0, 0.03, 0)
@@ -171,7 +582,31 @@ function Library.slash(
 	local count = if simple then 6 else 12
 	local sweep = 0.12
 	local roll = CFrame.Angles(0, 0, math.rad(tilt or 0))
-	for i = 0, count - 1 do
+	-- S112: a flat Beam with the arc texture in the arc's plane (slashWide from 120 degrees, else slashNarrow), the
+	-- beam running forwards from the origin through the middle of the arc; it appears over the sweep and fades in 0.25 s.
+	-- Beside it every second segment (an edge), none on low quality.
+	local key = if math.abs(from - to) >= 120 then "slashWide" else "slashNarrow"
+	local holder = if Textures.id(key) then Pool.holder("beam", key) else nil
+	local beam = if holder then setupBeam(holder, color, radius * 2, false, simple) else nil
+	if holder and beam then
+		local a0, a1 = attachments(holder)
+		-- the texture's leading edge is at +V: a sweep to the left (from < to) turns the plane over
+		local side = if from >= to then SLASH_SIDE else -SLASH_SIDE
+		holder.CFrame = origin
+			* roll
+			* CFrame.Angles(0, math.rad((from + to) / 2), 0)
+			* CFrame.Angles(0, 0, if side > 0 then 0 else math.pi)
+		a0.CFrame = CFrame.new(0, 0, radius)
+		a1.CFrame = CFrame.new(0, 0, -radius)
+		beam.LightEmission = 1
+		fadeBeam(beam, 1, 0.05, sweep)
+		Clock.after(sweep, fadeBeam, beam, 0.05, 1, 0.25)
+		Pool.holderLater(holder, sweep + 0.3)
+		if lowQuality() then
+			return
+		end
+	end
+	for i = 0, count - 1, if beam then 2 else 1 do
 		local u = i / math.max(1, count - 1)
 		local yaw = math.rad(from + (to - from) * u)
 		local frame = origin * roll * CFrame.Angles(0, yaw, 0)
@@ -238,6 +673,7 @@ function Library.projectile(
 		trail.Lifetime = if shape == "arrow" then 0.12 else 0.25
 		trail.Transparency = NumberSequence.new(0.2, 1)
 		trail.WidthScale = NumberSequence.new(1, 0)
+		Textures.trail(trail, "trailSoft") -- S112
 		trail.Parent = p
 		Clock.track(trail)
 		if shape ~= "arrow" then
@@ -250,6 +686,16 @@ function Library.projectile(
 			e.Speed = NumberRange.new(0.5, 2)
 			e.Size = NumberSequence.new(0.4 * size, 0)
 			e.Transparency = NumberSequence.new(0.2, 1)
+			-- S112: a soft glow instead of the default particle; a shard sheds ice shards
+			if shape == "shard" and Textures.particle(e, "iceShard") then
+				e.Rate = 6
+				e.Lifetime = NumberRange.new(0.3, 0.5)
+				e.Size = NumberSequence.new(0.5 * size, 0.2 * size)
+				e.Rotation = NumberRange.new(0, 360)
+				e.RotSpeed = NumberRange.new(-120, 120)
+			else
+				Textures.particle(e, "glow")
+			end
 			e.Parent = p
 			Clock.track(e)
 		end
@@ -287,6 +733,27 @@ end
 
 -- Lightning: a zigzag of short segments between two points, flickering for a few frames.
 function Library.lightning(a: Vector3, b: Vector3, color: Color3, width: number?, simple: boolean?)
+	-- S112: one camera-facing Beam with the scrolling lightning texture on the straight line a -> b; the second flicker
+	-- bends it by a random curve
+	local length = (b - a).Magnitude
+	local holder = if Textures.id("beamLightning") and length > 0.1 then Pool.holder("beam", "beamLightning") else nil
+	local w = (width or 0.3) * 4
+	local beam = if holder then setupBeam(holder, color, w, true, true) else nil
+	if holder and beam then
+		local a0, a1 = attachments(holder)
+		holder.CFrame = CFrame.lookAt(a, b)
+		a0.CFrame = CFrame.new()
+		a1.CFrame = CFrame.new(0, 0, -length)
+		Textures.beam(beam, "beamLightning", { speed = 6, length = w * 2 })
+		beam.Transparency = NumberSequence.new(0)
+		Clock.after(0.06, function()
+			beam.CurveSize0 = rng:NextNumber(-1.2, 1.2)
+			beam.CurveSize1 = rng:NextNumber(-1.2, 1.2)
+			fadeBeam(beam, 0, 1, 0.18)
+		end)
+		Pool.holderLater(holder, 0.26)
+		return
+	end
 	local pieces = if simple then 4 else 8
 	local random = Random.new()
 	local points = { a }
@@ -321,7 +788,26 @@ end
 function Library.pillar(at: Vector3, radius: number, height: number, color: Color3, seconds: number?)
 	local s = seconds or 0.6
 	local base = ground(at)
-	local col = Pool.part("Cylinder", color, Vector3.new(0.5, radius * 2, radius * 2), Enum.Material.Neon, 0.35)
+	-- S112: a camera-facing Beam of holy light rising in the column's axis; the cylinder more transparent beside it
+	local holder = if Textures.id("beamHoly") then Pool.holder("beam", "beamHoly") else nil
+	local beam = if holder then setupBeam(holder, color, radius * 2.4, true, true) else nil
+	if holder and beam then
+		local a0, a1 = attachments(holder)
+		holder.CFrame = CFrame.new(base)
+		a0.CFrame = CFrame.new()
+		a1.CFrame = CFrame.new(0, height, 0)
+		Textures.beam(beam, "beamHoly", { speed = 3, length = radius * 4 })
+		fadeBeam(beam, 1, 0.1, s * 0.35)
+		Clock.after(s * 0.35, fadeBeam, beam, 0.1, 1, s * 0.65)
+		Pool.holderLater(holder, s + 0.05)
+	end
+	local col = Pool.part(
+		"Cylinder",
+		color,
+		Vector3.new(0.5, radius * 2, radius * 2),
+		Enum.Material.Neon,
+		if beam then 0.55 else 0.35
+	)
 	col.CFrame = CFrame.new(base + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	tween(col, s * 0.35, {
 		Size = Vector3.new(height, radius * 2, radius * 2),
@@ -334,8 +820,82 @@ function Library.pillar(at: Vector3, radius: number, height: number, color: Colo
 	Pool.later(col, s + 0.05)
 end
 
--- Rune: a glowing circle on the ground with a turning pattern, for `seconds`.
-function Library.rune(at: Vector3, radius: number, color: Color3, seconds: number, simple: boolean?)
+-- S112: a textured circle lying on the ground (`key`, radius), turning at `spin` rad/s on the shared loop, shown in
+-- 0.15 s and fading over Config.Vfx.decalFade after `seconds`. Returns its stop function, nil without the texture.
+local function circleSurface(
+	at: Vector3,
+	radius: number,
+	color: Color3,
+	seconds: number,
+	key: string,
+	spin: number
+): (() -> ())?
+	local base = ground(at) + Vector3.new(0, SURFACE_LIFT, 0)
+	local holder, image = surfaceAt(key, CFrame.new(base), radius * 2, color)
+	if not holder or not image then
+		return nil
+	end
+	local part, label = holder :: BasePart, image :: ImageLabel
+	tween(label, 0.15, { ImageTransparency = 0.15 })
+	local started = Clock.now()
+	local turn = rng:NextNumber(0, math.pi * 2)
+	local done = false
+	local function finish()
+		if done then
+			return
+		end
+		done = true
+		local fade = Config.Vfx.decalFade
+		tween(label, fade, { ImageTransparency = 1 })
+		Pool.holderLater(part, fade + 0.05)
+	end
+	animate(function(now: number): boolean
+		if done then
+			return true
+		end
+		part.CFrame = CFrame.new(base) * CFrame.Angles(0, turn + (now - started) * spin, 0)
+		if now - started >= seconds then
+			finish()
+			return true
+		end
+		return false
+	end)
+	return finish
+end
+
+local runeParts: (Vector3, number, Color3, number, boolean?) -> ()
+
+-- Rune: a glowing circle on the ground with a turning pattern, for `seconds`. S112: the textured circle of `key`
+-- (a class rune, Data/VfxTextures.RUNE_OF_CLASS; default magicCircle) turning at 1.2 rad/s like the old spokes.
+function Library.rune(at: Vector3, radius: number, color: Color3, seconds: number, simple: boolean?, key: string?)
+	if not circleSurface(at, radius, color, seconds, key or "magicCircle", 1.2) then
+		runeParts(at, radius, color, seconds, simple)
+	end
+end
+
+-- S112 E5: the body of magic and heal effects (later magic telegraphs, S117): a textured circle of opts.key (default
+-- magicCircle) lying on the ground, turning at opts.spin (default Config.Vfx.spinStep), gone after `seconds`.
+-- Returns its stop function. Without the texture: the old rune (no stop: it ends by itself).
+function Library.magicCircle(at: Vector3, radius: number, color: Color3, seconds: number, opts: FxOpts?): () -> ()
+	local o: FxOpts = opts or {}
+	local stop = circleSurface(at, radius, color, seconds, o.key or "magicCircle", o.spin or Config.Vfx.spinStep)
+	if stop then
+		return stop
+	end
+	runeParts(at, radius, color, seconds, o.simple)
+	return function() end
+end
+
+-- S112 E6: the body of a shock wave: the textured ring growing from 0.3 r to RING_END r in opts.seconds (default
+-- 0.4 s), fading. Without the texture: the simple old shock wave.
+function Library.ringWave(at: Vector3, radius: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	if not ringSurface(at, radius, color, o.seconds or 0.4, o.key) then
+		Library.shockwave(at, radius, color, 0.45, true)
+	end
+end
+
+runeParts = function(at: Vector3, radius: number, color: Color3, seconds: number, simple: boolean?)
 	local base = ground(at) + Vector3.new(0, 0.12, 0)
 	local disc = Pool.part("Cylinder", color, Vector3.new(0.1, radius * 2, radius * 2), Enum.Material.Neon, 0.75)
 	disc.CFrame = CFrame.new(base) * CFrame.Angles(0, 0, math.rad(90))
@@ -419,6 +979,9 @@ function Library.aura(model: Model, color: Color3, seconds: number, simple: bool
 		e.SpreadAngle = Vector2.new(20, 20)
 		e.Size = NumberSequence.new(0.35, 0)
 		e.Transparency = NumberSequence.new(0.2, 1)
+		if Textures.particle(e, "glow") then -- S112: soft glows, a little bigger than the old dots
+			e.Size = NumberSequence.new(0.7, 0)
+		end
 		e.Parent = holder
 		Clock.track(e)
 		light(holder, color, 8, 0.8)
@@ -426,9 +989,27 @@ function Library.aura(model: Model, color: Color3, seconds: number, simple: bool
 	detachLater(holder, math.max(0.5, seconds))
 end
 
--- Rising sparkles around a character (heals).
+-- Rising sparkles around a character (heals). S112: star particles rising from the feet instead of the balls.
 function Library.sparkle(model: Model, color: Color3, simple: boolean?)
 	local at = centre(model)
+	local stars = textured("star", CFrame.new(at - Vector3.new(0, 1.5, 0)))
+	if stars then
+		burstFrom(stars, "star", color, 8, {
+			simple = simple,
+			spread = 25,
+			speedMin = 4,
+			speedMax = 6,
+			drag = 1,
+			lifeMin = 0.6,
+			lifeMax = 0.9,
+			size = 0.7,
+			area = Vector3.new(3.2, 0.2, 3.2),
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-90, 90),
+			emission = 1,
+		})
+		return
+	end
 	local count = if simple then 4 else 8
 	for i = 1, count do
 		local a = i / count * math.pi * 2
@@ -503,6 +1084,11 @@ function Library.meteor(at: Vector3, radius: number, delay: number, color: Color
 		e.Lifetime = NumberRange.new(0.3, 0.6)
 		e.Size = NumberSequence.new(2.2, 0)
 		e.Transparency = NumberSequence.new(0.1, 1)
+		if Textures.particle(e, "fire") then -- S112: a burning tail of looping flames
+			e.Rate = 40
+			e.Size = NumberSequence.new({ kp(0, 2.6), kp(1, 1) })
+			e.Rotation = NumberRange.new(0, 360)
+		end
 		e.Parent = rock
 		Clock.track(e)
 		light(rock, color, 16, 2)
@@ -510,7 +1096,8 @@ function Library.meteor(at: Vector3, radius: number, delay: number, color: Color
 	tween(rock, math.max(0.2, delay), { CFrame = CFrame.new(landing) }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 	Clock.after(math.max(0.2, delay), function()
 		Pool.release(rock)
-		Library.burst(landing + Vector3.new(0, 1, 0), radius * 1.2, color, 0.4)
+		Library.smokePuff(landing, math.clamp(radius * 0.4, 1, 3), DUST_COLOR, { simple = simple }) -- S112
+		Library.burst(landing + Vector3.new(0, 1, 0), radius * 1.2, color, 0.4, simple)
 		Library.shockwave(landing, radius, color, 0.45, simple)
 		if not simple then
 			Library.cracks(landing, radius * 0.8, color, 1.6, simple)
@@ -518,9 +1105,32 @@ function Library.meteor(at: Vector3, radius: number, delay: number, color: Color
 	end)
 end
 
--- A straight beam (heals reaching the target, charge streak).
-function Library.beam(a: Vector3, b: Vector3, color: Color3, width: number?, seconds: number?)
+-- A straight beam (heals reaching the target, charge streak). S112: a camera-facing Beam with the texture of
+-- opts.key (default beamHoly) flowing from a to b, narrowing as it fades.
+function Library.beam(a: Vector3, b: Vector3, color: Color3, width: number?, seconds: number?, opts: { key: string? }?)
 	local s = seconds or 0.3
+	local key = if opts and opts.key then opts.key else "beamHoly"
+	local length = (b - a).Magnitude
+	local holder = if Textures.id(key) and length > 0.1 then Pool.holder("beam", key) else nil
+	local w = (width or 0.35) * 3
+	local ray = if holder then setupBeam(holder, color, w, true, true) else nil
+	if holder and ray then
+		local a0, a1 = attachments(holder)
+		holder.CFrame = CFrame.lookAt(a, b)
+		a0.CFrame = CFrame.new()
+		a1.CFrame = CFrame.new(0, 0, -length)
+		Textures.beam(ray, key, { speed = 8, length = w * 2 })
+		fadeBeam(ray, 0.05, 1, s)
+		local started = Clock.now()
+		animate(function(now: number): boolean
+			local u = math.clamp((now - started) / s, 0, 1)
+			ray.Width0 = w * (1 - 0.8 * u)
+			ray.Width1 = ray.Width0
+			return u >= 1
+		end)
+		Pool.holderLater(holder, s + 0.05)
+		return
+	end
 	local p =
 		Pool.part("Block", color, Vector3.new(width or 0.35, width or 0.35, (b - a).Magnitude), Enum.Material.Neon, 0.1)
 	p.CFrame = CFrame.lookAt((a + b) / 2, b)
@@ -644,6 +1254,21 @@ function Library.orbit(model: Model, count: number, color: Color3, simple: boole
 		local orb = Pool.part("Ball", color, Vector3.one * ORBIT_SIZE, Enum.Material.Neon, 0.1)
 		if not simple then
 			light(orb, color, 4, 0.6)
+			-- S112 D1: a soft glow halo carried by the orb (the neon ball alone without the texture)
+			local e = Instance.new("ParticleEmitter")
+			if Textures.particle(e, "glow") then
+				e.Color = ColorSequence.new(color)
+				e.LockedToPart = true
+				e.Rate = 10
+				e.Lifetime = NumberRange.new(0.25, 0.35)
+				e.Speed = NumberRange.new(0)
+				e.Size = NumberSequence.new(ORBIT_SIZE * 3, ORBIT_SIZE * 2)
+				e.Transparency = NumberSequence.new(0.4, 1)
+				e.Parent = orb
+				Clock.track(e)
+			else
+				e:Destroy()
+			end
 		end
 		table.insert(orbs, orb)
 	end
@@ -687,10 +1312,10 @@ function Library.dash(a: Vector3, b: Vector3, color: Color3, simple: boolean?)
 end
 
 -- Dust puff at the feet (landings, slams).
-function Library.dust(at: Vector3, size: number, low: boolean?)
+local function dustParts(at: Vector3, size: number, low: boolean?)
 	local holder = Pool.part("Block", Color3.new(1, 1, 1), Vector3.one, Enum.Material.Neon, 1)
 	holder.CFrame = CFrame.new(ground(at) + Vector3.new(0, 0.3, 0))
-	emit(holder, Color3.fromHex("#B8AA90"), math.floor(10 * size), {
+	emit(holder, DUST_COLOR, math.floor(10 * size), {
 		emission = 0,
 		spread = 70,
 		speedMin = 3,
@@ -702,6 +1327,101 @@ function Library.dust(at: Vector3, size: number, low: boolean?)
 		low = low,
 	})
 	Pool.later(holder, 1.2)
+end
+
+-- S112 E4: smoke or dust rising and spreading (a trail layer): 3-5 particles of the smoke flipbook (the whole
+-- sequence over a particle's life), lit by the scene. Without the texture: the old dust.
+function Library.smokePuff(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local holder = textured(o.key or "smoke", CFrame.new(ground(at) + Vector3.new(0, 0.6 * size, 0)))
+	if not holder then
+		dustParts(at, size, o.simple)
+		return
+	end
+	burstFrom(holder, o.key or "smoke", color, o.count or rng:NextInteger(3, 5), {
+		simple = o.simple,
+		spread = 60,
+		speedMin = 1,
+		speedMax = 3,
+		accel = Vector3.new(0, 1.5, 0),
+		drag = 0.5,
+		lifeMin = 0.9,
+		lifeMax = 1.3,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-30, 30),
+		sizeSeq = NumberSequence.new({ kp(0, 0.6 * size), kp(1, 2.2 * size) }),
+		transparency = NumberSequence.new({ kp(0, 0.3), kp(1, 1) }),
+		area = Vector3.new(size, 0.2, size),
+		emission = 0,
+	})
+end
+
+-- Dust puff at the feet (landings, slams). S112: with the smoke texture a smoke puff in the dust colour and a burst of
+-- the dust texture.
+function Library.dust(at: Vector3, size: number, low: boolean?)
+	if not Textures.id("smoke") then
+		dustParts(at, size, low)
+		return
+	end
+	Library.smokePuff(at, size, DUST_COLOR, { simple = low })
+	local holder = textured("dust", CFrame.new(ground(at) + Vector3.new(0, 0.3, 0)))
+	if holder then
+		burstFrom(holder, "dust", DUST_COLOR, math.floor(6 * size), {
+			simple = low,
+			spread = 70,
+			speedMin = 3,
+			speedMax = 8 * size,
+			drag = 2,
+			size = 1.6 * size,
+			sizeEnd = 0.4 * size,
+			lifeMin = 0.4,
+			lifeMax = 0.9,
+			accel = Vector3.new(0, -4, 0),
+			rotation = NumberRange.new(0, 360),
+			emission = 0,
+		})
+	end
+end
+
+-- S112 E2: a trail layer of sparks or splinters flying from a blow along opts.dir (default up): key opts.key or
+-- "spark" (S113: darkSpark, iceShard, feather, dust by material), streaks along their flight for spark / darkSpark.
+-- Without the texture the same emitter with the default particle; in a ViewportFrame (skills window) small neon parts.
+function Library.sparks(at: Vector3, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local key = o.key or "spark"
+	local dir = if o.dir and o.dir.Magnitude > 0.01 then o.dir.Unit else Vector3.yAxis
+	if Pool.inViewport() then
+		for _ = 1, if o.simple then 3 else 6 do
+			local jitter = Vector3.new(rng:NextNumber(-0.6, 0.6), rng:NextNumber(-0.6, 0.6), rng:NextNumber(-0.6, 0.6))
+			local way = (dir + jitter).Unit
+			local bit = Pool.part("Block", color, Vector3.new(0.08, 0.08, 0.5), Enum.Material.Neon, 0.1)
+			bit.CFrame = CFrame.lookAt(at, at + way)
+			tween(bit, 0.3, { CFrame = CFrame.lookAt(at + way * 3, at + way * 4), Transparency = 1 })
+			Pool.later(bit, 0.35)
+		end
+		return
+	end
+	local holder = Pool.holder("emitter", key)
+	if not holder then
+		return
+	end
+	holder.CFrame = facingFrame(at, dir)
+	local streak = key == "spark" or key == "darkSpark"
+	burstFrom(holder, key, color, o.count or 8, {
+		simple = o.simple,
+		direction = Enum.NormalId.Front,
+		spread = 35,
+		speedMin = 10,
+		speedMax = 22,
+		accel = Vector3.new(0, -40, 0),
+		drag = 3,
+		lifeMin = 0.18,
+		lifeMax = 0.4,
+		orient = if streak then "parallel" else nil,
+		sizeSeq = NumberSequence.new({ kp(0, 0.215, 0.065), kp(1, 0.13, 0.04) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.7, 0.2), kp(1, 1) }),
+		rotation = if streak then nil else NumberRange.new(0, 360),
+	})
 end
 
 -- Glowing hand(s) or weapon for `seconds` (charging a spell, holy weapons).
@@ -738,6 +1458,9 @@ function Library.glow(
 				e.Speed = NumberRange.new(0.5, 1.5)
 				e.Size = NumberSequence.new(0.35, 0)
 				e.Transparency = NumberSequence.new(0.2, 1)
+				if Textures.particle(e, "glow") then -- S112
+					e.Size = NumberSequence.new(0.7, 0)
+				end
 				e.Parent = orb
 				Clock.track(e)
 			end
@@ -774,6 +1497,13 @@ function Library.weaponTrail(model: Model, color: Color3, from: number, to: numb
 	end
 	local t = Clock.track(trail :: Trail)
 	t.Color = ColorSequence.new(color)
+	-- S112: the streak texture narrowing towards the tail (the trail is reused: the texture may have been switched off)
+	if Textures.trail(t, "trailStreak") then
+		t.WidthScale = NumberSequence.new(1, 0.3)
+	else
+		t.Texture = ""
+		t.WidthScale = NumberSequence.new(1)
+	end
 	Clock.after(math.max(0, from), function()
 		if t.Parent then
 			t.Enabled = true
@@ -818,6 +1548,23 @@ function Library.lingering(at: Vector3, radius: number, kind: string, color: Col
 		e.Shape = Enum.ParticleEmitterShape.Cylinder
 		e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 		e.EmissionDirection = Enum.NormalId.Right -- the disc is rolled: its +X points up
+		-- S112: flames, ice shards or poison bubbles (flipbook) instead of the default particle
+		local key = if kind == "burn" then "fire" elseif kind == "frost" then "iceShard" else "poisonBubble"
+		if key == "poisonBubble" and Textures.id(key) then
+			e.Lifetime = NumberRange.new(0.7, 1.1) -- the bubble's whole flipbook plays over this life
+		end
+		if Textures.particle(e, key) then
+			e.Rotation = NumberRange.new(0, 360)
+			if kind == "burn" then
+				e.Size = NumberSequence.new({ kp(0, 1.4), kp(1, 0.5) })
+			elseif kind == "frost" then
+				e.Size = NumberSequence.new({ kp(0, 0.6), kp(1, 0.2) })
+				e.RotSpeed = NumberRange.new(-90, 90)
+			else
+				e.Size = NumberSequence.new({ kp(0, 0.9), kp(1, 1.1) })
+				e.Rotation = NumberRange.new(0)
+			end
+		end
 		e.Parent = disc
 		Clock.track(e)
 		light(disc, tint, radius * 2 + 4, 1)
@@ -1100,9 +1847,27 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 					end
 					local look = if heading.Magnitude > 0.01 then heading.Unit else Vector3.new(0, 0, -1)
 					Library.slash(CFrame.lookAt(hit, hit + look), 2, 60, -60, color, 30, simple)
-					Library.burst(hit, 3, color)
+					Library.burst(hit, 3, color, nil, simple)
+					-- S112: three feathers drifting down
+					local feathers = textured("feather", CFrame.new(hit))
+					if feathers then
+						burstFrom(feathers, "feather", color:Lerp(Color3.new(1, 1, 1), 0.3), 3, {
+							exact = true,
+							speedMin = 3,
+							speedMax = 6,
+							drag = 2,
+							accel = Vector3.new(0, -5, 0),
+							lifeMin = 0.8,
+							lifeMax = 1.2,
+							size = 0.6,
+							sizeEnd = 0.5,
+							rotation = NumberRange.new(0, 360),
+							rotSpeed = NumberRange.new(-120, 120),
+							emission = 0,
+						})
+					end
 					if dive then
-						Library.burst(hit, 6, color)
+						Library.burst(hit, 6, color, nil, simple)
 						Library.shockwave(hit, 3, color, 0.35, simple)
 					end
 				end,

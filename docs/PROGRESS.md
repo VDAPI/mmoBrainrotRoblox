@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S111 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S112 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -167,6 +167,10 @@ S110–S119 (`CLAUDE.md`).
 S111 dźwięki: rejestr `Data/Sfx` (90 kluczy, 30 z ID twórcy Roblox sprawdzonymi w Play), `SfxController` (pula głosów
 3D, priorytety, okno powtórzeń, cooldowny), grupa „Efekty” na „Głośności efektów”, podpięcia walki, potworów, bossów,
 telegrafów i interfejsu, `/animlab sfx`.
+S112 tekstury efektów: generator `tools/vfx/make_textures.py` (25 tekstur w `art/vfx/`, wgrane i wpisane w
+`Data/VfxTextures`), `client/Vfx/Textures`, uchwyty w `Vfx/Pool` z limitami telefonu, tekstury na starych składnikach
+`Library` z dawnym wyglądem jako zapasem, sześć nowych składników (`impactFlash`, `sparks`, `groundDecal`, `smokePuff`,
+`magicCircle`, `ringWave`), pola `SkillVfx` `decal` / `circle` / `sparks`, `/animlab vfx`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -288,14 +292,24 @@ zakończone; testy i decyzje właściciela po nich.
 - **Świat (kosmetyka, niski priorytet)**: listy „nie zrobione z planu” S45–S51 w `docs/SESJE.md` (reakcje sal na fazy
   bossów, drobne animacje dekoracji, nowe szablony `DecorController`, `crackFields`, `spurs`, zaspy w rzeźbie).
   Wspólne `Logic/TerrainLines` (algorytmy skopiowane między generatorami) i Łąki na `WorldLifeController`.
-- **S110: przegląd w Studio nie zrobiony (brak postaci w zapisie Studio):** miejsce bez dostępu do DataStore (zapis w
-  pamięci, 0 postaci); tabela bazowa w `docs/SESJE.md` → S110 ma tylko klatki z danych, koszt `stress 20` nie zmierzony.
-  Właściciel: Game Settings → Security → dostęp do API i raz utworzyć postać (`docs/ANIMACJE.md` §2 pkt 4).
+- **S110: przegląd w Studio nie zrobiony:** tabela bazowa w `docs/SESJE.md` → S110 ma tylko klatki z danych. Od
+  2026-10-14 Studio ma dostęp do API i postać, ale `screen_capture` przez MCP pokazuje sam interfejs bez obrazu 3D (także
+  w trybie Edit), więc ruchu i efektów nie da się obejrzeć zrzutem; liczby (`state`, `vfx stats`) działają.
 - **AnimLab (S110):** `npc` bez klipów do S116 (kopia stoi); zdolności Elity II
   tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
 - **Dźwięki (S111):** 30 dźwięków nieodsłuchanych (wybór po nazwie i długości, `docs/ASSETS.md` → „Dźwięki (S111)”;
   `skill.default.heal` i `.buff` słabe); koszt dźwięku w `/animlab stress 20` nie zmierzony (Studio bez postaci); rzucenie
   umiejętności (`onCast`) bez dźwięku do S114 / S115.
+- **S112: przegląd w Studio nie zrobiony (MCP bez obrazu 3D):** tekstury wgrane i wczytane, składniki odegrane w Play
+  bez błędów, koszt zmierzony, ale nieobejrzane: strona łuku cięcia (`SLASH_SIDE` w `Vfx/Library`: jasna krawędź ma być
+  na końcu zamachu), płaszczyzna płaskiego łuku (`Beam` leży w płaszczyźnie XZ attachmentów), rozmiary iskier i dymu
+  (liczby startowe z planu). Do obejrzenia `/animlab vfx all` przy widocznym oknie Studio.
+- **S112: flipbooki** (`smoke`, `fire`, `poisonBubble`): `/animlab vfx tex` zgłasza `FlipbookIncompatible` („1024 by
+  1024”), choć pliki i wgrane obrazy mają 1024 × 1024 (sprawdzone `EditableImage`); prawdopodobnie Studio bez renderu
+  3D nie wczytuje tekstury do karty. Sprawdzić przy widocznym oknie; gdyby zostało, flipbook pokaże cały arkusz.
+- **S112:** limity telefonu (`Pool.isTouch`) nie sprawdzone w Play (`execute_luau` dostaje osobną kopię modułów, więc
+  podmiana `Pool.isTouch` nie działa na grę); wymuszony zły ID (G4) też nie (ta sama przyczyna; ścieżka ta sama co puste
+  ID). `sealRune`, `telegraph`, `banner`, `dash`, `shield`, `cone`, `tether` bez tekstur (S114, S115, S117).
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

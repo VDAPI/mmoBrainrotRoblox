@@ -289,6 +289,18 @@ local Config = {
 		maxActive = 40,
 		simpleBeyond = 60,
 		lowParticles = 0.5,
+		-- S112: textures (Data/VfxTextures; false = the old look everywhere), limits of live holders per device (a
+		-- phone is touch without a keyboard), free holders kept per kind and key, particles of one Emit (after
+		-- lowParticles), seconds a ground decal / glowing circle takes to fade out, default turn of a magic circle (rad/s)
+		textures = true,
+		holdersPerKey = 12,
+		maxEmitters = { desktop = 48, touch = 24 },
+		maxBeams = { desktop = 20, touch = 10 },
+		maxDecals = { desktop = 24, touch = 12 },
+		maxLights = { desktop = 12, touch = 6 },
+		maxBurst = { desktop = 40, touch = 20 },
+		decalFade = 0.35,
+		spinStep = 0.6,
 	},
 	-- Sound effects (S111, DESIGN-16 §3, Data/Sfx, SfxController): positional voices at once (a phone is touch without a
 	-- keyboard), 2D interface voices, the same key again within `repeatWindow` s is dropped, nothing positional
@@ -342,6 +354,7 @@ local Config = {
 		lineWidth = 0.06, -- studs: grid lines (major lines twice as wide)
 		wallThickness = 1,
 		dummyColor = "#9A9AA0", -- the target mannequin
+		vfxEvery = 1.5, -- S112: seconds between two pieces of `vfx all` (and a looped `vfx <piece>`)
 	},
 	-- Bosses (S30, DESIGN §16): every character may kill one boss `dailyRuns` times per UTC day.
 	Boss = {

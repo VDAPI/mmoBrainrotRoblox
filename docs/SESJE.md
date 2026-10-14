@@ -8379,3 +8379,112 @@ Pliki: `src/shared/Data/Sfx.luau`, `src/shared/Logic/SfxRules.luau`, `src/client
 Po przeglądzie: śmierć potwora walczącego z nami gra jak drużyna (pamięć utraty `AggroUserId`), podgląd umiejętności w
 oknie jest cichy (`VfxController.playSound`), klucz `animlab.notYet` usunięty, pusty `hit.armor` i niższe `pitch`
 wspólnych plików zapisane w DECYZJE.
+
+### S112: Efekty 2.0: tekstury, flipbooki i nowe składniki
+
+Start na `5d5fd13` (S111): commity S110 i S111, `docs/ANIMACJE.md`, `/animlab` i `Vfx/Clock` (`now`, `after`, `tween`,
+`track`, `freeze`) na miejscu; `scripts/check` zielony na nietkniętym drzewie (6417 testów). Zgodnie z poleceniem
+przebiegu bez commita i pusha.
+
+Co zrobiono:
+- **Generator (B):** `tools/vfx/make_textures.py` + `tools/vfx/vfx_draw.py` (Pillow, ziarno z klucza, własny szum
+  wartości, rysowanie w 4× i LANCZOS, kontrola marginesu 2% i szwu tekstur kafelkowanych), `--only`, `--check`,
+  `--preview`; 25 tekstur w `art/vfx/` i `manifest.json` (skrót pikseli, `custom`). Dwa przebiegi pod rząd: ten sam
+  manifest; `--check`: 25 tekstur, 0 różnic.
+- **Rejestr i klient (C):** `Data/VfxTextures` (lista, `ORDER`, `RUNE_OF_CLASS`, `idOf`, `runeOf`; w `NOT_BALANCE`),
+  `client/Vfx/Textures` (`id`, `particle` z flipbookiem, `beam`, `trail`, `decal`, `check`), uchwyty w `Vfx/Pool`
+  (`holder` emiter / promień / ślad / koło, `releaseHolder`, `holderLater`, `holderCount`, `inViewport`, `isTouch`,
+  `limit`, światła `takeLight` / `dropLight`), pola `Config.Vfx` (C4) i `Config.AnimLab.vfxEvery`.
+- **Stare składniki (D):** `burst` (rdzeń `impactFlash` + mniejsza kula), `shockwave` (pierścień + 10 segmentów),
+  `cracks` (ciemny decal + 2 płyty), `slash` (płaska `Beam` z łukiem + co drugi segment), `projectile` (smuga
+  `trailSoft`, kula `glow`, odłamek `iceShard`), `lightning` (jedna `Beam` z przesuwaną błyskawicą), `pillar` (`beamHoly`),
+  `rune` (koło klasy), `aura`, `glow` (`glow`), `sparkle` (`star`), `beam` (`beamHoly` albo klucz), `dust` (dym + pył),
+  `meteor` (ogień w pętli, dym przy lądowaniu), `lingering` (`fire`, `iceShard`, `poisonBubble`), `weaponTrail`
+  (`trailStreak`), `falcon` (pióra). Każdy z dawnym wyglądem, gdy tekstury nie ma; `emit` z polem `texture`.
+- **Nowe składniki (E):** `impactFlash`, `sparks`, `groundDecal` (kolejka FIFO przy limicie), `smokePuff`, `magicCircle`,
+  `ringWave`; wspólna pętla animacji (`animate`, jedno połączenie `Heartbeat`, stoi w zamrożeniu); gałęzie w
+  `VfxController.piece`, runy klas w `rune` / `trapSet` / `pull`; pola `SkillVfx` `decal`, `circle`, `sparks`.
+- **AnimLab (E7):** `vfx <składnik> [#RRGGBB|class:<klasa>]` (ruch: `freeze`, `step`, `loop`; bez sceny przed
+  kamerą), `vfx all [stress]`, `vfx tex [on|off]`, `vfx stats`, `state.vfx`; parser `Logic/AnimLab` (`VFX_PIECES`,
+  `vfxColor`, `isVfxPiece`, błędy `animlab.error.vfx` / `vfxColor`), teksty PL i EN.
+- **Testy:** `tests/vfxtextures.spec.luau` (punkty 1–9 planu + parser `vfx`), `skillmotion.spec` (`VFX_PIECES`).
+
+Spis A2 (skrót; wołający: Vfx = `VfxController`, AL = `AnimLabController`, CFx = `CombatFxController`, Eff =
+`EffectsController`):
+
+| Składnik | Wołający | Wygląd przed S112 | Tekstura |
+|---|---|---|---|
+| `burst` | Vfx, AL, `meteor`, `lineBeam`, `falcon` | rosnąca kula Neon | `impactFlash` (`star`, `glow`) + mniejsza kula |
+| `shockwave` | Vfx, AL, `meteor`, `falcon` | 20 segmentów Neon w kole (10 przy `simple`) | `ring` + 10 segmentów |
+| `cracks` | Vfx, AL, `meteor`, `lingering` | 7 płyt Slate z rdzeniem Neon | decal `cracks` + 2 płyty |
+| `slash` | Vfx, AL, `falcon` | 12 segmentów Neon w łuku | płaska `Beam` `slashWide` / `slashNarrow` + co drugi segment |
+| `projectile` | Vfx, AL | kula / strzała / odłamek z `Trail` | `trailSoft`, kula `glow`, `iceShard` |
+| `lightning` | Vfx, AL, CFx | zygzak krótkich segmentów Neon | jedna `Beam` `beamLightning` |
+| `pillar` | Vfx, AL | walec Neon | `beamHoly` |
+| `rune` | Vfx, AL | koło z segmentów | `runeOf(klasa)` / `circle` |
+| `aura`, `glow`, `orbit` | Vfx, AL | kule Neon, emitery bez tekstury | emitery `glow` |
+| `sparkle` | Vfx, AL | kule Neon wznoszące się wokół postaci | `star` |
+| `beam` | Vfx, AL | belka Neon | `beamHoly` albo klucz z `opts` |
+| `dust` | Vfx, AL | emiter bez tekstury | `smoke` + `dust` |
+| `meteor` | Vfx, AL | skała z ogniem bez tekstury | `fire` w pętli, `smokePuff` przy lądowaniu |
+| `lingering` | Vfx, AL | dysk z części | `fire`, `iceShard`, `poisonBubble` |
+| `weaponTrail` | Vfx, AL | `Trail` bez tekstury | `trailStreak` |
+| `falcon` | Vfx, AL | bryły ptaka | pióra `feather` przy uderzeniu |
+| `telegraph`, `cone` | Vfx | obrys z segmentów Neon | zostaje z części (S117) |
+| `shield` | Vfx | bańka ForceField | zostaje z części |
+| `aimLine`, `tether`, `lineBeam` | Vfx, CFx | cienka część Neon | zostaje z części (`lineBeam` przez `burst`) |
+| `sealRune` | Eff | koło z segmentów | zostaje z części (S114 / S115) |
+| `dash`, `banner` | Vfx | odbicia postaci, sztandar z części | zostaje z części |
+
+MCP (A3): `store_image(filePath)` zwraca `IMAGEID_…` tylko dla innych narzędzi MCP; `upload_image(imagePaths)` przyjmuje
+wyłącznie adresy http(s) i zwraca `rbxassetid://…` obrazu (konto właściciela, bez wyboru grupy). Pliki podał lokalny
+`python -m http.server --bind 127.0.0.1 --directory art/vfx`. Wgrane wszystkie 25 (bąbel trucizny ponownie w 1024 px,
+łuki cięcia ponownie po obróceniu przodu na +U; trzy wcześniejsze ID osierocone, `docs/ASSETS.md`). W Play
+`/animlab vfx tex`: 25 / 25 „ok” (`IsLoaded`); `EditableImage` potwierdza 1024 × 1024 flipbooków, a próbny emiter i tak
+zgłasza `FlipbookIncompatible` (zob. niżej).
+
+Przegląd (G): Studio miało w tej sesji dostęp do API i postać (`/animlab on` działa), ale `screen_capture` zwraca sam
+interfejs na ciemnym tle (także w trybie Edit i z ukrytym interfejsem), więc zrzutów „przed / po” nie ma. Zrobione
+liczbowo: każdy z 22 składników `vfx` z teksturami i z `tex off` (bez błędów w konsoli, uchwyty wracają do 0 po
+efekcie), `freeze 0.5` na `magicCircle` trzyma koło (uchwyt stoi 2 s), `play` puszcza i oddaje uchwyt.
+
+| Składnik | Co było źle (1 linia) | Co zmieniono |
+|---|---|---|
+| `poisonBubble` | 512 px: `FlipbookIncompatible` (Roblox chce 1024) | generator 1024, nowe ID |
+| `slash` | przód łuku w −V tekstury: znak strony płaskiej `Beam` nieznany, łuk mógł wypaść za postacią | przód na +U (`Beam` od zadającego do przodu), zostaje tylko `SLASH_SIDE` |
+| koła na ziemi | płaska `Beam` stoi albo leży zależnie od osi attachmentów (nie do obejrzenia) | obraz na płaskiej części (`SurfaceGui`) |
+| reszta | nieobejrzane (brak obrazu 3D) | — |
+
+Koszt (G3, `stress 20` + `vfx all stress`, 12 s, odczyt co 0,1 s): spoczynek `HeartbeatTimeMs` 0,10 ms, w trakcie
+średnio 0,94 ms, najwyżej 1,38 ms, `GetRealPhysicsFPS` 60 / 60; szczyty: efekty 40 / 40, emitery 48 / 48, światła
+12 / 12, promienie i koła 10 / 20, ślady 4 / 24 (limity trzymają, liczby `Config.Vfx` bez zmian). Limit telefonu nie
+sprawdzony: `execute_luau` dostaje własną kopię modułów, podmiana `Pool.isTouch` nie dociera do gry (to samo dla G4).
+
+Stan wgrania: wszystkie 25 ID wpisane w `Data/VfxTextures` (2026-10-14, VDaPii).
+
+Dla S113–S117:
+- Klucze tekstur (`ORDER`): `glow`, `spark`, `star`, `smoke`, `fire`, `dust`, `slashWide`, `slashNarrow`, `ring`,
+  `cracks`, `runeWarrior`, `runeHunter`, `runeMage`, `runeCleric`, `magicCircle`, `beamLightning`, `beamHoly`,
+  `beamArcane`, `beamPoison`, `trailSoft`, `trailStreak`, `iceShard`, `poisonBubble`, `feather`, `darkSpark`;
+  `RUNE_OF_CLASS`, `runeOf(class?)`.
+- Składniki: `impactFlash(at, size, color, opts?)`, `sparks(at, color, opts?)` (S113: `key` według materiału:
+  `darkSpark`, `iceShard`, `feather`, `dust`), `groundDecal(at, radius, key, color, seconds, opts?) -> stop` (S117:
+  osmalenie, pęknięcia telegrafu), `smokePuff(at, size, color, opts?)`, `magicCircle(at, radius, color, seconds, opts?) ->
+  stop` (S117: telegrafy magii), `ringWave(at, radius, color, opts?)`; `FxOpts = { simple, key, dir, count, seconds,
+  spin, yaw }`; `rune(..., key?)`, `beam(..., opts?)` (`beamArcane`, `beamPoison` czekają na S114 / S115).
+- `Pool.holder(kind, key)`, `Pool.child`, `Pool.releaseHolder`, `Pool.holderLater`, `Pool.takeLight` / `dropLight`;
+  `Textures.id / particle / beam / trail / decal / check`; pola `SkillVfx` `decal`, `circle`, `sparks`; `/animlab vfx`.
+- S113: smuga ataku podstawowego (`CombatFxController.weaponTrail`) z `trailStreak`, iskry trafienia przez `sparks`.
+- Do obejrzenia przy widocznym oknie Studio: `SLASH_SIDE`, płaszczyzna łuku, flipbooki, rozmiary iskier i dymu.
+
+Pliki: `tools/vfx/{make_textures,vfx_draw}.py`, `art/vfx/*.png`, `art/vfx/manifest.json`,
+`src/shared/Data/VfxTextures.luau`, `src/client/Vfx/{Textures,Pool,Library}.luau`,
+`src/client/Controllers/{Vfx,AnimLab}Controller.luau`, `src/shared/Data/SkillVfx.luau`, `src/shared/Config.luau`,
+`src/shared/Logic/AnimLab.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tools/balance_reasons.luau`,
+`tests/vfxtextures.spec.luau`, `tests/skillmotion.spec.luau`, `wiki/src/data/meta.json`, `docs/ANIMACJE.md`,
+`docs/ASSETS.md`, `docs/DESIGN-16.md`, `CLAUDE.md`, `docs/DECYZJE.md`, `docs/PROGRESS.md`.
+
+Po przeglądzie: `burst` dostaje `simple` i przekazuje go do `impactFlash` (dalekie efekty bez `PointLight`, zgodnie z
+tabelą C5), `orbit` ma emiter `glow` (D1), `/animlab vfx` gra też `glow`, `weaponTrail` (zamach postaci z mieczem) i
+`falcon` (25 składników), kolor pęknięć z jednego miejsca (`Library.crackTint`), martwe `Textures.markFailed` usunięte,
+nagłówek `SkillVfx` opisuje domyślną runę klasy dla każdego koloru.

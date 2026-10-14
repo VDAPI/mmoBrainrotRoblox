@@ -235,8 +235,64 @@ dodaje wiersz w `docs/ASSETS.md`, sprawdza `/animlab sfx <klucz>` w Studio. Dźw
 Pro Sound Effects / APM w Creator Store, bogata w trafienia, ryki i wybuchy) to jego decyzja; nigdy dźwięki z cudzych
 gier.
 
-## 8. Tekstura efektu (szkic; uzupełnia S112)
+## 8. Tekstury efektów (S112)
 
-Tekstury rysuje `tools/vfx/make_textures.py` do `art/vfx/*.png`; ID trafiają do `Data/VfxTextures` (puste ID = dzisiejszy
-neon). Gdy MCP nie wgra plików: Asset Manager → Bulk Import i wpisanie ID. Nowy emiter, smuga albo tween efektu zawsze
-przez `client/Vfx/Clock`, żeby AnimLab mógł go zatrzymać.
+**Co to jest.** 25 białych obrazków na przezroczystym tle w `art/vfx/` (kształt tylko w kanale alfa; gra barwi je
+kolorem klasy albo żywiołu), rysowanych kodem przez `tools/vfx/make_textures.py` (Python + Pillow, deterministycznie:
+manifest `art/vfx/manifest.json` trzyma skrót pikseli). ID leżą w `src/shared/Data/VfxTextures.luau`. Gra działa bez
+nich: puste ID, `/animlab vfx tex off`, obrazek, który się nie wczytał, i podgląd w oknie umiejętności (ViewportFrame nie
+rysuje cząsteczek ani promieni) dają dawny wygląd z neonowych części.
+
+| Klucz | Plik | Rodzaj | Do czego |
+|---|---|---|---|
+| `glow` | `glow.png` | cząsteczka | poświata: rdzeń błysku, aury, kule pocisków, dłonie |
+| `spark` | `spark.png` | cząsteczka | iskra-kreska (`sparks`, leci wzdłuż prędkości) |
+| `star` | `star.png` | cząsteczka | błysk trafienia (`impactFlash`, `burst`), gwiazdki leczenia (`sparkle`) |
+| `smoke` | `smoke.png` | cząsteczka, flipbook 4×4 | dym i pył (`smokePuff`, `dust`, lądowanie meteoru) |
+| `fire` | `fire.png` | cząsteczka, flipbook 4×4 w pętli | ogon meteoru, płonąca ziemia (`lingering:burn`) |
+| `dust` | `dust.png` | cząsteczka | pył (`dust`) |
+| `slashWide`, `slashNarrow` | `slash_wide.png`, `slash_narrow.png` | promień (płaski) | łuk cięcia (`slash`: od 120° szeroki) |
+| `ring` | `ring.png` | koło na ziemi | fala uderzeniowa (`ringWave`, `shockwave`) |
+| `cracks` | `cracks.png` | ślad (decal) | pęknięcia ziemi (`groundDecal`, `cracks`) |
+| `runeWarrior`, `runeHunter`, `runeMage`, `runeCleric` | `rune_<klasa>.png` | koło na ziemi | runy klas (`rune`, `magicCircle`) |
+| `magicCircle` | `magic_circle.png` | koło na ziemi | koło magiczne bez klasy (telegrafy magii S117) |
+| `beamLightning`, `beamHoly`, `beamArcane`, `beamPoison` | `beam_<rodzaj>.png` | promień (kafelkowany) | błyskawica, słup światła i promienie leczenia, (arkana i trucizna dla S114–S115) |
+| `trailSoft`, `trailStreak` | `trail_soft.png`, `trail_streak.png` | smuga | smuga pocisku, smuga broni umiejętności (S113: ataki) |
+| `iceShard` | `ice_shard.png` | cząsteczka | odłamki lodu (pocisk `shard`, `lingering:frost`) |
+| `poisonBubble` | `poison_bubble.png` | cząsteczka, flipbook 4×4 | bąble trucizny (`lingering:poison`, chmura) |
+| `feather` | `feather.png` | cząsteczka | pióra przy uderzeniu sokoła |
+| `darkSpark` | `dark_spark.png` | cząsteczka | ciemna kropla (S113: trafienie w ciało) |
+
+**Wgranie (gdy trzeba ponownie):**
+1. Studio z miejscem gry, zalogowany jako właściciel gry (VDaPii; obrazki z innego konta mogą się nie wczytać).
+2. Widok → **Asset Manager** → **Bulk Import** → zaznacz pliki z `art/vfx/` (bez `manifest.json`).
+3. Po wgraniu w zakładce Images prawy klik na każdym → **Copy Asset ID** → wklej do
+   `src/shared/Data/VfxTextures.luau` w pole `id` wiersza z tym samym `file` (`"rbxassetid://<liczba>"`), zapisz
+   (Rojo zsynchronizuje).
+4. Moderacja trwa zwykle kilka minut; do tego czasu efekt może wyglądać jak dawniej.
+5. Sprawdzenie: Play → `/animlab` → `/animlab vfx tex` (wszystkie „ok”), `/animlab vfx all`.
+6. Commit zmiany ID (`VfxTextures.luau`).
+
+Sesja może wgrać sama przez MCP: lokalny serwer `python -m http.server <port> --bind 127.0.0.1 --directory art/vfx`,
+potem `upload_image` z adresami `http://127.0.0.1:<port>/<plik>` (zwraca `rbxassetid://…` obrazka; `store_image` daje
+tylko identyfikator dla innych narzędzi MCP, `upload_image` go nie przyjmuje).
+
+**Własna tekstura:** biały kształt na przezroczystym tle, ten sam rozmiar (flipbook: ta sama siatka, bok 1024 px),
+zapisz pod tą samą nazwą pliku w `art/vfx/`, w `manifest.json` ustaw w jej wierszu `"custom": true` (generator jej wtedy
+nie nadpisze, `--check` nie porównuje jej skrótu), wgraj i wpisz nowe ID.
+
+**Przebudowa:** `pip install pillow`, `python tools/vfx/make_textures.py` (wszystko), `--only glow,smoke` (wybrane),
+`--check` (kod 1 przy różnicy z manifestem), `--preview build/vfx_preview.png` (arkusz podglądu na szachownicy). Każdy
+zmieniony plik trzeba wgrać ponownie i wpisać nowe ID.
+
+**Kod:** `client/Vfx/Textures` (jedyne miejsce, które zamienia dane na właściwości i `Enum`), uchwyty w puli
+(`Pool.holder`: emiter, promień, ślad, koło na ziemi; limity urządzenia w `Config.Vfx`), składniki w `client/Vfx/Library`
+(nagłówek ma tabelę: co gra blisko, daleko i na niskiej jakości). Nowy emiter, smuga albo tween efektu zawsze przez
+`client/Vfx/Clock`, żeby AnimLab mógł go zatrzymać.
+
+**AnimLab:** `/animlab vfx <składnik> [#RRGGBB|class:<klasa>]` (składnik na celu sceny jako ruch: `freeze`, `step`,
+`loop` co `Config.AnimLab.vfxEvery`; bez sceny raz przed kamerą), `vfx all [stress]` (wszystkie po kolei, ze `stress`
+także przy manekinach), `vfx tex` (wczytanie każdego ID i flipbooków, 10 s), `vfx tex on|off` (porównanie przed / po),
+`vfx stats` (efekty, uchwyty i światła wobec limitów; też w `state`). Składniki: `impactFlash`, `sparks`, `groundDecal`,
+`smokePuff`, `magicCircle`, `ringWave`, `burst`, `shockwave`, `cracks`, `slash`, `projectile`, `lightning`, `pillar`,
+`rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`.
