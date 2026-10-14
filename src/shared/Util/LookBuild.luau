@@ -43,6 +43,7 @@ export type Options = {
 }
 
 local SMALL = 0.4 -- parts below this (longest side) are not clickable
+local FRONT_DEAD = 0.15 -- S117: studs around the centre where a joint is neither front nor hind
 
 local FX: {
 	[string]: {
@@ -227,6 +228,11 @@ function LookBuild.build(rig: Rig, opts: Options?): Model
 				motor:SetAttribute("Phase", joint.phase or 0)
 				motor:SetAttribute("Amp", joint.amp or 1)
 				motor:SetAttribute("Scale", o.scale or 1)
+				-- S117: front (-Z) or hind limb (Logic/Gait styles move front and hind legs differently)
+				motor:SetAttribute(
+					"Front",
+					if pivotPos[3] < -FRONT_DEAD then 1 elseif pivotPos[3] > FRONT_DEAD then -1 else 0
+				)
 				motor.Parent = part
 			end
 		elseif not anchored then

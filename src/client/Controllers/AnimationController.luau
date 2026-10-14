@@ -24,6 +24,14 @@
 --     from the attacker (AttackPose.flinch) and turns a generated monster's body away (MonsterState.hitDir, the base for
 --     S117); real clips (AttackMotions clips / clipsByWeapon, SkillMotions clip) play through client/Anim/CharacterClips
 --     instead of the poses when they loaded, fitted to the server's hit, and the poses stay the fallback.
+--   S117 (DESIGN-16 §8): generated monsters attack in the style of their body plan (Data/MonsterMotions: by weapon for
+--     humanoids, the Elite II special by its ability) and bosses with the pose of each attack (Data/BossMotions); a
+--     telegraphed attack gathers over exactly the windup the telegraph fills over (Gait.charge, the blow peaks at its
+--     end), a basic one peaks Gait.STRIKE_NOW_LEAD after its event; a hit or a hitstop never cuts the gather; Grimrok's
+--     leap flies the last Config.MonsterLook.leapArc s to the area before the server's teleport; a new boss phase roars,
+--     a summoned helper (attribute Summoned) climbs out of the ground, Vaelgrath's wings beat wide while Flying; deaths
+--     by plan over Config.MonsterLook.deathSeconds; a hit pushes the body away from the attacker (Gait.hitLean, bosses
+--     less). Real models keep their clips (S116 adds attack / roar clips); the new poses are the generator's.
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -31,8 +39,12 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
+local AnatomyPlans = require(ReplicatedStorage.Shared.Logic.Anatomy.Plans)
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
@@ -42,7 +54,11 @@ local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
 local SkillPose = require(ReplicatedStorage.Shared.Logic.SkillPose)
 local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
+local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
+local Library = require(script.Parent.Parent.Vfx.Library)
+local State = require(script.Parent.Parent.UI.State)
 local RiderPose = require(ReplicatedStorage.Shared.Logic.RiderPose)
 local UserInputService = game:GetService("UserInputService")
 
@@ -56,8 +72,19 @@ local HIT_SECONDS = Gait.HIT_SECONDS -- S110: shared with MobViz and AnimLab
 local SPAWN_SECONDS = 1.2 -- window in which a real model plays its "spawn" clip (not Gait.SPAWN_SECONDS)
 local PICK_EVERY = 0.25 -- seconds between choosing which monsters animate
 local DEATH_SECONDS = Gait.DEATH_SECONDS
+local LOOK = Config.MonsterLook
+-- S117: looks only.
+local SAME_ATTACK = 0.1 -- seconds: more telegraphs of one attack (count, target "all") pose it once
+local CHARGE_HIT = 0.3 -- a hit during a gather leans the body this much (it never restarts the gather)
+local ROAR_YIELD = 0.15 -- seconds a roar takes to give way to an attack
+local TELEPORT_JUMP = 4 -- studs the root jumps in one frame when the server teleports a leaping boss
+local LEAP_WAIT = 0.3 -- seconds after the windup a leap waits for the teleport, then its arc returns
+local LEAP_BACK = 0.2 -- seconds the arc takes to return
+local LAND_WIDE = 0.5 -- seconds the wings stay wide after a flight
+local LAND_FADE = 0.2 -- then they settle over this
+local DUST_TINT = Color3.fromHex("#6A5A48") -- the cracks a summon leaves
 
-type JointState = { motor: Motor6D, joint: Gait.Joint, scale: number }
+type JointState = { motor: Motor6D, joint: Gait.Joint, scale: number, body: boolean }
 
 type Clips = {
 	animator: Animator,
@@ -82,8 +109,28 @@ type MonsterState = {
 	attackStart: number,
 	attackWindup: number,
 	hitAt: number,
+	flinchAt: number, -- S117: the last flinch from a blow (MonsterHit's hitEvery gate; Hitstop leaves it)
 	hitDir: Vector3?, -- S113: flat unit direction of the last blow (from the attacker to the monster; S117 reads it)
 	deadAt: number?,
+	-- S117
+	plan: string?,
+	weapon: string?,
+	bossId: string?,
+	hover: number, -- studs at scale 1 the plan floats
+	deathStyle: string?,
+	deathSide: number,
+	style: string?, -- the running attack's style
+	charged: boolean, -- the running attack is telegraphed (Gait.charge)
+	attackId: string?,
+	leap: { offset: Vector3, height: number }?, -- Grimrok: the arc to the area (root frame)
+	lastRoot: Vector3?,
+	riseStart: number?,
+	roarStart: number?,
+	roarSeconds: number,
+	flying: boolean,
+	landedAt: number?,
+	phase: number,
+	connection: RBXScriptConnection?,
 }
 
 local monsters: { [Model]: MonsterState } = {}
@@ -91,6 +138,23 @@ local animated: { [Model]: boolean } = {}
 local animations: { [string]: Animation } = {} -- one Animation object per id
 local pickClock = 0
 local motion: Gait.Motion = { cycle = 0, move = 0, time = 0, raise = 0, strike = 0, hit = 0, dead = 0 }
+-- The S117 fields of the shared motion, cleared for every monster and mount (Gait reads nil / 0 as "off").
+local function clearExtra(m: Gait.Motion)
+	m.style = nil
+	m.tremble = 0
+	m.hop = 0
+	m.spin = 0
+	m.roar = 0
+	m.roarStyle = nil
+	m.rise = nil
+	m.deathStyle = nil
+	m.deathSide = nil
+	m.hover = nil
+	m.hitX = 0
+	m.hitZ = 0
+	m.plan = nil
+	m.flying = 0
+end
 
 -- Monsters --------------------------------------------------------------------------------------------------
 
@@ -109,8 +173,10 @@ local function collectJoints(model: Model): { JointState }
 					side = tonumber(item:GetAttribute("Side")) or 0,
 					phase = tonumber(item:GetAttribute("Phase")) or 0,
 					amp = tonumber(item:GetAttribute("Amp")) or 1,
+					front = tonumber(item:GetAttribute("Front")) or 0,
 				},
 				scale = tonumber(item:GetAttribute("Scale")) or 1,
+				body = role == "body",
 			})
 		end
 	end
@@ -176,6 +242,67 @@ local function refresh(model: Model)
 	end
 end
 
+-- S117: the boss id of a monster model (a world boss: MonsterId; an AnimLab look: PreviewMonsterId), else nil.
+local function bossIdOf(model: Model): string?
+	local id = model:GetAttribute("MonsterId") or model:GetAttribute("PreviewMonsterId")
+	return if type(id) == "string" and Bosses.get(id) then id else nil
+end
+
+-- S117: listeners of a phase roar (CombatFxController: the camera shake and the aura's flash).
+local roarListeners: { (model: Model, bossId: string?) -> () } = {}
+
+function AnimationController.OnRoar(fn: (model: Model, bossId: string?) -> ())
+	table.insert(roarListeners, fn)
+end
+
+-- S117: a phase roar starts (a new phase of a boss; AnimLab `boss <id> roar` calls it directly).
+local function startRoar(s: MonsterState)
+	local def = if s.bossId then BossMotions.get(s.bossId) else nil
+	s.roarStart = Clock.now()
+	s.roarSeconds = if def then def.roar.seconds else LOOK.roarSeconds
+	for _, fn in roarListeners do
+		task.spawn(fn, s.model, s.bossId)
+	end
+end
+
+-- S117: the first Config.MonsterLook.summonFxMax helpers of a wave rise with dust and cracks, the rest only move.
+local SUMMON_WAVE = 1 -- seconds: summons arriving within this belong to one wave
+local wave = { at = -math.huge, count = 0 }
+
+local function riseFx(s: MonsterState)
+	local now = Clock.now()
+	if now - wave.at > SUMMON_WAVE then
+		wave.at, wave.count = now, 0
+	end
+	wave.count += 1
+	if wave.count > LOOK.summonFxMax then
+		return
+	end
+	local low = State.Get({ "account", "settings", "quality" }) == "low"
+	local at = s.root.Position
+	Library.dust(at, 1.3 * s.scale, low)
+	if not low then
+		Library.groundDecal(at, 2.4 * s.scale, "cracks", Library.crackTint(DUST_TINT), LOOK.summonRise + 1.2)
+	end
+end
+
+local function onAttribute(s: MonsterState, name: string)
+	local model = s.model
+	if name == "Phase" then
+		local phase = tonumber(model:GetAttribute("Phase")) or 1
+		if phase > s.phase and model:GetAttribute("Dead") ~= true then
+			startRoar(s)
+		end
+		s.phase = phase
+	elseif name == "Flying" then
+		local flying = model:GetAttribute("Flying") == true
+		if s.flying and not flying then
+			s.landedAt = Clock.now()
+		end
+		s.flying = flying
+	end
+end
+
 local function track(model: Instance)
 	if not model:IsA("Model") or monsters[model] then
 		return
@@ -185,24 +312,71 @@ local function track(model: Instance)
 		return
 	end
 	local scale = model:GetAttribute("LookScale")
-	monsters[model] = {
+	local lookId = model:GetAttribute("Look")
+	local region = model:GetAttribute("LookRegion")
+	local look = if type(lookId) == "string"
+		then MonsterLooks.get(lookId, if type(region) == "number" then region else nil)
+		else nil
+	local plan = if look then look.plan else nil
+	local seed = math.random() * 100
+	local s: MonsterState = {
 		model = model,
 		root = root,
 		joints = {},
 		clips = nil,
-		spawnedAt = os.clock(),
+		spawnedAt = Clock.now(),
 		attackSlot = "attack1",
 		scale = if type(scale) == "number" then scale else 1,
-		seed = math.random() * 100,
+		seed = seed,
 		cycle = 0,
 		move = 0,
 		attackStart = -math.huge,
 		attackWindup = Gait.DEFAULT_WINDUP,
 		hitAt = -math.huge,
+		flinchAt = -math.huge,
 		hitDir = nil,
 		deadAt = nil,
+		plan = plan,
+		weapon = if look then look.weapon else nil,
+		bossId = bossIdOf(model),
+		hover = if plan and AnatomyPlans.hovers(plan) then Anatomy.HOVER else 0,
+		deathStyle = nil,
+		deathSide = if seed % 2 < 1 then -1 else 1,
+		style = nil,
+		charged = false,
+		attackId = nil,
+		leap = nil,
+		lastRoot = nil,
+		-- a summoned helper of a boss climbs out of the ground once, when it arrives (DECYZJE S117)
+		riseStart = if model:GetAttribute("Summoned") == true and model:GetAttribute("Dead") ~= true
+			then Clock.now()
+			else nil,
+		roarStart = nil,
+		roarSeconds = LOOK.roarSeconds,
+		flying = model:GetAttribute("Flying") == true,
+		landedAt = nil,
+		phase = tonumber(model:GetAttribute("Phase")) or 1,
+		connection = nil,
 	}
+	local bossDef = if s.bossId then BossMotions.get(s.bossId) else nil
+	s.deathStyle = if bossDef then bossDef.death.style elseif plan then MonsterMotions.deathFor(plan) else nil
+	s.connection = model.AttributeChanged:Connect(function(name: string)
+		onAttribute(s, name)
+	end)
+	monsters[model] = s
 	refresh(model)
+	if s.riseStart then
+		riseFx(s)
+	end
+end
+
+local function untrack(model: Model)
+	local s = monsters[model]
+	if s and s.connection then
+		s.connection:Disconnect()
+	end
+	monsters[model] = nil
+	animated[model] = nil
 end
 
 -- The nearest monsters with a full look shown animate (Config.MonsterLook.maxAnimated).
@@ -266,28 +440,120 @@ local function stepClips(s: MonsterState, clips: Clips, now: number, speed: numb
 	clip:AdjustSpeed(pick.speed)
 end
 
--- S113: the blow's push on a generated monster's body: a turn of at most FLINCH.monsterDegrees away from the attacker
--- with the sine envelope of Gait.HIT_SECONDS (the axis in world space; nil when there is none now).
-local function hitTwist(s: MonsterState, now: number): Vector3?
+-- S117: the push of the last blow in the root's frame (Gait.hitLean): unit, bosses Config.MonsterLook.bossHitScale;
+-- 0, 0 without a direction. A gather's CHARGE_HIT scales motion.hit only (Gait.hitLean multiplies the two).
+local function hitPush(s: MonsterState): (number, number)
 	local dir = s.hitDir
-	local t = now - s.hitAt
-	if not dir or t <= 0 or t >= HIT_SECONDS then
-		return nil
+	if not dir then
+		return 0, 0
 	end
-	local angle = math.rad(AttackMotions.FLINCH.monsterDegrees) * math.sin(math.pi * t / HIT_SECONDS)
-	-- the body's top moves along the push: rotation about up x push
-	return Vector3.new(0, 1, 0):Cross(dir) * angle
+	local into = s.root.CFrame:VectorToObjectSpace(dir)
+	local k = if s.bossId then LOOK.bossHitScale else 1
+	return into.X * k, into.Z * k
 end
 
--- The world-space turn `twist` (axis * angle) as a rotation in the joint's own frame (Part0 * C0).
-local function bodyTwist(motor: Motor6D, twist: Vector3): CFrame
-	local angle = twist.Magnitude
-	local part0 = motor.Part0
-	if angle < 1e-4 or not part0 then
-		return CFrame.identity
+-- S117: Grimrok's leap: the body flies the last leapArc s of the windup along an arc to the area (root frame), stays
+-- there until the server's teleport moves the root (then the arc ends at once), else returns after LEAP_WAIT.
+local function leapOffset(s: MonsterState, now: number): Vector3?
+	local leap = s.leap
+	if not leap then
+		return nil
 	end
-	local axis = (part0.CFrame * motor.C0):VectorToObjectSpace(twist.Unit)
-	return CFrame.fromAxisAngle(axis, angle)
+	local t = now - s.attackStart
+	local w = s.attackWindup
+	local fly = math.min(LOOK.leapArc, w)
+	if t < w - fly then
+		return nil
+	end
+	local target = leap.offset
+	if t <= w then
+		local x, y, z = Gait.leapArc((t - (w - fly)) / fly, { 0, 0, 0 }, { target.X, target.Y, target.Z }, leap.height)
+		return Vector3.new(x, y, z)
+	end
+	local back = (t - w - LEAP_WAIT) / LEAP_BACK
+	if back >= 1 then
+		s.leap = nil
+		return nil
+	end
+	return target * (1 - math.clamp(back, 0, 1))
+end
+
+-- S117: the roar envelope now (an attack started after the roar makes it give way within ROAR_YIELD s).
+local function roarOf(s: MonsterState, now: number): number
+	local start = s.roarStart
+	if not start then
+		return 0
+	end
+	local value = Gait.roarEnvelope(now - start, s.roarSeconds)
+	if value <= 0 and now - start >= s.roarSeconds then
+		s.roarStart = nil
+		return 0
+	end
+	if s.attackStart > start then
+		value *= math.max(0, 1 - (now - s.attackStart) / ROAR_YIELD)
+	end
+	return value
+end
+
+-- S117: how much a dragon is in the air: 1 while Flying and LAND_WIDE s after it, then down over LAND_FADE s.
+local function flyingOf(s: MonsterState, now: number): number
+	if s.flying then
+		return 1
+	end
+	local landed = s.landedAt
+	if not landed then
+		return 0
+	end
+	local t = now - landed - LAND_WIDE
+	if t >= LAND_FADE then
+		s.landedAt = nil
+		return 0
+	end
+	return if t <= 0 then 1 else 1 - t / LAND_FADE
+end
+
+-- The generated monster's Motion this frame (the shared `motion` table).
+local function monsterMotion(s: MonsterState, now: number): Gait.Motion
+	clearExtra(motion)
+	local elapsed = now - s.attackStart
+	Gait.attackMotion(motion, elapsed, s.attackWindup, s.charged)
+	local attacking = motion.raise > 0 or motion.strike > 0
+	if attacking then
+		motion.style = s.style
+	end
+	motion.cycle = s.cycle
+	motion.move = s.move
+	motion.time = now + s.seed
+	motion.hit = math.max(0, 1 - (now - s.hitAt) / HIT_SECONDS)
+	motion.dead = if s.deadAt then math.clamp((now - s.deadAt) / DEATH_SECONDS, 0, 1) else 0
+	motion.plan = s.plan
+	local gathering = s.charged and elapsed >= 0 and elapsed < s.attackWindup
+	if gathering then
+		-- D3: a hit during the gather only leans the body a little; the gather goes on
+		motion.hit *= CHARGE_HIT
+	end
+	motion.hitX, motion.hitZ = hitPush(s)
+	if s.deadAt then
+		motion.deathStyle = s.deathStyle
+		motion.deathSide = s.deathSide
+		motion.hover = s.hover
+	end
+	motion.roar = roarOf(s, now)
+	if s.bossId then
+		local def = BossMotions.get(s.bossId)
+		motion.roarStyle = if def then def.roar.style else nil
+	end
+	local riseStart = s.riseStart
+	if riseStart then
+		local t = now - riseStart
+		if t >= LOOK.summonRise then
+			s.riseStart = nil
+		else
+			motion.rise = Gait.riseOf(t, LOOK.summonRise)
+		end
+	end
+	motion.flying = flyingOf(s, now)
+	return motion
 end
 
 local function step(dt: number)
@@ -295,78 +561,135 @@ local function step(dt: number)
 	if not camera then
 		return
 	end
-	local now = os.clock()
-	if now - pickClock >= PICK_EVERY then
-		pickClock = now
+	local now = Clock.now()
+	if os.clock() - pickClock >= PICK_EVERY then
+		pickClock = os.clock()
 		pickAnimated()
 	end
 	for model, s in monsters do
 		if not model.Parent or not s.root.Parent then
-			monsters[model] = nil
-			animated[model] = nil
+			untrack(model)
 			continue
 		end
 		if s.deadAt == nil and model:GetAttribute("Dead") == true then
 			s.deadAt = now
 		end
+		-- the server's teleport of a leaping boss: the visual arc ends where the root lands
+		local rootAt = s.root.Position
+		if s.leap and s.lastRoot and (rootAt - s.lastRoot).Magnitude > TELEPORT_JUMP then
+			s.leap = nil
+		end
+		s.lastRoot = rootAt
 		if not animated[model] then
 			continue
 		end
 		local velocity = s.root.AssemblyLinearVelocity
 		local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 		local target = math.clamp(speed / 3, 0, 1)
-		s.move += (target - s.move) * math.min(1, dt * 8)
-		s.cycle = Gait.advance(s.cycle, dt, speed, s.scale)
+		local frame = Clock.dt(dt)
+		s.move += (target - s.move) * math.min(1, frame * 8)
+		s.cycle = Gait.advance(s.cycle, frame, speed, s.scale)
 		local clips = s.clips
 		if clips then
 			stepClips(s, clips, now, speed)
 			continue
 		end
 
-		local raise, strike = Gait.attack(now - s.attackStart, s.attackWindup)
-		motion.cycle = s.cycle
-		motion.move = s.move
-		motion.time = now + s.seed
-		motion.raise = raise
-		motion.strike = strike
-		motion.hit = math.max(0, 1 - (now - s.hitAt) / HIT_SECONDS)
-		motion.dead = if s.deadAt then math.clamp((now - s.deadAt) / DEATH_SECONDS, 0, 1) else 0
-
-		local twist = hitTwist(s, now)
+		local m = monsterMotion(s, now)
+		local leap = leapOffset(s, now)
 		for _, j in s.joints do
-			local p = Gait.pose(j.joint, motion)
+			local p = Gait.pose(j.joint, m)
 			local k = j.scale
 			local transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
-			if twist and j.joint.role == "body" then
-				transform = bodyTwist(j.motor, twist) * transform
+			if leap and j.body then
+				transform = CFrame.new(leap) * transform
 			end
 			j.motor.Transform = transform
 		end
 	end
 end
 
--- Starts an attack: the limbs rise for `windup` seconds and strike. With `strikeNow` the windup is mostly
--- skipped (basic attacks arrive when the hit already landed).
-function AnimationController.MonsterAttack(model: Model, windup: number?, strikeNow: boolean?)
+-- Starts an attack: the limbs rise for `windup` seconds and strike (S117: the blow peaks at the end of the windup).
+-- With `strikeNow` (a basic attack: its event arrives with the damage) the blow peaks Gait.STRIKE_NOW_LEAD s from now.
+-- S117: `attackId` (an Elite II ability or a boss attack, the "tele" event's `a`) picks the style and makes it a
+-- telegraphed gather (Gait.charge) over the same clamped windup the telegraph fills over; `area` (the event's CFrame)
+-- aims a boss leap. More telegraphs of one attack within SAME_ATTACK s pose it once.
+function AnimationController.MonsterAttack(
+	model: Model,
+	windup: number?,
+	strikeNow: boolean?,
+	attackId: string?,
+	area: CFrame?
+)
 	local s = monsters[model]
 	if not s then
 		return
 	end
-	local w = math.clamp(windup or Gait.DEFAULT_WINDUP, 0.05, 5)
+	local now = Clock.now()
+	if attackId and s.attackId == attackId and now - s.attackStart < SAME_ATTACK then
+		return
+	end
+	local w = if strikeNow
+		then math.clamp(windup or Gait.DEFAULT_WINDUP, 0.05, 5)
+		else Telegraph.windup(windup or Gait.DEFAULT_WINDUP)
 	s.attackWindup = w
 	-- Real models: long windups are spells and specials.
 	s.attackSlot = if strikeNow then "attack1" elseif w > 1 then "cast" else "attack2"
-	s.attackStart = os.clock() - (if strikeNow then math.max(0, w - 0.06) else 0)
+	s.attackStart = now - (if strikeNow then math.max(0, w - Gait.STRIKE_NOW_LEAD) else 0)
+	s.attackId = attackId
+	s.charged = not strikeNow and attackId ~= nil
+	s.leap = nil
+	local bossMotion = if s.bossId and attackId then BossMotions.attack(s.bossId, attackId) else nil
+	if bossMotion then
+		s.style = bossMotion.style
+		local arc = bossMotion.arc
+		local boss = Bosses.get(s.bossId :: string)
+		local leaps = false
+		if boss then
+			for _, attack in boss.attacks do
+				if attack.id == attackId and attack.leap then
+					leaps = true
+				end
+			end
+		end
+		if leaps and arc and area then
+			local offset = s.root.CFrame:PointToObjectSpace(area.Position)
+			s.leap = { offset = Vector3.new(offset.X, 0, offset.Z), height = arc }
+		end
+	elseif s.plan then
+		s.style = MonsterMotions.styleFor(s.plan, s.weapon, if s.charged then attackId else nil)
+	else
+		s.style = nil
+	end
 end
 
 -- A monster was hit; `from` (the attacker's position) gives the direction of the blow (S113: MonsterState.hitDir).
+-- S117: at most one flinch per Config.MonsterLook.hitEvery s (an area hitting many times does not shake it on and on).
 function AnimationController.MonsterHit(model: Model, from: Vector3?)
 	local s = monsters[model]
 	if s then
-		s.hitAt = os.clock()
+		local now = Clock.now()
+		if now - s.flinchAt < LOOK.hitEvery then
+			return
+		end
+		s.flinchAt = now
+		s.hitAt = now
 		local push = if from then s.root.Position - from else nil
 		local flat = if push then Vector3.new(push.X, 0, push.Z) else nil
 		s.hitDir = if flat and flat.Magnitude > 0.05 then flat.Unit else nil
+	end
+end
+
+-- S117 AnimLab `boss <id> roar`: a monster roars now (the Phase attribute does the same in the game); a stage look
+-- (not a world monster: AnimLab poses it itself) only gets the listeners' shake and flash.
+function AnimationController.Roar(model: Model)
+	local s = monsters[model]
+	if s then
+		startRoar(s)
+		return
+	end
+	for _, fn in roarListeners do
+		task.spawn(fn, model, bossIdOf(model))
 	end
 end
 
@@ -479,6 +802,7 @@ local function stepMounts(dt: number)
 			stepMountClips(clips, speed)
 			continue
 		end
+		clearExtra(motion)
 		motion.cycle = m.cycle
 		motion.move = m.move
 		motion.time = now + m.seed
@@ -1032,8 +1356,13 @@ function AnimationController.Hitstop(model: Model, seconds: number)
 	end
 	local s = monsters[model]
 	if s then
-		s.attackStart += seconds
-		s.hitAt = now
+		-- S117 (D3): a telegraphed gather never moves (the server deals its damage on time); a basic attack does
+		local clock = Clock.now()
+		local gathering = s.charged and clock - s.attackStart < s.attackWindup
+		if not gathering then
+			s.attackStart += seconds
+		end
+		s.hitAt = clock
 	end
 end
 
@@ -1186,7 +1515,9 @@ function AnimationController.Start()
 		task.defer(track, child)
 	end)
 	folder.ChildRemoved:Connect(function(child)
-		monsters[child :: Model] = nil
+		if child:IsA("Model") then
+			untrack(child)
+		end
 	end)
 end
 

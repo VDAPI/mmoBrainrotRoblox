@@ -20,6 +20,11 @@
 -- target's reaction to a blow from that side, `clip <assetId> [attack <type> [step] | skill <id>]` loads a real clip on
 -- the actor, prints its load state, "Hit" marker, the server's hit time, the fitted speed (Logic/ClipFit) and the line
 -- to paste into the data, and plays it in a loop (freeze through TimePosition).
+-- S117: generated monsters and bosses move like in the game (Data/MonsterMotions style of the plan / weapon / Elite II
+-- ability, Data/BossMotions of each boss attack, Gait.charge for telegraphed attacks, deaths by plan); `mob <kind>
+-- attack2|cast` of an Elite II kind plays its ability with its telegraph, `mob <kind> spawn` the climb of a summon,
+-- `boss <id> roar|death` the phase roar (camera shake, aura flash) and the death pose, a boss leap its arc to the actor;
+-- `floor <grass|snow|cave>` dresses the floor (telegraph readability, Config.AnimLab.floors).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -40,7 +45,12 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
+local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
+local AnatomyPlans = require(ReplicatedStorage.Shared.Logic.Anatomy.Plans)
+local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local MonsterAbilities = require(ReplicatedStorage.Shared.Data.MonsterAbilities)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local MotionKeys = require(ReplicatedStorage.Shared.Logic.MotionKeys)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
@@ -80,6 +90,8 @@ type Subject = {
 	track: AnimationTrack?,
 	looped: boolean,
 	keys: MotionKeys.Keys,
+	options: Gait.StateOptions?, -- S117: the game's style, gather, death, rise and roar of this motion
+	leap: { offset: Vector3, height: number }?, -- S117: a boss leap's arc (model frame)
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
@@ -563,6 +575,7 @@ local function collect(model: Model): { Joint }
 						side = tonumber(item:GetAttribute("Side")) or 0,
 						phase = tonumber(item:GetAttribute("Phase")) or 0,
 						amp = tonumber(item:GetAttribute("Amp")) or 1,
+						front = tonumber(item:GetAttribute("Front")) or 0,
 					},
 					scale = tonumber(item:GetAttribute("Scale")) or 1,
 				})
@@ -654,6 +667,46 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 	return model
 end
 
+-- S117: the hover of a plan (studs at scale 1).
+local function hoverOf(plan: string): number
+	return if AnatomyPlans.hovers(plan) then Anatomy.HOVER else 0
+end
+
+-- S117: a telegraph on the stage like CombatService sends it: around the caster for "self" circles / rings, on the
+-- actor for the other circles, from the caster towards the actor for cones and lines. Returns its area.
+local function stageTelegraph(
+	model: Model,
+	shape: string,
+	around: boolean,
+	dims: { r: number?, ir: number?, an: number?, l: number?, w: number? },
+	windup: number,
+	element: string?,
+	id: string
+): CFrame
+	local at = model:GetPivot().Position
+	local casterAt = Vector3.new(at.X, centre.Y, at.Z)
+	local actorAt = centre + vec(LAYOUT.actor)
+	local toActor = Vector3.new(actorAt.X - casterAt.X, 0, actorAt.Z - casterAt.Z)
+	local dir = if toActor.Magnitude > 0.01 then toActor.Unit else Vector3.new(0, 0, 1)
+	local isRound = shape == "circle" or shape == "ring"
+	local origin = if isRound and not around then actorAt else casterAt
+	local area = CFrame.lookAt(origin, origin + dir)
+	Combat.PreviewTelegraph({
+		k = "tele",
+		sh = shape,
+		cf = area,
+		r = dims.r,
+		ir = dims.ir,
+		an = dims.an,
+		l = dims.l,
+		w = dims.w,
+		t = windup,
+		el = element,
+		a = id,
+	}, model)
+	return area
+end
+
 local function playMob(command: Command)
 	local id = command.id :: string
 	local slot = command.slot or "attack1"
@@ -669,7 +722,13 @@ local function playMob(command: Command)
 		if monster then "normal" else "boss",
 		if monster then monster.size elseif boss then boss.look.size else 1
 	)
-	local windup = if slot == "cast" then LAB.castWindup else Gait.DEFAULT_WINDUP
+	-- S117: an Elite II kind's attack2 / cast is its ability (the windup and the telegraph of the game)
+	local ability = if monster
+			and monster.ability
+			and (slot == "attack2" or slot == "cast")
+		then MonsterAbilities.get(monster.ability)
+		else nil
+	local windup = if ability then ability.windup elseif slot == "cast" then LAB.castWindup else Gait.DEFAULT_WINDUP
 	-- a basic monster attack (attack1) comes with its damage: the windup is mostly skipped (MonsterAttack strikeNow)
 	local strikeNow = slot == "attack1"
 	local asset = look.asset
@@ -677,23 +736,86 @@ local function playMob(command: Command)
 	if asset and asset.rig == "animator" then
 		track, looped = clipOf(model, asset.anims :: any, slot)
 	end
+	local plan = look.plan
+	local bossDef = if boss then BossMotions.get(id) else nil
+	local style = if strikeNow
+		then MonsterMotions.styleFor(plan, look.weapon)
+		elseif ability then MonsterMotions.styleFor(plan, look.weapon, ability.id)
+		else MonsterMotions.styleFor(plan, look.weapon, "default")
+	local keys = keysForSlot(slot, windup, strikeNow, track)
+	if ability and not track then
+		keys = MotionKeys.ability(ability.id) or keys
+	elseif slot == "spawn" and not track then
+		keys = MotionKeys.clip(Config.MonsterLook.summonRise)
+	end
 	subject = {
 		model = model,
 		joints = collect(model),
 		slot = slot,
 		windup = windup,
-		shift = if strikeNow then math.max(0, windup - 0.06) else 0,
+		shift = if strikeNow then math.max(0, windup - Gait.STRIKE_NOW_LEAD) else 0,
 		track = track,
 		looped = looped,
-		keys = keysForSlot(slot, windup, strikeNow, track),
+		keys = keys,
+		options = {
+			style = style,
+			charged = ability ~= nil,
+			deathStyle = if bossDef then bossDef.death.style else MonsterMotions.deathFor(plan),
+			deathSide = 1,
+			hover = hoverOf(plan),
+			plan = plan,
+			rise = true,
+		},
+		leap = nil,
 	}
+	if ability then
+		stageTelegraph(
+			model,
+			ability.shape,
+			ability.origin == "self",
+			{ r = ability.radius, ir = ability.inner, an = ability.angle, l = ability.length, w = ability.width },
+			ability.windup,
+			ability.element,
+			ability.id
+		)
+	end
 end
 
 local function playBoss(command: Command)
 	local bossId, attackId = command.id :: string, command.slot :: string
 	local boss = Bosses.get(bossId)
 	local look = MonsterLooks.get(bossId)
+	local def = BossMotions.get(bossId)
 	if not boss or not look then
+		return
+	end
+	local model = placeLook(bossId, look, "boss", boss.look.size)
+	local plan = look.plan
+	-- S117: the phase roar and the death of the boss
+	if attackId == "roar" or attackId == "death" then
+		local roar = if def then def.roar.seconds else Config.MonsterLook.roarSeconds
+		subject = {
+			model = model,
+			joints = collect(model),
+			slot = if attackId == "death" then "death" else "idle",
+			windup = Gait.DEFAULT_WINDUP,
+			shift = 0,
+			track = nil,
+			looped = false,
+			keys = MotionKeys.clip(if attackId == "death" then Gait.DEATH_SECONDS else roar),
+			options = {
+				deathStyle = if def then def.death.style else MonsterMotions.deathFor(plan),
+				deathSide = 1,
+				hover = hoverOf(plan),
+				plan = plan,
+				roar = if attackId == "roar" then roar else nil,
+				roarStyle = if def then def.roar.style else nil,
+			},
+			leap = nil,
+		}
+		if attackId == "roar" then
+			Animation.Roar(model)
+		end
 		return
 	end
 	local attack: Bosses.Attack? = nil
@@ -705,14 +827,14 @@ local function playBoss(command: Command)
 	if not attack then
 		return
 	end
-	local model = placeLook(bossId, look, "boss", boss.look.size)
 	local slot = if attack.windup > 1 then "cast" else "attack2"
 	local asset = look.asset
 	local track, looped = nil, false
 	if asset and asset.rig == "animator" then
 		track, looped = clipOf(model, asset.anims :: any, slot)
 	end
-	subject = {
+	local motion = if def then def.attacks[attackId] else nil
+	local played: Subject = {
 		model = model,
 		joints = collect(model),
 		slot = slot,
@@ -721,27 +843,29 @@ local function playBoss(command: Command)
 		track = track,
 		looped = looped,
 		keys = MotionKeys.boss(bossId, attackId) or MotionKeys.monster(attack.windup),
+		options = {
+			style = if motion then motion.style else nil,
+			charged = true,
+			plan = plan,
+			hover = hoverOf(plan),
+		},
+		leap = nil,
 	}
-	-- the telegraph like CombatService sends it: around the boss for "self" circles / rings, on the actor for the
-	-- other circles, from the boss towards the actor for cones and lines
-	local bossAt = Vector3.new(model:GetPivot().Position.X, centre.Y, model:GetPivot().Position.Z)
-	local actorAt = centre + vec(LAYOUT.actor)
-	local toActor = Vector3.new(actorAt.X - bossAt.X, 0, actorAt.Z - bossAt.Z)
-	local dir = if toActor.Magnitude > 0.01 then toActor.Unit else Vector3.new(0, 0, 1)
-	local isRound = attack.shape == "circle" or attack.shape == "ring"
-	local origin = if isRound and attack.target ~= "self" then actorAt else bossAt
-	Combat.PreviewTelegraph({
-		k = "tele",
-		sh = attack.shape,
-		cf = CFrame.lookAt(origin, origin + dir),
-		r = attack.radius,
-		ir = attack.inner,
-		an = attack.angle,
-		l = attack.length,
-		w = attack.width,
-		t = attack.windup,
-		el = attack.element,
-	}, model)
+	subject = played
+	local area = stageTelegraph(
+		model,
+		attack.shape,
+		attack.target == "self",
+		{ r = attack.radius, ir = attack.inner, an = attack.angle, l = attack.length, w = attack.width },
+		attack.windup,
+		attack.element,
+		attack.id
+	)
+	-- S117: a leap flies its arc to the area (the stage has no server teleport: it stays there to the end)
+	if attack.leap and motion and motion.arc then
+		local offset = model:GetPivot():PointToObjectSpace(area.Position)
+		played.leap = { offset = Vector3.new(offset.X, 0, offset.Z), height = motion.arc }
+	end
 end
 
 local function playNpc(command: Command)
@@ -942,11 +1066,30 @@ step = function(_dt: number)
 			s.track.TimePosition = LookAnim.clipTime(t, s.track.Length, s.looped)
 		end
 		if #s.joints > 0 then
-			local motion = Gait.stateMotion(s.slot :: Gait.Slot, t + s.shift, { windup = s.windup })
+			-- S117: the game's choices (style, gather, death, rise, roar) on top of the slot's windup
+			local options: Gait.StateOptions = if s.options then table.clone(s.options) else {}
+			options.windup = s.windup
+			local motion = Gait.stateMotion(s.slot :: Gait.Slot, t + s.shift, options)
+			-- S117: a boss leap flies the last leapArc s of its windup to the area and stays there
+			local leap: Vector3? = nil
+			local arc = s.leap
+			if arc then
+				local fly = math.min(Config.MonsterLook.leapArc, s.windup)
+				local k = (t - (s.windup - fly)) / fly
+				if k > 0 then
+					local o = arc.offset
+					local x, y, z = Gait.leapArc(math.min(1, k), { 0, 0, 0 }, { o.X, o.Y, o.Z }, arc.height)
+					leap = Vector3.new(x, y, z)
+				end
+			end
 			for _, j in s.joints do
 				local p = Gait.pose(j.joint, motion)
 				local k = j.scale
-				j.motor.Transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+				local transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+				if leap and j.joint.role == "body" then
+					transform = CFrame.new(leap) * transform
+				end
+				j.motor.Transform = transform
 			end
 		end
 	end
@@ -1571,6 +1714,16 @@ local function run(command: Command): { [string]: any }
 		local result = { ok = true, camera_position = p, look_at_position = l }
 		print("[AnimLab] cam", HttpService:JSONEncode(result))
 		return result
+	elseif action == "floor" then
+		-- S117: the floor as grass, snow or a cave (telegraph readability)
+		local spec = (LAB.floors :: any)[command.id :: string]
+		local floorPart = (stage :: Folder):FindFirstChild("Floor")
+		if spec and floorPart and floorPart:IsA("BasePart") then
+			floorPart.Material = (Enum.Material :: any)[spec.material]
+			floorPart.Color = Color3.fromHex(spec.color)
+		end
+		notify("animlab.floor", { floor = command.id })
+		return { ok = true, floor = command.id }
 	elseif action == "stress" then
 		stress(command.n :: number)
 		notify("animlab.stress", { n = command.n, every = LAB.stressEvery })

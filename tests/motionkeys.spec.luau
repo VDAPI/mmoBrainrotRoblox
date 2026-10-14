@@ -177,13 +177,14 @@ T.describe("MotionKeys: skills", function()
 end)
 
 T.describe("MotionKeys: monsters, bosses, clips", function()
-	T.it("every boss attack: hit = windup, strikePeak = windup + STRIKE_SECONDS, end = attackLength", function()
+	T.it("every boss attack: hit = strikePeak = windup (S117), end = attackLength", function()
 		for _, boss in Bosses.list do
 			for _, attack in boss.attacks do
 				local keys = MotionKeys.boss(boss.id, attack.id) :: MotionKeys.Keys
 				checkShape(`{boss.id}.{attack.id}`, keys)
 				T.expect(MotionKeys.at(keys, "hit")).toBeNear(attack.windup, EPS)
-				T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(attack.windup + Gait.STRIKE_SECONDS, EPS)
+				T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(attack.windup, EPS)
+				T.expect(MotionKeys.at(keys, "peak")).toBeNear(attack.windup - Gait.STRIKE_SECONDS, EPS)
 				T.expect(MotionKeys.at(keys, "end")).toBeNear(Gait.attackLength(attack.windup), EPS)
 			end
 		end
@@ -196,17 +197,17 @@ T.describe("MotionKeys: monsters, bosses, clips", function()
 			local keys = MotionKeys.ability(id) :: MotionKeys.Keys
 			checkShape(id, keys)
 			T.expect(MotionKeys.at(keys, "hit")).toBeNear(ability.windup, EPS)
-			T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(ability.windup + Gait.STRIKE_SECONDS, EPS)
+			T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(ability.windup, EPS)
 			T.expect(MotionKeys.at(keys, "end")).toBeNear(Gait.attackLength(ability.windup), EPS)
 		end
 		T.expect(MotionKeys.ability("noSuchAbility")).toBeNil()
 	end)
 
-	T.it("a basic monster attack (strikeNow) hits at 0 and strikes later", function()
+	T.it("a basic monster attack (strikeNow) hits at 0 and peaks STRIKE_NOW_LEAD later (S117)", function()
 		local keys = MotionKeys.monster(nil, true)
 		checkShape("strikeNow", keys)
 		T.expect(MotionKeys.at(keys, "hit")).toBe(0)
-		T.expect((MotionKeys.at(keys, "strikePeak") :: number) > 0).toBe(true)
+		T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(Gait.STRIKE_NOW_LEAD, EPS)
 	end)
 
 	T.it("a clip has start, the marker and the end", function()
@@ -224,16 +225,17 @@ T.describe("Gait.stateMotion and LookAnim.clipTime", function()
 		T.expect(Gait.stateMotion("attack1", 0.3, { windup = 0.4 }))
 			.toEqual(Gait.stateMotion("attack1", 0.3, { windup = 0.4 }))
 		local w = 0.5
-		local atWindup = Gait.stateMotion("attack1", w, { windup = w })
-		T.expect(atWindup.raise).toBeNear(1, 1e-9)
-		T.expect(atWindup.strike).toBeNear(0, 1e-9)
-		local atStrike = Gait.stateMotion("attack2", w + Gait.STRIKE_SECONDS - 1e-6, { windup = w })
-		T.expect(atStrike.strike).toBeNear(1, 1e-4)
+		-- S117: the gather ends where the strike starts, the strike peaks at the windup (the server's hit)
+		local atGather = Gait.stateMotion("attack1", w - Gait.STRIKE_SECONDS, { windup = w })
+		T.expect(atGather.raise).toBeNear(1, 1e-9)
+		T.expect(atGather.strike).toBeNear(0, 1e-9)
+		local atStrike = Gait.stateMotion("attack2", w, { windup = w })
+		T.expect(atStrike.strike).toBeNear(1, 1e-9)
 	end)
 
 	T.it("death, spawn and hit use the shared lengths", function()
 		T.expect(Gait.HIT_SECONDS).toBe(0.25)
-		T.expect(Gait.DEATH_SECONDS).toBe(0.55)
+		T.expect(Gait.DEATH_SECONDS).toBe(0.8) -- S117 (Config.MonsterLook.deathSeconds)
 		T.expect(Gait.stateMotion("death", Gait.DEATH_SECONDS).dead).toBe(1)
 		T.expect(Gait.stateMotion("spawn", 0).dead).toBe(1)
 		T.expect(Gait.stateMotion("hit", 0).hit).toBe(1)

@@ -10,7 +10,8 @@
 --            fly from the bow on an arc and stick in the target, crossbow bolts fly straight, wand / staff bolts
 --            leave the tip in the weapon's element colour; the hit flash and the number of that attack wait for
 --            the blow / the arrival (at most 0.5 s), the server's damage itself is not delayed
---   tele   : red ground telegraph that fills during the windup (circle / cone / line)
+--   tele   : red ground telegraph that fills during the windup (circle / cone / line / ring); S117: telegraphs 2.0
+--            (Vfx/GroundTelegraph: from the edge to the centre, pulsing rim, flash and effect at the blow)
 --   reward : "+EXP · +gold" above our character
 -- Damage numbers: setting "all / mine and received / off" (settings.dmgMode, DamageText.mode; the old
 -- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
@@ -35,6 +36,8 @@ local Workspace = game:GetService("Workspace")
 
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
@@ -42,16 +45,21 @@ local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local HitFx = require(ReplicatedStorage.Shared.Data.HitFx)
+local MonsterAbilities = require(ReplicatedStorage.Shared.Data.MonsterAbilities)
+local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
+local GroundTelegraph = require(script.Parent.Parent.Vfx.GroundTelegraph)
 local Library = require(script.Parent.Parent.Vfx.Library)
+local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
 
 local CombatFxController = {
@@ -521,7 +529,7 @@ local function impact(model: Model, crit: boolean)
 end
 
 -- Short camera kick when we take a heavy (critical) hit or a big skill lands nearby (S28). Scaled by the setting
--- "Camera shake" (settings.shake 0..1, default 1).
+-- "Camera shake" (settings.shake 0..1, default 1); low effect quality shakes for half as long (S117).
 local function shake(strength: number)
 	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	local setting = State.Get({ "account", "settings", "shake" })
@@ -529,9 +537,10 @@ local function shake(strength: number)
 	if not humanoid or strength <= 0.01 then
 		return
 	end
+	local frames = if lowQuality() then 2 else 4
 	task.spawn(function()
-		for i = 1, 4 do
-			local fade = 1 - (i - 1) / 4
+		for i = 1, frames do
+			local fade = 1 - (i - 1) / frames
 			humanoid.CameraOffset =
 				Vector3.new((math.random() - 0.5) * strength * fade, (math.random() - 0.5) * strength * fade, 0)
 			task.wait(0.03)
@@ -980,115 +989,326 @@ local function hitSparks(model: Model, from: Vector3?, material: string, crit: b
 	return true
 end
 
--- Telegraphs -----------------------------------------------------------------------------------------------
+-- Telegraphs -----------------------------------------------------------------------------------------------------
+-- S117 (telegraphs 2.0, Vfx/GroundTelegraph + Logic/Telegraph): the area fills from its edge to its centre in step with
+-- the caster's gather (both start in this frame with the same clamped windup), flashes at the blow and fades; the
+-- warning sounds once per attack (the areas of one attack share its id `a`), the blow plays the attack's sound and
+-- effect on every area (an Elite II by its shape and element, a boss by Data/BossMotions) and shakes the camera of
+-- players near a boss (Config.Telegraph.shakeRange).
 
-local function groundDisc(name: string, radius: number, at: CFrame, transparency: number): Part
-	local disc = effectPart(name, Vector3.new(0.12, radius * 2, radius * 2), TELEGRAPH_COLOR, Enum.PartType.Cylinder)
-	disc.Material = Enum.Material.SmoothPlastic
-	disc.Transparency = transparency
-	disc.CFrame = at * CFrame.new(0, 0.15, 0) * CFrame.Angles(0, 0, math.rad(90))
-	return disc
+local TELE_GROUP = 0.1 -- seconds: telegraphs of one caster and attack within this are one attack (count, "all")
+local BOSS_DEATH_SHAKE = 0.5 -- the camera shake when a boss dies (E7)
+local METEOR_FALL = 0.45 -- seconds a boss meteor falls (it lands at the hit)
+local BOLT_FLIGHT = 0.25 -- seconds a boss bolt flies from the hand (it arrives at the hit)
+local ICE = Color3.fromHex("#BDE9FF")
+
+-- The last start of each caster's attack (sound and pose once per attack).
+local teleGroups: { [string]: number } = {}
+
+local function groupKey(event: { [string]: any }): string
+	return `{tostring(event.e)}:{tostring(event.a)}`
 end
 
--- S111: the warning at the centre of the area (louder when we stand in it) and the attack sound of the caster when
--- the windup ends (one key per boss: the event carries no attack id until S116).
-local function telegraphSounds(event: { [string]: any }, caster: Model?)
-	local area = event.cf
-	local windup = math.clamp(tonumber(event.t) or 1, 0.2, 5)
-	if typeof(area) == "CFrame" then
-		local who: SfxRules.Who = "other"
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart")
-		local reach = tonumber(event.r) or tonumber(event.l) or 8
-		if root and root:IsA("BasePart") and (root.Position - area.Position).Magnitude < reach then
+-- True for the first telegraph of an attack, false for its other areas.
+local function firstOfGroup(event: { [string]: any }): boolean
+	local key = groupKey(event)
+	local now = Clock.now()
+	local last = teleGroups[key]
+	if last and now - last < TELE_GROUP then
+		return false
+	end
+	teleGroups[key] = now
+	for other, at in teleGroups do
+		if now - at >= TELE_GROUP then
+			teleGroups[other] = nil
+		end
+	end
+	return true
+end
+
+-- What the event's attack is: the boss motion (nil for Elite II), the boss id, the magic kind.
+local function attackInfo(event: { [string]: any }, caster: Model?): (BossMotions.BossAttackMotion?, string?, boolean)
+	local a = if type(event.a) == "string" then event.a else nil
+	local bossId: string? = nil
+	if caster then
+		local id = caster:GetAttribute("MonsterId") or caster:GetAttribute("PreviewMonsterId")
+		if type(id) == "string" and Bosses.get(id) then
+			bossId = id
+		end
+	end
+	if bossId and a then
+		local boss = Bosses.get(bossId)
+		local magic = false
+		if boss then
+			for _, attack in boss.attacks do
+				if attack.id == a then
+					magic = attack.damageKind == "magic"
+				end
+			end
+		end
+		return BossMotions.attack(bossId, a), bossId, magic
+	end
+	local ability = if a then MonsterAbilities.get(a) else nil
+	if ability then
+		return nil, nil, ability.damageKind == "magic"
+	end
+	-- without an id (an old server): an element on a round area reads as a spell
+	return nil, nil, false
+end
+
+local function playerRoot(): BasePart?
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return if root and root:IsA("BasePart") then root else nil
+end
+
+-- A boss's camera shake: `strength` at the point, fading to nothing at Config.Telegraph.shakeRange studs.
+local function shakeNear(at: Vector3, strength: number)
+	local root = playerRoot()
+	if not root or strength <= 0 then
+		return
+	end
+	local d = (root.Position - at).Magnitude
+	local k = 1 - d / Config.Telegraph.shakeRange
+	if k > 0 then
+		shake(strength * k)
+	end
+end
+
+-- The effect of a boss attack on one area at the blow (Data/BossMotions impact).
+local function bossImpact(
+	motion: BossMotions.BossAttackMotion,
+	event: { [string]: any },
+	color: Color3,
+	simple: boolean
+)
+	local area = event.cf :: CFrame
+	local at = area.Position
+	local r = tonumber(event.r) or 8
+	local impact = motion.impact or "none"
+	if impact == "slash" then
+		if event.sh == "cone" then
+			Library.cone(area, r, tonumber(event.an) or 90, color, simple)
+		elseif event.sh == "line" then
+			local l = tonumber(event.l) or 15
+			Library.dash(at + Vector3.new(0, 1, 0), (area * CFrame.new(0, 1, -l)).Position, color, simple)
+		else
+			Library.slash(area * CFrame.new(0, 1, 0), r, 60, -60, color, 0, simple)
+		end
+	elseif impact == "shockwave" then
+		Library.impactFlash(at + Vector3.new(0, 1, 0), 4, color, { simple = simple })
+		Library.shockwave(at, r, color, 0.45, simple)
+	elseif impact == "cracks" then
+		Library.cracks(at, r * 0.7, color, 1.4, simple)
+	elseif impact == "ringWave" then
+		Library.ringWave(at, r, color, { simple = simple })
+	elseif impact == "pillar" then
+		if event.sh == "line" then
+			local l = tonumber(event.l) or 15
+			local count = if simple then 2 else 4
+			for i = 1, count do
+				Library.pillar((area * CFrame.new(0, 0, -l * (i - 0.5) / count)).Position, 2, 8, color, 0.6)
+			end
+		else
+			Library.pillar(at, math.min(r, 4), 9, color, 0.6)
+		end
+	elseif impact == "breath" then
+		Library.cone(area, r, tonumber(event.an) or 60, color, simple)
+		if not simple then
+			Library.sparks(at + area.LookVector * (r * 0.5) + Vector3.new(0, 1, 0), color, {
+				key = "iceShard",
+				dir = area.LookVector,
+				count = 10,
+			})
+		end
+	elseif impact == "rune" then
+		Library.magicCircle(at, r, color, 0.8, { simple = simple })
+	end
+	-- meteor and bolt start before the blow (scheduleBossImpact); they land / arrive at it
+	if motion.cracks then
+		Library.cracks(at, r * 0.6, color, 1.6, simple)
+	end
+end
+
+-- A caster killed in its windup (Dead, or its model gone) lands no blow: the server drops the cast. A caster that has not
+-- streamed in (nil) still gets its effects.
+local function casterGone(caster: Model?): boolean
+	return caster ~= nil and (caster.Parent == nil or caster:GetAttribute("Dead") == true)
+end
+
+-- Meteors and bolts of a boss: they must land at the server's hit, so they start before the end of the windup.
+local function scheduleBossImpact(
+	motion: BossMotions.BossAttackMotion,
+	event: { [string]: any },
+	caster: Model?,
+	windup: number,
+	color: Color3,
+	simple: boolean
+)
+	local area = event.cf :: CFrame
+	local at = area.Position
+	local r = tonumber(event.r) or 8
+	if motion.impact == "meteor" then
+		local fall = math.min(METEOR_FALL, windup)
+		local tint = if event.el == "ice" then ICE else color
+		Clock.after(windup - fall, function()
+			if casterGone(caster) then
+				return
+			end
+			Library.meteor(at, r, fall, tint, simple)
+		end)
+	elseif motion.impact == "bolt" and caster then
+		local flight = math.min(BOLT_FLIGHT, windup)
+		Clock.after(windup - flight, function()
+			if casterGone(caster) then
+				return
+			end
+			local from = centre(caster) + Vector3.new(0, 1.5, 0)
+			Library.projectile(from, at + Vector3.new(0, 1, 0), "orb", color, {
+				simple = simple,
+				time = flight,
+				onArrive = function(point: Vector3)
+					Library.impactFlash(point, 3, color, { simple = simple })
+				end,
+			})
+		end)
+	end
+end
+
+-- The effect of an Elite II ability at the blow (D5): by shape, in the element's colour, a flash in the middle.
+local function eliteImpact(event: { [string]: any }, color: Color3, simple: boolean)
+	local area = event.cf :: CFrame
+	local at = area.Position
+	local r = tonumber(event.r) or 8
+	if event.sh == "cone" then
+		Library.cone(area, r, tonumber(event.an) or 90, color, simple)
+	elseif event.sh == "line" then
+		local l = tonumber(event.l) or 15
+		Library.dash(at + Vector3.new(0, 1, 0), (area * CFrame.new(0, 1, -l)).Position, color, simple)
+	elseif event.sh == "ring" then
+		Library.ringWave(at, r, color, { simple = simple })
+	else
+		Library.shockwave(at, r, color, 0.45, simple)
+		Library.impactFlash(at + Vector3.new(0, 1, 0), math.clamp(r * 0.4, 2, 5), color, { simple = simple })
+	end
+end
+
+-- S111 / S117: the warning at the area (louder when we stand in it) once per attack.
+local function warnSound(event: { [string]: any }, area: CFrame)
+	local who: SfxRules.Who = "other"
+	local root = playerRoot()
+	if root then
+		local localPos = area:PointToObjectSpace(root.Position)
+		local inside = Telegraph.contains(event.sh, {
+			r = tonumber(event.r),
+			ir = tonumber(event.ir),
+			an = tonumber(event.an),
+			l = tonumber(event.l),
+			w = tonumber(event.w),
+		}, localPos.X, localPos.Z, localPos.Y)
+		if inside then
 			who = "party"
 		end
-		SfxController.Play("telegraph.warn", area.Position, who, if type(event.e) == "string" then event.e else nil)
 	end
-	local info = if caster then SfxController.Mob(caster) else nil
-	if caster and info then
-		local key = if info.boss then `boss.{info.boss}.attack` else `mob.{info.family}.attack`
-		SfxController.After(windup, key, caster, SfxController.WhoOf(caster), sourceOf(caster))
-	end
+	SfxController.Play("telegraph.warn", area.Position, who, if type(event.e) == "string" then event.e else nil)
 end
 
-local function telegraph(event: { [string]: any })
-	local area = event.cf :: CFrame
-	local windup = math.clamp(tonumber(event.t) or 1, 0.2, 5)
-	local color = ELEMENT_COLORS[event.el or ""] or TELEGRAPH_COLOR
-	local parts: { BasePart } = {}
-	local info = TweenInfo.new(windup, Enum.EasingStyle.Linear)
-
-	if event.sh == "circle" then
-		local radius = tonumber(event.r) or 8
-		local outline = groundDisc("TelegraphOuter", radius, area, 0.7)
-		local fill = groundDisc("TelegraphFill", 0.05, area, 0.45)
-		outline.Color = color
-		fill.Color = color
-		Clock.tween(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) })
-		table.insert(parts, outline)
-		table.insert(parts, fill)
-	elseif event.sh == "cone" then
-		local radius = tonumber(event.r) or 10
-		local angle = math.rad(tonumber(event.an) or 90)
-		local slices = 9
-		for i = 0, slices - 1 do
-			local yaw = -angle / 2 + angle * (i + 0.5) / slices
-			local width = 2 * radius * math.tan(angle / slices / 2) + 0.2
-			local slice = effectPart("TelegraphCone", Vector3.new(width, 0.12, radius), color)
-			slice.Material = Enum.Material.SmoothPlastic
-			slice.Transparency = 0.7
-			slice.CFrame = area * CFrame.Angles(0, -yaw, 0) * CFrame.new(0, 0.15, -radius / 2)
-			local fill = effectPart("TelegraphConeFill", Vector3.new(width * 0.95, 0.14, 0.05), color)
-			fill.Material = Enum.Material.SmoothPlastic
-			fill.Transparency = 0.45
-			fill.CFrame = area * CFrame.Angles(0, -yaw, 0) * CFrame.new(0, 0.16, 0)
-			Clock.tween(fill, info, {
-				Size = Vector3.new(width * 0.95, 0.14, radius),
-				CFrame = area * CFrame.Angles(0, -yaw, 0) * CFrame.new(0, 0.16, -radius / 2),
-			})
-			table.insert(parts, slice)
-			table.insert(parts, fill)
-		end
-	elseif event.sh == "ring" then
-		-- Ring with a safe centre (bosses): red outer disc filling up, green safe zone in the middle.
-		local radius = tonumber(event.r) or 20
-		local inner = tonumber(event.ir) or 5
-		local outline = groundDisc("TelegraphOuter", radius, area, 0.7)
-		local fill = groundDisc("TelegraphFill", inner, area, 0.45)
-		local safe = groundDisc("TelegraphSafe", inner, area, 0.35)
-		outline.Color = color
-		fill.Color = color
-		safe.Color = Theme.Colors.Success
-		safe.CFrame = safe.CFrame + Vector3.new(0, 0.05, 0)
-		Clock.tween(fill, info, { Size = Vector3.new(0.14, radius * 2, radius * 2) })
-		table.insert(parts, outline)
-		table.insert(parts, fill)
-		table.insert(parts, safe)
-	elseif event.sh == "line" then
-		local length = tonumber(event.l) or 15
-		local width = tonumber(event.w) or 5
-		local outline = effectPart("TelegraphLine", Vector3.new(width, 0.12, length), color)
-		outline.Material = Enum.Material.SmoothPlastic
-		outline.Transparency = 0.7
-		outline.CFrame = area * CFrame.new(0, 0.15, -length / 2)
-		local fill = effectPart("TelegraphLineFill", Vector3.new(width * 0.95, 0.14, 0.05), color)
-		fill.Material = Enum.Material.SmoothPlastic
-		fill.Transparency = 0.45
-		fill.CFrame = area * CFrame.new(0, 0.16, 0)
-		Clock.tween(fill, info, {
-			Size = Vector3.new(width * 0.95, 0.14, length),
-			CFrame = area * CFrame.new(0, 0.16, -length / 2),
-		})
-		table.insert(parts, outline)
-		table.insert(parts, fill)
+-- One "tele" event (or an AnimLab preview): the ground telegraph, the warning, the blow's sound, effect and shake.
+local function telegraph(event: { [string]: any }, caster: Model?)
+	local area = event.cf
+	if typeof(area) ~= "CFrame" or type(event.sh) ~= "string" then
+		return
 	end
+	local shape = event.sh :: string
+	if shape ~= "circle" and shape ~= "cone" and shape ~= "line" and shape ~= "ring" then
+		return
+	end
+	local windup = Telegraph.windup(tonumber(event.t))
+	local color = ELEMENT_COLORS[event.el or ""] or TELEGRAPH_COLOR
+	local motion, bossId, magic = attackInfo(event, caster)
+	local first = firstOfGroup(event)
+	local low = lowQuality()
+	local camera = Workspace.CurrentCamera
+	local far = camera ~= nil and (area.Position - camera.CFrame.Position).Magnitude > Config.Vfx.simpleBeyond * 2
+	local simpleFx = low or far
+	if first then
+		warnSound(event, area)
+	end
+	if motion then
+		scheduleBossImpact(motion, event, caster, windup, color, simpleFx)
+	end
+	GroundTelegraph.start({
+		shape = shape :: any,
+		dims = {
+			r = tonumber(event.r),
+			ir = tonumber(event.ir),
+			an = tonumber(event.an),
+			l = tonumber(event.l),
+			w = tonumber(event.w),
+		},
+		area = area,
+		windup = windup,
+		color = color,
+		magic = magic,
+		low = low,
+		onBlow = function()
+			if casterGone(caster) then
+				return
+			end
+			if motion then
+				bossImpact(motion, event, color, simpleFx)
+			else
+				eliteImpact(event, color, simpleFx)
+			end
+			if not first then
+				return
+			end
+			if motion then
+				shakeNear(area.Position, motion.shake or 0)
+			end
+			local info = if caster then SfxController.Mob(caster) else nil
+			if caster and info then
+				local key = if motion and motion.sound
+					then motion.sound
+					elseif bossId then `boss.{bossId}.attack`
+					else `mob.{info.family}.attack`
+				SfxController.Play(key, caster, SfxController.WhoOf(caster), sourceOf(caster))
+			end
+		end,
+	})
+end
 
-	Clock.after(windup, function()
-		for _, part in parts do
-			Clock.tween(part, TweenInfo.new(0.2), { Transparency = 1 })
-			destroyLater(part, 0.25)
-		end
+-- S117 (E4): a boss's new phase: the camera of players near it shakes (Data/BossMotions roar), its aura flashes in the
+-- look's glow for Config.MonsterLook.phaseLight s.
+local function onRoar(model: Model, bossId: string?)
+	local def = if bossId then BossMotions.get(bossId) else nil
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	if def then
+		shakeNear(root.Position, def.roar.shake)
+	end
+	if lowQuality() or not Pool.takeLight() then
+		return
+	end
+	local lookId = model:GetAttribute("Look") or bossId
+	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
+	local boss = if bossId then Bosses.get(bossId) else nil
+	local hex = (look and look.glow) or (boss and boss.look.aura) or "#FFD27A"
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromHex(hex)
+	light.Range = 24
+	light.Brightness = 0
+	light.Parent = root
+	local seconds = Config.MonsterLook.phaseLight
+	Clock.tween(light, TweenInfo.new(seconds * 0.3), { Brightness = 5 })
+	Clock.after(seconds * 0.3, function()
+		Clock.tween(light, TweenInfo.new(seconds * 0.7), { Brightness = 0 })
+	end)
+	Clock.after(seconds + 0.05, function()
+		light:Destroy()
+		Pool.dropLight()
 	end)
 end
 
@@ -1253,11 +1473,17 @@ local function handle(event: { [string]: any })
 	elseif kind == "trait" then
 		traitFx(event)
 	elseif kind == "tele" then
-		telegraph(event)
+		-- S117: the telegraph and the caster's gather start in this frame with the same windup (pose by the id `a`)
 		local caster = findModel(event.e)
-		telegraphSounds(event, caster)
+		telegraph(event, caster)
 		if caster then
-			AnimationController.MonsterAttack(caster, tonumber(event.t))
+			AnimationController.MonsterAttack(
+				caster,
+				tonumber(event.t),
+				false,
+				if type(event.a) == "string" then event.a else nil,
+				if typeof(event.cf) == "CFrame" then event.cf else nil
+			)
 		end
 	elseif kind == "reward" then
 		local character = player.Character
@@ -1307,6 +1533,14 @@ function CombatFxController.Init(registry)
 	AnimationController = registry.Get("AnimationController")
 	SfxController = registry.Get("SfxController")
 	registry.Get("VfxController").SetShake(shake)
+	AnimationController.OnRoar(onRoar) -- S117
+	-- S117 (E7): a boss's death shakes the camera of players near it
+	MonsterView.OnBossDeath(function(model: Model)
+		local root = model:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			shakeNear(root.Position, BOSS_DEATH_SHAKE)
+		end
+	end)
 	fxFolder = Instance.new("Folder")
 	fxFolder.Name = "Vaelthorn_CombatFx"
 	fxFolder.Parent = Workspace
@@ -1351,8 +1585,7 @@ end
 -- S110 AnimLab: the ground telegraph of a "tele" event (boss / Elite II attacks) without the server. S111: with its
 -- sounds (`caster`: the stage's boss, attribute PreviewMonsterId).
 function CombatFxController.PreviewTelegraph(event: { [string]: any }, caster: Model?)
-	telegraph(event)
-	telegraphSounds(event, caster)
+	telegraph(event, caster)
 end
 
 local WARN_EVERY = 2

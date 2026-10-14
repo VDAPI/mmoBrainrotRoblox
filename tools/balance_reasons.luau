@@ -123,6 +123,8 @@ return {
 		["Data/Sfx"] = "wygląd", -- S111: sound effect keys (ids, volume, pitch, roll-off)
 		["Data/VfxTextures"] = "wygląd", -- S112: effect texture ids, sizes and flipbooks
 		["Data/HitFx"] = "wygląd", -- S113: hit sparks by the target's material
+		["Data/MonsterMotions"] = "wygląd", -- S117: attack, death and hit styles of generated monsters
+		["Data/BossMotions"] = "wygląd", -- S117: poses, effects and shakes of boss attacks, roars, deaths
 		["Data/UiArt"] = "generowane", -- S119: interface picture registry (tools/icons/import_ui.py)
 		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
 		["Data/DamageNumbers"] = "wygląd",

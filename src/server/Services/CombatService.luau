@@ -1774,6 +1774,7 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 		w = ability.width,
 		t = ability.windup,
 		el = ability.element,
+		a = ability.id, -- S117: the attack's id (the client picks its pose / effect; looks only, DESIGN-16 §0.2.3)
 	})
 	vigilance(monster, ability)
 end

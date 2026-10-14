@@ -205,8 +205,10 @@ Roblox Studio ma też **serwer MCP** dla Claude Code (`execute_luau`, `insert_as
   - mocny kolor akcentu, emisja (oczy, pęknięcia, runy);
   - zmiana koloru lub aury przy zmianie fazy.
 - **Walka:**
-  - poza zamachu 0,5–1 s przed ciosem plus znacznik na ziemi;
-  - wstrząs kamery w pobliżu;
+  - (stan po S117) zapowiedź trwa dokładnie `windup` ataku, każdy atak ma własną pozę (`Data/BossMotions`) albo klip
+    `anims[<id ataku>]`, telegraf wypełnia się od krawędzi do środka i błyska w chwili ciosu; zmiana fazy: ryk, wstrząs
+    i błysk aury; przyzwani wychodzą z ziemi; śmierć: poza, potem klon rozpadający się w świetle;
+  - wstrząs kamery w pobliżu (siła ataku z `Data/BossMotions`);
   - własna muzyka;
   - pasek życia u góry ekranu.
 - **Wzory z innych gier:**

@@ -153,6 +153,45 @@ local Config = {
 		partsPerFrame = 300,
 		checkEvery = 0.25,
 		maxAnimated = { touch = 25, desktop = 60 },
+		-- S117 (DESIGN-16 §8, looks only; the server's windups, areas and corpse time stay): the push of a hit on a
+		-- generated monster away from its attacker (body lean in rad, shift in studs at scale 1; Logic/Gait.hitLean),
+		-- bosses lean less (x bossHitScale), one flinch per model at most every hitEvery s; a summoned boss helper
+		-- climbs out of the ground in summonRise s, the first summonFxMax of a wave with dust and cracks; a dead boss
+		-- leaves a clone of its look that breaks up in light over bossDeathSeconds (Data/BossMotions death.seconds may
+		-- override it); Grimrok's leap flies the last leapArc s of its windup; the death of a generated monster lasts
+		-- deathSeconds (inside CorpseSeconds); the phase roar lasts roarSeconds unless Data/BossMotions says otherwise
+		-- and its aura flashes phaseLight s.
+		hitLean = 0.18,
+		hitPush = 0.25,
+		bossHitScale = 0.35,
+		hitEvery = 0.1,
+		summonRise = 0.8,
+		summonFxMax = 4,
+		bossDeathSeconds = 4,
+		leapArc = 0.35,
+		deathSeconds = 0.8,
+		roarSeconds = 1.2,
+		phaseLight = 0.4,
+	},
+	-- Monster telegraphs 2.0 (S117, Logic/Telegraph): the area fills from the edge to the centre over the windup,
+	-- the rim pulses faster towards the end, the area flashes at the blow and fades. Telegraphs over maxActive use
+	-- the simple version (outline + moving front only). Segments: circle / ring band pieces (low quality: segmentsLow).
+	Telegraph = {
+		maxActive = 16,
+		segments = 24,
+		segmentsLow = 12,
+		rimWidth = 0.35, -- studs: the bright rim
+		underRim = 0.25, -- studs: a dark rim under / outside it (contrast on snow)
+		fillFrom = 0.8, -- transparency of the filled band at the start of the windup
+		fillTo = 0.45, -- ... and at its end
+		areaAlpha = 0.85, -- transparency of the whole area from the first frame (where the blow will land)
+		pulseSlow = 0.5, -- seconds per rim pulse at the start
+		pulseFast = 0.12, -- ... and at the end
+		flashSeconds = 0.08, -- the whole area brighter and whiter at the blow
+		fadeSeconds = 0.2, -- then it fades
+		safePulse = 0.3, -- seconds before the blow the safe centre of a ring pulses
+		shakeRange = 60, -- studs: players farther feel no boss shake
+		lift = 0.12, -- studs above the ground
 	},
 	-- Interactive map and the guide (S25, DESIGN §23): a target counts as reached within `arrive` studs
 	-- (`arriveNpc` for NPCs, who stand behind their counter); the path is recomputed when the player is more than
@@ -370,6 +409,12 @@ local Config = {
 		wallThickness = 1,
 		dummyColor = "#9A9AA0", -- the target mannequin
 		vfxEvery = 1.5, -- S112: seconds between two pieces of `vfx all` (and a looped `vfx <piece>`)
+		-- S117: `floor <name>`: the stage floor as light grass, snow or a dark cave (telegraph readability)
+		floors = {
+			grass = { material = "Grass", color = "#6E9A48" },
+			snow = { material = "Snow", color = "#EEF2F6" },
+			cave = { material = "Slate", color = "#2C2A28" },
+		} :: { [string]: { material: string, color: string } },
 	},
 	-- Bosses (S30, DESIGN §16): every character may kill one boss `dailyRuns` times per UTC day.
 	Boss = {

@@ -140,7 +140,7 @@ S116 (kod + pierwsza partia):
 - Bossowie: osobna poza (albo klip `anims[<attackId>]`) dla każdego ataku z `Data/Bosses`, zapowiedź = `windup`, ryk i wstrząs przy zmianie fazy, przyzwanie z animacją `spawn`, śmierć z dłuższą sekwencją i światłem.
 - **Telegrafy 2.0:** obszar wypełnia się od krawędzi do środka w czasie `windup`, pulsujący brzeg, tekstura z S112 (runy dla magii, pęknięcia dla uderzeń), dźwięk `telegraph.warn` na starcie, błysk w chwili trafienia; czytelne na jasnej trawie, śniegu i w jaskini.
 - Limit animowanych potworów i LOD bez zmian.
-- Id ataku w zdarzeniu `tele` dodaje S116 (pole `a`); S117 tylko sprawdza. S117 może dodać atrybut serwera `Summoned` na przyzwanych (czysto wizualny).
+- Id ataku w zdarzeniu `tele` (pole `a`) dodała S117 (S116 pominięta do czasu modeli; §17). S117 może dodać atrybut serwera `Summoned` na przyzwanych (czysto wizualny).
 
 ### 8.1. Ustalenia z planu (2026-10-12)
 
@@ -286,3 +286,16 @@ bez programowania: `docs/sessions/IMPORT-GRAFIK.md` (przedmioty i interfejs), `d
   `flinch`, `clip`.
 - `holystaff` (kostur pionowo w dłoni) gra `smash` jak młoty: ruch liczony pod broń w poprzek dłoni; własny ruch albo klip
   dla kostura kapłana to praca na później (`clipsByWeapon.holystaff`).
+
+## 17. Ustalenia S117
+
+- S117 zrobiona przed S116 (właściciel nie ma jeszcze modeli): pole `a` w zdarzeniu `tele` dodała S117 (D0); haki
+  klipów prawdziwych modeli (`anims[<id ataku>]`, `roar`, `spawn`, `static`, `LookWeld`) zostają dla S116.
+- Nazwy: `Data/MonsterMotions` (`STYLES`, `PLANS`, `WEAPON_BASIC`, `DEATH`, `styleFor`, `deathFor`), `Data/BossMotions`
+  (`byBoss`, `get`, `attack`, `IMPACTS`), `Logic/Telegraph` (`progress`, `front`, `band`, `inPiece`, `pulsePeriod`,
+  `rimPulse`, `fillAlpha`, `flashing`, `fade`, `duration`, `contains`), `client/Vfx/GroundTelegraph`, `Gait.charge`,
+  `attackMotion`, `hopOf`, `spinOf`, `roarEnvelope`, `leapArc`, `hitLean`, `Config.Telegraph`, nowe pola
+  `Config.MonsterLook`, AnimLab `floor`, `boss <id> roar|death`.
+- Różnice wobec §8: brzeg, obszar i czoło kół rysuje `SurfaceGui` (dokładne koło), pas to trapezy z części; `band` dla
+  koła ma tyle kawałków co `segments`, stożek połowę, linia dwa; wielokąt opisany na kole (pokrycie 100%, nadmiar
+  0,6% / 2,4%).

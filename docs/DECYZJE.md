@@ -3656,3 +3656,37 @@
 - **S115** `roll` dźwięków: strzały 80–100, obszary 100–120 st. (Meteor, Burza, Gniew i Kataklizm przycięte do 120);
   ciche buffy (Kamuflaż 60, Namierzenie 70) poza tymi widełkami. Strumień Arkanów bez wariantu kosturu: ruch już trzyma
   broń oburącz przed piersią (chwyt kosturu), wariant byłby kopią.
+- **S117** Kolejność: S117 przed S116 (właściciel nie ma modeli). Pole `a = ability.id` w zdarzeniu `tele` dodane tutaj
+  (D0, czysto wizualne); haki klipów prawdziwych modeli (ataki bossów, `roar`, `spawn`, `static`, `LookWeld`) czekają na S116.
+- **S117** Szczyt ciosu generatora w chwili rozliczenia serwera: cios zajmuje ostatnie `STRIKE_SECONDS` zamachu i ma szczyt
+  w `windup` (wcześniej 0,14 s po nim); zwykły atak startuje `w − 0,03` przed końcem zamachu, więc szczyt wypada 0,03 s po
+  zdarzeniu `atk` (wcześniej ok. 0,2 s). `attackLength = windup + RECOVER_SECONDS`, `MotionKeys` peak = `w − 0,14`.
+- **S117** Zbieranie siły `Gait.charge`: `raise = 1 − (1 − p)²`, drżenie `p²`, cios w `windup`, wybrzmienie z przestrzeleniem
+  0,12. Test D2 czytany jako: szczyt ciosu i początek błysku telegrafu w tej samej chwili (cios rośnie już 0,14 s przed nią).
+- **S117** Style generatora w danych (`Data/MonsterMotions`) jako przyrosty póz ról nad chodem i spoczynkiem; rola
+  wymieniona w stylu zastępuje ogólny ruch ataku tej roli. Przód i tył nóg z nowego atrybutu stawu `Front`
+  (`Util/LookBuild`, znak osi Z punktu obrotu).
+- **S117** Brak planu szlamu: ruch „ściśnięcie i wyrzut” dostaje `toad`; plan szlamu powstanie z pierwszym szlamem w danych.
+- **S117** Reakcja na trafienie według planu (`Gait.hitLean`: odchylenie i przesunięcie tułowia od atakującego, głowa ku
+  niemu, siła z `PLANS.hit` albo `Config.MonsterLook`) zastępuje obrót tułowia S113 u generatora; bossowie ×0,35, jedno
+  drgnięcie na 0,1 s (własny znacznik `flinchAt`, hitstop go nie zajmuje, więc kierunek ciosu nie przepada).
+  `FLINCH.monsterDegrees` usunięte.
+- **S117** Hitstop nie przesuwa zamachu z telegrafem (serwer i tak rozlicza w swoim czasie); trafienie w zamachu daje tylko
+  odchylenie ×0,3 (raz, na `motion.hit`; kierunek bez drugiego mnożnika).
+- **S117** Skok Grimroka: wygląd leci łukiem (`Gait.leapArc`, 6 st. wysokości) przez ostatnie 0,35 s zamachu do środka
+  obszaru, kończy się, gdy serwer przeniesie korzeń (skok > 4 st. w klatce), albo wraca 0,3 s po `windup`.
+- **S117** Atrybut `Summoned = true` na przyzwanych pomocnikach bossa, podany do `SpawnAt` przed parentowaniem (jedyna,
+  obok `a`, zmiana serwera); klient podnosi ich z ziemi raz, gdy model do niego dotrze (bez czasu spawnu w atrybucie).
+- **S117** Śmierć bossa: poza przez `deathSeconds`, potem zakotwiczony klon wyglądu (`MonsterViewController`) rozpada się w
+  świetle `death.light` przez `Config.MonsterLook.bossDeathSeconds` (4 s; `BossMotions` `death.seconds` może nadpisać);
+  niska jakość bez klonu (dłuższe światło na oryginale).
+- **S117** `Config.MonsterLook.deathSeconds` 0,8 zamiast 0,55 (`Gait.DEATH_SECONDS` czyta tę liczbę; mieści się w
+  `CorpseSeconds` 1,6).
+- **S117** Telegrafy: wypełnianie od krawędzi do środka, pierścień do bezpiecznego środka, stożek od łuku do wierzchołka,
+  linia od obu długich boków do osi. Pas to trapezy (blok + dwa kliny) wielokąta opisanego na kole; brzeg, obszar, czoło i
+  środek kół na jednym `SurfaceGui`. Części z `Vfx/Pool.part`, nie z `Pool.holder` (to nie warstwy z teksturą).
+- **S117** `Telegraph.contains` jest kopią reguły `CombatService.insideArea` (serwer bez zmian); test porównuje punkty brzegowe.
+- **S117** Efekt i dźwięk ataku grają w klatce błysku telegrafu (pętla `GroundTelegraph`); meteory i pociski Morvane startują
+  wcześniej, żeby wylądować w tej chwili. Ostrzeżenie i dźwięk raz na atak (obszary z tym samym `a` w 0,1 s). Rzucający
+  martwy (`Dead`) albo usunięty przed ciosem: bez efektu, meteoru, pocisku, wstrząsu i dźwięku (telegraf gaśnie jak
+  dotąd). Niska jakość: każdy wstrząs kamery 2 klatki zamiast 4.

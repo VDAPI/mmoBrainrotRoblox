@@ -13,13 +13,22 @@
 -- API: top(model) = world Y of the top of the look (from the rig, never from the live HipHeight, which a
 -- flying boss raises), Changed (BindableEvent: model) when the full look appears or goes away, IsFull(model),
 -- Stats() for /lookstats.
+-- S117 (DESIGN-16 §8, E7): a dead boss keeps its look for Config.MonsterLook.deathSeconds (its death pose, Logic/Gait),
+-- then a clone of the look in that pose takes its place (the original goes invisible; the server removes it soon after)
+-- and breaks up in the light of Data/BossMotions death.light over its seconds: a flash, smoke and sparks of its glow, the
+-- parts fading. Low quality: no clone, a longer light on the original, which fades like any corpse. OnBossDeath(fn)
+-- tells CombatFxController to shake the camera.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
+local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Library = require(script.Parent.Parent.Vfx.Library)
+local Pool = require(script.Parent.Parent.Vfx.Pool)
 local LookBuild = require(ReplicatedStorage.Shared.Util.LookBuild)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local State = require(script.Parent.Parent.UI.State)
@@ -55,9 +64,12 @@ type View = {
 	deadAt: number?,
 	phase: number,
 	connections: { RBXScriptConnection },
+	bossId: string?, -- S117: a boss look gets the long death (E7)
 }
 
 local views: { [Model]: View } = {}
+-- S117: who hears of a boss's death (CombatFxController: the camera shake).
+local bossDeathListeners: { (model: Model, bossId: string) -> () } = {}
 local dying: { [View]: boolean } = {}
 local queue: { View } = {}
 local rigCache: { [string]: Anatomy.Rig } = {}
@@ -319,6 +331,7 @@ local function track(model: Instance)
 		deadAt = nil,
 		phase = (model:GetAttribute("Phase") :: number?) or 1,
 		connections = {},
+		bossId = if v == "boss" and BossMotions.get(lookId) then lookId else nil,
 	}
 	views[model] = view
 	-- Streamed back in: reuse what this client already built.
@@ -351,6 +364,11 @@ local function track(model: Instance)
 		if model:GetAttribute("Dead") == true and not view.deadAt then
 			view.deadAt = os.clock()
 			dying[view] = true
+			if view.bossId then
+				for _, fn in bossDeathListeners do
+					task.spawn(fn, model, view.bossId)
+				end
+			end
 			for _, holder in { view.full, view.far } do
 				if holder then
 					for _, item in holder:GetDescendants() do
@@ -451,10 +469,109 @@ local function drainQueue()
 	end
 end
 
--- Dead monsters fade over CorpseSeconds (the server destroys them right after).
+-- S117 (E7): the clone of a dead boss's look, anchored in the pose it died in, breaking up in light.
+local function bossClone(view: View)
+	local full = view.full
+	local def = BossMotions.get(view.bossId :: string)
+	if not full or not def then
+		return
+	end
+	local copy = full:Clone()
+	local from = full:GetDescendants()
+	local into = copy:GetDescendants()
+	local parts: { BasePart } = {}
+	for i, item in into do
+		local source = from[i]
+		if item:IsA("BasePart") and source and source:IsA("BasePart") then
+			item.Anchored = true
+			item.CanCollide = false
+			item.CanQuery = false
+			item.CanTouch = false
+			item.CFrame = source.CFrame
+			item.LocalTransparencyModifier = 0
+			table.insert(parts, item)
+		elseif item:IsA("JointInstance") or item:IsA("Constraint") or item:IsA("WeldConstraint") then
+			item:Destroy()
+		elseif item:IsA("ParticleEmitter") then
+			item.Enabled = false
+		end
+	end
+	copy.Name = "BossDeath"
+	copy.Parent = Pool.folder()
+	setShown(view.fullParts, false)
+	setShown(view.farParts, false)
+	local seconds = def.death.seconds or LOOK.bossDeathSeconds
+	local color = Color3.fromHex(def.death.light)
+	local primary = copy.PrimaryPart or parts[1]
+	if primary and Pool.takeLight() then
+		local light = Instance.new("PointLight")
+		light.Color = color
+		light.Range = 30
+		light.Brightness = 0
+		light.Parent = primary
+		Clock.tween(light, TweenInfo.new(0.3), { Brightness = 6 })
+		Clock.after(0.3, function()
+			Clock.tween(light, TweenInfo.new(1.2), { Brightness = 0 })
+		end)
+		Clock.after(1.55, function()
+			light:Destroy()
+			Pool.dropLight()
+		end)
+	end
+	local centre = if primary then primary.Position else view.root.Position
+	local size = math.clamp(view.body.height * 0.3, 1.5, 4)
+	for i = 0, 2 do
+		Clock.after(seconds * 0.25 * i, function()
+			Library.smokePuff(centre, size, color)
+			Library.sparks(centre + Vector3.new(0, size * 0.5, 0), color, { count = 14, dir = Vector3.yAxis })
+		end)
+	end
+	for _, part in parts do
+		Clock.tween(part, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Transparency = 1 })
+	end
+	Clock.after(seconds + 0.1, function()
+		copy:Destroy()
+	end)
+end
+
+-- S117 (E7), low quality: a longer light of the death colour on the original (no clone).
+local function bossLight(view: View)
+	local def = BossMotions.get(view.bossId :: string)
+	if not def or not Pool.takeLight() then
+		return
+	end
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromHex(def.death.light)
+	light.Range = 24
+	light.Brightness = 4
+	light.Parent = view.root
+	Clock.tween(light, TweenInfo.new(Config.CorpseSeconds), { Brightness = 0 })
+	Clock.after(Config.CorpseSeconds, function()
+		light:Destroy()
+		Pool.dropLight()
+	end)
+end
+
+-- Dead monsters fade over CorpseSeconds (the server destroys them right after). S117: a boss holds its death pose
+-- for deathSeconds, then its clone takes over (bossClone).
+local bossDone: { [View]: boolean } = setmetatable({} :: any, { __mode = "k" })
+
 local function stepDeaths(now: number)
 	for view in dying do
-		local t = math.clamp((now - (view.deadAt :: number)) / Config.CorpseSeconds, 0, 1)
+		local since = now - (view.deadAt :: number)
+		if view.bossId and not bossDone[view] then
+			if since < LOOK.deathSeconds then
+				continue
+			end
+			bossDone[view] = true
+			if not lowQuality() and view.full and view.fullShown then
+				dying[view] = nil
+				bossClone(view)
+				continue
+			end
+			bossLight(view)
+		end
+		local t = math.clamp(since / Config.CorpseSeconds, 0, 1)
 		local fade = t * t
 		local parts: { BasePart } = if view.full and view.fullShown then view.fullParts else view.farParts
 		for _, part in parts do
@@ -526,6 +643,11 @@ function MonsterViewController.top(model: Model): number?
 	end
 	local body = view.body
 	return view.root.Position.Y - body.rootHalf - body.hipHeight + body.height
+end
+
+-- S117: `fn(model, bossId)` runs when a boss dies (the start of its long death).
+function MonsterViewController.OnBossDeath(fn: (model: Model, bossId: string) -> ())
+	table.insert(bossDeathListeners, fn)
 end
 
 function MonsterViewController.IsFull(model: Model): boolean

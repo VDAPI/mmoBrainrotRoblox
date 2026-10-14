@@ -39,6 +39,7 @@ export type Action =
 	| "cam"
 	| "stress"
 	| "state"
+	| "floor"
 -- `ref` (S113): the weapon type or skill id a `clip` is fitted to.
 export type Command = { action: Action, id: string?, slot: string?, t: number?, n: number?, ref: string? }
 
@@ -63,11 +64,16 @@ AnimLab.ACTIONS = {
 	"cam",
 	"stress",
 	"state",
+	"floor", -- S117
 } :: { Action }
 AnimLab.CAMERAS = { "front", "side", "threequarter", "top", "game" }
 AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
 -- Motions a freeze / loop / keys can replay (the others are tools).
 AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx", "hit", "flinch", "clip" } :: { Action }
+-- S117: the floors of `floor <name>` (telegraphs on light grass, snow and a dark cave; Config.AnimLab.floors).
+AnimLab.FLOORS = { "grass", "snow", "cave" }
+-- S117: what `boss <id>` plays besides an attack: the phase roar and the long death.
+AnimLab.BOSS_EXTRAS = { "roar", "death" }
 -- S113: the sides a `flinch <side> [crit]` comes from.
 AnimLab.FLINCH_SIDES = { "front", "back", "left", "right" }
 -- S112: pieces `vfx <piece> [color]` plays (Vfx/Library: the six new ones first, then the old ones and the three
@@ -127,6 +133,7 @@ AnimLab.ERRORS = {
 	"animlab.error.hit",
 	"animlab.error.flinch",
 	"animlab.error.clip",
+	"animlab.error.floor",
 }
 
 local function make(action: Action, id: string?, slot: string?, t: number?, n: number?, ref: string?): Command
@@ -263,6 +270,9 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		if not a or not boss or not b or MonsterLooks.get(a) == nil then
 			return nil, "animlab.error.boss"
 		end
+		if table.find(AnimLab.BOSS_EXTRAS, b) then
+			return make("boss", a, b), nil
+		end
 		for _, attack in boss.attacks do
 			if attack.id == b then
 				return make("boss", a, b), nil
@@ -339,6 +349,12 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 			return nil, "animlab.error.cam"
 		end
 		return make("cam", a), nil
+	elseif action == "floor" then
+		-- S117: floor <grass|snow|cave>
+		if not a or not table.find(AnimLab.FLOORS, a) or b ~= nil then
+			return nil, "animlab.error.floor"
+		end
+		return make("floor", a), nil
 	elseif action == "stress" then
 		local n = number(a)
 		if not n or n ~= math.floor(n) or n < 1 or n > limits.stressMax or b ~= nil then

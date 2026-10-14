@@ -320,4 +320,10 @@ wolf = {
 },
 ```
 
+Modele z Tripo bossów (S117): klipy ataków pod id ataku z `Data/Bosses` (Grimrok `sweep`, `leap`, `whirlwind`; Morvane
+`shadowBolt`, `shadowBoltFast`, `curseField`, `deathRing`; Azgor `fireWave`, `flameCleave`, `meteor`, `inferno`;
+Vaelgrath `frostBreath`, `wingBuffet`, `tailSwipe`, `blizzard`, `glacialRing`), ryk fazy `roar`; bez nich gra bierze
+`attack2` / `attack1`. Hak na te klipy dokłada S116 (do tego czasu bossowie z modelem grają `attack1` / `attack2` /
+`cast`, generator dostaje pozy z `Data/BossMotions`).
+
 Puste ID usuń przed commitem: test `tests/anatomy.spec.luau` wymaga formatu `rbxassetid://<liczba>`. Brakujące klipy mają zastępstwa (`Logic/LookAnim`): `run` → `walk` → `idle`, `attack2` / `cast` → `attack1`, `spawn` → `idle`; bez `hit` i `death` model tylko błyska i zanika.

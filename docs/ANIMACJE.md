@@ -44,12 +44,12 @@ Chwile, w których AnimLab zatrzymuje ruch i sesja robi zrzuty. Liczone tylko z 
 |---|---|---|---|---|---|---|
 | atak podstawowy (`MotionKeys.attack(typ, interwał?, krok?)`, S113 krok serii) | 0 | `windup` | `hit = AttackMotions.SERVER_HIT` ruchu (czas serwera, `AttackPose.hitDelay`, ten sam w każdym kroku); ruch dystansowy: ta sama chwila jako `release`, bez `hit` | `windup + strike` (koniec ciosu) | koniec wybrzmienia: `windup + strike + follow × recover` (`follow` kroku, domyślnie 0,35; krok bez pozy `follow`: 0,3) | `total` |
 | umiejętność (`MotionKeys.skill(id, loopUntil?)`) | 0 | ostatni klucz przed pierwszym z `hit` / `release` (bez nich: klucz z największymi kątami ramion) | `hit = SkillMotions.hitDelay` (≤ 0,6 s), `release`, `land` z ruchu | — | `h + 0,35 × (end − h)`, `h` = hit albo release albo peak | `SkillPose.duration` |
-| potwór z generatora (`MotionKeys.monster(windup?, strikeNow?)`) | 0 | `w` | `hit = w` (obrażenia telegrafu) | `w + 0,14` (`Gait.STRIKE_SECONDS`) | `strikePeak + 0,3 × 0,35` | `Gait.attackLength(w)` |
+| potwór z generatora (`MotionKeys.monster(windup?, strikeNow?)`) | 0 | `w − 0,14` (koniec zamachu, S117) | `hit = w` (obrażenia telegrafu) | `w` (S117: szczyt ciosu w chwili obrażeń) | `w + 0,3 × 0,35` | `Gait.attackLength(w)` = `w + 0,35` |
 | boss / Elita II (`MotionKeys.boss`, `MotionKeys.ability`) | jak potwór z `w = windup` ataku | | | | | |
 | klip (`MotionKeys.clip(długość, znacznik?)`) | 0 | — | znacznik `Hit` | — | — | długość |
 
-`strikeNow` (zwykły atak potwora: obrażenia przychodzą razem ze zdarzeniem) przesuwa wszystko o `−(w − 0,06)`
-(jak `AnimationController.MonsterAttack`) i daje `hit = 0`.
+`strikeNow` (zwykły atak potwora: obrażenia przychodzą razem ze zdarzeniem) przesuwa wszystko o `−(w − 0,03)`
+(jak `AnimationController.MonsterAttack`, `Gait.STRIKE_NOW_LEAD`) i daje `hit = 0`, `strikePeak = 0,03`.
 
 Przykłady (`lune run tools/motionkeys.luau attack`):
 
@@ -559,3 +559,58 @@ Kataklizm (fala, pęknięcia; koło trwa przez wszystkie fale). Burza i Gniew: s
 
 **AnimLab:** `/animlab skill <id> [typ broni]` (np. `skill aimedShot crossbow`, `skill fireball staff`); `vfx snare`,
 `vfx stormCloud`.
+
+## 13. Potwory i bossowie w walce (S117)
+
+**Style generatora** (`Data/MonsterMotions`): przyrosty póz ról `Logic/Gait` (`{ rx, ry, rz, x, y, z }`, strona prawa,
+lewa lustrzana) w chwili pełnego zamachu (`windup`) i ciosu (`strike`), plus `arms` (`right` / `both` / `alt`),
+`hindWindup` / `hindStrike` (tylne nogi: atrybut `Front` stawu z `Util/LookBuild`), `left` (lewa ręka osobno), `tremble`,
+`spin`, `hop`, `dash`. Rola wymieniona w stylu zastępuje ogólny ruch ataku tej roli. Wybór: `styleFor(plan, broń, id
+umiejętności)`.
+
+| Plan | Zwykły | Elita II | Śmierć |
+|---|---|---|---|
+| `canine`, `hare` | `bite` | `pounce` (skok, `hop` 1,2, `dash` 1,5) | `side` |
+| `boar` | `gore` | `charge` (`dash` 3) | `side` |
+| `bear` | `swipe` | `rear` (wspięcie) | `side` |
+| `mammoth` | `tusk` | `stomp` | `side` |
+| `toad` (też przyszły szlam) | `squash` | `spit` | `flat` |
+| `lizard` | `snap` | `breath` / `spit` | `side` |
+| `serpent` | `strike` | `breath` / `spit` | `coil` |
+| `spider` | `fang` | `spiderSpit` | `curl` |
+| `scorpion` | `pincer` | `sting` | `curl` |
+| `bird`, `bat` | `dive` | `screech` | `fall` (spada o wysokość unoszenia) |
+| `dragon` | `bite` | `breath` | `dragon` |
+| `humanoid` | według broni: `slash`, `thrust`, `overhead`, `overhead2`, `wide`, `cast` | `wide`, `jumpSlam`, `castBurst`, `charge`, `breath` | `knees` |
+| `beast` | `claw` (`alt`) | `jumpSlam`, `beastPounce` | `knees` |
+| `golem` | `punch` | `slam`, `erupt` | `crumble` |
+| `treant` | `branch` | `rootSlam` | `crumble` |
+| `ghost` | `reach` | `wail` | `dissolve` |
+| `elemental` | `pulse` | `nova` | `dissolve` |
+
+**Czas.** Atak z telegrafem: `Gait.charge` (zamach `1 − (1 − p)²`, drżenie `p²`), cios w ostatnich 0,14 s zamachu ze
+szczytem dokładnie w `windup` (chwila obrażeń serwera i błysku telegrafu), wybrzmienie 0,35 s z lekkim przestrzeleniem.
+Zwykły atak: `Gait.attack` w tym samym układzie, zdarzenie `atk` startuje go tak, że szczyt wypada 0,03 s po nim. Trafienie
+w czasie zamachu daje tylko odchylenie ×0,3, hitstop zamachu nie przesuwa.
+
+**Jak dodać styl:** wpis w `MonsterMotions.STYLES` (liczby w granicach testu: kąty ≤ 2,5 rad, przesunięcia ≤ 3 st.,
+`dash` ≤ 4, `hop` ≤ 2), nazwa w `PLANS` albo `WEAPON_BASIC`; `tests/gait.spec` („Attack styles (S117)”) sprawdza, że styl
+rusza rolę, którą plan ma. **Nowy boss:** wpis w `Data/BossMotions` (każdy atak z `Data/Bosses`, każdy inny styl,
+`impact` z listy, `shake` 0..1, `roar`, `death`); `tests/bossmotions.spec` pilnuje kompletności i braku martwych wpisów.
+
+**Bossowie:** ryk przy wzroście `Phase` (obwiednia `Gait.roarEnvelope`, wstrząs i błysk aury), skok Grimroka lecący łukiem
+(`Gait.leapArc`, ostatnie `leapArc` s zamachu) do miejsca teleportu serwera, wir (`spin`), lot Vaelgratha (`Flying`:
+skrzydła szeroko, nogi pod siebie, 0,5 s po lądowaniu), przyzwani wychodzą z ziemi (atrybut `Summoned`), śmierć: poza
+według stylu przez `deathSeconds`, potem klon wyglądu rozpada się w świetle `death.light` (`MonsterViewController`).
+
+**Telegrafy 2.0** (`Logic/Telegraph`, `Vfx/GroundTelegraph`, `Config.Telegraph`): warstwy od dołu: cały obszar
+(`areaAlpha` 0,85), pas wypełnienia od krawędzi do środka (pierścień do bezpiecznego środka, stożek od łuku do wierzchołka,
+linia od boków do osi; trapezy z bloku i dwóch klinów, koło 24 / 12 kawałków), cienkie jasne czoło, ciemny podbrzeg i
+pulsujący brzeg, zielony środek pierścienia (pulsuje w ostatnich 0,3 s). Koła i pierścienie rysują brzeg, czoło, obszar i
+środek na jednym `SurfaceGui`. W chwili `windup` błysk (`flashSeconds`), efekt ataku na każdym obszarze, wstrząs bossa, dźwięk
+ataku; potem zanik (`fadeSeconds`). Tekstury S112: zaklęcia mają koło runiczne (`magicCircle`), fizyczne koła ciemne pęknięcia.
+Ponad `maxActive` i dla `simple`: tylko brzegi i czoło; niska jakość: `segmentsLow`, bez tekstur.
+
+**AnimLab:** `mob <rodzaj> attack2` gra umiejętność Elity II z telegrafem, `mob <rodzaj> spawn` wyjście z ziemi,
+`boss <id> <atak>` pozę ataku z telegrafem (skok z łukiem), `boss <id> roar` i `boss <id> death`, `floor <grass|snow|cave>`
+podłogę (czytelność telegrafu). `freeze` zatrzymuje pozę i telegraf razem (oba na `Vfx/Clock`).

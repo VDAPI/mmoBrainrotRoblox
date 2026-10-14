@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115, S117, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -188,7 +188,7 @@ S119 grafiki interfejsu: importer `tools/icons/import_ui.py` (atlasy kategorii `
 `Data/UiArt` + id `Data/UiArtSheets`, `Logic/UiArt`, `UI/UiArtState`, komponent `ArtIcon` z dawnym znakiem jako
 zapasem; obrazki umiejętności, efektów, żywiołów, profili, gildii, herbów i portretów klas, HUD, pustych slotów, mapy
 świata i minimapy (ikony, usługi NPC, znaczniki, mapy malowane), sklepu, garderoby, tytułów, bossów i lochów; `/icons ui`,
-`/icongrid ui <atlas>`. Seria DESIGN-16 bez S116–S117 (w kolejce; S116 czeka na modele właściciela).
+`/icongrid ui <atlas>`. Seria DESIGN-16 bez S116 (czeka na modele właściciela).
 S114 umiejętności Wojownika i Kapłana: pin czasów serwera wszystkich umiejętności (`tests/fixtures/skill_timing.luau`),
 bramka fal `Logic/SkillFxWave` (drugi cel i łańcuch leczenia widoczne), warianty ruchu `SkillMotions.variants` +
 `SkillPose.pick` (broń, liczba fal z pola `w` zdarzenia `cast`, rzut w ruchu), 35 umiejętności w trzech warstwach na
@@ -201,6 +201,12 @@ w marszu, 32 wpisy w trzech warstwach (pocisk z dłoni / czubka broni z czasem s
 `rim`, składniki `snare` i `stormCloud`, meteor z lądowaniem po `d`, sokół z rdzeniem w chwili obrażeń, sidła lądujące w
 chwili postawienia), klucze `skill.<id>`, `.cast`, `.trigger`, `.wave`, `skill.falcon.strike`, `/animlab skill <id>
 [typ broni]`, zero par o tej samej sylwetce w obu klasach.
+S117 (przed S116) potwory i bossowie w walce: ataki według planu ciała i broni (`Data/MonsterMotions`), zapowiedź Elity
+II i bossów przez cały `windup` w rytmie telegrafu (`Gait.charge`, szczyt ciosu w chwili obrażeń; zwykły atak 0,03 s po
+zdarzeniu), każdy atak bossa z własną pozą, efektem i wstrząsem (`Data/BossMotions`), ryk przy fazie, skok Grimroka łukiem,
+wir, lot Vaelgratha, przyzwani z ziemi (atrybut `Summoned`), śmierć według planu i klon bossa w świetle, odchylenie od
+atakującego; telegrafy 2.0 (`Logic/Telegraph`, `Vfx/GroundTelegraph`: od krawędzi do środka, pulsujący brzeg, błysk, efekt
+i dźwięk w chwili ciosu, tekstury S112); pole `a` w `tele`; AnimLab `floor`, `boss <id> roar|death`.
 IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
 częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
@@ -220,7 +226,8 @@ zakończone; testy i decyzje właściciela po nich.
   do usunięcia.
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
   jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`).
-- **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
+- **Walka**: zwykłe ataki potworów zaliczają się od razu (zamach tylko w wyglądzie, szczyt 0,03 s po zdarzeniu; gracze
+  mają zamach). Brak „flinch” potwora wg siły ciosu.
   Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
   zabicie bez umiejętności); Instynkt Drapieżnika od S90 oddaje część szybkości (17 → 34%).
 - **Ruch**: sprint nie zmienia WalkSpeed lokalnie przed odpowiedzią serwera. Serwer nie kontroluje prędkości ani
@@ -327,8 +334,7 @@ zakończone; testy i decyzje właściciela po nich.
 - **S110: przegląd w Studio nie zrobiony:** tabela bazowa w `docs/SESJE.md` → S110 ma tylko klatki z danych. Od
   2026-10-14 Studio ma dostęp do API i postać, ale `screen_capture` przez MCP pokazuje sam interfejs bez obrazu 3D (także
   w trybie Edit), więc ruchu i efektów nie da się obejrzeć zrzutem; liczby (`state`, `vfx stats`) działają.
-- **AnimLab (S110):** `npc` bez klipów do S116 (kopia stoi); zdolności Elity II
-  tylko w klatkach (`tools/motionkeys.luau ability`), bez komendy; atak dystansowy w AnimLab bez strzały w locie.
+- **AnimLab (S110):** `npc` bez klipów do S116 (kopia stoi); atak dystansowy w AnimLab bez strzały w locie.
 - **Dźwięki (S111):** 30 dźwięków nieodsłuchanych (wybór po nazwie i długości, `docs/ASSETS.md` → „Dźwięki (S111)”;
   `skill.default.heal` i `.buff` słabe); koszt dźwięku w `/animlab stress 20` nie zmierzony (Studio bez postaci); rzucenie
   umiejętności Łowcy i Maga (`onCast`) bez dźwięku do S115 (od S115 `skill.<id>.cast`, gdy ma ID).
@@ -402,6 +408,18 @@ zakończone; testy i decyzje właściciela po nich.
   i usługa wierzchowców, `vendors`, mapy lochów, skiny wierzchowców.
 - **S119:** `mapy/world` bez miejsca w grze (brak widoku świata); wiki bez obrazków tytułów, efektów i portretów bossów
   (WIKI-GRAFIKA ma resztę); ikona gry, miniatury i ikony przepustek tylko instrukcją (`docs/ASSETS.md`).
+- **S117 bez S116 (haki prawdziwych modeli):** model z Tripo nie gra klipów ataków bossa `anims[<id ataku>]`, ryku
+  `roar`, wyjścia przyzwanych `spawn`, skoku i wiru na `LookWeld.C0`, pozy `static` ani przesunięcia od trafienia
+  (style, ryk, łuk skoku, wyjście z ziemi i klon śmierci działają tylko na generatorze); robi to S116.
+- **S117: przegląd w Studio częściowy:** obejrzane zrzutami: skok wilka, wspięcie niedźwiedzia, stożek bandyty na
+  jaskini, pierścień Morvane, łuk skoku Grimroka; reszta listy I odegrana w AnimLab bez błędów, oceniona z danych i
+  testów. Nieobejrzane: trawa i śnieg dla wszystkich kształtów, wersja prosta i niska jakość telegrafu, ryk z wstrząsem,
+  klon śmierci bossa (tylko w świecie), wyjście przyzwanych w walce. Koszt zmierzony z 8 telegrafami, bez 20 potworów w
+  zamachu naraz.
+- **S117: uproszczenia:** reakcja na trafienie rusza tułów i głowę (bez zadu czworonogów, skrzydeł ptaków i nóg pająka po
+  stronie ciosu); nogi czworonogów zostają przy korzeniu, gdy tułów skacze (stawy nóg wiszą na korzeniu); przyzwany
+  wychodzi z ziemi przy pierwszym pojawieniu się u klienta (także po streamingu); `wingBuffet` to jedno uderzenie skrzydeł
+  (plan: dwa).
 - **FIX 2026-10-14: przegląd w grze nie zrobiony** (konto moderowane, bez Studio): duch przeciągania, NPC i tablice
   miasta, siatka sklepu i drzewka ścieżek (PC i telefon) sprawdzone tylko w kodzie i testach Lune.
 

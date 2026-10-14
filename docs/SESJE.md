@@ -9137,3 +9137,87 @@ Gniewu Żywiołów grały od S114 w pierwszym (jedynym) zdarzeniu. S115 dodała 
 `src/client/Controllers/{Vfx,AnimLab}Controller.luau`, `src/client/Vfx/Library.luau`, `tests/SkillLooks.luau`,
 `tests/{skillmotion,motionkeys}.spec.luau`, `tests/fixtures/balance_paths.json`,
 `docs/{ANIMACJE,ASSETS,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`, `CLAUDE.md`.
+
+### S117: Potwory i bossowie w walce, telegrafy 2.0
+
+Start na `e793e4d` (S115). S116 pominięta na polecenie właściciela (nie ma jeszcze modeli z Tripo), więc S117 robi część
+dla generatora i dzisiejszych potworów, a haki prawdziwych modeli zostają dla S116 (lista w „Niedokończone”). Zgodnie z
+poleceniem przebiegu bez commita i pusha.
+
+1) Nazwy (A1): z planu S116 nie ma `attackChain`, `clipTiming`, `staticPose`, `BOSS_SLOTS`, `ClipInfo`, `roarSeconds`,
+`tools/models/scan.luau`; pole `a` w `tele` dodane tutaj (D0). Z S110–S113 wszystko jak w planie (`Vfx/Clock`,
+`Gait.stateMotion`, `MotionKeys`, `PreviewTelegraph`, `MonsterState.hitDir`, `Data/HitFx`, `Library.impactFlash` /
+`sparks` / `groundDecal` / `smokePuff` / `magicCircle` / `ringWave`, `SfxController.Play` / `After` / `Mob`, klucze
+`telegraph.warn`, `boss.<id>.roar|phase|death|attack`, `mob.<rodzina>.attack`). Ryk, faza i śmierć bossa mają już dźwięk z
+S111 (`SfxController` słucha atrybutów), więc S117 dokłada tylko ruch, wstrząs i światło.
+
+Co zrobiono:
+- **Dane:** `Data/MonsterMotions` (56 stylów, 20 planów z `horse`, broń humanoidów, 9 śmierci, reakcja na trafienie
+  planu), `Data/BossMotions` (4 bossy, 16 ataków z efektem i wstrząsem, ryk, śmierć ze światłem), `Config.Telegraph`, nowe
+  liczby `Config.MonsterLook` (`hitLean`, `hitPush`, `bossHitScale`, `hitEvery`, `summonRise`, `summonFxMax`,
+  `bossDeathSeconds`, `leapArc`, `deathSeconds` 0,8, `roarSeconds`, `phaseLight`), `Config.AnimLab.floors`.
+- **`Logic/Gait`:** pola ruchu `style`, `tremble`, `hop`, `spin`, `roar`, `rise`, `deathStyle`, `deathSide`, `hover`,
+  `hitX/Z`, `plan`, `flying`; `charge`, poprawiony `attack` (szczyt w `windup`), `attackMotion`, `hopOf`, `spinOf`,
+  `roarEnvelope`, `leapArc`, `hitLean`; bez nowych pól poza jak przed sesją (test). `Joint.front` z atrybutu `Front`.
+- **`Logic/Telegraph`** (nowy, czysty) i **`Vfx/GroundTelegraph`** (warstwy, pula, jedna pętla na zegarze efektów, wersja
+  prosta, tekstury S112); `CombatFxController`: ostrzeżenie raz na atak, w chwili błysku efekt na każdym obszarze (Elita
+  II według kształtu i żywiołu, boss według `BossMotions`), wstrząs bossa w 60 st., dźwięk ataku, meteory i pociski
+  Morvane startują wcześniej; ryk (wstrząs, błysk aury), wstrząs przy śmierci bossa.
+- **`AnimationController`:** style z planu, broni i umiejętności, zbieranie siły w rytmie telegrafu, szczyt zwykłego ataku
+  0,03 s po zdarzeniu, hitstop i trafienie nie przerywają zamachu, skok Grimroka łukiem do miejsca teleportu, ryk przy
+  fazie, wyjście przyzwanych z ziemi (pył i pęknięcia dla 4 pierwszych w fali), lot Vaelgratha, śmierć według planu,
+  kierunkowe drgnięcie (raz na 0,1 s), czasy potworów na `Vfx/Clock`.
+- **`MonsterViewController`:** śmierć bossa: poza, potem klon rozpadający się w świetle (niska jakość: światło na oryginale).
+- **Serwer:** `a = ability.id` w `tele` (`CombatService.telegraph`), `Summoned = true` przyzwanych (`Boss.spawnSummons` →
+  `DungeonService.spawnMonster` → `SpawnAt` z atrybutami).
+- **AnimLab:** `mob <rodzaj> attack2|cast` z umiejętnością i telegrafem Elity II, `mob <rodzaj> spawn` jako wyjście z
+  ziemi, pozy i telegrafy ataków bossów z `a`, łuk skoku, `boss <id> roar|death`, `floor <grass|snow|cave>` (PL i EN).
+- **Testy:** `gait.spec` (blok „Attack styles (S117)”, przypadki 1–9 i ryk / wyjście / lot; stary test ataku przestawiony
+  na nowy czas), nowe `bossmotions.spec` (10–11) i `telegraph.spec` (12–16), `motionkeys.spec` (szczyt = trafienie,
+  `DEATH_SECONDS` 0,8), `tools/balance_reasons.luau` (dwa nowe moduły „wygląd”). Wiki bez zmian (`wikidump --check`).
+
+Przegląd w Studio (MCP, obraz 3D z `camera_position`): Play przez „Graj”, `/animlab on`, wszystkie poniższe bez błędu w
+konsoli; zrzuty tylko w rozmowie. Play zatrzymany, miejsce niezapisane.
+
+| Ruch | Co było źle | Co zmieniono / co widać |
+|---|---|---|
+| `mob wolf attack2` (leap, t = 1,1 / 1,2) | ten sam zamach co zwykły atak, cios 0,14 s po obrażeniach | przysiad, drżenie, skok nad obszar z łapami w przód, lądowanie w chwili błysku |
+| `mob brownBear attack2` (slam, t = 1,2 / 1,4) | jedna poza dla wszystkich | wspięcie z łapą w górze; pas koła prawie pełny, czoło widoczne, pęknięcia pod spodem |
+| `mob bandit attack2` (cleave, t = 0,5 / 1,0) na `floor cave` | stożek z 9 plastrów rosnący od wierzchołka | broń w tył i w bok, stożek: brzeg, podbrzeg, czoło łuku w połowie promienia, pas od łuku |
+| `boss morvane deathRing` (t = 1,1 / 2,2) | czerwony dysk od środka, bez pozy | uniesienie z rękami szeroko, pierścień do zielonego środka, koło runiczne magii |
+| `boss grimrok leap` (t = 1,4 / 1,5) | teleport bez ruchu | Grimrok w locie nad obszarem celu (łuk), tasak i ręce w tył |
+| reszta listy I (12 umiejętności, 16 ataków, ryk, śmierci, przyzwanie) | — | odegrane bez błędów (`mob … attack1/attack2/death/spawn`, `boss …`, `boss azgor roar`), ocena z danych i testów |
+
+Koszt (H3, `execute_luau` w Play): czas klatki przed 16,68 ms średnio / 19,08 ms maks., z 8 telegrafami naraz (pierścień
+32, koła, stożki, linia, inferno) 16,63 / 19,07 ms (klatka trzyma 60 Hz); 492 części w folderze efektów w szczycie, po
+zaniku 0 widocznych (pula). Zestawu 20 potworów w zamachu naraz nie zmierzono (AnimLab ma jednego aktora potwora).
+
+Podsumowanie części animacyjnej serii (S110–S117) dla właściciela: AnimLab w Studio z klatkami kontrolnymi i MCP (S110),
+dźwięki walki, potworów i interfejsu (S111), tekstury efektów i nowe składniki (S112), ataki podstawowe ze szczytem w
+chwili trafienia, seriami i hakiem na klipy (S113), umiejętności czterech klas w trzech warstwach efektów (S114–S115),
+potwory i bossowie z atakami według ciała, zapowiedziami w rytmie telegrafów, rykiem, przyzwaniami i śmiercią oraz
+telegrafy 2.0 (S117). S116 (modele z Tripo) czeka: modele według `TRIPO-ANIMACJE.md` i `docs/sessions/IMPORT-MODELI.md`
+dostaną te same zapowiedzi przez klipy ataków bossów; opcjonalnie własne klipy w Moon Animator / Animation Editor;
+tekstury efektów można podmienić.
+
+Do decyzji właściciela: czy przyzwani mają wychodzić z ziemi także po streamingu (dziś każdy przyzwany przy pierwszym
+pojawieniu się u klienta); siła wstrząsów bossów (`Data/BossMotions` shake 0,2–0,7); czy wolisz brzeg telegrafu z
+tekstury `ring` zamiast linii z `SurfaceGui`.
+
+Niedokończone (też w PROGRESS): haki prawdziwych modeli z S116; zestaw 20 potworów w pomiarze; tylko wybrane klatki
+obejrzane; reakcja na trafienie bez zadu / skrzydeł / nóg po stronie ciosu (tylko tułów i głowa); klon śmierci bossa i ryk
+nie obejrzane w świecie (AnimLab pokazuje pozę, klon żyje w `MonsterViewController`).
+
+Po przeglądzie kodu: kierunek drgnięcia nie przepada po hitstopie umiejętności (`flinchAt`), trafienie w zamachu ×0,3 raz
+(nie ×0,09), wyjście z ziemi na jednej krzywej w grze i AnimLab (`Gait.riseOf`, test), długość klonu z
+`bossDeathSeconds`, bez efektu i dźwięku ciosu martwego rzucającego, krótszy wstrząs przy niskiej jakości, `/mobviz anim`
+z atakiem i śmiercią według planu (atrybut `Front`), czyszczenie `teleGroups`, usunięte `FLINCH.monsterDegrees`.
+
+Pliki: `src/shared/Data/{MonsterMotions,BossMotions}.luau` (nowe), `src/shared/Logic/{Gait,MotionKeys,AnimLab}.luau`,
+`src/shared/Logic/Telegraph.luau` (nowy), `src/shared/Config.luau`, `src/shared/Util/LookBuild.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Data/AttackMotions.luau` (`FLINCH`),
+`src/client/Vfx/GroundTelegraph.luau` (nowy),
+`src/client/Controllers/{Animation,CombatFx,MonsterView,AnimLab,MobViz}Controller.luau`, `src/server/Entities/Boss.luau`,
+`src/server/Services/{Combat,Dungeon}Service.luau`, `tests/{gait,motionkeys}.spec.luau`,
+`tests/{bossmotions,telegraph}.spec.luau` (nowe), `tools/balance_reasons.luau`,
+`docs/{ANIMACJE,ASSETS,MODELE,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`.

@@ -22,7 +22,7 @@ Boss.__index = Boss
 
 export type Services = {
 	spawnCustom: (def: Monsters.MonsterDef, variant: any, level: number, at: CFrame) -> any,
-	spawnMonster: (monsterId: string, level: number, at: CFrame) -> any,
+	spawnMonster: (monsterId: string, level: number, at: CFrame, attributes: { [string]: any }?) -> any,
 	despawn: (monster: any) -> (),
 	telegraph: (monster: any, ability: any, area: CFrame) -> (),
 	resolve: (monster: any, ability: any, area: CFrame) -> (),
@@ -178,7 +178,8 @@ local function spawnSummons(self: Boss, summon: Bosses.Summon)
 		local angle = (i / count) * math.pi * 2 + self.random:NextNumber()
 		local radius = 14 + self.random:NextNumber() * 6
 		local at = self.centre * CFrame.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
-		local monster = self.services.spawnMonster(summon.monster, summon.level, at)
+		-- S117: the attribute Summoned lets the clients raise it out of the ground (looks only; set before it replicates)
+		local monster = self.services.spawnMonster(summon.monster, summon.level, at, { Summoned = true })
 		if monster then
 			monster.summoned = true
 			monster.leashRange = self.monster.leashRange

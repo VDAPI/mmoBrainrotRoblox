@@ -10,10 +10,12 @@
 --     hit (the server's time, capped at MAX_HIT); release, land from the motion; peak = the last key before the first of
 --     hit / release (h itself when no key is earlier; without both: the key with the most arm angle); follow = h + 0.35
 --     * (end - h) with h = hit or release or peak; end = SkillPose.duration(motion, loopUntil)
---   generated monster (w = windup or Gait.DEFAULT_WINDUP): start 0; peak = w (raise 1); hit = w (the server's damage
---     after the telegraph); strikePeak = w + Gait.STRIKE_SECONDS (strike 1: where the motion really lands); follow =
---     strikePeak + 0.3 * RECOVER_SECONDS; end = Gait.attackLength(w). `strikeNow` (a basic attack, damage with the
---     event) moves everything by -(w - 0.06) (AnimationController.MonsterAttack), cut at 0, and hit = 0
+--   generated monster (w = windup or Gait.DEFAULT_WINDUP): start 0; peak = w - Gait.STRIKE_SECONDS (the end of the
+--     gather, cut at 0); hit = strikePeak = w (S117: the blow peaks at the server's damage after the telegraph, where
+--     the telegraph flashes; before S117 it peaked STRIKE_SECONDS later); follow = w + 0.3 * RECOVER_SECONDS; end =
+--     Gait.attackLength(w). `strikeNow` (a basic attack, damage with the event) moves everything by
+--     -(w - Gait.STRIKE_NOW_LEAD) (AnimationController.MonsterAttack), cut at 0, and hit = 0: the blow peaks 0.03 s after
+--     the event
 --   boss attack / Elite II ability: a monster with w = attack.windup / ability.windup
 --   clip: start 0, hit = the marker (when given), end = length; a clip played at `speed` (S113, Logic/ClipFit) divides
 --     both by it
@@ -36,7 +38,6 @@ MotionKeys.ORDER = { "start", "peak", "release", "hit", "strikePeak", "land", "f
 
 local FOLLOW_SKILL = 0.35 -- share of the time from the hit to the end
 local FOLLOW_MONSTER = 0.3 -- share of Gait.RECOVER_SECONDS
-local STRIKE_NOW_LEAD = 0.06 -- AnimationController.MonsterAttack: a strikeNow attack starts this much before the end of the windup
 
 local function rank(name: KeyName): number
 	return table.find(MotionKeys.ORDER, name) or 99
@@ -139,17 +140,16 @@ end
 -- A generated monster's attack (Logic/Gait) with `windup`; `strikeNow` = a basic attack (damage with the event).
 function MotionKeys.monster(windup: number?, strikeNow: boolean?): Keys
 	local w = math.max(windup or Gait.DEFAULT_WINDUP, 0.05)
-	local strikePeak = w + Gait.STRIKE_SECONDS
 	local entries: { [string]: number? } = {
 		start = 0,
-		peak = w,
+		peak = math.max(0, w - Gait.STRIKE_SECONDS),
 		hit = w,
-		strikePeak = strikePeak,
-		follow = strikePeak + FOLLOW_MONSTER * Gait.RECOVER_SECONDS,
+		strikePeak = w,
+		follow = w + FOLLOW_MONSTER * Gait.RECOVER_SECONDS,
 		["end"] = Gait.attackLength(w),
 	}
 	if strikeNow then
-		local shift = math.max(0, w - STRIKE_NOW_LEAD)
+		local shift = math.max(0, w - Gait.STRIKE_NOW_LEAD)
 		for name, t in entries do
 			entries[name] = math.max(0, (t :: number) - shift)
 		end

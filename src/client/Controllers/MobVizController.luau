@@ -2,17 +2,22 @@
 -- Admin look preview (S24, /mobviz and /lookstats): the server checks the command and sends "MobViz" to the
 -- admin only; looks are built locally in a row in front of the player (no monsters on the server), each with a
 -- label (id, plan, part count, real model or generator). With "anim" the previews cycle idle -> walk ->
--- attack -> hit -> death -> spawn every 1.5 s (Logic/Gait on their Gait_* joints, LookRoot anchored).
+-- attack -> hit -> death -> spawn every 1.5 s (Logic/Gait on their Gait_* joints, LookRoot anchored). S117: each
+-- preview attacks and dies by its body plan (Data/MonsterMotions, a boss by Data/BossMotions) like in the game.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
+local AnatomyPlans = require(ReplicatedStorage.Shared.Logic.Anatomy.Plans)
+local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -30,7 +35,7 @@ local PET_PREVIEW = 2 -- pets are shown bigger than they follow players
 
 type Item = { id: string, look: MonsterLooks.Look, variant: string, scale: number }
 type Joint = { motor: Motor6D, joint: Gait.Joint, scale: number }
-type Preview = { model: Model, joints: { Joint } }
+type Preview = { model: Model, joints: { Joint }, options: Gait.StateOptions }
 
 local MonsterView: any
 local Notifications: any
@@ -143,6 +148,7 @@ local function collect(model: Model): { Joint }
 						side = tonumber(item:GetAttribute("Side")) or 0,
 						phase = tonumber(item:GetAttribute("Phase")) or 0,
 						amp = tonumber(item:GetAttribute("Amp")) or 1,
+						front = tonumber(item:GetAttribute("Front")) or 0,
 					},
 					scale = tonumber(item:GetAttribute("Scale")) or 1,
 				})
@@ -150,6 +156,26 @@ local function collect(model: Model): { Joint }
 		end
 	end
 	return joints
+end
+
+local STATE_SLOTS: { [string]: Gait.Slot } =
+	{ idle = "idle", walk = "walk", attack = "attack1", hit = "hit", death = "death", spawn = "spawn" }
+local ATTACK_WINDUP = 0.6
+
+-- S117: the game's choices for a look (AnimationController): the attack style of its plan and weapon, the death of its
+-- plan (a boss: Data/BossMotions), the hover of a flier.
+local function optionsOf(item: Item): Gait.StateOptions
+	local plan = item.look.plan
+	local bossDef = if item.variant == "boss" then BossMotions.get(item.id) else nil
+	return {
+		windup = ATTACK_WINDUP,
+		speed = Gait.WALK_SPEED,
+		style = MonsterMotions.styleFor(plan, item.look.weapon),
+		deathStyle = if bossDef then bossDef.death.style else MonsterMotions.deathFor(plan),
+		deathSide = 1,
+		hover = if AnatomyPlans.hovers(plan) then Anatomy.HOVER else 0,
+		plan = plan,
+	}
 end
 
 local function show(target: string, variant: string, anim: boolean)
@@ -198,16 +224,12 @@ local function show(target: string, variant: string, anim: boolean)
 			info.height - info.hipHeight - info.rootHalf
 		)
 		entry.model.Parent = container
-		table.insert(previews, { model = entry.model, joints = collect(entry.model) })
+		table.insert(previews, { model = entry.model, joints = collect(entry.model), options = optionsOf(list[i]) })
 		x += info.width / 2 + GAP / 2
 	end
 	animate = anim
 	started = os.clock()
 end
-
-local STATE_SLOTS: { [string]: Gait.Slot } =
-	{ idle = "idle", walk = "walk", attack = "attack1", hit = "hit", death = "death", spawn = "spawn" }
-local ATTACK_WINDUP = 0.6
 
 -- S110: the state motion comes from Gait.stateMotion (the walk cycle counts from the start of the state).
 local function step()
@@ -218,9 +240,10 @@ local function step()
 	local index = math.floor(t / STATE_SECONDS) % #STATES + 1
 	local state = STATES[index]
 	local phaseTime = t % STATE_SECONDS
-	local motion = Gait.stateMotion(STATE_SLOTS[state], phaseTime, { windup = ATTACK_WINDUP, speed = Gait.WALK_SPEED })
-	motion.time = os.clock()
+	local now = os.clock()
 	for _, preview in previews do
+		local motion = Gait.stateMotion(STATE_SLOTS[state], phaseTime, preview.options)
+		motion.time = now
 		for _, j in preview.joints do
 			local p = Gait.pose(j.joint, motion)
 			local k = j.scale

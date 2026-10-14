@@ -437,8 +437,8 @@ end
 local function services(run: Run): Boss.Services
 	return {
 		spawnCustom = MonsterService.SpawnCustom,
-		spawnMonster = function(monsterId: string, level: number, at: CFrame)
-			return MonsterService.SpawnAt(monsterId, "normal", level, at, nil)
+		spawnMonster = function(monsterId: string, level: number, at: CFrame, attributes: { [string]: any }?)
+			return MonsterService.SpawnAt(monsterId, "normal", level, at, nil, attributes)
 		end,
 		despawn = MonsterService.Despawn,
 		telegraph = CombatService.MonsterTelegraph,

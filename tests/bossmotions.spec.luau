@@ -1,0 +1,64 @@
+--!strict
+-- S117: Data/BossMotions (every attack of every boss has its own pose, an effect from the list, a shake in 0..1, a roar
+-- and a death) and the styles it names.
+
+local BossMotions = require("../src/shared/Data/BossMotions")
+local Bosses = require("../src/shared/Data/Bosses")
+local Config = require("../src/shared/Config")
+local MonsterMotions = require("../src/shared/Data/MonsterMotions")
+local Sfx = require("../src/shared/Data/Sfx")
+local T = require("./Test")
+
+T.describe("BossMotions (S117)", function()
+	T.it("10. every boss and every attack has a motion, no dead entries", function()
+		for _, boss in Bosses.list do
+			local def = BossMotions.get(boss.id)
+			T.expect({ boss.id, def ~= nil }).toEqual({ boss.id, true })
+			if not def then
+				continue
+			end
+			local ids: { [string]: boolean } = {}
+			for _, attack in boss.attacks do
+				ids[attack.id] = true
+				local motion = def.attacks[attack.id]
+				T.expect({ boss.id, attack.id, motion ~= nil }).toEqual({ boss.id, attack.id, true })
+				if motion then
+					T.expect({ attack.id, MonsterMotions.STYLES[motion.style] ~= nil }).toEqual({ attack.id, true })
+					local impact = motion.impact or "none"
+					T.expect({ attack.id, table.find(BossMotions.IMPACTS, impact) ~= nil }).toEqual({ attack.id, true })
+					local shake = motion.shake or 0
+					T.expect({ attack.id, shake >= 0 and shake <= 1 }).toEqual({ attack.id, true })
+					if motion.sound then
+						T.expect({ attack.id, Sfx.get(motion.sound) ~= nil }).toEqual({ attack.id, true })
+					end
+					if attack.leap then
+						T.expect({ attack.id, (motion.arc or 0) > 0 }).toEqual({ attack.id, true })
+					end
+				end
+			end
+			for id in def.attacks do
+				T.expect({ boss.id, id, ids[id] == true }).toEqual({ boss.id, id, true })
+			end
+			T.expect({ boss.id, MonsterMotions.STYLES[def.roar.style] ~= nil }).toEqual({ boss.id, true })
+			T.expect({ boss.id, def.roar.shake >= 0 and def.roar.shake <= 1 }).toEqual({ boss.id, true })
+			T.expect({ boss.id, def.roar.seconds > 0.65 }).toEqual({ boss.id, true })
+			T.expect({ boss.id, MonsterMotions.DEATH[def.death.style] ~= nil }).toEqual({ boss.id, true })
+			T.expect({ boss.id, string.match(def.death.light, "^#%x%x%x%x%x%x$") ~= nil }).toEqual({ boss.id, true })
+			T.expect({ boss.id, (def.death.seconds or Config.MonsterLook.bossDeathSeconds) > 0 })
+				.toEqual({ boss.id, true })
+		end
+		for id in BossMotions.byBoss do
+			T.expect({ id, Bosses.get(id) ~= nil }).toEqual({ id, true })
+		end
+	end)
+
+	T.it("11. two attacks of one boss never share a style", function()
+		for id, def in BossMotions.byBoss do
+			local seen: { [string]: string } = {}
+			for attackId, motion in def.attacks do
+				T.expect({ id, attackId, seen[motion.style] }).toEqual({ id, attackId, nil })
+				seen[motion.style] = attackId
+			end
+		end
+	end)
+end)

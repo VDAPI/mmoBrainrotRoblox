@@ -922,8 +922,8 @@ return table.freeze({
 		staff = { release = "wand.cast" },
 	} :: { [MotionName]: { start: string?, swing: string?, release: string? } }),
 	-- A hit character's reaction (looks only, Logic/AttackPose.flinch): seconds, degrees of the waist (critical hits
-	-- more), the shoulders' share; monsters of the generator turn their body by at most monsterDegrees.
-	FLINCH = table.freeze({ seconds = 0.18, degrees = 5, critDegrees = 9, shoulder = 0.35, monsterDegrees = 6 }),
+	-- more), the shoulders' share (a monster's push since S117: Config.MonsterLook.hitLean / hitPush, Gait.hitLean).
+	FLINCH = table.freeze({ seconds = 0.18, degrees = 5, critDegrees = 9, shoulder = 0.35 }),
 	-- The weapon trail of a basic attack (Vfx/Library.weaponTrail with basic = true): lifetime, texture, where along
 	-- the weapon it starts (share of the grip-to-tip length; a mace's head: baseByMotion), widths at the tip and base.
 	TRAIL = table.freeze({
