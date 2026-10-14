@@ -182,7 +182,7 @@ cmd("items", "icons", { enum("mode", { "status", "glyph", "art" }, true, "status
 cmd(
 	"items",
 	"icongrid",
-	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "tiers" }, true, "eq"), str("type", true) }
+	{ enum("group", { "eq", "uniq", "mat", "pot", "misc", "art", "tiers" }, true, "eq"), str("type", true) }
 )
 -- S52: real art (weapon models, picture icons): coverage and a look in the hand without an item.
 cmd("items", "artcoverage", {})

@@ -1,7 +1,8 @@
 --!strict
 -- Item icon admin helpers on the client (S35): /icons (atlas state and the preload result of every sheet),
 -- /icons glyph | art (switch between the old glyphs and the pictures, not saved), /icongrid <group> (a preview window
--- of every icon of a group in Common slots; "tiers <type>" = the 21 tiers of one base side by side).
+-- of every icon of a group in Common slots; "tiers <type>" = the 21 tiers of one base side by side; S118: "art" =
+-- every item with its own picture).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -31,11 +32,31 @@ local gridScope: any = nil
 
 local SLOT = 52
 
--- Item ids of a /icongrid group, sorted ("eq" one per base type at tier 30, "uniq", "mat", "pot", "misc", or the
--- tiers of one base).
+local function always(_n: number): boolean
+	return true
+end
+
+-- S118: the item has its own picture (not one borrowed from a lower tier), every sheet counted as ready.
+local function ownPicture(def: Items.ItemDef): boolean
+	local r = ItemIcons.resolve(def, nil, always)
+	if not r or not r.picture then
+		return false
+	end
+	local tier = string.match(r.key, "@(%d+)$")
+	return tier == nil or tonumber(tier) == def.tier
+end
+
+-- Item ids of a /icongrid group, sorted ("eq" one per base type at tier 30, "uniq", "mat", "pot", "misc", "art" every
+-- item with its own picture, or the tiers of one base).
 function IconController.GroupIds(group: string, baseType: string?): { string }
 	local ids = {}
 	for id, def in Items.byId do
+		if group == "art" then
+			if ownPicture(def) then
+				table.insert(ids, id)
+			end
+			continue
+		end
 		local key = ItemIcons.keyOf(def)
 		local prefix = if key then string.match(key, "^(%a+)/") else nil
 		if group == "tiers" then

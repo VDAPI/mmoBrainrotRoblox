@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 
 local scope = Fusion.scoped(Fusion)
 
@@ -34,6 +35,23 @@ function IconState.readyIn(use: Fusion.Use): ItemIcons.Ready
 	return function(n: number): boolean
 		return loaded[n] == true
 	end
+end
+
+-- S118: the one place where the client decides what an item looks like: nil (glyph) in glyph mode or before the
+-- code-drawn sheets load, else the picture (its sheet loaded) or the code-drawn icon (Logic/ItemIcons.resolve).
+function IconState.picture(use: Fusion.Use, def: Items.ItemDef?, element: string?): ItemIcons.Resolved?
+	if not def or not use(IconState.Art) then
+		return nil
+	end
+	return ItemIcons.resolve(def, element, IconState.readyIn(use))
+end
+
+-- S118: picture of a quest objective item ("quest/<item>") once its sheet is loaded, else nil (text only).
+function IconState.questPicture(use: Fusion.Use, item: string?): ItemIcons.Resolved?
+	if not item or use(IconState.Mode) ~= "art" then
+		return nil
+	end
+	return ItemIcons.questItem(item, IconState.readyIn(use))
 end
 
 local loading = false

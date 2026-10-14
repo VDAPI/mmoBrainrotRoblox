@@ -1,5 +1,9 @@
 --!strict
 local Atlas = require("../src/shared/Data/ItemIconAtlas")
+local Elements = require("../src/shared/Data/Elements")
+local En = require("../src/shared/Data/Localization/en")
+local Pl = require("../src/shared/Data/Localization/pl")
+local Sheets = require("../src/shared/Data/ItemIconSheets")
 local ItemIcons = require("../src/shared/Logic/ItemIcons")
 local Items = require("../src/shared/Data/Items")
 local T = require("./Test")
@@ -132,11 +136,18 @@ T.describe("Item icons", function()
 					withAccent = withAccent or layer.t == "accent"
 				end
 				if def.elemental and not withAccent then
-					-- Mage weapons keep the drawn icon (element accent) until the picture has an accent layer.
+					-- S118: mage weapons use the picture too; the element is a gem drawn by the client.
 					local fire = ItemIcons.resolve(def, "fire", all) :: any
 					local ice = ItemIcons.resolve(def, "ice", all) :: any
-					T.expect(fire.key).toBe(`eq/{base}`)
-					T.expect(fire.layers[#fire.layers].tint == ice.layers[#ice.layers].tint).toBe(false)
+					T.expect(fire.key).toBe(key)
+					T.expect(fire.gem).toBe(Elements.COLORS.fire)
+					T.expect(ice.gem).toBe(Elements.COLORS.ice)
+					T.expect(#fire.layers).toBe(#ice.layers)
+					for i, layer in fire.layers do
+						T.expect(layer.image == ice.layers[i].image and layer.tint == ice.layers[i].tint).toBe(true)
+					end
+					T.expect((ItemIcons.resolve(def, nil, all) :: any).gem).toBeNil()
+					T.expect((ItemIcons.resolve(def, "fire", svgOnly) :: any).gem).toBeNil()
 					continue
 				end
 				T.expect((ItemIcons.resolve(def, nil, all) :: any).key).toBe(key)
@@ -176,6 +187,112 @@ T.describe("Item icons", function()
 		T.expect(first(Items.get("unique_grimrok_cleaver"))).toBe("uniq/unique_grimrok_cleaver")
 		T.expect(first(Items.get("ore_copper"))).toBe("mat/ore_copper")
 		T.expect(first(Items.get("ore_iron"))).toBe("mat/ore")
+	end)
+
+	T.it("every quest picture is a quest item with its text in PL and EN (S118)", function()
+		local bad = {}
+		local n = 0
+		for key in Atlas.PNG do
+			local item = string.match(key, "^quest/(.+)$")
+			if item then
+				n += 1
+				local textKey = `quest.item.{item}`
+				if (Pl :: any)[textKey] == nil or (En :: any)[textKey] == nil then
+					table.insert(bad, key)
+				end
+			end
+		end
+		table.sort(bad)
+		T.expect(table.concat(bad, ", ")).toBe("")
+		T.expect(n > 0).toBe(true)
+	end)
+
+	T.it("quest items: a picture only with its key in the atlas and a ready sheet (S118)", function()
+		local all = function(_n: number): boolean
+			return true
+		end
+		local none = function(_n: number): boolean
+			return false
+		end
+		local key, icon = next(Atlas.PNG)
+		while key and string.sub(key, 1, 6) ~= "quest/" do
+			key, icon = next(Atlas.PNG, key)
+		end
+		T.expect(key ~= nil).toBe(true)
+		local item = string.sub(key :: string, 7)
+		local r = ItemIcons.questItem(item, all) :: any
+		T.expect(r.key).toBe(key)
+		T.expect(r.picture).toBe(true)
+		T.expect(#r.layers).toBe(#(icon :: any).layers)
+		T.expect(r.layers[1].tint).toBeNil()
+		T.expect(r.layers[1].image > Atlas.SVG_SHEETS).toBe(true)
+		T.expect(ItemIcons.questItem(item, none)).toBeNil()
+		T.expect(ItemIcons.questItem("noSuchQuestItem", all)).toBeNil()
+		T.expect(ItemIcons.questItem(nil, all)).toBeNil()
+	end)
+
+	T.it(
+		"pictures are whole: a picture never mixes with tier tints, the fallback is the code-drawn icon (S118)",
+		function()
+			local all = function(_n: number): boolean
+				return true
+			end
+			local svgOnly = function(n: number): boolean
+				return n <= Atlas.SVG_SHEETS
+			end
+			for _, def in Items.byId do
+				local r = ItemIcons.resolve(def, nil, all) :: any
+				if r.picture then
+					T.expect(Atlas.PNG[r.key] ~= nil).toBe(true)
+					for _, layer in r.layers do
+						T.expect(layer.image > Atlas.SVG_SHEETS).toBe(true)
+					end
+				end
+				local old = ItemIcons.resolve(def, nil, svgOnly) :: any
+				local key = ItemIcons.keyOf(def)
+				T.expect(old.key).toBe(key)
+				T.expect(old.picture).toBe(false)
+				for _, layer in old.layers do
+					T.expect(layer.image <= Atlas.SVG_SHEETS).toBe(true)
+				end
+			end
+		end
+	)
+
+	T.it("coverage counts the items drawn with a picture and the sheets to upload (S118)", function()
+		local all = function(_n: number): boolean
+			return true
+		end
+		local cov = ItemIcons.coverage(all)
+		local count, items = 0, 0
+		for _, def in Items.byId do
+			items += 1
+			local r = ItemIcons.resolve(def, nil, all)
+			if r and r.picture then
+				count += 1
+			end
+		end
+		T.expect(cov.items).toBe(items)
+		T.expect(cov.withArt).toBe(count)
+		T.expect(count > 0).toBe(true)
+		local sum = 0
+		for _, n in cov.byGroup do
+			sum += n
+		end
+		T.expect(sum).toBe(count)
+		T.expect(cov.sheets).toBe(Atlas.SHEETS - Atlas.SVG_SHEETS)
+		local waiting = 0
+		for n = Atlas.SVG_SHEETS + 1, Atlas.SHEETS do
+			local id = Sheets[n]
+			T.expect(id == "" or string.match(id, "^rbxassetid://%d+$") ~= nil).toBe(true)
+			if id == "" then
+				waiting += 1
+			end
+		end
+		T.expect(#cov.waiting).toBe(waiting)
+		T.expect(ItemIcons.coverage(function(_n: number): boolean
+			return false
+		end).withArt).toBe(0)
 	end)
 
 	T.it("the drag ghost of an item carries its definition and element (S35)", function()

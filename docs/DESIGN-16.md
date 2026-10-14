@@ -207,3 +207,17 @@ Kolejka `DALEJ.md`: S110…S119 po S109. S118 zastępuje część „ikony z PNG
 - Nieobejrzane (MCP w tej sesji nie dawał obrazu 3D, `screen_capture` pokazuje tylko interfejs): strona łuku cięcia
   (`Library.SLASH_SIDE`), płaszczyzna płaskiej `Beam` (normalna = oś Y attachmentów), `FlipbookIncompatible` (Studio
   zgłaszał go także dla plików 1024 × 1024).
+
+## 14. Ustalenia S118
+
+- S118 rozszerza system S52 zamiast budować drugi (bez `import_items.py`, `ItemArtAtlas`, `ItemArtSheets`): obrazki w
+  tabeli `PNG` indeksu `Data/ItemIconAtlas`, atlasy `art/icons/items_4..8.png` po atlasach SVG 1–3, ID w
+  `Data/ItemIconSheets` (wiersz na plik `-- items_<n>.png`, puste = zapas), packer `tools/icons/import_png.py`
+  (`--check-ids`), import z folderu grafik `tools/icons/import_graphics.py` (nazwy z `tools/icons/ids.luau`, raport).
+- API: `ItemIcons.questItem(item, ready?)`, `ItemIcons.coverage(ready?)`, `Resolved.picture`, `Resolved.gem`;
+  `IconState.picture(use, def, element?)`, `IconState.questPicture(use, item)`; komponent
+  `UI/Components/QuestItemIcons(scope, use, objectives, layoutOrder?)`.
+- Klucze: `quest/<item>` (przedmioty questowe), `bless/blessing_<linia>_<n>` (jedna rzadkość). Folder dla S119: lista
+  w raporcie `import_graphics.py` („Grafiki interfejsu”).
+- Wgranie przez MCP jak S112: `upload_image` z lokalnego `http.server`; S118 wgrała `items_7.png` (zmieniony) i
+  `items_8.png` (kilka razy: po dograniu obrazków zapisanych w trakcie sesji).

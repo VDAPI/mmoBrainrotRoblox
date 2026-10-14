@@ -8488,3 +8488,86 @@ Po przeglądzie: `burst` dostaje `simple` i przekazuje go do `impactFlash` (dale
 tabelą C5), `orbit` ma emiter `glow` (D1), `/animlab vfx` gra też `glow`, `weaponTrail` (zamach postaci z mieczem) i
 `falcon` (25 składników), kolor pęknięć z jednego miejsca (`Library.crackTint`), martwe `Textures.markFailed` usunięte,
 nagłówek `SkillVfx` opisuje domyślną runę klasy dla każdego koloru.
+
+### S118: Ikony przedmiotów z PNG
+
+Na prośbę właściciela (2026-10-14: wszystkie grafiki 2D z folderu Graphics do gry i wgrane) przed S113–S117 (nie
+zrobione; S118 ich nie potrzebuje). Start na `a5f9e42` (S112): `scripts/check` zielony. Plan pisany przed S52, więc
+zgodnie z uwagą na jego początku S118 rozszerza importer, atlasy i gotowość per atlas z S52 zamiast budować drugi zestaw
+(`DECYZJE`, S118).
+- **Lista id gry:** `tools/icons/ids.luau` (Lune → JSON: `Items.byId` z grupą raportu, `item` celów wszystkich questów
+  i klucze `quest.item.*`, linie błogosławieństw). 934 przedmioty, 68 przedmiotów questowych.
+- **Importer:** `tools/icons/import_graphics.py` sprawdza każdą nazwę z grą (odrzucenie z podpowiedzią najbliższego id),
+  nowa grupa `quest/<item>` (`questy/quest_<item>.png`), `bless/blessing_<linia>_<n>`, kopie ` (1)` / `_v2` / `_wersja2`
+  / `-kopia`, inne formaty, duplikaty i konflikty (`tylko_2d` przed `modele_3d`, dwa różne w jednym drzewie = błąd),
+  `--prune`, `--report`, `--ids`, raport `build/icons/import_graphics.md` (grupy, krainy, odrzucone, foldery S119),
+  `--selftest` (sztuczny folder: OK). Klucz zawsze z przedmiotu (`own_key`), nie z folderu: obrazek w złym folderze
+  trafia pod klucz, który gra czyta, z ostrzeżeniem „inny folder niż grupa”; `--prune` nie usuwa klucza, którego plik
+  jest, ale został odrzucony; raport wypisuje nieużywane przedmioty questowe; odrzucony plik broni dostaje podpowiedź. `import_png.py`: grupa `quest`, PNG paletowe z `tRNS`, odrzucenie szachownicy i
+  jednolitego tła po `--key` (brzeg < 50% przezroczysty), `--check-ids`, lista `build/icons/do_wgrania.txt`; `--selftest`
+  OK, drugi przebieg bez zmian.
+- **Gra:** `Logic/ItemIcons` (`Resolved.picture`, `Resolved.gem`, `questItem`, `coverage`; broń maga z obrazkiem bez
+  akcentu), `UI/IconState.picture` / `questPicture`, `ItemIcon` z klejnotem żywiołu (jedna stała ramka), nowy
+  `UI/Components/QuestItemIcons` w dzienniku questów (fabuła, poboczne, bossowe). `ItemTooltip`, `LegendReveal`,
+  `Hud/PotionBar` i `Hud/BlessingIcon` pytają `IconState.picture` (tylko `CurrencyIcon` zostaje na `IconState.Art`).
+- **Admin:** `/icons` dostaje linię `admin.icons.art` (przedmioty z obrazkiem, grupy, questowe, atlasy wgrane / do
+  wgrania z nazwami plików), `/icongrid art` (każdy przedmiot z własnym obrazkiem), teksty PL i EN.
+- **Testy:** `itemicons.spec` (+4: teksty `quest.item.*` obrazków questowych, `questItem`, cały obrazek albo cała ikona
+  S35, `coverage`; broń maga: ten sam obrazek dla każdego żywiołu, `gem`), `artassets.spec` (klucze `quest/`),
+  `wikidump.spec` (broń maga też z obrazkiem). Check: 111 plików, 6432 testy.
+
+Pokrycie po imporcie (pliki z folderu → gra):
+
+| Grupa | Plików | Dopasowanych | Przedmiotów w grze | Własna ikona | Niższy próg |
+|---|---|---|---|---|---|
+| broń | 97 | 95 | 399 | 95 | 304 |
+| druga ręka | 25 | 25 | 105 | 25 | 80 |
+| zbroje | 60 | 60 | 252 | 60 | 192 |
+| biżuteria | 15 | 15 | 63 | 15 | 48 |
+| unikaty | 3 | 3 | 12 | 3 | 0 |
+| materiały | 22 | 22 | 34 | 22 | 0 |
+| mikstury | 15 | 15 | 15 | 15 | 0 |
+| eliksiry | 4 | 4 | 4 | 4 | 0 |
+| błogosławieństwa | 5 | 5 | 25 | 25 | 0 |
+| zwoje | 4 | 4 | 4 | 4 | 0 |
+| kamienie | 7 | 7 | 7 | 7 | 0 |
+| plecaki | 12 | 12 | 12 | 12 | 0 |
+| narzędzia | 2 | 2 | 2 | 2 | 0 |
+| questowe | 18 | 18 | 68 | 18 | 0 |
+
+Ekwipunek: kraina 1 (1–20) 195/195 z własnym obrazkiem, krainy 2–4 (25–100) 624 z obrazkiem progu 20 (S52). W grze z
+wgranymi atlasami 913 z 934 przedmiotów ma obrazek (eq 819, pot 19, mat 22, misc 23, bless 25, uniq 3, tool 2), do tego
+18 przedmiotów questowych. Nowe w tej sesji: 41 obrazków (mikstury IV–V 6, kamienie lochów 4, plecaki 8, materiały 5:
+rudy srebra, mithrilu, adamantytu, `herb_nightshade`, `herb_firebloom`, questowe 18) i 15 obrazków
+broni maga (różdżki, kostury, kostury runiczne), które S52 pomijała.
+
+Odrzucone pliki (2): `modele_3d/bronie/saber1h/saber1h_15_wersja2.png` (kopia, gra bierze `saber1h_15.png`),
+`modele_3d/bronie/sword1h/_test_start.png` (test). Mapowanie spoza reguł planu: brak.
+
+Grafiki bez przedmiotu (dla S119, 260 plików): bossowie 4, efekty 21, gildia 5, HUD 30, klasy 8, kosmetyki 23, lochy 4,
+mapa 33, mapy 18 (+ `_uklad` 18 wzorów, nie grafika gry), profile 3, sklep 12, sklep_roblox 8, tytuły 11, umiejętności 56,
+wiki 2, żywioły 4. Pełna lista: `py -3 tools/icons/import_graphics.py --dry-run`.
+
+Wgranie (D2, MCP): `upload_image` z `python -m http.server 8765 --bind 127.0.0.1` (kopie w `build/upload`), konto VDaPii:
+`items_7.png` (zmieniony: 10 nowych komórek na końcu) `116647103065980`, `items_8.png` (nowy) `126086041830482`, po
+dograniu 14 obrazków zapisanych przez właściciela w trakcie sesji (plecaki 8, `stone_dungeon_frostpeak`, rudy srebra,
+mithrilu i adamantytu, `herb_nightshade`, `herb_firebloom`; nowe komórki na końcu `items_8`) wgrany jeszcze cztery
+razy, ostatnio `90447876547035`; pierwsze items_7 / items_8 w Play
+(klient, tymczasowe `ImageLabel`) `PreloadAsync` → `Success`, `IsLoaded` po < 10 s. `--check-ids`: 8/8. Przeglądu
+`/icons`, `/icongrid art` i klejnotu w Play nie było: Rojo nie był połączony ze Studio (miejsce ma kod sprzed sesji, a
+edycji skryptów w Studio nie robimy). Podgląd `build/icons/import_preview.png` obejrzany: nowe ikony wyśrodkowane, bez
+obwódek i szachownicy.
+
+Wiki: `npm run data` (ikony: 290, w tym obrazki broni maga; 19 ikon błogosławieństw, materiałów, narzędzi i unikatów miało w
+`public/img/items` nieaktualne pliki pod tą samą nazwą i dostało obrazki), `npm run art` (+26: broń maga 15, mikstury i
+kamienie 9, przedmioty questowe 2), `npm test` (133), `npm run build` bez błędów. `wiki_keys_diff` z
+`WIKI_KEYS_ALLOW="items:items.items[].layersByElement.*[].tint"` (broń maga z obrazkiem nie ma już warstwy
+barwionej żywiołem); `icons.json` bez zmian kształtu.
+
+Pliki: `tools/icons/{ids.luau,import_graphics.py,import_png.py,README.md}`, `src/shared/Logic/ItemIcons.luau`,
+`src/shared/Data/{ItemIconAtlas,ItemIconSheets,AdminCommands}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/client/UI/{IconState.luau,Components/ItemIcon.luau,Components/QuestItemIcons.luau,Screens/QuestJournal.luau}`,
+`src/client/Controllers/IconController.luau`, `src/server/Admin/Items.luau`, `tools/WikiData/Items.luau`,
+`tests/{itemicons,artassets,wikidump}.spec.luau`, `art/icons/items_7.png`, `art/icons/items_8.png`, `art/icons/src/{misc,pot,quest}/*`,
+dane i obrazy wiki, `docs/{ANIMACJE,ASSETS,DESIGN,DESIGN-16,DECYZJE,PROGRESS,PRZEDMIOTY}.md`, `CLAUDE.md`,
+`docs/sessions/IMPORT-GRAFIK.md`.

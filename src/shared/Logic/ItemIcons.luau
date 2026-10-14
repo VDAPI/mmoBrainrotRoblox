@@ -12,7 +12,10 @@
 -- equipment "eq/<type>@<tier>" of the nearest lower tier with a picture (Logic/ArtTiers), other items
 -- "<group>/<item id>" (e.g. "mat/ore_copper"), then the picture of the shared key. Without a ready picture the icon
 -- drawn by code (Atlas.ICONS) is used, so an atlas waiting for its upload never changes how the game looks.
--- Mage weapons use a picture only when it has an accent layer (the element colour); otherwise the drawn icon.
+-- S118: mage weapons use their picture too; a picture with an accent layer (`.a.png`) takes the element colour there,
+-- one without gets `gem` (the element colour), drawn by the client as a small gem in the corner of the icon. Quest
+-- objective items have pictures "quest/<item>" (ItemIcons.questItem). One item is always drawn whole from one source
+-- (its picture, the code-drawn icon or the glyph); different items may be in different states (per sheet).
 
 local ArtTiers = require("./ArtTiers")
 local Atlas = require("../Data/ItemIconAtlas")
@@ -29,7 +32,12 @@ export type Layer = {
 	y: number,
 	tint: string?, -- hex colour multiplied into the layer (ImageColor3); nil = white
 }
-export type Resolved = { key: string, layers: { Layer } }
+export type Resolved = {
+	key: string,
+	layers: { Layer },
+	picture: boolean?, -- S118: the owner's picture (Atlas.PNG), not the code-drawn icon
+	gem: string?, -- S118: element colour of a mage weapon picture without an accent layer (client draws a gem)
+}
 -- Whether a sheet can be drawn (client: uploaded and loaded; default: it has an asset id).
 export type Ready = (sheet: number) -> boolean
 export type Candidate = { key: string, data: boolean }
@@ -144,12 +152,10 @@ local function hasAccent(icon: Icon): boolean
 end
 
 -- Icon of an atlas key: the picture (Atlas.PNG) when all its sheets are ready, else the code-drawn icon when ready.
--- `needAccent` (mage weapons) skips a picture without an accent layer, so the element colour stays visible until
--- the picture gets its `.a.png` (docs/GRAFIKA.md 4.5).
-function ItemIcons.iconOf(key: string, ready: Ready?, needAccent: boolean?): Icon?
+function ItemIcons.iconOf(key: string, ready: Ready?): Icon?
 	local isReady: Ready = ready or ItemIcons.hasId
 	local png = Atlas.PNG[key]
-	if png and drawable(png, isReady) and (not needAccent or hasAccent(png)) then
+	if png and drawable(png, isReady) then
 		return png
 	end
 	local svg = Atlas.ICONS[key]
@@ -162,7 +168,7 @@ end
 -- Key and icon an item shows now, and whether its accent comes from the data.
 function ItemIcons.pick(def: ItemDef, ready: Ready?): (string?, Icon?, boolean)
 	for _, c in ItemIcons.candidates(def) do
-		local icon = ItemIcons.iconOf(c.key, ready, def.elemental == true)
+		local icon = ItemIcons.iconOf(c.key, ready)
 		if icon then
 			return c.key, icon, c.data
 		end
@@ -191,7 +197,70 @@ function ItemIcons.resolve(def: ItemDef, element: string?, ready: Ready?): Resol
 			tint = if layer.t == "tier" then tier elseif layer.t == "accent" then accent else nil,
 		})
 	end
-	return { key = key, layers = layers }
+	local picture = Atlas.PNG[key] == icon
+	local gem = if picture
+			and def.elemental
+			and element
+			and Elements.COLORS[element]
+			and not hasAccent(icon)
+		then Elements.COLORS[element]
+		else nil
+	return { key = key, layers = layers, picture = picture, gem = gem }
+end
+
+-- S118: picture of a quest objective item ("quest/<item>", the `item` of deliver / collect objectives), or nil
+-- (no picture or its sheet not ready: the quest window shows only the text, as before).
+function ItemIcons.questItem(item: string?, ready: Ready?): Resolved?
+	if not item then
+		return nil
+	end
+	local key = `quest/{item}`
+	local icon = Atlas.PNG[key]
+	if not icon or not drawable(icon, ready or ItemIcons.hasId) then
+		return nil
+	end
+	local layers = {}
+	for _, layer in icon.layers do
+		table.insert(layers, { image = layer.s, x = layer.x, y = layer.y })
+	end
+	return { key = key, layers = layers, picture = true }
+end
+
+-- S118: the owner's pictures in numbers (/icons): items of the game, items whose icon is a picture (own or of a
+-- lower tier) when every sheet is `ready` (default: has an asset id), that count per key group ("eq", "mat", ...),
+-- quest items with a picture, picture sheets and those without an asset id (to upload).
+export type Coverage = {
+	items: number,
+	withArt: number,
+	byGroup: { [string]: number },
+	questItems: number,
+	sheets: number,
+	waiting: { number },
+}
+
+function ItemIcons.coverage(ready: Ready?): Coverage
+	local out: Coverage = { items = 0, withArt = 0, byGroup = {}, questItems = 0, sheets = 0, waiting = {} }
+	for _, def in Items.byId do
+		out.items += 1
+		local r = ItemIcons.resolve(def, nil, ready)
+		if r and r.picture then
+			out.withArt += 1
+			local group = string.match(r.key, "^(%a+)/") or "?"
+			out.byGroup[group] = (out.byGroup[group] or 0) + 1
+		end
+	end
+	for key in Atlas.PNG do
+		if string.sub(key, 1, 6) == "quest/" then
+			out.questItems += 1
+		end
+	end
+	for n = Atlas.SVG_SHEETS + 1, Atlas.SHEETS do
+		out.sheets += 1
+		if not ItemIcons.sheet(n) then
+			table.insert(out.waiting, n)
+		end
+	end
+	return out
 end
 
 -- True when `ids` has an asset id ("rbxassetid://<digits>") for every code-drawn sheet 1..SVG_SHEETS (S35, pure:

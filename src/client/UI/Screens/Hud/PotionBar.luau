@@ -84,7 +84,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			return if id then Items.get(id) else nil
 		end)
 		local showArt = scope:Computed(function(use): boolean
-			return use(IconState.Art) and use(assignedDef) ~= nil
+			return IconState.picture(use, use(assignedDef)) ~= nil
 		end)
 		local cooldown = scope:Computed(function(use): number
 			local c = use(cooldowns)

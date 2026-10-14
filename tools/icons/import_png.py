@@ -28,10 +28,12 @@ CELL, GRID, SIDE = 128, 8, 1024
 PER_SHEET = GRID * GRID
 MIN_SIDE = 256
 MARGIN = 0.06
-GROUPS = ("eq", "uniq", "mat", "pot", "bless", "misc", "tool", "ui")
+GROUPS = ("eq", "uniq", "mat", "pot", "bless", "misc", "tool", "ui", "quest")
 # Groups whose keys may name one item (`mat/ore_copper`, `pot/potion_hp_1`, `misc/stone_return`); tests/artassets checks
 # the ids against Data/Items.
-PER_ITEM = ("mat", "pot", "misc", "tool")
+# S118: "quest/<item>" = a quest objective item (tests check quest.item.<item> texts). "bless/blessing_<line>_<n>"
+# = one rarity of a blessing line (wins over the line picture "bless/<line>").
+PER_ITEM = ("mat", "pot", "misc", "tool", "quest", "bless")
 LAYER_SETS = ({"b"}, {"m"}, {"m", "b"}, {"m", "a"}, {"m", "b", "a"}, {"b", "a"})
 ORDER = {"m": 0, "b": 1, "a": 2}
 TIER_LIST = [t for t, _, _ in TIERS]
@@ -123,6 +125,20 @@ def _has_alpha(img):
     return img.mode in ("RGBA", "LA", "PA") and img.getchannel("A").getextrema()[0] < 255
 
 
+def _border_clear(img):
+    """Share of fully transparent pixels on the outer 2% band (a keyed background clears the border)."""
+    a = img.getchannel("A")
+    w, h = a.size
+    band = max(1, min(w, h) // 50)
+    px = a.load()
+    total = clear = 0
+    for y in range(h):
+        for x in (range(w) if y < band or y >= h - band else list(range(band)) + list(range(w - band, w))):
+            total += 1
+            clear += 1 if px[x, y] == 0 else 0
+    return clear / total if total else 0
+
+
 def _grey(img):
     """Greyscale copy keeping alpha (tinted layers m and a)."""
     a = img.getchannel("A")
@@ -144,11 +160,16 @@ def cells_of(key, layers, key_color=None):
     for layer, path in layers.items():
         img = Image.open(path)
         img.load()
+        if img.mode == "P" and "transparency" in img.info:
+            img = img.convert("RGBA")
         if not _has_alpha(img):
             if not key_color:
                 raise PackError(f"{os.path.relpath(path)}: brak przezroczystości (kanału alfa); "
                                 "zapisz PNG z alfą albo użyj --key FF00FF dla tła magenta")
             img = _keyed(img, key_color)
+            if _border_clear(img) < 0.5:
+                raise PackError(f"{os.path.relpath(path)}: brak przezroczystości (tło nie ma koloru klucza: "
+                                "szachownica albo jednolite tło)")
         imgs[layer] = img.convert("RGBA")
     sizes = {im.size for im in imgs.values()}
     if len(sizes) > 1:
@@ -274,6 +295,41 @@ def update_sheet_ids(path, changed, last, svg_sheets):
             f.write(out)
 
 
+def check_ids(root, sheets_path=None, sheets=None, write_list=False):
+    """(errors, files waiting for an upload) of ItemIconSheets.luau: one line per atlas, "" or rbxassetid://<digits>.
+    With write_list the waiting files go to build/icons/do_wgrania.txt (full paths, one per line)."""
+    sheets_path = sheets_path or os.path.join(root, "src", "shared", "Data", "ItemIconSheets.luau")
+    if sheets is None:
+        sheets = atlas_index.parse(os.path.join(root, "src", "shared", "Data", "ItemIconAtlas.luau"))["sheets"]
+    errors, waiting, lines = [], [], {}
+    for ln in open(sheets_path, encoding="utf-8").read().split("\n"):
+        m = re.match(r'^\t"([^"]*)", -- items_(\d+)\.png\s*$', ln)
+        if m:
+            n = int(m.group(2))
+            if n in lines:
+                errors.append(f"items_{n}.png: dwa wiersze")
+            lines[n] = m.group(1)
+    for n in range(1, sheets + 1):
+        if n not in lines:
+            errors.append(f"items_{n}.png: brak wiersza")
+        elif lines[n] == "":
+            waiting.append(f"items_{n}.png")
+        elif not re.fullmatch(r"rbxassetid://\d+", lines[n]):
+            errors.append(f"items_{n}.png: złe id {lines[n]!r} (tylko rbxassetid://<cyfry>)")
+    for n in lines:
+        if n > sheets:
+            errors.append(f"items_{n}.png: wiersz bez atlasu (SHEETS = {sheets})")
+        elif not os.path.exists(_atlas_path(os.path.join(root, "art", "icons"), n)):
+            errors.append(f"items_{n}.png: brak pliku art/icons/items_{n}.png")
+    if write_list:
+        out = os.path.join(root, "build", "icons", "do_wgrania.txt")
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        with open(out, "w", encoding="utf-8", newline="\n") as f:
+            for name in waiting:
+                f.write(os.path.join(root, "art", "icons", name) + "\n")
+    return errors, waiting
+
+
 # ------------------------------------------------------------------------------------------------ preview
 
 def preview(made, before, path, tint_samples):
@@ -375,6 +431,9 @@ def run(root, dry_run=False, key_color=None, out_atlas=None, out_index=None, out
     if png != index["png"] or last != index["sheets"] or old_text is None or "SVG_SHEETS" not in old_text:
         atlas_index.write(out_index, text)
     update_sheet_ids(out_sheets or sheets_path, changed, last, svg_sheets)
+    if not quiet:
+        _, waiting = check_ids(root, out_sheets or sheets_path, last, write_list=True)
+        print("Wgraj: " + (", ".join(waiting) if waiting else "nic") + " (docs/ASSETS.md, „Ikony przedmiotów”)")
     return changed, png
 
 
@@ -467,12 +526,21 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="tylko wypisz, co by się zmieniło (i zrób podgląd)")
     ap.add_argument("--key", help="kolor tła bez alfy do usunięcia: FF00FF, #FF00FF albo magenta")
     ap.add_argument("--selftest", action="store_true", help="sprawdza packer na sztucznych obrazkach w build/")
+    ap.add_argument("--check-ids", action="store_true", help="sprawdza id atlasów w ItemIconSheets.luau (nic nie pisze)")
     a = ap.parse_args()
     if a.selftest:
         sys.exit(0 if selftest() else 1)
     root = os.getcwd()
     if not os.path.exists(os.path.join(root, "src", "shared", "Data", "ItemIconAtlas.luau")):
         sys.exit("Uruchom z katalogu repozytorium (D:\\Dev\\mmoBrainrotRoblox).")
+    if a.check_ids:
+        sheets = atlas_index.parse(os.path.join(root, "src", "shared", "Data", "ItemIconAtlas.luau"))["sheets"]
+        errors, waiting = check_ids(root, sheets=sheets)
+        for e in errors:
+            print("Błąd: " + e)
+        print(f"Wgrane: {sheets - len(waiting)}/{sheets} atlasów")
+        print("Do wgrania: " + (", ".join(waiting) if waiting else "nic"))
+        sys.exit(1 if errors else 0)
     try:
         run(root, dry_run=a.dry_run, key_color=parse_key(a.key))
     except PackError as e:

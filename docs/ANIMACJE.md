@@ -296,3 +296,25 @@ także przy manekinach), `vfx tex` (wczytanie każdego ID i flipbooków, 10 s), 
 `vfx stats` (efekty, uchwyty i światła wobec limitów; też w `state`). Składniki: `impactFlash`, `sparks`, `groundDecal`,
 `smokePuff`, `magicCircle`, `ringWave`, `burst`, `shockwave`, `cracks`, `slash`, `projectile`, `lightning`, `pillar`,
 `rune`, `sparkle`, `aura`, `beam`, `dust`, `meteor`, `lingering:burn|frost|poison`.
+
+## 9. Ikony przedmiotów (S118)
+
+**Co to jest.** Atlasy `art/icons/items_4.png` … `items_8.png` (1024 × 1024, komórki 128 px) z obrazkami przedmiotów z
+folderu grafik właściciela (`D:\Users\vdapi\Downloads\Graphics`, nazwa pliku = id przedmiotu, `quest_<item>` dla
+przedmiotów questowych). Gra działa bez nich: atlas bez ID albo niewczytany pokazuje w miejscu swoich obrazków ikony
+rysowane kodem (S35). ID leżą w `src/shared/Data/ItemIconSheets.luau`, jeden wiersz na plik (komentarz `-- items_<n>.png`).
+
+**Wgranie (ta sama droga co tekstury, §8):**
+1. Studio z miejscem gry, zalogowany jako właściciel gry (VDaPii; obrazki z innego konta mogą się nie wczytać).
+2. Widok → **Asset Manager** → **Bulk Import** → zaznacz pliki z listy „do wgrania” (drukuje ją
+   `py -3 tools/icons/import_png.py --check-ids`, zapisuje `build/icons/do_wgrania.txt`; w grze `/icons`).
+3. Po wgraniu w zakładce Images prawy klik na każdym → **Copy Asset ID** → wklej do
+   `src/shared/Data/ItemIconSheets.luau` w wiersz z tą samą nazwą pliku (`"rbxassetid://<liczba>"`), zapisz (Rojo
+   zsynchronizuje).
+4. Moderacja trwa zwykle kilka minut; do tego czasu ikona może wyglądać jak dawniej.
+5. Sprawdzenie: Play → `/icons` (atlasy „Success”), `/icongrid art`.
+6. Po ponownym imporcie (nowe ikony) `import_png.py` sam czyści ID atlasów, które się zmieniły: wgrywasz tylko pliki z
+   listy „do wgrania”.
+
+Sesja może wgrać sama przez MCP jak w §8: `python -m http.server 8765 --bind 127.0.0.1` w folderze z kopiami atlasów
+(np. `build/upload`), potem `upload_image` z adresami `http://127.0.0.1:8765/items_<n>.png`.

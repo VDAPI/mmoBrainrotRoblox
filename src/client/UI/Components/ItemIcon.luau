@@ -3,7 +3,8 @@
 -- colours, accent: element / potion / ore colour) while the atlases are loaded (UI/IconState.Art); otherwise the
 -- old glyph on its coloured tile. S52: the owner's picture once its sheet is loaded, the code-drawn icon before.
 -- Rarity is never drawn here (the slot frame shows it). Layers are three fixed ImageLabels changed by Computed
--- values, so a slot never rebuilds instances when its item changes.
+-- values, so a slot never rebuilds instances when its item changes. S118: a mage weapon picture without an accent
+-- layer gets a small gem of the element colour in the bottom right corner (one more fixed Frame).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -37,15 +38,12 @@ local MAX_LAYERS = 3
 
 local function ItemIcon(scope: Scope, props: Props): Instance
 	local resolved = scope:Computed(function(use): ItemIcons.Resolved?
-		if not use(IconState.Art) then
-			return nil
-		end
-		local def = use(props.Def)
-		if not def then
-			return nil
-		end
 		local element = if props.Element ~= nil then use(props.Element) else nil
-		return ItemIcons.resolve(def, element, IconState.readyIn(use))
+		return IconState.picture(use, use(props.Def), element)
+	end)
+	local gem = scope:Computed(function(use): string?
+		local r = use(resolved)
+		return if r then r.gem else nil
 	end)
 	local fade = scope:Computed(function(use): number
 		return if props.Transparency ~= nil then use(props.Transparency) else 0
@@ -117,6 +115,33 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIGradient")({ Rotation = 90, Transparency = NumberSequence.new(0, 0.5) }),
 			layers :: any,
+			scope:New("Frame")({
+				Name = "Gem",
+				AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.fromScale(0.98, 0.98),
+				Size = UDim2.fromScale(0.28, 0.28),
+				ZIndex = MAX_LAYERS + 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(gem) ~= nil
+				end),
+				BackgroundColor3 = scope:Computed(function(use): Color3
+					local hex = use(gem)
+					return if hex then Color3.fromHex(hex) else Color3.new(1, 1, 1)
+				end),
+				BackgroundTransparency = fade,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UIStroke")({
+						Color = Color3.fromRGB(20, 18, 16),
+						Thickness = 1,
+						Transparency = fade,
+					}),
+					scope:New("UIGradient")({
+						Rotation = 45,
+						Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150)),
+					}),
+				},
+			}),
 			scope:New("TextLabel")({
 				Name = "Glyph",
 				BackgroundTransparency = 1,

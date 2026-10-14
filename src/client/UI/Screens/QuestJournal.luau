@@ -30,6 +30,7 @@ local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local QuestItemIcons = require(script.Parent.Parent.Components.QuestItemIcons)
 local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.QuestTrack)
@@ -289,14 +290,19 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					list,
 					label(s, 3, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 17, Theme.Colors.Text)
 				)
+				-- S118: pictures of the quest items (nothing without them)
+				local questItems = QuestItemIcons(s, use, quest.objectives, 4)
+				if questItems then
+					table.insert(list, questItems)
+				end
 				table.insert(
 					list,
-					QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, LayoutOrder = 4 })
+					QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, LayoutOrder = 5 })
 				)
 				table.insert(
 					list,
 					Button(s, {
-						LayoutOrder = 5,
+						LayoutOrder = 6,
 						Size = UDim2.fromOffset(200, 44),
 						Text = s:Computed(function(use2): string
 							local tracked = use2(props.Tracked) and use2(props.Focus) == nil
@@ -483,6 +489,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						shown,
 						label(s, 0, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 16, Theme.Colors.Text)
 					)
+					local questItems = QuestItemIcons(s, use, quest.objectives)
+					if questItems then
+						table.insert(shown, questItems)
+					end
 					table.insert(
 						shown,
 						QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, SlotSize = 36 })
@@ -586,6 +596,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							Theme.Colors.Text
 						)
 					)
+					local questItems = QuestItemIcons(s, use, quest.objectives)
+					if questItems then
+						add(questItems)
+					end
 					add(QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, SlotSize = 36 }))
 					add(sideButtons(s, quest.id))
 				else

@@ -3430,3 +3430,25 @@
   Wszystkie 25 ID wpisane (konto VDaPii), w Play `IsLoaded`.
 - **S112** `/animlab vfx <składnik>` to ruch AnimLab (działa z nim `freeze`, `step`, `loop` co `Config.AnimLab.vfxEvery`);
   bez sceny gra raz przed kamerą. Narzędzia `vfx all [stress]`, `vfx tex [on|off]`, `vfx stats` działają bez sceny.
+- **S118** Plan S118 (`import_items.py`, `ItemArtAtlas`, `ItemArtSheets`, `FIRST = 101`) nie powstał: S52 zrobiła już
+  importer, atlasy PNG i gotowość per atlas. S118 dokłada do S52: walidację nazw z grą (`tools/icons/ids.luau`), raport,
+  `--check-ids`, przedmioty questowe, klejnot żywiołu, `/icons` i `/icongrid art`, wgranie przez MCP, `IMPORT-GRAFIK.md`.
+- **S118** Zasada 4 planu („nigdy najbliższy próg”) przeczy S52: zostaje `Logic/ArtTiers` (próg bez obrazka bierze
+  obrazek najbliższego niższego progu tego samego typu, nigdy wyższego). Zmiana tylko na życzenie właściciela.
+- **S118** „Nigdy pół na pół” S35 → „nigdy pół ikony”: przedmiot jest w całości obrazkiem, ikoną rysowaną kodem albo
+  symbolem; różne przedmioty mogą być naraz w różnym stanie (gotowość per atlas, jak w S52).
+- **S118** Broń maga bierze obrazek także bez warstwy akcentu (`.a.png`); żywioł pokazuje klejnot w kolorze
+  `Elements.COLORS` w prawym dolnym rogu (28% ikony, `Resolved.gem`). Wiki rysuje sam obrazek (bez klejnotu).
+- **S118** Przedmioty questowe: plik `quest_<item>.png` → klucz `quest/<item>` (wielkość liter zachowana), walidacja
+  względem pól `item` celów wszystkich questów i kluczy `quest.item.*`; w dzienniku questów chip z obrazkiem i nazwą pod
+  celami (`QuestItemIcons`), bez obrazka sam tekst. Śledzik HUD zostaje tekstem.
+- **S118** Błogosławieństwa: plik linii (`blessing_<linia>.png` → `bless/<linia>`) obsługuje 5 rzadkości (wspólny klucz z
+  S52); plik `blessing_<linia>_<n>.png` → `bless/blessing_<linia>_<n>` wygrywa dla swojej rzadkości.
+- **S118** Tła bez alfy: magenta tylko z `--key FF00FF`; szachownica i jednolite tło są odrzucane (po kluczu brzeg musi
+  być w co najmniej 50% przezroczysty). Kopie (` (1)`, `_v2`, `_wersja2`, `-kopia`) i id spoza gry: odrzucenie z
+  podpowiedzią, nigdy kopia do repo. Ten sam klucz z `modele_3d` i `tylko_2d` przy różnych obrazkach: wygrywa `tylko_2d`.
+- **S118** Komórki stałe jak w S52 (nowe klucze na koniec, zmienione w swoich komórkach); wgrywa się tylko atlasy,
+  którym packer wyczyścił ID. Droga wgrania jak S112: MCP `upload_image` z lokalnego `http.server`, zapas Bulk Import
+  (`docs/ANIMACJE.md` §9). Zadziałało MCP: `items_7.png` i `items_8.png` wgrane i wczytane w Play.
+- **S118** Folder grafik ma też `bossowie`, `kosmetyki`, `lochy`, `sklep`, `sklep_roblox`, `tytuly`, `wiki`: żaden obrazek
+  stamtąd nie jest przedmiotem (`Items.byId`), więc wszystkie idą do S119 (lista w raporcie importu).

@@ -91,6 +91,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   (`Logic/ArtTiers`). Ikona: `art/icons/src/<grupa>/<klucz>.png` (`eq/<typ>@<próg>`, `mat/<id>` …; z folderu Graphics
   `tools/icons/import_graphics.py`), potem `py -3 tools/icons/import_png.py` i `npm run data`; testy `artassets` /
   `arttiers`. Umowa plików: `docs/GRAFIKA.md`.
+- **Ikona przedmiotu z PNG** (S118): `docs/sessions/IMPORT-GRAFIK.md` (nazwa pliku = id przedmiotu, `quest_<item>` dla
+  przedmiotów questowych; `import_graphics.py` sprawdza nazwy z `tools/icons/ids.luau`, wgranie atlasów przez MCP
+  `upload_image`, id w `ItemIconSheets.luau`, `import_png.py --check-ids`).
 - **Wybór ataku bossa** (S87): `Logic/BossSchedule` (gra i model); stałe bossów poza `Data/Bosses` w `Data/BossTuning`,
   ale linie `local NAZWA = liczba` czytane przez wiki zostają w skryptach.
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez

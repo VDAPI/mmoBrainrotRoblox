@@ -414,8 +414,9 @@ local function traitInfo(traitId: string, baseType: string): any
 end
 
 -- WIKI-GRAFIKA: the wiki composes icons from the atlas files in the repository (npm run icons), so every sheet counts
--- as ready. Items show the owner's pictures (Atlas.PNG, nearest lower tier through Logic/ArtTiers, mage weapons only
--- with an accent layer) exactly as the game does once their sheets are uploaded; the asset ids never matter here.
+-- as ready. Items show the owner's pictures (Atlas.PNG, nearest lower tier through Logic/ArtTiers; S118: mage weapons
+-- too, the game adds an element gem the wiki does not draw) exactly as the game does once their sheets are uploaded;
+-- the asset ids never matter here.
 function Items.wikiReady(_sheet: number): boolean
 	return true
 end

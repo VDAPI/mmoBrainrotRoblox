@@ -55,3 +55,31 @@ py -3 tools/icons/import_png.py [--dry-run] [--key FF00FF] [--selftest]
 - Nazwy: `<grupa>/<nazwa>[@<próg>][.m|.a].png` (`docs/GRAFIKA.md` 4.5); plik dokładnie 128×128 px idzie bez zmian, inny
   musi mieć bok ≥ 256 px. `tests/artassets.spec.luau` sprawdza nazwy, rozmiary i to, że packer był uruchomiony.
 - Pełna przebudowa SVG (`build_final.py`) pakuje obrazki od nowa na świeżych arkuszach: wtedy wgrywa się wszystkie atlasy.
+
+## Ikony z PNG: nazwy z gry, raport, wgranie (S118)
+
+Wymaga: Python 3 + Pillow, Lune (lista id gry: `lune run tools/icons/ids.luau [out.json]`). Z katalogu repo:
+
+```
+py -3 tools/icons/import_graphics.py [--src <Graphics>] [--dry-run] [--prune] [--key FF00FF] [--ids ids.json] [--report]
+py -3 tools/icons/import_graphics.py --selftest
+py -3 tools/icons/import_png.py [--dry-run] [--key FF00FF]
+py -3 tools/icons/import_png.py --check-ids
+```
+
+- `import_graphics.py` sprawdza każdą nazwę z grą (`tools/icons/ids.luau`: `Items.byId`, pola `item` celów wszystkich
+  questów i klucze `quest.item.*`, linie błogosławieństw). Plik bez przedmiotu jest odrzucany z powodem i podpowiedzią
+  najbliższego id (nie trafia do repo). Mapowanie: `modele_3d/bronie/<typ>/<typ>_<próg>.png` → `eq/<typ>@<próg>`
+  (podfoldery pomijane), `tylko_2d/ekwipunek/**/<typ>_<próg>.png` → `eq/…`, `unikaty` → `uniq/<id>`, `materialy` →
+  `mat/<id>`, `mikstury` → `pot/<id>`, `zwoje`, `kamienie`, `plecaki` → `misc/<id>`, `narzedzia` → `tool/<id>`,
+  `questy/quest_<item>.png` → `quest/<item>`, `blogoslawienstwa/blessing_<linia>.png` → `bless/<linia>`
+  (`blessing_<linia>_<n>.png` → `bless/blessing_<linia>_<n>`). Kopie (` (1)`, `_v2`, `_wersja2`, `-kopia`), obrazki bez
+  alfy (bez `--key`), z szachownicą i mniejsze niż 256 px są odrzucane. Ten sam klucz z dwóch plików: równe obrazki →
+  jeden, różne → `tylko_2d` wygrywa z `modele_3d` (ostrzeżenie), dwa różne w jednym drzewie → błąd (kod 1).
+- Raport (ekran i `build/icons/import_graphics.md`): pliki i dopasowania na grupę, pokrycie na grupę i krainę (własna
+  ikona, niższy próg), odrzucone, inny format, klucze w `art/icons/src` bez pliku (usuwa je `--prune`), grafiki
+  interfejsu dla S119. `--report` liczy pokrycie z samego `art/icons/src`.
+- `import_png.py` drukuje „Wgraj: …” i zapisuje `build/icons/do_wgrania.txt`; `--check-ids` (nic nie pisze) sprawdza
+  wiersze `ItemIconSheets.luau` (`""` albo `rbxassetid://<cyfry>`, jeden na atlas) i drukuje „Wgrane: n/m atlasów”.
+- Wgranie: `docs/ANIMACJE.md` §9 (MCP `upload_image` przez lokalny `http.server` albo Bulk Import właściciela).
+- `build_final.py` (SVG S35) nie dotyka atlasów obrazków (`items_<n>.png` po `SVG_SHEETS`) poza pełną przebudową.

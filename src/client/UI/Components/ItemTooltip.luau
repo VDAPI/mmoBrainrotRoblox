@@ -502,7 +502,8 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		return if item then Items.get(item.id) else nil
 	end)
 	local showIcon = scope:Computed(function(use): boolean
-		return use(IconState.Art) and use(shownDef) ~= nil
+		local item = use(shown)
+		return IconState.picture(use, use(shownDef), if item then ItemRoll.elementOf(item) else nil) ~= nil
 	end)
 	-- The equipped item of the hovered item's slot (not for the equipment slots themselves).
 	local compared = scope:Computed(function(use): ItemInstance?

@@ -1085,6 +1085,41 @@
       ],
       "hash": "c2df9d4a7b8aff41"
     },
+    "item/eq/runestaff@1": {
+      "file": "item/eq-runestaff_1",
+      "sizes": [
+        256
+      ],
+      "hash": "029cbf7e47a794db"
+    },
+    "item/eq/runestaff@10": {
+      "file": "item/eq-runestaff_10",
+      "sizes": [
+        256
+      ],
+      "hash": "32e8d161df6d757a"
+    },
+    "item/eq/runestaff@15": {
+      "file": "item/eq-runestaff_15",
+      "sizes": [
+        256
+      ],
+      "hash": "22d6eb76b413ea35"
+    },
+    "item/eq/runestaff@20": {
+      "file": "item/eq-runestaff_20",
+      "sizes": [
+        256
+      ],
+      "hash": "192eec2b17c98d2d"
+    },
+    "item/eq/runestaff@5": {
+      "file": "item/eq-runestaff_5",
+      "sizes": [
+        256
+      ],
+      "hash": "6e60749b6ffb5042"
+    },
     "item/eq/saber1h@1": {
       "file": "item/eq-saber1h_1",
       "sizes": [
@@ -1260,6 +1295,41 @@
       ],
       "hash": "ccbc2c6116d8165a"
     },
+    "item/eq/staff@1": {
+      "file": "item/eq-staff_1",
+      "sizes": [
+        256
+      ],
+      "hash": "6514a98c950f8b00"
+    },
+    "item/eq/staff@10": {
+      "file": "item/eq-staff_10",
+      "sizes": [
+        256
+      ],
+      "hash": "512c07bbf989bb91"
+    },
+    "item/eq/staff@15": {
+      "file": "item/eq-staff_15",
+      "sizes": [
+        256
+      ],
+      "hash": "4ae7422816279776"
+    },
+    "item/eq/staff@20": {
+      "file": "item/eq-staff_20",
+      "sizes": [
+        256
+      ],
+      "hash": "2e712441f9bc91aa"
+    },
+    "item/eq/staff@5": {
+      "file": "item/eq-staff_5",
+      "sizes": [
+        256
+      ],
+      "hash": "a482f1acee4c2a15"
+    },
     "item/eq/sword1h@1": {
       "file": "item/eq-sword1h_1",
       "sizes": [
@@ -1400,6 +1470,41 @@
       ],
       "hash": "8267dcc906e38094"
     },
+    "item/eq/wand@1": {
+      "file": "item/eq-wand_1",
+      "sizes": [
+        256
+      ],
+      "hash": "ecf4b4960f2a78c8"
+    },
+    "item/eq/wand@10": {
+      "file": "item/eq-wand_10",
+      "sizes": [
+        256
+      ],
+      "hash": "8af07503721651e7"
+    },
+    "item/eq/wand@15": {
+      "file": "item/eq-wand_15",
+      "sizes": [
+        256
+      ],
+      "hash": "c070782b80b8c31d"
+    },
+    "item/eq/wand@20": {
+      "file": "item/eq-wand_20",
+      "sizes": [
+        256
+      ],
+      "hash": "c86ef4dcad04f5f8"
+    },
+    "item/eq/wand@5": {
+      "file": "item/eq-wand_5",
+      "sizes": [
+        256
+      ],
+      "hash": "fdc1f5bbe5152866"
+    },
     "item/mat/boar_tusk": {
       "file": "item/mat-boar_tusk",
       "sizes": [
@@ -1463,6 +1568,13 @@
       ],
       "hash": "c0cf8819040e7723"
     },
+    "item/mat/herb_firebloom": {
+      "file": "item/mat-herb_firebloom",
+      "sizes": [
+        256
+      ],
+      "hash": "f2d1d8399c6da8fa"
+    },
     "item/mat/herb_meadowsweet": {
       "file": "item/mat-herb_meadowsweet",
       "sizes": [
@@ -1470,12 +1582,26 @@
       ],
       "hash": "ce7f1dbc4cefd3eb"
     },
+    "item/mat/herb_nightshade": {
+      "file": "item/mat-herb_nightshade",
+      "sizes": [
+        256
+      ],
+      "hash": "78b87691034dd3fc"
+    },
     "item/mat/legend_core": {
       "file": "item/mat-legend_core",
       "sizes": [
         256
       ],
       "hash": "496ff8433bc568b0"
+    },
+    "item/mat/ore_adamantite": {
+      "file": "item/mat-ore_adamantite",
+      "sizes": [
+        256
+      ],
+      "hash": "e117f2e3ed932176"
     },
     "item/mat/ore_copper": {
       "file": "item/mat-ore_copper",
@@ -1490,6 +1616,20 @@
         256
       ],
       "hash": "97d43da8863e224d"
+    },
+    "item/mat/ore_mithril": {
+      "file": "item/mat-ore_mithril",
+      "sizes": [
+        256
+      ],
+      "hash": "89fb93549ce2f011"
+    },
+    "item/mat/ore_silver": {
+      "file": "item/mat-ore_silver",
+      "sizes": [
+        256
+      ],
+      "hash": "cdde20c2d8c01d14"
     },
     "item/mat/spider_silk": {
       "file": "item/mat-spider_silk",
@@ -1519,12 +1659,40 @@
       ],
       "hash": "17db4f13e7edf756"
     },
+    "item/misc/backpack_100": {
+      "file": "item/misc-backpack_100",
+      "sizes": [
+        256
+      ],
+      "hash": "23e1417501b3d29d"
+    },
+    "item/misc/backpack_130": {
+      "file": "item/misc-backpack_130",
+      "sizes": [
+        256
+      ],
+      "hash": "bb7dc56023474079"
+    },
+    "item/misc/backpack_160": {
+      "file": "item/misc-backpack_160",
+      "sizes": [
+        256
+      ],
+      "hash": "e320141543d14e72"
+    },
     "item/misc/backpack_20": {
       "file": "item/misc-backpack_20",
       "sizes": [
         256
       ],
       "hash": "fa4ce37cd7930686"
+    },
+    "item/misc/backpack_200": {
+      "file": "item/misc-backpack_200",
+      "sizes": [
+        256
+      ],
+      "hash": "2f192dc38f4f76de"
     },
     "item/misc/backpack_30": {
       "file": "item/misc-backpack_30",
@@ -1546,6 +1714,34 @@
         256
       ],
       "hash": "13cdcde133d956e8"
+    },
+    "item/misc/backpack_80": {
+      "file": "item/misc-backpack_80",
+      "sizes": [
+        256
+      ],
+      "hash": "e93b26acbfb5e80d"
+    },
+    "item/misc/backpack_premium_100": {
+      "file": "item/misc-backpack_premium_100",
+      "sizes": [
+        256
+      ],
+      "hash": "89163911c52bd31b"
+    },
+    "item/misc/backpack_premium_150": {
+      "file": "item/misc-backpack_premium_150",
+      "sizes": [
+        256
+      ],
+      "hash": "cee8e30ce03a62e5"
+    },
+    "item/misc/backpack_premium_200": {
+      "file": "item/misc-backpack_premium_200",
+      "sizes": [
+        256
+      ],
+      "hash": "3e80a2b709962290"
     },
     "item/misc/scroll_oblivion": {
       "file": "item/misc-scroll_oblivion",
@@ -1574,6 +1770,34 @@
         256
       ],
       "hash": "4e3e2f36cbf23415"
+    },
+    "item/misc/stone_dungeon": {
+      "file": "item/misc-stone_dungeon",
+      "sizes": [
+        256
+      ],
+      "hash": "091423b5df3ee6ed"
+    },
+    "item/misc/stone_dungeon_ashen": {
+      "file": "item/misc-stone_dungeon_ashen",
+      "sizes": [
+        256
+      ],
+      "hash": "df8fece6c0ef55e0"
+    },
+    "item/misc/stone_dungeon_duskwood": {
+      "file": "item/misc-stone_dungeon_duskwood",
+      "sizes": [
+        256
+      ],
+      "hash": "3b67aa8ae9a67a61"
+    },
+    "item/misc/stone_dungeon_frostpeak": {
+      "file": "item/misc-stone_dungeon_frostpeak",
+      "sizes": [
+        256
+      ],
+      "hash": "15b11530c63f01e8"
     },
     "item/misc/stone_dungeon_meadows": {
       "file": "item/misc-stone_dungeon_meadows",
@@ -1645,6 +1869,20 @@
       ],
       "hash": "e688253c5d7b40b6"
     },
+    "item/pot/potion_energy_4": {
+      "file": "item/pot-potion_energy_4",
+      "sizes": [
+        256
+      ],
+      "hash": "bb12b544849fc833"
+    },
+    "item/pot/potion_energy_5": {
+      "file": "item/pot-potion_energy_5",
+      "sizes": [
+        256
+      ],
+      "hash": "c8026e6a3653ced4"
+    },
     "item/pot/potion_hp_1": {
       "file": "item/pot-potion_hp_1",
       "sizes": [
@@ -1666,6 +1904,20 @@
       ],
       "hash": "a8cf3328e706cf63"
     },
+    "item/pot/potion_hp_4": {
+      "file": "item/pot-potion_hp_4",
+      "sizes": [
+        256
+      ],
+      "hash": "1cb22cb463376472"
+    },
+    "item/pot/potion_hp_5": {
+      "file": "item/pot-potion_hp_5",
+      "sizes": [
+        256
+      ],
+      "hash": "b39f69b4f598662a"
+    },
     "item/pot/potion_mana_1": {
       "file": "item/pot-potion_mana_1",
       "sizes": [
@@ -1686,6 +1938,20 @@
         256
       ],
       "hash": "f56ea8d328d0bc69"
+    },
+    "item/pot/potion_mana_4": {
+      "file": "item/pot-potion_mana_4",
+      "sizes": [
+        256
+      ],
+      "hash": "c6c18087e5fd8a92"
+    },
+    "item/pot/potion_mana_5": {
+      "file": "item/pot-potion_mana_5",
+      "sizes": [
+        256
+      ],
+      "hash": "64dbfa127f8c7ff2"
     },
     "item/tool/fishing_rod": {
       "file": "item/tool-fishing_rod",
@@ -1907,6 +2173,14 @@
       ],
       "hash": "ffb0fdc30bb28c27"
     },
+    "quest/cultSigil": {
+      "file": "quest/cultSigil",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "ef6341491918efe9"
+    },
     "quest/grainOrder": {
       "file": "quest/grainOrder",
       "sizes": [
@@ -1986,6 +2260,14 @@
         128
       ],
       "hash": "08f3e5d9f9a32279"
+    },
+    "quest/wraithEssence": {
+      "file": "quest/wraithEssence",
+      "sizes": [
+        64,
+        128
+      ],
+      "hash": "5024fe526ba7a93b"
     },
     "service/alchemy": {
       "file": "service/alchemy",

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S112 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
+S01–S112 i S118 gotowe (lista i zakres w `docs/SESJE.md`); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
 kategorie efektów drużyny i stos efektów (`Logic/EffectStack`), S54 wzory globalne (`Logic/LevelCurves`), S55 rangi
 i przełomy w kształcie A/B (`Build.bp2`, `Skills.effective` §2.7), S56 koniec punktów umiejętności: rangi z poziomu
@@ -171,6 +171,10 @@ S112 tekstury efektów: generator `tools/vfx/make_textures.py` (25 tekstur w `ar
 `Data/VfxTextures`), `client/Vfx/Textures`, uchwyty w `Vfx/Pool` z limitami telefonu, tekstury na starych składnikach
 `Library` z dawnym wyglądem jako zapasem, sześć nowych składników (`impactFlash`, `sparks`, `groundDecal`, `smokePuff`,
 `magicCircle`, `ringWave`), pola `SkillVfx` `decal` / `circle` / `sparks`, `/animlab vfx`.
+S118 (przed S113–S117, na prośbę właściciela) ikony przedmiotów z PNG: import z folderu grafik sprawdzany z grą
+(`tools/icons/ids.luau`, raport, `--check-ids`), 287 obrazków w atlasach `items_4..8` (wszystkie wgrane), 913 z 934
+przedmiotów z obrazkiem (broń maga z klejnotem żywiołu), obrazki przedmiotów questowych w dzienniku, `/icons`,
+`/icongrid art`, `docs/sessions/IMPORT-GRAFIK.md` do ponownego importu.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -181,13 +185,12 @@ zakończone; testy i decyzje właściciela po nich.
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
   decyzja właściciela); muzyka `music = ""` w `Data/Maps`; kosmetyki (stroje, aury, ślady) to Party.
 - **Grafika (S52), czeka na właściciela**: Import 3D 121 modeli broni i `assets/Weapons/Meadows.rbxm` (lista w
-  `docs/ASSETS.md` → „Broń”), wgranie atlasów `items_4..7.png` i ich id w `ItemIconSheets.luau`; `IMPORT_YAW` niesprawdzony
-  (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1` do usunięcia.
+  `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1`
+  do usunięcia.
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
   jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`); obrazki
-  różdżek i kosturów maga czekają na `.a.png` (do tego czasu ikona kodu w kolorze żywiołu); obrazki umiejętności,
-  efektów, HUD, mapy, klas, gildii, questów i żywiołów nie mają haka w UI gry (na wiki są od WIKI-GRAFIKA, poza efektami,
-  ikonami mapy i resztą HUD).
+  umiejętności, efektów, HUD, mapy, klas, gildii, żywiołów, bossów, lochów, kosmetyków, sklepu i tytułów nie mają haka w
+  UI gry (S119; na wiki część jest od WIKI-GRAFIKA).
 - **Walka**: ataki potworów zaliczają się od razu (bez zamachu; gracze mają). Brak „flinch” potwora wg siły ciosu.
   Umiejętności (`Cast`) i strzały łowcy nie używają systemu póz S22. Zręczność od S54 słabnie z poziomem (Łowca L90 3,4 → 5,9 s na
   zabicie bez umiejętności); Instynkt Drapieżnika od S90 oddaje część szybkości (17 → 34%).
@@ -310,6 +313,12 @@ zakończone; testy i decyzje właściciela po nich.
 - **S112:** limity telefonu (`Pool.isTouch`) nie sprawdzone w Play (`execute_luau` dostaje osobną kopię modułów, więc
   podmiana `Pool.isTouch` nie działa na grę); wymuszony zły ID (G4) też nie (ta sama przyczyna; ścieżka ta sama co puste
   ID). `sealRune`, `telegraph`, `banner`, `dash`, `shield`, `cone`, `tether` bez tekstur (S114, S115, S117).
+- **S118: przegląd ikon w Play nie zrobiony:** atlasy `items_7` i `items_8` wgrane i wczytane (`Success`, `IsLoaded`), ale
+  Rojo nie był połączony ze Studio, więc `/icons`, `/icongrid art`, klejnot żywiołu na różdżce i obrazki w dzienniku
+  questów nie obejrzane w grze.
+- **S118:** bez obrazka (właściciel dorysowuje materiały; nowe pliki: `docs/sessions/IMPORT-GRAFIK.md`): 12 materiałów, 9 unikatów bossów
+  Azgora, Morvane i Vaelgratha, 50 przedmiotów questowych (krainy 2–4); krainy 2–4 ekwipunku biorą obrazek progu 20.
+  Wiki: broń maga z obrazkiem bez klejnotu żywiołu; okno rozmowy questa i śledzik HUD bez obrazków przedmiotów.
 
 ## Zgłoszone błędy
 (Właściciel wpisuje tu błędy po testach albo przekazuje je przez sesję poprawek.)

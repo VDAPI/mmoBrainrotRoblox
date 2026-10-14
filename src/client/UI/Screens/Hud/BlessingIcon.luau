@@ -36,7 +36,7 @@ local function icon(
 	-- S35: the item's picture (elixir bottle) while the atlases are loaded, otherwise the glyph.
 	local def = if itemId then Items.get(itemId) else nil
 	local art = scope:Computed(function(use): boolean
-		return def ~= nil and use(IconState.Art)
+		return IconState.picture(use, def) ~= nil
 	end)
 	local frame = scope:New("Frame")({
 		LayoutOrder = order,

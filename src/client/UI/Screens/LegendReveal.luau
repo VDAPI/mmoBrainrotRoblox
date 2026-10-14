@@ -173,7 +173,7 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						end),
 						-- S35: the picture sits on the dark panel; the coloured tile only behind the glyph.
 						BackgroundColor3 = scope:Computed(function(use): Color3
-							if use(IconState.Art) or not def then
+							if not def or IconState.picture(use, def, ItemRoll.elementOf(item)) ~= nil then
 								return Theme.Colors.Panel
 							end
 							return Color3.fromHex(def.icon.color)

@@ -218,8 +218,10 @@ T.describe("Art files (S52)", function()
 			end
 		end
 		local unused = {}
+		-- S118: quest objective items ("quest/<item>") are not items; tests/itemicons checks their texts.
 		for key in Atlas.PNG do
-			if not used[key] and not (string.sub(key, 1, 3) == "ui/" and Atlas.ICONS[key]) then
+			local quest = string.sub(key, 1, 6) == "quest/"
+			if not used[key] and not quest and not (string.sub(key, 1, 3) == "ui/" and Atlas.ICONS[key]) then
 				table.insert(unused, key)
 			end
 		end

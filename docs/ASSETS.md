@@ -15,7 +15,7 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `wiki/public/img/items/*` | własne, z atlasów S35 (`wiki/scripts/item-icons.mjs`) | własne | 2026-10-07 | — | przebudowa: `npm run icons` |
 | `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | test, zastąpiony przez `sword1h_1` (S52), do usunięcia; 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
 | `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
-| `art/icons/src/**`, `art/icons/items_4..7.png` (246 ikon przedmiotów) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
+| `art/icons/src/**`, `art/icons/items_4..8.png` (287 ikon: 269 przedmiotów, 18 przedmiotów questowych) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12, S118 2026-10-14 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 | `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
 | `art/vfx/*.png` (25 tekstur efektów) | własne, wygenerowane (`tools/vfx/make_textures.py`) | własne | S112, 2026-10-14 | — | przebudowa i wgranie: `docs/ANIMACJE.md` → „Tekstury efektów” |
 
@@ -55,8 +55,8 @@ atrybuty i światło jak klockom. Limit Roblox: 20 tys. trójkątów na MeshPart
 6. Jeśli wszystkie tarcze stoją tyłem, a topory obuchem do góry: `WeaponLooks.IMPORT_YAW = 180`. Pojedynczy model źle
    obrócony: wpis w `YAW` w `tools/weapons/prepare_glb.py`, kroki 1–4 jeszcze raz.
 7. Commit `assets/Weapons/Meadows.rbxm` (bez `.glb`).
-8. Ikony: wgraj w Asset Manager tylko atlasy z pustym id w `src/shared/Data/ItemIconSheets.luau` (dziś `items_4.png` ..
-   `items_7.png`) i wklej ich id w tej samej kolejności; commit.
+8. Ikony: wgraj w Asset Manager tylko atlasy z pustym id w `src/shared/Data/ItemIconSheets.luau`
+   (`py -3 tools/icons/import_png.py --check-ids`; od S118 wszystkie wgrane) i wklej ich id w wiersz tego pliku; commit.
 
 ## Dźwięki (S111)
 
@@ -135,7 +135,7 @@ z neonowych części). Przebudowa, podmiana na własną teksturę i wgranie: `do
 ## Ikony przedmiotów (S35)
 
 Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach, rysowane kodem) i indeks
-`src/shared/Data/ItemIconAtlas.luau`. S52: obrazki właściciela z `art/icons/src` (246 ikon) w atlasach `items_4..7.png`
+`src/shared/Data/ItemIconAtlas.luau`. S52: obrazki właściciela z `art/icons/src` (S118: 287 ikon) w atlasach `items_4..8.png`
 (tabela `PNG` indeksu, `py -3 tools/icons/import_png.py`); wgrywa się tylko atlasy, które packer wypisał jako zmienione
 (ich id są puste). Do wgrania gra pokazuje w ich miejscu ikony rysowane kodem.
 `art/` leży poza drzewem Rojo: atlasy wgrywa się jako obrazki, a gra zna je po id z
@@ -158,6 +158,28 @@ Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 1
 items_2 `113622747165970`, items_3 `103992189653299`. Sprawdzone w Play: warstwy ikon w pasku mikstur wczytane.
 Uwaga techniczna: `ContentProvider:PreloadAsync` z samym tekstem `rbxassetid://…` zwraca w Studio `Failure` także dla
 obrazków, które się wczytują; `UI/IconState` wczytuje więc instancje `ImageLabel`.
+
+## Ikony przedmiotów z PNG (S118)
+
+- **Skąd:** folder grafik właściciela (`VAELTHORN_GRAPHICS`, domyślnie `D:\Users\vdapi\Downloads\Graphics`, tylko do
+  odczytu), nazwa pliku = id przedmiotu; przedmioty questowe `tylko_2d/questy/quest_<item>.png` → klucz `quest/<item>`;
+  błogosławieństwa `blessing_<linia>.png` (wszystkie rzadkości) albo `blessing_<linia>_<n>.png`. Pełne zasady nazw:
+  `docs/sessions/IMPORT-GRAFIK.md`.
+- **Importer:** `py -3 tools/icons/import_graphics.py` (nazwy sprawdzone z grą przez `lune run tools/icons/ids.luau`,
+  odrzucone pliki z podpowiedzią, raport `build/icons/import_graphics.md`), potem `py -3 tools/icons/import_png.py`
+  (atlasy `art/icons/items_4..8.png`, tabela `PNG` w `src/shared/Data/ItemIconAtlas.luau`, stałe komórki) i
+  `--check-ids` (id w `ItemIconSheets.luau`, lista „do wgrania”).
+- **Kolejność wyglądu:** obrazek przedmiotu (albo najbliższego niższego progu tego typu) → ikona rysowana kodem (S35) →
+  symbol. Broń maga z obrazkiem bez warstwy akcentu: klejnot żywiołu w rogu ikony. Gotowość per atlas.
+- **Wgranie:** `docs/ANIMACJE.md` §9 (ta sama droga co tekstury efektów S112).
+- **Sprawdzenie:** `/icons` (obrazki: przedmioty, grupy, atlasy wgrane / do wgrania), `/icongrid art`.
+
+**Stan (2026-10-14, S118):** `items_7.png` (zmieniony) i nowy `items_8.png` wgrane przez Studio MCP (`upload_image`, konto
+VDaPii): items_7 `116647103065980`, items_8 `90447876547035` (ostatnie wgranie po dograniu 14 obrazków zapisanych w
+trakcie sesji: plecaki 80–200 i premium, `stone_dungeon_frostpeak`, rudy srebra, mithrilu i adamantytu,
+`herb_nightshade`, `herb_firebloom`); items_7 i pierwsze items_8 w Play `Success` i `IsLoaded`. Osierocone (nieużywane, można usunąć w
+Creator Hub): stare items_7 `72500852503959`, wcześniejsze items_8 `126086041830482`, `71377522475295`,
+`70653203214194`, `136046578378635`.
 
 ## Dodanie modelu potwora (skrót `docs/MODELE.md` §5)
 

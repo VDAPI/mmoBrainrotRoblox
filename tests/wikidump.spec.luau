@@ -980,21 +980,12 @@ T.describe("Wiki export: items and monsters (S68)", function()
 end)
 
 -- WIKI-GRAFIKA: item icons follow the game's picture rule (Logic/ItemIcons, Logic/ArtTiers) with every atlas sheet
--- counted as ready: own boss picture, else the nearest lower tier picture of the type, mage weapons only with an accent.
+-- counted as ready: own boss picture, else the nearest lower tier picture of the type (S118: mage weapons too).
 T.describe("Wiki export: owner's pictures (WIKI-GRAFIKA)", function()
 	local ArtTiers = require("../src/shared/Logic/ArtTiers")
 	local Atlas = require("../src/shared/Data/ItemIconAtlas")
 
-	local function hasAccent(icon: any): boolean
-		for _, layer in icon.layers do
-			if layer.t == "accent" then
-				return true
-			end
-		end
-		return false
-	end
-
-	T.it("equipment shows its own or the nearest lower tier picture, mage weapons only with an accent", function()
+	T.it("equipment shows its own or the nearest lower tier picture, mage weapons too (S118)", function()
 		local pictures, checked = 0, 0
 		for _, item in d.items.items do
 			local def = Items.get(item.id)
@@ -1002,12 +993,12 @@ T.describe("Wiki export: owner's pictures (WIKI-GRAFIKA)", function()
 				checked += 1
 				local expected: string? = nil
 				local own = Atlas.PNG[`uniq/{def.id}`]
-				if own and (not def.elemental or hasAccent(own)) then
+				if own then
 					expected = `uniq/{def.id}`
 				elseif not Atlas.ICONS[`uniq/{def.id}`] then
 					for _, key in ArtTiers.iconKeys(`eq/{def.type}`, def.tier) do
 						local png = Atlas.PNG[key]
-						if png and (not def.elemental or hasAccent(png)) then
+						if png then
 							expected = key
 							break
 						end

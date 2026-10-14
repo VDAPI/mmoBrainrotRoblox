@@ -149,10 +149,31 @@ commands.icons = function(player, args)
 		end
 	end
 	reply(player, "admin.icons.info", { ready = tostring(ItemIcons.ready()), missing = missing })
+	-- S118: the owner's pictures in the game now (sheets with an asset id) and the sheets still to upload.
+	local cov = ItemIcons.coverage()
+	local groups, files = {}, {}
+	for group, n in cov.byGroup do
+		table.insert(groups, `{group} {n}`)
+	end
+	table.sort(groups)
+	for _, n in cov.waiting do
+		table.insert(files, `items_{n}.png`)
+	end
+	reply(player, "admin.icons.art", {
+		withArt = cov.withArt,
+		items = cov.items,
+		groups = if #groups > 0 then table.concat(groups, ", ") else "-",
+		quest = cov.questItems,
+		uploaded = cov.sheets - #cov.waiting,
+		sheets = cov.sheets,
+		stale = #cov.waiting,
+		files = if #files > 0 then table.concat(files, ", ") else "-",
+	})
 	Net.Fire(player, "AdminClient", "icons", mode)
 end
 
--- S35: /icongrid [eq|uniq|mat|pot|misc|tiers <type>]: preview window of a group of icons on the client.
+-- S35: /icongrid [eq|uniq|mat|pot|misc|art|tiers <type>]: preview window of a group of icons on the client (S118: art =
+-- every item with its own picture).
 commands.icongrid = function(player, args)
 	local group = args[1] or "eq"
 	if group == "tiers" and not Items.bases.byType[args[2] or ""] then
