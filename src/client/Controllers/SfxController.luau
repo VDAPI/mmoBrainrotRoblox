@@ -74,6 +74,7 @@ local ROUTES: { [string]: { key: string, mul: number } } = {
 	error = { key = "ui.error", mul = 1 },
 	open = { key = "ui.click", mul = 0.6 },
 	levelUp = { key = "ui.levelup", mul = 1 },
+	coin = { key = "ui.coin", mul = 1 }, -- S120: a purchase for Dragon Currency
 }
 
 -- Helpers ---------------------------------------------------------------------------------------------------

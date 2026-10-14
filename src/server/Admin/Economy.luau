@@ -10,6 +10,7 @@ local Blessings = require(Shared.Data.Blessings)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local LoginReward = require(Shared.Logic.LoginReward)
+local Premium = require(Shared.Logic.Premium)
 local Products = require(Shared.Data.Products)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
@@ -118,6 +119,40 @@ commands.premium = function(player, args)
 	end
 	MonetizationService.SetTestPass(player, pass.key, true)
 	reply(player, "admin.pass.ok", { pass = pass.key, state = "on" })
+end
+
+-- S120: premium shop limit counters of the caller's account.
+commands.shoplimits = function(player, args)
+	local acc = PlayerStateService.Get(player, { "account" })
+	if args[1] == "reset" then
+		PlayerStateService.Set(player, { "account", "shopLimits" }, Premium.emptyLimits())
+		-- the pre-S120 counter too, so Premium.limitsOf does not bring it back today
+		PlayerStateService.Set(player, { "account", "dailyLimits" }, { day = 0, protectScrolls = 0 })
+		reply(player, "admin.shoplimits.reset")
+		return
+	end
+	if args[1] ~= "show" or type(acc) ~= "table" then
+		reply(player, "admin.usage.shoplimits")
+		return
+	end
+	local now = os.time()
+	local any = false
+	for _, entry in Products.shop do
+		if entry.dailyLimit or entry.weeklyLimit then
+			any = true
+			local day, week = Premium.usedOf(entry, acc, now)
+			reply(player, "admin.shoplimits.row", {
+				key = entry.key,
+				day = day,
+				dayMax = if entry.dailyLimit then tostring(entry.dailyLimit) else "-",
+				week = week,
+				weekMax = if entry.weeklyLimit then tostring(entry.weeklyLimit) else "-",
+			})
+		end
+	end
+	if not any then
+		reply(player, "admin.shoplimits.none")
+	end
 end
 
 commands.cosmetic = function(player, args)

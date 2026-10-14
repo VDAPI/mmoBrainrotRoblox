@@ -956,10 +956,11 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
-- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Nowej Ścieżki (zmiana ścieżki głównej), Zwój Rozwiązania, Zwój Ochrony (limit 5 dziennie, żeby nie był pay-to-win), zmiana nazwy postaci.
+- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Nowej Ścieżki (zmiana ścieżki głównej), Zwój Rozwiązania, Zwój Ochrony (limit 1 dziennie, żeby nie był pay-to-win; S120), zmiana nazwy postaci.
 - **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), VIP (złota ramka czatu, kolorowy nick, +1 kolejka u alchemika).
 - Brak sprzedaży EXP, statystyk, przedmiotów z bonusami.
 - Odrodzenie natychmiastowe także jako osobny Developer Product (bez kupowania waluty).
+- **Smoczy Sklep od S120** (`docs/DESIGN-17.md` §1): okno z pięcioma zakładkami (Waluta, Przepustki, Przedmioty w sekcjach Zwoje / Usługi / Plecaki, Kosmetyki, Wierzchowce tylko z włączonym produktem), saldo z „Doładuj” stale w nagłówku, podpowiedź i potwierdzenie przy każdym zakupie za Smoczą Walutę (także w garderobie), produkty Robux bez id na żywym serwerze jako nieaktywne „Wkrótce”. Limity dzienne i tygodniowe na wpis sklepu (`account.shopLimits`). Zasadę bez pay-to-win pilnuje `tests/paywall.spec.luau` (jawne listy tego, co wolno sprzedawać, z powodem przy każdym wpisie).
 
 ## 22. Kosmetyki i pety
 

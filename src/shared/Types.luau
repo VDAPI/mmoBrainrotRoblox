@@ -201,7 +201,9 @@ export type AccountData = {
 	pets: { owned: { [string]: boolean }, equipped: string? },
 	settings: Settings,
 	purchases: { [string]: number },
-	dailyLimits: { day: number, protectScrolls: number },
+	dailyLimits: { day: number, protectScrolls: number }, -- pre-S120, read-only (Logic/Premium.limitsOf)
+	-- S120: Logic/Premium.ShopLimits
+	shopLimits: { day: number, week: number, daily: { [string]: number }, weekly: { [string]: number } },
 	login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption

@@ -14,11 +14,13 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
@@ -126,6 +128,28 @@ local function DeathScreen(scope: Scope): Instance
 		end)
 	)
 
+	-- Pay Robux to skip the countdown. S120: without a product id on a live server a disabled "Soon" with the hint
+	-- (DESIGN-17 §0.8), as in the Dragon Shop.
+	local respawnSoon = Premium.robuxState(Products.respawn.productId, RunService:IsStudio()) == "soon"
+	local robuxButton = Button(scope, {
+		Name = "RespawnRobux",
+		LayoutOrder = 5,
+		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+		Visible = counting,
+		Text = if respawnSoon
+			then Text.T(scope, "premium.soon")
+			else Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
+		Disabled = if respawnSoon then true else busy,
+		OnClick = function()
+			if not respawnSoon then
+				invoke("BuyProduct", Products.respawn.key)
+			end
+		end,
+	})
+	if respawnSoon then
+		Tooltip.attach(scope, robuxButton :: GuiObject, Text.T(scope, "premium.soon.hint"))
+	end
+
 	local width = 460
 
 	return scope:New("Frame")({
@@ -214,21 +238,7 @@ local function DeathScreen(scope: Scope): Instance
 							invoke("RespawnNow")
 						end,
 					}),
-					withArt(
-						scope,
-						Button(scope, {
-							Name = "RespawnRobux",
-							LayoutOrder = 5,
-							Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
-							Visible = counting,
-							Text = Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
-							Disabled = busy,
-							OnClick = function()
-								invoke("BuyProduct", Products.respawn.key)
-							end,
-						}),
-						UiArt.shop(Products.respawn.key)
-					),
+					withArt(scope, robuxButton, UiArt.shop(Products.respawn.key)),
 					-- Choice.
 					Button(scope, {
 						Name = "RespawnCity",

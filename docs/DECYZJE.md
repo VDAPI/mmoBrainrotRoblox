@@ -3690,3 +3690,32 @@
   wcześniej, żeby wylądować w tej chwili. Ostrzeżenie i dźwięk raz na atak (obszary z tym samym `a` w 0,1 s). Rzucający
   martwy (`Dead`) albo usunięty przed ciosem: bez efektu, meteoru, pocisku, wstrząsu i dźwięku (telegraf gaśnie jak
   dotąd). Niska jakość: każdy wstrząs kamery 2 klatki zamiast 4.
+- **S120** Katalog: `cat` (sekcja zakładki „Przedmioty”) obok `kind` (jak serwer wydaje zakup); `Products.shopCats` w
+  kolejności `scroll`, `service`, `consumable`, `backpack`; zmiana imienia w `service`, plecaki premium w `backpack`.
+- **S120** Liczniki: `account.shopLimits = { day, week, daily, weekly }` na wpis (dzień `Time.dayNumber`, tydzień
+  `Time.weekNumber` z S98); stare `dailyLimits` zostaje w zapisie i jest czytane tylko w dniu aktualizacji. Bez migracji.
+- **S120** Zwój Ochrony 1 dziennie (DESIGN-17 §1), cena 60 bez zmian.
+- **S120** Jedna reguła zakupu `Premium.canBuy(entry, account, now)` w oknie i na serwerze; kolejność błędów:
+  niedostępny, limit dzienny, tygodniowy, waluta. Zmiana imienia też przez `canBuy` (przed i po rezerwacji imienia).
+- **S120** Okno: zakładki `currency`, `passes`, `items`, `cosmetics`, `mounts` (`mounts` tylko z włączonym produktem
+  wierzchowca), `SideTabs` na PC, przewijany pasek `Tabs` na telefonie, saldo z „Doładuj” w nagłówku. Zakładka
+  „Kosmetyki” = karta garderoby + lista nieposiadanych kosmetyków na sprzedaż z „Przymierz” (DESIGN-17 nie mówił, co jest
+  w zakładce poza garderobą i ofertą tygodnia S123).
+- **S120** Moduł okna zwraca `{ build, Selected, select }` zamiast funkcji (`PremiumShop.Selected` nie może być polem
+  funkcji w strict); `PremiumController` woła `PremiumShop.build`.
+- **S120** Potwierdzenie (`UI/PremiumConfirm`) przy każdym zakupie za Smoczą Walutę (sklep i garderoba); zakupy za Robux
+  natywnym oknem Roblox bez własnego potwierdzenia. Podpowiedź karty z tej samej funkcji (`describe(spec, "tooltip")`:
+  cena i saldo po zakupie), powód nieaktywnego przycisku dopisany w tej podpowiedzi (też na przycisku: dotyk).
+- **S120** Produkt Robux z id 0 poza Studio: nieaktywne „Wkrótce” z podpowiedzią (`Premium.robuxState`; też odrodzenie
+  na ekranie śmierci), w Studio symulacja jak dotąd; zgodne z `MonetizationService` (bez zmian).
+- **S120** `Premium.shownPasses` pomija przepustki z `enabled == false`, których gracz nie ma (pod S121, bez pola w typie).
+- **S120** Sklep bez klawisza (menu HUD wystarcza; litery zostają dla okien S123–S128).
+- **S120** Nazwa waluty w grze bez zmian: „Smocze Odłamki (SO)” w DESIGN-17 = `account.dragonShards` = „Smocza
+  Waluta” w tekstach.
+- **S120** `paywall.spec`: jawne listy dozwolonych rodzajów z powodami (przepustki, rodzaje sklepu, kategorie i rodzaje
+  użycia przedmiotów, zwoje, rodzaje i pola kosmetyków), puste `EXCEPTIONS` i `ALLOWED_SUBSCRIPTIONS` do rozszerzenia
+  przez S121–S123; Zwój Ochrony jedynym wyjątkiem dotykającym ulepszania, tylko z `dailyLimit == 1`. `COSMETIC_FIELDS`
+  ma też `wiki` (flaga publikacji S105).
+- **S120** Garderoba otwiera się na rodzaju i z przymierzanym kosmetykiem przez `UI/WardrobeStart` z S97 (nowe pole
+  `try`); dźwięk zakupu `ui.coin` przez router `Sounds.play("coin")` (okna nie wołają `SfxController` wprost).
+  Przedmioty w sklepie z obrazkiem przedmiotu (`ItemIcon`, S118) zamiast stałych znaków `📜` / `🎒`.

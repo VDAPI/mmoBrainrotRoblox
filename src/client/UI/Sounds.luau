@@ -1,6 +1,6 @@
 --!strict
 -- UI sound effects. S111: every name first asks the router (SfxController: click -> ui.click, error -> ui.error,
--- open -> ui.click quieter, levelUp -> ui.levelup); a key with a sound plays from Data/Sfx, otherwise the old
+-- open -> ui.click quieter, levelUp -> ui.levelup, S120: coin -> ui.coin); a key with a sound plays from Data/Sfx, otherwise the old
 -- placeholder below plays. Every Sound goes through the "Effects" sound group (setGroup), whose volume is the
 -- settings.volume option (SettingsController), so nothing here scales by the option any more.
 
@@ -14,6 +14,8 @@ local DEFS: { [string]: { id: string, volume: number, speed: number? } } = {
 	open = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.25, speed = 0.8 },
 	error = { id = "rbxasset://sounds/volume_slider.ogg", volume = 0.45, speed = 0.55 },
 	levelUp = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.7, speed = 0.6 },
+	-- S120: purchases for Dragon Currency (routed to ui.coin; this placeholder only without the router's sound).
+	coin = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.6, speed = 0.9 },
 	-- Gathering and the smith's upgrade ticks (not routed: no Data/Sfx key).
 	hit = { id = "rbxasset://sounds/action_jump_land.mp3", volume = 0.3, speed = 1.7 },
 }

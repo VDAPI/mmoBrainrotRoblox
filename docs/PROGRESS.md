@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115, S117, S118 i S119 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S120 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -207,6 +207,11 @@ zdarzeniu), każdy atak bossa z własną pozą, efektem i wstrząsem (`Data/Boss
 wir, lot Vaelgratha, przyzwani z ziemi (atrybut `Summoned`), śmierć według planu i klon bossa w świetle, odchylenie od
 atakującego; telegrafy 2.0 (`Logic/Telegraph`, `Vfx/GroundTelegraph`: od krawędzi do środka, pulsujący brzeg, błysk, efekt
 i dźwięk w chwili ciosu, tekstury S112); pole `a` w `tele`; AnimLab `floor`, `boss <id> roar|death`.
+S120 (pierwsza z DESIGN-17) Smoczy Sklep 1: katalog z kategoriami (`cat`, limity dzienne i tygodniowe na wpis w
+`account.shopLimits`), jedna reguła zakupu `Premium.canBuy` w oknie i na serwerze, Zwój Ochrony 1 dziennie, okno z
+zakładkami (Waluta, Przepustki, Przedmioty, Kosmetyki, Wierzchowce tylko z włączonym produktem; PC kolumna, telefon
+przewijany pasek), saldo z „Doładuj”, potwierdzenie każdego zakupu za walutę (też w garderobie), „Wkrótce” dla
+produktów Robux bez id na żywym serwerze, `/shoplimits`, `tests/paywall.spec.luau`.
 IMPORT-GRAFIK 2026-10-14: lista blokad treści `tools/icons/content_block.json` (obrazki z krwią, ranami, odciętymi
 częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery usuwają je same), 26 plików zablokowanych
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe

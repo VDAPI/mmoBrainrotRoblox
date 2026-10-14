@@ -5,15 +5,21 @@
 -- IDs ARE PLACEHOLDERS (0). The owner creates the products and passes in the Creator Hub
 -- (Monetization -> Developer Products / Passes) and pastes the ids here. With id 0 (or in Studio) the
 -- purchase is simulated, so everything can be tested without real Robux.
+-- S120: every shop entry has a `cat` (tab section) and optional daily / weekly limits; Logic/Premium.canBuy is the
+-- only purchase rule (shop window and server).
 
 export type ShardPack = { key: string, productId: number, shards: number, robux: number }
 export type Pass = { key: string, passId: number, robux: number, icon: string }
+export type ShopCat = "scroll" | "service" | "consumable" | "backpack"
 export type ShopEntry = {
 	key: string,
-	kind: "item" | "rename",
+	kind: "item" | "rename", -- how the server grants it (S122 adds its own kinds)
+	cat: ShopCat, -- the section of the "Items" tab (DESIGN-17 §1)
 	itemId: string?,
 	price: number, -- Dragon Shards
-	dailyLimit: number?, -- per account and UTC day
+	dailyLimit: number?, -- purchases per account and UTC day
+	weeklyLimit: number?, -- purchases per account and week (Monday 00:00 UTC, Logic/Time.weekNumber)
+	unavailable: boolean?, -- listed but not for sale yet: the shop shows "Soon", the server refuses
 }
 -- S97: a premium mount (Developer Product, granted to the active character; Data/Mounts entry with source "premium").
 export type MountProduct = { key: string, productId: number, robux: number, mount: string, enabled: boolean }
@@ -37,15 +43,23 @@ local PASSES: { Pass } = {
 }
 
 local SHOP: { ShopEntry } = {
-	{ key = "scroll_oblivion", kind = "item", itemId = "scroll_oblivion", price = 120 },
-	{ key = "scroll_skillreset", kind = "item", itemId = "scroll_skillreset", price = 120 },
-	{ key = "scroll_unbind", kind = "item", itemId = "scroll_unbind", price = 150 },
-	{ key = "scroll_protection", kind = "item", itemId = "scroll_protection", price = 60, dailyLimit = 5 },
-	{ key = "rename", kind = "rename", price = 400 },
+	{ key = "scroll_oblivion", kind = "item", cat = "scroll", itemId = "scroll_oblivion", price = 120 },
+	{ key = "scroll_skillreset", kind = "item", cat = "scroll", itemId = "scroll_skillreset", price = 120 },
+	{ key = "scroll_unbind", kind = "item", cat = "scroll", itemId = "scroll_unbind", price = 150 },
+	-- S120: 1 a day (DESIGN-17 §1): the only item that touches item power, see tests/paywall.spec.luau
+	{
+		key = "scroll_protection",
+		kind = "item",
+		cat = "scroll",
+		itemId = "scroll_protection",
+		price = 60,
+		dailyLimit = 1,
+	},
+	{ key = "rename", kind = "rename", cat = "service", price = 400 },
 	-- 2026-10-10: big backpacks without the level requirement.
-	{ key = "backpack_premium_100", kind = "item", itemId = "backpack_premium_100", price = 300 },
-	{ key = "backpack_premium_150", kind = "item", itemId = "backpack_premium_150", price = 600 },
-	{ key = "backpack_premium_200", kind = "item", itemId = "backpack_premium_200", price = 1000 },
+	{ key = "backpack_premium_100", kind = "item", cat = "backpack", itemId = "backpack_premium_100", price = 300 },
+	{ key = "backpack_premium_150", kind = "item", cat = "backpack", itemId = "backpack_premium_150", price = 600 },
+	{ key = "backpack_premium_200", kind = "item", cat = "backpack", itemId = "backpack_premium_200", price = 1000 },
 }
 
 -- S97: disabled until the owner decides (price in Robux, product id from the Creator Hub). Same speed cap as every
@@ -63,9 +77,17 @@ local passByKey: { [string]: Pass } = {}
 for _, pass in PASSES do
 	passByKey[pass.key] = pass
 end
+-- Sections of the "Items" tab in order (S120; `consumable` stays empty until S122).
+local SHOP_CATS: { ShopCat } = { "scroll", "service", "consumable", "backpack" }
+
 local shopByKey: { [string]: ShopEntry } = {}
+local shopByCat: { [string]: { ShopEntry } } = {}
+for _, cat in SHOP_CATS do
+	shopByCat[cat] = {}
+end
 for _, entry in SHOP do
 	shopByKey[entry.key] = entry
+	table.insert(shopByCat[entry.cat], entry)
 end
 local mountByKey: { [string]: MountProduct } = {}
 for _, entry in MOUNTS do
@@ -77,6 +99,7 @@ return table.freeze({
 	respawn = RESPAWN_PRODUCT,
 	passes = PASSES,
 	shop = SHOP,
+	shopCats = SHOP_CATS,
 	mounts = MOUNTS,
 	getPack = function(key: string): ShardPack?
 		return packByKey[key]
@@ -86,6 +109,10 @@ return table.freeze({
 	end,
 	getShop = function(key: string): ShopEntry?
 		return shopByKey[key]
+	end,
+	-- S120: the entries of one section in list order.
+	shopIn = function(cat: ShopCat): { ShopEntry }
+		return shopByCat[cat] or {}
 	end,
 	getMount = function(key: string): MountProduct?
 		return mountByKey[key]

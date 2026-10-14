@@ -1,8 +1,9 @@
 --!strict
--- Premium shop for Dragon Shards (DESIGN §21): scrolls (Protection limited to 5 a day), renaming the active
--- character (NameService: filter + unique reservation) and cosmetics/pets (owned by the account). Every
--- purchase checks and pays in one step without yielding between the check and the change; renaming yields
--- for the name store and re-checks the shards afterwards.
+-- Premium shop for Dragon Shards (DESIGN §21, DESIGN-17 §1): scrolls with daily/weekly limits from Data/Products,
+-- renaming the active character (NameService: filter + unique reservation) and cosmetics/pets (owned by the account).
+-- S120: every shop entry goes through Logic/Premium.canBuy (the same rule as the shop window) and the limit counters
+-- of account.shopLimits. Every purchase checks, pays and counts in one step without yielding between the check and
+-- the change; renaming yields for the name store and checks again afterwards.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -44,6 +45,13 @@ local function spend(player: Player, price: number, reason: string)
 	Analytics.custom(player, "PremiumSpend_" .. reason, price)
 end
 
+-- S120: the limit counters after a purchase, in the same step as the payment (only entries with a limit write).
+local function countLimit(player: Player, entry: Products.ShopEntry, data: Types.AccountData, now: number)
+	if entry.dailyLimit or entry.weeklyLimit then
+		PlayerStateService.Set(player, { "account", "shopLimits" }, Premium.countPurchase(entry, data, now))
+	end
+end
+
 local function buyItem(player: Player, key: string): (boolean, string?)
 	local data = account(player)
 	local entry = Products.getShop(key)
@@ -54,7 +62,7 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 		return false, "error.wrongPhase"
 	end
 	local now = os.time()
-	local ok, err = Premium.canBuyShop(key, data.dragonShards, data.dailyLimits, now)
+	local ok, err = Premium.canBuy(entry, data, now)
 	if not ok then
 		return false, err
 	end
@@ -63,9 +71,7 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 		return false, "inventory.full"
 	end
 	spend(player, entry.price, key)
-	if entry.dailyLimit then
-		PlayerStateService.Set(player, { "account", "dailyLimits" }, Premium.countDaily(data.dailyLimits, now))
-	end
+	countLimit(player, entry, data, now)
 	InventoryService.AddItem(player, item)
 	DataService.Save(player)
 	return true, nil
@@ -98,8 +104,9 @@ local function rename(player: Player, newName: string): (boolean, string?)
 	if newName == char.name then
 		return false, "premium.error.sameName"
 	end
-	if data.dragonShards < entry.price then
-		return false, "premium.error.shards"
+	local canBuy, buyErr = Premium.canBuy(entry, data, os.time())
+	if not canBuy then
+		return false, buyErr
 	end
 	local valid, err = NameService.Validate(player, newName)
 	if not valid then
@@ -111,13 +118,20 @@ local function rename(player: Player, newName: string): (boolean, string?)
 		return false, reserveErr
 	end
 	-- Yielded: make sure the same character is active and can still pay.
-	data = account(player)
-	if not data or PlayerStateService.GetCharacter(player) ~= char or data.dragonShards < entry.price then
+	local now = os.time()
+	local fresh = account(player)
+	if not fresh or PlayerStateService.GetCharacter(player) ~= char then
 		NameService.Release(newName, ownerKey)
-		return false, "premium.error.shards"
+		return false, "error.wrongPhase"
+	end
+	local stillOk, stillErr = Premium.canBuy(entry, fresh, now)
+	if not stillOk then
+		NameService.Release(newName, ownerKey)
+		return false, stillErr
 	end
 	local oldName = char.name
 	spend(player, entry.price, "rename")
+	countLimit(player, entry, fresh, now)
 	PlayerStateService.Set(player, { "character", "name" }, newName)
 	local slot = PlayerStateService.Get(player, { "session", "slot" })
 	if slot then

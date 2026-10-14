@@ -9221,3 +9221,82 @@ Pliki: `src/shared/Data/{MonsterMotions,BossMotions}.luau` (nowe), `src/shared/L
 `src/server/Services/{Combat,Dungeon}Service.luau`, `tests/{gait,motionkeys}.spec.luau`,
 `tests/{bossmotions,telegraph}.spec.luau` (nowe), `tools/balance_reasons.luau`,
 `docs/{ANIMACJE,ASSETS,MODELE,DESIGN-16,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S120: Sklep premium 1: katalog, zakładki, Zwój Ochrony 1/dzień, paywall
+
+Pierwsza sesja serii DESIGN-17 (S120–S132), po S119 (`97a4093`) i S117 (`016bb29`). S116 pominięta za zgodą
+właściciela (czeka na modele); S120 nic z niej nie potrzebuje. Start: `scripts/check` zielony. Bez Studio, bez nowych
+produktów i remote'ów.
+- **Katalog (`Data/Products`):** typ `ShopCat` i pola wpisu `cat` (sekcja zakładki), `weeklyLimit?`, `unavailable?` obok
+  `kind` (sposób wydania), `Products.shopCats` (`scroll`, `service`, `consumable`, `backpack`), `Products.shopIn(cat)`;
+  zwoje w `scroll`, zmiana imienia w `service`, plecaki premium w `backpack`. Zwój Ochrony `dailyLimit` 5 → 1 (cena 60
+  bez zmian). `Data/Products` zostaje `NOT_BALANCE`, bez wpisów w księdze.
+- **Reguły (`Logic/Premium`):** `ShopLimits`, `emptyLimits`, `limitsOf` (nowa tabela, reset dnia `Time.dayNumber` i
+  tygodnia `Time.weekNumber`, jednorazowy odczyt starego `dailyLimits` w dniu aktualizacji), `usedOf`, `canBuy`
+  (niedostępny → limit dzienny → tygodniowy → waluta), `countPurchase`, `TABS`, `visibleTabs`, `shopSections`,
+  `shownPasses`, `robuxState`, `packBonus` (dziś 0 / 9 / 18 / 28 / 38%), `balanceAfter`. Usunięte `DailyLimits`,
+  `usedToday`, `canBuyShop`, `countDaily`, `day`.
+- **Zapis:** `account.shopLimits = { day, week, daily, weekly }` z szablonu (`TableUtil.reconcile`, bez migracji,
+  `CURRENT` = 8 bez zmian); `dailyLimits` zostaje w szablonie i typie, nic go już nie zapisuje.
+- **Serwer:** `PremiumShopService.buyItem` i `rename` (przed i po rezerwacji imienia) przez `Premium.canBuy`, licznik
+  `account.shopLimits` w tym samym kroku co zapłata (bez yield). `MonetizationService` bez zmian: odmowa id 0 poza Studio
+  zgadza się z `Premium.robuxState`.
+- **Okno:** `UI/Screens/PremiumShop.luau` zamienione na folder `PremiumShop/` (`init`, `Cards`, `Currency`, `Passes`,
+  `Items`, `Cosmetics`, `Mounts`). Moduł zwraca `{ build, Selected, select }` (funkcja z polami nie przechodzi w strict),
+  `PremiumController` woła `PremiumShop.build`. Nagłówek: tytuł zakładki (PC), saldo przez `CurrencyIcon` i
+  „Doładuj” (nieaktywne na „Walucie”). PC: `SideTabs` 190 px po lewej; telefon: przewijany pasek `Tabs` (`Scroll`) pod
+  nagłówkiem; okno 900 × 640. Waluta: paczki z plakietką premii i linią o przeznaczeniu waluty; Przepustki: linia „na
+  zawsze”, karty od `LayoutOrder` 100; Przedmioty: sekcje z nagłówkami, obrazek przedmiotu (`ItemIcon`), podpis z
+  limitem albo opisem `premium.shop.<key>.desc`, przycisk ze stanu `canBuy` (Limit / Wkrótce / cena), powód w
+  podpowiedzi karty; Kosmetyki: karta garderoby + nieposiadane kosmetyki na sprzedaż z „Przymierz” i ceną; Wierzchowce:
+  sekcja S97 przeniesiona (dziś ukryta). Produkty Robux z id 0 poza Studio: nieaktywne „Wkrótce” z podpowiedzią.
+- **Ekran śmierci:** „Odródź się (R$)” z id 0 poza Studio jako nieaktywne „Wkrótce” z podpowiedzią (`robuxState`).
+- **Potwierdzenie:** `UI/PremiumConfirm` (`setShowModal`, `describe(spec, "confirm" | "tooltip")`, `ask`) przy każdym
+  zakupie za walutę w sklepie i garderobie; zmiana imienia ma modal z polem i saldem po zakupie (`premium.rename.confirm2`).
+  Dźwięk udanego zakupu: `Sounds.play("coin")` → router S111 `ui.coin` (wpis w `SfxController` ROUTES, zapas w `Sounds`).
+- **Garderoba:** „Kup” przez `PremiumConfirm.ask` z podpowiedzią `describe(spec, "tooltip")` (cena, saldo po zakupie
+  albo brak waluty przy nieaktywnym), „Doładuj” obok salda (100 × 36, na telefonie 44 px) →
+  `PremiumController.OpenShop("currency")`; `WardrobeStart.try` (obok `kind` z S97) otwiera z przymierzanym kosmetykiem
+  na jego zakładce. `Wardrobe(scope, props?)` z `OpenShop`.
+- **Admin:** `/shoplimits show | reset` (`admin.shoplimits.*`, `admin.usage.shoplimits`; reset zeruje też stare
+  `dailyLimits`), wiersz w `docs/ARCHITECTURE.md`.
+- **Teksty:** klucze z planu G w PL i EN; usunięte `premium.tab.services`, `premium.service.item`,
+  `premium.rename.confirm`; opisy plecaków jako trzy klucze `premium.shop.backpack_premium_<n>.desc`.
+- **Testy:** nowy `tests/paywall.spec.luau` (przypadki 1–10), `tests/premium.spec.luau` przepisany na nowe API (limit
+  1/dzień, tydzień pon.–niedz., kolejność błędów, `limitsOf` na zamrożonym wejściu, stary licznik, zakładki i sekcje,
+  `robuxState`, `shownPasses`, `packBonus`, szablon konta, „Wkrótce” w PL i EN, lokalizacja). `scripts/check` zielony
+  (117 plików, 6518 testów), `wiki_keys_diff` 0 różnic bez `WIKI_KEYS_ALLOW`.
+- **Wiki:** `npm run data`: w `premium.json` tylko `dailyLimit` 5 → 1 przy Zwoju Ochrony (plus `meta.json` i odcisk w
+  `docs/PRZEDMIOTY.md`); eksporter bez zmian.
+
+Dla S121–S132: `Products.ShopCat`, `Products.shopCats`, `Products.shopIn`, pola `ShopEntry.cat`, `weeklyLimit`,
+`unavailable`; `Premium.ShopLimits`, `ShopAccount`, `emptyLimits`, `limitsOf`, `usedOf`, `canBuy`, `countPurchase`,
+`TABS`, `visibleTabs`, `shopSections`, `shownPasses` (czyta `enabled == false` bez pola w typie), `robuxState`,
+`packBonus`, `balanceAfter`; zapis `account.shopLimits`; pliki okna `UI/Screens/PremiumShop/{init,Cards,Currency,Passes,
+Items,Cosmetics,Mounts}.luau` (każda zakładka `build(scope, ctx)`, `Cards.card` / `buyButton` / `robuxButton` /
+`sectionHeader` / `note` / `invoke`), `PremiumShop.Selected` / `select` / `build`, `UI/PremiumConfirm.luau` (`ask`,
+`describe`, `setShowModal`), `PremiumController.OpenShop(tab)` / `OpenWardrobe(start)`, `WardrobeStart.try`; klucze
+`premium.tab.<id>`, `premium.cat.<cat>`, `premium.shop.<key>.desc` (każdy nowy wpis sklepu potrzebuje opisu: test),
+`premium.soon`, `premium.soon.hint`, `premium.error.soon` (wpis `unavailable`; wyłączone przepustki i subskrypcja S121
+mają osobny `premium.error.unavailable`, wierzchowce S97 dalej `premium.error.notOnSale`), `premium.error.weeklyLimit`,
+`premium.confirm.*`, `premium.tooltip.*`, `premium.topUp`, `premium.bought`; `tests/paywall.spec.luau` i jego listy
+(`ALLOWED_PASSES`, `ALLOWED_SUBSCRIPTIONS`, `ALLOWED_SHOP_KINDS`, `ALLOWED_ITEM_CATEGORIES`, `ALLOWED_USE_KINDS`,
+`ALLOWED_SCROLLS`, `EXCEPTIONS`, `ALLOWED_COSMETIC_KINDS`, `COSMETIC_FIELDS`, `FORBIDDEN_KEYS`); komenda
+`/shoplimits`. S121: karta VIP przed linią w `Passes.luau` (`LayoutOrder` < 100); S122: nowe `kind` w gałęzi
+`Items.luau` (komentarz `-- S122`), `EXCEPTIONS` w `paywall.spec`; S123: oferta tygodnia nad kartą garderoby w
+`Cosmetics.luau`.
+
+Dla właściciela: w Creator Hub utworzyć 5 Developer Products paczek waluty (100 / 550 / 1 200 / 2 600 / 7 000 za 99 /
+499 / 999 / 1 999 / 4 999 R$), produkt natychmiastowego odrodzenia (15 R$) i 4 przepustki (Auto-łup, Skarbiec, Szybki
+Powrót, VIP); id wkleić w `src/shared/Data/Products.luau` (`productId` / `passId`). Do tego czasu sklep na żywym
+serwerze pokazuje przy nich „Wkrótce” (odrodzenie: ekran śmierci). Pełną listę z S121–S130 zbierze S131 w `docs/SKLEP-ID.md`.
+
+Pliki: `src/shared/Data/Products.luau`, `src/shared/Logic/{Premium,AccountSchema}.luau`, `src/shared/Types.luau`,
+`src/shared/Data/AdminCommands.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/PremiumShopService.luau`, `src/server/Admin/Economy.luau`,
+`src/client/UI/Screens/PremiumShop/{init,Cards,Currency,Passes,Items,Cosmetics,Mounts}.luau` (nowe; usunięty
+`PremiumShop.luau`), `src/client/UI/PremiumConfirm.luau` (nowy), `src/client/UI/Screens/Wardrobe.luau`,
+`src/client/UI/{WardrobeStart,Sounds}.luau`, `src/client/UI/Screens/Hud/DeathScreen.luau`,
+`src/client/Controllers/{Premium,Sfx}Controller.luau`,
+`tests/paywall.spec.luau` (nowy), `tests/premium.spec.luau`, `wiki/src/data/{premium,meta}.json`, `docs/PRZEDMIOTY.md`,
+`docs/{DESIGN,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

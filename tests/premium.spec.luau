@@ -1,42 +1,183 @@
 --!strict
+local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Premium = require("../src/shared/Logic/Premium")
 local Products = require("../src/shared/Data/Products")
+local Time = require("../src/shared/Logic/Time")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 local T = require("./Test")
 
 local DAY = 86400
+local MONDAY = 1791763200 -- 2026-10-12 00:00 UTC (S98)
 
 T.describe("Premium shop", function()
-	T.it("scroll of protection is limited to 5 a day", function()
-		local limits = { day = 0, protectScrolls = 0 }
+	local protection = Products.getShop("scroll_protection") :: Products.ShopEntry
+
+	T.it("scroll of protection is limited to 1 a day", function()
 		local now = 10 * DAY + 5
-		for _ = 1, 5 do
-			T.expect((Premium.canBuyShop("scroll_protection", 1000, limits, now))).toBe(true)
-			limits = Premium.countDaily(limits, now)
+		local account = { dragonShards = 1000, shopLimits = Premium.emptyLimits() }
+		T.expect((Premium.canBuy(protection, account, now))).toBe(true)
+		account.shopLimits = Premium.countPurchase(protection, account, now)
+		T.expect({ Premium.canBuy(protection, account, now) }).toEqual({ false, "premium.error.dailyLimit" })
+		-- New UTC day resets the counter.
+		T.expect((Premium.canBuy(protection, account, now + DAY))).toBe(true)
+		T.expect(Premium.countPurchase(protection, account, now + DAY).daily.scroll_protection).toBe(1)
+	end)
+
+	T.it("weekly limit counts Monday to Sunday", function()
+		local entry: Products.ShopEntry =
+			{ key = "x", kind = "item", cat = "scroll", itemId = "scroll_unbind", price = 1, weeklyLimit = 2 }
+		T.expect(Time.weekNumber(MONDAY)).toBe(2963)
+		local account = { dragonShards = 100, shopLimits = Premium.emptyLimits() }
+		for _ = 1, 2 do
+			T.expect((Premium.canBuy(entry, account, MONDAY + 3600))).toBe(true)
+			account.shopLimits = Premium.countPurchase(entry, account, MONDAY + 3600)
 		end
-		T.expect({ Premium.canBuyShop("scroll_protection", 1000, limits, now) }).toEqual({
+		T.expect({ Premium.canBuy(entry, account, MONDAY + 3600) }).toEqual({ false, "premium.error.weeklyLimit" })
+		local sundayLast = MONDAY + 7 * DAY - 1 -- 2026-10-18 23:59:59
+		T.expect({ Premium.canBuy(entry, account, sundayLast) }).toEqual({ false, "premium.error.weeklyLimit" })
+		T.expect((Premium.canBuy(entry, account, MONDAY + 7 * DAY))).toBe(true)
+		T.expect(select(2, Premium.usedOf(entry, account, sundayLast))).toBe(2)
+		T.expect(select(2, Premium.usedOf(entry, account, MONDAY + 7 * DAY))).toBe(0)
+	end)
+
+	T.it("checks availability, then limits, then shards", function()
+		local now = 10 * DAY
+		local used = Premium.countPurchase(protection, { shopLimits = Premium.emptyLimits() }, now)
+		T.expect({ Premium.canBuy(protection, { dragonShards = 0, shopLimits = used }, now) }).toEqual({
 			false,
 			"premium.error.dailyLimit",
 		})
-		-- New UTC day resets the counter.
-		T.expect((Premium.canBuyShop("scroll_protection", 1000, limits, now + DAY))).toBe(true)
-		T.expect(Premium.countDaily(limits, now + DAY).protectScrolls).toBe(1)
+		T.expect({ Premium.canBuy(protection, { dragonShards = 0 }, now) }).toEqual({ false, "premium.error.shards" })
+		local soon = table.clone(protection) :: Products.ShopEntry
+		soon.unavailable = true
+		T.expect({ Premium.canBuy(soon, { dragonShards = 0, shopLimits = used }, now) }).toEqual({
+			false,
+			"premium.error.soon",
+		})
+		T.expect({ Premium.canBuy(nil, { dragonShards = 1e9 }, now) }).toEqual({ false, "error.badRequest" })
+		local oblivion = Products.getShop("scroll_oblivion") :: Products.ShopEntry
+		T.expect({ Premium.canBuy(oblivion, { dragonShards = 1 }, 0) }).toEqual({ false, "premium.error.shards" })
 	end)
 
-	T.it("needs enough shards and a known entry", function()
-		local limits = { day = 0, protectScrolls = 0 }
-		T.expect({ Premium.canBuyShop("scroll_oblivion", 1, limits, 0) }).toEqual({ false, "premium.error.shards" })
-		T.expect({ Premium.canBuyShop("nope", 1e9, limits, 0) }).toEqual({ false, "error.badRequest" })
+	T.it("limitsOf never mutates and resets on a new day / week", function()
+		local entry: Products.ShopEntry = {
+			key = "y",
+			kind = "item",
+			cat = "scroll",
+			itemId = "scroll_unbind",
+			price = 1,
+			dailyLimit = 3,
+			weeklyLimit = 5,
+		}
+		local saved = Premium.countPurchase(entry, { shopLimits = Premium.emptyLimits() }, MONDAY)
+		table.freeze(saved.daily)
+		table.freeze(saved.weekly)
+		table.freeze(saved)
+		local account = table.freeze({ shopLimits = saved })
+		local same = Premium.limitsOf(account, MONDAY + 60)
+		T.expect(same ~= saved).toBe(true)
+		T.expect({ same.daily.y, same.weekly.y }).toEqual({ 1, 1 })
+		local after = Premium.countPurchase(entry, account, MONDAY + 60)
+		T.expect({ after.daily.y, after.weekly.y, saved.daily.y }).toEqual({ 2, 2, 1 })
+		local tuesday = Premium.limitsOf(account, MONDAY + DAY)
+		T.expect(tuesday.daily.y).toBeNil()
+		T.expect({ tuesday.weekly.y, tuesday.day }).toEqual({ 1, Time.dayNumber(MONDAY + DAY) })
+		local nextWeek = Premium.limitsOf(account, MONDAY + 7 * DAY)
+		T.expect(nextWeek.daily.y).toBeNil()
+		T.expect(nextWeek.weekly.y).toBeNil()
+		T.expect(nextWeek.week).toBe(Time.weekNumber(MONDAY + 7 * DAY))
+	end)
+
+	T.it("pre-S120 counter is read on the day of the update", function()
+		local now = 20 * DAY + 100
+		local account = {
+			dragonShards = 1000,
+			shopLimits = Premium.emptyLimits(),
+			dailyLimits = { day = Time.dayNumber(now), protectScrolls = 3 },
+		}
+		T.expect((Premium.usedOf(protection, account, now))).toBe(3)
+		T.expect({ Premium.canBuy(protection, account, now) }).toEqual({ false, "premium.error.dailyLimit" })
+		T.expect((Premium.usedOf(protection, account, now + DAY))).toBe(0)
+		T.expect((Premium.canBuy(protection, account, now + DAY))).toBe(true)
+	end)
+
+	T.it("tabs and sections", function()
+		T.expect(#Premium.TABS).toBe(5)
+		T.expect(Premium.visibleTabs(0)).toEqual({ "currency", "passes", "items", "cosmetics" })
+		T.expect(Premium.visibleTabs(1)).toEqual({ "currency", "passes", "items", "cosmetics", "mounts" })
+		local seen: { [string]: number } = {}
+		local cats = {}
+		for _, section in Premium.shopSections() do
+			T.expect(#section.entries > 0).toBe(true)
+			table.insert(cats, section.cat)
+			for _, entry in section.entries do
+				T.expect(entry.cat).toBe(section.cat)
+				seen[entry.key] = (seen[entry.key] or 0) + 1
+			end
+		end
+		local expected = {}
+		for _, cat in Products.shopCats do
+			if #Products.shopIn(cat) > 0 then
+				table.insert(expected, cat)
+			end
+		end
+		T.expect(cats).toEqual(expected)
+		for _, entry in Products.shop do
+			T.expect({ entry.key, seen[entry.key] }).toEqual({ entry.key, 1 })
+		end
+	end)
+
+	T.it("robux state", function()
+		T.expect(Premium.robuxState(0, false)).toBe("soon")
+		T.expect(Premium.robuxState(0, true)).toBe("buy")
+		T.expect(Premium.robuxState(123, false)).toBe("buy")
+	end)
+
+	T.it("shown passes", function()
+		local off: any = { key = "b", passId = 0, robux = 1, icon = "b", enabled = false }
+		local list: { Products.Pass } = { { key = "a", passId = 0, robux = 1, icon = "a" }, off }
+		T.expect(#Premium.shownPasses({}, list)).toBe(1)
+		T.expect(#Premium.shownPasses({ b = true }, list)).toBe(2)
+		T.expect(#Premium.shownPasses({})).toBe(#Products.passes)
+	end)
+
+	T.it("pack bonus", function()
+		local base = Products.shardPacks[1]
+		local last = -1
+		for i, pack in Products.shardPacks do
+			local bonus = Premium.packBonus(pack)
+			local expected = math.floor((pack.shards / pack.robux) / (base.shards / base.robux) * 100 + 1e-9) - 100
+			T.expect({ pack.key, bonus }).toEqual({ pack.key, expected })
+			if i == 1 then
+				T.expect(bonus).toBe(0)
+			end
+			T.expect(bonus > last).toBe(true)
+			last = bonus
+		end
+		T.expect(Premium.balanceAfter(100, 60)).toBe(40)
+	end)
+
+	T.it("account template has shopLimits (S120, no migration)", function()
+		T.expect(AccountSchema.accountTemplate().shopLimits).toEqual(Premium.emptyLimits())
+		local old: any = AccountSchema.accountTemplate()
+		old.shopLimits = nil
+		old.dailyLimits = { day = 5, protectScrolls = 2 }
+		AccountSchema.migrate(old, function(): string
+			return "id"
+		end)
+		T.expect(old.shopLimits).toEqual(Premium.emptyLimits())
+		T.expect(old.dailyLimits).toEqual({ day = 5, protectScrolls = 2 })
 	end)
 
 	T.it("scroll_skillreset is sold again (S81)", function()
-		local limits = { day = 0, protectScrolls = 0 }
-		T.expect((Premium.canBuyShop("scroll_skillreset", 1000, limits, 0))).toBe(true)
-		T.expect((Products.getShop("scroll_skillreset") :: any).unavailable).toBeNil()
+		local entry = Products.getShop("scroll_skillreset") :: Products.ShopEntry
+		T.expect((Premium.canBuy(entry, { dragonShards = 1000 }, 0))).toBe(true)
+		T.expect(entry.unavailable).toBeNil()
+		-- S120: "Soon" is back for entries and Robux products without an id (DESIGN-17 §0.8).
 		for _, key in { "premium.soon", "premium.error.soon" } do
-			T.expect({ key, pl[key], en[key] }).toEqual({ key, nil, nil })
+			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })
 		end
 	end)
 
@@ -94,6 +235,38 @@ T.describe("Premium data", function()
 		end
 		-- S97: the premium mount section (hidden until a product is enabled; its texts exist already)
 		for _, key in { "premium.mounts.title", "premium.mounts.desc", "premium.error.notForSale" } do
+			need(key)
+		end
+		-- S120: tabs, sections, entry descriptions, "Soon", limits, confirmation
+		for _, tab in Premium.TABS do
+			need(`premium.tab.{tab}`)
+		end
+		for _, cat in Products.shopCats do
+			need(`premium.cat.{cat}`)
+		end
+		for _, entry in Products.shop do
+			need(`premium.shop.{entry.key}.desc`)
+		end
+		for _, key in
+			{
+				"premium.soon",
+				"premium.soon.hint",
+				"premium.error.soon",
+				"premium.error.weeklyLimit",
+				"premium.limitReached",
+				"premium.service.limitWeek",
+				"premium.topUp",
+				"premium.bought",
+				"premium.rename.confirm2",
+				"premium.confirm.title",
+				"premium.confirm.buy",
+				"premium.confirm.price",
+				"premium.confirm.balance",
+				"premium.confirm.after",
+				"premium.tooltip.price",
+				"premium.tooltip.after",
+			}
+		do
 			need(key)
 		end
 		T.expect(missing).toEqual({})

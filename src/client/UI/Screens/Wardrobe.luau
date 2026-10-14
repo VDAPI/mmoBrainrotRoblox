@@ -5,6 +5,8 @@
 -- S97: the "mountskin" tab previews the character's active mount (or the horse) in the tried-on / worn skin; skins
 -- earned in the game (boss loot, quest rewards) show where they come from instead of a price and have no button
 -- until owned. UI/WardrobeStart picks the first tab (the mounts window opens the mount skins).
+-- S120: buying asks first (UI/PremiumConfirm: name, kind, price, balance after); "Top up" next to the balance opens the
+-- Dragon Shop on the currency tab; WardrobeStart.try opens with a cosmetic tried on (the shop's "Try on").
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,17 +17,20 @@ local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
 local CosmeticLook = require(ReplicatedStorage.Shared.Util.CosmeticLook)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Mounts = require(ReplicatedStorage.Shared.Logic.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PremiumConfirm = require(script.Parent.Parent.PremiumConfirm)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 local WardrobeStart = require(script.Parent.Parent.WardrobeStart)
@@ -34,7 +39,12 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
+export type Props = {
+	OpenShop: (() -> ())?, -- S120: "Top up" (PremiumController.OpenShop("currency"))
+}
+
 local PREVIEW = 330
+local TOP_UP_WIDTH = 100
 local MOUNT_ORBIT = 15 -- S97: the camera further out for a mount
 local CHARACTER_ORBIT = 11
 
@@ -92,12 +102,17 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 	return ""
 end
 
-local function Wardrobe(scope: Scope): Fusion.Child
+local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	local start = WardrobeStart.kind
+	local startTry = WardrobeStart.try and Cosmetics.get(WardrobeStart.try)
 	WardrobeStart.kind = nil
+	WardrobeStart.try = nil
+	if startTry then
+		start = startTry.kind -- S120: the tab of the tried-on cosmetic
+	end
 	local kind = scope:Value(if start and table.find(Cosmetics.kinds, start :: any) then start else "outfit")
 	local mountState = State.Value({ "character", "mounts" })
-	local tried = scope:Value(nil :: string?) -- previewed (not yet equipped) cosmetic
+	local tried = scope:Value(if startTry then startTry.id else nil :: string?) -- previewed (not yet equipped) cosmetic
 	local account = State.Value({ "account" })
 	local shards = State.Value({ "account", "dragonShards" })
 
@@ -238,6 +253,50 @@ local function Wardrobe(scope: Scope): Fusion.Child
 			local action = if isOn then "wardrobe.takeOff" elseif isOwned then "wardrobe.wear" else nil
 			-- S97: earned in the game, not for sale: no button until owned
 			local earned = def.obtain ~= nil and not isOwned
+			local button = Button(s, {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -8, 0.5, 0),
+				Size = UDim2.fromOffset(150, 44),
+				Variant = if action then "secondary" else "primary",
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(s, action or "wardrobe.buy"),
+				Visible = not earned,
+				Disabled = if action then false else (use(shards) or 0) < def.price,
+				OnClick = function()
+					if isOn then
+						invoke("CosmeticEquip", def.kind, nil)
+					elseif isOwned then
+						invoke("CosmeticEquip", def.kind, def.id)
+					else
+						-- S120: every purchase for Dragon Currency asks first.
+						PremiumConfirm.ask({
+							name = Text.now(def.nameKey),
+							desc = Text.now(`wardrobe.kind.{def.kind}`),
+							price = def.price,
+							shards = Fusion.peek(shards) or 0,
+							remote = "PremiumBuyCosmetic",
+							arg = def.id,
+						})
+					end
+				end,
+			})
+			-- S120: price and balance after on the buy button (with the reason while it is greyed out), as in the shop.
+			if action == nil and not earned then
+				Tooltip.attach(
+					s,
+					button :: GuiObject,
+					s:Computed(function(use2): string
+						return PremiumConfirm.describe({
+							name = Text.get(use2, def.nameKey),
+							desc = Text.get(use2, `wardrobe.kind.{def.kind}`),
+							price = def.price,
+							shards = use2(shards) or 0,
+							remote = "PremiumBuyCosmetic",
+							arg = def.id,
+						}, "tooltip")
+					end)
+				)
+			end
 			table.insert(
 				list,
 				s:New("TextButton")({
@@ -298,25 +357,7 @@ local function Wardrobe(scope: Scope): Fusion.Child
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
-						Button(s, {
-							AnchorPoint = Vector2.new(1, 0.5),
-							Position = UDim2.new(1, -8, 0.5, 0),
-							Size = UDim2.fromOffset(150, 44),
-							Variant = if action then "secondary" else "primary",
-							TextSize = Theme.TextSize.Small,
-							Text = Text.T(s, action or "wardrobe.buy"),
-							Visible = not earned,
-							Disabled = if action then false else (use(shards) or 0) < def.price,
-							OnClick = function()
-								if isOn then
-									invoke("CosmeticEquip", def.kind, nil)
-								elseif isOwned then
-									invoke("CosmeticEquip", def.kind, def.id)
-								else
-									invoke("PremiumBuyCosmetic", def.id)
-								end
-							end,
-						}),
+						button,
 					},
 				})
 			)
@@ -324,6 +365,7 @@ local function Wardrobe(scope: Scope): Fusion.Child
 		return list
 	end)
 
+	local openShop = props and props.OpenShop
 	local tabs = {}
 	for _, k in Cosmetics.kinds do
 		table.insert(tabs, { id = k, label = Text.T(scope, `wardrobe.kind.{k}`) })
@@ -363,7 +405,7 @@ local function Wardrobe(scope: Scope): Fusion.Child
 				Tabs(scope, { Selected = kind, Tabs = tabs }),
 				scope:New("TextLabel")({
 					Position = UDim2.fromOffset(0, 48),
-					Size = UDim2.new(1, 0, 0, 28),
+					Size = UDim2.new(1, -(TOP_UP_WIDTH + 10), 0, 28),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return `◆ {Format.number(use(shards) or 0)}`
@@ -373,9 +415,30 @@ local function Wardrobe(scope: Scope): Fusion.Child
 					TextColor3 = Theme.Colors.Accent,
 					TextXAlignment = Enum.TextXAlignment.Right,
 				}),
+				-- S120: "Top up" opens the Dragon Shop on the currency tab (44 px high on a phone).
+				Button(scope, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 44),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(TOP_UP_WIDTH, if use(Device.Touch) then Theme.Size.MinTouch else 36)
+					end),
+					Variant = "primary",
+					TextSize = Theme.TextSize.Small,
+					Text = Text.T(scope, "premium.topUp"),
+					Visible = openShop ~= nil,
+					OnClick = function()
+						if openShop then
+							openShop()
+						end
+					end,
+				}),
 				scope:New("ScrollingFrame")({
-					Position = UDim2.fromOffset(0, 80),
-					Size = UDim2.new(1, 0, 1, -80),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(0, if use(Device.Touch) then 94 else 84)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 1, if use(Device.Touch) then -94 else -84)
+					end),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
