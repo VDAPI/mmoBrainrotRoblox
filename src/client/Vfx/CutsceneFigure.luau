@@ -5,6 +5,8 @@
 -- for 1.5 s and the parts fading out over the last seconds of the shot. Everything anchored, no collisions, no
 -- queries. S103: a look with `crown` wears a ring of thorns on the hood (the young queen Morvane); a `ghost` figure
 -- (Ilvar's projection, the queen's spirit) is half-transparent and smooth, with a cold light in its trim's colour.
+-- S105: an `ice` figure is frozen through (the trappers in the Ice Grotto, the knights of the Guard); the fade "freeze"
+-- turns a figure to ice over the last seconds and leaves it so (Ilvar in the Rite Circle).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -43,8 +45,21 @@ local GHOST_TRANSPARENCY = 0.45
 local GHOST_RANGE = 12
 local GHOST_BRIGHTNESS = 1
 
+-- S105: the look of ice (a frozen figure, the end of the "freeze" fade).
+local ICE = Color3.fromHex("#CFE8F5")
+local ICE_TRANSPARENCY = 0.3
+
+local function frozen(p: BasePart, k: number, base: Color3?)
+	p.Color = (base or p.Color):Lerp(ICE, 0.75 * k)
+	p.Transparency = math.max(p.Transparency, ICE_TRANSPARENCY * k)
+	if k >= 0.5 then
+		p.Material = Enum.Material.Ice
+		p.CastShadow = false
+	end
+end
+
 -- A standing robed figure at `cframe` (its feet on the ground at the CFrame's position, facing its look vector).
-function CutsceneFigure.build(look: string, cframe: CFrame, ghost: boolean?): Model
+function CutsceneFigure.build(look: string, cframe: CFrame, ghost: boolean?, ice: boolean?): Model
 	local colors = CutsceneData.FIGURES[look] or CutsceneData.FIGURES.ilvar
 	local robe, hood, trim = Color3.fromHex(colors.robe), Color3.fromHex(colors.hood), Color3.fromHex(colors.trim)
 	local model = Instance.new("Model")
@@ -114,22 +129,32 @@ function CutsceneFigure.build(look: string, cframe: CFrame, ghost: boolean?): Mo
 		light.Shadows = false
 		light.Parent = model:FindFirstChildWhichIsA("BasePart")
 	end
+	if ice then
+		for _, child in model:GetChildren() do
+			if child:IsA("BasePart") then
+				frozen(child, 1)
+			end
+		end
+	end
 	return model
 end
 
 -- Frost fade: pale flakes around the figure for 1.5 s, then the parts go transparent over the last `seconds`.
--- `kind` "none" does nothing. Returns a function that stops it.
+-- S105 "freeze": the same flakes, then the parts turn to ice and stay. `kind` "none" does nothing. Returns a function
+-- that stops it.
 function CutsceneFigure.fade(model: Model, kind: string?, startIn: number, seconds: number): () -> ()
-	if kind ~= "frost" then
+	if kind ~= "frost" and kind ~= "freeze" then
 		return function() end
 	end
 	local alive = true
 	local parts: { BasePart } = {}
 	local from: { number } = {} -- S103: a ghost starts half-transparent
+	local colors: { Color3 } = {} -- S105: "freeze" turns from the figure's own colours
 	for _, child in model:GetChildren() do
 		if child:IsA("BasePart") then
 			table.insert(parts, child)
 			table.insert(from, child.Transparency)
+			table.insert(colors, child.Color)
 		end
 	end
 	local anchor = parts[1]
@@ -156,7 +181,11 @@ function CutsceneFigure.fade(model: Model, kind: string?, startIn: number, secon
 		connection = RunService.RenderStepped:Connect(function()
 			local t = math.clamp((os.clock() - started) / math.max(seconds, 0.1), 0, 1)
 			for i, p in parts do
-				p.Transparency = from[i] + (1 - from[i]) * t
+				if kind == "freeze" then
+					frozen(p, t, colors[i])
+				else
+					p.Transparency = from[i] + (1 - from[i]) * t
+				end
 			end
 			if t >= 1 and connection then
 				connection:Disconnect()

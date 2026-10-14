@@ -5,11 +5,16 @@
 --     Trail, the skull on a ledge,
 --   * wyrm burrows: round smooth holes in icy scarps with furrows of scales round them (shallow, blind; rims in the
 --     shell), shed scales, serpentine ruts in the snow,
---   * the dragonspawn's obelisk to the wyrms with a navy and gold banner. Pure.
+--   * the dragonspawn's obelisk to the wyrms with a navy and gold banner,
+--   * S105: the Rite Circle at the horn's foot (site `summitRite`, geometry in ./Rite): six ice monoliths with the
+--     cult's runes, a slate altar with the Heart of Winter beating like the crystals of the Glacier Heart, two cult
+--     banners and a trodden ring in the snow. Everyone sees it as built; what the rite and the Thorn change is drawn
+--     for one player by the client (QuestAnchorController `rite`, `thorn`). Pure.
 
 local Env = require("./Env")
 local Kit = require("../WorldGen/Kit")
 local Props = require("./Props")
+local Rite = require("./Rite")
 
 local o = Kit.o
 
@@ -184,6 +189,92 @@ local function obelisk(env: Env.Env, out: { Build })
 	table.insert(out, b)
 end
 
+-- S105: the Rite Circle (story chapter IV and the finale): <= 14 shell parts (monoliths, altar, the Heart).
+local function summitRite(env: Env.Env, out: { Build })
+	local ctx = env.ctx
+	local b = Env.atSite(env, "summitRite", "landmark", Rite.CLEAR)
+	local bp = b.bp
+	local function ground(lx: number, lz: number): number
+		return Kit.gy(ctx, b, lx, lz)
+	end
+	local y = ground(0, 0)
+	-- the trodden ring in the snow under the stones
+	bp:add(
+		"cyl",
+		0.08,
+		2 * Rite.RADIUS + 5,
+		2 * Rite.RADIUS + 5,
+		0,
+		y + 0.04,
+		0,
+		0,
+		0,
+		90,
+		o(Props.trackColor, "detail", { col = false })
+	)
+	-- six monoliths of ice with the cult's runes glowing on their inner faces
+	for k, st in Rite.stones() do
+		local gy = ground(st.x, st.z)
+		local h = Rite.STONE.h - (k % 2) * 1.2
+		bp:push(st.x, gy, st.z, 0, st.yaw, 0)
+		bp:box(Rite.STONE.w, h, Rite.STONE.d, 0, h / 2 - 0.4, 0, o(Props.ice, "shell", { q = false, t = 0.3 }))
+		bp:box(0.5, 2.4, 0.08, 0, h * 0.6, Rite.STONE.d / 2 + 0.05, {
+			c = Props.ICEFIRE,
+			m = "Neon",
+			lod = "detail",
+			col = false,
+			tag = "glow",
+			jitter = 0,
+			fxColor = Props.ICEFIRE,
+		})
+		bp:box(1.2, 0.3, 0.08, 0, h * 0.6 + 0.6, Rite.STONE.d / 2 + 0.05, {
+			c = Props.ICEFIRE,
+			m = "Neon",
+			lod = "fine",
+			col = false,
+			tag = "glow",
+			jitter = 0,
+			fxColor = Props.ICEFIRE,
+		})
+		Props.snowCap(bp, 0, h - 0.4, 0, Rite.STONE.w, Rite.STONE.d, "fine")
+		bp:pop()
+	end
+	-- the slate altar and the Heart of Winter on it (beating with the Glacier Heart's crystals, S51 `heart`)
+	local a = Rite.ALTAR
+	bp:box(a.w, a.h, a.d, 0, y + a.h / 2, 0, o(Props.darkStone, "shell", { q = false }))
+	bp:box(a.w + 0.6, 0.3, a.d + 0.6, 0, y + a.h, 0, o(Props.slate, "detail", { col = false }))
+	local hy = y + Rite.heartY()
+	bp:add("ball", Rite.HEART, Rite.HEART, Rite.HEART, 0, hy, 0, 0, 0, 0, {
+		c = Rite.HEART_COLOR,
+		m = "Neon",
+		lod = "shell",
+		col = false,
+		q = false,
+		t = 0.15,
+		tag = "heart",
+		jitter = 0,
+		fxColor = Rite.HEART_COLOR,
+	})
+	for _, r in { 30, -40 } do
+		bp:rbox(1.2, 3.4, 1.2, 0, hy + 0.4, 0, r, 20, 10, {
+			c = "#CFF6FF",
+			m = "Glass",
+			lod = "detail",
+			col = false,
+			q = false,
+			t = 0.3,
+			jitter = 0,
+		})
+	end
+	bp:light(0, hy + 1, 0, Rite.HEART_COLOR, 22, 1.4, "heart")
+	-- two cult banners behind the altar (navy and gold), off the way in
+	for _, side in { -1, 1 } do
+		Props.banner(bp, side * 4.5, ground(side * 4.5, 4), 4, 10, Props.cultBlue, Props.gold, false)
+	end
+	Kit.lifeAt(ctx, b, "icicleDust", 0, 6, 0, 8)
+	table.insert(out, b)
+end
+
 -- The summit: the snow plume and the wind's roar (life points on the horn and on the ridges' crests).
 local function plumes(env: Env.Env, out: { Build })
 	local ctx = env.ctx
@@ -208,6 +299,7 @@ function Wyrm.all(env: Env.Env, out: { Build })
 	bones(env, out)
 	burrows(env, out)
 	obelisk(env, out)
+	summitRite(env, out)
 	plumes(env, out)
 end
 

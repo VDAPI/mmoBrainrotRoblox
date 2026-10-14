@@ -10,6 +10,8 @@
 -- glacier whose cleft holds the Glacier Heart, the Ice Watch fortress sits on its knoll in the south-east and the
 -- Wyrm Spire, the highest horn, rises in the north-east. `sites` are the places of the buildings and landmarks
 -- (Logic/FrostpeakGen builds them); `lakes` are only the two ice holes (open water in the frozen lakes).
+-- S105 (story chapter IV and the finale): the Rite Circle at the foot of the Wyrm Spire's horn (`summitRite`), the
+-- places of the story NPCs (`npcSpots`) and the quest anchors (`questAnchors`), all inside existing avoid circles.
 
 local Types = require("./Types")
 
@@ -58,12 +60,57 @@ local SITES: { [string]: Site } = {
 	wyrmBurrows = { x = 596, z = -700, rot = 30 }, -- burrows in the ice scarps
 	wyrmObelisk = { x = 650, z = -430, rot = 200 }, -- the dragonspawn's obelisk to the wyrms
 	summit = { x = 690, z = -650, rot = 0 }, -- the horn's summit (snow plume)
+	-- S105: the Winter Rite's ring at the horn's foot (the summit itself is not walkable): the last gentle point on the
+	-- line from the horn towards the Bone Trail's end turned 15 degrees (build/s105_rite.luau; the straight line meets
+	-- the horn's flank at once), 98 studs from the horn inside its avoid circle; the front looks down the Bone Trail
+	summitRite = { x = 628, z = -574, rot = 177 },
 }
 
 local function at(name: string, r: number): Types.Circle
 	local s = SITES[name]
 	return { x = s.x, z = s.z, r = r }
 end
+
+-- S105: a point given in a site's local frame (same formula as Logic/WorldGen/Kit.toWorld, like Areas/ashen).
+local function atSite(name: string, lx: number, lz: number): (number, number)
+	local s = SITES[name]
+	local r = math.rad(s.rot)
+	local c, sn = math.cos(r), math.sin(r)
+	return s.x + c * lx + sn * lz, s.z - sn * lx + c * lz
+end
+
+-- NPC places of the story (S105) and the side arcs (S108): inside the existing avoid circles, on firm ground (names
+-- differ from every site: /tparea looks at npcSpots first).
+local NPC_SPOTS: { [string]: Types.NpcSpot } = {
+	-- Sigrun before the abandoned trappers' cabin, on the left of its front (the snares stand on the right), 4+ studs
+	-- from the drying racks, the lantern and the buried fire (Logic/FrostpeakGen/Valley trapperCamp)
+	trapper = { x = -534, z = -160, facing = 210, wiki = false },
+	-- the ghost of Brother Halgrim in the Ice Watch's courtyard before the keep's west door (x ~637), facing the gate,
+	-- 14 studs from the frozen weapon racks (Logic/FrostpeakGen/Fortress keep)
+	halgrim = { x = 628, z = 570, facing = 90, wiki = false },
+}
+
+-- Quest objects of the story (S105): invisible parts tagged QuestAnchor, inside the existing avoid circles; never added
+-- to `avoid`. `rot` = the site's yaw (the frame of the client effects).
+local function anchor(id: string, site: string, lx: number, lz: number, y: number): Types.QuestAnchor
+	local x, z = atSite(site, lx, lz)
+	return { id = id, x = x, z = z, y = y, wiki = false, rot = SITES[site].rot }
+end
+
+local QUEST_ANCHORS: { Types.QuestAnchor } = {
+	anchor("climbers_camp", "climbersCamp", 0, -6, 1), -- before the torn tent of the fallen climbers
+	anchor("hunting_camp", "huntingCamp", 0, -10, 1), -- the heap of the order's armour, between the giants' huts
+	anchor("crystal_garden", "crystals", 0, -8, 1.5), -- on the ice among the crystals (the walkable frozen lake)
+	-- between two offering altars (the brazier stands in the middle, the altars on a ring of 9)
+	anchor("temple_altars", "offeringAltars", -2.2, -5.6, 1.5),
+	-- 4 studs before the colossus's plinth (Logic/FrostpeakGen/Temple: its front at local z -1.6), in the sanctuary
+	anchor("temple_colossus", "sanctuary", 0, -5.6, 1.5),
+	anchor("wyrm_obelisk", "wyrmObelisk", 0, -5, 1.5), -- before the dragonspawn's obelisk
+	-- the Rite Circle (Logic/FrostpeakGen/Rite): the edge of the ring before the altar, and right before the altar with
+	-- the Heart of Winter (the altar's front at local z -2); 5 studs apart, no prompt over the other
+	anchor("summit_rite", "summitRite", 0, -9, 1.5),
+	anchor("summit_thorn", "summitRite", 0, -4, 2),
+}
 
 local data: Types.MapAreas = {
 	map = "frostpeak",
@@ -178,6 +225,8 @@ local data: Types.MapAreas = {
 		{ cave = "frostpeak_cave", x = 745, z = 0, rot = 90 },
 	},
 	sites = SITES,
+	npcSpots = NPC_SPOTS, -- S105
+	questAnchors = QUEST_ANCHORS, -- S105
 	areas = {
 		{
 			id = "frostpeak_valley",

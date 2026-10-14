@@ -353,6 +353,15 @@ commands.terraininfo = function(player)
 	return true
 end
 
+-- S105: /season <auto|summer|snow|spring>: the city's season on the caller's client (CitySeasonController, the mood
+-- in AmbienceController); auto gives it back to the story (Logic/CitySeason).
+commands.season = function(player, args)
+	local value = args[1] or "auto"
+	Net.Fire(player, "AdminClient", "season", value)
+	reply(player, "admin.season.set", { season = value })
+	return true
+end
+
 commands.worldfx = function(player, args)
 	local effect, mode = args[1] or "", args[2] or ""
 	Net.Fire(player, "AdminClient", "worldfx", { name = effect, mode = mode })

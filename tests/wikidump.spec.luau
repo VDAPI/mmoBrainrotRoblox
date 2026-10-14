@@ -334,6 +334,60 @@ T.describe("Wiki export: consistency", function()
 		T.expect(next(ashen.npcSpots)).toBeNil()
 	end)
 
+	-- S105: chapter IV and the finale (quests, Sigrun, Halgrim, the anchors of the Peaks and the Frozen Hold, the NPC
+	-- places, the finale's title and mount skin) wait for S109 too
+	T.it("leaves story chapter IV and the finale out: quests, NPCs, anchors, places, title and skin (S105)", function()
+		local hiddenIds = {
+			"trappersCamp",
+			"iceGrotto",
+			"harpyRocks",
+			"mammothTundra",
+			"frozenHold",
+			"frozenLake",
+			"iceWatch",
+			"oathWords",
+			"dragonTemple",
+			"wyrmSpire",
+			"eveOfBattle",
+			"snowInSummer",
+			"dragonsBrood",
+			"voiceOfWinter",
+			"firstSpring",
+			"climbers_camp",
+			"hunting_camp",
+			"crystal_garden",
+			"temple_altars",
+			"temple_colossus",
+			"wyrm_obelisk",
+			"summit_rite",
+			"summit_thorn",
+			"frost_bloom",
+			"hold_chapel",
+			"trapper_sigrun",
+			"ghost_halgrim",
+			"thornbearer",
+			"mountskin_spring",
+		}
+		for _, id in hiddenIds do
+			for _, file in fs.readDir("wiki/src/data") do
+				if string.match(file, "%.json$") then
+					if string.find(fs.readFile(`wiki/src/data/{file}`), `"{id}"`, 1, true) then
+						error(`{file} names hidden {id}`, 0)
+					end
+				end
+			end
+		end
+		for _, q in d.quests.main do
+			T.expect(q.id ~= "firstSpring" and q.id ~= "trappersCamp").toBe(true)
+		end
+		for _, npc in d.npcs.npcs do
+			T.expect((npc :: any).id ~= "trapper_sigrun").toBe(true)
+		end
+		local frost = d.areas.maps.frostpeak
+		T.expect(#frost.questAnchors).toBe(0)
+		T.expect(next(frost.npcSpots)).toBeNil()
+	end)
+
 	T.it("labels objectives without placeholders and keeps chances in 0..1", function()
 		for _, q in d.quests.main do
 			for _, o in q.objectives do

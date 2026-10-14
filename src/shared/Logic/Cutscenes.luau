@@ -23,6 +23,9 @@ local Cutscenes = {}
 Cutscenes.MAX_LINES = 4 -- "scene": 2-4 lines (FABULA §2.1)
 Cutscenes.ORBIT = 10 -- default degrees the eye turns over a shot
 Cutscenes.PUSH = 4 -- default studs the eye moves in over a shot
+-- S105: the figure fades and the story props the client knows (Vfx/CutsceneFigure, Util/StoryProps)
+Cutscenes.FADES = table.freeze({ frost = true, freeze = true, none = true })
+Cutscenes.PROPS = table.freeze({ thorn = true, lantern = true })
 
 -- Ids of the scenes a quest event triggers, in list order (`index` matters only for "objective").
 function Cutscenes.triggered(questId: string, on: string, index: number?): { string }
@@ -179,6 +182,19 @@ function Cutscenes.validate(): { string }
 		for _, figure in figures do
 			if not Data.FIGURES[figure.look] then
 				bad(`unknown figure look {figure.look}`)
+			end
+			if figure.fade ~= nil and not Cutscenes.FADES[figure.fade] then
+				bad(`unknown fade {tostring(figure.fade)}`)
+			end
+		end
+		-- S105: story props (Util/StoryProps on the client)
+		local props: { Data.Prop } = scene.props or {}
+		for _, item in props do
+			if not Cutscenes.PROPS[item.kind] then
+				bad(`unknown prop {tostring(item.kind)}`)
+			end
+			if type(item.x) ~= "number" or type(item.z) ~= "number" then
+				bad("prop without x / z")
 			end
 		end
 	end

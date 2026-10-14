@@ -7382,3 +7382,169 @@ wiki, `docs/{BALANS,PRZEDMIOTY,FABULA,DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUD
   `ShamanRest`, `HermitThreshold`, `CaptivePost_*`.
 
 Uproszczenia: scena `ch3_wyvern` bez figury wywerny (kamera i linie), `ch3_azgor` z ujęciem `self`.
+
+### S105: Fabuła, rozdział IV „Długa Zima” i finał „Pierwsza Wiosna”
+
+Start na `9793879` (S104): commity i sekcje S101b–S104, `docs/FABULA.md`, `Data/QuestBudget`, `Logic/QuestBudget`,
+`tools/quest_budget.luau`, `tools/balance_reasons.luau`, pola `companion` i `pages`, `LEGACY_ORDER` na miejscu;
+`scripts/check` zielony (6275 testów), `quest_budget check` aktualne. Migawka księgi `balance_report snapshot S105` na
+starcie (do raportu użyta migawka z repozytorium, jak w S102–S104), zrzut grup, węzłów i Buildów Szczytów w
+`build/s105_before.json`. Mechanizmy S101b–S104 bez przebudowy; różnice wobec planu: kotwice `anchor(...)` zapisane
+we współrzędnych lokalnych miejsca (`atSite`, jak w `Areas/ashen`), komentarz `near` / `death` mówi zawsze dający albo
+towarzysz obok (S101b nie ma mówcy na zdarzenie), więc linie „Sigrun” w `trappersCamp` pisane tak, by pasowały Halvarowi.
+
+Co zrobiono:
+- **Questy (B):** rozdział IV i finał to 19 questów (15 nowych, `wiki = false`), `Main.list` ma 70, ostatni
+  `firstSpring`; łańcuch dający → oddający bez przerwy od `coldFire`; strony 2–4 wszystkich 19, `.title` / `.text` /
+  `.done` czterech starych w tym samym sensie (`vaelgrath.done` co do słowa). `CHAPTERS` n = 5 „Finał: Pierwsza Wiosna”
+  od `snowInSummer` (`final = true`). Przedmioty fabularne `trapperJournal`, `orderSeal`; `deliver orderSeal` w
+  `iceWatch`. Cel `level` 100 w `firstSpring` liczy się od razu przy przyjęciu na 100. poziomie (`catchUp`).
+- **Mapa (A):** miejsce `summitRite` (628 / −574, rot 177) i budowla Kręgu Obrzędu w `FrostpeakGen/Wyrm` (sześć
+  monolitów lodu z runami, ołtarz z łupka, Serce Zimy z tagiem `heart`, dwie chorągwie kultu; +8 części `shell`),
+  geometria w nowym `Logic/FrostpeakGen/Rite`; `npcSpots` (`trapper`, `halgrim`) i `questAnchors` (8) w
+  `Areas/frostpeak`, kotwice `frost_bloom`, `hold_chapel` w `Areas/Caves` (`frostpeak_hold`). Wszystko w istniejących
+  kołach `avoid` (38 kół jak przed sesją); grupy (57), węzły (50), drzewa (326) i węzły jaskiń bez zmian.
+- **NPC (D):** Traperka Sigrun i Duch Brata Halgrima (`ghost`) przez `regionfolk("frostpeak", …)`, oboje zawsze
+  widoczni, `wiki = false`, teksty i `where`; powitania wiosenne kapitana, Anzelma i lekarki (`NpcDialog`).
+- **Przerywniki (E):** czternaście scen w `Data/Cutscenes` (lista niżej), mówca `WHO.journal`, figury `halgrim`,
+  `scout`, `knight`, `trapper`; nowe pole sceny `props` (`thorn`, `lantern`; `client/Util/StoryProps`), figura `ice` i
+  zanikanie `freeze` (`Vfx/CutsceneFigure`), wszystkie zanikania kończą się ze sceną (`CutsceneController`).
+- **Efekty kotwic (F):** `shroud`, `armor`, `shatter`, `snuff`, `oath`, `rite`, `thorn` w `Side.FX` i
+  `QuestAnchorController` (≤ 60 części, `rite` / `thorn` ≤ 120; posąg Ilvara i Cierń z `StoryProps`, kwiaty z palety
+  wiosny). Po przeglądzie: `snuff` gasi u gracza ogień misy i oczy kolosa (`quench`), posąg Ilvara stoi dopiero po
+  scenie `voiceOfWinter` (`riteBare` przed nią), ogród wiosny budowany w chwili zmiany pory jest usuwany
+  (`CitySeasonController`).
+- **Wiosna i śnieg w mieście (G):** `Logic/CitySeason`, `Logic/TownGen/Spring` (kwiaty w 81 ogrodach, wieniec przy
+  fontannie, słup wiosny na rynku 20 / −36, 39 punktów płatków), `CitySeasonController`, `UI/CitySeasonState`, nastroje
+  `Ambience.seasons` i `Ambience.cityMood`; `/season <auto|summer|snow|spring>` (H).
+- **Rozmowy (K):** wybory i komentarze 15 nowych questów, komentarze czterech starych, `recall` w `iceGrotto` (p1,
+  done), `iceWatch` (p1), `oathWords` (done), `dragonsBrood` (p1), `firstSpring` (done); towarzysze Sigrun (`iceGrotto`
+  `follow`, `dragonsBrood` `lead`, `voiceOfWinter` `follow`) i Halvar (`frozenHold` `lead`).
+- **Teksty (I):** PL i EN wszystkich stron, linii, NPC, przedmiotów, akcji, miejsc, scen, wyborów, komentarzy, tytułu,
+  skina i admina.
+- **Tytuł i skin (B8, B9):** `thornbearer` „Cierń Vaelthornu” od `Main.indexOf.firstSpring` (po `dragonbane`,
+  `TitleDef.wiki`), `mountskin_spring` „Rząd Pierwszej Wiosny” (`obtain.quest = "firstSpring"`, czaprak i wianek,
+  `Cosmetics.Def.wiki`).
+
+Rozdział IV i finał (EXP przed → po, ułamek `expToNext(poziom)`; złoto; przedmioty):
+
+| # | id | poz. | daje → oddaje | EXP (ułamek) | złoto | przedmioty |
+|---|---|---|---|---|---|---|
+| 52 | `frostpeak` | 72 | captain → scout_frostpeak | 135265 → 24507 (0,181) | 3300 | `backpack_160` |
+| 53 | ✚ `trappersCamp` | 74 | scout_frostpeak → trapper_sigrun | 21513 (0,151) | 3390 | `elixir_resIce` × 2 |
+| 54 | ✚ `iceGrotto` | 76 | trapper_sigrun → scout_frostpeak | 27157 (0,181) | 3480 | `stone_return` × 3 |
+| 55 | ✚ `harpyRocks` | 78 | scout_frostpeak → scout_frostpeak | 23775 (0,151) | 3570 | `stone_map` × 2 |
+| 56 | `giants` | 80 | scout_frostpeak → scout_frostpeak | 165230 → 24946 (0,151) | 3660 | `elixir_resIce` × 3 |
+| 57 | ✚ `mammothTundra` | 82 | scout_frostpeak → scout_frostpeak | 26144 (0,151) | 3750 | — |
+| 58 | ✚ `frozenHold` | 84 | scout_frostpeak → scout_frostpeak | 32842 (0,181) | 3840 | `elixir_resIce` × 2 |
+| 59 | ✚ `frozenLake` | 86 | scout_frostpeak → scout_frostpeak | 28619 (0,151) | 3930 | — |
+| 60 | ✚ `iceWatch` | 88 | scout_frostpeak → ghost_halgrim | 29897 (0,151) | 4020 | — |
+| 61 | ✚ `oathWords` | 90 | ghost_halgrim → scout_frostpeak | 46801 (0,226) | 8220 | `blessing_guardian_4` |
+| 62 | `glacier` | 92 | scout_frostpeak → scout_frostpeak | 215466 → 39037 (0,181) | 4200 | `backpack_200` |
+| 63 | ✚ `dragonTemple` | 94 | scout_frostpeak → scout_frostpeak | 44054 (0,196) | 4290 | `stone_dungeon_frostpeak` |
+| 64 | ✚ `wyrmSpire` | 95 | scout_frostpeak → scout_frostpeak | 34575 (0,151) | 4335 | — |
+| 65 | ✚ `eveOfBattle` | 96 | scout_frostpeak → scout_frostpeak | 28216 (0,121) | 4380 | `stone_return` × 5 |
+| 66 | `vaelgrath` | 97 | scout_frostpeak → captain | 371503 (bez zmian) | 22800 | `scroll_unbind`, `blessing_fortune_4`, skin Pogromcy |
+| 67 | ✚ `snowInSummer` | 98 | captain → scout_frostpeak | 29343 (0,121) | 4470 | — |
+| 68 | ✚ `dragonsBrood` | 99 | scout_frostpeak → scout_frostpeak | 37393 (0,151) | 4515 | — |
+| 69 | ✚ `voiceOfWinter` | 99 | scout_frostpeak → scout_frostpeak | 56090 (0,226) | 9030 | `blessing_sage_4` |
+| 70 | ✚ `firstSpring` | 100 | scout_frostpeak → captain | 0 | 13680 | skin `mountskin_spring`, tytuł `thornbearer` |
+
+Budżet (`lune run tools/quest_budget.luau --session S105`, `check` aktualne, `report`): `STORY_SCALE[70]` = 0,15098
+(EXP fabuły bez bossa na poziomach 70–99 = 10,0% `bandExp(70)`, test T10); raport okien: `main` w 70–99 10,4%, całe
+zadania 24,4% (było 24%). `monsterExpMul` przed → po: L72 0,842 → 0,870; L74 → 0,887; L80 0,849 → 0,848; L84 → 0,831;
+L88 → 0,847; L90 → 0,807; L92 0,842 → 0,872; L94 → 0,751; L95 → 0,802; L96 → 0,906; L98 → 0,837; L99 → 0,546
+(`dragonsBrood` i `voiceOfWinter` oba na 99); 1–71 bez zmian, przycięty tylko L3 (jak przed sesją), godziny bicia 70–99
+×0,9999, tempo i złoto Szczytów w `balance.spec` zielone. `tests/Balance.LEGACY_EXP` + EXP S94 `frostpeak`, `giants`,
+`glacier`. `allowed --why "S105: main story chapter IV"`: 222 wpisy, 0 nowych, 0 zmienionych. Księga: wpisy S105
+(`MONSTER_EXP_MUL*`, `STORY_BANDS*`, `STORY_SCALE*`, `STORY_WEIGHT*`, `indexOf*`, trzy `reward.exp`, piętnaście
+`byId.<nowy>*`), `balance_report` bez „BRAK POWODU”, `docs/BALANS.md` przeliczony. `Data/Areas/frostpeak` w księdze
+tylko z `lv`, więc nowe współrzędne nie wymagają wpisu.
+
+Miejsca i kotwice (sprawdzenie `build/s105_scan.luau`, `s105_rite.luau`; wszystko w kołach `avoid`, `wiki = false`):
+
+| id | punkt | przy czym |
+|---|---|---|
+| `summitRite` (miejsce) | 628 / −574, rot 177 | ostatni łagodny punkt (nachylenie 7,6° w r 8) na linii z rogu ku końcowi Szlaku Kości obróconej o +15°, 98 st. od rogu; plan zakładał 650 / −558, ale prosta linia od razu trafia w zbocze (16,7° na 106 st.) |
+| NPC `trapper` (Sigrun) | −534 / −160, 210° | przed chatą traperów, lokalnie −10,4 / −12,3; 4,3 st. od suszarki |
+| NPC `halgrim` | 628 / 570, 90° | dziedziniec przed zachodnimi drzwiami donżonu, 14,6 st. od stojaków z bronią |
+| `climbers_camp` | −464,4 / 606,1 | przed podartym namiotem |
+| `hunting_camp` | 96,6 / −630,6 | między chatami olbrzymów (6,6 st. od chaty) |
+| `crystal_garden` | 300 / 632 | na lodzie jeziora między kryształami |
+| `temple_altars` | 615,8 / 98,4 | między dwoma ołtarzami (misa ognia w środku) |
+| `temple_colossus` | 610 / −98,4 | 4 st. przed postumentem kolosa |
+| `wyrm_obelisk` | 651,7 / −425,3 | przed obeliskiem |
+| `summit_rite`, `summit_thorn` | 627,5 / −565,0 i 627,8 / −570,0 | krawędź kręgu i 2 st. przed ołtarzem, 5 st. od siebie |
+| `frost_bloom` | 7 / 1 (`frostpeak_hold`) | pod Kwiatem Szronu, 6 st. od środka dziedzińca |
+| `hold_chapel` | 130 / −71 | przed stopniami ołtarza z mieczem (sala 4, test `roomAt`) |
+| `place.giantsBreach` | 298 / −690, r 14 | droga tundry 55 st. przed bramą Twierdzy |
+
+Trasy (`build/s105_scan.luau`, `MapTerrain.walkable(…, 4)`): Halvar 277 / −336 (kamień tundry) → 283 / −430 → 291 / −560
+→ 295 / −640 → 298 / −690, najdłuższy odcinek 130; Sigrun 300 / −556 → 360 / −549 → 420 / −540 → 490 / −530 → 532 /
+−528 (przed żebrami, tam zaczyna `voiceOfWinter`), najdłuższy 70 (`legMax` 220).
+
+Sceny: ▣ `ch4_title` (cel 1 `frostpeak`, od kopca na wschód), ◆ `grottoTrappers` (cel 3 `iceGrotto`, okno w lodzie,
+trzy figury w lodzie i latarnia), ◆ `frostBloom` (cel 3 `frozenHold`, kamera nisko pod Kwiatem), ◆ `crystalPulse` (cel 2
+`frozenLake`), ◆ `halgrimRises` (cel 1 `iceWatch`, prawdziwy NPC), ◆ ▣ `thornWhole` (cel 2 `oathWords`, rycerze
+rozsypują się w śnieg, karta „Cierń Vaela”), ◆ `ilvarStairs` (cel 3 `dragonTemple`), ◆ `eveOfBattle` (cel 3, świt 6:30,
+czworo zwiadowców), ◆ `vaelgrathFalls` (cel 1 `vaelgrath`, Cierń w lodzie areny), ▣ `finaleTitle` i ◆ `snowInSummer`
+(przyjęcie `snowInSummer`), ◆ `voiceOfWinter` (cel 4, Ilvar zamienia się w lód), ◆ `thornSinks` (cel 1 `firstSpring`),
+◆ ▣ `firstSpring` (oddanie, nad rynkiem wiosną, „Koniec”).
+
+Przeliczenie postępu (B6, `story.spec`): dawne `mainDone = 32` (schemat 7) → `vaelgrath`, następny `snowInSummer`; 30
+(`giants`) → `trappersCamp`, `iceGrotto`, `harpyRocks` zaliczone bez nagrody, następny `mammothTundra`; aktywny `glacier`
+z postępem bez zmian; zapis po S104 (`mainLast`) wskazuje ten sam quest; `CURRENT = 8`; `EXPECTED_INSERTS.S105`.
+
+Wiki (`npm run data`): zmienione tylko EXP `frostpeak`, `giants`, `glacier` w `quests.json`, `dragonbane` 55 → 66 w
+`titles.json`, `meta.json` i odcisk w `docs/PRZEDMIOTY.md`; `areas.json`, `npcs.json`, `cosmetics.json`, obrazy map bez
+zmian, `wiki_keys_diff` pusty.
+
+Testy: nowy `tests/cityseason.spec.luau` (G-T1–G-T5); `story.spec` (rozdział IV i finał: B-T1–B-T8, NPC, S108; postęp B6;
+lista scen, `EXPECTED_INSERTS.S105`, `GOLD_EXCEPTIONS`, T10 z `firstSpring`, (g) → `snowInSummer`, rozdział 5),
+`quest.spec` (ostatni quest `firstSpring`, smok przez `indexOf`), `frostpeak.spec` (F-T1–F-T5, kotwice Twierdzy; F-T3 z murami
+Strażnicy w siatce dojścia i bez kolizji pod łukiem bramy),
+`titles.spec`, `dialogue.spec` (`NEW_QUESTS.S105` / `S105f`, `COMPANION_GROUPS`, `BARKS_ONLY.S105`, rozdział 5 =
+97–100), `companion.spec` (trasy Halvara i Sigrun), `wikidump.spec`; `tests/Balance.LEGACY_EXP`. `scripts/check`
+zielony (6309 testów).
+
+Pliki: `src/shared/Data/Quests/{Main,Side}.luau`, `src/shared/Data/Areas/{frostpeak,Caves}.luau`,
+`src/shared/Data/{Npcs,Cutscenes,Titles,Cosmetics,Ambience,AdminCommands,QuestBudget}.luau`, `src/shared/Config.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{CitySeason,Cutscenes}.luau` (`CitySeason` nowy),
+`src/shared/Logic/FrostpeakGen/{Rite,Wyrm}.luau` (`Rite` nowy), `src/shared/Logic/TownGen/Spring.luau` (nowy),
+`src/server/Admin/Terrain.luau`, `src/client/Controllers/{CitySeason,Cutscene,QuestAnchor,Ambience}Controller.luau`
+(`CitySeasonController` nowy), `src/client/UI/CitySeasonState.luau` (nowy), `src/client/UI/Screens/NpcDialog.luau`,
+`src/client/Util/StoryProps.luau` (nowy), `src/client/Vfx/CutsceneFigure.luau`,
+`tests/{story,quest,frostpeak,titles,dialogue,companion,wikidump}.spec.luau`, `tests/cityseason.spec.luau` (nowy),
+`tests/Balance.luau`, `tools/balance_reasons.luau`, dane wiki, `docs/{BALANS,PRZEDMIOTY,FABULA,DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+
+#### Dla S106–S109
+
+- Questy (id są kontraktem): `trappersCamp`, `iceGrotto`, `harpyRocks`, `mammothTundra`, `frozenHold`, `frozenLake`,
+  `iceWatch`, `oathWords`, `dragonTemple`, `wyrmSpire`, `eveOfBattle`, `snowInSummer`, `dragonsBrood`,
+  `voiceOfWinter`, `firstSpring` (ostatni, 100); stare `frostpeak`, `giants`, `glacier`, `vaelgrath` bez zmian id.
+- NPC: `trapper_sigrun` (miejsce `npcSpots.trapper` −534 / −160, usługa `talk`, zawsze widoczna; przesądy: spluwa przez
+  lewe ramię przed mostem, chleb na progu, w górach nie woła zmarłych po imieniu; brat Arne zamarzł w Grocie),
+  `ghost_halgrim` (`npcSpots.halgrim` 628 / 570, `ghost`, zostaje po `oathWords`). S108 dopisuje swoje klucze do
+  `NPC_SPOTS` i `QUEST_ANCHORS` w `Data/Areas/frostpeak.luau`.
+- Miejsce `SITES.summitRite` (Krąg Obrzędu, geometria `Logic/FrostpeakGen/Rite`), klucze `place.trapperCamp`,
+  `place.keep`, `place.dragonStairs`, `place.wyrmBones`, `place.giantsBreach`, `place.summit`.
+- Kotwice: `climbers_camp`, `hunting_camp`, `crystal_garden`, `temple_altars`, `temple_colossus`, `wyrm_obelisk`,
+  `summit_rite`, `summit_thorn`; w `frostpeak_hold` `frost_bloom`, `hold_chapel`. Efekty `shroud`, `armor`, `shatter`,
+  `snuff`, `oath`, `rite`, `thorn` (S108 może ich używać, nie dubluje).
+- Moduły: `Logic/CitySeason` (`of`, `isSeason`), `Logic/TownGen/Spring` (`all`, `petals`, `FLOWERS`, `MAYPOLE`),
+  `CitySeasonController`, `UI/CitySeasonState` (`current`, `force`), `client/Util/StoryProps` (`thorn`, `iceStatue`,
+  `lantern`, `build`), pole sceny `props`, figura `ice`, zanikanie `freeze`; `/season`.
+- Tytuł `thornbearer`, skin `mountskin_spring`, `Config.Dialogue.gifts` z `potion_hp_5` / `potion_mana_5` (po 2).
+- Towarzysze: Sigrun `follow` (`iceGrotto`, `voiceOfWinter` od 532 / −528), `lead` (`dragonsBrood`, cel `escort`
+  532 / −528); Halvar `lead` (`frozenHold`, cel `escort` 298 / −690).
+- Budżet: `70` w `STORY_BANDS`, `STORY_SCALE[70]` 0,151, `monsterExpMul` 72–98 0,75–0,91, L99 0,546; cała fabuła 1–100
+  na regule (stałe tylko stare 1–19, `toDuskwood` i questy z bossem; `firstSpring` 0).
+- S109 (wiki): ukryte `wiki = false` w danych: 15 questów S105, `trapper_sigrun`, `ghost_halgrim`, kotwice i miejsca NPC
+  Szczytów (`QuestAnchor.wiki`, `NpcSpot.wiki`, także w `Areas/Caves`), tytuł `thornbearer` (`TitleDef.wiki`), skin
+  `mountskin_spring` (`Cosmetics.Def.wiki`); zdjęcie = usunięcie pól `wiki = false` (filtr `tools/WikiData/World` i
+  `Visibility` zrobią resztę) i zdjęcie przypadku S105 w `tests/wikidump.spec`.
+
+Uproszczenia: brak dźwięku ryku, dzwonów i ptaków w scenach (dźwięki tylko jako `hint` w `Data/Ambience`, sceny nie mają
+pola dźwięku); kamera sceny `firstSpring` przybliża się, ale nie opada (stała wysokość ujęcia `point`); rycerze w
+`thornWhole` nie klękają, tylko rozsypują się w szron; skin finału bez płatków z grzywy (skin zmienia kolory i części,
+nie cząstki); `frozenFigure` z planu F1 zastąpiona figurą sceny z `ice = true`.

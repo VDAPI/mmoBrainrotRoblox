@@ -42,11 +42,13 @@ local KNOWN_TYPES = {
 }
 
 describe("Main quests data", function()
-	it("has about 30 quests from level 1 to the Frost Dragon", function()
+	-- S105: the story runs past the Frost Dragon to the finale (firstSpring, level 100)
+	it("has the story from level 1 to the Frost Dragon and the finale", function()
 		local list = Quests.Main.list
 		expect(#list >= 28).toBe(true)
 		expect(list[1].level).toBe(1)
-		expect(list[#list].objectives[1].boss).toBe("vaelgrath")
+		expect(list[Quests.Main.indexOf.vaelgrath].objectives[1].boss).toBe("vaelgrath")
+		expect(list[#list].id).toBe("firstSpring")
 	end)
 
 	it("never goes down in level", function()
@@ -72,7 +74,10 @@ describe("Main quests data", function()
 					error(`{quest.id}: unknown NPC {npc}`)
 				end
 			end
-			expect(quest.reward.exp > 0 and quest.reward.gold > 0).toBe(true)
+			-- S105: the finale (level 100) needs no EXP: gold, a title and a mount skin
+			expect(`{quest.id} {(quest.reward.exp > 0 or quest.level >= 100) and quest.reward.gold > 0}`).toBe(
+				`{quest.id} true`
+			)
 			for _, item in quest.reward.items or {} do
 				if not Items.get(item.id) then
 					error(`{quest.id}: unknown reward {item.id}`)

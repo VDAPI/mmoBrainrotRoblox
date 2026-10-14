@@ -11,6 +11,8 @@
 -- server hears CutsceneDone(id) (skipped counts as watched); Play(id) replays a watched scene from the journal without
 -- the server. S103: on a cave map (the Tomb of Morvane) the ground under the focus and the figures comes from
 -- Logic/CaveTerrain (a ray from the sky would land on the rock over the cave); ghost figures (Data/Cutscenes).
+-- S105: figures in ice and the "freeze" fade (every figure's fade stops with the scene), story props of the shot
+-- (Util/StoryProps: the Thorn of Vael, a lantern).
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -27,6 +29,7 @@ local Config = require(Shared.Config)
 local CutsceneData = require(Shared.Data.Cutscenes)
 local CutsceneFigure = require(script.Parent.Parent.Vfx.CutsceneFigure)
 local CutsceneScreen = require(script.Parent.Parent.UI.Screens.Cutscene)
+local StoryProps = require(script.Parent.Parent.Util.StoryProps)
 local Cutscenes = require(Shared.Logic.Cutscenes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Log = require(Shared.Util.Log)
@@ -355,7 +358,7 @@ local function play(scene: Scene, replay: boolean)
 	folder.Name = "VaelthornCutscene"
 	folder.Parent = Workspace
 	local connections: { RBXScriptConnection } = {}
-	local stopFade: (() -> ())? = nil
+	local stopFades: { () -> () } = {}
 	local overlayScope = scope:innerScope()
 	local hotkeys = WindowManager.HotkeysEnabled()
 	local camera = Workspace.CurrentCamera
@@ -376,8 +379,8 @@ local function play(scene: Scene, replay: boolean)
 			for _, connection in connections do
 				connection:Disconnect()
 			end
-			if stopFade then
-				stopFade()
+			for _, stop in stopFades do
+				stop()
 			end
 			folder:Destroy()
 			pcall(function()
@@ -521,12 +524,25 @@ local function play(scene: Scene, replay: boolean)
 			local model = CutsceneFigure.build(
 				figure.look,
 				CFrame.new(base.X, y, base.Z) * CFrame.Angles(0, math.rad(figure.facing), 0),
-				figure.ghost
+				figure.ghost,
+				figure.ice
 			)
 			model.Parent = folder
 			local lastStep = steps[#steps]
 			local fadeIn = math.max(0, total - (if lastStep then lastStep.seconds else 0) - 2)
-			stopFade = CutsceneFigure.fade(model, figure.fade, fadeIn, 2)
+			table.insert(stopFades, CutsceneFigure.fade(model, figure.fade, fadeIn, 2))
+		end
+		-- S105: story props of the shot (on the ground under them, like the figures)
+		local props: { CutsceneData.Prop } = scene.props or {}
+		for _, item in props do
+			local base = offset + Vector3.new(item.x, 0, item.z)
+			local y = ground(base, folder, shotMap) or focus.Y
+			StoryProps.build(
+				item.kind,
+				CFrame.new(base.X, y + (item.y or 0), base.Z) * CFrame.Angles(0, math.rad(item.yaw or 0), 0),
+				item.lit,
+				folder
+			)
 		end
 		if scene.light then
 			local holder = Instance.new("Part")

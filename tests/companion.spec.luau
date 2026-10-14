@@ -535,3 +535,79 @@ describe("Companions of story chapter III (S104)", function()
 		expect(want({ 3, 0 })).toBeNil()
 	end)
 end)
+
+describe("Companions of story chapter IV and the finale (S105)", function()
+	local MapTerrain = require("../src/shared/Logic/MapTerrain")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local Areas = require("../src/shared/Data/Areas")
+	local T = assert(RegionTerrain.get("frostpeak"))
+
+	local function routeOk(id: string): { any }
+		local quest = assert(Quests.Main.get(id))
+		local def = assert(quest.companion, "companion")
+		local escort = assert(Companion.escortOf(quest))
+		local start = assert(Companion.fromOf(def))
+		local route = Companion.route(def, escort, start)
+		expect(#route >= 3).toBe(true)
+		for i, point in route do
+			local tag = `{id} {i}`
+			expect(`{tag} {MapTerrain.walkable("frostpeak", point.x, point.z, 4)}`).toBe(`{tag} true`)
+			expect(T.isWater(point.x, point.z)).toBe(false)
+			expect(T.crevasseDistance(point.x, point.z) > 10).toBe(true)
+			for _, lake in Areas.byMap.frostpeak.lakes do
+				expect(math.sqrt((point.x - lake.x) ^ 2 + (point.z - lake.z) ^ 2) > lake.r).toBe(true)
+			end
+			if i > 1 then
+				local before = route[i - 1]
+				local leg = math.sqrt((point.x - before.x) ^ 2 + (point.z - before.z) ^ 2)
+				expect(`{tag} {leg <= Config.Companion.legMax}`).toBe(`{tag} true`)
+			end
+		end
+		return route
+	end
+
+	it("frozenHold: Halvar's route across the tundra to the Giants' Breach is walkable, legs <= legMax", function()
+		local route = routeOk("frozenHold")
+		local tundra = assert(Areas.areaById("frostpeak_tundra"))
+		local start = route[1]
+		expect(start.x).toBe(assert(tundra.arrive).x)
+		expect(start.z).toBe(assert(tundra.arrive).z)
+		-- the goal lies on the road 55 studs before the Hold's gate
+		local gate = assert(Areas.byMap.frostpeak.sites).holdGate
+		local goal = route[#route]
+		expect(math.sqrt((goal.x - gate.x) ^ 2 + (goal.z - gate.z) ^ 2) <= 60).toBe(true)
+	end)
+
+	it("dragonsBrood: Sigrun leads up the Bone Trail from the fork to the wyrm's ribs", function()
+		local route = routeOk("dragonsBrood")
+		local bones = assert(Areas.byMap.frostpeak.sites).wyrmBones
+		local goal = route[#route]
+		expect(math.sqrt((goal.x - bones.x) ^ 2 + (goal.z - bones.z) ^ 2) <= 34 - 2).toBe(true)
+		-- voiceOfWinter starts where she stopped
+		local voice = assert(assert(Quests.Main.get("voiceOfWinter")).companion, "voiceOfWinter companion")
+		expect(Companion.fromOf(voice)).toEqual({ x = goal.x, z = goal.z })
+		expect(Companion.validate()).toEqual({})
+	end)
+
+	it(
+		"iceGrotto and voiceOfWinter: Sigrun joins at her camp / before the ribs and follows the first objective",
+		function()
+			local npc = assert(require("../src/shared/Data/Npcs").get("trapper_sigrun"))
+			local grotto = assert(assert(Quests.Main.get("iceGrotto")).companion, "iceGrotto companion")
+			local from = assert(Companion.fromOf(grotto))
+			expect(from.x).toBe(npc.position.x)
+			expect(from.z).toBe(npc.position.z)
+			local function want(id: string, progress: { number }): any
+				return Companion.want(quests({ main = { id = id, progress = progress } }))
+			end
+			expect((want("iceGrotto", { 0, 0, 0 }) :: any).def.npc).toBe("trapper_sigrun")
+			expect(want("iceGrotto", { 1, 0, 0 })).toBeNil()
+			expect((want("voiceOfWinter", { 0, 0, 0, 0 }) :: any).def.npc).toBe("trapper_sigrun")
+			expect(want("voiceOfWinter", { 1, 0, 0, 0 })).toBeNil()
+			local voiceFrom = assert(
+				Companion.fromOf(assert(assert(Quests.Main.get("voiceOfWinter")).companion, "voiceOfWinter companion"))
+			)
+			expect(MapTerrain.walkable("frostpeak", voiceFrom.x, voiceFrom.z, 4)).toBe(true)
+		end
+	)
+end)

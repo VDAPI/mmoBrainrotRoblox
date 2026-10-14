@@ -45,6 +45,21 @@ local NEW_QUESTS: { [string]: { string } } = {
 		"forgeChains",
 		"coldFire",
 	},
+	-- S105: chapter IV (the Frost Peaks) and the finale
+	S105 = {
+		"trappersCamp",
+		"iceGrotto",
+		"harpyRocks",
+		"mammothTundra",
+		"frozenHold",
+		"frozenLake",
+		"iceWatch",
+		"oathWords",
+		"dragonTemple",
+		"wyrmSpire",
+		"eveOfBattle",
+	},
+	S105f = { "snowInSummer", "dragonsBrood", "voiceOfWinter", "firstSpring" },
 }
 
 -- Groups of a session that need at least two quests with a companion among its NEW_QUESTS: S102-S105
@@ -54,6 +69,8 @@ local COMPANION_GROUPS: { [string]: { { chapter: number?, map: string? } } } = {
 	S102 = { { chapter = 1 } },
 	S103 = { { chapter = 2 } },
 	S104 = { { chapter = 3 } },
+	S105 = { { chapter = 4 } },
+	S105f = { { chapter = 5 } },
 }
 
 -- Existing quests that got comments only (no answers): every event of Barks.required.
@@ -113,6 +130,8 @@ local BARKS_ONLY: { [string]: { string } } = {
 	S103 = { "toDuskwood", "werewolves", "ruins", "ents", "cult", "swamp", "crypt", "morvane" },
 	-- S104: the old quests of story chapter III
 	S104 = { "ashen", "orcs", "golems", "deepforge", "azgor" },
+	-- S105: the old quests of story chapter IV
+	S105 = { "frostpeak", "giants", "glacier", "vaelgrath" },
 }
 
 -- Existing quests that got answers, page variants and a companion in S101b (every effect kind is in the data).
@@ -124,7 +143,8 @@ local RETROFIT = {
 	},
 }
 
-local CHAPTER_LEVELS = { { 1, 20 }, { 20, 45 }, { 45, 70 }, { 70, 100 } }
+-- S105: chapter 5 = the finale (97-100)
+local CHAPTER_LEVELS = { { 1, 20 }, { 20, 45 }, { 45, 70 }, { 70, 100 }, { 97, 100 } }
 
 local function questOf(id: string): any
 	return Quests.Main.get(id) or Quests.npcQuest(id)
@@ -950,5 +970,99 @@ describe("Dialogue in story chapter III (S104)", function()
 		-- the companion lines of both (S101b: one variant picked per event)
 		expect(Barks.compCount(oasis, "arrive")).toBe(2)
 		expect(Barks.compCount(chains, "join")).toBe(1)
+	end)
+end)
+
+describe("Dialogue in story chapter IV and the finale (S105)", function()
+	local Locale = require("../src/shared/Util/Locale")
+	local Maps = require("../src/shared/Data/Maps")
+	local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+	local T = assert(RegionTerrain.get("frostpeak"))
+	local function has(key: string): boolean
+		return Locale.has(key, "pl") and Locale.has(key, "en")
+	end
+
+	it("the answers of the plan: pages, effects, hints on dry ground of the Peaks, the great potions", function()
+		local want: { [string]: { page: number, effects: { [string]: string } } } = {
+			trappersCamp = { page = 3, effects = { where = "hint" } },
+			iceGrotto = { page = 3, effects = { supplies = "item" } },
+			harpyRocks = { page = 2, effects = { where = "hint" } },
+			mammothTundra = { page = 2, effects = { herd = "focus" } },
+			frozenHold = { page = 3, effects = {} },
+			frozenLake = { page = 2, effects = { where = "hint" } },
+			iceWatch = { page = 3, effects = {} },
+			oathWords = { page = 4, effects = {} },
+			dragonTemple = { page = 3, effects = { fires = "focus" } },
+			wyrmSpire = { page = 2, effects = { obelisk = "hint" } },
+			eveOfBattle = { page = 3, effects = { captain = "focus", anzelm = "focus" } },
+			snowInSummer = { page = 3, effects = { where = "hint" } },
+			dragonsBrood = { page = 2, effects = { trail = "hint" } },
+			voiceOfWinter = { page = 4, effects = { supplies = "item" } },
+			firstSpring = { page = 4, effects = {} },
+		}
+		for id, row in want do
+			local quest = assert(Quests.Main.get(id), id)
+			local page = assert(Dialogue.choicePage(quest), id)
+			expect(`{id} {page.page}`).toBe(`{id} {row.page}`)
+			for _, option in page.options do
+				local effect: any = option.effect
+				expect(`{id}.{option.id} {if effect then effect.kind else "none"}`).toBe(
+					`{id}.{option.id} {row.effects[option.id] or "none"}`
+				)
+				if effect and effect.kind == "hint" then
+					local map = assert(Maps.get(effect.map))
+					expect(effect.map).toBe("frostpeak")
+					expect(math.abs(effect.x) <= map.size.x / 2 and math.abs(effect.z) <= map.size.z / 2).toBe(true)
+					expect(T.isWater(effect.x, effect.z)).toBe(false)
+					expect(`{id} {T.walkable(effect.x, effect.z)}`).toBe(`{id} true`)
+					expect(has(effect.place)).toBe(true)
+				elseif effect and effect.kind == "item" then
+					expect(Config.Dialogue.gifts[effect.id] ~= nil).toBe(true)
+					expect(effect.n <= Config.Dialogue.gifts[effect.id]).toBe(true)
+				end
+			end
+		end
+		expect(Config.Dialogue.gifts.potion_hp_5).toBe(2)
+		expect(Config.Dialogue.gifts.potion_mana_5).toBe(2)
+	end)
+
+	it("recall picks the variants of iceGrotto, iceWatch, oathWords, dragonsBrood and firstSpring", function()
+		local function key(id: string, page: string, said: { [string]: string }): string
+			return Dialogue.pageKey(assert(Quests.Main.get(id)), page, quests({ said = said }), has)
+		end
+		expect(key("iceGrotto", "p1", { trappersCamp = "sigrun" })).toBe("quest.iceGrotto.p1.sigrun")
+		expect(key("iceGrotto", "p1", { trappersCamp = "where" })).toBe("quest.iceGrotto.p1")
+		expect(key("iceGrotto", "done", { iceGrotto = "promise" })).toBe("quest.iceGrotto.done.promise")
+		expect(key("iceWatch", "p1", { iceGrotto = "wind" })).toBe("quest.iceWatch.p1.wind")
+		expect(key("oathWords", "done", { oathWords = "you" })).toBe("quest.oathWords.done.you")
+		expect(key("dragonsBrood", "p1", { iceGrotto = "wind" })).toBe("quest.dragonsBrood.p1.wind")
+		expect(key("dragonsBrood", "p1", { iceGrotto = "promise" })).toBe("quest.dragonsBrood.p1")
+		expect(key("firstSpring", "done", { eveOfBattle = "afraid" })).toBe("quest.firstSpring.done.afraid")
+	end)
+
+	it("Sigrun and Halvar walk with the player: two companions in the chapter, two in the finale", function()
+		local function companion(id: string): any
+			return assert(assert(Quests.Main.get(id)).companion, id)
+		end
+		local grotto, hold = companion("iceGrotto"), companion("frozenHold")
+		expect(grotto.npc).toBe("trapper_sigrun")
+		expect(grotto.mode).toBe("follow")
+		expect(grotto.during).toEqual({ 1 })
+		expect(hold.npc).toBe("scout_frostpeak")
+		expect(hold.mode).toBe("lead")
+		expect(assert(Quests.Main.get("frozenHold")).objectives[1].type).toBe("escort")
+		local brood, voice = companion("dragonsBrood"), companion("voiceOfWinter")
+		expect(brood.npc).toBe("trapper_sigrun")
+		expect(brood.mode).toBe("lead")
+		expect(brood.during).toEqual({ 2 })
+		expect(assert(Quests.Main.get("dragonsBrood")).objectives[2].type).toBe("escort")
+		expect(voice.npc).toBe("trapper_sigrun")
+		expect(voice.mode).toBe("follow")
+		expect(voice.from).toEqual({ x = 532, z = -528 })
+		expect(Barks.validate()).toEqual({})
+		expect(Dialogue.validate()).toEqual({})
+		expect(#BARKS_ONLY.S105).toBe(4)
+		expect(Barks.compCount(assert(Quests.Main.get("dragonsBrood")), "join")).toBe(2)
+		expect(Barks.compCount(assert(Quests.Main.get("dragonsBrood")), "wait")).toBe(2)
 	end)
 end)

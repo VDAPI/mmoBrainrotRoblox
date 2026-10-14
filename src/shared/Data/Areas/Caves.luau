@@ -215,6 +215,13 @@ local list: { Types.Cave } = {
 		seed = 4102,
 		material = "Slate",
 		theme = "hold",
+		-- S105: the story chapter IV (oathWords): under the Frost Flower, 6 studs south of the courtyard's centre (room 3
+		-- of CaveGen.generate(4102); the well stands west, the crystals on the diagonals), and before the steps of the
+		-- chapel's altar with the order's sword in the ice (130 / -78, room 4)
+		questAnchors = {
+			{ id = "frost_bloom", x = 7, z = 1, y = 2, wiki = false },
+			{ id = "hold_chapel", x = 130, z = -71, y = 2, wiki = false },
+		},
 		boss = false,
 	},
 	{

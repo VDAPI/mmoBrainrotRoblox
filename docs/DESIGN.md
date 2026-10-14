@@ -927,6 +927,17 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   skamieniały wóz) i trzy słupy jeńców w Kuźni (kotwice jaskini z S102), dziewięć przerywników (napis rozdziału, Kuźnia
   Głębin, koniec rozdziału w kuźni Dorgana). Grot Ciernia trafia na drzewce z Pradrzewa. EXP fabuły 45–69 = 10% EXP
   pasma (wagi), stały tylko `azgor`; czas na poziom bez zmian. Nowe questy, NPC, kotwice i miejsca na wiki od S109.
+- **Fabuła, rozdział IV i finał (S105, `docs/FABULA.md` §2.5)**: 19 questów na Lodowych Szczytach na 72–100
+  (`frostpeak`, `trappersCamp`, `iceGrotto`, `harpyRocks`, `giants`, `mammothTundra`, `frozenHold`, `frozenLake`,
+  `iceWatch`, `oathWords`, `glacier`, `dragonTemple`, `wyrmSpire`, `eveOfBattle`, `vaelgrath`, `snowInSummer`,
+  `dragonsBrood`, `voiceOfWinter`, `firstSpring`), razem 70 questów fabuły; finał od `snowInSummer` (rozdział 5).
+  Traperka Sigrun w opuszczonym obozie i duch Brata Halgrima przed donżonem Lodowej Strażnicy; Sigrun idzie z graczem
+  do Groty, prowadzi Szlakiem Kości i do Kręgu Obrzędu, Halvar prowadzi do Wyłomu Olbrzymów. Krąg Obrzędu z Sercem Zimy
+  u stóp rogu Iglicy Wyrmów; osiem kotwic na mapie i dwie w Zamarzniętej Twierdzy, czternaście przerywników. Ostatni
+  quest wymaga 100. poziomu (cel `level`), daje złoto, tytuł „Cierń Vaelthornu” i skin wierzchowca, bez EXP. Pora roku w
+  mieście wynika z postępu fabuły (bez pola zapisu, tylko u klienta tej postaci): śnieg w środku lata po smoku, wiosna
+  (kwiaty, wieniec przy fontannie, słup wiosny, płatki z sadów, ciepły nastrój) po finale; `/season` do testów. EXP
+  fabuły 70–99 = 10% EXP pasma (wagi), stały tylko `vaelgrath`; czas na poziom bez zmian. Nowe rzeczy na wiki od S109.
 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 

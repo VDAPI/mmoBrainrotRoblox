@@ -136,6 +136,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   rozmów S101b (`choices` na numerze strony, gdy mają `pages`).
 - **NPC widoczny od questu** (S104): `NpcDef.showFrom` = id questu fabuły (`regionfolk(..., { showFrom = ... })`);
   reguła tylko w `Logic/NpcVisibility`, klient (figura, mapy, znaki) i serwer (rozmowa) czytają ją same.
+- **Pora roku w mieście / rekwizyty scen** (S105): pora z postępu fabuły tylko w `Logic/CitySeason` (bez pola zapisu;
+  klient `CitySeasonController`, `UI/CitySeasonState`, `/season`), wiosna z `Logic/TownGen/Spring`; rekwizyt sceny =
+  pole `props` w `Data/Cutscenes` (rodzaj w `Cutscenes.PROPS`, budowa w `client/Util/StoryProps`).
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i

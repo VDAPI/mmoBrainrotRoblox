@@ -1912,6 +1912,7 @@ Balance.CREDIT_RULES = CREDIT_RULES
 local LEGACY_EXP: { [string]: number } = table.freeze({
 	werewolves = 22219, ruins = 23557, ents = 23136, cult = 30817, swamp = 39997, crypt = 61156, -- S103 (exp(L, f) of S92)
 	ashen = 49874, orcs = 67684, golems = 81109, deepforge = 101826, -- S104 (exp(L, f) of S94)
+	frostpeak = 135265, giants = 165230, glacier = 215466, -- S105 (exp(L, 1) of S94)
 })
 Balance.LEGACY_EXP = LEGACY_EXP
 

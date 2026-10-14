@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local CitySeasonState = require(script.Parent.Parent.CitySeasonState)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
@@ -77,6 +78,9 @@ local function questLine(def: Npcs.NpcDef): string?
 	return nil
 end
 
+-- S105: NPCs with a spring greeting (npc.<id>.greetingSpring).
+local SPRING_GREETINGS: { [string]: boolean } = { captain = true, brother_anzelm = true, healer = true }
+
 -- Line of an NPC for this visit: [key, args]. Lines rotate at random; the innkeeper's gossip names an NPC with
 -- a quest the character can take now.
 local function pickLine(def: Npcs.NpcDef): (string, { [string]: any }?)
@@ -96,6 +100,11 @@ local function pickLine(def: Npcs.NpcDef): (string, { [string]: any }?)
 					{ npc = `@{giver.nameKey}`, where = `@npc.{giver.id}.where` }
 			end
 		end
+	end
+	-- S105: in the first spring of Vaelthorn (the finale handed in, Logic/CitySeason) the captain, Anzelm and the
+	-- healer greet the player with a warmer word
+	if SPRING_GREETINGS[def.id] and CitySeasonState.current() == "spring" and math.random() < 0.6 then
+		return `npc.{def.id}.greetingSpring`, nil
 	end
 	local count = def.lines or 0
 	if count > 0 and math.random() < 0.8 then

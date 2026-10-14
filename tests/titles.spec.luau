@@ -51,6 +51,28 @@ T.describe("Titles", function()
 		T.expect(def and def.req.value).toBe(Quests.Main.indexOf.vaelgrath)
 	end)
 
+	-- S105: Dragonbane exactly from vaelgrath; the finale's title from firstSpring, in the same shape
+	T.it("dragonbane from vaelgrath, thornbearer from firstSpring (S105)", function()
+		local Main = Quests.Main
+		local function done(n: number): any
+			return character(100, n, 0, 0)
+		end
+		T.expect(Titles.isUnlocked(done(Main.indexOf.vaelgrath - 1), "dragonbane")).toBe(false)
+		T.expect(Titles.isUnlocked(done(Main.indexOf.vaelgrath), "dragonbane")).toBe(true)
+		T.expect(Titles.isUnlocked(done(Main.indexOf.firstSpring - 1), "thornbearer")).toBe(false)
+		T.expect(Titles.isUnlocked(done(Main.indexOf.firstSpring), "thornbearer")).toBe(true)
+		local def = assert(TitleData.get("thornbearer"))
+		T.expect(def.req).toEqual({ kind = "mainDone", value = Main.indexOf.firstSpring })
+		T.expect(def.wiki).toBe(false)
+		-- right after Dragonbane on the list
+		local at: { [string]: number } = {}
+		for i, t in TitleData.list do
+			at[t.id] = i
+		end
+		T.expect(at.thornbearer).toBe(at.dragonbane + 1)
+		T.expect(en["title.thornbearer"] ~= nil and pl["title.thornbearer"] ~= nil).toBe(true)
+	end)
+
 	T.it("sentinel = the tutorial", function()
 		local def = TitleData.get("sentinel")
 		T.expect(def and def.req.value).toBe(Quests.Main.indexOf.herbs)

@@ -3111,3 +3111,46 @@
   na końcu `CaveDress/Forge` (nic wcześniej się nie przesuwa). Węzły i grupy Pustkowi bez zmian (test sumy).
 - **S104 teksty bez rodzaju gracza:** zdania planu w 2. osobie czasu przeszłego i z rodzajem przepisane bez niego („Z
   Serca Kuźni przyszła wieść”, „zanim ktokolwiek zdążył”, odpowiedź „Pójdę bez ciebie”, „kiedy przyjdzie pora”).
+- **S105 EXP 70–99:** `70` w `STORY_BANDS`, wagi z planu (1 / 1,2 / 1,3 / 1,5 / 0,8); `frostpeak`, `giants`, `glacier`
+  na regule (z 1,0 poziomu na 0,15–0,18), `vaelgrath` z nagrodą S97 bez zmian, `firstSpring` (poziom 100) z EXP 0 i bez
+  wagi (100. poziom nie zbiera EXP). `STORY_SCALE[70]` 0,151; kompensacja 72–98 0,75–0,91, L99 0,546 (dwa questy na 99).
+- **S105 pieczęć zakonu:** `deliver orderSeal` przeniesione z `oathWords` do `iceWatch` (oddaje się Halgrimowi), bo
+  `oathWords` daje sam Halgrim, a rozmowa przy przyjęciu zaliczałaby dostawę od razu.
+- **S105 Krąg Obrzędu:** szczyt rogu Iglicy nie nadaje się do chodzenia, więc obrzęd stoi w nowym miejscu `summitRite`
+  (628 / −574, rot 177) u stóp rogu, na linii ku końcowi Szlaku Kości obróconej o 15° (prosta linia trafia od razu w
+  zbocze); w kole `summit`, bez nowego koła `avoid` i bez spłaszczania terenu. Klucz `place.summit` bez zmian.
+- **S105 scena końcowa:** zamiast przelotu kamery „z Iglicy przez cztery krainy” dwie sceny: `thornSinks` na Iglicy
+  (wbicie Ciernia) i `firstSpring` w mieście (oddanie u Aldrica); klient nie ma treści odległych map.
+- **S105 NPC:** Halvar zostaje przy wejściu na Szczyty (tekst `snowInSummer` każe wrócić do niego, nie czekać przy
+  Sercu); duch Halgrima zostaje przed donżonem także po przysiędze (jeden NPC dla wszystkich, kwestie prawdziwe przed i
+  po). Oboje zawsze widoczni (bez `showFrom`), usługa `talk`.
+- **S105 trzymanie:** `hold` 5 s dla trzech kotwic ceremonialnych (`hold_chapel`, `summit_rite`, `summit_thorn`), 3 s
+  dla pozostałych; test fabuły dopuszcza 1,5–5 s.
+- **S105 pora roku w mieście:** `Logic/CitySeason.of(quests)` z `mainDone`: śnieg od oddania `vaelgrath`, wiosna od
+  oddania `firstSpring`; bez pola zapisu, tylko u klienta tej postaci (`CitySeasonController`, nastrój w
+  `AmbienceController`, cieplejsze powitania kapitana, Anzelma i lekarki), `/season` wymusza porę u wołającego.
+- **S105 weterani:** postać z dawnym `mainDone = 32` po migracji ma `vaelgrath` oddany, a następny quest to
+  `snowInSummer` (finał dostępny dla wszystkich, którzy pokonali smoka); wstawki przelicza `StoryProgress.apply`, bez
+  nowej migracji (`CURRENT` 8).
+- **S105 mechanizmy:** postęp, tytuły z `Main.indexOf`, kotwice w jaskiniach, wygląd ducha (`ghost`), `regionfolk`,
+  przerywniki i ukrywanie na wiki wzięte bez zmian z S102–S104. Nowe ogólne: pole `props` w scenach (rekwizyty
+  `thorn`, `lantern` z `client/Util/StoryProps`), figura `ice` i zanikanie `freeze` (Ilvar zamienia się w lód i
+  zostaje), `CHAPTERS` n = 5 (`final`), `Logic/CitySeason`, `Logic/TownGen/Spring`.
+- **S105 efekty kotwic:** `shroud`, `armor`, `shatter` (krótki błysk przy pierwszym zbudowaniu, przy obelisku zakrywa
+  runę), `snuff` (węgle na misie ołtarzy, ciemne powieki na oczach kolosa; ogień misy, jej światło i świecenie oczu
+  gasną u gracza: `quench` ukrywa części `Fx = fire / glow` mapy w promieniu i wyłącza ich emitery i światła, oddaje
+  je po zdjęciu efektu), `oath` (wierzch ołtarza z promienia), `rite` (rysy na monolitach, lodowy posąg Ilvara; w
+  trakcie `voiceOfWinter` posąg dopiero po obejrzeniu sceny o tej nazwie, wcześniej `riteBare`, bo figura Ilvara stoi
+  w tym miejscu i zamarza na końcu sceny), `thorn` (Cierń, złota poświata, trawa i kwiaty wiosny). Geometria
+  kręgu w jednym miejscu: `Logic/FrostpeakGen/Rite` (generator i efekty).
+- **S105 wiki:** 15 questów, Sigrun, Halgrim, 10 kotwic, miejsca NPC Szczytów, tytuł `thornbearer` (`TitleDef.wiki`) i
+  skin `mountskin_spring` (`Cosmetics.Def.wiki`) ukryte do S109; zmienia się tylko EXP `frostpeak`, `giants`, `glacier`
+  i wartość `dragonbane` (indeks `vaelgrath`).
+- **S105 towarzysze:** Sigrun `follow` w `iceGrotto` (do wylotu Groty) i `voiceOfWinter` (od żeber wyrma do kręgu),
+  `lead` w `dragonsBrood` (nowy cel 2 `escort` zamiast `reach`, cel przed żebrami 532 / −528); Halvar `lead` w
+  `frozenHold` (nowy cel 1 `escort` od kamienia tundry do Wyłomu, 298 / −690). `NEW_QUESTS.S105` / `S105f`,
+  `COMPANION_GROUPS.S105` / `S105f` (rozdział 5 = 97–100).
+- **S105 upominki:** zamiast `potion_hp_1` / `potion_mana_1` z planu (mikstury 1. stopnia na 76. i 99. poziomie)
+  mikstury 5. stopnia `potion_hp_5` i `potion_mana_5`, po 2 (`Config.Dialogue.gifts`).
+- **S105 wiosna, budżet części:** kępy kwiatów po 3–4 kulki (2 przy niskim detalu), najwyżej 7 kęp na ogród (4 przy
+  niskim), bez kęp na ulicy: 2273 części (986 przy niskim) wobec limitu 2500 / 1200.

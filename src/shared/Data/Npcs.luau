@@ -370,6 +370,19 @@ regionfolk(
 )
 regionfolk("ashen", "hermit_kaspar", "hermit", { body = "#4A4236", accent = "#C9A45C" }, "✝", { wiki = false })
 
+-- Story NPCs of the Frost Peaks (S105, docs/FABULA.md §2.5), on the places of Areas/frostpeak npcSpots. Both always
+-- stand there (no showFrom): Sigrun in the abandoned trappers' camp, the ghost of Brother Halgrim before the Ice Watch's
+-- keep, also after the oath (one NPC for everyone; his lines hold before and after it). S108 gives Sigrun side arcs.
+regionfolk("frostpeak", "trapper_sigrun", "trapper", { body = "#6B5A44", accent = "#C9C2B0" }, "🐾", { wiki = false })
+regionfolk(
+	"frostpeak",
+	"ghost_halgrim",
+	"halgrim",
+	{ body = "#BFD3E0", accent = "#2F3A4A" },
+	"⛨",
+	{ wiki = false, ghost = true }
+)
+
 local byId: { [string]: NpcDef } = {}
 for _, def in LIST do
 	byId[def.id] = def

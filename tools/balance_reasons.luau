@@ -3134,6 +3134,10 @@ return {
 				session = "S104",
 				why = "regenerated: chapter III story (10 new main quests, story budget 10% of band 45-69, the four old quests without a boss on the rule); 45-69 0.76-0.96 (was 0.83-0.85), 70-71 0.856 (coldFire's window 69-71), no level clamped, 1-20 unchanged",
 			},
+			{
+				session = "S105",
+				why = "regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged",
+			},
 		},
 		["Quests/Weekly:*"] = {
 			{
@@ -3171,6 +3175,10 @@ return {
 				session = "S103",
 				why = "regenerated: chapter II story (9 new main quests, story budget 10% of band 20-44); 21-36 up to 1.10-1.24 (the old quests of 21-36 paid 1.1-1.7 levels, now 0.12-0.33), 37-43 0.96-0.99, 44 0.77, no level clamped",
 			},
+			{
+				session = "S105",
+				why = "regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged",
+			},
 		},
 		["Quests/Main:STORY_STEP"] = {
 			{
@@ -3188,6 +3196,10 @@ return {
 				session = "S104",
 				why = "S104: band 45-69 derived by settleStory (TARGET.main of the band, every quest without a boss weighted)",
 			},
+			{
+				session = "S105",
+				why = "S105: band 70-99 derived by settleStory (TARGET.main of the band, every quest without a boss weighted; firstSpring at 100 outside)",
+			},
 		},
 		["Quests/Main:STORY_WEIGHT*"] = {
 			{
@@ -3202,11 +3214,16 @@ return {
 				session = "S104",
 				why = "S104 (E1): weights of chapter III as planned: 1 a plain quest (and the old ashen, orcs, golems, deepforge), 1.2 a discovery (warcampCages, emberCores, burntTemple, ashRoad, forgeChains), 1.5 the chapter's end (coldFire); the compensation stays in 0.76-0.96, no clamp",
 			},
+			{
+				session = "S105",
+				why = "S105 (C1): weights of chapter IV and the finale as planned: 1 a plain quest (and the old giants), 1.2 a discovery (the old frostpeak and glacier, iceGrotto, frozenHold), 1.3 dragonTemple, 1.5 the ends (oathWords, voiceOfWinter), 0.8 the talks (eveOfBattle, snowInSummer); no clamp",
+			},
 		},
 		["Quests/Main:indexOf*"] = {
 			{ session = "S102", why = "S102: list positions shifted by inserted story quests, values unchanged" },
 			{ session = "S103", why = "S103: list positions shifted by the nine chapter II quests, values unchanged" },
 			{ session = "S104", why = "S104: list positions shifted by the ten chapter III quests, values unchanged" },
+			{ session = "S105", why = "S105: list positions shifted by the fifteen chapter IV / finale quests, values unchanged" },
 		},
 		["Quests/Main:byId.frostRuins*"] = {
 			{
@@ -3236,6 +3253,7 @@ return {
 		["Quests/Main:STORY_BANDS*"] = {
 			{ session = "S103", why = "S103 (A3): band 20-44 on the story rule (chapter II)" },
 			{ session = "S104", why = "S104 (E1): band 45-69 on the story rule (chapter III)" },
+			{ session = "S105", why = "S105 (C1): band 70-99 on the story rule (chapter IV and the finale)" },
 		},
 		["Quests/Main:byId.moonstone*"] = {
 			{
@@ -3362,6 +3380,106 @@ return {
 			{
 				session = "S104",
 				why = "S104 main story: chapter III quest (docs/FABULA.md §2.4), reward = STORY_SCALE[45] x expToNext(level) x weight (settleStory), gold(level), items of the plan (B1); level between the old quests of the chapter",
+			},
+		},
+		-- S105 (docs/FABULA.md §2.5): story chapter IV, the finale and the band 70-99 on the story rule
+		["Quests/Main:byId.frostpeak.reward.exp"] = {
+			{ session = "S105", why = "S105: story budget, chapter IV (share of TARGET.main of band 70-99 by weight)" },
+		},
+		["Quests/Main:byId.giants.reward.exp"] = {
+			{ session = "S105", why = "S105: story budget, chapter IV (share of TARGET.main of band 70-99 by weight)" },
+		},
+		["Quests/Main:byId.glacier.reward.exp"] = {
+			{ session = "S105", why = "S105: story budget, chapter IV (share of TARGET.main of band 70-99 by weight)" },
+		},
+		["Quests/Main:byId.trappersCamp*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.iceGrotto*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.harpyRocks*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.mammothTundra*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.frozenHold*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.frozenLake*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.iceWatch*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.oathWords*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.dragonTemple*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.wyrmSpire*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.eveOfBattle*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.snowInSummer*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.dragonsBrood*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.voiceOfWinter*"] = {
+			{
+				session = "S105",
+				why = "S105 main story: chapter IV / finale quest (docs/FABULA.md §2.5), reward = STORY_SCALE[70] x expToNext(level) x weight (settleStory), gold(level) (oathWords gold(90) x 2, voiceOfWinter gold(99) x 2), items of the plan (B2); levels 74-99 between the old quests, anchors held 3 s (the ceremonial ones 5 s), escorts and reach points from Areas/frostpeak",
+			},
+		},
+		["Quests/Main:byId.firstSpring*"] = {
+			{
+				session = "S105",
+				why = "S105 story finale (docs/FABULA.md §2.5): firstSpring at level 100 (the objective `level` 100; level 100 earns no EXP, so exp = 0 and no weight), gold(100) x 3, the title thornbearer and the skin mountskin_spring; the Thorn's anchor held 5 s",
 			},
 		},
 	} :: { [string]: { Reason } },

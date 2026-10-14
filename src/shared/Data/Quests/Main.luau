@@ -1,5 +1,5 @@
 --!strict
--- Main story (DESIGN §20): 32 quests from the arrival in Vaelthorn to the Frost Dragon Vaelgrath. The first
+-- Main story (DESIGN §20): from the arrival in Vaelthorn to the Frost Dragon Vaelgrath and the first spring (S105). The first
 -- ten are the tutorial (talking, potions, the healer, the blacksmith and +1, the portal, fighting, loot,
 -- gear, stat points, skills). Texts: quest.<id>.title / .text / .done (Localization).
 -- S101b (DESIGN-15 §3.5): comments during the quests 1-20 (`barks`, quest.<id>.bark.<event><n>; Logic/Barks).
@@ -14,6 +14,9 @@
 -- S104 (docs/FABULA.md §2.4): chapter III "Cold Fire" on the Ashen Wastes: ten new quests (deadOasis, warcampCages,
 -- mineDepths, emberCores, burntTemple, wyvernLair, ashRoad, runesOfBinding, forgeChains, coldFire; wiki = false until
 -- S109) between the five old ones, and the band 45-69 on the story rule (STORY_BANDS 45; azgor keeps its reward).
+-- S105 (docs/FABULA.md §2.5): chapter IV "The Long Winter" and the finale "The First Spring" on the Frost Peaks: fifteen
+-- new quests between the four old ones (70 quests in all, firstSpring last: reach level 100), the band 70-99 on the
+-- story rule (STORY_BANDS 70; vaelgrath keeps its reward, firstSpring gives no EXP).
 
 local Exp = require("../../Logic/Exp")
 local QuestBudget = require("../../Logic/QuestBudget")
@@ -990,43 +993,302 @@ q({
 	recall = { p3 = "burntTemple" },
 })
 
--- Frostpeak and the Glacier Heart ------------------------------------------------------------------------
+-- Chapter IV: The Long Winter (the Frost Peaks, 70–97) and the finale "The First Spring" (97–100); docs/FABULA.md
+-- §2.5, S105. Sigrun and the ghost of Halgrim stand on Areas/frostpeak npcSpots; the anchors are in Areas/frostpeak and
+-- in the frostpeak_hold cave. The band 70-99 is on the story rule (STORY_BANDS 70: the chapter shares TARGET.main of
+-- the band by weight, the old frostpeak, giants and glacier too); vaelgrath (the boss quest) keeps the reward S97
+-- pinned, firstSpring (level 100, nothing left to earn) gives no EXP. Fifteen new quests (wiki = false until S109)
+-- between the four old ones; their ids are a contract with S108 (trappersCamp, iceGrotto, iceWatch, dragonTemple).
 q({
 	id = "frostpeak",
 	level = 72,
 	giver = "captain",
 	turnIn = "scout_frostpeak",
+	pages = 3,
 	objectives = {
 		{ type = "reach", n = 1, map = "frostpeak" },
 		{ type = "kill", n = 20, monster = "iceWolf" },
 		{ type = "kill", n = 15, monster = "yeti" },
 	},
-	reward = { exp = exp(72, 1), gold = gold(72), items = { { id = "backpack_160", n = 1 } } },
+	weight = 1.2,
+	reward = { gold = gold(72), items = { { id = "backpack_160", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S105 chapter IV: Sigrun, the trappers' guide, came back alone to the abandoned camp in the valley
+q({
+	id = "trappersCamp",
+	level = 74,
+	giver = "scout_frostpeak",
+	turnIn = "trapper_sigrun",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		reach("frostpeak", -548, -168, 24, "place.trapperCamp"), -- Areas/frostpeak SITES.trapperCamp
+		kill(10, "snowLeopard", "frostpeak_valley"),
+		talk("trapper_sigrun", "quest.trappersCamp.sigrun"),
+	},
+	weight = 1,
+	reward = { gold = gold(74), items = { { id = "elixir_resIce", n = 2 } } },
+	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
+	choices = Talk.onPage(3, {
+		Talk.answer("where", Talk.hint("frostpeak", -548, -168, "place.trapperCamp")),
+		Talk.answer("sigrun"),
+		Talk.answer("alone"),
+	}),
+})
+-- S105 chapter IV: Sigrun walks the player to the Ice Grotto; the trappers froze inside, Arne's journal
+q({
+	id = "iceGrotto",
+	level = 76,
+	giver = "trapper_sigrun",
+	turnIn = "scout_frostpeak",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		reach("frostpeak_grotto"),
+		kill(4, "yeti", "frostpeak_grotto", "elite"),
+		collect(1, "trapperJournal", "yeti", 0.3, "frostpeak_grotto", "elite"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(76), items = { { id = "stone_return", n = 3 } } },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(3, {
+		Talk.answer("promise"),
+		Talk.answer("wind"),
+		Talk.answer("supplies", Talk.gift("potion_hp_5", 2)),
+	}),
+	recall = { p1 = "trappersCamp", done = "iceGrotto" },
+	-- from her place in the camp up the Yeti Slopes to the Grotto's mouth; she stays outside (another map)
+	companion = Talk.follow("trapper_sigrun", "frostpeak", { 1 }, { join = 1, wait = 1, back = 1 }),
+})
+-- S105 chapter IV: the climbers' camp under the Queen's Spire and the seal of the Ice Guard in a harpy nest
+q({
+	id = "harpyRocks",
+	level = 78,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 2,
+	wiki = false,
+	objectives = {
+		use("climbers_camp", "quest.use.burial", 3, "shroud"),
+		kill(10, "peakHarpy", "frostpeak_harpyrocks"),
+		collect(1, "orderSeal", "peakHarpy", 0.3, "frostpeak_harpyrocks"),
+	},
+	weight = 1,
+	reward = { gold = gold(78), items = { { id = "stone_map", n = 2 } } },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("shiny"),
+		Talk.answer("climbers"),
+		-- the anchor climbers_camp of Areas/frostpeak
+		Talk.answer("where", Talk.hint("frostpeak", -464, 606, "area.frostpeak_harpyrocks")),
+	}),
 })
 q({
 	id = "giants",
 	level = 80,
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
+	pages = 2,
 	objectives = { { type = "kill", n = 15, monster = "frostGiant" }, { type = "upgrade", n = 1, up = 5 } },
-	reward = { exp = exp(80, 1), gold = gold(80), items = { { id = "elixir_resIce", n = 3 } } },
+	weight = 1,
+	reward = { gold = gold(80), items = { { id = "elixir_resIce", n = 3 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S105 chapter IV: the order's armour in the giants' hunting camp on the Mammoth Tundra
+q({
+	id = "mammothTundra",
+	level = 82,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 2,
+	wiki = false,
+	objectives = {
+		use("hunting_camp", "quest.use.gatherArmor", 3, "armor"),
+		kill(12, "iceMammoth", "frostpeak_tundra"),
+	},
+	weight = 1,
+	reward = { gold = gold(82) },
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("knights"),
+		Talk.answer("herd", Talk.focus(2)),
+		Talk.answer("mammoths"),
+	}),
+})
+-- S105 chapter IV: Halvar leads the player across the tundra to the Giants' Breach of the Frozen Hold
+q({
+	id = "frozenHold",
+	level = 84,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		-- the tundra's map stone -> the road across the tundra (Areas/frostpeak roads, past the Mammoth Graveyard's
+		-- tusks) -> 55 studs before the Hold's gate (build/s105_scan.luau: every point MapTerrain.walkable(4), dry)
+		Talk.escort("scout_frostpeak", "frostpeak", 298, -690, 14, "place.giantsBreach", {
+			{ x = 283, z = -430 },
+			{ x = 291, z = -560 },
+			{ x = 295, z = -640 },
+		}),
+		reach("frostpeak_hold"),
+		kill(4, "frostGiant", "frostpeak_hold", "elite"),
+	},
+	weight = 1.2,
+	reward = { gold = gold(84), items = { { id = "elixir_resIce", n = 2 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, { Talk.answer("order"), Talk.answer("breach") }),
+	-- Halvar does not stand on the tundra: he joins by its map stone (Areas/frostpeak tundra `arrive`)
+	companion = Talk.lead(
+		"scout_frostpeak",
+		"frostpeak",
+		{ 1 },
+		{ join = 1, wait = 1, arrive = 1, back = 1 },
+		{ x = 277, z = -336 }
+	),
+})
+-- S105 chapter IV: the crystals of the Frozen Lake beat with the heart under the glacier
+q({
+	id = "frozenLake",
+	level = 86,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 2,
+	wiki = false,
+	objectives = {
+		kill(12, "iceElemental", "frostpeak_lake"),
+		use("crystal_garden", "quest.use.shatter", 3, "shatter"),
+	},
+	weight = 1,
+	reward = { gold = gold(86) },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("listen"),
+		-- the anchor crystal_garden of Areas/frostpeak
+		Talk.answer("where", Talk.hint("frostpeak", 300, 632, "area.frostpeak_lake")),
+	}),
+})
+-- S105 chapter IV: the seal of the Ice Guard to the last brother in the Ice Watch (the delivery moved here from
+-- oathWords: the giver of oathWords is Halgrim himself, DECYZJE S105)
+q({
+	id = "iceWatch",
+	level = 88,
+	giver = "scout_frostpeak",
+	turnIn = "ghost_halgrim",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		reach("frostpeak", 628, 570, 30, "place.keep"), -- Areas/frostpeak npcSpots.halgrim (before the keep)
+		kill(12, "frozenKnight", "frostpeak_icewatch"),
+		deliver("orderSeal", nil, "quest.iceWatch.halgrim"),
+	},
+	weight = 1,
+	reward = { gold = gold(88) },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(3, { Talk.answer("light"), Talk.answer("seal") }),
+	recall = { p1 = "iceGrotto" },
+})
+-- S105 chapter IV: the Frost Flower broken and the oath of the Guard sworn by the sword in the ice (the Thorn whole)
+q({
+	id = "oathWords",
+	level = 90,
+	giver = "ghost_halgrim",
+	turnIn = "scout_frostpeak",
+	pages = 4,
+	wiki = false,
+	objectives = {
+		use("frost_bloom", "quest.use.shatter", 3, "shatter"),
+		use("hold_chapel", "quest.use.oath", 5, "oath"),
+		kill(4, "frozenKnight", "frostpeak_hold", "elite"),
+	},
+	weight = 1.5,
+	reward = { gold = gold(90) * 2, items = { { id = "blessing_guardian_4", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1, death = 1 },
+	choices = Talk.onPage(4, { Talk.answer("brothers"), Talk.answer("you"), Talk.answer("words") }),
+	recall = { done = "oathWords" },
 })
 q({
 	id = "glacier",
 	level = 92,
 	giver = "scout_frostpeak",
 	turnIn = "scout_frostpeak",
+	pages = 2,
 	objectives = {
 		{ type = "reach", n = 1, map = "frostpeak_cave" },
 		{ type = "kill", n = 8, monster = "crystalGuardian", variant = "elite" },
 	},
-	reward = { exp = exp(92, 1), gold = gold(92), items = { { id = "backpack_200", n = 1 } } },
+	weight = 1.2,
+	reward = { gold = gold(92), items = { { id = "backpack_200", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+})
+-- S105 chapter IV: the cult's waking song in the Dragon Temple; Ilvar on the sanctuary's steps
+q({
+	id = "dragonTemple",
+	level = 94,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		kill(15, "dragonspawn", "frostpeak_temple"),
+		use("temple_altars", "quest.use.snuff", 3, "snuff"),
+		use("temple_colossus", "quest.use.snuff", 3, "snuff"),
+	},
+	weight = 1.3,
+	reward = { gold = gold(94), items = { { id = "stone_dungeon_frostpeak", n = 1 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, { Talk.answer("song"), Talk.answer("cult"), Talk.answer("fires", Talk.focus(2)) }),
+})
+-- S105 chapter IV: the dragonspawn's obelisk calling the wyrms to the lair
+q({
+	id = "wyrmSpire",
+	level = 95,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 2,
+	wiki = false,
+	objectives = {
+		kill(10, "frostWyrm", "frostpeak_wyrmspire"),
+		use("wyrm_obelisk", "quest.use.shatter", 3, "shatter"),
+	},
+	weight = 1,
+	reward = { gold = gold(95) },
+	barks = { accept = 1, half = 1, done = 1, stuck = 1 },
+	choices = Talk.onPage(2, {
+		Talk.answer("wyrms"),
+		-- the anchor wyrm_obelisk of Areas/frostpeak
+		Talk.answer("obelisk", Talk.hint("frostpeak", 652, -425, "area.frostpeak_wyrmspire")),
+	}),
+})
+-- S105 chapter IV: before the dragon, Aldric and Anzelm in the city, then the scouts of the four lands at dawn
+q({
+	id = "eveOfBattle",
+	level = 96,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		talk("captain", "quest.eveOfBattle.captain"),
+		talk("brother_anzelm", "quest.eveOfBattle.anzelm"),
+		reach("frostpeak", 560, 0, 24, "place.dragonStairs"), -- Areas/frostpeak SITES.dragonStairs
+	},
+	weight = 0.8,
+	reward = { gold = gold(96), items = { { id = "stone_return", n = 5 } } },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, {
+		Talk.answer("captain", Talk.focus(1)),
+		Talk.answer("anzelm", Talk.focus(2)),
+		Talk.answer("afraid"),
+	}),
 })
 q({
 	id = "vaelgrath",
 	level = 97,
 	giver = "scout_frostpeak",
 	turnIn = "captain",
+	pages = 3,
 	objectives = { { type = "boss", n = 1, boss = "vaelgrath" } },
 	reward = {
 		exp = exp(99, 1.5),
@@ -1035,6 +1297,113 @@ q({
 		items = { { id = "scroll_unbind", n = 1 }, { id = "blessing_fortune_4", n = 1 } },
 		cosmetic = "mountskin_dragonslayer", -- S97: the Dragonslayer's mount colours
 	},
+	barks = { accept = 1, done = 1 },
+})
+-- S105 finale: snow on the feast; the dragon had no heart (the finale's chapter card plays first)
+q({
+	id = "snowInSummer",
+	level = 98,
+	giver = "captain",
+	turnIn = "scout_frostpeak",
+	pages = 3,
+	wiki = false,
+	objectives = {
+		talk("brother_anzelm", "quest.snowInSummer.anzelm"),
+		reach("frostpeak_cave"),
+	},
+	weight = 0.8,
+	reward = { gold = gold(98) },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(3, {
+		Talk.answer("feast"),
+		-- before the Glacier Heart's mouth (Areas/frostpeak caves: 745 / 0, rot 90; 22 studs out like the cave arrivals)
+		Talk.answer("where", Talk.hint("frostpeak", 723, 0, "map.frostpeak_cave.name")),
+		Talk.answer("anzelm"),
+	}),
+})
+-- S105 finale: the young dragons carried the Heart of Winter away; Sigrun leads the player up the Bone Trail
+q({
+	id = "dragonsBrood",
+	level = 99,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 2,
+	wiki = false,
+	objectives = {
+		kill(6, "youngFrostDragon", "frostpeak_cave", "elite"),
+		-- the fork of the tundra road and the Bone Trail -> along the trail (Areas/frostpeak roads) -> before the ribs of
+		-- the wyrm's skeleton (they arch over the trail; Sigrun stops short of them, and voiceOfWinter starts there)
+		Talk.escort("trapper_sigrun", "frostpeak", 532, -528, 30, "place.wyrmBones", {
+			{ x = 360, z = -549 },
+			{ x = 420, z = -540 },
+			{ x = 490, z = -530 },
+		}),
+	},
+	weight = 1,
+	reward = { gold = gold(99) },
+	barks = { accept = 1, half = 1, near = 1, done = 1, death = 1 },
+	choices = Talk.onPage(2, {
+		-- Sigrun waits at the fork (the companion's start)
+		Talk.answer("trail", Talk.hint("frostpeak", 300, -556, "npc.trapper_sigrun.name")),
+		Talk.answer("brood"),
+	}),
+	recall = { p1 = "iceGrotto" },
+	companion = Talk.lead(
+		"trapper_sigrun",
+		"frostpeak",
+		{ 2 },
+		{ join = 2, wait = 2, arrive = 1, back = 1 },
+		{ x = 300, z = -556 }
+	),
+})
+-- S105 finale: Ilvar's rite in the Rite Circle under the Spire's summit (Sigrun walks the player up to it)
+q({
+	id = "voiceOfWinter",
+	level = 99,
+	giver = "scout_frostpeak",
+	turnIn = "scout_frostpeak",
+	pages = 4,
+	wiki = false,
+	objectives = {
+		reach("frostpeak", 628, -574, 24, "place.summit"), -- Areas/frostpeak SITES.summitRite
+		kill(8, "dragonspawn", "frostpeak_wyrmspire"),
+		kill(8, "frostWyrm", "frostpeak_wyrmspire"),
+		use("summit_rite", "quest.use.breakRite", 5, "rite"),
+	},
+	weight = 1.5,
+	reward = { gold = gold(99) * 2, items = { { id = "blessing_sage_4", n = 1 } } },
+	barks = { accept = 1, half = 1, near = 1, done = 1 },
+	choices = Talk.onPage(4, {
+		Talk.answer("alone"),
+		Talk.answer("turn"),
+		Talk.answer("supplies", Talk.gift("potion_mana_5", 2)),
+	}),
+	-- where dragonsBrood left her, before the wyrm's ribs
+	companion = Talk.follow(
+		"trapper_sigrun",
+		"frostpeak",
+		{ 1 },
+		{ join = 1, wait = 1, back = 1 },
+		{ x = 532, z = -528 }
+	),
+})
+-- S105 finale: the Thorn of Vael in the Heart of Winter, the hundredth level, and the first spring of Vaelthorn
+q({
+	id = "firstSpring",
+	level = 100,
+	giver = "scout_frostpeak",
+	turnIn = "captain",
+	pages = 4,
+	wiki = false,
+	objectives = {
+		use("summit_thorn", "quest.use.thorn", 5, "thorn"),
+		{ type = "level", n = 1, level = 100 },
+	},
+	-- level 100 needs no EXP (nothing to share of the band 70-99): gold, the title thornbearer (Data/Titles) and the skin
+	reward = { exp = 0, gold = gold(100) * 3, cosmetic = "mountskin_spring" },
+	barks = { accept = 1, half = 1, done = 1 },
+	choices = Talk.onPage(4, { Talk.answer("stay"), Talk.answer("city"), Talk.answer("thorn") }),
+	recall = { done = "eveOfBattle" },
 })
 
 -- S102 (B2a): one EXP rule for the story. A quest with `weight` gets floor(scale(band) x expToNext(level) x weight),
@@ -1046,6 +1415,7 @@ local STORY_STEP = 0.05
 local STORY_BANDS: { number } = {
 	20, -- S103: chapter II
 	45, -- S104: chapter III
+	70, -- S105: chapter IV
 }
 local STORY_SCALE: { [number]: number } = {}
 
@@ -1105,14 +1475,14 @@ for i, quest in list do
 	indexOf[quest.id] = i
 end
 
--- S102: chapters by region (story.chapter.<n>); a chapter starts at its `first` quest. S105 adds
--- { n = 5, first = "snowInSummer", final = true }.
+-- S102: chapters by region (story.chapter.<n>); a chapter starts at its `first` quest. S105: the finale (n = 5).
 export type Chapter = { n: number, first: string, region: string?, final: boolean? }
 local CHAPTERS: { Chapter } = {
 	{ n = 1, first = "arrival", region = "meadows" },
 	{ n = 2, first = "toDuskwood", region = "duskwood" },
 	{ n = 3, first = "ashen", region = "ashen" },
 	{ n = 4, first = "frostpeak", region = "frostpeak" },
+	{ n = 5, first = "snowInSummer", region = "frostpeak", final = true }, -- S105: the finale "The First Spring"
 }
 
 -- The chapter of a story quest (the highest one whose first quest is not after it; unknown ids: 1).

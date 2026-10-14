@@ -8,23 +8,32 @@
 -- frosted crest of frostRuins). S103: an anchor with `rot` turns the effect's frame; the effects at a generator prop
 -- (frostbreak, heartglow, sealbreak) are drawn in the prop's frame (Logic/DuskwoodGen/Quest.frame) and cover it.
 -- S104: cageOpen, rune and chains (the Ashen Wastes and the posts of the captives in Deepforge).
+-- S105: shroud, armor, shatter, snuff, oath, rite and thorn (the Frost Peaks and the Frozen Hold); the Rite Circle's
+-- geometry from Logic/FrostpeakGen/Rite, the Thorn and Ilvar's statue from Util/StoryProps, the flowers of the spring
+-- in Vaelthorn from Logic/TownGen/Spring.
 
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DuskwoodQuest = require(ReplicatedStorage.Shared.Logic.DuskwoodGen.Quest)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local Rite = require(ReplicatedStorage.Shared.Logic.FrostpeakGen.Rite)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
+local Spring = require(ReplicatedStorage.Shared.Logic.TownGen.Spring)
 local State = require(script.Parent.Parent.UI.State)
+local StoryProgress = require(ReplicatedStorage.Shared.Logic.StoryProgress)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local StoryProps = require(script.Parent.Parent.Util.StoryProps)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local QuestAnchorController = {
@@ -105,6 +114,112 @@ end
 
 local function at(point: { x: number, y: number, z: number }): CFrame
 	return CFrame.new(point.x, point.y, point.z)
+end
+
+-- S105: the top of whatever solid stands at `point` (a ray from a little over `fromY` down; effects and the player
+-- ignored), e.g. the chapel's altar in the Frozen Hold.
+local function surfaceY(point: Vector3, fromY: number): number?
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local skip: { Instance } = { folder() }
+	local character = Players.LocalPlayer.Character
+	if character then
+		table.insert(skip, character)
+	end
+	params.FilterDescendantsInstances = skip
+	local hit = Workspace:Raycast(Vector3.new(point.X, fromY + 12, point.Z), Vector3.new(0, -30, 0), params)
+	return if hit then hit.Position.Y else nil
+end
+
+-- S105: the rite broken (voiceOfWinter): dark cracks down the inner faces of the six monoliths and shards of the
+-- ring scattered on the snow (Logic/FrostpeakGen/Rite; the circle's middle is 9 studs behind the anchor summit_rite)
+local function brokenRite(model: Model, base: CFrame)
+	local centre = base * CFrame.new(0, 0, 9)
+	for k, st in Rite.stones() do
+		local stone = centre * CFrame.new(st.x, 0, st.z) * CFrame.Angles(0, math.rad(st.yaw), 0)
+		for m = 0, 1 do
+			part(
+				model,
+				Vector3.new(0.12, 3.2 + m, 0.06),
+				stone
+					* CFrame.new(-0.4 + m * 0.7, 2.6 + m * 1.6, Rite.STONE.d / 2 + 0.06)
+					* CFrame.Angles(0, 0, math.rad(if (k + m) % 2 == 0 then 14 else -11)),
+				"#1E2228",
+				Enum.Material.Slate
+			)
+		end
+		part(
+			model,
+			Vector3.new(0.9, 0.5, 0.7),
+			stone * CFrame.new(0.5, 0.25, -1.4) * CFrame.Angles(0, k, math.rad(20)),
+			"#BFE6F7",
+			Enum.Material.Ice
+		).Transparency =
+			0.3
+	end
+end
+
+-- S105: the world's own flames and glows near `points` (TownFx parts whose Fx is one of `kinds`, from the server shell
+-- or the client detail, now or built later) put out on this client while `model` lives: the part hidden, its
+-- emitters and lights (TownFxController's flames too) off; all restored when the effect goes.
+local function quench(model: Model, points: { Vector3 }, radius: number, kinds: { [string]: boolean })
+	local parts: { [BasePart]: boolean } = {}
+	local saved: { [Instance]: boolean } = {}
+	local connections: { RBXScriptConnection } = {}
+	local function off(child: Instance)
+		if (child:IsA("ParticleEmitter") or child:IsA("Light")) and saved[child] == nil then
+			saved[child] = (child :: any).Enabled;
+			(child :: any).Enabled = false
+		end
+	end
+	local function take(instance: Instance)
+		if not instance:IsA("BasePart") or parts[instance] or not model.Parent then
+			return
+		end
+		local fx = instance:GetAttribute("Fx")
+		if type(fx) ~= "string" or not kinds[fx] then
+			return
+		end
+		local near = false
+		for _, point in points do
+			if (instance.Position - point).Magnitude <= radius then
+				near = true
+				break
+			end
+		end
+		if not near then
+			return
+		end
+		parts[instance] = true
+		instance.LocalTransparencyModifier = 1
+		for _, child in instance:GetChildren() do
+			off(child)
+		end
+		table.insert(connections, instance.ChildAdded:Connect(off))
+	end
+	-- the model is parented right after its builder runs
+	task.defer(function()
+		for _, instance in CollectionService:GetTagged(BlueprintBuild.FX_TAG) do
+			take(instance)
+		end
+	end)
+	table.insert(
+		connections,
+		CollectionService:GetInstanceAddedSignal(BlueprintBuild.FX_TAG):Connect(function(instance)
+			task.defer(take, instance)
+		end)
+	)
+	model.Destroying:Connect(function()
+		for _, connection in connections do
+			connection:Disconnect()
+		end
+		for p in parts do
+			p.LocalTransparencyModifier = 0
+		end
+		for child, enabled in saved do
+			(child :: any).Enabled = enabled
+		end
+	end)
 end
 
 -- Builds the "done" look of an anchor around `base` (the ground under it, facing the anchor's yaw).
@@ -484,7 +599,240 @@ local BUILDERS: { [string]: (model: Model, base: CFrame, anchorId: string) -> ()
 			)
 		end
 	end,
+	-- S105: a tent cloth stretched over the fallen climbers, weighed down with stones, and a cairn with an ice axe on
+	-- its top (harpyRocks at the climbers' camp)
+	shroud = function(model, base)
+		local cloth = base * CFrame.new(-0.6, 0.35, 1.6) * CFrame.Angles(0, math.rad(8), 0)
+		part(model, Vector3.new(2.4, 0.5, 5.2), cloth, "#8A7A5E", Enum.Material.Fabric)
+		part(model, Vector3.new(2.6, 0.12, 5.4), cloth * CFrame.new(0, 0.28, 0), "#A89A7A", Enum.Material.Fabric)
+		for k = 0, 3 do
+			local side = if k % 2 == 0 then -1 else 1
+			part(
+				model,
+				Vector3.new(0.6, 0.45, 0.6),
+				cloth * CFrame.new(side * 1.3, 0.2, -2 + k * 1.3),
+				"#6E6A64",
+				Enum.Material.Slate,
+				Enum.PartType.Ball
+			)
+		end
+		local cairn = base * CFrame.new(2.4, 0, -0.6)
+		for k, s in { 1.6, 1.3, 1, 0.7 } do
+			part(
+				model,
+				Vector3.new(s, 0.6, s),
+				cairn * CFrame.new(0, 0.3 + (k - 1) * 0.55, 0) * CFrame.Angles(0, k * 0.7, 0),
+				"#7A766E",
+				Enum.Material.Slate
+			)
+		end
+		part(
+			model,
+			Vector3.new(0.16, 2.4, 0.16),
+			cairn * CFrame.new(0, 3, 0) * CFrame.Angles(0, 0, math.rad(8)),
+			"#6B5038",
+			Enum.Material.Wood
+		)
+		part(model, Vector3.new(1.2, 0.18, 0.12), cairn * CFrame.new(0.15, 4.1, 0), "#9FB6C9", Enum.Material.Metal)
+	end,
+	-- S105: the order's armour laid in a row on the snow, a pennant of the Ice Guard planted over it (mammothTundra)
+	armor = function(model, base)
+		for k = 0, 3 do
+			local at = base * CFrame.new(-2.4 + k * 1.6, 0, 1.4) * CFrame.Angles(0, math.rad(k * 6 - 9), 0)
+			part(model, Vector3.new(1.3, 0.5, 1.8), at * CFrame.new(0, 0.25, 0), "#9FB6C9", Enum.Material.Metal)
+			part(
+				model,
+				Vector3.new(0.9, 0.9, 0.9),
+				at * CFrame.new(0, 0.4, -1.3),
+				"#8E9CA8",
+				Enum.Material.Metal,
+				Enum.PartType.Ball
+			)
+			part(model, Vector3.new(0.5, 0.18, 0.5), at * CFrame.new(0, 0.55, 0.1), "#2F3A4A", Enum.Material.Fabric)
+		end
+		local pole = base * CFrame.new(2.8, 0, 0.4)
+		part(model, Vector3.new(0.2, 5, 0.2), pole * CFrame.new(0, 2.5, 0), "#4A4E56", Enum.Material.Metal)
+		part(model, Vector3.new(1.6, 1.1, 0.08), pole * CFrame.new(0.9, 4.3, 0), "#2F3A4A", Enum.Material.Fabric)
+		part(model, Vector3.new(1.6, 0.18, 0.1), pole * CFrame.new(0.9, 3.7, 0), "#B8D0E0", Enum.Material.Metal)
+		part(model, Vector3.new(0.4, 0.4, 0.1), pole * CFrame.new(0.9, 4.35, -0.06), "#B8D0E0", Enum.Material.Neon)
+	end,
+	-- S105: a crystal broken: shards of grey glass on the ground, a dead cluster fallen over, a short flash when first
+	-- built (frozenLake, oathWords' Frost Flower, wyrmSpire); on the obelisk its glowing rune is covered too
+	shatter = function(model, base, anchorId)
+		for k = 1, 7 do
+			local a = k * 0.9
+			local d = 1.2 + (k % 3) * 0.7
+			local shard = part(
+				model,
+				Vector3.new(0.35 + (k % 2) * 0.25, 0.9 + (k % 3) * 0.4, 0.3),
+				base
+					* CFrame.new(math.cos(a) * d, 0.25, 1.4 + math.sin(a) * d)
+					* CFrame.Angles(math.rad(70 + k * 4), k * 0.8, math.rad(k * 11)),
+				"#8A949C",
+				Enum.Material.Glass
+			)
+			shard.Transparency = 0.25
+		end
+		for k = 0, 2 do
+			part(
+				model,
+				Vector3.new(0.9, 3.2 - k * 0.6, 0.9),
+				base * CFrame.new(-1.6 + k * 0.6, 0.45, 2.6) * CFrame.Angles(math.rad(80), math.rad(k * 25), 0),
+				"#6E7880",
+				Enum.Material.Glass
+			).Transparency =
+				0.2
+		end
+		if anchorId == "wyrm_obelisk" then
+			-- the rune on the obelisk's front (Logic/FrostpeakGen/Wyrm obelisk: 5 studs behind the anchor)
+			part(model, Vector3.new(1.4, 4.2, 0.12), base * CFrame.new(0, 11, 3.38), "#4A4E56", Enum.Material.Slate)
+		end
+		local flash = part(
+			model,
+			Vector3.new(2.6, 2.6, 2.6),
+			base * CFrame.new(0, 1.4, 2),
+			"#E8F8FF",
+			Enum.Material.Neon,
+			Enum.PartType.Ball
+		)
+		flash.Transparency = 0.3
+		task.delay(0.35, function()
+			if flash.Parent then
+				flash:Destroy()
+			end
+		end)
+	end,
+	-- S105: blue fires put out (dragonTemple): the brazier's flame and light off and black embers in its bowl, the
+	-- colossus's glowing eyes off behind dark lids, thin smoke for a few seconds after the change
+	snuff = function(model, base, anchorId)
+		local embers: { CFrame } = {}
+		if anchorId == "temple_altars" then
+			-- the brazier in the middle of the altars (Temple altars: bowl at +3.2, fire at +3.8, its light above)
+			local brazier = base * CFrame.new(2.2, 3.8, 5.6)
+			table.insert(embers, brazier)
+			quench(model, { brazier.Position }, 4, { fire = true })
+		elseif anchorId == "temple_colossus" then
+			-- the colossus's eyes (Props.dragonStatue at scale 1.6, 8 studs behind the sanctuary's middle)
+			local eyes: { Vector3 } = {}
+			for _, side in { -1, 1 } do
+				local eye = base * CFrame.new(side * 1.28, 15.56, 1.1)
+				table.insert(eyes, eye.Position)
+				part(model, Vector3.new(1, 0.8, 0.4), eye, "#2A2E36", Enum.Material.Slate)
+			end
+			quench(model, eyes, 2.5, { glow = true })
+		end
+		table.insert(embers, base * CFrame.new(0, 0.2, 1.2))
+		for i, cf in embers do
+			part(
+				model,
+				Vector3.new(0.75, 2.4, 2.4),
+				cf * CFrame.Angles(0, 0, math.rad(90)),
+				"#1A1716",
+				Enum.Material.Slate,
+				Enum.PartType.Cylinder
+			)
+			for k = 0, 3 do
+				part(
+					model,
+					Vector3.new(0.3, 0.2, 0.3),
+					cf * CFrame.new(math.cos(k * 1.6) * 0.6, 0.42, math.sin(k * 1.6) * 0.6),
+					"#3A1A10",
+					Enum.Material.Neon
+				).Transparency =
+					0.5
+			end
+			if i == 1 then
+				local holder = part(model, Vector3.new(0.2, 0.2, 0.2), cf * CFrame.new(0, 0.6, 0), "#000000")
+				holder.Transparency = 1
+				local smoke = Instance.new("Smoke")
+				smoke.Opacity = 0.08
+				smoke.RiseVelocity = 3
+				smoke.Size = 1.2
+				smoke.Color = Color3.fromHex("#8A8A8A")
+				smoke.Parent = holder
+				task.delay(6, function()
+					if smoke.Parent then
+						smoke.Enabled = false
+					end
+				end)
+			end
+		end
+	end,
+	-- S105: the oath sworn (oathWords): the block of ice on the chapel's altar split in two halves, the order's sword
+	-- glowing gold and blue, a faint light (the altar 7 studs behind the anchor, its top found by a ray)
+	oath = function(model, base)
+		local altar = base * CFrame.new(0, 0, -7)
+		local top = surfaceY(altar.Position, base.Position.Y) or (base.Position.Y + 5)
+		local block = CFrame.new(altar.Position.X, top + 3, altar.Position.Z)
+		for _, side in { -1, 1 } do
+			part(
+				model,
+				Vector3.new(1.3, 6.2, 2.6),
+				block * CFrame.new(side * 1, -0.2, 0) * CFrame.Angles(0, 0, math.rad(side * 9)),
+				"#BFE8FF",
+				Enum.Material.Glass
+			).Transparency =
+				0.35
+		end
+		local blade = part(model, Vector3.new(0.44, 5.2, 0.24), block, "#E8C25A", Enum.Material.Neon)
+		part(model, Vector3.new(0.12, 4.6, 0.26), block * CFrame.new(0, -0.1, 0), "#9FE0FF", Enum.Material.Neon)
+		part(model, Vector3.new(2, 0.45, 0.45), block * CFrame.new(0, 1.4, 0), "#C8D0D8", Enum.Material.Metal)
+		light(blade, "#E8C25A", 12, 0.8)
+	end,
+	-- S105: the broken rite (voiceOfWinter) while the scene of the same name waits (riteKind)
+	riteBare = function(model, base)
+		brokenRite(model, base)
+	end,
+	-- S105: the broken rite and Ilvar's statue of ice by the altar, the arm stretched out (the scene's figure turned
+	-- to ice)
+	rite = function(model, base)
+		brokenRite(model, base)
+		StoryProps.iceStatue(model, base * CFrame.new(0, 0, 9) * CFrame.new(3.4, 0, 0.5))
+	end,
+	-- S105: the Thorn of Vael in the Heart of Winter (firstSpring): the shaft leaning out towards the player, a gold
+	-- glow over the crystal's blue, a ring of melted snow with grass and the flowers of the spring in Vaelthorn
+	-- (Logic/TownGen/Spring.FLOWERS); the circle's middle is 4 studs behind the anchor summit_thorn
+	thorn = function(model, base)
+		local centre = base * CFrame.new(0, 0, 4)
+		local heart = centre * CFrame.new(0, Rite.heartY(), 0)
+		StoryProps.thorn(model, heart * CFrame.new(0, 0, -0.6) * CFrame.Angles(math.rad(-35), 0, 0))
+		local glow = part(model, Vector3.new(4, 4, 4), heart, StoryProps.GOLD, Enum.Material.Neon, Enum.PartType.Ball)
+		glow.Transparency = 0.55
+		light(glow, StoryProps.GOLD, 22, 1.4)
+		part(
+			model,
+			Vector3.new(0.1, 13, 13),
+			centre * CFrame.new(0, 0.06, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			"#6E9A4A",
+			Enum.Material.LeafyGrass,
+			Enum.PartType.Cylinder
+		)
+		for k = 1, 16 do
+			local a = k * 2.4
+			local d = 3 + (k % 4) * 0.8
+			local at = centre * CFrame.new(math.cos(a) * d, 0, math.sin(a) * d)
+			part(model, Vector3.new(0.12, 0.5, 0.12), at * CFrame.new(0, 0.3, 0), "#5E8A4A", Enum.Material.Grass)
+			part(
+				model,
+				Vector3.new(0.55, 0.55, 0.55),
+				at * CFrame.new(0, 0.62, 0),
+				Spring.FLOWERS[(k - 1) % #Spring.FLOWERS + 1],
+				Enum.Material.SmoothPlastic,
+				Enum.PartType.Ball
+			)
+		end
+	end,
 }
+
+-- S105: while voiceOfWinter runs, Ilvar's statue waits for the scene of the same name (its figure stands on that
+-- spot and turns to ice at the end); after the scene or the hand-in it stays.
+local function riteKind(quests: any): string
+	local scenes = if type(quests) == "table" then quests.scenes else nil
+	if (type(scenes) == "table" and scenes.voiceOfWinter == true) or StoryProgress.isDone(quests, "voiceOfWinter") then
+		return "rite"
+	end
+	return "riteBare"
+end
 
 local function groundUnder(anchor: Anchor): CFrame
 	local data = Areas.anchorById(anchor.id)
@@ -533,7 +881,8 @@ local function refresh()
 			anchor.prompt.ActionText = Text.now(objective.action or "quest.use.default")
 			anchor.prompt.ObjectText = Text.now(`quest.{quest.id}.title`)
 		end
-		setFx(anchor, done[id])
+		local kind = done[id]
+		setFx(anchor, if kind == "rite" then riteKind(quests) else kind)
 	end
 end
 

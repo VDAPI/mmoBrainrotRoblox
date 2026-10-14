@@ -53,6 +53,14 @@ local FX = {
 	cageOpen = true, -- the door of an orc cage torn off and leant on the ground, a broken padlock
 	rune = true, -- a slate with a glowing blue rune and its light (the Sleeping Colossus; S107 uses it too)
 	chains = true, -- two open shackles on the ground, one broken in halves, and a run of links from the post
+	-- S105 (story chapter IV and the finale, the Frost Peaks and the Frozen Hold):
+	shroud = true, -- a tent cloth stretched over the fallen climbers, a cairn with an ice axe on top
+	armor = true, -- the order's armour laid in a row on the snow under a planted pennant (navy and silver)
+	shatter = true, -- shards of crystal on the ground, the glow gone grey (a short flash when first built)
+	snuff = true, -- bowls of fire put out: black embers and thin threads of smoke
+	oath = true, -- the block of ice on the altar split, the order's sword glowing gold and blue
+	rite = true, -- the Rite Circle broken: cracked monoliths, the ring scattered, Ilvar's statue of ice by the altar
+	thorn = true, -- the Thorn of Vael in the Heart of Winter, a gold glow, melted snow with grass and flowers
 }
 
 local list: { SideQuest } = {}

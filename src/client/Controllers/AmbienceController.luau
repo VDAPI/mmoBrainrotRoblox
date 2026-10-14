@@ -7,6 +7,8 @@
 --     Ambience.MAX_LOOPS at a time, crossfaded; positional loops of the map (waterfall, fires, drums) as 3D sounds.
 --     All through the "VaelthornAmbientGroup" SoundGroup (the "Ambience" option). Entries without an id are skipped.
 -- Admin /ambience <area|off> forces a mood (AdminClient "ambience").
+-- S105: in the city the character's season (Logic/CitySeason, forced by /season through UI/CitySeasonState) picks the
+-- mood: snow after the dragon, the first spring after the finale; summer = the city as before.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -17,6 +19,7 @@ local Workspace = game:GetService("Workspace")
 local Ambience = require(ReplicatedStorage.Shared.Data.Ambience)
 local AreaState = require(script.Parent.Parent.UI.AreaState)
 local CaveTerrain = require(ReplicatedStorage.Shared.Logic.CaveTerrain)
+local CitySeasonState = require(script.Parent.Parent.UI.CitySeasonState)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -244,6 +247,10 @@ local function step(dt: number)
 		areaId = if area then area.id else nil
 	end
 	local mood = if map and forced ~= "off" then Ambience.moodOf(map, areaId) else nil
+	local season = if map == "city" and not forced then CitySeasonState.current() else nil
+	if season then
+		mood = Ambience.cityMood(season)
+	end
 	-- S48: caves on the engine: the mood of the room under the player (tunnels: the map's), "/ambience <cave>:<room>"
 	local roomIndex: number? = nil
 	if map and CaveTerrain.has(map) and forced ~= "off" then
@@ -273,7 +280,7 @@ local function step(dt: number)
 	end
 	-- sound: change the set when the area or day/night changes
 	local night = isNight()
-	local key = `{map or ""}|{areaId or ""}|{roomIndex or ""}|{night}|{forced or ""}`
+	local key = `{map or ""}|{areaId or ""}|{roomIndex or ""}|{night}|{forced or ""}|{season or ""}`
 	if key ~= lastKey then
 		lastKey = key
 		setLoops(if mood then (if night then mood.sounds.night else mood.sounds.day) else {})

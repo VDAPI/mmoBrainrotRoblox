@@ -201,7 +201,7 @@ Rdzeń), `cultHarness` (Uprząż Kultu), `spearhead` (Grot Ciernia).
 | `shaman_ghasha` | Szamanka Ghasha | wschodni skraj niecki Gorącego Źródła (`hotSpring`, Równiny Salamander; S104) | orczyca, przeciwniczka kultowego złota; łuk S107 |
 | `hermit_kaspar` | Brat Kaspar | świątynia z zapadniętą kopułą (`burntTemple`, Spalone Ruiny) | pustelnik spalonego miasteczka, świadek Ilvara |
 
-### 2.5 Rozdział IV: Długa Zima (Lodowe Szczyty, 70–97) i finał: Pierwsza Wiosna (97–100), S105
+### 2.5 Rozdział IV: Długa Zima (Lodowe Szczyty, 70–97) i finał: Pierwsza Wiosna (97–100), S105 (zrobione)
 
 | # | id | Poz. | Daje → oddaje | Cele | Treść | Scena | Postacie |
 |---|---|---|---|---|---|---|---|
@@ -211,34 +211,36 @@ Rdzeń), `cultHarness` (Uprząż Kultu), `spearhead` (Grot Ciernia).
 | 55 | ✚ `harpyRocks` | 78 | Halvar → Halvar | use(`climbers_camp`, 3 s); kill 10 peakHarpy (area `frostpeak_harpyrocks`); collect 1 orderSeal ← peakHarpy (0,3) | Harpie znoszą do gniazd świecidełka. Wśród nich jest Pieczęć Zakonu Lodowej Straży, z tym samym płatkiem i cierniem co na Łąkach | | Halvar |
 | 56 | `giants` | 80 | Halvar → Halvar | kill 15 frostGiant; upgrade +5 | przełęcz olbrzymów | | Halvar |
 | 57 | ✚ `mammothTundra` | 82 | Halvar → Halvar | use(`hunting_camp`, 3 s); kill 12 iceMammoth (area `frostpeak_tundra`) | W obozie łowieckim olbrzymów leżą zbroje rycerzy zakonu, zdarte z oszronionych trupów. Olbrzymy walczą z czymś w Twierdzy | | Halvar |
-| 58 | ✚ `frozenHold` | 84 | Halvar → Halvar | reach(frostpeak_hold); kill 4 frostGiant (elite) | Przez Wyłom Olbrzymów gracz wchodzi do twierdzy zakonu. Dalej stoją rycerze, którzy wciąż pełnią straż, ale już dla zimy | ◆ Dziedziniec pod Lodowcem: pulsujący Kwiat Szronu | Halvar |
+| 58 | ✚ `frozenHold` | 84 | Halvar → Halvar | escort(Halvar → Wyłom Olbrzymów, `place.giantsBreach`; S105); reach(frostpeak_hold); kill 4 frostGiant (elite) | Przez Wyłom Olbrzymów gracz wchodzi do twierdzy zakonu. Dalej stoją rycerze, którzy wciąż pełnią straż, ale już dla zimy | ◆ Dziedziniec pod Lodowcem: pulsujący Kwiat Szronu | Halvar |
 | 59 | ✚ `frozenLake` | 86 | Halvar → Halvar | kill 12 iceElemental (area `frostpeak_lake`); use(`crystal_garden`, 3 s) | Kryształy Zamarzniętego Jeziora pulsują w rytmie bicia serca. To serce pod lodowcem bije coraz szybciej | ◆ kryształy błyskają razem, słychać bicie | Halvar |
-| 60 | ✚ `iceWatch` | 88 | Halvar → ghost_halgrim | reach(frostpeak, place.keep); kill 12 frozenKnight (area `frostpeak_icewatch`) | W Lodowej Strażnicy czeka duch Brata Halgrima, ostatniego, którego mróz nie złamał. Zna słowa przysięgi Straży | ◆ zamarznięci wartownicy, Halgrim wychodzi z donżonu | Halvar, Halgrim |
-| 61 | ✚ `oathWords` | 90 | ghost_halgrim → Halvar | deliver(orderSeal → ghost_halgrim); use(`frost_bloom`, 3 s) i use(`hold_chapel`, 5 s) (w `frostpeak_hold`); kill 4 frozenKnight (elite) | Gracz rozbija Kwiat Szronu, który trzyma rycerzy w niewoli, i przy mieczu w lodzie składa przysięgę Straży. Cierń jest cały | ◆ ▣ „Cierń Vaela”: włócznia rozbłyska błękitem i złotem, zamarznięci rycerze klękają i rozsypują się w śnieg | Halgrim, Halvar |
+| 60 | ✚ `iceWatch` | 88 | Halvar → ghost_halgrim | reach(frostpeak, place.keep); kill 12 frozenKnight (area `frostpeak_icewatch`); deliver(orderSeal → ghost_halgrim; S105: przeniesione z `oathWords`) | W Lodowej Strażnicy czeka duch Brata Halgrima, ostatniego, którego mróz nie złamał. Gracz oddaje mu pieczęć z gniazda harpii. Halgrim zna słowa przysięgi Straży | ◆ zamarznięci wartownicy, Halgrim wychodzi z donżonu | Halvar, Halgrim |
+| 61 | ✚ `oathWords` | 90 | ghost_halgrim → Halvar | use(`frost_bloom`, 3 s) i use(`hold_chapel`, 5 s) (w `frostpeak_hold`); kill 4 frozenKnight (elite) | Gracz rozbija Kwiat Szronu, który trzyma rycerzy w niewoli, i przy mieczu w lodzie składa przysięgę Straży. Cierń jest cały | ◆ ▣ „Cierń Vaela”: włócznia rozbłyska błękitem i złotem, zamarznięci rycerze klękają i rozsypują się w śnieg | Halgrim, Halvar |
 | 62 | `glacier` | 92 | Halvar → Halvar | reach(frostpeak_cave); kill 8 crystalGuardian (elite) | „Leże jest otwarte. On wie, że nadchodzisz” | | Halvar |
 | 63 | ✚ `dragonTemple` | 94 | Halvar → Halvar | kill 15 dragonspawn (area `frostpeak_temple`); use(`temple_altars`, 3 s) i use(`temple_colossus`, 3 s) | Kult śpiewa w Smoczej Świątyni pieśń przebudzenia. Gracz gasi niebieskie ognie, ale za późno. Ilvar staje na schodach sanktuarium, mówi graczowi, czym jest dla niego zima, i odchodzi w rozpadlinę lodowca | ◆ pierwsze spotkanie twarzą w twarz z Ilvarem; oczy kolosa smoka gasną, lodowiec pęka z rykiem | Ilvar, Halvar |
 | 64 | ✚ `wyrmSpire` | 95 | Halvar → Halvar | kill 10 frostWyrm (area `frostpeak_wyrmspire`); use(`wyrm_obelisk`, 3 s) | Obelisk kultu na Iglicy Wyrmów wzywa wylęg do obrony leża. Gracz go rozbija | | Halvar |
 | 65 | ✚ `eveOfBattle` | 96 | Halvar → Halvar | talk(captain); talk(brother_anzelm); reach(frostpeak, place.dragonStairs) | Aldric przekazuje graczowi chorągiew Vaelthornu, Anzelm błogosławi. Przy Smoczych Schodach o świcie czekają Halvar, Mira, Borin i Kesra | ◆ czworo zwiadowców przy Schodach (figury tylko w scenie) | Aldric, Anzelm, Mira, Borin, Kesra, Halvar |
 | 66 | `vaelgrath` | 97 | Halvar → captain | boss vaelgrath | „To koniec. Vaelthorn będzie śpiewał o tobie przez sto zim” | ◆ Cierń w ranie smoka, Leże Vaelgratha cichnie | Vaelgrath, Aldric |
-| 67 | ✚ `snowInSummer` | 98 | captain → Halvar | talk(brother_anzelm); reach(frostpeak_cave) | ▣ „Finał: Pierwsza Wiosna”. W czasie uczty w mieście zaczyna padać śnieg. Anzelm: w ciele smoka nie było serca. Halvar czeka przy Sercu Lodowca. Tekst zaczyna się od „Tak myśleliśmy”, więc `.done` questu `vaelgrath` zostaje bez zmian | ◆ śnieg na placu w środku lata | Aldric, Anzelm, Halvar |
-| 68 | ✚ `dragonsBrood` | 99 | Halvar → Halvar | kill 6 youngFrostDragon (elite); reach(frostpeak, place.wyrmBones) | Wylęg wyniósł Serce Zimy z lodowca Szlakiem Kości ku szczytowi | | Halvar |
-| 69 | ✚ `voiceOfWinter` | 99 | Halvar → Halvar | reach(frostpeak, place.summit); kill 8 dragonspawn; kill 8 frostWyrm (area `frostpeak_wyrmspire`); use(`summit_rite`, 5 s) | Na szczycie Ilvar odprawia obrzęd, żeby samemu stać się zimą. Gracz go przerywa. Mróz, który Ilvar wezwał, pochłania go i zostawia lodowy posąg | ◆ kulminacja: rozmowa z Ilvarem, obrzęd pęka, Ilvar zastyga z wyciągniętą ręką | Ilvar, Halvar |
-| 70 | ✚ `firstSpring` | 100 | Halvar → captain | use(`summit_thorn`, 5 s); level 100 | Cierń wbity w Serce Zimy zapada się w lodowiec. Śnieg na szczycie topnieje. W mieście pierwszy raz od trzystu lat przychodzi wiosna | ◆ ▣ zakończenie: kamera z Iglicy przez cztery krainy do Vaelthornu, dzwony, mowa Aldrica, napis „Koniec” | Aldric i wszyscy powracający |
+| 67 | ✚ `snowInSummer` | 98 | captain → Halvar | talk(brother_anzelm); reach(frostpeak_cave) | ▣ „Finał: Pierwsza Wiosna”. W czasie uczty w mieście zaczyna padać śnieg. Anzelm: w ciele smoka nie było serca. Gracz schodzi do Serca Lodowca i wraca do Halvara (S105: Halvar zostaje przy wejściu na Szczyty). Tekst zaczyna się od „Tak myśleliśmy”, więc `.done` questu `vaelgrath` zostaje bez zmian | ◆ śnieg na placu w środku lata | Aldric, Anzelm, Halvar |
+| 68 | ✚ `dragonsBrood` | 99 | Halvar → Halvar | kill 6 youngFrostDragon (elite); escort(Sigrun → szkielet wyrma, `place.wyrmBones`; S105 zamiast reach) | Wylęg wyniósł Serce Zimy z lodowca Szlakiem Kości ku szczytowi. Sigrun prowadzi Szlakiem, między śladami wylęgu idą ślady bosych stóp | | Halvar |
+| 69 | ✚ `voiceOfWinter` | 99 | Halvar → Halvar | reach(frostpeak, place.summit); kill 8 dragonspawn; kill 8 frostWyrm (area `frostpeak_wyrmspire`); use(`summit_rite`, 5 s) | W Kręgu Obrzędu u stóp rogu Iglicy (S105: sam szczyt nie nadaje się do chodzenia) Ilvar odprawia obrzęd, żeby samemu stać się zimą. Gracz go przerywa. Mróz, który Ilvar wezwał, pochłania go i zostawia lodowy posąg | ◆ kulminacja: rozmowa z Ilvarem, obrzęd pęka, Ilvar zastyga z wyciągniętą ręką | Ilvar, Halvar |
+| 70 | ✚ `firstSpring` | 100 | Halvar → captain | use(`summit_thorn`, 5 s); level 100 | Cierń wbity w Serce Zimy zapada się w lodowiec. Śnieg na szczycie topnieje. W mieście pierwszy raz od trzystu lat przychodzi wiosna | ◆ Cierń zapada się w Serce Zimy (przy wbiciu), ◆ ▣ zakończenie w mieście przy oddaniu: kwiaty, słup wiosny, dzwony, mowa Aldrica, napis „Koniec” (S105: dwie sceny zamiast przelotu przez cztery krainy) | Aldric i wszyscy powracający |
 
 Nowe kotwice (`Areas/frostpeak`): `climbers_camp` (`climbersCamp`), `hunting_camp` (`huntingCamp`), `crystal_garden`
 (`crystals`), `temple_altars` (`offeringAltars`), `temple_colossus` (`sanctuary`), `wyrm_obelisk` (`wyrmObelisk`),
-`summit_rite` i `summit_thorn` (`summit`). W jaskini `frostpeak_hold`: `frost_bloom` (Dziedziniec pod Lodowcem),
+`summit_rite` i `summit_thorn` (S105: nowe miejsce `summitRite`, Krąg Obrzędu u stóp rogu, w kole `summit`). W jaskini `frostpeak_hold`: `frost_bloom` (Dziedziniec pod Lodowcem),
 `hold_chapel` (Kaplica z mieczem w lodzie). Miejsca: `place.trapperCamp`, `place.keep`, `place.dragonStairs`,
-`place.wyrmBones`, `place.summit`. Przedmioty fabularne: `trapperJournal` (Dziennik Traperów), `orderSeal` (Pieczęć
-Zakonu). Nagroda `firstSpring`: tytuł (nowy, np. „Cierń Vaelthornu”; „Pogromca Smoka” już istnieje) i kosmetyk bez
-wpływu na walkę. Bez pay2win.
+`place.wyrmBones`, `place.summit` (Krąg Obrzędu), `place.giantsBreach` (cel `escort`). Przedmioty fabularne: `trapperJournal` (Dziennik Traperów), `orderSeal` (Pieczęć
+Zakonu). Nagroda `firstSpring`: tytuł `thornbearer` „Cierń Vaelthornu” i skin wierzchowca `mountskin_spring` „Rząd
+Pierwszej Wiosny”, bez wpływu na walkę. Wiosna w Vaelthornie tylko u postaci po finale, śnieg w środku lata po smoku
+(`Logic/CitySeason`, S105). Towarzysze (S105): Sigrun `follow` w `iceGrotto` i `voiceOfWinter`, `lead` w `dragonsBrood`;
+Halvar `lead` w `frozenHold`. Sigrun jest przewodniczką także w finale.
 
 **Nowi NPC, Lodowe Szczyty** (S105 dodaje `npcSpots`):
 
 | id | Imię | Gdzie stoi | Rola |
 |---|---|---|---|
 | `trapper_sigrun` | Traperka Sigrun | opuszczony obóz traperów (`trapperCamp`, Dolina Lodowych Wilków) | przewodniczka; łuk S108 |
-| `ghost_halgrim` | Duch Brata Halgrima | oblodzony donżon (`keep`, Lodowa Strażnica) | ostatni brat Zakonu Lodowej Straży, przysięga |
+| `ghost_halgrim` | Duch Brata Halgrima | dziedziniec przed oblodzonym donżonem (`keep`, Lodowa Strażnica) | ostatni brat Zakonu Lodowej Straży, przysięga; zostaje po przysiędze (S105) |
 
 ### 2.6 Postacie powracające (kto, gdzie się pojawia)
 

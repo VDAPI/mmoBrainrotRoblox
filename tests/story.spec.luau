@@ -54,6 +54,23 @@ local EXPECTED_INSERTS: { [string]: { string } } = {
 		"forgeChains",
 		"coldFire",
 	},
+	S105 = {
+		"trappersCamp",
+		"iceGrotto",
+		"harpyRocks",
+		"mammothTundra",
+		"frozenHold",
+		"frozenLake",
+		"iceWatch",
+		"oathWords",
+		"dragonTemple",
+		"wyrmSpire",
+		"eveOfBattle",
+		"snowInSummer",
+		"dragonsBrood",
+		"voiceOfWinter",
+		"firstSpring",
+	},
 }
 
 -- Rewards of the quests that keep fixed EXP (the old 1-19, toDuskwood and the boss quests), as before S102.
@@ -82,6 +99,9 @@ local FIXED_EXP: { [string]: number } = {
 -- Quests whose gold is not gold(level) (S103-S105 add their x2 / x3 rewards here).
 local GOLD_EXCEPTIONS: { [string]: boolean } = {
 	queensLegacy = true, -- S103: gold(44) x 2 (the end of chapter II)
+	oathWords = true, -- S105: gold(90) x 2 (the Thorn whole)
+	voiceOfWinter = true, -- S105: gold(99) x 2 (the rite broken)
+	firstSpring = true, -- S105: gold(100) x 3 (the end of the story)
 }
 
 local function has(key: string): boolean
@@ -205,11 +225,11 @@ describe("Story progress: sync and apply (S102 T2)", function()
 		expect(StoryProgress.isDone(q, "warCouncil")).toBe(true)
 	end)
 
-	it("(g) the old 32: the whole story, vaelgrath last", function()
+	it("(g) the old 32: the whole old story, vaelgrath last; S105: the finale comes next", function()
 		local q = applied({ mainLast = StoryProgress.legacyId(32), mainDone = 32 })
 		expect(q.mainDone).toBe(indexOf.vaelgrath)
 		expect(q.mainLast).toBe("vaelgrath")
-		expect((QuestLogic.nextMain(q.mainDone, 100))).toBe(Main.list[indexOf.vaelgrath + 1])
+		expect((QuestLogic.nextMain(q.mainDone, 100))).toBe(Main.get("snowInSummer"))
 	end)
 
 	it("(h) garbage without an anchor: clamped", function()
@@ -396,6 +416,12 @@ describe("Story chain and data (S102 T4)", function()
 		for _, id in StoryProgress.inserted() do
 			local quest = assert(Main.get(id))
 			local weight = Main.STORY_WEIGHT[id]
+			if quest.level >= 100 then
+				-- S105: the finale at level 100 has nothing to earn (no weight, no EXP)
+				expect(weight).toBeNil()
+				expect(quest.reward.exp).toBe(0)
+				continue
+			end
 			expect(`{id} {weight ~= nil}`).toBe(`{id} true`)
 			local lo = QuestBudget.bandOf(quest.level)
 			local scale = assert(Main.STORY_SCALE[lo], `scale {lo}`)
@@ -462,6 +488,10 @@ describe("Story pages and chapters (S102 T5)", function()
 		expect(Main.chapterOf("queensLegacy")).toBe(2)
 		expect(Main.chapterOf("ashen")).toBe(3)
 		expect(Main.chapterOf("vaelgrath")).toBe(4)
+		-- S105: the finale
+		expect(Main.chapterOf("snowInSummer")).toBe(5)
+		expect(Main.chapterOf("firstSpring")).toBe(5)
+		expect(Main.CHAPTERS[5].final).toBe(true)
 		expect(Main.chapterOf("nope")).toBe(1)
 		expect(has("story.chapter.1.end")).toBe(true)
 	end)
@@ -474,7 +504,7 @@ describe("Story cutscenes (S102 T6)", function()
 		expect(Cutscenes.validate()).toEqual({})
 	end)
 
-	it("has the scenes of chapters I-III with their triggers, in playing order", function()
+	it("has the scenes of chapters I-IV and the finale with their triggers, in playing order", function()
 		local want = {
 			{ "ch1_open", "arrival", "accept" },
 			{ "portal_gate", "portal", "objective", 1 },
@@ -504,6 +534,21 @@ describe("Story cutscenes (S102 T6)", function()
 			{ "ch3_freed", "forgeChains", "objective", 1 },
 			{ "ch3_azgor", "azgor", "objective", 1 },
 			{ "ch3_end", "coldFire", "turnIn" },
+			-- S105: chapter IV and the finale
+			{ "ch4_title", "frostpeak", "objective", 1 },
+			{ "grottoTrappers", "iceGrotto", "objective", 3 },
+			{ "frostBloom", "frozenHold", "objective", 3 },
+			{ "crystalPulse", "frozenLake", "objective", 2 },
+			{ "halgrimRises", "iceWatch", "objective", 1 },
+			{ "thornWhole", "oathWords", "objective", 2 },
+			{ "ilvarStairs", "dragonTemple", "objective", 3 },
+			{ "eveOfBattle", "eveOfBattle", "objective", 3 },
+			{ "vaelgrathFalls", "vaelgrath", "objective", 1 },
+			{ "finaleTitle", "snowInSummer", "accept" },
+			{ "snowInSummer", "snowInSummer", "accept" },
+			{ "voiceOfWinter", "voiceOfWinter", "objective", 4 },
+			{ "thornSinks", "firstSpring", "objective", 1 },
+			{ "firstSpring", "firstSpring", "turnIn" },
 		}
 		expect(#CutsceneData.list).toBe(#want)
 		for i, row in want do
@@ -693,7 +738,9 @@ describe("Story EXP rule (S102 T10)", function()
 				expect(`{quest.id} {table.find(Main.STORY_BANDS, lo) ~= nil}`).toBe(`{quest.id} true`)
 			end
 			if not weighted and table.find(Main.STORY_BANDS, lo) then
-				expect(`{quest.id} {hasBoss(quest) or quest.id == "toDuskwood"}`).toBe(`{quest.id} true`)
+				-- S105: firstSpring (level 100) gives no EXP
+				local free = quest.level >= 100 and quest.reward.exp == 0
+				expect(`{quest.id} {hasBoss(quest) or quest.id == "toDuskwood" or free}`).toBe(`{quest.id} true`)
 			end
 		end
 		for id, value in FIXED_EXP do
@@ -1540,5 +1587,423 @@ describe("Main story, chapter III: players in the middle of the story (S104, F3)
 		local broken = applied({ mainLast = "orcs", main = { id = "noSuchQuest", progress = {} } })
 		expect(broken.main).toBeNil()
 		expect(broken.mainDone).toBe(indexOf.orcs)
+	end)
+end)
+
+-- S105 (docs/FABULA.md §2.5): chapter IV "The Long Winter" and the finale "The First Spring" -------------------------
+
+local CHAPTER_IV = {
+	"frostpeak",
+	"trappersCamp",
+	"iceGrotto",
+	"harpyRocks",
+	"giants",
+	"mammothTundra",
+	"frozenHold",
+	"frozenLake",
+	"iceWatch",
+	"oathWords",
+	"glacier",
+	"dragonTemple",
+	"wyrmSpire",
+	"eveOfBattle",
+	"vaelgrath",
+	"snowInSummer",
+	"dragonsBrood",
+	"voiceOfWinter",
+	"firstSpring",
+}
+local LEVELS_IV = { 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 95, 96, 97, 98, 99, 99, 100 }
+local PAGES_IV = { 3, 3, 3, 2, 2, 2, 3, 2, 3, 4, 2, 3, 2, 3, 3, 3, 2, 4, 4 }
+local ANCHOR_MAP_IV: { [string]: string } = {
+	climbers_camp = "frostpeak",
+	hunting_camp = "frostpeak",
+	crystal_garden = "frostpeak",
+	temple_altars = "frostpeak",
+	temple_colossus = "frostpeak",
+	wyrm_obelisk = "frostpeak",
+	summit_rite = "frostpeak",
+	summit_thorn = "frostpeak",
+	frost_bloom = "frostpeak_hold",
+	hold_chapel = "frostpeak_hold",
+}
+local SCENES_IV = {
+	"ch4_title",
+	"grottoTrappers",
+	"frostBloom",
+	"crystalPulse",
+	"halgrimRises",
+	"thornWhole",
+	"ilvarStairs",
+	"eveOfBattle",
+	"vaelgrathFalls",
+	"finaleTitle",
+	"snowInSummer",
+	"voiceOfWinter",
+	"thornSinks",
+	"firstSpring",
+}
+
+describe("Story chapter IV and the finale (S105)", function()
+	it("B-T1: 70 quests, the 19 of the chapter in order right after coldFire, firstSpring last", function()
+		expect(#Main.list).toBe(70)
+		expect(Main.list[70].id).toBe("firstSpring")
+		local first = indexOf.frostpeak
+		expect(Main.list[first - 1].id).toBe("coldFire")
+		for k, id in CHAPTER_IV do
+			local quest = Main.list[first + k - 1]
+			expect(quest.id).toBe(id)
+			expect(`{id} {quest.level}`).toBe(`{id} {LEVELS_IV[k]}`)
+			expect(`{id} {quest.pages}`).toBe(`{id} {PAGES_IV[k]}`)
+			if k > 1 then
+				local gap = quest.level - Main.list[first + k - 2].level
+				expect(`{id} {gap >= 0 and gap <= 3}`).toBe(`{id} true`)
+			end
+		end
+		expect(Main.list[first].level - Main.list[first - 1].level <= 3).toBe(true)
+		expect(Main.chapterOf("frostpeak")).toBe(4)
+		expect(Main.chapterOf("vaelgrath")).toBe(4)
+		expect(Main.chapterOf("snowInSummer")).toBe(5)
+		expect(has("story.chapter.5")).toBe(true)
+	end)
+
+	it("B-T2: every quest is taken where the last one was handed in; Aldric opens and closes", function()
+		local first = indexOf.frostpeak
+		for k = 2, #CHAPTER_IV do
+			local prev, quest = Main.list[first + k - 2], Main.list[first + k - 1]
+			expect(`{quest.id} {quest.giver}`).toBe(`{quest.id} {prev.turnIn}`)
+		end
+		expect(Main.get("frostpeak").giver).toBe("captain")
+		expect(Main.get("firstSpring").turnIn).toBe("captain")
+		for _, id in CHAPTER_IV do
+			local quest = assert(Main.get(id))
+			expect(Npcs.get(quest.giver) ~= nil and Npcs.get(quest.turnIn) ~= nil).toBe(true)
+			for _, objective in quest.objectives do
+				if objective.type == "talk" or objective.type == "deliver" then
+					expect(Npcs.get(objective.npc or quest.turnIn) ~= nil).toBe(true)
+				end
+			end
+		end
+	end)
+
+	it(
+		"B-T3: monsters, areas, elites, anchors, effects, holds, places, items, the level 100 and the escorts",
+		function()
+			local fs = require("@lune/fs")
+			local controller = fs.readFile("src/client/Controllers/QuestAnchorController.luau")
+			local escorts: { string } = {}
+			local Monsters = require("../src/shared/Data/Monsters")
+			for _, id in CHAPTER_IV do
+				local quest = assert(Main.get(id))
+				local reached: string? = nil
+				for _, objective in quest.objectives do
+					if objective.type == "reach" and not objective.x then
+						reached = objective.map
+					end
+				end
+				for i, objective in quest.objectives do
+					local tag = `{id}#{i}`
+					local t = objective.type
+					if t == "kill" or t == "collect" then
+						local monster = objective.monster :: string
+						expect(`{tag} {Monsters.get(monster) ~= nil}`).toBe(`{tag} true`)
+						if objective.area then
+							local area = Areas.areaById(objective.area)
+							local cave = Areas.caves.get(objective.area)
+							local kinds: { string } = if area then area.kinds else {}
+							local lv: { number } = if area then area.lv else { 0, 0 }
+							if cave then
+								kinds = table.clone(cave.normal)
+								for _, elite in cave.elites do
+									table.insert(kinds, elite)
+								end
+								lv = cave.levels
+								expect(cave.region).toBe("frostpeak")
+							end
+							expect(`{tag} {table.find(kinds, monster) ~= nil}`).toBe(`{tag} true`)
+							local off = math.max(lv[1] - quest.level, quest.level - lv[2], 0)
+							expect(`{tag} {off <= 3}`).toBe(`{tag} true`)
+						end
+						if objective.variant == "elite" then
+							local cave = assert(Areas.caves.get((objective.area or reached) :: string), tag)
+							expect(`{tag} {table.find(cave.elites, monster) ~= nil}`).toBe(`{tag} true`)
+						end
+					elseif t == "use" then
+						for _, anchorId in objective.anchors or { objective.anchor :: string } do
+							local anchor, mapId = Areas.anchorById(anchorId)
+							expect(`{anchorId} {anchor ~= nil and mapId == ANCHOR_MAP_IV[anchorId]}`).toBe(
+								`{anchorId} true`
+							)
+						end
+						local fx = objective.fx :: string
+						expect(Side.FX[fx]).toBe(true)
+						expect(`{fx} {string.find(controller, "\n\t" .. fx .. " = function", 1, true) ~= nil}`).toBe(
+							`{fx} true`
+						)
+						local hold = objective.hold or 0
+						expect(`{tag} {hold >= 1.5 and hold <= 5}`).toBe(`{tag} true`)
+						expect(has(objective.action :: string)).toBe(true)
+					elseif t == "reach" and objective.x then
+						expect(objective.place ~= nil and has(objective.place :: string)).toBe(true)
+					elseif t == "escort" then
+						table.insert(escorts, `{id}#{i}`)
+						expect(has(objective.place :: string)).toBe(true)
+					end
+					if (t == "collect" or t == "deliver") and objective.item then
+						expect(has(`quest.item.{objective.item}`)).toBe(true)
+					end
+				end
+			end
+			expect(escorts).toEqual({ "frozenHold#1", "dragonsBrood#2" })
+			local spring = assert(Main.get("firstSpring"))
+			expect(spring.objectives[2].type).toBe("level")
+			expect(spring.objectives[2].level).toBe(100)
+			local watch = assert(Main.get("iceWatch"))
+			expect(watch.turnIn).toBe("ghost_halgrim")
+			expect(watch.objectives[3].type).toBe("deliver")
+			expect(watch.objectives[3].item).toBe("orderSeal")
+			for _, objective in assert(Main.get("oathWords")).objectives do
+				expect(objective.type ~= "deliver").toBe(true)
+			end
+			-- the level objective counts at once for a character already at 100 (QuestService.catchUp)
+			expect(QuestLogic.amount(spring.objectives[2], "level", { level = 100 }, 0)).toBe(1)
+			expect(QuestLogic.amount(spring.objectives[2], "level", { level = 99 }, 0)).toBe(0)
+		end
+	)
+
+	it("B-T4: texts of the 19 quests in both languages; vaelgrath's hand-in kept; the finale starts with it", function()
+		local Pl = require("../src/shared/Data/Localization/pl") :: any
+		for _, id in CHAPTER_IV do
+			local quest = assert(Main.get(id))
+			for _, key in { "title", "text", "done" } do
+				expect(`{id}.{key} {has(`quest.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+			local pages = assert(quest.pages, id)
+			expect(pages >= 2 and pages <= 4).toBe(true)
+			for i = 1, pages do
+				expect(`{id}.p{i} {has(`quest.{id}.p{i}`)}`).toBe(`{id}.p{i} true`)
+			end
+			for _, objective in quest.objectives do
+				if objective.line then
+					expect(has(objective.line)).toBe(true)
+				end
+			end
+		end
+		expect(Pl["quest.vaelgrath.done"]).toBe("To koniec. Vaelthorn będzie śpiewał o tobie przez sto zim.")
+		expect(string.sub(Pl["quest.snowInSummer.p1"], 1, #"Tak myśleliśmy")).toBe("Tak myśleliśmy")
+		expect(string.sub(Pl["quest.snowInSummer.text"], 1, #"Tak myśleliśmy")).toBe("Tak myśleliśmy")
+		for _, key in
+			{
+				"quest.use.burial",
+				"quest.use.gatherArmor",
+				"quest.use.shatter",
+				"quest.use.snuff",
+				"quest.use.oath",
+				"quest.use.breakRite",
+				"quest.use.thorn",
+				"place.trapperCamp",
+				"place.keep",
+				"place.dragonStairs",
+				"place.wyrmBones",
+				"place.giantsBreach",
+				"place.summit",
+				"title.thornbearer",
+				"cosmetic.mountskin_spring",
+			}
+		do
+			expect(`{key} {has(key)}`).toBe(`{key} true`)
+		end
+	end)
+
+	it("B-T6: the band 70-99 on the story rule; vaelgrath's reward as S97 pinned it; no EXP for the finale", function()
+		expect(table.find(Main.STORY_BANDS, 70) ~= nil).toBe(true)
+		local weighted = 0
+		for _, id in CHAPTER_IV do
+			local quest = assert(Main.get(id))
+			if Main.STORY_WEIGHT[id] then
+				weighted += 1
+				expect(quest.reward.exp).toBe(
+					math.floor(Main.STORY_SCALE[70] * Exp.expToNext(quest.level) * Main.STORY_WEIGHT[id])
+				)
+				expect(`{id} {quest.reward.exp > 0 and quest.reward.exp <= 0.5 * Exp.expToNext(quest.level)}`).toBe(
+					`{id} true`
+				)
+			end
+		end
+		expect(weighted).toBe(17)
+		local dragon = assert(Main.get("vaelgrath"))
+		expect(Main.STORY_WEIGHT.vaelgrath).toBeNil()
+		expect(dragon.reward.exp).toBe(math.floor(Exp.expToNext(99) * 1.5))
+		expect(dragon.reward.gold).toBe((60 + 100 * 45) * 5)
+		expect(dragon.reward.cosmetic).toBe("mountskin_dragonslayer")
+		local spring = assert(Main.get("firstSpring"))
+		expect(Main.STORY_WEIGHT.firstSpring).toBeNil()
+		expect(spring.reward.exp).toBe(0)
+		expect(spring.reward.gold).toBe((60 + 100 * 45) * 3)
+		expect(Main.get("oathWords").reward.gold).toBe((60 + 90 * 45) * 2)
+		expect(Main.get("voiceOfWinter").reward.gold).toBe((60 + 99 * 45) * 2)
+	end)
+
+	it("B-T7: reward items exist; the finale's skin and title", function()
+		local Items = require("../src/shared/Data/Items")
+		local Cosmetics = require("../src/shared/Data/Cosmetics")
+		local TitleData = require("../src/shared/Data/Titles")
+		for _, id in CHAPTER_IV do
+			for _, item in assert(Main.get(id)).reward.items or {} do
+				expect(`{id} {item.id} {Items.get(item.id) ~= nil}`).toBe(`{id} {item.id} true`)
+			end
+		end
+		local spring = assert(Main.get("firstSpring"))
+		expect(spring.reward.cosmetic).toBe("mountskin_spring")
+		local skin = assert(Cosmetics.get("mountskin_spring"))
+		expect(skin.kind).toBe("mountskin")
+		expect(skin.price).toBe(0)
+		expect((skin.obtain :: any).quest).toBe("firstSpring")
+		expect(skin.wiki).toBe(false)
+		local title = assert(TitleData.get("thornbearer"))
+		expect(title.req).toEqual({ kind = "mainDone", value = indexOf.firstSpring })
+		expect(title.wiki).toBe(false)
+	end)
+
+	it("B-T8: the scenes of the chapter and the finale; Ilvar only as a figure", function()
+		expect(Cutscenes.validate()).toEqual({})
+		for _, id in SCENES_IV do
+			local scene = assert(CutsceneData.get(id), id)
+			expect(scene.title ~= nil or (#scene.lines >= 2 and #scene.lines <= 4)).toBe(true)
+			for _, item in scene.lines do
+				expect(`{item.key} {has(item.key)}`).toBe(`{item.key} true`)
+			end
+			if scene.title then
+				expect(has(scene.title)).toBe(true)
+			end
+		end
+		expect(CutsceneData.get("ch4_title").subtitle).toBe("story.chapter.4")
+		expect(CutsceneData.get("finaleTitle").subtitle).toBe("story.chapter.5")
+		expect(CutsceneData.get("thornWhole").title).toBe("cutscene.thornWhole.title")
+		expect(CutsceneData.get("firstSpring").title).toBe("cutscene.firstSpring.title")
+		-- the finale's card plays before Aldric's scene (both on accepting snowInSummer)
+		expect(Cutscenes.triggered("snowInSummer", "accept")).toEqual({ "finaleTitle", "snowInSummer" })
+		-- Ilvar turns to ice for good in the Rite Circle, the knights crumble, the Thorn stands in the lair
+		local voice = assert(CutsceneData.get("voiceOfWinter"))
+		expect(assert(voice.figures)[1].look).toBe("ilvar")
+		expect(assert(voice.figures)[1].fade).toBe("freeze")
+		expect(assert(assert(CutsceneData.get("vaelgrathFalls")).props)[1].kind).toBe("thorn")
+		expect(Npcs.get("ilvar")).toBeNil()
+		for _, quest in Main.list do
+			for _, objective in quest.objectives do
+				expect(objective.npc ~= "ilvar").toBe(true)
+			end
+		end
+	end)
+
+	it("the two story NPCs of the Peaks: hidden from the wiki, texts in both languages, Halgrim a ghost", function()
+		local spots = assert(Areas.byMap.frostpeak.npcSpots, "npcSpots")
+		for id, spotId in { trapper_sigrun = "trapper", ghost_halgrim = "halgrim" } do
+			local npc = assert(Npcs.get(id), id)
+			local spot = assert(spots[spotId], spotId)
+			expect(npc.map).toBe("frostpeak")
+			expect(npc.wiki).toBe(false)
+			expect(npc.showFrom).toBeNil()
+			expect(npc.position.x).toBe(spot.x)
+			expect(npc.position.z).toBe(spot.z)
+			expect(table.find(npc.services, "talk") ~= nil).toBe(true)
+			for _, key in { "name", "role", "greeting", "line1", "line2", "line3", "where" } do
+				expect(`{id}.{key} {has(`npc.{id}.{key}`)}`).toBe(`{id}.{key} true`)
+			end
+		end
+		expect(Npcs.get("ghost_halgrim").ghost).toBe(true)
+		expect(Npcs.get("trapper_sigrun").ghost).toBeNil()
+		for _, id in { "captain", "brother_anzelm", "healer" } do
+			expect(has(`npc.{id}.greetingSpring`)).toBe(true)
+		end
+	end)
+
+	it("what S108 builds on: Sigrun, Halgrim, trappersCamp, iceGrotto, iceWatch, dragonTemple", function()
+		for _, id in { "trappersCamp", "iceGrotto", "iceWatch", "dragonTemple" } do
+			expect(indexOf[id] ~= nil).toBe(true)
+		end
+		local arc: any = { id = "test_s108", requires = { "iceWatch" } }
+		expect(SideQuests.requirementsMet(applied({ mainLast = "iceWatch" }), arc)).toBe(true)
+		expect(SideQuests.requirementsMet(applied({ mainLast = "frozenLake" }), arc)).toBe(false)
+		expect(has("place.wyrmBones")).toBe(true)
+	end)
+end)
+
+describe("Story chapter IV and the finale: players in the middle of the story (S105, B6)", function()
+	local function migrated(fields: { [string]: any }): any
+		local c: any = AccountSchema.characterTemplate()
+		c.id, c.name, c.level = "x", "x", 99
+		for key, value in fields do
+			c.quests[key] = value
+		end
+		local data: any = AccountSchema.accountTemplate()
+		data.schema = 7
+		data.characters = { x = c }
+		AccountSchema.migrate(data)
+		return data.characters.x.quests
+	end
+
+	it("the old numbers of the chapter; no new migration", function()
+		expect(StoryProgress.legacyId(29)).toBe("frostpeak")
+		expect(StoryProgress.legacyId(30)).toBe("giants")
+		expect(StoryProgress.legacyId(31)).toBe("glacier")
+		expect(StoryProgress.legacyId(32)).toBe("vaelgrath")
+		expect(AccountSchema.CURRENT).toBe(8)
+	end)
+
+	it("1. the dragon slayers of before (old 32): vaelgrath handed in, the finale next", function()
+		local q = migrated({ mainDone = 32 })
+		expect(q.mainDone).toBe(indexOf.vaelgrath)
+		expect(q.mainLast).toBe("vaelgrath")
+		expect((QuestLogic.nextMain(q.mainDone, 99))).toBe(Main.get("snowInSummer"))
+		for _, id in { "trappersCamp", "oathWords", "eveOfBattle" } do
+			expect(StoryProgress.isDone(q, id)).toBe(true)
+		end
+		expect(StoryProgress.isDone(q, "snowInSummer")).toBe(false)
+	end)
+
+	it("2. giants handed in (old 30): the three quests before it count as done, mammothTundra next", function()
+		local q = migrated({ mainDone = 30 })
+		expect(q.mainDone).toBe(indexOf.giants)
+		for _, id in { "trappersCamp", "iceGrotto", "harpyRocks" } do
+			expect(StoryProgress.isDone(q, id)).toBe(true)
+		end
+		expect(StoryProgress.isDone(q, "mammothTundra")).toBe(false)
+		expect((QuestLogic.nextMain(q.mainDone, 82))).toBe(Main.get("mammothTundra"))
+	end)
+
+	it("3. an active glacier keeps its progress", function()
+		local q = migrated({ mainDone = 30, main = { id = "glacier", progress = { 1, 3 } } })
+		expect(q.mainDone).toBe(indexOf.glacier - 1)
+		expect(q.main.id).toBe("glacier")
+		expect(q.main.progress).toEqual({ 1, 3 })
+		expect(StoryProgress.isDone(q, "oathWords")).toBe(true)
+		local again = applied({ mainLast = "giants", main = { id = "glacier", progress = { 1, 3 } } })
+		expect(again.mainDone).toBe(indexOf.glacier - 1)
+		expect(again.main.progress).toEqual({ 1, 3 })
+	end)
+
+	it("4. saved after S104 (mainLast): the same last quest, twice the same", function()
+		for _, last in { "frostpeak", "giants", "glacier", "vaelgrath" } do
+			local q = applied({ mainLast = last, mainDone = 52 })
+			expect(q.mainLast).toBe(last)
+			expect(q.mainDone).toBe(indexOf[last])
+			local d, l = q.mainDone, q.mainLast
+			StoryProgress.apply(q)
+			expect(q.mainDone).toBe(d)
+			expect(q.mainLast).toBe(l)
+		end
+		local frost = applied({ mainLast = "frostpeak" })
+		expect((QuestLogic.nextMain(frost.mainDone, 74))).toBe(Main.get("trappersCamp"))
+	end)
+
+	it("the title of the finale, and Dragonbane right at vaelgrath", function()
+		local function char(done: number): any
+			return { level = 100, quests = { mainDone = done }, pvp = {} }
+		end
+		expect(Titles.isUnlocked(char(indexOf.vaelgrath - 1), "dragonbane")).toBe(false)
+		expect(Titles.isUnlocked(char(indexOf.vaelgrath), "dragonbane")).toBe(true)
+		expect(Titles.isUnlocked(char(indexOf.firstSpring - 1), "thornbearer")).toBe(false)
+		expect(Titles.isUnlocked(char(indexOf.firstSpring), "thornbearer")).toBe(true)
 	end)
 end)

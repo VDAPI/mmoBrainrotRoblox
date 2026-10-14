@@ -1091,14 +1091,44 @@ local points: { [string]: { Point } } = {
 	},
 }
 
+-- S105: the city's seasons for one character (Logic/CitySeason; summer = no mood, as before): snow in the middle of
+-- summer once the dragon is beaten, the first spring after the finale. Sounds without ids like everything here.
+local seasons: { [string]: Mood } = {
+	snow = {
+		tint = "#DDE8F4",
+		tintMix = 0.3,
+		saturation = -0.08,
+		sounds = {
+			day = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.35) },
+			night = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.3) },
+		},
+	},
+	spring = {
+		tint = "#FFF2DC",
+		tintMix = 0.3,
+		saturation = 0.1,
+		brightness = 1.05,
+		sounds = {
+			day = { BIRDS, s("town spring celebration loop (distant bells, festive crowd, lute)", 0.35) },
+			night = { NIGHT_CRICKETS },
+		},
+	},
+}
+
 local Ambience = {
 	areas = areas,
 	maps = maps,
 	rooms = rooms,
 	points = points,
+	seasons = seasons, -- S105
 	MAX_LOOPS = 3,
 	BLEND = 2.5, -- seconds to blend from one mood to the next
 }
+
+-- S105: the city's mood in a season (summer = nil: the city as it always was).
+function Ambience.cityMood(season: string): Mood?
+	return seasons[season]
+end
 
 -- Mood of an area, else of the map (nil = plain map light, no loops).
 function Ambience.moodOf(mapId: string, areaId: string?): Mood?
@@ -1121,7 +1151,7 @@ function Ambience.allSounds(): { Sound }
 			table.insert(out, sound)
 		end
 	end
-	for _, list in { areas, maps } :: { { [string]: Mood } } do
+	for _, list in { areas, maps, seasons } :: { { [string]: Mood } } do
 		for _, mood in list do
 			for _, sound in mood.sounds.day do
 				add(sound)

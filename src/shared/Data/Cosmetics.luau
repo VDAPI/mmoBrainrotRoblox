@@ -38,6 +38,7 @@ export type Def = {
 	flies: boolean?,
 	skin: Skin?, -- S97: mountskin
 	obtain: Obtain?, -- S97: a boss drop (Data/Mounts.BOSS_DROPS) or a quest reward (Reward.cosmetic), not for sale
+	wiki: boolean?, -- S105: false = left out of the wiki until S109 (tools/WikiData/Visibility)
 }
 
 local LIST: { Def } = {}
@@ -191,6 +192,17 @@ add("mountskin_dragonslayer", "mountskin", 0, "🐉", "#8E949C", {
 	skin = {
 		colors = { base = "#5A5E66", accent = "#2E3138", trim = "#A8AEB6", cloth = "#9FD8F5" },
 		parts = { "peytral", "chamfron" },
+	},
+})
+-- S105: the reward of the story's finale (firstSpring): pale green cloth with white flowers, a wreath of field flowers
+-- by the bridle; off the wiki like its quest until S109
+add("mountskin_spring", "mountskin", 0, "❀", "#B8E07A", {
+	color2 = "#F4F0E8",
+	obtain = { quest = "firstSpring" },
+	wiki = false,
+	skin = {
+		colors = { cloth = "#9CCB6A", trim = "#F4F0E8", accent = "#E8D8B0" },
+		parts = { "caparison", "wreath" },
 	},
 })
 

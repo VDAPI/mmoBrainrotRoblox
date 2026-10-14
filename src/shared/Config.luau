@@ -204,6 +204,9 @@ local Config = {
 			potion_mana_3 = 2,
 			-- S104: chapter III (the Ashen Wastes, 45-70): one fire resistance elixir before the Wyvern Lair
 			elixir_resFire = 1,
+			-- S105: chapter IV and the finale (the Frost Peaks, 70-100): the great potions before the Grotto and the rite
+			potion_hp_5 = 2,
+			potion_mana_5 = 2,
 		},
 	},
 	-- NPC comments during quests (S101b, Logic/Barks + BarkController; client only, no effect on play). Seconds

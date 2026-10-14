@@ -712,3 +712,329 @@ describe("Frost Peaks: generator", function()
 		end
 	end)
 end)
+
+-- S105 (story chapter IV and the finale): the places of Sigrun and Halgrim, the quest anchors, the Rite Circle ------------
+
+describe("Frost Peaks: story places (S105)", function()
+	local Kit = require("../src/shared/Logic/WorldGen/Kit")
+	local Npcs = require("../src/shared/Data/Npcs")
+	local Rite = require("../src/shared/Logic/FrostpeakGen/Rite")
+
+	-- the site each NPC place and anchor belongs to (its avoid circle)
+	local OWNER: { [string]: string } = {
+		trapper = "trapperCamp",
+		halgrim = "keep",
+		climbers_camp = "climbersCamp",
+		hunting_camp = "huntingCamp",
+		crystal_garden = "crystals",
+		temple_altars = "offeringAltars",
+		temple_colossus = "sanctuary",
+		wyrm_obelisk = "wyrmObelisk",
+		summit_rite = "summit",
+		summit_thorn = "summit",
+	}
+	-- the building rectangles of the map's sketch (FrostpeakGen buildingSketch): the trappers' cabin and the keep
+	local RECTS = {
+		{ x = SITES.trapperCamp.x, z = SITES.trapperCamp.z + 4, w = 12, d = 10, rot = SITES.trapperCamp.rot },
+		{ x = SITES.keep.x + 10, z = SITES.keep.z, w = 30, d = 26, rot = 0 },
+		{ x = SITES.sanctuary.x, z = SITES.sanctuary.z, w = 40, d = 30, rot = 0, floor = true },
+	}
+
+	local function circleOf(site: string): { x: number, z: number, r: number }?
+		local s = SITES[site]
+		for _, c in DATA.avoid do
+			if c.x == s.x and c.z == s.z then
+				return c
+			end
+		end
+		return nil
+	end
+
+	local function inRectOf(x: number, z: number, r: any): boolean
+		local a = math.rad(r.rot)
+		local dx, dz = x - r.x, z - r.z
+		local lx, lz = math.cos(a) * dx - math.sin(a) * dz, math.sin(a) * dx + math.cos(a) * dz
+		return math.abs(lx) <= r.w / 2 and math.abs(lz) <= r.d / 2
+	end
+
+	local function places(): { { name: string, x: number, z: number, anchor: boolean } }
+		local out = {}
+		for name, spot in assert(DATA.npcSpots, "npcSpots") do
+			table.insert(out, { name = name, x = spot.x, z = spot.z, anchor = false })
+		end
+		for _, a in assert(DATA.questAnchors, "questAnchors") do
+			table.insert(out, { name = a.id, x = a.x, z = a.z, anchor = true })
+		end
+		return out
+	end
+
+	it("F-T1/F-T2: NPC places and anchors on firm, gentle ground inside the avoid circle of their site", function()
+		local list = places()
+		expect(#list).toBe(10)
+		for _, p in list do
+			local tag = `{p.name} at {math.floor(p.x)}, {math.floor(p.z)}`
+			local circle = assert(circleOf(assert(OWNER[p.name], p.name)), p.name)
+			local d = math.sqrt((p.x - circle.x) ^ 2 + (p.z - circle.z) ^ 2)
+			expect(`{tag} inside {d <= circle.r - 2}`).toBe(`{tag} inside true`)
+			-- the crystal garden grows out of the Frozen Lake's walkable ice
+			if p.name ~= "crystal_garden" then
+				expect(`{tag} ice {T.ice(p.x, p.z) == nil}`).toBe(`{tag} ice true`)
+			end
+			expect(T.isWater(p.x, p.z)).toBe(false)
+			expect(T.crevasseDistance(p.x, p.z) > 10).toBe(true)
+			expect(T.glacierAt(p.x, p.z)).toBe(false)
+			expect(T.mountainAt(p.x, p.z)).toBe(false)
+			expect(`{tag} slope {slopeAround(p.x, p.z, 6) < MAX_SLOPE}`).toBe(`{tag} slope true`)
+			local road = AreaSpawns.nearRoad(DATA.roads, p.x, p.z, if p.anchor then 4 else 6)
+			expect(`{tag} road {road}`).toBe(`{tag} road false`)
+			for _, r in RECTS do
+				if not r.floor then
+					expect(`{tag} building {inRectOf(p.x, p.z, r)}`).toBe(`{tag} building false`)
+				end
+			end
+		end
+		for i, a in list do
+			for k, b in list do
+				if k > i then
+					local d = math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+					local least = if a.anchor and b.anchor then 4 else 5
+					expect(`{a.name}/{b.name} {d >= least}`).toBe(`{a.name}/{b.name} true`)
+				end
+			end
+		end
+		-- no new avoid circle (the Rite Circle lies inside the summit's), the groups and nodes of S47 stay
+		expect(#DATA.avoid).toBe(38)
+		for _, spot in DATA.npcSpots :: any do
+			expect(spot.wiki).toBe(false)
+		end
+		for _, a in DATA.questAnchors :: any do
+			expect(a.wiki).toBe(false)
+		end
+	end)
+
+	it("F-T1: Sigrun and Halgrim stand exactly on their places; the places are named apart from every site", function()
+		local spots = assert(DATA.npcSpots, "npcSpots")
+		for id, spotId in { trapper_sigrun = "trapper", ghost_halgrim = "halgrim" } do
+			local npc = assert(Npcs.get(id), id)
+			local spot = assert(spots[spotId], spotId)
+			expect(npc.map).toBe("frostpeak")
+			expect(npc.position.x).toBe(spot.x)
+			expect(npc.position.z).toBe(spot.z)
+			expect(npc.facing).toBe(spot.facing)
+		end
+		for name in spots do
+			for _, data in Areas.byMap do
+				expect(`{name} {(data.sites or {} :: any)[name] == nil}`).toBe(`{name} true`)
+			end
+		end
+		-- Halgrim keeps 8+ studs from the frozen weapon racks of the courtyard (keep-local x -26..-14, z -26)
+		local keep = SITES.keep
+		for m = 0, 2 do
+			local rx, rz = Kit.toWorld(keep.x + 10, keep.z, keep.rot, -26 + m * 6, -26)
+			expect(math.sqrt((spots.halgrim.x - rx) ^ 2 + (spots.halgrim.z - rz) ^ 2) >= 8).toBe(true)
+		end
+	end)
+
+	it(
+		"F-T3: every NPC place, anchor and the Rite Circle can be walked to from the Ashen portal (the Ice Watch's walls in the way)",
+		function()
+			local STEP = 8
+			local N = math.floor(1560 / STEP)
+			local function idx(i: number, k: number): number
+				return i * (N + 1) + k
+			end
+			local hs: { number } = {}
+			local blocked: { boolean } = {}
+			for i = 0, N do
+				for k = 0, N do
+					local x, z = -780 + i * STEP, -780 + k * STEP
+					local h = T.height(x, z)
+					local w = T.water(x, z)
+					hs[idx(i, k)] = h
+					blocked[idx(i, k)] = (w ~= nil and w - h > 3.5) or (w ~= nil and T.ice(x, z) == nil and w > h + 0.5)
+				end
+			end
+			local function cell(x: number, z: number): (number, number)
+				return math.clamp(math.floor((x + 780) / STEP + 0.5), 0, N),
+					math.clamp(math.floor((z + 780) / STEP + 0.5), 0, N)
+			end
+			-- the Ice Watch's walls, towers, gatehouse and keep stop the walk (their collidable pieces up to head height,
+			-- footprints grown by STEP / 4 so a 4-stud wall always covers a row of cells): Halgrim's courtyard is reached
+			-- only through the gate, whose icicles and frozen sentries have no collision (Fortress.gate)
+			local gatePieces = 0
+			for _, b in FrostpeakGen.all() do
+				local name = b.name
+				local fort = name == "icewatchGate"
+					or name == "keep"
+					or string.sub(name, 1, 13) == "IceWatchWall_"
+					or string.sub(name, 1, 14) == "IceWatchTower_"
+				if not fort then
+					continue
+				end
+				for _, piece in b.bp.pieces do
+					local r, s, p = piece.r, piece.size, piece.p
+					if name == "icewatchGate" and math.abs(p[1]) < 6 and p[2] < 12 then
+						gatePieces += 1
+						expect(`gate piece col {piece.col}`).toBe("gate piece col false")
+					end
+					local ex = (math.abs(r[1]) * s[1] + math.abs(r[2]) * s[2] + math.abs(r[3]) * s[3]) / 2
+					local ey = (math.abs(r[4]) * s[1] + math.abs(r[5]) * s[2] + math.abs(r[6]) * s[3]) / 2
+					local ez = (math.abs(r[7]) * s[1] + math.abs(r[8]) * s[2] + math.abs(r[9]) * s[3]) / 2
+					if piece.col and p[2] - ey < 7 then
+						local x0, z0, x1, z1 = math.huge, math.huge, -math.huge, -math.huge
+						for _, c in { { -1, -1 }, { -1, 1 }, { 1, -1 }, { 1, 1 } } do
+							local wx, wz = Kit.toWorld(b.at.x, b.at.z, b.at.rot, p[1] + c[1] * ex, p[3] + c[2] * ez)
+							x0, z0, x1, z1 = math.min(x0, wx), math.min(z0, wz), math.max(x1, wx), math.max(z1, wz)
+						end
+						local grow = STEP / 4
+						for i = math.ceil((x0 - grow + 780) / STEP), math.floor((x1 + grow + 780) / STEP) do
+							for k = math.ceil((z0 - grow + 780) / STEP), math.floor((z1 + grow + 780) / STEP) do
+								if i >= 0 and i <= N and k >= 0 and k <= N then
+									blocked[idx(i, k)] = true
+								end
+							end
+						end
+					end
+				end
+			end
+			-- the icicles barring the gate (11) and nothing collidable under the arch
+			expect(gatePieces >= 11).toBe(true)
+			local seen: { [number]: boolean } = {}
+			local si, sk = cell(-740, 0)
+			local queue = { { si, sk } }
+			seen[idx(si, sk)] = true
+			local maxRise = math.tan(math.rad(32)) * STEP
+			local head = 1
+			while head <= #queue do
+				local c = queue[head]
+				head += 1
+				local h = hs[idx(c[1], c[2])]
+				for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+					local ni, nk = c[1] + d[1], c[2] + d[2]
+					if ni >= 0 and ni <= N and nk >= 0 and nk <= N then
+						local key = idx(ni, nk)
+						if not seen[key] and not blocked[key] and math.abs(hs[key] - h) <= maxRise then
+							seen[key] = true
+							table.insert(queue, { ni, nk })
+						end
+					end
+				end
+			end
+			local function reached(x: number, z: number): boolean
+				for dx = -12, 12, STEP / 2 do
+					for dz = -12, 12, STEP / 2 do
+						local i, k = cell(x + dx, z + dz)
+						if seen[idx(i, k)] then
+							return true
+						end
+					end
+				end
+				return false
+			end
+			local targets = places()
+			table.insert(
+				targets,
+				{ name = "site summitRite", x = SITES.summitRite.x, z = SITES.summitRite.z, anchor = false }
+			)
+			-- the companions' starts of the chapter (Data/Quests/Main: frozenHold, dragonsBrood, voiceOfWinter)
+			for _, p in { { 277, -336 }, { 300, -556 }, { 532, -528 } } do
+				table.insert(targets, { name = `companion {p[1]}, {p[2]}`, x = p[1], z = p[2], anchor = false })
+			end
+			for _, t in targets do
+				if not reached(t.x, t.z) then
+					error(`{t.name} at {math.floor(t.x)}, {math.floor(t.z)} cannot be reached on foot`)
+				end
+			end
+		end
+	)
+
+	it("F-T4: the monster groups and the gathering nodes of S47 are unchanged (57 groups, 50 nodes)", function()
+		-- before S105 (build/s105_before.json): 57 groups, 50 nodes; the sums of their coordinates
+		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4923, 738, 2719, 169
+		local groups = AreaSpawns.region(DATA, MAP.size)
+		expect(#groups).toBe(57)
+		local nodes = FrostpeakGen.nodes()
+		expect(#nodes).toBe(50)
+		local sx, sz = 0, 0
+		for _, n in nodes do
+			sx += n.x
+			sz += n.z
+		end
+		local gx, gz = 0, 0
+		for _, g in groups do
+			gx += g.position.x
+			gz += g.position.z
+		end
+		expect(math.floor(sx + 0.5)).toBe(NODE_SUM_X)
+		expect(math.floor(sz + 0.5)).toBe(NODE_SUM_Z)
+		expect(math.floor(gx + 0.5)).toBe(GROUP_SUM_X)
+		expect(math.floor(gz + 0.5)).toBe(GROUP_SUM_Z)
+	end)
+
+	it(
+		"F-T5: the Rite Circle stands on the ground with the Heart of Winter beating; the anchors face its altar",
+		function()
+			local found = false
+			for _, b in FrostpeakGen.all() do
+				if b.name == "summitRite" then
+					found = true
+					expect(math.abs(b.at.y - T.height(b.at.x, b.at.z)) <= 6).toBe(true)
+					local heart, shell = 0, 0
+					for _, piece in b.bp.pieces do
+						if piece.tag == "heart" then
+							heart += 1
+						end
+						if piece.lod == "shell" then
+							shell += 1
+						end
+					end
+					expect(heart >= 1).toBe(true)
+					expect(shell <= 14).toBe(true)
+				end
+			end
+			expect(found).toBe(true)
+			-- the circle's middle is 9 / 4 studs behind summit_rite / summit_thorn (QuestAnchorController `rite`, `thorn`)
+			local anchors: { [string]: any } = {}
+			for _, a in assert(DATA.questAnchors, "questAnchors") do
+				anchors[a.id] = a
+			end
+			local site = SITES.summitRite
+			for id, back in { summit_rite = 9, summit_thorn = 4 } do
+				local a = anchors[id]
+				local cx, cz = Kit.toWorld(a.x, a.z, a.rot, 0, back)
+				expect(math.abs(cx - site.x) < 0.01 and math.abs(cz - site.z) < 0.01).toBe(true)
+			end
+			-- the anchors stay off the monoliths and the altar (Logic/FrostpeakGen/Rite)
+			for _, id in { "summit_rite", "summit_thorn" } do
+				local a = anchors[id]
+				for _, st in Rite.stones() do
+					local sx, sz = Kit.toWorld(site.x, site.z, site.rot, st.x, st.z)
+					expect(math.sqrt((a.x - sx) ^ 2 + (a.z - sz) ^ 2) > 3).toBe(true)
+				end
+				expect(math.sqrt((a.x - site.x) ^ 2 + (a.z - site.z) ^ 2) > Rite.ALTAR.d / 2 + 1).toBe(true)
+			end
+		end
+	)
+
+	it("keeps the cave anchors on the floor of their rooms in the Frozen Hold", function()
+		local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
+		local cave = assert(Areas.caves.get("frostpeak_hold"))
+		local terrain = assert(CaveTerrain.get("frostpeak_hold"))
+		local rooms = { frost_bloom = 3, hold_chapel = 4 }
+		local anchors = assert(cave.questAnchors, "questAnchors")
+		expect(#anchors).toBe(2)
+		for _, a in anchors do
+			expect(a.wiki).toBe(false)
+			expect(terrain.floor(a.x, a.z) ~= nil).toBe(true)
+			expect(terrain.liquid(a.x, a.z)).toBeNil()
+			expect(terrain.headroom(a.x, a.z) >= 8).toBe(true)
+			expect(terrain.roomAt(a.x, a.z)).toBe(rooms[a.id])
+			local _, mapId = Areas.anchorById(a.id)
+			expect(mapId).toBe("frostpeak_hold")
+		end
+		-- the chapel's altar (130 / -78, a 6 x 3 block) stays clear of the anchor
+		local chapel = anchors[2]
+		expect(chapel.id).toBe("hold_chapel")
+		expect(math.abs(chapel.z - -78) - 1.5 >= 4).toBe(true)
+	end)
+end)

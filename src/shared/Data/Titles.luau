@@ -20,6 +20,7 @@ export type TitleDef = {
 	nameKey: string,
 	req: Requirement,
 	color: string, -- hex, how the title is drawn on the nameplate
+	wiki: boolean?, -- S105: false = left out of the wiki (tools/WikiData/Visibility) until S109
 }
 
 local list: { TitleDef } = {
@@ -40,6 +41,14 @@ local list: { TitleDef } = {
 		nameKey = "title.dragonbane",
 		req = { kind = "mainDone", value = Main.indexOf.vaelgrath },
 		color = "#FF6B4A",
+	},
+	-- S105: the end of the story (the Thorn of Vael in the Heart of Winter and the first spring); off the wiki until S109
+	{
+		id = "thornbearer",
+		nameKey = "title.thornbearer",
+		req = { kind = "mainDone", value = Main.indexOf.firstSpring },
+		color = "#B8E07A",
+		wiki = false,
 	},
 	{ id = "duelist", nameKey = "title.duelist", req = { kind = "duelsWon", value = 10 }, color = "#E8E25A" },
 	{ id = "gladiator", nameKey = "title.gladiator", req = { kind = "duelsWon", value = 50 }, color = "#FFD36B" },

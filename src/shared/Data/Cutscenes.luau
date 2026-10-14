@@ -9,7 +9,12 @@
 -- from Logic/CaveTerrain, not a ray from the sky.
 -- S104: the nine scenes of chapter III "Cold Fire" (the Ashen Wastes and Deepforge); speakers without an NPC: the freed
 -- smith and the freed villager of the burnt town (WHO); Brother Anzelm stands by the smith Dorgan at the chapter's end.
+-- S105: the fourteen scenes of chapter IV "The Long Winter" and the finale "The First Spring"; figures in ice (`ice`:
+-- the frozen trappers and knights), Ilvar turning to ice for good (`fade = "freeze"`), the scouts of the four lands and
+-- the ghost of Halgrim as figures, and client-only props of the story (`props`: Util/StoryProps on the client: the
+-- Thorn of Vael, a lantern).
 
+local Areas = require("./Areas")
 local Npcs = require("./Npcs")
 
 export type Shot = {
@@ -34,9 +39,13 @@ export type Figure = {
 	x: number,
 	z: number,
 	facing: number,
-	fade: ("frost" | "none")?,
+	-- "frost": vanishes in frost over the last line; S105 "freeze": turns to ice over the last line and stays so
+	fade: ("frost" | "freeze" | "none")?,
 	ghost: boolean?, -- S103: half-transparent with a cold light in the trim's colour (Ilvar's projection, a spirit)
+	ice: boolean?, -- S105: frozen through (ice, 0.3 transparent): the trappers in the Grotto, the knights of the Guard
 }
+-- S105: a client-only prop of the shot (Util/StoryProps): map-relative x / z, `y` over the ground, `yaw` in degrees.
+export type Prop = { kind: "thorn" | "lantern", x: number, z: number, y: number?, yaw: number?, lit: boolean? }
 export type Scene = {
 	id: string,
 	kind: "chapter" | "scene",
@@ -50,6 +59,7 @@ export type Scene = {
 	figures: { Figure }?, -- client-only figures placed for the shot (map of the shot, map-relative x / z)
 	light: { color: string, range: number }?, -- a warm light at the focus (candle, fire)
 	clock: number?, -- show the shot's map at this time of day (0..24); nil = as it is now
+	props: { Prop }?, -- S105: story props built for the shot (the Thorn in the dragon's lair, a lantern)
 }
 
 -- Who speaks: locale keys of speakers that are not NPCs or bosses.
@@ -59,6 +69,8 @@ local WHO: { [string]: string } = {
 	-- S104: the captives freed in Deepforge (forgeChains)
 	freedSmith = "cutscene.who.freedSmith",
 	freedVillager = "cutscene.who.freedVillager",
+	-- S105: Arne's journal read in the Ice Grotto
+	journal = "cutscene.who.journal",
 }
 
 -- Looks of the figures (colours of the robe, the hood and the trim).
@@ -67,6 +79,12 @@ local FIGURES: { [string]: { robe: string, hood: string, trim: string, crown: st
 	-- S103: Brother Anzelm by the captain (the city NPC's colours) and the young queen with a crown of thorns
 	anzelm = { robe = "#5A4A3A", hood = "#2E2620", trim = "#C9A45C" },
 	queen = { robe = "#9FE0C9", hood = "#6E9C8E", trim = "#E8FFF6", crown = "#3A4A44" },
+	-- S105: the ghost of Brother Halgrim (the NPC's colours), the scouts of the four lands (theirs), a knight of the Ice
+	-- Guard and a trapper (both shown frozen, `ice`)
+	halgrim = { robe = "#BFD3E0", hood = "#2F3A4A", trim = "#C8DDF0" },
+	scout = { robe = "#4F6B2E", hood = "#3A4F22", trim = "#C9A45C" },
+	knight = { robe = "#9FB6C9", hood = "#4A4E56", trim = "#2F3A4A" },
+	trapper = { robe = "#6B5A44", hood = "#7A6450", trim = "#C9C2B0" },
 }
 
 local function line(who: string?, key: string): Line
@@ -78,10 +96,37 @@ local function figure(
 	x: number,
 	z: number,
 	facing: number,
-	fade: ("frost" | "none")?,
-	ghost: boolean?
+	fade: ("frost" | "freeze" | "none")?,
+	ghost: boolean?,
+	ice: boolean?
 ): Figure
-	return { look = look, x = x, z = z, facing = facing, fade = fade, ghost = ghost }
+	return { look = look, x = x, z = z, facing = facing, fade = fade, ghost = ghost, ice = ice }
+end
+
+-- S105: a point in a Frost Peaks site's local frame (the formula of Areas/frostpeak atSite, Logic/WorldGen/Kit.toWorld).
+local function atSite(site: string, lx: number, lz: number): (number, number)
+	local s = assert((Areas.byMap.frostpeak.sites :: any)[site], site)
+	local r = math.rad(s.rot)
+	local c, sn = math.cos(r), math.sin(r)
+	return s.x + c * lx + sn * lz, s.z - sn * lx + c * lz
+end
+
+-- S105: a figure standing in a site's frame, facing `facing` degrees off the site's front.
+local function siteFigure(
+	look: string,
+	site: string,
+	lx: number,
+	lz: number,
+	turn: number,
+	fade: ("frost" | "freeze" | "none")?
+): Figure
+	local x, z = atSite(site, lx, lz)
+	local s = (Areas.byMap.frostpeak.sites :: any)[site]
+	return figure(look, x, z, s.rot + turn, fade)
+end
+
+local function prop(kind: "thorn" | "lantern", x: number, z: number, y: number?, yaw: number?, lit: boolean?): Prop
+	return { kind = kind, x = x, z = z, y = y, yaw = yaw, lit = lit }
 end
 
 -- S103: Brother Anzelm as a figure 3.5 studs to an NPC's left (both facing the camera of an "npc" shot); S104: by any
@@ -98,8 +143,9 @@ local function besideCaptain(): Figure
 	return anzelmBeside("captain")
 end
 
--- The seven scenes of chapter I "The Frost Sign", (S103) the ten of chapter II "The Forgotten House" and (S104) the
--- nine of chapter III "Cold Fire" (order = playing order when several are queued).
+-- The seven scenes of chapter I "The Frost Sign", (S103) the ten of chapter II "The Forgotten House", (S104) the
+-- nine of chapter III "Cold Fire" and (S105) the fourteen of chapter IV and the finale (order = playing order when
+-- several are queued).
 local list: { Scene } = {
 	{
 		-- the chapter card over the city when the first quest is taken
@@ -546,6 +592,318 @@ local list: { Scene } = {
 			line("captain", "cutscene.ch3_end.l3"),
 		},
 		title = "story.chapter.3.end",
+	},
+	-- S105: chapter IV "The Long Winter" (the Frost Peaks) and the finale "The First Spring" ---------------------------
+	{
+		-- the chapter card from the horned cairn along the Ice Wolf Valley east, towards the Step and the passes
+		id = "ch4_title",
+		kind = "chapter",
+		quest = "frostpeak",
+		on = "objective",
+		index = 1,
+		shot = {
+			kind = "point",
+			map = "frostpeak",
+			x = -600,
+			z = -14,
+			yaw = 90,
+			dist = 50,
+			height = 10,
+			lift = 10,
+			push = 12,
+			orbit = 4,
+		},
+		title = "cutscene.ch4_title.title",
+		subtitle = "story.chapter.4",
+		lines = { line(nil, "cutscene.ch4_title.l1"), line(nil, "cutscene.ch4_title.l2") },
+	},
+	{
+		-- the ice window of the Mountain King's Den: three trappers frozen in it, a lantern still glowing at their feet
+		id = "grottoTrappers",
+		kind = "scene",
+		quest = "iceGrotto",
+		on = "objective",
+		index = 3,
+		shot = {
+			kind = "point",
+			map = "frostpeak_grotto",
+			x = 129,
+			z = -52,
+			yaw = 180,
+			dist = 16,
+			height = 3,
+			lift = 4,
+			orbit = 6,
+			push = 4,
+		},
+		figures = {
+			figure("trapper", 125, -52, 180, "none", false, true),
+			figure("trapper", 129, -51.5, 180, "none", false, true),
+			figure("trapper", 133, -52, 160, "none", false, true),
+		},
+		props = { prop("lantern", 130.5, -49.5, 0, 20, true) },
+		light = { color = "#FFB46E", range = 10 },
+		lines = {
+			line(nil, "cutscene.grottoTrappers.l1"),
+			line("journal", "cutscene.grottoTrappers.l2"),
+			line("journal", "cutscene.grottoTrappers.l3"),
+		},
+	},
+	{
+		-- the courtyard under the glacier from below: the Frost Flower pulsing over it, a frozen knight raising his head
+		id = "frostBloom",
+		kind = "scene",
+		quest = "frozenHold",
+		on = "objective",
+		index = 3,
+		shot = {
+			kind = "point",
+			map = "frostpeak_hold",
+			x = 7,
+			z = -5,
+			yaw = 0,
+			dist = 18,
+			height = -12,
+			lift = 16,
+			orbit = 12,
+			push = 2,
+		},
+		figures = { figure("knight", 7, 12, 0, "none", false, true) },
+		light = { color = "#9FE0FF", range = 18 },
+		lines = { line(nil, "cutscene.frostBloom.l1"), line(nil, "cutscene.frostBloom.l2") },
+	},
+	{
+		-- the crystals of the Frozen Lake flash together (the heart under the glacier)
+		id = "crystalPulse",
+		kind = "scene",
+		quest = "frozenLake",
+		on = "objective",
+		index = 2,
+		shot = { kind = "anchor", anchor = "crystal_garden", dist = 22, height = 6, lift = 4, orbit = 20 },
+		light = { color = "#9FE0FF", range = 20 },
+		lines = { line(nil, "cutscene.crystalPulse.l1"), line(nil, "cutscene.crystalPulse.l2") },
+	},
+	{
+		-- the ghost of Halgrim before the keep (the NPC stands there already)
+		id = "halgrimRises",
+		kind = "scene",
+		quest = "iceWatch",
+		on = "objective",
+		index = 1,
+		shot = { kind = "npc", npc = "ghost_halgrim", dist = 12, height = 3, lift = 4.5, orbit = 10 },
+		light = { color = "#C8DDF0", range = 12 },
+		lines = {
+			line("ghost_halgrim", "cutscene.halgrimRises.l1"),
+			line("ghost_halgrim", "cutscene.halgrimRises.l2"),
+		},
+	},
+	{
+		-- the chapel of eternal winter: Halgrim by the sword in the ice, three knights crumbling to snow; the end card
+		id = "thornWhole",
+		kind = "scene",
+		quest = "oathWords",
+		on = "objective",
+		index = 2,
+		shot = {
+			kind = "point",
+			map = "frostpeak_hold",
+			x = 130,
+			z = -72,
+			yaw = 180,
+			dist = 20,
+			height = 5,
+			lift = 5,
+			orbit = 8,
+			push = 4,
+		},
+		figures = {
+			figure("halgrim", 125, -74, 150, "none", true),
+			figure("knight", 122, -64, 0, "frost", false, true),
+			figure("knight", 130, -61, 0, "frost", false, true),
+			figure("knight", 138, -64, 0, "frost", false, true),
+		},
+		light = { color = "#E8C25A", range = 14 },
+		lines = {
+			line("ghost_halgrim", "cutscene.thornWhole.l1"),
+			line("ghost_halgrim", "cutscene.thornWhole.l2"),
+			line(nil, "cutscene.thornWhole.l3"),
+		},
+		title = "cutscene.thornWhole.title",
+	},
+	{
+		-- Ilvar on the sanctuary's upper step, the colossus's eyes gone dark; he walks off into the frost
+		id = "ilvarStairs",
+		kind = "scene",
+		quest = "dragonTemple",
+		on = "objective",
+		index = 3,
+		shot = {
+			kind = "point",
+			map = "frostpeak",
+			x = 610,
+			z = -96,
+			yaw = 180,
+			dist = 24,
+			height = 5,
+			lift = 5,
+			orbit = 6,
+			push = 6,
+		},
+		figures = { figure("ilvar", 610, -97, 180, "frost") },
+		lines = {
+			line("ilvar", "cutscene.ilvarStairs.l1"),
+			line("ilvar", "cutscene.ilvarStairs.l2"),
+			line("ilvar", "cutscene.ilvarStairs.l3"),
+			line("ilvar", "cutscene.ilvarStairs.l4"),
+		},
+	},
+	{
+		-- the Dragon Stairs at dawn: the scouts of the four lands
+		id = "eveOfBattle",
+		kind = "scene",
+		quest = "eveOfBattle",
+		on = "objective",
+		index = 3,
+		shot = {
+			kind = "point",
+			map = "frostpeak",
+			x = 560,
+			z = 0,
+			yaw = 90,
+			dist = 18,
+			height = 4,
+			lift = 4,
+			orbit = 12,
+			push = 4,
+		},
+		clock = 6.5,
+		figures = {
+			figure("scout", 557, -6, 90, "none"),
+			figure("scout", 557, 6, 90, "none"),
+			figure("scout", 563, -2.5, 90, "none"),
+			figure("scout", 563, 2.5, 90, "none"),
+		},
+		lines = {
+			line("scout_meadows", "cutscene.eveOfBattle.l1"),
+			line("scout_duskwood", "cutscene.eveOfBattle.l2"),
+			line("scout_ashen", "cutscene.eveOfBattle.l3"),
+			line("scout_frostpeak", "cutscene.eveOfBattle.l4"),
+		},
+	},
+	{
+		-- the middle of the lair's arena: the Thorn of Vael in the ice
+		id = "vaelgrathFalls",
+		kind = "scene",
+		quest = "vaelgrath",
+		on = "objective",
+		index = 1,
+		shot = {
+			kind = "point",
+			map = "dungeon_frostpeak",
+			x = 0,
+			z = -10,
+			yaw = 180,
+			dist = 26,
+			height = 3,
+			lift = 5,
+			orbit = 30,
+			push = 10,
+		},
+		props = { prop("thorn", 0, -10, 0, 25) },
+		light = { color = "#CFF6FF", range = 16 },
+		lines = { line(nil, "cutscene.vaelgrathFalls.l1"), line(nil, "cutscene.vaelgrathFalls.l2") },
+	},
+	{
+		-- the finale's card over the market square under snow (the city's season is "snow" by now)
+		id = "finaleTitle",
+		kind = "chapter",
+		quest = "snowInSummer",
+		on = "accept",
+		shot = { kind = "city", push = 24, orbit = 6 },
+		title = "cutscene.finaleTitle.title",
+		subtitle = "story.chapter.5",
+		lines = { line(nil, "cutscene.finaleTitle.l1"), line(nil, "cutscene.finaleTitle.l2") },
+	},
+	{
+		-- Aldric and Anzelm on the square in the snow
+		id = "snowInSummer",
+		kind = "scene",
+		quest = "snowInSummer",
+		on = "accept",
+		shot = { kind = "npc", npc = "captain", dist = 11, height = 3, lift = 4.5, orbit = 8 },
+		figures = { besideCaptain() },
+		lines = {
+			line("captain", "cutscene.snowInSummer.l1"),
+			line("brother_anzelm", "cutscene.snowInSummer.l2"),
+			line("captain", "cutscene.snowInSummer.l3"),
+		},
+	},
+	{
+		-- the Rite Circle: Ilvar by the Heart of Winter; at the end he turns to ice and stays so (the effect `rite` keeps
+		-- his statue there for this player afterwards, Logic/FrostpeakGen/Rite)
+		id = "voiceOfWinter",
+		kind = "scene",
+		quest = "voiceOfWinter",
+		on = "objective",
+		index = 4,
+		shot = {
+			kind = "point",
+			map = "frostpeak",
+			x = 628,
+			z = -574,
+			yaw = 177,
+			dist = 20,
+			height = 5,
+			lift = 4,
+			orbit = 10,
+			push = 4,
+		},
+		figures = { siteFigure("ilvar", "summitRite", 3.4, 0.5, 0, "freeze") },
+		light = { color = "#9FE0FF", range = 18 },
+		lines = {
+			line("ilvar", "cutscene.voiceOfWinter.l1"),
+			line("ilvar", "cutscene.voiceOfWinter.l2"),
+			line("ilvar", "cutscene.voiceOfWinter.l3"),
+			line(nil, "cutscene.voiceOfWinter.l4"),
+		},
+	},
+	{
+		-- the Thorn in the Heart of Winter (the effect `thorn` is built by now), gold light spreading over the circle
+		id = "thornSinks",
+		kind = "scene",
+		quest = "firstSpring",
+		on = "objective",
+		index = 1,
+		shot = { kind = "anchor", anchor = "summit_thorn", dist = 14, height = 4, lift = 3, orbit = 25 },
+		light = { color = "#E8C25A", range = 20 },
+		lines = { line(nil, "cutscene.thornSinks.l1"), line(nil, "cutscene.thornSinks.l2") },
+	},
+	{
+		-- high over the city down to the market square in spring (flowers, the maypole, petals); the end card
+		id = "firstSpring",
+		kind = "scene",
+		quest = "firstSpring",
+		on = "turnIn",
+		shot = {
+			kind = "point",
+			map = "city",
+			x = -30,
+			z = -40,
+			yaw = 228,
+			dist = 120,
+			height = 60,
+			lift = 4,
+			orbit = 8,
+			push = 70,
+		},
+		figures = { besideCaptain() },
+		lines = {
+			line("captain", "cutscene.firstSpring.l1"),
+			line("brother_anzelm", "cutscene.firstSpring.l2"),
+			line("captain", "cutscene.firstSpring.l3"),
+		},
+		title = "cutscene.firstSpring.title",
+		subtitle = "cutscene.firstSpring.subtitle",
 	},
 }
 

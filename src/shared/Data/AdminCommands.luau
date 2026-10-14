@@ -303,6 +303,8 @@ cmd("world", "worldfx", {
 	}),
 	enum("mode", { "on", "off", "auto" }),
 })
+-- S105: the city's season on the caller's client (Logic/CitySeason; auto = from the story)
+cmd("world", "season", { enum("season", { "auto", "summer", "snow", "spring" }) })
 
 -- Monsters
 cmd("monsters", "spawn", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) })
