@@ -8,8 +8,8 @@ return table.freeze({
 	"rbxassetid://104431147179940", -- items_1.png
 	"rbxassetid://113622747165970", -- items_2.png
 	"rbxassetid://103992189653299", -- items_3.png
-	"", -- items_4.png
-	"", -- items_5.png
-	"", -- items_6.png
-	"", -- items_7.png
+	"rbxassetid://138699466409669", -- items_4.png
+	"rbxassetid://98316238490036", -- items_5.png
+	"rbxassetid://124843781940021", -- items_6.png
+	"rbxassetid://72500852503959", -- items_7.png
 })
