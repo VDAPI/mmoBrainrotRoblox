@@ -3,6 +3,9 @@
 -- by the players who fought the Elite II (their own `character.e2timers`). One row per timer: the Elite II and
 -- its map, then mm:ss until it is back; past that "may appear any moment" (its spawner wakes when a player is
 -- near). Timers from another server only say so.
+-- FIX 2026-10-15 (owner): a timer that ran out stays green only for READY_SECONDS, then its row goes (and the panel
+-- with the last one); a timer from another server goes once its time is up. The server still drops a timer the
+-- moment its Elite II is back (MonsterService.clearTimers).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,6 +25,7 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local WIDTH = 240
+local READY_SECONDS = 30
 
 local function Elite2Timer(scope: Scope): Instance
 	local timers = State.Value({ "character", "e2timers" })
@@ -37,9 +41,33 @@ local function Elite2Timer(scope: Scope): Instance
 			end
 		end)
 	)
+	-- Rebuilt when a row appears or goes or the timers change; `now` ticks the countdowns inside the rows.
+	local shownKey = scope:Computed(function(use): string
+		local value = use(timers)
+		local t = use(now)
+		local keys = {}
+		if type(value) == "table" then
+			for i, timer in value do
+				local limit = if timer.job == game.JobId then timer.to + READY_SECONDS else timer.to
+				if t < limit then
+					table.insert(keys, tostring(i))
+				end
+			end
+		end
+		return table.concat(keys, ",")
+	end)
 	local list = scope:Computed(function(use): { any }
 		local value = use(timers)
-		return if type(value) == "table" then value else {}
+		local out = {}
+		if type(value) == "table" then
+			for key in string.gmatch(use(shownKey), "%d+") do
+				local timer = value[tonumber(key) :: number]
+				if timer then
+					table.insert(out, timer)
+				end
+			end
+		end
+		return out
 	end)
 
 	return scope:New("Frame")({

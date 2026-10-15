@@ -13,10 +13,12 @@ return table.freeze({
 	monsterBase = 8,
 	monsterFactor = 6,
 	monsterExponent = 1.25,
+	-- FIX 2026-10-15 (owner): Elites and Elite II are for their drops, not for levelling: EXP per HP below a normal
+	-- monster (Elite HP x3, Elite II x10; was x4 / x12). The pace model 1-100 counts normal monsters only.
 	variantMultiplier = table.freeze({
 		normal = 1,
-		elite = 4,
-		elite2 = 12,
+		elite = 1.5,
+		elite2 = 4,
 		boss = 60,
 	}) :: { [Variant]: number },
 

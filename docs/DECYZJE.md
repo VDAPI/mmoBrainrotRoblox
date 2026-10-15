@@ -3719,3 +3719,28 @@
 - **S120** Garderoba otwiera się na rodzaju i z przymierzanym kosmetykiem przez `UI/WardrobeStart` z S97 (nowe pole
   `try`); dźwięk zakupu `ui.coin` przez router `Sounds.play("coin")` (okna nie wołają `SfxController` wprost).
   Przedmioty w sklepie z obrazkiem przedmiotu (`ItemIcon`, S118) zamiast stałych znaków `📜` / `🎒`.
+- **FIX 2026-10-15** „Teleport przerwany” tylko w trakcie kanału: `TravelService` ma `channeling[player]`; licznik `tokens`
+  zostawał po pierwszym teleporcie i każdy cios w walce wysyłał komunikat.
+- **FIX 2026-10-15** Okno potwierdzenia (`WindowManager.ShowModal`) chowa i blokuje opis przedmiotu
+  (`ItemTooltip.setBlocked`) i zwykły podpis do zamknięcia ostatniego okna z kolejki.
+- **FIX 2026-10-15** „Odródź tutaj” kosztuje złoto: `Respawn.hereCost` = max(`RespawnHereGoldMin` 10, poziom ×
+  `RespawnHereGoldPerLevel` 15), ok. 5 zabójstw swojego poziomu; pobierane tylko, gdy postać naprawdę wstaje w miejscu
+  śmierci (loch i miejsce nie do użycia są darmowe), miasto za darmo. Brak złota w chwili odrodzenia: miasto.
+- **FIX 2026-10-15** Sprzedaż: na karcie „Sprzedaj” klik / dotknięcie w plecaku obok sklepu zaznacza przedmiot
+  (`DragDrop.MarkHandler`, `DragDrop.Marked` slot → uid, znaczek na `ItemSlot`); sklep pokazuje zaznaczone, sumę i
+  „Sprzedaj zaznaczone (N)”. Druga kopia plecaka w sklepie usunięta. Zablokowany przedmiot nie da się zaznaczyć.
+- **FIX 2026-10-15** Opis przedmiotu: druga linia `TooltipModel.typeLine` = rzadkość · rodzaj (`itemBase.<typ>`) · kategoria;
+  „Dwuręczna” / „Dystansowa” tylko tam, szybkość jako „Szybkość: X ataku/s”; linia „Premia rzadkości: +N%” (z
+  `baseMul`, bez przedmiotów nazwanych); tytuł „Dodatkowe bonusy:” nad liniami; poziom przedmiotu na dole. Kolejność
+  STATY 11 bez zmian. Liczby rzadkości bez zmian (siła pełnego zestawu wobec Zwykłego: Unikat +11–13%, Heroik +21–25%,
+  Legenda +29–35%, Mityk +58–71%, w pasmach S32).
+- **FIX 2026-10-15** EXP Elit ×1,5 (było ×4), Elit II ×4 (było ×12): właściciel chce, żeby Elity i Elity II były dla
+  dropu, nie do expienia (EXP na punkt HP poniżej zwykłego potwora). Model tempa 1–100 liczy tylko zwykłe potwory, więc
+  jego cele się nie ruszają; złoto i drop Elit bez zmian.
+- **FIX 2026-10-15** Minutnik Elity II: wiersz po upływie czasu świeci na zielono tylko 30 s (`READY_SECONDS`), potem
+  znika; minutnik z innego serwera znika po swoim czasie. Serwer dalej usuwa wiersz, gdy Elita II wraca.
+- **FIX 2026-10-15** Boss za tarczą pomocników nie stoi bezczynnie: co `every` s rzuca atak z `BossTuning.extra.<id>.shield`
+  w losowego walczącego (stoi w środku, dalej nie da się go ranić). Uciekanie: gdy nikt nie stoi bliżej niż
+  `BossTuning.farRange` (14) przez `farAfter` (2,5 s), boss najpierw rzuca `extra.<id>.far` (Grimrok linia 48, Azgor i
+  Vaelgrath koło na losowym; Morvane i tak walczy z dystansu). Wygląd z istniejącego ataku bossa (`look`), poza harmonogramem
+  S87, więc model balansu (czas walki) bez zmian; realne walki są trochę groźniejsze dla grup, które uciekają.

@@ -9,6 +9,8 @@
 -- tap on it or a tap anywhere else hides it again. The mouse only hovers them (tooltip on hover).
 -- S68: a blocker (ItemTooltip: its panels) swallows touches on top of slots, so a tap on an open tooltip line never
 -- selects, activates, moves or opens the menu of the slot under it.
+-- FIX 2026-10-15 (owner): while a shop's Sell tab is open (`MarkHandler` set) a click / tap on a backpack slot marks
+-- it for selling (`Marked`, a check mark on the slot) instead of selecting or activating it; dragging still works.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +33,10 @@ DragDrop.Selected = scope:Value(nil :: string?)
 DragDrop.TAP_SLOP = LONG_PRESS_SLOP
 -- Set by an open shop window (S17): a backpack item dropped on "shopsell:*" is sold through it.
 DragDrop.SellHandler = nil :: ((index: number) -> ())?
+-- FIX 2026-10-15: backpack slots marked for selling ("inv:N" -> the item's uid, so a moved item drops its mark) and
+-- the open shop's toggle (returns true when it took the click).
+DragDrop.Marked = scope:Value({} :: { [string]: string })
+DragDrop.MarkHandler = nil :: ((slotId: string) -> boolean)?
 -- Slot id being dragged and the pointer position for the drag preview, in GUI space (InputObject.Position); the
 -- ghost converts it into its layer with Scale.toLayer (FIX 2026-10-14: the layers ignore the top bar inset).
 DragDrop.Dragging = scope:Value(nil :: string?)
@@ -113,6 +119,19 @@ local function slotAt(position: Vector2): string?
 	return nil
 end
 
+-- A click / tap that marks a backpack slot for selling (FIX 2026-10-15).
+local function mark(slotId: string): boolean
+	local handler = DragDrop.MarkHandler
+	if not handler or string.sub(slotId, 1, 4) ~= "inv:" then
+		return false
+	end
+	if handler(slotId) then
+		Sounds.play("click")
+		return true
+	end
+	return false
+end
+
 local function activate(slotId: string)
 	local owner = ownerOf(slotId)
 	if owner then
@@ -164,6 +183,9 @@ function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slo
 				end
 			elseif input.UserInputType == Enum.UserInputType.Touch then
 				if blocked(Vector2.new(input.Position.X, input.Position.Y)) then
+					return
+				end
+				if mark(slotId) then
 					return
 				end
 				local selected = Fusion.peek(DragDrop.Selected)
@@ -272,7 +294,11 @@ UserInputService.InputEnded:Connect(function(input)
 	if not press then
 		return
 	end
-	-- A click: select, or activate on double click.
+	-- A click: mark for selling (shop open), select, or activate on double click.
+	if mark(press.slotId) then
+		lastClick = nil
+		return
+	end
 	local now = os.clock()
 	local last = lastClick
 	if last and last.slotId == press.slotId and now - last.time <= DOUBLE_CLICK then

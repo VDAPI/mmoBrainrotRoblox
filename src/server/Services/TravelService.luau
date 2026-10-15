@@ -48,9 +48,13 @@ local WorldService: any
 local MountService: any
 
 local tokens: { [Player]: number } = {}
+-- Only a running channel can be interrupted: `tokens` outlives the channel (it only counts), so without
+-- this every hit after the first teleport showed "Teleport interrupted" in fights.
+local channeling: { [Player]: boolean } = {}
 
 local function interrupt(player: Player, notify: boolean)
-	if tokens[player] then
+	if channeling[player] then
+		channeling[player] = nil
 		tokens[player] = (tokens[player] or 0) + 1
 		if PlayerStateService.HasState(player) then
 			PlayerStateService.Set(player, { "travel" }, nil)
@@ -207,6 +211,7 @@ local function channel(player: Player, itemId: string, label: string, arrive: ()
 	end
 	local token = (tokens[player] or 0) + 1
 	tokens[player] = token
+	channeling[player] = true
 	local start = root.Position
 	PlayerStateService.Set(player, { "travel" }, {
 		endsAt = Workspace:GetServerTimeNow() + CHANNEL_SECONDS,
@@ -231,6 +236,7 @@ local function channel(player: Player, itemId: string, label: string, arrive: ()
 			return
 		end
 		tokens[player] = token + 1
+		channeling[player] = nil
 		PlayerStateService.Set(player, { "travel" }, nil)
 		-- The stone may have moved; consume one by id.
 		if InventoryService.Remove(player, itemId, 1) < 1 then
@@ -339,6 +345,7 @@ function TravelService.Start()
 	Players.PlayerRemoving:Connect(function(player)
 		portalBusy[player] = nil
 		tokens[player] = nil
+		channeling[player] = nil
 	end)
 end
 

@@ -64,6 +64,10 @@ local Config = {
 	RespawnShieldSeconds = 10,
 	-- S22: a blocked death spot (water, inside a wall) looks for a free spot this far around it.
 	RespawnSearchRadius = 20,
+	-- FIX 2026-10-15 (owner): "respawn here" costs gold, the city stays free: max(min, level x perLevel) (about five
+	-- kills of the player's level, Combat.goldPerLevel 3). Dungeons (entrance) and unusable spots stay free.
+	RespawnHereGoldPerLevel = 15,
+	RespawnHereGoldMin = 10,
 
 	-- PvP toggle (DESIGN §3.3).
 	PvpToggleDelay = 10,

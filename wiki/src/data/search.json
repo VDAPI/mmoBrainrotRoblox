@@ -1296,7 +1296,7 @@
     {"id":"side_fp_spurs","key":"ostrogi giermka the squire s spurs","level":93,"name":{"en":"The Squire's Spurs","pl":"Ostrogi giermka"},"type":"quest"},
     {"id":"side_fp_letter","key":"list do vigdis a letter for vigdis","level":94,"name":{"en":"A Letter for Vigdis","pl":"List do Vigdis"},"type":"quest"},
     {"id":"side_fp_clutches","key":"legi w skarpach clutches in the scarps","level":96,"name":{"en":"Clutches in the Scarps","pl":"Lęgi w skarpach"},"type":"quest"},
-    {"id":"side_fp_bonetrail","key":"szlak kosci the bone trail","level":97,"name":{"en":"The Bone Trail","pl":"Szlak Kości"},"type":"quest"},
+    {"id":"side_fp_bonetrail","key":"zebra wyrma the wyrm s ribs","level":97,"name":{"en":"The Wyrm's Ribs","pl":"Żebra wyrma"},"type":"quest"},
     {"id":"side_fp_treatise","key":"o wylegu on the brood","level":99,"name":{"en":"On the Brood","pl":"O wylęgu"},"type":"quest"},
     {"class":"Cleric","id":"holyStrike","key":"swiete uderzenie holy strike","level":1,"name":{"en":"Holy Strike","pl":"Święte Uderzenie"},"type":"skill"},
     {"class":"Cleric","id":"heal","key":"leczenie heal","level":3,"name":{"en":"Heal","pl":"Leczenie"},"type":"skill"},

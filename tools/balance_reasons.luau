@@ -216,6 +216,27 @@ return {
 				why = "C1 / G7: scale constants moved from ItemRoll.scaleFor; new pctCapIlvl 20 (pct x1.33 instead of x2.67 at 100): Legendary W 31.7 % at 100 (was 41.1)",
 			},
 		},
+		["BossTuning:extra*"] = {
+			{
+				session = "S117",
+				why = "FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule",
+			},
+		},
+		["BossTuning:far*"] = {
+			{ session = "S117", why = "FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s" },
+		},
+		["Progression:variantMultiplier.elite"] = {
+			{
+				session = "S117",
+				why = "FIX 2026-10-15 (owner): 4 -> 1.5, Elites are for drops, not levelling (EXP per HP below a normal monster; pace model counts normals only)",
+			},
+		},
+		["Progression:variantMultiplier.elite2"] = {
+			{
+				session = "S117",
+				why = "FIX 2026-10-15 (owner): 12 -> 4, Elite II is for drops, not levelling (HP x10)",
+			},
+		},
 		["Rarities:twoHandedBonusMul"] = {
 			{
 				session = "S87",

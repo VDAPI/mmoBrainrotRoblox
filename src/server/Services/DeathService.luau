@@ -165,27 +165,45 @@ local function placeHere(state: Pending): (Respawn.Place, CFrame?)
 	return place, nil
 end
 
-local function respawnCFrame(state: Pending, choice: Respawn.Choice): (string, CFrame)
+-- (map, CFrame, true when it is the death spot itself: the only paid place)
+local function respawnCFrame(state: Pending, choice: Respawn.Choice): (string, CFrame, boolean)
 	if choice == "city" then
-		return Config.StartingMap, WorldService.GetSpawnCFrame(Config.StartingMap)
+		return Config.StartingMap, WorldService.GetSpawnCFrame(Config.StartingMap), false
 	end
 	local place, at = placeHere(state)
 	if place == "here" and at then
-		return state.mapId, at
+		return state.mapId, at, true
 	end
 	-- Dungeons (entrance) and unusable spots (nearest spawn point) both come from SpawnCFrame.
-	return state.mapId, DeathService.SpawnCFrame(state.mapId, state.position)
+	return state.mapId, DeathService.SpawnCFrame(state.mapId, state.position), false
 end
 
 -- Respawn ------------------------------------------------------------------------------------------------
 
-local function respawn(player: Player, token: number, choice: Respawn.Choice)
+local function respawn(player: Player, token: number, choice: Respawn.Choice, price: number?)
 	local state = pending[player]
 	if not state or state.token ~= token or state.busy then
 		return
 	end
 	state.busy = true
-	local mapId, at = respawnCFrame(state, choice)
+	local mapId, at, deathSpot = respawnCFrame(state, choice)
+	-- "Here" is paid only when it really is the death spot (respawnCFrame falls back to free places).
+	if deathSpot and price and price > 0 then
+		local paid = false
+		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+			if gold >= price then
+				paid = true
+				return gold - price
+			end
+			return gold
+		end)
+		if paid then
+			Analytics.gold(player, -price, balance, "respawnHere")
+		else
+			-- Spent meanwhile (trade, auction): the free city instead.
+			mapId, at = Config.StartingMap, WorldService.GetSpawnCFrame(Config.StartingMap)
+		end
+	end
 	pending[player] = nil
 	if PlayerStateService.HasState(player) then
 		PlayerStateService.Set(player, { "death" }, nil)
@@ -258,6 +276,7 @@ local function onDied(player: Player, source: string)
 		deadline = state.deadline,
 		cost = Config.RespawnNowCost,
 		dungeon = (Maps.get(state.mapId) or {} :: any).biome == "dungeon",
+		hereCost = Respawn.hereCost(character.level, (Maps.get(state.mapId) or {} :: any).biome),
 	})
 	log:info("%s died (%s), choice in %.1f s", player.Name, source, delay)
 	task.delay(delay + Config.DeathChoiceTimeout, onDeadline, player, token)
@@ -278,7 +297,15 @@ local function onChoice(player: Player, choice: string): (boolean, string?)
 	if state.busy then
 		return false, "error.wrongPhase"
 	end
-	task.spawn(respawn, player, state.token, choice :: Respawn.Choice)
+	local price = 0
+	if choice == "here" then
+		local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+		price = Respawn.hereCost(if character then character.level else 1, (Maps.get(state.mapId) or {} :: any).biome)
+		if price > 0 and (not character or (character.gold or 0) < price) then
+			return false, "death.error.gold"
+		end
+	end
+	task.spawn(respawn, player, state.token, choice :: Respawn.Choice, price)
 	return true, nil
 end
 

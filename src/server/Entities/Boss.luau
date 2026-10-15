@@ -6,7 +6,9 @@
 --   * summons when a phase starts (optionally repeated, optionally shielding the boss while alive); helpers attack
 --     the fighters at once and drop nothing; a shielded boss holds still at the arena centre without attacking,
 --   * phase haste and the enrage after `enrageAfter` seconds,
---   * the Phase attribute (clients tint the look per Data/MonsterLooks phases, S24).
+--   * the Phase attribute (clients tint the look per Data/MonsterLooks phases, S24),
+--   * FIX 2026-10-15 (owner): BossTuning.extra: a shielded boss keeps casting at the fighters from the centre (it
+--     cannot be hurt, but it does not stand idle), and a boss nobody stands next to (kiting) throws a ranged attack.
 -- Services are injected (DungeonService), so the module never requires them.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -60,6 +62,9 @@ export type Boss = typeof(setmetatable(
 		baseAttack: number,
 		baseInterval: number,
 		random: Random,
+		nextShieldCast: number,
+		nextFar: number,
+		farSince: number?,
 	},
 	Boss
 ))
@@ -120,6 +125,9 @@ function Boss.new(def: Bosses.BossDef, players: number, centre: CFrame, services
 		baseAttack = monster.stats.attack,
 		baseInterval = monster.stats.attackInterval,
 		random = Random.new(),
+		nextShieldCast = 0,
+		nextFar = 0,
+		farSince = nil,
 	}, Boss)
 	for _, attack in def.attacks do
 		self.nextAttack[attack.id] = os.clock() + 3 + self.random:NextNumber() * 4
@@ -275,7 +283,7 @@ local function targetsFor(self: Boss, attack: Bosses.Attack): { Vector3? }
 	return list
 end
 
-local function cast(self: Boss, attack: Bosses.Attack)
+local function cast(self: Boss, attack: Bosses.Attack, keepState: boolean?)
 	local monster = self.monster
 	local ability = {
 		id = attack.id,
@@ -293,11 +301,14 @@ local function cast(self: Boss, attack: Bosses.Attack)
 		damageKind = attack.damageKind,
 		delivery = attack.delivery,
 	}
-	-- The boss stands still while it winds up (Monster "cast" state without its own ability).
-	monster.state = "cast"
-	monster.castEnd = os.clock() + attack.windup
-	monster.castArea = nil
-	monster.humanoid:MoveTo(monster.root.Position)
+	-- The boss stands still while it winds up (Monster "cast" state without its own ability); a held (shielded) boss
+	-- keeps its endless hold.
+	if not keepState then
+		monster.state = "cast"
+		monster.castEnd = os.clock() + attack.windup
+		monster.castArea = nil
+		monster.humanoid:MoveTo(monster.root.Position)
+	end
 	local areas = {}
 	for _, position in targetsFor(self, attack) do
 		local area = areaFor(self, attack, position)
@@ -320,6 +331,38 @@ local function cast(self: Boss, attack: Bosses.Attack)
 			)
 		end
 	end)
+end
+
+-- A BossTuning.extra entry as a Data/Bosses attack aimed at a random fighter (the id is the look's attack id).
+local function extraAttack(spec: any): Bosses.Attack
+	return {
+		id = spec.look,
+		shape = spec.shape,
+		target = "random",
+		radius = spec.radius,
+		length = spec.length,
+		width = spec.width,
+		windup = spec.windup,
+		damage = spec.damage,
+		cooldown = spec.cooldown or spec.every or 5,
+		phases = { 1, 2, 3 },
+	} :: any
+end
+
+-- Whether no fighter stands within BossTuning.farRange of the boss (kiting).
+local function nobodyNear(self: Boss): boolean
+	local root = self.monster.root :: BasePart
+	local any = false
+	for _, player in self.services.fighters() do
+		local p = self.services.position(player)
+		if p then
+			any = true
+			if (p - root.Position).Magnitude <= BossTuning.farRange then
+				return false
+			end
+		end
+	end
+	return any
 end
 
 -- One tick (DungeonService calls it ~10x per second).
@@ -375,8 +418,38 @@ function Boss.Step(self: Boss, now: number)
 	if self.script.onTick then
 		self.script.onTick(self, now)
 	end
-	-- Attacks (only while chasing and not already casting; never behind the helpers' shield)
-	if #self.shielded > 0 or monster.state ~= "chase" or now < self.nextGlobal then
+	local extra = (BossTuning.extra :: any)[self.def.id]
+	-- Behind the helpers' shield: no schedule, but the shield attack keeps coming (FIX 2026-10-15).
+	if #self.shielded > 0 then
+		if extra and extra.shield and now >= self.nextShieldCast then
+			if self.nextShieldCast == 0 then
+				self.nextShieldCast = now + 2 -- a breath after the shield goes up
+			else
+				self.nextShieldCast = now + extra.shield.every
+				cast(self, extraAttack(extra.shield), true)
+			end
+		end
+		return
+	end
+	self.nextShieldCast = 0
+	-- Kiting: nobody next to the boss for a while = the ranged attack first (FIX 2026-10-15).
+	if extra and extra.far then
+		if nobodyNear(self) then
+			self.farSince = self.farSince or now
+		else
+			self.farSince = nil
+		end
+	end
+	-- Attacks (only while chasing and not already casting)
+	if monster.state ~= "chase" or now < self.nextGlobal then
+		return
+	end
+	local since = self.farSince
+	if extra and extra.far and since and now - since >= BossTuning.farAfter and now >= self.nextFar then
+		local attack = extraAttack(extra.far)
+		self.nextFar = now + attack.cooldown
+		self.nextGlobal = now + attack.windup + BossTuning.globalGap
+		cast(self, attack)
 		return
 	end
 	-- S87 (balance plan D3, G11): the most overdue attack relative to its cooldown (Logic/BossSchedule, also the model).

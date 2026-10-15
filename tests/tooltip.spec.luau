@@ -92,6 +92,26 @@ T.describe("TooltipModel order (S68)", function()
 	end)
 end)
 
+T.describe("TooltipModel readability (FIX 2026-10-15)", function()
+	T.it("type line names the kind, rarity bonus before the trait, item level in the footer", function()
+		local item = sample("sword1h_60", Rarities.HEROIC)
+		local lines = TooltipModel.build(item, nil, { lang = "pl", class = "Warrior" }).lines
+		local first: { [string]: number } = {}
+		for index, line in lines do
+			first[line.role] = first[line.role] or index
+		end
+		T.expect(string.find(lines[first.type].text, Locale.T("itemBase.sword1h", nil, "pl"), 1, true) ~= nil)
+			.toBe(true)
+		T.expect(first.rarityBonus ~= nil and first.rarityBonus < first.traitName).toBe(true)
+		T.expect(first.bonusTitle < first.bonus).toBe(true)
+		T.expect(first.ilvl > first.requires).toBe(true)
+		local common = TooltipModel.build(sample("sword1h_60", Rarities.COMMON), nil, { lang = "pl" }).lines
+		for _, line in common do
+			T.expect(line.role ~= "rarityBonus").toBe(true)
+		end
+	end)
+end)
+
 T.describe("TooltipModel.details (S68)", function()
 	T.it("every published line has its details in both languages", function()
 		local ids: { string } = {}

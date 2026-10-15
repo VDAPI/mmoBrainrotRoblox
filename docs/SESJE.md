@@ -9300,3 +9300,23 @@ Pliki: `src/shared/Data/Products.luau`, `src/shared/Logic/{Premium,AccountSchema
 `src/client/Controllers/{Premium,Sfx}Controller.luau`,
 `tests/paywall.spec.luau` (nowy), `tests/premium.spec.luau`, `wiki/src/data/{premium,meta}.json`, `docs/PRZEDMIOTY.md`,
 `docs/{DESIGN,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+### Poprawki po teście właściciela (2026-10-15)
+
+Komunikat „Teleport przerwany” nie pojawia się już w każdej walce (tylko gdy kanał kamienia naprawdę trwa). Okno „Związać
+i założyć?” chowa opis przedmiotu. Odrodzenie w miejscu śmierci kosztuje złoto (max(10, 15 × poziom); miasto za darmo,
+cena na przycisku). Sprzedaż: zaznaczanie przedmiotów prosto w plecaku przy otwartej karcie „Sprzedaj”. Opis przedmiotu:
+rodzaj przedmiotu pod nazwą, premia rzadkości, tytuł bonusów, poziom przedmiotu na dole.
+
+Po drugiej wiadomości: EXP z Elit ×1,5 i Elit II ×4 (było ×4 / ×12), żeby służyły do dropu, nie do expienia; minutnik
+Elity II gaśnie 30 s po upływie czasu zamiast świecić na zielono.
+
+Bossowie: w fazie tarczy (fale pomocników) boss rzuca ataki w graczy ze środka areny; gdy grupa ucieka i nikt nie stoi
+przy bossie, boss rzuca atak dystansowy (`BossTuning.extra`).
+
+Tempo: 20. poziom w 2 h mieści się w celu modelu 1 → 20 (1,8–2,8 h, model okna Wojownika 2,6 h); EXP bez zmian.
+
+Pliki: `src/server/Services/{Travel,Death}Service.luau`, `src/shared/Logic/{Respawn,TooltipModel}.luau`,
+`src/shared/{Config,Types}.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `src/client/Controllers/WindowManager.luau`,
+`src/client/UI/DragDrop.luau`, `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
+`src/client/UI/Screens/{ShopWindow,Hud/DeathScreen,Hud/Elite2Timer}.luau`, `src/shared/Data/{Progression,BossTuning}.luau`, `src/server/Entities/Boss.luau`,
+`tools/balance_reasons.luau`, `tests/{tooltip,respawn,exp,bossmotions}.spec.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE}.md`.

@@ -238,18 +238,18 @@
   "levelDiffRules": {"bonusPerLevel":0.04,"freeDiff":5,"maxBonus":0.2,"minMultiplier":0.05,"penaltyPerLevel":0.15},
   "maxLevel": 100,
   "monsterExp": [
-    {"exp":{"boss":840,"elite":56,"elite2":168,"normal":14},"level":1},
-    {"exp":{"boss":6900,"elite":460,"elite2":1380,"normal":115},"level":10},
-    {"exp":{"boss":15720,"elite":1048,"elite2":3144,"normal":262},"level":20},
-    {"exp":{"boss":25740,"elite":1716,"elite2":5148,"normal":429},"level":30},
-    {"exp":{"boss":36720,"elite":2448,"elite2":7344,"normal":612},"level":40},
-    {"exp":{"boss":48360,"elite":3224,"elite2":9672,"normal":806},"level":50},
-    {"exp":{"boss":60600,"elite":4040,"elite2":12120,"normal":1010},"level":60},
-    {"exp":{"boss":73380,"elite":4892,"elite2":14676,"normal":1223},"level":70},
-    {"exp":{"boss":86640,"elite":5776,"elite2":17328,"normal":1444},"level":80},
-    {"exp":{"boss":100260,"elite":6684,"elite2":20052,"normal":1671},"level":90},
-    {"exp":{"boss":114300,"elite":7620,"elite2":22860,"normal":1905},"level":100}
+    {"exp":{"boss":840,"elite":21,"elite2":56,"normal":14},"level":1},
+    {"exp":{"boss":6900,"elite":172.5,"elite2":460,"normal":115},"level":10},
+    {"exp":{"boss":15720,"elite":393,"elite2":1048,"normal":262},"level":20},
+    {"exp":{"boss":25740,"elite":643.5,"elite2":1716,"normal":429},"level":30},
+    {"exp":{"boss":36720,"elite":918,"elite2":2448,"normal":612},"level":40},
+    {"exp":{"boss":48360,"elite":1209,"elite2":3224,"normal":806},"level":50},
+    {"exp":{"boss":60600,"elite":1515,"elite2":4040,"normal":1010},"level":60},
+    {"exp":{"boss":73380,"elite":1834.5,"elite2":4892,"normal":1223},"level":70},
+    {"exp":{"boss":86640,"elite":2166,"elite2":5776,"normal":1444},"level":80},
+    {"exp":{"boss":100260,"elite":2506.5,"elite2":6684,"normal":1671},"level":90},
+    {"exp":{"boss":114300,"elite":2857.5,"elite2":7620,"normal":1905},"level":100}
   ],
   "statPointsPerLevel": 5,
-  "variantExp": {"boss":60,"elite":4,"elite2":12,"normal":1}
+  "variantExp": {"boss":60,"elite":1.5,"elite2":4,"normal":1}
 }
