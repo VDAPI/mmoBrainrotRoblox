@@ -4,6 +4,7 @@
 -- Every apply* call first removes what it added before, so it can be called again at any time.
 
 local Anatomy = require("../Logic/Anatomy")
+local CosmeticRules = require("../Logic/CosmeticRules")
 local Cosmetics = require("../Data/Cosmetics")
 local LookBuild = require("./LookBuild")
 
@@ -187,6 +188,59 @@ function CosmeticLook.applyOutfit(model: Model, id: string?)
 	end
 end
 
+-- Whether `color` is the hex colour `hex` (part colours are stored with 8 bits per channel).
+local function sameColor(color: Color3, hex: string?): boolean
+	if hex == nil then
+		return false
+	end
+	local want = Color3.fromHex(hex)
+	return math.abs(color.R - want.R) < 0.003
+		and math.abs(color.G - want.G) < 0.003
+		and math.abs(color.B - want.B) < 0.003
+end
+
+-- S123: recolours the worn outfit with a dye (Logic/CosmeticRules.dyed): the body parts the outfit coloured (their
+-- original colour is in the VaelthornColor attribute; BODY_MAIN gets the main colour, BODY_SECOND the second one) and
+-- the outfit's accessories of the outfit's main / second colour (Neon and Metal ones too). Nothing without an outfit
+-- or a dye; never the Cloak of Luring cape, the aura, the trail or the weapon effect. Taking the dye off is a new
+-- applyAll (applyOutfit restores and rebuilds everything).
+-- S132 (DESIGN-17 §9a) will make outfits replace the class clothing; the dye stays a separate recolouring step after
+-- the outfit.
+function CosmeticLook.applyDye(model: Model, dyeId: string?, outfitId: string?)
+	local outfit = if outfitId then Cosmetics.get(outfitId) else nil
+	local dye = if dyeId then Cosmetics.get(dyeId) else nil
+	local mainHex, secondHex = CosmeticRules.dyed(outfit, dye)
+	if not outfit or not mainHex then
+		return
+	end
+	local main = Color3.fromHex(mainHex)
+	local second = Color3.fromHex(secondHex or mainHex)
+	for _, part in model:GetChildren() do
+		if part:IsA("BasePart") and typeof(part:GetAttribute("VaelthornColor")) == "Color3" then
+			if BODY_MAIN[part.Name] then
+				part.Color = main
+			elseif BODY_SECOND[part.Name] then
+				part.Color = second
+			end
+		end
+	end
+	local folder = model:FindFirstChild(OUTFIT_FOLDER)
+	if not folder then
+		return
+	end
+	local outfitSecond = outfit.color2 or outfit.color
+	for _, part in folder:GetDescendants() do
+		if part:IsA("BasePart") then
+			-- the second colour first: an outfit without color2 paints everything in its main colour
+			if sameColor(part.Color, outfitSecond) and outfit.color2 ~= nil then
+				part.Color = second
+			elseif sameColor(part.Color, outfit.color) then
+				part.Color = main
+			end
+		end
+	end
+end
+
 local function emitter(color: Color3, rate: number, size: number, speed: number): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
 	e.Color = ColorSequence.new(color)
@@ -356,6 +410,7 @@ end
 -- Ids of everything this module draws (used to apply all equipped cosmetics at once).
 function CosmeticLook.applyAll(model: Model, equipped: { [string]: string })
 	CosmeticLook.applyOutfit(model, equipped.outfit)
+	CosmeticLook.applyDye(model, equipped.dye, equipped.outfit) -- S123: after the outfit, never inside it
 	CosmeticLook.applyAura(model, equipped.aura)
 	CosmeticLook.applyTrail(model, equipped.trail)
 	CosmeticLook.applyWeapon(model, equipped.weapon)

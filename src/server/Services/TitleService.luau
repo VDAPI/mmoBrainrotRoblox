@@ -4,6 +4,8 @@
 -- S59: the main path title shows by default (Titles.shown), refreshed on PathService.Changed (main path chosen or
 -- changed, build set switched); "no title" is saved as Titles.NONE.
 -- S121: the account context (VIP title while MonetizationService.HasVip), refreshed on VipChanged.
+-- S123: the context also carries the owned cosmetics (bought titles, Titles.contextOf); CosmeticService refreshes
+-- after a title cosmetic is given or taken.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,8 +24,9 @@ local CharacterService: any
 local PathService: any
 local MonetizationService: any
 
+-- S123: one context for every account-dependent title (VIP and bought titles, Titles.contextOf).
 local function contextOf(player: Player): Titles.Context
-	return { vip = MonetizationService.HasVip(player) }
+	return Titles.contextOf(PlayerStateService.Get(player, { "account" }), MonetizationService.HasVip(player))
 end
 
 -- Writes the shown title onto the character model (nil hides it).

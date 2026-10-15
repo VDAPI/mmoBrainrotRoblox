@@ -16,6 +16,9 @@ export type Requirement =
 	| { kind: "mainPath", path: string } -- S59: unlocked while the active set's main path is this path id
 	-- S121: shown while the account has VIP (MonetizationService.HasVip); needs the context argument of Logic/Titles
 	| { kind: "vip" }
+	-- S123: owned cosmetic of kind title; the account owns it, every character may show it (needs the context argument
+	-- of Logic/Titles with `owned`)
+	| { kind: "cosmetic", id: string }
 
 export type TitleDef = {
 	id: string,
@@ -127,6 +130,33 @@ local list: { TitleDef } = {
 	},
 	-- S121: published on the wiki together with the VIP article (S131)
 	{ id = "vip", nameKey = "title.vip", req = { kind = "vip" }, color = "#F2C94C", wiki = false },
+	-- S123 (DESIGN-17 §4): bought titles (Data/Cosmetics kind "title"); names unlike the ranking and arena titles of
+	-- S124-S130, so a purchase never poses as an achievement. Kept out of titles.json (cosmetics.json lists them).
+	{ id = "pilgrim", nameKey = "title.pilgrim", req = { kind = "cosmetic", id = "title_pilgrim" }, color = "#CDBB94" },
+	{
+		id = "lorekeeper",
+		nameKey = "title.lorekeeper",
+		req = { kind = "cosmetic", id = "title_lorekeeper" },
+		color = "#9FC3E8",
+	},
+	{
+		id = "oathbound",
+		nameKey = "title.oathbound",
+		req = { kind = "cosmetic", id = "title_oathbound" },
+		color = "#D8C27A",
+	},
+	{
+		id = "nightwatch",
+		nameKey = "title.nightwatch",
+		req = { kind = "cosmetic", id = "title_nightwatch" },
+		color = "#7F8FB8",
+	},
+	{
+		id = "highborn",
+		nameKey = "title.highborn",
+		req = { kind = "cosmetic", id = "title_highborn" },
+		color = "#E0B0D8",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

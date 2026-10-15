@@ -71,7 +71,16 @@ local ALLOWED_COSMETIC_KINDS: { [string]: string } = {
 	weapon = "looks",
 	pet = "looks",
 	mountskin = "looks (S97)",
+	-- S123: looks only, DESIGN-17 §4
+	dye = "looks only, DESIGN-17 §4: the worn outfit's colours",
+	frame = "looks only, DESIGN-17 §4: a frame around the portrait",
+	chatframe = "looks only, DESIGN-17 §4: the name's frame in chat and the bubble",
+	title = "looks only, DESIGN-17 §4: a name over the head, nothing else",
+	emote = "looks only, DESIGN-17 §4: a gesture, never in combat",
+	levelup = "looks only, DESIGN-17 §4: the level-up picture",
 }
+-- S123: passes a starter pack may grant in the profile (comfort, DESIGN-17 §0.2).
+local PACK_PASSES_ALLOWED: { [string]: string } = { pockets = "space: +10 backpack slots" }
 -- Top-level fields a cosmetic may have (Data/Cosmetics.Def); `wiki` is the S105 publication flag.
 local COSMETIC_FIELDS = {
 	id = true,
@@ -87,6 +96,15 @@ local COSMETIC_FIELDS = {
 	skin = true,
 	obtain = true,
 	wiki = true,
+	-- S123
+	frame = true,
+	chat = true,
+	title = true,
+	emote = true,
+	levelup = true,
+	dye = true,
+	weekly = true,
+	free = true,
 }
 local FORBIDDEN_KEYS = {
 	"exp",
@@ -353,6 +371,7 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 			EXCEPTIONS = EXCEPTIONS,
 			ALLOWED_COSMETIC_KINDS = ALLOWED_COSMETIC_KINDS,
 			ALLOWED_VIP_KEYS = ALLOWED_VIP_KEYS,
+			PACK_PASSES_ALLOWED = PACK_PASSES_ALLOWED,
 		}
 		for name, list in lists do
 			for key, why in list do
@@ -464,6 +483,111 @@ T.describe("S122 premium consumables", function()
 		end
 		table.sort(lures)
 		T.expect(lures).toEqual({ "lure_1h", "lure_7d" })
+	end)
+end)
+
+T.describe("S123 cosmetics 2 and starter packs", function()
+	local Emotes = require("../src/shared/Data/Emotes")
+	local TitleData = require("../src/shared/Data/Titles")
+
+	T.it("bought titles and title cosmetics point at each other and carry only a name", function()
+		local byTitle: { [string]: string } = {}
+		for _, def in Cosmetics.list do
+			if def.kind == "title" then
+				T.expect({ def.id, def.title ~= nil }).toEqual({ def.id, true })
+				byTitle[def.title :: string] = def.id
+			end
+		end
+		local n = 0
+		for _, def in TitleData.list do
+			local req: any = def.req
+			if req.kind == "cosmetic" then
+				n += 1
+				local where = `titles.{def.id}`
+				T.expect({ where, byTitle[def.id] }).toEqual({ where, req.id })
+				fieldsWithin(def :: any, { id = true, nameKey = true, req = true, color = true }, where)
+				fieldsWithin(req, { kind = true, id = true }, `{where}.req`)
+			end
+		end
+		local m = 0
+		for _ in byTitle do
+			m += 1
+		end
+		T.expect(n).toBe(m)
+	end)
+
+	T.it("starter packs give shards, existing cosmetics and comfort passes only", function()
+		T.expect(#starterPacks >= 2).toBe(true)
+		local fields = {
+			key = true,
+			productId = true,
+			robux = true,
+			shards = true,
+			cosmetics = true,
+			passes = true,
+			icon = true,
+		}
+		local fromPack: { [string]: string } = {}
+		for _, pack in starterPacks do
+			local where = `starterPacks.{pack.key}`
+			fieldsWithin(pack, fields, where)
+			T.expect({ where, isInt(pack.shards) and pack.shards > 0 }).toEqual({ where, true })
+			for _, id in pack.cosmetics do
+				local def = Cosmetics.get(id)
+				if not def then
+					error(`{where}: unknown cosmetic {id}`)
+				end
+				T.expect({ id, ALLOWED_COSMETIC_KINDS[def.kind] ~= nil }).toEqual({ id, true })
+				T.expect({ id, fromPack[id] }).toEqual({ id, nil })
+				fromPack[id] = pack.key
+			end
+			for _, key in pack.passes do
+				if not PACK_PASSES_ALLOWED[key] then
+					error(`{where}: pass {key} is not in PACK_PASSES_ALLOWED`)
+				end
+				T.expect({ key, Products.getPass(key) ~= nil }).toEqual({ key, true })
+			end
+		end
+		-- obtain.pack <-> the pack that gives it
+		for _, def in Cosmetics.list do
+			local pack = def.obtain and def.obtain.pack
+			if pack then
+				T.expect({ def.id, fromPack[def.id] }).toEqual({ def.id, pack })
+				fieldsWithin(def.obtain :: any, { pack = true }, `cosmetics.{def.id}.obtain`)
+			end
+		end
+		for id, key in fromPack do
+			local def = Cosmetics.get(id) :: Cosmetics.Def
+			T.expect({ id, def.obtain and def.obtain.pack }).toEqual({ id, key })
+		end
+	end)
+
+	T.it("emotes have no combat events", function()
+		for _, emote in Emotes.list do
+			local raw = emote.motion :: any
+			for _, event in { "hit", "release", "land", "lock" } do
+				T.expect({ emote.id, event, raw[event] }).toEqual({ emote.id, event, nil })
+			end
+		end
+	end)
+
+	T.it("shard prices live in Data/Cosmetics only, one discount of at most half", function()
+		local fs = require("@lune/fs")
+		for _, path in { "src/shared/Logic/WeeklyOffer.luau", "src/shared/Logic/CosmeticRules.luau" } do
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "price%s*=%s*%d") }).toEqual({ path })
+		end
+		local weekly = Cosmetics.weekly
+		T.expect(type(weekly.discount)).toBe("number")
+		T.expect(weekly.discount >= 0 and weekly.discount <= 0.5).toBe(true)
+		local free = 0
+		for _, def in Cosmetics.list do
+			if def.free == true then
+				free += 1
+				T.expect({ def.id, def.kind, def.price, def.weekly }).toEqual({ def.id, "emote", 0, nil })
+			end
+		end
+		T.expect(free).toBe(2)
 	end)
 end)
 

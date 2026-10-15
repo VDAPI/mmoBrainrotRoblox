@@ -4,6 +4,8 @@
 -- S59 (ROZWOJ 4): after the local level-up toast, toasts for path points, skill ranks and new breakpoints to choose
 -- (Logic/PathView.rankUps / newBreakpoints between LevelUp's fromLevel and the new level).
 -- S65: the lasting rune of a glowing Runic Seal ("runeSeal" in "Effects") under every such character.
+-- S123: the level-up effect follows the player's CosmeticLevelUp attribute (five styles, levelUpFx); PlayLevelUp is
+-- the wardrobe's local preview. LevelService is unchanged: the LevelUp event already names the player.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -12,6 +14,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local Clock = require(script.Parent.Parent.Vfx.Clock)
+local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
@@ -20,7 +25,6 @@ local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
-local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local Library = require(script.Parent.Parent.Vfx.Library)
 
@@ -36,12 +40,15 @@ local PILLAR_SECONDS = 2.2
 
 local folder: Folder
 
-local function pillar(model: Model)
+-- S123: the level-up pillar of S22 in the colours of the style (the default style is the old gold pillar).
+local function pillar(model: Model, look: CosmeticRules.LevelUpLook)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
 		return
 	end
 	local base = root.Position - Vector3.new(0, 3, 0)
+	local main = Color3.fromHex(look.color)
+	local second = Color3.fromHex(look.color2)
 
 	local beam = Instance.new("Part")
 	beam.Name = "LevelUpPillar"
@@ -51,7 +58,7 @@ local function pillar(model: Model)
 	beam.CanTouch = false
 	beam.CastShadow = false
 	beam.Material = Enum.Material.Neon
-	beam.Color = Theme.Colors.GoldBright
+	beam.Color = main
 	beam.Shape = Enum.PartType.Cylinder
 	beam.Size = Vector3.new(PILLAR_HEIGHT, 1, 1)
 	beam.CFrame = CFrame.new(base + Vector3.new(0, PILLAR_HEIGHT / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
@@ -59,7 +66,7 @@ local function pillar(model: Model)
 	beam.Parent = folder
 
 	local light = Instance.new("PointLight")
-	light.Color = Theme.Colors.GoldBright
+	light.Color = main
 	light.Range = 24
 	light.Brightness = 3
 	light.Parent = beam
@@ -72,7 +79,7 @@ local function pillar(model: Model)
 	ring.CanTouch = false
 	ring.CastShadow = false
 	ring.Material = Enum.Material.Neon
-	ring.Color = Theme.Colors.Gold
+	ring.Color = second
 	ring.Shape = Enum.PartType.Cylinder
 	ring.Size = Vector3.new(0.3, 4, 4)
 	ring.CFrame = CFrame.new(base + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.rad(90))
@@ -85,6 +92,65 @@ local function pillar(model: Model)
 	TweenService:Create(ring, info, { Size = Vector3.new(0.3, 26, 26), Transparency = 1 }):Play()
 	Debris:AddItem(beam, PILLAR_SECONDS + 0.2)
 	Debris:AddItem(ring, PILLAR_SECONDS + 0.2)
+end
+
+-- S123 (DESIGN-17 §4): the level-up effect of a style (Logic/CosmeticRules.levelUpStyle of the player's attribute
+-- CosmeticLevelUp): pillar (the S22 pillar and ring in its colours), rings (three rings one after another), runes (a
+-- rune circle on the ground and the pillar), embers (the pillar, sparks rising, smoke), frost (rings and frost
+-- shards). The extra pieces come from Vfx/Library (S112: textures, pooled holders, the low quality and phone limits);
+-- every style keeps the pillar's cost class (no per-frame instances).
+local function levelUpFx(model: Model, look: CosmeticRules.LevelUpLook)
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	local feet = root.Position - Vector3.new(0, 3, 0)
+	local main = Color3.fromHex(look.color)
+	local second = Color3.fromHex(look.color2)
+	local function rings()
+		for i = 0, 2 do
+			Clock.after(i * 0.35, function()
+				Library.ringWave(feet, 5 + i * 2, if i % 2 == 0 then main else second, { seconds = 0.7 })
+			end)
+		end
+	end
+	if look.style == "rings" then
+		rings()
+		return
+	elseif look.style == "frost" then
+		rings()
+		Library.sparks(feet + Vector3.new(0, 1, 0), second, {
+			key = "iceShard",
+			count = 14,
+			speed = { 8, 16 },
+			life = { 0.6, 1.1 },
+			gravity = 18,
+		})
+		return
+	end
+	pillar(model, look)
+	if look.style == "runes" then
+		Library.magicCircle(feet, 6, main, PILLAR_SECONDS)
+	elseif look.style == "embers" then
+		Library.sparks(feet + Vector3.new(0, 1, 0), second, {
+			count = 18,
+			speed = { 6, 14 },
+			life = { 0.8, 1.4 },
+			gravity = -4,
+		})
+		Library.smokePuff(feet, 2, main)
+	end
+end
+
+-- S123: the level-up effect on `model` (the wardrobe's preview plays it on the own character, only here).
+function EffectsController.PlayLevelUp(model: Model, look: CosmeticRules.LevelUpLook)
+	levelUpFx(model, look)
+end
+
+-- S123: the look of a player's level-up (their attribute CosmeticLevelUp; the gold pillar without one).
+local function lookOf(player: Player): CosmeticRules.LevelUpLook
+	local id = player:GetAttribute("CosmeticLevelUp")
+	return CosmeticRules.levelUpStyle(if type(id) == "string" then Cosmetics.get(id) else nil)
 end
 
 function EffectsController.Init(registry: any)
@@ -247,7 +313,7 @@ function EffectsController.Start()
 			end
 			local model = player.Character
 			if model then
-				pillar(model)
+				levelUpFx(model, lookOf(player))
 			end
 			if player == Players.LocalPlayer then
 				-- S111: ui.levelup, the old placeholder while it has no sound

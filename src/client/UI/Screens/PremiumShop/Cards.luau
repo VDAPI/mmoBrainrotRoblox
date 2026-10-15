@@ -47,6 +47,7 @@ export type CardSpec = {
 	button: Instance?, -- the right side (one button or a frame with two)
 	buttonWidth: number?, -- width the right side takes (default 190)
 	tooltip: UsedAs<string>?, -- on the whole card (PC: hover, phone: long press)
+	rich: boolean?, -- S123: the subtitle is rich text (an old price struck through)
 }
 
 local CARD_HEIGHT = 70
@@ -131,6 +132,7 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 				Size = UDim2.new(1, -(86 + right), 0, 24),
 				BackgroundTransparency = 1,
 				Text = spec.subtitle,
+				RichText = spec.rich == true,
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,

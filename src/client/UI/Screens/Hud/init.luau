@@ -21,6 +21,7 @@ local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
 local LureButton = require(script.LureButton)
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
+local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
@@ -33,6 +34,7 @@ local MountButton = require(script.MountButton)
 local NavBar = require(script.NavBar)
 local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
+local EmoteButton = require(script.EmoteButton)
 local MobileSkills = require(script.MobileSkills)
 local PvpToggle = require(script.PvpToggle)
 local State = require(script.Parent.Parent.State)
@@ -74,6 +76,8 @@ export type Props = {
 	LoginStatus: Fusion.UsedAs<LoginReward.Status?>,
 	LoginBadge: Fusion.UsedAs<boolean>,
 	OpenLogin: () -> (),
+	-- S123: the emote wheel (EmoteController.Toggle)
+	OpenEmotes: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
 	CastSlot: (slot: number) -> (),
@@ -120,39 +124,34 @@ local function portrait(scope: Scope): Instance
 				Thickness = Theme.Stroke.Normal,
 				Color = Theme.Colors.GoldDim,
 			}),
-			scope:New("Frame")({
+			-- S123: the portrait frame cosmetic (UI/Components/PortraitFrame; the class stroke without one)
+			PortraitFrame(scope, {
 				Name = "Emblem",
 				Position = UDim2.fromOffset(12, 12),
-				Size = UDim2.fromOffset(84, 84),
-				BackgroundColor3 = Theme.Colors.Background,
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-					scope:New("UIStroke")({
-						Thickness = Theme.Stroke.Thick,
-						Color = scope:Computed(function(use): Color3
-							local c = use(class)
-							return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
-						end),
-					}),
-					-- S119: the class emblem (medallion) once loaded, the glyph otherwise.
-					ArtIcon(scope, {
-						Key = scope:Computed(function(use): string?
-							local c = use(class)
-							return if c then UiArt.classEmblem(c.id) else nil
-						end),
-						Glyph = scope:Computed(function(use): string
-							local c = use(class)
-							return if c then c.icon else ""
-						end),
-						GlyphColor = scope:Computed(function(use): Color3
-							local c = use(class)
-							return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
-						end),
-						ImageScale = 0.8,
-						Size = UDim2.fromScale(1, 1),
-						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
-					}),
-				},
+				Size = 84,
+				FrameId = State.Value({ "account", "cosmetics", "equipped", "frame" }),
+				ClassColor = scope:Computed(function(use): Color3
+					local c = use(class)
+					return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
+				end),
+				-- S119: the class emblem (medallion) once loaded, the glyph otherwise.
+				Content = ArtIcon(scope, {
+					Key = scope:Computed(function(use): string?
+						local c = use(class)
+						return if c then UiArt.classEmblem(c.id) else nil
+					end),
+					Glyph = scope:Computed(function(use): string
+						local c = use(class)
+						return if c then c.icon else ""
+					end),
+					GlyphColor = scope:Computed(function(use): Color3
+						local c = use(class)
+						return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
+					end),
+					ImageScale = 0.8,
+					Size = UDim2.fromScale(1, 1),
+					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
+				}),
 			}),
 			scope:New("TextLabel")({
 				Name = "Level",
@@ -362,6 +361,11 @@ local function actionBar(scope: Scope, props: Props): Instance
 			SlotSize = SLOT_SIZE,
 		})
 	)
+	-- S123: the emote wheel slot at the end (PC)
+	table.insert(
+		slots,
+		EmoteButton.Slot(scope, { OnOpen = props.OpenEmotes, LayoutOrder = SKILL_SLOTS + 5, SlotSize = SLOT_SIZE })
+	)
 
 	return scope:New("Frame")({
 		Name = "ActionBar",
@@ -468,6 +472,7 @@ local function Hud(scope: Scope, props: Props): Instance
 			AttackButton(scope, { OnAttack = props.OnAttack }),
 			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint, Riding = props.Riding }),
 			MountButton.Touch(scope, { Riding = props.Riding, Has = props.HasMount, OnToggle = props.OnMount }),
+			EmoteButton.Touch(scope, { OnOpen = props.OpenEmotes }),
 			PvpToggle(scope),
 			DeathScreen(scope),
 		},

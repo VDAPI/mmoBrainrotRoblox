@@ -8,6 +8,12 @@
 -- S121: saved looks (Garderoba+, DESIGN-17 §2): account.outfits is an array 1..n without holes; OutfitSave stores the
 -- current look, OutfitWear puts on what the account still owns (Logic/Premium.outfitLooks). Products.OUTFITS_FREE
 -- looks without the pass, OUTFITS_PLUS with it; looks above the limit stay saved but cannot be worn.
+-- S123 (DESIGN-17 §4): dye, frame, chatframe and levelup slots in account.cosmetics.equipped like the outfit; the
+-- dye recolours the worn outfit (CosmeticLook.applyDye inside applyAll). The frame, chat frame and level-up effect
+-- are mirrored as player attributes CosmeticFrame, CosmeticChatFrame, CosmeticLevelUp (on the Player, so they outlive
+-- respawns and exist before the first model) for the HUD portrait, chat lines and bubbles and the level-up effect of
+-- every client. Emotes and titles have no slot (EmoteService, SetTitle). A bought title owned or taken refreshes the
+-- shown title (TitleService, taken lazily: it is never needed during Init).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,6 +38,7 @@ local CharacterService: any
 local MonetizationService: any
 local Registry: any
 local MountService: any
+local TitleService: any
 
 -- Lazy: MountService depends on this service (RollBossDrop), so a Deps entry here would be a cycle. Never call during
 -- Init.
@@ -39,6 +46,19 @@ local function mountService(): any
 	MountService = MountService or Registry.Get("MountService")
 	return MountService
 end
+
+-- Lazy (S123): TitleService -> PathService pulls in many services; only a bought title needs it, never during Init.
+local function titleService(): any
+	TitleService = TitleService or Registry.Get("TitleService")
+	return TitleService
+end
+
+-- S123: equipped slots mirrored as player attributes (nil = none).
+local ATTRIBUTES: { [string]: string } = {
+	frame = "CosmeticFrame",
+	chatframe = "CosmeticChatFrame",
+	levelup = "CosmeticLevelUp",
+}
 
 local petFolder: Folder
 local pets: { [Player]: Model } = {}
@@ -78,7 +98,17 @@ local function spawnPet(player: Player)
 	pets[player] = pet
 end
 
+local function publishAttributes(player: Player)
+	local data = account(player)
+	for kind, attribute in ATTRIBUTES do
+		local id = data and data.cosmetics.equipped[kind]
+		local def = if type(id) == "string" then Cosmetics.get(id) else nil
+		player:SetAttribute(attribute, if def and def.kind == kind then def.id else nil)
+	end
+end
+
 local function applyLook(player: Player)
+	publishAttributes(player)
 	local data = account(player)
 	local model = player.Character
 	if not data or not model then
@@ -112,6 +142,7 @@ local function equip(player: Player, kind: string, id: string?): (boolean, strin
 		return false, "error.wrongPhase"
 	end
 	local owned = if kind == "pet" then data.pets.owned else data.cosmetics.owned
+	-- S123: emotes and titles have no slot (canEquip refuses them); dye, frame, chatframe, levelup are slots
 	local ok, err = Premium.canEquip(kind, id, owned)
 	if not ok then
 		return false, err
@@ -145,6 +176,46 @@ function CosmeticService.Grant(player: Player, id: string, toastKey: string?): b
 	PlayerStateService.Set(player, { "account", branch, "owned", id }, true)
 	Net.Fire(player, "Toast", toastKey or "cosmetic.got", { name = `@{def.nameKey}` }, "success")
 	DataService.Save(player)
+	CosmeticService.OwnedChanged(player, id)
+	return true
+end
+
+-- S123: after a cosmetic was given or taken (purchase, Grant, admin): a bought title chosen on the character shows
+-- or hides at once.
+function CosmeticService.OwnedChanged(player: Player, id: string)
+	local def = Cosmetics.get(id)
+	if def and def.kind == "title" then
+		titleService().Refresh(player)
+	end
+end
+
+-- S123 (admin /cosmetic take): the account no longer owns `id`; worn, it comes off. False when not owned (a free one
+-- can never be taken).
+function CosmeticService.Take(player: Player, id: string): boolean
+	local def = Cosmetics.get(id)
+	local data = account(player)
+	if not def or not data or def.free == true then
+		return false
+	end
+	local isPet = def.kind == "pet"
+	local owned = if isPet then data.pets.owned else data.cosmetics.owned
+	if owned[id] ~= true then
+		return false
+	end
+	PlayerStateService.Set(player, { "account", if isPet then "pets" else "cosmetics", "owned", id }, nil)
+	if isPet and data.pets.equipped == id then
+		PlayerStateService.Set(player, { "account", "pets", "equipped" }, nil)
+		spawnPet(player)
+	elseif not isPet and data.cosmetics.equipped[def.kind] == id then
+		PlayerStateService.Set(player, { "account", "cosmetics", "equipped", def.kind }, nil)
+		if def.kind == "mountskin" then
+			mountService().RefreshLook(player)
+		else
+			applyLook(player)
+		end
+	end
+	DataService.Save(player)
+	CosmeticService.OwnedChanged(player, id)
 	return true
 end
 
@@ -199,15 +270,18 @@ local function wearOutfit(player: Player, index: number): (boolean, string?)
 	return true, nil
 end
 
--- Admin: owns every cosmetic and pet.
+-- Admin: owns every cosmetic and pet (S123: free ones are owned anyway; bought titles too, so the picker shows them).
 function CosmeticService.GrantAll(player: Player)
 	for _, def in Cosmetics.list do
-		PlayerStateService.Set(
-			player,
-			{ "account", if def.kind == "pet" then "pets" else "cosmetics", "owned", def.id },
-			true
-		)
+		if def.free ~= true then
+			PlayerStateService.Set(
+				player,
+				{ "account", if def.kind == "pet" then "pets" else "cosmetics", "owned", def.id },
+				true
+			)
+		end
 	end
+	titleService().Refresh(player)
 end
 
 function CosmeticService.Init(registry)
@@ -228,6 +302,8 @@ function CosmeticService.Start()
 	Net.Handle("OutfitWear", wearOutfit)
 	CharacterService.ModelSpawned:Connect(onModel)
 	CharacterService.CharacterLeaving:Connect(removePet)
+	-- S123: the frame / chat frame / level-up attributes exist before the first character model
+	PlayerStateService.Ready:Connect(publishAttributes)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)
 		local watch = weaponWatch[player]

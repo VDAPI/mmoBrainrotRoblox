@@ -7,6 +7,8 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Blessings = require(Shared.Data.Blessings)
+local Clock = require(Shared.Util.Clock)
+local Cosmetics = require(Shared.Data.Cosmetics)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local LoginReward = require(Shared.Logic.LoginReward)
@@ -17,6 +19,7 @@ local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Time = require(Shared.Logic.Time)
 local Vip = require(Shared.Logic.Vip)
+local WeeklyOffer = require(Shared.Logic.WeeklyOffer)
 
 local Context = require(script.Parent.Context)
 
@@ -35,6 +38,7 @@ local CosmeticService = Context.services.CosmeticService
 local LoginRewardService = Context.services.LoginRewardService
 local VipService = Context.services.VipService
 local LureService = Context.services.LureService
+local PremiumShopService = Context.services.PremiumShopService -- S123: /pack
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -241,12 +245,69 @@ commands.shoplimits = function(player, args)
 end
 
 commands.cosmetic = function(player, args)
-	if args[1] ~= "all" then
+	local action = args[1]
+	if action == "all" then
+		CosmeticService.GrantAll(player)
+		reply(player, "admin.cosmetic.all")
+		return
+	end
+	local id = args[2]
+	if (action ~= "give" and action ~= "take") or not id then
 		reply(player, "admin.usage.cosmetic")
 		return
 	end
-	CosmeticService.GrantAll(player)
-	reply(player, "admin.cosmetic.all")
+	if not Cosmetics.get(id) then
+		reply(player, "admin.cosmetic.unknown", { id = id })
+		return
+	end
+	-- S123: give = CosmeticService.Grant (owned already: nothing); take = off the account, off the slot when worn
+	-- (not owned or free: nothing); nothing changed answers so
+	local changed = if action == "give" then CosmeticService.Grant(player, id) else CosmeticService.Take(player, id)
+	if not changed then
+		reply(player, "admin.cosmetic.unchanged", { id = id })
+	else
+		reply(player, if action == "give" then "admin.cosmetic.given" else "admin.cosmetic.taken", { id = id })
+	end
+end
+
+-- S123: a starter pack without Robux (the pack's own handler) or its purchase forgotten (granted passes off; the
+-- cosmetics and shards stay).
+commands.pack = function(player, args)
+	local key = args[2]
+	if (args[1] ~= "grant" and args[1] ~= "reset") or not key then
+		reply(player, "admin.usage.pack")
+		return
+	end
+	if not Products.getStarterPack(key) then
+		reply(player, "admin.pack.unknown", { key = key })
+		return
+	end
+	if args[1] == "grant" then
+		if PremiumShopService.GrantPack(player, key) then
+			reply(player, "admin.pack.granted", { key = key })
+		else
+			reply(player, "admin.usage.pack")
+		end
+	elseif PremiumShopService.ResetPack(player, key) then
+		reply(player, "admin.pack.reset", { key = key })
+	end
+end
+
+-- S123: the offer of the week (Logic/WeeklyOffer): names, the discounted one with its price, the end (UTC).
+commands.weeklyoffer = function(player, args)
+	local now = Clock.now()
+	local week = if args[1] then tonumber(args[1]) else nil
+	local offer = if week then WeeklyOffer.forWeek(week) else WeeklyOffer.at(now)
+	local discounted = Cosmetics.get(offer.discounted)
+	local ends = Time.weekStart(offer.week + 1)
+	local year, month, day = Time.civil(ends)
+	reply(player, "admin.weekly.offer", {
+		week = offer.week,
+		items = table.concat(offer.items, ", "),
+		discounted = offer.discounted,
+		price = if discounted then WeeklyOffer.discountedPrice(discounted.price) else 0,
+		ends = string.format("%04d-%02d-%02d 00:00 UTC", year, month, day),
+	})
 end
 
 commands.mail = function(player, args)

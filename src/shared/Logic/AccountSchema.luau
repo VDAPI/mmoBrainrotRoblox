@@ -69,6 +69,9 @@ function AccountSchema.accountTemplate(): AccountData
 		outfits = {},
 		-- S122: Cloak of Luring (Logic/Lure): real-time end (os.time) and the switch; no migration (reconcile)
 		lure = { untilTs = 0, on = false },
+		-- S123: starter packs bought once per account; passes granted by a pack, honoured by HasPass (no migration)
+		packs = {},
+		grantedPasses = {},
 		stats = { createdAt = 0, playtime = 0 },
 		redeemed = {},
 	}

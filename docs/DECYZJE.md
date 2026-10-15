@@ -3832,3 +3832,54 @@
 - **S122** Przycisk płaszcza na HUD stoi obok przycisku nagrody za logowanie (pod ikonami eliksirów odporności, które
   zajmują do pięciu miejsc w rzędzie po prawej od portretu), a nie po prawej od nich; tylko znak `❂` (w `Logic/UiArt` nie
   ma klucza `hud/lure`).
+- **S123** Nazwy S97 / S120–S122 zamiast założeń promptu: S120 nie założyła `Products.starterPacks` ani pola `weekly`
+  (dodane tu); zakup kosmetyku dalej przez `Premium.canBuyCosmetic(id, owned, shards, now?)` (nowy opcjonalny `now`), nie
+  przez `Premium.canBuy`; `PremiumConfirm.Spec` dostał opcjonalne `arg2` (cena tygodnia), `Cards.CardSpec` pole `rich`.
+  Komenda `/weekly` należy do zleceń tygodniowych (S98), więc oferta tygodnia ma `/weeklyoffer`.
+- **S123** Garderoba na dwóch poziomach zakładek (`Cosmetics.groups`): Wygląd (strój, barwnik, aura, ślad, broń),
+  Towarzysze (pet, skin wierzchowca), Wyróżnienia (tytuł, ramka, ramka czatu), Gesty i efekty (emotka, efekt awansu).
+- **S123** Emotki bez slotu (każda posiadana w kole), dwie darmowe (`free`: Pozdrowienie, Wskazanie), `/e` i `/emote` z
+  aliasami PL i EN, domyślna `RBXEmoteCommand` wyłączona. Odtwarzanie przez atrybut modelu `Emote = "<ruch>:<n>"` bez
+  remote'u serwer → klient. Blokady na serwerze: śmierć, walka, jazda, kanał / rzucanie (gałąź stanu `skills.channel`),
+  odnowienie 3 s; atrybut czyści śmierć, obrażenia, wsiadanie i nowy model. Umiejętność albo atak zastępuje emotkę,
+  emotka w trakcie umiejętności jest pomijana; pętla kończy się, gdy postać ruszy (prędkość korzenia, każdy klient sam).
+- **S123** Koło emotek przygasza wpisy tylko przy śmierci, jeździe i rzucaniu: klient nie zna stanu walki (serwer odmawia
+  z komunikatem). Koło to nakładka w warstwie okien, nie okno `WindowManager`.
+- **S123** Tytuły kupowane w `Data/Titles` z `req = { kind = "cosmetic", id }`, jeden picker; kontekst = typ
+  `Titles.Context` z S121 rozszerzony o `owned`, `Titles.contextOf(account, vip)` na serwerze i kliencie. „Zdejmij” w
+  garderobie ukrywa tytuł (`Titles.NONE`). Tytuły kupowane poza `titles.json` (są w `cosmetics.json` jako rodzaj `title`).
+- **S123** Ramka portretu, ramka czatu i efekt awansu jako atrybuty gracza `CosmeticFrame`, `CosmeticChatFrame`,
+  `CosmeticLevelUp` (na `Player`, ustawiane także przy `PlayerStateService.Ready`); `LevelService` bez zmian, efekt wybiera
+  klient z atrybutu. S121 nie dała osobnej ramki czatu VIP: gwiazdka VIP zostaje obok własnej ramki czatu.
+- **S123** Barwnik to osobny krok `CosmeticLook.applyDye` po `applyOutfit` (bez zmiany nakładania strojów, S132), nie
+  barwi peleryny przynęty, aury, śladu ani broni. Zestawy Garderoby+ kopiują całą mapę `equipped` (S121), więc obejmują
+  barwnik, ramkę, ramkę czatu i efekt awansu; zostawione tak.
+- **S123** **(odejście)** Barwnik to kosmetyk na zawsze (30–60 SO), nie zużywalny „30 za szt.” z KATALOG (kontrakt §4
+  traktuje go jako rodzaj kosmetyku); DESIGN-17 §4 poprawiony.
+- **S123** Oferta tygodnia: pula `weekly` posortowana po id (51 wpisów), ziarno `tydzień × 7919 + salt`, bez powtórek z
+  poprzedniego tygodnia przy puli ≥ 8, rabat zaokrąglony do 5 SO (nie mniej niż 5); zmiana puli w nowej wersji gry może
+  zmienić ofertę w trakcie tygodnia. Inna cena niż w oknie: `premium.error.priceChanged` bez pobrania waluty, okno
+  odświeża ofertę (`UI/WeeklyClock`). Ceny liczy tylko `WeeklyOffer.priceOf` z `Util/Clock`.
+- **S123** **(odejście)** Paczki startowe dają kosmetyki dostępne tylko w paczkach (`obtain = { pack }`: `outfit_wayfarer`
+  jako „peleryna” = strój z częścią `cape`, rodzaju peleryny nie ma; `pet_hound`; `aura_valor`), żeby paczka miała wartość
+  nie do kupienia osobno; DESIGN-17 §4 poprawiony.
+- **S123** Podwójny zakup paczki (wyścig okien Roblox): tylko Smocza Waluta, bez kosmetyków i przepustki, toast
+  `premium.pack.duplicate`. Paczka Bohatera do kupienia także z kupionymi Kieszeniami Kupca (dopisek w karcie).
+- **S123** `account.grantedPasses` scalane z pamięcią przepustek przy `PlayerStateService.Ready` (bez toastu);
+  `GrantProfilePass` zapisuje i woła `setPass` (sygnał `PassChanged` odświeża pojemność). `/pass pockets off` zdejmuje ją
+  tylko do następnego wejścia; na stałe `/pack reset` (`RevokeProfilePass`).
+- **S123** Zależności: `PremiumShopService` += `MonetizationService`, `CosmeticService`; `ProfileService` += `DataService`;
+  `AdminService` += `PremiumShopService`; nowy `EmoteService` (`DataService`, `PlayerStateService`, `CharacterService`,
+  `ResourceService`), `MountService` leniwie; `CosmeticService` bierze `TitleService` leniwie (przez `PathService` ciągnie
+  wiele serwisów, potrzebny tylko przy tytule kupowanym). Klient: `EmoteController` (`UIController`,
+  `AnimationController`), `PremiumController` += `EmoteController`, `EffectsController`.
+- **S123** Klawisz koła emotek `T` (wolny po S96–S122; `R` i `U` zostają dla S124 / S126); widać go też na wiki w liście
+  klawiszy (`mechanics.json`).
+- **S123** Efekt awansu `levelup_frost` nazywa się „Mroźny krąg” / "Frost Ring", żeby nie powtarzać nazwy ramki czatu
+  „Szron”.
+- **S123** Atrybut `Emote` zastany przy pierwszym zobaczeniu modelu (dołączenie, wejście w zasięg) nic nie odtwarza:
+  serwer nie czyści go po końcu emotki, więc nowy obserwator odgrywałby starą. Koszt: emotki trwającej w chwili wejścia
+  w zasięg nie widać.
+- **S123** Listy i ceny garderoby i sklepu czytają `WeeklyClock.WeekStart` (zmienia się raz w tygodniu), licznik
+  `Now`; bez przebudowy wierszy co 20 s. `Premium.canEquip` bierze rodzaje ze slotem z `CosmeticRules.SLOT_KINDS`
+  (+ `pet`); `CosmeticService.Owns` usunięte (bez użycia). `/cosmetic give|take` bez zmiany: `admin.cosmetic.unchanged`.

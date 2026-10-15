@@ -213,9 +213,11 @@ local Definitions: { [string]: Definition } = {
 	BuyPass = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (pass key)
 	PremiumBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (shop key) for Dragon Shards
 	LureToggle = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) Cloak of Luring switch, S122
-	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (cosmetic id)
+	-- (cosmetic id, expected price) S123: the weekly price can change at Monday 00:00 UTC
+	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string", "number?" } },
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
 	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)
+	PlayEmote = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (emote cosmetic id) S123
 	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
 	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121

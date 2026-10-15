@@ -4,7 +4,8 @@
 -- card tooltips use the same text (`describe`). Robux purchases go through the native Roblox prompt instead.
 --   PremiumConfirm.setShowModal(fn)  WindowManager.ShowModal (PremiumController.Init)
 --   PremiumConfirm.describe(spec, mode?)  "confirm" (default): price, balance, after; "tooltip": price, after
---   PremiumConfirm.ask(spec)  the dialog; confirming sends `spec.remote(spec.arg)` and keeps an error in the dialog
+--   PremiumConfirm.ask(spec)  the dialog; confirming sends `spec.remote(spec.arg, spec.arg2)` and keeps an error in the
+--     dialog (S123: arg2 = the price shown, PremiumBuyCosmetic refuses another one with premium.error.priceChanged)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -15,6 +16,7 @@ local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local Sounds = require(script.Parent.Sounds)
 local Text = require(script.Parent.Text)
 local Toast = require(script.Parent.Components.Toast)
+local WeeklyClock = require(script.Parent.WeeklyClock)
 
 local log = Log.new("PremiumConfirm")
 
@@ -28,6 +30,7 @@ export type Spec = {
 	shards: number, -- the balance now
 	remote: string, -- PremiumBuy / PremiumBuyCosmetic
 	arg: string,
+	arg2: any?, -- S123: a second remote argument (the cosmetic's price of the week)
 	onDone: (() -> ())?,
 }
 
@@ -62,9 +65,12 @@ end
 
 -- Sends the purchase; returns (ok, localized error).
 local function send(spec: Spec): (boolean, string?)
-	local ok, err = Net.Invoke(spec.remote, spec.arg)
+	local ok, err = Net.Invoke(spec.remote, spec.arg, spec.arg2)
 	if not ok then
 		Sounds.play("error")
+		if err == "premium.error.priceChanged" then
+			WeeklyClock.refresh() -- S123: the windows show the new week's offer
+		end
 		return false, Text.now(err or "error.internal")
 	end
 	Sounds.play("coin")

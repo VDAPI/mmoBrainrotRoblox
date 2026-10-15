@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S122 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S123 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -217,6 +217,10 @@ częściami nigdy nie trafiają do atlasów, plików gry ani na wiki; importery 
 (w tym 21 już wgranych w S118–S119: ich atlasy wgrane od nowa bez nich), wgrane wszystkie 17 map malowanych, nowe
 ikony umiejętności, efektów i tytułów ścieżek (`ui_skills_02`), 19 obrazków przedmiotów krain 2–4
 (`import_ui.py --check-ids` 33/33, `import_png.py --check-ids` 8/8).
+S123 Kosmetyki 2 (DESIGN-17 §4): ramki portretu i czatu, tytuły kupowane w jednym pickerze, emotki (koło pod T i na
+HUD, `/e`, dwie darmowe), efekty awansu, barwniki stroju, garderoba na dwóch poziomach zakładek, oferta tygodnia
+(`Logic/WeeklyOffer`, 4 kosmetyki, jeden −30%) i paczki startowe raz na konto (`account.packs`, przepustki w profilu
+`account.grantedPasses`).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
@@ -284,6 +288,12 @@ zakończone; testy i decyzje właściciela po nich.
   kotwicy), kikut kolumny bez kolizji.
 - **Sklep premium (S121)**: id subskrypcji VIP (`Products.subscriptions[1].subscriptionId`) i czterech przepustek
   (`pockets`, `slot4`, `slot5`, `wardrobePlus`) do wklejenia z Creator Hub; do tego czasu „Wkrótce” na żywym serwerze.
+- **Sklep premium (S123)**: id dwóch paczek startowych (`Products.starterPacks`: `starter_wanderer`, `starter_hero`) do
+  wklejenia z Creator Hub; do tego czasu „Wkrótce” na żywym serwerze. Nowe kosmetyki bez obrazków (znak zamiast
+  `kosmetyki/<id>.png`). Koło emotek nie przygasza wpisów w walce (klient nie zna stanu walki; serwer odmawia z
+  komunikatem). Emotki bez dźwięku; atak gracza kończy emotkę tylko u klientów (atrybut `Emote` zostaje do następnej,
+  więc nowy obserwator nie odgrywa zastanego atrybutu i nie widzi emotki trwającej w chwili wejścia w zasięg).
+  Podgląd emotki i efektu awansu tylko na własnej postaci w świecie (nie w okienku garderoby).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

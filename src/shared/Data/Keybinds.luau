@@ -39,6 +39,7 @@ local actions: { Action } = {
 	{ id = "interact", default = "E", labelKey = "keys.interact", group = "world" },
 	{ id = "pickup", default = "F", labelKey = "keys.pickup", group = "world" },
 	{ id = "mount", default = "H", labelKey = "keys.mount", group = "world" }, -- S96: ride / dismount (wiki from S97)
+	{ id = "emote_wheel", default = "T", labelKey = "keys.emoteWheel", group = "world" }, -- S123: the emote wheel
 }
 
 -- Keys a player may bind. Movement (WASD, arrows, Space), camera (I/O, Shift), chat (/), Esc and the

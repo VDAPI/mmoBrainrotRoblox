@@ -41,6 +41,18 @@ export type ShopEntry = {
 }
 -- S97: a premium mount (Developer Product, granted to the active character; Data/Mounts entry with source "premium").
 export type MountProduct = { key: string, productId: number, robux: number, mount: string, enabled: boolean }
+-- Starter packs (S123, DESIGN-17 §4): Developer Products, once per account (account.packs[key]). Shards,
+-- cosmetics only obtainable here (Data/Cosmetics obtain.pack) and passes granted in the profile
+-- (account.grantedPasses, honoured by MonetizationService.HasPass). No stats, no gold, no EXP (paywall.spec).
+export type StarterPack = {
+	key: string,
+	productId: number, -- 0 = placeholder (owner pastes the id from the Creator Hub)
+	robux: number,
+	shards: number,
+	cosmetics: { string },
+	passes: { string },
+	icon: string,
+}
 
 local SHARD_PACKS: { ShardPack } = {
 	{ key = "shards_100", productId = 0, shards = 100, robux = 99 },
@@ -105,6 +117,27 @@ local MOUNTS: { MountProduct } = {
 	{ key = "mount_royal", productId = 0, robux = 0, mount = "mount_royal", enabled = false },
 }
 
+local STARTER_PACKS: { StarterPack } = {
+	{
+		key = "starter_wanderer",
+		productId = 0,
+		robux = 199,
+		shards = 500,
+		cosmetics = { "outfit_wayfarer", "pet_hound" },
+		passes = {},
+		icon = "✣",
+	},
+	{
+		key = "starter_hero",
+		productId = 0,
+		robux = 799,
+		shards = 2200,
+		cosmetics = { "aura_valor" },
+		passes = { "pockets" },
+		icon = "✠",
+	},
+}
+
 local packByKey: { [string]: ShardPack } = {}
 for _, pack in SHARD_PACKS do
 	packByKey[pack.key] = pack
@@ -133,6 +166,10 @@ local mountByKey: { [string]: MountProduct } = {}
 for _, entry in MOUNTS do
 	mountByKey[entry.key] = entry
 end
+local starterByKey: { [string]: StarterPack } = {}
+for _, pack in STARTER_PACKS do
+	starterByKey[pack.key] = pack
+end
 
 return table.freeze({
 	shardPacks = SHARD_PACKS,
@@ -142,6 +179,7 @@ return table.freeze({
 	shop = SHOP,
 	shopCats = SHOP_CATS,
 	mounts = MOUNTS,
+	starterPacks = STARTER_PACKS, -- S123
 	getPack = function(key: string): ShardPack?
 		return packByKey[key]
 	end,
@@ -160,6 +198,10 @@ return table.freeze({
 	end,
 	getMount = function(key: string): MountProduct?
 		return mountByKey[key]
+	end,
+	-- S123
+	getStarterPack = function(key: string): StarterPack?
+		return starterByKey[key]
 	end,
 	VAULT_PASS_SLOTS = 60,
 	AUTO_LOOT_RANGE = 15,

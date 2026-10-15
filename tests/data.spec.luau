@@ -47,6 +47,7 @@ local NAMESPACES = {
 	"admin",
 	"fullElixir", -- S122 (not "elixir": the resistance elixirs)
 	"lure", -- S122
+	"emote", -- S123
 	"animlab", -- S110
 	"paths",
 	"title",

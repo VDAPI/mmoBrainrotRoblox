@@ -224,6 +224,8 @@ export type AccountData = {
 	outfits: { Outfit }, -- S121: saved looks (Garderoba+), 1..Products.OUTFITS_PLUS without holes
 	-- S122 Cloak of Luring: real-time end (os.time) and the player's switch; active = on and untilTs > now
 	lure: { untilTs: number, on: boolean },
+	packs: { [string]: boolean }, -- S123: starter packs bought (key -> true), once per account
+	grantedPasses: { [string]: boolean }, -- S123: passes granted by a starter pack (MonetizationService.HasPass)
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 }

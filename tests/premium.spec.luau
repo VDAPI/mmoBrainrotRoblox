@@ -222,6 +222,9 @@ T.describe("Premium data", function()
 		end
 		T.expect(counts.outfit >= 8 and counts.aura >= 4 and counts.weapon >= 3 and counts.pet >= 6).toBe(true)
 		T.expect((counts.mountskin or 0) >= 8).toBe(true) -- S97
+		-- S123 (DESIGN-17 §4)
+		T.expect((counts.frame or 0) >= 5 and (counts.chatframe or 0) >= 4 and (counts.title or 0) >= 5).toBe(true)
+		T.expect((counts.emote or 0) >= 8 and (counts.levelup or 0) >= 4 and (counts.dye or 0) >= 6).toBe(true)
 	end)
 
 	T.it("everything is localized", function()
@@ -240,6 +243,39 @@ T.describe("Premium data", function()
 		for _, pass in Products.passes do
 			need(`premium.pass.{pass.key}`)
 			need(`premium.pass.{pass.key}.desc`)
+		end
+		-- S123: starter packs, bought titles, groups, the weekly offer
+		for _, pack in Products.starterPacks do
+			need(`premium.pack.{pack.key}`)
+			need(`premium.pack.{pack.key}.desc`)
+		end
+		for _, def in Cosmetics.list do
+			if def.kind == "title" and def.title then
+				need(`title.{def.title}`)
+			end
+		end
+		for _, group in Cosmetics.groups do
+			need(`wardrobe.group.{group.id}`)
+		end
+		for _, key in
+			{
+				"premium.weekly.title",
+				"premium.weekly.ends",
+				"premium.weekly.discount",
+				"premium.error.priceChanged",
+				"premium.pack.title",
+				"premium.pack.once",
+				"premium.pack.granted",
+				"premium.pack.duplicate",
+				"premium.pack.passOwned",
+				"wardrobe.obtain.pack",
+				"wardrobe.free",
+				"wardrobe.weekly",
+				"keys.emoteWheel",
+				"emote.help",
+			}
+		do
+			need(key)
 		end
 		-- S97: the premium mount section (hidden until a product is enabled; its texts exist already)
 		for _, key in { "premium.mounts.title", "premium.mounts.desc", "premium.error.notForSale" } do
@@ -291,8 +327,8 @@ T.describe("S97 mount skins and premium mounts", function()
 		T.expect({ Premium.canBuyCosmetic("mountskin_dapple", {}, 349) }).toEqual({ false, "premium.error.shards" })
 		for _, def in Cosmetics.list do
 			if def.obtain then
-				-- S121: the VIP cosmetics of the month are earned too (any look kind)
-				T.expect(def.kind == "mountskin" or def.obtain.vipMonth ~= nil).toBe(true)
+				-- S121: the VIP cosmetics of the month are earned too (any look kind); S123: starter pack cosmetics
+				T.expect(def.kind == "mountskin" or def.obtain.vipMonth ~= nil or def.obtain.pack ~= nil).toBe(true)
 				T.expect(def.price).toBe(0)
 				local n = 0
 				for _ in def.obtain do

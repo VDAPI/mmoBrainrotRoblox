@@ -40,6 +40,7 @@ local ScreenController = {
 		"VfxController",
 		"MountController",
 		"LoginRewardController", -- S100: the HUD button's status and badge
+		"EmoteController", -- S123: the emote wheel button
 	},
 }
 
@@ -54,6 +55,7 @@ local NavController: any
 local VfxController: any
 local MountController: any
 local LoginRewardController: any
+local EmoteController: any
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
@@ -271,6 +273,7 @@ local function show(screen: "select" | "hud")
 			LoginStatus = LoginRewardController.Status,
 			LoginBadge = LoginRewardController.Badge,
 			OpenLogin = LoginRewardController.Open,
+			OpenEmotes = EmoteController.Toggle,
 			UsePotion = ItemController.UsePotion,
 			AssignPotion = ItemController.SetPotion,
 			CastSlot = SkillController.CastSlot,
@@ -307,6 +310,7 @@ function ScreenController.Init(registry)
 	VfxController = registry.Get("VfxController")
 	MountController = registry.Get("MountController")
 	LoginRewardController = registry.Get("LoginRewardController")
+	EmoteController = registry.Get("EmoteController")
 	blur = Instance.new("BlurEffect")
 	blur.Name = "Vaelthorn_SelectBlur"
 	blur.Enabled = false

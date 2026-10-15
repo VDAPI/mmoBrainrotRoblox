@@ -130,6 +130,7 @@ return {
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
+		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/Portals"] = "świat",

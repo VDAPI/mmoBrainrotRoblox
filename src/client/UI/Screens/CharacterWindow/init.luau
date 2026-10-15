@@ -7,6 +7,8 @@
 -- `Focus` ("backpack" | "stats") is the touch tab the open request asked for (WindowManager.FocusHint).
 -- S58 (ROZWOJ 2.9, 4): a build set switch under class / level (no "Copy" here: it lives in the skills window); the
 -- stat reservation belongs to a set and clears on a switch.
+-- S123: a portrait tile (UI/Components/PortraitFrame, the frame cosmetic) next to the name and class / level; the title
+-- picker sees the bought titles (Titles.contextOf with the owned cosmetics and the VIP branch).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,6 +22,7 @@ local Device = require(script.Parent.Parent.Device)
 local Equipment = require(script.Equipment)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local StatAllocator = require(script.StatAllocator)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -53,13 +56,17 @@ local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
 local function TitlePicker(scope: Scope, order: number): Instance
 	local character = State.Value({ "character" })
 	local vip = State.Value({ "vip", "active" }) -- S121: the VIP title
+	local owned = State.Value({ "account", "cosmetics", "owned" }) -- S123: bought titles
+	local ctx = scope:Computed(function(use): Titles.Context
+		return Titles.contextOf({ cosmetics = { owned = use(owned) } }, use(vip) == true)
+	end)
 	local unlocked = scope:Computed(function(use): { string }
 		local c = use(character)
-		return if c then Titles.unlocked(c, nil, { vip = use(vip) == true }) else {}
+		return if c then Titles.unlocked(c, nil, use(ctx)) else {}
 	end)
 	local current = scope:Computed(function(use): string?
 		local c = use(character)
-		return if c then Titles.shown(c, nil, { vip = use(vip) == true }) else nil
+		return if c then Titles.shown(c, nil, use(ctx)) else nil
 	end)
 	local medal = scope:Computed(function(use): string?
 		local id = use(current)
@@ -151,39 +158,76 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 	local name = State.Value({ "character", "name" })
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
+	local tile = if touch then 48 else 64
+	local classColor = scope:Computed(function(use): Color3
+		local class = Classes.get(use(classId) or "")
+		return if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+	end)
 	return {
 		scope:New("UIListLayout")({
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			Padding = UDim.new(0, Theme.Padding.Small),
 		}),
-		scope:New("TextLabel")({
-			Name = "CharName",
+		-- S123: the portrait tile (frame cosmetic) left of the name and class / level
+		scope:New("Frame")({
+			Name = "Header",
 			LayoutOrder = 1,
-			Size = UDim2.new(1, 0, 0, if touch then 28 else 34),
+			Size = UDim2.new(1, 0, 0, tile),
 			BackgroundTransparency = 1,
-			Text = scope:Computed(function(use): string
-				return use(name) or ""
-			end),
-			FontFace = Theme.Fonts.Heading,
-			TextSize = if touch then Theme.TextSize.Large else Theme.TextSize.Title,
-			TextColor3 = Theme.Colors.Gold,
-			TextTruncate = Enum.TextTruncate.AtEnd,
-		}),
-		scope:New("TextLabel")({
-			Name = "ClassLevel",
-			LayoutOrder = 2,
-			Size = UDim2.new(1, 0, 0, 24),
-			BackgroundTransparency = 1,
-			Text = scope:Computed(function(use): string
-				local class = Classes.get(use(classId) or "")
-				local className = if class then Text.get(use, class.nameKey) else ""
-				return Text.get(use, "charSelect.classLevel", { class = className, level = use(level) or 1 })
-			end),
-			FontFace = Theme.Fonts.Body,
-			TextSize = if touch then Theme.TextSize.Small else Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.Parchment,
-			TextTruncate = Enum.TextTruncate.AtEnd,
+			[Children] = {
+				PortraitFrame(scope, {
+					Name = "Portrait",
+					Position = UDim2.fromOffset(4, 0),
+					Size = tile,
+					FrameId = State.Value({ "account", "cosmetics", "equipped", "frame" }),
+					ClassColor = classColor,
+					Content = ArtIcon(scope, {
+						Key = scope:Computed(function(use): string?
+							local class = Classes.get(use(classId) or "")
+							return if class then UiArt.classEmblem(class.id) else nil
+						end),
+						Glyph = scope:Computed(function(use): string
+							local class = Classes.get(use(classId) or "")
+							return if class then class.icon else ""
+						end),
+						GlyphColor = classColor,
+						ImageScale = 0.8,
+						Size = UDim2.fromScale(1, 1),
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = math.floor(tile * 0.5) },
+					}),
+				}),
+				scope:New("TextLabel")({
+					Name = "CharName",
+					Position = UDim2.fromOffset(tile + 14, 0),
+					Size = UDim2.new(1, -(tile + 14), 0.55, 0),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						return use(name) or ""
+					end),
+					FontFace = Theme.Fonts.Heading,
+					TextSize = if touch then Theme.TextSize.Large else Theme.TextSize.Title,
+					TextColor3 = Theme.Colors.Gold,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}),
+				scope:New("TextLabel")({
+					Name = "ClassLevel",
+					Position = UDim2.new(0, tile + 14, 0.55, 0),
+					Size = UDim2.new(1, -(tile + 14), 0.45, 0),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						local class = Classes.get(use(classId) or "")
+						local className = if class then Text.get(use, class.nameKey) else ""
+						return Text.get(use, "charSelect.classLevel", { class = className, level = use(level) or 1 })
+					end),
+					FontFace = Theme.Fonts.Body,
+					TextSize = if touch then Theme.TextSize.Small else Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}),
+			},
 		}),
 		BuildSetSwitch(scope, {
 			Height = if touch then Theme.Size.MinTouch else 34,

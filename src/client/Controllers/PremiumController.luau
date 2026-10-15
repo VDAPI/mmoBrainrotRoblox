@@ -3,6 +3,14 @@
 -- (UI/Screens/PremiumShop), the purchase confirmation (UI/PremiumConfirm), OpenShop(tab) for later sessions and
 -- OpenWardrobe(start) on a cosmetic kind with a cosmetic tried on. No key: the HUD menu button opens the shop.
 -- S121: the VIP window ("vip", no key: the game menu, the Passes tab and its VIP card open it).
+-- S123: the wardrobe previews emotes and level-up effects on the own character in the world (EmoteController,
+-- EffectsController; nobody else sees them).
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 
 local PremiumConfirm = require(script.Parent.Parent.UI.PremiumConfirm)
 local PremiumShop = require(script.Parent.Parent.UI.Screens.PremiumShop)
@@ -12,10 +20,12 @@ local WardrobeStart = require(script.Parent.Parent.UI.WardrobeStart)
 
 local PremiumController = {
 	Name = "PremiumController",
-	Deps = { "WindowManager" },
+	Deps = { "WindowManager", "EmoteController", "EffectsController" },
 }
 
 local WindowManager: any
+local EmoteController: any
+local EffectsController: any
 
 -- Opens the Dragon Shop, on `tab` when it is given and visible (S121–S123 open their own tab).
 function PremiumController.OpenShop(tab: string?)
@@ -43,6 +53,8 @@ end
 
 function PremiumController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
+	EmoteController = registry.Get("EmoteController")
+	EffectsController = registry.Get("EffectsController")
 	PremiumConfirm.setShowModal(WindowManager.ShowModal)
 	WindowManager.Register({
 		id = "premium",
@@ -65,6 +77,14 @@ function PremiumController.Init(registry)
 			return Wardrobe(s, {
 				OpenShop = function(tab: string?)
 					PremiumController.OpenShop(tab or "currency")
+				end,
+				-- S123: local previews (only this client sees them)
+				PreviewEmote = EmoteController.Preview,
+				PreviewLevelUp = function(cosmeticId: string)
+					local model = Players.LocalPlayer.Character
+					if model then
+						EffectsController.PlayLevelUp(model, CosmeticRules.levelUpStyle(Cosmetics.get(cosmeticId)))
+					end
 				end,
 			})
 		end,

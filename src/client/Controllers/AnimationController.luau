@@ -32,6 +32,7 @@
 --     a summoned helper (attribute Summoned) climbs out of the ground, Vaelgrath's wings beat wide while Flying; deaths
 --     by plan over Config.MonsterLook.deathSeconds; a hit pushes the body away from the attacker (Gait.hitLean, bosses
 --     less). Real models keep their clips (S116 adds attack / roar clips); the new poses are the generator's.
+--   S123: emotes (Data/Emotes) play through the skill motion path with a lower priority (Emote, EndEmote, StopEmote).
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -49,6 +50,7 @@ local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Emotes = require(ReplicatedStorage.Shared.Data.Emotes)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
 local SkillPose = require(ReplicatedStorage.Shared.Logic.SkillPose)
@@ -875,6 +877,7 @@ type SkillPlay = {
 	frozenUntil: number, -- hitstop: the motion clock stands still until then
 	frozenAt: number?,
 	clip: CharacterClips.Play?, -- S113: a real clip plays instead of the keys
+	emote: boolean?, -- S123: an emote (any attack or skill replaces it; it never replaces a skill)
 }
 
 local rigs: { [Model]: Rig } = {}
@@ -1197,6 +1200,11 @@ function AnimationController.Attack(
 	if running and running.clip then
 		running.clip.stop(0.08)
 	end
+	-- S123: an attack ends an emote (the joints go straight to the attack pose)
+	local gesture = skills[model]
+	if gesture and gesture.emote then
+		skills[model] = nil
+	end
 	local play: CharacterClips.Play? = nil
 	if rig and not rig.r6 and nearCamera(model) then
 		local clip = ClipFit.attackClip(weaponType, chosen)
@@ -1313,6 +1321,66 @@ function AnimationController.StopSkill(model: Model)
 		if rig then
 			release(rig)
 		end
+	end
+end
+
+-- S123: plays an emote (Data/Emotes) on a character through the skill motion path, with a lower priority: a running
+-- skill motion skips it (false), an attack or a skill replaces it. A looping emote holds for Emotes.MAX_SECONDS unless
+-- EndEmote ends it earlier (the character moved). Characters too far away do not animate (like skills).
+function AnimationController.Emote(model: Model, emoteId: string): boolean
+	local emote = Emotes.get(emoteId)
+	if not emote or monsters[model] then
+		return false
+	end
+	local rig = rigOf(model)
+	if not rig then
+		return false
+	end
+	local running = skills[model]
+	if running and not running.emote then
+		return false
+	end
+	local attack = attacks[model]
+	if attack and attack.clip then
+		attack.clip.stop(0.08)
+	end
+	attacks[model] = nil
+	skills[model] = {
+		motion = emote.motion,
+		start = os.clock(),
+		loopUntil = if emote.motion.loop then Emotes.MAX_SECONDS else nil,
+		from = if running then running.pose elseif attack and not attack.clip then attack.pose else nil,
+		pose = nil,
+		frozenUntil = 0,
+		frozenAt = nil,
+		clip = nil,
+		emote = true,
+	}
+	return true
+end
+
+-- S123: whether `model` is playing an emote now.
+function AnimationController.IsEmoting(model: Model): boolean
+	local play = skills[model]
+	return play ~= nil and play.emote == true
+end
+
+-- S123: a looping emote ends now (the motion runs out of its loop and recovers); a short one is left to finish.
+function AnimationController.EndEmote(model: Model)
+	local play = skills[model]
+	if play and play.emote then
+		local loop = play.motion.loop
+		if loop then
+			play.loopUntil = math.max(os.clock() - play.start, loop.to)
+		end
+	end
+end
+
+-- S123: stops an emote at once (a new model, the server cleared it); never a skill motion.
+function AnimationController.StopEmote(model: Model)
+	local play = skills[model]
+	if play and play.emote then
+		AnimationController.StopSkill(model)
 	end
 end
 

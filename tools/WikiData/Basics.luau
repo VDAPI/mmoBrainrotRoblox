@@ -924,7 +924,8 @@ end
 function Basics.titles(ctx: any): any
 	local list = {}
 	for _, t in Titles.list do
-		if not ctx.hidden[t.id] then
+		-- S123: bought titles are cosmetics; cosmetics.json lists them, without prices
+		if not ctx.hidden[t.id] and t.req.kind ~= "cosmetic" then
 			table.insert(list, { id = t.id, name = Names.of(t.nameKey), color = t.color, req = Clean.clean(t.req) })
 		end
 	end

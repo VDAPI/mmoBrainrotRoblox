@@ -18,6 +18,11 @@
 --              "Vip" and the state branch `vip` = { active, sub, pass, renewing?, endsAt? }; VipChanged fires on change.
 --              An empty subscriptionId is simulated in Studio and refused (premium.error.notConfigured) on live servers;
 --              /vip on|off (admin) sets a session-only test subscription.
+--   Starter packs (S123, DESIGN-17 §4): Developer Products once per account (Logic/Premium.canBuyPack before the prompt,
+--              also in Studio); PremiumShopService registers their grant handlers. A pass granted by a pack is saved in
+--              account.grantedPasses (GrantProfilePass) and merged into the pass cache when the profile is ready, so
+--              HasPass honours it everywhere. Taking it away needs /pack reset (/pass <key> off only clears the cache
+--              until the next join).
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -161,6 +166,35 @@ local function grant(player: Player, key: string): boolean
 	return handler ~= nil and handler(player)
 end
 
+-- S123: a pass granted in the profile (a starter pack): saved for good and cached at once (PassChanged refreshes the
+-- backpack capacity of Merchant's Pockets).
+function MonetizationService.GrantProfilePass(player: Player, passKey: string)
+	PlayerStateService.Set(player, { "account", "grantedPasses", passKey }, true)
+	setPass(player, passKey, true)
+end
+
+-- S123 (admin /pack reset): the pass is no longer granted in the profile; the cache drops it too.
+function MonetizationService.RevokeProfilePass(player: Player, passKey: string)
+	PlayerStateService.Set(player, { "account", "grantedPasses", passKey }, nil)
+	setPass(player, passKey, false)
+end
+
+-- S123: when the profile is ready, the passes granted in it join the cache (no toast), then everything is published.
+local function onReady(player: Player)
+	local data = DataService.GetData(player)
+	local granted = data and data.grantedPasses
+	if type(granted) == "table" then
+		local passes = owned[player] or {}
+		for key, on in granted do
+			if on == true and Products.getPass(key) then
+				passes[key] = true
+			end
+		end
+		owned[player] = passes
+	end
+	publish(player)
+end
+
 local function keyOfProduct(productId: number): string?
 	for _, pack in Products.shardPacks do
 		if pack.productId == productId and productId ~= 0 then
@@ -173,6 +207,11 @@ local function keyOfProduct(productId: number): string?
 	for _, entry in Products.mounts do
 		if entry.productId == productId and productId ~= 0 then
 			return entry.key
+		end
+	end
+	for _, pack in Products.starterPacks do
+		if pack.productId == productId and productId ~= 0 then
+			return pack.key
 		end
 	end
 	return nil
@@ -212,10 +251,23 @@ local function buyProduct(player: Player, key: string): (boolean, string?)
 			return false, err
 		end
 	end
+	-- S123: a starter pack is bought once per account (refused before the prompt, also in Studio)
+	local starter = Products.getStarterPack(key)
+	if starter then
+		local data = DataService.GetData(player)
+		if not data then
+			return false, "error.wrongPhase"
+		end
+		local ok, err = Premium.canBuyPack(key, data)
+		if not ok then
+			return false, err
+		end
+	end
 	local productId = if Products.getPack(key)
 		then (Products.getPack(key) :: any).productId
 		elseif key == Products.respawn.key then Products.respawn.productId
 		elseif mount then mount.productId
+		elseif starter then starter.productId
 		else nil
 	if productId == nil then
 		return false, "error.badRequest"
@@ -400,7 +452,7 @@ function MonetizationService.Start()
 		task.spawn(loadSubscriptions, player)
 		loadPasses(player)
 	end)
-	PlayerStateService.Ready:Connect(publish)
+	PlayerStateService.Ready:Connect(onReady) -- S123: merges account.grantedPasses, then publishes
 	Players.PlayerRemoving:Connect(function(player)
 		owned[player] = nil
 		subs[player] = nil

@@ -1380,6 +1380,35 @@ T.describe("Wiki export: mounts (S97)", function()
 		end
 	end)
 
+	T.it("S123: new kinds in cosmetics.json without prices or new fields; no packs, offer or bought titles", function()
+		local kinds: { [string]: boolean } = {}
+		for _, k in d.cosmetics.kinds do
+			kinds[k.id] = true
+		end
+		for _, kind in { "dye", "frame", "chatframe", "title", "emote", "levelup" } do
+			T.expect({ kind, kinds[kind] }).toEqual({ kind, true })
+		end
+		local ids: { [string]: boolean } = {}
+		for _, c in d.cosmetics.cosmetics do
+			ids[c.id] = true
+			for _, key in { "price", "weekly", "free", "obtain", "frame", "chat", "emote", "levelup", "dye", "title" } do
+				T.expect({ c.id, key, c[key] }).toEqual({ c.id, key, nil })
+			end
+		end
+		T.expect(ids.frame_royal and ids.emote_wave and ids.title_pilgrim and ids.dye_gold).toBe(true)
+		for _, title in d.titles.titles do
+			for _, id in { "pilgrim", "lorekeeper", "oathbound", "nightwatch", "highborn" } do
+				T.expect(title.id ~= id).toBe(true)
+			end
+		end
+		for name, file in d do
+			local text = Json.encode(file)
+			for _, bad in { "starter_wanderer", "starter_hero", '"productId"', '"robux"' } do
+				T.expect({ name, bad, string.find(text, bad, 1, true) }).toEqual({ name, bad })
+			end
+		end
+	end)
+
 	T.it("lists the mount skins in cosmetics.json without new fields", function()
 		local kinds: { [string]: boolean } = {}
 		for _, k in d.cosmetics.kinds do

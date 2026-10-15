@@ -430,7 +430,12 @@ cmd(
 	"blessing",
 	{ enum("line", Blessings.lines), int("tier", 1, 5), int("seconds", 1, Blessings.DURATION, true) }
 )
-cmd("economy", "cosmetic", { enum("action", { "all" }) })
+-- S123: one cosmetic given (CosmeticService.Grant) or taken (off when worn), or everything
+cmd("economy", "cosmetic", { enum("action", { "all", "give", "take" }), str("id", true) })
+-- S123: a starter pack without Robux (handler of the pack) or the purchase forgotten (its granted passes off)
+cmd("economy", "pack", { enum("action", { "grant", "reset" }), str("key") }, { dangerActions = { "reset" } })
+-- S123: the offer of the week now (or of week number `week`); /weekly is the weekly quests' command (S98)
+cmd("economy", "weeklyoffer", { int("week", 0, 100000, true) })
 cmd("economy", "mail", { enum("kind", { "gold", "item" }), str("a"), str("b", true), str("c", true) })
 cmd("economy", "auction", { enum("action", { "list", "expireall" }) }, { dangerActions = { "expireall" } })
 cmd("economy", "tradetest", {}, { studioOnly = true })

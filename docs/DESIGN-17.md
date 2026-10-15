@@ -56,6 +56,9 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **Tytuły kupowane** dodawane do `Data/Titles` z `req = { kind = "cosmetic", id = … }` (jeden picker tytułów, bez dwóch systemów).
 - **Oferta tygodnia** (`Logic/WeeklyOffer.luau`, czysta): 4 kosmetyki wybrane deterministycznie z puli `weekly = true` przez `Logic/Rng` z ziarnem = numer tygodnia (poniedziałek 00:00 UTC, ta sama definicja tygodnia co tygodniowe questy S98), jeden z nich `−30%`. Ten sam wynik na każdym serwerze bez komunikacji. Zakładka „Kosmetyki” pokazuje ofertę u góry z licznikiem do zmiany.
 - **Paczki startowe** (`Products.starterPacks`, Developer Products, raz na konto: `account.packs[key] = true`): „Paczka Wędrowca” (199 R$: 500 SO + peleryna + pet), „Paczka Bohatera” (799 R$: 2 200 SO + aura + przepustka Kieszenie Kupca jako nadanie w profilu, `account.grantedPasses.pockets = true`, honorowane przez `HasPass`). Po zakupie znikają ze sklepu.
+- **Barwnik** to zwykły kosmetyk na zawsze (30–60 SO), nie zużywalny „30 za sztukę” z KATALOG.md; działa jako osobny krok po nałożeniu stroju (S132 przepnie go na stroje klas).
+- **Kosmetyki paczek startowych** są tylko w paczkach (`obtain = { pack }`), nie w zwykłym sklepie: „peleryna” Paczki Wędrowca to strój z peleryną (`outfit_wayfarer`, rodzaju „peleryna” nie ma), pet to chart (`pet_hound`), aura Paczki Bohatera to Aura Męstwa (`aura_valor`).
+- **Zrobione w S123:** `Logic/CosmeticRules`, `Logic/WeeklyOffer`, `Data/Emotes`, `EmoteService` (remote `PlayEmote`, atrybut modelu `Emote`, komenda `/e`), atrybuty gracza `CosmeticFrame` / `CosmeticChatFrame` / `CosmeticLevelUp`, `Products.starterPacks`, `account.packs`, `account.grantedPasses`, `MonetizationService.GrantProfilePass`, `Titles.contextOf`. S128 dopisze ramki i tytuły areny jako kosmetyki z `obtain` (cena 0), S131 przejrzy ceny.
 
 ## 5. Rankingi (S124–S125)
 

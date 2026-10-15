@@ -5,6 +5,8 @@
 -- function takes an optional title list (tests); default Data/Titles.
 -- S121: an optional account context as the last argument; the VIP title (req.kind "vip") is unlocked only with
 -- ctx.vip == true, so every call without a context keeps the VIP title locked.
+-- S123: bought titles (req.kind "cosmetic") are unlocked only with ctx.owned[req.id] == true (the account owns the
+-- cosmetic of kind title); Titles.contextOf builds the context the same way on the server and the client.
 
 local TitleData = require("../Data/Titles")
 
@@ -12,9 +14,10 @@ type TitleDef = TitleData.TitleDef
 
 local Titles = {}
 
--- Account facts a title may need (server: MonetizationService.HasVip; client: the replicated `vip` branch).
--- S123 adds the owned cosmetics here for bought titles (req.kind "cosmetic").
-export type Context = { vip: boolean? }
+-- Account facts a title may need (server: MonetizationService.HasVip; client: the replicated `vip` branch) and, S123,
+-- the account's owned cosmetics (account.cosmetics.owned) for bought titles.
+-- one context argument for every account-dependent title kind (S121 vip, S123 cosmetic)
+export type Context = { vip: boolean?, owned: { [string]: boolean }? }
 
 Titles.NONE = TitleData.NONE
 
@@ -42,8 +45,18 @@ local function meets(character: any, req: TitleData.Requirement, ctx: Context?):
 		return mainPathOf(character) == req.path
 	elseif req.kind == "vip" then
 		return ctx ~= nil and ctx.vip == true
+	elseif req.kind == "cosmetic" then
+		return ctx ~= nil and ctx.owned ~= nil and ctx.owned[req.id] == true
 	end
 	return progress(character, req.kind) >= (req :: any).value
+end
+
+-- S123: the context of an account (anything with cosmetics.owned) and its VIP state (a subscription is not in the
+-- account: the server passes MonetizationService.HasVip, the client the replicated `vip` branch).
+function Titles.contextOf(account: any, vip: boolean?): Context
+	local cosmetics = if type(account) == "table" then account.cosmetics else nil
+	local owned = if type(cosmetics) == "table" and type(cosmetics.owned) == "table" then cosmetics.owned else nil
+	return { vip = vip == true, owned = owned }
 end
 
 local function find(id: string, list: { TitleDef }?): TitleDef?

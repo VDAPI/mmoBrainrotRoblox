@@ -195,6 +195,22 @@ type CharacterData = {
   `PremiumBuy` (`kind = "lure"`), `MonsterService.Near` / `GroupOf` / `CanTarget`, peleryna
   `CosmeticLook.applyLure` (folder `VaelthornLureCape`, atrybut modelu `LureCape`, ukrywa części `OutfitCape`).
   Klient: `Hud/LureButton`, wiersz w `GameMenu`, karty w `PremiumShop/Items`, eliksir w `Hud/PotionBar`.
+- **Kosmetyki 2, oferta tygodnia, paczki startowe (S123, DESIGN-17 §4):** reguły w `Logic/CosmeticRules` (`owns` z
+  darmowymi, `SLOT_KINDS`, `ownedEmotes`, `emoteByAlias`, `canEmote`, `dyed`, `levelUpStyle`, `chatDecor`, `bubble`,
+  `frameOf`) i `Logic/WeeklyOffer` (`pool`, `raw`, `forWeek`, `at`, `endsAt`, `priceOf`: jedyne miejsce ceny kosmetyku);
+  ruchy emotek `Data/Emotes` (format `SkillMotions`). `EmoteService` (`Deps`: `DataService`, `PlayerStateService`,
+  `CharacterService`, `ResourceService`; `MountService` leniwie): remote `PlayEmote(id)`, komenda czatu `/e` / `/emote`
+  (`RBXEmoteCommand` wyłączona), atrybut modelu `Emote = "<ruch>:<n>"` bez remote'u serwer → klient. `CosmeticService`:
+  sloty `dye`, `frame`, `chatframe`, `levelup`, atrybuty gracza `CosmeticFrame`, `CosmeticChatFrame`, `CosmeticLevelUp`,
+  `Take`, `OwnedChanged` (leniwie `TitleService.Refresh`). `PremiumBuyCosmetic(id, cena?)` (cena tygodnia,
+  `premium.error.priceChanged`); `PremiumShopService` (`Deps` += `MonetizationService`, `CosmeticService`) rejestruje
+  handlery paczek startowych, `GrantPack` / `ResetPack` (admin). `MonetizationService.GrantProfilePass` /
+  `RevokeProfilePass` (`account.grantedPasses` scalane z przepustkami przy `PlayerStateService.Ready`), paczki w
+  `keyOfProduct` i `buyProduct` (`Premium.canBuyPack`). `Titles.contextOf(account, vip)` w `TitleService` i
+  `ProfileService` (`Deps` += `DataService`; profil ma pole `frame`). Klient: `EmoteController` (koło `UI/Screens/
+  EmoteWheel`, klawisz `emote_wheel`, `Hud/EmoteButton`), `AnimationController.Emote` / `EndEmote` / `StopEmote`,
+  `EffectsController.PlayLevelUp` (style efektu awansu), `UI/Components/PortraitFrame`, `UI/WeeklyClock`,
+  `CosmeticLook.applyDye`, ramka czatu w `ChatController` (`OnBubbleAdded`).
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -553,7 +569,9 @@ type CharacterData = {
 | `/login` | economy |  | stan serii nagrody za logowanie konta (S100) |
 | `/loginset` | economy | <day> [gap] | ustaw serię: dzień 0–7, przerwa w dniach (np. /loginset 6 → dziś skrzynia) |
 | `/loginnext` | economy | [days] | symuluj upływ dni dla konta (1 = następny dzień serii, 2+ = przerwa) |
-| `/cosmetic` | economy | <all> | /cosmetic all |
+| `/cosmetic` | economy | <all|give|take> [id] | wszystkie kosmetyki albo jeden dany / zabrany (S123) |
+| `/pack` | economy | <grant|reset> <key> | paczka startowa bez Robux / kasuje zakup i nadane przepustki (S123) ⚠ reset |
+| `/weeklyoffer` | economy | [week] | oferta tygodnia: cztery kosmetyki, rabat, koniec (S123) |
 | `/mail` | economy | <gold|item> <a> [b] [c] | /mail gold n | /mail item idPrzedmiotu [n] [rzadkość] |
 | `/auction` | economy | <list|expireall> | /auction list | /auction expireall (Studio) ⚠ expireall |
 | `/tradetest` | economy |  | otwórz okno handlu samemu (Studio) (Studio) |

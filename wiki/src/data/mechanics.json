@@ -37,7 +37,8 @@
     {"group":"world","id":"sprint","key":"Ctrl","name":{"en":"Sprint","pl":"Sprint"}},
     {"group":"world","id":"interact","key":"E","name":{"en":"Interact / talk","pl":"Interakcja / rozmowa"}},
     {"group":"world","id":"pickup","key":"F","name":{"en":"Pick up loot","pl":"Podnieś łup"}},
-    {"group":"world","id":"mount","key":"H","name":{"en":"Mount","pl":"Wierzchowiec"}}
+    {"group":"world","id":"mount","key":"H","name":{"en":"Mount","pl":"Wierzchowiec"}},
+    {"group":"world","id":"emote_wheel","key":"T","name":{"en":"Emote wheel","pl":"Koło emotek"}}
   ],
   "levelBands": [
     {"band":"grey","color":"#8C8C8C","max":-10,"min":-15},

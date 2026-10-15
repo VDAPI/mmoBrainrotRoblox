@@ -1,21 +1,28 @@
 --!strict
 -- Player profile (S15): name, class, level, guild, PvP kills/deaths and duels won/lost, and the equipped
 -- items with tooltips (inspect). Opened from the player menu (right click or the "⋯" button by the target).
+-- S123: a 64 px portrait tile with the player's portrait frame (`frame` of the profile) and the class emblem, left of
+-- the name and the level / class / title line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
+local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SLOTS = { "weapon", "offhand", "helmet", "armor", "gloves", "boots", "necklace", "ring1", "ring2", "talisman" }
+local TILE = 64
+
 local GLYPHS: { [string]: string } = {
 	weapon = "⚔",
 	offhand = "⛨",
@@ -79,21 +86,48 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 			BackgroundTransparency = 1,
 			[Children] = {
 				s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-				line(
-					1,
-					`{if class then class.icon .. " " else ""}{p.name}`,
-					Theme.Colors.GoldBright,
-					Theme.TextSize.Title
-				),
-				line(
-					2,
-					`{Text.get(use, "hud.level", { level = p.level })}  ·  {if class
-						then Text.get(use, class.nameKey)
-						else p.class}{if p.title and TitleData.get(p.title)
-						then "  ·  « " .. Text.get(use, (TitleData.get(p.title) :: any).nameKey) .. " »"
-						else ""}`,
-					Theme.Colors.Parchment
-				),
+				s:New("Frame")({
+					LayoutOrder = 1,
+					Size = UDim2.new(1, 0, 0, TILE),
+					BackgroundTransparency = 1,
+					[Children] = {
+						PortraitFrame(s, {
+							Name = "Portrait",
+							Size = TILE,
+							FrameId = if type(p.frame) == "string" then p.frame else nil,
+							ClassColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold,
+							Content = ArtIcon(s, {
+								Key = if class then UiArt.classEmblem(class.id) else nil,
+								Glyph = if class then class.icon else "",
+								GlyphColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold,
+								ImageScale = 0.8,
+								Size = UDim2.fromScale(1, 1),
+								Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 32 },
+							}),
+						}),
+						s:New("Frame")({
+							Position = UDim2.fromOffset(TILE + 12, 0),
+							Size = UDim2.new(1, -(TILE + 12), 1, 0),
+							BackgroundTransparency = 1,
+							[Children] = {
+								s:New("UIListLayout")({
+									SortOrder = Enum.SortOrder.LayoutOrder,
+									VerticalAlignment = Enum.VerticalAlignment.Center,
+								}),
+								line(1, p.name, Theme.Colors.GoldBright, Theme.TextSize.Large),
+								line(
+									2,
+									`{Text.get(use, "hud.level", { level = p.level })}  ·  {if class
+										then Text.get(use, class.nameKey)
+										else p.class}{if p.title and TitleData.get(p.title)
+										then "  ·  « " .. Text.get(use, (TitleData.get(p.title) :: any).nameKey) .. " »"
+										else ""}`,
+									Theme.Colors.Parchment
+								),
+							},
+						}),
+					},
+				}),
 				line(3, Text.get(use, "profile.guild", { guild = p.guild or Text.get(use, "profile.noGuild") })),
 				line(
 					4,

@@ -9525,3 +9525,97 @@ Pvp,Dungeon,Zone,Mount,Admin}Service.luau`, `src/server/Admin/{Economy,Character
 `wiki/src/generated/item-icons.json`, `wiki/public/img/items/pot-5-e8c25a-{64,128}.webp`,
 `wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/{PRZEDMIOTY,BALANS,DESIGN,DESIGN-17,ARCHITECTURE,
 DECYZJE,PROGRESS,SESJE}.md`.
+
+### S123: Kosmetyki 2, oferta tygodnia, paczki startowe
+
+Czwarta sesja serii DESIGN-17 (§4), po S122 (`5f898de`). S116 pominięta za zgodą właściciela. Bez Studio i bez
+wgrywania czegokolwiek do Roblox. Nazwy S97 / S120–S122 sprawdzone w kodzie (rozbieżności w DECYZJE).
+- **Dane:** `Data/Cosmetics`: rodzaje `dye`, `frame`, `chatframe`, `title`, `emote`, `levelup` (`KINDS` po `mountskin`),
+  pola `frame`, `chat`, `title`, `emote`, `levelup`, `dye`, `weekly`, `free`, `obtain.pack`, grupy garderoby `groups`,
+  `weekly = { size = 4, discount = 0.3, round = 5, salt = 1723 }`; 35 nowych kosmetyków; `weekly = true` także na 27
+  sprzedawanych dotąd (pula 51). Nowy `Data/Emotes` (8 ruchów w formacie `SkillMotions`, aliasy PL/EN, `COOLDOWN = 3`,
+  `MAX_SECONDS = 30`; w `NOT_BALANCE` „wygląd”). `Data/Titles`: wymaganie `{ kind = "cosmetic", id }`, tytuły
+  `pilgrim`, `lorekeeper`, `oathbound`, `nightwatch`, `highborn`. `Data/Products.starterPacks` (`starter_wanderer`,
+  `starter_hero`, `productId = 0`) i `getStarterPack`. Klawisz `emote_wheel` = `T`.
+- **Zapis:** `account.packs = {}`, `account.grantedPasses = {}` z szablonu (`TableUtil.reconcile`, bez migracji,
+  `CURRENT` = 8); nowe klucze `equipped`: `dye`, `frame`, `chatframe`, `levelup`.
+- **Logika:** `Logic/CosmeticRules` (nowy), `Logic/WeeklyOffer` (nowy), `Logic/Titles` (`Context.owned`, `contextOf`,
+  wymaganie `cosmetic`), `Logic/Premium` (`canBuyCosmetic(..., now?)` z ceną tygodnia i `free`, `canEquip` bez `emote` /
+  `title`, `canBuyPack`, `packVisible`).
+- **Serwer:** nowy `EmoteService` (remote `PlayEmote`, `/e` i `/emote`, atrybut modelu `Emote`), `CosmeticService`
+  (atrybuty gracza `CosmeticFrame`, `CosmeticChatFrame`, `CosmeticLevelUp`, barwnik przez `applyAll`, `Take`,
+  `OwnedChanged`, `GrantAll` bez darmowych), `PremiumShopService` (cena tygodnia z `Util/Clock`, `premium.error.priceChanged`,
+  `Analytics "WeeklyOffer"`, handlery paczek `grantPack`, `GrantPack`, `ResetPack`), `MonetizationService` (paczki w
+  `keyOfProduct` / `buyProduct`, `GrantProfilePass`, `RevokeProfilePass`, `grantedPasses` przy `Ready`), `TitleService` i
+  `ProfileService` z `Titles.contextOf` (profil: pole `frame`).
+- **Klient:** `UI/Components/PortraitFrame` (HUD, okno postaci 64 / 48 px, profil gracza 64 px, garderoba 120 px),
+  ramka czatu i dymki w `ChatController`, style efektu awansu w `EffectsController` (`pillar`, `rings`, `runes`,
+  `embers`, `frost` ze składników S112; `PlayLevelUp` dla podglądu), `AnimationController.Emote` / `EndEmote` /
+  `StopEmote` / `IsEmoting`, nowy `EmoteController` i nakładka `UI/Screens/EmoteWheel` (do 8 na stronie, „◀ ▶”,
+  „Zamknij”), przycisk `Hud/EmoteButton` (PC: slot na końcu paska akcji z etykietą klawisza; telefon: okrągły obok
+  przycisku wierzchowca), `CosmeticLook.applyDye`. Garderoba: zakładki dwupoziomowe (przewijane), wiersze wg rodzaju
+  (tytuł: Załóż / Zdejmij przez `SetTitle`; emotka: Podgląd; efekt awansu: Podgląd obok przycisku), „Darmowa”, „W paczce:
+  …”, oznaczenie „Oferta tygodnia” i przekreślona stara cena, podgląd ramki, linii czatu z dymkiem, tytułu nad postacią,
+  barwnika na stroju (bez stroju linia `wardrobe.dye.needOutfit`), emotki i efekty na własnej postaci w świecie. Sklep:
+  pas oferty tygodnia w zakładce „Kosmetyki” (4 karty, 2 × 2 na telefonie, „−30%”, licznik `premium.weekly.ends`,
+  `UI/WeeklyClock` co 20 s, listy z `WeekStart`), ceny tygodnia na liście „Do kupienia”; paczki startowe w zakładce „Waluta” (zawartość,
+  „Raz na konto”, dopisek przy posiadanych Kieszeniach, „Wkrótce” bez id). `PremiumConfirm.Spec.arg2` (cena wysyłana z
+  zakupem), `Cards.CardSpec.rich`.
+- **Admin:** `/cosmetic all | give <id> | take <id>`, `/pack grant|reset <klucz>` (reset jako groźny), `/weeklyoffer
+  [tydzień]` (`/weekly` to już komenda zleceń tygodniowych).
+- **Testy:** nowe `tests/cosmetics2.spec.luau` (rodzaje i grupy, pola i przedziały cen, tytuły, posiadanie i darmowe
+  emotki, aliasy, kolejność blokad, ruchy emotek, barwnik, efekt awansu, `Premium`, paczki, zapis) i
+  `tests/weeklyoffer.spec.luau` (pula, deterministyczność, 100 tygodni bez powtórek, cała pula w rotacji, ≥ 4 rodzaje z
+  rabatem, granice tygodnia, ceny); rozszerzone `paywall` (blok „S123 cosmetics 2 and starter packs”,
+  `PACK_PASSES_ALLOWED`), `premium`, `wikidump`, `data` (przestrzeń `emote`). `scripts/check` zielony (121 plików, 6600
+  testów), `balance1_20` 0 różnic bez `ALLOWED_1_20_DIFFS`, `balance_report` bez „BRAK POWODU” (`docs/BALANS.md` różnił
+  się tylko czasami liczenia, przywrócony).
+- **Wiki:** `Basics.titles` pomija tytuły kupowane; `npm run data`: `cosmetics.json` (35 nowych wpisów i 6 rodzajów, bez
+  nowych pól), `mechanics.json` (klawisz koła emotek), `meta.json`, odcisk w `docs/PRZEDMIOTY.md`; klucze `cos.kind.*`
+  w `wiki/src/i18n`, akapit w `kosmetyki.mdx` / `cosmetics.mdx`. `WIKI_KEYS_ALLOW` pusty (`wiki_keys_diff` 0 różnic:
+  tylko nowe elementy tablic). `npm run check` (astro check, eslint, vitest, build, linki, audyt) zielony.
+
+Nowe kosmetyki (cena w Smoczej Walucie, `weekly`):
+
+| id | rodzaj | cena | weekly |
+|---|---|---|---|
+| `frame_bronze` / `frame_silver` / `frame_runic` / `frame_thorns` / `frame_royal` | frame | 100 / 150 / 200 / 250 / 300 | tak |
+| `chatframe_parchment` / `_ember` / `_frost` / `_royal` | chatframe | 100 / 150 / 150 / 250 | tak |
+| `title_pilgrim` / `_lorekeeper` / `_oathbound` / `_nightwatch` / `_highborn` | title | 100 / 150 / 200 / 200 / 250 | tak |
+| `emote_wave` / `emote_point` | emote | 0 (`free`) | nie |
+| `emote_bow` / `_salute` / `_kneel` / `_cheer` / `_ponder` / `_sit` | emote | 50 / 50 / 80 / 80 / 100 / 120 | tak |
+| `levelup_radiance` / `_runes` / `_embers` / `_frost` | levelup | 250 / 350 / 400 / 400 | tak |
+| `dye_crimson` / `_azure` / `_forest` / `_onyx` / `_ivory` / `_gold` | dye | 30 / 30 / 30 / 40 / 40 / 60 | nie |
+| `outfit_wayfarer`, `pet_hound` | outfit, pet | 0 (`obtain.pack = starter_wanderer`) | nie |
+| `aura_valor` | aura | 0 (`obtain.pack = starter_hero`) | nie |
+
+Oferta tygodnia: tydzień 2963 (od 2026-10-12): `emote_salute`, `pet_cat`, `title_pilgrim`, `outfit_saint`, rabat
+`pet_cat` 500 → 350; tydzień 2964 (od 2026-10-19): `title_lorekeeper`, `outfit_frost`, `emote_sit`, `emote_cheer`, rabat
+`title_lorekeeper` 150 → 105.
+
+Dla S124–S132: `Logic/CosmeticRules`, `Logic/WeeklyOffer` (`priceOf` jedyną ceną kosmetyku), `Cosmetics.groups`,
+`Cosmetics.weekly`, pola `weekly` / `free` / `obtain.pack`, `Data/Emotes`, `EmoteService.Stop`, atrybuty gracza
+`CosmeticFrame` / `CosmeticChatFrame` / `CosmeticLevelUp`, `UI/Components/PortraitFrame`, `Titles.contextOf` (jeden
+kontekst tytułów: S125 dopisze tu swoje pole), `Products.starterPacks`, `Premium.canBuyPack` / `packVisible`,
+`MonetizationService.GrantProfilePass` / `RevokeProfilePass`, `account.packs`, `account.grantedPasses`,
+`CosmeticService.Take` / `OwnedChanged`, `PremiumShopService.GrantPack` / `ResetPack`. S128 dopisze ramki i
+tytuły areny jako kosmetyki z `obtain` (cena 0; `cosmetics2.spec` pilnuje przedziałów tylko dla sprzedawanych).
+
+Dla właściciela (Creator Hub): dwa Developer Products: Paczka Wędrowca (199 R$) i Paczka Bohatera (799 R$); id wkleić w
+`src/shared/Data/Products.luau` → `starterPacks` (`productId`). Do tego czasu paczki na żywym serwerze pokazują
+„Wkrótce”, w Studio zakup jest symulowany; test bez Robux: `/pack grant <klucz>`. Ikony nowych kosmetyków mogą dojść
+ścieżką S119 (`kosmetyki/<id>.png`); do tego czasu gra rysuje znak.
+
+Pliki: `src/shared/{Types}.luau`, `src/shared/Data/{Cosmetics,Emotes (nowy),Titles,Products,Keybinds,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{CosmeticRules (nowy),WeeklyOffer (nowy),Titles,Premium,
+AccountSchema}.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Util/CosmeticLook.luau`,
+`src/server/Services/{EmoteService (nowy),Cosmetic,PremiumShop,Monetization,Title,Profile,Admin}Service.luau`,
+`src/server/Admin/Economy.luau`, `src/client/Controllers/{EmoteController (nowy),Animation,Chat,Effects,Premium,Screen}
+Controller.luau`, `src/client/UI/Components/PortraitFrame.luau` (nowy), `src/client/UI/WeeklyClock.luau` (nowy),
+`src/client/UI/PremiumConfirm.luau`, `src/client/UI/Screens/{EmoteWheel (nowy),Wardrobe,ProfileWindow}.luau`,
+`src/client/UI/Screens/Hud/{init,EmoteButton (nowy)}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`,
+`src/client/UI/Screens/PremiumShop/{Cards,Cosmetics,Currency}.luau`, `tests/{cosmetics2,weeklyoffer}.spec.luau` (nowe),
+`tests/{paywall,premium,wikidump,data}.spec.luau`, `tools/{balance_reasons,WikiData/Basics}.luau`,
+`wiki/src/data/{cosmetics,mechanics,meta}.json`, `wiki/src/i18n/{pl,en}.ts`,
+`wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/PRZEDMIOTY.md`,
+`docs/{DESIGN,DESIGN-17,ARCHITECTURE,WIKI,DECYZJE,PROGRESS,SESJE}.md`.

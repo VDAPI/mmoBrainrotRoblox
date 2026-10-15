@@ -1,6 +1,8 @@
 --!strict
 -- Player profiles (S15): what anyone may see about another character on the same server — name, class,
 -- level, guild, PvP and duel records and the equipped items (with their rolls, like inspecting in Margonem).
+-- S123: the shown title with the account context (VIP and bought titles) and the portrait frame (cosmetic id); nothing
+-- else of the account (no owned cosmetics, no shards).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,12 +13,14 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 local ProfileService = {
 	Name = "ProfileService",
-	Deps = { "PlayerStateService", "GuildService", "MonetizationService" }, -- S121: the VIP title
+	-- S121: the VIP title; S123: DataService for the target's account (bought titles, portrait frame)
+	Deps = { "PlayerStateService", "GuildService", "MonetizationService", "DataService" },
 }
 
 local PlayerStateService: any
 local GuildService: any
 local MonetizationService: any
+local DataService: any
 
 local function profile(_viewer: Player, userId: number): (boolean, any)
 	local target = Players:GetPlayerByUserId(userId)
@@ -25,6 +29,8 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 		return false, "profile.error.notFound"
 	end
 	local guild = GuildService.Data(target)
+	local account: Types.AccountData? = DataService.GetData(target)
+	local frame = account and account.cosmetics.equipped.frame
 	return true,
 		{
 			userId = userId,
@@ -35,7 +41,8 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 			pvp = table.clone(char.pvp),
 			equipment = table.clone(char.equipment),
 			createdAt = char.createdAt,
-			title = Titles.shown(char, nil, { vip = MonetizationService.HasVip(target) }),
+			title = Titles.shown(char, nil, Titles.contextOf(account, MonetizationService.HasVip(target))),
+			frame = if type(frame) == "string" then frame else nil,
 		}
 end
 
@@ -43,6 +50,7 @@ function ProfileService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	GuildService = registry.Get("GuildService")
 	MonetizationService = registry.Get("MonetizationService")
+	DataService = registry.Get("DataService")
 end
 
 function ProfileService.Start()

@@ -3,13 +3,17 @@
 -- window and PremiumShopService), daily/weekly limits, tabs and sections of the shop window, cosmetic ownership and
 -- equipping, receipt idempotency. S97: cosmetics earned in the game are not for sale, premium mounts (sold only while
 -- their product is enabled; Data/Products.mounts). S121 (DESIGN-17 §2): passes (enabled, requires), the VIP
--- subscription, character slots 4-5 and saved looks (Garderoba+).
+-- subscription, character slots 4-5 and saved looks (Garderoba+). S123 (DESIGN-17 §4): the price of the week
+-- (Logic/WeeklyOffer.priceOf), free cosmetics (Logic/CosmeticRules), kinds without a slot (emote, title) and the
+-- starter packs (once per account).
 
 local Config = require("../Config")
+local CosmeticRules = require("./CosmeticRules")
 local Cosmetics = require("../Data/Cosmetics")
 local Products = require("../Data/Products")
 local Time = require("./Time")
 local Types = require("../Types")
+local WeeklyOffer = require("./WeeklyOffer")
 
 local Premium = {}
 
@@ -274,26 +278,35 @@ function Premium.balanceAfter(shards: number, price: number): number
 	return shards - price
 end
 
-function Premium.canBuyCosmetic(id: string, owned: { [string]: boolean }, shards: number): (boolean, string?)
+-- `now` (S123): the price of that moment (the offer of the week, Logic/WeeklyOffer.priceOf); without it the list
+-- price. A free cosmetic is owned already; one earned in the game or in a starter pack (obtain) is not for sale.
+function Premium.canBuyCosmetic(
+	id: string,
+	owned: { [string]: boolean },
+	shards: number,
+	now: number?
+): (boolean, string?)
 	local def = Cosmetics.get(id)
 	if not def then
 		return false, "error.badRequest"
 	end
-	if owned[id] then
+	if CosmeticRules.ownsIn(def, owned) then
 		return false, "premium.error.owned"
 	end
 	if def.obtain ~= nil then
 		return false, "premium.error.notForSale"
 	end
-	if shards < def.price then
+	local price = if now then WeeklyOffer.priceOf(id, now) or def.price else def.price
+	if shards < price then
 		return false, "premium.error.shards"
 	end
 	return true, nil
 end
 
--- Equip check: nil id = take off the slot of `kind`.
+-- Equip check: nil id = take off the slot of `kind`. S123: emotes and titles have no slot (the wheel, SetTitle);
+-- a free cosmetic counts as owned.
 function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean }): (boolean, string?)
-	if not table.find(Cosmetics.kinds, kind :: any) then
+	if kind ~= "pet" and not table.find(CosmeticRules.SLOT_KINDS, kind) then
 		return false, "error.badRequest"
 	end
 	if id == nil then
@@ -303,10 +316,27 @@ function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean 
 	if not def or def.kind ~= kind then
 		return false, "error.badRequest"
 	end
-	if not owned[id] then
+	if not CosmeticRules.ownsIn(def, owned) then
 		return false, "premium.error.notOwned"
 	end
 	return true, nil
+end
+
+-- S123: whether the starter pack `key` may be bought (shop window and MonetizationService.buyProduct).
+function Premium.canBuyPack(key: string, account: { packs: { [string]: boolean }? }): (boolean, string?)
+	if not Products.getStarterPack(key) then
+		return false, "error.badRequest"
+	end
+	local packs = account.packs
+	if type(packs) == "table" and packs[key] == true then
+		return false, "premium.error.owned"
+	end
+	return true, nil
+end
+
+-- S123: the shop shows a starter pack while it exists and is not bought.
+function Premium.packVisible(key: string, account: { packs: { [string]: boolean }? }): boolean
+	return (Premium.canBuyPack(key, account))
 end
 
 -- Premium mounts on sale (enabled) from `list` (default Data/Products.mounts). Empty while the owner has not decided.
