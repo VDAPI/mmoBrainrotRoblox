@@ -28,6 +28,17 @@ local SLOT = 56
 local function Sell(scope: Scope): Instance
 	local inventory = State.Value({ "character", "inventory" })
 	local gold = State.Value({ "character", "gold" })
+	-- S121: VIP lists more and pays a lower fee (the server fixes it on the listing)
+	local vip = State.Value({ "vip", "active" })
+	local function feePct(use: Fusion.Use): number
+		return Auction.feePctFor(use(vip) == true)
+	end
+	local function pctText(use: Fusion.Use, pct: number): string
+		if pct == math.floor(pct) then
+			return tostring(pct)
+		end
+		return (string.gsub(tostring(pct), "%.", Text.get(use, "format.decimal")))
+	end
 	local selected = scope:Value(nil :: string?)
 	local priceText = scope:Value("")
 	local hours = scope:Value(Market.Auction.durations[1])
@@ -223,9 +234,10 @@ local function Sell(scope: Scope): Instance
 						5,
 						scope:Computed(function(use): string
 							local p = use(price)
+							local pct = feePct(use)
 							return Text.get(use, "auction.sell.fee", {
-								pct = Market.Auction.feePct,
-								gold = if p then Format.number(Auction.fee(p)) else "-",
+								pct = pctText(use, pct),
+								gold = if p then Format.number(Auction.fee(p, pct)) else "-",
 							})
 						end),
 						Theme.Colors.TextMuted
@@ -235,7 +247,9 @@ local function Sell(scope: Scope): Instance
 						scope:Computed(function(use): string
 							local p = use(price)
 							return Text.get(use, "auction.sell.payout", {
-								gold = if p then Format.number(Auction.payout(p, Auction.deposit(p))) else "-",
+								gold = if p
+									then Format.number(Auction.payout(p, Auction.deposit(p), feePct(use)))
+									else "-",
 							})
 						end),
 						Theme.Colors.Success
@@ -283,17 +297,33 @@ local function Sell(scope: Scope): Instance
 						LayoutOrder = 10,
 						Size = UDim2.new(1, 0, 0, 60),
 						BackgroundTransparency = 1,
-						Text = Text.T(scope, "auction.sell.rules", {
-							max = Market.Auction.maxListings,
-							deposit = Market.Auction.depositPct,
-							fee = Market.Auction.feePct,
-						}),
+						Text = scope:Computed(function(use): string
+							return Text.get(use, "auction.sell.rules", {
+								max = Auction.maxListingsFor(use(vip) == true),
+								deposit = Market.Auction.depositPct,
+								fee = pctText(use, feePct(use)),
+							})
+						end),
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Colors.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 11,
+						Size = UDim2.new(1, 0, 0, 22),
+						BackgroundTransparency = 1,
+						Visible = scope:Computed(function(use): boolean
+							return use(vip) == true
+						end),
+						Text = Text.T(scope, "auction.sell.vip"),
+						TextWrapped = true,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.GoldBright,
+						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},
 			}),

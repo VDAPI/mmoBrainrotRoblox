@@ -1,11 +1,12 @@
 --!strict
 -- Backpack merchant (DESIGN §5.7): every backpack with capacity, level and price; "Buy and equip" puts the
--- old backpack into the new one.
+-- old backpack into the new one. S121: with Merchant's Pockets each row adds "(n with Merchant's Pockets)".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -26,6 +27,7 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 	local backpack = State.Value({ "character", "equipment", "backpack" })
 	local level = State.Value({ "character", "level" })
 	local gold = State.Value({ "character", "gold" })
+	local pockets = State.Value({ "passes", "pockets" })
 
 	local defs = {}
 	for _, def in Items.byId do
@@ -83,6 +85,11 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 								Text.get(use, "backpacks.capacity", { capacity = def.capacity or 0 }),
 								Text.get(use, "shop.price", { price = Format.number(def.buyPrice or 0) }),
 							}
+							if use(pockets) == true then
+								parts[1] ..= " " .. Text.get(use, "backpacks.withPockets", {
+									n = Inventory.capacityOf(def.id, true),
+								})
+							end
 							if def.level > 1 then
 								local ok = (use(level) or 1) >= def.level
 								local text = Text.get(use, "tooltip.requiresLevel", { level = def.level })

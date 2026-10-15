@@ -2,8 +2,13 @@
 -- Backpack operations on the sparse slot table (DESIGN §5.7). Pure: every function works on the table it
 -- gets (keys "1".."capacity") and returns what changed, so the server can mirror changes to the client.
 -- Stackable items (materials, potions, scrolls) merge up to their maxStack (999).
+-- S121 overflow: items may sit above the capacity (Merchant's Pockets taken away, or before the server confirms the
+-- pass after joining). Nothing is lost: they can be taken out (`move` from them), never added to (`add`, `firstFree`,
+-- `freeSlots`, `canFit`, `split` and move targets only use 1..capacity); `sort` packs everything.
 
+local Config = require("../Config")
 local Items = require("../Data/Items")
+local Products = require("../Data/Products")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -13,6 +18,27 @@ local Inventory = {}
 
 local function key(index: number): string
 	return tostring(index)
+end
+
+-- S121: the only capacity formula (DESIGN-17 §2): server (InventoryService.CapacityOf) and client (BackpackPanel,
+-- DepositWindow, backpack shops) call it. The backpack item's capacity (or Config.DefaultCapacity without one), plus
+-- Data/Products.POCKETS_SLOTS with the Merchant's Pockets pass.
+function Inventory.capacityOf(backpackId: string?, pockets: boolean?): number
+	local def = if backpackId then Items.get(backpackId) else nil
+	local base = if def and def.capacity then def.capacity else Config.DefaultCapacity
+	return base + (if pockets == true then Products.POCKETS_SLOTS else 0)
+end
+
+-- S121: the highest occupied slot (0 for an empty backpack); above the capacity it is overflow.
+function Inventory.lastIndex(inv: Inventory): number
+	local last = 0
+	for k in inv do
+		local index = tonumber(k)
+		if index and index > last then
+			last = index
+		end
+	end
+	return last
 end
 
 local function maxStack(item: ItemInstance): number
@@ -109,19 +135,25 @@ function Inventory.canFit(inv: Inventory, capacity: number, items: { ItemInstanc
 end
 
 -- Moves (or merges / swaps) the item at `from` to `to`. Returns changed indices, or nil when invalid.
+-- S121: `from` may be an overflow slot (above `capacity`, holding an item); `to` never is.
 function Inventory.move(inv: Inventory, capacity: number, from: number, to: number): { number }?
-	if from == to or from < 1 or to < 1 or from > capacity or to > capacity then
+	if from == to or from < 1 or to < 1 or to > capacity then
 		return nil
 	end
 	local source = inv[key(from)]
-	if not source then
+	if not source or from > math.max(capacity, Inventory.lastIndex(inv)) then
 		return nil
 	end
 	local target = inv[key(to)]
+	-- S121: nothing goes into the overflow, so an overflow item is not swapped with a slot's item (merging is fine).
+	local overflow = from > capacity
 	if target and Inventory.canMerge(source, target) then
 		local limit = maxStack(target)
 		local moved = math.min(limit - target.n, source.n)
 		if moved <= 0 then
+			if overflow then
+				return nil
+			end
 			-- Full target stack: swap instead.
 			local slots = inv :: any
 			slots[key(from)], slots[key(to)] = target, source
@@ -133,6 +165,9 @@ function Inventory.move(inv: Inventory, capacity: number, from: number, to: numb
 			inv[key(from)] = nil
 		end
 		return { from, to }
+	end
+	if overflow and target then
+		return nil
 	end
 	local slots = inv :: any
 	slots[key(from)], slots[key(to)] = target, source

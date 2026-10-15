@@ -16,6 +16,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local EquipFit = require(ReplicatedStorage.Shared.Logic.EquipFit)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -276,9 +277,29 @@ local function fitsSlot(item: ItemInstance, slot: string): boolean
 	return true
 end
 
+-- S121: nothing goes into the overflow (slots above the capacity); the server refuses it too.
+local function intoOverflow(toKind: string, toRest: string): boolean
+	if toKind ~= "inv" then
+		return false
+	end
+	local index = tonumber(toRest)
+	local backpack = State.Get({ "character", "equipment", "backpack" })
+	local capacity =
+		Inventory.capacityOf(if backpack then backpack.id else nil, State.Get({ "passes", "pockets" }) == true)
+	if index and index > capacity then
+		Sounds.play("error")
+		Toast.push(Text.now("backpack.overflow"), "error")
+		return true
+	end
+	return false
+end
+
 local function onDrop(from: string, to: string)
 	local fromKind, fromRest = parse(from)
 	local toKind, toRest = parse(to)
+	if intoOverflow(toKind, toRest) then
+		return
+	end
 	if fromKind == "inv" and toKind == "inv" then
 		invoke("MoveItem", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "inv" and toKind == "eq" then

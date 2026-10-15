@@ -2,11 +2,14 @@
 -- Premium rules (DESIGN §21–22, DESIGN-17 §1), pure: the one purchase rule of the shop (`canBuy`, used by the shop
 -- window and PremiumShopService), daily/weekly limits, tabs and sections of the shop window, cosmetic ownership and
 -- equipping, receipt idempotency. S97: cosmetics earned in the game are not for sale, premium mounts (sold only while
--- their product is enabled; Data/Products.mounts).
+-- their product is enabled; Data/Products.mounts). S121 (DESIGN-17 §2): passes (enabled, requires), the VIP
+-- subscription, character slots 4-5 and saved looks (Garderoba+).
 
+local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
 local Products = require("../Data/Products")
 local Time = require("./Time")
+local Types = require("../Types")
 
 local Premium = {}
 
@@ -145,6 +148,119 @@ end
 -- id 0 on a live server shows "Soon" (MonetizationService refuses it with premium.error.notConfigured).
 function Premium.robuxState(id: number, studio: boolean): "buy" | "soon"
 	return if id ~= 0 or studio then "buy" else "soon"
+end
+
+-- S121: the subscription's buy button: an empty id on a live server shows "Soon" (refused with notConfigured).
+function Premium.subscriptionState(sub: Products.Subscription, studio: boolean): "buy" | "soon"
+	return if sub.subscriptionId ~= "" or studio then "buy" else "soon"
+end
+
+-- S121: whether a pass may be bought (server BuyPass and the shop window). A switched-off pass (VIP forever) answers
+-- premium.error.soon like an unavailable shop entry; a missing `requires` answers premium.error.requires (the caller
+-- adds { pass = "@premium.pass.<requires>" }).
+function Premium.canBuyPass(key: string, owned: { [string]: boolean }): (boolean, string?)
+	local pass = Products.getPass(key)
+	if not pass then
+		return false, "error.badRequest"
+	end
+	if pass.enabled == false then
+		return false, "premium.error.soon"
+	end
+	if owned[key] == true then
+		return false, "premium.error.owned"
+	end
+	if pass.requires ~= nil and owned[pass.requires] ~= true then
+		return false, "premium.error.requires"
+	end
+	return true, nil
+end
+
+-- S121: whether the subscription `key` may be bought (`active` = the player has it now).
+function Premium.canBuySubscription(key: string, active: boolean): (boolean, string?)
+	local sub = Products.getSubscription(key)
+	if not sub then
+		return false, "error.badRequest"
+	end
+	if sub.enabled ~= true then
+		return false, "premium.error.soon"
+	end
+	if active then
+		return false, "premium.error.owned"
+	end
+	return true, nil
+end
+
+-- S121: whether a character may be CREATED on `slot` (playing or deleting one never needs the passes).
+function Premium.slotOpen(slot: number, owned: { [string]: boolean }): boolean
+	if slot ~= math.floor(slot) or slot < 1 or slot > Config.MaxCharacters then
+		return false
+	end
+	if slot <= Config.FreeCharacters then
+		return true
+	end
+	local needs = Products.SLOT_PASSES[slot]
+	if needs == nil then
+		return false
+	end
+	for _, key in needs do
+		if owned[key] ~= true then
+			return false
+		end
+	end
+	return true
+end
+
+-- S121: the pass to buy next for a locked `slot` (the first missing one of SLOT_PASSES), nil when open or unknown.
+function Premium.slotPass(slot: number, owned: { [string]: boolean }): string?
+	local needs: { string } = Products.SLOT_PASSES[slot] or {}
+	for _, key in needs do
+		if owned[key] ~= true then
+			return key
+		end
+	end
+	return nil
+end
+
+-- S121: saved looks the account may use (Wardrobe+ or not).
+function Premium.outfitSlots(owned: { [string]: boolean }): number
+	return if owned.wardrobePlus == true then Products.OUTFITS_PLUS else Products.OUTFITS_FREE
+end
+
+-- S121: the current look as a saved look (shallow copies; the input is never shared).
+function Premium.snapshotOutfit(
+	cosmetics: { equipped: { [string]: string } },
+	pets: { equipped: string? }
+): Types.Outfit
+	local equipped: { [string]: string } = {}
+	for kind, id in (if type(cosmetics.equipped) == "table" then cosmetics.equipped else {}) :: { [string]: string } do
+		if kind ~= "pet" and type(id) == "string" then
+			equipped[kind] = id
+		end
+	end
+	return { equipped = equipped, pet = if type(pets.equipped) == "string" then pets.equipped else nil }
+end
+
+-- S121: what a saved look puts on: only the positions canEquip lets through (a kind of Cosmetics.kinds except "pet",
+-- an existing cosmetic of that kind, owned), plus the pet when owned. Anything else is skipped quietly, so a look with
+-- bad data never breaks the appearance.
+function Premium.outfitLooks(
+	outfit: any,
+	owned: { [string]: boolean },
+	petsOwned: { [string]: boolean }
+): ({ [string]: string }, string?)
+	local looks: { [string]: string } = {}
+	local saved = if type(outfit) == "table" and type(outfit.equipped) == "table" then outfit.equipped else {}
+	for kind, id in saved do
+		if type(kind) == "string" and kind ~= "pet" and type(id) == "string" then
+			if Premium.canEquip(kind, id, owned) then
+				looks[kind] = id
+			end
+		end
+	end
+	local pet = if type(outfit) == "table" then outfit.pet else nil
+	local petDef = if type(pet) == "string" then Cosmetics.get(pet) else nil
+	local wearPet: string? = if petDef and petDef.kind == "pet" and petsOwned[petDef.id] == true then petDef.id else nil
+	return looks, wearPet
 end
 
 -- Percent more currency per Robux than `base` (default the smallest pack), rounded down.

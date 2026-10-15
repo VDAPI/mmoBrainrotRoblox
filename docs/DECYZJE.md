@@ -3744,3 +3744,55 @@
   `BossTuning.farRange` (14) przez `farAfter` (2,5 s), boss najpierw rzuca `extra.<id>.far` (Grimrok linia 48, Azgor i
   Vaelgrath koło na losowym; Morvane i tak walczy z dystansu). Wygląd z istniejącego ataku bossa (`look`), poza harmonogramem
   S87, więc model balansu (czas walki) bez zmian; realne walki są trochę groźniejsze dla grup, które uciekają.
+- **S121** Nazwy S97 / S120 wzięte z kodu: `CosmeticService.Grant` (dostaje opcjonalny klucz toastu, kosmetyk miesiąca
+  mówi `vip.monthGot` zamiast `cosmetic.got`), `Premium.shownPasses`, `robuxState`, `Cards.card` / `robuxButton` /
+  `invoke`, `PremiumController.OpenShop("passes")`, `PremiumConfirm` (nowe `modal` dla potwierdzenia bez zakupu).
+  Wyłączona przepustka i subskrypcja odmawiają `premium.error.soon` (z S120), bez `premium.error.unavailable`
+  (SESJE S120 zapowiadała osobny klucz; plik sesji S121 wygrywa).
+- **S121** VIP: status subskrypcji w `MonetizationService` (`HasSubscription`, `HasVip` = subskrypcja `vip` lub
+  przepustka `vip`, sygnał `VipChanged` tylko przy zmianie, gałąź stanu `vip`, atrybut `Vip` z `HasVip`); korzyści w
+  nowym `VipService`. Nazwy metod `MarketplaceService` (`GetUserSubscriptionStatusAsync`, `PromptSubscriptionPurchase`,
+  `GetUserSubscriptionPaymentHistoryAsync`, `PromptSubscriptionPurchaseFinished`) sprawdzone na create.roblox.com
+  (2026-10-15); `Players.UserSubscriptionStatusChanged` niesprawdzone, podłączane w `pcall`.
+- **S121** Błędy handlerów mogą nieść argumenty jako trzecią wartość `(false, key, args)` (`premium.error.requires`,
+  `vip.error.recallCooldown`); klient (`Cards.invoke`, `Cards.resolveArgs`, okno VIP, menu) tłumaczy wartości `@klucz`.
+- **S121** Pola `account.vip.respawnN` (darmowe odrodzenia dnia `respawnDay`) i `account.vip.recallAt` (czas ostatniego
+  udanego darmowego powrotu) dopisane do nazw z DESIGN-17. Dzienne odłamki przy pierwszym „momencie z VIP” dnia UTC
+  (gotowy profil, `VipChanged`, wejście postacią, pętla co 60 s, więc także północ w grze); najpierw zapis dnia, potem
+  waluta, bez `yield`. Kosmetyk miesiąca zapisuje miesiąc tylko, gdy miesiąc ma kosmetyk (także gdy konto już go ma).
+- **S121** Darmowy powrót: ten sam kanał 5 s co Kamień Powrotu (`TravelService.FreeRecall`, `channel` z `itemId = nil`),
+  odliczanie od udanego powrotu, odmowa w mieście (`vip.error.inCity`). Darmowe odrodzenie: `DeathService.SkipCountdown`
+  otwiera wybór jak produkt „respawn”, błędy jak `RespawnNow`.
+- **S121** Aukcja: opłata VIP (`Auction.feePctFor(true)` = 2,5%) zapisana w ogłoszeniu (`Listing.feePct`) przy
+  wystawieniu, kaucja bez zmian, `Data/Market` bez zmian; po wygaśnięciu VIP nadwyżka aktywnych ogłoszeń zostaje, nowe
+  dopiero poniżej 20.
+- **S121** „Złota ramka czatu” z DESIGN §21 = istniejąca złota gwiazdka i złote imię (atrybut `Vip`); osobne ramki
+  czatu to kosmetyki S123.
+- **S121** Tytuł `vip` z `wiki = false` do artykułu VIP (S131; schemat `TitleReq` wymaga `value`); `Logic/Titles` z
+  opcjonalnym kontekstem konta `{ vip }` jako ostatnim argumentem (bez kontekstu tytuł VIP jest zablokowany).
+- **S121** Pojemność plecaka liczy tylko `Inventory.capacityOf` (serwer `InventoryService.CapacityOf(char, player)` i
+  `CapacityFor`, klient plecak / depozyt / kupiec plecaków). Utrata Kieszeni (tylko admin) albo chwila po wejściu przed
+  potwierdzeniem przepustki = nadmiar: `compact`, gdy się mieści, inaczej przedmioty zostają ponad pojemnością; nic nie
+  ginie i nie idzie pocztą. Z nadmiaru można wyjmować (przeniesienie, użycie, zniszczenie, założenie, sprzedaż,
+  wystawienie, wpłata), nic do niego nie wkładamy (cel przeniesienia, zamiana, podział stosu, poprzedni przedmiot przy
+  zakładaniu z nadmiaru trafia w wolny slot albo odmowa `equip.error.full`; stary plecak przy zakładaniu plecaka z
+  nadmiaru też idzie w wolny slot nowej pojemności).
+- **S121** Sloty 4–5: `slot5` wymaga `slot4` (`requires`, `SLOT_PASSES[5] = { slot4, slot5 }`); serwer blokuje tylko
+  tworzenie (`charSelect.error.slotLocked`, sprawdzenie przed i po rezerwacji imienia); `Config.MaxCharacters = 5`,
+  `FreeCharacters = 3`.
+- **S121** Garderoba+: zestaw = `equipped` bez peta + pet; 1 bez przepustki, 5 z nią; `account.outfits` jako tablica bez
+  dziur; zestawy ponad limit zostają zapisane, nie da się ich założyć; „Załóż” zakłada tylko posiadane rzeczy, reszta
+  slotów zostaje pusta.
+- **S121** „VIP na zawsze” (`vip`, `enabled = false`): ukryty w sklepie (poza posiadaczami) i na wiki, zakup odmówiony
+  nawet w Studio, posiadanie dalej sprawdzane (`loadPasses` przechodzi po wszystkich przepustkach z id). Włączenie to
+  decyzja właściciela (daje też dzienne odłamki bez końca). Obrazek `pass/vip` zniknął z wiki (`npm run art` przycina
+  nieopublikowane id); wróci po włączeniu przepustki.
+- **S121** `Config.Vip`, `MaxCharacters`, `FreeCharacters` poza `CONFIG_KEYS` (wygoda premium, nie tempo gry). Okno VIP
+  bez klawisza (przycisk „VIP” w menu gry, karta VIP i „Szczegóły” na zakładce „Przepustki”).
+- **S121** `Time.monthKey` / `Time.civil` liczone z numeru dnia („civil from days”, bez `os.date`), do użycia przez sezony
+  areny (S126).
+- **S121** `MonetizationService` w `Deps` serwisów `InventoryService`, `CharacterService`, `TitleService`,
+  `ProfileService`, `AuctionService`, `CosmeticService` (sam zależy tylko od `DataService` i `PlayerStateService`, więc
+  bez cyklu i bez dostępu leniwego); `EquipmentService` i `ShopService` liczą pojemność przez
+  `InventoryService.CapacityFor`, bez nowej zależności.
+- **S121** Ikona Kieszeni Kupca `▣` zamiast `▥` z planu (znak już używany w grze, renderuje się w czcionkach UI).

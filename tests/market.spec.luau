@@ -52,6 +52,22 @@ T.describe("Auction rules", function()
 			.toEqual({ false, "auction.error.deposit" })
 	end)
 
+	T.it("S121: VIP fee fixed on the listing and more listings", function()
+		T.expect(Auction.fee(1000)).toBe(50)
+		T.expect(Auction.payout(1000, 10)).toBe(960)
+		T.expect(Auction.feePctFor(false)).toBe(Market.Auction.feePct)
+		T.expect(Auction.feePctFor(true)).toBe(2.5)
+		T.expect(Auction.fee(1000, 2.5)).toBe(25)
+		T.expect(Auction.payout(1000, 10, 2.5)).toBe(985)
+		T.expect(Auction.fee(999, 2.5)).toBe(24)
+		T.expect(Auction.maxListingsFor(false)).toBe(20)
+		T.expect(Auction.maxListingsFor(true)).toBe(25)
+		local def = Items.get("sword1h_1") :: any
+		T.expect((Auction.validateListing(item("sword1h_1"), def, 100, 24, 20, 1000, 25))).toBe(true)
+		T.expect({ Auction.validateListing(item("sword1h_1"), def, 100, 24, 25, 1000, 25) })
+			.toEqual({ false, "auction.error.limit" })
+	end)
+
 	T.it("every item falls into a known category", function()
 		for id, def in Items.byId do
 			local category = Auction.categoryOf(def :: any)

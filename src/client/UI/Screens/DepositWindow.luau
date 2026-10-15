@@ -5,11 +5,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
-local Config = require(ReplicatedStorage.Shared.Config)
+local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
-local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.State)
@@ -71,10 +70,12 @@ local function DepositWindow(scope: Scope): Fusion.Child
 	local depositSize = State.Value({ "account", "deposit", "size" })
 	local backpack = State.Value({ "character", "equipment", "backpack" })
 
+	-- S121: Logic/Inventory.capacityOf (with Merchant's Pockets); overflow items stay visible to be taken out
+	local pockets = State.Value({ "passes", "pockets" })
 	local capacity = scope:Computed(function(use): number
 		local item = use(backpack)
-		local def = item and Items.get(item.id)
-		return if def and def.capacity then def.capacity else Config.DefaultCapacity
+		local cap = Inventory.capacityOf(if item then item.id else nil, use(pockets) == true)
+		return math.max(cap, Inventory.lastIndex(use(inventory) or {}))
 	end)
 	local vaultPass = State.Value({ "passes", "vault" })
 	local size = scope:Computed(function(use): number

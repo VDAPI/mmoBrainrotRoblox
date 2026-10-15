@@ -2,10 +2,13 @@
 -- Options window (Esc / ☰, DESIGN §23): resume, switch character, language, effects and music volume,
 -- damage numbers, effects quality, minimap mode, camera sensitivity, quick cast, confirmations and the
 -- list of hotkeys. Every change is saved on the account through SetSetting / SetLanguage.
+-- S121: "VIP" (the VIP window) and, with VIP, "Return to the city (VIP)" with its countdown under "Switch character".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Config = require(ReplicatedStorage.Shared.Config)
 local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -14,11 +17,14 @@ local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Vip = require(ReplicatedStorage.Shared.Logic.Vip)
 
 local Children = Fusion.Children
 
@@ -241,7 +247,88 @@ local function codeRow(scope: Scope): Instance
 	})
 end
 
-local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
+-- S121: what the menu may open (ScreenController passes WindowManager.Open).
+export type Extra = { OpenWindow: ((id: string) -> ())? }
+
+-- S121: the VIP row: "VIP" always, "Return to the city (VIP)" only with VIP (disabled with the countdown or in town).
+local function vipRow(scope: Scope, close: () -> (), extra: Extra?): Instance
+	local active = State.Value({ "vip", "active" })
+	local vipState = State.Value({ "account", "vip" })
+	local map = State.Value({ "character", "location", "map" })
+	local now = scope:Value(Clock.now())
+	local alive = true
+	table.insert(scope, function()
+		alive = false
+	end)
+	task.spawn(function()
+		while alive do
+			task.wait(1)
+			if alive then
+				now:set(Clock.now())
+			end
+		end
+	end)
+	local left = scope:Computed(function(use): number
+		return Vip.recallLeft(use(vipState), use(now))
+	end)
+	local isVip = scope:Computed(function(use): boolean
+		return use(active) == true
+	end)
+	local openWindow = extra and extra.OpenWindow
+	return scope:New("Frame")({
+		LayoutOrder = 2,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+		[Children] = {
+			Button(scope, {
+				Text = Text.T(scope, "menu.vip"),
+				Variant = "secondary",
+				Size = scope:Computed(function(use): UDim2
+					return if use(isVip) then UDim2.new(0.4, -4, 1, 0) else UDim2.fromScale(1, 1)
+				end),
+				Disabled = openWindow == nil,
+				OnClick = function()
+					if openWindow then
+						close()
+						openWindow("vip")
+					end
+				end,
+			}),
+			Button(scope, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.new(0.6, -4, 1, 0),
+				Variant = "secondary",
+				Visible = isVip,
+				Disabled = scope:Computed(function(use): boolean
+					return use(left) > 0 or use(map) == Config.StartingMap
+				end),
+				Text = scope:Computed(function(use): string
+					local wait = use(left)
+					if wait > 0 then
+						return `{Text.get(use, "menu.vipRecall")} · {Time.format(wait)}`
+					end
+					return Text.get(use, "menu.vipRecall")
+				end),
+				OnClick = function()
+					task.spawn(function()
+						local ok, err, args = Net.Invoke("VipRecall")
+						if ok then
+							Sounds.play("levelUp")
+							close()
+						else
+							Sounds.play("error")
+							local resolved = if type(args) == "table" then args else nil
+							Toast.push(Text.now(err or "error.internal", resolved), "error")
+						end
+					end)
+				end,
+			}),
+		},
+	})
+end
+
+local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Child
 	local busy = scope:Value(false)
 	local dataMock = State.Value({ "session", "dataMock" })
 	local quality = State.Value({ "account", "settings", "quality" })
@@ -381,20 +468,21 @@ local function GameMenu(scope: Scope, close: () -> ()): Fusion.Child
 			}),
 			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
 			Button(scope, {
-				LayoutOrder = 1,
+				LayoutOrder = 0,
 				Text = Text.T(scope, "menu.resume"),
 				Variant = "primary",
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				OnClick = close,
 			}),
 			Button(scope, {
-				LayoutOrder = 2,
+				LayoutOrder = 1,
 				Text = Text.T(scope, "menu.switchCharacter"),
 				Variant = "secondary",
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				Disabled = busy,
 				OnClick = switchCharacter,
 			}),
+			vipRow(scope, close, extra),
 			row(
 				scope,
 				3,

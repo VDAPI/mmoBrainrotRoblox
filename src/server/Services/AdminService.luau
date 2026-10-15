@@ -76,6 +76,7 @@ local AdminService = {
 		"MountService", -- S96: /mount
 		"LoginRewardService", -- S100: /login, /loginset, /loginnext
 		"WorldEventService", -- S101: /event
+		"VipService", -- S121: /vip
 	},
 }
 

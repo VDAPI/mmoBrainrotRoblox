@@ -11,11 +11,12 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 local ProfileService = {
 	Name = "ProfileService",
-	Deps = { "PlayerStateService", "GuildService" },
+	Deps = { "PlayerStateService", "GuildService", "MonetizationService" }, -- S121: the VIP title
 }
 
 local PlayerStateService: any
 local GuildService: any
+local MonetizationService: any
 
 local function profile(_viewer: Player, userId: number): (boolean, any)
 	local target = Players:GetPlayerByUserId(userId)
@@ -34,13 +35,14 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 			pvp = table.clone(char.pvp),
 			equipment = table.clone(char.equipment),
 			createdAt = char.createdAt,
-			title = Titles.shown(char),
+			title = Titles.shown(char, nil, { vip = MonetizationService.HasVip(target) }),
 		}
 end
 
 function ProfileService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	GuildService = registry.Get("GuildService")
+	MonetizationService = registry.Get("MonetizationService")
 end
 
 function ProfileService.Start()

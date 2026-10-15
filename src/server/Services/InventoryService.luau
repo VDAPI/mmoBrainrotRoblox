@@ -2,13 +2,14 @@
 -- The active character's backpack (DESIGN §5.7). Every change goes through Logic/Inventory and is mirrored to
 -- the client slot by slot. Other services use the API (AddItem, GiveNew, Remove, Count, CanFit, ...);
 -- players use the remotes MoveItem / SplitStack / SortInventory / DestroyItem / UseItem.
+-- S121: the capacity is Logic/Inventory.capacityOf (backpack + Merchant's Pockets); items above it are overflow (taken
+-- out through ValidTakeIndex, never added to).
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
-local Config = require(Shared.Config)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
@@ -24,7 +25,8 @@ type ItemInstance = Types.ItemInstance
 
 local InventoryService = {
 	Name = "InventoryService",
-	Deps = { "PlayerStateService", "CharacterService" },
+	-- S121: MonetizationService depends on neither of the others (Merchant's Pockets)
+	Deps = { "PlayerStateService", "CharacterService", "MonetizationService" },
 	-- (player) after any change of the backpack contents.
 	Changed = Signal.new(),
 	-- Item use handlers by UseEffect.kind (PotionService registers "potion"; S06–S07 add the rest).
@@ -32,6 +34,7 @@ local InventoryService = {
 }
 
 local PlayerStateService: any
+local MonetizationService: any
 local rng = Rng.new()
 
 -- Players with an open trade (S10): items cannot leave their backpack until the trade ends.
@@ -53,15 +56,31 @@ local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
 end
 
-function InventoryService.CapacityOf(char: Types.CharacterData): number
+-- S121: `player` is required (the Merchant's Pockets pass is the player's).
+function InventoryService.CapacityOf(char: Types.CharacterData, player: Player): number
 	local backpack = char.equipment.backpack
-	local def = backpack and Items.get(backpack.id)
-	return if def and def.capacity then def.capacity else Config.DefaultCapacity
+	return Inventory.capacityOf(if backpack then backpack.id else nil, MonetizationService.HasPass(player, "pockets"))
 end
 
 function InventoryService.Capacity(player: Player): number
 	local char = character(player)
-	return if char then InventoryService.CapacityOf(char) else 0
+	return if char then InventoryService.CapacityOf(char, player) else 0
+end
+
+-- S121: the capacity `player` would have with the backpack `backpackId` (equipping or buying a backpack).
+function InventoryService.CapacityFor(player: Player, backpackId: string?): number
+	return Inventory.capacityOf(backpackId, MonetizationService.HasPass(player, "pockets"))
+end
+
+-- S121: a backpack index an item may be TAKEN from: 1..capacity, or an overflow slot holding an item.
+function InventoryService.ValidTakeIndex(player: Player, index: number): boolean
+	local char = character(player)
+	if not char or index ~= math.floor(index) or index < 1 then
+		return false
+	end
+	local capacity = InventoryService.CapacityOf(char, player)
+	return index <= capacity
+		or (char.inventory[tostring(index)] ~= nil and index <= Inventory.lastIndex(char.inventory))
 end
 
 -- Mirrors the given slots to the client.
@@ -126,14 +145,14 @@ function InventoryService.AddItem(player: Player, item: ItemInstance): number
 		return item.n
 	end
 	local changed, leftover =
-		Inventory.add(char.inventory, InventoryService.CapacityOf(char), item, InventoryService.NewUid)
+		Inventory.add(char.inventory, InventoryService.CapacityOf(char, player), item, InventoryService.NewUid)
 	sync(player, changed)
 	return leftover
 end
 
 function InventoryService.CanFit(player: Player, items: { ItemInstance }): boolean
 	local char = character(player)
-	return char ~= nil and Inventory.canFit(char.inventory, InventoryService.CapacityOf(char), items)
+	return char ~= nil and Inventory.canFit(char.inventory, InventoryService.CapacityOf(char, player), items)
 end
 
 -- Creates and adds a new item. Equipment is rolled at `rarity`/`ilvl`. Returns (leftover, instance).
@@ -218,8 +237,9 @@ end
 
 -- Remotes ---------------------------------------------------------------------------------------------------
 
-local function validIndex(char: Types.CharacterData, index: number): boolean
-	return index >= 1 and index <= InventoryService.CapacityOf(char)
+-- Operations that take the item out (lock, destroy, use) accept overflow slots too (S121).
+local function validIndex(player: Player, index: number): boolean
+	return InventoryService.ValidTakeIndex(player, index)
 end
 
 local function moveItem(player: Player, from: number, to: number): (boolean, string?)
@@ -227,7 +247,7 @@ local function moveItem(player: Player, from: number, to: number): (boolean, str
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local changed = Inventory.move(char.inventory, InventoryService.CapacityOf(char), from, to)
+	local changed = Inventory.move(char.inventory, InventoryService.CapacityOf(char, player), from, to)
 	if not changed then
 		return false, "error.badRequest"
 	end
@@ -240,13 +260,11 @@ local function splitStack(player: Player, from: number, amount: number): (boolea
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local changed =
-		Inventory.split(char.inventory, InventoryService.CapacityOf(char), from, amount, InventoryService.NewUid)
+	local capacity = InventoryService.CapacityOf(char, player)
+	local changed = Inventory.split(char.inventory, capacity, from, amount, InventoryService.NewUid)
 	if not changed then
 		return false,
-			if Inventory.firstFree(char.inventory, InventoryService.CapacityOf(char)) == nil
-				then "inventory.full"
-				else "error.badRequest"
+			if Inventory.firstFree(char.inventory, capacity) == nil then "inventory.full" else "error.badRequest"
 	end
 	sync(player, changed)
 	return true, nil
@@ -257,7 +275,7 @@ local function sortInventory(player: Player): (boolean, string?)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	Inventory.sort(char.inventory, InventoryService.CapacityOf(char), InventoryService.NewUid)
+	Inventory.sort(char.inventory, InventoryService.CapacityOf(char, player), InventoryService.NewUid)
 	InventoryService.SyncAll(player)
 	return true, nil
 end
@@ -265,7 +283,7 @@ end
 -- Item lock (S20, DESIGN §5.9): protects from selling, dismantling, destroying and trading.
 local function toggleLock(player: Player, index: number): (boolean, string?)
 	local char = character(player)
-	if not char or not validIndex(char, index) then
+	if not char or not validIndex(player, index) then
 		return false, "error.badRequest"
 	end
 	local item = char.inventory[tostring(index)]
@@ -283,7 +301,7 @@ local function destroyItem(player: Player, index: number): (boolean, string?)
 		return false, "trade.error.locked"
 	end
 	local char = character(player)
-	if not char or not validIndex(char, index) then
+	if not char or not validIndex(player, index) then
 		return false, "error.badRequest"
 	end
 	local key = tostring(index)
@@ -305,7 +323,7 @@ local function useItem(player: Player, index: number): (boolean, string?)
 		return false, "trade.error.locked"
 	end
 	local char = character(player)
-	if not char or not validIndex(char, index) then
+	if not char or not validIndex(player, index) then
 		return false, "error.badRequest"
 	end
 	local item = char.inventory[tostring(index)]
@@ -323,6 +341,23 @@ end
 
 function InventoryService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
+	MonetizationService = registry.Get("MonetizationService")
+end
+
+-- S121: Merchant's Pockets bought or taken away (admin): new slots show at once; a loss packs the items into the
+-- smaller capacity when they fit, otherwise they stay as overflow (nothing lost, nothing mailed).
+local function pocketsChanged(player: Player, passKey: string, owned: boolean)
+	if passKey ~= "pockets" then
+		return
+	end
+	local char = character(player)
+	if not char then
+		return
+	end
+	if not owned then
+		Inventory.compact(char.inventory, InventoryService.CapacityOf(char, player))
+	end
+	InventoryService.SyncAll(player)
 end
 
 function InventoryService.Start()
@@ -332,6 +367,7 @@ function InventoryService.Start()
 	Net.Handle("DestroyItem", destroyItem)
 	Net.Handle("ToggleLock", toggleLock)
 	Net.Handle("UseItem", useItem)
+	MonetizationService.PassChanged:Connect(pocketsChanged)
 end
 
 return InventoryService

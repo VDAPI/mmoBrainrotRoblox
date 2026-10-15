@@ -8,6 +8,8 @@
 --   weapon  : particles on the weapon in hand
 --   pet     : a small creature that follows its owner
 --   mountskin: the look of every owned mount (account-wide, one slot; S97, DESIGN-15 §2)
+-- obtain.vipMonth (S121, DESIGN-17 §2): given for good to an account with VIP during that month (VipService); never
+-- sold.
 
 export type Kind = "outfit" | "aura" | "trail" | "weapon" | "pet" | "mountskin"
 
@@ -21,7 +23,8 @@ export type Skin = {
 }
 
 -- S97: earned in the game, never sold (price 0, Logic/Premium.canBuyCosmetic): exactly one of the fields.
-export type Obtain = { boss: string?, quest: string? }
+-- S121: vipMonth = "YYYYMM" (UTC) of the VIP cosmetic of the month (Logic/Vip.monthCosmetic).
+export type Obtain = { boss: string?, quest: string?, vipMonth: string? }
 
 export type Def = {
 	id: string,
@@ -214,6 +217,18 @@ add("mountskin_lantern", "mountskin", 0, "🏮", "#8A8884", {
 		colors = { base = "#8A8884", accent = "#9FB8D8", detail = "#1A1A1E", cloth = "#1E2A4A", trim = "#C8CCD4" },
 		parts = { "caparison" },
 	},
+})
+
+-- S121: VIP cosmetics of the month (DESIGN-17 §2): given for good to an account with VIP in that UTC month.
+add("aura_vip_hearth", "aura", 0, "✺", "#FFB04A", { color2 = "#FFE3A0", obtain = { vipMonth = "202611" } })
+add("trail_vip_snowfall", "trail", 0, "❄", "#EAF6FF", { color2 = "#9ED8FF", obtain = { vipMonth = "202612" } })
+add("weapon_vip_starlight", "weapon", 0, "✧", "#CFE3FF", { obtain = { vipMonth = "202701" } })
+add("aura_vip_bloodrose", "aura", 0, "❀", "#B3263A", { obtain = { vipMonth = "202702" } })
+add("trail_vip_thaw", "trail", 0, "≋", "#8FD18B", { color2 = "#E8F6E0", obtain = { vipMonth = "202703" } })
+add("outfit_vip_herald", "outfit", 0, "♛", "#1F2E5A", {
+	color2 = "#E8C25A",
+	parts = { "cape", "crown" },
+	obtain = { vipMonth = "202704" },
 })
 
 local byId: { [string]: Def } = {}

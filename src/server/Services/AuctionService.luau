@@ -51,6 +51,7 @@ local AuctionService = {
 		"InventoryService",
 		"NpcService",
 		"MailService",
+		"MonetizationService", -- S121: VIP listings limit and fee (depends on none of the above)
 	},
 }
 
@@ -58,6 +59,7 @@ local Rules = Market.Auction
 
 local DataService: any
 local PlayerStateService: any
+local MonetizationService: any
 local InventoryService: any
 local NpcService: any
 local MailService: any
@@ -144,7 +146,10 @@ local function list(player: Player, index: number, price: number, hours: number)
 	end
 	local item = InventoryService.Get(player, index)
 	local def = item and Items.get(item.id)
-	local ok, err = Auction.validateListing(item, def, price, hours, activeCount(char), char.gold)
+	-- S121: VIP lists more and pays a lower fee, fixed on the listing now (the sale may happen after VIP ends)
+	local vip = MonetizationService.HasVip(player)
+	local ok, err =
+		Auction.validateListing(item, def, price, hours, activeCount(char), char.gold, Auction.maxListingsFor(vip))
 	if not ok then
 		return false, err
 	end
@@ -163,6 +168,7 @@ local function list(player: Player, index: number, price: number, hours: number)
 		createdAt = now,
 		expiresAt = now + hours * 3600,
 		status = "active",
+		feePct = if vip then Auction.feePctFor(true) else nil,
 	}
 	-- Item and deposit leave before the yield; they come back if the write fails.
 	InventoryService.SetSlot(player, index, nil)
@@ -350,11 +356,16 @@ local function buy(player: Player, id: string, expectedPrice: number): (boolean,
 	end
 	DataService.Save(player)
 	-- Payment to the seller.
-	local payout = Auction.payout(listing.price, listing.deposit)
+	local payout = Auction.payout(listing.price, listing.deposit, listing.feePct)
 	MailService.Send(listing.sellerUserId, {
 		from = "auction",
 		subjectKey = "mail.subject.sold",
-		args = { item = itemArg(item), price = listing.price, fee = Auction.fee(listing.price), buyer = char.name },
+		args = {
+			item = itemArg(item),
+			price = listing.price,
+			fee = Auction.fee(listing.price, listing.feePct),
+			buyer = char.name,
+		},
 		gold = payout,
 		charId = listing.sellerCharId,
 	})
@@ -539,6 +550,7 @@ function AuctionService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	NpcService = registry.Get("NpcService")
 	MailService = registry.Get("MailService")
+	MonetizationService = registry.Get("MonetizationService")
 	store = KeyStore.new(Config.AuctionStoreName, DataService.HasDataStoreAccess)
 end
 

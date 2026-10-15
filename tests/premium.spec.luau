@@ -140,7 +140,15 @@ T.describe("Premium shop", function()
 		local list: { Products.Pass } = { { key = "a", passId = 0, robux = 1, icon = "a" }, off }
 		T.expect(#Premium.shownPasses({}, list)).toBe(1)
 		T.expect(#Premium.shownPasses({ b = true }, list)).toBe(2)
-		T.expect(#Premium.shownPasses({})).toBe(#Products.passes)
+		-- S121: "VIP forever" is switched off (enabled = false): hidden unless owned
+		local enabled = 0
+		for _, pass in Products.passes do
+			if (pass :: any).enabled ~= false then
+				enabled += 1
+			end
+		end
+		T.expect(#Premium.shownPasses({})).toBe(enabled)
+		T.expect(#Premium.shownPasses({ vip = true })).toBe(#Products.passes)
 	end)
 
 	T.it("pack bonus", function()
@@ -283,7 +291,8 @@ T.describe("S97 mount skins and premium mounts", function()
 		T.expect({ Premium.canBuyCosmetic("mountskin_dapple", {}, 349) }).toEqual({ false, "premium.error.shards" })
 		for _, def in Cosmetics.list do
 			if def.obtain then
-				T.expect(def.kind).toBe("mountskin")
+				-- S121: the VIP cosmetics of the month are earned too (any look kind)
+				T.expect(def.kind == "mountskin" or def.obtain.vipMonth ~= nil).toBe(true)
 				T.expect(def.price).toBe(0)
 				local n = 0
 				for _ in def.obtain do
@@ -315,6 +324,47 @@ T.describe("S97 mount skins and premium mounts", function()
 		T.expect({ Premium.canBuyMount("x", nil, on) }).toEqual({ false, "error.wrongPhase" })
 		local owner = { mounts = { owned = { mount_royal = { lvl = 4 } } } }
 		T.expect({ Premium.canBuyMount("x", owner, on) }).toEqual({ false, "premium.error.owned" })
+	end)
+end)
+
+T.describe("S121 VIP and passes", function()
+	T.it("subscriptions, new passes and the VIP texts are localized", function()
+		local missing = {}
+		local function need(key: string)
+			if en[key] == nil or pl[key] == nil then
+				table.insert(missing, key)
+			end
+		end
+		for _, sub in Products.subscriptions do
+			need(`premium.sub.{sub.key}`)
+			need(`premium.sub.{sub.key}.desc`)
+		end
+		for _, key in { "wardrobe.obtain.vip", "premium.error.requires", "premium.requires", "title.vip" } do
+			need(key)
+		end
+		T.expect(missing).toEqual({})
+	end)
+
+	T.it("the cosmetics of the month are earned, never sold, and equip like any", function()
+		T.expect({ Premium.canBuyCosmetic("aura_vip_hearth", {}, 1e9) }).toEqual({
+			false,
+			"premium.error.notForSale",
+		})
+		T.expect((Premium.canEquip("aura", "aura_vip_hearth", { aura_vip_hearth = true }))).toBe(true)
+	end)
+
+	T.it("the subscription button says Soon without an id on a live server", function()
+		local sub = { key = "vip", subscriptionId = "", enabled = true }
+		T.expect(Premium.subscriptionState(sub, false)).toBe("soon")
+		T.expect(Premium.subscriptionState(sub, true)).toBe("buy")
+		T.expect(Premium.subscriptionState({ key = "vip", subscriptionId = "EXP-1", enabled = true }, false))
+			.toBe("buy")
+	end)
+
+	T.it("the account template has vip and outfits (no migration)", function()
+		local acc = AccountSchema.accountTemplate()
+		T.expect(acc.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
+		T.expect(acc.outfits).toEqual({})
 	end)
 end)
 

@@ -36,6 +36,7 @@ export type Props = {
 	ShowModal: (spec: any) -> (),
 	OpenWardrobe: (start: { kind: string?, try: string? }?) -> (),
 	Select: ((tab: string) -> ())?,
+	OpenVip: (() -> ())?, -- S121
 }
 
 local HEADER = 52
@@ -151,6 +152,7 @@ function PremiumShop.build(scope: Scope, props: Props): Fusion.Child
 		ShowModal = props.ShowModal,
 		OpenWardrobe = props.OpenWardrobe,
 		Select = props.Select or PremiumShop.select,
+		OpenVip = props.OpenVip,
 	}
 	-- Depends only on the tab: the cards read their own branches (balance, limits, passes, cosmetics).
 	local content = scope:Computed(function(use, s: Scope): { any }

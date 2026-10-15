@@ -165,6 +165,22 @@ type CharacterData = {
   zakładkami, `Cards`, po pliku na zakładkę: `Currency`, `Passes`, `Items`, `Cosmetics`, `Mounts`),
   `UI/PremiumConfirm` (potwierdzenie zakupu za walutę, też w garderobie), `PremiumController.OpenShop(tab)` /
   `OpenWardrobe(start)`.
+- **VIP i przepustki wygody (S121, DESIGN-17 §2):** `MonetizationService.HasSubscription(player, key)`, `HasVip(player)`
+  (subskrypcja `vip` albo przepustka `vip`), `Passes(player)`, sygnał `VipChanged(player, active)`,
+  `SetTestSubscription` (admin `/vip`); status subskrypcji z `GetUserSubscriptionStatusAsync` w `pcall` (wejście,
+  `Players.UserSubscriptionStatusChanged`, `PromptSubscriptionPurchaseFinished`, co `Config.Vip.statusRefresh`), stan
+  replikowany `vip = { active, sub, pass, renewing?, endsAt? }` obok `passes`. `VipService` (`Deps`: `DataService`,
+  `PlayerStateService`, `CharacterService`, `MonetizationService`, `TravelService`, `DeathService`, `CosmeticService`;
+  zależy od niego tylko `AdminService`): `Refresh`, `Recall`, `Respawn`, `Reset`, `GrantMonth`, `Status`; reguły w
+  `Logic/Vip`, liczby w `Config.Vip`. `TravelService.FreeRecall(player, onArrive)` (kanał kamienia bez kamienia),
+  `DeathService.SkipCountdown(player)`. Pojemność plecaka tylko z `Logic/Inventory.capacityOf` (serwer:
+  `InventoryService.CapacityOf(char, player)`, `CapacityFor(player, backpackId)`, `ValidTakeIndex`); nadmiar przez
+  `Inventory.lastIndex`. Sloty 4–5: `Logic/Premium.slotOpen` w `CharacterService.createCharacter`. Zestawy wyglądu:
+  `CosmeticService` (`OutfitSave`, `OutfitWear`, `Premium.outfitLooks`). Pola konta `account.vip` i `account.outfits`
+  z szablonu (bez migracji), ogłoszenie aukcji `Listing.feePct?`. Remote'y: `BuySubscription(key)`, `VipRecall()`,
+  `VipRespawn()`, `OutfitSave(index)`, `OutfitWear(index)`. `MonetizationService` dopisany do `Deps` serwisów
+  `InventoryService`, `CharacterService`, `TitleService`, `ProfileService`, `AuctionService`, `CosmeticService`.
+  Klient: okno `vip` (`UI/Screens/VipWindow`, `PremiumController.OpenVip`), karta VIP w `PremiumShop/Passes`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -513,7 +529,8 @@ type CharacterData = {
 | `/setgold` | economy | <amount> | ustaw złoto postaci |
 | `/setshards` | economy | <amount> | ustaw Smoczą Walutę konta |
 | `/pass` | economy | <pass:pass> <on|off> | testuj gamepass |
-| `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip |
+| `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip|pockets|slot4|slot5|wardrobePlus |
+| `/vip` | economy | <on|off|status|reset|month> [RRRRMM] | test VIP: subskrypcja tylko na tę sesję, stan, dzienne korzyści od nowa, kosmetyk miesiąca (S121) |
 | `/shoplimits` | economy | <show|reset> | liczniki limitów Smoczego Sklepu konta (S120) |
 | `/bless` | economy | [id:blessing] | lista błogosławieństw albo nadaj jedno (np. warrior_5) |
 | `/login` | economy |  | stan serii nagrody za logowanie konta (S100) |

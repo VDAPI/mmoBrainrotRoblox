@@ -329,7 +329,8 @@ commands.bag = function(player, args)
 	end
 	withCharacter(player, function()
 		local character = PlayerStateService.GetCharacter(player)
-		if not Inventory.compact(character.inventory, capacity :: number) then
+		-- the real capacity (Merchant's Pockets too), the same formula as EquipmentService (S121)
+		if not Inventory.compact(character.inventory, InventoryService.CapacityFor(player, id)) then
 			reply(player, "equip.error.backpackFit")
 			return
 		end

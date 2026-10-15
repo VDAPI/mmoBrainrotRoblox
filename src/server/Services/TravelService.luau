@@ -200,7 +200,8 @@ local function dungeonMap(region: string): Maps.MapDef?
 end
 
 -- 5 s channel; on success consumes one `itemId` and runs `arrive`.
-local function channel(player: Player, itemId: string, label: string, arrive: () -> ()): (boolean, string?)
+-- `itemId` nil (S121, the VIP free return): nothing is consumed; every other rule is the stone's.
+local function channel(player: Player, itemId: string?, label: string, arrive: () -> ()): (boolean, string?)
 	if ResourceService.IsDead(player) then
 		return false, "error.wrongPhase"
 	end
@@ -239,12 +240,22 @@ local function channel(player: Player, itemId: string, label: string, arrive: ()
 		channeling[player] = nil
 		PlayerStateService.Set(player, { "travel" }, nil)
 		-- The stone may have moved; consume one by id.
-		if InventoryService.Remove(player, itemId, 1) < 1 then
+		if itemId ~= nil and InventoryService.Remove(player, itemId, 1) < 1 then
 			return
 		end
 		arrive()
 	end)
 	return true, nil
+end
+
+-- S121 (DESIGN-17 §2): the VIP free return to the city: the Stone of Return's channel without a stone (same
+-- interruptions: damage, moving, death; TeleportToMap dismounts). `onArrive` runs only after a successful return.
+function TravelService.FreeRecall(player: Player, onArrive: () -> ()): (boolean, string?)
+	return channel(player, nil, "vip.recall.channel", function()
+		TravelService.TeleportToMap(player, Config.StartingMap)
+		Net.Fire(player, "Toast", "teleport.done", nil, "success")
+		onArrive()
+	end)
 end
 
 local function toMap(player: Player, itemId: string, mapId: string, areaId: string?): (boolean, string?)

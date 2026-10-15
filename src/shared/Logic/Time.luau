@@ -33,6 +33,40 @@ function Time.split(seconds: number): (number, number, number)
 	return s // 86400, (s % 86400) // 3600, (s % 3600) // 60
 end
 
+-- S121: the UTC calendar date (year, month 1..12, day 1..31) of `t`. Computed from the day number ("civil from
+-- days", H. Hinnant) instead of os.date, so Lune and Roblox give the same answer.
+function Time.civil(t: number): (number, number, number)
+	local z = Time.dayNumber(t) + 719468
+	local era = z // 146097
+	local doe = z - era * 146097
+	local yoe = (doe - doe // 1460 + doe // 36524 - doe // 146096) // 365
+	local doy = doe - (365 * yoe + yoe // 4 - yoe // 100)
+	local mp = (5 * doy + 2) // 153
+	local day = doy - (153 * mp + 2) // 5 + 1
+	local month = if mp < 10 then mp + 3 else mp - 9
+	local year = yoe + era * 400 + (if month <= 2 then 1 else 0)
+	return year, month, day
+end
+
+-- S121: "YYYYMM" of the UTC month containing `t` (VIP cosmetic of the month; arena seasons may reuse it, S126).
+function Time.monthKey(t: number): string
+	local year, month = Time.civil(t)
+	return string.format("%04d%02d", year, month)
+end
+
+-- S121: (year, month) of a "YYYYMM" key, nil for a malformed one (the UI prints "11.2026").
+function Time.monthLabel(key: string): (number?, number?)
+	if type(key) ~= "string" or not string.match(key, "^%d%d%d%d%d%d$") then
+		return nil, nil
+	end
+	local year = tonumber(string.sub(key, 1, 4)) :: number
+	local month = tonumber(string.sub(key, 5, 6)) :: number
+	if month < 1 or month > 12 then
+		return nil, nil
+	end
+	return year, month
+end
+
 -- Seconds left until `expiresAt` (never negative).
 function Time.remaining(expiresAt: number, now: number): number
 	return math.max(0, expiresAt - now)

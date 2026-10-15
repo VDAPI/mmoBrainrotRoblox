@@ -98,7 +98,7 @@ local function withdraw(player: Player, depIndex: number, invIndex: number?): (b
 	if not item then
 		return false, "error.badRequest"
 	end
-	local capacity = InventoryService.CapacityOf(char)
+	local capacity = InventoryService.CapacityOf(char, player)
 	if invIndex and invIndex >= 1 and invIndex <= capacity and InventoryService.Get(player, invIndex) == nil then
 		(data.deposit.items :: any)[key] = nil
 		InventoryService.SetSlot(player, invIndex, item)

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S120 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S121 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -279,6 +279,8 @@ zakończone; testy i decyzje właściciela po nich.
 - **Poboczne Pustkowi (S107)**: uproszczenia wyglądu: runa snu (efekt `rune` z S104) to płyta na ziemi przy sarkofagu
   i przy wrotach piramidy, nie znak na wieku; przecięta skóra bębna leży oparta o róg podestu (pozycja liczona od
   kotwicy), kikut kolumny bez kolizji.
+- **Sklep premium (S121)**: id subskrypcji VIP (`Products.subscriptions[1].subscriptionId`) i czterech przepustek
+  (`pockets`, `slot4`, `slot5`, `wardrobePlus`) do wklejenia z Creator Hub; do tego czasu „Wkrótce” na żywym serwerze.
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
 - **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez

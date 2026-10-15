@@ -1,5 +1,7 @@
 --!strict
 -- Character selection screen (DESIGN §4.1): three slots, creator, delete confirmation, language switch.
+-- S121: Config.MaxCharacters slots (5): slots above Config.FreeCharacters are locked until their passes are owned
+-- (Logic/Premium.slotOpen on the replicated `passes` branch); a locked slot buys its pass (BuyPass) or says "Soon".
 -- Shown by ScreenController while the session phase is "loading" or "select".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +11,8 @@ local Creator = require(script.Creator)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
+local Sounds = require(script.Parent.Parent.Sounds)
 local SlotCard = require(script.SlotCard)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -29,6 +33,7 @@ local HEADER_HEIGHT = 150
 local function CharacterSelect(scope: Scope, props: Props): Instance
 	local phase = State.Value({ "session", "phase" })
 	local slots = State.Value({ "slots" })
+	local passes = State.Value({ "passes" })
 	local dataMock = State.Value({ "session", "dataMock" })
 
 	-- nil = slot list, number = creator for that slot
@@ -89,6 +94,28 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 		})
 	end
 
+	-- S121: buys the slot pass (the native prompt; simulated in Studio). The card unlocks when `passes` changes.
+	local function unlock(passKey: string)
+		task.spawn(function()
+			local ok, err = Net.Invoke("BuyPass", passKey)
+			if ok then
+				if err then
+					Toast.push(Text.now(err), "info")
+				else
+					Sounds.play("levelUp")
+				end
+			else
+				Sounds.play("error")
+				Toast.push(Text.now(err or "error.internal"), "error")
+			end
+		end)
+	end
+
+	local function ownedPasses(use: Fusion.Use): { [string]: boolean }
+		local owned = use(passes)
+		return if type(owned) == "table" then owned else {}
+	end
+
 	local cards = {}
 	for slot = 1, Config.MaxCharacters do
 		table.insert(
@@ -109,6 +136,13 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				OnDelete = function(summary)
 					askDelete(slot, summary)
 				end,
+				Locked = scope:Computed(function(use): boolean
+					return not Premium.slotOpen(slot, ownedPasses(use))
+				end),
+				Pass = scope:Computed(function(use): string?
+					return Premium.slotPass(slot, ownedPasses(use))
+				end),
+				OnUnlock = unlock,
 			})
 		)
 	end

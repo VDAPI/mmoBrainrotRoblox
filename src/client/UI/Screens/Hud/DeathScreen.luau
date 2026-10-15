@@ -4,6 +4,7 @@
 -- paid skip) two choices replace it: "Respawn in the city" [1] and "Respawn here" [2] (in a dungeon: at its
 -- entrance); without a choice the server picks the city at `deadline`. Keys 1 and 2 are local to this screen.
 -- FIX 2026-10-15: "Respawn here" shows its gold price (`death.hereCost`) and is disabled without enough gold.
+-- S121: "VIP respawn (free)" above the paid buttons while counting, only with VIP and a free respawn left today.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -11,6 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -23,6 +25,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local Vip = require(ReplicatedStorage.Shared.Logic.Vip)
 
 local Children = Fusion.Children
 
@@ -156,6 +159,25 @@ local function DeathScreen(scope: Scope): Instance
 		Tooltip.attach(scope, robuxButton :: GuiObject, Text.T(scope, "premium.soon.hint"))
 	end
 
+	-- S121: the free VIP respawn (VipService; once per UTC day).
+	local vipActive = State.Value({ "vip", "active" })
+	local vipState = State.Value({ "account", "vip" })
+	local vipButton = Button(scope, {
+		Name = "VipRespawn",
+		LayoutOrder = 3,
+		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+		Variant = "primary",
+		Text = Text.T(scope, "death.vipRespawn"),
+		Visible = scope:Computed(function(use): boolean
+			use(now) -- re-read every tick: the day may change while dead
+			return use(counting) and use(vipActive) == true and Vip.respawnLeft(use(vipState), Clock.now()) > 0
+		end),
+		Disabled = busy,
+		OnClick = function()
+			invoke("VipRespawn")
+		end,
+	})
+
 	local width = 460
 
 	return scope:New("Frame")({
@@ -176,7 +198,7 @@ local function DeathScreen(scope: Scope): Instance
 				Name = "Content",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.45),
-				Size = UDim2.new(0.92, 0, 0, 380), -- phones: 92% of the width, at most `width`
+				Size = UDim2.new(0.92, 0, 0, 440), -- phones: 92% of the width, at most `width`
 				BackgroundTransparency = 1,
 				ZIndex = 51,
 				[Children] = {
@@ -188,7 +210,7 @@ local function DeathScreen(scope: Scope): Instance
 					}),
 					label(scope, {
 						Name = "Title",
-						LayoutOrder = 1,
+						LayoutOrder = 0,
 						Size = UDim2.new(1, 0, 0, 80),
 						Text = Text.T(scope, "death.title"),
 						FontFace = Theme.Fonts.Heading,
@@ -198,7 +220,7 @@ local function DeathScreen(scope: Scope): Instance
 					}),
 					label(scope, {
 						Name = "Countdown",
-						LayoutOrder = 2,
+						LayoutOrder = 1,
 						Size = UDim2.new(1, 0, 0, 32),
 						Text = scope:Computed(function(use): string
 							if use(choosing) then
@@ -211,7 +233,7 @@ local function DeathScreen(scope: Scope): Instance
 					}),
 					label(scope, {
 						Name = "Note",
-						LayoutOrder = 3,
+						LayoutOrder = 2,
 						Size = UDim2.new(1, 0, 0, 24),
 						Text = scope:Computed(function(use): string
 							if use(choosing) then
@@ -226,6 +248,7 @@ local function DeathScreen(scope: Scope): Instance
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Colors.TextMuted,
 					}),
+					vipButton,
 					-- Countdown: pay to skip it.
 					Button(scope, {
 						Name = "RespawnNow",

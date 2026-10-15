@@ -266,7 +266,7 @@ local function buyBackpack(player: Player, npcId: string, itemId: string): (bool
 	if char.gold < price then
 		return false, "shop.error.gold"
 	end
-	local capacity = def.capacity or 0
+	local capacity = InventoryService.CapacityFor(player, itemId) -- S121: with Merchant's Pockets
 	local old = char.equipment.backpack
 	local needed = Inventory.used(char.inventory) + (if old then 1 else 0)
 	if needed > capacity then

@@ -2169,15 +2169,6 @@
       "hash": "57745bf3bc16d7dc",
       "mask": true
     },
-    "pass/vip": {
-      "file": "pass/vip",
-      "sizes": [
-        64,
-        128
-      ],
-      "hash": "dbabad484a60dd80",
-      "mask": true
-    },
     "portrait/Cleric": {
       "file": "portrait/Cleric",
       "sizes": [

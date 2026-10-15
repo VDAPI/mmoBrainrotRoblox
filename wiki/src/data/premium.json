@@ -3,7 +3,10 @@
     {"desc":{"en":"Loot bags within 15 studs are picked up on their own.","pl":"Worki z łupem w promieniu 15 st. podnoszą się same."},"icon":"✋","key":"autoLoot","name":{"en":"Auto-loot","pl":"Auto-łup"}},
     {"desc":{"en":"+60 slots in the account vault.","pl":"+60 miejsc w depozycie konta."},"icon":"▤","key":"vault","name":{"en":"Vault","pl":"Skarbiec"}},
     {"desc":{"en":"Respawn time halved.","pl":"Czas odrodzenia o połowę krótszy."},"icon":"⟲","key":"fastRespawn","name":{"en":"Fast Return","pl":"Szybki Powrót"}},
-    {"desc":{"en":"Golden star in chat, coloured name, +1 alchemist queue slot.","pl":"Złota gwiazdka w czacie, kolorowy nick, +1 miejsce w kolejce alchemika."},"icon":"★","key":"vip","name":{"en":"VIP","pl":"VIP"}}
+    {"desc":{"en":"+10 slots in every backpack, including the ones you have yet to find.","pl":"+10 miejsc w każdym plecaku, także w tym, który dopiero zdobędziesz."},"icon":"▣","key":"pockets","name":{"en":"Merchant's Pockets","pl":"Kieszenie Kupca"}},
+    {"desc":{"en":"A fourth character slot on your account.","pl":"Czwarte miejsce na postać na koncie."},"icon":"♟","key":"slot4","name":{"en":"Character Slot 4","pl":"Miejsce na postać 4"}},
+    {"desc":{"en":"A fifth character slot. Requires slot 4.","pl":"Piąte miejsce na postać. Wymaga miejsca 4."},"icon":"♟","key":"slot5","name":{"en":"Character Slot 5","pl":"Miejsce na postać 5"}},
+    {"desc":{"en":"Five saved looks instead of one.","pl":"Pięć zapisanych zestawów wyglądu zamiast jednego."},"icon":"♛","key":"wardrobePlus","name":{"en":"Wardrobe+","pl":"Garderoba+"}}
   ],
   "shop": [
     {"item":"scroll_oblivion","key":"scroll_oblivion","kind":"item","name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"}},

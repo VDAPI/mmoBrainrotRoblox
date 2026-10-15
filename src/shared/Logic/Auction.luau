@@ -3,6 +3,7 @@
 -- listing checks, deposit/fee/payout, the MemoryStore index key and summary, search filtering and the
 -- listing state machine active -> sold | cancelled | expired (each transition only from "active").
 
+local Config = require("../Config")
 local Market = require("../Data/Market")
 local Rarities = require("../Data/Rarities")
 local Types = require("../Types")
@@ -27,6 +28,7 @@ export type Listing = {
 	status: Status,
 	buyerName: string?,
 	closedAt: number?,
+	feePct: number?, -- S121: sale fee percent fixed when listed (VIP); nil = Market.Auction.feePct
 }
 
 -- Short index entry (MemoryStore value).
@@ -77,13 +79,24 @@ function Auction.deposit(price: number): number
 	return math.max(1, math.floor(price * Rules.depositPct / 100))
 end
 
-function Auction.fee(price: number): number
-	return math.floor(price * Rules.feePct / 100)
+-- The sale fee; `feePct` is the listing's own percent (S121 VIP), default Market.Auction.feePct.
+function Auction.fee(price: number, feePct: number?): number
+	return math.floor(price * (feePct or Rules.feePct) / 100)
 end
 
 -- What the seller receives by mail after a sale: price minus fee plus the returned deposit.
-function Auction.payout(price: number, deposit: number): number
-	return price - Auction.fee(price) + deposit
+function Auction.payout(price: number, deposit: number, feePct: number?): number
+	return price - Auction.fee(price, feePct) + deposit
+end
+
+-- S121: the active listings limit with and without VIP (Config.Vip.auctionExtraListings on top).
+function Auction.maxListingsFor(vip: boolean): number
+	return Rules.maxListings + (if vip then Config.Vip.auctionExtraListings else 0)
+end
+
+-- S121: the sale fee percent of a new listing (VIP: Config.Vip.auctionFeeMul of the base fee).
+function Auction.feePctFor(vip: boolean): number
+	return Rules.feePct * (if vip then Config.Vip.auctionFeeMul else 1)
 end
 
 function Auction.validPrice(price: number): boolean
@@ -97,7 +110,8 @@ function Auction.validateListing(
 	price: number,
 	hours: number,
 	activeCount: number,
-	gold: number
+	gold: number,
+	maxListings: number? -- S121: Auction.maxListingsFor(vip); default Market.Auction.maxListings
 ): (boolean, string?)
 	if not item or not def then
 		return false, "auction.error.noItem"
@@ -114,7 +128,7 @@ function Auction.validateListing(
 	if not table.find(Rules.durations, hours) then
 		return false, "error.badRequest"
 	end
-	if activeCount >= Rules.maxListings then
+	if activeCount >= (maxListings or Rules.maxListings) then
 		return false, "auction.error.limit"
 	end
 	if gold < Auction.deposit(price) then

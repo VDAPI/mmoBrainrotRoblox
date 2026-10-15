@@ -705,7 +705,19 @@ T.describe("Wiki export: consistency", function()
 				T.expect(allowed).toBe(Guild.can(rank.id, action))
 			end
 		end
-		T.expect(#d.premium.passes).toBe(#Products.passes)
+		-- S121: switched-off passes (VIP forever) stay off the wiki; no subscription, id or price reaches it
+		local enabledPasses = 0
+		for _, pass in Products.passes do
+			enabledPasses += if (pass :: any).enabled ~= false then 1 else 0
+		end
+		T.expect(#d.premium.passes).toBe(enabledPasses)
+		for _, pass in d.premium.passes do
+			T.expect(pass.key ~= "vip").toBe(true)
+		end
+		local premiumText = Json.encode(d.premium)
+		for _, bad in { "subscriptionId", "EXP-", "robux" } do
+			T.expect({ bad, string.find(premiumText, bad, 1, true) }).toEqual({ bad })
+		end
 		-- S81: the New Path Scroll is sold again, so it is on the wiki (key, kind and texts only)
 		local scrolls = 0
 		for _, service in d.premium.shop do

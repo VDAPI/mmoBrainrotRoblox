@@ -3,18 +3,21 @@
 -- category filter and an action bar for the selected slot (works for mouse and touch). S29: one component
 -- embedded in the character window (middle column / "Backpack" tab) and in the companion backpack window
 -- next to services ("inventory").
+-- S121: the capacity is Logic/Inventory.capacityOf (backpack + Merchant's Pockets from the `passes` branch); items
+-- above it (overflow) get extra slots with a red frame and can only be taken out.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
-local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
@@ -62,10 +65,17 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 	local filter = scope:Value("all")
 	local sorting = false
 
+	local pockets = State.Value({ "passes", "pockets" })
 	local capacity = scope:Computed(function(use): number
 		local item = use(backpack)
-		local def = item and Items.get(item.id)
-		return if def and def.capacity then def.capacity else Config.DefaultCapacity
+		return Inventory.capacityOf(if item then item.id else nil, use(pockets) == true)
+	end)
+	-- S121: slots drawn = the capacity, or more while items sit above it (overflow)
+	local shown = scope:Computed(function(use): number
+		return math.max(use(capacity), Inventory.lastIndex(use(inventory) or {}))
+	end)
+	local overflow = scope:Computed(function(use): boolean
+		return use(shown) > use(capacity)
 	end)
 	local used = scope:Computed(function(use): number
 		local n = 0
@@ -92,30 +102,48 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		end)
 	end
 
-	-- Slots are rebuilt only when the capacity changes; contents update reactively.
+	-- Slots are rebuilt only when the capacity (or the overflow) changes; contents update reactively.
 	local grid = scope:Computed(function(use, s: Scope): { Instance }
-		local count = use(capacity)
+		local count = use(shown)
+		local cap = use(capacity)
 		local list = {}
 		for index = 1, count do
 			local item = slotItem(s, index)
-			table.insert(
-				list,
-				ItemSlot(s, {
-					SlotId = `inv:{index}`,
-					Item = item,
-					Size = slotSize,
-					LayoutOrder = index,
-					Visible = s:Computed(function(use2): boolean
-						local categories = FILTERS[use2(filter)]
-						if not categories then
-							return true
-						end
-						local i = use2(item)
-						local def = i and Items.get(i.id)
-						return def ~= nil and categories[def.category] == true
-					end),
+			local slot = ItemSlot(s, {
+				SlotId = `inv:{index}`,
+				Item = item,
+				Size = slotSize,
+				LayoutOrder = index,
+				Visible = s:Computed(function(use2): boolean
+					local categories = FILTERS[use2(filter)]
+					if not categories then
+						return true
+					end
+					local i = use2(item)
+					local def = i and Items.get(i.id)
+					return def ~= nil and categories[def.category] == true
+				end),
+			})
+			if index > cap then
+				-- S121: an overflow slot: a red frame over the slot (input goes through to the slot)
+				s:New("Frame")({
+					Name = "Overflow",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundTransparency = 1,
+					Active = false,
+					ZIndex = 5,
+					Parent = slot,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						s:New("UIStroke")({
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = Theme.Colors.Danger,
+							Thickness = Theme.Stroke.Normal,
+						}),
+					},
 				})
-			)
+			end
+			table.insert(list, slot)
 		end
 		return list
 	end)
@@ -165,7 +193,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				scope:New("TextLabel")({
 					Name = "Gold",
 					Position = UDim2.fromOffset(24, 0),
-					Size = UDim2.new(1, -294, 1, 0),
+					Size = UDim2.new(1, -374, 1, 0),
 					TextTruncate = Enum.TextTruncate.AtEnd,
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
@@ -176,11 +204,37 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 					TextColor3 = Theme.Colors.GoldBright,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
+				-- S121: under the count, the Merchant's Pockets line or the overflow warning
+				scope:New("TextLabel")({
+					Name = "SlotsHint",
+					AnchorPoint = Vector2.new(1, 1),
+					Position = UDim2.new(1, -140, 1, 2),
+					Size = UDim2.fromOffset(220, 16),
+					BackgroundTransparency = 1,
+					Visible = scope:Computed(function(use): boolean
+						return use(overflow) or use(pockets) == true
+					end),
+					Text = scope:Computed(function(use): string
+						if use(overflow) then
+							return Text.get(use, "backpack.overflow")
+						end
+						return Text.get(use, "backpack.pockets", { n = Products.POCKETS_SLOTS })
+					end),
+					TextScaled = true,
+					FontFace = Theme.Fonts.Body,
+					TextColor3 = scope:Computed(function(use): Color3
+						return if use(overflow) then Theme.Colors.DangerHover else Theme.Colors.TextMuted
+					end),
+					TextXAlignment = Enum.TextXAlignment.Right,
+				}),
 				scope:New("TextLabel")({
 					Name = "Slots",
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -140, 0, 0),
-					Size = UDim2.new(0, 120, 1, 0),
+					Size = scope:Computed(function(use): UDim2
+						local hinted = use(overflow) or use(pockets) == true
+						return UDim2.new(0, 120, if hinted then 0 else 1, if hinted then 24 else 0)
+					end),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return Text.get(use, "inventory.slots", { used = use(used), capacity = use(capacity) })

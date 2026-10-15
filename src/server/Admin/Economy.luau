@@ -14,6 +14,8 @@ local Premium = require(Shared.Logic.Premium)
 local Products = require(Shared.Data.Products)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
+local Time = require(Shared.Logic.Time)
+local Vip = require(Shared.Logic.Vip)
 
 local Context = require(script.Parent.Context)
 
@@ -30,6 +32,7 @@ local MailService = Context.services.MailService
 local AuctionService = Context.services.AuctionService
 local CosmeticService = Context.services.CosmeticService
 local LoginRewardService = Context.services.LoginRewardService
+local VipService = Context.services.VipService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -119,6 +122,54 @@ commands.premium = function(player, args)
 	end
 	MonetizationService.SetTestPass(player, pass.key, true)
 	reply(player, "admin.pass.ok", { pass = pass.key, state = "on" })
+end
+
+-- S121: VIP test. on/off = a session-only subscription (also on live servers for admins; never saved).
+commands.vip = function(player, args)
+	local action = args[1]
+	if action == "on" or action == "off" then
+		-- VipChanged runs VipService.Refresh (daily shards, cosmetic of the month) when it turns on
+		MonetizationService.SetTestSubscription(player, "vip", action == "on")
+		reply(player, if action == "on" then "admin.vip.on" else "admin.vip.off")
+	elseif action == "status" then
+		local status = VipService.Status(player)
+		if not status then
+			reply(player, "admin.usage.vip")
+			return
+		end
+		reply(player, "admin.vip.status", {
+			active = tostring(status.active),
+			sub = tostring(status.sub),
+			pass = tostring(status.pass),
+			shards = if status.shardsToday then "@admin.vip.shardsDone" else "@admin.vip.shardsWait",
+			respawns = status.respawns,
+			recall = Time.format(status.recall),
+			months = if #status.months > 0 then table.concat(status.months, ", ") else "-",
+		})
+	elseif action == "reset" then
+		VipService.Reset(player)
+		reply(player, "admin.vip.reset")
+	elseif action == "month" then
+		local month = args[2]
+		if type(month) ~= "string" or Time.monthLabel(month) == nil then
+			reply(player, "admin.usage.vip")
+			return
+		end
+		local cosmetic = Vip.monthCosmetic(month)
+		if cosmetic == nil then
+			reply(player, "admin.vip.noMonth", { month = month })
+			return
+		end
+		local id = VipService.GrantMonth(player, month)
+		if id then
+			reply(player, "admin.vip.month", { id = id })
+		else
+			-- the month was already marked or the account owns its cosmetic
+			reply(player, "admin.vip.monthOwned", { id = cosmetic, month = month })
+		end
+	else
+		reply(player, "admin.usage.vip")
+	end
 end
 
 -- S120: premium shop limit counters of the caller's account.

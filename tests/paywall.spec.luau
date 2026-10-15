@@ -4,9 +4,11 @@
 -- blessings (DESIGN-17 §0.2). The lists are allowlists: anything not named here fails.
 
 local Blessings = require("../src/shared/Data/Blessings")
+local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Items = require("../src/shared/Data/Items")
 local Mounts = require("../src/shared/Data/Mounts")
+local Premium = require("../src/shared/Logic/Premium")
 local Products = require("../src/shared/Data/Products")
 local T = require("./Test")
 
@@ -15,9 +17,23 @@ local ALLOWED_PASSES: { [string]: string } = {
 	autoLoot = "comfort: picks up bags in range",
 	vault = "space: deposit slots",
 	fastRespawn = "time: shorter respawn",
-	vip = "looks and comfort only (chat star, colour, alchemist queue)",
+	vip = "VIP forever (switched off): the VIP benefits below, looks and comfort only",
+	pockets = "space: +10 backpack slots (S121)",
+	slot4 = "account: a fourth character slot (S121)",
+	slot5 = "account: a fifth character slot (S121)",
+	wardrobePlus = "looks: five saved looks (S121)",
 }
-local ALLOWED_SUBSCRIPTIONS: { [string]: string } = {} -- S121: vip
+local ALLOWED_SUBSCRIPTIONS: { [string]: string } = { vip = "comfort and looks, DESIGN-17 §2" }
+-- S121: Config.Vip keys -> why (statusRefresh is a technical re-check interval, not a benefit).
+local ALLOWED_VIP_KEYS: { [string]: string } = {
+	dailyShards = "premium currency: buys only what passes this test",
+	auctionExtraListings = "comfort: more listings at once",
+	auctionFeeMul = "comfort: a lower sale fee, fixed on the listing",
+	freeRecallCooldown = "travel: the Stone of Return's channel without a stone",
+	freeRespawnsPerDay = "time: an instant respawn once a day",
+	statusRefresh = "technical: subscription re-check interval",
+}
+local VIP_POWER_WORDS = { "exp", "gold", "drop", "luck", "stat", "dmg", "hp" }
 local ALLOWED_SHOP_KINDS: { [string]: string } = { item = "an item, checked below", rename = "a service" }
 local ALLOWED_ITEM_CATEGORIES: { [string]: string } = {
 	scroll = "resets and unbinding (protection only with a daily limit of 1)",
@@ -225,7 +241,7 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 	end)
 
 	T.it("4. every pass is allowed and carries only its fields", function()
-		local fields = { key = true, passId = true, robux = true, icon = true, enabled = true }
+		local fields = { key = true, passId = true, robux = true, icon = true, enabled = true, requires = true }
 		for _, pass in Products.passes do
 			local where = `passes.{pass.key}`
 			if not ALLOWED_PASSES[pass.key] then
@@ -321,12 +337,100 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 			ALLOWED_SCROLLS = ALLOWED_SCROLLS,
 			EXCEPTIONS = EXCEPTIONS,
 			ALLOWED_COSMETIC_KINDS = ALLOWED_COSMETIC_KINDS,
+			ALLOWED_VIP_KEYS = ALLOWED_VIP_KEYS,
 		}
 		for name, list in lists do
 			for key, why in list do
 				if type(why) ~= "string" or why == "" then
 					error(`{name}.{key}: no reason`)
 				end
+			end
+		end
+	end)
+end)
+
+T.describe("S121 VIP and passes", function()
+	T.it("subscriptions are allowed and carry only their fields", function()
+		T.expect(#subscriptions >= 1).toBe(true)
+		for _, sub in subscriptions do
+			local where = `subscriptions.{tostring(sub.key)}`
+			if not ALLOWED_SUBSCRIPTIONS[sub.key] then
+				error(`{where}: not in ALLOWED_SUBSCRIPTIONS`)
+			end
+			T.expect({ where, type(sub.subscriptionId) }).toEqual({ where, "string" })
+			fieldsWithin(sub, { key = true, subscriptionId = true, enabled = true }, where)
+		end
+	end)
+
+	T.it("Config.Vip has exactly the allowed keys and no power", function()
+		for key in Config.Vip :: any do
+			if not ALLOWED_VIP_KEYS[key] then
+				error(`Config.Vip.{key}: not in ALLOWED_VIP_KEYS`)
+			end
+			if key ~= "statusRefresh" then
+				local lower = string.lower(key)
+				for _, word in VIP_POWER_WORDS do
+					if string.find(lower, word, 1, true) then
+						error(`Config.Vip.{key}: contains "{word}" (DESIGN-17 §0.2)`)
+					end
+				end
+			end
+		end
+		for key in ALLOWED_VIP_KEYS do
+			T.expect({ key, (Config.Vip :: any)[key] ~= nil }).toEqual({ key, true })
+		end
+		T.expect(Config.Vip.auctionFeeMul > 0 and Config.Vip.auctionFeeMul <= 1).toBe(true)
+	end)
+
+	T.it("passes: requires and slot passes point at real passes", function()
+		for _, pass in Products.passes do
+			if pass.requires ~= nil then
+				T.expect({ pass.key, Products.getPass(pass.requires) ~= nil }).toEqual({ pass.key, true })
+			end
+		end
+		for slot, keys in Products.SLOT_PASSES do
+			for _, key in keys do
+				T.expect({ slot, key, ALLOWED_PASSES[key] ~= nil }).toEqual({ slot, key, true })
+			end
+		end
+	end)
+
+	T.it("the cosmetics of the month are looks, never sold", function()
+		local n = 0
+		for _, def in Cosmetics.list do
+			local obtain = def.obtain
+			if obtain and obtain.vipMonth then
+				n += 1
+				local where = `cosmetics.{def.id}`
+				T.expect({ where, ALLOWED_COSMETIC_KINDS[def.kind] ~= nil }).toEqual({ where, true })
+				T.expect({ where, def.price }).toEqual({ where, 0 })
+				fieldsWithin(def :: any, COSMETIC_FIELDS, where)
+				fieldsWithin(obtain :: any, { boss = true, quest = true, vipMonth = true }, `{where}.obtain`)
+				scan(def, where, { look = true, skin = true })
+				T.expect({ where, Premium.canBuyCosmetic(def.id, {}, 1e9) }).toEqual({
+					where,
+					false,
+					"premium.error.notForSale",
+				})
+			end
+		end
+		T.expect(n).toBe(6)
+	end)
+
+	T.it("Logic/Vip requires no power module", function()
+		local fs = require("@lune/fs")
+		local source = fs.readFile("src/shared/Logic/Vip.luau")
+		local allowed = {
+			["../Config"] = true,
+			["../Data/Cosmetics"] = true,
+			["../Data/Market"] = true, -- the auction fee for the benefit row
+			["../Data/Recipes"] = true, -- the alchemist queue sizes for the benefit row
+			["./Time"] = true,
+			["../Types"] = true,
+		}
+		for path in string.gmatch(source, 'require%("([^"]+)"%)') do
+			if not allowed[path] then
+				error(`Logic/Vip requires {path}: not in the allowed list`)
 			end
 		end
 	end)

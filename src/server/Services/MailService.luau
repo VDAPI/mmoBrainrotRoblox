@@ -152,7 +152,10 @@ local function claim(player: Player, id: string): (boolean, string?)
 	if not cached then
 		return false, "mail.error.gone"
 	end
-	if #cached.items > 0 and not Inventory.canFit(char.inventory, InventoryService.CapacityOf(char), cached.items) then
+	if
+		#cached.items > 0
+		and not Inventory.canFit(char.inventory, InventoryService.CapacityOf(char, player), cached.items)
+	then
 		return false, "inventory.full"
 	end
 	local taken: Mail.Parcel? = nil

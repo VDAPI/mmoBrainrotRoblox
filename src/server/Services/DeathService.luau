@@ -373,6 +373,20 @@ local function respawnProduct(player: Player): boolean
 	return true
 end
 
+-- S121: the VIP free instant respawn (VipService): opens the choice like the "respawn" product, refusing like
+-- RespawnNow (not dead, countdown already over).
+function DeathService.SkipCountdown(player: Player): (boolean, string?)
+	local state = pending[player]
+	if not state then
+		return false, "death.error.notDead"
+	end
+	if Workspace:GetServerTimeNow() >= state.respawnAt then
+		return false, "death.error.alreadyOpen"
+	end
+	openChoice(player, state)
+	return true, nil
+end
+
 function DeathService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

@@ -16,6 +16,7 @@ local Maps = require(Shared.Data.Maps)
 local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
 local Placement = require(script.Parent.Parent.Placement)
+local Premium = require(Shared.Logic.Premium)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
@@ -27,7 +28,8 @@ local FALL_RESCUE_DEPTH = 45
 
 local CharacterService = {
 	Name = "CharacterService",
-	Deps = { "DataService", "PlayerStateService", "NameService", "WorldService" },
+	-- S121: MonetizationService (character slots 4-5) depends on none of these
+	Deps = { "DataService", "PlayerStateService", "NameService", "WorldService", "MonetizationService" },
 	-- (player, characterData) after the player entered the world with a character.
 	CharacterEntered = Signal.new(),
 	-- (player, characterData) before the player leaves the world (switch, leave, wipe).
@@ -42,6 +44,13 @@ local DataService: any
 local PlayerStateService: any
 local NameService: any
 local WorldService: any
+local MonetizationService: any
+
+-- S121 (DESIGN-17 §2): slots above Config.FreeCharacters need the slot passes to CREATE a character there; playing and
+-- deleting one never do.
+local function slotOpen(player: Player, slot: number): boolean
+	return Premium.slotOpen(slot, MonetizationService.Passes(player))
+end
 
 type Runtime = {
 	busy: boolean,
@@ -258,6 +267,9 @@ local function createCharacter(player: Player, slot: number, classId: string, na
 	if not data then
 		return false, "error.notLoaded"
 	end
+	if not slotOpen(player, slot) then
+		return false, "charSelect.error.slotLocked"
+	end
 	if data.characters[slotKey] then
 		return false, "error.slotTaken"
 	end
@@ -283,6 +295,10 @@ local function createCharacter(player: Player, slot: number, classId: string, na
 	if not data or data.characters[slotKey] then
 		NameService.Release(name, ownerKey)
 		return false, if data then "error.slotTaken" else "error.notLoaded"
+	end
+	if not slotOpen(player, slot) then
+		NameService.Release(name, ownerKey)
+		return false, "charSelect.error.slotLocked"
 	end
 
 	local first = true
@@ -384,6 +400,7 @@ function CharacterService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	NameService = registry.Get("NameService")
 	WorldService = registry.Get("WorldService")
+	MonetizationService = registry.Get("MonetizationService")
 end
 
 function CharacterService.Start()

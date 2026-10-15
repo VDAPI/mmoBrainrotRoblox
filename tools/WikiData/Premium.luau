@@ -31,12 +31,15 @@ S.file(
 function Premium.build(ctx: any): any
 	local passes = {}
 	for _, p in Products.passes do
-		table.insert(passes, {
-			key = p.key,
-			icon = p.icon,
-			name = Names.of(`premium.pass.{p.key}`),
-			desc = Names.of(`premium.pass.{p.key}.desc`),
-		})
+		-- S121: disabled passes (VIP forever) stay off the wiki
+		if p.enabled ~= false then
+			table.insert(passes, {
+				key = p.key,
+				icon = p.icon,
+				name = Names.of(`premium.pass.{p.key}`),
+				desc = Names.of(`premium.pass.{p.key}.desc`),
+			})
+		end
 	end
 	local shop = {}
 	for _, e in Products.shop do

@@ -191,9 +191,22 @@ export type Settings = {
 	barks: boolean, -- S101b: NPC comments during quests (BarkController)
 }
 
+-- S121 (DESIGN-17 §2): UTC day of the last daily shards, free respawns used on respawnDay, the last free recall
+-- (Clock seconds) and the months whose VIP cosmetic was given ("YYYYMM" -> true).
+export type VipState = {
+	shardDay: number,
+	respawnDay: number,
+	respawnN: number,
+	recallAt: number,
+	months: { [string]: boolean },
+}
+
+-- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet.
+export type Outfit = { equipped: { [string]: string }, pet: string? }
+
 export type AccountData = {
 	schema: number,
-	characters: { [string]: CharacterData }, -- "1".."3" -> character
+	characters: { [string]: CharacterData }, -- "1".."5" -> character (S121: slots 4-5 need passes to create)
 	lastCharacter: number?,
 	dragonShards: number,
 	deposit: { size: number, items: { [string]: ItemInstance } },
@@ -205,6 +218,8 @@ export type AccountData = {
 	-- S120: Logic/Premium.ShopLimits
 	shopLimits: { day: number, week: number, daily: { [string]: number }, weekly: { [string]: number } },
 	login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
+	vip: VipState, -- S121: VIP benefits (Logic/Vip)
+	outfits: { Outfit }, -- S121: saved looks (Garderoba+), 1..Products.OUTFITS_PLUS without holes
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 }

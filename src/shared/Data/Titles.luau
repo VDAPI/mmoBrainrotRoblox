@@ -14,6 +14,8 @@ export type Requirement =
 	| { kind: "duelsWon", value: number }
 	| { kind: "mainDone", value: number }
 	| { kind: "mainPath", path: string } -- S59: unlocked while the active set's main path is this path id
+	-- S121: shown while the account has VIP (MonetizationService.HasVip); needs the context argument of Logic/Titles
+	| { kind: "vip" }
 
 export type TitleDef = {
 	id: string,
@@ -123,6 +125,8 @@ local list: { TitleDef } = {
 		req = { kind = "mainPath", path = "arcanist" },
 		color = "#A884FF",
 	},
+	-- S121: published on the wiki together with the VIP article (S131)
+	{ id = "vip", nameKey = "title.vip", req = { kind = "vip" }, color = "#F2C94C", wiki = false },
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

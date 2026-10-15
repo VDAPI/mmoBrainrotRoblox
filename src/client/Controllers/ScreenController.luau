@@ -164,7 +164,10 @@ local function registerWindows()
 				id = "menu",
 				titleKey = "window.menu.title",
 				size = Vector2.new(640, 700),
-				build = GameMenu,
+				-- S121: the menu opens the VIP window
+				build = function(s, close)
+					return GameMenu(s, close, { OpenWindow = WindowManager.Open })
+				end,
 			})
 		else
 			WindowManager.Register({

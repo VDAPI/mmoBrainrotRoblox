@@ -9320,3 +9320,103 @@ Pliki: `src/server/Services/{Travel,Death}Service.luau`, `src/shared/Logic/{Resp
 `src/client/UI/DragDrop.luau`, `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
 `src/client/UI/Screens/{ShopWindow,Hud/DeathScreen,Hud/Elite2Timer}.luau`, `src/shared/Data/{Progression,BossTuning}.luau`, `src/server/Entities/Boss.luau`,
 `tools/balance_reasons.luau`, `tests/{tooltip,respawn,exp,bossmotions}.spec.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE}.md`.
+
+### S121: VIP (subskrypcja), Kieszenie Kupca, miejsca na postać 4–5, Garderoba+
+
+Druga sesja serii DESIGN-17 (§2), po S120 (`a3cf4d2`). S116 pominięta za zgodą właściciela (czeka na modele); S121 nic
+z niej nie potrzebuje. Bez Studio i bez wgrywania czegokolwiek do Roblox. Nazwy S97 / S120 sprawdzone w kodzie
+(rozbieżności w DECYZJE).
+- **Dane:** `Data/Products`: `Pass.enabled?` / `requires?`, przepustka `vip` jako „VIP na zawsze” z `enabled = false`,
+  nowe `pockets` (249 R$), `slot4` (99), `slot5` (149, `requires = "slot4"`), `wardrobePlus` (79), wszystkie z
+  `passId = 0`; typ `Subscription`, `subscriptions = { { key = "vip", subscriptionId = "", enabled = true } }`,
+  `getSubscription`, `POCKETS_SLOTS = 10`, `OUTFITS_FREE = 1`, `OUTFITS_PLUS = 5`, `SLOT_PASSES`. `Config.MaxCharacters`
+  3 → 5, `FreeCharacters = 3`, `Config.Vip` (sześć kluczy z DESIGN-17 §2 + `statusRefresh`). `Data/Titles`: wymaganie
+  `{ kind = "vip" }`, tytuł `vip` (`wiki = false`). `Data/Cosmetics`: `obtain.vipMonth`, sześć kosmetyków miesiąca
+  (`aura_vip_hearth` 202611, `trail_vip_snowfall` 202612, `weapon_vip_starlight` 202701, `aura_vip_bloodrose` 202702,
+  `trail_vip_thaw` 202703, `outfit_vip_herald` 202704), cena 0.
+- **Logika:** `Time.civil`, `Time.monthKey`, `Time.monthLabel`; nowy `Logic/Vip` (`sanitize`, `dailyDue`, `claimDaily`,
+  `monthCosmetic`, `monthDue`, `markMonth`, `respawnLeft`, `useRespawn`, `recallLeft`, `useRecall`, `reset`,
+  `BENEFITS`); `Logic/Premium`: `subscriptionState`, `canBuyPass`, `canBuySubscription`, `slotOpen`, `slotPass`,
+  `outfitSlots`, `snapshotOutfit`, `outfitLooks`; `Logic/Inventory`: `capacityOf` (jedyny wzór pojemności),
+  `lastIndex`, `move` z nadmiaru (bez zamiany i bez wkładania do nadmiaru); `Logic/Auction`: `fee` / `payout` z
+  `feePct?`, `maxListingsFor`, `feePctFor`, `validateListing(..., maxListings?)`, `Listing.feePct?`; `Logic/Titles` z
+  kontekstem `{ vip }`.
+- **Serwer:** `MonetizationService` (subskrypcje w `pcall`, `HasSubscription`, `HasVip`, `Passes`, `VipChanged`,
+  `SetTestSubscription`, gałąź `vip`, `BuySubscription`, `BuyPass` przez `canBuyPass` z argumentem błędu, pętla
+  sprawdzania co `statusRefresh`); nowy `VipService` (dzienne odłamki, kosmetyk miesiąca, `VipRecall`, `VipRespawn`,
+  `Reset`, `GrantMonth`, `Status`); `TravelService.FreeRecall`; `DeathService.SkipCountdown`; pojemność:
+  `InventoryService.CapacityOf(char, player)`, `CapacityFor`, `ValidTakeIndex`, `PassChanged("pockets")` → `compact` /
+  `SyncAll` (`EquipmentService`, `ShopService`, `TradeService`, `DepositService`, `MailService`); `CharacterService`
+  blokuje tworzenie na zablokowanym slocie; `TitleService` / `ProfileService` z kontekstem VIP; `AuctionService` z
+  limitem i opłatą VIP; `AlchemyService` przez `HasVip`; `CosmeticService` (`OutfitSave`, `OutfitWear`, `Grant` z
+  kluczem toastu); admin `/vip on|off|status|reset|month <RRRRMM>` (`admin.vip.monthOwned`, gdy miesiąc już
+  nadany); `/bag` liczy pojemność z Kieszeniami (`InventoryService.CapacityFor`).
+- **Klient:** nowe okno `UI/Screens/VipWindow` (status, „Subskrybuj” / „Wkrótce”, korzyści z `Vip.BENEFITS`, „Dziś”
+  z powrotem i licznikiem, kosmetyk miesiąca i kolekcja, „Garderoba”; PC dwie kolumny, telefon jedna przewijana),
+  rejestracja w `PremiumController` (`OpenVip`); zakładka „Przepustki”: karta VIP w złotej ramce przed przepustkami
+  („Subskrybuj” / „Wkrótce”, „Szczegóły”), przepustka z niespełnionym `requires` mówi „Najpierw: …”; wybór postaci:
+  pięć kart, zablokowane wolne sloty z kłódką i „Odblokuj (n R$)” albo „Wkrótce” (slot 5 bez 4 prowadzi do slotu 4);
+  plecak: pojemność z `capacityOf`, sloty nadmiaru w czerwonej ramce, podpowiedź Kieszeni / nadmiaru pod licznikiem,
+  przeciąganie do nadmiaru blokowane na kliencie (`ItemController`); depozyt i kupiec plecaków przez `capacityOf`
+  („(n z Kieszeniami Kupca)”); garderoba: rząd „Zestawy” pod podglądem (kafle z kropką koloru, kłódka → sklep na
+  „Przepustkach”, „Załóż”, „Zapisz obecny” z potwierdzeniem nadpisania), źródło „Nagroda VIP (11.2026)”; ekran
+  śmierci: „Odrodzenie VIP (darmowe)”; menu gry: „VIP” i „Wróć do miasta (VIP)” z licznikiem (`GameMenu(scope, close,
+  { OpenWindow })`); aukcja: opłata i limit VIP z przecinkiem języka, linia `auction.sell.vip`; okno postaci: tytuł VIP.
+- **Zapis:** `account.vip = { shardDay, respawnDay, respawnN, recallAt, months }`, `account.outfits = {}` z szablonu
+  (`TableUtil.reconcile`, bez migracji, `CURRENT` = 8); ogłoszenie aukcji `feePct?` (stare bez pola liczą jak dziś).
+- **Remote'y:** `BuySubscription(key)`, `VipRecall()`, `VipRespawn()`, `OutfitSave(index)`, `OutfitWear(index)`.
+- **Teksty (PL i EN):** `premium.pass.{pockets,slot4,slot5,wardrobePlus}(.desc)`, nowe `premium.pass.vip(.desc)`,
+  `premium.sub.vip(.desc)`, `premium.subscribe`, `premium.details`, `premium.subGranted`, `premium.requires`,
+  `premium.error.requires`, `window.vip.title`, `vip.*` (status, korzyści, dziś, powrót, miesiąc, błędy, toasty),
+  `title.vip`, `charSelect.{slotLocked,unlock,slotNeeds4,error.slotLocked}`, `backpack.{pockets,overflow}`,
+  `backpacks.withPockets`, `wardrobe.outfits`, `wardrobe.outfit.*`, `wardrobe.error.outfitLocked`,
+  `wardrobe.obtain.vip`, `cosmetic.*_vip_*`, `death.vipRespawn`, `menu.{vip,vipRecall}`, `auction.sell.vip`,
+  `admin.usage.vip`, `admin.vip.*`; `admin.usage.pass` / `.premium` z nowymi kluczami.
+- **Testy:** nowy `tests/vip.spec.luau` (miesiące, stan VIP, kosmetyki miesiąca, odrodzenie i powrót, przepustki i
+  subskrypcja, sloty, pojemność, nadmiar, zestawy, korzyści w Locale); rozszerzone `paywall` (blok „S121 VIP and
+  passes”: subskrypcje, `Config.Vip` z jawną listą kluczy, `requires` i `SLOT_PASSES`, kosmetyki miesiąca, `require`
+  w `Logic/Vip`), `premium`, `market`, `titles`, `character`, `wikidump`. `scripts/check` zielony (118 plików, 6543
+  testy), `balance1_20` 0 różnic bez `ALLOWED_1_20_DIFFS`, `balance_report` bez „BRAK POWODU” (`docs/BALANS.md` różnił się
+  tylko czasami liczenia, przywrócony).
+- **Wiki:** `tools/WikiData/Premium.luau` pomija przepustki z `enabled == false`; `npm run data`: w `premium.json`
+  cztery nowe przepustki bez „VIP na zawsze”, w `cosmetics.json` sześć kosmetyków miesiąca (bez ceny i `obtain`), plus
+  `meta.json` i odcisk w `docs/PRZEDMIOTY.md`; `npm run art -- --src <brak>` usunął obrazek `pass/vip` (już
+  nieopublikowany); zdanie o nowych przepustkach w `kosmetyki.mdx` / `cosmetics.mdx`. `WIKI_KEYS_ALLOW` pusty
+  (`wiki_keys_diff` 0 różnic). `npm run check`: astro check, eslint, vitest (133) i build zielone; audyt kończy się
+  błędem na dwóch tytułach zadań (`side_fp_bonetrail` i `dragonsBrood` mają ten sam tytuł „Szlak Kości” / „The Bone
+  Trail”), niezwiązane z tą sesją.
+
+Dla S122–S131: `MonetizationService.HasVip`, `HasSubscription`, `VipChanged`, `SetTestSubscription`, `Passes`;
+`VipService.Refresh` / `Recall` / `Respawn` / `Reset` / `GrantMonth` / `Status`; `Products.subscriptions`,
+`getSubscription`, `POCKETS_SLOTS`, `OUTFITS_FREE`, `OUTFITS_PLUS`, `SLOT_PASSES`, pola `Pass.enabled` /
+`Pass.requires`; `Config.Vip.*`, `Config.FreeCharacters`; `Logic/Vip`, `Time.monthKey` / `Time.monthLabel` /
+`Time.civil` (sezony areny S126, id „RRRRMM”), `Inventory.capacityOf` / `lastIndex` (S123:
+`account.grantedPasses.pockets` ma działać przez `HasPass`, więc `capacityOf` nie trzeba zmieniać),
+`InventoryService.CapacityFor` / `ValidTakeIndex`, `Titles` z `ctx` (S123 dopisze tytuły `kind = "cosmetic"` do tego
+samego kontekstu), `Auction.feePctFor` / `maxListingsFor`, `TravelService.FreeRecall` (S122 / S126: blokady areny i
+Krwawego Księżyca obejmą go przez `channel`), `DeathService.SkipCountdown`; gałąź stanu `vip`; komenda `/vip`;
+`Premium.subscriptionState`, `canBuyPass`, `canBuySubscription`, `slotOpen`, `slotPass`, `outfitSlots`,
+`snapshotOutfit`, `outfitLooks`; `CosmeticService.Grant(player, id, toastKey?)`; `PremiumConfirm.modal`;
+`Cards.resolveArgs` i trzecia wartość błędu handlera (argumenty toastu); `VipWindow.statusText` / `subscribeButton`;
+`Cards.Ctx.OpenVip`.
+
+Dla właściciela (Creator Hub): subskrypcja VIP (Monetization → Subscriptions, cena z progów Roblox, propozycja ok.
+349 R$/mies.), id `EXP-…` do `Products.subscriptions[1].subscriptionId`; cztery przepustki (Monetization → Passes:
+Kieszenie Kupca 249 R$, Miejsce na postać 4 99 R$, Miejsce na postać 5 149 R$, Garderoba+ 79 R$), id do `passId` w
+`src/shared/Data/Products.luau`. „VIP na zawsze” czeka z `enabled = false` (decyzja i cena; daje dzienne odłamki bez
+końca). Do wklejenia id gracze widzą „Wkrótce”, w Studio wszystko działa jako symulacja; test VIP: `/vip on`.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Products,Titles,Cosmetics,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{Vip (nowy),Time,Premium,Inventory,Auction,Titles,
+AccountSchema}.luau`, `src/shared/Net/Definitions.luau`, `src/server/Services/{VipService (nowy),Monetization,Inventory,
+Equipment,Shop,Trade,Deposit,Mail,Character,Title,Profile,Auction,Alchemy,Travel,Death,Cosmetic,Admin}Service.luau`,
+`src/server/Admin/{Economy,Items}.luau`, `src/client/UI/Screens/VipWindow.luau` (nowy),
+`src/client/UI/Screens/PremiumShop/{init,Cards,Passes}.luau`, `src/client/UI/Screens/CharacterSelect/{init,SlotCard}.luau`,
+`src/client/UI/Screens/{BackpackPanel,DepositWindow,BackpackShop,Wardrobe,GameMenu}.luau`,
+`src/client/UI/Screens/Hud/DeathScreen.luau`, `src/client/UI/Screens/AuctionWindow/Sell.luau`,
+`src/client/UI/Screens/CharacterWindow/init.luau`, `src/client/UI/PremiumConfirm.luau`,
+`src/client/Controllers/{Premium,Screen,Item}Controller.luau`, `tests/vip.spec.luau` (nowy),
+`tests/{paywall,premium,market,titles,character,wikidump}.spec.luau`, `tools/WikiData/Premium.luau`,
+`wiki/src/data/{premium,cosmetics,meta}.json`, `wiki/src/generated/art.json`, `wiki/public/img/art/pass/vip-*.webp`
+(usunięte), `wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/PRZEDMIOTY.md`,
+`docs/{DESIGN,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

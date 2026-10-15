@@ -159,3 +159,39 @@ T.describe("Path titles (S59)", function()
 		end
 	end)
 end)
+
+T.describe("VIP title (S121)", function()
+	local function hero(main: string?, title: string?): any
+		return { level = 30, title = title, path = { main = main, nodes = {}, bp = {}, freeUsed = true } }
+	end
+
+	local function has(list: { string }, id: string): boolean
+		return table.find(list, id) ~= nil
+	end
+
+	T.it("is unlocked only with the VIP context", function()
+		local c = hero(nil, nil)
+		T.expect(has(Titles.unlocked(c), "vip")).toBe(false)
+		T.expect(has(Titles.unlocked(c, nil, { vip = false }), "vip")).toBe(false)
+		T.expect(has(Titles.unlocked(c, nil, { vip = true }), "vip")).toBe(true)
+		T.expect(Titles.isUnlocked(c, "vip")).toBe(false)
+		T.expect(Titles.isUnlocked(c, "vip", nil, { vip = true })).toBe(true)
+		local def = TitleData.get("vip")
+		T.expect(def ~= nil and def.wiki == false).toBe(true)
+		T.expect((pl :: any)["title.vip"] ~= nil and (en :: any)["title.vip"] ~= nil).toBe(true)
+	end)
+
+	T.it("a chosen VIP title falls back to the path title when VIP ends", function()
+		local withPath = hero(nil, "vip")
+		T.expect(Titles.shown(withPath, nil, { vip = true })).toBe("vip")
+		T.expect(Titles.shown(withPath, nil, { vip = false })).toBeNil()
+		T.expect(Titles.shown(withPath)).toBeNil()
+		local first = PathData.list[1]
+		if first then
+			local c = hero(first.id, "vip")
+			T.expect(Titles.shown(c, nil, { vip = false })).toBe(first.titleId)
+		end
+	end)
+end)
+
+return nil

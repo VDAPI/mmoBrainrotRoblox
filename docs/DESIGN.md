@@ -207,7 +207,7 @@ lawy przecinają tunele tylko pod mostami (kaniony mają łagodne zbocza żużlu
 
 ### 4.1 Konto i postacie
 
-- Konto Roblox = 3 sloty postaci. Ekran wyboru postaci przy wejściu: utwórz / usuń (potwierdzenie wpisaniem nazwy) / graj.
+- Konto Roblox = 5 slotów postaci: 3 darmowe i 2 z przepustek „Miejsce na postać 4 / 5” (S121; slot 5 wymaga slotu 4). Bez przepustki zablokowany jest tylko wolny slot (kłódka i przycisk zakupu albo „Wkrótce”); postać na slocie 4–5 zostaje grywalna. Ekran wyboru postaci przy wejściu: utwórz / usuń (potwierdzenie wpisaniem nazwy) / graj.
 - Nazwa postaci: 3–16 znaków, litery i cyfry, filtrowana przez TextService, **unikalna globalnie** (rezerwacja w DataStore).
 - Wygląd: awatar Roblox gracza + widoczna broń w ręce + później kosmetyki.
 - Przełączanie postaci w trakcie gry: menu → „Zmień postać” (powrót do ekranu wyboru bez wychodzenia z gry, zapis postaci).
@@ -957,7 +957,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
 - Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Nowej Ścieżki (zmiana ścieżki głównej), Zwój Rozwiązania, Zwój Ochrony (limit 1 dziennie, żeby nie był pay-to-win; S120), zmiana nazwy postaci.
-- **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), VIP (złota ramka czatu, kolorowy nick, +1 kolejka u alchemika).
+- **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), od S121 Kieszenie Kupca (+10 miejsc w każdym plecaku, także bez plecaka: 20 → 30; utrata przepustki zostawia przedmioty w nadmiarze, którego nie da się uzupełniać), Miejsce na postać 4 i 5, Garderoba+ (5 zapisanych zestawów wyglądu zamiast 1). Dawna przepustka VIP to „VIP na zawsze”, wyłączona (`enabled = false`) do decyzji właściciela.
+- **VIP od S121 to subskrypcja Roblox** (Experience Subscriptions, `docs/DESIGN-17.md` §2): 15 Smoczej Waluty raz na dzień UTC, tytuł VIP, złota gwiazdka w czacie i złote imię, +1 kolejka u alchemika, +5 ogłoszeń na aukcji i opłata od sprzedaży 2,5% zamiast 5% (zapisana w ogłoszeniu przy wystawieniu), darmowy powrót do miasta co 10 min (kanał Kamienia Powrotu bez kamienia), jedno darmowe natychmiastowe odrodzenie dziennie, kosmetyk miesiąca na zawsze. Bez EXP, złota, łupów i statystyk. Okno VIP z menu gry i z zakładki „Przepustki” sklepu.
 - Brak sprzedaży EXP, statystyk, przedmiotów z bonusami.
 - Odrodzenie natychmiastowe także jako osobny Developer Product (bez kupowania waluty).
 - **Smoczy Sklep od S120** (`docs/DESIGN-17.md` §1): okno z pięcioma zakładkami (Waluta, Przepustki, Przedmioty w sekcjach Zwoje / Usługi / Plecaki, Kosmetyki, Wierzchowce tylko z włączonym produktem), saldo z „Doładuj” stale w nagłówku, podpowiedź i potwierdzenie przy każdym zakupie za Smoczą Walutę (także w garderobie), produkty Robux bez id na żywym serwerze jako nieaktywne „Wkrótce”. Limity dzienne i tygodniowe na wpis sklepu (`account.shopLimits`). Zasadę bez pay-to-win pilnuje `tests/paywall.spec.luau` (jawne listy tego, co wolno sprzedawać, z powodem przy każdym wpisie).
@@ -965,6 +966,10 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 ## 22. Kosmetyki i pety
 
 - Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni, wygląd wierzchowca (S97, rodzaj `mountskin`: jeden na konto, działa na każdym wierzchowcu). Garderoba w menu.
+- **Kosmetyki miesiąca VIP (S121):** `obtain.vipMonth = "RRRRMM"` (sześć na 2026-11 … 2027-04: aura, ślad, efekt broni,
+  aura, ślad, strój). Konto z VIP w danym miesiącu UTC dostaje go na zawsze (`account.vip.months`); nie jest na sprzedaż.
+- **Zestawy wyglądu (S121):** zestaw = założone kosmetyki + pet (`account.outfits`); 1 bez przepustki, 5 z Garderobą+.
+  „Załóż” zakłada tylko posiadane rzeczy; zestawy ponad limit zostają zapisane, ale nie da się ich założyć.
 - **Skiny zdobywane w grze (S97):** kosmetyka z `obtain` (łup bossa albo nagroda zadania, `Reward.cosmetic`) ma cenę 0,
   nie jest na sprzedaż (`premium.error.notForSale`), w garderobie pokazuje źródło zamiast ceny i nie ma przycisku, dopóki
   jej nie masz.

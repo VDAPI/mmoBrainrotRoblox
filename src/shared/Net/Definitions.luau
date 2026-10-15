@@ -216,6 +216,11 @@ local Definitions: { [string]: Definition } = {
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
 	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)
 	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
+	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
+	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121
+	VipRespawn = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free instant respawn once a day (VIP), S121
+	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
+	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121
 
 	-- Profiles (S15)
 	PlayerProfile = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId) same server

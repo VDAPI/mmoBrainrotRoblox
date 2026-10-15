@@ -47,7 +47,7 @@ local function orderKey(order: Time.Order): string
 end
 
 function AlchemyService.Slots(player: Player): number
-	return if MonetizationService.HasPass(player, "vip") then Recipes.QUEUE_SLOTS_VIP else Recipes.QUEUE_SLOTS
+	return if MonetizationService.HasVip(player) then Recipes.QUEUE_SLOTS_VIP else Recipes.QUEUE_SLOTS
 end
 
 local function nearAlchemist(player: Player, npcId: string): boolean

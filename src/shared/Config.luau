@@ -6,7 +6,10 @@ local Config = {
 	GameName = "Vaelthorn",
 
 	MaxLevel = 100,
-	MaxCharacters = 3,
+	MaxCharacters = 5,
+	-- S121: slots above FreeCharacters need the slot passes (Data/Products.SLOT_PASSES) to create a character; an
+	-- existing character there stays playable (DESIGN-17 §2)
+	FreeCharacters = 3,
 
 	-- Roblox UserIds with admin commands in live servers. Everyone is admin in Studio.
 	-- To add yourself: open your Roblox profile, the number in the URL (roblox.com/users/<id>/profile)
@@ -58,6 +61,16 @@ local Config = {
 	RespawnPerLevel = 0.3,
 	FastRespawnMultiplier = 0.5, -- "Fast Return" gamepass
 	RespawnNowCost = 10, -- Dragon Shards
+	-- VIP (DESIGN-17 §2, S121): comfort and looks only, never EXP, gold, drops or stats (tests/paywall.spec).
+	-- MonetizationService.HasVip = an active VIP subscription or the "vip" pass ("VIP forever").
+	Vip = {
+		dailyShards = 15, -- Dragon Shards on the first VIP moment of a UTC day (account.vip.shardDay)
+		auctionExtraListings = 5, -- on top of Data/Market Auction.maxListings
+		auctionFeeMul = 0.5, -- sale fee multiplier, fixed on the listing when it is listed (deposit unchanged)
+		freeRecallCooldown = 600, -- seconds between free returns to the city (the Stone of Return channel)
+		freeRespawnsPerDay = 1, -- instant respawns for free per UTC day (account.vip.respawnDay / respawnN)
+		statusRefresh = 1800, -- seconds: safety re-check of the subscription status while in game
+	},
 	-- S22: after the countdown the player picks "city" or "here"; no pick in this many seconds = the city.
 	DeathChoiceTimeout = 60,
 	-- S22: respawn protection (1 HP, no damage, monsters ignore, no PvP; ends early on any attack).

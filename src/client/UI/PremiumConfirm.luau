@@ -75,6 +75,17 @@ local function send(spec: Spec): (boolean, string?)
 	return true, nil
 end
 
+-- S121: any other confirmation through the same dialog (the wardrobe's "overwrite look"); without the dialog the
+-- action runs at once (never a dead button).
+function PremiumConfirm.modal(spec: any)
+	local show = showModal
+	if show then
+		show(spec)
+	elseif spec.OnConfirm then
+		task.spawn(spec.OnConfirm, "")
+	end
+end
+
 function PremiumConfirm.ask(spec: Spec)
 	local show = showModal
 	if not show then

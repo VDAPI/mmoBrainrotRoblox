@@ -312,13 +312,13 @@ local function execute(session: Session): (boolean, string?)
 	-- No yields from here until both sides are written.
 	local result, err = Trade.exchange({
 		inventory = charA.inventory,
-		capacity = InventoryService.CapacityOf(charA),
+		capacity = InventoryService.CapacityOf(charA, a),
 		gold = charA.gold,
 		offerUids = offerA.uids,
 		offerGold = offerA.gold,
 	}, {
 		inventory = charB.inventory,
-		capacity = InventoryService.CapacityOf(charB),
+		capacity = InventoryService.CapacityOf(charB, b),
 		gold = charB.gold,
 		offerUids = offerB.uids,
 		offerGold = offerB.gold,

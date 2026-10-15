@@ -1,14 +1,20 @@
 --!strict
 -- One character slot on the selection screen: empty ("Create character") or occupied (name, class,
 -- level, map, Play / Delete).
+-- S121: an empty slot above Config.FreeCharacters without its passes is locked: a lock, "Extra character slot" and
+-- "Unlock (n R$)" for the next missing pass (Data/Products.SLOT_PASSES; slot 5 first asks for slot 4), or "Soon"
+-- without a pass id on a live server. An occupied slot is always a normal card (playing never needs the pass).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
+local Products = require(ReplicatedStorage.Shared.Data.Products)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -26,6 +32,10 @@ export type Props = {
 	OnCreate: () -> (),
 	OnPlay: () -> (),
 	OnDelete: (summary: Types.SlotSummary) -> (),
+	-- S121: a locked empty slot and the pass to buy next for it (nil = open)
+	Locked: UsedAs<boolean>?,
+	Pass: UsedAs<string?>?,
+	OnUnlock: ((passKey: string) -> ())?,
 }
 
 local CARD_WIDTH = 300
@@ -162,6 +172,78 @@ local function empty(scope: Scope, props: Props): { Instance }
 	}
 end
 
+-- S121: a locked empty slot.
+local function locked(scope: Scope, props: Props, passKey: string): { Instance }
+	local pass = Products.getPass(passKey)
+	local soon = pass == nil or Premium.robuxState(pass.passId, RunService:IsStudio()) == "soon"
+	-- slot 5 without slot 4: the button buys slot 4 first and says so
+	local needs = Products.SLOT_PASSES[props.Slot] or {}
+	local needsEarlier = #needs > 1 and passKey ~= needs[#needs]
+	return {
+		scope:New("Frame")({
+			Name = "Emblem",
+			LayoutOrder = 1,
+			Size = UDim2.fromOffset(84, 84),
+			BackgroundColor3 = Theme.Colors.Background,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+				scope:New("UIStroke")({ Thickness = Theme.Stroke.Thick, Color = Theme.Colors.GoldDim }),
+				scope:New("TextLabel")({
+					Size = UDim2.fromScale(1, 1),
+					BackgroundTransparency = 1,
+					Text = "🔒",
+					TextSize = 40,
+					FontFace = Theme.Fonts.BodyBold,
+					TextColor3 = Theme.Colors.GoldDim,
+				}),
+			},
+		}),
+		label(scope, {
+			Name = "Locked",
+			LayoutOrder = 2,
+			Height = 56,
+			Text = Text.T(scope, "charSelect.slotLocked"),
+			FontFace = Theme.Fonts.Heading,
+			TextSize = Theme.TextSize.Large,
+			TextColor3 = Theme.Colors.TextMuted,
+			TextWrapped = true,
+		}),
+		label(scope, {
+			Name = "Needs",
+			LayoutOrder = 3,
+			Height = 44,
+			Text = Text.T(scope, if needsEarlier then "charSelect.slotNeeds4" else `premium.pass.{passKey}.desc`),
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Colors.TextMuted,
+			TextWrapped = true,
+		}),
+		scope:New("Frame")({
+			Name = "Spacer",
+			LayoutOrder = 4,
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(1, 1),
+			[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
+		}),
+		Button(scope, {
+			Name = "Unlock",
+			LayoutOrder = 5,
+			Text = if soon
+				then Text.T(scope, "premium.soon")
+				else Text.T(scope, "charSelect.unlock", { robux = if pass then pass.robux else 0 }),
+			Variant = "primary",
+			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+			Disabled = scope:Computed(function(use): boolean
+				return soon or use(props.Busy)
+			end),
+			OnClick = function()
+				if props.OnUnlock then
+					props.OnUnlock(passKey)
+				end
+			end,
+		}),
+	}
+end
+
 local function SlotCard(scope: Scope, props: Props): Instance
 	local hasCharacter = scope:Computed(function(use): boolean
 		return use(props.Summary) ~= nil
@@ -199,6 +281,10 @@ local function SlotCard(scope: Scope, props: Props): Instance
 				local summary = use(props.Summary)
 				if summary then
 					return occupied(innerScope, props, summary)
+				end
+				local passKey = if props.Pass ~= nil then use(props.Pass) else nil
+				if props.Locked ~= nil and use(props.Locked) and passKey ~= nil then
+					return locked(innerScope, props, passKey)
 				end
 				return empty(innerScope, props)
 			end) :: any,

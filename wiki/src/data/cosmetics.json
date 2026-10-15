@@ -32,7 +32,13 @@
     {"color":"#8A4A26","color2":"#4E7A34","icon":"❦","id":"mountskin_meadow","kind":"mountskin","name":{"en":"Meadow Colours","pl":"Barwy Łąk"}},
     {"color":"#8E949C","color2":"#9FD8F5","icon":"🐉","id":"mountskin_dragonslayer","kind":"mountskin","name":{"en":"Dragonslayer's Colours","pl":"Barwy Pogromcy Smoka"}},
     {"color":"#B8E07A","color2":"#F4F0E8","icon":"❀","id":"mountskin_spring","kind":"mountskin","name":{"en":"First Spring Tack","pl":"Rząd Pierwszej Wiosny"}},
-    {"color":"#8A8884","color2":"#7FB8FF","icon":"🏮","id":"mountskin_lantern","kind":"mountskin","name":{"en":"Lantern Warden's Caparison","pl":"Czaprak straży latarń"}}
+    {"color":"#8A8884","color2":"#7FB8FF","icon":"🏮","id":"mountskin_lantern","kind":"mountskin","name":{"en":"Lantern Warden's Caparison","pl":"Czaprak straży latarń"}},
+    {"color":"#FFB04A","color2":"#FFE3A0","icon":"✺","id":"aura_vip_hearth","kind":"aura","name":{"en":"Hearthglow","pl":"Blask Ogniska"}},
+    {"color":"#EAF6FF","color2":"#9ED8FF","icon":"❄","id":"trail_vip_snowfall","kind":"trail","name":{"en":"Snowfall","pl":"Śnieżna Zamieć"}},
+    {"color":"#CFE3FF","icon":"✧","id":"weapon_vip_starlight","kind":"weapon","name":{"en":"Starlit Edge","pl":"Gwiezdne Ostrze"}},
+    {"color":"#B3263A","icon":"❀","id":"aura_vip_bloodrose","kind":"aura","name":{"en":"Blood Rose","pl":"Krwawa Róża"}},
+    {"color":"#8FD18B","color2":"#E8F6E0","icon":"≋","id":"trail_vip_thaw","kind":"trail","name":{"en":"Thaw","pl":"Roztopy"}},
+    {"color":"#1F2E5A","color2":"#E8C25A","icon":"♛","id":"outfit_vip_herald","kind":"outfit","name":{"en":"Herald's Garb","pl":"Strój Herolda"},"parts":["cape","crown"]}
   ],
   "kinds": [
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},

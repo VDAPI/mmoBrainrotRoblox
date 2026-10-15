@@ -52,13 +52,14 @@ local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
 -- "◀ title ▶" picker (S16): cycles through none + the unlocked titles, saved with SetTitle.
 local function TitlePicker(scope: Scope, order: number): Instance
 	local character = State.Value({ "character" })
+	local vip = State.Value({ "vip", "active" }) -- S121: the VIP title
 	local unlocked = scope:Computed(function(use): { string }
 		local c = use(character)
-		return if c then Titles.unlocked(c) else {}
+		return if c then Titles.unlocked(c, nil, { vip = use(vip) == true }) else {}
 	end)
 	local current = scope:Computed(function(use): string?
 		local c = use(character)
-		return if c then Titles.shown(c) else nil
+		return if c then Titles.shown(c, nil, { vip = use(vip) == true }) else nil
 	end)
 	local medal = scope:Computed(function(use): string?
 		local id = use(current)

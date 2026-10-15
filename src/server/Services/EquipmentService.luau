@@ -210,7 +210,7 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 	end
 	local equipment = char.equipment
 	local inventory = char.inventory
-	local capacity = InventoryService.CapacityOf(char)
+	local capacity = InventoryService.CapacityOf(char, player)
 
 	-- Off-hand is blocked by a two-handed weapon.
 	if slot == "offhand" then
@@ -223,7 +223,8 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 
 	-- Backpacks: the current contents (plus the old backpack) must fit the new capacity.
 	if slot == "backpack" then
-		local newCapacity = def.capacity or capacity
+		-- S121: Logic/Inventory.capacityOf (with Merchant's Pockets)
+		local newCapacity = InventoryService.CapacityFor(player, def.id)
 		local used = Inventory.used(inventory) -- the new backpack leaves, the old one takes its place
 		if used > newCapacity then
 			return false, "equip.error.backpackFit"
@@ -234,6 +235,15 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 		item.bound = true
 		if old then
 			inventory[key] = old
+			-- S121: a backpack equipped from an overflow slot never leaves the old one in the overflow (the used
+			-- count fits newCapacity, so a slot is free there)
+			if index > newCapacity then
+				local free = Inventory.firstFree(inventory, newCapacity)
+				if free then
+					inventory[key] = nil
+					inventory[tostring(free)] = old
+				end
+			end
 		end
 		if newCapacity < capacity then
 			Inventory.compact(inventory, newCapacity)
@@ -250,10 +260,25 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 		offhandToStore = equipment.offhand
 	end
 
+	-- S121: equipping from an overflow slot never puts anything back into the overflow.
+	local fromOverflow = index > capacity
+	if fromOverflow then
+		local needed = (if equipment[slot] then 1 else 0) + (if offhandToStore then 1 else 0)
+		if Inventory.freeSlots(inventory, capacity) < needed then
+			return false, "equip.error.full"
+		end
+	end
 	local previous = equipment[slot]
 	inventory[key] = previous -- swap (nil when the slot was empty)
+	if fromOverflow and previous then
+		local free = Inventory.firstFree(inventory, capacity) :: number
+		inventory[key] = nil
+		InventoryService.SetSlot(player, free, previous)
+	end
 	if offhandToStore then
-		local free = if inventory[key] == nil then index else Inventory.firstFree(inventory, capacity)
+		local free = if inventory[key] == nil and not fromOverflow
+			then index
+			else Inventory.firstFree(inventory, capacity)
 		if not free then
 			inventory[key] = item -- undo
 			return false, "equip.error.full"
@@ -283,7 +308,7 @@ function EquipmentService.Unequip(player: Player, slot: string, targetIndex: num
 	if not item then
 		return false, "error.badRequest"
 	end
-	local capacity = InventoryService.CapacityOf(char)
+	local capacity = InventoryService.CapacityOf(char, player)
 	local index: number? = nil
 	if
 		targetIndex

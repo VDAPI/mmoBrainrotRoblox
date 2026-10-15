@@ -1,6 +1,6 @@
 --!strict
 -- Monetisation (DESIGN §21), without pay-to-win: Dragon Shard packs and the instant respawn are Developer
--- Products, four Gamepasses, and the premium shop that sells services for shards.
+-- Products, Gamepasses, the VIP subscription (S121) and the premium shop that sells services for shards.
 --
 -- IDs ARE PLACEHOLDERS (0). The owner creates the products and passes in the Creator Hub
 -- (Monetization -> Developer Products / Passes) and pastes the ids here. With id 0 (or in Studio) the
@@ -9,7 +9,20 @@
 -- only purchase rule (shop window and server).
 
 export type ShardPack = { key: string, productId: number, shards: number, robux: number }
-export type Pass = { key: string, passId: number, robux: number, icon: string }
+export type Pass = {
+	key: string,
+	passId: number,
+	robux: number,
+	icon: string,
+	-- S121: nil = enabled; false = hidden in the shop and on the wiki, the server refuses the purchase (owners keep it)
+	enabled: boolean?,
+	-- S121: key of the pass that must be owned first (Character Slot 5 needs Character Slot 4)
+	requires: string?,
+}
+-- S121: Experience Subscription (Creator Hub -> Monetization -> Subscriptions). The price is a Roblox price tier set in
+-- the Creator Hub, not here; paste the id (EXP-...) into subscriptionId. Empty id: simulated in Studio, "coming soon" on
+-- live servers.
+export type Subscription = { key: string, subscriptionId: string, enabled: boolean }
 export type ShopCat = "scroll" | "service" | "consumable" | "backpack"
 export type ShopEntry = {
 	key: string,
@@ -39,7 +52,19 @@ local PASSES: { Pass } = {
 	{ key = "autoLoot", passId = 0, robux = 199, icon = "✋" },
 	{ key = "vault", passId = 0, robux = 149, icon = "▤" },
 	{ key = "fastRespawn", passId = 0, robux = 99, icon = "⟲" },
-	{ key = "vip", passId = 0, robux = 399, icon = "★" },
+	-- S121: kept as "VIP forever" (owner decides; it would also grant the daily shards forever). The VIP is the
+	-- subscription in SUBSCRIPTIONS.
+	{ key = "vip", passId = 0, robux = 399, icon = "★", enabled = false },
+	-- S121 (DESIGN-17 §2): comfort passes.
+	{ key = "pockets", passId = 0, robux = 249, icon = "▣" }, -- +POCKETS_SLOTS in every backpack
+	{ key = "slot4", passId = 0, robux = 99, icon = "♟" }, -- character slot 4 (SLOT_PASSES)
+	{ key = "slot5", passId = 0, robux = 149, icon = "♟", requires = "slot4" }, -- character slot 5
+	{ key = "wardrobePlus", passId = 0, robux = 79, icon = "♛" }, -- OUTFITS_PLUS saved looks instead of OUTFITS_FREE
+}
+
+-- S121: Experience Subscriptions (see the Subscription type).
+local SUBSCRIPTIONS: { Subscription } = {
+	{ key = "vip", subscriptionId = "", enabled = true },
 }
 
 local SHOP: { ShopEntry } = {
@@ -89,6 +114,10 @@ for _, entry in SHOP do
 	shopByKey[entry.key] = entry
 	table.insert(shopByCat[entry.cat], entry)
 end
+local subByKey: { [string]: Subscription } = {}
+for _, sub in SUBSCRIPTIONS do
+	subByKey[sub.key] = sub
+end
 local mountByKey: { [string]: MountProduct } = {}
 for _, entry in MOUNTS do
 	mountByKey[entry.key] = entry
@@ -98,6 +127,7 @@ return table.freeze({
 	shardPacks = SHARD_PACKS,
 	respawn = RESPAWN_PRODUCT,
 	passes = PASSES,
+	subscriptions = SUBSCRIPTIONS,
 	shop = SHOP,
 	shopCats = SHOP_CATS,
 	mounts = MOUNTS,
@@ -106,6 +136,9 @@ return table.freeze({
 	end,
 	getPass = function(key: string): Pass?
 		return passByKey[key]
+	end,
+	getSubscription = function(key: string): Subscription?
+		return subByKey[key]
 	end,
 	getShop = function(key: string): ShopEntry?
 		return shopByKey[key]
@@ -119,4 +152,10 @@ return table.freeze({
 	end,
 	VAULT_PASS_SLOTS = 60,
 	AUTO_LOOT_RANGE = 15,
+	-- S121 (DESIGN-17 §2)
+	POCKETS_SLOTS = 10, -- Merchant's Pockets: extra slots in every backpack (Logic/Inventory.capacityOf)
+	OUTFITS_FREE = 1, -- saved looks without Wardrobe+
+	OUTFITS_PLUS = 5, -- saved looks with Wardrobe+
+	-- passes needed to CREATE a character on a slot above Config.FreeCharacters (playing one never needs them)
+	SLOT_PASSES = table.freeze({ [4] = { "slot4" }, [5] = { "slot4", "slot5" } }) :: { [number]: { string } },
 })

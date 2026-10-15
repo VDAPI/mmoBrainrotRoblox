@@ -32,6 +32,7 @@ export type Ctx = {
 	ShowModal: (spec: any) -> (),
 	OpenWardrobe: (start: { kind: string?, try: string? }?) -> (),
 	Select: (tab: string) -> (),
+	OpenVip: (() -> ())?, -- S121: the VIP window
 }
 
 export type CardSpec = {
@@ -233,11 +234,28 @@ function Cards.note(scope: Scope, order: number, textKey: string): Instance
 	})
 end
 
--- A Robux request (BuyProduct / BuyPass): the server opens the native prompt (or simulates in Studio).
+-- S121: error arguments from a handler's third result; "@key" values are localization keys (like toasts).
+function Cards.resolveArgs(args: any): { [string]: any }?
+	if type(args) ~= "table" then
+		return nil
+	end
+	local out = {}
+	for name, value in args do
+		if type(value) == "string" and string.sub(value, 1, 1) == "@" then
+			out[name] = Text.now(string.sub(value, 2))
+		else
+			out[name] = value
+		end
+	end
+	return out
+end
+
+-- A Robux request (BuyProduct / BuyPass / BuySubscription): the server opens the native prompt (or simulates in
+-- Studio).
 function Cards.invoke(name: string, ...: any)
 	local args = table.pack(...)
 	task.spawn(function()
-		local ok, err = Net.Invoke(name, table.unpack(args, 1, args.n))
+		local ok, err, errArgs = Net.Invoke(name, table.unpack(args, 1, args.n))
 		if ok then
 			if err then
 				-- the native prompt is open (premium.prompted): no sound until something is granted
@@ -247,7 +265,7 @@ function Cards.invoke(name: string, ...: any)
 			end
 		else
 			Sounds.play("error")
-			Toast.push(Text.now(err or "error.internal"), "error")
+			Toast.push(Text.now(err or "error.internal", Cards.resolveArgs(errArgs)), "error")
 		end
 	end)
 end

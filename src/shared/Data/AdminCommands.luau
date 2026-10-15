@@ -406,6 +406,8 @@ cmd("economy", "setgold", { int("amount", 0, BIG) })
 cmd("economy", "setshards", { int("amount", 0, BIG) })
 cmd("economy", "pass", { ref("pass", "pass"), enum("mode", { "on", "off" }) })
 cmd("economy", "premium", { enum("action", { "grant" }), ref("pass", "pass") })
+-- S121: VIP test (a session-only subscription), its state, today's benefits again, a month's cosmetic
+cmd("economy", "vip", { enum("action", { "on", "off", "status", "reset", "month" }), str("month", true) })
 -- S120: the caller's premium shop limit counters (account.shopLimits)
 cmd("economy", "shoplimits", { enum("action", { "show", "reset" }) })
 cmd("economy", "bless", { ref("id", "blessing", true) })

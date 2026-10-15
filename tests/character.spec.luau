@@ -136,6 +136,30 @@ T.describe("AccountSchema", function()
 		T.expect(data.characters["1"].quests.daily.list).toEqual({})
 	end)
 
+	T.it("S121: vip and outfits come from the template without a migration, nothing saved is overwritten", function()
+		T.expect(AccountSchema.CURRENT).toBe(8)
+		local template = AccountSchema.accountTemplate()
+		T.expect(template.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
+		T.expect(template.outfits).toEqual({})
+		local old: any = { schema = AccountSchema.CURRENT, characters = {}, dragonShards = 5 }
+		AccountSchema.migrate(old)
+		T.expect(old.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
+		T.expect(old.outfits).toEqual({})
+		local look = { equipped = { aura = "aura_gold" }, pet = "pet_wolf" }
+		local saved: any = {
+			schema = AccountSchema.CURRENT,
+			characters = {},
+			vip = { shardDay = 20000, respawnDay = 0, respawnN = 0, recallAt = 0, months = { ["202611"] = true } },
+			outfits = { look },
+		}
+		AccountSchema.migrate(saved)
+		T.expect(saved.vip.months).toEqual({ ["202611"] = true })
+		T.expect(saved.vip.shardDay).toBe(20000)
+		T.expect(saved.outfits).toEqual({ { equipped = { aura = "aura_gold" }, pet = "pet_wolf" } })
+		T.expect(CharacterFactory.slotKey(5)).toBe("5")
+		T.expect(CharacterFactory.slotKey(6)).toBeNil()
+	end)
+
 	T.it("S98: old characters get the weekly and contract branches, side quests untouched", function()
 		local side = { active = { side_granary = { progress = { 1 }, used = {} } }, done = { side_fence = true } }
 		local data: any = {

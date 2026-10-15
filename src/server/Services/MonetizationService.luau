@@ -9,6 +9,15 @@
 -- server so everything is testable without Robux; on live servers id 0 is refused. Admins grant passes with /premium grant.
 -- S97: premium mounts (Data/Products.mounts, handlers registered by MountService) are sold only while enabled
 -- (Logic/Premium.canBuyMount), even in Studio; today none is.
+--   Subscriptions (S121, DESIGN-17 §2): the VIP is an Experience Subscription (Data/Products.subscriptions). Its status
+--              is read from MarketplaceService:GetUserSubscriptionStatusAsync (always in pcall; an error keeps the last
+--              known value and retries on the next check) on join, on Players.UserSubscriptionStatusChanged, on
+--              PromptSubscriptionPurchaseFinished and every Config.Vip.statusRefresh seconds. Roblox issues no receipts
+--              for subscriptions (no ProcessReceipt). HasVip = an active VIP subscription or the "vip" pass ("VIP
+--              forever", switched off in Data/Products until the owner decides). Replicated as the player attribute
+--              "Vip" and the state branch `vip` = { active, sub, pass, renewing?, endsAt? }; VipChanged fires on change.
+--              An empty subscriptionId is simulated in Studio and refused (premium.error.notConfigured) on live servers;
+--              /vip on|off (admin) sets a session-only test subscription.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -18,6 +27,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Premium = require(Shared.Logic.Premium)
@@ -31,9 +41,11 @@ local MonetizationService = {
 	Deps = { "DataService", "PlayerStateService" },
 	-- (player, passKey, owned) when a pass is bought or granted.
 	PassChanged = Signal.new(),
+	-- (player, active) when HasVip changes (subscription or the "vip" pass), S121.
+	VipChanged = Signal.new(),
 }
 
-export type PassId = "fastRespawn" | "autoLoot" | "vault" | "vip"
+export type PassId = "fastRespawn" | "autoLoot" | "vault" | "vip" | "pockets" | "slot4" | "slot5" | "wardrobePlus"
 
 local RECEIPT_KEEP = 90 * 86400
 
@@ -41,6 +53,12 @@ local DataService: any
 local PlayerStateService: any
 
 local owned: { [Player]: { [string]: boolean } } = {}
+-- S121: subscription status from the API (key -> status) and the session-only test subscriptions (admin, Studio).
+type SubStatus = { active: boolean, renewing: boolean?, endsAt: number? }
+local subs: { [Player]: { [string]: SubStatus } } = {}
+local testSubs: { [Player]: { [string]: boolean } } = {}
+-- The last published HasVip per player (VipChanged fires only on a change).
+local vipNow: { [Player]: boolean } = {}
 -- Product kinds other than shard packs: "respawn" -> handler(player) -> granted?
 local productHandlers: { [string]: (player: Player) -> boolean } = {}
 
@@ -49,17 +67,54 @@ local function simulated(): boolean
 	return RunService:IsStudio()
 end
 
-local function publish(player: Player)
-	local passes: { [string]: boolean } = owned[player] or {}
-	player:SetAttribute("Vip", passes.vip == true)
-	if PlayerStateService.HasState(player) then
-		PlayerStateService.Set(player, { "passes" }, table.clone(passes))
-	end
-end
-
 function MonetizationService.HasPass(player: Player, passId: PassId): boolean
 	local passes = owned[player]
 	return passes ~= nil and passes[passId] == true
+end
+
+-- S121: a copy of the owned passes (Logic/Premium rules that take the whole set: slots, looks).
+function MonetizationService.Passes(player: Player): { [string]: boolean }
+	return table.clone(owned[player] or {})
+end
+
+-- S121: an active subscription `key` (a test one, or the API status).
+function MonetizationService.HasSubscription(player: Player, key: string): boolean
+	local test = testSubs[player]
+	if test and test[key] == true then
+		return true
+	end
+	local mine = subs[player]
+	local status = if mine then mine[key] else nil
+	return status ~= nil and status.active == true
+end
+
+-- S121 (DESIGN-17 §2): VIP = the subscription or the "vip" pass.
+function MonetizationService.HasVip(player: Player): boolean
+	return MonetizationService.HasSubscription(player, "vip") or MonetizationService.HasPass(player, "vip")
+end
+
+local function publish(player: Player)
+	local passes: { [string]: boolean } = owned[player] or {}
+	local vip = MonetizationService.HasVip(player)
+	player:SetAttribute("Vip", vip)
+	if PlayerStateService.HasState(player) then
+		PlayerStateService.Set(player, { "passes" }, table.clone(passes))
+		local test = testSubs[player]
+		local testOn = test ~= nil and test.vip == true
+		local mine = subs[player]
+		local status: SubStatus? = if mine and not testOn then mine.vip else nil
+		PlayerStateService.Set(player, { "vip" }, {
+			active = vip,
+			sub = MonetizationService.HasSubscription(player, "vip"),
+			pass = MonetizationService.HasPass(player, "vip"),
+			renewing = if status and status.active then status.renewing else nil,
+			endsAt = if status and status.active then status.endsAt else nil,
+		})
+	end
+	if player.Parent == Players and (vipNow[player] == true) ~= vip then
+		vipNow[player] = vip
+		MonetizationService.VipChanged:Fire(player, vip)
+	end
 end
 
 local function setPass(player: Player, passKey: string, value: boolean)
@@ -73,6 +128,14 @@ end
 -- Test helper for admin commands (/pass, /premium grant).
 function MonetizationService.SetTestPass(player: Player, passId: string, value: boolean)
 	setPass(player, passId, value)
+end
+
+-- S121: a session-only test subscription (admin /vip on|off; the simulated purchase in Studio). Never saved.
+function MonetizationService.SetTestSubscription(player: Player, key: string, value: boolean)
+	local test = testSubs[player] or {}
+	test[key] = if value then true else nil
+	testSubs[player] = test
+	publish(player)
 end
 
 function MonetizationService.RegisterProduct(kind: string, handler: (player: Player) -> boolean)
@@ -173,13 +236,19 @@ local function buyProduct(player: Player, key: string): (boolean, string?)
 	return true, "premium.prompted"
 end
 
-local function buyPass(player: Player, key: string): (boolean, string?)
+-- Errors may carry toast arguments as a third value (premium.error.requires names the pass to buy first).
+local function buyPass(player: Player, key: string): (boolean, string?, { [string]: any }?)
 	local pass = Products.getPass(key)
 	if not pass then
-		return false, "error.badRequest"
+		return false, "error.badRequest", nil
 	end
-	if MonetizationService.HasPass(player, key :: PassId) then
-		return false, "premium.error.owned"
+	-- S121: a switched-off pass (VIP forever) is refused even in Studio; slot 5 needs slot 4 first.
+	local ok, err = Premium.canBuyPass(key, owned[player] or {})
+	if not ok then
+		local args = if err == "premium.error.requires" and pass.requires
+			then { pass = `@premium.pass.{pass.requires}` }
+			else nil
+		return false, err, args
 	end
 	if simulated() then
 		setPass(player, key, true)
@@ -191,6 +260,79 @@ local function buyPass(player: Player, key: string): (boolean, string?)
 	end
 	MarketplaceService:PromptGamePassPurchase(player, pass.passId)
 	return true, "premium.prompted"
+end
+
+-- S121: the VIP subscription prompt (or the simulated purchase in Studio).
+local function buySubscription(player: Player, key: string): (boolean, string?)
+	local sub = Products.getSubscription(key)
+	local ok, err = Premium.canBuySubscription(key, MonetizationService.HasSubscription(player, key))
+	if not ok or not sub then
+		return false, err or "error.badRequest"
+	end
+	if simulated() then
+		MonetizationService.SetTestSubscription(player, key, true)
+		Net.Fire(player, "Toast", "premium.subGranted", { name = `@premium.sub.{key}` }, "success")
+		log:info("simulated subscription %s for %s", key, player.Name)
+		return true, nil
+	end
+	if sub.subscriptionId == "" then
+		return false, "premium.error.notConfigured"
+	end
+	local prompted = pcall(function()
+		-- typed as any: the subscription API may be missing from the analyzer's type definitions
+		(MarketplaceService :: any):PromptSubscriptionPurchase(player, sub.subscriptionId)
+	end)
+	if not prompted then
+		return false, "premium.error.notNow"
+	end
+	return true, "premium.prompted"
+end
+
+-- S121: the subscription status from the API. Names checked on create.roblox.com (MarketplaceService page, 2026-10):
+-- GetUserSubscriptionStatusAsync(player, id) -> { IsSubscribed, IsRenewing }, GetUserSubscriptionPaymentHistoryAsync
+-- (player, id) -> { { PaymentStatus, CycleStartTime: DateTime, CycleEndTime: DateTime } }. Every call is in pcall: an
+-- error keeps the last known value (first time: none) and the next check tries again.
+local function loadSubscriptions(player: Player)
+	for _, sub in Products.subscriptions do
+		if not sub.enabled or sub.subscriptionId == "" then
+			continue
+		end
+		local ok, result = pcall(function(): any
+			return (MarketplaceService :: any):GetUserSubscriptionStatusAsync(player, sub.subscriptionId)
+		end)
+		if player.Parent ~= Players then
+			return
+		end
+		if not ok or type(result) ~= "table" then
+			log:warn("subscription status %s for %s failed: %s", sub.key, player.Name, tostring(result))
+			continue
+		end
+		local status: SubStatus = { active = result.IsSubscribed == true, renewing = result.IsRenewing == true }
+		if status.active then
+			local okHistory, history = pcall(function(): any
+				return (MarketplaceService :: any):GetUserSubscriptionPaymentHistoryAsync(player, sub.subscriptionId)
+			end)
+			if okHistory and type(history) == "table" then
+				local latest = 0
+				for _, entry in history do
+					local cycleEnd = if type(entry) == "table" then entry.CycleEndTime else nil
+					if typeof(cycleEnd) == "DateTime" then
+						latest = math.max(latest, (cycleEnd :: DateTime).UnixTimestamp)
+					end
+				end
+				status.endsAt = if latest > 0 then latest else nil
+			end
+		end
+		if player.Parent ~= Players then
+			return
+		end
+		local mine = subs[player] or {}
+		mine[sub.key] = status
+		subs[player] = mine
+	end
+	if player.Parent == Players then
+		publish(player)
+	end
 end
 
 local function loadPasses(player: Player)
@@ -228,14 +370,51 @@ function MonetizationService.Start()
 	)
 	Net.Handle("BuyProduct", buyProduct)
 	Net.Handle("BuyPass", buyPass)
+	Net.Handle("BuySubscription", buySubscription)
+
+	-- S121: subscription events (connected in pcall: an older API may lack them).
+	local okChanged, errChanged = pcall(function()
+		(Players :: any).UserSubscriptionStatusChanged:Connect(function(player: Player, _subscriptionId: string)
+			task.spawn(loadSubscriptions, player)
+		end)
+	end)
+	if not okChanged then
+		log:warn("UserSubscriptionStatusChanged unavailable: %s", tostring(errChanged))
+	end
+	local okFinished, errFinished = pcall(function()
+		(MarketplaceService :: any).PromptSubscriptionPurchaseFinished:Connect(
+			function(player: Player, _subscriptionId: string, _didTry: boolean)
+				task.spawn(loadSubscriptions, player)
+			end
+		)
+	end)
+	if not okFinished then
+		log:warn("PromptSubscriptionPurchaseFinished unavailable: %s", tostring(errFinished))
+	end
 
 	for _, player in Players:GetPlayers() do
 		task.spawn(loadPasses, player)
+		task.spawn(loadSubscriptions, player)
 	end
-	Players.PlayerAdded:Connect(loadPasses)
+	Players.PlayerAdded:Connect(function(player: Player)
+		task.spawn(loadSubscriptions, player)
+		loadPasses(player)
+	end)
 	PlayerStateService.Ready:Connect(publish)
 	Players.PlayerRemoving:Connect(function(player)
 		owned[player] = nil
+		subs[player] = nil
+		testSubs[player] = nil
+		vipNow[player] = nil
+	end)
+	-- S121: safety re-check of the subscription status while in game (spread around the interval; not a game roll).
+	task.spawn(function()
+		while true do
+			task.wait(Config.Vip.statusRefresh * (0.9 + 0.2 * math.random()))
+			for _, player in Players:GetPlayers() do
+				task.spawn(loadSubscriptions, player)
+			end
+		end
 	end)
 end
 
