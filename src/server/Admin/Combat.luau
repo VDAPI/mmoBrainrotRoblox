@@ -19,6 +19,10 @@ local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
 
 local Context = require(script.Parent.Context)
+local Matchmaker = require(script.Parent.Parent.Arena.Matchmaker)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
+local Transfer = require(script.Parent.Parent.Arena.Transfer)
+local Venues = require(script.Parent.Parent.Arena.Venues)
 
 local reply = Context.reply
 local withCharacter = Context.withCharacter
@@ -36,6 +40,8 @@ local PartyAuraService = Context.services.PartyAuraService
 local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
 local ArenaService = Context.services.ArenaService
+local WorldService = Context.services.WorldService
+local TravelService = Context.services.TravelService
 local AdminService = Context.services.AdminService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
@@ -139,6 +145,50 @@ commands.pvp = function(player, args)
 		PvpService.Force(player, mode == "on")
 		reply(player, if mode == "on" then "admin.pvp.on" else "admin.pvp.off")
 	end)
+end
+
+-- S127: /arenanet status | offline | online | pit | home
+commands.arenanet = function(player, args: { string })
+	local op = args[1]
+	if op == "status" then
+		local s = Matchmaker.Status()
+		local parts = {}
+		for bracket, n in s.queued do
+			table.insert(parts, `{bracket}: {n}`)
+		end
+		table.sort(parts)
+		reply(player, "admin.arenanet.status", {
+			mode = ServerMode.get(),
+			ref = ServerMode.ref() or "-",
+			backend = s.backend,
+			queued = if #parts > 0 then table.concat(parts, ", ") else "0",
+			offers = s.offers,
+			err = s.err,
+		})
+	elseif op == "offline" or op == "online" then
+		Matchmaker.SetOffline(op == "offline")
+		reply(player, if op == "offline" then "admin.arenanet.offline" else "admin.arenanet.online")
+	elseif op == "pit" then
+		if not ServerMode.isWorld() then
+			reply(player, "arena.net.error.notHere")
+			return
+		end
+		-- the arena map on this world server, for a look only (the next login elsewhere lands in the capital)
+		if not WorldService.IsBuilt("arena_pit") then
+			WorldService.Rebuild("arena_pit")
+		end
+		local venue = Venues.get("pit")
+		task.spawn(TravelService.TeleportToMap, player, venue.map, venue:spawnCFrame(1, 1))
+		reply(player, "admin.arenanet.pit")
+	elseif op == "home" then
+		if ServerMode.isWorld() then
+			reply(player, "admin.arenanet.notArena")
+			return
+		end
+		Transfer.homeAll("arena.net.returned")
+	else
+		reply(player, "admin.usage.arenanet")
+	end
 end
 
 -- S126: /arena info | rating <n> | reset | season | queue | match <player> | stop [player]

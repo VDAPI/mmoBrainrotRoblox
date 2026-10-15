@@ -17,6 +17,7 @@ local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Npcs = require(Shared.Data.Npcs)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Footing = require(Shared.Logic.Footing)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
@@ -251,6 +252,9 @@ function NpcService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "Npcs"
 	folder.Parent = world
+	if not ServerMode.isWorld() then
+		return -- S127: no NPCs on arena/tournament servers (the empty folder: clients wait for it)
+	end
 	local function place(def: Npcs.NpcDef)
 		if def.body == "board" then
 			buildBoard(def, folder)

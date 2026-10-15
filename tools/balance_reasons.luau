@@ -141,6 +141,7 @@ return {
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
+		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
 		["Data/Portals"] = "świat",
 		["Data/Npcs"] = "świat",
 		["Data/Keybinds"] = "świat",
@@ -4127,6 +4128,13 @@ return {
 		},
 		["Arena:MIN_LEVEL"] = {
 			{ session = "S126", why = "DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket)" },
+		},
+		-- S127 (DESIGN-17 §6): the arena server map; its level range is the arena's brackets (not a hunting ground)
+		["Maps:byId.arena_pit*"] = {
+			{
+				session = "S127",
+				why = "the arena server map arena_pit: levels 20-100 = Data/Arena brackets, built only on arena and tournament servers",
+			},
 		},
 	} :: { [string]: { Reason } },
 }

@@ -4033,3 +4033,61 @@
   `DeathService.Recall` od razu stawia go na jego miejscu na piasku (bez licznika, wyboru i ochrony po odrodzeniu);
   `ArenaService` zależy od `DeathService`. Start meczu przy wolnym piasku sprawdza też walkę (`InCombat`, jak pojedynek
   S14): zawodnik w walce odwołuje mecz bez kary, drugi wraca do kolejki.
+- **S127** Nazwy S126 użyte bez zmian (`ArenaRules.bracketOf`, `window`, `pair`, typy `Ticket` / `Pairing` /
+  `MatchSpec`, `Arena/Types.PairSource` / `Host`, `AddSource`, `SetHost`, `RunMatch`, `ArenaRespond`, `ArenaOffer`,
+  `arenaLive`). `Matchmaker` jest `PairSource` „global” (pierwsze źródło), `RemoteHost` to `Host` „remote”, mecz na
+  serwerze areny przez `RunMatch(spec, "pit")` na nowym `Data/Arena.VENUES.pit`. `PairSource` dostał opcjonalne `info` i
+  `scope`. `Join` S126 próbuje następnego źródła tylko po błędzie magazynu (bez klucza błędu); kara i „już w kolejce”
+  nie przechodzą do kolejki lokalnej.
+- **S127** Atrapa `Logic/MemoryFake` na `Leaderboard.memoryBoard` S124 (dopisane `range`). Żywa SortedMap nie idzie przez
+  `Stores.sorted` S124/S125: ta ma prefiks tablic rankingu, kształt `{ s, m }`, własny przełącznik atrapy od dostępu do
+  DataStore i nie zwraca wartości sprzed zapisu; `Matchmaker` ma własny cienki dostęp (każde wywołanie przez
+  `Retry.call`). `update` / `hupdate` zwracają też wartość, którą widziała ostatnia transformacja (`ArenaQueue.changed`).
+- **S127** Wpis kolejki opakowuje bilet S126 (`Entry.ticket`), zamiast płaskiego `{ key, rating, jobId, t }` z kontraktu.
+  Dobór globalny tym samym warunkiem co `ArenaRules.pair` (większe z dwóch okien), parę zakłada serwer dłużej
+  czekającego. Czas wszędzie z `Workspace:GetServerTimeNow()` (jak bilety S126), nie `os.time()`.
+- **S127** Atomowość: przejęcie dwóch wpisów `UpdateAsync` w stałej kolejności kluczy z wycofaniem pierwszego,
+  przejęcie żyje `claimHold` s (potem `refresh` właściciela je zwalnia), rekord meczu zapisywany tylko, gdy nie istnieje;
+  powrót do kolejki oddaje tylko przejęcie tego meczu (`ArenaQueue.release`). `go` / `cancel` wysyła tylko serwer, którego
+  zapis zmienił stan. Wiadomość „offer”, która zginęła, wykrywa odczyt zakresu (własny wpis przejęty → odczyt rekordu).
+- **S127** Rezerwacja serwera przed ofertą (tania, serwer nie startuje bez graczy), potem wpis rejestru
+  `ReservedServers[PrivateServerId] = { mode, ref }` (przed rekordem). Tryb zarezerwowanego serwera z rejestru, a
+  `TeleportData` pierwszego gracza tylko jako zapas; serwer bez wiedzy o trybie startuje jako świat (DESIGN-17 §6
+  poprawione).
+- **S127** Para na jednym serwerze (i całe Studio, atrapa nie rezerwuje) idzie przez `take` do przebiegu S126 na
+  Ristalle, bez teleportu i rekordu. Po 45 s globalnego czekania propozycja lokalnej walki z kimś z tego serwera poza
+  oknem (`Pairing.fallback`): odmowa bez kary, obaj czekają dalej, para się unika przez czas kary.
+- **S127** Brak odpowiedzi w trakcie walki (stan walki widziany w czasie oferty): anulowanie bez kary i wyjście z kolejki;
+  dotyczy też ofert lokalnych S126 (zmiana S126). Karta propozycji dostaje `offer.combat` z serwera (klient nie zna stanu
+  walki) i blokuje „Akceptuj”. Wyjście z gry w trakcie oferty globalnej = odmowa „left” z karą, tylko gdy ten zapis anulował
+  ofertę (przeciwnik odmówił wcześniej: bez kary; błąd magazynu: kara zostaje); w ofercie lokalnej S126 bez kary.
+- **S127** Nieprzybycie na serwer areny w 60 s: mecz anulowany bez zmiany ratingu, obecny wraca, nieobecny dostaje karę w
+  `ArenaPenalty`, chyba że rekord ma już powód `teleport` (jego serwer zgłosił błąd przenosin). Błąd teleportu na arenę:
+  anulowanie bez kary i powrót do kolejki z tym samym miejscem.
+- **S127** Lokalizacja postaci na serwerze areny tylko w pamięci (`Runtime.home` w `CharacterService`): pozycja się nie
+  zapisuje, a stara lokalizacja wraca do profilu przed odesłaniem i w `ProfileReleasing` po `CharacterLeaving:Fire`
+  (przegraną wychodzącego zapisuje S126). Awaria serwera areny = następne wejście w stolicy (mapa niezbudowana).
+- **S127** Powrót przez `TeleportAsync` z `TeleportOptions.ServerInstanceId = returnJob` (odpowiednik
+  `TeleportToPlaceInstance` z kontraktu, z `TeleportData`), 3 próby, potem 3 próby dowolnego publicznego, na końcu kick z
+  tekstem PL/EN. Po powrocie serwer świata sam wybiera postać (`TeleportData.arenaReturn` + `slot`) i pokazuje wynik z
+  najnowszego wpisu historii, tylko gdy serwer areny zgłosił wynik (`TeleportData.arenaDone`); mecz anulowany: sam
+  `arena.net.backPlain`. Zamknięcie serwera areny w trakcie meczu przerywa mecz bez ratingu (nie walkower).
+- **S127** Na serwerze areny wyłączone: NPC (pusty `World.Npcs`), potwory, wydarzenia świata, podróż (strażnik
+  `TravelService.AddGuard` S126; `TeleportToMap` zostaje dla `Arena/Match`), pojedynki, wybór / tworzenie / usuwanie /
+  zmiana postaci, kolejka areny, okno nagrody za logowanie i wpisy menu mapy, dziennika i wierzchowców. Eliksir Pełni i
+  Płaszcz: drugi warunek powodu `arena` (`UseGuards`, właściciel `ServerMode`), `UseBlocks.LATER` pusty. Lochy, zbieractwo,
+  łowiska i Płaszcz nie potrzebują strażnika (bez zbudowanych map nic nie działa).
+- **S127** `Data/ArenaPit` jako osobny moduł `NOT_BALANCE` (geometria), `MapDef.serverModes` i `MapDef.hidden`; mapa
+  `arena_pit` ma powód w księdze (poziomy 20–100 = przedziały areny). `Specials.arena` wyeksportowana do trybun
+  `arena_pit` (wszystkie poziomy detali na serwerze). Biom `grass` (bez skutków ubocznych `city`).
+- **S127** Moduły `src/server/Arena/*` to zwykłe moduły (nie serwisy); `ServerMode` rozstrzyga tryb w
+  `init.server.luau` przed loaderem i nie zależy od żadnego serwisu. `ArenaService.Deps` += `DataService` (zapis przed
+  teleportem; nic nie zależy od `ArenaService` poza `AdminService`), drużyna, handel i wierzchowiec kończą się zwykłym
+  wyjściem gracza (bez nowych zależności).
+- **S127** (przegląd) Mapa z `serverModes` nigdy nie trafia do `visitedMaps` (`TravelService.MarkVisited`) ani do
+  kamienia mapy (`toMap` odmawia, `StonePicker` pomija wpisy zapisane wcześniej); kontrakt `MapDef.serverModes`
+  („nigdy w podróży”), mimo „`TravelService` bez zmian” w S127 C6.
+- **S127** (przegląd) Fallback F1 bierze kandydatów z listy oczekujących tego serwera (`PairOptions.locals`), bez odczytu
+  zakresu całego przedziału (ten trzyma tylko `rangeCount` najniższych ratingów); przejęcia sprawdzają magazyn jak
+  zwykle. Serwer areny przy anulowaniu w trakcie czekania (rekord już nie `accepted` / `live`) odsyła z
+  `arena.net.cancelled.noShow` (nie z `arena.cancelled` S126, który obiecuje powrót do kolejki).

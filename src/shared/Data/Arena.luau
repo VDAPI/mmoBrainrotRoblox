@@ -5,6 +5,7 @@
 -- Pure data (Lune). Balance ledger: Data/Arena is in BALANCE_MODULES (VENUES omitted: geometry). Nothing here may
 -- depend on purchases (DESIGN-17 §0.2, tests/paywall.spec "Arena (S126)").
 
+local ArenaPit = require("./ArenaPit")
 local Town = require("./Town")
 
 export type Bracket = { id: string, min: number, max: number }
@@ -103,6 +104,28 @@ local function side(spot: { number }): { { number } }
 	return { { spot[1], spot[2] }, { spot[1], spot[2] - 8 }, { spot[1], spot[2] + 8 } }
 end
 
+-- S127: the sand of an arena server field (Data/ArenaPit), the same shape as the Ristalle.
+local function pitVenue(id: string, f: ArenaPit.Field): Venue
+	local offset = f.half + f.stands * 0.6
+	return {
+		id = id,
+		map = "arena_pit",
+		center = { f.x, f.z },
+		half = f.half,
+		sides = {
+			side({ f.x + f.starts[1][1], f.z + f.starts[1][2] }),
+			side({ f.x + f.starts[2][1], f.z + f.starts[2][2] }),
+		},
+		stands = {
+			{ f.x - offset, f.z - STAND_Z },
+			{ f.x - offset, f.z + STAND_Z },
+			{ f.x + offset, f.z - STAND_Z },
+			{ f.x + offset, f.z + STAND_Z },
+		},
+		exit = { f.x + f.exit[1], f.z + f.exit[2] },
+	}
+end
+
 local VENUES: { [string]: Venue } = {
 	ristalle = {
 		id = "ristalle",
@@ -118,6 +141,8 @@ local VENUES: { [string]: Venue } = {
 		},
 		exit = { PLAN.exit[1], PLAN.exit[2] },
 	},
+	-- S127: the arena server (map arena_pit, Data/ArenaPit layout "arena"); S130 adds pit_1 .. pit_4
+	pit = pitVenue("pit", ArenaPit.layout("arena").fields[1]),
 }
 
 local Arena = {

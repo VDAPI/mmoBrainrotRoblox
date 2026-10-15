@@ -50,6 +50,11 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 		local o = use(offer)
 		return o ~= nil and o.accepted == true
 	end)
+	-- S127: the server marks an offer whose player is in a fight (Accept waits; no answer then costs nothing)
+	local combat = scope:Computed(function(use): boolean
+		local o = use(offer)
+		return o ~= nil and o.combat == true
+	end)
 
 	return scope:New("Frame")({
 		Name = "ArenaOffer",
@@ -84,8 +89,21 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = Theme.Colors.GoldBright,
 			}),
+			-- S127: where the match is played (another server of all worlds, or this one)
 			scope:New("TextLabel")({
 				LayoutOrder = 2,
+				Size = UDim2.new(1, 0, 0, 18),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use): string
+					local o = use(offer)
+					return Text.get(use, if o and o.scope == "global" then "arena.scope.global" else "arena.net.local")
+				end),
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.Parchment,
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 3,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -110,7 +128,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 			}),
 			-- the time left to answer
 			scope:New("Frame")({
-				LayoutOrder = 3,
+				LayoutOrder = 4,
 				Size = UDim2.new(1, 0, 0, 6),
 				BackgroundColor3 = Theme.Colors.PanelRaised,
 				[Children] = {
@@ -130,7 +148,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				},
 			}),
 			scope:New("TextLabel")({
-				LayoutOrder = 4,
+				LayoutOrder = 5,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -148,7 +166,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Colors.Warning,
 			}),
 			scope:New("TextLabel")({
-				LayoutOrder = 5,
+				LayoutOrder = 6,
 				Size = UDim2.new(1, 0, 0, 24),
 				BackgroundTransparency = 1,
 				Visible = accepted,
@@ -158,7 +176,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Colors.Success,
 			}),
 			scope:New("Frame")({
-				LayoutOrder = 6,
+				LayoutOrder = 7,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
@@ -169,6 +187,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 						Position = UDim2.fromScale(0, 0),
 						Size = UDim2.new(0.5, -6, 1, 0),
 						Variant = "primary",
+						Disabled = combat,
 						Text = Text.T(scope, "arena.offer.accept"),
 						OnClick = function()
 							props.Respond(true)
@@ -187,13 +206,22 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				},
 			}),
 			scope:New("TextLabel")({
-				LayoutOrder = 7,
+				LayoutOrder = 8,
 				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					return not use(accepted)
 				end),
-				Text = Text.T(scope, "arena.offer.penaltyHint", { time = Time.format(Arena.QUEUE.declinePenalty) }),
+				-- S127: in a fight "finish it first"; a fallback offer costs nothing to decline
+				Text = scope:Computed(function(use): string
+					local o = use(offer)
+					if use(combat) then
+						return Text.get(use, "arena.net.combatBlock")
+					elseif o and o.fallback == true then
+						return Text.get(use, "arena.net.localDecline")
+					end
+					return Text.get(use, "arena.offer.penaltyHint", { time = Time.format(Arena.QUEUE.declinePenalty) })
+				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Colors.TextMuted,

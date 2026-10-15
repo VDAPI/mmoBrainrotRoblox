@@ -27,7 +27,8 @@ export type Entrant = {
 	played: number,
 }
 export type Ticket = { entrant: Entrant, mode: string, bracket: string, joinedAt: number }
-export type Pairing = { mode: string, bracket: string, sides: { { Ticket } } }
+-- `fallback` (S127): a local offer after the global wait (Logic/ArenaQueue.localOffer): declining it costs nothing.
+export type Pairing = { mode: string, bracket: string, sides: { { Ticket } }, fallback: boolean? }
 export type MatchSpec = {
 	id: string,
 	mode: string,

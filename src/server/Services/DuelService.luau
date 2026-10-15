@@ -20,6 +20,7 @@ local Net = require(Shared.Net)
 local Town = require(Shared.Data.Town)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Sand = require(script.Parent.Parent.Arena.Sand)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Types = require(Shared.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
 
@@ -258,6 +259,9 @@ startNext = function()
 end
 
 local function challenge(player: Player, userId: number): (boolean, string?)
+	if not ServerMode.isWorld() then
+		return false, "arena.net.error.notHere" -- S127: no duels on arena/tournament servers
+	end
 	local target = Players:GetPlayerByUserId(userId)
 	if not target or target == player or PlayerStateService.GetPhase(target) ~= "playing" then
 		return false, "party.error.notFound"

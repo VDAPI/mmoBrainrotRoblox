@@ -358,6 +358,9 @@ cmd(
 	{ enum("action", { "info", "rating", "reset", "season", "queue", "match", "stop" }), str("value", true) },
 	{ dangerActions = { "reset" } }
 )
+-- S127: the global arena queue and arena servers: state, the in-memory store on / off, a preview of the arena map,
+-- everybody home from an arena server
+cmd("combat", "arenanet", { enum("op", { "status", "offline", "online", "pit", "home" }) })
 cmd("combat", "die", {})
 cmd("combat", "shield", { int("seconds", 1, 600, true) })
 cmd("combat", "anim", { str("kind") })

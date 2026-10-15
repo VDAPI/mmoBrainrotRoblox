@@ -15,7 +15,8 @@ export type IsOpen = (mapId: string) -> boolean
 
 local function defaultOpen(mapId: string): boolean
 	local map = Maps.get(mapId)
-	return map ~= nil and map.buildMode ~= "none"
+	-- S127: a map of reserved servers (arena_pit) is never on a world server's routes
+	return map ~= nil and map.buildMode ~= "none" and map.serverModes == nil
 end
 
 -- Maps along the way from `fromMap` to `toMap`, both included; `{ fromMap }` when they are the same; nil when

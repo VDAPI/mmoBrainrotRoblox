@@ -524,4 +524,43 @@ T.describe("Arena rules (S126)", function()
 		T.expect(s7.rating).toBe(1000)
 		T.expect(s7.history[1].mode).toBe("3v3")
 	end)
+
+	T.it("S127: the pit venue has the shape of the Ristalle and lies in the arena server layout", function()
+		local ArenaPit = require("../src/shared/Data/ArenaPit")
+		local pit = Arena.venue("pit") :: Arena.Venue
+		local ristalle = Arena.venue("ristalle") :: Arena.Venue
+		local fieldsOf = function(v: any): { string }
+			local out = {}
+			for k in v do
+				table.insert(out, k)
+			end
+			table.sort(out)
+			return out
+		end
+		T.expect(fieldsOf(pit)).toEqual(fieldsOf(ristalle))
+		T.expect(pit.map).toBe("arena_pit")
+		T.expect(#pit.sides).toBe(#ristalle.sides)
+		local layout = ArenaPit.layout("arena")
+		local half = layout.size / 2
+		for side = 1, #pit.sides do
+			for i = 1, #pit.sides[side] do
+				local x, z = ArenaRules.spot(pit, side, i)
+				T.expect(math.abs(x) <= half and math.abs(z) <= half).toBe(true)
+			end
+			local x1, z1 = ArenaRules.spot(pit, side, 1)
+			T.expect(ArenaRules.inside(pit, x1, z1)).toBe(true)
+		end
+		for i = 1, #pit.stands do
+			local x, z = ArenaRules.standSpot(pit, i)
+			T.expect(math.abs(x) <= half and math.abs(z) <= half).toBe(true)
+			T.expect(ArenaRules.inside(pit, x, z)).toBe(false)
+		end
+		T.expect(math.abs(pit.exit[1]) <= half and math.abs(pit.exit[2]) <= half).toBe(true)
+	end)
+
+	T.it("S127: ArenaRules.pair never marks a pairing as the fallback offer", function()
+		local pairs = ArenaRules.pair({ ticket("a", 1, 1000, 0), ticket("b", 2, 1010, 0) }, 10)
+		T.expect(#pairs).toBe(1)
+		T.expect(pairs[1].fallback).toBeNil()
+	end)
 end)

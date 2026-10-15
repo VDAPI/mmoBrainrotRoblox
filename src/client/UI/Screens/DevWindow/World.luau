@@ -21,8 +21,10 @@ local Dev = require(script.Parent.Dev)
 
 local function World(s: Dev.Scope): Instance
 	local mapIds = {}
-	for id in Maps.byId do
-		table.insert(mapIds, id)
+	for id, def in Maps.byId do
+		if def.serverModes == nil then -- S127: arena server maps only through /arenanet pit
+			table.insert(mapIds, id)
+		end
 	end
 	table.sort(mapIds, function(a, b)
 		local ma, mb = Maps.get(a), Maps.get(b)

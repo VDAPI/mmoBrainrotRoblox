@@ -45,7 +45,7 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 		else
 			for mapId in (use(visited) or {}) :: { [string]: boolean } do
 				local map = Maps.get(mapId)
-				if map then
+				if map and map.serverModes == nil then -- S127: arena_pit saved by an older build stays off the list
 					table.insert(choices, {
 						id = mapId,
 						label = Text.get(use, map.nameKey),

@@ -195,8 +195,19 @@ export type ArenaState = {
 }
 -- S126: the runtime arena branch `arenaLive` (ArenaService; never saved): the queue, the offer, the match.
 export type ArenaLive = {
-	queue: { mode: string, bracket: string, since: number, scope: string, waiting: number? }?,
+	-- S127: scope "global" | "local"; window = the rating window now (+-N); waitingLocal = past the global wait
+	queue: {
+		mode: string,
+		bracket: string,
+		since: number,
+		scope: string,
+		waiting: number?,
+		window: number?,
+		waitingLocal: boolean?,
+	}?,
 	penaltyUntil: number?,
+	-- S127: scope = where the match is played ("global": an arena server, "local": this server); fallback = a local
+	-- offer after the global wait (declining it costs nothing)
 	offer: {
 		id: string,
 		expiresAt: number,
@@ -205,6 +216,9 @@ export type ArenaLive = {
 		unrated: boolean,
 		vs: number, -- matches against this opponent today (the warning of an unrated offer)
 		opp: { name: string, class: string, level: number, rating: number },
+		scope: ("global" | "local")?,
+		fallback: boolean?,
+		combat: boolean?, -- S127: the player is in a fight now (Accept waits; no answer then costs nothing)
 	}?,
 	match: {
 		id: string,
@@ -219,6 +233,8 @@ export type ArenaLive = {
 		names: { { string } },
 		queued: number?, -- "waiting": the place in the line for the sand
 	}?,
+	transfer: ("toArena" | "home")?, -- S127: a teleport between servers is on its way (the client's overlay)
+	returnAt: number?, -- S127: on the arena server, the server time the way back starts
 }
 
 export type BossRun = { day: number, n: number, k: number? } -- n = attempts, k = kills

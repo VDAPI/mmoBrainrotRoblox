@@ -13,6 +13,7 @@ local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local Sounds = require(script.Parent.Parent.Sounds)
+local ServerModeView = require(script.Parent.Parent.ServerModeView)
 local SlotCard = require(script.SlotCard)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -40,8 +41,19 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 	local creating = scope:Value(nil :: number?)
 	local busy = scope:Value(false)
 
+	-- S127: an arena server picks the character itself ("Entering the arena…"); after the way back the world server
+	-- does the same for a while ("Back from the arena…"), then the list shows (a slot that is gone)
+	local arenaServer = not ServerModeView.isWorld()
+	local autoPick = scope:Value(arenaServer or ServerModeView.backFromArena())
+	if not arenaServer and Fusion.peek(autoPick) then
+		task.delay(15, function()
+			pcall(function()
+				autoPick:set(false)
+			end)
+		end)
+	end
 	local loading = scope:Computed(function(use): boolean
-		return use(phase) ~= "select"
+		return use(phase) ~= "select" or use(autoPick)
 	end)
 
 	-- The server answers within seconds; if it never does (server failed to start), say so instead of
@@ -49,7 +61,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 	local SERVER_TIMEOUT = 45
 	local stalled = scope:Value(false)
 	task.delay(SERVER_TIMEOUT, function()
-		if Fusion.peek(phase) ~= "select" then
+		if Fusion.peek(phase) ~= "select" and not Fusion.peek(autoPick) then
 			pcall(function()
 				stalled:set(true)
 			end)
@@ -210,6 +222,9 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				Size = UDim2.new(1, -320, 0, 30),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
+					if use(autoPick) then
+						return Text.get(use, if arenaServer then "arena.net.loading" else "arena.net.returningLoad")
+					end
 					if use(loading) then
 						return Text.get(use, if use(stalled) then "charSelect.stalled" else "charSelect.loading")
 					end

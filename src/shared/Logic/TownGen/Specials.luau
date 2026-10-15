@@ -1048,4 +1048,8 @@ function Specials.all(city: any, ground: Ground): { Build }
 	return out
 end
 
+-- S127: the Ristalle stands for the arena server map (World/Layouts/arena_pit): `plan.arena` has the shape of
+-- Data/Town city.arena ({ x, z, half, stands, exit, duel }); unchanged from the city build.
+Specials.arena = arena
+
 return Specials

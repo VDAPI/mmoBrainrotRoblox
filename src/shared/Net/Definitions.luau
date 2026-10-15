@@ -175,6 +175,8 @@ local Definitions: { [string]: Definition } = {
 	ArenaRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (accept)
 	ArenaSpectate = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
 	ArenaStatus = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	-- S127: leave the arena server now (after the result); ArenaRespond also answers a global offer (same arguments)
+	ArenaReturnNow = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
 	TradeRequest = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	TradeInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },

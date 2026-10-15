@@ -463,6 +463,35 @@ type CharacterData = {
     `tools/fixture_caveshapes.luau`; admin `/tpcave`, `/caveinfo`, `/cavestats`, `/lights`, `/ambience <jaskinia>:<sala>`,
     `/terrainrebuild <jaskinia>`.
 
+### Tryby serwera i arena globalna (S127)
+
+- **Tryb serwera:** `src/server/Arena/ServerMode.luau` rozstrzyga w `init.server.luau` przed `Loader.load` (jedyne miejsce,
+  gdzie wolno czekać): publiczny serwer i prywatny serwer gracza od razu `"world"`; zarezerwowany serwer czyta
+  `ReservedServers[PrivateServerId]` (MemoryStore HashMap, wpis `{ mode, ref }`), a bez wpisu `TeleportData.serverMode`
+  pierwszego gracza (do `Config.ArenaNet.modeWait` s); Studio zawsze `"world"`. Atrybuty Workspace `ServerMode` /
+  `ServerModeRef` dla klienta (`UI/ServerModeView`). `ServerMode` nie jest serwisem (bez `Deps`), każdy serwis może go
+  `require`'ować.
+- **Świat wg trybu:** `WorldBuilder.build(mode)`; mapa z `serverModes` (dziś tylko `arena_pit`, `hidden = true`) powstaje
+  wyłącznie na serwerach tych trybów, serwer świata ją pomija (poza `/arenanet pit`). Na serwerze areny: brak NPC,
+  potworów, wydarzeń, podróży, pojedynków i wyboru postaci (strażniki `ServerMode.isWorld()`).
+- **Magazyny:** SortedMap `ArenaQueue_<mode>_<przedział>` (wpis `{ key, ticket, jobId, state, match?, claimUntil? }`,
+  sort key = rating, TTL 120 s), HashMapy `ArenaMatches` (`ArenaMatch_<id>`, rekord meczu, TTL 600 s), `ReservedServers`
+  (TTL 900 s), `ArenaPenalty` (koniec kary); temat MessagingService `ArenaMatch` (`offer` / `go` / `cancel`). Czysta
+  logika w `Logic/ArenaQueue` (interfejs `Backend`), atrapa `Logic/MemoryFake` (Studio, `/arenanet offline`, seria błędów).
+- **Przepływ meczu:** (1) wejście: `ArenaService.Join` → `Matchmaker` (pierwszy `PairSource`, „global”) pisze wpis;
+  (2) przejęcie: serwer dłużej czekającego przejmuje oba wpisy `UpdateAsync` w stałej kolejności kluczy; (3) rezerwacja
+  `ReserveServer` i wpis rejestru; (4) rekord `ArenaMatch_<id>` (stan `offered`); (5) oferta: `arenaLive.offer` ze
+  `scope = "global"` na obu serwerach (karta S126); (6) akceptacja: `ArenaRespond` → `Matchmaker.Respond` w rekordzie,
+  drugi „tak” daje `accepted` i `go`; (7) teleport: `RemoteHost` (`Host` „remote”) → `Arena/Transfer.toReserved`
+  (`TeleportData = { serverMode, arenaMatch, returnJob, slot }`); (8) mecz: `Arena/ArenaHost` wpuszcza tylko graczy
+  z rekordu (`CharacterService.Play` na punkt startu, lokalizacja w pamięci), oba obecne → `RunMatch(spec, "pit")`;
+  (9) wynik: S126 `ApplyResult` w profilach, rekord `done`; (10) powrót: `Transfer.home` na `returnJob`, potem dowolny
+  publiczny, na końcu kick; serwer świata sam wybiera postać (`TeleportData.arenaReturn`).
+- **Para z jednego serwera** (i całe Studio) wychodzi przez `take` do lokalnego przebiegu S126 na Ristalle; po
+  `globalWait` s propozycja lokalna (`Pairing.fallback`).
+- **Remote'y:** `ArenaReturnNow` (nowy), `ArenaRespond` S126 z gałęzią oferty globalnej. Nowe pola `arenaLive`:
+  `queue.window`, `queue.waitingLocal`, `offer.scope`, `offer.fallback`, `offer.combat`, `transfer`, `returnAt`.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

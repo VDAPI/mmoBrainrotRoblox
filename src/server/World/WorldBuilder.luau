@@ -236,10 +236,21 @@ local function pacer(slice: number?): () -> ()
 	end
 end
 
+-- Whether a map belongs on a server of `mode` (S127): world servers build every map without `serverModes`; an arena
+-- or tournament server builds only the maps that list its mode (arena_pit).
+local function forMode(map: Maps.MapDef, mode: string): boolean
+	if mode == "world" then
+		return map.serverModes == nil
+	end
+	return map.serverModes ~= nil and table.find(map.serverModes, mode) ~= nil
+end
+
 -- Builds every map into Workspace.World (idempotent: rebuilds if already present).
 -- Live servers kill a script that runs without yielding for too long ("Script timeout: exhausted allowed
 -- execution time", first publish 2026-10-14), so the startup build pauses for a frame every STARTUP_SLICE seconds.
-function WorldBuilder.build(): Folder
+-- S127: `mode` (Arena/ServerMode, default "world") picks the maps; servers of another mode build no late maps.
+function WorldBuilder.build(mode: string?): Folder
+	local serverMode = mode or "world"
 	removeBaseplate()
 	local existing = Workspace:FindFirstChild("World")
 	if existing then
@@ -259,16 +270,28 @@ function WorldBuilder.build(): Folder
 	table.sort(ids)
 	table.clear(WorldBuilder.late)
 	local pace = pacer(STARTUP_SLICE)
+	local count = 0
 	for _, id in ids do
 		local map = Maps.get(id)
-		if map and map.buildLate and layoutModule(id) then
+		if not map or not forMode(map, serverMode) then
+			continue
+		end
+		if map.buildLate and layoutModule(id) and serverMode == "world" then
 			table.insert(WorldBuilder.late, id)
-		elseif map then
-			buildMap(map, root, true, pace)
+		else
+			if buildMap(map, root, true, pace) then
+				count += 1
+			end
 			pace()
 		end
 	end
-	log:info("world built in %.2f s (%d maps left for the background)", os.clock() - started, #WorldBuilder.late)
+	log:info(
+		"world built for mode %s: %d maps in %.2f s (%d maps left for the background)",
+		serverMode,
+		count,
+		os.clock() - started,
+		#WorldBuilder.late
+	)
 	return root
 end
 

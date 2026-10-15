@@ -11,6 +11,11 @@
 -- PotionService.AddGuard / Drank, BlessingService.SetSuspended, PartyService.SetAllyOverride, TravelService.AddGuard,
 -- UseGuards "arena"); DuelService takes this service lazily. Nothing depends on this service (Util/Loader order).
 -- Live state: the runtime branch `arenaLive` ({ queue, penaltyUntil, offer, match }, Types.ArenaLive).
+-- S127 (DESIGN-17 §6): on a world server the global Matchmaker (Arena/Matchmaker, MemoryStore) is the first source and
+-- the RemoteHost (Arena/RemoteHost) the "remote" host; the local queue stays the fallback of a failed join. On an
+-- arena server (Arena/ServerMode "arena") this service runs Arena/ArenaHost: no queue, no Arena Master, one match
+-- through RunMatch(spec, "pit"). A world server lets a player back from an arena server in with the same character
+-- (TeleportData.arenaReturn). Players moving between servers: Arena/Transfer.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -20,6 +25,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Arena = require(Shared.Data.Arena)
+local ArenaHost = require(script.Parent.Parent.Arena.ArenaHost)
 local ArenaRules = require(Shared.Logic.ArenaRules)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
@@ -30,11 +36,14 @@ local LocalQueue = require(script.Parent.Parent.Arena.LocalQueue)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Match = require(script.Parent.Parent.Arena.Match)
+local Matchmaker = require(script.Parent.Parent.Arena.Matchmaker)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Sand = require(script.Parent.Parent.Arena.Sand)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Time = require(Shared.Logic.Time)
+local Transfer = require(script.Parent.Parent.Arena.Transfer)
 local Types = require(Shared.Types)
 local ArenaTypes = require(script.Parent.Parent.Arena.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
@@ -63,6 +72,8 @@ local ArenaService = {
 		"DuelService",
 		"LeaderboardService",
 		"DeathService",
+		-- S127: the save before a teleport between servers (DataService depends on no other service)
+		"DataService",
 	},
 	-- (spec, result) after every match with a result (S128 tokens, S130 the bracket)
 	MatchFinished = Signal.new(),
@@ -88,6 +99,7 @@ local AnnounceService: any
 local DuelService: any
 local LeaderboardService: any
 local DeathService: any
+local DataService: any
 
 type Queued = { ticket: ArenaRules.Ticket, source: ArenaTypes.PairSource }
 type Offer = {
@@ -98,6 +110,8 @@ type Offer = {
 	accepted: { [string]: boolean },
 	expiresAt: number,
 	source: ArenaTypes.PairSource,
+	fallback: boolean, -- S127: the local offer after the global wait (declining costs nothing)
+	combat: { [string]: boolean }, -- S127: the fight state last sent to each player's card
 }
 
 local sources: { ArenaTypes.PairSource } = {}
@@ -218,12 +232,17 @@ local function publishQueue(player: Player)
 	end
 	local waiting = q.source:waiting(q.ticket.mode, q.ticket.bracket)
 	lastWaiting[player] = waiting or -1
+	-- S127: the global source tells its scope ("local" on the in-memory store), the rating window and the global wait
+	local infoOf = q.source.info
+	local info = if infoOf then infoOf(q.source, q.ticket.entrant.key) else nil
 	setLive(player, "queue", {
 		mode = q.ticket.mode,
 		bracket = q.ticket.bracket,
 		since = q.ticket.joinedAt,
-		scope = q.source.kind,
+		scope = if info and info.scope then info.scope else q.source.kind,
 		waiting = waiting,
+		window = if info then info.window else nil,
+		waitingLocal = if info then info.waitingLocal else nil,
 	})
 end
 
@@ -287,7 +306,8 @@ end
 
 -- S126: a match offer waits for the player's answer, or the accepted match waits for the sand.
 function ArenaService.HasOffer(player: Player): boolean
-	return offerOf[player] ~= nil or reserved[player] ~= nil
+	local key = keyOf(player)
+	return offerOf[player] ~= nil or reserved[player] ~= nil or (key ~= nil and Matchmaker.HasOffer(key))
 end
 
 -- Logic/ArenaRules.canQueue on the player's state (S129 / S130 use it for their blocks).
@@ -304,7 +324,7 @@ function ArenaService.BlockedReason(player: Player, mode: string?): string?
 		inDuel = DuelService.InDuel(player),
 		inMatch = byPlayer[player] ~= nil or reserved[player] ~= nil,
 		queued = inQueue(player),
-		offered = offerOf[player] ~= nil,
+		offered = offerOf[player] ~= nil or (key ~= nil and Matchmaker.HasOffer(key)),
 		penaltyUntil = if key then penalties[key] else nil,
 		now = serverNow(),
 		mode = mode or Arena.MODE_ORDER[1],
@@ -323,6 +343,9 @@ end
 function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 	if type(modeId) ~= "string" then
 		return false, "error.badRequest"
+	end
+	if not ServerMode.isWorld() then
+		return false, "arena.net.error.notHere"
 	end
 	ensureSeason(player)
 	local reason = ArenaService.BlockedReason(player, modeId)
@@ -348,10 +371,20 @@ function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 		bracket = bracket,
 		joinedAt = serverNow(),
 	}
-	local source = sources[1]
-	local ok, err = source:join(ticket)
-	if not ok then
-		return false, err
+	-- S127: the first source takes the ticket (the global Matchmaker); a store failure (no error key) falls through to
+	-- the next one (the local queue), a refusal with a reason (a penalty) does not
+	local source: ArenaTypes.PairSource? = nil
+	for _, candidate in sources do
+		local ok, err = candidate:join(ticket)
+		if ok then
+			source = candidate
+			break
+		elseif err ~= nil then
+			return false, err
+		end
+	end
+	if not source then
+		return false, "error.internal"
 	end
 	queued[player] = { ticket = ticket, source = source }
 	publishQueue(player)
@@ -759,6 +792,9 @@ local function offerView(offer: Offer, player: Player): { [string]: any }?
 		unrated = offer.spec.unrated[key] == true,
 		vs = if state then ArenaRules.vsCount(state, o.key, Time.dayNumber(Clock.now())) else 0,
 		opp = { name = o.name, class = o.class, level = o.level, rating = o.rating },
+		scope = "local", -- S127: played on this server's Ristalle
+		fallback = if offer.fallback then true else nil,
+		combat = ResourceService.InCombat(player),
 	}
 end
 
@@ -773,13 +809,28 @@ local function closeOffer(offer: Offer)
 end
 
 -- Ends an offer: `declined` keys get the queue penalty, the others go back to their place (unless gone).
-local function failOffer(offer: Offer, declined: { [string]: boolean }, gone: { [string]: boolean })
+-- S127: `excused` keys (no answer while in a fight) leave the queue without a penalty; a declined fallback offer
+-- (Pairing.fallback) costs nothing and both keep waiting; every penalty also goes to MemoryStore (all servers).
+local function failOffer(
+	offer: Offer,
+	declined: { [string]: boolean },
+	gone: { [string]: boolean },
+	excused: { [string]: boolean }?
+)
 	closeOffer(offer)
 	local now = serverNow()
 	for key, player in offer.players do
-		if declined[key] then
+		if excused and excused[key] then
+			toast(player, "arena.net.cancelled.combat", nil, "warning")
+		elseif declined[key] and offer.fallback then
+			if keyOf(player) == key then
+				requeue(player, offer.tickets[key], offer.source)
+				toast(player, "arena.net.localDecline", nil, "info")
+			end
+		elseif declined[key] then
 			local untilAt = now + Arena.QUEUE.declinePenalty
 			penalties[key] = untilAt
+			Matchmaker.RecordPenalty(key, untilAt)
 			setLive(player, "penaltyUntil", untilAt)
 			toast(player, "arena.penalty", { time = Time.format(Arena.QUEUE.declinePenalty) }, "warning")
 		elseif not gone[key] and keyOf(player) == key then
@@ -865,6 +916,8 @@ local function makeOffer(pairing: ArenaRules.Pairing, source: ArenaTypes.PairSou
 		accepted = {},
 		expiresAt = serverNow() + Arena.QUEUE.acceptSeconds,
 		source = source,
+		fallback = pairing.fallback == true,
+		combat = {},
 	}
 	offers[offer.id] = offer
 	for _, player in players do
@@ -878,6 +931,19 @@ end
 local function respond(player: Player, accept: boolean): (boolean, string?)
 	local offer = offerOf[player]
 	local key = keyOf(player)
+	-- S127: an offer of the global queue (a player of another server) is answered in its MemoryStore record
+	if not offer and key and Matchmaker.HasOffer(key) then
+		if accept then
+			if ResourceService.InCombat(player) then
+				return false, "arena.error.combat"
+			end
+			local reason = matchBlock(player)
+			if reason then
+				return false, reason
+			end
+		end
+		return Matchmaker.Respond(player, key, accept)
+	end
 	if not offer or not key or serverNow() > offer.expiresAt then
 		return false, "arena.error.offer"
 	end
@@ -910,12 +976,28 @@ local function queueTick()
 	for _, offer in table.clone(offers) do
 		if now > offer.expiresAt then
 			local silent: { [string]: boolean } = {}
-			for key in offer.players do
+			local excused: { [string]: boolean } = {}
+			for key, player in offer.players do
 				if not offer.accepted[key] then
-					silent[key] = true
+					-- S127: no answer during a fight is no refusal (DECYZJE S127)
+					if player.Parent and ResourceService.InCombat(player) then
+						excused[key] = true
+					else
+						silent[key] = true
+					end
 				end
 			end
-			failOffer(offer, silent, {})
+			failOffer(offer, silent, {}, excused)
+		end
+	end
+	-- S127: the fight state of a waiting answer (the card's Accept waits while the player fights)
+	for _, offer in offers do
+		for key, player in offer.players do
+			local fighting = ResourceService.InCombat(player)
+			if not offer.accepted[key] and fighting ~= (offer.combat[key] == true) then
+				offer.combat[key] = fighting
+				setLive(player, "offer", offerView(offer, player))
+			end
 		end
 	end
 	for _, source in table.clone(sources) do
@@ -987,6 +1069,13 @@ local function spectate(player: Player): (boolean, string?)
 	return true, nil
 end
 
+-- S127: the scope of new queue entries ("global" | "local").
+local function scopeNow(): string
+	local first = sources[1]
+	local scopeOf = first.scope
+	return if scopeOf then scopeOf(first) else first.kind
+end
+
 local function status(_player: Player): (boolean, any)
 	local waiting: { [string]: number } = {}
 	local home = sources[#sources] -- the local queue stays last (S127 sources go in front)
@@ -996,7 +1085,7 @@ local function status(_player: Player): (boolean, any)
 	local kind, names = sandFight()
 	return true,
 		{
-			scope = sources[1].kind,
+			scope = scopeNow(),
 			waiting = waiting,
 			busy = if kind then { kind = kind, names = names } else nil,
 			pending = Sand.waiting(),
@@ -1163,6 +1252,7 @@ function ArenaService.Init(registry)
 	DuelService = registry.Get("DuelService")
 	LeaderboardService = registry.Get("LeaderboardService")
 	DeathService = registry.Get("DeathService")
+	DataService = registry.Get("DataService")
 
 	sources = { LocalQueue.new() }
 	hosts = { ["local"] = localHost() }
@@ -1201,10 +1291,143 @@ function ArenaService.Init(registry)
 	end)
 end
 
+-- S127: a world server lets a player back from an arena server in with the same character (no selection screen)
+-- and says how the match went (the newest history entry, when it is that recent and the arena server reported a
+-- result: TeleportData.arenaDone; a cancelled match only says "back").
+local function backFromArena(player: Player)
+	local ok, data = pcall(function(): any
+		return player:GetJoinData()
+	end)
+	local tp: any = if ok and type(data) == "table" then data.TeleportData else nil
+	if type(tp) ~= "table" or type(tp.arenaReturn) ~= "string" then
+		return
+	end
+	local slot = tonumber(tp.slot)
+	if not slot then
+		return
+	end
+	local played = CharacterService.Play(player, slot)
+	if not played then
+		return
+	end
+	local state = ArenaService.State(player)
+	local last = if state then state.history[1] else nil
+	if tp.arenaDone == true and state and last and Clock.now() - last.t <= Config.ArenaNet.matchTtl then
+		local result = if last.score >= 1 then "win" elseif last.score <= 0 then "loss" else "draw"
+		toast(player, "arena.net.back", {
+			result = `@arena.net.result.{result}`,
+			rating = state.rating,
+			delta = if last.delta > 0 then `+{last.delta}` else tostring(last.delta),
+		}, "info")
+	else
+		toast(player, "arena.net.backPlain", nil, "info")
+	end
+end
+
+local function startMatchmaker()
+	Matchmaker.Start({
+		playerOfKey = playerOfKey,
+		state = ArenaService.State,
+		inCombat = function(player: Player): boolean
+			return ResourceService.InCombat(player)
+		end,
+		toast = toast,
+		setLive = setLive,
+		offered = function(player: Player)
+			queued[player] = nil
+			publishQueue(player)
+		end,
+		requeued = function(player: Player, ticket: ArenaRules.Ticket)
+			queued[player] = { ticket = ticket, source = Matchmaker.source() }
+			publishQueue(player)
+		end,
+		dropped = function(player: Player)
+			queued[player] = nil
+			publishQueue(player)
+		end,
+		publish = publishQueue,
+		penalize = function(key: string, untilAt: number)
+			penalties[key] = math.max(penalties[key] or 0, untilAt)
+			local player = playerOfKey(key)
+			if player then
+				setLive(player, "penaltyUntil", penalties[key])
+			end
+		end,
+		refreshInfo = function(player: Player, modeId: string): { rating: number, level: number, name: string }?
+			local char = character(player)
+			local mode = Arena.mode(modeId)
+			if not char or not mode or type(char.arena) ~= "table" then
+				return nil
+			end
+			return { rating = ArenaRules.ratingOf(char.arena, mode), level = char.level, name = char.name }
+		end,
+	})
+	-- the global queue before the local one (Join writes to the first source; take reads all of them)
+	ArenaService.AddSource(Matchmaker.source())
+	ArenaService.SetHost("remote", Matchmaker.host :: ArenaTypes.Host)
+end
+
 function ArenaService.Start()
 	UseGuards.register("arena", function(player)
 		return ArenaService.InMatch(player)
 	end, "ArenaService") -- S122 Logic/UseBlocks (the Elixir of Wholeness and the Cloak of Luring in a match)
+	-- S127: an arena or tournament server is the arena as a whole (no elixir, no lure from the first second)
+	UseGuards.register("arena", function(_player)
+		return not ServerMode.isWorld()
+	end, "ServerMode")
+
+	Transfer.init({
+		save = function(player: Player)
+			CharacterService.SaveRuntime(player)
+			DataService.Save(player)
+		end,
+		restoreHome = function(player: Player)
+			CharacterService.RestoreHome(player)
+		end,
+		inParty = function(player: Player): boolean
+			return PartyService.Get(player) ~= nil
+		end,
+		toast = toast,
+		setLive = setLive,
+	})
+	Net.Handle("ArenaReturnNow", function(player: Player)
+		return ArenaHost.returnNow(player)
+	end)
+
+	local mode = ServerMode.get()
+	if mode == "world" then
+		startMatchmaker()
+		PlayerStateService.Ready:Connect(function(player: Player)
+			task.spawn(backFromArena, player)
+		end)
+	elseif mode == "arena" then
+		ArenaHost.start({
+			ArenaService = ArenaService,
+			PlayerState = PlayerStateService,
+			Character = CharacterService,
+			TravelService = TravelService,
+			backend = Matchmaker.Backend(),
+			playerOfKey = playerOfKey,
+			setLive = setLive,
+			toast = toast,
+		})
+	else
+		-- "tournament" (S130): its service claims the mode in its Start; until it exists nobody stays on a dead server
+		local function unclaimedHome(player: Player)
+			if ServerMode.claimedBy() == nil then
+				local ok, data = pcall(function()
+					return player:GetJoinData()
+				end)
+				task.spawn(Transfer.home, player, if ok then data else nil, "arena.net.tourneySoon")
+			end
+		end
+		task.delay(30, function()
+			for _, player in Players:GetPlayers() do
+				unclaimedHome(player)
+			end
+			PlayerStateService.Ready:Connect(unclaimedHome)
+		end)
+	end
 
 	Net.Handle("ArenaJoin", function(player: Player, mode: string)
 		return ArenaService.Join(player, mode)
@@ -1246,6 +1469,9 @@ function ArenaService.Start()
 	-- The character data goes away after this event: the loss of a running match is written now, without a yield.
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		local key = keyOf(player)
+		if queued[player] and player.Parent then
+			toast(player, "arena.net.left", { reason = "@arena.net.reason.character" }, "info")
+		end
 		dropQueue(player)
 		local offer = offerOf[player]
 		if offer and key then

@@ -17,6 +17,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local ServerModeView = require(script.Parent.Parent.ServerModeView)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -295,6 +296,9 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 	-- Queue ------------------------------------------------------------------------------------------------------------
 	-- Why the join button is off (nil = it is on); the same rule as the server, from the replicated state.
 	local function reasonFor(use: Use, mode: string): string?
+		if not ServerModeView.isWorld() then
+			return "arena.net.error.notHere" -- S127: no queue on an arena server
+		end
 		local l = use(liveValue)
 		local z = use(zone)
 		local mapId = if type(z) == "table" then z.map else nil
@@ -339,18 +343,47 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				)
 			)
 		end
-		-- S127 adds the global scope; this session only has the queue of this server
-		table.insert(items, label(s, nextOrder(), Text.get(use, "arena.scope.local"), nil, Theme.Colors.Gold))
+		-- S127: the scope of the queue: all servers (MemoryStore), or this server only (Studio, the link down) with why
 		local bracket = ArenaRules.bracketOf(use(myLevel))
 		local q = l.queue
+		local scopeId = if type(q) == "table" and type(q.scope) == "string"
+			then q.scope
+			elseif type(status) == "table" and type(status.scope) == "string" then status.scope
+			else "local"
+		local global = scopeId == "global"
+		table.insert(
+			items,
+			label(
+				s,
+				nextOrder(),
+				Text.get(use, if global then "arena.scope.global" else "arena.scope.local"),
+				nil,
+				Theme.Colors.Gold
+			)
+		)
+		if not global then
+			table.insert(
+				items,
+				label(s, nextOrder(), Text.get(use, "arena.net.scope.localHint"), nil, Theme.Colors.TextMuted)
+			)
+		end
 		local waiting: number? = nil
 		if type(q) == "table" and type(q.waiting) == "number" then
 			waiting = q.waiting
-		elseif bracket and type(status) == "table" and type(status.waiting) == "table" then
+		elseif not global and bracket and type(status) == "table" and type(status.waiting) == "table" then
 			waiting = tonumber(status.waiting[bracket])
 		end
 		if bracket and waiting then
 			table.insert(items, label(s, nextOrder(), Text.get(use, "arena.waiting", { n = waiting })))
+		elseif type(q) == "table" and type(q.window) == "number" then
+			-- the global queue does not know who waits elsewhere: the rating window it searches now
+			table.insert(items, label(s, nextOrder(), Text.get(use, "arena.net.window", { n = q.window })))
+		end
+		if type(q) == "table" and q.waitingLocal == true then
+			table.insert(
+				items,
+				label(s, nextOrder(), Text.get(use, "arena.net.waitingLocal"), nil, Theme.Colors.TextMuted)
+			)
 		end
 		for _, mode in ArenaRules.enabledModes() do
 			local inThis = type(q) == "table" and q.mode == mode.id

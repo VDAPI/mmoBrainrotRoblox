@@ -29,6 +29,7 @@ local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rng = require(Shared.Logic.Rng)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Types = require(Shared.Types)
 local WorldEvents = require(Shared.Logic.WorldEvents)
 
@@ -776,6 +777,9 @@ local function stepInvasion(e: Event, t: number)
 end
 
 local function step()
+	if not ServerMode.isWorld() then
+		return -- S127: no world events on arena/tournament servers
+	end
 	local t = now()
 	local e = current
 	if not e then

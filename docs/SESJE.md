@@ -9895,3 +9895,92 @@ PartyAura,Travel,Leaderboard,Admin}Service.luau`, `src/server/Skills/{Context,Co
 `tests/arena.spec.luau` (nowy), `tests/{paywall,leaderboard,data}.spec.luau`, `tools/balance_reasons.luau`,
 `wiki/src/data/{npcs,mapsearch,search,meta}.json`, `wiki/public/img/maps/city.svg`, `docs/{PRZEDMIOTY,BALANS,DESIGN,
 DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S127: Arena 2: kolejka globalna, serwery areny, powrót, fallback
+
+Ósma sesja serii DESIGN-17 (§6), po S126 (`557d6c4`). Bez Studio i bez wgrywania czegokolwiek do Roblox. Nazwy S126
+sprawdzone w kodzie i użyte bez zmian (DECYZJE).
+- **Dane:** `Config.ArenaNet` (czasy i nazwy magazynów, poza `CONFIG_KEYS`), nowy `Data/ArenaPit` (układ `arena`: pole
+  `pit1`, piasek 80 × 80, trybuny 14, starty ±25, wyjście 72; `NOT_BALANCE` „geometria”), `Data/Arena.VENUES.pit` (kształt
+  Ristalle, liczony z `ArenaPit`), mapa `arena_pit` w `Data/Maps` (z = −8000, `serverModes = { arena, tournament }`,
+  `hidden`; powód w księdze), pola `MapDef.serverModes` / `hidden`, `Pairing.fallback`, pola `arenaLive` (`queue.window`,
+  `queue.waitingLocal`, `offer.scope` / `fallback` / `combat`, `transfer`, `returnAt`). Wykluczenia mapy: `MapRoute`,
+  `MapSearch`, wyszukiwarka mapy świata, panel dewelopera, `/maps` (dopisek „(arena)”), `maproute.spec`.
+- **Logika:** `Logic/ArenaQueue` (klucze, wpis i transformacje `put` / `refresh` / `claim` / `extend` / `unclaim` /
+  `release`, `pickPartner`, `shouldInitiate`, `lockOrder`, `pairingOf`, `newRecord`, `tryPair`, `respond`, `expire`,
+  `cancel`, `goLive`, `arrived`, `finish`, `void`, `changed`, `entryAfter`, `arrival`, `allowed`, `returnPlan`,
+  `decideMode`, `registryEntry`, `parseMessage`, `scope`, `localOffer`), `Logic/MemoryFake` (SortedMap / HashMap na
+  `Leaderboard.memoryBoard`, konflikty `onBeforeCommit`, `fail`, `reserve`, `publish`, `subscribe`),
+  `Leaderboard.memoryBoard.range`.
+- **Serwer:** `Arena/ServerMode` (przed loaderem w `init.server.luau`), `Arena/Matchmaker` (`PairSource` „global”,
+  prawdziwy `Backend` na MemoryStore / MessagingService / `ReserveServer` przez `Retry.call`, atrapa, pętla co 3–5 s,
+  temat `ArenaMatch`, fallback po 45 s, `/arenanet`), `Arena/RemoteHost` (`Host` „remote”), `Arena/Transfer`
+  (`toReserved`, `home`, `homeAll`, ponowienia, `TeleportInitFailed`), `Arena/ArenaHost` (serwer areny: rekord,
+  wpuszczanie z rekordu, start, nieprzybycie, wynik, powrót, `BindToClose`). `ArenaService`: źródło globalne i host
+  zdalny w `Start`, `Join` z zapasem lokalnym, gałąź globalna `ArenaRespond`, kara także w `ArenaPenalty`, bez kary za
+  brak odpowiedzi w walce i za odmowę propozycji lokalnej, powrót z areny (`backFromArena`), tryb `tournament` odsyła po
+  30 s, `ArenaReturnNow`, drugi warunek `UseGuards` „arena” (właściciel `ServerMode`). `CharacterService.Play`,
+  `SaveRuntime`, `RestoreHome`, `SetSpawnOverride` / `SpawnOverride`, `Runtime.home`. `WorldBuilder.build(mode)`,
+  `WorldService` (dom = `ServerMode.homeMap()`, `buildLate` tylko w świecie), układ `World/Layouts/arena_pit`,
+  `Specials.arena`. Strażniki trybu: `NpcService`, `MonsterService`, `DuelService`, `DeathService`, `WorldEventService`,
+  `CharacterService` (wybór, tworzenie, usuwanie i zmiana postaci).
+- **Usługi sprawdzone grepem (`"city"` / `StartingMap`):** `CharacterService`, `DeathService`, `DuelService`,
+  `MonsterService`, `WorldService` (strażnik albo dom trybu); `CombatService` (`ZoneAt` z domyślną mapą),
+  `TravelService` (strażnik S126 z `ArenaHost`), `VipService` (darmowy powrót przez strażnika podróży), `ZoneService`
+  (blokada „city” zbędna bez stolicy) bez zmian. Lochy, zbieractwo, łowiska i Płaszcz Przynęty bez strażnika (bez map nic
+  nie robią).
+- **Klient:** `UI/ServerModeView`; `ArenaWindow` (zakres „wszystkie światy” / „ten serwer” z powodem, okno ratingu,
+  „Nikt inny nie czeka…”, przycisk zablokowany na serwerze areny), `ArenaOffer` (linia zakresu, podpowiedź odmowy
+  propozycji lokalnej, „Akceptuj” zablokowane w walce), `Hud/ArenaPanel` (okno ratingu w pigułce, „Powrót za {s} s” z „Wróć
+  teraz”, zasłona przenosin), `CharacterSelect` („Wejście na arenę…”, „Powrót z areny…”), menu HUD bez mapy, dziennika
+  i wierzchowców na serwerze areny, bez okna nagrody za logowanie.
+- **Remote:** `ArenaReturnNow`. **Admin:** `/arenanet status | offline | online | pit | home`. **Teksty:** `arena.scope.global`,
+  `arena.net.*`, `admin.arenanet.*`, `admin.usage.arenanet`, `map.arena_pit.name` (PL i EN).
+- **Testy:** nowy `tests/arenaqueue.spec.luau` (H1 atrapa, H2 wpisy i dobór, H3 wyścigi dwóch i trzech serwerów, H4
+  oferta, H5 serwer areny i powrót, H6 mapa, H7 okablowanie); dopiski `arena.spec` (miejsce `pit`, `fallback`),
+  `leaderboard.spec` (`range`), `paywall.spec` („Global arena (S127)”), `mapsearch.spec`, `maproute.spec`.
+  `scripts/check` zielony (125 plików, 6714 testów), `balance1_20` 0 różnic bez `ALLOWED_1_20_DIFFS`, `wiki_keys_diff` 0
+  bez `WIKI_KEYS_ALLOW`, `tools/wikidump.luau`: dane wiki bez zmian (`dataHash` ten sam, brak `arena_pit`).
+  `docs/BALANS.md`: wiersze `arena_pit`.
+
+Przepływ meczu i nazwy magazynów: `docs/ARCHITECTURE.md` → „Tryby serwera i arena globalna (S127)”. MemoryStore:
+`ArenaQueue_<mode>_<przedział>`, `ArenaMatches`, `ReservedServers`, `ArenaPenalty`; temat `ArenaMatch`.
+
+Dla S128–S130:
+- `ServerMode.get / ref / isWorld / homeMap / register / claim / claimedBy` (S130: `ServerMode.register(backend, psid,
+  "tournament", tourneyId)` po każdej rezerwacji i `ServerMode.claim("tournament", "<Serwis>")` w `Start`; bez
+  właściciela `ArenaService` odsyła graczy po 30 s).
+- `Data/ArenaPit.LAYOUTS` (S130 dopisuje `tournament` z czterema polami i `lobby`; `arena_pit.luau` buduje każde pole z
+  układu trybu z atrybutu `ServerMode`), `VENUES.pit` (S130: `pit_1` … `pit_4` funkcją `pitVenue`).
+- `Arena/Transfer.toReserved / home / homeAll` (S130: `TeleportData.serverMode = "tournament"`, `tourney = id`).
+- `CharacterService.Play(player, slot, spawn?)`, `SetSpawnOverride`, `RestoreHome`.
+- `Logic/ArenaQueue` z `mode` w nazwie mapy; `Entry` opakowuje bilet S126, więc wpis drużyny S128 dokłada pola obok
+  `ticket`; `tryPair` jest dla 1v1. `Matchmaker.source()` (`PairSource` „global” z `info` / `scope`), `RemoteHost`
+  (`Host` „remote”), `MatchRecord.spec` (S126 `MatchSpec`), `Pairing.fallback`.
+- `Logic/MemoryFake` (S128–S130, S129: SortedMap z TTL i `range`, HashMap, `fail`, `onBeforeCommit`).
+- `ServerMode.isWorld()` jako strażnik nowych pętli świata (S129: Krwawy Księżyc nie startuje na serwerach areny i
+  turnieju).
+
+Dla właściciela: nic do ustawienia w Creator Hub ani w Studio. W Studio kolejka działa lokalnie (mecz na Ristalle);
+pełny test kolejki globalnej wymaga dwóch kont na dwóch serwerach opublikowanej gry; podgląd stanu `/arenanet status`.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{ArenaPit (nowy),Arena,Maps,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{ArenaQueue,MemoryFake} (nowe)`,
+`src/shared/Logic/{ArenaRules,Leaderboard,MapRoute,MapSearch,UseBlocks}.luau`, `src/shared/Logic/TownGen/Specials.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/init.server.luau`,
+`src/server/Arena/{ServerMode,Matchmaker,RemoteHost,Transfer,ArenaHost} (nowe)`, `src/server/Arena/Types.luau`,
+`src/server/World/WorldBuilder.luau`, `src/server/World/Layouts/arena_pit.luau` (nowy),
+`src/server/Services/{Arena,Character,Death,Duel,Monster,Npc,WorldEvent,World}Service.luau`,
+`src/server/Admin/{Combat,World}.luau`, `src/client/UI/ServerModeView.luau` (nowy),
+`src/client/UI/Screens/{ArenaWindow,ArenaOffer}.luau`, `src/client/UI/Screens/Hud/ArenaPanel.luau`,
+`src/client/UI/Screens/CharacterSelect/init.luau`, `src/client/UI/Screens/{WorldMap/Search,DevWindow/World}.luau`,
+`src/client/Controllers/{Arena,Screen,LoginReward}Controller.luau`, `tests/arenaqueue.spec.luau` (nowy),
+`tests/{arena,leaderboard,paywall,mapsearch,maproute}.spec.luau`, `tools/balance_reasons.luau`,
+`docs/{ARCHITECTURE,BALANS,DESIGN,DESIGN-17,DECYZJE,PROGRESS,SESJE}.md`.
+- **Poprawki po przeglądzie:** powrót z anulowanego meczu bez wyniku starego meczu (`TeleportData.arenaDone` z
+  `ArenaHost` po `MatchFinished`, `Transfer.home(..., finished)`), anulowanie w czasie czekania na arenie z
+  `arena.net.cancelled.noShow`, fallback F1 z kandydatów tego serwera (`PairOptions.locals`), kara za wyjście w ofercie
+  tylko za własne anulowanie, `arena_pit` poza `visitedMaps` i kamieniem mapy (`TravelService`, `StonePicker`), ziarno
+  `Rng.new()` w `Matchmaker`. Testy: `arenaqueue.spec` (fallback z `locals`, przejęty kandydat, mapa trybu poza
+  podróżą). Pliki: `src/server/Arena/{ArenaHost,Matchmaker,Transfer}.luau`, `src/server/Services/{ArenaService,
+  TravelService}.luau`, `src/client/UI/Screens/StonePicker.luau`, `src/shared/Logic/ArenaQueue.luau`.

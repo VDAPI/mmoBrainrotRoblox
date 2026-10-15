@@ -143,7 +143,7 @@ local function mapEntries(translate: Translate, out: { Entry })
 	table.sort(ids)
 	for _, id in ids do
 		local map = Maps.byId[id]
-		if map.biome ~= "dungeon" then
+		if map.biome ~= "dungeon" and map.serverModes == nil then -- S127: no arena server maps
 			table.insert(out, {
 				kind = if Areas.caves.get(id) then "cave" else "map",
 				id = id,

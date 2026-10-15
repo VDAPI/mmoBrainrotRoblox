@@ -27,6 +27,32 @@ local Config = {
 	GuildPresenceRefresh = 45, -- how often a server refreshes its members' presence
 	GuildCacheRefresh = 90, -- safety re-read of cached guilds (MessagingService is best effort)
 	GuildChatMaxLength = 200,
+	-- S127: global arena queue and arena servers (DESIGN-17 §6). Technical timings and store names, not balance (not in
+	-- CONFIG_KEYS). The rating window, the brackets, the accept time and the decline penalty stay in Data/Arena.
+	ArenaNet = {
+		pollMin = 3, -- s between two queue polls of this server (random in pollMin..pollMax, Logic/Rng)
+		pollMax = 5,
+		entryTtl = 120, -- s a queue entry lives in MemoryStore without a refresh (DESIGN-17 §6)
+		refreshEvery = 30, -- s between refreshes of a waiting entry by its own server
+		claimHold = 20, -- s a claim lives before its offer exists (organizer died -> the entry is free again)
+		acceptGrace = 10, -- s after the accept time before a server cancels an offer nobody finished
+		matchTtl = 600, -- s a match record lives (ArenaMatch_<id>, DESIGN-17 §6: 10 min)
+		registryTtl = 900, -- s a ReservedServers entry lives (the mode of a reserved server)
+		globalWait = 45, -- s without a global opponent before the local offer (DESIGN-17 §6)
+		rangeCount = 50, -- entries read by one GetRangeAsync
+		arriveTimeout = 60, -- s the arena server waits for both fighters
+		returnDelay = 8, -- s on the arena server after the result before the way back
+		teleportRetries = 3, -- attempts per teleport target
+		teleportRetryGap = 2, -- s between two attempts
+		modeWait = 15, -- s a reserved server waits at boot for its registry entry / the first join data
+		offlineAfterErrors = 3, -- consecutive store errors -> "this server only" for offlineFor s
+		offlineFor = 60,
+		queuePrefix = "ArenaQueue", -- SortedMap ArenaQueue_<mode>_<bracket>
+		matchMap = "ArenaMatches", -- HashMap, keys ArenaMatch_<id>
+		registryMap = "ReservedServers", -- HashMap, key = PrivateServerId -> { mode, ref }
+		penaltyMap = "ArenaPenalty", -- HashMap, key = the entry key "<userId>_<slot>" -> until (unix s)
+		topic = "ArenaMatch", -- MessagingService topic (DESIGN-17 §6)
+	},
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
 	AuctionStoreName = "Vaelthorn_Auction_v1",

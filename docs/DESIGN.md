@@ -924,8 +924,15 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   zamknięty sezon zostaje w `character.arena.last` (nagrody za niego: S128).
 - **Ranking areny:** tablica `arena_<sezon>_<przedział>` (OrderedDataStore, wynik = rating), zakładka „Arena” w oknie
   Rankingi z przełącznikiem przedziałów i końcem sezonu. Serwer ogłasza każdy wynik.
-- **Dalej:** S127 kolejka globalna (MemoryStore) i serwery areny z powrotem do tej kolejki jako zapasem; S128 3v3, Żetony
-  Areny, sklep u Mistrza Areny i nagrody sezonu; S130 turniej.
+- **Kolejka wszystkich światów (S127):** ten sam przycisk zapisuje do wspólnej kolejki wszystkich serwerów; okno pokazuje
+  „Kolejka: wszystkie światy” i bieżące okno ratingu. Propozycja jak wyżej (15 s, odmowa = 5 min kary na każdym
+  serwerze; brak odpowiedzi w trakcie walki bez kary). Po akceptacji obaj przechodzą na osobny, mały serwer areny (sam
+  piasek z trybunami Ristalle), postać staje od razu na punkcie startu; mecz idzie zasadami powyżej, a po wyniku (8 s
+  albo „Wróć teraz”) gracz wraca na serwer, z którego przyszedł (przy błędzie na dowolny), tą samą postacią i w tym samym
+  miejscu. Przeciwnik, który nie dotrze w 60 s: mecz anulowany bez ratingu. Para z jednego serwera walczy na Ristalle.
+  Gdy połączenie między światami nie działa (i w Studio), okno mówi „Kolejka: ten serwer” i kolejka działa lokalnie; po
+  45 s bez przeciwnika z innych światów gracz dostaje propozycję walki z kimś z tego serwera (odmowa bez kary).
+- **Dalej:** S128 3v3, Żetony Areny, sklep u Mistrza Areny i nagrody sezonu; S130 turniej (ten sam tryb serwera).
 
 ## 20. Questy
 

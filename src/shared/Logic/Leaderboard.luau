@@ -99,6 +99,9 @@ export type MemoryBoard = {
 	remove: (key: string) -> (),
 	get: (key: string, now: number) -> { score: number, value: any }?,
 	top: (n: number, now: number) -> { Entry },
+	-- S127 (MemoryStore SortedMap GetRangeAsync ascending): entries with lo < score < hi (nil = no bound), lowest
+	-- score first, then by key, at most `count`, expired ones skipped
+	range: (lo: number?, hi: number?, count: number, now: number) -> { Entry },
 	size: (now: number) -> number,
 	clear: () -> (),
 }
@@ -488,6 +491,26 @@ function Leaderboard.memoryBoard(): MemoryBoard
 		end
 		table.sort(out, better)
 		while #out > n do
+			table.remove(out)
+		end
+		return out
+	end
+
+	function board.range(lo: number?, hi: number?, count: number, now: number): { Entry }
+		local out: { Entry } = {}
+		for key in entries do
+			local e = live(key, now)
+			if e and (lo == nil or e.score > lo) and (hi == nil or e.score < hi) then
+				table.insert(out, { key = key, score = e.score, value = e.value })
+			end
+		end
+		table.sort(out, function(a: Entry, b: Entry): boolean
+			if a.score ~= b.score then
+				return a.score < b.score
+			end
+			return a.key < b.key
+		end)
+		while #out > math.max(0, count) do
 			table.remove(out)
 		end
 		return out

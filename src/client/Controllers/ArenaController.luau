@@ -85,6 +85,11 @@ function ArenaController.Spectate()
 	call("ArenaSpectate")
 end
 
+-- S127: leave the arena server now (after the result).
+function ArenaController.ReturnNow()
+	call("ArenaReturnNow")
+end
+
 function ArenaController.RefreshStatus()
 	task.spawn(function()
 		local ok, data = Net.Invoke("ArenaStatus")
@@ -135,7 +140,8 @@ function ArenaController.Init(registry)
 		end,
 	})
 	ArenaOffer(scope, { Respond = ArenaController.Respond }).Parent = UIController.GetLayer("Screens")
-	ArenaPanel(scope, { Leave = ArenaController.Leave }).Parent = UIController.GetLayer("Screens")
+	ArenaPanel(scope, { Leave = ArenaController.Leave, ReturnNow = ArenaController.ReturnNow }).Parent =
+		UIController.GetLayer("Screens")
 end
 
 function ArenaController.Start()

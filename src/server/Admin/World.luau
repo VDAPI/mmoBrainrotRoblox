@@ -261,7 +261,10 @@ commands.maps = function(player)
 	table.sort(ids)
 	local parts = {}
 	for _, id in ids do
-		table.insert(parts, if WorldService.IsBuilt(id) then `{id} ✔` else id)
+		local def = Maps.get(id)
+		-- S127: maps of reserved servers (arena_pit) are marked; /arenanet pit previews them
+		local name = if def and def.serverModes then `{id} (arena)` else id
+		table.insert(parts, if WorldService.IsBuilt(id) then `{name} ✔` else name)
 	end
 	reply(player, "admin.maps.list", { list = table.concat(parts, ", ") })
 end

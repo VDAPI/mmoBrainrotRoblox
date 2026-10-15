@@ -883,4 +883,26 @@ T.describe("Arena (S126)", function()
 	end)
 end)
 
+T.describe("Global arena (S127)", function()
+	local fs = require("@lune/fs")
+
+	T.it("the global queue, the arena server and the remote host read nothing of purchases", function()
+		for _, path in
+			{
+				"src/shared/Logic/ArenaQueue.luau",
+				"src/server/Arena/Matchmaker.luau",
+				"src/server/Arena/ArenaHost.luau",
+				"src/server/Arena/RemoteHost.luau",
+			}
+		do
+			local text = fs.readFile(path)
+			for _, word in { "Products", "HasVip", "HasPass", "MonetizationService", "shards", "Vip" } do
+				if string.find(text, word, 1, true) then
+					error(`{path}: mentions {word}`, 0)
+				end
+			end
+		end
+	end)
+end)
+
 return nil

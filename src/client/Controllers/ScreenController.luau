@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local CharacterSelect = require(script.Parent.Parent.UI.Screens.CharacterSelect)
+local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local CharacterWindow = require(script.Parent.Parent.UI.Screens.CharacterWindow)
 local ComingSoon = require(script.Parent.Parent.UI.Screens.ComingSoon)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -57,12 +58,18 @@ local MountController: any
 local LoginRewardController: any
 local EmoteController: any
 
+-- S127: menu entries that need the world (an arena server has none of it).
+local function worldOnly(_use: Fusion.Use): boolean
+	return ServerModeView.isWorld()
+end
+
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
 	{ id = "inventory", icon = "▣", hotkey = "B", tooltipKey = "hud.menu.inventory" },
 	{ id = "skills", icon = "✦", hotkey = "K", tooltipKey = "hud.menu.skills", badge = SkillsAttention.badge },
-	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map" },
-	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests" },
+	-- S127: the world map and the journal need the world (hidden on an arena server)
+	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map", visible = worldOnly },
+	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests", visible = worldOnly },
 	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
 	{ id = "party", icon = "☍", hotkey = "P", tooltipKey = "hud.menu.party" },
 	-- S97: shown from the mount level, or earlier with a mount (MountController.Access)
@@ -72,7 +79,7 @@ local MENU: { Hud.MenuEntry } = {
 		hotkey = "J",
 		tooltipKey = "hud.menu.mounts",
 		visible = function(use: Fusion.Use): boolean
-			return use(MountController.Access) == true
+			return use(MountController.Access) == true and ServerModeView.isWorld()
 		end,
 	},
 	-- S124: rankings (RankingsController registers the window; key win_rankings)

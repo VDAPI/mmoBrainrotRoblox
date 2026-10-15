@@ -5,11 +5,15 @@
 --   * in a match: a panel at the top centre with the names of the sides and the round score, "Round 2 / 3", the time
 --     of the round (server clock), the match potions left and the phase. The countdown and the round results come as
 --     BossAnnounce (the panel does not repeat them).
+-- S127: on an arena server after the result "Returning in 8 s" with "Return now" (`arenaLive.returnAt`, ArenaReturnNow);
+-- while a teleport between servers runs (`arenaLive.transfer`) a full-screen veil "Travelling to the arena…" /
+-- "Returning to the world…". The global queue's pill shows the rating window instead of the number waiting.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local State = require(script.Parent.Parent.Parent.State)
@@ -21,7 +25,7 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-export type Props = { Leave: () -> () }
+export type Props = { Leave: () -> (), ReturnNow: () -> () }
 
 local PILL_WIDTH = 280
 local PANEL_WIDTH = 420
@@ -79,9 +83,14 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 						return ""
 					end
 					local t = use(now)
+					local time = Time.format(t - (tonumber(q.since) or t))
+					if q.waiting == nil and tonumber(q.window) then
+						-- S127: the global queue: the rating window it searches now
+						return `{Text.get(use, "arena.inQueue", { mode = q.mode, time = time })} · ±{q.window}`
+					end
 					return Text.get(use, "arena.panel.queue", {
 						mode = q.mode,
-						time = Time.format(t - (tonumber(q.since) or t)),
+						time = time,
 						n = tonumber(q.waiting) or 0,
 					})
 				end),
@@ -193,11 +202,101 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		},
 	})
 
+	-- S127: the way back from an arena server
+	local returnAt = scope:Computed(function(use): number?
+		local value = use(live)
+		return if type(value) == "table" then tonumber(value.returnAt) else nil
+	end)
+	local back = scope:New("Frame")({
+		Name = "ArenaReturn",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 160),
+		Size = UDim2.fromOffset(PANEL_WIDTH, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundTransparency = 0.15,
+		Visible = scope:Computed(function(use): boolean
+			return use(returnAt) ~= nil
+		end),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+			}),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				Size = UDim2.new(1, 0, 0, 24),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use): string
+					local at = use(returnAt)
+					local left = if at then math.max(0, math.ceil(at - use(now))) else 0
+					return Text.get(use, "arena.net.returnIn", { s = left })
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Colors.Parchment,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Variant = "primary",
+				Text = Text.T(scope, "arena.net.returnNow"),
+				OnClick = props.ReturnNow,
+			}),
+		},
+	})
+
+	-- S127: the veil of a teleport between servers
+	local transfer = scope:Computed(function(use): string?
+		local value = use(live)
+		local t = if type(value) == "table" then value.transfer else nil
+		return if type(t) == "string" then t else nil
+	end)
+	local veil = scope:New("Frame")({
+		Name = "ArenaTransfer",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundTransparency = 0.1,
+		Active = true,
+		ZIndex = 50,
+		Visible = scope:Computed(function(use): boolean
+			return use(transfer) ~= nil
+		end),
+		[Children] = {
+			scope:New("TextLabel")({
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.new(1, -40, 0, 60),
+				BackgroundTransparency = 1,
+				ZIndex = 51,
+				Text = scope:Computed(function(use): string
+					return Text.get(
+						use,
+						if use(transfer) == "home" then "arena.net.returning" else "arena.net.teleporting"
+					)
+				end),
+				FontFace = Theme.Fonts.Heading,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Colors.Gold,
+				TextWrapped = true,
+			}),
+		},
+	})
+
 	return scope:New("Frame")({
 		Name = "ArenaHud",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Children] = { pill, panel },
+		[Children] = { pill, panel, back, veil },
 	})
 end
 

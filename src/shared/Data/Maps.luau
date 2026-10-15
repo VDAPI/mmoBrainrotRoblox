@@ -4,6 +4,7 @@
 -- built. Offsets keep maps >= 3000 studs apart. Lighting/atmosphere are applied on the client when the
 -- player enters the map (EnvironmentController).
 
+local ArenaPit = require("./ArenaPit")
 local Town = require("./Town")
 local TownTerrain = require("../Logic/TownTerrain")
 
@@ -59,6 +60,11 @@ export type MapDef = {
 	-- S45: built in the background after the server started (World/WorldBuilder.buildLate): the shaped regions.
 	-- Until done, portals show "Soon" and travel there is refused, like an unbuilt map.
 	buildLate: boolean?,
+	-- S127: built only on servers of these modes (World/WorldBuilder.build); never on a world server, never on the
+	-- world map, in travel or on the wiki.
+	serverModes: { string }?,
+	-- S127: left out of the wiki (tools/WikiData/Visibility), the world map search and admin map lists.
+	hidden: boolean?,
 }
 
 local DAY: Lighting = {
@@ -761,6 +767,28 @@ do
 			else 450, -- S51: Vaelgrath's Lair
 	})
 end
+
+-- S127: the arena server map (DESIGN-17 §6): sand and stands only (Data/ArenaPit), built on reserved arena and
+-- tournament servers instead of the whole world. Far from every other map (z = -8000, tests/data.spec).
+map({
+	id = "arena_pit",
+	nameKey = "map.arena_pit.name",
+	zone = "green",
+	minLevel = 20,
+	maxLevel = 100,
+	offset = { x = 0, y = 0, z = -8000 },
+	size = { x = ArenaPit.layout("arena").size, z = ArenaPit.layout("arena").size },
+	spawn = { x = 0, y = 4, z = 60 }, -- on the stand by the way out
+	biome = "grass",
+	lighting = LIGHT.city,
+	music = "",
+	buildMode = "generated",
+	worldMap = { x = 0, y = 0 },
+	links = {},
+	maxParts = 1500,
+	serverModes = { "arena", "tournament" },
+	hidden = true,
+})
 
 return table.freeze({
 	byId = Maps,

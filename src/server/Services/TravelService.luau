@@ -205,7 +205,8 @@ end
 
 function TravelService.MarkVisited(player: Player, mapId: string)
 	local map = Maps.get(mapId)
-	if not map or map.biome == "dungeon" then
+	-- S127: a server-mode map (arena_pit) is never a travel target, so it is never "visited"
+	if not map or map.biome == "dungeon" or map.serverModes ~= nil then
 		return
 	end
 	local char = PlayerStateService.GetCharacter(player)
@@ -299,7 +300,7 @@ local function toMap(player: Player, itemId: string, mapId: string, areaId: stri
 	if not map or not char then
 		return false, "error.badRequest"
 	end
-	if not (char.visitedMaps or {})[mapId] or map.biome == "dungeon" then
+	if not (char.visitedMaps or {})[mapId] or map.biome == "dungeon" or map.serverModes ~= nil then
 		return false, "teleport.notVisited"
 	end
 	if char.location.map == mapId and mapId ~= Config.StartingMap and not areaId then

@@ -21,6 +21,10 @@ export type PairSource = {
 	take: (self: PairSource, now: number) -> { ArenaRules.Pairing }, -- pairs this server may start now
 	waiting: (self: PairSource, mode: string, bracket: string) -> number?, -- nil = unknown (global)
 	tickets: (self: PairSource) -> { ArenaRules.Ticket }, -- the tickets this server knows (admin /arena queue)
+	-- S127 (the global Matchmaker): the queue view of a key (scope "global" | "local", the rating window, past the
+	-- global wait) merged into arenaLive.queue, and the scope of new entries for ArenaStatus
+	info: ((self: PairSource, key: string) -> { [string]: any }?)?,
+	scope: ((self: PairSource) -> string)?,
 }
 
 export type Host = {

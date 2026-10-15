@@ -26,6 +26,7 @@ local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local Monsters = require(Shared.Data.Monsters)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Spawns = require(Shared.Data.Spawns)
 local Types = require(Shared.Types)
@@ -604,6 +605,9 @@ function MonsterService.Init(registry)
 	folder.Name = "Monsters"
 	folder.Parent = Workspace
 
+	if not ServerMode.isWorld() then
+		return -- S127: no monsters on arena/tournament servers (the empty folder stays)
+	end
 	for mapId, list in Spawns.byMap do
 		local map = Maps.get(mapId)
 		if not map then
@@ -668,6 +672,9 @@ function MonsterService.SpawnersNear(
 end
 
 function MonsterService.Start()
+	if not ServerMode.isWorld() then
+		return -- S127: no spawner loop on arena/tournament servers
+	end
 	task.spawn(function()
 		while true do
 			local ok, err = pcall(function()

@@ -14,7 +14,8 @@ describe("MapRoute", function()
 	it("reaches every open map from the city and back", function()
 		local missing = {}
 		for id, map in Maps.byId do
-			if map.buildMode ~= "none" then
+			-- S127: maps of reserved servers (arena_pit) are not on the routes of a world server
+			if map.buildMode ~= "none" and map.serverModes == nil then
 				local there = MapRoute.path("city", id)
 				local back = MapRoute.path(id, "city")
 				if not there or not back then

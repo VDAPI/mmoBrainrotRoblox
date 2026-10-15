@@ -63,8 +63,10 @@ local indexes: { [string]: MapSearch.Index } = {}
 local function nodeEntries(): { MapSearch.Entry }
 	local out: { MapSearch.Entry } = {}
 	local ids = {}
-	for id in Maps.byId do
-		table.insert(ids, id)
+	for id, map in Maps.byId do
+		if map.serverModes == nil then -- S127: no arena server maps
+			table.insert(ids, id)
+		end
 	end
 	table.sort(ids)
 	for _, mapId in ids do

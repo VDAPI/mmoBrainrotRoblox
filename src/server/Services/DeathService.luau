@@ -20,6 +20,7 @@ local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
 local Respawn = require(Shared.Logic.Respawn)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
@@ -166,7 +167,15 @@ local function placeHere(state: Pending): (Respawn.Place, CFrame?)
 end
 
 -- (map, CFrame, true when it is the death spot itself: the only paid place)
-local function respawnCFrame(state: Pending, choice: Respawn.Choice): (string, CFrame, boolean)
+local function respawnCFrame(player: Player, state: Pending, choice: Respawn.Choice): (string, CFrame, boolean)
+	if choice == "city" and not ServerMode.isWorld() then
+		-- S127: no capital on an arena server: the own start point (ArenaHost through CharacterService)
+		local at, map = CharacterService.SpawnOverride(player)
+		if at then
+			return map or ServerMode.homeMap(), at, false
+		end
+		return ServerMode.homeMap(), WorldService.GetSpawnCFrame(ServerMode.homeMap()), false
+	end
 	if choice == "city" then
 		return Config.StartingMap, WorldService.GetSpawnCFrame(Config.StartingMap), false
 	end
@@ -186,7 +195,7 @@ local function respawn(player: Player, token: number, choice: Respawn.Choice, pr
 		return
 	end
 	state.busy = true
-	local mapId, at, deathSpot = respawnCFrame(state, choice)
+	local mapId, at, deathSpot = respawnCFrame(player, state, choice)
 	-- "Here" is paid only when it really is the death spot (respawnCFrame falls back to free places).
 	if deathSpot and price and price > 0 then
 		local paid = false

@@ -103,6 +103,11 @@ describe("MapSearch", function()
 		end
 		expect(outside).toEqual({})
 	end)
+
+	it("S127: the arena server map is never a search result", function()
+		expect(ids(plIndex, "arena").arena_pit).toBeNil()
+		expect(ids(enIndex, "arena").arena_pit).toBeNil()
+	end)
 end)
 
 return nil

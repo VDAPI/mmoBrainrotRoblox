@@ -903,6 +903,27 @@ T.describe("S126 arena boards", function()
 		T.expect(Leaderboard.arenaMe({ level = 12 }, rows, false)).toEqual({ below = 20 })
 		T.expect(Leaderboard.arenaMe(character, rows, true)).toEqual({ hidden = true })
 	end)
+
+	T.it("S127: memoryBoard.range: ascending, exclusive bounds, count, expired entries skipped", function()
+		local board = Leaderboard.memoryBoard()
+		board.set("b", 20)
+		board.set("a", 20)
+		board.set("c", 10)
+		board.set("d", 30)
+		board.set("e", 25, nil, 50)
+		local function rangeKeys(lo: number?, hi: number?, count: number, now: number): { string }
+			local out = {}
+			for _, e in board.range(lo, hi, count, now) do
+				table.insert(out, e.key)
+			end
+			return out
+		end
+		T.expect(rangeKeys(nil, nil, 10, 0)).toEqual({ "c", "a", "b", "e", "d" })
+		T.expect(rangeKeys(10, 30, 10, 0)).toEqual({ "a", "b", "e" })
+		T.expect(rangeKeys(nil, nil, 2, 0)).toEqual({ "c", "a" })
+		T.expect(rangeKeys(10, nil, 10, 60)).toEqual({ "a", "b", "d" })
+		T.expect(rangeKeys(30, nil, 10, 0)).toEqual({})
+	end)
 end)
 
 return nil

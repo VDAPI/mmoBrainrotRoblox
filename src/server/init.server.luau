@@ -12,4 +12,8 @@ local Loader = require(Shared.Util.Loader)
 Players.CharacterAutoLoads = false
 
 Net.initServer()
+-- S127: reserved arena/tournament servers learn their mode before any service starts (WorldService.Init builds only
+-- their map and must not yield). World servers return at once.
+local ServerMode = require(script:WaitForChild("Arena"):WaitForChild("ServerMode")) :: any
+ServerMode.resolve()
 Loader.load(script:WaitForChild("Services"), "Server")

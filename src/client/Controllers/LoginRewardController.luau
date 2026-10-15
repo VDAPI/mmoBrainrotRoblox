@@ -14,6 +14,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local LoginRewardWindow = require(script.Parent.Parent.UI.Screens.LoginReward)
 local Net = require(ReplicatedStorage.Shared.Net)
+local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local State = require(script.Parent.Parent.UI.State)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 
@@ -59,6 +60,9 @@ end
 local function wanted(): boolean
 	if State.Get({ "session", "phase" }) ~= "playing" then
 		return false
+	end
+	if not ServerModeView.isWorld() then
+		return false -- S127: no window popping up on an arena server (the reward waits for the world)
 	end
 	if State.Get({ "character", "guideDone" }) == false then
 		return false -- the new character guide first; GuideDone re-checks

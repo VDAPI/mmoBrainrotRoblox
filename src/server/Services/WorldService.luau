@@ -7,6 +7,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Respawn = require(ReplicatedStorage.Shared.Logic.Respawn)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local WorldService = {
@@ -31,7 +32,8 @@ function WorldService.IsInsideMap(mapId: string, position: Vector3): boolean
 end
 
 function WorldService.GetSpawnCFrame(mapId: string): CFrame
-	local map = Maps.get(mapId) or Maps.get("city")
+	-- S127: an unknown map falls back to the home map of the server (the capital; the pit on an arena server)
+	local map = Maps.get(mapId) or Maps.get(ServerMode.homeMap()) or Maps.get("city")
 	assert(map, "WorldService: city map missing")
 	local ground = WorldService.GroundCFrame(map.id, map.spawn.x, map.spawn.z).Position
 	-- Face the map centre.
@@ -51,7 +53,7 @@ function WorldService.ResolveLocation(mapId: string, x: number, y: number, z: nu
 		end
 	end
 	if not map or not WorldService.IsBuilt(mapId) then
-		return WorldService.GetSpawnCFrame("city")
+		return WorldService.GetSpawnCFrame(ServerMode.homeMap())
 	end
 	local position = Vector3.new(x, y, z)
 	if (x ~= 0 or y ~= 0 or z ~= 0) and WorldService.IsInsideMap(mapId, position) then
@@ -304,12 +306,15 @@ function WorldService.Rebuild(mapId: string): boolean
 end
 
 function WorldService.Init()
-	WorldBuilder.build()
+	-- S127: an arena or tournament server builds only its maps (Data/Maps.serverModes: arena_pit)
+	WorldBuilder.build(ServerMode.get())
 end
 
 -- S45: the shaped regions (Data/Maps buildLate) are built after every service started, in the background.
 function WorldService.Start()
-	task.spawn(WorldBuilder.buildLate)
+	if ServerMode.isWorld() then
+		task.spawn(WorldBuilder.buildLate)
+	end
 end
 
 return WorldService

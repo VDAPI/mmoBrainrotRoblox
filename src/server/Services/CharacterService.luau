@@ -17,6 +17,7 @@ local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
 local Placement = require(script.Parent.Parent.Placement)
 local Premium = require(Shared.Logic.Premium)
+local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
@@ -57,6 +58,9 @@ type Runtime = {
 	busy: boolean,
 	spawnToken: number,
 	playStartedAt: number?,
+	-- S127: on an arena server, the saved location the character came from. The location in memory is the pit; this
+	-- one goes back into the profile before the session ends (ProfileReleasing), so the save never keeps the pit.
+	home: Types.Location?,
 }
 
 local runtimes: { [Player]: Runtime } = {}
@@ -116,7 +120,8 @@ local function saveRuntime(player: Player)
 	local rt = runtime(player)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if root and WorldService.IsInsideMap(character.location.map, root.Position) then
+	-- S127: on a temporary map (the arena server) only the playtime is written, never the position
+	if rt.home == nil and root and WorldService.IsInsideMap(character.location.map, root.Position) then
 		local p = root.Position
 		character.location = {
 			map = character.location.map,
@@ -150,6 +155,9 @@ end
 -- streamed in first and the root stays anchored until the pivot sticks; before, the client (network owner
 -- of the fresh model in the city) could overwrite the pivot thousands of studs away, so every respawn
 -- ended in the city. The client shows the map loading screen meanwhile.
+-- S127: set by ArenaHost on an arena server: where a fresh model of `player` stands (start point, map).
+local spawnOverride: ((player: Player) -> (CFrame?, string?))? = nil
+
 local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 	local rt = runtime(player)
 	rt.spawnToken += 1
@@ -169,8 +177,15 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 			return
 		end
 	end
+	if not at and not ServerMode.isWorld() and spawnOverride then
+		-- S127: an arena server puts a fresh model on the player's start point (ArenaHost)
+		local overAt, overMap = spawnOverride(player)
+		if overAt then
+			at, map = overAt, overMap or map
+		end
+	end
 	if not at and not WorldService.IsBuilt(map) then
-		map = "city" -- ResolveLocation sends a character on an unbuilt map to the capital
+		map = ServerMode.homeMap() -- ResolveLocation sends a character on an unbuilt map to the capital (S127: the pit)
 	end
 	local cframe = at or WorldService.ResolveLocation(map, loc.x, loc.y, loc.z)
 	if map ~= loc.map then
@@ -227,6 +242,8 @@ function CharacterService.ReturnToSelect(player: Player)
 	if character then
 		CharacterService.CharacterLeaving:Fire(player, character)
 	end
+	CharacterService.RestoreHome(player)
+	runtime(player).home = nil
 	despawn(player)
 	runtime(player).playStartedAt = nil
 
@@ -348,7 +365,9 @@ local function deleteCharacter(player: Player, slot: number, confirmName: string
 	return true, nil
 end
 
-local function playCharacter(player: Player, slot: number): (boolean, string?)
+-- `spawn` (S127, an arena server): the character enters on that map and point; the saved location is kept aside
+-- (Runtime.home) and goes back into the profile before the session ends.
+local function playCharacter(player: Player, slot: number, spawn: { map: string, at: CFrame }?): (boolean, string?)
 	if PlayerStateService.GetPhase(player) ~= "select" then
 		return false, "error.wrongPhase"
 	end
@@ -367,10 +386,21 @@ local function playCharacter(player: Player, slot: number): (boolean, string?)
 	PlayerStateService.Set(player, { "character" }, character)
 	PlayerStateService.Set(player, { "session", "slot" }, slot)
 	PlayerStateService.Set(player, { "session", "phase" }, "playing")
+	local rt = runtime(player)
+	rt.home = nil
+	if spawn then
+		rt.home = table.clone(character.location)
+		local p = spawn.at.Position
+		PlayerStateService.Set(player, { "character", "location" }, { map = spawn.map, x = p.X, y = p.Y, z = p.Z })
+	end
 	PlayerStateService.Flush(player)
 
-	runtime(player).playStartedAt = os.clock()
-	task.spawn(spawnModel, player, nil)
+	rt.playStartedAt = os.clock()
+	if spawn then
+		task.spawn(spawnModel, player, spawn.at, spawn.map)
+	else
+		task.spawn(spawnModel, player, nil)
+	end
 	CharacterService.CharacterEntered:Fire(player, character)
 	log:info("%s entered the world as '%s'", player.Name, character.name)
 	return true, nil
@@ -387,6 +417,9 @@ local function switchCharacter(player: Player): (boolean, string?)
 	if PlayerStateService.GetPhase(player) ~= "playing" then
 		return false, "error.wrongPhase"
 	end
+	if not ServerMode.isWorld() then
+		return false, "arena.net.error.notHere" -- S127: no character selection on an arena server
+	end
 	local blocked = switchGuard and switchGuard(player)
 	if blocked then
 		return false, blocked
@@ -394,6 +427,43 @@ local function switchCharacter(player: Player): (boolean, string?)
 	CharacterService.ReturnToSelect(player)
 	DataService.Save(player)
 	return true, nil
+end
+
+-- S127: enters the world with the character of `slot` (the PlayCharacter path, under the request lock). With `spawn`
+-- (an arena server) on that map and point, the saved location kept aside; without it on the saved location (a world
+-- server after the arena: TeleportData.arenaReturn).
+function CharacterService.Play(player: Player, slot: number, spawn: { map: string, at: CFrame }?): (boolean, string?)
+	return withLock(player, function()
+		return playCharacter(player, slot, spawn)
+	end)
+end
+
+-- S127: the position and playtime into the character data now (before a teleport between servers).
+function CharacterService.SaveRuntime(player: Player)
+	saveRuntime(player)
+end
+
+-- S127: the location saved before the arena server goes back into the character data (before the profile is saved for
+-- the last time). Nothing without one.
+function CharacterService.RestoreHome(player: Player)
+	local rt = runtimes[player]
+	local character = PlayerStateService.GetCharacter(player)
+	if rt and rt.home and character then
+		character.location = table.clone(rt.home)
+	end
+end
+
+-- S127: one override (ArenaHost on an arena server) for where a fresh model stands; nil on a world server.
+function CharacterService.SetSpawnOverride(fn: ((player: Player) -> (CFrame?, string?))?)
+	spawnOverride = fn
+end
+
+-- S127: the start point of `player` on this arena server (DeathService's "city" choice off a world server).
+function CharacterService.SpawnOverride(player: Player): (CFrame?, string?)
+	if spawnOverride then
+		return spawnOverride(player)
+	end
+	return nil, nil
 end
 
 function CharacterService.Init(registry)
@@ -409,16 +479,25 @@ function CharacterService.Start()
 		return checkName(player, name)
 	end)
 	Net.Handle("CreateCharacter", function(player: Player, slot: number, classId: string, name: string)
+		if not ServerMode.isWorld() then
+			return false, "arena.net.error.notHere" -- S127: the arena server picks the character itself
+		end
 		return withLock(player, function()
 			return createCharacter(player, slot, classId, name)
 		end)
 	end)
 	Net.Handle("DeleteCharacter", function(player: Player, slot: number, confirmName: string)
+		if not ServerMode.isWorld() then
+			return false, "arena.net.error.notHere"
+		end
 		return withLock(player, function()
 			return deleteCharacter(player, slot, confirmName)
 		end)
 	end)
 	Net.Handle("PlayCharacter", function(player: Player, slot: number)
+		if not ServerMode.isWorld() then
+			return false, "arena.net.error.notHere"
+		end
 		return withLock(player, function()
 			return playCharacter(player, slot)
 		end)
@@ -463,6 +542,13 @@ function CharacterService.Start()
 		local character = PlayerStateService.GetCharacter(player)
 		if character then
 			CharacterService.CharacterLeaving:Fire(player, character)
+		end
+		-- S127: after the arena wrote the result (CharacterLeaving), the location before the arena server goes back into
+		-- the profile, right before EndSession saves it. A ProfileStore auto-save during the match may store the pit;
+		-- harmless: a map that is not built sends the next login to the capital (WorldService.ResolveLocation).
+		local rt = runtimes[player]
+		if rt and rt.home and character then
+			character.location = table.clone(rt.home)
 		end
 	end)
 
