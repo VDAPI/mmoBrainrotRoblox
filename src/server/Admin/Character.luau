@@ -4,6 +4,8 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local CharacterLook = require(Shared.Logic.CharacterLook)
+local ClassLooks = require(Shared.Data.ClassLooks)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
@@ -39,6 +41,7 @@ local PathService = Context.services.PathService
 local PartyService = Context.services.PartyService
 local MountService = Context.services.MountService
 local TitleService = Context.services.TitleService
+local CosmeticService = Context.services.CosmeticService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -298,6 +301,51 @@ commands.mountall = function(player)
 		end
 		reply(player, "admin.mount.all", { n = n })
 	end)
+end
+
+-- S132: the look of the character without a cost and without touching the free change; "reset" = the default look.
+commands.charlook = function(player, args)
+	withCharacter(player, function()
+		local look: ClassLooks.Look
+		if args[1] == "reset" then
+			look = CharacterLook.normalize(nil)
+		else
+			look = { face = args[1] or "", skin = args[2] or "", hair = args[3] or "" }
+			for _, id in { look.face, look.skin, look.hair } do
+				if not (ClassLooks.faceById[id] or ClassLooks.skinById[id] or ClassLooks.hairById[id]) then
+					reply(player, "admin.charlook.bad", { id = id })
+					return
+				end
+			end
+		end
+		if not CosmeticService.AdminSetLook(player, look) then
+			reply(player, "admin.usage.charlook")
+			return
+		end
+		reply(player, "admin.charlook.set", {
+			face = `@look.face.{look.face}`,
+			skin = look.skin,
+			hair = `@look.hair.{look.hair}`,
+		})
+	end)
+end
+
+-- S132: the free look change again (the creator's one).
+commands.lookfree = function(player)
+	withCharacter(player, function()
+		PlayerStateService.Set(player, { "character", "lookFree" }, true)
+		reply(player, "admin.lookfree.ok")
+	end)
+end
+
+-- S132: "Show my Roblox avatar" like the options window (CosmeticService.SetRobloxAvatar).
+commands.avatarmode = function(player, args)
+	if args[1] ~= "on" and args[1] ~= "off" then
+		reply(player, "admin.usage.avatarmode")
+		return
+	end
+	CosmeticService.SetRobloxAvatar(player, args[1] == "on")
+	reply(player, "admin.avatarmode.ok", { mode = args[1] })
 end
 
 -- Level + the full gear set of the character's class at that level (Logic/DevPreset), rolled at `rarity` with

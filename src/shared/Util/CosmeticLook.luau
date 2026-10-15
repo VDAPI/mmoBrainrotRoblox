@@ -2,8 +2,13 @@
 -- Placeholder visuals of cosmetics (Data/Cosmetics), built from parts and particles. Used by the server
 -- (CosmeticService, on real characters) and by the wardrobe preview (on a cloned model in a ViewportFrame).
 -- Every apply* call first removes what it added before, so it can be called again at any time.
+-- S132 (DESIGN-17 §9a): outfits and the dye are drawn by Util/AvatarBuild from Logic/CharacterLook.resolve (the class
+-- look); applyOutfit / applyDye / applyAll stay with their names and signatures as a compatibility path (an outfit over
+-- the model as it is, avatar mode). CosmeticService and the wardrobe use AvatarBuild directly.
 
 local Anatomy = require("../Logic/Anatomy")
+local AvatarBuild = require("./AvatarBuild")
+local CharacterLook = require("../Logic/CharacterLook")
 local CosmeticRules = require("../Logic/CosmeticRules")
 local Cosmetics = require("../Data/Cosmetics")
 local LookBuild = require("./LookBuild")
@@ -11,7 +16,6 @@ local LookBuild = require("./LookBuild")
 local CosmeticLook = {}
 
 local OUTFIT_FOLDER = "VaelthornOutfit"
-local HIDDEN_CLOTHES = "VaelthornHiddenClothes"
 local AURA = "VaelthornAura"
 local TRAIL = "VaelthornTrail"
 local WEAPON_FX = "VaelthornWeaponFx"
@@ -85,49 +89,6 @@ local function piece(
 	return part
 end
 
-local function accessory(model: Model, folder: Folder, name: string, main: Color3, second: Color3)
-	local head = model:FindFirstChild("Head") :: BasePart?
-	local body = torso(model)
-	if name == "hood" then
-		piece(folder, head, Vector3.new(1.4, 1.35, 1.4), CFrame.new(0, 0.12, 0.08), main)
-	elseif name == "crown" then
-		piece(folder, head, Vector3.new(1.15, 0.35, 1.15), CFrame.new(0, 0.75, 0), second, nil, Enum.Material.Neon)
-	elseif name == "halo" then
-		piece(
-			folder,
-			head,
-			Vector3.new(0.12, 1.4, 1.4),
-			CFrame.new(0, 1.15, 0) * CFrame.Angles(0, 0, math.rad(90)),
-			second,
-			Enum.PartType.Cylinder,
-			Enum.Material.Neon
-		)
-	elseif name == "horns" then
-		piece(folder, head, Vector3.new(0.25, 0.7, 0.25), CFrame.new(-0.45, 0.75, 0) * CFrame.Angles(0, 0, 0.4), second)
-		piece(folder, head, Vector3.new(0.25, 0.7, 0.25), CFrame.new(0.45, 0.75, 0) * CFrame.Angles(0, 0, -0.4), second)
-	elseif name == "mask" then
-		piece(folder, head, Vector3.new(1.05, 0.45, 0.2), CFrame.new(0, -0.15, -0.55), second)
-	elseif name == "cape" then
-		local cape = piece(
-			folder,
-			body,
-			Vector3.new(1.9, 2.6, 0.12),
-			CFrame.new(0, -0.6, 0.6) * CFrame.Angles(0.12, 0, 0),
-			second
-		)
-		if cape then
-			-- S122: the lure cape has priority (applyLure hides every OutfitCape while it is on)
-			cape.Name = OUTFIT_CAPE
-			if model:GetAttribute(LURE_ATTRIBUTE) == true then
-				cape.Transparency = 1
-			end
-		end
-	elseif name == "pauldrons" then
-		piece(folder, body, Vector3.new(0.9, 0.5, 1.1), CFrame.new(-1.15, 0.75, 0), second, nil, Enum.Material.Metal)
-		piece(folder, body, Vector3.new(0.9, 0.5, 1.1), CFrame.new(1.15, 0.75, 0), second, nil, Enum.Material.Metal)
-	end
-end
-
 local function clear(model: Model, name: string)
 	for _, child in model:GetDescendants() do
 		if child.Name == name then
@@ -136,56 +97,29 @@ local function clear(model: Model, name: string)
 	end
 end
 
-function CosmeticLook.applyOutfit(model: Model, id: string?)
-	-- Undo the previous outfit.
-	local old = model:FindFirstChild(OUTFIT_FOLDER)
+-- Compatibility (S132): the outfit `id` over the model as it is (Util/AvatarBuild in avatar mode, the dye with
+-- `dyeId`). A class outfit is drawn for any model here; the game checks the class before (Logic/Premium.canEquip).
+function CosmeticLook.applyOutfit(model: Model, id: string?, dyeId: string?)
+	local old = model:FindFirstChild(OUTFIT_FOLDER) -- an outfit drawn before S132
 	if old then
 		old:Destroy()
 	end
-	for _, part in model:GetChildren() do
-		if part:IsA("BasePart") then
-			local original = part:GetAttribute("VaelthornColor")
-			if typeof(original) == "Color3" then
-				part.Color = original
-				part:SetAttribute("VaelthornColor", nil)
-			end
-		end
-	end
-	local hidden = model:FindFirstChild(HIDDEN_CLOTHES)
-	if hidden then
-		for _, clothing in hidden:GetChildren() do
-			clothing.Parent = model
-		end
-		hidden:Destroy()
-	end
-
-	local def = id and Cosmetics.get(id)
+	local def = if id then Cosmetics.get(id) else nil
 	if not def or def.kind ~= "outfit" then
+		AvatarBuild.clearProcedural(model)
 		return
 	end
-	local main = Color3.fromHex(def.color)
-	local second = Color3.fromHex(def.color2 or def.color)
-	-- Clothing textures would cover the colours: park them in a folder (restored on removal).
-	local park = Instance.new("Folder")
-	park.Name = HIDDEN_CLOTHES
-	park.Parent = model
-	for _, child in model:GetChildren() do
-		if child:IsA("Clothing") or child:IsA("ShirtGraphic") then
-			(child :: Instance).Parent = park
-		end
-	end
-	for _, part in model:GetChildren() do
-		if part:IsA("BasePart") and (BODY_MAIN[part.Name] or BODY_SECOND[part.Name]) then
-			part:SetAttribute("VaelthornColor", part.Color)
-			part.Color = if BODY_MAIN[part.Name] then main else second
-		end
-	end
-	local folder = Instance.new("Folder")
-	folder.Name = OUTFIT_FOLDER
-	folder.Parent = model
-	for _, name in (def.parts or {}) :: { string } do
-		accessory(model, folder, name, main, second)
-	end
+	AvatarBuild.applyProcedural(
+		model,
+		CharacterLook.resolve({
+			classId = def.class or "",
+			look = nil,
+			outfitId = def.id,
+			dye = dyeId,
+			robloxAvatar = true,
+		}),
+		true
+	)
 end
 
 -- Whether `color` is the hex colour `hex` (part colours are stored with 8 bits per channel).
@@ -204,8 +138,8 @@ end
 -- the outfit's accessories of the outfit's main / second colour (Neon and Metal ones too). Nothing without an outfit
 -- or a dye; never the Cloak of Luring cape, the aura, the trail or the weapon effect. Taking the dye off is a new
 -- applyAll (applyOutfit restores and rebuilds everything).
--- S132 (DESIGN-17 §9a) will make outfits replace the class clothing; the dye stays a separate recolouring step after
--- the outfit.
+-- S132 (DESIGN-17 §9a): compatibility only. The game puts the dye into Logic/CharacterLook.resolve (the outfit's colours
+-- before drawing); calling this after Util/AvatarBuild would paint the body a second time.
 function CosmeticLook.applyDye(model: Model, dyeId: string?, outfitId: string?)
 	local outfit = if outfitId then Cosmetics.get(outfitId) else nil
 	local dye = if dyeId then Cosmetics.get(dyeId) else nil
@@ -224,7 +158,7 @@ function CosmeticLook.applyDye(model: Model, dyeId: string?, outfitId: string?)
 			end
 		end
 	end
-	local folder = model:FindFirstChild(OUTFIT_FOLDER)
+	local folder = model:FindFirstChild(OUTFIT_FOLDER) or model:FindFirstChild("VaelthornClassLook")
 	if not folder then
 		return
 	end
@@ -407,10 +341,15 @@ function CosmeticLook.buildPet(id: string): Model?
 	return out
 end
 
--- Ids of everything this module draws (used to apply all equipped cosmetics at once).
+-- Ids of everything this module draws (used to apply all equipped cosmetics at once). S132: compatibility; the dye goes
+-- into the outfit's colours (applyOutfit), the game applies the class look through Util/AvatarBuild and applyEffects.
 function CosmeticLook.applyAll(model: Model, equipped: { [string]: string })
-	CosmeticLook.applyOutfit(model, equipped.outfit)
-	CosmeticLook.applyDye(model, equipped.dye, equipped.outfit) -- S123: after the outfit, never inside it
+	CosmeticLook.applyOutfit(model, equipped.outfit, equipped.dye)
+	CosmeticLook.applyEffects(model, equipped)
+end
+
+-- S132: everything but the outfit and the dye (aura, trail, weapon effect), after the class look.
+function CosmeticLook.applyEffects(model: Model, equipped: { [string]: string })
 	CosmeticLook.applyAura(model, equipped.aura)
 	CosmeticLook.applyTrail(model, equipped.trail)
 	CosmeticLook.applyWeapon(model, equipped.weapon)

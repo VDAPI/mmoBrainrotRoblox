@@ -10,7 +10,7 @@ import { formatNumber } from "./format";
 export type StatFormat = "num" | "pct" | "frac" | "x" | "s" | "min" | "h" | "gold" | "lvl";
 
 const FILES = new Set<string>([
-  "arena", "areas", "blessings", "bonuses", "bosses", "caves", "classes", "cosmetics", "crafting", "elements", "fish", "gather",
+  "arena", "areas", "blessings", "bonuses", "bosses", "caves", "classes", "classlooks", "cosmetics", "crafting", "elements", "fish", "gather",
   "icons", "items", "maps", "mechanics", "meta", "monsters", "mounts", "npcs", "portals", "premium", "progression", "quests",
   "rarities", "recipes", "shops", "skills", "stats", "titles", "upgrade",
 ]);

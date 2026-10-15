@@ -292,6 +292,8 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	if quest.reward.cosmetic then
 		CosmeticService.Grant(player, quest.reward.cosmetic)
 	end
+	-- S132: class outfits of this quest for the character's class (obtain.quest)
+	CosmeticService.GrantQuestOutfits(player, quest.id, char.class)
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = quest.reward.exp, gold = quest.reward.gold } })
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)

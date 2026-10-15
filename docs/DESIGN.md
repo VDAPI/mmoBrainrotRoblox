@@ -212,7 +212,8 @@ lawy przecinają tunele tylko pod mostami (kaniony mają łagodne zbocza żużlu
 
 - Konto Roblox = 5 slotów postaci: 3 darmowe i 2 z przepustek „Miejsce na postać 4 / 5” (S121; slot 5 wymaga slotu 4). Bez przepustki zablokowany jest tylko wolny slot (kłódka i przycisk zakupu albo „Wkrótce”); postać na slocie 4–5 zostaje grywalna. Ekran wyboru postaci przy wejściu: utwórz / usuń (potwierdzenie wpisaniem nazwy) / graj.
 - Nazwa postaci: 3–16 znaków, litery i cyfry, filtrowana przez TextService, **unikalna globalnie** (rezerwacja w DataStore).
-- Wygląd: awatar Roblox gracza + widoczna broń w ręce + później kosmetyki.
+- Wygląd: strój zależny od klasy na standardowej postaci R15 (twarz, skóra i fryzura z kreatora; opcja awatara Roblox w
+  standardowych proporcjach) + widoczna broń w ręce + kosmetyki (S132).
 - Przełączanie postaci w trakcie gry: menu → „Zmień postać” (powrót do ekranu wyboru bez wychodzenia z gry, zapis postaci).
 - Wspólne dla konta: Smocza Waluta, depozyt, kosmetyki, pety, zakupy, ustawienia.
 - Osobne dla postaci: wszystko inne (złoto, plecak, ekwipunek, poziom, skille, questy, gildia).
@@ -1103,7 +1104,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 ## 22. Kosmetyki i pety
 
-- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (nakładany na awatar), aura, ślad, efekt broni, wygląd wierzchowca (S97, rodzaj `mountskin`: jeden na konto, działa na każdym wierzchowcu). Garderoba w menu.
+- Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (S132: podmienia strój klasy, wspólny albo klasowy; w trybie awatara nakłada się na awatar), aura, ślad, efekt broni, wygląd wierzchowca (S97, rodzaj `mountskin`: jeden na konto, działa na każdym wierzchowcu). Garderoba w menu.
 - **Kosmetyki 2 (S123, DESIGN-17 §4):** sześć nowych rodzajów, wszystkie tylko wygląd. Ramka portretu (portret HUD, okno
   postaci, profil gracza), ramka czatu (znaki i kolor wokół imienia w czacie, kolory dymka), tytuł kupowany (w `Data/Titles`
   z `req = { kind = "cosmetic" }`, w tym samym pickerze co tytuły z gry), emotka (gest z koła emotek pod klawiszem T i
@@ -1153,6 +1154,23 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   (350–900), dwa z bossów, cztery z zadań (finał łuku stajni, `vaelgrath`, finał fabuły `firstSpring` S105 i łuk
   latarników Boru `side_lampLighter` S106; łuki Pustkowi i Szczytów skinów nie dają). Na wiki od S97 (skiny z zadań
   S105 / S106 od S109).
+
+- **Wygląd klas (S132, DESIGN-17 §9a):** postać gracza to zawsze standardowe R15 (skale domyślne, standardowe części
+  ciała, bez animacji awatara). Wygląd daje klasa, kreator dodaje twarz (8), kolor skóry (10) i fryzurę (12)
+  (`character.look`; jedna darmowa zmiana na postać, potem u Cyrulika na rynku za `max(300, 15 × poziom)` złota, nigdy
+  za odłamki ani Robux). Stroje z garderoby **podmieniają** strój klasy (`account.cosmetics.classOutfits[klasa]`);
+  wspólne pasują do każdej klasy, klasowe tylko do swojej (kupić może każde konto). Opcja „Pokaż mój awatar Roblox”:
+  awatar w standardowych proporcjach, strój z garderoby nakłada się na niego, wszyscy widzą wybór właściciela.
+
+  | Klasa | Strój domyślny | Części | Stroje klasowe |
+  |---|---|---|---|
+  | Wojownik | Strój Wojownika | napierśnik, płytowe naramienniki, rękawice, nagolenniki, pas, peleryna | 3 za odłamki (450, 700, 900), Strażnik Boru (finał rozdziału II), Zahartowany w Popiele (Azgor tą klasą) |
+  | Kapłan | Szata Kapłana | szata do ziemi, kaptur, święty symbol, szarfa, stuła | 3 za odłamki (400, 700, 900), Opiekun Kapliczek, Popielny Kapłan |
+  | Łowca | Strój Łowcy | skórzany kaftan, kaptur, kołczan na plecach, karwasze, pas, buty | 3 za odłamki (400, 650, 900), Leśny Strzelec, Łowca Salamander |
+  | Mag | Szata Maga | szata do ziemi, wysoki kołnierz, pas z księgą, szarfa, narzutka | 3 za odłamki (400, 700, 900), Wiedźmi Strój Boru, Popielny Arcymag |
+
+  Każdy element może być darmowym przedmiotem z katalogu Roblox albo modelem właściciela (`docs/WYGLAD-KLAS.md`); do
+  tego czasu gra rysuje go z części. Zbroja z ekwipunku zmieni wygląd dopiero później (miejsce na warstwy w danych).
 
 ## 23. Interfejs
 

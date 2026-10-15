@@ -6,11 +6,13 @@
 -- phone, the discounted one with "−30%" and the old price struck through, "Owned" instead of a button, "Try on",
 -- the countdown to Monday 00:00 UTC; UI/WeeklyClock ticks, so a new week shows by itself). Every price here is
 -- WeeklyOffer.priceOf and goes with the purchase (the server refuses another one: premium.error.priceChanged).
+-- S132: a class outfit stays on sale for every account and says which class wears it ("Only for: {class}").
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Cards = require(script.Parent.Cards)
+local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local CosmeticData = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
 local Device = require(script.Parent.Parent.Parent.Device)
@@ -80,6 +82,16 @@ local function spec(def: CosmeticData.Def, price: number, balance: number): Prem
 end
 
 -- "◆ 175 <s>250</s>" for the discounted one, "◆ 250" otherwise (rich text).
+-- The kind of a cosmetic, with the class of a class outfit (S132).
+local function kindText(use: Fusion.Use, def: CosmeticData.Def): string
+	local kind = Text.get(use, `wardrobe.kind.{def.kind}`)
+	local class = if def.class then Classes.get(def.class) else nil
+	if class then
+		return `{kind} · {Text.get(use, "wardrobe.onlyFor", { class = Text.get(use, class.nameKey) })}`
+	end
+	return kind
+end
+
 local function priceText(def: CosmeticData.Def, price: number): string
 	if price < def.price then
 		return `◆ {Format.number(price)}  <s>{Format.number(def.price)}</s>`
@@ -140,10 +152,12 @@ local function row(
 		title = Text.T(scope, def.nameKey),
 		subtitle = if price < def.price
 			then scope:Computed(function(use): string
-				local kind = Text.get(use, `wardrobe.kind.{def.kind}`)
+				local kind = kindText(use, def)
 				return `{kind} · {Text.get(use, "wardrobe.weekly")} · <s>◆ {Format.number(def.price)}</s>`
 			end)
-			else Text.T(scope, `wardrobe.kind.{def.kind}`),
+			else scope:Computed(function(use): string
+				return kindText(use, def)
+			end),
 		rich = price < def.price,
 		badge = if price < def.price
 			then Text.T(
@@ -225,7 +239,9 @@ local function offerCard(
 				Position = UDim2.fromOffset(6, 88),
 				Size = UDim2.new(1, -12, 0, 20),
 				BackgroundTransparency = 1,
-				Text = Text.T(scope, `wardrobe.kind.{def.kind}`),
+				Text = scope:Computed(function(use): string
+					return kindText(use, def)
+				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Colors.TextMuted,

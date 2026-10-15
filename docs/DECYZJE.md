@@ -4326,3 +4326,60 @@
 - **S131** Żetony Areny z wydarzeń (Krwawy Księżyc, turniej) poza limitem tygodniowym meczów (`uncapped`, S129) zostają;
   postać zawsze ma `character.arena` z szablonu, więc nagroda poniżej 20. poziomu nie ginie. Turniej nie wyklucza
   postaci administracji (to wydarzenie, nie tablica); rankingi areny i Krwawego Księżyca wykluczają (`excludeAdmins`).
+- **S132** Nazwy z kodu zamiast założeń promptu: zestawy Garderoby+ to `account.outfits` (`Types.Outfit` + nowe pole
+  `class`), barwnik `account.cosmetics.equipped.dye`, peleryna przynęty `CosmeticLook.applyLure` z umową
+  `OutfitCape` / `LureCape` (szuka po wszystkich potomkach modelu, bez zmian), `Logic/Lure.active`, finał rozdziału II
+  to quest `queensLegacy` (S103). `applySet` mieszka w `Logic/Premium` (nie w `Logic/CharacterLook`), bo
+  `Premium.canEquip` wymaga `CharacterLook` i odwrotny `require` byłby cyklem.
+- **S132** Postać gracza zawsze standardowe R15: `LoadCharacterWithHumanoidDescription(Async)` z opisem od
+  `CosmeticService` (dostawca `CharacterService.SetDescriptionProvider`, bez zależności `CharacterService` →
+  `CosmeticService`), części ciała i animacje opisu = 0, skale klasy 1/1/1/1/0/0; w trybie awatara skale przycięte do
+  `Config.CharacterLook.avatarScale` i **części ciała też wyzerowane** (Rthro i głowy dynamiczne psują pozy S110–S117,
+  siodło S96 i równe sylwetki w PvP). Błąd API → `LoadCharacterAsync` i sam wygląd proceduralny; R6 z ustawień gry =
+  ostrzeżenie w logu i `Analytics.custom("RigNotR15")`. Bez własnego spawnu z `CreateHumanoidModelFromDescription`
+  (gubi skrypty startowe postaci i `Animate`); ta metoda tylko dla manekina podglądu.
+- **S132** Każdy element wyglądu: id z katalogu Roblox, model `assets/ClassLooks/<nazwa>.rbxm` (`ClassLooks.assets`)
+  albo procedural z `Util/AvatarBuild`. W tej sesji wszystkie id = 0 i brak modeli; lista do uzupełnienia w
+  `docs/WYGLAD-KLAS.md` (`tools/classlooks_slots.luau`). Podgląd w kreatorze, garderobie i oknie wyglądu rysuje zapas
+  proceduralny dla elementów z katalogu (opis zakłada tylko serwer); żywa postać (klon) ma je naprawdę.
+- **S132** Strój na klasę: `account.cosmetics.classOutfits[class]` (`nil` = strój domyślny klasy); migracja 9
+  przeniosła dawne `equipped.outfit` do wszystkich klas, które mogą go nosić (dziś wspólne = wszystkie). Strój innej
+  klasy można kupić, założyć tylko tą klasą (`wardrobe.error.otherClass`). Zestawy Garderoby+ zapisują strój klasy i
+  `class`, wczytanie przez `Premium.applySet`; wygląd (twarz, skóra, fryzura) należy do postaci, nie do zestawu.
+- **S132** `character.look = { face, skin, hair }` i `character.lookFree` (każda postać, także nowa, ma jedną darmową
+  zmianę z dowolnego miejsca). Płatna zmiana tylko u Cyrulika, za złoto `max(goldMin, goldPerLevel × poziom)` =
+  `max(300, 15 × poziom)`, **bez odłamków i Robux** (kontrakt dopuszczał odłamki; złoto nie wymaga produktu i jest
+  pochłaniaczem złota z gry). Prompt proponował 100 / 1000; G1 (2–15% dochodu poziomu) wymagał 15 / 300.
+- **S132** Stroje „z gry”: `obtain.quest = "queensLegacy"` (finał rozdziału II) i nowe `obtain.bossWin = "azgor"`
+  (każdy zwycięzca tej klasy, deterministycznie, bez losowania i bez zużycia `rng` rzutów S97). Nadanie wstecz przy
+  wejściu do świata tylko z trwałym dowodem: oddany quest (`mainDone` / `side.done`), dla bossa oddany quest fabuły z
+  celem `boss` albo quest bossowy S98 `boss_<id>`; `bossRuns` (tylko dzisiejszy dzień) nie jest dowodem.
+- **S132** Nowy NPC `barber` (Cyrulik Bazyli) przy straganie z suknem na rynku (`stall_cloth`, `town.spec` zielony),
+  usługa `look`; okno `look` otwiera się też z garderoby (jak okno wierzchowców: `NPC_OPTIONAL`, zamyka się z NPC tylko
+  otwarte u niego).
+- **S132** Peleryna stroju ustępuje pelerynie przynęty S122 przez zachowaną umowę `OutfitCape` / `LureCape`
+  (`applyLure` bez zmian; `resolve` liczy części przynęty tylko do budżetu). Barwnik liczony w `CharacterLook.resolve`
+  (także na stroju domyślnym klasy); w trybie awatara działa tylko z założonym strojem. `applyOutfit` / `applyDye` /
+  `applyAll` zostają jako ścieżka zgodności (`applyEffects` = aura, ślad, broń). Procedural kołczana znika, gdy model ma
+  `VaelthornOffhand` z `WeaponType = "quiver"`. W trybie awatara dłonie dalej biorą drugi kolor stroju (jak przed S132).
+- **S132** `Data/ClassLooks` w `NOT_BALANCE` („wygląd”), `Config.LookChange` w `CONFIG_KEYS` z powodami S132;
+  `Config.CharacterLook` (budżet części, skale awatara) to wygląd, poza księgą.
+- **S132** Warstwy zbroi wg slotu (`ClassLooks.layers`, sloty `CharacterLook.SLOTS` / `GARMENTS[g].slot`) zostawione na
+  później (DESIGN-17 §9a „Później”); nic ich nie czyta.
+- **S132** Zależności: `CosmeticService.Deps` += `NpcService` (zależy tylko od `WorldService`); `MountService` i
+  `EquipmentService` leniwie z `registry` (wzór S60/S97); `DungeonService.Deps` += `CosmeticService` (nadanie stroju
+  za bossa); `QuestService` / `SideQuestService` już miały `CosmeticService`; `SettingsService.Deps` +=
+  `CosmeticService` (nikt nie zależy od `SettingsService`, `AdminService` już ma `CosmeticService`). Graf bez cykli.
+- **S132** Wiki: pole `class` w `cosmetics.json`, nowy `classlooks.json` (strój domyślny, części, stroje klasy ze
+  źródłem `shop` / `quest` / `boss`, liczba twarzy i fryzur, odcienie skóry; bez id katalogu, modeli i cen),
+  `WIKI_KEYS_ALLOW="classlooks:*,cosmetics:cosmetics.cosmetics[].class,types.ts"`.
+- **S132** Stroje klasowe ze sklepu są w puli oferty tygodnia (`weekly = true`, jak wszystkie kosmetyki S123);
+  `weeklyoffer.spec` sprawdza rotację całej puli na 200 tygodniach zamiast 100 (pula urosła o 12).
+- **S132** Uproszczenia wyglądu proceduralnego: szata (`robe_skirt`) i części nóg są spawane do tułowia i łydek (nogi
+  przy chodzie przechodzą przez szatę), twarz to ramki na `SurfaceGui` przodu głowy (w podglądach cienkie części na
+  przodzie głowy, bo `ViewportFrame` nie rysuje `SurfaceGui`), fryzury i stroje to bryły bez siatek.
+  Budżet części: najcięższy strój + fryzura + przynęta = 15 z 28.
+- **S132** (przegląd) `ModelSpawned` niesie trzeci argument `described` (model wczytany z opisu); klucz wyglądu ze
+  spawnu trafia na model tylko wtedy, inaczej `CosmeticService` od razu ponawia opis na stojącym modelu. Przed
+  `ApplyDescription` zawsze `AvatarBuild.clearProcedural` (opis nie trafia na stare kolory i odłożoną twarz); po nim
+  odbudowa broni, gdy brakuje `VaelthornWeapon` albo `VaelthornOffhand`.

@@ -463,6 +463,8 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `BossTuning:farRange` | 14 | S117 | FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s |
 | `Config:FullElixir.cooldown` | 180 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
 | `Config:FullElixir.dailyLimit` | 10 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:LookChange.goldMin` | 300 | S132 | 300 gold below level 20 (= 15 x 20, the price of level 20): a new character pays no more than at 20; the free first change covers the creator's regrets |
+| `Config:LookChange.goldPerLevel` | 15 | S132 | look change at the barber = 15 x level gold: 300 / 675 / 1050 / 1500 at 20 / 45 / 70 / 100 = 13.3 / 4.5 / 3.1 / 2.4% of a level's income (Balance.levelIncome 2260 / 14926 / 33468 / 61396), inside the 2-15% band of tests/balance.spec S132; a gold sink, the first change is free |
 | `Config:Lure.interval` | 8 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
 | `Config:Lure.levelGap` | 10 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
 | `Config:Lure.maxPulled` | 6 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
@@ -528,7 +530,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4277 kluczy zmienionych od bazy, 0 bez powodu.
+4279 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -631,6 +633,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
 | `Config:FullElixir.cooldown` | – | 180 | nowy od S122 | S122: DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
 | `Config:FullElixir.dailyLimit` | – | 10 | nowy od S122 | S122: DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:LookChange.goldMin` | – | 300 | nowy od S132 | S132: 300 gold below level 20 (= 15 x 20, the price of level 20): a new character pays no more than at 20; the free first change covers the creator's regrets |
+| `Config:LookChange.goldPerLevel` | – | 15 | nowy od S132 | S132: look change at the barber = 15 x level gold: 300 / 675 / 1050 / 1500 at 20 / 45 / 70 / 100 = 13.3 / 4.5 / 3.1 / 2.4% of a level's income (Balance.levelIncome 2260 / 14926 / 33468 / 61396), inside the 2-15% band of tests/balance.spec S132; a gold sink, the first change is free |
 | `Config:Lure.interval` | – | 8 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
 | `Config:Lure.levelGap` | – | 10 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
 | `Config:Lure.maxPulled` | – | 6 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
@@ -14178,7 +14182,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 20,3 s.
+Tabele S86 liczą się 22,0 s.
 
 ## Poprawki globalne (S87)
 

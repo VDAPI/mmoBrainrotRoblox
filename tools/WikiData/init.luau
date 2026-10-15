@@ -13,6 +13,7 @@
 local ArenaWiki = require("@self/Arena")
 local Basics = require("@self/Basics")
 local Bosses = require("@self/Bosses")
+local ClassLooks = require("@self/ClassLooks")
 local Clean = require("@self/Clean")
 local Crafting = require("@self/Crafting")
 local Features = require("@self/Features")
@@ -87,6 +88,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "titles", fn = Basics.titles },
 	{ name = "blessings", fn = Basics.blessings },
 	{ name = "cosmetics", fn = Basics.cosmetics },
+	{ name = "classlooks", fn = ClassLooks.build }, -- S132: class looks (after classes and cosmetics)
 	{ name = "fish", fn = Basics.fish },
 	{ name = "gather", fn = Basics.gather },
 	{ name = "recipes", fn = Basics.recipes },

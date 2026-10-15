@@ -28,6 +28,9 @@ właściciel (`docs/GRAFIKA.md` 6).
   `model` w `WeaponLooks.assets`; gra szuka po nazwie w całym `Assets.Weapons`). Źródła `.glb` leżą obok tylko lokalnie.
 - `assets/Mounts/<model>.rbxm` → `ReplicatedStorage.Assets.Mounts.<model>` (S96: model wierzchowca z wpisem w
   `Data/Mounts.assets`, sekcja „Wierzchowce”).
+- `assets/ClassLooks/<nazwa>.rbxm` → `ReplicatedStorage.Assets.ClassLooks.<nazwa>` (S132: akcesorium albo model części
+  stroju klasy lub fryzury z wpisem w `Data/ClassLooks.assets`; id z katalogu Roblox i lista pustych miejsc:
+  `docs/WYGLAD-KLAS.md`).
 - `art/icons/src/<grupa>/<klucz>.png` → atlasy `art/icons/items_<n>.png` (packer `tools/icons/import_png.py`).
 - `art/ui/ui_<atlas>_<NN>.png`, `art/ui/single/*.jpg` ← folder grafik (`tools/icons/import_ui.py`, S119); ID w
   `src/shared/Data/UiArtSheets.luau`.

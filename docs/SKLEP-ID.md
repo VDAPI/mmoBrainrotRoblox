@@ -99,7 +99,7 @@ się dla nich nie ustawia.
 
 | Rodzaj | Sztuk | Min | Mediana | Max | Max w R$ (najdrożej) |
 |---|---|---|---|---|---|
-| outfit | 8 | 300 | 450 | 900 | 891 |
+| outfit | 20 | 300 | 600 | 900 | 891 |
 | aura | 4 | 500 | 500 | 650 | 643,50 |
 | trail | 2 | 250 | 250 | 250 | 247,50 |
 | weapon | 3 | 400 | 400 | 500 | 495 |

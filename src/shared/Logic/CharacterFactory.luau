@@ -5,6 +5,7 @@ local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Types = require("../Types")
 local AccountSchema = require("./AccountSchema")
+local CharacterLook = require("./CharacterLook")
 local Skills = require("./Skills")
 local StarterGear = require("./StarterGear")
 
@@ -17,7 +18,8 @@ export type Ids = {
 	now: number,
 }
 
-function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids): CharacterData
+-- S132: `look` = the creator's face, skin and hair (unknown ids fall back to the default ones, CharacterLook.normalize).
+function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids, look: any?): CharacterData
 	local class = Classes.get(classId)
 	assert(class, `CharacterFactory: unknown class {classId}`)
 
@@ -35,6 +37,8 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids)
 	StarterGear.apply(character, ids.newId)
 	character.createdAt = ids.now
 	character.guideDone = false
+	character.look = CharacterLook.normalize(look)
+	character.lookFree = true
 	return character
 end
 

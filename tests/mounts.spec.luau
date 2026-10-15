@@ -360,8 +360,9 @@ describe("Mounts: seat, rider pose and save", function()
 	end)
 
 	it("adds mounts through the template and reconcile, without a new schema", function()
-		-- S96 added no schema; the next ones are S99 (7, hunting contracts) and S102 (8, story progress)
-		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96 + 2)
+		-- S96 added no schema; the next ones are S99 (7, hunting contracts), S102 (8, story progress), S132 (9, class
+		-- outfits)
+		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96 + 3)
 		local template = AccountSchema.characterTemplate().mounts
 		expect(template).toEqual({ owned = {}, riding = false })
 		local data: any = {
@@ -658,7 +659,8 @@ describe("S97 quest skins", function()
 	it("ties quest skins and Reward.cosmetic both ways, without touching EXP and gold", function()
 		for _, c in Cosmetics.list do
 			local obtain = c.obtain
-			if obtain and obtain.quest then
+			-- S132: class outfits of a quest are given by CosmeticService.GrantQuestOutfits, not Reward.cosmetic
+			if obtain and obtain.quest and c.class == nil then
 				local quest = questOf(obtain.quest)
 				expect(quest ~= nil).toBe(true)
 				expect(quest.reward.cosmetic).toBe(c.id)

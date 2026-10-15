@@ -331,6 +331,7 @@ S.file(
 			["color2?"] = "color",
 			["parts?"] = arr("string"), -- S43: outfit accessories
 			["flies?"] = "bool", -- S43: pets
+			["class?"] = enum("ClassId"), -- S132: the class a class outfit is for
 		})),
 		kinds = arr(rec("CosmeticKind", { id = "string", ["name?"] = "name" })),
 		-- S43: wardrobe and shop texts of the game
@@ -1004,6 +1005,7 @@ function Basics.cosmetics(ctx: any): any
 				color2 = c.color2,
 				parts = if c.parts then Clean.clean(c.parts) else nil,
 				flies = if c.kind == "pet" then c.flies == true else nil,
+				class = c.class, -- S132
 			})
 		end
 	end

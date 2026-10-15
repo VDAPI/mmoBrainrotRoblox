@@ -225,6 +225,25 @@ local Config = {
 	-- studs and `levelGap` levels are pulled onto the player, at most `maxPulled` fighting the player at once;
 	-- `pullThreat` = threat of the pull (any real hit outweighs it); `tick` = LureService loop step.
 	Lure = { interval = 8, radius = 25, levelGap = 10, maxPulled = 6, pullThreat = 1, tick = 1 },
+	-- S132 (DESIGN-17 §9a): class looks; looks only, not balance (not in CONFIG_KEYS). maxPieces = procedural parts
+	-- one character may wear (outfit + hairstyle + the S122 lure cape, Logic/CharacterLook.resolve); avatarScale =
+	-- the Roblox avatar's scales allowed in "Show my Roblox avatar" (Logic/CharacterLook.clampScales: standard R15
+	-- height +-5%, never wider or deeper than standard, no Rthro body type or proportions).
+	CharacterLook = {
+		maxPieces = 28,
+		avatarScale = {
+			height = { 0.95, 1.05 },
+			width = { 0.9, 1.0 },
+			depth = { 0.9, 1.0 },
+			head = { 0.95, 1.0 },
+			bodyType = { 0, 0 },
+			proportion = { 0, 0 },
+		},
+	},
+	-- S132: the paid look change at the barber (after the one free change of every character):
+	-- max(goldMin, goldPerLevel x character level) gold (Logic/CharacterLook.changeCost): 2-15% of a level's income
+	-- on 20 / 45 / 70 / 100 (tests/balance.spec "S132 look change"); goldMin covers levels 1-20.
+	LookChange = { goldPerLevel = 15, goldMin = 300 },
 	LootLifetime = 120, -- seconds a loot bag stays
 	LootPickupRange = 12, -- studs (+ lag tolerance in LootService)
 	DefaultCapacity = 20, -- inventory slots without a backpack item

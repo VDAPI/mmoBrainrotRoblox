@@ -224,7 +224,8 @@ T.describe("Premium data", function()
 		for _, def in Cosmetics.list do
 			counts[def.kind] = (counts[def.kind] or 0) + 1
 		end
-		T.expect(counts.outfit >= 8 and counts.aura >= 4 and counts.weapon >= 3 and counts.pet >= 6).toBe(true)
+		-- S132: 20 class outfits (5 per class) on top of the shared ones
+		T.expect(counts.outfit >= 28 and counts.aura >= 4 and counts.weapon >= 3 and counts.pet >= 6).toBe(true)
 		T.expect((counts.mountskin or 0) >= 8).toBe(true) -- S97
 		-- S123 (DESIGN-17 §4)
 		T.expect((counts.frame or 0) >= 5 and (counts.chatframe or 0) >= 4 and (counts.title or 0) >= 5).toBe(true)
@@ -339,6 +340,7 @@ T.describe("S97 mount skins and premium mounts", function()
 						or def.obtain.pack ~= nil
 						or def.obtain.arena ~= nil
 						or def.obtain.event ~= nil
+						or def.class ~= nil -- S132: class outfits from a quest or a boss win
 				).toBe(true)
 				T.expect(def.price).toBe(0)
 				local n = 0
@@ -648,6 +650,44 @@ T.describe("Purchase rule edges (S131)", function()
 		end
 		T.expect(Premium.robuxState(0, false)).toBe("soon")
 		T.expect(Premium.robuxState(0, true)).toBe("buy")
+	end)
+end)
+
+-- S132 (DESIGN-17 §9a): class outfits in the wardrobe: bought by any account, worn only by their class.
+T.describe("Class outfits (S132)", function()
+	T.it("an outfit needs the active character's class", function()
+		local owned = { outfit_warrior_vanguard = true, outfit_ranger = true }
+		T.expect({ Premium.canEquip("outfit", "outfit_warrior_vanguard", owned, "Warrior") }).toEqual({ true, nil })
+		T.expect({ Premium.canEquip("outfit", "outfit_warrior_vanguard", owned, "Mage") }).toEqual({
+			false,
+			"wardrobe.error.otherClass",
+		})
+		for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
+			T.expect({ classId, Premium.canEquip("outfit", "outfit_ranger", owned, classId) })
+				.toEqual({ classId, true })
+		end
+		T.expect({ Premium.canEquip("outfit", "outfit_ranger", owned) }).toEqual({ false, "error.wrongPhase" })
+		T.expect({ Premium.canEquip("outfit", nil, {}, "Mage") }).toEqual({ true, nil })
+		T.expect({ Premium.canEquip("outfit", "outfit_mage_ember", {}, "Mage") })
+			.toEqual({ false, "premium.error.notOwned" })
+		T.expect({ Premium.canEquip("aura", "aura_gold", { aura_gold = true }) }).toEqual({ true, nil })
+	end)
+
+	T.it("earned class outfits are not for sale, the others are for every account", function()
+		T.expect({ Premium.canBuyCosmetic("outfit_mage_ashen", {}, 99999) })
+			.toEqual({ false, "premium.error.notForSale" })
+		T.expect({ Premium.canBuyCosmetic("outfit_mage_duskwood", {}, 99999) }).toEqual({
+			false,
+			"premium.error.notForSale",
+		})
+		-- buying does not depend on the class played (the account may have characters of every class)
+		T.expect({ Premium.canBuyCosmetic("outfit_mage_ember", {}, 700) }).toEqual({ true, nil })
+		T.expect({ Premium.canBuyCosmetic("outfit_mage_ember", {}, 699) }).toEqual({ false, "premium.error.shards" })
+		for _, def in Cosmetics.list do
+			if def.class ~= nil then
+				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
+			end
+		end
 	end)
 end)
 

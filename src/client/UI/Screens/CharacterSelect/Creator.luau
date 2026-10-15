@@ -1,14 +1,21 @@
 --!strict
 -- Character creator: class picker (4 cards) + name field with live validation (local rules instantly,
 -- server availability after a short pause) + Create / Back.
+-- S132 (DESIGN-17 §9a): the "Appearance" section under the classes: the preview of the picked class's outfit with the
+-- picked face, skin and hair (UI/Components/LookPreview) next to the picker (UI/Components/LookPicker; one under the
+-- other on a phone); CreateCharacter sends the look.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local ClassLooks = require(ReplicatedStorage.Shared.Data.ClassLooks)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local LookPicker = require(script.Parent.Parent.Parent.Components.LookPicker)
+local LookPreview = require(script.Parent.Parent.Parent.Components.LookPreview)
 local NameRules = require(ReplicatedStorage.Shared.Logic.NameRules)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -170,6 +177,9 @@ local function Creator(scope: Scope, props: Props): Instance
 	local checking = scope:Value(false)
 	local busy = scope:Value(false)
 	local checkToken = 0
+	-- S132: face, skin and hair of the new character
+	local d = ClassLooks.DEFAULT_LOOK
+	local look = scope:Value({ face = d.face, skin = d.skin, hair = d.hair } :: ClassLooks.Look)
 
 	local localValid = scope:Computed(function(use): boolean
 		return (NameRules.validate(use(name)))
@@ -217,7 +227,16 @@ local function Creator(scope: Scope, props: Props): Instance
 		local text = Fusion.peek(name)
 		busy:set(true)
 		task.spawn(function()
-			local ok, err = Net.Invoke("CreateCharacter", props.Slot, Fusion.peek(selected), text)
+			local picked = Fusion.peek(look)
+			local ok, err = Net.Invoke(
+				"CreateCharacter",
+				props.Slot,
+				Fusion.peek(selected),
+				text,
+				picked.face,
+				picked.skin,
+				picked.hair
+			)
 			busy:set(false)
 			if ok then
 				props.OnDone(text)
@@ -283,9 +302,83 @@ local function Creator(scope: Scope, props: Props): Instance
 					cards :: any,
 				},
 			}),
+			-- S132: the appearance
+			scope:New("TextLabel")({
+				Name = "LookTitle",
+				LayoutOrder = 3,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 32),
+				Text = Text.T(scope, "charSelect.create.look"),
+				FontFace = Theme.Fonts.Heading,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Colors.Gold,
+			}),
+			scope:New("Frame")({
+				Name = "Look",
+				LayoutOrder = 4,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = scope:Computed(function(use): Enum.FillDirection
+							return if use(Device.Touch)
+								then Enum.FillDirection.Vertical
+								else Enum.FillDirection.Horizontal
+						end),
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, Theme.Padding.Large),
+					}),
+					scope:New("Frame")({
+						Name = "PreviewColumn",
+						LayoutOrder = 1,
+						BackgroundTransparency = 1,
+						Size = scope:Computed(function(use): UDim2
+							return if use(Device.Touch) then UDim2.fromOffset(240, 0) else UDim2.fromOffset(300, 0)
+						end),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						[Children] = {
+							scope:New("UIListLayout")({
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								HorizontalAlignment = Enum.HorizontalAlignment.Center,
+								Padding = UDim.new(0, Theme.Padding.Tiny),
+							}),
+							LookPreview(scope, {
+								LayoutOrder = 1,
+								Size = scope:Computed(function(use): UDim2
+									return if use(Device.Touch)
+										then UDim2.fromOffset(240, 280)
+										else UDim2.fromOffset(300, 340)
+								end),
+								ClassId = selected,
+								Look = look,
+							}),
+							scope:New("TextLabel")({
+								Name = "LookHint",
+								LayoutOrder = 2,
+								BackgroundTransparency = 1,
+								Size = UDim2.fromScale(1, 0),
+								AutomaticSize = Enum.AutomaticSize.Y,
+								Text = Text.T(scope, "charSelect.create.lookHint"),
+								FontFace = Theme.Fonts.Body,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Colors.TextMuted,
+								TextWrapped = true,
+							}),
+						},
+					}),
+					LookPicker(scope, {
+						LayoutOrder = 2,
+						Look = look,
+						Size = UDim2.fromOffset(460, 0),
+					}),
+				},
+			}),
 			scope:New("TextLabel")({
 				Name = "NameLabel",
-				LayoutOrder = 3,
+				LayoutOrder = 5,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromOffset(460, 26),
 				Text = Text.T(scope, "charSelect.create.name"),
@@ -296,7 +389,7 @@ local function Creator(scope: Scope, props: Props): Instance
 			}),
 			TextInput(scope, {
 				Name = "NameInput",
-				LayoutOrder = 4,
+				LayoutOrder = 6,
 				Size = UDim2.fromOffset(460, Theme.Size.InputHeight + 22),
 				Text = name,
 				MaxLength = Config.CharacterName.MaxLength,
@@ -311,7 +404,7 @@ local function Creator(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				Name = "Status",
-				LayoutOrder = 5,
+				LayoutOrder = 7,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromOffset(460, 20),
 				Text = scope:Computed(function(use): string
@@ -332,7 +425,7 @@ local function Creator(scope: Scope, props: Props): Instance
 			}),
 			scope:New("Frame")({
 				Name = "Buttons",
-				LayoutOrder = 6,
+				LayoutOrder = 8,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromOffset(460, Theme.Size.ButtonHeight),
 				[Children] = {

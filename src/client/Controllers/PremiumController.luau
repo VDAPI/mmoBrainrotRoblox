@@ -5,12 +5,15 @@
 -- S121: the VIP window ("vip", no key: the game menu, the Passes tab and its VIP card open it).
 -- S123: the wardrobe previews emotes and level-up effects on the own character in the world (EmoteController,
 -- EffectsController; nobody else sees them).
+-- S132 (DESIGN-17 §9a): the look window ("look": face, skin, hair; the wardrobe's button and the barber open it).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+
+local LookWindow = require(script.Parent.Parent.UI.Screens.LookWindow)
 
 local PremiumConfirm = require(script.Parent.Parent.UI.PremiumConfirm)
 local PremiumShop = require(script.Parent.Parent.UI.Screens.PremiumShop)
@@ -43,6 +46,13 @@ function PremiumController.OpenWardrobe(start: { kind: string?, try: string? }?)
 	WardrobeStart.kind = if start then start.kind else nil
 	WardrobeStart.try = if start then start.try else nil
 	WindowManager.Open("wardrobe")
+end
+
+-- S132: the look window (closes the wardrobe and the shop so they never overlap on a phone).
+function PremiumController.OpenLook()
+	WindowManager.Close("premium")
+	WindowManager.Close("wardrobe")
+	WindowManager.Open("look")
 end
 
 -- S121: the VIP window (closes the shop so the two never overlap on a phone).
@@ -80,6 +90,7 @@ function PremiumController.Init(registry)
 				end,
 				-- S123: local previews (only this client sees them)
 				PreviewEmote = EmoteController.Preview,
+				OpenLook = PremiumController.OpenLook, -- S132
 				PreviewLevelUp = function(cosmeticId: string)
 					local model = Players.LocalPlayer.Character
 					if model then
@@ -87,6 +98,14 @@ function PremiumController.Init(registry)
 					end
 				end,
 			})
+		end,
+	})
+	WindowManager.Register({
+		id = "look",
+		titleKey = "window.look.title",
+		size = Vector2.new(820, 600),
+		build = function(s)
+			return LookWindow(s)
 		end,
 	})
 	WindowManager.Register({

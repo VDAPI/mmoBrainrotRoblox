@@ -120,6 +120,33 @@ local function toggle(scope: Scope, name: string, default: boolean): Instance
 	})
 end
 
+-- S132: "Show my Roblox avatar" with its hint under the row (the server writes the setting and changes the look).
+local function avatarRow(scope: Scope, order: number): Instance
+	return scope:New("Frame")({
+		Name = "RobloxAvatar",
+		LayoutOrder = order,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		[Children] = {
+			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
+			row(scope, 1, "menu.robloxAvatar", toggle(scope, "robloxAvatar", false)),
+			scope:New("TextLabel")({
+				LayoutOrder = 2,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Text = Text.T(scope, "menu.robloxAvatar.hint"),
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.TextMuted,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+			}),
+		},
+	})
+end
+
 -- S29: "Damage numbers: all / mine and received / off". Reads through DamageText.mode, so an old save with
 -- the dmgNumbers switch off shows (and cycles on from) "off".
 local function damageNumbers(scope: Scope): Instance
@@ -609,6 +636,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
 			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
 			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
+			avatarRow(scope, 14), -- S132
 			row(
 				scope,
 				14,

@@ -72,7 +72,8 @@ local SERVICE_WINDOWS = {
 }
 -- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
 -- stablemaster's dialog opened it. S126: the arena window the same way (U, the HUD menu, the Arena Master).
-local NPC_OPTIONAL: { string } = { "mounts", "arena" }
+-- S132: the look window too (the wardrobe opens it anywhere for the free change).
+local NPC_OPTIONAL: { string } = { "mounts", "arena", "look" }
 local fromNpc: { [string]: boolean } = {}
 
 local function closeServiceWindows()
@@ -91,6 +92,7 @@ local SERVICE_TO_WINDOW: { [string]: string } = {
 	alchemy = "alchemy",
 	mounts = "mounts", -- S97: the stablemaster (MountController registers the window)
 	arena = "arena", -- S126: the Arena Master (ArenaController registers the window)
+	look = "look", -- S132: the barber (PremiumController registers the window)
 }
 
 local function heal(npcId: string)

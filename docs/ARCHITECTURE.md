@@ -593,6 +593,23 @@ type CharacterData = {
   `TourneyService` (fazy `Tourney.phaseFor`, id `Tourney.forcedId`).
 - **Lista do Creator Hub:** `lune run tools/shop_report.luau [--check]` → `docs/SKLEP-ID.md` (z `tests/Pricing.luau`).
 
+### Wygląd klas (S132)
+
+`Data/ClassLooks` (strój domyślny klasy, twarze, skóry, fryzury, `assets`, puste `layers`), `Logic/CharacterLook`
+(czyste: `GARMENTS`, `FACE_PARTS`, `normalize`, `isValid`, `allowed`, `outfitOf`, `outfitSpec`, `resolve` →
+`LookSpec` z barwnikiem w środku, `questOutfits`, `bossWinOutfits`, `earnedOutfits`, `changeCost`, `canChange`,
+`STANDARD`, `clampScales`), `Util/AvatarBuild` (serwer i klient: `description(spec, base)`, `applyProcedural`,
+`clearProcedural`, `DRAW`, `MANNEQUIN`, `blockFigure`, `previewFigure`). `CharacterService.SetDescriptionProvider`
+(postać wczytywana przez `LoadCharacterWithHumanoidDescription(Async)`, zapas `LoadCharacterAsync`, ostrzeżenie przy
+R6). `CosmeticService`: dostawca opisu, `RefreshAppearance` (opis tylko przy zmianie id katalogu albo trybu, atrybut
+modelu `VaelthornLookKey`; zsiada i wsiada na wierzchowca), `GrantQuestOutfits`, `GrantBossWin`, `AdminSetLook`,
+`SetRobloxAvatar`, nadanie wstecz przy `CharacterEntered`, manekin `ReplicatedStorage.VaelthornMannequin`;
+`EquipmentService.RefreshHeld`. Pola: `character.look`, `character.lookFree`, `account.cosmetics.classOutfits`,
+`account.settings.robloxAvatar` (migracja 9), `Types.Outfit.class`. Remote'y: `SetCharacterLook(face, skin, hair)`
+(rate 1), `CreateCharacter(slot, classId, name, face?, skin?, hair?)`. NPC `barber` z usługą `look`. Klient:
+`Components/LookPicker`, `Components/LookPreview`, okno `look` (`Screens/LookWindow`, `PremiumController.OpenLook`),
+sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „Pokaż mój awatar Roblox” w `GameMenu`.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

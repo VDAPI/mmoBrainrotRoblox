@@ -111,6 +111,12 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	end
 end
 
+-- S132: builds the held models again (CosmeticService after Humanoid:ApplyDescription changed the character).
+function EquipmentService.RefreshHeld(player: Player)
+	updateHeldModel(player, "weapon")
+	updateHeldModel(player, "offhand")
+end
+
 -- Which real model an item shows and its source part, or nil (Part look); S110: Util/WeaponBuild.modelFor.
 function EquipmentService.ModelFor(def: Items.ItemDef): (string?, BasePart?)
 	return WeaponBuild.modelFor(def)

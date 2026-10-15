@@ -24,6 +24,7 @@ export type Service =
 	| "mounts" -- S97: the stablemaster's mounts window (upgrades only near him)
 	| "arena" -- S126: the ranked arena window (ArenaController)
 	| "arenashop" -- S128: Arena Tokens shop (opens the arena window on its shop tab)
+	| "look" -- S132: change face, skin and hair (the look window; paid changes only here, Logic/CharacterLook)
 
 export type NpcDef = {
 	id: string,
@@ -274,6 +275,8 @@ townsfolk("innkeeper", { body = "#7A3E2A", accent = "#E8D8B0" }, "🍺", { gossi
 townsfolk("miller_widow", { body = "#4A4A52", accent = "#1E1E22" }, "⚙")
 townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { services = { "talk", "mounts" } })
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
+-- S132 (DESIGN-17 §9a): the barber by the cloth stall on the market square: the paid look change (gold)
+townsfolk("barber", { body = "#4A3A5A", accent = "#C9B98A" }, "✂", { services = { "talk", "look" } })
 
 -- S126: the Arena Master by the north gate of Ristalle (Data/Town/npcExtra), the ranked arena window.
 npc({

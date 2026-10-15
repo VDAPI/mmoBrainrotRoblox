@@ -463,6 +463,26 @@ export interface ClassInfo {
   weaponTypes: string[];
 }
 
+export interface ClassLook {
+  class: ClassId;
+  colors: LookColors;
+  garments: Name[];
+  name: Name;
+  outfits: ClassOutfit[];
+}
+
+export interface ClassLooksFile {
+  classes: ClassLook[];
+  faces: number;
+  hairs: number;
+  skins: string[];
+}
+
+export interface ClassOutfit {
+  id: string;
+  source: string;
+}
+
 export interface ClassesFile {
   classes: ClassInfo[];
 }
@@ -485,6 +505,7 @@ export interface Contracts {
 }
 
 export interface Cosmetic {
+  class?: ClassId;
   color: string;
   color2?: string;
   desc?: Name;
@@ -829,6 +850,12 @@ export interface LevelExp {
   exp: number;
   level: number;
   total: number;
+}
+
+export interface LookColors {
+  main: string;
+  second: string;
+  trim: string;
 }
 
 export interface LootGroup {
@@ -1917,6 +1944,7 @@ export interface Files {
   bosses: BossesFile;
   caves: CavesFile;
   classes: ClassesFile;
+  classlooks: ClassLooksFile;
   cosmetics: CosmeticsFile;
   crafting: CraftingFile;
   elements: ElementsFile;

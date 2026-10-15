@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S131 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S132 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -249,10 +249,17 @@ drabince turnieju, kolejka ogłoszeń między serwerami, `paywall.spec` C1–C8 
 (`arena.json`, rozszerzony `premium.json`, sześć artykułów, bez liczb Smoczej Waluty), przegląd cen (`tests/Pricing`,
 bez zmian), lejki analityki (`Logic/ShopFunnel`, `PremiumFunnel`), admin `/premium`, `/vip grant|take`,
 `/tourney force`, `/sched`, `/weekreset`, lista do Creator Hub `docs/SKLEP-ID.md` (`tools/shop_report.luau`).
+S132 wygląd klas (DESIGN-17 §9a, ostatnia sesja serii): postać zawsze standardowe R15 z opisu, strój domyślny każdej
+klasy, kreator z twarzą, skórą i fryzurą (`character.look`, jedna darmowa zmiana, potem Cyrulik za złoto), stroje
+klasowe w garderobie (`account.cosmetics.classOutfits`, migracja 9; 3 za odłamki i 2 z gry na klasę), opcja „Pokaż mój
+awatar Roblox”, wiki `classlooks.json`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S132:** Wygląd klas: id z katalogu Roblox i modele akcesoriów do uzupełnienia przez właściciela
+  (`docs/WYGLAD-KLAS.md`), do tego czasu procedural.
 
 - **S131:** lejki analityki (`Analytics.funnel` → `LogFunnelStepEvent`) niesprawdzone na żywym serwerze (wywołanie w
   `pcall`); obrazki nowych bloków wiki areny i wydarzeń bez grafik (tabele).

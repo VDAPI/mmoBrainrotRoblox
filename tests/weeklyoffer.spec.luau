@@ -42,11 +42,12 @@ T.describe("Offer of the week (S123)", function()
 		T.expect(WeeklyOffer.forWeek(2963, WeeklyOffer.pool(shuffled))).toEqual(offer)
 	end)
 
-	T.it("100 weeks: no repeat of the previous week, the whole pool rotates, discounts spread over kinds", function()
+	-- S132: 200 weeks (the pool grew by the class outfits)
+	T.it("200 weeks: no repeat of the previous week, the whole pool rotates, discounts spread over kinds", function()
 		local pool = WeeklyOffer.pool()
 		local seen: { [string]: boolean } = {}
 		local kinds: { [string]: boolean } = {}
-		for week = 2963, 3062 do
+		for week = 2963, 3162 do
 			local offer = WeeklyOffer.forWeek(week)
 			local before = WeeklyOffer.raw(week - 1)
 			for _, id in offer.items do

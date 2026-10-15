@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
 local CharacterFactory = require(Shared.Logic.CharacterFactory)
 local Classes = require(Shared.Data.Classes)
 local Log = require(Shared.Util.Log)
@@ -38,7 +39,8 @@ local CharacterService = {
 	-- (player, characterData, slotKey) after a character was deleted (guild membership cleanup; S124: slotKey "1".."5"
 	-- for the leaderboard entry "<userId>_<slot>").
 	CharacterDeleted = Signal.new(),
-	-- (player, model) every time a Roblox character model is spawned for the active character.
+	-- (player, model, described) every time a Roblox character model is spawned for the active character (S132:
+	-- described = the model was loaded from the look's HumanoidDescription, false for the plain fallback).
 	ModelSpawned = Signal.new(),
 }
 
@@ -158,6 +160,52 @@ end
 -- S127: set by ArenaHost on an arena server: where a fresh model of `player` stands (start point, map).
 local spawnOverride: ((player: Player) -> (CFrame?, string?))? = nil
 
+-- S132 (DESIGN-17 §9a): set by CosmeticService: the HumanoidDescription of the active character (class look or the
+-- player's avatar in standard R15 proportions). A provider and not a dependency: CosmeticService depends on this
+-- service. May yield (the avatar's description from Roblox).
+local descriptionProvider: ((player: Player, character: Types.CharacterData) -> HumanoidDescription?)? = nil
+
+function CharacterService.SetDescriptionProvider(provider: (
+	player: Player,
+	character: Types.CharacterData
+) -> HumanoidDescription?)
+	descriptionProvider = provider
+end
+
+-- A Roblox method by its new name (…Async) or its old one; nil when neither exists. Verify the Async variant in the
+-- Roblox documentation (the old names are deprecated, not removed).
+local function method(object: Instance, asyncName: string, oldName: string): ((...any) -> ...any)?
+	for _, name in { asyncName, oldName } do
+		local ok, fn = pcall(function()
+			return (object :: any)[name]
+		end)
+		if ok and type(fn) == "function" then
+			return fn
+		end
+	end
+	return nil
+end
+
+-- Loads the character from the description (S132); false when there is none or Roblox refused it (the caller then
+-- loads the plain character).
+local function loadWithDescription(player: Player, description: HumanoidDescription?): boolean
+	if not description then
+		return false
+	end
+	local load = method(player, "LoadCharacterWithHumanoidDescriptionAsync", "LoadCharacterWithHumanoidDescription")
+	if not load then
+		log:warn("no LoadCharacterWithHumanoidDescription: plain character for %s", player.Name)
+		return false
+	end
+	local ok, err = pcall(load, player, description)
+	if not ok then
+		log:warn("loading %s with the class look failed: %s", player.Name, tostring(err))
+	end
+	return ok
+end
+
+local warnedRig = false
+
 local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 	local rt = runtime(player)
 	rt.spawnToken += 1
@@ -200,7 +248,26 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 		return
 	end
 
-	player:LoadCharacterAsync()
+	-- S132: the class look (or the avatar in standard proportions) from CosmeticService; the provider may yield
+	local description: HumanoidDescription? = nil
+	if descriptionProvider then
+		local ok, result = pcall(descriptionProvider, player, character)
+		if ok then
+			description = result
+		else
+			log:warn("description for %s failed: %s", player.Name, tostring(result))
+		end
+		if rt.spawnToken ~= token or player.Parent ~= Players then
+			return
+		end
+	end
+	local described = loadWithDescription(player, description)
+	if not described then
+		if rt.spawnToken ~= token or player.Parent ~= Players then
+			return
+		end
+		player:LoadCharacterAsync()
+	end
 	if rt.spawnToken ~= token or player.Parent ~= Players then
 		return -- switched or left while loading
 	end
@@ -208,11 +275,20 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 	if not model then
 		return
 	end
+	-- S132: the game's motions (S110-S117) and the saddle (S96) assume R15; R6 from the game settings still plays
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if humanoid and humanoid.RigType ~= Enum.HumanoidRigType.R15 then
+		if not warnedRig then
+			warnedRig = true
+			log:warn("characters spawn as %s: set Avatar Type R15 in the game settings", tostring(humanoid.RigType))
+		end
+		Analytics.custom(player, "RigNotR15", 1)
+	end
 
 	setNameplate(model, character)
 	-- Anchored at the target until the client has streamed the ground under it (Placement).
 	local placement = Placement.place(player, model, cframe)
-	CharacterService.ModelSpawned:Fire(player, model)
+	CharacterService.ModelSpawned:Fire(player, model, described)
 	Placement.release(player, model, cframe, placement)
 	if rt.spawnToken ~= token or player.Parent ~= Players then
 		return
@@ -273,7 +349,14 @@ local function checkName(player: Player, name: string): (boolean, string?)
 	return NameService.IsAvailable(name, nil)
 end
 
-local function createCharacter(player: Player, slot: number, classId: string, name: string): (boolean, string?)
+-- S132: `look` = { face, skin, hair } of the creator (unknown ids fall back to the default ones in the factory).
+local function createCharacter(
+	player: Player,
+	slot: number,
+	classId: string,
+	name: string,
+	look: { face: string?, skin: string?, hair: string? }?
+): (boolean, string?)
 	if PlayerStateService.GetPhase(player) ~= "select" then
 		return false, "error.wrongPhase"
 	end
@@ -329,7 +412,7 @@ local function createCharacter(player: Player, slot: number, classId: string, na
 			return newId()
 		end,
 		now = os.time(),
-	})
+	}, look)
 	data.characters[slotKey] = character
 	refreshSlot(player, slotKey)
 	log:info("%s created %s '%s' in slot %s", player.Name, class.id, name, slotKey)
@@ -478,14 +561,26 @@ function CharacterService.Start()
 	Net.Handle("CheckName", function(player: Player, name: string)
 		return checkName(player, name)
 	end)
-	Net.Handle("CreateCharacter", function(player: Player, slot: number, classId: string, name: string)
-		if not ServerMode.isWorld() then
-			return false, "arena.net.error.notHere" -- S127: the arena server picks the character itself
+	-- S132: face, skin and hair are optional (an old client sends none: the default look)
+	Net.Handle(
+		"CreateCharacter",
+		function(
+			player: Player,
+			slot: number,
+			classId: string,
+			name: string,
+			face: string?,
+			skin: string?,
+			hair: string?
+		)
+			if not ServerMode.isWorld() then
+				return false, "arena.net.error.notHere" -- S127: the arena server picks the character itself
+			end
+			return withLock(player, function()
+				return createCharacter(player, slot, classId, name, { face = face, skin = skin, hair = hair })
+			end)
 		end
-		return withLock(player, function()
-			return createCharacter(player, slot, classId, name)
-		end)
-	end)
+	)
 	Net.Handle("DeleteCharacter", function(player: Player, slot: number, confirmName: string)
 		if not ServerMode.isWorld() then
 			return false, "arena.net.error.notHere"

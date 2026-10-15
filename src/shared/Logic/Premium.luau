@@ -7,6 +7,7 @@
 -- (Logic/WeeklyOffer.priceOf), free cosmetics (Logic/CosmeticRules), kinds without a slot (emote, title) and the
 -- starter packs (once per account).
 
+local CharacterLook = require("./CharacterLook")
 local Config = require("../Config")
 local CosmeticRules = require("./CosmeticRules")
 local Cosmetics = require("../Data/Cosmetics")
@@ -231,9 +232,12 @@ function Premium.outfitSlots(owned: { [string]: boolean }): number
 end
 
 -- S121: the current look as a saved look (shallow copies; the input is never shared).
+-- S132: with `classId` the class outfit of that class (cosmetics.classOutfits) goes in as equipped.outfit and the look
+-- remembers the class it was saved on (`class`, shown in the wardrobe); the face, skin and hair are not part of it.
 function Premium.snapshotOutfit(
-	cosmetics: { equipped: { [string]: string } },
-	pets: { equipped: string? }
+	cosmetics: { equipped: { [string]: string }, classOutfits: { [string]: string }? },
+	pets: { equipped: string? },
+	classId: string?
 ): Types.Outfit
 	local equipped: { [string]: string } = {}
 	for kind, id in (if type(cosmetics.equipped) == "table" then cosmetics.equipped else {}) :: { [string]: string } do
@@ -241,7 +245,16 @@ function Premium.snapshotOutfit(
 			equipped[kind] = id
 		end
 	end
-	return { equipped = equipped, pet = if type(pets.equipped) == "string" then pets.equipped else nil }
+	local out: Types.Outfit =
+		{ equipped = equipped, pet = if type(pets.equipped) == "string" then pets.equipped else nil }
+	if type(classId) == "string" then
+		local saved = if type(cosmetics.classOutfits) == "table" then cosmetics.classOutfits[classId] else nil
+		if type(saved) == "string" then
+			equipped.outfit = saved
+		end
+		out.class = classId
+	end
+	return out
 end
 
 -- S121: what a saved look puts on: only the positions canEquip lets through (a kind of Cosmetics.kinds except "pet",
@@ -265,6 +278,28 @@ function Premium.outfitLooks(
 	local petDef = if type(pet) == "string" then Cosmetics.get(pet) else nil
 	local wearPet: string? = if petDef and petDef.kind == "pet" and petsOwned[petDef.id] == true then petDef.id else nil
 	return looks, wearPet
+end
+
+-- S132: what a saved look puts on a character of `classId`: the slots of outfitLooks without the outfit (it never
+-- lives in `equipped` since migration 9), the pet, and the outfit for cosmetics.classOutfits[classId] only when owned
+-- and allowed for that class (nil = the class outfit stays as it is). Here and not in Logic/CharacterLook: that module
+-- is required by this one (canEquip).
+function Premium.applySet(
+	set: any,
+	classId: string,
+	owned: { [string]: boolean },
+	petsOwned: { [string]: boolean }
+): ({ [string]: string }, string?, string?)
+	local looks, pet = Premium.outfitLooks(set, owned, petsOwned)
+	local loose: any = looks
+	loose.outfit = nil
+	local saved = if type(set) == "table" and type(set.equipped) == "table" then set.equipped.outfit else nil
+	local def = if type(saved) == "string" then Cosmetics.get(saved) else nil
+	local outfit: string? = nil
+	if def and CharacterLook.allowed(def, classId) and CosmeticRules.ownsIn(def, owned) then
+		outfit = def.id
+	end
+	return looks, pet, outfit
 end
 
 -- Percent more currency per Robux than `base` (default the smallest pack), rounded down.
@@ -304,8 +339,9 @@ function Premium.canBuyCosmetic(
 end
 
 -- Equip check: nil id = take off the slot of `kind`. S123: emotes and titles have no slot (the wheel, SetTitle);
--- a free cosmetic counts as owned.
-function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean }): (boolean, string?)
+-- a free cosmetic counts as owned. S132: an outfit needs the class of the active character (`classId`; nil = no
+-- character: error.wrongPhase) and must be shared or of that class; other kinds ignore `classId`.
+function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean }, classId: string?): (boolean, string?)
 	if kind ~= "pet" and not table.find(CosmeticRules.SLOT_KINDS, kind) then
 		return false, "error.badRequest"
 	end
@@ -318,6 +354,14 @@ function Premium.canEquip(kind: string, id: string?, owned: { [string]: boolean 
 	end
 	if not CosmeticRules.ownsIn(def, owned) then
 		return false, "premium.error.notOwned"
+	end
+	if kind == "outfit" then
+		if classId == nil then
+			return false, "error.wrongPhase"
+		end
+		if not CharacterLook.allowed(def, classId) then
+			return false, "wardrobe.error.otherClass"
+		end
 	end
 	return true, nil
 end

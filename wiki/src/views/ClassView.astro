@@ -5,6 +5,7 @@
 // records, so the list is ignored there).
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
+import ClassOutfits from "../components/blocks/ClassOutfits.astro";
 import ItemIcon from "../components/ItemIcon.svelte";
 import SectionTitle from "../components/SectionTitle.astro";
 import SkillNode from "../components/SkillNode.svelte";
@@ -106,6 +107,11 @@ const portrait = artImg("portrait", c.id, 300, 88);
       <SkillPlanner client:load data={planner} />
     </section>
 
+    <section class="looks" aria-labelledby="class-look">
+      <SectionTitle id="class-look">{t(lang, "cos.classlook.title")}</SectionTitle>
+      <ClassOutfits cls={c.id} />
+    </section>
+
     <section class="all" aria-labelledby="all-skills" data-pagefind-ignore>
       <SectionTitle id="all-skills">{t(lang, "class.allSkills")}</SectionTitle>
       <table class="vw-table skills">
@@ -182,7 +188,8 @@ const portrait = artImg("portrait", c.id, 300, 88);
   .gear__item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--vw-text); }
   a.gear__item:hover { color: var(--vw-gold-bright); }
   .gear__more { font-weight: 800; }
-  .planner, .all { scroll-margin-top: 88px; }
+  .planner, .all, .looks { scroll-margin-top: 88px; }
+  .looks { margin-top: 56px; }
   .all { margin-top: 56px; }
   .name__in { display: flex; align-items: center; gap: 14px; }
   .skills .name { width: 260px; vertical-align: top; height: auto; padding: 12px 14px; text-align: left; font: 400 17px/1.3 var(--vw-font-ui); letter-spacing: 0; text-transform: none; white-space: normal; color: var(--vw-text); border-bottom: 1px solid var(--vw-border-subtle); }

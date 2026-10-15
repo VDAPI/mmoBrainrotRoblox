@@ -3,7 +3,10 @@
 -- When the shape changes: bump CURRENT, add MIGRATIONS[CURRENT], extend the templates.
 
 local ArenaRules = require("./ArenaRules")
+local CharacterLook = require("./CharacterLook")
+local ClassLooks = require("../Data/ClassLooks")
 local Classes = require("../Data/Classes")
+local Cosmetics = require("../Data/Cosmetics")
 local Config = require("../Config")
 local Contracts = require("../Data/Quests/Contracts")
 local Exp = require("./Exp")
@@ -21,7 +24,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 8
+AccountSchema.CURRENT = 9
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -30,7 +33,8 @@ function AccountSchema.accountTemplate(): AccountData
 		lastCharacter = nil,
 		dragonShards = 0,
 		deposit = { size = 60, items = {} },
-		cosmetics = { owned = {}, equipped = {} },
+		-- S132: classOutfits = the worn outfit per class (migration 9 moved equipped.outfit here)
+		cosmetics = { owned = {}, equipped = {}, classOutfits = {} },
 		pets = { owned = {}, equipped = nil },
 		settings = {
 			lang = "",
@@ -55,6 +59,7 @@ function AccountSchema.accountTemplate(): AccountData
 			devPins = {},
 			mapCloseOnWalk = true,
 			barks = true, -- S101b: NPC comments during quests (reconcile adds it to old accounts)
+			robloxAvatar = false, -- S132: "Show my Roblox avatar" (reconcile adds it to old accounts)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -116,6 +121,14 @@ function AccountSchema.characterTemplate(): CharacterData
 			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
 		},
 		guildId = nil,
+		-- S132 (DESIGN-17 §9a): the creator's face, skin and hair; every character (old ones through reconcile, new ones
+		-- from CharacterFactory) has one free look change
+		look = {
+			face = ClassLooks.DEFAULT_LOOK.face,
+			skin = ClassLooks.DEFAULT_LOOK.skin,
+			hair = ClassLooks.DEFAULT_LOOK.hair,
+		},
+		lookFree = true,
 		reached100At = nil, -- S124: set by LevelService at Config.MaxLevel (no migration)
 		lbHidden = nil, -- S124: /lb hide (no migration)
 		expWeek = { week = 0, exp = 0, b = 0 }, -- S125: weekly EXP ranking (no migration, reconcile)
@@ -349,6 +362,36 @@ MIGRATIONS[8] = function(data, _newId)
 			quests.main.used = nil
 		end
 	end
+end
+
+-- 9 (S132, DESIGN-17 §9a): the account-wide outfit becomes one outfit per class. A known outfit in
+-- cosmetics.equipped.outfit goes to cosmetics.classOutfits[class] for every class of Data/Classes that may wear it,
+-- then equipped.outfit is removed (an unknown id is dropped). Saved looks (account.outfits) stay: Logic/Premium.applySet
+-- reads their outfit. Idempotent.
+MIGRATIONS[9] = function(data, _newId)
+	local cosmetics = data.cosmetics
+	if type(cosmetics) ~= "table" then
+		-- a broken value: reconcile keeps anything that is not nil, so the template goes in here
+		data.cosmetics = { owned = {}, equipped = {}, classOutfits = {} }
+		return
+	end
+	if type(cosmetics.classOutfits) ~= "table" then
+		cosmetics.classOutfits = {}
+	end
+	local equipped = cosmetics.equipped
+	if type(equipped) ~= "table" then
+		return
+	end
+	local id = equipped.outfit
+	local def = if type(id) == "string" then Cosmetics.get(id) else nil
+	if def then
+		for _, classId in Classes.order do
+			if CharacterLook.allowed(def, classId) and cosmetics.classOutfits[classId] == nil then
+				cosmetics.classOutfits[classId] = def.id
+			end
+		end
+	end
+	equipped.outfit = nil
 end
 
 -- Upgrades and reconciles account data in place. Returns the list of applied migration numbers.

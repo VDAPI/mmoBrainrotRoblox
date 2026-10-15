@@ -11,15 +11,18 @@ local Rarities = require(Shared.Data.Rarities)
 
 local SettingsService = {
 	Name = "SettingsService",
-	Deps = { "PlayerStateService", "AdminService" },
+	-- S132: CosmeticService for "Show my Roblox avatar" (nothing depends on this service, so no cycle)
+	Deps = { "PlayerStateService", "AdminService", "CosmeticService" },
 }
 
 local PlayerStateService: any
 local AdminService: any
+local CosmeticService: any
 
 function SettingsService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	AdminService = registry.Get("AdminService")
+	CosmeticService = registry.Get("CosmeticService")
 end
 
 local MAX_PINS = 12
@@ -80,6 +83,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	barks = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S132: the player's Roblox avatar in standard proportions instead of the class look (CosmeticService).
+	robloxAvatar = function(value)
+		return type(value) == "boolean"
+	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
 		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC
@@ -113,6 +120,10 @@ function SettingsService.Start()
 	Net.On("SetSetting", function(player: Player, name: string, value: any)
 		local validate = SETTINGS[name]
 		if not validate or not validate(value, player) or not PlayerStateService.HasState(player) then
+			return
+		end
+		if name == "robloxAvatar" then
+			CosmeticService.SetRobloxAvatar(player, value) -- S132: writes the setting and refreshes the appearance
 			return
 		end
 		PlayerStateService.Set(player, { "account", "settings", name }, value)

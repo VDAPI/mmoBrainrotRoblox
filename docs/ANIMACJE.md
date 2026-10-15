@@ -160,6 +160,9 @@ Tabela przeglądu w `docs/SESJE.md` (wzór S110):
 
 ## 6. Własne klipy ataków i umiejętności (S113)
 
+Od S132 postacie graczy są zawsze standardowym R15 bez animacji z awatara (opis postaci z zerowymi animacjami,
+standardowymi częściami ciała i skalami), więc klipy robi się na standardowym rigu.
+
 1. **Po co.** Klip zastępuje ruch z kodu dla jednego rodzaju broni (np. wszystkich mieczy jednoręcznych), jednego typu
    broni (np. tylko toporów) albo jednej umiejętności. Gdy się nie wczyta, gra sama wraca do ruchu z kodu. Obrażenia i
    czasy się nie zmieniają: gra przyspiesza albo zwalnia klip tak, żeby jego znacznik `Hit` wypadł w chwili trafienia z

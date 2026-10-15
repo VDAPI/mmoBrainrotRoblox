@@ -1,6 +1,6 @@
 ---
 title: Kosmetyki
-description: "Stroje, aury, ślady, efekty broni i pety oraz przepustki: tylko wygląd i wygoda, nigdy siła postaci."
+description: "Wygląd klas, stroje, aury, ślady, efekty broni i pety oraz przepustki: tylko wygląd i wygoda, nigdy siła postaci."
 key: cosmetics
 order: 10
 updated: 2026-10-15
@@ -18,6 +18,22 @@ Kosmetyki należą do konta, więc każda twoja postać może ich używać. Zak�
 Garderoba ma też ozdoby widoczne dla innych graczy: ramkę wokół portretu (na pasku postaci, w oknie postaci i w profilu), ramkę imienia w czacie razem z kolorem dymka, tytuły nad postacią (wybierasz je w tym samym miejscu co tytuły zdobyte w grze), gesty postaci z koła emotek albo komendy `/e` (dwa gesty ma każdy od początku, żaden nie działa w walce ani na wierzchowcu), efekt widoczny przy awansie na poziom i barwniki, które zmieniają kolory założonego stroju.
 
 <CosmeticsGrid />
+
+## Wygląd postaci
+
+Każda klasa ma własny strój: Wojownik nosi płyty i pelerynę, Kapłan szatę z kapturem i świętym symbolem, Łowca skórznię, kaptur i kołczan na plecach, a Mag szatę do ziemi z wysokim kołnierzem i księgą u pasa. Wszystkie postacie mają te same, standardowe proporcje, więc ruchy w walce i na wierzchowcu wyglądają u każdego tak samo.
+
+W kreatorze postaci wybierasz tylko twarz (<Stat path="classlooks.faces" /> do wyboru), kolor skóry (<Stat path="classlooks.skins.length" /> odcieni) i fryzurę (<Stat path="classlooks.hairs" /> fryzur). Resztę daje klasa. Każda postać ma jedną darmową zmianę wyglądu, którą zrobisz z garderoby w dowolnym miejscu. Każdą kolejną zmianę zrobisz za złoto u <Npc id="barber" /> na rynku.
+
+W garderobie każda klasa ma oprócz stroju klasy stroje za Smoczą Walutę i dwa stroje, które zdobywa się tylko w grze: jeden za ukończenie drugiego rozdziału fabuły, drugi za pokonanie bossa tą klasą. Strój klasy podmienia jej domyślne ubranie. Strój innej klasy możesz kupić, ale założy go tylko postać tej klasy. Wspólne stroje pasują do każdej klasy, a barwniki zmieniają kolory także stroju klasy.
+
+W ustawieniach jest opcja „Pokaż mój awatar Roblox”. Postać wygląda wtedy jak twój awatar, ale w standardowych proporcjach, a strój z garderoby nakłada się na niego. Inni gracze widzą to, co wybrałeś.
+
+<Callout kind="tip" title="Tylko wygląd">
+Strój, twarz, skóra, fryzura i awatar nie dają żadnych statystyk. Wszyscy gracze mają te same proporcje postaci, także w walce z innymi graczami.
+</Callout>
+
+<ClassOutfits />
 
 ## Przepustki i usługi
 

@@ -4,6 +4,8 @@
 -- blessings (DESIGN-17 §0.2). The lists are allowlists: anything not named here fails.
 
 local Blessings = require("../src/shared/Data/Blessings")
+local CharacterLook = require("../src/shared/Logic/CharacterLook")
+local ClassLooks = require("../src/shared/Data/ClassLooks")
 local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Items = require("../src/shared/Data/Items")
@@ -106,6 +108,9 @@ local COSMETIC_FIELDS = {
 	dye = true,
 	weekly = true,
 	free = true,
+	-- S132: looks only (the class that may wear an outfit, the outfit's colours and procedural garments)
+	class = true,
+	outfit = true,
 }
 local FORBIDDEN_KEYS = {
 	"exp",
@@ -1504,6 +1509,54 @@ T.describe("Paywall S131: nothing bought for Robux moves a ranking (C7)", functi
 				T.expect({ key, string.find(lower, word, 1, true) }).toEqual({ key, nil })
 			end
 		end
+	end)
+end)
+
+T.describe("Paywall S132: class looks are looks only (DESIGN-17 §9a)", function()
+	T.it("no class look, face, skin, hairstyle, layer or asset hook carries power", function()
+		scan(ClassLooks.classes, "classLooks.classes")
+		scan(ClassLooks.FACES, "classLooks.FACES")
+		scan(ClassLooks.SKINS, "classLooks.SKINS")
+		scan(ClassLooks.HAIRS, "classLooks.HAIRS")
+		scan(ClassLooks.assets, "classLooks.assets")
+		scan(CharacterLook.GARMENTS, "CharacterLook.GARMENTS")
+		for _, def in Cosmetics.list do
+			-- the outfit spec is scanned in full (colour roles, body parts, garments)
+			scan(def.outfit, `cosmetics.{def.id}.outfit`)
+			if def.class ~= nil then
+				T.expect({ def.id, def.kind }).toEqual({ def.id, "outfit" })
+				fieldsWithin(def :: any, COSMETIC_FIELDS, `cosmetics.{def.id}`)
+			end
+		end
+	end)
+
+	T.it("everyone has the standard silhouette: +-5% height, never narrower or shallower than standard", function()
+		local limits = Config.CharacterLook.avatarScale
+		T.expect(CharacterLook.STANDARD)
+			.toEqual({ height = 1, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 })
+		T.expect(limits.height[1] >= 0.95 and limits.height[2] <= 1.05).toBe(true)
+		for _, key in { "width", "depth", "head" } do
+			local range = (limits :: any)[key]
+			T.expect({ key, range[2] <= 1 }).toEqual({ key, true })
+		end
+		-- nobody can pick a smaller hitbox: the root part never scales (HumanoidRootPart untouched), the body is
+		-- standard R15, Rthro and proportions are off
+		T.expect({ limits.bodyType[1], limits.bodyType[2], limits.proportion[1], limits.proportion[2] })
+			.toEqual({ 0, 0, 0, 0 })
+	end)
+
+	T.it("a look change costs game gold only: no product, no shard price", function()
+		T.expect(type(Config.LookChange.goldPerLevel)).toBe("number")
+		T.expect(type(Config.LookChange.goldMin)).toBe("number")
+		local text = fs.readFile("src/shared/Data/Products.luau")
+		for _, word in { "LookChange", "lookChange", "barber", "Barber", "SetCharacterLook" } do
+			T.expect({ word, string.find(text, word, 1, true) }).toEqual({ word, nil })
+		end
+		for _, entry in Products.shop do
+			T.expect({ entry.key, string.find(string.lower(entry.key), "look", 1, true) }).toEqual({ entry.key, nil })
+		end
+		local service = fs.readFile("src/server/Services/CosmeticService.luau")
+		T.expect(string.find(service, "dragonShards", 1, true)).toBeNil()
 	end)
 end)
 

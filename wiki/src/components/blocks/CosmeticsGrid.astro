@@ -1,6 +1,7 @@
 ---
 // Cosmetics by kind (S43): a colour swatch (pets: their render), name and a description built from the kind, parts
-// and flying. No prices, no buy buttons: the game sells them, the wiki only shows them.
+// and flying. No prices, no buy buttons: the game sells them, the wiki only shows them. S132: a class outfit says which
+// class wears it.
 import MonsterImage from "../MonsterImage.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
@@ -9,7 +10,10 @@ import { name, t, type Key } from "../../lib/i18n";
 import { renderSrc } from "../../lib/renders";
 const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const file = load("cosmetics");
+const classes = new Map(load("classes").classes.map((c) => [c.id, c]));
 const describe = (c: (typeof file.cosmetics)[number]) => {
+  const info = c.class ? classes.get(c.class) : undefined;
+  if (info) return `${t(lang, `cos.kind.${c.kind}` as Key)} · ${t(lang, "cos.class", { class: name(info.name, lang) })}`;
   const kind = t(lang, `cos.kind.${c.kind}` as Key);
   if (c.parts?.length) return `${kind}: ${c.parts.map((p) => t(lang, `cos.part.${p}` as Key)).join(t(lang, "cos.and"))}`;
   if (c.kind === "pet") return `${kind}, ${t(lang, c.flies ? "cos.flies" : "cos.walks")}`;

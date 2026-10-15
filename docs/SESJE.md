@@ -10411,3 +10411,97 @@ Pliki: `src/shared/{Config}.luau`, `src/shared/Data/{AdminCommands,Cosmetics,Key
 kosmetyki), `wiki/src/content/updates/{pl,en}/2026-10-15-*` (nowe), `wiki/src/data/{arena (nowy),premium,titles,
 cosmetics,mechanics,meta,types}`, `docs/{SKLEP-ID (nowy),PRZEDMIOTY,DESIGN,DESIGN-17,WIKI,ARCHITECTURE,DECYZJE,PROGRESS,
 SESJE}.md`, `CLAUDE.md`.
+
+### S132: Wygląd klas: stroje klas, kreator, garderoba klasowa, awatar Roblox
+
+Start na `bd1336e` (S131: commit i sekcja SESJE są; pliki `docs/DESIGN-17.md`, `tests/paywall.spec.luau`,
+`Data/Cosmetics`, `Util/CosmeticLook`, `CosmeticService`, `Screens/Wardrobe` na miejscu). Nazwy S97 / S121–S123 z kodu
+(lista w DECYZJE). Ostatnia sesja serii DESIGN-17.
+
+Co zrobiono:
+- **Dane (A, B):** `Data/ClassLooks` (strój domyślny czterech klas z rolami kolorów, `BODY_ROLES`, 8 twarzy, 10 odcieni
+  skóry, 12 fryzur, `DEFAULT_LOOK`, puste `assets` i `layers`), `Config.CharacterLook` (budżet 28 części, skale awatara),
+  `Config.LookChange = { goldPerLevel = 15, goldMin = 300 }` (G1: 13,3 / 4,5 / 3,1 / 2,4% dochodu poziomu na 20 / 45 /
+  70 / 100; prompt proponował 100 / 1000 = 88% na 20). W `Data/Cosmetics` pola `class`, `outfit`, `obtain.bossWin` i
+  20 strojów klasowych (tabela niżej); `NOT_BALANCE` „wygląd”, `CONFIG_KEYS` += `LookChange` z powodami S132.
+- **Logika (C):** `Logic/CharacterLook` (słownik `GARMENTS` 43 procedurali ze slotem i liczbą części, `FACE_PARTS`,
+  `normalize`, `isValid`, `allowed`, `outfitSpec` dla strojów sprzed S132, `outfitOf`, `resolve` z barwnikiem S123 w
+  danych, `questOutfits`, `bossWinOutfits`, `earnedOutfits`, `changeCost`, `canChange`, `STANDARD`, `clampScales`),
+  `Premium.canEquip(kind, id, owned, classId?)` (`wardrobe.error.otherClass`, bez klasy `error.wrongPhase`),
+  `Premium.snapshotOutfit(..., classId?)`, `Premium.applySet`. Zapis: migracja **9** (`AccountSchema.CURRENT = 9`).
+- **Serwer (D, H):** `Util/AvatarBuild` (opis R15: standardowe części i skale, animacje 0, katalog; rysowanie z części:
+  kolory ciała, procedurale `DRAW`, modele `assets`, fryzura, twarz na `SurfaceGui` (w podglądzie z części); umowa `OutfitCape` / `LureCape`;
+  kołczan z ekwipunku zastępuje proceduralny; `blockFigure`, `previewFigure`). `CharacterService.SetDescriptionProvider`
+  i wczytanie z opisem (zapas `LoadCharacterAsync`, ponowne sprawdzenie tokenu po dostawcy, ostrzeżenie R6 +
+  `RigNotR15`). `CosmeticService`: dostawca opisu, `RefreshAppearance` (opis tylko przy zmianie id katalogu albo trybu,
+  wierzchowiec zsiada i wsiada, broń odbudowana przez nowe `EquipmentService.RefreshHeld`), stroje na klasę,
+  `SetCharacterLook` (darmowa raz, potem złoto przy Cyruliku w jednym kroku), `GrantQuestOutfits` (QuestService,
+  SideQuestService), `GrantBossWin` (DungeonService, po rzucie wierzchowca, bez `rng`), nadanie wstecz przy wejściu,
+  pobranie i cache opisu awatara, `SetRobloxAvatar` (SettingsService i admin), manekin `VaelthornMannequin`. NPC
+  `barber` (usługa `look`) przy `stall_cloth` na rynku. Admin `/charlook`, `/lookfree`, `/avatarmode`.
+  `CosmeticLook.applyOutfit` / `applyDye` / `applyAll` zostały (ścieżka zgodności), nowe `applyEffects`.
+- **Klient (E):** `Components/LookPicker`, `Components/LookPreview`, okno `look` (`Screens/LookWindow`, 820 × 600,
+  `PremiumController.OpenLook`), sekcja „Wygląd” w kreatorze (podgląd i wybór; na telefonie jedno pod drugim),
+  garderoba (filtr klas, strój klasy na górze, „Tylko dla”, `wardrobe.obtain.bossWin`, przymierzanie przez
+  `AvatarBuild`, inna klasa na manekinie, „Zmień wygląd” i linia trybu nad podglądem, klasa zestawu w podpowiedzi
+  kafelka), sklep premium z dopiskiem klasy, wiersz „Pokaż mój awatar Roblox” z podpowiedzią w `GameMenu`, usługa
+  `look` u NPC (`NPC_OPTIONAL`).
+- **Teksty (F):** PL i EN wszystkich kluczy z tabeli F + `garment.<g>` (43) + `worldmap.search.look`.
+- **Wiki (I):** `tools/WikiData/ClassLooks.luau` → `classlooks.json`, pole `class` w `cosmetics.json`, blok
+  `ClassOutfits` (w widoku klasy i w artykule), dopisek klasy w `CosmeticsGrid`, sekcja „Wygląd postaci” /
+  "Character appearance" w `kosmetyki.mdx` / `cosmetics.mdx`, wpis aktualizacji `2026-10-15-wyglad-klas`,
+  `"classlooks"` w `stat.ts`. Node jest: `npm run data`, `npm run check` (z `npm test`) zielone.
+- **Dokumentacja:** `docs/WYGLAD-KLAS.md` (nowy, tabela z `tools/classlooks_slots.luau`), `DESIGN.md` §4.1, §22 i
+  akapit „Wygląd klas (S132)”, `DESIGN-17.md` „Ustalenia S132”, `ASSETS.md`, `ARCHITECTURE.md`, `ANIMACJE.md`,
+  `BALANS.md` (`balance_report`, bez migawki), `SKLEP-ID.md` (`shop_report`: 20 strojów w zakresie 300–900).
+- **Testy:** nowy `tests/classlooks.spec.luau` (dane, kreator, procedurale, budżet, `resolve`, walidacja i koszt,
+  skale, stroje z gry, zestawy); przypadki w `character.spec` (fabryka, migracja 9), `premium.spec`, `paywall.spec`
+  („Paywall S132”, `COSMETIC_FIELDS` += `class`, `outfit`), `balance.spec` („S132 look change”), `wikidump.spec`.
+  `CURRENT = 9` w testach przypinających schemat (character, contracts, leaderboard, mounts, premiumuse, rarities,
+  sidequests, story, tourney, worldmap); `mounts.spec` pomija stroje klasowe w powiązaniu `Reward.cosmetic`;
+  `weeklyoffer.spec` na 200 tygodni. `balance1_20.spec` bez zmian w `ALLOWED_1_20_DIFFS`. Lune: 6875 przypadków (przed sesją 6850), 0 błędów.
+
+Po przeglądzie: przełączenie awatara w trakcie gry czyści wygląd proceduralny przed `ApplyDescription` (bez
+starych kolorów klasy i podwójnej twarzy), twarz w podglądach (kreator, okno wyglądu, garderoba) z cienkich części,
+nieudane wczytanie z opisem przy spawnie ponawia opis (`ModelSpawned(player, model, described)`), po opisie odbudowa
+także drugiej ręki, kolejność wierszy kreatora całkowitymi `LayoutOrder`.
+
+Zapis: `character.look = { face, skin, hair }`, `character.lookFree`, `account.cosmetics.classOutfits`,
+`account.settings.robloxAvatar`, `Types.Outfit.class`; migracja 9 (`equipped.outfit` → `classOutfits` każdej klasy).
+Remote'y: `SetCharacterLook(face, skin, hair)` (rate 1), `CreateCharacter(slot, classId, name, face?, skin?, hair?)`.
+
+`WIKI_KEYS_ALLOW="classlooks:*,cosmetics:cosmetics.cosmetics[].class,types.ts"`: nowy plik, nowe pole klasy
+strojów i odpowiadające typy; nic więcej (`wiki_keys_diff` bez tej zmiennej pokazuje dokładnie te trzy różnice).
+
+Stroje klasowe (wszystkie `catalog = 0`, części proceduralne):
+
+| id | klasa | źródło |
+|---|---|---|
+| `outfit_warrior_vanguard` / `_blackiron` / `_crimson` | Wojownik | 450 / 700 / 900 odłamków |
+| `outfit_warrior_duskwood` / `_ashen` | Wojownik | `queensLegacy` / zwycięstwo nad `azgor` |
+| `outfit_cleric_pilgrim` / `_dawn` / `_inquisitor` | Kapłan | 400 / 700 / 900 odłamków |
+| `outfit_cleric_duskwood` / `_ashen` | Kapłan | `queensLegacy` / `azgor` |
+| `outfit_hunter_tracker` / `_wolfpelt` / `_nightstalker` | Łowca | 400 / 650 / 900 odłamków |
+| `outfit_hunter_duskwood` / `_ashen` | Łowca | `queensLegacy` / `azgor` |
+| `outfit_mage_scholar` / `_ember` / `_frostweave` | Mag | 400 / 700 / 900 odłamków |
+| `outfit_mage_duskwood` / `_ashen` | Mag | `queensLegacy` / `azgor` |
+
+Id katalogu do uzupełnienia: 199 pustych miejsc (stroje domyślne klas i 20 strojów klasowych: części, koszula,
+spodnie; 8 twarzy, 12 fryzur), pełna lista w `docs/WYGLAD-KLAS.md`.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{ClassLooks (nowy),Cosmetics,AdminCommands,Npcs}.luau`,
+`src/shared/Data/Town/npcExtra.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{CharacterLook (nowy),Premium,AccountSchema,CharacterFactory}.luau`,
+`src/shared/Util/{AvatarBuild (nowy),CosmeticLook}.luau`, `src/shared/Net/Definitions.luau`,
+`src/server/Services/{Cosmetic,Character,Settings,Dungeon,Quest,SideQuest,Equipment}Service.luau`,
+`src/server/Admin/Character.luau`, `src/client/UI/Components/{LookPicker,LookPreview} (nowe).luau`,
+`src/client/UI/Screens/{LookWindow (nowy),Wardrobe,GameMenu}.luau`, `src/client/UI/Screens/CharacterSelect/Creator.luau`,
+`src/client/UI/Screens/PremiumShop/Cosmetics.luau`, `src/client/Controllers/{Premium,Npc}Controller.luau`,
+`assets/ClassLooks/{init.meta.json,.gitkeep}` (nowe), `tests/classlooks.spec.luau` (nowy), `tests/*.spec.luau` (wyżej),
+`tools/{classlooks_slots (nowy),balance_reasons}.luau`, `tools/WikiData/{ClassLooks (nowy),Basics,init}.luau`,
+`wiki/src/components/blocks/{ClassOutfits (nowy),CosmeticsGrid}.astro`, `wiki/src/components/blocks/index.ts`,
+`wiki/src/views/ClassView.astro`, `wiki/src/lib/stat.ts`, `wiki/src/i18n/{pl,en}.ts`,
+`wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `wiki/src/content/updates/{pl,en}/2026-10-15-wyglad-klas.md`
+(nowe), `wiki/src/data/{classlooks (nowy),cosmetics,npcs,mapsearch,search,meta,types}`, `wiki/public/img/maps/city.svg`,
+`docs/{WYGLAD-KLAS (nowy),DESIGN,DESIGN-17,ASSETS,ARCHITECTURE,ANIMACJE,BALANS,SKLEP-ID,PRZEDMIOTY,DECYZJE,PROGRESS,
+SESJE}.md`.

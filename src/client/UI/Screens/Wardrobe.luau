@@ -17,6 +17,13 @@
 -- without an outfit), the portrait frame tile, a chat line and bubble, the title over the character; titles are worn
 -- with SetTitle ("Take off" hides the title), emotes and level-up effects preview on the own character in the world
 -- (props.PreviewEmote / PreviewLevelUp, nobody else sees them).
+-- S132 (DESIGN-17 §9a): outfits replace the class look. The outfit list has a class filter ("My class", the four
+-- classes, "Shared"; "My class" = the active class's outfits and the shared ones) and the class's default outfit on
+-- top; an outfit of another class can be bought but not worn ("Only for: {class}"). Outfits are tried on with
+-- Util/AvatarBuild (the class look of Logic/CharacterLook.resolve, the dye inside); another class's outfit (or the
+-- filter on another class) shows on the mannequin with the character's face, skin and hair. Over the preview of the
+-- look group: "Change appearance" (the look window; "free" while the free change is left) and the mode line (class
+-- look or the Roblox avatar). A saved look says which class it was saved on.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,7 +31,10 @@ local RunService = game:GetService("RunService")
 
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Arena = require(ReplicatedStorage.Shared.Data.Arena)
+local AvatarBuild = require(ReplicatedStorage.Shared.Util.AvatarBuild)
+local CharacterLook = require(ReplicatedStorage.Shared.Logic.CharacterLook)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local ClassLooks = require(ReplicatedStorage.Shared.Data.ClassLooks)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Button = require(script.Parent.Parent.Components.Button)
 local CosmeticLook = require(ReplicatedStorage.Shared.Util.CosmeticLook)
@@ -67,6 +77,7 @@ export type Props = {
 	-- EffectsController.PlayLevelUp)
 	PreviewEmote: ((emoteId: string) -> ())?,
 	PreviewLevelUp: ((cosmeticId: string) -> ())?,
+	OpenLook: (() -> ())?, -- S132: the look window (PremiumController.OpenLook)
 }
 
 local PREVIEW = 330
@@ -78,6 +89,9 @@ local CHARACTER_ORBIT = 11
 -- S123: the kind tabs under the group tabs (a scrolling strip is ButtonHeightSmall + 6 high), then the balance
 local KIND_TABS_Y = 50
 local BALANCE_Y = 100
+-- S132: the class filter of the outfit list (under the balance) and the pseudo-id of the class's default outfit
+local FILTER_HEIGHT = 50
+local CLASS_DEFAULT = "$class"
 
 local function invoke(name: string, ...: any)
 	local args = table.pack(...)
@@ -126,6 +140,14 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 			use,
 			"wardrobe.obtain.boss",
 			{ boss = if boss then Text.get(use, boss.nameKey) else obtain.boss }
+		)
+	elseif obtain and obtain.bossWin then
+		-- S132: a class outfit for defeating the boss with that class
+		local boss = Bosses.get(obtain.bossWin)
+		return Text.get(
+			use,
+			"wardrobe.obtain.bossWin",
+			{ boss = if boss then Text.get(use, boss.nameKey) else obtain.bossWin }
 		)
 	elseif obtain and obtain.quest then
 		return Text.get(use, "wardrobe.obtain.quest", { quest = Text.get(use, `quest.{obtain.quest}.title`) })
@@ -180,14 +202,30 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	local shards = State.Value({ "account", "dragonShards" })
 
 	local titleState = State.Value({ "character", "title" }) -- S123: bought titles are worn on the character
+	-- S132: the class look of the active character
+	local classId = State.Value({ "character", "class" })
+	local charLook = State.Value({ "character", "look" })
+	local lookFree = State.Value({ "character", "lookFree" })
+	local filter = scope:Value("mine") -- "mine" | a class id | "common"
 	local function owns(acc: any, def: Cosmetics.Def): boolean
 		return CosmeticRules.owns(def, if type(acc) == "table" then acc else nil)
+	end
+	local function myClass(): string?
+		local c = Fusion.peek(classId)
+		return if type(c) == "string" then c else nil
 	end
 	local function equippedOf(acc: any, k: string): string?
 		if type(acc) ~= "table" then
 			return nil
 		end
+		if k == "outfit" then
+			return CharacterLook.outfitOf(acc, myClass()) -- S132: the outfit of the active class
+		end
 		return if k == "pet" then acc.pets.equipped else acc.cosmetics.equipped[k]
+	end
+	-- S132: the class the filter shows (nil = "My class" / "Shared": the active class)
+	local function filterClass(f: string): string?
+		return if f ~= "mine" and f ~= "common" then f else nil
 	end
 	local previewEmote = props and props.PreviewEmote
 	local previewLevelUp = props and props.PreviewLevelUp
@@ -250,23 +288,79 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			return
 		end
 		orbit = CHARACTER_ORBIT
-		model = cloneCharacter()
-		if not model or type(acc) ~= "table" then
+		if type(acc) ~= "table" then
 			return
 		end
 		local look = table.clone(acc.cosmetics.equipped)
 		local petId = acc.pets.equipped
 		local trying = Fusion.peek(tried)
 		local def = trying and Cosmetics.get(trying)
+		-- S132: the outfit of the active class (or the tried one); the class default with CLASS_DEFAULT
+		local mine = myClass()
+		local outfitId = CharacterLook.outfitOf(acc, mine)
+		if trying == CLASS_DEFAULT then
+			outfitId = nil
+		end
+		local otherClass: string? = nil
 		if def then
 			if def.kind == "pet" then
 				petId = def.id
+			elseif def.kind == "outfit" then
+				outfitId = def.id
+				if def.class ~= nil and def.class ~= mine then
+					otherClass = def.class
+				end
 			else
 				look[def.kind] = def.id
 			end
 		end
-		CosmeticLook.applyAll(model, look)
-		model.Parent = viewport
+		if Fusion.peek(kind) == "outfit" and otherClass == nil then
+			local shown = filterClass(Fusion.peek(filter))
+			if shown and shown ~= mine then
+				otherClass = shown
+				if not (def and def.kind == "outfit" and def.class == shown) then
+					outfitId = nil -- the shown class's default outfit
+				end
+			end
+		end
+		local avatar = acc.settings.robloxAvatar == true
+		if otherClass then
+			-- another class: the mannequin in that class's look with the character's face, skin and hair
+			local figure = AvatarBuild.previewFigure()
+			model = figure
+			AvatarBuild.applyProcedural(
+				figure,
+				CharacterLook.resolve({
+					classId = otherClass,
+					look = Fusion.peek(charLook),
+					outfitId = outfitId,
+					dye = look.dye,
+					robloxAvatar = false,
+				}),
+				true
+			)
+		else
+			local clone = cloneCharacter()
+			if not clone then
+				return
+			end
+			model = clone
+			if mine then
+				AvatarBuild.applyProcedural(
+					clone,
+					CharacterLook.resolve({
+						classId = mine,
+						look = Fusion.peek(charLook),
+						outfitId = outfitId,
+						dye = look.dye,
+						robloxAvatar = avatar,
+					})
+				)
+			end
+		end
+		local shown = model :: Model
+		CosmeticLook.applyEffects(shown, look)
+		shown.Parent = viewport
 		if petId then
 			pet = CosmeticLook.buildPet(petId)
 			if pet then
@@ -283,6 +377,8 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	scope:Observer(tried):onChange(rebuild)
 	scope:Observer(account):onChange(rebuild)
 	scope:Observer(kind):onChange(rebuild)
+	scope:Observer(filter):onChange(rebuild) -- S132
+	scope:Observer(charLook):onChange(rebuild)
 	scope:Observer(mountState):onChange(function()
 		if Fusion.peek(kind) == "mountskin" then
 			rebuild()
@@ -328,11 +424,122 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 		local equipped = if k == "title" then nil else equippedOf(acc, k)
 		local wornTitle = use(titleState)
 		local index = 0
+		-- S132: the class filter of the outfits and the class's default outfit on top
+		local mine = use(classId)
+		local f = use(filter)
+		local shownClass = if k == "outfit" then (filterClass(f) or (if f == "mine" then mine else nil)) else nil
+		if type(shownClass) == "string" then
+			local classLook = ClassLooks.get(shownClass)
+			local isMine = shownClass == mine
+			local isOn = isMine and equipped == nil
+			local button = Button(s, {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -8, 0.5, 0),
+				Size = UDim2.fromOffset(150, 44),
+				Variant = "secondary",
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(s, "wardrobe.wear"),
+				Visible = not isOn,
+				Disabled = not isMine,
+				OnClick = function()
+					invoke("CosmeticEquip", "outfit", nil)
+				end,
+			})
+			if not isMine then
+				local class = Classes.get(shownClass)
+				Tooltip.attach(
+					s,
+					button :: GuiObject,
+					s:Computed(function(use2): string
+						local name = if class then Text.get(use2, class.nameKey) else shownClass
+						return Text.get(use2, "wardrobe.onlyFor", { class = name })
+					end)
+				)
+			end
+			local color = if classLook then classLook.outfit.colors.main else "#808080"
+			table.insert(
+				list,
+				s:New("TextButton")({
+					LayoutOrder = 0,
+					Size = UDim2.new(1, 0, 0, 64),
+					AutoButtonColor = false,
+					Text = "",
+					BackgroundColor3 = if use(tried) == CLASS_DEFAULT
+						then Theme.Colors.PanelHover
+						else Theme.Colors.PanelRaised,
+					BackgroundTransparency = 0.2,
+					[OnEvent("Activated")] = function()
+						Sounds.play("click")
+						tried:set(if Fusion.peek(tried) == CLASS_DEFAULT then nil else CLASS_DEFAULT)
+					end,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						s:New("TextLabel")({
+							Position = UDim2.fromOffset(8, 8),
+							Size = UDim2.fromOffset(48, 48),
+							BackgroundColor3 = Color3.fromHex(color),
+							Text = (Classes.get(shownClass) or { icon = "" } :: any).icon,
+							TextScaled = true,
+							FontFace = Theme.Fonts.BodyBold,
+							TextColor3 = Color3.new(1, 1, 1),
+							TextStrokeTransparency = 0.4,
+							[Children] = { s:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
+						}),
+						s:New("TextLabel")({
+							Position = UDim2.fromOffset(66, 8),
+							Size = UDim2.new(1, -240, 0, 26),
+							BackgroundTransparency = 1,
+							Text = `{if isOn then "✔ " else ""}{Text.get(
+								use,
+								if classLook then classLook.nameKey else "wardrobe.classDefault"
+							)}`,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Body,
+							TextColor3 = if isOn then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("TextLabel")({
+							Position = UDim2.fromOffset(66, 34),
+							Size = UDim2.new(1, -240, 0, 22),
+							BackgroundTransparency = 1,
+							Text = `{Text.get(use, "wardrobe.classDefault")} · {Text.get(use, "premium.owned")}`,
+							FontFace = Theme.Fonts.Body,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Colors.Success,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+							TextXAlignment = Enum.TextXAlignment.Left,
+						}),
+						button,
+					},
+				})
+			)
+		end
 		for _, def in Cosmetics.list do
 			if def.kind ~= k then
 				continue
 			end
+			if k == "outfit" then
+				if f == "mine" and def.class ~= nil and def.class ~= mine then
+					continue
+				elseif f == "common" and def.class ~= nil then
+					continue
+				elseif filterClass(f) and def.class ~= f then
+					continue
+				end
+			end
 			index += 1
+			-- S132: an outfit of another class: bought like any cosmetic, never worn by this class
+			local otherClass = k == "outfit" and def.class ~= nil and def.class ~= mine
+			local onlyFor: string? = nil
+			if otherClass then
+				local class = Classes.get(def.class :: string)
+				onlyFor = Text.get(
+					use,
+					"wardrobe.onlyFor",
+					{ class = if class then Text.get(use, class.nameKey) else def.class }
+				)
+			end
 			local isOwned = owns(acc, def)
 			local isOn = if k == "title" then def.title ~= nil and wornTitle == def.title else equipped == def.id
 			local price = WeeklyOffer.priceOf(def.id, now) or def.price
@@ -355,7 +562,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				TextSize = Theme.TextSize.Small,
 				Text = Text.T(s, action or "wardrobe.buy"),
 				Visible = not earned,
-				Disabled = if action then false else (use(shards) or 0) < price,
+				Disabled = if action then otherClass and isOwned else (use(shards) or 0) < price,
 				OnClick = function()
 					if k == "emote" and isOwned then
 						preview(def)
@@ -373,6 +580,9 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					end
 				end,
 			})
+			if otherClass and isOwned and onlyFor then
+				Tooltip.attach(s, button :: GuiObject, onlyFor)
+			end
 			-- S120: price and balance after on the buy button (with the reason while it is greyed out), as in the shop.
 			if action == nil and not earned then
 				Tooltip.attach(
@@ -414,6 +624,9 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				priceText = `◆ {Format.number(price)}  · {Text.get(use, "wardrobe.weekly")}`
 			else
 				priceText = `◆ {Format.number(price)}`
+			end
+			if onlyFor then
+				priceText = `{priceText} · {onlyFor}`
 			end
 			table.insert(
 				list,
@@ -596,6 +809,12 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				if outfit == nil then
 					return Text.get(use, "wardrobe.outfit.empty")
 				end
+				-- S132: the class the look was saved on
+				local class = if type(outfit.class) == "string" then Classes.get(outfit.class) else nil
+				if class then
+					local saved = Text.get(use, "wardrobe.set.class", { class = Text.get(use, class.nameKey) })
+					return `{outfitNames(use, outfit)} · {saved}`
+				end
 				return outfitNames(use, outfit)
 			end)
 		)
@@ -667,6 +886,16 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	})
 	local HINT_Y = PREVIEW_HEIGHT + 6 + 22 + OUTFIT_TILE + 6 + 44 + 6
 
+	-- S132: the class filter tabs of the outfit list
+	local filterTabs = { { id = "mine", label = Text.T(scope, "wardrobe.filter.mine") } }
+	for _, id in Classes.order do
+		local class = Classes.get(id)
+		if class then
+			table.insert(filterTabs, { id = id :: string, label = Text.T(scope, class.nameKey) })
+		end
+	end
+	table.insert(filterTabs, { id = "common", label = Text.T(scope, "wardrobe.filter.common") })
+
 	-- S123: two-level tabs: the groups, then the kinds of the chosen group (both scroll sideways on a phone)
 	local groupTabs = {}
 	for _, g in Cosmetics.groups do
@@ -715,7 +944,6 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 		return if type(id) == "string" then Cosmetics.get(id) else nil
 	end
 	local charName = State.Value({ "character", "name" })
-	local classId = State.Value({ "character", "class" })
 	local overlay = scope:New("Frame")({
 		Name = "PreviewOverlay",
 		Size = UDim2.fromOffset(PREVIEW, PREVIEW_HEIGHT),
@@ -825,6 +1053,49 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					}),
 				},
 			}),
+			-- S132: "Change appearance" (the look window) and the mode line over the preview of the look group
+			Button(scope, {
+				Name = "ChangeLook",
+				Position = UDim2.fromOffset(10, 10),
+				Size = UDim2.fromOffset(190, 44),
+				Variant = "secondary",
+				TextSize = Theme.TextSize.Small,
+				Visible = scope:Computed(function(use): boolean
+					return use(group) == "look" and props ~= nil and props.OpenLook ~= nil
+				end),
+				Text = scope:Computed(function(use): string
+					return Text.get(
+						use,
+						if use(lookFree) == true then "wardrobe.changeLookFree" else "wardrobe.changeLook"
+					)
+				end),
+				OnClick = function()
+					local open = props and props.OpenLook
+					if open then
+						open()
+					end
+				end,
+			}),
+			scope:New("TextLabel")({
+				Name = "LookMode",
+				AnchorPoint = Vector2.new(0.5, 1),
+				Position = UDim2.new(0.5, 0, 1, -10),
+				Size = UDim2.new(1, -20, 0, 24),
+				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundTransparency = 0.35,
+				Visible = scope:Computed(function(use): boolean
+					return use(group) == "look" and use(kind) ~= "dye"
+				end),
+				Text = scope:Computed(function(use): string
+					local acc = use(account)
+					local avatar = type(acc) == "table" and acc.settings.robloxAvatar == true
+					return Text.get(use, if avatar then "wardrobe.mode.avatar" else "wardrobe.mode.class")
+				end),
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.Parchment,
+				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
+			}),
 			-- a dye needs a worn (or tried) outfit; emotes and level-up effects play in the world
 			scope:New("TextLabel")({
 				Name = "PreviewNote",
@@ -838,7 +1109,10 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					if k == "emote" or k == "levelup" then
 						return true
 					end
-					return k == "dye" and shownOf(use, "outfit") == nil
+					-- S132: the class look always has an outfit; only the Roblox avatar can be without one
+					local acc = use(account)
+					local avatar = type(acc) == "table" and acc.settings.robloxAvatar == true
+					return k == "dye" and avatar and shownOf(use, "outfit") == nil
 				end),
 				Text = scope:Computed(function(use): string
 					local k = use(kind)
@@ -926,12 +1200,32 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						end
 					end,
 				}),
-				scope:New("ScrollingFrame")({
+				-- S132: the class filter of the outfits
+				scope:New("Frame")({
+					Name = "ClassFilter",
 					Position = scope:Computed(function(use): UDim2
 						return UDim2.fromOffset(0, BALANCE_Y + (if use(Device.Touch) then 50 else 40))
 					end),
+					Size = UDim2.new(1, 0, 0, FILTER_HEIGHT - 6),
+					BackgroundTransparency = 1,
+					Visible = scope:Computed(function(use): boolean
+						return use(kind) == "outfit"
+					end),
+					[Children] = Tabs(scope, {
+						Selected = filter,
+						Tabs = filterTabs,
+						Scroll = true,
+						Size = UDim2.fromScale(1, 1),
+					}),
+				}),
+				scope:New("ScrollingFrame")({
+					Position = scope:Computed(function(use): UDim2
+						local extra = if use(kind) == "outfit" then FILTER_HEIGHT else 0
+						return UDim2.fromOffset(0, BALANCE_Y + (if use(Device.Touch) then 50 else 40) + extra)
+					end),
 					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(1, 0, 1, -(BALANCE_Y + (if use(Device.Touch) then 50 else 40)))
+						local extra = if use(kind) == "outfit" then FILTER_HEIGHT else 0
+						return UDim2.new(1, 0, 1, -(BALANCE_Y + (if use(Device.Touch) then 50 else 40) + extra))
 					end),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,

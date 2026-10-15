@@ -1,11 +1,12 @@
 // Data blocks usable in MDX without an import (S42; S43: city, guild, market, cosmetics, guides; S97: mounts; S131:
-// arena, PvP events, VIP, premium items).
+// arena, PvP events, VIP, premium items; S132: class outfits).
 import ArenaTable from "./ArenaTable.astro";
 import AuctionTable from "./AuctionTable.astro";
 import BlessingTable from "./BlessingTable.astro";
 import CapsTable from "./CapsTable.astro";
 import CityGallery from "./CityGallery.astro";
 import CityNpcs from "./CityNpcs.astro";
+import ClassOutfits from "./ClassOutfits.astro";
 import ClassStartTable from "./ClassStartTable.astro";
 import CosmeticsGrid from "./CosmeticsGrid.astro";
 import ElementList from "./ElementList.astro";
@@ -39,6 +40,7 @@ export const BLOCKS = {
   CapsTable,
   CityGallery,
   CityNpcs,
+  ClassOutfits,
   ClassStartTable,
   CosmeticsGrid,
   ElementList,

@@ -1085,6 +1085,7 @@
     {"id":"miller_widow","key":"mlynarzowa hanna hanna the miller s widow","map":"city","name":{"en":"Hanna the Miller's Widow","pl":"Młynarzowa Hanna"},"type":"npc"},
     {"id":"stablemaster","key":"stajenny radosz radosz the stablemaster","map":"city","name":{"en":"Radosz the Stablemaster","pl":"Stajenny Radosz"},"type":"npc"},
     {"id":"sergeant","key":"sierzant dobieslaw sergeant dobieslaw","map":"city","name":{"en":"Sergeant Dobiesław","pl":"Sierżant Dobiesław"},"type":"npc"},
+    {"id":"barber","key":"cyrulik bazyli basil the barber","map":"city","name":{"en":"Basil the Barber","pl":"Cyrulik Bazyli"},"type":"npc"},
     {"id":"arenamaster","key":"mistrz areny arena master","map":"city","name":{"en":"Arena Master","pl":"Mistrz Areny"},"type":"npc"},
     {"id":"farmer_bartosz","key":"farmer bartosz bartosz the farmer","map":"meadows","name":{"en":"Bartosz the Farmer","pl":"Farmer Bartosz"},"type":"npc"},
     {"id":"fisher_wit","key":"rybak wit wit the fisherman","map":"meadows","name":{"en":"Wit the Fisherman","pl":"Rybak Wit"},"type":"npc"},

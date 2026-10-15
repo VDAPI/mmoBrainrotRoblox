@@ -2,6 +2,7 @@
 -- Character creation, account schema and migrations.
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local CharacterFactory = require("../src/shared/Logic/CharacterFactory")
+local ClassLooks = require("../src/shared/Data/ClassLooks")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local T = require("./Test")
@@ -137,7 +138,7 @@ T.describe("AccountSchema", function()
 	end)
 
 	T.it("S121: vip and outfits come from the template without a migration, nothing saved is overwritten", function()
-		T.expect(AccountSchema.CURRENT).toBe(8)
+		T.expect(AccountSchema.CURRENT).toBe(9) -- S132: 9 = class outfits
 		local template = AccountSchema.accountTemplate()
 		T.expect(template.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
 		T.expect(template.outfits).toEqual({})
@@ -186,7 +187,7 @@ T.describe("AccountSchema", function()
 	end)
 
 	T.it("S101b: dialogue answers and the comments switch come from the templates, without a migration", function()
-		T.expect(AccountSchema.CURRENT).toBe(8) -- S102: 8 = story progress (mainLast)
+		T.expect(AccountSchema.CURRENT).toBe(9) -- S102: 8 = story progress (mainLast), S132: 9 = class outfits
 		T.expect(AccountSchema.characterTemplate().quests.said).toEqual({})
 		-- S102: cutscenes start empty, the story anchor has no default
 		T.expect(AccountSchema.characterTemplate().quests.scenes).toEqual({})
@@ -244,7 +245,7 @@ T.describe("AccountSchema", function()
 		local older: any = AccountSchema.accountTemplate()
 		older.schema = 6
 		older.login = nil
-		T.expect(AccountSchema.migrate(older)).toEqual({ 7, 8 })
+		T.expect(AccountSchema.migrate(older)).toEqual({ 7, 8, 9 })
 		T.expect(older.login).toEqual({ day = 0, last = 0 })
 	end)
 
@@ -309,7 +310,7 @@ end
 T.describe("Migration 6 (S56)", function()
 	T.it("level 1 Warrior", function()
 		local data, c = oldSave("Warrior", 1, { skills = { mightyStrike = 1 }, skillPoints = 0 })
-		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7, 8 }) -- S99: 7 = hunting contracts, S102: 8 = story progress
+		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7, 8, 9 }) -- S99: 7 = hunting contracts, S102: 8 = story progress, S132: 9
 		T.expect(data.schema).toBe(AccountSchema.CURRENT)
 		T.expect(c.skills).toBeNil()
 		T.expect(c.skillPoints).toBeNil()
@@ -400,6 +401,73 @@ T.describe("Migration 6 (S56)", function()
 		local copy = TableUtil.deepCopy(c)
 		AccountSchema._migrations[6](data, newId)
 		T.expect(data.characters["1"]).toEqual(copy)
+	end)
+end)
+
+-- S132 (DESIGN-17 §9a): the creator's look and migration 9 (one outfit per class).
+T.describe("Class looks: creation and migration 9 (S132)", function()
+	local DEFAULT = {
+		face = ClassLooks.DEFAULT_LOOK.face,
+		skin = ClassLooks.DEFAULT_LOOK.skin,
+		hair = ClassLooks.DEFAULT_LOOK.hair,
+	}
+
+	T.it("a new character keeps the creator's look and has one free change", function()
+		local look = { face = "face_stern", skin = "skin_7", hair = "hair_braid_grey" }
+		local c = CharacterFactory.create("Mage", "Imie", ids(), look)
+		T.expect(c.look).toEqual(look)
+		T.expect(c.look == look).toBe(false)
+		T.expect(c.lookFree).toBe(true)
+		T.expect(CharacterFactory.create("Mage", "Imie", ids()).look).toEqual(DEFAULT)
+		local odd = CharacterFactory.create("Hunter", "Imie", ids(), { face = "nope", skin = "skin_2", hair = 5 })
+		T.expect(odd.look).toEqual({ face = DEFAULT.face, skin = "skin_2", hair = DEFAULT.hair })
+	end)
+
+	local function account(cosmetics: any): any
+		return {
+			schema = 8,
+			cosmetics = cosmetics,
+			characters = { ["1"] = { id = "a", name = "Old", class = "Warrior", level = 30 } },
+		}
+	end
+
+	T.it("moves a known outfit to every class, drops an unknown one, keeps the rest", function()
+		local data = account({
+			owned = { outfit_ranger = true },
+			equipped = { outfit = "outfit_ranger", aura = "aura_gold", dye = "dye_crimson" },
+		})
+		T.expect(AccountSchema.migrate(data)).toEqual({ 9 })
+		local want = {}
+		for _, classId in Classes.order do
+			want[classId] = "outfit_ranger"
+		end
+		T.expect(data.cosmetics.classOutfits).toEqual(want)
+		T.expect(data.cosmetics.equipped).toEqual({ aura = "aura_gold", dye = "dye_crimson" })
+		T.expect(data.characters["1"].look).toEqual(DEFAULT)
+		T.expect(data.characters["1"].lookFree).toBe(true)
+		T.expect(data.settings.robloxAvatar).toBe(false)
+		-- idempotent: the migration again changes nothing
+		local copy = TableUtil.deepCopy(data)
+		AccountSchema._migrations[9](data, function(): string
+			return "x"
+		end)
+		T.expect(data).toEqual(copy)
+
+		local unknown = account({ owned = {}, equipped = { outfit = "outfit_gone" } })
+		AccountSchema.migrate(unknown)
+		T.expect(unknown.cosmetics.classOutfits).toEqual({})
+		T.expect(unknown.cosmetics.equipped.outfit).toBeNil()
+	end)
+
+	T.it("broken cosmetics become the template, saved looks stay", function()
+		local broken = account("broken")
+		broken.outfits = { { equipped = { outfit = "outfit_ranger" } } }
+		AccountSchema.migrate(broken)
+		T.expect(broken.cosmetics).toEqual({ owned = {}, equipped = {}, classOutfits = {} })
+		T.expect(broken.outfits).toEqual({ { equipped = { outfit = "outfit_ranger" } } })
+		local noEquipped = account({ owned = {} })
+		AccountSchema.migrate(noEquipped)
+		T.expect(noEquipped.cosmetics).toEqual({ owned = {}, equipped = {}, classOutfits = {} })
 	end)
 end)
 

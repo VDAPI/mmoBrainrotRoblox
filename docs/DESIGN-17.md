@@ -165,6 +165,18 @@ Prośba właściciela z 2026-10-13 (wątek animacji, przeniesiona tutaj): wyglą
 - **Później (nie w tej serii):** zbroja z ekwipunku zmienia wygląd jak w Margonem. S132 tylko zostawia w `Data/ClassLooks` miejsce na warstwy wg slotu (`layers = { chest?, head?, … }`) i opisuje to w DECYZJE.
 - Podgląd w kreatorze i garderobie (obracany model, wzór istniejącego podglądu garderoby), PC i telefon. Wiki: stroje klas (bez cen w Robux).
 
+### Ustalenia S132 (szczegóły w `docs/DECYZJE.md`)
+
+1. Płatna zmiana wyglądu tylko u Cyrulika (`barber`, rynek) za złoto `max(300, 15 × poziom)`, nigdy za Smocze Odłamki
+   ani Robux; każda postać (także nowa) ma jedną darmową zmianę z dowolnego miejsca (`character.lookFree`).
+2. Strój na klasę: `account.cosmetics.classOutfits[klasa]` (migracja 9 przeniosła dawne `equipped.outfit` do każdej
+   klasy); zestawy Garderoby+ zapisują strój klasy i pole `class`, wygląd postaci nie należy do zestawu.
+3. Stroje „z gry”: `obtain.quest = "queensLegacy"` (finał rozdziału II) i nowe `obtain.bossWin = "azgor"`
+   (deterministycznie, bez rzutu); na klasę 3 za odłamki i 2 z gry.
+4. W trybie awatara części ciała też wyzerowane (bez Rthro i głów dynamicznych), skale przycięte do
+   `Config.CharacterLook.avatarScale`; animacje opisu zawsze 0.
+5. Wszystkie id z katalogu = 0 i brak modeli: gra rysuje wygląd proceduralny; lista w `docs/WYGLAD-KLAS.md`.
+
 ## 10. Kolejność sesji
 
 | Sesja | Treść |

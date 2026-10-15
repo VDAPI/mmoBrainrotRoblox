@@ -403,6 +403,8 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 		Analytics.onboarding(player, index, quest.id)
 	end
 	give(player, quest.reward)
+	-- S132: class outfits of this quest for the character's class (obtain.quest; owned = nothing)
+	CosmeticService.GrantQuestOutfits(player, quest.id, char.class)
 	queueScenes(player, quest.id, "turnIn")
 	Net.Fire(player, "QuestCompleted", `quest.{quest.id}.title`)
 	log:info("%s completed %s", player.Name, quest.id)

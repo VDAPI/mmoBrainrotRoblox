@@ -106,7 +106,7 @@ return {
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
 	} :: { ModuleEntry },
-	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount", "FullElixir", "Lure" },
+	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount", "FullElixir", "Lure", "LookChange" },
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
 		["Data/Codes"] = "sekret",
@@ -141,6 +141,7 @@ return {
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
+		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
@@ -4071,6 +4072,19 @@ return {
 			{
 				session = "S122",
 				why = "DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical",
+			},
+		},
+		-- S132 (DESIGN-17 §9a): the paid look change at the barber, gold only (never shards or Robux)
+		["Config:LookChange.goldPerLevel"] = {
+			{
+				session = "S132",
+				why = "look change at the barber = 15 x level gold: 300 / 675 / 1050 / 1500 at 20 / 45 / 70 / 100 = 13.3 / 4.5 / 3.1 / 2.4% of a level's income (Balance.levelIncome 2260 / 14926 / 33468 / 61396), inside the 2-15% band of tests/balance.spec S132; a gold sink, the first change is free",
+			},
+		},
+		["Config:LookChange.goldMin"] = {
+			{
+				session = "S132",
+				why = "300 gold below level 20 (= 15 x 20, the price of level 20): a new character pays no more than at 20; the free first change covers the creator's regrets",
 			},
 		},
 		-- S125 (DESIGN-17 §5): the weekly EXP ranking

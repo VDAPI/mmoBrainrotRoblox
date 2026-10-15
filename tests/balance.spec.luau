@@ -25,6 +25,7 @@ local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
 local B = require("./Balance")
+local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local Config = require("../src/shared/Config")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local Loot = require("../src/shared/Logic/Loot")
@@ -2095,6 +2096,30 @@ T.describe("S97 mounts", function()
 			T.expect(row.kills >= last).toBe(true)
 			last = row.kills
 		end
+	end)
+end)
+
+-- S132 (DESIGN-17 §9a): the paid look change at the barber against the level income of the S84 model (the function of
+-- the S97 mount upgrades). Always asserted. The 1-20 tables never read Config.LookChange (balance1_20.spec unchanged).
+T.describe("S132 look change", function()
+	T.it("costs 2-15% of a level's income on 20 / 45 / 70 / 100 and goldMin below 20", function()
+		for _, level in { 20, 45, 70, 100 } do
+			local cost, free = CharacterLook.changeCost({ lookFree = false, level = level })
+			T.expect(free).toBe(false)
+			for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
+				local share = cost / B.levelIncome(classId, level)
+				if share < 0.02 or share > 0.15 then
+					error(`look change at {level} ({classId}): {cost} gold = {share} of the level's income`)
+				end
+			end
+		end
+		for level = 1, 19 do
+			T.expect({ level, (CharacterLook.changeCost({ lookFree = false, level = level })) }).toEqual({
+				level,
+				Config.LookChange.goldMin,
+			})
+		end
+		T.expect({ CharacterLook.changeCost({ lookFree = true, level = 60 }) }).toEqual({ 0, true })
 	end)
 end)
 

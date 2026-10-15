@@ -1562,3 +1562,41 @@ T.describe("Wiki export: shop, VIP, arena, events (S131)", function()
 		end
 	end)
 end)
+
+-- S132 (DESIGN-17 §9a): the class looks on the wiki, without catalog ids, models or prices.
+T.describe("Wiki export: class looks (S132)", function()
+	T.it("exports four class looks with colours and garments, the creator counts and the skins", function()
+		local looks = d.classlooks
+		T.expect(looks ~= nil).toBe(true)
+		T.expect(#looks.classes).toBe(4)
+		for _, look in looks.classes do
+			T.expect({ look.class, #look.garments >= 3, #look.outfits }).toEqual({ look.class, true, 5 })
+			T.expect(type(look.colors.main)).toBe("string")
+			T.expect(type(look.name.pl) == "string" and type(look.name.en) == "string").toBe(true)
+		end
+		T.expect(looks.faces).toBe(8)
+		T.expect(looks.hairs).toBe(12)
+		T.expect(#looks.skins).toBe(10)
+		local classOf: { [string]: string } = {}
+		for _, c in d.cosmetics.cosmetics do
+			if c.class then
+				classOf[c.id] = c.class
+			end
+		end
+		for _, look in looks.classes do
+			for _, outfit in look.outfits do
+				T.expect({ outfit.id, classOf[outfit.id] }).toEqual({ outfit.id, look.class })
+			end
+		end
+	end)
+
+	T.it("leaks no catalog id, model, clothing, price or source of the game", function()
+		for name, text in result.files do
+			if string.find(name, "classlooks.json", 1, true) or string.find(name, "cosmetics.json", 1, true) then
+				for _, key in { "catalog", "asset", "shirt", "pants", "price", "obtain", "productId", "robux" } do
+					T.expect({ name, key, string.find(text, `"{key}"%s*:`) }).toEqual({ name, key, nil })
+				end
+			end
+		end
+	end)
+end)

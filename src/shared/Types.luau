@@ -175,6 +175,9 @@ export type CharacterData = {
 		said: { [string]: string },
 	},
 	guildId: string?,
+	-- S132 (DESIGN-17 §9a): face, skin and hair of the creator (Data/ClassLooks ids) and the one free look change
+	look: { face: string, skin: string, hair: string },
+	lookFree: boolean,
 	reached100At: number?, -- S124: os.time() when the character reached Config.MaxLevel (leaderboard tie-break, Hall of Fame)
 	lbHidden: boolean?, -- S124: test / staff character left out of every leaderboard (/lb hide)
 	-- S125: EXP gained in the UTC week `week` (Logic/Time.weekNumber) from Data/Leaderboards.WEEK_SOURCES; `b` = bracket
@@ -358,6 +361,7 @@ export type Settings = {
 	devPins: { string }, -- S23: dev panel favourites (admins)
 	mapCloseOnWalk: boolean, -- S25: the world map closes after "Walk"
 	barks: boolean, -- S101b: NPC comments during quests (BarkController)
+	robloxAvatar: boolean, -- S132: the player's Roblox avatar (standard R15 scales) instead of the class look
 }
 
 -- S121 (DESIGN-17 §2): UTC day of the last daily shards, free respawns used on respawnDay, the last free recall
@@ -370,8 +374,9 @@ export type VipState = {
 	months: { [string]: boolean },
 }
 
--- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet.
-export type Outfit = { equipped: { [string]: string }, pet: string? }
+-- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet. S132: `class` = the class it was
+-- saved on (the class outfit is in equipped.outfit; Logic/Premium.applySet).
+export type Outfit = { equipped: { [string]: string }, pet: string?, class: string? }
 
 export type AccountData = {
 	schema: number,
@@ -379,7 +384,9 @@ export type AccountData = {
 	lastCharacter: number?,
 	dragonShards: number,
 	deposit: { size: number, items: { [string]: ItemInstance } },
-	cosmetics: { owned: { [string]: boolean }, equipped: { [string]: string } },
+	-- S132: classOutfits = the worn outfit per class (class id -> outfit id; none = the class's default look, migration 9
+	-- moved equipped.outfit here)
+	cosmetics: { owned: { [string]: boolean }, equipped: { [string]: string }, classOutfits: { [string]: string } },
 	pets: { owned: { [string]: boolean }, equipped: string? },
 	settings: Settings,
 	purchases: { [string]: number },

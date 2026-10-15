@@ -1,0 +1,54 @@
+---
+// Class looks (S132, DESIGN-17 §9a): per class the default outfit (colour swatches, name, its garments) and the class
+// outfits of the wardrobe (swatch, name, where it comes from: the shop, a story quest or a boss). One class with
+// `cls`, every class without it. No prices and no catalog ids: classlooks.json and cosmetics.json have none.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t, type Key } from "../../lib/i18n";
+
+interface Props {
+  cls?: string;
+}
+const { cls } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const looks = load("classlooks").classes.filter((l) => !cls || l.class === cls);
+const cosmetics = new Map(load("cosmetics").cosmetics.map((c) => [c.id, c]));
+const classes = new Map(load("classes").classes.map((c) => [c.id, c]));
+---
+{looks.map((look) => {
+  const info = classes.get(look.class);
+  return (
+    <section class="vw-look">
+      {!cls && info && <h3 class="vw-h3">{name(info.name, lang)}</h3>}
+      <div class="default">
+        <span class="sw" style={`--c1: ${look.colors.main}; --c2: ${look.colors.second}; --c3: ${look.colors.trim}`} aria-hidden="true"></span>
+        <span class="txt">
+          <strong>{name(look.name, lang)}</strong>
+          <span>{t(lang, "cos.classlook.default")}: {look.garments.map((g) => name(g, lang)).join(", ")}</span>
+        </span>
+      </div>
+      <ul>
+        {look.outfits.map((o) => {
+          const c = cosmetics.get(o.id);
+          return c && (
+            <li>
+              <span class="sw" style={`--c1: ${c.color}; --c2: ${c.color2 ?? c.color}; --c3: ${c.color2 ?? c.color}`} aria-hidden="true"><span>{c.icon}</span></span>
+              <span class="txt"><strong>{name(c.name, lang)}</strong><span>{t(lang, `cos.source.${o.source}` as Key)}</span></span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+})}
+<Source from="Data/ClassLooks" />
+<style>
+  .vw-look { margin: 0 0 12px; }
+  .default { display: flex; align-items: center; gap: 14px; padding: 10px 12px; margin: 0 0 10px; background: var(--vw-panel); border: 1px solid var(--vw-gold-dark); }
+  .vw-look ul { margin: 0 0 8px; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .vw-look li { display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .sw { flex-shrink: 0; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--c1) 0 50%, var(--c2) 50% 80%, var(--c3) 80% 100%); border: 2px solid var(--vw-gold-dark); font-size: 22px; color: #fff; text-shadow: 0 1px 2px #000; }
+  .txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .txt span { font-size: 14px; color: var(--vw-text-muted); }
+</style>

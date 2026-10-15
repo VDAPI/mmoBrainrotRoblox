@@ -63,6 +63,7 @@ local DungeonService = {
 		"StatService",
 		"StatusEffectService",
 		"MountService", -- S97: the boss mount roll (MountService never depends on this service)
+		"CosmeticService", -- S132: class outfits of a boss win (CosmeticService never depends on this service)
 	},
 }
 
@@ -105,6 +106,7 @@ local AnnounceService: any
 local StatusEffectService: any
 local StatService: any
 local MountService: any
+local CosmeticService: any
 local Registry: any
 local PathService: any
 
@@ -363,6 +365,8 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 			if mountDrop.mount then
 				Analytics.custom(player, "BossMount", def.level)
 			end
+			-- S132: the class outfit of this boss for every winner of that class (obtain.bossWin; no roll, rng unused)
+			CosmeticService.GrantBossWin(player, def.id, char.class :: string)
 			-- The chances of the next kill today.
 			local chances = Loot.bossChances(def.id, killsToday + 1, bossLuck)
 			Net.Fire(player, "CombatFx", {
@@ -762,6 +766,7 @@ function DungeonService.Init(registry)
 	AnnounceService = registry.Get("AnnounceService")
 	StatService = registry.Get("StatService")
 	MountService = registry.Get("MountService")
+	CosmeticService = registry.Get("CosmeticService")
 	StatusEffectService = registry.Get("StatusEffectService")
 	Registry = registry
 end

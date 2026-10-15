@@ -54,6 +54,7 @@ export type Command = {
 }
 
 local Blessings = require("./Blessings")
+local ClassLooks = require("./ClassLooks")
 local BuffCategories = require("./BuffCategories")
 local TerrainShapes = require("./Terrain")
 local CaveShapes = require("./CaveShapes")
@@ -125,6 +126,26 @@ cmd("character", "speed", { str("value") })
 cmd("character", "mount", { enum("action", { "info", "give", "take", "lvl", "ride", "off" }), str("arg", true) })
 -- S97: every mount of Data/Mounts at its start level (premium too, for tests)
 cmd("character", "mountall", {})
+-- S132: the character's look without a cost (or "reset" = the default look), the free change back, the avatar switch
+local LOOK_FACES: { string } = { "reset" }
+for _, f in ClassLooks.FACES do
+	table.insert(LOOK_FACES, f.id)
+end
+local LOOK_SKINS: { string } = {}
+for _, sk in ClassLooks.SKINS do
+	table.insert(LOOK_SKINS, sk.id)
+end
+local LOOK_HAIRS: { string } = {}
+for _, h in ClassLooks.HAIRS do
+	table.insert(LOOK_HAIRS, h.id)
+end
+cmd(
+	"character",
+	"charlook",
+	{ enum("face", LOOK_FACES), enum("skin", LOOK_SKINS, true), enum("hair", LOOK_HAIRS, true) }
+)
+cmd("character", "lookfree", {})
+cmd("character", "avatarmode", { enum("mode", { "on", "off" }) })
 cmd("character", "preset", { int("level", 1, MAX_LEVEL), int("rarity", 1, 5), int("up", 0, 9, true, "0") })
 -- S28: skill tools (S56: ranks come from the level; /lvl sets them)
 cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })

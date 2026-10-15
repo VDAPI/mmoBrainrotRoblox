@@ -19,6 +19,13 @@
 -- sold. obtain.pack (S123): only in a starter pack (Data/Products.starterPacks), never sold on its own.
 -- weekly (S123): the cosmetic is in the pool of the offer of the week (Logic/WeeklyOffer); free (S123): every account
 -- owns it without buying (Logic/CosmeticRules.owns, price 0).
+-- S132 (DESIGN-17 §9a): class looks. An outfit replaces the clothing of the class (Data/ClassLooks); `class` = the class
+-- that may wear it (nil = every class; only outfits), `outfit` = the full look (colour roles, body parts, procedural
+-- garments of Logic/CharacterLook.GARMENTS, catalog ids; without it Logic/CharacterLook.outfitSpec builds one from
+-- color / color2 / parts). obtain.bossWin = every character of the outfit's class among the winners of that boss gets
+-- it; obtain.quest on a class outfit = the character of that class handing the quest in gets it.
+
+local ClassLooks = require("./ClassLooks")
 
 export type Kind =
 	"outfit"
@@ -48,6 +55,7 @@ export type Skin = {
 -- S123: pack = the key of the starter pack (Data/Products.starterPacks) that gives it.
 -- S128: arena = "shop" (Arena Tokens shop, Data/Arena.SHOP) or "season" (a season reward, Data/Arena.SEASON_REWARDS).
 -- S129: event = a reward of a wall-clock event (Data/ScheduledEvents key, "bloodmoon"; S130 "tourney"), never sold
+-- S132: bossWin = a class outfit for every winner of that class over the boss (deterministic, no roll; CosmeticService)
 export type Obtain = {
 	boss: string?,
 	quest: string?,
@@ -55,6 +63,7 @@ export type Obtain = {
 	pack: string?,
 	arena: ("shop" | "season")?,
 	event: string?,
+	bossWin: string?,
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -93,6 +102,9 @@ export type Def = {
 	dye: Dye?,
 	weekly: boolean?, -- in the pool of the offer of the week (price > 0, no obtain, not free)
 	free: boolean?, -- owned by every account (price 0)
+	-- S132 (DESIGN-17 §9a): outfits only
+	class: string?, -- the class that may wear it (nil = every class)
+	outfit: ClassLooks.OutfitSpec?, -- the full look (nil: built from color / color2 / parts)
 }
 
 local LIST: { Def } = {}
@@ -458,6 +470,330 @@ add("frame_tourney", "frame", 0, "⚔", "#6E7480", {
 	obtain = { event = "tourney" },
 	frame = { stroke = "#6E7480", stroke2 = "#C9CED6", thickness = 5, ornament = "⚔", glow = true },
 })
+
+-- S132 (DESIGN-17 §9a): class outfits. Each replaces the default outfit of its class (Data/ClassLooks): per class
+-- three for Dragon Shards, one for the end of the story's chapter II and one for defeating Azgor with that class. All
+-- catalog ids 0 (procedural garments, docs/WYGLAD-KLAS.md). `color` / `color2` are the wardrobe and wiki swatch.
+local QUEST_CHAPTER2_END = "queensLegacy" -- the last story quest of chapter II "Zapomniany Ród" (S103)
+local ASHEN_BOSS = "azgor"
+
+type Garment = ClassLooks.Garment
+
+local function wear(g: string, role: string?): Garment
+	return { g = g, catalog = 0, role = role }
+end
+
+-- A long robe: the legs in the robe's colour (as the default looks of the Cleric and the Mage).
+local ROBE_BODY: { [string]: string } = {
+	LowerTorso = "main",
+	LeftUpperLeg = "main",
+	RightUpperLeg = "main",
+	LeftLowerLeg = "main",
+	RightLowerLeg = "main",
+}
+
+local function classOutfit(
+	id: string,
+	class: string,
+	price: number,
+	icon: string,
+	colors: ClassLooks.Colors,
+	garments: { Garment },
+	extra: { [string]: any }?
+)
+	local e: { [string]: any } = {
+		class = class,
+		color2 = colors.second,
+		outfit = {
+			colors = colors,
+			body = if class == "Cleric" or class == "Mage" then ROBE_BODY else nil,
+			garments = garments,
+			shirt = 0,
+			pants = 0,
+		} :: ClassLooks.OutfitSpec,
+	}
+	if price > 0 then
+		e.weekly = true
+	end
+	for k, v in (extra or {}) :: { [string]: any } do
+		e[k] = v
+	end
+	add(id, "outfit", price, icon, colors.main, e)
+end
+
+-- Warrior
+classOutfit("outfit_warrior_vanguard", "Warrior", 450, "⛨", {
+	main = "#6A707A",
+	second = "#2A3550",
+	trim = "#C9A45C",
+	leather = "#5A3E26",
+	metal = "#B4BCC6",
+}, {
+	wear("breastplate", "metal"),
+	wear("plate_pauldrons", "metal"),
+	wear("gauntlets", "metal"),
+	wear("greaves", "metal"),
+	wear("belt", "leather"),
+	wear("amulet", "trim"),
+	wear("cape", "second"),
+})
+classOutfit("outfit_warrior_blackiron", "Warrior", 700, "⛨", {
+	main = "#2A2A2E",
+	second = "#4A4A50",
+	trim = "#7A7A80",
+	leather = "#3A2A1E",
+	metal = "#3C3C42",
+}, {
+	wear("breastplate", "metal"),
+	wear("plate_pauldrons", "metal"),
+	wear("gauntlets", "metal"),
+	wear("greaves", "metal"),
+	wear("belt", "leather"),
+	wear("cape", "trim"),
+})
+classOutfit("outfit_warrior_crimson", "Warrior", 900, "⛨", {
+	main = "#7A1E22",
+	second = "#5A1418",
+	trim = "#B03028",
+	leather = "#4A2E1E",
+	metal = "#B8903E",
+}, {
+	wear("breastplate", "metal"),
+	wear("plate_pauldrons", "metal"),
+	wear("gauntlets", "metal"),
+	wear("greaves", "metal"),
+	wear("tabard", "trim"),
+	wear("cape", "trim"),
+	wear("helm_crest", "metal"),
+})
+classOutfit("outfit_warrior_duskwood", "Warrior", 0, "❦", {
+	main = "#4A5A3A",
+	second = "#5A4A30",
+	trim = "#3E6A34",
+	leather = "#5A3E24",
+	metal = "#7A7E84",
+}, {
+	wear("chain_mail", "metal"),
+	wear("tabard", "trim"),
+	wear("fur_collar", "leather"),
+	wear("belt", "leather"),
+	wear("bracers", "leather"),
+	wear("boots", "leather"),
+}, { obtain = { quest = QUEST_CHAPTER2_END } })
+classOutfit("outfit_warrior_ashen", "Warrior", 0, "♨", {
+	main = "#3A3432",
+	second = "#2A2422",
+	trim = "#FF7A2A",
+	leather = "#3A2A20",
+	metal = "#4A4442",
+}, {
+	wear("breastplate", "metal"),
+	wear("plate_pauldrons", "metal"),
+	wear("gauntlets", "metal"),
+	wear("greaves", "metal"),
+	wear("glow_seams", "trim"),
+	wear("cape", "second"),
+}, { obtain = { bossWin = ASHEN_BOSS } })
+-- Cleric
+classOutfit("outfit_cleric_pilgrim", "Cleric", 400, "✝", {
+	main = "#8A8680",
+	second = "#6B4A2B",
+	trim = "#A8916A",
+	leather = "#5A4030",
+	metal = "#6B4A2B",
+}, {
+	wear("robe_skirt", "main"),
+	wear("hood", "main"),
+	wear("sash", "trim"),
+	wear("holy_symbol", "second"),
+})
+classOutfit("outfit_cleric_dawn", "Cleric", 700, "☀", {
+	main = "#F4EFE0",
+	second = "#D8B24A",
+	trim = "#E8C25A",
+	leather = "#8A6A3A",
+	metal = "#D8B24A",
+}, {
+	wear("robe_skirt", "main"),
+	wear("holy_symbol", "second"),
+	wear("stole", "second"),
+	wear("sash", "trim"),
+	wear("shoulder_mantle", "trim"),
+})
+classOutfit("outfit_cleric_inquisitor", "Cleric", 900, "✝", {
+	main = "#1E1C20",
+	second = "#A8AEB6",
+	trim = "#8E1A22",
+	leather = "#2A2226",
+	metal = "#A8AEB6",
+}, {
+	wear("robe_skirt", "main"),
+	wear("hood", "main"),
+	wear("holy_symbol", "second"),
+	wear("stole", "trim"),
+	wear("sash", "trim"),
+})
+classOutfit("outfit_cleric_duskwood", "Cleric", 0, "❦", {
+	main = "#3E5A34",
+	second = "#7A5A3A",
+	trim = "#6B8A3A",
+	leather = "#5A4030",
+	metal = "#7A5A3A",
+}, {
+	wear("robe_skirt", "main"),
+	wear("wreath", "trim"),
+	wear("holy_symbol", "second"),
+	wear("sash", "leather"),
+}, { obtain = { quest = QUEST_CHAPTER2_END } })
+classOutfit("outfit_cleric_ashen", "Cleric", 0, "♨", {
+	main = "#5A5654",
+	second = "#8A6A2E",
+	trim = "#FF8A3A",
+	leather = "#3A302A",
+	metal = "#8A6A2E",
+}, {
+	wear("robe_skirt", "main"),
+	wear("hood", "main"),
+	wear("holy_symbol", "second"),
+	wear("glow_seams", "trim"),
+}, { obtain = { bossWin = ASHEN_BOSS } })
+-- Hunter
+classOutfit("outfit_hunter_tracker", "Hunter", 400, "➶", {
+	main = "#3E5A2E",
+	second = "#6B4A2B",
+	trim = "#8A6A3A",
+	leather = "#6B4A2B",
+	metal = "#7A7468",
+}, {
+	wear("leather_vest", "leather"),
+	wear("hood", "main"),
+	wear("cape", "main"),
+	wear("quiver_back", "leather"),
+	wear("belt", "leather"),
+	wear("boots", "leather"),
+})
+classOutfit("outfit_hunter_wolfpelt", "Hunter", 650, "➶", {
+	main = "#6A6660",
+	second = "#4A3A2A",
+	trim = "#8A8278",
+	leather = "#4A3424",
+	metal = "#7A7468",
+}, {
+	wear("leather_vest", "leather"),
+	wear("hood", "main"),
+	wear("fur_mantle", "main"),
+	wear("quiver_back", "leather"),
+	wear("bracers", "leather"),
+	wear("boots", "leather"),
+})
+classOutfit("outfit_hunter_nightstalker", "Hunter", 900, "➶", {
+	main = "#1E1E22",
+	second = "#2E2A2A",
+	trim = "#5A5A66",
+	leather = "#26222A",
+	metal = "#4A4A52",
+}, {
+	wear("leather_vest", "leather"),
+	wear("hood", "main"),
+	wear("mask", "second"),
+	wear("quiver_back", "leather"),
+	wear("bracers", "leather"),
+	wear("boots", "leather"),
+})
+classOutfit("outfit_hunter_duskwood", "Hunter", 0, "❦", {
+	main = "#4A5A2E",
+	second = "#6A5A3A",
+	trim = "#7A9A3A",
+	leather = "#4A3A24",
+	metal = "#6A6458",
+}, {
+	wear("leather_vest", "leather"),
+	wear("hood", "main"),
+	wear("wreath", "trim"),
+	wear("quiver_back", "leather"),
+	wear("bracers", "leather"),
+	wear("boots", "leather"),
+}, { obtain = { quest = QUEST_CHAPTER2_END } })
+classOutfit("outfit_hunter_ashen", "Hunter", 0, "♨", {
+	main = "#8A3E22",
+	second = "#4A2A1A",
+	trim = "#FF8A2A",
+	leather = "#5A2E1A",
+	metal = "#6A5A50",
+}, {
+	wear("leather_vest", "main"),
+	wear("hood", "second"),
+	wear("quiver_back", "leather"),
+	wear("ember_arrows", "trim"),
+	wear("bracers", "leather"),
+	wear("boots", "leather"),
+}, { obtain = { bossWin = ASHEN_BOSS } })
+-- Mage
+classOutfit("outfit_mage_scholar", "Mage", 400, "✦", {
+	main = "#6B4E2E",
+	second = "#C9B98A",
+	trim = "#8A6A3A",
+	leather = "#4A3424",
+	metal = "#B8A060",
+}, {
+	wear("robe_skirt", "main"),
+	wear("belt_book", "leather"),
+	wear("spectacles", "metal"),
+	wear("sash", "trim"),
+	wear("shoulder_mantle", "second"),
+})
+classOutfit("outfit_mage_ember", "Mage", 700, "♨", {
+	main = "#5A1414",
+	second = "#2A1010",
+	trim = "#FF8A2A",
+	leather = "#3A2018",
+	metal = "#B8603A",
+}, {
+	wear("robe_skirt", "main"),
+	wear("high_collar", "trim"),
+	wear("glow_seams", "trim"),
+	wear("sash", "trim"),
+	wear("belt_book", "leather"),
+})
+classOutfit("outfit_mage_frostweave", "Mage", 900, "❄", {
+	main = "#E4F0F6",
+	second = "#7FB8E8",
+	trim = "#BFE8FF",
+	leather = "#5A6A7A",
+	metal = "#A8C8E0",
+}, {
+	wear("robe_skirt", "main"),
+	wear("high_collar", "main"),
+	wear("frost_crystals", "trim"),
+	wear("sash", "second"),
+	wear("belt_book", "leather"),
+})
+classOutfit("outfit_mage_duskwood", "Mage", 0, "❦", {
+	main = "#24361E",
+	second = "#4A3A2A",
+	trim = "#D8D0B8",
+	leather = "#3A2A1E",
+	metal = "#8A7A5A",
+}, {
+	wear("robe_skirt", "main"),
+	wear("hood", "main"),
+	wear("amulet", "trim"),
+	wear("sash", "second"),
+	wear("belt_book", "leather"),
+}, { obtain = { quest = QUEST_CHAPTER2_END } })
+classOutfit("outfit_mage_ashen", "Mage", 0, "♨", {
+	main = "#141214",
+	second = "#2A2628",
+	trim = "#FF6A2A",
+	leather = "#2A2020",
+	metal = "#1A1A22",
+}, {
+	wear("robe_skirt", "main"),
+	wear("high_collar", "metal"),
+	wear("glow_seams", "trim"),
+	wear("belt_book", "leather"),
+	wear("shoulder_mantle", "second"),
+}, { obtain = { bossWin = ASHEN_BOSS } })
 
 local byId: { [string]: Def } = {}
 for _, def in LIST do
