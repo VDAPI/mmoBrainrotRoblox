@@ -8,6 +8,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 
 local AccountSchema = require(Shared.Logic.AccountSchema)
 local AdminCommands = require(Shared.Data.AdminCommands)
+local Classes = require(Shared.Data.Classes)
 
 local Context = require(script.Parent.Context)
 
@@ -18,6 +19,8 @@ local DataService = Context.services.DataService
 local PlayerStateService = Context.services.PlayerStateService
 local CharacterService = Context.services.CharacterService
 local NameService = Context.services.NameService
+local LeaderboardService = Context.services.LeaderboardService
+local AdminService = Context.services.AdminService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -71,6 +74,63 @@ end
 commands.resetcodes = function(player)
 	PlayerStateService.Set(player, { "account", "redeemed" }, {})
 	reply(player, "admin.resetcodes.ok")
+end
+
+-- S124: /lb info | refresh | submit | hide <player> | show <player> | remove <board:key> | fake <n> | hofclear <class>
+commands.lb = function(player, args)
+	local action, arg = args[1], args[2]
+	if action == "info" then
+		local info = LeaderboardService.Info(player)
+		reply(player, "admin.lb.info", info :: any)
+	elseif action == "refresh" then
+		local ok, n = LeaderboardService.ForceRefresh()
+		reply(player, if ok then "admin.lb.refreshed" else "admin.lb.cooldown", { n = n })
+	elseif action == "submit" then
+		Context.withCharacter(player, function()
+			reply(player, if LeaderboardService.AdminSubmit(player) then "admin.lb.submitted" else "admin.lb.excluded")
+		end)
+	elseif action == "hide" or action == "show" then
+		local target = AdminService.FindPlayer(arg or "")
+		if not target or not LeaderboardService.SetHidden(target, action == "hide") then
+			reply(player, "admin.player.none")
+			return
+		end
+		reply(player, if action == "hide" then "admin.lb.hidden" else "admin.lb.shown", { name = target.Name })
+	elseif action == "remove" then
+		local board, key = string.match(arg or "", "^([^:]+):(.+)$")
+		if not board or not key or not LeaderboardService.RemoveEntry(board, key) then
+			reply(player, "admin.usage.lb")
+			return
+		end
+		reply(player, "admin.lb.removed")
+	elseif action == "fake" then
+		local n = tonumber(arg)
+		if not n or n < 1 or n > 200 then
+			reply(player, "admin.usage.lb")
+			return
+		end
+		if not LeaderboardService.Fake(math.floor(n)) then
+			reply(player, "admin.lb.notMock")
+			return
+		end
+		reply(player, "admin.lb.faked", { n = math.floor(n) })
+	elseif action == "hofclear" then
+		local class: string? = nil
+		for _, id in Classes.order do
+			if string.lower(id) == string.lower(arg or "") then
+				class = id
+			end
+		end
+		if not class then
+			reply(player, "admin.usage.lb")
+			return
+		end
+		if not LeaderboardService.HofClear(class) then
+			reply(player, "admin.lb.notMock")
+			return
+		end
+		reply(player, "admin.lb.hofCleared", { class = `@class.{class}.name` })
+	end
 end
 
 return commands

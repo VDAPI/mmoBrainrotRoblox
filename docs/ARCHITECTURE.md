@@ -211,6 +211,20 @@ type CharacterData = {
   EmoteWheel`, klawisz `emote_wheel`, `Hud/EmoteButton`), `AnimationController.Emote` / `EndEmote` / `StopEmote`,
   `EffectsController.PlayLevelUp` (style efektu awansu), `UI/Components/PortraitFrame`, `UI/WeeklyClock`,
   `CosmeticLook.applyDye`, ramka czatu w `ChatController` (`OnBubbleAdded`).
+- **Rankingi (S124, DESIGN-17 §5):** `LeaderboardService` (`Deps`: `DataService`, `PlayerStateService`,
+  `CharacterService`, `LevelService`, `AnnounceService`, `WorldService`; `GuildService` leniwie) + folder
+  `src/server/Leaderboard/`: `Stores` (jedyne miejsce z API usług rankingów: OrderedDataStore
+  `Vaelthorn_LB_v1_<tablica>` klucz → wynik, MemoryStore SortedMap `Vaelthorn_LBMap_v1_<tablica>` z kluczem sortowania =
+  wynik i TTL, DataStore `Vaelthorn_LBMeta_v1` (klucz wpisu → `{ n, c, g, l, u, t }`, usunięte: `{ d = true }`) i
+  `Vaelthorn_LBLists_v1` (lista Sali Sław `{ entries }`) przez `Market/KeyStore`; `Market/Retry` i budżet; atrapa
+  `Logic/Leaderboard.memoryBoard` bez dostępu do DataStore, MemoryStore sprawdzany raz na serwer), `Cache` (top 100 na
+  instancję tablicy, metadane z limitem `metaReadsPerRefresh` i `budgetFloor`, sygnał `Refreshed`), `TownBoard` (atrybuty
+  planszy `Panels` (JSON), `Mode` i tabliczek `HeroName`, `ClassKey`, `At`). Klucz wpisu `"<userId>_<slot>"`, tablice i
+  zakładki w `Data/Leaderboards`, reguły w `Logic/Leaderboard`, liczby w `Config.Leaderboard` (zapis 60 s na tablicę i
+  klucz, odczyt 5 min na tablicę i serwer). Jeden wątek roboczy pisze kolejkę co 1 s; `BindToClose` czeka `flushWait` s.
+  Remote `LeaderboardGet(id)` → `(true, Snapshot)` / `(false, klucz)` (rate 2). Zapis postaci: `character.reached100At`
+  (`LevelService`), `character.lbHidden`; `CharacterDeleted(player, character, slotKey)`. Klient: `RankingsController`
+  (okno `UI/Screens/RankingsWindow`, akcja `win_rankings`), `FameBoardController` (tagi `FameBoard`, `FamePlinth`).
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -582,6 +596,7 @@ type CharacterData = {
 | `/help` | data |  | lista komend admina |
 | `/wipe` | data | [confirm] | usuń całe konto (wymaga /wipe confirm) ⚠ |
 | `/resetcodes` | data |  | kody nagród znów do użycia na tym koncie |
+| `/lb` | data | <info|refresh|submit|hide|show|remove|fake|hofclear> [arg] | rankingi: tryb i cache, wymuszony odczyt (raz na minutę), własny zapis, flaga testowa gracza, jeden wpis `tablica:klucz`, postacie testowe i czyszczenie Sali Sław w trybie „tylko ten serwer” (S124) ⚠ remove, hofclear |
 
 ## 12. Testy
 

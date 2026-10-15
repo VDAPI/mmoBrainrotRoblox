@@ -126,6 +126,8 @@ export type CharacterData = {
 		said: { [string]: string },
 	},
 	guildId: string?,
+	reached100At: number?, -- S124: os.time() when the character reached Config.MaxLevel (leaderboard tie-break, Hall of Fame)
+	lbHidden: boolean?, -- S124: test / staff character left out of every leaderboard (/lb hide)
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden

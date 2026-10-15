@@ -75,6 +75,8 @@ local MENU: { Hud.MenuEntry } = {
 			return use(MountController.Access) == true
 		end,
 	},
+	-- S124: rankings (RankingsController registers the window; key win_rankings)
+	{ id = "rankings", icon = "♔", hotkey = "R", tooltipKey = "hud.menu.rankings" },
 	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
@@ -157,9 +159,10 @@ local function registerWindows()
 			or entry.id == "premium"
 			or entry.id == "wardrobe"
 			or entry.id == "mounts"
+			or entry.id == "rankings"
 		then
 			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
-			-- MountController (S97).
+			-- MountController (S97) / RankingsController (S124).
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

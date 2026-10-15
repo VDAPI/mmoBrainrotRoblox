@@ -456,6 +456,14 @@ cmd("perf", "regionstats", { enum("map", REGION_MAPS) })
 cmd("data", "help", {})
 cmd("data", "wipe", { enum("confirm", { "confirm" }, true) }, { danger = true })
 cmd("data", "resetcodes", {})
+-- S124: leaderboards (LeaderboardService): mode and cache, forced read, own write, test flag, one entry, test
+-- characters and Hall of Fame clearing on the in-memory boards (Studio without API access)
+cmd(
+	"data",
+	"lb",
+	{ enum("action", { "info", "refresh", "submit", "hide", "show", "remove", "fake", "hofclear" }), str("arg", true) },
+	{ dangerActions = { "remove", "hofclear" } }
+)
 
 local byName: { [string]: Command } = {}
 for _, def in list do

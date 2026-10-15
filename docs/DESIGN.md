@@ -867,6 +867,25 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 - Czat gildii (między serwerami), lista członków z online/offline i serwerem, tag nad głową.
 - Dane gildii w osobnym DataStore (`UpdateAsync`), zmiany rozsyłane przez MessagingService.
 
+## 19a. Rankingi (S124, `docs/DESIGN-17.md` §5)
+
+- **Tablice:** ranking poziomu wszystkich postaci (`level`) i osobno każdej klasy (`level_<klasa>`), wspólny dla
+  wszystkich serwerów (OrderedDataStore). Wynik = `poziom × 10^10 + część poziomu` (EXP / EXP do następnego, 10^9 kroków);
+  na 100. poziomie wyżej stoi ten, kto dotarł pierwszy (`character.reached100At`). Wynik liczy serwer z samej postaci:
+  zakupy, VIP i przepustki nic nie zmieniają (`tests/paywall.spec`).
+- **Sala Sław:** pierwsze 10 postaci każdej klasy, które osiągnęły 100. poziom, w kolejności dojścia; wpis zostaje na
+  zawsze (także po usunięciu postaci). Wejście: toast i ogłoszenie na wszystkich serwerach.
+- **Zapis:** przy awansie, raz po wejściu do świata i przy wyjściu, najwyżej raz na 60 s na tablicę i postać; postacie
+  poniżej 5. poziomu, konta z `Config.AdminUserIds` i postacie z flagą testową (`/lb hide`) nie trafiają do rankingów.
+  Usunięcie postaci usuwa jej wpis z rankingu poziomu.
+- **Odczyt:** każdy serwer czyta top 100 tablicy najwyżej raz na 5 minut; okno pokazuje czas odświeżenia.
+- **Okno „Rankingi”** (menu HUD, klawisz R, prompt planszy w mieście): zakładki „Poziom” i „Sala Sław”, filtr klas, top 100
+  z przewijaniem, „Ty: miejsce X” albo „Poza pierwszą setką: poziom X (Y%)”, na telefonie zakładki u góry i mniej kolumn.
+- **Plansza przy ratuszu** (północna pierzeja rynku, obok bankiera): top 10 poziomu, listy Sali Sław czterech klas i cztery
+  cokoły z posągami i imionami pierwszych bohaterów klas („Czeka na pierwszego”, gdy wolne).
+- **Bez dostępu do usług Roblox** (Studio bez API) wszystko działa na tym serwerze z napisem „Tylko ten serwer”;
+  `/lb fake 100` wypełnia tablice postaciami testowymi.
+
 ## 20. Questy
 
 Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` §3, `docs/FABULA.md`, `docs/BALANS.md`.

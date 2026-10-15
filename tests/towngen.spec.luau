@@ -34,6 +34,7 @@ local BUDGET: { [string]: { number } } = {
 	forest = { 140, 0, 0 },
 	outside = { 80, 260, 120 },
 	cemetery = { 40, 200, 160 },
+	fame = { 60, 200, 80 }, -- S124: the Hall of Fame board and four plinths with statues
 }
 
 T.describe("Town generator", function()
@@ -114,6 +115,19 @@ T.describe("Town generator", function()
 		T.expect((tags.sail or 0) >= 8).toBe(true)
 		T.expect((tags.smoke or 0) > 20).toBe(true)
 		T.expect((tags.window or 0) > 500).toBe(true)
+		-- S124: the Hall of Fame writing surfaces, built on the server (shell) so World/Layouts/city can tag them
+		T.expect(names.FameHall).toBe(true)
+		T.expect(tags.fameBoard).toBe(1)
+		T.expect(tags.famePlinth).toBe(#Town.fame.plinths)
+		for _, b in all do
+			if b.name == "FameHall" then
+				for _, p in b.bp.pieces do
+					if p.tag == "fameBoard" or p.tag == "famePlinth" then
+						T.expect(p.lod).toBe("shell")
+					end
+				end
+			end
+		end
 	end)
 
 	T.it("builds the hunters' lodge and the mages' tower (S95)", function()

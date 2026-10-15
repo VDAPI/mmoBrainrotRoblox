@@ -9619,3 +9619,98 @@ Controller.luau`, `src/client/UI/Components/PortraitFrame.luau` (nowy), `src/cli
 `wiki/src/data/{cosmetics,mechanics,meta}.json`, `wiki/src/i18n/{pl,en}.ts`,
 `wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/PRZEDMIOTY.md`,
 `docs/{DESIGN,DESIGN-17,ARCHITECTURE,WIKI,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S124: Rankingi 1: LeaderboardService, ranking poziomu, Sala Sław, okno Rankingi, plansza w mieście
+
+Piąta sesja serii DESIGN-17 (§5), po S123 (`6f5331f`). S116 pominięta za zgodą właściciela. Bez Studio i bez wgrywania
+czegokolwiek do Roblox; bez nowych produktów. Nazwy S120–S123 sprawdzone w kodzie (DECYZJE).
+- **Dane:** `Config.Leaderboard` (`refresh` 300, `writeGap` 60, `top` 100, `townTop` 10, `minLevel` 5, `excludeAdmins`,
+  `orderedPrefix` `Vaelthorn_LB_v1_`, `sortedPrefix` `Vaelthorn_LBMap_v1_`, `metaStore` `Vaelthorn_LBMeta_v1`,
+  `listStore` `Vaelthorn_LBLists_v1`, `metaTtl` 1800, `metaReadsPerRefresh` 40, `budgetFloor` 20, `firstWait` 5,
+  `clientPoll` 60, `flushWait` 8, `idleBoard` 900, `adminRefreshGap` 60, `deleteTries` 3, `enterDelay` 10,
+  `retryFailed` 60). Nowy `Data/Leaderboards`
+  (tablice `level`, `level_<klasa>` ×4 `ordered`, `hof_<klasa>` ×4 `list` 10 / `first`; klasy z pętli po
+  `Classes.order`; zakładki `level`, `hof` z filtrem `class`; `TOWN` z panelami `top` / `hof` i czterema cokołami;
+  `HOF_SIZE`), w `NOT_BALANCE` („ranking”). `Types.CharacterData`: `reached100At?`, `lbHidden?` (bez migracji, w
+  szablonie jako `nil`).
+- **Logika (`Logic/Leaderboard`, czysta):** `levelScore` / `decodeLevel` (`LEVEL_BASE` 1e10, `FRAC_BASE` 1e9),
+  `SCORERS.level` (sama postać), `PARTS.week` / `PARTS.season`, `instanceId`, `partsAt`, `resolve` (ostatnia część
+  bierze resztę z `_`), `boardFor`, `entryKey` / `parseKey`, `excluded` / `eligible`, `memoryBoard`, dławienie
+  (`newThrottle`, `queue`, `due`, `release`, `pendingCount`, `META_BOARD`), `rows` / `listRows` / `mergeLocal` /
+  `rankOf` / `me` / `listMe`, `listInsert` / `placeOf` / `sameEntry` (klucz + `cid`), `townPanels`, `dateParts` (przez `Time.civil`),
+  `fakeEntries`, `better`, `classKey`.
+- **Serwer:** nowy folder `src/server/Leaderboard/` (`Stores`, `Cache`, `TownBoard`) i `LeaderboardService` (wątek
+  roboczy co 1 s, zapis przy `LevelChanged`, 10 s po `CharacterEntered`, przy `CharacterLeaving` z `release`, usunięcie
+  przy `CharacterDeleted`, `BindToClose`; Sala Sław z toastem, ogłoszeniem `AnnounceService.Global` i
+  `Analytics "HallOfFame"`; remote `LeaderboardGet`). `LevelService.onLevelsGained` ustawia `reached100At` przed
+  `LevelChanged`. `CharacterService.CharacterDeleted` z trzecim argumentem `slotKey`. Budowa miasta
+  (`World/Layouts/city`) nazywa i taguje powierzchnie `FameBoard` / `FamePlinth_<i>` (atrybut `Plinth`).
+- **Miasto:** `Data/Town/fame.luau` (ręczny, `Town.fame`): plansza (72, −66, `facing` 180), cokoły (58, −56), (64, −56),
+  (80, −56), (86, −56). Budowla `FameHall` w `Logic/TownGen/Props` (ziarno 1240): plansza między kamiennymi słupami w
+  brązowej ramie, daszek, herb, dwie latarnie, cztery cokoły ze stopniami, kamiennym posągiem w płaszczu wspartym na
+  mieczu, tarczą w kolorze klasy i brązową tabliczką; 20 części `shell`.
+- **Klient:** okno `UI/Screens/RankingsWindow` (PC: `SideTabs` 200 px, telefon: pasek `Tabs`; filtr klas jako przewijany
+  pasek; tabela 40 / 44 px, miejsca 1–3 złoto / srebro / brąz (`Theme.Colors.Silver`, `Bronze`), własny wiersz
+  podświetlony, wolne miejsca Sali Sław; stopka z linią gracza, zasadą Sali Sław, czasem odświeżenia i „Tylko ten
+  serwer”; pytanie przy zmianie tablicy i co 60 s, bez „Odśwież”), `RankingsController` (rejestracja, `Open`),
+  `FameBoardController` (napisy planszy na obu stronach, tabliczki cokołów, `ProximityPrompt` → okno). Menu HUD: wpis
+  `rankings` (♔, klawisz R), `UiArt.MENUS` += `rankings`; `Data/Keybinds` `win_rankings` = `R` (`wiki = false`).
+- **Admin:** `/lb info | refresh | submit | hide | show | remove | fake | hofclear` (`Admin/Data`), `admin.usage.lb`,
+  `admin.lb.*`; `AdminService.Deps` += `LeaderboardService`.
+- **Teksty (PL i EN):** `window.rankings.title`, `hud.menu.rankings`, `leaderboard.*`, `town.fame.*`, `admin.lb.*`.
+- **Testy:** nowy `tests/leaderboard.spec.luau` (dane, teksty, wynik, scorer, id tablic, atrapa, dławienie,
+  `mergeLocal`, wiersze i linia gracza, wykluczenia, Sala Sław, panele planszy, daty); bloki w `paywall` („Rankings
+  (S124)”: `ALLOWED_SCORERS`, scorer z argumentem-pułapką konta), `town` (miejsce Sali Sław, ślad w teście dojścia, dojście
+  do planszy), `towngen` (budżet `fame`, tagi `fameBoard` / `famePlinth` jako `shell`). `scripts/check` zielony (122
+  pliki, 6618 testów), `balance1_20` 0 różnic bez `ALLOWED_1_20_DIFFS`, `wiki_keys_diff` 0 bez `WIKI_KEYS_ALLOW`.
+- **Poprawki po przeglądzie:** wpis Sali Sław z `cid` (nowa postać na zwolnionym slocie wchodzi do Sali i nie widzi
+  starego wpisu jako swojego), znacznik gildii nie znika przy wyjściu, okno pyta znowu po 5 s przy „loading” i po
+  błędzie, pierwsza migawka czeka na imiona, tabliczka z `captionKey` / `ClassKey`, przyciski pasków na telefonie 44 px,
+  `enterDelay` / `retryFailed` w `Config`, usunięte nieużywane `IsLocal`, `Board.memory`, `Leaderboard.slice`.
+- **Wiki:** bez zmian (`wikidump --check`: aktualne); strona „Rankingi” to S125.
+
+Dla S125–S130:
+- Moduły: `src/shared/Data/Leaderboards.luau`, `src/shared/Logic/Leaderboard.luau`, `src/server/Leaderboard/Stores.luau`
+  (`ordered`, `sorted(id, ttl)`, `board(kind, id, ttl)`, `meta`, `lists`, `mode(kind?)`, `budget`, `warnOnce`),
+  `Cache.luau` (`get`, `wait`, `refresh`, `touch`, `usedSince`, `metaOf`, `putMeta`, `mergeLocal`, `setList`, `stats`,
+  `Refreshed`), `TownBoard.luau` (`start`), `src/server/Services/LeaderboardService.luau`,
+  `src/client/Controllers/RankingsController.luau` (`Open`), `src/client/UI/Screens/RankingsWindow.luau`,
+  `src/client/Controllers/FameBoardController.luau`, `src/shared/Data/Town/fame.luau`.
+- API serwisu: `KeyOf(player)`, `Submit(id, key, score, meta?)`, `Add(id, key, delta, meta?)` (tylko `sorted`),
+  `Remove(id, key)`, `ListInsert(id, entry)` → `(true)` / `(false, "dup" | "full" | "store" | "unknown")`, `List(id)`,
+  `Snapshot(id, player?)`, `SubmitPlayer(player, force?)`, `IsGlobal()`, sygnał `Refreshed(id)`; dla admina `Info`,
+  `ForceRefresh`, `AdminSubmit`, `SetHidden`, `RemoveEntry`, `Fake`, `HofClear`.
+- Typy: `Leaderboards.BoardDef`, `TabDef`, `PanelDef`, `PlinthDef`, `Kind`, `Filter`, `Format`, `ListMode`;
+  `Leaderboard.Meta`, `Entry`, `Row`, `Me`, `Snapshot`, `ListEntry` (z `cid` = id postaci), `Pending`, `Throttle`, `MemoryBoard`, `Panel`.
+- `Leaderboard.SCORERS` (`level`; nowy scorer = wpis tu + nazwa w `ALLOWED_SCORERS` w `paywall.spec`),
+  `Leaderboard.PARTS` (`week` = `Time.weekNumber`, `season` = `Time.monthKey`); tablica z `parts` ma id
+  `<id>_<część>_<część>`, okno samo bierze części z bieżącego czasu.
+- Magazyny: `Vaelthorn_LB_v1_<id>` (OrderedDataStore), `Vaelthorn_LBMap_v1_<id>` (SortedMap, wartość `{ s, m? }`),
+  `Vaelthorn_LBMeta_v1`, `Vaelthorn_LBLists_v1`. Remote `LeaderboardGet(id)` → `(true, Snapshot)` / `(false, klucz)`.
+- Klawisz `win_rankings` = `R` (`wiki = false`: S125 zdejmuje flagę razem ze stroną wiki); wolne litery po S124: `U`
+  (S126 `win_arena`), `N` (zapas S97), `Y`.
+- Tagi `FameBoard` / `FamePlinth`; atrybuty planszy `Panels` (JSON `townPanels`), `Mode`; tabliczek `Plinth`,
+  `HeroName`, `ClassKey`, `At`.
+- Teksty: `leaderboard.*` (`leaderboard.board.<id>`, `leaderboard.tab.<id>`), `town.fame.*`, `admin.lb.*`.
+- Zapis: `character.reached100At`, `character.lbHidden`; `CharacterDeleted(player, character, slotKey)`.
+- Jak dodać tablicę: wpis w `Data/Leaderboards.list` (stałe id, małe litery), zakładka w `tabs` (albo id w istniejącej),
+  teksty `leaderboard.board.<id>` / `leaderboard.tab.<id>` (PL, EN), ewentualnie scorer w `SCORERS` (sama postać) albo
+  część id w `PARTS`; serwis karmi ją przez `Submit` / `Add` / `ListInsert`. Jak dodać cokół: punkt w
+  `Data/Town/fame.luau` `plinths` + wpis w `Leaderboards.TOWN.plinths` (test pilnuje równej liczby); panel planszy: wpis w
+  `TOWN.panels` (rysuje go `FameBoardController`: `top` po lewej, `lists` po prawej).
+- Ikona menu: klucz `hud/menu_rankings` bez pliku (znak ♔); do narysowania: korona nad trzema stopniami podium (linia do
+  `BRAKI-GRAFIK.md` właściciela, pliku nie ma w repozytorium).
+
+Dla właściciela: nic do Creator Hub. W Studio ranking działa w trybie „tylko ten serwer”; `/lb fake 100` wypełnia okno
+i planszę, `/lb info` mówi o trybie. Na żywych serwerach ranking jest wspólny bez konfiguracji (w Studio prawdziwe
+magazyny po włączeniu „Game Settings → Security → Enable Studio Access to API Services”).
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Leaderboards (nowy),AdminCommands,Keybinds}.luau`,
+`src/shared/Data/Town/{fame (nowy),init}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{Leaderboard (nowy),AccountSchema,UiArt}.luau`, `src/shared/Logic/TownGen/Props.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/Leaderboard/{Stores,Cache,TownBoard}.luau` (nowe),
+`src/server/Services/{LeaderboardService (nowy),Level,Character,Admin}Service.luau`, `src/server/Admin/Data.luau`,
+`src/server/World/Layouts/city.luau`, `src/client/Controllers/{RankingsController,FameBoardController}.luau` (nowe),
+`src/client/Controllers/ScreenController.luau`, `src/client/UI/Screens/RankingsWindow.luau` (nowy),
+`src/client/UI/Theme.luau`, `tests/leaderboard.spec.luau` (nowy), `tests/{paywall,town,towngen}.spec.luau`,
+`tools/balance_reasons.luau`, `docs/{DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

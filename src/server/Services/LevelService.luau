@@ -73,6 +73,11 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	ResourceService.Restore(player)
 	local pathPts = Paths.pointsAt(to) - Paths.pointsAt(from)
 	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts, from)
+	-- S124: leaderboard tie-break and Hall of Fame (DESIGN-17 §5); set before LevelChanged so LeaderboardService sees it.
+	-- SetLevel up comes here too; going down keeps the field (the first moment stays).
+	if to >= Config.MaxLevel and from < Config.MaxLevel and character.reached100At == nil then
+		PlayerStateService.Set(player, { "character", "reached100At" }, os.time())
+	end
 	LevelService.LevelChanged:Fire(player, to, from)
 	LevelService.LeveledUp:Fire(player, to, to - from)
 	Analytics.progression(player, "Level", to, `level_{to}`) -- an empty level name is rejected by AnalyticsService

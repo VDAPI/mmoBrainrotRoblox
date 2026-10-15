@@ -3883,3 +3883,50 @@
 - **S123** Listy i ceny garderoby i sklepu czytają `WeeklyClock.WeekStart` (zmienia się raz w tygodniu), licznik
   `Now`; bez przebudowy wierszy co 20 s. `Premium.canEquip` bierze rodzaje ze slotem z `CosmeticRules.SLOT_KINDS`
   (+ `pet`); `CosmeticService.Owns` usunięte (bez użycia). `/cosmetic give|take` bez zmiany: `admin.cosmetic.unchanged`.
+- **S124** `LeaderboardService` ogólny: rodzaje tablic `ordered` / `sorted` / `list` w `Data/Leaderboards`, id instancji z
+  części (`Leaderboard.PARTS`: `week`, `season`), jeden remote `LeaderboardGet` dla wszystkich tablic; S125–S129 dopisują
+  tylko dane, scorer albo wywołania `Submit` / `Add` / `ListInsert`. Nazwy S120–S123 sprawdzone w kodzie: sloty "1".."5"
+  (`Config.MaxCharacters = 5`), `LevelService` po S123 bez zmian (efekt awansu z `CosmeticLevelUp`), klawisze T (S123)
+  i J (S97) zajęte.
+- **S124** Id tablic klas małymi literami (`level_warrior`, `hof_warrior`), bo nazywają magazyny
+  (`Vaelthorn_LB_v1_level_warrior`); Sala Sław to rodzaj `list` (jeden klucz DataStore na klasę w
+  `Vaelthorn_LBLists_v1`, `{ entries }`), metadane w `Vaelthorn_LBMeta_v1` przez `Market/KeyStore`.
+- **S124** `Config.Leaderboard.minLevel = 5`: postacie poniżej nie są zapisywane (mniej zapytań); postać, która spadnie
+  poniżej (`/lvl` w dół), traci wpis. Doprecyzowanie kontraktu.
+- **S124** Zapis także raz przy wejściu postaci (10 s po wejściu, żeby wczytała się gildia; weterani sprzed S124, zmiana
+  gildii); EXP między awansami nie wymusza zapisu (kontrakt: awans i wyjście). Wyjście i usunięcie zwalniają dławienie
+  klucza (`Leaderboard.release`), `BindToClose` czeka na kolejkę najwyżej `flushWait` s.
+- **S124** Weterani na 100. poziomie bez `reached100At` dostają czas pierwszego wejścia po S124 (prawdziwego nie znamy);
+  Sala Sław porządkuje po `at`, lista „first” jest pełna po 10 wpisach (późniejsze wejście z wcześniejszym `at` nie wypycha).
+- **S124** Wpis Sali Sław zostaje po usunięciu postaci („na zawsze”), wpis rankingu poziomu znika; `CharacterDeleted` z
+  trzecim argumentem `slotKey`; usunięte metadane jako znacznik `{ d = true }` (KeyStore nie usuwa kluczy), traktowany
+  jak brak metadanych.
+- **S124** Wykluczenie: `Config.AdminUserIds` (nie „wszyscy w Studio”) i flaga postaci `lbHidden` (`/lb hide`), filtr
+  także przy odczycie (wpisy sprzed dopisania admina).
+- **S124** Zależności: `LeaderboardService.Deps` = `DataService`, `PlayerStateService`, `CharacterService`,
+  `LevelService`, `AnnounceService`, `WorldService` (żaden nie zależy od `AdminService`); `GuildService` leniwie z
+  rejestru (S125 doda `LeaderboardService` do jego `Deps`); `AdminService.Deps` += `LeaderboardService`. Klient:
+  `RankingsController` (`WindowManager`), `FameBoardController` (`RankingsController`).
+- **S124** Klawisz okna `R` (J: S97, T: S123, U zostaje dla S126, N zapas S97); wpis w menu HUD (`MENU` to „GameMenu” z
+  DESIGN-17 §0.9; okno opcji `GameMenu.luau` nie ma listy skrótów do okien, więc bez wiersza). Akcja `win_rankings` z
+  `wiki = false`: lista klawiszy na wiki zmieni się razem ze stroną „Rankingi” (S125), ta sesja nie rusza eksportu.
+- **S124** Okno bez przycisku „Odśwież” (cache serwera 5 min, okno pyta samo co `clientPoll` = 60 s); plansza z
+  `ProximityPrompt` (12 studs, klawisz `interact`). `LeaderboardGet` zwraca `(true, Snapshot)` albo `(false, klucz)` jak
+  inne remote'y z danymi (`AuctionSearch`), nie gołą migawkę.
+- **S124** Sala Sław w ręcznym `Data/Town/fame.luau` (plan miasta jest generowany): plansza (72, −66) zwrócona na rynek,
+  cokoły (58 / 64 / 80 / 86, −56) po dwa po bokach, żeby nie zasłaniały planszy; między bankierem a wylotem ulicy Leśnej
+  (84, −78), która wyklucza punkt (84, −70) z planu sesji. Budowla `FameHall` w `Logic/TownGen/Props` (ziarno 1240).
+- **S124** Atrybut imienia na tabliczce cokołu to `HeroName`, nie `Name` (myli się z właściwością `Instance.Name`);
+  `ClassKey`, `At` jak w planie. Kolory 2. i 3. miejsca jako `Theme.Colors.Silver` / `Bronze`.
+- **S124** `Data/Leaderboards` w `NOT_BALANCE` („ranking”), `Config.Leaderboard` poza `CONFIG_KEYS`; wiki bez zmian
+  (`wikidump --check` aktualne, `wiki_keys_diff` 0 bez `WIKI_KEYS_ALLOW`). Ikona menu `hud/menu_rankings` w
+  `UiArt.MENUS` bez pliku (znak ♔); `BRAKI-GRAFIK.md` nie ma w repozytorium, opis sylwetki („korona nad trzema stopniami
+  podium”) w SESJE.
+- **S124** Wpis Sali Sław ma `cid` (id postaci): klucz slotu wraca dla nowej postaci po usunięciu, więc „dup”, miejsce
+  i własny wiersz porównują klucz i `cid` (`Leaderboard.sameEntry`; wpis bez `cid`, np. `/lb fake`, po samym kluczu).
+- **S124** Zapis przy wyjściu nie kasuje znacznika gildii: gdy `GuildService` odpiął gracza wcześniej (kolejność
+  handlerów nie jest stała), a postać ma `guildId`, zostaje znacznik z ostatniego zapisu tego serwera.
+- **S124** Okno pyta znowu po 5 s, gdy migawka jest „loading” albo wywołanie się nie udało; `Cache` ustawia `fetchedAt`
+  dopiero po odczycie imion. Tabliczka cokołu: podpis z `PlinthDef.captionKey`, klasa z atrybutu `ClassKey` (zapas:
+  klasa tablicy). Pasek zakładek i filtra na telefonie `MinTouch + 6` (przyciski 44 px). `enterDelay` 10 i
+  `retryFailed` 60 w `Config.Leaderboard`.

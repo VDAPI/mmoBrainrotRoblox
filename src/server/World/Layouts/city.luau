@@ -9,6 +9,7 @@
 --   * zones (green map, yellow Ristalle), the spawn point on the market and the map sketch (TownSketch).
 -- NPC positions come from the same plan (Data/Npcs, NpcService); the arena from Town.city.arena (DuelService).
 
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Build = require(script.Parent.Parent.Build)
@@ -43,6 +44,25 @@ local function gatePortal(ctx: Build.Context, build: any, result: BlueprintBuild
 	field.Parent = model
 	model.Parent = ctx.folder
 	Prefabs.makePortal(ctx, model, field, gate.portal, gate.target, gate.x, gate.z, nil)
+end
+
+-- S124: names and tags the writing surfaces of the Hall of Fame (Logic/TownGen/Props fameHall) for the leaderboard
+-- board (Leaderboard/TownBoard on the server, FameBoardController on the client). No yield (WorldService.Init).
+local function fameHall(result: BlueprintBuild.Result)
+	local boards = result.tagged.fameBoard
+	local board = boards and boards[1]
+	if board then
+		board.Name = "FameBoard"
+		CollectionService:AddTag(board, "FameBoard")
+	else
+		log:warn("the Hall of Fame has no board surface")
+	end
+	local plaques: { BasePart } = result.tagged.famePlinth or {}
+	for i, plaque in plaques do
+		plaque.Name = `FamePlinth_{i}`
+		plaque:SetAttribute("Plinth", i)
+		CollectionService:AddTag(plaque, "FamePlinth")
+	end
 end
 
 return function(ctx: Build.Context)
@@ -82,6 +102,8 @@ return function(ctx: Build.Context)
 		parts += result.parts
 		if build.tag == "gate" then
 			gatePortal(ctx, build, result)
+		elseif build.tag == "fame" then
+			fameHall(result)
 		end
 	end
 	ctx.parts += parts

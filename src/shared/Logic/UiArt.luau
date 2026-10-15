@@ -60,6 +60,7 @@ UiArt.MENUS = table.freeze({
 	"guild",
 	"party",
 	"mounts",
+	"rankings", -- S124: no picture yet (glyph ♔)
 	"wardrobe",
 	"premium",
 	"menu",

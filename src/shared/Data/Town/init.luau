@@ -10,6 +10,7 @@ export type Spot = Types.Spot
 
 local city: Types.City = require("@self/city")
 local extra: { [string]: Types.Spot } = require("@self/npcExtra")
+local fame = require("@self/fame")
 
 local specialsById: { [string]: Types.Special } = {}
 for _, special in city.specials do
@@ -19,6 +20,8 @@ end
 local Town = {}
 
 Town.city = city
+-- S124: the Hall of Fame by the town hall (hand-placed next to the generated plan, Town/fame)
+Town.fame = fame
 
 function Town.special(id: string): Types.Special?
 	return specialsById[id]

@@ -1,0 +1,551 @@
+--!strict
+-- Rankings window (S124, DESIGN-17 §5): the tabs of Data/Leaderboards.tabs (a column on the left on PC, a strip on a
+-- phone), a class filter, the top of the chosen board (Logic/Leaderboard.boardFor) in a scrolling table, the player's
+-- own line and when the board was read. Data comes from LeaderboardGet (the server keeps a 5-minute cache), asked when
+-- the board changes and every Config.Leaderboard.clientPoll s while the window is open; no "refresh" button (it would
+-- change nothing). "This server only" when the shared stores are unavailable (DESIGN-17 §0.8). Tabs and boards of later
+-- sessions (S125+) show up from the data alone.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Device)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Leaderboard = require(ReplicatedStorage.Shared.Logic.Leaderboard)
+local Leaderboards = require(ReplicatedStorage.Shared.Data.Leaderboards)
+local Net = require(ReplicatedStorage.Shared.Net)
+local SideTabs = require(script.Parent.Parent.Components.SideTabs)
+local Sounds = require(script.Parent.Parent.Sounds)
+local State = require(script.Parent.Parent.State)
+local Tabs = require(script.Parent.Parent.Components.Tabs)
+local Text = require(script.Parent.Parent.Text)
+local Theme = require(script.Parent.Parent.Theme)
+local Toast = require(script.Parent.Parent.Components.Toast)
+
+local Children = Fusion.Children
+local peek = Fusion.peek
+
+type Scope = Fusion.Scope<typeof(Fusion)>
+type Use = Fusion.Use
+
+local SIDE = 200
+local STRIP = Theme.Size.MinTouch + 6 -- Tabs with Scroll: buttons are STRIP - 6 (scroll bar 4 + 2) = MinTouch tall
+local TITLE = 34
+local HEAD = 30
+local FOOTER = 58
+local ALL = "all" -- the filter value of the board without a class
+
+type Cell = { text: string, width: number?, color: Color3?, bold: boolean?, rich: boolean? }
+
+local function sortedTabs(): { Leaderboards.TabDef }
+	local list = table.clone(Leaderboards.tabs)
+	table.sort(list, function(a, b)
+		return a.order < b.order
+	end)
+	return list
+end
+
+local function tabById(id: string): Leaderboards.TabDef?
+	for _, tab in Leaderboards.tabs do
+		if tab.id == id then
+			return tab
+		end
+	end
+	return nil
+end
+
+-- Filter values of a tab: "all" when it has a board without a class, then the classes with a board.
+local function filterValues(tab: Leaderboards.TabDef): { string }
+	local out = {}
+	if tab.filter ~= "class" then
+		return out
+	end
+	if Leaderboard.boardFor(tab, nil) then
+		table.insert(out, ALL)
+	end
+	for _, class in Classes.order do
+		if Leaderboard.boardFor(tab, class) then
+			table.insert(out, class)
+		end
+	end
+	return out
+end
+
+local function boardOf(tab: Leaderboards.TabDef, filter: string): string?
+	local id = Leaderboard.boardFor(tab, if filter == ALL then nil else filter)
+	if not id then
+		return nil
+	end
+	local def = Leaderboards.get(id)
+	if def and def.parts then
+		-- S125+: boards with parts (week, season) are read for the current period
+		return Leaderboard.instanceId(def, Leaderboard.partsAt(def, Workspace:GetServerTimeNow()))
+	end
+	return id
+end
+
+local function escape(text: string): string
+	return (string.gsub(text, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" }))
+end
+
+local function rankColor(rank: number): Color3
+	if rank == 1 then
+		return Theme.Colors.GoldBright
+	elseif rank == 2 then
+		return Theme.Colors.Silver
+	elseif rank == 3 then
+		return Theme.Colors.Bronze
+	end
+	return Theme.Colors.Text
+end
+
+local function line(scope: Scope, cells: { Cell }, height: number, order: number, background: Color3?): Instance
+	local fixed = 0
+	for _, cell in cells do
+		fixed += cell.width or 0
+	end
+	local children: { any } = {
+		scope:New("UIListLayout")({
+			FillDirection = Enum.FillDirection.Horizontal,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}),
+		scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
+	}
+	if background then
+		table.insert(children, scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }))
+	end
+	for i, cell in cells do
+		table.insert(
+			children,
+			scope:New("TextLabel")({
+				LayoutOrder = i,
+				Size = if cell.width then UDim2.new(0, cell.width, 1, 0) else UDim2.new(1, -(fixed + 16), 1, 0),
+				BackgroundTransparency = 1,
+				Text = cell.text,
+				RichText = cell.rich == true,
+				FontFace = if cell.bold then Theme.Fonts.BodyBold else Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = cell.color or Theme.Colors.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			})
+		)
+	end
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		Size = UDim2.new(1, 0, 0, height),
+		BackgroundColor3 = background or Theme.Colors.Panel,
+		BackgroundTransparency = if background then 0 else 1,
+		[Children] = children,
+	})
+end
+
+local function headerCells(use: Use, format: string, touch: boolean): { Cell }
+	local muted = Theme.Colors.TextMuted
+	local cells: { Cell } = {
+		{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
+		{ text = Text.get(use, "leaderboard.col.name"), color = muted },
+		{ text = Text.get(use, "leaderboard.col.class"), width = if touch then 110 else 150, color = muted },
+	}
+	if format == "date" then
+		table.insert(cells, { text = Text.get(use, "leaderboard.col.reached"), width = 150, color = muted })
+		return cells
+	end
+	if not touch then
+		table.insert(cells, { text = Text.get(use, "leaderboard.col.guild"), width = 110, color = muted })
+	end
+	table.insert(
+		cells,
+		{ text = Text.get(use, "leaderboard.col.level"), width = if touch then 110 else 130, color = muted }
+	)
+	return cells
+end
+
+local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: boolean): { Cell }
+	local top = row.r <= 3
+	local color = rankColor(row.r)
+	local name = if row.n == "" then Text.get(use, "leaderboard.unknown") else row.n
+	local nameText = escape(name)
+	if touch and row.g then
+		nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
+	end
+	local class = if row.c and string.sub(row.c, 1, 1) == "@" then Text.get(use, string.sub(row.c, 2)) else ""
+	local cells: { Cell } = {
+		{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+		{ text = nameText, color = color, bold = top, rich = true },
+		{ text = class, width = if touch then 110 else 150 },
+	}
+	if format == "date" then
+		local parts = Leaderboard.dateParts(row.at or row.s)
+		table.insert(cells, { text = Text.get(use, "leaderboard.date", parts), width = 150 })
+		return cells
+	end
+	if not touch then
+		table.insert(cells, { text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Colors.TextMuted })
+	end
+	local level = if row.p
+		then Text.get(use, "leaderboard.levelPct", { level = row.l or 1, pct = row.p })
+		else tostring(row.l or row.s)
+	table.insert(cells, { text = level, width = if touch then 110 else 130, bold = top })
+	return cells
+end
+
+local function freeCells(use: Use, rank: number, touch: boolean): { Cell }
+	local muted = Theme.Colors.TextMuted
+	return {
+		{ text = tostring(rank), width = if touch then 44 else 56, color = muted },
+		{ text = Text.get(use, "leaderboard.hof.free"), color = muted },
+		{ text = "", width = if touch then 110 else 150 },
+		{ text = "", width = 150 },
+	}
+end
+
+-- The player's line under the table.
+local function meText(use: Use, snap: Leaderboard.Snapshot): string
+	local me = snap.me
+	if not me then
+		return ""
+	end
+	if me.hidden then
+		return Text.get(use, "leaderboard.meHidden")
+	end
+	if snap.format == "date" then
+		if me.r then
+			return Text.get(use, "leaderboard.hof.mine", { n = me.r })
+		end
+		return Text.get(use, "leaderboard.hof.left", { n = me.left or 0 })
+	end
+	if me.below then
+		return Text.get(use, "leaderboard.meBelow", { level = me.below })
+	end
+	if me.r then
+		return Text.get(use, "leaderboard.me", { rank = me.r })
+	end
+	if me.l then
+		return Text.get(use, "leaderboard.meOutside", { level = me.l, pct = me.p or 100 })
+	end
+	return ""
+end
+
+local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
+	local touch = Device.Touch
+	local tabs = sortedTabs()
+	local myClass = State.Value({ "character", "class" })
+	local selected = scope:Value(if tabs[1] then tabs[1].id else "")
+	local filter = scope:Value(ALL)
+	local snapshots = scope:Value({} :: { [string]: Leaderboard.Snapshot })
+	local now = scope:Value(Workspace:GetServerTimeNow())
+	local asked: { [string]: number } = {}
+	local alive = true
+	table.insert(scope, function()
+		alive = false
+	end)
+
+	-- The default filter of a tab: "all" when the tab has it, else the active character's class (Hall of Fame).
+	local function resetFilter(tabId: string)
+		local tab = tabById(tabId)
+		if not tab then
+			return
+		end
+		local values = filterValues(tab)
+		if table.find(values, ALL) then
+			filter:set(ALL)
+		else
+			local class = peek(myClass)
+			filter:set(if type(class) == "string" and table.find(values, class) then class else values[1] or ALL)
+		end
+	end
+	resetFilter(peek(selected))
+
+	local current = scope:Computed(function(use): string?
+		local tab = tabById(use(selected))
+		return if tab then boardOf(tab, use(filter)) else nil
+	end)
+
+	local function load(id: string?, force: boolean?)
+		if not id then
+			return
+		end
+		local last = asked[id]
+		if not force and last and os.clock() - last < Config.Leaderboard.clientPoll then
+			return
+		end
+		asked[id] = os.clock()
+		task.spawn(function()
+			local ok, data = Net.Invoke("LeaderboardGet", id)
+			if not alive then
+				return
+			end
+			if ok and type(data) == "table" then
+				local copy = table.clone(peek(snapshots))
+				copy[id] = data :: any
+				snapshots:set(copy)
+				if data.loading then
+					-- the server's first read is still running: ask again soon
+					asked[id] = os.clock() - Config.Leaderboard.clientPoll + 5
+				end
+			else
+				-- refused (rate limit) or failed: the next poll tick or selecting the board again asks at once
+				asked[id] = nil
+				Sounds.play("error")
+				Toast.push(Text.now(if type(data) == "string" then data else "error.internal"), "error")
+			end
+		end)
+	end
+
+	scope:Observer(selected):onChange(function()
+		resetFilter(peek(selected))
+	end)
+	scope:Observer(current):onBind(function()
+		load(peek(current))
+	end)
+	task.spawn(function()
+		local elapsed = 0
+		while alive do
+			task.wait(5)
+			if not alive then
+				break
+			end
+			now:set(Workspace:GetServerTimeNow())
+			elapsed += 5
+			local id = peek(current)
+			if elapsed >= Config.Leaderboard.clientPoll then
+				elapsed = 0
+				load(id, true)
+			elseif id then
+				-- no snapshot yet (a failed call) or the server's first read still running: `asked` gates the retry
+				local snap = peek(snapshots)[id]
+				if snap == nil or snap.loading then
+					load(id)
+				end
+			end
+		end
+	end)
+
+	local snapshot = scope:Computed(function(use): Leaderboard.Snapshot?
+		local id = use(current)
+		return if id then use(snapshots)[id] else nil
+	end)
+
+	local tabList = {}
+	for _, tab in tabs do
+		table.insert(tabList, { id = tab.id, label = Text.T(scope, tab.nameKey) })
+	end
+
+	local contentPos = scope:Computed(function(use): UDim2
+		return if use(touch) then UDim2.fromOffset(0, STRIP + 8) else UDim2.fromOffset(SIDE + 12, 0)
+	end)
+	local contentSize = scope:Computed(function(use): UDim2
+		return if use(touch) then UDim2.new(1, 0, 1, -(STRIP + 8)) else UDim2.new(1, -(SIDE + 12), 1, 0)
+	end)
+
+	local filterStrip = scope:Computed(function(use, s: Scope): any
+		local tab = tabById(use(selected))
+		local values: { string } = if tab then filterValues(tab) else {}
+		if #values <= 1 then
+			return nil
+		end
+		local list = {}
+		for _, value in values do
+			list[#list + 1] = {
+				id = value,
+				label = if value == ALL then Text.T(s, "leaderboard.filter.all") else Text.T(s, `class.{value}.name`),
+			}
+		end
+		return Tabs(s, { Tabs = list, Selected = filter, Scroll = true, Size = UDim2.fromScale(1, 1) })
+	end)
+
+	local table_ = scope:Computed(function(use, s: Scope): { any }
+		local snap = use(snapshot)
+		local isTouch = use(touch)
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		local format = if snap then snap.format elseif def then def.format else "level"
+		local items: { any } = {
+			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
+		}
+		local rowHeight = if isTouch then 44 else 40
+		if not snap or (snap.loading and #snap.rows == 0) then
+			table.insert(
+				items,
+				line(
+					s,
+					{ { text = Text.get(use, "leaderboard.loading"), color = Theme.Colors.TextMuted } },
+					rowHeight,
+					1
+				)
+			)
+			return items
+		end
+		for i, row in snap.rows do
+			local background = if row.mine
+				then Theme.Colors.PanelHover
+				elseif i % 2 == 0 then Theme.Colors.PanelRaised
+				else nil
+			table.insert(items, line(s, rowCells(use, row, format, isTouch), rowHeight, i, background))
+		end
+		if format == "date" then
+			local max = if def and def.max then def.max else Leaderboards.HOF_SIZE
+			for rank = #snap.rows + 1, max do
+				table.insert(items, line(s, freeCells(use, rank, isTouch), rowHeight, rank))
+			end
+		elseif #snap.rows == 0 then
+			table.insert(
+				items,
+				line(s, { { text = Text.get(use, "leaderboard.empty"), color = Theme.Colors.TextMuted } }, rowHeight, 1)
+			)
+		end
+		return items
+	end)
+
+	return {
+		-- PC: the tab column on the left.
+		scope:New("Frame")({
+			Name = "SideTabsHolder",
+			Size = UDim2.new(0, SIDE, 1, 0),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return not use(touch)
+			end),
+			[Children] = {
+				SideTabs(scope, { Tabs = tabList, Selected = selected, Size = UDim2.fromScale(1, 1) }),
+			},
+		}),
+		-- Phone: the tabs as a strip at the top.
+		scope:New("Frame")({
+			Name = "TabStripHolder",
+			Size = UDim2.new(1, 0, 0, STRIP),
+			BackgroundTransparency = 1,
+			Visible = touch,
+			[Children] = {
+				Tabs(scope, { Tabs = tabList, Selected = selected, Scroll = true, Size = UDim2.fromScale(1, 1) }),
+			},
+		}),
+		scope:New("Frame")({
+			Name = "Board",
+			Position = contentPos,
+			Size = contentSize,
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("TextLabel")({
+					Name = "Title",
+					Size = UDim2.new(1, 0, 0, TITLE),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						local id = use(current)
+						local def = if id then Leaderboard.resolve(id) else nil
+						return if def then Text.get(use, def.nameKey) else ""
+					end),
+					FontFace = Theme.Fonts.Heading,
+					TextSize = Theme.TextSize.Large,
+					TextColor3 = Theme.Colors.Gold,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+				}),
+				scope:New("Frame")({
+					Name = "Filter",
+					Position = UDim2.fromOffset(0, TITLE + 4),
+					Size = UDim2.new(1, 0, 0, STRIP),
+					BackgroundTransparency = 1,
+					[Children] = filterStrip :: any,
+				}),
+				scope:New("Frame")({
+					Name = "Head",
+					Position = UDim2.fromOffset(0, TITLE + STRIP + 8),
+					Size = UDim2.new(1, -8, 0, HEAD),
+					BackgroundTransparency = 1,
+					[Children] = scope:Computed(function(use, s: Scope): any
+						local snap = use(snapshot)
+						local id = use(current)
+						local def = if id then Leaderboard.resolve(id) else nil
+						local format = if snap then snap.format elseif def then def.format else "level"
+						return line(s, headerCells(use, format, use(touch)), HEAD, 1)
+					end) :: any,
+				}),
+				scope:New("ScrollingFrame")({
+					Name = "Rows",
+					Position = UDim2.fromOffset(0, TITLE + STRIP + HEAD + 10),
+					Size = UDim2.new(1, 0, 1, -(TITLE + STRIP + HEAD + 10 + FOOTER)),
+					BackgroundTransparency = 1,
+					BorderSizePixel = 0,
+					ScrollBarThickness = 6,
+					ScrollBarImageColor3 = Theme.Colors.Border,
+					CanvasSize = UDim2.new(),
+					AutomaticCanvasSize = Enum.AutomaticSize.Y,
+					ScrollingDirection = Enum.ScrollingDirection.Y,
+					[Children] = table_ :: any,
+				}),
+				scope:New("Frame")({
+					Name = "Footer",
+					AnchorPoint = Vector2.new(0, 1),
+					Position = UDim2.fromScale(0, 1),
+					Size = UDim2.new(1, 0, 0, FOOTER),
+					BackgroundTransparency = 1,
+					[Children] = {
+						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
+						scope:New("TextLabel")({
+							LayoutOrder = 1,
+							Size = UDim2.new(1, 0, 0, 22),
+							BackgroundTransparency = 1,
+							Text = scope:Computed(function(use): string
+								local snap = use(snapshot)
+								if not snap then
+									return ""
+								end
+								local text = meText(use, snap)
+								if snap.format == "date" then
+									local hint = Text.get(
+										use,
+										"leaderboard.hof.hint",
+										{ n = Leaderboards.HOF_SIZE, level = Config.MaxLevel }
+									)
+									return if text ~= "" then `{text}  ·  {hint}` else hint
+								end
+								return text
+							end),
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Colors.Parchment,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						scope:New("TextLabel")({
+							LayoutOrder = 2,
+							Size = UDim2.new(1, 0, 0, 22),
+							BackgroundTransparency = 1,
+							RichText = true,
+							Text = scope:Computed(function(use): string
+								local snap = use(snapshot)
+								if not snap or snap.loading then
+									return ""
+								end
+								local age = use(now) - snap.at
+								local updated = if age < 60
+									then Text.get(use, "leaderboard.updatedNow")
+									else Text.get(use, "leaderboard.updated", { time = Format.time(age) })
+								if snap.mode == "local" then
+									local warning = Theme.Colors.Warning:ToHex()
+									return `{escape(updated)}   <font color="#{warning}">⚠ {escape(
+										Text.get(use, "leaderboard.local")
+									)}</font>`
+								end
+								return escape(updated)
+							end),
+							FontFace = Theme.Fonts.Body,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Colors.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+					},
+				}),
+			},
+		}),
+	}
+end
+
+return RankingsWindow

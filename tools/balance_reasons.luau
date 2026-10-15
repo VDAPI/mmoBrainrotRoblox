@@ -136,6 +136,7 @@ return {
 		["Data/Portals"] = "świat",
 		["Data/Npcs"] = "świat",
 		["Data/Keybinds"] = "świat",
+		["Data/Leaderboards"] = "ranking", -- S124: board kinds, store names, the Rankings tabs and the town board
 		["Data/Fish"] = "zbieractwo",
 		["Data/GatherNodes"] = "zbieractwo",
 	} :: { [string]: string },

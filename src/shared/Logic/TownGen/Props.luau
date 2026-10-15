@@ -1,12 +1,15 @@
 --!strict
--- Street furniture of the city (S21, MIASTO.md §7): market stalls, the fountain, wells, the pillory, the quest board
--- and the cemetery. One Build per object. Pure.
+-- Street furniture of the city (S21, MIASTO.md §7): market stalls, the fountain, wells, the pillory, the quest board,
+-- the cemetery and (S124) the Hall of Fame by the town hall. One Build per object. Pure.
 
 local Blueprint = require("./Blueprint")
+local Classes = require("../../Data/Classes")
 local Fill = require("./Fill")
+local Leaderboards = require("../../Data/Leaderboards")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
 local Structures = require("./Structures")
+local Town = require("../../Data/Town")
 local TownGeom = require("../TownGeom")
 
 type BP = Blueprint.Blueprint
@@ -473,6 +476,90 @@ local function cemetery(city: any, ground: Ground): Build
 	return { name = "Cemetery", bp = bp, at = { x = cx, y = y0, z = cz, rot = 0 }, tag = "cemetery" }
 end
 
+-- S124: the Hall of Fame (DESIGN-17 §5) at Town.fame: a roofed double notice board between ashlar pillars with a bronze
+-- frame, the city crest and two lanterns, and statue plinths in front of it (stone steps, a pedestal, a cloaked stone
+-- figure resting on a sword, the class emblem colour on a small shield, a bronze plaque). The writing surfaces are
+-- their own shell parts: `fameBoard` (one, both faces) and `famePlinth` (one per plinth, in Town.fame.plinths order);
+-- World/Layouts/city tags them and the client writes on them (FameBoardController).
+local function fameHall(ground: Ground): Build
+	local fame = Town.fame
+	local b = fame.board
+	local bp = Blueprint.new(1240)
+	local y0 = ground(b.x, b.z)
+	local timber = Palette.timber[2]
+	local wood = { c = "#3A2A1E", m = "SmoothPlastic" }
+	-- the board
+	bp:box(15, 0.5, 2.4, 0, 0.25, 0, o(STONE, "shell", { q = true }))
+	for _, x in { -6.8, 6.8 } do
+		bp:box(1.2, 8, 1.2, x, 4, 0, o(STONE, "shell", { q = true }))
+		bp:box(1.6, 0.5, 1.6, x, 8.25, 0, o(Palette.ashlar[3]))
+	end
+	bp:box(12, 6, 0.4, 0, 5, 0, o(wood, "shell", { tag = "fameBoard", q = true, jitter = 0 }))
+	for _, y in { 1.85, 8.15 } do
+		bp:box(12.8, 0.35, 0.6, 0, y, 0, o(BRONZE))
+	end
+	for _, x in { -6.2, 6.2 } do
+		bp:box(0.35, 6.6, 0.6, x, 5, 0, o(BRONZE))
+	end
+	bp:box(15, 0.4, 0.8, 0, 8.7, 0, o(timber))
+	smallRoof(bp, 16, 1.6, 10.2, 30, Palette.shingles[2], "detail")
+	-- the city crest on the ridge
+	bp:box(1.4, 1.7, 0.3, 0, 11.2, 0, o(BRONZE))
+	bp:add("ball", 0.6, 0.6, 0.6, 0, 12.3, 0, 0, 0, 0, o(BRONZE, "fine"))
+	bp:box(0.9, 0.9, 0.08, 0, 11.2, -0.19, o(Palette.ashlar[3], "fine"))
+	-- two lanterns on iron arms, like the quest board
+	for _, x in { -6.8, 6.8 } do
+		bp:box(0.2, 0.2, 1.6, x, 7.4, -0.9, o(Palette.metal[1]))
+		bp:box(0.7, 0.9, 0.7, x, 6.6, -1.6, { c = "#FFD08A", m = "Neon", lod = "detail", t = 0.2, tag = "lamp" })
+		bp:light(x, 6.6, -1.6, "#FFB860", 14, 0.7, "lamp")
+	end
+	-- the plinths, placed in the board's frame
+	local a = math.rad(b.facing)
+	local cosA, sinA = math.cos(a), math.sin(a)
+	local statue = Palette.ashlar[3]
+	for i, spot in fame.plinths do
+		local dx, dz = spot.x - b.x, spot.z - b.z
+		local lx, lz = dx * cosA - dz * sinA, dx * sinA + dz * cosA
+		bp:push(lx, ground(spot.x, spot.z) - y0, lz, 0, spot.facing - b.facing, 0)
+		bp:box(4.4, 0.5, 4.4, 0, 0.25, 0, o(STONE, "shell", { q = true }))
+		bp:box(3.6, 0.5, 3.6, 0, 0.75, 0, o(Palette.ashlar[2], "shell", { q = true }))
+		bp:box(2.8, 2.4, 2.8, 0, 2.2, 0, o(STONE, "shell", { q = true }))
+		bp:box(3.2, 0.3, 3.2, 0, 3.55, 0, o(Palette.ashlar[2]))
+		-- the plaque (written by the client) and the class emblem above it
+		bp:box(
+			2.6,
+			1.3,
+			0.12,
+			0,
+			1.8,
+			-1.46,
+			o(BRONZE, "shell", { tag = "famePlinth", col = false, q = false, jitter = 0 })
+		)
+		local plinth = Leaderboards.TOWN.plinths[i]
+		local board = plinth and Leaderboards.get(plinth.board)
+		local class = board and board.class and Classes.get(board.class)
+		local color = if class then class.color else "#8A8A8A"
+		bp:box(0.8, 0.85, 0.12, 0, 2.95, -1.46, { c = color, m = "SmoothPlastic", lod = "detail", jitter = 0 })
+		-- the statue: feet, robe, torso, cloak, shoulders, head, arms, and a sword with its point on the pedestal
+		local top = 3.7
+		for _, x in { -0.3, 0.3 } do
+			bp:box(0.5, 0.4, 0.9, x, top + 0.2, -0.05, o(statue))
+		end
+		bp:box(1.2, 1.7, 0.8, 0, top + 1.25, 0, o(statue))
+		bp:box(1.3, 1.4, 0.75, 0, top + 2.8, 0, o(statue))
+		bp:box(1.6, 3.0, 0.25, 0, top + 1.9, 0.45, o(statue))
+		bp:box(1.8, 0.35, 0.85, 0, top + 3.4, 0, o(statue))
+		bp:add("ball", 0.85, 0.9, 0.85, 0, top + 4.05, 0, 0, 0, 0, o(statue))
+		bp:beam(-0.8, top + 3.3, 0, -0.75, top + 2.1, -0.1, 0.35, o(statue))
+		bp:beam(0.8, top + 3.3, 0, 0.35, top + 2.75, -0.55, 0.35, o(statue))
+		bp:box(0.15, 2.4, 0.06, 0.3, top + 1.2, -0.6, o(statue, "fine"))
+		bp:box(0.8, 0.12, 0.14, 0.3, top + 2.45, -0.6, o(statue, "fine"))
+		bp:add("ball", 0.25, 0.25, 0.25, 0.3, top + 2.7, -0.6, 0, 0, 0, o(statue, "fine"))
+		bp:pop()
+	end
+	return { name = "FameHall", bp = bp, at = { x = b.x, y = y0, z = b.z, rot = b.facing }, tag = "fame" }
+end
+
 function Props.all(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	for _, st in city.stalls do
@@ -484,6 +571,7 @@ function Props.all(city: any, ground: Ground): { Build }
 	end
 	table.insert(out, pillory(ground))
 	table.insert(out, questBoard(city, ground))
+	table.insert(out, fameHall(ground))
 	table.insert(out, cemetery(city, ground))
 	return out
 end

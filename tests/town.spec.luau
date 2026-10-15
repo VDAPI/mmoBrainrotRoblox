@@ -2,15 +2,22 @@
 -- Starting city plan (S21): the generated data in Data/Town must stay buildable and walkable. Mirrors
 -- docs/miasto/tools/validate.py.
 
+local Props = require("../src/shared/Logic/TownGen/Props")
+local Spring = require("../src/shared/Logic/TownGen/Spring")
 local T = require("./Test")
 local Town = require("../src/shared/Data/Town")
 local TownGeom = require("../src/shared/Logic/TownGeom")
+local TownSigns = require("../src/shared/Logic/TownSigns")
 local TownTerrain = require("../src/shared/Logic/TownTerrain")
 
 local city = Town.city
 
 type Vec2 = { number }
 type Box = { id: string, poly: { Vec2 } }
+
+-- S124: footprint of the Hall of Fame board (its stone step) and of a plinth's lowest step
+local FAME_BOARD_W, FAME_BOARD_D = 15, 2.4
+local FAME_PLINTH = 4.4
 
 -- Footprints of everything solid on the ground: houses, special buildings (the arena only by its stands, which
 -- leave 12-stud entrances in the middle of the north and south sides), stalls, the fountain and wells.
@@ -45,6 +52,15 @@ local function footprints(): { Box }
 	end
 	for _, s in city.stalls do
 		table.insert(out, { id = s.id, poly = TownGeom.rect(s.x, s.z, 10, 5, s.rot) })
+	end
+	-- S124: the Hall of Fame (Data/Town/fame, Logic/TownGen/Props fameHall): the board with its step and the plinths
+	local fame = Town.fame
+	table.insert(out, {
+		id = "fameBoard",
+		poly = TownGeom.rect(fame.board.x, fame.board.z, FAME_BOARD_W, FAME_BOARD_D, fame.board.facing),
+	})
+	for i, p in fame.plinths do
+		table.insert(out, { id = `famePlinth{i}`, poly = TownGeom.rect(p.x, p.z, FAME_PLINTH, FAME_PLINTH, p.facing) })
 	end
 	return out
 end
@@ -322,6 +338,75 @@ T.describe("Town plan", function()
 			local dx, dz = TownGeom.door(lot.x, lot.z, lot.d, lot.rot)
 			reach(`door of {lot.id}`, dx, dz)
 		end
+		-- S124: the player walks up to the Hall of Fame board (its prompt opens the Rankings window)
+		local board = Town.fame.board
+		local fx, fz = TownGeom.front(board.facing)
+		reach("the Hall of Fame board", board.x + fx * 4, board.z + fz * 4)
+	end)
+
+	T.it("puts the Hall of Fame by the town hall on open market ground (S124)", function()
+		local fame = Town.fame
+		local rynek
+		for _, q in city.squares do
+			if q.id == "rynek" then
+				rynek = q
+			end
+		end
+		T.expect(rynek ~= nil).toBe(true)
+		local function far(what: string, x: number, z: number, ox: number, oz: number, min: number)
+			local d = math.sqrt((x - ox) ^ 2 + (z - oz) ^ 2)
+			if d < min then
+				error(`{what}: {d} studs at ({x}, {z}), needs {min}`)
+			end
+		end
+		local points = { { what = "board", p = fame.board } }
+		for i, p in fame.plinths do
+			table.insert(points, { what = `plinth {i}`, p = p })
+		end
+		for _, item in points do
+			local x, z, what = item.p.x, item.p.z, item.what
+			T.expect({ what, TownGeom.inPoly((rynek :: any).poly, x, z) }).toEqual({ what, true })
+			T.expect({ what, TownTerrain.isOpen(x, z, 2) }).toEqual({ what, true })
+			for id, spot in Town.allNpcSpots() do
+				far(`{what} by NPC {id}`, x, z, spot.x, spot.z, 4)
+			end
+			for _, sign in TownSigns.list() do
+				far(`{what} by sign {sign.key}`, x, z, sign.x, sign.z, 3)
+			end
+			for _, lamp in city.lamps do
+				far(`{what} by lamp {lamp.id}`, x, z, lamp.x, lamp.z, 4)
+			end
+			for _, sp in city.specials do
+				local poly = TownGeom.rect(sp.x, sp.z, sp.w, sp.d, sp.rot)
+				if TownGeom.inPoly(poly, x, z) or TownGeom.edgeDist(poly, x, z) < 2 then
+					error(`{what} touches {sp.id}`)
+				end
+			end
+			for _, st in city.stalls do
+				local poly = TownGeom.rect(st.x, st.z, 10, 5, st.rot)
+				if TownGeom.inPoly(poly, x, z) or TownGeom.edgeDist(poly, x, z) < 2 then
+					error(`{what} touches {st.id}`)
+				end
+			end
+			far(`{what} by the maypole`, x, z, Spring.MAYPOLE.x, Spring.MAYPOLE.z, 8)
+			far(`{what} by the pillory`, x, z, Props.PILLORY.x, Props.PILLORY.z, 6)
+			far(`{what} by the fountain`, x, z, city.fountain[1], city.fountain[2], 10)
+		end
+		-- the board does not narrow a street
+		local b = fame.board
+		local corners = TownGeom.rect(b.x, b.z, FAME_BOARD_W, FAME_BOARD_D, b.facing)
+		table.insert(corners, { b.x, b.z })
+		for _, street in city.streets do
+			for _, c in corners do
+				local gap = TownGeom.lineDist(street.pts, c[1], c[2]) - street.w / 2
+				if gap < 3 then
+					error(`the Hall of Fame board is {gap} studs from street {street.id}`)
+				end
+			end
+		end
+		-- facing the market (from the north side, toward +z)
+		local fx, fz = TownGeom.front(b.facing)
+		T.expect(math.abs(fx) < 1e-6 and fz > 0.99).toBe(true)
 	end)
 
 	T.it("has sane gardens and retaining walls", function()

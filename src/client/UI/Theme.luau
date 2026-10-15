@@ -16,6 +16,9 @@ Theme.Colors = {
 	Gold = Color3.fromHex("#C9A45C"),
 	GoldBright = Color3.fromHex("#E8C25A"),
 	GoldDim = Color3.fromHex("#7A6438"),
+	-- S124: second and third place in rankings (with GoldBright for the first)
+	Silver = Color3.fromHex("#C9CED6"),
+	Bronze = Color3.fromHex("#C48A58"),
 	Border = Color3.fromHex("#3A3F4C"),
 	Accent = Color3.fromHex("#4A8FE7"),
 	AccentHover = Color3.fromHex("#5E9EF0"),

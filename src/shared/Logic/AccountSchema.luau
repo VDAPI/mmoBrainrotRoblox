@@ -115,6 +115,8 @@ function AccountSchema.characterTemplate(): CharacterData
 			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
 		},
 		guildId = nil,
+		reached100At = nil, -- S124: set by LevelService at Config.MaxLevel (no migration)
+		lbHidden = nil, -- S124: /lb hide (no migration)
 		auctions = {},
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
 		pvpEnabled = false,

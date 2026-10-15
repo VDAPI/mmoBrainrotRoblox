@@ -225,6 +225,9 @@ local Definitions: { [string]: Definition } = {
 	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
 	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121
 
+	-- Leaderboards (S124): (board instance id) -> (true, Logic/Leaderboard.Snapshot) | (false, errorKey)
+	LeaderboardGet = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+
 	-- Profiles (S15)
 	PlayerProfile = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId) same server
 

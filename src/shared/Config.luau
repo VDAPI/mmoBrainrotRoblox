@@ -30,6 +30,30 @@ local Config = {
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
 	AuctionStoreName = "Vaelthorn_Auction_v1",
+	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
+	Leaderboard = {
+		refresh = 300, -- s: one server reads the top of one board at most this often (DESIGN-17 §0.4)
+		writeGap = 60, -- s: one entry key is written at most this often (and once more on leave)
+		top = 100, -- entries kept per board read
+		townTop = 10, -- rows on the town board
+		minLevel = 5, -- characters below this level are not written (saves requests for brand-new characters)
+		excludeAdmins = true, -- characters of Config.AdminUserIds are never written and are filtered out on read
+		orderedPrefix = "Vaelthorn_LB_v1_", -- + board instance id: OrderedDataStore per permanent board
+		sortedPrefix = "Vaelthorn_LBMap_v1_", -- + board instance id: MemoryStore SortedMap per periodic board
+		metaStore = "Vaelthorn_LBMeta_v1", -- DataStore: entry key -> { n, c, g?, l, u, t } (name, class, guild tag, level)
+		listStore = "Vaelthorn_LBLists_v1", -- DataStore: list board instance id -> { entries } (Hall of Fame)
+		metaTtl = 1800, -- s a cached name / class / guild tag is trusted before it is read again
+		metaReadsPerRefresh = 40, -- DataStore reads of missing metadata per board refresh (the rest waits a refresh)
+		budgetFloor = 20, -- skip optional reads while the GetAsync budget is below this (profiles come first)
+		firstWait = 5, -- s a LeaderboardGet call waits for the very first read of a board
+		clientPoll = 60, -- s between LeaderboardGet calls of an open Rankings window
+		flushWait = 8, -- s BindToClose waits for queued writes
+		idleBoard = 900, -- s: a board nobody opened for this long is no longer refreshed (town boards always are)
+		adminRefreshGap = 60, -- s between forced refreshes (/lb refresh) on one server
+		deleteTries = 3, -- attempts to remove the entries of a deleted character
+		enterDelay = 10, -- s after entering the world before the entry write (the guild record loads in the meantime)
+		retryFailed = 60, -- s before a failed board read is tried again
+	},
 
 	CharacterName = {
 		MinLength = 3,

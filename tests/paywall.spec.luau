@@ -678,4 +678,47 @@ T.describe("S121 VIP and passes", function()
 	end)
 end)
 
+-- S124 (DESIGN-17 §0.2, §5): a leaderboard score depends on the character only. Every scorer is listed here (S125+
+-- add theirs with a comment); none may read the account, purchases, VIP, passes or shards.
+local ALLOWED_SCORERS: { [string]: string } = { level = "level, EXP and the moment of the top level (S124)" }
+
+T.describe("Rankings (S124)", function()
+	local Leaderboard = require("../src/shared/Logic/Leaderboard")
+	local Leaderboards = require("../src/shared/Data/Leaderboards")
+
+	T.it("every scorer is on the allowed list and every board's scorer exists", function()
+		for name in Leaderboard.SCORERS do
+			if not ALLOWED_SCORERS[name] then
+				error(`Leaderboard.SCORERS.{name}: not in ALLOWED_SCORERS`)
+			end
+		end
+		for _, def in Leaderboards.list do
+			if def.score then
+				T.expect({ def.id, Leaderboard.SCORERS[def.score] ~= nil }).toEqual({ def.id, true })
+			end
+		end
+	end)
+
+	T.it("a score depends only on the character, never on what the account bought", function()
+		local now = 1791763200
+		local character = { id = "c1", name = "Aria", class = "Mage", level = 63, exp = 4321, gold = 10 }
+		local bought = table.clone(character) :: any
+		bought.title = "title_highborn"
+		bought.guildId = "g1"
+		bought.gold = 1e12
+		bought.fullElixir = { day = 1, used = 10, readyAt = 0 }
+		bought.equipment = { weapon = { id = "sword", rarity = 5, up = 9 } }
+		local trap = setmetatable({}, {
+			__index = function()
+				error("scorer read the account")
+			end,
+		})
+		for name, scorer in Leaderboard.SCORERS do
+			local plain = (scorer :: any)(character, now, trap)
+			T.expect({ name, plain }).toEqual({ name, (scorer :: any)(bought, now, trap) })
+			T.expect({ name, type(plain) }).toEqual({ name, "number" })
+		end
+	end)
+end)
+
 return nil
