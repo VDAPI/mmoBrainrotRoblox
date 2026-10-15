@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S121 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S122 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -222,6 +222,9 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S122:** powody blokad `bloodMoon` i `tourney` (Eliksir Pełni, Płaszcz Przynęty) czekają na S129 / S130
+  (`UseBlocks.PENDING`; do tego czasu nic nie blokują). Fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
+  (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, `balance.spec` tylko je drukuje).
 - **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
   puste klucze `Data/Sfx` (66 ze 123: 24 `mob.*`, 16 `boss.*`, 22 `skill.*`, `hit.armor/wood/stone`, `bow.draw`; lista:
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to

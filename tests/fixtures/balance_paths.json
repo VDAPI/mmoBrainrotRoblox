@@ -11,12 +11,12 @@
     "BuffCategories": "221eef21",
     "Classes": "d882245f",
     "Combat": "c085b5bc",
-    "Config": "3efeff6f",
+    "Config": "2aff0a8f",
     "Families": "8a6cb04c",
     "ItemTraits": "bdc9d1bd",
     "ItemWeights": "32c3b52b",
     "Items/Bases": "3f659ac8",
-    "Items/Consumables": "7e312c8c",
+    "Items/Consumables": "3f6a07df",
     "LevelCurves": "ea025e43",
     "MonsterAbilities": "75e1ae61",
     "Monsters": "e5f14790",
@@ -36,8 +36,8 @@
     "Stats": "94aa09db"
   },
   "meta": {
-    "note": "S86: mechaniki klas i cele ścieżek w modelu umiejętności (tests/BalanceTables.tablesPaths)",
-    "session": "S86",
+    "note": "S122: hash only (potion_full, Config.FullElixir/Lure)",
+    "session": "S122",
     "tolerance": 0.005
   },
   "values": {

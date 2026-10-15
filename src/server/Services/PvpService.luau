@@ -17,6 +17,7 @@ local Config = require(Shared.Config)
 local Net = require(Shared.Net)
 local PvpRules = require(Shared.Logic.PvpRules)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local PvpService = {
 	Name = "PvpService",
@@ -84,6 +85,14 @@ end
 function PvpService.InArena(player: Player): boolean
 	local zone = ZoneService.GetZone(player)
 	return zone ~= nil and zone.nameKey == ARENA_ZONE
+end
+
+-- S122: the toggle's lock after PvP damage dealt or taken (DESIGN-17 §3 Elixir of Wholeness): the same counter as
+-- the `pvp.lockedUntil` branch (Config.PvpCombatLock), not the shorter InPvpCombat window of the healing penalty.
+function PvpService.InCombatLock(player: Player): boolean
+	local rt = runtimes[player]
+	local last = rt and rt.lastPvpCombat
+	return last ~= nil and last + Config.PvpCombatLock > now()
 end
 
 function PvpService.IsEnabled(player: Player): boolean
@@ -282,6 +291,8 @@ local function onDied(victim: Player)
 end
 
 function PvpService.Start()
+	UseGuards.register("arena", PvpService.InArena, "PvpService") -- S122 Logic/UseBlocks (Ristalle sand)
+	UseGuards.register("pvpLock", PvpService.InCombatLock, "PvpService") -- S122 Logic/UseBlocks
 	Net.Handle("SetPvp", request)
 
 	CharacterService.ModelSpawned:Connect(function(player: Player)

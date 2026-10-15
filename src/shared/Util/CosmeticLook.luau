@@ -14,6 +14,11 @@ local HIDDEN_CLOTHES = "VaelthornHiddenClothes"
 local AURA = "VaelthornAura"
 local TRAIL = "VaelthornTrail"
 local WEAPON_FX = "VaelthornWeaponFx"
+-- S122: the Cloak of Luring cape (applyLure) and the outfit cape it covers. S132 (class looks) keeps this contract:
+-- the outfit cape part is named OUTFIT_CAPE and the model attribute LureCape says the lure cape is on.
+local LURE_FOLDER = "VaelthornLureCape"
+local OUTFIT_CAPE = "OutfitCape"
+local LURE_ATTRIBUTE = "LureCape"
 
 local BODY_MAIN = {
 	UpperTorso = true,
@@ -102,7 +107,20 @@ local function accessory(model: Model, folder: Folder, name: string, main: Color
 	elseif name == "mask" then
 		piece(folder, head, Vector3.new(1.05, 0.45, 0.2), CFrame.new(0, -0.15, -0.55), second)
 	elseif name == "cape" then
-		piece(folder, body, Vector3.new(1.9, 2.6, 0.12), CFrame.new(0, -0.6, 0.6) * CFrame.Angles(0.12, 0, 0), second)
+		local cape = piece(
+			folder,
+			body,
+			Vector3.new(1.9, 2.6, 0.12),
+			CFrame.new(0, -0.6, 0.6) * CFrame.Angles(0.12, 0, 0),
+			second
+		)
+		if cape then
+			-- S122: the lure cape has priority (applyLure hides every OutfitCape while it is on)
+			cape.Name = OUTFIT_CAPE
+			if model:GetAttribute(LURE_ATTRIBUTE) == true then
+				cape.Transparency = 1
+			end
+		end
 	elseif name == "pauldrons" then
 		piece(folder, body, Vector3.new(0.9, 0.5, 1.1), CFrame.new(-1.15, 0.75, 0), second, nil, Enum.Material.Metal)
 		piece(folder, body, Vector3.new(0.9, 0.5, 1.1), CFrame.new(1.15, 0.75, 0), second, nil, Enum.Material.Metal)
@@ -181,6 +199,54 @@ local function emitter(color: Color3, rate: number, size: number, speed: number)
 	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
 	e:SetAttribute("VaelthornBaseRate", rate)
 	return e
+end
+
+-- S122 (DESIGN-17 §3): the Cloak of Luring, a dark red cape with a faint smoke, seen by everyone. Not a cosmetic
+-- slot and nothing saved: LureService calls it while the cloak is on and has time. While on it hides the outfit cape
+-- (OutfitCape parts), so the order of CosmeticService.applyLook and LureService does not matter.
+function CosmeticLook.applyLure(model: Model, on: boolean)
+	local old = model:FindFirstChild(LURE_FOLDER)
+	if old then
+		old:Destroy()
+	end
+	model:SetAttribute(LURE_ATTRIBUTE, on)
+	for _, part in model:GetDescendants() do
+		if part.Name == OUTFIT_CAPE and part:IsA("BasePart") then
+			part.Transparency = if on then 1 else 0
+		end
+	end
+	if not on then
+		return
+	end
+	local body = torso(model)
+	if not body then
+		return
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = LURE_FOLDER
+	folder.Parent = model
+	local offset = CFrame.new(0, -0.7, 0.66) * CFrame.Angles(0.14, 0, 0)
+	local cape =
+		piece(folder, body, Vector3.new(2.0, 2.9, 0.14), offset, Color3.fromHex("#5E1218"), nil, Enum.Material.Fabric)
+	-- a darker hem along the bottom edge
+	piece(
+		folder,
+		body,
+		Vector3.new(2.04, 0.18, 0.16),
+		offset * CFrame.new(0, -1.36, 0),
+		Color3.fromHex("#3B0A0F"),
+		nil,
+		Enum.Material.Fabric
+	)
+	if cape then
+		local smoke = emitter(Color3.fromHex("#3A2A2A"), 4, 0.35, 0.6)
+		smoke.Name = "LureSmoke"
+		smoke.LightEmission = 0
+		smoke.SpreadAngle = Vector2.new(25, 25)
+		smoke.EmissionDirection = Enum.NormalId.Top
+		smoke.Acceleration = Vector3.new(0, 0.8, 0)
+		smoke.Parent = cape
+	end
 end
 
 function CosmeticLook.applyAura(model: Model, id: string?)

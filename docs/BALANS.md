@@ -131,6 +131,8 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
+| `Progression:variantMultiplier.elite` | 4 | 1,5 | S117 | FIX 2026-10-15 (owner): 4 -> 1.5, Elites are for drops, not levelling (EXP per HP below a normal monster; pace model counts normals only) |
+| `Progression:variantMultiplier.elite2` | 12 | 4 | S117 | FIX 2026-10-15 (owner): 12 -> 4, Elite II is for drops, not levelling (HP x10) |
 | `QuestBudget:MONSTER_EXP_MUL[20]` | 0,575 | 1,231 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
 | `QuestBudget:MONSTER_EXP_MUL[21]` | 1,18 | 1,151 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
 | `QuestBudget:MONSTER_EXP_MUL[22]` | 1,18 | 1,151 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
@@ -315,6 +317,51 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
+| `BossTuning:extra.azgor.far.cooldown` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.far.damage` | 3,6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.far.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.far.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.shield.damage` | 3,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.shield.length` | 40 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.shield.width` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.azgor.shield.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.far.cooldown` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.far.damage` | 4,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.far.length` | 48 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.far.width` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.far.windup` | 1,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.shield.length` | 40 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.shield.width` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.grimrok.shield.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.morvane.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.morvane.shield.every` | 4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.morvane.shield.radius` | 4,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.morvane.shield.windup` | 1,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.far.cooldown` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.far.damage` | 3,8 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.far.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.far.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.shield.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:extra.vaelgrath.shield.windup` | 1,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
+| `BossTuning:farAfter` | 2,5 | S117 | FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s |
+| `BossTuning:farRange` | 14 | S117 | FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s |
+| `Config:FullElixir.cooldown` | 180 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:FullElixir.dailyLimit` | 10 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:Lure.interval` | 8 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.levelGap` | 10 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.maxPulled` | 6 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.pullThreat` | 1 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.radius` | 25 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.tick` | 1 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Items/Consumables:[potion_full].level` | 1 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].maxStack` | 999 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].price` | 1 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].tier` | 5 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
 | `Quests/Contracts:RULES.expFrom` | 4 | S109 | S109 audit (D3): contracts 1-3 give gold only; the tutorial pays levels 1-2 in full (no grinding in the S94 base), so their EXP (12 + 25 + 45) only carried into level 3 and clamped monsterExpMul(3) at MUL_MIN (raw 0.14); now 0.875 as in S98 |
 | `Quests/Main:STORY_WEIGHT.toDuskwood` | 6,76 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
 
@@ -327,7 +374,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4263 kluczy zmienionych od bazy, 0 bez powodu.
+4277 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -428,6 +475,14 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bosses:byId.vaelgrath.summons[1].level` | 99 | 86 | S94 | S94: C7: shield wave 99 -> 86: a party of 3 loses 95 % HP per member per wave (<= 110 %; 290 % at 99) |
 | `Bosses:byId.vaelgrath.summons[2].level` | 100 | 87 | S94 | S94: C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59) |
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
+| `Config:FullElixir.cooldown` | – | 180 | nowy od S122 | S122: DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:FullElixir.dailyLimit` | – | 10 | nowy od S122 | S122: DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
+| `Config:Lure.interval` | – | 8 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.levelGap` | – | 10 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.maxPulled` | – | 6 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.pullThreat` | – | 1 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.radius` | – | 25 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
+| `Config:Lure.tick` | – | 1 | nowy od S122 | S122: DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
 | `Config:Mount.baseMul` | – | 1,6 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Config:Mount.fastFromLevel` | – | 5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Config:Mount.maxLevel` | – | 10 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
@@ -485,6 +540,10 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Items/Consumables:[potion_energy_5].buyPrice` | 3000 | 1800 | S94 | S94: PRICES[5] shared with HP (J2) |
 | `Items/Consumables:[potion_energy_5].level` | 1 | 70 | S87 | S87: D3: Mighty potion from 70 (was 1) |
 | `Items/Consumables:[potion_energy_5].price` | 750 | 450 | S94 | S94: derived: buyPrice / 4 |
+| `Items/Consumables:[potion_full].level` | – | 1 | nowy od S122 | S122: DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].maxStack` | – | 999 | nowy od S122 | S122: DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].price` | – | 1 | nowy od S122 | S122: DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
+| `Items/Consumables:[potion_full].tier` | – | 5 | nowy od S122 | S122: DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
 | `Items/Consumables:[potion_hp_4].buyPrice` | 900 | 700 | S93 | S93: 900 -> 700 (I2): gold per HP 0.225 -> 0.175 (Large 0.167 <= Great <= Mighty 0.30); chain potions 0.36-1.0 -> 0.28-0.82 of income |
 | `Items/Consumables:[potion_hp_4].level` | 1 | 45 | S87 | S87: D3: Great potion from 45 (was 1) |
 | `Items/Consumables:[potion_hp_4].price` | 225 | 175 | S93 | S93: derived: buyPrice / 4 |
@@ -820,6 +879,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]` | 12 | 18 | S89 | S89: R6: 12 -> 18 % |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[1]` | 4 | 3 | S89 | S89: R6: 4 -> 3 % max HP (first third 1.56 -> 1.29 of the mean) |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]` | 12 | 9 | S89 | S89: R6: 12 -> 9 % |
+| `Progression:variantMultiplier.elite` | 4 | 1,5 | S117 | S117: FIX 2026-10-15 (owner): 4 -> 1.5, Elites are for drops, not levelling (EXP per HP below a normal monster; pace model counts normals only) |
+| `Progression:variantMultiplier.elite2` | 12 | 4 | S117 | S117: FIX 2026-10-15 (owner): 12 -> 4, Elite II is for drops, not levelling (HP x10) |
 | `Quests/Main:STORY_BANDS[1]` | – | 20 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III); S105: S105 (C1): band 70-99 on the story rule (chapter IV and the finale) |
 | `Quests/Main:STORY_BANDS[2]` | – | 45 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III); S105: S105 (C1): band 70-99 on the story rule (chapter IV and the finale) |
 | `Quests/Main:STORY_BANDS[3]` | – | 70 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III); S105: S105 (C1): band 70-99 on the story rule (chapter IV and the finale) |
@@ -2042,7 +2103,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 
 | moduł | kluczy | zmiany (sesja: powód) |
 | --- | --: | --: |
-| BossTuning | 3 | S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
+| BossTuning | 36 | S117: FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule; S117: FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s; S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
 | Crafting | 1494 | S94: K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | LoginReward | 37 | S100: new module: login reward 7-day streak (DESIGN-15 §5); week 0.27-0.47 h of income at 10-99 (0.33-0.39 h at 45, 0.27-0.30 h at 99), dearest day <= 0.11 h; Great potions from 70, shards instead of crystals (a crystal ~3 900 gold), chest Unique 85 / Heroic 15 (T-LR5 <= 5% of D5) |
 | Maps | 42 | S94: E1: the Ice Grotto's map from 71 |
@@ -11248,7 +11309,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 2,6 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 2,7 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -13960,7 +14021,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 19,9 s.
+Tabele S86 liczą się 20,8 s.
 
 ## Poprawki globalne (S87)
 

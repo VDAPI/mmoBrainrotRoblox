@@ -14,6 +14,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local ResourceService = {
 	Name = "ResourceService",
@@ -363,6 +364,7 @@ local function switchGuard(player: Player): string?
 end
 
 function ResourceService.Start()
+	UseGuards.register("dead", ResourceService.IsDead, "ResourceService") -- S122 Logic/UseBlocks
 	CharacterService.SetSwitchGuard(switchGuard)
 	CharacterService.CharacterEntered:Connect(onEntered)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)

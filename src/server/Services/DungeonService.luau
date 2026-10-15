@@ -43,6 +43,7 @@ local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local log = Log.new("DungeonService")
 
@@ -784,6 +785,7 @@ local function fightOf(target: Player, source: Player): Run?
 end
 
 function DungeonService.Start()
+	UseGuards.register("dungeon", DungeonService.InRun, "DungeonService") -- S122 Logic/UseBlocks
 	Net.Handle("DungeonInfo", info)
 	Net.Handle("EnterDungeon", enter)
 	ResourceService.Healed:Connect(function(target: Player, amount: number, source: Player?, kind: string)

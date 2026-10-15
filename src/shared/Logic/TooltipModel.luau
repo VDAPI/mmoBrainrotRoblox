@@ -237,7 +237,7 @@ function TooltipModel.categoryKey(def: ItemDef): string
 		return `itemCat.{def.slot or "equipment"}`
 	elseif def.category == "consumable" then
 		local kind = if def.use then def.use.kind else "potion"
-		if kind == "blessing" or kind == "elixir" then
+		if kind == "blessing" or kind == "elixir" or kind == "fullElixir" then -- S122: fullElixir
 			return `itemCat.{kind}`
 		end
 		return "itemCat.potion"
@@ -793,6 +793,19 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 			"dark",
 			{ font = "bold" }
 		)
+	elseif use and use.kind == "fullElixir" then
+		-- S122 (DESIGN-17 §3): what it does, its limits and where it does not work (Logic/UseBlocks.LISTS.fullElixir)
+		b.add("effect", Locale.T("tooltip.fullElixir.effect", nil, lang), "dark", { font = "bold" })
+		b.add(
+			"rules",
+			Locale.T(
+				"tooltip.fullElixir.rules",
+				{ min = Config.FullElixir.cooldown // 60, n = Config.FullElixir.dailyLimit },
+				lang
+			),
+			"dark"
+		)
+		b.add("blocked", Locale.T("tooltip.fullElixir.blocked", { s = Config.PvpCombatLock }, lang), "bad")
 	elseif use and use.kind == "blessing" then
 		blessingLines(b, d, lang)
 	elseif use and use.kind == "elixir" then
@@ -837,6 +850,9 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		else
 			b.add("bind", Locale.T("tooltip.bindOnEquip", nil, lang), "muted")
 		end
+	elseif item.bound then
+		-- S122: bound stacks too (the Elixir of Wholeness is bound from creation; worn backpacks)
+		b.add("bind", Locale.T("tooltip.bound", nil, lang), "bad")
 	end
 	if item.n > 1 then
 		b.add("stack", Locale.T("tooltip.stack", { n = item.n }, lang), "muted")
@@ -1222,6 +1238,8 @@ function TooltipModel.statLine(item: ItemInstance, def: ItemDef?, lang: string?)
 		local use = d.use
 		if use and use.kind == "potion" and use.resource then
 			return Locale.T(`tooltip.restores.{use.resource}`, { amount = Format.number(use.amount or 0) }, language)
+		elseif use and use.kind == "fullElixir" then
+			return Locale.T("tooltip.fullElixir.effect", nil, language)
 		elseif use and use.kind == "elixir" and use.target then
 			return Locale.T(
 				"tooltip.elixir",

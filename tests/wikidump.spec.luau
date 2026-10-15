@@ -724,6 +724,31 @@ T.describe("Wiki export: consistency", function()
 			scrolls += if service.key == "scroll_skillreset" then 1 else 0
 		end
 		T.expect(scrolls).toBe(1)
+		-- S122: one row of the Elixir of Wholeness (two packs), the two Cloak of Luring entries with name and text;
+		-- no pack size, cloak seconds or price
+		local elixirRows, lures = 0, {}
+		for _, service in d.premium.shop do
+			elixirRows += if service.item == "potion_full" then 1 else 0
+			if service.key == "lure_1h" or service.key == "lure_7d" then
+				T.expect({ service.key, service.name ~= nil, service.desc ~= nil }).toEqual({ service.key, true, true })
+				table.insert(lures, service.key)
+			end
+		end
+		T.expect(elixirRows).toBe(1)
+		table.sort(lures)
+		T.expect(lures).toEqual({ "lure_1h", "lure_7d" })
+		for _, key in { '"seconds"', '"n"', '"price"' } do
+			T.expect({ key, string.find(premiumText, key, 1, true) }).toEqual({ key })
+		end
+		local elixir: any = nil
+		for _, item in d.items.items do
+			if item.id == "potion_full" then
+				elixir = item
+			end
+		end
+		assert(elixir, "items.json: potion_full")
+		T.expect(elixir.use and elixir.use.kind).toBe("fullElixir")
+		T.expect(elixir.buyPrice).toBeNil()
 		-- the instant respawn product never reaches the wiki (areaProfiles use a "respawn" key, so only premium.json)
 		T.expect(string.find(Json.encode(d.premium), 'respawn"', 1, true)).toBe(nil)
 		for _, npc in d.npcs.npcs do

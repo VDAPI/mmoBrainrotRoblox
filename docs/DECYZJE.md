@@ -3796,3 +3796,39 @@
   bez cyklu i bez dostępu leniwego); `EquipmentService` i `ShopService` liczą pojemność przez
   `InventoryService.CapacityFor`, bez nowej zależności.
 - **S121** Ikona Kieszeni Kupca `▣` zamiast `▥` z planu (znak już używany w grze, renderuje się w czcionkach UI).
+- **S122** Nazwy S120/S121 zamiast założeń promptu: dzień UTC eliksiru przez `Time.dayNumber` (S120 usunęło
+  `Premium.day`); `Premium.canBuy` nie sprawdza `kind`, więc `lure` nie wymagało zmian; karty w
+  `UI/Screens/PremiumShop/Items.luau` przy komentarzu S120. Tekst czasu w toaście `lure.added`: zagnieżdżony klucz
+  `{ key = "lure.left.*", args }` (Toast S99 to obsługuje), bez osobnych `lure.added.d/h/m`.
+- **S122** Jedno miejsce blokad: `Logic/UseBlocks` (listy, kolejność, teksty, `PENDING`) + `src/server/UseGuards.luau`
+  (rejestr warunków, nie serwis, bez `Deps`); każdy serwis-właściciel rejestruje swój powód w `Start`; S126/S127/S129/S130
+  tylko rejestrują i zdejmują wpis z `PENDING` (test w `premiumuse.spec`). Błąd warunku = blokada (fail closed).
+- **S122** Eliksir jako `use.kind = "fullElixir"` i `type = "potion_full"` (ikona mikstury `pot/5` w złotym kolorze, poza
+  modelem mikstur i tabelą wiki), związany od utworzenia: `ItemRoll.makeStack` wiąże stosy z `bindOnPickup` (unikaty
+  bossów nie są stosowe, więc bez zmian). Przechodzi przez depozyt konta (związany z kontem, nie z postacią).
+- **S122** `character.fullElixir = { day, used, readyAt }` trwałe (`os.time`; wylogowanie nie omija odnowienia), dzień
+  UTC; eliksir pasuje do każdego slotu paska (`Potions.fitsSlot`), odnowienie i limit wspólne; nie zalicza zadań „wypij
+  miksturę” (bez `QuestEvents "potion"`). Podpowiedź pokazuje „Związany” także dla stosów (dotąd tylko ekwipunek).
+- **S122** Eliksir bez miasta, jaskiń, czerwonej strefy i wierzchowca na liście blokad (kontrakt ich nie wymienia; walkę
+  z graczem łapie blokada PvP 15 s, `PvpService.InCombatLock` = licznik `pvp.lockedUntil`). `arena` w S122 = piasek
+  Ristalle (`PvpService.InArena`); loch bossa = `DungeonService.InRun` lub mapa z `biome = "dungeon"` (`ZoneService`).
+- **S122** Płaszcz: „zwykłe” = `variant == "normal"`, ze spawnera (potwory wydarzeń S101 nie mają spawnera), nie
+  `passive`, nie przyzwane, nie boss; „nikogo nie atakują” = `idle` i pusta tablica groźby; limit 6 liczy całe grupy
+  (przyciągnięcie wciąga grupę, S19), grupa większa niż limit nie jest przyciągana; przyciągnięcie = `AddThreat` z groźbą 1.
+- **S122** Płaszcz bez `tourney` na liście (kontrakt; serwer turnieju nie ma potworów); peleryna widoczna, gdy płaszcz
+  włączony i ma czas, także tam, gdzie wstrzymany; kupno włącza płaszcz; czas płynie offline (`os.time`), po upływie
+  jeden toast `lure.expired`, pole `on` zostaje.
+- **S122** Peleryna jako osobne `CosmeticLook.applyLure` (nie rodzaj kosmetyku): folder `VaelthornLureCape`, atrybut
+  `LureCape`, ukrywa części `OutfitCape` stroju (kolejność z `CosmeticService` bez znaczenia); widoczna też w podglądzie
+  garderoby (klon postaci), tak jak widzą ją inni.
+- **S122** `Config.Lure.pullThreat = 1` i `tick = 1` to liczby techniczne spoza kontraktu. `CONFIG_KEYS` += `FullElixir`,
+  `Lure` (powody S122). Fixture ścieżek: odświeżony tylko skrót (0 przesuniętych wartości); fixture przedmiotów nie
+  odświeżony (476 wartości przesuniętych już przed S122 przez `QuestBudget` / `Quests/Contracts`, nie przez tę sesję).
+- **S122** Wiki: dwie paczki eliksiru jako jeden wiersz w `premium.json` (jedyna zmiana w `tools/WikiData/Premium.luau`),
+  eliksir w `items.json` jak plecaki premium; jego ikona to pierwszy barwiony rysunek kodu w `items.json` (pole
+  `layers[].tint` było w schemacie, pierwszy raz użyte): przepuszczone `WIKI_KEYS_ALLOW="items:items.items[].layers[].tint"`.
+- **S122** Ceny z kontraktu (paczki 5 / 20 za 120 / 400 SO) zamiast 25 za sztukę z KATALOG. Opis paczek w sklepie bierze
+  minuty i limit z `Config.FullElixir` (`{min}`, `{n}`), nie z cyfr w tekście.
+- **S122** Przycisk płaszcza na HUD stoi obok przycisku nagrody za logowanie (pod ikonami eliksirów odporności, które
+  zajmują do pięciu miejsc w rzędzie po prawej od portretu), a nie po prawej od nich; tylko znak `❂` (w `Logic/UiArt` nie
+  ma klucza `hud/lure`).

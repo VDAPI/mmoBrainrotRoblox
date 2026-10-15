@@ -9420,3 +9420,108 @@ Equipment,Shop,Trade,Deposit,Mail,Character,Title,Profile,Auction,Alchemy,Travel
 `wiki/src/data/{premium,cosmetics,meta}.json`, `wiki/src/generated/art.json`, `wiki/public/img/art/pass/vip-*.webp`
 (usunięte), `wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/PRZEDMIOTY.md`,
 `docs/{DESIGN,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S122: Eliksir Pełni i Płaszcz Przynęty
+
+Trzecia sesja serii DESIGN-17 (§3), po S121 (`338d284`). S116 pominięta za zgodą właściciela. Bez Studio i bez
+wgrywania czegokolwiek do Roblox; bez nowych produktów Robux (oba przedmioty są za Smoczą Walutę). Nazwy S120/S121
+sprawdzone w kodzie (rozbieżności w DECYZJE).
+- **Jedno miejsce blokad:** nowy `Logic/UseBlocks` (`LISTS.fullElixir` = dead, duel, arena, dungeon, pvpLock,
+  bloodMoon, tourney; `LISTS.lure` = dead, city, underground, redZone, arena, bloodMoon, mounted; `PREFIX`, `PENDING` =
+  bloodMoon S129 i tourney S130, `LATER`, `UNDERGROUND`, `key`, `first`, `reasons`) i rejestr `src/server/UseGuards.luau`
+  (`register` → wyrejestrowanie, `first`, `active`, `owners`, `lastError`, `_reset`; błąd warunku = blokada). Rejestracje
+  w `Start`: `ResourceService` dead, `DuelService` duel, `PvpService` arena (piasek Ristalle) i pvpLock (nowe
+  `PvpService.InCombatLock`), `DungeonService` dungeon (`InRun`), `ZoneService` dungeon (mapa `biome = "dungeon"`), city,
+  underground, redZone, `MountService` mounted. Pytają tylko `PotionService` i `LureService`.
+- **Dane:** `Config.FullElixir = { cooldown = 180, dailyLimit = 10 }`, `Config.Lure = { interval = 8, radius = 25,
+  levelGap = 10, maxPulled = 6, pullThreat = 1, tick = 1 }`; przedmiot `potion_full` (`use.kind = "fullElixir"`,
+  `type = "potion_full"`, tier 5 dla ikony, `bindOnPickup`, `noSell`, bez ceny kupna); `UseEffect.kind` +=
+  `"fullElixir"`; `Products.shop`: `potion_full_5` (5 szt., 120), `potion_full_20` (20 szt., 400), `lure_1h` (3600 s,
+  150), `lure_7d` (604800 s, 990), `ShopEntry.kind` += `"lure"`, pola `n?`, `seconds?`. `ItemRoll.makeStack` wiąże stosy
+  z `bindOnPickup`. Zapis: `account.lure = { untilTs = 0, on = false }`, `character.fullElixir = { day = 0, used = 0,
+  readyAt = 0 }` z szablonu (bez migracji, `CURRENT` = 8); typ `LureRuntime` i gałąź stanu `lure`. Remote
+  `LureToggle(boolean)` (rate 2).
+- **Logika:** `Logic/FullElixir` (`EMPTY`, `usedToday`, `leftToday`, `readyIn`, `check` z kolejnością odnowienie →
+  limit → „masz pełnię sił”, `count`), `Logic/Lure` (`left`, `active`, `extend`, `parts`, `timeKey`, `Candidate`,
+  `eligible`, `pick` z kosztem całej grupy), `Potions.fitsSlot`.
+- **Serwer:** `PotionService.drinkFull` (plecak przez `UseHandlers.fullElixir`, pasek przez `UsePotion`, `SetPotionSlot`
+  przez `fitsSlot`; blokady, `FullElixir.check`, potem bez yield: zużycie, `ResourceService.Restore`, licznik; toast
+  `fullElixir.used`, `Analytics.custom("FullElixir")`, bez `QuestEvents "potion"`). `PremiumShopService`: paczki
+  `entry.n`, nowe `buyLure` (`Lure.extend`, toast `lure.added` z zagnieżdżonymi kluczami czasu), `PremiumBuy` dzieli po
+  `kind`. Nowy `LureService` (pętla co `Config.Lure.tick`, peleryna, toast `lure.expired` raz, gałąź `lure` tylko przy
+  zmianie, przyciąganie co `interval` przez `Monster.AddThreat`; `Left`, `Step(player, force?)`, `Toggle`).
+  `MonsterService.Near`, `GroupOf`, `CanTarget` (bez zmian zachowania).
+- **Klient:** pasek mikstur (eliksir w każdym wyborze, odnowienie z `character.fullElixir.readyAt`, „0/10” po limicie,
+  podpowiedź `fullElixir.slot`, bez cyfry jakości), `ItemController` (upuszczenie przez `fitsSlot`, dźwięk i toasty
+  błędów eliksiru), podpowiedź przedmiotu (`itemCat.fullElixir`, wiersze `effect`, `rules`, `blocked`; „Związany” teraz
+  także dla stosów), sklep „Przedmioty”: karty paczek (`premium.potion_full.pack`) i karta Płaszcza (czas, Włącz /
+  Wyłącz tylko przy czasie) z dwiema kartami kupna, nowy `Hud/LureButton` (obok przycisku nagrody za logowanie; włączony
+  / wyłączony / wstrzymany z powodem), wiersz `menu.lure` w menu gry po wierszach dźwięku, `CosmeticLook.applyLure`
+  (ciemnoczerwona płyta z lamówką i dymem; części peleryny stroju nazywają się teraz `OutfitCape`, atrybut modelu
+  `LureCape`: tę umowę zachowuje S132).
+- **Admin:** `/lure add [minuty] | clear | on | off | pulse`, `/elixir info | reset`, `/useblocks` (`admin.usage.*`, PL i
+  EN); `LureService` w `AdminService.Deps`.
+- **Teksty (PL i EN):** `item.potion_full.*`, `itemCat.fullElixir`, `tooltip.fullElixir.*`, przestrzenie `fullElixir.*`
+  i `lure.*` (dopisane do `NAMESPACES` w `data.spec`), `hud.lure*`, `menu.lure`, `premium.potion_full.pack`,
+  `premium.lure_*`, `premium.lure.*`, `premium.shop.{potion_full_5,potion_full_20,lure_1h,lure_7d}.desc`, `admin.lure.*`,
+  `admin.elixir.*`, `admin.useblocks.*`.
+- **Testy:** nowy `tests/premiumuse.spec.luau` (UseBlocks z testem tekstu rejestracji w `src/server`, UseGuards,
+  FullElixir, Lure, dane i zapis); bloki w `paywall` („S122 premium consumables”: `EXCEPTIONS.potion_full`,
+  `ALLOWED_SHOP_KINDS.lure`), `premium`, `tooltip`, `data` (licznik + 1, przestrzenie), `wikidump`. `scripts/check`
+  zielony (119 plików, 6576 testów) z `WIKI_KEYS_ALLOW="items:items.items[].layers[].tint"` (niżej); `balance1_20` 0
+  różnic bez `ALLOWED_1_20_DIFFS`; `balance_report` bez „BRAK POWODU” (wpisy S122 w `docs/BALANS.md`).
+- **Księga i fixture'y:** `CONFIG_KEYS` += `FullElixir`, `Lure`; powody `Items/Consumables:[potion_full]*`,
+  `Config:FullElixir*`, `Config:Lure*`. Fixture ścieżek odświeżony tylko w skrótach (`--fixture-paths`, 0 przesuniętych
+  wartości; zmienione odciski `Items/Consumables` i `Config`). Fixture przedmiotów **nie** odświeżony: raport mówi 476
+  przesuniętych wartości z `QuestBudget` / `Quests/Contracts` już na `338d284` (sprawdzone na czystym drzewie), więc to
+  nie sprawa tej sesji (H2: przy przesuniętych wartościach nie odświeżać).
+- **Grep `"potion_"` (B3):** sklep alchemika (`Shops.potions()`), kody, nagrody questów i rozmów, nagroda za logowanie
+  (S100) i `Config` sięgają po konkretne `potion_<zasób>_<n>`; jedyne czytanie prefiksu to `ItemIcons.keyOf` po `type`
+  (eliksir dostaje ikonę `pot/5` w złotym kolorze). Nic nie łapie eliksiru przypadkiem.
+- **Wiki:** `tools/WikiData/Premium.luau` pomija powtórzony `itemId` (dwie paczki = jeden wiersz); `npm run data`:
+  `premium.json` (eliksir, `lure_1h`, `lure_7d`), `items.json` (`potion_full`), `search.json`, `meta.json`,
+  `item-icons.json`, obrazki `pot-5-e8c25a-*.webp`, odcisk w `docs/PRZEDMIOTY.md`; akapit w `kosmetyki.mdx` /
+  `cosmetics.mdx` bez cyfr. `wiki_keys_diff` pokazuje jedną różnicę: `items.items[].layers[].tint` (ikona eliksiru to
+  pierwszy barwiony rysunek kodu w `items.json`; pole było już w schemacie i `types.ts` się nie zmienił), przepuszczone
+  świadomie `WIKI_KEYS_ALLOW="items:items.items[].layers[].tint"`; po commicie HEAD ma to pole i lista znów pusta.
+  `npm run check` i `npm test` (133) zielone.
+
+**Jak dopiąć blokadę** (S126 / S127 / S129 / S130):
+
+```lua
+-- S126 ArenaService.Start (a second check of the existing reason; the Ristalle sand check of PvpService stays):
+UseGuards.register("arena", function(player) return ArenaService.InMatch(player) end, "ArenaService")
+-- S127 (arena server): every player on an arena server is "on the arena"
+UseGuards.register("arena", function() return ServerMode.get() == "arena" end, "ServerMode")
+-- S129 BloodMoonService.Start (both features; then delete `bloodMoon` from UseBlocks.PENDING):
+UseGuards.register("bloodMoon", function() return BloodMoonService.Active() end, "BloodMoonService")
+-- S130 tournament (then delete `tourney` from UseBlocks.PENDING):
+UseGuards.register("tourney", function(player) return TourneyService.InTourney(player) end, "TourneyService")
+```
+
+Nazwy `ArenaService.InMatch`, `BloodMoonService.Active`, `TourneyService.InTourney` są przykładowe; stałe są nazwy
+powodów, `UseGuards.register` (`local UseGuards = require(script.Parent.Parent.UseGuards)`) i usunięcie wpisu z
+`UseBlocks.PENDING` w tym samym commicie (`premiumuse.spec` sprawdza zgodność rejestracji z `PENDING`). Nowa funkcja z
+blokadami (np. darmowy powrót VIP) = nowa lista w `UseBlocks.LISTS`, te same powody, bez nowego mechanizmu.
+
+Dla S123–S132: `UseBlocks`, `UseGuards`, `FullElixir`, `Lure`, `Potions.fitsSlot`, `PvpService.InCombatLock`,
+`MonsterService.Near` / `GroupOf` / `CanTarget`, `LureService.Left` / `Step` / `Toggle`, `CosmeticLook.applyLure`
+(umowa `OutfitCape` / `LureCape` dla S132), pola `ShopEntry.n` / `seconds`, `kind = "lure"`.
+
+Dla właściciela: nie ma nowych id do Creator Hub (Eliksir i Płaszcz kupuje się za Smoczą Walutę). Opcjonalnie obrazek
+przycisku płaszcza `hud/lure.png` (dziś znak `❂`; klucz trzeba by dopisać do `UiArt.FIXED.hud` przy imporcie).
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Products,AdminCommands}.luau`,
+`src/shared/Data/Items/{Consumables,Types}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{UseBlocks,FullElixir,Lure}.luau` (nowe), `src/shared/Logic/{Potions,ItemRoll,AccountSchema,
+TooltipModel}.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Util/CosmeticLook.luau`, `src/server/UseGuards.luau`
+(nowy), `src/server/Services/LureService.luau` (nowy), `src/server/Services/{Potion,PremiumShop,Monster,Resource,Duel,
+Pvp,Dungeon,Zone,Mount,Admin}Service.luau`, `src/server/Admin/{Economy,Character}.luau`,
+`src/client/UI/Screens/Hud/LureButton.luau` (nowy), `src/client/UI/Screens/Hud/{init,PotionBar}.luau`,
+`src/client/UI/Screens/PremiumShop/Items.luau`, `src/client/UI/Screens/GameMenu.luau`,
+`src/client/Controllers/ItemController.luau`, `tests/premiumuse.spec.luau` (nowy),
+`tests/{paywall,premium,tooltip,data,wikidump}.spec.luau`, `tests/fixtures/balance_paths.json`,
+`tools/{balance_reasons,WikiData/Premium}.luau`, `wiki/src/data/{premium,items,search,meta}.json`,
+`wiki/src/generated/item-icons.json`, `wiki/public/img/items/pot-5-e8c25a-{64,128}.webp`,
+`wiki/src/content/mechanics/{pl/kosmetyki,en/cosmetics}.mdx`, `docs/{PRZEDMIOTY,BALANS,DESIGN,DESIGN-17,ARCHITECTURE,
+DECYZJE,PROGRESS,SESJE}.md`.

@@ -7,6 +7,9 @@
 -- purchase is simulated, so everything can be tested without real Robux.
 -- S120: every shop entry has a `cat` (tab section) and optional daily / weekly limits; Logic/Premium.canBuy is the
 -- only purchase rule (shop window and server).
+-- S122: the Elixir of Wholeness (potion_full_*) and the Cloak of Luring (lure_*) are the two explicit exceptions of
+-- DESIGN-17 §0.2 (healing outside fights with players and bosses, faster farming without strength), listed with their
+-- limits in tests/paywall.spec.luau.
 
 export type ShardPack = { key: string, productId: number, shards: number, robux: number }
 export type Pass = {
@@ -26,9 +29,11 @@ export type Subscription = { key: string, subscriptionId: string, enabled: boole
 export type ShopCat = "scroll" | "service" | "consumable" | "backpack"
 export type ShopEntry = {
 	key: string,
-	kind: "item" | "rename", -- how the server grants it (S122 adds its own kinds)
+	kind: "item" | "rename" | "lure", -- how the server grants it (S122: "lure" = Cloak of Luring time)
 	cat: ShopCat, -- the section of the "Items" tab (DESIGN-17 §1)
 	itemId: string?,
+	n: number?, -- S122: stack size of an item entry, default 1 (the price is per pack)
+	seconds: number?, -- S122: lure time added by a `lure` entry (real time, account.lure.untilTs)
 	price: number, -- Dragon Shards
 	dailyLimit: number?, -- purchases per account and UTC day
 	weeklyLimit: number?, -- purchases per account and week (Monday 00:00 UTC, Logic/Time.weekNumber)
@@ -85,6 +90,12 @@ local SHOP: { ShopEntry } = {
 	{ key = "backpack_premium_100", kind = "item", cat = "backpack", itemId = "backpack_premium_100", price = 300 },
 	{ key = "backpack_premium_150", kind = "item", cat = "backpack", itemId = "backpack_premium_150", price = 600 },
 	{ key = "backpack_premium_200", kind = "item", cat = "backpack", itemId = "backpack_premium_200", price = 1000 },
+	-- S122 (DESIGN-17 §3): Elixir of Wholeness packs (account-bound, 3 min cooldown, 10 a day, Logic/UseBlocks).
+	{ key = "potion_full_5", kind = "item", cat = "consumable", itemId = "potion_full", n = 5, price = 120 },
+	{ key = "potion_full_20", kind = "item", cat = "consumable", itemId = "potion_full", n = 20, price = 400 },
+	-- S122 (DESIGN-17 §3): Cloak of Luring, real time added to account.lure.untilTs (also offline).
+	{ key = "lure_1h", kind = "lure", cat = "service", seconds = 3600, price = 150 },
+	{ key = "lure_7d", kind = "lure", cat = "service", seconds = 7 * 86400, price = 990 },
 }
 
 -- S97: disabled until the owner decides (price in Robux, product id from the Creator Hub). Same speed cap as every
@@ -102,7 +113,7 @@ local passByKey: { [string]: Pass } = {}
 for _, pass in PASSES do
 	passByKey[pass.key] = pass
 end
--- Sections of the "Items" tab in order (S120; `consumable` stays empty until S122).
+-- Sections of the "Items" tab in order (S120; S122 fills `consumable` with the Elixir of Wholeness).
 local SHOP_CATS: { ShopCat } = { "scroll", "service", "consumable", "backpack" }
 
 local shopByKey: { [string]: ShopEntry } = {}

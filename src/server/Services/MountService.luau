@@ -33,6 +33,7 @@ local Net = require(Shared.Net)
 local Products = require(Shared.Data.Products)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local log = Log.new("MountService")
 
@@ -547,6 +548,7 @@ function MountService.Init(registry)
 end
 
 function MountService.Start()
+	UseGuards.register("mounted", MountService.IsRiding, "MountService") -- S122 Logic/UseBlocks
 	Net.Handle("SetMounted", MountService.Request)
 	Net.Handle("MountUpgrade", lockedRequest(upgrade))
 	Net.Handle("MountSetActive", lockedRequest(setActive))

@@ -42,6 +42,26 @@ for _, potion in POTIONS do
 	end
 end
 
+-- S122 (DESIGN-17 §3): Elixir of Wholeness, sold only in the premium shop (Data/Products potion_full_5 / _20).
+-- Account-bound from the moment it is created (ItemRoll.makeStack binds `bindOnPickup` stacks), never sold, traded
+-- or listed. Rules: Config.FullElixir, Logic/FullElixir, Logic/UseBlocks.
+table.insert(LIST, {
+	id = "potion_full",
+	category = "consumable",
+	type = "potion_full", -- icon pot/<tier> through Logic/ItemIcons (S118: own PNG when the owner adds one)
+	level = 1,
+	tier = 5,
+	stackable = true,
+	maxStack = 999,
+	nameKey = "item.potion_full.name",
+	descKey = "item.potion_full.desc",
+	icon = { glyph = "⚗", color = "#E8C25A" },
+	price = 1,
+	bindOnPickup = true,
+	noSell = true,
+	use = { kind = "fullElixir" },
+})
+
 local function other(
 	id: string,
 	category: Types.Category,

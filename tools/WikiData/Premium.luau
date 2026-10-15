@@ -2,7 +2,7 @@
 -- premium.json (S43): the ONLY exporter module that reads Data/Products (docs/WIKI.md §1). It copies the keys and icons
 -- of the passes (names and descriptions from premium.pass.<key>) and the services of the premium shop (key, kind,
 -- item, daily limit; name from the item or premium.rename). Never prices, Robux, product or pass ids, shard packs,
--- the instant respawn product.
+-- the instant respawn product. S122: an item sold in several packs (Elixir of Wholeness) is one row.
 
 local Names = require("./Names")
 local Products = require("../../src/shared/Data/Products")
@@ -42,9 +42,14 @@ function Premium.build(ctx: any): any
 		end
 	end
 	local shop = {}
+	-- S122: one row per item (packs differ only in price and size, which the wiki never shows)
+	local listed: { [string]: boolean } = {}
 	for _, e in Products.shop do
 		local item = e.itemId
-		if not (item and ctx.hidden[item]) then
+		if not (item and (ctx.hidden[item] or listed[item])) then
+			if item then
+				listed[item] = true
+			end
 			table.insert(shop, {
 				key = e.key,
 				kind = e.kind,

@@ -112,6 +112,27 @@ T.describe("TooltipModel readability (FIX 2026-10-15)", function()
 	end)
 end)
 
+T.describe("TooltipModel Elixir of Wholeness (S122)", function()
+	T.it("effect, rules, where it does not work, bound and not for sale", function()
+		local stack = ItemRoll.makeStack("potion_full", 3, "s122")
+		for _, lang in { "pl", "en" } do
+			local lines = TooltipModel.build(stack, nil, { lang = lang }).lines
+			local byRole: { [string]: TooltipModel.Line } = {}
+			for _, line in lines do
+				byRole[line.role] = byRole[line.role] or line
+			end
+			for _, role in { "effect", "rules", "blocked", "bind", "noSell" } do
+				T.expect({ lang, role, byRole[role] ~= nil }).toEqual({ lang, role, true })
+			end
+			T.expect(byRole.effect.text).toBe(Locale.T("tooltip.fullElixir.effect", nil, lang))
+			T.expect(byRole.blocked.tone).toBe("bad")
+			T.expect(byRole.bind.text).toBe(Locale.T("tooltip.bound", nil, lang))
+			T.expect(clean(byRole.rules.text) and clean(byRole.blocked.text)).toBe(true)
+			T.expect(byRole.type.text ~= nil).toBe(true)
+		end
+	end)
+end)
+
 T.describe("TooltipModel.details (S68)", function()
 	T.it("every published line has its details in both languages", function()
 		local ids: { string } = {}

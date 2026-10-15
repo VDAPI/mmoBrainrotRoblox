@@ -48,6 +48,7 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **Eliksir Pełni** (`potion_full`, nowy przedmiot w `Data/Items/Consumables`, stackowalny, związany z kontem/postacią: **nie da się go sprzedać, wystawić ani wymienić**): przywraca 100% HP i many (i energii, jeśli klasa ją ma). Sprzedawany w paczkach (`potion_full_5` za 120 SO, `potion_full_20` za 400 SO). Reguły (`Config.FullElixir`): `cooldown = 180` s (własny, nie wspólny z miksturami), `dailyLimit = 10` użyć na postać i dzień UTC, **zablokowany**: w pojedynku i na arenie (`DuelService`/`ArenaService`), w lochu bossa (`DungeonService.InRun` albo mapa `dungeon_*`), w czasie blokady PvP (otrzymał/zadał obrażenia graczowi w ostatnich 15 s, ten sam licznik co przełącznik PvP), w trakcie Krwawego Księżyca (S129) i turnieju (S130). Slot: używany z plecaka i z dowolnego slotu mikstury (gracz może go podpiąć jak miksturę), z czytelnym komunikatem, czemu nie działa.
 - **Płaszcz Przynęty** (usługa czasowa, nie przedmiot w plecaku): `account.lure = { untilTs, on }`; kupno `lure_1h` (150 SO) i `lure_7d` (990 SO) dodaje czas do `untilTs` (czas rzeczywisty, płynie także offline). Włącz/wyłącz w oknie sklepu, w menu i przyciskiem na HUD (ikona z pozostałym czasem). Działanie (`LureService`, `Config.Lure`): co `interval = 8` s zwykłe potwory (nie Elita, nie Elita II, nie boss, nie potwory wydarzeń świata) w promieniu `radius = 25` st. od gracza, które nikogo nie atakują i są w zasięgu poziomu gracza (`|lvl potwora − lvl gracza| <= levelGap = 10`), dostają aggro na gracza, najwyżej `maxPulled = 6` potworów aktywnie walczących z graczem naraz. **Nie działa:** w mieście, w jaskiniach i lochach (`biome` cave/crypt/dungeon), w czerwonej strefie, na arenie, w czasie Krwawego Księżyca, na wierzchowcu, gdy gracz nie żyje. Wygląd: peleryna z `Util/CosmeticLook` (ciemnoczerwona, lekki dym), widoczna dla innych; nie zajmuje slotu kosmetyku (nakłada się na strój, ma pierwszeństwo przed peleryną stroju, gdy włączony). **Zero statów.**
 - Oba wchodzą do zakładki „Przedmioty” S120 i do `paywall.spec` jako jawnie dozwolone wyjątki z opisem ograniczeń.
+- Blokady: `Logic/UseBlocks` + `src/server/UseGuards.luau` (S122); S126/S127/S129/S130 rejestrują powody `arena` / `bloodMoon` / `tourney` (`UseGuards.register`, instrukcja w `docs/SESJE.md` → S122 „Jak dopiąć blokadę”).
 
 ## 4. Kosmetyki 2, oferta tygodnia, paczki startowe (S123)
 
@@ -75,6 +76,7 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **`ArenaService`** (nowy; `DuelService` zostaje dla towarzyskich pojedynków na zaproszenie) + `Data/Arena.luau` + `Logic/Elo.luau` (czysta) + `Logic/ArenaRules.luau` (czysta: przedziały, sezon, progi, nagrody).
 - **Przedziały poziomów:** `{20,39}`, `{40,59}`, `{60,79}`, `{80,100}`; poniżej 20 arena rankingowa niedostępna. Dobór tylko w obrębie przedziału.
 - **Zasady walki 1v1 (S126):** do 2 wygranych rund, runda max `roundTime = 180` s (remis rundy przy końcu czasu: wygrywa ten z wyższym % HP), pełne HP/mana/cooldowny na start rundy, **3 mikstury na mecz** (licznik na HUD), Eliksir Pełni zablokowany, błogosławieństwa zawieszone na czas meczu (efekt nie liczy się, czas płynie normalnie, sprawdź `BlessingService`), wierzchowce zakazane (S96 już blokuje `zone.arena`), `modPvP` jak w grze. Wyjście/rozłączenie = przegrana meczu.
+- **Blokady S122:** S126 rejestruje mecz jako drugi warunek powodu `arena` (`UseGuards.register("arena", …, "ArenaService")`), S127 serwer areny (`ServerMode.get() == "arena"`); powód `arena` nie jest w `UseBlocks.PENDING`, więc nic stamtąd nie zdejmuje.
 - **Rating:** Elo, start `1000`, `K = 32` (pierwsze 10 meczów sezonu `K = 48`), minimum 0. `character.arena = { season, rating, wins, losses, peak, played, tokens, daily = { day, n }, vs = { day, [oppKey] = n } }`. Mecz z tym samym przeciwnikiem więcej niż `sameOpponentDaily = 3` razy dziennie nie zmienia ratingu (komunikat przed meczem).
 - **Sezon miesięczny:** id `"YYYYMM"` (UTC). Nowy sezon: rating miękko resetowany `1000 + (rating − 1000) × 0.5` przy pierwszym wejściu w nowym sezonie, nagrody za poprzedni wg `peak` (S128). Progi: Brąz < 1100, Srebro 1100–1299, Złoto 1300–1499, Diament 1500–1699, Mistrz ≥ 1700.
 - **Ranking areny:** tablica `arena_<season>_<przedział>` w `LeaderboardService` (S124) z wynikiem = rating.
@@ -95,6 +97,7 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **Punkty** (`BloodMoonService`, `character.bloodMoon = { id, points, kills = { [victimKey] = n } }`): zabicie gracza 10 pkt (0, gdy ofiara ma ≥ 8 poziomów mniej; ta sama ofiara liczy się max 2 razy), Elita 1, Elita II 5; śmierć 0 (bez kary). **Ranking per region** (gdzie zdobyto punkty) w MemoryStore SortedMap `BloodMoon_<id>_<region>`, TTL 2 dni; okno wyników na żywo (top 10 + ty).
 - **Nagrody** po końcu (pocztą, idempotentnie po `id` wydarzenia): udział (≥ 5 pkt): 20 Żetonów Areny + błogosławieństwo Unikatowe; top 100 regionu: tytuł „Krwawy” na 7 dni; top 10: + ramka „Krwawego Księżyca”; top 1: + 100 SO i ogłoszenie na wszystkich serwerach (MessagingService). Brak dostępu do MemoryStore → ranking tylko tego serwera (jasno opisany w oknie).
 - Komenda admina do wymuszenia startu/końca na serwerze testowym.
+- **Blokady S122:** zarejestruj powód `bloodMoon` w `UseGuards` (`UseGuards.register("bloodMoon", …, "BloodMoonService")`) i zdejmij go z `UseBlocks.PENDING` w tym samym commicie (test `premiumuse.spec` tego pilnuje).
 
 ## 8. Turniej Czempiona (S130)
 
@@ -103,6 +106,7 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **Nagrody** (pocztą + ogłoszenie na wszystkich serwerach): zwycięzca przedziału: tytuł „Czempion Vaelthorn” na 7 dni, unikalna aura czempiona (na zawsze), posąg na tablicy Sali Sław (wpis tygodnia, 4 ostatnie tygodnie), 200 SO; finalista: 100 SO + ramka; półfinaliści: 50 SO; każdy uczestnik: 30 Żetonów.
 - Za mało zapisanych (< 4 w przedziale) → turniej w tym przedziale odwołany, komunikat.
 - W Studio: symulacja turnieju na jednym serwerze z botami-atrapami w testach (`Logic/Bracket.luau`, czysta drabinka z testami).
+- **Blokady S122:** zarejestruj powód `tourney` w `UseGuards` (`UseGuards.register("tourney", …)`) i zdejmij go z `UseBlocks.PENDING` w tym samym commicie.
 
 ## 9. Audyt, wiki, ceny (S131)
 

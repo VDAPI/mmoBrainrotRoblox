@@ -8,9 +8,16 @@ local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Items = require("../src/shared/Data/Items")
 local Mounts = require("../src/shared/Data/Mounts")
+local Auction = require("../src/shared/Logic/Auction")
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemValue = require("../src/shared/Logic/ItemValue")
+local Lure = require("../src/shared/Logic/Lure")
 local Premium = require("../src/shared/Logic/Premium")
 local Products = require("../src/shared/Data/Products")
+local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
+local Trade = require("../src/shared/Logic/Trade")
+local UseBlocks = require("../src/shared/Logic/UseBlocks")
 
 -- Passes (Products.passes): key -> why it is not pay-to-win.
 local ALLOWED_PASSES: { [string]: string } = {
@@ -34,7 +41,11 @@ local ALLOWED_VIP_KEYS: { [string]: string } = {
 	statusRefresh = "technical: subscription re-check interval",
 }
 local VIP_POWER_WORDS = { "exp", "gold", "drop", "luck", "stat", "dmg", "hp" }
-local ALLOWED_SHOP_KINDS: { [string]: string } = { item = "an item, checked below", rename = "a service" }
+local ALLOWED_SHOP_KINDS: { [string]: string } = {
+	item = "an item, checked below",
+	rename = "a service",
+	lure = "DESIGN-17 §0.2/§3: faster farming without strength (Cloak of Luring)",
+}
 local ALLOWED_ITEM_CATEGORIES: { [string]: string } = {
 	scroll = "resets and unbinding (protection only with a daily limit of 1)",
 	backpack = "space: capacity only, no stats",
@@ -48,7 +59,11 @@ local ALLOWED_SCROLLS: { [string]: string } = {
 	unbind = "trade comfort",
 	protection = "EXCEPTION: keeps the upgrade level on a failure; dailyLimit must be 1 (DESIGN-17 §1)",
 }
-local EXCEPTIONS: { [string]: string } = {} -- item id -> reason (S122: potion_full; DESIGN-17 §3)
+-- item id -> reason (DESIGN-17 §3). Never add "fullElixir" to ALLOWED_USE_KINDS: every future item of that kind
+-- would pass without an exception.
+local EXCEPTIONS: { [string]: string } = {
+	potion_full = "DESIGN-17 §0.2/§3: healing outside fights with players and bosses",
+}
 local ALLOWED_COSMETIC_KINDS: { [string]: string } = {
 	outfit = "looks",
 	aura = "looks",
@@ -346,6 +361,109 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 				end
 			end
 		end
+	end)
+end)
+
+T.describe("S122 premium consumables", function()
+	local function has(list: { string }, reason: string): boolean
+		return table.find(list, reason) ~= nil
+	end
+
+	T.it("the Elixir of Wholeness is bound, never sold, traded or listed and has no power", function()
+		local def = Items.get("potion_full")
+		assert(def, "potion_full")
+		local raw = def :: any
+		T.expect(def.use and def.use.kind).toBe("fullElixir")
+		T.expect(def.bindOnPickup).toBe(true)
+		T.expect(def.noSell).toBe(true)
+		for _, field in { "fixedBonuses", "bonusGroup", "base", "weapon", "trait" } do
+			T.expect({ field, raw[field] }).toEqual({ field, nil })
+		end
+		for id, shop in Shops.byId do
+			for _, entry in shop.entries do
+				T.expect({ id, entry.item ~= "potion_full" }).toEqual({ id, true })
+			end
+		end
+		local stack = ItemRoll.makeStack("potion_full", 1, "paywall")
+		T.expect(stack.bound).toBe(true)
+		T.expect({ Trade.canOffer(stack) }).toEqual({ false, "trade.error.bound" })
+		T.expect({ Auction.validateListing(stack, def :: any, 100, 24, 0, 100000) }).toEqual({
+			false,
+			"auction.error.bound",
+		})
+		T.expect(ItemValue.canSell(stack, def)).toBe(false)
+		T.expect(ALLOWED_USE_KINDS.fullElixir).toBeNil()
+	end)
+
+	T.it("the elixir never works against players or bosses", function()
+		T.expect(Config.FullElixir.cooldown >= 180).toBe(true)
+		T.expect(Config.FullElixir.dailyLimit <= 10).toBe(true)
+		for _, reason in { "duel", "arena", "dungeon", "pvpLock", "bloodMoon", "tourney" } do
+			if not has(UseBlocks.LISTS.fullElixir, reason) then
+				error(`{reason}: DESIGN-17 §3: the elixir must never work against players or bosses`)
+			end
+		end
+	end)
+
+	T.it("the Cloak of Luring: limits, places and ordinary monsters only", function()
+		T.expect(Config.Lure.maxPulled <= 6).toBe(true)
+		T.expect(Config.Lure.radius <= 25).toBe(true)
+		T.expect(Config.Lure.levelGap <= 10).toBe(true)
+		T.expect(Config.Lure.interval >= 8).toBe(true)
+		for _, reason in { "city", "underground", "redZone", "arena", "bloodMoon", "mounted", "dead" } do
+			if not has(UseBlocks.LISTS.lure, reason) then
+				error(`{reason}: DESIGN-17 §3: the cloak must not work there`)
+			end
+		end
+		local base: { [string]: any } = {
+			ref = 1,
+			variant = "normal",
+			boss = false,
+			summoned = false,
+			fromSpawner = true,
+			passive = false,
+			idle = true,
+			targetable = true,
+			level = 30,
+			distance = 5,
+			cost = 1,
+		}
+		T.expect(Lure.eligible(base :: any, 30)).toBe(true)
+		for _, change in
+			{
+				{ variant = "elite" },
+				{ variant = "elite2" },
+				{ variant = "boss" },
+				{ boss = true },
+				{ summoned = true },
+				{ fromSpawner = false },
+			} :: { { [string]: any } }
+		do
+			local c = table.clone(base)
+			for k, v in change do
+				c[k] = v
+			end
+			T.expect(Lure.eligible(c :: any, 30)).toBe(false)
+		end
+	end)
+
+	T.it("one item of kind fullElixir and two lure entries, without items", function()
+		local elixirs = {}
+		for id, def in Items.byId do
+			if def.use and def.use.kind == "fullElixir" then
+				table.insert(elixirs, id)
+			end
+		end
+		T.expect(elixirs).toEqual({ "potion_full" })
+		local lures = {}
+		for _, entry in Products.shop do
+			if entry.kind == "lure" then
+				table.insert(lures, entry.key)
+				T.expect({ entry.key, (entry.seconds or 0) > 0, entry.itemId }).toEqual({ entry.key, true, nil })
+			end
+		end
+		table.sort(lures)
+		T.expect(lures).toEqual({ "lure_1h", "lure_7d" })
 	end)
 end)
 

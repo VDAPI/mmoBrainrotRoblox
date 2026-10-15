@@ -109,6 +109,13 @@ local Config = {
 
 	-- Items (DESIGN §5.5, §9).
 	PotionCooldown = 1.5, -- seconds, per potion kind
+	-- S122 (DESIGN-17 §3): Elixir of Wholeness (potion_full): own cooldown, uses per character and UTC day. Where it
+	-- does not work: Logic/UseBlocks.LISTS.fullElixir.
+	FullElixir = { cooldown = 180, dailyLimit = 10 },
+	-- S122 (DESIGN-17 §3): Cloak of Luring (account.lure). Every `interval` s ordinary idle monsters within `radius`
+	-- studs and `levelGap` levels are pulled onto the player, at most `maxPulled` fighting the player at once;
+	-- `pullThreat` = threat of the pull (any real hit outweighs it); `tick` = LureService loop step.
+	Lure = { interval = 8, radius = 25, levelGap = 10, maxPulled = 6, pullThreat = 1, tick = 1 },
 	LootLifetime = 120, -- seconds a loot bag stays
 	LootPickupRange = 12, -- studs (+ lag tolerance in LootService)
 	DefaultCapacity = 20, -- inventory slots without a backpack item

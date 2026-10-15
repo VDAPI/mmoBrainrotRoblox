@@ -4,6 +4,8 @@
 -- S120: every shop entry goes through Logic/Premium.canBuy (the same rule as the shop window) and the limit counters
 -- of account.shopLimits. Every purchase checks, pays and counts in one step without yielding between the check and
 -- the change; renaming yields for the name store and checks again afterwards.
+-- S122 (DESIGN-17 §3): item entries give `n` items (Elixir of Wholeness packs, bound from creation through
+-- ItemRoll.makeStack); `lure` entries add real time to account.lure (Logic/Lure.extend, buying switches it on).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +16,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
+local Lure = require(Shared.Logic.Lure)
 local Net = require(Shared.Net)
 local Premium = require(Shared.Logic.Premium)
 local Products = require(Shared.Data.Products)
@@ -66,7 +69,7 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 	if not ok then
 		return false, err
 	end
-	local item = ItemRoll.makeStack(entry.itemId, 1, InventoryService.NewUid())
+	local item = ItemRoll.makeStack(entry.itemId, entry.n or 1, InventoryService.NewUid())
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end
@@ -75,6 +78,41 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 	InventoryService.AddItem(player, item)
 	DataService.Save(player)
 	return true, nil
+end
+
+-- S122: Cloak of Luring time (account, no character needed); checked, paid and added in one step.
+local function buyLure(player: Player, key: string): (boolean, string?)
+	local data = account(player)
+	local entry = Products.getShop(key)
+	if not data or not entry or entry.kind ~= "lure" or not entry.seconds or entry.seconds <= 0 then
+		return false, "error.badRequest"
+	end
+	local now = os.time()
+	local ok, err = Premium.canBuy(entry, data, now)
+	if not ok then
+		return false, err
+	end
+	local fresh = Lure.extend(data.lure, entry.seconds, now)
+	spend(player, entry.price, key)
+	countLimit(player, entry, data, now)
+	PlayerStateService.Set(player, { "account", "lure" }, fresh)
+	DataService.Save(player)
+	local addedKey, addedArgs = Lure.timeKey(entry.seconds)
+	local leftKey, leftArgs = Lure.timeKey(Lure.left(fresh, now))
+	Net.Fire(player, "Toast", "lure.added", {
+		time = { key = addedKey, args = addedArgs },
+		left = { key = leftKey, args = leftArgs },
+	}, "success")
+	return true, nil
+end
+
+-- PremiumBuy: one remote for every shop entry, split by the entry's kind.
+local function buy(player: Player, key: string): (boolean, string?)
+	local entry = Products.getShop(key)
+	if entry and entry.kind == "lure" then
+		return buyLure(player, key)
+	end
+	return buyItem(player, key)
 end
 
 local function buyCosmetic(player: Player, id: string): (boolean, string?)
@@ -170,7 +208,7 @@ function PremiumShopService.Init(registry)
 end
 
 function PremiumShopService.Start()
-	Net.Handle("PremiumBuy", locked(buyItem))
+	Net.Handle("PremiumBuy", locked(buy))
 	Net.Handle("PremiumBuyCosmetic", locked(buyCosmetic))
 	Net.Handle("PremiumRename", locked(rename))
 	Players.PlayerRemoving:Connect(function(player)

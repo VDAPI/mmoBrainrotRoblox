@@ -19,6 +19,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
+local LureButton = require(script.LureButton)
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
@@ -440,6 +441,11 @@ local function Hud(scope: Scope, props: Props): Instance
 				Open = props.OpenLogin,
 				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
 			}),
+			-- S122: the Cloak of Luring right of the login button, below the elixirs (only while it has time)
+			LureButton(
+				scope,
+				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+			),
 			CastBar(scope),
 			EffectIcons(scope, {
 				Model = myModel,

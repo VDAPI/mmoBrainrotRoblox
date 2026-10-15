@@ -24,6 +24,17 @@ function Potions.canDrink(def: Items.ItemDef?, level: number): boolean
 	return level >= Potions.requiredLevel(def)
 end
 
+-- Whether `def` may sit in the potion bar slot `kind` ("hp" | "mana" | "energy"): a potion of that resource.
+-- S122: the Elixir of Wholeness fits every potion slot. PotionService.setPotionSlot, the drop on a slot
+-- (ItemController) and the slot's choice list (PotionBar) use this one rule.
+function Potions.fitsSlot(def: Items.ItemDef?, kind: string): boolean
+	local use = def and def.use
+	if not use then
+		return false
+	end
+	return (use.kind == "potion" and use.resource == kind) or use.kind == "fullElixir"
+end
+
 -- Seconds between two potions of the same kind at character level `level`.
 function Potions.interval(level: number): number
 	return Config.PotionCooldown * LevelCurves.at("potionCooldown", level)

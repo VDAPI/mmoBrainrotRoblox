@@ -181,6 +181,20 @@ type CharacterData = {
   `VipRespawn()`, `OutfitSave(index)`, `OutfitWear(index)`. `MonetizationService` dopisany do `Deps` serwisów
   `InventoryService`, `CharacterService`, `TitleService`, `ProfileService`, `AuctionService`, `CosmeticService`.
   Klient: okno `vip` (`UI/Screens/VipWindow`, `PremiumController.OpenVip`), karta VIP w `PremiumShop/Passes`.
+- **Przedmioty użytkowe premium (S122, DESIGN-17 §3):** jedno miejsce blokad: `Logic/UseBlocks` (listy powodów na
+  funkcję, kolejność, klucze `<prefiks>.block.<powód>`, `PENDING` dla S129/S130) i `src/server/UseGuards.luau` (rejestr
+  warunków, zwykły moduł jak `QuestEvents`, bez `Deps` i bez API Roblox; `register(powód, warunek, właściciel)`,
+  `first`, `active`, `owners`, `lastError`; błąd warunku = blokada). Rejestrują w `Start`: `ResourceService` (`dead`),
+  `DuelService` (`duel`), `PvpService` (`arena`, `pvpLock` przez nowe `PvpService.InCombatLock`), `DungeonService` i
+  `ZoneService` (`dungeon`), `ZoneService` (`city`, `underground`, `redZone`), `MountService` (`mounted`). Eliksir Pełni:
+  `use.kind = "fullElixir"`, `PotionService.drinkFull` (handler `UseItem` i `UsePotion`, bez nowego remote'u),
+  `Logic/FullElixir`, pole `character.fullElixir`, `Potions.fitsSlot`; stosy z `bindOnPickup` związane od
+  `ItemRoll.makeStack`. Płaszcz Przynęty: `LureService` (`Deps`: `DataService`, `PlayerStateService`,
+  `CharacterService`, `MonsterService`, `ZoneService`, `ResourceService`; `Left`, `Step`, `Toggle`), `Logic/Lure`,
+  pole `account.lure`, gałąź stanu `lure = { blocked?, pulled? }`, remote `LureToggle(boolean)` (rate 2), kupno przez
+  `PremiumBuy` (`kind = "lure"`), `MonsterService.Near` / `GroupOf` / `CanTarget`, peleryna
+  `CosmeticLook.applyLure` (folder `VaelthornLureCape`, atrybut modelu `LureCape`, ukrywa części `OutfitCape`).
+  Klient: `Hud/LureButton`, wiersz w `GameMenu`, karty w `PremiumShop/Items`, eliksir w `Hud/PotionBar`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -454,6 +468,8 @@ type CharacterData = {
 | `/stats` | character | <reset> | zwróć wszystkie punkty statystyk |
 | `/statpoints` | character | <n> | ustaw liczbę wolnych punktów statystyk |
 | `/heal` | character |  | odnów życie, manę i energię |
+| `/elixir` | character | <info|reset> | licznik Eliksiru Pełni postaci (S122) |
+| `/useblocks` | character |  | co teraz blokuje Eliksir Pełni i Płaszcz Przynęty, powody czekające na sesje (S122) |
 | `/god` | character |  | włącz/wyłącz nieśmiertelność |
 | `/cd` | character | <off|on> | wyłącz / włącz odnowienie umiejętności |
 | `/res` | character | <inf|off> | nieskończona mana i energia |
@@ -532,6 +548,7 @@ type CharacterData = {
 | `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip|pockets|slot4|slot5|wardrobePlus |
 | `/vip` | economy | <on|off|status|reset|month> [RRRRMM] | test VIP: subskrypcja tylko na tę sesję, stan, dzienne korzyści od nowa, kosmetyk miesiąca (S121) |
 | `/shoplimits` | economy | <show|reset> | liczniki limitów Smoczego Sklepu konta (S120) |
+| `/lure` | economy | <add|clear|on|off|pulse> [minutes] | czas Płaszcza Przynęty bez waluty, przełącznik, przyciągnięcie teraz (S122) |
 | `/bless` | economy | [id:blessing] | lista błogosławieństw albo nadaj jedno (np. warrior_5) |
 | `/login` | economy |  | stan serii nagrody za logowanie konta (S100) |
 | `/loginset` | economy | <day> [gap] | ustaw serię: dzień 0–7, przerwa w dniach (np. /loginset 6 → dziś skrzynia) |

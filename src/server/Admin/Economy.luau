@@ -10,6 +10,7 @@ local Blessings = require(Shared.Data.Blessings)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local LoginReward = require(Shared.Logic.LoginReward)
+local Lure = require(Shared.Logic.Lure)
 local Premium = require(Shared.Logic.Premium)
 local Products = require(Shared.Data.Products)
 local Rarities = require(Shared.Data.Rarities)
@@ -33,6 +34,7 @@ local AuctionService = Context.services.AuctionService
 local CosmeticService = Context.services.CosmeticService
 local LoginRewardService = Context.services.LoginRewardService
 local VipService = Context.services.VipService
+local LureService = Context.services.LureService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -169,6 +171,38 @@ commands.vip = function(player, args)
 		end
 	else
 		reply(player, "admin.usage.vip")
+	end
+end
+
+-- S122: Cloak of Luring of the caller's account: time without shards, clear, the switch, a pull now.
+commands.lure = function(player, args)
+	local action = args[1]
+	local acc = PlayerStateService.Get(player, { "account" })
+	if type(acc) ~= "table" then
+		reply(player, "admin.usage.lure")
+		return
+	end
+	local now = os.time()
+	if action == "add" then
+		local minutes = math.clamp(math.floor(tonumber(args[2]) or 60), 1, 20160)
+		local fresh = Lure.extend(acc.lure, minutes * 60, now)
+		PlayerStateService.Set(player, { "account", "lure" }, fresh)
+		reply(player, "admin.lure.added", { minutes = minutes, left = Lure.left(fresh, now) })
+	elseif action == "clear" then
+		PlayerStateService.Set(player, { "account", "lure" }, { untilTs = 0, on = false })
+		reply(player, "admin.lure.cleared")
+	elseif action == "on" or action == "off" then
+		local ok, err = LureService.Toggle(player, action == "on")
+		if not ok then
+			reply(player, err or "error.internal")
+			return
+		end
+		reply(player, "admin.lure.state", { state = action })
+	elseif action == "pulse" then
+		local n, blocked = LureService.Step(player, true)
+		reply(player, "admin.lure.pulse", { n = n, reason = if blocked then `@{blocked}` else "-" })
+	else
+		reply(player, "admin.usage.lure")
 	end
 end
 

@@ -212,6 +212,7 @@ local Definitions: { [string]: Definition } = {
 	BuyProduct = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (product key) prompt or simulated grant
 	BuyPass = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (pass key)
 	PremiumBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (shop key) for Dragon Shards
+	LureToggle = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) Cloak of Luring switch, S122
 	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (cosmetic id)
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
 	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)

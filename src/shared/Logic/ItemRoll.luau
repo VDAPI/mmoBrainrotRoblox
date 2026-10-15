@@ -147,7 +147,8 @@ function ItemRoll.makeStack(defId: string, n: number, uid: string): ItemInstance
 		ilvl = def.level,
 		bonuses = {},
 		up = 0,
-		bound = false,
+		-- S122: stackables with bindOnPickup are bound from creation (potion_full); boss uniques are not stackable
+		bound = def.stackable == true and def.bindOnPickup == true,
 		n = math.clamp(math.floor(n), 1, def.maxStack),
 		rv = Rarities.RV,
 	}

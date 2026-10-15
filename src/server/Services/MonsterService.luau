@@ -86,6 +86,32 @@ function MonsterService.All(): { Monster.Monster }
 	return monsters
 end
 
+-- S122 (LureService): living monsters within `radius` studs of `position` (3D, unsorted).
+function MonsterService.Near(position: Vector3, radius: number): { Monster.Monster }
+	local out: { Monster.Monster } = {}
+	for _, monster in monsters do
+		if monster:IsAlive() and (monster:Position() - position).Magnitude <= radius then
+			table.insert(out, monster)
+		end
+	end
+	return out
+end
+
+-- S122: the living members of the monster's spawner group (S19: they fight together), or the monster alone.
+function MonsterService.GroupOf(monster: Monster.Monster): { Monster.Monster }
+	local spawner = spawnerOf[monster]
+	if not spawner then
+		return { monster }
+	end
+	local out: { Monster.Monster } = {}
+	for _, member in spawner.alive do
+		if member:IsAlive() then
+			table.insert(out, member)
+		end
+	end
+	return out
+end
+
 -- Ground position below `position` (ignores monsters and characters). The ray starts only a little above
 -- the point so spawners inside caves (terrain roof overhead) land on the cave floor.
 local function groundAt(position: Vector3): Vector3
@@ -200,6 +226,12 @@ local context: Monster.Context = {
 		end
 	end,
 }
+
+-- S122 (LureService): whether the monster may go after the player (the rule the AI uses: alive and playing, no
+-- camouflage or respawn protection, not in a green zone).
+function MonsterService.CanTarget(monster: Monster.Monster, player: Player): boolean
+	return context.canTarget(monster, player)
+end
 
 -- Spawns one monster. Returns nil when the server budget is full or the id is unknown. S101: `mods` multiply the
 -- HP and attack on top of the hunting ground profile (world event commander / champion). Without a spawner (world

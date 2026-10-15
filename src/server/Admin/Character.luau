@@ -7,6 +7,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
+local FullElixir = require(Shared.Logic.FullElixir)
 local Items = require(Shared.Data.Items)
 local Luck = require(Shared.Logic.Luck)
 local MountData = require(Shared.Data.Mounts)
@@ -14,6 +15,9 @@ local Mounts = require(Shared.Logic.Mounts)
 local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local PathData = require(Shared.Data.Paths)
+local UseBlocks = require(Shared.Logic.UseBlocks)
+
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local Context = require(script.Parent.Context)
 
@@ -78,6 +82,50 @@ commands.heal = function(player)
 		ResourceService.Restore(player)
 		reply(player, "admin.heal.ok")
 	end)
+end
+
+-- S122: the character's Elixir of Wholeness counter (Logic/FullElixir).
+commands.elixir = function(player, args)
+	withCharacter(player, function()
+		local now = os.time()
+		if args[1] == "reset" then
+			PlayerStateService.Set(player, { "character", "fullElixir" }, table.clone(FullElixir.EMPTY))
+			reply(player, "admin.elixir.reset")
+		elseif args[1] == "info" then
+			local state = PlayerStateService.Get(player, { "character", "fullElixir" })
+			reply(player, "admin.elixir.info", {
+				used = FullElixir.usedToday(state, now),
+				max = Config.FullElixir.dailyLimit,
+				ready = FullElixir.readyIn(state, now),
+			})
+		else
+			reply(player, "admin.usage.elixir")
+		end
+	end)
+end
+
+-- S122: what blocks the elixir and the cloak for the caller right now (src/server/UseGuards) and what waits.
+commands.useblocks = function(player)
+	local pending: { string } = {}
+	for reason, session in UseBlocks.PENDING do
+		table.insert(pending, `{reason} ({session})`)
+	end
+	table.sort(pending)
+	for _, feature in { "fullElixir", "lure" } :: { UseBlocks.Feature } do
+		local list = UseBlocks.LISTS[feature]
+		local active = UseGuards.active(player, list)
+		reply(player, "admin.useblocks.line", {
+			feature = feature,
+			active = if #active > 0 then table.concat(active, ", ") else "-",
+			pending = if #pending > 0 then table.concat(pending, ", ") else "-",
+		})
+	end
+	for _, reason in UseBlocks.reasons() do
+		local err = UseGuards.lastError(reason)
+		if err then
+			reply(player, "admin.useblocks.error", { reason = reason, err = err })
+		end
+	end
 end
 
 commands.god = function(player)

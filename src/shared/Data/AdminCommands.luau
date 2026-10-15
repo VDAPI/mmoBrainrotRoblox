@@ -113,6 +113,9 @@ cmd("character", "exp", { int("amount", 1, BIG) })
 cmd("character", "stats", { enum("action", { "reset" }) })
 cmd("character", "statpoints", { int("n", 0, 100000) })
 cmd("character", "heal", {})
+-- S122: the Elixir of Wholeness counter of the character and what blocks the elixir / the cloak now (Logic/UseBlocks)
+cmd("character", "elixir", { enum("action", { "info", "reset" }) })
+cmd("character", "useblocks", {})
 cmd("character", "god", {})
 cmd("character", "cd", { enum("mode", { "off", "on" }) })
 cmd("character", "res", { enum("mode", { "inf", "off" }) })
@@ -410,6 +413,12 @@ cmd("economy", "premium", { enum("action", { "grant" }), ref("pass", "pass") })
 cmd("economy", "vip", { enum("action", { "on", "off", "status", "reset", "month" }), str("month", true) })
 -- S120: the caller's premium shop limit counters (account.shopLimits)
 cmd("economy", "shoplimits", { enum("action", { "show", "reset" }) })
+-- S122: Cloak of Luring time of the caller's account (no shards), the switch and a pull now
+cmd(
+	"economy",
+	"lure",
+	{ enum("action", { "add", "clear", "on", "off", "pulse" }), int("minutes", 1, 20160, true, "60") }
+)
 cmd("economy", "bless", { ref("id", "blessing", true) })
 -- S100: the login reward streak of the caller's account (state, set, simulate days passing)
 cmd("economy", "login", {})

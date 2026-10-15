@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 4e3a3a72 (`wiki/src/data/meta.json`).
+> Odcisk danych 2b07a6f9 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1214,6 +1214,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Duża Mikstura Energii | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Energii | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Energii | Mikstura | 70 | — | 1800 | 450 |
+| Eliksir Pełni | Mikstura | 1 | Gęsty, złoty napój z królewskich pracowni alchemików. Jeden łyk przywraca pełnię sił. | — | 1 |
 | Mała Mikstura Życia | Mikstura | 1 | — | 10 | 2 |
 | Średnia Mikstura Życia | Mikstura | 1 | — | 60 | 15 |
 | Duża Mikstura Życia | Mikstura | 1 | — | 250 | 62 |

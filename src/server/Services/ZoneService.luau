@@ -18,6 +18,8 @@ local Config = require(Shared.Config)
 local Maps = require(Shared.Data.Maps)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
+local UseBlocks = require(Shared.Logic.UseBlocks)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local ZoneService = {
 	Name = "ZoneService",
@@ -98,6 +100,13 @@ function ZoneService.GetPvpZone(player: Player): Types.PvpZone
 	return if zone then zone.pvp else "green"
 end
 
+-- S122: the biome of the map the player stands on (nil while loading): Logic/UseBlocks city / underground / dungeon.
+local function biomeOf(player: Player): string?
+	local zone = current[player]
+	local map = zone and Maps.get(zone.map)
+	return if map then map.biome else nil
+end
+
 local function same(a: ZoneState?, b: ZoneState): boolean
 	return a ~= nil and a.map == b.map and a.pvp == b.pvp and a.nameKey == b.nameKey
 end
@@ -131,6 +140,21 @@ function ZoneService.Init(registry)
 end
 
 function ZoneService.Start()
+	-- S122 Logic/UseBlocks: the map checks (DungeonService has no ZoneService dependency, so the owner of zones
+	-- registers the boss dungeon map as a second check of "dungeon")
+	UseGuards.register("dungeon", function(player: Player): boolean
+		return biomeOf(player) == "dungeon"
+	end, "ZoneService")
+	UseGuards.register("city", function(player: Player): boolean
+		return biomeOf(player) == "city"
+	end, "ZoneService")
+	UseGuards.register("underground", function(player: Player): boolean
+		local biome = biomeOf(player)
+		return biome ~= nil and UseBlocks.UNDERGROUND[biome] == true
+	end, "ZoneService")
+	UseGuards.register("redZone", function(player: Player): boolean
+		return ZoneService.GetPvpZone(player) == "red"
+	end, "ZoneService")
 	for _, instance in CollectionService:GetTagged(TAG) do
 		addVolume(instance)
 	end

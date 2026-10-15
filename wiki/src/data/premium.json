@@ -16,6 +16,9 @@
     {"desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}},
     {"item":"backpack_premium_100","key":"backpack_premium_100","kind":"item","name":{"en":"Wanderer's Backpack (100)","pl":"Plecak Wędrowca (100)"}},
     {"item":"backpack_premium_150","key":"backpack_premium_150","kind":"item","name":{"en":"Caravan Backpack (150)","pl":"Plecak Kupca Karawan (150)"}},
-    {"item":"backpack_premium_200","key":"backpack_premium_200","kind":"item","name":{"en":"Dragon Chest (200)","pl":"Smoczy Kufer (200)"}}
+    {"item":"backpack_premium_200","key":"backpack_premium_200","kind":"item","name":{"en":"Dragon Chest (200)","pl":"Smoczy Kufer (200)"}},
+    {"item":"potion_full","key":"potion_full_5","kind":"item","name":{"en":"Elixir of Wholeness","pl":"Eliksir Pełni"}},
+    {"desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_1h","kind":"lure","name":{"en":"Cloak of Luring: 1 hour","pl":"Płaszcz Przynęty: 1 godzina"}},
+    {"desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_7d","kind":"lure","name":{"en":"Cloak of Luring: 7 days","pl":"Płaszcz Przynęty: 7 dni"}}
   ]
 }

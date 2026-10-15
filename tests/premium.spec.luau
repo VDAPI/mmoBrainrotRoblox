@@ -327,6 +327,52 @@ T.describe("S97 mount skins and premium mounts", function()
 	end)
 end)
 
+T.describe("S122 Elixir of Wholeness and Cloak of Luring", function()
+	local now = MONDAY + 3600
+	local function account(shards: number): Premium.ShopAccount
+		return { dragonShards = shards, shopLimits = Premium.emptyLimits() }
+	end
+
+	T.it("packs and cloak time go through the one purchase rule, without a daily limit", function()
+		local pack = Products.getShop("potion_full_5")
+		local week = Products.getShop("lure_7d")
+		assert(pack and week, "S122 entries")
+		T.expect({ Premium.canBuy(pack, account(pack.price - 1), now) }).toEqual({ false, "premium.error.shards" })
+		T.expect({ Premium.canBuy(pack, account(pack.price), now) }).toEqual({ true, nil })
+		T.expect({ Premium.canBuy(week, account(989), now) }).toEqual({ false, "premium.error.shards" })
+		T.expect({ Premium.canBuy(week, account(990), now) }).toEqual({ true, nil })
+		for _, entry in { pack, week } do
+			local acc = account(1e9)
+			for _ = 1, 10 do
+				T.expect((Premium.canBuy(entry, acc, now))).toBe(true)
+				acc.shopLimits = Premium.countPurchase(entry, acc, now)
+			end
+		end
+	end)
+
+	T.it("the cards and the cloak are localized", function()
+		for _, key in
+			{
+				"premium.potion_full.pack",
+				"premium.lure_1h",
+				"premium.lure_7d",
+				"premium.lure_1h.desc",
+				"premium.lure_7d.desc",
+				"premium.lure.left",
+				"premium.lure.none",
+				"premium.lure.toggleOn",
+				"premium.lure.toggleOff",
+				"lure.name",
+				"lure.desc",
+				"menu.lure",
+				"hud.lure",
+			}
+		do
+			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })
+		end
+	end)
+end)
+
 T.describe("S121 VIP and passes", function()
 	T.it("subscriptions, new passes and the VIP texts are localized", function()
 		local missing = {}

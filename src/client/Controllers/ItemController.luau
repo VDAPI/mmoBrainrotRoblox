@@ -20,6 +20,7 @@ local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
@@ -161,6 +162,17 @@ function ItemController.Use(index: number)
 		})
 		return
 	end
+	if use and use.kind == "fullElixir" then
+		-- S122: the Elixir of Wholeness says why it does not work (toast) and sounds on success
+		task.spawn(function()
+			local ok, err = Net.Invoke("UseItem", index)
+			report(ok, err)
+			if ok then
+				Sounds.play("levelUp")
+			end
+		end)
+		return
+	end
 	invoke("UseItem", index)
 end
 
@@ -227,7 +239,14 @@ function ItemController.UsePotion(kind: string)
 	task.spawn(function()
 		local ok, err = Net.Invoke("UsePotion", kind)
 		if not ok and err ~= "potion.cooldown" then
-			report(ok, err)
+			report(ok, err) -- S122: elixir errors (cooldown and blocks too) always show: the player must know why
+		elseif ok then
+			local bar = State.Get({ "character", "potionBar" })
+			local id = if type(bar) == "table" then bar[kind] else nil
+			local def = if type(id) == "string" then Items.get(id) else nil
+			if def and def.use and def.use.kind == "fullElixir" then
+				Sounds.play("levelUp")
+			end
 		end
 	end)
 end
@@ -333,7 +352,8 @@ local function onDrop(from: string, to: string)
 	elseif fromKind == "inv" and toKind == "pot" then
 		local item = ItemController.ItemAt(from)
 		local def = item and Items.get(item.id)
-		if def and def.use and def.use.kind == "potion" and def.use.resource == toRest then
+		-- S122: the server's slot rule (the Elixir of Wholeness fits every slot)
+		if def and Potions.fitsSlot(def, toRest) then
 			ItemController.SetPotion(toRest, def.id)
 		else
 			report(false, "error.badRequest")

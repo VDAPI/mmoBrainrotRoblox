@@ -579,6 +579,7 @@
     {"id":"potion_energy_3","key":"duza mikstura energii large energy potion","level":1,"name":{"en":"Large Energy Potion","pl":"Duża Mikstura Energii"},"rarity":"common","type":"item"},
     {"id":"potion_energy_4","key":"wielka mikstura energii great energy potion","level":45,"name":{"en":"Great Energy Potion","pl":"Wielka Mikstura Energii"},"rarity":"common","type":"item"},
     {"id":"potion_energy_5","key":"potezna mikstura energii mighty energy potion","level":70,"name":{"en":"Mighty Energy Potion","pl":"Potężna Mikstura Energii"},"rarity":"common","type":"item"},
+    {"id":"potion_full","key":"eliksir pelni elixir of wholeness","level":1,"name":{"en":"Elixir of Wholeness","pl":"Eliksir Pełni"},"rarity":"common","type":"item"},
     {"id":"potion_hp_1","key":"mala mikstura zycia small health potion","level":1,"name":{"en":"Small Health Potion","pl":"Mała Mikstura Życia"},"rarity":"common","type":"item"},
     {"id":"potion_hp_2","key":"srednia mikstura zycia medium health potion","level":1,"name":{"en":"Medium Health Potion","pl":"Średnia Mikstura Życia"},"rarity":"common","type":"item"},
     {"id":"potion_hp_3","key":"duza mikstura zycia large health potion","level":1,"name":{"en":"Large Health Potion","pl":"Duża Mikstura Życia"},"rarity":"common","type":"item"},

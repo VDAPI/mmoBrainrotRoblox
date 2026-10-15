@@ -67,6 +67,8 @@ function AccountSchema.accountTemplate(): AccountData
 		vip = { shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} },
 		-- S121: saved looks (Garderoba+): { equipped = { [kind] = id }, pet = id? }, index 1..Products.OUTFITS_PLUS.
 		outfits = {},
+		-- S122: Cloak of Luring (Logic/Lure): real-time end (os.time) and the switch; no migration (reconcile)
+		lure = { untilTs = 0, on = false },
 		stats = { createdAt = 0, playtime = 0 },
 		redeemed = {},
 	}
@@ -114,6 +116,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
 		pvpEnabled = false,
 		elixirs = {},
+		-- S122: Elixir of Wholeness counter (Logic/FullElixir); no migration (reconcile)
+		fullElixir = { day = 0, used = 0, readyAt = 0 },
 		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },
 		visitedMaps = { [Config.StartingMap] = true },
 		mapMarks = {},

@@ -2,13 +2,17 @@
 -- Potion bar (DESIGN §9): three slots (health Z, mana X, energy V) showing the assigned potion, how many
 -- are left and the cooldown (Logic/Potions.interval of the character level). Click / tap drinks; drop a potion
 -- from the backpack to assign it; right-click (or long-press on touch) opens a picker with the qualities you carry.
+-- S122: the Elixir of Wholeness fits every slot (Logic/Potions.fitsSlot); its slot shows the saved elixir cooldown
+-- (character.fullElixir.readyAt, os.time = server time), "0/10" once today's limit is used up, no quality numeral.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
+local FullElixir = require(ReplicatedStorage.Shared.Logic.FullElixir)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local IconState = require(script.Parent.Parent.Parent.IconState)
@@ -19,6 +23,7 @@ local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
@@ -47,14 +52,21 @@ local function PotionBar(scope: Scope, props: Props): Instance
 	local potionBar = State.Value({ "character", "potionBar" })
 	local cooldowns = State.Value({ "potions" })
 	local level = State.Value({ "character", "level" })
+	local elixir = State.Value({ "character", "fullElixir" }) -- S122
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local picker = scope:Value(nil :: string?)
 
 	table.insert(
 		scope,
 		RunService.Heartbeat:Connect(function()
-			if Fusion.peek(cooldowns) ~= nil then
-				now:set(Workspace:GetServerTimeNow())
+			local t = Workspace:GetServerTimeNow()
+			-- S122: also while the elixir recovers, and every few seconds after it was used today (the UTC day
+			-- may reset the "0/10" mark)
+			local e = Fusion.peek(elixir)
+			local recovering = type(e) == "table" and FullElixir.readyIn(e, t) > 0
+			local usedToday = type(e) == "table" and (e.used or 0) > 0 and t - Fusion.peek(now) >= 5
+			if Fusion.peek(cooldowns) ~= nil or recovering or usedToday then
+				now:set(t)
 			end
 		end)
 	)
@@ -88,7 +100,15 @@ local function PotionBar(scope: Scope, props: Props): Instance
 		local showArt = scope:Computed(function(use): boolean
 			return IconState.picture(use, use(assignedDef)) ~= nil
 		end)
+		local isElixir = scope:Computed(function(use): boolean
+			local def = use(assignedDef)
+			return def ~= nil and def.use ~= nil and def.use.kind == "fullElixir"
+		end)
 		local cooldown = scope:Computed(function(use): number
+			if use(isElixir) then
+				-- S122: the saved elixir cooldown (os.time on the server = Roblox server time here)
+				return math.clamp(FullElixir.readyIn(use(elixir), use(now)) / Config.FullElixir.cooldown, 0, 1)
+			end
 			local c = use(cooldowns)
 			local ready = if type(c) == "table" then c[entry.kind] else nil
 			if not ready then
@@ -173,6 +193,11 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Text = scope:Computed(function(use): string
 						local id = use(assigned)
 						local def = id and Items.get(id)
+						if use(isElixir) then
+							-- S122: no quality numeral; "0/10" once today's limit is used up
+							local left = FullElixir.leftToday(use(elixir), use(now))
+							return if left <= 0 then `0/{Config.FullElixir.dailyLimit}` else ""
+						end
 						return if def and def.tier then ROMAN[def.tier] or "" else ""
 					end),
 					FontFace = Theme.Fonts.BodyBold,
@@ -227,6 +252,18 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			slot :: GuiObject,
 			scope:Computed(function(use): string
 				local id = use(assigned)
+				if id and use(isElixir) then
+					-- S122: key, cooldown and uses left today
+					local state = use(elixir)
+					local t = use(now)
+					local wait = FullElixir.readyIn(state, t)
+					return Text.get(use, "fullElixir.slot", {
+						key = Keybinds.label(`potion_{entry.kind}`),
+						time = if wait > 0 then Time.format(wait) else Text.get(use, "fullElixir.ready"),
+						left = FullElixir.leftToday(state, t),
+						max = Config.FullElixir.dailyLimit,
+					})
+				end
 				local head = Text.get(use, `potion.slot.{entry.kind}`)
 				return if id then `{ItemText.get(use, id)}\n{head}` else head
 			end)
@@ -243,8 +280,8 @@ local function PotionBar(scope: Scope, props: Props): Instance
 		local inv = use(inventory) or {}
 		local found: { [string]: number } = {}
 		for _, item in inv do
-			local def = Items.get(item.id)
-			if def and def.use and def.use.kind == "potion" and def.use.resource == kind then
+			-- S122: one rule with the server (the elixir fits every slot)
+			if Potions.fitsSlot(Items.get(item.id), kind) then
 				found[item.id] = (found[item.id] or 0) + item.n
 			end
 		end
@@ -269,6 +306,9 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			)
 		end
 		for i, id in ids do
+			-- S122: the elixir row carries the item's glyph and colour (no quality numeral)
+			local def = Items.get(id)
+			local elixirRow = def ~= nil and def.use ~= nil and def.use.kind == "fullElixir"
 			table.insert(
 				list,
 				s:New("TextButton")({
@@ -276,10 +316,12 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Size = UDim2.fromOffset(240, 34),
 					AutoButtonColor = true,
 					BackgroundColor3 = Theme.Colors.PanelRaised,
-					Text = `{ItemText.get(use, id)} ({found[id]})`,
+					Text = if elixirRow and def
+						then `{def.icon.glyph} {ItemText.get(use, id)} ({found[id]})`
+						else `{ItemText.get(use, id)} ({found[id]})`,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = if elixirRow and def then Color3.fromHex(def.icon.color) else Theme.Colors.Text,
 					[OnEvent("Activated")] = function()
 						picker:set(nil)
 						props.Assign(kind, id)

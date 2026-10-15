@@ -18,6 +18,7 @@ local Net = require(Shared.Net)
 local Town = require(Shared.Data.Town)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 
 local log = Log.new("DuelService")
 
@@ -332,6 +333,7 @@ function DuelService.Init(registry)
 end
 
 function DuelService.Start()
+	UseGuards.register("duel", DuelService.InDuel, "DuelService") -- S122 Logic/UseBlocks
 	Net.Handle("DuelChallenge", challenge)
 	Net.Handle("DuelRespond", respond)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)

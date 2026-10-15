@@ -45,6 +45,8 @@ end
 -- Namespaces whose string literals are localization keys.
 local NAMESPACES = {
 	"admin",
+	"fullElixir", -- S122 (not "elixir": the resistance elixirs)
+	"lure", -- S122
 	"animlab", -- S110
 	"paths",
 	"title",
@@ -367,8 +369,8 @@ T.describe("Data: Items", function()
 		end
 		-- 39 base types (S18: +8 weapons) x 21 tiers + 30 materials + 24 consumables + 9 backpacks + 12 uniques
 		-- + S07: 25 blessings, 4 elixirs, 4 dungeon stones; S32: 3 monster parts; 2026-10-10: 3 premium backpacks;
-		-- S92: 1 monster part (cursed_bone)
-		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 12 + 25 + 4 + 4 + 3 + 3 + 1)
+		-- S92: 1 monster part (cursed_bone); S122: potion_full
+		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 12 + 25 + 4 + 4 + 3 + 3 + 1 + 1)
 	end)
 
 	T.it("class weapon types exist as item bases", function()

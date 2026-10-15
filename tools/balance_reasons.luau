@@ -95,7 +95,7 @@ return {
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
 	} :: { ModuleEntry },
-	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount" },
+	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount", "FullElixir", "Lure" },
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
 		["Data/Codes"] = "sekret",
@@ -223,7 +223,10 @@ return {
 			},
 		},
 		["BossTuning:far*"] = {
-			{ session = "S117", why = "FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s" },
+			{
+				session = "S117",
+				why = "FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s",
+			},
 		},
 		["Progression:variantMultiplier.elite"] = {
 			{
@@ -4039,6 +4042,22 @@ return {
 			{
 				session = "S109",
 				why = "S109 audit (D3): contracts 1-3 give gold only; the tutorial pays levels 1-2 in full (no grinding in the S94 base), so their EXP (12 + 25 + 45) only carried into level 3 and clamped monsterExpMul(3) at MUL_MIN (raw 0.14); now 0.875 as in S98",
+			},
+		},
+		-- S122 (DESIGN-17 §3): Elixir of Wholeness and Cloak of Luring
+		["Items/Consumables:[potion_full]*"] = {
+			{
+				session = "S122",
+				why = "DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price",
+			},
+		},
+		["Config:FullElixir*"] = {
+			{ session = "S122", why = "DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day" },
+		},
+		["Config:Lure*"] = {
+			{
+				session = "S122",
+				why = "DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical",
 			},
 		},
 	} :: { [string]: { Reason } },

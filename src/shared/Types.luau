@@ -131,6 +131,8 @@ export type CharacterData = {
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
+	-- S122: Elixir of Wholeness uses on UTC `day` (Time.dayNumber) and the os.time when the next one is allowed
+	fullElixir: { day: number, used: number, readyAt: number },
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
 	visitedMaps: { [string]: boolean },
 	mapMarks: { MapMark }, -- S25: own map marks (Data/MapMarks icons, max Config.Nav.maxMarks)
@@ -220,6 +222,8 @@ export type AccountData = {
 	login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
 	vip: VipState, -- S121: VIP benefits (Logic/Vip)
 	outfits: { Outfit }, -- S121: saved looks (Garderoba+), 1..Products.OUTFITS_PLUS without holes
+	-- S122 Cloak of Luring: real-time end (os.time) and the player's switch; active = on and untilTs > now
+	lure: { untilTs: number, on: boolean },
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 }
@@ -264,6 +268,10 @@ export type DeathState = {
 
 export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil: number? }
 
+-- S122: the Cloak of Luring at runtime (LureService; only while it has time and is on): the Locale key of the block
+-- that pauses it (Logic/UseBlocks.key) and how many monsters the last pulse drew.
+export type LureRuntime = { blocked: string?, pulled: number? }
+
 export type ClientState = {
 	account: AccountData?,
 	slots: { [string]: SlotSummary },
@@ -278,6 +286,7 @@ export type ClientState = {
 	-- S101b: the quest companion (CompanionService; never saved): whose figure, for which quest, the phase of
 	-- Logic/Companion ("join" | "follow" | "lead" | "wait" | "arrived" | "back")
 	companion: CompanionState?,
+	lure: LureRuntime?, -- S122
 }
 
 export type CompanionState = { npc: string, quest: string, mode: "follow" | "lead", phase: string }

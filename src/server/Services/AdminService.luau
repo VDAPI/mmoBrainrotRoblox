@@ -77,6 +77,7 @@ local AdminService = {
 		"LoginRewardService", -- S100: /login, /loginset, /loginnext
 		"WorldEventService", -- S101: /event
 		"VipService", -- S121: /vip
+		"LureService", -- S122: /lure
 	},
 }
 

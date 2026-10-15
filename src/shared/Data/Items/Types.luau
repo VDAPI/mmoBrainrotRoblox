@@ -26,7 +26,8 @@ export type WeaponStats = {
 }
 
 export type UseEffect = {
-	kind: "potion" | "teleport" | "scroll" | "blessing" | "elixir" | "none",
+	-- S122: "fullElixir" = Elixir of Wholeness, restores everything; PotionService, Logic/FullElixir
+	kind: "potion" | "teleport" | "scroll" | "blessing" | "elixir" | "fullElixir" | "none",
 	resource: ("hp" | "mana" | "energy")?,
 	amount: number?,
 	target: string?, -- teleport / scroll specifics (S06–S07)

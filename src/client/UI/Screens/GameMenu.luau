@@ -3,8 +3,10 @@
 -- damage numbers, effects quality, minimap mode, camera sensitivity, quick cast, confirmations and the
 -- list of hotkeys. Every change is saved on the account through SetSetting / SetLanguage.
 -- S121: "VIP" (the VIP window) and, with VIP, "Return to the city (VIP)" with its countdown under "Switch character".
+-- S122: the Cloak of Luring switch with its time after the sound rows (only while the account has cloak time).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
@@ -15,6 +17,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
+local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -328,6 +331,76 @@ local function vipRow(scope: Scope, close: () -> (), extra: Extra?): Instance
 	})
 end
 
+-- S122: the Cloak of Luring row right after the sound rows, only while the account has cloak time (no dead switch).
+local function lureRow(scope: Scope): Instance
+	local lure = State.Value({ "account", "lure" })
+	local now = scope:Value(Workspace:GetServerTimeNow())
+	local alive = true
+	table.insert(scope, function()
+		alive = false
+	end)
+	task.spawn(function()
+		while alive do
+			task.wait(1)
+			if alive then
+				now:set(Workspace:GetServerTimeNow())
+			end
+		end
+	end)
+	local left = scope:Computed(function(use): number
+		local state = use(lure)
+		return Lure.left(if type(state) == "table" then state else nil, use(now))
+	end)
+	local on = scope:Computed(function(use): boolean
+		local state = use(lure)
+		return type(state) == "table" and state.on == true
+	end)
+	return scope:New("Frame")({
+		LayoutOrder = 6,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 46),
+		Visible = scope:Computed(function(use): boolean
+			return use(left) > 0
+		end),
+		[Children] = {
+			scope:New("TextLabel")({
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(0.6, 1),
+				Text = scope:Computed(function(use): string
+					local key, args = Lure.timeKey(use(left))
+					return Text.get(use, "menu.lure", { time = Text.get(use, key, args) })
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Colors.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = true,
+			}),
+			Button(scope, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.fromOffset(150, 44),
+				Variant = "secondary",
+				Text = scope:Computed(function(use): string
+					return Text.get(use, if use(on) then "premium.lure.toggleOff" else "premium.lure.toggleOn")
+				end),
+				OnClick = function()
+					local wanted = not Fusion.peek(on)
+					task.spawn(function()
+						local ok, err = Net.Invoke("LureToggle", wanted)
+						if ok then
+							Sounds.play("levelUp")
+						else
+							Sounds.play("error")
+							Toast.push(Text.now(err or "error.internal"), "error")
+						end
+					end)
+				end,
+			}),
+		},
+	})
+end
+
 local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Child
 	local busy = scope:Value(false)
 	local dataMock = State.Value({ "session", "dataMock" })
@@ -492,6 +565,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			row(scope, 4, "menu.volume", stepper(scope, "volume", 0.8, 0.1, 0, 1)),
 			row(scope, 5, "menu.musicVolume", stepper(scope, "musicVolume", 0.6, 0.1, 0, 1)),
 			row(scope, 6, "menu.ambientVolume", stepper(scope, "ambientVolume", 0.7, 0.1, 0, 1)),
+			lureRow(scope), -- S122
 			row(scope, 7, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
 			row(scope, 7.5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1)),
 			row(

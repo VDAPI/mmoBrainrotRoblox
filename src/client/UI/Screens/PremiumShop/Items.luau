@@ -3,14 +3,21 @@
 -- .shopSections, empty sections have no header). Every button state comes from Logic/Premium.canBuy (the server's
 -- rule): affordable -> confirmation (UI/PremiumConfirm) -> PremiumBuy; no shards / limit / "Soon" -> disabled with the
 -- reason in the card tooltip. Renaming keeps its own dialog with the name field and the balance after the purchase.
+-- S122 (DESIGN-17 §3): item packs (`n`, Elixir of Wholeness: title premium.<item>.pack) and the Cloak of Luring: a
+-- service card with the time left and the switch (LureToggle; only while there is time), then one buy card per
+-- `lure` entry. The time refreshes once a second while this tab is open.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Cards = require(script.Parent.Cards)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local ItemData = require(ReplicatedStorage.Shared.Data.Items)
+local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local PremiumConfirm = require(script.Parent.Parent.Parent.PremiumConfirm)
@@ -18,12 +25,16 @@ local Products = require(ReplicatedStorage.Shared.Data.Products)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
+local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local Items = {}
+
+-- S122: arguments of the card descriptions (premium.shop.potion_full_*.desc reads the elixir rules from Config).
+local DESC_ARGS = { min = Config.FullElixir.cooldown // 60, n = Config.FullElixir.dailyLimit }
 
 -- The account branches the purchase rule reads (the window replicates them separately).
 type Branches = {
@@ -65,10 +76,18 @@ local function descKey(entry: Products.ShopEntry): string
 	return `premium.shop.{entry.key}.desc`
 end
 
+-- S122: the card title of an item entry: a pack of n (premium.<item>.pack) or the item name.
+local function itemTitle(use: Fusion.Use, entry: Products.ShopEntry, itemId: string): string
+	if (entry.n or 1) > 1 then
+		return Text.get(use, `premium.{itemId}.pack`, { n = entry.n })
+	end
+	return ItemText.get(use, itemId)
+end
+
 -- The card subtitle: limits used today / this week, otherwise what the entry gives.
 local function subtitle(use: Fusion.Use, entry: Products.ShopEntry, b: Branches): string
 	if not entry.dailyLimit and not entry.weeklyLimit then
-		return Text.get(use, descKey(entry))
+		return Text.get(use, descKey(entry), DESC_ARGS)
 	end
 	local today, week = Premium.usedOf(entry, accountOf(use, b), os.time())
 	local parts = {}
@@ -88,9 +107,10 @@ local function itemCard(scope: Scope, entry: Products.ShopEntry, itemId: string,
 		return if ok then nil else e
 	end)
 	local function spec(shards: number): PremiumConfirm.Spec
+		local packed = (entry.n or 1) > 1
 		return {
-			name = ItemText.name(itemId),
-			desc = Text.now(descKey(entry)),
+			name = if packed then Text.now(`premium.{itemId}.pack`, { n = entry.n }) else ItemText.name(itemId),
+			desc = Text.now(descKey(entry), DESC_ARGS),
 			price = entry.price,
 			shards = shards,
 			remote = "PremiumBuy",
@@ -102,7 +122,7 @@ local function itemCard(scope: Scope, entry: Products.ShopEntry, itemId: string,
 		glyph = if def then def.icon.glyph else "📜",
 		item = def,
 		title = scope:Computed(function(use): string
-			return ItemText.get(use, itemId)
+			return itemTitle(use, entry, itemId)
 		end),
 		subtitle = scope:Computed(function(use): string
 			return subtitle(use, entry, b)
@@ -187,6 +207,106 @@ local function renameCard(scope: Scope, ctx: Cards.Ctx, entry: Products.ShopEntr
 	})
 end
 
+-- S122: the time text of the Cloak of Luring ("6 d 23 h", "59 min", ...).
+local function lureTime(use: Fusion.Use, seconds: number): string
+	local key, args = Lure.timeKey(seconds)
+	return Text.get(use, key, args)
+end
+
+-- S122: the Cloak of Luring service: time left and the switch (no switch without time: never a dead button).
+local function lureCard(scope: Scope, order: number, lure: Fusion.Value<any>, now: Fusion.Value<number>): Instance
+	local left = scope:Computed(function(use): number
+		local state = use(lure)
+		return Lure.left(if type(state) == "table" then state else nil, use(now))
+	end)
+	local on = scope:Computed(function(use): boolean
+		local state = use(lure)
+		return type(state) == "table" and state.on == true
+	end)
+	return Cards.card(scope, {
+		order = order,
+		glyph = "❂",
+		art = UiArt.shop("lure"),
+		title = Text.T(scope, "lure.name"),
+		subtitle = scope:Computed(function(use): string
+			local seconds = use(left)
+			if seconds <= 0 then
+				return Text.get(use, "premium.lure.none")
+			end
+			return Text.get(use, "premium.lure.left", { time = lureTime(use, seconds) })
+		end),
+		button = Button(scope, {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Size = UDim2.fromOffset(180, 48),
+			Variant = "secondary",
+			TextSize = Theme.TextSize.Small,
+			Visible = scope:Computed(function(use): boolean
+				return use(left) > 0
+			end),
+			Text = scope:Computed(function(use): string
+				return Text.get(use, if use(on) then "premium.lure.toggleOff" else "premium.lure.toggleOn")
+			end),
+			OnClick = function()
+				local wanted = not Fusion.peek(on)
+				task.spawn(function()
+					local ok, err = Net.Invoke("LureToggle", wanted)
+					if ok then
+						Sounds.play("levelUp")
+					else
+						Sounds.play("error")
+						Toast.push(Text.now(err or "error.internal"), "error")
+					end
+				end)
+			end,
+		}),
+		tooltip = Text.T(scope, "lure.desc"),
+	})
+end
+
+-- S122: one Cloak of Luring time entry (lure_1h / lure_7d): the same purchase rule and confirmation as items.
+local function lureBuyCard(scope: Scope, entry: Products.ShopEntry, order: number, b: Branches): Instance
+	local err = scope:Computed(function(use): string?
+		local ok, e = Premium.canBuy(entry, accountOf(use, b), os.time())
+		return if ok then nil else e
+	end)
+	local function spec(shards: number): PremiumConfirm.Spec
+		return {
+			name = Text.now(`premium.{entry.key}`),
+			desc = Text.now(descKey(entry)),
+			price = entry.price,
+			shards = shards,
+			remote = "PremiumBuy",
+			arg = entry.key,
+		}
+	end
+	return Cards.card(scope, {
+		order = order,
+		glyph = "❂",
+		art = UiArt.shop(entry.key),
+		title = Text.T(scope, `premium.{entry.key}`),
+		subtitle = Text.T(scope, descKey(entry)),
+		button = Cards.buyButton(
+			scope,
+			scope:Computed(function(use): string
+				return buttonText(use, entry, use(err))
+			end),
+			scope:Computed(function(use): boolean
+				return use(err) ~= nil
+			end),
+			function()
+				PremiumConfirm.ask(spec(Fusion.peek(b.shards) or 0))
+			end
+		),
+		tooltip = scope:Computed(function(use): string
+			use(Text.Lang)
+			local text = PremiumConfirm.describe(spec(use(b.shards) or 0), "tooltip")
+			local reason = reasonOf(use, use(err))
+			return if reason then `{text}\n\n{reason}` else text
+		end),
+	})
+end
+
 -- An entry this window cannot sell yet: a card without a buy button ("Soon"), never an error.
 local function soonCard(scope: Scope, entry: Products.ShopEntry, order: number): Instance
 	return Cards.card(scope, {
@@ -209,14 +329,37 @@ function Items.build(scope: Scope, ctx: Cards.Ctx): { any }
 		limits = State.Value({ "account", "shopLimits" }),
 		old = State.Value({ "account", "dailyLimits" }),
 	}
+	-- S122: the Cloak of Luring state and a clock ticking once a second while this tab is built (switching tabs
+	-- cleans the scope and stops it)
+	local lure = State.Value({ "account", "lure" })
+	local now = scope:Value(Workspace:GetServerTimeNow())
+	local alive = true
+	table.insert(scope, function()
+		alive = false
+	end)
+	task.spawn(function()
+		while alive do
+			task.wait(1)
+			if alive then
+				now:set(Workspace:GetServerTimeNow())
+			end
+		end
+	end)
 	local list: { any } = {}
 	for s, section in Premium.shopSections() do
 		local base = s * 100
+		local lureShown = false
 		table.insert(list, Cards.sectionHeader(scope, base, `premium.cat.{section.cat}`))
 		for i, entry in section.entries do
-			local order = base + i
-			-- S122: other kinds (lure service) render here
-			if entry.kind == "item" and entry.itemId then
+			local order = base + i * 2
+			-- S122: other kinds render here (the Cloak of Luring: the service card before its first time entry)
+			if entry.kind == "lure" then
+				if not lureShown then
+					lureShown = true
+					table.insert(list, lureCard(scope, order - 1, lure, now))
+				end
+				table.insert(list, lureBuyCard(scope, entry, order, b))
+			elseif entry.kind == "item" and entry.itemId then
 				table.insert(list, itemCard(scope, entry, entry.itemId, order, b))
 			elseif entry.kind == "rename" then
 				table.insert(list, renameCard(scope, ctx, entry, order, b))
