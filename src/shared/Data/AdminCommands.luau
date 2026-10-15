@@ -137,6 +137,8 @@ cmd("character", "resetskills", {})
 cmd("character", "luck", {})
 -- S58: build sets (ROZWOJ 3.3): anywhere; copy overwrites the other set, so the panel asks first
 cmd("character", "buildset", { enum("action", { "1", "2", "copy" }) }, { dangerActions = { "copy" } })
+-- S125: timed titles (TitleService.GrantTimed; 0 days takes the title away)
+cmd("character", "timedtitle", { str("id"), int("days", 0, 365, true, "7") })
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).
@@ -229,6 +231,14 @@ cmd("items", "itemscore", {})
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })
+-- S125: the weekly EXP ranking (LeaderboardService): state, write now, payout of a week (default the previous one),
+-- clearing the in-memory week, EXP added to the character's week only
+cmd(
+	"world",
+	"rankweek",
+	{ enum("action", { "info", "flush", "pay", "reset", "add" }), int("value", 0, 100000000, true) },
+	{ dangerActions = { "pay", "reset" } }
+)
 cmd("world", "npc", { ref("id", "npc", true) })
 cmd("world", "time", { str("seconds") })
 cmd("world", "daytime", { str("hour") })
@@ -445,6 +455,8 @@ cmd(
 	{ enum("action", { "info", "treasury", "skills", "bots", "disband" }), str("value", true) },
 	{ dangerActions = { "disband" } }
 )
+-- S125: the guild board entry of the player's guild (score, place; push = write now)
+cmd("guild", "rankguild", { enum("action", { "info", "push" }) })
 
 -- Performance and logs
 cmd("perf", "perf", {})

@@ -40,6 +40,7 @@ local TravelService = Context.services.TravelService
 local AdminService = Context.services.AdminService
 local MapMarkService = Context.services.MapMarkService
 local WorldEventService = Context.services.WorldEventService
+local LeaderboardService = Context.services.LeaderboardService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -622,6 +623,49 @@ end
 
 -- S101: world events. /event info | start [kind] [area] | warn [kind] [area] | stop | next <minutes>
 local EVENT_KINDS = { invasion = true, champion = true, random = true }
+
+-- S125: the weekly EXP ranking.
+commands.rankweek = function(player, args)
+	local action, value = args[1], tonumber(args[2])
+	if action == "info" then
+		reply(player, "admin.rank.week", LeaderboardService.WeekInfo(player) :: any)
+	elseif action == "flush" then
+		withCharacter(player, function()
+			reply(player, if LeaderboardService.WeekFlush(player) then "admin.rank.flushed" else "admin.rank.excluded")
+		end)
+	elseif action == "pay" then
+		local status, n, week, early =
+			LeaderboardService.WeekPay(if value and value > 0 then math.floor(value) else nil)
+		if status == "paid" then
+			reply(player, "admin.rank.paying", { week = week, n = n })
+			if early then
+				reply(player, "admin.rank.early", { week = week })
+			end
+		elseif status == "done" then
+			reply(player, "admin.rank.paid", { week = week })
+		elseif status == "busy" then
+			reply(player, "admin.rank.busy", { week = week })
+		else
+			reply(player, "admin.rank.failed", { week = week })
+		end
+	elseif action == "reset" then
+		local ok, week = LeaderboardService.WeekReset()
+		reply(player, if ok then "admin.rank.reset" else "admin.rank.liveOnly", { week = week })
+	elseif action == "add" then
+		local n = math.floor(value or 0)
+		if n <= 0 then
+			reply(player, "admin.usage.rankweek")
+			return
+		end
+		withCharacter(player, function()
+			reply(player, if LeaderboardService.WeekAdd(player, n) then "admin.rank.added" else "admin.rank.excluded", {
+				n = n,
+			})
+		end)
+	else
+		reply(player, "admin.usage.rankweek")
+	end
+end
 
 commands.event = function(player, args)
 	local action = args[1]

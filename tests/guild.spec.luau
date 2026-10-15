@@ -201,4 +201,15 @@ T.describe("ShopPrice", function()
 	end)
 end)
 
+T.describe("Guild board score (S125)", function()
+	local Leaderboard = require("../src/shared/Logic/Leaderboard")
+
+	T.it("follows the record GuildService writes", function()
+		local g = sample()
+		T.expect(Leaderboard.guildScore(g.members)).toBe(90)
+		assert(Guild.touchMember(g, MEMBER, "Mem", "Warrior", 45))
+		T.expect(Leaderboard.guildScore(g.members)).toBe(105)
+	end)
+end)
+
 return nil

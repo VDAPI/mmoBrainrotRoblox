@@ -20,6 +20,8 @@ export const ROUTES = {
   guides: { pl: "poradniki", en: "guides" },
   search: { pl: "szukaj", en: "search" },
   updates: { pl: "aktualizacje", en: "updates" },
+  // S125: leaderboards from the game (rankings.json)
+  rankings: { pl: "rankingi", en: "rankings" },
   styleguide: { pl: "styleguide", en: "styleguide" },
 } as const satisfies Record<string, Record<Lang, string>>;
 

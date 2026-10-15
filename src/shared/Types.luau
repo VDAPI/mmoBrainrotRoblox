@@ -63,6 +63,9 @@ export type BuildSet = { path: PathState, stats: Stats, statPoints: number, hotb
 -- S96: mounts of a character (Data/Mounts ids; lvl 1..Config.Mount.maxLevel).
 export type MountState = { owned: { [string]: { lvl: number } }, active: string?, riding: boolean }
 
+-- S125: the character's weekly EXP (Logic/Leaderboard.addWeekly).
+export type ExpWeek = { week: number, exp: number, b: number }
+
 export type CharacterData = {
 	id: string,
 	name: string,
@@ -128,6 +131,12 @@ export type CharacterData = {
 	guildId: string?,
 	reached100At: number?, -- S124: os.time() when the character reached Config.MaxLevel (leaderboard tie-break, Hall of Fame)
 	lbHidden: boolean?, -- S124: test / staff character left out of every leaderboard (/lb hide)
+	-- S125: EXP gained in the UTC week `week` (Logic/Time.weekNumber) from Data/Leaderboards.WEEK_SOURCES; `b` = bracket
+	-- index of the last ranking write, 0 = never written
+	expWeek: ExpWeek,
+	-- S125: timed titles, title id -> unix time until which it is unlocked (weekly ranking; S129 Blood Moon, S130
+	-- tournament). Expired entries are removed on entering the world.
+	timedTitles: { [string]: number },
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden

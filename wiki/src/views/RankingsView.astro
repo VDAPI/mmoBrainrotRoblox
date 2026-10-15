@@ -1,0 +1,134 @@
+---
+// Rankings (S125, /pl/rankingi/): the leaderboards of the game from rankings.json. The commit holds the exporter's
+// placeholder (available = false): the page then says where the ranking is (the game window), never empty tables.
+// With data (tools/rankings_fetch.luau in the workflows): level (all and per class), the weekly brackets, guilds and
+// the Hall of Fame. Static tables (data-label rows on phones like the other tables), anchors, no client script. The
+// article about the mechanics comes with S131.
+import Base from "../layouts/Base.astro";
+import Callout from "../components/Callout.astro";
+import Crumbs from "../components/Crumbs.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import type { RankingBoard, RankingRow } from "../data/types";
+import { href, type Lang } from "../i18n/routes";
+import { load } from "../lib/data";
+import { formatDate, formatNumber } from "../lib/format";
+import { name, t, type Key } from "../lib/i18n";
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const data = load("rankings");
+const classNames = new Map<string, string>(load("classes").classes.map((c) => [c.id, name(c.name, lang)]));
+const className = (id?: string) => (id ? classNames.get(id) ?? id : "");
+const isoDay = (unix: number) => new Date(unix * 1000).toISOString().slice(0, 10);
+const of = (kind: string) => data.boards.filter((b) => b.kind === kind);
+
+type Column = { key: Key; value: (row: RankingRow) => string; strong?: boolean };
+const rank: Column = { key: "rankings.col.rank", value: (r) => String(r.rank) };
+const columns: Record<string, Column[]> = {
+  level: [
+    rank,
+    { key: "rankings.col.name", value: (r) => r.name, strong: true },
+    { key: "rankings.col.class", value: (r) => className(r.class) },
+    { key: "rankings.col.guild", value: (r) => (r.guild ? `[${r.guild}]` : "") },
+    { key: "rankings.col.level", value: (r) => formatNumber(r.value, lang) },
+  ],
+  week: [
+    rank,
+    { key: "rankings.col.name", value: (r) => r.name, strong: true },
+    { key: "rankings.col.class", value: (r) => className(r.class) },
+    { key: "rankings.col.level", value: (r) => (r.level !== undefined ? String(r.level) : "") },
+    { key: "rankings.col.exp", value: (r) => formatNumber(r.value, lang) },
+  ],
+  guild: [
+    rank,
+    { key: "rankings.col.guildName", value: (r) => (r.guild ? `[${r.guild}] ${r.name}` : r.name), strong: true },
+    { key: "rankings.col.members", value: (r) => (r.members !== undefined ? String(r.members) : "") },
+    { key: "rankings.col.score", value: (r) => formatNumber(r.value, lang) },
+  ],
+  hof: [
+    rank,
+    { key: "rankings.col.name", value: (r) => r.name, strong: true },
+    { key: "rankings.col.class", value: (r) => className(r.class) },
+    { key: "rankings.col.date", value: (r) => formatDate(isoDay(r.value), lang) },
+  ],
+};
+const heading = (b: RankingBoard) => (b.bracket ? t(lang, "rankings.bracket", { bracket: b.bracket }) : name(b.name, lang));
+const sections = [
+  { id: lang === "pl" ? "poziom" : "level", kind: "level", title: t(lang, "rankings.section.level"), note: undefined },
+  { id: lang === "pl" ? "tydzien" : "week", kind: "week", title: t(lang, "rankings.section.week"), note: t(lang, "rankings.week.note") },
+  { id: lang === "pl" ? "gildie" : "guilds", kind: "guild", title: t(lang, "rankings.section.guild"), note: t(lang, "rankings.guild.note") },
+  { id: lang === "pl" ? "sala-slaw" : "hall-of-fame", kind: "hof", title: t(lang, "rankings.section.hof"), note: t(lang, "rankings.hof.note") },
+].filter((s) => of(s.kind).length > 0);
+const updated = data.updatedAt > 0 ? formatDate(isoDay(data.updatedAt), lang) : "";
+---
+<Base lang={lang} title={t(lang, "rankings.title")} description={t(lang, "rankings.intro")} section="rankings">
+  <div class="vw-article">
+    <Crumbs items={[{ label: t(lang, "crumbs.wiki"), href: href(lang, "home") }, { label: t(lang, "rankings.title") }]} />
+    <p class="vw-label vw-article__kicker">{t(lang, "rankings.kicker")}</p>
+    <h1 class="vw-article__title">{t(lang, "rankings.title")}</h1>
+    <p class="vw-article__lead">{t(lang, "rankings.intro")}</p>
+    {!data.available && <Callout kind="info" lang={lang}>{t(lang, "rankings.inGame")}</Callout>}
+    {data.available && (
+      <>
+        <p class="updated">{t(lang, "rankings.updated", { date: updated })}</p>
+        <nav class="jump" aria-label={t(lang, "rankings.toc")}>
+          {sections.map((s) => <a href={`#${s.id}`}>{s.title}</a>)}
+        </nav>
+        {sections.map((s) => (
+          <section class="block" aria-labelledby={s.id}>
+            <SectionTitle id={s.id}>{s.title}</SectionTitle>
+            {s.note && <p class="note">{s.note}</p>}
+            <div class={s.kind === "level" ? "boards boards--first" : "boards"}>
+              {of(s.kind).map((b) => (
+                <div class="board">
+                  <h3 class="board__title">{heading(b)}</h3>
+                  {b.rows.length === 0 ? (
+                    <p class="empty">{t(lang, "rankings.empty")}</p>
+                  ) : (
+                    <table class="vw-table vw-table--plain">
+                      <caption class="vw-sr">{heading(b)}</caption>
+                      <thead>
+                        <tr>{columns[b.kind].map((c) => <th scope="col">{t(lang, c.key)}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {b.rows.map((row) => (
+                          <tr>
+                            {columns[b.kind].map((c, i) =>
+                              i === 0 ? (
+                                <td class="rank">{c.value(row)}</td>
+                              ) : (
+                                <td data-label={t(lang, c.key)}>{c.strong ? <strong>{c.value(row)}</strong> : c.value(row)}</td>
+                              ),
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </>
+    )}
+  </div>
+</Base>
+
+<style>
+  .updated { margin: 0 0 16px; color: var(--vw-text-muted); }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0 0 32px; }
+  .jump a { min-height: var(--vw-touch); display: inline-flex; align-items: center; color: var(--vw-gold); }
+  .block { margin: 0 0 48px; scroll-margin-top: 80px; }
+  .note { margin: 0 0 20px; color: var(--vw-text-soft); }
+  .boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+  .boards--first > .board:first-child { grid-column: 1 / -1; }
+  .board__title { margin: 0 0 10px; font: 700 18px/1.3 var(--vw-font-ui); color: var(--vw-gold-bright); }
+  .empty { margin: 0; color: var(--vw-text-muted); }
+  .rank { font-weight: 800; color: var(--vw-gold); }
+  @media (max-width: 767px) {
+    .boards { grid-template-columns: 1fr; }
+  }
+</style>

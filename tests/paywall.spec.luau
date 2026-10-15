@@ -721,4 +721,90 @@ T.describe("Rankings (S124)", function()
 	end)
 end)
 
+-- S125 (DESIGN-17 §0.2, §5): the weekly ranking counts EXP from an allowlist of game sources, the guild board the
+-- member levels only; boards without a scorer are fed by LeaderboardService and listed here (S126+ add theirs).
+local SERVICE_BOARDS: { [string]: string } = {
+	exp_week = "weekly EXP from Data/Leaderboards.WEEK_SOURCES (S125)",
+	guild = "the sum of the highest member levels, Logic/Leaderboard.guildScore (S125)",
+}
+local SOURCE_WORDS = { "premium", "shop", "purchase", "product", "admin", "robux", "shard" }
+
+T.describe("S125 rankings", function()
+	local Leaderboard = require("../src/shared/Logic/Leaderboard")
+	local Leaderboards = require("../src/shared/Data/Leaderboards")
+	local Mail = require("../src/shared/Logic/Mail")
+
+	T.it("weekly EXP sources are game sources, never a product, a pass or an admin command", function()
+		local productKeys: { [string]: boolean } = {}
+		for _, list in
+			{ Products.shop, Products.passes, subscriptions, starterPacks, raw.shardPacks or {}, raw.mounts or {} }
+		do
+			for _, entry in list :: { any } do
+				productKeys[entry.key] = true
+			end
+		end
+		for source, on in Leaderboards.WEEK_SOURCES do
+			T.expect({ source, on }).toEqual({ source, true })
+			T.expect({ source, productKeys[source] == nil }).toEqual({ source, true })
+			local lower = string.lower(source)
+			for _, word in SOURCE_WORDS do
+				T.expect({ source, word, string.find(lower, word, 1, true) == nil }).toEqual({ source, word, true })
+			end
+		end
+		T.expect(Leaderboard.countsForWeek("admin")).toBe(false)
+	end)
+
+	T.it("every board is scored by an allowed scorer or listed as fed by a service", function()
+		for _, def in Leaderboards.list do
+			if def.kind == "list" then
+				continue
+			end
+			if def.score then
+				T.expect({ def.id, ALLOWED_SCORERS[def.score] ~= nil }).toEqual({ def.id, true })
+			else
+				T.expect({ def.id, SERVICE_BOARDS[def.id] ~= nil }).toEqual({ def.id, true })
+			end
+		end
+		for id in SERVICE_BOARDS do
+			T.expect({ id, Leaderboards.get(id) ~= nil }).toEqual({ id, true })
+		end
+	end)
+
+	T.it("the guild score depends only on the member levels", function()
+		local function guild(treasury: number, skills: { [string]: number }): any
+			return {
+				members = { a = { level = 40, contributed = 9 }, b = { level = 55 }, c = { level = 12 } },
+				treasury = treasury,
+				skills = skills,
+			}
+		end
+		local poor = guild(0, {})
+		local rich = guild(1e9, { wealth = 5, might = 5 })
+		T.expect(Leaderboard.guildScore(poor.members)).toBe(Leaderboard.guildScore(rich.members))
+		T.expect(Leaderboard.guildScore(rich.members)).toBe(107)
+	end)
+
+	T.it("rewards are shards and a timed title only, and players cannot mail shards", function()
+		local rewards = Leaderboards.WEEK_REWARDS :: any
+		local fields = {}
+		for key in rewards do
+			table.insert(fields, key)
+		end
+		table.sort(fields)
+		T.expect(fields).toEqual({ "shards", "title", "titleDays" })
+		local box = Mail.newBox()
+		local parcel: Mail.Parcel = {
+			id = "p",
+			from = "player",
+			subjectKey = "mail.subject.admin",
+			gold = 0,
+			items = {},
+			createdAt = 0,
+			expiresAt = 1000,
+			shards = 10,
+		}
+		T.expect({ Mail.add(box, parcel, 0) }).toEqual({ false, "error.badRequest" })
+	end)
+end)
+
 return nil

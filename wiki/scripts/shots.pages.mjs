@@ -61,6 +61,8 @@ export const PAGES = [
   { name: "poradnik-pierwsze", path: "/pl/poradniki/pierwsze-kroki/" },
   { name: "guide-first-en", path: "/en/guides/first-steps/" },
   { name: "aktualizacje", path: "/pl/aktualizacje/" },
+  // S125
+  { name: "rankingi", path: "/pl/rankingi/" },
 ];
 
 // S44: one page of every kind for the accessibility, keyboard and layout tests (e2e/) and Lighthouse. Ids come from
@@ -108,5 +110,6 @@ export const KEY_PAGES = [
   ...(mechanic ? [{ name: "mechanic", path: `/pl/mechaniki/${mechanic}/` }] : []),
   ...(guide ? [{ name: "guide", path: `/pl/poradniki/${guide}/` }] : []),
   { name: "updates", path: "/pl/aktualizacje/" },
+  { name: "rankings", path: "/pl/rankingi/" },
   { name: "404", path: "/pl/404/" },
 ];

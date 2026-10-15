@@ -73,6 +73,16 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
   - `exp_week` (MemoryStore SortedMap na klucz tygodnia, TTL 8 dni): wynik = EXP zdobyty w tym tygodniu (z potworów, questów i wydarzeń; przyrost wysyłany partiami co 60 s). Koniec tygodnia: top 3 na każdym przedziale poziomów (`brackets = { {1,19}, {20,44}, {45,69}, {70,100} }`, przedział wg poziomu postaci w chwili ostatniego zapisu; osobna SortedMap na przedział) dostaje tytuł „Najpilniejszy tygodnia” na 7 dni (`character.timedTitles`) i odłamki 100/50/25 pocztą. Wypłatę robi pierwszy serwer, który zdobędzie blokadę (`UpdateAsync` na kluczu `"paid_<tydzień>"`), idempotentnie.
   - `guild` (tablica gildii: suma poziomów 10 najwyższych członków, aktualizowana przez `GuildService` przy zmianie składu/awansie, z limitem zapisów).
   - **Eksport na wiki (opcjonalny):** `tools/rankings_fetch` (Lune lub Node) czyta top 100 przez Roblox Open Cloud (OrderedDataStore API) i zapisuje `wiki/src/data/rankings.json`; workflow GitHub co godzinę **tylko gdy** istnieje sekret `ROBLOX_OPEN_CLOUD_KEY` (inaczej krok pomija się na zielono). Strona wiki „Rankingi” pokazuje dane albo informację „ranking dostępny w grze”. Ostatnia wiadomość sesji mówi właścicielowi, jak dodać klucz.
+  - **Doprecyzowania S125 (kod, kontrakt dla S126–S131):** przedziały, nagrody i źródła w `Data/Leaderboards`
+    (`WEEK_BRACKETS`, `WEEK_REWARDS`, `WEEK_SOURCES`: potwory, bossowie, zadania, zlecenia, wydarzenia; nigdy admin);
+    tydzień w `character.expWeek = { week, exp, b }`, do SortedMap `exp_week_<tydzień>_<przedział>` idzie suma
+    bezwzględna `{ s, m, cid }` z maksimum w `UpdateAsync` (nie przyrosty), metadane w wartości (bez `metaStore`); EXP po
+    premii, także na 100. poziomie (`LevelService.ExpGained`); tytuł do `weekStart(W + 1) + 7 dni`. Wypłata: blokada
+    `paid_<tydzień>` w `Config.Leaderboard.payoutStore` z przejęciem po `payoutLockStale`, oznaczenie przed wysyłką.
+    Poczta: `Parcel.shards?` i `Parcel.timedTitle? = { id, untilTs }` tylko od `system` / `admin`. Tytuły czasowe:
+    `Data/Titles` `req = { kind = "timed" }`, `character.timedTitles`, `TitleService.GrantTimed(player, id, untilTs)`.
+    Gildia: `LeaderboardService.SubmitGuild`, remis dla starszej gildii. Wiki: `tools/rankings_fetch.luau` (Lune),
+    workflow `rankings.yml`, zmienna repozytorium `ROBLOX_UNIVERSE_ID`.
 
 ## 6. Arena (S126–S128)
 

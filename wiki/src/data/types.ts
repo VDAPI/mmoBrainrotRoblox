@@ -1193,6 +1193,32 @@ export interface QuestsFile {
   weekly: WeeklyQuests;
 }
 
+export interface RankingBoard {
+  bracket?: string;
+  class?: string;
+  id: string;
+  kind: string;
+  name: Name;
+  rows: RankingRow[];
+  week?: number;
+}
+
+export interface RankingRow {
+  class?: string;
+  guild?: string;
+  level?: number;
+  members?: number;
+  name: string;
+  rank: number;
+  value: number;
+}
+
+export interface RankingsFile {
+  available: boolean;
+  boards: RankingBoard[];
+  updatedAt: number;
+}
+
 export interface RaritiesFile {
   rarities: Rarity[];
   sources: Record<string, DropSource>;
@@ -1734,6 +1760,7 @@ export interface Files {
   premium: PremiumFile;
   progression: ProgressionFile;
   quests: QuestsFile;
+  rankings: RankingsFile;
   rarities: RaritiesFile;
   recipes: RecipesFile;
   search: SearchFile;

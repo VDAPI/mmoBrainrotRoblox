@@ -6,6 +6,7 @@
 local Items = require("../Data/Items")
 local Market = require("../Data/Market")
 local Rarities = require("../Data/Rarities")
+local TitleData = require("../Data/Titles")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -23,6 +24,8 @@ export type Parcel = {
 	createdAt: number,
 	expiresAt: number,
 	charId: string?,
+	shards: number?, -- S125: Dragon Shards for the account, system/admin parcels only
+	timedTitle: { id: string, untilTs: number }?, -- S125: timed title (Data/Titles req.kind "timed") for `charId`
 }
 
 export type Box = { parcels: { [string]: Parcel } }
@@ -82,11 +85,41 @@ function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 	if parcel.gold < 0 or parcel.gold ~= math.floor(parcel.gold) then
 		return false, "error.badRequest"
 	end
+	-- S125: shards and a timed title come only from the game (rankings, events) or an admin, never from a player
+	if parcel.shards ~= nil then
+		local n = parcel.shards
+		if
+			type(n) ~= "number"
+			or n < 0
+			or n ~= math.floor(n)
+			or (parcel.from ~= "system" and parcel.from ~= "admin")
+		then
+			return false, "error.badRequest"
+		end
+	end
+	if parcel.timedTitle ~= nil then
+		local t = parcel.timedTitle
+		local def = if type(t) == "table" and type(t.id) == "string" then TitleData.get(t.id) else nil
+		if
+			not def
+			or def.req.kind ~= "timed"
+			or type(t.untilTs) ~= "number"
+			or parcel.charId == nil
+			or (parcel.from ~= "system" and parcel.from ~= "admin")
+		then
+			return false, "error.badRequest"
+		end
+	end
 	if Mail.count(box) >= Rules.maxParcels then
 		return false, "mail.error.full"
 	end
 	box.parcels[parcel.id] = parcel
 	return true, nil
+end
+
+-- S125: nothing to take: no gold, items, shards or title.
+function Mail.isEmpty(parcel: Parcel): boolean
+	return parcel.gold <= 0 and #parcel.items == 0 and (parcel.shards or 0) <= 0 and parcel.timedTitle == nil
 end
 
 local function visibleTo(parcel: Parcel, charId: string?, now: number): boolean

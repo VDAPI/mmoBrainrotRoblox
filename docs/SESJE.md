@@ -9714,3 +9714,82 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Leaderboards (nowy),A
 `src/client/Controllers/ScreenController.luau`, `src/client/UI/Screens/RankingsWindow.luau` (nowy),
 `src/client/UI/Theme.luau`, `tests/leaderboard.spec.luau` (nowy), `tests/{paywall,town,towngen}.spec.luau`,
 `tools/balance_reasons.luau`, `docs/{DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S125: Rankingi 2: tygodniowy EXP z nagrodami, ranking gildii, eksport na wiki
+
+Szósta sesja serii DESIGN-17 (§5), po S124 (`335a3e6`). Bez Studio i bez wgrywania czegokolwiek do Roblox. Nazwy S124
+sprawdzone w kodzie (różnice w DECYZJE).
+- **Dane:** `Data/Leaderboards`: tablice `exp_week` (`sorted`, części `week` + `bracket`, `ttl = weekTtl`, format `int`)
+  i `guild` (`ordered`, `scope = "guild"`, format `guild`), zakładki `week` (filtr `bracket`) i `guild`,
+  `WEEK_BRACKETS` (1–19, 20–44, 45–69, 70–100, assert ciągłości), `WEEK_REWARDS` (100 / 50 / 25 odłamków,
+  `weekly_diligent`, 7 dni), `WEEK_SOURCES` (`monster`, `boss`, `quest`, `contract`, `worldEvent`). Moduł przeniesiony do
+  `BALANCE_MODULES` (powody S125). `Config.Leaderboard`: `weekTtl`, `payoutGrace`, `payoutCheck`, `payoutJitter`,
+  `payoutLockStale`, `payoutStore` (`Vaelthorn_LBPayouts_v1`), `guildTop`. Tytuł `weekly_diligent` (`req.kind = "timed"`,
+  `wiki = false`). Klawisz `win_rankings` bez `wiki = false`.
+- **Zapis (bez migracji):** `character.expWeek = { week, exp, b }`, `character.timedTitles = {}` (szablon + reconcile,
+  typ `Types.ExpWeek`). Poczta: `Parcel.shards?`, `Parcel.timedTitle? = { id, untilTs }` (stare przesyłki bez zmian).
+- **Logika:** `Logic/Leaderboard`: `bracketOf`, `bracketLabel`, `weekMapName`, `PARTS.bracket`, `boardFor(tab, filtr,
+  now)`, `countsForWeek`, `addWeekly`, `weekExp`, `weeklyEntry`, `mergeWeekly`, `claimPayout`, `payoutPlan`,
+  `winnersOf`, `winnerRows`, `weekEndsIn`, `weekMe`, `guildKey`, `guildScore`, `encodeGuild` / `decodeGuild`,
+  `guildMe`, `fakeWeekly`, `fakeGuilds`; typy `Meta.m`, `Row.m`, `Me.s/b/none`, `Snapshot.last`, `Entry.raw`;
+  `rows` dla formatów `guild` i `int`. `Logic/Titles`: `Context.now`, `timed`, `timedUntil`, `grantTimed`, `pruneTimed`,
+  `contextOf(account, vip, now)`. `Logic/Mail`: walidacja odłamków i tytułu, `isEmpty`.
+- **Serwer:** `LevelService.ExpGained`; `LeaderboardService`: tydzień (`ExpGained` → `expWeek`, zapis co `writeGap` i
+  przy wyjściu, zmiana przedziału i tygodnia, usunięcie postaci, `/lb hide`), wypłata (pętla co `payoutCheck` ±
+  `payoutJitter`, blokada, plan, oznacz–wyślij–cofnij, `done`, toast `leaderboard.week.won`), migawki tygodnia (`me`,
+  `last`) i gildii (`me` po `g_<id>`), `SubmitGuild`, admin `WeekInfo/WeekFlush/WeekPay/WeekReset/WeekAdd/GuildInfo/
+  GuildPush`, `/lb fake` wypełnia też tydzień i gildie. `Stores`: `payouts`, `update`, `get`, `clear`, `raw` w `top`.
+  `GuildService`: wrapper `mutate` + `create` → `SubmitGuild` (leniwie). `MailService`: odłamki (`Analytics.shards`,
+  powód `mail_<from>`) i tytuł (`TitleService.GrantTimed`, leniwie), zwrot przy zmianie postaci. `TitleService`:
+  `GrantTimed`, `RemoveTimed`, czas w kontekście, czyszczenie przy wejściu i co 60 s.
+- **Admin:** `/rankweek info|flush|pay|reset|add`, `/rankguild info|push`, `/timedtitle <id> [dni]` (`admin.rank.*`,
+  `admin.title.*`); `AdminService.Deps` += `TitleService`.
+- **Klient:** `RankingsWindow`: zakładka „Tydzień” (przełącznik przedziałów zamiast filtra klas, domyślnie przedział
+  postaci; linia nagród nad listą; odliczanie w stopce; EXP i poziom w kolumnach; „Ty”, „poza pierwszą setką”, „Twój
+  przedział”; zwycięzcy poprzedniego tygodnia pod listą) i „Gildie” (tag i nazwa, członkowie, wynik, „Twoja gildia”,
+  podpis zasady); stopka rośnie o linię. `MailWindow`: ikona ◆, linie odłamków i tytułu. Picker tytułów: czas w
+  kontekście co 30 s i „(jeszcze X d Y h)”. Medalion `weekly_diligent` bez pliku (zachowanie S119).
+- **Wiki:** `tools/WikiData/Rankings.luau` (schemat `rankings`, zaślepka w `ORDER`), `tools/Rankings/{OpenCloud,Build,
+  Main}.luau`, `tools/rankings_fetch.luau`, `.github/workflows/rankings.yml` (co godzinę), krok „Fetch rankings
+  (optional)” w `wiki.yml` (+ `paths`), sekcja `rankings` (`/pl/rankingi/`, `/en/rankings/`, grupa „Więcej”), widok
+  `RankingsView.astro`, teksty `rankings.*`, `nav.rankings`, strona w `shots.pages.mjs` (`PAGES`, `KEY_PAGES`). Node
+  jest: `npm run data`, `npm run routes`, `npm test`, `npm run check` zielone (strona z danymi obejrzana lokalnie na
+  pliku z atrapy, potem przywrócona zaślepka). `npm run qa` (Playwright) nie uruchomione.
+- **Testy:** `leaderboard.spec` (blok S125: dane, przedziały, id, tydzień S98, `addWeekly`, `mergeWeekly`,
+  `claimPayout`, `payoutPlan`, gildia, metadane z wpisu, szablon i reconcile, `/lb fake`), `paywall.spec` („S125
+  rankings”: źródła, tablice bez scorera `SERVICE_BOARDS`, gildia tylko z poziomów, nagrody i odłamki od gracza),
+  `titles.spec`, `market.spec`, `guild.spec`, `wikidump.spec` (zaślepka), nowy `rankingsfetch.spec` (fixture
+  `tests/fixtures/rankings/answers.luau`). `balance1_20` bez `ALLOWED_1_20_DIFFS`, `BALANS.md` bez „BRAK POWODU”.
+- **`WIKI_KEYS_ALLOW="rankings:*,types.ts"`**: nowy plik `rankings.json` i jego typy w `types.ts`; nic więcej
+  (`mechanics.json` zmienia tylko wartości: klawisz R na liście).
+- Po przeglądzie: whitelist id tablicy tygodnia w `LeaderboardGet` (`Leaderboard.readable`, test w
+  `leaderboard.spec`), zapisy tygodnia w toku w `BindToClose`, 404 na wszystkich tablicach jako błąd `rankings_fetch`
+  (test w `rankingsfetch.spec`), linia o wcześniejszej wypłacie w `/rankweek pay`, `/rankweek info` przez `Locale`.
+
+Dla S126–S131:
+- Tytuły czasowe: wpis w `Data/Titles` z `req = { kind = "timed" }` (+ `title.<id>` PL/EN), nadanie
+  `TitleService.GrantTimed(player, id, untilTs)` (online) albo przesyłką z `timedTitle`; `character.timedTitles`.
+- Poczta: `MailService.Send(userId, { from = "system", subjectKey, args, shards = n, timedTitle = { id, untilTs },
+  charId })` (S128 nagrody sezonu, S129, S130); argument daty: `{ key = "leaderboard.date", args = dateParts(t) }`.
+- `Stores.sorted(instanceId, ttl)` z `update(key, fn)` / `get` / `clear` (atrapa) i `top` z `raw`; tablice `sorted` z
+  częściami (`PARTS.bracket`, `Leaderboard.weekMapName`) i filtrem `bracket` w oknie (S126 `arena_<season>_<przedział>`:
+  własne przedziały areny wymagają drugiej listy przedziałów albo parametru `brackets` w `bracketOf` / `boardFor`).
+- Wzór blokady jednej wypłaty: `Leaderboard.claimPayout` + `Stores.payouts` (`KeyStore`) + oznacz–wyślij–cofnij
+  (`LeaderboardService` `payWeek`); S129 nagrody wydarzenia, S130 organizator turnieju.
+- `LevelService.ExpGained(player, gained, source)`; tablice bez scorera wpisz do `SERVICE_BOARDS` w `paywall.spec`.
+
+Dla właściciela: gra działa bez konfiguracji (w Studio „tylko ten serwer”). Eksport na wiki: klucz Open Cloud i
+`ROBLOX_UNIVERSE_ID` (`docs/WIKI.md` → „Rankingi (S125)”).
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Leaderboards,Titles,Keybinds,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{Leaderboard,Titles,Mail,AccountSchema}.luau`,
+`src/server/Leaderboard/Stores.luau`, `src/server/Services/{Leaderboard,Level,Guild,Mail,Title,Admin}Service.luau`,
+`src/server/Admin/{World,Guild,Character}.luau`, `src/client/UI/Screens/{RankingsWindow,MailWindow}.luau`,
+`src/client/UI/Screens/CharacterWindow/init.luau`, `tools/WikiData/{Rankings (nowy),init}.luau`,
+`tools/Rankings/{OpenCloud,Build,Main}.luau` (nowe), `tools/rankings_fetch.luau` (nowy), `tools/balance_reasons.luau`,
+`tests/{leaderboard,paywall,titles,market,guild,wikidump}.spec.luau`, `tests/rankingsfetch.spec.luau` (nowy),
+`tests/fixtures/rankings/answers.luau` (nowy), `.github/workflows/{rankings (nowy),wiki}.yml`,
+`wiki/src/{i18n/{pl,en,routes,routes.test}.ts,lib/sections.ts,views/{paths.ts,RankingsView.astro},layouts/Base.astro}`,
+`wiki/src/pages/{pl/rankingi,en/rankings}/[...path].astro` (generowane), `wiki/scripts/shots.pages.mjs`,
+`wiki/src/data/{rankings.json (nowy),types.ts,mechanics.json,meta.json}`, `docs/PRZEDMIOTY.md`, `docs/BALANS.md`,
+`docs/{DESIGN,DESIGN-17,ARCHITECTURE,WIKI,DECYZJE,PROGRESS,SESJE}.md`.

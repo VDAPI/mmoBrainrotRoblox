@@ -7,7 +7,10 @@
 -- ctx.vip == true, so every call without a context keeps the VIP title locked.
 -- S123: bought titles (req.kind "cosmetic") are unlocked only with ctx.owned[req.id] == true (the account owns the
 -- cosmetic of kind title); Titles.contextOf builds the context the same way on the server and the client.
+-- S125: timed titles (req.kind "timed") are unlocked while character.timedTitles[id] > now; `now` comes in the context
+-- (ctx.now, default Util/Clock.now(): the server clock with the /time offset on both sides).
 
+local Clock = require("../Util/Clock")
 local TitleData = require("../Data/Titles")
 
 type TitleDef = TitleData.TitleDef
@@ -17,7 +20,8 @@ local Titles = {}
 -- Account facts a title may need (server: MonetizationService.HasVip; client: the replicated `vip` branch) and, S123,
 -- the account's owned cosmetics (account.cosmetics.owned) for bought titles.
 -- one context argument for every account-dependent title kind (S121 vip, S123 cosmetic)
-export type Context = { vip: boolean?, owned: { [string]: boolean }? }
+-- S125: `now` for timed titles (unix seconds; nil = Clock.now()).
+export type Context = { vip: boolean?, owned: { [string]: boolean }?, now: number? }
 
 Titles.NONE = TitleData.NONE
 
@@ -40,8 +44,23 @@ local function mainPathOf(character: any): string?
 	return if type(state) == "table" and type(state.main) == "string" then state.main else nil
 end
 
-local function meets(character: any, req: TitleData.Requirement, ctx: Context?): boolean
-	if req.kind == "mainPath" then
+local function nowOf(ctx: Context?): number
+	return if ctx ~= nil and type(ctx.now) == "number" then ctx.now else Clock.now()
+end
+
+-- S125: until when the timed title `id` is unlocked (nil = never granted or the data is broken).
+function Titles.timedUntil(character: any, id: string): number?
+	local timed = if type(character) == "table" then character.timedTitles else nil
+	local untilTs = if type(timed) == "table" then timed[id] else nil
+	return if type(untilTs) == "number" then untilTs else nil
+end
+
+local function meets(character: any, def: TitleDef, ctx: Context?): boolean
+	local req = def.req
+	if req.kind == "timed" then
+		local untilTs = Titles.timedUntil(character, def.id)
+		return untilTs ~= nil and untilTs > nowOf(ctx)
+	elseif req.kind == "mainPath" then
 		return mainPathOf(character) == req.path
 	elseif req.kind == "vip" then
 		return ctx ~= nil and ctx.vip == true
@@ -53,10 +72,35 @@ end
 
 -- S123: the context of an account (anything with cosmetics.owned) and its VIP state (a subscription is not in the
 -- account: the server passes MonetizationService.HasVip, the client the replicated `vip` branch).
-function Titles.contextOf(account: any, vip: boolean?): Context
+function Titles.contextOf(account: any, vip: boolean?, now: number?): Context
 	local cosmetics = if type(account) == "table" then account.cosmetics else nil
 	local owned = if type(cosmetics) == "table" and type(cosmetics.owned) == "table" then cosmetics.owned else nil
-	return { vip = vip == true, owned = owned }
+	return { vip = vip == true, owned = owned, now = now }
+end
+
+-- S125: a new map with `id` unlocked until `untilTs` (the later of the old and the new term; the input is not
+-- changed, so a repeated grant never shortens a title).
+function Titles.grantTimed(timed: { [string]: number }?, id: string, untilTs: number): { [string]: number }
+	local out: { [string]: number } = if type(timed) == "table" then table.clone(timed) else {}
+	local old = out[id]
+	out[id] = if type(old) == "number" then math.max(old, untilTs) else untilTs
+	return out
+end
+
+-- S125: a copy without the entries that ended at or before `now`, and whether anything was removed.
+function Titles.pruneTimed(timed: { [string]: number }?, now: number): ({ [string]: number }, boolean)
+	local out: { [string]: number } = {}
+	local removed = false
+	if type(timed) == "table" then
+		for id, untilTs in timed do
+			if type(untilTs) == "number" and untilTs > now then
+				out[id] = untilTs
+			else
+				removed = true
+			end
+		end
+	end
+	return out, removed
 end
 
 local function find(id: string, list: { TitleDef }?): TitleDef?
@@ -73,14 +117,14 @@ end
 
 function Titles.isUnlocked(character: any, id: string, list: { TitleDef }?, ctx: Context?): boolean
 	local def = find(id, list)
-	return def ~= nil and meets(character, def.req, ctx)
+	return def ~= nil and meets(character, def, ctx)
 end
 
 -- Unlocked title ids in display order.
 function Titles.unlocked(character: any, list: { TitleDef }?, ctx: Context?): { string }
 	local result = {}
 	for _, def in list or TitleData.list do
-		if meets(character, def.req, ctx) then
+		if meets(character, def, ctx) then
 			table.insert(result, def.id)
 		end
 	end

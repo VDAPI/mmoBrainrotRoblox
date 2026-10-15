@@ -3930,3 +3930,53 @@
   dopiero po odczycie imion. Tabliczka cokołu: podpis z `PlinthDef.captionKey`, klasa z atrybutu `ClassKey` (zapas:
   klasa tablicy). Pasek zakładek i filtra na telefonie `MinTouch + 6` (przyciski 44 px). `enterDelay` 10 i
   `retryFailed` 60 w `Config.Leaderboard`.
+- **S125** Nazwy S124 zgodne z założeniami promptu; różnice: `Board.top` daje całą wartość wpisu jako `Entry.raw`
+  (`value` zostaje metadanymi, jak czyta je `Cache`), `Leaderboard.boardFor(tab, filtr, now)` z trzecim parametrem dla
+  filtra `bracket`, rodzaj wpisu na wiki w polu `kind` pliku `rankings.json` (sposób pokazania `value`).
+- **S125** Źródła EXP tygodnia = lista dozwolonych `Data/Leaderboards.WEEK_SOURCES`: `monster`, `boss`, `quest`,
+  `contract`, `worldEvent` (wszystkie wywołania `GiveExp` w kodzie poza `admin`; nagroda za logowanie nie daje EXP).
+  Liczy się EXP po premii (`expBonus`), także na 100. poziomie: `LevelService.ExpGained` (doprecyzowanie).
+- **S125** Tydzień w zapisie postaci `character.expWeek = { week, exp, b }` (bez migracji); do SortedMap idzie suma
+  bezwzględna z `cid` i `UpdateAsync` z maksimum (`Leaderboard.mergeWeekly`): ponowienie nie liczy drugi raz, starszy
+  mniejszy wynik z innego serwera nie nadpisuje większego, nowa postać na slocie nadpisuje (doprecyzowanie: zamiast
+  wysyłania przyrostów).
+- **S125** Metadane wpisu tygodnia w wartości SortedMap (`{ s, m, cid }`, kształt `Stores.sorted`), bez `metaStore`;
+  `Leaderboard.rows` czyta je z wpisu przed wspólnym cache (doprecyzowanie). Limit zapisu tygodnia i gildii =
+  `Config.Leaderboard.writeGap` (60 s na klucz; tydzień ma własną pętlę z rozrzutem pierwszego zapisu przez `Rng`), przy
+  wyjściu zapis od razu z kopii. Tydzień bez progu `minLevel` (przedział 1–19 od 1. poziomu).
+- **S125** Przedział = poziom przy ostatnim zapisie; zmiana przedziału usuwa wpis ze starej mapy. Przy wyjściu przedział
+  zapisu trafia do `expWeek.b` od razu (postać znika przed końcem zapisu). Zmiana tygodnia w trakcie gry: stara suma
+  idzie najpierw do mapy starego tygodnia.
+- **S125** Wypłata: blokada `paid_<tydzień>` w `payoutStore` (`Leaderboard.claimPayout`, przejęcie po `payoutLockStale`
+  900 s z zachowaniem `sent` i planu), plan i zwycięzcy zapisani w rekordzie przed pierwszą przesyłką, każda przesyłka
+  „oznacz, wyślij, przy błędzie cofnij” (awaria między oznaczeniem a wysyłką = najwyżej jedna utracona nagroda, nigdy
+  podwójna), `payoutGrace` 300 s po końcu tygodnia, pierwsze sprawdzenie po starcie serwera po `payoutGrace`.
+- **S125** Remisy wypłaty: odczyt top 5 przedziału (`GetRangeAsync`), potem kolejność EXP malejąco i klucz rosnąco
+  (`payoutPlan`); przy równym EXP na 3. i 4. miejscu nagrodę dostaje niższy klucz.
+- **S125** Tytuł czasowy do `weekStart(W + 1) + 7 dni` (termin bezwzględny, nie od odbioru poczty; doprecyzowanie);
+  ustawiany od razu tylko, gdy gracz nie wybrał tytułu (`character.title == nil`). Przesyłka do usuniętej postaci
+  przepada (`Mail.visible`). Tytuł `weekly_diligent` z `wiki = false` (jak VIP S121; na wiki z artykułem S131), kolor
+  `#F0D27A` (nie koliduje z `path_fortune`).
+- **S125** Poczta z odłamkami i tytułem tylko od `system` / `admin` (`Mail.add`), tytuł tylko z `charId`. `MailService`
+  bierze `TitleService` leniwie, `LeaderboardService` bierze `MailService` i `GuildService` leniwie, `GuildService`
+  bierze `LeaderboardService` leniwie (żaden `Deps` się nie zmienił poza `AdminService` += `TitleService`).
+- **S125** Wynik gildii: suma 10 najwyższych poziomów (`Config.Leaderboard.guildTop`), kodowanie
+  `wynik × 10^10 + (10^10 − 1 − createdAt)` (remis: starsza gildia wyżej). Zapis tylko z serwera, który zmienił rekord
+  (wrapper `mutate` w `GuildService` i `create`, nigdy `Runtime.setData`), dławienie `writeGap`; rozwiązana gildia =
+  usunięcie wpisu i znacznik metadanych.
+- **S125** Eksport na wiki: schemat i zaślepka w eksporterze (`tools/WikiData/Rankings.luau`), narzędzie Lune
+  (`tools/rankings_fetch.luau` + `tools/Rankings/`), plik nigdy w commicie; osobny workflow co godzinę z grupą
+  `concurrency` wdrożenia `main`, krok w `wiki.yml` po „stale data” z `continue-on-error`; id uniwersum jako zmienna
+  repozytorium `ROBLOX_UNIVERSE_ID`. Na wiki: poziom 100 wierszy, klasy po 25, tydzień po 25 na przedział, gildie 50,
+  Sala Sław 10 (dzień wpisu, bez sekund). Artykuł „Rankingi” zostaje dla S131. Klawisz R na liście wiki od S125.
+- **S125** `Data/Leaderboards` przeniesiony z `NOT_BALANCE` do `BALANCE_MODULES` (`omit`: definicje tablic, zakładki,
+  plansza, `HOF_SIZE`, `WEEK_SOURCES`); przedziały i nagrody tygodnia mają powody S125.
+- **S125** Odliczanie do nowego tygodnia w oknie w dniach, godzinach i minutach (odświeżane co 5 s jak reszta okna),
+  zwycięzcy poprzedniego tygodnia jako wiersze pod listą przedziału (uproszczenie wyglądu, nie działania).
+- **S125** `LeaderboardGet` przyjmuje tablicę z częściami tylko dla id, które buduje okno (`Leaderboard.readable`:
+  okres teraz albo do `READ_GRACE` 3600 s wstecz, przedział 1..4); inne id = `leaderboard.error.unknown` (klient nie
+  otwiera serwerowi dowolnych map). `BindToClose` czeka też na zapisy tygodnia w toku (licznik `weekInFlight`).
+- **S125** `rankings_fetch`: 404 jednej tablicy = jej magazyn jeszcze nie istnieje (pusta tablica); 404 na każdej
+  tablicy = błąd z kodem 404 (złe id uniwersum albo prefiks), kod wyjścia 1 (doprecyzowanie J2).
+- **S125** `/rankweek pay` bieżącego tygodnia dopisuje linię, że planowa wypłata na koniec tygodnia zostanie pominięta
+  (w atrapie przywraca ją `/rankweek reset`); `/rankweek info` podaje tryb i stan wypłaty kluczami `Locale`.

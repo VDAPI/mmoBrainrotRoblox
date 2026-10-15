@@ -117,6 +117,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		guildId = nil,
 		reached100At = nil, -- S124: set by LevelService at Config.MaxLevel (no migration)
 		lbHidden = nil, -- S124: /lb hide (no migration)
+		expWeek = { week = 0, exp = 0, b = 0 }, -- S125: weekly EXP ranking (no migration, reconcile)
+		timedTitles = {}, -- S125: timed titles, title id -> until (no migration, reconcile)
 		auctions = {},
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
 		pvpEnabled = false,

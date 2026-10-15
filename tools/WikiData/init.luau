@@ -25,6 +25,7 @@ local Names = require("@self/Names")
 local Places = require("@self/Places")
 local Premium = require("@self/Premium")
 local Quests = require("@self/Quests")
+local Rankings = require("@self/Rankings")
 local Schema = require("@self/Schema")
 local Search = require("@self/Search")
 local Skills = require("@self/Skills")
@@ -107,6 +108,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "search", fn = Search.build },
 	{ name = "mapsearch", fn = Places.mapsearch },
 	{ name = "premium", fn = Premium.build },
+	{ name = "rankings", fn = Rankings.build }, -- S125: the placeholder (tools/rankings_fetch fills it in the workflow)
 }
 
 -- Files a file needs built first (for opts.only).

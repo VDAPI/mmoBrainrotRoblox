@@ -17,6 +17,7 @@ local BackpackPanel = require(script.Parent.BackpackPanel)
 local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DerivedList = require(script.DerivedList)
 local Device = require(script.Parent.Parent.Device)
 local Equipment = require(script.Equipment)
@@ -29,6 +30,7 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -51,14 +53,29 @@ local TOUCH_GAP = 8
 -- 4 stat rows (44 + 4) + points line + buttons + plan line + spacing.
 local ALLOCATOR_HEIGHT = 338 -- FIX 2026-10-09: rows grew by a description line; S58: the plan line
 local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
+local TIMED_TICK = 30 -- S125: s between checks of the timed titles (the picker list and the time left)
 
 -- "◀ title ▶" picker (S16): cycles through none + the unlocked titles, saved with SetTitle.
 local function TitlePicker(scope: Scope, order: number): Instance
 	local character = State.Value({ "character" })
 	local vip = State.Value({ "vip", "active" }) -- S121: the VIP title
 	local owned = State.Value({ "account", "cosmetics", "owned" }) -- S123: bought titles
+	-- S125: timed titles need the time (the server clock with the /time offset), refreshed every TIMED_TICK s
+	local clock = scope:Value(Clock.now())
+	local alive = true
+	table.insert(scope, function()
+		alive = false
+	end)
+	task.spawn(function()
+		while alive do
+			task.wait(TIMED_TICK)
+			if alive then
+				clock:set(Clock.now())
+			end
+		end
+	end)
 	local ctx = scope:Computed(function(use): Titles.Context
-		return Titles.contextOf({ cosmetics = { owned = use(owned) } }, use(vip) == true)
+		return Titles.contextOf({ cosmetics = { owned = use(owned) } }, use(vip) == true, use(clock))
 	end)
 	local unlocked = scope:Computed(function(use): { string }
 		local c = use(character)
@@ -125,7 +142,12 @@ local function TitlePicker(scope: Scope, order: number): Instance
 				Text = scope:Computed(function(use): string
 					local id = use(current)
 					local def = if id then TitleData.get(id) else nil
-					if def then
+					if def and def.req.kind == "timed" then
+						-- S125: how long the timed title still lasts
+						local untilTs = Titles.timedUntil(use(character), def.id) or 0
+						local d, h = Time.split(untilTs - use(clock))
+						return `« {Text.get(use, def.nameKey)} » {Text.get(use, "title.timedLeft", { d = d, h = h })}`
+					elseif def then
 						return `« {Text.get(use, def.nameKey)} »`
 					end
 					return Text.get(use, "title.none", { count = #use(unlocked) })

@@ -108,6 +108,7 @@ Identyfikatory w URL to **id z danych gry** (stabilne między językami, także 
 | Poradniki | `/pl/poradniki/`, `/pl/poradniki/<slug>/` | `/en/guides/`, `/en/guides/<slug>/` |
 | Szukaj | `/pl/szukaj/?q=` | `/en/search/?q=` |
 | Aktualizacje | `/pl/aktualizacje/` | `/en/updates/` |
+| Rankingi (S125) | `/pl/rankingi/` (`#poziom`, `#tydzien`, `#gildie`, `#sala-slaw`) | `/en/rankings/` |
 | Styleguide (noindex) | `/pl/styleguide/` | `/en/styleguide/` |
 
 ## 5. Kontrakt danych (pliki `wiki/src/data`)
@@ -148,6 +149,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `monsters.json` | `monsters`: Monster[], `families`: Record<string, FamilyInfo> | `Data/Monsters`, `Data/Spawns`; `MonsterStats.compute`, `Damage.computeDamage` + `StubRng` (min–max), `Exp.monsterExp` i `MonsterStats.gold` × `kindReward`; łup: `Rarities`, `LootTables`, Monte Carlo `Loot.rollMonsterLoot`; `family` = rodzina gry z `Data/Families` (S68), `families` z nazwami `family.<id>`, `dodge` z `MonsterStats.compute` (pominięty przy 0); od S39 `ability.name` (`ability.<id>.name`) |
 | `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`); od S43 `building` (`Town.npcSpot(id).at`) i `buildingName` (`town.sign.<at>`, gdy jest) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
+| `rankings.json` (S125) | `available`: boolean, `updatedAt`: number, `boards`: RankingBoard[] (`id`, `kind`, `name`, `class?`, `bracket?`, `week?`, `rows`: miejsce, imię, klasa, poziom, tag gildii, członkowie, wartość) | schemat i zaślepka (`available = false`, puste `rows`) w `tools/WikiData/Rankings.luau` (tylko `Data/Leaderboards`, klasy, teksty); dane wpisuje `tools/rankings_fetch.luau` (Open Cloud) w workflow, bez commita; nigdy `userId`, klucze wpisów, id postaci, odłamki |
 | `premium.json` (S43) | `passes`: PassInfo[], `shop`: PremiumService[] | jedyny moduł czytający `Data/Products`: `tools/WikiData/Premium.luau` (klucz i ikona przepustki, nazwa/opis z `premium.pass.<key>`; usługa: klucz, rodzaj, przedmiot, `dailyLimit`, nazwa z przedmiotu albo `premium.<key>`) |
 | `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
 | `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number, `sideChoice` (S42: `count`, `rarity` z `Config.SideQuest`) | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`). S109 (tylko dodane klucze): `chapters` (z `Main.CHAPTERS`: `n`, `title` z `story.chapter.<n>`, `from` / `to` = poziomy questów rozdziału, `map`, `final?`), `main[].chapter` (`Main.chapterOf`; questy ze stronami mają `text` = strony `p1..pN` złączone pustą linią), `bossQuests` (`Data/Quests/Boss`), `weekly` (`perWeek`, szablony na poziomach dziennych, `bossContract` na poziomach z bossem), `contracts` (`max`, `board`, `scouts`, `milestoneEvery`, `list`: poziom, mapa, łowisko, `n`, etykieta, nagroda; bez reguł generatora). Reguła G1 (decyzja właściciela): strony i pola questów głównych bez zmian, przerywniki nigdy na wiki; zlecenia, bossowe i tygodniowe bez stron i bez wpisów w wyszukiwarce |
@@ -374,6 +376,25 @@ sam) i wgrywa `wiki/dist` na Cloudflare Pages. Bez sekretów workflow przechodzi
    workflow**). Darmowy plan Cloudflare: 20 000 plików na wdrożenie (pilnuje `budgets.mjs`, dziś ok. 8 400). Żółte
    ostrzeżenie „Nieaktualne dane wiki” = zmiana danych gry bez `npm run data` w `wiki/` i commita (strona i tak buduje
    się ze świeżego eksportu). Opcjonalnie: Google Search Console → dodaj domenę → prześlij `sitemap-index.xml`.
+
+### Rankingi (S125)
+
+Strona „Rankingi” bierze dane z `wiki/src/data/rankings.json`. W commicie jest zaślepka eksportera (strona pisze
+„ranking dostępny w grze”). Prawdziwe rankingi pobiera `lune run tools/rankings_fetch.luau` przez Roblox Open Cloud:
+osobny workflow „Rankings” (`.github/workflows/rankings.yml`, co godzinę o :23 i ręcznie) buduje stronę i wdraża ją jak
+„Wiki” (ta sama grupa `concurrency`), a „Wiki” pobiera ranking przed budową (krok z `continue-on-error`). Plik nigdy nie
+trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem.
+
+1. Creator Hub → **Open Cloud** → **API Keys** → **Create API Key**. Uprawnienia dla tego jednego doświadczenia, tylko
+   odczyt: **Ordered DataStores** (odczyt wpisów), **DataStores** (odczyt wpisów), **Memory Store** (odczyt sorted maps).
+   Dozwolone IP: dowolne (`0.0.0.0/0`; GitHub Actions nie ma stałych adresów). Skopiuj klucz.
+2. GitHub: **Settings** → **Secrets and variables** → **Actions**: sekret `ROBLOX_OPEN_CLOUD_KEY` (klucz) i zmienna
+   (zakładka **Variables**) `ROBLOX_UNIVERSE_ID` (id uniwersum doświadczenia z Creator Hub, nie id miejsca). Do
+   wdrożenia potrzebne są istniejące sekrety Cloudflare (punkt 4 wyżej).
+3. **Actions** → „Rankings” → **Run workflow**. Błąd API (401, 403; 404 na wszystkich tablicach) widać w logu kroku
+   „Fetch rankings” z kodem HTTP (klucz nigdy nie jest wypisywany); 404 jednej tablicy = pusta tablica (jeszcze bez
+   wpisów); adresy API są w `tools/Rankings/OpenCloud.luau` (`ENDPOINTS`).
+4. Repozytorium prywatne: każdy run zużywa minuty Actions; rzadziej = zmiana `cron` w `.github/workflows/rankings.yml`.
 
 ## Jakość (S44)
 

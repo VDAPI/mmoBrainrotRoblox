@@ -194,4 +194,62 @@ T.describe("VIP title (S121)", function()
 	end)
 end)
 
+T.describe("Timed titles (S125)", function()
+	local NOW = 1791763200
+
+	local function timed(untilTs: number?, title: string?): any
+		return {
+			level = 1,
+			title = title,
+			timedTitles = if untilTs then { weekly_diligent = untilTs } else {},
+			path = { main = (PathData.list[1] or {} :: any).id },
+		}
+	end
+
+	T.it("unlocks a timed title while its term is in the future", function()
+		local def = TitleData.get("weekly_diligent") :: TitleData.TitleDef
+		T.expect(def.req.kind).toBe("timed")
+		T.expect(Titles.isUnlocked(timed(NOW + 10), "weekly_diligent", nil, { now = NOW })).toBe(true)
+		T.expect(Titles.isUnlocked(timed(NOW - 1), "weekly_diligent", nil, { now = NOW })).toBe(false)
+		T.expect(Titles.isUnlocked(timed(NOW), "weekly_diligent", nil, { now = NOW })).toBe(false)
+		T.expect(Titles.isUnlocked(timed(nil), "weekly_diligent", nil, { now = NOW })).toBe(false)
+		T.expect(Titles.isUnlocked({ level = 1 }, "weekly_diligent", nil, { now = NOW })).toBe(false)
+		T.expect(table.find(Titles.unlocked(timed(NOW + 10), nil, { now = NOW }), "weekly_diligent") ~= nil).toBe(true)
+		T.expect(Titles.timedUntil(timed(NOW + 10), "weekly_diligent")).toBe(NOW + 10)
+		T.expect(Titles.timedUntil(timed(nil), "weekly_diligent")).toBeNil()
+		T.expect(Titles.contextOf(nil, false, NOW).now).toBe(NOW)
+	end)
+
+	T.it("a chosen expired timed title falls back to the path title", function()
+		local c = timed(NOW - 5, "weekly_diligent")
+		T.expect(Titles.shown(timed(NOW + 5, "weekly_diligent"), nil, { now = NOW })).toBe("weekly_diligent")
+		T.expect(Titles.shown(c, nil, { now = NOW })).toBe(Titles.pathTitle(c))
+	end)
+
+	T.it("grants the later term and prunes only expired entries, never touching the input", function()
+		local before = { weekly_diligent = NOW + 100, other = NOW - 1 }
+		local granted = Titles.grantTimed(before, "weekly_diligent", NOW + 50)
+		T.expect(granted.weekly_diligent).toBe(NOW + 100)
+		T.expect(Titles.grantTimed(before, "weekly_diligent", NOW + 500).weekly_diligent).toBe(NOW + 500)
+		T.expect(before.weekly_diligent).toBe(NOW + 100)
+		T.expect(Titles.grantTimed(nil, "weekly_diligent", NOW)).toEqual({ weekly_diligent = NOW })
+		local kept, removed = Titles.pruneTimed(before, NOW)
+		T.expect(kept).toEqual({ weekly_diligent = NOW + 100 })
+		T.expect(removed).toBe(true)
+		local same, none = Titles.pruneTimed(kept, NOW)
+		T.expect(same).toEqual(kept)
+		T.expect(none).toBe(false)
+		T.expect(before.other).toBe(NOW - 1)
+	end)
+
+	T.it("every timed title has its name and stays off the wiki until published", function()
+		for _, def in TitleData.list do
+			if def.req.kind == "timed" then
+				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+			end
+		end
+	end)
+end)
+
 return nil

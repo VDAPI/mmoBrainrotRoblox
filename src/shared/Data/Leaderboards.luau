@@ -1,7 +1,8 @@
 --!strict
 -- Leaderboard definitions (S124, DESIGN-17 §5). Kinds: `ordered` = OrderedDataStore, permanent (level); `sorted` =
 -- MemoryStore SortedMap with a TTL, periodic (week, event, season); `list` = one DataStore key with a short list (Hall
--- of Fame, statues). Later sessions add boards here: S125 exp_week / guild, S126/S128 arena_<season>_<bracket>, S129
+-- of Fame, statues). Later sessions add boards here: S125 exp_week / guild (with the weekly brackets, rewards and EXP
+-- sources), S126/S128 arena_<season>_<bracket>, S129
 -- bloodmoon. Board ids are stable: they name the stores (Config.Leaderboard prefixes), so class ids are lower case.
 -- Scores come from Logic/Leaderboard.SCORERS (the character only, never the account: tests/paywall.spec).
 
@@ -10,7 +11,7 @@ local Config = require("../Config")
 
 export type Kind = "ordered" | "sorted" | "list"
 export type Filter = "class" | "bracket" | "region"
-export type Format = "level" | "int" | "date"
+export type Format = "level" | "int" | "date" | "guild" -- S125: "guild" = Logic/Leaderboard.decodeGuild
 export type ListMode = "first" | "latest"
 
 export type BoardDef = {
@@ -34,6 +35,39 @@ export type PlinthDef = { board: string, index: number, captionKey: string }
 export type Town = { panels: { PanelDef }, plinths: { PlinthDef } }
 
 local HOF_SIZE = 10 -- the first ten characters of each class at the top level (DESIGN-17 §5)
+
+-- S125 (DESIGN-17 §5): weekly EXP. One MemoryStore SortedMap per (week, bracket), TTL Config.Leaderboard.weekTtl.
+-- The bracket is the character's level at its last write. Top 3 of every bracket get WEEK_REWARDS by mail after the
+-- week ends (one server pays, guarded by the "paid_<week>" lock). Week = Logic/Time.weekNumber (Monday 00:00 UTC, S98).
+local WEEK_BRACKETS: { { number } } = { { 1, 19 }, { 20, 44 }, { 45, 69 }, { 70, 100 } }
+
+-- Rewards per place (index 1..3): Dragon Shards and the timed title (Data/Titles, req.kind "timed"). Gameplay rewards,
+-- never sold (tests/paywall.spec).
+local WEEK_REWARDS = {
+	shards = { 100, 50, 25 },
+	title = "weekly_diligent",
+	titleDays = 7, -- counted from the start of the next week (Logic/Leaderboard.payoutPlan)
+}
+
+-- EXP sources that count for the week (LevelService.GiveExp `source`). An allowlist: anything else (admin commands,
+-- unknown sources) never reaches a ranking (DESIGN-17 §0.2). Adding a source is a deliberate change with a test.
+local WEEK_SOURCES: { [string]: boolean } = {
+	monster = true,
+	boss = true,
+	quest = true,
+	contract = true,
+	worldEvent = true,
+}
+
+do
+	-- the brackets cover 1..Config.MaxLevel without gaps or overlaps
+	local nextLevel = 1
+	for i, b in WEEK_BRACKETS do
+		assert(b[1] == nextLevel and b[2] >= b[1], `Data/Leaderboards: WEEK_BRACKETS[{i}] must start at {nextLevel}`)
+		nextLevel = b[2] + 1
+	end
+	assert(nextLevel == Config.MaxLevel + 1, "Data/Leaderboards: WEEK_BRACKETS must end at Config.MaxLevel")
+end
 
 local list: { BoardDef } = {}
 
@@ -81,6 +115,33 @@ for _, class in Classes.order do
 	table.insert(hofBoards, `hof_{string.lower(class)}`)
 end
 
+-- S125: weekly EXP, fed by LeaderboardService from LevelService.ExpGained (no scorer); instance id
+-- exp_week_<week>_<bracket> (Logic/Leaderboard.weekMapName).
+table.insert(
+	list,
+	{
+		id = "exp_week",
+		kind = "sorted",
+		nameKey = "leaderboard.board.exp_week",
+		scope = "character",
+		parts = { "week", "bracket" },
+		ttl = Config.Leaderboard.weekTtl,
+		format = "int",
+	} :: BoardDef
+)
+-- S125: guilds, the sum of the levels of the Config.Leaderboard.guildTop highest members (GuildService through
+-- LeaderboardService.SubmitGuild); entry key "g_<guildId>".
+table.insert(
+	list,
+	{
+		id = "guild",
+		kind = "ordered",
+		nameKey = "leaderboard.board.guild",
+		scope = "guild",
+		format = "guild",
+	} :: BoardDef
+)
+
 local byId: { [string]: BoardDef } = {}
 for _, def in list do
 	assert(byId[def.id] == nil, `Data/Leaderboards: duplicate board {def.id}`)
@@ -90,6 +151,8 @@ end
 local tabs: { TabDef } = {
 	{ id = "level", nameKey = "leaderboard.tab.level", boards = levelBoards, filter = "class", order = 1 },
 	{ id = "hof", nameKey = "leaderboard.tab.hof", boards = hofBoards, filter = "class", order = 2 },
+	{ id = "week", nameKey = "leaderboard.tab.week", boards = { "exp_week" }, filter = "bracket", order = 3 },
+	{ id = "guild", nameKey = "leaderboard.tab.guild", boards = { "guild" }, order = 4 },
 }
 
 local plinths: { PlinthDef } = {}
@@ -123,6 +186,9 @@ local Leaderboards = {
 	tabs = tabs,
 	TOWN = TOWN,
 	HOF_SIZE = HOF_SIZE,
+	WEEK_BRACKETS = WEEK_BRACKETS,
+	WEEK_REWARDS = WEEK_REWARDS,
+	WEEK_SOURCES = WEEK_SOURCES,
 	get = function(id: string): BoardDef?
 		return byId[id]
 	end,

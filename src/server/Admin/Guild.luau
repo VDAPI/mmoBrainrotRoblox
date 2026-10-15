@@ -14,8 +14,25 @@ local withCharacter = Context.withCharacter
 local parseAmount = Context.parseAmount
 
 local GuildService = Context.services.GuildService
+local LeaderboardService = Context.services.LeaderboardService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
+
+-- S125: the guild board entry of the player's guild.
+commands.rankguild = function(player, args)
+	withCharacter(player, function()
+		if args[1] == "push" and not LeaderboardService.GuildPush(player) then
+			reply(player, "admin.rank.noGuild")
+			return
+		end
+		local score, rank = LeaderboardService.GuildInfo(player)
+		if score == nil then
+			reply(player, "admin.rank.noGuild")
+			return
+		end
+		reply(player, "admin.rank.guild", { score = score, rank = if rank then rank else "-" })
+	end)
+end
 
 commands.guild = function(player, args)
 	withCharacter(player, function()

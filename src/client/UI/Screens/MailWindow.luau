@@ -1,20 +1,23 @@
 --!strict
 -- Mail window (DESIGN §18): parcels on the left (sender, subject, time left), the selected parcel on the
--- right (message, gold, items with tooltips) with "Collect"; "Collect all" below. Collecting only works
+-- right (message, gold, S125 Dragon Shards and a timed title, items with tooltips) with "Collect"; "Collect all" below. Collecting only works
 -- at the mailbox (the Auctioneer in the capital); the list itself can be read anywhere.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
+local Leaderboard = require(ReplicatedStorage.Shared.Logic.Leaderboard)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Toast = require(script.Parent.Parent.Components.Toast)
 
 local Children = Fusion.Children
@@ -29,6 +32,23 @@ export type Props = {
 
 local function subject(use: Fusion.Use, parcel: any, resolve: (args: any) -> { [string]: any }?): string
 	return Text.get(use, parcel.subjectKey, resolve(parcel.args))
+end
+
+-- S125: "Title: <name> (until <date>)", or "(expired)" after the term.
+local function titleLine(use: Fusion.Use, timed: any): string
+	if type(timed) ~= "table" or type(timed.id) ~= "string" then
+		return ""
+	end
+	local def = TitleData.get(timed.id)
+	local name = if def then Text.get(use, def.nameKey) else timed.id
+	local untilTs = tonumber(timed.untilTs) or 0
+	if untilTs <= Clock.now() then
+		return Text.get(use, "mail.titleExpired", { title = name })
+	end
+	return Text.get(use, "mail.title", {
+		title = name,
+		["until"] = Text.get(use, "leaderboard.date", Leaderboard.dateParts(untilTs)),
+	})
 end
 
 local function MailWindow(scope: Scope, props: Props): Fusion.Child
@@ -91,11 +111,11 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 							Position = UDim2.fromOffset(10, 4),
 							Size = UDim2.new(1, -20, 0, 26),
 							BackgroundTransparency = 1,
-							Text = `{if #parcel.items > 0 then "📦 " elseif parcel.gold > 0 then "◉ " else "✉ "}{subject(
-								use,
-								parcel,
-								props.ResolveArgs
-							)}`,
+							Text = `{if (parcel.shards or 0) > 0 or parcel.timedTitle ~= nil
+								then "◆ "
+								elseif #parcel.items > 0 then "📦 "
+								elseif parcel.gold > 0 then "◉ "
+								else "✉ "}{subject(use, parcel, props.ResolveArgs)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = Theme.Colors.Text,
@@ -175,8 +195,33 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					TextColor3 = Theme.Colors.GoldBright,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
-				s:New("Frame")({
+				-- S125: Dragon Shards and a timed title (rankings, events)
+				s:New("TextLabel")({
 					LayoutOrder = 3,
+					Size = UDim2.new(1, 0, 0, 26),
+					BackgroundTransparency = 1,
+					Text = Text.get(use, "mail.shards", { n = Format.number(parcel.shards or 0) }),
+					Visible = (parcel.shards or 0) > 0,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.GoldBright,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("TextLabel")({
+					LayoutOrder = 4,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = titleLine(use, parcel.timedTitle),
+					Visible = parcel.timedTitle ~= nil,
+					TextWrapped = true,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("Frame")({
+					LayoutOrder = 5,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -190,7 +235,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					},
 				}),
 				Button(s, {
-					LayoutOrder = 4,
+					LayoutOrder = 6,
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 					Variant = "primary",
 					Text = Text.T(s, "mail.claim"),

@@ -1,7 +1,8 @@
 # Wiki (S44, docs/WIKI.md "Wdrożenie"): export the game data with Lune, test, build, audit, accessibility checks and
 # deploy wiki/dist to Cloudflare Pages (main = production, other branches and PRs = previews with noindex). Without
 # the two Cloudflare secrets the run stays green and skips the deployment. A weekly run refreshes the "of the week"
-# picks of the home page.
+# picks of the home page. S125: with the ROBLOX_OPEN_CLOUD_KEY secret and the ROBLOX_UNIVERSE_ID variable the build
+# also shows the current rankings (tools/rankings_fetch.luau, never committed; .github/workflows/rankings.yml hourly).
 name: Wiki
 
 on:
@@ -12,6 +13,8 @@ on:
       - "src/shared/**"
       - "tools/wikidump.luau"
       - "tools/WikiData/**"
+      - "tools/Rankings/**"
+      - "tools/rankings_fetch.luau"
       - "tests/fixtures/**"
       - "tools/wikimap.luau"
       - "tools/WikiMaps/**"
@@ -27,6 +30,8 @@ on:
       - "src/shared/**"
       - "tools/wikidump.luau"
       - "tools/WikiData/**"
+      - "tools/Rankings/**"
+      - "tools/rankings_fetch.luau"
       - "tests/fixtures/**"
       - "tools/wikimap.luau"
       - "tools/WikiMaps/**"
@@ -54,6 +59,7 @@ jobs:
     timeout-minutes: 30
     env:
       HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+      HAS_RANKINGS: ${{ secrets.ROBLOX_OPEN_CLOUD_KEY != '' && vars.ROBLOX_UNIVERSE_ID != '' }}
     steps:
       - name: Checkout (full history for the data commit)
         uses: actions/checkout@v4
@@ -84,6 +90,16 @@ jobs:
       - name: Check for stale data
         working-directory: wiki
         run: node scripts/stale-data.mjs
+
+      # S125: after the stale check (fresh rankings differ from the committed placeholder by design), so a deployment
+      # from main does not take the page back to the placeholder until the next hourly run
+      - name: Fetch rankings (optional)
+        if: env.HAS_RANKINGS == 'true'
+        continue-on-error: true
+        env:
+          ROBLOX_OPEN_CLOUD_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_KEY }}
+          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
+        run: lune run tools/rankings_fetch.luau
 
       - name: Lune tests
         run: lune run tests/run.luau

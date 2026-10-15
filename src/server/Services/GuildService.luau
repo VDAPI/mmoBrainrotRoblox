@@ -39,6 +39,8 @@ local GuildService = {
 
 local Rules = GuildSkills.Rules
 
+local Registry: any
+local LeaderboardService: any
 local DataService: any
 local PlayerStateService: any
 local CharacterService: any
@@ -53,8 +55,37 @@ local memberKey = Runtime.memberKey
 local setGuildId = Runtime.setGuildId
 local attach = Runtime.attach
 local detach = Runtime.detach
-local mutate = Runtime.mutate
 local notify = Runtime.notify
+
+-- S125: the guild board, lazily (LeaderboardService takes this service lazily too; S60 pattern, never in Init).
+local function leaderboard(): any
+	if LeaderboardService == nil and Registry then
+		local ok, service = pcall(Registry.Get, "LeaderboardService")
+		LeaderboardService = if ok then service else false
+	end
+	return LeaderboardService or nil
+end
+
+-- S125: the guild board entry follows every record this server wrote (never Runtime.setData: the messages of other
+-- servers would write the same entry from every server).
+local function submitGuild(data: GuildData?)
+	local lb = leaderboard()
+	if lb and data then
+		local ok, err = pcall(lb.SubmitGuild, data)
+		if not ok then
+			log:warn("guild board entry of %s failed: %s", data.id, tostring(err))
+		end
+	end
+end
+
+-- One UpdateAsync with a Logic/Guild mutation (Runtime.mutate), then the guild board entry (S125).
+local function mutate(guildId: string, fn: (guild: GuildData?) -> (boolean, string?)): (boolean, string?, GuildData?)
+	local ok, err, data = Runtime.mutate(guildId, fn)
+	if ok and data then
+		submitGuild(data)
+	end
+	return ok, err, data
+end
 
 local invites: { [Player]: { guildId: string, from: Player, expiresAt: number } } = {}
 local busy: { [Player]: boolean } = {}
@@ -217,6 +248,7 @@ local function create(player: Player, name: string, tag: string): (boolean, stri
 	setGuildId(player, id)
 	DataService.Save(player)
 	attach(player, data)
+	submitGuild(data)
 	notify(id, "guild.sys.founded", { name = char.name, guild = name })
 	log:info("%s founded guild '%s' [%s] (%s)", player.Name, name, tag, id)
 	return true, nil
@@ -573,6 +605,7 @@ local function onDeleted(player: Player, char: Types.CharacterData)
 end
 
 function GuildService.Init(registry)
+	Registry = registry
 	DataService = registry.Get("DataService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

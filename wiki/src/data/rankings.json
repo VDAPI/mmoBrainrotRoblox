@@ -1,0 +1,20 @@
+{
+  "available": false,
+  "boards": [
+    {"id":"level","kind":"level","name":{"en":"Level: everyone","pl":"Poziom: wszyscy"},"rows":[]},
+    {"class":"Warrior","id":"level_warrior","kind":"level","name":{"en":"Level: Warriors","pl":"Poziom: Wojownicy"},"rows":[]},
+    {"class":"Hunter","id":"level_hunter","kind":"level","name":{"en":"Level: Hunters","pl":"Poziom: Łowcy"},"rows":[]},
+    {"class":"Mage","id":"level_mage","kind":"level","name":{"en":"Level: Mages","pl":"Poziom: Magowie"},"rows":[]},
+    {"class":"Cleric","id":"level_cleric","kind":"level","name":{"en":"Level: Clerics","pl":"Poziom: Kapłani"},"rows":[]},
+    {"bracket":"1–19","id":"exp_week_1","kind":"week","name":{"en":"This week: EXP gained","pl":"Tydzień: zdobyty EXP"},"rows":[]},
+    {"bracket":"20–44","id":"exp_week_2","kind":"week","name":{"en":"This week: EXP gained","pl":"Tydzień: zdobyty EXP"},"rows":[]},
+    {"bracket":"45–69","id":"exp_week_3","kind":"week","name":{"en":"This week: EXP gained","pl":"Tydzień: zdobyty EXP"},"rows":[]},
+    {"bracket":"70–100","id":"exp_week_4","kind":"week","name":{"en":"This week: EXP gained","pl":"Tydzień: zdobyty EXP"},"rows":[]},
+    {"id":"guild","kind":"guild","name":{"en":"Guilds: sum of levels","pl":"Gildie: suma poziomów"},"rows":[]},
+    {"class":"Warrior","id":"hof_warrior","kind":"hof","name":{"en":"Warriors","pl":"Wojownicy"},"rows":[]},
+    {"class":"Hunter","id":"hof_hunter","kind":"hof","name":{"en":"Hunters","pl":"Łowcy"},"rows":[]},
+    {"class":"Mage","id":"hof_mage","kind":"hof","name":{"en":"Mages","pl":"Magowie"},"rows":[]},
+    {"class":"Cleric","id":"hof_cleric","kind":"hof","name":{"en":"Clerics","pl":"Kapłani"},"rows":[]}
+  ],
+  "updatedAt": 0
+}

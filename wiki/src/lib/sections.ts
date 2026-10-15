@@ -21,6 +21,7 @@ export const SECTIONS: Section[] = [
   { id: "mechanics", ready: true, session: "S42" },
   { id: "guides", ready: true, session: "S43" },
   { id: "updates", ready: true, session: "S43" },
+  { id: "rankings", ready: true, session: "S125" },
   { id: "search", ready: true, session: "S36" },
   { id: "styleguide", ready: true, session: "S36" },
 ];
@@ -50,5 +51,5 @@ export const NAV_GROUPS: NavGroup[] = [
   { id: "monsters", sections: ["bestiary", "bosses"] },
   { id: "world", sections: ["map", "regions", "quests"] },
   { id: "character", sections: ["classes", "mechanics"] },
-  { id: "more", sections: ["guides", "updates", "search"] },
+  { id: "more", sections: ["guides", "updates", "rankings", "search"] },
 ];

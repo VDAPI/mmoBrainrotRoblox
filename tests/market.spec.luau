@@ -183,4 +183,75 @@ T.describe("Mail rules", function()
 	end)
 end)
 
+T.describe("Mail with shards and a timed title (S125)", function()
+	local function parcel(from: string, extra: { [string]: any }?): Mail.Parcel
+		local p: any = {
+			id = "p",
+			from = from,
+			subjectKey = "mail.subject.weeklyRank",
+			gold = 0,
+			items = {},
+			createdAt = 0,
+			expiresAt = 1000,
+			charId = "c1",
+		}
+		for k, v in extra or {} do
+			p[k] = v
+		end
+		return p
+	end
+	local TITLE = { id = "weekly_diligent", untilTs = 500 }
+
+	T.it("takes shards and a timed title from the system and admins", function()
+		local box = Mail.newBox()
+		T.expect({ Mail.add(box, parcel("system", { shards = 100, timedTitle = TITLE }), 0) }).toEqual({ true, nil })
+		local admin = parcel("admin", { shards = 25 })
+		admin.id = "q"
+		T.expect({ Mail.add(box, admin, 0) }).toEqual({ true, nil })
+		T.expect(#Mail.visible(box, "c1", 0)).toBe(2)
+		T.expect(Mail.isEmpty(parcel("system", { shards = 100 }))).toBe(false)
+		T.expect(Mail.isEmpty(parcel("system", { timedTitle = TITLE }))).toBe(false)
+		T.expect(Mail.isEmpty(parcel("system"))).toBe(true)
+	end)
+
+	T.it("refuses shards and titles from players and malformed values", function()
+		local bad = {
+			parcel("player", { shards = 10 }),
+			parcel("auction", { shards = 10 }),
+			parcel("system", { shards = 1.5 }),
+			parcel("system", { shards = -1 }),
+			parcel("player", { timedTitle = TITLE }),
+			parcel("system", { timedTitle = { id = "nothing", untilTs = 5 } }),
+			parcel("system", { timedTitle = { id = "wanderer", untilTs = 5 } }),
+			parcel("system", { timedTitle = { id = "weekly_diligent" } }),
+		}
+		local noChar = parcel("system", { timedTitle = TITLE })
+		noChar.charId = nil
+		table.insert(bad, noChar)
+		for i, p in bad do
+			T.expect({ i, Mail.add(Mail.newBox(), p, 0) }).toEqual({ i, false, "error.badRequest" })
+		end
+	end)
+
+	T.it("old parcels without the new fields still work", function()
+		local stored = {
+			parcels = {
+				old = {
+					id = "old",
+					from = "auction",
+					subjectKey = "mail.subject.sold",
+					gold = 40,
+					items = {},
+					createdAt = 0,
+					expiresAt = 1000,
+				},
+			},
+		}
+		local box = Mail.box(stored)
+		T.expect(#Mail.visible(box, "c1", 0)).toBe(1)
+		T.expect(Mail.isEmpty(box.parcels.old)).toBe(false)
+		T.expect((Mail.take(box, "old", "c1", 0) :: any).gold).toBe(40)
+	end)
+end)
+
 return nil

@@ -5,11 +5,15 @@
 -- the board changes and every Config.Leaderboard.clientPoll s while the window is open; no "refresh" button (it would
 -- change nothing). "This server only" when the shared stores are unavailable (DESIGN-17 §0.8). Tabs and boards of later
 -- sessions (S125+) show up from the data alone.
+-- S125: the "This week" tab (a bracket switch instead of the class filter, the countdown to the new week, the rewards,
+-- the own EXP and the winners of the week before) and the "Guilds" tab (tag and name, members, the sum of levels, the
+-- own guild). Narrow state branches only (expWeek, level), never the whole character.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
@@ -23,6 +27,7 @@ local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 
 local Children = Fusion.Children
@@ -36,6 +41,7 @@ local STRIP = Theme.Size.MinTouch + 6 -- Tabs with Scroll: buttons are STRIP - 6
 local TITLE = 34
 local HEAD = 30
 local FOOTER = 58
+local INFO = 22 -- S125: the countdown / hint line of the week and guild boards
 local ALL = "all" -- the filter value of the board without a class
 
 type Cell = { text: string, width: number?, color: Color3?, bold: boolean?, rich: boolean? }
@@ -57,9 +63,16 @@ local function tabById(id: string): Leaderboards.TabDef?
 	return nil
 end
 
--- Filter values of a tab: "all" when it has a board without a class, then the classes with a board.
+-- Filter values of a tab: "all" when it has a board without a class, then the classes with a board; S125 the bracket
+-- indexes of the weekly board ("1".."4").
 local function filterValues(tab: Leaderboards.TabDef): { string }
 	local out = {}
+	if tab.filter == "bracket" then
+		for i in Leaderboards.WEEK_BRACKETS do
+			table.insert(out, tostring(i))
+		end
+		return out
+	end
 	if tab.filter ~= "class" then
 		return out
 	end
@@ -74,7 +87,11 @@ local function filterValues(tab: Leaderboards.TabDef): { string }
 	return out
 end
 
-local function boardOf(tab: Leaderboards.TabDef, filter: string): string?
+local function boardOf(tab: Leaderboards.TabDef, filter: string, now: number): string?
+	if tab.filter == "bracket" then
+		-- S125: this week's board of the bracket (the server clock with the /time offset, like the server)
+		return Leaderboard.boardFor(tab, filter, now)
+	end
 	local id = Leaderboard.boardFor(tab, if filter == ALL then nil else filter)
 	if not id then
 		return nil
@@ -146,6 +163,34 @@ end
 
 local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 	local muted = Theme.Colors.TextMuted
+	if format == "guild" then
+		-- S125: place, guild, members, score
+		return {
+			{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
+			{ text = Text.get(use, "leaderboard.col.guild"), color = muted },
+			{ text = Text.get(use, "leaderboard.col.members"), width = if touch then 90 else 120, color = muted },
+			{ text = Text.get(use, "leaderboard.col.score"), width = if touch then 80 else 120, color = muted },
+		}
+	elseif format == "int" then
+		-- S125: place, name, (class, guild on PC), level, EXP
+		local cells: { Cell } = {
+			{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
+			{ text = Text.get(use, "leaderboard.col.name"), color = muted },
+		}
+		if not touch then
+			table.insert(cells, { text = Text.get(use, "leaderboard.col.class"), width = 150, color = muted })
+			table.insert(cells, { text = Text.get(use, "leaderboard.col.guild"), width = 110, color = muted })
+		end
+		table.insert(
+			cells,
+			{ text = Text.get(use, "leaderboard.col.level"), width = if touch then 56 else 80, color = muted }
+		)
+		table.insert(
+			cells,
+			{ text = Text.get(use, "leaderboard.col.exp"), width = if touch then 100 else 130, color = muted }
+		)
+		return cells
+	end
 	local cells: { Cell } = {
 		{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
 		{ text = Text.get(use, "leaderboard.col.name"), color = muted },
@@ -170,6 +215,36 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 	local color = rankColor(row.r)
 	local name = if row.n == "" then Text.get(use, "leaderboard.unknown") else row.n
 	local nameText = escape(name)
+	if format == "guild" then
+		-- S125: "[TAG] Name", members, the decoded sum of levels
+		local tag = if row.g then `<font color="#9A9DA8">[{escape(row.g)}]</font> ` else ""
+		return {
+			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+			{ text = tag .. nameText, color = color, bold = top, rich = true },
+			{ text = if row.m then Format.number(row.m) else "", width = if touch then 90 else 120 },
+			{ text = Format.number(row.s), width = if touch then 80 else 120, bold = top },
+		}
+	elseif format == "int" then
+		-- S125: weekly EXP
+		if touch and row.g then
+			nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
+		end
+		local cells: { Cell } = {
+			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+			{ text = nameText, color = color, bold = top, rich = true },
+		}
+		if not touch then
+			local class = if row.c and string.sub(row.c, 1, 1) == "@" then Text.get(use, string.sub(row.c, 2)) else ""
+			table.insert(cells, { text = class, width = 150 })
+			table.insert(
+				cells,
+				{ text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Colors.TextMuted }
+			)
+		end
+		table.insert(cells, { text = if row.l then tostring(row.l) else "", width = if touch then 56 else 80 })
+		table.insert(cells, { text = Format.number(row.s), width = if touch then 100 else 130, bold = top })
+		return cells
+	end
 	if touch and row.g then
 		nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
 	end
@@ -219,6 +294,33 @@ local function meText(use: Use, snap: Leaderboard.Snapshot): string
 		end
 		return Text.get(use, "leaderboard.hof.left", { n = me.left or 0 })
 	end
+	if snap.format == "guild" then
+		-- S125
+		if me.none then
+			return Text.get(use, "leaderboard.guild.none")
+		end
+		if me.r then
+			return Text.get(use, "leaderboard.guild.yours", { rank = me.r, score = Format.number(me.s or 0) })
+		end
+		return Text.get(use, "leaderboard.guild.outside", { score = Format.number(me.s or 0) })
+	end
+	if snap.format == "int" then
+		-- S125: the week's EXP, and the own bracket when another one is shown
+		local exp = Format.number(me.s or 0)
+		local text = if me.r
+			then Text.get(use, "leaderboard.week.you", { rank = me.r, exp = exp })
+			else Text.get(use, "leaderboard.week.outside", { exp = exp })
+		local _, parts = Leaderboard.resolve(snap.id)
+		local shown = tonumber(parts and parts[2])
+		if me.b and shown and me.b ~= shown then
+			text ..= "  ·  " .. Text.get(
+				use,
+				"leaderboard.week.otherBracket",
+				{ bracket = Leaderboard.bracketLabel(me.b) }
+			)
+		end
+		return text
+	end
 	if me.below then
 		return Text.get(use, "leaderboard.meBelow", { level = me.below })
 	end
@@ -235,6 +337,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 	local touch = Device.Touch
 	local tabs = sortedTabs()
 	local myClass = State.Value({ "character", "class" })
+	local myLevel = State.Value({ "character", "level" })
 	local selected = scope:Value(if tabs[1] then tabs[1].id else "")
 	local filter = scope:Value(ALL)
 	local snapshots = scope:Value({} :: { [string]: Leaderboard.Snapshot })
@@ -252,7 +355,11 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			return
 		end
 		local values = filterValues(tab)
-		if table.find(values, ALL) then
+		if tab.filter == "bracket" then
+			-- S125: the bracket of the active character
+			local level = peek(myLevel)
+			filter:set(tostring(Leaderboard.bracketOf(if type(level) == "number" then level else 1)))
+		elseif table.find(values, ALL) then
 			filter:set(ALL)
 		else
 			local class = peek(myClass)
@@ -261,9 +368,11 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 	end
 	resetFilter(peek(selected))
 
+	-- S125: `clock` follows the server clock with the /time offset (the week board changes at Monday 00:00 UTC)
+	local clock = scope:Value(Clock.now())
 	local current = scope:Computed(function(use): string?
 		local tab = tabById(use(selected))
-		return if tab then boardOf(tab, use(filter)) else nil
+		return if tab then boardOf(tab, use(filter), use(clock)) else nil
 	end)
 
 	local function load(id: string?, force: boolean?)
@@ -311,6 +420,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				break
 			end
 			now:set(Workspace:GetServerTimeNow())
+			clock:set(Clock.now())
 			elapsed += 5
 			local id = peek(current)
 			if elapsed >= Config.Leaderboard.clientPoll then
@@ -351,10 +461,16 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		local list = {}
 		for _, value in values do
-			list[#list + 1] = {
-				id = value,
-				label = if value == ALL then Text.T(s, "leaderboard.filter.all") else Text.T(s, `class.{value}.name`),
-			}
+			local label: any
+			if tab and tab.filter == "bracket" then
+				label =
+					Text.T(s, "leaderboard.week.bracket", { bracket = Leaderboard.bracketLabel(tonumber(value) or 1) })
+			elseif value == ALL then
+				label = Text.T(s, "leaderboard.filter.all")
+			else
+				label = Text.T(s, `class.{value}.name`)
+			end
+			list[#list + 1] = { id = value, label = label }
 		end
 		return Tabs(s, { Tabs = list, Selected = filter, Scroll = true, Size = UDim2.fromScale(1, 1) })
 	end)
@@ -369,6 +485,38 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 		}
 		local rowHeight = if isTouch then 44 else 40
+		if def and def.id == "exp_week" then
+			-- S125: what the top three of each bracket get (numbers from Data/Leaderboards)
+			local rewards = Leaderboards.WEEK_REWARDS
+			table.insert(
+				items,
+				s:New("TextLabel")({
+					LayoutOrder = -1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = Text.get(use, "leaderboard.week.rewards", {
+						title = Text.get(use, "title." .. rewards.title),
+						days = rewards.titleDays,
+						first = rewards.shards[1],
+						second = rewards.shards[2],
+						third = rewards.shards[3],
+					}),
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					[Children] = {
+						s:New("UIPadding")({
+							PaddingLeft = UDim.new(0, 8),
+							PaddingRight = UDim.new(0, 8),
+							PaddingBottom = UDim.new(0, 6),
+						}),
+					},
+				})
+			)
+		end
 		if not snap or (snap.loading and #snap.rows == 0) then
 			table.insert(
 				items,
@@ -399,7 +547,43 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				line(s, { { text = Text.get(use, "leaderboard.empty"), color = Theme.Colors.TextMuted } }, rowHeight, 1)
 			)
 		end
+		local last = snap.last
+		if last and #last.rows > 0 then
+			-- S125: the winners of the week before in this bracket
+			local base = #snap.rows + 10
+			table.insert(
+				items,
+				line(
+					s,
+					{ { text = Text.get(use, "leaderboard.week.lastWinners"), color = Theme.Colors.Gold, bold = true } },
+					rowHeight,
+					base
+				)
+			)
+			for i, row in last.rows do
+				table.insert(
+					items,
+					line(s, rowCells(use, row, "int", isTouch), rowHeight, base + i, Theme.Colors.PanelRaised)
+				)
+			end
+		end
 		return items
+	end)
+
+	-- S125: the countdown to the new week, or how the guild score is counted; empty for the other boards
+	local infoText = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		if def and def.id == "exp_week" then
+			local d, h, m = Time.split(Leaderboard.weekEndsIn(use(clock)))
+			return Text.get(use, "leaderboard.week.resetIn", { d = d, h = h, m = m })
+		elseif def and def.format == "guild" then
+			return Text.get(use, "leaderboard.guild.hint", { n = Config.Leaderboard.guildTop })
+		end
+		return ""
+	end)
+	local footerHeight = scope:Computed(function(use): number
+		return if use(infoText) ~= "" then FOOTER + INFO else FOOTER
 	end)
 
 	return {
@@ -469,7 +653,9 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				scope:New("ScrollingFrame")({
 					Name = "Rows",
 					Position = UDim2.fromOffset(0, TITLE + STRIP + HEAD + 10),
-					Size = UDim2.new(1, 0, 1, -(TITLE + STRIP + HEAD + 10 + FOOTER)),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 1, -(TITLE + STRIP + HEAD + 10 + use(footerHeight)))
+					end),
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
@@ -483,10 +669,26 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 					Name = "Footer",
 					AnchorPoint = Vector2.new(0, 1),
 					Position = UDim2.fromScale(0, 1),
-					Size = UDim2.new(1, 0, 0, FOOTER),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 0, use(footerHeight))
+					end),
 					BackgroundTransparency = 1,
 					[Children] = {
 						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
+						scope:New("TextLabel")({
+							LayoutOrder = 0,
+							Size = UDim2.new(1, 0, 0, INFO),
+							BackgroundTransparency = 1,
+							Visible = scope:Computed(function(use): boolean
+								return use(infoText) ~= ""
+							end),
+							Text = infoText,
+							FontFace = Theme.Fonts.Body,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Colors.Gold,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
 						scope:New("TextLabel")({
 							LayoutOrder = 1,
 							Size = UDim2.new(1, 0, 0, 22),

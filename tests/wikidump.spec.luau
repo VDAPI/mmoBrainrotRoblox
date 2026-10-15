@@ -1422,3 +1422,26 @@ T.describe("Wiki export: mounts (S97)", function()
 		end
 	end)
 end)
+
+T.describe("Wiki export: rankings (S125)", function()
+	T.it("writes the placeholder: no rows, names in both languages, no ids or forbidden keys", function()
+		local r = d.rankings
+		T.expect(r ~= nil).toBe(true)
+		T.expect(r.available).toBe(false)
+		T.expect(r.updatedAt).toBe(0)
+		T.expect(#r.boards > 0).toBe(true)
+		local ids = {}
+		for _, b in r.boards do
+			ids[b.id] = true
+			T.expect({ b.id, #b.rows }).toEqual({ b.id, 0 })
+			T.expect({ b.id, type(b.name.pl), type(b.name.en) }).toEqual({ b.id, "string", "string" })
+		end
+		for _, id in { "level", "level_mage", "exp_week_1", "exp_week_4", "guild", "hof_cleric" } do
+			T.expect({ id, ids[id] }).toEqual({ id, true })
+		end
+		local text = result.files["wiki/src/data/rankings.json"]
+		for _, key in { "userId", "charId", "key", "shards", "productId", "robux" } do
+			T.expect({ key, string.find(text, `"{key}"`, 1, true) == nil }).toEqual({ key, true })
+		end
+	end)
+end)

@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S124 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S125 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -224,13 +224,20 @@ HUD, `/e`, dwie darmowe), efekty awansu, barwniki stroju, garderoba na dwóch po
 S124 Rankingi 1 (DESIGN-17 §5): `LeaderboardService` (OrderedDataStore / SortedMap / DataStore z atrapą „tylko ten
 serwer”), ranking poziomu (wszyscy i klasy, remis na 100 po `reached100At`), Sala Sław (10 pierwszych na klasę), okno
 „Rankingi” (menu HUD, klawisz R), plansza i cokoły przy ratuszu, `/lb`.
+S125 Rankingi 2 (DESIGN-17 §5): tygodniowy EXP w czterech przedziałach (od poniedziałku 00:00 UTC, źródła z listy
+`WEEK_SOURCES`) z wypłatą top 3 pocztą (100 / 50 / 25 odłamków i tytuł czasowy „Najpilniejszy Tygodnia”, blokada
+`paid_<tydzień>`), tytuły czasowe (`character.timedTitles`, `TitleService.GrantTimed`), poczta z odłamkami i tytułem,
+ranking gildii (suma 10 najwyższych poziomów), zakładki „Tydzień” i „Gildie”, strona wiki „Rankingi” z opcjonalnym
+eksportem Open Cloud (`tools/rankings_fetch.luau`, workflow co godzinę), `/rankweek`, `/rankguild`, `/timedtitle`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔). Strona wiki „Rankingi” i klawisz R na liście wiki:
-  S125.
+- **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔).
+- **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →
+  „Rankingi (S125)”); adresy Open Cloud v2 w `tools/Rankings/OpenCloud.luau` niesprawdzone na żywym API
+  (`TODO(owner): verify`). Medalion tytułu `weekly_diligent` bez obrazka (`tytuly/title_weekly_diligent.png`).
 - **S122:** powody blokad `bloodMoon` i `tourney` (Eliksir Pełni, Płaszcz Przynęty) czekają na S129 / S130
   (`UseBlocks.PENDING`; do tego czasu nic nie blokują). Fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
   (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, `balance.spec` tylko je drukuje).

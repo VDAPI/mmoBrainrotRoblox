@@ -4,6 +4,7 @@
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local DevPreset = require(Shared.Logic.DevPreset)
 local Elements = require(Shared.Data.Elements)
@@ -15,6 +16,8 @@ local Mounts = require(Shared.Logic.Mounts)
 local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local PathData = require(Shared.Data.Paths)
+local Time = require(Shared.Logic.Time)
+local TitleData = require(Shared.Data.Titles)
 local UseBlocks = require(Shared.Logic.UseBlocks)
 
 local UseGuards = require(script.Parent.Parent.UseGuards)
@@ -35,8 +38,31 @@ local SkillService = Context.services.SkillService
 local PathService = Context.services.PathService
 local PartyService = Context.services.PartyService
 local MountService = Context.services.MountService
+local TitleService = Context.services.TitleService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
+
+-- S125: a timed title for tests (0 days takes it away).
+commands.timedtitle = function(player, args)
+	local id = args[1] or ""
+	local days = math.floor(tonumber(args[2]) or 7)
+	local def = TitleData.get(id)
+	if not def or def.req.kind ~= "timed" then
+		reply(player, "admin.title.notTimed")
+		return
+	end
+	withCharacter(player, function()
+		if days <= 0 then
+			TitleService.RemoveTimed(player, id)
+			reply(player, "admin.title.removed", { id = id })
+			return
+		end
+		local untilTs = math.floor(Clock.now()) + days * 86400
+		TitleService.GrantTimed(player, id, untilTs)
+		local year, month, day = Time.civil(untilTs)
+		reply(player, "admin.title.timed", { id = id, ["until"] = string.format("%d-%02d-%02d", year, month, day) })
+	end)
+end
 
 commands.lvl = function(player, args)
 	local level = parseAmount(args[1])

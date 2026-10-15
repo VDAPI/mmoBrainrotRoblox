@@ -53,6 +53,14 @@ local Config = {
 		deleteTries = 3, -- attempts to remove the entries of a deleted character
 		enterDelay = 10, -- s after entering the world before the entry write (the guild record loads in the meantime)
 		retryFailed = 60, -- s before a failed board read is tried again
+		-- S125: weekly EXP and the guild board (one write per key every writeGap s, like every board)
+		weekTtl = 8 * 86400, -- s: weekly SortedMap entries outlive the week, so the next week can pay it out
+		payoutGrace = 300, -- s after the week ends before any server tries to pay (the last writes land)
+		payoutCheck = 300, -- s between payout checks (with ±payoutJitter)
+		payoutJitter = 60,
+		payoutLockStale = 900, -- s after which a claimed but unfinished payout may be taken over by another server
+		payoutStore = "Vaelthorn_LBPayouts_v1", -- DataStore: "paid_<week>" -> payout record (lock, sent, winners)
+		guildTop = 10, -- highest member levels summed for the guild score
 	},
 
 	CharacterName = {

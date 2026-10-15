@@ -1,0 +1,87 @@
+# Rankings on the wiki (S125, docs/WIKI.md "Rankingi (S125)"): every hour read the top of the leaderboards through
+# Roblox Open Cloud (tools/rankings_fetch.luau), build the wiki and deploy it to Cloudflare Pages (production, main).
+# Optional: without the ROBLOX_OPEN_CLOUD_KEY secret or the ROBLOX_UNIVERSE_ID variable the run only prints a notice and
+# stays green; without the Cloudflare secrets it builds and skips the deployment. Nothing is committed: the commit keeps
+# the exporter's placeholder of wiki/src/data/rankings.json. The same concurrency group as the main deployment of
+# wiki.yml, so two deployments never run at once. In a private repository each run uses Actions minutes: change the cron
+# below to run less often.
+name: Rankings
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: wiki-refs/heads/main
+  cancel-in-progress: false
+
+jobs:
+  rankings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HAS_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_KEY != '' && vars.ROBLOX_UNIVERSE_ID != '' }}
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+    steps:
+      - name: No Open Cloud key
+        if: env.HAS_KEY != 'true'
+        run: |
+          echo "::notice::Brak ROBLOX_OPEN_CLOUD_KEY albo ROBLOX_UNIVERSE_ID — pomijam ranking na wiki (docs/WIKI.md → Rankingi)"
+
+      - name: Checkout
+        if: env.HAS_KEY == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install toolchain
+        if: env.HAS_KEY == 'true'
+        uses: CompeyDev/setup-rokit@v0.1.2
+
+      - name: Set up Node
+        if: env.HAS_KEY == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: wiki/.nvmrc
+          cache: npm
+          cache-dependency-path: wiki/package-lock.json
+
+      - name: Install wiki dependencies
+        if: env.HAS_KEY == 'true'
+        working-directory: wiki
+        run: npm ci
+
+      - name: Fetch rankings
+        if: env.HAS_KEY == 'true'
+        env:
+          ROBLOX_OPEN_CLOUD_KEY: ${{ secrets.ROBLOX_OPEN_CLOUD_KEY }}
+          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
+        run: lune run tools/rankings_fetch.luau
+
+      - name: Build
+        if: env.HAS_KEY == 'true'
+        working-directory: wiki
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://vaelthorn-wiki.pages.dev' }}
+          PUBLIC_NOINDEX: "0"
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        if: env.HAS_KEY == 'true' && env.HAS_CF == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: "4.148.0"
+          command: pages deploy wiki/dist --project-name=${{ vars.CF_PAGES_PROJECT || 'vaelthorn-wiki' }} --branch=main --commit-hash=${{ github.sha }}
+
+      - name: No Cloudflare secrets
+        if: env.HAS_KEY == 'true' && env.HAS_CF != 'true'
+        run: |
+          echo "::notice::Brak sekretów Cloudflare — ranking pobrany, wdrożenie pominięte (docs/WIKI.md → Wdrożenie)"

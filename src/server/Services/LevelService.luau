@@ -29,6 +29,9 @@ local LevelService = {
 	-- (player, newLevel, levelsGained)
 	LeveledUp = Signal.new(),
 	LevelChanged = Signal.new(), -- (player, newLevel, oldLevel) S56: every level change, also SetLevel down
+	-- (player, gained, source) S125: every GiveExp after the EXP bonus, also at the top level (the weekly ranking counts
+	-- EXP gained, not EXP kept; LeaderboardService filters the sources by Data/Leaderboards.WEEK_SOURCES)
+	ExpGained = Signal.new(),
 }
 
 local PlayerStateService: any
@@ -85,7 +88,7 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 end
 
 -- Grants EXP (before the character's EXP bonus). Returns levels gained.
-function LevelService.GiveExp(player: Player, amount: number, _source: string?): number
+function LevelService.GiveExp(player: Player, amount: number, source: string?): number
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character or amount <= 0 or amount ~= amount then
 		return 0
@@ -97,6 +100,9 @@ function LevelService.GiveExp(player: Player, amount: number, _source: string?):
 	PlayerStateService.Set(player, { "character", "exp" }, exp)
 	if levels > 0 then
 		onLevelsGained(player, character, from, level)
+	end
+	if gained > 0 then
+		LevelService.ExpGained:Fire(player, gained, source)
 	end
 	return levels
 end

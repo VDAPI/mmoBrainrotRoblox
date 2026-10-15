@@ -225,6 +225,15 @@ type CharacterData = {
   Remote `LeaderboardGet(id)` → `(true, Snapshot)` / `(false, klucz)` (rate 2). Zapis postaci: `character.reached100At`
   (`LevelService`), `character.lbHidden`; `CharacterDeleted(player, character, slotKey)`. Klient: `RankingsController`
   (okno `UI/Screens/RankingsWindow`, akcja `win_rankings`), `FameBoardController` (tagi `FameBoard`, `FamePlinth`).
+- **Rankingi 2 (S125):** `LevelService.ExpGained(player, gained, source)` (każde `GiveExp` po premii, także na 100.);
+  `LeaderboardService` zbiera tydzień w `character.expWeek` (`{ week, exp, b }`), pisze sumę bezwzględną do SortedMap
+  `Vaelthorn_LBMap_v1_exp_week_<tydzień>_<przedział>` (wartość `{ s, m, cid }`, `UpdateAsync` z
+  `Logic/Leaderboard.mergeWeekly`), wypłata z blokadą `paid_<tydzień>` w DataStore `Config.Leaderboard.payoutStore`
+  (`Vaelthorn_LBPayouts_v1`, `Stores.payouts`), `LeaderboardService.SubmitGuild(data)` (tablica `guild`, OrderedDataStore
+  `Vaelthorn_LB_v1_guild`, klucze `g_<guildId>`; woła ją `GuildService` po każdym własnym zapisie rekordu, `GuildService`
+  bierze serwis rankingów leniwie). `Stores.sorted` ma `update`, `get`, `clear` (atrapa), `top` daje `raw`. Poczta:
+  `Mail.Parcel` / `MailService.Outgoing` mają `shards?` i `timedTitle?` (`TitleService` leniwie). Tytuły:
+  `character.timedTitles`, `TitleService.GrantTimed(player, id, untilTs)` / `RemoveTimed`, czas w `Titles.Context.now`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -494,6 +503,7 @@ type CharacterData = {
 | Komenda | Kategoria | Argumenty | Opis |
 |---|---|---|---|
 | `/lvl` | character | <level> | ustaw poziom postaci (punkty przeliczone) |
+| `/timedtitle` | character | <id> [dni] | tytuł czasowy na `dni` (0 = zdejmij), tylko tytuły `req.kind = "timed"` (S125) |
 | `/exp` | character | <amount> | dodaj doświadczenie |
 | `/stats` | character | <reset> | zwróć wszystkie punkty statystyk |
 | `/statpoints` | character | <n> | ustaw liczbę wolnych punktów statystyk |
@@ -522,6 +532,7 @@ type CharacterData = {
 | `/tp` | world | <target> [a] [b] | teleport na mapę, przed wejście do jaskini albo na pozycję |
 | `/npc` | world | [id:npc] | lista NPC albo teleport do jednego |
 | `/time` | world | <seconds> | przesuń zegar gry (alchemia, błogosławieństwa) |
+| `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
 | `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
 | `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |
 | `/fish` | world | <auto> | włącz/wyłącz automatyczny sukces łowienia |
@@ -590,6 +601,7 @@ type CharacterData = {
 | `/auction` | economy | <list|expireall> | /auction list | /auction expireall (Studio) ⚠ expireall |
 | `/tradetest` | economy |  | otwórz okno handlu samemu (Studio) (Studio) |
 | `/guild` | guild | <info|treasury|skills|bots|disband> [value] | /guild info | treasury n | skills max | bots n | disband ⚠ disband |
+| `/rankguild` | guild | <info|push> | wynik gildii w rankingu i miejsce, `push` = zapis od razu (S125) |
 | `/perf` | perf |  | /perf |
 | `/adminlog` | perf | [n] | ostatnie wywołania komend admina |
 | `/meadowsstats` | perf |  | części serwera, czasy budowy, budowle, drzewa, węzły i grupy Szepczących Łąk (S26) |

@@ -18,6 +18,7 @@ const TABLE: Record<string, [string, string]> = {
   guides: ["/pl/poradniki/", "/en/guides/"],
   search: ["/pl/szukaj/", "/en/search/"],
   updates: ["/pl/aktualizacje/", "/en/updates/"],
+  rankings: ["/pl/rankingi/", "/en/rankings/"],
   styleguide: ["/pl/styleguide/", "/en/styleguide/"],
 };
 

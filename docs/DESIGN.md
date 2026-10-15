@@ -834,6 +834,8 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 - **Handel 1 na 1**: zaproszenie, okno z dwoma stronami (przedmioty + złoto), obaj klikają „Akceptuj”, każda zmiana resetuje akceptację, potem 3 s odliczania i „Potwierdź”. Tylko niezwiązane. Transakcja atomowa na serwerze (obaj na tym samym serwerze).
 - **Dom aukcyjny** (między serwerami): wystaw niezwiązany przedmiot za złoto (24/48 h), opłata 5% od sprzedaży + kaucja 1%. Wyszukiwanie: slot, klasa, poziom, rzadkość, nazwa; sortowanie po cenie. Zakup natychmiastowy (bez licytacji). Złoto/przedmioty trafiają do **Poczty** (odbiór w mieście, także offline).
 - Waluty: **Złoto** (grywalna, per postać), **Smocza Waluta / Dragon Shards** (premium, kontowa, tylko za Robux i rzadkie wydarzenia).
+- **Poczta (S125):** przesyłka od systemu albo admina może mieć Smocze Odłamki (na konto) i tytuł czasowy (dla
+  postaci); gracz nie wyśle odłamków (`Logic/Mail.add`). Odbiór jak zawsze przy skrzynce, tytuł po terminie nic nie daje.
 - **Wartość przedmiotu** (S31, `Logic/ItemValue`, stałe w `Data/ItemValue`): ekwipunek `round(6 × ilvl × sellMul² × slotMul × (1 + 0,1 × ulepszenie))`, `slotMul` broń 1,0 / pancerz i druga ręka 0,8 / biżuteria 0,7; pozostałe `def.price × ilość` (każdy przedmiot ma cenę > 0). Kupiec płaci wartość; zakup u NPC = wartość × `shop.buyMul` (domyślnie 4), chyba że wpis ma stałą cenę (mikstury, kamienie, narzędzia, plecaki, ruda — nie niższą niż wartość). Ta sama funkcja liczy cenę na serwerze i w UI. Zablokowane i `noSell`: „Nie można sprzedać”.
 - Odbiorniki złota: ulepszanie, mikstury, plecaki, alchemik, wytwarzanie, opłaty aukcji, zwoje resetu, gildie.
 - **Budżet 1→20** (S32, `docs/BALANS.md`, Wojownik, fabuła + połowa questów pobocznych; S91 po przestrojeniu zadań):
@@ -884,7 +886,20 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 - **Plansza przy ratuszu** (północna pierzeja rynku, obok bankiera): top 10 poziomu, listy Sali Sław czterech klas i cztery
   cokoły z posągami i imionami pierwszych bohaterów klas („Czeka na pierwszego”, gdy wolne).
 - **Bez dostępu do usług Roblox** (Studio bez API) wszystko działa na tym serwerze z napisem „Tylko ten serwer”;
-  `/lb fake 100` wypełnia tablice postaciami testowymi.
+  `/lb fake 100` wypełnia tablice postaciami testowymi (od S125 także tydzień i gildie).
+- **Tydzień (S125):** tydzień od poniedziałku 00:00 UTC (ten sam co zadania tygodniowe S98). Liczy się EXP zdobyty w grze
+  po premii (także na 100. poziomie) ze źródeł z listy `Data/Leaderboards.WEEK_SOURCES`: potwory, bossowie, zadania,
+  zlecenia łowieckie, wydarzenia świata; nigdy komendy admina ani nic kupionego. Cztery przedziały poziomów 1–19, 20–44,
+  45–69, 70–100 (przedział według poziomu przy ostatnim zapisie), osobna lista na przedział, zapis co 60 s i przy wyjściu.
+  Po końcu tygodnia jeden serwer (blokada `paid_<tydzień>`) wysyła pocztą najlepszej trójce każdego przedziału 100 / 50 /
+  25 Smoczych Odłamków i tytuł „Najpilniejszy Tygodnia” do końca następnego tygodnia (7 dni od poniedziałku). Okno:
+  zakładka „Tydzień” z przełącznikiem przedziału, odliczaniem, nagrodami, „Ty” i zwycięzcami poprzedniego tygodnia.
+- **Gildie (S125):** zakładka „Gildie”: wynik = suma poziomów 10 najwyższych członków (remis: starsza gildia wyżej),
+  aktualizowany przy zmianie składu i awansie członka (najwyżej co 60 s); rozwiązana gildia znika. Wiersz „Twoja gildia”.
+- **Tytuły czasowe (S125):** `character.timedTitles` (tytuł → do kiedy); odblokowane do terminu, potem znikają same
+  (picker pokazuje, ile zostało). Daje je poczta z rankingu tygodnia; z tego samego mechanizmu skorzystają S129 i S130.
+- **Wiki (S125):** strona „Rankingi” (`/pl/rankingi/`) pokazuje rankingi pobierane co godzinę przez Roblox Open Cloud,
+  gdy właściciel doda klucz; bez klucza: „ranking dostępny w grze” (`docs/WIKI.md` → „Rankingi (S125)”).
 
 ## 20. Questy
 

@@ -6,6 +6,8 @@
 -- Claiming is atomic: the parcel is removed from the mailbox in UpdateAsync first, then put into the
 -- character; whatever no longer fits is mailed back as a new parcel, so nothing is lost or duplicated.
 -- Claiming happens at the mailbox (the Auctioneer); the list (state branch `mail`) is visible anywhere.
+-- S125: system and admin parcels may carry Dragon Shards (account) and a timed title (character, TitleService.GrantTimed);
+-- the weekly ranking sends them (LeaderboardService), S128-S130 too. TitleService is taken lazily (S60 pattern).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -13,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
 local Config = require(Shared.Config)
 local Inventory = require(Shared.Logic.Inventory)
 local KeyStore = require(script.Parent.Parent.Market.KeyStore)
@@ -39,8 +42,12 @@ export type Outgoing = {
 	gold: number?,
 	items: { ItemInstance }?,
 	charId: string?,
+	shards: number?, -- S125: Dragon Shards for the account (system / admin only, Logic/Mail.add)
+	timedTitle: { id: string, untilTs: number }?, -- S125: a timed title for `charId`
 }
 
+local Registry: any
+local TitleService: any
 local DataService: any
 local PlayerStateService: any
 local CharacterService: any
@@ -50,6 +57,15 @@ local NpcService: any
 local store: KeyStore.KeyStore
 local boxes: { [Player]: Mail.Box } = {}
 local busy: { [Player]: boolean } = {}
+
+-- S125: lazily (TitleService does not depend on mail; nothing here needs it at Init time).
+local function titleService(): any
+	if TitleService == nil and Registry then
+		local ok, service = pcall(Registry.Get, "TitleService")
+		TitleService = if ok then service else false
+	end
+	return TitleService or nil
+end
 
 local function key(userId: number): string
 	return `Mail_{userId}`
@@ -96,6 +112,8 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 		createdAt = now,
 		expiresAt = now + Mail.LIFETIME,
 		charId = outgoing.charId,
+		shards = if outgoing.shards and outgoing.shards > 0 then math.max(0, math.floor(outgoing.shards)) else nil,
+		timedTitle = outgoing.timedTitle,
 	}
 	local ok, _, err = store:update(key(userId), function(current: any?)
 		local box = Mail.box(current)
@@ -107,11 +125,12 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 	end)
 	if not ok then
 		log:warn(
-			"parcel to %d rejected (%s): %d gold, %d items, subject %s",
+			"parcel to %d rejected (%s): %d gold, %d items, %d shards, subject %s",
 			userId,
 			tostring(err),
 			parcel.gold,
 			#parcel.items,
+			parcel.shards or 0,
 			parcel.subjectKey
 		)
 		return false, err
@@ -126,6 +145,22 @@ local function deliver(player: Player, parcel: Mail.Parcel): { ItemInstance }
 		PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 			return gold + parcel.gold
 		end)
+	end
+	-- S125: shards for the account (MonetizationService.addShards pattern) and a timed title (an expired term gives
+	-- nothing; the parcel is still taken)
+	local shards = parcel.shards
+	if shards and shards > 0 then
+		local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(n: number)
+			return (n or 0) + shards
+		end)
+		Analytics.shards(player, shards, total, `mail_{parcel.from}`)
+	end
+	local timed = parcel.timedTitle
+	if timed then
+		local titles = titleService()
+		if titles then
+			titles.GrantTimed(player, timed.id, timed.untilTs)
+		end
 	end
 	local leftovers = {}
 	for _, item in parcel.items do
@@ -173,21 +208,34 @@ local function claim(player: Player, id: string): (boolean, string?)
 	end
 	boxes[player] = Mail.box(newBox)
 	local parcel = taken :: Mail.Parcel
-	-- The character may have switched while the store yielded: deliver to whoever is active, else re-mail.
-	local leftovers = if character(player) == char then deliver(player, parcel) else parcel.items
-	local missedGold = if character(player) == char then 0 else parcel.gold
-	if #leftovers > 0 or missedGold > 0 then
+	-- The character may have switched while the store yielded: deliver to whoever is active, else re-mail (S125: the
+	-- shards and the title go back in the same parcel).
+	local same = character(player) == char
+	local leftovers = if same then deliver(player, parcel) else parcel.items
+	local missedGold = if same then 0 else parcel.gold
+	local missedShards = if same then nil else parcel.shards
+	local missedTitle = if same then nil else parcel.timedTitle
+	if #leftovers > 0 or missedGold > 0 or (missedShards or 0) > 0 or missedTitle ~= nil then
 		MailService.Send(player.UserId, {
 			from = "system",
 			subjectKey = "mail.subject.returned",
 			gold = missedGold,
 			items = leftovers,
 			charId = char.id,
+			shards = missedShards,
+			timedTitle = missedTitle,
 		})
 	end
 	DataService.Save(player)
 	publish(player)
-	log:info("%s claimed parcel %s (%d gold, %d items)", player.Name, id, parcel.gold, #parcel.items)
+	log:info(
+		"%s claimed parcel %s (%d gold, %d items, %d shards)",
+		player.Name,
+		id,
+		parcel.gold,
+		#parcel.items,
+		parcel.shards or 0
+	)
 	return true, nil
 end
 
@@ -231,6 +279,7 @@ local function claimAll(player: Player): (boolean, string?, number?)
 end
 
 function MailService.Init(registry)
+	Registry = registry
 	DataService = registry.Get("DataService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

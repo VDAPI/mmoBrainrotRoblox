@@ -18,8 +18,8 @@ local actions: { Action } = {
 	{ id = "win_guild", default = "G", labelKey = "hud.menu.guild", group = "windows" },
 	{ id = "win_party", default = "P", labelKey = "hud.menu.party", group = "windows" },
 	{ id = "win_mounts", default = "J", labelKey = "hud.menu.mounts", group = "windows" }, -- S97: mounts window
-	-- S124: the Rankings window; on the wiki key list from S125 (the Rankings page)
-	{ id = "win_rankings", default = "R", labelKey = "hud.menu.rankings", group = "windows", wiki = false },
+	-- S124: the Rankings window; on the wiki key list since S125 (the Rankings page)
+	{ id = "win_rankings", default = "R", labelKey = "hud.menu.rankings", group = "windows" },
 	-- S68: held, pins the item tooltip so the mouse can point at its lines (details panel)
 	{ id = "item_details", default = "LeftAlt", labelKey = "keys.itemDetails", group = "windows" },
 	{ id = "skill_1", default = "One", labelKey = "keys.skill.1", group = "combat" },

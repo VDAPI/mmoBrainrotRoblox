@@ -85,6 +85,7 @@ export const PAGES: PageEntry[] = [
     ],
   },
   { key: "updates", view: "UpdatesView", getPaths: () => [{ ids: [] }] },
+  { key: "rankings", view: "RankingsView", getPaths: () => [{ ids: [] }] },
   ...SECTIONS.filter((s) => !s.ready).map(
     (s): PageEntry => ({ key: s.id, view: "ComingSoon", getPaths: () => [{ ids: [], props: { section: s.id } }] }),
   ),

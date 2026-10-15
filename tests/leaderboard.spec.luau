@@ -1,7 +1,7 @@
 --!strict
 -- Leaderboards (S124, DESIGN-17 §5): the board data, the score encoding, board ids, the in-memory board, write
 -- throttling, rows and the own line, the Hall of Fame list and the town board panels. The Roblox stores are not here
--- (no DataStoreService in Lune): the server only calls these functions.
+-- (no DataStoreService in Lune): the server only calls these functions. S125: weekly EXP and the guild board below.
 
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
@@ -524,6 +524,317 @@ T.describe("Leaderboards (S124)", function()
 	T.it("splits dates into day, month and year", function()
 		T.expect(Leaderboard.dateParts(1791763200)).toEqual({ d = "12", m = "10", y = "2026" })
 		T.expect(Leaderboard.dateParts(0)).toEqual({ d = "01", m = "01", y = "1970" })
+	end)
+end)
+
+-- S125 (DESIGN-17 §5): weekly EXP (brackets, the week, the entry and its merge, the payout lock and plan), the guild
+-- score and the save fields. The SortedMap and DataStore calls are not here: the server only calls these functions.
+T.describe("S125 weekly EXP and the guild board", function()
+	local AccountSchema = require("../src/shared/Logic/AccountSchema")
+	local TitleData = require("../src/shared/Data/Titles")
+	local Time = require("../src/shared/Logic/Time")
+	local MONDAY = 1791763200 -- 2026-10-12 00:00 UTC, week 2963 (S98)
+
+	local function weekly(s: number, cid: string?): Leaderboard.WeeklyValue
+		return { s = s, m = { n = "Aria", c = "Mage", l = 30, u = 1, t = 0 }, cid = cid }
+	end
+
+	T.it("has four contiguous brackets, the rewards, the sources and both boards", function()
+		local brackets = Leaderboards.WEEK_BRACKETS
+		T.expect(brackets).toEqual({ { 1, 19 }, { 20, 44 }, { 45, 69 }, { 70, 100 } })
+		local nextLevel = 1
+		for _, b in brackets do
+			T.expect(b[1]).toBe(nextLevel)
+			T.expect(b[2] >= b[1]).toBe(true)
+			nextLevel = b[2] + 1
+		end
+		T.expect(nextLevel).toBe(MAX + 1)
+		local rewards = Leaderboards.WEEK_REWARDS
+		T.expect(rewards.shards).toEqual({ 100, 50, 25 })
+		for i, n in rewards.shards do
+			T.expect(n > 0 and n == math.floor(n)).toBe(true)
+			if i > 1 then
+				T.expect(n < rewards.shards[i - 1]).toBe(true)
+			end
+		end
+		T.expect(rewards.titleDays).toBe(7)
+		local title = TitleData.get(rewards.title) :: TitleData.TitleDef
+		T.expect(title ~= nil).toBe(true)
+		T.expect(title.req.kind).toBe("timed")
+		T.expect(Leaderboards.WEEK_SOURCES.admin).toBeNil()
+		for _, source in { "monster", "boss", "quest", "contract", "worldEvent" } do
+			T.expect({ source, Leaderboard.countsForWeek(source) }).toEqual({ source, true })
+		end
+		T.expect(Leaderboard.countsForWeek("admin")).toBe(false)
+		T.expect(Leaderboard.countsForWeek(nil)).toBe(false)
+		T.expect(Leaderboard.countsForWeek("purchase")).toBe(false)
+		local week = Leaderboards.get("exp_week") :: Leaderboards.BoardDef
+		T.expect({ week.kind, week.scope, week.format, week.ttl }).toEqual({
+			"sorted",
+			"character",
+			"int",
+			Config.Leaderboard.weekTtl,
+		})
+		T.expect(week.parts).toEqual({ "week", "bracket" })
+		T.expect(week.score).toBeNil()
+		local guild = Leaderboards.get("guild") :: Leaderboards.BoardDef
+		T.expect({ guild.kind, guild.scope, guild.format }).toEqual({ "ordered", "guild", "guild" })
+		T.expect(guild.score).toBeNil()
+		for _, key in { week.nameKey, guild.nameKey, "leaderboard.tab.week", "leaderboard.tab.guild" } do
+			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })
+		end
+	end)
+
+	T.it("finds brackets, labels and weekly board ids", function()
+		local cases = { { 1, 1 }, { 19, 1 }, { 20, 2 }, { 44, 2 }, { 45, 3 }, { 69, 3 }, { 70, 4 }, { 100, 4 } }
+		for _, c in cases do
+			T.expect({ c[1], Leaderboard.bracketOf(c[1]) }).toEqual({ c[1], c[2] })
+		end
+		T.expect(Leaderboard.bracketOf(0)).toBe(1)
+		T.expect(Leaderboard.bracketOf(101)).toBe(4)
+		T.expect(Leaderboard.bracketLabel(1)).toBe("1–19")
+		T.expect(Leaderboard.bracketLabel(4)).toBe("70–100")
+		T.expect(Leaderboard.bracketLabel(9)).toBe("")
+		T.expect(Leaderboard.weekMapName(2963, 2)).toBe("exp_week_2963_2")
+		T.expect(Leaderboard.weekMapName(2963, 1) ~= Leaderboard.weekMapName(2964, 1)).toBe(true)
+		T.expect(Leaderboard.weekMapName(2963, 1) ~= Leaderboard.weekMapName(2963, 2)).toBe(true)
+		local def, parts = Leaderboard.resolve("exp_week_2963_2")
+		T.expect(def).toBe(Leaderboards.get("exp_week"))
+		T.expect(parts).toEqual({ "2963", "2" })
+		T.expect(Leaderboard.PARTS.bracket({ now = 0, level = 50 })).toBe("3")
+		T.expect(Leaderboard.PARTS.bracket({ now = 0, bracket = 2 })).toBe("2")
+		local tab: Leaderboards.TabDef? = nil
+		for _, t in Leaderboards.tabs do
+			if t.id == "week" then
+				tab = t
+			end
+		end
+		T.expect(tab ~= nil).toBe(true)
+		local weekTab = tab :: Leaderboards.TabDef
+		T.expect(weekTab.filter).toBe("bracket")
+		T.expect(Leaderboard.boardFor(weekTab, "4", MONDAY + 3600)).toBe("exp_week_2963_4")
+		T.expect(Leaderboard.boardFor(weekTab, "9", MONDAY)).toBe("exp_week_2963_4")
+		T.expect(Leaderboard.boardFor(weekTab, "2", nil)).toBeNil()
+		T.expect((Leaderboard.resolve("guild"))).toBe(Leaderboards.get("guild"))
+		-- a client reads only the boards the window builds: this week (or within READ_GRACE of its start), brackets 1..4
+		local function readable(id: string, now: number): boolean
+			local d, p = Leaderboard.resolve(id)
+			return d ~= nil and Leaderboard.readable(d, p, now)
+		end
+		T.expect(readable("level", MONDAY)).toBe(true)
+		T.expect(readable("exp_week_2963_1", MONDAY + 86400)).toBe(true)
+		T.expect(readable("exp_week_2963_4", MONDAY + 86400)).toBe(true)
+		T.expect(readable("exp_week_2962_2", MONDAY + 60)).toBe(true)
+		T.expect(readable("exp_week_2962_2", MONDAY + Leaderboard.READ_GRACE + 60)).toBe(false)
+		T.expect(readable("exp_week_2964_1", MONDAY + 60)).toBe(false)
+		for _, bad in { "exp_week_2963_0", "exp_week_2963_5", "exp_week_2963_01", "exp_week_2963_x", "exp_week_abc_1" } do
+			T.expect({ bad, readable(bad, MONDAY + 60) }).toEqual({ bad, false })
+		end
+		T.expect(Leaderboard.readable(Leaderboards.get("exp_week") :: any, nil, MONDAY)).toBe(false)
+	end)
+
+	T.it("adds weekly EXP without touching the input", function()
+		local first = Leaderboard.addWeekly(nil, 2963, 120)
+		T.expect(first).toEqual({ week = 2963, exp = 120, b = 0 })
+		local state = { week = 2963, exp = 500, b = 2 }
+		local more = Leaderboard.addWeekly(state, 2963, 40.7)
+		T.expect(more).toEqual({ week = 2963, exp = 540, b = 2 })
+		T.expect(state).toEqual({ week = 2963, exp = 500, b = 2 })
+		T.expect(Leaderboard.addWeekly(state, 2964, 10)).toEqual({ week = 2964, exp = 10, b = 0 })
+		T.expect(Leaderboard.addWeekly(state, 2963, -50)).toEqual(state)
+		T.expect(Leaderboard.addWeekly(state, 2963, 0 / 0)).toEqual(state)
+		T.expect(Leaderboard.addWeekly(state, 2963, math.huge)).toEqual(state)
+		T.expect(Leaderboard.addWeekly(state, 2963, 0)).toEqual(state)
+		T.expect(Leaderboard.weekExp({ expWeek = state }, 2963)).toBe(500)
+		T.expect(Leaderboard.weekExp({ expWeek = state }, 2964)).toBe(0)
+		T.expect(Leaderboard.weekExp({}, 2963)).toBe(0)
+	end)
+
+	T.it("builds the weekly entry and merges it as an absolute total", function()
+		local entry = Leaderboard.weeklyEntry({
+			userId = 123,
+			slot = 2,
+			charId = "c1",
+			name = "Aria",
+			class = "Mage",
+			level = 30,
+			guildTag = "ORD",
+			exp = 4321.9,
+			now = 50,
+		})
+		T.expect(entry.key).toBe("123_2")
+		T.expect(entry.sortKey).toBe(4321)
+		T.expect(entry.value).toEqual({
+			s = 4321,
+			m = { n = "Aria", c = "Mage", g = "ORD", l = 30, u = 123, t = 50 },
+			cid = "c1",
+		})
+		-- nothing stored -> the entry
+		T.expect(Leaderboard.mergeWeekly(nil, weekly(10, "c1"))).toEqual(weekly(10, "c1"))
+		-- a retry with the same total changes nothing
+		T.expect(Leaderboard.mergeWeekly(weekly(10, "c1"), weekly(10, "c1"))).toEqual(weekly(10, "c1"))
+		-- a later, higher total wins
+		T.expect(Leaderboard.mergeWeekly(weekly(10, "c1"), weekly(25, "c1"))).toEqual(weekly(25, "c1"))
+		-- an older, lower total from another server never replaces a higher one
+		T.expect(Leaderboard.mergeWeekly(weekly(25, "c1"), weekly(10, "c1"))).toBeNil()
+		-- a new character on the slot replaces the entry of the deleted one
+		T.expect(Leaderboard.mergeWeekly(weekly(25, "c1"), weekly(3, "c2"))).toEqual(weekly(3, "c2"))
+	end)
+
+	T.it("claims the payout lock once, lets a stale lock be taken over and keeps what was sent", function()
+		local record, err = Leaderboard.claimPayout(nil, "jobA", 1000, 900)
+		T.expect(err).toBeNil()
+		T.expect(record).toEqual({ state = "claimed", job = "jobA", at = 1000, sent = {}, winners = {} })
+		local claimed =
+			{ state = "claimed", job = "jobA", at = 1000, sent = { ["1_1"] = true }, winners = { { b = 1 } } }
+		T.expect({ Leaderboard.claimPayout(claimed, "jobB", 1100, 900) }).toEqual({ nil, "busy" })
+		local taken = Leaderboard.claimPayout(claimed, "jobB", 2000, 900)
+		T.expect(taken.job).toBe("jobB")
+		T.expect(taken.at).toBe(2000)
+		T.expect(taken.sent).toEqual({ ["1_1"] = true })
+		T.expect(taken.winners).toEqual({ { b = 1 } })
+		T.expect(claimed.job).toBe("jobA")
+		local again = Leaderboard.claimPayout(claimed, "jobA", 1100, 900)
+		T.expect(again.job).toBe("jobA")
+		T.expect(again.sent).toEqual({ ["1_1"] = true })
+		T.expect({ Leaderboard.claimPayout({ state = "done" }, "jobA", 1100, 900) }).toEqual({ nil, "done" })
+		local reset = Leaderboard.claimPayout({ state = "reset", at = 1 }, "jobC", 5, 900)
+		T.expect(reset.state).toBe("claimed")
+	end)
+
+	T.it("plans the top three of every bracket with shards and a title until a week after the next Monday", function()
+		local W = 2963
+		local function e(key: string, s: number, cid: string?): { key: string, value: any }
+			return { key = key, value = { s = s, m = { n = key, c = "Mage", l = 30, u = 0, t = 0 }, cid = cid } }
+		end
+		local tops = {
+			[1] = {},
+			[2] = { e("10_1", 500, "a"), e("11_1", 900, "b") },
+			[3] = {
+				e("20_1", 300, "c"),
+				e("21_1", 0, "d"),
+				e("bad", 999, "x"),
+				e("22_1", 300, "e"),
+				e("23_1", 300, "f"),
+				e("24_1", 700, "g"),
+			},
+		}
+		local plan = Leaderboard.payoutPlan(W, tops)
+		T.expect(#plan).toBe(5)
+		local untilTs = Time.weekStart(W + 1) + 7 * 86400
+		local got = {}
+		for _, p in plan do
+			table.insert(got, { p.bracket, p.place, p.key, p.userId, p.charId, p.shards, p.title, p.untilTs, p.exp })
+		end
+		T.expect(got).toEqual({
+			{ 2, 1, "11_1", 11, "b", 100, "weekly_diligent", untilTs, 900 },
+			{ 2, 2, "10_1", 10, "a", 50, "weekly_diligent", untilTs, 500 },
+			{ 3, 1, "24_1", 24, "g", 100, "weekly_diligent", untilTs, 700 },
+			{ 3, 2, "20_1", 20, "c", 50, "weekly_diligent", untilTs, 300 },
+			{ 3, 3, "22_1", 22, "e", 25, "weekly_diligent", untilTs, 300 },
+		})
+		T.expect(Leaderboard.payoutPlan(W, tops)).toEqual(plan)
+		local user = Leaderboard.parseKey("123_2")
+		T.expect(user).toBe(123)
+		local winners = Leaderboard.winnersOf(plan)
+		T.expect(winners[1]).toEqual({ b = 2, p = 1, n = "11_1", c = "Mage", l = 30, e = 900 })
+		for _, w in winners do
+			for key in w do
+				T.expect({ key, key ~= "userId" and key ~= "key" and key ~= "charId" }).toEqual({ key, true })
+			end
+		end
+		local rows = Leaderboard.winnerRows(winners, 3)
+		T.expect(#rows).toBe(3)
+		T.expect({ rows[1].r, rows[1].s, rows[1].c }).toEqual({ 1, 700, "@class.Mage.name" })
+		T.expect(#Leaderboard.winnerRows(winners, 1)).toBe(0)
+		T.expect(#Leaderboard.winnerRows(nil, 1)).toBe(0)
+	end)
+
+	T.it("uses the S98 week", function()
+		T.expect(Leaderboard.weekEndsIn(Time.weekStart(2963))).toBe(7 * 86400)
+		T.expect(Leaderboard.weekEndsIn(MONDAY + 3600)).toBe(7 * 86400 - 3600)
+		T.expect(Time.weekNumber(MONDAY + 3600)).toBe(2963)
+		T.expect(Leaderboard.PARTS.week({ now = MONDAY + 3600 })).toBe("2963")
+		local me = Leaderboard.weekMe({ level = 50, expWeek = { week = 2963, exp = 77, b = 3 } }, {}, 2963, false)
+		T.expect(me).toEqual({ s = 77, b = 3 })
+		T.expect(Leaderboard.weekMe({ level = 50 }, {}, 2963, true)).toEqual({ hidden = true })
+	end)
+
+	T.it("scores a guild by its highest member levels, the older guild first on a tie", function()
+		local members = {}
+		for i = 1, 12 do
+			members[`m{i}`] = { level = i * 5 }
+		end
+		T.expect(Leaderboard.guildScore(members)).toBe(15 + 20 + 25 + 30 + 35 + 40 + 45 + 50 + 55 + 60)
+		T.expect(Leaderboard.guildScore({ a = { level = 10 }, b = { level = 20 }, c = { level = 7 } })).toBe(37)
+		T.expect(Leaderboard.guildScore({})).toBe(0)
+		T.expect(Leaderboard.guildScore(nil)).toBe(0)
+		local high = Leaderboard.encodeGuild(300, 5000)
+		local low = Leaderboard.encodeGuild(299, 1)
+		local older = Leaderboard.encodeGuild(300, 4000)
+		T.expect(high > low).toBe(true)
+		T.expect(older > high).toBe(true)
+		T.expect(Leaderboard.decodeGuild(high)).toBe(300)
+		T.expect(Leaderboard.decodeGuild(Leaderboard.encodeGuild(0, MONDAY))).toBe(0)
+		local max = Leaderboard.encodeGuild(1000, 0)
+		T.expect(max < 2 ^ 53).toBe(true)
+		T.expect(Leaderboard.decodeGuild(max)).toBe(1000)
+		T.expect(Leaderboard.guildKey("abc")).toBe("g_abc")
+		T.expect((Leaderboard.parseKey("g_abc"))).toBeNil()
+		local def = Leaderboards.get("guild") :: Leaderboards.BoardDef
+		local rows = Leaderboard.rows(def, { { key = "g_abc", score = high } }, function()
+			return { n = "Order", g = "ORD", l = 60, m = 12, t = 0 }
+		end, function()
+			return false
+		end, "g_abc")
+		T.expect({ rows[1].s, rows[1].m, rows[1].g, rows[1].n, rows[1].mine })
+			.toEqual({ 300, 12, "ORD", "Order", true })
+		T.expect(Leaderboard.guildMe(nil, rows)).toEqual({ none = true })
+		T.expect(Leaderboard.guildMe({ members = { a = { level = 9 } } }, rows)).toEqual({ r = 1, s = 9 })
+	end)
+
+	T.it("reads the weekly metadata from the entry itself", function()
+		local def = Leaderboards.get("exp_week") :: Leaderboards.BoardDef
+		local rows = Leaderboard.rows(def, {
+			{ key = "5_1", score = 900, value = { n = "Week", c = "Hunter", l = 33, u = 5, t = 0 } },
+		}, function()
+			return { n = "Stale", c = "Mage", l = 1, t = 0 }
+		end, function()
+			return false
+		end, nil)
+		T.expect({ rows[1].n, rows[1].c, rows[1].l, rows[1].s }).toEqual({ "Week", "@class.Hunter.name", 33, 900 })
+	end)
+
+	T.it("adds the weekly and timed title fields from the template, without a migration", function()
+		local template = AccountSchema.characterTemplate()
+		T.expect(template.expWeek).toEqual({ week = 0, exp = 0, b = 0 })
+		T.expect(template.timedTitles).toEqual({})
+		T.expect(AccountSchema.CURRENT).toBe(8)
+		local data: any = {
+			schema = AccountSchema.CURRENT,
+			characters = { ["1"] = { id = "x", name = "Old", class = "Mage", level = 40 } },
+		}
+		AccountSchema.migrate(data)
+		T.expect(data.characters["1"].expWeek).toEqual({ week = 0, exp = 0, b = 0 })
+		T.expect(data.characters["1"].timedTitles).toEqual({})
+		T.expect(data.characters["1"].level).toBe(40)
+	end)
+
+	T.it("fills the weekly and guild boards for /lb fake deterministically", function()
+		local a = Leaderboard.fakeWeekly(40, MONDAY)
+		T.expect(a).toEqual(Leaderboard.fakeWeekly(40, MONDAY))
+		local seen = {}
+		for i, f in a do
+			seen[f.bracket] = true
+			if i > 1 then
+				T.expect(f.value.s < a[i - 1].value.s).toBe(true)
+			end
+		end
+		T.expect(seen).toEqual({ [1] = true, [2] = true, [3] = true, [4] = true })
+		local g = Leaderboard.fakeGuilds(40, MONDAY)
+		T.expect(#g).toBe(30)
+		T.expect(g[1].key).toBe("g_fake1")
+		T.expect(Leaderboard.decodeGuild(g[1].score) > Leaderboard.decodeGuild(g[2].score)).toBe(true)
 	end)
 end)
 

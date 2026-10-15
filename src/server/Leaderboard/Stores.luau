@@ -11,6 +11,9 @@
 --            sortKey), expiration), GetRangeAsync(direction, count) -> { { key, value, sortKey } }.
 --   meta     DataStore Config.Leaderboard.metaStore (KeyStore): entry key -> Logic/Leaderboard.Meta
 --   lists    DataStore Config.Leaderboard.listStore (KeyStore): list instance id -> { entries = { ListEntry } }
+--   payouts  DataStore Config.Leaderboard.payoutStore (KeyStore, S125): "paid_<week>" -> the weekly payout record
+-- S125: a sorted board also has `update` (UpdateAsync with a pure step: the weekly entry { s, m, cid }) and `get`; `top`
+-- gives each entry's whole stored value as `raw`.
 
 local DataStoreService = game:GetService("DataStoreService")
 local MemoryStoreService = game:GetService("MemoryStoreService")
@@ -36,8 +39,15 @@ export type Board = {
 	-- (ok) adds to the score of a sorted board (UpdateAsync); ordered boards refuse
 	add: (key: string, delta: number, meta: Leaderboard.Meta?) -> boolean,
 	remove: (key: string) -> boolean,
-	-- (ok, entries best first; a sorted entry's value is its meta)
+	-- (ok, entries best first; a sorted entry's value is its meta, `raw` the whole stored value)
 	top: (n: number) -> (boolean, { Leaderboard.Entry }),
+	-- S125, sorted boards only: (ok, the written value?) after `fn(old stored value?)` -> new value { s = score, ... }
+	-- or nil (nothing written; ok stays true)
+	update: (key: string, fn: (old: any?) -> any?) -> (boolean, any?),
+	-- S125, sorted boards only: (ok, stored value?)
+	get: (key: string) -> (boolean, any?),
+	-- S125: empties an in-memory board (/rankweek reset); false for a live one
+	clear: () -> boolean,
 	isMock: () -> boolean,
 }
 
@@ -53,6 +63,7 @@ local warned: { [string]: boolean } = {}
 
 Stores.meta = (nil :: any) :: KeyStore.KeyStore
 Stores.lists = (nil :: any) :: KeyStore.KeyStore
+Stores.payouts = (nil :: any) :: KeyStore.KeyStore
 
 -- One warning per kind of failure, never a flood (wzór Guild/Bus).
 function Stores.warnOnce(what: string, err: any)
@@ -66,6 +77,7 @@ function Stores.init(hasDataStoreAccess: () -> boolean)
 	hasAccess = hasDataStoreAccess
 	Stores.meta = KeyStore.new(Config.Leaderboard.metaStore, hasDataStoreAccess)
 	Stores.lists = KeyStore.new(Config.Leaderboard.listStore, hasDataStoreAccess)
+	Stores.payouts = KeyStore.new(Config.Leaderboard.payoutStore, hasDataStoreAccess)
 end
 
 -- The DataStore budget of a request type (0 when unknown); in-memory mode has no budget to save.
@@ -79,11 +91,17 @@ function Stores.budget(requestType: Enum.DataStoreRequestType): number
 	return if ok and type(budget) == "number" then budget else 0
 end
 
+-- In memory every entry keeps the stored shape of a sorted board ({ s = score, m = meta?, cid? }), so `update` sees
+-- what UpdateAsync would.
 local function memoryBoardOf(ttl: number?): Board
 	local memory = Leaderboard.memoryBoard()
+	local function expiry(now: number): number?
+		return if ttl then now + ttl else nil
+	end
 	local board = {}
 	function board.set(key: string, score: number, meta: Leaderboard.Meta?): boolean
-		memory.set(key, math.floor(score), meta, if ttl then os.time() + ttl else nil)
+		local s = math.floor(score)
+		memory.set(key, s, { s = s, m = meta }, expiry(os.time()))
 		return true
 	end
 	function board.add(key: string, delta: number, meta: Leaderboard.Meta?): boolean
@@ -92,16 +110,53 @@ local function memoryBoardOf(ttl: number?): Board
 		end
 		local now = os.time()
 		memory.update(key, function(old)
-			return (if old then old.score else 0) + delta, meta or (old and old.value)
-		end, now + (ttl :: number), now)
+			local s = math.floor((if old then old.score else 0) + delta)
+			local oldMeta = if old and type(old.value) == "table" then old.value.m else nil
+			return s, { s = s, m = meta or oldMeta }
+		end, expiry(now), now)
 		return true
+	end
+	function board.update(key: string, fn: (old: any?) -> any?): (boolean, any?)
+		if not ttl then
+			error("Stores: update on an ordered board")
+		end
+		local now = os.time()
+		local written: any? = nil
+		memory.update(key, function(old)
+			local value = fn(if old and type(old.value) == "table" then table.clone(old.value) else nil)
+			if type(value) ~= "table" or type(value.s) ~= "number" then
+				return nil, nil
+			end
+			value.s = math.floor(value.s)
+			written = value
+			return value.s, value
+		end, expiry(now), now)
+		return true, written
+	end
+	function board.get(key: string): (boolean, any?)
+		local e = memory.get(key, os.time())
+		return true, if e then e.value else nil
 	end
 	function board.remove(key: string): boolean
 		memory.remove(key)
 		return true
 	end
 	function board.top(n: number): (boolean, { Leaderboard.Entry })
-		return true, memory.top(n, os.time())
+		local out: { Leaderboard.Entry } = {}
+		for _, e in memory.top(n, os.time()) do
+			local raw = e.value
+			table.insert(out, {
+				key = e.key,
+				score = e.score,
+				value = if ttl and type(raw) == "table" then raw.m else nil,
+				raw = if ttl then raw else nil,
+			})
+		end
+		return true, out
+	end
+	function board.clear(): boolean
+		memory.clear()
+		return true
 	end
 	function board.isMock(): boolean
 		return true
@@ -124,6 +179,15 @@ local function switching(mock: Board, live: Board, useMock: () -> boolean): Boar
 	end
 	function board.top(n: number): (boolean, { Leaderboard.Entry })
 		return (if useMock() then mock else live).top(n)
+	end
+	function board.update(key: string, fn: (old: any?) -> any?): (boolean, any?)
+		return (if useMock() then mock else live).update(key, fn)
+	end
+	function board.get(key: string): (boolean, any?)
+		return (if useMock() then mock else live).get(key)
+	end
+	function board.clear(): boolean
+		return useMock() and mock.clear()
 	end
 	function board.isMock(): boolean
 		return useMock()
@@ -153,6 +217,15 @@ local function orderedLive(instanceId: string): Board
 	end
 	function live.add(_key: string, _delta: number, _meta: Leaderboard.Meta?): boolean
 		error("Stores: add on an ordered board")
+	end
+	function live.update(_key: string, _fn: (old: any?) -> any?): (boolean, any?)
+		error("Stores: update on an ordered board")
+	end
+	function live.get(_key: string): (boolean, any?)
+		error("Stores: get on an ordered board")
+	end
+	function live.clear(): boolean
+		return false
 	end
 	function live.remove(key: string): boolean
 		Retry.waitBudget(Enum.DataStoreRequestType.SetIncrementSortedAsync)
@@ -278,11 +351,46 @@ local function sortedLive(instanceId: string, ttl: number): Board
 		for _, item in result :: { any } do
 			local value = item.value
 			if type(item.key) == "string" and type(value) == "table" and type(value.s) == "number" then
-				table.insert(out, { key = item.key, score = value.s, value = value.m })
+				table.insert(out, { key = item.key, score = value.s, value = value.m, raw = value })
 			end
 		end
 		table.sort(out, Leaderboard.better)
 		return true, out
+	end
+	-- S125: UpdateAsync with a pure step (Logic/Leaderboard.mergeWeekly); nil from `fn` cancels the write.
+	function live.update(key: string, fn: (old: any?) -> any?): (boolean, any?)
+		local written: any? = nil
+		local ok, err = Retry.call(`{name}.Update`, function()
+			written = nil
+			real():UpdateAsync(key, function(old: any, _sortKey: any)
+				local value = fn(old)
+				if type(value) ~= "table" or type(value.s) ~= "number" then
+					return nil
+				end
+				local s = math.floor(value.s)
+				value.s = s
+				written = value
+				return value, s
+			end, expiration)
+		end)
+		if not ok then
+			Stores.warnOnce("SortedMap.UpdateAsync", err)
+			return false, nil
+		end
+		return true, written
+	end
+	function live.get(key: string): (boolean, any?)
+		local ok, result = Retry.call(`{name}.Get`, function()
+			return real():GetAsync(key)
+		end)
+		if not ok then
+			Stores.warnOnce("SortedMap.GetAsync", result)
+			return false, nil
+		end
+		return true, result
+	end
+	function live.clear(): boolean
+		return false
 	end
 	function live.isMock(): boolean
 		return false
@@ -290,7 +398,7 @@ local function sortedLive(instanceId: string, ttl: number): Board
 	return live :: Board
 end
 
--- A periodic board (MemoryStore SortedMap, entries live `ttl` s), created on first use. S124 has none; S125 exp_week,
+-- A periodic board (MemoryStore SortedMap, entries live `ttl` s), created on first use. S125 exp_week_<week>_<bracket>,
 -- S129 bloodmoon.
 function Stores.sorted(instanceId: string, ttl: number): Board
 	local existing = sorted[instanceId]

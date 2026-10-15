@@ -19,6 +19,9 @@ export type Requirement =
 	-- S123: owned cosmetic of kind title; the account owns it, every character may show it (needs the context argument
 	-- of Logic/Titles with `owned`)
 	| { kind: "cosmetic", id: string }
+	-- S125: unlocked while character.timedTitles[id] is in the future (rankings, events); granted by
+	-- TitleService.GrantTimed or a mail parcel (Logic/Mail `timedTitle`)
+	| { kind: "timed" }
 
 export type TitleDef = {
 	id: string,
@@ -156,6 +159,15 @@ local list: { TitleDef } = {
 		nameKey = "title.highborn",
 		req = { kind = "cosmetic", id = "title_highborn" },
 		color = "#E0B0D8",
+	},
+	-- S125 (DESIGN-17 §5): the top 3 of each weekly EXP bracket, 7 days; published on the wiki with the Rankings article
+	-- (S131). S129 / S130 add their timed titles here.
+	{
+		id = "weekly_diligent",
+		nameKey = "title.weekly_diligent",
+		req = { kind = "timed" },
+		color = "#F0D27A",
+		wiki = false,
 	},
 }
 
