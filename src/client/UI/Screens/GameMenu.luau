@@ -636,6 +636,16 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
 			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
 			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
+			-- S133: who may whisper, and the "<name> is in the game" toast
+			row(
+				scope,
+				14,
+				"menu.whispers",
+				cycle(scope, "whispers", "all", { "all", "friends" }, function(use, value)
+					return Text.get(use, `menu.whispers.{value}`)
+				end)
+			),
+			row(scope, 14, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
 			avatarRow(scope, 14), -- S132
 			row(
 				scope,

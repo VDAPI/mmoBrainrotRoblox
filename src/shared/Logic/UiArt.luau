@@ -59,6 +59,7 @@ UiArt.MENUS = table.freeze({
 	"quests",
 	"guild",
 	"party",
+	"friends", -- S133: no picture yet (glyph ☺)
 	"mounts",
 	"rankings", -- S124: no picture yet (glyph ♔)
 	"arena", -- S126: no picture yet (glyph ⚔)

@@ -491,6 +491,21 @@ local function follow(target: NavTarget.Target): NavTarget.Target?
 	if not target.follow then
 		return target
 	end
+	-- S133: any player whose character is streamed in on this map ("Follow player" from the player menu)
+	local other = Players:GetPlayerByUserId(target.follow)
+	local model = other and other.Character
+	local otherRoot = model and model:FindFirstChild("HumanoidRootPart")
+	local here = Maps.get(currentMap() or "")
+	if otherRoot and otherRoot:IsA("BasePart") and here then
+		local x, z = otherRoot.Position.X - here.offset.x, otherRoot.Position.Z - here.offset.z
+		if math.abs(x) <= here.size.x / 2 + 50 and math.abs(z) <= here.size.z / 2 + 50 then
+			local moved = table.clone(target)
+			moved.map = here.id
+			moved.x = x
+			moved.z = z
+			return moved
+		end
+	end
 	local party = State.Get({ "party" })
 	if type(party) ~= "table" then
 		return nil
@@ -596,6 +611,10 @@ local function step()
 		local near = distance <= NAV.arrive
 			or (target.npc ~= nil and npcPosition ~= nil and flat(r.Position, npcPosition) <= NAV.arriveNpc)
 		if near then
+			-- S133: "Follow player" keeps going after the player; standing next to them is not the end
+			if target.keep then
+				return
+			end
 			arrived(target, npcPosition)
 			return
 		end

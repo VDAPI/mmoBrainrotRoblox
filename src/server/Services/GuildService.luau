@@ -20,6 +20,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Bus = require(script.Parent.Parent.Guild.Bus)
 local Runtime = require(script.Parent.Parent.Guild.Runtime)
+local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local Config = require(Shared.Config)
 local Guild = require(Shared.Logic.Guild)
 local GuildSkills = require(Shared.Data.GuildSkills)
@@ -277,6 +278,10 @@ local function invite(player: Player, target: Player?): (boolean, string?)
 	end
 	if not target or target == player or PlayerStateService.GetPhase(target) ~= "playing" then
 		return false, "guild.error.notFound"
+	end
+	local ignored = Ignores.check(player, target) -- S133
+	if ignored then
+		return false, ignored
 	end
 	local targetChar = character(target)
 	if not targetChar or targetChar.guildId then

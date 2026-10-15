@@ -15,8 +15,22 @@ local parseAmount = Context.parseAmount
 
 local GuildService = Context.services.GuildService
 local LeaderboardService = Context.services.LeaderboardService
+local SocialService = Context.services.SocialService -- S133
+local AdminService = Context.services.AdminService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
+
+-- S133: /social <player>: the friends and ignored players of a player on this server.
+commands.social = function(player, args)
+	local target = AdminService.FindPlayer(args[1] or "")
+	if not target then
+		reply(player, "admin.player.none")
+		return false, "admin.player.none"
+	end
+	local friends, ignored = SocialService.Describe(target)
+	reply(player, "admin.social.list", { name = target.Name, friends = friends, ignored = ignored })
+	return true
+end
 
 -- S125: the guild board entry of the player's guild.
 commands.rankguild = function(player, args)

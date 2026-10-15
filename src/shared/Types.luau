@@ -192,6 +192,8 @@ export type CharacterData = {
 	tourney: TourneyState,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
+	playerMenuHint: boolean, -- S133: the one-time "Actions" hint after selecting another player was shown
+	mailSent: { day: number, n: number }, -- S133: letters to players sent on UTC day `day` (Logic/Social)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
 	pvpEnabled: boolean,
 	elixirs: { [string]: number }, -- resistance stat -> expiresAt (Clock time)
@@ -362,7 +364,14 @@ export type Settings = {
 	mapCloseOnWalk: boolean, -- S25: the world map closes after "Walk"
 	barks: boolean, -- S101b: NPC comments during quests (BarkController)
 	robloxAvatar: boolean, -- S132: the player's Roblox avatar (standard R15 scales) instead of the class look
+	whispers: string, -- S133: "all" | "friends" (friends and guild mates only)
+	friendAlerts: boolean, -- S133: the "<name> is in the game" toast
 }
+
+-- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class
+-- and when the entry was made (os.time).
+export type SocialEntry = { name: string, class: string?, since: number }
+export type SocialData = { friends: { [string]: SocialEntry }, ignored: { [string]: SocialEntry } }
 
 -- S121 (DESIGN-17 §2): UTC day of the last daily shards, free respawns used on respawnDay, the last free recall
 -- (Clock seconds) and the months whose VIP cosmetic was given ("YYYYMM" -> true).
@@ -402,6 +411,7 @@ export type AccountData = {
 	grantedPasses: { [string]: boolean }, -- S123: passes granted by a starter pack (MonetizationService.HasPass)
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
+	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
 }
 
 -- Character summary shown on the selection screen.

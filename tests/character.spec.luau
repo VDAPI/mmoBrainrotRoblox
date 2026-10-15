@@ -161,6 +161,33 @@ T.describe("AccountSchema", function()
 		T.expect(CharacterFactory.slotKey(6)).toBeNil()
 	end)
 
+	T.it(
+		"S133: social lists, whisper and alert settings, the mail counter and the hint flag come from reconcile",
+		function()
+			T.expect(AccountSchema.CURRENT).toBe(9) -- S133: no migration
+			local friend = { name = "Borys", class = "Hunter", since = 100 }
+			local old: any = {
+				schema = AccountSchema.CURRENT,
+				characters = { ["1"] = { id = "x", name = "Old", class = "Warrior", level = 12 } },
+				settings = { lang = "pl", volume = 0.5 },
+			}
+			AccountSchema.migrate(old)
+			T.expect(old.social).toEqual({ friends = {}, ignored = {} })
+			T.expect(old.settings.whispers).toBe("all")
+			T.expect(old.settings.friendAlerts).toBe(true)
+			T.expect(old.settings.volume).toBe(0.5)
+			T.expect(old.characters["1"].mailSent).toEqual({ day = 0, n = 0 })
+			T.expect(old.characters["1"].playerMenuHint).toBe(false)
+			local saved: any = {
+				schema = AccountSchema.CURRENT,
+				characters = {},
+				social = { friends = { ["42"] = friend }, ignored = {} },
+			}
+			AccountSchema.migrate(saved)
+			T.expect(saved.social.friends["42"]).toEqual(friend)
+		end
+	)
+
 	T.it("S98: old characters get the weekly and contract branches, side quests untouched", function()
 		local side = { active = { side_granary = { progress = { 1 }, used = {} } }, done = { side_fence = true } }
 		local data: any = {

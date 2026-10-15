@@ -51,6 +51,7 @@ local NAMESPACES = {
 	"arena", -- S126
 	"bloodmoon", -- S129
 	"tourney", -- S130
+	"social", -- S133
 	"animlab", -- S110
 	"paths",
 	"title",

@@ -539,6 +539,9 @@ cmd(
 )
 -- S125: the guild board entry of the player's guild (score, place; push = write now)
 cmd("guild", "rankguild", { enum("action", { "info", "push" }) })
+-- S133: the friends and ignored players of a player on this server; the daily letter limit of a character reset
+cmd("guild", "social", { ref("player", "player") })
+cmd("economy", "mailcap", { enum("action", { "reset" }), ref("player", "player", true) })
 
 -- Performance and logs
 cmd("perf", "perf", {})

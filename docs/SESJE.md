@@ -10505,3 +10505,56 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{ClassLooks (nowy),Cos
 (nowe), `wiki/src/data/{classlooks (nowy),cosmetics,npcs,mapsearch,search,meta,types}`, `wiki/public/img/maps/city.svg`,
 `docs/{WYGLAD-KLAS (nowy),DESIGN,DESIGN-17,ASSETS,ARCHITECTURE,ANIMACJE,BALANS,SKLEP-ID,PRZEDMIOTY,DECYZJE,PROGRESS,
 SESJE}.md`.
+
+### S133: Interakcje z graczami
+
+Menu gracza, prywatne wiadomości, listy do graczy, znajomi i ignorowani (prośba właściciela z 2026-10-15).
+
+- **Menu gracza** (`UI/Screens/PlayerMenu`, `PartyController`): nagłówek z kropką PvP, `[TAG] imię postaci`, poziomem i
+  klasą; pozycje z `Logic/Social.menuEntries` w stałej kolejności: Szepnij, Wyślij list, Handluj, Wyzwij na pojedynek,
+  Zaproś do grupy, Zaproś do gildii (lider / oficer), Pokaż profil, Dodaj do / Usuń ze znajomych, Ignoruj / Przestań
+  ignorować, Idź za graczem / Przestań iść. Niedostępne są szare z linijką powodu. Otwieranie: prawy klik na graczu,
+  przycisk „Akcje” przy ramce celu (zamiast „⋯”), na telefonie przytrzymanie gracza 0,5 s bez ruchu palca
+  (`Config.Social.holdSeconds` / `holdMove`) i dolny arkusz z dużymi przyciskami. Jednorazowa podpowiedź przy pierwszym
+  zaznaczeniu innego gracza (`character.playerMenuHint`, `SocialHintSeen`). Klik w świat zamyka menu (przyciski
+  menu zamykają je po akcji). „Idź za graczem”: `NavController.Walk` z `follow = userId` i `keep = true` (cel dowolny
+  gracz widoczny na tej mapie; dojście nie kończy prowadzenia; przerywa własny ruch).
+- **Szept** (`SocialService`): prywatny `TextChannel` pary, oba konta dodaje serwer, kanał znika po wyjściu obu albo
+  przy ignorowaniu; „/w <imię postaci> tekst” (nasza `TextChatCommand`, imię Roblox działa dalej na tym serwerze);
+  gracz na innym serwerze → okno „Wyślij list”. Ustawienie „Szepty: od wszystkich / od znajomych i gildii”.
+- **Listy do graczy** (`MailService.sendLetter`, `UI/Screens/MailCompose`): „Napisz list” w poczcie, „Odpisz”, z menu
+  gracza i okna znajomych; odbiorca po imieniu postaci (`NameService.Lookup`, także offline i na innym serwerze), temat
+  40 / treść 300 znaków, złoto, do 3 całych stosów (niezwiązane, bez kłódki), opłata, limit 20 na dobę UTC, od 5.
+  poziomu; filtr Roblox przed zapisem; złoto, opłata i przedmioty schodzą z postaci przed zapisem przesyłki, przy błędzie
+  wracają. Powiadomienie „Nowy list od {name}” na każdym serwerze (Notify). List bez zawartości: „Usuń” wszędzie; z
+  zawartością: „Odeślij” (bez opłaty) i „Ignoruj nadawcę”.
+- **Znajomi i ignorowani** (`SocialService`, `UI/Screens/FriendsWindow`, klawisz Y / menu HUD ☺): zaproszenie z popupem,
+  zapis u obu kont, limity 50 / 100, status „Na tym serwerze · mapa”, „W grze”, „Poza grą”, „Status nieznany”
+  (obecność w MemoryStore, `src/server/Social/Presence`), toast „{name} jest w grze” (ustawienie). Ignorowanie usuwa
+  znajomość, blokuje szepty, listy, handel, pojedynek, zaproszenia do grupy i gildii (`src/server/Social/Ignores` w
+  `TradeService`, `DuelService`, `PartyService`, `GuildService`) i ukrywa linie czatu (`ShouldDeliverCallback`).
+- **Admin**: `/social <gracz>`, `/mailcap reset [gracz]`.
+
+Remote'y: `MailSend(table)`, `MailReturn(id)`, `FriendInvite(userId)`, `FriendInvited` (s2c), `FriendRespond(bool)`,
+`FriendRemove(userId)`, `FriendsStatus()`, `IgnoreAdd(userId)`, `IgnoreName(name)`, `IgnoreRemove(userId)`,
+`WhisperOpen(userId)`, `WhisperReady` / `WhisperFailed` (s2c), `SocialHintSeen`.
+
+Zapis (bez migracji, `reconcile`): `account.social = { friends, ignored }` (klucz `tostring(userId)`, wpis
+`{ name, class?, since }`), `account.settings.whispers` (`"all"`), `account.settings.friendAlerts` (`true`),
+`character.mailSent = { day, n }`, `character.playerMenuHint`; przesyłka: `subject`, `body`, `fromId`, `fromChar`.
+Magazyny: DataStore `Vaelthorn_Social_v1` (`Social_<userId>`: lustro ignorowanych, `drop`), MemoryStore HashMap
+`Vaelthorn_Presence_v1`; temat MessagingService `Vaelthorn_FriendOnline`.
+
+Testy: `tests/social.spec.luau` (nowy: menu, listy, szept, obecność, list, opłata, limit dzienny, przesyłka gracza),
+`tests/character.spec.luau` (pola po `reconcile`), `tests/data.spec.luau` (przestrzeń `social`). Wiki: klawisz
+`win_friends` (`npm run data` / `wikidump`).
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Logic/{Social (nowy),Mail,AccountSchema,UiArt}.luau`,
+`src/shared/Data/{Keybinds,AdminCommands}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/Social/{Presence,Ignores} (nowe).luau`,
+`src/server/Services/{Social (nowy),Mail,Name,Settings,Trade,Duel,Party,Guild,Admin}Service.luau`,
+`src/server/Admin/{Guild,Economy}.luau`, `src/client/Controllers/{Party,Social,Chat,Market,Nav,Screen}Controller.luau`,
+`src/client/UI/{MailDraft (nowy),NavTarget}.luau`, `src/client/UI/Screens/{PlayerMenu,FriendsWindow,MailCompose}
+(nowe).luau`, `src/client/UI/Screens/{MailWindow,GameMenu}.luau`, `src/client/UI/Screens/Hud/TargetFrame.luau`,
+`tests/{social (nowy),character,data}.spec.luau`, `wiki/src/data/{mechanics,meta}.json`,
+`docs/{PRZEDMIOTY,DECYZJE,PROGRESS,SESJE}.md`.

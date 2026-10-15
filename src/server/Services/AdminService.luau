@@ -69,6 +69,7 @@ local AdminService = {
 		"CompanionService", -- S101b: /companion
 		"GuildService",
 		"MailService",
+		"SocialService", -- S133: /social
 		"AuctionService",
 		"CosmeticService",
 		"StatusEffectService",

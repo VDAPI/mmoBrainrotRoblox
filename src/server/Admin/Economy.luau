@@ -439,6 +439,22 @@ commands.mail = function(player, args)
 	end)
 end
 
+-- S133: /mailcap reset [player]: the daily letter limit of the character (the caller's without a player).
+commands.mailcap = function(player, args)
+	local target = if args[2] then Context.services.AdminService.FindPlayer(args[2]) else player
+	if not target then
+		reply(player, "admin.player.none")
+		return false, "admin.player.none"
+	end
+	if args[1] ~= "reset" or PlayerStateService.GetCharacter(target) == nil then
+		reply(player, if args[1] ~= "reset" then "admin.usage.mailcap" else "admin.needCharacter")
+		return false, "admin.usage.mailcap"
+	end
+	PlayerStateService.Set(target, { "character", "mailSent" }, { day = 0, n = 0 })
+	reply(player, "admin.mailcap.reset", { name = target.Name })
+	return true
+end
+
 commands.auction = function(player, args)
 	if args[1] == "list" then
 		local parts = {}

@@ -3,7 +3,7 @@
 -- Whisper), the speaker's character name instead of the Roblox name, the guild tag and the VIP star
 -- (S14, player attribute "Vip"). System lines without their own colour are drawn in gold.
 -- Channels: RBXGeneral (server), Trade (ChatService), party (PartyService), guild (GuildService),
--- whispers through Roblox's /w name.
+-- whispers: S133 private channels per pair by character name (SocialService, "/w <character name>").
 -- S17: the tab labels of the trade and party channels are renamed locally to the player's language (the
 -- server names are "⚖ Trade" and "VaelthornParty_<id>"); the tab follows TextChannel.Name.
 -- S123 (DESIGN-17 §4): the chat frame cosmetic of the speaker (player attribute CosmeticChatFrame): its glyphs around
@@ -18,6 +18,7 @@ local TextChatService = game:GetService("TextChatService")
 local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -67,6 +68,13 @@ local function onIncoming(message: TextChatMessage): TextChatMessageProperties?
 	local properties = Instance.new("TextChatMessageProperties")
 	local kind = kindOf(message.TextChannel)
 	local source = message.TextSource
+	-- S133: the server does not deliver lines of an ignored player (SocialService); a line that still arrives is blanked
+	local ignored = State.Get({ "account", "social", "ignored" })
+	if source and type(ignored) == "table" and ignored[tostring(source.UserId)] ~= nil then
+		properties.Text = ""
+		properties.PrefixText = ""
+		return properties
+	end
 	if source then
 		local player = Players:GetPlayerByUserId(source.UserId)
 		local model = player and player.Character
@@ -113,6 +121,21 @@ local function relabel(channel: Instance)
 		return
 	end
 	local kind = channel:GetAttribute("VaelthornChannel")
+	-- S133: a whisper tab carries the other player's character name
+	if kind == "whisper" then
+		local a, b = channel:GetAttribute("WhisperA"), channel:GetAttribute("WhisperB")
+		local other = if a == Players.LocalPlayer.UserId then b else a
+		local player = if type(other) == "number" then Players:GetPlayerByUserId(other) else nil
+		if player then
+			local model = player.Character
+			local charName = model and model:GetAttribute("CharName")
+			local name = if type(charName) == "string" then charName else player.DisplayName
+			pcall(function()
+				channel.Name = `✉ {name}`
+			end)
+		end
+		return
+	end
 	local icon = if type(kind) == "string" then TAB_ICONS[kind] else nil
 	if icon then
 		pcall(function()

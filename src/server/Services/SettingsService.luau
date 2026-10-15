@@ -87,6 +87,13 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	robloxAvatar = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S133: whispers from everyone or only from friends and guild mates; the "<name> is in the game" toast.
+	whispers = function(value)
+		return value == "all" or value == "friends"
+	end,
+	friendAlerts = function(value)
+		return type(value) == "boolean"
+	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
 		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC

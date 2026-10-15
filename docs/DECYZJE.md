@@ -4383,3 +4383,32 @@
   spawnu trafia na model tylko wtedy, inaczej `CosmeticService` od razu ponawia opis na stojącym modelu. Przed
   `ApplyDescription` zawsze `AvatarBuild.clearProcedural` (opis nie trafia na stare kolory i odłożoną twarz); po nim
   odbudowa broni, gdy brakuje `VaelthornWeapon` albo `VaelthornOffhand`.
+- **S133** Menu gracza: `Logic/Social.menuEntries` (kolejność stała, test); szare pozycje z powodem, poza stałymi
+  zasadami: „Zaproś do gildii” tylko dla lidera / oficera, „Wyzwij na arenę” i „Zgłoś” nie istnieją w grze
+  (`arenaChallenge = false`, `canReport = false` w `PartyController`): S126–S127 nie mają zaproszenia na arenę z imienia,
+  a Roblox nie daje klientowi API otwierającego okno zgłoszenia (zgłasza się z menu Roblox); pojedynek nie jest
+  zakazany w mieście (walki idą na wspólny piasek), szary tylko poza serwerem świata.
+- **S133** Znajomość obustronna tylko między graczami online na tym samym serwerze (popup jak przy grupie,
+  `Config.Social.inviteSeconds`); bez zaproszeń listem do graczy offline (prostsze). Usunięcie i ignorowanie piszą konto
+  drugiego gracza od razu, gdy jest na serwerze, inaczej przez „drop” w DataStore `Social_<userId>` + Notify
+  `socialSync` (stosowany przy jego wejściu; drop zdejmuje tylko znajomość starszą od siebie).
+- **S133** Ten sam rekord `Social_<userId>` to lustro listy ignorowanych (poczta sprawdza ignorowanie odbiorcy offline lub
+  na innym serwerze); lustro naprawiane przy wejściu do gry. Ignorowany dostaje ten sam komunikat co przy niedostępnym
+  graczu (`social.error.unavailable`, `mail.error.unavailable`); ignorujący dostaje „Ignorujesz tego gracza”.
+- **S133** Obecność: `src/server/Social/Presence` (HashMap `Config.Social.presenceMap`, wpis `{ j, m, l, c, n, t }`, TTL 120 s,
+  zapis co 60 s, odczyt z pamięcią podręczną 30 s na serwer, błąd = „Status nieznany”); „jest w grze” jedną publikacją
+  na wejście (temat `Vaelthorn_FriendOnline`, najwyżej raz na minutę na gracza), nie listą tematów per znajomy.
+- **S133** Szept: prywatny `TextChannel` pary (`Whisper_<min>_<max>`, atrybuty `WhisperA/B`), filtr TextChatService.
+  „/w” to nasza `TextChatCommand` na serwerze (domyślne `RBXWhisperCommand` wyłączone; imię postaci najpierw, potem
+  nazwa / nazwa wyświetlana Roblox na tym serwerze); serwer odsyła tekst tylko autorowi (`WhisperReady`), który wysyła
+  go `SendAsync` (tekst nie jest nigdzie zapisany). Pole czatu nie ma nagłówka: zakładka kanału ma lokalną nazwę
+  „✉ <postać>” i toast mówi, do kogo się pisze. Linie ignorowanego w innych kanałach nie są dostarczane
+  (`ShouldDeliverCallback` na serwerze; klient wygasza linię awaryjnie).
+- **S133** List do gracza: jeden argument `table` (`MailSend`), bo treść 300 znaków przekracza limit 200 bajtów stringa
+  w `ArgCheck`; serwer sprawdza typy i długości sam. Filtr: `PrivateChat`, `GetNonChatStringForUserAsync` gdy odbiorca
+  jest na tym serwerze, inaczej `GetNonChatStringForBroadcastAsync` (najostrzejszy). Temat i treść w osobnych polach
+  przesyłki (`subject`, `body`; nie w `args`, żeby `ResolveArgs` nie czytał ich jako kluczy).
+- **S133** Opłata pocztowa 10 złota + 10 za przedmiot, 20 listów na postać na dobę UTC, od 5. poziomu; `Config.PlayerMail`
+  poza `CONFIG_KEYS` (mały odpływ złota poza modelem ekonomii). List bez zawartości czyta się i usuwa wszędzie; złoto i
+  przedmioty tylko przy skrzynce (jak odbiór). „Odeślij” zwraca złoto i przedmioty bez opłaty (`mail.subject.bounced`).
+- **S133** Brak `BRAKI-GRAFIK.md` w repozytorium: ikona menu `hud/menu_friends` (znak ☺) zapisana w „Niedokończone”.

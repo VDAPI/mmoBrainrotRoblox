@@ -60,6 +60,8 @@ function AccountSchema.accountTemplate(): AccountData
 			mapCloseOnWalk = true,
 			barks = true, -- S101b: NPC comments during quests (reconcile adds it to old accounts)
 			robloxAvatar = false, -- S132: "Show my Roblox avatar" (reconcile adds it to old accounts)
+			whispers = "all", -- S133: whispers from everyone or only friends and guild mates (reconcile)
+			friendAlerts = true, -- S133: "<name> is in the game" toast (reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -80,6 +82,8 @@ function AccountSchema.accountTemplate(): AccountData
 		grantedPasses = {},
 		stats = { createdAt = 0, playtime = 0 },
 		redeemed = {},
+		-- S133: friends and ignored players (Logic/Social), keys tostring(userId); reconcile adds it, no migration
+		social = { friends = {}, ignored = {} },
 	}
 end
 
@@ -139,6 +143,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		tourney = { played = 0, won = 0, best = 0 },
 		auctions = {},
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
+		playerMenuHint = false, -- S133: the one-time "Actions" hint (reconcile: old characters see it once too)
+		mailSent = { day = 0, n = 0 }, -- S133: letters to players today (Logic/Social.countSent)
 		pvpEnabled = false,
 		elixirs = {},
 		-- S122: Elixir of Wholeness counter (Logic/FullElixir); no migration (reconcile)

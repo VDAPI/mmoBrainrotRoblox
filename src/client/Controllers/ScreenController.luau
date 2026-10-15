@@ -73,6 +73,8 @@ local MENU: { Hud.MenuEntry } = {
 	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests", visible = worldOnly },
 	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
 	{ id = "party", icon = "☍", hotkey = "P", tooltipKey = "hud.menu.party" },
+	-- S133: friends and ignored players (SocialController registers the window; key win_friends)
+	{ id = "friends", icon = "☺", hotkey = "Y", tooltipKey = "hud.menu.friends" },
 	-- S97: shown from the mount level, or earlier with a mount (MountController.Access)
 	{
 		id = "mounts",
@@ -173,6 +175,7 @@ local function registerWindows()
 		elseif
 			entry.id == "map"
 			or entry.id == "party"
+			or entry.id == "friends"
 			or entry.id == "quests"
 			or entry.id == "guild"
 			or entry.id == "premium"

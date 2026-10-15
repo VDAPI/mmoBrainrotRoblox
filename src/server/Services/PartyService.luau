@@ -21,6 +21,7 @@ local Log = require(Shared.Util.Log)
 local Luck = require(Shared.Logic.Luck)
 local Net = require(Shared.Net)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local Types = require(Shared.Types)
 
 local log = Log.new("PartyService")
@@ -328,6 +329,10 @@ local function invite(player: Player, target: Player): (boolean, string?)
 	end
 	if PlayerStateService.GetPhase(target) ~= "playing" or not character(player) then
 		return false, "party.error.notFound"
+	end
+	local ignored = Ignores.check(player, target) -- S133
+	if ignored then
+		return false, ignored
 	end
 	local party = partyOf[player]
 	if party and party.leader ~= player then

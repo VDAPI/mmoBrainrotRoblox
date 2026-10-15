@@ -1,7 +1,12 @@
 --!strict
 -- Parties on the client (DESIGN §17): the party window (P), member frames under the portrait, the invite
--- popup with Accept / Decline and a countdown, and the context menu on other players (right click):
--- Invite to party, Trade and Duel (S10), Invite to guild (S12), Profile (S15).
+-- popup with Accept / Decline and a countdown, and the player menu on other players.
+-- S133: the player menu (UI/Screens/PlayerMenu, entries from Logic/Social.menuEntries): Whisper, Write a letter,
+-- Trade and Duel (S10), Invite to party, Invite to guild (S12, leader / officer), Profile (S15), Add / remove friend,
+-- Ignore / stop ignoring, Follow player. It opens with a right click on a player, the "Actions" button next to the
+-- target frame (a click or tap selects the player first) and, on a touch screen, by holding a finger on a player for
+-- Config.Social.holdSeconds without moving it (a camera drag cancels). The first time a character selects another
+-- player a one-time hint explains this (character.playerMenuHint).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,11 +14,18 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.UI.Components.Button)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local NavTarget = require(script.Parent.Parent.UI.NavTarget)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PartyFrames = require(script.Parent.Parent.UI.Screens.PartyFrames)
 local PartyWindow = require(script.Parent.Parent.UI.Screens.PartyWindow)
+local PlayerMenu = require(script.Parent.Parent.UI.Screens.PlayerMenu)
 local ProfileWindow = require(script.Parent.Parent.UI.Screens.ProfileWindow)
+local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
+local Social = require(ReplicatedStorage.Shared.Logic.Social)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -28,6 +40,7 @@ local PartyController = {
 }
 
 local scope = Fusion.scoped(Fusion)
+local Registry: any
 local WindowManager: any
 local TargetController: any
 local SocialController: any
@@ -98,101 +111,117 @@ local function invitePopup(): Instance
 	})
 end
 
-local function contextMenu(): Instance
-	local function entry(
-		order: number,
-		key: string,
-		action: (target: Player) -> (),
-		visible: Fusion.UsedAs<boolean>?
-	): Instance
-		return Button(scope, {
-			LayoutOrder = order,
-			Visible = visible,
-			Size = UDim2.new(1, 0, 0, 40),
-			TextSize = Theme.TextSize.Small,
-			Text = Text.T(scope, key),
-			OnClick = function()
-				local target = Fusion.peek(menuFor)
-				menuFor:set(nil)
-				if target then
-					action(target)
-				end
-			end,
-		})
+-- S133: the player menu -------------------------------------------------------------------------------------------
+
+local function charName(player: Player): string
+	local model = player.Character
+	local name = model and model:GetAttribute("CharName")
+	return if type(name) == "string" then name else player.DisplayName
+end
+
+-- Whether the player's character stands on the local player's map (streamed in and inside the map's footprint).
+local function onMyMap(player: Player): boolean
+	local model = player.Character
+	local root = model and model:FindFirstChild("HumanoidRootPart")
+	local map = Maps.get(State.Get({ "character", "location", "map" }) or "")
+	if not root or not root:IsA("BasePart") or not map then
+		return false
 	end
-	return scope:New("Frame")({
-		Name = "PlayerMenu",
-		Position = scope:Computed(function(use): UDim2
-			local at = use(menuAt)
-			return UDim2.fromOffset(at.X, at.Y)
-		end),
-		Size = UDim2.fromOffset(200, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		Visible = scope:Computed(function(use): boolean
-			return use(menuFor) ~= nil
-		end),
-		ZIndex = 20,
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 6),
-				PaddingBottom = UDim.new(0, 6),
-				PaddingLeft = UDim.new(0, 6),
-				PaddingRight = UDim.new(0, 6),
-			}),
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
-			scope:New("TextLabel")({
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 26),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local target = use(menuFor)
-					if not target then
-						return ""
-					end
-					local char = target.Character
-					local name = char and char:GetAttribute("CharName")
-					return if type(name) == "string" then name else target.DisplayName
-				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.GoldBright,
-			}),
-			entry(1, "party.menu.invite", function(target)
-				task.spawn(function()
-					if invoke("PartyInviteUser", target.UserId) then
-						Toast.push(Text.now("party.inviteSent", { name = target.DisplayName }), "success")
-					end
-				end)
-			end),
-			entry(2, "party.menu.trade", function(target)
-				SocialController.RequestTrade(target.UserId)
-			end),
-			entry(3, "party.menu.duel", function(target)
-				SocialController.Challenge(target.UserId)
-			end),
-			entry(
-				4,
-				"guild.menu.invite",
-				function(target)
-					task.spawn(function()
-						if invoke("GuildInvite", target.UserId) then
-							Toast.push(Text.now("guild.inviteSent", { name = target.DisplayName }), "success")
-						end
-					end)
-				end,
-				scope:Computed(function(use): boolean
-					local rank = use(State.Value({ "guild", "myRank" }))
-					return rank == "leader" or rank == "officer"
-				end)
-			),
-			entry(5, "party.menu.profile", function(target)
-				PartyController.OpenProfile(target.UserId)
-			end),
-		},
-	})
+	local x, z = root.Position.X - map.offset.x, root.Position.Z - map.offset.z
+	return math.abs(x) <= map.size.x / 2 + 50 and math.abs(z) <= map.size.z / 2 + 50
+end
+
+local function following(userId: number): boolean
+	local target = Fusion.peek(NavTarget.Target)
+	return target ~= nil and target.keep == true and target.follow == userId
+end
+
+-- What the local player knows about `target` (Logic/Social.MenuContext).
+local function menuContext(use: Fusion.Use, target: Player): Social.MenuContext
+	local social = use(State.Value({ "account", "social" }))
+	local friends = if type(social) == "table" and type(social.friends) == "table" then social.friends else {}
+	local ignored = if type(social) == "table" and type(social.ignored) == "table" then social.ignored else {}
+	local key = Social.key(target.UserId)
+	local party = use(State.Value({ "party" }))
+	local inMyParty, notLeader = false, false
+	if type(party) == "table" and type(party.members) == "table" then
+		notLeader = party.leader ~= Players.LocalPlayer.UserId
+		for _, member in party.members do
+			if member.id == target.UserId then
+				inMyParty = true
+			end
+		end
+	end
+	local model = target.Character
+	local tag = model and model:GetAttribute("GuildTag")
+	use(NavTarget.Target)
+	return {
+		sameMap = onMyMap(target),
+		isFriend = friends[key] ~= nil,
+		isIgnored = ignored[key] ~= nil,
+		friendsFull = Social.count(friends) >= Config.Social.maxFriends,
+		ignoredFull = Social.count(ignored) >= Config.Social.maxIgnored,
+		guildRank = use(State.Value({ "guild", "myRank" })),
+		targetInGuild = type(tag) == "string" and tag ~= "",
+		inMyParty = inMyParty,
+		notPartyLeader = notLeader,
+		duelAllowed = ServerModeView.isWorld(),
+		arenaChallenge = false, -- S126-S127 have no arena invitation by name (docs/DECYZJE.md S133)
+		canReport = false, -- no client API opens the Roblox report dialog (docs/DECYZJE.md S133)
+		following = following(target.UserId),
+	}
+end
+
+-- "Follow player": the character walks after the target on this map (NavController, stopped by own movement).
+local function follow(target: Player)
+	local nav = Registry.Get("NavController")
+	if following(target.UserId) then
+		nav.Clear()
+		return
+	end
+	local map = State.Get({ "character", "location", "map" })
+	if type(map) ~= "string" or not onMyMap(target) then
+		Toast.push(Text.now("social.reason.otherMap"), "info")
+		return
+	end
+	nav.Walk({ map = map, x = 0, z = 0, follow = target.UserId, keep = true, label = charName(target) })
+end
+
+local function act(id: string, target: Player)
+	local userId, name = target.UserId, charName(target)
+	if id == "whisper" then
+		SocialController.Whisper(userId, name)
+	elseif id == "mail" then
+		SocialController.ComposeTo(name)
+	elseif id == "trade" then
+		SocialController.RequestTrade(userId)
+	elseif id == "duel" then
+		SocialController.Challenge(userId)
+	elseif id == "party" then
+		SocialController.InviteParty(userId, name)
+	elseif id == "guild" then
+		task.spawn(function()
+			if invoke("GuildInvite", userId) then
+				Toast.push(Text.now("guild.inviteSent", { name = name }), "success")
+			end
+		end)
+	elseif id == "profile" then
+		PartyController.OpenProfile(userId)
+	elseif id == "friend" then
+		if Social.isFriend(State.Get({ "account", "social" }), userId) then
+			SocialController.RemoveFriend(userId, name)
+		else
+			SocialController.AddFriend(userId)
+		end
+	elseif id == "ignore" then
+		if Social.isIgnored(State.Get({ "account", "social" }), userId) then
+			SocialController.Unignore(userId, name)
+		else
+			SocialController.Ignore(userId, name)
+		end
+	elseif id == "follow" then
+		follow(target)
+	end
 end
 
 -- Player whose character is under the screen point.
@@ -242,11 +271,17 @@ function PartyController.OpenMenu(target: Player, at: Vector2)
 	if target == Players.LocalPlayer then
 		return
 	end
+	Sounds.play("click")
 	menuAt:set(at)
 	menuFor:set(target)
 end
 
+function PartyController.CloseMenu()
+	menuFor:set(nil)
+end
+
 function PartyController.Init(registry)
+	Registry = registry
 	WindowManager = registry.Get("WindowManager")
 	TargetController = registry.Get("TargetController")
 	SocialController = registry.Get("SocialController")
@@ -275,13 +310,62 @@ function PartyController.Init(registry)
 	end).Parent =
 		layer
 	invitePopup().Parent = UIController.GetLayer("Modals")
-	-- The context menu lives in an unscaled ScreenGui so it opens exactly at the mouse.
+	-- The player menu lives in an unscaled ScreenGui so it opens exactly at the mouse.
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "Vaelthorn_PlayerMenu"
 	gui.DisplayOrder = 60
 	gui.ResetOnSpawn = false
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-	contextMenu().Parent = gui
+	PlayerMenu(scope, {
+		Target = menuFor,
+		At = menuAt,
+		Touch = Device.Touch,
+		Context = menuContext,
+		OnAction = act,
+	}).Parent =
+		gui
+end
+
+-- S133: the one-time hint when the character selects another player for the first time.
+local function watchHint()
+	local hinted = false
+	scope:Observer(TargetController.Target):onChange(function()
+		local model = Fusion.peek(TargetController.Target)
+		local player = if model then Players:GetPlayerFromCharacter(model) else nil
+		if hinted or not player or player == Players.LocalPlayer then
+			return
+		end
+		if State.Get({ "character", "playerMenuHint" }) ~= false then
+			return
+		end
+		hinted = true
+		local key = if Fusion.peek(Device.Touch) then "social.hint.touch" else "social.hint.pc"
+		Toast.push(Text.now(key), "info", 10)
+		Net.Send("SocialHintSeen")
+	end)
+end
+
+-- S133: holding a finger on a player opens the menu (cancelled by moving the finger: the camera drag).
+type Hold = { input: InputObject, start: Vector2, token: number }
+local hold: Hold? = nil
+local holdToken = 0
+
+local function startHold(input: InputObject)
+	holdToken += 1
+	local token = holdToken
+	local start = Vector2.new(input.Position.X, input.Position.Y)
+	hold = { input = input, start = start, token = token }
+	task.delay(Config.Social.holdSeconds, function()
+		local current = hold
+		if not current or current.token ~= token then
+			return
+		end
+		hold = nil
+		local target = playerAt(current.start)
+		if target and target ~= Players.LocalPlayer then
+			PartyController.OpenMenu(target, current.start)
+		end
+	end)
 end
 
 function PartyController.Start()
@@ -303,20 +387,51 @@ function PartyController.Start()
 		end)
 	end)
 
+	watchHint()
+
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 and Fusion.peek(menuFor) then
-			-- Clicking elsewhere closes the menu (buttons handle their own click first).
-			task.defer(function()
+		local kind = input.UserInputType
+		if (kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.Touch) and Fusion.peek(menuFor) then
+			-- A click or tap in the world closes the menu (its own buttons close it after their action).
+			if not processed then
 				menuFor:set(nil)
-			end)
+			end
 		end
-		if processed or input.UserInputType ~= Enum.UserInputType.MouseButton2 then
+		if processed then
+			return
+		end
+		if kind == Enum.UserInputType.Touch then
+			startHold(input)
+			return
+		end
+		if kind ~= Enum.UserInputType.MouseButton2 then
 			return
 		end
 		local at = Vector2.new(input.Position.X, input.Position.Y)
 		local target = playerAt(at)
 		if target then
 			PartyController.OpenMenu(target, at)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input: InputObject)
+		local current = hold
+		if current and input == current.input then
+			local moved = Vector2.new(input.Position.X, input.Position.Y) - current.start
+			if moved.Magnitude > Config.Social.holdMove then
+				hold = nil
+			end
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input: InputObject)
+		local current = hold
+		if current and input == current.input then
+			hold = nil
+		end
+	end)
+	-- The menu closes when its player leaves.
+	Players.PlayerRemoving:Connect(function(player)
+		if Fusion.peek(menuFor) == player then
+			menuFor:set(nil)
 		end
 	end)
 end

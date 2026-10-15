@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S132 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S133 gotowe (ostatnia S133: menu gracza „Akcje”, szept po imieniu postaci, listy do graczy, znajomi i ignorowani) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -257,6 +257,11 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S133:** szept działa tylko na tym samym serwerze (do gracza na innym serwerze gra proponuje list); możliwy krok:
+  szept między serwerami przez MessagingService. Ikona menu `hud/menu_friends` bez obrazka (znak ☺). „Zgłoś” w menu
+  gracza i przy liście nie istnieje (brak API klienta do okna zgłoszeń Roblox). Obecność, „jest w grze” i listy między
+  serwerami niesprawdzone na żywym serwerze (wszystko w `pcall`, przy błędzie status „nieznany”).
 
 - **S132:** Wygląd klas: id z katalogu Roblox i modele akcesoriów do uzupełnienia przez właściciela
   (`docs/WYGLAD-KLAS.md`), do tego czasu procedural.

@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local AuctionWindow = require(script.Parent.Parent.UI.Screens.AuctionWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MailCompose = require(script.Parent.Parent.UI.Screens.MailCompose)
 local MailWindow = require(script.Parent.Parent.UI.Screens.MailWindow)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local State = require(script.Parent.Parent.UI.State)
@@ -20,7 +21,7 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 local MarketController = {
 	Name = "MarketController",
-	Deps = { "WindowManager", "UIController", "NotificationController" },
+	Deps = { "WindowManager", "UIController", "NotificationController", "SocialController" }, -- S133: SocialController
 }
 
 local MAILBOX_NPCS: { string } = {}
@@ -99,6 +100,7 @@ end
 function MarketController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	local NotificationController = registry.Get("NotificationController")
+	local SocialController = registry.Get("SocialController")
 	local UIController = registry.Get("UIController")
 	WindowManager.Register({
 		id = "auction",
@@ -113,7 +115,21 @@ function MarketController.Init(registry)
 		titleKey = "window.mail.title",
 		size = Vector2.new(900, 620),
 		build = function(s)
-			return MailWindow(s, { ResolveArgs = NotificationController.ResolveArgs, AtMailbox = atMailbox })
+			return MailWindow(s, {
+				ResolveArgs = NotificationController.ResolveArgs,
+				AtMailbox = atMailbox,
+				Compose = SocialController.ComposeTo,
+				IgnoreName = SocialController.IgnoreByName,
+			})
+		end,
+	})
+	-- S133: a letter to another player (SocialController.ComposeTo fills the recipient and opens it)
+	WindowManager.Register({
+		id = "mailCompose",
+		titleKey = "window.mailCompose.title",
+		size = Vector2.new(760, 680),
+		build = function(s, close)
+			return MailCompose(s, { AtMailbox = atMailbox, Close = close })
 		end,
 	})
 	envelope().Parent = UIController.GetLayer("Screens")

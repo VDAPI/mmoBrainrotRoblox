@@ -108,6 +108,40 @@ function NameService.Reserve(name: string, ownerKey: string): (boolean, string?)
 	return granted, if granted then nil else "error.name.taken"
 end
 
+-- S133: the account and character that own a character name, offline or on any server. Yields.
+-- Returns (ok, userId?, characterId?): ok = false when the store failed, userId nil when nobody owns the name.
+function NameService.Lookup(name: string): (boolean, number?, string?)
+	if utf8.len(name) == nil then
+		return true, nil, nil -- not UTF-8: no character has this name
+	end
+	local key = NameRules.normalize(name)
+	if key == "" then
+		return true, nil, nil
+	end
+	local owner: any
+	if useMock() then
+		owner = mock[key]
+	else
+		local ok, result = pcall(function()
+			return getStore():GetAsync(key)
+		end)
+		if not ok then
+			log:warn("lookup failed: %s", tostring(result))
+			return false, nil, nil
+		end
+		owner = result
+	end
+	if type(owner) ~= "string" then
+		return true, nil, nil
+	end
+	local userText, characterId = string.match(owner, "^(%d+):(.+)$")
+	local userId = tonumber(userText)
+	if not userId or not characterId then
+		return true, nil, nil
+	end
+	return true, userId, characterId
+end
+
 -- Frees the name if (and only if) it is still owned by ownerKey. Yields. Never throws.
 function NameService.Release(name: string, ownerKey: string): boolean
 	local key = NameRules.normalize(name)

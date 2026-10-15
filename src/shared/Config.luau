@@ -87,6 +87,31 @@ local Config = {
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
 	AuctionStoreName = "Vaelthorn_Auction_v1",
+	-- S133: letters between players (Logic/Social.letter*). Not in CONFIG_KEYS: the fee is a small gold sink outside the
+	-- economy model (docs/DECYZJE.md S133).
+	PlayerMail = {
+		subjectMax = 40, -- characters
+		bodyMax = 300, -- characters
+		maxItems = 3, -- backpack items per letter (whole stacks, unbound, not locked)
+		feeBase = 10, -- gold per letter
+		feePerItem = 10, -- gold per attached item
+		perDay = 20, -- letters per character and UTC day
+		minLevel = 5, -- sender's level (spam accounts)
+	},
+	-- S133: friends, ignored players, presence across servers and whispers (Logic/Social, SocialService).
+	Social = {
+		maxFriends = 50,
+		maxIgnored = 100,
+		storeName = "Vaelthorn_Social_v1", -- DataStore "Social_<userId>": ignore mirror and pending unfriends
+		presenceMap = "Vaelthorn_Presence_v1", -- MemoryStore HashMap: userId -> { j, m, l, c, n, t }
+		presenceTtl = 120, -- s: an entry without a refresh counts as offline
+		presenceRefresh = 60, -- s: how often a server rewrites its players' entries
+		statusRefresh = 30, -- s: the friends window asks again; the server caches a read for as long
+		inviteSeconds = 30, -- friend request popup
+		holdSeconds = 0.5, -- touch: holding a player this long opens the player menu
+		holdMove = 14, -- px: a finger moving further cancels the hold (camera drag)
+		followRefresh = 0.5, -- s: "Follow player" re-reads the target position
+	},
 	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
 	Leaderboard = {
 		refresh = 300, -- s: one server reads the top of one board at most this often (DESIGN-17 §0.4)

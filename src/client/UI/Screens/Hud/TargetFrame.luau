@@ -20,8 +20,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Target: Fusion.Value<Model?>,
-	-- Opens the player actions (party, trade, duel, guild, profile) for another player's character; the "⋯"
-	-- button next to the frame makes them reachable by touch (S15).
+	-- Opens the player menu (S133: whisper, letter, trade, duel, party, guild, profile, friends, ignore, follow) for another
+	-- player's character; the "Actions" button next to the frame makes it reachable by touch (S15; the "⋯" until S133).
 	OnPlayerMenu: ((player: Player, at: Vector2) -> ())?,
 }
 
@@ -128,13 +128,14 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 			scope:New("TextButton")({
 				Name = "PlayerMenu",
 				AnchorPoint = Vector2.new(0, 0),
-				Position = UDim2.new(1, Theme.Padding.Medium + 8, 0, -8),
-				Size = UDim2.fromOffset(Theme.Size.MinTouch + 8, Theme.Size.MinTouch + 8),
+				-- S133: a labelled "Actions" button (the bare "⋯" was not found by players)
+				Position = UDim2.new(1, Theme.Padding.Medium + 8, 0, 0),
+				Size = UDim2.fromOffset(120, Theme.Size.MinTouch + 8),
 				BackgroundColor3 = Theme.Colors.Panel,
 				BackgroundTransparency = 0.12,
-				Text = "⋯",
+				Text = Text.T(scope, "social.actions"),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 30,
+				TextSize = Theme.TextSize.Body,
 				TextColor3 = Theme.Colors.GoldBright,
 				Visible = scope:Computed(function(use): boolean
 					local i = use(info)
@@ -158,7 +159,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				end,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+					scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
 				},
 			}),
 			scope:New("UIStroke")({

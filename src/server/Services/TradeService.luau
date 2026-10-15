@@ -19,6 +19,7 @@ local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Trade = require(Shared.Logic.Trade)
+local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local Types = require(Shared.Types)
 
 local log = Log.new("TradeService")
@@ -200,7 +201,7 @@ local function request(player: Player, userId: number): (boolean, string?)
 	if not target or target == player then
 		return false, "party.error.notFound"
 	end
-	local why = blocker(player) or blocker(target)
+	local why = Ignores.check(player, target) or blocker(player) or blocker(target)
 	if why then
 		return false, why
 	end

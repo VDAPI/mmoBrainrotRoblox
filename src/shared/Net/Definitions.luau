@@ -222,6 +222,24 @@ local Definitions: { [string]: Definition } = {
 	MailClaim = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (parcel id) at the mailbox
 	MailClaimAll = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- -> (ok, err, count)
 	MailRefresh = { kind = "function", dir = "c2s", rate = 0.2, args = {} },
+	-- S133: a letter to a character by name ({ to, subject, body, gold, items = { backpack slot } }; the body can be
+	-- longer than a string argument, so the letter is one table checked by MailService) and sending a letter back
+	MailSend = { kind = "function", dir = "c2s", rate = 0.5, args = { "table" } },
+	MailReturn = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (parcel id)
+
+	-- Friends, ignored players and whispers (S133, SocialService)
+	FriendInvite = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId) same server
+	FriendInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
+	FriendRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	FriendRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
+	FriendsStatus = { kind = "function", dir = "c2s", rate = 0.2, args = {} }, -- -> (ok, err, { [userId]: status })
+	IgnoreAdd = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
+	IgnoreName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character name)
+	IgnoreRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
+	WhisperOpen = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId) -> (ok, err, channel, name)
+	WhisperReady = { kind = "event", dir = "s2c" }, -- (channel name, character name, text to send) after "/w"
+	WhisperFailed = { kind = "event", dir = "s2c" }, -- (error key, name) after "/w"
+	SocialHintSeen = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- the one-time player menu hint
 	AuctionSearch = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer", "boolean" } }, -- (filter, page, descending)
 	AuctionDetails = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (listing id) -> full item
 	AuctionList = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer", "integer" } }, -- (inv index, price, hours)

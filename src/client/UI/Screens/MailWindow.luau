@@ -29,10 +29,30 @@ export type Props = {
 	-- Resolves "@key" / "#item:" message arguments (NotificationController.ResolveArgs).
 	ResolveArgs: (args: any) -> { [string]: any }?,
 	AtMailbox: Fusion.UsedAs<boolean>,
+	-- S133: "Write a letter" (empty recipient) and "Reply" (the sender), ignoring a letter's sender
+	Compose: (to: string) -> (),
+	IgnoreName: (name: string) -> (),
 }
 
 local function subject(use: Fusion.Use, parcel: any, resolve: (args: any) -> { [string]: any }?): string
+	-- S133: a letter from a player shows its own (filtered) subject; its args are never resolved as keys
+	if parcel.from == "player" then
+		if type(parcel.subject) == "string" and parcel.subject ~= "" then
+			return parcel.subject
+		end
+		return Text.get(use, parcel.subjectKey, { name = parcel.fromName or "?" })
+	end
 	return Text.get(use, parcel.subjectKey, resolve(parcel.args))
+end
+
+-- S133: nothing to take: gold, items, shards, a title, tokens or cosmetics (Logic/Mail.isEmpty on the client copy).
+local function isEmpty(parcel: any): boolean
+	return (parcel.gold or 0) <= 0
+		and #parcel.items == 0
+		and (parcel.shards or 0) <= 0
+		and parcel.timedTitle == nil
+		and (parcel.tokens or 0) <= 0
+		and (parcel.cosmetics == nil or #parcel.cosmetics == 0)
 end
 
 -- S125: "Title: <name> (until <date>)", or "(expired)" after the term.
@@ -144,7 +164,9 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 							Size = UDim2.new(1, -20, 0, 22),
 							BackgroundTransparency = 1,
 							Text = Text.get(use, "mail.row", {
-								from = Text.get(use, `mail.from.{parcel.from}`),
+								from = if parcel.from == "player" and type(parcel.fromName) == "string"
+									then parcel.fromName
+									else Text.get(use, `mail.from.{parcel.from}`),
 								days = math.max(0, math.floor((parcel.expiresAt - now) / 86400)),
 							}),
 							FontFace = Theme.Fonts.Body,
@@ -184,13 +206,33 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 				ItemSlot(s, { SlotId = `view:mail:{parcel.id}:{i}`, Item = item, Size = 60, LayoutOrder = i })
 			)
 		end
-		return s:New("Frame")({
+		-- S133: a scrolling column (a letter's text can be long)
+		return s:New("ScrollingFrame")({
 			Size = UDim2.fromScale(1, 1),
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollBarThickness = 4,
+			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
 			[Children] = {
 				s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
+				s:New("UIPadding")({ PaddingRight = UDim.new(0, 6) }),
+				-- S133: the text of a letter from a player (filtered by Roblox when it was sent)
 				s:New("TextLabel")({
 					LayoutOrder = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = if type(parcel.body) == "string" then parcel.body else "",
+					Visible = type(parcel.body) == "string" and parcel.body ~= "",
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("TextLabel")({
+					LayoutOrder = 0,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -280,13 +322,71 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					LayoutOrder = 8,
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 					Variant = "primary",
-					Text = Text.T(s, "mail.claim"),
+					-- S133: a letter with nothing to take is thrown away anywhere ("Delete")
+					Text = Text.T(s, if isEmpty(parcel) then "mail.delete" else "mail.claim"),
 					Disabled = s:Computed(function(use2): boolean
-						return use2(busy) or not use2(props.AtMailbox)
+						return use2(busy) or (not isEmpty(parcel) and not use2(props.AtMailbox))
 					end),
 					OnClick = function()
 						invoke("MailClaim", parcel.id)
 					end,
+				}),
+				-- S133: a letter from a player: reply, send it back with its contents, ignore the sender
+				s:New("Frame")({
+					LayoutOrder = 9,
+					Size = UDim2.new(1, 0, 0, 44),
+					BackgroundTransparency = 1,
+					Visible = parcel.from == "player" and type(parcel.fromName) == "string",
+					[Children] = {
+						s:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, 6),
+						}),
+						Button(s, {
+							LayoutOrder = 1,
+							Size = UDim2.new(1 / 3, -4, 1, 0),
+							TextSize = Theme.TextSize.Small,
+							Text = Text.T(s, "mail.reply"),
+							OnClick = function()
+								props.Compose(parcel.fromName or "")
+							end,
+						}),
+						Button(s, {
+							LayoutOrder = 2,
+							Size = UDim2.new(1 / 3, -4, 1, 0),
+							TextSize = Theme.TextSize.Small,
+							Text = Text.T(s, "mail.sendBack"),
+							Visible = (parcel.gold or 0) > 0 or #parcel.items > 0,
+							Disabled = busy,
+							OnClick = function()
+								busy:set(true)
+								task.spawn(function()
+									local ok, err = Net.Invoke("MailReturn", parcel.id)
+									busy:set(false)
+									if ok then
+										Toast.push(
+											Text.now("mail.sentBack", { name = parcel.fromName or "" }),
+											"success"
+										)
+									else
+										Sounds.play("error")
+										Toast.push(Text.now(err or "error.internal"), "error")
+									end
+								end)
+							end,
+						}),
+						Button(s, {
+							LayoutOrder = 3,
+							Size = UDim2.new(1 / 3, -4, 1, 0),
+							TextSize = Theme.TextSize.Small,
+							Variant = "danger",
+							Text = Text.T(s, "mail.ignoreSender"),
+							OnClick = function()
+								props.IgnoreName(parcel.fromName or "")
+							end,
+						}),
+					},
 				}),
 			},
 		})
@@ -335,10 +435,21 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 				invoke("MailClaimAll")
 			end,
 		}),
+		-- S133: a new letter to another player
+		Button(scope, {
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 250, 1, 0),
+			Size = UDim2.fromOffset(200, 48),
+			Variant = "primary",
+			Text = Text.T(scope, "mail.write"),
+			OnClick = function()
+				props.Compose("")
+			end,
+		}),
 		scope:New("TextLabel")({
 			AnchorPoint = Vector2.new(1, 1),
 			Position = UDim2.fromScale(1, 1),
-			Size = UDim2.new(1, -260, 0, 48),
+			Size = UDim2.new(1, -470, 0, 48),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				return Text.get(use, if use(props.AtMailbox) then "mail.hint.here" else "mail.hint.away")

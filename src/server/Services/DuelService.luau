@@ -21,6 +21,7 @@ local Town = require(Shared.Data.Town)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Sand = require(script.Parent.Parent.Arena.Sand)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
+local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local Types = require(Shared.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
 
@@ -265,6 +266,10 @@ local function challenge(player: Player, userId: number): (boolean, string?)
 	local target = Players:GetPlayerByUserId(userId)
 	if not target or target == player or PlayerStateService.GetPhase(target) ~= "playing" then
 		return false, "party.error.notFound"
+	end
+	local ignored = Ignores.check(player, target) -- S133
+	if ignored then
+		return false, ignored
 	end
 	if inDuel(player) or inDuel(target) then
 		return false, "duel.error.busy"

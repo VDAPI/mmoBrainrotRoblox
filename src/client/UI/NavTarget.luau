@@ -21,7 +21,8 @@ export type Target = {
 	id: string?,
 	labelKey: string?,
 	label: string?,
-	follow: number?, -- userId of a party member
+	follow: number?, -- userId of a party member (S133: or any player streamed in on this map)
+	keep: boolean?, -- S133: reaching the target does not end the guide ("Follow player" keeps following)
 }
 
 -- What the world map should show when it opens (or right away when it is open).

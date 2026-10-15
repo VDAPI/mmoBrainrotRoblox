@@ -3,6 +3,7 @@
 -- an account ("Mail_<userId>"); a parcel addressed to a character (`charId`) is only visible to it, one
 -- without `charId` to every character of the account. Parcels expire after Market.Mail.lifetimeDays.
 
+local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
 local Items = require("../Data/Items")
 local Market = require("../Data/Market")
@@ -30,6 +31,12 @@ export type Parcel = {
 	once: string?, -- S128: an idempotency key: a second parcel with the same key is never added (Mail.add)
 	tokens: number?, -- S129: Arena Tokens for `charId` (outside the weekly cap), system/admin parcels only
 	cosmetics: { string }?, -- S129: Data/Cosmetics ids earned in the game (obtain ~= nil), system/admin parcels only
+	-- S133: a letter from a player: the subject and the body after the Roblox text filter (never the raw text), the
+	-- sender's account and character (for "Send back")
+	subject: string?,
+	body: string?,
+	fromId: number?,
+	fromChar: string?,
 }
 
 -- S128: `sent` = the once keys of parcels added (key -> os.time it is forgotten), kept after the parcel is claimed
@@ -157,6 +164,23 @@ function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 			end
 		end
 	end
+	-- S133: text only in a letter from a player, within the letter limits (the server filtered it before)
+	if parcel.subject ~= nil or parcel.body ~= nil or parcel.from == "player" then
+		local subject, body = parcel.subject or "", parcel.body or ""
+		local subjectLength = if type(subject) == "string" then utf8.len(subject) else nil
+		local bodyLength = if type(body) == "string" then utf8.len(body) else nil
+		if
+			parcel.from ~= "player"
+			or type(parcel.fromId) ~= "number"
+			or subjectLength == nil
+			or bodyLength == nil
+			or subjectLength > Config.PlayerMail.subjectMax
+			or bodyLength > Config.PlayerMail.bodyMax
+			or #parcel.items > Config.PlayerMail.maxItems
+		then
+			return false, "error.badRequest"
+		end
+	end
 	if Mail.count(box) >= Rules.maxParcels then
 		return false, "mail.error.full"
 	end
@@ -177,6 +201,11 @@ function Mail.isEmpty(parcel: Parcel): boolean
 		and parcel.timedTitle == nil
 		and (parcel.tokens or 0) <= 0
 		and (parcel.cosmetics == nil or #parcel.cosmetics == 0)
+end
+
+-- S133: a letter from a player with gold or items may be sent back to its sender (free of postage).
+function Mail.returnable(parcel: Parcel): boolean
+	return parcel.from == "player" and type(parcel.fromId) == "number" and (parcel.gold > 0 or #parcel.items > 0)
 end
 
 local function visibleTo(parcel: Parcel, charId: string?, now: number): boolean
