@@ -28,8 +28,8 @@ UseBlocks.LISTS = table.freeze({
 })
 UseBlocks.PREFIX = table.freeze({ fullElixir = "fullElixir", lure = "lure" })
 -- Reasons whose check a later session registers (no check = never blocks until then). S129 registered bloodMoon
--- (BloodMoonService).
-local PENDING: { [string]: string } = { tourney = "S130" }
+-- (BloodMoonService), S130 tourney (TourneyService): nothing left.
+local PENDING: { [string]: string } = {}
 UseBlocks.PENDING = table.freeze(PENDING)
 -- Reasons that have a check now and get one more later (documentation for S126/S127). S127 registered the arena
 -- server (UseGuards "arena", owner "ServerMode"): nothing left.

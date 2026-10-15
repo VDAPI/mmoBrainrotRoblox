@@ -77,6 +77,41 @@ export type BloodMoonState = {
 	paid: boolean,
 }
 
+-- S130: the character's Champion's Tournament (Logic/Tourney): the current signup (also in MemoryStore; cleared once
+-- that tournament is over), tournaments played (seeded and showed up), titles won and the best place (0 = none yet).
+export type TourneyState = {
+	signed: { id: string, bracket: string }?,
+	played: number,
+	won: number,
+	best: number,
+}
+
+-- S130: the runtime branch `tourney` (TourneyService; never saved). `live` exists only on the server that runs a
+-- bracket (a tournament server, or a world server in the local mode): the bracket view (Logic/Bracket.view) and
+-- the player's own state in it.
+export type TourneyClient = {
+	mode: string?, -- "global" | "local" | nil (not decided yet)
+	phase: string, -- Logic/Tourney Phase
+	startAt: number,
+	id: string,
+	server: string, -- Arena/ServerMode of this server ("world" | "arena" | "tournament")
+	test: boolean?, -- an admin test tournament (/tourney open) runs here
+	signed: { bracket: string }?,
+	invite: { expiresAt: number, range: string }?,
+	live: {
+		bracket: string,
+		range: string,
+		view: any,
+		me: {
+			place: number?,
+			field: number?,
+			at: number?,
+			state: string, -- "waiting" | "called" | "fighting" | "out" | "champion" | "spectator"
+		},
+		endsAt: number?, -- the server time everybody goes home (after the final)
+	}?,
+}
+
 export type CharacterData = {
 	id: string,
 	name: string,
@@ -150,6 +185,8 @@ export type CharacterData = {
 	timedTitles: { [string]: number },
 	-- S129: the last Blood Moon the character took part in (no migration, reconcile)
 	bloodMoon: BloodMoonState,
+	-- S130: the Champion's Tournament (no migration, reconcile)
+	tourney: TourneyState,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
@@ -423,6 +460,7 @@ export type ClientState = {
 	arenaLive: ArenaLive?, -- S126
 	-- S129: the Blood Moon results of the occurrence (BloodMoonService): { id, phase, global, updatedAt, regions }
 	bloodMoonBoard: { [string]: any }?,
+	tourney: TourneyClient?, -- S130: TourneyService
 }
 
 export type CompanionState = { npc: string, quest: string, mode: "follow" | "lead", phase: string }

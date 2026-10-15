@@ -86,6 +86,9 @@ export type ResultInput = {
 	score: number, -- 1 win, 0.5 draw, 0 loss
 	rounds: string, -- "2:1" (own:opponent)
 	rated: boolean,
+	-- S130: a Champion's Tournament match: never rated, the daily and same-opponent counters stay, the history entry
+	-- has mode "tourney"
+	tourney: boolean?,
 }
 
 local ELO = Arena.ELO
@@ -740,13 +743,17 @@ end
 --   3. rated: Elo on the mode's rating field with K from `played`, then played, wins / losses (a draw: neither), peak;
 --   4. unrated: rating, played, wins, losses and peak stay;
 --   5. history: the new entry first, cut to LIMITS.history.
+-- S130: `tourney` (a Champion's Tournament match) skips 2 and 3: only the history entry (mode "tourney").
 -- The input stays untouched. Gets nothing from the account, gear or purchases (DESIGN-17 §0.2).
 function ArenaRules.applyResult(state: ArenaState, input: ResultInput): (ArenaState, { delta: number, rated: boolean })
 	local out = ArenaRules.rollSeason(state, input.season)
+	local tourney = input.tourney == true
 	if out.daily.day ~= input.day then
 		out.daily = { day = input.day, n = 0 }
 	end
-	out.daily.n += 1
+	if not tourney then
+		out.daily.n += 1
+	end
 	local mode = input.mode
 	-- S128: the counters of the mode (Data/Arena Mode fields; a mode without them writes the 1v1 fields)
 	local fields: any = out
@@ -758,15 +765,17 @@ function ArenaRules.applyResult(state: ArenaState, input: ResultInput): (ArenaSt
 	if type(fields[vsField]) ~= "table" or fields[vsField].day ~= input.day then
 		fields[vsField] = { day = input.day }
 	end
-	local rated = input.rated
+	local rated = input.rated and not tourney
 	for _, key in input.oppKeys do
 		if not ArenaRules.isRated(out, key, input.day, vsField) then
 			rated = false
 		end
 	end
-	for _, key in input.oppKeys do
-		if key ~= "day" then
-			fields[vsField][key] = (tonumber(fields[vsField][key]) or 0) + 1
+	if not tourney then
+		for _, key in input.oppKeys do
+			if key ~= "day" then
+				fields[vsField][key] = (tonumber(fields[vsField][key]) or 0) + 1
+			end
 		end
 	end
 	local delta = 0
@@ -787,7 +796,7 @@ function ArenaRules.applyResult(state: ArenaState, input: ResultInput): (ArenaSt
 	end
 	local entry: ArenaHistoryEntry = {
 		t = input.now,
-		mode = mode.id,
+		mode = if tourney then "tourney" else mode.id,
 		opp = input.oppName,
 		oppClass = input.oppClass,
 		oppRating = input.oppRating,

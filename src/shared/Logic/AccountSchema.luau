@@ -122,6 +122,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		timedTitles = {}, -- S125: timed titles, title id -> until (no migration, reconcile)
 		-- S129: the last Blood Moon (Logic/BloodMoon.newState); no migration, reconcile adds it to older characters
 		bloodMoon = { id = "", points = 0, kills = {}, regions = {}, at = 0, paid = false },
+		-- S130: the Champion's Tournament (Logic/Tourney); no migration, reconcile adds it to older characters
+		tourney = { played = 0, won = 0, best = 0 },
 		auctions = {},
 		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
 		pvpEnabled = false,

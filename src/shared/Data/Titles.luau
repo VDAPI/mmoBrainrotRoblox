@@ -184,6 +184,15 @@ local list: { TitleDef } = {
 		color = "#C0262D",
 		wiki = false,
 	},
+	-- S130 (DESIGN-17 §8): the Champion of Vaelthorn, the winner of a Champion's Tournament bracket, 7 days from the
+	-- mail (`timedTitle`); not "champion" (level 75). Published on the wiki with the tournament article (S131).
+	{
+		id = "tourney_champion",
+		nameKey = "title.tourney_champion",
+		req = { kind = "timed" },
+		color = "#F2C14E",
+		wiki = false,
+	},
 	-- S128 (DESIGN-17 §6): arena titles, published on the wiki with the arena article (S131). Bought with Arena Tokens
 	-- (Data/Cosmetics kind "title", obtain.arena = "shop"; kept out of titles.json like every bought title, and their
 	-- cosmetics have wiki = false):

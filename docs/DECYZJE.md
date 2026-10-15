@@ -4201,3 +4201,70 @@
   wraca po `writeRetry` 10 s, ostatni ma `writeTries` 3 próby; rozliczenie czyta tablice do `settleTries` 3 razy co
   `settleRetry` 60 s, a postać z punktami w regionie, którego tablicy nie udało się odczytać, czeka na następne wejście.
   Nieudany odczyt na żywo zostawia poprzednie wiersze regionu.
+- **S130** Nazwy S12x zamiast założeń promptu: klucz idempotencji poczty to `once` (nie `dedupe`), pole przesyłki
+  `tokens` daje Żetony poza limitem tygodnia (S129); miejsca pól turnieju w `Data/Arena.VENUES` to `pit_1` … `pit_4`
+  (pola `ArenaPit` `pit1` … `pit4`); rozpoznanie trybu S127 czyta `TeleportData.tourney` jako tekst, więc dane teleportu
+  niosą `tourney = "<id>_<przedział>"`, nie tabelę; `ArenaService.RunMatch(spec, venueId, absent?, opts?)` dostał tylko
+  czwarty, opcjonalny argument (zachowanie S126–S128 bez zmian).
+- **S130** Mecze turnieju bez ratingu: `origin = "tournament"`, `rated = false`; `ArenaRules.applyResult(..., tourney =
+  true)` pisze tylko wpis historii (tryb `"tourney"`), bez Elo, `peak`, `played`/`wins`/`losses`, `daily` i `vs`, bez
+  Żetonów za mecz, wpisu do rankingu, ogłoszenia meczu i tostu areny. Zawsze zwycięzca: remis (i mecz przerwany) =
+  wyżej rozstawiony.
+- **S130** Przepełnienie: ponad 32 zapisy w przedziale → wchodzi 32 najwyższych ratingów 1v1 bieżącego sezonu, remis =
+  wcześniejszy zapis, potem klucz (każdy serwer liczy to samo). Rozstawienie wg ratingu standardowym kluczem (1 z
+  ostatnim), wolne losy dla najwyżej rozstawionych. Przedział = poziom w chwili zapisu, zostaje do końca turnieju.
+- **S130** Rozstawienie z obecnych o 19:00 (serwer turniejowy czeka do 19:00 i najwyżej `Config.Tourney.startWait` 45 s
+  dłużej na brakujących; lokalnie: ci, którzy przyjęli zaproszenie i są w grze), bez rezerwowych. Mniej niż 4 obecnych
+  → odwołanie bez nagród (`tourney.cancelledFew`); nieobecny w trakcie = walkower.
+- **S130** Uczestnik (30 Żetonów) = rozstawiony i obecny na starcie; przegrana walkowerem przez własną nieobecność przed
+  pierwszym rozegranym meczem = bez nagrody (wolny los nie liczy się jako mecz, ale nie odbiera nagrody); brak meczu o 3.
+  miejsce (obaj przegrani półfinałów mają miejsce 3). Zwycięzca finału nieobecny = brak czempiona (miejsce 2).
+- **S130** `restBetween` 30 s, `hallWeeks` 4; organizacja przedziałów kolejno przez jeden serwer (blokada `lock_<id>`
+  w `TourneyServers`), wiadomości `Tourney` bez list graczy i kodów (limit 1 KB), dwa odczyty kontrolne rekordów na
+  serwer świata (20 i 60 s po 18:55). Rekord serwera pisany przed rejestrem `ReservedServers`, rejestr przed wiadomością.
+- **S130** Tryb lokalny („tylko ten serwer”: Studio, brak MemoryStore, turniej testowy): zapisy w atrapie tego serwera,
+  zaproszenia o 18:55 dla zapisanych obecnych, o 19:00 wszystkie przedziały na jednym polu (Ristalle). Turniej zajmuje
+  piasek na cały czas przez `Arena/Sand.request(..., first = true)` (przed kolejką), więc pojedynki i mecze rankingowe
+  czekają do końca; mecze przedziałów idą jedną kolejką pola. Zajęty zawodnik (walka, loch) jest wzywany do
+  `callWait` 90 s, potem walkower. Tryb ustala się raz na turniej (sonda przy wejściu w zapisy).
+- **S130** Nagrody jedną przesyłką mechanizmem S125/S129 (`shards`, `tokens`, `timedTitle` 7 dni od wysyłki,
+  `cosmetics`, `once = tourney_<id>_<przedział>_<klucz>`), plus pamięć `paid` serwera prowadzącego. Statystyki
+  `character.tourney` (`played`, `won`, `best`) tylko dla obecnych na serwerze w chwili ustalenia miejsca; wtedy też
+  znika `signed`.
+- **S130** Aura (`aura_champion`) i ramka (`frame_tourney`) z `obtain = { event = "tourney" }` (nie na sprzedaż,
+  garderoba pokazuje źródło `wardrobe.obtain.event` z nazwą slotu), tytuł `tourney_champion` czasowy (S125). Wszystkie
+  trzy z `wiki = false` jak nagrody S125, S128 i S129 (publikacja z artykułem w S131), więc dane wiki się nie zmieniły.
+- **S130** Serwer turniejowy wpuszcza tylko klucze z rekordu `srv_<id>_<przedział>` (TeleportData daje tylko slot),
+  reszta wraca od razu (`tourney.error.notInvited`); widzami są tylko przegrani. Gracze pojawiają się w lobby (nowy
+  podest między czterema polami, `ArenaPit.LAYOUTS.tournament`, mapa `arena_pit` powiększona do 280), odrodzenie przez
+  `CharacterService.SetSpawnOverride` → lobby. Pusty serwer kończy się po `emptyClose` 300 s, bezpiecznik po
+  `maxMinutes` 150.
+- **S130** Posągi: kamienna figura z budowli Sali Sław S124 (bez rozróżnienia klasy) na czterech cokołach obok planszy
+  „Czempioni Vaelthorn” (za Salą Sław Areny, `Data/Town/fame.tourney`), tabliczka z imieniem, przedziałem i datą.
+- **S130** Zależności: `TourneyService.Deps` = PlayerState, Character, Data, Resource, Zone, Announce, Arena, Mail, Travel,
+  World, Pvp (żaden nie zależy od niego); `AdminService.Deps` += `TourneyService`; `GuildService` leniwie (tag czempiona).
+  Blokada eliksiru przez `UseGuards.register("tourney", …)` (gracz w drabince na tym serwerze albo cały serwer
+  turniejowy), `tourney` zdjęty z `UseBlocks.PENDING`. `QuestController` zależy od `ArenaController` (panel HUD).
+- **S130** Rejestr serwerów turniejowych tylko przez `ServerMode.register` (S127, ref `"<id>_<przedział>"`, odnawiany
+  co `registryTtl / 3` przez cały turniej, usuwany po powrocie graczy), bez własnego mapowania; teleport i powrót przez `Arena/Transfer`. Slot w
+  `Data/ScheduledEvents` bez ogłoszeń ogólnych (`warn = {}`) i bez blokady wydarzeń świata; ogłoszenia zapisów robi
+  `TourneyService` (godzina zamknięcia jako gotowe „HH:MM UTC”, bo `Announce` niesie tekst).
+- **S130** `/tourney open … win` tylko dla testowego turnieju lokalnego (bez nagród i statystyk, bez magazynów);
+  wymuszenie prawdziwego turnieju zostaje dla S131. Mistrz Areny w czasie zapisów otwiera okno areny od razu na
+  zakładce „Turniej”. Zaproszenie to wariant karty `ArenaOffer` (✕ tylko chowa kartę, „Pokaż” w panelu HUD otwiera ją
+  znowu).
+- **S130** (przegląd) Tryb turnieju: świeża sonda MemoryStore dla każdego nowego id turnieju (`Store.probe(true)`, jedno
+  ponowienie po `Config.Tourney.probeRetry` 5 s), nie wynik z rozruchu serwera; turniej globalny podpina `Bus`
+  (`Bus.start` drugi raz), gdy sonda przy starcie serwera zawiodła.
+- **S130** Organizator: nieudany odczyt zapisów przedziału → jedno ponowienie po 5 s, nieudana rezerwacja serwera →
+  jedno po 2 s; potem rekord `cancelled` z powodem `service`, wiadomość `cancel` i log błędu (gracze:
+  `tourney.cancelled.service`).
+- **S130** (przegląd) Gracz lokalnej drabinki nie wchodzi do kolejki rankingowej: `ArenaService.AddQueueGuard` (odmowa
+  `ArenaJoin`, wypadnięcie przy parowaniu, `tourney.error.inBracket`), a start lokalnej drabinki zdejmuje jej graczy z
+  kolejki. Inaczej mecz rankingowy czekałby na piasek zajęty przez turniej, a gracz przegrałby walkowerem po `callWait`.
+- **S130** (przegląd) `/tourney open` tylko poza prawdziwym turniejem (`Tourney.phaseAt` = `idle`, inaczej
+  `admin.tourney.real`), bo test przejmuje zapisy, wiadomości, odczyty kontrolne i ogłoszenia serwera.
+- **S130** (przegląd) Serwer turniejowy: reguła walki odmawia każdego ataku poza meczem areny (widz na wolnym polu nikogo
+  nie trafi); skończona drabinka zostaje w `tourney.live` do powrotu (odliczanie, stan czempiona, przyciski); wpis
+  `ReservedServers` usuwany po odesłaniu graczy (`ServerMode.unregister`). Tost powrotu bez znaczników (`tourney.ended`,
+  `tourney.left`); odmowa wejścia pokazuje `tourney.error.notInvited` raz.

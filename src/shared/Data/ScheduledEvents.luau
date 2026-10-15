@@ -47,7 +47,25 @@ local BLOODMOON: EventDef = table.freeze({
 	enabled = true,
 })
 
-local LIST: { EventDef } = table.freeze({ BLOODMOON })
+-- S130 (DESIGN-17 §8): Champion's Tournament. The slot time is the bracket start; signups and invites are offsets in
+-- Data/Arena.TOURNEY.window. No general warnings (TourneyService announces the signups itself) and no block of S101
+-- world events (the fighters are on tournament servers). `duration` is an upper bound of a bracket of 32 on four
+-- fields (usually 45-90 min; a tournament server stops itself at Config.Tourney.maxMinutes).
+local TOURNEY: EventDef = table.freeze({
+	key = "tourney",
+	nameKey = "tourney.title",
+	descKey = "tourney.desc",
+	slots = table.freeze({
+		slot(6, 19, 0), -- Saturday 19:00 UTC (DESIGN-17 §8)
+	}),
+	duration = 3 * 3600,
+	warn = table.freeze({}),
+	blocksWorldEvents = false,
+	quietBefore = 0,
+	enabled = true,
+})
+
+local LIST: { EventDef } = table.freeze({ BLOODMOON, TOURNEY })
 
 local byKey: { [string]: EventDef } = {}
 for _, def in LIST do

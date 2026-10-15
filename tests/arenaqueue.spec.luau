@@ -696,7 +696,10 @@ T.describe("ArenaQueue H6: the arena_pit map", function()
 		T.expect(pit.hidden).toBe(true)
 		T.expect(#pit.links).toBe(0)
 		T.expect(pit.worldMap).toEqual({ x = 0, y = 0 })
-		T.expect(pit.size.x).toBe(ArenaPit.layout("arena").size)
+		-- S130: the map is as large as the largest layout (the tournament's four fields)
+		for _, mode in { "arena", "tournament" } do
+			T.expect(pit.size.x >= ArenaPit.layout(mode).size).toBe(true)
+		end
 	end)
 
 	T.it("every server-mode map has a layout file and is hidden; no world map links to one", function()
@@ -717,17 +720,21 @@ T.describe("ArenaQueue H6: the arena_pit map", function()
 	T.it("the layout fits the map; starts inside the sand and apart; unknown modes fall back", function()
 		local layout = ArenaPit.layout("arena")
 		T.expect(#layout.fields >= 1).toBe(true)
-		for _, f in layout.fields do
-			T.expect(math.abs(f.x) + f.half + f.stands <= layout.size / 2).toBe(true)
-			T.expect(math.abs(f.z) + f.half + f.stands <= layout.size / 2).toBe(true)
-			T.expect(#f.starts).toBe(2)
-			for _, s in f.starts do
-				T.expect(math.abs(s[1]) < f.half and math.abs(s[2]) < f.half).toBe(true)
+		-- S130: every layout (the tournament's four fields too)
+		for _, mode in { "arena", "tournament" } do
+			local l = ArenaPit.layout(mode)
+			for _, f in l.fields do
+				T.expect(math.abs(f.x) + f.half + f.stands <= l.size / 2).toBe(true)
+				T.expect(math.abs(f.z) + f.half + f.stands <= l.size / 2).toBe(true)
+				T.expect(#f.starts).toBe(2)
+				for _, s in f.starts do
+					T.expect(math.abs(s[1]) < f.half and math.abs(s[2]) < f.half).toBe(true)
+				end
+				local dx, dz = f.starts[1][1] - f.starts[2][1], f.starts[1][2] - f.starts[2][2]
+				T.expect(math.sqrt(dx * dx + dz * dz) >= 30).toBe(true)
 			end
-			local dx, dz = f.starts[1][1] - f.starts[2][1], f.starts[1][2] - f.starts[2][2]
-			T.expect(math.sqrt(dx * dx + dz * dz) >= 30).toBe(true)
 		end
-		T.expect(ArenaPit.layout("tournament")).toBe(layout)
+		T.expect(ArenaPit.layout("tournament") ~= layout).toBe(true)
 		T.expect(ArenaPit.layout("nieznany")).toBe(layout)
 		T.expect(ArenaPit.field("arena", "pit1") ~= nil).toBe(true)
 	end)

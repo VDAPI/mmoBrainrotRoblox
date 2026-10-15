@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S129 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S130 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -248,6 +248,11 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S130:** posągi czempionów to kamienna figura Sali Sław bez rozróżnienia klasy (klasa na tabliczce planszy); aura i
+  ramka turnieju proceduralne, bez obrazków. Panel HUD na telefonie pod panelem wydarzenia świata przesuwa się o stałe
+  150 px (bez dokładnej wysokości tamtego panelu). Teleportów i serwerów turniejowych nie da się sprawdzić w Studio
+  (tryb lokalny); prawdziwy test wymaga opublikowanej gry i co najmniej 4 graczy w przedziale. Artykuł „Turniej
+  Czempiona”, eksport `Data/Arena.TOURNEY` na wiki i wymuszenie prawdziwego turnieju z komendy admina: S131.
 - **S129:** ikona menu `hud/menu_bloodmoon` bez obrazka (znak ☾); ramka `frame_bloodmoon` proceduralna; bez dźwięku
   startu (brak klucza ogłoszenia / rogu z id w `Data/Sfx`); czerwone niebo bez kuli księżyca (sam odcień, mgła i
   przejście). Artykuł „Krwawy Księżyc” i publikacja tytułu `bloodmoon` oraz ramki na wiki: S131.
@@ -258,12 +263,11 @@ zakończone; testy i decyzje właściciela po nich.
   areny bez nieobecnego gracza: nieobecny dostaje karę, ale nie przegraną w profilu. Artykuł „Arena” i publikacja tytułów
   oraz kosmetyków areny na wiki: S131.
 - **S127:** przenosiny między serwerami bez `TeleportService:SetTeleportGui` (nakładka klienta tylko do startu
-  teleportu, potem ekran ładowania Roblox). Tryb `tournament` bez obsługi: serwer odsyła graczy po 30 s (S130).
+  teleportu, potem ekran ładowania Roblox).
 - **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →
   „Rankingi (S125)”); adresy Open Cloud v2 w `tools/Rankings/OpenCloud.luau` niesprawdzone na żywym API
   (`TODO(owner): verify`). Medalion tytułu `weekly_diligent` bez obrazka (`tytuly/title_weekly_diligent.png`).
-- **S122:** powód blokady `tourney` (Eliksir Pełni, Płaszcz Przynęty) czeka na S130 (`UseBlocks.PENDING`; do tego
-  czasu nic nie blokuje; `bloodMoon` zarejestrowała S129). Fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
+- **S122:** fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
   (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, `balance.spec` tylko je drukuje).
 - **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
   puste klucze `Data/Sfx` (66 ze 123: 24 `mob.*`, 16 `boss.*`, 22 `skill.*`, `hit.armor/wood/stone`, `bow.draw`; lista:

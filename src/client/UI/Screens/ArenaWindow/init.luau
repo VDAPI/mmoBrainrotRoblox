@@ -5,7 +5,8 @@
 -- on the sand with "Watch") and "Recent matches" (character.arena.history). On a PC the first two stand side by side,
 -- on a phone everything is one scrolling column. It reads `character.arena`, `arenaLive` and the window's status
 -- (ArenaController.Status); the reason a button is off is Logic/ArenaRules.canQueue on the same state as the server.
--- S130 may add a "Tournament" part here or turn this file into a folder ArenaWindow/ (the window id stays "arena").
+-- S130: a folder now (ArenaWindow/init); the "Tournament" tab is ArenaWindow/Tourney with its bracket
+-- (ArenaWindow/TourneyBracket); the window id stays "arena".
 -- S128: the Arena Tokens on top (balance, the week, the daily bonus left), three tabs ("Arena", "Arena shop", "Season
 -- rewards"; the Arena Master's "arenashop" opens the shop tab) and a 1 vs 1 / 3 vs 3 switch in the arena tab (the
 -- rating, tier and numbers of that mode; 3v3: solo or the party team of three, the reason a button is off from
@@ -37,6 +38,7 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local TourneyTab = require(script.Tourney)
 
 local Children = Fusion.Children
 
@@ -50,10 +52,12 @@ export type Props = {
 	Spectate: () -> (),
 	ErrorText: (key: string) -> string,
 	-- S128
-	Tab: Fusion.Value<string>, -- "main" | "shop" | "season"
+	Tab: Fusion.Value<string>, -- "main" | "shop" | "season" | "tourney" (S130)
 	Mode: Fusion.Value<string>, -- "1v1" | "3v3" (the arena tab)
 	AtMaster: Fusion.UsedAs<boolean>, -- opened at the Arena Master (the shop's buttons)
 	Buy: (entry: Arena.ArenaShopEntry, name: string) -> (),
+	-- S130: the tournament tab
+	Tourney: TourneyTab.Props?,
 }
 
 -- Tier colours and sign (client only; Data/Arena holds the numbers).
@@ -1110,6 +1114,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					{ id = "main", label = Text.T(scope, "arena.tab.main") },
 					{ id = "shop", label = Text.T(scope, "arena.shop.title") },
 					{ id = "season", label = Text.T(scope, "arena.season.rewards") },
+					{ id = "tourney", label = Text.T(scope, "tourney.tab") }, -- S130
 				},
 				Selected = props.Tab,
 				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
@@ -1125,6 +1130,15 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
 				seasonBody :: any,
 			}),
+			-- S130: the Champion's Tournament
+			page(
+				"tourney",
+				6,
+				{
+					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
+					(if props.Tourney then TourneyTab(scope, props.Tourney) else nil) :: any,
+				} :: any
+			),
 		},
 	})
 end

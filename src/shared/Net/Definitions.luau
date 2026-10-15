@@ -179,6 +179,11 @@ local Definitions: { [string]: Definition } = {
 	ArenaReturnNow = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
 	-- S128: the arena shop at the Arena Master (Data/Arena.SHOP key); 3v3 joins with ArenaJoin("3v3")
 	ArenaShopBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	-- S130: the Champion's Tournament (TourneyService); the state goes through the runtime branch `tourney`
+	TourneySignup = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } }, -- (true = sign up, false = withdraw)
+	TourneyRespond = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } }, -- (accept the invitation)
+	TourneyLeave = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- back to the world from a tournament server
+	TourneyInfo = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- signup count, mode, hall
 	TradeRequest = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	TradeInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },

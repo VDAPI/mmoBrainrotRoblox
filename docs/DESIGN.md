@@ -978,7 +978,20 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
 - **Sala Sław Areny (S128):** plansza przy wschodniej stronie Ristalle: top 10 każdego przedziału zakończonego sezonu,
   z przodu 1 na 1, z tyłu 3 na 3, i cztery cokoły ze zwycięzcami 1 na 1 przedziałów. Budowana raz na sezon przez
   pierwszy serwer (15 min po zmianie sezonu); w pierwszym sezonie napis „Pierwszy sezon areny jeszcze trwa.”.
-- **Dalej:** S129 Krwawy Księżyc (Żetony za udział), S130 turniej (ten sam tryb serwera), S131 artykuł „Arena” na wiki.
+- **Turniej Czempiona (S130, `docs/DESIGN-17.md` §8):** co sobotę o 19:00 UTC w każdym przedziale areny drabinka 1 na 1
+  pojedynczej eliminacji. Zapisy 18:00–18:50 UTC w oknie areny (zakładka „Turniej”, Mistrz Areny otwiera ją w czasie
+  zapisów) z każdego serwera świata, od 20. poziomu; przedział ustala poziom w chwili zapisu. Najwyżej 32 na przedział:
+  przy przepełnieniu wchodzą najwyższe ratingi 1 na 1 sezonu (remis: wcześniejszy zapis); mniej niż 4 = odwołanie.
+  O 18:55 jeden serwer rezerwuje serwer turniejowy na przedział, zapisani dostają zaproszenie (2 min na akceptację) i
+  trafiają do lobby między czterema polami; o 19:00 drabinka (rozstawienie wg ratingu, wolne losy dla najlepszych,
+  nieobecny = walkower), cztery mecze naraz na zasadach areny, ale bez zmiany ratingu i bez Żetonów za mecz; remis
+  wygrywa wyżej rozstawiony. Przegrani oglądają albo wracają przyciskiem; po finale wszyscy wracają na swój serwer.
+  Nagrody pocztą: czempion tytuł „Czempion Vaelthorn” na 7 dni, Aura Czempiona, 200 SO i posąg przy Sali Sław Areny
+  (plansza „Czempioni Vaelthorn”, 4 ostatnie tygodnie); finalista 100 SO i Ramka Finalisty; półfinaliści 50 SO; każdy
+  obecny uczestnik 30 Żetonów (poza limitem tygodnia). Czempion ogłaszany na wszystkich serwerach. Eliksir Pełni nie
+  działa w drabince. Bez usług Roblox (Studio, awaria) turniej idzie „tylko na tym serwerze”: wszystkie przedziały po kolei
+  na piasku Ristalle (pojedynki i mecze rankingowe czekają). Liczby: `Data/Arena.TOURNEY`.
+- **Dalej:** S131 artykuły „Arena” i „Turniej Czempiona” na wiki.
 
 ## 20. Questy
 

@@ -467,6 +467,17 @@ add("frame_bloodmoon", "frame", 0, "☾", "#8E1A22", {
 	frame = { stroke = "#8E1A22", stroke2 = "#D04A3A", thickness = 5, ornament = "☾", glow = true },
 })
 
+-- S130 (DESIGN-17 §8): the Champion's Tournament rewards, never sold (obtain.event = "tourney"): the champion's aura
+-- (a bright golden crown of light, CosmeticLook.applyAura from the colours) and the finalist's frame (dark silver with
+-- crossed swords). On the wiki with the tournament article (S131).
+add("aura_champion", "aura", 0, "♛", "#F2C14E", { color2 = "#FFFFFF", obtain = { event = "tourney" }, wiki = false })
+add("frame_tourney", "frame", 0, "⚔", "#6E7480", {
+	color2 = "#C9CED6",
+	obtain = { event = "tourney" },
+	wiki = false,
+	frame = { stroke = "#6E7480", stroke2 = "#C9CED6", thickness = 5, ornament = "⚔", glow = true },
+})
+
 local byId: { [string]: Def } = {}
 for _, def in LIST do
 	byId[def.id] = def

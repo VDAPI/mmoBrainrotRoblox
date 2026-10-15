@@ -108,6 +108,9 @@ return function(ctx: Build.Context)
 			fameHall(result, "fameBoard", "famePlinth", "Fame")
 		elseif build.tag == "arenaFame" then
 			fameHall(result, "arenaFameBoard", "arenaFamePlinth", "ArenaFame")
+		elseif build.tag == "tourneyFame" then
+			-- S130: the Champions of Vaelthorn (TourneyService / TourneyFameController)
+			fameHall(result, "tourneyFameBoard", "tourneyFamePlinth", "TourneyFame")
 		end
 	end
 	ctx.parts += parts

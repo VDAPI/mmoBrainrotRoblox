@@ -777,7 +777,8 @@ map({
 	minLevel = 20,
 	maxLevel = 100,
 	offset = { x = 0, y = 0, z = -8000 },
-	size = { x = ArenaPit.layout("arena").size, z = ArenaPit.layout("arena").size },
+	-- S130: as large as the largest layout (the tournament's four fields)
+	size = { x = ArenaPit.maxSize(), z = ArenaPit.maxSize() },
 	spawn = { x = 0, y = 4, z = 60 }, -- on the stand by the way out
 	biome = "grass",
 	lighting = LIGHT.city,
@@ -785,7 +786,7 @@ map({
 	buildMode = "generated",
 	worldMap = { x = 0, y = 0 },
 	links = {},
-	maxParts = 1500,
+	maxParts = 6000, -- S130: four Ristalle stands on a tournament server
 	serverModes = { "arena", "tournament" },
 	hidden = true,
 })

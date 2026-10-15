@@ -62,6 +62,27 @@ local Config = {
 		hofSize = 10, -- the top of each board kept (DESIGN-17 §6: top 10)
 		rewardRetry = 300, -- s between two attempts to mail a pending season reward
 	},
+	-- S130: Champion's Tournament plumbing (DESIGN-17 §0.4/§8). Store names, TTLs and polling; technical, not balance (not
+	-- in CONFIG_KEYS); the game numbers are in Data/Arena.TOURNEY.
+	Tourney = {
+		signupMap = "Tourney", -- MemoryStore SortedMap "<signupMap>_<id>_<bracket>"
+		serverMap = "TourneyServers", -- MemoryStore HashMap: organizer lock and tournament server records
+		hallStore = "TourneyHall", -- DataStore (KeyStore) with the last champions per bracket
+		topic = "Tourney", -- MessagingService topic { op, id, b, s } (<= 1 KB, never player lists)
+		signupTtl = 6 * 3600,
+		recordTtl = 3 * 3600,
+		lockTtl = 3600,
+		infoCache = 30, -- seconds a server keeps the signup count of a bracket
+		signupCooldown = 3, -- seconds between signup/unsign calls of one player
+		recheck = { 20, 60 }, -- seconds after `organize` when a world server reads the records itself (lost messages)
+		hallRefresh = 300,
+		returnDelay = 60, -- seconds after the final before everyone is sent back
+		maxMinutes = 150, -- safety stop of a tournament server
+		startWait = 45, -- seconds after the start a tournament server waits for the invited players to arrive
+		callWait = 90, -- seconds a called fighter of a local tournament may stay busy (fight, dungeon) before a walkover
+		emptyClose = 300, -- seconds a tournament server without anyone in the bracket waits before sending all home
+		probeRetry = 5, -- seconds before the second store probe when a tournament's mode is decided
+	},
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
 	AuctionStoreName = "Vaelthorn_Auction_v1",

@@ -7,6 +7,11 @@
 -- S128: the window's tab and mode (Tab "main" | "shop" | "season", Mode "1v1" | "3v3"), OpenAtMaster (the Arena
 -- Master's "arena" / "arenashop"), the shop purchase after a confirmation (ArenaShopBuy), AtMaster (the window opened at the
 -- Arena Master: the shop's buttons), the 3v3 team panel on the HUD (UI/Screens/Hud/ArenaTeams).
+-- S130: the Champion's Tournament: the window's "tourney" tab (TourneyInfo every TOURNEY_EVERY s while it is open),
+-- signups (TourneySignup), the invitation on the offer card (TourneyRespond; closing it does not decline), leaving a
+-- bracket (TourneyLeave, with a confirmation while still in it); QuestController mounts the HUD panel
+-- (UI/Screens/Hud/TourneyPanel) with these. The Arena Master opens the tournament tab while the signups are open.
+-- State: the runtime branch `tourney`.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -16,6 +21,7 @@ local ArenaOffer = require(script.Parent.Parent.UI.Screens.ArenaOffer)
 local ArenaPanel = require(script.Parent.Parent.UI.Screens.Hud.ArenaPanel)
 local ArenaTeams = require(script.Parent.Parent.UI.Screens.Hud.ArenaTeams)
 local ArenaWindow = require(script.Parent.Parent.UI.Screens.ArenaWindow)
+local Tourney = require(ReplicatedStorage.Shared.Logic.Tourney)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -30,6 +36,7 @@ local ArenaController = {
 }
 
 local STATUS_EVERY = 10
+local TOURNEY_EVERY = 30 -- s between two TourneyInfo calls while the tab is open (Config.Tourney.infoCache)
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
@@ -44,11 +51,17 @@ ArenaController.Mode = scope:Value("1v1")
 ArenaController.AtMaster = scope:Value(false)
 local live = State.Value({ "arenaLive" })
 local polling = false
+-- S130: the last TourneyInfo answer ({ mode, phase, startAt, id, bracket, count, cap, overflowRating, rating, hall })
+ArenaController.TourneyInfo = scope:Value(nil :: any)
+-- S130: the invitation card closed without an answer (the HUD's "Show" opens it again)
+ArenaController.InviteHidden = scope:Value(false)
+local tourney = State.Value({ "tourney" })
+local tourneyPolling = false
 
 -- The text of an error key with its arguments (the server returns bare keys).
 function ArenaController.ErrorText(key: string): string
 	local args: { [string]: any }? = nil
-	if key == "arena.error.level" or key == "arena.bracket.none" then
+	if key == "arena.error.level" or key == "arena.bracket.none" or key == "tourney.error.level" then
 		args = { level = Arena.MIN_LEVEL }
 	elseif key == "arena.error.penalty" then
 		local value = Fusion.peek(live)
@@ -78,7 +91,13 @@ function ArenaController.Open()
 end
 
 -- S128: from the Arena Master's dialog ("arena": the arena tab, "arenashop": the shop tab).
+-- S130: "main" opens the tournament tab while its signups are open (and the character may sign up).
 function ArenaController.OpenAtMaster(tab: string)
+	local t = Fusion.peek(tourney)
+	local level = tonumber(State.Get({ "character", "level" })) or 0
+	if tab == "main" and type(t) == "table" and t.phase == "signup" and Tourney.bracketOf(level) ~= nil then
+		tab = "tourney"
+	end
 	ArenaController.Tab:set(tab)
 	ArenaController.AtMaster:set(true)
 	WindowManager.Open("arena")
@@ -114,6 +133,65 @@ function ArenaController.Join(mode: string)
 	call("ArenaJoin", mode)
 end
 
+-- S130: the tournament tab (the HUD panel's buttons).
+function ArenaController.OpenTourney()
+	ArenaController.Tab:set("tourney")
+	WindowManager.Open("arena")
+end
+
+function ArenaController.RefreshTourney()
+	task.spawn(function()
+		local ok, data = Net.Invoke("TourneyInfo")
+		if ok and type(data) == "table" then
+			ArenaController.TourneyInfo:set(data)
+		end
+	end)
+end
+
+-- S130: sign up (true) or withdraw (false); the answer refreshes the count.
+function ArenaController.TourneySign(sign: boolean)
+	task.spawn(function()
+		local ok, err = Net.Invoke("TourneySignup", sign)
+		if ok then
+			if sign then
+				Sounds.play("levelUp")
+			end
+			ArenaController.RefreshTourney()
+		else
+			fail(err)
+		end
+	end)
+end
+
+function ArenaController.TourneyRespond(accept: boolean)
+	ArenaController.InviteHidden:set(false)
+	call("TourneyRespond", accept)
+end
+
+-- S130: back to the world (a tournament server) or out of the bracket; while still in it, a walkover: asks first.
+function ArenaController.TourneyLeave()
+	local t = Fusion.peek(tourney)
+	local me = if type(t) == "table" and type(t.live) == "table" then t.live.me else nil
+	local stillIn = type(me) == "table" and (me.state == "waiting" or me.state == "fighting")
+	if not stillIn then
+		call("TourneyLeave")
+		return
+	end
+	WindowManager.ShowModal({
+		Title = Text.now("tourney.title"),
+		Message = Text.now("tourney.leaveConfirm"),
+		ConfirmText = Text.now("tourney.leave"),
+		CancelText = Text.now("common.cancel"),
+		OnConfirm = function(): (boolean, string?)
+			local ok, err = Net.Invoke("TourneyLeave")
+			if ok then
+				return true, nil
+			end
+			return false, ArenaController.ErrorText(if type(err) == "string" then err else "error.internal")
+		end,
+	})
+end
+
 function ArenaController.Leave()
 	call("ArenaLeave")
 end
@@ -137,6 +215,26 @@ function ArenaController.RefreshStatus()
 		if ok and type(data) == "table" then
 			ArenaController.Status:set(data)
 		end
+	end)
+end
+
+-- S130: TourneyInfo now and every TOURNEY_EVERY s while the window is open on the tournament tab.
+local function pollTourney()
+	ArenaController.RefreshTourney()
+	if tourneyPolling then
+		return
+	end
+	tourneyPolling = true
+	task.spawn(function()
+		local isOpen = WindowManager.IsOpen("arena")
+		while true do
+			task.wait(TOURNEY_EVERY)
+			if not Fusion.peek(isOpen) or Fusion.peek(ArenaController.Tab) ~= "tourney" then
+				break
+			end
+			ArenaController.RefreshTourney()
+		end
+		tourneyPolling = false
 	end)
 end
 
@@ -181,10 +279,23 @@ function ArenaController.Init(registry)
 				Mode = ArenaController.Mode,
 				AtMaster = ArenaController.AtMaster,
 				Buy = ArenaController.Buy,
+				-- S130
+				Tourney = {
+					Info = ArenaController.TourneyInfo,
+					Sign = ArenaController.TourneySign,
+					Leave = ArenaController.TourneyLeave,
+					ErrorText = ArenaController.ErrorText,
+				},
 			})
 		end,
 	})
-	ArenaOffer(scope, { Respond = ArenaController.Respond }).Parent = UIController.GetLayer("Screens")
+	ArenaOffer(scope, {
+		Respond = ArenaController.Respond,
+		-- S130: the tournament invitation on the same card
+		Tourney = { Respond = ArenaController.TourneyRespond, Hidden = ArenaController.InviteHidden },
+	}).Parent =
+		UIController.GetLayer("Screens")
+
 	ArenaPanel(scope, { Leave = ArenaController.Leave, ReturnNow = ArenaController.ReturnNow }).Parent =
 		UIController.GetLayer("Screens")
 	ArenaTeams(scope, {}).Parent = UIController.GetLayer("Screens") -- S128
@@ -197,7 +308,27 @@ function ArenaController.Start()
 		if not Fusion.peek(isOpen) then
 			ArenaController.AtMaster:set(false)
 			ArenaController.Tab:set("main")
+		elseif Fusion.peek(ArenaController.Tab) == "tourney" then
+			pollTourney()
 		end
+	end)
+	-- S130: the tournament tab asks for the signup count while it is shown
+	scope:Observer(ArenaController.Tab):onChange(function()
+		if Fusion.peek(ArenaController.Tab) == "tourney" and Fusion.peek(isOpen) then
+			pollTourney()
+		end
+	end)
+	-- S130: a new tournament invitation rings like a match offer and shows the card again
+	local lastInvite: number? = nil
+	scope:Observer(tourney):onChange(function()
+		local value = Fusion.peek(tourney)
+		local invite = if type(value) == "table" then value.invite else nil
+		local at = if type(invite) == "table" then tonumber(invite.expiresAt) else nil
+		if at and at ~= lastInvite then
+			ArenaController.InviteHidden:set(false)
+			SfxController.Ui("ui.quest")
+		end
+		lastInvite = at
 	end)
 	-- a new match offer rings (the quest jingle: a short, clear call)
 	local lastOffer: string? = nil

@@ -10157,3 +10157,82 @@ Pliki: `src/shared/Data/ScheduledEvents.luau` (nowy), `src/shared/Logic/{Schedul
   odczyt na żywo zostaje jako „Zakończony” do rozliczenia (wcześniej wpis menu i nagłówek znikały na `settleDelay`);
   `/bloodmoon start` nie czyści `stoppedId` (zatrzymany harmonogramowy nie wraca po wymuszonym z wyzerowanymi
   punktami); w oknie na dotyku bez kolumny gildii (szerokość 0 robiła z niej drugą elastyczną komórkę).
+
+### S130: Turniej Czempiona
+
+Jedenasta sesja serii DESIGN-17 (§8), po S129 (`a64671e`). S116 pominięta za zgodą właściciela. Bez Studio i bez
+wgrywania czegokolwiek do Roblox; nic do Creator Hub (turniej niczego nie sprzedaje). Nazwy S122–S129 sprawdzone w kodzie
+(różnice w DECYZJE: `once` zamiast `dedupe`, miejsca `pit_1` … `pit_4`, `TeleportData.tourney` jako tekst).
+- **Dane:** slot `tourney` w `Data/ScheduledEvents` (sobota 19:00 UTC, 3 h, `warn = {}`, bez blokady wydarzeń świata),
+  `Data/Arena.TOURNEY` (typy `Tourney`, `TourneyWindow`, `TourneyReward`) i `VENUES.pit_1` … `pit_4`,
+  `Data/ArenaPit.LAYOUTS.tournament` (cztery pola co 80 studs, wyjścia na lobby, `lobby` 24 × 24) i `ArenaPit.maxSize`,
+  mapa `arena_pit` 280 × 280 (`maxParts` 6000), `Config.Tourney`, kosmetyki `aura_champion` / `frame_tourney`
+  (`obtain.event = "tourney"`, `wiki = false`), tytuł czasowy `tourney_champion` (`wiki = false`), `Data/Town/fame.tourney`
+  (plansza i cztery cokoły za Salą Sław Areny), komenda `tourney` w `Data/AdminCommands`. Zapis: `character.tourney =
+  { signed?, played, won, best }` (szablon, bez migracji, `CURRENT` = 8), typy `TourneyState`, `TourneyClient`, gałąź
+  runtime `tourney`. Księga: `Arena:TOURNEY*` i `ScheduledEvents:list[2]*` z powodem S130.
+- **Logika:** `Logic/Bracket` (nowa: `size`, `order`, `new`, `ready`, `get`, `report`, `withdraw`, `setField`, `done`,
+  `champion`, `finalist`, `rangeOf`, `placeRange`, `placeOf`, `status`, `matchOf`, `view`), `Logic/Tourney` (nowa:
+  `startAt`, `idOf`, `times`, `phaseAt`, `phaseEnds`, `bracketOf`, `rangeOf`, `canSignup`, `canUnsign`, `sortKey`,
+  `pick`, `seedOrder`, `rewardsFor`, `isStale`, `placeKey`, `placeArg`, `roundKey`, `clockUtc`),
+  `ArenaRules.applyResult` z polem `tourney` (tylko historia), `UseBlocks.PENDING` puste.
+- **Serwer:** nowe `src/server/Tourney/{Store,Bus,Hall,Runner}.luau` i `TourneyService`. Magazyny: MemoryStore SortedMap
+  `Tourney_<id>_<przedział>` (klucz postaci, `{ n, c, r, l, t }`, sort key `Tourney.sortKey`), HashMap `TourneyServers`
+  (`lock_<id>`, `srv_<id>_<przedział>` = rekord: stan, kod, `ps`, `keys`, `players`, `minRating`), rejestr S127
+  `ReservedServers` przez `ServerMode.register` (ref `"<id>_<przedział>"`), DataStore `TourneyHall` (klucz `champions`),
+  temat MessagingService `Tourney`. API `TourneyService`: `InTourney`, `Hall`, `AdminInfo`, `AdminOpen`, `AdminClose`,
+  `AdminStart`, `AdminCancel`, `AdminWin`, `HasTest`; `Runner.start(spec)` → `InTourney`, `Has`, `View`, `Me`,
+  `Withdraw`, `AdminWin`, `Stop`, `Done`, `Count`. Zmiany: `ArenaService.RunMatch(spec, venueId, absent?, opts?)` (nowe
+  `opts.direct` / `opts.onClosed`; ścieżki S126–S128 bez zmian), `ArenaService.ForceWin`, `ArenaService.CanFight`, mecze
+  `origin = "tournament"` bez ogłoszenia, tostu i liczników; `Arena/Match.decide`; `Arena/Sand.request(..., first)`;
+  `ServerMode.tourney()`; `World/Layouts/arena_pit` (lobby z ławami, tablice z numerami pól), `World/Layouts/city` i
+  `Logic/TownGen/Props` (trzecia Sala Sław `TourneyFameHall`, tagi `TourneyFameBoard` / `TourneyFamePlinth`),
+  `Admin/World` (`/tourney`), `AdminService.Deps` += `TourneyService`. Warunki `ServerMode` (E1): grep nie znalazł
+  `ServerMode.get() == "arena"`; wszystkie strażniki świata używają `isWorld()`, więc nic nie zmieniono.
+- **Remote'y:** `TourneySignup(boolean)`, `TourneyRespond(boolean)`, `TourneyLeave()`, `TourneyInfo()`.
+- **Klient:** `UI/Screens/ArenaWindow` jest teraz folderem (`init.luau` = dawny plik, nowe `Tourney.luau` z zakładką
+  „Turniej” i `TourneyBracket.luau` z drabinką), `ArenaOffer` (wariant zaproszenia turniejowego, ✕ chowa kartę), nowy
+  `Hud/TourneyPanel` (montuje `QuestController`, który zależy teraz od `ArenaController`), `ArenaController`
+  (`TourneyInfo`, `InviteHidden`, `OpenTourney`, `RefreshTourney`, `TourneySign`, `TourneyRespond`, `TourneyLeave`,
+  zakładka turnieju u Mistrza Areny w czasie zapisów, dźwięk zaproszenia), nowy `TourneyFameController`.
+- **Teksty (PL i EN):** `tourney.*` (przestrzeń dopisana do `NAMESPACES` w `data.spec`), `mail.subject.tourney`,
+  `title.tourney_champion`, `cosmetic.aura_champion`, `cosmetic.frame_tourney`, `admin.usage.tourney`, `admin.tourney.*`.
+  Blokada eliksiru używa gotowego `fullElixir.block.tourney`; źródło kosmetyków w garderobie: `wardrobe.obtain.event`.
+- **Poprawki po przeglądzie:** tryb turnieju z nowej sondy dla każdego turnieju (`Store.probe(true)`, ponowienie po
+  `Config.Tourney.probeRetry`, `Bus.start` po udanej sondzie); `ArenaService.AddQueueGuard` (gracz lokalnej drabinki
+  poza kolejką rankingową, zdjęcie z kolejki przy starcie); `/tourney open` odmawia w czasie prawdziwego turnieju
+  (`admin.tourney.real`); serwer turniejowy: reguła walki tylko dla meczów (`TourneyService.Deps` += `PvpService`),
+  drabinka po finale w `tourney.live` (`hostRunner`), `ServerMode.unregister` po powrocie, nowe teksty `tourney.ended`,
+  `tourney.left`, `tourney.error.inBracket`; zakładka „Turniej” buduje przycisk zapisu raz (zegar odświeża tylko
+  nagłówek).
+- **Testy:** nowy `tests/tourney.spec.luau` (T1 drabinka z symulacją 200 turniejów botów dla 4–32 graczy, T2 reguły, T3
+  dane i brak kolizji slotów, T5 tekst źródeł, T6 zapis); blok „S130 tourney” w `paywall.spec` (oraz `shards` dozwolone
+  pod `TOURNEY` w teście S126), `arenaqueue.spec` (rozmiar mapy i układy obu trybów), `town.spec` (Sala Sław turnieju),
+  `data.spec` (przestrzeń). `scripts/check` zielony (128 plików specyfikacji, 6810 testów), `balance1_20` 0 różnic bez
+  `ALLOWED_1_20_DIFFS`, `wiki_keys_diff` 0 bez `WIKI_KEYS_ALLOW`, `docs/BALANS.md` z wpisami S130 bez „BRAK POWODU”
+  (migawki nie generowano).
+- **Wiki:** `npm run data` bez zmian danych (ten sam `dataHash`: tytuł i kosmetyki z `wiki = false`), `meta.json` zmienił
+  tylko commit i datę, więc przywrócony.
+
+Dla S131:
+- Eksport `Data/Arena.TOURNEY` na wiki (miejsca, nagrody, termin startu), bez nazw magazynów i przesunięć w sekundach poza
+  godziną startu; artykuł „Turniej Czempiona”; publikacja `tourney_champion`, `aura_champion`, `frame_tourney`.
+- Komendy admina: wymuszenie prawdziwego (globalnego) turnieju, nadanie tytułu / aury czempiona.
+- `paywall.spec`: blok S130 już jest. Analityka: `TourneySignup` (poziom), `TourneyPlace` (miejsce).
+
+Dla właściciela: nic do ustawienia w Creator Hub ani w Studio. W Studio turniej działa „tylko na tym serwerze” (Ristalle);
+`/tourney open 60`, zapis kilku kont, `/tourney close`, `/tourney start`, `/tourney win <imię>` przechodzi drabinkę.
+Teleportów nie da się sprawdzić w Studio: prawdziwy test wymaga opublikowanej gry i co najmniej 4 graczy w przedziale.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Arena,ArenaPit,Maps,ScheduledEvents,Cosmetics,Titles,
+AdminCommands}.luau`, `src/shared/Data/Town/fame.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{Bracket,Tourney}.luau` (nowe), `src/shared/Logic/{AccountSchema,ArenaRules,UseBlocks}.luau`,
+`src/shared/Logic/TownGen/Props.luau`, `src/shared/Net/Definitions.luau`, `src/server/Tourney/{Store,Bus,Hall,Runner}.luau`
+(nowe), `src/server/Services/TourneyService.luau` (nowy), `src/server/Services/{Arena,Admin}Service.luau`,
+`src/server/Arena/{Match,Sand,ServerMode}.luau`, `src/server/World/Layouts/{arena_pit,city}.luau`,
+`src/server/Admin/World.luau`, `src/client/UI/Screens/ArenaWindow/init.luau` (przeniesiony z `ArenaWindow.luau`),
+`src/client/UI/Screens/ArenaWindow/{Tourney,TourneyBracket}.luau` (nowe), `src/client/UI/Screens/ArenaOffer.luau`,
+`src/client/UI/Screens/Hud/TourneyPanel.luau` (nowy), `src/client/Controllers/{Arena,Quest}Controller.luau`,
+`src/client/Controllers/TourneyFameController.luau` (nowy), `tests/tourney.spec.luau` (nowy),
+`tests/{paywall,arenaqueue,town,data}.spec.luau`, `tools/balance_reasons.luau`,
+`docs/{BALANS,DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

@@ -138,6 +138,14 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - W Studio: symulacja turnieju na jednym serwerze z botami-atrapami w testach (`Logic/Bracket.luau`, czysta drabinka z testami).
 - **Blokady S122:** zarejestruj powód `tourney` w `UseGuards` (`UseGuards.register("tourney", …)`) i zdejmij go z `UseBlocks.PENDING` w tym samym commicie.
 
+**Ustalenia S130** (szczegóły w `docs/DECYZJE.md`):
+- mecze turnieju bez ratingu (bez Elo, liczników dnia i Żetonów za mecz, tylko wpis historii), remis = wyżej rozstawiony;
+- rozstawienie wg ratingu 1 na 1 sezonu standardowym kluczem z obecnych o 19:00, wolne losy dla najlepszych, brak meczu
+  o 3. miejsce; uczestnik = rozstawiony i obecny na starcie, walkower przez własną nieobecność przed pierwszym meczem
+  = bez nagrody;
+- tryb lokalny („tylko ten serwer”): wszystkie przedziały po kolei na jednym polu Ristalle, piasek zajęty na cały turniej;
+- aura, ramka i tytuł z `wiki = false` do artykułu S131.
+
 ## 9. Audyt, wiki, ceny (S131)
 
 - Wiki: artykuły „Sklep premium” (co jest, czego nie sprzedajemy, bez cen w Robux i bez id), „VIP”, „Rankingi”, „Arena”, „Krwawy Księżyc”, „Turniej Czempiona”; dane areny (progi, zasady, sklep areny) z `Data/Arena` przez nowy eksporter na liście dozwolonych.

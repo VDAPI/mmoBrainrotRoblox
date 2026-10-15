@@ -274,6 +274,14 @@ cmd(
 	{ enum("action", { "info", "start", "stop", "settle", "points" }), int("n", 1, 120, true, "30") },
 	{ dangerActions = { "start", "stop" } }
 )
+-- S130: the Champion's Tournament (TourneyService): info, and a local test tournament on this server (open [s] ...
+-- win <name>); a = seconds for open, the player's name for win
+cmd(
+	"world",
+	"tourney",
+	{ enum("action", { "info", "open", "close", "start", "cancel", "win" }), str("a", true) },
+	{ dangerActions = { "cancel" } }
+)
 cmd("world", "bring", { ref("player", "player") })
 -- S26: shaped terrains (Admin/Terrain)
 cmd("world", "tparea", { str("target") })

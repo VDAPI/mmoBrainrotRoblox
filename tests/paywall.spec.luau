@@ -873,7 +873,8 @@ T.describe("Arena (S126)", function()
 		local banned = { robux = true, productId = true, shards = true, price = true }
 		local allowedUnder: { [string]: { [string]: boolean } } = {
 			price = { SHOP = true, shopByKey = true },
-			shards = { SEASON_REWARDS = true },
+			-- S130: TOURNEY.rewards (the Champion's Tournament places, by mail, never bought)
+			shards = { SEASON_REWARDS = true, TOURNEY = true },
 		}
 		local function walk(value: any, path: string, top: string?)
 			if type(value) ~= "table" then
@@ -1137,6 +1138,119 @@ T.describe("S129 Blood Moon", function()
 		for _, word in { "purchases", "dragonShards", "vip", "passes", "HasPass", "HasVip" } do
 			T.expect({ word, string.find(source, word, 1, true) ~= nil }).toEqual({ word, false })
 		end
+	end)
+end)
+
+T.describe("S130 tourney", function()
+	local Arena = require("../src/shared/Data/Arena")
+	local Tourney = require("../src/shared/Logic/Tourney")
+	local TOURNEY = Arena.TOURNEY
+	-- the kinds of a tournament reward -> why it is not pay-to-win
+	local ALLOWED_REWARD_FIELDS: { [string]: string } = {
+		place = "the place it is for",
+		shards = "Dragon Shards: buy only what passes this test",
+		title = "a timed title: looks",
+		titleDays = "how long the title shows",
+		cosmetics = "looks never sold (obtain), no stats",
+	}
+	local LOOK_KINDS: { [string]: boolean } =
+		{ aura = true, frame = true, title = true, chatframe = true, trail = true }
+
+	-- every string value under a product: never a tournament reward
+	local function noReward(value: any, ids: { [string]: boolean }, where: string, seen: { [any]: boolean }?)
+		if type(value) ~= "table" then
+			if type(value) == "string" and ids[value] then
+				error(`{where}: gives the tournament reward {value}`, 0)
+			end
+			return
+		end
+		local visited = seen or {}
+		if visited[value] then
+			return
+		end
+		visited[value] = true
+		for k, v in value do
+			noReward(v, ids, `{where}.{tostring(k)}`, visited)
+		end
+	end
+
+	T.it("rewards are shards, tokens, a timed title and looks only", function()
+		local allowed: { [string]: boolean } = {}
+		for k in ALLOWED_REWARD_FIELDS do
+			allowed[k] = true
+		end
+		for i, r in TOURNEY.rewards do
+			fieldsWithin(r :: any, allowed, `TOURNEY.rewards[{i}]`)
+			for _, id in r.cosmetics or {} do
+				local def = Cosmetics.get(id) :: Cosmetics.Def
+				T.expect({ id, def ~= nil }).toEqual({ id, true })
+				T.expect({ id, LOOK_KINDS[def.kind] == true }).toEqual({ id, true })
+				-- no stat-like field on a reward cosmetic
+				for _, key in FORBIDDEN_KEYS do
+					T.expect({ id, key, (def :: any)[key] }).toEqual({ id, key, nil })
+				end
+			end
+		end
+		T.expect(TOURNEY.participantTokens > 0 and TOURNEY.participantTokens % 1 == 0).toBe(true)
+	end)
+
+	T.it("the aura and the frame are never for sale and in no product", function()
+		local ids: { [string]: boolean } = { tourney_champion = true }
+		for _, id in { "aura_champion", "frame_tourney" } do
+			ids[id] = true
+			local def = Cosmetics.get(id) :: Cosmetics.Def
+			T.expect(def ~= nil).toBe(true)
+			fieldsWithin(def.obtain :: any, { event = true }, `cosmetics.{id}.obtain`)
+			T.expect((def.obtain :: any).event).toBe("tourney")
+			T.expect(def.price).toBe(0)
+			T.expect(def.weekly == true).toBe(false)
+			T.expect({ Premium.canBuyCosmetic(id, {}, 999999) }).toEqual({ false, "premium.error.notForSale" })
+		end
+		local raw: any = Products
+		for _, field in { "shop", "passes", "subscriptions", "starterPacks", "mounts" } do
+			noReward(raw[field] or {}, ids, `Products.{field}`)
+		end
+		for _, cosmetic in Cosmetics.list do
+			T.expect({ cosmetic.id, cosmetic.title == "tourney_champion" }).toEqual({ cosmetic.id, false })
+		end
+		-- the arena shop does not sell them either
+		for _, entry in Arena.SHOP do
+			T.expect({ entry.id, ids[entry.id] == true }).toEqual({ entry.id, false })
+		end
+	end)
+
+	T.it("the list and the seeding read only the rating and the signup time", function()
+		local plain: { Tourney.Entry } = {}
+		local rich: { any } = {}
+		for i = 1, 40 do
+			local e = { key = `{i}_1`, rating = 1000 + (i * 37) % 300, t = 1000 + i, name = `n{i}`, class = "warrior" }
+			table.insert(plain, e)
+			local r: any = table.clone(e)
+			r.vip = i % 2 == 0
+			r.passes = { fastRespawn = true, vip = true }
+			r.dragonShards = i * 1000
+			r.name = `other{i}`
+			r.class = "mage"
+			table.insert(rich, r)
+		end
+		T.expect(Tourney.seedOrder(rich)).toEqual(Tourney.seedOrder(plain))
+		local a, _, ta = Tourney.pick(plain, TOURNEY.cap)
+		local b, _, tb = Tourney.pick(rich, TOURNEY.cap)
+		local keysA, keysB = {}, {}
+		for _, e in a do
+			table.insert(keysA, e.key)
+		end
+		for _, e in b do
+			table.insert(keysB, e.key)
+		end
+		T.expect(keysB).toEqual(keysA)
+		T.expect(tb).toBe(ta)
+	end)
+
+	T.it("the Elixir of Wholeness is blocked in a tournament (registered, not pending)", function()
+		T.expect(table.find(UseBlocks.LISTS.fullElixir, "tourney") ~= nil).toBe(true)
+		T.expect(UseBlocks.PENDING.tourney).toBeNil()
+		T.expect(UseBlocks.first("fullElixir", { tourney = true })).toBe("tourney")
 	end)
 end)
 

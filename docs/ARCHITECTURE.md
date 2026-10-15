@@ -552,6 +552,32 @@ type CharacterData = {
   S101), okno `UI/Screens/BloodMoonWindow` (`BloodMoonController`, bez klawisza), `WorldController.SetEventTint`
   (czerwone niebo nad otwartymi regionami), wpis menu HUD `bloodmoon`, przycisk w `GameMenu`, ekran śmierci.
 
+### Turniej Czempiona (S130)
+
+- **Dane i logika:** slot `tourney` w `Data/ScheduledEvents` (sobota 19:00 UTC, `warn = {}`), `Data/Arena.TOURNEY`
+  (`cap`, `minPlayers`, `window` = przesunięcia od startu, `fields`, `restBetween`, `hallWeeks`, `participantTokens`,
+  `rewards`), `Data/Arena.VENUES.pit_1` … `pit_4`, `Data/ArenaPit.LAYOUTS.tournament` (cztery pola, `lobby`),
+  `Config.Tourney` (nazwy magazynów, TTL, odpytywanie; poza księgą). Czyste `Logic/Bracket` (drabinka: `new`, `ready`,
+  `report`, `withdraw`, `placeOf`, `view`) i `Logic/Tourney` (`startAt`, `phaseAt`, `canSignup`, `pick`, `seedOrder`,
+  `rewardsFor`, `isStale`, `placeKey`, `roundKey`).
+- **Między serwerami (`src/server/Tourney/`):** `Store` (Backend S127 albo atrapa `MemoryFake`: SortedMap
+  `Tourney_<id>_<przedział>`, HashMap `TourneyServers` z `lock_<id>` i `srv_<id>_<przedział>`, `reserve`), `Bus`
+  (temat MessagingService `Tourney`, `{ op = open | cancel, id, b }`), `Hall` (DataStore `TourneyHall`, klucz
+  `champions`, przez `KeyStore`), `Runner` (jedna drabinka przez `ArenaService.RunMatch` z `origin = "tournament"`).
+- **`TourneyService`:** pętla 1 s na serwerze świata (fazy, ogłoszenia, organizator z blokadą, zaproszenia, odczyty
+  kontrolne, tryb lokalny z piaskiem Ristalle przez `Arena/Sand`), serwer turniejowy (`ServerMode.claim("tournament")`,
+  wpuszczanie z rekordu, lobby przez `SetSpawnOverride`, odnawianie `ReservedServers`, start, powrót przez
+  `Arena/Transfer`), nagrody (jedna przesyłka, `once`), plansza „Czempioni Vaelthorn” (tagi `TourneyFameBoard` /
+  `TourneyFamePlinth`), `InTourney` dla `UseGuards "tourney"`, admin `AdminInfo` / `AdminOpen` / `AdminClose` /
+  `AdminStart` / `AdminCancel` / `AdminWin`. `ArenaService`: `RunMatch(..., opts)`, `ForceWin`, `CanFight`;
+  `Arena/Match.decide`; `ServerMode.tourney()`.
+- **Remote'y:** `TourneySignup(boolean)`, `TourneyRespond(boolean)`, `TourneyLeave()`, `TourneyInfo()`. Gałąź runtime
+  `tourney` (`Types.TourneyClient`: faza, start, tryb, zapis, zaproszenie, `live` = widok drabinki i stan gracza), zapis
+  `character.tourney = { signed?, played, won, best }`.
+- **Klient:** zakładka „Turniej” okna areny (`UI/Screens/ArenaWindow/` jest folderem: `init`, `Tourney`,
+  `TourneyBracket`), wariant zaproszenia w `ArenaOffer`, `Hud/TourneyPanel` (montuje `QuestController`),
+  `TourneyFameController` (plansza i posągi).
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.

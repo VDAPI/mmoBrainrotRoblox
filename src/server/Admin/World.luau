@@ -42,6 +42,7 @@ local MapMarkService = Context.services.MapMarkService
 local WorldEventService = Context.services.WorldEventService
 local LeaderboardService = Context.services.LeaderboardService
 local BloodMoonService = Context.services.BloodMoonService
+local TourneyService = Context.services.TourneyService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -817,6 +818,74 @@ commands.bloodmoon = function(player, args)
 	end
 	reply(player, "admin.usage.bloodmoon")
 	return false, "admin.usage.bloodmoon"
+end
+
+-- S130: the Champion's Tournament. /tourney info | open [s] | close | start | cancel | win <name>: open .. win run a
+-- local test tournament on this server (never the real one, never the stores).
+commands.tourney = function(player, args)
+	local action = args[1] or "info"
+	if action == "info" then
+		local info = TourneyService.AdminInfo()
+		reply(player, "admin.tourney.info", {
+			id = info.id,
+			mode = info.mode,
+			phase = info.phase,
+			left = Time.format(info.left),
+			counts = info.counts,
+			lock = info.lock,
+			servers = info.servers,
+		})
+		return true
+	elseif action == "open" then
+		local seconds = math.clamp(math.floor(tonumber(args[2]) or 120), 10, 3600)
+		local ok, err = TourneyService.AdminOpen(seconds)
+		if not ok then
+			reply(player, err or "admin.tourney.busy")
+			return false, err
+		end
+		reply(player, "admin.tourney.opened", { s = seconds })
+		return true
+	end
+	if not TourneyService.HasTest() then
+		reply(player, "admin.tourney.noTest")
+		return false, "admin.tourney.noTest"
+	end
+	if action == "close" then
+		local ok, n = TourneyService.AdminClose()
+		if not ok then
+			reply(player, "admin.tourney.noTest")
+			return false, "admin.tourney.noTest"
+		end
+		reply(player, "admin.tourney.closed", { n = n })
+		return true
+	elseif action == "start" then
+		local ok, n = TourneyService.AdminStart()
+		if not ok then
+			reply(player, "admin.tourney.noTest")
+			return false, "admin.tourney.noTest"
+		end
+		reply(player, "admin.tourney.started", { n = n })
+		return true
+	elseif action == "cancel" then
+		TourneyService.AdminCancel()
+		reply(player, "admin.tourney.cancelled")
+		return true
+	elseif action == "win" then
+		local target = AdminService.FindPlayer(args[2] or "")
+		if not target then
+			reply(player, "admin.player.none")
+			return false, "admin.player.none"
+		end
+		local ok, err = TourneyService.AdminWin(target)
+		if not ok then
+			reply(player, err or "admin.tourney.noMatch")
+			return false, err
+		end
+		reply(player, "admin.tourney.won", { name = target.Name })
+		return true
+	end
+	reply(player, "admin.usage.tourney")
+	return false, "admin.usage.tourney"
 end
 
 return commands

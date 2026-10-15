@@ -24,12 +24,17 @@ local function nextOne()
 end
 
 -- Asks for the sand: `start` runs (task.spawn) once the sand is free and every earlier request is done. Returns the
--- place in the line (0 = started at once).
-function Sand.request(owner: string, id: string, start: () -> ()): number
+-- place in the line (0 = started at once). S130: `first` puts the request before every waiting one (the Champion's
+-- Tournament of this server takes the sand for its whole bracket; duels and ranked matches wait for its end).
+function Sand.request(owner: string, id: string, start: () -> (), first: boolean?): number
 	local request: Request = { owner = owner, id = id, start = start }
 	if current == nil and #waiting == 0 then
 		grant(request)
 		return 0
+	end
+	if first then
+		table.insert(waiting, 1, request)
+		return 1
 	end
 	table.insert(waiting, request)
 	return #waiting

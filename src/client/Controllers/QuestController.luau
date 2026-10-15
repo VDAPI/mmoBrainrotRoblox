@@ -20,6 +20,7 @@ local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local BloodMoonPanel = require(script.Parent.Parent.UI.Screens.Hud.BloodMoonPanel)
+local TourneyPanel = require(script.Parent.Parent.UI.Screens.Hud.TourneyPanel)
 local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
 local WorldEventPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldEventPanel)
@@ -33,7 +34,15 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local QuestController = {
 	Name = "QuestController",
-	Deps = { "WindowManager", "UIController", "NavController", "NotificationController", "SfxController" },
+	-- S130: ArenaController for the tournament panel (it depends on no quest code)
+	Deps = {
+		"WindowManager",
+		"UIController",
+		"NavController",
+		"NotificationController",
+		"SfxController",
+		"ArenaController",
+	},
 }
 
 local scope = Fusion.scoped(Fusion)
@@ -199,8 +208,13 @@ function QuestController.Init(registry)
 	local eventOffset = scope:Value(0)
 	-- S129: the Blood Moon panel stands in the same place (never at the same time: no world event during it)
 	local moonOffset = scope:Value(0)
-	local trackerOffset = scope:Computed(function(use): number
+	-- S130: the tournament panel stands under them (a world event may run during the signups)
+	local tourneyOffset = scope:Value(0)
+	local aboveTourney = scope:Computed(function(use): number
 		return math.max(use(eventOffset), use(moonOffset))
+	end)
+	local trackerOffset = scope:Computed(function(use): number
+		return use(aboveTourney) + use(tourneyOffset)
 	end)
 	QuestTracker(scope, {
 		Offset = trackerOffset,
@@ -232,6 +246,17 @@ function QuestController.Init(registry)
 		OpenResults = function()
 			WindowManager.Open("bloodmoon")
 		end,
+	}).Parent =
+		UIController.GetLayer("Screens")
+	local Arena = registry.Get("ArenaController")
+	TourneyPanel(scope, {
+		Offset = tourneyOffset,
+		Above = aboveTourney,
+		OpenTab = Arena.OpenTourney,
+		ShowInvite = function()
+			Arena.InviteHidden:set(false)
+		end,
+		Leave = Arena.TourneyLeave,
 	}).Parent =
 		UIController.GetLayer("Screens")
 end

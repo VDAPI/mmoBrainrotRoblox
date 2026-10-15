@@ -59,6 +59,22 @@ export type ArenaShopEntry = {
 }
 -- S128: the reward of the best tier of a finished season (Data/Titles id, Data/Cosmetics ids, Dragon Shards by mail).
 export type SeasonReward = { title: string, cosmetics: { string }?, shards: number? }
+-- S130 (DESIGN-17 §8): the Champion's Tournament reward of a place (1 champion, 2 finalist, 3 both semifinal
+-- losers): Dragon Shards, a timed title (Data/Titles req.kind "timed") for `titleDays` and cosmetics never sold
+-- (Data/Cosmetics obtain.event = "tourney"); everything by one mail parcel.
+export type TourneyReward =
+	{ place: number, shards: number?, title: string?, titleDays: number?, cosmetics: { string }? }
+export type TourneyWindow = { open: number, close: number, organize: number, invite: number }
+export type Tourney = {
+	cap: number,
+	minPlayers: number,
+	window: TourneyWindow,
+	fields: number,
+	restBetween: number,
+	hallWeeks: number,
+	participantTokens: number,
+	rewards: { TourneyReward },
+}
 
 local MIN_LEVEL = 20
 
@@ -198,6 +214,28 @@ local SEASON_REWARDS: { [string]: SeasonReward } = {
 }
 local seasonMinPlayed = 5 -- matches (1v1 + 3v3) in the finished season needed for any season reward
 
+-- S130 (DESIGN-17 §8): the Champion's Tournament. Offsets in seconds relative to the bracket start (the "tourney" slot
+-- of Data/ScheduledEvents, Saturday 19:00 UTC): signups 18:00-18:50, the organizer at 18:55, `invite` s to accept.
+-- Brackets are the arena brackets (ArenaRules). Rewards are mailed (the S129 parcel); every seeded player who showed
+-- up gets `participantTokens` on top of the place reward (outside the weekly token cap, like the S129 event tokens).
+local function reward(def: TourneyReward): TourneyReward
+	return def
+end
+local TOURNEY: Tourney = {
+	cap = 32, -- signups taken per bracket; above it the highest 1v1 ratings get in (ties: earlier signup)
+	minPlayers = 4, -- fewer signed (at the close) or present (at the start) cancels the bracket
+	window = { open = -3600, close = -600, organize = -300, invite = 120 },
+	fields = 4, -- fighting fields on a tournament server (a local tournament has one: Ristalle)
+	restBetween = 30, -- seconds a player rests after a match before the next one is called
+	hallWeeks = 4, -- champions kept per bracket on the Hall of Fame board
+	participantTokens = 30,
+	rewards = {
+		reward({ place = 1, shards = 200, title = "tourney_champion", titleDays = 7, cosmetics = { "aura_champion" } }),
+		reward({ place = 2, shards = 100, cosmetics = { "frame_tourney" } }),
+		reward({ place = 3, shards = 50 }), -- both semifinal losers (no match for third place)
+	},
+}
+
 -- Venues (geometry from the city plan, never typed by hand).
 local PLAN = Town.city.arena
 local STAND_OFFSET = PLAN.half + PLAN.stands * 0.6 -- on the third row of the full (x-axis) stands
@@ -252,6 +290,10 @@ local VENUES: { [string]: Venue } = {
 	-- S127: the arena server (map arena_pit, Data/ArenaPit layout "arena"); S130 adds pit_1 .. pit_4
 	pit = pitVenue("pit", ArenaPit.layout("arena").fields[1]),
 }
+-- S130: the four fields of a tournament server ("pit_1" .. "pit_4" = ArenaPit tournament fields pit1 .. pit4)
+for i, f in ArenaPit.layout("tournament").fields do
+	VENUES[`pit_{i}`] = pitVenue(`pit_{i}`, f)
+end
 
 local Arena = {
 	MIN_LEVEL = MIN_LEVEL,
@@ -273,6 +315,8 @@ local Arena = {
 	shopByKey = shopByKey,
 	SEASON_REWARDS = SEASON_REWARDS,
 	seasonMinPlayed = seasonMinPlayed,
+	-- S130
+	TOURNEY = TOURNEY,
 }
 
 function Arena.bracket(id: string): Bracket?

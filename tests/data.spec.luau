@@ -50,6 +50,7 @@ local NAMESPACES = {
 	"emote", -- S123
 	"arena", -- S126
 	"bloodmoon", -- S129
+	"tourney", -- S130
 	"animlab", -- S110
 	"paths",
 	"title",

@@ -6,7 +6,14 @@
 
 export type Spot = { x: number, z: number, facing: number }
 -- S128: `arena` = the arena Hall of Fame east of the Ristalle (board + one plinth per arena bracket, Data/Arena).
-export type Fame = { board: Spot, plinths: { Spot }, arena: { board: Spot, plinths: { Spot } } }
+-- S130: `tourney` = the Champions of Vaelthorn (the Champion's Tournament) east of the arena Hall of Fame: board + one
+-- statue plinth per arena bracket (the newest champion of the bracket).
+export type Fame = {
+	board: Spot,
+	plinths: { Spot },
+	arena: { board: Spot, plinths: { Spot } },
+	tourney: { board: Spot, plinths: { Spot } },
+}
 
 local fame: Fame = {
 	-- on the north side of the market, east of the banker (56, -72) and west of the mouth of Ulica Leśna (84, -78)
@@ -27,6 +34,17 @@ local fame: Fame = {
 			{ x = 243, z = -88, facing = 270 },
 			{ x = 243, z = -72, facing = 270 },
 			{ x = 243, z = -66, facing = 270 },
+		},
+	},
+	-- S130 (DESIGN-17 §8): the Champions of Vaelthorn behind the arena Hall of Fame (the same facing), the statues of
+	-- the newest champion of each bracket two by two beside the view of the board
+	tourney = {
+		board = { x = 248, z = -84, facing = 270 },
+		plinths = {
+			{ x = 257, z = -98, facing = 270 },
+			{ x = 257, z = -92, facing = 270 },
+			{ x = 257, z = -76, facing = 270 },
+			{ x = 257, z = -70, facing = 270 },
 		},
 	},
 }

@@ -106,6 +106,20 @@ function ServerMode.ref(): string?
 	return ref
 end
 
+-- S130: the tournament and the bracket of a tournament server (ref "<id>_<bracket>", split at the first "_": the
+-- bracket id has one itself); nil outside the "tournament" mode.
+function ServerMode.tourney(): { id: string, bracket: string }?
+	local r = ref
+	if mode ~= "tournament" or r == nil then
+		return nil
+	end
+	local cut = string.find(r, "_", 1, true)
+	if not cut then
+		return nil
+	end
+	return { id = string.sub(r, 1, cut - 1), bracket = string.sub(r, cut + 1) }
+end
+
 function ServerMode.isWorld(): boolean
 	return mode == "world"
 end
@@ -122,6 +136,11 @@ function ServerMode.register(backend: ArenaQueue.Backend, psid: string, m: Mode,
 		return ArenaQueue.registryEntry(m, r)
 	end, NET.registryTtl)
 	return ok
+end
+
+-- S130: the entry goes when the reserved server's job is over (a tournament server after its final).
+function ServerMode.unregister(backend: ArenaQueue.Backend, psid: string): boolean
+	return backend.hremove(NET.registryMap, psid)
 end
 
 -- The service that runs a non-world mode says so in its Start (S127 ArenaService for "arena"; S130 the tournament

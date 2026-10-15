@@ -20,6 +20,10 @@
 -- tickets formed into teams by Logic/ArenaRules.pair), Arena Tokens for every match (AddTokens, the one writer),
 -- IsSidelined (a knocked out team fighter), the arena shop at the Arena Master (ArenaShopBuy), the season rewards
 -- paid from character.arena.last (settleSeason) and the arena Hall of Fame (Arena/HallOfFame, the city board).
+-- S130 (DESIGN-17 §8): the Champion's Tournament plays its matches through RunMatch (origin "tournament", rated =
+-- false: only a history entry, no counters, no tokens, no announcement; `opts.direct` on the Ristalle when the
+-- tournament already holds the sand), ForceWin (admin /tourney win), CanFight and AddQueueGuard (a player of a local
+-- bracket stays out of the queue). TourneyService takes nothing else.
 
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
@@ -153,6 +157,18 @@ local lastWaiting: { [Player]: number } = {}
 local teamParty: { [string]: number } = {} -- S128: team ticket key -> the id of the party that queued it
 local shopBusy: { [Player]: boolean } = {} -- S128: one arena shop purchase at a time
 local settling: { [Player]: boolean } = {} -- S128: a season reward on its way
+local queueGuards: { (player: Player) -> string? } = {} -- S130: other services keep a player out of the queue
+
+-- The first refusal of a queue guard (S130 TourneyService: a player of a local bracket), nil = none.
+local function guardReason(player: Player): string?
+	for _, guard in queueGuards do
+		local reason = guard(player)
+		if reason then
+			return reason
+		end
+	end
+	return nil
+end
 
 local function serverNow(): number
 	return Workspace:GetServerTimeNow()
@@ -411,11 +427,15 @@ function ArenaService.HasOffer(player: Player): boolean
 	return offerOf[player] ~= nil or reserved[player] ~= nil or (key ~= nil and Matchmaker.HasOffer(key))
 end
 
--- Logic/ArenaRules.canQueue on the player's state (S129 / S130 use it for their blocks).
+-- Logic/ArenaRules.canQueue on the player's state (S129 / S130 use it for their blocks), then the queue guards.
 function ArenaService.BlockedReason(player: Player, mode: string?): string?
 	local char = character(player)
 	if not char then
 		return "error.wrongPhase"
+	end
+	local guarded = guardReason(player)
+	if guarded then
+		return guarded
 	end
 	local key = keyOf(player)
 	return ArenaRules.canQueue({
@@ -599,6 +619,11 @@ function ArenaService.Leave(player: Player)
 	dropQueue(player)
 end
 
+-- S130: a reason that keeps a player out of the ranked queue (a join is refused, a pairing drops the player).
+function ArenaService.AddQueueGuard(guard: (player: Player) -> string?)
+	table.insert(queueGuards, guard)
+end
+
 -- S127: a Matchmaker goes in front of the local queue (Join uses the first source; pairs come from all of them).
 function ArenaService.AddSource(source: ArenaTypes.PairSource)
 	table.insert(sources, 1, source)
@@ -705,6 +730,7 @@ local function applyFor(
 		score = score,
 		rounds = ArenaRules.roundsText(result.score, side),
 		rated = spec.rated and not spec.unrated[key] and result.reason ~= "aborted",
+		tourney = spec.origin == "tournament", -- S130: a history entry only
 	})
 	PlayerStateService.Set(player, { "character", "arena" }, new)
 	if info.rated then
@@ -714,7 +740,10 @@ local function applyFor(
 	QuestEvents.fire(player, "duel", { won = score >= 1 })
 	local delta = if info.delta > 0 then `+{info.delta}` else tostring(info.delta)
 	local outcome: "win" | "loss" | "draw" = if score >= 1 then "win" elseif score <= 0 then "loss" else "draw"
-	if not info.rated then
+	if spec.origin == "tournament" then
+		-- S130: the bracket tells the result (TourneyService), no arena toast
+		return info
+	elseif not info.rated then
 		toast(player, "arena.result.unrated", nil, "info")
 	elseif mode.teamSize > 1 then
 		toast(player, "arena.result3.toast", { result = `@arena.result3.{outcome}`, delta = delta }, "info")
@@ -758,7 +787,17 @@ end
 
 local function onFinished(match: Match.Match, result: ArenaRules.MatchResult)
 	local spec = match.spec
-	if result.reason ~= "aborted" then
+	-- S130: tournament matches are announced by the tournament (the champion), not one by one
+	if result.reason ~= "aborted" and spec.origin == "tournament" then
+		for _, list in spec.sides do
+			for _, entrant in list do
+				local player = playerOfKey(entrant.key)
+				if player then
+					applyFor(player, spec, result, nil)
+				end
+			end
+		end
+	elseif result.reason ~= "aborted" then
 		for _, list in spec.sides do
 			for _, entrant in list do
 				local player = playerOfKey(entrant.key)
@@ -929,10 +968,13 @@ end
 -- S127: a match for the players on this server (an arena server); S130 tournaments with rated = false. On the
 -- Ristalle venue the match waits for the sand (the local host).
 -- S128: `absent` = entrant keys that never arrived (a team match on an arena server starts without them).
+-- S130: `opts.direct` = play on the venue now even on the Ristalle (the tournament holds the sand itself, Arena/Sand),
+-- `opts.onClosed` runs once the fighters were sent back after the match (the tournament frees its field).
 function ArenaService.RunMatch(
 	spec: ArenaRules.MatchSpec,
 	venueId: string,
-	absent: { [string]: boolean }?
+	absent: { [string]: boolean }?,
+	opts: { direct: boolean?, onClosed: (() -> ())? }?
 ): (boolean, string?)
 	if not Arena.venue(venueId) or not Arena.mode(spec.mode) then
 		return false, "error.badRequest"
@@ -957,11 +999,33 @@ function ArenaService.RunMatch(
 		dropQueue(player)
 		reserved[player] = spec.id
 	end
-	if venueId == "ristalle" then
+	local direct = opts ~= nil and opts.direct == true
+	if venueId == "ristalle" and not direct then
 		return hosts["local"]:start(spec, players)
 	end
-	runOn(spec, venueId, players, nil)
+	runOn(spec, venueId, players, if opts then opts.onClosed else nil)
 	return true, nil
+end
+
+-- S130: ends the running match of `player` with its win (admin /tourney win). False without a match.
+function ArenaService.ForceWin(player: Player): boolean
+	local match = byPlayer[player]
+	local side = if match then match:sideOf(player) else nil
+	if not match or not side or match.phase == "done" then
+		return false
+	end
+	match:decide(side)
+	return true
+end
+
+-- S130: what keeps `player` from being called to a tournament match now (dead, a dungeon, a duel, a match, a fight);
+-- nil = ready.
+function ArenaService.CanFight(player: Player): string?
+	local reason = matchBlock(player)
+	if reason then
+		return reason
+	end
+	return if ResourceService.InCombat(player) then "arena.error.combat" else nil
 end
 
 -- Offers -----------------------------------------------------------------------------------------------------------------
@@ -1180,7 +1244,7 @@ local function makeOffer(pairing: ArenaRules.Pairing, source: ArenaTypes.PairSou
 					any = true
 				else
 					players[key] = player
-					local reason = matchBlock(player)
+					local reason = matchBlock(player) or guardReason(player)
 					if reason then
 						blocked[key] = reason
 						blockedTicket[ticket.entrant.key] = true

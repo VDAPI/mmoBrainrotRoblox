@@ -4185,6 +4185,19 @@ return {
 				why = "new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon",
 			},
 		},
+		-- S130 (DESIGN-17 §8): the Champion's Tournament
+		["Arena:TOURNEY*"] = {
+			{
+				session = "S130",
+				why = "new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold",
+			},
+		},
+		["ScheduledEvents:list[2]*"] = {
+			{
+				session = "S130",
+				why = "the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0)",
+			},
+		},
 		-- S127 (DESIGN-17 §6): the arena server map; its level range is the arena's brackets (not a hunting ground)
 		["Maps:byId.arena_pit*"] = {
 			{

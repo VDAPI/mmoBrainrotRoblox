@@ -580,6 +580,11 @@ local function arenaEmblem(_i: number): string
 	return "#B07A4A"
 end
 
+-- S130: the tournament plinths carry the champion's gold.
+local function tourneyEmblem(_i: number): string
+	return "#F2C14E"
+end
+
 function Props.all(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	for _, st in city.stalls do
@@ -614,6 +619,19 @@ function Props.all(city: any, ground: Ground): { Build }
 			emblem = arenaEmblem,
 			name = "ArenaFameHall",
 			tag = "arenaFame",
+		})
+	)
+	-- S130: the Champions of Vaelthorn (World/Layouts/city tags it for TourneyService)
+	table.insert(
+		out,
+		fameHall(ground, {
+			board = Town.fame.tourney.board,
+			plinths = Town.fame.tourney.plinths,
+			boardTag = "tourneyFameBoard",
+			plinthTag = "tourneyFamePlinth",
+			emblem = tourneyEmblem,
+			name = "TourneyFameHall",
+			tag = "tourneyFame",
 		})
 	)
 	table.insert(out, cemetery(city, ground))

@@ -84,6 +84,7 @@ export type Match = {
 	result: ArenaRules.MatchResult?,
 	run: (self: Match) -> (),
 	abort: (self: Match, reason: string) -> (),
+	decide: (self: Match, side: number) -> (), -- S130: ends the match with this side's win (admin /tourney win)
 	sideOf: (self: Match, player: Player) -> number?,
 	isFighter: (self: Match, player: Player) -> boolean,
 	keyOf: (self: Match, player: Player) -> string?,
@@ -517,6 +518,15 @@ function Match.new(
 
 	function self.abort(_self: Match, _reason: string)
 		finish({ winner = nil, score = table.clone(self.score), rounds = self.round, reason = "aborted", forfeits = {} })
+	end
+
+	function self.decide(_self: Match, side: number)
+		if spec.sides[side] == nil then
+			return
+		end
+		local score = table.clone(self.score)
+		score[side] = math.max(score[side] or 0, mode.winsNeeded)
+		finish({ winner = side, score = score, rounds = self.round, reason = "score", forfeits = {} })
 	end
 
 	function self.sideOf(_self: Match, player: Player): number?
