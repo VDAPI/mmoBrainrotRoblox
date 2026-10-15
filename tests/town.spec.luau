@@ -62,6 +62,18 @@ local function footprints(): { Box }
 	for i, p in fame.plinths do
 		table.insert(out, { id = `famePlinth{i}`, poly = TownGeom.rect(p.x, p.z, FAME_PLINTH, FAME_PLINTH, p.facing) })
 	end
+	-- S128: the arena Hall of Fame (the same build)
+	local arenaFame = fame.arena
+	table.insert(out, {
+		id = "arenaFameBoard",
+		poly = TownGeom.rect(arenaFame.board.x, arenaFame.board.z, FAME_BOARD_W, FAME_BOARD_D, arenaFame.board.facing),
+	})
+	for i, p in arenaFame.plinths do
+		table.insert(
+			out,
+			{ id = `arenaFamePlinth{i}`, poly = TownGeom.rect(p.x, p.z, FAME_PLINTH, FAME_PLINTH, p.facing) }
+		)
+	end
 	return out
 end
 
@@ -421,4 +433,42 @@ T.describe("Town plan", function()
 			T.expect(w.top - w.bottom <= 26).toBe(true)
 		end
 	end)
+end)
+
+T.describe("S128 arena Hall of Fame", function()
+	local Arena = require("../src/shared/Data/Arena")
+
+	T.it(
+		"stands on open ground by the Ristalle, off the arena, the streets and the NPCs, one plinth a bracket",
+		function()
+			local spec = Town.fame.arena
+			T.expect(#spec.plinths).toBe(#Arena.BRACKETS)
+			local a = city.arena
+			local points = { { what = "board", p = spec.board } }
+			for i, p in spec.plinths do
+				table.insert(points, { what = `plinth {i}`, p = p })
+			end
+			for _, item in points do
+				local x, z, what = item.p.x, item.p.z, item.what
+				T.expect({ what, TownTerrain.isOpen(x, z, 2) }).toEqual({ what, true })
+				local outside = math.abs(x - a.x) > a.half + a.stands + 3 or math.abs(z - a.z) > a.half + a.stands + 3
+				T.expect({ what, outside }).toEqual({ what, true })
+				for id, spot in Town.allNpcSpots() do
+					local d = math.sqrt((x - spot.x) ^ 2 + (z - spot.z) ^ 2)
+					T.expect({ what, id, d >= 4 }).toEqual({ what, id, true })
+				end
+				for _, lamp in city.lamps do
+					local d = math.sqrt((x - lamp.x) ^ 2 + (z - lamp.z) ^ 2)
+					T.expect({ what, lamp.id, d >= 4 }).toEqual({ what, lamp.id, true })
+				end
+				for _, street in city.streets do
+					local gap = TownGeom.lineDist(street.pts, x, z) - street.w / 2
+					T.expect({ what, street.id, gap >= 3 }).toEqual({ what, street.id, true })
+				end
+			end
+			-- near the arena's way out (the players walk over from the Ristalle)
+			local d = math.sqrt((spec.board.x - a.exit[1]) ^ 2 + (spec.board.z - a.exit[2]) ^ 2)
+			T.expect(d < 60).toBe(true)
+		end
+	)
 end)

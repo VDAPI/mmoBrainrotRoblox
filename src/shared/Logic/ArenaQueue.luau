@@ -36,6 +36,9 @@ export type Entry = {
 	state: "wait" | "claimed",
 	match: string?, -- set while claimed
 	claimUntil: number?,
+	-- S128: the fighters of the entry (a 3v3 party team = one entry of its leader; the members are in
+	-- ticket.members, Logic/ArenaRules.Ticket); nil = 1
+	size: number?,
 }
 export type MatchPlayer = {
 	key: string,
@@ -48,6 +51,7 @@ export type MatchPlayer = {
 	level: number,
 	ok: boolean?,
 	arrived: boolean?,
+	entry: string?, -- S128: the queue entry key the player came with (a party team: its leader's key)
 }
 export type MatchState = "offered" | "accepted" | "cancelled" | "live" | "done" | "void"
 export type MatchRecord = {
@@ -65,7 +69,9 @@ export type MatchRecord = {
 	acceptBy: number,
 	reason: string?, -- cancel reason: "declined" | "timeout" | "left" | "teleport" | "noShow" | "server"
 	by: string?, -- whose
+	silent: { string }?, -- S128: "timeout": every player without an answer (all of them are penalized, not only `by`)
 	result: { winner: string?, noRating: boolean? }?,
+	teams: { { string } }?, -- S128 (3v3): the player keys of each side
 }
 export type Item = { key: string, value: any, sortKey: number? }
 export type Backend = {
@@ -126,6 +132,7 @@ end
 
 -- A waiting entry of a ticket on this server (`ticket.joinedAt` is kept: a re-queue keeps its place).
 function ArenaQueue.newEntry(ticket: ArenaRules.Ticket, jobId: string): Entry
+	local size = ArenaRules.size(ticket)
 	return {
 		key = ticket.entrant.key,
 		ticket = copy(ticket),
@@ -133,6 +140,7 @@ function ArenaQueue.newEntry(ticket: ArenaRules.Ticket, jobId: string): Entry
 		state = "wait",
 		match = nil,
 		claimUntil = nil,
+		size = if size > 1 then size else nil,
 	}
 end
 
@@ -497,6 +505,306 @@ function ArenaQueue.tryPair(
 	return "paired", record
 end
 
+-- S128: the fighters of an entry (a party team: its members; else the entrant).
+local function fightersOf(e: Entry): { ArenaRules.Entrant }
+	local t = e.ticket
+	if t.members then
+		return copy(t.members)
+	end
+	return { copy(t.entrant) }
+end
+
+-- S128: the match record of a 3v3 pairing of entries (sides of entries; ratings snapshotted from the tickets).
+function ArenaQueue.newTeamRecord(
+	id: string,
+	sidesOfEntries: { { Entry } },
+	org: string,
+	now: number,
+	acceptSeconds: number,
+	code: string?,
+	psid: string?
+): MatchRecord
+	local sides: { { ArenaRules.Entrant } } = {}
+	local teams: { { string } } = {}
+	local players: { MatchPlayer } = {}
+	local first = sidesOfEntries[1][1].ticket
+	for i, list in sidesOfEntries do
+		local entrants: { ArenaRules.Entrant } = {}
+		local keys: { string } = {}
+		for _, e in list do
+			for _, en in fightersOf(e) do
+				table.insert(entrants, en)
+				table.insert(keys, en.key)
+				table.insert(players, {
+					key = en.key,
+					userId = en.userId,
+					slot = en.slot,
+					jobId = e.jobId,
+					rating = en.rating,
+					name = en.name,
+					class = en.class,
+					level = en.level,
+					entry = e.key,
+				})
+			end
+		end
+		sides[i] = entrants
+		teams[i] = keys
+	end
+	table.sort(players, function(x: MatchPlayer, y: MatchPlayer): boolean
+		return x.key < y.key
+	end)
+	return {
+		id = id,
+		mode = first.mode,
+		bracket = first.bracket,
+		state = "offered",
+		spec = {
+			id = id,
+			mode = first.mode,
+			bracket = first.bracket,
+			season = ArenaRules.seasonOf(now),
+			rated = true,
+			unrated = {},
+			sides = sides,
+			venue = "pit",
+			origin = "global",
+			createdAt = now,
+		},
+		players = players,
+		org = org,
+		sameJob = false,
+		code = code,
+		psid = psid,
+		created = now,
+		acceptBy = now + acceptSeconds,
+		teams = teams,
+	}
+end
+
+-- S128: one organizer step of a 3v3 entry `me` (party team or solo), with the statuses of tryPair ("paired" +
+-- record, "local" + ArenaRules.Pairing, "none", "lost", "error"). The waiting entries of the bracket go through
+-- ArenaRules.formTeams3; only the server of the pairing's oldest entry builds it (shouldInitiate, unless `force`);
+-- every entry of the pairing is claimed in key order and all claims made are given back (unclaim keeps joinedAt) when
+-- one fails. 1v1 stays on tryPair. The fallback (as tryPair): only this server's entries (`locals`: no range read), any
+-- rating, no oldest-initiates check.
+function ArenaQueue.tryTeams(
+	backend: Backend,
+	me: Entry,
+	cfg: Cfg,
+	now: number,
+	newId: () -> string,
+	jobId: string,
+	opts: PairOptions?
+): (Status, any?)
+	local o: PairOptions = opts or {}
+	local avoid = o.avoid or {}
+	local map = ArenaQueue.queueMap(me.ticket.mode, me.ticket.bracket)
+	local locals = if o.fallback then o.locals else nil
+	local items: { Item }
+	if locals then
+		items = {}
+		for _, e in locals do
+			if isEntry(e) and e.jobId == jobId then
+				table.insert(items, { key = e.key, value = e })
+			end
+		end
+	else
+		local ok, read = backend.range(map, nil, nil, cfg.rangeCount)
+		if not ok or not read then
+			return "error", nil
+		end
+		items = read
+	end
+	local byTicket: { [ArenaRules.Ticket]: Entry } = {}
+	local tickets: { ArenaRules.Ticket } = {}
+	local function add(e: Entry)
+		byTicket[e.ticket] = e
+		table.insert(tickets, e.ticket)
+	end
+	add(me)
+	for _, item in items do
+		local e = item.value
+		if not isEntry(e) then
+			continue
+		end
+		if e.key == me.key then
+			if o.self then
+				o.self(e)
+			end
+			continue
+		end
+		if claimedNow(e, now) or avoid[e.key] or e.ticket.mode ~= me.ticket.mode then
+			continue
+		end
+		if o.fallback and e.jobId ~= jobId then
+			continue -- the local fallback pairs only this server's entries
+		end
+		if e.ticket.bracket == me.ticket.bracket then
+			add(e)
+		end
+	end
+	local pairing = ArenaRules.formTeams3(tickets, now, o.fallback == true)
+	if not pairing then
+		return "none", nil
+	end
+	local sidesOfEntries: { { Entry } } = {}
+	local all: { Entry } = {}
+	local oldest: Entry? = nil
+	for i, side in pairing.sides do
+		local list: { Entry } = {}
+		for _, t in side do
+			local e = byTicket[t]
+			table.insert(list, e)
+			table.insert(all, e)
+			local cur = oldest
+			if cur == nil or older(e, cur) then
+				oldest = e
+			end
+		end
+		sidesOfEntries[i] = list
+	end
+	if not o.force and not o.fallback and (oldest :: Entry).key ~= me.key then
+		return "none", nil
+	end
+	-- the claims in key order; on a failure every claim made so far is given back
+	local matchId = newId()
+	local ordered = table.clone(all)
+	table.sort(ordered, function(a: Entry, b: Entry): boolean
+		return a.key < b.key
+	end)
+	local got: { [string]: Entry } = {}
+	local claimed: { Entry } = {}
+	local function giveBack()
+		for _, c in claimed do
+			backend.update(map, c.key, ArenaQueue.unclaim(matchId), cfg.entryTtl)
+		end
+	end
+	for _, e in ordered do
+		local okC, value = backend.update(map, e.key, ArenaQueue.claim(matchId, now, cfg.claimHold), cfg.entryTtl)
+		if not okC or type(value) ~= "table" or value.match ~= matchId then
+			giveBack()
+			return "lost", nil
+		end
+		got[e.key] = value
+		table.insert(claimed, e)
+	end
+	local fresh: { { Entry } } = {}
+	local sameJob = true
+	for i, list in sidesOfEntries do
+		local l: { Entry } = {}
+		for _, e in list do
+			local g = got[e.key]
+			table.insert(l, g)
+			if g.jobId ~= jobId then
+				sameJob = false
+			end
+		end
+		fresh[i] = l
+	end
+	-- every entry on this server: no reservation, the pairing goes to the S126 offer here
+	if sameJob then
+		local sides: { { ArenaRules.Ticket } } = {}
+		for i, list in fresh do
+			local l: { ArenaRules.Ticket } = {}
+			for _, e in list do
+				backend.remove(map, e.key)
+				table.insert(l, copy(e.ticket))
+			end
+			sides[i] = l
+		end
+		local local3: ArenaRules.Pairing = {
+			mode = me.ticket.mode,
+			bracket = me.ticket.bracket,
+			sides = sides,
+			fallback = if o.fallback then true else nil, -- the local offer after the global wait costs nothing
+		}
+		return "local", local3
+	end
+	local code, psid = backend.reserve()
+	if not code or not psid then
+		giveBack()
+		return "error", nil
+	end
+	local okReg = backend.hupdate(cfg.registryMap, psid, function(_current: any?): any?
+		return ArenaQueue.registryEntry("arena", matchId)
+	end, cfg.registryTtl)
+	if not okReg then
+		giveBack()
+		return "error", nil
+	end
+	local accept = o.acceptSeconds or Arena.QUEUE.acceptSeconds
+	local record = ArenaQueue.newTeamRecord(matchId, fresh, jobId, now, accept, code, psid)
+	local okRec, stored = backend.hupdate(cfg.matchMap, ArenaQueue.matchKey(matchId), function(current: any?): any?
+		if current == nil then
+			return copy(record)
+		end
+		return nil
+	end, cfg.matchTtl)
+	if not okRec or type(stored) ~= "table" or stored.id ~= matchId or stored.org ~= jobId then
+		giveBack()
+		return "error", nil
+	end
+	local hold = record.acceptBy + cfg.acceptGrace
+	local jobs: { string } = {}
+	for _, e in claimed do
+		backend.update(map, e.key, ArenaQueue.extend(matchId, hold), cfg.entryTtl)
+		local j = got[e.key].jobId
+		if not table.find(jobs, j) then
+			table.insert(jobs, j)
+		end
+	end
+	backend.publish({ op = "offer", id = matchId, jobs = jobs })
+	return "paired", record
+end
+
+-- S128: the record players that came with queue entry `entryKey` (a party team: three; a solo: one).
+function ArenaQueue.playersOfEntry(record: any?, entryKey: string): { MatchPlayer }
+	local out: { MatchPlayer } = {}
+	if type(record) == "table" and type(record.players) == "table" then
+		for _, p in record.players do
+			if (p.entry or p.key) == entryKey then
+				table.insert(out, p)
+			end
+		end
+	end
+	return out
+end
+
+-- S128: whether player `key` caused the cancel of `record`: its `by`, or (a timeout) any player without an answer.
+local function guilty(record: any, key: string): boolean
+	if record.by == key then
+		return true
+	end
+	return record.reason == "timeout" and type(record.silent) == "table" and table.find(record.silent, key) ~= nil
+end
+
+-- S128: what the server of a 3v3 entry does after reading the record: the after of `entryAfter`, except that a refusal
+-- by ANY member of a party team takes the whole team out (penalty for those members only: `penalized`).
+function ArenaQueue.entryAfterTeam(
+	record: any?,
+	entryKey: string,
+	members: { string },
+	now: number
+): (After, { string }?)
+	if type(record) == "table" and record.state == "cancelled" then
+		local penalized: { string } = {}
+		for _, member in members do
+			if guilty(record, member) then
+				table.insert(penalized, member)
+			end
+		end
+		if #penalized > 0 then
+			local reason = record.reason
+			if reason == "declined" or reason == "timeout" or reason == "left" then
+				return "penalty", penalized
+			end
+			return "remove", nil
+		end
+	end
+	return ArenaQueue.entryAfter(record, entryKey, nil, now), nil
+end
+
 -- Offers -----------------------------------------------------------------------------------------------------------
 
 local function isRecord(value: any): boolean
@@ -547,7 +855,8 @@ function ArenaQueue.respond(key: string, accept: boolean, now: number, reason: s
 	end
 end
 
--- The end of time: an offer past acceptBy is cancelled ("timeout", by the first player without an answer); an
+-- The end of time: an offer past acceptBy is cancelled ("timeout", by the first player without an answer; S128:
+-- `silent` lists all of them, a 3v3 offer may have several); an
 -- accepted or live record near the end of its ttl becomes "void" (cleaning up).
 function ArenaQueue.expire(now: number, cfg: Cfg): (current: any?) -> any?
 	return function(current: any?): any?
@@ -558,12 +867,14 @@ function ArenaQueue.expire(now: number, cfg: Cfg): (current: any?) -> any?
 		if r.state == "offered" and now > r.acceptBy then
 			r.state = "cancelled"
 			r.reason = "timeout"
+			local silent: { string } = {}
 			for _, p in r.players do
 				if not p.ok then
-					r.by = p.key
-					break
+					r.by = r.by or p.key
+					table.insert(silent, p.key)
 				end
 			end
+			r.silent = silent
 			return r
 		elseif (r.state == "accepted" or r.state == "live") and now > r.created + cfg.matchTtl - 30 then
 			r.state = "void"
@@ -674,7 +985,7 @@ function ArenaQueue.entryAfter(record: any?, key: string, entry: Entry?, now: nu
 	elseif r.state == "offered" or r.state == "live" then
 		return "wait"
 	elseif r.state == "cancelled" then
-		if r.by == key then
+		if guilty(r, key) then
 			if r.reason == "declined" or r.reason == "timeout" or r.reason == "left" then
 				return "penalty"
 			end

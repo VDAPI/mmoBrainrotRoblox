@@ -3,7 +3,7 @@
 -- rating, tier sign), a bar of the time left to answer, Accept / Decline (44 px and more, at the bottom centre; on a
 -- phone above the combat buttons, clear of the joystick), the warning of a match that will not change the rating and
 -- the cost of declining. After accepting: "Waiting for the opponent…". S127 extends this card (it does not make
--- another one).
+-- another one). S128: a 3v3 offer says "3 vs 3 match found" and lists both teams (offer.mine / offer.them).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -84,7 +84,10 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				LayoutOrder = 1,
 				Size = UDim2.new(1, 0, 0, 28),
 				BackgroundTransparency = 1,
-				Text = Text.T(scope, "arena.offer.title"),
+				Text = scope:Computed(function(use): string
+					local o = use(offer)
+					return Text.get(use, if o and o.mode == "3v3" then "arena.match.found3" else "arena.offer.title")
+				end),
 				FontFace = Theme.Fonts.Heading,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = Theme.Colors.GoldBright,
@@ -112,6 +115,12 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 					local o = use(offer)
 					if not o or type(o.opp) ~= "table" then
 						return ""
+					end
+					-- S128: a team match lists both teams
+					if type(o.mine) == "table" and type(o.them) == "table" then
+						local team = Text.get(use, "arena.offer.team", { names = table.concat(o.mine, ", ") })
+						local them = Text.get(use, "arena.offer.them", { names = table.concat(o.them, ", ") })
+						return team .. "\n" .. them
 					end
 					local opp = o.opp
 					return Text.get(use, "arena.offer.opp", {

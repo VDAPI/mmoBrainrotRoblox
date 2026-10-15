@@ -355,7 +355,24 @@ cmd("combat", "pvp", { str("a"), str("b", true), str("c", true) })
 cmd(
 	"combat",
 	"arena",
-	{ enum("action", { "info", "rating", "reset", "season", "queue", "match", "stop" }), str("value", true) },
+	-- S128: tokens <n>, rating3 <n>, week, hof, queue3
+	{
+		enum("action", {
+			"info",
+			"rating",
+			"reset",
+			"season",
+			"queue",
+			"match",
+			"stop",
+			"tokens",
+			"rating3",
+			"week",
+			"hof",
+			"queue3",
+		}),
+		str("value", true),
+	},
 	{ dangerActions = { "reset" } }
 )
 -- S127: the global arena queue and arena servers: state, the in-memory store on / off, a preview of the arena map,

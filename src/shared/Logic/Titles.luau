@@ -55,6 +55,14 @@ function Titles.timedUntil(character: any, id: string): number?
 	return if type(untilTs) == "number" then untilTs else nil
 end
 
+-- S128: the season of the latest finished arena season at `tier` (character.arena.titles[tier]), nil when none.
+function Titles.arenaSeason(character: any, tier: string): string?
+	local arena = if type(character) == "table" then character.arena else nil
+	local titles = if type(arena) == "table" then arena.titles else nil
+	local season = if type(titles) == "table" then titles[tier] else nil
+	return if type(season) == "string" and season ~= "" then season else nil
+end
+
 local function meets(character: any, def: TitleDef, ctx: Context?): boolean
 	local req = def.req
 	if req.kind == "timed" then
@@ -66,6 +74,9 @@ local function meets(character: any, def: TitleDef, ctx: Context?): boolean
 		return ctx ~= nil and ctx.vip == true
 	elseif req.kind == "cosmetic" then
 		return ctx ~= nil and ctx.owned ~= nil and ctx.owned[req.id] == true
+	elseif req.kind == "arenaSeason" then
+		-- S128: only the character (character.arena.titles[tier]); the account context stays as it is
+		return Titles.arenaSeason(character, req.tier) ~= nil
 	end
 	return progress(character, req.kind) >= (req :: any).value
 end
@@ -113,6 +124,17 @@ local function find(id: string, list: { TitleDef }?): TitleDef?
 		end
 	end
 	return nil
+end
+
+-- S128: the arguments of a title's name: { season = "YYYYMM" } for a title with seasonArg (the client formats it,
+-- Logic/ArenaRules.seasonLabel), nil otherwise or without a season. Only for the name, never for unlocking.
+function Titles.argsOf(character: any, id: string, list: { TitleDef }?): { [string]: string }?
+	local def = find(id, list)
+	if not def or def.seasonArg ~= true or def.req.kind ~= "arenaSeason" then
+		return nil
+	end
+	local season = Titles.arenaSeason(character, (def.req :: any).tier)
+	return if season then { season = season } else nil
 end
 
 function Titles.isUnlocked(character: any, id: string, list: { TitleDef }?, ctx: Context?): boolean

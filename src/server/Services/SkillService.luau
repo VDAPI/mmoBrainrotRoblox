@@ -752,6 +752,16 @@ end
 -- S80: a beam too (no mana for a tick, a lost target).
 local INSTANT: { [string]: boolean } = { resurrect = true, channel = true, beam = true }
 
+-- S128: ArenaService taken lazily (it depends on this service through its Deps; wzór S60), never in Init.
+local Registry: any = nil
+local function arenaService(): any?
+	if not Registry then
+		return nil
+	end
+	local ok, service = pcall(Registry.Get, "ArenaService")
+	return if ok then service else nil
+end
+
 local function cast(player: Player, skillId: string, targetId: string?, aim: any): (boolean, string?)
 	-- S96 (DESIGN-15 §2): pressing a skill stops mounting, even when the cast is refused below
 	MountService.Interrupt(player)
@@ -759,6 +769,11 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	local base = SkillData.get(skillId)
 	if not char or not base or base.class ~= char.class then
 		return false, "error.badRequest"
+	end
+	-- S128: a fighter knocked out in a 3v3 match watches from the bench (ArenaService lazily: it needs this service)
+	local arena = arenaService()
+	if arena and arena.IsSidelined(player) then
+		return false, "arena.error.out"
 	end
 	-- S57: rank from Logic/Paths (base from the level, path skills from their node), then the path weapon
 	local rank = Paths.skillRank(char, skillId)
@@ -1144,6 +1159,7 @@ function SkillService.Cast(player: Player, skillId: string, targetId: string?, a
 end
 
 function SkillService.Init(registry)
+	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	StatService = registry.Get("StatService")

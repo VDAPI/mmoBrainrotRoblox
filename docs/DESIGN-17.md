@@ -104,6 +104,13 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
   - **Żetony Areny** (`character.arena.tokens`): wygrana 1v1 = 10, przegrana 4, 3v3 wygrana 12, przegrana 5; **pierwsze 3 mecze dnia** ×2. Limit tygodniowy `tokensWeekCap = 600`.
   - **Sklep areny** u Mistrza Areny (za Żetony): kosmetyki areny (ramki, tytuły, aura „Gladiatora”), błogosławieństwa (te same co w grze, do Heroicznej rzadkości, ceny w `Data/Arena`, w księdze balansu), Kamienie Powrotu. Bez przedmiotów z bonusami.
   - **Nagrody sezonu** (pocztą przy pierwszym wejściu w nowym sezonie, wg `peak`): Brąz: tytuł sezonu; Srebro: + ramka; Złoto: + aura sezonu; Diament: + 150 SO; Mistrz: + 300 SO i tytuł „Mistrz Areny <sezon>”. Top 10 przedziału na koniec sezonu: posąg na tablicy Sali Sław areny (S124 plansza).
+  - **Zrobione w S128 (doprecyzowania, DECYZJE S128):** drużyna = grupa dokładnie 3 (zapisuje lider) albo pojedynczy
+    bez grupy, bez kolejki dla dwójek; drużyna z pojedynczych bez wspólnej grupy (sojusznicy strony meczu); pokonany
+    schodzi na ławkę swojej strony; remis = Żetony przegranej obu stronom, opuszczenie meczu i mecz ponad limit tego
+    samego przeciwnika = 0 Żetonów; próg nagród wg lepszego z `peak` i `peak3`, minimum 5 meczów sezonu
+    (`seasonMinPlayed`); jedna ramka i jedna aura nagród na wszystkie sezony (sezon w tytule); list zawsze, także bez
+    odłamków; Sala Sław z obu trybów (przód planszy 1v1, tył 3v3), posągi = zwycięzcy 1v1 przedziałów. 3v3 to drugi wpis
+    `MODES` (`rating3` itd. z pól trybu), kolejka przez `ArenaJoin("3v3")`, nagroda z `last.rewarded` S126.
 
 ## 7. Krwawy Księżyc (S129)
 

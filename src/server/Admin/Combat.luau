@@ -5,6 +5,7 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local AnimLab = require(Shared.Logic.AnimLab)
+local ArenaRules = require(Shared.Logic.ArenaRules)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
@@ -211,6 +212,17 @@ commands.arena = function(player, args: { string })
 			})
 		end
 		return
+	elseif action == "hof" then
+		-- S128: the arena Hall of Fame of the season before, built now when missing (never overwritten)
+		task.spawn(function()
+			local ok, n = ArenaService.AdminHof()
+			reply(player, if ok then "admin.arena.hof" else "error.internal", { n = n })
+		end)
+		return
+	elseif action == "queue3" then
+		local here, global = ArenaService.AdminQueue3()
+		reply(player, "admin.arena.queue3", { ["local"] = here, global = global })
+		return
 	elseif action == "stop" then
 		local target = if args[2] then AdminService.FindPlayer(args[2]) else player
 		if not target then
@@ -247,6 +259,31 @@ commands.arena = function(player, args: { string })
 					"admin.arena.season",
 					{ season = state.season, rating = state.rating, closed = if closed then closed.season else "-" }
 				)
+				-- S128: the reward of the closed season is paid at once (SeasonClosed)
+				local reward = ArenaRules.seasonReward(closed)
+				if reward then
+					reply(player, "admin.arena.seasonReward", { tier = `@arena.tier.{reward.tier}` })
+				else
+					reply(player, "admin.arena.seasonNone")
+				end
+			end
+		elseif action == "tokens" then
+			local n = parseAmount(args[2])
+			if n == nil then
+				reply(player, "admin.usage.arena")
+			elseif ArenaService.AdminTokens(player, n) then
+				reply(player, "admin.arena.tokens", { n = math.clamp(n, 0, 1000000) })
+			end
+		elseif action == "rating3" then
+			local n = parseAmount(args[2])
+			if n == nil then
+				reply(player, "admin.usage.arena")
+			elseif ArenaService.AdminRating3(player, n) then
+				reply(player, "admin.arena.rating3", { n = math.clamp(n, 0, 5000) })
+			end
+		elseif action == "week" then
+			if ArenaService.AdminWeek(player) then
+				reply(player, "admin.arena.week")
 			end
 		elseif action == "match" then
 			local target = AdminService.FindPlayer(args[2] or "")

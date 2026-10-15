@@ -22,6 +22,9 @@ export type Requirement =
 	-- S125: unlocked while character.timedTitles[id] is in the future (rankings, events); granted by
 	-- TitleService.GrantTimed or a mail parcel (Logic/Mail `timedTitle`)
 	| { kind: "timed" }
+	-- S128: earned once in any finished arena season at this tier; character.arena.titles[tier] = season id
+	-- (Logic/Titles)
+	| { kind: "arenaSeason", tier: string }
 
 export type TitleDef = {
 	id: string,
@@ -29,6 +32,9 @@ export type TitleDef = {
 	req: Requirement,
 	color: string, -- hex, how the title is drawn on the nameplate
 	wiki: boolean?, -- S105: false = left out of the wiki (tools/WikiData/Visibility) until published
+	-- S128: the name key has a {season} placeholder filled from character.arena.titles[tier] (Titles.argsOf); the
+	-- key "<nameKey>.plain" is the name without it
+	seasonArg: boolean?,
 }
 
 local list: { TitleDef } = {
@@ -168,6 +174,62 @@ local list: { TitleDef } = {
 		req = { kind = "timed" },
 		color = "#F0D27A",
 		wiki = false,
+	},
+	-- S128 (DESIGN-17 §6): arena titles, published on the wiki with the arena article (S131). Bought with Arena Tokens
+	-- (Data/Cosmetics kind "title", obtain.arena = "shop"; kept out of titles.json like every bought title, and their
+	-- cosmetics have wiki = false):
+	{
+		id = "ironwill",
+		nameKey = "title.ironwill",
+		req = { kind = "cosmetic", id = "title_ironwill" },
+		color = "#B8B2A6",
+	},
+	{
+		id = "sandveteran",
+		nameKey = "title.sandveteran",
+		req = { kind = "cosmetic", id = "title_sandveteran" },
+		color = "#D9B26A",
+	},
+	-- the season titles of each tier (Data/Arena.SEASON_REWARDS), carrying the season of the latest one
+	{
+		id = "arena_bronze",
+		nameKey = "title.arena_bronze",
+		req = { kind = "arenaSeason", tier = "bronze" },
+		color = "#B07A4A",
+		wiki = false,
+		seasonArg = true,
+	},
+	{
+		id = "arena_silver",
+		nameKey = "title.arena_silver",
+		req = { kind = "arenaSeason", tier = "silver" },
+		color = "#C9D1D9",
+		wiki = false,
+		seasonArg = true,
+	},
+	{
+		id = "arena_gold",
+		nameKey = "title.arena_gold",
+		req = { kind = "arenaSeason", tier = "gold" },
+		color = "#E8C25A",
+		wiki = false,
+		seasonArg = true,
+	},
+	{
+		id = "arena_diamond",
+		nameKey = "title.arena_diamond",
+		req = { kind = "arenaSeason", tier = "diamond" },
+		color = "#8FD8FF",
+		wiki = false,
+		seasonArg = true,
+	},
+	{
+		id = "arena_master",
+		nameKey = "title.arena_master",
+		req = { kind = "arenaSeason", tier = "master" },
+		color = "#FF9F1C",
+		wiki = false,
+		seasonArg = true,
 	},
 }
 

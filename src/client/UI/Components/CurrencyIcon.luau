@@ -12,7 +12,8 @@ local Theme = require(script.Parent.Parent.Theme)
 
 local Children = Fusion.Children
 
-export type Currency = "gold" | "exp" | "dragon"
+-- S128: "token" = Arena Tokens (no atlas picture yet: the glyph)
+export type Currency = "gold" | "exp" | "dragon" | "token"
 
 export type Props = {
 	Currency: Currency,
@@ -28,6 +29,7 @@ local GLYPHS: { [string]: { glyph: string, color: Color3 } } = {
 	gold = { glyph = "◉", color = Theme.Colors.GoldBright },
 	exp = { glyph = "✦", color = Theme.Colors.Exp },
 	dragon = { glyph = "◆", color = Color3.fromHex("#E5302A") },
+	token = { glyph = "⚔", color = Color3.fromHex("#D9A441") },
 }
 
 local MAX_LAYERS = 3

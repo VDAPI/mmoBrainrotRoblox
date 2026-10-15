@@ -492,6 +492,40 @@ type CharacterData = {
 - **Remote'y:** `ArenaReturnNow` (nowy), `ArenaRespond` S126 z gałęzią oferty globalnej. Nowe pola `arenaLive`:
   `queue.window`, `queue.waitingLocal`, `offer.scope`, `offer.fallback`, `offer.combat`, `transfer`, `returnAt`.
 
+### Arena 3: 3v3, Żetony, sklep, nagrody sezonu (S128)
+
+- **Tryb `"3v3"`** to drugi wpis `Data/Arena.MODES` (bez osobnej tabeli): `Mode` ma pola statystyk trybu
+  (`ratingField`, `peakField`, `winsField`, `lossesField`, `playedField`, `vsField`; 3v3 pisze `rating3`, `peak3`,
+  `wins3`, `losses3`, `played3`, `vs3`, `daily` wspólne), `ArenaRules.applyResult` / `rollSeason` / `copy` czytają je z
+  trybu. Drużyna z grupy to jeden bilet lidera (`Ticket.members`, `ArenaRules.size`), dobór `ArenaRules.formTeams3`
+  (gałąź drużynowa `pair(tickets, now, 3)`), zapis `ArenaJoin("3v3")` (`ArenaRules.canQueue3`), wypisanie każdym
+  członkiem (`ArenaLeave`). Wynik: `roundOutcome(..., "sumHpPct")` / `matchOutcome` S126.
+- **Mecz:** `Arena/Match` dla `teamSize > 1`: pokonany (`down`) na ławkę (`VENUES.<miejsce>.bench` → trybuna strony,
+  `ArenaRules.benchIndex`), `Match:sidelined`, panel drużyn w migawce (`teams`, `myTeam`, co 0,5 s). Publiczne
+  `ArenaService.IsSidelined(player)` (`SkillService.Cast` leniwie, strażnik mikstur S126), `ArenaService.RunMatch(spec,
+  venueId, absent?)` (serwer areny startuje 3v3 bez nieobecnych, gdy każda strona kogoś ma).
+- **Globalnie:** `Logic/ArenaQueue.Entry.size` (członkowie w `ticket.members`), `ArenaQueue.tryTeams` (przejęcie
+  wszystkich wpisów pary w kolejności kluczy, zwrot przy porażce), `newTeamRecord` (`MatchRecord.teams`,
+  `MatchPlayer.entry`), `playersOfEntry`, `entryAfterTeam` (odmowa członka wyrzuca drużynę, kara tylko jemu).
+  `Arena/Matchmaker`: wpis drużyny z `members` i mapą `teamOf` (członek → wpis), oferta i teleport do każdego członka,
+  `TeleportData.team`. `Arena/ArenaHost`: start na `spawnCFrame(strona, indeks)`.
+- **Żetony:** `ArenaRules.tokensFor` (czyste, bez konta), `ArenaRules.addTokens` (jedyne dodawanie) przez
+  `ArenaService.AddTokens(player, gain, reasonKey?)` (S129/S130 też), w `applyFor` po `applyResult`; pola
+  `character.arena.tokens` / `tokensWeek`, w HUD `arenaLive.match.tokens` / `tokensReason`.
+- **Sklep areny:** `Data/Arena.SHOP` / `shopByKey` / `shopOf`, `ArenaRules.canBuyShop`, remote `ArenaShopBuy(key)`
+  (`NpcService.Near("arenamaster")`, przedmioty związane, kosmetyk przez `CosmeticService.Grant`), usługa NPC
+  `arenashop`.
+- **Nagrody sezonu:** `ArenaRules.seasonTier` / `seasonReward` / `seasonLabel`; `ArenaService` wypłaca z
+  `character.arena.last` (`last.rewarded`, `titles[tier]`, `pendingReward` do udanej wysyłki `MailService.Send` z
+  `shards`). Tytuły `Data/Titles` `req.kind = "arenaSeason"`, `seasonArg`, `Titles.argsOf`, atrybut modelu
+  `TitleSeason`, klient `UI/TitleText`.
+- **Sala Sław Areny:** `src/server/Arena/HallOfFame.luau` (DataStore `Config.Arena.hofStore`, klucz = sezon, zapis
+  tylko gdy brak klucza), klucze `Config.Arena.hofCheck` / `hofDelay` / `hofSize` / `rewardRetry`; plansza z
+  `Town.fame.arena` (`Logic/TownGen/Props` `fameHall`, tagi `ArenaFameBoard` / `ArenaFamePlinth`), klient
+  `Controllers/ArenaFameController`.
+- **Zależności:** `ArenaService.Deps` += `MailService`, `CosmeticService`, `InventoryService`, `NpcService`,
+  `TitleService` (żaden nie zależy od `ArenaService`).
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.
@@ -625,7 +659,7 @@ type CharacterData = {
 | `/hurt` | combat | <amount> | zadaj sobie obrażenia |
 | `/kill` | combat | [who] | zabij swoją postać |
 | `/pvp` | combat | <a> [b] [c] | przełącz PvP natychmiast |
-| `/arena` | combat | <info|rating|reset|season|queue|match|stop> [value] | arena rankingowa: własny stan, rating (0–5000, wpis do rankingu), czysty stan, nowy sezon od razu (miękki reset), kolejka serwera i piasek, mecz testowy z ratingiem z graczem serwera, przerwanie meczu bez ratingu (S126) ⚠ reset |
+| `/arena` | combat | <info|rating|reset|season|queue|match|stop|tokens|rating3|week|hof|queue3> [value] | arena rankingowa: własny stan, rating (0–5000, wpis do rankingu), czysty stan, nowy sezon od razu (miękki reset i nagroda sezonu, S128), kolejka serwera i piasek, mecz testowy z ratingiem z graczem serwera, przerwanie meczu bez ratingu (S126); Żetony, rating 3v3, zerowanie tygodnia Żetonów, Sala Sław Areny teraz, kolejki 3v3 (S128) ⚠ reset |
 | `/die` | combat |  | zabij siebie (zdejmuje ochronę) i pokaż wybór miejsca odrodzenia |
 | `/shield` | combat | [seconds] | nałóż ochronę po odrodzeniu |
 | `/anim` | combat | <kind> | animacja ataku na sobie co 1 s (np. sword1h, bow, staff) |

@@ -23,6 +23,7 @@ export type Service =
 	| "vendors" -- S95: the dealer's "Where can I buy gear?" (leads to the player's class vendor, client only)
 	| "mounts" -- S97: the stablemaster's mounts window (upgrades only near him)
 	| "arena" -- S126: the ranked arena window (ArenaController)
+	| "arenashop" -- S128: Arena Tokens shop (opens the arena window on its shop tab)
 
 export type NpcDef = {
 	id: string,
@@ -280,7 +281,7 @@ npc({
 	map = "city",
 	nameKey = "npc.arenamaster.name",
 	greetingKey = "npc.arenamaster.greeting",
-	services = { "arena" },
+	services = { "arena", "arenashop" },
 	position = { x = 0, z = 0 }, -- from Town.npcSpot
 	facing = 0,
 	colors = { body = "#6B2A24", accent = "#C8A040" }, -- the crimson and gold of the lord's box of Ristalle

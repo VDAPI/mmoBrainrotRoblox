@@ -327,8 +327,14 @@ T.describe("S97 mount skins and premium mounts", function()
 		T.expect({ Premium.canBuyCosmetic("mountskin_dapple", {}, 349) }).toEqual({ false, "premium.error.shards" })
 		for _, def in Cosmetics.list do
 			if def.obtain then
-				-- S121: the VIP cosmetics of the month are earned too (any look kind); S123: starter pack cosmetics
-				T.expect(def.kind == "mountskin" or def.obtain.vipMonth ~= nil or def.obtain.pack ~= nil).toBe(true)
+				-- S121: the VIP cosmetics of the month are earned too (any look kind); S123: starter pack cosmetics;
+				-- S128: the arena cosmetics (Arena Tokens shop, season rewards)
+				T.expect(
+					def.kind == "mountskin"
+						or def.obtain.vipMonth ~= nil
+						or def.obtain.pack ~= nil
+						or def.obtain.arena ~= nil
+				).toBe(true)
 				T.expect(def.price).toBe(0)
 				local n = 0
 				for _ in def.obtain do
@@ -447,6 +453,19 @@ T.describe("S121 VIP and passes", function()
 		local acc = AccountSchema.accountTemplate()
 		T.expect(acc.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
 		T.expect(acc.outfits).toEqual({})
+	end)
+end)
+
+T.describe("S128 arena cosmetics", function()
+	T.it("adds no cosmetic kind and sells no arena cosmetic for shards", function()
+		T.expect(#Cosmetics.kinds).toBe(12)
+		T.expect({ Premium.canBuyCosmetic("aura_gladiator", {}, 99999) }).toEqual({ false, "premium.error.notForSale" })
+		for _, def in Cosmetics.list do
+			if def.obtain and def.obtain.arena then
+				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+			end
+		end
 	end)
 end)
 

@@ -4,6 +4,9 @@
 -- panel on the HUD (UI/Screens/Hud/ArenaPanel). Everything reads the state branches `character.arena` and
 -- `arenaLive`; the only question to the server is ArenaStatus (on opening the window and every STATUS_EVERY s while
 -- it is open). The server decides everything (ArenaService): these calls only ask.
+-- S128: the window's tab and mode (Tab "main" | "shop" | "season", Mode "1v1" | "3v3"), OpenAtMaster (the Arena
+-- Master's "arena" / "arenashop"), the shop purchase after a confirmation (ArenaShopBuy), AtMaster (the window opened at the
+-- Arena Master: the shop's buttons), the 3v3 team panel on the HUD (UI/Screens/Hud/ArenaTeams).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 local Arena = require(ReplicatedStorage.Shared.Data.Arena)
 local ArenaOffer = require(script.Parent.Parent.UI.Screens.ArenaOffer)
 local ArenaPanel = require(script.Parent.Parent.UI.Screens.Hud.ArenaPanel)
+local ArenaTeams = require(script.Parent.Parent.UI.Screens.Hud.ArenaTeams)
 local ArenaWindow = require(script.Parent.Parent.UI.Screens.ArenaWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -32,8 +36,12 @@ local WindowManager: any
 local UIController: any
 local SfxController: any
 
--- The last ArenaStatus answer ({ scope, waiting, busy?, pending }), nil before the first.
+-- The last ArenaStatus answer ({ scope, waiting, waiting3, busy?, pending }), nil before the first.
 ArenaController.Status = scope:Value(nil :: any)
+-- S128: the window's tab and mode, and whether it was opened at the Arena Master (NpcController sets it)
+ArenaController.Tab = scope:Value("main")
+ArenaController.Mode = scope:Value("1v1")
+ArenaController.AtMaster = scope:Value(false)
 local live = State.Value({ "arenaLive" })
 local polling = false
 
@@ -67,6 +75,39 @@ end
 
 function ArenaController.Open()
 	WindowManager.Open("arena")
+end
+
+-- S128: from the Arena Master's dialog ("arena": the arena tab, "arenashop": the shop tab).
+function ArenaController.OpenAtMaster(tab: string)
+	ArenaController.Tab:set(tab)
+	ArenaController.AtMaster:set(true)
+	WindowManager.Open("arena")
+end
+
+-- S128: buys an arena shop entry after a confirmation (name, price, the balance after, bound items).
+function ArenaController.Buy(entry: Arena.ArenaShopEntry, name: string)
+	local value = State.Get({ "character", "arena" })
+	local tokens = if type(value) == "table" then tonumber(value.tokens) or 0 else 0
+	local message = Text.now("arena.shop.confirm", { name = name, price = entry.price, left = tokens - entry.price })
+	if entry.kind == "item" then
+		message ..= "\n" .. Text.now("arena.shop.bound")
+	end
+	WindowManager.ShowModal({
+		Title = Text.now("arena.shop.title"),
+		Message = message,
+		ConfirmText = Text.now("arena.shop.buy"),
+		CancelText = Text.now("common.cancel"),
+		OnConfirm = function(): (boolean, string?)
+			local ok, err = Net.Invoke("ArenaShopBuy", entry.key)
+			if ok then
+				Sounds.play("levelUp")
+				Toast.push(Text.now("arena.shop.bought", { name = name }), "success")
+				return true, nil
+			end
+			Sounds.play("error")
+			return false, ArenaController.ErrorText(if type(err) == "string" then err else "error.internal")
+		end,
+	})
 end
 
 function ArenaController.Join(mode: string)
@@ -136,15 +177,28 @@ function ArenaController.Init(registry)
 				Leave = ArenaController.Leave,
 				Spectate = ArenaController.Spectate,
 				ErrorText = ArenaController.ErrorText,
+				Tab = ArenaController.Tab,
+				Mode = ArenaController.Mode,
+				AtMaster = ArenaController.AtMaster,
+				Buy = ArenaController.Buy,
 			})
 		end,
 	})
 	ArenaOffer(scope, { Respond = ArenaController.Respond }).Parent = UIController.GetLayer("Screens")
 	ArenaPanel(scope, { Leave = ArenaController.Leave, ReturnNow = ArenaController.ReturnNow }).Parent =
 		UIController.GetLayer("Screens")
+	ArenaTeams(scope, {}).Parent = UIController.GetLayer("Screens") -- S128
 end
 
 function ArenaController.Start()
+	-- S128: the window closed: the next opening is not at the Arena Master unless the dialog says so
+	local isOpen = WindowManager.IsOpen("arena")
+	scope:Observer(isOpen):onChange(function()
+		if not Fusion.peek(isOpen) then
+			ArenaController.AtMaster:set(false)
+			ArenaController.Tab:set("main")
+		end
+	end)
 	-- a new match offer rings (the quest jingle: a short, clear call)
 	local lastOffer: string? = nil
 	scope:Observer(live):onChange(function()

@@ -3878,6 +3878,43 @@ do
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, rows)
 end
 
+-- S128: Arena Tokens and the arena shop (H2) -------------------------------------------------------------------
+
+do
+	local arena = B.arenaTokens()
+	add("## Arena: Żetony i sklep (S128)")
+	add()
+	add(
+		"Żetony Areny za mecz (`Data/Arena.TOKENS`, `ArenaRules.tokensFor`): 50% wygranych, premia ×2 na pierwsze 3 mecze dnia (1 na 1 i 3 na 3 razem), limit tygodnia od poniedziałku 00:00 UTC. Nic za Robux ani odłamki."
+	)
+	add()
+	local profileNames = {
+		["1v1x3"] = "3 mecze 1 na 1 dziennie",
+		["1v1x10"] = "10 meczów 1 na 1 dziennie",
+		["3v3x3"] = "3 mecze 3 na 3 dziennie",
+	}
+	local rows = {}
+	for _, p in arena.profiles do
+		table.insert(rows, {
+			profileNames[p.id] or p.id,
+			fmtValue(p.perDay, "1"),
+			fmtValue(p.perWeek, "0"),
+			fmtValue(p.capDays, "1"),
+		})
+	end
+	tableOut({ "profil", "Żetony / dzień", "Żetony / tydzień (limit)", `dni do limitu {arena.cap}` }, rows)
+	local shopRows = {}
+	for _, row in arena.shop do
+		table.insert(shopRows, {
+			`\`{row.key}\``,
+			tostring(row.price),
+			fmtValue(row.days, "1"),
+			if row.gold then `{row.gold} zł` else "—",
+		})
+	end
+	tableOut({ "pozycja sklepu areny", "cena (Żetony)", "dni (3 mecze dziennie)", "cena u kupca (złoto)" }, shopRows)
+end
+
 -- Formulas ------------------------------------------------------------------------------------------------------
 
 add("## Wzory (stan obecny)")

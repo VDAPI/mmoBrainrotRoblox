@@ -22,7 +22,7 @@ return {
 		{ path = "Data/AreaProfiles" },
 		-- S126: the ranked arena (Elo, tiers, brackets, the queue window, match rules); VENUES are geometry, the
 		-- lookups are functions of an id
-		{ path = "Data/Arena", omit = { "VENUES", "bracket", "mode", "venue" } },
+		{ path = "Data/Arena", omit = { "VENUES", "bracket", "mode", "venue", "shopOf", "shopByKey" } },
 		{ path = "Data/Areas/Caves", pick = { "levels", "eliteGroups" } },
 		{ path = "Data/Areas/ashen", pick = { "lv" } },
 		{ path = "Data/Areas/duskwood", pick = { "lv" } },
@@ -4128,6 +4128,52 @@ return {
 		},
 		["Arena:MIN_LEVEL"] = {
 			{ session = "S126", why = "DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket)" },
+		},
+		-- S128 (DESIGN-17 §6): 3v3, Arena Tokens, the arena shop and the season rewards
+		["Arena:MODES.3v3*"] = {
+			{
+				session = "S128",
+				why = "DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round)",
+			},
+		},
+		["Arena:TOKENS*"] = {
+			{
+				session = "S128",
+				why = "DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days)",
+			},
+		},
+		["Arena:tokensWeekCap"] = {
+			{
+				session = "S128",
+				why = "DESIGN-17 §6: 600 a week (Monday 00:00 UTC) = 2.04 weeks of the 3-matches-a-day income (294): the cap stops farming (about 15 matches a day for 6 days), not normal play",
+			},
+		},
+		["Arena:SHOP*"] = {
+			{
+				session = "S128",
+				why = "arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound",
+			},
+		},
+		["Arena:BLESSING_PRICE*"] = {
+			{
+				session = "S128",
+				why = "arena blessings of every line by rarity 1-3: 15 / 35 / 70 tokens = 0.4 / 0.8 / 1.7 days of 3 matches; the gold price 20 x rarity^2 (20 / 80 / 180) is not comparable, they are bound",
+			},
+		},
+		["Arena:SHOP_MAX_BLESSING_RARITY"] = {
+			{ session = "S128", why = "DESIGN-17 §6: blessings in the arena shop up to Heroic (rarity 3)" },
+		},
+		["Arena:SEASON_REWARDS*"] = {
+			{
+				session = "S128",
+				why = "DESIGN-17 §6 season rewards: Diamond 150 and Master 300 Dragon Shards = about 2-4 of the smallest packs (100 SO), once a month for Diamond / Master; free shards for play, never sold",
+			},
+		},
+		["Arena:seasonMinPlayed"] = {
+			{
+				session = "S128",
+				why = "5 rated matches (1v1 + 3v3) in a season before any season reward (S128 decision): without it every character that queued once would get Bronze",
+			},
 		},
 		-- S127 (DESIGN-17 §6): the arena server map; its level range is the arena's brackets (not a hunting ground)
 		["Maps:byId.arena_pit*"] = {

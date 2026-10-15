@@ -47,7 +47,11 @@ function TitleService.Refresh(player: Player)
 	local model = player.Character
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if model and character then
-		model:SetAttribute("Title", Titles.shown(character, nil, contextOf(player)))
+		local shown = Titles.shown(character, nil, contextOf(player))
+		model:SetAttribute("Title", shown)
+		-- S128: the season of an arena season title (nameplates of every player read the model)
+		local args = if shown then Titles.argsOf(character, shown) else nil
+		model:SetAttribute("TitleSeason", if args then args.season else nil)
 	end
 end
 

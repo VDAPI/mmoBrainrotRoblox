@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S127 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S128 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -238,14 +238,22 @@ atomowe przejęcie pary, rekord meczu, akceptacja 15 s, kara 5 min w `ArenaPenal
 (`Arena/ServerMode` przed loaderem, mapa `arena_pit`, `Arena/ArenaHost`, mecz zasadami S126), powrót na serwer gracza
 (`Arena/Transfer`), zapas lokalny (Studio, awaria, `/arenanet offline`, propozycja walki z tego serwera po 45 s),
 `/arenanet`.
+S128 Arena 3 (DESIGN-17 §6): 3 na 3 (pojedynczo albo drużyną z grupy trzech osób, lokalnie i globalnie, jedna runda
+240 s, pokonany na ławce, `rating3`, tablica `arena3`), Żetony Areny (10/4, 12/5, ×2 za 3 pierwsze mecze dnia, limit
+600 na tydzień), sklep areny u Mistrza Areny (kosmetyki areny, błogosławieństwa do Heroicznej, Kamienie Powrotu,
+związane), nagrody sezonu z `last` (tytuł z sezonem, Laur, aura, odłamki pocztą), Sala Sław Areny przy Ristalle,
+`/arena tokens | rating3 | week | hof | queue3`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
 - **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔).
-- **S126:** 3v3, Żetony Areny, sklep i nagrody sezonu (pole `last` czeka): S128. Ikona menu `hud/menu_arena` bez
-  obrazka (znak ⚔).
+- **S126:** ikona menu `hud/menu_arena` bez obrazka (znak ⚔).
+- **S128:** uproszczenie: grupa drużyny 3 na 3 nie odtwarza się po powrocie z serwera areny (komunikat „zaproś ponownie”,
+  `PartyService.Restore` nie powstał). Waluta `token` i kosmetyki areny bez obrazków (znaki). Mecz 3 na 3 na serwerze
+  areny bez nieobecnego gracza: nieobecny dostaje karę, ale nie przegraną w profilu. Artykuł „Arena” i publikacja tytułów
+  oraz kosmetyków areny na wiki: S131.
 - **S127:** przenosiny między serwerami bez `TeleportService:SetTeleportGui` (nakładka klienta tylko do startu
   teleportu, potem ekran ładowania Roblox). Tryb `tournament` bez obsługi: serwer odsyła graczy po 30 s (S130).
 - **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →

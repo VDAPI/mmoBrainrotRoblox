@@ -13,6 +13,9 @@
 --   5. the end: hooks.finished (ArenaService writes ratings), blessings back, everyone restored, after BACK_DELAY s a
 --      teleport to the spot before the match, then hooks.closed (the host frees the venue).
 -- Leaving the game (or switching characters) during a match: `leave` - the side whose fighters all left loses.
+-- S128 (3v3, teamSize > 1): a knocked out fighter stays down for the round with 1 HP, leaves the sand for the bench of
+-- its side (VENUES.bench, a stand seat), cannot fight or cast (ArenaService.IsSidelined) and watches; the HUD panel of
+-- the teams (`teams`, `myTeam` in the snapshot) refreshes every TEAM_PUBLISH s while the round runs.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +34,7 @@ local SETTLE = 1.5 -- s after the teleport before "Round n of m"
 local TELEPORT_WAIT = 8 -- s at most for the round teleports
 local BACK_DELAY = 2 -- s after the end before the way back
 local SPECTATOR_GAP = 3 -- s between two moves of the same spectator
+local TEAM_PUBLISH = 0.5 -- s between two team panel updates (S128: at most 4 a second by the contract)
 
 export type Deps = {
 	Resource: any,
@@ -58,6 +62,7 @@ type FighterState = {
 	index: number,
 	player: Player,
 	name: string,
+	class: string, -- S128: the team panel
 	down: boolean,
 	out: boolean, -- stepped off the sand this round
 	gone: boolean, -- left the game / switched characters
@@ -90,6 +95,7 @@ export type Match = {
 	potionsLeft: (self: Match, player: Player) -> number,
 	drank: (self: Match, player: Player) -> (),
 	snapshot: (self: Match, player: Player) -> { [string]: any },
+	sidelined: (self: Match, player: Player) -> boolean, -- S128: knocked out in a team match, the round still runs
 	players: (self: Match) -> { Player },
 	names: (self: Match) -> { { string } },
 }
@@ -126,6 +132,7 @@ function Match.new(
 					index = index,
 					player = player,
 					name = entrant.name,
+					class = entrant.class,
 					down = false,
 					out = false,
 					gone = false,
@@ -149,6 +156,7 @@ function Match.new(
 	self.endsAt = nil :: number?
 	self.result = nil :: ArenaRules.MatchResult?
 
+	local team = mode.teamSize > 1 -- S128
 	local forfeits: { [string]: boolean } = {}
 	local spectatorMoved: { [Player]: number } = {}
 	local seat = 0
@@ -193,6 +201,20 @@ function Match.new(
 			table.insert(names, f.name)
 		end
 		return table.concat(names, ", ")
+	end
+
+	-- S128: a fighter knocked out in a team match goes to the bench of its side and everybody hears of it.
+	local function bench(f: FighterState)
+		deps.toast(f.player, "arena.team.youOut", nil, "warning")
+		for _, other in fighters do
+			if other ~= f and online(other) then
+				deps.toast(other.player, "arena.team.out", { name = f.name }, "info")
+			end
+		end
+		local at = venue:standCFrame(ArenaRules.benchIndex(venue.def, f.side))
+		task.spawn(function()
+			pcall(deps.Travel.TeleportToMap, f.player, venue.map, at)
+		end)
 	end
 
 	local function restore(player: Player)
@@ -397,6 +419,7 @@ function Match.new(
 		end
 		self.phase = "fight" :: Phase
 		local fightStart = os.clock()
+		local lastTeamPublish = fightStart
 		self.endsAt = serverNow() + mode.roundTime
 		publish()
 		announce("arena.fight", nil)
@@ -421,10 +444,20 @@ function Match.new(
 					elseif f.seen then
 						-- stepped off the sand: the round is lost (DECYZJE S126)
 						f.out = true
+						if team then
+							-- S128 (C6): knocked out and counted as having left (no tokens), sidelined on the bench
+							f.down = true
+							forfeits[f.key] = true
+							bench(f)
+						end
 					end
 				end
 			end
 			moveSpectators()
+			if team and os.clock() - lastTeamPublish >= TEAM_PUBLISH then
+				lastTeamPublish = os.clock()
+				publish()
+			end
 			local timedOut = os.clock() - fightStart >= mode.roundTime
 			outcome = outcomeNow(timedOut)
 			if outcome then
@@ -540,6 +573,10 @@ function Match.new(
 		end
 		if self.phase == "fight" and not f.down then
 			f.down = true
+			if team then
+				-- S128: off the sand to the bench (deferred: this runs inside the damage filter)
+				task.defer(bench, f)
+			end
 		end
 		return math.max(0, hp - 1)
 	end
@@ -552,12 +589,21 @@ function Match.new(
 		if not f or f.gone then
 			return
 		end
+		local wasDown = f.down
 		if not finishing and (self.phase == "fight" or self.phase == "countdown") then
 			f.down = true
 		end
 		task.defer(function()
 			if not f.gone and online(f) then
-				deps.Death.Recall(player, venue.map, venue:spawnCFrame(f.side, f.index))
+				-- S128: a team fighter down in the fight comes back on the bench of its side
+				local onBench = team and f.down and self.phase == "fight"
+				local at = if onBench
+					then venue:standCFrame(ArenaRules.benchIndex(venue.def, f.side))
+					else venue:spawnCFrame(f.side, f.index)
+				deps.Death.Recall(player, venue.map, at)
+				if onBench and not wasDown then
+					bench(f)
+				end
 			end
 		end)
 	end
@@ -588,6 +634,11 @@ function Match.new(
 		end
 	end
 
+	function self.sidelined(_self: Match, player: Player): boolean
+		local f = byPlayer[player]
+		return team and f ~= nil and f.down and not finishing and self.phase == "fight"
+	end
+
 	function self.players(_self: Match): { Player }
 		local out = {}
 		for _, f in fighters do
@@ -609,9 +660,35 @@ function Match.new(
 	end
 
 	-- The HUD panel of `player` (state branch arenaLive.match).
+	-- S128: the fighters of each side for the team panel (hp of a downed or gone fighter = 0).
+	local function teamsView(): { { { [string]: any } } }
+		local out = {}
+		for side in spec.sides do
+			local list = {}
+			for _, other in sideFighters(side) do
+				local hp, maxHp = 0, 1
+				if online(other) then
+					maxHp = math.max(1, deps.Stat.GetValue(other.player, "maxHp"))
+					hp = if other.down then 0 else math.clamp(deps.Resource.Get(other.player), 0, maxHp)
+				end
+				table.insert(list, {
+					name = other.name,
+					class = other.class,
+					out = other.down or other.gone or other.out,
+					hp = math.floor(hp),
+					maxHp = math.floor(maxHp),
+				})
+			end
+			out[side] = list
+		end
+		return out
+	end
+
 	function self.snapshot(_self: Match, player: Player): { [string]: any }
 		local f = byPlayer[player]
 		return {
+			teams = if team then teamsView() else nil,
+			myTeam = if team and f then f.side else nil,
 			id = spec.id,
 			mode = spec.mode,
 			phase = self.phase,
@@ -622,6 +699,8 @@ function Match.new(
 			endsAt = self.endsAt,
 			potionsLeft = if f then f.potions else 0,
 			names = self:names(),
+			-- S128: the decided match (0 = no winner), so a forfeit win at 0:0 does not read as a draw
+			winner = if self.result then self.result.winner or 0 else nil,
 		}
 	end
 

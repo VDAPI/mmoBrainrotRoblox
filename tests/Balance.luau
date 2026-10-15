@@ -27,6 +27,8 @@
 local fs = require("@lune/fs")
 
 local AreaProfiles = require("../src/shared/Data/AreaProfiles")
+local ArenaData = require("../src/shared/Data/Arena")
+local ArenaRules = require("../src/shared/Logic/ArenaRules")
 local AreaRates = require("../src/shared/Logic/AreaRates")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
@@ -8673,6 +8675,57 @@ function Balance.fullIncomeReport(classId: string, level: number): FullIncomeRep
 		extras = extras,
 		total = grind + quests + extras.total,
 	}
+end
+
+-- S128 (DESIGN-17 §6, H1): Arena Tokens of three player profiles per day and week (from Data/Arena, the same
+-- ArenaRules.tokensFor the server calls, the week cap from an empty week) and, per arena shop entry, the days of the
+-- profile "3 matches a day, 50% wins" to buy it, with the gold price of the same items at the merchants.
+export type ArenaProfile = { id: string, perDay: number, perWeek: number, capDays: number }
+export type ArenaShopRow = { key: string, kind: string, price: number, days: number, gold: number? }
+export type ArenaTokens = { profiles: { ArenaProfile }, shop: { ArenaShopRow }, cap: number }
+
+function Balance.arenaTokens(): ArenaTokens
+	local function day(mode: string, matches: number): number
+		local total = 0
+		for i = 1, matches do
+			-- 50% wins: half a win and half a loss of every match, with the daily bonus of the first ones
+			local win = ArenaRules.tokensFor(mode, "win", i - 1, 0, true, false)
+			local loss = ArenaRules.tokensFor(mode, "loss", i - 1, 0, true, false)
+			total += (win + loss) / 2
+		end
+		return total
+	end
+	local cap = ArenaData.tokensWeekCap
+	local function profile(id: string, perDay: number): ArenaProfile
+		local perWeek = math.min(cap, perDay * 7)
+		return { id = id, perDay = perDay, perWeek = perWeek, capDays = cap / perDay }
+	end
+	local profiles = {
+		profile("1v1x3", day("1v1", 3)),
+		profile("1v1x10", day("1v1", 10)),
+		profile("3v3x3", day("3v3", 3)),
+	}
+	local base = profiles[1].perDay
+	local shop: { ArenaShopRow } = {}
+	for _, entry in ArenaData.SHOP do
+		local gold: number? = nil
+		if entry.kind == "item" then
+			local def = Items.get(entry.id)
+			-- the merchant's price (an item sold by NPCs has a fixed buyPrice: 5 stones = 5 × 20), else the item price
+			local unit = if def
+					and def.buyPrice
+					and def.buyPrice > 0
+				then def.buyPrice
+				elseif def then def.price or 0
+				else 0
+			gold = if def then unit * (entry.n or 1) else nil
+		end
+		table.insert(
+			shop,
+			{ key = entry.key, kind = entry.kind, price = entry.price, days = entry.price / base, gold = gold }
+		)
+	end
+	return { profiles = profiles, shop = shop, cap = cap }
 end
 
 return Balance

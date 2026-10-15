@@ -48,20 +48,22 @@ end
 
 -- S124: names and tags the writing surfaces of the Hall of Fame (Logic/TownGen/Props fameHall) for the leaderboard
 -- board (Leaderboard/TownBoard on the server, FameBoardController on the client). No yield (WorldService.Init).
-local function fameHall(result: BlueprintBuild.Result)
-	local boards = result.tagged.fameBoard
+-- S128: the arena Hall of Fame the same way (tags "ArenaFameBoard" / "ArenaFamePlinth": ArenaService on the server,
+-- ArenaFameController on the client; `Plinth` = the arena bracket index).
+local function fameHall(result: BlueprintBuild.Result, boardTag: string, plinthTag: string, name: string)
+	local boards = result.tagged[boardTag]
 	local board = boards and boards[1]
 	if board then
-		board.Name = "FameBoard"
-		CollectionService:AddTag(board, "FameBoard")
+		board.Name = name .. "Board"
+		CollectionService:AddTag(board, name .. "Board")
 	else
-		log:warn("the Hall of Fame has no board surface")
+		log:warn("the %s has no board surface", name)
 	end
-	local plaques: { BasePart } = result.tagged.famePlinth or {}
+	local plaques: { BasePart } = result.tagged[plinthTag] or {}
 	for i, plaque in plaques do
-		plaque.Name = `FamePlinth_{i}`
+		plaque.Name = `{name}Plinth_{i}`
 		plaque:SetAttribute("Plinth", i)
-		CollectionService:AddTag(plaque, "FamePlinth")
+		CollectionService:AddTag(plaque, name .. "Plinth")
 	end
 end
 
@@ -103,7 +105,9 @@ return function(ctx: Build.Context)
 		if build.tag == "gate" then
 			gatePortal(ctx, build, result)
 		elseif build.tag == "fame" then
-			fameHall(result)
+			fameHall(result, "fameBoard", "famePlinth", "Fame")
+		elseif build.tag == "arenaFame" then
+			fameHall(result, "arenaFameBoard", "arenaFamePlinth", "ArenaFame")
 		end
 	end
 	ctx.parts += parts

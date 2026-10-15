@@ -181,6 +181,29 @@ T.describe("Mail rules", function()
 		end
 		T.expect({ Mail.add(box, big, 0) }).toEqual({ false, "mail.error.tooManyItems" })
 	end)
+
+	T.it("a once key adds one parcel, even after it was claimed (S128)", function()
+		local box = Mail.newBox()
+		local key = "arenaSeason_2026-10_c1"
+		local first = parcel("a", nil)
+		first.once = key
+		T.expect({ Mail.add(box, first, 0) }).toEqual({ true, nil })
+		local again = parcel("b", nil)
+		again.once = key
+		T.expect({ Mail.add(box, again, 0) }).toEqual({ true, nil })
+		T.expect(Mail.count(box)).toBe(1)
+		T.expect((Mail.take(box, "a", nil, 0) :: any).id).toBe("a")
+		T.expect({ Mail.add(box, again, 10) }).toEqual({ true, nil })
+		T.expect(Mail.count(box)).toBe(0)
+		-- another key goes in; the key is forgotten after ONCE_KEEP
+		local other = parcel("c", nil)
+		other.once = "arenaSeason_2026-10_c2"
+		assert(Mail.add(box, other, 0))
+		T.expect(Mail.count(box)).toBe(1)
+		Mail.prune(box, Mail.ONCE_KEEP + 1)
+		local sent = box.sent or {}
+		T.expect(sent[key]).toBeNil()
+	end)
 end)
 
 T.describe("Mail with shards and a timed title (S125)", function()

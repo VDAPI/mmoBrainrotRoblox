@@ -932,7 +932,43 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
   miejscu. Przeciwnik, który nie dotrze w 60 s: mecz anulowany bez ratingu. Para z jednego serwera walczy na Ristalle.
   Gdy połączenie między światami nie działa (i w Studio), okno mówi „Kolejka: ten serwer” i kolejka działa lokalnie; po
   45 s bez przeciwnika z innych światów gracz dostaje propozycję walki z kimś z tego serwera (odmowa bez kary).
-- **Dalej:** S128 3v3, Żetony Areny, sklep u Mistrza Areny i nagrody sezonu; S130 turniej (ten sam tryb serwera).
+- **3 na 3 (S128):** przełącznik „1 na 1 / 3 na 3” w oknie. Zapis pojedynczo (gracz bez grupy, dobierany w trójki z
+  innymi o podobnym ratingu) albo drużyną (grupa dokładnie trzech osób z jednego przedziału, zapisuje lider; każdy
+  członek może ją wypisać, zmiana składu grupy wypisuje drużynę). Dwójek nie ma. Dobór: najstarszy wpis zaczyna drużynę,
+  dopełniają ją najstarsi pojedynczy w oknie ratingu; przeciwnikiem jest najstarsza drużyna w oknie średniej, inaczej
+  trzech pojedynczych. Wszyscy sześciu akceptują w 15 s; karę dostaje tylko ten, kto nie przyjął (jego drużyna z grupy
+  wypada z kolejki, reszta wraca na swoje miejsca). Mecz: jedna runda do 240 s na Ristalle (albo na serwerze areny, gdy
+  gracze są na różnych serwerach), start na sześciu punktach. Pokonany zostaje z 1 HP, schodzi na ławkę swojej drużyny
+  (trybuna po jej stronie), nie atakuje, nie jest celem, nie rzuca umiejętności i nie pije mikstur. Wygrywa drużyna, której
+  ktoś został na piasku; po czasie suma % HP stojących (pokonany = 0; równa suma = remis). Drużyna dobrana z pojedynczych
+  nie ma wspólnej grupy: leczenie, tarcze i aury działają w obrębie strony meczu, a zawodnicy jednej strony nie mogą się
+  bić. Osobny rating `rating3` (K z meczów 3 na 3, przeciwnik = średnia drugiej strony), tablica
+  `arena3_<sezon>_<przedział>` i zakładka „Arena 3 na 3” w Rankingach. Na HUD panel drużyn (klasa, imię, HP, „pokonany”;
+  na telefonie kropki rozwijane dotknięciem).
+- **Żetony Areny (S128):** za każdy mecz rankingowy: 1 na 1 wygrana 10, przegrana 4; 3 na 3 wygrana 12, przegrana 5;
+  remis = Żetony przegranej. Pierwsze 3 mecze dnia UTC (1 na 1 i 3 na 3 razem) ×2. Limit 600 na tydzień (od
+  poniedziałku 00:00 UTC). Bez Żetonów: opuszczenie meczu, mecz ponad limit tego samego przeciwnika (3 dziennie), mecz
+  przerwany. Żetony są na postaci, nie da się ich kupić. Przy profilu „3 mecze dziennie” ok. 42 dziennie i 294 tygodniowo.
+- **Sklep areny (S128):** u Mistrza Areny (usługa „Sklep areny” i zakładka okna), zakup tylko przy nim:
+
+  | pozycja | cena (Żetony) |
+  |---|---|
+  | 5 Kamieni Powrotu | 10 |
+  | błogosławieństwo każdej linii: Zwykłe / Niezwykłe / Heroiczne | 15 / 35 / 70 |
+  | Ramka Gladiatora, Ramka czatu Gladiatora | 250 |
+  | tytuł „Żelazna Wola” / „Weteran Ristalle” | 400 / 600 |
+  | Aura Gladiatora | 1200 |
+
+  Przedmioty ze sklepu są związane (bez handlu i aukcji), kosmetyki kontowe. Nic z bonusami.
+- **Nagrody sezonu (S128):** przy pierwszym wejściu w nowym sezonie, według lepszego szczytu sezonu z 1 na 1 i 3 na 3,
+  gdy postać rozegrała co najmniej 5 meczów rankingowych sezonu, raz: Brąz tytuł „Gladiator Brązu <sezon>”; Srebro
+  tytuł + Laur Areny (ramka); Złoto + Aura Zwycięzcy Sezonu; Diament + 150 Smoczych Odłamków; Mistrz + 300 SO i tytuł
+  „Mistrz Areny <sezon>”. Tytuł jest jeden (najwyższego progu), nosi sezon; późniejszy sezon na tym samym progu zmienia
+  sezon w tytule. List w poczcie zawsze (odłamki jako załącznik od Diamentu), ponawiany, gdy poczta nie działa.
+- **Sala Sław Areny (S128):** plansza przy wschodniej stronie Ristalle: top 10 każdego przedziału zakończonego sezonu,
+  z przodu 1 na 1, z tyłu 3 na 3, i cztery cokoły ze zwycięzcami 1 na 1 przedziałów. Budowana raz na sezon przez
+  pierwszy serwer (15 min po zmianie sezonu); w pierwszym sezonie napis „Pierwszy sezon areny jeszcze trwa.”.
+- **Dalej:** S129 Krwawy Księżyc (Żetony za udział), S130 turniej (ten sam tryb serwera), S131 artykuł „Arena” na wiki.
 
 ## 20. Questy
 
@@ -1027,6 +1063,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), od S121 Kieszenie Kupca (+10 miejsc w każdym plecaku, także bez plecaka: 20 → 30; utrata przepustki zostawia przedmioty w nadmiarze, którego nie da się uzupełniać), Miejsce na postać 4 i 5, Garderoba+ (5 zapisanych zestawów wyglądu zamiast 1). Dawna przepustka VIP to „VIP na zawsze”, wyłączona (`enabled = false`) do decyzji właściciela.
 - **VIP od S121 to subskrypcja Roblox** (Experience Subscriptions, `docs/DESIGN-17.md` §2): 15 Smoczej Waluty raz na dzień UTC, tytuł VIP, złota gwiazdka w czacie i złote imię, +1 kolejka u alchemika, +5 ogłoszeń na aukcji i opłata od sprzedaży 2,5% zamiast 5% (zapisana w ogłoszeniu przy wystawieniu), darmowy powrót do miasta co 10 min (kanał Kamienia Powrotu bez kamienia), jedno darmowe natychmiastowe odrodzenie dziennie, kosmetyk miesiąca na zawsze. Bez EXP, złota, łupów i statystyk. Okno VIP z menu gry i z zakładki „Przepustki” sklepu.
 - Brak sprzedaży EXP, statystyk, przedmiotów z bonusami.
+- **Arena (S128):** Żetonów Areny nie da się kupić, a kosmetyki areny (`obtain.arena`: sklep areny za Żetony albo nagroda sezonu) nie są na sprzedaż za Smoczą Walutę, nie trafiają do oferty tygodnia ani paczek; rating, Żetony i nagrody sezonu zależą tylko od meczów (`tests/paywall.spec.luau`).
 - Odrodzenie natychmiastowe także jako osobny Developer Product (bez kupowania waluty).
 - **Smoczy Sklep od S120** (`docs/DESIGN-17.md` §1): okno z pięcioma zakładkami (Waluta, Przepustki, Przedmioty w sekcjach Zwoje / Usługi / Plecaki, Kosmetyki, Wierzchowce tylko z włączonym produktem), saldo z „Doładuj” stale w nagłówku, podpowiedź i potwierdzenie przy każdym zakupie za Smoczą Walutę (także w garderobie), produkty Robux bez id na żywym serwerze jako nieaktywne „Wkrótce”. Limity dzienne i tygodniowe na wpis sklepu (`account.shopLimits`). Zasadę bez pay-to-win pilnuje `tests/paywall.spec.luau` (jawne listy tego, co wolno sprzedawać, z powodem przy każdym wpisie).
 - **Przedmioty użytkowe od S122** (`docs/DESIGN-17.md` §3), dwa jawne wyjątki z `paywall.spec`. **Eliksir Pełni** (paczki 5 i 20 za 120 / 400 Smoczej Waluty): od razu pełne życie, mana i energia; własne odnowienie 3 min (trwałe, wylogowanie go nie omija), 10 użyć na postać i dzień UTC; związany z kontem od chwili zakupu (depozyt konta tak, sprzedaż, handel i aukcja nie); pije się go z plecaka i z każdego slotu paska mikstur; nie działa po śmierci, w pojedynku, na arenie, w lochu bossa, przez 15 s po walce z graczem (licznik przełącznika PvP), w czasie Krwawego Księżyca i turnieju (te dwa od S129 / S130), zawsze z komunikatem dlaczego. **Płaszcz Przynęty** (1 h za 150, 7 dni za 990): czas konta płynie także poza grą, kupno go włącza; przełącznik w sklepie, w menu gry i przyciskiem na HUD z czasem. Co 8 s ściąga zwykłe, bezczynne potwory ze spawnerów w promieniu 25 i ±10 poziomów, najwyżej 6 walczących z graczem naraz (liczone całymi grupami); nigdy Elit, Elit II, bossów, przyzwanych ani potworów wydarzeń. Nie działa w mieście, w jaskiniach, kryptach i lochach, w czerwonej strefie, na arenie, w czasie Krwawego Księżyca, na wierzchowcu i po śmierci (HUD: „wstrzymany” z powodem). Ciemnoczerwona peleryna z dymem, widoczna dla innych, przykrywa pelerynę stroju; zero statystyk, nagrody za zabicie bez zmian. Gdzie oba nie działają, mówi jedno miejsce: `Logic/UseBlocks` + rejestr `src/server/UseGuards.luau`.
@@ -1049,6 +1086,9 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   aura, ślad, strój). Konto z VIP w danym miesiącu UTC dostaje go na zawsze (`account.vip.months`); nie jest na sprzedaż.
 - **Zestawy wyglądu (S121):** zestaw = założone kosmetyki + pet (`account.outfits`); 1 bez przepustki, 5 z Garderobą+.
   „Załóż” zakłada tylko posiadane rzeczy; zestawy ponad limit zostają zapisane, ale nie da się ich założyć.
+- **Kosmetyki areny (S128):** Ramka Gladiatora, Ramka czatu Gladiatora, tytuły „Żelazna Wola” i „Weteran Ristalle”,
+  Aura Gladiatora (sklep areny za Żetony), Laur Areny i Aura Zwycięzcy Sezonu (nagrody sezonu); w garderobie zamiast ceny
+  „Sklep areny: N Żetonów” albo „Nagroda sezonu areny”, bez przycisku.
 - **Skiny zdobywane w grze (S97):** kosmetyka z `obtain` (łup bossa albo nagroda zadania, `Reward.cosmetic`) ma cenę 0,
   nie jest na sprzedaż (`premium.error.notForSale`), w garderobie pokazuje źródło zamiast ceny i nie ma przycisku, dopóki
   jej nie masz.

@@ -13,6 +13,7 @@ local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local TitleText = require(script.Parent.Parent.TitleText)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
@@ -120,7 +121,11 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 									`{Text.get(use, "hud.level", { level = p.level })}  ·  {if class
 										then Text.get(use, class.nameKey)
 										else p.class}{if p.title and TitleData.get(p.title)
-										then "  ·  « " .. Text.get(use, (TitleData.get(p.title) :: any).nameKey) .. " »"
+										then "  ·  « " .. TitleText.get(
+											use,
+											TitleData.get(p.title) :: any,
+											p.titleSeason
+										) .. " »"
 										else ""}`,
 									Theme.Colors.Parchment
 								),

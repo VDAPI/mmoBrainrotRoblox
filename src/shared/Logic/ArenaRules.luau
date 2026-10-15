@@ -26,7 +26,18 @@ export type Entrant = {
 	rating: number,
 	played: number,
 }
-export type Ticket = { entrant: Entrant, mode: string, bracket: string, joinedAt: number }
+-- S128: a team of a party (3v3) is ONE ticket: `entrant` = the leader (its rating = Elo.sideRating of the members'
+-- rating3), `members` = the three fighters with the leader; a solo ticket has no members.
+export type Ticket = { entrant: Entrant, mode: string, bracket: string, joinedAt: number, members: { Entrant }? }
+-- S128: what the server knows when a player asks for the 3v3 queue (Logic/ArenaRules.canQueue3).
+export type Queue3Input = {
+	inParty: boolean,
+	partySize: number,
+	isLeader: boolean,
+	sameBracket: boolean,
+	anyBusy: boolean,
+}
+export type SeasonRewardOut = { season: string, tier: string, title: string, cosmetics: { string }, shards: number }
 -- `fallback` (S127): a local offer after the global wait (Logic/ArenaQueue.localOffer): declining it costs nothing.
 export type Pairing = { mode: string, bracket: string, sides: { { Ticket } }, fallback: boolean? }
 export type MatchSpec = {
@@ -203,13 +214,189 @@ local function older(a: Ticket, b: Ticket): boolean
 	return a.entrant.key < b.entrant.key
 end
 
+-- S128: the number of fighters of a ticket (a party team 3, a solo 1).
+function ArenaRules.size(t: Ticket): number
+	return if t.members then #t.members else 1
+end
+
+-- The user ids of a ticket's fighters.
+local function usersOf(t: Ticket): { number }
+	if t.members then
+		local out = {}
+		for _, m in t.members do
+			table.insert(out, m.userId)
+		end
+		return out
+	end
+	return { t.entrant.userId }
+end
+
+local function ratingsOf(t: Ticket): { number }
+	if t.members then
+		local out = {}
+		for _, m in t.members do
+			table.insert(out, m.rating)
+		end
+		return out
+	end
+	return { t.entrant.rating }
+end
+
+-- S128: one 3v3 pairing out of the tickets of ONE bracket (deterministic; tests/arena.spec "S128"):
+--   1. the tickets sorted by joinedAt, then key (as pair);
+--   2. the oldest ticket E starts team A: a party team alone, else E and the next oldest solo tickets of other users
+--      within min(window(E), window(X)) of E's rating until A has three fighters; else the next oldest is E;
+--   3. team B: the oldest party team whose rating is within min(window(oldest of A), window(candidate)) of A's mean,
+--      else the three oldest solo tickets each within that window of A's mean;
+--   4. { A, B } or nil. A party team is never split, no ticket is in both teams, no user twice.
+-- `anyRating` (the S127 local fallback after the global wait) drops the rating windows.
+function ArenaRules.formTeams3(tickets: { Ticket }, now: number, anyRating: boolean?): Pairing?
+	if #tickets == 0 then
+		return nil
+	end
+	local bracket = tickets[1].bracket
+	for _, t in tickets do
+		assert(t.bracket == bracket, "formTeams3: tickets of one bracket")
+	end
+	local need = (Arena.MODES["3v3"] :: Mode).teamSize
+	local sorted = table.clone(tickets)
+	table.sort(sorted, older)
+	local function w(t: Ticket): number
+		return if anyRating then math.huge else ArenaRules.window(now - t.joinedAt)
+	end
+	for i, e in sorted do
+		local sizeE = ArenaRules.size(e)
+		if sizeE ~= 1 and sizeE ~= need then
+			continue
+		end
+		local a: { Ticket } = { e }
+		local usedIdx: { [number]: boolean } = { [i] = true }
+		local users: { [number]: boolean } = {}
+		for _, u in usersOf(e) do
+			users[u] = true
+		end
+		local count = sizeE
+		if count < need then
+			for j, x in sorted do
+				if count >= need then
+					break
+				end
+				if usedIdx[j] or ArenaRules.size(x) ~= 1 or users[x.entrant.userId] then
+					continue
+				end
+				if math.abs(x.entrant.rating - e.entrant.rating) <= math.min(w(e), w(x)) then
+					table.insert(a, x)
+					usedIdx[j] = true
+					users[x.entrant.userId] = true
+					count += 1
+				end
+			end
+		end
+		if count ~= need then
+			continue
+		end
+		local ratingsA: { number } = {}
+		local oldestA = a[1]
+		for _, t in a do
+			for _, r in ratingsOf(t) do
+				table.insert(ratingsA, r)
+			end
+			if older(t, oldestA) then
+				oldestA = t
+			end
+		end
+		local meanA = Elo.sideRating(ratingsA)
+		local function fits(t: Ticket): boolean
+			return math.abs(t.entrant.rating - meanA) <= math.min(w(oldestA), w(t))
+		end
+		local function free(t: Ticket, taken: { [number]: boolean }): boolean
+			for _, u in usersOf(t) do
+				if taken[u] then
+					return false
+				end
+			end
+			return true
+		end
+		-- B: a party team first
+		local b: { Ticket }? = nil
+		for j, x in sorted do
+			if not usedIdx[j] and ArenaRules.size(x) == need and free(x, users) and fits(x) then
+				b = { x }
+				break
+			end
+		end
+		if not b then
+			local solo: { Ticket } = {}
+			local taken = table.clone(users)
+			for j, x in sorted do
+				if #solo >= need then
+					break
+				end
+				if not usedIdx[j] and ArenaRules.size(x) == 1 and free(x, taken) and fits(x) then
+					table.insert(solo, x)
+					taken[x.entrant.userId] = true
+				end
+			end
+			if #solo == need then
+				b = solo
+			end
+		end
+		if b then
+			return { mode = e.mode, bracket = bracket, sides = { a, b } }
+		end
+	end
+	return nil
+end
+
 -- Deterministic pairing of one list of tickets at `now`: oldest unpaired ticket first; its candidates share mode and
 -- bracket, belong to another user and fit the wider of the two windows; the smallest rating difference wins (tie:
--- the older ticket). Returns the pairs (sides[1] = the older ticket) and the rest in queue order. Only teamSize 1
--- here; S128 adds the team branch in this function.
+-- the older ticket). Returns the pairs (sides[1] = the older ticket) and the rest in queue order.
+-- S128: teamSize > 1 groups the tickets by mode and bracket and forms teams with formTeams3 while it finds any.
 function ArenaRules.pair(tickets: { Ticket }, now: number, teamSize: number?): ({ Pairing }, { Ticket })
 	if (teamSize or 1) ~= 1 then
-		error("pair: teamSize > 1 is S128")
+		local groups: { [string]: { Ticket } } = {}
+		local order: { string } = {}
+		local all = table.clone(tickets)
+		table.sort(all, older)
+		for _, t in all do
+			local id = `{t.mode}|{t.bracket}`
+			if not groups[id] then
+				groups[id] = {}
+				table.insert(order, id)
+			end
+			table.insert(groups[id], t)
+		end
+		local out: { Pairing } = {}
+		local taken: { [Ticket]: boolean } = {}
+		for _, id in order do
+			local left = groups[id]
+			while true do
+				local pairing = ArenaRules.formTeams3(left, now)
+				if not pairing then
+					break
+				end
+				table.insert(out, pairing)
+				for _, side in pairing.sides do
+					for _, t in side do
+						taken[t] = true
+					end
+				end
+				local rest = {}
+				for _, t in left do
+					if not taken[t] then
+						table.insert(rest, t)
+					end
+				end
+				left = rest
+			end
+		end
+		local rest = {}
+		for _, t in all do
+			if not taken[t] then
+				table.insert(rest, t)
+			end
+		end
+		return out, rest
 	end
 	local sorted = table.clone(tickets)
 	table.sort(sorted, older)
@@ -270,6 +457,24 @@ function ArenaRules.canQueue(input: QueueInput): string?
 	return nil
 end
 
+-- S128: who may queue for 3v3 after canQueue passed for every member (`anyBusy` = one of them failed it): a player
+-- without a party queues alone; a party queues only as a team of exactly three, by its leader, all in one bracket.
+-- No queue for pairs (DECYZJE S128).
+function ArenaRules.canQueue3(input: Queue3Input): (boolean, string?)
+	if not input.inParty then
+		return true, nil
+	elseif input.partySize ~= (Arena.MODES["3v3"] :: Mode).teamSize then
+		return false, "arena.error.party3"
+	elseif not input.isLeader then
+		return false, "arena.error.notLeader"
+	elseif not input.sameBracket then
+		return false, "arena.error.partyBracket"
+	elseif input.anyBusy then
+		return false, "arena.error.partyBusy"
+	end
+	return true, nil
+end
+
 -- State --------------------------------------------------------------------------------------------------------------
 
 -- A fresh character.arena (the template of Logic/AccountSchema).
@@ -286,6 +491,16 @@ function ArenaRules.emptyState(): ArenaState
 		vs = { day = 0 },
 		history = {},
 		last = nil,
+		-- S128 (DESIGN-17 §6)
+		rating3 = ELO.start,
+		peak3 = ELO.start,
+		wins3 = 0,
+		losses3 = 0,
+		played3 = 0,
+		vs3 = { day = 0 },
+		tokensWeek = { week = 0, n = 0 },
+		titles = {},
+		pendingReward = nil,
 	}
 end
 
@@ -293,23 +508,35 @@ end
 local function copy(state: ArenaState): ArenaState
 	local s: any = state
 	local out: any = ArenaRules.emptyState()
-	for _, field in { "season", "rating", "wins", "losses", "peak", "played", "tokens" } do
+	for _, field in { "season", "tokens" } do
 		if s[field] ~= nil then
 			out[field] = s[field]
 		end
 	end
-	-- mode rating fields beyond "rating" (S128 rating3)
+	-- the numbers and the day counters of every mode (S128: rating3, peak3, wins3, losses3, played3, vs3)
 	for _, mode in Arena.MODES do
-		if mode.ratingField ~= "rating" and type(s[mode.ratingField]) == "number" then
-			out[mode.ratingField] = s[mode.ratingField]
+		for _, field in { mode.ratingField, mode.peakField, mode.winsField, mode.lossesField, mode.playedField } do
+			if type(s[field]) == "number" then
+				out[field] = s[field]
+			end
+		end
+		local vs = s[mode.vsField]
+		if type(vs) == "table" then
+			out[mode.vsField] = table.clone(vs)
+			out[mode.vsField].day = out[mode.vsField].day or 0
 		end
 	end
 	if type(s.daily) == "table" then
 		out.daily = { day = s.daily.day or 0, n = s.daily.n or 0 }
 	end
-	if type(s.vs) == "table" then
-		out.vs = table.clone(s.vs)
-		out.vs.day = out.vs.day or 0
+	if type(s.tokensWeek) == "table" then
+		out.tokensWeek = { week = tonumber(s.tokensWeek.week) or 0, n = tonumber(s.tokensWeek.n) or 0 }
+	end
+	if type(s.titles) == "table" then
+		out.titles = table.clone(s.titles)
+	end
+	if type(s.pendingReward) == "table" then
+		out.pendingReward = table.clone(s.pendingReward)
 	end
 	if type(s.history) == "table" then
 		local list = {}
@@ -340,7 +567,8 @@ function ArenaRules.rollSeason(state: ArenaState, season: string): (ArenaState, 
 		return out, nil
 	end
 	local summary: ArenaSeasonSummary? = nil
-	if out.played > 0 then
+	-- S128: a season with rated matches of any mode closes into `last` (with the 3v3 numbers)
+	if out.played + out.played3 > 0 then
 		summary = {
 			season = out.season,
 			rating = out.rating,
@@ -349,39 +577,45 @@ function ArenaRules.rollSeason(state: ArenaState, season: string): (ArenaState, 
 			losses = out.losses,
 			played = out.played,
 			rewarded = false,
+			rating3 = out.rating3,
+			peak3 = out.peak3,
+			wins3 = out.wins3,
+			losses3 = out.losses3,
+			played3 = out.played3,
 		}
 		out.last = table.clone(summary :: ArenaSeasonSummary)
 	end
-	local reset = ELO.start + (out.rating - ELO.start) * Arena.SEASON.keep
-	out.rating = Elo.apply(math.floor(reset + 0.5), 0)
+	-- the soft reset of every mode: rating, peak = the new rating, wins / losses / played = 0
 	local fields: any = out
 	for _, mode in Arena.MODES do
-		local field = mode.ratingField
-		local value = fields[field]
-		if field ~= "rating" and type(value) == "number" then
-			fields[field] = Elo.apply(math.floor(ELO.start + (value - ELO.start) * Arena.SEASON.keep + 0.5), 0)
+		local value = fields[mode.ratingField]
+		if type(value) ~= "number" then
+			value = ELO.start
 		end
+		local reset = Elo.apply(math.floor(ELO.start + (value - ELO.start) * Arena.SEASON.keep + 0.5), 0)
+		fields[mode.ratingField] = reset
+		fields[mode.peakField] = reset
+		fields[mode.winsField] = 0
+		fields[mode.lossesField] = 0
+		fields[mode.playedField] = 0
 	end
-	out.peak = out.rating
-	out.wins = 0
-	out.losses = 0
-	out.played = 0
 	out.season = season
 	return out, summary
 end
 
--- Matches against `oppKey` on UTC day `day` (the key "day" of `vs` is the day, never an opponent).
-function ArenaRules.vsCount(state: ArenaState, oppKey: string, day: number): number
-	local vs = state.vs
+-- Matches against `oppKey` on UTC day `day` (the key "day" of `vs` is the day, never an opponent). S128: `field` =
+-- the mode's vsField ("vs3" for 3v3; default "vs").
+function ArenaRules.vsCount(state: ArenaState, oppKey: string, day: number, field: string?): number
+	local vs = (state :: any)[field or "vs"]
 	if type(vs) ~= "table" or vs.day ~= day or oppKey == "day" then
 		return 0
 	end
 	return tonumber(vs[oppKey]) or 0
 end
 
--- Whether the next match against `oppKey` today still changes the rating.
-function ArenaRules.isRated(state: ArenaState, oppKey: string, day: number): boolean
-	return ArenaRules.vsCount(state, oppKey, day) < LIMITS.sameOpponentDaily
+-- Whether the next match against `oppKey` today still changes the rating (S128: `field` as vsCount).
+function ArenaRules.isRated(state: ArenaState, oppKey: string, day: number, field: string?): boolean
+	return ArenaRules.vsCount(state, oppKey, day, field) < LIMITS.sameOpponentDaily
 end
 
 -- The rating of a mode in a state (S128 rating3 starts at ELO.start).
@@ -524,38 +758,43 @@ function ArenaRules.applyResult(state: ArenaState, input: ResultInput): (ArenaSt
 		out.daily = { day = input.day, n = 0 }
 	end
 	out.daily.n += 1
-	if out.vs.day ~= input.day then
-		out.vs = { day = input.day }
+	local mode = input.mode
+	-- S128: the counters of the mode (Data/Arena Mode fields; a mode without them writes the 1v1 fields)
+	local fields: any = out
+	local vsField = mode.vsField or "vs"
+	local playedField = mode.playedField or "played"
+	local winsField = mode.winsField or "wins"
+	local lossesField = mode.lossesField or "losses"
+	local peakField = mode.peakField or "peak"
+	if type(fields[vsField]) ~= "table" or fields[vsField].day ~= input.day then
+		fields[vsField] = { day = input.day }
 	end
 	local rated = input.rated
 	for _, key in input.oppKeys do
-		if not ArenaRules.isRated(out, key, input.day) then
+		if not ArenaRules.isRated(out, key, input.day, vsField) then
 			rated = false
 		end
 	end
 	for _, key in input.oppKeys do
 		if key ~= "day" then
-			out.vs[key] = (tonumber(out.vs[key]) or 0) + 1
+			fields[vsField][key] = (tonumber(fields[vsField][key]) or 0) + 1
 		end
 	end
 	local delta = 0
-	local mode = input.mode
 	if rated then
 		local before = ArenaRules.ratingOf(out, mode)
-		delta = Elo.delta(before, input.oppRating, input.score, Elo.k(out.played))
+		local played = tonumber(fields[playedField]) or 0
+		delta = Elo.delta(before, input.oppRating, input.score, Elo.k(played))
 		local after = Elo.apply(before, delta)
 		delta = after - before
-		local fields: any = out
 		fields[mode.ratingField] = after
-		out.played += 1
+		fields[playedField] = played + 1
 		if input.score >= 1 then
-			out.wins += 1
+			fields[winsField] = (tonumber(fields[winsField]) or 0) + 1
 		elseif input.score <= 0 then
-			out.losses += 1
+			fields[lossesField] = (tonumber(fields[lossesField]) or 0) + 1
 		end
-		if mode.ratingField == "rating" then
-			out.peak = math.max(out.peak, after)
-		end
+		fields[peakField] = math.max(tonumber(fields[peakField]) or after, after)
 	end
 	local entry: ArenaHistoryEntry = {
 		t = input.now,
@@ -573,6 +812,142 @@ function ArenaRules.applyResult(state: ArenaState, input: ResultInput): (ArenaSt
 		table.remove(out.history)
 	end
 	return out, { delta = delta, rated = rated }
+end
+
+-- Arena Tokens (S128) --------------------------------------------------------------------------------------------------
+
+-- The token week of a moment (Monday 00:00 UTC, S98 Time.weekNumber).
+function ArenaRules.weekOf(now: number): number
+	return Time.weekNumber(now)
+end
+
+-- Matches of UTC day `day` before the next one (the shared daily counter of 1v1 and 3v3).
+function ArenaRules.dailyCount(state: ArenaState, day: number): number
+	local daily = state.daily
+	return if type(daily) == "table" and daily.day == day then tonumber(daily.n) or 0 else 0
+end
+
+-- Tokens earned in the week of `now`.
+function ArenaRules.weekTokens(state: ArenaState, now: number): number
+	local week = (state :: any).tokensWeek
+	return if type(week) == "table" and week.week == ArenaRules.weekOf(now) then tonumber(week.n) or 0 else 0
+end
+
+-- The tokens of one match for one fighter (DESIGN-17 §6) and the reason shown with them (nil: a plain gain):
+--   left (gave up the match) -> 0 "arena.tokens.left"; not rated (over the same-opponent limit) -> 0
+--   "arena.tokens.sameOpponent"; a win pays TOKENS.win<mode>, a loss or a draw TOKENS.loss<mode>; the first
+--   TOKENS.firstMatches matches of the day (`dailyBefore` = matches today before this one) pay x firstMul
+--   ("arena.tokens.bonus"); at most what is left of tokensWeekCap ("arena.tokens.capped" / "cappedPart").
+-- Nothing about the account, VIP or purchases comes in (tests/paywall.spec).
+function ArenaRules.tokensFor(
+	modeId: string,
+	outcome: "win" | "loss" | "draw",
+	dailyBefore: number,
+	weekGot: number,
+	rated: boolean,
+	left: boolean
+): (number, string?)
+	if left then
+		return 0, "arena.tokens.left"
+	elseif not rated then
+		return 0, "arena.tokens.sameOpponent"
+	end
+	local TOKENS: any = Arena.TOKENS
+	local base = tonumber(TOKENS[if outcome == "win" then `win{modeId}` else `loss{modeId}`]) or 0
+	local reason: string? = nil
+	if dailyBefore < Arena.TOKENS.firstMatches then
+		base *= Arena.TOKENS.firstMul
+		reason = "arena.tokens.bonus"
+	end
+	local room = math.max(0, Arena.tokensWeekCap - weekGot)
+	if room <= 0 then
+		return 0, "arena.tokens.capped"
+	elseif base > room then
+		return room, "arena.tokens.cappedPart"
+	end
+	return base, reason
+end
+
+-- Adds `gain` tokens to a copy of the state (a new week resets tokensWeek first). The only place tokens are added
+-- (ArenaService.AddTokens). S129/S130: event rewards call ArenaService.AddTokens, which uses this; whether they count
+-- to the week cap is their decision. Returns the copy and the new balance.
+function ArenaRules.addTokens(state: ArenaState, gain: number, now: number): (ArenaState, number)
+	local out = copy(state)
+	local week = ArenaRules.weekOf(now)
+	if out.tokensWeek.week ~= week then
+		out.tokensWeek = { week = week, n = 0 }
+	end
+	local n = math.max(0, math.floor(gain))
+	out.tokens += n
+	out.tokensWeek.n += n
+	return out, out.tokens
+end
+
+-- Season rewards (S128) ------------------------------------------------------------------------------------------------
+
+-- The tier of a finished season: the better of the 1v1 and the 3v3 peak (DECYZJE S128).
+function ArenaRules.seasonTier(peak: number, peak3: number): string
+	return ArenaRules.tierOf(math.max(peak, peak3))
+end
+
+-- The reward of the season closed into `last` (nil: none, already given, or fewer than seasonMinPlayed matches).
+function ArenaRules.seasonReward(last: ArenaSeasonSummary?): SeasonRewardOut?
+	if last == nil or last.rewarded then
+		return nil
+	end
+	local played = (tonumber(last.played) or 0) + (tonumber(last.played3) or 0)
+	if played < Arena.seasonMinPlayed then
+		return nil
+	end
+	local tier = ArenaRules.seasonTier(tonumber(last.peak) or 0, tonumber(last.peak3) or 0)
+	local reward = Arena.SEASON_REWARDS[tier]
+	if not reward then
+		return nil
+	end
+	return {
+		season = last.season,
+		tier = tier,
+		title = reward.title,
+		cosmetics = if reward.cosmetics then table.clone(reward.cosmetics) else {},
+		shards = reward.shards or 0,
+	}
+end
+
+-- Month and year of a season for "{month}.{year}" ("202611" -> "11", "2026"); ("?", "?") for a bad key.
+function ArenaRules.seasonLabel(season: string): (string, string)
+	local year, month = Time.monthLabel(season)
+	if not year or not month then
+		return "?", "?"
+	end
+	return string.format("%02d", month), tostring(year)
+end
+
+-- Arena shop (S128) ----------------------------------------------------------------------------------------------------
+
+-- Whether a character may buy a shop entry (the same rule on the server and in the window). The server also checks
+-- the distance to the Arena Master and the room in the backpack.
+function ArenaRules.canBuyShop(
+	entry: Arena.ArenaShopEntry?,
+	character: any,
+	ownedCosmetics: { [string]: boolean }?
+): (boolean, string?)
+	if entry == nil then
+		return false, "error.badRequest"
+	end
+	local e = entry :: Arena.ArenaShopEntry
+	local level = if type(character) == "table" then tonumber(character.level) or 0 else 0
+	if level < (e.level or Arena.MIN_LEVEL) then
+		return false, "arena.shop.error.level"
+	end
+	if e.kind == "cosmetic" and ownedCosmetics ~= nil and ownedCosmetics[e.id] == true then
+		return false, "arena.shop.error.owned"
+	end
+	local arena = if type(character) == "table" then character.arena else nil
+	local tokens = if type(arena) == "table" then tonumber(arena.tokens) or 0 else 0
+	if tokens < e.price then
+		return false, "arena.shop.error.tokens"
+	end
+	return true, nil
 end
 
 -- Venues -------------------------------------------------------------------------------------------------------------
@@ -596,6 +971,12 @@ function ArenaRules.standSpot(venue: Venue, i: number): (number, number)
 	local n = #venue.stands
 	local p = venue.stands[((math.floor(i) - 1) % n) + 1]
 	return p[1], p[2]
+end
+
+-- S128: the stand index of a side's bench (3v3: a knocked out fighter leaves the sand for it).
+function ArenaRules.benchIndex(venue: Venue, side: number): number
+	local bench = (venue :: any).bench
+	return if type(bench) == "table" and bench[side] then bench[side] else 1
 end
 
 return ArenaRules

@@ -727,6 +727,7 @@ local SERVICE_BOARDS: { [string]: string } = {
 	exp_week = "weekly EXP from Data/Leaderboards.WEEK_SOURCES (S125)",
 	guild = "the sum of the highest member levels, Logic/Leaderboard.guildScore (S125)",
 	arena = "the 1v1 arena rating from match results only, Logic/ArenaRules.applyResult (S126)",
+	arena3 = "the 3v3 arena rating from match results only, Logic/ArenaRules.applyResult (S128)",
 }
 local SOURCE_WORDS = { "premium", "shop", "purchase", "product", "admin", "robux", "shard" }
 
@@ -867,19 +868,26 @@ T.describe("Arena (S126)", function()
 
 	T.it("the arena data has no prices in Robux or Dragon Shards", function()
 		-- S128 adds a SHOP priced in Arena Tokens (allowed); a `shards` / `robux` key never is
+		-- S128: `price` only in SHOP / shopByKey (Arena Tokens, earned in matches), `shards` only in SEASON_REWARDS (a
+		-- reward by mail for the season's tier, never bought)
 		local banned = { robux = true, productId = true, shards = true, price = true }
-		local function walk(value: any, path: string)
+		local allowedUnder: { [string]: { [string]: boolean } } = {
+			price = { SHOP = true, shopByKey = true },
+			shards = { SEASON_REWARDS = true },
+		}
+		local function walk(value: any, path: string, top: string?)
 			if type(value) ~= "table" then
 				return
 			end
 			for k, v in value do
-				if type(k) == "string" and banned[k] then
+				local allow = type(k) == "string" and allowedUnder[k] and top and allowedUnder[k][top]
+				if type(k) == "string" and banned[k] and not allow then
 					error(`Data/Arena{path}.{k}: a purchase key`, 0)
 				end
-				walk(v, `{path}.{tostring(k)}`)
+				walk(v, `{path}.{tostring(k)}`, top or (if type(k) == "string" then k else nil))
 			end
 		end
-		walk(Arena, "")
+		walk(Arena, "", nil)
 	end)
 end)
 
@@ -902,6 +910,155 @@ T.describe("Global arena (S127)", function()
 				end
 			end
 		end
+	end)
+end)
+
+-- S128 (DESIGN-17 §0.2, §6): Arena Tokens are never sold, the arena cosmetics are never for sale, the arena shop sells
+-- no power and the arena never depends on purchases. The kinds the arena shop may sell (explicit):
+local ARENA_SHOP_KINDS: { [string]: string } = {
+	cosmetic = "looks: an arena cosmetic (obtain.arena = shop), never for Dragon Shards",
+	item = "a blessing up to Heroic (rarity <= 3) or the Return Stone; bound to the character",
+}
+
+T.describe("S128 arena tokens, shop and season rewards", function()
+	local Arena = require("../src/shared/Data/Arena")
+	local ArenaRules = require("../src/shared/Logic/ArenaRules")
+
+	local function arenaCosmetic(id: string): boolean
+		local def = Cosmetics.get(id)
+		return def ~= nil and def.obtain ~= nil and def.obtain.arena ~= nil
+	end
+
+	-- every key and string value under a product: no tokens, no arena keys, no arena cosmetic
+	local function noArena(value: any, where: string, seen: { [any]: boolean }?)
+		if type(value) ~= "table" then
+			if type(value) == "string" and arenaCosmetic(value) then
+				error(`{where}: gives the arena cosmetic {value}`, 0)
+			end
+			return
+		end
+		local visited = seen or {}
+		if visited[value] then
+			return
+		end
+		visited[value] = true
+		for k, v in value do
+			if type(k) == "string" then
+				local lower = string.lower(k)
+				if lower == "tokens" or lower == "arenatokens" or string.sub(lower, 1, 5) == "arena" then
+					error(`{where}.{k}: Arena Tokens are never sold`, 0)
+				end
+			end
+			noArena(v, `{where}.{tostring(k)}`, visited)
+		end
+	end
+
+	T.it("no product, pass, subscription, starter pack or mount gives Arena Tokens or an arena cosmetic", function()
+		local raw: any = Products
+		for _, field in { "shop", "passes", "subscriptions", "starterPacks", "mounts" } do
+			noArena(raw[field] or {}, `Products.{field}`)
+		end
+	end)
+
+	T.it("every arena cosmetic is free of a shard price, out of the weekly offer and not for sale", function()
+		local n = 0
+		for _, def in Cosmetics.list do
+			if def.obtain and def.obtain.arena then
+				n += 1
+				local where = `cosmetics.{def.id}`
+				T.expect({ where, def.price }).toEqual({ where, 0 })
+				T.expect({ where, def.weekly == true }).toEqual({ where, false })
+				T.expect({ where, def.obtain.arena == "shop" or def.obtain.arena == "season" }).toEqual({ where, true })
+				T.expect({ where, ALLOWED_COSMETIC_KINDS[def.kind] ~= nil }).toEqual({ where, true })
+				fieldsWithin(def.obtain :: any, { arena = true }, `{where}.obtain`)
+				T.expect({ where, Premium.canBuyCosmetic(def.id, {}, 1e9) }).toEqual({
+					where,
+					false,
+					"premium.error.notForSale",
+				})
+			end
+		end
+		T.expect(n).toBe(7)
+	end)
+
+	T.it("the arena shop sells only the allowed kinds, nothing with power", function()
+		for _, entry in Arena.SHOP do
+			local where = `Arena.SHOP.{entry.key}`
+			T.expect({ where, ARENA_SHOP_KINDS[entry.kind] ~= nil }).toEqual({ where, true })
+			if entry.kind == "cosmetic" then
+				local def = Cosmetics.get(entry.id)
+				T.expect({ where, def and def.obtain and def.obtain.arena }).toEqual({ where, "shop" })
+			else
+				local def = Items.get(entry.id) :: any
+				T.expect({ where, def ~= nil }).toEqual({ where, true })
+				local blessing = def.use and def.use.kind == "blessing"
+				if blessing then
+					local b = Blessings.get(def.use.target)
+					T.expect({ where, b ~= nil and b.rarity <= 3 }).toEqual({ where, true })
+				else
+					T.expect({ where, entry.id }).toEqual({ where, "stone_return" })
+				end
+				for _, field in { "base", "weapon", "bonusGroup", "fixedBonuses", "trait" } do
+					T.expect({ where, field, def[field] }).toEqual({ where, field, nil })
+				end
+				T.expect({ where, def.category ~= "material" and def.category ~= "currency" }).toEqual({ where, true })
+				T.expect({ where, def.use == nil or def.use.kind ~= "scroll" }).toEqual({ where, true })
+				T.expect({ where, def.use == nil or def.use.kind ~= "exp" }).toEqual({ where, true })
+			end
+		end
+	end)
+
+	T.it("tokens, teams, the 3v3 result and the season tier take nothing of the account", function()
+		-- (S131: these functions have no account parameter; two accounts that differ in VIP, passes, shards and
+		-- cosmetics cannot change their results)
+		local plainAccount: any = { vip = false, passes = {}, dragonShards = 0, cosmetics = { owned = {} } }
+		local richAccount: any =
+			{ vip = true, passes = { vip = true, pockets = true }, dragonShards = 99999, cosmetics = { owned = {} } }
+		local results = {}
+		for _, _account in { plainAccount, richAccount } do
+			local tickets = {}
+			for i = 1, 6 do
+				table.insert(tickets, {
+					entrant = {
+						key = `{i}_1`,
+						userId = i,
+						slot = 1,
+						name = `P{i}`,
+						class = "Mage",
+						level = 45,
+						rating = 1000 + i,
+						played = 0,
+					},
+					mode = "3v3",
+					bracket = "40_59",
+					joinedAt = i,
+				})
+			end
+			local state: any = ArenaRules.emptyState()
+			state.season = "202611"
+			local after, info = ArenaRules.applyResult(state, {
+				mode = Arena.MODES["3v3"],
+				season = "202611",
+				day = 20758,
+				now = 20758 * 86400,
+				myKey = "1_1",
+				oppKeys = { "4_1", "5_1", "6_1" },
+				oppRating = 1005,
+				oppName = "P4",
+				oppClass = "Mage",
+				score = 1,
+				rounds = "1:0",
+				rated = true,
+			})
+			table.insert(results, {
+				pairing = ArenaRules.formTeams3(tickets, 10),
+				after = after,
+				info = info,
+				tokens = { ArenaRules.tokensFor("3v3", "win", 0, 0, true, false) },
+				tier = ArenaRules.seasonTier(1250, 1310),
+			})
+		end
+		T.expect(results[2]).toEqual(results[1])
 	end)
 end)
 

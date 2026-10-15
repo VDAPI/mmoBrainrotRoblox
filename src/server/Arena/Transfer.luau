@@ -183,6 +183,7 @@ function Transfer.home(player: Player, joinData: any?, reasonKey: string, finish
 		arenaReturn = if type(data.arenaMatch) == "string" then data.arenaMatch else "arena",
 		slot = if type(data.slot) == "number" then data.slot else nil,
 		arenaDone = if finished then true else nil,
+		team = if data.team == true then true else nil, -- S128: the world server tells a party member it is gone
 	}
 	d.toast(player, reasonKey, nil, "info")
 	d.setLive(player, "transfer", "home")

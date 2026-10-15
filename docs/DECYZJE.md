@@ -4091,3 +4091,52 @@
   zakresu całego przedziału (ten trzyma tylko `rangeCount` najniższych ratingów); przejęcia sprawdzają magazyn jak
   zwykle. Serwer areny przy anulowaniu w trakcie czekania (rekord już nie `accepted` / `live`) odsyła z
   `arena.net.cancelled.noShow` (nie z `arena.cancelled` S126, który obiecuje powrót do kolejki).
+- **S128** Nazwy S126/S127 użyte bez zmian (zgodne z promptem): `MODES` / `MODE_ORDER`, `ArenaRules.pair` z gałęzią
+  drużynową, `applyResult`, `rollSeason`, `last.rewarded`, `ArenaJoin(mode)`, `Match:rule` / `allies` (ta sama strona już
+  `deny` od S126), `VENUES.<miejsce>.sides` po 3 punkty (także `pit`, liczone z `starts` ± 8), usługa NPC `arena`. Pole
+  `ArenaQueue.Entry` dostało tylko `size`; członkowie drużyny są w `ticket.members` (bilet S126 jest w wpisie).
+- **S128** 3v3 to drugi wpis `MODES` (bez tabeli `TEAM`); `Mode` ma pola statystyk trybu (`peakField` … `vsField`),
+  `applyResult` / `rollSeason` / `copy` czytają je z trybu (3v3: `rating3`, `peak3`, `wins3`, `losses3`, `played3`,
+  `vs3`; `daily` wspólne). Wynik przez `roundOutcome` / `matchOutcome` S126, bez osobnych funkcji Elo dla drużyn.
+- **S128** Drużyna = grupa dokładnie 3 osób (zapisuje lider, wszyscy w jednym przedziale) albo gracz bez grupy dobierany
+  w trójki; brak kolejki dla dwójek (dwójka + pojedynczy to osobny przypadek doboru, którego kontrakt nie przewiduje).
+  Drużyna z grupy to jeden bilet lidera z `members`; rating biletu = średnia `rating3` członków.
+- **S128** Drużyna dobrana z pojedynczych gra bez wspólnej grupy: wsparcie i aury przez `SetAllyOverride` S126
+  (`match:allies`, stojący zawodnicy strony), bez czatu i ramek grupy; `Party.fixed` nie powstaje. Grupa zapisana gra
+  swoją grupą. Zmiana składu grupy w kolejce wypisuje drużynę.
+- **S128** Pokonany w 3v3 zostaje z 1 HP, idzie na ławkę swojej strony (trybuna `VENUES.bench`: strona 1 = 1, strona 2 =
+  3), nie atakuje, nie jest celem, nie rzuca umiejętności (`IsSidelined`, `SkillService` leniwie, wzór S60: `ArenaService`
+  zależy od `SkillService`) i nie pije mikstur (strażnik S126). Po czasie liczy się suma % HP stojących (pokonany = 0),
+  równa suma = remis.
+- **S128** Odrzucenie albo brak odpowiedzi w 3v3: kara dla odmawiającego i dla każdego bez odpowiedzi (rekord ma listę
+  `silent`, nie tylko `by`); jego drużyna z grupy wypada z kolejki
+  (`ArenaQueue.entryAfterTeam`), pozostałe wpisy wracają z dawnym czasem. Serwer areny po `arriveTimeout` startuje mecz
+  bez nieobecnych, gdy każda strona kogoś ma (nieobecni: kara, bez wyniku w profilu); gdy strona jest pusta, mecz
+  anulowany bez wyniku (bez walkowera).
+- **S128** Żetony: remis = Żetony przegranej obu stronom; opuszczenie meczu = 0 dla tego gracza; mecz ponad
+  `sameOpponentDaily` = 0 Żetonów i rating bez zmian (PROPOZYCJA §5); mecz przerwany (admin, zamknięcie serwera) i
+  turniej = 0; premia dnia wspólna dla 1v1 i 3v3 (`daily.n` przed meczem); limit tygodnia od poniedziałku 00:00 UTC
+  (`Time.weekNumber`); Żetony na postaci. Jedyne dodawanie: `ArenaRules.addTokens` przez `ArenaService.AddTokens`.
+- **S128** Sklep areny: ceny i rachunek w księdze (42 Żetony dziennie przy 3 meczach: aura 4,1 tygodnia, ramki 6 dni,
+  tytuły 9,5 / 14,3 dnia, Heroiczne błogosławieństwo 1,7 dnia, 5 Kamieni Powrotu 0,24 dnia). Przedmioty związane (Żetonów
+  nie da się zamienić na złoto); błogosławieństwa do Heroicznej, wszystkie pięć linii (także Fortuna: Żetonów nie da się
+  kupić); z kamieni tylko Kamień Powrotu. Zakup tylko przy Mistrzu Areny (okno otwarte z jego dialogu ma aktywne „Kup”).
+- **S128** Nagrody sezonu: próg z lepszego z `peak` i `peak3`; minimum `seasonMinPlayed = 5` meczów sezonu (kontrakt
+  milczał); jedna ramka (Laur Areny) i jedna aura na wszystkie sezony, sezon widać w tytule (`TitleSeason`); późniejszy
+  sezon na tym samym progu nadpisuje sezon w tytule; tytuł tylko najwyższego progu sezonu. Nagroda na postać (odłamki i
+  kosmetyki kontowe, więc kilka postaci = kilka nagród). List pocztą zawsze (także bez odłamków); `pendingReward`
+  czyszczone dopiero po udanej wysyłce, ponowienie przy wejściu i co 5 min; list ma klucz `once` (postać, sezon), który
+  skrzynka pamięta 400 dni także po odbiorze, więc ponowienie po wyjściu w trakcie wysyłki nie daje drugiego listu.
+- **S128** Sala Sław Areny: top 10 obu trybów (8 tablic) poprzedniego sezonu raz na sezon (DataStore, zapis tylko gdy brak
+  klucza, `hofDelay` 15 min po zmianie sezonu, bez zapisu, gdy nikt nie grał); plansza dwustronna (przód 1v1, tył 3v3,
+  prostsze niż przełączanie co 20 s), cztery cokoły = zwycięzcy 1v1 przedziałów; stoi na wschód od północnego wejścia
+  Ristalle (`Town.fame.arena`), ten sam budynek co S124.
+- **S128** Zależności: `ArenaService.Deps` += `MailService`, `CosmeticService`, `InventoryService`, `NpcService`,
+  `TitleService` (grep: żaden od niego nie zależy); `SkillService` bierze `ArenaService` leniwie z `registry`.
+- **S128** Uproszczenie (zasada „Kolejność i priorytety”): po powrocie z serwera areny grupa się nie odtwarza
+  (`PartyService.Restore` nie powstał); członek drużyny z grupy dostaje komunikat `arena.team.partyLost`.
+- **S128** Tytuły i kosmetyki areny mają `wiki = false` (tytuły kupowane i tak poza `titles.json`, S123); publikacja w
+  S131. Na wiki zmieniła się tylko lista usług Mistrza Areny (`arenashop`) i wyszukiwarka mapy.
+- **S128** Zejście z piasku stojącego zawodnika w 3v3 = pokonany, `left` (bez Żetonów) i ławka; w 1v1 bez zmian
+  (przegrana runda, S126). Fallback 3v3 po `globalWait` jak w 1v1: tylko wpisy tego serwera, bez okna ratingu
+  (`formTeams3(..., anyRating)`), bez warunku „najstarszy zakłada”.

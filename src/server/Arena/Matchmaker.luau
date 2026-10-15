@@ -31,6 +31,9 @@
 -- Cost (MemoryStore limit: 1000 + 100 x players requests a minute per experience, create.roblox.com MemoryStore
 -- limits): one GetRangeAsync per waiting player every 3-5 s, one refresh per player every 30 s, record reads only
 -- around offers.
+-- S128 (3v3): a party team is one entry of its leader with the members' keys (`members`, `teamOf`); its offer goes
+-- to every member, a refusal of one member takes the team out (Logic/ArenaQueue.entryAfterTeam), the pairing goes
+-- through ArenaQueue.tryTeams (claims of every entry of the pairing, all given back on a failure).
 -- Nothing here reads purchases (DESIGN-17 §0.2, tests/paywall.spec).
 
 local HttpService = game:GetService("HttpService")
@@ -90,6 +93,7 @@ type Local = {
 	combat: boolean, -- seen in combat during the offer (no answer then is excused)
 	window: number?,
 	waitingLocal: boolean?,
+	members: { string }?, -- S128: the member keys of a party team (the leader first)
 }
 
 local Matchmaker = {}
@@ -102,6 +106,7 @@ local entries: { [string]: Local } = {}
 local ready: { ArenaRules.Pairing } = {}
 local avoid: { [string]: { [string]: number } } = {} -- key -> partner key -> until (server time)
 local partnerOf: { [string]: string } = {} -- local pairs handed to `take`: on a re-queue the partner is avoided
+local teamOf: { [string]: string } = {} -- S128: member key of a party team -> the team's entry key
 local errors = 0
 local offlineUntil = 0
 local forced = false
@@ -308,6 +313,45 @@ local function playerOf(st: Local): Player?
 	return need().playerOfKey(st.key)
 end
 
+-- S128: the keys of the fighters of an entry (a party team: its members).
+local function keysOf(st: Local): { string }
+	return st.members or { st.key }
+end
+
+-- S128: the online players of an entry by key.
+local function playersOf(st: Local): { [string]: Player }
+	local out: { [string]: Player } = {}
+	for _, key in keysOf(st) do
+		local player = need().playerOfKey(key)
+		if player then
+			out[key] = player
+		end
+	end
+	return out
+end
+
+local function membersOfTicket(ticket: ArenaRules.Ticket): { string }?
+	if not ticket.members then
+		return nil
+	end
+	local out = {}
+	for _, m in ticket.members do
+		table.insert(out, m.key)
+	end
+	return out
+end
+
+local function track(st: Local)
+	for _, key in (st.members or {}) :: { string } do
+		teamOf[key] = st.key
+	end
+end
+
+-- The entry of a key (a party team member finds its team).
+local function entryOf(key: string): Local?
+	return entries[teamOf[key] or key]
+end
+
 local function avoidOf(key: string): { [string]: boolean }
 	local out: { [string]: boolean } = {}
 	local list = avoid[key]
@@ -341,6 +385,11 @@ end
 local function forget(st: Local, removeEntry: boolean)
 	if entries[st.key] == st then
 		entries[st.key] = nil
+		for _, key in (st.members or {}) :: { string } do
+			if teamOf[key] == st.key then
+				teamOf[key] = nil
+			end
+		end
 	end
 	if removeEntry then
 		task.spawn(function()
@@ -376,35 +425,82 @@ local function opponentOf(record: ArenaQueue.MatchRecord, key: string): ArenaQue
 	return nil
 end
 
-local function offerView(st: Local, player: Player, record: ArenaQueue.MatchRecord): { [string]: any }?
-	local opp = opponentOf(record, st.key)
+-- S128: the side of a player key in a record (1v1: the spec sides of one entrant each).
+local function sideIn(record: ArenaQueue.MatchRecord, key: string): number?
+	for side, list in record.spec.sides do
+		for _, e in list do
+			if e.key == key then
+				return side
+			end
+		end
+	end
+	return nil
+end
+
+local function offerView(record: ArenaQueue.MatchRecord, player: Player, myKey: string): { [string]: any }?
+	local side = sideIn(record, myKey)
+	local opp: ArenaQueue.MatchPlayer? = nil
+	local oppKeys: { string } = {}
+	local mineNames, themNames = {}, {}
+	for s, list in record.spec.sides do
+		for _, e in list do
+			if s == side then
+				table.insert(mineNames, e.name)
+			else
+				table.insert(themNames, e.name)
+				table.insert(oppKeys, e.key)
+			end
+		end
+	end
+	for _, p in record.players do
+		if p.key == oppKeys[1] then
+			opp = p
+		end
+	end
+	opp = opp or opponentOf(record, myKey)
 	if not opp then
 		return nil
 	end
+	local o = opp :: ArenaQueue.MatchPlayer
 	local mine: ArenaQueue.MatchPlayer? = nil
 	for _, p in record.players do
-		if p.key == st.key then
+		if p.key == myKey then
 			mine = p
 		end
 	end
 	local state = need().state(player)
 	local day = Time.dayNumber(Clock.now())
+	local mode = Arena.mode(record.mode)
+	local field = if mode then mode.vsField else "vs"
+	local team = mode ~= nil and mode.teamSize > 1
+	local unrated, vs = false, 0
+	if state then
+		local against: { string } = if #oppKeys > 0 then oppKeys else { o.key }
+		for _, key in against do
+			if not ArenaRules.isRated(state, key, day, field) then
+				unrated = true
+			end
+			vs = math.max(vs, ArenaRules.vsCount(state, key, day, field))
+		end
+	end
 	return {
 		id = record.id,
 		expiresAt = record.acceptBy,
 		accepted = mine ~= nil and mine.ok == true,
 		mode = record.mode,
-		unrated = state ~= nil and not ArenaRules.isRated(state, opp.key, day),
-		vs = if state then ArenaRules.vsCount(state, opp.key, day) else 0,
-		opp = { name = opp.name, class = opp.class, level = opp.level, rating = opp.rating },
+		unrated = unrated,
+		vs = vs,
+		opp = { name = o.name, class = o.class, level = o.level, rating = o.rating },
 		scope = "global",
 		combat = need().inCombat(player),
+		mine = if team then mineNames else nil,
+		them = if team then themNames else nil,
 	}
 end
 
 local function onOffer(st: Local, record: ArenaQueue.MatchRecord)
-	local player = playerOf(st)
-	if not player then
+	local players = playersOf(st)
+	if next(players) == nil then
 		return
 	end
 	local first = st.state ~= "offer"
@@ -413,18 +509,25 @@ local function onOffer(st: Local, record: ArenaQueue.MatchRecord)
 	st.record = record
 	if first then
 		st.combat = false
-		need().offered(player)
 	end
-	need().setLive(player, "offer", offerView(st, player, record))
+	for key, player in players do
+		if first then
+			need().offered(player)
+		end
+		need().setLive(player, "offer", offerView(record, player, key))
+	end
 end
 
-local function backToQueue(st: Local, player: Player, toastKey: string?)
+local function backToQueue(st: Local, _player: Player, toastKey: string?)
 	local old = st.match
 	st.state = "wait"
 	st.match = nil
 	st.record = nil
 	st.waitingLocal = nil
-	need().setLive(player, "offer", nil)
+	local players = playersOf(st)
+	for _, p in players do
+		need().setLive(p, "offer", nil)
+	end
 	task.spawn(function()
 		local ok
 		if old then
@@ -438,35 +541,53 @@ local function backToQueue(st: Local, player: Player, toastKey: string?)
 		if not ok and entries[st.key] == st then
 			-- the store refused: out of the global queue (the player may join again, the local queue takes it)
 			forget(st, false)
-			need().dropped(player)
-			need().toast(player, "arena.net.offline", nil, "warning")
+			for _, p in players do
+				need().dropped(p)
+				need().toast(p, "arena.net.offline", nil, "warning")
+			end
 			return
 		end
 		if entries[st.key] == st then
-			need().requeued(player, st.ticket)
+			for _, p in players do
+				need().requeued(p, st.ticket)
+			end
 		end
 	end)
 	if toastKey then
-		need().toast(player, toastKey, nil, "info")
+		for _, p in players do
+			need().toast(p, toastKey, nil, "info")
+		end
 	end
+end
+
+-- S128: the whole entry out of the queue for good (every member's offer card closed).
+local function dropAll(st: Local)
+	for _, p in playersOf(st) do
+		need().setLive(p, "offer", nil)
+		need().dropped(p)
+	end
+	forget(st, true)
 end
 
 local function onGo(st: Local, record: ArenaQueue.MatchRecord)
 	if st.state == "go" then
 		return
 	end
-	local player = playerOf(st)
-	if not player or not record.code then
+	local players = playersOf(st)
+	if next(players) == nil or not record.code then
 		return
 	end
 	st.state = "go"
 	st.record = record
-	need().setLive(player, "offer", nil)
+	for _, p in players do
+		need().setLive(p, "offer", nil)
+	end
 	forget(st, true)
 	entries[st.key] = st -- kept while the teleport runs (leave() knows it is no refusal)
+	track(st)
 	local host = Matchmaker.host
 	if host then
-		host:start(record.spec, { [st.key] = player })
+		host:start(record.spec, players)
 	end
 end
 
@@ -486,14 +607,43 @@ local function apply(st: Local, record: any?)
 	local r = record :: ArenaQueue.MatchRecord
 	local member = false
 	for _, p in (if type(r.players) == "table" then r.players else {}) :: { ArenaQueue.MatchPlayer } do
-		if p.key == st.key then
+		if p.key == st.key or p.entry == st.key then
 			member = true
 		end
 	end
 	if not member then
 		return
 	end
-	local after = ArenaQueue.entryAfter(r, st.key, nil, t)
+	local after: ArenaQueue.After, guilty: { string }? = ArenaQueue.entryAfter(r, st.key, nil, t), nil
+	if st.members then
+		-- S128: a party team: one member's refusal takes the team out, the penalty only for the members who refused
+		-- or did not answer
+		after, guilty = ArenaQueue.entryAfterTeam(r, st.key, st.members, t)
+		if after == "penalty" and st.state == "offer" then
+			local players = playersOf(st)
+			local penalized = guilty or {}
+			dropAll(st)
+			local name = "?"
+			for _, p in r.players do
+				if p.key == penalized[1] then
+					name = p.name
+				end
+			end
+			for key, p in players do
+				if table.find(penalized, key) then
+					if r.reason == "timeout" and (st.combat or need().inCombat(p)) then
+						need().toast(p, "arena.net.cancelled.combat", nil, "warning")
+					else
+						penalize(key)
+						need().toast(p, "arena.penalty", { time = Time.format(Arena.QUEUE.declinePenalty) }, "warning")
+					end
+				else
+					need().toast(p, "arena.queue3.teamLeft", { name = name }, "warning")
+				end
+			end
+			return
+		end
+	end
 	if after == "wait" then
 		if r.state == "offered" then
 			onOffer(st, r)
@@ -506,9 +656,15 @@ local function apply(st: Local, record: any?)
 			local entry = ArenaQueue.newEntry(st.ticket, JOB)
 			task.spawn(st.backend.update, mapOf(st.ticket), st.key, ArenaQueue.release(r.id, entry), NET.entryTtl)
 		elseif st.state == "offer" then
-			local opp = opponentOf(r, st.key)
-			if opp and r.by == opp.key then
-				addAvoid(st.key, opp.key)
+			-- the entry of whoever refused is avoided for a while (S128: the team entry of a member)
+			if r.by and r.by ~= st.key then
+				local byEntry = r.by
+				for _, p in r.players do
+					if p.key == r.by and p.entry then
+						byEntry = p.entry
+					end
+				end
+				addAvoid(st.key, byEntry)
 			end
 			local key = if r.reason == "declined"
 					or r.reason == "timeout"
@@ -532,9 +688,7 @@ local function apply(st: Local, record: any?)
 		end
 	else -- remove
 		if st.state ~= "go" then
-			need().setLive(player, "offer", nil)
-			forget(st, true)
-			need().dropped(player)
+			dropAll(st) -- S128: every member of a party team
 		end
 	end
 end
@@ -561,9 +715,10 @@ local function pollWaiting(st: Local, t: number)
 		forget(st, true)
 		return
 	end
-	-- 1. the refresh (renews the ttl; a level-up into another bracket moves the entry with its old joinedAt)
+	-- 1. the refresh (renews the ttl; a level-up into another bracket moves the entry with its old joinedAt; S128: a
+	-- party team keeps the ratings of its ticket)
 	if t - st.refreshedAt >= NET.refreshEvery then
-		local info = need().refreshInfo(player, st.ticket.mode)
+		local info = if st.members then nil else need().refreshInfo(player, st.ticket.mode)
 		if info then
 			local e = st.ticket.entrant
 			e.rating, e.level, e.name = info.rating, info.level, info.name
@@ -610,7 +765,11 @@ local function pollWaiting(st: Local, t: number)
 		st.waitingLocal = waitingLocal
 		need().publish(player)
 	end
-	local status, result = ArenaQueue.tryPair(
+	local mode = Arena.mode(st.ticket.mode)
+	local teams = mode ~= nil and mode.teamSize > 1
+	-- S128: 3v3 forms teams
+	local try: typeof(ArenaQueue.tryPair) = if teams then ArenaQueue.tryTeams else ArenaQueue.tryPair
+	local status, result = try(
 		st.backend,
 		me,
 		NET,
@@ -651,7 +810,7 @@ local function pollWaiting(st: Local, t: number)
 			end
 		end
 		if ArenaQueue.localOffer(waited, NET.globalWait, #locals > 0) then
-			status, result = ArenaQueue.tryPair(st.backend, me, NET, t, function()
+			status, result = try(st.backend, me, NET, t, function()
 				return HttpService:GenerateGUID(false)
 			end, JOB, { avoid = avoidOf(st.key), fallback = true, locals = locals })
 		end
@@ -667,7 +826,7 @@ local function pollWaiting(st: Local, t: number)
 			end
 		end
 		for _, key in keys do
-			local other = entries[key]
+			local other = entryOf(key)
 			if other then
 				forget(other, false)
 			end
@@ -766,7 +925,7 @@ local function onMessage(data: any)
 				if ok and type(record) == "table" then
 					local mine = false
 					for _, p in record.players do
-						if p.key == st.key and p.jobId == JOB then
+						if (p.key == st.key or p.entry == st.key) and p.jobId == JOB then
 							mine = true
 						end
 					end
@@ -788,7 +947,7 @@ source.kind = "global"
 -- then tries the local queue).
 function source.join(_self: ArenaTypes.PairSource, ticket: ArenaRules.Ticket): (boolean, string?)
 	local key = ticket.entrant.key
-	local existing = entries[key]
+	local existing = entryOf(key)
 	if existing and existing.state ~= "go" then
 		return false, "arena.error.queued"
 	end
@@ -805,12 +964,12 @@ function source.join(_self: ArenaTypes.PairSource, ticket: ArenaRules.Ticket): (
 		state = "wait",
 		refreshedAt = now(),
 		combat = false,
+		members = membersOfTicket(ticket),
 	}
 	entries[key] = st
+	track(st)
 	if not put(st) then
-		if entries[key] == st then
-			entries[key] = nil
-		end
+		forget(st, false)
 		return false, nil
 	end
 	return true, nil
@@ -818,12 +977,22 @@ end
 
 -- Out of the queue. Never yields (CharacterLeaving): the store calls run in a task. Leaving during a global offer
 -- answers it with "left" (a penalty: the other player lost the match).
-function source.leave(_self: ArenaTypes.PairSource, key: string)
-	local st = entries[key]
+function source.leave(_self: ArenaTypes.PairSource, memberKey: string)
+	local st = entryOf(memberKey)
 	if not st then
 		return
 	end
-	entries[key] = nil
+	local key = memberKey -- S128: the refusal is the leaving member's (a team entry is st.key)
+	forget(st, false)
+	if st.members and st.state == "offer" then
+		-- S128: the other members of the party team lose the offer with it
+		for k, p in playersOf(st) do
+			if k ~= key then
+				need().setLive(p, "offer", nil)
+				need().dropped(p)
+			end
+		end
+	end
 	if st.state == "wait" then
 		forget(st, true)
 	elseif st.state == "offer" and st.match then
@@ -851,7 +1020,7 @@ function source.leave(_self: ArenaTypes.PairSource, key: string)
 end
 
 function source.has(_self: ArenaTypes.PairSource, key: string): boolean
-	local st = entries[key]
+	local st = entryOf(key)
 	return st ~= nil and st.state == "wait"
 end
 
@@ -874,8 +1043,10 @@ function source.requeue(_self: ArenaTypes.PairSource, ticket: ArenaRules.Ticket)
 		state = "wait",
 		refreshedAt = 0, -- written by the next poll
 		combat = false,
+		members = membersOfTicket(ticket),
 	}
 	entries[key] = st
+	track(st)
 	task.spawn(put, st)
 end
 
@@ -926,7 +1097,7 @@ end
 
 -- The answer to a global offer (ArenaRespond, the offer of scope "global"). ArenaService checked the fight rules.
 function Matchmaker.Respond(player: Player, key: string, accept: boolean): (boolean, string?)
-	local st = entries[key]
+	local st = entryOf(key)
 	if not st or st.state ~= "offer" or not st.match or not st.record then
 		return false, "arena.error.offer"
 	end
@@ -952,7 +1123,7 @@ end
 
 -- Whether `key` has a global offer now.
 function Matchmaker.HasOffer(key: string): boolean
-	local st = entries[key]
+	local st = entryOf(key)
 	return st ~= nil and (st.state == "offer" or st.state == "go")
 end
 
@@ -1017,15 +1188,30 @@ function Matchmaker.Start(d: Deps)
 	deps = d
 	Matchmaker.host = RemoteHost.new(function(spec: ArenaRules.MatchSpec, player: Player): RemoteHost.Ticket?
 		for key, st in entries do
-			if st.state == "go" and st.record and st.record.id == spec.id and d.playerOfKey(key) == player then
+			local mine: string? = nil
+			if st.state == "go" and st.record and st.record.id == spec.id then
+				for _, k in keysOf(st) do
+					if d.playerOfKey(k) == player then
+						mine = k
+					end
+				end
+			end
+			if mine then
 				local record = st.record :: ArenaQueue.MatchRecord
+				local slot = st.ticket.entrant.slot
+				for _, m in (st.ticket.members or {}) :: { ArenaRules.Entrant } do
+					if m.key == mine then
+						slot = m.slot
+					end
+				end
 				return {
 					code = record.code :: string,
 					data = {
 						serverMode = "arena",
 						arenaMatch = record.id,
 						returnJob = JOB,
-						slot = st.ticket.entrant.slot,
+						slot = slot,
+						team = if st.members then true else nil, -- S128: the party is lost on the way
 					},
 					onFail = function(p: Player, _reason: string)
 						-- the teleport failed: the match is off (no penalty), back to the queue with the old place
@@ -1033,7 +1219,7 @@ function Matchmaker.Start(d: Deps)
 							local ok, after, before = live.hupdate(
 								NET.matchMap,
 								ArenaQueue.matchKey(record.id),
-								ArenaQueue.cancel("teleport", key),
+								ArenaQueue.cancel("teleport", mine),
 								NET.matchTtl
 							)
 							if ok then

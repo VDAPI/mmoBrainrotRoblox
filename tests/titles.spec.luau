@@ -252,4 +252,39 @@ T.describe("Timed titles (S125)", function()
 	end)
 end)
 
+T.describe("S128 arena season titles", function()
+	T.it("unlocks a season title from character.arena.titles and names its season", function()
+		T.expect(Titles.isUnlocked({ level = 50 }, "arena_gold")).toBe(false)
+		local c: any = { level = 50, arena = { titles = { gold = "202611" } } }
+		T.expect(Titles.isUnlocked(c, "arena_gold")).toBe(true)
+		T.expect(Titles.isUnlocked(c, "arena_silver")).toBe(false)
+		T.expect(Titles.argsOf(c, "arena_gold")).toEqual({ season = "202611" })
+		T.expect(Titles.argsOf(c, "wanderer")).toBeNil()
+		T.expect(Titles.argsOf(c, "arena_master")).toBeNil()
+		local listed = Titles.unlocked(c)
+		T.expect(table.find(listed, "arena_gold") ~= nil).toBe(true)
+	end)
+
+	T.it("every season title carries {season} in both languages, a plain name and stays off the wiki", function()
+		local n = 0
+		for _, def in TitleData.list do
+			if def.seasonArg then
+				n += 1
+				for _, lang in { pl, en } do
+					local text = lang[def.nameKey]
+					T.expect({ def.id, text ~= nil and string.find(text, "{season}", 1, true) ~= nil }).toEqual({
+						def.id,
+						true,
+					})
+					T.expect({ def.id, lang[`{def.nameKey}.plain`] ~= nil }).toEqual({ def.id, true })
+				end
+			end
+			if def.req.kind == "arenaSeason" then
+				T.expect({ def.id, def.wiki, def.seasonArg }).toEqual({ def.id, false, true })
+			end
+		end
+		T.expect(n).toBe(5)
+	end)
+end)
+
 return nil

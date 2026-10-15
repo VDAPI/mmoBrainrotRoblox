@@ -53,6 +53,15 @@ local Config = {
 		penaltyMap = "ArenaPenalty", -- HashMap, key = the entry key "<userId>_<slot>" -> until (unix s)
 		topic = "ArenaMatch", -- MessagingService topic (DESIGN-17 §6)
 	},
+	-- S128: the arena Hall of Fame and the season rewards between servers (DESIGN-17 §0.4, §6). Technical, not balance
+	-- (not in CONFIG_KEYS); the rewards themselves are in Data/Arena.
+	Arena = {
+		hofStore = "ArenaHallOfFame", -- DataStore, key = the season "YYYYMM" -> the top of each arena board
+		hofCheck = 600, -- s between two checks whether the last season's record exists (with a random spread)
+		hofDelay = 900, -- s after the start of a season before the record is built (the last results arrive)
+		hofSize = 10, -- the top of each board kept (DESIGN-17 §6: top 10)
+		rewardRetry = 300, -- s between two attempts to mail a pending season reward
+	},
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
 	AuctionStoreName = "Vaelthorn_Auction_v1",

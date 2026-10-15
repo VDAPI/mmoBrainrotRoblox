@@ -481,8 +481,19 @@ end
 -- figure resting on a sword, the class emblem colour on a small shield, a bronze plaque). The writing surfaces are
 -- their own shell parts: `fameBoard` (one, both faces) and `famePlinth` (one per plinth, in Town.fame.plinths order);
 -- World/Layouts/city tags them and the client writes on them (FameBoardController).
-local function fameHall(ground: Ground): Build
-	local fame = Town.fame
+-- S128: the same build for the arena Hall of Fame (Town.fame.arena): its own surface tags and emblem colours.
+type FameSpec = {
+	board: { x: number, z: number, facing: number },
+	plinths: { { x: number, z: number, facing: number } },
+	boardTag: string,
+	plinthTag: string,
+	emblem: (i: number) -> string,
+	name: string,
+	tag: string,
+}
+
+local function fameHall(ground: Ground, spec: FameSpec): Build
+	local fame = spec
 	local b = fame.board
 	local bp = Blueprint.new(1240)
 	local y0 = ground(b.x, b.z)
@@ -494,7 +505,7 @@ local function fameHall(ground: Ground): Build
 		bp:box(1.2, 8, 1.2, x, 4, 0, o(STONE, "shell", { q = true }))
 		bp:box(1.6, 0.5, 1.6, x, 8.25, 0, o(Palette.ashlar[3]))
 	end
-	bp:box(12, 6, 0.4, 0, 5, 0, o(wood, "shell", { tag = "fameBoard", q = true, jitter = 0 }))
+	bp:box(12, 6, 0.4, 0, 5, 0, o(wood, "shell", { tag = spec.boardTag, q = true, jitter = 0 }))
 	for _, y in { 1.85, 8.15 } do
 		bp:box(12.8, 0.35, 0.6, 0, y, 0, o(BRONZE))
 	end
@@ -533,13 +544,9 @@ local function fameHall(ground: Ground): Build
 			0,
 			1.8,
 			-1.46,
-			o(BRONZE, "shell", { tag = "famePlinth", col = false, q = false, jitter = 0 })
+			o(BRONZE, "shell", { tag = spec.plinthTag, col = false, q = false, jitter = 0 })
 		)
-		local plinth = Leaderboards.TOWN.plinths[i]
-		local board = plinth and Leaderboards.get(plinth.board)
-		local class = board and board.class and Classes.get(board.class)
-		local color = if class then class.color else "#8A8A8A"
-		bp:box(0.8, 0.85, 0.12, 0, 2.95, -1.46, { c = color, m = "SmoothPlastic", lod = "detail", jitter = 0 })
+		bp:box(0.8, 0.85, 0.12, 0, 2.95, -1.46, { c = spec.emblem(i), m = "SmoothPlastic", lod = "detail", jitter = 0 })
 		-- the statue: feet, robe, torso, cloak, shoulders, head, arms, and a sword with its point on the pedestal
 		local top = 3.7
 		for _, x in { -0.3, 0.3 } do
@@ -557,7 +564,20 @@ local function fameHall(ground: Ground): Build
 		bp:add("ball", 0.25, 0.25, 0.25, 0.3, top + 2.7, -0.6, 0, 0, 0, o(statue, "fine"))
 		bp:pop()
 	end
-	return { name = "FameHall", bp = bp, at = { x = b.x, y = y0, z = b.z, rot = b.facing }, tag = "fame" }
+	return { name = spec.name, bp = bp, at = { x = b.x, y = y0, z = b.z, rot = b.facing }, tag = spec.tag }
+end
+
+-- S124: the class emblem of a Hall of Fame plinth (Data/Leaderboards.TOWN.plinths).
+local function classEmblem(i: number): string
+	local plinth = Leaderboards.TOWN.plinths[i]
+	local board = plinth and Leaderboards.get(plinth.board)
+	local class = board and board.class and Classes.get(board.class)
+	return if class then class.color else "#8A8A8A"
+end
+
+-- S128: the arena plinths carry the bronze of the arena (one per bracket).
+local function arenaEmblem(_i: number): string
+	return "#B07A4A"
 end
 
 function Props.all(city: any, ground: Ground): { Build }
@@ -571,7 +591,31 @@ function Props.all(city: any, ground: Ground): { Build }
 	end
 	table.insert(out, pillory(ground))
 	table.insert(out, questBoard(city, ground))
-	table.insert(out, fameHall(ground))
+	table.insert(
+		out,
+		fameHall(ground, {
+			board = Town.fame.board,
+			plinths = Town.fame.plinths,
+			boardTag = "fameBoard",
+			plinthTag = "famePlinth",
+			emblem = classEmblem,
+			name = "FameHall",
+			tag = "fame",
+		})
+	)
+	-- S128: the arena Hall of Fame by the Ristalle (World/Layouts/city tags it for ArenaService)
+	table.insert(
+		out,
+		fameHall(ground, {
+			board = Town.fame.arena.board,
+			plinths = Town.fame.arena.plinths,
+			boardTag = "arenaFameBoard",
+			plinthTag = "arenaFamePlinth",
+			emblem = arenaEmblem,
+			name = "ArenaFameHall",
+			tag = "arenaFame",
+		})
+	)
 	table.insert(out, cemetery(city, ground))
 	return out
 end

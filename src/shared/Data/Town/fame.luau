@@ -5,7 +5,8 @@
 -- like city.npcs (facing 180 looks into the market square). tests/town.spec checks open ground, distance and reach.
 
 export type Spot = { x: number, z: number, facing: number }
-export type Fame = { board: Spot, plinths: { Spot } }
+-- S128: `arena` = the arena Hall of Fame east of the Ristalle (board + one plinth per arena bracket, Data/Arena).
+export type Fame = { board: Spot, plinths: { Spot }, arena: { board: Spot, plinths: { Spot } } }
 
 local fame: Fame = {
 	-- on the north side of the market, east of the banker (56, -72) and west of the mouth of Ulica Leśna (84, -78)
@@ -16,6 +17,17 @@ local fame: Fame = {
 		{ x = 64, z = -56, facing = 180 },
 		{ x = 80, z = -56, facing = 180 },
 		{ x = 86, z = -56, facing = 180 },
+	},
+	-- S128 (DESIGN-17 §6): the arena Hall of Fame on the open ground east of the Ristalle's north gate, the board facing
+	-- east (the street side), one plinth per arena bracket two by two beside the view of the board
+	arena = {
+		board = { x = 234, z = -80, facing = 270 },
+		plinths = {
+			{ x = 243, z = -94, facing = 270 },
+			{ x = 243, z = -88, facing = 270 },
+			{ x = 243, z = -72, facing = 270 },
+			{ x = 243, z = -66, facing = 270 },
+		},
 	},
 }
 

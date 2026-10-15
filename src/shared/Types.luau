@@ -179,6 +179,12 @@ export type ArenaSeasonSummary = {
 	losses: number,
 	played: number,
 	rewarded: boolean,
+	-- S128: the 3v3 numbers of the closed season (nil in a summary written before S128)
+	rating3: number?,
+	peak3: number?,
+	wins3: number?,
+	losses3: number?,
+	played3: number?,
 }
 export type ArenaState = {
 	season: string, -- "YYYYMM" (UTC) of the numbers below; "" = never played
@@ -192,6 +198,16 @@ export type ArenaState = {
 	vs: { [string]: number }, -- "<userId>_<slot>" -> matches today against them; key "day" holds the day number
 	history: { ArenaHistoryEntry }, -- newest first, at most Data/Arena.LIMITS.history
 	last: ArenaSeasonSummary?, -- the season closed by the last soft reset (S128 pays rewards from it)
+	-- S128 (DESIGN-17 §6): team rating, tokens week, season titles and rewards.
+	rating3: number,
+	peak3: number,
+	wins3: number,
+	losses3: number,
+	played3: number,
+	vs3: { [string]: number }, -- 3v3 matches today against an opponent (same rule as vs)
+	tokensWeek: { week: number, n: number }, -- tokens earned in UTC week `week` (Logic/Time.weekNumber)
+	titles: { [string]: string }, -- [tier] = season id of the latest finished season at this tier (Data/Titles)
+	pendingReward: { season: string, tier: string, shards: number }?, -- the season mail still to send
 }
 -- S126: the runtime arena branch `arenaLive` (ArenaService; never saved): the queue, the offer, the match.
 export type ArenaLive = {
@@ -204,6 +220,7 @@ export type ArenaLive = {
 		waiting: number?,
 		window: number?,
 		waitingLocal: boolean?,
+		members: { { name: string, class: string, level: number } }?, -- S128: a party team in the 3v3 queue
 	}?,
 	penaltyUntil: number?,
 	-- S127: scope = where the match is played ("global": an arena server, "local": this server); fallback = a local
@@ -219,6 +236,9 @@ export type ArenaLive = {
 		scope: ("global" | "local")?,
 		fallback: boolean?,
 		combat: boolean?, -- S127: the player is in a fight now (Accept waits; no answer then costs nothing)
+		-- S128 (3v3): the names of the own team and of the opponents (opp = the first opponent)
+		mine: { string }?,
+		them: { string }?,
 	}?,
 	match: {
 		id: string,
@@ -232,6 +252,12 @@ export type ArenaLive = {
 		potionsLeft: number,
 		names: { { string } },
 		queued: number?, -- "waiting": the place in the line for the sand
+		-- S128 (3v3): the fighters of each side (hp at most 4 updates a second) and the own side
+		teams: { { { name: string, class: string, out: boolean, hp: number, maxHp: number } } }?,
+		myTeam: number?,
+		tokens: number?, -- S128: the Arena Tokens this match gave (the result screen)
+		tokensReason: string?,
+		winner: number?, -- S128: the winning side once the match is decided (0 = none)
 	}?,
 	transfer: ("toArena" | "home")?, -- S127: a teleport between servers is on its way (the client's overlay)
 	returnAt: number?, -- S127: on the arena server, the server time the way back starts

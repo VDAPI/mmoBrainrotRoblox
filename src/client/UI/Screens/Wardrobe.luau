@@ -23,6 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
+local Arena = require(ReplicatedStorage.Shared.Data.Arena)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -135,6 +136,12 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 		local year, month = Time.monthLabel(obtain.vipMonth)
 		local label = if year and month then string.format("%02d.%04d", month, year) else obtain.vipMonth
 		return Text.get(use, "wardrobe.obtain.vip", { month = label })
+	elseif obtain and obtain.arena == "shop" then
+		-- S128: the arena shop at the Arena Master (Arena Tokens)
+		local entry = Arena.shopOf(def.id)
+		return Text.get(use, "wardrobe.obtain.arena", { price = if entry then entry.price else 0 })
+	elseif obtain and obtain.arena == "season" then
+		return Text.get(use, "wardrobe.obtain.arenaSeason")
 	end
 	return ""
 end

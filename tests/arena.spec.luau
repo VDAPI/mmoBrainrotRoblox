@@ -121,7 +121,8 @@ T.describe("Arena data (S126)", function()
 			T.expect(string.find(mode.board, "_", 1, true)).toBeNil()
 		end
 		T.expect(Arena.mode("1v1")).toBe(MODE)
-		T.expect(Arena.mode("3v3")).toBeNil()
+		-- S128: the 3v3 mode exists (its own block below)
+		T.expect((Arena.mode("3v3") :: any).teamSize).toBe(3)
 		T.expect((Arena.bracket("40_59") :: any).min).toBe(40)
 	end)
 
@@ -276,6 +277,12 @@ T.describe("Arena rules (S126)", function()
 				losses = 3,
 				played = 10,
 				rewarded = false,
+				-- S128: the 3v3 numbers of the season (untouched here)
+				rating3 = 1000,
+				peak3 = 1000,
+				wins3 = 0,
+				losses3 = 0,
+				played3 = 0,
 			})
 			T.expect(s.last).toEqual(closed)
 			T.expect(s.tokens).toBe(40)
@@ -350,9 +357,8 @@ T.describe("Arena rules (S126)", function()
 		local _, r6 = ArenaRules.pair(rest, 6)
 		T.expect({ r6[1].entrant.key, r6[2].entrant.key, r6[3].entrant.key }).toEqual({ "y", "x", "z" })
 
-		T.expect(function()
-			ArenaRules.pair({}, 0, 3)
-		end).toThrow("S128")
+		-- S128: teamSize 3 forms teams (block "S128 teams")
+		T.expect(#(ArenaRules.pair({}, 0, 3))).toBe(0)
 	end)
 
 	T.it("checks who may join the queue, in a fixed order", function()
@@ -375,7 +381,8 @@ T.describe("Arena rules (S126)", function()
 			return base
 		end
 		T.expect(ArenaRules.canQueue(q())).toBeNil()
-		T.expect(ArenaRules.canQueue(q({ mode = "3v3" }))).toBe("arena.error.mode")
+		T.expect(ArenaRules.canQueue(q({ mode = "3v3" }))).toBeNil() -- S128
+		T.expect(ArenaRules.canQueue(q({ mode = "5v5" }))).toBe("arena.error.mode")
 		T.expect(ArenaRules.canQueue(q({ level = 19 }))).toBe("arena.error.level")
 		T.expect(ArenaRules.canQueue(q({ dead = true }))).toBe("arena.error.dead")
 		T.expect(ArenaRules.canQueue(q({ inDungeon = true }))).toBe("arena.error.dungeon")
@@ -562,5 +569,482 @@ T.describe("Arena rules (S126)", function()
 		local pairs = ArenaRules.pair({ ticket("a", 1, 1000, 0), ticket("b", 2, 1010, 0) }, 10)
 		T.expect(#pairs).toBe(1)
 		T.expect(pairs[1].fallback).toBeNil()
+	end)
+end)
+
+-- S128 (DESIGN-17 §6): 3v3, Arena Tokens, the arena shop and the season rewards ----------------------------------------
+
+local Blessings = require("../src/shared/Data/Blessings")
+local Cosmetics = require("../src/shared/Data/Cosmetics")
+local Items = require("../src/shared/Data/Items")
+local TitleData = require("../src/shared/Data/Titles")
+
+local MODE3 = Arena.MODES["3v3"]
+
+local function solo(key: string, userId: number, rating: number, joinedAt: number): ArenaRules.Ticket
+	return { entrant = entrant(key, userId, rating), mode = "3v3", bracket = "40_59", joinedAt = joinedAt }
+end
+
+local function team(key: string, userIds: { number }, ratings: { number }, joinedAt: number): ArenaRules.Ticket
+	local members = {}
+	for i, userId in userIds do
+		table.insert(members, entrant(`{key}{i}`, userId, ratings[i]))
+	end
+	local lead = table.clone(members[1])
+	lead.key = `{key}1`
+	lead.rating = Elo.sideRating(ratings)
+	return { entrant = lead, mode = "3v3", bracket = "40_59", joinedAt = joinedAt, members = members }
+end
+
+local function sideKeys(p: ArenaRules.Pairing?): { string }
+	if not p then
+		return {}
+	end
+	local out = {}
+	for _, side in p.sides do
+		local keys = {}
+		for _, t in side do
+			table.insert(keys, t.entrant.key)
+		end
+		table.insert(out, table.concat(keys, ","))
+	end
+	return out
+end
+
+T.describe("S128 arena data", function()
+	T.it("adds the 3v3 mode of the contract with its own fields", function()
+		T.expect(MODE3.teamSize).toBe(3)
+		T.expect(MODE3.roundTime).toBe(240)
+		T.expect(MODE3.winsNeeded).toBe(1)
+		T.expect(MODE3.maxRounds).toBe(1)
+		T.expect(MODE3.tieBreak).toBe("sumHpPct")
+		T.expect(MODE3.ratingField).toBe("rating3")
+		T.expect(MODE3.board).toBe("arena3")
+		T.expect(MODE3.potions).toBe(MODE.potions)
+		T.expect(Arena.MODE_ORDER).toEqual({ "1v1", "3v3" })
+		local template: any = ArenaRules.emptyState()
+		for _, mode in Arena.MODES do
+			for _, field in { mode.ratingField, mode.peakField, mode.winsField, mode.lossesField, mode.playedField } do
+				T.expect({ field, type(template[field]) }).toEqual({ field, "number" })
+			end
+			T.expect({ mode.vsField, type(template[mode.vsField]) }).toEqual({ mode.vsField, "table" })
+		end
+		T.expect({ MODE.peakField, MODE.winsField, MODE.lossesField, MODE.playedField, MODE.vsField }).toEqual({
+			"peak",
+			"wins",
+			"losses",
+			"played",
+			"vs",
+		})
+	end)
+
+	T.it("keeps the token numbers of the contract", function()
+		local t = Arena.TOKENS
+		T.expect(t.win1v1 > t.loss1v1 and t.loss1v1 > 0).toBe(true)
+		T.expect(t.win3v3 > t.loss3v3 and t.loss3v3 > 0).toBe(true)
+		T.expect({ t.win1v1, t.loss1v1, t.win3v3, t.loss3v3 }).toEqual({ 10, 4, 12, 5 })
+		T.expect(t.firstMatches).toBe(3)
+		T.expect(t.firstMul).toBe(2)
+		T.expect(Arena.tokensWeekCap).toBe(600)
+	end)
+
+	T.it("sells only arena cosmetics, blessings up to Heroic and Return Stones", function()
+		local keys: { [string]: boolean } = {}
+		local blessings: { [string]: boolean } = {}
+		for _, entry in Arena.SHOP do
+			T.expect({ entry.key, keys[entry.key] }).toEqual({ entry.key, nil })
+			keys[entry.key] = true
+			T.expect({ entry.key, entry.price > 0 and entry.price % 1 == 0 }).toEqual({ entry.key, true })
+			T.expect(Arena.shopByKey[entry.key]).toBe(entry)
+			if entry.kind == "item" then
+				T.expect({ entry.id, Items.get(entry.id) ~= nil }).toEqual({ entry.id, true })
+				local line, rarity = string.match(entry.id, "^blessing_(%a+)_(%d)$")
+				if line then
+					T.expect(tonumber(rarity) :: number <= Arena.SHOP_MAX_BLESSING_RARITY).toBe(true)
+					blessings[entry.id] = true
+				else
+					T.expect(entry.id).toBe("stone_return")
+				end
+			else
+				local def = Cosmetics.get(entry.id)
+				T.expect({ entry.id, def and def.obtain and def.obtain.arena }).toEqual({ entry.id, "shop" })
+			end
+		end
+		T.expect(Arena.SHOP_MAX_BLESSING_RARITY).toBe(3)
+		for _, line in Blessings.lines do
+			for rarity = 1, 3 do
+				T.expect({ line, rarity, blessings[`blessing_{line}_{rarity}`] }).toEqual({ line, rarity, true })
+			end
+		end
+		-- every shop cosmetic of the arena is in the shop
+		for _, def in Cosmetics.list do
+			if def.obtain and def.obtain.arena == "shop" then
+				local entry = Arena.shopOf(def.id)
+				T.expect({ def.id, entry and entry.kind }).toEqual({ def.id, "cosmetic" })
+			end
+		end
+	end)
+
+	T.it("lists the season rewards of every tier, growing with the tier", function()
+		local previous: { string } = {}
+		for _, tier in Arena.TIERS do
+			local reward = Arena.SEASON_REWARDS[tier.id]
+			T.expect({ tier.id, reward ~= nil }).toEqual({ tier.id, true })
+			local title = TitleData.get(reward.title)
+			T.expect({ tier.id, title and title.req.kind, title and (title.req :: any).tier }).toEqual({
+				tier.id,
+				"arenaSeason",
+				tier.id,
+			})
+			local cosmetics = reward.cosmetics or {}
+			for _, id in cosmetics do
+				local def = Cosmetics.get(id)
+				T.expect({ id, def and def.obtain and def.obtain.arena }).toEqual({ id, "season" })
+			end
+			for _, id in previous do
+				T.expect({ tier.id, id, table.find(cosmetics, id) ~= nil }).toEqual({ tier.id, id, true })
+			end
+			previous = cosmetics
+		end
+		local shards = {}
+		for _, tier in Arena.TIERS do
+			table.insert(shards, Arena.SEASON_REWARDS[tier.id].shards or 0)
+		end
+		T.expect(shards).toEqual({ 0, 0, 0, 150, 300 })
+		T.expect(Arena.seasonMinPlayed).toBe(5)
+	end)
+
+	T.it("seats each 3v3 side on the sand and benches it on its own stand", function()
+		for _, id in { "ristalle", "pit" } do
+			local venue = Arena.venue(id) :: Arena.Venue
+			for side = 1, 2 do
+				T.expect(#venue.sides[side]).toBe(3)
+				for _, p in venue.sides[side] do
+					T.expect({ id, ArenaRules.inside(venue, p[1], p[2]) }).toEqual({ id, true })
+				end
+				local i = ArenaRules.benchIndex(venue, side)
+				local x, z = ArenaRules.standSpot(venue, i)
+				T.expect(ArenaRules.inside(venue, x, z)).toBe(false)
+				-- the bench is on the side's half (side 1 west, side 2 east)
+				local sx = venue.sides[side][1][1] - venue.center[1]
+				T.expect({ id, side, (x - venue.center[1]) * sx > 0 }).toEqual({ id, side, true })
+			end
+		end
+	end)
+end)
+
+T.describe("S128 teams", function()
+	T.it("forms teams of solo tickets and pairs party teams, never splitting one", function()
+		local six = {}
+		for i = 1, 6 do
+			table.insert(six, solo(`s{i}`, i, 1000 + i, i))
+		end
+		local p1 = ArenaRules.formTeams3(six, 10)
+		T.expect(sideKeys(p1)).toEqual({ "s1,s2,s3", "s4,s5,s6" })
+		local pairs, rest = ArenaRules.pair(six, 10, 3)
+		T.expect(#pairs).toBe(1)
+		T.expect(#rest).toBe(0)
+
+		-- a party team and three solo
+		local mixed = { team("t", { 11, 12, 13 }, { 1000, 1000, 1000 }, 0), solo("a", 1, 1000, 1) }
+		table.insert(mixed, solo("b", 2, 1000, 2))
+		table.insert(mixed, solo("c", 3, 1000, 3))
+		T.expect(sideKeys(ArenaRules.formTeams3(mixed, 5))).toEqual({ "t1", "a,b,c" })
+
+		-- two party teams
+		local two =
+			{ team("t", { 11, 12, 13 }, { 1000, 1000, 1000 }, 0), team("u", { 21, 22, 23 }, { 1050, 990, 1000 }, 1) }
+		T.expect(sideKeys(ArenaRules.formTeams3(two, 5))).toEqual({ "t1", "u1" })
+
+		-- five solo: nothing
+		local five = {}
+		for i = 1, 5 do
+			table.insert(five, solo(`s{i}`, i, 1000, i))
+		end
+		T.expect(ArenaRules.formTeams3(five, 10)).toBeNil()
+
+		-- a team is never split: team + 2 solo + team = team vs team, the solo wait
+		local split = {
+			solo("a", 1, 1000, 0),
+			solo("b", 2, 1000, 1),
+			team("t", { 11, 12, 13 }, { 1000, 1000, 1000 }, 2),
+			team("u", { 21, 22, 23 }, { 1000, 1000, 1000 }, 3),
+		}
+		local p2, r2 = ArenaRules.pair(split, 5, 3)
+		T.expect(sideKeys(p2[1])).toEqual({ "t1", "u1" })
+		T.expect(#r2).toBe(2)
+	end)
+
+	T.it("waits for the window and is deterministic", function()
+		local far = {}
+		for i = 1, 3 do
+			table.insert(far, solo(`a{i}`, i, 1000, 0))
+		end
+		for i = 1, 3 do
+			table.insert(far, solo(`b{i}`, 10 + i, 1250, 0))
+		end
+		T.expect(ArenaRules.formTeams3(far, 0)).toBeNil()
+		-- 30 s later the window is 300: the high three join the low ones' mean
+		local later = ArenaRules.formTeams3(far, 30)
+		T.expect(#sideKeys(later)).toBe(2)
+		local shuffled = { far[4], far[2], far[6], far[1], far[5], far[3] }
+		T.expect(sideKeys(ArenaRules.formTeams3(shuffled, 30))).toEqual(sideKeys(later))
+		-- no ticket in both teams, no user twice
+		local seen: { [number]: boolean } = {}
+		for _, side in (later :: ArenaRules.Pairing).sides do
+			for _, t in side do
+				T.expect(seen[t.entrant.userId]).toBeNil()
+				seen[t.entrant.userId] = true
+			end
+		end
+		-- one user twice in the queue is never twice in a match
+		local same = {}
+		for i = 1, 6 do
+			table.insert(same, solo(`x{i}`, if i <= 2 then 1 else i, 1000, i))
+		end
+		T.expect(ArenaRules.formTeams3(same, 10)).toBeNil()
+		-- one bracket only
+		local mixedBrackets = { solo("a", 1, 1000, 0), solo("b", 2, 1000, 0) }
+		mixedBrackets[2].bracket = "60_79"
+		T.expect(function()
+			ArenaRules.formTeams3(mixedBrackets, 0)
+		end).toThrow("one bracket")
+		-- pair groups by bracket
+		local p, r = ArenaRules.pair(mixedBrackets, 0, 3)
+		T.expect(#p).toBe(0)
+		T.expect(#r).toBe(2)
+	end)
+
+	T.it("decides a 3v3 round and the match in one round", function()
+		local a = { fighter("a1", 0.5), fighter("a2", 0, true), fighter("a3", 0, false, true) }
+		local b = { fighter("b1", 0, true), fighter("b2", 0, true), fighter("b3", 0, true) }
+		T.expect(ArenaRules.roundOutcome({ a, b }, false, MODE3.tieBreak)).toEqual({
+			winner = 1,
+			reason = "ko",
+			draw = false,
+		})
+		local c = { fighter("a1", 0.5), fighter("a2", 0.5), fighter("a3", 0.5) }
+		local d = { fighter("b1", 0.4), fighter("b2", 0.4), fighter("b3", 0.4) }
+		T.expect((ArenaRules.roundOutcome({ c, d }, true, MODE3.tieBreak) :: any).winner).toBe(1)
+		-- a downed fighter counts 0 at the end of the time
+		local e = { fighter("a1", 1, true), fighter("a2", 0.6), fighter("a3", 0.6) }
+		local f = { fighter("b1", 0.5), fighter("b2", 0.4), fighter("b3", 0.4) }
+		T.expect((ArenaRules.roundOutcome({ e, f }, true, MODE3.tieBreak) :: any).winner).toBe(2)
+		local g = { fighter("a1", 0.5), fighter("a2", 0.5), fighter("a3", 0.5) }
+		T.expect((ArenaRules.roundOutcome({ c, g }, true, MODE3.tieBreak) :: any).draw).toBe(true)
+		local none = { fighter("a1", 0, true), fighter("a2", 0, true), fighter("a3", 0, true) }
+		T.expect((ArenaRules.roundOutcome({ none, b }, false, MODE3.tieBreak) :: any).draw).toBe(true)
+		local m = ArenaRules.matchOutcome({ 1, 0 }, 1, MODE3) :: ArenaRules.MatchResult
+		T.expect({ m.winner, m.reason }).toEqual({ 1, "score" } :: any)
+		local dr = ArenaRules.matchOutcome({ 0, 0 }, 1, MODE3) :: ArenaRules.MatchResult
+		T.expect({ dr.winner, dr.reason }).toEqual({ nil, "draw" } :: any)
+	end)
+
+	T.it("lets a solo player or a full party team queue", function()
+		local function q(over: { [string]: any }?): ArenaRules.Queue3Input
+			local base: any = { inParty = false, partySize = 0, isLeader = false, sameBracket = true, anyBusy = false }
+			for k, v in over or {} do
+				base[k] = v
+			end
+			return base
+		end
+		T.expect({ ArenaRules.canQueue3(q()) }).toEqual({ true } :: any)
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 3, isLeader = true })) })
+			.toEqual({ true } :: any)
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 3 })) })
+			.toEqual({ false, "arena.error.notLeader" })
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 2, isLeader = true })) }).toEqual({
+			false,
+			"arena.error.party3",
+		})
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 4, isLeader = true })) }).toEqual({
+			false,
+			"arena.error.party3",
+		})
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 3, isLeader = true, sameBracket = false })) })
+			.toEqual({ false, "arena.error.partyBracket" })
+		T.expect({ ArenaRules.canQueue3(q({ inParty = true, partySize = 3, isLeader = true, anyBusy = true })) })
+			.toEqual({ false, "arena.error.partyBusy" })
+		for _, key in
+			{ "arena.error.party3", "arena.error.notLeader", "arena.error.partyBracket", "arena.error.partyBusy" }
+		do
+			T.expect({ key, pl[key] ~= nil and en[key] ~= nil }).toEqual({ key, true })
+		end
+	end)
+
+	T.it("writes a 3v3 result into the team fields only", function()
+		local s0 = state()
+		local before = deepCopy(s0)
+		local opp = Elo.sideRating({ 1000, 1000, 1000 })
+		local s1: any, r1 =
+			ArenaRules.applyResult(s0, input({ mode = MODE3, oppKeys = { "7_1", "8_1", "9_1" }, oppRating = opp }))
+		T.expect(s0).toEqual(before)
+		T.expect(r1).toEqual({ delta = 24, rated = true })
+		T.expect({ s1.rating3, s1.wins3, s1.played3, s1.peak3 }).toEqual({ 1024, 1, 1, 1024 })
+		T.expect({ s1.rating, s1.wins, s1.played, s1.peak }).toEqual({ 1000, 0, 0, 1000 })
+		T.expect(s1.vs).toEqual({ day = 0 })
+		T.expect(s1.vs3).toEqual({ day = DAY, ["7_1"] = 1, ["8_1"] = 1, ["9_1"] = 1 })
+		T.expect(s1.daily).toEqual({ day = DAY, n = 1 })
+		-- a teammate past newGames gets K 32
+		local vet = state({ played3 = 12 })
+		local _, rv = ArenaRules.applyResult(vet, input({ mode = MODE3, oppKeys = { "7_1" } }))
+		T.expect(rv.delta).toBe(16)
+		T.expect(rv.delta < r1.delta).toBe(true)
+		-- the fourth match today against one of them is unrated
+		local s = s0
+		for _ = 1, 3 do
+			s = ArenaRules.applyResult(s, input({ mode = MODE3, oppKeys = { "7_1", "8_1", "9_1" } }))
+		end
+		local s4: any, r4 = ArenaRules.applyResult(s, input({ mode = MODE3, oppKeys = { "9_1", "5_1", "6_1" } }))
+		T.expect(r4.rated).toBe(false)
+		T.expect(s4.played3).toBe((s :: any).played3)
+		-- the 1v1 counters do not see the 3v3 opponents
+		T.expect(ArenaRules.isRated(s4, "9_1", DAY)).toBe(true)
+		T.expect(ArenaRules.isRated(s4, "9_1", DAY, "vs3")).toBe(false)
+		-- the floor
+		local low: any = ArenaRules.applyResult(
+			state({ rating3 = 5, played3 = 30 }),
+			input({ mode = MODE3, score = 0, oppRating = 5 })
+		)
+		T.expect(low.rating3).toBe(0)
+	end)
+end)
+
+T.describe("S128 tokens", function()
+	T.it("pays a match with the daily bonus, the cap and no pay for leaving or a farmed opponent", function()
+		local function tf(...): { any }
+			return { ArenaRules.tokensFor(...) }
+		end
+		T.expect(tf("1v1", "win", 0, 0, true, false)).toEqual({ 20, "arena.tokens.bonus" })
+		T.expect(tf("1v1", "win", 2, 0, true, false)).toEqual({ 20, "arena.tokens.bonus" })
+		T.expect(tf("1v1", "win", 3, 0, true, false)).toEqual({ 10 } :: any)
+		T.expect(tf("1v1", "loss", 5, 0, true, false)).toEqual({ 4 } :: any)
+		T.expect(tf("3v3", "loss", 5, 0, true, false)).toEqual({ 5 } :: any)
+		T.expect(tf("3v3", "loss", 0, 0, true, false)).toEqual({ 10, "arena.tokens.bonus" })
+		T.expect(tf("3v3", "win", 4, 0, true, false)).toEqual({ 12 } :: any)
+		T.expect(tf("3v3", "draw", 4, 0, true, false)).toEqual({ 5 } :: any)
+		T.expect(tf("1v1", "draw", 4, 0, true, false)).toEqual({ 4 } :: any)
+		T.expect(tf("1v1", "loss", 0, 0, true, true)).toEqual({ 0, "arena.tokens.left" })
+		T.expect(tf("1v1", "win", 0, 0, false, false)).toEqual({ 0, "arena.tokens.sameOpponent" })
+		T.expect(tf("1v1", "win", 0, 595, true, false)).toEqual({ 5, "arena.tokens.cappedPart" })
+		T.expect(tf("1v1", "win", 0, 600, true, false)).toEqual({ 0, "arena.tokens.capped" })
+		for _, key in
+			{
+				"arena.tokens.bonus",
+				"arena.tokens.left",
+				"arena.tokens.sameOpponent",
+				"arena.tokens.capped",
+				"arena.tokens.cappedPart",
+				"arena.tokens.gain",
+			}
+		do
+			T.expect({ key, pl[key] ~= nil and en[key] ~= nil }).toEqual({ key, true })
+		end
+	end)
+
+	T.it("adds tokens on a copy and starts a new week on Monday 00:00 UTC", function()
+		local week = 2965
+		local monday = Time.weekStart(week)
+		local s0 = state({ tokens = 50, tokensWeek = { week = week - 1, n = 590 } })
+		local before = deepCopy(s0)
+		local s1, balance = ArenaRules.addTokens(s0, 20, monday)
+		T.expect(s0).toEqual(before)
+		T.expect(balance).toBe(70)
+		T.expect(s1.tokensWeek).toEqual({ week = week, n = 20 })
+		local s2 = ArenaRules.addTokens(s1, 5, monday + 3600)
+		T.expect(s2.tokensWeek).toEqual({ week = week, n = 25 })
+		T.expect(ArenaRules.weekTokens(s2, monday - 1)).toBe(0)
+		T.expect(ArenaRules.weekTokens(s2, monday + 7 * 86400 - 1)).toBe(25)
+		T.expect(ArenaRules.weekTokens(s2, monday + 7 * 86400)).toBe(0)
+		T.expect(ArenaRules.weekOf(monday - 1)).toBe(week - 1)
+		T.expect(ArenaRules.weekOf(monday)).toBe(week)
+		-- the daily counter before a match
+		T.expect(ArenaRules.dailyCount(state({ daily = { day = DAY, n = 2 } }), DAY)).toBe(2)
+		T.expect(ArenaRules.dailyCount(state({ daily = { day = DAY - 1, n = 7 } }), DAY)).toBe(0)
+	end)
+end)
+
+T.describe("S128 season rewards", function()
+	local function last(over: { [string]: any }): ArenaRules.ArenaSeasonSummary
+		local base: any = {
+			season = "202611",
+			rating = 1000,
+			peak = 1000,
+			wins = 0,
+			losses = 0,
+			played = 0,
+			rewarded = false,
+			rating3 = 1000,
+			peak3 = 1000,
+			wins3 = 0,
+			losses3 = 0,
+			played3 = 0,
+		}
+		for k, v in over do
+			base[k] = v
+		end
+		return base
+	end
+
+	T.it("rewards the better peak of the season once, with a minimum of matches", function()
+		T.expect(ArenaRules.seasonTier(1050, 1320)).toBe("gold")
+		T.expect(ArenaRules.seasonReward(nil)).toBeNil()
+		T.expect(ArenaRules.seasonReward(last({ played = 2, played3 = 2 }))).toBeNil()
+		T.expect(ArenaRules.seasonReward(last({ played = 9, rewarded = true }))).toBeNil()
+		local master = ArenaRules.seasonReward(last({ played = 3, played3 = 2, peak3 = 1720 })) :: any
+		T.expect(master.tier).toBe("master")
+		T.expect(master.shards).toBe(300)
+		T.expect(master.title).toBe("arena_master")
+		T.expect(master.season).toBe("202611")
+		local bronze = ArenaRules.seasonReward(last({ played = 5 })) :: any
+		T.expect({ bronze.tier, bronze.shards, #bronze.cosmetics }).toEqual({ "bronze", 0, 0 })
+		-- a summary written before S128 (no 3v3 fields)
+		local old: any =
+			{ season = "202610", rating = 1310, peak = 1350, wins = 5, losses = 1, played = 6, rewarded = false }
+		T.expect((ArenaRules.seasonReward(old) :: any).tier).toBe("gold")
+		T.expect({ ArenaRules.seasonLabel("202611") }).toEqual({ "11", "2026" })
+		T.expect({ ArenaRules.seasonLabel("202601") }).toEqual({ "01", "2026" })
+		T.expect(ArenaRules.prevSeason("202601")).toBe("202512")
+		T.expect(ArenaRules.prevSeason("202611")).toBe("202610")
+	end)
+
+	T.it("soft resets the 3v3 rating and closes a season of 3v3 matches only", function()
+		local old = state({ rating3 = 1400, peak3 = 1450, wins3 = 4, losses3 = 2, played3 = 6, played = 0 })
+		local s: any, closed = ArenaRules.rollSeason(old, "202612")
+		T.expect(s.rating3).toBe(1200)
+		T.expect(s.peak3).toBe(1200)
+		T.expect({ s.played3, s.wins3, s.losses3 }).toEqual({ 0, 0, 0 })
+		T.expect(closed ~= nil).toBe(true)
+		T.expect({ (closed :: any).peak3, (closed :: any).played3 }).toEqual({ 1450, 6 })
+		T.expect((s.last :: any).season).toBe("202611")
+		-- titles and the pending reward survive a roll
+		local kept: any = ArenaRules.rollSeason(
+			state({ titles = { gold = "202610" }, pendingReward = { season = "202610", tier = "gold", shards = 0 } }),
+			"202612"
+		)
+		T.expect(kept.titles).toEqual({ gold = "202610" })
+		T.expect(kept.pendingReward).toEqual({ season = "202610", tier = "gold", shards = 0 })
+	end)
+end)
+
+T.describe("S128 arena shop", function()
+	T.it("checks a purchase like the server", function()
+		local entry = Arena.shopByKey["aura_gladiator"]
+		local char = { level = 45, arena = state({ tokens = entry.price }) }
+		T.expect({ ArenaRules.canBuyShop(entry, char, {}) }).toEqual({ true } :: any)
+		T.expect({ ArenaRules.canBuyShop(entry, { level = 45, arena = state({ tokens = entry.price - 1 }) }, {}) })
+			.toEqual({ false, "arena.shop.error.tokens" })
+		T.expect({ ArenaRules.canBuyShop(entry, char, { aura_gladiator = true }) }).toEqual({
+			false,
+			"arena.shop.error.owned",
+		})
+		T.expect({ ArenaRules.canBuyShop(entry, { level = 19, arena = state({ tokens = 9999 }) }, {}) }).toEqual({
+			false,
+			"arena.shop.error.level",
+		})
+		T.expect({ ArenaRules.canBuyShop(Arena.shopByKey["nope"], char, {}) }).toEqual({ false, "error.badRequest" })
+		for _, key in { "arena.shop.error.tokens", "arena.shop.error.owned", "arena.shop.error.level" } do
+			T.expect({ key, pl[key] ~= nil and en[key] ~= nil }).toEqual({ key, true })
+		end
 	end)
 end)

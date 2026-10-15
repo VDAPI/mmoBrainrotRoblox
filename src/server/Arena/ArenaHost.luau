@@ -12,6 +12,9 @@
 --   5. after the result (ArenaService.MatchFinished): the record "done", the return in returnDelay s (or "Return now",
 --      ArenaReturnNow), Arena/Transfer.home: the server the player came from, any public one, a kick at last;
 --   6. the server closing (an update): the match stops without a rating, the record "cancelled" / "void", all home.
+-- S128 (3v3): six fighters on their own start points (side and index of the spec); after arriveTimeout the match
+-- starts when every side has somebody here (the missing ones get the decline penalty and no result, DECYZJE S128),
+-- else it is cancelled without a result.
 -- Travel (portals, stones, the free return) is refused here through TravelService.AddGuard; Arena/Match still moves
 -- the fighters with TravelService.TeleportToMap. Nothing here reads purchases (tests/paywall.spec).
 
@@ -77,18 +80,18 @@ function ArenaHost.start(d: Deps)
 		return "arena.net.error.notHere"
 	end)
 
-	local function sideOf(key: string): number
+	local function sideOf(key: string): (number, number)
 		local r = record
 		if r then
 			for side, list in r.spec.sides do
-				for _, entrant in list do
+				for index, entrant in list do
 					if entrant.key == key then
-						return side
+						return side, index
 					end
 				end
 			end
 		end
-		return 1
+		return 1, 1
 	end
 
 	local function keyOfUser(player: Player, slot: number): string
@@ -96,7 +99,8 @@ function ArenaHost.start(d: Deps)
 	end
 
 	local function startOf(key: string): CFrame
-		return Venues.get(VENUE):spawnCFrame(sideOf(key), 1)
+		local side, index = sideOf(key)
+		return Venues.get(VENUE):spawnCFrame(side, index)
 	end
 
 	-- A death respawn or a fresh model on this server goes to the own start point (or the pit's way out).
@@ -174,12 +178,14 @@ function ArenaHost.start(d: Deps)
 		return out
 	end
 
-	local function startMatch()
+	local function startMatch(absent: { [string]: boolean }?)
 		local r = record :: ArenaQueue.MatchRecord
 		phase = "live"
 		write(ArenaQueue.goLive())
 		local spec = table.clone(r.spec)
 		local day = Time.dayNumber(Clock.now())
+		local mode = Arena.mode(spec.mode)
+		local vsField = if mode then mode.vsField else "vs" -- S128: the mode's own counter
 		local unrated: { [string]: boolean } = {}
 		for side, list in spec.sides do
 			for _, entrant in list do
@@ -189,7 +195,7 @@ function ArenaHost.start(d: Deps)
 					for other, olist in spec.sides do
 						if other ~= side then
 							for _, opp in olist do
-								if not ArenaRules.isRated(state, opp.key, day) then
+								if not ArenaRules.isRated(state, opp.key, day, vsField) then
 									unrated[entrant.key] = true
 								end
 							end
@@ -199,7 +205,7 @@ function ArenaHost.start(d: Deps)
 			end
 		end
 		spec.unrated = unrated
-		local ok, err = ArenaService.RunMatch(spec, VENUE)
+		local ok, err = ArenaService.RunMatch(spec, VENUE, absent)
 		if not ok then
 			log:warn("match %s did not start: %s", id, tostring(err))
 			phase = "done"
@@ -208,7 +214,46 @@ function ArenaHost.start(d: Deps)
 		end
 	end
 
+	local function penalizeMissing(missing: { string })
+		for _, key in missing do
+			local untilAt = now() + Arena.QUEUE.declinePenalty
+			d.backend.hupdate(NET.penaltyMap, key, function(cur: any?): any?
+				return math.max(tonumber(cur) or 0, untilAt)
+			end, math.max(1, math.floor(untilAt - now())))
+		end
+	end
+
+	-- S128: a team match goes on without the missing ones when every side has a fighter here.
+	local function startShort(missing: { string }): boolean
+		local r = record
+		local mode = if r then Arena.mode(r.mode) else nil
+		if not r or not mode or mode.teamSize <= 1 then
+			return false
+		end
+		local absent: { [string]: boolean } = {}
+		for _, key in missing do
+			absent[key] = true
+		end
+		for _, list in r.spec.sides do
+			local any = false
+			for _, entrant in list do
+				if not absent[entrant.key] then
+					any = true
+				end
+			end
+			if not any then
+				return false
+			end
+		end
+		penalizeMissing(missing)
+		startMatch(absent)
+		return true
+	end
+
 	local function noShow(missing: { string })
+		if startShort(missing) then
+			return
+		end
 		phase = "done"
 		local r = record
 		-- a player whose own server reported a failed teleport is not to blame

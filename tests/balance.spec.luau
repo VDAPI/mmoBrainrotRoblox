@@ -2264,3 +2264,46 @@ T.describe("Full income (S109)", function()
 			.toBeNear(B.economyAt("Warrior", 50).incomePerHour + B.extrasPerHour("Warrior", 50).total, 1e-6)
 	end)
 end)
+
+T.describe("S128 arena tokens", function()
+	local t = B.arenaTokens()
+	local byId = {}
+	for _, p in t.profiles do
+		byId[p.id] = p
+	end
+	local days: { [string]: number } = {}
+	for _, row in t.shop do
+		days[row.key] = row.days
+	end
+
+	T.it("pays a normal player well below the week cap", function()
+		local three = byId["1v1x3"]
+		T.expect(three.perDay).toBeNear(42, 1e-9)
+		T.expect(three.perWeek).toBeNear(294, 1e-9)
+		T.expect(byId["1v1x10"].perDay).toBeNear(91, 1e-9)
+		T.expect(byId["1v1x10"].capDays > 6 and byId["1v1x10"].capDays < 7).toBe(true)
+		-- the cap only stops farming: at least twice the week of 3 matches a day
+		T.expect(t.cap >= 2 * three.perWeek).toBe(true)
+		T.expect(byId["3v3x3"].perDay > three.perDay).toBe(true)
+	end)
+
+	T.it("prices the shop in days of 3 matches a day", function()
+		local week = 7
+		T.expect(days.aura_gladiator >= 3 * week and days.aura_gladiator <= 6 * week).toBe(true)
+		for _, key in { "frame_gladiator", "chatframe_gladiator", "title_ironwill", "title_sandveteran" } do
+			T.expect({ key, days[key] >= 5 and days[key] <= 15 }).toEqual({ key, true })
+		end
+		for _, row in t.shop do
+			if string.match(row.key, "^blessing_%a+_3$") then
+				T.expect({ row.key, row.days <= 2 }).toEqual({ row.key, true })
+			end
+		end
+		T.expect(days.stone_return_5 <= 0.5).toBe(true)
+		-- the gold column compares with the merchant's price (5 stones × 20), not the sell value
+		for _, row in t.shop do
+			if row.key == "stone_return_5" then
+				T.expect(row.gold).toBe(100)
+			end
+		end
+	end)
+end)

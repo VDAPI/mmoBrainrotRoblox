@@ -16,6 +16,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local TitleText = require(script.Parent.Parent.UI.TitleText)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PvpDot = require(script.Parent.Parent.UI.Components.PvpDot)
@@ -111,6 +112,7 @@ local function build(model: Model)
 		end)
 
 	local title = attributeValue(scope, model, "Title")
+	local titleSeason = attributeValue(scope, model, "TitleSeason") -- S128: the season of an arena title
 	local titleDef = scope:Computed(function(use): any
 		local id = use(title)
 		return if type(id) == "string" then TitleData.get(id) else nil
@@ -210,7 +212,10 @@ local function build(model: Model)
 				end),
 				Text = scope:Computed(function(use): string
 					local def = use(titleDef)
-					return if def then `« {Text.get(use, def.nameKey)} »` else ""
+					local season = use(titleSeason)
+					return if def
+						then `« {TitleText.get(use, def, if type(season) == "string" then season else nil)} »`
+						else ""
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = 15,

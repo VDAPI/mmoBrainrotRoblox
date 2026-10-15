@@ -16,7 +16,12 @@
 -- arena server (Arena/ServerMode "arena") this service runs Arena/ArenaHost: no queue, no Arena Master, one match
 -- through RunMatch(spec, "pit"). A world server lets a player back from an arena server in with the same character
 -- (TeleportData.arenaReturn). Players moving between servers: Arena/Transfer.
+-- S128 (DESIGN-17 §6): mode "3v3" through the same pieces (a party team of three = one ticket of its leader, solo
+-- tickets formed into teams by Logic/ArenaRules.pair), Arena Tokens for every match (AddTokens, the one writer),
+-- IsSidelined (a knocked out team fighter), the arena shop at the Arena Master (ArenaShopBuy), the season rewards
+-- paid from character.arena.last (settleSeason) and the arena Hall of Fame (Arena/HallOfFame, the city board).
 
+local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,8 +29,13 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
 local Arena = require(Shared.Data.Arena)
 local ArenaHost = require(script.Parent.Parent.Arena.ArenaHost)
+local Cosmetics = require(Shared.Data.Cosmetics)
+local HallOfFame = require(script.Parent.Parent.Arena.HallOfFame)
+local ItemRoll = require(Shared.Logic.ItemRoll)
+local Items = require(Shared.Data.Items)
 local ArenaRules = require(Shared.Logic.ArenaRules)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
@@ -39,6 +49,7 @@ local Match = require(script.Parent.Parent.Arena.Match)
 local Matchmaker = require(script.Parent.Parent.Arena.Matchmaker)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
+local Rng = require(Shared.Logic.Rng)
 local Sand = require(script.Parent.Parent.Arena.Sand)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -74,6 +85,12 @@ local ArenaService = {
 		"DeathService",
 		-- S127: the save before a teleport between servers (DataService depends on no other service)
 		"DataService",
+		-- S128: season rewards, the arena shop and the season titles (none of them depends on ArenaService)
+		"MailService",
+		"CosmeticService",
+		"InventoryService",
+		"NpcService",
+		"TitleService",
 	},
 	-- (spec, result) after every match with a result (S128 tokens, S130 the bracket)
 	MatchFinished = Signal.new(),
@@ -100,6 +117,11 @@ local DuelService: any
 local LeaderboardService: any
 local DeathService: any
 local DataService: any
+local MailService: any
+local CosmeticService: any
+local InventoryService: any
+local NpcService: any
+local TitleService: any
 
 type Queued = { ticket: ArenaRules.Ticket, source: ArenaTypes.PairSource }
 type Offer = {
@@ -126,8 +148,11 @@ local matches: { [string]: Match.Match } = {}
 local byPlayer: { [Player]: Match.Match } = {}
 local penalties: { [string]: number } = {} -- entry key -> server time the queue opens again (memory; S127 MemoryStore)
 local saved: { [string]: { [string]: boolean } } = {} -- spec id -> entry keys whose result is written
-local lastBoard: { [string]: string } = {} -- entry key -> the arena board written last on this server
+local lastBoard: { [string]: string } = {} -- "<entry key>|<mode>" -> the arena board of that mode written last here
 local lastWaiting: { [Player]: number } = {}
+local teamParty: { [string]: number } = {} -- S128: team ticket key -> the id of the party that queued it
+local shopBusy: { [Player]: boolean } = {} -- S128: one arena shop purchase at a time
+local settling: { [Player]: boolean } = {} -- S128: a season reward on its way
 
 local function serverNow(): number
 	return Workspace:GetServerTimeNow()
@@ -235,10 +260,20 @@ local function publishQueue(player: Player)
 	-- S127: the global source tells its scope ("local" on the in-memory store), the rating window and the global wait
 	local infoOf = q.source.info
 	local info = if infoOf then infoOf(q.source, q.ticket.entrant.key) else nil
+	-- S128: the members of a party team in the queue (name, class, level)
+	local members: { { name: string, class: string, level: number } }? = nil
+	if q.ticket.members then
+		local list = {}
+		for _, m in q.ticket.members do
+			table.insert(list, { name = m.name, class = m.class, level = m.level })
+		end
+		members = list
+	end
 	setLive(player, "queue", {
 		mode = q.ticket.mode,
 		bracket = q.ticket.bracket,
 		since = q.ticket.joinedAt,
+		members = members,
 		scope = if info and info.scope then info.scope else q.source.kind,
 		waiting = waiting,
 		window = if info then info.window else nil,
@@ -246,9 +281,25 @@ local function publishQueue(player: Player)
 	})
 end
 
-local function dropQueue(player: Player)
+-- S128: the other players that wait on the same team ticket.
+local function teammates(player: Player, q: Queued?): { Player }
+	local out = {}
+	if q and q.ticket.members then
+		for other, oq in queued do
+			if other ~= player and oq.ticket.entrant.key == q.ticket.entrant.key then
+				table.insert(out, other)
+			end
+		end
+	end
+	return out
+end
+
+-- Out of the queue. S128: a member of a party team takes the whole team out (`toastKey` for the others, nil =
+-- arena.queue3.teamLeft with this player's name; "" = silent).
+local function dropQueue(player: Player, toastKey: string?)
 	local key = keyOf(player)
 	local q = queued[player]
+	local mates = teammates(player, q)
 	queued[player] = nil
 	for _, source in sources do
 		if key then
@@ -258,7 +309,25 @@ local function dropQueue(player: Player)
 			source:leave(q.ticket.entrant.key)
 		end
 	end
+	if q then
+		teamParty[q.ticket.entrant.key] = nil
+	end
 	publishQueue(player)
+	if #mates > 0 then
+		local char = character(player)
+		for _, other in mates do
+			queued[other] = nil
+			publishQueue(other)
+			if toastKey ~= "" then
+				toast(
+					other,
+					toastKey or "arena.queue3.teamLeft",
+					{ name = if char then char.name else player.Name },
+					"info"
+				)
+			end
+		end
+	end
 end
 
 local function requeue(player: Player, ticket: ArenaRules.Ticket, source: ArenaTypes.PairSource)
@@ -298,6 +367,32 @@ end
 
 function ArenaService.InMatch(player: Player): boolean
 	return byPlayer[player] ~= nil
+end
+
+-- S128: a fighter knocked out in a team match while the round runs (no skills, no potions, no attacks).
+function ArenaService.IsSidelined(player: Player): boolean
+	local match = byPlayer[player]
+	return match ~= nil and match:sidelined(player)
+end
+
+-- S128: adds Arena Tokens to the character (the one place: Logic/ArenaRules.addTokens). Returns the new balance, nil
+-- without a character. S129/S130 event rewards call this too; the week cap is checked by the caller (tokensFor).
+function ArenaService.AddTokens(player: Player, gain: number, reasonKey: string?): number?
+	local char = character(player)
+	if not char or type(char.arena) ~= "table" then
+		return nil
+	end
+	local n = math.max(0, math.floor(gain))
+	local new, balance = ArenaRules.addTokens(char.arena, n, Clock.now())
+	PlayerStateService.Set(player, { "character", "arena" }, new)
+	if n > 0 then
+		Analytics.custom(player, "ArenaTokens", n)
+		toast(player, "arena.tokens.gain", { n = n }, "success")
+	end
+	if reasonKey then
+		toast(player, reasonKey, nil, if n > 0 then "info" else "warning")
+	end
+	return balance
 end
 
 function ArenaService.InQueue(player: Player): boolean
@@ -340,6 +435,99 @@ function ArenaService.State(player: Player): Types.ArenaState?
 	return (ArenaRules.rollSeason(char.arena, ArenaRules.seasonOf(Clock.now())))
 end
 
+-- The entrant of the active character in a mode (rating and played of that mode).
+local function entrantFor(player: Player, mode: Arena.Mode): ArenaRules.Entrant?
+	local char = character(player)
+	local key = keyOf(player)
+	if not char or not key or type(char.arena) ~= "table" then
+		return nil
+	end
+	return {
+		key = key,
+		userId = player.UserId,
+		slot = tonumber(PlayerStateService.Get(player, { "session", "slot" })) or 0,
+		name = char.name,
+		class = char.class :: string,
+		level = char.level,
+		rating = ArenaRules.ratingOf(char.arena, mode),
+		played = tonumber((char.arena :: any)[mode.playedField]) or 0,
+	}
+end
+
+-- S128: the 3v3 ticket of `player`: alone without a party, else the party team of exactly three queued by its
+-- leader (Logic/ArenaRules.canQueue3 after canQueue for every member). Returns the ticket and the members, or the
+-- reason.
+local function team3(player: Player): (ArenaRules.Ticket?, { Player }?, string?)
+	local mode = Arena.MODES["3v3"]
+	local party = PartyService.Get(player)
+	if not party then
+		local reason = ArenaService.BlockedReason(player, mode.id)
+		if reason then
+			return nil, nil, reason
+		end
+		local entrant = entrantFor(player, mode) :: ArenaRules.Entrant
+		local char = character(player) :: Types.CharacterData
+		return {
+			entrant = entrant,
+			mode = mode.id,
+			bracket = ArenaRules.bracketOf(char.level) :: string,
+			joinedAt = serverNow(),
+		},
+			{ player },
+			nil
+	end
+	local members = PartyService.Members(player)
+	local anyBusy = false
+	local bracket: string? = nil
+	local sameBracket = true
+	for _, member in members do
+		ensureSeason(member)
+		if ArenaService.BlockedReason(member, mode.id) then
+			anyBusy = true
+		end
+		local char = character(member)
+		local b = if char then ArenaRules.bracketOf(char.level) else nil
+		if bracket == nil then
+			bracket = b
+		elseif b ~= bracket then
+			sameBracket = false
+		end
+	end
+	local ok, err = ArenaRules.canQueue3({
+		inParty = true,
+		partySize = #members,
+		isLeader = PartyService.IsLeader(player),
+		sameBracket = sameBracket and bracket ~= nil,
+		anyBusy = anyBusy,
+	})
+	if not ok then
+		return nil, nil, err
+	end
+	-- the leader first, then the others in the party's order
+	local ordered: { Player } = { player }
+	for _, member in members do
+		if member ~= player then
+			table.insert(ordered, member)
+		end
+	end
+	local list: { ArenaRules.Entrant } = {}
+	local ratings: { number } = {}
+	for _, member in ordered do
+		local e = entrantFor(member, mode)
+		if not e then
+			return nil, nil, "arena.error.partyBusy"
+		end
+		table.insert(list, e)
+		table.insert(ratings, e.rating)
+	end
+	local lead = table.clone(list[1])
+	lead.rating = Elo.sideRating(ratings)
+	teamParty[lead.key] = party.id
+	return { entrant = lead, mode = mode.id, bracket = bracket :: string, joinedAt = serverNow(), members = list },
+		ordered,
+		nil
+end
+
 function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 	if type(modeId) ~= "string" then
 		return false, "error.badRequest"
@@ -348,29 +536,28 @@ function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 		return false, "arena.net.error.notHere"
 	end
 	ensureSeason(player)
-	local reason = ArenaService.BlockedReason(player, modeId)
-	if reason then
-		return false, reason
+	local ticket: ArenaRules.Ticket
+	local members: { Player } = { player }
+	if modeId == "3v3" then
+		local t, list, err = team3(player)
+		if not t or not list then
+			return false, err
+		end
+		ticket, members = t, list
+	else
+		local reason = ArenaService.BlockedReason(player, modeId)
+		if reason then
+			return false, reason
+		end
+		local char = character(player) :: Types.CharacterData
+		local mode = Arena.MODES[modeId]
+		ticket = {
+			entrant = entrantFor(player, mode) :: ArenaRules.Entrant,
+			mode = modeId,
+			bracket = ArenaRules.bracketOf(char.level) :: string,
+			joinedAt = serverNow(),
+		}
 	end
-	local char = character(player) :: Types.CharacterData
-	local key = keyOf(player) :: string
-	local mode = Arena.MODES[modeId]
-	local bracket = ArenaRules.bracketOf(char.level) :: string
-	local ticket: ArenaRules.Ticket = {
-		entrant = {
-			key = key,
-			userId = player.UserId,
-			slot = tonumber(PlayerStateService.Get(player, { "session", "slot" })) or 0,
-			name = char.name,
-			class = char.class :: string,
-			level = char.level,
-			rating = ArenaRules.ratingOf(char.arena, mode),
-			played = char.arena.played,
-		},
-		mode = modeId,
-		bracket = bracket,
-		joinedAt = serverNow(),
-	}
 	-- S127: the first source takes the ticket (the global Matchmaker); a store failure (no error key) falls through to
 	-- the next one (the local queue), a refusal with a reason (a penalty) does not
 	local source: ArenaTypes.PairSource? = nil
@@ -380,15 +567,25 @@ function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 			source = candidate
 			break
 		elseif err ~= nil then
+			teamParty[ticket.entrant.key] = nil
 			return false, err
 		end
 	end
 	if not source then
+		teamParty[ticket.entrant.key] = nil
 		return false, "error.internal"
 	end
-	queued[player] = { ticket = ticket, source = source }
-	publishQueue(player)
-	toast(player, "arena.joined", { mode = modeId }, "success")
+	for _, member in members do
+		queued[member] = { ticket = ticket, source = source }
+		publishQueue(member)
+	end
+	if ticket.members then
+		for _, member in members do
+			toast(member, "arena.queue3.teamJoined", nil, "success")
+		end
+	else
+		toast(player, "arena.joined", { mode = modeId }, "success")
+	end
 	return true, nil
 end
 
@@ -436,13 +633,13 @@ local function submitBoard(player: Player, char: Types.CharacterData, key: strin
 	end
 	local season = ArenaRules.seasonOf(Clock.now())
 	local id = ArenaRules.boardId(mode, season, bracket)
-	if lastBoard[key] ~= id then
+	if lastBoard[`{key}|{mode.id}`] ~= id then
 		for _, b in Arena.BRACKETS do
 			if b.id ~= bracket then
 				LeaderboardService.Remove(ArenaRules.boardId(mode, season, b.id), key)
 			end
 		end
-		lastBoard[key] = id
+		lastBoard[`{key}|{mode.id}`] = id
 	end
 	LeaderboardService.Submit(id, key, rating)
 end
@@ -487,6 +684,8 @@ local function applyFor(
 	end
 	local score = forcedScore or ArenaRules.scoreOf(result, side)
 	local now = Clock.now()
+	-- S128: the day's matches before this one (applyResult counts this one) and the week's tokens so far
+	local dailyBefore = ArenaRules.dailyCount(char.arena, Time.dayNumber(now))
 	local new, info = ArenaRules.applyResult(char.arena, {
 		mode = mode,
 		season = ArenaRules.seasonOf(now),
@@ -508,14 +707,36 @@ local function applyFor(
 	-- the daily and weekly duel objectives count ranked matches too (DECYZJE S126)
 	QuestEvents.fire(player, "duel", { won = score >= 1 })
 	local delta = if info.delta > 0 then `+{info.delta}` else tostring(info.delta)
+	local outcome: "win" | "loss" | "draw" = if score >= 1 then "win" elseif score <= 0 then "loss" else "draw"
 	if not info.rated then
 		toast(player, "arena.result.unrated", nil, "info")
+	elseif mode.teamSize > 1 then
+		toast(player, "arena.result3.toast", { result = `@arena.result3.{outcome}`, delta = delta }, "info")
 	elseif score >= 1 then
 		toast(player, "arena.result.win", { delta = delta }, "success")
 	elseif score <= 0 then
 		toast(player, "arena.result.loss", { delta = delta }, "warning")
 	else
 		toast(player, "arena.result.draw", { delta = delta }, "info")
+	end
+	-- S128: Arena Tokens (DESIGN-17 §6); an aborted match (admin, a closing server) pays nothing
+	if result.reason ~= "aborted" then
+		local gain, why = ArenaRules.tokensFor(
+			mode.id,
+			outcome,
+			dailyBefore,
+			ArenaRules.weekTokens(new, now),
+			spec.rated and info.rated,
+			result.forfeits[key] == true or forcedScore ~= nil
+		)
+		if spec.rated then
+			ArenaService.AddTokens(player, gain, why)
+		end
+		local live = PlayerStateService.Get(player, { "arenaLive", "match" })
+		if type(live) == "table" and live.id == spec.id then
+			PlayerStateService.Set(player, { "arenaLive", "match", "tokens" }, if spec.rated then gain else 0)
+			PlayerStateService.Set(player, { "arenaLive", "match", "tokensReason" }, if spec.rated then why else nil)
+		end
 	end
 	return info
 end
@@ -542,7 +763,21 @@ local function onFinished(match: Match.Match, result: ArenaRules.MatchResult)
 		end
 		local names = match:names()
 		local winner = result.winner
-		if winner and #spec.sides == 2 then
+		local mode = Arena.mode(spec.mode)
+		if mode and mode.teamSize > 1 and #spec.sides == 2 then
+			-- S128: the team result for the server
+			if winner then
+				AnnounceService.Server("arena.result3", {
+					a = table.concat(names[winner], ", "),
+					b = table.concat(names[3 - winner], ", "),
+				})
+			else
+				AnnounceService.Server(
+					"arena.result3.drawAnnounce",
+					{ a = table.concat(names[1], ", "), b = table.concat(names[2], ", ") }
+				)
+			end
+		elseif winner and #spec.sides == 2 then
 			local loser = 3 - winner
 			AnnounceService.Server("arena.announce", {
 				winner = table.concat(names[winner], ", "),
@@ -588,6 +823,12 @@ local function runOn(spec: ArenaRules.MatchSpec, venueId: string, players: { [st
 	for _, player in players do
 		reserved[player] = nil
 		setLive(player, "offer", nil)
+	end
+	local mode = Arena.mode(spec.mode)
+	if mode and mode.teamSize > 1 then
+		for _, player in players do
+			Analytics.custom(player, "ArenaMatch3", 1)
+		end
 	end
 	local match = Match.new(spec, Venues.get(venueId), matchDeps(), {
 		finished = onFinished,
@@ -681,13 +922,21 @@ end
 
 -- S127: a match for the players on this server (an arena server); S130 tournaments with rated = false. On the
 -- Ristalle venue the match waits for the sand (the local host).
-function ArenaService.RunMatch(spec: ArenaRules.MatchSpec, venueId: string): (boolean, string?)
+-- S128: `absent` = entrant keys that never arrived (a team match on an arena server starts without them).
+function ArenaService.RunMatch(
+	spec: ArenaRules.MatchSpec,
+	venueId: string,
+	absent: { [string]: boolean }?
+): (boolean, string?)
 	if not Arena.venue(venueId) or not Arena.mode(spec.mode) then
 		return false, "error.badRequest"
 	end
 	local players: { [string]: Player } = {}
 	for _, list in spec.sides do
 		for _, entrant in list do
+			if absent and absent[entrant.key] then
+				continue
+			end
 			local player = playerOfKey(entrant.key)
 			if not player then
 				return false, "arena.cancelled"
@@ -711,14 +960,19 @@ end
 
 -- Offers -----------------------------------------------------------------------------------------------------------------
 
-local function entrantOf(player: Player, ticket: ArenaRules.Ticket): ArenaRules.Entrant
+-- The fighters of a ticket (S128: a party team's members, else the entrant).
+local function fightersOf(ticket: ArenaRules.Ticket): { ArenaRules.Entrant }
+	return if ticket.members then ticket.members else { ticket.entrant }
+end
+
+local function entrantOf(player: Player, entrant: ArenaRules.Entrant, modeId: string): ArenaRules.Entrant
 	-- the rating snapshot of the match: the state now (a match may have ended since the ticket was made)
 	local char = character(player)
-	local mode = Arena.mode(ticket.mode)
-	local e = table.clone(ticket.entrant)
+	local mode = Arena.mode(modeId)
+	local e = table.clone(entrant)
 	if char and mode and type(char.arena) == "table" then
 		e.rating = ArenaRules.ratingOf(char.arena, mode)
-		e.played = char.arena.played
+		e.played = tonumber((char.arena :: any)[mode.playedField]) or 0
 		e.level = char.level
 	end
 	return e
@@ -735,6 +989,7 @@ local function buildSpec(
 	local now = Clock.now()
 	local day = Time.dayNumber(now)
 	local unrated: { [string]: boolean } = {}
+	local vsField = (Arena.mode(mode) or Arena.MODES["1v1"]).vsField -- S128: the mode's own counter
 	for side, list in sides do
 		for _, entrant in list do
 			local player = playerOfKey(entrant.key)
@@ -743,7 +998,7 @@ local function buildSpec(
 				for other, olist in sides do
 					if other ~= side then
 						for _, opp in olist do
-							if not ArenaRules.isRated(state, opp.key, day) then
+							if not ArenaRules.isRated(state, opp.key, day, vsField) then
 								unrated[entrant.key] = true
 							end
 						end
@@ -784,17 +1039,42 @@ local function offerView(offer: Offer, player: Player): { [string]: any }?
 	end
 	local o = opp :: ArenaRules.Entrant
 	local state = ArenaService.State(player)
+	local mode = Arena.mode(offer.spec.mode)
+	-- S128: the names of both teams in a team match
+	local mine, them = nil :: { string }?, nil :: { string }?
+	if mode and mode.teamSize > 1 then
+		local a, b = {}, {}
+		for s, list in offer.spec.sides do
+			for _, entrant in list do
+				table.insert(if s == side then a else b, entrant.name)
+			end
+		end
+		mine, them = a, b
+	end
+	local vs = 0
+	if state then
+		local field = if mode then mode.vsField else "vs"
+		for s, list in offer.spec.sides do
+			if s ~= side then
+				for _, entrant in list do
+					vs = math.max(vs, ArenaRules.vsCount(state, entrant.key, Time.dayNumber(Clock.now()), field))
+				end
+			end
+		end
+	end
 	return {
 		id = offer.id,
 		expiresAt = offer.expiresAt,
 		accepted = offer.accepted[key] == true,
 		mode = offer.spec.mode,
 		unrated = offer.spec.unrated[key] == true,
-		vs = if state then ArenaRules.vsCount(state, o.key, Time.dayNumber(Clock.now())) else 0,
+		vs = vs,
 		opp = { name = o.name, class = o.class, level = o.level, rating = o.rating },
 		scope = "local", -- S127: played on this server's Ristalle
 		fallback = if offer.fallback then true else nil,
 		combat = ResourceService.InCombat(player),
+		mine = mine,
+		them = them,
 	}
 end
 
@@ -819,7 +1099,24 @@ local function failOffer(
 )
 	closeOffer(offer)
 	local now = serverNow()
+	-- S128: a party team whose member refused (or went) leaves the queue as a whole; the penalty stays the refuser's
+	local teamOut: { [string]: string } = {}
 	for key, player in offer.players do
+		local ticket = offer.tickets[key]
+		if ticket and ticket.members and (declined[key] or gone[key]) and not offer.fallback then
+			local char = character(player)
+			teamOut[ticket.entrant.key] = if char then char.name else player.Name
+		end
+	end
+	for key, player in offer.players do
+		local ticket = offer.tickets[key]
+		local outName = if ticket then teamOut[ticket.entrant.key] else nil
+		if outName and not declined[key] and not gone[key] then
+			queued[player] = nil
+			publishQueue(player)
+			toast(player, "arena.queue3.teamLeft", { name = outName }, "warning")
+			continue
+		end
 		if excused and excused[key] then
 			toast(player, "arena.net.cancelled.combat", nil, "warning")
 		elseif declined[key] and offer.fallback then
@@ -859,38 +1156,47 @@ local function startOffer(offer: Offer)
 end
 
 local function makeOffer(pairing: ArenaRules.Pairing, source: ArenaTypes.PairSource)
+	-- S128: every fighter of every ticket (a party team: its three members) by its own key
 	local players: { [string]: Player } = {}
 	local tickets: { [string]: ArenaRules.Ticket } = {}
 	local blocked: { [string]: string } = {}
+	local blockedTicket: { [string]: boolean } = {}
 	local any = false
 	for _, list in pairing.sides do
 		for _, ticket in list do
-			local key = ticket.entrant.key
-			tickets[key] = ticket
-			local player = playerOfKey(key)
-			if not player then
-				blocked[key] = "gone"
-				any = true
-			else
-				players[key] = player
-				local reason = matchBlock(player)
-				if reason then
-					blocked[key] = reason
+			for _, fighter in fightersOf(ticket) do
+				local key = fighter.key
+				tickets[key] = ticket
+				local player = playerOfKey(key)
+				if not player then
+					blocked[key] = "gone"
+					blockedTicket[ticket.entrant.key] = true
 					any = true
+				else
+					players[key] = player
+					local reason = matchBlock(player)
+					if reason then
+						blocked[key] = reason
+						blockedTicket[ticket.entrant.key] = true
+						any = true
+					end
 				end
 			end
 		end
 	end
 	if any then
-		-- the blocked ones drop out of the queue; the others keep their place
+		-- the blocked ones (with their whole party team) drop out of the queue; the others keep their place
 		for key, ticket in tickets do
 			local player = players[key]
-			if blocked[key] then
+			if blockedTicket[ticket.entrant.key] then
 				if player then
 					queued[player] = nil
 					publishQueue(player)
-					if blocked[key] ~= "gone" then
-						toast(player, blocked[key], nil, "warning")
+					local why = blocked[key]
+					if why and why ~= "gone" then
+						toast(player, why, nil, "warning")
+					elseif not why then
+						toast(player, "arena.queue3.partyChanged", nil, "warning")
 					end
 				end
 			elseif player then
@@ -903,7 +1209,9 @@ local function makeOffer(pairing: ArenaRules.Pairing, source: ArenaTypes.PairSou
 	for side, list in pairing.sides do
 		local entrants = {}
 		for _, ticket in list do
-			table.insert(entrants, entrantOf(players[ticket.entrant.key], ticket))
+			for _, fighter in fightersOf(ticket) do
+				table.insert(entrants, entrantOf(players[fighter.key], fighter, pairing.mode))
+			end
 		end
 		sides[side] = entrants
 	end
@@ -1078,15 +1386,18 @@ end
 
 local function status(_player: Player): (boolean, any)
 	local waiting: { [string]: number } = {}
+	local waiting3: { [string]: number } = {} -- S128: fighters waiting for 3v3 here
 	local home = sources[#sources] -- the local queue stays last (S127 sources go in front)
 	for _, b in Arena.BRACKETS do
 		waiting[b.id] = home:waiting(Arena.MODE_ORDER[1], b.id) or 0
+		waiting3[b.id] = home:waiting("3v3", b.id) or 0
 	end
 	local kind, names = sandFight()
 	return true,
 		{
 			scope = scopeNow(),
 			waiting = waiting,
+			waiting3 = waiting3,
 			busy = if kind then { kind = kind, names = names } else nil,
 			pending = Sand.waiting(),
 		}
@@ -1204,6 +1515,62 @@ function ArenaService.AdminMatch(admin: Player, target: Player): (boolean, strin
 	return hosts["local"]:start(spec, players)
 end
 
+-- S128 (/arena tokens | rating3 | week | queue3 | hof) ----------------------------------------------------------------
+
+local function adminWrite(player: Player, edit: (state: Types.ArenaState) -> ()): Types.ArenaState?
+	ensureSeason(player)
+	local char = character(player)
+	if not char or type(char.arena) ~= "table" then
+		return nil
+	end
+	local new = ArenaRules.copy(char.arena)
+	edit(new)
+	PlayerStateService.Set(player, { "character", "arena" }, new)
+	return new
+end
+
+function ArenaService.AdminTokens(player: Player, n: number): boolean
+	return adminWrite(player, function(s)
+		s.tokens = math.clamp(math.floor(n), 0, 1000000)
+	end) ~= nil
+end
+
+function ArenaService.AdminRating3(player: Player, n: number): boolean
+	local key = keyOf(player)
+	local new = adminWrite(player, function(s)
+		s.rating3 = math.clamp(math.floor(n), 0, 5000)
+		s.peak3 = math.max(s.peak3, s.rating3)
+	end)
+	local char = character(player)
+	if new and key and char then
+		submitBoard(player, char, key, Arena.MODES["3v3"], new.rating3)
+	end
+	return new ~= nil
+end
+
+function ArenaService.AdminWeek(player: Player): boolean
+	return adminWrite(player, function(s)
+		s.tokensWeek = { week = 0, n = 0 }
+	end) ~= nil
+end
+
+-- The 3v3 entries of this server's queue and the global entries this server holds (per the sources).
+function ArenaService.AdminQueue3(): (number, number)
+	local here, global = 0, 0
+	for _, source in sources do
+		for _, t in source:tickets() do
+			if t.mode == "3v3" then
+				if source.kind == "global" then
+					global += ArenaRules.size(t)
+				else
+					here += ArenaRules.size(t)
+				end
+			end
+		end
+	end
+	return here, global
+end
+
 -- Stops the match of `player` without a rating.
 function ArenaService.AdminStop(player: Player): boolean
 	local match = byPlayer[player]
@@ -1231,6 +1598,223 @@ function ArenaService.Info(player: Player): { [string]: any }?
 	}
 end
 
+-- S128: season rewards (DESIGN-17 §6) ----------------------------------------------------------------------------------
+
+local function seasonText(season: string): string
+	local month, year = ArenaRules.seasonLabel(season)
+	return `{month}.{year}`
+end
+
+-- Mails the pending season reward (Dragon Shards when the tier gives them, else a letter without a parcel). Cleared
+-- only after the mail went out, so a failure tries the same letter again (next entry, every rewardRetry s); the mail's
+-- once key (character, season) keeps a retry after a send that went out uncleared (a leave mid-send) from a second one.
+local function sendPending(player: Player)
+	local char = character(player)
+	local pending = if char and type(char.arena) == "table" then char.arena.pendingReward else nil
+	if not pending or settling[player] then
+		return
+	end
+	settling[player] = true
+	local p = table.clone(pending)
+	local charId = (char :: Types.CharacterData).id
+	task.spawn(function()
+		local ok, err = MailService.Send(player.UserId, {
+			from = "system",
+			subjectKey = "mail.subject.arenaSeason",
+			args = { season = seasonText(p.season), tier = `@arena.tier.{p.tier}` },
+			shards = if p.shards > 0 then p.shards else nil,
+			-- one letter per character and season: a retry after a leave mid-send adds no second parcel
+			once = `arenaSeason_{p.season}_{charId}`,
+		})
+		settling[player] = nil
+		if not ok then
+			log:warn("season reward mail for %s failed: %s", player.Name, tostring(err))
+			return
+		end
+		local now = character(player)
+		local cur = if now and type(now.arena) == "table" then now.arena.pendingReward else nil
+		if now and cur and cur.season == p.season and cur.tier == p.tier then
+			local copy = ArenaRules.copy(now.arena)
+			copy.pendingReward = nil
+			PlayerStateService.Set(player, { "character", "arena" }, copy)
+		end
+	end)
+end
+
+-- Pays the reward of the season closed into character.arena.last once (last.rewarded): the season title (one, of the
+-- best tier: titles[tier] = season), the cosmetics of the tier, the letter (and shards) by mail. Idempotent: called on
+-- SeasonClosed and on every entry (a reward missed by a crash).
+local function settleSeason(player: Player)
+	local char = character(player)
+	if not char or type(char.arena) ~= "table" then
+		return
+	end
+	local reward = ArenaRules.seasonReward(char.arena.last)
+	if reward then
+		local copy = ArenaRules.copy(char.arena)
+		local last = copy.last :: Types.ArenaSeasonSummary
+		last.rewarded = true
+		copy.titles[reward.tier] = reward.season
+		copy.pendingReward = { season = reward.season, tier = reward.tier, shards = reward.shards }
+		PlayerStateService.Set(player, { "character", "arena" }, copy)
+		DataService.Save(player)
+		TitleService.Refresh(player)
+		for _, id in reward.cosmetics do
+			CosmeticService.Grant(player, id)
+		end
+		toast(
+			player,
+			"arena.season.rewarded",
+			{ season = seasonText(reward.season), tier = `@arena.tier.{reward.tier}` },
+			"success"
+		)
+		Analytics.custom(player, `ArenaSeasonReward_{reward.tier}`, 1)
+	end
+	sendPending(player)
+end
+
+-- S128: the arena Hall of Fame (Arena/HallOfFame, the board by the Ristalle) ----------------------------------------
+
+local hofRecord: HallOfFame.Record? = nil
+local hofSeason: string? = nil -- the season whose record the board shows
+
+-- The top rows of a board (the leaderboard cache; nil while it is not read yet).
+local function readTop(boardId: string): { HallOfFame.Row }?
+	local snap = LeaderboardService.Snapshot(boardId, nil)
+	if not snap or snap.loading then
+		return nil
+	end
+	local rows: { HallOfFame.Row } = {}
+	for _, row in snap.rows do
+		table.insert(rows, { name = row.n, class = row.c, guild = row.g, rating = row.s })
+	end
+	return rows
+end
+
+-- The board in the city: the part tagged "ArenaFameBoard" gets `Record` (JSON of the record, or none: the first
+-- season still runs) and `Mode`; every plaque tagged "ArenaFamePlinth" (attribute `Plinth` = the bracket index) the
+-- 1v1 winner of its bracket (`HeroName`, `ClassKey`). The client writes the text (ArenaFameController).
+local function showHof()
+	local json: string? = nil
+	if hofRecord then
+		local ok, encoded = pcall(HttpService.JSONEncode, HttpService, hofRecord)
+		json = if ok then encoded else nil
+	end
+	for _, board in CollectionService:GetTagged("ArenaFameBoard") do
+		board:SetAttribute("Record", json)
+		board:SetAttribute("Mode", if LeaderboardService.IsGlobal() then "global" else "local")
+	end
+	for _, plaque in CollectionService:GetTagged("ArenaFamePlinth") do
+		local i = plaque:GetAttribute("Plinth")
+		local bracket = if type(i) == "number" then Arena.BRACKETS[i] else nil
+		local rows = if hofRecord
+				and bracket
+				and hofSeason
+			then hofRecord.boards[ArenaRules.boardId(Arena.MODES["1v1"], hofSeason, bracket.id)]
+			else nil
+		local top = if rows then rows[1] else nil
+		plaque:SetAttribute("HeroName", if top then top.name else nil)
+		plaque:SetAttribute("ClassKey", if top then top.class else nil)
+	end
+end
+
+-- Reads (or, `force` / after Config.Arena.hofDelay into the new season, builds) the record of the season before the
+-- current one. Returns the rows in it (admin /arena hof).
+local function checkHof(force: boolean?): (boolean, number)
+	local now = Clock.now()
+	local season = ArenaRules.seasonOf(now)
+	local prev = ArenaRules.prevSeason(season)
+	if hofSeason == prev and hofRecord then
+		local n = 0
+		for _, rows in hofRecord.boards do
+			n += #rows
+		end
+		return true, n
+	end
+	local ok, record = HallOfFame.get(prev)
+	if not ok then
+		return false, 0
+	end
+	local n = 0
+	if not record and (force or now - ArenaRules.seasonStart(season) >= Config.Arena.hofDelay) then
+		local built, stored, count = HallOfFame.build(prev, readTop, now)
+		if not built then
+			return false, 0
+		end
+		record, n = stored, count
+	elseif record then
+		for _, rows in record.boards do
+			n += #rows
+		end
+	end
+	if record then
+		hofRecord, hofSeason = record, prev
+		showHof()
+	end
+	return true, n
+end
+
+function ArenaService.AdminHof(): (boolean, number)
+	return checkHof(true)
+end
+
+-- S128: the arena shop (DESIGN-17 §6) ----------------------------------------------------------------------------------
+
+-- One purchase: at the Arena Master, Logic/ArenaRules.canBuyShop, room in the backpack; then, without a yield, the
+-- tokens go and the item (bound) or the cosmetic comes.
+local function buyShop(player: Player, key: string): (boolean, string?)
+	if type(key) ~= "string" then
+		return false, "error.badRequest"
+	end
+	if not ServerMode.isWorld() then
+		return false, "arena.net.error.notHere"
+	end
+	ensureSeason(player)
+	local char = character(player)
+	if not char or type(char.arena) ~= "table" then
+		return false, "error.wrongPhase"
+	end
+	if not NpcService.Near(player, "arenamaster") then
+		return false, "arena.shop.error.tooFar"
+	end
+	local entry = Arena.shopByKey[key]
+	local account = PlayerStateService.Get(player, { "account" })
+	local owned = if type(account) == "table" and type(account.cosmetics) == "table"
+		then account.cosmetics.owned
+		else {}
+	local ok, err = ArenaRules.canBuyShop(entry, char, owned)
+	if not ok or not entry then
+		return false, err
+	end
+	local item: Types.ItemInstance? = nil
+	if entry.kind == "item" then
+		if not Items.get(entry.id) then
+			return false, "error.badRequest"
+		end
+		local stack = ItemRoll.makeStack(entry.id, entry.n or 1, InventoryService.NewUid())
+		stack.bound = true -- tokens never turn into gold through trade or the auction house
+		if not InventoryService.CanFit(player, { stack }) then
+			return false, "inventory.full"
+		end
+		item = stack
+	elseif not Cosmetics.get(entry.id) then
+		return false, "error.badRequest"
+	end
+	local copy = ArenaRules.copy(char.arena)
+	copy.tokens -= entry.price
+	PlayerStateService.Set(player, { "character", "arena" }, copy)
+	if item then
+		InventoryService.AddItem(player, item)
+	else
+		CosmeticService.Grant(player, entry.id)
+	end
+	Analytics.custom(player, `ArenaShop_{entry.key}`, entry.price)
+	if item then
+		DataService.Save(player)
+	end
+	return true, nil
+end
+
 -- Lifecycle -------------------------------------------------------------------------------------------------------------
 
 function ArenaService.Init(registry)
@@ -1253,6 +1837,12 @@ function ArenaService.Init(registry)
 	LeaderboardService = registry.Get("LeaderboardService")
 	DeathService = registry.Get("DeathService")
 	DataService = registry.Get("DataService")
+	MailService = registry.Get("MailService")
+	CosmeticService = registry.Get("CosmeticService")
+	InventoryService = registry.Get("InventoryService")
+	NpcService = registry.Get("NpcService")
+	TitleService = registry.Get("TitleService")
+	HallOfFame.init(DataService.HasDataStoreAccess)
 
 	sources = { LocalQueue.new() }
 	hosts = { ["local"] = localHost() }
@@ -1275,6 +1865,9 @@ function ArenaService.Init(registry)
 	-- Ordinary potions: Data/Arena MODES.potions per match (the Elixir of Wholeness: UseGuards "arena" in Start).
 	PotionService.AddGuard(function(player: Player, _def: any): string?
 		local match = byPlayer[player]
+		if match and match:sidelined(player) then
+			return "arena.error.out" -- S128: a knocked out team fighter watches
+		end
 		if match and match:potionsLeft(player) <= 0 then
 			return "arena.error.potions"
 		end
@@ -1321,6 +1914,10 @@ local function backFromArena(player: Player)
 		}, "info")
 	else
 		toast(player, "arena.net.backPlain", nil, "info")
+	end
+	-- S128: a party team lost its party on the way to the arena server (parties live on one server)
+	if tp.team == true and PartyService.Get(player) == nil then
+		toast(player, "arena.team.partyLost", nil, "warning")
 	end
 end
 
@@ -1443,6 +2040,69 @@ function ArenaService.Start()
 	Net.Handle("ArenaRespond", respond)
 	Net.Handle("ArenaSpectate", spectate)
 	Net.Handle("ArenaStatus", status)
+	-- S128: the arena shop at the Arena Master (one purchase at a time)
+	Net.Handle("ArenaShopBuy", function(player: Player, key: string): (boolean, string?)
+		if shopBusy[player] then
+			return false, "error.busy"
+		end
+		shopBusy[player] = true
+		local ok, result, err = pcall(buyShop, player, key)
+		shopBusy[player] = nil
+		if not ok then
+			log:error("arena shop failed for %s: %s", player.Name, tostring(result))
+			return false, "error.internal"
+		end
+		return result, err
+	end)
+
+	-- S128: season rewards when a season closes (and on entry: a reward missed before), pending letters again later
+	ArenaService.SeasonClosed:Connect(function(player: Player)
+		settleSeason(player)
+	end)
+	task.spawn(function()
+		while true do
+			task.wait(Config.Arena.rewardRetry)
+			for _, player in Players:GetPlayers() do
+				if character(player) then
+					pcall(sendPending, player)
+				end
+			end
+		end
+	end)
+	-- S128: a party team leaves the queue when its party changes
+	PartyService.Changed:Connect(function(party: any)
+		for leaderKey, partyId in table.clone(teamParty) do
+			if partyId == party.id then
+				teamParty[leaderKey] = nil
+				for player, q in table.clone(queued) do
+					-- only the team ticket (the entry may be stale: the leader may wait for a 1v1 now)
+					if q.ticket.members and q.ticket.entrant.key == leaderKey then
+						queued[player] = nil
+						for _, source in sources do
+							source:leave(leaderKey)
+						end
+						publishQueue(player)
+						toast(player, "arena.queue3.partyChanged", nil, "warning")
+					end
+				end
+			end
+		end
+	end)
+	-- S128: the arena Hall of Fame of the season before (world servers: the city board)
+	if ServerMode.isWorld() then
+		task.spawn(function()
+			local rng = Rng.new() -- seeded from os.clock: servers check apart
+			while true do
+				local ok, err = pcall(function()
+					checkHof(false)
+				end)
+				if not ok then
+					log:warn("arena hall of fame check failed: %s", tostring(err))
+				end
+				task.wait(rng:float(Config.Arena.hofCheck * 0.75, Config.Arena.hofCheck * 1.25))
+			end
+		end)
+	end
 
 	PotionService.Drank:Connect(function(player: Player)
 		local match = byPlayer[player]
@@ -1459,6 +2119,7 @@ function ArenaService.Start()
 
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		ensureSeason(player)
+		settleSeason(player) -- S128
 		local key = keyOf(player)
 		local untilAt = if key then penalties[key] else nil
 		if untilAt and untilAt > serverNow() then
@@ -1510,6 +2171,8 @@ function ArenaService.Start()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		task.defer(function()
 			queued[player] = nil
+			shopBusy[player] = nil
+			settling[player] = nil
 			local offer = offerOf[player]
 			if offer then
 				for key, p in offer.players do

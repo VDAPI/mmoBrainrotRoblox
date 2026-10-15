@@ -155,6 +155,18 @@ table.insert(
 		format = "rating",
 	} :: BoardDef
 )
+-- S128 (DESIGN-17 §6): the 3v3 arena, the same shape ("arena3_202611_40_59"), score = the 3v3 rating (rating3).
+table.insert(
+	list,
+	{
+		id = "arena3",
+		kind = "ordered",
+		nameKey = "leaderboard.board.arena3",
+		scope = "character",
+		parts = { "season", "arenaBracket" },
+		format = "rating",
+	} :: BoardDef
+)
 
 local byId: { [string]: BoardDef } = {}
 for _, def in list do
@@ -169,6 +181,8 @@ local tabs: { TabDef } = {
 	{ id = "guild", nameKey = "leaderboard.tab.guild", boards = { "guild" }, order = 4 },
 	-- S126: this season's arena board of an arena bracket
 	{ id = "arena", nameKey = "leaderboard.tab.arena", boards = { "arena" }, filter = "arenaBracket", order = 5 },
+	-- S128: this season's 3v3 arena board of an arena bracket
+	{ id = "arena3", nameKey = "leaderboard.tab.arena3", boards = { "arena3" }, filter = "arenaBracket", order = 6 },
 }
 
 local plinths: { PlinthDef } = {}

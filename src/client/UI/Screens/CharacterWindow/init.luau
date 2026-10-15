@@ -29,6 +29,7 @@ local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local TitleText = require(script.Parent.Parent.TitleText)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
@@ -148,7 +149,9 @@ local function TitlePicker(scope: Scope, order: number): Instance
 						local d, h = Time.split(untilTs - use(clock))
 						return `« {Text.get(use, def.nameKey)} » {Text.get(use, "title.timedLeft", { d = d, h = h })}`
 					elseif def then
-						return `« {Text.get(use, def.nameKey)} »`
+						-- S128: an arena season title with its season
+						local args = Titles.argsOf(use(character), def.id)
+						return `« {TitleText.get(use, def, if args then args.season else nil)} »`
 					end
 					return Text.get(use, "title.none", { count = #use(unlocked) })
 				end),

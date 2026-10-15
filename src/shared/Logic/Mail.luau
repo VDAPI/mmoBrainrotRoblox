@@ -26,13 +26,17 @@ export type Parcel = {
 	charId: string?,
 	shards: number?, -- S125: Dragon Shards for the account, system/admin parcels only
 	timedTitle: { id: string, untilTs: number }?, -- S125: timed title (Data/Titles req.kind "timed") for `charId`
+	once: string?, -- S128: an idempotency key: a second parcel with the same key is never added (Mail.add)
 }
 
-export type Box = { parcels: { [string]: Parcel } }
+-- S128: `sent` = the once keys of parcels added (key -> os.time it is forgotten), kept after the parcel is claimed
+export type Box = { parcels: { [string]: Parcel }, sent: { [string]: number }? }
 
 local Mail = {}
 
 Mail.LIFETIME = Rules.lifetimeDays * 86400
+-- S128: how long a once key is remembered (a season reward retried after a long absence still finds it)
+Mail.ONCE_KEEP = 400 * 86400
 
 function Mail.newBox(): Box
 	return { parcels = {} }
@@ -43,6 +47,9 @@ end
 -- (Rarities.upgradeItem, idempotent; parcels live up to 30 days).
 function Mail.box(value: any): Box
 	if type(value) == "table" and type(value.parcels) == "table" then
+		if value.sent ~= nil and type(value.sent) ~= "table" then
+			value.sent = nil
+		end
 		for _, parcel in value.parcels do
 			if type(parcel) == "table" and type(parcel.items) == "table" then
 				for _, item in parcel.items do
@@ -74,11 +81,22 @@ function Mail.prune(box: Box, now: number): { string }
 			table.insert(removed, id)
 		end
 	end
+	if box.sent then
+		for once, untilTs in box.sent do
+			if type(untilTs) ~= "number" or untilTs <= now then
+				box.sent[once] = nil
+			end
+		end
+	end
 	return removed
 end
 
+-- S128: a parcel with a `once` key already sent returns (true, nil) and adds nothing (the sender may retry safely).
 function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 	Mail.prune(box, now)
+	if parcel.once ~= nil and box.sent and box.sent[parcel.once] then
+		return true, nil
+	end
 	if #parcel.items > Rules.maxItemsPerParcel then
 		return false, "mail.error.tooManyItems"
 	end
@@ -114,6 +132,11 @@ function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 		return false, "mail.error.full"
 	end
 	box.parcels[parcel.id] = parcel
+	if parcel.once ~= nil then
+		local sent = box.sent or {}
+		sent[parcel.once] = now + Mail.ONCE_KEEP
+		box.sent = sent
+	end
 	return true, nil
 end
 

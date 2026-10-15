@@ -8,6 +8,9 @@
 -- S127: on an arena server after the result "Returning in 8 s" with "Return now" (`arenaLive.returnAt`, ArenaReturnNow);
 -- while a teleport between servers runs (`arenaLive.transfer`) a full-screen veil "Travelling to the arena…" /
 -- "Returning to the world…". The global queue's pill shows the rating window instead of the number waiting.
+-- S128: after the match a result line: the team result of a 3v3 match ("Team victory" / "Team defeat" / "Draw") and
+-- the Arena Tokens of the match with their reason (`arenaLive.match.tokens` / `tokensReason`). The 3v3 team panel is
+-- UI/Screens/Hud/ArenaTeams.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -198,6 +201,53 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Colors.Parchment,
 				TextTruncate = Enum.TextTruncate.AtEnd,
+			}),
+			-- S128: the result and the tokens of the match
+			scope:New("TextLabel")({
+				LayoutOrder = 3,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				TextWrapped = true,
+				Visible = scope:Computed(function(use): boolean
+					local m = use(match)
+					return m ~= nil and m.phase == "done"
+				end),
+				Text = scope:Computed(function(use): string
+					local m = use(match)
+					if not m or m.phase ~= "done" then
+						return ""
+					end
+					local bits = {}
+					if m.mode == "3v3" and type(m.score) == "table" then
+						local key: string
+						local winner = tonumber(m.winner)
+						if winner then
+							-- the decided match (a forfeit win keeps the score 0:0)
+							key = if winner == 0 then "draw" elseif winner == m.side then "win" else "loss"
+						else
+							local mine = tonumber(m.score[m.side]) or 0
+							local other = 0
+							for side, n in m.score do
+								if side ~= m.side then
+									other = math.max(other, tonumber(n) or 0)
+								end
+							end
+							key = if mine > other then "win" elseif mine < other then "loss" else "draw"
+						end
+						table.insert(bits, Text.get(use, `arena.result3.{key}`))
+					end
+					if type(m.tokens) == "number" then
+						table.insert(bits, Text.get(use, "arena.tokens.match", { n = m.tokens }))
+					end
+					if type(m.tokensReason) == "string" then
+						table.insert(bits, Text.get(use, m.tokensReason))
+					end
+					return table.concat(bits, "  ·  ")
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Colors.GoldBright,
 			}),
 		},
 	})

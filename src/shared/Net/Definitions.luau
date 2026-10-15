@@ -177,6 +177,8 @@ local Definitions: { [string]: Definition } = {
 	ArenaStatus = { kind = "function", dir = "c2s", rate = 1, args = {} },
 	-- S127: leave the arena server now (after the result); ArenaRespond also answers a global offer (same arguments)
 	ArenaReturnNow = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	-- S128: the arena shop at the Arena Master (Data/Arena.SHOP key); 3v3 joins with ArenaJoin("3v3")
+	ArenaShopBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	TradeRequest = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	TradeInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },

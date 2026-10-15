@@ -752,7 +752,9 @@ T.describe("ArenaQueue H7: wiring of the server modules", function()
 	end)
 
 	T.it("the Matchmaker pairs through ArenaQueue on a guarded backend with the fake as fallback", function()
-		has("src/server/Arena/Matchmaker.luau", "ArenaQueue.tryPair(")
+		-- S128: 1v1 through tryPair, 3v3 through tryTeams (one call site picks the function)
+		has("src/server/Arena/Matchmaker.luau", "ArenaQueue.tryPair")
+		has("src/server/Arena/Matchmaker.luau", "ArenaQueue.tryTeams")
 		has("src/server/Arena/Matchmaker.luau", "Retry.call")
 		has("src/server/Arena/Matchmaker.luau", "pcall")
 		has("src/server/Arena/Matchmaker.luau", "MemoryFake")
@@ -796,5 +798,296 @@ T.describe("ArenaQueue H7: wiring of the server modules", function()
 			n += 1
 		end
 		T.expect(n).toBe(1)
+	end)
+end)
+
+-- S128 (DESIGN-17 §6): global 3v3 -----------------------------------------------------------------------------------
+
+local MAP3 = ArenaQueue.queueMap("3v3", "40_59")
+
+local function ticket3(userId: number, rating: number, joinedAt: number): ArenaRules.Ticket
+	local t = ticket(userId, rating, joinedAt)
+	t.mode = "3v3"
+	return t
+end
+
+local function party3(userIds: { number }, rating: number, joinedAt: number): ArenaRules.Ticket
+	local members = {}
+	for _, userId in userIds do
+		table.insert(members, ticket3(userId, rating, joinedAt).entrant)
+	end
+	local t = ticket3(userIds[1], rating, joinedAt)
+	t.members = members
+	return t
+end
+
+local function enter3(fake: any, job: string, t: ArenaRules.Ticket): ArenaQueue.Entry
+	local entry = ArenaQueue.newEntry(t, job)
+	local ok, value = fake.update(MAP3, entry.key, ArenaQueue.put(entry), NET.entryTtl)
+	assert(ok, "put failed")
+	return value
+end
+
+local function stored3(fake: any, key: string): any
+	for _, item in fake:items(MAP3) do
+		if item.key == key then
+			return item.value
+		end
+	end
+	return nil
+end
+
+T.describe("ArenaQueue S128 teams", function()
+	local function setup()
+		local c, clock = newClock(70000)
+		local fake = MemoryFake.new(clock)
+		return c, fake
+	end
+
+	T.it("six solo entries of three servers: one record with two teams of three, every entry claimed", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{(i - 1) % 3 + 1}`, ticket3(i, 1000 + i, c.now - 60 + i)))
+		end
+		local status, record = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		T.expect(status).toBe("paired")
+		T.expect(record.mode).toBe("3v3")
+		T.expect(#record.players).toBe(6)
+		T.expect(#(record.teams :: any)[1]).toBe(3)
+		T.expect(#(record.teams :: any)[2]).toBe(3)
+		T.expect(#record.spec.sides[1]).toBe(3)
+		for _, e in entries do
+			T.expect(stored3(fake, e.key).state).toBe("claimed")
+			T.expect(stored3(fake, e.key).match).toBe(record.id)
+		end
+		T.expect(#records(fake)).toBe(1)
+		-- only the oldest entry's server builds it
+		local c2, fake2 = setup()
+		local later = {}
+		for i = 1, 6 do
+			table.insert(later, enter3(fake2, `S{i}`, ticket3(i, 1000, c2.now - 60 + i)))
+		end
+		T.expect((ArenaQueue.tryTeams(fake2, later[3], NET, c2.now, newId, "S3"))).toBe("none")
+	end)
+
+	T.it("a party team and three solo entries make a pair; the team stays one entry", function()
+		local c, fake = setup()
+		local team = enter3(fake, "S1", party3({ 11, 12, 13 }, 1000, c.now - 50))
+		T.expect(team.size).toBe(3)
+		for i = 1, 3 do
+			enter3(fake, "S2", ticket3(i, 1000, c.now - 40 + i))
+		end
+		local status, record = ArenaQueue.tryTeams(fake, team, NET, c.now, newId, "S1")
+		T.expect(status).toBe("paired")
+		T.expect(#record.players).toBe(6)
+		T.expect(#ArenaQueue.playersOfEntry(record, team.key)).toBe(3)
+		local jobs = {}
+		for _, p in record.players do
+			jobs[p.jobId] = true
+		end
+		T.expect(jobs).toEqual({ S1 = true, S2 = true })
+	end)
+
+	T.it("one entry taken by another server: lost, every other entry waits again with its old joinedAt", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{i}`, ticket3(i, 1000, c.now - 60 + i)))
+		end
+		local victim = entries[5].key
+		local fired = false
+		fake:onBeforeCommit(function(map, key)
+			if not fired and map == MAP3 and key == victim then
+				fired = true
+				fake.update(MAP3, victim, ArenaQueue.claim("other", c.now, NET.claimHold), NET.entryTtl)
+			end
+		end)
+		local status = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		fake:onBeforeCommit(nil)
+		T.expect(status).toBe("lost")
+		for i, e in entries do
+			local now = stored3(fake, e.key)
+			if e.key == victim then
+				T.expect(now.match).toBe("other")
+			else
+				T.expect({ i, now.state, now.ticket.joinedAt }).toEqual({ i, "wait", e.ticket.joinedAt })
+			end
+		end
+		T.expect(#records(fake)).toBe(0)
+	end)
+
+	T.it("two servers interleaved: exactly one record", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{i}`, ticket3(i, 1000, c.now - 60)))
+		end
+		local inner: string? = nil
+		local fired = false
+		fake:onBeforeCommit(function(map, key)
+			if not fired and map == MAP3 and key == entries[4].key then
+				fired = true
+				inner =
+					ArenaQueue.tryTeams(fake, stored3(fake, entries[2].key), NET, c.now, newId, "S2", { force = true })
+			end
+		end)
+		local outer = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1", { force = true })
+		fake:onBeforeCommit(nil)
+		T.expect(#records(fake)).toBe(1)
+		T.expect((outer == "paired") ~= (inner == "paired")).toBe(true)
+	end)
+
+	T.it("all six on this server: a local pairing, nothing reserved, entries removed", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, "S1", ticket3(i, 1000, c.now - 60 + i)))
+		end
+		local status, pairing = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		T.expect(status).toBe("local")
+		T.expect(#pairing.sides).toBe(2)
+		T.expect(#records(fake)).toBe(0)
+		for _, e in entries do
+			T.expect(stored3(fake, e.key)).toBeNil()
+		end
+	end)
+
+	T.it("a refusal of six: the refuser alone is penalized, the others go back", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{i}`, ticket3(i, 1000, c.now - 60 + i)))
+		end
+		local _, record = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		local key = ArenaQueue.matchKey(record.id)
+		for i = 1, 5 do
+			fake.hupdate(NET.matchMap, key, ArenaQueue.respond(entries[i].key, true, c.now), NET.matchTtl)
+		end
+		local _, after = fake.hupdate(NET.matchMap, key, ArenaQueue.respond(entries[6].key, false, c.now), NET.matchTtl)
+		T.expect(after.state).toBe("cancelled")
+		T.expect(after.by).toBe(entries[6].key)
+		for i, e in entries do
+			local want = if i == 6 then "penalty" else "requeue"
+			T.expect({ i, ArenaQueue.entryAfter(after, e.key, nil, c.now) }).toEqual({ i, want })
+		end
+		-- a party team: a member's refusal takes the whole team out, the penalty only for that member
+		local members = { "11_1", "12_1", "13_1" }
+		local cancelled = { state = "cancelled", reason = "declined", by = "12_1", players = {}, id = "x" }
+		T.expect({ ArenaQueue.entryAfterTeam(cancelled, "11_1", members, c.now) }).toEqual({ "penalty", { "12_1" } })
+		local other = { state = "cancelled", reason = "declined", by = "99_1", players = {}, id = "x" }
+		T.expect({ ArenaQueue.entryAfterTeam(other, "11_1", members, c.now) }).toEqual({ "requeue" } :: any)
+		-- all six accepted
+		local c2, fake2 = setup()
+		local es = {}
+		for i = 1, 6 do
+			table.insert(es, enter3(fake2, `S{i}`, ticket3(i, 1000, c2.now - 60 + i)))
+		end
+		local _, r2 = ArenaQueue.tryTeams(fake2, es[1], NET, c2.now, newId, "S1")
+		local last: any = nil
+		for i = 1, 6 do
+			local _, a = fake2.hupdate(
+				NET.matchMap,
+				ArenaQueue.matchKey(r2.id),
+				ArenaQueue.respond(es[i].key, true, c2.now),
+				NET.matchTtl
+			)
+			last = a
+		end
+		T.expect(last.state).toBe("accepted")
+	end)
+
+	T.it("the local fallback: this server's entries, any rating, without the oldest-initiates check", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			-- ratings far apart (outside every window), one more entry of another server
+			table.insert(entries, enter3(fake, "S1", ticket3(i, 1000 + 400 * i, c.now - 60 + i)))
+		end
+		enter3(fake, "S2", ticket3(7, 1000, c.now - 100))
+		local me = entries[6]
+		T.expect((ArenaQueue.tryTeams(fake, me, NET, c.now, newId, "S1"))).toBe("none")
+		local locals = {}
+		for i = 1, 5 do
+			table.insert(locals, ArenaQueue.newEntry(entries[i].ticket, "S1"))
+		end
+		local status, pairing =
+			ArenaQueue.tryTeams(fake, me, NET, c.now, newId, "S1", { fallback = true, locals = locals })
+		T.expect(status).toBe("local")
+		T.expect(pairing.fallback).toBe(true)
+		local keys = {}
+		for _, side in pairing.sides do
+			for _, t in side do
+				keys[t.entrant.key] = true
+			end
+		end
+		T.expect(keys["7_1"]).toBeNil()
+		for _, e in entries do
+			T.expect(keys[e.key]).toBe(true)
+		end
+	end)
+
+	T.it("a timeout of six: every player without an answer is penalized, the others go back", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{i}`, ticket3(i, 1000, c.now - 60 + i)))
+		end
+		local _, record = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		local key = ArenaQueue.matchKey(record.id)
+		for i = 1, 4 do
+			fake.hupdate(NET.matchMap, key, ArenaQueue.respond(entries[i].key, true, c.now), NET.matchTtl)
+		end
+		local _, after = fake.hupdate(NET.matchMap, key, ArenaQueue.expire(record.acceptBy + 1, NET), NET.matchTtl)
+		T.expect(after.state).toBe("cancelled")
+		T.expect(after.reason).toBe("timeout")
+		T.expect(#after.silent).toBe(2)
+		for i, e in entries do
+			local want = if i >= 5 then "penalty" else "requeue"
+			T.expect({ i, ArenaQueue.entryAfter(after, e.key, nil, c.now) }).toEqual({ i, want })
+		end
+		-- a party team with two silent members: both penalized, the team out
+		local members = { "11_1", "12_1", "13_1" }
+		local timedOut = {
+			state = "cancelled",
+			reason = "timeout",
+			by = "12_1",
+			silent = { "12_1", "13_1" },
+			players = {},
+			id = "x",
+		}
+		T.expect({ ArenaQueue.entryAfterTeam(timedOut, "11_1", members, c.now) }).toEqual({
+			"penalty",
+			{ "12_1", "13_1" },
+		})
+	end)
+
+	T.it("arrival of five of six after the time: noShow with the missing one", function()
+		local c, fake = setup()
+		local entries = {}
+		for i = 1, 6 do
+			table.insert(entries, enter3(fake, `S{i}`, ticket3(i, 1000, c.now - 60 + i)))
+		end
+		local _, record = ArenaQueue.tryTeams(fake, entries[1], NET, c.now, newId, "S1")
+		local present = {}
+		for i = 1, 5 do
+			present[entries[i].key] = true
+		end
+		T.expect({ ArenaQueue.arrival(record, present, c.now, c.now + 1, NET) }).toEqual({ "wait", { entries[6].key } })
+		T.expect({ ArenaQueue.arrival(record, present, c.now, c.now + NET.arriveTimeout, NET) }).toEqual({
+			"noShow",
+			{ entries[6].key },
+		})
+	end)
+
+	T.it("the 3v3 starts of the pit lie on the sand", function()
+		local pit = Arena.venue("pit") :: Arena.Venue
+		for side = 1, 2 do
+			T.expect(#pit.sides[side]).toBe(3)
+			for i = 1, 3 do
+				local x, z = ArenaRules.spot(pit, side, i)
+				T.expect(ArenaRules.inside(pit, x, z)).toBe(true)
+			end
+		end
 	end)
 end)

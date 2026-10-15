@@ -42,6 +42,12 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 			equipment = table.clone(char.equipment),
 			createdAt = char.createdAt,
 			title = Titles.shown(char, nil, Titles.contextOf(account, MonetizationService.HasVip(target))),
+			-- S128: the season of an arena season title (ProfileWindow, UI/TitleText)
+			titleSeason = (function(): string?
+				local shown = Titles.shown(char, nil, Titles.contextOf(account, MonetizationService.HasVip(target)))
+				local args = if shown then Titles.argsOf(char, shown) else nil
+				return if args then args.season else nil
+			end)(),
 			frame = if type(frame) == "string" then frame else nil,
 		}
 end

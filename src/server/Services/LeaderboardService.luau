@@ -777,7 +777,14 @@ local function snapshotOf(instanceId: string, player: Player?, wait: boolean): L
 		elseif def.format == "rating" then
 			-- S126: the arena rank and rating of the character
 			if player and character then
-				me = Leaderboard.arenaMe(character, rows, excludedPlayer(player, character))
+				-- S128: the rating field of the board's mode (arena3 -> rating3)
+				local field = "rating"
+				for _, mode in Arena.MODES do
+					if mode.board == def.id then
+						field = mode.ratingField
+					end
+				end
+				me = Leaderboard.arenaMe(character, rows, excludedPlayer(player, character), field)
 			end
 		elseif player and character and (def.class == nil or def.class == character.class) then
 			me = Leaderboard.me(character, rows, CFG, excludedPlayer(player, character))

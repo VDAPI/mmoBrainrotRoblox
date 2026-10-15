@@ -757,7 +757,8 @@ end
 
 -- S126: the player's line under an arena board: the rank (from the rows) and the own rating; `below` = the arena
 -- minimum level for characters under it.
-function Leaderboard.arenaMe(character: any, rows: { Row }, excluded: boolean): Me
+-- S128: `field` = the mode's rating field of the board ("rating3" for arena3; default "rating").
+function Leaderboard.arenaMe(character: any, rows: { Row }, excluded: boolean, field: string?): Me
 	if excluded then
 		return { hidden = true }
 	end
@@ -766,7 +767,8 @@ function Leaderboard.arenaMe(character: any, rows: { Row }, excluded: boolean): 
 		return { below = Arena.MIN_LEVEL }
 	end
 	local state = if type(character) == "table" then character.arena else nil
-	local rating = if type(state) == "table" and type(state.rating) == "number" then state.rating else Arena.ELO.start
+	local value = if type(state) == "table" then state[field or "rating"] else nil
+	local rating = if type(value) == "number" then value else Arena.ELO.start
 	return { r = Leaderboard.rankOf(rows), s = rating }
 end
 

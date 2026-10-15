@@ -46,7 +46,8 @@ export type Skin = {
 -- S97: earned in the game, never sold (price 0, Logic/Premium.canBuyCosmetic): exactly one of the fields.
 -- S121: vipMonth = "YYYYMM" (UTC) of the VIP cosmetic of the month (Logic/Vip.monthCosmetic).
 -- S123: pack = the key of the starter pack (Data/Products.starterPacks) that gives it.
-export type Obtain = { boss: string?, quest: string?, vipMonth: string?, pack: string? }
+-- S128: arena = "shop" (Arena Tokens shop, Data/Arena.SHOP) or "season" (a season reward, Data/Arena.SEASON_REWARDS).
+export type Obtain = { boss: string?, quest: string?, vipMonth: string?, pack: string?, arena: ("shop" | "season")? }
 
 -- S123 looks of the new kinds (all colours hex).
 -- frame: the stroke (a gradient from stroke to stroke2) `thickness` px at an 84 px portrait, an ornament glyph in the
@@ -408,6 +409,46 @@ add("pet_hound", "pet", 0, "🐕", "#8A7A6A", {
 	},
 })
 add("aura_valor", "aura", 0, "✠", "#E8C25A", { obtain = { pack = "starter_hero" } })
+
+-- S128 (DESIGN-17 §6): the arena cosmetics, never sold for shards (price 0, obtain.arena): bought with Arena Tokens at
+-- the Arena Master (Data/Arena.SHOP) or given as a season reward (Data/Arena.SEASON_REWARDS). On the wiki with the
+-- arena article (S131).
+add("frame_gladiator", "frame", 0, "⚔", "#8A5A2A", {
+	color2 = "#D9B26A",
+	obtain = { arena = "shop" },
+	wiki = false,
+	frame = { stroke = "#8A5A2A", stroke2 = "#D9B26A", thickness = 4, ornament = "⚔" },
+})
+add("chatframe_gladiator", "chatframe", 0, "⚔", "#3A2A18", {
+	color2 = "#E8D2A0",
+	obtain = { arena = "shop" },
+	wiki = false,
+	chat = { left = "⟦", right = "⟧", color = "#B07A3A", bubble = "#3A2A18", bubbleText = "#E8D2A0" },
+})
+add("title_ironwill", "title", 0, "✎", "#B8B2A6", { obtain = { arena = "shop" }, wiki = false, title = "ironwill" })
+add(
+	"title_sandveteran",
+	"title",
+	0,
+	"✎",
+	"#D9B26A",
+	{ obtain = { arena = "shop" }, wiki = false, title = "sandveteran" }
+)
+add("aura_gladiator", "aura", 0, "⚔", "#D9A441", { color2 = "#8A5A2A", obtain = { arena = "shop" }, wiki = false })
+add("frame_arena_season", "frame", 0, "❦", "#C9D1D9", {
+	color2 = "#8A9098",
+	obtain = { arena = "season" },
+	wiki = false,
+	frame = { stroke = "#C9D1D9", stroke2 = "#8A9098", thickness = 5, ornament = "❦", glow = true },
+})
+add(
+	"aura_arena_season",
+	"aura",
+	0,
+	"❦",
+	"#E8C25A",
+	{ color2 = "#FFF0B0", obtain = { arena = "season" }, wiki = false }
+)
 
 local byId: { [string]: Def } = {}
 for _, def in LIST do

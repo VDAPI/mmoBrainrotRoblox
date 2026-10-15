@@ -40,6 +40,7 @@ local NpcController = {
 		"GuildController",
 		"MarketController",
 		"NavController",
+		"ArenaController", -- S128: the arena shop tab (ArenaController depends on no NPC code)
 	},
 }
 
@@ -48,6 +49,7 @@ NpcController.Current = scope:Value(nil :: string?)
 NpcController.Quests = nil :: any
 NpcController.Guild = nil :: any
 NpcController.Market = nil :: any
+NpcController.Arena = nil :: any
 NpcController.Nav = nil :: any
 -- Target of the forge's upgrade tab ({ location, key }), set by dropping an item on the anvil.
 NpcController.UpgradeTarget = scope:Value(nil :: any)
@@ -151,6 +153,13 @@ function NpcController.OpenService(service: string)
 		return
 	elseif service == "vendors" then
 		guideToClassVendor()
+		return
+	elseif service == "arenashop" or service == "arena" then
+		-- S128: the arena window at the Arena Master (the shop's buttons work), "arenashop" on the shop tab; it closes
+		-- with the NPC's windows like before (NPC_OPTIONAL)
+		WindowManager.Close("npc")
+		NpcController.Arena.OpenAtMaster(if service == "arenashop" then "shop" else "main")
+		fromNpc.arena = true
 		return
 	end
 	local window = SERVICE_TO_WINDOW[service]
@@ -392,6 +401,7 @@ function NpcController.Init(registry)
 	NpcController.Guild = registry.Get("GuildController")
 	NpcController.Market = registry.Get("MarketController")
 	NpcController.Nav = registry.Get("NavController")
+	NpcController.Arena = registry.Get("ArenaController")
 	registerWindows()
 end
 

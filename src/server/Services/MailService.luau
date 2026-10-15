@@ -44,6 +44,7 @@ export type Outgoing = {
 	charId: string?,
 	shards: number?, -- S125: Dragon Shards for the account (system / admin only, Logic/Mail.add)
 	timedTitle: { id: string, untilTs: number }?, -- S125: a timed title for `charId`
+	once: string?, -- S128: an idempotency key: sent once per mailbox, a repeated Send succeeds without a second parcel
 }
 
 local Registry: any
@@ -114,6 +115,7 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 		charId = outgoing.charId,
 		shards = if outgoing.shards and outgoing.shards > 0 then math.max(0, math.floor(outgoing.shards)) else nil,
 		timedTitle = outgoing.timedTitle,
+		once = outgoing.once,
 	}
 	local ok, _, err = store:update(key(userId), function(current: any?)
 		local box = Mail.box(current)

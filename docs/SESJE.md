@@ -9984,3 +9984,86 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{ArenaPit (nowy),Arena
   `Rng.new()` w `Matchmaker`. Testy: `arenaqueue.spec` (fallback z `locals`, przejęty kandydat, mapa trybu poza
   podróżą). Pliki: `src/server/Arena/{ArenaHost,Matchmaker,Transfer}.luau`, `src/server/Services/{ArenaService,
   TravelService}.luau`, `src/client/UI/Screens/StonePicker.luau`, `src/shared/Logic/ArenaQueue.luau`.
+
+### S128: Arena 3: 3v3, Żetony Areny, sklep areny, nagrody sezonu
+
+Dziewiąta sesja serii DESIGN-17 (§6), po S127 (`296537e`). Bez Studio i bez wgrywania czegokolwiek do Roblox; nic do
+Creator Hub. Nazwy S126/S127 sprawdzone w kodzie i użyte (DECYZJE).
+- **Dane:** `Data/Arena`: `MODES["3v3"]` (240 s, 1 runda, `rating3`, tablica `arena3`, `sumHpPct`), `MODE_ORDER = { "1v1",
+  "3v3" }`, pola trybu `peakField` … `vsField`, `TOKENS`, `tokensWeekCap`, `SHOP` (generowane błogosławieństwa 1–3 każdej
+  linii), `shopByKey`, `shopOf`, `SHOP_MAX_BLESSING_RARITY`, `BLESSING_PRICE`, `SEASON_REWARDS`, `seasonMinPlayed`,
+  `VENUES.*.bench`; powody S128 w księdze (`omit` += `shopOf`, `shopByKey`). `Data/Cosmetics`: `obtain.arena`, siedem
+  kosmetyków areny; `Data/Titles`: `arenaSeason`, `seasonArg`, pięć tytułów sezonu i dwa kupowane; `Data/Leaderboards`:
+  tablica i zakładka `arena3`; `Data/Npcs`: usługa `arenashop`; `Data/Town/fame.arena`; `Config.Arena` (`hofStore`,
+  `hofCheck`, `hofDelay`, `hofSize`, `rewardRetry`).
+- **Logika:** `ArenaRules`: `Ticket.members`, `size`, `formTeams3`, gałąź drużynowa `pair`, `canQueue3`, `applyResult` /
+  `rollSeason` / `copy` z polami trybu, `vsCount` / `isRated` z polem, `weekOf`, `dailyCount`, `weekTokens`, `tokensFor`,
+  `addTokens`, `seasonTier`, `seasonReward`, `seasonLabel`, `canBuyShop`, `benchIndex`; `ArenaQueue`: `Entry.size`,
+  `MatchPlayer.entry`, `MatchRecord.teams` / `silent`, `newTeamRecord`, `tryTeams` (z fallbackiem `locals`),
+  `playersOfEntry`, `entryAfterTeam`; `Titles`: `arenaSeason`, `argsOf`; `Leaderboard.arenaMe` z polem ratingu; `Mail`:
+  klucz `once` (pamięć `sent` w skrzynce).
+- **Serwer:** `ArenaService` (3v3 lokalnie: drużyna z grupy albo pojedynczy, oferta do sześciu, kara dla
+  odmawiającego i milczących, wypisanie drużyny przy zmianie grupy; Żetony w `applyFor`; `AddTokens`, `IsSidelined`, `RunMatch(...,
+  absent)`, sklep `ArenaShopBuy`, nagrody sezonu `settleSeason` / `sendPending`, Sala Sław, admin `AdminTokens` /
+  `AdminRating3` / `AdminWeek` / `AdminQueue3` / `AdminHof`), `Arena/Match` (ławka, `sidelined`, zejście z piasku = pokonany i `left`,
+  panel drużyn, `winner` w migawce), `Arena/Transfer` (pole `team` w drodze powrotnej), `MailService` (`once`),
+  `Arena/LocalQueue` (tryby drużynowe), `Arena/Matchmaker` (wpisy drużyn, `teamOf`, `tryTeams`), `Arena/ArenaHost`
+  (start na punktach strony, mecz bez nieobecnych), nowy `Arena/HallOfFame`; `SkillService` (pokonany nie rzuca),
+  `TitleService` (atrybut `TitleSeason`), `ProfileService` (`titleSeason`), `LeaderboardService` (linia `arena3`),
+  `World/Layouts/city` i `Logic/TownGen/Props` (plansza i cokoły Sali Sław Areny), `Admin/Combat`.
+- **Klient:** `ArenaWindow` (Żetony w nagłówku, zakładki Arena / Sklep areny / Nagrody sezonu, przełącznik 1 na 1 / 3 na
+  3, przycisk drużyny z powodem, potwierdzenie zakupu), `ArenaController` (`Tab`, `Mode`, `AtMaster`, `OpenAtMaster`,
+  `Buy`), `ArenaOffer` (3 na 3: obie drużyny), `Hud/ArenaPanel` (wynik drużyny i Żetony), nowy
+  `Hud/ArenaTeams` (panel drużyn, kropki na telefonie), nowy `ArenaFameController`, nowy `UI/TitleText` (tytuł z
+  sezonem w tabliczce, oknie postaci i profilu), `NpcController` (`arena` / `arenashop` przy Mistrzu), `Wardrobe`
+  (`obtain.arena`), `CurrencyIcon` (`token`).
+- **Remote'y:** `ArenaShopBuy(string)` (nowy); 3v3 przez `ArenaJoin("3v3")` / `ArenaLeave` / `ArenaRespond`. Nowe pola
+  `character.arena`: `rating3`, `peak3`, `wins3`, `losses3`, `played3`, `vs3`, `tokensWeek`, `titles`, `pendingReward?`
+  (szablon, bez migracji); `ArenaSeasonSummary` += pola 3v3; `arenaLive`: `queue.members` (imię, klasa, poziom),
+  `offer.mine` / `them`, `match.teams` / `myTeam` / `tokens` / `tokensReason` / `winner`.
+- **Żetony i sklep:** wygrana / przegrana 1v1 10 / 4, 3v3 12 / 5, pierwsze 3 mecze dnia ×2, limit 600 na tydzień. Sklep:
+  5 Kamieni Powrotu 10, błogosławieństwa 15 / 35 / 70 (rzadkość 1 / 2 / 3, pięć linii), Ramka Gladiatora i Ramka czatu
+  Gladiatora po 250, tytuły „Żelazna Wola” 400 i „Weteran Ristalle” 600, Aura Gladiatora 1200; przy 3 meczach dziennie
+  42 Żetony na dzień (`docs/BALANS.md` → „Arena: Żetony i sklep (S128)”).
+- **Admin:** `/arena tokens <n> | rating3 <n> | week | hof | queue3`, `/arena season` wypłaca nagrodę od razu.
+- **Teksty (PL i EN):** `arena.mode.*`, `arena.queue3.*`, `arena.error.party3` / `notLeader` / `partyBracket` /
+  `partyBusy` / `out`, `arena.team.*`, `arena.result3*`, `arena.tokens.*`, `arena.shop.*`, `arena.season.*`,
+  `arena.hof.*`, `currency.token`, `npc.service.arenashop`, `worldmap.search.arenashop`, `mail.subject.arenaSeason`,
+  `leaderboard.board.arena3`, `leaderboard.tab.arena3`, tytuły i kosmetyki areny, `wardrobe.obtain.arena*`,
+  `admin.arena.*`, `admin.usage.arena`.
+- **Testy:** `arena.spec` (bloki S128: dane, drużyny, wynik 3v3, `canQueue3`, `applyResult` 3v3, Żetony, nagrody sezonu,
+  sklep, ławki), `arenaqueue.spec` (S128: `tryTeams`, wyścigi, odmowa i brak odpowiedzi z sześciu,
+  fallback, przybycie, punkty `pit`), `market.spec` (list z kluczem `once`), `paywall.spec`
+  (S128: Żetony nie do kupienia, kosmetyki areny nie na sprzedaż, sklep bez mocy, arena niezależna od konta; `price` /
+  `shards` w `Data/Arena` tylko w sklepie i nagrodach), `titles.spec`, `premium.spec`, `town.spec` (plansza), `balance.spec`
+  („S128 arena tokens”, `Balance.arenaTokens`). `scripts/check` zielony, `balance1_20` 0 różnic bez
+  `ALLOWED_1_20_DIFFS`, `wiki_keys_diff` 0 bez `WIKI_KEYS_ALLOW` (nie był potrzebny).
+- **Wiki:** `npm run data`: `npcs.json` i `mapsearch.json` (usługa `arenashop` Mistrza Areny), `meta.json`, odcisk w
+  `docs/PRZEDMIOTY.md`. Do publikacji w S131 (`wiki = false`): tytuły `arena_bronze`, `arena_silver`, `arena_gold`,
+  `arena_diamond`, `arena_master` (oraz kupowane `ironwill`, `sandveteran`, jak każdy tytuł kupowany poza `titles.json`),
+  kosmetyki `frame_gladiator`, `chatframe_gladiator`, `title_ironwill`, `title_sandveteran`, `aura_gladiator`,
+  `frame_arena_season`, `aura_arena_season`.
+
+Dla S129–S131:
+- Żetony za wydarzenia: `ArenaService.AddTokens(player, gain, reasonKey?)` (jedyna droga, `ArenaRules.addTokens`); limit
+  tygodnia liczy `ArenaRules.weekTokens`, decyzja o nim po stronie wywołującego.
+- Sala Sław Areny: `Arena/HallOfFame` (rekord sezonu), plansza z tagiem `ArenaFameBoard`; S130 może dopisać wpis turnieju
+  obok, w tym samym wzorze.
+- Kosmetyki areny: `obtain.arena`; S131 przegląda ceny sklepu areny w `Data/Arena.SHOP` (księga S128).
+
+Dla właściciela: nic do Creator Hub ani do Studio. Kolejka globalna 3 na 3 działa tylko na opublikowanym miejscu z
+włączonymi usługami API (jak 1 na 1 z S127); w Studio wszystko lokalnie na Ristalle.
+
+Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Arena,Cosmetics,Titles,Leaderboards,Npcs,AdminCommands}.luau`,
+`src/shared/Data/Town/fame.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{ArenaRules,ArenaQueue,Titles,Leaderboard}.luau`, `src/shared/Logic/TownGen/Props.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/Arena/HallOfFame.luau` (nowy),
+`src/server/Arena/{Match,LocalQueue,Matchmaker,ArenaHost,Transfer}.luau`, `src/shared/Logic/Mail.luau`,
+`src/server/Services/{Arena,Skill,Title,Profile,Leaderboard,Mail}Service.luau`, `src/server/Admin/Combat.luau`,
+`src/server/World/Layouts/city.luau`, `src/client/Controllers/ArenaFameController.luau` (nowy),
+`src/client/Controllers/{Arena,Npc,Nameplate}Controller.luau`, `src/client/UI/TitleText.luau` (nowy),
+`src/client/UI/Screens/Hud/ArenaTeams.luau` (nowy), `src/client/UI/Screens/{ArenaWindow,ArenaOffer,Wardrobe,
+ProfileWindow}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`, `src/client/UI/Screens/Hud/ArenaPanel.luau`,
+`src/client/UI/Components/CurrencyIcon.luau`, `tests/{arena,arenaqueue,paywall,titles,premium,town,balance,market}.spec.luau`,
+`tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`, `wiki/src/data/{npcs,mapsearch,meta}.json`,
+`docs/{BALANS,PRZEDMIOTY,DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

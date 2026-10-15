@@ -56,9 +56,10 @@ function LocalQueue.new(): Types.PairSource
 		local out: { ArenaRules.Pairing } = {}
 		for _, id in Arena.MODE_ORDER do
 			local mode = Arena.MODES[id]
-			if not mode or not mode.enabled or mode.teamSize ~= 1 then
+			if not mode or not mode.enabled then
 				continue
 			end
+			-- S128: teams (teamSize 3) through the team branch of ArenaRules.pair (a party team is one ticket)
 			local mine = {}
 			for _, t in tickets do
 				if t.mode == id then
@@ -85,7 +86,7 @@ function LocalQueue.new(): Types.PairSource
 		local n = 0
 		for _, t in tickets do
 			if t.mode == mode and t.bracket == bracket then
-				n += 1
+				n += ArenaRules.size(t) -- S128: a party team counts its three fighters
 			end
 		end
 		return n
