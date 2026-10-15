@@ -72,6 +72,7 @@ local QuestBudget = require("../src/shared/Logic/QuestBudget")
 local QuestLogic = require("../src/shared/Logic/QuestLogic")
 local Quests = require("../src/shared/Data/Quests")
 local Rarities = require("../src/shared/Data/Rarities")
+local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
 local Recipes = require("../src/shared/Data/Recipes")
 local Shops = require("../src/shared/Data/Shops")
 local SkillData = require("../src/shared/Data/Skills")
@@ -8726,6 +8727,47 @@ function Balance.arenaTokens(): ArenaTokens
 		)
 	end
 	return { profiles = profiles, shop = shop, cap = cap }
+end
+
+-- S129: the Blood Moon (Data/ScheduledEvents.bloodMoon): how many Elites a group of an open region brings in one
+-- occurrence when it is killed as soon as it respawns (the respawn window of a hunting ground, AreaSpawns.RESPAWN
+-- without a profile), and what the participation reward weighs against the arena's week cap.
+export type BloodMoonRow = { id: string, respawn: number, respawns: number, elites: number }
+export type BloodMoonBalance = {
+	duration: number,
+	eliteChance: number,
+	rows: { BloodMoonRow },
+	tokens: number,
+	tokensShare: number, -- of Data/Arena.tokensWeekCap
+	shards: number,
+	perWeek: number, -- occurrences a week
+}
+
+function Balance.bloodMoon(): BloodMoonBalance
+	local rules = ScheduledEvents.bloodMoon
+	local def = ScheduledEvents.get("bloodmoon") :: ScheduledEvents.EventDef
+	local rows: { BloodMoonRow } = {}
+	local function row(id: string, window: { min: number, max: number })
+		local respawn = (window.min + window.max) / 2
+		local respawns = def.duration / respawn
+		table.insert(rows, { id = id, respawn = respawn, respawns = respawns, elites = respawns * rules.eliteChance })
+	end
+	row("default", AreaSpawns.RESPAWN)
+	for _, id in AreaProfiles.order do
+		local profile = AreaProfiles.get(id)
+		if profile then
+			row(id, profile.respawn)
+		end
+	end
+	return {
+		duration = def.duration,
+		eliteChance = rules.eliteChance,
+		rows = rows,
+		tokens = rules.reward.tokens,
+		tokensShare = rules.reward.tokens / ArenaData.tokensWeekCap,
+		shards = rules.reward.shards,
+		perWeek = #def.slots,
+	}
 end
 
 return Balance

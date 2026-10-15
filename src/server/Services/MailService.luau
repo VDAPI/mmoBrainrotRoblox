@@ -8,6 +8,8 @@
 -- Claiming happens at the mailbox (the Auctioneer); the list (state branch `mail`) is visible anywhere.
 -- S125: system and admin parcels may carry Dragon Shards (account) and a timed title (character, TitleService.GrantTimed);
 -- the weekly ranking sends them (LeaderboardService), S128-S130 too. TitleService is taken lazily (S60 pattern).
+-- S129: they may also carry Arena Tokens (character, ArenaService.AddTokens outside the weekly cap) and cosmetics earned
+-- in the game (account, CosmeticService.Grant); ArenaService depends on mail and CosmeticService is taken lazily too.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -45,10 +47,14 @@ export type Outgoing = {
 	shards: number?, -- S125: Dragon Shards for the account (system / admin only, Logic/Mail.add)
 	timedTitle: { id: string, untilTs: number }?, -- S125: a timed title for `charId`
 	once: string?, -- S128: an idempotency key: sent once per mailbox, a repeated Send succeeds without a second parcel
+	tokens: number?, -- S129: Arena Tokens for `charId` (system / admin only), outside the weekly cap
+	cosmetics: { string }?, -- S129: cosmetics never sold (obtain), for the account (system / admin only)
 }
 
 local Registry: any
 local TitleService: any
+local ArenaService: any
+local CosmeticService: any
 local DataService: any
 local PlayerStateService: any
 local CharacterService: any
@@ -66,6 +72,25 @@ local function titleService(): any
 		TitleService = if ok then service else false
 	end
 	return TitleService or nil
+end
+
+-- S129: lazily as well (ArenaService lists MailService in its Deps; CosmeticService knows nothing about mail).
+local function lazy(name: string, cached: any): any
+	if cached == nil and Registry then
+		local ok, service = pcall(Registry.Get, name)
+		return if ok and service then service else false
+	end
+	return cached
+end
+
+local function arenaService(): any
+	ArenaService = lazy("ArenaService", ArenaService)
+	return ArenaService or nil
+end
+
+local function cosmeticService(): any
+	CosmeticService = lazy("CosmeticService", CosmeticService)
+	return CosmeticService or nil
 end
 
 local function key(userId: number): string
@@ -116,6 +141,8 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 		shards = if outgoing.shards and outgoing.shards > 0 then math.max(0, math.floor(outgoing.shards)) else nil,
 		timedTitle = outgoing.timedTitle,
 		once = outgoing.once,
+		tokens = if outgoing.tokens and outgoing.tokens > 0 then math.floor(outgoing.tokens) else nil,
+		cosmetics = if outgoing.cosmetics and #outgoing.cosmetics > 0 then outgoing.cosmetics else nil,
 	}
 	local ok, _, err = store:update(key(userId), function(current: any?)
 		local box = Mail.box(current)
@@ -162,6 +189,22 @@ local function deliver(player: Player, parcel: Mail.Parcel): { ItemInstance }
 		local titles = titleService()
 		if titles then
 			titles.GrantTimed(player, timed.id, timed.untilTs)
+		end
+	end
+	-- S129: Arena Tokens (never counted to the weekly cap of matches) and cosmetics (an owned one gives nothing)
+	local tokens = parcel.tokens
+	if tokens and tokens > 0 then
+		local arena = arenaService()
+		if arena then
+			arena.AddTokens(player, tokens, nil, { uncapped = true })
+		end
+	end
+	if parcel.cosmetics then
+		local cosmetics = cosmeticService()
+		if cosmetics then
+			for _, id in parcel.cosmetics do
+				cosmetics.Grant(player, id)
+			end
 		end
 	end
 	local leftovers = {}
@@ -217,7 +260,16 @@ local function claim(player: Player, id: string): (boolean, string?)
 	local missedGold = if same then 0 else parcel.gold
 	local missedShards = if same then nil else parcel.shards
 	local missedTitle = if same then nil else parcel.timedTitle
-	if #leftovers > 0 or missedGold > 0 or (missedShards or 0) > 0 or missedTitle ~= nil then
+	local missedTokens = if same then nil else parcel.tokens
+	local missedCosmetics = if same then nil else parcel.cosmetics
+	if
+		#leftovers > 0
+		or missedGold > 0
+		or (missedShards or 0) > 0
+		or missedTitle ~= nil
+		or (missedTokens or 0) > 0
+		or missedCosmetics ~= nil
+	then
 		MailService.Send(player.UserId, {
 			from = "system",
 			subjectKey = "mail.subject.returned",
@@ -226,6 +278,8 @@ local function claim(player: Player, id: string): (boolean, string?)
 			charId = char.id,
 			shards = missedShards,
 			timedTitle = missedTitle,
+			tokens = missedTokens,
+			cosmetics = missedCosmetics,
 		})
 	end
 	DataService.Save(player)

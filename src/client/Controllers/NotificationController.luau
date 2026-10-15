@@ -83,10 +83,11 @@ function NotificationController.Start()
 		NotificationController.System(Text.now(key, escapeArgs(args)))
 	end)
 	-- Server-wide announcements (legendary drops, +7..+9 upgrades): golden banner + system chat; a mythic drop
-	-- (loot.announceMythic*, S30) gets the stronger red banner.
+	-- (loot.announceMythic*, S30) gets the stronger red banner; S129: so do the Blood Moon announcements (bloodmoon.*).
 	Net.On("Announce", function(key: string, args: any)
 		local text = Text.now(key, escapeArgs(args))
-		local mythic = type(key) == "string" and string.find(key, "announceMythic", 1, true) ~= nil
+		local mythic = type(key) == "string"
+			and (string.find(key, "announceMythic", 1, true) ~= nil or string.sub(key, 1, 10) == "bloodmoon.")
 		Announcement.push(text, if mythic then "mythic" else nil)
 		NotificationController.System(text)
 	end)

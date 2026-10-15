@@ -1048,3 +1048,21 @@ T.describe("S128 arena shop", function()
 		end
 	end)
 end)
+
+T.describe("S129 event tokens", function()
+	T.it("an uncapped gain adds tokens without eating the week's cap", function()
+		local week = 2965
+		local monday = Time.weekStart(week)
+		local s0 = state({ tokens = 50, tokensWeek = { week = week, n = 590 } })
+		local s1, balance = ArenaRules.addTokens(s0, 20, monday + 60, { uncapped = true })
+		T.expect(balance).toBe(70)
+		T.expect(s1.tokensWeek).toEqual({ week = week, n = 590 })
+		T.expect(ArenaRules.weekTokens(s1, monday + 60)).toBe(590)
+		local s2 = ArenaRules.addTokens(s1, 5, monday + 120)
+		T.expect(s2.tokensWeek).toEqual({ week = week, n = 595 })
+		-- a new week starts even on an uncapped gain
+		local s3 = ArenaRules.addTokens(s2, 20, monday + 7 * 86400, { uncapped = true })
+		T.expect(s3.tokensWeek).toEqual({ week = week + 1, n = 0 })
+		T.expect(s3.tokens).toBe(95)
+	end)
+end)

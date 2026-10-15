@@ -133,18 +133,51 @@ function WorldController.SetModulation(mod: Modulation?)
 	modulationDirty = true
 end
 
+-- S129: Blood Moon sky: a second layer after the area mood (BloodMoonController), faded in and out over `fade` s by
+-- `eventMix` (the Heartbeat loop steps it and re-applies the light, also on maps without a day cycle).
+export type EventTint = {
+	fogColor: Color3,
+	fogMix: number,
+	tint: Color3,
+	tintMix: number,
+	brightness: number, -- multiplier
+	saturation: number, -- added
+	haze: number, -- added
+	fade: number, -- seconds
+}
+local eventTint: EventTint? = nil
+local eventTarget = 0
+local eventMix = 0
+
+function WorldController.SetEventTint(tint: EventTint?)
+	if tint then
+		eventTint = tint
+	end
+	eventTarget = if tint then 1 else 0
+	modulationDirty = true
+end
+
 local function modulate(lighting: { [string]: any }, air: { [string]: any }, grading: { [string]: any })
 	local m = modulation
-	if not m then
-		return
+	if m then
+		lighting.FogEnd *= m.fogScale
+		lighting.FogColor = (lighting.FogColor :: Color3):Lerp(m.fogColor, m.fogMix)
+		lighting.Brightness *= m.brightness
+		air.Haze = math.clamp(air.Haze + m.haze, 0, 10)
+		air.Density = math.clamp(air.Density + m.density, 0, 1)
+		grading.TintColor = (grading.TintColor :: Color3):Lerp(m.tint, m.tintMix)
+		grading.Saturation = math.clamp(grading.Saturation + m.saturation, -1, 1)
 	end
-	lighting.FogEnd *= m.fogScale
-	lighting.FogColor = (lighting.FogColor :: Color3):Lerp(m.fogColor, m.fogMix)
-	lighting.Brightness *= m.brightness
-	air.Haze = math.clamp(air.Haze + m.haze, 0, 10)
-	air.Density = math.clamp(air.Density + m.density, 0, 1)
-	grading.TintColor = (grading.TintColor :: Color3):Lerp(m.tint, m.tintMix)
-	grading.Saturation = math.clamp(grading.Saturation + m.saturation, -1, 1)
+	local e = eventTint
+	local k = eventMix
+	if e and k > 0 then
+		lighting.FogColor = (lighting.FogColor :: Color3):Lerp(e.fogColor, e.fogMix * k)
+		lighting.Brightness *= 1 + (e.brightness - 1) * k
+		air.Haze = math.clamp(air.Haze + e.haze * k, 0, 10)
+		air.Color = (air.Color :: Color3):Lerp(e.fogColor, e.fogMix * k)
+		grading.TintColor = (grading.TintColor :: Color3):Lerp(e.tint, e.tintMix * k)
+		grading.Saturation = math.clamp(grading.Saturation + e.saturation * k, -1, 1)
+	end
 end
 
 -- The day/night loop leaves the lighting alone while the map-entry tween runs.
@@ -662,6 +695,14 @@ function WorldController.Start()
 	RunService.Heartbeat:Connect(function(dt: number)
 		accumulator += dt
 		sinceMod += dt
+		-- S129: the Blood Moon sky fades in / out
+		if eventMix ~= eventTarget then
+			local fade = if eventTint then math.max(0.1, eventTint.fade) else 1
+			eventMix = if eventTarget > eventMix
+				then math.min(eventTarget, eventMix + dt / fade)
+				else math.max(eventTarget, eventMix - dt / fade)
+			modulationDirty = true
+		end
 		local cycle = accumulator >= 1
 		local mood = modulationDirty and sinceMod >= 0.1
 		if not cycle and not mood then

@@ -556,6 +556,21 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				OnClick = switchCharacter,
 			}),
 			vipRow(scope, close, extra),
+			-- S129: the Blood Moon window (always: it shows when the next one starts)
+			Button(scope, {
+				LayoutOrder = 2.5,
+				Text = Text.T(scope, "menu.bloodmoon"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("bloodmoon")
+					end
+				end,
+			}),
 			row(
 				scope,
 				3,

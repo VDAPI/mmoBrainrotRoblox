@@ -10067,3 +10067,93 @@ ProfileWindow}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`, `src/cl
 `src/client/UI/Components/CurrencyIcon.luau`, `tests/{arena,arenaqueue,paywall,titles,premium,town,balance,market}.spec.luau`,
 `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`, `wiki/src/data/{npcs,mapsearch,meta}.json`,
 `docs/{BALANS,PRZEDMIOTY,DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S129: Krwawy Księżyc: harmonogram UTC, czerwone regiony, punkty, ranking per region, nagrody
+
+Dziesiąta sesja serii DESIGN-17 (§7), po S128 (`a6705bc`). S116 pominięta za zgodą właściciela. Bez Studio i bez
+wgrywania czegokolwiek do Roblox; nic do Creator Hub (wydarzenie niczego nie sprzedaje). Nazwy S101 i S120–S128
+sprawdzone w kodzie (różnice w DECYZJE: `once` zamiast `dedupe`, sygnatura `AddTokens`).
+- **Dane:** nowy `Data/ScheduledEvents` (`list`, `byKey`, `get`; Krwawy Księżyc wt. i czw. 19:00 UTC, 30 min,
+  ostrzeżenia 600 / 60 s, `blocksWorldEvents`, `quietBefore` 600; `bloodMoon`: regiony, punkty 10 / 1 / 5, `levelGap` 8,
+  `sameVictimMax` 2, `eliteChance` 0,15, nagrody, `sky`), w `BALANCE_MODULES` (`omit` `byKey`, `sky`, powody S129).
+  `Config.BloodMoon` (`writeEvery` 60, `readEvery` 30, `rankTop` 100, `boardTop` 10, `ttl` 2 dni, `settleDelay` 90,
+  `resultsFor` 2 h, ponowienia `writeRetry` 10 / `writeTries` 3 / `settleRetry` 60 / `settleTries` 3; bez `retries`,
+  bo ponowienia wywołań robi `Stores`). Tytuł `bloodmoon` (`req.kind = "timed"`, `wiki = false`), ramka
+  `frame_bloodmoon` (`obtain.event = "bloodmoon"`, `wiki = false`), typ `Cosmetics.Obtain.event`. Zapis:
+  `character.bloodMoon = { id, points, kills, regions, at, paid }` (szablon, bez migracji; typ `Types.BloodMoonState`).
+- **Logika:** `Logic/Schedule` (nowy), `Logic/BloodMoon` (nowy), `Time.fromCivil` (odwrotność `Time.civil`, używa jej
+  też `ArenaRules` zamiast własnej `daysFromCivil`), `WorldEvents.window(warn)`, `ArenaRules.addTokens(...,
+  opts)` z `uncapped`, `Mail`: pola `tokens` i `cosmetics` z walidacją (tylko system / admin, Żetony całkowite z
+  `charId`, kosmetyk tylko z `obtain`), `isEmpty`; `UseBlocks.PENDING` = tylko `tourney`.
+- **Serwer:** `BloodMoonService` (nowy), `BloodMoon/Board` (nowy, cienka warstwa na `Leaderboard/Stores.sorted` S124/S125:
+  bez drugiej atrapy, bez zmian w `Stores`; zapis przez `update` tylko podnosi wpis); `ZoneService.SetBloodMoon` (nakładka w `ZoneAt`), `MonsterService.SetGroupHook`,
+  `PvpService.PlayerKilled`, `WorldEventService` (blokada harmonogramem, `AddBlocker`, `Force` → `admin.event.blocked`),
+  `DeathService` (`death.bloodMoon`, `RespawnDelay(..., ignorePass)`, odmowy w `RespawnNow` i `SkipCountdown`),
+  `MailService` (Żetony i kosmetyki przy odbiorze, zwrot przy zmianie postaci), `ArenaService.AddTokens(..., opts)`,
+  komentarz drzewa w `PlayerStateService`. Admin `/bloodmoon info | start [min] | stop | settle | points <n>`
+  (`Admin/World`, `AdminService.Deps` += `BloodMoonService`).
+- **Klient:** `UI/BloodMoonView` (nowy), `Hud/BloodMoonPanel` (nowy, montowany w `QuestController` obok panelu S101;
+  tropiciel zjeżdża o większy z dwóch odstępów), `BloodMoonWindow` (nowy: stan i termin w UTC, zakładki regionów, top 10,
+  linia „Ty”, źródło rankingu, zasady i nagrody z danych), `BloodMoonController` (nowy: okno, czerwone niebo),
+  `WorldController.SetEventTint`, wpis menu HUD `bloodmoon` (☾, `visible`, `UiArt.MENUS`), przycisk w `GameMenu`,
+  czerwony baner ogłoszeń `bloodmoon.*`, ekran śmierci (ukryte płatne / VIP odrodzenie, podpowiedź), okno poczty
+  (wiersze Żetonów i kosmetyków), garderoba (`wardrobe.obtain.event`).
+- **Teksty (PL i EN):** `bloodmoon.*` (przestrzeń dopisana do `NAMESPACES` w `data.spec`), `hud.bloodmoon.*`,
+  `hud.menu.bloodmoon`, `window.bloodmoon.title`, `menu.bloodmoon`, `mail.tokens`, `mail.cosmetics`,
+  `mail.subject.bloodMoon`, `death.error.bloodMoon`, `death.bloodMoonHint`, `title.bloodmoon`,
+  `cosmetic.frame_bloodmoon`, `wardrobe.obtain.event`, `day.1`…`day.7`, `admin.usage.bloodmoon`, `admin.bloodmoon.*`,
+  `admin.event.blocked`.
+- **Testy:** nowe `tests/schedule.spec.luau` i `tests/bloodmoon.spec.luau`; bloki w `paywall` („S129 Blood Moon”),
+  `market` (poczta S129), `arena` („S129 event tokens”), `worldevents` (blokada), `balance` („Blood Moon (S129)”,
+  `Balance.bloodMoon`), `character` (szablon), `premium` (kosmetyki z `obtain.event`), `data` (przestrzeń).
+  `premiumuse.spec` zielony bez zmian. `scripts/check` zielony (127 plików specyfikacji), `balance1_20` 0 różnic bez
+  `ALLOWED_1_20_DIFFS`, fixture 1–20 bez zmian, `wiki_keys_diff` 0 bez `WIKI_KEYS_ALLOW`.
+- **Balans:** `docs/BALANS.md` z wpisami S129 w księdze (bez „BRAK POWODU”) i sekcją „Krwawy Księżyc (S129)” (grupa bita
+  przy każdym odrodzeniu: 5–11 Elit w 30 min zależnie od profilu łowiska; 20 Żetonów = 3,3% limitu tygodnia). Migawki nie
+  generowano.
+- **Wiki:** `npm run data` bez zmian w danych (ten sam `dataHash`; tytuł i ramka z `wiki = false`, reszta nie trafia do
+  eksportu), `meta.json` zmienił tylko commit i datę, więc przywrócony; artykuł „Krwawy Księżyc” w S131.
+
+Panel na telefonie (obliczenie, jak S101): na PC 280 × 90 / 127 (przed startem / w trakcie) w y 400 po prawej, tropiciel
+zjeżdża o wysokość + 8. Na dotyku 240 × 104 / 141 po lewej pod portretem i ikonami efektów (y ok. 208, w drużynie pod
+ramkami `PartyFrames`), na ekranie 998 × 461 kończy się na y ok. 349; prawa krawędź x ok. 262 nie dotyka `TargetFrame`
+(x 289–709), prawej kolumny ani `Elite2Timer`; przycisk „Wyniki” 44 px. Panel S101 stoi w tym samym miejscu, ale oba
+nigdy nie są widoczne naraz.
+
+Dla S130:
+- `Data/ScheduledEvents`: wpis `EventDef` do `list` (`key = "tourney"`, `nameKey`, `descKey`, `slots` najwyżej jeden na
+  dzień, `duration`, `warn`, `blocksWorldEvents`, `quietBefore`, `enabled`), zasady obok jak `bloodMoon`.
+- `Logic/Schedule`: `current`, `next`, `crossed` (pętla z `lastStep`: `crossed(def, next(def, lastStep), lastStep, now)`),
+  `blocking`, `idOf` / `dateKey` (id turnieju z daty), `weekday`, `untilNext`; wzór pętli i atrybutów `ReplicatedStorage`
+  w `BloodMoonService` (`BloodMoon`, `BloodMoonEndsAt`, `BloodMoonNext`).
+- `WorldEventService.AddBlocker(check, nameKey)` dla wymuszonych wydarzeń; harmonogramowe blokuje `Schedule.blocking`
+  samo, gdy `blocksWorldEvents`.
+- Poczta: `shards`, `timedTitle` (S125), `tokens`, `cosmetics` (S129), idempotencja `once`; Żetony przy odbiorze przez
+  `ArenaService.AddTokens(player, n, nil, { uncapped = true })`.
+- Kosmetyki nagród: `obtain = { event = "tourney" }` + `wardrobe.obtain.event` (nazwa z `ScheduledEvents.get(key).nameKey`).
+- Blokady: `UseGuards.register("tourney", …)` i zdjęcie `tourney` z `UseBlocks.PENDING`; odrodzenie jak w `DeathService`
+  (`death.bloodMoon` jako wzór), turniej ma te same blokady premium (DESIGN-17 §3).
+- `BloodMoon/Board`: wzór tablicy SortedMap z atrapą przez `Leaderboard/Stores.sorted(id, ttl)` (`update`, który
+  tylko podnosi własny klucz sortowania podany jako wynik, `top` z trzecim wynikiem „odczyt się udał”,
+  `Stores.mode("sorted")`).
+
+Dla właściciela: nic do Creator Hub ani do Studio. Ranking globalny działa na opublikowanym miejscu (w Studio po włączeniu
+dostępu do usług API), bez niego okno mówi „tylko ten serwer”.
+
+Pliki: `src/shared/Data/ScheduledEvents.luau` (nowy), `src/shared/Logic/{Schedule,BloodMoon}.luau` (nowe),
+`src/shared/{Config,Types}.luau`, `src/shared/Data/{Titles,Cosmetics,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{AccountSchema,ArenaRules,Mail,Time,UseBlocks,WorldEvents,UiArt}.luau`,
+`src/server/BloodMoon/Board.luau` (nowy), `src/server/Services/BloodMoonService.luau` (nowy),
+`src/server/Services/{Zone,Monster,Pvp,WorldEvent,Death,Mail,Arena,Admin,PlayerState}Service.luau`,
+`src/server/Admin/World.luau`, `src/client/UI/BloodMoonView.luau` (nowy),
+`src/client/UI/Screens/Hud/BloodMoonPanel.luau` (nowy), `src/client/UI/Screens/BloodMoonWindow.luau` (nowy),
+`src/client/Controllers/BloodMoonController.luau` (nowy),
+`src/client/Controllers/{World,Screen,Quest,Notification}Controller.luau`,
+`src/client/UI/Screens/{GameMenu,MailWindow,Wardrobe}.luau`, `src/client/UI/Screens/Hud/DeathScreen.luau`,
+`tests/{schedule,bloodmoon}.spec.luau` (nowe), `tests/{paywall,market,arena,worldevents,balance,character,premium,data}.spec.luau`,
+`tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
+`docs/{BALANS,DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+- **Poprawki po przeglądzie:** po końcu wydarzenia (`finish`) `resultsUntil` = koniec + `resultsFor`, więc ostatni
+  odczyt na żywo zostaje jako „Zakończony” do rozliczenia (wcześniej wpis menu i nagłówek znikały na `settleDelay`);
+  `/bloodmoon start` nie czyści `stoppedId` (zatrzymany harmonogramowy nie wraca po wymuszonym z wyzerowanymi
+  punktami); w oknie na dotyku bez kolumny gildii (szerokość 0 robiła z niej drugą elastyczną komórkę).

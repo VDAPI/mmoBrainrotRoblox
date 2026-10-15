@@ -2307,3 +2307,24 @@ T.describe("S128 arena tokens", function()
 		end
 	end)
 end)
+
+T.describe("Blood Moon (S129)", function()
+	local bm = B.bloodMoon()
+	local Products = require("../src/shared/Data/Products")
+	local Rarities = require("../src/shared/Data/Rarities")
+	local ArenaData = require("../src/shared/Data/Arena")
+	local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
+
+	T.it("Elites are a seasoning, the rewards stay below the arena and the shop", function()
+		T.expect(bm.eliteChance).toBeBetween(0.05, 0.3)
+		T.expect(bm.tokens <= 0.1 * ArenaData.tokensWeekCap).toBe(true)
+		T.expect(bm.tokensShare).toBeNear(bm.tokens / ArenaData.tokensWeekCap, 1e-12)
+		T.expect(bm.shards <= Products.shardPacks[1].shards).toBe(true)
+		T.expect(ScheduledEvents.bloodMoon.reward.blessingRarity).toBe(Rarities.UNIQUE)
+		-- every respawn window gives a handful of Elites per group in one occurrence, never a flood
+		for _, row in bm.rows do
+			T.expect({ row.id, row.elites > 0.5 and row.elites < 20 }).toEqual({ row.id, true })
+		end
+		T.expect(bm.perWeek).toBe(2)
+	end)
+end)

@@ -136,17 +136,6 @@ function ArenaRules.seasonOf(t: number): string
 	return Time.monthKey(t)
 end
 
--- Day number of a UTC date ("days from civil", H. Hinnant; the inverse of Time.civil).
-local function daysFromCivil(year: number, month: number, day: number): number
-	local y = if month <= 2 then year - 1 else year
-	local era = y // 400
-	local yoe = y - era * 400
-	local mp = if month > 2 then month - 3 else month + 9
-	local doy = (153 * mp + 2) // 5 + day - 1
-	local doe = yoe * 365 + yoe // 4 - yoe // 100 + doy
-	return era * 146097 + doe - 719468
-end
-
 local function shift(season: string, by: number): (number, number)
 	local year, month = Time.monthLabel(season)
 	if not year or not month then
@@ -159,13 +148,13 @@ end
 -- Unix time the season starts (the 1st of its month, 00:00 UTC).
 function ArenaRules.seasonStart(season: string): number
 	local year, month = shift(season, 0)
-	return daysFromCivil(year, month, 1) * 86400
+	return Time.fromCivil(year, month, 1) * 86400
 end
 
 -- Unix time the season ends (= the start of the next one).
 function ArenaRules.seasonEndsAt(season: string): number
 	local year, month = shift(season, 1)
-	return daysFromCivil(year, month, 1) * 86400
+	return Time.fromCivil(year, month, 1) * 86400
 end
 
 function ArenaRules.prevSeason(season: string): string
@@ -871,7 +860,14 @@ end
 -- Adds `gain` tokens to a copy of the state (a new week resets tokensWeek first). The only place tokens are added
 -- (ArenaService.AddTokens). S129/S130: event rewards call ArenaService.AddTokens, which uses this; whether they count
 -- to the week cap is their decision. Returns the copy and the new balance.
-function ArenaRules.addTokens(state: ArenaState, gain: number, now: number): (ArenaState, number)
+-- S129: `opts.uncapped` (event rewards: Blood Moon, S130 tournament) adds to the balance without counting toward the
+-- week's tokensWeekCap, so an event never eats the cap of matches (DECYZJE S129).
+function ArenaRules.addTokens(
+	state: ArenaState,
+	gain: number,
+	now: number,
+	opts: { uncapped: boolean? }?
+): (ArenaState, number)
 	local out = copy(state)
 	local week = ArenaRules.weekOf(now)
 	if out.tokensWeek.week ~= week then
@@ -879,7 +875,9 @@ function ArenaRules.addTokens(state: ArenaState, gain: number, now: number): (Ar
 	end
 	local n = math.max(0, math.floor(gain))
 	out.tokens += n
-	out.tokensWeek.n += n
+	if not (opts and opts.uncapped) then
+		out.tokensWeek.n += n
+	end
 	return out, out.tokens
 end
 

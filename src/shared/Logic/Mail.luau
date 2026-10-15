@@ -3,6 +3,7 @@
 -- an account ("Mail_<userId>"); a parcel addressed to a character (`charId`) is only visible to it, one
 -- without `charId` to every character of the account. Parcels expire after Market.Mail.lifetimeDays.
 
+local Cosmetics = require("../Data/Cosmetics")
 local Items = require("../Data/Items")
 local Market = require("../Data/Market")
 local Rarities = require("../Data/Rarities")
@@ -27,6 +28,8 @@ export type Parcel = {
 	shards: number?, -- S125: Dragon Shards for the account, system/admin parcels only
 	timedTitle: { id: string, untilTs: number }?, -- S125: timed title (Data/Titles req.kind "timed") for `charId`
 	once: string?, -- S128: an idempotency key: a second parcel with the same key is never added (Mail.add)
+	tokens: number?, -- S129: Arena Tokens for `charId` (outside the weekly cap), system/admin parcels only
+	cosmetics: { string }?, -- S129: Data/Cosmetics ids earned in the game (obtain ~= nil), system/admin parcels only
 }
 
 -- S128: `sent` = the once keys of parcels added (key -> os.time it is forgotten), kept after the parcel is claimed
@@ -128,6 +131,32 @@ function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 			return false, "error.badRequest"
 		end
 	end
+	-- S129: Arena Tokens and cosmetics earned in events (Blood Moon, S130 tournament); a cosmetic must be one that is
+	-- never sold (obtain), so mail can never hand out a shop item
+	if parcel.tokens ~= nil then
+		local n = parcel.tokens
+		if
+			type(n) ~= "number"
+			or n < 0
+			or n ~= math.floor(n)
+			or parcel.charId == nil
+			or (parcel.from ~= "system" and parcel.from ~= "admin")
+		then
+			return false, "error.badRequest"
+		end
+	end
+	if parcel.cosmetics ~= nil then
+		local list = parcel.cosmetics
+		if type(list) ~= "table" or (parcel.from ~= "system" and parcel.from ~= "admin") then
+			return false, "error.badRequest"
+		end
+		for _, id in list do
+			local def = if type(id) == "string" then Cosmetics.get(id) else nil
+			if not def or def.obtain == nil then
+				return false, "error.badRequest"
+			end
+		end
+	end
 	if Mail.count(box) >= Rules.maxParcels then
 		return false, "mail.error.full"
 	end
@@ -140,9 +169,14 @@ function Mail.add(box: Box, parcel: Parcel, now: number): (boolean, string?)
 	return true, nil
 end
 
--- S125: nothing to take: no gold, items, shards or title.
+-- S125: nothing to take: no gold, items, shards or title (S129: tokens, cosmetics).
 function Mail.isEmpty(parcel: Parcel): boolean
-	return parcel.gold <= 0 and #parcel.items == 0 and (parcel.shards or 0) <= 0 and parcel.timedTitle == nil
+	return parcel.gold <= 0
+		and #parcel.items == 0
+		and (parcel.shards or 0) <= 0
+		and parcel.timedTitle == nil
+		and (parcel.tokens or 0) <= 0
+		and (parcel.cosmetics == nil or #parcel.cosmetics == 0)
 end
 
 local function visibleTo(parcel: Parcel, charId: string?, now: number): boolean

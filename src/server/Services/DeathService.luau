@@ -5,6 +5,9 @@
 -- they fell; Logic/Respawn handles dungeons, falls under the map and blocked spots). No choice within
 -- Config.DeathChoiceTimeout seconds = the city. The character comes back with 1 HP, full mana and energy and
 -- the respawn protection (StatusEffectService "respawnShield"). Death clears harmful effects.
+-- S129: a death on a Blood Moon map during the event (Logic/BloodMoon.paidRespawnBlocked) has no paid (shards) or free
+-- VIP skip and no "Fast Return" shortcut; a Robux respawn bought anyway is still honoured (the receipt never hangs).
+-- BloodMoonService is taken lazily from the registry (S60 pattern; it does not depend on this service).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -14,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local BloodMoon = require(ReplicatedStorage.Shared.Logic.BloodMoon)
 
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
@@ -50,6 +54,8 @@ local ZoneService: any
 local WorldService: any
 local MonetizationService: any
 local StatusEffectService: any
+local Registry: any
+local BloodMoonService: any
 
 type Pending = {
 	token: number,
@@ -58,14 +64,31 @@ type Pending = {
 	respawnAt: number, -- server time the choice opens
 	deadline: number, -- server time the choice defaults to the city
 	busy: boolean, -- a respawn is running
+	bloodMoon: boolean, -- S129: died on a Blood Moon map during the event
 }
 
 local pending: { [Player]: Pending } = {}
 local tokenCounter = 0
 
-function DeathService.RespawnDelay(player: Player, level: number): number
+-- S129: lazily (never in Init).
+local function bloodMoonService(): any
+	if BloodMoonService == nil and Registry then
+		local ok, service = pcall(Registry.Get, "BloodMoonService")
+		BloodMoonService = if ok and service then service else false
+	end
+	return BloodMoonService or nil
+end
+
+-- S129: whether a death on `mapId` now falls under the Blood Moon blocks.
+local function bloodMoonDeath(mapId: string): boolean
+	local service = bloodMoonService()
+	return service ~= nil and BloodMoon.paidRespawnBlocked(service.IsActive(), mapId)
+end
+
+-- S129: `ignorePass` = the Blood Moon (the pass does not shorten the countdown).
+function DeathService.RespawnDelay(player: Player, level: number, ignorePass: boolean?): number
 	local delay = Config.RespawnBase + Config.RespawnPerLevel * level
-	if MonetizationService.HasPass(player, "fastRespawn") then
+	if not ignorePass and MonetizationService.HasPass(player, "fastRespawn") then
 		delay *= Config.FastRespawnMultiplier
 	end
 	return delay
@@ -268,15 +291,18 @@ local function onDied(player: Player, source: string)
 	tokenCounter += 1
 	local token = tokenCounter
 	local zone = ZoneService.GetZone(player)
-	local delay = DeathService.RespawnDelay(player, character.level)
+	local mapId = if zone then zone.map else character.location.map
+	local blocked = bloodMoonDeath(mapId)
+	local delay = DeathService.RespawnDelay(player, character.level, blocked)
 	local now = Workspace:GetServerTimeNow()
 	local state: Pending = {
 		token = token,
-		mapId = if zone then zone.map else character.location.map,
+		mapId = mapId,
 		position = if root then root.Position else nil,
 		respawnAt = now + delay,
 		deadline = now + delay + Config.DeathChoiceTimeout,
 		busy = false,
+		bloodMoon = blocked,
 	}
 	pending[player] = state
 	PlayerStateService.Set(player, { "death" }, {
@@ -286,6 +312,7 @@ local function onDied(player: Player, source: string)
 		cost = Config.RespawnNowCost,
 		dungeon = (Maps.get(state.mapId) or {} :: any).biome == "dungeon",
 		hereCost = Respawn.hereCost(character.level, (Maps.get(state.mapId) or {} :: any).biome),
+		bloodMoon = if blocked then true else nil,
 	})
 	log:info("%s died (%s), choice in %.1f s", player.Name, source, delay)
 	task.delay(delay + Config.DeathChoiceTimeout, onDeadline, player, token)
@@ -381,6 +408,9 @@ local function respawnNow(player: Player): (boolean, string?)
 	if Workspace:GetServerTimeNow() >= state.respawnAt then
 		return false, "death.error.alreadyOpen"
 	end
+	if state.bloodMoon then
+		return false, "death.error.bloodMoon"
+	end
 	local account: Types.AccountData? = PlayerStateService.Get(player, { "account" })
 	if not account or account.dragonShards < Config.RespawnNowCost then
 		return false, "error.notEnoughShards"
@@ -403,7 +433,8 @@ local function respawnProduct(player: Player): boolean
 end
 
 -- S121: the VIP free instant respawn (VipService): opens the choice like the "respawn" product, refusing like
--- RespawnNow (not dead, countdown already over).
+-- RespawnNow (not dead, countdown already over). S129: refused for a Blood Moon death before VipService spends the day's
+-- respawn.
 function DeathService.SkipCountdown(player: Player): (boolean, string?)
 	local state = pending[player]
 	if not state then
@@ -412,11 +443,15 @@ function DeathService.SkipCountdown(player: Player): (boolean, string?)
 	if Workspace:GetServerTimeNow() >= state.respawnAt then
 		return false, "death.error.alreadyOpen"
 	end
+	if state.bloodMoon then
+		return false, "death.error.bloodMoon"
+	end
 	openChoice(player, state)
 	return true, nil
 end
 
 function DeathService.Init(registry)
+	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ResourceService = registry.Get("ResourceService")

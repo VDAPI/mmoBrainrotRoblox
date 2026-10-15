@@ -100,6 +100,14 @@ local function DeathScreen(scope: Scope): Instance
 	local counting = scope:Computed(function(use): boolean
 		return not use(choosing)
 	end)
+	-- S129: a death on a Blood Moon map during the event: no paid or VIP skip (a hint instead of the buttons)
+	local moonBlocked = scope:Computed(function(use): boolean
+		local d = use(death)
+		return d ~= nil and d.bloodMoon == true
+	end)
+	local canSkip = scope:Computed(function(use): boolean
+		return use(counting) and not use(moonBlocked)
+	end)
 
 	local function invoke(name: string, ...: any)
 		if Fusion.peek(busy) then
@@ -144,7 +152,7 @@ local function DeathScreen(scope: Scope): Instance
 		Name = "RespawnRobux",
 		LayoutOrder = 5,
 		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
-		Visible = counting,
+		Visible = canSkip,
 		Text = if respawnSoon
 			then Text.T(scope, "premium.soon")
 			else Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
@@ -170,7 +178,7 @@ local function DeathScreen(scope: Scope): Instance
 		Text = Text.T(scope, "death.vipRespawn"),
 		Visible = scope:Computed(function(use): boolean
 			use(now) -- re-read every tick: the day may change while dead
-			return use(counting) and use(vipActive) == true and Vip.respawnLeft(use(vipState), Clock.now()) > 0
+			return use(canSkip) and use(vipActive) == true and Vip.respawnLeft(use(vipState), Clock.now()) > 0
 		end),
 		Disabled = busy,
 		OnClick = function()
@@ -249,13 +257,25 @@ local function DeathScreen(scope: Scope): Instance
 						TextColor3 = Theme.Colors.TextMuted,
 					}),
 					vipButton,
+					label(scope, {
+						Name = "BloodMoonHint",
+						LayoutOrder = 3,
+						Size = UDim2.new(1, 0, 0, 40),
+						Visible = scope:Computed(function(use): boolean
+							return use(counting) and use(moonBlocked)
+						end),
+						TextWrapped = true,
+						Text = Text.T(scope, "death.bloodMoonHint"),
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Colors.DangerHover,
+					}),
 					-- Countdown: pay to skip it.
 					Button(scope, {
 						Name = "RespawnNow",
 						LayoutOrder = 4,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 						Variant = "primary",
-						Visible = counting,
+						Visible = canSkip,
 						Text = scope:Computed(function(use): string
 							return Text.get(use, "death.respawnNow", { cost = use(cost) })
 						end),

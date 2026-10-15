@@ -62,6 +62,10 @@ type SpawnerRuntime = {
 
 local SLEEP_DESPAWN = 90
 
+-- S129: asked before a normal group spawns; "elite" turns this spawn into one Elite (Blood Moon). nil = as before.
+export type GroupHook = (mapId: string, data: Spawns.Spawner) -> string?
+local groupHook: GroupHook? = nil
+
 local EntityService: any
 local ZoneService: any
 local ResourceService: any
@@ -432,6 +436,20 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 	if data.choices and #data.choices > 0 then
 		kinds = { data.choices[random:NextInteger(1, #data.choices)] }
 	end
+	local variant: "normal" | "elite" | "elite2" = data.variant :: any
+	-- S129: the Blood Moon may bring the group back as one Elite of its first kind that has Elites (the same spawner:
+	-- level cap, home and loot of the hunting ground; after its death the group respawns and rolls again)
+	local hook = groupHook
+	if hook and variant == "normal" and hook(spawner.mapId, data) == "elite" then
+		for _, kind in kinds do
+			local def = Monsters.get(kind)
+			if def and def.elites ~= false then
+				kinds = { kind }
+				variant = "elite"
+				break
+			end
+		end
+	end
 	-- S27: AreaId = the named area (or cave) of the group, for "kill / collect in an area" side quests.
 	local attributes = { GroupId = data.id, GroupSize = #kinds, AreaId = data.areaId }
 	if data.variant == "elite2" then
@@ -444,8 +462,7 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 		local position = spawner.origin + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
 		local level = random:NextInteger(data.level.min, data.level.max)
 		local facing = CFrame.Angles(0, random:NextNumber() * math.pi * 2, 0)
-		local monster =
-			MonsterService.SpawnAt(kind, data.variant, level, CFrame.new(position) * facing, spawner, attributes)
+		local monster = MonsterService.SpawnAt(kind, variant, level, CFrame.new(position) * facing, spawner, attributes)
 		if monster and announce and monster.variant == "elite2" then
 			for _, player in Players:GetPlayers() do
 				local zone = ZoneService.GetZone(player)
@@ -456,6 +473,11 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 		end
 	end
 	refreshGroupSize(spawner)
+end
+
+-- S129: sets (or with nil removes) the group hook of spawnGroup (BloodMoonService at the start and the end).
+function MonsterService.SetGroupHook(hook: GroupHook?)
+	groupHook = hook
 end
 
 -- Removes a sleeping group without rewards; it spawns fresh when a player comes back.

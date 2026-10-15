@@ -377,13 +377,19 @@ end
 
 -- S128: adds Arena Tokens to the character (the one place: Logic/ArenaRules.addTokens). Returns the new balance, nil
 -- without a character. S129/S130 event rewards call this too; the week cap is checked by the caller (tokensFor).
-function ArenaService.AddTokens(player: Player, gain: number, reasonKey: string?): number?
+-- S129: `opts.uncapped` = an event reward outside the week's cap (ArenaRules.addTokens).
+function ArenaService.AddTokens(
+	player: Player,
+	gain: number,
+	reasonKey: string?,
+	opts: { uncapped: boolean? }?
+): number?
 	local char = character(player)
 	if not char or type(char.arena) ~= "table" then
 		return nil
 	end
 	local n = math.max(0, math.floor(gain))
-	local new, balance = ArenaRules.addTokens(char.arena, n, Clock.now())
+	local new, balance = ArenaRules.addTokens(char.arena, n, Clock.now(), opts)
 	PlayerStateService.Set(player, { "character", "arena" }, new)
 	if n > 0 then
 		Analytics.custom(player, "ArenaTokens", n)

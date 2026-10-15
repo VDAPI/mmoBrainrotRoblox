@@ -77,6 +77,19 @@ function WorldEvents.nextStart(plannedStart: number, rng: Rng.Rng, notBefore: nu
 	return at
 end
 
+-- S129: how long a world event starting now may last at most (the warning when announced, then the longest kind):
+-- WorldEventService checks [now, now + window) against Logic/Schedule.blocking (the Blood Moon).
+function WorldEvents.window(warn: boolean): number
+	local longest = 0
+	for _, id in Data.order do
+		local def = WorldEvents.kindOf(id)
+		if def then
+			longest = math.max(longest, def.duration)
+		end
+	end
+	return (if warn then Data.schedule.warn else 0) + longest
+end
+
 -- No player in an open region: the next try.
 function WorldEvents.retryAt(now: number): number
 	return now + Data.schedule.retry

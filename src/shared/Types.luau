@@ -66,6 +66,17 @@ export type MountState = { owned: { [string]: { lvl: number } }, active: string?
 -- S125: the character's weekly EXP (Logic/Leaderboard.addWeekly).
 export type ExpWeek = { week: number, exp: number, b: number }
 
+-- S129: the character's Blood Moon (Logic/BloodMoon): the occurrence id ("" = none), points, kills per victim key
+-- ("<userId>_<slot>"), points per region, the time of the last point (ranking tie-break) and whether it was settled.
+export type BloodMoonState = {
+	id: string,
+	points: number,
+	kills: { [string]: number },
+	regions: { [string]: number },
+	at: number,
+	paid: boolean,
+}
+
 export type CharacterData = {
 	id: string,
 	name: string,
@@ -137,6 +148,8 @@ export type CharacterData = {
 	-- S125: timed titles, title id -> unix time until which it is unlocked (weekly ranking; S129 Blood Moon, S130
 	-- tournament). Expired entries are removed on entering the world.
 	timedTitles: { [string]: number },
+	-- S129: the last Blood Moon the character took part in (no migration, reconcile)
+	bloodMoon: BloodMoonState,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
 	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
@@ -383,6 +396,7 @@ export type DeathState = {
 	cost: number,
 	dungeon: boolean?,
 	hereCost: number?, -- FIX 2026-10-15: gold for "respawn here" (0 or nil: free)
+	bloodMoon: boolean?, -- S129: died on a Blood Moon map during the event: no paid / VIP skip, no pass shortcut
 }
 
 export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil: number? }
@@ -407,6 +421,8 @@ export type ClientState = {
 	companion: CompanionState?,
 	lure: LureRuntime?, -- S122
 	arenaLive: ArenaLive?, -- S126
+	-- S129: the Blood Moon results of the occurrence (BloodMoonService): { id, phase, global, updatedAt, regions }
+	bloodMoonBoard: { [string]: any }?,
 }
 
 export type CompanionState = { npc: string, quest: string, mode: "follow" | "lead", phase: string }

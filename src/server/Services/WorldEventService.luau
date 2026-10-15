@@ -13,6 +13,9 @@
 -- (backpack, else mail, else a personal bag), and one step of the weekly "event" contract (QuestEvents "event").
 -- The rules are pure (Logic/WorldEvents); the schedule lives in memory (a restart starts over). All times are
 -- server times (Workspace:GetServerTimeNow).
+-- S129: no world event starts when its window (warning + the longest kind) meets a wall-clock event that blocks world
+-- events (Logic/Schedule.blocking over Data/ScheduledEvents, in Util/Clock time; the Blood Moon and its quiet 10 min
+-- before) or a blocker added by another service (AddBlocker: a Blood Moon forced by an admin).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -22,6 +25,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 local Areas = require(Shared.Data.Areas)
+local Clock = require(Shared.Util.Clock)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
@@ -29,6 +33,8 @@ local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rng = require(Shared.Logic.Rng)
+local Schedule = require(Shared.Logic.Schedule)
+local ScheduledEvents = require(Shared.Data.ScheduledEvents)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Types = require(Shared.Types)
 local WorldEvents = require(Shared.Logic.WorldEvents)
@@ -120,6 +126,10 @@ local lastPublish = 0
 local lastSent: { [Player]: string } = {}
 
 local PUBLISH_EVERY = 2
+
+-- S129: (from, to) in Util/Clock time -> true while that window is taken (BloodMoonService: a forced Blood Moon)
+type Blocker = { check: (from: number, to: number) -> boolean, nameKey: string }
+local blockers: { Blocker } = {}
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -776,6 +786,25 @@ local function stepInvasion(e: Event, t: number)
 	end
 end
 
+-- S129: what a world event lasting `window` s from now would overlap: (the name key, the scheduled occurrence or nil
+-- for a blocker); nil when free. A blocker that errors blocks (fail closed).
+local function blockedBy(window: number): (string?, Schedule.Occurrence?)
+	local from = Clock.now()
+	local to = from + window
+	local occ = Schedule.blocking(ScheduledEvents.list, from, to)
+	if occ then
+		local def = ScheduledEvents.get(occ.key)
+		return if def then def.nameKey else occ.key, occ
+	end
+	for _, blocker in blockers do
+		local ok, result = pcall(blocker.check, from, to)
+		if not ok or result == true then
+			return blocker.nameKey, nil
+		end
+	end
+	return nil, nil
+end
+
 local function step()
 	if not ServerMode.isWorld() then
 		return -- S127: no world events on arena/tournament servers
@@ -784,6 +813,14 @@ local function step()
 	local e = current
 	if not e then
 		if t >= nextAt - Data.schedule.warn then
+			local nameKey, occ = blockedBy(WorldEvents.window(true))
+			if nameKey then
+				-- the first try after the blocking event (its end in Clock time; a blocker: the usual retry)
+				local wait = if occ then math.max(0, occ.endsAt - Clock.now()) else 0
+				nextAt = t + wait + Data.schedule.retry + Data.schedule.warn
+				log:info("world event postponed by %s for %d s", nameKey, math.floor(wait + Data.schedule.retry))
+				return
+			end
 			plan(t)
 		end
 		return
@@ -884,9 +921,19 @@ end
 
 -- Starts an event now (`warn` = after the 2 min warning). `kind` nil / "random" = by weight; `areaId` nil = the
 -- admin's open region at their level, else the usual pick.
-function WorldEventService.Force(kind: string?, areaId: string?, warn: boolean, by: Player): (boolean, string?)
+function WorldEventService.Force(
+	kind: string?,
+	areaId: string?,
+	warn: boolean,
+	by: Player
+): (boolean, string?, { [string]: any }?)
 	if current then
 		return false, "admin.event.busy"
+	end
+	-- S129: not over a scheduled event (Blood Moon) or a forced one
+	local blockedKey = blockedBy(WorldEvents.window(warn))
+	if blockedKey then
+		return false, "admin.event.blocked", { name = "@" .. blockedKey }
 	end
 	local chosen: WorldEvents.KindId = if kind and WorldEvents.kindOf(kind)
 		then (kind :: any) :: WorldEvents.KindId
@@ -939,6 +986,19 @@ end
 -- Moves the next scheduled start `seconds` from now.
 function WorldEventService.SetNext(seconds: number)
 	nextAt = now() + math.max(0, seconds)
+end
+
+-- S129: `check(from, to)` (Util/Clock time) -> true while a world event in that window must not start; `nameKey`
+-- names it for /event start. Returns the function that removes it.
+function WorldEventService.AddBlocker(check: (from: number, to: number) -> boolean, nameKey: string): () -> ()
+	local blocker: Blocker = { check = check, nameKey = nameKey }
+	table.insert(blockers, blocker)
+	return function()
+		local index = table.find(blockers, blocker)
+		if index then
+			table.remove(blockers, index)
+		end
+	end
 end
 
 function WorldEventService.Current(): Event?

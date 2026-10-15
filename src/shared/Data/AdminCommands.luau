@@ -267,6 +267,13 @@ cmd(
 	{ enum("action", { "info", "start", "warn", "stop", "next" }), str("a", true), str("b", true) },
 	{ dangerActions = { "stop" } }
 )
+-- S129: the Blood Moon on this server (BloodMoonService): n = minutes for start, points for points
+cmd(
+	"world",
+	"bloodmoon",
+	{ enum("action", { "info", "start", "stop", "settle", "points" }), int("n", 1, 120, true, "30") },
+	{ dangerActions = { "start", "stop" } }
+)
 cmd("world", "bring", { ref("player", "player") })
 -- S26: shaped terrains (Admin/Terrain)
 cmd("world", "tparea", { str("target") })

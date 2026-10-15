@@ -18,6 +18,7 @@ local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
 local Net = require(Shared.Net)
 local PvpRules = require(Shared.Logic.PvpRules)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
 
@@ -32,6 +33,8 @@ local PvpService = {
 		"GuildService",
 		"StatusEffectService",
 	},
+	-- (killer: Player, victim: Player, mapId: string?) after a player defeated another (S129: Blood Moon points)
+	PlayerKilled = Signal.new(),
 }
 
 local PlayerStateService: any
@@ -296,6 +299,7 @@ local function onDied(victim: Player)
 			Net.Fire(player, "KillFeed", killerName, victimName)
 		end
 	end
+	PvpService.PlayerKilled:Fire(killer, victim, mapId)
 end
 
 function PvpService.Start()

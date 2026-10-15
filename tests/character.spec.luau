@@ -210,6 +210,24 @@ T.describe("AccountSchema", function()
 		T.expect(kept.characters["1"].quests.said).toEqual({ side_bears = "quiet" })
 	end)
 
+	T.it("S129: the Blood Moon state comes from the template, without a migration", function()
+		local fresh = AccountSchema.characterTemplate()
+		T.expect(fresh.bloodMoon).toEqual({ id = "", points = 0, kills = {}, regions = {}, at = 0, paid = false })
+		local old: any = AccountSchema.accountTemplate()
+		old.characters["1"] = AccountSchema.characterTemplate()
+		old.characters["1"].bloodMoon = nil
+		T.expect(AccountSchema.migrate(old)).toEqual({})
+		T.expect(old.characters["1"].bloodMoon.id).toBe("")
+		T.expect(old.characters["1"].bloodMoon.paid).toBe(false)
+		local kept: any = AccountSchema.accountTemplate()
+		kept.characters["1"] = AccountSchema.characterTemplate()
+		kept.characters["1"].bloodMoon =
+			{ id = "20261013", points = 25, kills = { ["5_1"] = 2 }, regions = { ashen = 25 }, at = 9, paid = true }
+		AccountSchema.migrate(kept)
+		T.expect(kept.characters["1"].bloodMoon.points).toBe(25)
+		T.expect(kept.characters["1"].bloodMoon.kills).toEqual({ ["5_1"] = 2 })
+	end)
+
 	T.it("S100: the login streak comes from the template, without a migration", function()
 		T.expect(AccountSchema.accountTemplate().login).toEqual({ day = 0, last = 0 })
 		local old: any = AccountSchema.accountTemplate()

@@ -74,6 +74,7 @@ local AdminService = {
 		"StatusEffectService",
 		"MapMarkService",
 		"MountService", -- S96: /mount
+		"BloodMoonService", -- S129: /bloodmoon (nothing it depends on knows AdminService)
 		"LoginRewardService", -- S100: /login, /loginset, /loginnext
 		"WorldEventService", -- S101: /event
 		"VipService", -- S121: /vip

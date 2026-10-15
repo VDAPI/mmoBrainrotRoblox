@@ -48,6 +48,17 @@ function Time.civil(t: number): (number, number, number)
 	return year, month, day
 end
 
+-- S129: the UTC day number of a calendar date ("days from civil", H. Hinnant; the inverse of Time.civil).
+function Time.fromCivil(year: number, month: number, day: number): number
+	local y = if month <= 2 then year - 1 else year
+	local era = y // 400
+	local yoe = y - era * 400
+	local mp = if month > 2 then month - 3 else month + 9
+	local doy = (153 * mp + 2) // 5 + day - 1
+	local doe = yoe * 365 + yoe // 4 - yoe // 100 + doy
+	return era * 146097 + doe - 719468
+end
+
 -- S121: "YYYYMM" of the UTC month containing `t` (VIP cosmetic of the month; arena seasons may reuse it, S126).
 function Time.monthKey(t: number): string
 	local year, month = Time.civil(t)

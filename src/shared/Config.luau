@@ -97,6 +97,21 @@ local Config = {
 		payoutStore = "Vaelthorn_LBPayouts_v1", -- DataStore: "paid_<week>" -> payout record (lock, sent, winners)
 		guildTop = 10, -- highest member levels summed for the guild score
 	},
+	-- S129 (DESIGN-17 §7, §0.4): Blood Moon technical limits (not in CONFIG_KEYS). Rules and rewards:
+	-- Data/ScheduledEvents.bloodMoon. MemoryStore retries: Leaderboard/Stores (Market/Retry).
+	BloodMoon = {
+		writeEvery = 60, -- seconds between two writes of one character's score to the region board (and on leave / end)
+		writeRetry = 10, -- seconds before a failed score write is tried again
+		writeTries = 3, -- attempts of the last write (on leave / at the end) before the settlement
+		readEvery = 30, -- seconds between two reads of the regions' top 10 on one server (live window)
+		rankTop = 100, -- ranks read at the end (rewards: top 100 / 10 / 1)
+		boardTop = 10, -- rows of the live window
+		ttl = 172800, -- 2 days: SortedMap entries (DESIGN-17 §7)
+		settleDelay = 90, -- seconds after the end before reading the final ranks (last writes of other servers)
+		settleRetry = 60, -- seconds before the settlement reads a region board again after a failed read
+		settleTries = 3, -- settlement attempts on one server; then the rest waits for the character's next entry
+		resultsFor = 7200, -- the window and the menu entry keep the results this long after the end
+	},
 
 	CharacterName = {
 		MinLength = 3,

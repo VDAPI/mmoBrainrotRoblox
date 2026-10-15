@@ -4140,3 +4140,64 @@
 - **S128** Zejście z piasku stojącego zawodnika w 3v3 = pokonany, `left` (bez Żetonów) i ławka; w 1v1 bez zmian
   (przegrana runda, S126). Fallback 3v3 po `globalWait` jak w 1v1: tylko wpisy tego serwera, bez okna ratingu
   (`formTeams3(..., anyRating)`), bez warunku „najstarszy zakłada”.
+- **S129** Nazwy z kodu zamiast założeń promptu: idempotencja poczty to istniejący klucz S128 `once`
+  (`"bloodmoon_<id>_<charId>"`), nie nowe pole `dedupe`; `ArenaService.AddTokens(player, gain, reasonKey?, opts?)`
+  (trzeci argument to klucz toastu, więc Żetony z poczty idą jako `AddTokens(player, n, nil, { uncapped = true })`);
+  wykluczenia `Leaderboard.excluded`, klucz `LeaderboardService.KeyOf`, tablica przez `Leaderboard/Stores.sorted`;
+  ogłoszenie zwycięzcy `AnnounceService.Global`. `Config.BloodMoon.retries` usunięte (ponowienia robi `Stores`).
+- **S129** Harmonogram z `Util/Clock.now` (UTC z przesunięciem `/time`, także na kliencie), bez komunikacji między
+  serwerami; id wystąpienia = data UTC startu `YYYYMMDD` (dane: najwyżej jeden slot dziennie, test). Ogłoszenia z
+  `Schedule.crossed(def, next(lastStep), lastStep, now)`: każde dokładnie raz, serwer wstający w trakcie nie ogłasza
+  zaległych ostrzeżeń ani startu (gracze dostają `bloodmoon.inProgress`).
+- **S129** (odejście) Czerwone niebo w `WorldController.SetEventTint` (druga warstwa po nastroju łowiska, przejście
+  3 s) z nowego `BloodMoonController`, nie w `RegionLightController` (ten steruje tylko detalami świateł). Bez dźwięku
+  startu: `Data/Sfx` nie ma ogłoszenia ani rogu z id.
+- **S129** (odejście) „Elity częściej (`eliteMul = 1.5`)” jako `eliteChance = 0.15`: w otwartych regionach nie ma Elit;
+  zwykła grupa przy każdym odrodzeniu (także po uśpieniu) w trakcie wydarzenia wraca z tą szansą jako jedna Elita
+  pierwszego rodzaju z Elitami (`MonsterService.SetGroupHook`); Elity zostają po końcu do zabicia albo uśpienia grupy.
+- **S129** (odejście doprecyzowujące) Punkty liczą się w czterech regionach i ich jaskiniach (ranking regionu jaskini:
+  `dungeonRegion` albo link do regionu), nie w lochach bossów ani w mieście; strefa, niebo i Elity tylko w otwartych
+  regionach. Punkty za Elitę dostaje cała zasługa (`credit` = najlepszy zadający i jego drużyna, jak EXP); licznik
+  ofiary rośnie także przy 0 pkt za różnicę poziomów; ofiara nic nie traci.
+- **S129** (odejście) `character.bloodMoon` ma dodatkowo `regions`, `at`, `paid`; klucz ofiary i wpisu tablicy = klucz
+  S124 `"<userId>_<slot>"`; remis rozstrzyga wcześniejsze zdobycie punktów (`sortKey` = punkty × 10^4 + reszta z
+  czasu od startu; `at` to czas ostatniego punktu w dowolnym regionie). Nazwa mapy `BloodMoon_<id>_<region>` dostaje
+  prefiks `Config.Leaderboard.sortedPrefix` (wrapper S124).
+- **S129** (odejście) Odczyt top 10 czterech regionów co 30 s na serwer (wyniki na żywo) i zapis wyniku co 60 s na
+  klucz (plus wyjście i koniec): ok. 8 odczytów + 1 zapis na gracza z punktami na minutę i serwer, daleko pod limitem
+  MemoryStore (ok. 1000 + 100 × gracze na minutę na grę). Limit „top 100 raz na 5 min” z §0.4 dotyczy tablic stałych S124.
+- **S129** Nagrody: każdy próg wymaga udziału (≥ 5 pkt); liczy się najlepsza ranga postaci spośród regionów z jej
+  punktami; rozliczenie 90 s po końcu na serwerze, zaległe przy następnym wejściu postaci (na dowolnym serwerze, po
+  `settleDelay` od końca); po TTL tablicy albo bez dostępu tylko nagroda za udział. Pełna skrzynka = `paid` zostaje
+  false i ponowienie przy wejściu; postać, która przy starcie nowego wydarzenia ma nierozliczone stare, rozlicza je w tle.
+- **S129** Termin tytułu „Krwawy” = koniec wydarzenia + 7 dni (`untilTs` liczony przez nadawcę, wzór S125); tytuł i
+  ramka mają `wiki = false` (publikacja z artykułem w S131, jak tytuły S125 / S128), więc wiki się nie zmieniła.
+- **S129** (odejście) Żetony z wydarzenia poza tygodniowym limitem areny: `ArenaRules.addTokens(..., { uncapped = true })`
+  nie podbija `tokensWeek.n` (limit chroni przed farmieniem meczów, nie przed nagrodami wydarzeń).
+- **S129** Zwycięzca regionu ogłaszany `AnnounceService.Global` przez serwer, który go rozlicza (raz na zwycięzcę, bez
+  blokady); kilku zwycięzców z jednego serwera co 11 s (Global przepuszcza jedno ogłoszenie na 10 s).
+- **S129** Blokady w trakcie: Eliksir Pełni i Płaszcz Przynęty na całym serwerze (`UseGuards.register("bloodMoon", …)` w
+  `BloodMoonService.Start`, `bloodMoon` zdjęty z `UseBlocks.PENDING`); dla śmierci na mapie regionu albo jego jaskini:
+  bez płatnego (odłamki) i darmowego (VIP) natychmiastowego odrodzenia i bez skrótu przepustki `fastRespawn`
+  (`death.bloodMoon`, odmowa w `SkipCountdown` przed zużyciem dziennego odrodzenia VIP). Produkt Robux kupiony mimo
+  to (przycisk jest ukryty) jest obsłużony jak dotąd, żeby paragon nie wisiał.
+- **S129** Admini (`Config.AdminUserIds`, `/lb hide`) zbierają punkty widoczne w panelu, ale bez wpisu do tablicy i bez
+  nagród; wyjątek: wystąpienie wymuszone `/bloodmoon start` (id `t<data><minuta>`, osobne tablice, tylko ten serwer).
+- **S129** Wydarzenia świata S101: krok harmonogramu sprawdza `Schedule.blocking` dla okna ostrzeżenie + najdłuższy
+  rodzaj (`WorldEvents.window`, 1020 s > `quietBefore` 600 s) i przesuwa próbę za koniec wydarzenia; wymuszony Krwawy
+  Księżyc blokuje przez `WorldEventService.AddBlocker`; `/event start` w czasie blokady odmawia (`admin.event.blocked`);
+  start Krwawego Księżyca kończy trwające wydarzenie świata (`Stop`, bez nagród).
+- **S129** Serwer areny / turnieju (`ServerMode ~= "world"`) tylko pokazuje stan (atrybuty, ogłoszenia), bez stref, Elit,
+  punktów i rozliczeń.
+- **S129** Okno bez klawisza (wolne litery zajęte przez S96–S128); wejścia: wpis menu HUD (od 10 min przed startem do
+  końca publikacji wyników, 2 h po końcu), przycisk „Wyniki” w panelu HUD, przycisk w `GameMenu` (zawsze). Panel stoi
+  w miejscu panelu S101 (nigdy razem), tropiciel zjeżdża o wyższy z dwóch odstępów.
+- **S129** Zależności: `BloodMoonService.Deps` = PlayerState, Character, Data, Zone, Monster, Combat, Pvp, Mail,
+  Announce, WorldEvent, Leaderboard (żaden nie zależy od niego); `AdminService.Deps` += `BloodMoonService`;
+  `DeathService` bierze go leniwie z `registry` (wzór S60), `MailService` tak samo `ArenaService` i `CosmeticService`,
+  `BloodMoonService` tak samo `GuildService` (tag w tablicy).
+- **S129** Zapis do tablicy tylko podnosi wpis (`Board.write` przez `UpdateAsync`: niższy albo równy klucz zostaje), więc
+  zapis okresowy i ostatni (wyjście, koniec) mogą lecieć równolegle w dowolnej kolejności. Nieudany zapis okresowy
+  wraca po `writeRetry` 10 s, ostatni ma `writeTries` 3 próby; rozliczenie czyta tablice do `settleTries` 3 razy co
+  `settleRetry` 60 s, a postać z punktami w regionie, którego tablicy nie udało się odczytać, czeka na następne wejście.
+  Nieudany odczyt na żywo zostawia poprzednie wiersze regionu.

@@ -100,6 +100,9 @@ return {
 		-- byId / byClass are the records of the class files (dumped there); the rest: RANKS, GCD, HOTBAR_SLOTS, ...
 		{ path = "Data/Skills/init", omit = { "byId", "byClass" } },
 		{ path = "Data/Stats" },
+		-- S129: wall-clock events (the Blood Moon schedule, points, rewards, the Elite chance); byKey repeats `list`, the
+		-- sky is a look
+		{ path = "Data/ScheduledEvents", omit = { "byKey", "sky" } },
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
 	} :: { ModuleEntry },
@@ -4173,6 +4176,13 @@ return {
 			{
 				session = "S128",
 				why = "5 rated matches (1v1 + 3v3) in a season before any season reward (S128 decision): without it every character that queued once would get Bronze",
+			},
+		},
+		-- S129 (DESIGN-17 §7): the Blood Moon
+		["ScheduledEvents:*"] = {
+			{
+				session = "S129",
+				why = "new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon",
 			},
 		},
 		-- S127 (DESIGN-17 §6): the arena server map; its level range is the arena's brackets (not a hunting ground)

@@ -1062,4 +1062,82 @@ T.describe("S128 arena tokens, shop and season rewards", function()
 	end)
 end)
 
+T.describe("S129 Blood Moon", function()
+	local BloodMoon = require("../src/shared/Logic/BloodMoon")
+	local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
+	local REWARD = ScheduledEvents.bloodMoon.reward
+
+	-- every string value under a product: never the Blood Moon frame or title
+	local function noEvent(value: any, where: string, seen: { [any]: boolean }?)
+		if type(value) ~= "table" then
+			if value == REWARD.frameId or value == REWARD.titleId then
+				error(`{where}: gives the Blood Moon reward {value}`, 0)
+			end
+			return
+		end
+		local visited = seen or {}
+		if visited[value] then
+			return
+		end
+		visited[value] = true
+		for k, v in value do
+			noEvent(v, `{where}.{tostring(k)}`, visited)
+		end
+	end
+
+	T.it("the frame and the title are earned only: not for sale, in no product", function()
+		local frame = Cosmetics.get(REWARD.frameId)
+		T.expect(frame ~= nil).toBe(true)
+		local def = frame :: Cosmetics.Def
+		T.expect(def.obtain ~= nil).toBe(true)
+		fieldsWithin(def.obtain :: any, { event = true }, `cosmetics.{def.id}.obtain`)
+		T.expect(def.price).toBe(0)
+		T.expect(def.weekly == true).toBe(false)
+		T.expect({ Premium.canBuyCosmetic(def.id, {}, 1e9) }).toEqual({ false, "premium.error.notForSale" })
+		local raw: any = Products
+		for _, field in { "shop", "passes", "subscriptions", "starterPacks", "mounts" } do
+			noEvent(raw[field] or {}, `Products.{field}`)
+		end
+		-- no bought title (Data/Cosmetics kind "title") points at the Blood Moon title
+		for _, cosmetic in Cosmetics.list do
+			T.expect({ cosmetic.id, cosmetic.title == REWARD.titleId }).toEqual({ cosmetic.id, false })
+		end
+	end)
+
+	T.it("paid and VIP respawns are off on the event maps during the event", function()
+		T.expect(BloodMoon.paidRespawnBlocked(true, "meadows")).toBe(true)
+		T.expect(BloodMoon.paidRespawnBlocked(true, "meadows_cave")).toBe(true)
+		T.expect(BloodMoon.paidRespawnBlocked(true, "city")).toBe(false)
+		T.expect(BloodMoon.paidRespawnBlocked(false, "meadows")).toBe(false)
+	end)
+
+	T.it("the Elixir of Wholeness and the Cloak of Luring are blocked during the event", function()
+		T.expect(BloodMoon.consumableBlocked(true)).toBe(true)
+		T.expect(BloodMoon.consumableBlocked(false)).toBe(false)
+		T.expect(table.find(UseBlocks.LISTS.fullElixir, "bloodMoon") ~= nil).toBe(true)
+		T.expect(table.find(UseBlocks.LISTS.lure, "bloodMoon") ~= nil).toBe(true)
+		T.expect(UseBlocks.PENDING.bloodMoon).toBeNil()
+		T.expect(UseBlocks.first("fullElixir", { bloodMoon = true })).toBe("bloodMoon")
+	end)
+
+	T.it("points come from kills only, never from purchases or VIP", function()
+		local plain = { killerLevel = 40, victimLevel = 38, prior = 0 }
+		local rich: any = table.clone(plain)
+		rich.vip = true
+		rich.passes = { fastRespawn = true, vip = true }
+		rich.purchases = { r1 = true }
+		rich.dragonShards = 99999
+		T.expect(BloodMoon.playerPoints(rich)).toBe(BloodMoon.playerPoints(plain))
+		T.expect(BloodMoon.monsterPoints("elite")).toBe(ScheduledEvents.bloodMoon.points.elite)
+		-- the reward comes from the points and the rank alone
+		T.expect(BloodMoon.rewardsOf(BloodMoon.tierOf(5, nil)).shards).toBe(0)
+		-- the module never reads the account
+		local fs = require("@lune/fs")
+		local source = fs.readFile("src/shared/Logic/BloodMoon.luau")
+		for _, word in { "purchases", "dragonShards", "vip", "passes", "HasPass", "HasVip" } do
+			T.expect({ word, string.find(source, word, 1, true) ~= nil }).toEqual({ word, false })
+		end
+	end)
+end)
+
 return nil

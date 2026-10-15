@@ -328,12 +328,13 @@ T.describe("S97 mount skins and premium mounts", function()
 		for _, def in Cosmetics.list do
 			if def.obtain then
 				-- S121: the VIP cosmetics of the month are earned too (any look kind); S123: starter pack cosmetics;
-				-- S128: the arena cosmetics (Arena Tokens shop, season rewards)
+				-- S128: the arena cosmetics (Arena Tokens shop, season rewards); S129: event rewards (Blood Moon)
 				T.expect(
 					def.kind == "mountskin"
 						or def.obtain.vipMonth ~= nil
 						or def.obtain.pack ~= nil
 						or def.obtain.arena ~= nil
+						or def.obtain.event ~= nil
 				).toBe(true)
 				T.expect(def.price).toBe(0)
 				local n = 0

@@ -7,6 +7,8 @@
 --
 -- Result: model attributes MapId / PvpZone, state branch `zone` (the client shows the banner), and the
 -- ZoneChanged signal.
+-- S129: during the Blood Moon the yellow zones of the open regions are red (Logic/BloodMoon.forcedZone, switched by
+-- BloodMoonService through SetBloodMoon); green stays green, caves and dungeons are unchanged.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -14,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local BloodMoon = require(Shared.Logic.BloodMoon)
 local Config = require(Shared.Config)
 local Maps = require(Shared.Data.Maps)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -38,6 +41,7 @@ local CharacterService: any
 
 local volumes: { BasePart } = {}
 local current: { [Player]: ZoneState } = {}
+local forcedActive = false -- S129: the Blood Moon overlay
 
 local function volumeSize(part: BasePart): number
 	return part.Size.X * part.Size.Y * part.Size.Z
@@ -76,7 +80,7 @@ function ZoneService.ZoneAt(position: Vector3, fallbackMap: string): ZoneState
 				local nameKey = part:GetAttribute("NameKey")
 				return {
 					map = mapId,
-					pvp = pvp :: Types.PvpZone,
+					pvp = BloodMoon.forcedZone(mapId, pvp :: Types.PvpZone, forcedActive),
 					nameKey = if type(nameKey) == "string" then nameKey elseif map then map.nameKey else "map.unknown",
 				}
 			end
@@ -85,7 +89,7 @@ function ZoneService.ZoneAt(position: Vector3, fallbackMap: string): ZoneState
 	local map = Maps.get(fallbackMap)
 	return {
 		map = fallbackMap,
-		pvp = if map then map.zone else "green",
+		pvp = BloodMoon.forcedZone(fallbackMap, if map then map.zone else "green", forcedActive),
 		nameKey = if map then map.nameKey else "map.unknown",
 	}
 end
@@ -98,6 +102,20 @@ end
 function ZoneService.GetPvpZone(player: Player): Types.PvpZone
 	local zone = current[player]
 	return if zone then zone.pvp else "green"
+end
+
+-- S129: switches the Blood Moon overlay and re-evaluates every playing character at once (the pvp change fires
+-- ZoneChanged: PvpService updates the nameplate and drops the toggle countdown).
+function ZoneService.SetBloodMoon(active: boolean)
+	if forcedActive == active then
+		return
+	end
+	forcedActive = active
+	for _, player in Players:GetPlayers() do
+		if PlayerStateService.GetPhase(player) == "playing" then
+			ZoneService.Update(player)
+		end
+	end
 end
 
 -- S122: the biome of the map the player stands on (nil while loading): Logic/UseBlocks city / underground / dungeon.

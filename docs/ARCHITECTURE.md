@@ -526,6 +526,32 @@ type CharacterData = {
 - **Zależności:** `ArenaService.Deps` += `MailService`, `CosmeticService`, `InventoryService`, `NpcService`,
   `TitleService` (żaden nie zależy od `ArenaService`).
 
+### Krwawy Księżyc i harmonogram z zegara (S129)
+
+- **Harmonogram:** `Data/ScheduledEvents` (`list` z `EventDef`: `key`, `nameKey`, `descKey`, `slots` = { weekday ISO,
+  hour, minute } UTC, najwyżej jeden na dzień, `duration`, `warn`, `blocksWorldEvents`, `quietBefore`, `enabled`;
+  `bloodMoon` = zasady i nagrody, `sky` = wygląd), czysty `Logic/Schedule` (`weekday`, `ymd`, `dateKey`, `startOf`,
+  `idOf` = data UTC startu, `current`, `next`, `crossed`, `blocking`, `untilNext`) na `Util/Clock.now` (z `/time`).
+- **Zasady:** czysty `Logic/BloodMoon` (`regionOf` region i jego jaskinie, `isEventMap`, `forcedZone`, `playerPoints` /
+  `noPointsKey`, `monsterPoints`, `sortKey` / `pointsOf`, `tierOf`, `rewardsOf`, `bestRank`, `rollElite`,
+  `paidRespawnBlocked`, `consumableBlocked`, `newState` / `addPoints` / `countKill`, `forcedId`, `spanOf`, `boardId`,
+  `phaseOf`, `when`).
+- **Serwer:** `BloodMoonService` (pętla 1 s: `Schedule.crossed` z `lastStep`, start / koniec, zapis wyników co
+  `Config.BloodMoon.writeEvery` i przy wyjściu, odczyt top 10 co `readEvery`, rozliczenie po `settleDelay`, `IsActive`,
+  `Current`, `ActiveOn`, admin `Force` / `Stop` / `Settle` / `AdminPoints` / `Info`), `src/server/BloodMoon/Board.luau`
+  (SortedMap `BloodMoon_<id>_<region>` przez `Leaderboard/Stores.sorted`, ta sama atrapa i prefiks `sortedPrefix`).
+  Haki: `ZoneService.SetBloodMoon`, `MonsterService.SetGroupHook`, sygnał `PvpService.PlayerKilled(killer, victim,
+  mapId)`, `WorldEventService.AddBlocker(check, nameKey)` i blokada `Schedule.blocking` w kroku wydarzeń świata,
+  `DeathService` (leniwie `IsActive`; pole `death.bloodMoon`), `UseGuards.register("bloodMoon", ...)`.
+- **Stan:** atrybuty `ReplicatedStorage` `BloodMoon` (id albo ""), `BloodMoonEndsAt`, `BloodMoonNext`; gałąź runtime
+  `bloodMoonBoard` (`{ id, phase, global, updatedAt, regions = { [region] = { top, me } } }`); zapis
+  `character.bloodMoon = { id, points, kills, regions, at, paid }` (szablon, bez migracji).
+- **Poczta:** `Parcel` / `Outgoing` += `tokens` (Żetony dla `charId`, `ArenaService.AddTokens(..., nil, { uncapped =
+  true })`) i `cosmetics` (tylko kosmetyki z `obtain`); nagroda idempotentna przez `once = "bloodmoon_<id>_<charId>"`.
+- **Klient:** `UI/BloodMoonView` (atrybuty, zegar 0,5 s, `Phase`, `menuVisible`), `Hud/BloodMoonPanel` (miejsce panelu
+  S101), okno `UI/Screens/BloodMoonWindow` (`BloodMoonController`, bez klawisza), `WorldController.SetEventTint`
+  (czerwone niebo nad otwartymi regionami), wpis menu HUD `bloodmoon`, przycisk w `GameMenu`, ekran śmierci.
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.
@@ -616,6 +642,7 @@ type CharacterData = {
 | `/tp` | world | <target> [a] [b] | teleport na mapę, przed wejście do jaskini albo na pozycję |
 | `/npc` | world | [id:npc] | lista NPC albo teleport do jednego |
 | `/time` | world | <seconds> | przesuń zegar gry (alchemia, błogosławieństwa) |
+| `/bloodmoon` | world | <info|start|stop|settle|points> [n] | Krwawy Księżyc na tym serwerze: stan, wymuszenie na n min (osobne tablice `t…`), koniec, rozliczenie teraz, punkty adminowi w regionie (S129) ⚠ start, stop |
 | `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
 | `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
 | `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |

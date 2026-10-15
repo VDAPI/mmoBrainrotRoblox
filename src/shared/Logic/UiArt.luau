@@ -62,6 +62,7 @@ UiArt.MENUS = table.freeze({
 	"mounts",
 	"rankings", -- S124: no picture yet (glyph ♔)
 	"arena", -- S126: no picture yet (glyph ⚔)
+	"bloodmoon", -- S129: no picture yet (glyph ☾)
 	"wardrobe",
 	"premium",
 	"menu",

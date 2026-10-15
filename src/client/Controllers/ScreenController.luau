@@ -15,6 +15,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
+local BloodMoonView = require(script.Parent.Parent.UI.BloodMoonView)
 local SkillsAttention = require(script.Parent.Parent.UI.SkillsAttention)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
@@ -86,6 +87,15 @@ local MENU: { Hud.MenuEntry } = {
 	{ id = "rankings", icon = "♔", hotkey = "R", tooltipKey = "hud.menu.rankings" },
 	-- S126: the ranked arena next to the rankings (ArenaController registers the window; key win_arena)
 	{ id = "arena", icon = "⚔", hotkey = "U", tooltipKey = "hud.menu.arena" },
+	-- S129: the Blood Moon results, from 10 min before the start until the results go (BloodMoonController registers
+	-- the window; no key)
+	{
+		id = "bloodmoon",
+		icon = "☾",
+		hotkey = nil,
+		tooltipKey = "hud.menu.bloodmoon",
+		visible = BloodMoonView.menuVisible,
+	},
 	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
@@ -170,9 +180,10 @@ local function registerWindows()
 			or entry.id == "mounts"
 			or entry.id == "rankings"
 			or entry.id == "arena"
+			or entry.id == "bloodmoon"
 		then
 			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
-			-- MountController (S97) / RankingsController (S124) / ArenaController (S126).
+			-- MountController (S97) / RankingsController (S124) / ArenaController (S126) / BloodMoonController (S129).
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

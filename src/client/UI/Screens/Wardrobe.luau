@@ -40,6 +40,7 @@ local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local PremiumConfirm = require(script.Parent.Parent.PremiumConfirm)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
+local ScheduledEvents = require(ReplicatedStorage.Shared.Data.ScheduledEvents)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -142,6 +143,14 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 		return Text.get(use, "wardrobe.obtain.arena", { price = if entry then entry.price else 0 })
 	elseif obtain and obtain.arena == "season" then
 		return Text.get(use, "wardrobe.obtain.arenaSeason")
+	elseif obtain and obtain.event then
+		-- S129: a reward of a wall-clock event (Data/ScheduledEvents; S130 "tourney")
+		local event = ScheduledEvents.get(obtain.event)
+		return Text.get(
+			use,
+			"wardrobe.obtain.event",
+			{ event = if event then Text.get(use, event.nameKey) else obtain.event }
+		)
 	end
 	return ""
 end

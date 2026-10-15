@@ -41,6 +41,7 @@ local AdminService = Context.services.AdminService
 local MapMarkService = Context.services.MapMarkService
 local WorldEventService = Context.services.WorldEventService
 local LeaderboardService = Context.services.LeaderboardService
+local BloodMoonService = Context.services.BloodMoonService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -712,10 +713,10 @@ commands.event = function(player, args)
 		else
 			areaId = args[2]
 		end
-		local ok, err =
+		local ok, err, errArgs =
 			WorldEventService.Force(if kind == "random" then nil else kind, areaId, action == "warn", player)
 		if not ok then
-			reply(player, err or "admin.event.busy")
+			reply(player, err or "admin.event.busy", errArgs)
 			return false, err
 		end
 		local info = WorldEventService.Info()
@@ -748,6 +749,74 @@ commands.event = function(player, args)
 	end
 	reply(player, "admin.usage.event")
 	return false, "admin.usage.event"
+end
+
+-- S129: /bloodmoon info | start [minutes] | stop | settle | points <n> (this server only)
+commands.bloodmoon = function(player, args)
+	local action = args[1] or "info"
+	local n = tonumber(args[2])
+	if action == "info" then
+		local info = BloodMoonService.Info()
+		if info.phase == "none" then
+			reply(player, "admin.bloodmoon.none", { time = Time.format(info.nextIn or 0), id = info.nextId or "-" })
+			return true
+		end
+		reply(player, "admin.bloodmoon.info", {
+			id = info.id or "-",
+			phase = info.phase,
+			time = Time.format(info.timeLeft),
+			mode = if info.global == nil
+				then "-"
+				elseif info.global then "@admin.bloodmoon.global"
+				else "@admin.bloodmoon.local",
+			n = info.characters,
+		})
+		for _, row in info.top do
+			local map = Maps.get(row.region)
+			reply(
+				player,
+				"admin.bloodmoon.row",
+				{ name = row.name, points = row.points, region = if map then "@" .. map.nameKey else row.region }
+			)
+		end
+		return true
+	elseif action == "start" then
+		local minutes = math.clamp(math.floor(n or 30), 1, 120)
+		local ok, result = BloodMoonService.Force(minutes)
+		if not ok then
+			reply(player, result or "admin.bloodmoon.busy")
+			return false, result
+		end
+		reply(player, "admin.bloodmoon.started", { min = minutes, id = result })
+		return true
+	elseif action == "stop" then
+		if not BloodMoonService.Stop() then
+			reply(player, "admin.bloodmoon.notActive")
+			return false, "admin.bloodmoon.notActive"
+		end
+		reply(player, "admin.bloodmoon.stopped")
+		return true
+	elseif action == "settle" then
+		local id, count = BloodMoonService.Settle(nil)
+		if id == nil then
+			reply(player, "admin.bloodmoon.notActive")
+			return false, "admin.bloodmoon.notActive"
+		end
+		reply(player, "admin.bloodmoon.settled", { id = id, n = count })
+		return true
+	elseif action == "points" then
+		local points = math.clamp(math.floor(n or 10), 1, 120)
+		local region = BloodMoonService.AdminPoints(player, points)
+		if not region then
+			reply(player, "admin.bloodmoon.notActive")
+			return false, "admin.bloodmoon.notActive"
+		end
+		local map = Maps.get(region)
+		reply(player, "admin.bloodmoon.points", { n = points, region = if map then "@" .. map.nameKey else region })
+		return true
+	end
+	reply(player, "admin.usage.bloodmoon")
+	return false, "admin.usage.bloodmoon"
 end
 
 return commands

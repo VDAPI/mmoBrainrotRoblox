@@ -367,3 +367,29 @@ T.describe("WorldEvents: HUD progress", function()
 		T.expect(WorldEvents.progressOf(c)).toBe(0)
 	end)
 end)
+
+T.describe("WorldEvents: Blood Moon block (S129)", function()
+	local Schedule = require("../src/shared/Logic/Schedule")
+	local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
+	local TUESDAY_19 = 1791918000 -- 2026-10-13 19:00 UTC
+
+	T.it("a world event whose window meets the Blood Moon does not start", function()
+		local window = WorldEvents.window(true)
+		T.expect(window).toBe(Data.schedule.warn + Data.kinds.champion.duration)
+		T.expect(WorldEvents.window(false)).toBe(Data.kinds.champion.duration)
+		-- the warning at 18:40 would run to 18:57 at the latest: inside the quiet 10 min before 19:00
+		local from = TUESDAY_19 - 20 * 60
+		T.expect(Schedule.blocking(ScheduledEvents.list, from, from + window) ~= nil).toBe(true)
+		-- 17:30: over by 17:47
+		local early = TUESDAY_19 - 90 * 60
+		T.expect(Schedule.blocking(ScheduledEvents.list, early, early + window)).toBeNil()
+		-- during the Blood Moon and right after it
+		T.expect(Schedule.blocking(ScheduledEvents.list, TUESDAY_19 + 600, TUESDAY_19 + 600 + window) ~= nil).toBe(true)
+		T.expect(Schedule.blocking(ScheduledEvents.list, TUESDAY_19 + 1800, TUESDAY_19 + 1800 + window)).toBeNil()
+	end)
+
+	T.it("the window covers more than the quiet minutes (no world event runs when the Blood Moon rises)", function()
+		local def = ScheduledEvents.get("bloodmoon") :: any
+		T.expect(WorldEvents.window(true) > def.quietBefore).toBe(true)
+	end)
+end)

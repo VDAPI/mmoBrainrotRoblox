@@ -277,4 +277,60 @@ T.describe("Mail with shards and a timed title (S125)", function()
 	end)
 end)
 
+T.describe("Mail with Arena Tokens and cosmetics (S129)", function()
+	local function parcel(from: string, extra: { [string]: any }?): Mail.Parcel
+		local p: any = {
+			id = "p",
+			from = from,
+			subjectKey = "mail.subject.bloodMoon",
+			gold = 0,
+			items = {},
+			createdAt = 0,
+			expiresAt = 1000,
+			charId = "c1",
+		}
+		for k, v in extra or {} do
+			p[k] = v
+		end
+		return p
+	end
+
+	T.it("takes event tokens and earned cosmetics from the system", function()
+		local box = Mail.newBox()
+		local reward = parcel("system", { tokens = 20, cosmetics = { "frame_bloodmoon" }, shards = 100 })
+		T.expect({ Mail.add(box, reward, 0) }).toEqual({ true, nil })
+		T.expect(Mail.isEmpty(parcel("system", { tokens = 20 }))).toBe(false)
+		T.expect(Mail.isEmpty(parcel("system", { cosmetics = { "frame_bloodmoon" } }))).toBe(false)
+		T.expect(Mail.isEmpty(parcel("system", { cosmetics = {} }))).toBe(true)
+		local admin = parcel("admin", { tokens = 0 })
+		admin.id = "q"
+		T.expect({ Mail.add(box, admin, 0) }).toEqual({ true, nil })
+	end)
+
+	T.it("refuses tokens and cosmetics from players, without a character or malformed", function()
+		local bad = {
+			parcel("player", { tokens = 20 }),
+			parcel("auction", { tokens = 20 }),
+			parcel("system", { tokens = 1.5 }),
+			parcel("system", { tokens = -1 }),
+			parcel("player", { cosmetics = { "frame_bloodmoon" } }),
+			parcel("system", { cosmetics = { "no_such_cosmetic" } }),
+			parcel("system", { cosmetics = { "outfit_ranger" } }), -- sold in the wardrobe: never by mail
+			parcel("system", { cosmetics = "frame_bloodmoon" }),
+		}
+		local noChar = parcel("system", { tokens = 20 })
+		noChar.charId = nil
+		table.insert(bad, noChar)
+		for i, p in bad do
+			T.expect({ i, Mail.add(Mail.newBox(), p, 0) }).toEqual({ i, false, "error.badRequest" })
+		end
+	end)
+
+	T.it("an old parcel without the new fields still works", function()
+		local box = Mail.newBox()
+		T.expect({ Mail.add(box, parcel("auction", { gold = 5 }), 0) }).toEqual({ true, nil })
+		T.expect(Mail.isEmpty(parcel("auction", { gold = 5 }))).toBe(false)
+	end)
+end)
+
 return nil

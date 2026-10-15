@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -49,6 +50,19 @@ local function titleLine(use: Fusion.Use, timed: any): string
 		title = name,
 		["until"] = Text.get(use, "leaderboard.date", Leaderboard.dateParts(untilTs)),
 	})
+end
+
+-- S129: "Cosmetic: <name>" for each cosmetic of a parcel (event rewards).
+local function cosmeticsLine(use: Fusion.Use, ids: any): string
+	if type(ids) ~= "table" then
+		return ""
+	end
+	local lines = {}
+	for _, id in ids do
+		local def = if type(id) == "string" then Cosmetics.get(id) else nil
+		table.insert(lines, Text.get(use, "mail.cosmetics", { name = if def then Text.get(use, def.nameKey) else id }))
+	end
+	return table.concat(lines, "\n")
 end
 
 local function MailWindow(scope: Scope, props: Props): Fusion.Child
@@ -111,7 +125,10 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 							Position = UDim2.fromOffset(10, 4),
 							Size = UDim2.new(1, -20, 0, 26),
 							BackgroundTransparency = 1,
-							Text = `{if (parcel.shards or 0) > 0 or parcel.timedTitle ~= nil
+							Text = `{if (parcel.shards or 0) > 0
+									or parcel.timedTitle ~= nil
+									or (parcel.tokens or 0) > 0
+									or parcel.cosmetics ~= nil
 								then "◆ "
 								elseif #parcel.items > 0 then "📦 "
 								elseif parcel.gold > 0 then "◉ "
@@ -220,8 +237,33 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					TextColor3 = Theme.Colors.Parchment,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
-				s:New("Frame")({
+				-- S129: Arena Tokens and cosmetics (events)
+				s:New("TextLabel")({
 					LayoutOrder = 5,
+					Size = UDim2.new(1, 0, 0, 26),
+					BackgroundTransparency = 1,
+					Text = Text.get(use, "mail.tokens", { n = Format.number(parcel.tokens or 0) }),
+					Visible = (parcel.tokens or 0) > 0,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.GoldBright,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("TextLabel")({
+					LayoutOrder = 6,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = cosmeticsLine(use, parcel.cosmetics),
+					Visible = type(parcel.cosmetics) == "table" and #parcel.cosmetics > 0,
+					TextWrapped = true,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Colors.Parchment,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				s:New("Frame")({
+					LayoutOrder = 7,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
@@ -235,7 +277,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					},
 				}),
 				Button(s, {
-					LayoutOrder = 6,
+					LayoutOrder = 8,
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 					Variant = "primary",
 					Text = Text.T(s, "mail.claim"),

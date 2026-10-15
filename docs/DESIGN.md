@@ -770,6 +770,16 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 (obrażenia, leczenie, tarcze) dostają EXP, złoto i przy zwycięstwie skrzynię. Szczegóły i liczby: `docs/DESIGN-15.md`
 §4, `Data/WorldEvents`.
 
+### 15.5 Krwawy Księżyc (S129, `docs/DESIGN-17.md` §7)
+
+We wtorek i czwartek o 19:00 UTC na 30 minut każdy serwer sam (z zegara, bez komunikacji) zaczyna Krwawy Księżyc:
+cztery otwarte regiony stają się czerwoną strefą (miasto zostaje zielone, jaskinie i lochy bez zmian), niebo nad nimi
+czerwienieje, a odradzające się grupy potworów mogą wrócić jako Elita. Punkty za pokonanych graczy i Elity (w regionie i
+jego jaskiniach) trafiają do rankingu regionu wspólnego dla wszystkich serwerów; po końcu nagrody pocztą (Żetony Areny,
+błogosławieństwo, tytuł, ramka, Smocze Odłamki dla zwycięzcy). W trakcie nie działają Eliksir Pełni, Płaszcz Przynęty
+ani przyspieszone odrodzenie; wydarzenia świata (15.4) nie startują. Ogłoszenia 10 min i 1 min przed, panel na HUD, okno
+wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy Księżyc (S129)”.
+
 ## 16. Bossy i lochy
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.

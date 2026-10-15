@@ -175,6 +175,15 @@ local list: { TitleDef } = {
 		color = "#F0D27A",
 		wiki = false,
 	},
+	-- S129 (DESIGN-17 §7): the top 100 of a Blood Moon region, 7 days from the end of the event (mail `timedTitle`);
+	-- not "bloodied" (10 PvP kills). Published on the wiki with the Blood Moon article (S131).
+	{
+		id = "bloodmoon",
+		nameKey = "title.bloodmoon",
+		req = { kind = "timed" },
+		color = "#C0262D",
+		wiki = false,
+	},
 	-- S128 (DESIGN-17 §6): arena titles, published on the wiki with the arena article (S131). Bought with Arena Tokens
 	-- (Data/Cosmetics kind "title", obtain.arena = "shop"; kept out of titles.json like every bought title, and their
 	-- cosmetics have wiki = false):

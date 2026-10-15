@@ -47,7 +47,15 @@ export type Skin = {
 -- S121: vipMonth = "YYYYMM" (UTC) of the VIP cosmetic of the month (Logic/Vip.monthCosmetic).
 -- S123: pack = the key of the starter pack (Data/Products.starterPacks) that gives it.
 -- S128: arena = "shop" (Arena Tokens shop, Data/Arena.SHOP) or "season" (a season reward, Data/Arena.SEASON_REWARDS).
-export type Obtain = { boss: string?, quest: string?, vipMonth: string?, pack: string?, arena: ("shop" | "season")? }
+-- S129: event = a reward of a wall-clock event (Data/ScheduledEvents key, "bloodmoon"; S130 "tourney"), never sold
+export type Obtain = {
+	boss: string?,
+	quest: string?,
+	vipMonth: string?,
+	pack: string?,
+	arena: ("shop" | "season")?,
+	event: string?,
+}
 
 -- S123 looks of the new kinds (all colours hex).
 -- frame: the stroke (a gradient from stroke to stroke2) `thickness` px at an 84 px portrait, an ornament glyph in the
@@ -449,6 +457,15 @@ add(
 	"#E8C25A",
 	{ color2 = "#FFF0B0", obtain = { arena = "season" }, wiki = false }
 )
+
+-- S129 (DESIGN-17 §7): the frame of the top 10 of a Blood Moon region, never sold (obtain.event); on the wiki with the
+-- Blood Moon article (S131).
+add("frame_bloodmoon", "frame", 0, "☾", "#8E1A22", {
+	color2 = "#2A0A0E",
+	obtain = { event = "bloodmoon" },
+	wiki = false,
+	frame = { stroke = "#8E1A22", stroke2 = "#D04A3A", thickness = 5, ornament = "☾", glow = true },
+})
 
 local byId: { [string]: Def } = {}
 for _, def in LIST do

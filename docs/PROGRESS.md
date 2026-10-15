@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S128 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S129 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -248,6 +248,9 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S129:** ikona menu `hud/menu_bloodmoon` bez obrazka (znak ☾); ramka `frame_bloodmoon` proceduralna; bez dźwięku
+  startu (brak klucza ogłoszenia / rogu z id w `Data/Sfx`); czerwone niebo bez kuli księżyca (sam odcień, mgła i
+  przejście). Artykuł „Krwawy Księżyc” i publikacja tytułu `bloodmoon` oraz ramki na wiki: S131.
 - **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔).
 - **S126:** ikona menu `hud/menu_arena` bez obrazka (znak ⚔).
 - **S128:** uproszczenie: grupa drużyny 3 na 3 nie odtwarza się po powrocie z serwera areny (komunikat „zaproś ponownie”,
@@ -259,8 +262,8 @@ zakończone; testy i decyzje właściciela po nich.
 - **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →
   „Rankingi (S125)”); adresy Open Cloud v2 w `tools/Rankings/OpenCloud.luau` niesprawdzone na żywym API
   (`TODO(owner): verify`). Medalion tytułu `weekly_diligent` bez obrazka (`tytuly/title_weekly_diligent.png`).
-- **S122:** powody blokad `bloodMoon` i `tourney` (Eliksir Pełni, Płaszcz Przynęty) czekają na S129 / S130
-  (`UseBlocks.PENDING`; do tego czasu nic nie blokują). Fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
+- **S122:** powód blokady `tourney` (Eliksir Pełni, Płaszcz Przynęty) czeka na S130 (`UseBlocks.PENDING`; do tego
+  czasu nic nie blokuje; `bloodMoon` zarejestrowała S129). Fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
   (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, `balance.spec` tylko je drukuje).
 - **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
   puste klucze `Data/Sfx` (66 ze 123: 24 `mob.*`, 16 `boss.*`, 22 `skill.*`, `hit.armor/wood/stone`, `bow.draw`; lista:

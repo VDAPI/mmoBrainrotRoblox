@@ -31,7 +31,9 @@ local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Progression = require("../src/shared/Data/Progression")
+local ArenaData = require("../src/shared/Data/Arena")
 local Rarities = require("../src/shared/Data/Rarities")
+local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
 local Reasons = require("./balance_reasons")
 local Exp = require("../src/shared/Logic/Exp")
 local QuestBudgetData = require("../src/shared/Data/QuestBudget")
@@ -3913,6 +3915,44 @@ do
 		})
 	end
 	tableOut({ "pozycja sklepu areny", "cena (Żetony)", "dni (3 mecze dziennie)", "cena u kupca (złoto)" }, shopRows)
+end
+
+-- S129: the Blood Moon (F1) ----------------------------------------------------------------------------------------
+
+do
+	local bm = B.bloodMoon()
+	local rules = ScheduledEvents.bloodMoon
+	local reward = rules.reward
+	local def = ScheduledEvents.get("bloodmoon") :: ScheduledEvents.EventDef
+	local dayNames = { "pon.", "wt.", "śr.", "czw.", "pt.", "sob.", "niedz." }
+	local slots = {}
+	for _, slot in def.slots do
+		table.insert(slots, `{dayNames[slot.weekday]} {string.format("%02d:%02d", slot.hour, slot.minute)} UTC`)
+	end
+	add("## Krwawy Księżyc (S129)")
+	add()
+	add(
+		`Harmonogram (\`Data/ScheduledEvents\`): {table.concat(slots, ", ")}, {def.duration // 60} min, ogłoszenia {def.warn[1] // 60} min i {def.warn[2] // 60} min przed oraz na starcie; wydarzenia świata (S101) nie startują od {def.quietBefore // 60} min przed startem do końca. {bm.perWeek} razy w tygodniu.`
+	)
+	add()
+	add(
+		`Punkty: gracz {rules.points.player} (0, gdy ofiara ma {rules.levelGap} lub więcej poziomów mniej; ta sama ofiara najwyżej {rules.sameVictimMax} razy), Elita {rules.points.elite}, Elita II {rules.points.elite2}; śmierć 0. Nagrody (od {reward.minPoints} pkt): {reward.tokens} Żetonów Areny (poza limitem tygodnia, {fmtValue(bm.tokensShare * 100, "1")}% z {ArenaData.tokensWeekCap}) i Unikatowe błogosławieństwo (30 min); top {reward.titleTop} regionu tytuł na {reward.titleDays} dni, top {reward.frameTop} ramka, 1. miejsce {reward.shards} Smoczych Odłamków (tyle co najmniejsza paczka w sklepie, raz na region i wydarzenie). Bez asercji poza blokiem „Blood Moon (S129)” w \`balance.spec\`.`
+	)
+	add()
+	add(
+		`Elity w otwartych regionach (\`eliteChance\` = {rules.eliteChance}): każda zwykła grupa przy odrodzeniu wraca jako jedna Elita z tą szansą. Grupa bita od razu po odrodzeniu (górna granica):`
+	)
+	add()
+	local rows = {}
+	for _, row in bm.rows do
+		table.insert(rows, {
+			row.id,
+			fmtValue(row.respawn, "1"),
+			fmtValue(row.respawns, "1"),
+			fmtValue(row.elites, "1"),
+		})
+	end
+	tableOut({ "odrodzenie (profil łowiska)", "średnio s", "odrodzeń w 30 min", "Elit na grupę" }, rows)
 end
 
 -- Formulas ------------------------------------------------------------------------------------------------------
