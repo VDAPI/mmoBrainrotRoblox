@@ -98,9 +98,9 @@ local function placeText(use: Use, place: number): string
 	return Text.get(use, key, args)
 end
 
--- "DD.MM.YYYY" of a tournament id ("YYYYMMDD"); the id itself when it is not a date.
+-- "DD.MM.YYYY" of a tournament id ("YYYYMMDD", a forced one "YYYYMMDDfHHMM"); the id itself when it is not a date.
 local function dateOf(use: Use, id: string): string
-	local y, m, d = string.match(id, "^(%d%d%d%d)(%d%d)(%d%d)$")
+	local y, m, d = string.match(id, "^(%d%d%d%d)(%d%d)(%d%d)")
 	if not y then
 		return id
 	end

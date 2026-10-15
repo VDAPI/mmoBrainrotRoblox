@@ -6,6 +6,8 @@
 -- (this server's id), the wzór of Guild/Bus. Best effort: without MessagingService (Studio, an error) only this server
 -- hears it, and world servers read the records themselves twice (TourneyService, Config.Tourney.recheck). Every
 -- Roblox call in pcall; the in-memory path (no subscription, a local call) is the fake.
+-- S131: op "force" { id, t = start } (admin /tourney force): a real tournament forced on every server that hears it
+-- (`b` is empty); a server started after the message does not know it.
 
 local HttpService = game:GetService("HttpService")
 local MessagingService = game:GetService("MessagingService")
@@ -17,7 +19,7 @@ local Log = require(ReplicatedStorage.Shared.Util.Log)
 
 local log = Log.new("TourneyBus")
 
-export type Message = { op: "open" | "cancel", id: string, b: string, s: string? }
+export type Message = { op: "open" | "cancel" | "force", id: string, b: string, s: string?, t: number? }
 
 local Bus = {}
 
@@ -35,13 +37,22 @@ local function warnOnce(what: string, err: any)
 end
 
 local function parse(data: any): Message?
-	if type(data) ~= "table" or (data.op ~= "open" and data.op ~= "cancel") then
+	if type(data) ~= "table" or (data.op ~= "open" and data.op ~= "cancel" and data.op ~= "force") then
 		return nil
 	end
 	if type(data.id) ~= "string" or #data.id > 32 or type(data.b) ~= "string" or #data.b > 16 then
 		return nil
 	end
-	return { op = data.op, id = data.id, b = data.b, s = if type(data.s) == "string" then data.s else nil }
+	if data.op == "force" and type(data.t) ~= "number" then
+		return nil
+	end
+	return {
+		op = data.op,
+		id = data.id,
+		b = data.b,
+		s = if type(data.s) == "string" then data.s else nil,
+		t = if type(data.t) == "number" then data.t else nil,
+	}
 end
 
 -- Sets the handler and subscribes (yields; once). `online` = false (the local mode, Studio): only local calls.

@@ -1,0 +1,44 @@
+---
+// The two explicit exceptions of the premium shop (S131, DESIGN-17 §3): premium.json `items` (Config.FullElixir,
+// Config.Lure and the texts of their blocks from Logic/UseBlocks). Rules and limits only, never a price.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const items = load("premium").items;
+const n = (v: number) => formatNumber(v, lang);
+const elixir = items.fullElixir;
+const lure = items.lure;
+---
+<div class="vw-pitems">
+  <section>
+    <h3 class="vw-h3">{t(lang, "premiumItems.elixir")}</h3>
+    <ul>
+      <li>{t(lang, "premiumItems.elixir.cooldown", { n: n(elixir.cooldown / 60) })}</li>
+      <li>{t(lang, "premiumItems.elixir.daily", { n: n(elixir.dailyLimit) })}</li>
+      <li>{t(lang, "premiumItems.bound")}</li>
+    </ul>
+    <p class="vw-label">{t(lang, "premiumItems.blocked")}</p>
+    <ul class="blocked">{elixir.blocked.map((b) => <li>{name(b, lang)}</li>)}</ul>
+  </section>
+  <section>
+    <h3 class="vw-h3">{t(lang, "premiumItems.lure")}</h3>
+    <ul>
+      <li>{t(lang, "premiumItems.lure.pull", { n: n(lure.interval), r: n(lure.radius) })}</li>
+      <li>{t(lang, "premiumItems.lure.max", { n: n(lure.maxPulled) })}</li>
+      <li>{t(lang, "premiumItems.lure.gap", { n: n(lure.levelGap) })}</li>
+      <li>{t(lang, "premiumItems.lure.only")}</li>
+    </ul>
+    <p class="vw-label">{t(lang, "premiumItems.blocked")}</p>
+    <ul class="blocked">{lure.blocked.map((b) => <li>{name(b, lang)}</li>)}</ul>
+  </section>
+</div>
+<Source from="Config.FullElixir, Config.Lure (Premium.luau)" />
+<style>
+  .vw-pitems { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .vw-pitems section { padding: 12px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); }
+  .vw-pitems ul { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 4px; }
+  .blocked li { color: var(--vw-text-muted); font-size: 14px; }
+</style>

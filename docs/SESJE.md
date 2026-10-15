@@ -10236,3 +10236,178 @@ AdminCommands}.luau`, `src/shared/Data/Town/fame.luau`, `src/shared/Data/Localiz
 `src/client/Controllers/TourneyFameController.luau` (nowy), `tests/tourney.spec.luau` (nowy),
 `tests/{paywall,arenaqueue,town,data}.spec.luau`, `tools/balance_reasons.luau`,
 `docs/{BALANS,DESIGN,DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S131: Audyt serii DESIGN-17: braki, paywall, wiki, ceny, analityka, admin, lista id
+
+Przedostatnia sesja serii DESIGN-17, po S130 (`7102ab2`). S116 pominięta za zgodą właściciela (czeka na modele). Bez
+Studio i bez wgrywania czegokolwiek do Roblox. Start: `scripts/check` zielony (128 plików, 6810 testów, `wiki_keys_diff`
+0). Wszystkie S120–S130 mają commit i sekcję SESJE, pliki kontraktu istnieją.
+
+- **Naprawy audytu:** Płaszcz Przynęty zablokowany w drabince turnieju (`UseBlocks.LISTS.lure` += `tourney`,
+  `lure.block.tourney`); kolejka ogłoszeń między serwerami w `AnnounceService` (`Config.Announce`); `/rankweek pay` dla
+  trwającego tygodnia tylko w Studio (`LeaderboardService.WeekPay` → `early`); ograniczone nazwy zdarzeń `custom` i
+  czytelne powody odłamków z poczty nagród (`MailService.SHARD_REASONS`).
+- **Analityka (E):** `Analytics.funnel` (`LogFunnelStepEvent`), czysty `Logic/ShopFunnel` (`FUNNELS`, `CLIENT_STEPS`,
+  `track`, `sessionId`, `clientAllowed`), moduł `src/server/PremiumFunnel.luau` (stan na gracza, `step`, `fromClient`,
+  `clear`), remote `PremiumFunnel(funnel, step)` (rate 2, biała lista). Kroki: klient `shop.open` (budowa okna sklepu),
+  `shop.tab` (pierwsza zmiana zakładki w oknie), `shop.item` (`PremiumConfirm.ask`, `Cards.invoke` dla `BuyProduct` / `BuyPass`),
+  `vip.open` (`VipWindow.build`); serwer `shop.prompt` / `shop.granted` (`MonetizationService.buyProduct` / `buyPass` /
+  paragon / zakup przepustki, `PremiumShopService` po `canBuy`), `vip.prompt` / `vip.active` (subskrypcja), `VipActiveJoin`.
+- **Admin (F):** `/premium grant|take|list` (przez `account.grantedPasses`), `/vip grant|take` (przepustka `vip` na
+  koncie, `status` pokazuje źródło), `/tourney force [min]` (`TourneyService.AdminForce`, `Bus` op `force`,
+  `Tourney.forceStart` / `forcedId` / `forceMinutesOk` / `phaseFor`, `TourneyService.Forced`), `/sched`
+  (`BloodMoonService.Forced`), `/weekreset limits|tokens|expweek`; `MonetizationService.PassSource`. `/arena`,
+  `/bloodmoon`, `/rankweek`, `/shoplimits`, `/pack` sprawdzone: komplet akcji.
+- **Wiki (B):** nowy `tools/WikiData/Arena.luau` → `arena.json` (przedziały, zasady, progi, sezon, Żetony, sklep areny,
+  nagrody sezonu, Krwawy Księżyc i turniej: sloty UTC, punkty, nagrody bez kwot), `Premium.luau` rozszerzony (`cat`,
+  `weeklyLimit`, `vip`, `items`, `starterPacks`, bez `unavailable`), `Basics.titles` z `req` pole po polu, `Leak`
+  += trzy klucze, `Features.FILES` += `arena`, `scheduledEvents`, `leaderboards`. Strona: bloki `ArenaTable`,
+  `EventSchedule`, `VipBenefits`, `PremiumItems`, `PassList` (`cat`, `weeklyLimit`, `packs`), `TitleTable` (nowe
+  rodzaje warunków), `stat.ts` (+ `arena`, `premium`), sześć tematów w `mechanics.ts`, teksty `wiki/src/i18n`.
+  Artykuły PL/EN: `sklep-premium` / `premium-shop`, `vip`, `rankingi` / `rankings`, `arena`, `krwawy-ksiezyc` /
+  `blood-moon`, `turniej-czempiona` / `champions-tournament` (order 13–18); `kosmetyki` / `cosmetics` odsyłają do sklepu i
+  VIP (artykuł rankingów ma tytuł „Zasady rankingów” / „How rankings work”, bo strona danych S125 nazywa się
+  „Rankingi” i audyt odrzuca dwa takie same tytuły); wpis aktualizacji `2026-10-15-sklep-i-arena` / `-shop-and-arena`. Opublikowane (zdjęte `wiki = false`): tytuły
+  `vip`, `weekly_diligent`, `bloodmoon`, `tourney_champion`, `arena_bronze` … `arena_master`; kosmetyki
+  `frame_gladiator`, `chatframe_gladiator`, `title_ironwill`, `title_sandveteran`, `aura_gladiator`,
+  `frame_arena_season`, `aura_arena_season`, `frame_bloodmoon`, `aura_champion`, `frame_tourney`; klawisz `win_arena`.
+- **Ceny (D):** `tests/Pricing.luau` (`packRates`, `robuxOf`, `shopTable`, `cosmeticRanges`, `vipMonth`, `starterPacks`,
+  `allShardPrices`, `weeklyPrices`, `PROPOSED`), `tools/shop_report.luau [--check]` → `docs/SKLEP-ID.md` (instrukcja
+  Creator Hub, tabela 20 produktów / przepustek / subskrypcji z miejscem na id i stanem, wyłączone do decyzji, poza
+  sklepem, przegląd cen). Wynik: kurs paczek 1,01 → 1,40 odłamka za R$ (premia największej 38,6%), najdroższa rzecz
+  1 200 (pet) < 7 000, eliksir 24 → 20 za sztukę, płaszcz tygodniowy 990 ≤ 7 × 150; miesiąc VIP = 450 odłamków ≈
+  321–446 R$ wobec propozycji 349 R$; paczki startowe dają odłamki warte ×2,5 / ×2,7 ceny. **Cen nie zmieniono.**
+- **Testy:** `paywall.spec` (bloki „Paywall S131” C1–C8; test S121 `Config.Vip` sprawdza słowa po częściach camelCase
+  bez wyjątku `statusRefresh`), `premium.spec` („Prices (S131)” D2.1–D2.6, „Shop funnel (S131)”, „Purchase rule edges
+  (S131)”, kosmetyki areny opublikowane), `wikidump.spec` („Wiki export: shop, VIP, arena, events (S131)” B8.1–B8.6,
+  przypadek S123 pozwala na paczki startowe w `premium.json`), `tourney.spec` („S131 forced tournament”),
+  `premiumuse.spec` (lista Płaszcza), `titles.spec` (tytuły VIP, czasowe i sezonu areny opublikowane). C9 (każdy moduł `Data/*` serii w księdze) sprawdza już „Balance ledger (S83)” w
+  `balance.spec`: potwierdzone, bez zmian.
+- **`WIKI_KEYS_ALLOW`** (nowy plik `arena.json`, nowe bloki `premium.json`, pola `req` tytułów, typy; nic usuniętego):
+  `arena:*,premium:premium.items,premium:premium.items.fullElixir,premium:premium.items.fullElixir.blocked,premium:premium.items.fullElixir.blocked[],premium:premium.items.fullElixir.cooldown,premium:premium.items.fullElixir.dailyLimit,premium:premium.items.lure,premium:premium.items.lure.blocked,premium:premium.items.lure.blocked[],premium:premium.items.lure.interval,premium:premium.items.lure.levelGap,premium:premium.items.lure.maxPulled,premium:premium.items.lure.radius,premium:premium.shop[].cat,premium:premium.starterPacks,premium:premium.starterPacks[],premium:premium.starterPacks[].cosmetics,premium:premium.starterPacks[].cosmetics[],premium:premium.starterPacks[].currency,premium:premium.starterPacks[].desc,premium:premium.starterPacks[].key,premium:premium.starterPacks[].name,premium:premium.starterPacks[].passes,premium:premium.starterPacks[].passes[],premium:premium.vip,premium:premium.vip.alchemyQueue,premium:premium.vip.auctionExtraListings,premium:premium.vip.auctionFeeBasePct,premium:premium.vip.auctionFeePct,premium:premium.vip.dailyCurrency,premium:premium.vip.freeRespawnsPerDay,premium:premium.vip.monthCosmetics,premium:premium.vip.monthCosmetics[],premium:premium.vip.monthCosmetics[].id,premium:premium.vip.monthCosmetics[].month,premium:premium.vip.monthCosmetics[].name,premium:premium.vip.recallMin,titles:titles.titles[].req.days,titles:titles.titles[].req.tier,types.ts`.
+  `shop[].weeklyLimit` nie pojawia się (żaden wpis nie ma limitu tygodniowego).
+- **Poprawki po przeglądzie:** zapis na wymuszony turniej nie przepada przy wejściu postaci (`Tourney.isStale` z
+  `forced`, test w `tourney.spec`); data wymuszonego turnieju w Sali Sław (miasto, okno areny); tytuły nagród sezonu w
+  `arena.json` z nazwą `.plain` (test: brak `{…}` w pliku); `ArenaShop_<grupa>`; wydatki sklepu premium jako Shop,
+  paczki startowe jako IAP; `shop.tab` raz na okno; odrodzenie z ekranu śmierci poza lejkiem sklepu; usunięte dwie
+  asercje C7 porównujące wyrażenie z samym sobą.
+- `scripts/check` zielony z `WIKI_KEYS_ALLOW` jak wyżej (128 plików, 6850 testów), `shop_report --check` kod 0.
+- `balance_report` nie uruchamiany (żadna liczba z `BALANCE_MODULES` się nie zmieniła; `Config.Announce`,
+  `Config.ShopFunnel`, `Config.Tourney.forceMinutes` są poza `CONFIG_KEYS`). `balance1_20` 0 różnic bez
+  `ALLOWED_1_20_DIFFS`.
+
+#### Tabela audytu (A5)
+
+| Sesja | Punkt kontraktu | Stan na starcie | S131 | Kat. |
+|---|---|---|---|---|
+| S120 | `cat`, limity, `unavailable`, Zwój Ochrony 1/dzień | jest | test granicy dnia (`premium.spec`) | 6 |
+| S120 | `Premium.canBuy` w oknie i na serwerze | jest | test tekstu serwera (C8) | 1 |
+| S120 | zakładki, „Doładuj”, „Wkrótce” bez id | jest | — | 3 |
+| S120 | `paywall.spec` z listami | jest | bloki C1–C8 | 2 |
+| S121 | VIP: subskrypcja w `pcall`, `HasVip`, atrybut `Vip` z `HasVip` | jest | — | 1 |
+| S121 | dzienne odłamki raz na dzień konta, `vip_daily` | jest | — | 1 |
+| S121 | nadanie VIP przez admina | brak (tylko test na sesję) | `/vip grant|take` przez `grantedPasses` | 7 |
+| S121 | Kieszenie: jedna funkcja pojemności | jest (`Inventory.capacityOf`) | — | 4 |
+| S121 | sloty 4–5 na serwerze, Garderoba+ na serwerze | jest | — | 1 |
+| S121 | okno VIP w menu | inaczej (menu gry ☰, karta w sklepie) | decyzja | 3 |
+| S122 | Eliksir: związany, limity, blokady | jest | C5 | 2 |
+| S122 | Płaszcz: blokady (wymuszona czerwona strefa, arena, serwery areny) | częściowo (drabinka lokalna turnieju) | `tourney` na liście | 4 |
+| S123 | kosmetyki 2, tytuły w jednym pickerze, oferta tygodnia | jest | ceny tygodnia w D2.2 | 6 |
+| S123 | paczka startowa drugi raz = same odłamki | jest (DECYZJE S123) | — | 1 |
+| S124 | `Stores` z atrapą, „tylko ten serwer”, limity zapisów | jest | — | 5 |
+| S125 | tydzień, wypłata idempotentna, gildie, eksport Open Cloud | jest | `/rankweek pay` tylko po końcu tygodnia na żywo | 1 |
+| S125 | strona wiki „Rankingi” | jest (strona danych) | artykuł mechaniki `rankings` | 7 |
+| S126 | ArenaService, Elo, sezony, Mistrz Areny, okno | jest | — | — |
+| S127 | Matchmaker z atrapą, fallback, `ServerMode` | jest | — | 5 |
+| S128 | 3v3, Żetony, sklep areny, nagrody sezonu | jest | C6 (tylko Żetony w sklepie) | 2 |
+| S128 | grupa 3v3 po powrocie z serwera areny | brak (uproszczenie S128) | zostaje w „Niedokończone” | 7 |
+| S129 | harmonogram, czerwona strefa, punkty, nagrody | jest | — | — |
+| S129 | ogłoszenie zwycięzcy na wszystkich serwerach | częściowo (gubione w 10 s) | kolejka `AnnounceService` | 4 |
+| S130 | drabinka, zapisy, serwer turniejowy, nagrody | jest | — | — |
+| S130 | wymuszenie prawdziwego turnieju | brak (dla S131) | `/tourney force` | 7 |
+| S130 | analityka `TourneySignup` / `TourneyPlace` | jest | — | 6 |
+| S120–S130 | artykuły i dane wiki (sklep, VIP, rankingi, arena, wydarzenia) | brak (dla S131) | B | 7 |
+| S120–S130 | lejek zakupów i VIP | brak | E | 7 |
+| S120–S130 | `docs/SKLEP-ID.md` | brak | D4 | — |
+
+#### Połączenia między sesjami (A3)
+
+| Punkt | Stan | Zmiana |
+|---|---|---|
+| 1 Eliksir: arena, serwer areny, 3v3, Krwawy Księżyc, turniej | jest (`PENDING` pusty, haki zarejestrowane) | test C5 |
+| 2 Płaszcz: wymuszona czerwona strefa, serwery areny / turnieju, mecz | częściowo | `tourney` na liście Płaszcza |
+| 3 VIP: powrót / odrodzenie na serwerach areny, dzienne odłamki bez dublowania | jest (strażnik podróży, zapis profilu) | — |
+| 4 `ServerMode` w wydarzeniach świata, Krwawym Księżycu, nagrodzie logowania, wierzchowcach | jest (`isWorld`) | — |
+| 5 Żetony z wydarzeń | jest (`uncapped`, szablon `character.arena`) | decyzja potwierdzona |
+| 6 Tytuły czasowe w jednym mechanizmie | jest (`character.timedTitles`) | wiki z `days` |
+| 7 Plansze Sali Sław | jest (trzy osobne plansze) | — |
+| 8 Ogłoszenia między serwerami | brak kolejki | kolejka w `AnnounceService` |
+| 9 Poczta nagród idempotentna | jest (`once`, blokady `UpdateAsync`) | — |
+| 10 `excludeAdmins` | jest w rankingach, arenie, Krwawym Księżycu; turniej bez | decyzja |
+| 11 Kieszenie Kupca | jest | opis przepustki na wiki |
+| 12 `paywall.spec` | jest | C1–C8 |
+| 13 Grafiki S119 (znak zamiast obrazka) | jest (`uiart.spec`) | — |
+| 14 Klawisze T, R, U | jest (`keybinds.spec`) | `win_arena` na wiki |
+
+Nazwy serii różne od kontraktu (DECYZJE, `docs/DESIGN-17.md` → „Ustalenia S120–S131”): `PremiumShop/` (folder),
+`account.shopLimits`, `account.vip.{respawnN,recallAt}`, `UseBlocks` / `UseGuards`, `server/Leaderboard/TownBoard`,
+`Logic/ArenaQueue`, `Logic/MemoryFake`, `eliteChance`, `BloodMoon/Board`, `TourneyService` + `server/Tourney/*`,
+`Logic/Tourney`, `once` (poczta), `pit_1` … `pit_4`, `win_rankings` = R, `win_arena` = U.
+
+Node jest: `npm run data`, `npm test`, `npm run check` (astro check, eslint, vitest, build, linki, budżety, audyt).
+
+Dla S132: `UseBlocks.LISTS.lure` ma `tourney`; `CosmeticLook.applyLure` bez zmian (umowa `OutfitCape` / `LureCape`).
+
+Dla właściciela: produkty, przepustki i subskrypcja w Creator Hub według `docs/SKLEP-ID.md`; opcjonalnie sekret
+`ROBLOX_OPEN_CLOUD_KEY` i zmienna `ROBLOX_UNIVERSE_ID` (rankingi na wiki); „Enable Studio Access to API Services” do
+testu rankingów, kolejki i zapisów w Studio.
+
+#### Seria DESIGN-17 (S120–S131): podsumowanie dla właściciela
+
+1. Sklep premium sprzedaje za Smoczą Walutę zwoje, zmianę imienia, plecaki premium, Eliksir Pełni, Płaszcz Przynęty i
+   kosmetyki, a za Robux paczki waluty, przepustki, VIP i dwie paczki startowe.
+2. Nic kupionego nie daje statystyk, doświadczenia, złota, łupu, materiałów ani błogosławieństw; pilnuje tego test
+   uruchamiany przy każdej zmianie.
+3. Jedyne wyjątki to Eliksir Pełni (leczenie poza walką z graczami i bossami, limit dzienny) i Płaszcz Przynęty
+   (szybsza farma zwykłych potworów, bez siły).
+4. VIP to miesięczna subskrypcja: dzienna Smocza Waluta, tytuł i kolor w czacie, większa kolejka alchemika, tańsza
+   aukcja, darmowy powrót do miasta, jedno darmowe odrodzenie dziennie i kosmetyk miesiąca na zawsze.
+5. Przepustki: Auto-łup, Skarbiec, Szybki Powrót, Kieszenie Kupca, miejsca na postać 4 i 5, Garderoba+.
+6. Rankingi poziomu, klas, Sala Sław, tydzień doświadczenia z nagrodami, gildie i arena są w oknie „Rankingi” (klawisz
+   R), na planszach w mieście i na wiki.
+7. Arena przy Ristalle: walki jeden na jeden i trzy na trzy w przedziałach poziomów, rating z sezonem miesięcznym,
+   Żetony Areny i sklep Mistrza Areny.
+8. Kolejka areny łączy graczy ze wszystkich serwerów i przenosi ich na osobny serwer meczu; gdy nikt nie czeka albo
+   usługi Roblox nie działają, mecz odbywa się na tym samym serwerze.
+9. Krwawy Księżyc jest we wtorek i czwartek o 19:00 UTC (w Polsce 21:00 do 25 października, potem 20:00), trwa
+   30 minut i zamienia otwarte regiony w czerwoną strefę z punktami i nagrodami.
+10. Turniej Czempiona jest w sobotę o 19:00 UTC (21:00 / od 25 października 20:00 w Polsce), zapisy przez godzinę
+    przed startem, drabinka w każdym przedziale poziomów.
+11. Dopóki gra nie jest opublikowana z włączonymi usługami, rankingi, kolejka areny, Krwawy Księżyc i turniej działają
+    w trybie „tylko ten serwer” i mówią o tym w oknach.
+12. Do zrobienia przez Ciebie: produkty, przepustki i subskrypcja VIP w Creator Hub i wklejenie id według
+    `docs/SKLEP-ID.md`; bez tego gracze widzą „Wkrótce”.
+13. Opcjonalnie: sekret `ROBLOX_OPEN_CLOUD_KEY` na GitHub dla rankingów na wiki i „Enable Studio Access to API
+    Services” do testów w Studio.
+14. Decyzja: „VIP na zawsze” (przepustka) zostaje wyłączona (domyślnie: wyłączona).
+15. Decyzja: wierzchowiec premium zostaje wyłączony (domyślnie: wyłączony).
+16. Decyzja: ceny jak w kodzie mimo różnic z KATALOG, np. Szybki Powrót 99 zamiast 149 R$ (domyślnie: jak w kodzie).
+17. Decyzja: miesiąc VIP daje 450 odłamków, czyli więcej, niż kosztuje proponowana subskrypcja w paczkach (domyślnie:
+    bez zmian; ewentualnie mniej odłamków dziennie albo wyższy próg ceny).
+18. Decyzja: osobna sesja poprawek nie jest konieczna; zostały drobiazgi (grupa trzy na trzy po powrocie z serwera
+    areny, przegrana nieobecnego w trzy na trzy, obrazki ikon serii) i test na opublikowanej grze z kilkoma kontami.
+
+Pliki: `src/shared/{Config}.luau`, `src/shared/Data/{AdminCommands,Cosmetics,Keybinds,Titles}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{ShopFunnel (nowy),Tourney,UseBlocks}.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/{Analytics,PremiumFunnel (nowy)}.luau`,
+`src/server/Services/{Announce,BloodMoon,Leaderboard,Mail,Monetization,PremiumShop,Tourney}Service.luau`,
+`src/server/Tourney/Bus.luau`, `src/server/Admin/{Economy,World}.luau`, `src/client/UI/PremiumConfirm.luau`,
+`src/client/UI/Screens/PremiumShop/{init,Cards}.luau`, `src/client/UI/Screens/VipWindow.luau`,
+`tests/Pricing.luau` (nowy), `tests/{paywall,premium,premiumuse,wikidump,tourney}.spec.luau`,
+`tools/shop_report.luau` (nowy), `tools/WikiData/{Arena (nowy),Premium,Basics,init,Leak,Features}.luau`,
+`wiki/src/components/blocks/{ArenaTable,EventSchedule,VipBenefits,PremiumItems} (nowe).astro`,
+`wiki/src/components/blocks/{PassList,TitleTable}.astro`, `wiki/src/components/blocks/index.ts`,
+`wiki/src/lib/{stat,mechanics}.ts`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/mechanics/{pl,en}/*` (sześć par nowych,
+kosmetyki), `wiki/src/content/updates/{pl,en}/2026-10-15-*` (nowe), `wiki/src/data/{arena (nowy),premium,titles,
+cosmetics,mechanics,meta,types}`, `docs/{SKLEP-ID (nowy),PRZEDMIOTY,DESIGN,DESIGN-17,WIKI,ARCHITECTURE,DECYZJE,PROGRESS,
+SESJE}.md`, `CLAUDE.md`.

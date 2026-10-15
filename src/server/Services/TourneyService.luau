@@ -26,6 +26,9 @@
 -- reads purchases (tests/paywall.spec). The Elixir of Wholeness is off for the players of a bracket and on a tournament
 -- server (UseGuards "tourney").
 -- Runtime branch `tourney` (Types.TourneyClient), published per player only when it changed.
+-- S131 (admin /tourney force): a real tournament forced on every server through the bus ("force", Tourney.forcedId,
+-- the start Tourney.forceStart); it takes the place of the scheduled one until its end and runs exactly like it (global
+-- with the stores, else this server only). A server that boots after the message keeps the schedule.
 -- Only AdminService lists this service in its Deps.
 
 local CollectionService = game:GetService("CollectionService")
@@ -104,6 +107,7 @@ local GuildService: any
 
 local current: Current? = nil
 local test: Test? = nil
+local forced: { id: string, startAt: number }? = nil -- S131: /tourney force
 local modes: { [string]: Mode } = {} -- tournament id -> its mode on this server (decided once)
 local deciding: { [string]: boolean } = {}
 local invites: { [Player]: Invite } = {}
@@ -201,6 +205,10 @@ local function currentNow(now: number): Current
 	local t = test
 	if t then
 		return { id = t.id, startAt = t.startAt, phase = t.phase, test = true }
+	end
+	local f = forced
+	if f and now < Tourney.times(f.startAt).ends then
+		return { id = f.id, startAt = f.startAt, phase = Tourney.phaseFor(f.startAt, now), test = false }
 	end
 	local phase, startAt = Tourney.phaseAt(now)
 	return { id = Tourney.idOf(startAt), startAt = startAt, phase = phase :: Phase, test = false }
@@ -732,6 +740,15 @@ local function applyRecord(id: string, b: string, record: Store.Record)
 end
 
 onMessage = function(message: Bus.Message)
+	if message.op == "force" then
+		-- S131: a forced tournament (also this server's own publish); a test tournament here keeps it out
+		local startAt = message.t
+		local now = Clock.now()
+		if startAt and test == nil and startAt > now and startAt <= now + 3 * 3600 then
+			forced = { id = message.id, startAt = startAt } -- the next step (every second) announces the signups
+		end
+		return
+	end
 	local c = cur()
 	if message.id ~= c.id or c.test then
 		return
@@ -1452,7 +1469,7 @@ function TourneyService.AdminOpen(seconds: number): (boolean, string?)
 	end
 	local now = Clock.now()
 	-- H: the test never touches the real tournament (its signups, messages, rechecks and announcements)
-	if (Tourney.phaseAt(now)) ~= "idle" then
+	if (Tourney.phaseAt(now)) ~= "idle" or currentNow(now).phase ~= "idle" then
 		return false, "admin.tourney.real"
 	end
 	local id = `test_{os.time()}`
@@ -1460,6 +1477,37 @@ function TourneyService.AdminOpen(seconds: number): (boolean, string?)
 	modes[id] = "local"
 	step()
 	return true, id
+end
+
+-- S131: a real tournament on every server, `minutes` from now (signups open at once, the usual close, organizer and
+-- start offsets). Refused next to a scheduled or another forced tournament and during a test one. Returns its id.
+function TourneyService.AdminForce(minutes: number): (boolean, string?)
+	if not ServerMode.isWorld() then
+		return false, "tourney.error.notWorld"
+	end
+	if not Tourney.forceMinutesOk(minutes) then
+		return false, "admin.tourney.forceMinutes"
+	end
+	if test ~= nil or next(runners) ~= nil then
+		return false, "admin.tourney.busy"
+	end
+	local now = Clock.now()
+	local startAt = Tourney.forceStart(now, minutes)
+	local ends = Tourney.times(startAt).ends
+	-- the next scheduled tournament must open after the forced one ends; nothing may run now
+	local nextStart = Tourney.startAt(now)
+	if currentNow(now).phase ~= "idle" or (nextStart > 0 and Tourney.times(nextStart).open < ends) then
+		return false, "admin.tourney.real"
+	end
+	local id = Tourney.forcedId(startAt)
+	Bus.publish({ op = "force", id = id, b = "", t = startAt }, true)
+	return true, id
+end
+
+-- S131 (/sched): the forced tournament known here until its end.
+function TourneyService.Forced(): { id: string, startAt: number }?
+	local f = forced
+	return if f and Clock.now() < Tourney.times(f.startAt).ends then f else nil
 end
 
 local function needTest(): Test?
@@ -1635,7 +1683,7 @@ function TourneyService.Start()
 	CharacterService.CharacterEntered:Connect(function(player: Player, char: Types.CharacterData)
 		lastSent[player] = nil
 		local state = stateOf(char)
-		if ServerMode.isWorld() and state.signed and Tourney.isStale(state.signed, Clock.now()) then
+		if ServerMode.isWorld() and state.signed and Tourney.isStale(state.signed, Clock.now(), forced) then
 			local signed = state.signed :: { id: string, bracket: string }
 			local t = test
 			if not (t and signed.id == t.id) then

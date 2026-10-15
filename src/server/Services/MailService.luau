@@ -168,6 +168,15 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 	return true, nil
 end
 
+-- S131: readable economy reasons of the reward parcels that carry Dragon Shards (Analytics.shards); others stay
+-- "mail_<from>".
+local SHARD_REASONS: { [string]: string } = {
+	["mail.subject.weeklyRank"] = "exp_week",
+	["mail.subject.arenaSeason"] = "arena_season",
+	["mail.subject.bloodMoon"] = "event_bloodmoon",
+	["mail.subject.tourney"] = "event_tourney",
+}
+
 -- Puts a parcel's contents into the character; returns items that did not fit.
 local function deliver(player: Player, parcel: Mail.Parcel): { ItemInstance }
 	if parcel.gold > 0 then
@@ -182,7 +191,7 @@ local function deliver(player: Player, parcel: Mail.Parcel): { ItemInstance }
 		local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(n: number)
 			return (n or 0) + shards
 		end)
-		Analytics.shards(player, shards, total, `mail_{parcel.from}`)
+		Analytics.shards(player, shards, total, SHARD_REASONS[parcel.subjectKey] or `mail_{parcel.from}`)
 	end
 	local timed = parcel.timedTitle
 	if timed then

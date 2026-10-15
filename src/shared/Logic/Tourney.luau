@@ -66,23 +66,47 @@ function Tourney.times(startAt: number): Times
 	}
 end
 
+-- S131: the phase at `now` of the tournament starting at `startAt` (a scheduled or a forced one).
+function Tourney.phaseFor(startAt: number, now: number): Phase
+	local t = Tourney.times(startAt)
+	if now >= t.start and now < t.ends then
+		return "running"
+	elseif now >= t.organize and now < t.start then
+		return "inviting"
+	elseif now >= t.close and now < t.organize then
+		return "closed"
+	elseif now >= t.open and now < t.close then
+		return "signup"
+	end
+	return "idle"
+end
+
 -- (phase, startAt) at `now`.
 function Tourney.phaseAt(now: number): (Phase, number)
 	local startAt = Tourney.startAt(now)
 	if startAt == 0 then
 		return "idle", 0
 	end
-	local t = Tourney.times(startAt)
-	if now >= t.start and now < t.ends then
-		return "running", startAt
-	elseif now >= t.organize and now < t.start then
-		return "inviting", startAt
-	elseif now >= t.close and now < t.organize then
-		return "closed", startAt
-	elseif now >= t.open and now < t.close then
-		return "signup", startAt
-	end
-	return "idle", startAt
+	return Tourney.phaseFor(startAt, now), startAt
+end
+
+-- S131 (admin /tourney force): a real tournament forced on every server, starting `minutes` after `now` (whole
+-- minutes, UTC). Its signups open at once when the start is closer than the usual opening. The id is the date, "f"
+-- and the start time ("YYYYMMDDfHHMM"): never the id of a scheduled tournament (the date alone), no "_" (server refs
+-- split at the first "_"), the date first (the Hall of Fame board reads it).
+function Tourney.forceStart(now: number, minutes: number): number
+	return (math.floor(now / 60) + math.max(1, math.floor(minutes))) * 60
+end
+
+function Tourney.forcedId(startAt: number): string
+	local day = math.floor(startAt / 86400)
+	local secs = startAt - day * 86400
+	return `{Schedule.dateKey(startAt)}f{string.format("%02d%02d", secs // 3600, (secs % 3600) // 60)}`
+end
+
+-- The minutes `/tourney force` accepts: the signups must stay open a while before they close (window.close).
+function Tourney.forceMinutesOk(minutes: number): boolean
+	return minutes == math.floor(minutes) and minutes * 60 > -RULES.window.close and minutes <= 180
 end
 
 -- The moment the phase at `now` ends (the next boundary).
@@ -224,8 +248,12 @@ function Tourney.rewardsFor(place: number?, showed: boolean): Rewards
 end
 
 -- Whether the saved signup belongs to a tournament that is over (the server clears it on entering the world).
-function Tourney.isStale(signed: { id: string }?, now: number): boolean
+-- `forced` is the forced tournament (/tourney force) this server knows, until its end: its signup is not stale.
+function Tourney.isStale(signed: { id: string }?, now: number, forced: { id: string, startAt: number }?): boolean
 	if signed == nil then
+		return false
+	end
+	if forced and signed.id == forced.id and now < Tourney.times(forced.startAt).ends then
 		return false
 	end
 	return signed.id ~= Tourney.idOf(Tourney.startAt(now))

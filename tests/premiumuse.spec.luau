@@ -62,7 +62,7 @@ T.describe("S122 UseBlocks", function()
 		T.expect(UseBlocks.LISTS.fullElixir)
 			.toEqual({ "dead", "duel", "arena", "dungeon", "pvpLock", "bloodMoon", "tourney" })
 		T.expect(UseBlocks.LISTS.lure)
-			.toEqual({ "dead", "city", "underground", "redZone", "arena", "bloodMoon", "mounted" })
+			.toEqual({ "dead", "city", "underground", "redZone", "arena", "tourney", "bloodMoon", "mounted" })
 	end)
 
 	T.it("keys, the first active reason and ignored reasons", function()

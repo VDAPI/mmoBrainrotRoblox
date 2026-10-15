@@ -1,0 +1,82 @@
+---
+// PvP events on the clock (S131): arena.json (Data/ScheduledEvents, Data/Arena.TOURNEY). `event` = "bloodMoon" (slots,
+// length, warnings, regions, points, rewards) or "tourney" (slot, signups, places, rewards). Times are UTC, as the game
+// counts them; no conversion (the page says "UTC time"). Dragon Shards only as "yes", never an amount.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+interface Props {
+  event: "bloodMoon" | "tourney";
+}
+const { event } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const arena = load("arena");
+const n = (v: number) => formatNumber(v, lang);
+const two = (v: number) => String(v).padStart(2, "0");
+type Slot = { weekday: number; hour: number; minute: number };
+const slotText = (s: Slot) => `${t(lang, `sched.day.${s.weekday}` as Key)} ${two(s.hour)}:${two(s.minute)}`;
+type Reward = (typeof arena.bloodMoon.rewards)[number];
+const placeText = (r: Reward) =>
+  r.place === "top" ? t(lang, "sched.place.top", { n: r.top ?? 0 }) : t(lang, `sched.place.${r.place}` as Key);
+const parts = (r: Reward): string[] => {
+  const out: string[] = [];
+  if (r.tokens !== undefined) out.push(t(lang, "sched.reward.tokens", { n: r.tokens }));
+  if (r.blessing) out.push(t(lang, "sched.reward.blessing", { rarity: name(r.blessing, lang) }));
+  if (r.title) out.push(t(lang, "sched.reward.title", { title: name(r.title, lang), n: r.titleDays ?? 0 }));
+  if (r.frame) out.push(name(r.frame, lang));
+  if (r.aura) out.push(name(r.aura, lang));
+  if (r.currency) out.push(t(lang, "sched.reward.currency"));
+  return out;
+};
+const moon = arena.bloodMoon;
+const cup = arena.tourney;
+const rows: [string, string][] =
+  event === "bloodMoon"
+    ? [
+        [t(lang, "sched.when"), moon.slots.map(slotText).join(", ")],
+        [t(lang, "sched.length"), `${n(moon.durationMin)} min`],
+        [t(lang, "sched.warn"), moon.warnMin.map((m) => `${n(m)} min`).join(", ")],
+        [t(lang, "sched.regions"), moon.regions.map((x) => name(x, lang)).join(", ")],
+        [t(lang, "sched.points.player"), n(moon.points.player)],
+        [t(lang, "sched.points.elite"), n(moon.points.elite)],
+        [t(lang, "sched.points.elite2"), n(moon.points.elite2)],
+        [t(lang, "sched.points.levelGap"), n(moon.points.levelGap)],
+        [t(lang, "sched.points.sameVictim"), n(moon.points.sameVictim)],
+        [t(lang, "sched.points.min"), n(moon.minPoints)],
+        [t(lang, "sched.eliteChance"), `${n(Math.round(moon.eliteChance * 100))}%`],
+      ]
+    : [
+        [t(lang, "sched.when"), slotText(cup.slot)],
+        [t(lang, "sched.signup"), t(lang, "sched.signupRange", { from: cup.signupFromMin, to: cup.signupToMin })],
+        [t(lang, "sched.cap"), n(cup.cap)],
+        [t(lang, "sched.minPlayers"), n(cup.minPlayers)],
+        [t(lang, "sched.invite"), `${n(cup.inviteSec / 60)} min`],
+        [t(lang, "sched.fields"), n(cup.fields)],
+        [t(lang, "sched.hall"), n(cup.hallWeeks)],
+      ];
+const rewards = event === "bloodMoon" ? moon.rewards : cup.rewards;
+---
+<table class="vw-table vw-table--plain">
+  <caption class="vw-sr">{t(lang, "sched.caption")}</caption>
+  <tbody>
+    {rows.map(([label, value]) => (
+      <tr><th scope="row">{label}</th><td>{value}</td></tr>
+    ))}
+  </tbody>
+</table>
+<p class="vw-label utc">{t(lang, "sched.utc")}</p>
+<table class="vw-table vw-table--plain">
+  <caption class="vw-sr">{t(lang, "sched.rewards")}</caption>
+  <thead><tr><th scope="col">{t(lang, "sched.place")}</th><th scope="col">{t(lang, "sched.rewards")}</th></tr></thead>
+  <tbody>
+    {rewards.map((r) => (
+      <tr><th scope="row">{placeText(r)}</th><td>{parts(r).join(" · ") || "—"}</td></tr>
+    ))}
+  </tbody>
+</table>
+<Source from={event === "bloodMoon" ? "Data/ScheduledEvents" : "Data/ScheduledEvents, Data/Arena"} />
+<style>
+  .utc { margin: 6px 0 14px; color: var(--vw-text-muted); }
+</style>

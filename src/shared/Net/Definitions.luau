@@ -237,6 +237,7 @@ local Definitions: { [string]: Definition } = {
 	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
 	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121
+	PremiumFunnel = { kind = "event", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (funnel, step) S131: shop/VIP window funnel steps from the client
 	VipRespawn = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free instant respawn once a day (VIP), S121
 	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
 	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121

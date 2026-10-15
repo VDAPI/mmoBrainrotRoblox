@@ -20,6 +20,7 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Items = require(script.Items)
 local Mounts = require(script.Mounts)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Passes = require(script.Passes)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local SideTabs = require(script.Parent.Parent.Components.SideTabs)
@@ -155,6 +156,15 @@ function PremiumShop.build(scope: Scope, props: Props): Fusion.Child
 		OpenVip = props.OpenVip,
 	}
 	-- Depends only on the tab: the cards read their own branches (balance, limits, passes, cosmetics).
+	-- S131: the shop funnel (Logic/ShopFunnel): the window opened, then the first change of tab
+	Net.Send("PremiumFunnel", "shop", "open")
+	local sentTab = false
+	scope:Observer(selected):onChange(function()
+		if not sentTab then
+			sentTab = true
+			Net.Send("PremiumFunnel", "shop", "tab")
+		end
+	end)
 	local content = scope:Computed(function(use, s: Scope): { any }
 		local id = use(selected)
 		local builder = BUILDERS[id] or BUILDERS.currency

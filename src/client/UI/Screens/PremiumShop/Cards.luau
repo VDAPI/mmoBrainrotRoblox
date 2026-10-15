@@ -256,6 +256,9 @@ end
 -- Studio).
 function Cards.invoke(name: string, ...: any)
 	local args = table.pack(...)
+	if name == "BuyProduct" or name == "BuyPass" then
+		Net.Send("PremiumFunnel", "shop", "item") -- S131: the shop funnel (the VIP funnel's prompt is the server's)
+	end
 	task.spawn(function()
 		local ok, err, errArgs = Net.Invoke(name, table.unpack(args, 1, args.n))
 		if ok then

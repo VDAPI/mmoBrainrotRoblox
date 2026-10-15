@@ -23,8 +23,9 @@ local UseBlocks = {}
 UseBlocks.LISTS = table.freeze({
 	-- DESIGN-17 §3: duel and arena (DuelService / ArenaService), boss dungeon, the 15 s PvP lock, Blood Moon, tournament
 	fullElixir = table.freeze({ "dead", "duel", "arena", "dungeon", "pvpLock", "bloodMoon", "tourney" }),
-	-- DESIGN-17 §3: city, caves and dungeons, red zone, arena, Blood Moon, on a mount, dead
-	lure = table.freeze({ "dead", "city", "underground", "redZone", "arena", "bloodMoon", "mounted" }),
+	-- DESIGN-17 §3: city, caves and dungeons, red zone, arena, Blood Moon, on a mount, dead; S131: a tournament bracket
+	-- too (a local bracket waits on Ristalle between its matches; arena / tournament servers are "arena" already)
+	lure = table.freeze({ "dead", "city", "underground", "redZone", "arena", "tourney", "bloodMoon", "mounted" }),
 })
 UseBlocks.PREFIX = table.freeze({ fullElixir = "fullElixir", lure = "lure" })
 -- Reasons whose check a later session registers (no check = never blocks until then). S129 registered bloodMoon

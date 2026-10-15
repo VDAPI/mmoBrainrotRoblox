@@ -177,7 +177,7 @@ T.describe("VIP title (S121)", function()
 		T.expect(Titles.isUnlocked(c, "vip")).toBe(false)
 		T.expect(Titles.isUnlocked(c, "vip", nil, { vip = true })).toBe(true)
 		local def = TitleData.get("vip")
-		T.expect(def ~= nil and def.wiki == false).toBe(true)
+		T.expect(def ~= nil and def.wiki == nil).toBe(true) -- S131: published with the VIP article
 		T.expect((pl :: any)["title.vip"] ~= nil and (en :: any)["title.vip"] ~= nil).toBe(true)
 	end)
 
@@ -242,11 +242,11 @@ T.describe("Timed titles (S125)", function()
 		T.expect(before.other).toBe(NOW - 1)
 	end)
 
-	T.it("every timed title has its name and stays off the wiki until published", function()
+	T.it("every timed title has its name and is on the wiki since S131", function()
 		for _, def in TitleData.list do
 			if def.req.kind == "timed" then
 				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
-				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, nil })
 			end
 		end
 	end)
@@ -280,7 +280,7 @@ T.describe("S128 arena season titles", function()
 				end
 			end
 			if def.req.kind == "arenaSeason" then
-				T.expect({ def.id, def.wiki, def.seasonArg }).toEqual({ def.id, false, true })
+				T.expect({ def.id, def.wiki, def.seasonArg }).toEqual({ def.id, nil, true }) -- S131: published
 			end
 		end
 		T.expect(n).toBe(5)

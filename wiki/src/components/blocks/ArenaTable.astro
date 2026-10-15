@@ -1,0 +1,124 @@
+---
+// Ranked arena (S131): arena.json (tools/WikiData/Arena.luau, Data/Arena). `part` = "tiers" (rating tiers), "rules"
+// (match, queue and rating rules), "tokens" (Arena Tokens per match and the weekly cap), "shop" (the Arena Master's
+// shop, costs in tokens) or "rewards" (season rewards by tier; Dragon Shards only as "yes", never an amount).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+import { sectionHref } from "../../lib/sections";
+interface Props {
+  part: "tiers" | "rules" | "tokens" | "shop" | "rewards";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const arena = load("arena");
+const n = (v: number) => formatNumber(v, lang);
+const r = arena.rules;
+const tok = arena.tokens;
+const rules: [string, string][] = [
+  [t(lang, "arena.rules.brackets"), arena.brackets.map((b) => `${n(b.min)}–${n(b.max)}`).join(", ")],
+  [t(lang, "arena.rules.rounds"), n(r.roundsToWin)],
+  [t(lang, "arena.rules.roundTime"), `${n(r.roundTime / 60)} min`],
+  [t(lang, "arena.rules.teamTime"), `${n(r.teamTime / 60)} min`],
+  [t(lang, "arena.rules.potions"), n(r.potions)],
+  [t(lang, "arena.rules.accept"), `${n(r.acceptSec)} s`],
+  [t(lang, "arena.rules.penalty"), `${n(r.declinePenaltyMin)} min`],
+  [t(lang, "arena.rules.sameOpponent"), n(r.sameOpponentDaily)],
+  [t(lang, "arena.rules.start"), n(r.start)],
+  [t(lang, "arena.rules.k"), n(r.k)],
+  [t(lang, "arena.rules.kNew", { n: r.kNewMatches }), n(r.kNew)],
+  [t(lang, "arena.rules.softReset"), `${n(Math.round(arena.season.softReset * 100))}%`],
+  [t(lang, "arena.rules.minPlayed"), n(arena.season.minPlayed)],
+];
+const tokens: [string, string][] = [
+  [t(lang, "arena.tokens.win"), n(tok.win)],
+  [t(lang, "arena.tokens.loss"), n(tok.loss)],
+  [t(lang, "arena.tokens.win3"), n(tok.win3)],
+  [t(lang, "arena.tokens.loss3"), n(tok.loss3)],
+  [t(lang, "arena.tokens.first", { n: tok.firstDaily }), `×${n(tok.firstMul)}`],
+  [t(lang, "arena.tokens.weekCap"), n(tok.weekCap)],
+];
+const nextMin = (i: number) => arena.tiers[i + 1]?.min;
+---
+{part === "tiers" && (
+  <table class="vw-table vw-table--plain">
+    <caption class="vw-sr">{t(lang, "arena.tiers.caption")}</caption>
+    <thead><tr><th scope="col">{t(lang, "arena.tiers.tier")}</th><th scope="col" style="text-align: right">{t(lang, "arena.tiers.rating")}</th></tr></thead>
+    <tbody>
+      {arena.tiers.map((tier, i) => (
+        <tr>
+          <th scope="row">{name(tier.name, lang)}</th>
+          <td style="text-align: right">{nextMin(i) !== undefined ? `${n(tier.min)}–${n((nextMin(i) as number) - 1)}` : `${n(tier.min)}+`}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)}
+{(part === "rules" || part === "tokens") && (
+  <table class="vw-table vw-table--plain">
+    <caption class="vw-sr">{t(lang, part === "rules" ? "arena.rules.caption" : "arena.tokens.caption")}</caption>
+    <tbody>
+      {(part === "rules" ? rules : tokens).map(([label, value]) => (
+        <tr><th scope="row">{label}</th><td style="text-align: right" class="gold">{value}</td></tr>
+      ))}
+    </tbody>
+  </table>
+)}
+{part === "shop" && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "arena.shop.caption")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "arena.shop.name")}</th>
+          <th scope="col">{t(lang, "arena.shop.group")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "arena.shop.tokens")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {arena.shop.map((e) => {
+          const h = e.item ? sectionHref(lang, "items", e.item) : null;
+          const label = `${name(e.name, lang)}${e.n !== undefined ? ` ×${n(e.n)}` : ""}`;
+          return (
+            <tr>
+              <td>{h ? <a href={h}>{label}</a> : label}</td>
+              <td>{t(lang, `arena.shop.group.${e.group}` as Key)}</td>
+              <td style="text-align: right" class="gold">{n(e.tokens)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
+{part === "rewards" && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "arena.rewards.caption")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "arena.tiers.tier")}</th>
+          <th scope="col">{t(lang, "arena.rewards.title")}</th>
+          <th scope="col">{t(lang, "arena.rewards.looks")}</th>
+          <th scope="col">{t(lang, "arena.rewards.currency")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {arena.seasonRewards.map((s) => (
+          <tr>
+            <th scope="row">{name(s.name, lang)}</th>
+            <td>{s.title ? name(s.title, lang) : "—"}</td>
+            <td>{[s.frame, s.aura].filter((x) => x !== undefined).map((x) => name(x, lang)).join(", ") || "—"}</td>
+            <td>{s.currency ? t(lang, "arena.rewards.yes") : "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+<Source from="Data/Arena" />
+<style>
+  .gold { color: var(--vw-gold-bright); }
+</style>

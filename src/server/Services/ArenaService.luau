@@ -1878,7 +1878,7 @@ local function buyShop(player: Player, key: string): (boolean, string?)
 	else
 		CosmeticService.Grant(player, entry.id)
 	end
-	Analytics.custom(player, `ArenaShop_{entry.key}`, entry.price)
+	Analytics.custom(player, `ArenaShop_{entry.group}`, entry.price) -- a bounded name (S131)
 	if item then
 		DataService.Save(player)
 	end

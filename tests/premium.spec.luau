@@ -1,10 +1,14 @@
 --!strict
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
+local Config = require("../src/shared/Config")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Premium = require("../src/shared/Logic/Premium")
+local Pricing = require("./Pricing")
 local Products = require("../src/shared/Data/Products")
+local ShopFunnel = require("../src/shared/Logic/ShopFunnel")
 local Time = require("../src/shared/Logic/Time")
 local en = require("../src/shared/Data/Localization/en")
+local fs = require("@lune/fs")
 local pl = require("../src/shared/Data/Localization/pl")
 local T = require("./Test")
 
@@ -464,9 +468,186 @@ T.describe("S128 arena cosmetics", function()
 		for _, def in Cosmetics.list do
 			if def.obtain and def.obtain.arena then
 				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
-				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+				-- S131: published on the wiki with the arena article
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, nil })
 			end
 		end
+	end)
+end)
+
+-- S131 (DESIGN-17 §9, D2): the price review. A failing case means a price to tune in Data/Products / Data/Cosmetics
+-- (shards, NOT_BALANCE, DECYZJE line) or a Robux proposal to fix (only an obvious inconsistency).
+T.describe("Prices (S131)", function()
+	T.it("1. every bigger shard pack gives strictly more shards per Robux, the biggest bonus at most 50%", function()
+		local rates = Pricing.packRates()
+		T.expect(#rates >= 2).toBe(true)
+		for i = 2, #rates do
+			T.expect({ rates[i].key, rates[i].perRobux > rates[i - 1].perRobux }).toEqual({ rates[i].key, true })
+		end
+		T.expect(rates[#rates].bonusPct <= 50).toBe(true)
+	end)
+
+	T.it("2. every shard price is a whole number above zero, and so is every weekly offer price", function()
+		for _, row in Pricing.allShardPrices() do
+			T.expect({ row.key, row.so > 0 and row.so == math.floor(row.so) }).toEqual({ row.key, true })
+		end
+		local weekly = Pricing.weeklyPrices()
+		T.expect(#weekly > 0).toBe(true)
+		for _, w in weekly do
+			T.expect({ w.id, w.offer >= 1 and w.offer == math.floor(w.offer) and w.offer < w.price })
+				.toEqual({ w.id, true })
+		end
+	end)
+
+	T.it("3. nothing costs more than the biggest shard pack", function()
+		local biggest = 0
+		for _, pack in Products.shardPacks do
+			biggest = math.max(biggest, pack.shards)
+		end
+		for _, row in Pricing.allShardPrices() do
+			T.expect({ row.key, row.so <= biggest }).toEqual({ row.key, true })
+		end
+	end)
+
+	T.it("4. bigger elixir packs are not dearer per elixir, the long cloak not dearer than seven short ones", function()
+		local small = Products.getShop("potion_full_5") :: Products.ShopEntry
+		local big = Products.getShop("potion_full_20") :: Products.ShopEntry
+		T.expect(big.price / (big.n or 1) <= small.price / (small.n or 1)).toBe(true)
+		local hour = Products.getShop("lure_1h") :: Products.ShopEntry
+		local week = Products.getShop("lure_7d") :: Products.ShopEntry
+		T.expect(week.price <= 7 * hour.price).toBe(true)
+		T.expect(week.price / (week.seconds or 1) <= hour.price / (hour.seconds or 1)).toBe(true)
+	end)
+
+	T.it("5. product and pass ids are unique when set, subscription ids are empty or without spaces", function()
+		local seen: { [number]: string } = {}
+		local function check(key: string, id: number)
+			if id ~= 0 then
+				T.expect({ key, seen[id] }).toEqual({ key, nil })
+				seen[id] = key
+			end
+		end
+		for _, p in Products.shardPacks do
+			check(p.key, p.productId)
+		end
+		check(Products.respawn.key, Products.respawn.productId)
+		for _, p in Products.passes do
+			check(p.key, p.passId)
+		end
+		for _, p in Products.starterPacks do
+			check(p.key, p.productId)
+		end
+		for _, m in Products.mounts do
+			check(m.key, m.productId)
+		end
+		for _, sub in Products.subscriptions do
+			T.expect({ sub.key, string.find(sub.subscriptionId, "%s") == nil }).toEqual({ sub.key, true })
+		end
+	end)
+
+	T.it("6. docs/SKLEP-ID.md lists every product, pass and subscription (tools/shop_report.luau)", function()
+		local text = fs.readFile("docs/SKLEP-ID.md")
+		local keys: { string } = { Products.respawn.key }
+		local lists: { { any } } =
+			{ Products.shardPacks, Products.passes, Products.subscriptions, Products.starterPacks, Products.mounts }
+		for _, list in lists do
+			for _, e in list do
+				table.insert(keys, e.key)
+			end
+		end
+		for _, key in keys do
+			T.expect({ key, string.find(text, "`" .. key .. "`", 1, true) ~= nil }).toEqual({ key, true })
+		end
+	end)
+
+	T.it("the VIP month and the starter packs are reported against their proposals", function()
+		local vip = Pricing.vipMonth(Pricing.PROPOSED.vipSubscription)
+		T.expect(vip.so).toBe(Config.Vip.dailyShards * 30)
+		T.expect(vip.robuxValueCheap <= vip.robuxValueDear).toBe(true)
+		T.expect(#Pricing.starterPacks()).toBe(#Products.starterPacks)
+		T.expect(#Pricing.shopTable()).toBe(#Products.shop)
+	end)
+end)
+
+-- S131 (E2): Logic/ShopFunnel, the pure funnel steps behind src/server/PremiumFunnel.
+T.describe("Shop funnel (S131)", function()
+	local TIMEOUT = Config.ShopFunnel.sessionTimeout
+
+	T.it("the steps in order give 1..5, a repeated step gives nil", function()
+		local state = ShopFunnel.empty()
+		local got = {}
+		for i, name in ShopFunnel.FUNNELS.shop do
+			local step, nextState = ShopFunnel.track(state, "shop", name, 1000 + i, TIMEOUT)
+			table.insert(got, step)
+			state = nextState
+		end
+		T.expect(got).toEqual({ 1, 2, 3, 4, 5 })
+		T.expect((ShopFunnel.track(state, "shop", "tab", 1010, TIMEOUT))).toBeNil()
+		T.expect(ShopFunnel.sessionId(state, "shop")).toBe(1)
+	end)
+
+	T.it("open after granted starts a new session", function()
+		local _, s1 = ShopFunnel.track(ShopFunnel.empty(), "shop", "open", 0, TIMEOUT)
+		local _, s2 = ShopFunnel.track(s1, "shop", "granted", 5, TIMEOUT)
+		local step, s3 = ShopFunnel.track(s2, "shop", "open", 10, TIMEOUT)
+		T.expect(step).toBe(1)
+		T.expect(ShopFunnel.sessionId(s3, "shop")).toBe(2)
+	end)
+
+	T.it("a step after the timeout starts a new session and logs itself", function()
+		local _, s1 = ShopFunnel.track(ShopFunnel.empty(), "shop", "open", 0, TIMEOUT)
+		local _, s2 = ShopFunnel.track(s1, "shop", "prompt", 10, TIMEOUT)
+		T.expect((ShopFunnel.track(s2, "shop", "prompt", 20, TIMEOUT))).toBeNil()
+		local step, s3 = ShopFunnel.track(s2, "shop", "prompt", 10 + TIMEOUT + 1, TIMEOUT)
+		T.expect(step).toBe(4)
+		T.expect(ShopFunnel.sessionId(s3, "shop")).toBe(2)
+	end)
+
+	T.it("an unknown funnel or step gives nil, the input state never changes", function()
+		local _, s1 = ShopFunnel.track(ShopFunnel.empty(), "vip", "open", 0, TIMEOUT)
+		local before = table.clone(s1.vip.done)
+		T.expect((ShopFunnel.track(s1, "nope", "open", 1, TIMEOUT))).toBeNil()
+		T.expect((ShopFunnel.track(s1, "vip", "granted", 1, TIMEOUT))).toBeNil()
+		local step = ShopFunnel.track(s1, "vip", "prompt", 2, TIMEOUT)
+		T.expect(step).toBe(2)
+		T.expect(s1.vip.done).toEqual(before)
+		T.expect(s1.vip.last).toBe(0)
+	end)
+
+	T.it("the client may report only open, tab and item of the shop and open of the VIP window", function()
+		T.expect(ShopFunnel.clientAllowed("shop", "open")).toBe(true)
+		T.expect(ShopFunnel.clientAllowed("shop", "item")).toBe(true)
+		T.expect(ShopFunnel.clientAllowed("shop", "granted")).toBe(false)
+		T.expect(ShopFunnel.clientAllowed("shop", "prompt")).toBe(false)
+		T.expect(ShopFunnel.clientAllowed("vip", "open")).toBe(true)
+		T.expect(ShopFunnel.clientAllowed("vip", "active")).toBe(false)
+		T.expect(ShopFunnel.clientAllowed("other", "open")).toBe(false)
+	end)
+end)
+
+-- S131: edges of the one purchase rule (Logic/Premium) not covered above.
+T.describe("Purchase rule edges (S131)", function()
+	T.it("the daily limit resets exactly at 00:00:00 UTC", function()
+		local protection = Products.getShop("scroll_protection") :: Products.ShopEntry
+		local lastSecond = MONDAY + DAY - 1
+		local account = { dragonShards = 1000, shopLimits = Premium.emptyLimits() }
+		account.shopLimits = Premium.countPurchase(protection, account, lastSecond)
+		T.expect({ Premium.canBuy(protection, account, lastSecond) }).toEqual({ false, "premium.error.dailyLimit" })
+		T.expect((Premium.canBuy(protection, account, lastSecond + 1))).toBe(true)
+	end)
+
+	T.it("a bought starter pack, an earned cosmetic and an id-less product on a live server", function()
+		local key = Products.starterPacks[1].key
+		T.expect((Premium.canBuyPack(key, { packs = {} }))).toBe(true)
+		T.expect({ Premium.canBuyPack(key, { packs = { [key] = true } }) }).toEqual({ false, "premium.error.owned" })
+		for _, def in Cosmetics.list do
+			local o = def.obtain :: any
+			if o and (o.vipMonth or o.pack or o.event or o.arena) then
+				T.expect({ def.id, (Premium.canBuyCosmetic(def.id, {}, 999999)) }).toEqual({ def.id, false })
+			end
+		end
+		T.expect(Premium.robuxState(0, false)).toBe("soon")
+		T.expect(Premium.robuxState(0, true)).toBe("buy")
 	end)
 end)
 

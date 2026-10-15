@@ -40,13 +40,13 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
   - `pockets` „Kieszenie Kupca” (249 R$): **+10 miejsc w każdym plecaku** (także bez plecaka: 20 → 30). Jedno miejsce w kodzie liczy pojemność (`Inventory`/`Config.DefaultCapacity` + plecak): dodaj `+ Products.POCKETS_SLOTS` przy przepustce. Utrata przepustki niemożliwa (gamepass jest na zawsze), ale admin może ją zabrać: wtedy przedmioty ponad pojemność zostają, tylko nie da się dokładać (sprawdź, jak dziś działa zmiana plecaka na mniejszy, i zrób tak samo).
   - `slot4`, `slot5` „Miejsce na postać” (99 / 149 R$): `Config.MaxCharacters = 5`, `Config.FreeCharacters = 3`; slot 4 wymaga `slot4`, slot 5 wymaga `slot5` (i `slot4`). Wybór postaci pokazuje zablokowane sloty z przyciskiem zakupu. Postać na slocie 4/5 po utracie przepustki zostaje grywalna (nie blokujemy dostępu do kupionej postaci; blokujemy tylko tworzenie).
   - `wardrobePlus` „Garderoba+” (79 R$): 5 zapisanych zestawów wyglądu (`account.outfits`, zapis/wczytanie w oknie garderoby). Bez przepustki: 1 zestaw.
-- **Okno VIP** (`VipWindow`): lista korzyści, status (aktywny do / nieaktywny), przycisk subskrypcji, darmowy powrót z licznikiem, kosmetyk miesiąca.
+- **Okno VIP** (`VipWindow`): lista korzyści, status (aktywny do / nieaktywny), przycisk subskrypcji, darmowy powrót z licznikiem, kosmetyk miesiąca. Wejście: menu gry (☰ → VIP) i karta VIP na zakładce „Przepustki” sklepu (S121/S131: bez osobnej ikony paska HUD).
 - Drugi zestaw buildu **już jest za darmo** (S58, `SwitchBuildSet`): nie sprzedajemy go.
 
 ## 3. Przedmioty użytkowe premium (S122)
 
 - **Eliksir Pełni** (`potion_full`, nowy przedmiot w `Data/Items/Consumables`, stackowalny, związany z kontem/postacią: **nie da się go sprzedać, wystawić ani wymienić**): przywraca 100% HP i many (i energii, jeśli klasa ją ma). Sprzedawany w paczkach (`potion_full_5` za 120 SO, `potion_full_20` za 400 SO). Reguły (`Config.FullElixir`): `cooldown = 180` s (własny, nie wspólny z miksturami), `dailyLimit = 10` użyć na postać i dzień UTC, **zablokowany**: w pojedynku i na arenie (`DuelService`/`ArenaService`), w lochu bossa (`DungeonService.InRun` albo mapa `dungeon_*`), w czasie blokady PvP (otrzymał/zadał obrażenia graczowi w ostatnich 15 s, ten sam licznik co przełącznik PvP), w trakcie Krwawego Księżyca (S129) i turnieju (S130). Slot: używany z plecaka i z dowolnego slotu mikstury (gracz może go podpiąć jak miksturę), z czytelnym komunikatem, czemu nie działa.
-- **Płaszcz Przynęty** (usługa czasowa, nie przedmiot w plecaku): `account.lure = { untilTs, on }`; kupno `lure_1h` (150 SO) i `lure_7d` (990 SO) dodaje czas do `untilTs` (czas rzeczywisty, płynie także offline). Włącz/wyłącz w oknie sklepu, w menu i przyciskiem na HUD (ikona z pozostałym czasem). Działanie (`LureService`, `Config.Lure`): co `interval = 8` s zwykłe potwory (nie Elita, nie Elita II, nie boss, nie potwory wydarzeń świata) w promieniu `radius = 25` st. od gracza, które nikogo nie atakują i są w zasięgu poziomu gracza (`|lvl potwora − lvl gracza| <= levelGap = 10`), dostają aggro na gracza, najwyżej `maxPulled = 6` potworów aktywnie walczących z graczem naraz. **Nie działa:** w mieście, w jaskiniach i lochach (`biome` cave/crypt/dungeon), w czerwonej strefie, na arenie, w czasie Krwawego Księżyca, na wierzchowcu, gdy gracz nie żyje. Wygląd: peleryna z `Util/CosmeticLook` (ciemnoczerwona, lekki dym), widoczna dla innych; nie zajmuje slotu kosmetyku (nakłada się na strój, ma pierwszeństwo przed peleryną stroju, gdy włączony). **Zero statów.**
+- **Płaszcz Przynęty** (usługa czasowa, nie przedmiot w plecaku): `account.lure = { untilTs, on }`; kupno `lure_1h` (150 SO) i `lure_7d` (990 SO) dodaje czas do `untilTs` (czas rzeczywisty, płynie także offline). Włącz/wyłącz w oknie sklepu, w menu i przyciskiem na HUD (ikona z pozostałym czasem). Działanie (`LureService`, `Config.Lure`): co `interval = 8` s zwykłe potwory (nie Elita, nie Elita II, nie boss, nie potwory wydarzeń świata) w promieniu `radius = 25` st. od gracza, które nikogo nie atakują i są w zasięgu poziomu gracza (`|lvl potwora − lvl gracza| <= levelGap = 10`), dostają aggro na gracza, najwyżej `maxPulled = 6` potworów aktywnie walczących z graczem naraz. **Nie działa:** w mieście, w jaskiniach i lochach (`biome` cave/crypt/dungeon), w czerwonej strefie, na arenie, w czasie Krwawego Księżyca, w drabince turnieju (S131), na wierzchowcu, gdy gracz nie żyje. Wygląd: peleryna z `Util/CosmeticLook` (ciemnoczerwona, lekki dym), widoczna dla innych; nie zajmuje slotu kosmetyku (nakłada się na strój, ma pierwszeństwo przed peleryną stroju, gdy włączony). **Zero statów.**
 - Oba wchodzą do zakładki „Przedmioty” S120 i do `paywall.spec` jako jawnie dozwolone wyjątki z opisem ograniczeń.
 - Blokady: `Logic/UseBlocks` + `src/server/UseGuards.luau` (S122); S126/S127/S129/S130 rejestrują powody `arena` / `bloodMoon` / `tourney` (`UseGuards.register`, instrukcja w `docs/SESJE.md` → S122 „Jak dopiąć blokadę”).
 
@@ -182,3 +182,36 @@ Prośba właściciela z 2026-10-13 (wątek animacji, przeniesiona tutaj): wyglą
 | S130 | Turniej Czempiona: zapisy globalne, serwer turniejowy, drabinka, nagrody, posąg |
 | S131 | Audyt: wiki, paywall, ceny, analityka, admin, lista id do Creator Hub |
 | S132 | Wygląd klas: domyślne stroje klas, kreator (twarz, skóra, fryzura), stroje klasowe w garderobie, opcja awatara Roblox |
+
+## Ustalenia S120–S131 (po audycie S131; szczegóły w `docs/DECYZJE.md`)
+
+1. Nazwy z kodu: okno sklepu `UI/Screens/PremiumShop/` (folder, zakładki `currency`, `passes`, `items`, `cosmetics`,
+   `mounts`), reguła `Premium.canBuy` z licznikami `account.shopLimits = { day, week, daily, weekly }`; VIP `VipService` +
+   `Logic/Vip`, `account.vip = { shardDay, respawnDay, respawnN, recallAt, months }`; blokady `Logic/UseBlocks` +
+   `src/server/UseGuards.luau`; rankingi `LeaderboardService` + `server/Leaderboard/{Stores,Cache,TownBoard}`; kolejka
+   `Logic/ArenaQueue` + atrapa `Logic/MemoryFake`; Krwawy Księżyc `BloodMoonService` + `server/BloodMoon/Board`; turniej
+   `TourneyService` + `server/Tourney/{Store,Bus,Hall,Runner}`, `Logic/Tourney`, `Logic/Bracket`, zakładka „Turniej” okna
+   areny; poczta nagród z kluczem `once` (nie `dedupe`).
+2. Klawisze: `win_rankings` = R, `win_arena` = U, `emote_wheel` = T (S97 zajął J).
+3. Krwawy Księżyc: `eliteChance = 0.15` zamiast `eliteMul`; Żetony z wydarzeń (Krwawy Księżyc, turniej) poza tygodniowym
+   limitem meczów (`uncapped`).
+4. Płaszcz Przynęty nie działa też w drabince turnieju (`UseBlocks.LISTS.lure` += `tourney`); Eliksir Pełni ma blokady
+   wszystkich miejsc serii, `UseBlocks.PENDING` jest pusty.
+5. Ogłoszenia na wszystkie serwery (zwycięzcy Krwawego Księżyca, czempioni) przez kolejkę `AnnounceService.Global`
+   (`Config.Announce`), nie giną w odstępie 10 s.
+6. Wiki: jeden plik `arena.json` (arena, Krwawy Księżyc, turniej; `tools/WikiData/Arena.luau`), rozszerzony
+   `premium.json` (`cat`, `weeklyLimit`, `vip`, `items`, `starterPacks`), sześć artykułów (`premiumShop`, `vip`,
+   `rankings`, `arena`, `bloodMoon`, `tourney`). **Na wiki nie ma żadnej liczby Smoczych Odłamków** (`currency = true`
+   zamiast kwoty); zakazane klucze += `subscriptionId`, `dailyShards`, `shardReward`.
+7. Analityka: lejki `shop` (open, tab, item, prompt, granted) i `vip` (open, prompt, active) przez
+   `LogFunnelStepEvent` (`Analytics.funnel`, `Logic/ShopFunnel`, `src/server/PremiumFunnel.luau`, remote `PremiumFunnel`
+   z białą listą kroków klienta); nazwy zdarzeń `custom` ograniczone (`PremiumSpend_<sekcja>`).
+8. Admin: `/premium grant|take|list` i `/vip grant|take` nadają na stałe przez `account.grantedPasses`; `/tourney force
+   [min]` wymusza prawdziwy turniej na wszystkich serwerach (wiadomość `force`); `/sched`; `/weekreset`; `/rankweek pay`
+   trwającego tygodnia tylko w Studio.
+9. Ceny po przeglądzie bez zmian (kurs paczek rośnie, premia największej 39%, nic droższego niż największa paczka);
+   różnice z KATALOG i wartość miesiąca VIP do decyzji właściciela. Lista do Creator Hub: `docs/SKLEP-ID.md`
+   (`tools/shop_report.luau`).
+10. Turniej nie wyklucza postaci administracji; rankingi poziomu, areny i Krwawego Księżyca wykluczają (`excludeAdmins`).
+11. Uproszczenia, które zostają: grupa trzy na trzy nie odtwarza się po powrocie z serwera areny, nieobecny w trzy na
+    trzy na serwerze areny dostaje karę bez przegranej, posągi czempionów bez rozróżnienia klasy.

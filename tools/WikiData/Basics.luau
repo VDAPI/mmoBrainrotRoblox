@@ -36,6 +36,9 @@ local Schema = require("./Schema")
 local StatCalc = require("../../src/shared/Logic/StatCalc")
 local Stats = require("../../src/shared/Data/Stats")
 local Titles = require("../../src/shared/Data/Titles")
+local ArenaData = require("../../src/shared/Data/Arena")
+local Leaderboards = require("../../src/shared/Data/Leaderboards")
+local ScheduledEvents = require("../../src/shared/Data/ScheduledEvents")
 local World = require("./World")
 
 local S = Schema
@@ -290,7 +293,8 @@ S.file(
 			id = "string",
 			name = "name",
 			color = "color",
-			req = rec("TitleReq", { kind = "string", value = "int" }),
+			-- S131: `value` for counted conditions, `tier` for an arena season tier, `days` for a timed title
+			req = rec("TitleReq", { kind = "string", ["value?"] = "int", ["tier?"] = "string", ["days?"] = "int" }),
 		})),
 	})
 )
@@ -921,12 +925,37 @@ function Basics.pvp(): any
 	return { rows = rows, toggleMatters = matters }
 end
 
+-- S131: how many days a timed title lasts, from the data of the reward that gives it (S125, S129, S130).
+local function timedDays(): { [string]: number }
+	local out: { [string]: number } = {}
+	out[Leaderboards.WEEK_REWARDS.title] = Leaderboards.WEEK_REWARDS.titleDays
+	local moon = ScheduledEvents.bloodMoon.reward
+	out[moon.titleId] = moon.titleDays
+	for _, r in ArenaData.TOURNEY.rewards do
+		if r.title and r.titleDays then
+			out[r.title] = r.titleDays
+		end
+	end
+	return out
+end
+
 function Basics.titles(ctx: any): any
 	local list = {}
+	local days = timedDays()
 	for _, t in Titles.list do
 		-- S123: bought titles are cosmetics; cosmetics.json lists them, without prices
 		if not ctx.hidden[t.id] and t.req.kind ~= "cosmetic" then
-			table.insert(list, { id = t.id, name = Names.of(t.nameKey), color = t.color, req = Clean.clean(t.req) })
+			-- S131: the condition field by field (never the whole requirement): no player names, no dates
+			local r = t.req :: any
+			local req = {
+				kind = r.kind,
+				value = if type(r.value) == "number" then r.value else nil,
+				tier = if type(r.tier) == "string" then r.tier else nil,
+				days = if r.kind == "timed" then days[t.id] else nil,
+			}
+			-- an arena season title carries the season in game ("{season}"): the wiki shows its plain name (S128)
+			local name = if (t :: any).seasonArg then Names.of(`{t.nameKey}.plain`) else Names.of(t.nameKey)
+			table.insert(list, { id = t.id, name = name, color = t.color, req = req })
 		end
 	end
 	return { titles = list }

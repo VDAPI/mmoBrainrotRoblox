@@ -1,0 +1,51 @@
+{
+  "bloodMoon": {"durationMin":30,"eliteChance":0.15,"minPoints":5,"points":{"elite":1,"elite2":5,"levelGap":8,"player":10,"sameVictim":2},"regions":[{"en":"Whispering Meadows","pl":"Szepczące Łąki"},{"en":"Duskwood","pl":"Mroczny Bór"},{"en":"Ashen Wastes","pl":"Spalone Pustkowia"},{"en":"Frostpeak","pl":"Lodowe Szczyty"}],"rewards":[{"blessing":{"en":"Unique","pl":"Unikatowy"},"currency":false,"place":"participant","tokens":20},{"currency":false,"place":"top","title":{"en":"Crimson","pl":"Krwawy"},"titleDays":7,"top":100},{"currency":false,"frame":{"en":"Blood Moon Frame","pl":"Ramka Krwawego Księżyca"},"place":"top","top":10},{"currency":true,"place":"top","top":1}],"slots":[{"hour":19,"minute":0,"weekday":2},{"hour":19,"minute":0,"weekday":4}],"warnMin":[10,1]},
+  "brackets": [
+    {"max":39,"min":20},
+    {"max":59,"min":40},
+    {"max":79,"min":60},
+    {"max":100,"min":80}
+  ],
+  "minLevel": 20,
+  "rules": {"acceptSec":15,"declinePenaltyMin":5,"k":32,"kNew":48,"kNewMatches":10,"potions":3,"roundTime":180,"roundsToWin":2,"sameOpponentDaily":3,"start":1000,"teamTime":240},
+  "season": {"minPlayed":5,"softReset":0.5},
+  "seasonRewards": [
+    {"currency":false,"name":{"en":"Bronze","pl":"Brąz"},"tier":"bronze","title":{"en":"Bronze Gladiator","pl":"Gladiator Brązu"}},
+    {"currency":false,"frame":{"en":"Arena Laurel","pl":"Laur Areny"},"name":{"en":"Silver","pl":"Srebro"},"tier":"silver","title":{"en":"Silver Gladiator","pl":"Gladiator Srebra"}},
+    {"aura":{"en":"Season Victor's Aura","pl":"Aura Zwycięzcy Sezonu"},"currency":false,"frame":{"en":"Arena Laurel","pl":"Laur Areny"},"name":{"en":"Gold","pl":"Złoto"},"tier":"gold","title":{"en":"Gold Gladiator","pl":"Gladiator Złota"}},
+    {"aura":{"en":"Season Victor's Aura","pl":"Aura Zwycięzcy Sezonu"},"currency":true,"frame":{"en":"Arena Laurel","pl":"Laur Areny"},"name":{"en":"Diamond","pl":"Diament"},"tier":"diamond","title":{"en":"Diamond Gladiator","pl":"Gladiator Diamentu"}},
+    {"aura":{"en":"Season Victor's Aura","pl":"Aura Zwycięzcy Sezonu"},"currency":true,"frame":{"en":"Arena Laurel","pl":"Laur Areny"},"name":{"en":"Master","pl":"Mistrz"},"tier":"master","title":{"en":"Arena Master","pl":"Mistrz Areny"}}
+  ],
+  "shop": [
+    {"group":"travel","id":"stone_return_5","item":"stone_return","kind":"item","n":5,"name":{"en":"Stone of Return","pl":"Kamień Powrotu"},"tokens":10},
+    {"group":"blessing","id":"blessing_warrior_1","item":"blessing_warrior_1","kind":"item","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"tokens":15},
+    {"group":"blessing","id":"blessing_hunter_1","item":"blessing_hunter_1","kind":"item","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"tokens":15},
+    {"group":"blessing","id":"blessing_sage_1","item":"blessing_sage_1","kind":"item","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"tokens":15},
+    {"group":"blessing","id":"blessing_guardian_1","item":"blessing_guardian_1","kind":"item","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"tokens":15},
+    {"group":"blessing","id":"blessing_fortune_1","item":"blessing_fortune_1","kind":"item","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"tokens":15},
+    {"group":"blessing","id":"blessing_warrior_2","item":"blessing_warrior_2","kind":"item","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"tokens":35},
+    {"group":"blessing","id":"blessing_hunter_2","item":"blessing_hunter_2","kind":"item","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"tokens":35},
+    {"group":"blessing","id":"blessing_sage_2","item":"blessing_sage_2","kind":"item","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"tokens":35},
+    {"group":"blessing","id":"blessing_guardian_2","item":"blessing_guardian_2","kind":"item","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"tokens":35},
+    {"group":"blessing","id":"blessing_fortune_2","item":"blessing_fortune_2","kind":"item","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"tokens":35},
+    {"group":"blessing","id":"blessing_warrior_3","item":"blessing_warrior_3","kind":"item","name":{"en":"Blessing of the Warrior","pl":"Błogosławieństwo Wojownika"},"tokens":70},
+    {"group":"blessing","id":"blessing_hunter_3","item":"blessing_hunter_3","kind":"item","name":{"en":"Blessing of the Hunter","pl":"Błogosławieństwo Łowcy"},"tokens":70},
+    {"group":"blessing","id":"blessing_sage_3","item":"blessing_sage_3","kind":"item","name":{"en":"Blessing of the Sage","pl":"Błogosławieństwo Mędrca"},"tokens":70},
+    {"group":"blessing","id":"blessing_guardian_3","item":"blessing_guardian_3","kind":"item","name":{"en":"Blessing of the Guardian","pl":"Błogosławieństwo Strażnika"},"tokens":70},
+    {"group":"blessing","id":"blessing_fortune_3","item":"blessing_fortune_3","kind":"item","name":{"en":"Blessing of Fortune","pl":"Błogosławieństwo Fortuny"},"tokens":70},
+    {"cosmetic":"frame_gladiator","group":"cosmetic","id":"frame_gladiator","kind":"cosmetic","name":{"en":"Gladiator's Frame","pl":"Ramka Gladiatora"},"tokens":250},
+    {"cosmetic":"chatframe_gladiator","group":"cosmetic","id":"chatframe_gladiator","kind":"cosmetic","name":{"en":"Gladiator's Chat Frame","pl":"Ramka czatu Gladiatora"},"tokens":250},
+    {"cosmetic":"title_ironwill","group":"cosmetic","id":"title_ironwill","kind":"cosmetic","name":{"en":"Title: Iron Will","pl":"Tytuł: Żelazna Wola"},"tokens":400},
+    {"cosmetic":"title_sandveteran","group":"cosmetic","id":"title_sandveteran","kind":"cosmetic","name":{"en":"Title: Veteran of the Ristalle","pl":"Tytuł: Weteran Ristalle"},"tokens":600},
+    {"cosmetic":"aura_gladiator","group":"cosmetic","id":"aura_gladiator","kind":"cosmetic","name":{"en":"Gladiator's Aura","pl":"Aura Gladiatora"},"tokens":1200}
+  ],
+  "tiers": [
+    {"id":"bronze","min":0,"name":{"en":"Bronze","pl":"Brąz"}},
+    {"id":"silver","min":1100,"name":{"en":"Silver","pl":"Srebro"}},
+    {"id":"gold","min":1300,"name":{"en":"Gold","pl":"Złoto"}},
+    {"id":"diamond","min":1500,"name":{"en":"Diamond","pl":"Diament"}},
+    {"id":"master","min":1700,"name":{"en":"Master","pl":"Mistrz"}}
+  ],
+  "tokens": {"firstDaily":3,"firstMul":2,"loss":4,"loss3":5,"weekCap":600,"win":10,"win3":12},
+  "tourney": {"cap":32,"fields":4,"hallWeeks":4,"inviteSec":120,"minPlayers":4,"rewards":[{"aura":{"en":"Champion's Aura","pl":"Aura Czempiona"},"currency":true,"place":"1","title":{"en":"Champion of Vaelthorn","pl":"Czempion Vaelthorn"},"titleDays":7},{"currency":true,"frame":{"en":"Finalist's Frame","pl":"Ramka Finalisty"},"place":"2"},{"currency":true,"place":"3"},{"currency":false,"place":"participant","tokens":30}],"signupFromMin":60,"signupToMin":10,"slot":{"hour":19,"minute":0,"weekday":6}}
+}

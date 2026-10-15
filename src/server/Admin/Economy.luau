@@ -39,6 +39,7 @@ local LoginRewardService = Context.services.LoginRewardService
 local VipService = Context.services.VipService
 local LureService = Context.services.LureService
 local PremiumShopService = Context.services.PremiumShopService -- S123: /pack
+local ArenaService = Context.services.ArenaService -- S131: /weekreset tokens
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -120,14 +121,59 @@ commands.blessing = function(player, args)
 	end)
 end
 
+-- The sources of a pass in a short admin text ("roblox+granted", "-").
+local function sourceText(passKey: string, player: Player): string
+	local source = MonetizationService.PassSource(player, passKey)
+	local parts: { string } = {}
+	if source.roblox then
+		table.insert(parts, "roblox")
+	end
+	if source.granted then
+		table.insert(parts, "granted")
+	end
+	if source.cache and not source.roblox and not source.granted then
+		table.insert(parts, "test")
+	end
+	return if #parts > 0 then table.concat(parts, "+") else "-"
+end
+
+-- S131: passes saved in the caller's account (account.grantedPasses, MonetizationService.GrantProfilePass, the starter
+-- pack path): grant / take for good, list with sources. A pass bought on Roblox cannot be taken (only its grant goes).
+-- /pass on|off stays the session-only test.
 commands.premium = function(player, args)
-	local pass = args[2] and Products.getPass(args[2])
-	if args[1] ~= "grant" or not pass then
+	local action = args[1]
+	if action == "list" then
+		local rows: { string } = {}
+		for _, pass in Products.passes do
+			table.insert(rows, `{pass.key}: {sourceText(pass.key, player)}`)
+		end
+		reply(player, "admin.premium.list", { list = table.concat(rows, ", ") })
+		return
+	end
+	local key = args[2]
+	if (action ~= "grant" and action ~= "take") or not key then
 		reply(player, "admin.usage.premium")
 		return
 	end
-	MonetizationService.SetTestPass(player, pass.key, true)
-	reply(player, "admin.pass.ok", { pass = pass.key, state = "on" })
+	local pass = Products.getPass(key)
+	if not pass then
+		reply(player, "admin.premium.unknown", { key = key })
+		return
+	end
+	if PlayerStateService.Get(player, { "account" }) == nil then
+		reply(player, "admin.usage.premium")
+		return
+	end
+	if action == "grant" then
+		MonetizationService.GrantProfilePass(player, pass.key)
+		reply(player, "admin.premium.granted", { pass = pass.key })
+	elseif MonetizationService.PassSource(player, pass.key).roblox then
+		PlayerStateService.Set(player, { "account", "grantedPasses", pass.key }, nil)
+		reply(player, "admin.premium.ownedOnRoblox", { pass = pass.key })
+	else
+		MonetizationService.RevokeProfilePass(player, pass.key)
+		reply(player, "admin.premium.taken", { pass = pass.key })
+	end
 end
 
 -- S121: VIP test. on/off = a session-only subscription (also on live servers for admins; never saved).
@@ -137,6 +183,22 @@ commands.vip = function(player, args)
 		-- VipChanged runs VipService.Refresh (daily shards, cosmetic of the month) when it turns on
 		MonetizationService.SetTestSubscription(player, "vip", action == "on")
 		reply(player, if action == "on" then "admin.vip.on" else "admin.vip.off")
+	elseif action == "grant" or action == "take" then
+		-- S131: the VIP for good = the "vip" pass saved in the account (HasVip = subscription or pass)
+		if PlayerStateService.Get(player, { "account" }) == nil then
+			reply(player, "admin.usage.vip")
+			return
+		end
+		if action == "grant" then
+			MonetizationService.GrantProfilePass(player, "vip")
+			reply(player, "admin.vip.granted")
+		elseif MonetizationService.PassSource(player, "vip").roblox then
+			PlayerStateService.Set(player, { "account", "grantedPasses", "vip" }, nil)
+			reply(player, "admin.premium.ownedOnRoblox", { pass = "vip" })
+		else
+			MonetizationService.RevokeProfilePass(player, "vip")
+			reply(player, "admin.vip.taken")
+		end
 	elseif action == "status" then
 		local status = VipService.Status(player)
 		if not status then
@@ -146,7 +208,7 @@ commands.vip = function(player, args)
 		reply(player, "admin.vip.status", {
 			active = tostring(status.active),
 			sub = tostring(status.sub),
-			pass = tostring(status.pass),
+			pass = `{tostring(status.pass)} ({sourceText("vip", player)})`,
 			shards = if status.shardsToday then "@admin.vip.shardsDone" else "@admin.vip.shardsWait",
 			respawns = status.respawns,
 			recall = Time.format(status.recall),
@@ -208,6 +270,44 @@ commands.lure = function(player, args)
 	else
 		reply(player, "admin.usage.lure")
 	end
+end
+
+-- S131: the caller's weekly counters back to zero (tests of the week): the weekly shop limits (the daily ones stay),
+-- the Arena Tokens of the week (/arena week) or the weekly EXP of the character (its ranking entry keeps the highest
+-- score sent; /rankweek reset clears the in-memory boards).
+commands.weekreset = function(player, args)
+	local what = args[1]
+	if what == "limits" then
+		local acc = PlayerStateService.Get(player, { "account" })
+		if type(acc) ~= "table" then
+			reply(player, "admin.usage.weekreset")
+			return
+		end
+		local limits = Premium.limitsOf(acc, os.time())
+		limits.weekly = {}
+		PlayerStateService.Set(player, { "account", "shopLimits" }, limits)
+	elseif what == "tokens" then
+		if not (ArenaService and ArenaService.AdminWeek(player)) then
+			reply(player, "admin.needCharacter")
+			return
+		end
+	elseif what == "expweek" then
+		local char = PlayerStateService.GetCharacter(player)
+		if not char then
+			reply(player, "admin.needCharacter")
+			return
+		end
+		local old = char.expWeek
+		PlayerStateService.Set(
+			player,
+			{ "character", "expWeek" },
+			{ week = Time.weekNumber(Clock.now()), exp = 0, b = if old then old.b else 0 }
+		)
+	else
+		reply(player, "admin.usage.weekreset")
+		return
+	end
+	reply(player, "admin.weekreset.done", { what = what })
 end
 
 -- S120: premium shop limit counters of the caller's account.

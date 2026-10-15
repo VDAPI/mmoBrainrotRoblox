@@ -1,0 +1,54 @@
+---
+title: Arena
+description: "Arena rankingowa przy Ristalle: przedziały, kolejka, zasady meczu jeden na jeden i trzy na trzy, rating i sezony, Żetony Areny, sklep i nagrody."
+key: arena
+order: 16
+updated: 2026-10-15
+tags: [Arena, PvP]
+---
+
+<Callout kind="tip" title="Rating tylko z walk">
+Rating, Żetony i nagrody sezonu zależą wyłącznie od wyników meczów. Nic kupionego w sklepie nie zmienia ich ani o punkt.
+</Callout>
+
+## Mistrz Areny
+
+Arenę prowadzi <Npc id="arenamaster" /> przy Ristalle w mieście. Okno areny otwierasz u niego, z menu na ekranie albo klawiszem <Key action="win_arena" />. Arena rankingowa jest dostępna od <Stat path="arena.minLevel" format="lvl" />. Gracze walczą tylko w swoim przedziale poziomów:
+
+<ArenaTable part="rules" />
+
+## Kolejka
+
+Zapisujesz się do kolejki jeden na jeden albo trzy na trzy (sam albo z grupą trzech osób, zapisuje lider). Kolejka szuka rywala o podobnym ratingu na wszystkich serwerach i z czasem poszerza zakres. Gdy nikt inny nie czeka, gra proponuje walkę z kimś z twojego serwera. Znaleziony mecz trzeba przyjąć w krótkim czasie, a odrzucenie zamyka kolejkę na kilka minut.
+
+Mecz z innego serwera odbywa się na osobnym serwerze areny: gra przenosi tam obu graczy, a po walce odsyła ich z powrotem. Na czas kolejki możesz dalej grać, byle nie w lochu.
+
+## Zasady meczu
+
+Jeden na jeden toczy się do dwóch wygranych rund, trzy na trzy to jedna runda, w której wygrywa drużyna z żywymi zawodnikami. Na start rundy każdy ma pełne życie, manę i gotowe umiejętności. Masz kilka mikstur na cały mecz. Gdy czas się skończy, wygrywa strona z większą częścią życia. Zejście z piasku przegrywa rundę, wyjście z gry przegrywa mecz.
+
+Na arenie nie działa Eliksir Pełni ani Płaszcz Przynęty, nie wsiądziesz na wierzchowca, a błogosławieństwa są zawieszone (ich czas płynie dalej).
+
+## Rating i sezony
+
+Rating działa jak w szachach: wygrana z mocniejszym daje więcej, przegrana ze słabszym zabiera więcej. Kilka meczów dziennie z tym samym rywalem liczy się do ratingu, kolejne już nie. Sezon trwa miesiąc kalendarzowy. Na początku nowego sezonu rating częściowo wraca w stronę wartości startowej.
+
+<ArenaTable part="tiers" />
+
+## Żetony Areny
+
+Za każdy mecz dostajesz Żetony Areny, za pierwsze mecze dnia więcej. Żetony z meczów mają limit tygodniowy, nagrody wydarzeń są poza nim.
+
+<ArenaTable part="tokens" />
+
+## Sklep areny
+
+Mistrz Areny sprzedaje za Żetony kosmetyki areny, błogosławieństwa do rzadkości Heroicznej i Kamienie Powrotu. Rzeczy ze sklepu są związane z postacią. Żetonów nie da się kupić.
+
+<ArenaTable part="shop" />
+
+## Nagrody sezonu
+
+Po końcu sezonu przychodzi pocztą nagroda za najwyższy próg sezonu, o ile rozegrałeś wymaganą liczbę meczów. Najlepsi z każdego przedziału trafiają na planszę Sali Sław Areny przy Ristalle.
+
+<ArenaTable part="rewards" />

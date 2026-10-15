@@ -11,6 +11,15 @@
     {"color":"#E8E25A","id":"duelist","name":{"en":"Duelist","pl":"Pojedynkowicz"},"req":{"kind":"duelsWon","value":10}},
     {"color":"#FFD36B","id":"gladiator","name":{"en":"Gladiator","pl":"Gladiator"},"req":{"kind":"duelsWon","value":50}},
     {"color":"#E05A4A","id":"bloodied","name":{"en":"Bloodied","pl":"Splamiony Krwią"},"req":{"kind":"pvpKills","value":10}},
-    {"color":"#B8322A","id":"warlord","name":{"en":"Warlord","pl":"Watażka"},"req":{"kind":"pvpKills","value":100}}
+    {"color":"#B8322A","id":"warlord","name":{"en":"Warlord","pl":"Watażka"},"req":{"kind":"pvpKills","value":100}},
+    {"color":"#F2C94C","id":"vip","name":{"en":"VIP","pl":"VIP"},"req":{"kind":"vip"}},
+    {"color":"#F0D27A","id":"weekly_diligent","name":{"en":"Most Diligent of the Week","pl":"Najpilniejszy Tygodnia"},"req":{"days":7,"kind":"timed"}},
+    {"color":"#C0262D","id":"bloodmoon","name":{"en":"Crimson","pl":"Krwawy"},"req":{"days":7,"kind":"timed"}},
+    {"color":"#F2C14E","id":"tourney_champion","name":{"en":"Champion of Vaelthorn","pl":"Czempion Vaelthorn"},"req":{"days":7,"kind":"timed"}},
+    {"color":"#B07A4A","id":"arena_bronze","name":{"en":"Bronze Gladiator","pl":"Gladiator Brązu"},"req":{"kind":"arenaSeason","tier":"bronze"}},
+    {"color":"#C9D1D9","id":"arena_silver","name":{"en":"Silver Gladiator","pl":"Gladiator Srebra"},"req":{"kind":"arenaSeason","tier":"silver"}},
+    {"color":"#E8C25A","id":"arena_gold","name":{"en":"Gold Gladiator","pl":"Gladiator Złota"},"req":{"kind":"arenaSeason","tier":"gold"}},
+    {"color":"#8FD8FF","id":"arena_diamond","name":{"en":"Diamond Gladiator","pl":"Gladiator Diamentu"},"req":{"kind":"arenaSeason","tier":"diamond"}},
+    {"color":"#FF9F1C","id":"arena_master","name":{"en":"Arena Master","pl":"Mistrz Areny"},"req":{"kind":"arenaSeason","tier":"master"}}
   ]
 }

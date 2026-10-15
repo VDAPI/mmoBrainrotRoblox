@@ -73,7 +73,17 @@
     {"color":"#B8902E","color2":"#3A2A1A","icon":"◐","id":"dye_gold","kind":"dye","name":{"en":"Dye: Gold","pl":"Barwnik: złoto"}},
     {"color":"#4A3E2E","color2":"#7A2E22","icon":"✣","id":"outfit_wayfarer","kind":"outfit","name":{"en":"Wayfarer's Cloak","pl":"Płaszcz Wędrowca"},"parts":["hood","cape"]},
     {"color":"#8A7A6A","color2":"#E8E0CC","flies":false,"icon":"🐕","id":"pet_hound","kind":"pet","name":{"en":"Hound","pl":"Chart"}},
-    {"color":"#E8C25A","icon":"✠","id":"aura_valor","kind":"aura","name":{"en":"Aura of Valour","pl":"Aura Męstwa"}}
+    {"color":"#E8C25A","icon":"✠","id":"aura_valor","kind":"aura","name":{"en":"Aura of Valour","pl":"Aura Męstwa"}},
+    {"color":"#8A5A2A","color2":"#D9B26A","icon":"⚔","id":"frame_gladiator","kind":"frame","name":{"en":"Gladiator's Frame","pl":"Ramka Gladiatora"}},
+    {"color":"#3A2A18","color2":"#E8D2A0","icon":"⚔","id":"chatframe_gladiator","kind":"chatframe","name":{"en":"Gladiator's Chat Frame","pl":"Ramka czatu Gladiatora"}},
+    {"color":"#B8B2A6","icon":"✎","id":"title_ironwill","kind":"title","name":{"en":"Title: Iron Will","pl":"Tytuł: Żelazna Wola"}},
+    {"color":"#D9B26A","icon":"✎","id":"title_sandveteran","kind":"title","name":{"en":"Title: Veteran of the Ristalle","pl":"Tytuł: Weteran Ristalle"}},
+    {"color":"#D9A441","color2":"#8A5A2A","icon":"⚔","id":"aura_gladiator","kind":"aura","name":{"en":"Gladiator's Aura","pl":"Aura Gladiatora"}},
+    {"color":"#C9D1D9","color2":"#8A9098","icon":"❦","id":"frame_arena_season","kind":"frame","name":{"en":"Arena Laurel","pl":"Laur Areny"}},
+    {"color":"#E8C25A","color2":"#FFF0B0","icon":"❦","id":"aura_arena_season","kind":"aura","name":{"en":"Season Victor's Aura","pl":"Aura Zwycięzcy Sezonu"}},
+    {"color":"#8E1A22","color2":"#2A0A0E","icon":"☾","id":"frame_bloodmoon","kind":"frame","name":{"en":"Blood Moon Frame","pl":"Ramka Krwawego Księżyca"}},
+    {"color":"#F2C14E","color2":"#FFFFFF","icon":"♛","id":"aura_champion","kind":"aura","name":{"en":"Champion's Aura","pl":"Aura Czempiona"}},
+    {"color":"#6E7480","color2":"#C9CED6","icon":"⚔","id":"frame_tourney","kind":"frame","name":{"en":"Finalist's Frame","pl":"Ramka Finalisty"}}
   ],
   "kinds": [
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},

@@ -138,7 +138,7 @@ local list: { TitleDef } = {
 		color = "#A884FF",
 	},
 	-- S121: published on the wiki together with the VIP article (S131)
-	{ id = "vip", nameKey = "title.vip", req = { kind = "vip" }, color = "#F2C94C", wiki = false },
+	{ id = "vip", nameKey = "title.vip", req = { kind = "vip" }, color = "#F2C94C" },
 	-- S123 (DESIGN-17 §4): bought titles (Data/Cosmetics kind "title"); names unlike the ranking and arena titles of
 	-- S124-S130, so a purchase never poses as an achievement. Kept out of titles.json (cosmetics.json lists them).
 	{ id = "pilgrim", nameKey = "title.pilgrim", req = { kind = "cosmetic", id = "title_pilgrim" }, color = "#CDBB94" },
@@ -173,7 +173,6 @@ local list: { TitleDef } = {
 		nameKey = "title.weekly_diligent",
 		req = { kind = "timed" },
 		color = "#F0D27A",
-		wiki = false,
 	},
 	-- S129 (DESIGN-17 §7): the top 100 of a Blood Moon region, 7 days from the end of the event (mail `timedTitle`);
 	-- not "bloodied" (10 PvP kills). Published on the wiki with the Blood Moon article (S131).
@@ -182,7 +181,6 @@ local list: { TitleDef } = {
 		nameKey = "title.bloodmoon",
 		req = { kind = "timed" },
 		color = "#C0262D",
-		wiki = false,
 	},
 	-- S130 (DESIGN-17 §8): the Champion of Vaelthorn, the winner of a Champion's Tournament bracket, 7 days from the
 	-- mail (`timedTitle`); not "champion" (level 75). Published on the wiki with the tournament article (S131).
@@ -191,11 +189,10 @@ local list: { TitleDef } = {
 		nameKey = "title.tourney_champion",
 		req = { kind = "timed" },
 		color = "#F2C14E",
-		wiki = false,
 	},
 	-- S128 (DESIGN-17 §6): arena titles, published on the wiki with the arena article (S131). Bought with Arena Tokens
-	-- (Data/Cosmetics kind "title", obtain.arena = "shop"; kept out of titles.json like every bought title, and their
-	-- cosmetics have wiki = false):
+	-- (Data/Cosmetics kind "title", obtain.arena = "shop"; kept out of titles.json like every bought title, their
+	-- cosmetics are in cosmetics.json since S131):
 	{
 		id = "ironwill",
 		nameKey = "title.ironwill",
@@ -214,7 +211,6 @@ local list: { TitleDef } = {
 		nameKey = "title.arena_bronze",
 		req = { kind = "arenaSeason", tier = "bronze" },
 		color = "#B07A4A",
-		wiki = false,
 		seasonArg = true,
 	},
 	{
@@ -222,7 +218,6 @@ local list: { TitleDef } = {
 		nameKey = "title.arena_silver",
 		req = { kind = "arenaSeason", tier = "silver" },
 		color = "#C9D1D9",
-		wiki = false,
 		seasonArg = true,
 	},
 	{
@@ -230,7 +225,6 @@ local list: { TitleDef } = {
 		nameKey = "title.arena_gold",
 		req = { kind = "arenaSeason", tier = "gold" },
 		color = "#E8C25A",
-		wiki = false,
 		seasonArg = true,
 	},
 	{
@@ -238,7 +232,6 @@ local list: { TitleDef } = {
 		nameKey = "title.arena_diamond",
 		req = { kind = "arenaSeason", tier = "diamond" },
 		color = "#8FD8FF",
-		wiki = false,
 		seasonArg = true,
 	},
 	{
@@ -246,7 +239,6 @@ local list: { TitleDef } = {
 		nameKey = "title.arena_master",
 		req = { kind = "arenaSeason", tier = "master" },
 		color = "#FF9F1C",
-		wiki = false,
 		seasonArg = true,
 	},
 }

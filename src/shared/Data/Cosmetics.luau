@@ -424,57 +424,38 @@ add("aura_valor", "aura", 0, "✠", "#E8C25A", { obtain = { pack = "starter_hero
 add("frame_gladiator", "frame", 0, "⚔", "#8A5A2A", {
 	color2 = "#D9B26A",
 	obtain = { arena = "shop" },
-	wiki = false,
 	frame = { stroke = "#8A5A2A", stroke2 = "#D9B26A", thickness = 4, ornament = "⚔" },
 })
 add("chatframe_gladiator", "chatframe", 0, "⚔", "#3A2A18", {
 	color2 = "#E8D2A0",
 	obtain = { arena = "shop" },
-	wiki = false,
 	chat = { left = "⟦", right = "⟧", color = "#B07A3A", bubble = "#3A2A18", bubbleText = "#E8D2A0" },
 })
-add("title_ironwill", "title", 0, "✎", "#B8B2A6", { obtain = { arena = "shop" }, wiki = false, title = "ironwill" })
-add(
-	"title_sandveteran",
-	"title",
-	0,
-	"✎",
-	"#D9B26A",
-	{ obtain = { arena = "shop" }, wiki = false, title = "sandveteran" }
-)
-add("aura_gladiator", "aura", 0, "⚔", "#D9A441", { color2 = "#8A5A2A", obtain = { arena = "shop" }, wiki = false })
+add("title_ironwill", "title", 0, "✎", "#B8B2A6", { obtain = { arena = "shop" }, title = "ironwill" })
+add("title_sandveteran", "title", 0, "✎", "#D9B26A", { obtain = { arena = "shop" }, title = "sandveteran" })
+add("aura_gladiator", "aura", 0, "⚔", "#D9A441", { color2 = "#8A5A2A", obtain = { arena = "shop" } })
 add("frame_arena_season", "frame", 0, "❦", "#C9D1D9", {
 	color2 = "#8A9098",
 	obtain = { arena = "season" },
-	wiki = false,
 	frame = { stroke = "#C9D1D9", stroke2 = "#8A9098", thickness = 5, ornament = "❦", glow = true },
 })
-add(
-	"aura_arena_season",
-	"aura",
-	0,
-	"❦",
-	"#E8C25A",
-	{ color2 = "#FFF0B0", obtain = { arena = "season" }, wiki = false }
-)
+add("aura_arena_season", "aura", 0, "❦", "#E8C25A", { color2 = "#FFF0B0", obtain = { arena = "season" } })
 
 -- S129 (DESIGN-17 §7): the frame of the top 10 of a Blood Moon region, never sold (obtain.event); on the wiki with the
 -- Blood Moon article (S131).
 add("frame_bloodmoon", "frame", 0, "☾", "#8E1A22", {
 	color2 = "#2A0A0E",
 	obtain = { event = "bloodmoon" },
-	wiki = false,
 	frame = { stroke = "#8E1A22", stroke2 = "#D04A3A", thickness = 5, ornament = "☾", glow = true },
 })
 
 -- S130 (DESIGN-17 §8): the Champion's Tournament rewards, never sold (obtain.event = "tourney"): the champion's aura
 -- (a bright golden crown of light, CosmeticLook.applyAura from the colours) and the finalist's frame (dark silver with
 -- crossed swords). On the wiki with the tournament article (S131).
-add("aura_champion", "aura", 0, "♛", "#F2C14E", { color2 = "#FFFFFF", obtain = { event = "tourney" }, wiki = false })
+add("aura_champion", "aura", 0, "♛", "#F2C14E", { color2 = "#FFFFFF", obtain = { event = "tourney" } })
 add("frame_tourney", "frame", 0, "⚔", "#6E7480", {
 	color2 = "#C9CED6",
 	obtain = { event = "tourney" },
-	wiki = false,
 	frame = { stroke = "#6E7480", stroke2 = "#C9CED6", thickness = 5, ornament = "⚔", glow = true },
 })
 

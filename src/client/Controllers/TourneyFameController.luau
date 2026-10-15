@@ -59,9 +59,9 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 	return scope:New("TextLabel")(base)
 end
 
--- "DD.MM.YYYY" of a tournament id ("YYYYMMDD").
+-- "DD.MM.YYYY" of a tournament id ("YYYYMMDD", a forced one "YYYYMMDDfHHMM").
 local function dateOf(use: Use, id: any): string
-	local y, m, d = string.match(tostring(id), "^(%d%d%d%d)(%d%d)(%d%d)$")
+	local y, m, d = string.match(tostring(id), "^(%d%d%d%d)(%d%d)(%d%d)")
 	if not y then
 		return ""
 	end

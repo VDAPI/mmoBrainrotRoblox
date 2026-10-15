@@ -12,6 +12,9 @@
 -- MonetizationService (Developer Products, once per account in account.packs): shards, the pack's cosmetics
 -- (CosmeticService.Grant) and passes in the profile (MonetizationService.GrantProfilePass), without yielding. A pack
 -- bought twice (two Roblox prompts racing) adds the shards only.
+-- S131: analytics. The economy event keeps the entry key / cosmetic id as the SKU; the custom event name is bounded:
+-- "PremiumSpend_<shop cat>" or "PremiumSpend_cosmetic_<kind>" (Roblox counts unique names). The shop funnel
+-- (src/server/PremiumFunnel) gets "prompt" after the server check and "granted" after the purchase.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +29,7 @@ local Log = require(Shared.Util.Log)
 local Lure = require(Shared.Logic.Lure)
 local Net = require(Shared.Net)
 local Premium = require(Shared.Logic.Premium)
+local PremiumFunnel = require(script.Parent.Parent.PremiumFunnel)
 local Products = require(Shared.Data.Products)
 local Types = require(Shared.Types)
 local WeeklyOffer = require(Shared.Logic.WeeklyOffer)
@@ -58,12 +62,14 @@ local function account(player: Player): Types.AccountData?
 	return DataService.GetData(player)
 end
 
-local function spend(player: Player, price: number, reason: string)
+-- `sku` = the entry key or cosmetic id (economy SKU), `group` = a bounded name part (shop cat, cosmetic_<kind>).
+local function spend(player: Player, price: number, sku: string, group: string)
 	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(shards: number)
 		return shards - price
 	end)
-	Analytics.shards(player, -price, total, reason)
-	Analytics.custom(player, "PremiumSpend_" .. reason, price)
+	Analytics.shards(player, -price, total, sku, true)
+	Analytics.custom(player, "PremiumSpend_" .. group, price)
+	PremiumFunnel.step(player, "shop", "granted")
 end
 
 -- S120: the limit counters after a purchase, in the same step as the payment (only entries with a limit write).
@@ -91,7 +97,8 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end
-	spend(player, entry.price, key)
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, entry.price, key, entry.cat)
 	countLimit(player, entry, data, now)
 	InventoryService.AddItem(player, item)
 	DataService.Save(player)
@@ -111,7 +118,8 @@ local function buyLure(player: Player, key: string): (boolean, string?)
 		return false, err
 	end
 	local fresh = Lure.extend(data.lure, entry.seconds, now)
-	spend(player, entry.price, key)
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, entry.price, key, entry.cat)
 	countLimit(player, entry, data, now)
 	PlayerStateService.Set(player, { "account", "lure" }, fresh)
 	DataService.Save(player)
@@ -150,7 +158,8 @@ local function buyCosmetic(player: Player, id: string, expected: number?): (bool
 	if not ok then
 		return false, err
 	end
-	spend(player, price, id)
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, price, id, `cosmetic_{def.kind}`)
 	PlayerStateService.Set(player, { "account", if def.kind == "pet" then "pets" else "cosmetics", "owned", id }, true)
 	DataService.Save(player)
 	if WeeklyOffer.inOffer(id, now) then
@@ -170,7 +179,7 @@ local function grantPack(player: Player, pack: Products.StarterPack): boolean
 	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(shards: number)
 		return shards + pack.shards
 	end)
-	Analytics.shards(player, pack.shards, total, pack.key)
+	Analytics.shards(player, pack.shards, total, pack.key) -- "starter_<name>" (the key)
 	if data.packs[pack.key] == true then
 		-- bought twice (two prompts racing): paid for, so the shards stay; the rest only once
 		Net.Fire(player, "Toast", "premium.pack.duplicate", nil, "info")
@@ -249,7 +258,8 @@ local function rename(player: Player, newName: string): (boolean, string?)
 		return false, stillErr
 	end
 	local oldName = char.name
-	spend(player, entry.price, "rename")
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, entry.price, "rename", entry.cat)
 	countLimit(player, entry, fresh, now)
 	PlayerStateService.Set(player, { "character", "name" }, newName)
 	local slot = PlayerStateService.Get(player, { "session", "slot" })

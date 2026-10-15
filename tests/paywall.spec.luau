@@ -18,6 +18,7 @@ local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
 local Trade = require("../src/shared/Logic/Trade")
 local UseBlocks = require("../src/shared/Logic/UseBlocks")
+local fs = require("@lune/fs")
 
 -- Passes (Products.passes): key -> why it is not pay-to-win.
 local ALLOWED_PASSES: { [string]: string } = {
@@ -609,10 +610,11 @@ T.describe("S121 VIP and passes", function()
 			if not ALLOWED_VIP_KEYS[key] then
 				error(`Config.Vip.{key}: not in ALLOWED_VIP_KEYS`)
 			end
-			if key ~= "statusRefresh" then
-				local lower = string.lower(key)
+			-- S131: whole camelCase parts, so "statusRefresh" (status + refresh) needs no exception
+			for part in string.gmatch((string.gsub(key, "(%u)", " %1")), "%S+") do
+				local lower = string.lower(part)
 				for _, word in VIP_POWER_WORDS do
-					if string.find(lower, word, 1, true) then
+					if lower == word or lower == word .. "s" then
 						error(`Config.Vip.{key}: contains "{word}" (DESIGN-17 §0.2)`)
 					end
 				end
@@ -1251,6 +1253,271 @@ T.describe("S130 tourney", function()
 		T.expect(table.find(UseBlocks.LISTS.fullElixir, "tourney") ~= nil).toBe(true)
 		T.expect(UseBlocks.PENDING.tourney).toBeNil()
 		T.expect(UseBlocks.first("fullElixir", { tourney = true })).toBe("tourney")
+	end)
+end)
+
+-- S131 (DESIGN-17 §9): the audit of the whole series. The S120-S130 blocks above stay; these cases close what they
+-- did not cover. Every list here is an allowlist: a new entry needs the owner's decision and a change of the list.
+local SHOP_CATS_ALLOWED = { "scroll", "service", "consumable", "backpack" } -- new entry: owner's decision
+-- shop entries that are not items (kind ~= "item"), by key: new entry: owner's decision
+local SERVICE_KEYS: { [string]: string } = {
+	rename = "a new name for the active character",
+	lure_1h = "Cloak of Luring time (DESIGN-17 §3 exception)",
+	lure_7d = "Cloak of Luring time (DESIGN-17 §3 exception)",
+}
+-- words that would name power in a key split at camelCase (statusRefresh = status + refresh, never "stat")
+local POWER_PARTS = { "exp", "gold", "drop", "loot", "luck", "stat", "stats", "dmg", "damage", "crit", "hp", "armor" }
+-- Blood Moon reward fields (Data/ScheduledEvents.bloodMoon.reward): new field: owner's decision
+local MOON_REWARD_FIELDS: { [string]: string } = {
+	minPoints = "the participation threshold",
+	tokens = "Arena Tokens",
+	blessingRarity = "a blessing of this rarity at most (Unique, DESIGN-17 §7)",
+	titleTop = "rank that gets the timed title",
+	titleId = "the timed title",
+	titleDays = "its days",
+	frameTop = "rank that gets the frame",
+	frameId = "the frame (a look)",
+	shardsTop = "rank that gets Dragon Shards",
+	shards = "Dragon Shards as a game reward",
+}
+-- Arena season reward fields (Data/Arena.SEASON_REWARDS): new field: owner's decision
+local SEASON_REWARD_FIELDS: { [string]: boolean } = { title = true, cosmetics = true, shards = true }
+-- The ranking, arena and event code that must never ask about purchases (C7); a missing file is skipped.
+local FAIR_FILES = {
+	"src/shared/Logic/Leaderboard.luau",
+	"src/shared/Logic/Elo.luau",
+	"src/shared/Logic/ArenaRules.luau",
+	"src/shared/Logic/ArenaQueue.luau",
+	"src/shared/Logic/Bracket.luau",
+	"src/shared/Logic/Schedule.luau",
+	"src/shared/Logic/BloodMoon.luau",
+	"src/shared/Logic/Tourney.luau",
+	"src/shared/Data/Leaderboards.luau",
+	"src/shared/Data/Arena.luau",
+	"src/shared/Data/ScheduledEvents.luau",
+	"src/server/Services/LeaderboardService.luau",
+	"src/server/Services/ArenaService.luau",
+	"src/server/Services/BloodMoonService.luau",
+	"src/server/Services/TourneyService.luau",
+}
+local FAIR_DIRS = { "src/server/Leaderboard", "src/server/Arena", "src/server/BloodMoon", "src/server/Tourney" }
+local PURCHASE_WORDS = {
+	"Data.Products",
+	"Data/Products",
+	"Logic.Premium",
+	'/Premium"',
+	"HasPass",
+	"HasVip",
+	"MonetizationService",
+	"dragonShards",
+}
+
+-- camelCase parts in lower case: "freeRecallCooldown" -> { "free", "recall", "cooldown" }
+local function partsOf(key: string): { string }
+	local out: { string } = {}
+	for part in string.gmatch((string.gsub(key, "(%u)", " %1")), "%S+") do
+		table.insert(out, string.lower(part))
+	end
+	return out
+end
+
+T.describe("Paywall S131: passes, subscriptions and Config.Vip (C1)", function()
+	T.it("the only subscription is the VIP and every pass has a reason", function()
+		T.expect(#subscriptions).toBe(1)
+		T.expect(subscriptions[1].key).toBe("vip")
+		for _, pass in Products.passes do
+			T.expect({ pass.key, ALLOWED_PASSES[pass.key] ~= nil }).toEqual({ pass.key, true })
+		end
+	end)
+
+	T.it("no Config.Vip key names power, part by part", function()
+		T.expect(partsOf("statusRefresh")).toEqual({ "status", "refresh" })
+		for key in Config.Vip :: any do
+			for _, part in partsOf(key) do
+				T.expect({ key, table.find(POWER_PARTS, part) }).toEqual({ key, nil })
+			end
+		end
+	end)
+end)
+
+T.describe("Paywall S131: the shop for shards (C2)", function()
+	T.it("sections and services are on their allowlists", function()
+		T.expect(Products.shopCats).toEqual(SHOP_CATS_ALLOWED)
+		for _, entry in Products.shop do
+			if entry.kind ~= "item" then
+				T.expect({ entry.key, SERVICE_KEYS[entry.key] ~= nil }).toEqual({ entry.key, true })
+			end
+		end
+		for key in SERVICE_KEYS do
+			T.expect({ key, Products.getShop(key) ~= nil }).toEqual({ key, true })
+		end
+	end)
+
+	T.it("no item sold has a power field, a material or blessing category, or an EXP / gold / drop use", function()
+		for _, entry in Products.shop do
+			if entry.itemId then
+				local def = Items.get(entry.itemId) :: any
+				for _, field in { "stats", "bonuses", "expMul", "goldMul", "dropMul", "luck" } do
+					T.expect({ entry.key, field, def[field] }).toEqual({ entry.key, field, nil })
+				end
+				T.expect({ entry.key, def.category ~= "material" and def.category ~= "blessing" })
+					.toEqual({ entry.key, true })
+				local use = def.use and def.use.kind
+				T.expect({ entry.key, use ~= "exp" and use ~= "gold" and use ~= "blessing" })
+					.toEqual({ entry.key, true })
+			end
+		end
+	end)
+end)
+
+T.describe("Paywall S131: products and starter packs (C3)", function()
+	T.it("every product key is unique across Products", function()
+		local seen: { [string]: boolean } = { [Products.respawn.key] = true }
+		local lists: { { any } } =
+			{ Products.shardPacks, Products.passes, Products.starterPacks, Products.mounts, Products.shop }
+		for _, list in lists do
+			for _, e in list do
+				T.expect({ e.key, seen[e.key] }).toEqual({ e.key, nil })
+				seen[e.key] = true
+			end
+		end
+	end)
+
+	T.it("a starter pack gives no game item and no gold", function()
+		for _, pack in starterPacks do
+			for k in pack do
+				T.expect({ pack.key, k ~= "items" and k ~= "itemId" and k ~= "gold" }).toEqual({ pack.key, true })
+			end
+		end
+	end)
+end)
+
+T.describe("Paywall S131: titles of the series (C4)", function()
+	local Titles = require("../src/shared/Data/Titles")
+
+	T.it("the VIP title needs the VIP, timed and season titles are earned, never cosmetics for sale", function()
+		local vip = Titles.get("vip") :: any
+		T.expect(vip and vip.req.kind).toBe("vip")
+		for _, t in Titles.list do
+			local kind = (t.req :: any).kind
+			if kind == "timed" or kind == "arenaSeason" then
+				T.expect({ t.id, (t.req :: any).id }).toEqual({ t.id, nil })
+			end
+		end
+	end)
+end)
+
+T.describe("Paywall S131: the two exceptions and their blocks (C5)", function()
+	T.it("limits of the Elixir of Wholeness and the Cloak of Luring stay within DESIGN-17 §3", function()
+		T.expect(Config.FullElixir.cooldown >= 180).toBe(true)
+		T.expect(Config.FullElixir.dailyLimit <= 10).toBe(true)
+		T.expect(Config.Lure.radius <= 25).toBe(true)
+		T.expect(Config.Lure.maxPulled <= 6).toBe(true)
+		T.expect(Config.Lure.levelGap <= 10).toBe(true)
+	end)
+
+	T.it("every place of the series blocks both (duel, arena, dungeon, PvP lock, Blood Moon, tournament)", function()
+		for _, reason in { "dead", "duel", "arena", "dungeon", "pvpLock", "bloodMoon", "tourney" } do
+			T.expect({ "fullElixir", reason, table.find(UseBlocks.LISTS.fullElixir, reason) ~= nil })
+				.toEqual({ "fullElixir", reason, true })
+		end
+		for _, reason in { "dead", "city", "underground", "redZone", "arena", "tourney", "bloodMoon", "mounted" } do
+			T.expect({ "lure", reason, table.find(UseBlocks.LISTS.lure, reason) ~= nil })
+				.toEqual({ "lure", reason, true })
+		end
+		T.expect(next(UseBlocks.PENDING)).toBeNil()
+	end)
+end)
+
+T.describe("Paywall S131: rewards of the arena and the events (C6)", function()
+	local Arena = require("../src/shared/Data/Arena")
+	local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
+
+	T.it("Blood Moon and season rewards carry only allowed fields, the blessing at most Unique", function()
+		for k in ScheduledEvents.bloodMoon.reward :: any do
+			T.expect({ k, MOON_REWARD_FIELDS[k] ~= nil }).toEqual({ k, true })
+		end
+		T.expect(ScheduledEvents.bloodMoon.reward.blessingRarity <= 2).toBe(true)
+		for tier, reward in Arena.SEASON_REWARDS do
+			for k in reward :: any do
+				T.expect({ tier, k, SEASON_REWARD_FIELDS[k] == true }).toEqual({ tier, k, true })
+			end
+		end
+	end)
+
+	T.it("the arena shop asks for tokens only", function()
+		for _, entry in Arena.SHOP do
+			local raw = entry :: any
+			T.expect({ entry.key, raw.shards, raw.robux, raw.currency }).toEqual({ entry.key, nil, nil, nil })
+			T.expect({ entry.key, entry.price > 0 }).toEqual({ entry.key, true })
+		end
+	end)
+end)
+
+T.describe("Paywall S131: nothing bought for Robux moves a ranking (C7)", function()
+	local Leaderboard = require("../src/shared/Logic/Leaderboard")
+
+	T.it("the same game data gives the same score with or without a rich account", function()
+		local now = 1791763200
+		local plain = { id = "c1", name = "Aria", class = "Mage", level = 100, exp = 0, reached100At = now - 50 }
+		local rich = table.clone(plain) :: any
+		rich.account = {
+			dragonShards = 99999,
+			passes = { autoLoot = true, vault = true, fastRespawn = true, vip = true, pockets = true },
+			grantedPasses = { pockets = true, vip = true },
+			packs = { starter_wanderer = true, starter_hero = true },
+			vip = { shardDay = 1, months = { ["202611"] = true } },
+		}
+		for name, scorer in Leaderboard.SCORERS do
+			T.expect({ name, (scorer :: any)(plain, now) }).toEqual({ name, (scorer :: any)(rich, now) })
+		end
+	end)
+
+	T.it("ranking, arena and event code never asks about purchases", function()
+		local files = table.clone(FAIR_FILES)
+		for _, dir in FAIR_DIRS do
+			if fs.isDir(dir) then
+				for _, name in fs.readDir(dir) do
+					if string.match(name, "%.luau$") then
+						table.insert(files, `{dir}/{name}`)
+					end
+				end
+			end
+		end
+		local read = 0
+		for _, path in files do
+			if fs.isFile(path) then
+				read += 1
+				local text = fs.readFile(path)
+				for _, word in PURCHASE_WORDS do
+					T.expect({ path, word, string.find(text, word, 1, true) }).toEqual({ path, word, nil })
+				end
+			end
+		end
+		T.expect(read >= #FAIR_FILES).toBe(true)
+	end)
+
+	T.it("Config.Leaderboard has no key that depends on the VIP or a purchase", function()
+		for key in Config.Leaderboard :: any do
+			local lower = string.lower(key)
+			for _, word in { "vip", "premium", "pass", "shard", "robux" } do
+				T.expect({ key, string.find(lower, word, 1, true) }).toEqual({ key, nil })
+			end
+		end
+	end)
+end)
+
+T.describe("Paywall S131: the window and the server use one rule (C8)", function()
+	T.it("the server buys shop entries, passes and packs through Logic/Premium", function()
+		local shop = fs.readFile("src/server/Services/PremiumShopService.luau")
+		local _, canBuys = string.gsub(shop, "Premium%.canBuy%(", "")
+		T.expect(canBuys >= 4).toBe(true) -- item, lure, rename before and after the name reservation
+		T.expect(string.find(shop, "Premium.canBuyCosmetic(", 1, true) ~= nil).toBe(true)
+		local money = fs.readFile("src/server/Services/MonetizationService.luau")
+		T.expect(string.find(money, "Premium.canBuyPass(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(money, "Premium.canBuyPack(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(money, "Premium.canBuyMount(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(money, "NotProcessedYet", 1, true) ~= nil).toBe(true)
 	end)
 end)
 

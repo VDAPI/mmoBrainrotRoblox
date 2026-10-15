@@ -1,38 +1,71 @@
 ---
 // Passes and Dragon Currency services (S43): premium.json (tools/WikiData/Premium.luau: names, descriptions, daily
 // limits — never prices). `shop` = list the services instead of the passes. WIKI-GRAFIKA: the owner's sign of a pass
-// (VIP) drawn in the icon box instead of the glyph.
+// (VIP) drawn in the icon box instead of the glyph. S131: the services grouped by the shop section (`cat`, with the
+// weekly limit), `packs` = the starter packs (contents only, the Dragon Shards named without an amount).
 import ArtIcon from "../ArtIcon.astro";
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
-import { name, t } from "../../lib/i18n";
+import { name, t, type Key } from "../../lib/i18n";
 import { sectionHref } from "../../lib/sections";
 interface Props {
   shop?: boolean;
+  packs?: boolean;
 }
-const { shop = false } = Astro.props;
+const { shop = false, packs = false } = Astro.props;
 const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const premium = load("premium");
+const cosmetics = load("cosmetics").cosmetics;
+const passes = premium.passes;
+const cats: string[] = [];
+for (const s of premium.shop) if (!cats.includes(s.cat)) cats.push(s.cat);
+const cosmeticName = (id: string) => {
+  const c = cosmetics.find((x) => x.id === id);
+  return c ? name(c.name, lang) : id;
+};
+const passName = (key: string) => {
+  const p = passes.find((x) => x.key === key);
+  return p ? name(p.name, lang) : key;
+};
 ---
-{shop ? (
+{packs ? (
   <ul class="vw-pass">
-    {premium.shop.map((s) => {
-      const h = s.item ? sectionHref(lang, "items", s.item) : null;
-      return (
-        <li>
-          <span class="txt">
-            <strong>{h ? <a href={h}>{name(s.name, lang)}</a> : name(s.name, lang)}</strong>
-            {s.desc && <span>{name(s.desc, lang)}</span>}
-            {s.dailyLimit !== undefined && <span>{t(lang, "cos.dailyLimit", { n: s.dailyLimit })}</span>}
-          </span>
-        </li>
-      );
-    })}
+    {premium.starterPacks.map((p) => (
+      <li>
+        <span class="txt">
+          <strong>{name(p.name, lang)}</strong>
+          {p.desc && <span>{name(p.desc, lang)}</span>}
+          <span>{[...(p.currency ? [t(lang, "cos.pack.currency")] : []), ...p.cosmetics.map(cosmeticName), ...p.passes.map(passName)].join(" · ")}</span>
+          <span>{t(lang, "cos.pack.once")}</span>
+        </span>
+      </li>
+    ))}
   </ul>
+) : shop ? (
+  cats.map((cat) => (
+    <>
+      <h3 class="vw-h3">{t(lang, `cos.cat.${cat}` as Key)}</h3>
+      <ul class="vw-pass">
+        {premium.shop.filter((s) => s.cat === cat).map((s) => {
+          const h = s.item ? sectionHref(lang, "items", s.item) : null;
+          return (
+            <li>
+              <span class="txt">
+                <strong>{h ? <a href={h}>{name(s.name, lang)}</a> : name(s.name, lang)}</strong>
+                {s.desc && <span>{name(s.desc, lang)}</span>}
+                {s.dailyLimit !== undefined && <span>{t(lang, "cos.dailyLimit", { n: s.dailyLimit })}</span>}
+                {s.weeklyLimit !== undefined && <span>{t(lang, "cos.weeklyLimit", { n: s.weeklyLimit })}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  ))
 ) : (
   <ul class="vw-pass">
-    {premium.passes.map((p) => (
+    {passes.map((p) => (
       <li>
         <span class="icon" aria-hidden="true"><ArtIcon kind="pass" id={p.key} size={26}>{p.icon}</ArtIcon></span>
         <span class="txt"><strong>{name(p.name, lang)}</strong><span>{name(p.desc, lang)}</span></span>

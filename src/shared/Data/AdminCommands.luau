@@ -275,13 +275,16 @@ cmd(
 	{ dangerActions = { "start", "stop" } }
 )
 -- S130: the Champion's Tournament (TourneyService): info, and a local test tournament on this server (open [s] ...
--- win <name>); a = seconds for open, the player's name for win
+-- win <name>); a = seconds for open, the player's name for win. S131: force [min] = a real tournament on every server
+-- (signups at once, the start `min` minutes from now)
 cmd(
 	"world",
 	"tourney",
-	{ enum("action", { "info", "open", "close", "start", "cancel", "win" }), str("a", true) },
-	{ dangerActions = { "cancel" } }
+	{ enum("action", { "info", "open", "close", "start", "cancel", "win", "force" }), str("a", true) },
+	{ dangerActions = { "cancel", "force" } }
 )
+-- S131: the next occurrence of every scheduled event (UTC) and what is forced on this server
+cmd("world", "sched", {})
 cmd("world", "bring", { ref("player", "player") })
 -- S26: shaped terrains (Admin/Terrain)
 cmd("world", "tparea", { str("target") })
@@ -461,9 +464,24 @@ cmd("economy", "shards", { int("amount", -BIG, BIG) })
 cmd("economy", "setgold", { int("amount", 0, BIG) })
 cmd("economy", "setshards", { int("amount", 0, BIG) })
 cmd("economy", "pass", { ref("pass", "pass"), enum("mode", { "on", "off" }) })
-cmd("economy", "premium", { enum("action", { "grant" }), ref("pass", "pass") })
+-- S131: grant / take = a pass saved in the account (account.grantedPasses, like a starter pack); list = every pass and
+-- where it comes from. /pass on|off stays the session-only test.
+cmd(
+	"economy",
+	"premium",
+	{ enum("action", { "grant", "take", "list" }), str("key", true) },
+	{ dangerActions = { "take" } }
+)
 -- S121: VIP test (a session-only subscription), its state, today's benefits again, a month's cosmetic
-cmd("economy", "vip", { enum("action", { "on", "off", "status", "reset", "month" }), str("month", true) })
+-- S131: grant / take = the VIP for good through the "vip" pass saved in the account (account.grantedPasses)
+cmd(
+	"economy",
+	"vip",
+	{ enum("action", { "on", "off", "status", "reset", "month", "grant", "take" }), str("month", true) },
+	{ dangerActions = { "take" } }
+)
+-- S131: the caller's weekly counters back to zero: shop limits, Arena Tokens of the week, weekly EXP
+cmd("economy", "weekreset", { enum("what", { "limits", "tokens", "expweek" }) })
 -- S120: the caller's premium shop limit counters (account.shopLimits)
 cmd("economy", "shoplimits", { enum("action", { "show", "reset" }) })
 -- S122: Cloak of Luring time of the caller's account (no shards), the switch and a pull now

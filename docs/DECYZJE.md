@@ -4268,3 +4268,61 @@
   nie trafi); skończona drabinka zostaje w `tourney.live` do powrotu (odliczanie, stan czempiona, przyciski); wpis
   `ReservedServers` usuwany po odesłaniu graczy (`ServerMode.unregister`). Tost powrotu bez znaczników (`tourney.ended`,
   `tourney.left`); odmowa wejścia pokazuje `tourney.error.notInvited` raz.
+- **S131** Audyt serii DESIGN-17 (S120–S130): nazwy z kodu zostają, kontrakt poprawiony („Ustalenia S120–S131” w
+  `docs/DESIGN-17.md`): okno sklepu `UI/Screens/PremiumShop/` (folder), `Premium.canBuy` + `account.shopLimits`, VIP
+  `VipService` / `Logic/Vip` / `account.vip = { shardDay, respawnDay, respawnN, recallAt, months }`, blokady
+  `Logic/UseBlocks` + `UseGuards`, `LeaderboardService` + `server/Leaderboard/{Stores,Cache,TownBoard}`, `ArenaService` +
+  `server/Arena/*`, `Logic/ArenaQueue`, `BloodMoonService` + `server/BloodMoon/Board`, `eliteChance` zamiast `eliteMul`,
+  `TourneyService` + `server/Tourney/{Store,Bus,Hall,Runner}`, zakładka „Turniej” w `ArenaWindow`, `once` zamiast `dedupe`.
+- **S131** Płaszcz Przynęty nie działa też w drabince turnieju (`UseBlocks.LISTS.lure` += `tourney`, tekst
+  `lure.block.tourney`): lokalna drabinka czeka na Ristalle między meczami; serwery areny i turnieju były już „arena”.
+- **S131** Ogłoszenia między serwerami (`AnnounceService.Global`) nie giną w odstępie 10 s: krótka kolejka
+  (`Config.Announce.queueMax` 6, wysyłka co `globalGap` 10 s, najstarsza wypada ponad limit), sygnatura bez zmian.
+- **S131** `/rankweek pay` dla tygodnia, który trwa, tylko w Studio (`LeaderboardService.WeekPay` → `early`,
+  `admin.rank.earlyLive`): na żywym serwerze zablokowałby na zawsze wypłatę tego tygodnia wszystkim serwerom.
+- **S131** Lejki analityki przez `AnalyticsService:LogFunnelStepEvent` (nowe `Analytics.funnel`, czysty
+  `Logic/ShopFunnel`, moduł `src/server/PremiumFunnel.luau`, remote `PremiumFunnel` z białą listą kroków klienta
+  `shop.open|tab|item`, `vip.open`; `prompt`, `granted`, `vip.active` tylko serwer). Rozszerzenie modułu `Analytics`,
+  wywołanie w `pcall` (inna sygnatura po stronie Roblox nie psuje gry).
+- **S131** Nazwy zdarzeń `custom` ograniczone: `PremiumSpend_<sekcja sklepu>` / `PremiumSpend_cosmetic_<rodzaj>` zamiast
+  klucza wpisu albo id kosmetyku (SKU zostaje w zdarzeniu gospodarki), `ArenaShop_<grupa>` (travel / blessing /
+  cosmetic) zamiast klucza wpisu; wydatek w sklepie premium to transakcja Shop, paczka startowa (`starter_<nazwa>`) IAP;
+  natychmiastowe odrodzenie z ekranu śmierci poza lejkiem sklepu; `VipActiveJoin` raz na gracza i sesję serwera;
+  odłamki z poczty nagród z czytelnym powodem (`exp_week`, `arena_season`, `event_bloodmoon`, `event_tourney`).
+- **S131** Admin: `/premium grant|take|list` i `/vip grant|take` zapisują nadanie na koncie (`account.grantedPasses`,
+  `MonetizationService.GrantProfilePass` / `RevokeProfilePass`, ta sama ścieżka co paczki startowe; VIP przez przepustkę
+  `vip`, `HasVip` = subskrypcja lub przepustka); przepustki kupionej w Roblox nie da się zabrać (`ownedOnRoblox`, zdjęte
+  tylko nadanie). Test na sesję zostaje w `/pass on|off` i `/vip on|off`. `MonetizationService.PassSource` rozróżnia
+  źródła (Roblox, nadanie, test).
+- **S131** Admin: `/tourney force [min]` = prawdziwy turniej na każdym serwerze, który usłyszy wiadomość `force` (Bus,
+  MessagingService; bez usług tylko ten serwer), start za 11–180 min (domyślnie `Config.Tourney.forceMinutes` 20), id
+  `RRRRMMDDfHHMM` (`Tourney.forcedId`), fazy z `Tourney.phaseFor`; odmowa obok zaplanowanego turnieju. Serwer
+  uruchomiony po wiadomości trzyma się harmonogramu. Zapis na znany serwerowi wymuszony turniej nie przepada przy
+  wejściu postaci (`Tourney.isStale(signed, now, forced)`); data z id wymuszonego turnieju w Sali Sław (wzorzec bez `$`). Boty w grze nie powstały: drabinkę z botami sprawdza `tourney.spec`.
+- **S131** Admin: `/sched` (najbliższe terminy z `Logic/Schedule` w UTC i wymuszone teraz wydarzenia),
+  `/weekreset limits|tokens|expweek` (tygodniowe limity sklepu, `ArenaService.AdminWeek`, `character.expWeek`; wpis w
+  tablicy tygodnia zostaje). `/arena` S126/S128 ma już rating, rating3, Żetony, tydzień, sezon i reset: bez zmian.
+  Serwisy komend z `AdminService.Deps` (Arena, BloodMoon, Tourney, Leaderboard już tam; bez nowych zależności).
+- **S131** Wiki: jeden plik `arena.json` dla areny, Krwawego Księżyca i turnieju (`tools/WikiData/Arena.luau`: tylko
+  `Data/Arena`, `Data/ScheduledEvents`, nazwy z Locale, rodzaj kosmetyku z `Data/Cosmetics`, klucz rzadkości z
+  `Data/Rarities`); nagroda w odłamkach jako `currency = true`. Na wiki nie ma żadnej liczby Smoczych Odłamków (cen,
+  nagród, paczek ani dziennej premii VIP): to pochodne cen w Robux, gracz widzi je w grze.
+- **S131** `Leak.FORBIDDEN_KEYS` += `subscriptionId`, `dailyShards`, `shardReward`. `premium.json`: przepustki tylko
+  włączone, wiersze sklepu z `cat` i `weeklyLimit`, bez wpisów `unavailable`, nowe `vip`, `items`, `starterPacks`
+  (zawartość bez ceny). `titles.json`: `req` pole po polu (`value?`, `tier?`, `days?`), tytuł sezonu areny z nazwą
+  `title.<id>.plain` (bez `{season}`). Opublikowane: tytuły `vip`, `weekly_diligent`, `bloodmoon`, `tourney_champion`, `arena_*`, kosmetyki areny,
+  `frame_bloodmoon`, `aura_champion`, `frame_tourney`, klawisz `win_arena`.
+- **S131** `WIKI_KEYS_ALLOW` = `arena:*` + 37 nowych kluczy `premium` (`vip…`, `items…`, `starterPacks…`,
+  `shop[].cat`) + `titles:titles.titles[].req.days`, `titles:titles.titles[].req.tier` + `types.ts` (pełna wartość w
+  SESJE). Po commicie lista znów pusta.
+- **S131** Ceny: wszystkie asercje „Prices (S131)” przechodzą bez zmian (kurs paczek rośnie ściśle, premia największej
+  39%, nic droższego niż największa paczka, eliksir i płaszcz tańsze w większych paczkach). Rozbieżność z KATALOG
+  (Szybki Powrót 99 wobec 149 R$) i wartość miesiąca VIP (450 odłamków ≈ 321–446 R$ wobec propozycji 349 R$) zostają
+  do decyzji właściciela (domyślnie jak w kodzie). `tests/Pricing.PROPOSED` (VIP 349 R$, prywatny serwer 100 R$) to
+  propozycja do Creator Hub w narzędziu, nie dane gry.
+- **S131** `docs/SKLEP-ID.md` generuje `tools/shop_report.luau` (`--check` w teście ceny: każdy klucz produktu w pliku).
+- **S131** Okno VIP zostaje w menu gry (☰ → VIP) i na karcie VIP w sklepie, bez osobnej ikony paska HUD (pasek menu
+  jest pełny); okno turnieju to zakładka okna areny (U), wyniki Krwawego Księżyca mają ikonę HUD w czasie wydarzenia.
+- **S131** Żetony Areny z wydarzeń (Krwawy Księżyc, turniej) poza limitem tygodniowym meczów (`uncapped`, S129) zostają;
+  postać zawsze ma `character.arena` z szablonu, więc nagroda poniżej 20. poziomu nie ginie. Turniej nie wyklucza
+  postaci administracji (to wydarzenie, nie tablica); rankingi areny i Krwawego Księżyca wykluczają (`excludeAdmins`).

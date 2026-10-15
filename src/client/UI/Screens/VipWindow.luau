@@ -202,6 +202,7 @@ local function invoke(name: string)
 end
 
 function VipWindow.build(scope: Scope, props: Props?): Instance
+	Net.Send("PremiumFunnel", "vip", "open") -- S131: the VIP funnel (Logic/ShopFunnel)
 	local vip = State.Value({ "vip" })
 	local vipState = State.Value({ "account", "vip" })
 	local owned = State.Value({ "account", "cosmetics", "owned" })

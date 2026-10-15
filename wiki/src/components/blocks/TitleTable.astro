@@ -11,6 +11,12 @@ interface Props {
 const { kinds } = Astro.props;
 const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const titles = load("titles").titles.filter((x) => !kinds || kinds.includes(x.req.kind));
+// S131: counted conditions carry `value`, the arena season titles a `tier`, the timed titles their `days`.
+const reqText = (req: (typeof titles)[number]["req"]) =>
+  t(lang, `block.titles.req.${req.kind}` as Key, {
+    n: formatNumber(req.value ?? req.days ?? 0, lang),
+    tier: req.tier ? t(lang, `arena.tier.${req.tier}` as Key) : "",
+  });
 ---
 <table class="vw-table vw-table--plain">
   <caption class="vw-sr">{t(lang, "block.titles.caption")}</caption>
@@ -19,7 +25,7 @@ const titles = load("titles").titles.filter((x) => !kinds || kinds.includes(x.re
     {titles.map((x) => (
       <tr>
         <td data-mobile="title"><strong style={`color: ${x.color}`} class="vw-title-name">{name(x.name, lang)}</strong></td>
-        <td data-label={t(lang, "block.titles.req")}>{t(lang, `block.titles.req.${x.req.kind}` as Key, { n: formatNumber(x.req.value, lang) })}</td>
+        <td data-label={t(lang, "block.titles.req")}>{reqText(x.req)}</td>
       </tr>
     ))}
   </tbody>

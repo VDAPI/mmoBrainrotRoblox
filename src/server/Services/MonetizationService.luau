@@ -23,6 +23,11 @@
 --              account.grantedPasses (GrantProfilePass) and merged into the pass cache when the profile is ready, so
 --              HasPass honours it everywhere. Taking it away needs /pack reset (/pass <key> off only clears the cache
 --              until the next join).
+--   Funnels (S131, DESIGN-17 §9): src/server/PremiumFunnel (Logic/ShopFunnel) logs the shop funnel (open, tab, item from
+--              the client through the PremiumFunnel remote; prompt and granted here and in PremiumShopService) and the
+--              VIP funnel (open from the client; prompt and active here). "VipActiveJoin" once per player and server
+--              session when the VIP is active. Admin grants (/premium grant, /vip grant) are account.grantedPasses
+--              (GrantProfilePass), the same path as a starter pack.
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -36,6 +41,7 @@ local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Premium = require(Shared.Logic.Premium)
+local PremiumFunnel = require(script.Parent.Parent.PremiumFunnel)
 local Products = require(Shared.Data.Products)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -58,12 +64,16 @@ local DataService: any
 local PlayerStateService: any
 
 local owned: { [Player]: { [string]: boolean } } = {}
+-- S131: passes Roblox says the player owns (UserOwnsGamePassAsync / a finished prompt); an admin cannot take these.
+local robloxOwned: { [Player]: { [string]: boolean } } = {}
 -- S121: subscription status from the API (key -> status) and the session-only test subscriptions (admin, Studio).
 type SubStatus = { active: boolean, renewing: boolean?, endsAt: number? }
 local subs: { [Player]: { [string]: SubStatus } } = {}
 local testSubs: { [Player]: { [string]: boolean } } = {}
 -- The last published HasVip per player (VipChanged fires only on a change).
 local vipNow: { [Player]: boolean } = {}
+-- S131: players whose active VIP was reported to analytics in this server session ("VipActiveJoin").
+local vipLogged: { [Player]: boolean } = {}
 -- Product kinds other than shard packs: "respawn" -> handler(player) -> granted?
 local productHandlers: { [string]: (player: Player) -> boolean } = {}
 
@@ -119,6 +129,10 @@ local function publish(player: Player)
 	if player.Parent == Players and (vipNow[player] == true) ~= vip then
 		vipNow[player] = vip
 		MonetizationService.VipChanged:Fire(player, vip)
+	end
+	if vip and player.Parent == Players and not vipLogged[player] then
+		vipLogged[player] = true
+		Analytics.custom(player, "VipActiveJoin", 1)
 	end
 end
 
@@ -177,6 +191,22 @@ end
 function MonetizationService.RevokeProfilePass(player: Player, passKey: string)
 	PlayerStateService.Set(player, { "account", "grantedPasses", passKey }, nil)
 	setPass(player, passKey, false)
+end
+
+-- S131 (admin /premium list, /vip status): where each pass of the player comes from. `roblox` = bought on Roblox,
+-- `granted` = account.grantedPasses (a starter pack or an admin grant), `cache` = in the session cache (also test
+-- passes of /pass on and simulated Studio purchases).
+export type PassSource = { roblox: boolean, granted: boolean, cache: boolean }
+function MonetizationService.PassSource(player: Player, passKey: string): PassSource
+	local data = DataService.GetData(player)
+	local granted = data and data.grantedPasses
+	local mine = robloxOwned[player]
+	local cache = owned[player]
+	return {
+		roblox = mine ~= nil and mine[passKey] == true,
+		granted = type(granted) == "table" and granted[passKey] == true,
+		cache = cache ~= nil and cache[passKey] == true,
+	}
 end
 
 -- S123: when the profile is ready, the passes granted in it join the cache (no toast), then everything is published.
@@ -239,6 +269,9 @@ local function processReceipt(info: any): Enum.ProductPurchaseDecision
 	Premium.pruneReceipts(data.purchases, os.time(), RECEIPT_KEEP)
 	DataService.Save(player)
 	Analytics.custom(player, "PremiumPurchase", info.CurrencySpent or 0)
+	if key ~= Products.respawn.key then -- the death screen's respawn is not a shop purchase (S131)
+		PremiumFunnel.step(player, "shop", "granted")
+	end
 	log:info("receipt %s: %s granted %s", receiptId, player.Name, key)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
@@ -272,17 +305,28 @@ local function buyProduct(player: Player, key: string): (boolean, string?)
 	if productId == nil then
 		return false, "error.badRequest"
 	end
+	-- the death screen's respawn is not a shop purchase: it stays out of the shop funnel (S131)
+	local shop = key ~= Products.respawn.key
 	if simulated() then
 		-- Test mode: no Robux, same grant path (receipt ids are not needed without MarketplaceService).
+		if shop then
+			PremiumFunnel.step(player, "shop", "prompt")
+		end
 		local ok = grant(player, key)
 		if ok then
 			DataService.Save(player)
+			if shop then
+				PremiumFunnel.step(player, "shop", "granted")
+			end
 			log:info("simulated purchase of %s by %s", key, player.Name)
 		end
 		return ok, if ok then nil else "premium.error.notNow"
 	end
 	if productId == 0 then
 		return false, "premium.error.notConfigured"
+	end
+	if shop then
+		PremiumFunnel.step(player, "shop", "prompt")
 	end
 	MarketplaceService:PromptProductPurchase(player, productId)
 	return true, "premium.prompted"
@@ -303,13 +347,16 @@ local function buyPass(player: Player, key: string): (boolean, string?, { [strin
 		return false, err, args
 	end
 	if simulated() then
+		PremiumFunnel.step(player, "shop", "prompt")
 		setPass(player, key, true)
+		PremiumFunnel.step(player, "shop", "granted")
 		Net.Fire(player, "Toast", "premium.passGranted", { pass = `@premium.pass.{key}` }, "success")
 		return true, nil
 	end
 	if pass.passId == 0 then
 		return false, "premium.error.notConfigured"
 	end
+	PremiumFunnel.step(player, "shop", "prompt")
 	MarketplaceService:PromptGamePassPurchase(player, pass.passId)
 	return true, "premium.prompted"
 end
@@ -322,7 +369,9 @@ local function buySubscription(player: Player, key: string): (boolean, string?)
 		return false, err or "error.badRequest"
 	end
 	if simulated() then
+		PremiumFunnel.step(player, "vip", "prompt")
 		MonetizationService.SetTestSubscription(player, key, true)
+		PremiumFunnel.step(player, "vip", "active")
 		Net.Fire(player, "Toast", "premium.subGranted", { name = `@premium.sub.{key}` }, "success")
 		log:info("simulated subscription %s for %s", key, player.Name)
 		return true, nil
@@ -330,6 +379,7 @@ local function buySubscription(player: Player, key: string): (boolean, string?)
 	if sub.subscriptionId == "" then
 		return false, "premium.error.notConfigured"
 	end
+	PremiumFunnel.step(player, "vip", "prompt")
 	local prompted = pcall(function()
 		-- typed as any: the subscription API may be missing from the analyzer's type definitions
 		(MarketplaceService :: any):PromptSubscriptionPurchase(player, sub.subscriptionId)
@@ -379,8 +429,13 @@ local function loadSubscriptions(player: Player)
 			return
 		end
 		local mine = subs[player] or {}
+		local before = mine[sub.key]
 		mine[sub.key] = status
 		subs[player] = mine
+		-- S131: a known inactive status that turns active is a conversion of the VIP funnel (not the first read on join)
+		if sub.key == "vip" and status.active and before ~= nil and not before.active then
+			PremiumFunnel.step(player, "vip", "active")
+		end
 	end
 	if player.Parent == Players then
 		publish(player)
@@ -394,6 +449,9 @@ local function loadPasses(player: Player)
 				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, pass.passId)
 			end)
 			if ok and has and player.Parent == Players then
+				local mine = robloxOwned[player] or {}
+				mine[pass.key] = true
+				robloxOwned[player] = mine
 				setPass(player, pass.key, true)
 			end
 		end
@@ -414,7 +472,11 @@ function MonetizationService.Start()
 			end
 			for _, pass in Products.passes do
 				if pass.passId == passId and passId ~= 0 then
+					local mine = robloxOwned[player] or {}
+					mine[pass.key] = true
+					robloxOwned[player] = mine
 					setPass(player, pass.key, true)
+					PremiumFunnel.step(player, "shop", "granted")
 					Net.Fire(player, "Toast", "premium.passGranted", { pass = `@premium.pass.{pass.key}` }, "success")
 				end
 			end
@@ -423,6 +485,10 @@ function MonetizationService.Start()
 	Net.Handle("BuyProduct", buyProduct)
 	Net.Handle("BuyPass", buyPass)
 	Net.Handle("BuySubscription", buySubscription)
+	-- S131: funnel steps from the shop and VIP windows (Logic/ShopFunnel.CLIENT_STEPS; anything else is ignored)
+	Net.On("PremiumFunnel", function(player: Player, funnel: string, stepName: string)
+		PremiumFunnel.fromClient(player, funnel, stepName)
+	end)
 
 	-- S121: subscription events (connected in pcall: an older API may lack them).
 	local okChanged, errChanged = pcall(function()
@@ -455,9 +521,12 @@ function MonetizationService.Start()
 	PlayerStateService.Ready:Connect(onReady) -- S123: merges account.grantedPasses, then publishes
 	Players.PlayerRemoving:Connect(function(player)
 		owned[player] = nil
+		robloxOwned[player] = nil
 		subs[player] = nil
 		testSubs[player] = nil
 		vipNow[player] = nil
+		vipLogged[player] = nil
+		PremiumFunnel.clear(player)
 	end)
 	-- S121: safety re-check of the subscription status while in game (spread around the interval; not a game roll).
 	task.spawn(function()

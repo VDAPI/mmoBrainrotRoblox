@@ -532,4 +532,57 @@ T.describe("Tourney T6: the save", function()
 	end)
 end)
 
+-- S131 (admin /tourney force): a forced real tournament runs on the same phase rule as the scheduled one.
+T.describe("S131 forced tournament", function()
+	local NOW = 1792058400 + 37 -- 2026-10-15 10:00:37 UTC (a Thursday)
+
+	T.it("starts on a whole minute, its id is the date, f and the time, without an underscore", function()
+		local startAt = Tourney.forceStart(NOW, 20)
+		T.expect(startAt % 60).toBe(0)
+		T.expect(startAt - NOW > 19 * 60 and startAt - NOW <= 20 * 60).toBe(true)
+		local id = Tourney.forcedId(startAt)
+		T.expect(id).toBe("20261015f1020")
+		T.expect(string.find(id, "_", 1, true)).toBeNil()
+		T.expect(id ~= Tourney.idOf(startAt)).toBe(true)
+		T.expect(string.sub(id, 1, 8)).toBe(Schedule.dateKey(startAt))
+	end)
+
+	T.it("its signups are open at once and close at the usual offset", function()
+		local startAt = Tourney.forceStart(NOW, 20)
+		T.expect(Tourney.phaseFor(startAt, NOW)).toBe("signup")
+		local t = Tourney.times(startAt)
+		T.expect(Tourney.phaseFor(startAt, t.close)).toBe("closed")
+		T.expect(Tourney.phaseFor(startAt, t.organize)).toBe("inviting")
+		T.expect(Tourney.phaseFor(startAt, t.start)).toBe("running")
+		T.expect(Tourney.phaseFor(startAt, t.ends)).toBe("idle")
+	end)
+
+	T.it("accepts whole minutes after the signup close only, at most three hours", function()
+		local closeMin = -Arena.TOURNEY.window.close / 60
+		T.expect(Tourney.forceMinutesOk(closeMin)).toBe(false)
+		T.expect(Tourney.forceMinutesOk(closeMin + 1)).toBe(true)
+		T.expect(Tourney.forceMinutesOk(180)).toBe(true)
+		T.expect(Tourney.forceMinutesOk(181)).toBe(false)
+		T.expect(Tourney.forceMinutesOk(20.5)).toBe(false)
+	end)
+
+	T.it("a signup for the known forced tournament is not stale until it ends", function()
+		local startAt = Tourney.forceStart(NOW, 20)
+		local f = { id = Tourney.forcedId(startAt), startAt = startAt }
+		local signed = { id = f.id }
+		T.expect(Tourney.isStale(signed, NOW)).toBe(true)
+		T.expect(Tourney.isStale(signed, NOW, f)).toBe(false)
+		T.expect(Tourney.isStale(signed, Tourney.times(startAt).start + 60, f)).toBe(false)
+		T.expect(Tourney.isStale(signed, Tourney.times(startAt).ends, f)).toBe(true)
+		T.expect(Tourney.isStale({ id = "20261008f1020" }, NOW, f)).toBe(true)
+	end)
+
+	T.it("phaseAt is phaseFor of the scheduled start", function()
+		for _, offset in { -7200, -3000, -400, -100, 60, 4000 } do
+			local phase, startAt = Tourney.phaseAt(NOW + offset)
+			T.expect(phase).toBe(Tourney.phaseFor(startAt, NOW + offset))
+		end
+	end)
+end)
+
 return nil

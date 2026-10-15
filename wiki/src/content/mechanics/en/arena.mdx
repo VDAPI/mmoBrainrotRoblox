@@ -1,0 +1,54 @@
+---
+title: Arena
+description: "The ranked arena at the Ristalle: ranges, the queue, one on one and three on three rules, rating and seasons, Arena Tokens, the shop and rewards."
+key: arena
+order: 16
+updated: 2026-10-15
+tags: [Arena, PvP]
+---
+
+<Callout kind="tip" title="Rating from fights only">
+The rating, the tokens and the season rewards depend only on match results. Nothing bought in the shop moves them by a single point.
+</Callout>
+
+## The Arena Master
+
+The arena is run by <Npc id="arenamaster" /> at the Ristalle in the city. You open the arena window with him, from the on-screen menu or with <Key action="win_arena" />. The ranked arena opens at <Stat path="arena.minLevel" format="lvl" />. Players fight only within their level range:
+
+<ArenaTable part="rules" />
+
+## The queue
+
+You join the one on one or the three on three queue (alone or with a party of three, the leader signs up). The queue looks for an opponent of a similar rating on every server and widens the range over time. When nobody else is waiting, the game offers a fight with someone from your server. A found match must be accepted quickly, and declining closes the queue for a few minutes.
+
+A match against another server is played on a separate arena server: the game moves both players there and sends them back after the fight. While you wait in the queue you can keep playing, just not in a dungeon.
+
+## Match rules
+
+One on one is played to two won rounds; three on three is one round won by the team with fighters left standing. Every round starts with full health, mana and ready skills. You have a few potions for the whole match. When time runs out, the side with the larger share of health wins. Leaving the sand loses the round, leaving the game loses the match.
+
+The Elixir of Wholeness and the Cloak of Luring do not work in the arena, mounts are not allowed, and blessings are suspended (their time keeps running).
+
+## Rating and seasons
+
+The rating works like in chess: beating a stronger player gives more, losing to a weaker one takes more. A few matches a day against the same opponent count for the rating, the rest do not. A season lasts a calendar month. At the start of a new season the rating partly returns towards the starting value.
+
+<ArenaTable part="tiers" />
+
+## Arena Tokens
+
+Every match pays Arena Tokens, the first matches of a day more. Tokens from matches have a weekly cap; event rewards are outside it.
+
+<ArenaTable part="tokens" />
+
+## The arena shop
+
+The Arena Master sells arena cosmetics, blessings up to Heroic rarity and Stones of Return for tokens. Things from this shop are bound to the character. Tokens cannot be bought.
+
+<ArenaTable part="shop" />
+
+## Season rewards
+
+After a season ends, the reward of your best tier of that season comes by mail, as long as you played enough matches. The best of each range go up on the Arena Hall of Fame board by the Ristalle.
+
+<ArenaTable part="rewards" />

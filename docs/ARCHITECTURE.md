@@ -578,6 +578,21 @@ type CharacterData = {
   `TourneyBracket`), wariant zaproszenia w `ArenaOffer`, `Hud/TourneyPanel` (montuje `QuestController`),
   `TourneyFameController` (plansza i posągi).
 
+### Sklep, VIP i lejki analityki po audycie (S131)
+
+- **Lejki:** czysty `Logic/ShopFunnel` (`FUNNELS.shop = open, tab, item, prompt, granted`, `FUNNELS.vip = open, prompt,
+  active`, sesja lejka kończy się po `Config.ShopFunnel.sessionTimeout`, każdy krok raz na sesję), moduł
+  `src/server/PremiumFunnel.luau` (stan na gracza, `step`, `fromClient`, `clear`), `Analytics.funnel` →
+  `AnalyticsService:LogFunnelStepEvent`. Remote `PremiumFunnel(funnel, step)` (event c2s, rate 2) przyjmuje tylko
+  `ShopFunnel.CLIENT_STEPS` (`shop.open|tab|item`, `vip.open`); `prompt`, `granted` i `vip.active` loguje serwer
+  (`MonetizationService`, `PremiumShopService`).
+- **Nadania admina:** `MonetizationService.GrantProfilePass` / `RevokeProfilePass` / `PassSource` (Roblox, nadanie,
+  test); `/premium`, `/vip grant|take`.
+- **Ogłoszenia:** `AnnounceService.Global` kolejkuje wiadomości między serwerami (`Config.Announce`).
+- **Turniej wymuszony:** `/tourney force` → `TourneyService.AdminForce` → `Bus` op `force` (`t` = start) → `forced` w
+  `TourneyService` (fazy `Tourney.phaseFor`, id `Tourney.forcedId`).
+- **Lista do Creator Hub:** `lune run tools/shop_report.luau [--check]` → `docs/SKLEP-ID.md` (z `tests/Pricing.luau`).
+
 ## 9. UI (Fusion 0.3)
 
 - Każdy ekran to moduł zwracający funkcję `(scope, props) -> Instance`. Jeden `ScreenGui` per warstwa (HUD, Okna, Modale, Toasty, Tooltip) z `IgnoreGuiInset` i `ResetOnSpawn = false`.
@@ -669,7 +684,9 @@ type CharacterData = {
 | `/npc` | world | [id:npc] | lista NPC albo teleport do jednego |
 | `/time` | world | <seconds> | przesuń zegar gry (alchemia, błogosławieństwa) |
 | `/bloodmoon` | world | <info|start|stop|settle|points> [n] | Krwawy Księżyc na tym serwerze: stan, wymuszenie na n min (osobne tablice `t…`), koniec, rozliczenie teraz, punkty adminowi w regionie (S129) ⚠ start, stop |
-| `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
+| `/tourney` | world | <info|open|close|start|cancel|win|force> [a] | Turniej Czempiona: stan; open … win = testowy turniej lokalny (S130); force [min] = prawdziwy turniej na wszystkich serwerach za min minut (S131) ⚠ cancel, force |
+| `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę; trwający tydzień tylko w Studio, S131), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
+| `/sched` | world |  | najbliższe terminy wydarzeń z zegara (UTC) i wymuszone na tym serwerze (S131) |
 | `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
 | `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |
 | `/fish` | world | <auto> | włącz/wyłącz automatyczny sukces łowienia |
@@ -724,8 +741,9 @@ type CharacterData = {
 | `/setgold` | economy | <amount> | ustaw złoto postaci |
 | `/setshards` | economy | <amount> | ustaw Smoczą Walutę konta |
 | `/pass` | economy | <pass:pass> <on|off> | testuj gamepass |
-| `/premium` | economy | <grant> <pass:pass> | /premium grant autoLoot|vault|fastRespawn|vip|pockets|slot4|slot5|wardrobePlus |
-| `/vip` | economy | <on|off|status|reset|month> [RRRRMM] | test VIP: subskrypcja tylko na tę sesję, stan, dzienne korzyści od nowa, kosmetyk miesiąca (S121) |
+| `/premium` | economy | <grant|take|list> [key] | przepustka zapisana na koncie na stałe (`account.grantedPasses`), zabrana albo lista ze źródłem; kupionej w Roblox nie zabiera (S131) ⚠ take |
+| `/vip` | economy | <on|off|status|reset|month|grant|take> [RRRRMM] | VIP: on/off subskrypcja testowa na tę sesję, stan ze źródłem, dzienne korzyści od nowa, kosmetyk miesiąca (S121); grant/take VIP na stałe przez przepustkę `vip` na koncie (S131) ⚠ take |
+| `/weekreset` | economy | <limits|tokens|expweek> | zeruje własne liczniki tygodnia: limity sklepu, Żetony tygodnia, EXP tygodnia (S131) |
 | `/shoplimits` | economy | <show|reset> | liczniki limitów Smoczego Sklepu konta (S120) |
 | `/lure` | economy | <add|clear|on|off|pulse> [minutes] | czas Płaszcza Przynęty bez waluty, przełącznik, przyciągnięcie teraz (S122) |
 | `/bless` | economy | [id:blessing] | lista błogosławieństw albo nadaj jedno (np. warrior_5) |

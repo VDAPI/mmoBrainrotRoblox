@@ -1403,7 +1403,11 @@ T.describe("Wiki export: mounts (S97)", function()
 		end
 		for name, file in d do
 			local text = Json.encode(file)
-			for _, bad in { "starter_wanderer", "starter_hero", '"productId"', '"robux"' } do
+			-- S131: premium.json lists the starter packs' contents (B2), never their price or product id
+			local bads = if name == "premium"
+				then { '"productId"', '"robux"' }
+				else { "starter_wanderer", "starter_hero", '"productId"', '"robux"' }
+			for _, bad in bads do
 				T.expect({ name, bad, string.find(text, bad, 1, true) }).toEqual({ name, bad })
 			end
 		end
@@ -1442,6 +1446,119 @@ T.describe("Wiki export: rankings (S125)", function()
 		local text = result.files["wiki/src/data/rankings.json"]
 		for _, key in { "userId", "charId", "key", "shards", "productId", "robux" } do
 			T.expect({ key, string.find(text, `"{key}"`, 1, true) == nil }).toEqual({ key, true })
+		end
+	end)
+end)
+
+-- S131 (DESIGN-17 §9, B8): the shop, the VIP, the arena and the PvP events on the wiki: no ids, prices, amounts of
+-- Dragon Shards or service keys; the arena data equal to the game data.
+T.describe("Wiki export: shop, VIP, arena, events (S131)", function()
+	local Arena = require("../src/shared/Data/Arena")
+	local Products = require("../src/shared/Data/Products")
+	local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
+
+	local FORBIDDEN = {
+		"robux",
+		"productId",
+		"passId",
+		"subscriptionId",
+		"price",
+		"shards",
+		"dailyShards",
+		"shardReward",
+		"RespawnNowCost",
+		"enabled",
+		"jobId",
+		"placeId",
+	}
+	local SERVICE_KEYS = { "ArenaQueue_", "ArenaMatch_", "BloodMoon_", "Tourney_", "paid_" }
+
+	local function fileText(name: string): string
+		return result.files[`wiki/src/data/{name}.json`] or ""
+	end
+
+	T.it("1. no forbidden key in arena, premium, titles, cosmetics, mechanics; enabled passes only", function()
+		for _, name in { "arena", "premium", "titles", "cosmetics", "mechanics" } do
+			local text = fileText(name)
+			T.expect({ name, #text > 0 }).toEqual({ name, true })
+			for _, key in FORBIDDEN do
+				T.expect({ name, key, string.find(text, `"{key}":`, 1, true) }).toEqual({ name, key, nil })
+			end
+		end
+		T.expect(string.find(fileText("premium"), "mount_royal", 1, true)).toBeNil()
+		for _, pass in Products.passes do
+			if (pass :: any).enabled == false then
+				for _, p in d.premium.passes do
+					T.expect({ pass.key, p.key ~= pass.key }).toEqual({ pass.key, true })
+				end
+			end
+		end
+	end)
+
+	T.it("2. the arena brackets, tiers and shop follow Data/Arena", function()
+		T.expect(d.arena ~= nil).toBe(true)
+		T.expect(#d.arena.brackets).toBe(#Arena.BRACKETS)
+		for i, b in Arena.BRACKETS do
+			T.expect(d.arena.brackets[i]).toEqual({ min = b.min, max = b.max })
+		end
+		for i = 2, #d.arena.tiers do
+			T.expect(d.arena.tiers[i].min > d.arena.tiers[i - 1].min).toBe(true)
+		end
+		for _, e in d.arena.shop do
+			T.expect({ e.id, e.tokens > 0 }).toEqual({ e.id, true })
+			if e.item then
+				local def = Items.get(e.item) :: any
+				T.expect({ e.item, def.category ~= "equipment" and def.bonusGroup == nil }).toEqual({ e.item, true })
+			end
+		end
+		-- no Locale placeholder left in a name (the season titles use their plain name)
+		T.expect(string.match(fileText("arena"), "{%a+}")).toBeNil()
+	end)
+
+	T.it("3. the event slots follow Data/ScheduledEvents", function()
+		local moon = ScheduledEvents.get("bloodmoon") :: any
+		T.expect(#d.arena.bloodMoon.slots).toBe(#moon.slots)
+		for i, s in moon.slots do
+			T.expect(d.arena.bloodMoon.slots[i]).toEqual({ weekday = s.weekday, hour = s.hour, minute = s.minute })
+		end
+		local cup = (ScheduledEvents.get("tourney") :: any).slots[1]
+		T.expect(d.arena.tourney.slot).toEqual({ weekday = cup.weekday, hour = cup.hour, minute = cup.minute })
+	end)
+
+	T.it("4. the VIP names its daily shards without an amount, the elixir lists the series' blocks", function()
+		T.expect(d.premium.vip.dailyCurrency).toBe(true)
+		for key in d.premium.vip do
+			T.expect({ key, string.find(string.lower(key), "shard", 1, true) }).toEqual({ key, nil })
+		end
+		local blocked: { [string]: boolean } = {}
+		for _, name in d.premium.items.fullElixir.blocked do
+			blocked[name.pl] = true
+		end
+		local Locale = require("../src/shared/Util/Locale")
+		for _, reason in { "arena", "duel", "dungeon", "bloodMoon", "tourney" } do
+			local text = Locale.T(`fullElixir.block.{reason}`, nil, "pl")
+			T.expect({ reason, blocked[text] == true }).toEqual({ reason, true })
+		end
+	end)
+
+	T.it("5. no file holds a store key of the cross-server services", function()
+		for path, text in result.files do
+			for _, word in SERVICE_KEYS do
+				T.expect({ path, word, string.find(text, word, 1, true) }).toEqual({ path, word, nil })
+			end
+		end
+	end)
+
+	T.it("6. the published titles and arena cosmetics carry no purchase", function()
+		for _, t in d.titles.titles do
+			T.expect({ t.id, t.req.kind ~= "cosmetic" and t.req.kind ~= "pass" }).toEqual({ t.id, true })
+		end
+		local ids: { [string]: boolean } = {}
+		for _, c in d.cosmetics.cosmetics do
+			ids[c.id] = true
+		end
+		for _, id in { "frame_gladiator", "aura_gladiator", "frame_bloodmoon", "aura_champion", "frame_tourney" } do
+			T.expect({ id, ids[id] == true }).toEqual({ id, true })
 		end
 	end)
 end)

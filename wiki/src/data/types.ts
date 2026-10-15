@@ -90,6 +90,79 @@ export interface AreasFile {
   maps: Record<string, MapFeatures>;
 }
 
+export interface ArenaBracket {
+  max: number;
+  min: number;
+}
+
+export interface ArenaFile {
+  bloodMoon: BloodMoonInfo;
+  brackets: ArenaBracket[];
+  minLevel: number;
+  rules: ArenaRules;
+  season: ArenaSeason;
+  seasonRewards: ArenaSeasonReward[];
+  shop: ArenaShopEntry[];
+  tiers: ArenaTier[];
+  tokens: ArenaTokens;
+  tourney: TourneyInfo;
+}
+
+export interface ArenaRules {
+  acceptSec: number;
+  declinePenaltyMin: number;
+  k: number;
+  kNew: number;
+  kNewMatches: number;
+  potions: number;
+  roundTime: number;
+  roundsToWin: number;
+  sameOpponentDaily: number;
+  start: number;
+  teamTime: number;
+}
+
+export interface ArenaSeason {
+  minPlayed: number;
+  softReset: number;
+}
+
+export interface ArenaSeasonReward {
+  aura?: Name;
+  currency: boolean;
+  frame?: Name;
+  name: Name;
+  tier: string;
+  title?: Name;
+}
+
+export interface ArenaShopEntry {
+  cosmetic?: string;
+  group: string;
+  id: string;
+  item?: string; // id in items.json
+  kind: string;
+  n?: number;
+  name: Name;
+  tokens: number;
+}
+
+export interface ArenaTier {
+  id: string;
+  min: number;
+  name: Name;
+}
+
+export interface ArenaTokens {
+  firstDaily: number;
+  firstMul: number;
+  loss: number;
+  loss3: number;
+  weekCap: number;
+  win: number;
+  win3: number;
+}
+
 export interface AuctionCategory {
   id: string;
   name: Name;
@@ -149,6 +222,25 @@ export interface BlessingsFile {
   elixirValue: number;
   elixirs: Elixir[];
   lines: string[];
+}
+
+export interface BloodMoonInfo {
+  durationMin: number;
+  eliteChance: number;
+  minPoints: number;
+  points: BloodMoonPoints;
+  regions: Name[];
+  rewards: EventReward[];
+  slots: EventSlot[];
+  warnMin: number[];
+}
+
+export interface BloodMoonPoints {
+  elite: number;
+  elite2: number;
+  levelGap: number;
+  player: number;
+  sameVictim: number;
 }
 
 export interface Bonus {
@@ -497,6 +589,24 @@ export interface Elixir {
   stat: string;
 }
 
+export interface EventReward {
+  aura?: Name;
+  blessing?: Name;
+  currency: boolean;
+  frame?: Name;
+  place: string;
+  title?: Name;
+  titleDays?: number;
+  tokens?: number;
+  top?: number;
+}
+
+export interface EventSlot {
+  hour: number;
+  minute: number;
+  weekday: number;
+}
+
 export interface FamilyInfo {
   name: Name;
 }
@@ -529,6 +639,12 @@ export interface FishSpot {
 export interface FixedBonus {
   stat: string; // id in bonuses.json
   v: number;
+}
+
+export interface FullElixirInfo {
+  blocked: Name[];
+  cooldown: number;
+  dailyLimit: number;
 }
 
 export interface GatherFile {
@@ -720,6 +836,14 @@ export interface LootGroup {
   ilvlMax: number;
   ilvlMin: number;
   top: ItemChance[];
+}
+
+export interface LureInfo {
+  blocked: Name[];
+  interval: number;
+  levelGap: number;
+  maxPulled: number;
+  radius: number;
 }
 
 export interface MailRules {
@@ -1075,17 +1199,27 @@ export interface PotionInterval {
 }
 
 export interface PremiumFile {
+  items: PremiumItems;
   passes: PassInfo[];
   shop: PremiumService[];
+  starterPacks: StarterPackInfo[];
+  vip: VipInfo;
+}
+
+export interface PremiumItems {
+  fullElixir: FullElixirInfo;
+  lure: LureInfo;
 }
 
 export interface PremiumService {
+  cat: string;
   dailyLimit?: number;
   desc?: Name;
   item?: string; // id in items.json
   key: string;
   kind: string;
   name: Name;
+  weeklyLimit?: number;
 }
 
 export interface ProgressionFile {
@@ -1579,6 +1713,15 @@ export interface SpawnGroup {
   z: number;
 }
 
+export interface StarterPackInfo {
+  cosmetics: string[];
+  currency: boolean;
+  desc?: Name;
+  key: string;
+  name: Name;
+  passes: string[];
+}
+
 export interface StatGroupInfo {
   id: string;
   name: Name;
@@ -1617,12 +1760,26 @@ export interface Title {
 }
 
 export interface TitleReq {
+  days?: number;
   kind: string;
-  value: number;
+  tier?: string;
+  value?: number;
 }
 
 export interface TitlesFile {
   titles: Title[];
+}
+
+export interface TourneyInfo {
+  cap: number;
+  fields: number;
+  hallWeeks: number;
+  inviteSec: number;
+  minPlayers: number;
+  rewards: EventReward[];
+  signupFromMin: number;
+  signupToMin: number;
+  slot: EventSlot;
 }
 
 export interface TraitInfo {
@@ -1689,6 +1846,23 @@ export interface VariantInfo {
   scale: number;
 }
 
+export interface VipInfo {
+  alchemyQueue: number;
+  auctionExtraListings: number;
+  auctionFeeBasePct: number;
+  auctionFeePct: number;
+  dailyCurrency: boolean;
+  freeRespawnsPerDay: number;
+  monthCosmetics: VipMonthCosmetic[];
+  recallMin: number;
+}
+
+export interface VipMonthCosmetic {
+  id: string;
+  month: string;
+  name: Name;
+}
+
 export interface WeeklyQuests {
   bossContract: BossContract;
   perWeek: number;
@@ -1737,6 +1911,7 @@ export interface ZoneInfo {
 /** Every data file in wiki/src/data by name (<name>.json). */
 export interface Files {
   areas: AreasFile;
+  arena: ArenaFile;
   blessings: BlessingsFile;
   bonuses: BonusesFile;
   bosses: BossesFile;

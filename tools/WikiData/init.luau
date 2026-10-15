@@ -10,6 +10,7 @@
 -- opts.readText  path -> text? (S37: server layouts and UI/MapSketch.luau read as text, never required)
 -- opts.git       { commit, date } of the data (the CLI asks git; "unknown" without it)
 
+local ArenaWiki = require("@self/Arena")
 local Basics = require("@self/Basics")
 local Bosses = require("@self/Bosses")
 local Clean = require("@self/Clean")
@@ -108,6 +109,7 @@ local ORDER: { { name: string, fn: (ctx: any) -> any } } = {
 	{ name = "search", fn = Search.build },
 	{ name = "mapsearch", fn = Places.mapsearch },
 	{ name = "premium", fn = Premium.build },
+	{ name = "arena", fn = ArenaWiki.build }, -- S131: the arena and the PvP events (Data/Arena, Data/ScheduledEvents)
 	{ name = "rankings", fn = Rankings.build }, -- S125: the placeholder (tools/rankings_fetch fills it in the workflow)
 }
 

@@ -82,6 +82,7 @@ local Config = {
 		callWait = 90, -- seconds a called fighter of a local tournament may stay busy (fight, dungeon) before a walkover
 		emptyClose = 300, -- seconds a tournament server without anyone in the bracket waits before sending all home
 		probeRetry = 5, -- seconds before the second store probe when a tournament's mode is decided
+		forceMinutes = 20, -- S131: default start of /tourney force (minutes from now; signups open at once)
 	},
 	-- Mail and auction house (S13).
 	MailStoreName = "Vaelthorn_Mail_v1",
@@ -133,6 +134,11 @@ local Config = {
 		settleTries = 3, -- settlement attempts on one server; then the rest waits for the character's next entry
 		resultsFor = 7200, -- the window and the menu entry keep the results this long after the end
 	},
+	-- S131: cross-server announcements (AnnounceService.Global): one MessagingService publish per `globalGap` s per
+	-- server; announcements within the gap wait in a queue of at most `queueMax` (the oldest is dropped beyond it).
+	Announce = { globalGap = 10, queueMax = 6 },
+	-- S131: shop and VIP analytics funnels (Logic/ShopFunnel): a funnel session ends after this many s without a step.
+	ShopFunnel = { sessionTimeout = 1800 },
 
 	CharacterName = {
 		MinLength = 3,

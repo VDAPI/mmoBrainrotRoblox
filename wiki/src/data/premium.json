@@ -1,4 +1,8 @@
 {
+  "items": {
+    "fullElixir": {"blocked":[{"en":"The Elixir of Wholeness does not work in a duel.","pl":"Eliksir Pełni nie działa w pojedynku."},{"en":"The Elixir of Wholeness does not work on the arena.","pl":"Eliksir Pełni nie działa na arenie."},{"en":"The Elixir of Wholeness does not work in a boss dungeon.","pl":"Eliksir Pełni nie działa w lochu bossa."},{"en":"The Elixir of Wholeness does not work right after fighting a player. Wait a moment.","pl":"Eliksir Pełni nie działa tuż po walce z graczem. Odczekaj chwilę."},{"en":"The Elixir of Wholeness does not work during the Blood Moon.","pl":"Eliksir Pełni nie działa w czasie Krwawego Księżyca."},{"en":"The Elixir of Wholeness does not work during a tournament.","pl":"Eliksir Pełni nie działa w czasie turnieju."}],"cooldown":180,"dailyLimit":10},
+    "lure": {"blocked":[{"en":"The cloak does not work in the city.","pl":"Płaszcz nie działa w mieście."},{"en":"The cloak does not work in caves and dungeons.","pl":"Płaszcz nie działa w jaskiniach i lochach."},{"en":"The cloak does not work in a red zone.","pl":"Płaszcz nie działa w czerwonej strefie."},{"en":"The cloak does not work on the arena.","pl":"Płaszcz nie działa na arenie."},{"en":"The cloak does not work during the tournament.","pl":"Płaszcz nie działa w czasie turnieju."},{"en":"The cloak does not work during the Blood Moon.","pl":"Płaszcz nie działa w czasie Krwawego Księżyca."},{"en":"The cloak does not work while mounted.","pl":"Płaszcz nie działa na wierzchowcu."}],"interval":8,"levelGap":10,"maxPulled":6,"radius":25}
+  },
   "passes": [
     {"desc":{"en":"Loot bags within 15 studs are picked up on their own.","pl":"Worki z łupem w promieniu 15 st. podnoszą się same."},"icon":"✋","key":"autoLoot","name":{"en":"Auto-loot","pl":"Auto-łup"}},
     {"desc":{"en":"+60 slots in the account vault.","pl":"+60 miejsc w depozycie konta."},"icon":"▤","key":"vault","name":{"en":"Vault","pl":"Skarbiec"}},
@@ -9,16 +13,21 @@
     {"desc":{"en":"Five saved looks instead of one.","pl":"Pięć zapisanych zestawów wyglądu zamiast jednego."},"icon":"♛","key":"wardrobePlus","name":{"en":"Wardrobe+","pl":"Garderoba+"}}
   ],
   "shop": [
-    {"item":"scroll_oblivion","key":"scroll_oblivion","kind":"item","name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"}},
-    {"item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of a New Path","pl":"Zwój Nowej Ścieżki"}},
-    {"item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
-    {"dailyLimit":1,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
-    {"desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}},
-    {"item":"backpack_premium_100","key":"backpack_premium_100","kind":"item","name":{"en":"Wanderer's Backpack (100)","pl":"Plecak Wędrowca (100)"}},
-    {"item":"backpack_premium_150","key":"backpack_premium_150","kind":"item","name":{"en":"Caravan Backpack (150)","pl":"Plecak Kupca Karawan (150)"}},
-    {"item":"backpack_premium_200","key":"backpack_premium_200","kind":"item","name":{"en":"Dragon Chest (200)","pl":"Smoczy Kufer (200)"}},
-    {"item":"potion_full","key":"potion_full_5","kind":"item","name":{"en":"Elixir of Wholeness","pl":"Eliksir Pełni"}},
-    {"desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_1h","kind":"lure","name":{"en":"Cloak of Luring: 1 hour","pl":"Płaszcz Przynęty: 1 godzina"}},
-    {"desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_7d","kind":"lure","name":{"en":"Cloak of Luring: 7 days","pl":"Płaszcz Przynęty: 7 dni"}}
-  ]
+    {"cat":"scroll","item":"scroll_oblivion","key":"scroll_oblivion","kind":"item","name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"}},
+    {"cat":"scroll","item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of a New Path","pl":"Zwój Nowej Ścieżki"}},
+    {"cat":"scroll","item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
+    {"cat":"scroll","dailyLimit":1,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
+    {"cat":"service","desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}},
+    {"cat":"backpack","item":"backpack_premium_100","key":"backpack_premium_100","kind":"item","name":{"en":"Wanderer's Backpack (100)","pl":"Plecak Wędrowca (100)"}},
+    {"cat":"backpack","item":"backpack_premium_150","key":"backpack_premium_150","kind":"item","name":{"en":"Caravan Backpack (150)","pl":"Plecak Kupca Karawan (150)"}},
+    {"cat":"backpack","item":"backpack_premium_200","key":"backpack_premium_200","kind":"item","name":{"en":"Dragon Chest (200)","pl":"Smoczy Kufer (200)"}},
+    {"cat":"consumable","item":"potion_full","key":"potion_full_5","kind":"item","name":{"en":"Elixir of Wholeness","pl":"Eliksir Pełni"}},
+    {"cat":"service","desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_1h","kind":"lure","name":{"en":"Cloak of Luring: 1 hour","pl":"Płaszcz Przynęty: 1 godzina"}},
+    {"cat":"service","desc":{"en":"Every few seconds draws ordinary monsters from nearby. The time runs while you are offline too.","pl":"Co kilka sekund ściąga zwykłe potwory z okolicy. Czas płynie także poza grą."},"key":"lure_7d","kind":"lure","name":{"en":"Cloak of Luring: 7 days","pl":"Płaszcz Przynęty: 7 dni"}}
+  ],
+  "starterPacks": [
+    {"cosmetics":["outfit_wayfarer","pet_hound"],"currency":true,"desc":{"en":"For the first road: Dragon Shards, a wayfarer's cloak with a cape and a loyal hound.","pl":"Na pierwszą drogę: Smocza Waluta, płaszcz wędrowca z peleryną i wierny chart."},"key":"starter_wanderer","name":{"en":"Wayfarer's Pack","pl":"Paczka Wędrowca"},"passes":[]},
+    {"cosmetics":["aura_valor"],"currency":true,"desc":{"en":"Plenty of Dragon Shards, the Aura of Valour and Merchant's Pockets for good.","pl":"Dużo Smoczej Waluty, Aura Męstwa i Kieszenie Kupca na zawsze."},"key":"starter_hero","name":{"en":"Hero's Pack","pl":"Paczka Bohatera"},"passes":["pockets"]}
+  ],
+  "vip": {"alchemyQueue":1,"auctionExtraListings":5,"auctionFeeBasePct":5,"auctionFeePct":2.5,"dailyCurrency":true,"freeRespawnsPerDay":1,"monthCosmetics":[{"id":"aura_vip_hearth","month":"2026-11","name":{"en":"Hearthglow","pl":"Blask Ogniska"}},{"id":"trail_vip_snowfall","month":"2026-12","name":{"en":"Snowfall","pl":"Śnieżna Zamieć"}},{"id":"weapon_vip_starlight","month":"2027-01","name":{"en":"Starlit Edge","pl":"Gwiezdne Ostrze"}},{"id":"aura_vip_bloodrose","month":"2027-02","name":{"en":"Blood Rose","pl":"Krwawa Róża"}},{"id":"trail_vip_thaw","month":"2027-03","name":{"en":"Thaw","pl":"Roztopy"}},{"id":"outfit_vip_herald","month":"2027-04","name":{"en":"Herald's Garb","pl":"Strój Herolda"}}],"recallMin":10}
 }

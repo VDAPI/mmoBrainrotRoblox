@@ -774,6 +774,12 @@ function BloodMoonService.Force(minutes: number): (boolean, string?)
 	return true, id
 end
 
+-- S131 (/sched): the occurrence forced on this server by /bloodmoon start while it runs.
+function BloodMoonService.Forced(): Occurrence?
+	local f = forced
+	return if f and Clock.now() < f.endsAt then f else nil
+end
+
 -- Ends the running occurrence on this server (a scheduled one stays off here until its end); settled as usual.
 function BloodMoonService.Stop(): boolean
 	local o = occ

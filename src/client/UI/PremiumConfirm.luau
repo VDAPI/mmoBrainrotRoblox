@@ -93,6 +93,7 @@ function PremiumConfirm.modal(spec: any)
 end
 
 function PremiumConfirm.ask(spec: Spec)
+	Net.Send("PremiumFunnel", "shop", "item") -- S131: the shop funnel (a purchase for Dragon Shards was opened)
 	local show = showModal
 	if not show then
 		-- Never a dead button: without the dialog the purchase goes straight to the server.

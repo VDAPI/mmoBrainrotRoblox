@@ -1,0 +1,42 @@
+---
+// VIP benefits (S131): premium.json `vip` (tools/WikiData/Premium.luau from Config.Vip, Data/Recipes, Data/Market and
+// the cosmetics of the month). Comfort and looks only; the daily Dragon Shards are named without an amount.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const vip = load("premium").vip;
+const n = (v: number) => formatNumber(v, lang);
+const rows: string[] = [
+  ...(vip.dailyCurrency ? [t(lang, "vip.benefit.currency")] : []),
+  t(lang, "vip.benefit.title"),
+  t(lang, "vip.benefit.alchemy", { n: n(vip.alchemyQueue) }),
+  t(lang, "vip.benefit.auction", { n: n(vip.auctionExtraListings), pct: n(vip.auctionFeePct), base: n(vip.auctionFeeBasePct) }),
+  t(lang, "vip.benefit.recall", { n: n(vip.recallMin) }),
+  t(lang, "vip.benefit.respawn", { n: n(vip.freeRespawnsPerDay) }),
+  t(lang, "vip.benefit.month"),
+];
+const month = (m: string) => {
+  const [y, mm] = m.split("-");
+  return `${mm}.${y}`;
+};
+---
+<ul class="vw-vip">
+  {rows.map((row) => <li>{row}</li>)}
+</ul>
+<table class="vw-table vw-table--plain">
+  <caption>{t(lang, "vip.month.caption")}</caption>
+  <thead><tr><th scope="col">{t(lang, "vip.month.month")}</th><th scope="col">{t(lang, "vip.month.cosmetic")}</th></tr></thead>
+  <tbody>
+    {vip.monthCosmetics.map((c) => (
+      <tr><th scope="row">{month(c.month)}</th><td>{name(c.name, lang)}</td></tr>
+    ))}
+  </tbody>
+</table>
+<Source from="Config.Vip (Premium.luau)" />
+<style>
+  .vw-vip { margin: 0 0 14px; padding-left: 20px; display: grid; gap: 6px; }
+  caption { text-align: left; padding: 6px 0; color: var(--vw-text-muted); }
+</style>

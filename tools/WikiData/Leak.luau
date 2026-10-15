@@ -18,6 +18,10 @@ Leak.FORBIDDEN_KEYS = {
 	"nodeHooks",
 	"capRef",
 	"reference",
+	-- S131: subscription id, VIP daily shards, shard rewards (no amount of Dragon Shards on the wiki)
+	"subscriptionId",
+	"dailyShards",
+	"shardReward",
 }
 
 local function sortedPaths(files: { [string]: string }): { string }

@@ -16,7 +16,10 @@ local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
+local Schedule = require(Shared.Logic.Schedule)
+local ScheduledEvents = require(Shared.Data.ScheduledEvents)
 local Time = require(Shared.Logic.Time)
+local Tourney = require(Shared.Logic.Tourney)
 local Town = require(Shared.Data.Town)
 local TownGen = require(Shared.Logic.TownGen)
 local TownPlaces = require(Shared.Logic.TownPlaces)
@@ -650,6 +653,8 @@ commands.rankweek = function(player, args)
 			reply(player, "admin.rank.paid", { week = week })
 		elseif status == "busy" then
 			reply(player, "admin.rank.busy", { week = week })
+		elseif status == "early" then
+			reply(player, "admin.rank.earlyLive", { week = week })
 		else
 			reply(player, "admin.rank.failed", { week = week })
 		end
@@ -822,6 +827,31 @@ end
 
 -- S130: the Champion's Tournament. /tourney info | open [s] | close | start | cancel | win <name>: open .. win run a
 -- local test tournament on this server (never the real one, never the stores).
+-- S131: the next occurrence of every slot of Data/ScheduledEvents (UTC) and what is forced on this server now.
+commands.sched = function(player, _args)
+	local now = Clock.now()
+	for _, def in ScheduledEvents.list do
+		local occ = Schedule.current(def, now) or Schedule.next(def, now)
+		if occ then
+			reply(player, "admin.sched.line", {
+				event = `@{def.nameKey}`,
+				at = `{Schedule.dateKey(occ.startsAt)} {Tourney.clockUtc(occ.startsAt)} UTC`,
+				inMin = math.max(0, math.ceil((occ.startsAt - now) / 60)),
+			})
+		else
+			reply(player, "admin.sched.off", { event = `@{def.nameKey}` })
+		end
+	end
+	local moon = BloodMoonService.Forced()
+	if moon then
+		reply(player, "admin.sched.forced", { event = "@bloodmoon.name", id = moon.id })
+	end
+	local cup = TourneyService.Forced()
+	if cup then
+		reply(player, "admin.sched.forced", { event = "@tourney.title", id = cup.id })
+	end
+end
+
 commands.tourney = function(player, args)
 	local action = args[1] or "info"
 	if action == "info" then
@@ -844,6 +874,16 @@ commands.tourney = function(player, args)
 			return false, err
 		end
 		reply(player, "admin.tourney.opened", { s = seconds })
+		return true
+	elseif action == "force" then
+		-- S131: a real tournament on every server (the bus), `a` minutes from now
+		local minutes = math.floor(tonumber(args[2]) or Config.Tourney.forceMinutes)
+		local ok, result = TourneyService.AdminForce(minutes)
+		if not ok then
+			reply(player, result or "admin.tourney.busy")
+			return false, result
+		end
+		reply(player, "admin.tourney.force", { min = minutes, id = result or "" })
 		return true
 	end
 	if not TourneyService.HasTest() then

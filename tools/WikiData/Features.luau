@@ -18,6 +18,9 @@ Features.FILES = {
 	itemIconAtlas = "src/shared/Data/ItemIconAtlas.luau", -- S35
 	fightSim = "src/shared/Logic/FightSim.luau", -- S32
 	worldEvents = "src/shared/Data/WorldEvents.luau", -- S101
+	arena = "src/shared/Data/Arena.luau", -- S126 (arena.json, S131)
+	scheduledEvents = "src/shared/Data/ScheduledEvents.luau", -- S129 (arena.json, S131)
+	leaderboards = "src/shared/Data/Leaderboards.luau", -- S124 (rankings.json, S125)
 }
 
 function Features.detect(exists: (path: string) -> boolean): Set

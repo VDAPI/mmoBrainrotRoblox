@@ -29,6 +29,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage.Shared
 
@@ -1190,8 +1191,13 @@ end
 
 -- Pays `week` (default the previous one) through the same lock as the schedule (yields). The last value: the week has
 -- not ended yet (its scheduled payout will find it done).
+-- S131: a week that has not ended is paid only in Studio (status "early"); on a live server it would lock the real
+-- end-of-week payout of every server for good.
 function LeaderboardService.WeekPay(week: number?): (string, number, number, boolean)
 	local w = week or (weekNow() - 1)
+	if w >= weekNow() and not RunService:IsStudio() then
+		return "early", 0, w, true
+	end
 	local status, n = runPayout(w)
 	return status, n, w, w >= weekNow()
 end

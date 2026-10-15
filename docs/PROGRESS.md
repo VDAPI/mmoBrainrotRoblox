@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S130 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S131 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -243,25 +243,32 @@ S128 Arena 3 (DESIGN-17 §6): 3 na 3 (pojedynczo albo drużyną z grupy trzech o
 600 na tydzień), sklep areny u Mistrza Areny (kosmetyki areny, błogosławieństwa do Heroicznej, Kamienie Powrotu,
 związane), nagrody sezonu z `last` (tytuł z sezonem, Laur, aura, odłamki pocztą), Sala Sław Areny przy Ristalle,
 `/arena tokens | rating3 | week | hof | queue3`.
+S129 Krwawy Księżyc i S130 Turniej Czempiona (DESIGN-17 §7–§8). S131 audyt serii DESIGN-17 (sklep premium, VIP,
+przedmioty premium, kosmetyki 2, rankingi, arena, Krwawy Księżyc, Turniej Czempiona): seria zamknięta; Płaszcz w
+drabince turnieju, kolejka ogłoszeń między serwerami, `paywall.spec` C1–C8 („nic za Robux nie rusza rankingów”), wiki
+(`arena.json`, rozszerzony `premium.json`, sześć artykułów, bez liczb Smoczej Waluty), przegląd cen (`tests/Pricing`,
+bez zmian), lejki analityki (`Logic/ShopFunnel`, `PremiumFunnel`), admin `/premium`, `/vip grant|take`,
+`/tourney force`, `/sched`, `/weekreset`, lista do Creator Hub `docs/SKLEP-ID.md` (`tools/shop_report.luau`).
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S131:** lejki analityki (`Analytics.funnel` → `LogFunnelStepEvent`) niesprawdzone na żywym serwerze (wywołanie w
+  `pcall`); obrazki nowych bloków wiki areny i wydarzeń bez grafik (tabele).
 - **S130:** posągi czempionów to kamienna figura Sali Sław bez rozróżnienia klasy (klasa na tabliczce planszy); aura i
   ramka turnieju proceduralne, bez obrazków. Panel HUD na telefonie pod panelem wydarzenia świata przesuwa się o stałe
   150 px (bez dokładnej wysokości tamtego panelu). Teleportów i serwerów turniejowych nie da się sprawdzić w Studio
-  (tryb lokalny); prawdziwy test wymaga opublikowanej gry i co najmniej 4 graczy w przedziale. Artykuł „Turniej
-  Czempiona”, eksport `Data/Arena.TOURNEY` na wiki i wymuszenie prawdziwego turnieju z komendy admina: S131.
+  (tryb lokalny); prawdziwy test wymaga opublikowanej gry i co najmniej 4 graczy w przedziale. `/tourney force` (S131)
+  dociera tylko do serwerów działających w chwili wiadomości; botów turnieju w grze nie ma (drabinka z botami w testach).
 - **S129:** ikona menu `hud/menu_bloodmoon` bez obrazka (znak ☾); ramka `frame_bloodmoon` proceduralna; bez dźwięku
   startu (brak klucza ogłoszenia / rogu z id w `Data/Sfx`); czerwone niebo bez kuli księżyca (sam odcień, mgła i
-  przejście). Artykuł „Krwawy Księżyc” i publikacja tytułu `bloodmoon` oraz ramki na wiki: S131.
+  przejście).
 - **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔).
 - **S126:** ikona menu `hud/menu_arena` bez obrazka (znak ⚔).
 - **S128:** uproszczenie: grupa drużyny 3 na 3 nie odtwarza się po powrocie z serwera areny (komunikat „zaproś ponownie”,
   `PartyService.Restore` nie powstał). Waluta `token` i kosmetyki areny bez obrazków (znaki). Mecz 3 na 3 na serwerze
-  areny bez nieobecnego gracza: nieobecny dostaje karę, ale nie przegraną w profilu. Artykuł „Arena” i publikacja tytułów
-  oraz kosmetyków areny na wiki: S131.
+  areny bez nieobecnego gracza: nieobecny dostaje karę, ale nie przegraną w profilu.
 - **S127:** przenosiny między serwerami bez `TeleportService:SetTeleportGui` (nakładka klienta tylko do startu
   teleportu, potem ekran ładowania Roblox).
 - **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →
@@ -326,10 +333,9 @@ zakończone; testy i decyzje właściciela po nich.
 - **Poboczne Pustkowi (S107)**: uproszczenia wyglądu: runa snu (efekt `rune` z S104) to płyta na ziemi przy sarkofagu
   i przy wrotach piramidy, nie znak na wieku; przecięta skóra bębna leży oparta o róg podestu (pozycja liczona od
   kotwicy), kikut kolumny bez kolizji.
-- **Sklep premium (S121)**: id subskrypcji VIP (`Products.subscriptions[1].subscriptionId`) i czterech przepustek
-  (`pockets`, `slot4`, `slot5`, `wardrobePlus`) do wklejenia z Creator Hub; do tego czasu „Wkrótce” na żywym serwerze.
-- **Sklep premium (S123)**: id dwóch paczek startowych (`Products.starterPacks`: `starter_wanderer`, `starter_hero`) do
-  wklejenia z Creator Hub; do tego czasu „Wkrótce” na żywym serwerze. Nowe kosmetyki bez obrazków (znak zamiast
+- **Sklep (właściciel)**: id produktów, przepustek i subskrypcji w `Data/Products` = 0 / pusty: lista w
+  `docs/SKLEP-ID.md` (do tego czasu „Wkrótce” na żywym serwerze).
+- **Kosmetyki 2 (S123)**: nowe kosmetyki bez obrazków (znak zamiast
   `kosmetyki/<id>.png`). Koło emotek nie przygasza wpisów w walce (klient nie zna stanu walki; serwer odmawia z
   komunikatem). Emotki bez dźwięku; atak gracza kończy emotkę tylko u klientów (atrybut `Emote` zostaje do następnej,
   więc nowy obserwator nie odgrywa zastanego atrybutu i nie widzi emotki trwającej w chwili wejścia w zasięg).

@@ -20,6 +20,11 @@ Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłe
 - Encje oznaczone jako niewydane (`hidden = true` albo `wiki = false` w danych; eksporter dodaje obsługę tych flag tam, gdzie ich jeszcze nie ma) są pomijane razem z linkami do nich.
 - Ścieżki (S57, `Visibility.fromPaths`): ścieżka z `wiki = false` ukrywa swój tytuł (`titleId`), węzły i umiejętności, a umiejętność z `path` bez `PathDef` jest ukryta zawsze. Same id ścieżek nie wchodzą do wspólnego zbioru ukrytych (kolizje z NPC i sklepem `healer`, umiejętnością gildii `fortune`); eksport ścieżek (S82) filtruje po `PathDef.wiki`. Wpis sklepu `needsPaths` (Zwój Nowej Ścieżki) trafia na wiki tylko z klasami, które mają opublikowaną ścieżkę.
 - `tests/wikidump.spec.luau` wywala się, gdy w wyjściu pojawi się którykolwiek kod z `Data/Codes`, id administratora, klucz spoza allowlisty albo klucz `productId`, `passId`, `robux`, `price`, `shards`, `RespawnNowCost`. Od S44 ten sam skan wycieków przechodzi po zbudowanej stronie (`dist/`).
+- **S131: na wiki nie ma żadnej liczby Smoczych Odłamków** (cen, nagród, paczek ani dziennej premii VIP): to pochodne
+  cen w Robux, gracz widzi je w grze; nagroda w odłamkach to `currency = true`. Zakazane klucze += `subscriptionId`,
+  `dailyShards`, `shardReward`. Eksporter areny i wydarzeń (`tools/WikiData/Arena.luau`) nie czyta `Data/Products`,
+  `Logic/Premium` ani serwisów; nazwy kluczy MemoryStore (`ArenaQueue_`, `ArenaMatch_`, `BloodMoon_`, `Tourney_`,
+  `paid_`) nie trafiają do żadnego pliku. Przepustki z `enabled = false` i wierzchowiec premium poza wiki.
 
 ## 2. Stack
 
@@ -150,7 +155,8 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `npcs.json` | `npcs`: Npc[], `services`: Record<string, Name> | `Data/Npcs`; od S37 `role` (`npc.<id>.role`) i nazwy usług (`npc.service.<id>`); od S43 `building` (`Town.npcSpot(id).at`) i `buildingName` (`town.sign.<at>`, gdy jest) |
 | `portals.json` | `portals`: PortalInfo[] | `Data/Portals` |
 | `rankings.json` (S125) | `available`: boolean, `updatedAt`: number, `boards`: RankingBoard[] (`id`, `kind`, `name`, `class?`, `bracket?`, `week?`, `rows`: miejsce, imię, klasa, poziom, tag gildii, członkowie, wartość) | schemat i zaślepka (`available = false`, puste `rows`) w `tools/WikiData/Rankings.luau` (tylko `Data/Leaderboards`, klasy, teksty); dane wpisuje `tools/rankings_fetch.luau` (Open Cloud) w workflow, bez commita; nigdy `userId`, klucze wpisów, id postaci, odłamki |
-| `premium.json` (S43) | `passes`: PassInfo[], `shop`: PremiumService[] | jedyny moduł czytający `Data/Products`: `tools/WikiData/Premium.luau` (klucz i ikona przepustki, nazwa/opis z `premium.pass.<key>`; usługa: klucz, rodzaj, przedmiot, `dailyLimit`, nazwa z przedmiotu albo `premium.<key>`) |
+| `premium.json` (S43) | `passes`: PassInfo[], `shop`: PremiumService[]; S131: `vip`: VipInfo, `items`: PremiumItems, `starterPacks`: StarterPackInfo[] | jedyny moduł czytający `Data/Products`: `tools/WikiData/Premium.luau` (klucz i ikona włączonej przepustki, nazwa/opis z `premium.pass.<key>`; usługa: klucz, rodzaj, `cat`, przedmiot, `dailyLimit`, `weeklyLimit`, nazwa z przedmiotu albo `premium.<key>`, bez wpisów `unavailable`; S131: korzyści VIP z `Config.Vip` z `dailyCurrency` zamiast kwoty i kosmetyki miesiąca, zasady i blokady Eliksiru i Płaszcza, zawartość paczek startowych bez ceny) |
+| `arena.json` (S131) | `minLevel`, `brackets`, `rules`, `tiers`, `season`, `tokens`, `shop` (koszt w `tokens`), `seasonRewards`, `bloodMoon` (sloty UTC, czas, ogłoszenia, regiony, punkty, `eliteChance`, nagrody), `tourney` (slot, zapisy w minutach przed startem, miejsca, nagrody) | `tools/WikiData/Arena.luau`: pola wybrane ręcznie z `Data/Arena` i `Data/ScheduledEvents`, nazwy z Locale; nagrody z `currency = true` zamiast kwoty odłamków |
 | `progression.json` | `expToNext`: LevelExp[], `levelDiff`: LevelDiff[], `maxLevel`: number, `statPointsPerLevel`: number, `variantExp`: Record<string, number>; od S42 `monsterExp`, `bestArea`, `levelDiffRules` | `Exp.expToNext`, `Exp.levelDiffMultiplier` (`diff` = poziom potwora − poziom gracza), `Data/Progression`; S42: `Exp.monsterExp` (poz. 1, 10…100 × normal/elite/elite2/boss), `AreaAdvice.best` dla poziomów 1…100 (mapa regionu z zakresem poziomu, polecany obszar najbliższy środkiem) |
 | `quests.json` | `daily`: DailyQuests, `levelSlack`: number, `main`: MainQuest[], `side`: SideQuest[], `sideLevelSlack`: number, `sideMaxActive`: number, `sideChoice` (S42: `count`, `rarity` z `Config.SideQuest`) | `Data/Quests` (główne, poboczne S27, dzienne: `objective(level)`, `Daily.reward(level)`); etykiety celów z kluczy `quest.obj.*` jak `UI/QuestText.objective`; od S37 cel ma `where` = `{ map, area?, cave?, npc? }` (`AreaAdvice.forKind` / `caveFor`, mapa regionu, loch bossa, mapa NPC, kotwica); od S39 `itemName` celów z przedmiotem (`quest.item.<item>`). S109 (tylko dodane klucze): `chapters` (z `Main.CHAPTERS`: `n`, `title` z `story.chapter.<n>`, `from` / `to` = poziomy questów rozdziału, `map`, `final?`), `main[].chapter` (`Main.chapterOf`; questy ze stronami mają `text` = strony `p1..pN` złączone pustą linią), `bossQuests` (`Data/Quests/Boss`), `weekly` (`perWeek`, szablony na poziomach dziennych, `bossContract` na poziomach z bossem), `contracts` (`max`, `board`, `scouts`, `milestoneEvery`, `list`: poziom, mapa, łowisko, `n`, etykieta, nagroda; bez reguł generatora). Reguła G1 (decyzja właściciela): strony i pola questów głównych bez zmian, przerywniki nigdy na wiki; zlecenia, bossowe i tygodniowe bez stron i bez wpisów w wyszukiwarce |
 | `rarities.json` | `rarities`: Rarity[], `sources`: Record<string, DropSource>, `upgradeStatPerLevel`: number | `Data/Rarities` (drabina S30, `itemDrops`, `dropWeights`, `cap`; `mythicLines` od S68) |
@@ -290,7 +296,10 @@ sama data), spoiler `inert` + `data-pagefind-ignore`. `src/lib/stat.ts` (`resolv
 `LevelBandStrip`, `StatFormulaTable`, `CapsTable`, `ClassStartTable`, `ElementList`, `BlessingTable`, `ElixirTable`,
 `PotionTable`, `KeybindTable` (`groups?`, `fixed?`); S43: `CityNpcs`, `CityGallery` (`names?`, `hero?`), `GuildRanksTable`,
 `GuildSkillsTable`, `AuctionTable`, `CosmeticsGrid`, `PassList` (`shop?`), `LevelPath` (`from`, `to`), `UpgradeChances`,
-`MountTable` (S97; `part?`: `levels` | `mounts` | `skins`; artykuł mechaniki `mounts`). Widoki S43:
+`MountTable` (S97; `part?`: `levels` | `mounts` | `skins`; artykuł mechaniki `mounts`); S131: `ArenaTable` (`part`:
+`tiers` | `rules` | `tokens` | `shop` | `rewards`), `EventSchedule` (`event`: `bloodMoon` | `tourney`, podpis „czas
+UTC”), `VipBenefits`, `PremiumItems`, `PassList` (`shop?` z sekcjami `cat`, `packs?`), `TitleTable` (warunki `vip`,
+`timed`, `arenaSeason`). Widoki S43:
 `GuidesSection.astro`, `UpdatesView.astro`, `src/lib/city.ts`. Klasy CSS: `.vw-article*`, `.vw-prose`, `.vw-h3`, `.vw-stat`,
 `.vw-ref`, `.vw-scroll`, `.vw-table--plain|keep|dense|prose`, `.vw-chart`, `.vw-chip--static`.
 
@@ -757,6 +766,11 @@ trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem
   `use` przedmiotu, ikony S35) są w schemacie typem `data` (czysty JSON); reszta pól jest wymieniona jawnie.
 - **S34** Pełny eksport nie czyta `Data/Codes`, `Data/AdminCommands`, `Logic/DevPreset`, `Data/Products`; kody i
   `Config.AdminUserIds` czyta tylko `tests/wikidump.spec.luau` (`Leak.scan`). Każdy build sprawdza zakazane klucze.
+- **S131** Sześć artykułów serii DESIGN-17 (klucze `premiumShop`, `vip`, `rankings`, `arena`, `bloodMoon`, `tourney`,
+  order 13–18; artykuł rankingów „Zasady rankingów”, bo strona danych S125 nazywa się „Rankingi”); kosmetyki odsyłają do
+  sklepu. Jeden plik `arena.json` na arenę i wydarzenia PvP; `<Stat>` czyta też `arena` i `premium`. Bez liczb Smoczych
+  Odłamków (§1). Opublikowane tytuły i kosmetyki areny, Krwawego Księżyca, turnieju i VIP; tytuł sezonu areny bez
+  `{season}`, tytuły czasowe z liczbą dni (`req.days`).
 
 ## Niedokończone
 
