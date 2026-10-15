@@ -317,6 +317,42 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
+| `Arena:BRACKETS[20_39].max` | 39 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[20_39].min` | 20 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[40_59].max` | 59 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[40_59].min` | 40 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[60_79].max` | 79 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[60_79].min` | 60 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[80_100].max` | 100 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:BRACKETS[80_100].min` | 80 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
+| `Arena:ELO.floor` | 0 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:ELO.k` | 32 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:ELO.kNew` | 48 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:ELO.newGames` | 10 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:ELO.scale` | 400 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:ELO.start` | 1000 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
+| `Arena:LIMITS.history` | 10 | S126 | DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches |
+| `Arena:LIMITS.sameOpponentDaily` | 3 | S126 | DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches |
+| `Arena:MIN_LEVEL` | 20 | S126 | DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket) |
+| `Arena:MODES.1v1.between` | 5 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.countdown` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.maxRounds` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.potions` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.roundTime` | 180 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.teamSize` | 1 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:MODES.1v1.winsNeeded` | 2 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
+| `Arena:QUEUE.acceptSeconds` | 15 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:QUEUE.declinePenalty` | 300 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:QUEUE.tick` | 1 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:QUEUE.widen` | 100 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:QUEUE.widenEvery` | 15 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:QUEUE.window` | 100 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
+| `Arena:SEASON.keep` | 0,5 | S126 | DESIGN-17 §6 monthly season with the soft reset 1000 + (rating - 1000) x 0.5 |
+| `Arena:TIERS[bronze].min` | 0 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
+| `Arena:TIERS[diamond].min` | 1500 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
+| `Arena:TIERS[gold].min` | 1300 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
+| `Arena:TIERS[master].min` | 1700 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
+| `Arena:TIERS[silver].min` | 1100 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
 | `BossTuning:extra.azgor.far.cooldown` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
 | `BossTuning:extra.azgor.far.damage` | 3,6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
 | `BossTuning:extra.azgor.far.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
@@ -2115,6 +2151,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 
 | moduł | kluczy | zmiany (sesja: powód) |
 | --- | --: | --: |
+| Arena | 36 | S126: DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling; S126: DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale; S126: DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches; S126: DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket); S126: DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision; S126: DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical; S126: DESIGN-17 §6 monthly season with the soft reset 1000 + (rating - 1000) x 0.5; S126: DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
 | BossTuning | 36 | S117: FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule; S117: FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s; S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
 | Crafting | 1494 | S94: K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
 | Leaderboards | 12 | S125: weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers; S125: top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
@@ -14034,7 +14071,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 20,8 s.
+Tabele S86 liczą się 20,4 s.
 
 ## Poprawki globalne (S87)
 

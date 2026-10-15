@@ -4,6 +4,8 @@
 -- confirmation (remote UseBlessing). Stats plug into StatService as modifier source "blessing"; the
 -- EXP/gold/drop bonuses are ordinary stats read by Combat/Level/Loot. The active blessing is mirrored to the
 -- character model (attributes Blessing / BlessingUntil, Logic/BlessingMark) for the ✶ next to the name (S29).
+-- S126: SetSuspended (a ranked match): the blessing's stats stop counting while its time runs on; the resistance
+-- elixirs keep working and the ✶ stays (it shows, it gives nothing).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +29,7 @@ local CHECK_INTERVAL = 5
 
 local PlayerStateService: any
 local InventoryService: any
+local suspended: { [Player]: boolean } = {} -- S126
 local StatService: any
 local CharacterService: any
 
@@ -38,11 +41,11 @@ local function activeBlessing(char: Types.CharacterData, now: number): Blessings
 	return Blessings.get(blessing.id)
 end
 
-local function modifierSource(_player: Player, char: Types.CharacterData): StatCalc.Source?
+local function modifierSource(player: Player, char: Types.CharacterData): StatCalc.Source?
 	local now = Clock.now()
 	local flat: { [string]: number } = {}
 	local any = false
-	local blessing = activeBlessing(char, now)
+	local blessing = if suspended[player] then nil else activeBlessing(char, now)
 	if blessing then
 		for stat, value in blessing.stats do
 			flat[stat] = (flat[stat] or 0) + value
@@ -60,6 +63,23 @@ local function modifierSource(_player: Player, char: Types.CharacterData): StatC
 		return nil
 	end
 	return { key = "source.blessing", flat = flat }
+end
+
+-- S126: suspends (or restores) the stats of the player's blessing; its expiry does not move.
+function BlessingService.SetSuspended(player: Player, on: boolean)
+	local was = suspended[player] == true
+	if on then
+		suspended[player] = true
+	else
+		suspended[player] = nil
+	end
+	if was ~= on then
+		StatService.Invalidate(player)
+	end
+end
+
+function BlessingService.IsSuspended(player: Player): boolean
+	return suspended[player] == true
 end
 
 -- Writes the active blessing onto the character model (nil attributes hide the ✶ on every nameplate).
@@ -191,6 +211,12 @@ function BlessingService.Start()
 	end)
 	CharacterService.ModelSpawned:Connect(function(player: Player)
 		BlessingService.RefreshAttribute(player)
+	end)
+	CharacterService.CharacterLeaving:Connect(function(player: Player)
+		suspended[player] = nil
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		suspended[player] = nil
 	end)
 
 	task.spawn(function()

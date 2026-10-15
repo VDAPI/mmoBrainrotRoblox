@@ -13,6 +13,9 @@ local spots: { [string]: Types.Spot } = {
 	miller_widow = { x = -194, z = 209, facing = 180, at = "mlyn" },
 	stablemaster = { x = 243, z = 23, facing = 0, at = "stajnia" },
 	sergeant = { x = 256, z = -33, facing = 180, at = "wartownia" },
+	-- S126: outside the north stands of Ristalle (they end at z = -106), off the spectators' way out (190, -88),
+	-- facing the gate and the street; more than 16 studs from the arena's door point, so no `at`
+	arenamaster = { x = 204, z = -96, facing = 135 },
 }
 
 return spots

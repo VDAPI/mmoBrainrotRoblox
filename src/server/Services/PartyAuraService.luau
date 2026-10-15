@@ -346,7 +346,24 @@ end
 
 local function pass()
 	local done: { [number]: boolean } = {}
+	local seen: { [Player]: boolean } = {}
 	for _, player in Players:GetPlayers() do
+		-- S126: a fighter of a ranked match shares auras with its match side only (PartyService.Allies)
+		if PartyService.HasAllyOverride(player) then
+			if not seen[player] then
+				local group = PartyService.Allies(player)
+				for _, member in group do
+					seen[member] = true
+				end
+				local ok, err = pcall(function()
+					passGroup(group)
+				end)
+				if not ok then
+					log:error("aura pass failed for %s: %s", player.Name, tostring(err))
+				end
+			end
+			continue
+		end
 		local party = PartyService.Get(player)
 		if party then
 			if done[party.id] then
@@ -355,7 +372,7 @@ local function pass()
 			done[party.id] = true
 		end
 		local ok, err = pcall(function()
-			passGroup(PartyService.Members(player))
+			passGroup(PartyService.Allies(player))
 		end)
 		if not ok then
 			log:error("aura pass failed for %s: %s", player.Name, tostring(err))

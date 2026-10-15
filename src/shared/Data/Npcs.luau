@@ -22,6 +22,7 @@ export type Service =
 	| "talk" -- S27: only conversation (side quests, gossip)
 	| "vendors" -- S95: the dealer's "Where can I buy gear?" (leads to the player's class vendor, client only)
 	| "mounts" -- S97: the stablemaster's mounts window (upgrades only near him)
+	| "arena" -- S126: the ranked arena window (ArenaController)
 
 export type NpcDef = {
 	id: string,
@@ -272,6 +273,20 @@ townsfolk("innkeeper", { body = "#7A3E2A", accent = "#E8D8B0" }, "🍺", { gossi
 townsfolk("miller_widow", { body = "#4A4A52", accent = "#1E1E22" }, "⚙")
 townsfolk("stablemaster", { body = "#6B4A2B", accent = "#3A2A1A" }, "🐎", { services = { "talk", "mounts" } })
 townsfolk("sergeant", { body = "#8E96A3", accent = "#7A1F2B" }, "⚔")
+
+-- S126: the Arena Master by the north gate of Ristalle (Data/Town/npcExtra), the ranked arena window.
+npc({
+	id = "arenamaster",
+	map = "city",
+	nameKey = "npc.arenamaster.name",
+	greetingKey = "npc.arenamaster.greeting",
+	services = { "arena" },
+	position = { x = 0, z = 0 }, -- from Town.npcSpot
+	facing = 0,
+	colors = { body = "#6B2A24", accent = "#C8A040" }, -- the crimson and gold of the lord's box of Ristalle
+	icon = "🏆",
+	lines = 3,
+})
 
 -- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
 -- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`; S104: `extra.showFrom`.

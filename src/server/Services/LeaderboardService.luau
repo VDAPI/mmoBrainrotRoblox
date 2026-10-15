@@ -23,6 +23,8 @@
 --     member levels, Logic/Leaderboard.guildScore), throttled like every board.
 -- API for S125–S130: KeyOf, Submit, Add, Remove, ListInsert, List, Snapshot, SubmitPlayer, IsGlobal, Refreshed;
 -- S125 SubmitGuild.
+--   * S126 arena boards (arena_<season>_<bracket>): fed by ArenaService through Submit / Remove; this service only
+--     builds the player's line (Logic/Leaderboard.arenaMe) and removes the entries of a deleted or hidden character.
 -- GuildService and MailService are taken lazily from the registry (GuildService takes this service lazily too).
 
 local Players = game:GetService("Players")
@@ -35,6 +37,8 @@ local Cache = require(script.Parent.Parent.Leaderboard.Cache)
 local Stores = require(script.Parent.Parent.Leaderboard.Stores)
 local TownBoard = require(script.Parent.Parent.Leaderboard.TownBoard)
 
+local Arena = require(Shared.Data.Arena)
+local ArenaRules = require(Shared.Logic.ArenaRules)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local Leaderboard = require(Shared.Logic.Leaderboard)
@@ -179,6 +183,20 @@ local function removeCharacter(key: string, character: any)
 	Leaderboard.queue(throttle, Leaderboard.META_BOARD, key, { remove = true }, now, CFG.writeGap)
 	Cache.putMeta(key, nil)
 	Leaderboard.release(throttle, key)
+end
+
+-- S126: takes the entry of `key` off this season's arena boards of the character's bracket (every mode).
+local function removeArena(key: string, character: any)
+	local bracket = ArenaRules.bracketOf(character.level)
+	if not bracket then
+		return
+	end
+	local season = ArenaRules.seasonOf(Clock.now())
+	for _, mode in Arena.MODES do
+		local id = ArenaRules.boardId(mode, season, bracket)
+		Leaderboard.queue(throttle, id, key, { remove = true }, os.time(), CFG.writeGap)
+		Cache.mergeLocal(id, key, nil)
+	end
 end
 
 -- Queues the scores and metadata of `character` under `key`. Returns false when the character is left out.
@@ -756,6 +774,11 @@ local function snapshotOf(instanceId: string, player: Player?, wait: boolean): L
 					last = { week = paid.week, rows = winners }
 				end
 			end
+		elseif def.format == "rating" then
+			-- S126: the arena rank and rating of the character
+			if player and character then
+				me = Leaderboard.arenaMe(character, rows, excludedPlayer(player, character))
+			end
 		elseif player and character and (def.class == nil or def.class == character.class) then
 			me = Leaderboard.me(character, rows, CFG, excludedPlayer(player, character))
 		end
@@ -1003,6 +1026,7 @@ function LeaderboardService.SetHidden(player: Player, hidden: boolean): boolean
 	end
 	PlayerStateService.Set(player, { "character", "lbHidden" }, if hidden then true else nil)
 	if hidden then
+		removeArena(key, character) -- S126 (before removeCharacter: its release covers these writes)
 		removeCharacter(key, character)
 		-- S125: and the entry of this week
 		local state = character.expWeek
@@ -1294,6 +1318,7 @@ function LeaderboardService.Start()
 	CharacterService.CharacterDeleted:Connect(function(player: Player, character: Types.CharacterData, slotKey: string?)
 		if slotKey then
 			local key = Leaderboard.entryKey(player.UserId, slotKey)
+			removeArena(key, character) -- S126 (before removeCharacter: its release covers these writes)
 			removeCharacter(key, character)
 			hofSettled[key] = nil
 			-- S125: the entry of this week (the slot key may go to a new character: mergeWeekly compares cid)

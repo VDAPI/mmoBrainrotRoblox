@@ -838,4 +838,71 @@ T.describe("S125 weekly EXP and the guild board", function()
 	end)
 end)
 
+T.describe("S126 arena boards", function()
+	T.it("reads and builds arena board ids with the arena brackets", function()
+		local arena = Leaderboards.get("arena") :: Leaderboards.BoardDef
+		T.expect({ arena.kind, arena.scope, arena.score, arena.format })
+			.toEqual({ "ordered", "character", nil, "rating" } :: any)
+		local def, parts = Leaderboard.resolve("arena_202611_40_59")
+		T.expect(def).toBe(arena)
+		T.expect(parts).toEqual({ "202611", "40_59" })
+		T.expect(Leaderboard.instanceId(arena, { "202611", "80_100" })).toBe("arena_202611_80_100")
+		T.expect((Leaderboard.resolve("arena_202611_10_19"))).toBeNil()
+		T.expect((Leaderboard.resolve("arena_x_40_59"))).toBeNil()
+		T.expect((Leaderboard.resolve("arena_202611"))).toBeNil()
+		T.expect((Leaderboard.resolve("arena_2026111_40_59"))).toBeNil()
+		T.expect(Leaderboard.PARTS.season({ now = 1793491200 })).toBe("202611")
+		T.expect(Leaderboard.PARTS.arenaBracket({ now = 0, arenaBracket = "60_79" })).toBe("60_79")
+		T.expect(Leaderboard.PARTS.arenaBracket({ now = 0, level = 45 })).toBe("40_59")
+		-- the S125 weekly ids keep resolving (the bracket index is not an arena bracket)
+		local week, weekParts = Leaderboard.resolve("exp_week_2963_2")
+		T.expect(week).toBe(Leaderboards.get("exp_week"))
+		T.expect(weekParts).toEqual({ "2963", "2" })
+	end)
+
+	T.it("gives the arena tab one board per arena bracket of this season", function()
+		local tab: Leaderboards.TabDef? = nil
+		for _, t in Leaderboards.tabs do
+			if t.id == "arena" then
+				tab = t
+			end
+		end
+		local arenaTab = tab :: Leaderboards.TabDef
+		T.expect(arenaTab.filter).toBe("arenaBracket")
+		T.expect(Leaderboard.boardFor(arenaTab, "40_59", 1793491200)).toBe("arena_202611_40_59")
+		T.expect(Leaderboard.boardFor(arenaTab, "nope", 1793491200)).toBe("arena_202611_20_39")
+		T.expect(Leaderboard.boardFor(arenaTab, "40_59", nil)).toBeNil()
+		local arena = Leaderboards.get("arena") :: Leaderboards.BoardDef
+		T.expect(Leaderboard.readable(arena, { "202611", "40_59" }, 1793491200)).toBe(true)
+		T.expect(Leaderboard.readable(arena, { "202611", "10_19" }, 1793491200)).toBe(false)
+		T.expect(Leaderboard.readable(arena, { "202610", "40_59" }, 1793491200 + 7200)).toBe(false)
+		for _, key in
+			{ "leaderboard.board.arena", "leaderboard.tab.arena", "leaderboard.arena.you", "leaderboard.arena.outside" }
+		do
+			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })
+			T.expect(placeholders(pl[key])).toEqual(placeholders(en[key]))
+		end
+	end)
+
+	T.it("builds the rows and the own line of an arena board", function()
+		local arena = Leaderboards.get("arena") :: Leaderboards.BoardDef
+		local metas: { [string]: Leaderboard.Meta } = {
+			["1_1"] = { n = "Aria", c = "Mage", l = 45, t = 0 },
+			["2_1"] = { n = "Borg", c = "Warrior", l = 50, t = 0 },
+		}
+		local rows = Leaderboard.rows(arena, { entry("2_1", 1300), entry("1_1", 1100) }, function(key)
+			return metas[key]
+		end, function()
+			return false
+		end, "1_1")
+		T.expect({ rows[1].n, rows[1].s, rows[1].l }).toEqual({ "Borg", 1300, 50 })
+		T.expect(rows[2].mine).toBe(true)
+		local character = { level = 45, arena = { rating = 1100 } }
+		T.expect(Leaderboard.arenaMe(character, rows, false)).toEqual({ r = 2, s = 1100 })
+		T.expect(Leaderboard.arenaMe(character, {}, false)).toEqual({ s = 1100 })
+		T.expect(Leaderboard.arenaMe({ level = 12 }, rows, false)).toEqual({ below = 20 })
+		T.expect(Leaderboard.arenaMe(character, rows, true)).toEqual({ hidden = true })
+	end)
+end)
+
 return nil

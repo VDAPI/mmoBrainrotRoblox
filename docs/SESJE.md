@@ -9793,3 +9793,105 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Leaderboards,Titles,K
 `wiki/src/pages/{pl/rankingi,en/rankings}/[...path].astro` (generowane), `wiki/scripts/shots.pages.mjs`,
 `wiki/src/data/{rankings.json (nowy),types.ts,mechanics.json,meta.json}`, `docs/PRZEDMIOTY.md`, `docs/BALANS.md`,
 `docs/{DESIGN,DESIGN-17,ARCHITECTURE,WIKI,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S126: Arena 1: ArenaService, Mistrz Areny, mecze 1v1 lokalnie, Elo, sezony, ranking areny
+
+Siódma sesja serii DESIGN-17 (§6), po S125 (`141de3e`). S116 pominięta za zgodą właściciela. Bez Studio i bez wgrywania
+czegokolwiek do Roblox; arena nic nie sprzedaje. Nazwy S121/S122/S124 sprawdzone w kodzie (DECYZJE).
+- **Dane:** nowy `Data/Arena` (`MIN_LEVEL` 20, `BRACKETS` z id `20_39` … `80_100`, `MODES["1v1"]`, `MODE_ORDER`, `ELO`,
+  `SEASON`, `TIERS`, `QUEUE`, `LIMITS`, `VENUES.ristalle` z planu miasta: punkty startu pojedynków + dwa miejsca 3v3 na
+  stronę, cztery miejsca na pełnych trybunach osi x ≥ 20 studs od osi loży, wyjście), w `BALANCE_MODULES` z `omit`
+  `VENUES` i funkcji, powody S126. Zapis: `character.arena` z szablonu (`ArenaRules.emptyState`, bez migracji, `CURRENT`
+  bez zmian), typy `ArenaState`, `ArenaHistoryEntry`, `ArenaSeasonSummary`, gałąź runtime `arenaLive` (`ArenaLive`).
+- **Logika:** `Logic/Elo` (`expected`, `k`, `delta`, `apply`, `sideRating`), `Logic/ArenaRules` (typy wymiany `Entrant`,
+  `Ticket`, `Pairing`, `MatchSpec`, `Fighter`, `RoundOutcome`, `MatchResult`, `QueueInput`, `ResultInput`; `bracketOf`,
+  `enabledModes`, `boardId`, `seasonOf` / `seasonStart` / `seasonEndsAt` / `prevSeason` / `nextSeason`, `tierOf` /
+  `tierProgress`, `window`, `pair`, `canQueue`, `emptyState`, `copy`, `rollSeason`, `vsCount` / `isRated`, `ratingOf`,
+  `roundOutcome`, `matchOutcome`, `scoreOf`, `roundsText`, `applyResult`, `inside`, `spot`, `standSpot`).
+  `Logic/Leaderboard`: część `arenaBracket`, `PART_CHECK` w `resolve`, filtr `arenaBracket` w `boardFor` i `readable`,
+  format `rating` w `rows`, `arenaMe`.
+- **Serwer:** `src/server/Arena/` (`Types`, `Sand`, `LocalQueue`, `LocalHost`, `Venues`, `Match`) i `ArenaService`
+  (kolejka, propozycje z akceptacją i karą, mecze, wynik z migawki, ranking, sezon przy wejściu, przegrana przy wyjściu,
+  widzowie na trybuny, `ArenaStatus`). Haki: `PvpService.AddFightRule` (lista; `SetDuelRule` nakładką),
+  `ResourceService.FilterPriority.arena`, `SkillService.ResetAllCooldowns`, `PotionService.AddGuard` / `Drank`,
+  `BlessingService.SetSuspended` / `IsSuspended`, `PartyService.SetAllyOverride` / `Allies` / `HasAllyOverride` (pomoc w
+  `Skills/Context.alliesInCircle`, `Support.resurrect`, `Companion`, `PartyAuraService`), `TravelService.AddGuard`,
+  `UseGuards.register("arena", …, "ArenaService")`. `DuelService`: piasek przez `Arena/Sand`, `Fighters()`, blokada
+  `arena.error.inMatch` (ArenaService leniwie). `LeaderboardService`: linia gracza tablicy areny, zdjęcie wpisu areny przy
+  usunięciu postaci i `/lb hide`. Tablica `arena` w `Data/Leaderboards` (+ zakładka `arena`).
+- **NPC:** `arenamaster` (usługa `arena`, 🏆) w `Data/Npcs` i `Data/Town/npcExtra` (204, −96), teksty i słowa wyszukiwania
+  mapy (`worldmap.search.arena`).
+- **Klient:** `ArenaController` (okno `arena` 940 × 620, klawisz U, status co 10 s przy otwartym oknie, dźwięk `ui.quest`
+  przy propozycji), `UI/Screens/ArenaWindow` (Twoja arena, Kolejka, Ostatnie mecze; PC dwie kolumny, telefon jedna),
+  `UI/Screens/ArenaOffer` (karta propozycji), `UI/Screens/Hud/ArenaPanel` (pigułka kolejki z ✕, panel meczu u góry).
+  `RankingsWindow`: zakładka „Arena” (przedziały areny, kolumna Rating, linia gracza, koniec sezonu). Menu HUD `arena`
+  (⚔) obok rankingów, `UiArt.MENUS` += `arena`, `Data/Keybinds` `win_arena` = U (`wiki = false`), `NpcController`
+  (usługa `arena`, okno zamyka się z NPC tylko po otwarciu z dialogu).
+- **Remote'y:** `ArenaJoin(string)`, `ArenaLeave`, `ArenaRespond(boolean)`, `ArenaSpectate`, `ArenaStatus`.
+- **Admin:** `/arena info | rating <n> | reset | season | queue | match <gracz> | stop [gracz]` (`Admin/Combat`,
+  `admin.usage.arena`, `admin.arena.*`), `AdminService.Deps` += `ArenaService`.
+- **Teksty (PL i EN):** `npc.arenamaster.*`, `npc.service.arena`, `worldmap.search.arena`, `window.arena.title`,
+  `hud.menu.arena`, `arena.*`, `leaderboard.board.arena`, `leaderboard.tab.arena`, `leaderboard.col.rating`,
+  `leaderboard.arena.*`, `admin.arena.*`; przestrzeń `arena` w `NAMESPACES` (`data.spec`).
+- **Testy:** nowy `tests/arena.spec.luau` (dane, miejsca Ristalle, przedziały, sezony, Elo, `rollSeason`, progi, okno i
+  dobór, `canQueue`, rundy 1v1 i drużyn, mecz, `applyResult` z `rating3`); bloki w `paywall` („Arena (S126)”,
+  `SERVICE_BOARDS.arena`), `leaderboard` („S126 arena boards”). `scripts/check` zielony (124 pliki, 6667 testów),
+  `balance1_20` 0 różnic bez `ALLOWED_1_20_DIFFS`, `BALANS.md` bez „BRAK POWODU”, `wiki_keys_diff` 0 bez
+  `WIKI_KEYS_ALLOW`.
+- **Wiki:** `npm run data`: `npcs.json` (Mistrz Areny, usługa `arena`), `mapsearch.json`, `search.json`, `meta.json`,
+  `public/img/maps/city.svg` (znacznik NPC), odcisk w `docs/PRZEDMIOTY.md`. `npm run check` i `npm test` (133) zielone.
+  Artykuł areny: S131.
+- **Po przeglądzie:** śmierć zawodnika poza filtrem 1 HP przez `DeathService.Recall` (nowa), `InCombat` przy starcie
+  meczu (`LocalHost.ready`), sprzątanie `PlayerRemoving` odroczone i kończące propozycję bez kary, `/arena match` nie
+  wraca admina i celu do kolejki, `UseBlocks.LATER.arena` = tylko S127, usunięty martwy `ArenaController.OpenRanking`.
+
+Dla S127:
+- Typy wymiany (`Logic/ArenaRules`, bez instancji): `Entrant { key, userId, slot, name, class, level, rating, played }`,
+  `Ticket { entrant, mode, bracket, joinedAt }` (czas serwera `GetServerTimeNow`), `Pairing { mode, bracket, sides }`,
+  `MatchSpec { id, mode, bracket, season, rated, unrated, sides, venue, origin, createdAt }`, `MatchResult`.
+- `Arena/Types.PairSource` (`kind`, `join`, `leave`, `has`, `requeue`, `take(now)`, `waiting(mode, bracket)` → nil =
+  nieznane, `tickets`) i `Host` (`kind`, `start(spec, players)`, `pending`); `ArenaService.AddSource` (wstawia na początek:
+  `Join` pisze do pierwszego źródła, pary bierze ze wszystkich, okno liczy czekających z ostatniego = lokalnego),
+  `SetHost(kind, host)`, `RunMatch(spec, venueId)` (inne miejsce niż `ristalle` gra od razu, bez `Sand`), `ApplyResult`,
+  `BlockedReason`, `InMatch`, `InQueue`, `HasOffer`.
+- `Data/Arena.VENUES` (`{ id, map, center, half, sides, stands, exit }`; S127 dopisuje `pit`), `Arena/Venues` (`init`
+  z `ground` i `mapOf`; `contains` z geometrii, nie z `ZoneService`), `Arena/Sand` tylko dla Ristalle.
+- Gałąź `arenaLive.queue.scope` = `source.kind`; okno pokazuje dziś zawsze `arena.scope.local` (S127 dodaje
+  `arena.scope.global` i wybór tekstu w `ArenaWindow`). Kary `penalties` w pamięci (klucz wpisu → czas serwera).
+- Akceptacja: remote `ArenaRespond` i karta `UI/Screens/ArenaOffer` już istnieją (S127 je rozszerza). Gracz, który
+  wyszedł w meczu, ma przegraną zapisaną w `CharacterLeaving` (`applyFor` z wynikiem `forfeit`), druga strona w
+  `onFinished`; zapisani w `saved[spec.id]`.
+- Blokada eliksiru na serwerze areny: tylko `UseGuards.register("arena", …, "ServerMode")`.
+
+Dla S128:
+- `Data/Arena.MODES` (pola `teamSize`, `winsNeeded`, `maxRounds`, `roundTime`, `countdown`, `between`, `potions`,
+  `ratingField`, `board`, `tieBreak`), `MODE_ORDER`; `ArenaRules.pair` rzuca `pair: teamSize > 1 is S128` (miejsce na
+  dobór drużyn), `LocalQueue.take` pomija tryby z `teamSize ~= 1`. `roundOutcome` działa dla stron wieloosobowych,
+  `Elo.sideRating`, `VENUES.ristalle.sides` mają po trzy punkty. `applyResult` pisze rating w `mode.ratingField`
+  (`rating3`), `wins` / `losses` / `played` są wspólne, `peak` tylko dla `rating` (do decyzji S128).
+- `Match.rule`: ta sama strona `deny`, zawodnik `down` stoi z 1 HP i nie bije ani nie jest bity; `Match.allies` = stojący
+  zawodnicy strony (`PartyService.SetAllyOverride`).
+- `character.arena.tokens` (0), `daily = { day, n }`, `last` (`rewarded = false`); sygnały `ArenaService.MatchFinished(spec,
+  result)` i `SeasonClosed(player, summary)`; `ArenaJoin(mode)` przyjmuje tryb. Usługa NPC `arena` (S128 dopisze
+  `arenashop`). `ArenaRules.seasonOf` / `prevSeason` / `seasonStart` / `seasonEndsAt` istnieją.
+
+Dla S130:
+- `ArenaWindow` to plik `src/client/UI/Screens/ArenaWindow.luau`: zakładkę „Turniej” S130 dopisuje w nim albo zamienia go
+  na folder `ArenaWindow/` (`init.luau`), id okna `arena` bez zmian. Mecze turnieju: `ArenaService.RunMatch(spec,
+  venueId)` z `rated = false` (`origin = "tournament"`), pola `pit_1` … `pit_4` w `VENUES`.
+
+Dla właściciela: nic do Creator Hub. Test na serwerze testowym: dwa konta od 20. poziomu, `/arena match <gracz>`
+(mecz z ratingiem bez kolejki), `/arena season` (miękki reset od razu), `/arena queue`.
+
+Pliki: `src/shared/{Types}.luau`, `src/shared/Data/{Arena (nowy),Leaderboards,Npcs,Keybinds,AdminCommands}.luau`,
+`src/shared/Data/Town/npcExtra.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{Elo,ArenaRules} (nowe)`, `src/shared/Logic/{Leaderboard,AccountSchema,UiArt}.luau`,
+`src/shared/Net/Definitions.luau`, `src/server/Arena/{Types,Sand,LocalQueue,LocalHost,Venues,Match}.luau` (nowe),
+`src/server/Services/ArenaService.luau` (nowy), `src/server/Services/{Duel,Pvp,Resource,Skill,Potion,Blessing,Party,
+PartyAura,Travel,Leaderboard,Admin}Service.luau`, `src/server/Skills/{Context,Companion}.luau`,
+`src/server/Skills/Types/Support.luau`, `src/server/Admin/Combat.luau`, `src/client/Controllers/ArenaController.luau`
+(nowy), `src/client/Controllers/{Screen,Npc}Controller.luau`, `src/client/UI/Screens/{ArenaWindow,ArenaOffer}.luau`
+(nowe), `src/client/UI/Screens/Hud/ArenaPanel.luau` (nowy), `src/client/UI/Screens/RankingsWindow.luau`,
+`tests/arena.spec.luau` (nowy), `tests/{paywall,leaderboard,data}.spec.luau`, `tools/balance_reasons.luau`,
+`wiki/src/data/{npcs,mapsearch,search,meta}.json`, `wiki/public/img/maps/city.svg`, `docs/{PRZEDMIOTY,BALANS,DESIGN,
+DESIGN-17,ARCHITECTURE,DECYZJE,PROGRESS,SESJE}.md`.

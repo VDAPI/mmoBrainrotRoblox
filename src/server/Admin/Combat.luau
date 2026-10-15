@@ -35,6 +35,8 @@ local PartyService = Context.services.PartyService
 local PartyAuraService = Context.services.PartyAuraService
 local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
+local ArenaService = Context.services.ArenaService
+local AdminService = Context.services.AdminService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -136,6 +138,82 @@ commands.pvp = function(player, args)
 	withCharacter(player, function()
 		PvpService.Force(player, mode == "on")
 		reply(player, if mode == "on" then "admin.pvp.on" else "admin.pvp.off")
+	end)
+end
+
+-- S126: /arena info | rating <n> | reset | season | queue | match <player> | stop [player]
+commands.arena = function(player, args: { string })
+	local action = args[1]
+	if action == "queue" then
+		local lines, owner, waiting = ArenaService.AdminQueue()
+		reply(player, "admin.arena.queue", {
+			n = #lines,
+			sand = if owner ~= "" then owner else "@admin.arena.free",
+			waiting = waiting,
+		})
+		for _, line in lines do
+			reply(player, "admin.arena.queueLine", {
+				name = line.name,
+				bracket = line.bracket,
+				rating = line.rating,
+				wait = line.wait,
+				window = line.window,
+			})
+		end
+		return
+	elseif action == "stop" then
+		local target = if args[2] then AdminService.FindPlayer(args[2]) else player
+		if not target then
+			reply(player, "admin.arena.notFound")
+		elseif ArenaService.AdminStop(target) then
+			reply(player, "admin.arena.stop")
+		else
+			reply(player, "admin.arena.none")
+		end
+		return
+	end
+	withCharacter(player, function()
+		if action == "info" then
+			local info = ArenaService.Info(player)
+			if info then
+				reply(player, "admin.arena.info", info)
+			end
+		elseif action == "rating" then
+			local n = parseAmount(args[2])
+			if n == nil then
+				reply(player, "admin.usage.arena")
+			elseif ArenaService.AdminSetRating(player, n) then
+				reply(player, "admin.arena.rating", { rating = math.clamp(n, 0, 5000) })
+			end
+		elseif action == "reset" then
+			if ArenaService.AdminReset(player) then
+				reply(player, "admin.arena.reset")
+			end
+		elseif action == "season" then
+			local state, closed = ArenaService.AdminSeason(player)
+			if state then
+				reply(
+					player,
+					"admin.arena.season",
+					{ season = state.season, rating = state.rating, closed = if closed then closed.season else "-" }
+				)
+			end
+		elseif action == "match" then
+			local target = AdminService.FindPlayer(args[2] or "")
+			if not target then
+				reply(player, "admin.arena.notFound")
+				return
+			end
+			local ok, err = ArenaService.AdminMatch(player, target)
+			if ok then
+				local char = PlayerStateService.GetCharacter(target)
+				reply(player, "admin.arena.match", { name = if char then char.name else target.DisplayName })
+			else
+				reply(player, err or "error.internal")
+			end
+		else
+			reply(player, "admin.usage.arena")
+		end
 	end)
 end
 

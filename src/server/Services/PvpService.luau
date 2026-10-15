@@ -5,6 +5,8 @@
 -- S10: combat calls CanAttack / MarkPvpCombat / RecordHit; a death within Config.PvpKillCredit seconds of a
 -- player's hit is a PvP kill (no losses for the victim, kill/death counters, map-local kill feed). Standing
 -- on the city arena counts as PvP enabled. DuelService installs a rule that overrides everything for duelists.
+-- S126: fight rules are a list (AddFightRule): duels (DuelService) and ranked matches (ArenaService); the first verdict
+-- that is not nil wins.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -44,8 +46,8 @@ local ARENA_ZONE = "zone.arena"
 
 -- Last player hit per victim (kill credit).
 local lastHit: { [Player]: { attacker: Player, at: number } } = {}
--- Duel rule: "allow" / "deny" / nil (no opinion) for an attacker-target pair.
-local duelRule: ((attacker: Player, target: Player) -> string?)? = nil
+-- Fight rules (S126; S10 had one duel rule): "allow" / "deny" / nil (no opinion) for an attacker-target pair.
+local fightRules: { (attacker: Player, target: Player) -> string? } = {}
 
 type Runtime = { token: number, pendingTarget: boolean?, lastPvpCombat: number? }
 
@@ -100,8 +102,14 @@ function PvpService.IsEnabled(player: Player): boolean
 	return character ~= nil and (character.pvpEnabled or PvpService.InArena(player))
 end
 
+-- S126: adds a fight rule (duels, ranked matches); the first rule with a verdict decides.
+function PvpService.AddFightRule(rule: (attacker: Player, target: Player) -> string?)
+	table.insert(fightRules, rule)
+end
+
+-- S10 name, kept for DuelService: a fight rule like any other.
 function PvpService.SetDuelRule(rule: (attacker: Player, target: Player) -> string?)
-	duelRule = rule
+	PvpService.AddFightRule(rule)
 end
 
 -- Records a hit for kill credit (CombatService, damaging skills).
@@ -182,8 +190,8 @@ function PvpService.CanAttack(attacker: Player, target: Player): (boolean, strin
 	if StatusEffectService.PlayerHas(target, "respawnShield") then
 		return false, "pvp.deny.protected"
 	end
-	if duelRule then
-		local verdict = duelRule(attacker, target)
+	for _, rule in fightRules do
+		local verdict = rule(attacker, target)
 		if verdict == "allow" then
 			return true, nil
 		elseif verdict == "deny" then

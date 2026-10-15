@@ -541,6 +541,19 @@ local function interruptChannel(player: Player, reason: string?, refund: boolean
 	end
 end
 
+-- S126: every cooldown and the GCD at once, a running channel or aim broken off (the start of a ranked round). The
+-- admin's no-cooldown mode stays as it is.
+function SkillService.ResetAllCooldowns(player: Player)
+	local rt = runtimes[player]
+	if not rt then
+		return
+	end
+	interruptChannel(player, nil, false)
+	table.clear(rt.cooldowns)
+	rt.gcd = 0
+	publishCooldowns(player)
+end
+
 -- Toast of a channel stopped by `event` (S76: a cancelled aim says so; S80: a lost target says nothing).
 local function stopReason(event: Channel.Event, refund: boolean): string?
 	if refund then

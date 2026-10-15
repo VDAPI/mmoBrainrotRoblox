@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S125 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S126 gotowe (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -229,12 +229,19 @@ S125 Rankingi 2 (DESIGN-17 §5): tygodniowy EXP w czterech przedziałach (od pon
 `paid_<tydzień>`), tytuły czasowe (`character.timedTitles`, `TitleService.GrantTimed`), poczta z odłamkami i tytułem,
 ranking gildii (suma 10 najwyższych poziomów), zakładki „Tydzień” i „Gildie”, strona wiki „Rankingi” z opcjonalnym
 eksportem Open Cloud (`tools/rankings_fetch.luau`, workflow co godzinę), `/rankweek`, `/rankguild`, `/timedtitle`.
+S126 Arena 1 (DESIGN-17 §6): `ArenaService` + `src/server/Arena/` (kolejka tego serwera, piasek Ristalle wspólny z
+pojedynkami, mecz), Mistrz Areny przy Ristalle, okno „Arena” (U), propozycja meczu z akceptacją 15 s i karą 5 min, mecz
+1v1 do dwóch wygranych rund, Elo z sezonem miesięcznym i miękkim resetem, progi Brąz–Mistrz, zakładka „Arena” w
+Rankingach, `/arena`.
 Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`, `docs/STATY.md`) i łańcuch balansu
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
 - **S124:** ikona menu `hud/menu_rankings` bez obrazka (znak ♔).
+- **S126:** kolejka areny tylko na tym serwerze, kary za odmowę w pamięci serwera (kolejka globalna i serwery areny:
+  S127); 3v3, Żetony Areny, sklep i nagrody sezonu (pole `last` czeka): S128. Ikona menu `hud/menu_arena` bez obrazka
+  (znak ⚔).
 - **S125:** eksport rankingów na wiki czeka na klucz Open Cloud i `ROBLOX_UNIVERSE_ID` właściciela (`docs/WIKI.md` →
   „Rankingi (S125)”); adresy Open Cloud v2 w `tools/Rankings/OpenCloud.luau` niesprawdzone na żywym API
   (`TODO(owner): verify`). Medalion tytułu `weekly_diligent` bez obrazka (`tytuly/title_weekly_diligent.png`).

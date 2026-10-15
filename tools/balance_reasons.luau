@@ -20,6 +20,9 @@ local LOOKS = { "look", "size", "aura", "color", "icon", "glyph", "parts", "colo
 return {
 	BALANCE_MODULES = {
 		{ path = "Data/AreaProfiles" },
+		-- S126: the ranked arena (Elo, tiers, brackets, the queue window, match rules); VENUES are geometry, the
+		-- lookups are functions of an id
+		{ path = "Data/Arena", omit = { "VENUES", "bracket", "mode", "venue" } },
 		{ path = "Data/Areas/Caves", pick = { "levels", "eliteGroups" } },
 		{ path = "Data/Areas/ashen", pick = { "lv" } },
 		{ path = "Data/Areas/duskwood", pick = { "lv" } },
@@ -4078,6 +4081,52 @@ return {
 				session = "S125",
 				why = "top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday",
 			},
+		},
+		-- S126 (DESIGN-17 §6): the ranked arena
+		["Arena:ELO*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale",
+			},
+		},
+		["Arena:MODES*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision",
+			},
+		},
+		["Arena:TIERS*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700",
+			},
+		},
+		["Arena:BRACKETS*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling",
+			},
+		},
+		["Arena:QUEUE*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical",
+			},
+		},
+		["Arena:SEASON*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 monthly season with the soft reset 1000 + (rating - 1000) x 0.5",
+			},
+		},
+		["Arena:LIMITS*"] = {
+			{
+				session = "S126",
+				why = "DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches",
+			},
+		},
+		["Arena:MIN_LEVEL"] = {
+			{ session = "S126", why = "DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket)" },
 		},
 	} :: { [string]: { Reason } },
 }

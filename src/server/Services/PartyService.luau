@@ -7,6 +7,9 @@
 -- neutral. S78: scoutRange: Scout's Eye bonus in studs (ROZWOJ 11.5), read by the minimaps of members within
 -- HOOK_RULES.scoutEye.shareRange.
 -- Other systems use AreAllies / SameParty / Members / MembersInRange.
+-- S126: help (heals, shields, buffs, auras, companions) goes through Allies; an ally override (ArenaService: the side
+-- of a ranked match) replaces the party of a fighter, so nobody in the stands helps a fighter and a fighter helps
+-- nobody outside the match. Loot, EXP, boss luck and dungeons stay with Members.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -73,6 +76,14 @@ local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
 end
 
+-- S126: one slot (ArenaService); a list = the help group of that player instead of the party.
+local allyOverride: ((player: Player) -> { Player }?)? = nil
+
+local function overrideOf(player: Player): { Player }?
+	local fn = allyOverride
+	return if fn then fn(player) else nil
+end
+
 local function displayName(player: Player): string
 	local char = character(player)
 	return if char then char.name else player.DisplayName
@@ -90,14 +101,47 @@ function PartyService.SameParty(a: Player, b: Player): boolean
 	return party ~= nil and partyOf[b] == party
 end
 
-function PartyService.AreAllies(a: Player, b: Player): boolean
-	return PartyService.SameParty(a, b)
-end
-
 -- Party members including `player` (just the player when solo).
 function PartyService.Members(player: Player): { Player }
 	local party = partyOf[player]
 	return if party then table.clone(party.members) else { player }
+end
+
+-- S126: sets the ally override (one slot).
+function PartyService.SetAllyOverride(fn: (player: Player) -> { Player }?)
+	allyOverride = fn
+end
+
+function PartyService.HasAllyOverride(player: Player): boolean
+	return overrideOf(player) ~= nil
+end
+
+-- S126: who `player` may help and be helped by: the override (a match side), else the party members without the ones
+-- under an override.
+function PartyService.Allies(player: Player): { Player }
+	local list = overrideOf(player)
+	if list then
+		return table.clone(list)
+	end
+	local out = {}
+	for _, member in PartyService.Members(player) do
+		if member == player or overrideOf(member) == nil then
+			table.insert(out, member)
+		end
+	end
+	return out
+end
+
+-- Allies for help: the same party, or (S126) both on each other's override list when either has one.
+function PartyService.AreAllies(a: Player, b: Player): boolean
+	if a == b then
+		return true
+	end
+	local la, lb = overrideOf(a), overrideOf(b)
+	if la or lb then
+		return la ~= nil and lb ~= nil and table.find(la, b) ~= nil and table.find(lb, a) ~= nil
+	end
+	return PartyService.SameParty(a, b)
 end
 
 function PartyService.IsLeader(player: Player): boolean

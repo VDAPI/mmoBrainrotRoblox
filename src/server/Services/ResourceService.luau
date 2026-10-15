@@ -53,8 +53,9 @@ type FilterEntry = { filter: DamageFilter, priority: number }
 local damageFilters: { FilterEntry } = {}
 
 -- Code order, not balance. ROZWOJ 7.6: intercept, then the target's reductions and shields, then Guardian Angel; the
--- duel knockout sees the final amount.
-ResourceService.FilterPriority = table.freeze({ intercept = 10, mitigation = 20, guardianAngel = 90, duel = 100 })
+-- duel knockout sees the final amount; S126: the ranked match knockout (ArenaService) at the same step.
+ResourceService.FilterPriority =
+	table.freeze({ intercept = 10, mitigation = 20, guardianAngel = 90, duel = 100, arena = 100 })
 
 -- Adds a filter that may reduce incoming damage. Lower priority runs first; equal priorities keep registration order.
 function ResourceService.SetDamageFilter(filter: DamageFilter, priority: number)

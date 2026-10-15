@@ -81,6 +81,7 @@ local AdminService = {
 		"PremiumShopService", -- S123: /pack
 		"LeaderboardService", -- S124: /lb; S125: /rankweek, /rankguild
 		"TitleService", -- S125: /timedtitle
+		"ArenaService", -- S126: /arena
 	},
 }
 

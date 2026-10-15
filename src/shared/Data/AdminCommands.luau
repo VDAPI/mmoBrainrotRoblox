@@ -350,6 +350,14 @@ cmd("combat", "dmg", { str("amount") })
 cmd("combat", "hurt", { int("amount", 1, BIG) })
 cmd("combat", "kill", { str("who", true) })
 cmd("combat", "pvp", { str("a"), str("b", true), str("c", true) })
+-- S126: the ranked arena (ArenaService): the own state, rating, a fresh state, a new season now, the queue of this
+-- server, a rated test match against a player of this server, stopping a match without a rating
+cmd(
+	"combat",
+	"arena",
+	{ enum("action", { "info", "rating", "reset", "season", "queue", "match", "stop" }), str("value", true) },
+	{ dangerActions = { "reset" } }
+)
 cmd("combat", "die", {})
 cmd("combat", "shield", { int("seconds", 1, 600, true) })
 cmd("combat", "anim", { str("kind") })

@@ -31,7 +31,7 @@ UseBlocks.PREFIX = table.freeze({ fullElixir = "fullElixir", lure = "lure" })
 local PENDING: { [string]: string } = { bloodMoon = "S129", tourney = "S130" }
 UseBlocks.PENDING = table.freeze(PENDING)
 -- Reasons that have a check now and get one more later (documentation for S126/S127).
-local LATER: { [string]: string } = { arena = "S126 ArenaService match, S127 arena server" }
+local LATER: { [string]: string } = { arena = "S127 arena server" }
 UseBlocks.LATER = table.freeze(LATER)
 -- Map biomes that count as "underground" for the lure (DESIGN-17 §3: cave / crypt / dungeon).
 local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon = true }

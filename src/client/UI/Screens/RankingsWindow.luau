@@ -8,10 +8,14 @@
 -- S125: the "This week" tab (a bracket switch instead of the class filter, the countdown to the new week, the rewards,
 -- the own EXP and the winners of the week before) and the "Guilds" tab (tag and name, members, the sum of levels, the
 -- own guild). Narrow state branches only (expWeek, level), never the whole character.
+-- S126: the "Arena" tab (filter "arenaBracket": the arena brackets of Data/Arena, this season's board of each; the
+-- rating and the level in the columns; the own rank and rating; the end of the season in the footer).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Arena = require(ReplicatedStorage.Shared.Data.Arena)
+local ArenaRules = require(ReplicatedStorage.Shared.Logic.ArenaRules)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -73,6 +77,13 @@ local function filterValues(tab: Leaderboards.TabDef): { string }
 		end
 		return out
 	end
+	if tab.filter == "arenaBracket" then
+		-- S126: the arena bracket ids ("20_39" ...)
+		for _, b in Arena.BRACKETS do
+			table.insert(out, b.id)
+		end
+		return out
+	end
 	if tab.filter ~= "class" then
 		return out
 	end
@@ -88,7 +99,7 @@ local function filterValues(tab: Leaderboards.TabDef): { string }
 end
 
 local function boardOf(tab: Leaderboards.TabDef, filter: string, now: number): string?
-	if tab.filter == "bracket" then
+	if tab.filter == "bracket" or tab.filter == "arenaBracket" then
 		-- S125: this week's board of the bracket (the server clock with the /time offset, like the server)
 		return Leaderboard.boardFor(tab, filter, now)
 	end
@@ -171,8 +182,8 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 			{ text = Text.get(use, "leaderboard.col.members"), width = if touch then 90 else 120, color = muted },
 			{ text = Text.get(use, "leaderboard.col.score"), width = if touch then 80 else 120, color = muted },
 		}
-	elseif format == "int" then
-		-- S125: place, name, (class, guild on PC), level, EXP
+	elseif format == "int" or format == "rating" then
+		-- S125: place, name, (class, guild on PC), level, EXP; S126: the arena rating in the last column
 		local cells: { Cell } = {
 			{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
 			{ text = Text.get(use, "leaderboard.col.name"), color = muted },
@@ -185,10 +196,11 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 			cells,
 			{ text = Text.get(use, "leaderboard.col.level"), width = if touch then 56 else 80, color = muted }
 		)
-		table.insert(
-			cells,
-			{ text = Text.get(use, "leaderboard.col.exp"), width = if touch then 100 else 130, color = muted }
-		)
+		table.insert(cells, {
+			text = Text.get(use, if format == "rating" then "leaderboard.col.rating" else "leaderboard.col.exp"),
+			width = if touch then 100 else 130,
+			color = muted,
+		})
 		return cells
 	end
 	local cells: { Cell } = {
@@ -224,8 +236,8 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 			{ text = if row.m then Format.number(row.m) else "", width = if touch then 90 else 120 },
 			{ text = Format.number(row.s), width = if touch then 80 else 120, bold = top },
 		}
-	elseif format == "int" then
-		-- S125: weekly EXP
+	elseif format == "int" or format == "rating" then
+		-- S125: weekly EXP; S126: the arena rating
 		if touch and row.g then
 			nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
 		end
@@ -304,6 +316,16 @@ local function meText(use: Use, snap: Leaderboard.Snapshot): string
 		end
 		return Text.get(use, "leaderboard.guild.outside", { score = Format.number(me.s or 0) })
 	end
+	if snap.format == "rating" then
+		-- S126: the own arena rank and rating, or the arena's minimum level
+		if me.below then
+			return Text.get(use, "arena.bracket.none", { level = me.below })
+		end
+		if me.r then
+			return Text.get(use, "leaderboard.arena.you", { rank = me.r, rating = me.s or 0 })
+		end
+		return Text.get(use, "leaderboard.arena.outside", { rating = me.s or 0 })
+	end
 	if snap.format == "int" then
 		-- S125: the week's EXP, and the own bracket when another one is shown
 		local exp = Format.number(me.s or 0)
@@ -359,6 +381,10 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			-- S125: the bracket of the active character
 			local level = peek(myLevel)
 			filter:set(tostring(Leaderboard.bracketOf(if type(level) == "number" then level else 1)))
+		elseif tab.filter == "arenaBracket" then
+			-- S126: the arena bracket of the active character (the lowest one below the arena level)
+			local level = peek(myLevel)
+			filter:set(ArenaRules.bracketOf(if type(level) == "number" then level else 1) or values[1])
 		elseif table.find(values, ALL) then
 			filter:set(ALL)
 		else
@@ -465,6 +491,10 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			if tab and tab.filter == "bracket" then
 				label =
 					Text.T(s, "leaderboard.week.bracket", { bracket = Leaderboard.bracketLabel(tonumber(value) or 1) })
+			elseif tab and tab.filter == "arenaBracket" then
+				-- S126
+				local b = Arena.bracket(value)
+				label = Text.T(s, "arena.bracket", { min = if b then b.min else 0, max = if b then b.max else 0 })
 			elseif value == ALL then
 				label = Text.T(s, "leaderboard.filter.all")
 			else
@@ -579,6 +609,11 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			return Text.get(use, "leaderboard.week.resetIn", { d = d, h = h, m = m })
 		elseif def and def.format == "guild" then
 			return Text.get(use, "leaderboard.guild.hint", { n = Config.Leaderboard.guildTop })
+		elseif def and def.format == "rating" then
+			-- S126: the end of the arena season
+			local season = ArenaRules.seasonOf(use(clock))
+			local d, h = Time.split(ArenaRules.seasonEndsAt(season) - use(clock))
+			return Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) })
 		end
 		return ""
 	end)

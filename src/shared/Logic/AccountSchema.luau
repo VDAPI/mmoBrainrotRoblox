@@ -2,6 +2,7 @@
 -- Persistent data templates and migrations (pure). DataService feeds these to ProfileStore.
 -- When the shape changes: bump CURRENT, add MIGRATIONS[CURRENT], extend the templates.
 
+local ArenaRules = require("./ArenaRules")
 local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Contracts = require("../Data/Quests/Contracts")
@@ -126,6 +127,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		-- S122: Elixir of Wholeness counter (Logic/FullElixir); no migration (reconcile)
 		fullElixir = { day = 0, used = 0, readyAt = 0 },
 		pvp = { kills = 0, deaths = 0, duelsWon = 0, duelsLost = 0 },
+		-- S126: the ranked arena (Data/Arena.ELO.start); no migration, reconcile adds it to older characters
+		arena = ArenaRules.emptyState(),
 		visitedMaps = { [Config.StartingMap] = true },
 		mapMarks = {},
 		-- S96: no migration; reconcile adds owned = {} and riding = false to older characters

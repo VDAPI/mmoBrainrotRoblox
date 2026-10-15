@@ -344,7 +344,7 @@ Support.resurrect = function(ctx)
 	if target and target.kind == "player" and target.player then
 		table.insert(candidates, target.player)
 	end
-	for _, member in ctx.services.Party.Members(ctx.player) do
+	for _, member in ctx.services.Party.Allies(ctx.player) do -- S126: the help group
 		table.insert(candidates, member)
 	end
 	for _, member in candidates do

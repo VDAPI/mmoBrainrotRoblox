@@ -198,12 +198,13 @@ function Context.hpFraction(entity: any): number?
 	return nil
 end
 
--- Living party members of `player` within `radius` (flat) of `center`; without a party the player alone.
+-- Living party members of `player` within `radius` (flat) of `center`; without a party the player alone. S126: the
+-- help group (PartyService.Allies: a ranked match side instead of the party).
 function Context.alliesInCircle(player: Player, center: Vector3, radius: number): { Player }
 	local services = need()
 	local Entity = services.Entity
 	local list = {}
-	for _, member in services.Party.Members(player) do
+	for _, member in services.Party.Allies(player) do
 		local entity = Entity.GetPlayerEntity(member)
 		local p = entity and Entity.Position(entity)
 		if p and flat(p - center).Magnitude <= radius and not services.Resource.IsDead(member) then

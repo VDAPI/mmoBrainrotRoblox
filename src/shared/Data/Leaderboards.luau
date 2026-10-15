@@ -2,7 +2,7 @@
 -- Leaderboard definitions (S124, DESIGN-17 §5). Kinds: `ordered` = OrderedDataStore, permanent (level); `sorted` =
 -- MemoryStore SortedMap with a TTL, periodic (week, event, season); `list` = one DataStore key with a short list (Hall
 -- of Fame, statues). Later sessions add boards here: S125 exp_week / guild (with the weekly brackets, rewards and EXP
--- sources), S126/S128 arena_<season>_<bracket>, S129
+-- sources), S126 arena_<season>_<bracket> (S128 arena3_...), S129
 -- bloodmoon. Board ids are stable: they name the stores (Config.Leaderboard prefixes), so class ids are lower case.
 -- Scores come from Logic/Leaderboard.SCORERS (the character only, never the account: tests/paywall.spec).
 
@@ -10,8 +10,8 @@ local Classes = require("./Classes")
 local Config = require("../Config")
 
 export type Kind = "ordered" | "sorted" | "list"
-export type Filter = "class" | "bracket" | "region"
-export type Format = "level" | "int" | "date" | "guild" -- S125: "guild" = Logic/Leaderboard.decodeGuild
+export type Filter = "class" | "bracket" | "region" | "arenaBracket" -- S126: the arena brackets (Data/Arena.BRACKETS)
+export type Format = "level" | "int" | "date" | "guild" | "rating" -- S125: "guild" = Logic/Leaderboard.decodeGuild; S126 arena rating
 export type ListMode = "first" | "latest"
 
 export type BoardDef = {
@@ -21,7 +21,7 @@ export type BoardDef = {
 	scope: "character" | "guild", -- what an entry key names: "<userId>_<slot>" or "g_<guildId>" (S125)
 	score: string?, -- snapshot scorer in Logic/Leaderboard.SCORERS ("level"); nil = fed by a service (Submit / Add)
 	class: string?, -- Data/Classes id: only characters of this class
-	parts: { string }?, -- instance parts resolved by Logic/Leaderboard.PARTS ("week", "season"; S125+ more)
+	parts: { string }?, -- instance parts resolved by Logic/Leaderboard.PARTS ("week", "season"; S125 "bracket", S126 "arenaBracket")
 	ttl: number?, -- sorted: seconds an entry lives
 	max: number?, -- list: entries kept
 	mode: ListMode?, -- list: keep the first `max` forever / keep the latest `max`
@@ -142,6 +142,20 @@ table.insert(
 	} :: BoardDef
 )
 
+-- S126 (DESIGN-17 §6): the ranked arena, one board per season and arena bracket ("arena_202611_40_59"), score =
+-- the 1v1 rating, fed by ArenaService through Submit (no scorer). Ordered (no TTL): S128 reads closed seasons.
+table.insert(
+	list,
+	{
+		id = "arena",
+		kind = "ordered",
+		nameKey = "leaderboard.board.arena",
+		scope = "character",
+		parts = { "season", "arenaBracket" },
+		format = "rating",
+	} :: BoardDef
+)
+
 local byId: { [string]: BoardDef } = {}
 for _, def in list do
 	assert(byId[def.id] == nil, `Data/Leaderboards: duplicate board {def.id}`)
@@ -153,6 +167,8 @@ local tabs: { TabDef } = {
 	{ id = "hof", nameKey = "leaderboard.tab.hof", boards = hofBoards, filter = "class", order = 2 },
 	{ id = "week", nameKey = "leaderboard.tab.week", boards = { "exp_week" }, filter = "bracket", order = 3 },
 	{ id = "guild", nameKey = "leaderboard.tab.guild", boards = { "guild" }, order = 4 },
+	-- S126: this season's arena board of an arena bracket
+	{ id = "arena", nameKey = "leaderboard.tab.arena", boards = { "arena" }, filter = "arenaBracket", order = 5 },
 }
 
 local plinths: { PlinthDef } = {}

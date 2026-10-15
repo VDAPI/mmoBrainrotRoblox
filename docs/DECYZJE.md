@@ -3980,3 +3980,56 @@
   tablicy = błąd z kodem 404 (złe id uniwersum albo prefiks), kod wyjścia 1 (doprecyzowanie J2).
 - **S125** `/rankweek pay` bieżącego tygodnia dopisuje linię, że planowa wypłata na koniec tygodnia zostanie pominięta
   (w atrapie przywraca ją `/rankweek reset`); `/rankweek info` podaje tryb i stan wypłaty kluczami `Locale`.
+- **S126** Nazwy S121/S122/S124 zgodne z kodem (`Time.monthKey` / `monthLabel`, `UseGuards.register`,
+  `LeaderboardService.KeyOf` / `Submit` / `Remove`, `RankingsWindow`). Część `bracket` tablic jest już zajęta przez
+  indeks przedziału tygodnia S125, więc tablica areny ma części `{ "season", "arenaBracket" }` i filtr zakładki
+  `"arenaBracket"`; `resolve` sprawdza wartości znanych części (`Leaderboard.PART_CHECK`: sezon 6 cyfr, przedział z
+  `Data/Arena.BRACKETS`). Nowy format tablicy `rating`; linia gracza `Leaderboard.arenaMe`.
+- **S126** Ranking areny to zakładka „Arena” w oknie Rankingi (piąta, przełącznik przedziałów areny, koniec sezonu w
+  stopce); w oknie areny nie ma osobnego przycisku rankingu. Tablica `ordered`, karmiona `Submit` bez metadanych (meta
+  postaci pisze ranking poziomu: postać od 20. poziomu zawsze tam jest, tag gildii nie znika).
+- **S126** Usunięcie postaci i `/lb hide` zdejmują też wpis bieżącego sezonu areny w przedziale jej poziomu
+  (`LeaderboardService`, przed `removeCharacter`); pierwszy zapis meczu w sesji (albo po zmianie przedziału) zdejmuje wpis
+  postaci z pozostałych przedziałów sezonu.
+- **S126** Architektura: `PairSource` (S126 `Arena/LocalQueue`; S127 Matchmaker przez `AddSource`, `Join` pisze do
+  pierwszego źródła), `Host` (S126 „local” = piasek przez `Arena/Sand`; S127 „remote” przez `SetHost`), `Arena/Match`
+  nie zna źródła ani miejsca. Wejścia S127: `RunMatch(spec, venueId)` i `ApplyResult`. Wynik zawsze z ratingów
+  zapisanych w `MatchSpec` przy doborze, nie z bieżącego stanu przeciwnika.
+- **S126** Id przedziałów `"20_39"`, `"40_59"`, `"60_79"`, `"80_100"`, tryb `"1v1"` (S128 `"3v3"`), tablica
+  `<board>_<sezon>_<przedział>` (`arena_202611_40_59`).
+- **S126 (odejście)** `character.arena` ma ponad kontrakt `history` (10 ostatnich meczów, okno) i `last` (sezon
+  zamknięty miękkim resetem, tylko gdy miał mecze z ratingiem; S128 płaci z niego nagrody). Bez migracji (szablon).
+- **S126 (odejście)** Potwierdzenie gotowości 15 s i kara 5 min za odmowę albo brak odpowiedzi już w kolejce lokalnej
+  (kontrakt opisuje je przy S127): przeciwnik bywa daleko na mapie. Wyjście z gry w czasie propozycji to nie odmowa.
+  Kary trzymane w pamięci serwera (S127 przeniesie je do MemoryStore).
+- **S126** Mecz bez ratingu (ten sam przeciwnik ponad 3 razy dziennie) zmienia tylko historię i liczniki dnia, nie
+  rating, wygrane, przegrane ani `played`. Runda remisowa (równy % HP) nie daje punktu; po 3 rundach bez rozstrzygnięcia
+  mecz jest remisem (Elo 0,5).
+- **S126** Zejście z piasku w fazie walki przegrywa rundę (powód `left`), wyjście z gry albo zmiana postaci cały mecz
+  (przegrana zapisana od razu w `CharacterLeaving`). Zawodnik liczy się jako zszedł dopiero, gdy w tej rundzie stanął już
+  na piasku (teleport mógł się spóźnić).
+- **S126** Przerwa między rundami 5 s. Zapis do kolejki z każdego miejsca poza lochem (okno z menu i u Mistrza), gracz
+  gra dalej, wejście do lochu zdejmuje z kolejki. Po meczu powrót na miejsce sprzed meczu (loch albo brak modelu:
+  wyjście areny).
+- **S126** Zawieszone jest tylko błogosławieństwo (eliksiry odporności działają: kontrakt mówi o błogosławieństwach);
+  limit 3 obejmuje wszystkie zwykłe mikstury (HP, mana, energia), także w odliczaniu i przerwie.
+- **S126** Pomoc z zewnątrz zablokowana `PartyService.SetAllyOverride` / `Allies`: w meczu sojusznikami są tylko
+  zawodnicy tej samej strony (leczenie w kręgu, wskrzeszenie, towarzysz, aury drużyny; łupy, EXP i lochy zostają przy
+  `Members`). Ta sama strona się nie bije (`Match.rule` daje `deny`, nie `nil`: drużyna 3v3 S128 nie ma wspólnej grupy).
+- **S126** Jeden piasek dla pojedynków i meczów (`Arena/Sand`, FIFO w kolejności zgłoszeń); kolejka pojedynków trzyma w
+  `Sand` jedną prośbę naraz. Pojedynek odmawia graczowi w meczu, z propozycją albo z meczem czekającym na piasek
+  (`arena.error.inMatch`).
+- **S126** Mecz rankingowy odpala zdarzenie `duel` (dzienne i tygodniowe zadania pojedynków S98 liczą też arenę).
+- **S126** Haki zamiast zależności: `PvpService.AddFightRule`, `ResourceService.FilterPriority.arena`,
+  `SkillService.ResetAllCooldowns`, `PotionService.AddGuard` / `Drank`, `BlessingService.SetSuspended`,
+  `TravelService.AddGuard`, `PartyService.SetAllyOverride`; `DuelService` bierze `ArenaService` leniwie (wzór S60).
+  Eliksir Pełni i Płaszcz w meczu blokuje drugi warunek powodu `arena` w `UseGuards` (S122), nie strażnik mikstur.
+- **S126** Menu HUD: wpis `arena` (⚔) obok `rankings` (tak jak S124), klawisz `win_arena` = U (`wiki = false` do strony
+  areny S131). Mistrz Areny (`arenamaster`, 🏆: ⚔ ma sierżant) stoi na (204, −96) przed północnymi trybunami, bez `at`
+  (drzwi budowli `arena` są dalej niż 16 studs).
+- **S126** `/arena season` cofa sezon stanu o miesiąc i woła zwykłe `rollSeason` (miękki reset i `last` od razu);
+  `/arena match` to mecz z ratingiem bez kolejki i akceptacji.
+- **S126 (przegląd)** Prawdziwa śmierć zawodnika (reset, spadek w pustkę) w odliczaniu albo walce przegrywa rundę, a
+  `DeathService.Recall` od razu stawia go na jego miejscu na piasku (bez licznika, wyboru i ochrony po odrodzeniu);
+  `ArenaService` zależy od `DeathService`. Start meczu przy wolnym piasku sprawdza też walkę (`InCombat`, jak pojedynek
+  S14): zawodnik w walce odwołuje mecz bez kary, drugi wraca do kolejki.

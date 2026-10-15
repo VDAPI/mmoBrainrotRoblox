@@ -6,6 +6,8 @@
 -- S22: portals and the Map Stone to a region map take an optional monster area: the player arrives at the
 -- area's `arrive` point (Data/Areas); without one, at the lowest area. An area opens at its minimum level.
 -- Cave exits keep their own arrival in front of the cave mouth; portals to the city keep the city gate.
+-- S126: guards (AddGuard; ArenaService: a fighter of a ranked match) refuse the stone channels (and the VIP free
+-- return) and portals; teleports of the server (TeleportToMap) never ask them.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,6 +48,20 @@ local CharacterService: any
 local DeathService: any
 local WorldService: any
 local MountService: any
+
+-- S126: a guard returns an error key to refuse a player's own travel.
+export type Guard = (player: Player) -> string?
+local guards: { Guard } = {}
+
+local function guarded(player: Player): string?
+	for _, guard in guards do
+		local refused = guard(player)
+		if refused then
+			return refused
+		end
+	end
+	return nil
+end
 
 local tokens: { [Player]: number } = {}
 -- Only a running channel can be interrupted: `tokens` outlives the channel (it only counts), so without
@@ -149,6 +165,10 @@ local function usePortal(player: Player, portalId: string, areaId: string?): (bo
 	if ResourceService.IsDead(player) or portalBusy[player] then
 		return false, "error.wrongPhase"
 	end
+	local refused = guarded(player)
+	if refused then
+		return false, refused
+	end
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (root.Position - portal.position).Magnitude > PORTAL_RANGE then
@@ -178,6 +198,11 @@ local function usePortal(player: Player, portalId: string, areaId: string?): (bo
 	return true, nil
 end
 
+-- S126: adds a travel guard (the first refusal wins).
+function TravelService.AddGuard(guard: Guard)
+	table.insert(guards, guard)
+end
+
 function TravelService.MarkVisited(player: Player, mapId: string)
 	local map = Maps.get(mapId)
 	if not map or map.biome == "dungeon" then
@@ -204,6 +229,10 @@ end
 local function channel(player: Player, itemId: string?, label: string, arrive: () -> ()): (boolean, string?)
 	if ResourceService.IsDead(player) then
 		return false, "error.wrongPhase"
+	end
+	local refused = guarded(player)
+	if refused then
+		return false, refused
 	end
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -239,6 +268,12 @@ local function channel(player: Player, itemId: string?, label: string, arrive: (
 		tokens[player] = token + 1
 		channeling[player] = nil
 		PlayerStateService.Set(player, { "travel" }, nil)
+		-- S126: a ranked match may have started during the channel
+		local late = guarded(player)
+		if late then
+			Net.Fire(player, "Toast", late, nil, "warning")
+			return
+		end
 		-- The stone may have moved; consume one by id.
 		if itemId ~= nil and InventoryService.Remove(player, itemId, 1) < 1 then
 			return

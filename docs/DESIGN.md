@@ -901,6 +901,32 @@ czacie przed startem i na starcie, znak na mapie i minimapie, panel na HUD; ucze
 - **Wiki (S125):** strona „Rankingi” (`/pl/rankingi/`) pokazuje rankingi pobierane co godzinę przez Roblox Open Cloud,
   gdy właściciel doda klucz; bez klucza: „ranking dostępny w grze” (`docs/WIKI.md` → „Rankingi (S125)”).
 
+## 19b. Arena rankingowa (S126, `docs/DESIGN-17.md` §6)
+
+- **Kto i gdzie:** od 20. poziomu, okno „Arena” (menu HUD, klawisz U, Mistrz Areny przy północnym wejściu Ristalle).
+  Pojedynki towarzyskie na zaproszenie (S10) zostają bez zmian i dzielą z meczami jeden piasek: walki czekają w jednej
+  kolejce w kolejności zgłoszeń.
+- **Przedziały:** 20–39, 40–59, 60–79, 80–100; dobór tylko w obrębie przedziału, bez wyrównywania sprzętu.
+- **Kolejka (S126: ten serwer):** zapis z każdego miejsca poza lochem, gracz gra dalej; wejście do lochu zdejmuje z kolejki.
+  Dobór po ratingu: okno ±100, szersze o 100 co 15 s czekania; najbliższy rating, remis dla dłużej czekającego.
+  Propozycja meczu: 15 s na „Akceptuj”; odmowa albo brak odpowiedzi = 5 min bez kolejki, przeciwnik wraca na swoje
+  miejsce. Ostrzeżenie przed meczem, który nie zmieni ratingu.
+- **Mecz 1v1 na Ristalle:** do dwóch wygranych rund, najwyżej trzy rundy po 180 s; na start każdej rundy pełne życie, mana
+  i energia, czyste efekty i odnowienia, odliczanie 3 s; cios zabójczy zostawia 1 HP i kończy rundę; przy końcu czasu
+  rundę wygrywa wyższy % HP (równy = runda nierozstrzygnięta); zejście z piasku przegrywa rundę, wyjście z gry albo zmiana
+  postaci cały mecz. 3 mikstury na mecz (licznik na HUD), Eliksir Pełni, błogosławieństwa (czas płynie), wierzchowce,
+  kamienie i portale zablokowane; nikt z zewnątrz nie leczy ani nie wzmacnia zawodnika; `modPvP` jak w grze. Widzowie
+  trafiają na trybuny („Oglądaj” w oknie). Po meczu powrót na miejsce sprzed meczu. Mecz liczy się do zadań pojedynków.
+- **Rating:** Elo, start 1000, K 48 przez pierwsze 10 meczów sezonu, potem 32, minimum 0; wynik z ratingów zapisanych przy
+  doborze. Więcej niż 3 mecze dziennie (UTC) z tym samym przeciwnikiem nie zmieniają ratingu ani bilansu. Progi: Brąz,
+  Srebro od 1100, Złoto od 1300, Diament od 1500, Mistrz od 1700. Historia 10 ostatnich meczów w oknie.
+- **Sezon:** miesiąc kalendarzowy UTC; przy pierwszym wejściu w nowym miesiącu miękki reset `1000 + (rating − 1000) × 0,5`,
+  zamknięty sezon zostaje w `character.arena.last` (nagrody za niego: S128).
+- **Ranking areny:** tablica `arena_<sezon>_<przedział>` (OrderedDataStore, wynik = rating), zakładka „Arena” w oknie
+  Rankingi z przełącznikiem przedziałów i końcem sezonu. Serwer ogłasza każdy wynik.
+- **Dalej:** S127 kolejka globalna (MemoryStore) i serwery areny z powrotem do tej kolejki jako zapasem; S128 3v3, Żetony
+  Areny, sklep u Mistrza Areny i nagrody sezonu; S130 turniej.
+
 ## 20. Questy
 
 Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` §3, `docs/FABULA.md`, `docs/BALANS.md`.

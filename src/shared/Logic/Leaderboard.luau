@@ -14,6 +14,7 @@
 --   * S125: weekly EXP (brackets, the character's week, the entry and its merge, the payout lock and plan) and the guild
 --     score (sum of the highest member levels, older guild first on a tie).
 
+local Arena = require("../Data/Arena")
 local Classes = require("../Data/Classes")
 local Config = require("../Config")
 local Exp = require("./Exp")
@@ -163,8 +164,21 @@ function Leaderboard.bracketOf(level: number, brackets: { { number } }?): number
 	return if l < list[1][1] then 1 else #list
 end
 
--- Context of the instance parts: the moment, and S125 the level or the bracket index of the weekly board.
-export type PartCtx = { now: number, level: number?, bracket: number? }
+-- Context of the instance parts: the moment, and S125 the level or the bracket index of the weekly board; S126 the
+-- arena bracket id ("40_59").
+export type PartCtx = { now: number, level: number?, bracket: number?, arenaBracket: string? }
+
+-- S126: the arena bracket id of a level (Data/Arena.BRACKETS), the lowest bracket below Data/Arena.MIN_LEVEL.
+local function arenaBracketOf(level: number?): string
+	local l = math.floor(tonumber(level) or 0)
+	for _, b in Arena.BRACKETS do
+		if l >= b.min and l <= b.max then
+			return b.id
+		end
+	end
+	local last = Arena.BRACKETS[#Arena.BRACKETS]
+	return if l > last.max then last.id else Arena.BRACKETS[1].id
+end
 
 -- Instance parts of boards with `parts` (Data/Leaderboards): the week of S98, the month of S121 ("YYYYMM"), S125 the
 -- weekly bracket (index into Data/Leaderboards.WEEK_BRACKETS).
@@ -178,7 +192,27 @@ Leaderboard.PARTS = table.freeze({
 	bracket = function(ctx: PartCtx): string
 		return tostring(ctx.bracket or Leaderboard.bracketOf(ctx.level or 1))
 	end,
+	-- S126: the arena bracket id (the last part of arena_<season>_<bracket>: it holds a "_")
+	arenaBracket = function(ctx: PartCtx): string
+		return ctx.arenaBracket or arenaBracketOf(ctx.level)
+	end,
 }) :: { [string]: (ctx: PartCtx) -> string }
+
+-- S126: values a part may take in an instance id (Leaderboard.resolve); parts without a check take any clean text.
+local function isArenaBracket(value: string): boolean
+	for _, b in Arena.BRACKETS do
+		if b.id == value then
+			return true
+		end
+	end
+	return false
+end
+Leaderboard.PART_CHECK = table.freeze({
+	season = function(value: string): boolean
+		return string.match(value, "^%d%d%d%d%d%d$") ~= nil
+	end,
+	arenaBracket = isArenaBracket,
+}) :: { [string]: (value: string) -> boolean }
 
 -- The instance id: `def.id`, or `def.id .. "_" .. parts` for a board with parts (the count must match).
 function Leaderboard.instanceId(def: BoardDef, parts: { string }?): string
@@ -262,6 +296,13 @@ function Leaderboard.resolve(instanceId: string, list: { BoardDef }?): (BoardDef
 		return nil, nil
 	end
 	table.insert(parts, rest)
+	-- S126: known parts take only their values (season = 6 digits, arenaBracket = a Data/Arena bracket id)
+	for i, name in def.parts :: { string } do
+		local check = Leaderboard.PART_CHECK[name]
+		if check and not check(parts[i]) then
+			return nil, nil
+		end
+	end
 	return def, parts
 end
 
@@ -269,6 +310,24 @@ end
 -- S125: filter "bracket" -> the instance id of the first board at `now` for that bracket index ("1".."4"; nil
 -- without `now`).
 function Leaderboard.boardFor(tab: TabDef, filterValue: string?, now: number?): string?
+	if tab.filter == "arenaBracket" then
+		-- S126: this season's board of an arena bracket id (nil without `now`; an unknown id -> the lowest bracket)
+		local def = Leaderboards.get(tab.boards[1])
+		if not def or now == nil then
+			return nil
+		end
+		local bracket = if filterValue and isArenaBracket(filterValue) then filterValue else Arena.BRACKETS[1].id
+		local parts = {}
+		local names: { string } = def.parts or {}
+		for _, name in names do
+			local part = Leaderboard.PARTS[name]
+			if not part then
+				return nil
+			end
+			table.insert(parts, part({ now = now :: number, arenaBracket = bracket }))
+		end
+		return Leaderboard.instanceId(def, if #parts > 0 then parts else nil)
+	end
 	if tab.filter == "bracket" then
 		local def = Leaderboards.get(tab.boards[1])
 		if not def or now == nil then
@@ -317,6 +376,11 @@ function Leaderboard.readable(def: BoardDef, parts: { string }?, now: number): b
 		if name == "bracket" then
 			local b = tonumber(value)
 			if b == nil or tostring(b) ~= value or b < 1 or b > #Leaderboards.WEEK_BRACKETS then
+				return false
+			end
+		elseif name == "arenaBracket" then
+			-- S126
+			if not isArenaBracket(value) then
 				return false
 			end
 		else
@@ -576,8 +640,8 @@ function Leaderboard.rows(
 			row.l = if meta then meta.l else nil
 			row.m = if meta then meta.m else nil
 			row.c = nil
-		elseif def.format == "int" then
-			-- S125: weekly EXP, the level at the last write
+		elseif def.format == "int" or def.format == "rating" then
+			-- S125: weekly EXP, the level at the last write; S126: the arena rating, the level at the last write
 			row.l = if meta then meta.l else nil
 		end
 		table.insert(out, row)
@@ -666,6 +730,21 @@ function Leaderboard.me(character: any, rows: { Row }, cfg: Cfg, excluded: boole
 		pct = if need > 0 then math.clamp(math.floor((tonumber(character.exp) or 0) / need * 100), 0, 99) else 0
 	end
 	return { l = level, p = pct }
+end
+
+-- S126: the player's line under an arena board: the rank (from the rows) and the own rating; `below` = the arena
+-- minimum level for characters under it.
+function Leaderboard.arenaMe(character: any, rows: { Row }, excluded: boolean): Me
+	if excluded then
+		return { hidden = true }
+	end
+	local level = if type(character) == "table" then tonumber(character.level) or 0 else 0
+	if level < Arena.MIN_LEVEL then
+		return { below = Arena.MIN_LEVEL }
+	end
+	local state = if type(character) == "table" then character.arena else nil
+	local rating = if type(state) == "table" and type(state.rating) == "number" then state.rating else Arena.ELO.start
+	return { r = Leaderboard.rankOf(rows), s = rating }
 end
 
 -- The player's line under a list board: the place, or the places left.

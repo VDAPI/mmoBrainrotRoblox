@@ -333,6 +333,26 @@ function DeathService.Revive(player: Player, hpPct: number): boolean
 	return true
 end
 
+-- S126: brings a dead player back at once at `at` on `mapId` with full health (a ranked arena fighter who died past
+-- the 1 HP filter: a reset, a fall into the void). No timer, no choice and no respawn protection (the match decides).
+function DeathService.Recall(player: Player, mapId: string, at: CFrame): boolean
+	local state = pending[player]
+	if not state or state.busy then
+		return false
+	end
+	state.busy = true
+	pending[player] = nil
+	if PlayerStateService.HasState(player) then
+		PlayerStateService.Set(player, { "death" }, nil)
+	end
+	ResourceService.Revive(player)
+	task.spawn(function()
+		CharacterService.Respawn(player, at, mapId)
+		DeathService.Respawned:Fire(player)
+	end)
+	return true
+end
+
 -- Kills the active character through the normal death flow (/kill me, /die). Removes the respawn protection
 -- first, otherwise the damage filter would stop it. S61: math.huge, so reductions and shields cannot leave HP (they
 -- subtract or multiply by at most 0.25..1, never 0 x inf); a duel still leaves its duelist 1 HP.

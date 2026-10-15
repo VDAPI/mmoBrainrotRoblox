@@ -234,6 +234,27 @@ type CharacterData = {
   bierze serwis rankingów leniwie). `Stores.sorted` ma `update`, `get`, `clear` (atrapa), `top` daje `raw`. Poczta:
   `Mail.Parcel` / `MailService.Outgoing` mają `shards?` i `timedTitle?` (`TitleService` leniwie). Tytuły:
   `character.timedTitles`, `TitleService.GrantTimed(player, id, untilTs)` / `RemoveTimed`, czas w `Titles.Context.now`.
+- **Arena rankingowa (S126, DESIGN-17 §6):** `ArenaService` (`Deps`: `PlayerStateService`, `CharacterService`,
+  `ResourceService`, `StatService`, `StatusEffectService`, `EntityService`, `SkillService`, `PotionService`,
+  `BlessingService`, `PartyService`, `PvpService`, `ZoneService`, `WorldService`, `TravelService`, `AnnounceService`,
+  `DuelService`, `LeaderboardService`, `DeathService` (`Recall`: śmierć zawodnika poza filtrem 1 HP); nic od niego
+  nie zależy poza `AdminService`, `DuelService` bierze go leniwie) +
+  folder `src/server/Arena/`: `Types` (`PairSource`: skąd pary, `Host`: gdzie mecz), `LocalQueue` (kolejka tego serwera,
+  `PairSource` „local”, dobór `Logic/ArenaRules.pair`), `Sand` (FIFO piasku Ristalle wspólne z `DuelService`),
+  `LocalHost` (`Host` „local”: mecz czeka na piasek, ponowne sprawdzenie graczy), `Venues` (miejsca z
+  `Data/Arena.VENUES` i świata: start, trybuny, wyjście, „na piasku”), `Match` (przebieg jednego meczu z `MatchSpec`,
+  serwisy w `deps`, iteruje po stronach). Czysta logika: `Logic/Elo`, `Logic/ArenaRules` (typy wymiany bez instancji),
+  dane `Data/Arena`. API: `InMatch`, `InQueue`, `HasOffer`, `BlockedReason`, `Join`, `Leave`, `AddSource`, `SetHost`,
+  `RunMatch`, `ApplyResult`, `State`, sygnały `MatchFinished`, `SeasonClosed`. Haki w innych serwisach:
+  `PvpService.AddFightRule` (lista reguł; `SetDuelRule` to nakładka), `ResourceService.FilterPriority.arena`,
+  `SkillService.ResetAllCooldowns`, `PotionService.AddGuard` / `Drank`, `BlessingService.SetSuspended`,
+  `PartyService.SetAllyOverride` / `Allies` / `HasAllyOverride` (pomoc: `Skills/Context.alliesInCircle`, wskrzeszenie,
+  towarzysz, aury), `TravelService.AddGuard` (kamienie, darmowy powrót, portale), `UseGuards` powód `arena` (drugi
+  warunek). Remote'y `ArenaJoin(mode)`, `ArenaLeave`, `ArenaRespond(bool)`, `ArenaSpectate`, `ArenaStatus`; gałąź
+  runtime `arenaLive = { queue?, penaltyUntil?, offer?, match? }` (`Types.ArenaLive`); zapis `character.arena`
+  (`Types.ArenaState`, szablon, bez migracji). Ranking: tablica `arena` z częściami `season` + `arenaBracket`
+  (`Logic/Leaderboard.PART_CHECK`, `arenaMe`, format `rating`). Klient: `ArenaController` (okno `UI/Screens/ArenaWindow`,
+  akcja `win_arena`, karta `UI/Screens/ArenaOffer`, `UI/Screens/Hud/ArenaPanel`), usługa NPC `arena`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
@@ -575,6 +596,7 @@ type CharacterData = {
 | `/hurt` | combat | <amount> | zadaj sobie obrażenia |
 | `/kill` | combat | [who] | zabij swoją postać |
 | `/pvp` | combat | <a> [b] [c] | przełącz PvP natychmiast |
+| `/arena` | combat | <info|rating|reset|season|queue|match|stop> [value] | arena rankingowa: własny stan, rating (0–5000, wpis do rankingu), czysty stan, nowy sezon od razu (miękki reset), kolejka serwera i piasek, mecz testowy z ratingiem z graczem serwera, przerwanie meczu bez ratingu (S126) ⚠ reset |
 | `/die` | combat |  | zabij siebie (zdejmuje ochronę) i pokaż wybór miejsca odrodzenia |
 | `/shield` | combat | [seconds] | nałóż ochronę po odrodzeniu |
 | `/anim` | combat | <kind> | animacja ataku na sobie co 1 s (np. sword1h, bow, staff) |

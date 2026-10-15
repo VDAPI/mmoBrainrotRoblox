@@ -77,6 +77,8 @@ local MENU: { Hud.MenuEntry } = {
 	},
 	-- S124: rankings (RankingsController registers the window; key win_rankings)
 	{ id = "rankings", icon = "♔", hotkey = "R", tooltipKey = "hud.menu.rankings" },
+	-- S126: the ranked arena next to the rankings (ArenaController registers the window; key win_arena)
+	{ id = "arena", icon = "⚔", hotkey = "U", tooltipKey = "hud.menu.arena" },
 	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
@@ -160,9 +162,10 @@ local function registerWindows()
 			or entry.id == "wardrobe"
 			or entry.id == "mounts"
 			or entry.id == "rankings"
+			or entry.id == "arena"
 		then
 			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
-			-- MountController (S97) / RankingsController (S124).
+			-- MountController (S97) / RankingsController (S124) / ArenaController (S126).
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

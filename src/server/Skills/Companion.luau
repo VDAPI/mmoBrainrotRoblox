@@ -48,7 +48,7 @@ local function pickTarget(state: State): any
 	if at and ctx.isEnemy(selected) and flatDistance(at, origin) <= (ctx.skill.range or 0) then
 		return selected
 	end
-	local party = ctx.services.Party.Members(ctx.player)
+	local party = ctx.services.Party.Allies(ctx.player) -- S126: the help group
 	local best, bestDistance = nil, math.huge
 	for _, entity in Entity.QueryMonsters(origin, ctx.skill.radius or 0) do
 		local position = Entity.Position(entity)

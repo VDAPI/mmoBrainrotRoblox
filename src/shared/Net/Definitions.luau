@@ -168,6 +168,13 @@ local Definitions: { [string]: Definition } = {
 	DuelChallenge = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	DuelInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	DuelRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	-- Arena (S126): the ranked queue of this server, the ready check of a match offer, watching from the stands and the
+	-- window's status (-> { scope, waiting = { [bracket] = n }, busy = { kind, names }?, pending })
+	ArenaJoin = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (mode)
+	ArenaLeave = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	ArenaRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (accept)
+	ArenaSpectate = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	ArenaStatus = { kind = "function", dir = "c2s", rate = 1, args = {} },
 	TradeRequest = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	TradeInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },

@@ -145,6 +145,8 @@ export type CharacterData = {
 	-- S122: Elixir of Wholeness uses on UTC `day` (Time.dayNumber) and the os.time when the next one is allowed
 	fullElixir: { day: number, used: number, readyAt: number },
 	pvp: { kills: number, deaths: number, duelsWon: number, duelsLost: number },
+	-- S126: the ranked arena (Logic/ArenaRules; no migration, reconcile)
+	arena: ArenaState,
 	visitedMaps: { [string]: boolean },
 	mapMarks: { MapMark }, -- S25: own map marks (Data/MapMarks icons, max Config.Nav.maxMarks)
 	-- S96: owned mounts (lvl 1..Config.Mount.maxLevel), the chosen one and whether riding now (never survives a
@@ -155,6 +157,68 @@ export type CharacterData = {
 	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.
 	lootLog: { LootLogEntry }?,
 	e2timers: { Elite2Timer }?,
+}
+
+-- S126 (DESIGN-17 §6): the ranked arena of a character. `history` and `last` go beyond the contract (DECYZJE S126).
+export type ArenaHistoryEntry = {
+	t: number, -- unix time (Clock) of the end
+	mode: string,
+	opp: string, -- opponent's character name (3v3: the first of the other side, S128 may add more)
+	oppClass: string,
+	oppRating: number,
+	score: number, -- 1 win, 0.5 draw, 0 loss
+	rounds: string, -- "2:1" (own:opponent)
+	delta: number, -- rating change (0 when unrated)
+	rated: boolean,
+}
+export type ArenaSeasonSummary = {
+	season: string,
+	rating: number,
+	peak: number,
+	wins: number,
+	losses: number,
+	played: number,
+	rewarded: boolean,
+}
+export type ArenaState = {
+	season: string, -- "YYYYMM" (UTC) of the numbers below; "" = never played
+	rating: number,
+	wins: number,
+	losses: number,
+	peak: number,
+	played: number, -- rated matches this season (K = kNew below ELO.newGames)
+	tokens: number, -- S128 (Arena Tokens); S126 only keeps it at 0
+	daily: { day: number, n: number }, -- matches today (UTC day), S128 doubles tokens of the first 3
+	vs: { [string]: number }, -- "<userId>_<slot>" -> matches today against them; key "day" holds the day number
+	history: { ArenaHistoryEntry }, -- newest first, at most Data/Arena.LIMITS.history
+	last: ArenaSeasonSummary?, -- the season closed by the last soft reset (S128 pays rewards from it)
+}
+-- S126: the runtime arena branch `arenaLive` (ArenaService; never saved): the queue, the offer, the match.
+export type ArenaLive = {
+	queue: { mode: string, bracket: string, since: number, scope: string, waiting: number? }?,
+	penaltyUntil: number?,
+	offer: {
+		id: string,
+		expiresAt: number,
+		accepted: boolean,
+		mode: string,
+		unrated: boolean,
+		vs: number, -- matches against this opponent today (the warning of an unrated offer)
+		opp: { name: string, class: string, level: number, rating: number },
+	}?,
+	match: {
+		id: string,
+		mode: string,
+		phase: "waiting" | "countdown" | "fight" | "between" | "done",
+		round: number,
+		maxRounds: number,
+		score: { number },
+		side: number,
+		endsAt: number?,
+		potionsLeft: number,
+		names: { { string } },
+		queued: number?, -- "waiting": the place in the line for the sand
+	}?,
 }
 
 export type BossRun = { day: number, n: number, k: number? } -- n = attempts, k = kills
@@ -300,6 +364,7 @@ export type ClientState = {
 	-- Logic/Companion ("join" | "follow" | "lead" | "wait" | "arrived" | "back")
 	companion: CompanionState?,
 	lure: LureRuntime?, -- S122
+	arenaLive: ArenaLive?, -- S126
 }
 
 export type CompanionState = { npc: string, quest: string, mode: "follow" | "lead", phase: string }

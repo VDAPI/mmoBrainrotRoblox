@@ -5,6 +5,8 @@
 -- off the arena). A blow that would kill leaves 1 HP and ends the duel; leaving the arena forfeits; after
 -- Config.DuelTimeLimit seconds it is a draw. Both are fully restored afterwards; the result is announced
 -- on the server and counted in the characters' PvP statistics.
+-- S126: the sand is shared with ranked matches (Arena/Sand: one FIFO line in the order of the requests); a player in a
+-- ranked match or with a match offer cannot duel (ArenaService, taken lazily: it depends on this service).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +19,7 @@ local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
 local Town = require(Shared.Data.Town)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
+local Sand = require(script.Parent.Parent.Arena.Sand)
 local Types = require(Shared.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
 
@@ -43,7 +46,7 @@ local ARENA = { map = "city", x = PLAN.x, z = PLAN.z, half = PLAN.half }
 local EXIT = { x = PLAN.exit[1], z = PLAN.exit[2] }
 local STARTS = { { x = PLAN.duel[1][1], z = PLAN.duel[1][2] }, { x = PLAN.duel[2][1], z = PLAN.duel[2][2] } }
 
-type Duel = { a: Player, b: Player, phase: "countdown" | "fight" | "done", startedAt: number }
+type Duel = { a: Player, b: Player, phase: "countdown" | "fight" | "done", startedAt: number, sand: string }
 
 local PlayerStateService: any
 local CharacterService: any
@@ -53,10 +56,23 @@ local ZoneService: any
 local WorldService: any
 local TravelService: any
 local AnnounceService: any
+local Registry: any
+local ArenaService: any
+
+-- S126 (S60 pattern): ArenaService depends on this service; never called during Init.
+local function arenaService(): any
+	if ArenaService == nil and Registry then
+		local ok, service = pcall(Registry.Get, "ArenaService")
+		ArenaService = if ok then service else false
+	end
+	return ArenaService or nil
+end
 
 local invites: { [Player]: { from: Player, expiresAt: number } } = {}
 local queue: { { a: Player, b: Player } } = {}
 local current: Duel? = nil
+local sandRequest: string? = nil -- S126: the request of the next queued duel waiting in Arena/Sand
+local nextSand = 0
 
 local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
@@ -74,6 +90,19 @@ end
 
 function DuelService.InDuel(player: Player): boolean
 	return inDuel(player)
+end
+
+-- S126: the names of the duel on the sand now (the arena window's "On the sand"), nil without one.
+function DuelService.Fighters(): { string }?
+	local duel = current
+	if not duel or duel.phase == "done" then
+		return nil
+	end
+	local function name(player: Player): string
+		local char = PlayerStateService.GetCharacter(player)
+		return if char then char.name else player.DisplayName
+	end
+	return { name(duel.a), name(duel.b) }
 end
 
 local function opponent(player: Player): Player?
@@ -133,12 +162,13 @@ local function finish(duel: Duel, winner: Player?, reason: string)
 		if current == duel then
 			current = nil
 		end
+		Sand.release("duel", duel.sand)
 		startNext()
 	end)
 end
 
-local function start(a: Player, b: Player)
-	local duel: Duel = { a = a, b = b, phase = "countdown", startedAt = os.clock() }
+local function start(a: Player, b: Player, sand: string)
+	local duel: Duel = { a = a, b = b, phase = "countdown", startedAt = os.clock(), sand = sand }
 	current = duel
 	restore(a)
 	restore(b)
@@ -183,12 +213,18 @@ local function blockedReason(player: Player): string?
 	if map and map.biome == "dungeon" then
 		return "duel.error.state"
 	end
+	-- S126: not during a ranked match or while a match offer waits
+	local arena = arenaService()
+	if arena and (arena.InMatch(player) or arena.HasOffer(player)) then
+		return "arena.error.inMatch"
+	end
 	return nil
 end
 
-startNext = function()
-	if current then
-		return
+-- The sand is ours (S126 Arena/Sand): the first queued pair that can still fight starts; none -> the sand goes on.
+local function onSand(id: string)
+	if sandRequest == id then
+		sandRequest = nil
 	end
 	while #queue > 0 do
 		local pair = table.remove(queue, 1) :: { a: Player, b: Player }
@@ -199,11 +235,26 @@ startNext = function()
 					Net.Fire(p, "Toast", reason, nil, "warning")
 				end
 			else
-				start(pair.a, pair.b)
+				start(pair.a, pair.b, id)
+				startNext()
 				return
 			end
 		end
 	end
+	Sand.release("duel", id)
+end
+
+-- S126: one request of the duel queue waits in Arena/Sand at a time (the queue's first pair takes it).
+startNext = function()
+	if sandRequest or #queue == 0 then
+		return
+	end
+	nextSand += 1
+	local id = `duel{nextSand}`
+	sandRequest = id
+	Sand.request("duel", id, function()
+		onSand(id)
+	end)
 end
 
 local function challenge(player: Player, userId: number): (boolean, string?)
@@ -242,12 +293,14 @@ local function respond(player: Player, accept: boolean): (boolean, string?)
 		return false, blocked
 	end
 	table.insert(queue, { a = challenger, b = player })
-	if current then
+	startNext()
+	if #queue > 0 and (queue[#queue].a == challenger and queue[#queue].b == player) then
+		-- still waiting: the place of the duel request on the sand plus the duels before this pair (S126)
+		local place = (if sandRequest then Sand.position(sandRequest) or 1 else 1) + #queue - 1
 		for _, p in { challenger, player } do
-			Net.Fire(p, "Toast", "duel.queued", { n = #queue }, "info")
+			Net.Fire(p, "Toast", "duel.queued", { n = place }, "info")
 		end
 	end
-	startNext()
 	return true, nil
 end
 
@@ -290,6 +343,7 @@ local function watch()
 end
 
 function DuelService.Init(registry)
+	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ResourceService = registry.Get("ResourceService")

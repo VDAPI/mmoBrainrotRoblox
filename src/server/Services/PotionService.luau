@@ -5,12 +5,16 @@
 -- S122: the Elixir of Wholeness (use.kind "fullElixir", DESIGN-17 §3) fits every bar slot and restores everything;
 -- its own cooldown and daily limit are saved on the character (Logic/FullElixir), where it does not work is the one
 -- list Logic/UseBlocks.LISTS.fullElixir asked through src/server/UseGuards. It never goes through `drink`.
+-- S126: guards of the ordinary potions (AddGuard: ArenaService counts the potions of a ranked match) and the Drank
+-- signal after every ordinary potion.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
+
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Analytics = require(script.Parent.Parent.Analytics)
 local Config = require(Shared.Config)
@@ -26,7 +30,13 @@ local UseGuards = require(script.Parent.Parent.UseGuards)
 local PotionService = {
 	Name = "PotionService",
 	Deps = { "PlayerStateService", "CharacterService", "InventoryService", "ResourceService" },
+	-- S126: (player, itemId) after an ordinary potion was drunk (never the Elixir of Wholeness)
+	Drank = Signal.new(),
 }
+
+-- S126: a guard returns an error key to refuse an ordinary potion (checked after the level, before the cooldown).
+export type Guard = (player: Player, def: Items.ItemDef) -> string?
+local guards: { Guard } = {}
 
 local PlayerStateService: any
 local CharacterService: any
@@ -60,6 +70,12 @@ local function drink(player: Player, index: number): (boolean, string?)
 	if not Potions.canDrink(def, character.level) then
 		return false, "potion.error.level"
 	end
+	for _, guard in guards do
+		local refused = guard(player, def :: Items.ItemDef)
+		if refused then
+			return false, refused
+		end
+	end
 	local timers = readyAt[player] or {}
 	readyAt[player] = timers
 	local t = now()
@@ -74,7 +90,13 @@ local function drink(player: Player, index: number): (boolean, string?)
 	timers[resource] = t + Potions.interval(character.level)
 	PlayerStateService.Set(player, { "potions", resource }, timers[resource])
 	QuestEvents.fire(player, "potion", nil)
+	PotionService.Drank:Fire(player, item.id)
 	return true, nil
+end
+
+-- S126: adds a guard of the ordinary potions (the first refusal wins).
+function PotionService.AddGuard(guard: Guard)
+	table.insert(guards, guard)
 end
 
 -- S122: drinks the Elixir of Wholeness at `index` (backpack or any bar slot). Place blocks first (UseGuards), then

@@ -69,15 +69,16 @@ local SERVICE_WINDOWS = {
 	"mail",
 }
 -- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
--- stablemaster's dialog opened it.
-local mountsFromNpc = false
+-- stablemaster's dialog opened it. S126: the arena window the same way (U, the HUD menu, the Arena Master).
+local NPC_OPTIONAL: { string } = { "mounts", "arena" }
+local fromNpc: { [string]: boolean } = {}
 
 local function closeServiceWindows()
 	WindowManager.CloseMany(SERVICE_WINDOWS)
-	if mountsFromNpc then
-		mountsFromNpc = false
-		WindowManager.Close("mounts")
+	for id in fromNpc do
+		WindowManager.Close(id)
 	end
+	table.clear(fromNpc)
 end
 
 local SERVICE_TO_WINDOW: { [string]: string } = {
@@ -87,6 +88,7 @@ local SERVICE_TO_WINDOW: { [string]: string } = {
 	backpacks = "backpacks",
 	alchemy = "alchemy",
 	mounts = "mounts", -- S97: the stablemaster (MountController registers the window)
+	arena = "arena", -- S126: the Arena Master (ArenaController registers the window)
 }
 
 local function heal(npcId: string)
@@ -158,8 +160,8 @@ function NpcController.OpenService(service: string)
 	end
 	WindowManager.Close("npc")
 	WindowManager.Open(window)
-	if window == "mounts" then
-		mountsFromNpc = true
+	if table.find(NPC_OPTIONAL, window) then
+		fromNpc[window] = true
 	end
 end
 
@@ -400,13 +402,15 @@ function NpcController.Start()
 			applyVisibility(npcId)
 		end
 	end)
-	-- A mounts window closed by hand and reopened with J no longer belongs to the stablemaster.
-	local mountsOpen = WindowManager.IsOpen("mounts")
-	scope:Observer(mountsOpen):onChange(function()
-		if not Fusion.peek(mountsOpen) then
-			mountsFromNpc = false
-		end
-	end)
+	-- A mounts (arena) window closed by hand and reopened with J (U) no longer belongs to the NPC.
+	for _, id in NPC_OPTIONAL do
+		local isOpen = WindowManager.IsOpen(id)
+		scope:Observer(isOpen):onChange(function()
+			if not Fusion.peek(isOpen) then
+				fromNpc[id] = nil
+			end
+		end)
+	end
 	local function watch(folder: Instance)
 		for _, child in folder:GetChildren() do
 			if child:IsA("Model") then

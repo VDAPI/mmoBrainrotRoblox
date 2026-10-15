@@ -726,6 +726,7 @@ end)
 local SERVICE_BOARDS: { [string]: string } = {
 	exp_week = "weekly EXP from Data/Leaderboards.WEEK_SOURCES (S125)",
 	guild = "the sum of the highest member levels, Logic/Leaderboard.guildScore (S125)",
+	arena = "the 1v1 arena rating from match results only, Logic/ArenaRules.applyResult (S126)",
 }
 local SOURCE_WORDS = { "premium", "shop", "purchase", "product", "admin", "robux", "shard" }
 
@@ -804,6 +805,81 @@ T.describe("S125 rankings", function()
 			shards = 10,
 		}
 		T.expect({ Mail.add(box, parcel, 0) }).toEqual({ false, "error.badRequest" })
+	end)
+end)
+
+-- S126 (DESIGN-17 §0.2, §6): the ranked arena depends on match results, the character level and its gear only.
+T.describe("Arena (S126)", function()
+	local fs = require("@lune/fs")
+	local Arena = require("../src/shared/Data/Arena")
+	local ArenaRules = require("../src/shared/Logic/ArenaRules")
+
+	local FORBIDDEN_REQUIRES = { "Data/Products", "Data/Cosmetics", "Logic/Premium", "MonetizationService" }
+
+	T.it("the arena data and rules require nothing from the shop", function()
+		for _, path in
+			{
+				"src/shared/Data/Arena.luau",
+				"src/shared/Logic/Elo.luau",
+				"src/shared/Logic/ArenaRules.luau",
+			}
+		do
+			for line in string.gmatch(fs.readFile(path), "[^\n]+") do
+				if string.find(line, "require(", 1, true) then
+					for _, name in FORBIDDEN_REQUIRES do
+						if string.find(line, name, 1, true) then
+							error(`{path}: requires {name}`, 0)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("a result is the same for a state carrying purchases", function()
+		local plain: any = ArenaRules.emptyState()
+		plain.season = "202611"
+		local bought: any = table.clone(plain)
+		bought.vip = true
+		bought.dragonShards = 99999
+		bought.passes = { vip = true }
+		local input: ArenaRules.ResultInput = {
+			mode = Arena.MODES["1v1"],
+			season = "202611",
+			day = 20758,
+			now = 20758 * 86400,
+			myKey = "1_1",
+			oppKeys = { "2_1" },
+			oppRating = 1100,
+			oppName = "Rival",
+			oppClass = "Mage",
+			score = 1,
+			rounds = "2:1",
+			rated = true,
+		}
+		local a, ra = ArenaRules.applyResult(plain, input)
+		local b, rb = ArenaRules.applyResult(bought, input)
+		T.expect(b).toEqual(a)
+		T.expect(rb).toEqual(ra)
+		T.expect((b :: any).vip).toBeNil()
+		T.expect((b :: any).dragonShards).toBeNil()
+	end)
+
+	T.it("the arena data has no prices in Robux or Dragon Shards", function()
+		-- S128 adds a SHOP priced in Arena Tokens (allowed); a `shards` / `robux` key never is
+		local banned = { robux = true, productId = true, shards = true, price = true }
+		local function walk(value: any, path: string)
+			if type(value) ~= "table" then
+				return
+			end
+			for k, v in value do
+				if type(k) == "string" and banned[k] then
+					error(`Data/Arena{path}.{k}: a purchase key`, 0)
+				end
+				walk(v, `{path}.{tostring(k)}`)
+			end
+		end
+		walk(Arena, "")
 	end)
 end)
 
