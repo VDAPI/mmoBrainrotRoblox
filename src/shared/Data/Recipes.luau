@@ -3,6 +3,7 @@
 -- Groups: blessings (5 lines x Common..Epic), scrolls and stones, material transmutation, resistance elixirs.
 
 local Blessings = require("./Blessings")
+local Bosses = require("./Bosses")
 
 export type Ingredient = { id: string, n: number }
 
@@ -127,7 +128,7 @@ for _, dungeon in DUNGEONS do
 		ingredients = { { id = dungeon.ore, n = 4 }, { id = "essence_shard", n = 1 } },
 		gold = dungeon.level * 30,
 		time = 20 * 60,
-		level = dungeon.level - 5,
+		level = dungeon.level - Bosses.ENTRY_GAP, -- S134c: from the level the dungeon opens
 	})
 end
 

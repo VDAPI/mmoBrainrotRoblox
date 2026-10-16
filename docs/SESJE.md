@@ -10732,3 +10732,87 @@ Pliki: `src/shared/Data/Progression.luau`, `src/shared/Logic/PartyLoot.luau`,
 `src/shared/Data/Localization/{pl,en}.luau`, `tests/{Balance,BalanceTables}.luau`, `tests/{party,balance}.spec.luau`,
 `tools/{balance_reasons,balance_report}.luau`, `wiki/src/content/mechanics/{pl/doswiadczenie,en/experience,pl/handel,en/trading}.mdx`,
 `wiki/src/content/guides/{pl/jak-expic-1-30,en/leveling-1-30}.mdx`, `docs/{DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS,BALANS}.md`.
+
+### S134c: Boss od niższego poziomu, trudniejsza Inwazja
+
+Prośba właściciela z 2026-10-15: bossa da się bić razem od niższego poziomu, Inwazja (np. Równiny Salamander) ma być
+trudna, a nagroda większa.
+
+- **Wejście do lochu** (B): `Data/Bosses.ENTRY_GAP` 10 i `QUEST_GAP` 5; `BossScaling.requiredLevel` = boss − 10,
+  nowe `BossScaling.questLevel` = boss − 5 dla questu „Pogromca” (`Data/Quests/Boss`) i zlecenia tygodniowego
+  (`QuestLogic.bossContractFor`); budżet questów bez zmian. Tabliczka wejścia (`DungeonController`), wybór kamienia
+  (`StonePicker`), mapa lochu (`Data/Maps` `minLevel`) i przepis kamienia lochu (`Data/Recipes`) z tego samego progu.
+- **EXP i łup niższego zwycięzcy** (B3, B4): `Exp.bossExpFor(postać, boss, udział)` w `DungeonService.reward`; łup bez
+  zmian w kodzie (komentarz w `reward`, test `rollBossItem`).
+- **Inwazja** (C, D): `Data/WorldEvents` (fale 10 + 3 na gracza do 25, gromady po 5, `elitesPerWave`, `lastWaveElite2`,
+  15 min, fale co 90 s, dowódca do 630 s, `commanderAbilities`, `commanderGap`, `scale.commander` jedna wartość);
+  `Logic/WorldEvents.elitesOf`, `hasWaveElite2`, `waveElite2Kinds`, `commanderAbilities`; `WorldEventService` (Elity
+  w każdej fali, Elita II ostatniej fali z ogłoszeniem `event.lastWave`, dowódca z `SetExtraAbilities`, ogłoszenie
+  „Rozkazu”). Ciosy dowódcy w `Data/MonsterAbilities` (`warlordCleave`, `warlordLeap`, `warlordRally`, pola S134 i
+  `origin = "random"`, `fromHp`, `leap`); `Entities/Monster` wybiera zdolność (dodatkowe przed własną, przerwa po
+  rzucie), przekazuje opcje S134 do telegrafu i rozstrzygnięcia (`MonsterService` przepuszcza `opts`); style ruchu w
+  `Data/MonsterMotions` (`humanoid`, `beast`, `canine`; reszta planów przez `default`).
+- **Nagroda** (F): skrzynia 60 / 37 / 3 (Legenda), złoto 18 zabić, EXP bez zmian (miara ≤ 3% zielona, najgorszy L3).
+- **Model** (E): `Balance.invasion`, `invasionParams`, `INVASION_S101` (liczby „przed”), `commanderCasts`,
+  `invasionOf`, `classTeam`, cele `Balance.S134c` / `targetsS134c` (52 wiersze, 48 z progiem asertowane), sekcja „Inwazja
+  (S134c)” w `tools/balance_report` i `docs/BALANS.md`; księga powodów S134c.
+- **Po przeglądzie**: dowódca czeka na Elitę II ostatniej fali (albo `commanderAt`); ciosy losowe na ziemi pod celem
+  i tylko w twardej smyczy dowódcy (`Context.groundAt`); wiki „Doświadczenie” wspomina wyjątek bossa.
+- **Teksty, wiki** (G): `ability.warlord*.name`, `event.invasion.desc`, `event.lastWave` (PL, EN); wiki
+  `wydarzenia-swiata` / `world-events` (Elity, Elita II, dowódca bez zniżki z ciosami i „Rozkazem”, skrzynia do
+  Legendarnej), `chestMax` z danych; DESIGN §16, DESIGN-15 §4.
+
+Wejście do lochu i EXP za zabicie (piątka = udział 60% z puli S134b, bez premii za klasy):
+
+| boss | wejście (przed) | quest | gracz | EXP solo przed → po (poziomów) | EXP w piątce przed → po (poziomów) |
+|---|---|---|---|---|---|
+| Grimrok L20 | 10 (15) | 15 | L15 | 18 864 (2,72) bez zmian | 11 318 (1,63) bez zmian |
+| Grimrok L20 | | | L10 | 18 864 (5,83) → 8 817 (2,72) | 11 318 (3,50) → 5 290 (1,63) |
+| Morvane L45 | 35 (40) | 40 | L35 | 50 904 (1,48) → 39 512 (1,15) | 30 542 (0,89) → 23 707 (0,69) |
+| Azgor L70 | 60 (65) | 65 | L60 | 88 056 (0,92) → 75 639 (0,79) | 52 833 (0,55) → 45 383 (0,47) |
+| Vaelgrath L100 | 90 (95) | 95 | L90 | 137 160 (0,66) → 123 772 (0,60) | 82 296 (0,40) → 74 263 (0,36) |
+
+(L10 do 14 przy Grimroku przed S134c nie mógł wejść; wiersz „przed” = zwykłe zasady, gdyby mógł.)
+
+Inwazja przed (S101) / po (S134c) w modelu, Równiny Salamander L47 (pozostałe łowiska w `docs/BALANS.md`):
+
+| graczy | fala przed → po | Elity przed → po | dowódca HP przed → po | czas przed → po (limit 12 → 15 min) |
+|---|---|---|---|---|
+| 1 (Wojownik) | 6 → 13 | 2 → 8 + Elita II | × 0,45 → × 1,6 | 5,7 → 16,3 min (nie zdąża) |
+| 2 | 8 → 16 | 2 → 8 + Elita II | × 0,7 → × 1,6 | 4,6 → 8,0 min |
+| 3 | 10 → 19 | 2 → 8 + Elita II | × 1,0 → × 1,6 | 4,6 → 6,9 min (46% limitu) |
+| 5 | 14 → 25 | 2 → 8 + Elita II | × 1,4 → × 1,6 | 4,5 → 4,8 min |
+
+Na czterech łowiskach (Gobliński Obóz L15, Osada Kultystów L33, Równiny Salamander L47, Mamucia Tundra L85): 3 graczy kończy w
+46–61% limitu, 5 graczy 0,67–0,72 czasu 3, 3 graczy 0,82–0,87 czasu 2; solo na równym sprzęcie nie zdąża (1,09–1,43
+limitu), solo 5 poziomów wyżej w Heroicznym +6 kończy w 41–72% limitu. Ciosy do unikania 0,65–0,74 HP Maga, „Rozkaz” 3
+razem 0,43–0,50, w pojedynkę w kręgu 1,30–1,49, pusty krąg 0,43–0,49. Przyjmowane / podtrzymanie przy dowódcy i na
+gromadzie z Elitą ≤ 0,17 (model mikstur jest łagodny: trudność to czas, uniki i „Rozkaz”). Skrzynia: Unikat 60% /
+Heroik 37% / Legenda 3% (było 80 / 20).
+
+Dla właściciela:
+- Czempion (`scale.champion`) dalej słabnie dla jednego gracza i rośnie z grupą; czy ma przejść na zasadę dowódcy (stała
+  siła, ciosy S134), to osobna decyzja.
+- Trudność Inwazji w modelu to głównie czas (solo nie zdąża) i ciosy do unikania; zwykłe ciosy fal są łagodne
+  (≤ 0,17 podtrzymania). Jeśli po testach fale mają boleć, dźwignia to atak potworów wydarzenia (np. mnożnik w `mods`
+  fal) albo większe gromady.
+- Szansa na Legendę 3% na wydarzenie (połowa bazowej szansy bossa); przy ok. 1 wydarzeniu na 2 h to ok. 1 Legenda na
+  ~67 h gry z samych wydarzeń.
+
+Testy: `party.spec` (progi wejścia i questu, `bossContractFor`, mapy lochów, `Exp.bossExpFor`, łup na poziomie bossa),
+`questcategories.spec` (quest bossa od `questLevel`), `worldevents.spec` (fale 13 / 19 / 25, Elity, Elita II, dowódca
+bez skali, ciosy z tekstami i ruchem na każdym planie, skrzynia ≤ Legenda; dawne asercje skrzyni zmienione z
+komentarzem), `bossmotions.spec` (ciosy potworów: `avoid` ≥ 1,8 s, `split` ≥ 3 s z `missAll`), `telegraph.spec` 14
+(nowe zdolności same w liście), `balance.spec` (blok „Balance: Invasion (S134c)”, „World events (S101)”: skrzynia
+nigdy Mityczna, wagi 100, Legenda ≤ szansy bossa). `balance1_20.spec`, `questbudget.spec` (`check`, `audit`) bez zmian.
+
+Pliki: `src/shared/Data/{Bosses,Maps,Recipes,MonsterAbilities,MonsterMotions,WorldEvents}.luau`,
+`src/shared/Data/Quests/Boss.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{BossScaling,Exp,QuestLogic,WorldEvents}.luau`, `src/server/Entities/Monster.luau`,
+`src/server/Services/{Dungeon,Monster,WorldEvent}Service.luau`, `src/client/Controllers/DungeonController.luau`,
+`src/client/UI/Screens/StonePicker.luau`, `tests/Balance.luau`,
+`tests/{balance,party,questcategories,worldevents,bossmotions}.spec.luau`,
+`tools/{balance_reasons,balance_report,balance_before.json}`, `tools/WikiData/Basics.luau`,
+`wiki/src/content/mechanics/{pl/wydarzenia-swiata,en/world-events,pl/doswiadczenie,en/experience}.mdx`,
+`wiki/src/data/*.json`,
+`docs/{DESIGN,DESIGN-15,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.

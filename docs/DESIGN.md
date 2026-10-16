@@ -786,7 +786,7 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
 
 ## 16. Bossy i lochy
 
-- Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.
+- Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 10; quest bossa i zlecenie tygodniowe od poziomu bossa − 5, S134c), stan „Wolny / Zajęty przez grupę X (mm:ss)”. Zwycięzca poniżej poziomu bossa − 5 dostaje pełny łup na poziomie bossa i EXP w takim ułamku swojego poziomu, jaki dostałby gracz na poziomie bossa − 5 (`Exp.bossExpFor`).
 - **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; S134: projektowany pod 3–5, solo tylko z przepakowanym sprzętem). Inni czekają.
 - **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Próbę zużywa zabicie bossa i porażka (czas albo wszyscy padli; FIX 2026-10-10), a szanse osobistego łupu liczą się z
   zabić tego bossa dziś.

@@ -715,7 +715,8 @@ function Basics.mechanics(ctx: any): any
 end
 
 -- S101: world events in general, explicitly picked fields of Data/WorldEvents (never the whole module: no reward
--- formulas, chest weights, scale, thresholds in HP or schedule details).
+-- formulas, chest weights, scale, thresholds in HP or schedule details). S134c: the chest's best rarity from the data
+-- (no new field: the Legendary chance stays off the wiki, the key guard of S83).
 function Basics.worldEvents(): any
 	local WorldEvents = (require :: any)("../../src/shared/Data/WorldEvents")
 	local kinds = {}
@@ -729,6 +730,12 @@ function Basics.worldEvents(): any
 			durationMin = def.duration / 60,
 			waves = def.waves,
 		})
+	end
+	local chestTop = 0
+	for rarity, weight in WorldEvents.reward.chest.rarity :: { [number]: number } do
+		if weight > 0 then
+			chestTop = math.max(chestTop, rarity)
+		end
 	end
 	local regions = {}
 	for _, mapId in WorldEvents.regions do
@@ -744,7 +751,7 @@ function Basics.worldEvents(): any
 		minSharePct = WorldEvents.share.min * 100,
 		maxLevelAbove = WorldEvents.share.maxLevelAbove,
 		failPct = WorldEvents.reward.failMul * 100,
-		chestMax = Names.of("rarity.heroic"),
+		chestMax = Names.of(Rarities.get(chestTop).nameKey),
 		regions = regions,
 	}
 end

@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
+local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -306,7 +307,7 @@ local function decorate(instance: Instance)
 	prompt.Parent = anchor
 	local function refresh()
 		title.Text = Text.now(def.nameKey)
-		sub.Text = Text.now("dungeon.levels", { level = def.level, required = def.level - 5 })
+		sub.Text = Text.now("dungeon.levels", { level = def.level, required = BossScaling.requiredLevel(def.level) })
 		prompt.ActionText = Text.now("dungeon.open")
 		prompt.ObjectText = Text.now(def.nameKey)
 	end

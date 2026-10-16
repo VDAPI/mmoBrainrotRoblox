@@ -3,7 +3,7 @@ title: World Events
 description: "Invasions and the Wandering Champion: when and where they start, how your part counts and what the participants get."
 key: worldEvents
 order: 12
-updated: 2026-10-13
+updated: 2026-10-16
 tags: [Events, Monsters, Rewards]
 ---
 
@@ -17,9 +17,9 @@ The hunting ground is chosen for the level of the players in that region, so the
 
 ## Invasion
 
-The monsters of the ground come in waves and gather around its centre. There are <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> waves: the next one comes after a while, or earlier once you defeat most of the current one. Waves grow with the number of players nearby, and some of them bring an Elite as well.
+The monsters of the ground come in waves and gather around its centre. There are <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> waves: the next one comes after a while, or earlier once you defeat most of the current one. The waves are large and grow with the number of players nearby, every one of them brings Elites, and an Elite II leads the last one as well.
 
-After the last wave the invasion's commander enters the fight: an Elite II of one of the ground's kinds, with its special ability. Its strength depends on how many players are around when it appears, so it can be beaten alone, while a bigger group meets a tougher foe. An Invasion lasts up to <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minutes; defeating the commander in time is a victory.
+After the last wave the invasion's commander enters the fight: an Elite II of one of the ground's kinds, with its special ability. The commander is no weaker for a lone player and no stronger for a group, so a bigger group simply has it easier. It has two big blows you must dodge and "Warlord's Command": a golden circle under one of the players where you must stand together, because the blow is shared by everyone inside, while an empty circle hurts everyone nearby. It is an event for a group; only a clearly stronger character copes alone. An Invasion lasts up to <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minutes; defeating the commander in time is a victory.
 
 ## Wandering Champion
 
@@ -29,7 +29,7 @@ A mighty Elite II sets out across the region and visits several hunting grounds 
 
 Your part is the damage you deal to the event's monsters, the healing and shields you cast on players nearby, and the damage you take for an ally. Each of these counts the same, so healers and protectors earn the reward just like those who deal the damage. You need <Stat path="mechanics.worldEvents.minSharePct" format="pct" /> of everyone's total, or the worth of a few defeated monsters, whichever is lower.
 
-At the end every participant with enough of a part gets experience, gold and, on a victory, a chest with one Unique or Heroic item (Heroic at most), fitted to the character's level and usually to its class. The chest's item is bound to the character. With a full backpack the chest comes by mail.
+At the end every participant with enough of a part gets experience, gold and, on a victory, a chest with one Unique or Heroic item, or with a small chance a Legendary one (never Mythic), fitted to the character's level and usually to its class. The chest's item is bound to the character. With a full backpack the chest comes by mail.
 
 If time runs out without a victory, participants get <Stat path="mechanics.worldEvents.failPct" format="pct" /> of the experience and gold and no chest. A character more than <Stat path="mechanics.worldEvents.maxLevelAbove" /> levels above the event can help but gets no reward. Only the character that fought gets the reward, and only while it is on the server when the event ends.
 

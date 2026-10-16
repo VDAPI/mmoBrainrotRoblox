@@ -6,7 +6,10 @@ local Classes = require("../src/shared/Data/Classes")
 local Data = require("../src/shared/Data/WorldEvents")
 local Exp = require("../src/shared/Logic/Exp")
 local Items = require("../src/shared/Data/Items")
+local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
+local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
+local MonsterMotions = require("../src/shared/Data/MonsterMotions")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
@@ -34,7 +37,7 @@ local function key(p: WorldEvents.Point): string
 end
 
 T.describe("WorldEvents: data", function()
-	T.it("has both kinds with texts, open regions, rising scales and a Unique / Heroic chest", function()
+	T.it("has both kinds with texts, open regions, rising scales and a Unique / Heroic / Legendary chest", function()
 		T.expect(table.isfrozen(Data)).toBe(true)
 		T.expect(Data.order).toEqual({ "invasion", "champion" })
 		for _, id in Data.order do
@@ -69,9 +72,11 @@ T.describe("WorldEvents: data", function()
 			table.insert(keys, k)
 		end
 		table.sort(keys)
-		T.expect(keys).toEqual({ 2, 3 })
+		-- S134c: the chest may hold a Legendary item (owner 2026-10-15), never a Mythic one
+		T.expect(keys).toEqual({ 2, 3, 4 })
 		T.expect(2).toBe(Rarities.UNIQUE)
 		T.expect(3).toBe(Rarities.HEROIC)
+		T.expect(4).toBe(Rarities.LEGENDARY)
 		T.expect(Data.reward.chest.bound).toBe(true)
 		T.expect(Data.schedule.warn).toBe(120)
 	end)
@@ -298,17 +303,20 @@ T.describe("WorldEvents: reward", function()
 end)
 
 T.describe("WorldEvents: chest", function()
-	T.it("rolls a Unique or Heroic item of the right level, mostly for the class", function()
-		local heroic, total, mage = 0, 0, 0
+	-- S134c: Unique 60 / Heroic 37 / Legendary 3 (S101: Unique 80 / Heroic 20)
+	T.it("rolls a Unique, Heroic or Legendary item of the right level, mostly for the class", function()
+		local heroic, legendary, total, mage = 0, 0, 0, 0
 		for _, L in { 1, 20, 45, 70, 100 } do
 			for seed = 1, 2000 do
 				local drop = WorldEvents.rollChest(L, L, "Mage", Rng.new(seed * 31 + L))
 				assert(drop, `L{L} seed {seed}`)
-				T.expect(drop.rarity == Rarities.UNIQUE or drop.rarity == Rarities.HEROIC).toBe(true)
+				T.expect(drop.rarity >= Rarities.UNIQUE and drop.rarity <= Rarities.LEGENDARY).toBe(true)
 				T.expect(drop.ilvl).toBeBetween(1, L)
 				total += 1
 				if drop.rarity == Rarities.HEROIC then
 					heroic += 1
+				elseif drop.rarity == Rarities.LEGENDARY then
+					legendary += 1
 				end
 				local def = Items.get(drop.defId) :: Items.ItemDef
 				if def.classes == nil or table.find(def.classes, "Mage") ~= nil then
@@ -316,7 +324,8 @@ T.describe("WorldEvents: chest", function()
 				end
 			end
 		end
-		T.expect(heroic / total).toBeNear(0.2, 0.03)
+		T.expect(heroic / total).toBeNear(0.37, 0.03) -- S134c: 0.2 -> 0.37
+		T.expect(legendary / total).toBeNear(0.03, 0.01) -- S134c
 		T.expect(mage / total >= 0.7).toBe(true)
 		for seed = 1, 50 do
 			local drop = WorldEvents.rollChest(18, 10, "Warrior", Rng.new(seed)) :: any
@@ -393,3 +402,97 @@ T.describe("WorldEvents: Blood Moon block (S129)", function()
 		T.expect(WorldEvents.window(true) > def.quietBefore).toBe(true)
 	end)
 end)
+
+-- S134c: the harder Invasion (owner 2026-10-15): bigger waves with Elites in every wave and an Elite II in the last,
+-- the commander the same for every party with the bosses 2.0 blows, the chest up to Legendary.
+T.describe("WorldEvents: harder Invasion (S134c)", function()
+	T.it(
+		"waves of 13 / 19 / 25 for 1 / 3 / 5 players (capped), Elites in every wave, an Elite II in the last",
+		function()
+			T.expect(WorldEvents.waveSize(1)).toBe(13)
+			T.expect(WorldEvents.waveSize(3)).toBe(19)
+			T.expect(WorldEvents.waveSize(5)).toBe(25)
+			T.expect(WorldEvents.waveSize(9)).toBe(25)
+			local inv = Data.kinds.invasion
+			for wave = 1, inv.waves do
+				T.expect({ wave, WorldEvents.elitesOf(wave) >= 1 }).toEqual({ wave, true })
+				T.expect({ wave, WorldEvents.hasWaveElite2(wave) }).toEqual({ wave, wave == inv.waves })
+			end
+			T.expect(WorldEvents.elitesOf(inv.waves + 1)).toBe(0)
+			T.expect(inv.commanderAt < inv.duration).toBe(true)
+			-- the last wave's Elite II is another kind than the commander when the ground has two
+			for _, mapId in Data.regions do
+				for _, area in areasOf(mapId) do
+					local hosts = WorldEvents.hostKinds(area)
+					if #hosts > 0 then
+						local others = WorldEvents.waveElite2Kinds(area, hosts[1])
+						T.expect({ area.id, #others > 0 }).toEqual({ area.id, true })
+						if #hosts > 1 then
+							T.expect({ area.id, table.find(others, hosts[1]) }).toEqual({ area.id, nil })
+						end
+					end
+				end
+			end
+		end
+	)
+
+	T.it("the commander does not scale with the party", function()
+		for _, n in { 1, 2, 3, 4, 5, 9 } do
+			T.expect(WorldEvents.scaleOf("commander", n)).toEqual(WorldEvents.scaleOf("commander", 5))
+		end
+	end)
+
+	T.it(
+		"the commander's blows: two big blows to dodge and a shared blow, with texts and a motion on every plan",
+		function()
+			local abilities = WorldEvents.commanderAbilities()
+			T.expect(#abilities).toBe(#Data.kinds.invasion.commanderAbilities)
+			local avoid, split = 0, 0
+			for _, ability in abilities do
+				T.expect(MonsterAbilities.get(ability.id)).toBe(ability)
+				for _, locale in { pl, en } :: { { [string]: string } } do
+					T.expect({ ability.id, type(locale[`ability.{ability.id}.name`]) })
+						.toEqual({ ability.id, "string" })
+				end
+				for plan in MonsterMotions.PLANS do
+					local style = MonsterMotions.styleFor(plan, nil, ability.id)
+					T.expect({ plan, ability.id, style ~= nil and MonsterMotions.STYLES[style] ~= nil })
+						.toEqual({ plan, ability.id, true })
+				end
+				if ability.avoid then
+					avoid += 1
+				end
+				if ability.mechanic == "split" then
+					split += 1
+				end
+			end
+			T.expect(avoid >= 2).toBe(true)
+			T.expect(split).toBe(1)
+			for _, k in { "event.lastWave", "boss.mechanic.split.hint" } do
+				T.expect({ k, type(pl[k]), type(en[k]) }).toEqual({ k, "string", "string" })
+			end
+		end
+	)
+
+	T.it(
+		"the chest: never Mythic, at most Legendary, weights sum to 100, the Legendary no more than a boss's",
+		function()
+			local sum, top = 0, 0
+			for k, w in Data.reward.chest.rarity :: { [number]: number } do
+				sum += w
+				top = math.max(top, k)
+			end
+			T.expect(sum).toBe(100)
+			T.expect(top).toBe(Rarities.LEGENDARY)
+			local legendary = (Data.reward.chest.rarity :: { [number]: number })[Rarities.LEGENDARY] or 0
+			T.expect(legendary <= LootTables.bosses.grimrok.legendaryChance * 100 + 1e-9).toBe(true)
+			for seed = 1, 300 do
+				local drop = WorldEvents.rollChest(47, 47, "Warrior", Rng.new(seed))
+				assert(drop, `seed {seed}`)
+				T.expect(drop.rarity <= Rarities.LEGENDARY).toBe(true)
+			end
+		end
+	)
+end)
+
+return nil

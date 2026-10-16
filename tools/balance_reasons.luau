@@ -4574,5 +4574,108 @@ return {
 				why = "new: a member more than 10 levels below the monster is carried, does not grow the pool and gets total / n (anti power-levelling of the S134b pool)",
 			},
 		},
+		-- S134c: boss from boss level - 10 (full loot), a harder Invasion (docs/SESJE.md S134c)
+		["Bosses:ENTRY_GAP"] = {
+			{
+				session = "S134c",
+				why = "new: owner request 2026-10-15 (answer 1a), a character enters a boss dungeon from boss level - 10 (Grimrok 10, Morvane 35, Azgor 60, Vaelgrath 90; before - 5) to beat the boss together with stronger friends; = partyCarryGap of S134b, so a member on the entry level is not carried",
+			},
+		},
+		["Bosses:QUEST_GAP"] = {
+			{
+				session = "S134c",
+				why = "new: the old entry level (boss level - 5) kept for the boss quest, the weekly boss contract (S98 quest budget bands unchanged) and the lower winner's EXP rule (Exp.bossExpFor: below it the share of the own level a winner on the old entry level gets)",
+			},
+		},
+		["Maps:byId.dungeon_*"] = {
+			{
+				session = "S134c",
+				why = "the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5)",
+			},
+		},
+		["Recipes:byId.stone_dungeon_*"] = {
+			{
+				session = "S134c",
+				why = "the dungeon stones from the level the dungeon opens (boss level - Bosses.ENTRY_GAP; before boss level - 5)",
+			},
+		},
+		["MonsterAbilities:byId.warlordCleave*"] = {
+			{
+				session = "S134c",
+				why = "new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12",
+			},
+		},
+		["MonsterAbilities:byId.warlordLeap*"] = {
+			{
+				session = "S134c",
+				why = "new: the Invasion commander's Warlord's Leap, a big blow to dodge: circle 8 under a random fighter, windup 2.0, x8.7 (the commander lands there), cooldown 16",
+			},
+		},
+		["MonsterAbilities:byId.warlordRally*"] = {
+			{
+				session = "S134c",
+				why = "new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24",
+			},
+		},
+		["WorldEvents:kinds.invasion.duration"] = {
+			{
+				session = "S134c",
+				why = "720 -> 900: bigger waves need more time; 3 players end in 0.46-0.61 of it (<= 0.8, Balance.invasion), solo on equal gear runs out of time (1.09-1.43)",
+			},
+		},
+		["WorldEvents:kinds.invasion.waveEvery"] = {
+			{
+				session = "S134c",
+				why = "80 -> 90 with the bigger waves (owner answer 4a)",
+			},
+		},
+		["WorldEvents:kinds.invasion.commanderAt"] = {
+			{
+				session = "S134c",
+				why = "480 -> 630: the commander at the latest after 10.5 min of the 15 (the waves need longer)",
+			},
+		},
+		["WorldEvents:kinds.invasion.commanderGap"] = {
+			{
+				session = "S134c",
+				why = "new: the gap after each of the commander's casts = Data/BossTuning.globalGap (the bosses 2.0 cadence)",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave*"] = {
+			{
+				session = "S134c",
+				why = "owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4)",
+			},
+		},
+		["WorldEvents:kinds.invasion.eliteWaves*"] = {
+			{
+				session = "S134c",
+				why = "removed: replaced by elitesPerWave (an Elite in every wave, owner answer 4)",
+			},
+		},
+		["WorldEvents:kinds.invasion.elitesPerWave*"] = {
+			{
+				session = "S134c",
+				why = "new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2)",
+			},
+		},
+		["WorldEvents:scale.commander*"] = {
+			{
+				session = "S134c",
+				why = "owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45",
+			},
+		},
+		["WorldEvents:reward.goldKills"] = {
+			{
+				session = "S134c",
+				why = "12 -> 18 (+50 %) for the harder event; Full income (S109) blocks stay green",
+			},
+		},
+		["WorldEvents:reward.chest.rarity*"] = {
+			{
+				session = "S134c",
+				why = "owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

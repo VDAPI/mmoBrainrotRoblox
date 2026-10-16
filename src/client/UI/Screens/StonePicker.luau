@@ -3,6 +3,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -39,7 +40,7 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 				table.insert(choices, {
 					id = dungeon.region,
 					label = Text.get(use, `dungeon.{dungeon.region}`),
-					sub = Text.get(use, "tooltip.requiresLevel", { level = dungeon.level - 5 }),
+					sub = Text.get(use, "tooltip.requiresLevel", { level = BossScaling.requiredLevel(dungeon.level) }),
 				})
 			end
 		else

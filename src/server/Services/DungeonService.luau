@@ -334,7 +334,9 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 				{ "character", "bossRuns", def.id },
 				BossScaling.addRun(char.bossRuns, def.id, now, true)
 			)
-			local exp = math.floor(expShares[i] * Exp.levelDiffMultiplier(char.level, def.level) + 0.5)
+			-- S134c: below the old entry level (boss level - 5) the winner gets the share of its level a winner there
+			-- would (Exp.bossExpFor); the helpers of the shield waves are ordinary kills (CombatService)
+			local exp = math.floor(Exp.bossExpFor(char.level, def.level, expShares[i]) + 0.5)
 			LevelService.GiveExp(player, exp, "boss")
 			QuestEvents.fire(player, "boss", { bossId = def.id })
 			local gold = math.floor(shares[i] * (1 + StatService.GetValue(player, "goldBonus") / 100) + 0.5)
@@ -346,6 +348,8 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 			local gotLeg, gotMyth, upgraded, gotExtra = false, false, false, false
 			if bossTable then
 				local items = {}
+				-- S134c: the boss item is always at the boss level, also for a lower winner (no clamp to the
+				-- character's level; an item above it waits in the backpack like any loot)
 				local drop = Loot.rollBossItem(bossTable, killsToday, char.class :: string, rng, bossLuck)
 				local extraDrop = Loot.rollBossExtra(bossTable, char.class :: string, rng, bossLuck)
 				if drop then

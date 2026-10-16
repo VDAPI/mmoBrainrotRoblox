@@ -1,6 +1,7 @@
 --!strict
 -- Experience formulas (DESIGN §4.6). Pure.
 
+local Bosses = require("../Data/Bosses")
 local LevelCurves = require("./LevelCurves")
 local Progression = require("../Data/Progression")
 
@@ -34,6 +35,21 @@ function Exp.levelDiffMultiplier(playerLevel: number, monsterLevel: number): num
 		return 1
 	end
 	return math.max(Progression.minMultiplier, 1 - Progression.penaltyPerLevel * (d - Progression.freeDiff))
+end
+
+-- S134c: a boss winner's EXP from its share of the party pool (`shareExp`, PartyLoot.expShares before the level
+-- difference). At or above the old entry level (boss level - Bosses.QUEST_GAP) the usual levelDiffMultiplier; below
+-- it (the dungeon opens at boss level - Bosses.ENTRY_GAP) the same share of the own level as a winner on the old entry
+-- level gets: exp(old entry level) x expToNext(char) / expToNext(old entry level). Continuous at the old entry level.
+function Exp.bossExpFor(charLevel: number, bossLevel: number, shareExp: number): number
+	local ref = bossLevel - Bosses.QUEST_GAP
+	if charLevel >= ref then
+		return shareExp * Exp.levelDiffMultiplier(charLevel, bossLevel)
+	end
+	return shareExp
+		* Exp.levelDiffMultiplier(ref, bossLevel)
+		* Exp.expToNext(math.max(1, charLevel))
+		/ math.max(1, Exp.expToNext(ref))
 end
 
 -- Adds `gained` EXP. Returns (newLevel, newExp, levelsGained). EXP is not collected at maxLevel.

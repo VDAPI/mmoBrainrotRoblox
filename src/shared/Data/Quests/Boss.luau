@@ -1,7 +1,7 @@
 --!strict
 -- Boss quests (S98, docs/DESIGN-15.md §3.1): one "first defeat" quest per boss and its dungeon (the boss cave of the
--- region), given and handed in by the region's scout. Available from the dungeon's entry level
--- (BossScaling.requiredLevel). Progress only from a won dungeon run (QuestEvents "boss"), so the daily limit
+-- region), given and handed in by the region's scout. Available from boss level - 5 (BossScaling.questLevel; S134c:
+-- the dungeon itself opens 10 levels below the boss, the quest stays on the old entry level and its budget band). Progress only from a won dungeon run (QuestEvents "boss"), so the daily limit
 -- (Config.Boss.dailyRuns) always applies. EXP: Logic/QuestBudget.bossQuestExp (the boss share of the band's EXP).
 -- Texts: quest.<id>.title, .p1..p2, .progress, .done.
 
@@ -35,7 +35,7 @@ local perBand: { [number]: number } = {}
 for _, region in REGIONS do
 	local def = Bosses.forRegion(region)
 	if def then
-		local lo = QuestBudget.bandOf(BossScaling.requiredLevel(def.level))
+		local lo = QuestBudget.bandOf(BossScaling.questLevel(def.level))
 		perBand[lo] = (perBand[lo] or 0) + 1
 	end
 end
@@ -47,7 +47,7 @@ local byBoss: { [string]: SideQuest } = {}
 for _, region in REGIONS do
 	local def = Bosses.forRegion(region)
 	assert(def, `Quests/Boss: no boss in region {region}`)
-	local level = BossScaling.requiredLevel(def.level)
+	local level = BossScaling.questLevel(def.level)
 	local quest: SideQuest = {
 		id = "boss_" .. def.id,
 		category = "boss",

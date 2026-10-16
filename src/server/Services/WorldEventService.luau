@@ -2,14 +2,16 @@
 -- World events (S101, docs/DESIGN-15.md §4). About every hour each server starts one event in an open region with
 -- players (weighted by players), on the hunting ground that fits the median level of the players there:
 --   * Invasion: waves of the ground's monsters around its centre, then the commander (an Elite II scaled by the
---     players near it); victory = the commander dies before the end.
+--     players near it); victory = the commander dies before the end. S134c: bigger waves with Elites in every wave
+--     and an Elite II in the last one; the commander is the same for every party and casts big blows to dodge and a
+--     shared blow (Monster.SetExtraAbilities, the bosses 2.0 telegraph), the chest may hold a Legendary item.
 --   * Wandering Champion: an Elite II walking a route through the region (Monster.SetPatrol) for 15 min; victory =
 --     it dies before the end, else it leaves.
 -- Announced to the server 2 min before and at the start (AnnounceService.Server), shown to every player through
 -- the runtime state branch `worldEvent` (map marker, minimap, HUD panel on the event's map). Contribution =
 -- damage to the event's monsters (their damageBy, kept across the S22 reset) + healing and shields on players in
 -- the event's radius (ResourceService.Healed) + damage taken for them (StatusEffectService.Intercepted). At the
--- end every participant over the threshold gets EXP, gold and on a victory a bound Unique / Heroic chest item
+-- end every participant over the threshold gets EXP, gold and on a victory a bound chest item (S134c: up to Legendary)
 -- (backpack, else mail, else a personal bag), and one step of the weekly "event" contract (QuestEvents "event").
 -- The rules are pure (Logic/WorldEvents); the schedule lives in memory (a restart starts over). All times are
 -- server times (Workspace:GetServerTimeNow).
@@ -91,6 +93,7 @@ type Event = {
 	waveStarted: number,
 	nextWaveAt: number,
 	waveMembers: { [any]: boolean },
+	waveElite2: any?, -- S134c: the last wave's Elite II (the commander waits for its death or commanderAt)
 	points: { Vector3 }, -- wave spawn points (world)
 	route: { Vector3 }?, -- champion route (world)
 	bossKind: string?,
@@ -438,6 +441,20 @@ local function waveLevel(e: Event): number
 	return rng:int(math.max(e.area.lv[1], e.level - 2), math.min(e.area.lv[2], e.level + 1))
 end
 
+local function pickBossKind(e: Event): string?
+	if not e.bossKind then
+		local kinds = WorldEvents.hostKinds(e.area)
+		if #kinds == 0 then
+			return nil
+		end
+		local kind = rng:pick(kinds)
+		local def = Monsters.get(kind)
+		e.bossKind = kind
+		e.bossKey = if def then def.nameKeys.elite2 else nil
+	end
+	return e.bossKind
+end
+
 local function spawnWave(e: Event, t: number)
 	local def = Data.kinds.invasion
 	e.wave += 1
@@ -463,13 +480,27 @@ local function spawnWave(e: Event, t: number)
 			end
 		end
 	end
-	if table.find(def.eliteWaves, e.wave) and #e.points > 0 then
-		local elites = WorldEvents.eliteKinds(e.area)
-		if #elites > 0 then
+	-- S134c: Elites in every wave (WorldEvents.elitesOf) and one Elite II of the ground in the last wave (another kind
+	-- than the commander's when there is one; an ordinary Elite II with its own ability, rewards through CombatService)
+	local elites = if #e.points > 0 then WorldEvents.eliteKinds(e.area) else {}
+	if #elites > 0 then
+		for _ = 1, WorldEvents.elitesOf(e.wave) do
 			local monster = spawnOne(e, rng:pick(elites), "elite", waveLevel(e), e.points[rng:int(1, #e.points)])
 			if monster then
 				spawned += 1
 				e.waveMembers[monster] = true
+			end
+		end
+	end
+	if WorldEvents.hasWaveElite2(e.wave) and #e.points > 0 then
+		local hostKinds = WorldEvents.waveElite2Kinds(e.area, pickBossKind(e))
+		if #hostKinds > 0 then
+			local monster = spawnOne(e, rng:pick(hostKinds), "elite2", waveLevel(e), e.points[rng:int(1, #e.points)])
+			if monster then
+				spawned += 1
+				e.waveMembers[monster] = true
+				e.waveElite2 = monster
+				AnnounceService.Server("event.lastWave", { name = "@" .. monster:Name(), area = areaArg(e) })
 			end
 		end
 	end
@@ -478,20 +509,6 @@ local function spawnWave(e: Event, t: number)
 	e.waveStarted = t
 	e.nextWaveAt = t + def.waveEvery
 	e.dirty = true
-end
-
-local function pickBossKind(e: Event): string?
-	if not e.bossKind then
-		local kinds = WorldEvents.hostKinds(e.area)
-		if #kinds == 0 then
-			return nil
-		end
-		local kind = rng:pick(kinds)
-		local def = Monsters.get(kind)
-		e.bossKind = kind
-		e.bossKey = if def then def.nameKeys.elite2 else nil
-	end
-	return e.bossKind
 end
 
 local function spawnCommander(e: Event)
@@ -506,6 +523,18 @@ local function spawnCommander(e: Event)
 		e.boss = monster
 		e.bossKey = monster:Name()
 		e.dirty = true
+		-- S134c: the commander's blows (big blows to dodge, the shared blow) aim at the players in the event's radius;
+		-- the shared blow is announced to them like a boss's (BossAnnounce)
+		local def = Data.kinds.invasion
+		monster:SetExtraAbilities(WorldEvents.commanderAbilities(), def.commanderGap, function(): { Player }
+			return playersNear(e, e.centre, def.radius)
+		end, function(ability: any, _area: CFrame)
+			if ability.mechanic == "split" then
+				for _, player in playersNear(e, e.centre, def.radius) do
+					Net.Fire(player, "BossAnnounce", "boss.mechanic.split.hint", nil)
+				end
+			end
+		end)
 		AnnounceService.Server("event.commander", { name = "@" .. monster:Name(), area = areaArg(e) })
 	end
 end
@@ -585,6 +614,7 @@ local function begin(mapId: string, area: Areas.Area, kind: WorldEvents.KindId, 
 		waveStarted = t,
 		nextWaveAt = math.huge,
 		waveMembers = {},
+		waveElite2 = nil,
 		points = {},
 		route = nil,
 		bossKind = nil,
@@ -775,7 +805,11 @@ local function stepInvasion(e: Event, t: number)
 			e.commanderDue = true
 		elseif t >= e.nextWaveAt or cleared then
 			if e.wave >= def.waves then
-				e.commanderDue = true
+				-- S134c: the last wave's Elite II holds the commander back (removeMonster drops it on death or despawn)
+				local elite2 = e.waveElite2
+				if not (elite2 and e.monsters[elite2]) then
+					e.commanderDue = true
+				end
 			else
 				spawnWave(e, t)
 			end

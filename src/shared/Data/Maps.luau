@@ -5,6 +5,7 @@
 -- player enters the map (EnvironmentController).
 
 local ArenaPit = require("./ArenaPit")
+local Bosses = require("./Bosses")
 local Town = require("./Town")
 local TownTerrain = require("../Logic/TownTerrain")
 
@@ -744,7 +745,7 @@ do
 		id = `dungeon_{dungeon.region}`,
 		nameKey = `map.dungeon_{dungeon.region}.name`,
 		zone = "red",
-		minLevel = dungeon.level - 5,
+		minLevel = dungeon.level - Bosses.ENTRY_GAP, -- S134c: the dungeon opens 10 levels below the boss
 		maxLevel = dungeon.level,
 		offset = { x = 4000 * i, y = 0, z = 8000 },
 		size = { x = 300, z = 300 },

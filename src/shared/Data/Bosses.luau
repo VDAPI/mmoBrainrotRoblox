@@ -617,4 +617,10 @@ return table.freeze({
 	-- S134: HP multiplier on top of a normal monster of the boss's level, whatever the party (BossScaling.hpMultiplier;
 	-- the old 30 x (1 + 0.6 x (players - 1)) for 4 players)
 	HP_BASE = 84,
+	-- S134c: a character may enter a boss dungeon from boss level - ENTRY_GAP; a party carries the lower ones
+	-- (BossScaling.requiredLevel)
+	ENTRY_GAP = 10,
+	-- S134c: the boss quest, the weekly boss contract and the lower winner's EXP rule stay at boss level - QUEST_GAP
+	-- (the old entry level; BossScaling.questLevel, Exp.bossExpFor)
+	QUEST_GAP = 5,
 })

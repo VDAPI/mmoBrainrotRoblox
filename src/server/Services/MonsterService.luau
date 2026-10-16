@@ -42,8 +42,9 @@ local MonsterService = {
 
 export type Handlers = {
 	basicAttack: (monster: Monster.Monster, player: Player) -> (),
-	telegraph: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame) -> (),
-	resolveAbility: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame) -> (),
+	-- S134c: `opts` = CombatService.TelegraphOpts / ResolveOpts (a world event commander's extra abilities)
+	telegraph: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame, opts: any?) -> (),
+	resolveAbility: (monster: Monster.Monster, ability: MonsterAbilities.Ability, area: CFrame, opts: any?) -> (),
 	died: (monster: Monster.Monster) -> (),
 	-- S72 (ROZWOJ 10.3): threat multiplier of a player's damage (the threat hook); nil = 1.
 	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
@@ -208,14 +209,14 @@ local context: Monster.Context = {
 			handlers.basicAttack(monster, player)
 		end
 	end,
-	telegraph = function(monster, ability, area)
+	telegraph = function(monster, ability, area, opts)
 		if handlers then
-			handlers.telegraph(monster, ability, area)
+			handlers.telegraph(monster, ability, area, opts)
 		end
 	end,
-	resolveAbility = function(monster, ability, area)
+	resolveAbility = function(monster, ability, area, opts)
 		if handlers then
-			handlers.resolveAbility(monster, ability, area)
+			handlers.resolveAbility(monster, ability, area, opts)
 		end
 	end,
 	died = function(monster)
@@ -230,6 +231,7 @@ local context: Monster.Context = {
 			EntityService.UpdatePosition(monster.entity)
 		end
 	end,
+	groundAt = groundAt,
 }
 
 -- S122 (LureService): whether the monster may go after the player (the rule the AI uses: alive and playing, no

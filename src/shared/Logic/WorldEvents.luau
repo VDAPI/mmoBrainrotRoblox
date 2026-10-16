@@ -11,6 +11,7 @@ local Exp = require("./Exp")
 local ItemRoll = require("./ItemRoll")
 local Loot = require("./Loot")
 local LootTables = require("../Data/LootTables")
+local MonsterAbilities = require("../Data/MonsterAbilities")
 local Monsters = require("../Data/Monsters")
 local MonsterStats = require("./MonsterStats")
 local Rng = require("./Rng")
@@ -159,7 +160,7 @@ function WorldEvents.waveKinds(area: Area): { string }
 	return out
 end
 
--- Kinds of the ground with an Elite variant (one Elite in the elite waves).
+-- Kinds of the ground with an Elite variant (the Elites of the waves, WorldEvents.elitesOf).
 function WorldEvents.eliteKinds(area: Area): { string }
 	local out = {}
 	for _, id in area.kinds do
@@ -392,10 +393,45 @@ function WorldEvents.route(mapId: string, area: Area, level: number, rng: Rng.Rn
 	return route
 end
 
--- Monsters of one wave (all waves equal; `wave` stays for a later growing rule).
+-- Monsters of one wave (all waves equal; `wave` stays for a later growing rule), without its Elites.
 function WorldEvents.waveSize(players: number, _wave: number?): number
 	local w = Data.kinds.invasion.wave
 	return math.min(w.max, w.base + w.perPlayer * math.max(1, players))
+end
+
+-- S134c: Elites of wave `wave` (Data elitesPerWave; none past the list).
+function WorldEvents.elitesOf(wave: number): number
+	return Data.kinds.invasion.elitesPerWave[wave] or 0
+end
+
+-- S134c: whether wave `wave` also brings one Elite II of the ground (the last wave, lastWaveElite2).
+function WorldEvents.hasWaveElite2(wave: number): boolean
+	local def = Data.kinds.invasion
+	return def.lastWaveElite2 == true and wave == def.waves
+end
+
+-- S134c: the kinds the last wave's Elite II may be: the ground's host kinds other than the commander's, or all of
+-- them when the ground has only the commander's.
+function WorldEvents.waveElite2Kinds(area: Area, commanderKind: string?): { string }
+	local hosts = WorldEvents.hostKinds(area)
+	local others = {}
+	for _, id in hosts do
+		if id ~= commanderKind then
+			table.insert(others, id)
+		end
+	end
+	return if #others > 0 then others else hosts
+end
+
+-- S134c: the commander's blows on top of its own ability, in priority order (Data commanderAbilities).
+function WorldEvents.commanderAbilities(): { MonsterAbilities.Ability }
+	local out = {}
+	for _, id in Data.kinds.invasion.commanderAbilities do
+		local ability = MonsterAbilities.get(id)
+		assert(ability, `WorldEvents: unknown commander ability {id}`)
+		table.insert(out, ability)
+	end
+	return out
 end
 
 -- Stat multipliers of the commander / champion by the players near it when it spawns.

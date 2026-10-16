@@ -1768,6 +1768,10 @@ return {
 	["ability.fireBreath.name"] = "Fire Breath",
 	["ability.frostBreath.name"] = "Frost Breath",
 	["ability.emberNova.name"] = "Ember Nova",
+	-- S134c: the Invasion commander's blows
+	["ability.warlordCleave.name"] = "Warlord's Cleave",
+	["ability.warlordLeap.name"] = "Warlord's Leap",
+	["ability.warlordRally.name"] = "Warlord's Command",
 	["boss.grimrok.attack.sweep"] = "Sweep",
 	["boss.grimrok.attack.leap"] = "Leap",
 	["boss.grimrok.attack.whirlwind"] = "Whirlwind",
@@ -4750,7 +4754,7 @@ return {
 	["admin.login.status.reset"] = "missed a day, claimable: day 1",
 	-- S101: world events (docs/DESIGN-15.md §4)
 	["event.invasion.name"] = "Invasion",
-	["event.invasion.desc"] = "The monsters of the hunting ground come in waves, and their commander comes last.",
+	["event.invasion.desc"] = "The monsters of the hunting ground come in large waves led by Elites, and their commander comes last: dodge its blows and stand together in the golden circle.",
 	["event.champion.name"] = "Wandering Champion",
 	["event.champion.desc"] = "A mighty monster roams the region. Stop it before it leaves.",
 	["event.warn.invasion"] = "⚔ In 2 minutes: an Invasion of {area} ({region}, lvl {level}). Gather!",
@@ -4758,6 +4762,7 @@ return {
 	["event.warn.champion"] = "♛ In 2 minutes a Wandering Champion appears in {region} (near {area}, lvl {level}).",
 	["event.start.champion"] = "♛ {name} sets out across {region}! You have 15 minutes.",
 	["event.commander"] = "The invasion's commander, {name}, has entered the fight at {area}!",
+	["event.lastWave"] = "The last wave at {area}: {name} leads it!",
 	["event.end.success"] = 'The "{kind}" event ended in victory. Rewarded: {n}.',
 	["event.end.fail"] = 'The "{kind}" event ended without victory. Rewarded: {n}.',
 	["event.end.cancelled"] = 'The "{kind}" event was called off.',

@@ -5,9 +5,11 @@
 
 ## Stan
 
-S01–S115 i S117–S134b gotowe (ostatnia S134b: EXP i złoto potwora w drużynie to pula +50% za każdego dodatkowego
-zaliczonego, dzielona równo, wożony i bierny jej nie powiększają; wcześniej S134: bossowie 2.0, czyli HP i fale bez
-skalowania z drużyną, wielkie ciosy do unikania, wspólny cios, piętno i zaklęcie do przerwania) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S134c gotowe (ostatnia S134c: do lochu od poziomu bossa − 10 z pełnym łupem i EXP niższego gracza
+„jak na starym progu”, quest bossa dalej od − 5; Inwazja z falami 13 / 19 / 25, Elitami w każdej fali, Elitą II w
+ostatniej, dowódcą bez zniżki solo z ciosami do unikania i „Rozkazem”, skrzynia do Legendarnej; wcześniej S134b: pula
+EXP drużyny +50% za członka, S134: bossowie 2.0, czyli HP i fale bez skalowania z drużyną, wielkie ciosy do unikania,
+wspólny cios, piętno i zaklęcie do przerwania) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -260,6 +262,11 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S134c:** ciosy dowódcy Inwazji (`warlord*`) pozują stylami planu (`humanoid`, `beast`, `canine`, reszta `default`),
+  bez własnych póz i bez obejrzenia w Studio; „Skok Wodza” przenosi dowódcę bez łuku skoku. Model Inwazji
+  (`Balance.invasion`) to oszacowanie: zwykłe ciosy fal łagodne (≤ 0,17 podtrzymania), trudność daje czas, uniki i
+  „Rozkaz”. Czempion bez zmian (dalej skala z liczbą graczy).
+
 - **S134b:** bierny członek = bez walki przez `Config.CombatTimeout` (5 s); tyknięcia HoT i pól leczenia nie przedłużają
   walki leczącego (pula liczy rzucenia). Wiki opisuje pulę bez liczb (nowe pole eksportu wymaga zmiany kształtu danych).
   Model drużyny bez wożonych i biernych (wszyscy na poziomie potworów).
@@ -338,7 +345,8 @@ zakończone; testy i decyzje właściciela po nich.
 - **Nagroda za logowanie (S100)**: liczby skrzyni (85 / 15 zamiast planowanych 65 / 35) i to, czy dzień bez odbioru
   przerywa serię, do decyzji właściciela (`docs/SESJE.md` → S100); nagroda bez strony na wiki. Uproszczenie wyglądu:
   karty dni w siatce równej szerokości (karta 7 nie jest szersza), bez dźwięku „reward” (jest `levelUp`).
-- **Wydarzenia świata (S101)**: EXP nagrody to tylko 1,9 zwykłego potwora (limit ≤ 3% przy jednym wydarzeniu na 2 h,
+- **Wydarzenia świata (S101, S134c)**: Inwazja od S134c trudniejsza (fale, Elity, Elita II, dowódca z ciosami S134,
+  skrzynia do Legendarnej). EXP nagrody to tylko 1,9 zwykłego potwora (limit ≤ 3% przy jednym wydarzeniu na 2 h,
   najostrzej na L3 z `monsterExpMul` 0,5; decyzja właściciela: `docs/SESJE.md` → S101). Szablon tygodniowy `event`
   wchodzi do list od następnego resetu tygodnia. Mapa świata nie ma widoku regionów: glif wydarzenia tylko na mapie
   wydarzenia i na liście map; znak nie jest klikalny (bez karty). Uproszczenie: minimapa bez pulsowania znaku.

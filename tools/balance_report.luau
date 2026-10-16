@@ -1267,7 +1267,12 @@ local function s93Section()
 			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
 	end
 	local rows = {
-		{ "Azgor 3 / 4 / 5 graczy L69: min", "5,14 / 5,30 / 5,13", three("azgor.team", "", "2"), "S134: 5–7,5 / – / 3–4,5" },
+		{
+			"Azgor 3 / 4 / 5 graczy L69: min",
+			"5,14 / 5,30 / 5,13",
+			three("azgor.team", "", "2"),
+			"S134: 5–7,5 / – / 3–4,5",
+		},
 		{
 			"Azgor z węzłami 3 / 4 / 5: min",
 			"4,62 / 4,77 / 4,71",
@@ -2780,6 +2785,61 @@ do
 	add()
 end
 
+-- S134c: the harder Invasion (Balance.invasion, Balance.targetsS134c): before (the S101 numbers, Balance.INVASION_S101)
+-- and now for 1 / 2 / 3 / 5 players on the target grounds, then the asserted rows.
+do
+	add("## Inwazja (S134c)")
+	add()
+	add(
+		"Model `Balance.invasion`: drużyna bije gromady i Elity osobno (każdy swoją, tempa zabić się sumują), Elitę II ostatniej fali i dowódcę razem (dowódca × `BOSS_UPTIME`); następna fala, gdy padło `clearShare` bieżącej (nie przed `minWaveGap`) albo po `waveEvery`, reszta zostaje jako zaległość; dowódca po ostatniej fali albo w `commanderAt`, drużyna najpierw kończy zaległość. Ciosy dowódcy według reguły serwera (`Monster.SetExtraAbilities`: pierwsza gotowa z listy, własna zdolność na końcu, przerwa po każdym rzucie); ciosy `avoid` uniknięte, „Rozkaz” dzielony przez stojących razem (solo: pusty krąg, `missAll`). Drużyny: 1 Wojownik, 2 + Łowca, 3 + Kapłan, 5 + Mag i Wojownik; sprzęt konwencji, poziom wydarzenia. „Przed” = liczby S101 (`Balance.INVASION_S101`). Asertuje `balance.spec` („Balance: Invasion (S134c)”)."
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, spec in B.S134c.areas do
+		local areaId, L = spec[1], spec[2]
+		for _, n in { 1, 2, 3, 5 } do
+			local before = B.invasionOf(B.S134c.teams[n], areaId, L, nil, { params = B.INVASION_S101 })
+			local after = B.invasionOf(B.S134c.teams[n], areaId, L)
+			table.insert(rows, {
+				`{areaId} L{L}`,
+				tostring(n),
+				`{before.waveSize} / {before.elites}`,
+				`{fmtValue(before.seconds / 60, "1")} z {fmtValue(before.duration / 60, "1")}`,
+				`{after.waveSize} / {after.elites} + E2`,
+				fmtValue(after.commanderAt / 60, "1"),
+				fmtValue(after.commanderSeconds, "i"),
+				`{fmtValue(after.seconds / 60, "1")} z {fmtValue(after.duration / 60, "1")}`,
+				if after.inTime then "tak" else "nie",
+			})
+		end
+	end
+	tableOut({
+		"łowisko",
+		"graczy",
+		"przed: fala / Elity",
+		"przed: min",
+		"po: fala / Elity",
+		"po: dowódca od min",
+		"po: dowódca s",
+		"po: min",
+		"po: w czasie",
+	}, rows)
+	add()
+	local banded: { B.TargetRow } = {}
+	local free: { { string } } = {}
+	for _, row in B.targetsS134c() do
+		if row.low or row.high then
+			table.insert(banded, row)
+		else
+			table.insert(free, { row.label, fmtValue(row.value, "2") })
+		end
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134c (asertowane)"))
+	add()
+	tableOut({ "bez progu", "wartość" }, free)
+	add()
+end
+
 -- Quest audit (S109) ----------------------------------------------------------------------------------------------
 
 do
@@ -3964,7 +4024,10 @@ do
 	)
 	add()
 	add(
-		`Punkty: gracz {rules.points.player} (0, gdy ofiara ma {rules.levelGap} lub więcej poziomów mniej; ta sama ofiara najwyżej {rules.sameVictimMax} razy), Elita {rules.points.elite}, Elita II {rules.points.elite2}; śmierć 0. Nagrody (od {reward.minPoints} pkt): {reward.tokens} Żetonów Areny (poza limitem tygodnia, {fmtValue(bm.tokensShare * 100, "1")}% z {ArenaData.tokensWeekCap}) i Unikatowe błogosławieństwo (30 min); top {reward.titleTop} regionu tytuł na {reward.titleDays} dni, top {reward.frameTop} ramka, 1. miejsce {reward.shards} Smoczych Odłamków (tyle co najmniejsza paczka w sklepie, raz na region i wydarzenie). Bez asercji poza blokiem „Blood Moon (S129)” w \`balance.spec\`.`
+		`Punkty: gracz {rules.points.player} (0, gdy ofiara ma {rules.levelGap} lub więcej poziomów mniej; ta sama ofiara najwyżej {rules.sameVictimMax} razy), Elita {rules.points.elite}, Elita II {rules.points.elite2}; śmierć 0. Nagrody (od {reward.minPoints} pkt): {reward.tokens} Żetonów Areny (poza limitem tygodnia, {fmtValue(
+			bm.tokensShare * 100,
+			"1"
+		)}% z {ArenaData.tokensWeekCap}) i Unikatowe błogosławieństwo (30 min); top {reward.titleTop} regionu tytuł na {reward.titleDays} dni, top {reward.frameTop} ramka, 1. miejsce {reward.shards} Smoczych Odłamków (tyle co najmniejsza paczka w sklepie, raz na region i wydarzenie). Bez asercji poza blokiem „Blood Moon (S129)” w \`balance.spec\`.`
 	)
 	add()
 	add(

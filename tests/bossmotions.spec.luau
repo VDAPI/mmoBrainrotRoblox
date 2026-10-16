@@ -102,6 +102,31 @@ T.describe("Boss big blows and mechanics (S134)", function()
 	end)
 end)
 
+-- S134c: the same reaction times for the monster abilities with the bosses 2.0 fields (the Invasion commander's blows);
+-- a monster has only the split mechanic.
+T.describe("Monster big blows and mechanics (S134c)", function()
+	T.it("an avoid blow winds up >= 1.8 s, a split >= 3 s with a complete missAll, no mark or channel", function()
+		local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
+		for id, ability in MonsterAbilities.byId do
+			if ability.avoid then
+				T.expect({ id, ability.windup >= 1.8, ability.mechanic }).toEqual({ id, true, nil })
+			end
+			if ability.mechanic == "split" then
+				local split = ability.split
+				T.expect({ id, ability.windup >= 3, split ~= nil }).toEqual({ id, true, true })
+				if split then
+					T.expect({ id, split.missAll > 0 and split.missAll < 1 }).toEqual({ id, true })
+				end
+			else
+				T.expect({ id, ability.mechanic, ability.split }).toEqual({ id, nil, nil })
+			end
+			if ability.fromHp then
+				T.expect({ id, ability.fromHp > 0 and ability.fromHp < 1 }).toEqual({ id, true })
+			end
+		end
+	end)
+end)
+
 T.describe("BossTuning.extra (FIX 2026-10-15)", function()
 	T.it("shield and kiting attacks borrow a motion of their own boss and have sane numbers", function()
 		local BossTuning = require("../src/shared/Data/BossTuning")

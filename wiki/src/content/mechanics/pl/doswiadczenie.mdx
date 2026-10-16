@@ -3,7 +3,7 @@ title: Doświadczenie
 description: "Ile EXP potrzebujesz na poziom, ile dają potwory, jak różnica poziomów zmienia nagrodę i co daje dodatkowe doświadczenie."
 key: experience
 order: 3
-updated: 2026-10-08
+updated: 2026-10-16
 tags: [Poziomy, Potwory]
 ---
 
@@ -23,7 +23,7 @@ EXP za potwora zależy od jego poziomu i rangi. Elity dają <Stat path="mechanic
 
 ## Różnica poziomów
 
-Bij potwory blisko swojego poziomu. Gdy potwór jest słabszy od ciebie o więcej niż <Stat path="progression.levelDiffRules.freeDiff" /> poziomów, za każdy kolejny poziom tracisz <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> nagrody, aż do <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. Silniejszy potwór daje premię <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> za poziom, najwyżej <Stat path="progression.levelDiffRules.maxBonus" format="frac" />.
+Bij potwory blisko swojego poziomu. Gdy potwór jest słabszy od ciebie o więcej niż <Stat path="progression.levelDiffRules.freeDiff" /> poziomów, za każdy kolejny poziom tracisz <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> nagrody, aż do <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. Silniejszy potwór daje premię <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> za poziom, najwyżej <Stat path="progression.levelDiffRules.maxBonus" format="frac" />. Wyjątek to boss lochu: gracz słabszy od progu questu bossa nie dostaje tej premii w całości, tylko taką część swojego poziomu, jaką za tego bossa dostaje gracz na progu questu.
 
 <ExpDiffChart />
 

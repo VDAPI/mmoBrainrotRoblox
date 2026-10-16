@@ -69,9 +69,15 @@ function BossScaling.untilReset(now: number): number
 	return (Time.dayNumber(now) + 1) * 86400 - now
 end
 
--- Minimum character level to enter a boss dungeon.
+-- Minimum character level to enter a boss dungeon (S134c: boss level - Bosses.ENTRY_GAP; before: - 5).
 function BossScaling.requiredLevel(bossLevel: number): number
-	return bossLevel - 5
+	return bossLevel - Bosses.ENTRY_GAP
+end
+
+-- S134c: the level of the boss quest and the weekly boss contract (boss level - Bosses.QUEST_GAP, the old entry
+-- level: both stay in the S98 quest budget bands) and the reference level of a lower winner's EXP (Exp.bossExpFor).
+function BossScaling.questLevel(bossLevel: number): number
+	return bossLevel - Bosses.QUEST_GAP
 end
 
 return BossScaling

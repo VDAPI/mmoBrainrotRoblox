@@ -4482,3 +4482,49 @@
 - **S134b** Wiki bez nowych liczb (opis puli słowami): nowe pole w eksporcie zmieniłoby kształt danych (`wiki_keys_diff`).
   Okno drużyny: linia puli (`party.pool` / `party.poolNone`, potencjał z liczby członków) nad premią za klasy, zasada
   wożonego i biernego w `party.rules` (`{gap}`).
+- **S134c** Wejście do lochu od poziomu bossa − `Bosses.ENTRY_GAP` 10 (prośba właściciela 2026-10-15, odpowiedź 1):
+  Grimrok 10, Morvane 35, Azgor 60, Vaelgrath 90 (serwer `DungeonService.blocker`, okno lochu, karty mapy, tabliczka
+  wejścia, mapa lochu `minLevel`, kamień lochu w przepisie i wyborze, wiki `requiredLevel`). Próg wożenia S134b
+  (`partyCarryGap` 10) zgadza się z progiem wejścia: gracz dokładnie na progu nie jest wożony.
+- **S134c** Quest bossa „Pogromca” i tygodniowe zlecenie na bossa zostają od poziomu bossa − `Bosses.QUEST_GAP` 5
+  (`BossScaling.questLevel`): siedzą w budżecie S98, przesunięcie zmieniłoby pasma budżetu i zamrożone 1–20. Postęp
+  questu liczy wygrany loch: kto zabije bossa przed `minLevel` questu, nie dostaje go w questie (bez zmian).
+- **S134c** EXP niższego zwycięzcy „jak na starym progu” (odpowiedź 2: zwykłe zasady dawałyby L10 przy Grimroku 3,5
+  poziomu za zabicie w piątce): poniżej poziomu bossa − 5 udział z puli × `levelDiffMultiplier(boss − 5)` ×
+  `expToNext(postać) / expToNext(boss − 5)` (`Exp.bossExpFor`, ciągłe na progu, od progu wzwyż wynik jak przed S134c).
+  Tylko boss lochu; pomocnicy fal tarczy to zwykłe zabicia przez `CombatService` (mały EXP, bez zmiany).
+- **S134c** Łup niższego zwycięzcy pełny: `Loot.rollBossItem` nigdy nie dostaje poziomu postaci (Legenda / Mityk na
+  poziomie bossa, Unikat / Heroik w zakresie `dropLevelRange` bossa; test). Przedmiot powyżej poziomu postaci czeka w
+  plecaku (wymóg poziomu jak każdego łupu).
+- **S134c** Inwazja (odpowiedzi 3–4): fale 10 + 3 na gracza (najwyżej 25, gromady po 5), Elity w każdej fali (1 / 1 /
+  1 / 1 / 2 / 2, `WorldEvents.elitesOf`), w ostatniej fali Elita II łowiska innego rodzaju niż dowódca, gdy łowisko ma
+  dwa (zwykła Elita II ze swoją zdolnością, nagrody przez `CombatService`, ogłoszenie `event.lastWave`); „e2 na koniec”
+  czytane jako dodatkowy przeciwnik obok dowódcy. Czas 15 min, fale co 90 s, dowódca najpóźniej po 10,5 min.
+- **S134c** Dowódca bez skali z drużyną (`scale.commander` jedna wartość: HP × 1,6, atak × 1,0) zastępuje S101
+  „dowódca × skala wg graczy”: jak bossowie S134 większa drużyna ma tylko łatwiej. Czempion bez zmian (poza prośbą).
+- **S134c** Ciosy dowódcy to zdolności potworów z polami S134 (`Data/MonsterAbilities`: `avoid`, `mechanic = "split"`,
+  `split.missAll`, nowe `origin = "random"`, `fromHp`, `leap`), bez kopii logiki: `Monster.SetExtraAbilities` (pierwsza
+  gotowa z listy, własna zdolność na końcu, przerwa `commanderGap` 2,2 s jak `BossTuning.globalGap`), telegraf i
+  rozstrzygnięcie przez `CombatService.telegraph` / `resolveAbility` z opcjami S134 (kontekst potwora przekazuje
+  `opts`); cele losowe i `missAll` z listy graczy w promieniu wydarzenia (serwis), „Rozkaz” ogłasza `BossAnnounce`
+  `boss.mechanic.split.hint` graczom w promieniu. Klient bez zmian (złoty krąg i gruby brzeg działały już dla potworów).
+- **S134c** Liczby ciosów z modelu `Balance.invasion`: „Cios Wodza” × 7,5 i „Skok Wodza” × 8,7 (0,65–0,74 HP Maga na
+  poziomie wydarzenia), „Rozkaz Wodza” × 17,5 od 60% HP (w pojedynkę w kręgu 1,3–1,5 HP Maga, 3 razem 0,43–0,50,
+  pusty krąg `missAll` 0,33 = 0,43–0,49). Planowane „ok. 150% / missAll 45%” dałoby pusty krąg > 0,50 HP Maga (cel E2):
+  suma ok. 130–150% wg łowiska, `missAll` 0,33.
+- **S134c** Skrzynia zwycięstwa Unikat 60 / Heroik 37 / Legenda 3 (odpowiedź 5: „Epic” = Legendarny, gra nie ma
+  Epickiej), nigdy Mityk, związana; zastępuje S101 „Unikat 80 / Heroik 20” i DESIGN-15 „do Heroicznego”. Legenda ze
+  skrzyni dostaje `forClass` klasy jak reszta skrzyni (`rollChest`; Legenda bossa jest bez niego), linie legendarne z
+  `Data/Rarities` jak przy łupie bossa.
+- **S134c** Miara ≤ 3% nagrody wydarzenia (S101 F2) bez zmian (`expKills` 1,9); większa Inwazja daje więcej EXP przez
+  zwykłe zabicia fal (poza tą miarą jak w S101). Złoto nagrody 12 → 18 zabić (+50%), bloki „Full income (S109)” zielone.
+- **S134c** Model Inwazji (`Balance.invasion`, test tooling): drużyna bije gromady i Elity osobno, Elitę II ostatniej
+  fali i dowódcę razem (dowódca × `BOSS_UPTIME`), następna fala po `clearShare` (≥ `minWaveGap`) albo `waveEvery`,
+  zaległość dobijana przed dowódcą; podtrzymanie jak `bossNoSupport` (mikstury + regeneracja + kradzież życia).
+  Zamrożone 1–20 bez zmian (bez sekcji wydarzeń, nowa baza niepotrzebna).
+- **S134c** Wiki: `chestMax` z najwyższego klucza `chest.rarity` (Legendarny), szansa na Legendę słowami („z niewielką
+  szansą”), bez nowego pola eksportu (`wiki_keys_diff` pusty).
+- **S134c** Dowódca czeka na śmierć (albo zniknięcie) Elity II ostatniej fali; `commanderAt` dalej go wymusza
+  (zgodnie z modelem: zaległość przed dowódcą). Ciosy `origin = "random"` stają na ziemi pod wybranym graczem
+  (`groundAt`, nie wysokość dowódcy), a cel losowy tylko w twardej smyczy dowódcy (skok nie wynosi go poza nią).
+- **S134c** Wiki „Doświadczenie”: jedno zdanie o wyjątku bossa lochu dla gracza poniżej progu questu, bez liczb.

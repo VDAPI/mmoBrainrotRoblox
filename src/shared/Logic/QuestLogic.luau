@@ -236,12 +236,12 @@ function QuestLogic.weeklyFor(userId: number, characterId: string, week: number,
 	return pickTemplates(Quests.Weekly.templates, Quests.Weekly.PER_WEEK, seed, characterId, level)
 end
 
--- S98: the boss of the week's boss contract: the highest boss whose dungeon the character may enter
--- (BossScaling.requiredLevel); nil below the first entry level.
+-- S98: the boss of the week's boss contract: the highest boss whose quest level the character has (S134c:
+-- BossScaling.questLevel = boss level - 5, the old entry level; the dungeon opens 10 below); nil below the first.
 function QuestLogic.bossContractFor(level: number): string?
 	local best, bestLevel = nil, -math.huge
 	for _, def in Bosses.list do
-		if BossScaling.requiredLevel(def.level) <= level and def.level > bestLevel then
+		if BossScaling.questLevel(def.level) <= level and def.level > bestLevel then
 			best, bestLevel = def.id, def.level
 		end
 	end

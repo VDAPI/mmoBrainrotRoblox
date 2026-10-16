@@ -1768,6 +1768,10 @@ return {
 	["ability.fireBreath.name"] = "Ognisty oddech",
 	["ability.frostBreath.name"] = "Mroźny oddech",
 	["ability.emberNova.name"] = "Wybuch żaru",
+	-- S134c: the Invasion commander's blows
+	["ability.warlordCleave.name"] = "Cios Wodza",
+	["ability.warlordLeap.name"] = "Skok Wodza",
+	["ability.warlordRally.name"] = "Rozkaz Wodza",
 	["boss.grimrok.attack.sweep"] = "Zamach",
 	["boss.grimrok.attack.leap"] = "Skok",
 	["boss.grimrok.attack.whirlwind"] = "Wir ostrzy",
@@ -4748,7 +4752,7 @@ return {
 	["admin.login.status.reset"] = "przerwa, do odebrania: dzień 1",
 	-- S101: world events (docs/DESIGN-15.md §4)
 	["event.invasion.name"] = "Inwazja",
-	["event.invasion.desc"] = "Potwory łowiska nadciągają falami, a na końcu przychodzi ich dowódca.",
+	["event.invasion.desc"] = "Potwory łowiska nadciągają licznymi falami z Elitami, a na końcu przychodzi ich dowódca: unikajcie jego ciosów i stańcie razem w złotym kręgu.",
 	["event.champion.name"] = "Wędrowny czempion",
 	["event.champion.desc"] = "Potężny potwór przemierza region. Zatrzymaj go, zanim odejdzie.",
 	["event.warn.invasion"] = "⚔ Za 2 minuty: Inwazja na {area} ({region}, poz. {level}). Zbierzcie się!",
@@ -4756,6 +4760,7 @@ return {
 	["event.warn.champion"] = "♛ Za 2 minuty w {region} pojawi się Wędrowny czempion (okolice: {area}, poz. {level}).",
 	["event.start.champion"] = "♛ {name} wyrusza w drogę przez {region}! Masz 15 minut.",
 	["event.commander"] = "Dowódca inwazji, {name}, wkroczył do walki na {area}!",
+	["event.lastWave"] = "Ostatnia fala na {area}: prowadzi ją {name}!",
 	["event.end.success"] = "Wydarzenie „{kind}” zakończone zwycięstwem. Nagrodzeni: {n}.",
 	["event.end.fail"] = "Wydarzenie „{kind}” dobiegło końca bez zwycięstwa. Nagrodzeni: {n}.",
 	["event.end.cancelled"] = "Wydarzenie „{kind}” zostało odwołane.",

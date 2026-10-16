@@ -3,7 +3,7 @@ title: Wydarzenia świata
 description: "Inwazje i Wędrowny czempion: kiedy i gdzie się zaczynają, jak liczy się udział i jaką nagrodę dostają uczestnicy."
 key: worldEvents
 order: 12
-updated: 2026-10-13
+updated: 2026-10-16
 tags: [Wydarzenia, Potwory, Nagrody]
 ---
 
@@ -17,9 +17,9 @@ Na <Stat path="mechanics.worldEvents.warnMin" /> minuty przed startem cały serw
 
 ## Inwazja
 
-Potwory łowiska nadciągają falami i krążą wokół jego środka. Fal jest <Stat path="mechanics.worldEvents.kinds[invasion].waves" />: następna przychodzi po upływie czasu albo wcześniej, gdy pokonacie większość poprzedniej. Fale rosną z liczbą graczy w pobliżu, a w niektórych pojawia się także Elita.
+Potwory łowiska nadciągają falami i krążą wokół jego środka. Fal jest <Stat path="mechanics.worldEvents.kinds[invasion].waves" />: następna przychodzi po upływie czasu albo wcześniej, gdy pokonacie większość poprzedniej. Fale są liczne i rosną z liczbą graczy w pobliżu, w każdej idą też Elity, a ostatnią prowadzi dodatkowo Elita II.
 
-Po ostatniej fali do walki wkracza dowódca inwazji: Elita II jednego z rodzajów łowiska, ze swoją specjalną umiejętnością. Jego siła zależy od liczby graczy w okolicy w chwili pojawienia się, więc w pojedynkę da się go pokonać, a większa grupa trafi na twardszego przeciwnika. Inwazja trwa do <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minut; pokonanie dowódcy przed czasem to zwycięstwo.
+Po ostatniej fali do walki wkracza dowódca inwazji: Elita II jednego z rodzajów łowiska, ze swoją specjalną umiejętnością. Dowódca nie słabnie dla jednego gracza i nie rośnie z grupą, więc większa grupa ma po prostu łatwiej. Ma dwa wielkie ciosy, których trzeba uniknąć, i „Rozkaz Wodza”: złoty krąg pod jednym z graczy, w którym trzeba stanąć razem, bo cios dzieli się między wszystkich w środku, a pusty krąg rani każdego w pobliżu. To wydarzenie dla grupy; w pojedynkę poradzi sobie tylko wyraźnie silniejsza postać. Inwazja trwa do <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minut; pokonanie dowódcy przed czasem to zwycięstwo.
 
 ## Wędrowny czempion
 
@@ -29,7 +29,7 @@ Potężna Elita II wyrusza w drogę przez region i odwiedza po kolei kilka łowi
 
 Do udziału liczą się zadane potworom wydarzenia obrażenia, leczenie i tarcze rzucone na graczy w pobliżu oraz obrażenia przejęte za sojusznika. Każdy z tych sposobów liczy się tak samo, więc uzdrowiciel i obrońca dostają nagrodę na równi z tymi, którzy zadają obrażenia. Wystarczy <Stat path="mechanics.worldEvents.minSharePct" format="pct" /> całego wkładu wszystkich uczestników albo równowartość kilku pokonanych potworów, zależnie od tego, co jest mniejsze.
 
-Na koniec każdy uczestnik z wystarczającym udziałem dostaje doświadczenie, złoto, a przy zwycięstwie także skrzynię z jednym przedmiotem Unikatowym albo Heroicznym (najwyżej Heroiczny), dopasowanym do poziomu i zwykle do klasy postaci. Przedmiot ze skrzyni jest związany z postacią. Gdy plecak jest pełny, skrzynia przychodzi pocztą.
+Na koniec każdy uczestnik z wystarczającym udziałem dostaje doświadczenie, złoto, a przy zwycięstwie także skrzynię z jednym przedmiotem Unikatowym, Heroicznym albo, z niewielką szansą, Legendarnym (nigdy Mitycznym), dopasowanym do poziomu i zwykle do klasy postaci. Przedmiot ze skrzyni jest związany z postacią. Gdy plecak jest pełny, skrzynia przychodzi pocztą.
 
 Jeśli czas minie bez zwycięstwa, uczestnicy dostają <Stat path="mechanics.worldEvents.failPct" format="pct" /> doświadczenia i złota, ale bez skrzyni. Postać o więcej niż <Stat path="mechanics.worldEvents.maxLevelAbove" /> poziomów wyższa od wydarzenia może pomagać, ale nagrody nie dostaje. Nagrodę dostaje tylko postać, która walczyła, i tylko gdy w chwili końca wydarzenia jest na serwerze.
 

@@ -654,7 +654,12 @@ local STYLES: { [string]: Style } = {
 
 local PLANS: { [string]: PlanMotion } = {
 	hare = { basic = "bite", special = { default = "bite" }, death = "side" },
-	canine = { basic = "bite", special = { leap = "pounce", default = "pounce" }, death = "side" },
+	-- S134c: the Invasion commander's blows (warlord*) borrow the plan's leap / slam / cast styles
+	canine = {
+		basic = "bite",
+		special = { leap = "pounce", warlordLeap = "pounce", default = "pounce" },
+		death = "side",
+	},
 	bear = { basic = "swipe", special = { slam = "rear", default = "rear" }, death = "side", hit = { lean = 0.12 } },
 	boar = { basic = "gore", special = { charge = "charge", default = "charge" }, death = "side" },
 	toad = { basic = "squash", special = { poisonPool = "spit", default = "spit" }, death = "flat" },
@@ -701,13 +706,16 @@ local PLANS: { [string]: PlanMotion } = {
 			emberNova = "castBurst",
 			charge = "charge",
 			fireBreath = "breath",
+			warlordCleave = "wide",
+			warlordLeap = "jumpSlam",
+			warlordRally = "castBurst",
 			default = "wide",
 		},
 		death = "knees",
 	},
 	beast = {
 		basic = "claw",
-		special = { slam = "jumpSlam", leap = "beastPounce", default = "jumpSlam" },
+		special = { slam = "jumpSlam", leap = "beastPounce", warlordLeap = "beastPounce", default = "jumpSlam" },
 		death = "knees",
 	},
 	golem = {

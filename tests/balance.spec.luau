@@ -181,6 +181,40 @@ T.describe("Balance: bosses 2.0 (S134)", function()
 	end)
 end)
 
+-- S134c (E2): the harder Invasion (Balance.targetsS134c, Balance.invasion): 3 players end in time and survive, 5 are
+-- faster than 3 and 3 than 2, solo on equal gear loses or barely makes it, solo with an edge wins, the commander's big
+-- blows in the S134 band; every row without `report` asserted (Balance.S134C_REPORT prints the rest with the reason).
+T.describe("Balance: Invasion (S134c)", function()
+	local rows = B.targetsS134c()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134c, docs/sessions S134c E2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134c targets (printed); every hunting ground of the targets hosts an Invasion", function()
+		printReport("S134c", rows, 20)
+		for _, row in rows do
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		T.expect(#rows >= 4 * 10).toBe(true)
+		local Areas = require("../src/shared/Data/Areas")
+		local WorldEvents = require("../src/shared/Logic/WorldEvents")
+		for _, spec in B.S134c.areas do
+			local area = Areas.areaById(spec[1])
+			assert(area, spec[1])
+			T.expect({ spec[1], WorldEvents.canHost(area) }).toEqual({ spec[1], true })
+			T.expect({ spec[1], spec[2] >= area.lv[1] and spec[2] <= area.lv[2] }).toEqual({ spec[1], true })
+		end
+	end)
+end)
+
 -- S134b: the party EXP pool (PartyLoot.poolMul in Balance.paceAt): solo unchanged, the member's EXP/h = the mean of
 -- the solo rates x pool x class bonus and grows with the party, the solo hours 1-19 as in the 1-20 fixture.
 T.describe("Balance: party EXP pool (S134b)", function()
@@ -2341,10 +2375,18 @@ T.describe("World events (S101)", function()
 		print(string.format("world events: worst %.2f%% of a level at L%d (%s)", worst * 100, worstLevel, worstClass))
 	end)
 
-	T.it("the reward never goes over Heroic and a defeat pays less without a chest", function()
-		for k in WorldEventsData.reward.chest.rarity :: { [number]: number } do
-			T.expect(k <= 3).toBe(true)
+	-- S134c: the chest may hold a Legendary item (owner 2026-10-15), never a Mythic one, and is never more generous
+	-- with Legendaries than a boss (BOSS_ROLL.legendaryChance)
+	T.it("the reward is never Mythic (at most Legendary) and a defeat pays less without a chest", function()
+		local LootTables = require("../src/shared/Data/LootTables")
+		local sum = 0
+		for k, w in WorldEventsData.reward.chest.rarity :: { [number]: number } do
+			T.expect(k <= 4).toBe(true) -- S134c: 3 -> 4
+			sum += w
 		end
+		T.expect(sum).toBe(100) -- S134c
+		local legendary = (WorldEventsData.reward.chest.rarity :: { [number]: number })[4] or 0
+		T.expect(legendary <= LootTables.bosses.grimrok.legendaryChance * 100 + 1e-9).toBe(true) -- S134c
 		for _, L in { 1, 20, 45, 70, 100 } do
 			local win, lost = WorldEvents.reward(L, L, true), WorldEvents.reward(L, L, false)
 			T.expect(lost.exp <= win.exp and lost.gold <= win.gold).toBe(true)

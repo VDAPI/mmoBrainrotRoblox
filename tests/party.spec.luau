@@ -4,11 +4,15 @@
 local BossScaling = require("../src/shared/Logic/BossScaling")
 local Config = require("../src/shared/Config")
 local Bosses = require("../src/shared/Data/Bosses")
+local Exp = require("../src/shared/Logic/Exp")
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
 local Monsters = require("../src/shared/Data/Monsters")
 local Progression = require("../src/shared/Data/Progression")
 local PartyLoot = require("../src/shared/Logic/PartyLoot")
+local QuestLogic = require("../src/shared/Logic/QuestLogic")
 local Rng = require("../src/shared/Logic/Rng")
 local Test = require("./Test")
 
@@ -254,9 +258,69 @@ describe("BossScaling", function()
 		expect(BossScaling.untilReset(now)).toBe(86400 - 3600)
 	end)
 
-	it("requires boss level - 5", function()
-		expect(BossScaling.requiredLevel(20)).toBe(15)
+	-- S134c: the dungeon opens at boss level - 10 (owner 2026-10-15); the boss quest and the weekly contract stay at
+	-- boss level - 5 (the S98 quest budget bands)
+	it("S134c: enter from boss level - 10, the quest and the weekly contract from boss level - 5", function()
+		expect(BossScaling.requiredLevel(20)).toBe(10)
+		expect(BossScaling.requiredLevel(45)).toBe(35)
+		expect(BossScaling.requiredLevel(70)).toBe(60)
+		expect(BossScaling.requiredLevel(100)).toBe(90)
+		expect(BossScaling.questLevel(20)).toBe(15)
+		expect(QuestLogic.bossContractFor(14)).toBeNil()
+		expect(QuestLogic.bossContractFor(15)).toBe("grimrok")
+		for _, def in Bosses.list do
+			local map = Maps.get(`dungeon_{def.region}`)
+			assert(map, def.region)
+			expect({ def.id, map.minLevel }).toEqual({ def.id, BossScaling.requiredLevel(def.level) })
+		end
 	end)
+
+	it("S134c: a lower winner gets the share of its level a winner on the old entry level would", function()
+		local share = Exp.monsterExp(20, "boss") * 0.6
+		-- at the old entry level and above: exactly the old rule
+		for _, level in { 15, 16, 20, 23, 30 } do
+			expect({ level, Exp.bossExpFor(level, 20, share) }).toEqual({
+				level,
+				share * Exp.levelDiffMultiplier(level, 20),
+			})
+		end
+		-- below it: the same fraction of the own level as at L15
+		local ref = Exp.bossExpFor(15, 20, share) / Exp.expToNext(15)
+		for _, level in { 10, 12, 14 } do
+			local fraction = Exp.bossExpFor(level, 20, share) / Exp.expToNext(level)
+			expect({ level, math.abs(fraction / ref - 1) <= 0.01 }).toEqual({ level, true })
+		end
+		-- continuous on the old entry level, and below it never more than the old rule
+		local at14 = Exp.bossExpFor(14, 20, share)
+		expect(at14 <= share * Exp.levelDiffMultiplier(14, 20)).toBe(true)
+		expect(at14 < Exp.bossExpFor(15, 20, share)).toBe(true)
+		expect(Exp.bossExpFor(10, 20, share) < at14).toBe(true)
+	end)
+
+	-- S134c: Loot.rollBossItem never gets the character's level: a Legendary / Mythic is at the boss level, a Unique /
+	-- Heroic in the boss level's drop range (ItemRoll.dropLevelRange), for a winner of any level
+	it(
+		"S134c: the boss item is at the boss level whatever the winner's level (no character level in the roll)",
+		function()
+			local boss = LootTables.bosses.grimrok
+			local low, high = ItemRoll.dropLevelRange(boss.level)
+			local luck: Loot.BossLuck = { legendaryMul = 8, upgrade = 0, extra = 0 }
+			local rng = Rng.new(134)
+			local top = 0
+			for _ = 1, 400 do
+				local drop = Loot.rollBossItem(boss, 0, "Mage", rng, luck)
+				if drop then
+					if drop.rarity >= 4 then
+						top += 1
+						expect(drop.ilvl).toBe(boss.level)
+					else
+						expect(drop.ilvl >= low and drop.ilvl <= high).toBe(true)
+					end
+				end
+			end
+			expect(top > 0).toBe(true)
+		end
+	)
 end)
 
 describe("Boss data", function()

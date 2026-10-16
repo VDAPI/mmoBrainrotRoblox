@@ -3,7 +3,7 @@ title: Experience
 description: "How much EXP each level needs, what monsters give, how the level gap changes the reward and what gives extra experience."
 key: experience
 order: 3
-updated: 2026-10-08
+updated: 2026-10-16
 tags: [Levels, Monsters]
 ---
 
@@ -23,7 +23,7 @@ A monster's EXP depends on its level and rank. Elites give <Stat path="mechanics
 
 ## Level gap
 
-Fight monsters close to your level. When a monster is more than <Stat path="progression.levelDiffRules.freeDiff" /> levels below you, every further level costs <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> of the reward, down to <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. A stronger monster gives a bonus of <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> per level, at most <Stat path="progression.levelDiffRules.maxBonus" format="frac" />.
+Fight monsters close to your level. When a monster is more than <Stat path="progression.levelDiffRules.freeDiff" /> levels below you, every further level costs <Stat path="progression.levelDiffRules.penaltyPerLevel" format="frac" /> of the reward, down to <Stat path="progression.levelDiffRules.minMultiplier" format="frac" />. A stronger monster gives a bonus of <Stat path="progression.levelDiffRules.bonusPerLevel" format="frac" /> per level, at most <Stat path="progression.levelDiffRules.maxBonus" format="frac" />. Dungeon bosses are the exception: a player below the level of the boss quest does not get the full bonus, only the share of their own level that a player at the boss quest level gets for that boss.
 
 <ExpDiffChart />
 

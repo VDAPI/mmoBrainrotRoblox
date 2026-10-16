@@ -4,7 +4,9 @@
 --            combat it slowly regains HP (S22, Logic/Leash.regen)
 --   chase  : follow the highest-threat valid target; goes home by Logic/Leash.shouldReturn (S22: soft leash
 --            while nobody hits the group, hard leash, lost target, stuck)
---   cast   : Elite II special: telegraph for `windup` seconds, then resolve
+--   cast   : Elite II special: telegraph for `windup` seconds, then resolve. S134c: a world event commander also has
+--            extra abilities (SetExtraAbilities: big blows to dodge and a shared blow, the bosses 2.0 telegraph and
+--            resolve options of Logic/BossMechanics)
 --   return : walk back to the group centre (S22: no healing, no invulnerability; a hit within the hard leash
 --            turns it back into the fight), then to its own spot and idle. Bosses keep the old return: their
 --            arena centre, full HP and invulnerable on the way.
@@ -21,6 +23,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local BossMechanics = require(Shared.Logic.BossMechanics)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
@@ -40,8 +43,9 @@ export type Context = {
 	canTarget: (monster: any, player: Player) -> boolean,
 	isSafePosition: (position: Vector3) -> boolean,
 	basicAttack: (monster: any, player: Player) -> (),
-	telegraph: (monster: any, ability: MonsterAbilities.Ability, area: CFrame) -> (),
-	resolveAbility: (monster: any, ability: MonsterAbilities.Ability, area: CFrame) -> (),
+	-- S134c: `opts` = CombatService.TelegraphOpts / ResolveOpts (the bosses 2.0 mechanics of extra abilities)
+	telegraph: (monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: any?) -> (),
+	resolveAbility: (monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: any?) -> (),
 	died: (monster: any) -> (),
 	moved: (monster: any) -> (),
 	-- Status effects (StatusEffectService): stunned/frozen monsters do nothing, rooted ones cannot move,
@@ -58,6 +62,8 @@ export type Context = {
 	-- S72 (ROZWOJ 10.3, Menace): threat multiplier of a player's damage (the threat hook); nil = 1. Kill credit
 	-- (damageBy) never uses it.
 	threatMultiplier: ((monster: any, player: Player) -> number)?,
+	-- S134c: ground below a point (a "random" ability lands on the chosen fighter's ground, not the caster's).
+	groundAt: ((position: Vector3) -> Vector3)?,
 }
 
 local Monster = {}
@@ -85,6 +91,16 @@ export type Monster = typeof(setmetatable(
 		castEnd: number,
 		castArea: CFrame?,
 		ability: MonsterAbilities.Ability?,
+		-- S134c: the ability being cast (own or extra) and the extra abilities of a world event commander: list order
+		-- = priority (its own ability last), each with its own ready time, a gap after every cast (`extraGap`), the
+		-- fighters the random ones aim at and the shared blow hits when nobody stands in it, and a hook on each cast
+		castAbility: MonsterAbilities.Ability?,
+		extra: { MonsterAbilities.Ability }?,
+		extraNext: { [string]: number },
+		extraGap: number,
+		nextGlobal: number,
+		fighters: (() -> { Player })?,
+		onCast: ((ability: MonsterAbilities.Ability, area: CFrame) -> ())?,
 		returnStarted: number,
 		random: Random,
 		entity: any, -- EntityService entity (set by MonsterService)
@@ -190,6 +206,13 @@ function Monster.new(
 		castEnd = 0,
 		castArea = nil,
 		ability = ability,
+		castAbility = nil,
+		extra = nil,
+		extraNext = {},
+		extraGap = 0,
+		nextGlobal = 0,
+		fighters = nil,
+		onCast = nil,
 		returnStarted = 0,
 		random = Random.new(),
 		entity = nil,
@@ -496,13 +519,21 @@ local function engage(self: Monster, player: Player)
 		if self.ability then
 			self.nextAbility = now + 3 + self.random:NextNumber() * 3
 		end
+		local extras: { MonsterAbilities.Ability } = self.extra or {}
+		for _, extra in extras do
+			self.extraNext[extra.id] = now + 3 + self.random:NextNumber() * 3
+		end
 	end
 end
 
 local function abilityArea(self: Monster, ability: MonsterAbilities.Ability, targetPosition: Vector3): CFrame
 	local from = self.root.Position
 	local ground = from.Y - self.humanoid.HipHeight - self.root.Size.Y / 2
-	if ability.origin == "target" then
+	if ability.origin == "random" and self.ctx.groundAt then
+		-- S134c: the chosen fighter may stand far away on higher or lower ground (insideArea checks height).
+		return CFrame.new(self.ctx.groundAt(targetPosition))
+	end
+	if ability.origin == "target" or ability.origin == "random" then
 		return CFrame.new(Vector3.new(targetPosition.X, ground, targetPosition.Z))
 	end
 	local look = Vector3.new(targetPosition.X, ground, targetPosition.Z)
@@ -511,6 +542,82 @@ local function abilityArea(self: Monster, ability: MonsterAbilities.Ability, tar
 		return CFrame.new(origin)
 	end
 	return CFrame.lookAt(origin, look)
+end
+
+-- Hard leash distance from home (S22; bosses keep their single arena leash).
+local function leashMax(self: Monster): number
+	if self.isBoss then
+		return self.leashRange or Combat.leashRange
+	end
+	return math.max(self.leashRange or Combat.leashRange, Combat.leashMax)
+end
+
+-- S134c: a random living fighter's position for a "random" ability (the spawning service lists the fighters); only
+-- fighters within the hard leash, so a leap never carries the caster past it.
+local function randomFighterPosition(self: Monster): Vector3?
+	local list: { Player } = if self.fighters then self.fighters() else {}
+	local options: { Vector3 } = {}
+	local limit = leashMax(self)
+	for _, player in list do
+		if self.ctx.canTarget(self, player) then
+			local position = self.ctx.playerPosition(player)
+			if position and distanceFlat(position, homeOf(self)) <= limit then
+				table.insert(options, position)
+			end
+		end
+	end
+	if #options == 0 then
+		return nil
+	end
+	return options[self.random:NextInteger(1, #options)]
+end
+
+-- The ability to cast now and its area, or nil: S134c the first ready extra ability (its HP gate met; a "random" one
+-- needs a fighter, the others the target in reach), then the own ability; with extra abilities the gap after the
+-- last cast holds them all.
+local function pickAbility(
+	self: Monster,
+	now: number,
+	distance: number,
+	reach: number,
+	targetPosition: Vector3
+): (MonsterAbilities.Ability?, CFrame?)
+	if self.extra and now < self.nextGlobal then
+		return nil, nil
+	end
+	local hpShare = self.hp / math.max(1, self.stats.maxHp)
+	local extras: { MonsterAbilities.Ability } = self.extra or {}
+	for _, extra in extras do
+		if now >= (self.extraNext[extra.id] or math.huge) and (extra.fromHp == nil or hpShare <= extra.fromHp) then
+			if extra.origin == "random" then
+				local at = randomFighterPosition(self)
+				if at then
+					return extra, abilityArea(self, extra, at)
+				end
+			elseif distance <= math.max(reach, (extra.radius or extra.length or 10)) then
+				return extra, abilityArea(self, extra, targetPosition)
+			end
+		end
+	end
+	local ability = self.ability
+	if
+		ability
+		and now >= self.nextAbility
+		and distance <= math.max(reach, (ability.radius or ability.length or 10))
+	then
+		return ability, abilityArea(self, ability, targetPosition)
+	end
+	return nil, nil
+end
+
+-- S134c: the bosses 2.0 telegraph options of an ability (the golden shared circle, the thicker rim of a big blow).
+local function teleOpts(ability: MonsterAbilities.Ability): any?
+	if ability.mechanic == "split" then
+		return { mechanic = "split" }
+	elseif BossMechanics.isAvoidable(ability :: any) then
+		return { mechanic = "avoid" }
+	end
+	return nil
 end
 
 local function stepIdle(self: Monster, now: number)
@@ -573,6 +680,27 @@ local function attackInterval(self: Monster): number
 	return Traits.slowedInterval(self.stats.attackInterval, slow)
 end
 
+-- S134c: extra abilities of a world event commander (Data/MonsterAbilities with the bosses 2.0 fields): tried in list
+-- order before its own ability, `gap` seconds after every cast, `fighters` = the players a "random" ability aims at
+-- and a shared blow hits when nobody stands in it (from the spawning service), `onCast` = a hook on each cast (the
+-- service's announcement of a shared blow). Ready 3 s after it is set while fighting, else 3-6 s after it engages.
+function Monster.SetExtraAbilities(
+	self: Monster,
+	abilities: { MonsterAbilities.Ability },
+	gap: number,
+	fighters: () -> { Player },
+	onCast: ((ability: MonsterAbilities.Ability, area: CFrame) -> ())?
+)
+	self.extra = abilities
+	self.extraGap = gap
+	self.fighters = fighters
+	self.onCast = onCast
+	local now = os.clock()
+	for _, ability in abilities do
+		self.extraNext[ability.id] = if self.state == "idle" then math.huge else now + 3
+	end
+end
+
 -- S63: after a Concussion stun the monster strikes at the earliest `share` of its interval later (like stepCast);
 -- a stun alone never moves nextAttack (Step returns early), so it would strike right after the stun.
 function Monster.DelayAttack(self: Monster, stunSeconds: number, share: number)
@@ -595,20 +723,22 @@ local function stepChase(self: Monster, now: number)
 	local distance = distanceFlat(position, targetPosition)
 	local reach = self.stats.range + self.root.Size.Z / 2
 
-	-- Elite II special ability (telegraphed).
-	local ability = self.ability
-	if
-		ability
-		and now >= self.nextAbility
-		and distance <= math.max(reach, (ability.radius or ability.length or 10))
-	then
+	-- Elite II special ability (telegraphed); S134c: a commander's extra abilities first.
+	local ability, area = pickAbility(self, now, distance, reach, targetPosition)
+	if ability and area then
 		stop(self)
-		face(self, targetPosition)
-		local area = abilityArea(self, ability, targetPosition)
+		face(self, if ability.origin == "random" then area.Position else targetPosition)
 		self.state = "cast"
 		self.castArea = area
+		self.castAbility = ability
 		self.castEnd = now + ability.windup
-		self.ctx.telegraph(self, ability, area)
+		if self.extra then
+			self.nextGlobal = now + ability.windup + self.extraGap
+		end
+		self.ctx.telegraph(self, ability, area, teleOpts(ability))
+		if self.onCast then
+			self.onCast(ability, area)
+		end
 		return
 	end
 
@@ -637,14 +767,34 @@ local function stepCast(self: Monster, now: number)
 	if now < self.castEnd then
 		return
 	end
-	local ability = self.ability
+	local ability = self.castAbility
 	local area = self.castArea
 	self.state = "chase"
 	self.castArea = nil
+	self.castAbility = nil
 	if ability and area then
-		self.nextAbility = now + ability.cooldown
+		if ability == self.ability then
+			self.nextAbility = now + ability.cooldown
+		else
+			self.extraNext[ability.id] = now + ability.cooldown
+		end
 		self.nextAttack = now + attackInterval(self) * 0.5
-		self.ctx.resolveAbility(self, ability, area)
+		-- S134c: a shared blow is split by everyone inside; nobody inside = missAll on every fighter (CombatService)
+		local split = if ability.mechanic == "split" then ability.split else nil
+		local opts = if split
+			then {
+				split = true,
+				missAll = split.missAll,
+				fighters = if self.fighters then self.fighters() else {},
+			}
+			else nil
+		self.ctx.resolveAbility(self, ability, area, opts)
+		if ability.leap then
+			self.model:PivotTo(
+				CFrame.new(area.Position + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
+					* self.root.CFrame.Rotation
+			)
+		end
 	end
 end
 
