@@ -1,7 +1,7 @@
 // World pages (S37): the order of the map list like the game's map window (city, then each region followed by its
 // caves by level), neighbours from portals, monsters of a map from the monster spawns, quests with an objective on a
 // map, links to region / area / cave pages and to the map. Build time only (reads src/data through data.ts).
-import type { Area, Boss, Cave, MainQuest, MapInfo, Monster, Npc, SideQuest } from "../data/types";
+import type { Area, Boss, Cave, Lair, MainQuest, MapInfo, Monster, Npc, SideQuest } from "../data/types";
 import { href, type Lang } from "../i18n/routes";
 import { load } from "./data";
 import { serialize, type MapLink } from "./deeplink";
@@ -24,6 +24,13 @@ export function regionOrder(): string[] {
   for (const c of caves()) if (!out.includes(c.region)) out.push(c.region);
   for (const m of maps()) if (m.kind === "region" && !out.includes(m.id)) out.push(m.id);
   return out;
+}
+
+/** S134i: the Elite II lairs of a region map, by level. */
+export function lairsOf(region: string): Lair[] {
+  return (load("areas").lairs ?? [])
+    .filter((l) => l.map === region)
+    .sort((a, b) => a.levelMin - b.levelMin || (a.id < b.id ? -1 : 1));
 }
 
 export function cavesOf(region: string): Cave[] {

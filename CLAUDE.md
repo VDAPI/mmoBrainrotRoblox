@@ -191,6 +191,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Premium.canBuy` (okno liczy to samo), przypadek w `tests/paywall.spec.luau` (listy dozwolonych z powodem), potem
   `lune run tools/shop_report.luau` (świeży `docs/SKLEP-ID.md`, `--check` w `premium.spec`). Wiki tylko przez
   `tools/WikiData/Premium.luau`, nigdy cena, id ani kwota Smoczej Waluty. Lejek: `src/server/PremiumFunnel` (`Logic/ShopFunnel`).
+- **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
+  ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
+  `Balance.targetsS134i`.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

@@ -71,7 +71,8 @@ local SLOT_GROUPS: { string } =
 -- monster.<kind>.elite2; a kind is an Elite II in at most one place of the world, tests/elite2loot.spec). Its items
 -- keep the DEFAULT_SLOTS weights cut to these groups (LootTables.slotsFor). A kind outside the list (the Elite II of
 -- events: the Invasion, the Blood Moon) drops from every group. In every band of ELITE2_BANDS the Elite IIs together
--- drop all nine groups; the two of one cave never share a group.
+-- drop all nine groups; the two of one cave never share a group. S134i: the Elite IIs of the hideouts (Data/Areas lairs)
+-- too; with them every group has at least two Elite IIs in each region.
 local ELITE2_SLOTS: { [string]: { string } } = {
 	-- Region 1
 	bandit = { "weapon", "armor", "ring" }, -- meadows_hideout
@@ -80,6 +81,8 @@ local ELITE2_SLOTS: { [string]: { string } } = {
 	koboldMiner = { "weapon", "necklace", "talisman" },
 	caveSpider = { "armor", "boots", "ring" }, -- meadows_cave
 	goblinShaman = { "weapon", "helmet", "necklace" },
+	swampToad = { "offhand", "gloves" }, -- S134i: meadows_snarecamp
+	boar = { "weapon", "armor" }, -- S134i: meadows_poacherspen
 	-- Region 2
 	werewolf = { "weapon", "gloves", "boots" }, -- duskwood_den
 	blackBear = { "armor", "helmet", "ring" },
@@ -87,6 +90,9 @@ local ELITE2_SLOTS: { [string]: { string } } = {
 	ghoul = { "necklace", "ring", "boots" },
 	necromancer = { "weapon", "helmet", "gloves" }, -- duskwood_cave
 	specter = { "armor", "necklace", "ring" },
+	rotEnt = { "armor", "talisman" }, -- S134i: duskwood_hangedring
+	bogSerpent = { "weapon", "offhand", "boots" }, -- S134i: duskwood_drownedring
+	bloodBat = { "helmet", "ring" }, -- S134i: duskwood_gallowsknoll
 	-- Region 3
 	ashOrc = { "weapon", "armor", "gloves" }, -- ashen_mine
 	wasteHyena = { "boots", "helmet", "ring" },
@@ -94,6 +100,9 @@ local ELITE2_SLOTS: { [string]: { string } } = {
 	desertScorpion = { "offhand", "ring", "gloves" },
 	flameSmith = { "weapon", "armor", "helmet" }, -- ashen_cave
 	magmaGolem = { "boots", "offhand", "necklace" },
+	fireGolem = { "armor", "talisman" }, -- S134i: ashen_bonepit
+	basilisk = { "weapon", "ring", "gloves" }, -- S134i: ashen_bonenest
+	desertMummy = { "helmet", "necklace", "boots" }, -- S134i: ashen_sunkengrave
 	-- Region 4
 	yeti = { "weapon", "helmet", "gloves" }, -- frostpeak_grotto
 	iceWolf = { "boots", "ring", "talisman" },
@@ -101,6 +110,9 @@ local ELITE2_SLOTS: { [string]: { string } } = {
 	frostGiant = { "weapon", "necklace", "talisman" },
 	youngFrostDragon = { "weapon", "helmet", "boots" }, -- frostpeak_cave
 	crystalGuardian = { "gloves", "armor", "necklace" },
+	snowLeopard = { "offhand", "gloves" }, -- S134i: frostpeak_frozencamp
+	iceMammoth = { "armor", "boots", "ring" }, -- S134i: frostpeak_tuskcamp
+	dragonspawn = { "weapon", "helmet", "talisman" }, -- S134i: frostpeak_buriedcamp
 }
 
 -- S134h: two level bands per region; an Elite II belongs to a band when its spawner's level range overlaps it.

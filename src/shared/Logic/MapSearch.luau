@@ -1,6 +1,7 @@
 --!strict
 -- Search of the world map (S25): NPCs (name, role and the names of their services, e.g. "smith", "shop",
--- "mail"), maps, monster areas, monster kinds (every variant name), bosses and, from the client, gathering nodes.
+-- "mail"), maps, monster areas, monster kinds (every variant name), bosses, S134i Elite II hideouts (their name and
+-- their Elite II's) and, from the client, gathering nodes.
 -- Case and Polish letters do not matter ("laki" finds "Łąki"); a word that starts with the query ranks above a
 -- match inside a word. The index is built once per language with an injected translate function, so the
 -- tests run without Locale. Pure (Lune).
@@ -17,7 +18,7 @@ local MapSearch = {}
 
 MapSearch.LIMIT = 12
 
-export type Kind = "npc" | "map" | "area" | "monster" | "boss" | "node" | "cave"
+export type Kind = "npc" | "map" | "area" | "monster" | "boss" | "node" | "cave" | "lair"
 
 export type Result = {
 	kind: Kind,
@@ -47,7 +48,8 @@ export type Index = { entries: { Prepared } }
 export type Translate = (key: string) -> string
 
 -- Kind order when two results score the same.
-local KIND_RANK: { [string]: number } = { npc = 1, map = 2, cave = 3, area = 4, boss = 5, monster = 6, node = 7 }
+local KIND_RANK: { [string]: number } =
+	{ npc = 1, map = 2, cave = 3, area = 4, lair = 5, boss = 5, monster = 6, node = 7 }
 
 -- Lowercase letters without Polish (and a few other) diacritics.
 local FOLD: { [number]: string } = {
@@ -211,6 +213,28 @@ local function monsterEntries(translate: Translate, out: { Entry })
 	end
 end
 
+-- S134i: the Elite II hideouts: their name, the name of their Elite II and the word "hideout" lead to the middle.
+local function lairEntries(translate: Translate, out: { Entry })
+	for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
+		for _, lair in (Areas.byMap[mapId].lairs or {}) :: { Areas.Lair } do
+			local def = Monsters.get(lair.elite2)
+			table.insert(out, {
+				kind = "lair",
+				id = lair.id,
+				map = mapId,
+				x = lair.x,
+				z = lair.z,
+				labelKey = lair.nameKey,
+				texts = {
+					translate(lair.nameKey),
+					if def then translate(def.nameKeys.elite2) else lair.elite2,
+					translate("worldmap.lair"),
+				},
+			})
+		end
+	end
+end
+
 local function bossEntries(translate: Translate, out: { Entry })
 	for _, boss in Bosses.list do
 		local gate = Portals.get(`dungeon_{boss.region}`)
@@ -235,6 +259,7 @@ function MapSearch.build(translate: Translate, extra: { Entry }?): Index
 	mapEntries(translate, entries)
 	areaEntries(translate, entries)
 	monsterEntries(translate, entries)
+	lairEntries(translate, entries) -- S134i
 	bossEntries(translate, entries)
 	if extra then
 		for _, entry in extra do

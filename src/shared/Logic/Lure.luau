@@ -23,6 +23,7 @@ export type Candidate = {
 	level: number,
 	distance: number,
 	cost: number, -- alive members of its group not fighting this player yet (1 without a group)
+	lair: boolean?, -- S134i: a guard of an Elite II hideout (never pulled out of it)
 }
 
 local function stateOf(state: State?): State
@@ -69,13 +70,15 @@ function Lure.timeKey(seconds: number): (string, { d: number, h: number, m: numb
 end
 
 -- Whether one candidate may be pulled by a player of `playerLevel` (DESIGN-17 §3: ordinary monsters only, never
--- Elites, Elites II, bosses, boss helpers or world event monsters; idle, within radius and level gap).
+-- Elites, Elites II, bosses, boss helpers or world event monsters; idle, within radius and level gap). S134i: never
+-- a guard of an Elite II hideout.
 function Lure.eligible(c: Candidate, playerLevel: number): boolean
 	return c.variant == "normal"
 		and not c.boss
 		and not c.summoned
 		and c.fromSpawner
 		and not c.passive
+		and c.lair ~= true
 		and c.idle
 		and c.targetable
 		and math.abs(c.level - playerLevel) <= Config.Lure.levelGap

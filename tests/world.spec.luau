@@ -191,7 +191,8 @@ describe("World spawns", function()
 			local map = Maps.get(mapId)
 			assert(map, mapId)
 			for _, spawner in list do
-				if spawner.variant ~= "normal" and map.zone ~= "red" then
+				-- S134i: an Elite II hideout keeps the zone of its map (no new red zone)
+				if spawner.variant ~= "normal" and map.zone ~= "red" and spawner.lair == nil then
 					error(`{spawner.id}: elite outside a red zone`)
 				end
 			end
@@ -219,7 +220,13 @@ describe("World spawns", function()
 
 	it("give region maps 45-60 groups, 8-10 kinds and 2-3 kinds per area, spread out and off the roads", function()
 		for mapId, data in Areas.byMap do
-			local list = Spawns.byMap[mapId]
+			-- S134i: the area groups only (the hideouts' Elite II and guards: tests/lairs.spec)
+			local list = {}
+			for _, spawner in Spawns.byMap[mapId] do
+				if spawner.lair == nil then
+					table.insert(list, spawner)
+				end
+			end
 			if #list < 45 or #list > 60 then
 				error(`{mapId}: {#list} groups`)
 			end

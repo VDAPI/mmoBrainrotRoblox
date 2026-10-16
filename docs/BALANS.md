@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S134h (commit 8e1b68d, 2026-10-16) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S134i (commit ab414dc, 2026-10-16) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -17,13 +17,13 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | blok | wiersze | w paśmie | asertowane | raport (sesja powodu: wiersze) |
 | --- | --: | --: | --: | --: |
-| 1–20: cele S32 (S91) | 991 | 991 | 991 | 0 |
+| 1–20: cele S32 (S91) | 997 | 997 | 997 | 0 |
 | 1–20: cele S91 | 130 | 124 | 124 | S90 3, – 3 |
 | 20–100: globalne G1–G13 (S87) | 1832 | 1496 | 1279 | S103 4, S134 12, S88 285, S91 12, S92 5, – 235 |
-| region meadows (S91) | 390 | 390 | 390 | 0 |
-| region duskwood (S92) | 963 | 776 | 705 | S134 1, S32 3, S90 20, S92 234 |
-| region ashen (S93) | 1155 | 817 | 786 | S32 3, S90 24, S93 342 |
-| region frostpeak (S94) | 1338 | 867 | 836 | S32 3, S90 28, S94 471 |
+| region meadows (S91) | 402 | 402 | 402 | 0 |
+| region duskwood (S92) | 972 | 785 | 714 | S134 1, S32 3, S90 20, S92 234 |
+| region ashen (S93) | 1164 | 826 | 795 | S32 3, S90 24, S93 342 |
+| region frostpeak (S94) | 1347 | 876 | 845 | S32 3, S90 28, S94 471 |
 | 1–100: wiersze przekrojowe (S94) | 240 | 240 | 240 | 0 |
 | 20–100: cechy, linie, obrona (S88) | 516 | 451 | 451 | S134 3, S89 25, S90 22, S94 3, – 12 |
 | 20–100: ścieżki (S89–S90) | 1019 | 550 | 452 | S90 24, S94 24, – 519 |
@@ -132,34 +132,33 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 ## Zmiany danych (księga, `tools/balance_reasons.luau`)
 
-| klucz | przed | po | sesja | powód |
-| --- | --: | --: | --: | --: |
-| `LootTables:byId.ashOrc.variantMaterials.elite2[essence_crystal].chance` | 0,3 | 0,15 | S134h | 0.3 -> 0.15: halved with the shards (two Elite IIs a cave) |
-| `LootTables:byId.ashOrc.variantMaterials.elite2[essence_shard].chance` | 0,8 | 0,4 | S134h | 0.8 -> 0.4 (every kind's table shares VARIANT_MATERIALS): two Elite IIs a cave, crystal equivalents per hour 1.12 of before (<= 1.25) |
-| `LootTables:byId.ashOrc.variantMaterials.elite2[scroll_protection].chance` | 0,08 | 0,04 | S134h | 0.08 -> 0.04: halved with the essence (two Elite IIs a cave: the same protection scrolls per hour as one before) |
-| `Rarities:itemDrops.elite2.max` | 3 | 2 | S134h | 3 -> 2: with the min 1-2 items a kill (see min) |
-| `Rarities:itemDrops.elite2.min` | 2 | 1 | S134h | 2 -> 1: two Elite IIs in every cave (each with its own respawn) instead of one; 1-2 items a kill keep the Heroics and Legendaries for the class per hour of a cave at 1.18-1.22 of before (Balance.targetsS134h 0.85-1.25) |
-
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `LootTables:ELITE2_BANDS[1][1]` | 7 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[1][2]` | 14 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[2][1]` | 14 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[2][2]` | 20 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[3][1]` | 21 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[3][2]` | 33 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[4][1]` | 33 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[4][2]` | 45 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[5][1]` | 46 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[5][2]` | 58 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[6][1]` | 58 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[6][2]` | 70 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[7][1]` | 71 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[7][2]` | 86 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[8][1]` | 86 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
-| `LootTables:ELITE2_BANDS[8][2]` | 100 | S134h | new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec) |
+| `Areas/ashen:lairs[ashen_bonenest].lv[1]` | 62 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonenest].lv[2]` | 64 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonepit].lv[1]` | 55 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonepit].lv[2]` | 57 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_sunkengrave].lv[1]` | 67 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_sunkengrave].lv[2]` | 69 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/duskwood:lairs[duskwood_drownedring].lv[1]` | 35 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_drownedring].lv[2]` | 37 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[1]` | 42 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[2]` | 44 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_hangedring].lv[1]` | 30 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_hangedring].lv[2]` | 32 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[1]` | 93 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[2]` | 95 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[1]` | 73 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[2]` | 75 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[1]` | 83 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[2]` | 85 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/meadows:lairs[meadows_poacherspen].lv[1]` | 9 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_poacherspen].lv[2]` | 11 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_snarecamp].lv[1]` | 7 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_snarecamp].lv[2]` | 8 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Combat:lairElite2RespawnMul` | 1,5 | S134i | new: a hideout's Elite II respawns 1.5 x slower than a cave's of its top level (no red zone, near a road): Heroics / Legendaries for the class per hour of every band 1.00-1.35 of the caves alone (Balance.targetsS134i <= 1.35), one hideout 0.65-0.69 of one cave Elite II of its band (<= 1) |
 
 ### Księga: pominięte funkcje
 
@@ -170,7 +169,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4575 kluczy zmienionych od bazy, 0 bez powodu.
+4598 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -178,9 +177,31 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Areas/Caves:byId.duskwood_den.levels[1]` | 24 | 21 | S92 | S92: 24 -> 21 (D1): Elites on every level 21-45 (spawner levels 18/25 -> 25/25) |
 | `Areas/Caves:byId.frostpeak_grotto.levels[1]` | 74 | 71 | S94 | S94: E1: the Ice Grotto 74 -> 71 (Elites and Elite II from 71, item levels 71-73) |
 | `Areas/ashen:areas[ashen_ashroad].lv[2]` | 67 | 69 | S93 | S93: 67 -> 69 (D2): a second hunting ground on 68-69 (1 -> 2 areas) |
+| `Areas/ashen:lairs[ashen_bonenest].lv[1]` | – | 62 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonenest].lv[2]` | – | 64 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonepit].lv[1]` | – | 55 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_bonepit].lv[2]` | – | 57 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_sunkengrave].lv[1]` | – | 67 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
+| `Areas/ashen:lairs[ashen_sunkengrave].lv[2]` | – | 69 | nowy od S134i | S134i: new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
 | `Areas/duskwood:areas[duskwood_witchmarsh].lv[2]` | 42 | 44 | S92 | S92: 42 -> 44 (D6): a second hunting ground on 43-44 (1 -> 2 areas) |
+| `Areas/duskwood:lairs[duskwood_drownedring].lv[1]` | – | 35 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_drownedring].lv[2]` | – | 37 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[1]` | – | 42 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[2]` | – | 44 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_hangedring].lv[1]` | – | 30 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
+| `Areas/duskwood:lairs[duskwood_hangedring].lv[2]` | – | 32 | nowy od S134i | S134i: new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
 | `Areas/frostpeak:areas[frostpeak_icewatch].lv[2]` | 95 | 100 | S94 | S94: E2: the Icewatch 95 -> 100 (a second hunting ground on 96-100, the Frozen Knight to 100) |
 | `Areas/frostpeak:areas[frostpeak_slopes].lv[1]` | 74 | 71 | S94 | S94: E2: the Yeti Slopes 74 -> 71 (a second hunting ground on 71-73) |
+| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[1]` | – | 93 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[2]` | – | 95 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[1]` | – | 73 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[2]` | – | 75 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[1]` | – | 83 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[2]` | – | 85 | nowy od S134i | S134i: new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
+| `Areas/meadows:lairs[meadows_poacherspen].lv[1]` | – | 9 | nowy od S134i | S134i: new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_poacherspen].lv[2]` | – | 11 | nowy od S134i | S134i: new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_snarecamp].lv[1]` | – | 7 | nowy od S134i | S134i: new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
+| `Areas/meadows:lairs[meadows_snarecamp].lv[2]` | – | 8 | nowy od S134i | S134i: new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
 | `Bonuses:byId.basicDmg.max` | 3,3 | 2,2 | S88 | S88: D1 / G7: basicDmg 1.5-3.3 -> 1-2.2 |
 | `Bonuses:byId.basicDmg.min` | 1,5 | 1 | S88 | S88: D1 / G7: basicDmg 1.5-3.3 -> 1-2.2 (D2 parity 0.78-0.98 -> 0.51-0.65 of the attack line) |
 | `Bonuses:byId.magicPierce.max` | 6 | 4 | S88 | S88: D1 / G7: magicPierce 3-6 -> 2-4 |
@@ -400,6 +421,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bosses:byId.vaelgrath.summons[2].level` | 100 | 87 | S94 | S94: C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59) |
 | `Combat:elite2RespawnBase` | 480 | 300 | S134e | S134e: 480 -> 300: owner 2026-10-15 ('too long a wait for the Elite II', answer a): level 66 cave about 8 min instead of about 21 |
 | `Combat:elite2RespawnPerLevel` | 12 | 3 | S134e | S134e: 12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows) |
+| `Combat:lairElite2RespawnMul` | – | 1,5 | nowy od S134i | S134i: new: a hideout's Elite II respawns 1.5 x slower than a cave's of its top level (no red zone, near a road): Heroics / Legendaries for the class per hour of every band 1.00-1.35 of the caves alone (Balance.targetsS134i <= 1.35), one hideout 0.65-0.69 of one cave Elite II of its band (<= 1) |
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
 | `Config:AutoGrind.arrive` | – | 12 | nowy od S134d | S134d: new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
 | `Config:AutoGrind.bossRadius` | – | 90 | nowy od S134d | S134d: new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
@@ -2646,9 +2668,9 @@ Wojownik. Elity: walka + odpoczynek do pełna + marsz; Unikatowe ze zwykłych po
 
 | rzadkość | na zabicie (do klasy) |
 | --- | --: |
-| unique | 0,96 → 0,57 |
-| heroic | 1,06 → 0,64 |
-| legendary | 0,11 → 0,06 |
+| unique | 0,57 |
+| heroic | 0,64 |
+| legendary | 0,06 |
 
 ### Ceny
 
@@ -2710,10 +2732,10 @@ Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwy�
 
 | mapa | bez profili | z profilami |
 | --- | --: | --: |
-| meadows | 142 | 145 |
-| duskwood | 120 | 135 |
-| ashen | 138 | 148 |
-| frostpeak | 141 | 148 |
+| meadows | 142 | 145 → 155 |
+| duskwood | 120 | 135 → 151 |
+| ashen | 138 | 148 → 168 |
+| frostpeak | 141 | 148 → 164 |
 
 ### Gracz z węzłami rzędów 1–3 (S91)
 
@@ -3344,7 +3366,7 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 ### Cele 1–20 (S32 i S91)
 
-1115/1121 w paśmie. S91: poziomy 1–20 przestrojone i zamrożone. Bloki S32 w `balance.spec` asertują znowu (gracz konwencji bez węzłów i z węzłami buildów wzorcowych przyciętych do poziomu, wiersze „@<build>”), nowe cele S91 (tempo z modelu okna, Grimrok w modelu S83 / S87, T-SK6, bez wsparcia, warstwa umiejętności na L20, R4 rangi 5, ścieżki na 20) w bloku „Balance 1-20: S91”; wiersze z opisem w kolumnie „kto asertuje” są poza zasięgiem dźwigni S91 (raport). Liczby „przed” (start S91) i porównanie z 05b859d: `docs/SESJE.md` → S91.
+1121/1127 w paśmie. S91: poziomy 1–20 przestrojone i zamrożone. Bloki S32 w `balance.spec` asertują znowu (gracz konwencji bez węzłów i z węzłami buildów wzorcowych przyciętych do poziomu, wiersze „@<build>”), nowe cele S91 (tempo z modelu okna, Grimrok w modelu S83 / S87, T-SK6, bez wsparcia, warstwa umiejętności na L20, R4 rangi 5, ścieżki na 20) w bloku „Balance 1-20: S91”; wiersze z opisem w kolumnie „kto asertuje” są poza zasięgiem dźwigni S91 (raport). Liczby „przed” (start S91) i porównanie z 05b859d: `docs/SESJE.md` → S91.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -4170,6 +4192,12 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | koboldMiner 15: solo HP | 2,62 | ≥ 1,80 | w paśmie | S91 (asertowane) |
 | koboldMiner 15: 2 graczy HP | 1,16 | ≤ 1,50 | w paśmie | S91 (asertowane) |
 | koboldMiner 15: 3 graczy HP | 0,77 | 0,60–1,00 | w paśmie | S91 (asertowane) |
+| swampToad 8: solo HP | 3,12 | ≥ 1,80 | w paśmie | S91 (asertowane) |
+| swampToad 8: 2 graczy HP | 1,43 | ≤ 1,50 | w paśmie | S91 (asertowane) |
+| swampToad 8: 3 graczy HP | 0,96 | 0,60–1,00 | w paśmie | S91 (asertowane) |
+| boar 10: solo HP | 3,21 | ≥ 1,80 | w paśmie | S91 (asertowane) |
+| boar 10: 2 graczy HP | 1,45 | ≤ 1,50 | w paśmie | S91 (asertowane) |
+| boar 10: 3 graczy HP | 0,97 | 0,60–1,00 | w paśmie | S91 (asertowane) |
 | Warrior 5: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Warrior 5: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
 | Warrior 5: Legendarny − Heroiczny | 0,01 | 0,00–0,08 | w paśmie | S91 (asertowane) |
@@ -4480,14 +4508,14 @@ G12 (fixture 1–20): 0 różnic powyżej 0,5% (0 dozwolonych), 0 brakujących k
 | 1 na 1 L20 Łowca: s / HP | 6,1 s / 15% | 6,1 s / 15% |
 | 1 na 1 L20 Mag: s / HP | 6,1 s / 17% | 6,0 s / 17% |
 | 1 na 1 L20 Kapłan: s / HP | 10,4 s / 12% | 10,3 s / 11% |
-| Elita II (S32): solo / 3 graczy HP | 238–307% / 72–94% | 262%–298% / 77%–90% |
+| Elita II (S32): solo / 3 graczy HP | 238–307% / 72–94% | 262%–321% / 77%–97% |
 | Grimrok 3 / 4 / 5 graczy (model S83 / S87): min | 5,0 / 5,3 / 5,2 (model S32) | 6,2 / 5,1 / 4,1 |
 | Grimrok: największy cios / HP Maga L20 (model S32) | 67% | 66% |
 | Tempo 1 → 20 Wojownika: h | ok. 2,3 (model S32, z Grimrokiem) | 2,63 (model okna, bez Grimroka) |
 
 ### Cele (1–20)
 
-Globalne (G): 1/1 w paśmie; regionu: 151/151 w paśmie.
+Globalne (G): 1/1 w paśmie; regionu: 157/157 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -4618,6 +4646,12 @@ Globalne (G): 1/1 w paśmie; regionu: 151/151 w paśmie.
 | meadows_cave goblinShaman 20: Elita II solo HP | 2,81 | ≥ 1,80 | w paśmie | S91 (asertowane) |
 | meadows_cave goblinShaman 20: Elita II 2 graczy HP | 1,26 | ≤ 1,50 | w paśmie | S91 (asertowane) |
 | meadows_cave goblinShaman 20: Elita II 3 graczy HP | 0,83 | 0,60–1,00 | w paśmie | S91 (asertowane) |
+| meadows_snarecamp swampToad 8: Elita II solo HP | 3,12 | ≥ 1,80 | w paśmie | S91 (asertowane) |
+| meadows_snarecamp swampToad 8: Elita II 2 graczy HP | 1,43 | ≤ 1,50 | w paśmie | S91 (asertowane) |
+| meadows_snarecamp swampToad 8: Elita II 3 graczy HP | 0,96 | 0,60–1,00 | w paśmie | S91 (asertowane) |
+| meadows_poacherspen boar 10: Elita II solo HP | 3,21 | ≥ 1,80 | w paśmie | S91 (asertowane) |
+| meadows_poacherspen boar 10: Elita II 2 graczy HP | 1,45 | ≤ 1,50 | w paśmie | S91 (asertowane) |
+| meadows_poacherspen boar 10: Elita II 3 graczy HP | 0,97 | 0,60–1,00 | w paśmie | S91 (asertowane) |
 | Elity solo: udział walk w paśmie czasu i HP | 0,98 | ≥ 0,72 | w paśmie | S91 (asertowane) |
 | rabbit 2: EXP/s ÷ zwykły | 0,96 | 0,85–1,20 | w paśmie | S91 (asertowane) |
 | wolf 4: EXP/s ÷ zwykły | 1,04 | 0,85–1,20 | w paśmie | S91 (asertowane) |
@@ -4905,7 +4939,7 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 ### Cele (20–45)
 
-Globalne (G): 169/169 w paśmie; regionu: 198/198 w paśmie.
+Globalne (G): 169/169 w paśmie; regionu: 207/207 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -5204,6 +5238,15 @@ Globalne (G): 169/169 w paśmie; regionu: 198/198 w paśmie.
 | duskwood_cave specter 45: Elita II solo HP | 2,40 | ≥ 1,80 | w paśmie | S92 (asertowane) |
 | duskwood_cave specter 45: Elita II 2 graczy HP | 1,13 | ≤ 1,50 | w paśmie | S92 (asertowane) |
 | duskwood_cave specter 45: Elita II 3 graczy HP | 0,73 | 0,60–1,00 | w paśmie | S92 (asertowane) |
+| duskwood_hangedring rotEnt 32: Elita II solo HP | 3,28 | ≥ 1,80 | w paśmie | S92 (asertowane) |
+| duskwood_hangedring rotEnt 32: Elita II 2 graczy HP | 1,39 | ≤ 1,50 | w paśmie | S92 (asertowane) |
+| duskwood_hangedring rotEnt 32: Elita II 3 graczy HP | 0,92 | 0,60–1,00 | w paśmie | S92 (asertowane) |
+| duskwood_drownedring bogSerpent 36: Elita II solo HP | 2,69 | ≥ 1,80 | w paśmie | S92 (asertowane) |
+| duskwood_drownedring bogSerpent 36: Elita II 2 graczy HP | 1,19 | ≤ 1,50 | w paśmie | S92 (asertowane) |
+| duskwood_drownedring bogSerpent 36: Elita II 3 graczy HP | 0,78 | 0,60–1,00 | w paśmie | S92 (asertowane) |
+| duskwood_gallowsknoll bloodBat 44: Elita II solo HP | 2,72 | ≥ 1,80 | w paśmie | S92 (asertowane) |
+| duskwood_gallowsknoll bloodBat 44: Elita II 2 graczy HP | 1,20 | ≤ 1,50 | w paśmie | S92 (asertowane) |
+| duskwood_gallowsknoll bloodBat 44: Elita II 3 graczy HP | 0,79 | 0,60–1,00 | w paśmie | S92 (asertowane) |
 | Elity solo: udział walk w paśmie czasu i HP | 0,78 | ≥ 0,72 | w paśmie | S92 (asertowane) |
 | werewolf 25: EXP/s ÷ zwykły | 1,00 | 0,85–1,20 | w paśmie | S92 (asertowane) |
 | forestWraith 27: EXP/s ÷ zwykły | 1,06 | 0,85–1,20 | w paśmie | S92 (asertowane) |
@@ -6057,7 +6100,7 @@ Faza 3: ×2.2 ataku bossa (magic) co 1 s na każdego poza bezpiecznym miejscem. 
 
 ### Cele (45–70)
 
-Globalne (G): 169/169 w paśmie; regionu: 196/196 w paśmie.
+Globalne (G): 169/169 w paśmie; regionu: 205/205 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -6356,6 +6399,15 @@ Globalne (G): 169/169 w paśmie; regionu: 196/196 w paśmie.
 | ashen_cave magmaGolem 70: Elita II solo HP | 3,40 | ≥ 1,80 | w paśmie | S93 (asertowane) |
 | ashen_cave magmaGolem 70: Elita II 2 graczy HP | 1,33 | ≤ 1,50 | w paśmie | S93 (asertowane) |
 | ashen_cave magmaGolem 70: Elita II 3 graczy HP | 0,91 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_bonepit fireGolem 57: Elita II solo HP | 3,28 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_bonepit fireGolem 57: Elita II 2 graczy HP | 1,29 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_bonepit fireGolem 57: Elita II 3 graczy HP | 0,88 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_bonenest basilisk 64: Elita II solo HP | 2,80 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_bonenest basilisk 64: Elita II 2 graczy HP | 1,18 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_bonenest basilisk 64: Elita II 3 graczy HP | 0,79 | 0,60–1,00 | w paśmie | S93 (asertowane) |
+| ashen_sunkengrave desertMummy 69: Elita II solo HP | 2,24 | ≥ 1,80 | w paśmie | S93 (asertowane) |
+| ashen_sunkengrave desertMummy 69: Elita II 2 graczy HP | 0,98 | ≤ 1,50 | w paśmie | S93 (asertowane) |
+| ashen_sunkengrave desertMummy 69: Elita II 3 graczy HP | 0,65 | 0,60–1,00 | w paśmie | S93 (asertowane) |
 | Elity solo: udział walk w paśmie czasu i HP | 0,83 | ≥ 0,72 | w paśmie | S93 (asertowane) |
 | salamander 48: EXP/s ÷ zwykły | 1,02 | 0,85–1,20 | w paśmie | S93 (asertowane) |
 | ashOrc 51: EXP/s ÷ zwykły | 0,98 | 0,85–1,20 | w paśmie | S93 (asertowane) |
@@ -6448,7 +6500,7 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 | Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,79 / 0,81 / 0,83 | 0,40 / 0,38 / 0,36 | ≤ 1,0 |
 | Azgor bez wsparcia: największy cios / HP członka | 111% | 38% | ≤ 100% |
 | Elity: spotkanie Wojownik / Mag (najgorsze) | 158% / 163% | 106% / 117% | ≤ 110% / ≤ 125% |
-| Elita II solo / 2 / 3 graczy | 2,55–3,45 / 1,11–1,42 / 0,74–0,95 | 2,54–3,45 / 1,11–1,35 / 0,74–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| Elita II solo / 2 / 3 graczy | 2,55–3,45 / 1,11–1,42 / 0,74–0,95 | 2,24–3,45 / 0,98–1,35 / 0,65–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
 | Elity dropią ilvl 46–70 | 22/25 | 25/25 | każdy |
 | Expowiska na 68 / 69 | 1 / 1 | 2 / 2 | ≥ 2 |
 | Rodzaje: EXP/s ÷ zwykły (najmniej) | 0,69 (magmaGolem) | 0,90 | 0,85–1,20 |
@@ -7125,7 +7177,7 @@ Faza 3: ×3.9 ataku bossa (magic) co 3 s na każdego poza bezpiecznym miejscem.
 
 ### Cele (70–100)
 
-Globalne (G): 249/249 w paśmie; regionu: 204/204 w paśmie.
+Globalne (G): 249/249 w paśmie; regionu: 213/213 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -7504,6 +7556,15 @@ Globalne (G): 249/249 w paśmie; regionu: 204/204 w paśmie.
 | frostpeak_cave crystalGuardian 96: Elita II solo HP | 2,32 | ≥ 1,80 | w paśmie | S94 (asertowane) |
 | frostpeak_cave crystalGuardian 96: Elita II 2 graczy HP | 0,91 | ≤ 1,50 | w paśmie | S94 (asertowane) |
 | frostpeak_cave crystalGuardian 96: Elita II 3 graczy HP | 0,62 | 0,60–1,00 | w paśmie | S94 (asertowane) |
+| frostpeak_frozencamp snowLeopard 75: Elita II solo HP | 2,83 | ≥ 1,80 | w paśmie | S94 (asertowane) |
+| frostpeak_frozencamp snowLeopard 75: Elita II 2 graczy HP | 1,23 | ≤ 1,50 | w paśmie | S94 (asertowane) |
+| frostpeak_frozencamp snowLeopard 75: Elita II 3 graczy HP | 0,81 | 0,60–1,00 | w paśmie | S94 (asertowane) |
+| frostpeak_tuskcamp iceMammoth 85: Elita II solo HP | 2,84 | ≥ 1,80 | w paśmie | S94 (asertowane) |
+| frostpeak_tuskcamp iceMammoth 85: Elita II 2 graczy HP | 1,23 | ≤ 1,50 | w paśmie | S94 (asertowane) |
+| frostpeak_tuskcamp iceMammoth 85: Elita II 3 graczy HP | 0,81 | 0,60–1,00 | w paśmie | S94 (asertowane) |
+| frostpeak_buriedcamp dragonspawn 95: Elita II solo HP | 3,20 | ≥ 1,80 | w paśmie | S94 (asertowane) |
+| frostpeak_buriedcamp dragonspawn 95: Elita II 2 graczy HP | 1,37 | ≤ 1,50 | w paśmie | S94 (asertowane) |
+| frostpeak_buriedcamp dragonspawn 95: Elita II 3 graczy HP | 0,91 | 0,60–1,00 | w paśmie | S94 (asertowane) |
 | Elity solo: udział walk w paśmie czasu i HP | 0,94 | ≥ 0,72 | w paśmie | S94 (asertowane) |
 | iceWolf 74: EXP/s ÷ zwykły | 1,04 | 0,85–1,20 | w paśmie | S94 (asertowane) |
 | yeti 76: EXP/s ÷ zwykły | 0,96 | 0,85–1,20 | w paśmie | S94 (asertowane) |
@@ -7608,7 +7669,7 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Vaelgrath: zabicia do Mityka / Grimrok | 1,00 (50 / 50) | 1,54 (77 / 50) | 1,4–1,6 |
 | Elity pojedyncze w paśmie (20–36 s, 55–95%) | 44% | 94% | ≥ 72% |
 | Elity: spotkanie Wojownik / Mag (najgorsze) | 185% / 211% | 105% / 120% | ≤ 110% / ≤ 125% |
-| Elita II solo / 2 / 3 graczy | 2,79–4,52 / 1,11–1,93 / 0,75–1,27 | 2,32–3,03 / 0,91–1,30 / 0,62–0,86 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
+| Elita II solo / 2 / 3 graczy | 2,79–4,52 / 1,11–1,93 / 0,75–1,27 | 2,32–3,20 / 0,91–1,37 / 0,62–0,91 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
 | Elity dropią ilvl 71–100 | 29/30 | 30/30 | każdy |
 | Expowiska ≥ 2 na 71–100 | 22/30 | 30/30 | każdy |
 | Rodzaje: EXP/s ÷ zwykły (najmniej) | 0,70 (crystalGuardian) | 0,92 | 0,85–1,20 |
@@ -9080,23 +9141,23 @@ Wartości oczekiwane z tabel łupu (szansa × średnia ilość, jak `Loot.rollMo
 | --- | --: | --: | --: | --: | --: |
 | 20 · expienie / h | 44,2 | 0,86 | 0,00 | 0,00 | 0,00 |
 | 20 · Elity / h | 66,6 | 7,97 | 0,17 | 0,00 | 0,00 |
-| 20 · Elita II / zabicie | 3,7 → 2,3 | 3,96 → 2,22 | 0,70 → 0,39 | 0,08 → 0,04 | 0,12 → 0,08 |
-| 20 · Elita II / h odrodzeń | 33,8 → 42,6 | 36,36 → 40,69 | 6,42 → 7,15 | 0,73 | 1,15 → 1,38 |
+| 20 · Elita II / zabicie | 2,3 | 2,22 | 0,39 | 0,04 | 0,08 |
+| 20 · Elita II / h odrodzeń | 42,6 | 40,69 | 7,15 | 0,73 | 1,38 |
 | 20 · boss / tydzień | 0,0 | 84,00 | 25,20 | 6,30 | 3,15 |
 | 45 · expienie / h | 54,7 | 0,94 | 0,00 | 0,00 | 0,00 |
 | 45 · Elity / h | 67,6 | 7,98 | 0,18 | 0,00 | 0,00 |
-| 45 · Elita II / zabicie | 3,8 → 2,4 | 4,10 → 2,30 | 0,71 → 0,40 | 0,08 → 0,04 | 0,12 → 0,08 |
-| 45 · Elita II / h odrodzeń | 29,2 → 38,0 | 31,60 → 35,92 | 5,49 → 6,20 | 0,62 | 0,96 → 1,17 |
+| 45 · Elita II / zabicie | 2,4 | 2,30 | 0,40 | 0,04 | 0,08 |
+| 45 · Elita II / h odrodzeń | 38,0 | 35,92 | 6,20 | 0,62 | 1,17 |
 | 45 · boss / tydzień | 0,0 | 0,00 | 52,50 | 11,02 | 4,20 |
 | 70 · expienie / h | 64,6 | 0,95 | 0,00 | 0,00 | 0,00 |
 | 70 · Elity / h | 73,6 | 8,39 | 0,19 | 0,00 | 0,00 |
-| 70 · Elita II / zabicie | 3,9 → 2,6 | 4,10 → 2,30 | 0,71 → 0,40 | 0,08 → 0,04 | 0,12 → 0,08 |
-| 70 · Elita II / h odrodzeń | 26,0 → 34,4 | 27,08 → 30,72 | 4,70 → 5,31 | 0,53 | 0,82 → 1,00 |
+| 70 · Elita II / zabicie | 2,6 | 2,30 | 0,40 | 0,04 | 0,08 |
+| 70 · Elita II / h odrodzeń | 34,4 | 30,72 | 5,31 | 0,53 | 1,00 |
 | 70 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 | 100 · expienie / h | 55,1 | 0,81 | 0,00 | 0,00 | 0,00 |
 | 100 · Elity / h | 75,6 | 8,61 | 0,19 | 0,00 | 0,00 |
-| 100 · Elita II / zabicie | 3,9 → 2,6 | 4,10 → 2,30 | 0,71 → 0,40 | 0,08 → 0,04 | 0,12 → 0,08 |
-| 100 · Elita II / h odrodzeń | 23,6 → 31,2 | 24,62 → 27,92 | 4,28 → 4,82 | 0,48 → 0,49 | 0,75 → 0,91 |
+| 100 · Elita II / zabicie | 2,6 | 2,30 | 0,40 | 0,04 | 0,08 |
+| 100 · Elita II / h odrodzeń | 31,2 | 27,92 | 4,82 | 0,49 | 0,91 |
 | 100 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 
 ### Godziny na +9 broni, Rdzenie i zwoje (Wojownik)
@@ -9105,10 +9166,10 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 
 | poziom | h expienia +9 z ochroną | h expienia +9 bez ochrony | h Elit +9 z ochroną | h Elit +9 bez ochrony | Rdzenie / tydzień (boss) | Rdzenie na Legendę +9 z ochroną | zwoje / Elita II | zwoje na +9 z ochroną | udział materiałów w goldEq +9 bez ochrony |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 20 | – | – | 203,4 | 775,0 | 3,15 | 8,3 | 0,08 → 0,04 | 18,3 | 75% |
-| 45 | 53,7 | 245,6 | 21,3 | 97,4 | 4,20 | 8,3 | 0,08 → 0,04 | 18,3 | 36% |
-| 70 | 46,5 | 212,6 | 20,0 | 91,3 | 9,45 | 8,3 | 0,08 → 0,04 | 18,3 | 19% |
-| 100 | 54,5 | 249,4 | 19,4 | 88,9 | 9,45 | 8,3 | 0,08 → 0,04 | 18,3 | 10% |
+| 20 | – | – | 203,4 | 775,0 | 3,15 | 8,3 | 0,04 | 18,3 | 75% |
+| 45 | 53,7 | 245,6 | 21,3 | 97,4 | 4,20 | 8,3 | 0,04 | 18,3 | 36% |
+| 70 | 46,5 | 212,6 | 20,0 | 91,3 | 9,45 | 8,3 | 0,04 | 18,3 | 19% |
+| 100 | 54,5 | 249,4 | 19,4 | 88,9 | 9,45 | 8,3 | 0,04 | 18,3 | 10% |
 
 ### Cele G7–G9 (S84; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
@@ -9436,70 +9497,70 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,02 | 3,93 | 1,30 | 0,77 | 1,00 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 65,7 | 17,8 |
-| 25 · K1 | 3,57 | 4,47 | 1,25 | 0,91 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 65,7 | 17,8 |
-| 25 · K2 | 4,48 | 5,38 | 1,20 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 65,7 | 17,8 |
-| 25 · K3 | 5,14 | 6,05 | 1,18 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 65,7 | 17,8 |
-| 30 · K0 | 2,70 | 3,51 | 1,30 | 0,76 | 0,99 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 58,7 | 17,7 |
-| 30 · K1 | 3,19 | 4,00 | 1,25 | 0,90 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 58,7 | 17,7 |
-| 30 · K2 | 4,00 | 4,81 | 1,20 | 1,02 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 58,7 | 17,7 |
-| 30 · K3 | 4,59 | 5,40 | 1,18 | 1,02 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 58,7 | 17,7 |
-| 35 · K0 | 2,50 | 3,25 | 1,30 | 0,92 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 54,3 | 21,3 |
-| 35 · K1 | 2,95 | 3,70 | 1,25 | 1,08 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 54,3 | 21,3 |
-| 35 · K2 | 3,70 | 4,45 | 1,20 | 1,22 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 54,3 | 21,3 |
-| 35 · K3 | 4,25 | 5,00 | 1,18 | 1,22 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 54,3 | 21,3 |
-| 40 · K0 | 3,34 | 4,34 | 1,30 | 0,85 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 72,5 | 19,8 |
-| 40 · K1 | 3,94 | 4,94 | 1,25 | 1,01 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 72,5 | 19,8 |
-| 40 · K2 | 4,94 | 5,94 | 1,20 | 1,14 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 72,5 | 19,8 |
-| 40 · K3 | 5,68 | 6,68 | 1,18 | 1,14 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 72,5 | 19,8 |
-| 45 · K0 | 3,41 | 4,44 | 1,30 | 0,80 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 70,0 | 17,6 |
-| 45 · K1 | 4,02 | 5,05 | 1,25 | 0,95 | 1,07 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 70,0 | 17,6 |
-| 45 · K2 | 5,05 | 6,07 | 1,20 | 1,07 | 1,07 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 70,0 | 17,6 |
-| 45 · K3 | 5,80 | 6,82 | 1,18 | 1,07 | 1,07 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 70,0 | 17,6 |
-| 50 · K0 | 3,22 | 4,18 | 1,30 | 0,81 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 66,0 | 17,7 |
-| 50 · K1 | 3,79 | 4,76 | 1,25 | 0,95 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 66,0 | 17,7 |
-| 50 · K2 | 4,76 | 5,73 | 1,20 | 1,08 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 66,0 | 17,7 |
-| 50 · K3 | 5,47 | 6,43 | 1,18 | 1,08 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 66,0 | 17,7 |
-| 55 · K0 | 2,61 | 3,39 | 1,30 | 0,82 | 1,06 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 53,5 | 17,9 |
-| 55 · K1 | 3,08 | 3,86 | 1,25 | 0,96 | 1,09 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 53,5 | 17,9 |
-| 55 · K2 | 3,86 | 4,64 | 1,20 | 1,09 | 1,09 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 53,5 | 17,9 |
-| 55 · K3 | 4,43 | 5,22 | 1,18 | 1,09 | 1,09 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 53,5 | 17,9 |
-| 60 · K0 | 3,26 | 4,24 | 1,30 | 0,92 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 66,9 | 20,1 |
-| 60 · K1 | 3,85 | 4,82 | 1,25 | 1,08 | 1,23 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 66,9 | 20,1 |
-| 60 · K2 | 4,83 | 5,81 | 1,20 | 1,23 | 1,23 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 66,9 | 20,1 |
-| 60 · K3 | 5,54 | 6,52 | 1,18 | 1,23 | 1,23 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 66,9 | 20,1 |
-| 65 · K0 | 3,07 | 3,99 | 1,30 | 0,81 | 1,06 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 62,9 | 17,8 |
-| 65 · K1 | 3,62 | 4,54 | 1,25 | 0,96 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 62,9 | 17,8 |
-| 65 · K2 | 4,54 | 5,46 | 1,20 | 1,08 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 62,9 | 17,8 |
-| 65 · K3 | 5,21 | 6,13 | 1,18 | 1,08 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 62,9 | 17,8 |
-| 70 · K0 | 3,42 | 4,44 | 1,30 | 0,84 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 70,1 | 18,4 |
-| 70 · K1 | 4,03 | 5,06 | 1,25 | 0,99 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 70,1 | 18,4 |
-| 70 · K2 | 5,06 | 6,09 | 1,20 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 70,1 | 18,4 |
-| 70 · K3 | 5,81 | 6,84 | 1,18 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 70,1 | 18,4 |
-| 75 · K0 | 2,95 | 3,84 | 1,30 | 0,85 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 60,5 | 18,6 |
-| 75 · K1 | 3,48 | 4,36 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 60,5 | 18,6 |
-| 75 · K2 | 4,37 | 5,25 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 60,5 | 18,6 |
-| 75 · K3 | 5,02 | 5,90 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 60,5 | 18,6 |
-| 80 · K0 | 3,56 | 4,63 | 1,30 | 0,85 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 73,1 | 18,6 |
-| 80 · K1 | 4,20 | 5,27 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 73,1 | 18,6 |
-| 80 · K2 | 5,27 | 6,34 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 73,1 | 18,6 |
-| 80 · K3 | 6,06 | 7,12 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 73,1 | 18,6 |
-| 85 · K0 | 2,94 | 3,83 | 1,30 | 0,85 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 60,4 | 18,5 |
-| 85 · K1 | 3,47 | 4,36 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 60,4 | 18,5 |
-| 85 · K2 | 4,36 | 5,24 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 60,4 | 18,5 |
-| 85 · K3 | 5,01 | 5,89 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 60,4 | 18,5 |
-| 90 · K0 | 2,76 | 3,59 | 1,30 | 0,85 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 56,6 | 18,6 |
-| 90 · K1 | 3,25 | 4,08 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 56,6 | 18,6 |
-| 90 · K2 | 4,08 | 4,91 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 56,6 | 18,6 |
-| 90 · K3 | 4,69 | 5,52 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 56,6 | 18,6 |
-| 95 · K0 | 2,90 | 3,77 | 1,30 | 0,86 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 59,5 | 18,7 |
-| 95 · K1 | 3,42 | 4,29 | 1,25 | 1,01 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 59,5 | 18,7 |
-| 95 · K2 | 4,30 | 5,17 | 1,20 | 1,14 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 59,5 | 18,7 |
-| 95 · K3 | 4,93 | 5,80 | 1,18 | 1,14 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 59,5 | 18,7 |
-| 100 · K0 | 2,91 | 3,79 | 1,30 | 0,87 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 59,8 | 18,9 |
-| 100 · K1 | 3,44 | 4,31 | 1,25 | 1,02 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 59,8 | 18,9 |
-| 100 · K2 | 4,31 | 5,19 | 1,20 | 1,15 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 59,8 | 18,9 |
-| 100 · K3 | 4,96 | 5,83 | 1,18 | 1,15 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 59,8 | 18,9 |
+| 25 · K0 | 3,02 | 3,93 | 1,30 | 0,77 | 1,00 | 0,07 | 0,08 | 0,0 | 65,7 | 17,8 |
+| 25 · K1 | 3,57 | 4,47 | 1,25 | 0,91 | 1,03 | 0,07 | 0,08 | 14,6 | 65,7 | 17,8 |
+| 25 · K2 | 4,48 | 5,38 | 1,20 | 1,03 | 1,03 | 0,07 | 0,08 | 44,7 | 65,7 | 17,8 |
+| 25 · K3 | 5,14 | 6,05 | 1,18 | 1,03 | 1,03 | 0,07 | 0,08 | 66,7 | 65,7 | 17,8 |
+| 30 · K0 | 2,70 | 3,51 | 1,30 | 0,76 | 0,99 | 0,07 | 0,08 | 0,0 | 58,7 | 17,7 |
+| 30 · K1 | 3,19 | 4,00 | 1,25 | 0,90 | 1,02 | 0,07 | 0,08 | 14,6 | 58,7 | 17,7 |
+| 30 · K2 | 4,00 | 4,81 | 1,20 | 1,02 | 1,02 | 0,07 | 0,08 | 44,7 | 58,7 | 17,7 |
+| 30 · K3 | 4,59 | 5,40 | 1,18 | 1,02 | 1,02 | 0,07 | 0,08 | 66,7 | 58,7 | 17,7 |
+| 35 · K0 | 2,50 | 3,25 | 1,30 | 0,92 | 1,19 | 0,07 | 0,08 | 0,0 | 54,3 | 21,3 |
+| 35 · K1 | 2,95 | 3,70 | 1,25 | 1,08 | 1,22 | 0,07 | 0,08 | 14,6 | 54,3 | 21,3 |
+| 35 · K2 | 3,70 | 4,45 | 1,20 | 1,22 | 1,22 | 0,07 | 0,08 | 44,7 | 54,3 | 21,3 |
+| 35 · K3 | 4,25 | 5,00 | 1,18 | 1,22 | 1,22 | 0,07 | 0,08 | 66,7 | 54,3 | 21,3 |
+| 40 · K0 | 3,34 | 4,34 | 1,30 | 0,85 | 1,11 | 0,07 | 0,08 | 0,0 | 72,5 | 19,8 |
+| 40 · K1 | 3,94 | 4,94 | 1,25 | 1,01 | 1,14 | 0,07 | 0,08 | 14,6 | 72,5 | 19,8 |
+| 40 · K2 | 4,94 | 5,94 | 1,20 | 1,14 | 1,14 | 0,07 | 0,08 | 44,7 | 72,5 | 19,8 |
+| 40 · K3 | 5,68 | 6,68 | 1,18 | 1,14 | 1,14 | 0,07 | 0,08 | 66,7 | 72,5 | 19,8 |
+| 45 · K0 | 3,41 | 4,44 | 1,30 | 0,80 | 1,04 | 0,07 | 0,08 | 0,0 | 70,0 | 17,6 |
+| 45 · K1 | 4,02 | 5,05 | 1,25 | 0,95 | 1,07 | 0,07 | 0,08 | 14,6 | 70,0 | 17,6 |
+| 45 · K2 | 5,05 | 6,07 | 1,20 | 1,07 | 1,07 | 0,07 | 0,08 | 44,7 | 70,0 | 17,6 |
+| 45 · K3 | 5,80 | 6,82 | 1,18 | 1,07 | 1,07 | 0,07 | 0,08 | 66,7 | 70,0 | 17,6 |
+| 50 · K0 | 3,22 | 4,18 | 1,30 | 0,81 | 1,05 | 0,07 | 0,08 | 0,0 | 66,0 | 17,7 |
+| 50 · K1 | 3,79 | 4,76 | 1,25 | 0,95 | 1,08 | 0,07 | 0,08 | 14,6 | 66,0 | 17,7 |
+| 50 · K2 | 4,76 | 5,73 | 1,20 | 1,08 | 1,08 | 0,07 | 0,08 | 44,7 | 66,0 | 17,7 |
+| 50 · K3 | 5,47 | 6,43 | 1,18 | 1,08 | 1,08 | 0,07 | 0,08 | 66,7 | 66,0 | 17,7 |
+| 55 · K0 | 2,61 | 3,39 | 1,30 | 0,82 | 1,06 | 0,07 | 0,08 | 0,0 | 53,5 | 17,9 |
+| 55 · K1 | 3,08 | 3,86 | 1,25 | 0,96 | 1,09 | 0,07 | 0,08 | 14,6 | 53,5 | 17,9 |
+| 55 · K2 | 3,86 | 4,64 | 1,20 | 1,09 | 1,09 | 0,07 | 0,08 | 44,7 | 53,5 | 17,9 |
+| 55 · K3 | 4,43 | 5,22 | 1,18 | 1,09 | 1,09 | 0,07 | 0,08 | 66,7 | 53,5 | 17,9 |
+| 60 · K0 | 3,26 | 4,24 | 1,30 | 0,92 | 1,19 | 0,07 | 0,08 | 0,0 | 66,9 | 20,1 |
+| 60 · K1 | 3,85 | 4,82 | 1,25 | 1,08 | 1,23 | 0,07 | 0,08 | 14,6 | 66,9 | 20,1 |
+| 60 · K2 | 4,83 | 5,81 | 1,20 | 1,23 | 1,23 | 0,07 | 0,08 | 44,7 | 66,9 | 20,1 |
+| 60 · K3 | 5,54 | 6,52 | 1,18 | 1,23 | 1,23 | 0,07 | 0,08 | 66,7 | 66,9 | 20,1 |
+| 65 · K0 | 3,07 | 3,99 | 1,30 | 0,81 | 1,06 | 0,07 | 0,08 | 0,0 | 62,9 | 17,8 |
+| 65 · K1 | 3,62 | 4,54 | 1,25 | 0,96 | 1,08 | 0,07 | 0,08 | 14,6 | 62,9 | 17,8 |
+| 65 · K2 | 4,54 | 5,46 | 1,20 | 1,08 | 1,08 | 0,07 | 0,08 | 44,7 | 62,9 | 17,8 |
+| 65 · K3 | 5,21 | 6,13 | 1,18 | 1,08 | 1,08 | 0,07 | 0,08 | 66,7 | 62,9 | 17,8 |
+| 70 · K0 | 3,42 | 4,44 | 1,30 | 0,84 | 1,10 | 0,07 | 0,08 | 0,0 | 70,1 | 18,4 |
+| 70 · K1 | 4,03 | 5,06 | 1,25 | 0,99 | 1,12 | 0,07 | 0,08 | 14,6 | 70,1 | 18,4 |
+| 70 · K2 | 5,06 | 6,09 | 1,20 | 1,12 | 1,12 | 0,07 | 0,08 | 44,7 | 70,1 | 18,4 |
+| 70 · K3 | 5,81 | 6,84 | 1,18 | 1,12 | 1,12 | 0,07 | 0,08 | 66,7 | 70,1 | 18,4 |
+| 75 · K0 | 2,95 | 3,84 | 1,30 | 0,85 | 1,10 | 0,07 | 0,08 | 0,0 | 60,5 | 18,6 |
+| 75 · K1 | 3,48 | 4,36 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 60,5 | 18,6 |
+| 75 · K2 | 4,37 | 5,25 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 60,5 | 18,6 |
+| 75 · K3 | 5,02 | 5,90 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 60,5 | 18,6 |
+| 80 · K0 | 3,56 | 4,63 | 1,30 | 0,85 | 1,11 | 0,07 | 0,08 | 0,0 | 73,1 | 18,6 |
+| 80 · K1 | 4,20 | 5,27 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 73,1 | 18,6 |
+| 80 · K2 | 5,27 | 6,34 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 73,1 | 18,6 |
+| 80 · K3 | 6,06 | 7,12 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 73,1 | 18,6 |
+| 85 · K0 | 2,94 | 3,83 | 1,30 | 0,85 | 1,10 | 0,07 | 0,08 | 0,0 | 60,4 | 18,5 |
+| 85 · K1 | 3,47 | 4,36 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 60,4 | 18,5 |
+| 85 · K2 | 4,36 | 5,24 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 60,4 | 18,5 |
+| 85 · K3 | 5,01 | 5,89 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 60,4 | 18,5 |
+| 90 · K0 | 2,76 | 3,59 | 1,30 | 0,85 | 1,11 | 0,07 | 0,08 | 0,0 | 56,6 | 18,6 |
+| 90 · K1 | 3,25 | 4,08 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 56,6 | 18,6 |
+| 90 · K2 | 4,08 | 4,91 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 56,6 | 18,6 |
+| 90 · K3 | 4,69 | 5,52 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 56,6 | 18,6 |
+| 95 · K0 | 2,90 | 3,77 | 1,30 | 0,86 | 1,11 | 0,07 | 0,08 | 0,0 | 59,5 | 18,7 |
+| 95 · K1 | 3,42 | 4,29 | 1,25 | 1,01 | 1,14 | 0,07 | 0,08 | 14,6 | 59,5 | 18,7 |
+| 95 · K2 | 4,30 | 5,17 | 1,20 | 1,14 | 1,14 | 0,07 | 0,08 | 44,7 | 59,5 | 18,7 |
+| 95 · K3 | 4,93 | 5,80 | 1,18 | 1,14 | 1,14 | 0,07 | 0,08 | 66,7 | 59,5 | 18,7 |
+| 100 · K0 | 2,91 | 3,79 | 1,30 | 0,87 | 1,13 | 0,07 | 0,08 | 0,0 | 59,8 | 18,9 |
+| 100 · K1 | 3,44 | 4,31 | 1,25 | 1,02 | 1,15 | 0,07 | 0,08 | 14,6 | 59,8 | 18,9 |
+| 100 · K2 | 4,31 | 5,19 | 1,20 | 1,15 | 1,15 | 0,07 | 0,08 | 44,7 | 59,8 | 18,9 |
+| 100 · K3 | 4,96 | 5,83 | 1,18 | 1,15 | 1,15 | 0,07 | 0,08 | 66,7 | 59,8 | 18,9 |
 
 ### D5: drop na godzinę, Łowca
 
@@ -9507,70 +9568,70 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,04 | 3,95 | 1,30 | 0,79 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 66,6 | 18,4 |
-| 25 · K1 | 3,58 | 4,49 | 1,25 | 0,93 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 66,6 | 18,4 |
-| 25 · K2 | 4,50 | 5,41 | 1,20 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 66,6 | 18,4 |
-| 25 · K3 | 5,17 | 6,08 | 1,18 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 66,6 | 18,4 |
-| 30 · K0 | 2,75 | 3,58 | 1,30 | 0,78 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 60,4 | 18,4 |
-| 30 · K1 | 3,25 | 4,07 | 1,25 | 0,93 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 60,4 | 18,4 |
-| 30 · K2 | 4,08 | 4,90 | 1,20 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 60,4 | 18,4 |
-| 30 · K3 | 4,68 | 5,51 | 1,18 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 60,4 | 18,4 |
-| 35 · K0 | 2,53 | 3,29 | 1,30 | 0,98 | 1,28 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 55,5 | 23,0 |
-| 35 · K1 | 2,98 | 3,74 | 1,25 | 1,16 | 1,31 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 55,5 | 23,0 |
-| 35 · K2 | 3,75 | 4,50 | 1,20 | 1,31 | 1,31 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 55,5 | 23,0 |
-| 35 · K3 | 4,30 | 5,06 | 1,18 | 1,31 | 1,31 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 55,5 | 23,0 |
-| 40 · K0 | 3,65 | 4,74 | 1,30 | 0,91 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 80,0 | 21,3 |
-| 40 · K1 | 4,30 | 5,40 | 1,25 | 1,07 | 1,21 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 80,0 | 21,3 |
-| 40 · K2 | 5,40 | 6,49 | 1,20 | 1,21 | 1,21 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 80,0 | 21,3 |
-| 40 · K3 | 6,20 | 7,29 | 1,18 | 1,21 | 1,21 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 80,0 | 21,3 |
-| 45 · K0 | 3,45 | 4,48 | 1,30 | 0,83 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 71,4 | 18,3 |
-| 45 · K1 | 4,06 | 5,10 | 1,25 | 0,98 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 71,4 | 18,3 |
-| 45 · K2 | 5,10 | 6,13 | 1,20 | 1,10 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 71,4 | 18,3 |
-| 45 · K3 | 5,86 | 6,89 | 1,18 | 1,10 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 71,4 | 18,3 |
-| 50 · K0 | 3,24 | 4,21 | 1,30 | 0,83 | 1,08 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 67,1 | 18,4 |
-| 50 · K1 | 3,82 | 4,79 | 1,25 | 0,98 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 67,1 | 18,4 |
-| 50 · K2 | 4,79 | 5,77 | 1,20 | 1,11 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 67,1 | 18,4 |
-| 50 · K3 | 5,51 | 6,48 | 1,18 | 1,11 | 1,11 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 67,1 | 18,4 |
-| 55 · K0 | 2,68 | 3,49 | 1,30 | 0,84 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 55,6 | 18,6 |
-| 55 · K1 | 3,17 | 3,97 | 1,25 | 0,99 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 55,6 | 18,6 |
-| 55 · K2 | 3,97 | 4,78 | 1,20 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 55,6 | 18,6 |
-| 55 · K3 | 4,56 | 5,37 | 1,18 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 55,6 | 18,6 |
-| 60 · K0 | 3,31 | 4,30 | 1,30 | 0,95 | 1,23 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 68,5 | 21,0 |
-| 60 · K1 | 3,90 | 4,89 | 1,25 | 1,12 | 1,27 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 68,5 | 21,0 |
-| 60 · K2 | 4,90 | 5,89 | 1,20 | 1,27 | 1,27 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 68,5 | 21,0 |
-| 60 · K3 | 5,63 | 6,62 | 1,18 | 1,27 | 1,27 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 68,5 | 21,0 |
-| 65 · K0 | 3,13 | 4,07 | 1,30 | 0,85 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 64,8 | 18,7 |
-| 65 · K1 | 3,69 | 4,63 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 64,8 | 18,7 |
-| 65 · K2 | 4,63 | 5,57 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 64,8 | 18,7 |
-| 65 · K3 | 5,32 | 6,26 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 64,8 | 18,7 |
-| 70 · K0 | 3,48 | 4,52 | 1,30 | 0,87 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 72,0 | 19,3 |
-| 70 · K1 | 4,10 | 5,14 | 1,25 | 1,03 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 72,0 | 19,3 |
-| 70 · K2 | 5,15 | 6,19 | 1,20 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 72,0 | 19,3 |
-| 70 · K3 | 5,91 | 6,95 | 1,18 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 72,0 | 19,3 |
-| 75 · K0 | 3,03 | 3,93 | 1,30 | 0,88 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 62,7 | 19,5 |
-| 75 · K1 | 3,57 | 4,48 | 1,25 | 1,04 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 62,7 | 19,5 |
-| 75 · K2 | 4,48 | 5,39 | 1,20 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 62,7 | 19,5 |
-| 75 · K3 | 5,14 | 6,05 | 1,18 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 62,7 | 19,5 |
-| 80 · K0 | 3,63 | 4,72 | 1,30 | 0,88 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 75,1 | 19,5 |
-| 80 · K1 | 4,28 | 5,37 | 1,25 | 1,04 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 75,1 | 19,5 |
-| 80 · K2 | 5,37 | 6,46 | 1,20 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 75,1 | 19,5 |
-| 80 · K3 | 6,17 | 7,26 | 1,18 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 75,1 | 19,5 |
-| 85 · K0 | 3,05 | 3,96 | 1,30 | 0,89 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 63,1 | 19,6 |
-| 85 · K1 | 3,59 | 4,51 | 1,25 | 1,05 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 63,1 | 19,6 |
-| 85 · K2 | 4,51 | 5,43 | 1,20 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 63,1 | 19,6 |
-| 85 · K3 | 5,18 | 6,10 | 1,18 | 1,18 | 1,18 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 63,1 | 19,6 |
-| 90 · K0 | 2,85 | 3,71 | 1,30 | 0,89 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 59,0 | 19,8 |
-| 90 · K1 | 3,36 | 4,22 | 1,25 | 1,06 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 59,0 | 19,8 |
-| 90 · K2 | 4,22 | 5,08 | 1,20 | 1,19 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 59,0 | 19,8 |
-| 90 · K3 | 4,85 | 5,70 | 1,18 | 1,19 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 59,0 | 19,8 |
-| 95 · K0 | 3,02 | 3,92 | 1,30 | 0,90 | 1,17 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 62,5 | 19,9 |
-| 95 · K1 | 3,56 | 4,46 | 1,25 | 1,06 | 1,20 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 62,5 | 19,9 |
-| 95 · K2 | 4,47 | 5,37 | 1,20 | 1,20 | 1,20 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 62,5 | 19,9 |
-| 95 · K3 | 5,13 | 6,04 | 1,18 | 1,20 | 1,20 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 62,5 | 19,9 |
-| 100 · K0 | 3,04 | 3,95 | 1,30 | 0,92 | 1,19 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 63,0 | 20,2 |
-| 100 · K1 | 3,58 | 4,50 | 1,25 | 1,08 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 63,0 | 20,2 |
-| 100 · K2 | 4,50 | 5,41 | 1,20 | 1,22 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 63,0 | 20,2 |
-| 100 · K3 | 5,17 | 6,08 | 1,18 | 1,22 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 63,0 | 20,2 |
+| 25 · K0 | 3,04 | 3,95 | 1,30 | 0,79 | 1,02 | 0,07 | 0,08 | 0,0 | 66,6 | 18,4 |
+| 25 · K1 | 3,58 | 4,49 | 1,25 | 0,93 | 1,05 | 0,07 | 0,08 | 14,6 | 66,6 | 18,4 |
+| 25 · K2 | 4,50 | 5,41 | 1,20 | 1,05 | 1,05 | 0,07 | 0,08 | 44,7 | 66,6 | 18,4 |
+| 25 · K3 | 5,17 | 6,08 | 1,18 | 1,05 | 1,05 | 0,07 | 0,08 | 66,7 | 66,6 | 18,4 |
+| 30 · K0 | 2,75 | 3,58 | 1,30 | 0,78 | 1,02 | 0,07 | 0,08 | 0,0 | 60,4 | 18,4 |
+| 30 · K1 | 3,25 | 4,07 | 1,25 | 0,93 | 1,05 | 0,07 | 0,08 | 14,6 | 60,4 | 18,4 |
+| 30 · K2 | 4,08 | 4,90 | 1,20 | 1,05 | 1,05 | 0,07 | 0,08 | 44,7 | 60,4 | 18,4 |
+| 30 · K3 | 4,68 | 5,51 | 1,18 | 1,05 | 1,05 | 0,07 | 0,08 | 66,7 | 60,4 | 18,4 |
+| 35 · K0 | 2,53 | 3,29 | 1,30 | 0,98 | 1,28 | 0,07 | 0,08 | 0,0 | 55,5 | 23,0 |
+| 35 · K1 | 2,98 | 3,74 | 1,25 | 1,16 | 1,31 | 0,07 | 0,08 | 14,6 | 55,5 | 23,0 |
+| 35 · K2 | 3,75 | 4,50 | 1,20 | 1,31 | 1,31 | 0,07 | 0,08 | 44,7 | 55,5 | 23,0 |
+| 35 · K3 | 4,30 | 5,06 | 1,18 | 1,31 | 1,31 | 0,07 | 0,08 | 66,7 | 55,5 | 23,0 |
+| 40 · K0 | 3,65 | 4,74 | 1,30 | 0,91 | 1,18 | 0,07 | 0,08 | 0,0 | 80,0 | 21,3 |
+| 40 · K1 | 4,30 | 5,40 | 1,25 | 1,07 | 1,21 | 0,07 | 0,08 | 14,6 | 80,0 | 21,3 |
+| 40 · K2 | 5,40 | 6,49 | 1,20 | 1,21 | 1,21 | 0,07 | 0,08 | 44,7 | 80,0 | 21,3 |
+| 40 · K3 | 6,20 | 7,29 | 1,18 | 1,21 | 1,21 | 0,07 | 0,08 | 66,7 | 80,0 | 21,3 |
+| 45 · K0 | 3,45 | 4,48 | 1,30 | 0,83 | 1,08 | 0,07 | 0,08 | 0,0 | 71,4 | 18,3 |
+| 45 · K1 | 4,06 | 5,10 | 1,25 | 0,98 | 1,10 | 0,07 | 0,08 | 14,6 | 71,4 | 18,3 |
+| 45 · K2 | 5,10 | 6,13 | 1,20 | 1,10 | 1,10 | 0,07 | 0,08 | 44,7 | 71,4 | 18,3 |
+| 45 · K3 | 5,86 | 6,89 | 1,18 | 1,10 | 1,10 | 0,07 | 0,08 | 66,7 | 71,4 | 18,3 |
+| 50 · K0 | 3,24 | 4,21 | 1,30 | 0,83 | 1,08 | 0,07 | 0,08 | 0,0 | 67,1 | 18,4 |
+| 50 · K1 | 3,82 | 4,79 | 1,25 | 0,98 | 1,11 | 0,07 | 0,08 | 14,6 | 67,1 | 18,4 |
+| 50 · K2 | 4,79 | 5,77 | 1,20 | 1,11 | 1,11 | 0,07 | 0,08 | 44,7 | 67,1 | 18,4 |
+| 50 · K3 | 5,51 | 6,48 | 1,18 | 1,11 | 1,11 | 0,07 | 0,08 | 66,7 | 67,1 | 18,4 |
+| 55 · K0 | 2,68 | 3,49 | 1,30 | 0,84 | 1,10 | 0,07 | 0,08 | 0,0 | 55,6 | 18,6 |
+| 55 · K1 | 3,17 | 3,97 | 1,25 | 0,99 | 1,12 | 0,07 | 0,08 | 14,6 | 55,6 | 18,6 |
+| 55 · K2 | 3,97 | 4,78 | 1,20 | 1,12 | 1,12 | 0,07 | 0,08 | 44,7 | 55,6 | 18,6 |
+| 55 · K3 | 4,56 | 5,37 | 1,18 | 1,12 | 1,12 | 0,07 | 0,08 | 66,7 | 55,6 | 18,6 |
+| 60 · K0 | 3,31 | 4,30 | 1,30 | 0,95 | 1,23 | 0,07 | 0,08 | 0,0 | 68,5 | 21,0 |
+| 60 · K1 | 3,90 | 4,89 | 1,25 | 1,12 | 1,27 | 0,07 | 0,08 | 14,6 | 68,5 | 21,0 |
+| 60 · K2 | 4,90 | 5,89 | 1,20 | 1,27 | 1,27 | 0,07 | 0,08 | 44,7 | 68,5 | 21,0 |
+| 60 · K3 | 5,63 | 6,62 | 1,18 | 1,27 | 1,27 | 0,07 | 0,08 | 66,7 | 68,5 | 21,0 |
+| 65 · K0 | 3,13 | 4,07 | 1,30 | 0,85 | 1,10 | 0,07 | 0,08 | 0,0 | 64,8 | 18,7 |
+| 65 · K1 | 3,69 | 4,63 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 64,8 | 18,7 |
+| 65 · K2 | 4,63 | 5,57 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 64,8 | 18,7 |
+| 65 · K3 | 5,32 | 6,26 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 64,8 | 18,7 |
+| 70 · K0 | 3,48 | 4,52 | 1,30 | 0,87 | 1,14 | 0,07 | 0,08 | 0,0 | 72,0 | 19,3 |
+| 70 · K1 | 4,10 | 5,14 | 1,25 | 1,03 | 1,16 | 0,07 | 0,08 | 14,6 | 72,0 | 19,3 |
+| 70 · K2 | 5,15 | 6,19 | 1,20 | 1,16 | 1,16 | 0,07 | 0,08 | 44,7 | 72,0 | 19,3 |
+| 70 · K3 | 5,91 | 6,95 | 1,18 | 1,16 | 1,16 | 0,07 | 0,08 | 66,7 | 72,0 | 19,3 |
+| 75 · K0 | 3,03 | 3,93 | 1,30 | 0,88 | 1,15 | 0,07 | 0,08 | 0,0 | 62,7 | 19,5 |
+| 75 · K1 | 3,57 | 4,48 | 1,25 | 1,04 | 1,18 | 0,07 | 0,08 | 14,6 | 62,7 | 19,5 |
+| 75 · K2 | 4,48 | 5,39 | 1,20 | 1,18 | 1,18 | 0,07 | 0,08 | 44,7 | 62,7 | 19,5 |
+| 75 · K3 | 5,14 | 6,05 | 1,18 | 1,18 | 1,18 | 0,07 | 0,08 | 66,7 | 62,7 | 19,5 |
+| 80 · K0 | 3,63 | 4,72 | 1,30 | 0,88 | 1,15 | 0,07 | 0,08 | 0,0 | 75,1 | 19,5 |
+| 80 · K1 | 4,28 | 5,37 | 1,25 | 1,04 | 1,18 | 0,07 | 0,08 | 14,6 | 75,1 | 19,5 |
+| 80 · K2 | 5,37 | 6,46 | 1,20 | 1,18 | 1,18 | 0,07 | 0,08 | 44,7 | 75,1 | 19,5 |
+| 80 · K3 | 6,17 | 7,26 | 1,18 | 1,18 | 1,18 | 0,07 | 0,08 | 66,7 | 75,1 | 19,5 |
+| 85 · K0 | 3,05 | 3,96 | 1,30 | 0,89 | 1,15 | 0,07 | 0,08 | 0,0 | 63,1 | 19,6 |
+| 85 · K1 | 3,59 | 4,51 | 1,25 | 1,05 | 1,18 | 0,07 | 0,08 | 14,6 | 63,1 | 19,6 |
+| 85 · K2 | 4,51 | 5,43 | 1,20 | 1,18 | 1,18 | 0,07 | 0,08 | 44,7 | 63,1 | 19,6 |
+| 85 · K3 | 5,18 | 6,10 | 1,18 | 1,18 | 1,18 | 0,07 | 0,08 | 66,7 | 63,1 | 19,6 |
+| 90 · K0 | 2,85 | 3,71 | 1,30 | 0,89 | 1,16 | 0,07 | 0,08 | 0,0 | 59,0 | 19,8 |
+| 90 · K1 | 3,36 | 4,22 | 1,25 | 1,06 | 1,19 | 0,07 | 0,08 | 14,6 | 59,0 | 19,8 |
+| 90 · K2 | 4,22 | 5,08 | 1,20 | 1,19 | 1,19 | 0,07 | 0,08 | 44,7 | 59,0 | 19,8 |
+| 90 · K3 | 4,85 | 5,70 | 1,18 | 1,19 | 1,19 | 0,07 | 0,08 | 66,7 | 59,0 | 19,8 |
+| 95 · K0 | 3,02 | 3,92 | 1,30 | 0,90 | 1,17 | 0,07 | 0,08 | 0,0 | 62,5 | 19,9 |
+| 95 · K1 | 3,56 | 4,46 | 1,25 | 1,06 | 1,20 | 0,07 | 0,08 | 14,6 | 62,5 | 19,9 |
+| 95 · K2 | 4,47 | 5,37 | 1,20 | 1,20 | 1,20 | 0,07 | 0,08 | 44,7 | 62,5 | 19,9 |
+| 95 · K3 | 5,13 | 6,04 | 1,18 | 1,20 | 1,20 | 0,07 | 0,08 | 66,7 | 62,5 | 19,9 |
+| 100 · K0 | 3,04 | 3,95 | 1,30 | 0,92 | 1,19 | 0,07 | 0,08 | 0,0 | 63,0 | 20,2 |
+| 100 · K1 | 3,58 | 4,50 | 1,25 | 1,08 | 1,22 | 0,07 | 0,08 | 14,6 | 63,0 | 20,2 |
+| 100 · K2 | 4,50 | 5,41 | 1,20 | 1,22 | 1,22 | 0,07 | 0,08 | 44,7 | 63,0 | 20,2 |
+| 100 · K3 | 5,17 | 6,08 | 1,18 | 1,22 | 1,22 | 0,07 | 0,08 | 66,7 | 63,0 | 20,2 |
 
 ### D5: drop na godzinę, Mag
 
@@ -9578,70 +9639,70 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 2,70 | 3,51 | 1,30 | 0,70 | 0,91 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 59,4 | 16,5 |
-| 25 · K1 | 3,19 | 4,00 | 1,25 | 0,83 | 0,94 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 59,4 | 16,5 |
-| 25 · K2 | 4,00 | 4,81 | 1,20 | 0,94 | 0,94 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 59,4 | 16,5 |
-| 25 · K3 | 4,59 | 5,40 | 1,18 | 0,94 | 0,94 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 59,4 | 16,5 |
-| 30 · K0 | 2,60 | 3,38 | 1,30 | 0,70 | 0,91 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 57,1 | 16,3 |
-| 30 · K1 | 3,06 | 3,84 | 1,25 | 0,82 | 0,93 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 57,1 | 16,3 |
-| 30 · K2 | 3,85 | 4,63 | 1,20 | 0,93 | 0,93 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 57,1 | 16,3 |
-| 30 · K3 | 4,42 | 5,20 | 1,18 | 0,93 | 0,93 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 57,1 | 16,3 |
-| 35 · K0 | 2,26 | 2,94 | 1,30 | 0,93 | 1,22 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 49,8 | 21,9 |
-| 35 · K1 | 2,67 | 3,35 | 1,25 | 1,10 | 1,25 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 49,8 | 21,9 |
-| 35 · K2 | 3,35 | 4,03 | 1,20 | 1,25 | 1,25 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 49,8 | 21,9 |
-| 35 · K3 | 3,85 | 4,53 | 1,18 | 1,25 | 1,25 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 49,8 | 21,9 |
-| 40 · K0 | 3,71 | 4,82 | 1,30 | 0,88 | 1,14 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 81,5 | 20,6 |
-| 40 · K1 | 4,37 | 5,49 | 1,25 | 1,04 | 1,17 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 81,5 | 20,6 |
-| 40 · K2 | 5,49 | 6,60 | 1,20 | 1,17 | 1,17 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 81,5 | 20,6 |
-| 40 · K3 | 6,31 | 7,42 | 1,18 | 1,17 | 1,17 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 81,5 | 20,6 |
-| 45 · K0 | 3,06 | 3,97 | 1,30 | 0,77 | 1,00 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 63,4 | 17,1 |
-| 45 · K1 | 3,60 | 4,52 | 1,25 | 0,91 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 63,4 | 17,1 |
-| 45 · K2 | 4,52 | 5,44 | 1,20 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 63,4 | 17,1 |
-| 45 · K3 | 5,20 | 6,11 | 1,18 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 63,4 | 17,1 |
-| 50 · K0 | 2,88 | 3,75 | 1,30 | 0,78 | 1,01 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 59,8 | 17,3 |
-| 50 · K1 | 3,40 | 4,26 | 1,25 | 0,92 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 59,8 | 17,3 |
-| 50 · K2 | 4,27 | 5,13 | 1,20 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 59,8 | 17,3 |
-| 50 · K3 | 4,90 | 5,76 | 1,18 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 59,8 | 17,3 |
-| 55 · K0 | 2,77 | 3,61 | 1,30 | 0,79 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 57,6 | 17,5 |
-| 55 · K1 | 3,27 | 4,10 | 1,25 | 0,93 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 57,6 | 17,5 |
-| 55 · K2 | 4,11 | 4,94 | 1,20 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 57,6 | 17,5 |
-| 55 · K3 | 4,72 | 5,55 | 1,18 | 1,05 | 1,05 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 57,6 | 17,5 |
-| 60 · K0 | 2,93 | 3,81 | 1,30 | 0,85 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 60,8 | 18,8 |
-| 60 · K1 | 3,45 | 4,33 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 60,8 | 18,8 |
-| 60 · K2 | 4,33 | 5,21 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 60,8 | 18,8 |
-| 60 · K3 | 4,98 | 5,86 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 60,8 | 18,8 |
-| 65 · K0 | 2,91 | 3,78 | 1,30 | 0,87 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 60,4 | 19,2 |
-| 65 · K1 | 3,43 | 4,31 | 1,25 | 1,02 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 60,4 | 19,2 |
-| 65 · K2 | 4,31 | 5,18 | 1,20 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 60,4 | 19,2 |
-| 65 · K3 | 4,95 | 5,82 | 1,18 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 60,4 | 19,2 |
-| 70 · K0 | 3,08 | 4,00 | 1,30 | 0,77 | 1,01 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 63,9 | 17,1 |
-| 70 · K1 | 3,63 | 4,55 | 1,25 | 0,91 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 63,9 | 17,1 |
-| 70 · K2 | 4,56 | 5,48 | 1,20 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 63,9 | 17,1 |
-| 70 · K3 | 5,23 | 6,16 | 1,18 | 1,03 | 1,03 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 63,9 | 17,1 |
-| 75 · K0 | 2,67 | 3,47 | 1,30 | 0,78 | 1,01 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 55,3 | 17,3 |
-| 75 · K1 | 3,15 | 3,95 | 1,25 | 0,92 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 55,3 | 17,3 |
-| 75 · K2 | 3,95 | 4,75 | 1,20 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 55,3 | 17,3 |
-| 75 · K3 | 4,53 | 5,33 | 1,18 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 55,3 | 17,3 |
-| 80 · K0 | 3,21 | 4,17 | 1,30 | 0,78 | 1,02 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 66,6 | 17,3 |
-| 80 · K1 | 3,78 | 4,74 | 1,25 | 0,92 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 66,6 | 17,3 |
-| 80 · K2 | 4,75 | 5,71 | 1,20 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 66,6 | 17,3 |
-| 80 · K3 | 5,45 | 6,41 | 1,18 | 1,04 | 1,04 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 66,6 | 17,3 |
-| 85 · K0 | 2,69 | 3,50 | 1,30 | 0,84 | 1,09 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 55,9 | 18,6 |
-| 85 · K1 | 3,18 | 3,99 | 1,25 | 0,99 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 55,9 | 18,6 |
-| 85 · K2 | 3,99 | 4,80 | 1,20 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 55,9 | 18,6 |
-| 85 · K3 | 4,58 | 5,39 | 1,18 | 1,12 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 55,9 | 18,6 |
-| 90 · K0 | 2,53 | 3,29 | 1,30 | 0,85 | 1,10 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 52,5 | 18,7 |
-| 90 · K1 | 2,98 | 3,74 | 1,25 | 1,00 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 52,5 | 18,7 |
-| 90 · K2 | 3,74 | 4,50 | 1,20 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 52,5 | 18,7 |
-| 90 · K3 | 4,30 | 5,06 | 1,18 | 1,13 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 52,5 | 18,7 |
-| 95 · K0 | 2,69 | 3,49 | 1,30 | 0,86 | 1,12 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 55,7 | 19,0 |
-| 95 · K1 | 3,17 | 3,97 | 1,25 | 1,01 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 55,7 | 19,0 |
-| 95 · K2 | 3,98 | 4,78 | 1,20 | 1,15 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 55,7 | 19,0 |
-| 95 · K3 | 4,57 | 5,37 | 1,18 | 1,15 | 1,15 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 55,7 | 19,0 |
-| 100 · K0 | 2,70 | 3,51 | 1,30 | 0,87 | 1,13 | 0,11 → 0,07 | 0,13 → 0,08 | 0,0 | 56,0 | 19,3 |
-| 100 · K1 | 3,18 | 3,99 | 1,25 | 1,03 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 14,6 | 56,0 | 19,3 |
-| 100 · K2 | 4,00 | 4,81 | 1,20 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 44,7 | 56,0 | 19,3 |
-| 100 · K3 | 4,59 | 5,40 | 1,18 | 1,16 | 1,16 | 0,11 → 0,07 | 0,13 → 0,08 | 66,7 | 56,0 | 19,3 |
+| 25 · K0 | 2,70 | 3,51 | 1,30 | 0,70 | 0,91 | 0,07 | 0,08 | 0,0 | 59,4 | 16,5 |
+| 25 · K1 | 3,19 | 4,00 | 1,25 | 0,83 | 0,94 | 0,07 | 0,08 | 14,6 | 59,4 | 16,5 |
+| 25 · K2 | 4,00 | 4,81 | 1,20 | 0,94 | 0,94 | 0,07 | 0,08 | 44,7 | 59,4 | 16,5 |
+| 25 · K3 | 4,59 | 5,40 | 1,18 | 0,94 | 0,94 | 0,07 | 0,08 | 66,7 | 59,4 | 16,5 |
+| 30 · K0 | 2,60 | 3,38 | 1,30 | 0,70 | 0,91 | 0,07 | 0,08 | 0,0 | 57,1 | 16,3 |
+| 30 · K1 | 3,06 | 3,84 | 1,25 | 0,82 | 0,93 | 0,07 | 0,08 | 14,6 | 57,1 | 16,3 |
+| 30 · K2 | 3,85 | 4,63 | 1,20 | 0,93 | 0,93 | 0,07 | 0,08 | 44,7 | 57,1 | 16,3 |
+| 30 · K3 | 4,42 | 5,20 | 1,18 | 0,93 | 0,93 | 0,07 | 0,08 | 66,7 | 57,1 | 16,3 |
+| 35 · K0 | 2,26 | 2,94 | 1,30 | 0,93 | 1,22 | 0,07 | 0,08 | 0,0 | 49,8 | 21,9 |
+| 35 · K1 | 2,67 | 3,35 | 1,25 | 1,10 | 1,25 | 0,07 | 0,08 | 14,6 | 49,8 | 21,9 |
+| 35 · K2 | 3,35 | 4,03 | 1,20 | 1,25 | 1,25 | 0,07 | 0,08 | 44,7 | 49,8 | 21,9 |
+| 35 · K3 | 3,85 | 4,53 | 1,18 | 1,25 | 1,25 | 0,07 | 0,08 | 66,7 | 49,8 | 21,9 |
+| 40 · K0 | 3,71 | 4,82 | 1,30 | 0,88 | 1,14 | 0,07 | 0,08 | 0,0 | 81,5 | 20,6 |
+| 40 · K1 | 4,37 | 5,49 | 1,25 | 1,04 | 1,17 | 0,07 | 0,08 | 14,6 | 81,5 | 20,6 |
+| 40 · K2 | 5,49 | 6,60 | 1,20 | 1,17 | 1,17 | 0,07 | 0,08 | 44,7 | 81,5 | 20,6 |
+| 40 · K3 | 6,31 | 7,42 | 1,18 | 1,17 | 1,17 | 0,07 | 0,08 | 66,7 | 81,5 | 20,6 |
+| 45 · K0 | 3,06 | 3,97 | 1,30 | 0,77 | 1,00 | 0,07 | 0,08 | 0,0 | 63,4 | 17,1 |
+| 45 · K1 | 3,60 | 4,52 | 1,25 | 0,91 | 1,03 | 0,07 | 0,08 | 14,6 | 63,4 | 17,1 |
+| 45 · K2 | 4,52 | 5,44 | 1,20 | 1,03 | 1,03 | 0,07 | 0,08 | 44,7 | 63,4 | 17,1 |
+| 45 · K3 | 5,20 | 6,11 | 1,18 | 1,03 | 1,03 | 0,07 | 0,08 | 66,7 | 63,4 | 17,1 |
+| 50 · K0 | 2,88 | 3,75 | 1,30 | 0,78 | 1,01 | 0,07 | 0,08 | 0,0 | 59,8 | 17,3 |
+| 50 · K1 | 3,40 | 4,26 | 1,25 | 0,92 | 1,04 | 0,07 | 0,08 | 14,6 | 59,8 | 17,3 |
+| 50 · K2 | 4,27 | 5,13 | 1,20 | 1,04 | 1,04 | 0,07 | 0,08 | 44,7 | 59,8 | 17,3 |
+| 50 · K3 | 4,90 | 5,76 | 1,18 | 1,04 | 1,04 | 0,07 | 0,08 | 66,7 | 59,8 | 17,3 |
+| 55 · K0 | 2,77 | 3,61 | 1,30 | 0,79 | 1,03 | 0,07 | 0,08 | 0,0 | 57,6 | 17,5 |
+| 55 · K1 | 3,27 | 4,10 | 1,25 | 0,93 | 1,05 | 0,07 | 0,08 | 14,6 | 57,6 | 17,5 |
+| 55 · K2 | 4,11 | 4,94 | 1,20 | 1,05 | 1,05 | 0,07 | 0,08 | 44,7 | 57,6 | 17,5 |
+| 55 · K3 | 4,72 | 5,55 | 1,18 | 1,05 | 1,05 | 0,07 | 0,08 | 66,7 | 57,6 | 17,5 |
+| 60 · K0 | 2,93 | 3,81 | 1,30 | 0,85 | 1,10 | 0,07 | 0,08 | 0,0 | 60,8 | 18,8 |
+| 60 · K1 | 3,45 | 4,33 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 60,8 | 18,8 |
+| 60 · K2 | 4,33 | 5,21 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 60,8 | 18,8 |
+| 60 · K3 | 4,98 | 5,86 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 60,8 | 18,8 |
+| 65 · K0 | 2,91 | 3,78 | 1,30 | 0,87 | 1,13 | 0,07 | 0,08 | 0,0 | 60,4 | 19,2 |
+| 65 · K1 | 3,43 | 4,31 | 1,25 | 1,02 | 1,16 | 0,07 | 0,08 | 14,6 | 60,4 | 19,2 |
+| 65 · K2 | 4,31 | 5,18 | 1,20 | 1,16 | 1,16 | 0,07 | 0,08 | 44,7 | 60,4 | 19,2 |
+| 65 · K3 | 4,95 | 5,82 | 1,18 | 1,16 | 1,16 | 0,07 | 0,08 | 66,7 | 60,4 | 19,2 |
+| 70 · K0 | 3,08 | 4,00 | 1,30 | 0,77 | 1,01 | 0,07 | 0,08 | 0,0 | 63,9 | 17,1 |
+| 70 · K1 | 3,63 | 4,55 | 1,25 | 0,91 | 1,03 | 0,07 | 0,08 | 14,6 | 63,9 | 17,1 |
+| 70 · K2 | 4,56 | 5,48 | 1,20 | 1,03 | 1,03 | 0,07 | 0,08 | 44,7 | 63,9 | 17,1 |
+| 70 · K3 | 5,23 | 6,16 | 1,18 | 1,03 | 1,03 | 0,07 | 0,08 | 66,7 | 63,9 | 17,1 |
+| 75 · K0 | 2,67 | 3,47 | 1,30 | 0,78 | 1,01 | 0,07 | 0,08 | 0,0 | 55,3 | 17,3 |
+| 75 · K1 | 3,15 | 3,95 | 1,25 | 0,92 | 1,04 | 0,07 | 0,08 | 14,6 | 55,3 | 17,3 |
+| 75 · K2 | 3,95 | 4,75 | 1,20 | 1,04 | 1,04 | 0,07 | 0,08 | 44,7 | 55,3 | 17,3 |
+| 75 · K3 | 4,53 | 5,33 | 1,18 | 1,04 | 1,04 | 0,07 | 0,08 | 66,7 | 55,3 | 17,3 |
+| 80 · K0 | 3,21 | 4,17 | 1,30 | 0,78 | 1,02 | 0,07 | 0,08 | 0,0 | 66,6 | 17,3 |
+| 80 · K1 | 3,78 | 4,74 | 1,25 | 0,92 | 1,04 | 0,07 | 0,08 | 14,6 | 66,6 | 17,3 |
+| 80 · K2 | 4,75 | 5,71 | 1,20 | 1,04 | 1,04 | 0,07 | 0,08 | 44,7 | 66,6 | 17,3 |
+| 80 · K3 | 5,45 | 6,41 | 1,18 | 1,04 | 1,04 | 0,07 | 0,08 | 66,7 | 66,6 | 17,3 |
+| 85 · K0 | 2,69 | 3,50 | 1,30 | 0,84 | 1,09 | 0,07 | 0,08 | 0,0 | 55,9 | 18,6 |
+| 85 · K1 | 3,18 | 3,99 | 1,25 | 0,99 | 1,12 | 0,07 | 0,08 | 14,6 | 55,9 | 18,6 |
+| 85 · K2 | 3,99 | 4,80 | 1,20 | 1,12 | 1,12 | 0,07 | 0,08 | 44,7 | 55,9 | 18,6 |
+| 85 · K3 | 4,58 | 5,39 | 1,18 | 1,12 | 1,12 | 0,07 | 0,08 | 66,7 | 55,9 | 18,6 |
+| 90 · K0 | 2,53 | 3,29 | 1,30 | 0,85 | 1,10 | 0,07 | 0,08 | 0,0 | 52,5 | 18,7 |
+| 90 · K1 | 2,98 | 3,74 | 1,25 | 1,00 | 1,13 | 0,07 | 0,08 | 14,6 | 52,5 | 18,7 |
+| 90 · K2 | 3,74 | 4,50 | 1,20 | 1,13 | 1,13 | 0,07 | 0,08 | 44,7 | 52,5 | 18,7 |
+| 90 · K3 | 4,30 | 5,06 | 1,18 | 1,13 | 1,13 | 0,07 | 0,08 | 66,7 | 52,5 | 18,7 |
+| 95 · K0 | 2,69 | 3,49 | 1,30 | 0,86 | 1,12 | 0,07 | 0,08 | 0,0 | 55,7 | 19,0 |
+| 95 · K1 | 3,17 | 3,97 | 1,25 | 1,01 | 1,15 | 0,07 | 0,08 | 14,6 | 55,7 | 19,0 |
+| 95 · K2 | 3,98 | 4,78 | 1,20 | 1,15 | 1,15 | 0,07 | 0,08 | 44,7 | 55,7 | 19,0 |
+| 95 · K3 | 4,57 | 5,37 | 1,18 | 1,15 | 1,15 | 0,07 | 0,08 | 66,7 | 55,7 | 19,0 |
+| 100 · K0 | 2,70 | 3,51 | 1,30 | 0,87 | 1,13 | 0,07 | 0,08 | 0,0 | 56,0 | 19,3 |
+| 100 · K1 | 3,18 | 3,99 | 1,25 | 1,03 | 1,16 | 0,07 | 0,08 | 14,6 | 56,0 | 19,3 |
+| 100 · K2 | 4,00 | 4,81 | 1,20 | 1,16 | 1,16 | 0,07 | 0,08 | 44,7 | 56,0 | 19,3 |
+| 100 · K3 | 4,59 | 5,40 | 1,18 | 1,16 | 1,16 | 0,07 | 0,08 | 66,7 | 56,0 | 19,3 |
 
 ### D5: drop na godzinę, Kapłan
 
@@ -9649,70 +9710,70 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 
 | poziom · profil | Unikaty / h expienia | Unikaty z Fortuną | Fortuna / bez (Unikaty) | Heroiki / h Elit | Heroiki z Fortuną | Legendy / Elita II | Legendy / Elita II z Fortuną | premia ucięta na Elitach (pkt, z Fortuną) | zabicia / h | Elity / h |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 25 · K0 | 3,35 | 4,36 | 1,30 | 0,84 | 1,10 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 71,5 | 19,2 |
-| 25 · K1 | 3,96 | 4,96 | 1,25 | 0,99 | 1,12 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 71,5 | 19,2 |
-| 25 · K2 | 4,97 | 5,97 | 1,20 | 1,12 | 1,12 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 71,5 | 19,2 |
-| 25 · K3 | 5,70 | 6,71 | 1,18 | 1,12 | 1,12 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 71,5 | 19,2 |
-| 30 · K0 | 3,08 | 4,01 | 1,30 | 0,83 | 1,08 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 65,7 | 18,8 |
-| 30 · K1 | 3,63 | 4,56 | 1,25 | 0,98 | 1,11 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 65,7 | 18,8 |
-| 30 · K2 | 4,56 | 5,49 | 1,20 | 1,11 | 1,11 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 65,7 | 18,8 |
-| 30 · K3 | 5,24 | 6,16 | 1,18 | 1,11 | 1,11 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 65,7 | 18,8 |
-| 35 · K0 | 2,68 | 3,48 | 1,30 | 1,01 | 1,31 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 57,1 | 22,9 |
-| 35 · K1 | 3,16 | 3,96 | 1,25 | 1,19 | 1,34 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 57,1 | 22,9 |
-| 35 · K2 | 3,96 | 4,77 | 1,20 | 1,34 | 1,34 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 57,1 | 22,9 |
-| 35 · K3 | 4,55 | 5,36 | 1,18 | 1,34 | 1,34 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 57,1 | 22,9 |
-| 40 · K0 | 3,84 | 4,99 | 1,30 | 0,95 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 81,9 | 21,6 |
-| 40 · K1 | 4,53 | 5,68 | 1,25 | 1,12 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 81,9 | 21,6 |
-| 40 · K2 | 5,69 | 6,84 | 1,20 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 81,9 | 21,6 |
-| 40 · K3 | 6,53 | 7,68 | 1,18 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 81,9 | 21,6 |
-| 45 · K0 | 3,68 | 4,78 | 1,30 | 0,90 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 74,1 | 19,3 |
-| 45 · K1 | 4,34 | 5,45 | 1,25 | 1,06 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 74,1 | 19,3 |
-| 45 · K2 | 5,45 | 6,55 | 1,20 | 1,20 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 74,1 | 19,3 |
-| 45 · K3 | 6,26 | 7,36 | 1,18 | 1,20 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 74,1 | 19,3 |
-| 50 · K0 | 3,47 | 4,51 | 1,30 | 0,90 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 69,8 | 19,4 |
-| 50 · K1 | 4,09 | 5,13 | 1,25 | 1,07 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 69,8 | 19,4 |
-| 50 · K2 | 5,14 | 6,18 | 1,20 | 1,20 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 69,8 | 19,4 |
-| 50 · K3 | 5,90 | 6,94 | 1,18 | 1,20 | 1,20 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 69,8 | 19,4 |
-| 55 · K0 | 3,13 | 4,07 | 1,30 | 0,91 | 1,18 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 63,0 | 19,5 |
-| 55 · K1 | 3,69 | 4,63 | 1,25 | 1,07 | 1,21 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 63,0 | 19,5 |
-| 55 · K2 | 4,63 | 5,57 | 1,20 | 1,21 | 1,21 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 63,0 | 19,5 |
-| 55 · K3 | 5,32 | 6,26 | 1,18 | 1,21 | 1,21 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 63,0 | 19,5 |
-| 60 · K0 | 3,49 | 4,53 | 1,30 | 0,97 | 1,26 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 70,2 | 20,8 |
-| 60 · K1 | 4,11 | 5,16 | 1,25 | 1,14 | 1,29 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 70,2 | 20,8 |
-| 60 · K2 | 5,16 | 6,21 | 1,20 | 1,29 | 1,29 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 70,2 | 20,8 |
-| 60 · K3 | 5,93 | 6,97 | 1,18 | 1,29 | 1,29 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 70,2 | 20,8 |
-| 65 · K0 | 3,38 | 4,39 | 1,30 | 0,95 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 68,0 | 20,4 |
-| 65 · K1 | 3,98 | 5,00 | 1,25 | 1,12 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 68,0 | 20,4 |
-| 65 · K2 | 5,00 | 6,01 | 1,20 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 68,0 | 20,4 |
-| 65 · K3 | 5,74 | 6,75 | 1,18 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 68,0 | 20,4 |
-| 70 · K0 | 3,63 | 4,71 | 1,30 | 0,88 | 1,14 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 73,0 | 18,9 |
-| 70 · K1 | 4,28 | 5,36 | 1,25 | 1,04 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 73,0 | 18,9 |
-| 70 · K2 | 5,37 | 6,46 | 1,20 | 1,17 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 73,0 | 18,9 |
-| 70 · K3 | 6,17 | 7,25 | 1,18 | 1,17 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 73,0 | 18,9 |
-| 75 · K0 | 3,12 | 4,05 | 1,30 | 0,88 | 1,15 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 62,7 | 18,9 |
-| 75 · K1 | 3,68 | 4,61 | 1,25 | 1,04 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 62,7 | 18,9 |
-| 75 · K2 | 4,61 | 5,55 | 1,20 | 1,17 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 62,7 | 18,9 |
-| 75 · K3 | 5,30 | 6,23 | 1,18 | 1,17 | 1,17 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 62,7 | 18,9 |
-| 80 · K0 | 3,77 | 4,90 | 1,30 | 0,88 | 1,15 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 75,9 | 19,0 |
-| 80 · K1 | 4,45 | 5,58 | 1,25 | 1,04 | 1,18 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 75,9 | 19,0 |
-| 80 · K2 | 5,58 | 6,72 | 1,20 | 1,18 | 1,18 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 75,9 | 19,0 |
-| 80 · K3 | 6,41 | 7,54 | 1,18 | 1,18 | 1,18 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 75,9 | 19,0 |
-| 85 · K0 | 3,03 | 3,93 | 1,30 | 0,93 | 1,21 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 60,9 | 19,9 |
-| 85 · K1 | 3,57 | 4,48 | 1,25 | 1,09 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 60,9 | 19,9 |
-| 85 · K2 | 4,48 | 5,39 | 1,20 | 1,24 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 60,9 | 19,9 |
-| 85 · K3 | 5,14 | 6,05 | 1,18 | 1,24 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 60,9 | 19,9 |
-| 90 · K0 | 2,92 | 3,79 | 1,30 | 0,93 | 1,21 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 58,7 | 20,0 |
-| 90 · K1 | 3,44 | 4,32 | 1,25 | 1,10 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 58,7 | 20,0 |
-| 90 · K2 | 4,32 | 5,19 | 1,20 | 1,24 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 58,7 | 20,0 |
-| 90 · K3 | 4,96 | 5,84 | 1,18 | 1,24 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 58,7 | 20,0 |
-| 95 · K0 | 3,02 | 3,92 | 1,30 | 0,94 | 1,22 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 60,8 | 20,2 |
-| 95 · K1 | 3,56 | 4,47 | 1,25 | 1,11 | 1,25 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 60,8 | 20,2 |
-| 95 · K2 | 4,47 | 5,37 | 1,20 | 1,25 | 1,25 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 60,8 | 20,2 |
-| 95 · K3 | 5,13 | 6,04 | 1,18 | 1,25 | 1,25 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 60,8 | 20,2 |
-| 100 · K0 | 3,03 | 3,94 | 1,30 | 0,95 | 1,24 | 0,12 → 0,07 | 0,14 → 0,08 | 0,0 | 61,0 | 20,4 |
-| 100 · K1 | 3,57 | 4,48 | 1,25 | 1,12 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 14,6 | 61,0 | 20,4 |
-| 100 · K2 | 4,48 | 5,39 | 1,20 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 44,7 | 61,0 | 20,4 |
-| 100 · K3 | 5,15 | 6,06 | 1,18 | 1,27 | 1,27 | 0,12 → 0,07 | 0,14 → 0,08 | 66,7 | 61,0 | 20,4 |
+| 25 · K0 | 3,35 | 4,36 | 1,30 | 0,84 | 1,10 | 0,07 | 0,08 | 0,0 | 71,5 | 19,2 |
+| 25 · K1 | 3,96 | 4,96 | 1,25 | 0,99 | 1,12 | 0,07 | 0,08 | 14,6 | 71,5 | 19,2 |
+| 25 · K2 | 4,97 | 5,97 | 1,20 | 1,12 | 1,12 | 0,07 | 0,08 | 44,7 | 71,5 | 19,2 |
+| 25 · K3 | 5,70 | 6,71 | 1,18 | 1,12 | 1,12 | 0,07 | 0,08 | 66,7 | 71,5 | 19,2 |
+| 30 · K0 | 3,08 | 4,01 | 1,30 | 0,83 | 1,08 | 0,07 | 0,08 | 0,0 | 65,7 | 18,8 |
+| 30 · K1 | 3,63 | 4,56 | 1,25 | 0,98 | 1,11 | 0,07 | 0,08 | 14,6 | 65,7 | 18,8 |
+| 30 · K2 | 4,56 | 5,49 | 1,20 | 1,11 | 1,11 | 0,07 | 0,08 | 44,7 | 65,7 | 18,8 |
+| 30 · K3 | 5,24 | 6,16 | 1,18 | 1,11 | 1,11 | 0,07 | 0,08 | 66,7 | 65,7 | 18,8 |
+| 35 · K0 | 2,68 | 3,48 | 1,30 | 1,01 | 1,31 | 0,07 | 0,08 | 0,0 | 57,1 | 22,9 |
+| 35 · K1 | 3,16 | 3,96 | 1,25 | 1,19 | 1,34 | 0,07 | 0,08 | 14,6 | 57,1 | 22,9 |
+| 35 · K2 | 3,96 | 4,77 | 1,20 | 1,34 | 1,34 | 0,07 | 0,08 | 44,7 | 57,1 | 22,9 |
+| 35 · K3 | 4,55 | 5,36 | 1,18 | 1,34 | 1,34 | 0,07 | 0,08 | 66,7 | 57,1 | 22,9 |
+| 40 · K0 | 3,84 | 4,99 | 1,30 | 0,95 | 1,24 | 0,07 | 0,08 | 0,0 | 81,9 | 21,6 |
+| 40 · K1 | 4,53 | 5,68 | 1,25 | 1,12 | 1,27 | 0,07 | 0,08 | 14,6 | 81,9 | 21,6 |
+| 40 · K2 | 5,69 | 6,84 | 1,20 | 1,27 | 1,27 | 0,07 | 0,08 | 44,7 | 81,9 | 21,6 |
+| 40 · K3 | 6,53 | 7,68 | 1,18 | 1,27 | 1,27 | 0,07 | 0,08 | 66,7 | 81,9 | 21,6 |
+| 45 · K0 | 3,68 | 4,78 | 1,30 | 0,90 | 1,17 | 0,07 | 0,08 | 0,0 | 74,1 | 19,3 |
+| 45 · K1 | 4,34 | 5,45 | 1,25 | 1,06 | 1,20 | 0,07 | 0,08 | 14,6 | 74,1 | 19,3 |
+| 45 · K2 | 5,45 | 6,55 | 1,20 | 1,20 | 1,20 | 0,07 | 0,08 | 44,7 | 74,1 | 19,3 |
+| 45 · K3 | 6,26 | 7,36 | 1,18 | 1,20 | 1,20 | 0,07 | 0,08 | 66,7 | 74,1 | 19,3 |
+| 50 · K0 | 3,47 | 4,51 | 1,30 | 0,90 | 1,17 | 0,07 | 0,08 | 0,0 | 69,8 | 19,4 |
+| 50 · K1 | 4,09 | 5,13 | 1,25 | 1,07 | 1,20 | 0,07 | 0,08 | 14,6 | 69,8 | 19,4 |
+| 50 · K2 | 5,14 | 6,18 | 1,20 | 1,20 | 1,20 | 0,07 | 0,08 | 44,7 | 69,8 | 19,4 |
+| 50 · K3 | 5,90 | 6,94 | 1,18 | 1,20 | 1,20 | 0,07 | 0,08 | 66,7 | 69,8 | 19,4 |
+| 55 · K0 | 3,13 | 4,07 | 1,30 | 0,91 | 1,18 | 0,07 | 0,08 | 0,0 | 63,0 | 19,5 |
+| 55 · K1 | 3,69 | 4,63 | 1,25 | 1,07 | 1,21 | 0,07 | 0,08 | 14,6 | 63,0 | 19,5 |
+| 55 · K2 | 4,63 | 5,57 | 1,20 | 1,21 | 1,21 | 0,07 | 0,08 | 44,7 | 63,0 | 19,5 |
+| 55 · K3 | 5,32 | 6,26 | 1,18 | 1,21 | 1,21 | 0,07 | 0,08 | 66,7 | 63,0 | 19,5 |
+| 60 · K0 | 3,49 | 4,53 | 1,30 | 0,97 | 1,26 | 0,07 | 0,08 | 0,0 | 70,2 | 20,8 |
+| 60 · K1 | 4,11 | 5,16 | 1,25 | 1,14 | 1,29 | 0,07 | 0,08 | 14,6 | 70,2 | 20,8 |
+| 60 · K2 | 5,16 | 6,21 | 1,20 | 1,29 | 1,29 | 0,07 | 0,08 | 44,7 | 70,2 | 20,8 |
+| 60 · K3 | 5,93 | 6,97 | 1,18 | 1,29 | 1,29 | 0,07 | 0,08 | 66,7 | 70,2 | 20,8 |
+| 65 · K0 | 3,38 | 4,39 | 1,30 | 0,95 | 1,24 | 0,07 | 0,08 | 0,0 | 68,0 | 20,4 |
+| 65 · K1 | 3,98 | 5,00 | 1,25 | 1,12 | 1,27 | 0,07 | 0,08 | 14,6 | 68,0 | 20,4 |
+| 65 · K2 | 5,00 | 6,01 | 1,20 | 1,27 | 1,27 | 0,07 | 0,08 | 44,7 | 68,0 | 20,4 |
+| 65 · K3 | 5,74 | 6,75 | 1,18 | 1,27 | 1,27 | 0,07 | 0,08 | 66,7 | 68,0 | 20,4 |
+| 70 · K0 | 3,63 | 4,71 | 1,30 | 0,88 | 1,14 | 0,07 | 0,08 | 0,0 | 73,0 | 18,9 |
+| 70 · K1 | 4,28 | 5,36 | 1,25 | 1,04 | 1,17 | 0,07 | 0,08 | 14,6 | 73,0 | 18,9 |
+| 70 · K2 | 5,37 | 6,46 | 1,20 | 1,17 | 1,17 | 0,07 | 0,08 | 44,7 | 73,0 | 18,9 |
+| 70 · K3 | 6,17 | 7,25 | 1,18 | 1,17 | 1,17 | 0,07 | 0,08 | 66,7 | 73,0 | 18,9 |
+| 75 · K0 | 3,12 | 4,05 | 1,30 | 0,88 | 1,15 | 0,07 | 0,08 | 0,0 | 62,7 | 18,9 |
+| 75 · K1 | 3,68 | 4,61 | 1,25 | 1,04 | 1,17 | 0,07 | 0,08 | 14,6 | 62,7 | 18,9 |
+| 75 · K2 | 4,61 | 5,55 | 1,20 | 1,17 | 1,17 | 0,07 | 0,08 | 44,7 | 62,7 | 18,9 |
+| 75 · K3 | 5,30 | 6,23 | 1,18 | 1,17 | 1,17 | 0,07 | 0,08 | 66,7 | 62,7 | 18,9 |
+| 80 · K0 | 3,77 | 4,90 | 1,30 | 0,88 | 1,15 | 0,07 | 0,08 | 0,0 | 75,9 | 19,0 |
+| 80 · K1 | 4,45 | 5,58 | 1,25 | 1,04 | 1,18 | 0,07 | 0,08 | 14,6 | 75,9 | 19,0 |
+| 80 · K2 | 5,58 | 6,72 | 1,20 | 1,18 | 1,18 | 0,07 | 0,08 | 44,7 | 75,9 | 19,0 |
+| 80 · K3 | 6,41 | 7,54 | 1,18 | 1,18 | 1,18 | 0,07 | 0,08 | 66,7 | 75,9 | 19,0 |
+| 85 · K0 | 3,03 | 3,93 | 1,30 | 0,93 | 1,21 | 0,07 | 0,08 | 0,0 | 60,9 | 19,9 |
+| 85 · K1 | 3,57 | 4,48 | 1,25 | 1,09 | 1,24 | 0,07 | 0,08 | 14,6 | 60,9 | 19,9 |
+| 85 · K2 | 4,48 | 5,39 | 1,20 | 1,24 | 1,24 | 0,07 | 0,08 | 44,7 | 60,9 | 19,9 |
+| 85 · K3 | 5,14 | 6,05 | 1,18 | 1,24 | 1,24 | 0,07 | 0,08 | 66,7 | 60,9 | 19,9 |
+| 90 · K0 | 2,92 | 3,79 | 1,30 | 0,93 | 1,21 | 0,07 | 0,08 | 0,0 | 58,7 | 20,0 |
+| 90 · K1 | 3,44 | 4,32 | 1,25 | 1,10 | 1,24 | 0,07 | 0,08 | 14,6 | 58,7 | 20,0 |
+| 90 · K2 | 4,32 | 5,19 | 1,20 | 1,24 | 1,24 | 0,07 | 0,08 | 44,7 | 58,7 | 20,0 |
+| 90 · K3 | 4,96 | 5,84 | 1,18 | 1,24 | 1,24 | 0,07 | 0,08 | 66,7 | 58,7 | 20,0 |
+| 95 · K0 | 3,02 | 3,92 | 1,30 | 0,94 | 1,22 | 0,07 | 0,08 | 0,0 | 60,8 | 20,2 |
+| 95 · K1 | 3,56 | 4,47 | 1,25 | 1,11 | 1,25 | 0,07 | 0,08 | 14,6 | 60,8 | 20,2 |
+| 95 · K2 | 4,47 | 5,37 | 1,20 | 1,25 | 1,25 | 0,07 | 0,08 | 44,7 | 60,8 | 20,2 |
+| 95 · K3 | 5,13 | 6,04 | 1,18 | 1,25 | 1,25 | 0,07 | 0,08 | 66,7 | 60,8 | 20,2 |
+| 100 · K0 | 3,03 | 3,94 | 1,30 | 0,95 | 1,24 | 0,07 | 0,08 | 0,0 | 61,0 | 20,4 |
+| 100 · K1 | 3,57 | 4,48 | 1,25 | 1,12 | 1,27 | 0,07 | 0,08 | 14,6 | 61,0 | 20,4 |
+| 100 · K2 | 4,48 | 5,39 | 1,20 | 1,27 | 1,27 | 0,07 | 0,08 | 44,7 | 61,0 | 20,4 |
+| 100 · K3 | 5,15 | 6,06 | 1,18 | 1,27 | 1,27 | 0,07 | 0,08 | 66,7 | 61,0 | 20,4 |
 
 ### Boss z Fortuną: przedmioty dla klasy na dzień
 
@@ -11174,6 +11235,76 @@ Każda Elita II daje tylko swoje 2–3 grupy miejsc (`LootTables.ELITE2_SLOTS`, 
 | crystalGuardian (frostpeak_cave): udział przedmiotów najlepszej klasy | 0,95 | ≥ 0,25 | w paśmie | S134h (asertowane) |
 
 
+## Elity II: kryjówki (S134i)
+
+Na każdej mapie regionu 2–3 kryjówki (`Data/Areas` `lairs`): Elita II w środku na górnym poziomie `lv` (w zakresie rodzaju), strażnicy dookoła, węzły zbieractwa. Łup Elity II jak w jaskiniach (`LootTables.ELITE2_SLOTS`), powrót `AreaSpawns.elite2Respawn(lv[2]) × Combat.lairElite2RespawnMul` (1.5). Pasmo = każda Elita II świata, której zakres poziomów zachodzi na pasmo (`LootTables.ELITE2_BANDS`), zabita, gdy wraca; „przed” = same jaskinie (stan po S134h, ten sam kod). Asertuje `balance.spec` („Balance: Elite II hideouts (S134i)”).
+
+| mapa | kryjówka | Elita II | poziom | łup | powrót |
+| --- | --: | --: | --: | --: | --: |
+| meadows | meadows_snarecamp | swampToad | L8 | offhand, gloves | 7–9 min |
+| meadows | meadows_poacherspen | boar | L10 | weapon, armor | 7–10 min |
+| duskwood | duskwood_hangedring | rotEnt | L32 | armor, talisman | 8–11 min |
+| duskwood | duskwood_drownedring | bogSerpent | L36 | weapon, offhand, boots | 9–12 min |
+| duskwood | duskwood_gallowsknoll | bloodBat | L44 | helmet, ring | 9–12 min |
+| ashen | ashen_bonepit | fireGolem | L57 | armor, talisman | 10–14 min |
+| ashen | ashen_bonenest | basilisk | L64 | weapon, gloves, ring | 10–14 min |
+| ashen | ashen_sunkengrave | desertMummy | L69 | helmet, boots, necklace | 11–15 min |
+| frostpeak | frostpeak_frozencamp | snowLeopard | L75 | offhand, gloves | 11–15 min |
+| frostpeak | frostpeak_tuskcamp | iceMammoth | L85 | armor, boots, ring | 12–16 min |
+| frostpeak | frostpeak_buriedcamp | dragonspawn | L95 | weapon, helmet, talisman | 12–17 min |
+
+
+| pasmo | Elity II | Heroiki dla klasy / h | Legendarne dla klasy / h | kryształy esencji / h |
+| --- | --: | --: | --: | --: |
+| 7–14 | 4 → 6 | 28,35 → 37,85 | 2,83 → 3,78 | 30,42 → 40,96 |
+| 14–20 | 4 → 4 | 27,43 → 27,43 | 2,74 → 2,74 | 29,38 → 29,38 |
+| 21–33 | 4 → 5 | 20,68 → 24,26 | 2,43 → 2,85 | 23,86 → 27,91 |
+| 33–45 | 4 → 6 | 19,85 → 26,41 | 2,34 → 3,11 | 22,68 → 30,29 |
+| 46–58 | 4 → 5 | 18,39 → 21,58 | 2,04 → 2,40 | 20,65 → 24,15 |
+| 58–70 | 4 → 6 | 17,53 → 23,41 | 1,95 → 2,60 | 19,78 → 26,37 |
+| 71–86 | 4 → 6 | 15,78 → 21,18 | 1,75 → 2,35 | 17,57 → 23,67 |
+| 86–100 | 4 → 5 | 14,91 → 17,35 | 1,66 → 1,93 | 16,80 → 19,61 |
+
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| 7-14: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 7-14: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 7-14: kryształy esencji / h pasma / same jaskinie | 1,35 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 14-20: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,00 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 14-20: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,00 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 14-20: kryształy esencji / h pasma / same jaskinie | 1,00 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 21-33: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 21-33: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 21-33: kryształy esencji / h pasma / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 33-45: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,33 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 33-45: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,33 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 33-45: kryształy esencji / h pasma / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 46-58: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 46-58: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 46-58: kryształy esencji / h pasma / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 58-70: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 58-70: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 58-70: kryształy esencji / h pasma / same jaskinie | 1,33 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 71-86: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 71-86: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,34 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 71-86: kryształy esencji / h pasma / same jaskinie | 1,35 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 86-100: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,16 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 86-100: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie | 1,16 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| 86-100: kryształy esencji / h pasma / same jaskinie | 1,17 | ≤ 1,35 | w paśmie | S134i (asertowane) |
+| meadows_snarecamp (swampToad): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 7-14 | 0,68 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| meadows_poacherspen (boar): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 7-14 | 0,66 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| duskwood_hangedring (rotEnt): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 21-33 | 0,69 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| duskwood_drownedring (bogSerpent): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 33-45 | 0,65 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| duskwood_gallowsknoll (bloodBat): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 33-45 | 0,68 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| ashen_bonepit (fireGolem): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 46-58 | 0,69 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| ashen_bonenest (basilisk): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 58-70 | 0,67 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| ashen_sunkengrave (desertMummy): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 58-70 | 0,67 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| frostpeak_frozencamp (snowLeopard): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 71-86 | 0,68 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| frostpeak_tuskcamp (iceMammoth): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 71-86 | 0,69 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+| frostpeak_buriedcamp (dragonspawn): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 86-100 | 0,65 | ≤ 1,00 | w paśmie | S134i (asertowane) |
+
+
 ## Samodzielne Łowy (S134d)
 
 Tylko raport: EXP/h Łowów = tempo solo (`Balance.paceAt`, Wojownik, region poziomu) × 70% × sprawność chodzenia 0,8 (założenie raportu, nie liczba gry). Dzień z limitem 3,0 h = 1,68 h ręcznej gry. Tempo solo 1–100, zamrożone 1–20 i budżet questów bez zmian (Łowy nie są w modelu tempa).
@@ -12368,7 +12499,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 5,4 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 3,4 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -15080,7 +15211,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 39,6 s.
+Tabele S86 liczą się 26,5 s.
 
 ## Poprawki globalne (S87)
 

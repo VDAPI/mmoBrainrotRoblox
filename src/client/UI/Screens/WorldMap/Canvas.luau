@@ -10,6 +10,7 @@
 -- S119: icons get the owner's silhouettes (UiArtState.decorate, glyph colour) once the map atlas is loaded; a map with
 -- a painted picture (Logic/UiArt.map, frame from the wiki SVG viewBox) shows it instead of the sketch's terrain once
 -- loaded (the sketch is not drawn when the picture is already there; otherwise it hides when the picture arrives).
+-- S134i: Elite II hideouts as an orange skull (smaller than the dungeon's) with the name and levels, from the data only.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -39,11 +40,11 @@ Canvas.DETAIL_ZOOM = 2 -- nodes and NPC names from this zoom index
 Canvas.HIT = 36 -- icon hit area in pixels at every zoom (UI scale 1)
 local CROWD = 22 -- icons closer than this at zoom 1 overlap
 
-export type IconKind = "npc" | "portal" | "cave" | "dungeon" | "node"
+export type IconKind = "npc" | "portal" | "cave" | "dungeon" | "node" | "lair"
 
 export type Icon = {
 	kind: IconKind,
-	id: string, -- NPC id, portal id, cave map id, dungeon region, node kind
+	id: string, -- NPC id, portal id, cave map id, dungeon region, node kind, hideout id (S134i)
 	x: number,
 	z: number,
 	pixel: Vector2, -- canvas pixel at zoom 1
@@ -83,7 +84,10 @@ export type Cached = {
 	sketchLayer: Frame?, -- S119: the drawn terrain (nil when the painted map replaced it at build time)
 }
 
-local PRIORITY: { [IconKind]: number } = { portal = 40, cave = 40, dungeon = 30, npc = 20, node = 10 }
+local PRIORITY: { [IconKind]: number } = { portal = 40, cave = 40, dungeon = 30, lair = 30, npc = 20, node = 10 }
+-- S134i: an Elite II hideout's skull: orange, smaller than the dungeon's red one
+local LAIR_COLOR = Color3.fromHex("#E0823C")
+local LAIR_CAPTION = Color3.fromHex("#F2C29A")
 local NODE_COLORS: { [string]: string } = { vein = "#E8C25A", bush = "#6FCF5A", fishing = "#5AA8E8" }
 
 local cache: { [string]: Cached } = {}
@@ -260,6 +264,17 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 			entry.target = portal.target
 			caption(cached, entry, target.nameKey, levels, Color3.fromHex("#D8CCFF"), 11, 14)
 		end
+	end
+end
+
+-- S134i: the Elite II hideouts of the map (Data/Areas lairs): a skull with the name and levels, from the data alone
+-- (never whether the Elite II lives).
+local function lairIcons(cached: Cached, layers: { [string]: Frame })
+	local data = Areas.byMap[cached.mapId]
+	for _, lair in (if data then data.lairs or {} else {}) :: { Areas.Lair } do
+		local entry =
+			icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", LAIR_COLOR, 16, UiArt.mapIcon("lair"))
+		caption(cached, entry, lair.nameKey, ` {lair.lv[1]}–{lair.lv[2]}`, LAIR_CAPTION, 11, 14)
 	end
 end
 
@@ -619,6 +634,7 @@ function Canvas.get(mapId: string): Cached?
 	paint(cached)
 	areaFrames(cached, layers)
 	portalIcons(cached, layers)
+	lairIcons(cached, layers) -- S134i
 	npcIcons(cached, layers)
 	nodeIcons(cached, layers)
 	Canvas.declutter(cached)

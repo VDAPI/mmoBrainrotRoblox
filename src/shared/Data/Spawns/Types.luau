@@ -14,6 +14,9 @@ export type Spawner = {
 	count: number,
 	respawn: { min: number, max: number }, -- seconds (the whole group after its last member died)
 	areaId: string?,
+	-- S134i: the Elite II hideout (Data/Areas lairs) of the spawner: its Elite II comes back without the map's
+	-- announcement, the Blood Moon, the Cloak of Luring and Auto Hunt leave its groups alone
+	lair: string?,
 }
 
 return nil

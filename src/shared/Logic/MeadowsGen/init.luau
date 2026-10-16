@@ -17,12 +17,14 @@ local AreaSpawns = require("./AreaSpawns")
 local Camps = require("@self/Camps")
 local Homes = require("@self/Homes")
 local Kit = require("@self/Kit")
+local Lairs = require("./WorldGen/Lairs")
 local Landmarks = require("@self/Landmarks")
 local MeadowsTerrain = require("./MeadowsTerrain")
 local Nature = require("@self/Nature")
 local Quarry = require("@self/Quarry")
 local Rng = require("./Rng")
 local Water = require("@self/Water")
+local WorldKit = require("./WorldGen/Kit")
 
 local MeadowsGen = {}
 
@@ -50,6 +52,18 @@ function MeadowsGen.all(): { Build }
 	Water.banks(out)
 	for _, b in Nature.rocks() do
 		table.insert(out, b :: any)
+	end
+	-- S134i: the Elite II hideouts (Logic/WorldGen/Lairs on the Meadows' ground) after the rocks, dropping the few rocks
+	-- inside one (every other rock stays); the trees keep out of their circles (Nature.forest)
+	Lairs.prune(Areas, out, 4, nil, function(b: Build): boolean
+		return b.tag ~= "rocks"
+	end)
+	local ctx = WorldKit.new("meadows", MeadowsTerrain.height)
+	for _, b in Lairs.all(ctx, Areas) do
+		table.insert(out, b :: any)
+	end
+	for _, point in ctx.life do
+		table.insert(Kit.lifePoints, point)
 	end
 	local tiles, trees = Nature.forest()
 	for _, b in tiles do
@@ -233,6 +247,13 @@ function MeadowsGen.nodes(): { NodePlacement }
 				placed += 1
 			end
 		end
+	end
+	-- S134i: no node of the rules inside an Elite II hideout, then the hideouts' own nodes at their edge
+	Lairs.prune(Areas, out, 6, nil, function(n: NodePlacement): boolean
+		return string.sub(n.kind, 1, 8) == "fishing_"
+	end)
+	for _, node in Lairs.nodes(Areas, out) do
+		table.insert(out, node)
 	end
 	nodeCache = out
 	return out

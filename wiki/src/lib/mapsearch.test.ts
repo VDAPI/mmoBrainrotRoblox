@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { prepare, search } from "./search";
 
 // The same results in the same order as Logic/MapSearch (vectors from tools/WikiData/Places.luau).
-const KIND_RANK: Record<string, number> = { npc: 1, map: 2, cave: 3, area: 4, boss: 5, monster: 6, node: 7 };
+const KIND_RANK: Record<string, number> = { npc: 1, map: 2, cave: 3, area: 4, lair: 5, boss: 5, monster: 6, node: 7 };
 
 describe("map search", () => {
   const data = JSON.parse(readFileSync(join(process.cwd(), "src", "data", "mapsearch.json"), "utf8"));

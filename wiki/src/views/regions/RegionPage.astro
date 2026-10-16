@@ -3,6 +3,7 @@
 // and zone badges, description and PvP rule, areas, monsters (row <-> map highlight), caves, quests, neighbouring
 // regions and the way from the city on the right. The city lists its characters and gates instead of monsters.
 // S109: over the quests, a line per story chapter of the land with a link to the chapter on the quests page.
+// S134i: the Elite II lairs of the region (name, levels, the Elite II with its level and loot, guards, nodes).
 import Base from "../../layouts/Base.astro";
 import ArtIcon from "../../components/ArtIcon.astro";
 import Crumbs from "../../components/Crumbs.astro";
@@ -18,7 +19,8 @@ import { name, t } from "../../lib/i18n";
 import { cardsFor, legendFor } from "../../lib/mapcards";
 import { chapterHref } from "../../lib/links";
 import { searchHref, sectionHref } from "../../lib/sections";
-import { areasOf, bossOfCave, cavesOf, getMapInfo, levels, mapDescription, mapHref, monstersOn, neighbours, npcs, placeHref, questsAt } from "../../lib/world";
+import { monsterHref as bestiaryHref } from "../../lib/bestiary";
+import { areasOf, bossOfCave, cavesOf, lairsOf, getMapInfo, levels, mapDescription, mapHref, monstersOn, neighbours, npcs, placeHref, questsAt } from "../../lib/world";
 
 interface Props {
   lang: Lang;
@@ -33,6 +35,7 @@ const isCity = map.kind === "city";
 const areaList = areasOf(id);
 const monsterList = monstersOn(id);
 const caveList = cavesOf(id);
+const lairList = lairsOf(id);
 const quests = questsAt({ map: id });
 const storyChapters = load("quests").chapters.filter((c) => c.map === id);
 const near = neighbours(id)
@@ -141,6 +144,31 @@ const title = name(map.name, lang);
         </section>
       )}
 
+      {lairList.length > 0 && (
+        <section>
+          <SectionTitle id="lairs">{t(lang, "region.lairs")}</SectionTitle>
+          <p class="soft small">{t(lang, "region.lairsText")}</p>
+          <div class="cards">
+            {lairList.map((l) => {
+              const boss = load("monsters").monsters.find((m) => m.id === l.elite2);
+              const bossName = name(boss?.variants.elite2?.name, lang) || l.elite2;
+              const guards = l.guards.map((k) => name(load("monsters").monsters.find((m) => m.id === k)?.variants.normal?.name, lang) || k);
+              const nodes = l.nodes.map((k) => name(load("gather").nodes.find((g) => g.id === k)?.name, lang) || k);
+              return (
+                <a class="card" href={bestiaryHref(lang, l.elite2, "elite2")} data-el={`group-${l.id}_elite2`}>
+                  <span class="dia lair" aria-hidden="true"></span>
+                  <span class="strong">☠ {name(l.name, lang)}</span>
+                  <span class="muted">{levels(lang, l.levelMin, l.levelMax)} · {t(lang, "region.lairBoss", { name: bossName, level: l.elite2Level })}</span>
+                  <span class="soft small">{t(lang, "cave.elite2Loot", { slots: l.slots.map((s) => name(s, lang)).join(", ") })}</span>
+                  <span class="soft small">{t(lang, "region.lairGuards", { names: guards.join(", "), n: l.guardGroups })}</span>
+                  <span class="soft small">{t(lang, "region.lairNodes", { names: nodes.join(", ") })}</span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {isCity && gates.length > 0 && (
         <section>
           <SectionTitle id="gates">{t(lang, "region.gates")}</SectionTitle>
@@ -232,6 +260,7 @@ const title = name(map.name, lang);
   .card > :not(.dia) { grid-column: 2; }
   .card:hover { text-decoration: none; border-color: var(--vw-gold-dark); }
   .card .boss { color: var(--vw-zone-red-text); font-weight: 700; }
+  .dia.lair { background: #e0823c; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .stack { display: flex; flex-direction: column; gap: 10px; }
   .card.row .dia { grid-row: 1 / span 2; }

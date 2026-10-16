@@ -17,11 +17,13 @@
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
+local AreaTypes = require("../Data/Areas/Types")
 local Env = require("@self/Env")
 local Flora = require("./WorldGen/Flora")
 local Fortress = require("@self/Fortress")
 local Harpy = require("@self/Harpy")
 local Kit = require("./WorldGen/Kit")
+local Lairs = require("./WorldGen/Lairs")
 local Lake = require("@self/Lake")
 local Maps = require("../Data/Maps")
 local Mouths = require("@self/Mouths")
@@ -281,6 +283,17 @@ function FrostpeakGen.all(): { Build }
 	-- S108: the side arc NPCs' camps after the rocks (a clearing before them would reshuffle every later rock) and
 	-- before the trees, which keep out of their clearings
 	SideCamps.all(e, out)
+	-- S134i: the Elite II hideouts after the rocks (the few rocks inside one go; every other rock stays) and before the
+	-- trees, which keep out of their circles
+	Lairs.prune(e.areas, out, 4, nil, function(b: Build): boolean
+		return b.tag ~= "rocks"
+	end)
+	for _, lair in (e.areas.lairs or {}) :: { AreaTypes.Lair } do
+		Env.clear(e, lair.x, lair.z, lair.r)
+	end
+	for _, b in Lairs.all(e.ctx, e.areas) do
+		table.insert(out, b :: any)
+	end
 	local tiles, trees = Flora.forest({
 		ctx = e.ctx,
 		ground = e.T :: any,
@@ -511,6 +524,13 @@ function FrostpeakGen.nodes(): { NodePlacement }
 				end
 			end
 		end
+	end
+	-- S134i: no node of the rules inside an Elite II hideout, then the hideouts' own nodes at their edge
+	Lairs.prune(e.areas, out, 6, nil, function(n: NodePlacement): boolean
+		return string.sub(n.kind, 1, 8) == "fishing_"
+	end)
+	for _, node in Lairs.nodes(e.areas, out) do
+		table.insert(out, node)
 	end
 	nodeCache = out
 	return out

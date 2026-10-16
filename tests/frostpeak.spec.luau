@@ -25,6 +25,7 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 local T = assert(RegionTerrain.get("frostpeak"), "frostpeak terrain")
 local SHAPE = Shapes.byMap.frostpeak
 local DATA = Areas.byMap.frostpeak
+local Lairs = require("../src/shared/Logic/WorldGen/Lairs")
 local SITES = assert(DATA.sites, "frostpeak sites")
 local MAP = assert(Maps.get("frostpeak"))
 local MAX_SLOPE = math.tan(math.rad(15))
@@ -636,7 +637,11 @@ describe("Frost Peaks: generator", function()
 		local per: { [string]: number } = {}
 		local nodes = FrostpeakGen.nodes()
 		for i, n in nodes do
-			per[n.kind] = (per[n.kind] or 0) + 1
+			-- S134i: a hideout's own nodes stand by the hideout, not by the areas' character (tests/lairs.spec)
+			local inLair = Lairs.at(DATA, n.x, n.z) ~= nil
+			if not inLair then
+				per[n.kind] = (per[n.kind] or 0) + 1
+			end
 			if n.kind ~= "fishing_frostpeak" then
 				expect(T.walkable(n.x, n.z)).toBe(true)
 				expect(T.roadDistance(n.x, n.z) > 3).toBe(true)
@@ -649,7 +654,9 @@ describe("Frost Peaks: generator", function()
 				end
 			end
 			local theme = T.themeAt(n.x, n.z)
-			if n.kind == "vein_adamantite" then
+			if inLair then
+				continue
+			elseif n.kind == "vein_adamantite" then
 				expect(theme ~= "snowforest" and theme ~= "harpyrocks").toBe(true)
 			elseif n.kind == "vein_mithril" then
 				expect(theme ~= "dragontemple" and theme ~= "icefort" and theme ~= "wyrmpeak").toBe(true)
@@ -1003,7 +1010,13 @@ describe("Frost Peaks: story places (S105)", function()
 		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4923, 738, 2719, 169
 		local groups = AreaSpawns.region(DATA, MAP.size)
 		expect(#groups).toBe(57)
-		local nodes = FrostpeakGen.nodes()
+		-- S134i: without the Elite II hideouts' own nodes (every other node unchanged)
+		local nodes = {}
+		for _, n in FrostpeakGen.nodes() do
+			if Lairs.at(DATA, n.x, n.z) == nil then
+				table.insert(nodes, n)
+			end
+		end
 		expect(#nodes).toBe(50)
 		local sx, sz = 0, 0
 		for _, n in nodes do
@@ -1289,7 +1302,7 @@ describe("Frost Peaks: side quest places (S108)", function()
 				local key = string.match(b.name, "^SideCamp_(.+)$")
 				if key then
 					camps[key] = b
-				else
+				elseif b.tag ~= "lair" then -- S134i: the Elite II hideouts
 					others += 1
 				end
 				if b.tag == "rocks" then

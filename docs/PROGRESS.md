@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S134h gotowe (ostatnia S134h: każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
+S01–S115 i S117–S134i gotowe (ostatnia S134i: 11 kryjówek Elit II na mapach regionów (Łąki 2, Bór, Pustkowia i Szczyty po
+3; `Data/Areas` `lairs`, `AreaSpawns.lair`, ubiór `Logic/WorldGen/Lairs`): Elita II w środku z przypisanym łupem,
+wraca po cichu ×1,5 wolniej niż w jaskini, strażnicy, węzły; pomarańczowa czaszka na mapie i minimapie, karta i
+wyszukiwarka bez stanu Elity II; tempo łupu pasma ≤ ×1,35; wcześniej S134h: każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
 (`LootTables.ELITE2_SLOTS`, w każdym paśmie poziomów razem cały ekwipunek), dwie Elity II różnych rodzajów w każdej
 jaskini (spawnery `_elite2` i `_elite2b`, 1–2 przedmioty, materiały o połowę: Heroiki i Legendarne na godzinę ×1,2),
 jaskinie 1,35 × większe przez `Logic/CavePlan` (rozciągnięty plan, 3 grupy w dużych salach) i jaśniejsze (presety 0,9,
@@ -278,11 +281,17 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S134i:** kryjówki bez przeglądu w grze (ubiór czterech motywów, wolny środek dla Doskoku i Druzgocącego Ciosu,
+  strażnicy na pierścieniu, czaszka na mapie i minimapie, karta `CreatureCards.lair`). Brak obrazka `mapa/map_lair`
+  (znak ☠ zastępczy; plik do `BRAKI-GRAFIK`). Wiki: sekcja kryjówek na stronie krainy, miejsce „kryjówka” w
+  bestiariuszu i wyszukiwarka mapy (`lair`) niesprawdzone `npm run check` (bez `node_modules`). Łąki mają 2 kryjówki
+  (trzecia czeka na decyzję właściciela, `docs/SESJE.md` → S134i).
+
 - **S134h:** jaskinie 1,35 × większe i jaśniejsze bez przeglądu w grze (ubiór na rozciągniętym planie: stałe punkty przez
   `Kit.at`, drobne odsunięcia lokalne bez skali; pochodnia gracza, presety światła, druga Elita II w salach). Wiki: strona
   jaskini i potwora (łup Elity II) niesprawdzone `npm run check` (bez `node_modules`). Decyzje właściciela w
   `docs/SESJE.md` → S134h: `eliteGroups` +1 (nie weszło), quest tygodniowy Elit II `n = 4`, tempo łupu ×1,2. S134i
-  dołoży kryjówki z Elitami II do tych samych testów (`elite2loot.spec`).
+  dołożyła kryjówki z Elitami II do tych samych testów (`elite2loot.spec`).
 
 - **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
   Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów

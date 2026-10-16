@@ -5,7 +5,7 @@
 -- cave with its kinds, elites, its two Elite IIs (each with its loot; the player's own timer, 3D) and rooms; a boss
 -- dungeon with the boss in 3D, the required level, today's runs ("Dziś: 1/3") with the time to the UTC reset, the
 -- current personal Legendary / Mythic chances (growing with the pity counters), the party rule and the boss's named
--- mythic items (item tooltips).
+-- mythic items (item tooltips). S134i: an Elite II hideout (its Elite II with its loot and abilities, guards, nodes).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,6 +20,7 @@ local DetailCard = require(script.Parent.DetailCard)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Families = require(ReplicatedStorage.Shared.Data.Families)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local GroupLuck = require(script.Parent.Parent.Parent.GroupLuck)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
@@ -49,6 +50,7 @@ local T = CardKit.T
 local mapName, bandColor, whereLine, moveActions =
 	CardKit.mapName, CardKit.bandColor, CardKit.whereLine, CardKit.moveActions
 local kindRow, rarityWord = CardKit.kindRow, CardKit.rarityWord
+local LAIR_COLOR = Color3.fromHex("#E0823C") -- S134i: the hideout's skull (WorldMap/Canvas)
 
 -- S134h: "Loot: Helmet, Gloves" of an Elite II kind (its own slot groups, Data/LootTables.ELITE2_SLOTS); nil for a kind
 -- outside the table (the Elite IIs of events drop every group).
@@ -85,6 +87,28 @@ local function homes(kind: string): { string }
 		end
 		if #where > 0 then
 			table.insert(out, `{T(cave.nameKey)} ({table.concat(where, ", ")})`)
+		end
+	end
+	-- S134i: the Elite II hideouts (the Elite II in the middle, the guards around)
+	for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
+		local data = Areas.byMap[mapId]
+		for _, lair in (if data then data.lairs or {} else {}) :: { Areas.Lair } do
+			local where: { string } = {}
+			if table.find(lair.guards, kind) then
+				table.insert(where, T("variant.normal"))
+			end
+			if lair.elite2 == kind then
+				table.insert(where, T("variant.elite2"))
+			end
+			if #where > 0 then
+				table.insert(
+					out,
+					`{T(
+						"worldmap.lairWhere",
+						{ name = T(lair.nameKey), map = mapName(mapId), min = lair.lv[1], max = lair.lv[2] }
+					)} ({table.concat(where, ", ")})`
+				)
+			end
 		end
 	end
 	return out
@@ -233,6 +257,11 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 			if entrance and cave then
 				mapId, x, z = cave.region, entrance.x, entrance.z
 			end
+		elseif kindOf == "lair" and a then -- S134i
+			local lair, home = Areas.lairById(a)
+			if lair and home then
+				mapId, x, z = home, lair.x, lair.z
+			end
 		end
 	end
 	if not mapId then
@@ -349,6 +378,88 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 		preview = if cave.elite2[1]
 			then { kind = "monster", id = cave.elite2[1], variant = "elite2", glyph = "♛" }
 			else nil,
+		sections = sections,
+		actions = actions,
+	}
+end
+
+-- S134i: an Elite II hideout of a region map (Data/Areas lairs): its levels, the Elite II in the middle (name, level,
+-- abilities, "Loot: ..."), the guards, the gathering nodes, the way there. Only data: never whether the Elite II lives
+-- (its return is quiet; the player's own timer stays on the HUD).
+function CreatureCards.lair(ctx: Context, lairId: string): Spec?
+	local lair, mapId = Areas.lairById(lairId)
+	if not lair or not mapId then
+		return nil
+	end
+	local from = `lair:{lair.id}`
+	local def = Monsters.get(lair.elite2)
+	local boss = kindRow(ctx, lair.elite2, lair.lv, "elite2", from)
+	boss.sub = elite2Loot(lair.elite2)
+	local abilities: { string } = {}
+	if def and def.ability then
+		table.insert(abilities, T(`ability.{def.ability}.name`))
+	end
+	for _, ability in { "crush", "pounce" } do
+		table.insert(abilities, T(`ability.{ability}.name`))
+	end
+	local guards: { DetailCard.Row } = {}
+	for _, kind in lair.guards do
+		table.insert(guards, kindRow(ctx, kind, lair.lv, "normal", from))
+	end
+	local nodes: { DetailCard.Line } = {}
+	for _, kind in lair.nodes do
+		local node = GatherNodes.get(kind)
+		if node then
+			table.insert(nodes, { text = `• {T(node.nameKey)}`, size = 14 })
+		end
+	end
+	local sections: { Section } = {
+		{ lines = { whereLine(ctx, mapId, lair.x, lair.z) } },
+		{
+			title = T("worldmap.lairElite2"),
+			rows = { boss },
+			lines = {
+				{
+					text = T("worldmap.lairAbilities", { list = table.concat(abilities, ", ") }),
+					color = Theme.Colors.Parchment,
+				},
+				{ text = T("worldmap.lairQuiet"), color = Theme.Colors.TextMuted },
+			},
+		},
+		{ title = T("worldmap.lairGuards"), rows = guards },
+	}
+	if #nodes > 0 then
+		table.insert(sections, { title = T("worldmap.lairNodes"), lines = nodes })
+	end
+	local actions = moveActions(ctx, {
+		map = mapId,
+		x = lair.x,
+		z = lair.z,
+		kind = "lair",
+		id = lair.id,
+		labelKey = lair.nameKey,
+	})
+	if ctx.here ~= mapId then
+		table.insert(actions, {
+			text = T("worldmap.action.showMap"),
+			onClick = function()
+				ctx.showMap(mapId)
+			end,
+		})
+	end
+	local color = bandColor(lair.lv, ctx.level)
+	return {
+		icon = "☠",
+		iconColor = LAIR_COLOR,
+		art = UiArt.mapIcon("lair"),
+		title = T(lair.nameKey),
+		subtitle = `{T("worldmap.lair")} · {T("worldmap.card.levels", { min = lair.lv[1], max = lair.lv[2] })} · {mapName(
+			mapId
+		)}`,
+		subtitleColor = color,
+		accent = LAIR_COLOR,
+		back = ctx.back,
+		preview = { kind = "monster", id = lair.elite2, variant = "elite2", glyph = "♛" },
 		sections = sections,
 		actions = actions,
 	}

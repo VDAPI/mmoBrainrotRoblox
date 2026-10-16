@@ -14,6 +14,7 @@ export type Stream = Types.Stream
 export type NpcSpot = Types.NpcSpot
 export type QuestAnchor = Types.QuestAnchor
 export type Site = Types.Site
+export type Lair = Types.Lair
 
 local byMap: { [string]: Types.MapAreas } = {
 	meadows = require("@self/meadows"),
@@ -98,8 +99,21 @@ local function anchorById(id: string): (Types.QuestAnchor?, string?)
 	return nil, nil
 end
 
+-- S134i: an Elite II hideout by id and its map.
+local function lairById(id: string): (Types.Lair?, string?)
+	for mapId, data in byMap do
+		for _, lair in (data.lairs or {}) :: { Types.Lair } do
+			if lair.id == id then
+				return lair, mapId
+			end
+		end
+	end
+	return nil, nil
+end
+
 return table.freeze({
 	byMap = byMap,
+	lairById = lairById,
 	areaById = areaById,
 	anchorById = anchorById,
 	caves = Caves,

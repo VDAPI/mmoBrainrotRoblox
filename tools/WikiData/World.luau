@@ -1,6 +1,7 @@
 --!strict
 -- World files (S34): maps.json (Data/Maps without lighting and music), areas.json (Data/Areas: named areas with the
--- spawn totals of Data/Spawns, roads, lakes, streams, cave entrances, NPC spots and quest anchors), caves.json,
+-- spawn totals of Data/Spawns, roads, lakes, streams, cave entrances, NPC spots and quest anchors; S134i: the Elite II
+-- hideouts), caves.json,
 -- portals.json, npcs.json, shops.json (prices in gold through ItemValue.buyPrice, key `gold`). World.mapsData() and
 -- World.areasData() are plain functions so tools/wikimap.luau (S37) can reuse them.
 
@@ -89,6 +90,26 @@ S.file(
 			questAnchors = arr(rec("QuestAnchorInfo", { id = "string", x = "number", z = "number" })),
 		})),
 		groups = map(arr(Places.Group)), -- S37: monster groups of every region and cave map (Data/Spawns)
+		-- S134i: the Elite II hideouts of the region maps (Data/Areas lairs, their spawners from Data/Spawns)
+		lairs = arr(rec("Lair", {
+			id = "string",
+			map = "ref:maps",
+			area = "ref:areas",
+			name = "name",
+			levelMin = "int",
+			levelMax = "int",
+			x = "number",
+			z = "number",
+			r = "number",
+			elite2 = "ref:monsters",
+			elite2Level = "int",
+			slots = arr("name"), -- the Elite II's own slot groups (LootTables.elite2Groups, names of slot.*)
+			respawnMin = "number", -- the Elite II's respawn window (s)
+			respawnMax = "number",
+			guards = arr("ref:monsters"),
+			guardGroups = "int",
+			nodes = arr("string"),
+		})),
 	})
 )
 
@@ -335,7 +356,43 @@ function World.areasData(): any
 			questAnchors = anchors,
 		}
 	end
-	return { areas = areas, maps = features, groups = Places.groups() }
+	-- S134i: the Elite II hideouts with their Elite II's level, loot and respawn (one function with the game)
+	local lairs = {}
+	for _, mapId in Clean.keys(Areas.byMap) do
+		for _, lair in (Areas.byMap[mapId].lairs or {}) :: { any } do
+			local spawners = assert(Spawns.byMap[mapId], mapId)
+			local spawner: any = nil
+			for _, s in spawners do
+				if s.lair == lair.id and s.variant == "elite2" then
+					spawner = s
+				end
+			end
+			local slots = {}
+			for _, group in LootTables.elite2Groups(lair.elite2) do
+				table.insert(slots, Names.of(LootTables.slotKey(group)))
+			end
+			table.insert(lairs, {
+				id = lair.id,
+				map = mapId,
+				area = lair.area,
+				name = Names.of(lair.nameKey),
+				levelMin = lair.lv[1],
+				levelMax = lair.lv[2],
+				x = lair.x,
+				z = lair.z,
+				r = lair.r,
+				elite2 = lair.elite2,
+				elite2Level = if spawner then spawner.level.max else lair.lv[2],
+				slots = slots,
+				respawnMin = if spawner then spawner.respawn.min else 0,
+				respawnMax = if spawner then spawner.respawn.max else 0,
+				guards = Clean.clean(lair.guards),
+				guardGroups = lair.guardGroups,
+				nodes = Clean.clean(lair.nodes),
+			})
+		end
+	end
+	return { areas = areas, maps = features, groups = Places.groups(), lairs = lairs }
 end
 
 function World.areas(_ctx: any): any

@@ -281,6 +281,7 @@ T.describe("S122 Lure", function()
 			{ targetable = false },
 			{ level = 41 },
 			{ distance = 25.1 },
+			{ lair = true }, -- S134i: a guard of an Elite II hideout
 		}
 		for _, fields in refused do
 			T.expect(Lure.eligible(candidate(fields), 30)).toBe(false)

@@ -800,6 +800,26 @@ function BalanceTables.tables1_20(): { Table }
 		end
 	end
 
+	-- S134i: the Elite IIs of the Meadows' hideouts (one level each), the same teams and target as the caves'
+	section(
+		"Elita II kryjówek Łąk (S134i)",
+		{ "kryjówka · rodzaj · spawner · wariant", "solo HP", "2 graczy HP", "3 graczy HP", "4 graczy HP" },
+		'`Balance.lairElites("meadows")`: drużyna `Balance.team` (W, M, Ł, K) na poziomie spawnera + 2. Cel `REGION_TARGETS.elite2`.'
+	)
+	for _, withNodes in { false, true } do
+		for _, lair in B.lairElites("meadows", withNodes) do
+			for _, e in lair.elite2 do
+				local label = `{lair.id} {e.kind} {e.spawner}{if withNodes then " z węzłami" else ""}`
+				row(label, {
+					{ e.byTeam[1].hpLost, "%" },
+					{ e.byTeam[2].hpLost, "%" },
+					{ e.byTeam[3].hpLost, "%" },
+					{ e.byTeam[4].hpLost, "%" },
+				}, if e.spawner + 4 > 20 then false else nil)
+			end
+		end
+	end
+
 	section(
 		"Grimrok w modelu S83 / S87 (S91)",
 		{

@@ -7,7 +7,7 @@
 -- fixture (`fixture = false`) and are asserted by balance.spec.
 -- New fixture: `lune run tools/balance_report.luau fixture S<n> "<note>"` (only on the owner's decision; S109: the
 -- 1-20 baseline after the quest series S95-S109, DESIGN-15 §0.4; last S134: bosses 2.0, only the Grimrok sections
--- moved). Full list of the differences: build/balance1_20_diff.txt.
+-- moved; S134i: the Meadows' Elite II hideouts, new rows only). Full list of the differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
 local fs = require("@lune/fs")
@@ -60,9 +60,10 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 	end)
 
 	-- S134h: the new baseline (Elite II rows only: the second Elite IIs of the Meadows' caves, the Elite II loot per kill)
-	T.it("the fixture is the S134h baseline (Elite II: assigned loot, two a cave)", function()
+	-- S134i: the new baseline (new Elite II rows only: the Meadows' hideouts; no other key moved)
+	T.it("the fixture is the S134i baseline (Elite II: the Meadows' hideouts)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S134h")
+		T.expect(file and file.meta and file.meta.session).toBe("S134i")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

@@ -86,12 +86,17 @@ export function placesOf(m: Monster, variant: MonsterRank, lang: Lang): Place[] 
   const out: Place[] = [];
   const areas = load("areas").areas;
   const caves = load("caves").caves;
+  const lairs = load("areas").lairs ?? [];
   for (const s of m.variants[variant]?.spawns ?? []) {
-    const id = s.cave ?? s.area ?? s.map;
+    const id = s.cave ?? s.lair ?? s.area ?? s.map;
     if (out.some((p) => p.id === id)) continue;
     if (s.cave) {
       const cave = caves.find((c) => c.id === s.cave);
       out.push({ id, map: s.cave, region: s.map, zone: getMap(s.cave)?.zone ?? "red", name: name(cave?.name, lang) || id });
+    } else if (s.lair) {
+      // S134i: an Elite II lair of the region map (its own name, the zone of the map)
+      const lair = lairs.find((l) => l.id === s.lair);
+      out.push({ id, map: s.map, region: s.map, zone: getMap(s.map)?.zone ?? "yellow", name: name(lair?.name, lang) || id });
     } else {
       const area = areas.find((a) => a.id === s.area);
       const map = getMap(s.map);

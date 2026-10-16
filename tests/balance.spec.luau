@@ -276,6 +276,34 @@ T.describe("Balance: Elite II loot (S134h)", function()
 	end)
 end)
 
+-- S134i (C2): Elite II hideouts (Balance.targetsS134i): Heroics, Legendaries (mean of the 4 classes) and crystals per
+-- hour of every level band with the hideouts / the caves alone at most 1.35, one hideout at most one cave Elite II of
+-- its band; every row without `report` asserted.
+T.describe("Balance: Elite II hideouts (S134i)", function()
+	local rows = B.targetsS134i()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134i, docs/sessions S134i C2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134i targets (printed); three rows a band, one a hideout, none in report mode", function()
+		printReport("S134i", rows, 20)
+		local lairs = 0
+		for _, data in require("../src/shared/Data/Areas").byMap do
+			lairs += #(data.lairs or {})
+		end
+		T.expect(#rows).toBe(3 * #require("../src/shared/Data/LootTables").ELITE2_BANDS + lairs)
+		for _, row in rows do
+			T.expect(row.report).toBeNil()
+		end
+	end)
+end)
+
 -- S134g (E2): Legendary and Mythic with skill effects (Balance.targetsS134g): stats Legendary / Heroic 1.03-1.07 and
 -- Mythic / Heroic 1.08-1.12 at the same level, Mythic > Legendary > Heroic with the effects, a Heroic catches a
 -- Legendary weapon 2-5 levels above and a Mythic 5-9, the owner's Legendary L36 loses to a Heroic L48 (every class,

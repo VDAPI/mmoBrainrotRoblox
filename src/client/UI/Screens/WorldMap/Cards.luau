@@ -2,7 +2,8 @@
 -- Contents of the world map cards (S25, DESIGN §23) as DetailCard specs: NPC (3D figure, role, greeting,
 -- services, the shop's first items for the player's level, quests at this NPC, distance or route), portal
 -- (target map, its levels and zone, the recommended area there), monster area (kinds as rows -> monster
--- sub-card), gathering node / fishing spot, party member and own mark; monsters, caves and dungeons live in
+-- sub-card), gathering node / fishing spot, party member and own mark; monsters, caves, dungeons and (S134i) Elite II
+-- hideouts live in
 -- WorldMap/CreatureCards, shared helpers in WorldMap/CardKit. Actions: Guide, Walk (same map), Centre,
 -- Show map, Profile, Remove.
 
@@ -660,6 +661,8 @@ function Cards.build(ctx: Context, kind: string, id: string, extra: any?): Spec?
 		return CreatureCards.cave(ctx, id)
 	elseif kind == "dungeon" then
 		return CreatureCards.dungeon(ctx, id)
+	elseif kind == "lair" then
+		return CreatureCards.lair(ctx, id) -- S134i
 	elseif kind == "boss" then
 		local boss = Bosses.get(id)
 		return if boss then CreatureCards.dungeon(ctx, boss.region) else nil
@@ -689,6 +692,14 @@ function Cards.hint(kind: string, id: string, level: number, extra: any?): (stri
 		local cave = Areas.caves.get(id)
 		if cave then
 			return T(cave.nameKey), `{cave.levels[1]}–{cave.levels[2]} · {T("zone.red")}`
+		end
+	elseif kind == "lair" then
+		-- S134i: name, levels and the Elite II (never whether it lives)
+		local lair = Areas.lairById(id)
+		local def = lair and Monsters.get(lair.elite2)
+		if lair then
+			return T(lair.nameKey),
+				`{lair.lv[1]}–{lair.lv[2]} · {if def then T(def.nameKeys.elite2) else lair.elite2}`
 		end
 	elseif kind == "dungeon" then
 		local boss = Bosses.forRegion(id)

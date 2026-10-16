@@ -62,6 +62,30 @@ export type Area = {
 	profile: string?,
 }
 
+-- S134i: a hideout of an Elite II on a region map (DESIGN §3.6): a small corner of radius `r` (18-26 studs) at (x, z)
+-- facing `rot` degrees (front (-sin, -cos) like the sites) inside the named area `area`. The Elite II of kind `elite2`
+-- stands in the middle (an Elite II only here, tests/elite2loot.spec), `guardGroups` groups of 1-3 of the `guards`
+-- kinds (normal kinds of the area) on a ring around it, levels `lv` (2-3 levels within the area's), gathering nodes of
+-- the `nodes` kinds at the edge. `theme` = the dressing of Logic/WorldGen/Lairs ("poachers", "gallows", "bonepit",
+-- "frozencamp"); `decor` = the mood key of Data/Ambience (nil: the area's). Spawners: Logic/AreaSpawns.lair; the area
+-- groups keep AreaSpawns.LAIR_CLEARANCE studs off its circle. The map shows a skull, never whether the Elite II lives.
+export type Lair = {
+	id: string,
+	nameKey: string,
+	area: string,
+	x: number,
+	z: number,
+	r: number,
+	rot: number,
+	lv: { number }, -- { min, max }
+	elite2: string,
+	guards: { string },
+	guardGroups: number,
+	nodes: { string },
+	theme: string,
+	decor: string?,
+}
+
 -- Entrance of a cave on its region map; the mouth faces `rot` degrees (0 = the opening looks to -Z).
 export type CaveEntrance = { cave: string, x: number, z: number, rot: number }
 
@@ -76,6 +100,7 @@ export type MapAreas = {
 	npcSpots: { [string]: NpcSpot }?, -- S26
 	questAnchors: { QuestAnchor }?, -- S26
 	sites: { [string]: Site }?, -- S26: buildings and landmarks of the layout (also terrain flats)
+	lairs: { Lair }?, -- S134i: Elite II hideouts (2-3 a region map)
 }
 
 export type Room = { x: number, z: number, r: number, h: number }

@@ -128,6 +128,12 @@ function MonsterService.AreaOf(monster: Monster.Monster): string?
 	return if spawner then spawner.data.areaId else nil
 end
 
+-- S134i: the Elite II hideout (Data/Areas lairs) of the monster's spawner, or nil (the Cloak of Luring leaves it alone).
+function MonsterService.LairOf(monster: Monster.Monster): string?
+	local spawner = spawnerOf[monster]
+	return if spawner then spawner.data.lair else nil
+end
+
 -- S134d (Auto Hunt): every ordinary spawner group (no Elites) of the named area (or cave) `areaId`: its centre (world
 -- x / z) and whether it has living members or spawns when a player comes (ready; waiting for its respawn = not ready).
 function MonsterService.GroupsIn(
@@ -496,8 +502,9 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 	local variant: "normal" | "elite" | "elite2" = data.variant :: any
 	-- S129: the Blood Moon may bring the group back as one Elite of its first kind that has Elites (the same spawner:
 	-- level cap, home and loot of the hunting ground; after its death the group respawns and rolls again)
+	-- S134i: never in an Elite II hideout (its guards stay what the map's card says)
 	local hook = groupHook
-	if hook and variant == "normal" and hook(spawner.mapId, data) == "elite" then
+	if hook and variant == "normal" and data.lair == nil and hook(spawner.mapId, data) == "elite" then
 		for _, kind in kinds do
 			local def = Monsters.get(kind)
 			if def and def.elites ~= false then
@@ -520,7 +527,8 @@ local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 		local level = random:NextInteger(data.level.min, data.level.max)
 		local facing = CFrame.Angles(0, random:NextNumber() * math.pi * 2, 0)
 		local monster = MonsterService.SpawnAt(kind, variant, level, CFrame.new(position) * facing, spawner, attributes)
-		if monster and announce and monster.variant == "elite2" then
+		-- S134i: a hideout's Elite II comes back quietly (the map never tells whether it lives)
+		if monster and announce and monster.variant == "elite2" and data.lair == nil then
 			for _, player in Players:GetPlayers() do
 				local zone = ZoneService.GetZone(player)
 				if zone and zone.map == spawner.mapId then

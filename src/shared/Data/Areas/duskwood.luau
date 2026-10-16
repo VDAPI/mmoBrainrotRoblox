@@ -398,6 +398,55 @@ local data: Types.MapAreas = {
 			decor = "cliffs",
 		},
 	},
+	-- S134i: Elite II hideouts, the hanged men's rings (Logic/WorldGen/Lairs "gallows"); places picked off roads, water,
+	-- buildings and every area group (no group moved), facing the nearest road.
+	lairs = {
+		{
+			id = "duskwood_hangedring", -- a clearing at the Heart's edge, above the Witch Marsh
+			nameKey = "lair.duskwood_hangedring.name",
+			area = "duskwood_heart",
+			x = 258,
+			z = 228,
+			r = 18,
+			rot = 325,
+			lv = { 30, 32 },
+			elite2 = "rotEnt",
+			guards = { "rotEnt", "ghoul" },
+			guardGroups = 2,
+			nodes = { "bush_nightshade", "vein_iron" },
+			theme = "gallows",
+		},
+		{
+			id = "duskwood_drownedring", -- a dry islet between the Troll Swamp's pools
+			nameKey = "lair.duskwood_drownedring.name",
+			area = "duskwood_swamp",
+			x = 463,
+			z = 266,
+			r = 22,
+			rot = 120,
+			lv = { 35, 37 },
+			elite2 = "bogSerpent",
+			guards = { "bogSerpent", "swampTroll" },
+			guardGroups = 3,
+			nodes = { "bush_moonpetal", "vein_iron", "bush_nightshade" },
+			theme = "gallows",
+		},
+		{
+			id = "duskwood_gallowsknoll", -- a knoll on the Blood Cliffs' plateau
+			nameKey = "lair.duskwood_gallowsknoll.name",
+			area = "duskwood_bloodcliffs",
+			x = 564,
+			z = 50,
+			r = 22,
+			rot = 0,
+			lv = { 42, 44 },
+			elite2 = "bloodBat",
+			guards = { "bloodBat", "marshWitch" },
+			guardGroups = 2,
+			nodes = { "vein_silver", "bush_moonpetal" },
+			theme = "gallows",
+		},
+	},
 }
 
 return data

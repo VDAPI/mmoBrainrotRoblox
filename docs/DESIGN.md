@@ -167,6 +167,36 @@ lawy przecinają tunele tylko pod mostami (kaniony mają łagodne zbocza żużlu
   | Lodowe Szczyty 70–100 | Zbocza Yeti, Mamucia Tundra (stada mamutów), Lodowa Strażnica (patrole) | Skały Harpii (gniazda ze sprzętem wspinaczy), Zamarznięte Jezioro (rzeczy uwięzione w lodzie) | Ruiny Smoczej Świątyni (ofiary w świątyni) | Dolina Wilków, Przełęcz, Iglica Wyrmów |
 
   Na Łąkach na każdym poziomie 3–18 są co najmniej dwa różne wybory (test). Jaskinie nie mają profilu.
+- **Kryjówki Elit II** (S134i, prośba właściciela 2026-10-15: „ciekawe open lokalizacje”): na każdej mapie regionu 2–3
+  małe zakątki (`lairs` w `Data/Areas/<mapa>`, promień 18–26 st.) w obszarze potworów, z dala od dróg (ale ≤ 80 st. od
+  drogi), wody, budowli, jaskiń i portali, na suchym łagodnym terenie. W środku Elita II (na górnym poziomie `lv`
+  kryjówki w zakresie rodzaju; rodzaj jest Elitą II tylko tu), dookoła 2–3 grupy strażników (zwykłe rodzaje obszaru,
+  1–3 w grupie), przy skraju 2–3 węzły zbieractwa i skrzynia-rekwizyt (bez łupu). Ubiór regionu (`Logic/WorldGen/Lairs`):
+  Łąki obóz kłusowników, Bór krąg wisielców, Pustkowia kościany dół, Szczyty zamarznięty obóz. Kryjówka ma strefę swojej
+  mapy (bez nowej czerwonej). Elita II wraca po cichu (bez ogłoszenia na mapie), rzadziej niż w jaskini
+  (`Combat.lairElite2RespawnMul` 1,5), ma zestaw §15.1 i przypisany łup §5.5. Na mapie świata i minimapie stała
+  pomarańczowa czaszka (mniejsza niż czerwona czaszka lochu) z nazwą i poziomami; karta mówi, kto tam jest i co daje,
+  i prowadzi na miejsce; mapa nigdy nie pokazuje, czy Elita II żyje. Grupy obszarów, punkty przybycia, Inwazja,
+  Samodzielne Łowy i Płaszcz Przynęty omijają kryjówki (`AreaSpawns.LAIR_CLEARANCE` 30 st.), Krwawy Księżyc nie zamienia
+  ich strażników w Elity.
+
+  | mapa | kryjówka | obszar | poziomy | Elita II (poziom) | łup | strażnicy | węzły |
+  |---|---|---|---|---|---|---|---|
+  | Łąki | Obóz Wnykarzy | Żabie Oczko | 7–8 | Królowa Mokradeł (8) | druga ręka, rękawice | ropucha, ryś | wiązówka, miedź |
+  | Łąki | Kłusownicza Zagroda | Stary Las | 9–11 | Kłoborożec (10) | broń, zbroja | dzik, kruk | psianka, miedź |
+  | Bór | Krąg Wisielców | Serce Puszczy | 30–32 | Serce Zgnilizny (32) | zbroja, talizman | ent, ghul | psianka, żelazo |
+  | Bór | Krąg Topielców | Trolle Bagno | 35–37 | Matka Węży (36) | broń, druga ręka, buty | wąż, troll | księżycowy płatek, żelazo, psianka |
+  | Bór | Szubieniczne Wzgórze | Krwawe Urwiska | 42–44 | Krwawy Pan Nocy (44) | hełm, pierścień | nietoperz, wiedźma | srebro, księżycowy płatek |
+  | Pustkowia | Kościany Dół | Pola Golemów | 55–57 | Kolos Pożogi (57) | zbroja, talizman | golem, chochlik | srebro, ogniokwiat |
+  | Pustkowia | Gniazdo Kości | Turnie Wywern | 62–64 | Król Bazyliszków (64) | broń, pierścień, rękawice | bazyliszek, wywerna | mithril, srebro, ogniokwiat |
+  | Pustkowia | Zapadły Grób | Grobowce Pustyni | 67–69 | Zapomniany Faraon (69) | hełm, naszyjnik, buty | mumia, bazyliszek | mithril, ogniokwiat |
+  | Szczyty | Zamarznięty Obóz | Dolina Lodowych Wilków | 73–75 | Biały Cień (75) | druga ręka, rękawice | lampart, wilk | mithril, szronolist |
+  | Szczyty | Obóz Łowców Kłów | Mamucia Tundra | 83–85 | Wielki Kieł (85) | zbroja, buty, pierścień | mamut, olbrzym | adamantyt, szronolist, mithril |
+  | Szczyty | Zasypany Obóz | Ruiny Smoczej Świątyni | 93–95 | Smoczy Czempion (95) | broń, hełm, talizman | pomiot, rycerz | adamantyt, szronolist |
+
+  Łąki mają dwie: pozostałe otwarte rodzaje Łąk z Elitami (wilk, ryś, niedźwiedź) są jako Elita II za mocne na cele
+  S32 (2 graczy ≤ 1,5, 3 graczy 0,6–1,0 HP). Z kryjówkami każda grupa miejsc ma ≥ 2 Elity II w każdym regionie, a
+  tempo łupu pasma rośnie najwyżej ×1,35 (`Balance.targetsS134i`).
 
 ### 3.7 Szczegółowość świata i wydajność (zmiana po testach S17)
 
@@ -691,7 +721,8 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 ### 15.1 Zasady
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×3, obrażenia ×1.25, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×10, obrażenia ×1.35, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem). (S32; wcześniej ×4 / ×1.5 i ×12 / ×2.)
-- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i 2 Elity II (S134h, każda ze swoim łupem §5.5) na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
+- Elity i Elity II **w jaskiniach** (czerwone strefy), zasady w §3.5 (S134i: Elity II także w kryjówkach na mapach
+  regionów, §3.6, bez ogłoszenia, powrót ×1,5): 2 rodzaje Elit i 2 Elity II (S134h, każda ze swoim łupem §5.5) na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
 - **Zestawy Elit** (S134e, `Data/MonsterAbilities.KITS`, wybór `Logic/MonsterCast`): Elita II ma obok własnej zdolności
   **Druzgocący Cios** (krąg 9 st. zamrożony pod celem w chwili zapowiedzi, zapowiadany do 45 st., 2,2 s, ×10,8 ataku,
   nigdy krytyk, co 16 s, ciemny karmin i komunikat dla celu), **Doskok** (gdy cel ucieka 2,5 s i stoi 12–45 st. dalej:

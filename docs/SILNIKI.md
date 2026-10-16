@@ -52,6 +52,18 @@
   planu, każdy czytelnik bierze je przez `Logic/CavePlan` (`plan`, `rooms`, `shape`, `anchors`), a stałe współrzędne
   ubioru przez `Kit.at(env, v)` (= `CavePlan.coord`) albo `CavePlan.point`.
 
+- **Kryjówka Elity II na mapie regionu** (S134i): wpis w `lairs` w `Data/Areas/<mapa>` (typ `Data/Areas/Types.Lair`: `area`,
+  `x`, `z`, `r` 18–26, `rot` (przód do drogi), `lv` 2–3 poziomy obszaru, `elite2` (rodzaj Elitą II tylko tu),
+  `guards`, `guardGroups`, `nodes`, `theme`) + `LootTables.ELITE2_SLOTS[elite2]` + `lair.<id>.name` (PL, EN). Miejsce:
+  suche, łagodne koło (`MapTerrain.walkable` w całym promieniu), ≥ 150 st. od innej kryjówki, wejścia jaskini i portalu,
+  ≥ `ROAD_CLEARANCE` + r i ≤ 80 st. od drogi, z dala od wody i `avoid` (`tests/lairs.spec`). Spawnery same:
+  `AreaSpawns.lair` (Elita II w środku na górze `lv`, strażnicy na pierścieniu; `Spawner.lair`), grupy obszarów omijają
+  koło `r + LAIR_CLEARANCE`. Ubiór: motyw w `Logic/WorldGen/Lairs` (`THEMES`; środek `Lairs.FREE` pusty), generatory
+  wstawiają kryjówki po skałach i przed drzewami (skały w kole odpadają, `Lairs.prune`), węzły przez `Lairs.nodes` na
+  końcu `nodes()`. Mapa świata, minimapa, karta (`CreatureCards.lair`) i wyszukiwarka czytają dane same. Po wstawieniu
+  sprawdź `lune run tools/arrivals.luau` (zmiany punktów przybycia: `arrivals_apply.py`), model łupu pasm
+  (`Balance.targetsS134i`) i wiersze Elity II (`S32.elite2`, `R.<mapa>.elite2`).
+
 ## S45: API silnika krain (dla S46–S48)
 
 - `Data/Terrain/Types.Shape`: `map`, `seed`, `writer {bottom, top, margin}`, `lakeLevel`, `lakeDepth`, `lakeShore`,

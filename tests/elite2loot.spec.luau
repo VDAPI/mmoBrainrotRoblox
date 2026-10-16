@@ -3,7 +3,8 @@
 -- known groups, a kind is an Elite II in at most one place of the world, the two of a cave share no group, in every
 -- band of ELITE2_BANDS the Elite IIs together drop all nine groups, weapons from at least two Elite IIs of a region,
 -- and Loot.rollMonsterLoot keeps to it (the same kind as an Elite or a normal monster, and an Elite II outside the
--- table, drop every group).
+-- table, drop every group). S134i: the Elite IIs of the hideouts (Data/Areas lairs, AreaSpawns.lair) count with the caves,
+-- and every slot group has at least two Elite IIs in each region.
 
 local Areas = require("../src/shared/Data/Areas")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
@@ -18,9 +19,19 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 
 local GROUPS = LootTables.slotGroups
 
--- Every Elite II spawner of the world's places (S134h: the caves; S134i adds its hideouts here).
+-- Every Elite II spawner of the world's places (S134h: the caves; S134i: and the hideouts of the region maps).
 local function elite2Spawners(): { { place: string, region: string, kind: string, min: number, max: number } }
 	local out = {}
+	for mapId, data in Areas.byMap do
+		for _, s in AreaSpawns.lairs(data) do
+			if s.variant == "elite2" then
+				table.insert(
+					out,
+					{ place = s.lair or "", region = mapId, kind = s.monster, min = s.level.min, max = s.level.max }
+				)
+			end
+		end
+	end
 	for _, cave in Areas.caves.list do
 		for _, s in AreaSpawns.cave(cave) do
 			if s.variant == "elite2" then
@@ -100,6 +111,24 @@ describe("Elite II loot (S134h)", function()
 			expect(n >= 2).toBe(true)
 			for _, g in GROUPS do
 				expect(`{band[1]}-{band[2]} {g} {got[g] == true}`).toBe(`{band[1]}-{band[2]} {g} true`)
+			end
+		end
+	end)
+
+	-- S134i (C1): the player picks where to hunt for a helmet: two Elite IIs of a region at least for every group
+	it("gives every slot group at least two Elite IIs in every region (caves and hideouts)", function()
+		local sources: { [string]: { [string]: number } } = {}
+		for _, s in elite2Spawners() do
+			local byGroup = sources[s.region] or {}
+			sources[s.region] = byGroup
+			for _, g in LootTables.ELITE2_SLOTS[s.kind] or {} do
+				byGroup[g] = (byGroup[g] or 0) + 1
+			end
+		end
+		for _, region in { "meadows", "duskwood", "ashen", "frostpeak" } do
+			for _, g in GROUPS do
+				local n = (sources[region] or {})[g] or 0
+				expect(`{region} {g} {n >= 2}`).toBe(`{region} {g} true`)
 			end
 		end
 	end)

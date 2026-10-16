@@ -48,6 +48,7 @@ UiArt.FIXED = table.freeze({
 		"boss",
 		"area",
 		"npc",
+		"lair", -- S134i: Elite II hideout (glyph ☠ until the owner's picture)
 	}),
 })
 

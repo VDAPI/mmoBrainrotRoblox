@@ -131,7 +131,14 @@ end)
 T.describe("Area profiles: spawns", function()
 	T.it("give profiled areas their group sizes and respawn without moving any group", function()
 		local wolf, toad = 0, 0
+		-- S134i: the area groups only (the Elite II hideouts' spawners follow them: tests/lairs.spec)
+		local areaGroups = {}
 		for _, spawner in Spawns.byMap.meadows do
+			if spawner.lair == nil then
+				table.insert(areaGroups, spawner)
+			end
+		end
+		for _, spawner in areaGroups do
 			local profile = AreaProfiles.ofArea(spawner.areaId)
 			T.expect(spawner.respawn).toEqual(if profile then profile.respawn else AreaSpawns.RESPAWN)
 			T.expect(#(spawner.members :: { string })).toBe(spawner.count)
@@ -152,7 +159,7 @@ T.describe("Area profiles: spawns", function()
 			table.insert(plain.areas, copy)
 		end
 		local before = AreaSpawns.region(plain, (Maps.get("meadows") :: any).size)
-		local after = Spawns.byMap.meadows
+		local after = areaGroups -- S134i
 		T.expect(#before).toBe(#after)
 		for i, spawner in before do
 			T.expect(after[i].position).toEqual(spawner.position)
@@ -173,13 +180,14 @@ T.describe("Area profiles: spawns", function()
 
 	T.it("stay far below the active monster limit", function()
 		-- Every region map full at once (groups only spawn near players; Config.MaxActiveMonsters = 600).
+		-- S134i: with the Elite II hideouts (12 Elite IIs and their guards) the limit is 700
 		local total = 0
 		for mapId in Areas.byMap do
 			for _, spawner in Spawns.byMap[mapId] do
 				total += spawner.count
 			end
 		end
-		T.expect(total < 600).toBe(true)
+		T.expect(total < 700).toBe(true) -- S134i: 600 -> 700 (the hideouts)
 	end)
 end)
 

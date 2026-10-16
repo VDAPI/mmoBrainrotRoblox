@@ -21,7 +21,7 @@
   const LAYERS: Layer[] = ["zones", "bosses", "portals", "quests", "npcs", "gather"];
   const DEFAULT_ON: Layer[] = ["zones", "bosses", "portals", "npcs"];
   const LAYER_COLOR: Record<Layer, string> = { zones: "#e8c25a", bosses: "#e0503f", portals: "#4a8be8", quests: "#5fcf6b", npcs: "#e8c25a", gather: "#6fcf5a" };
-  const KIND_RANK: Record<string, number> = { npc: 1, map: 2, cave: 3, area: 4, boss: 5, monster: 6, node: 7 };
+  const KIND_RANK: Record<string, number> = { npc: 1, map: 2, cave: 3, area: 4, lair: 5, boss: 5, monster: 6, node: 7 };
 
   let data = $state<MapData | null>(null);
   let mapId = $state<string | null>(null); // null = world
@@ -369,6 +369,8 @@
       const cave = data.caves[r.id];
       return openMap(cave ? cave.region : null, { select: cave ? `cave-${r.id}` : null, push: true });
     }
+    // S134i: a lair selects its Elite II's group on the region map
+    if (r.kind === "lair") return openMap(r.map, { select: `group-${r.id}_elite2`, push: true });
     const prefix = r.kind === "monster" ? "" : r.kind;
     const target = prefix ? `${prefix}-${r.id}` : null;
     await openMap(r.map, { select: target, x: r.kind === "monster" ? Math.round(r.x) : undefined, z: r.kind === "monster" ? Math.round(r.z) : undefined, push: true });

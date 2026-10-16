@@ -4762,3 +4762,44 @@
 - **S134h** Wiki: Monte Carlo łupu z ziarnem `Rng.seedOf` (FNV-1a) zamiast `StubRng.seedOf` (pierwsze losowania xorshift z
   tamtych ziaren korelowały: szybki test 500 losowań chybiał 3 sigma). Świadoma zmiana kształtu danych:
   `WIKI_KEYS_ALLOW` = `caves.caves[].elite2Loot…` (5 kluczy), `monsters…loot.slots` (2), `types.ts`.
+- **S134i** Kryjówki Elit II: 11, nie 12 (Łąki 2, Bór 3, Pustkowia 3, Szczyty 3). Wilk, ryś i brunatny niedźwiedź jako
+  Elita II na swoich poziomach łamią cele S32 / `REGION_TARGETS.elite2` (2 graczy 1,55–2,14 > 1,50, 3 graczy 1,01–1,42 >
+  1,00), a pozostałe rodzaje otwartych Łąk z Elitami są już Elitami II jaskiń (zasada 8: inny rodzaj, nie zmiana progu).
+  Łąki: Królowa Mokradeł (ropucha) w Żabim Oczku i Kłoborożec (dzik) w Starym Lesie. Bór: bagienny wąż zamiast trolla
+  (troll 37–39 łamał 2 / 3 graczy).
+- **S134i** Elita II kryjówki ma jeden poziom: górę `lv` w zakresie rodzaju (`levelRange(lv, { kind }).max`); strażnicy
+  cały `lv` jak grupy obszarów. Powód: przy `lv` 7–8 ropucha na 7. łamała 3 graczy (1,02), a kryjówka ma mieć 2–3 poziomy.
+- **S134i** Miejsca kryjówek wybrane skryptem w Lune (`build/s134i/find.luau`: siatka co 6 st. po prostokącie obszaru,
+  cały krąg `MapTerrain.walkable`, odstępy z B1, droga 34–80 st., najmniejsza rzeźba, żadna część budowli w kole), bez
+  obrazków `regionmap.py`: na tej maszynie nie ma Pythona. Każda kryjówka stoi tam, gdzie nie było żadnej grupy obszaru
+  (r + 30), więc **żadna grupa ani punkt przybycia się nie przesunęły** (`tools/arrivals.luau` bez zmian, teren i
+  fixture'y terenu bez zmian, bez `flats`). `arrivals_apply.py` nie był potrzebny.
+- **S134i** Elita II kryjówki wraca po cichu: `MonsterService.spawnGroup` nie wysyła `combat.elite2Spawned`, gdy spawner ma
+  `lair`; `e2timers` zostają (własna wiedza gracza na HUD), karta kryjówki nie pokazuje licznika ani stanu.
+- **S134i** Strefa: kryjówka ma strefę swojej mapy (bez nowej czerwonej); `world.spec` „elity tylko w czerwonych
+  strefach” omija spawnery z `lair`.
+- **S134i** Skrzynia w kryjówce to rekwizyt (`Lairs.build`, bez łupu i bez interakcji); łup dają Elita II i węzły.
+- **S134i** `Combat.lairElite2RespawnMul` = 1,5 (powrót Elity II kryjówki ×1,5 jaskiniowego jej górnego poziomu, ok.
+  8–17 min). Do tego `lv` kryjówek ustawione tak, żeby Elita II siedziała w jednym paśmie `ELITE2_BANDS` (Kościany Dół
+  55–57 zamiast 56–58, Obóz Łowców Kłów 83–85 zamiast 86–88): przy 1,0 i dawnych poziomach pasmo 58–70 miało 1,78
+  jaskiń. Wynik: każde pasmo 1,00–1,35 (śr. 4 klas), jedna kryjówka 0,64–0,69 Elity II jaskini swojego pasma.
+- **S134i** Łup (`ELITE2_SLOTS`): ropucha druga ręka + rękawice, dzik broń + zbroja, ent zbroja + talizman, wąż broń +
+  druga ręka + buty, nietoperz hełm + pierścień, golem zbroja + talizman, bazyliszek broń + pierścień + rękawice, mumia
+  hełm + naszyjnik + buty, lampart druga ręka + rękawice, mamut zbroja + buty + pierścień, smoczy pomiot broń + hełm +
+  talizman. Każda grupa miejsc ma teraz ≥ 2 Elity II w każdym regionie (`elite2loot.spec`).
+- **S134i** Omijanie: grupy obszarów (i przez to Inwazja, czempion, punkty przybycia) poza `r + AreaSpawns.LAIR_CLEARANCE`
+  (30); Samodzielne Łowy nie startują w kryjówce (`AutoGrind.groundAt` nil), jej strażnicy mają `areaId` = id kryjówki,
+  więc nigdy nie są celem łowów; Płaszcz Przynęty pomija potwory z `lair` (`Lure.Candidate.lair`); Krwawy Księżyc nie
+  zamienia strażników kryjówki w Elity (`groupHook` tylko dla spawnerów bez `lair`).
+- **S134i** `Config.MaxActiveMonsters` 600 → 700: wszystkie mapy regionów pełne naraz to 644 potwory z kryjówkami
+  (`areaprofiles.spec`; grupy pojawiają się tylko przy graczach).
+- **S134i** Generatory: kryjówki po skałach i przed drzewami; skały, których środek wpadł w koło (2: `Rocks_crags_9` w
+  Gnieździe Kości, `Rocks_cliffs_10` na Szubienicznym Wzgórzu), odpadają (`Lairs.prune`), reszta skał, budowli i węzłów
+  bez zmian; węzły kryjówki doklejane na końcu `nodes()` (odstęp 24 st. od innych, przesunięcie kąta). Testy z
+  sumami kontrolnymi (Bór S103, Pustkowia S104 / S107, Szczyty S105 / S108) liczą bez kryjówek.
+- **S134i** Fixture 1–20: nowa baza S134i (tylko nowe wiersze „Elita II kryjówek Łąk”, 16 kluczy; żadna dawna wartość
+  się nie zmieniła), `ALLOWED_1_20_DIFFS` pusta; `Balance.ELITE2_1_20` += ropucha 8 i dzik 10.
+- **S134i** Ikona: `UiArt.FIXED.map` += `lair` (`mapa/map_lair`, bez obrazka: znak ☠ w kolorze #E0823C, 16 px; loch
+  zostaje czerwony 20 px). Wiki: świadoma zmiana kształtu danych (`WIKI_KEYS_ALLOW="areas:*,mechanics:mechanics.combat.
+  lairElite2RespawnMul,monsters:monsters.monsters[].variants.*.spawns[].lair,types.ts"`); mapy SVG jaskiń odświeżone
+  (po S134h były sprzed skali).

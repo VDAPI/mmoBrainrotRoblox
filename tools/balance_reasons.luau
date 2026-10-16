@@ -5010,5 +5010,36 @@ return {
 				why = "0.08 -> 0.04: halved with the essence (two Elite IIs a cave: the same protection scrolls per hour as one before)",
 			},
 		},
+		-- S134i: Elite II hideouts on the region maps (docs/SESJE.md S134i)
+		["Areas/meadows:lairs*"] = {
+			{
+				session = "S134i",
+				why = "new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong)",
+			},
+		},
+		["Areas/duskwood:lairs*"] = {
+			{
+				session = "S134i",
+				why = "new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35)",
+			},
+		},
+		["Areas/ashen:lairs*"] = {
+			{
+				session = "S134i",
+				why = "new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy)",
+			},
+		},
+		["Areas/frostpeak:lairs*"] = {
+			{
+				session = "S134i",
+				why = "new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn)",
+			},
+		},
+		["Combat:lairElite2RespawnMul"] = {
+			{
+				session = "S134i",
+				why = "new: a hideout's Elite II respawns 1.5 x slower than a cave's of its top level (no red zone, near a road): Heroics / Legendaries for the class per hour of every band 1.00-1.35 of the caves alone (Balance.targetsS134i <= 1.35), one hideout 0.65-0.69 of one cave Elite II of its band (<= 1)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

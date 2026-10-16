@@ -107,6 +107,9 @@ return table.freeze({
 	elite2RespawnBase = 300,
 	elite2RespawnPerLevel = 3,
 	elite2RespawnSpread = 0.15,
+	-- S134i: the Elite II of a hideout on the open map (Logic/AreaSpawns.lair) respawns this many times slower than a cave's
+	-- of its top level (Balance.targetsS134i: the hour of a band at most 1.35 of the caves alone)
+	lairElite2RespawnMul = 1.5,
 
 	-- Variants (DESIGN §15.1).
 	variants = table.freeze({

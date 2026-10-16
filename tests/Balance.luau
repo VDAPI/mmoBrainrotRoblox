@@ -2297,6 +2297,57 @@ export type CaveElites = {
 
 -- The caves of a region from the real spawners (Data/Spawns): single and paired Elites for the four classes at the
 -- spawner's min, middle and max level, Elite II for 1-4 players (Balance.team) at min(100, spawner + 2).
+-- The Elite II fights of one spawner (S32 reading: teams of 1-4 at the spawner level + 2, at its lowest and top level)
+-- into `out` (S134i: shared by the caves and the hideouts).
+local function elite2Fights(spawner: any, withNodes: boolean?, out: { Elite2Fight })
+	for _, kind in spawner.choices or { spawner.monster } do
+		for i, L in { spawner.level.min, spawner.level.max } do
+			if i == 2 and L == spawner.level.min then
+				continue -- S134i: a hideout's Elite II has one level
+			end
+			local pl = math.min(100, L + 2)
+			if withNodes and pl < PathData.ROWS[1].level then
+				continue
+			end
+			local byTeam: { Fight } = {}
+			for n = 1, 4 do
+				local team = {}
+				for i = 1, n do
+					local c = Balance.ORDER[i]
+					table.insert(
+						team,
+						if withNodes
+							then Balance.player(c, pl, { nodes = Balance.COMBAT_BUILD[c] })
+							else Balance.cachedPlayer(c, pl)
+					)
+				end
+				byTeam[n] = Balance.elite2(team, kind, L)
+			end
+			table.insert(out, { kind = kind, spawner = L, playerLevel = pl, byTeam = byTeam })
+		end
+	end
+end
+
+-- S134i: the Elite II fights of a region map's hideouts (Data/Spawns, the spawners with `lair`), by hideout id.
+local lairCache: { [string]: { { id: string, elite2: { Elite2Fight } } } } = {}
+function Balance.lairElites(mapId: string, withNodes: boolean?): { { id: string, elite2: { Elite2Fight } } }
+	local cacheKey = `{mapId}|{withNodes == true}`
+	local cached = lairCache[cacheKey]
+	if cached then
+		return cached
+	end
+	local out = {}
+	for _, s in Spawns.byMap[mapId] or {} do
+		if s.lair and s.variant == "elite2" then
+			local fights: { Elite2Fight } = {}
+			elite2Fights(s, withNodes, fights)
+			table.insert(out, { id = s.lair, elite2 = fights })
+		end
+	end
+	lairCache[cacheKey] = out
+	return out
+end
+
 -- S91 (B1): `withNodes` = the players with nodes: every variant of Balance.buildsAt but "bez węzłów" (Elites), the
 -- class's combat build of Balance.COMBAT_BUILD (Elite II teams); levels without nodes give no fights.
 local caveCache: { [string]: { CaveElites } } = {}
@@ -2369,29 +2420,7 @@ function Balance.caveElites(mapId: string, withNodes: boolean?): { CaveElites }
 			end
 			local elite2: { Elite2Fight } = {}
 			for _, elite2Spawner in elite2Spawners do
-				for _, kind in elite2Spawner.choices or { elite2Spawner.monster } do
-					for _, L in { elite2Spawner.level.min, elite2Spawner.level.max } do
-						local pl = math.min(100, L + 2)
-						if withNodes and pl < PathData.ROWS[1].level then
-							continue
-						end
-						local byTeam: { Fight } = {}
-						for n = 1, 4 do
-							local team = {}
-							for i = 1, n do
-								local c = Balance.ORDER[i]
-								table.insert(
-									team,
-									if withNodes
-										then Balance.player(c, pl, { nodes = Balance.COMBAT_BUILD[c] })
-										else Balance.cachedPlayer(c, pl)
-								)
-							end
-							byTeam[n] = Balance.elite2(team, kind, L)
-						end
-						table.insert(elite2, { kind = kind, spawner = L, playerLevel = pl, byTeam = byTeam })
-					end
-				end
+				elite2Fights(elite2Spawner, withNodes, elite2)
 			end
 			table.insert(out, { id = cave.id, levels = cave.levels, pairShare = q, kinds = kinds, elite2 = elite2 })
 		end
@@ -2932,6 +2961,9 @@ Balance.ELITE2_1_20 = { { "bandit", 12 }, { "goblinScout", 16 }, { "caveSpider",
 -- S134h: the second Elite IIs of the Meadows' generated caves (spawner levels of their own: kind ranges)
 table.insert(Balance.ELITE2_1_20, { "carrionCrow", 11 })
 table.insert(Balance.ELITE2_1_20, { "koboldMiner", 15 })
+-- S134i: the Elite IIs of the Meadows' hideouts (one level each: the top of lv within the kind's range)
+table.insert(Balance.ELITE2_1_20, { "swampToad", 8 })
+table.insert(Balance.ELITE2_1_20, { "boar", 10 })
 
 local function target(
 	rows: { TargetRow },
@@ -5883,6 +5915,43 @@ function Balance.targetsRegion(mapId: string, targets: any?, withNodes: boolean?
 			)
 		end
 	end
+	-- S134i: the Elite IIs of the hideouts, the same rows (ids "elite2.<hideout>.<kind>.<spawner>")
+	for _, lair in Balance.lairElites(mapId, withNodes) do
+		for _, e in lair.elite2 do
+			local key = `{lair.id}.{e.kind}.{e.spawner}`
+			local label = `{lair.id} {e.kind} {e.spawner}`
+			add(
+				"elite2",
+				`elite2.{key}.solo`,
+				`{label}: Elita II solo HP`,
+				e.byTeam[1].hpLost,
+				T.elite2.solo,
+				nil,
+				nil,
+				e.playerLevel
+			)
+			add(
+				"elite2",
+				`elite2.{key}.duo`,
+				`{label}: Elita II 2 graczy HP`,
+				e.byTeam[2].hpLost,
+				nil,
+				T.elite2.duo,
+				nil,
+				e.playerLevel
+			)
+			add(
+				"elite2",
+				`elite2.{key}.trio`,
+				`{label}: Elita II 3 graczy HP`,
+				e.byTeam[3].hpLost,
+				T.elite2.trio[1],
+				T.elite2.trio[2],
+				nil,
+				e.playerLevel
+			)
+		end
+	end
 	if single > 0 then
 		add(
 			"eliteSingle",
@@ -8223,6 +8292,175 @@ function Balance.targetsS134h(): { TargetRow }
 				nil,
 				nil,
 				s.level
+			)
+		end
+	end
+	return rows
+end
+
+-- Elite II hideouts (S134i, docs/sessions/S134i.md C) ----------------------------------------------------------------
+-- 2-3 hideouts on every region map, each with one Elite II of its own loot (LootTables.ELITE2_SLOTS) and its respawn
+-- (AreaSpawns.elite2Respawn of its top level x Combat.lairElite2RespawnMul). The model per hour of a level band
+-- (LootTables.ELITE2_BANDS): every Elite II spawner of the world whose level range overlaps the band, killed as soon as
+-- it is back; `before` = the caves alone (the state after S134h, the same code).
+
+Balance.S134i = {
+	band = 1.35, -- Heroics / Legendaries for the class (mean of the 4 classes), crystals: per hour of a band / before
+	seat = 1, -- one hideout's Heroics + Legendaries for the class per hour / one cave Elite II's of its band (mean)
+}
+
+export type Elite2Place = {
+	place: string, -- cave id or hideout id
+	region: string,
+	lair: boolean,
+	kind: string,
+	min: number,
+	max: number,
+	respawn: { min: number, max: number },
+}
+
+-- Every Elite II spawner of the world's places (Data/Spawns): the caves', then the hideouts'.
+function Balance.elite2Places(): { Elite2Place }
+	local out: { Elite2Place } = {}
+	for _, cave in Areas.caves.list do
+		for _, s in Spawns.byMap[cave.id] or {} do
+			if s.variant == "elite2" then
+				table.insert(out, {
+					place = cave.id,
+					region = cave.region,
+					lair = false,
+					kind = s.monster,
+					min = s.level.min,
+					max = s.level.max,
+					respawn = s.respawn,
+				})
+			end
+		end
+	end
+	for _, mapId in { "meadows", "duskwood", "ashen", "frostpeak" } do
+		for _, s in Spawns.byMap[mapId] or {} do
+			if s.variant == "elite2" and s.lair then
+				table.insert(out, {
+					place = s.lair,
+					region = mapId,
+					lair = true,
+					kind = s.monster,
+					min = s.level.min,
+					max = s.level.max,
+					respawn = s.respawn,
+				})
+			end
+		end
+	end
+	return out
+end
+
+export type Elite2Hour = { kills: number, heroic: number, legendary: number, crystals: number, places: number }
+
+-- One place's hour for `classId` (killed as soon as it is back).
+function Balance.elite2PlaceHour(classId: string, e: Elite2Place): Elite2Hour
+	local perHour = 3600 / ((e.respawn.min + e.respawn.max) / 2)
+	local seat = Balance.elite2Seat(classId, e.kind, e.max)
+	return {
+		kills = perHour,
+		heroic = seat.heroic * perHour,
+		legendary = seat.legendary * perHour,
+		crystals = seat.crystals * perHour,
+		places = 1,
+	}
+end
+
+-- S134i (C2): an hour of every Elite II of a level band { lo, hi } for `classId` (caves and hideouts; `before`: the
+-- caves alone).
+function Balance.elite2Band(classId: string, band: { number }, before: boolean?): Elite2Hour
+	local out: Elite2Hour = { kills = 0, heroic = 0, legendary = 0, crystals = 0, places = 0 }
+	for _, e in Balance.elite2Places() do
+		if e.max >= band[1] and e.min <= band[2] and not (before and e.lair) then
+			local h = Balance.elite2PlaceHour(classId, e)
+			out.kills += h.kills
+			out.heroic += h.heroic
+			out.legendary += h.legendary
+			out.crystals += h.crystals
+			out.places += 1
+		end
+	end
+	return out
+end
+
+-- S134i (C2): the targets in one place (ids "S134i.*"); balance.spec ("Balance: Elite II hideouts (S134i)") asserts
+-- every row without `report`.
+function Balance.targetsS134i(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134i
+	local function add(id: string, label: string, value: number, low: number?, high: number?, lv: number?)
+		target(rows, `S134i.{id}`, "lairs", label, value, low, high, nil, lv)
+	end
+	for _, band in LootTables.ELITE2_BANDS do
+		local name = `{band[1]}-{band[2]}`
+		local heroic, legendary = 0, 0
+		for _, c in Balance.CLASSES do
+			local now, before = Balance.elite2Band(c, band), Balance.elite2Band(c, band, true)
+			heroic += now.heroic / math.max(1e-9, before.heroic) / #Balance.CLASSES
+			legendary += now.legendary / math.max(1e-9, before.legendary) / #Balance.CLASSES
+		end
+		add(
+			`band.heroic.{name}`,
+			`{name}: Heroiki dla klasy / h pasma (śr. 4 klas) / same jaskinie`,
+			heroic,
+			nil,
+			S.band,
+			band[2]
+		)
+		add(
+			`band.legendary.{name}`,
+			`{name}: Legendarne dla klasy / h pasma (śr. 4 klas) / same jaskinie`,
+			legendary,
+			nil,
+			S.band,
+			band[2]
+		)
+		local now, before = Balance.elite2Band("Warrior", band), Balance.elite2Band("Warrior", band, true)
+		add(
+			`band.crystal.{name}`,
+			`{name}: kryształy esencji / h pasma / same jaskinie`,
+			now.crystals / math.max(1e-9, before.crystals),
+			nil,
+			S.band,
+			band[2]
+		)
+	end
+	-- one hideout against one cave Elite II of the band of its top level (mean over the cave Elite IIs of that band)
+	local places = Balance.elite2Places()
+	for _, e in places do
+		if e.lair then
+			local band = LootTables.ELITE2_BANDS[1]
+			for _, b in LootTables.ELITE2_BANDS do
+				if e.max >= b[1] and e.max <= b[2] then
+					band = b
+					break
+				end
+			end
+			local mine, caves = 0, 0
+			for _, c in Balance.CLASSES do
+				local h = Balance.elite2PlaceHour(c, e)
+				mine += (h.heroic + h.legendary) / #Balance.CLASSES
+				local sum, n = 0, 0
+				for _, o in places do
+					if not o.lair and o.max >= band[1] and o.min <= band[2] then
+						local oh = Balance.elite2PlaceHour(c, o)
+						sum += oh.heroic + oh.legendary
+						n += 1
+					end
+				end
+				caves += sum / math.max(1, n) / #Balance.CLASSES
+			end
+			add(
+				`lair.seat.{e.place}`,
+				`{e.place} ({e.kind}): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma {band[1]}-{band[2]}`,
+				mine / math.max(1e-9, caves),
+				nil,
+				S.seat,
+				e.max
 			)
 		end
 	end

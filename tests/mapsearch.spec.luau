@@ -108,6 +108,20 @@ describe("MapSearch", function()
 		expect(ids(plIndex, "arena").arena_pit).toBeNil()
 		expect(ids(enIndex, "arena").arena_pit).toBeNil()
 	end)
+
+	-- S134i: an Elite II hideout by its name and by its Elite II's name
+	it("finds an Elite II hideout by its name and by its Elite II", function()
+		local results = MapSearch.search(plIndex, "krag wisielcow")
+		expect(results[1].kind).toBe("lair")
+		expect(results[1].id).toBe("duskwood_hangedring")
+		expect(ids(plIndex, "serce zgnilizny").duskwood_hangedring).toBe(true)
+		expect(ids(enIndex, "bone pit").ashen_bonepit).toBe(true)
+		local found = false
+		for _, result in MapSearch.search(enIndex, "lair", 40) do
+			found = found or result.kind == "lair"
+		end
+		expect(found).toBe(true)
+	end)
 end)
 
 return nil

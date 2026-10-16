@@ -298,7 +298,9 @@ local Config = {
 	DefaultCapacity = 20, -- inventory slots without a backpack item
 
 	-- Live monsters allowed on one server (spawners stop when reached).
-	MaxActiveMonsters = 600, -- S19: groups near players only (sleeping groups despawn after 90 s)
+	-- S19: groups near players only (sleeping groups despawn after 90 s). S134i: 600 -> 700 (every region map full at
+	-- once holds 644 monsters with the Elite II hideouts' Elite IIs and guards, tests/areaprofiles.spec)
+	MaxActiveMonsters = 700,
 
 	-- How often (s) the server flushes batched state diffs. 0 = every Heartbeat.
 	StateFlushInterval = 0,

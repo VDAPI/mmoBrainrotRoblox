@@ -361,6 +361,55 @@ local data: Types.MapAreas = {
 			decor = "necropolis",
 		},
 	},
+	-- S134i: Elite II hideouts, the bone pits (Logic/WorldGen/Lairs "bonepit"); places picked off roads, lava, water,
+	-- buildings and every area group (no group moved), facing the nearest road.
+	lairs = {
+		{
+			id = "ashen_bonepit", -- a cold patch between the golem fields' cracks, by the ash road
+			nameKey = "lair.ashen_bonepit.name",
+			area = "ashen_golemfields",
+			x = 90,
+			z = 4,
+			r = 22,
+			rot = 350,
+			lv = { 55, 57 },
+			elite2 = "fireGolem",
+			guards = { "fireGolem", "fireImp" },
+			guardGroups = 2,
+			nodes = { "vein_silver", "bush_firebloom" },
+			theme = "bonepit",
+		},
+		{
+			id = "ashen_bonenest", -- a shelf among the crags where the basilisks drag their prey
+			nameKey = "lair.ashen_bonenest.name",
+			area = "ashen_crags",
+			x = 524,
+			z = -580,
+			r = 22,
+			rot = 140,
+			lv = { 62, 64 },
+			elite2 = "basilisk",
+			guards = { "basilisk", "wyvern" },
+			guardGroups = 3,
+			nodes = { "vein_mithril", "vein_silver", "bush_firebloom" },
+			theme = "bonepit",
+		},
+		{
+			id = "ashen_sunkengrave", -- a fallen-in grave west of the pyramid
+			nameKey = "lair.ashen_sunkengrave.name",
+			area = "ashen_tombs",
+			x = 540,
+			z = 138,
+			r = 22,
+			rot = 275,
+			lv = { 67, 69 },
+			elite2 = "desertMummy",
+			guards = { "desertMummy", "basilisk" },
+			guardGroups = 3,
+			nodes = { "vein_mithril", "bush_firebloom" },
+			theme = "bonepit",
+		},
+	},
 }
 
 return data

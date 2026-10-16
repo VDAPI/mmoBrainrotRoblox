@@ -432,6 +432,10 @@ export type TreeInfo = { x: number, z: number, kind: string }
 -- Every tree tile (Builds tagged "trees") and the list of big trees (for the map's forest patches).
 function Nature.forest(): ({ Kit.Build }, { TreeInfo })
 	local avoid = clearings()
+	-- S134i: no tree in an Elite II hideout
+	for _, lair in (Areas.lairs or {}) :: { AreaTypes.Lair } do
+		table.insert(avoid, { x = lair.x, z = lair.z, r = lair.r })
+	end
 	local tiles: { [number]: Kit.Build } = {}
 	local order: { Kit.Build } = {}
 	local trees: { TreeInfo } = {}

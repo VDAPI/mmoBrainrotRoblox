@@ -28,6 +28,7 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 local T = assert(RegionTerrain.get("ashen"), "ashen terrain")
 local SHAPE = Shapes.byMap.ashen
 local DATA = Areas.byMap.ashen
+local Lairs = require("../src/shared/Logic/WorldGen/Lairs")
 local SITES = assert(DATA.sites, "ashen sites")
 local MAP = assert(Maps.get("ashen"))
 local MAX_SLOPE = math.tan(math.rad(15))
@@ -792,7 +793,11 @@ describe("Ashen Wastes: generator", function()
 		local per: { [string]: number } = {}
 		local nodes = AshenGen.nodes()
 		for i, n in nodes do
-			per[n.kind] = (per[n.kind] or 0) + 1
+			-- S134i: a hideout's own nodes stand by the hideout, not by the areas' character (tests/lairs.spec)
+			local inLair = Lairs.at(DATA, n.x, n.z) ~= nil
+			if not inLair then
+				per[n.kind] = (per[n.kind] or 0) + 1
+			end
 			if n.kind ~= "fishing_ashen" then
 				expect(T.walkable(n.x, n.z)).toBe(true)
 				expect(T.lavaDistance(n.x, n.z) >= CLEAR).toBe(true)
@@ -804,7 +809,7 @@ describe("Ashen Wastes: generator", function()
 				end
 			end
 			local theme = T.themeAt(n.x, n.z)
-			if n.kind == "vein_mithril" then
+			if n.kind == "vein_mithril" and not inLair then
 				local d = T.lavaDistance(n.x, n.z)
 				expect(theme == "crags" or (theme == "lavafield" and d < 40) or (n.z > 210 and n.x > 350)).toBe(true)
 			end
@@ -969,7 +974,13 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 		function()
 			-- the nodes before S104 (build/s104_nodes_before.json): 50 nodes, coordinate sums -11331 / 1059
 			local sx, sz = 0, 0
-			local nodes = AshenGen.nodes()
+			-- S134i: without the Elite II hideouts' own nodes (every other node unchanged)
+			local nodes = {}
+			for _, n in AshenGen.nodes() do
+				if Lairs.at(DATA, n.x, n.z) == nil then
+					table.insert(nodes, n)
+				end
+			end
 			for _, n in nodes do
 				sx += n.x
 				sz += n.z
@@ -1111,12 +1122,15 @@ describe("Ashen Wastes: side quest places (S107)", function()
 				end
 				if string.match(b.name, "^QuestProp_") then
 					props += 1
+				elseif b.tag == "lair" then
+					continue -- S134i: the Elite II hideouts
 				else
 					others += 1
 				end
 			end
 			-- the Builds before S107 (build/s107_before.json: 527, names and places unchanged)
-			expect(others).toBe(527)
+			-- S134i: one rock less (Rocks_crags_9 stood in the bone nest hideout)
+			expect(others).toBe(527 - 1)
 			expect(props).toBe(9)
 			for _, id in S107_ANCHORS do
 				local a = assert(Areas.anchorById(id), id)

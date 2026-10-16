@@ -16,6 +16,7 @@ local Test = require("./Test")
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
 local DATA = Areas.byMap.meadows
+local Lairs = require("../src/shared/Logic/WorldGen/Lairs")
 
 -- The areas as the S26 brief lists them (ids and levels must not change: quests, maps and spawns use them).
 local EXPECTED: { [string]: { number } } = {
@@ -206,7 +207,11 @@ describe("Meadows generator (S26)", function()
 		local counts: { [string]: number } = {}
 		local nodes = MeadowsGen.nodes()
 		for i, n in nodes do
-			counts[n.kind] = (counts[n.kind] or 0) + 1
+			-- S134i: a hideout's own nodes stand by the hideout, not by the areas' character (tests/lairs.spec)
+			local inLair = Lairs.at(DATA, n.x, n.z) ~= nil
+			if not inLair then
+				counts[n.kind] = (counts[n.kind] or 0) + 1
+			end
 			if n.kind ~= "fishing_meadows" then
 				expect(MeadowsTerrain.walkable(n.x, n.z)).toBe(true)
 				expect(AreaSpawns.nearRoad(DATA.roads, n.x, n.z, 4)).toBe(false)
@@ -215,7 +220,9 @@ describe("Meadows generator (S26)", function()
 				local o = nodes[k]
 				expect((n.x - o.x) ^ 2 + (n.z - o.z) ^ 2 >= 23 * 23).toBe(true)
 			end
-			if n.kind == "bush_nightshade" then
+			if inLair then
+				continue
+			elseif n.kind == "bush_nightshade" then
 				expect(MeadowsTerrain.themeAt(n.x, n.z)).toBe("forest")
 			elseif n.kind == "bush_moonpetal" then
 				local near = MeadowsTerrain.streamDistance(n.x, n.z) < 26 or MeadowsTerrain.lakeDistance(n.x, n.z) < 26

@@ -16,6 +16,7 @@ local Test = require("./Test")
 local describe, it, expect = Test.describe, Test.it, Test.expect
 
 local DATA = Areas.byMap.duskwood
+local Lairs = require("../src/shared/Logic/WorldGen/Lairs")
 local T = assert(RegionTerrain.get("duskwood"))
 local MAP = assert(Maps.get("duskwood"))
 
@@ -115,8 +116,12 @@ describe("Duskwood", function()
 	it("places gathering nodes by the areas' character, at least as many as before", function()
 		local per: { [string]: number } = {}
 		for _, n in DuskwoodGen.nodes() do
-			per[n.kind] = (per[n.kind] or 0) + 1
 			expect(T.walkable(n.x, n.z)).toBe(true)
+			-- S134i: a hideout's own nodes stand by the hideout, not by the areas' character (tests/lairs.spec)
+			if Lairs.at(DATA, n.x, n.z) then
+				continue
+			end
+			per[n.kind] = (per[n.kind] or 0) + 1
 			local theme = T.themeAt(n.x, n.z)
 			if n.kind == "vein_iron" then
 				expect(theme == "thicket" or theme == "hollow" or (T.gorgeFloor(n.x, n.z))).toBe(true)
@@ -389,14 +394,25 @@ describe("Duskwood story places (S103)", function()
 	end)
 
 	it("monster groups and gathering nodes are those of before S103 (count and position checksum)", function()
-		local groups = Spawns.byMap.duskwood
+		-- S134i: without the Elite II hideouts' spawners and nodes (every other one unchanged)
+		local groups = {}
+		for _, g in Spawns.byMap.duskwood do
+			if g.lair == nil then
+				table.insert(groups, g)
+			end
+		end
 		local gs = 0
 		for _, g in groups do
 			gs += g.position.x + 3 * g.position.z
 		end
 		expect(#groups).toBe(57)
 		expect(string.format("%.3f", gs)).toBe("7475.000")
-		local nodes = DuskwoodGen.nodes()
+		local nodes = {}
+		for _, n in DuskwoodGen.nodes() do
+			if Lairs.at(DATA, n.x, n.z) == nil then
+				table.insert(nodes, n)
+			end
+		end
 		local ns = 0
 		for _, n in nodes do
 			ns += n.x + 3 * n.z

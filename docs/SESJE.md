@@ -11313,3 +11313,113 @@ Dla właściciela:
 - Quest tygodniowy „zabij 3 Elity II” jest teraz krótszy (dwie na jaskinię); proponuję `n = 4`.
 - Heroiki i Legendarne na godzinę obozowania jaskini są ×1,2 dawnych (górna połowa pasma); jeśli wolisz dokładnie
   „jak przed”, `ITEM_DROPS.elite2` 1–2 → 1 z dodatkiem 25% na drugi przedmiot daje ×1,0.
+
+### S134i: Kryjówki Elit II na otwartym świecie
+
+Prośba właściciela (2026-10-15, punkty 4–6): „ciekawe open lokalizacje” z Elitą II, oznaczone na mapie czaszką, bez
+informacji, czy Elita II żyje. Na czterech mapach regionów stoi 11 kryjówek: mały zakątek z ubiorem regionu, Elitą II w
+środku, 2–3 grupami strażników dookoła, 2–3 węzłami zbieractwa i skrzynią-rekwizytem.
+
+**Co zrobiono**
+- Dane: typ `Data/Areas/Types.Lair`, pole `MapAreas.lairs`, wpisy w `Data/Areas/<mapa>`, `Areas.lairById`; łup w
+  `LootTables.ELITE2_SLOTS` (11 nowych rodzajów); nazwy `lair.<id>.name` i teksty mapy `worldmap.lair*` (PL, EN).
+- Spawnery: `AreaSpawns.lair` / `lairs` / `lairCircles` / `lairAt`, `LAIR_CLEARANCE` 30 (grupy obszarów i punkty przybycia
+  omijają koło), `Spawner.lair`; `Data/Spawns` dokleja kryjówki po grupach obszarów. Elita II na górnym poziomie `lv`,
+  powrót `elite2Respawn(lv[2], Combat.lairElite2RespawnMul = 1,5)`, strażnicy 1–3 na pierścieniu 0,55–0,9 r (≥ 12 st.).
+- Serwer: bez ogłoszenia `combat.elite2Spawned` dla Elity II kryjówki, Krwawy Księżyc pomija spawnery kryjówek,
+  `MonsterService.LairOf`; Płaszcz Przynęty pomija strażników (`Lure.Candidate.lair`), Samodzielne Łowy nie startują w
+  kryjówce (`AutoGrind.groundAt`); Inwazja i czempion biorą punkty grup obszarów (już poza kryjówkami).
+  `Config.MaxActiveMonsters` 600 → 700.
+- Wygląd: `Logic/WorldGen/Lairs` (motywy: obóz kłusowników, krąg wisielców, kościany dół, zamarznięty obóz; wolny środek
+  8 st., skrzynia, węzły przy skraju, `prune` skał w kole) wołany z czterech generatorów (Łąki przez `MeadowsGen`, las
+  Łąk omija kryjówki w `Nature.forest`).
+- Mapa: `WorldMap/Canvas.lairIcons` (pomarańczowa ☠ 16 px, podpis nazwa + poziomy, tylko dane), minimapa `ICONS.lair`,
+  karta `CreatureCards.lair` (miejsce, Elita II z łupem i zdolnościami, „wraca po cichu”, strażnicy, węzły, „Prowadź”),
+  karta potwora wymienia kryjówkę w „Gdzie występuje”, podpowiedź `Cards.hint`, wyszukiwarka `MapSearch` (nazwa
+  kryjówki i jej Elity II), `UiArt.FIXED.map` += `lair`.
+- Model: `Balance.elite2Places`, `elite2PlaceHour`, `elite2Band`, `lairElites`, `targetsS134i` (blok w `balance.spec`),
+  wiersze `R.<mapa>.elite2.<kryjówka>…` i `S32.elite2.swampToad.8` / `.boar.10`, sekcja „Elity II: kryjówki (S134i)” w
+  raporcie i `docs/BALANS.md`, tabela 1–20 „Elita II kryjówek Łąk (S134i)”, nowa baza fixture'u 1–20 S134i.
+- Wiki: `areas.json` `lairs`, `monsters…spawns[].lair`, region: sekcja „Kryjówki Elit II”, bestiariusz: miejsce
+  „kryjówka”, akapit w „Walka” (PL, EN), wyszukiwarka mapy (`lair`), mapy SVG odświeżone.
+- Testy: nowy `tests/lairs.spec` (dane, teren, odstępy, spawnery, omijanie, łowy, węzły, ubiór), `elite2loot.spec`
+  (kryjówki + ≥ 2 źródła na grupę w regionie), `mapsearch.spec`, `uiart.spec`, `premiumuse.spec`; testy z sumami
+  kontrolnymi generatorów i liczbami grup liczą bez kryjówek (`-- S134i:`).
+
+**Kryjówki** (promień 22 st., gdzie nie podano)
+
+| mapa | kryjówka | obszar | poziomy | Elita II (poziom) | łup | strażnicy (grupy) | węzły | powrót |
+|---|---|---|---|---|---|---|---|---|
+| Łąki | Obóz Wnykarzy (-426, 400, r 18) | Żabie Oczko | 7–8 | Królowa Mokradeł (8) | druga ręka, rękawice | ropucha, ryś (1+1) | wiązówka, miedź | 7–9 min |
+| Łąki | Kłusownicza Zagroda (-18, -478) | Stary Las | 9–11 | Kłoborożec (10) | broń, zbroja | dzik, kruk (3+1+2) | psianka, miedź | 7–10 min |
+| Bór | Krąg Wisielców (258, 228, r 18) | Serce Puszczy | 30–32 | Serce Zgnilizny (32) | zbroja, talizman | ent, ghul (3+2) | psianka, żelazo | 8–11 min |
+| Bór | Krąg Topielców (463, 266) | Trolle Bagno | 35–37 | Matka Węży (36) | broń, druga ręka, buty | wąż, troll (1+1+1) | księżycowy płatek, żelazo, psianka | 9–12 min |
+| Bór | Szubieniczne Wzgórze (564, 50) | Krwawe Urwiska | 42–44 | Krwawy Pan Nocy (44) | hełm, pierścień | nietoperz, wiedźma (2+3) | srebro, księżycowy płatek | 9–12 min |
+| Pustkowia | Kościany Dół (90, 4) | Pola Golemów | 55–57 | Kolos Pożogi (57) | zbroja, talizman | golem, chochlik (3+1) | srebro, ogniokwiat | 10–14 min |
+| Pustkowia | Gniazdo Kości (524, -580) | Turnie Wywern | 62–64 | Król Bazyliszków (64) | broń, pierścień, rękawice | bazyliszek, wywerna (3+1+1) | mithril, srebro, ogniokwiat | 10–14 min |
+| Pustkowia | Zapadły Grób (540, 138) | Grobowce Pustyni | 67–69 | Zapomniany Faraon (69) | hełm, naszyjnik, buty | mumia, bazyliszek (2+3+3) | mithril, ogniokwiat | 11–15 min |
+| Szczyty | Zamarznięty Obóz (-554, -34) | Dolina Lodowych Wilków | 73–75 | Biały Cień (75) | druga ręka, rękawice | lampart, wilk (3+1) | mithril, szronolist | 11–15 min |
+| Szczyty | Obóz Łowców Kłów (242, -598) | Mamucia Tundra | 83–85 | Wielki Kieł (85) | zbroja, buty, pierścień | mamut, olbrzym (1+3) | adamantyt, szronolist, mithril | 12–16 min |
+| Szczyty | Zasypany Obóz (546, 50) | Ruiny Smoczej Świątyni | 93–95 | Smoczy Czempion (95) | broń, hełm, talizman | pomiot, rycerz (1+2+2) | adamantyt, szronolist | 12–17 min |
+
+**Pokrycie pasm** (Elity II z daną grupą miejsc w paśmie: jaskinie + kryjówki)
+
+| pasmo | Elity II | broń | 2. ręka | hełm | zbroja | rękawice | buty | naszyjnik | pierścień | talizman |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 7–14 | 4 + 2 (ropucha, dzik) | 3 | 2 | 1 | 2 | 3 | 1 | 1 | 1 | 2 |
+| 14–20 | 4 + 0 | 2 | 1 | 2 | 1 | 1 | 1 | 2 | 1 | 1 |
+| 21–33 | 4 + 1 (ent) | 2 | 1 | 1 | 2 | 1 | 2 | 1 | 2 | 2 |
+| 33–45 | 4 + 2 (wąż, nietoperz) | 3 | 2 | 2 | 1 | 1 | 2 | 2 | 3 | 1 |
+| 46–58 | 4 + 1 (golem) | 2 | 1 | 1 | 2 | 2 | 1 | 1 | 2 | 2 |
+| 58–70 | 4 + 2 (bazyliszek, mumia) | 3 | 2 | 2 | 1 | 2 | 2 | 3 | 2 | 1 |
+| 71–86 | 4 + 2 (lampart, mamut) | 2 | 2 | 1 | 2 | 2 | 2 | 1 | 3 | 2 |
+| 86–100 | 4 + 1 (pomiot) | 3 | 1 | 2 | 2 | 1 | 1 | 2 | 1 | 2 |
+
+W każdym regionie każda grupa ma ≥ 2 Elity II (jaskinie + kryjówki), `elite2loot.spec`.
+
+**Tempo łupu pasma** (średnia 4 klas na godzinę, każda Elita II zabita, gdy wraca; przed = same jaskinie)
+
+| pasmo | Heroiki dla klasy / h | Legendarne dla klasy / h | kryształy esencji / h | po / przed (cel ≤ 1,35) |
+|---|---|---|---|---|
+| 7–14 | 28,35 → 37,85 | 2,83 → 3,78 | 30,42 → 40,96 | 1,34 |
+| 14–20 | 27,43 → 27,43 | 2,74 → 2,74 | 29,38 → 29,38 | 1,00 |
+| 21–33 | 20,68 → 24,26 | 2,43 → 2,85 | 23,86 → 27,91 | 1,17 |
+| 33–45 | 19,85 → 26,41 | 2,34 → 3,11 | 22,68 → 30,29 | 1,33 |
+| 46–58 | 18,39 → 21,58 | 2,04 → 2,40 | 20,65 → 24,15 | 1,17 |
+| 58–70 | 17,53 → 23,41 | 1,95 → 2,60 | 19,78 → 26,37 | 1,34 |
+| 71–86 | 15,78 → 21,18 | 1,75 → 2,35 | 17,57 → 23,67 | 1,34 |
+| 86–100 | 14,91 → 17,35 | 1,66 → 1,93 | 16,80 → 19,61 | 1,16 |
+
+Jedna kryjówka daje 0,64–0,69 Heroików i Legendarnych na godzinę jednej Elity II jaskini swojego pasma (cel ≤ 1).
+Elity II kryjówek w S32 / `REGION_TARGETS.elite2`: solo ≥ 1,8, 2 graczy ≤ 1,5, 3 graczy 0,6–1,0 (wszystkie w paśmie).
+
+**Części map** (generator: shell / detail / fine, przed → po)
+
+| mapa | shell | detail | fine | węzły |
+|---|---|---|---|---|
+| Łąki | 2128 → 2156 | 7116 → 7257 | 2407 → 2536 | 61 → 65 |
+| Bór | 2235 → 2272 | 31224 → 31224 | 7908 → 8012 | 50 → 57 |
+| Pustkowia | 944 → 964 | 7502 → 7571 | 2300 → 2423 | 50 → 57 |
+| Szczyty | 1056 → 1075 | 6751 → 6845 | 3863 → 3908 | 50 → 57 |
+
+`maxParts` bez zmian (testy budżetu części zielone). Grupy obszarów: **żadnemu obszarowi nie zmieniły się grupy** ani
+punkt przybycia (kryjówki stoją poza r + 30 od każdej grupy); teren, `flats` i fixture'y terenu bez zmian.
+
+**Pliki:** `src/shared/Data/Areas/{Types,init,meadows,duskwood,ashen,frostpeak}.luau`, `Data/Spawns/{init,Types}.luau`,
+`Data/LootTables.luau`, `Data/Combat.luau`, `Config.luau`, `Data/Localization/{pl,en}.luau`, `Logic/AreaSpawns.luau`,
+`Logic/AreaArrival.luau`, `Logic/AutoGrind.luau`, `Logic/Lure.luau`, `Logic/MapSearch.luau`, `Logic/UiArt.luau`,
+`Logic/WorldGen/Lairs.luau` (nowy), `Logic/{Meadows,Duskwood,Ashen,Frostpeak}Gen/init.luau`, `Logic/MeadowsGen/Nature.luau`,
+`src/server/Services/{MonsterService,LureService}.luau`, `src/client/UI/Screens/WorldMap/{Canvas,Cards,CreatureCards,
+Search}.luau`, `UI/Screens/Hud/Minimap.luau`, `tests/lairs.spec.luau` (nowy), `tests/{elite2loot,world,areaprofiles,ashen,
+duskwood,frostpeak,meadows,premiumuse,mapsearch,uiart,balance,balance1_20}.spec.luau`, `tests/Balance.luau`,
+`tests/BalanceTables.luau`, `tests/fixtures/balance_1_20.json`, `tools/balance_reasons.luau`, `tools/balance_report.luau`,
+`tools/balance_before.json`, `tools/WikiData/{World,Monsters}.luau`, `wiki/src/…` (dane, typy, region, bestiariusz,
+mapa, i18n, „Walka”), `wiki/public/img/maps/*.svg`, `docs/{DESIGN,SILNIKI,BALANS,DECYZJE,SESJE,PROGRESS,PRZEDMIOTY}.md`,
+`CLAUDE.md`.
+
+**Dla właściciela**
+- Łąki mają 2 kryjówki, nie 3: wilk, ryś i brunatny niedźwiedź jako Elita II są za mocne na cele S32. Trzecia wymaga
+  albo nowego rodzaju Łąk, albo osłabienia Elity II tych rodzajów (osobna decyzja z nową bazą 1–20).
+- Czy kryjówki mają być czerwoną strefą jak jaskinie (dziś strefa mapy)?
+- Elita II kryjówki wraca ×1,5 wolniej niż w jaskini (7–17 min); krótszy powrót przekroczy cel tempa pasma ×1,35.
+- Ikona `mapa/map_lair` czeka na obrazek (dziś znak ☠).

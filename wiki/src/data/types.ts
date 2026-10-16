@@ -88,6 +88,7 @@ export interface AreaProfileInfo {
 export interface AreasFile {
   areas: Area[];
   groups: Record<string, SpawnGroup[]>;
+  lairs: Lair[];
   maps: Record<string, MapFeatures>;
 }
 
@@ -877,6 +878,26 @@ export interface KeybindInfo {
   name: Name;
 }
 
+export interface Lair {
+  area: string; // id in areas.json
+  elite2: string; // id in monsters.json
+  elite2Level: number;
+  guardGroups: number;
+  guards: string[]; // ids in monsters.json
+  id: string;
+  levelMax: number;
+  levelMin: number;
+  map: string; // id in maps.json
+  name: Name;
+  nodes: string[];
+  r: number;
+  respawnMax: number;
+  respawnMin: number;
+  slots: Name[];
+  x: number;
+  z: number;
+}
+
 export interface Lake {
   r: number;
   x: number;
@@ -1115,6 +1136,7 @@ export interface MonsterSpawn {
   cave?: string; // id in caves.json
   count: number;
   groups: number;
+  lair?: string;
   levelMax: number;
   levelMin: number;
   map: string; // id in maps.json

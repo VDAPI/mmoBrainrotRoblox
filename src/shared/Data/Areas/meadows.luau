@@ -450,6 +450,41 @@ local data: Types.MapAreas = {
 	npcSpots = NPC_SPOTS,
 	questAnchors = QUEST_ANCHORS,
 	sites = SITES,
+	-- S134i: Elite II hideouts, the poachers' camps (Logic/WorldGen/Lairs "poachers"); places picked off roads, water,
+	-- buildings and every area group (no group moved), facing the nearest road. Two, not three: the other open
+	-- Meadows kinds with Elites (wolf, lynx, brown bear) are too strong as an Elite II for the S32 targets (DECYZJE S134i).
+	lairs = {
+		{
+			id = "meadows_snarecamp", -- a dry hummock on the north edge of Toad Pond's mire, below the merchant road
+			nameKey = "lair.meadows_snarecamp.name",
+			area = "meadows_toadmire",
+			x = -426,
+			z = 400,
+			r = 18,
+			rot = 100,
+			lv = { 7, 8 },
+			elite2 = "swampToad",
+			guards = { "swampToad", "lynx" },
+			guardGroups = 2,
+			nodes = { "bush_meadowsweet", "vein_copper" },
+			theme = "poachers",
+		},
+		{
+			id = "meadows_poacherspen", -- a glade deep in the Old Forest, off the forest path
+			nameKey = "lair.meadows_poacherspen.name",
+			area = "meadows_oldforest",
+			x = -18,
+			z = -478,
+			r = 22,
+			rot = 240,
+			lv = { 9, 11 },
+			elite2 = "boar",
+			guards = { "boar", "carrionCrow" },
+			guardGroups = 3,
+			nodes = { "bush_nightshade", "vein_copper" },
+			theme = "poachers",
+		},
+	},
 }
 
 return data

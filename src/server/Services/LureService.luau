@@ -126,6 +126,7 @@ local function pull(player: Player): number
 			level = monster.stats.level,
 			distance = (monster:Position() - position).Magnitude,
 			cost = cost,
+			lair = MonsterService.LairOf(monster) ~= nil, -- S134i
 		})
 	end
 	local pulled = 0

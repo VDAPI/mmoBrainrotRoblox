@@ -10,6 +10,7 @@
 -- S78 Scout's Eye (ROZWOJ 11.5): Elites are shown MONSTER_RANGE + bonus studs away (own minimapEliteBonus hook or the
 -- scoutRange of a party member nearby, Logic/ScoutRange); those beyond the disc get markers pinned to its edge.
 -- Without the node (bonus 0) nothing changes. Only monsters the client has streamed in can be shown.
+-- S134i: the Elite II hideouts of the map as a fixed skull (ICONS.lair) from the data, never from a monster's state.
 -- S101: the world event of this map (its glyph and colour, faded during the warning) while inside the disc (like
 -- the quest star, no edge marker).
 -- S119: the owner's silhouettes on the markers and icons (UiArtState.decorate / retarget: pooled labels only change
@@ -69,6 +70,7 @@ local ICONS: { [string]: { glyph: string, color: string } } = {
 	dungeon = { glyph = "☠", color = "#D64A3E" },
 	node = { glyph = "•", color = "#E8C25A" },
 	spawn = { glyph = "", color = "#C9A45C" },
+	lair = { glyph = "☠", color = "#E0823C" }, -- S134i: an Elite II hideout (a fixed marker, like a cave)
 }
 
 local PLAYER_ART = UiArt.mapIcon("player")
@@ -294,6 +296,13 @@ local function Minimap(scope: Scope, props: Props): Instance
 					{ size = if icon.t == "node" then 12 else 18 }
 				)
 			end
+		end
+		-- S134i: the Elite II hideouts from the data (the living Elites nearby get their markers as before)
+		local areaData = Areas.byMap[id]
+		for _, lair in (if areaData then areaData.lairs or {} else {}) :: { Areas.Lair } do
+			local style = ICONS.lair
+			local label = glyph(canvas, style.glyph, style.color, MapSketch.toPixel(sketch, s, lair.x, lair.z), 16, 2)
+			UiArtState.decorate(label, UiArt.mapIcon("lair"), { size = 16 })
 		end
 		table.clear(npcMarks)
 		table.clear(npcGlyphs)

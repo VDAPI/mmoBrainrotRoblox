@@ -108,6 +108,7 @@ local Spawn = rec("MonsterSpawn", {
 	map = "ref:maps",
 	["area?"] = "ref:areas",
 	["cave?"] = "ref:caves",
+	["lair?"] = "string", -- S134i: an Elite II hideout of the region map (areas.json lairs)
 	["profile?"] = "string",
 	groups = "int",
 	count = "int", -- monsters of this kind in those groups
@@ -384,6 +385,7 @@ function Monsters.build(ctx: any): any
 								else (Areas.caves.get(s.areaId or "") or {}).region or entry.map,
 							area = if isArea then s.areaId else nil,
 							cave = if not isArea and Areas.caves.get(s.areaId or "") then s.areaId else nil,
+							lair = s.lair, -- S134i
 							profile = if isArea then (Areas.areaById(s.areaId) :: any).profile else nil,
 							groups = 0,
 							count = 0,

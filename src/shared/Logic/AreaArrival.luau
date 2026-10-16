@@ -52,6 +52,12 @@ function AreaArrival.valid(
 			return false
 		end
 	end
+	-- S134i: never in an Elite II hideout or its clearance
+	for _, c in AreaSpawns.lairCircles(def) do
+		if (x - c.x) ^ 2 + (z - c.z) ^ 2 < c.r * c.r then
+			return false
+		end
+	end
 	-- S26: never in a stream or on a bridge over one, never at a cliff
 	if
 		AreaSpawns.nearStream(def.streams, x, z, AreaArrival.WATER_CLEARANCE) or not MapTerrain.walkable(def.map, x, z)

@@ -10,7 +10,9 @@
 --     positions (and the `arrive` points) never move;
 --   * caves: normal groups in every room but the entrance (and the boss antechamber), 3–5 elite groups of
 --     1–2 of the two elite kinds, two Elite II spawners (S134h): A in the deepest room, B in the fighting room
---     farthest from it (at least ELITE2_SEPARATION apart), each of its fixed kind with its own respawn.
+--     farthest from it (at least ELITE2_SEPARATION apart), each of its fixed kind with its own respawn;
+--   * S134i: Elite II hideouts of the region maps (Data/Areas lairs, `AreaSpawns.lair`): the Elite II in the middle,
+--     2-3 guard groups of 1-3 on a ring around it; the area groups keep LAIR_CLEARANCE studs off every hideout.
 
 local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
@@ -39,10 +41,14 @@ AreaSpawns.RESPAWN = { min = 30, max = 45 }
 AreaSpawns.ELITE_RESPAWN = { min = 90, max = 150 }
 AreaSpawns.THREE_GROUPS_RADIUS = 70 -- S134h: rooms this big (after the cave's scale) hold three normal groups
 AreaSpawns.ELITE2_SEPARATION = 140 -- S134h: least distance between the two Elite IIs of a cave (tests)
+AreaSpawns.LAIR_CLEARANCE = 30 -- S134i: area groups (and the events' points) stay this far outside a hideout's circle
+AreaSpawns.LAIR_GUARD_WEIGHTS = { [1] = 30, [2] = 30, [3] = 25 } -- S134i: guard group sizes (GROUP_SIZE_WEIGHTS to 3)
+AreaSpawns.LAIR_GUARD_GAP = 12 -- S134i: least distance of a guard group from the Elite II and from another guard group
 
 -- Elite II respawn window (seconds) in a cave whose top level is `level` (FIX 2026-10-09: longer for higher levels).
-function AreaSpawns.elite2Respawn(level: number): { min: number, max: number }
-	local mid = Combat.elite2RespawnBase + Combat.elite2RespawnPerLevel * math.max(1, level)
+-- S134i: `mul` stretches it (a hideout's Elite II: Combat.lairElite2RespawnMul).
+function AreaSpawns.elite2Respawn(level: number, mul: number?): { min: number, max: number }
+	local mid = (Combat.elite2RespawnBase + Combat.elite2RespawnPerLevel * math.max(1, level)) * (mul or 1)
 	return {
 		min = math.floor(mid * (1 - Combat.elite2RespawnSpread)),
 		max = math.floor(mid * (1 + Combat.elite2RespawnSpread)),
@@ -171,6 +177,7 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 	for _, entrance in def.caves do
 		table.insert(caves, { x = entrance.x, z = entrance.z, r = AreaSpawns.CAVE_CLEARANCE })
 	end
+	local lairs = AreaSpawns.lairCircles(def)
 	for _, area in def.areas do
 		local rng = Rng.new(seedOf(area.id))
 		local profile = AreaProfiles.get(area.profile)
@@ -187,6 +194,7 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 				and not inCircles(def.lakes, x, z, AreaSpawns.WATER_CLEARANCE)
 				and not inCircles(def.avoid, x, z, 0)
 				and not inCircles(caves, x, z, 0)
+				and not inCircles(lairs, x, z, 0)
 				and not AreaSpawns.nearStream(def.streams, x, z, AreaSpawns.STREAM_CLEARANCE)
 				and MapTerrain.walkable(def.map, x, z, AreaSpawns.CLIFF_CLEARANCE)
 			if ok then
@@ -228,6 +236,111 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 		end
 	end
 	return spawners
+end
+
+-- S134i: the circles the area groups (and the events' points, arrivals) keep out of: every hideout of the map, its
+-- radius plus LAIR_CLEARANCE.
+function AreaSpawns.lairCircles(def: AreaTypes.MapAreas): { AreaTypes.Circle }
+	local out: { AreaTypes.Circle } = {}
+	for _, lair in (def.lairs or {}) :: { AreaTypes.Lair } do
+		table.insert(out, { x = lair.x, z = lair.z, r = lair.r + AreaSpawns.LAIR_CLEARANCE })
+	end
+	return out
+end
+
+-- S134i: whether a map-relative point lies in a hideout of the map (its circle grown by `extra` studs).
+function AreaSpawns.lairAt(def: AreaTypes.MapAreas?, x: number, z: number, extra: number?): AreaTypes.Lair?
+	for _, lair in (if def then def.lairs or {} else {}) :: { AreaTypes.Lair } do
+		local r = lair.r + (extra or 0)
+		if (x - lair.x) ^ 2 + (z - lair.z) ^ 2 < r * r then
+			return lair
+		end
+	end
+	return nil
+end
+
+-- S134i: spawners of one Elite II hideout (seed = its id): the Elite II in the middle (`{id}_elite2`, no `choices`,
+-- one level: the top of `lv` within its kind's range, respawn elite2Respawn(lv[2]) x Combat.lairElite2RespawnMul), then `guardGroups` groups of 1-3 of the guard kinds
+-- (`{id}_guard_{n}`) on a ring 0.55-0.9 r around it, LAIR_GUARD_GAP from the Elite II and from each other, with the
+-- area respawn. Levels from `lv` as the area groups (levelRange); every spawner carries `areaId` = `lair` = the id.
+function AreaSpawns.lair(mapId: string, lair: AreaTypes.Lair): { Spawner }
+	local rng = Rng.new(seedOf(lair.id))
+	local range = { lair.lv[1], lair.lv[2] }
+	local spawners: { Spawner } = {}
+	-- the Elite II on one level: the top of `lv` narrowed to its kind's range (the guards take the whole range)
+	local top = levelRange(range, { lair.elite2 }).max
+	local function at(x: number, z: number): { x: number, y: number, z: number }
+		return {
+			x = math.floor(x + 0.5),
+			y = math.floor((MapTerrain.height(mapId, x, z) or 0) + 0.5),
+			z = math.floor(z + 0.5),
+		}
+	end
+	table.insert(spawners, {
+		id = `{lair.id}_elite2`,
+		monster = lair.elite2,
+		members = { lair.elite2 },
+		variant = "elite2",
+		level = { min = top, max = top },
+		position = at(lair.x, lair.z),
+		radius = 3,
+		count = 1,
+		respawn = AreaSpawns.elite2Respawn(range[2], Combat.lairElite2RespawnMul),
+		areaId = lair.id,
+		lair = lair.id,
+	})
+	local placed: { { number } } = { { lair.x, lair.z } }
+	local start = rng:float(0, math.pi * 2)
+	local inner = math.max(0.55 * lair.r, AreaSpawns.LAIR_GUARD_GAP)
+	local outer = math.max(inner, 0.9 * lair.r)
+	for n = 1, lair.guardGroups do
+		-- the first try apart from the others on gentle, dry ground (as the area groups, CLIFF_CLEARANCE), else the
+		-- first one apart from the others
+		local x, z, fallback = lair.x, lair.z, nil :: { number }?
+		for _ = 1, 40 do
+			local angle = start + (n - 1) * 2 * math.pi / lair.guardGroups + rng:float(-0.35, 0.35)
+			local d = rng:float(inner, outer)
+			local px, pz = lair.x + math.cos(angle) * d, lair.z + math.sin(angle) * d
+			if farFrom(placed, px, pz, AreaSpawns.LAIR_GUARD_GAP) then
+				fallback = fallback or { px, pz }
+				if MapTerrain.walkable(mapId, px, pz, AreaSpawns.CLIFF_CLEARANCE) then
+					fallback = { px, pz }
+					break
+				end
+			end
+		end
+		if fallback then
+			x, z = fallback[1], fallback[2]
+		end
+		table.insert(placed, { x, z })
+		local count = rng:weighted(AreaSpawns.LAIR_GUARD_WEIGHTS)
+		local kinds = members(lair.guards, count, rng)
+		table.insert(spawners, {
+			id = `{lair.id}_guard_{n}`,
+			monster = kinds[1],
+			members = kinds,
+			variant = "normal",
+			level = levelRange(range, kinds),
+			position = at(x, z),
+			radius = 3,
+			count = count,
+			respawn = AreaSpawns.RESPAWN,
+			areaId = lair.id,
+			lair = lair.id,
+		})
+	end
+	return spawners
+end
+
+-- S134i: the spawners of every hideout of a region map, in data order.
+function AreaSpawns.lairs(def: AreaTypes.MapAreas): { Spawner }
+	local out: { Spawner } = {}
+	for _, lair in (def.lairs or {}) :: { AreaTypes.Lair } do
+		for _, s in AreaSpawns.lair(def.map, lair) do
+			table.insert(out, s)
+		end
+	end
+	return out
 end
 
 -- Room plan of a cave: listed rooms (boss caves) or the generated plan, as drawn (S134h: Logic/CavePlan, scaled).

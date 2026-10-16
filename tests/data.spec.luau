@@ -3,6 +3,7 @@
 local fs = require("@lune/fs")
 
 local Classes = require("../src/shared/Data/Classes")
+local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Bosses = require("../src/shared/Data/Bosses")
@@ -321,7 +322,9 @@ T.describe("Data: Monsters", function()
 				if spawner.variant == "elite2" then
 					-- DESIGN §15.1 (FIX 2026-10-09: grows with the cave level). S134e: shorter (owner 2026-10-15),
 					-- Elite II respawn ~4-12 min (was ~7-33 min, min >= 400 s, max <= 2000 s)
-					T.expect(spawner.respawn.min >= 240 and spawner.respawn.max <= 720).toBe(true)
+					-- S134i: an Elite II hideout's x Combat.lairElite2RespawnMul (1.5: at most 18 min)
+					local mul = if spawner.lair then Combat.lairElite2RespawnMul else 1
+					T.expect(spawner.respawn.min >= 240 and spawner.respawn.max <= 720 * mul).toBe(true)
 				end
 			end
 		end

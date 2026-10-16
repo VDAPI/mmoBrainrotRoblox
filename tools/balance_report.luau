@@ -3060,6 +3060,60 @@ do
 	add()
 end
 
+-- S134i: Elite II hideouts (Balance.elite2Places / elite2Band, Balance.targetsS134i): every hideout with its Elite II, loot
+-- and respawn, every level band's Heroics, Legendaries and crystals per hour with the caves alone / with the hideouts.
+do
+	add("## Elity II: kryjówki (S134i)")
+	add()
+	add(
+		`Na każdej mapie regionu 2–3 kryjówki (\`Data/Areas\` \`lairs\`): Elita II w środku na górnym poziomie \`lv\` (w zakresie rodzaju), strażnicy dookoła, węzły zbieractwa. Łup Elity II jak w jaskiniach (\`LootTables.ELITE2_SLOTS\`), powrót \`AreaSpawns.elite2Respawn(lv[2]) × Combat.lairElite2RespawnMul\` ({Combat.lairElite2RespawnMul}). Pasmo = każda Elita II świata, której zakres poziomów zachodzi na pasmo (\`LootTables.ELITE2_BANDS\`), zabita, gdy wraca; „przed” = same jaskinie (stan po S134h, ten sam kod). Asertuje \`balance.spec\` („Balance: Elite II hideouts (S134i)”).`
+	)
+	add()
+	local lairRows: { { string } } = {}
+	for _, e in B.elite2Places() do
+		if e.lair then
+			table.insert(lairRows, {
+				e.region,
+				e.place,
+				e.kind,
+				`L{e.max}`,
+				table.concat(LootTables.elite2Groups(e.kind), ", "),
+				`{math.floor(e.respawn.min / 60 + 0.5)}–{math.floor(e.respawn.max / 60 + 0.5)} min`,
+			})
+		end
+	end
+	tableOut({ "mapa", "kryjówka", "Elita II", "poziom", "łup", "powrót" }, lairRows)
+	add()
+	local bandRows: { { string } } = {}
+	for _, band in LootTables.ELITE2_BANDS do
+		local acc = { h0 = 0, h1 = 0, l0 = 0, l1 = 0, c0 = 0, c1 = 0, n0 = 0, n1 = 0 }
+		for _, c in B.CLASSES do
+			local before, now = B.elite2Band(c, band, true), B.elite2Band(c, band)
+			acc.h0 += before.heroic / #B.CLASSES
+			acc.h1 += now.heroic / #B.CLASSES
+			acc.l0 += before.legendary / #B.CLASSES
+			acc.l1 += now.legendary / #B.CLASSES
+			acc.c0 += before.crystals / #B.CLASSES
+			acc.c1 += now.crystals / #B.CLASSES
+			acc.n0, acc.n1 = before.places, now.places
+		end
+		table.insert(bandRows, {
+			`{band[1]}–{band[2]}`,
+			`{acc.n0} → {acc.n1}`,
+			`{fmtValue(acc.h0, "2")} → {fmtValue(acc.h1, "2")}`,
+			`{fmtValue(acc.l0, "2")} → {fmtValue(acc.l1, "2")}`,
+			`{fmtValue(acc.c0, "2")} → {fmtValue(acc.c1, "2")}`,
+		})
+	end
+	tableOut(
+		{ "pasmo", "Elity II", "Heroiki dla klasy / h", "Legendarne dla klasy / h", "kryształy esencji / h" },
+		bandRows
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS134i(), "S134i (asertowane)"))
+	add()
+end
+
 -- S134d: Auto Hunt, a report only (no assertion, no pace change): EXP/h while hunting = the solo pace x
 -- Progression.autoGrindExpPct x a walking efficiency (a report assumption, never a game number), the hand-play hours a
 -- capped day is worth, and the Scroll of the Hunt minutes the daily boss runs give.

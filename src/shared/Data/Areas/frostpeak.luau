@@ -386,6 +386,55 @@ local data: Types.MapAreas = {
 			decor = "wyrmpeak",
 		},
 	},
+	-- S134i: Elite II hideouts, the frozen camps (Logic/WorldGen/Lairs "frozencamp"); places picked off roads, ice,
+	-- crevasses, buildings and every area group (no group moved), facing the nearest road.
+	lairs = {
+		{
+			id = "frostpeak_frozencamp", -- a snowed-in camp in a fold of the valley's west side
+			nameKey = "lair.frostpeak_frozencamp.name",
+			area = "frostpeak_valley",
+			x = -554,
+			z = -34,
+			r = 22,
+			rot = 175,
+			lv = { 73, 75 },
+			elite2 = "snowLeopard",
+			guards = { "snowLeopard", "iceWolf" },
+			guardGroups = 2,
+			nodes = { "vein_mithril", "bush_frostleaf" },
+			theme = "frozencamp",
+		},
+		{
+			id = "frostpeak_tuskcamp", -- the tusk hunters' last camp on the open tundra
+			nameKey = "lair.frostpeak_tuskcamp.name",
+			area = "frostpeak_tundra",
+			x = 242,
+			z = -598,
+			r = 22,
+			rot = 265,
+			lv = { 83, 85 },
+			elite2 = "iceMammoth",
+			guards = { "iceMammoth", "frostGiant" },
+			guardGroups = 2,
+			nodes = { "vein_adamantite", "bush_frostleaf", "vein_mithril" },
+			theme = "frozencamp",
+		},
+		{
+			id = "frostpeak_buriedcamp", -- a buried pilgrims' camp below the temple terraces
+			nameKey = "lair.frostpeak_buriedcamp.name",
+			area = "frostpeak_temple",
+			x = 546,
+			z = 50,
+			r = 22,
+			rot = 0,
+			lv = { 93, 95 },
+			elite2 = "dragonspawn",
+			guards = { "dragonspawn", "frozenKnight" },
+			guardGroups = 3,
+			nodes = { "vein_adamantite", "bush_frostleaf" },
+			theme = "frozencamp",
+		},
+	},
 }
 
 return data
