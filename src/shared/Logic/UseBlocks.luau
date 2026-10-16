@@ -7,7 +7,7 @@
 -- two new reasons: worldEvent = in the radius of a running world event (WorldEventService) and bossNear = a living
 -- Elite II or boss close by (AutoGrindService).
 
-export type Feature = "fullElixir" | "lure" | "autoPotion" | "autoGrind"
+export type Feature = "fullElixir" | "lure" | "autoPotion" | "autoGrind" | "finder"
 export type Reason =
 	"dead"
 	| "duel"
@@ -49,15 +49,19 @@ UseBlocks.LISTS = table.freeze({
 		"bossNear",
 		"mounted",
 	}),
+	-- S134f: joining a party from the party finder board (PartyFinderService): never into or out of a match, a duel,
+	-- a tournament bracket or a running boss dungeon
+	finder = table.freeze({ "arena", "duel", "tourney", "dungeon" }),
 })
 UseBlocks.PREFIX = table.freeze({
 	fullElixir = "fullElixir",
 	lure = "lure",
 	autoPotion = "autoPotion",
 	autoGrind = "autoGrind",
+	finder = "finder",
 })
 -- Every feature in the order /useblocks prints them (S134d).
-local FEATURES: { Feature } = { "fullElixir", "lure", "autoPotion", "autoGrind" }
+local FEATURES: { Feature } = { "fullElixir", "lure", "autoPotion", "autoGrind", "finder" }
 UseBlocks.FEATURES = table.freeze(FEATURES)
 -- Reasons whose check a later session registers (no check = never blocks until then). S129 registered bloodMoon
 -- (BloodMoonService), S130 tourney (TourneyService), S134d worldEvent (WorldEventService) and bossNear

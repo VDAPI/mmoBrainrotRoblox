@@ -152,6 +152,7 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 	local sold = 0
 	local list = buyback[player] or {}
 	buyback[player] = list
+	local cleared: { [number]: false } = {} -- S134f: one inventory sync for the whole sale
 	for i, raw in indices do
 		if i > 200 then
 			break
@@ -162,7 +163,7 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 			local item = InventoryService.Get(player, index)
 			if item and ItemValue.canSell(item) then
 				local price = ItemValue.sellPrice(item)
-				InventoryService.SetSlot(player, index, nil)
+				cleared[index] = false
 				total += price
 				sold += 1
 				table.insert(list, 1, { item = item, price = price })
@@ -172,6 +173,7 @@ local function sell(player: Player, npcId: string, indices: { any }): (boolean, 
 	if sold == 0 then
 		return false, "shop.error.nothing"
 	end
+	InventoryService.SetSlots(player, cleared)
 	while #list > Shops.BUYBACK_SIZE do
 		table.remove(list)
 	end

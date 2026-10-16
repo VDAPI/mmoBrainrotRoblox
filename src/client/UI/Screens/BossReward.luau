@@ -7,6 +7,8 @@
 -- "Fight summary" table: damage share, healing and shields of every member. On short screens the card sits in the
 -- middle and the table scrolls after 4 rows. S61: an "Intercepted" column when anyone took over blows from allies.
 -- S97: a new mount / mount skin from the personal boss roll (lines above the fight summary).
+-- S134f: the fight meter (Components/FightTable: numbers and %, taken, deaths, dodges; phones see fewer columns), the
+-- header line (fight time, deaths, dodged blows), "Party loot" (Components/FightLoot) and "Details" (the fight log).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,16 +16,17 @@ local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
-local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local FightLoot = require(script.Parent.Parent.Components.FightLoot)
+local FightTable = require(script.Parent.Parent.Components.FightTable)
+local FightView = require(script.Parent.Parent.FightView)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Scale = require(script.Parent.Parent.Scale)
-local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
@@ -34,8 +37,8 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
--- n = name, c = class, d = damage share 0..1, h = healing, s = shields (S61 adds the taken-damage column).
-export type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number? }
+-- S134f: the rows of the fight meter (UI/FightView.Row: S60 n, c, d, h, s, i plus a, t, x, v, w).
+export type SummaryRow = FightView.Row
 
 export type Reward = {
 	boss: string?,
@@ -52,6 +55,8 @@ export type Reward = {
 	upgraded: boolean?, -- Fortune ennobled the item (Unique -> Heroic)
 	extra: boolean?, -- Fortune's second item
 	summary: { SummaryRow }?,
+	fight: FightView.Header?, -- S134f: fight time, deaths, dodged / aimed blows of the party
+	drop: FightView.DropView?, -- S134f: own items and the party's from Legendary up
 	mount: string?, -- S97: a new mount from the personal roll (Data/Mounts id)
 	mountSkin: string?, -- S97: a new mount skin (Data/Cosmetics id)
 }
@@ -59,131 +64,14 @@ export type Reward = {
 export type Props = {
 	Reward: Reward,
 	Close: () -> (),
+	OpenDetails: (() -> ())?, -- S134f: the fight log window ("Details")
 }
 
 local function percent(value: number?): number
 	return math.floor((tonumber(value) or 0) * 100 + 0.5)
 end
 
-local SUMMARY_ROW = 26
 local SUMMARY_VISIBLE = 4 -- rows before the table scrolls on short screens
-local COLUMNS = { 0.40, 0.20, 0.20, 0.20 }
-local COLUMNS_INTERCEPT = { 0.32, 0.17, 0.17, 0.17, 0.17 } -- S61: with the "Intercepted" column
-
-local function cell(
-	scope: Scope,
-	columns: { number },
-	column: number,
-	text: string,
-	color: Color3,
-	font: Font
-): Instance
-	local x = 0
-	for i = 1, column - 1 do
-		x += columns[i]
-	end
-	return scope:New("TextLabel")({
-		Position = UDim2.fromScale(x, 0),
-		Size = UDim2.fromScale(columns[column], 1),
-		BackgroundTransparency = 1,
-		Text = text,
-		FontFace = font,
-		TextSize = Theme.TextSize.Small,
-		TextColor3 = color,
-		TextXAlignment = if column == 1 then Enum.TextXAlignment.Left else Enum.TextXAlignment.Center,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-	})
-end
-
--- The fight summary: a header and one row per member (own row in GoldBright).
-local function summaryTable(scope: Scope, rows: { SummaryRow }, compact: boolean): Instance
-	local own = State.Get({ "character", "name" })
-	local intercept = false
-	for _, row in rows do
-		if (row.i or 0) > 0 then
-			intercept = true
-		end
-	end
-	local columns = if intercept then COLUMNS_INTERCEPT else COLUMNS
-	local muted, bold = Theme.Colors.TextMuted, Theme.Fonts.BodyBold
-	local headerCells: { Instance } = {
-		cell(scope, columns, 1, Text.now("dungeon.summary.member"), muted, bold),
-		cell(scope, columns, 2, Text.now("dungeon.summary.damage"), muted, bold),
-		cell(scope, columns, 3, Text.now("dungeon.summary.healing"), muted, bold),
-		cell(scope, columns, 4, Text.now("dungeon.summary.shields"), muted, bold),
-	}
-	if intercept then
-		table.insert(headerCells, cell(scope, columns, 5, Text.now("dungeon.summary.intercepted"), muted, bold))
-	end
-	local header = scope:New("Frame")({
-		LayoutOrder = 0,
-		Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
-		BackgroundTransparency = 1,
-		[Children] = headerCells :: any,
-	})
-	local lines: { Instance } = {}
-	for i, row in rows do
-		local class = if row.c then Classes.get(row.c) else nil
-		local color = if row.n == own then Theme.Colors.GoldBright else Theme.Colors.Parchment
-		local name = if class then `{class.icon} {row.n}` else row.n
-		local font = Theme.Fonts.BodyMedium
-		local cells: { Instance } = {
-			cell(scope, columns, 1, name, color, font),
-			cell(scope, columns, 2, `{math.floor(row.d * 100 + 0.5)}%`, color, font),
-			cell(scope, columns, 3, Format.number(row.h), color, font),
-			cell(scope, columns, 4, Format.number(row.s), color, font),
-		}
-		if intercept then
-			table.insert(cells, cell(scope, columns, 5, Format.number(row.i or 0), color, font))
-		end
-		table.insert(
-			lines,
-			scope:New("Frame")({
-				LayoutOrder = i,
-				Size = UDim2.new(1, 0, 0, SUMMARY_ROW),
-				BackgroundTransparency = 1,
-				[Children] = cells :: any,
-			})
-		)
-	end
-	local list = { scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }) :: Instance }
-	for _, line in lines do
-		table.insert(list, line)
-	end
-	local body: Instance
-	if compact and #rows > SUMMARY_VISIBLE then
-		body = scope:New("ScrollingFrame")({
-			LayoutOrder = 1,
-			Size = UDim2.new(1, 0, 0, SUMMARY_ROW * SUMMARY_VISIBLE),
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 4,
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			ScrollingDirection = Enum.ScrollingDirection.Y,
-			[Children] = list :: any,
-		})
-	else
-		body = scope:New("Frame")({
-			LayoutOrder = 1,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			BackgroundTransparency = 1,
-			[Children] = list :: any,
-		})
-	end
-	return scope:New("Frame")({
-		LayoutOrder = 10,
-		Size = UDim2.fromScale(1, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
-		[Children] = {
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
-			header,
-			body,
-		},
-	})
-end
 
 local function BossReward(scope: Scope, props: Props): Instance
 	local reward = props.Reward
@@ -297,14 +185,78 @@ local function BossReward(scope: Scope, props: Props): Instance
 				Theme.Fonts.Heading
 			)
 		)
-		table.insert(extras, summaryTable(scope, summary, compact))
+		-- S134f: "Fight time 3:42 · Deaths: Ala, Olek · Dodged blows 14 / 17" above the table
+		local header = reward.fight
+		if header then
+			table.insert(
+				extras,
+				label(
+					9,
+					scope:Computed(function(use): string
+						return FightView.headerLine(use, header)
+					end),
+					Theme.Colors.Parchment,
+					Theme.TextSize.Small,
+					Theme.Fonts.BodyMedium
+				)
+			)
+		end
+		table.insert(
+			extras,
+			FightTable(scope, {
+				Rows = summary,
+				Compact = compact,
+				MaxVisible = if compact then SUMMARY_VISIBLE else nil,
+				LayoutOrder = 10,
+			})
+		)
+	end
+	-- S134f: the party's loot under the table
+	local drop = reward.drop
+	if drop then
+		local loot = FightLoot(scope, { Drop = drop, LayoutOrder = 10 })
+		if loot then
+			table.insert(extras, loot)
+		end
+	end
+	-- S134f: OK and "Details" (the fight log window) side by side
+	local buttons: { Instance } = {
+		scope:New("UIListLayout")({
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 8),
+		}),
+		Button(scope, {
+			LayoutOrder = 1,
+			Text = Text.T(scope, "reveal.ok"),
+			Variant = "secondary",
+			Size = UDim2.fromOffset(140, Theme.Size.ButtonHeight),
+			OnClick = props.Close,
+		}),
+	}
+	local openDetails = props.OpenDetails
+	if openDetails and summary and #summary > 0 then
+		table.insert(
+			buttons,
+			Button(scope, {
+				LayoutOrder = 2,
+				Text = Text.T(scope, "fight.details"),
+				Variant = "secondary",
+				Size = UDim2.fromOffset(160, Theme.Size.ButtonHeight),
+				OnClick = function()
+					openDetails()
+					props.Close()
+				end,
+			})
+		)
 	end
 
 	return scope:New("Frame")({
 		Name = "BossReward",
 		AnchorPoint = if compact then Vector2.new(0.5, 0.5) else Vector2.new(0.5, 0),
 		Position = if compact then UDim2.fromScale(0.5, 0.5) else UDim2.fromScale(0.5, 0.38),
-		Size = UDim2.fromOffset(540, 0),
+		Size = UDim2.fromOffset(if compact then 540 else 660, 0), -- S134f: wider for the meter columns
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Colors.Panel,
 		BackgroundTransparency = 0.08,
@@ -372,12 +324,12 @@ local function BossReward(scope: Scope, props: Props): Instance
 				Theme.Fonts.BodyBold
 			),
 			extras :: any,
-			Button(scope, {
+			scope:New("Frame")({
+				Name = "Buttons",
 				LayoutOrder = 11,
-				Text = Text.T(scope, "reveal.ok"),
-				Variant = "secondary",
-				Size = UDim2.fromOffset(140, Theme.Size.ButtonHeight),
-				OnClick = props.Close,
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				BackgroundTransparency = 1,
+				[Children] = buttons :: any,
 			}),
 		},
 	})

@@ -1,6 +1,7 @@
 --!strict
 -- Party window (P): members with class, level, HP/mana, leader crown; invite by name; leave; the leader can
--- kick and promote; party chat toggle; the loot rules (DESIGN §17).
+-- kick and promote; party chat toggle; the loot rules (DESIGN §17). S134f: a second tab with the party finder board
+-- (UI/Screens/PartyFinder) and "Recent fights" (the fight log window).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
@@ -13,11 +14,13 @@ local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PartyBonus = require(ReplicatedStorage.Shared.Logic.PartyBonus)
 local PartyLoot = require(ReplicatedStorage.Shared.Logic.PartyLoot)
+local PartyFinder = require(script.Parent.PartyFinder)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
+local Tabs = require(script.Parent.Parent.Components.Tabs)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
@@ -78,7 +81,15 @@ local function bar(scope: Scope, ratio: Fusion.UsedAs<number>, color: Color3, y:
 	})
 end
 
-local function PartyWindow(scope: Scope): Fusion.Child
+-- S134f: what the party controller passes (the fight log window, the guide to a finder listing).
+export type Options = {
+	OpenFightLog: (() -> ())?,
+	Guide: ((place: any, labelKey: string) -> ())?,
+}
+
+local TAB_BAR = 48 -- S134f: the tab strip above the content
+
+local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 	local party = State.Value({ "party" })
 	local myId = game:GetService("Players").LocalPlayer.UserId
 	local inviteName = scope:Value("")
@@ -225,7 +236,7 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		return if luckLine then text .. "\n" .. luckLine else text
 	end)
 
-	return {
+	local content = {
 		scope:New("Frame")({
 			Name = "Invite",
 			Size = UDim2.new(1, 0, 0, 48),
@@ -335,6 +346,59 @@ local function PartyWindow(scope: Scope): Fusion.Child
 				}),
 			},
 		}),
+	}
+	-- S134f: the members (as before) and the party finder board ("Looking for a party") in two tabs; "Recent fights"
+	-- opens the fight log window.
+	local tab = scope:Value("members")
+	local members = scope:New("Frame")({
+		Name = "Members",
+		Position = UDim2.fromOffset(0, TAB_BAR),
+		Size = UDim2.new(1, 0, 1, -TAB_BAR),
+		BackgroundTransparency = 1,
+		Visible = scope:Computed(function(use): boolean
+			return use(tab) == "members"
+		end),
+		[Children] = content :: any,
+	})
+	local finder = scope:Computed(function(use, s: Scope): { Instance }
+		if use(tab) ~= "finder" then
+			return {}
+		end
+		return {
+			s:New("Frame")({
+				Name = "Finder",
+				Position = UDim2.fromOffset(0, TAB_BAR),
+				Size = UDim2.new(1, 0, 1, -TAB_BAR),
+				BackgroundTransparency = 1,
+				[Children] = { PartyFinder(s, { Guide = options.Guide }) },
+			}),
+		}
+	end)
+	local openLog = options.OpenFightLog
+	return {
+		Tabs(scope, {
+			Size = UDim2.new(1, -190, 0, 40),
+			Selected = tab,
+			Tabs = {
+				{ id = "members", label = Text.T(scope, "window.party.title") },
+				{ id = "finder", label = Text.T(scope, "finder.tab") },
+			},
+		}),
+		Button(scope, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.fromScale(1, 0),
+			Size = UDim2.fromOffset(180, 40),
+			TextSize = Theme.TextSize.Small,
+			Text = Text.T(scope, "fight.recent"),
+			Visible = openLog ~= nil,
+			OnClick = function()
+				if openLog then
+					openLog()
+				end
+			end,
+		}),
+		members,
+		finder :: any,
 	}
 end
 

@@ -16,6 +16,7 @@ local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
+local ReadyCheckScreen = require(script.Parent.Parent.UI.Screens.ReadyCheck)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -35,6 +36,7 @@ local DungeonController = {
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local UIControllerRef: any
+local RegistryRef: any -- S134f: FightLogController ("Details" on the reward card), looked up lazily
 local rewardScope: Fusion.Scope<typeof(Fusion)>? = nil
 
 local REWARD_SECONDS = 20
@@ -337,7 +339,18 @@ function DungeonController.ShowReward(reward: BossReward.Reward)
 	if reward.gotMyth or reward.gotLeg or reward.mount ~= nil or reward.mountSkin ~= nil then
 		Sounds.play("levelUp")
 	end
-	BossReward(inner, { Reward = reward, Close = close }).Parent = UIControllerRef.GetLayer("Toasts")
+	BossReward(inner, {
+		Reward = reward,
+		Close = close,
+		-- S134f: "Details" opens the fight log (its summary arrives right after the card)
+		OpenDetails = function()
+			local log = RegistryRef and RegistryRef.Get("FightLogController")
+			if log then
+				log.Open(1)
+			end
+		end,
+	}).Parent =
+		UIControllerRef.GetLayer("Toasts")
 	task.delay(REWARD_SECONDS, close)
 end
 
@@ -347,6 +360,7 @@ function DungeonController.RewardVisible(): boolean
 end
 
 function DungeonController.Init(registry)
+	RegistryRef = registry
 	WindowManager = registry.Get("WindowManager")
 	local UIController = registry.Get("UIController")
 	UIControllerRef = UIController
@@ -365,6 +379,7 @@ function DungeonController.Init(registry)
 	})
 	bossBar().Parent = UIController.GetLayer("Screens")
 	announcer().Parent = UIController.GetLayer("Toasts")
+	ReadyCheckScreen(scope).Parent = UIController.GetLayer("Toasts") -- S134f: the ready check at the gate
 end
 
 function DungeonController.Start()

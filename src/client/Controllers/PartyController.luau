@@ -289,9 +289,21 @@ function PartyController.Init(registry)
 	WindowManager.Register({
 		id = "party",
 		titleKey = "window.party.title",
-		size = Vector2.new(640, 560),
+		size = Vector2.new(660, 620), -- S134f: room for the tab strip (was 640 x 560)
 		hotkey = Enum.KeyCode.P,
-		build = PartyWindow,
+		-- S134f: the finder tab guides to a listing; "Recent fights" opens the fight log
+		build = function(s)
+			return PartyWindow(s, {
+				OpenFightLog = function()
+					local log = Registry.Get("FightLogController")
+					log.Open(1)
+				end,
+				Guide = function(place: any, labelKey: string)
+					local nav = Registry.Get("NavController")
+					nav.Guide({ map = place.map, x = place.x, z = place.z, labelKey = labelKey })
+				end,
+			})
+		end,
 	})
 	WindowManager.Register({
 		id = "profile",

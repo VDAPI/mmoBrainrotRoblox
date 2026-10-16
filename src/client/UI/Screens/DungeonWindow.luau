@@ -35,6 +35,20 @@ export type Props = {
 	Close: () -> (),
 }
 
+-- S134f: the leader and at least one more member may come along now: the gate asks "Ready?" first.
+local function asks(data: any): boolean
+	if type(data) ~= "table" or not data.isLeader or type(data.members) ~= "table" then
+		return false
+	end
+	local able = 0
+	for _, member in data.members do
+		if member.ok then
+			able += 1
+		end
+	end
+	return able >= 2
+end
+
 local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 	local info = scope:Value(nil :: any)
 	local now = scope:Value(Workspace:GetServerTimeNow())
@@ -236,7 +250,11 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			Variant = "primary",
 			Text = scope:Computed(function(use): string
 				local data = use(info)
-				return Text.get(use, if data and not data.isLeader then "dungeon.leaderOnly" else "dungeon.enter")
+				if data and not data.isLeader then
+					return Text.get(use, "dungeon.leaderOnly")
+				end
+				-- S134f: a leader with a member able to come along asks "Ready?" first (DungeonService ready check)
+				return Text.get(use, if asks(data) then "dungeon.ready.ask" else "dungeon.enter")
 			end),
 			Disabled = scope:Computed(function(use): boolean
 				local data = use(info)
@@ -248,9 +266,10 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 					return
 				end
 				task.spawn(function()
+					local asking = asks(Fusion.peek(info))
 					local ok, err = Net.Invoke("EnterDungeon", region)
 					if ok then
-						Sounds.play("levelUp")
+						Sounds.play(if asking then "click" else "levelUp")
 						props.Close()
 					else
 						Sounds.play("error")

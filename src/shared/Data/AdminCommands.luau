@@ -359,6 +359,8 @@ cmd("world", "worldfx", {
 })
 -- S105: the city's season on the caller's client (Logic/CitySeason; auto = from the story)
 cmd("world", "season", { enum("season", { "auto", "summer", "snow", "spring" }) })
+-- S134f: the party finder board of this server (list, or remove every listing)
+cmd("world", "finder", { enum("action", { "list", "clear" }) })
 
 -- Monsters
 cmd("monsters", "spawn", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) })
@@ -370,6 +372,8 @@ cmd("monsters", "mobdef", { ref("monster", "monster"), VARIANT, int("level", 1, 
 cmd("monsters", "e2", { enum("action", { "spawn" }) })
 cmd("monsters", "e2timer", {})
 cmd("monsters", "boss", { enum("action", { "reset", "spawn" }), ref("boss", "boss", true) })
+-- S134f: the ready check at a dungeon gate (the leader's pending check: everyone "yes" at once)
+cmd("monsters", "readycheck", { enum("action", { "skip" }) })
 cmd("monsters", "phase", { int("phase", 1, 3) })
 -- S30: boss grind (personal roll pity counters, daily runs, simulation)
 cmd("monsters", "bosspity", { ref("boss", "boss", true), int("kills", 0, 100, true) })

@@ -50,6 +50,8 @@ export type Handlers = {
 	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
 	-- S134e: the kit's throw at a fleeing target (a regular ranged blow)
 	rangedThrow: ((monster: Monster.Monster, player: Player, params: any) -> ())?,
+	-- S134f: a player's damage booked on the monster (CombatService.MonsterDamaged)
+	damaged: ((monster: Monster.Monster, player: Player, dealt: number) -> ())?,
 }
 
 type SpawnerRuntime = {
@@ -262,6 +264,12 @@ local context: Monster.Context = {
 	end,
 	died = function(monster)
 		MonsterService.OnDied(monster)
+	end,
+	damaged = function(monster, player, dealt)
+		local damaged = handlers and handlers.damaged
+		if damaged then
+			damaged(monster, player, dealt)
+		end
 	end,
 	threatMultiplier = function(monster, player): number
 		local multiplier = handlers and handlers.threatMultiplier

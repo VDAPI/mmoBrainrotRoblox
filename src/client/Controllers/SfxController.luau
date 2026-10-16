@@ -626,6 +626,7 @@ function SfxController.Start()
 		local route = ROUTES[name]
 		return route ~= nil and SfxController.Ui(route.key, route.mul)
 	end)
+	Sounds.setKeyPlayer(SfxController.Ui) -- S134f: Data/Sfx keys from UI screens (Hud/LowHpVignette)
 
 	local root = Instance.new("Folder")
 	root.Name = "Vaelthorn_Sfx"

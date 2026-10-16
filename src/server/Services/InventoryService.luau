@@ -138,6 +138,23 @@ function InventoryService.SetSlot(player: Player, index: number, item: ItemInsta
 	sync(player, { index })
 end
 
+-- S134f: sets several slots at once (nil clears) with one sync and one Changed signal (selling a batch).
+function InventoryService.SetSlots(player: Player, slots: { [number]: ItemInstance | false })
+	local char = character(player)
+	if not char then
+		return
+	end
+	local indices = {}
+	for index, item in slots do
+		(char.inventory :: any)[tostring(index)] = if item then item else nil
+		table.insert(indices, index)
+	end
+	if #indices > 0 then
+		table.sort(indices)
+		sync(player, indices)
+	end
+end
+
 -- Adds an item (stacking). Returns the number of units that did not fit.
 function InventoryService.AddItem(player: Player, item: ItemInstance): number
 	local char = character(player)

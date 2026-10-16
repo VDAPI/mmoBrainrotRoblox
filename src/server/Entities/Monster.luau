@@ -70,6 +70,8 @@ export type Context = {
 	groundAt: ((position: Vector3) -> Vector3)?,
 	-- S134e: the kit's throw at a fleeing target (a regular ranged blow, CombatService.monsterHitsPlayer)
 	rangedThrow: ((monster: any, player: Player, params: any) -> ())?,
+	-- S134f: a player's damage was booked in damageBy (CombatService.MonsterDamaged, the fight meter).
+	damaged: ((monster: any, player: Player, dealt: number) -> ())?,
 }
 
 local Monster = {}
@@ -990,6 +992,9 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 		-- Engage first: it pulls the group only while this player has no threat entry yet.
 		engage(self, source)
 		self.threat[source] = (self.threat[source] or 0) + dealt * threatMul
+		if self.ctx.damaged and dealt > 0 then
+			self.ctx.damaged(self, source, dealt)
+		end
 	end
 	if self.hp <= 0 then
 		self.killedBy = source

@@ -63,6 +63,7 @@ local WorldEventService = {
 		"LootService",
 		"AnnounceService",
 		"WorldService",
+		"FightLogService", -- S134f: the Invasion's after-fight meter
 	},
 }
 
@@ -104,6 +105,7 @@ type Event = {
 	bossDead: boolean,
 	bossGone: boolean,
 	dirty: boolean,
+	fightId: number?, -- S134f: the Invasion's fight (FightLogService)
 }
 
 local PlayerStateService: any
@@ -120,6 +122,7 @@ local MailService: any
 local LootService: any
 local AnnounceService: any
 local WorldService: any
+local FightLogService: any
 
 local rng = Rng.new()
 local current: Event? = nil
@@ -205,6 +208,9 @@ end
 -- Contribution -------------------------------------------------------------------------------------------
 
 local function note(e: Event, player: Player)
+	if e.fightId then
+		FightLogService.Join(e.fightId, player) -- S134f: a contributor takes part in the Invasion's fight
+	end
 	if e.chars[player] == nil then
 		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 		if char then
@@ -442,6 +448,9 @@ local function spawnOne(
 	monster.levelCap = e.area.lv[2]
 	e.monsters[monster] = true
 	e.seen[monster] = {}
+	if e.fightId then
+		FightLogService.BindEvent(e.fightId, monster) -- S134f
+	end
 	if monster.entity then
 		e.byEntity[monster.entity.id] = monster
 	end
@@ -534,6 +543,9 @@ local function spawnCommander(e: Event)
 		e.boss = monster
 		e.bossKey = monster:Name()
 		e.dirty = true
+		if e.fightId then
+			FightLogService.Bind(e.fightId, monster) -- S134f: the commander counts in the Invasion, not as an Elite II
+		end
 		-- S134c: the commander's blows (big blows to dodge, the shared blow) aim at the players in the event's radius;
 		-- the shared blow is announced to them like a boss's (BossAnnounce)
 		local def = Data.kinds.invasion
@@ -578,6 +590,8 @@ local function activate(e: Event, t: number)
 	e.dirty = true
 	local map = { area = areaArg(e), region = "@" .. e.mapKey, level = e.level }
 	if e.kind == "invasion" then
+		-- S134f: the after-fight meter of the Invasion (contributors and everyone its monsters hit take part)
+		e.fightId = FightLogService.Begin("invasion", e.id, nil, e.def.nameKey)
 		AnnounceService.Server("event.start.invasion", map)
 		spawnWave(e, t)
 	else
@@ -774,6 +788,15 @@ local function finish(e: Event, success: boolean, mode: EndMode)
 	current = nil
 	local t = now()
 	local rewarded = if mode == "normal" then rewardAll(e, success) else 0
+	local fightId = e.fightId
+	if fightId then
+		e.fightId = nil
+		if mode == "cancel" then
+			FightLogService.Drop(fightId)
+		else
+			FightLogService.End(fightId, if success and mode == "normal" then "win" else "fail")
+		end
+	end
 	local args = { kind = "@" .. e.def.nameKey, area = areaArg(e), n = rewarded }
 	if mode == "cancel" then
 		AnnounceService.Server("event.end.cancelled", args)
@@ -1065,6 +1088,7 @@ function WorldEventService.Init(registry)
 	LootService = registry.Get("LootService")
 	AnnounceService = registry.Get("AnnounceService")
 	WorldService = registry.Get("WorldService")
+	FightLogService = registry.Get("FightLogService")
 end
 
 function WorldEventService.Start()

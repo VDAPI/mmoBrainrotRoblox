@@ -19,6 +19,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
+local LowHpVignette = require(script.LowHpVignette) -- S134f
 local LureButton = require(script.LureButton)
 local AutoGrindButton = require(script.AutoGrindButton) -- S134d
 local AutoPotionButton = require(script.AutoPotionButton) -- S134d
@@ -438,6 +439,7 @@ local function Hud(scope: Scope, props: Props): Instance
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
+			LowHpVignette(scope), -- S134f: under every other HUD element
 			portrait(scope),
 			BlessingIcon(scope, UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)),
 			-- S100: right of the portrait, aligned to its bottom (the elixirs end at ~90, the effect icons start at 164)

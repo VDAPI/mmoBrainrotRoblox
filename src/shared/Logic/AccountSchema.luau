@@ -62,6 +62,8 @@ function AccountSchema.accountTemplate(): AccountData
 			robloxAvatar = false, -- S132: "Show my Roblox avatar" (reconcile adds it to old accounts)
 			whispers = "all", -- S133: whispers from everyone or only friends and guild mates (reconcile)
 			friendAlerts = true, -- S133: "<name> is in the game" toast (reconcile)
+			lowHpWarn = true, -- S134f: red vignette and heartbeat below 25 % HP (reconcile)
+			fightCard = true, -- S134f: the small after-fight card for Elite II and Invasion (reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

@@ -16,7 +16,6 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
-local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children = Fusion.Children
 
@@ -98,10 +97,7 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 				SelectableSlot(s, {
 					Id = `dismantle:{key}`,
 					LayoutOrder = index,
-					Item = s:Computed(function(use2): Types.ItemInstance?
-						local inv = use2(inventory)
-						return if inv then inv[key] else nil
-					end),
+					Item = State.Value({ "character", "inventory", key }), -- S134f: the slot listens to its own key
 					Selected = s:Computed(function(use2): boolean
 						return use2(selected)[key] == true
 					end),

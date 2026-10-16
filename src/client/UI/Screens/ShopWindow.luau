@@ -53,6 +53,7 @@ export type Props = {
 }
 
 local ROW = 76 -- buyback rows
+local SELL_RETRY = 0.3 -- S134f: pause before a rate-limited single sale is retried as one batch (seconds)
 -- FIX 2026-10-14: the Buy grid's cell and icon, and the buy bar under it.
 local CELL = 68
 local ICON = 60
@@ -490,8 +491,45 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		return n
 	end)
 
+	-- S134f: items dropped faster than the Sell rate limit are queued (key -> uid), marked and sold as one batch
+	-- after a short pause instead of bouncing back with "rate limited".
+	local queued: { [string]: string } = {}
+	local flushPending = false
+	local sellKeys: (keys: { string }) -> ()
+	local function queueSale(keys: { string })
+		local inv = Fusion.peek(inventory) or {}
+		local marks = table.clone(Fusion.peek(selected))
+		for _, key in keys do
+			local item = inv[key]
+			if item then
+				queued[key] = item.uid
+				marks[`inv:{key}`] = item.uid
+			end
+		end
+		selected:set(marks)
+		if flushPending then
+			return
+		end
+		flushPending = true
+		task.delay(SELL_RETRY, function()
+			flushPending = false
+			local current = Fusion.peek(inventory) or {}
+			local again = {}
+			for key, uid in queued do
+				local item = current[key]
+				if item and item.uid == uid then
+					table.insert(again, key)
+				end
+			end
+			table.clear(queued)
+			if #again > 0 then
+				sellKeys(again)
+			end
+		end)
+	end
+
 	-- Sells backpack slots (keys "1".."N"): the selection, or one item dropped on the window (S17).
-	local function sellKeys(keys: { string })
+	function sellKeys(keys: { string })
 		local id = Fusion.peek(npcId)
 		local inv = Fusion.peek(inventory) or {}
 		local indices = {}
@@ -513,6 +551,10 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		end
 		local function doSell(): (boolean, string?)
 			local ok, err, total = Net.Invoke("Sell", id, indices)
+			if not ok and err == "error.rateLimited" then
+				queueSale(keys)
+				return true, nil
+			end
 			if ok then
 				selected:set({}) -- slots shift after a sale, so the old selection would be wrong
 				Sounds.play("click")
@@ -757,44 +799,52 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			if bar then
 				table.insert(list, bar)
 			end
-			-- What is marked in the backpack (a click here removes the mark).
-			local inv = use(inventory) or {}
-			local marked = {}
-			for slotId, uid in use(selected) do
-				local index = tonumber(string.sub(slotId, 5))
-				local item = inv[string.sub(slotId, 5)]
-				if index and item and item.uid == uid then
-					table.insert(marked, index)
+			-- What is marked in the backpack (a click here removes the mark). S134f: the tab is built once; only
+			-- this list follows the marks, and through per-slot state values only the marked slots (not the whole
+			-- backpack), so a sale no longer rebuilds the tab.
+			local marked = s:Computed(function(use2): { number }
+				local out = {}
+				for slotId, uid in use2(selected) do
+					local key = string.sub(slotId, 5)
+					local index = tonumber(key)
+					local item = use2(State.Value({ "character", "inventory", key }))
+					if index and item and item.uid == uid then
+						table.insert(out, index)
+					end
 				end
-			end
-			table.sort(marked)
-			local grid = {}
-			for _, index in marked do
-				local key = tostring(index)
-				table.insert(
-					grid,
-					SelectableSlot(s, {
-						Id = `sell:{key}`,
-						LayoutOrder = index,
-						TooltipCtx = { merchantOpen = true },
-						Item = s:Computed(function(use2): Types.ItemInstance?
-							local current = use2(inventory)
-							return if current then current[key] else nil
-						end),
-						Selected = true,
-						OnToggle = function()
-							unmark(`inv:{key}`)
-						end,
-					})
-				)
-			end
+				table.sort(out)
+				return out
+			end)
+			local grid = s:Computed(function(use2, s2: Scope): { Instance }
+				local cells = {}
+				for _, index in use2(marked) do
+					local key = tostring(index)
+					table.insert(
+						cells,
+						SelectableSlot(s2, {
+							Id = `sell:{key}`,
+							LayoutOrder = index,
+							TooltipCtx = { merchantOpen = true },
+							Item = State.Value({ "character", "inventory", key }),
+							Selected = true,
+							OnToggle = function()
+								unmark(`inv:{key}`)
+							end,
+						})
+					)
+				end
+				return cells
+			end)
 			table.insert(
 				list,
 				s:New("TextLabel")({
 					LayoutOrder = 1,
 					Size = UDim2.new(1, 0, 0, 24),
 					BackgroundTransparency = 1,
-					Text = Text.get(use, if #marked == 0 then "shop.markedNone" else "shop.marked", { n = #marked }),
+					Text = s:Computed(function(use2): string
+						local n = #use2(marked)
+						return Text.get(use2, if n == 0 then "shop.markedNone" else "shop.marked", { n = n })
+					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Colors.Text,

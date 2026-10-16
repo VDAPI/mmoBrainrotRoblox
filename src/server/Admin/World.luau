@@ -928,4 +928,17 @@ commands.tourney = function(player, args)
 	return false, "admin.usage.tourney"
 end
 
+-- S134f: /finder list | clear: the party finder board of this server.
+commands.finder = function(player, args)
+	local finder = Context.services.PartyFinderService
+	if args[1] == "list" then
+		local lines = finder.List()
+		reply(player, "admin.finder.list", { n = #lines, list = table.concat(lines, "; ") })
+	elseif args[1] == "clear" then
+		reply(player, "admin.finder.clear", { n = finder.Clear() })
+	else
+		reply(player, "admin.usage.finder")
+	end
+end
+
 return commands

@@ -10994,3 +10994,76 @@ Pliki: `src/shared/Data/{MonsterAbilities,MonsterMotions,Combat}.luau`, `src/sha
 `tools/WikiData/Monsters.luau`, `wiki/src/{views/MonsterView.astro,lib/monster.ts,i18n/pl.ts,i18n/en.ts}`,
 `wiki/src/content/mechanics/{pl/walka,en/combat}.mdx`, `wiki/src/data/*`,
 `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.
+
+### S134f: Tablica drużyn, licznik walki, gotowość, niskie HP, podsumowanie bossa, lag sprzedaży
+
+Zrobione (prośby właściciela z 2026-10-15):
+- **Lag przy sprzedaży** (przyczyna po stronie klienta, `docs/DECYZJE.md` → S134f): `UI/State.ApplyDiffs` stosuje całą
+  paczkę, potem jeden przebieg po wartościach (`Logic/StateBatch.touched`); sloty plecaka, depozytu, rozbiórki i siatki
+  zaznaczonych słuchają tylko swojego klucza; `ItemSlot` przelicza się tylko przy innej referencji przedmiotu
+  (`UI/SameRef`, `def` po id); zakładka „Sprzedaj” nie odbudowuje się przy zmianie plecaka; serwer `InventoryService.SetSlots`
+  (jedna synchronizacja na sprzedaż); `Sell` `rate` 8, a przeciąganie szybsze niż limit idzie do kolejki (0,3 s, jedna paczka).
+- **Niskie HP**: `Logic/LowHp` (włącza < 25%, gaśnie > 28%, siła 0 → 1 do 5%, bicie 1,4 → 0,7 s), `Hud/LowHpVignette`
+  (cztery pasy z gradientem, puls, ukryta przy śmierci, w przerywniku z całym HUD i u widza turnieju), dźwięk `ui.lowHp`
+  (bez ID, gra cicho), ustawienie `lowHpWarn`.
+- **Gotowość przed bossem**: `Logic/ReadyCheck`, `DungeonService` (pytanie przy bramie, stan `readyCheck`, `DungeonReady`,
+  3‑2‑1 przez `BossAnnounce` `dungeon.ready.count`, ponowne sprawdzenie bramy, anulowanie przy „nie”, czasie, wyjściu,
+  śmierci i zmianie drużyny), przycisk „Gotowi?” w `DungeonWindow`, nakładka `UI/Screens/ReadyCheck`, `/readycheck skip`.
+- **Licznik walki po walce**: `Logic/FightStats`, `FightLogService` (boss, Elita II, Inwazja; sygnały
+  `CombatService.MonsterDamaged` i `TelegraphResolved`, `ResourceService.Damaged` z napastnikiem), zdarzenie
+  `FightSummary` tylko z własną drużyną; S60 (`Run.healing` / `shielding` / `intercepted`, `fightOf`) przeniesione do
+  serwisu. Klient: `FightLogController` (5 ostatnich), karta `FightCard` po Elicie II i Inwazji (ustawienie
+  `fightCard`), okno `fightlog` (`FightLogWindow`), wspólne `Components/FightTable`, `Components/FightLoot`, `UI/FightView`.
+- **Podsumowanie bossa**: karta nagrody z czasem walki, śmierciami, unikami zapowiedzianych ciosów, nowymi kolumnami
+  (obrażenia z liczbą i %, przyjęte, śmierci, uniki; telefon: %, leczenie, przyjęte, śmierci), „Łupem drużyny”
+  (własny worek, u innych od Legendarnych, reszta liczbą) i „Szczegóły”.
+- **Tablica drużyn**: `Logic/PartyFinder`, `PartyFinderService` (pamięć serwera, gałąź `finder` dla oglądających),
+  `PartyService.AddMember` (wspólna ścieżka z zaproszeniem), funkcja `finder` w `Logic/UseBlocks`, zakładka „Szukam
+  drużyny” (`UI/Screens/PartyFinder`) i „Ostatnie walki” w oknie `party`, `/finder list | clear`.
+
+Nowe remote'y:
+
+| remote | kind | dir | rate | args |
+|---|---|---|---|---|
+| `DungeonReady` | function | c2s | 2 | `boolean` |
+| `FightSummary` | event | s2c | – | – |
+| `FinderPost` | function | c2s | 1 | `string, string, integer, integer, table` |
+| `FinderCancel` | function | c2s | 2 | – |
+| `FinderJoin` | function | c2s | 2 | `integer` |
+| `FinderWatch` | event | c2s | 2 | `boolean` |
+| `Sell` (zmiana) | function | c2s | 4 → 8 | bez zmian |
+
+Lag sprzedaży przed / po (model lustra w Lune, `build/bench_state.luau`: plecak 200 slotów, wpisy `{"character"}`,
+`{"character","inventory"}`, 200 slotów, złoto, odkup; przed A2 każde `set` plecaka = 200 przeliczeń slotów, po A2 =
+liczba zmienionych slotów; Fusion nie ładuje się w Lune, więc to model, nie prawdziwe `Computed`):
+
+| sprzedaż | `set` wszystkich wartości | `set` wartości plecaka | przeliczenia slotów |
+|---|---|---|---|
+| 1 przedmiot | 6 → 5 | 1 → 1 | 200 → 1 |
+| 60 przedmiotów (zaznaczone / szybka) | 183 → 64 | 60 → 1 | 12 000 → 60 |
+
+Do tego zakładka „Sprzedaj” nie odbudowuje się (przed: przy każdym `set` plecaka), a `ItemSlot` bez zmiany przedmiotu
+nie przelicza ikony, napisów ani `def`.
+
+Nowe okna i ekrany dla S135 / S136: okno `fightlog` (`FightLogWindow.luau`), zakładka `PartyFinder.luau` (okno `party`),
+ekrany `ReadyCheck.luau` (pergamin), `FightCard.luau` (żelazo), `Hud/LowHpVignette.luau` (żelazo).
+
+Testy: nowe `statebatch`, `lowhp`, `readycheck`, `fightstats`, `partyfinder`; wszystkie 139 plików zielone. Narzędzia:
+`balance_report` bez „BRAK POWODU”, `quest_budget check` zielony, `wiki_keys_diff` 0, `wikidump --check` aktualne (bez
+zmian wiki).
+
+Pliki: `src/shared/Logic/{StateBatch,LowHp,ReadyCheck,FightStats,PartyFinder,UseBlocks,AccountSchema}.luau`,
+`src/shared/{Config,Types}.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Data/{Sfx,AdminCommands}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/server/Services/{FightLog,PartyFinder,Dungeon,WorldEvent,Party,Combat,
+Monster,Resource,Inventory,Shop,Settings,Admin}Service.luau`, `src/server/Entities/Monster.luau`,
+`src/server/Admin/{Monsters,World}.luau`, `src/client/Controllers/{FightLog,Dungeon,Party,CombatFx,Sfx}Controller.luau`,
+`src/client/UI/{State,SameRef,FightView,Sounds}.luau`, `src/client/UI/Components/{ItemSlot,FightTable,FightLoot}.luau`,
+`src/client/UI/Screens/{BackpackPanel,ShopWindow,DepositWindow,BossReward,DungeonWindow,PartyWindow,PartyFinder,ReadyCheck,
+FightCard,FightLogWindow,GameMenu}.luau`, `src/client/UI/Screens/BlacksmithWindow/Dismantle.luau`,
+`src/client/UI/Screens/Hud/{init,LowHpVignette}.luau`, `tests/{statebatch,lowhp,readycheck,fightstats,partyfinder}.spec.luau`,
+`CLAUDE.md`, `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`.
+
+Dla właściciela:
+- ID dźwięku `ui.lowHp` (bicie serca, twórca Roblox): klucz jest, gra cicho do czasu ID.
+- „Dołącz” wpuszcza do drużyny bez zgody lidera (lider widzi toast i może wyrzucić); jeśli wolisz prośbę z akceptacją
+  lidera, to jedna zmiana w `PartyFinderService.join`.

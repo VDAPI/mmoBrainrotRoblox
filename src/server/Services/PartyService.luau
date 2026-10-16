@@ -371,14 +371,34 @@ local function respond(player: Player, accept: boolean): (boolean, string?)
 	if party and party.leader ~= inviter then
 		return false, "party.error.expired"
 	end
+	return PartyService.AddMember(inviter, player)
+end
+
+-- S134f: `player` joins `leader`'s party (a party of the leader alone is created first): the one join path of an
+-- accepted invite and the party finder (PartyFinderService, no leader consent). Chat channel, "joined" line,
+-- state refresh and Changed.
+function PartyService.AddMember(leader: Player, player: Player): (boolean, string?)
+	if leader == player or leader.Parent == nil or player.Parent == nil then
+		return false, "error.badRequest"
+	end
+	if partyOf[player] then
+		return false, "party.error.inParty"
+	end
+	local party = partyOf[leader]
+	if party and party.leader ~= leader then
+		return false, "party.error.notLeader"
+	end
+	if party and #party.members >= MAX_MEMBERS then
+		return false, "party.error.full"
+	end
 	if not party then
 		nextId += 1
-		local created: Party = { id = nextId, leader = inviter, members = { inviter }, channel = nil }
+		local created: Party = { id = nextId, leader = leader, members = { leader }, channel = nil }
 		party = created
 		parties[created.id] = created
-		partyOf[inviter] = created
+		partyOf[leader] = created
 		ensureChannel(created)
-		addToChannel(created, inviter)
+		addToChannel(created, leader)
 	end
 	assert(party, "party")
 	if #party.members >= MAX_MEMBERS then

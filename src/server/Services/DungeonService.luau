@@ -13,6 +13,9 @@
 -- variety bonus on the boss EXP and a fight summary (damage share, healing, shields) on every winner's reward card.
 -- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded, staggered,
 -- channel? } (S134: `channel` = { id, endsAt, need, done } while the boss channels a spell to break).
+-- S134f: a leader with a member able to come along asks "Ready?" first (Logic/ReadyCheck, state branch `readyCheck`,
+-- remote DungeonReady, 3-2-1, then the gate checks again); the fight summary comes from FightLogService (the S60 healing /
+-- shield / intercept books moved there) with the time, deaths, dodged blows and the party's loot on the reward card.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -30,6 +33,7 @@ local BossScaling = require(Shared.Logic.BossScaling)
 local Bosses = require(Shared.Data.Bosses)
 local Clock = require(Shared.Util.Clock)
 local Exp = require(Shared.Logic.Exp)
+local FightStats = require(Shared.Logic.FightStats)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Config = require(Shared.Config)
@@ -43,6 +47,7 @@ local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
+local ReadyCheck = require(Shared.Logic.ReadyCheck)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
 local UseGuards = require(script.Parent.Parent.UseGuards)
@@ -63,9 +68,9 @@ local DungeonService = {
 		"LootService",
 		"AnnounceService",
 		"StatService",
-		"StatusEffectService",
 		"MountService", -- S97: the boss mount roll (MountService never depends on this service)
 		"CosmeticService", -- S132: class outfits of a boss win (CosmeticService never depends on this service)
+		"FightLogService", -- S134f: the after-fight meter (the S60 summary moved there)
 	},
 }
 
@@ -87,13 +92,8 @@ type Run = {
 	releaseAt: number?,
 	lastState: number,
 	warned: { [number]: boolean }, -- time-left warnings already sent (minutes)
-	healing: { [Player]: number }, -- S60: HP restored by each member while the boss was up
-	shielding: { [Player]: number }, -- S60: damage soaked by each member's shields while the boss was up
-	intercepted: { [Player]: number }, -- S61: blows each member took over from allies (before their own reductions)
+	fightId: number?, -- S134f: the FightLogService fight while the boss is up (healing, shields, intercepts: S60 / S61)
 }
-
--- One row of the fight summary (short keys: it travels in CombatFx); i = damage taken over from allies (S61).
-type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number }
 
 local PlayerStateService: any
 local PartyService: any
@@ -105,10 +105,10 @@ local ResourceService: any
 local LevelService: any
 local LootService: any
 local AnnounceService: any
-local StatusEffectService: any
 local StatService: any
 local MountService: any
 local CosmeticService: any
+local FightLogService: any
 local Registry: any
 local PathService: any
 
@@ -121,6 +121,16 @@ end
 
 local rng = Rng.new()
 local runs: { [string]: Run } = {}
+
+-- S134f: a ready check at a dungeon gate (one per dungeon; the dungeon counts as busy meanwhile).
+type Pending = {
+	check: ReadyCheck.Check,
+	leader: Player,
+	entering: { Player },
+	def: Bosses.BossDef,
+	counted: number, -- the last 3-2-1 number announced
+}
+local checks: { [string]: Pending } = {}
 
 local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
@@ -207,6 +217,10 @@ local function sendOut(run: Run, player: Player)
 end
 
 local function finish(run: Run)
+	if run.fightId then
+		FightLogService.Drop(run.fightId) -- S134f: ended without a win or a fail (admin reset)
+		run.fightId = nil
+	end
 	if run.boss then
 		run.boss:Destroy()
 		run.boss = nil
@@ -235,6 +249,10 @@ end
 
 local function fail(run: Run, key: string)
 	log:info("%s dungeon failed (%s)", run.region, key)
+	if run.fightId then
+		FightLogService.End(run.fightId, "fail") -- S134f
+		run.fightId = nil
+	end
 	useAttempt(run)
 	announce(run, key, { boss = `@{run.def.nameKey}` })
 	task.delay(2.5, function()
@@ -258,42 +276,19 @@ local function bossLuckOf(players: { Player }): Luck.BossLuck
 	return Luck.boss(members)
 end
 
--- Fight summary (S60): every member still in the game, damage share of the boss (0..1), healing and shields; sorted
--- by damage, then healing.
-local function summaryOf(run: Run, damageBy: { [Player]: number }): { SummaryRow }
-	local total = 0
-	for _, amount in damageBy do
-		total += amount
-	end
-	local rows: { SummaryRow } = {}
-	for _, member in run.members do
-		if member.Parent ~= nil then
-			local char = character(member)
-			local share = if total > 0 then (damageBy[member] or 0) / total else 0
-			table.insert(rows, {
-				n = nameOf(member),
-				c = if char then char.class :: string else nil,
-				d = math.floor(share * 1000 + 0.5) / 1000,
-				h = math.floor(run.healing[member] or 0),
-				s = math.floor(run.shielding[member] or 0),
-				i = math.floor(run.intercepted[member] or 0),
-			})
-		end
-	end
-	table.sort(rows, function(a, b)
-		if a.d ~= b.d then
-			return a.d > b.d
-		end
-		return a.h > b.h
-	end)
-	return rows
+-- S134f: the active flag of the party pool (S134b) and the card summary come from the fight meter (FightLogService:
+-- damage on the boss and its summons, healing, shields, intercepted blows of this attempt; S60 moved there).
+local function activeIn(run: Run, player: Player): boolean
+	local stat = if run.fightId then FightLogService.Stat(run.fightId, player) else nil
+	return stat ~= nil and (stat.dmg > 0 or stat.heal > 0 or stat.shield > 0 or stat.intercept > 0)
 end
 
-local function reward(run: Run, position: Vector3, damageBy: { [Player]: number })
+local function reward(run: Run, position: Vector3): { [Player]: { any } }
+	local drops: { [Player]: { any } } = {}
 	local winners = present(run)
 	local n = #winners
 	if n == 0 then
-		return
+		return drops
 	end
 	local def = run.def
 	local now = Clock.now()
@@ -306,17 +301,12 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 		local char = character(player)
 		table.insert(classes, if char then char.class :: string else "")
 	end
-	local summary = summaryOf(run, damageBy)
 	-- S134b: the party pool (Logic/PartyLoot) as for monsters; active = damage on the boss, healing, shields or
-	-- intercepted blows in this attempt (the fight summary), carried = more than partyCarryGap levels below the boss.
+	-- intercepted blows in this attempt (the fight meter), carried = more than partyCarryGap levels below the boss.
 	local pool: { PartyLoot.Member } = {}
 	for _, player in winners do
 		local char = character(player)
-		local active = (damageBy[player] or 0) > 0
-			or (run.healing[player] or 0) > 0
-			or (run.shielding[player] or 0) > 0
-			or (run.intercepted[player] or 0) > 0
-		table.insert(pool, { level = if char then char.level else 0, active = active })
+		table.insert(pool, { level = if char then char.level else 0, active = activeIn(run, player) })
 	end
 	local expShares =
 		PartyLoot.expShares(Exp.monsterExp(def.level, "boss") * PartyBonus.expMul(classes), pool, def.level)
@@ -324,6 +314,8 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 	-- FIX 2026-10-09: every winner gets exactly one item (and the materials) in an own bag only they see and can
 	-- pick up; the Legendary / Mythic chances grow with the character's kills of this boss today.
 	local blessingChance = Bosses.LEGENDARY_BLESSING_CHANCE / n
+	-- S134f: the cards go out after every bag is rolled (each card lists the party's loot)
+	local cards: { { player: Player, card: { [string]: any } } } = {}
 	for i, player in winners do
 		local char = character(player)
 		if char then
@@ -384,6 +376,12 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 				if #items > 0 then
 					LootService.SpawnBag(player, position + Vector3.new(0, 0, 3), items, def.id, true, luckFrom)
 				end
+				-- S134f: what the bag holds, for the "Party loot" lines of the cards and the fight summary
+				local listed = {}
+				for _, item in items do
+					table.insert(listed, { id = item.id, r = item.rarity, up = item.up, n = item.n })
+				end
+				drops[player] = listed
 				if gotLeg or gotMyth then
 					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
 				end
@@ -397,8 +395,9 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 			CosmeticService.GrantBossWin(player, def.id, char.class :: string)
 			-- The chances of the next kill today.
 			local chances = Loot.bossChances(def.id, killsToday + 1, bossLuck)
-			Net.Fire(player, "CombatFx", {
-				{
+			table.insert(cards, {
+				player = player,
+				card = {
 					k = "reward",
 					exp = exp,
 					gold = gold,
@@ -413,14 +412,33 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 					luckFrom = bossLuck.from,
 					upgraded = upgraded,
 					extra = gotExtra,
-					sum = summary,
 					mount = mountDrop.mount,
 					mountSkin = mountDrop.skin,
 				},
 			})
 		end
 	end
+	-- S134f: the fight summary of each winner's party (rows with the new columns, time, deaths, dodged blows) and the
+	-- party's loot (own items, the others' from Legendary up)
+	for _, entry in cards do
+		local player = entry.player
+		local card = entry.card
+		local snap = if run.fightId then FightLogService.Snapshot(run.fightId, player) else nil
+		if snap then
+			card.sum = snap.rows
+			card.fs = { time = snap.time, deaths = snap.deaths, dodged = snap.dodged, aimed = snap.aimed }
+		end
+		local others = {}
+		for _, other in winners do
+			if other ~= player and drops[other] then
+				table.insert(others, { n = nameOf(other), items = drops[other] })
+			end
+		end
+		card.drop = FightStats.dropView(drops[player], others, Rarities.LEGENDARY)
+		Net.Fire(player, "CombatFx", { card })
+	end
 	AnnounceService.Server("announce.boss", { name = run.leaderName, boss = `@{def.nameKey}` })
+	return drops
 end
 
 local function win(run: Run)
@@ -436,14 +454,17 @@ local function win(run: Run)
 			end
 		end
 	end
-	-- The damage map before the boss is dropped (fight summary, S60).
-	local damageBy: { [Player]: number } = if boss then table.clone(boss.monster.damageBy) else {}
 	run.boss = nil
 	announce(run, "dungeon.victory", { boss = `@{run.def.nameKey}` })
 	for _, member in present(run) do
 		clearState(member)
 	end
-	reward(run, position, damageBy)
+	local drops = reward(run, position)
+	-- S134f: the after-fight summary of every party member (the reward card already has it; the fight log keeps it)
+	if run.fightId then
+		FightLogService.End(run.fightId, "win", { drops = drops })
+		run.fightId = nil
+	end
 	log:info("%s cleared by %s's group (%d)", run.def.id, run.leaderName, #run.members)
 end
 
@@ -542,9 +563,7 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		releaseAt = nil,
 		lastState = 0,
 		warned = {},
-		healing = {},
-		shielding = {},
-		intercepted = {},
+		fightId = nil,
 	}
 	runs[region] = run
 	for i, member in members do
@@ -561,8 +580,13 @@ local function start(region: string, leader: Player, members: { Player }): Run
 			return
 		end
 		-- S134: the boss is the same for every party (the log above keeps the party size)
-		run.boss = Boss.new(def, arenaCentre(mapId), services(run))
+		local boss = Boss.new(def, arenaCentre(mapId), services(run))
+		run.boss = boss
 		run.startedAt = os.clock()
+		-- S134f: the fight meter starts with the boss (members join at once; damage on the boss and its summons)
+		local fightId = FightLogService.Begin("boss", region, present(run), def.nameKey)
+		run.fightId = fightId
+		FightLogService.Bind(fightId, boss.monster)
 		announce(run, `boss.{def.id}.phase1`, nil)
 	end)
 	log:info("%s entered %s with %d player(s)", run.leaderName, region, #members)
@@ -637,7 +661,7 @@ local function info(player: Player, region: string): (boolean, string?, any)
 			level = def.level,
 			required = BossScaling.requiredLevel(def.level),
 			built = WorldService.IsBuilt(`dungeon_{region}`),
-			busy = run ~= nil,
+			busy = run ~= nil or checks[region] ~= nil, -- S134f: a ready check holds the gate too
 			leaderName = if run then run.leaderName else nil,
 			endsAt = if run then run.endsAt else nil,
 			isLeader = PartyService.IsLeader(player),
@@ -649,6 +673,186 @@ local function info(player: Player, region: string): (boolean, string?, any)
 			legChance = chances.legendary,
 			mythChance = chances.mythic,
 		}
+end
+
+-- The leader and the party members who may come along now (blocker, ENTRY_RANGE from the leader); the others are told
+-- why they stay (`dungeon.leftOut`).
+local function gather(leader: Player, def: Bosses.BossDef, among: { Player }): { Player }
+	local root = (leader.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
+	local entering = { leader }
+	for _, member in among do
+		if member ~= leader then
+			local why = blocker(member, def)
+			local memberRoot = member.Character and member.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if not why and (not memberRoot or (memberRoot.Position - root.Position).Magnitude > Bosses.ENTRY_RANGE) then
+				why = "dungeon.reason.far"
+			end
+			if not why and not PartyService.SameParty(leader, member) then
+				why = "dungeon.reason.far"
+			end
+			if why then
+				Net.Fire(member, "Toast", "dungeon.leftOut", { reason = `@{why}` }, "warning")
+			else
+				table.insert(entering, member)
+			end
+		end
+	end
+	return entering
+end
+
+-- Ready check (S134f, Logic/ReadyCheck) ------------------------------------------------------------------------
+-- A leader with at least one member able to come along asks first; every asked member sees the `readyCheck` state
+-- branch { region, bossKey, endsAt, members = { { id, name, answer? } }, goAt? } (server time). All "yes": a 3-2-1
+-- (`dungeon.ready.count`), then the gate checks run again and the run starts as before. "No", the time, the leader
+-- leaving or a party change cancels the whole check. The daily attempt is used only by the run (start / useAttempt).
+
+local function clearCheckState(player: Player)
+	if player.Parent ~= nil and PlayerStateService.HasState(player) then
+		PlayerStateService.Set(player, { "readyCheck" }, nil)
+	end
+end
+
+local function publishCheck(region: string)
+	local pending = checks[region]
+	if not pending then
+		return
+	end
+	local check = pending.check
+	local offset = Workspace:GetServerTimeNow() - os.clock()
+	local members = {}
+	for _, member in pending.entering do
+		local answer = check.answers[member.UserId]
+		table.insert(members, {
+			id = member.UserId,
+			name = nameOf(member),
+			answer = if answer == nil then nil else answer,
+		})
+	end
+	local goAt = ReadyCheck.goAt(check)
+	local value = {
+		region = region,
+		bossKey = pending.def.nameKey,
+		endsAt = check.endsAt + offset,
+		members = members,
+		goAt = if goAt then goAt + offset else nil,
+	}
+	for _, member in pending.entering do
+		if member.Parent ~= nil and PlayerStateService.HasState(member) then
+			PlayerStateService.Set(member, { "readyCheck" }, value)
+		end
+	end
+end
+
+local function cancelCheck(region: string, key: string, args: { [string]: any }?)
+	local pending = checks[region]
+	if not pending then
+		return
+	end
+	checks[region] = nil
+	for _, member in pending.entering do
+		clearCheckState(member)
+		if member.Parent ~= nil then
+			Net.Fire(member, "Toast", key, args, "warning")
+		end
+	end
+	log:info("%s ready check cancelled (%s)", region, key)
+end
+
+-- The countdown is over: the gate checks again (the leader at the gate and alive, members in range) and the run starts.
+local function launchCheck(region: string)
+	local pending = checks[region]
+	if not pending then
+		return
+	end
+	local leader = pending.leader
+	if
+		runs[region]
+		or leader.Parent == nil
+		or not PartyService.IsLeader(leader)
+		or not nearEntrance(leader, region)
+		or blocker(leader, pending.def) ~= nil
+	then
+		cancelCheck(region, "dungeon.ready.cancelled")
+		return
+	end
+	checks[region] = nil
+	for _, member in pending.entering do
+		clearCheckState(member)
+	end
+	local among = {}
+	for _, member in pending.entering do
+		if member.Parent ~= nil then
+			table.insert(among, member)
+		end
+	end
+	local entering = gather(leader, pending.def, among)
+	if #entering < 2 then
+		-- nobody is left with the leader (the others were told why): the check is called off, the leader may enter alone
+		Net.Fire(leader, "Toast", "dungeon.ready.cancelled", nil, "warning")
+		return
+	end
+	start(region, leader, entering)
+end
+
+local function stepChecks(now: number)
+	for region, pending in checks do
+		local check = pending.check
+		local status = ReadyCheck.status(check, now)
+		if status == "expired" then
+			cancelCheck(region, "dungeon.ready.expired")
+		elseif status == "go" then
+			local goAt = ReadyCheck.goAt(check) :: number
+			if now >= goAt then
+				launchCheck(region)
+			else
+				local left = math.ceil(goAt - now - 1e-3)
+				if left >= 1 and left ~= pending.counted then
+					pending.counted = left
+					for _, member in pending.entering do
+						if member.Parent ~= nil then
+							Net.Fire(member, "BossAnnounce", "dungeon.ready.count", { n = left })
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- The pending check `player` was asked in (region, check), or nil.
+local function checkOf(player: Player): (string?, Pending?)
+	for region, pending in checks do
+		if table.find(pending.entering, player) then
+			return region, pending
+		end
+	end
+	return nil, nil
+end
+
+local function readyAnswer(player: Player, yes: boolean): (boolean, string?)
+	local region, pending = checkOf(player)
+	if not region or not pending then
+		return false, "dungeon.ready.notAsked"
+	end
+	local now = os.clock()
+	local ok, err = ReadyCheck.answer(pending.check, player.UserId, yes, now)
+	if not ok then
+		return false, err
+	end
+	if ReadyCheck.status(pending.check, now) == "declined" then
+		cancelCheck(region, "dungeon.ready.declined", { name = nameOf(player) })
+		return true, nil
+	end
+	publishCheck(region)
+	return true, nil
+end
+
+-- A member of a pending check left the game / the party, died or the leader changed: the check is called off.
+local function cancelChecksWith(player: Player)
+	local region = checkOf(player)
+	if region then
+		cancelCheck(region, "dungeon.ready.cancelled")
+	end
 end
 
 local function enter(player: Player, region: string): (boolean, string?)
@@ -665,35 +869,45 @@ local function enter(player: Player, region: string): (boolean, string?)
 	if not PartyService.IsLeader(player) then
 		return false, "dungeon.notLeader"
 	end
-	if runs[region] then
+	local pending = checks[region]
+	if pending and pending.leader == player then
+		return false, "dungeon.ready.waiting"
+	end
+	if runs[region] or pending then
 		return false, "dungeon.busy"
+	end
+	if checkOf(player) then
+		return false, "dungeon.ready.waiting"
 	end
 	local reason = blocker(player, def)
 	if reason then
 		return false, reason
 	end
-	local root = (player.Character :: Model):FindFirstChild("HumanoidRootPart") :: BasePart
-	local entering = { player }
-	for _, member in PartyService.Members(player) do
-		if member ~= player then
-			local why = blocker(member, def)
-			local memberRoot = member.Character and member.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if not why and (not memberRoot or (memberRoot.Position - root.Position).Magnitude > Bosses.ENTRY_RANGE) then
-				why = "dungeon.reason.far"
-			end
-			if why then
-				Net.Fire(member, "Toast", "dungeon.leftOut", { reason = `@{why}` }, "warning")
-			else
-				table.insert(entering, member)
-			end
-		end
+	local entering = gather(player, def, PartyService.Members(player))
+	if #entering < 2 then
+		-- solo, or only the leader at the gate: in at once (as before S134f)
+		start(region, player, entering)
+		return true, nil
 	end
-	start(region, player, entering)
+	local ids = {}
+	for _, member in entering do
+		table.insert(ids, member.UserId)
+	end
+	checks[region] = {
+		check = ReadyCheck.new(ids, player.UserId, os.clock(), Config.Boss),
+		leader = player,
+		entering = entering,
+		def = def,
+		counted = 0,
+	}
+	publishCheck(region)
+	log:info("%s asks %d member(s) at %s", nameOf(player), #entering - 1, region)
 	return true, nil
 end
 
 local function step()
 	local now = os.clock()
+	stepChecks(now) -- S134f
 	for _, run in runs do
 		if run.cleared then
 			if (run.releaseAt and now >= run.releaseAt) or #present(run) == 0 then
@@ -711,9 +925,9 @@ local function step()
 			if boss.monster.state == "return" then
 				-- A leashed boss walks home at full HP with a cleared damage record (Monster.StartReturn): the fight
 				-- summary starts over with it, so healing, shields and intercepts match the damage of the last attempt.
-				table.clear(run.healing)
-				table.clear(run.shielding)
-				table.clear(run.intercepted)
+				if run.fightId then
+					FightLogService.Reset(run.fightId)
+				end
 			end
 			if now - run.lastState >= STATE_INTERVAL then
 				run.lastState = now
@@ -792,6 +1006,21 @@ function DungeonService.ForceStart(player: Player, bossId: string): boolean
 	return true
 end
 
+-- S134f /readycheck skip: every asked member of the leader's pending check answers "yes" at once.
+function DungeonService.ReadySkip(player: Player): boolean
+	for region, pending in checks do
+		if pending.leader == player then
+			local now = os.clock()
+			for _, id in ReadyCheck.pending(pending.check) do
+				ReadyCheck.answer(pending.check, id, true, now)
+			end
+			publishCheck(region)
+			return true
+		end
+	end
+	return false
+end
+
 -- /phase <n>: forces the phase of the boss the player is fighting.
 function DungeonService.ForcePhase(player: Player, phase: number): boolean
 	for _, run in runs do
@@ -823,48 +1052,31 @@ function DungeonService.Init(registry)
 	StatService = registry.Get("StatService")
 	MountService = registry.Get("MountService")
 	CosmeticService = registry.Get("CosmeticService")
-	StatusEffectService = registry.Get("StatusEffectService")
+	FightLogService = registry.Get("FightLogService")
 	Registry = registry
-end
-
--- The run in which both players fight a boss that is up and not walking home after a leash (S60: healing and
--- shields of the fight summary).
-local function fightOf(target: Player, source: Player): Run?
-	for _, run in runs do
-		local boss = run.boss
-		if
-			boss ~= nil
-			and boss.monster.state ~= "return"
-			and not run.cleared
-			and table.find(run.members, target)
-			and table.find(run.members, source)
-		then
-			return run
-		end
-	end
-	return nil
 end
 
 function DungeonService.Start()
 	UseGuards.register("dungeon", DungeonService.InRun, "DungeonService") -- S122 Logic/UseBlocks
 	Net.Handle("DungeonInfo", info)
 	Net.Handle("EnterDungeon", enter)
-	ResourceService.Healed:Connect(function(target: Player, amount: number, source: Player?, kind: string)
-		if not source then
-			return
+	-- S134f: the ready check (answers; a member who leaves the party, dies or quits calls it off)
+	Net.Handle("DungeonReady", readyAnswer)
+	PartyService.Changed:Connect(function(party: any)
+		for _, member in party.members do
+			cancelChecksWith(member)
 		end
-		local run = fightOf(target, source)
-		if run then
-			local book = if kind == "shield" then run.shielding else run.healing
-			book[source] = (book[source] or 0) + amount
+		for region, pending in checks do
+			for _, member in pending.entering do
+				if not PartyService.SameParty(pending.leader, member) then
+					cancelCheck(region, "dungeon.ready.cancelled")
+					break
+				end
+			end
 		end
 	end)
-	-- S61: the summary counts the part a guard took before their own reductions (ROZWOJ 10.6).
-	StatusEffectService.Intercepted:Connect(function(guard: Player, target: Player, moved: number)
-		local run = fightOf(target, guard)
-		if run then
-			run.intercepted[guard] = (run.intercepted[guard] or 0) + moved
-		end
+	ResourceService.Died:Connect(function(player: Player)
+		cancelChecksWith(player)
 	end)
 	local accumulator = 0
 	RunService.Heartbeat:Connect(function(dt)
@@ -881,6 +1093,7 @@ function DungeonService.Start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		cancelChecksWith(player) -- S134f
 		for _, run in runs do
 			local index = table.find(run.members, player)
 			if index and run.leader == player and #run.members > 1 then

@@ -94,6 +94,13 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	friendAlerts = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S134f: the low health warning and the after-fight card.
+	lowHpWarn = function(value)
+		return type(value) == "boolean"
+	end,
+	fightCard = function(value)
+		return type(value) == "boolean"
+	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
 		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC

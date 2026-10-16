@@ -15,6 +15,7 @@ local ItemTooltip = require(script.Parent.ItemTooltip)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local SameRef = require(script.Parent.Parent.SameRef)
 local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
@@ -93,13 +94,20 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 	local level = State.Value({ "character", "level" })
 	local classId = State.Value({ "character", "class" })
 
-	local item = scope:Computed(function(use): ItemInstance?
-		return use(props.Item)
-	end)
-	local def = scope:Computed(function(use): Items.ItemDef?
+	-- S134f: the slot recomputes only when its item table (or the item id) really changes, not on every
+	-- inventory refresh (SameRef: Fusion never treats an unfrozen table as unchanged).
+	local item: Fusion.UsedAs<ItemInstance?> = SameRef.of(scope, props.Item)
+	local itemId = scope:Computed(function(use): string?
 		local i = use(item)
-		return if i then Items.get(i.id) else nil
+		return if i then i.id else nil
 	end)
+	local def = SameRef.of(
+		scope,
+		scope:Computed(function(use): Items.ItemDef?
+			local id = use(itemId)
+			return if id then Items.get(id) else nil
+		end)
+	)
 	local rarity = scope:Computed(function(use): Rarities.RarityDef?
 		local i = use(item)
 		return if i then Rarities.get(i.rarity) else nil

@@ -4617,3 +4617,51 @@
   bez zmian. `tests/fixtures/balance_items.json` przeliczony (`--fixture-items`).
 - **S134e** Wiki: nowe pole `monsters.variants.*.kit` (nazwa, kształt, zapowiedź, mnożnik, odnowienie, `lethal`) i akapit
   na stronie walki bez liczb; zmiana kształtu celowa (`WIKI_KEYS_ALLOW` z 12 kluczami `kit` i `types.ts` do commita).
+- **S134f** Lag przy sprzedaży był po stronie klienta: lustro stanu odświeżało wartość całego plecaka raz na każdą
+  różnicę paczki, Fusion 0.3 uznaje tę samą (zmienioną w miejscu) tabelę za zmianę, każdy z 100–200 slotów słuchał
+  całego plecaka, a zakładka „Sprzedaj” odbudowywała się cała. Cztery poprawki: paczka = jedno odświeżenie każdej
+  wartości (`Logic/StateBatch.touched`), slot słucha swojego klucza (`State.Value({"character","inventory",k})` w
+  plecaku, depozycie, rozbiórce i siatce zaznaczonych), ta sama referencja = bez zmiany (`UI/SameRef` w `ItemSlot`,
+  `def` po id), zakładka „Sprzedaj” budowana raz (lista zaznaczonych w osobnym `Computed`). Serwer: `InventoryService.SetSlots`
+  (jedna synchronizacja i jeden `Changed` na sprzedaż).
+- **S134f** `Sell` `rate` 4 → 8 (funkcja z limitem 200 indeksów, serwer tani); klient przy `error.rateLimited` nie
+  pokazuje błędu, tylko zaznacza przedmiot i po 0,3 s sprzedaje kolejkę jedną paczką (`ShopWindow.queueSale`).
+- **S134f** Tablica drużyn bez wolnego tekstu (ogłoszenie = cel + przedział poziomu + klasy; tekst wymagałby
+  `TextService` i moderacji). Przedział z danych (`PartyFinder.bandFor`: boss od `BossScaling.requiredLevel` do +10,
+  Elita II −12…+5, łowisko min −3…max +5, Inwazja ±10), lider tylko zawęża (`clampBand`). Tablica na serwer, w
+  pamięci (restart czyści), jedno ogłoszenie na lidera, 30 na serwer, 10 min (odnowienie = nowe ogłoszenie).
+- **S134f** „Dołącz” bez zgody lidera (prośba właściciela: przycisk Dołącz); lider dostaje toast `finder.joined` i może
+  wyrzucić jak dziś. Jedna ścieżka dołączenia: `PartyService.AddMember` (też przyjęte zaproszenie). Blokady: nowa
+  funkcja `finder` w `Logic/UseBlocks` (arena, pojedynek, turniej, loch), lider w tych miejscach → `finder.error.leaderBusy`.
+  `PartyFinder.prune` dostaje całe ogłoszenie (nie samo `leaderId`): koniec Inwazji to warunek ogłoszenia.
+- **S134f** Cele tablicy: Elita II = spawner `mapa:spawner` z poziomem `level.max`, nazwą mapy jaskini; łowisko =
+  `mapa:obszar` (prowadzenie do `arrive` albo środka); Inwazja = trwające wydarzenie (`WorldEventService.Current()`);
+  serwer sam liczy nazwę, poziom i przedział. Gdy zabrakłoby czasu, nic nie skracano (wszystkie cztery rodzaje są).
+- **S134f** Gotowość tylko w drużynie, gdy przy bramie stoi co najmniej jeden członek zdolny wejść (`gather`: `blocker`,
+  `ENTRY_RANGE`, ta sama drużyna); solo i sam lider wchodzą od razu. „Nie”, czas (20 s), wyjście z gry, śmierć pytanego
+  i każda zmiana drużyny (`PartyService.Changed`) anulują całość. Po 3‑2‑1 brama sprawdza się jeszcze raz: kto odpadł,
+  dostaje `dungeon.leftOut`; gdy odpadł lider albo nikt nie został z liderem, anulowanie (lider może wejść sam). Loch jest
+  zajęty w trakcie pytania. Dzienna próba zużywa się jak dziś (start / porażka).
+- **S134f** Liczniki tylko po walce i tylko własnej drużyny (`PartyService.Members` w chwili końca ∩ uczestnicy; udział
+  `d` liczony w drużynie). Uczestnik = zadał / przyjął obrażenia od potwora walki, leczył, osłaniał albo przejął cios za
+  uczestnika, stał w zapowiedzianym obszarze. Obrażenia przyjęte bez znanego potwora (trucizny, tyknięcia) idą do każdej
+  trwającej walki gracza; PvP i admin nie liczą się.
+- **S134f** Walka z bossem liczy obrażenia na bossie i jego pomocnikach (przed S134f udział `d` liczył tylko bossa);
+  „aktywny” do puli S134b = obrażenia, leczenie, tarcze albo przejęcia w tej próbie (jak S60). Boss wracający na smyczy
+  zeruje liczby walki (śmierci zostają), jak `table.clear` S60. Porażka (czas i wybicie) = `fail`.
+- **S134f** Elita II: walka zaczyna się przy pierwszym ciosie od / w Elitę II (spawner, wydarzenie, ostatnia fala
+  Inwazji); zabicie = `win`, wszyscy uczestnicy martwi = `wipe`; powrót na smyczy, zniknięcie albo śmierć bez kredytu =
+  walka znika bez podsumowania. Dowódca Inwazji należy do walki Inwazji (nie osobna Elita II), Wędrowny Czempion to
+  zwykła walka Elity II. Walka krótsza niż 5 s albo bez obrażeń drużyny → bez podsumowania.
+- **S134f** Unik = gracz był żywy w obszarze w chwili zapowiedzi (`telegraph` zapisuje `aimed` w czerwonej strefie) i
+  nie znalazł się wśród trafionych w chwili uderzenia (`resolveAbility`, sygnał `TelegraphResolved`). Piętna (ruchomy
+  krąg) i niezerwane zaklęcia (bez obszaru) nie liczą się do uników.
+- **S134f** Winieta niskiego HP bez obrazka (cztery pasy z `UIGradient`, `Theme.Colors.Danger`), puls przez `TweenService`
+  (to HUD, nie efekt umiejętności, więc bez `Vfx/Clock`); jedno ustawienie `lowHpWarn` wyłącza winietę i dźwięk.
+  Klucz `ui.lowHp` bez ID (w `docs/ASSETS.md` nie ma sprawdzonego bicia serca twórcy Roblox): gra cicho do czasu ID.
+  Granie z ekranu przez nowe `Sounds.key` (`SfxController.Ui`), żeby ekran nie wymagał kontrolera.
+- **S134f** Nowe `Config.PartyFinder`, `Config.FightLog`, `Config.LowHp` i `Config.Boss.readyTimeout` / `readyCountdown`
+  to czasy i limity wygody, nie balans walki: poza `CONFIG_KEYS` księgi.
+- **S134f** Nowe okna i ekrany na listę S135 / S136: okno `fightlog` (`FightLogWindow`), zakładka `PartyFinder` (idzie
+  z oknem `party`), ekrany `ReadyCheck` (pergamin), `FightCard` (żelazo), `Hud/LowHpVignette` (żelazo). Okno `party`
+  urosło do 660 × 620 (pasek zakładek).

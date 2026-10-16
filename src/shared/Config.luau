@@ -628,8 +628,44 @@ local Config = {
 		} :: { [string]: { material: string, color: string } },
 	},
 	-- Bosses (S30, DESIGN §16): every character may kill one boss `dailyRuns` times per UTC day.
+	-- S134f: ready check at the dungeon gate (Logic/ReadyCheck): answers within `readyTimeout` s, then a
+	-- `readyCountdown` s 3-2-1 before the party is moved in (not balance, outside the ledger).
 	Boss = {
 		dailyRuns = 3,
+		readyTimeout = 20,
+		readyCountdown = 3,
+	},
+	-- S134f: party finder board (Logic/PartyFinder, PartyFinderService): level bands per target kind (the leader
+	-- may only narrow them), listing lifetime (s), per-server cap, publish throttle (s). Not balance.
+	PartyFinder = {
+		bossAbove = 10,
+		eliteBelow = 12,
+		eliteAbove = 5,
+		groundBelow = 3,
+		groundAbove = 5,
+		invasionBand = 10,
+		listingSeconds = 600,
+		maxListings = 30,
+		maxWant = 4,
+		maxMembers = 5,
+		publishEvery = 1,
+	},
+	-- S134f: after-fight meter (Logic/FightStats, FightLogService, FightLogController): shortest fight with a
+	-- summary (s), summaries kept on the client, seconds the small card stays. Not balance.
+	FightLog = {
+		minSeconds = 5,
+		keep = 5,
+		cardSeconds = 12,
+	},
+	-- S134f: low health warning (Logic/LowHp, Hud/LowHpVignette): on below onPct, off above offPct (hysteresis),
+	-- full strength at fullPct; heartbeat interval from beatSlow to beatFast (s); vignette alpha cap. Not balance.
+	LowHp = {
+		onPct = 25,
+		offPct = 28,
+		fullPct = 5,
+		beatSlow = 1.4,
+		beatFast = 0.7,
+		maxAlpha = 0.55,
 	},
 	-- Boss personal loot (S30, DESIGN §16): a personal Legendary is usable by the winner's class with chance
 	-- `legendaryClassShare`; a personal Mythic is one of the boss's named items with chance `mythicNamedShare`

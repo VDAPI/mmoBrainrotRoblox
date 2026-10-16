@@ -17,7 +17,7 @@
 -- the falcon's strike),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- boss.mechanic.<mark|split|channel> (S134),
--- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error>. S112-S117 call sounds by these keys.
+-- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>. S112-S117 call sounds by these keys.
 
 local Bosses = require("./Bosses")
 local Families = require("./Families")
@@ -170,6 +170,9 @@ local defs: { [string]: Def } = {
 	["ui.coin"] = d("coins pickup jingle", 0.45, 0, { ui = true, ids = { "rbxassetid://10066947742" } }),
 	["ui.click"] = d("ui button click soft", 0.4, 0, { ui = true, pitch = FLAT, ids = { "rbxassetid://15675032796" } }),
 	["ui.error"] = d("ui error buzz short", 0.5, 0, { ui = true, pitch = FLAT, ids = { "rbxassetid://15675075163" } }),
+	-- S134f: the low health heartbeat (Hud/LowHpVignette); no checked Roblox heartbeat yet, silent until the owner
+	-- picks one (docs/ASSETS.md). Cooldown shorter than Config.LowHp.beatFast.
+	["ui.lowHp"] = d("heartbeat low health thump", 0.6, 0, { ui = true, pitch = FLAT, cooldown = 0.5 }),
 }
 
 -- Own skill keys of the sample (hints by what the skill does).

@@ -804,6 +804,13 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
 - **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Próbę zużywa zabicie bossa i porażka (czas albo wszyscy padli; FIX 2026-10-10), a szanse osobistego łupu liczą się z
   zabić tego bossa dziś.
 - Limit czasu walki 15 min; po wybiciu całej grupy lub przekroczeniu czasu: wyrzucenie, boss się resetuje, loch wolny.
+- **Gotowość przed bossem** (S134f, `Logic/ReadyCheck`): lider drużyny, z którym przy bramie stoi co najmniej jeden członek
+  zdolny wejść, klika „Gotowi?”; każdy pytany odpowiada „Gotowy” / „Nie teraz” w ciągu `Config.Boss.readyTimeout` (20 s).
+  Wszyscy „tak”: odliczanie 3‑2‑1 i wejście (bramę sprawdza się jeszcze raz); jedno „nie”, czas, wyjście z gry, śmierć
+  albo zmiana składu drużyny odwołują całość. Solo i lider sam przy bramie wchodzą od razu. Dzienna próba zużywa się
+  dopiero w walce. **Podsumowanie walki** na karcie nagrody: czas walki, kto zginął, uniknięte zapowiedziane ciosy
+  drużyny (był w obszarze przy zapowiedzi, nie dostał), tabela drużyny (obrażenia z liczbą i %, leczenie, tarcze,
+  przyjęte, przejęte, śmierci, uniki) i „Łup drużyny” (własne przedmioty, u innych od Legendarnych, reszta liczbą).
 - Boss: HP `84 × HP zwykłego potwora tego poziomu × hpMul bossa` (S134, `Bosses.HP_BASE`): **to samo HP i ta sama fala
   pomocników (8) dla każdej drużyny**, więc większa drużyna tylko szybciej bije. Boss jest projektowany pod 3–5 graczy;
   solo wygrywa tylko gracz z przepakowanym sprzętem (w modelu Wojownik Furii z Mitycznym kompletem +9). 2–3 fazy
@@ -851,6 +858,16 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
   3. Jeśli nikt nie ma tej klasy lub przedmiot jest bez wymogu klasy (np. biżuteria): losowanie między wszystkimi kandydatami.
   4. Komunikat w czacie grupy: „{gracz} otrzymał {przedmiot}”.
 - Materiały i zioła: losowanie między wszystkimi.
+- **Tablica drużyn** (S134f, `Logic/PartyFinder`, zakładka „Szukam drużyny” w oknie grupy): ogłoszenie na tym serwerze =
+  cel (boss, Elita II, Inwazja, łowisko) + przedział poziomu z danych (lider może go tylko zawęzić) + szukane klasy, bez
+  wolnego tekstu; wygasa po 10 min (lider odnawia), znika przy pełnej drużynie, wyjściu lidera, wejściu do lochu i końcu
+  Inwazji. „Dołącz” wpisuje gracza do drużyny od razu (bez zgody lidera, który może wyrzucić), nie na arenie, w
+  pojedynku, turnieju ani lochu.
+- **Licznik walki „po walce”** (S134f, `Logic/FightStats`): po walce z bossem, Elitą II i Inwazją każdy uczestnik
+  dostaje tabelę swojej drużyny (zadane, leczenie, tarcze, przyjęte, przejęte, śmierci, uniki); obcy przy tej samej
+  Elicie II nie są pokazani. W trakcie walki nic się nie pokazuje. Po Elicie II i Inwazji mała karta (wyłączana w
+  ustawieniach), okno „Ostatnie walki” trzyma 5 ostatnich walk sesji. Elita II, która wróciła na miejsce bez wybicia
+  drużyny, nie daje podsumowania.
 
 ## 18. Handel i ekonomia
 

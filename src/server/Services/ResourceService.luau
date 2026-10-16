@@ -21,7 +21,7 @@ local ResourceService = {
 	Deps = { "PlayerStateService", "CharacterService", "StatService" },
 	-- (player, source: string) when HP reaches 0 (or the Roblox humanoid died, e.g. falling into the void).
 	Died = Signal.new(),
-	-- (player, amount, source) after damage was applied.
+	-- (player, amount, source, attacker?) after damage was applied (S134f: the attacker passed to Damage, e.g. a monster).
 	Damaged = Signal.new(),
 	-- (target: Player, amount: number, source: Player?, kind: "heal" | "shield") after HP was restored or a shield
 	-- soaked damage (S60: the fight summary of a boss).
@@ -171,7 +171,7 @@ function ResourceService.Damage(player: Player, amount: number, source: string?,
 		pool.dead = true
 	end
 	publish(player, pool)
-	ResourceService.Damaged:Fire(player, dealt, source or "unknown")
+	ResourceService.Damaged:Fire(player, dealt, source or "unknown", attacker) -- S134f: + the attacker (fight meter)
 	if died then
 		ResourceService.Died:Fire(player, source or "unknown")
 	end

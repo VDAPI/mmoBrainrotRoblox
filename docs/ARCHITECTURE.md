@@ -284,6 +284,12 @@ type CharacterData = {
 - **Prawdziwe modele (S24, `docs/ASSETS.md`):** Rojo mapuje `assets/` na `ReplicatedStorage.Assets` (`ignoreUnknownInstances`, więc modele wklejone w Studio zostają). Gdy wpis ma `asset` i `Assets.Monsters.<model>` istnieje, klient klonuje model, usuwa z kopii wszystkie skrypty, zamienia `Humanoid` na `AnimationController` + `Animator`, skaluje raz (`ScaleTo`) i spawa `PrimaryPart` z HRP. `asset.rig`: `animator` (klipy z `asset.anims`, wybór `Logic/LookAnim`: death > hit > atak/cast > run/walk > idle, zastępstwa, prędkość chodu = prędkość / `walkSpeed`), `gait` (motory `Gait_*`) albo `static`. Bez pliku: generator, jedno ostrzeżenie. Pety: `Assets.Pets.<id>` (statyczne).
 - **Kontrakt modelu potwora (nie łam):** potwory to bezpośrednie dzieci `Workspace.Monsters`; HRP to hitbox (`max(X,Z)/2` = promień walki); ziemia = `HRP.Y − HipHeight − HRP.Size.Y/2`; atrybuty `MonsterId`, `Variant`, `NameKey`, `Level`, `MaxHp`, `Hp`, `Look*` przed parentowaniem, `EntityId` po; klik idzie w górę do Modelu z `EntityId`.
 - Liczby obrażeń, efekty uderzeń, telegrafy: wysyłane eventem do klientów w zasięgu, rysowane lokalnie.
+- **Licznik walki (S134f):** `FightLogService` (`Deps`: `PlayerStateService`, `PartyService`, `CombatService`,
+  `ResourceService`, `StatusEffectService`; zależą od niego `DungeonService` i `WorldEventService`) liczy walki z bossem,
+  Elitą II i Inwazją z sygnałów `CombatService.MonsterDamaged(monster, player, dealt)` (z `Monster.TakeDamage` przez
+  `ctx.damaged`), `CombatService.TelegraphResolved(monster, abilityId, aimed, hit)`, `ResourceService.Damaged` (z
+  napastnikiem), `Healed`, `Died` i `StatusEffectService.Intercepted`; po walce zdarzenie `FightSummary`. Tablica drużyn:
+  `PartyFinderService` (pamięć serwera, gałąź `finder`, dołączanie przez `PartyService.AddMember`).
 - **Wierzchowce (S96, DESIGN-15 §2):** `MountService` (`Deps`: `PlayerStateService`, `CharacterService`,
   `StatService`, `ResourceService`, `ZoneService`; od niego zależą `SkillService`, `TravelService`, `SideQuestService`,
   `GatherService`, `FishingService`, `AdminService`). Remote `SetMounted(boolean) -> (ok, errKey?)` (rate 4), gałąź stanu
@@ -704,6 +710,7 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
 | `/tourney` | world | <info|open|close|start|cancel|win|force> [a] | Turniej Czempiona: stan; open … win = testowy turniej lokalny (S130); force [min] = prawdziwy turniej na wszystkich serwerach za min minut (S131) ⚠ cancel, force |
 | `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę; trwający tydzień tylko w Studio, S131), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
 | `/sched` | world |  | najbliższe terminy wydarzeń z zegara (UTC) i wymuszone na tym serwerze (S131) |
+| `/finder` | world | <list|clear> | S134f: tablica drużyn tego serwera (ogłoszenia albo wyczyszczenie) |
 | `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
 | `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |
 | `/fish` | world | <auto> | włącz/wyłącz automatyczny sukces łowienia |
@@ -736,6 +743,7 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
 | `/e2` | monsters | <spawn> | od razu odródź Elitę II w tej jaskini |
 | `/e2timer` | monsters |  | twoje timery Elit II |
 | `/boss` | monsters | <reset|spawn> [boss:boss] | /boss reset | spawn <grimrok|morvane> |
+| `/readycheck` | monsters | <skip> | S134f: wszyscy pytani w twoim sprawdzeniu gotowości przy bramie odpowiadają „tak” |
 | `/phase` | monsters | <phase> | wymuś fazę bossa |
 | `/leash` | monsters |  | stan AI zaznaczonego potwora (smycz, powrót, regeneracja) |
 | `/mobviz` | monsters | <id\|1-4\|bosses\|pets\|all\|clear> [wariant] [anim] | lokalny podgląd wyglądów w rzędzie przed adminem (S24) |

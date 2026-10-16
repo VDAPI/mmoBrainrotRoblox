@@ -15,7 +15,6 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
-local Types = require(ReplicatedStorage.Shared.Types)
 
 local Children = Fusion.Children
 
@@ -23,21 +22,21 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SLOT = 56
 
-local function grid(scope: Scope, prefix: string, count: Fusion.UsedAs<number>, source: Fusion.Value<any>): Instance
+-- S134f: each slot listens to its own state key (`basePath` + index), not to the whole item table.
+local function grid(scope: Scope, prefix: string, count: Fusion.UsedAs<number>, basePath: { string }): Instance
 	local slots = scope:Computed(function(use, s: Scope): { Instance }
 		local list = {}
 		for index = 1, use(count) do
 			local key = tostring(index)
+			local path = table.clone(basePath)
+			table.insert(path, key)
 			table.insert(
 				list,
 				ItemSlot(s, {
 					SlotId = `{prefix}:{index}`,
 					Size = SLOT,
 					LayoutOrder = index,
-					Item = s:Computed(function(use2): Types.ItemInstance?
-						local items = use2(source)
-						return if type(items) == "table" then items[key] else nil
-					end),
+					Item = State.Value(path),
 				})
 			)
 		end
@@ -132,7 +131,7 @@ local function DepositWindow(scope: Scope): Fusion.Child
 	return {
 		column(UDim2.fromScale(0, 0), Text.T(scope, "deposit.inventory"), function()
 			sort("SortInventory")
-		end, grid(scope, "inv", capacity, inventory)),
+		end, grid(scope, "inv", capacity, { "character", "inventory" })),
 		column(
 			UDim2.new(0.5, 8, 0, 0),
 			scope:Computed(function(use): string
@@ -141,7 +140,7 @@ local function DepositWindow(scope: Scope): Fusion.Child
 			function()
 				sort("SortDeposit")
 			end,
-			grid(scope, "dep", size, depositItems)
+			grid(scope, "dep", size, { "account", "deposit", "items" })
 		),
 	}
 end

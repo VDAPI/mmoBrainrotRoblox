@@ -496,4 +496,13 @@ commands.lookstats = function(player)
 	Net.Fire(player, "MobViz", "stats")
 end
 
+-- S134f: /readycheck skip: everyone asked in the leader's pending ready check answers "yes" (3-2-1 follows).
+commands.readycheck = function(player, args)
+	if args[1] == "skip" and DungeonService.ReadySkip(player) then
+		reply(player, "admin.readycheck.skip")
+	else
+		reply(player, "admin.usage.readycheck")
+	end
+end
+
 return commands

@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S134e gotowe (ostatnia S134e: Elita II z Druzgocącym Ciosem (krąg pod celem, 2,2 s, na równym
+S01–S115 i S117–S134f gotowe (ostatnia S134f: tablica drużyn „Szukam drużyny” z „Dołącz” w oknie grupy, gotowość przed
+bossem z 3‑2‑1 przy bramie, licznik walki po walce z bossem, Elitą II i Inwazją (tylko własna drużyna, okno „Ostatnie
+walki”), podsumowanie bossa z czasem, śmierciami, unikami i łupem drużyny, czerwona winieta i bicie serca poniżej 25%
+HP, poprawka lagu przy sprzedaży (jedno odświeżenie na paczkę, slot słucha swojego klucza); wcześniej S134e: Elita II z Druzgocącym Ciosem (krąg pod celem, 2,2 s, na równym
 poziomie 60–80% HP Maga, od 10 poziomów przewagi zabija), Doskokiem i rzutem w uciekającego (ucieczka 15 poziomów niżej
 przegrywa), Ciężki Cios Elity, krótszy powrót Elity II (ok. 8 min na 66.); wcześniej S134d: odwet stojącej postaci przy
 „Automatycznym celu”, Samoczynne Mikstury i Samodzielne Łowy (bank czasu, najwyżej 3 h dziennie, EXP i złoto ×0,7);
@@ -265,6 +268,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134f:** okna i ekrany S134f do przemalowania w S135 / S136 („Pergamin i żelazo”): okno `fightlog`
+  (`FightLogWindow`), zakładka `PartyFinder` (z oknem `party`), `ReadyCheck` (pergamin), `FightCard` (żelazo),
+  `Hud/LowHpVignette` (żelazo); muszą wejść do `Data/UiWindows` / `UiWindows.SCREENS`. Dla właściciela: ID dźwięku
+  `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez przeglądu w grze: tablica, gotowość,
+  karta po walce i winieta; pomiar lagu sprzedaży jest na modelu lustra w Lune (Fusion nie ładuje się w Lune).
 
 - **S134e:** Druzgocący Cios, Doskok, rzut i Ciężki Cios bez przeglądu w grze (kolor karminu, puls, ruchy z
   `KIT_STYLES` są ogólnymi stylami planów, bez własnych póz; Doskok przenosi Elitę II bez łuku skoku). Model ucieczki

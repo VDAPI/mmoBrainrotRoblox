@@ -62,6 +62,18 @@ function Sounds.setRouter(fn: (name: string) -> boolean)
 	router = fn
 end
 
+-- S134f: plays a Data/Sfx interface key (SfxController.Ui) from a UI screen; silent before the controller starts
+-- or when the key has no id yet.
+local keyPlayer: ((key: string, volumeMul: number?) -> boolean)? = nil
+function Sounds.setKeyPlayer(fn: (key: string, volumeMul: number?) -> boolean)
+	keyPlayer = fn
+end
+
+function Sounds.key(key: string, volumeMul: number?): boolean
+	local play = keyPlayer
+	return play ~= nil and play(key, volumeMul)
+end
+
 -- Kept for compatibility (S14); the group volume (settings.volume) does the scaling since S111.
 function Sounds.setVolume(volume: number)
 	master = math.clamp(volume, 0, 1)

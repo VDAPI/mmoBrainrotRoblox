@@ -103,7 +103,7 @@ local Definitions: { [string]: Definition } = {
 
 	-- City (S06). All validate the distance to the NPC on the server.
 	Buy = { kind = "function", dir = "c2s", rate = 6, args = { "string", "string", "integer" } }, -- (npcId, itemId, n)
-	Sell = { kind = "function", dir = "c2s", rate = 4, args = { "string", "table" } }, -- (npcId, { index })
+	Sell = { kind = "function", dir = "c2s", rate = 8, args = { "string", "table" } }, -- (npcId, { index }); S134f: 4 → 8
 	Buyback = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } }, -- (npcId, buyback index)
 	HealMe = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	BuyBackpack = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (npcId, itemId)
@@ -145,6 +145,21 @@ local Definitions: { [string]: Definition } = {
 	DungeonInfo = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (region) -> info
 	EnterDungeon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (region)
 	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message (boss fights, duels)
+	-- S134f: the ready check at the dungeon gate (the asked member's answer: true = ready) -> (ok, errKey?)
+	DungeonReady = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	-- S134f: after a boss / Elite II / Invasion fight, the party's table (FightLogService) { kind, key, nameKey,
+	-- outcome, time, rows, deaths, dodged, aimed, drop? }
+	FightSummary = { kind = "event", dir = "s2c" },
+	-- S134f: the party finder board (PartyFinderService): (kind, target, minLevel, maxLevel, { classId }) -> (ok, errKey?)
+	FinderPost = {
+		kind = "function",
+		dir = "c2s",
+		rate = 1,
+		args = { "string", "string", "integer", "integer", "table" },
+	},
+	FinderCancel = { kind = "function", dir = "c2s", rate = 2, args = {} },
+	FinderJoin = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (listing id) -> (ok, errKey?)
+	FinderWatch = { kind = "event", dir = "c2s", rate = 2, args = { "boolean" } }, -- the board is open (state `finder`)
 
 	-- Quests (S11)
 	QuestTalk = { kind = "function", dir = "c2s", rate = 4, args = { "string" } }, -- (npcId) counts "talk" objectives

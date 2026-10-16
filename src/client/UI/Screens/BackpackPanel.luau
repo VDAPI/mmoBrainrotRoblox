@@ -95,11 +95,10 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		return if index and inv then inv[tostring(index)] else nil
 	end)
 
-	local function slotItem(s: Scope, index: number)
-		return s:Computed(function(use): Types.ItemInstance?
-			local inv = use(inventory)
-			return if inv then inv[tostring(index)] else nil
-		end)
+	-- S134f: a slot listens to its own key only (a diff of slot "17" does not touch slot "5"); a sort or a
+	-- snapshot replaces the whole inventory and refreshes every slot once.
+	local function slotItem(_s: Scope, index: number): Fusion.Value<any>
+		return State.Value({ "character", "inventory", tostring(index) })
 	end
 
 	-- Slots are rebuilt only when the capacity (or the overflow) changes; contents update reactively.

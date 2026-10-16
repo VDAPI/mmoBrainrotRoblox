@@ -94,6 +94,13 @@ local CombatService = {
 	},
 	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
 	MonsterKilled = Signal.new(),
+	-- S134f: (monster, player, dealt) whenever a player's damage is booked on a monster (Monster.TakeDamage
+	-- damageBy: hits, damage over time, thorns); FightLogService counts it.
+	MonsterDamaged = Signal.new(),
+	-- S134f: (monster, abilityId, aimed: { Player }, hit: { Player }) after a telegraphed blow landed; `aimed` were
+	-- inside the area when it was announced, `hit` took the blow (dodged = aimed - hit). Moving marks and channels
+	-- (no ground area at the announcement) do not fire.
+	TelegraphResolved = Signal.new(),
 }
 
 export type KillInfo = {
@@ -201,7 +208,14 @@ local rng = Rng.new()
 local fxQueue: { { position: Vector3, event: FxEvent } } = {}
 
 -- S61: telegraphed areas until they resolve (see telegraph).
-export type RedZone = { monster: any, ability: MonsterAbilities.Ability, area: CFrame, endsAt: number }
+-- S134f: `aimed` = living players inside the area when it was announced (the fight meter's dodges).
+export type RedZone = {
+	monster: any,
+	ability: MonsterAbilities.Ability,
+	area: CFrame,
+	endsAt: number,
+	aimed: { Player }?,
+}
 local redZones: { RedZone } = {}
 
 -- S64: the facts of the hit a player is taking, set only around ResourceService.Damage ("monster" / "pvp") so the
@@ -1817,11 +1831,22 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 	local mechanic = if opts then opts.mechanic else nil
 	local moving = mechanic == "mark" or mechanic == "channel"
 	if not moving then
+		-- S134f: who stands in the area now (a dodge = aimed now, not hit when it lands)
+		local aimed: { Player } = {}
+		local reach = (ability.radius or 0) + (ability.length or 0) + 10
+		for _, entity in EntityService.QueryPlayers(area.Position, reach) do
+			local player = entity.player :: Player
+			local position = EntityService.Position(entity)
+			if position and playerAlive(player) and insideArea(ability, area, position) then
+				table.insert(aimed, player)
+			end
+		end
 		table.insert(redZones, {
 			monster = monster,
 			ability = ability,
 			area = area,
 			endsAt = os.clock() + ability.windup + Combat.redZoneGrace,
+			aimed = aimed,
 		})
 	end
 	local followEntity = if opts and opts.follow then EntityService.GetPlayerEntity(opts.follow) else nil
@@ -1933,6 +1958,10 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 	for i, zone in redZones do
 		if zone.monster == monster and zone.ability == ability and zone.area == area then
 			table.remove(redZones, i)
+			local aimed = zone.aimed
+			if aimed and #aimed > 0 then
+				CombatService.TelegraphResolved:Fire(monster, ability.id, aimed, targets) -- S134f
+			end
 			break
 		end
 	end
@@ -2183,6 +2212,9 @@ function CombatService.Init(registry)
 		resolveAbility = resolveAbility,
 		rangedThrow = monsterThrow,
 		died = onMonsterDied,
+		damaged = function(monster: any, player: Player, dealt: number)
+			CombatService.MonsterDamaged:Fire(monster, player, dealt) -- S134f: the fight meter
+		end,
 		-- S72 Menace (ROZWOJ 10.3): the threat hook raises the threat of every damage of the player (not the credit).
 		threatMultiplier = function(_monster: any, player: Player): number
 			-- a DoT tick can outlive its source (logout, character switch): no hook reads then

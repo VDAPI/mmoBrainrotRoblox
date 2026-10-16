@@ -54,6 +54,7 @@ local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
+local FightView = require(script.Parent.Parent.UI.FightView)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -127,33 +128,6 @@ local pool: { BillboardGui } = {}
 local MAX_FLASHES = 20
 local flashes: { [Model]: any } = {}
 local flashCount = 0
-
--- Same shape as UI/Screens/BossReward.SummaryRow.
-type SummaryRow = { n: string, c: string?, d: number, h: number, s: number, i: number? }
-
--- S60: the fight summary rows of a boss reward, type-checked, at most 5.
-local function summaryOf(raw: any): { SummaryRow }?
-	if type(raw) ~= "table" then
-		return nil
-	end
-	local rows: { SummaryRow } = {}
-	for _, row in raw do
-		if #rows >= 5 then
-			break
-		end
-		if type(row) == "table" and type(row.n) == "string" then
-			table.insert(rows, {
-				n = row.n,
-				c = if type(row.c) == "string" then row.c else nil,
-				d = tonumber(row.d) or 0,
-				h = tonumber(row.h) or 0,
-				s = tonumber(row.s) or 0,
-				i = tonumber(row.i),
-			})
-		end
-	end
-	return rows
-end
 
 -- Entity lookup ---------------------------------------------------------------------------------------------
 
@@ -1708,7 +1682,9 @@ local function handle(event: { [string]: any })
 				luckFrom = if type(event.luckFrom) == "string" then event.luckFrom else nil,
 				upgraded = event.upgraded == true,
 				extra = event.extra == true,
-				summary = summaryOf(event.sum),
+				summary = FightView.rows(event.sum),
+				fight = FightView.header(event.fs), -- S134f: time, deaths, dodged blows
+				drop = FightView.drop(event.drop), -- S134f: the party loot
 				-- S97: the personal mount roll (ids checked against the data)
 				mount = if type(event.mount) == "string" and MountData.get(event.mount) then event.mount else nil,
 				mountSkin = if type(event.mountSkin) == "string" and Cosmetics.get(event.mountSkin)

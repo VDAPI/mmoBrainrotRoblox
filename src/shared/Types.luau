@@ -368,6 +368,8 @@ export type Settings = {
 	robloxAvatar: boolean, -- S132: the player's Roblox avatar (standard R15 scales) instead of the class look
 	whispers: string, -- S133: "all" | "friends" (friends and guild mates only)
 	friendAlerts: boolean, -- S133: the "<name> is in the game" toast
+	lowHpWarn: boolean, -- S134f: low health vignette and heartbeat (Hud/LowHpVignette)
+	fightCard: boolean, -- S134f: the after-fight card (FightCard; the fight log window stays)
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class
