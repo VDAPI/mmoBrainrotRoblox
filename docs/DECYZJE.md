@@ -4461,3 +4461,24 @@
   ROZWOJ 10.6 (115% / 116%) zostaje jako stan sprzed S134; na L100 teraz ok. 85% → 60%, Mur 66% / 54%.
 - **S134** Wiki: piętno pokazuje `mark.seconds` i obrażenia naznaczonego, wspólny cios sumę i udział przy 3 graczach
   (`SPLIT_SHOWN`), zaklęcie bez kształtu (czas, próg przerwania, oszołomienie).
+- **S134b** Pula EXP drużyny (prośba właściciela 2026-10-15) zastępuje równy podział 100% (S09 / S60) i założenie modelu
+  S83: EXP i złoto potwora (zwykły, Elita, Elita II, pomocnik bossa) i bossa lochu to pula `PartyLoot.poolMul(n)` = 1 +
+  `partyPoolPerMember` 50 / 100 × (n − 1) dzielona równo na wszystkich zaliczonych (2: po 75%, 3: ~67%, 4: ~63%, 5: 60%).
+  Premia za klasy (S60) mnoży pulę, różnica poziomów i budżet questów dalej na gracza, kolejność w `reward()` bez zmian.
+- **S134b** Wożony: zaliczony o poziomie < poziom potwora − `partyCarryGap` 10 nie powiększa puli i dostaje `total / n`
+  (jak przed S134b); wszyscy wożeni = nikt bez premii puli; solo zawsze 100%. Udział liczonego = `total × pula(liczeni) /
+  n` (n = wszyscy zaliczeni), więc wożony albo bierny obniża udział pozostałych tak jak dawny podział.
+- **S134b** Bierny: na świecie pulę powiększa zaliczony z `ResourceService.InCombat` (5 s) albo z obrażeniami na tym
+  potworze; najlepszy zadający zawsze. `MarkCombat` woła każde rzucenie umiejętności (`SkillService`, także leczenie i
+  tarcza), trafienie i otrzymany cios, więc Kapłan bez obrażeń się liczy; tyknięcia HoT i pól leczenia nie przedłużają
+  walki leczącego (bez zmian w `ResourceService.Heal`: `InCombat` blokuje też wierzchowca, handel, arenę). W lochu
+  aktywny = obrażenia na bossie, leczenie, tarcze albo przejęcia w tej próbie (podsumowanie walki S60).
+- **S134b** Pula nie dotyczy PvP (zabicia graczy nie idą przez `reward`), wydarzeń świata, zleceń łowieckich i questów;
+  łup (`PartyLoot.distribute`) i szansa błogosławieństwa bossa bez zmian; `PARTY_RANGE` 80 bez zmian.
+- **S134b** Model: EXP/h członka = średnia solowych × `poolMul(n)` × `PartyBonus.expMul` (złoto z zabić × `poolMul`),
+  wszyscy na poziomie potworów; solo, zamrożone 1–20 i budżet questów bez zmian (budżet liczony z tempa solo). Piątka w
+  modelu expi ok. 3,45× szybciej niż solo (×3 z puli, ×1,15 z klas).
+- **S134b** `Balance.sessionNumber` czyta też numer sesji z literą („S134b” = 134), żeby księga powodów przyjęła wpis.
+- **S134b** Wiki bez nowych liczb (opis puli słowami): nowe pole w eksporcie zmieniłoby kształt danych (`wiki_keys_diff`).
+  Okno drużyny: linia puli (`party.pool` / `party.poolNone`, potencjał z liczby członków) nad premią za klasy, zasada
+  wożonego i biernego w `party.rules` (`{gap}`).

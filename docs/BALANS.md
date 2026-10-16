@@ -269,6 +269,8 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | `Bosses:byId.vaelgrath.attacks[iceComet].radius` | 7 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
 | `Bosses:byId.vaelgrath.attacks[iceComet].split.missAll` | 0,25 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
 | `Bosses:byId.vaelgrath.attacks[iceComet].windup` | 3,2 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Progression:partyCarryGap` | 10 | S134b | new: a member more than 10 levels below the monster is carried, does not grow the pool and gets total / n (anti power-levelling of the S134b pool) |
+| `Progression:partyPoolPerMember` | 50 | S134b | new: owner request 2026-10-15, the monster's EXP/gold pool +50 % per extra credited player, split equally (2: 150 % / 75 % each, 3: 200 % / 67 %, 5: 300 % / 60 %); solo unchanged |
 
 ### Usunięte klucze
 
@@ -289,7 +291,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4405 kluczy zmienionych od bazy, 0 bez powodu.
+4407 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -922,6 +924,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Paths/Warrior:[standard].rows[10].nodes[standard_veteran].values.campaign[2]` | 12 | 18 | S89 | S89: R6: 12 -> 18 % |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[1]` | 4 | 3 | S89 | S89: R6: 4 -> 3 % max HP (first third 1.56 -> 1.29 of the mean) |
 | `Paths/Warrior:[standard].rows[5].nodes[standard_grit].values.bearerGrit[2]` | 12 | 9 | S89 | S89: R6: 12 -> 9 % |
+| `Progression:partyCarryGap` | – | 10 | nowy od S134b | S134b: new: a member more than 10 levels below the monster is carried, does not grow the pool and gets total / n (anti power-levelling of the S134b pool) |
+| `Progression:partyPoolPerMember` | – | 50 | nowy od S134b | S134b: new: owner request 2026-10-15, the monster's EXP/gold pool +50 % per extra credited player, split equally (2: 150 % / 75 % each, 3: 200 % / 67 %, 5: 300 % / 60 %); solo unchanged |
 | `Progression:variantMultiplier.elite` | 4 | 1,5 | S117 | S117: FIX 2026-10-15 (owner): 4 -> 1.5, Elites are for drops, not levelling (EXP per HP below a normal monster; pace model counts normals only) |
 | `Progression:variantMultiplier.elite2` | 12 | 4 | S117 | S117: FIX 2026-10-15 (owner): 12 -> 4, Elite II is for drops, not levelling (HP x10) |
 | `Quests/Main:STORY_BANDS[1]` | – | 20 | nowy od S103 | S103: S103 (A3): band 20-44 on the story rule (chapter II); S104: S104 (E1): band 45-69 on the story rule (chapter III); S105: S105 (C1): band 70-99 on the story rule (chapter IV and the finale) |
@@ -4719,14 +4723,16 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 ### Premia za różne klasy (poziom 30) (20-45)
 
-Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86), więc EXP/h członka = średnia solowych EXP/h × `PartyBonus.expMul`; `floor` z `PartyLoot.splitExp` pominięty.
+Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86); S134b: każde zabicie daje pulę `PartyLoot.poolMul(n)` (+50% za członka) dzieloną równo, więc EXP/h członka = średnia solowych EXP/h × pula × `PartyBonus.expMul` (mnożnik EXP = pula × klasy); wszyscy walczą na poziomie potworów (bez wożonych i biernych); `floor` z `PartyLoot.expShares` pominięty.
 
-| drużyna | mnożnik EXP | EXP/h członka | h pasma |
-| --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 42 064 | 15,0 |
-| 3 × Wojownik | 1,00 | 42 064 | 15,0 |
-| Wojownik + Łowca + Mag | 1,10 | 46 307 | 13,6 |
-| cztery klasy | 1,15 | 49 847 | 12,7 |
+| drużyna | pula | mnożnik EXP | EXP/h członka | h pasma |
+| --- | --: | --: | --: | --: |
+| solo (Wojownik) | 1,00 | 1,00 | 42 064 | 15,0 |
+| 2 × Wojownik | 1,50 | 1,50 | 63 097 | 10,0 |
+| 3 × Wojownik | 2,00 | 1,00 → 2,00 | 42 064 → 84 129 | 15,0 → 7,5 |
+| Wojownik + Łowca + Mag | 2,00 | 1,10 → 2,20 | 46 307 → 92 614 | 13,6 → 6,8 |
+| cztery klasy | 2,50 | 1,15 → 2,88 | 49 847 → 124 617 | 12,7 → 5,1 |
+| 5 graczy (cztery klasy + Wojownik) | 3,00 | 3,45 | 148 657 | 4,3 |
 
 ### Ekonomia (Wojownik) (20-45)
 
@@ -5588,12 +5594,12 @@ Suma 20 → 45: 14,38 h (rodzaj regionu 15,06 h, z Morvane 12,97 h); h(45) / h(4
 
 ### Premia za różne klasy (tylko raport, S92)
 
-| drużyna 3 osób | mnożnik EXP | EXP/h członka |
-| --- | --: | --: |
-| 30: Warrior + Warrior + Warrior | 1,00 | 4,206e+04 |
-| 30: Warrior + Hunter + Mage | 1,10 | 4,631e+04 |
-| 40: Warrior + Warrior + Warrior | 1,00 | 3,801e+04 |
-| 40: Warrior + Hunter + Mage | 1,10 | 4,499e+04 |
+| drużyna 3 osób | pula | pula × klasy | EXP/h członka |
+| --- | --: | --: | --: |
+| 30: Warrior + Warrior + Warrior | 2,00 | 2,00 | 8,413e+04 |
+| 30: Warrior + Hunter + Mage | 2,00 | 2,20 | 9,261e+04 |
+| 40: Warrior + Warrior + Warrior | 2,00 | 2,00 | 7,603e+04 |
+| 40: Warrior + Hunter + Mage | 2,00 | 2,20 | 8,998e+04 |
 
 ### Mikstury łańcuchowe ÷ dochód (S92, I3; dolna granica 15% tylko raport)
 
@@ -5858,14 +5864,16 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 ### Premia za różne klasy (poziom 55) (45-70)
 
-Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86), więc EXP/h członka = średnia solowych EXP/h × `PartyBonus.expMul`; `floor` z `PartyLoot.splitExp` pominięty.
+Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86); S134b: każde zabicie daje pulę `PartyLoot.poolMul(n)` (+50% za członka) dzieloną równo, więc EXP/h członka = średnia solowych EXP/h × pula × `PartyBonus.expMul` (mnożnik EXP = pula × klasy); wszyscy walczą na poziomie potworów (bez wożonych i biernych); `floor` z `PartyLoot.expShares` pominięty.
 
-| drużyna | mnożnik EXP | EXP/h członka | h pasma |
-| --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 78 612 | 26,3 |
-| 3 × Wojownik | 1,00 | 78 612 | 26,3 |
-| Wojownik + Łowca + Mag | 1,10 | 89 794 | 24,1 |
-| cztery klasy | 1,15 | 97 002 | 22,6 |
+| drużyna | pula | mnożnik EXP | EXP/h członka | h pasma |
+| --- | --: | --: | --: | --: |
+| solo (Wojownik) | 1,00 | 1,00 | 78 612 | 26,3 |
+| 2 × Wojownik | 1,50 | 1,50 | 117 918 | 17,5 |
+| 3 × Wojownik | 2,00 | 1,00 → 2,00 | 78 612 → 157 224 | 26,3 → 13,2 |
+| Wojownik + Łowca + Mag | 2,00 | 1,10 → 2,20 | 89 794 → 179 587 | 24,1 → 12,1 |
+| cztery klasy | 2,50 | 1,15 → 2,88 | 97 002 → 242 506 | 22,6 → 9,1 |
+| 5 graczy (cztery klasy + Wojownik) | 3,00 | 3,45 | 287 048 | 7,6 |
 
 ### Ekonomia (Wojownik) (45-70)
 
@@ -6606,12 +6614,12 @@ Suma 45 → 70: 26,14 h (rodzaj regionu 26,50 h, z Azgorem 24,14 h); h(70) / h(6
 
 ### Premia za różne klasy (tylko raport, S93)
 
-| drużyna 3 osób | mnożnik EXP | EXP/h członka |
-| --- | --: | --: |
-| 55: Warrior + Warrior + Warrior | 1,00 | 7,861e+04 |
-| 55: Warrior + Hunter + Mage | 1,10 | 8,979e+04 |
-| 65: Warrior + Warrior + Warrior | 1,00 | 6,779e+04 |
-| 65: Warrior + Hunter + Mage | 1,10 | 7,435e+04 |
+| drużyna 3 osób | pula | pula × klasy | EXP/h członka |
+| --- | --: | --: | --: |
+| 55: Warrior + Warrior + Warrior | 2,00 | 2,00 | 1,572e+05 |
+| 55: Warrior + Hunter + Mage | 2,00 | 2,20 | 1,796e+05 |
+| 65: Warrior + Warrior + Warrior | 2,00 | 2,00 | 1,356e+05 |
+| 65: Warrior + Hunter + Mage | 2,00 | 2,20 | 1,487e+05 |
 
 ### Mikstury łańcuchowe ÷ dochód (S93, I2; górna granica 30% w raporcie, dolna 15% asertowana)
 
@@ -6905,14 +6913,16 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 ### Premia za różne klasy (poziom 85) (70-100)
 
-Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86), więc EXP/h członka = średnia solowych EXP/h × `PartyBonus.expMul`; `floor` z `PartyLoot.splitExp` pominięty.
+Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86); S134b: każde zabicie daje pulę `PartyLoot.poolMul(n)` (+50% za członka) dzieloną równo, więc EXP/h członka = średnia solowych EXP/h × pula × `PartyBonus.expMul` (mnożnik EXP = pula × klasy); wszyscy walczą na poziomie potworów (bez wożonych i biernych); `floor` z `PartyLoot.expShares` pominięty.
 
-| drużyna | mnożnik EXP | EXP/h członka | h pasma |
-| --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 109 181 | 43,1 |
-| 3 × Wojownik | 1,00 | 109 181 | 43,1 |
-| Wojownik + Łowca + Mag | 1,10 | 118 925 | 39,1 |
-| cztery klasy | 1,15 | 124 897 | 37,0 |
+| drużyna | pula | mnożnik EXP | EXP/h członka | h pasma |
+| --- | --: | --: | --: | --: |
+| solo (Wojownik) | 1,00 | 1,00 | 109 181 | 43,1 |
+| 2 × Wojownik | 1,50 | 1,50 | 163 772 | 28,7 |
+| 3 × Wojownik | 2,00 | 1,00 → 2,00 | 109 181 → 218 363 | 43,1 → 21,5 |
+| Wojownik + Łowca + Mag | 2,00 | 1,10 → 2,20 | 118 925 → 237 849 | 39,1 → 19,6 |
+| cztery klasy | 2,50 | 1,15 → 2,88 | 124 897 → 312 242 | 37,0 → 14,8 |
+| 5 graczy (cztery klasy + Wojownik) | 3,00 | 3,45 | 375 088 | 12,4 |
 
 ### Ekonomia (Wojownik) (70-100)
 
@@ -7760,12 +7770,12 @@ Zadanie `vaelgrath` oddaje 371 503 EXP (z Vaelgrathem w oknie −3,16 h na 70 �
 
 ### Premia za różne klasy (tylko raport, S94)
 
-| drużyna 3 osób | mnożnik EXP | EXP/h członka |
-| --- | --: | --: |
-| 80: Warrior + Warrior + Warrior | 1,00 | 7,858e+04 |
-| 80: Warrior + Hunter + Mage | 1,10 | 8,47e+04 |
-| 95: Warrior + Warrior + Warrior | 1,00 | 1,146e+05 |
-| 95: Warrior + Hunter + Mage | 1,10 | 1,255e+05 |
+| drużyna 3 osób | pula | pula × klasy | EXP/h członka |
+| --- | --: | --: | --: |
+| 80: Warrior + Warrior + Warrior | 2,00 | 2,00 | 1,572e+05 |
+| 80: Warrior + Hunter + Mage | 2,00 | 2,20 | 1,694e+05 |
+| 95: Warrior + Warrior + Warrior | 2,00 | 2,00 | 2,292e+05 |
+| 95: Warrior + Hunter + Mage | 2,00 | 2,20 | 2,51e+05 |
 
 ### Mikstury łańcuchowe ÷ dochód (S94, J2; górna granica 30% w raporcie, dolna 15% asertowana)
 
@@ -14067,7 +14077,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 20,1 s.
+Tabele S86 liczą się 20,0 s.
 
 ## Poprawki globalne (S87)
 
@@ -15465,5 +15475,5 @@ HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba
 - Zadania 1–100 (S83): na swoim poziomie (główne + połowa pobocznych; bossowie w polu `boss`, w tempie tylko z
   `bosses`), bez rozkładania na pasmo; nadmiar EXP przechodzi na następny poziom. Tabele S32 1–20 zostają przy
   rozkładaniu według potrzebnego EXP (`Balance.questRewards`).
-- Drużyna (S83): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; EXP/h członka = średnia solowych × (1 + min(15, 5·(klasy − 1))/100); `floor` z `PartyLoot.splitExp` pominięty.
+- Drużyna (S83, pula S134b): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; wszyscy na poziomie potworów (bez wożonych i biernych); EXP/h członka = średnia solowych × `PartyLoot.poolMul(n)` (1 + 50·(n − 1)/100) × (1 + min(15, 5·(klasy − 1))/100), złoto z zabić × `poolMul(n)`; `floor` z `PartyLoot.expShares` pominięty.
 - Harmonogram bossa: `Boss.Step` co 0,05 s; gdy t ≥ nextGlobal, spośród gotowych ataków fazy ten z największą zaległością względem swojego odnowienia, (t − nextAttack) / odnowienie (S87, `Logic/BossSchedule`; remis: kolejność listy); potem nextAttack = t + odnowienie, nextGlobal = t + zamach + 2.2 s (`Data/BossTuning`); pierwszy atak po 4 s, pierwsze użycie każdego średnio po 5 s. Przyspieszenie fazy dzieli tylko odstęp ataku podstawowego, wściekłość mnoży wszystkie ciosy.

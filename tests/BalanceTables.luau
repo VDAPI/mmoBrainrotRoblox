@@ -26,6 +26,7 @@ local Items = require("../src/shared/Data/Items")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Maps = require("../src/shared/Data/Maps")
 local Monsters = require("../src/shared/Data/Monsters")
+local PartyLoot = require("../src/shared/Logic/PartyLoot")
 local Potions = require("../src/shared/Logic/Potions")
 local Rarities = require("../src/shared/Data/Rarities")
 local SkillData = require("../src/shared/Data/Skills")
@@ -1347,24 +1348,32 @@ function BalanceTables.tablesBand(lo: number, hi: number): { Table }
 		`Premia za różne klasy (poziom {mid}){suffix}`,
 		{
 			"drużyna",
+			"pula",
 			"mnożnik EXP",
 			"EXP/h członka",
 			"h pasma",
 		},
-		"Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86), więc EXP/h członka = średnia solowych EXP/h × `PartyBonus.expMul`; `floor` z `PartyLoot.splitExp` pominięty."
+		"Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczenie, bez synergii (S85–S86); S134b: każde zabicie daje pulę `PartyLoot.poolMul(n)` (+50% za członka) dzieloną równo, więc EXP/h członka = średnia solowych EXP/h × pula × `PartyBonus.expMul` (mnożnik EXP = pula × klasy); wszyscy walczą na poziomie potworów (bez wożonych i biernych); `floor` z `PartyLoot.expShares` pominięty."
 	)
 	for _, spec in
 		{
 			{ "solo (Wojownik)", nil },
+			{ "2 × Wojownik", { "Warrior", "Warrior" } },
 			{ "3 × Wojownik", { "Warrior", "Warrior", "Warrior" } },
 			{ "Wojownik + Łowca + Mag", { "Warrior", "Hunter", "Mage" } },
 			{ "cztery klasy", { "Warrior", "Hunter", "Mage", "Cleric" } },
+			{ "5 graczy (cztery klasy + Wojownik)", { "Warrior", "Hunter", "Mage", "Cleric", "Warrior" } },
 		}
 	do
 		local party = spec[2] :: { string }?
 		local pace = B.paceAt("Warrior", mid, { party = party })
 		local hours = B.paceBand("Warrior", lo, hi, { party = party }).hours
-		row(spec[1] :: string, { { pace.expMul, "2" }, { pace.expPerHour, "i" }, { hours, "1" } })
+		row(spec[1] :: string, {
+			{ PartyLoot.poolMul(if party then #party else 1), "2" },
+			{ pace.expMul, "2" },
+			{ pace.expPerHour, "i" },
+			{ hours, "1" },
+		})
 	end
 
 	section(

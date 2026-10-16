@@ -299,7 +299,7 @@ unik, pech wroga i blok razem najwyżej 40% (S61).
 - EXP z potwora: `round(8 + 6 · Lpotwora^1.25)`; Elita ×1,5, Elita II ×4 (poprawka 2026-10-15: Elity są dla dropu, nie do expienia; było ×4 / ×12), boss ×60; od S32 razy wytrzymałość rodzaju
   `hpMul^0.75 × (atkMul × szybkość)^0.25` (niedźwiedź brunatny ×1,26, królik ×0,57, wrona ×0,86; bossy ×1).
 - Różnica poziomów (gracz − potwór = d): d ≤ 5 → 100%; d > 5 → `−15%` za każdy poziom ponad 5, min 5%. Potwór wyżej: `+4%` za poziom, max +20%.
-- Grupa: EXP potwora **dzielony przez liczbę członków grupy w zasięgu 80 studów** (każdy dostaje równą część, potem własna kara/bonus za różnicę poziomu).
+- Grupa (S134b): EXP i złoto potwora to **pula +50% za każdego dodatkowego zaliczonego członka w zasięgu 80 studów** (2 → 150%, po 75%; 5 → 300%, po 60%; `Data/Progression.partyPoolPerMember`, `Logic/PartyLoot`), dzielona równo między członków w zasięgu (potem własna kara/bonus za różnicę poziomu); członek bez walki albo ponad 10 poziomów poniżej potwora (`partyCarryGap`) puli nie powiększa i dostaje część bez premii.
 - Max poziom: 100 (Config.MaxLevel). EXP na 100 poziomie się nie zbiera.
 - Level up: efekt świetlny, dźwięk, pełne HP/Mana/Energia, komunikat z liczbą nowych punktów.
 
@@ -831,8 +831,7 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
 ## 17. Grupa
 
 - Do 5 osób. Zaproszenie (klik na gracza → menu), lider, wyrzucanie, opuszczanie, przekazanie lidera. Ramki członków w HUD z HP/Maną.
-- **EXP**: dzielony równo przez liczbę członków w zasięgu 80 st.
-- **Złoto**: dzielone równo.
+- **EXP i złoto** (S134b): pula +`partyPoolPerMember` (50%) za każdego dodatkowego zaliczonego członka w zasięgu 80 st., dzielona równo między członków w zasięgu; wożony (`partyCarryGap`) i bierny puli nie powiększają (sami: suma / n).
 - **Przedmioty z potwora bitego przez grupę**: każdy przedmiot osobno:
   1. Kandydaci = członkowie w zasięgu 80 st.
   2. Jeśli przedmiot ma wymóg klasy: kandydaci z tą klasą. Jeden → dostaje go. Kilku → losowanie między nimi.

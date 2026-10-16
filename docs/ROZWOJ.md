@@ -116,7 +116,8 @@ Wspólne:
 8. Schemat zapisu 6: darmowy reset umiejętności, statystyk i paska wszystkich postaci.
 9. Wzmocnienia i osłabienia drużyny mają kategorie: w kategorii liczy się najsilniejsze, kategorie się sumują, redukcja
    obrażeń łączy się mnożnikowo z limitem 75%; nadpisywanie efektów jednego rzucającego zostaje naprawione.
-10. Premia za różne klasy: +5% EXP za każdą klasę w drużynie poza własną, najwyżej +15%.
+10. Premia za różne klasy: +5% EXP za każdą klasę w drużynie poza własną, najwyżej +15%. S134b: na wierzchu puli EXP
+    potwora (+50% za każdego dodatkowego zaliczonego, podział równy; 7.4).
 11. Szczęście: na potworach jeden limit (+100% szansy na przedmiot) dla przedmiotów, błogosławieństw, gildii i Fortuny,
     dla całej drużyny zaliczonej do zabicia; na bossach działa tylko Kapłan Fortuny (Legenda ×1,13 z pełnej Fortuny,
     ×1,06 z jej początków).
@@ -689,6 +690,12 @@ do sprawdzenia w sesji balansu.
 - Liczą się gracze zaliczeni do zabicia (`CombatService.ResolveKillCredit`: najlepszy zadający i drużyna do 80 st.),
   przy bossie zwycięzcy w lochu. `CombatService.onMonsterDied` mnoży `expMul` dla `reward`, `DungeonService.reward`
   mnoży `baseExp`; przed własnym `expBonus`, bez questów. Okno drużyny: „Premia za różne klasy: +10% EXP”.
+- S134b, pula drużyny: EXP i złoto potwora (także Elity, Elity II, pomocnika bossa) i bossa lochu to pula
+  `PartyLoot.poolMul(n)` = 1 + 0,5 × (n − 1) (`Data/Progression.partyPoolPerMember` 50), dzielona równo na wszystkich
+  zaliczonych (2: po 75%, 3: ~67%, 4: ~63%, 5: 60%); premia za klasy mnoży pulę, różnica poziomów i budżet questów
+  potem na gracza. Pulę powiększa tylko członek aktywny (walka w ostatnich `Config.CombatTimeout` s albo obrażenia na
+  potworze; w lochu obrażenia, leczenie, tarcze albo przejęcia) i nie wożony (poziom ≥ potwór − `partyCarryGap` 10);
+  pozostali dostają `total / n`. Okno drużyny: „EXP i złoto z potworów: pula 200% dzielona na 3 → 67% dla każdego”.
 
 ### 7.5 Cele dla klas i balansu
 

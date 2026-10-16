@@ -37,4 +37,11 @@ return table.freeze({
 	-- % EXP for each other class among the credited players, at most varietyMax (ROZWOJ 7.4, S60).
 	varietyPerClass = 5,
 	varietyMax = 15,
+
+	-- S134b: % of the monster's EXP/gold pool added per extra credited player; split equally (Logic/PartyLoot):
+	-- 2 players 150 % (75 % each), 3 200 %, 4 250 %, 5 300 % (60 % each). Solo unchanged.
+	partyPoolPerMember = 50,
+	-- S134b: a credited member more than this many levels below the monster is carried: does not grow the pool and
+	-- gets a share without the pool bonus (total / n).
+	partyCarryGap = 10,
 })

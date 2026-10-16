@@ -66,6 +66,7 @@ local Monsters = require("../src/shared/Data/Monsters")
 local MountData = require("../src/shared/Data/Mounts")
 local MountLogic = require("../src/shared/Logic/Mounts")
 local PartyBonus = require("../src/shared/Logic/PartyBonus")
+local PartyLoot = require("../src/shared/Logic/PartyLoot")
 local PathData = require("../src/shared/Data/Paths")
 local Paths = require("../src/shared/Logic/Paths")
 local Potions = require("../src/shared/Logic/Potions")
@@ -1682,7 +1683,7 @@ export type PaceOpts = {
 	kind: any?, -- a Data/Monsters id or a kind table (default kindAtRegion)
 	area: "best"?, -- the region's hunting ground with the most EXP/h (Logic/AreaRates with its profile)
 	potions: "chain"?, -- potions instead of the rest
-	party: { string }?, -- class ids: same ground, credit split, no synergy, x PartyBonus.expMul
+	party: { string }?, -- class ids: same ground, credit split, no synergy, x PartyLoot.poolMul x PartyBonus.expMul
 	bosses: boolean?, -- boss quests count
 	carry: number?, -- EXP carried in from the level before
 }
@@ -1818,9 +1819,13 @@ function Balance.paceAt(classId: string, level: number, opts: PaceOpts?): PaceAt
 				else Balance.paceAt(c, level, { kind = o.kind, area = o.area }).expPerHour
 			sum += solo
 		end
-		expMul = PartyBonus.expMul(o.party)
+		-- S134b: every kill pays the party pool (PartyLoot.poolMul) split equally; the model's members all fight
+		-- at the same level as the monsters (counted)
+		expMul = PartyLoot.poolMul(#o.party) * PartyBonus.expMul(o.party)
 		expPerHour = sum / #o.party * expMul
 		expPerKill = expPerHour * secondsPerKill / 3600
+		-- S134b: kill gold from the same pool (the member's own kill rate; no class bonus on gold)
+		goldPerKill *= PartyLoot.poolMul(#o.party)
 	end
 	local q = Balance.questsAt(level, { bosses = o.bosses })
 	local questExp = q.exp + (o.carry or 0)
@@ -5942,9 +5947,9 @@ function Balance.rankDump(): { [string]: number }
 	return out
 end
 
--- Session number of "S<n>" (nil for anything else).
+-- Session number of "S<n>" (nil for anything else). S134b: a follow-up session "S<n><letter>" ("S134b") counts as <n>.
 function Balance.sessionNumber(session: string?): number?
-	local n = session and string.match(session, "^S(%d+)$")
+	local n = session and string.match(session, "^S(%d+)%l?$")
 	return if n then tonumber(n) else nil
 end
 

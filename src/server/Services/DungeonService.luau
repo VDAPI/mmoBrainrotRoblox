@@ -3,7 +3,8 @@
 -- enters at the gate in the cave; party members within 20 studs come along if they meet the level
 -- (boss − 5) and have kills left today (S30: Config.Boss.dailyRuns per boss; others are told why they stay).
 -- After a 5 s countdown the boss appears (Entities/Boss). The run fails after 15 minutes or when nobody is left
--- fighting: everyone is sent out and the boss resets. On a kill: EXP and gold shared; every winner gets one item
+-- fighting: everyone is sent out and the boss resets. On a kill: EXP and gold from the party pool (S134b,
+-- Logic/PartyLoot); every winner gets one item
 -- in an own bag nobody else sees (FIX 2026-10-09, Loot.rollBossItem: Mythic 1 %, Legendary 6 %, +1 % each per kill
 -- of this boss today, else Unique / Heroic) with materials and a chance of a legendary blessing; one daily run used
 -- for everyone present, a server announcement; the dungeon is released 60 s later or when everybody has left
@@ -306,8 +307,20 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 		table.insert(classes, if char then char.class :: string else "")
 	end
 	local summary = summaryOf(run, damageBy)
-	local baseExp = PartyLoot.splitExp(Exp.monsterExp(def.level, "boss") * PartyBonus.expMul(classes), n)
-	local shares = PartyLoot.splitGold(MonsterStats.gold(def.level, "boss", rng:next()), n, rng)
+	-- S134b: the party pool (Logic/PartyLoot) as for monsters; active = damage on the boss, healing, shields or
+	-- intercepted blows in this attempt (the fight summary), carried = more than partyCarryGap levels below the boss.
+	local pool: { PartyLoot.Member } = {}
+	for _, player in winners do
+		local char = character(player)
+		local active = (damageBy[player] or 0) > 0
+			or (run.healing[player] or 0) > 0
+			or (run.shielding[player] or 0) > 0
+			or (run.intercepted[player] or 0) > 0
+		table.insert(pool, { level = if char then char.level else 0, active = active })
+	end
+	local expShares =
+		PartyLoot.expShares(Exp.monsterExp(def.level, "boss") * PartyBonus.expMul(classes), pool, def.level)
+	local shares = PartyLoot.goldShares(MonsterStats.gold(def.level, "boss", rng:next()), pool, def.level, rng)
 	-- FIX 2026-10-09: every winner gets exactly one item (and the materials) in an own bag only they see and can
 	-- pick up; the Legendary / Mythic chances grow with the character's kills of this boss today.
 	local blessingChance = Bosses.LEGENDARY_BLESSING_CHANCE / n
@@ -321,7 +334,7 @@ local function reward(run: Run, position: Vector3, damageBy: { [Player]: number 
 				{ "character", "bossRuns", def.id },
 				BossScaling.addRun(char.bossRuns, def.id, now, true)
 			)
-			local exp = math.floor(baseExp * Exp.levelDiffMultiplier(char.level, def.level) + 0.5)
+			local exp = math.floor(expShares[i] * Exp.levelDiffMultiplier(char.level, def.level) + 0.5)
 			LevelService.GiveExp(player, exp, "boss")
 			QuestEvents.fire(player, "boss", { bossId = def.id })
 			local gold = math.floor(shares[i] * (1 + StatService.GetValue(player, "goldBonus") / 100) + 0.5)

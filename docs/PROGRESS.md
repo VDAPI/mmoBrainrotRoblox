@@ -5,9 +5,9 @@
 
 ## Stan
 
-S01–S115 i S117–S134 gotowe (ostatnia S134: bossowie 2.0, czyli HP i fale bez skalowania z drużyną, wielkie ciosy do
-unikania, wspólny cios, piętno i zaklęcie do przerwania; większa drużyna kończy szybciej, solo tylko z przepakowanym
-sprzętem) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S134b gotowe (ostatnia S134b: EXP i złoto potwora w drużynie to pula +50% za każdego dodatkowego
+zaliczonego, dzielona równo, wożony i bierny jej nie powiększają; wcześniej S134: bossowie 2.0, czyli HP i fale bez
+skalowania z drużyną, wielkie ciosy do unikania, wspólny cios, piętno i zaklęcie do przerwania) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -259,6 +259,10 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134b:** bierny członek = bez walki przez `Config.CombatTimeout` (5 s); tyknięcia HoT i pól leczenia nie przedłużają
+  walki leczącego (pula liczy rzucenia). Wiki opisuje pulę bez liczb (nowe pole eksportu wymaga zmiany kształtu danych).
+  Model drużyny bez wożonych i biernych (wszyscy na poziomie potworów).
 
 - **S134:** nowe ataki bossów pozują ogólnymi stylami `Data/MonsterMotions` (bez własnych póz), mechaniki i ruchy
   nieobejrzane w Studio (`/animlab boss <id> <atak>`); dźwięki `boss.mechanic.<mark|split|channel>` bez ID (wybór

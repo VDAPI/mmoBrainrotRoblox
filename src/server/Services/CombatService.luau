@@ -608,7 +608,8 @@ end
 -- Kill credit and rewards ----------------------------------------------------------------------------
 
 -- Players who get EXP/gold/loot for a monster (DESIGN §15.1, §17): the top damage dealer, or their party
--- members within PARTY_RANGE of the monster. The top damage dealer comes first.
+-- members within PARTY_RANGE of the monster (alive). The top damage dealer comes first. S134b: their EXP and gold
+-- form a pool growing with the active, not carried members (Logic/PartyLoot, `poolMembers`).
 local PARTY_RANGE = 80
 
 function CombatService.ResolveKillCredit(monster: any): { Player }
@@ -625,18 +626,32 @@ function CombatService.ResolveKillCredit(monster: any): { Player }
 	return credit
 end
 
--- EXP and gold for one credited player; `share` = number of credited players, `goldShare` = their gold (already
--- with the area's gold multiplier); `expMul` = the area profile's EXP multiplier (S33) times the class variety bonus
--- (S60), before the party split; `luckGold` = Fortune's gold % (S60), added to the player's own goldBonus.
-local function reward(player: Player, monster: any, share: number, goldShare: number, expMul: number, luckGold: number)
+-- S134b: the credited players for the party pool (Logic/PartyLoot): level and whether they fought. Active = in
+-- combat (ResourceService.MarkCombat: hits, casts incl. heals and shields, being hit) or damage on this monster; the
+-- top damage dealer always counts.
+local function poolMembers(credit: { Player }, monster: any): { PartyLoot.Member }
+	local members: { PartyLoot.Member } = {}
+	for i, player in credit do
+		local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+		table.insert(members, {
+			level = if character then character.level else 0,
+			active = i == 1 or ResourceService.InCombat(player) or (monster.damageBy[player] or 0) > 0,
+		})
+	end
+	return members
+end
+
+-- EXP and gold for one credited player; `baseExp` = their share of the kill's EXP pool (S134b, Logic/PartyLoot:
+-- with the kind reward, the area profile's EXP multiplier (S33) and the class variety bonus (S60), before the
+-- level difference), `goldShare` = their gold (already with the area's gold multiplier and the pool);
+-- `luckGold` = Fortune's gold % (S60), added to the player's own goldBonus.
+local function reward(player: Player, monster: any, baseExp: number, goldShare: number, luckGold: number)
 	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 	if not character then
 		return
 	end
 	local level = monster.stats.level
-	-- S32: tougher kinds pay more EXP and gold (MonsterStats.kindReward); gold also drops for monsters far below.
-	local kindReward = MonsterStats.kindReward(monster.def)
-	local baseExp = PartyLoot.splitExp(Exp.monsterExp(level, monster.variant) * kindReward * expMul, share)
+	-- S32: gold also drops for monsters far below (goldLevelMultiplier).
 	local exp = math.floor(baseExp * Exp.levelDiffMultiplier(character.level, level) + 0.5)
 	-- S98: quest EXP budget (Data/QuestBudget): quests replace part of the grinding. The receiver's own level (every
 	-- party member has its own multiplier); dungeon bosses never come here (their EXP stays).
@@ -702,7 +717,7 @@ local function onMonsterDied(monster: any)
 		local groupLuck = Luck.monster(members)
 		luck = groupLuck
 		local varietyMul = PartyBonus.expMul(classes)
-		-- S33: the area profile scales the kill's EXP and gold before the party split (quests are not affected).
+		-- S33: the area profile scales the kill's EXP and gold before the party pool (quests are not affected).
 		local mods = AreaProfiles.modsOf(areaId)
 		-- Boss helpers (2026-10-10) give EXP but no gold.
 		local total = if monster.summoned
@@ -716,9 +731,17 @@ local function onMonsterDied(monster: any)
 						+ 0.5
 				)
 			)
-		local shares = PartyLoot.splitGold(total, #credit, rng)
+		-- S32: tougher kinds pay more EXP and gold (MonsterStats.kindReward). S134b: one pool per kill, the shares by
+		-- Logic/PartyLoot (solo unchanged).
+		local level = monster.stats.level
+		local pool = poolMembers(credit, monster)
+		local expTotal = Exp.monsterExp(level, monster.variant)
+			* MonsterStats.kindReward(monster.def)
+			* (mods.expMul * varietyMul)
+		local expShares = PartyLoot.expShares(expTotal, pool, level)
+		local shares = PartyLoot.goldShares(total, pool, level, rng)
 		for i, player in credit do
-			reward(player, monster, #credit, shares[i], mods.expMul * varietyMul, groupLuck.gold)
+			reward(player, monster, expShares[i], shares[i], groupLuck.gold)
 		end
 	end
 	local position = monster:Position()

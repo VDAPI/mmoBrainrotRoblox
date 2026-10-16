@@ -30,6 +30,7 @@ local Crafting = require("../src/shared/Data/Crafting")
 local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
+local PartyLoot = require("../src/shared/Logic/PartyLoot")
 local Progression = require("../src/shared/Data/Progression")
 local ArenaData = require("../src/shared/Data/Arena")
 local Rarities = require("../src/shared/Data/Rarities")
@@ -1031,6 +1032,7 @@ local function s92Section()
 			local p = B.paceAt("Warrior", L, { party = party })
 			table.insert(premium, {
 				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(PartyLoot.poolMul(#party), "2"),
 				fmtValue(p.expMul, "2"),
 				fmtValue(p.expPerHour, "g"),
 			})
@@ -1038,7 +1040,7 @@ local function s92Section()
 	end
 	add("### Premia za różne klasy (tylko raport, S92)")
 	add()
-	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	tableOut({ "drużyna 3 osób", "pula", "pula × klasy", "EXP/h członka" }, premium)
 	-- chain potions (I3)
 	add("### Mikstury łańcuchowe ÷ dochód (S92, I3; dolna granica 15% tylko raport)")
 	add()
@@ -1491,6 +1493,7 @@ local function s93Section()
 			local p = B.paceAt("Warrior", L, { party = party })
 			table.insert(premium, {
 				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(PartyLoot.poolMul(#party), "2"),
 				fmtValue(p.expMul, "2"),
 				fmtValue(p.expPerHour, "g"),
 			})
@@ -1498,7 +1501,7 @@ local function s93Section()
 	end
 	add("### Premia za różne klasy (tylko raport, S93)")
 	add()
-	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	tableOut({ "drużyna 3 osób", "pula", "pula × klasy", "EXP/h członka" }, premium)
 	-- chain potions (I2)
 	add("### Mikstury łańcuchowe ÷ dochód (S93, I2; górna granica 30% w raporcie, dolna 15% asertowana)")
 	add()
@@ -2089,6 +2092,7 @@ local function s94Section()
 			local p = B.paceAt("Warrior", L, { party = party })
 			table.insert(premium, {
 				`{L}: {table.concat(party, " + ")}`,
+				fmtValue(PartyLoot.poolMul(#party), "2"),
 				fmtValue(p.expMul, "2"),
 				fmtValue(p.expPerHour, "g"),
 			})
@@ -2096,7 +2100,7 @@ local function s94Section()
 	end
 	add("### Premia za różne klasy (tylko raport, S94)")
 	add()
-	tableOut({ "drużyna 3 osób", "mnożnik EXP", "EXP/h członka" }, premium)
+	tableOut({ "drużyna 3 osób", "pula", "pula × klasy", "EXP/h członka" }, premium)
 	-- chain potions (J2)
 	add("### Mikstury łańcuchowe ÷ dochód (S94, J2; górna granica 30% w raporcie, dolna 15% asertowana)")
 	add()
@@ -4056,7 +4060,7 @@ add(
 )
 add("  rozkładaniu według potrzebnego EXP (`Balance.questRewards`).")
 add(
-	`- Drużyna (S83): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; EXP/h członka = średnia solowych × (1 + min({Progression.varietyMax}, {Progression.varietyPerClass}·(klasy − 1))/100); \`floor\` z \`PartyLoot.splitExp\` pominięty.`
+	`- Drużyna (S83, pula S134b): bije osobno na tym samym łowisku i dzieli zaliczenie, bez synergii; wszyscy na poziomie potworów (bez wożonych i biernych); EXP/h członka = średnia solowych × \`PartyLoot.poolMul(n)\` (1 + {Progression.partyPoolPerMember}·(n − 1)/100) × (1 + min({Progression.varietyMax}, {Progression.varietyPerClass}·(klasy − 1))/100), złoto z zabić × \`poolMul(n)\`; \`floor\` z \`PartyLoot.expShares\` pominięty.`
 )
 add(
 	`- Harmonogram bossa: \`Boss.Step\` co 0,05 s; gdy t ≥ nextGlobal, spośród gotowych ataków fazy ten z największą zaległością względem swojego odnowienia, (t − nextAttack) / odnowienie (S87, \`Logic/BossSchedule\`; remis: kolejność listy); potem nextAttack = t + odnowienie, nextGlobal = t + zamach + {B.BOSS_GLOBAL_GAP} s (\`Data/BossTuning\`); pierwszy atak po 4 s, pierwsze użycie każdego średnio po 5 s. Przyspieszenie fazy dzieli tylko odstęp ataku podstawowego, wściekłość mnoży wszystkie ciosy.`

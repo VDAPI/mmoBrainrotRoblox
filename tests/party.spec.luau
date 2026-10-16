@@ -7,6 +7,7 @@ local Bosses = require("../src/shared/Data/Bosses")
 local LootTables = require("../src/shared/Data/LootTables")
 local Maps = require("../src/shared/Data/Maps")
 local Monsters = require("../src/shared/Data/Monsters")
+local Progression = require("../src/shared/Data/Progression")
 local PartyLoot = require("../src/shared/Logic/PartyLoot")
 local Rng = require("../src/shared/Logic/Rng")
 local Test = require("./Test")
@@ -83,8 +84,19 @@ describe("PartyLoot.distribute", function()
 end)
 
 describe("PartyLoot sharing", function()
-	it("splits gold evenly with the remainder to one member", function()
-		local shares = PartyLoot.splitGold(101, 4, Rng.new(3))
+	-- S134b: the pool grows by Progression.partyPoolPerMember % per extra counted member, split equally
+	it("grows the pool by 50 % per extra member", function()
+		expect(Progression.partyPoolPerMember).toBe(50)
+		expect(PartyLoot.poolMul(0)).toBe(1)
+		expect(PartyLoot.poolMul(1)).toBe(1)
+		expect(PartyLoot.poolMul(2)).toBe(1.5)
+		expect(PartyLoot.poolMul(3)).toBe(2)
+		expect(PartyLoot.poolMul(4)).toBe(2.5)
+		expect(PartyLoot.poolMul(5)).toBe(3)
+	end)
+
+	it("splits the pooled gold evenly with the remainder to one member", function()
+		local shares = PartyLoot.splitGold(103, 4, Rng.new(3))
 		local total, max, min = 0, 0, math.huge
 		for _, share in shares do
 			total += share
@@ -92,19 +104,104 @@ describe("PartyLoot sharing", function()
 			min = math.min(min, share)
 		end
 		expect(#shares).toBe(4)
-		expect(total).toBe(101)
-		expect(min).toBe(25)
-		expect(max).toBe(26)
+		expect(total).toBe(math.floor(103 * PartyLoot.poolMul(4))) -- 257
+		expect(min).toBe(64)
+		expect(max).toBe(65)
+	end)
+
+	it("sums the gold shares to the floored pool", function()
+		for n = 1, 5 do
+			local shares = PartyLoot.splitGold(77, n, Rng.new(n))
+			local total = 0
+			for _, share in shares do
+				total += share
+			end
+			expect(#shares).toBe(n)
+			expect(total).toBe(math.floor(77 * PartyLoot.poolMul(n)))
+		end
 	end)
 
 	it("keeps solo gold intact", function()
 		expect(PartyLoot.splitGold(77, 1, Rng.new(1))[1]).toBe(77)
+		expect(PartyLoot.splitGold(77, 0, Rng.new(1))[1]).toBe(77)
 	end)
 
-	it("splits EXP evenly", function()
-		expect(PartyLoot.splitExp(100, 3)).toBe(33)
+	it("splits the pooled EXP evenly", function()
 		expect(PartyLoot.splitExp(100, 1)).toBe(100)
+		expect(PartyLoot.splitExp(100, 2)).toBe(75)
+		expect(PartyLoot.splitExp(100, 3)).toBe(66)
+		expect(PartyLoot.splitExp(100, 4)).toBe(62)
+		expect(PartyLoot.splitExp(100, 5)).toBe(60)
 		expect(PartyLoot.splitExp(100, 0)).toBe(100)
+		expect(PartyLoot.splitExp(37.8, 1)).toBe(37)
+	end)
+
+	it("keeps a carried member out of the pool", function()
+		-- monster 40, partyCarryGap 10: level 25 is carried, 30 is not
+		expect(Progression.partyCarryGap).toBe(10)
+		local shares = PartyLoot.expShares(100, {
+			{ level = 40, active = true },
+			{ level = 38, active = true },
+			{ level = 25, active = true },
+		}, 40)
+		-- two counted: pool 150 % over 3 credited
+		expect(shares[1]).toBe(50)
+		expect(shares[2]).toBe(50)
+		expect(shares[3]).toBe(33) -- total / n, no pool bonus
+		local edge = PartyLoot.expShares(100, { { level = 40, active = true }, { level = 30, active = true } }, 40)
+		expect(edge[1]).toBe(75)
+		expect(edge[2]).toBe(75)
+	end)
+
+	it("keeps a passive member out of the pool", function()
+		local shares = PartyLoot.expShares(100, {
+			{ level = 40, active = true },
+			{ level = 40, active = false },
+		}, 40)
+		expect(shares[1]).toBe(50)
+		expect(shares[2]).toBe(50)
+		local three = PartyLoot.expShares(
+			100,
+			{ { level = 40, active = true }, { level = 40, active = true }, { level = 40, active = false } },
+			40
+		)
+		expect(three[1]).toBe(50)
+		expect(three[3]).toBe(33)
+	end)
+
+	it("gives no pool bonus when everyone is carried", function()
+		local shares = PartyLoot.expShares(90, {
+			{ level = 10, active = true },
+			{ level = 12, active = true },
+			{ level = 5, active = true },
+		}, 40)
+		for _, share in shares do
+			expect(share).toBe(30)
+		end
+	end)
+
+	it("keeps a carried or passive solo player at 100 %", function()
+		expect(PartyLoot.expShares(100, { { level = 5, active = true } }, 40)[1]).toBe(100)
+		expect(PartyLoot.expShares(100, { { level = 40, active = false } }, 40)[1]).toBe(100)
+		expect(PartyLoot.goldShares(77, { { level = 5, active = false } }, 40, Rng.new(2))[1]).toBe(77)
+	end)
+
+	it("pays gold with the same factors as EXP", function()
+		local members = {
+			{ level = 40, active = true },
+			{ level = 40, active = true },
+			{ level = 25, active = true },
+		}
+		local gold = PartyLoot.goldShares(90, members, 40, Rng.new(4))
+		local total = 0
+		for _, share in gold do
+			total += share
+		end
+		-- 90 x (1.5 + 1.5 + 1) / 3 = 120
+		expect(total).toBe(120)
+		local exp = PartyLoot.expShares(90, members, 40)
+		expect(exp[1]).toBe(45)
+		expect(exp[3]).toBe(30)
 	end)
 end)
 

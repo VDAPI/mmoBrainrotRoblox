@@ -181,6 +181,72 @@ T.describe("Balance: bosses 2.0 (S134)", function()
 	end)
 end)
 
+-- S134b: the party EXP pool (PartyLoot.poolMul in Balance.paceAt): solo unchanged, the member's EXP/h = the mean of
+-- the solo rates x pool x class bonus and grows with the party, the solo hours 1-19 as in the 1-20 fixture.
+T.describe("Balance: party EXP pool (S134b)", function()
+	local BalanceTables = require("./BalanceTables")
+	local PartyBonus = require("../src/shared/Logic/PartyBonus")
+	local PartyLoot = require("../src/shared/Logic/PartyLoot")
+	local function close(a: number, b: number): boolean
+		return math.abs(a - b) <= 0.005 * math.max(math.abs(a), math.abs(b), 1e-9)
+	end
+	T.it("S134b.solo: paceAt without a party = a party of one", function()
+		for _, L in { 5, 30, 60, 90 } do
+			local solo = B.paceAt("Warrior", L)
+			local one = B.paceAt("Warrior", L, { party = { "Warrior" } })
+			T.expect({ L, one.expPerHour, math.abs(one.hours - solo.hours) < 1e-9, one.expMul })
+				.toEqual({ L, solo.expPerHour, true, 1 })
+		end
+	end)
+	T.it("S134b.grow: the member's EXP/h grows with the party (n Warriors: solo x poolMul(n))", function()
+		for _, L in { 30, 60 } do
+			local solo = B.paceAt("Warrior", L).expPerHour
+			local last = solo
+			for n = 2, 5 do
+				local party = table.create(n, "Warrior")
+				local pace = B.paceAt("Warrior", L, { party = party })
+				T.expect({ L, n, close(pace.expPerHour, solo * PartyLoot.poolMul(n)) }).toEqual({ L, n, true })
+				T.expect({ L, n, pace.expPerHour > last }).toEqual({ L, n, true })
+				last = pace.expPerHour
+			end
+		end
+	end)
+	T.it("S134b.mixed: mixed parties = mean solo x poolMul(n) x PartyBonus.expMul", function()
+		local L = 40
+		local classes = { "Warrior", "Hunter", "Mage", "Cleric", "Warrior" }
+		local soloOf: { [string]: number } = {}
+		for _, c in { "Warrior", "Hunter", "Mage", "Cleric" } do
+			soloOf[c] = B.paceAt(c, L).expPerHour
+		end
+		for n = 2, 5 do
+			local party = table.move(classes, 1, n, 1, {})
+			local pace = B.paceAt("Warrior", L, { party = party })
+			local sum = 0
+			for _, c in party do
+				sum += soloOf[c]
+			end
+			local want = sum / n * PartyLoot.poolMul(n) * PartyBonus.expMul(party)
+			T.expect({ n, close(pace.expPerHour, want) }).toEqual({ n, true })
+			T.expect({ n, close(pace.expMul, PartyLoot.poolMul(n) * PartyBonus.expMul(party)) }).toEqual({ n, true })
+		end
+	end)
+	T.it("S134b.fixture: the solo hours 1-19 as in the 1-20 fixture", function()
+		local file = BalanceTables.readFixture()
+		local values: { [string]: number } = if file then file.values or {} else {}
+		local checked = 0
+		for L = 1, 19 do
+			local pace = B.pace("Warrior", L)
+			local key = `Tempo (Wojownik): zabicia i czas na poziom|{L} {pace.kind}|godziny`
+			local before = values[key]
+			if before then
+				checked += 1
+				T.expect({ key, close(pace.hours, before) }).toEqual({ key, true })
+			end
+		end
+		T.expect(checked).toBe(19)
+	end)
+end)
+
 T.describe("Balance S32: structural checks", function()
 	T.it("bigger groups hit softer per member", function()
 		local last = math.huge

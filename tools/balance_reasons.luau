@@ -4562,5 +4562,17 @@ return {
 				why = "1.3 -> 1.35: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.24 (3-4.5) with HP no longer scaled by the party",
 			},
 		},
+		["Progression:partyPoolPerMember"] = {
+			{
+				session = "S134b",
+				why = "new: owner request 2026-10-15, the monster's EXP/gold pool +50 % per extra credited player, split equally (2: 150 % / 75 % each, 3: 200 % / 67 %, 5: 300 % / 60 %); solo unchanged",
+			},
+		},
+		["Progression:partyCarryGap"] = {
+			{
+				session = "S134b",
+				why = "new: a member more than 10 levels below the monster is carried, does not grow the pool and gets total / n (anti power-levelling of the S134b pool)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

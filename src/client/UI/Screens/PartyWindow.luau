@@ -12,6 +12,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PartyBonus = require(ReplicatedStorage.Shared.Logic.PartyBonus)
+local PartyLoot = require(ReplicatedStorage.Shared.Logic.PartyLoot)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -192,6 +193,8 @@ local function PartyWindow(scope: Scope): Fusion.Child
 	end)
 
 	-- S60: the class variety bonus of the party (potential: the kill counts members within range) and Fortune.
+	-- S134b: above it the monster EXP/gold pool of the whole party (potential: only members nearby, fighting and not
+	-- carried grow it, Logic/PartyLoot).
 	local bonusText = scope:Computed(function(use): string
 		local p = use(party)
 		if type(p) ~= "table" then
@@ -201,6 +204,14 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		for _, member in p.members do
 			table.insert(classes, if type(member.class) == "string" then member.class else "")
 		end
+		local n = #classes
+		local poolLine = if n > 1
+			then Text.get(use, "party.pool", {
+				pool = math.floor(PartyLoot.poolMul(n) * 100 + 0.5),
+				n = n,
+				each = math.floor(PartyLoot.poolMul(n) * 100 / n + 0.5),
+			})
+			else Text.get(use, "party.poolNone", { per = Progression.partyPoolPerMember })
 		local pct = PartyBonus.variety(classes)
 		local line = if pct > 0
 			then Text.get(use, "party.variety", { pct = pct })
@@ -210,7 +221,8 @@ local function PartyWindow(scope: Scope): Fusion.Child
 				{ per = Progression.varietyPerClass, max = Progression.varietyMax }
 			)
 		local luckLine = GroupLuck.line(use, GroupLuck.use(use))
-		return if luckLine then line .. "\n" .. luckLine else line
+		local text = poolLine .. "\n" .. line
+		return if luckLine then text .. "\n" .. luckLine else text
 	end)
 
 	return {
@@ -247,7 +259,7 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Position = UDim2.fromOffset(0, 58),
-			Size = UDim2.new(1, 0, 1, -240),
+			Size = UDim2.new(1, 0, 1, -276),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
@@ -261,8 +273,8 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Bonus",
-			Position = UDim2.new(0, 0, 1, -178),
-			Size = UDim2.new(1, 0, 0, 40),
+			Position = UDim2.new(0, 0, 1, -214),
+			Size = UDim2.new(1, 0, 0, 60),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return type(use(party)) == "table"
@@ -278,9 +290,9 @@ local function PartyWindow(scope: Scope): Fusion.Child
 		scope:New("TextLabel")({
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.new(0, 0, 1, -58),
-			Size = UDim2.new(1, 0, 0, 72),
+			Size = UDim2.new(1, 0, 0, 88),
 			BackgroundTransparency = 1,
-			Text = Text.T(scope, "party.rules"),
+			Text = Text.T(scope, "party.rules", { gap = Progression.partyCarryGap }),
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,

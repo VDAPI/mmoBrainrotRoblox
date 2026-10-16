@@ -10672,3 +10672,63 @@ Pliki: `src/shared/Logic/{BossMechanics (nowy),BossScaling}.luau`, `src/shared/D
 `wiki/src/{components/BossHeader,views/BossView,views/Styleguide}.astro`, `wiki/src/scripts/boss.ts`,
 `wiki/src/lib/{monster,monster.test}.ts`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/bosses/{pl,en}/{azgor,vaelgrath,vaelgrath-storm}.md`,
 `wiki/src/data/{bosses,meta}.json`, `wiki/src/data/types.ts`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.
+
+### S134b: EXP w drużynie
+
+Prośba właściciela z 2026-10-15: równy podział 100% EXP w grupie nie zachęca do grania razem; pula ma rosnąć z drużyną.
+
+- **Dane i logika** (A): `Data/Progression.partyPoolPerMember` 50 i `partyCarryGap` 10 (księga powodów S134b);
+  `Logic/PartyLoot.poolMul(n)`, `counts`, `expShares(total, members, monsterLevel)`, `goldShares(..., rng)` (reszta złota
+  jednemu losowemu), `splitExp` / `splitGold` liczą już pulę (wszyscy liczeni); typ `PartyLoot.Member = { level, active }`.
+- **Serwer** (B, C): `CombatService.onMonsterDied` liczy udziały raz na zabicie (`poolMembers`: poziom, aktywność z
+  `InCombat` albo obrażeń na potworze, najlepszy zadający zawsze), `reward` dostaje gotowy udział EXP i złota;
+  `DungeonService.reward` to samo dla zwycięzców (aktywny = obrażenia, leczenie, tarcze albo przejęcia). Wożony (> 10
+  poziomów pod potworem) i bierny nie powiększają puli i dostają `total / n`. Różnica poziomów, budżet questów, premia
+  za klasy, łup i błogosławieństwo bez zmian.
+- **Model** (D, E): `Balance.paceAt` z `party` × `PartyLoot.poolMul` (złoto z zabić też), sekcja „Premia za różne klasy”
+  z kolumną `pula` i wierszami 2 × Wojownik oraz 5 graczy, w `tools/balance_report` założenie „Drużyna” z pulą i kolumny
+  `pula` / `pula × klasy` w tabelach S92–S94, nowy `docs/BALANS.md`; `Balance.sessionNumber` przyjmuje
+  „S134b”. Budżet questów (`check`, `audit`) i zamrożone 1–20 bez zmian (bez regeneracji).
+- **Okno, teksty, wiki** (F): linia `party.pool` / `party.poolNone` nad premią za klasy, `party.rules` z zasadą wożonego
+  (`{gap}`) i biernego (PL, EN; etykieta premii 3 linie); wiki `doswiadczenie` / `experience`, `jak-expic-1-30` /
+  `leveling-1-30`, `handel` / `trading` opisują pulę słowami (bez nowych pól eksportu); ROZWOJ 7.4 i punkt 10, DESIGN
+  (grupa w EXP, §17 Grupa).
+
+Pula (przed premią za klasy, różnicą poziomów i budżetem questów):
+
+| zaliczonych | pula | każdy dostaje (przed S134b) |
+|---|---|---|
+| 1 | 100% | 100% (100%) |
+| 2 | 150% | 75% (50%) |
+| 3 | 200% | ~67% (33%) |
+| 4 | 250% | ~63% (25%) |
+| 5 | 300% | 60% (20%) |
+
+EXP/h członka w modelu (Wojownik, wszyscy na poziomie potworów, każdy bije w tempie solo; przed → po):
+
+| drużyna | L30 | L60 | L90 |
+|---|---|---|---|
+| solo | 42 064 → 42 064 | 59 671 → 59 671 | 90 174 → 90 174 |
+| 2 × Wojownik | 42 064 → 63 097 | 59 671 → 89 506 | 90 174 → 135 261 |
+| 3 × Wojownik | 42 064 → 84 129 | 59 671 → 119 342 | 90 174 → 180 348 |
+| Wojownik + Łowca + Mag | 46 307 → 92 614 | 64 174 → 128 348 | 98 206 → 196 412 |
+| cztery klasy | 49 847 → 124 617 | 68 320 → 170 800 | 103 902 → 259 756 |
+| 5 graczy (cztery klasy + Wojownik) | 49 552 → 148 657 | 68 380 → 205 141 | 103 862 → 311 586 |
+
+Piątka expi w modelu ok. 3,45× szybciej niż solo (wcześniej 1,15×); pasmo Boru (poziom 32 w raporcie) 15,0 h solo → 4,3 h.
+
+Dla właściciela:
+- Model zakłada, że każdy członek bije w tempie solo, więc pula ×3 dla piątki to ×3 EXP/h; jeśli to za dużo, dźwignia to
+  sama liczba `partyPoolPerMember` (np. 30 → piątka 2,2×).
+- Bierny = bez walki przez `Config.CombatTimeout` (5 s); dłuższe okno albo „walczył z tym potworem” to decyzja po
+  testach z grupą.
+
+Testy: `party.spec` (pula 1–5, `splitExp` 100 / 75 / 66 / 62 / 60, złoto = `floor(total × pula)`, wożony, bierny, wszyscy
+wożeni, solo wożony), `balance.spec` (blok „Balance: party EXP pool (S134b)”: solo = drużyna 1, wzrost z drużyną,
+mieszane drużyny, godziny 1–19 jak w fixture), `localization.spec`; `balance1_20.spec` i `questbudget.spec` bez zmian.
+
+Pliki: `src/shared/Data/Progression.luau`, `src/shared/Logic/PartyLoot.luau`,
+`src/server/Services/{Combat,Dungeon}Service.luau`, `src/client/UI/Screens/PartyWindow.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `tests/{Balance,BalanceTables}.luau`, `tests/{party,balance}.spec.luau`,
+`tools/{balance_reasons,balance_report}.luau`, `wiki/src/content/mechanics/{pl/doswiadczenie,en/experience,pl/handel,en/trading}.mdx`,
+`wiki/src/content/guides/{pl/jak-expic-1-30,en/leveling-1-30}.mdx`, `docs/{DESIGN,ROZWOJ,DECYZJE,SESJE,PROGRESS,BALANS}.md`.
