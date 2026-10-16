@@ -248,21 +248,23 @@ describe("World spawns", function()
 		end
 	end)
 
-	it("give every cave 2-3 normal kinds, 2 elite kinds and exactly one Elite II", function()
+	-- S134h: two Elite IIs of different fixed kinds (no `choices`) and two more ore veins
+	it("give every cave 2-3 normal kinds, 2 elite kinds and two Elite IIs", function()
 		for _, cave in Areas.caves.list do
 			expect(#cave.normal).toBeBetween(2, 3)
 			expect(#cave.elites).toBe(2)
 			expect(cave.elites[1] ~= cave.elites[2]).toBe(true)
-			expect(#cave.elite2).toBeBetween(1, 2)
+			expect(#cave.elite2).toBe(2) -- S134h: two Elite IIs
+			expect(cave.elite2[1] ~= cave.elite2[2]).toBe(true)
 			expect(cave.eliteGroups).toBeBetween(3, 5)
-			expect(cave.oreCount).toBeBetween(6, 10)
+			expect(cave.oreCount).toBeBetween(8, 12) -- S134h: +2
 			local elites, elite2 = {}, 0
 			for _, spawner in Spawns.byMap[cave.id] do
 				if spawner.variant == "elite" then
 					elites[spawner.monster] = true
 				elseif spawner.variant == "elite2" then
 					elite2 += 1
-					expect(spawner.choices ~= nil).toBe(true)
+					expect(spawner.choices == nil).toBe(true) -- S134h: fixed kind
 				end
 			end
 			local n = 0
@@ -270,7 +272,7 @@ describe("World spawns", function()
 				n += 1
 			end
 			expect(n).toBe(2)
-			expect(elite2).toBe(1)
+			expect(elite2).toBe(2) -- S134h
 		end
 	end)
 

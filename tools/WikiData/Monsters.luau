@@ -129,6 +129,7 @@ local VariantInfo = rec("MonsterVariant", {
 		itemMin = "int",
 		itemMax = "int",
 		["itemExtra?"] = "number",
+		["slots?"] = arr("name"), -- S134h: an Elite II's own slot groups (Data/LootTables.ELITE2_SLOTS), names of slot.*
 		itemMeasured = "number", -- share of kills with an item in the Monte Carlo (checks the tables)
 		rarities = map("number"),
 		materials = arr(rec("MaterialChance", {
@@ -175,6 +176,18 @@ S.file(
 		families = map(rec("FamilyInfo", { name = "name" })), -- S68
 	})
 )
+
+-- S134h: the slot groups an Elite II of a kind drops, by name (nil for every other variant and kind).
+local function elite2Slots(kind: string, variant: string): { any }?
+	if variant ~= "elite2" or not LootTables.ELITE2_SLOTS[kind] then
+		return nil
+	end
+	local out = {}
+	for _, group in LootTables.elite2Groups(kind) do
+		table.insert(out, Names.of(LootTables.slotKey(group)))
+	end
+	return out
+end
 
 -- Spawners of a kind by variant, with the map they are on.
 local function spawnersOf(id: string): { [string]: { { map: string, s: any } } }
@@ -252,7 +265,9 @@ end
 
 -- Monte Carlo of the loot of a variant over its spawn levels (equal share each), fixed seed per kind:variant.
 local function rollLoot(def: any, variant: string, levels: { { level: number, cap: number } }, rolls: number): any
-	local rng = Rng.new(StubRng.seedOf(`{def.id}:{variant}`))
+	-- S134h: the FNV-1a seed of Logic/Rng (StubRng.seedOf gave xorshift states whose first draws correlate: the quick
+	-- 500-roll check of wikidump.spec missed 3 sigma on a material right after another chance roll)
+	local rng = Rng.new(Rng.seedOf(`{def.id}:{variant}`))
 	local itemKills: { [string]: number } = {}
 	local slotKills: { [string]: number } = {}
 	local anyItem = 0
@@ -439,6 +454,7 @@ function Monsters.build(ctx: any): any
 						itemMin = drops.min,
 						itemMax = drops.max,
 						itemExtra = drops.extra,
+						slots = elite2Slots(def.id, variant),
 						itemMeasured = measured.item,
 						rarities = shares,
 						materials = Clean.dropRefs(materials, ctx.hidden, "id"),

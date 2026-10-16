@@ -11184,3 +11184,132 @@ Dla właściciela:
 - Liczby efektów (np. Meteor 3 × 35%, Szarża +0,7 s) są startowe; po testach w grze zmieniasz je w `Data/ItemEffects`.
 - 12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej (0,95–0,97) w raporcie: dźwignia `twoHandedBonusMul` na
   rzadkość (S87).
+
+### S134h: Elity II z przypisanym łupem, dwie w każdej jaskini, większe i jaśniejsze jaskinie
+
+Co zrobiono:
+- **Łup przypisany:** `Data/LootTables.ELITE2_SLOTS` (24 rodzaje, 2–3 grupy), `ELITE2_BANDS`, `slotsFor` (jedyne źródło
+  wag: `Loot.rollMonsterLoot`, model, karta mapy, wiki), `elite2Groups`, `slotKey`; rodzaj spoza listy (wydarzenia) z
+  `DEFAULT_SLOTS`, bez przerzutu klasy.
+- **Dwie Elity II w jaskini:** `Data/Areas/Caves.elite2` = 2 stałe rodzaje (nowe: hiena, skorpion, lodowy wilk, mroźny
+  olbrzym), `AreaSpawns.cave`: A `{id}_elite2` w najdalszej sali, B `{id}_elite2b` w sali walki najdalszej od A (na końcu,
+  ≥ `ELITE2_SEPARATION` 140, odległości 269–586 st.), bez `choices`; `MonsterService.RespawnElite2(mapId, kind?)`,
+  `/e2 spawn [rodzaj]`; liczniki i ogłoszenia per spawner jak dotąd.
+- **Model łupu:** `Balance.elite2Seat` / `elite2Cave` (z `legacy` = stan sprzed sesji tym samym kodem),
+  `Balance.targetsS134h` + blok „Balance: Elite II loot (S134h)” w `balance.spec`, `dropsPerHour.legendaryPerElite2` i
+  `materialSupply.elite2*` przez nowe funkcje (średnia obu Elit II jaskini), `caveElites` / `caveSpawners` biorą oba
+  spawnery, `ELITE2_1_20` += kruk 11, kobold 15; sekcja „Elity II: łup (S134h)” w `docs/BALANS.md`.
+- **Dźwignie:** `ITEM_DROPS.elite2` 2–3 → 1–2, `VARIANT_MATERIALS.elite2` o połowę (księga S134h).
+- **Większe jaskinie:** `Logic/CavePlan` (skala, `plan`, `rooms`, `shape`, `anchors`, `point`, `coord`, `size`), pole
+  `scale = 1.35` 12 jaskiń w `Data/CaveShapes`; `CaveTerrain` rysuje plan rozciągnięty (kolumna planu w x / s, z / s,
+  strop × 1,175); przez `CavePlan`: `AreaSpawns`, `CaveTerrain.rooms/shape`, ubiór (`Kit.at`, 12 modułów `CaveDress`),
+  `World/CaveLayout`, `Layouts/CaveTemplate` i 4 jaskinie bossów, `Data/Portals`, `Data/Maps` (rozmiar, spawn, wejście),
+  `Data/Areas.anchorById`, `Data/Cutscenes`, `Logic/Companion`, `Admin/Quests`, `tools/WikiMaps`; 3 grupy zwykłe w
+  salach od r 70 (`THREE_GROUPS_RADIUS`), żyły rud +2; fixture'y 12 jaskiń świadomie nowe (komnaty bossów bez zmian).
+- **Jaśniejsze jaskinie:** 18 presetów podziemi w `Data/Maps`, pochodnia gracza w `RegionLightController`
+  (`Config.CaveLights.player`), `CaveLights.low` 12.
+- **Karty i wiki:** karta jaskini z dwiema Elitami II i linią „Łup: …” (`worldmap.elite2Loot`), karta potwora (wariant
+  Elita II) z tym samym; wiki: `caves.json` `elite2Loot`, `monsters.json` `loot.slots`, strona jaskini i potwora,
+  akapit w „Walka” / „Combat”, teksty `cave.elite2Text`, `map.elite2one`; Monte Carlo z `Rng.seedOf`.
+
+Elita II → łup (24):
+
+| Jaskinia | Elita II A | Łup A | Elita II B | Łup B |
+|---|---|---|---|---|
+| meadows_hideout (7–12) | bandit, Krwawy Ruben | broń, zbroja, pierścień | carrionCrow, Czarne Skrzydło | rękawice, buty, talizman |
+| meadows_burrow (12–16) | goblinScout, Goblin Rzeźnik | druga ręka, hełm, rękawice | koboldMiner, Wódz Szybów | broń, naszyjnik, talizman |
+| meadows_cave (16–20) | caveSpider, Królowa Splotu | zbroja, buty, pierścień | goblinShaman, Wieszcz Kości | broń, hełm, naszyjnik |
+| duskwood_den (21–31) | werewolf, Pradawny Wilkołak | broń, rękawice, buty | blackBear, Smolisty Pan | hełm, zbroja, pierścień |
+| duskwood_barrow (31–38) | darkCultist, Arcykapłan Mroku | broń, druga ręka, talizman | ghoul, Pożeracz Zmarłych | buty, naszyjnik, pierścień |
+| duskwood_cave (38–45) | necromancer, Lisz Zapomnianych | broń, hełm, rękawice | specter, Banshee Krypty | zbroja, naszyjnik, pierścień |
+| ashen_mine (46–56) | ashOrc, Wódz Popiołu | broń, zbroja, rękawice | wasteHyena, Matrona Stada | hełm, buty, pierścień |
+| ashen_lair (56–63) | wyvern, Królowa Wywern | broń, naszyjnik, talizman | desertScorpion, Żądło Pustkowi | druga ręka, rękawice, pierścień |
+| ashen_cave (63–70) | flameSmith, Pierwszy Kowal | broń, hełm, zbroja | magmaGolem, Serce Wulkanu | druga ręka, buty, naszyjnik |
+| frostpeak_grotto (71–83) | yeti, Król Gór | broń, hełm, rękawice | iceWolf, Biały Kieł | buty, pierścień, talizman |
+| frostpeak_hold (83–92) | frozenKnight, Komtur Wiecznej Zimy | druga ręka, zbroja, pierścień | frostGiant, Jarl Mrozu | broń, naszyjnik, talizman |
+| frostpeak_cave (92–100) | youngFrostDragon, Starszy Smok Lodu | broń, hełm, buty | crystalGuardian, Kryształowy Tytan | zbroja, rękawice, naszyjnik |
+
+Pokrycie pasm (spawnery Elit II, ich poziomy):
+
+| Pasmo | Elity II | Grupy |
+|---|---|---|
+| 7–14 | bandit (9–12), carrionCrow (7–11), goblinScout (13–16), koboldMiner (12–15) | 9 / 9 |
+| 14–20 | goblinScout (13–16), koboldMiner (12–15), caveSpider (16–20), goblinShaman (16–20) | 9 / 9 |
+| 21–33 | werewolf (21–31), blackBear (21–31), darkCultist (31–38), ghoul (31–38) | 9 / 9 |
+| 33–45 | darkCultist (31–38), ghoul (31–38), necromancer (38–45), specter (38–45) | 9 / 9 |
+| 46–58 | ashOrc (46–56), wasteHyena (46–52), wyvern (56–63), desertScorpion (56–63) | 9 / 9 |
+| 58–70 | wyvern (56–63), desertScorpion (56–63), flameSmith (63–70), magmaGolem (63–70) | 9 / 9 |
+| 71–86 | yeti (71–82), iceWolf (71–78), frozenKnight (83–92), frostGiant (83–88) | 9 / 9 |
+| 86–100 | frozenKnight (83–92), frostGiant (83–88), youngFrostDragon (92–100), crystalGuardian (92–96) | 9 / 9 |
+
+Tempo łupu na godzinę obu Elit II jaskini (każdy spawner bity zaraz po powrocie, średnia 4 klas; przed = jedna Elita II
+z 2–3 przedmiotami ze wszystkich grup):
+
+| Jaskinia | Heroiki dla klasy / h | Legendarne dla klasy / h | Kryształy esencji / h |
+|---|---|---|---|
+| meadows_hideout | 12,10 → 14,54 | 1,21 → 1,45 | 13,79 → 15,48 |
+| meadows_burrow | 11,69 → 13,81 | 1,17 → 1,38 | 13,31 → 14,94 |
+| meadows_cave | 11,30 → 13,62 | 1,13 → 1,36 | 12,87 → 14,44 |
+| duskwood_den | 8,79 → 10,48 | 1,03 → 1,23 | 10,97 → 12,24 |
+| duskwood_barrow | 8,35 → 10,20 | 0,98 → 1,20 | 10,41 → 11,62 |
+| duskwood_cave | 7,94 → 9,65 | 0,93 → 1,13 | 9,91 → 11,06 |
+| ashen_mine | 7,82 → 9,32 | 0,87 → 1,04 | 9,44 → 10,55 |
+| ashen_lair | 7,48 → 9,07 | 0,83 → 1,01 | 9,03 → 10,10 |
+| ashen_cave | 7,17 → 8,46 | 0,80 → 0,94 | 8,66 → 9,68 |
+| frostpeak_grotto | 6,66 → 8,09 | 0,74 → 0,90 | 8,04 → 8,99 |
+| frostpeak_hold | 6,35 → 7,69 | 0,71 → 0,85 | 7,67 → 8,57 |
+| frostpeak_cave | 6,09 → 7,22 | 0,68 → 0,80 | 7,35 → 8,22 |
+
+Ilorazy: Heroiki i Legendarne ×1,18–1,22 (pojedyncza klasa 1,18–1,23; cel 0,85–1,25), kryształy ×1,12 (≤ 1,25).
+
+Skala jaskiń i części (przed → po; `maxParts` bez zmian, shell ubioru stały, więcej detalu w większych salach):
+
+| Jaskinia | Mapa | Pow. sal (st²) | Shell / limit | Detal |
+|---|---|---|---|---|
+| meadows_hideout | 480 → 648 | 29 684 → 54 100 | 40 / 700 | 93 → 103 |
+| meadows_burrow | 480 → 648 | 29 688 → 54 106 | 37 / 700 | 144 → 154 |
+| meadows_cave | 640 → 864 | 67 468 → 122 961 | 51 / 1000 | 272 → 282 |
+| duskwood_den | 480 → 648 | 34 299 → 62 511 | 9 / 700 | 128 → 138 |
+| duskwood_barrow | 480 → 648 | 37 001 → 67 435 | 18 / 700 | 237 → 293 |
+| duskwood_cave | 640 → 864 | 63 661 → 116 022 | 39 / 1000 | 451 → 569 |
+| ashen_mine | 480 → 648 | 25 098 → 45 741 | 14 / 750 | 395 → 473 |
+| ashen_lair | 480 → 648 | 37 344 → 68 059 | 4 / 700 | 186 → 197 |
+| ashen_cave | 640 → 864 | 58 194 → 106 060 | 79 / 1100 | 729 → 773 |
+| frostpeak_grotto | 480 → 648 | 29 713 → 54 152 | 2 / 650 | 142 → 152 |
+| frostpeak_hold | 480 → 648 | 40 344 → 73 527 | 40 / 800 | 210 → 220 |
+| frostpeak_cave | 640 → 864 | 60 393 → 110 068 | 15 / 1000 | 259 → 269 |
+
+Potwory w 12 jaskiniach (pełne grupy): 308 → 382 (limit serwera 600, grupy śpią z dala od graczy).
+
+Światło (18 presetów podziemi: jaskinie, krypty, komnaty bossów): jasność 0,30–0,40 → 0,9; otoczenie w barwie presetu,
+np. `cave` `#3A3F38` → `#565E53`, `caveMoss` `#2E3A2E` → `#4D614D`, `caveSmugglers` `#34302A` → `#625A4F` (jasność
+względna ok. 0,02–0,04 → ≥ 0,105); mgła 180–300 → 400–480; gęstość atmosfery 0,5–0,6 → 0,4; mgiełka ≤ 0,4; pochodnia
+gracza 26 st., 0,8; lampy na niskiej jakości 8 → 12.
+
+Testy: nowe `tests/elite2loot.spec.luau`, `tests/areaspawns.spec.luau`, `tests/caveplan.spec.luau`,
+`tests/cavelight.spec.luau`; zmienione z komentarzem `-- S134h`: `world.spec` (dwie Elity II, bez `choices`, rudy
+8–12), `caveterrain.spec` (cechy, korytarze i stałe punkty przez `CavePlan`), `ashen.spec`, `story.spec` (kotwice
+przez `CavePlan.anchors`), `items.spec` (1–2 przedmioty), `balance.spec` (blok S134h, udział klasy z `slotsFor`),
+`balance1_20.spec` (baza S134h). Narzędzia: `balance_report` bez „BRAK POWODU”, `quest_budget check` zielony,
+`wikidump --check` aktualne, `wiki_keys_diff` 0 z `WIKI_KEYS_ALLOW` (7 kluczy + `types.ts`), `fixture_caves` i
+`fixture_caveshapes` (zmienione tylko 12 jaskiń). Wiki bez `node_modules`: Astro / TS niesprawdzone.
+
+Pliki: `src/shared/Logic/{CavePlan,AreaSpawns,CaveTerrain,Loot,Companion}.luau`, `src/shared/Logic/CaveDress/*.luau`
+(12 motywów jaskiń, `Kit`), `src/shared/Data/{LootTables,Rarities,CaveShapes,Maps,Portals,Cutscenes,AdminCommands}.luau`,
+`src/shared/Data/Areas/{Caves,Types,init}.luau`, `src/shared/Data/Quests/Main.luau`, `src/shared/Config.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/server/Services/MonsterService.luau`,
+`src/server/Admin/{Monsters,Quests}.luau`, `src/server/World/CaveLayout.luau`,
+`src/server/World/Layouts/{CaveTemplate,meadows_cave,duskwood_cave,ashen_cave,frostpeak_cave}.luau`,
+`src/client/Controllers/RegionLightController.luau`, `src/client/UI/Screens/WorldMap/CreatureCards.luau`, testy wyżej,
+`tests/Balance.luau`, `tests/fixtures/{caveRooms,caveShapes}.luau`, `tests/fixtures/balance_1_20.json`,
+`tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`, `tools/WikiData/{World,Monsters}.luau`,
+`tools/WikiMaps/init.luau`, `wiki/src/data/*`, `wiki/src/views/{MonsterView,regions/CavePage}.astro`,
+`wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/mechanics/{pl/walka,en/combat}.mdx`, `CLAUDE.md`,
+`docs/{DESIGN,ARCHITECTURE,SILNIKI,BALANS,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+Dla właściciela:
+- `eliteGroups` +1 (więcej Elit w większych jaskiniach) nie weszło: zmienia udział par Elit i zamrożone 1–20; jeśli
+  chcesz więcej Elit, to osobna decyzja z nową bazą 1–20 i progami spotkań Elit w Kopalni.
+- Quest tygodniowy „zabij 3 Elity II” jest teraz krótszy (dwie na jaskinię); proponuję `n = 4`.
+- Heroiki i Legendarne na godzinę obozowania jaskini są ×1,2 dawnych (górna połowa pasma); jeśli wolisz dokładnie
+  „jak przed”, `ITEM_DROPS.elite2` 1–2 → 1 z dodatkiem 25% na drugi przedmiot daje ×1,0.

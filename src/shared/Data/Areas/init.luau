@@ -1,6 +1,7 @@
 --!strict
 -- Named monster areas, roads and cave entrances per region map, and the caves (S19). See Areas/Types.
 
+local CavePlan = require("../Logic/CavePlan")
 local Caves = require("@self/Caves")
 local Types = require("@self/Types")
 
@@ -86,7 +87,8 @@ local function anchorById(id: string): (Types.QuestAnchor?, string?)
 		end
 	end
 	for _, cave in Caves.list do
-		local list: { Types.QuestAnchor } = cave.questAnchors or {}
+		-- S134h: as they stand in the drawn (scaled) cave
+		local list: { Types.QuestAnchor } = CavePlan.anchors(cave)
 		for _, anchor in list do
 			if anchor.id == id then
 				return anchor, cave.id

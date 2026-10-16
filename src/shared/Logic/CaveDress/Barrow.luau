@@ -41,7 +41,7 @@ end
 
 local function dromos(env: Env, out: { Build })
 	local r = env.T.rooms[1]
-	local d = Kit.build(env, "Dolmen", "landmark", -204, 0, 90)
+	local d = Kit.build(env, "Dolmen", "landmark", Kit.at(env, -204), 0, 90)
 	local bp = d.bp
 	for _, s in { -1, 1 } do
 		bp:rbox(4, 14, 3, s * 7, 6, 2, 0, 0, s * 3, o(STONE, "shell", { q = false }))
@@ -230,7 +230,7 @@ end
 local function heart(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	-- the altar on the dais (188, 50), the idol behind it, the black pool (200, 50)
-	local b = Kit.build(env, "BarrowAltar", "landmark", 188, 50, 270)
+	local b = Kit.build(env, "BarrowAltar", "landmark", Kit.at(env, 188), Kit.at(env, 50), 270)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	bp:box(6, 3, 3.4, 0, y + 1.5, 0, o(STONE, "shell", { q = false }))
@@ -259,7 +259,7 @@ local function heart(env: Env, out: { Build })
 		violetCandles(bp, -3 + k * 3, Kit.gy(env, b, -3 + k * 3, -6), -6, 3)
 	end
 	for _, s in { -1, 1 } do
-		local top = (Kit.ceil(env, 188 + s * 6, 50) or 40) - b.at.y
+		local top = (Kit.ceil(env, b.at.x + s * 6, b.at.z) or 40) - b.at.y
 		bp:box(
 			0.25,
 			math.max(2, top - y - 12),
@@ -285,7 +285,7 @@ local function heart(env: Env, out: { Build })
 			o({ c = "#A8B85A", m = "SmoothPlastic" }, "fine", { col = false, t = 0.3 })
 		)
 	end
-	Kit.clear(env, 188, 50, 12)
+	Kit.clear(env, b.at.x, b.at.z, 12)
 	table.insert(out, b)
 	local _ = r
 end
@@ -360,9 +360,10 @@ local function flooded(env: Env, out: { Build })
 		end
 	end
 	-- the nave (-69, 170)
-	local nx, nz = -69 - r.x, 172 - r.z
+	local ax, az = Kit.at(env, -69), Kit.at(env, 172) -- S134h: as drawn
+	local nx, nz = ax - r.x, az - r.z
 	for k = -1, 1 do
-		local liquid = env.T.liquid(-69 + k * 6, 172)
+		local liquid = env.T.liquid(ax + k * 6, az)
 		local level = (if liquid then liquid.level else -4) - b.at.y
 		bp:box(3.4, 2.4, 8, nx + k * 6, level - 0.2, nz, o(STONE, "detail", { col = false }))
 	end

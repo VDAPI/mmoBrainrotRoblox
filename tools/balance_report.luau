@@ -29,6 +29,7 @@ local Config = require("../src/shared/Config")
 local Crafting = require("../src/shared/Data/Crafting")
 local Items = require("../src/shared/Data/Items")
 local LevelCurves = require("../src/shared/Logic/LevelCurves")
+local LootTables = require("../src/shared/Data/LootTables")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local PartyLoot = require("../src/shared/Logic/PartyLoot")
 local Progression = require("../src/shared/Data/Progression")
@@ -2988,6 +2989,74 @@ do
 		table.insert(banded, row)
 	end
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134g (asertowane)"))
+	add()
+end
+
+-- S134h: Elite II loot (Balance.elite2Seat / elite2Cave, Balance.targetsS134h): every Elite II with its slot groups and
+-- the share for its best class, a cave's Heroics, Legendaries and crystals per hour (mean of the 4 classes) before / after.
+do
+	add("## Elity II: łup (S134h)")
+	add()
+	add(
+		`Każda Elita II daje tylko swoje 2–3 grupy miejsc (\`LootTables.ELITE2_SLOTS\`, wagi \`DEFAULT_SLOTS\` obcięte do nich, \`LootTables.slotsFor\`), w każdej jaskini są dwie (spawnery A i B, każdy ze swoim powrotem). Przedmiotów na zabicie {Rarities.itemDrops.elite2.min}–{Rarities.itemDrops.elite2.max}. „Przed” = stan sprzed sesji liczony tym samym kodem (\`Balance.elite2Cave(..., \{ legacy = true \})\`: jeden spawner, wszystkie grupy, 2–3 przedmioty, dawne materiały). Godzina = każdy spawner zabity, gdy wraca (3600 / środek okna powrotu). Asertuje \`balance.spec\` („Balance: Elite II loot (S134h)”).`
+	)
+	add()
+	local GROUP_PL = {
+		weapon = "broń",
+		offhand = "druga ręka",
+		helmet = "hełm",
+		armor = "zbroja",
+		gloves = "rękawice",
+		boots = "buty",
+		necklace = "naszyjnik",
+		ring = "pierścień",
+		talisman = "talizman",
+	}
+	local seatRows: { { string } } = {}
+	local caveRows: { { string } } = {}
+	for _, cave in require("../src/shared/Data/Areas").caves.list do
+		for _, s in B.elite2Spawners(cave.id) do
+			local groups = {}
+			for _, g in LootTables.elite2Groups(s.kind) do
+				table.insert(groups, GROUP_PL[g] or g)
+			end
+			local best, bestClass = 0, ""
+			for _, c in B.CLASSES do
+				local u = B.elite2Seat(c, s.kind, s.level).usable
+				if u > best then
+					best, bestClass = u, c
+				end
+			end
+			table.insert(seatRows, {
+				cave.id,
+				s.kind,
+				`L{s.level}`,
+				table.concat(groups, ", "),
+				`{fmtValue(best, "%")} ({bestClass})`,
+			})
+		end
+		local acc = { h0 = 0, h1 = 0, l0 = 0, l1 = 0, c0 = 0, c1 = 0 }
+		for _, c in B.CLASSES do
+			local before, now = B.elite2Cave(c, cave.id, { legacy = true }), B.elite2Cave(c, cave.id)
+			acc.h0 += before.heroic / #B.CLASSES
+			acc.h1 += now.heroic / #B.CLASSES
+			acc.l0 += before.legendary / #B.CLASSES
+			acc.l1 += now.legendary / #B.CLASSES
+			acc.c0 += before.crystals / #B.CLASSES
+			acc.c1 += now.crystals / #B.CLASSES
+		end
+		table.insert(caveRows, {
+			cave.id,
+			`{fmtValue(acc.h0, "2")} → {fmtValue(acc.h1, "2")}`,
+			`{fmtValue(acc.l0, "2")} → {fmtValue(acc.l1, "2")}`,
+			`{fmtValue(acc.c0, "2")} → {fmtValue(acc.c1, "2")}`,
+		})
+	end
+	tableOut({ "jaskinia", "Elita II", "spawner", "łup", "najlepsza klasa: udział" }, seatRows)
+	add()
+	tableOut({ "jaskinia", "Heroiki dla klasy / h", "Legendarne dla klasy / h", "kryształy esencji / h" }, caveRows)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS134h(), "S134h (asertowane)"))
 	add()
 end
 

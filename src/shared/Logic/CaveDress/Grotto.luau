@@ -183,8 +183,8 @@ end
 local function mouth(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- fangs of icicles over the exit (-211, 0)
-	local f = Kit.build(env, "IcicleFangs", "landmark", -214, 0, 90)
-	local top = (Kit.ceil(env, -214, 0) or 20) - f.at.y
+	local f = Kit.build(env, "IcicleFangs", "landmark", Kit.at(env, -214), 0, 90)
+	local top = (Kit.ceil(env, f.at.x, 0) or 20) - f.at.y
 	for k = -4, 4 do
 		local len = 3 + (4 - math.abs(k)) * 0.8
 		f.bp:add("cyl", len, 1.2, 1.2, k * 2.2, top - len / 2, 0, 0, 0, 90, o(ICE, "detail", { col = false }))
@@ -211,7 +211,7 @@ local function mouth(env: Env, out: { Build })
 		table.insert(out, c)
 	end
 	-- tracks of yeti and wolves leading in, hand prints in the ice
-	local t = Kit.build(env, "SnowTracks", "traces", -180, 4, 0)
+	local t = Kit.build(env, "SnowTracks", "traces", Kit.at(env, -180), Kit.at(env, 4), 0)
 	for k = 0, 9 do
 		local lx = -14 + k * 4
 		t.bp:rbox(
@@ -240,7 +240,7 @@ local function mouth(env: Env, out: { Build })
 		)
 	end
 	table.insert(out, t)
-	Kit.life(env.ctx, "snowGust", -205, 0.5, 0, 8)
+	Kit.life(env.ctx, "snowGust", Kit.at(env, -205), 0.5, 0, 8)
 	Kit.life(env.ctx, "drips", r.x, 16, r.z, 16)
 end
 
@@ -252,7 +252,7 @@ local function icefalls(env: Env, out: { Build })
 		end
 	end
 	-- the yeti's ice hole (-90, -42): fish bones, hacked blocks, a frozen fish
-	local h = Kit.build(env, "YetiIceHole", "traces", -86, -36, 0)
+	local h = Kit.build(env, "YetiIceHole", "traces", Kit.at(env, -86), Kit.at(env, -36), 0)
 	local y = Kit.gy(env, h, 0, 0)
 	for k = 0, 3 do
 		h.bp:rbox(
@@ -288,12 +288,12 @@ end
 local function chimney(env: Env, out: { Build })
 	local r = env.T.rooms[3]
 	-- the shaft: icicles round its rim, snow in the moonbeam
-	local s = Kit.build(env, "HarpyChimney", "traces", 20, 80, 0)
+	local s = Kit.build(env, "HarpyChimney", "traces", Kit.at(env, 20), Kit.at(env, 80), 0)
 	local y = Kit.gy(env, s, 0, 0)
 	for k = 0, 11 do
 		local a = k * math.pi / 6
-		local px, pz = math.cos(a) * 11.5, math.sin(a) * 11.5
-		local top = env.T.ceiling(20 + px, 80 + pz)
+		local px, pz = math.cos(a) * Kit.at(env, 11.5), math.sin(a) * Kit.at(env, 11.5)
+		local top = env.T.ceiling(s.at.x + px, s.at.z + pz)
 		if top and top < 9000 then
 			local len = 2 + (k % 3)
 			s.bp:add("cyl", len, 1, 1, px, top - s.at.y - len / 2, pz, 0, 0, 90, o(ICE, "detail", { col = false }))
@@ -305,7 +305,8 @@ local function chimney(env: Env, out: { Build })
 	table.insert(out, s)
 	-- the harpies' nests on the ledges, the climbers' gear under them
 	local n = Kit.build(env, "HarpyNests", "traces", r.x, r.z, 0)
-	for k, p in { { -29, 59 }, { 68, 74 }, { 50, 95 } } do
+	for k, p0 in { { -29, 59 }, { 68, 74 }, { 50, 95 } } do
+		local p = { Kit.at(env, p0[1]), Kit.at(env, p0[2]) } -- S134h: as drawn
 		local f = env.T.floor(p[1], p[2])
 		if f then
 			local lx, lz = p[1] - r.x, p[2] - r.z
@@ -375,7 +376,7 @@ end
 local function kingden(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	-- the throne of mammoth tusks and ice blocks on its dais (175, -14), the wall of trophies behind
-	local t = Kit.build(env, "MountainThrone", "landmark", 175, -14, 270)
+	local t = Kit.build(env, "MountainThrone", "landmark", Kit.at(env, 175), Kit.at(env, -14), 270)
 	local bp = t.bp
 	local y = Kit.gy(env, t, 0, 0)
 	bp:box(6, 3, 4, 0, y + 1.5, 0, o(ICE, "shell", { q = false }))
@@ -388,7 +389,7 @@ local function kingden(env: Env, out: { Build })
 		Kit.skull(bp, k * 2.4, y + 9 + (k % 2), 3.4, 1.1, 0)
 	end
 	bp:add("ball", 3, 2.4, 3, 6, y + 1.2, 3, 0, 0, 0, o({ c = "#6A7A8A", m = "Metal" }, "detail", { col = false })) -- a giant's helmet
-	Kit.clear(env, 175, -14, 6)
+	Kit.clear(env, t.at.x, t.at.z, 6)
 	table.insert(out, t)
 	-- the ice window with the frozen mammoth calf
 	for _, w in env.T.windows() do
@@ -433,7 +434,8 @@ end
 local function wolfden(env: Env, out: { Build })
 	local r = env.T.rooms[5]
 	local b = Kit.build(env, "WolfBurrows", "traces", r.x, r.z, 0)
-	for _, p in { { -22, -70 }, { 5, -104 }, { 52, -90 }, { 58, -62 } } do
+	for _, p0 in { { -22, -70 }, { 5, -104 }, { 52, -90 }, { 58, -62 } } do
+		local p = { Kit.at(env, p0[1]), Kit.at(env, p0[2]) } -- S134h: as drawn
 		local f = env.T.floor(p[1], p[2])
 		if f then
 			b.bp:add(

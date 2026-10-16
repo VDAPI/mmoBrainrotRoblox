@@ -155,7 +155,7 @@ local function rails(env: Env, out: { Build })
 	end
 	local rooms = env.T.rooms
 	-- the exit to the Lift Hall, the Pump Chamber and the Chief's Hall (rooms 1-2, 2-3, 3-4)
-	railway(env, out, 1, -205, 0, rooms[2].x, rooms[2].z, 14)
+	railway(env, out, 1, Kit.at(env, -205), 0, rooms[2].x, rooms[2].z, 14)
 	railway(env, out, 2, rooms[2].x, rooms[2].z, rooms[3].x, rooms[3].z, 12)
 	railway(env, out, 3, rooms[3].x, rooms[3].z, rooms[4].x, rooms[4].z, 12)
 end
@@ -163,7 +163,7 @@ end
 local function pithead(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- the timbered adit round the exit (-211, 0)
-	local a = Kit.build(env, "Adit", "landmark", -206, 0, 90)
+	local a = Kit.build(env, "Adit", "landmark", Kit.at(env, -206), 0, 90)
 	for t = 0, 2 do
 		for _, s in { -1, 1 } do
 			a.bp:box(1.4, 14, 1.4, s * 8, 7, t * 4, o(TIMBER, "detail", { col = false }))
@@ -185,7 +185,7 @@ local function pithead(env: Env, out: { Build })
 	end
 	table.insert(out, a)
 	-- the barricade of overturned carts with a way through, the skull on a stake, the drum, the hyenas' stakes
-	local b = Kit.build(env, "OrcBarricade", "traces", -172, 0, 90)
+	local b = Kit.build(env, "OrcBarricade", "traces", Kit.at(env, -172), 0, 90)
 	local y = Kit.gy(env, b, 0, 0)
 	cart(b.bp, -8, y, 0, 80, true, nil)
 	cart(b.bp, 8, y, 0, 100, true, nil)
@@ -204,14 +204,14 @@ local function pithead(env: Env, out: { Build })
 			table.insert(out, s)
 		end
 	end
-	Kit.life(env.ctx, "dustBeam", -205, 6, 0, 8)
+	Kit.life(env.ctx, "dustBeam", Kit.at(env, -205), 6, 0, 8)
 	Kit.life(env.ctx, "drips", r.x, 14, r.z, 20)
 end
 
 local function lift(env: Env, out: { Build })
 	local r = env.T.rooms[2]
 	-- the headframe and wheel in the shaft (-114, -62), the cage askew on one chain, the torn rope, the smashed cage
-	local b = Kit.build(env, "LiftHeadframe", "landmark", -114, -62, 30)
+	local b = Kit.build(env, "LiftHeadframe", "landmark", Kit.at(env, -114), Kit.at(env, -62), 30)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	for _, s in { -1, 1 } do
@@ -251,7 +251,7 @@ local function lift(env: Env, out: { Build })
 	Kit.lifeAt(env.ctx, b, "ashBeam", 0, 30, 0, 4)
 	Kit.lifeAt(env.ctx, b, "dustBeam", 0, 12, 0, 5)
 	Kit.lifeAt(env.ctx, b, "bats", 0, 26, 0, 6)
-	Kit.clear(env, -114, -62, 7)
+	Kit.clear(env, Kit.at(env, -114), Kit.at(env, -62), 7)
 	table.insert(out, b)
 	-- the turntable, carts of ore, banners, the rack of axes, the spit
 	for k, pr in { { a = 200, kind = "carts" }, { a = 120, kind = "rack" }, { a = 20, kind = "spit" } } do
@@ -332,7 +332,7 @@ local function camp(env: Env, out: { Build })
 		table.insert(out, w)
 	end
 	-- the hide tents in the south niche (6, 100)
-	local t = Kit.build(env, "OrcTents", "landmark", 6, 100, 0)
+	local t = Kit.build(env, "OrcTents", "landmark", Kit.at(env, 6), Kit.at(env, 100), 0)
 	for k = -1, 1 do
 		local lx = k * 9
 		local ty = Kit.gy(env, t, lx, 0)
@@ -389,7 +389,7 @@ local function chief(env: Env, out: { Build })
 	end
 	table.insert(out, v)
 	-- the chief's throne on the terrace (154, 50): an ore cart, dwarven shields, the headless king
-	local t = Kit.build(env, "ChiefThrone", "landmark", 154, 50, 270)
+	local t = Kit.build(env, "ChiefThrone", "landmark", Kit.at(env, 154), Kit.at(env, 50), 270)
 	local y = Kit.gy(env, t, 0, 0)
 	cart(t.bp, 0, y, 0, 0, false, nil)
 	t.bp:box(3.6, 6, 0.8, 0, y + 4.4, 2.2, o(IRON, "detail", { col = false }))
@@ -416,12 +416,12 @@ local function chief(env: Env, out: { Build })
 	end
 	Kit.banner(t.bp, -4, y, 4, 10, ORCRAG)
 	Kit.banner(t.bp, 4, y, 5, 10, ORCRAG)
-	Kit.clear(env, 154, 50, 6)
+	Kit.clear(env, Kit.at(env, 154), Kit.at(env, 50), 6)
 	table.insert(out, t)
 	-- the vultures' shaft (116, 26): nests on beams, white streaks, feathers, the pile of carrion
-	local s = Kit.build(env, "VultureShaft", "traces", 116, 26, 0)
+	local s = Kit.build(env, "VultureShaft", "traces", Kit.at(env, 116), Kit.at(env, 26), 0)
 	local sy = Kit.gy(env, s, 0, 0)
-	local top = (Kit.ceil(env, 126, 26) or 30) - s.at.y
+	local top = (Kit.ceil(env, s.at.x + 10, s.at.z) or 30) - s.at.y
 	for k = 0, 2 do
 		local a = k * 2.1
 		s.bp:beam(
@@ -488,7 +488,7 @@ end
 local function kennel(env: Env, out: { Build })
 	local r = env.T.rooms[5]
 	-- the broken props and the torn-out bulkhead door before the breakthrough (32, -116)
-	local b = Kit.build(env, "Breakthrough", "landmark", 32, -104, 0)
+	local b = Kit.build(env, "Breakthrough", "landmark", Kit.at(env, 32), Kit.at(env, -104), 0)
 	local y = Kit.gy(env, b, 0, 0)
 	for _, s in { -1, 1 } do
 		b.bp:rbox(1, 10, 1, s * 6, y + 4, 0, 0, 0, s * 12, o(TIMBER, "detail", { col = false }))
@@ -540,7 +540,7 @@ local function kennel(env: Env, out: { Build })
 			table.insert(out, kb)
 		end
 	end
-	Kit.life(env.ctx, "embers", 32, -8, -116, 5)
+	Kit.life(env.ctx, "embers", Kit.at(env, 32), -8, Kit.at(env, -116), 5)
 	Kit.life(env.ctx, "drips", r.x, 14, r.z, 18)
 end
 

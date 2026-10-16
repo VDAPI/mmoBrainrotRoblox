@@ -9,6 +9,7 @@ local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
 local ItemValue = require("../../src/shared/Logic/ItemValue")
 local Json = require("./Json")
+local LootTables = require("../../src/shared/Data/LootTables")
 local Maps = require("../../src/shared/Data/Maps")
 local Names = require("./Names")
 local Npcs = require("../../src/shared/Data/Npcs")
@@ -103,6 +104,8 @@ S.file(
 			normal = arr("ref:monsters"),
 			elites = arr("ref:monsters"),
 			elite2 = arr("ref:monsters"),
+			-- S134h: each Elite II of the cave with its own slot groups (LootTables.elite2Groups, names of slot.*)
+			elite2Loot = arr(rec("CaveElite2Loot", { kind = "ref:monsters", slots = arr("name") })),
 			eliteGroups = "int",
 			ores = arr("string"),
 			oreCount = "int",
@@ -339,6 +342,19 @@ function World.areas(_ctx: any): any
 	return World.areasData()
 end
 
+-- S134h: the loot of each Elite II of a cave: its slot groups by name (Data/LootTables, one function with the game).
+local function elite2Loot(kinds: { string }): { any }
+	local out = {}
+	for _, kind in kinds do
+		local slots = {}
+		for _, group in LootTables.elite2Groups(kind) do
+			table.insert(slots, Names.of(LootTables.slotKey(group)))
+		end
+		table.insert(out, { kind = kind, slots = slots })
+	end
+	return out
+end
+
 function World.caves(_ctx: any): any
 	local totals = spawnTotals()
 	local list = {}
@@ -354,6 +370,7 @@ function World.caves(_ctx: any): any
 			normal = Clean.clean(cave.normal),
 			elites = Clean.clean(cave.elites),
 			elite2 = Clean.clean(cave.elite2),
+			elite2Loot = elite2Loot(cave.elite2),
 			eliteGroups = cave.eliteGroups,
 			ores = Clean.clean(cave.ores),
 			oreCount = cave.oreCount,

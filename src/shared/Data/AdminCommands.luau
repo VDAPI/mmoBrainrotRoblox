@@ -369,7 +369,8 @@ cmd("monsters", "monsters", {})
 cmd("monsters", "groups", {})
 cmd("monsters", "mstats", { int("level", 1, MAX_LEVEL, true) })
 cmd("monsters", "mobdef", { ref("monster", "monster"), VARIANT, int("level", 1, MAX_LEVEL, true) }) -- S66
-cmd("monsters", "e2", { enum("action", { "spawn" }) })
+-- S134h: /e2 spawn [kind]: both Elite IIs of the cave or the one of that kind
+cmd("monsters", "e2", { enum("action", { "spawn" }), ref("kind", "monster", true) })
 cmd("monsters", "e2timer", {})
 cmd("monsters", "boss", { enum("action", { "reset", "spawn" }), ref("boss", "boss", true) })
 -- S134f: the ready check at a dungeon gate (the leader's pending check: everyone "yes" at once)

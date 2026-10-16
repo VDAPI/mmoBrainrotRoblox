@@ -287,7 +287,8 @@ T.describe("Loot", function()
 		T.expect(withItems / 20000).toBeNear(0.40, 0.02)
 	end)
 
-	T.it("Elite II always drops 2–3 items of the right tier", function()
+	-- S134h: 2-3 -> 1-2 items (two Elite IIs in every cave, Data/Rarities ITEM_DROPS.elite2)
+	T.it("Elite II always drops 1–2 items of the right tier", function()
 		local rng = Rng.new(13)
 		for _ = 1, 300 do
 			local loot = Loot.rollMonsterLoot("caveSpider", "elite2", 20, rng)
@@ -296,7 +297,7 @@ T.describe("Loot", function()
 				T.expect(drop.ilvl).toBeBetween(18, 22)
 				T.expect(drop.rarity).toBeBetween(Rarities.UNIQUE, Rarities.cap.elite2)
 			end
-			T.expect(#loot.items).toBeBetween(2, 3)
+			T.expect(#loot.items).toBeBetween(1, 2) -- S134h
 			T.expect(loot.gold > 0).toBe(true)
 		end
 	end)

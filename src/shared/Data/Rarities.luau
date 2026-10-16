@@ -246,7 +246,9 @@ local CAP: { [string]: number } = { normal = UNIQUE, elite = HEROIC, elite2 = LE
 local ITEM_DROPS: { [string]: { chance: number, min: number, max: number, extra: number? } } = {
 	normal = { chance = 0.20, min = 1, max = 1 },
 	elite = { chance = 0.75, min = 1, max = 1, extra = 0.25 },
-	elite2 = { chance = 1.0, min = 2, max = 3 },
+	-- S134h: 2-3 -> 1-2 (two Elite IIs in every cave, each with its own respawn: about the same Heroics and Legendaries
+	-- for the class per hour as one with 2-3 before; tests/Balance S134h)
+	elite2 = { chance = 1.0, min = 1, max = 2 },
 	boss = { chance = 1.0, min = 1, max = 1 }, -- FIX 2026-10-09: one item per winner (was 3-4 shared)
 }
 

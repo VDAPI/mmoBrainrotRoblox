@@ -950,10 +950,12 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 		local cave = assert(Areas.caves.get("ashen_cave"))
 		local terrain = assert(CaveTerrain.get("ashen_cave"))
 		local rooms = { forge_chain_1 = 4, forge_chain_2 = 6, forge_chain_3 = 7 }
-		local anchors = assert(cave.questAnchors, "questAnchors")
+		-- S134h: the anchors and rooms as drawn in the scaled cave (Logic/CavePlan)
+		local CavePlan = require("../src/shared/Logic/CavePlan")
+		local anchors = CavePlan.anchors(cave)
 		expect(#anchors).toBe(3)
 		for _, a in anchors do
-			local room = assert(cave.rooms)[assert(rooms[a.id], a.id)]
+			local room = CavePlan.rooms(cave)[assert(rooms[a.id], a.id)]
 			expect(terrain.floor(a.x, a.z) ~= nil).toBe(true)
 			expect(terrain.liquid(a.x, a.z)).toBeNil()
 			expect(math.sqrt((a.x - room.x) ^ 2 + (a.z - room.z) ^ 2) <= 0.65 * room.r).toBe(true)

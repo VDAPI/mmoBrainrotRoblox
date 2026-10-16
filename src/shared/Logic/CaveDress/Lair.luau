@@ -153,7 +153,7 @@ local function maw(env: Env, out: { Build })
 		p.bp:box(1.6, 1.4, 1, -3, y + 0.7, 2, o(CHAR, "fine", { col = false })) -- the charred pack
 		table.insert(out, p)
 	end
-	local s = Kit.build(env, "BlownSand", "traces", -198, 6, 0)
+	local s = Kit.build(env, "BlownSand", "traces", Kit.at(env, -198), Kit.at(env, 6), 0)
 	local sy = Kit.gy(env, s, 0, 0)
 	s.bp:add("ball", 14, 0.8, 8, 0, sy + 0.1, 0, 0, 20, 0, o(SAND, "detail", { col = false }))
 	for k = 0, 5 do
@@ -168,7 +168,7 @@ local function maw(env: Env, out: { Build })
 		)
 	end
 	table.insert(out, s)
-	Kit.life(env.ctx, "dustBeam", -205, 6, 0, 8)
+	Kit.life(env.ctx, "dustBeam", Kit.at(env, -205), 6, 0, 8)
 	Kit.life(env.ctx, "drips", r.x, 14, r.z, 16)
 end
 
@@ -226,14 +226,14 @@ local function chimneys(env: Env, out: { Build })
 		end
 	end
 	table.insert(out, w)
-	Kit.life(env.ctx, "smoke", -46, 14, -89, 4)
+	Kit.life(env.ctx, "smoke", Kit.at(env, -46), 14, Kit.at(env, -89), 4)
 	Kit.life(env.ctx, "drips", r.x, 16, r.z, 20)
 end
 
 local function sands(env: Env, out: { Build })
 	local r = env.T.rooms[3]
 	-- the stream of sand pouring through the hole (13, 116) onto the cone
-	local s = Kit.build(env, "SandFall", "landmark", 13, 118, 0)
+	local s = Kit.build(env, "SandFall", "landmark", Kit.at(env, 13), Kit.at(env, 118), 0)
 	local y = Kit.gy(env, s, 0, 0)
 	s.bp:add("cyl", 26, 1.4, 1.4, 0, y + 13, 0, 0, 0, 90, o(SAND, "detail", { col = false, t = 0.35 }))
 	Kit.lifeAt(env.ctx, s, "sandfall", 0, y + 26, 0, 2)
@@ -287,16 +287,16 @@ end
 local function roosts(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	-- the great hole in the east wall: the beam, ash, smoke
-	Kit.life(env.ctx, "dustBeam", 174, 16, -14, 12)
-	Kit.life(env.ctx, "ashBeam", 174, 34, -14, 12)
-	Kit.life(env.ctx, "smokeColumn", 174, 24, -14, 4)
+	Kit.life(env.ctx, "dustBeam", Kit.at(env, 174), 16, Kit.at(env, -14), 12)
+	Kit.life(env.ctx, "ashBeam", Kit.at(env, 174), 34, Kit.at(env, -14), 12)
+	Kit.life(env.ctx, "smokeColumn", Kit.at(env, 174), 24, Kit.at(env, -14), 4)
 	-- nests on the unreachable ledges (r ~50 from the centre)
 	local n = Kit.build(env, "WyvernNests", "traces", r.x, r.z, 0)
 	for k = 0, 5 do
 		local deg = k * 60 + 20
 		if not (deg > 120 and deg < 170) and not (deg > 250 and deg < 300) then
 			local a = math.rad(deg)
-			local lx, lz = math.cos(a) * 50, math.sin(a) * 50
+			local lx, lz = math.cos(a) * Kit.at(env, 50), math.sin(a) * Kit.at(env, 50)
 			local f = env.T.floor(r.x + lx, r.z + lz)
 			if f then
 				nest(n.bp, lx, f - n.at.y, lz, 1, 3, false)
@@ -306,7 +306,7 @@ local function roosts(env: Env, out: { Build })
 	-- soot fans on the floor, the carpet of bones by the walls, the tarp hanging from a ledge
 	for k = 0, 3 do
 		local a = k * 1.6
-		local lx, lz = math.cos(a) * 30, math.sin(a) * 30
+		local lx, lz = math.cos(a) * Kit.at(env, 30), math.sin(a) * Kit.at(env, 30)
 		n.bp:rbox(
 			10,
 			0.06,
@@ -323,7 +323,7 @@ local function roosts(env: Env, out: { Build })
 			return Kit.gy(env, n, x, z)
 		end)
 	end
-	local tx, tz = math.cos(math.rad(80)) * 46, math.sin(math.rad(80)) * 46
+	local tx, tz = math.cos(math.rad(80)) * Kit.at(env, 46), math.sin(math.rad(80)) * Kit.at(env, 46)
 	local tf = env.T.floor(r.x + tx, r.z + tz)
 	if tf then
 		n.bp:rbox(
@@ -450,7 +450,7 @@ end
 
 local function queen(env: Env, out: { Build })
 	-- the huge nest on the mound (202, -162) inside the ring of lava: five glowing eggs, one with a claw
-	local b = Kit.build(env, "QueenNest", "landmark", 202, -162, 0)
+	local b = Kit.build(env, "QueenNest", "landmark", Kit.at(env, 202), Kit.at(env, -162), 0)
 	local y = Kit.gy(env, b, 0, 0)
 	nest(b.bp, 0, y, 0, 2, 5, true)
 	b.bp:beam(
@@ -469,7 +469,7 @@ local function queen(env: Env, out: { Build })
 	table.insert(out, b)
 	-- the spilled treasure, the scales, the scorched floor
 	local r = env.T.rooms[6]
-	local t = Kit.build(env, "QueenTreasure", "traces", 180, -160, 0)
+	local t = Kit.build(env, "QueenTreasure", "traces", Kit.at(env, 180), Kit.at(env, -160), 0)
 	local ty = Kit.gy(env, t, 0, 0)
 	for k = 0, 11 do
 		local a = k * 2.4

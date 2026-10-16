@@ -63,6 +63,68 @@ local DEFAULT_SLOTS: { [string]: number } = {
 	talisman = 6,
 }
 
+-- S134h: the nine slot groups of DEFAULT_SLOTS in the order of the cards and the wiki.
+local SLOT_GROUPS: { string } =
+	{ "weapon", "offhand", "helmet", "armor", "gloves", "boots", "necklace", "ring", "talisman" }
+
+-- S134h (DESIGN §5.5): the slot groups an Elite II drops, by kind (the player knows an Elite II by its name,
+-- monster.<kind>.elite2; a kind is an Elite II in at most one place of the world, tests/elite2loot.spec). Its items
+-- keep the DEFAULT_SLOTS weights cut to these groups (LootTables.slotsFor). A kind outside the list (the Elite II of
+-- events: the Invasion, the Blood Moon) drops from every group. In every band of ELITE2_BANDS the Elite IIs together
+-- drop all nine groups; the two of one cave never share a group.
+local ELITE2_SLOTS: { [string]: { string } } = {
+	-- Region 1
+	bandit = { "weapon", "armor", "ring" }, -- meadows_hideout
+	carrionCrow = { "boots", "gloves", "talisman" },
+	goblinScout = { "helmet", "gloves", "offhand" }, -- meadows_burrow
+	koboldMiner = { "weapon", "necklace", "talisman" },
+	caveSpider = { "armor", "boots", "ring" }, -- meadows_cave
+	goblinShaman = { "weapon", "helmet", "necklace" },
+	-- Region 2
+	werewolf = { "weapon", "gloves", "boots" }, -- duskwood_den
+	blackBear = { "armor", "helmet", "ring" },
+	darkCultist = { "weapon", "offhand", "talisman" }, -- duskwood_barrow
+	ghoul = { "necklace", "ring", "boots" },
+	necromancer = { "weapon", "helmet", "gloves" }, -- duskwood_cave
+	specter = { "armor", "necklace", "ring" },
+	-- Region 3
+	ashOrc = { "weapon", "armor", "gloves" }, -- ashen_mine
+	wasteHyena = { "boots", "helmet", "ring" },
+	wyvern = { "weapon", "necklace", "talisman" }, -- ashen_lair
+	desertScorpion = { "offhand", "ring", "gloves" },
+	flameSmith = { "weapon", "armor", "helmet" }, -- ashen_cave
+	magmaGolem = { "boots", "offhand", "necklace" },
+	-- Region 4
+	yeti = { "weapon", "helmet", "gloves" }, -- frostpeak_grotto
+	iceWolf = { "boots", "ring", "talisman" },
+	frozenKnight = { "armor", "offhand", "ring" }, -- frostpeak_hold
+	frostGiant = { "weapon", "necklace", "talisman" },
+	youngFrostDragon = { "weapon", "helmet", "boots" }, -- frostpeak_cave
+	crystalGuardian = { "gloves", "armor", "necklace" },
+}
+
+-- S134h: two level bands per region; an Elite II belongs to a band when its spawner's level range overlaps it.
+local ELITE2_BANDS: { { number } } = {
+	{ 7, 14 },
+	{ 14, 20 },
+	{ 21, 33 },
+	{ 33, 45 },
+	{ 46, 58 },
+	{ 58, 70 },
+	{ 71, 86 },
+	{ 86, 100 },
+}
+
+-- DEFAULT_SLOTS cut to the groups of each kind of ELITE2_SLOTS (built once).
+local ELITE2_WEIGHTS: { [string]: { [string]: number } } = {}
+for kind, groups in ELITE2_SLOTS do
+	local weights: { [string]: number } = {}
+	for _, group in groups do
+		weights[group] = DEFAULT_SLOTS[group]
+	end
+	ELITE2_WEIGHTS[kind] = table.freeze(weights)
+end
+
 -- Per-region base materials (essence dust is common everywhere).
 local REGION_MATERIALS: { [number]: { MaterialDrop } } = {
 	[1] = {
@@ -149,10 +211,11 @@ local VARIANT_MATERIALS: { [string]: { MaterialDrop } } = {
 		{ id = "essence_shard", chance = 0.25, min = 1, max = 1 },
 		{ id = "essence_dust", chance = 0.5, min = 2, max = 4 },
 	},
+	-- S134h: halved (two Elite IIs in every cave: about the same essence and scrolls per hour as one before)
 	elite2 = {
-		{ id = "essence_shard", chance = 0.8, min = 1, max = 3 },
-		{ id = "essence_crystal", chance = 0.3, min = 1, max = 1 },
-		{ id = "scroll_protection", chance = 0.08, min = 1, max = 1 },
+		{ id = "essence_shard", chance = 0.4, min = 1, max = 3 },
+		{ id = "essence_crystal", chance = 0.15, min = 1, max = 1 },
+		{ id = "scroll_protection", chance = 0.04, min = 1, max = 1 },
 	},
 }
 
@@ -242,8 +305,48 @@ local BOSSES: { [string]: BossTable } = {
 	},
 }
 
+-- S134h: the slot weights of a monster's item drops: an Elite II of ELITE2_SLOTS only its groups (DEFAULT_SLOTS
+-- weights), everything else its table's. The one source of the server (Loot.rollMonsterLoot), the model, the map card
+-- and the wiki.
+local function slotsFor(monsterId: string, variant: string): { [string]: number }
+	if variant == "elite2" then
+		local weights = ELITE2_WEIGHTS[monsterId]
+		if weights then
+			return weights
+		end
+	end
+	local def = Monsters.get(monsterId)
+	local tableDef = def and TABLES[def.lootTable]
+	return if tableDef then tableDef.slotWeights else DEFAULT_SLOTS
+end
+
+-- S134h: the locale key of a slot group's name (the ring group reads as one ring: slot.ring1).
+local function slotKey(group: string): string
+	return if group == "ring" then "slot.ring1" else `slot.{group}`
+end
+
+-- S134h: the slot groups an Elite II of `kind` drops, in SLOT_GROUPS order (every group for a kind outside
+-- ELITE2_SLOTS).
+local function elite2Groups(kind: string): { string }
+	local own = ELITE2_SLOTS[kind]
+	local list = {}
+	for _, group in SLOT_GROUPS do
+		if own == nil or table.find(own, group) then
+			table.insert(list, group)
+		end
+	end
+	return list
+end
+
 return table.freeze({
 	byId = TABLES,
+	defaultSlots = DEFAULT_SLOTS,
+	slotGroups = SLOT_GROUPS,
+	ELITE2_SLOTS = ELITE2_SLOTS,
+	ELITE2_BANDS = ELITE2_BANDS,
+	slotsFor = slotsFor,
+	elite2Groups = elite2Groups,
+	slotKey = slotKey,
 	bosses = BOSSES,
 	bossSlots = BOSS_SLOTS,
 	get = function(id: string): LootTable?

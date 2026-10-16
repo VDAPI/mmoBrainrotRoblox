@@ -1,7 +1,7 @@
 --!strict
 -- Wiki map SVGs (S37, docs/WIKI.md): build(opts) -> { files = { [name]: svg }, stats } for the city, the four
 -- regions, the twelve caves and the world overview, drawn from the same shared data as the game's map (Data/Areas,
--- Data/Maps, Data/Portals, Data/Npcs, Data/Spawns, Logic/TownSketch, Logic/CaveGen, Logic/AreaSpawns). Pure: the CLI
+-- Data/Maps, Data/Portals, Data/Npcs, Data/Spawns, Logic/TownSketch, Logic/CavePlan, Logic/AreaSpawns). Pure: the CLI
 -- tools/wikimap.luau writes the files, tests/wikimap.spec.luau checks them.
 --
 -- Every file: viewBox in map studs (x right, z down = north up like the game), layers <g id="layer-…"> in a fixed
@@ -11,7 +11,7 @@
 local Areas = require("../src/shared/Data/Areas")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Bosses = require("../src/shared/Data/Bosses")
-local CaveGen = require("../src/shared/Logic/CaveGen")
+local CavePlan = require("../src/shared/Logic/CavePlan")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local Clean = require("./WikiData/Clean")
 local WorldGen = require("../src/shared/Logic/WorldGen")
@@ -535,7 +535,7 @@ local function cave(ctx: Ctx, caveId: string): string
 	local out = header(sx, sz, -sx / 2, -sz / 2, caveId, sx / 600, map.name)
 	table.insert(out, background(ctx, map))
 	local rooms = AreaSpawns.caveRooms(def)
-	local corridors = if def.rooms or not def.seed then spanningTree(rooms) else CaveGen.generate(def.seed).corridors
+	local corridors = if def.rooms or not def.seed then spanningTree(rooms) else CavePlan.plan(def).corridors
 	local floor = {}
 	local byWidth: { [number]: { string } } = {}
 	for _, c in corridors do

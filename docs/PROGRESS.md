@@ -5,7 +5,11 @@
 
 ## Stan
 
-S01–S115 i S117–S134g gotowe (ostatnia S134g: Legendarne i Mityczne niewiele silniejsze w statystykach od Heroicznego
+S01–S115 i S117–S134h gotowe (ostatnia S134h: każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
+(`LootTables.ELITE2_SLOTS`, w każdym paśmie poziomów razem cały ekwipunek), dwie Elity II różnych rodzajów w każdej
+jaskini (spawnery `_elite2` i `_elite2b`, 1–2 przedmioty, materiały o połowę: Heroiki i Legendarne na godzinę ×1,2),
+jaskinie 1,35 × większe przez `Logic/CavePlan` (rozciągnięty plan, 3 grupy w dużych salach) i jaśniejsze (presety 0,9,
+pochodnia gracza, 12 lamp na niskiej jakości); wcześniej S134g: Legendarne i Mityczne niewiele silniejsze w statystykach od Heroicznego
 (×1,17 / ×1,22 bazy, ×1,05 / ×1,10 linii; Legendarny L36 przegrywa w statystykach z Heroicznym L48) i z efektami
 zmieniającymi umiejętność klasy zamiast linii legendarnych (`Data/ItemEffects`, 36 efektów na rolach i pulach DESIGN-18,
 1 na Legendarnym, 2 na Mitycznym, nazwane Mityczne ze stałą parą), migracja 10 starych przedmiotów (konto, poczta,
@@ -273,6 +277,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134h:** jaskinie 1,35 × większe i jaśniejsze bez przeglądu w grze (ubiór na rozciągniętym planie: stałe punkty przez
+  `Kit.at`, drobne odsunięcia lokalne bez skali; pochodnia gracza, presety światła, druga Elita II w salach). Wiki: strona
+  jaskini i potwora (łup Elity II) niesprawdzone `npm run check` (bez `node_modules`). Decyzje właściciela w
+  `docs/SESJE.md` → S134h: `eliteGroups` +1 (nie weszło), quest tygodniowy Elit II `n = 4`, tempo łupu ×1,2. S134i
+  dołoży kryjówki z Elitami II do tych samych testów (`elite2loot.spec`).
 
 - **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
   Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów

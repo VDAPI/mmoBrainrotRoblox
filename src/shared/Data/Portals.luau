@@ -7,6 +7,7 @@
 
 local Areas = require("./Areas")
 local CaveGen = require("../Logic/CaveGen")
+local CavePlan = require("../Logic/CavePlan")
 local Maps = require("./Maps")
 local Town = require("./Town")
 
@@ -113,7 +114,10 @@ end
 for _, cave in Areas.caves.list do
 	local boss = BOSS_CAVES[cave.id]
 	local entrance = CaveGen.ENTRANCE
-	local exit = if boss then boss.exit else { entrance.x - entrance.r + 10, entrance.z, 90 }
+	local planExit = if boss then boss.exit else { entrance.x - entrance.r + 10, entrance.z, 90 }
+	-- S134h: drawn in the scaled cave (Logic/CavePlan; the exit stays in the entrance room, the gate in the antechamber)
+	local ex, ez = CavePlan.point(cave.id, planExit[1], planExit[2])
+	local exit = { ex, ez, planExit[3] }
 	add({
 		id = `{cave.id}_exit`,
 		map = cave.id,
@@ -132,8 +136,8 @@ for _, cave in Areas.caves.list do
 			map = cave.id,
 			target = `dungeon_{cave.region}`,
 			kind = "dungeon",
-			x = boss.gate[1],
-			z = boss.gate[2],
+			x = CavePlan.coord(cave.id, boss.gate[1]),
+			z = CavePlan.coord(cave.id, boss.gate[2]),
 			rot = boss.gate[3],
 			arrive = nil,
 		})

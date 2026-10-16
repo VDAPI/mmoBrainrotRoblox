@@ -54,7 +54,7 @@ local function landing(env: Env, out: { Build })
 	local r = env.T.rooms[2]
 	local ctx = env.ctx
 	-- the jetty along the stream's bend (stream at ~ (-120, -62)) with a moored boat
-	local b = Kit.build(env, "Jetty", "landmark", -112, -58, 50)
+	local b = Kit.build(env, "Jetty", "landmark", Kit.at(env, -112), Kit.at(env, -58), 50)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	bp:box(4, 0.4, 14, 0, y + 0.6, -3, o(Kit.planks, "shell", { q = false }))
@@ -85,7 +85,7 @@ local function landing(env: Env, out: { Build })
 		end
 	end
 	-- the plank over the stream in the tunnel to the pen
-	local p = Kit.build(env, "StreamPlank", "bridge", -85, -88, 0)
+	local p = Kit.build(env, "StreamPlank", "bridge", Kit.at(env, -85), Kit.at(env, -88), 0)
 	p.bp:box(3, 0.4, 12, 0, 0.2, 0, o(Kit.planks, "shell", { q = false }))
 	table.insert(out, p)
 	Kit.life(ctx, "drips", r.x, 16, r.z, 24)
@@ -95,7 +95,7 @@ local function council(env: Env, out: { Build })
 	local r = env.T.rooms[3]
 	local ctx = env.ctx
 	-- moonlight through the sinkhole (-5, 72)
-	local sky = Kit.build(env, "Sinkhole", "landmark", -5, 72, 0)
+	local sky = Kit.build(env, "Sinkhole", "landmark", Kit.at(env, -5), Kit.at(env, 72), 0)
 	local sb = sky.bp
 	local y = Kit.gy(env, sky, 0, 0)
 	sb:light(0, y + 24, 0, MOON, 40, 1.4, "lamp")
@@ -160,7 +160,7 @@ local function council(env: Env, out: { Build })
 	end
 	lantern(env, out, "CouncilLantern", r.x - 30, r.z - 20)
 	-- the lookout terrace's rope rail (terrace at (24, -14))
-	local rail = Kit.build(env, "LookoutRail", "traces", 24, -14, 0)
+	local rail = Kit.build(env, "LookoutRail", "traces", Kit.at(env, 24), Kit.at(env, -14), 0)
 	for k = 0, 5 do
 		local a = math.rad(200 + k * 25)
 		local lx, lz = math.cos(a) * 11, math.sin(a) * 11

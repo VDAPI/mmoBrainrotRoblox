@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych b90c918c (`wiki/src/data/meta.json`).
+> Odcisk danych 6f0defc3 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -52,7 +52,7 @@ Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny
 |---|---|---|---|---|
 | bossowie (wspólny łup) | 100% | 1 | Mityczny | Heroiczny 65%, Unikatowy 35% |
 | Elity | 75% | 1 | Heroiczny | Zwykły 45%, Heroiczny 6%, Unikatowy 49% |
-| Elity II | 100% | 2–3 | Legendarny | Heroiczny 50%, Legendarny 5%, Unikatowy 45% |
+| Elity II | 100% | 1–2 | Legendarny | Heroiczny 50%, Legendarny 5%, Unikatowy 45% |
 | zwykłe potwory | 20% | 1 | Unikatowy | Zwykły 70%, Unikatowy 30% |
 
 Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazwane Mityki tylko bossowie.

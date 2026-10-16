@@ -25,7 +25,7 @@ import { name, t } from "../lib/i18n";
 import { abilityText, kitText, levelCells, lootRows, neighboursOf, pageVariants, questsFor, respawnText, shapeText, summonedBy } from "../lib/monster";
 import { sectionHref } from "../lib/sections";
 import { tooltipData } from "../lib/tooltip";
-import { caveOf, placeHref, respawn } from "../lib/world";
+import { placeHref, respawn } from "../lib/world";
 
 interface Props {
   lang: Lang;
@@ -212,6 +212,7 @@ const statCols = [
                 </tbody>
               </table>
               <p class="note">{t(lang, "monster.lootNote", { chance: formatChance(view.info.loot.itemChance, lang), count: view.info.loot.itemMin === view.info.loot.itemMax ? view.info.loot.itemMin : `${view.info.loot.itemMin}–${view.info.loot.itemMax}`, bias: formatChance(m.classBias, lang) })}</p>
+              {view.info.loot.slots && view.info.loot.slots.length > 0 && <p class="note">{t(lang, "monster.elite2Loot", { slots: view.info.loot.slots.map((s) => name(s, lang)).join(", ") })}</p>}
               <p class="note">{t(lang, "monster.familyLoot", { family: familyName(m.family, lang) })}</p>
             </section>
 
@@ -300,8 +301,6 @@ const statCols = [
               {view.places.length === 0 && <p class="muted">{t(lang, "monster.none", { bosses: summonerNames })}</p>}
               {view.info.spawns.map((s) => {
                 const place = view.places.find((p) => p.id === (s.cave ?? s.area ?? s.map));
-                const cave = s.cave ? caveOf(s.cave) : undefined;
-                const pool = view.v === "elite2" && cave ? cave.elite2.map((x) => name(getMonster(x)?.variants.elite2?.name, lang)).filter(Boolean) : [];
                 const profile = s.profile ? mech.areaProfiles?.[s.profile] : undefined;
                 const target = placeHref(lang, place?.id ?? s.map);
                 return (
@@ -312,7 +311,6 @@ const statCols = [
                       <span class="muted">{t(lang, "levelRangeCap", { min: s.levelMin + view.levelAdd, max: s.levelMax + view.levelAdd })} · {name(mech.zones[place?.zone ?? "yellow"]?.name, lang)}</span>
                       <span class="muted">{t(lang, "monster.whereGroups", { groups: s.groups, count: s.count })} · {t(lang, "monster.whereRespawn", { time: respawn(s.respawnMin, s.respawnMax) })}</span>
                       {profile && <span class="profile" style={`--c: ${profile.color}`}>{name(profile.name, lang)}</span>}
-                      {pool.length > 1 && <span class="muted">{t(lang, "monster.elite2Pick", { names: pool.join(", ") })}</span>}
                     </div>
                   </article>
                 );

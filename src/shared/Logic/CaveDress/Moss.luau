@@ -67,7 +67,7 @@ end
 local function entrance(env: Env, out: { Build })
 	local r = room(env, 1)
 	-- the curtain of water behind the exit (x -278): sheets of falling water and foam, green daylight through it
-	local b = Kit.build(env, "MossEntrance", "landmark", -290, 0, 90)
+	local b = Kit.build(env, "MossEntrance", "landmark", Kit.at(env, -290), 0, 90)
 	local bp = b.bp
 	for k = -3, 3 do
 		bp:box(
@@ -158,12 +158,13 @@ local function grotto(env: Env, out: { Build })
 		table.insert(out, f)
 	end
 	-- giant glowing mushrooms on the lake's shore and moss carpets
-	local lake = Kit.build(env, "GrottoShore", "glow", 44, 62, 0)
+	local lake = Kit.build(env, "GrottoShore", "glow", Kit.at(env, 44), Kit.at(env, 62), 0)
+	local cx, cz, shore = Kit.at(env, 44), Kit.at(env, 62), Kit.at(env, 27) -- S134h: the pool as drawn
 	for k = 0, 4 do
 		local a = math.rad(200 + k * 30)
-		local x, z = 44 + math.cos(a) * 27, 62 + math.sin(a) * 27
+		local x, z = cx + math.cos(a) * shore, cz + math.sin(a) * shore
 		if Kit.free(env, x, z, 2, false) then
-			local lx, lz = x - 44, z - 62
+			local lx, lz = x - cx, z - cz
 			Kit.glowCap(lake.bp, lx, Kit.gy(env, lake, lx, lz), lz, 1.8 + (k % 2) * 0.8, Kit.MOSS, k % 2 == 0, "shell")
 		end
 	end
@@ -172,22 +173,22 @@ local function grotto(env: Env, out: { Build })
 		3,
 		22,
 		1.2,
-		14,
+		Kit.at(env, 14),
 		11,
-		12,
+		Kit.at(env, 12),
 		{ c = "#9FD8E8", m = "Glass", lod = "detail", col = false, t = 0.4, tag = "waterfall" }
 	)
 	lake.bp:box(
 		8,
 		0.6,
 		6,
-		14,
+		Kit.at(env, 14),
 		-0.8,
-		12,
+		Kit.at(env, 12),
 		{ c = "#E8F4F8", m = "SmoothPlastic", lod = "detail", col = false, t = 0.3, tag = "foam" }
 	)
-	Kit.lifeAt(ctx, lake, "dustBeam", 14, 20, 12, 6)
-	Kit.lifeAt(ctx, lake, "mist", 14, 0, 12, 10)
+	Kit.lifeAt(ctx, lake, "dustBeam", Kit.at(env, 14), 20, Kit.at(env, 12), 6)
+	Kit.lifeAt(ctx, lake, "mist", Kit.at(env, 14), 0, Kit.at(env, 12), 10)
 	table.insert(out, lake)
 	-- glow-worms on the vault, drops from the stalactites, bats high up
 	Kit.life(ctx, "glowworms", r.x, (Kit.ceil(env, r.x, r.z) or 30) - 1, r.z, r.r * 0.9)
@@ -201,7 +202,7 @@ local function bearden(env: Env, out: { Build })
 	local b = Kit.build(env, "BearDen", "traces", r.x, r.z, 0)
 	local bp = b.bp
 	for _, n in { { -182, -162 }, { -122, -170 } } do
-		local lx, lz = n[1] - r.x, n[2] - r.z
+		local lx, lz = Kit.at(env, n[1]) - r.x, Kit.at(env, n[2]) - r.z -- S134h: fixed points as drawn
 		local y = Kit.gy(env, b, lx, lz)
 		bp:add("ball", 9, 1.6, 7, lx, y + 0.2, lz, 0, 20, 0, o(Kit.moss, "detail", { col = false }))
 		Kit.bones(bp, lx + 3, 0, lz + 2, 5, function(px: number, pz: number): number
@@ -333,7 +334,7 @@ local function queennest(env: Env, out: { Build })
 	local r = room(env, 5)
 	local ctx = env.ctx
 	-- the funnel web in the niche behind the room, lit from behind by glowing moss
-	local nb = Kit.build(env, "QueenWeb", "landmark", 158, -200, 160)
+	local nb = Kit.build(env, "QueenWeb", "landmark", Kit.at(env, 158), Kit.at(env, -200), 160)
 	local bp = nb.bp
 	local y = Kit.gy(env, nb, 0, 0)
 	for k = 0, 11 do
@@ -486,7 +487,7 @@ end
 local function shrine(env: Env, out: { Build })
 	local r = room(env, 7)
 	-- the stone circle with green fire (on the altar terrace by the south wall)
-	local b = Kit.build(env, "ShamanShrine", "landmark", 90, 278, 180)
+	local b = Kit.build(env, "ShamanShrine", "landmark", Kit.at(env, 90), Kit.at(env, 278), 180)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	for k = 0, 7 do
@@ -540,7 +541,7 @@ local function shrine(env: Env, out: { Build })
 	end
 	for k = 0, 8 do
 		local a = k * math.pi * 2 / 9
-		local lx, lz = math.cos(a) * 30, math.sin(a) * 30
+		local lx, lz = math.cos(a) * Kit.at(env, 30), math.sin(a) * Kit.at(env, 30)
 		if Kit.free(env, r.x + lx, r.z + lz, 1, false) then
 			Kit.glowCap(m.bp, lx, Kit.gy(env, m, lx, lz), lz, 0.5, Kit.MOSS, false, "fine")
 		end
@@ -552,7 +553,7 @@ end
 local function antechamber(env: Env, out: { Build })
 	local r = room(env, 8)
 	-- two rows of tall red banners with the fang sign along the avenue to the gate (x 205..262, z ±12)
-	local b = Kit.build(env, "BannerAvenue", "landmark", 235, 0, 0)
+	local b = Kit.build(env, "BannerAvenue", "landmark", Kit.at(env, 235), 0, 0)
 	local bp = b.bp
 	for k = 0, 3 do
 		local lx = -26 + k * 14
@@ -630,7 +631,7 @@ end
 local function tunnels(env: Env, out: { Build })
 	local b = Kit.build(env, "TunnelMarks", "traces", 0, 0, 0)
 	for k = 0, 3 do
-		local x, z = -10 + k * 18, 92 + k * 20
+		local x, z = Kit.at(env, -10 + k * 18), Kit.at(env, 92 + k * 20) -- S134h: as drawn
 		if env.T.floor(x, z) then
 			b.bp:box(
 				2,
@@ -644,8 +645,8 @@ local function tunnels(env: Env, out: { Build })
 		end
 	end
 	table.insert(out, b)
-	Kit.life(env.ctx, "drips", -150, 12, -60, 20)
-	Kit.life(env.ctx, "drips", 110, 12, 0, 20)
+	Kit.life(env.ctx, "drips", Kit.at(env, -150), 12, Kit.at(env, -60), 20)
+	Kit.life(env.ctx, "drips", Kit.at(env, 110), 12, 0, 20)
 end
 
 function Moss.all(env: Env, out: { Build })

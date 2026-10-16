@@ -7,6 +7,7 @@
 
 local AreaSpawns = require("../AreaSpawns")
 local AreaTypes = require("../../Data/Areas/Types")
+local CavePlan = require("../CavePlan")
 local CaveShapes = require("../../Data/CaveShapes")
 local CaveTerrain = require("../CaveTerrain")
 local Caves = require("../../Data/Areas/Caves")
@@ -97,19 +98,25 @@ function Kit.env(mapId: string): Env
 		local plan = T.rooms[1]
 		table.insert(keep, { x = plan.x + 8, z = plan.z, r = 6 })
 	elseif mapId == "meadows_cave" then
-		table.insert(keep, { x = -240, z = 0, r = 6 })
+		table.insert(keep, { x = CavePlan.coord(mapId, -240), z = 0, r = 6 })
 	end
 	return {
 		mapId = mapId,
 		ctx = ctx,
 		T = T,
 		cave = cave,
-		shape = CaveShapes.byMap[mapId],
+		shape = CavePlan.shape(mapId) :: CaveShapes.Shape, -- S134h: as drawn (scaled)
 		spawners = spawners,
 		keep = keep,
 		clearings = {},
 		nodes = {},
 	}
+end
+
+-- S134h: an authored horizontal coordinate of the dressing (a fixed x or z written for the plan) as it stands in the
+-- drawn cave (Logic/CavePlan.coord). Positions taken from the rooms, the features or the terrain are drawn already.
+function Kit.at(env: Env, v: number): number
+	return CavePlan.coord(env.mapId, v)
 end
 
 function Kit.clear(env: Env, x: number, z: number, r: number)

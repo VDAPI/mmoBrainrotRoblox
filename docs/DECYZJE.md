@@ -4723,3 +4723,42 @@
   kształtu danych (`WIKI_KEYS_ALLOW` przy tej sesji). Wiki nie ma strony mechaniki przedmiotów: akapit w „Statystyki”.
 - **S134g** Pole `hook` efektu sumuje `ItemRoll.itemStats` bez filtra klasy; żaden dzisiejszy efekt go nie ma. Sesja,
   która doda hook, liczy go przez `ItemEffects.hooks(item, classId)` (filtr klasy) albo dopisuje filtr w czytelniku.
+- **S134h** Łup Elity II przypisany do **rodzaju** (`LootTables.ELITE2_SLOTS[kind]`, 2–3 grupy z `DEFAULT_SLOTS`, wagi
+  obcięte, jedna funkcja `LootTables.slotsFor` dla serwera, modelu, karty mapy i wiki); rodzaj jest Elitą II w najwyżej
+  jednym miejscu świata (test). Elita II wydarzeń (Inwazja, Krwawy Księżyc) rodzaju spoza listy daje wszystkie grupy;
+  rodzaj z listy (ta sama nazwa) daje na wydarzeniu swoje grupy. Przypisanie = propozycja z pliku sesji bez zmian.
+- **S134h** Bez przerzutu klasy: w przypisanej grupie bez bazy klasy gracza na progu wypada baza innej klasy (jak dotąd
+  przy `classBias`). Nazwa grupy pierścieni z `slot.ring1` (bez nowego klucza `slotGroup.ring`, `LootTables.slotKey`).
+- **S134h** Pasma `ELITE2_BANDS` 7–14, 14–20, 21–33, 33–45, 46–58, 58–70, 71–86, 86–100; Elita II należy do pasma, gdy
+  przedział poziomów jej spawnera na nie nachodzi. W każdym paśmie 9 grup, broń z ≥ 2 Elit II regionu (`elite2loot.spec`).
+- **S134h** Dźwignie łupu: `ITEM_DROPS.elite2` 2–3 → 1–2, `VARIANT_MATERIALS.elite2` o połowę (odłamek 0,4, kryształ 0,15,
+  zwój ochrony 0,04), `DROP_WEIGHTS.elite2` bez zmian. Wynik: Heroiki i Legendarne dla klasy na godzinę obu Elit II
+  jaskini ×1,18–1,22 stanu sprzed sesji (pojedyncza klasa 1,18–1,23), kryształy esencji ×1,12 (`Balance.targetsS134h`,
+  „przed” liczone tym samym kodem z `Balance.S134h.legacy`).
+- **S134h** Druga Elita II: spawner B `{id}_elite2b` dodany na końcu `AreaSpawns.cave` (rzut nie przesuwa innych), w sali
+  walki najdalszej od A, ten sam powrót co A (`elite2Respawn(levels[2])`); A zachowuje `{id}_elite2` (zapisane `e2timers`
+  pasują). Rodzaje stałe, bez `choices`. `/e2 spawn [rodzaj]` odradza obie albo jedną.
+- **S134h** Skala jaskiń jako rozciągnięcie całego planu: `CaveTerrain` czyta kolumnę planu w (x / s, z / s), strop
+  × (1 + (s − 1) / 2); szerokości strumieni, ramp i korytarzy rosną razem z planem (odstępstwo od pliku sesji: korytarze
+  × s zamiast × 1,175, strumienie nie stałe). Powód: przy samym skalowaniu pozycji szum podłogi przestawał się zgadzać
+  z ręcznie strojonymi poziomami (brzegi lawy, progi w niszach), a rozciągnięcie zachowuje każdą regułę planu.
+  Skala zamiast nowych sal: jeden pomocnik (`Logic/CavePlan`), ten sam układ i ubiór, kotwice i rdzenie na miejscu.
+- **S134h** Ubiór: stałe współrzędne modułów `CaveDress` przez `Kit.at(env, v)` (= `CavePlan.coord`), także promienie
+  pierścieni od środka sali ≥ 20 st. i odsunięcia od filarów; drobne przesunięcia lokalne (< 20 st.) bez skali.
+- **S134h** `eliteGroups` +1 (E3) **nie** wprowadzone: każda nowa grupa zmienia udział par `q` z prawdziwych spawnerów, a
+  przez to zamrożone wiersze Elit 1–20 (zasada 9: różnice poza łupem i Elitami II to błąd) i spotkania Elit w
+  `ashen_mine` (1,19–1,36 > 1,10 / 1,25). Większa powierzchnia dostaje 3 grupy zwykłe w salach od r 70 i +2 żyły rud.
+- **S134h** Światło: presety podziemi jasność 0,9, otoczenie podniesione w barwie presetu do jasności względnej ≥ 0,105
+  (`outdoorAmbient` ≥ 0,075), mgła +180 (≥ 400), gęstość ≤ 0,4, mgiełka ≤ 0,4 (test `cavelight.spec`); pochodnia gracza
+  `Config.CaveLights.player` (26 st., 0,8, ciepła, bez cieni) w `RegionLightController`; `CaveLights.low` 8 → 12.
+- **S134h: świadomie nowe fixture'y 12 jaskiń (skala, druga Elita II)**; komnaty bossów bez zmian w `caveShapes`.
+- **S134h** Fixture 1–20: nowa baza S134h (tylko wiersze Elit II jaskiń Łąk i łupu Elity II na zabicie),
+  `ALLOWED_1_20_DIFFS` pusta; `Balance.ELITE2_1_20` += `carrionCrow` 11 i `koboldMiner` 15 (wiersze S32 nowych Elit II).
+- **S134h** Quest tygodniowy „zabij Elity II” (`n = 3`) i punkty Krwawego Księżyca za Elitę II bez zmian (dwie Elity II
+  na jaskinię skracają quest; propozycja `n = 4` dla właściciela).
+- **S134h** Karta jaskini: dwie Elity II, każda z linią „Łup: …”; zostaje tylko osobisty licznik gracza (`e2timers`), bez
+  informacji, czy Elita II żyje. Brokk (`forgeChains`) dołącza w (-238, 6) planu (było -232, 8), żeby po skali stał w
+  `Config.Companion.rejoin` od spawnu mapy.
+- **S134h** Wiki: Monte Carlo łupu z ziarnem `Rng.seedOf` (FNV-1a) zamiast `StubRng.seedOf` (pierwsze losowania xorshift z
+  tamtych ziaren korelowały: szybki test 500 losowań chybiał 3 sigma). Świadoma zmiana kształtu danych:
+  `WIKI_KEYS_ALLOW` = `caves.caves[].elite2Loot…` (5 kluczy), `monsters…loot.slots` (2), `types.ts`.

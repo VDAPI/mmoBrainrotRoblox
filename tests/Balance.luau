@@ -2312,14 +2312,14 @@ function Balance.caveElites(mapId: string, withNodes: boolean?): { CaveElites }
 			local spawners = Spawns.byMap[cave.id] or {}
 			local groups, paired = 0, 0
 			local rangeOf: { [string]: { min: number, max: number } } = {}
-			local elite2Spawner: any = nil
+			local elite2Spawners: { any } = {} -- S134h: two per cave (A, then B)
 			for _, s in spawners do
 				if s.variant == "elite" then
 					groups += 1
 					paired += if s.count >= 2 then 1 else 0
 					rangeOf[s.monster] = rangeOf[s.monster] or s.level
 				elseif s.variant == "elite2" then
-					elite2Spawner = s
+					table.insert(elite2Spawners, s)
 				end
 			end
 			local q = if groups > 0 then paired / groups else 0
@@ -2368,7 +2368,7 @@ function Balance.caveElites(mapId: string, withNodes: boolean?): { CaveElites }
 				end
 			end
 			local elite2: { Elite2Fight } = {}
-			if elite2Spawner then
+			for _, elite2Spawner in elite2Spawners do
 				for _, kind in elite2Spawner.choices or { elite2Spawner.monster } do
 					for _, L in { elite2Spawner.level.min, elite2Spawner.level.max } do
 						local pl = math.min(100, L + 2)
@@ -2929,6 +2929,9 @@ Balance.LEVELS_1_20 = { 1, 2, 5, 10, 15, 18, 20 }
 Balance.MAIN = { "Warrior", "Hunter", "Mage" }
 -- S32 Elite II checks: kind and spawner level (the top of its cave, as S32 took it).
 Balance.ELITE2_1_20 = { { "bandit", 12 }, { "goblinScout", 16 }, { "caveSpider", 18 }, { "goblinShaman", 18 } }
+-- S134h: the second Elite IIs of the Meadows' generated caves (spawner levels of their own: kind ranges)
+table.insert(Balance.ELITE2_1_20, { "carrionCrow", 11 })
+table.insert(Balance.ELITE2_1_20, { "koboldMiner", 15 })
 
 local function target(
 	rows: { TargetRow },
@@ -7430,7 +7433,8 @@ export type CaveSpawners = {
 	levels: { number },
 	q: number, -- share of Elite spawners with two members
 	elites: { { kind: string, min: number, max: number } },
-	elite2: { min: number, max: number }?,
+	elite2: { min: number, max: number }?, -- S134h: the range over the cave'"'"'s Elite II spawners
+	elite2s: { { kind: string, min: number, max: number } }, -- S134h: every Elite II spawner (A, then B)
 }
 
 local caveSpawnerCache: { [string]: { CaveSpawners } } = {}
@@ -7445,7 +7449,8 @@ function Balance.caveSpawners(mapId: string): { CaveSpawners }
 		if cave.region == mapId then
 			local groups, paired = 0, 0
 			local elites = {}
-			local elite2 = nil
+			local elite2: { min: number, max: number }? = nil
+			local elite2s = {}
 			for _, s in Spawns.byMap[cave.id] or {} do
 				if s.variant == "elite" then
 					groups += 1
@@ -7458,7 +7463,11 @@ function Balance.caveSpawners(mapId: string): { CaveSpawners }
 						table.insert(elites, { kind = s.monster, min = s.level.min, max = s.level.max })
 					end
 				elseif s.variant == "elite2" then
-					elite2 = { min = s.level.min, max = s.level.max }
+					table.insert(elite2s, { kind = s.monster, min = s.level.min, max = s.level.max })
+					local e = elite2
+					elite2 = if e
+						then { min = math.min(e.min, s.level.min), max = math.max(e.max, s.level.max) }
+						else { min = s.level.min, max = s.level.max }
 				end
 			end
 			table.insert(out, {
@@ -7467,6 +7476,7 @@ function Balance.caveSpawners(mapId: string): { CaveSpawners }
 				q = if groups > 0 then paired / groups else 0,
 				elites = elites,
 				elite2 = elite2,
+				elite2s = elite2s,
 			})
 		end
 	end
@@ -7579,8 +7589,8 @@ export type MaterialSupply = {
 	elitesPerHour: number,
 	normal: { [string]: number }, -- per hour of grinding: kill materials + dismantled drops
 	elite: { [string]: number }, -- per hour of cave Elites
-	elite2: { [string]: number }, -- per Elite II kill (materials + dismantled drops)
-	elite2PerHour: number, -- Elite II kills per hour of one cave's respawn (AreaSpawns.elite2Respawn)
+	elite2: { [string]: number }, -- per Elite II kill (materials + dismantled drops; S134h: the mean of the cave's two)
+	elite2PerHour: number, -- Elite II kills per hour of a cave (S134h: both spawners, AreaSpawns.elite2Respawn)
 	bossWeek: { [string]: number }, -- Config.Boss.dailyRuns x 7 kills of the region boss (materials only)
 }
 
@@ -7608,12 +7618,18 @@ function Balance.materialSupply(classId: string, level: number): MaterialSupply
 	for id, n in Balance.dismantlePerItem("elite", nil, factor) do
 		elite[id] = (elite[id] or 0) + n * eliteItems
 	end
-	local elite2: { [string]: number } = Balance.materialsPerKill(eliteKind, "elite2", mods.materialMul)
-	local items2 = AreaRates.itemsPerKill("elite2", mods, 0, factor)
-	for id, n in Balance.dismantlePerItem("elite2", nil, factor) do
-		elite2[id] = (elite2[id] or 0) + n * items2
+	-- S134h: the mean kill of the cave'"'"'s Elite IIs (Balance.elite2Seat: their own slot groups, materials and
+	-- dismantling) and the kills per hour of all of them (two spawners, each with its respawn)
+	local elite2: { [string]: number } = {}
+	local elite2PerHour = 0
+	for _, e in cave.elite2s do
+		local seat = Balance.elite2Seat(classId, e.kind, e.max, { mods = mods })
+		for id, n in seat.materials do
+			elite2[id] = (elite2[id] or 0) + n / #cave.elite2s
+		end
+		local respawn = AreaSpawns.elite2Respawn(e.max)
+		elite2PerHour += 3600 / ((respawn.min + respawn.max) / 2)
 	end
-	local respawn = AreaSpawns.elite2Respawn(if cave.elite2 then cave.elite2.max else level)
 	local bossId = LootTables.regionBoss[Balance.regionAt(level)]
 	local bossWeek: { [string]: number } = {}
 	addExpected(LootTables.bosses[bossId].materials, Config.Boss.dailyRuns * 7, bossWeek)
@@ -7624,7 +7640,7 @@ function Balance.materialSupply(classId: string, level: number): MaterialSupply
 		normal = normal,
 		elite = elite,
 		elite2 = elite2,
-		elite2PerHour = 3600 / ((respawn.min + respawn.max) / 2),
+		elite2PerHour = elite2PerHour,
 		bossWeek = bossWeek,
 	}
 end
@@ -7913,7 +7929,8 @@ Balance.usableAt = usableAt
 export type Drops = {
 	unique: number, -- Uniques for the class per hour of grinding (paceAt)
 	heroic: number, -- Heroics for the class per hour of cave Elites (elitesPerHour)
-	legendaryPerElite2: number, -- Legendaries for the class per Elite II kill (topTierMul x elite2Mul)
+	legendaryPerElite2: number, -- Legendaries for the class per Elite II kill (topTierMul x elite2Mul; S134h: the mean of
+	-- the cave'"'"'s two, each with its own slot groups)
 	killsPerHour: number,
 	elitesPerHour: number,
 	luck: Luck.MonsterLuck,
@@ -7954,9 +7971,12 @@ function Balance.dropsPerHour(
 	local heroic = eph * eCount * eTop * usableAt(eliteTable.slotWeights, eliteBase, eliteTable.classBias, classId)
 	local mods2 = table.clone(mods) :: any
 	mods2.topTierMul = mods.topTierMul * luck.elite2Mul
-	local c2, t2 = AreaRates.itemsPerKill("elite2", mods2, luck.itemBonus, factor)
-	local base2 = Loot.dropBaseLevel(level + (Combat.variants :: any).elite2.levelAdd, "elite2", level)
-	local legendary = c2 * t2 * usableAt(eliteTable.slotWeights, base2, eliteTable.classBias, classId)
+	-- S134h: the mean of the cave'"'"'s Elite IIs (each with its own slot groups, Balance.elite2Seat)
+	local legendary = 0
+	for _, e in cave.elite2s do
+		local seat = Balance.elite2Seat(classId, e.kind, level, { mods = mods2, itemBonus = luck.itemBonus })
+		legendary += seat.legendary / #cave.elite2s
+	end
 	local eliteChance = Rarities.itemDrops.elite.chance * mods.itemChanceMul
 	local result: Drops = {
 		unique = unique,
@@ -7971,6 +7991,242 @@ function Balance.dropsPerHour(
 	}
 	dropCache[key] = result
 	return result
+end
+
+-- Elite II loot (S134h, docs/sessions/S134h.md C) -------------------------------------------------------------------
+-- Every Elite II drops only its own 2-3 slot groups (LootTables.slotsFor) and every cave has two of them (spawners A and
+-- B, each with its own respawn). The model per kill (elite2Seat) and per hour of a cave (elite2Cave) against the state
+-- before the session (`legacy`: one spawner, DEFAULT_SLOTS, the old item count and materials), computed by the same
+-- code: the targets of C2 are ratios new / legacy.
+
+Balance.S134h = {
+	-- the inputs as they were before S134h (one spawner per cave with its kinds picked on every respawn)
+	legacy = {
+		itemDrops = { chance = 1, min = 2, max = 3 },
+		materials = {
+			{ id = "essence_shard", chance = 0.8, min = 1, max = 3 },
+			{ id = "essence_crystal", chance = 0.3, min = 1, max = 1 },
+			{ id = "scroll_protection", chance = 0.08, min = 1, max = 1 },
+		},
+		-- the caves whose kinds changed (the others: cave.elite2)
+		kinds = {
+			ashen_mine = { "ashOrc" },
+			ashen_lair = { "wyvern" },
+			frostpeak_grotto = { "yeti" },
+			frostpeak_hold = { "frozenKnight" },
+		} :: { [string]: { string } },
+	},
+	ratio = { 0.85, 1.25 }, -- Heroics / Legendaries for the class per hour of a cave (mean of the 4 classes) / legacy
+	classFloor = 0.6, -- a single class / legacy (report: it depends on the assigned groups)
+	crystal = 1.25, -- crystal equivalents (shards in crystals, Data/Recipes) per hour of a cave / legacy, at most
+	seatShare = 0.25, -- each Elite II: its best class gets at least this share of its items
+}
+
+export type Elite2Seat = {
+	kind: string,
+	items: number, -- items per kill
+	usable: number, -- share of them for the class
+	heroic: number, -- Heroics for the class per kill
+	legendary: number, -- Legendaries for the class per kill
+	crystals: number, -- crystal equivalents per kill (drops and the dismantled items)
+	scrolls: number, -- protection scrolls per kill
+	materials: { [string]: number }, -- every material per kill (drops and the dismantled items)
+}
+
+export type Elite2SeatOpts = {
+	legacy: boolean?, -- the state before S134h (DEFAULT_SLOTS, Balance.S134h.legacy count and materials)
+	mods: AreaProfiles.Mods?, -- default the region's (Balance.dropMods); luck: topTierMul x elite2Mul
+	itemBonus: number?, -- % (Loot Modifiers.dropBonus)
+}
+
+-- Shards per crystal and dust per shard of the transmutation recipes (Data/Recipes).
+local function crystalEquivalent(mats: { [string]: number }): number
+	local crystalRecipe = Recipes.get("transmute_crystal") :: Recipes.Recipe
+	local shardsPerCrystal = crystalRecipe.ingredients[1].n / crystalRecipe.result.n
+	return (mats.essence_crystal or 0) + (mats.essence_shard or 0) / shardsPerCrystal
+end
+
+local seatCache: { [string]: Elite2Seat } = {}
+-- S134h (C1): one kill of an Elite II of `kind` on a spawner of top level `level` for `classId` (expected values,
+-- mirrors Loot.rollMonsterLoot: item count, rarity, the slot groups and the class bias, materials, dismantling).
+function Balance.elite2Seat(classId: string, kind: string, level: number, opts: Elite2SeatOpts?): Elite2Seat
+	local legacy = opts ~= nil and opts.legacy == true
+	local def = Monsters.get(kind) :: any
+	local mods = (opts and opts.mods) or Balance.dropMods(def.region)
+	local bonus = (opts and opts.itemBonus) or 0
+	local key = `{classId}|{kind}|{level}|{legacy}|{mods.topTierMul}|{mods.itemChanceMul}|{mods.materialMul}|{bonus}`
+	local cached = seatCache[key]
+	if cached then
+		return cached
+	end
+	local factor = LevelCurves.dropFactor(def.region)
+	local drops = if legacy then Balance.S134h.legacy.itemDrops else Rarities.itemDrops.elite2
+	local chance = math.min(1, drops.chance * (1 + bonus / 100) * mods.itemChanceMul)
+	local items = chance * ((drops.min + drops.max) / 2 + ((drops :: any).extra or 0))
+	local weights = ItemRoll.rarityWeights("elite2", mods.topTierMul, factor)
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local tableDef = LootTables.byId[def.lootTable]
+	local slots = if legacy then LootTables.defaultSlots else LootTables.slotsFor(kind, "elite2")
+	local usable = usableAt(slots, level, tableDef.classBias, classId)
+	local mats: { [string]: number } = {}
+	addExpected(tableDef.materials, mods.materialMul, mats)
+	addExpected(
+		if legacy then Balance.S134h.legacy.materials else tableDef.variantMaterials.elite2 or {},
+		mods.materialMul,
+		mats
+	)
+	for id, n in Balance.dismantlePerItem("elite2", mods.topTierMul, factor) do
+		mats[id] = (mats[id] or 0) + n * items
+	end
+	local seat: Elite2Seat = {
+		kind = kind,
+		items = items,
+		usable = usable,
+		heroic = items * (weights[Rarities.HEROIC] or 0) / total * usable,
+		legendary = items * (weights[Rarities.LEGENDARY] or 0) / total * usable,
+		crystals = crystalEquivalent(mats),
+		scrolls = mats.scroll_protection or 0,
+		materials = mats,
+	}
+	seatCache[key] = seat
+	return seat
+end
+
+export type Elite2Cave = {
+	caveId: string,
+	kills: number, -- Elite II kills per hour (every spawner killed as soon as it is back)
+	items: number,
+	heroic: number,
+	legendary: number,
+	crystals: number,
+	scrolls: number,
+	seats: { { seat: Elite2Seat, perHour: number } },
+}
+
+-- The Elite II spawners of a cave (Data/Spawns): kind, top level, respawn window.
+local function elite2Spawners(
+	caveId: string
+): { { kind: string, level: number, respawn: { min: number, max: number } } }
+	local out = {}
+	for _, s in Spawns.byMap[caveId] or {} do
+		if s.variant == "elite2" then
+			table.insert(out, { kind = s.monster, level = s.level.max, respawn = s.respawn })
+		end
+	end
+	return out
+end
+Balance.elite2Spawners = elite2Spawners
+
+-- S134h (C1): an hour of a cave's Elite IIs for `classId` (each spawner killed as soon as it is back: 3600 / the mean
+-- of its respawn window). `opts.legacy`: the state before S134h (the first spawner only, its kind picked among the
+-- legacy kinds on every respawn, DEFAULT_SLOTS and the old count and materials).
+function Balance.elite2Cave(classId: string, caveId: string, opts: Elite2SeatOpts?): Elite2Cave
+	local cave = assert(Areas.caves.get(caveId), caveId)
+	local spawners = elite2Spawners(caveId)
+	local legacy = opts ~= nil and opts.legacy == true
+	local out: Elite2Cave =
+		{ caveId = caveId, kills = 0, items = 0, heroic = 0, legendary = 0, crystals = 0, scrolls = 0, seats = {} }
+	local function addSeat(seat: Elite2Seat, perHour: number)
+		out.kills += perHour
+		out.items += seat.items * perHour
+		out.heroic += seat.heroic * perHour
+		out.legendary += seat.legendary * perHour
+		out.crystals += seat.crystals * perHour
+		out.scrolls += seat.scrolls * perHour
+		table.insert(out.seats, { seat = seat, perHour = perHour })
+	end
+	if legacy then
+		local first = assert(spawners[1], caveId)
+		local kinds = Balance.S134h.legacy.kinds[caveId] or cave.elite2
+		local perHour = 3600 / ((first.respawn.min + first.respawn.max) / 2)
+		for _, kind in kinds do
+			addSeat(Balance.elite2Seat(classId, kind, first.level, opts), perHour / #kinds)
+		end
+	else
+		for _, s in spawners do
+			addSeat(Balance.elite2Seat(classId, s.kind, s.level, opts), 3600 / ((s.respawn.min + s.respawn.max) / 2))
+		end
+	end
+	return out
+end
+
+-- S134h (C2): the targets in one place (ids "S134h.*"); balance.spec ("Balance: Elite II loot (S134h)") asserts every
+-- row without `report`.
+function Balance.targetsS134h(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134h
+	local function add(id: string, label: string, value: number, low: number?, high: number?, c: string?, lv: number?)
+		target(rows, `S134h.{id}`, "elite2loot", label, value, low, high, c, lv)
+	end
+	for _, cave in Areas.caves.list do
+		local heroic, legendary = 0, 0
+		local lv = cave.levels[2]
+		for _, c in Balance.CLASSES do
+			local now, before = Balance.elite2Cave(c, cave.id), Balance.elite2Cave(c, cave.id, { legacy = true })
+			local h = now.heroic / math.max(1e-9, before.heroic)
+			local l = now.legendary / math.max(1e-9, before.legendary)
+			heroic += h / #Balance.CLASSES
+			legendary += l / #Balance.CLASSES
+			add(
+				`elite2.class.heroic.{cave.id}.{c}`,
+				`{cave.id} {c}: Heroiki dla klasy / h przed`,
+				h,
+				S.classFloor,
+				nil,
+				c,
+				lv
+			)
+			rows[#rows].report = "S134h"
+		end
+		add(
+			`elite2.cave.heroic.{cave.id}`,
+			`{cave.id}: Heroiki dla klasy / h (śr. 4 klas) przed`,
+			heroic,
+			S.ratio[1],
+			S.ratio[2],
+			nil,
+			lv
+		)
+		add(
+			`elite2.cave.legendary.{cave.id}`,
+			`{cave.id}: Legendarne dla klasy / h (śr. 4 klas) przed`,
+			legendary,
+			S.ratio[1],
+			S.ratio[2],
+			nil,
+			lv
+		)
+		local now, before =
+			Balance.elite2Cave("Warrior", cave.id), Balance.elite2Cave("Warrior", cave.id, { legacy = true })
+		add(
+			`elite2.cave.crystal.{cave.id}`,
+			`{cave.id}: kryształy esencji / h przed`,
+			now.crystals / math.max(1e-9, before.crystals),
+			nil,
+			S.crystal,
+			nil,
+			lv
+		)
+		for _, s in elite2Spawners(cave.id) do
+			local best = 0
+			for _, c in Balance.CLASSES do
+				best = math.max(best, Balance.elite2Seat(c, s.kind, s.level).usable)
+			end
+			add(
+				`elite2.seat.share.{s.kind}`,
+				`{s.kind} ({cave.id}): udział przedmiotów najlepszej klasy`,
+				best,
+				S.seatShare,
+				nil,
+				nil,
+				s.level
+			)
+		end
+	end
+	return rows
 end
 
 export type BossDrops = { legendary: number, mythic: number, heroic: number, extra: number }

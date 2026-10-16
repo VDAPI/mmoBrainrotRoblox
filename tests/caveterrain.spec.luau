@@ -13,6 +13,7 @@ local Areas = require("../src/shared/Data/Areas")
 local BossConsts = require("../tools/WikiData/Bosses")
 local CaveDress = require("../src/shared/Logic/CaveDress")
 local CaveGen = require("../src/shared/Logic/CaveGen")
+local CavePlan = require("../src/shared/Logic/CavePlan")
 local CaveShapes = require("../src/shared/Data/CaveShapes")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local Fixture = require("./fixtures/caveRooms")
@@ -392,11 +393,12 @@ describe("Cave engine: quest anchors (S102)", function()
 	-- S104-S105 add the first ones (Data/Areas/Caves questAnchors, cave-relative, built by World/CaveLayout)
 	it("every cave quest anchor stands on the cave floor and Areas.anchorById finds it", function()
 		for _, cave in Areas.caves.list do
-			for _, a in cave.questAnchors or {} do
+			-- S134h: the anchors as drawn in the scaled cave (Logic/CavePlan.anchors, also Areas.anchorById)
+			for _, a in CavePlan.anchors(cave) do
 				local T = assert(CaveTerrain.get(cave.id), cave.id)
 				expect(`{cave.id}/{a.id} {T.floor(a.x, a.z) ~= nil}`).toBe(`{cave.id}/{a.id} true`)
 				local found, mapId = Areas.anchorById(a.id)
-				expect(found == a and mapId == cave.id).toBe(true)
+				expect(found ~= nil and found.x == a.x and found.z == a.z and mapId == cave.id).toBe(true)
 			end
 		end
 	end)
@@ -516,7 +518,7 @@ end)
 local function lavaMaps(): { string }
 	local list = {}
 	for _, id in MAPS do
-		for _, f in CaveShapes.byMap[id].features do
+		for _, f in assert(CavePlan.shape(id)).features do -- S134h: as drawn
 			if f.liquid == "lava" or f.kind == "vent" or f.kind == "crack" or f.kind == "moat" then
 				table.insert(list, id)
 				break
@@ -535,11 +537,12 @@ local function routes(
 	local cave = Areas.caves.get(id)
 	local tunnels: { any } = {}
 	if cave and cave.seed then
-		for _, c in CaveGen.generate(cave.seed).corridors do
+		-- S134h: the plan and the shape as drawn (Logic/CavePlan)
+		for _, c in CavePlan.plan(cave).corridors do
 			table.insert(tunnels, c)
 		end
 	end
-	for _, t in CaveShapes.byMap[id].tunnels or {} do
+	for _, t in assert(CavePlan.shape(id)).tunnels or {} do
 		table.insert(tunnels, t)
 	end
 	for _, t in tunnels do
@@ -579,7 +582,7 @@ describe("Cave engine: lava (S50)", function()
 			local nodes = CaveDress.nodes(id)
 			local lanes = routes(id, T)
 			local bridges = {}
-			for _, f in CaveShapes.byMap[id].features do
+			for _, f in assert(CavePlan.shape(id)).features do -- S134h: as drawn
 				if f.kind == "bridge" then
 					table.insert(bridges, f)
 				end
@@ -639,7 +642,7 @@ describe("Cave engine: lava (S50)", function()
 			local probe: { number }? = nil
 			-- glowing cracks and vents follow the floor's slope (they are only a little sunk)
 			local function fissure(x: number, z: number): boolean
-				for _, f in CaveShapes.byMap[id].features do
+				for _, f in assert(CavePlan.shape(id)).features do -- S134h: as drawn
 					if f.kind == "vent" and (x - f.x) ^ 2 + (z - f.z) ^ 2 < (f.r + 1) ^ 2 then
 						return true
 					elseif f.kind == "crack" then
@@ -655,7 +658,7 @@ describe("Cave engine: lava (S50)", function()
 			end
 			-- the decks of the bridges stand high over the lava beside them
 			local function onBridge(x: number, z: number): boolean
-				for _, f in CaveShapes.byMap[id].features do
+				for _, f in assert(CavePlan.shape(id)).features do -- S134h: as drawn
 					if f.kind == "bridge" and segDist(f.ax, f.az, f.bx, f.bz, x, z) < f.width / 2 + 1 then
 						return true
 					end
@@ -705,7 +708,7 @@ describe("Cave engine: lava (S50)", function()
 	it("lays every bridge as a continuous floor with lava on both sides", function()
 		for _, id in lavaMaps() do
 			local T = assert(CaveTerrain.get(id))
-			for _, f in CaveShapes.byMap[id].features do
+			for _, f in assert(CavePlan.shape(id)).features do -- S134h: as drawn
 				if f.kind == "bridge" then
 					local len = math.sqrt((f.bx - f.ax) ^ 2 + (f.bz - f.az) ^ 2)
 					local ux, uz = (f.bx - f.ax) / len, (f.bz - f.az) / len
@@ -843,7 +846,7 @@ describe("Cave engine: ice and the Frost Peaks (S51)", function()
 			expect(n > 0).toBe(true)
 		end
 		local G = assert(CaveTerrain.get("frostpeak_grotto"))
-		local hole = G.liquid(-90, -42)
+		local hole = G.liquid(CavePlan.point("frostpeak_grotto", -90, -42)) -- S134h: as drawn
 		expect(hole ~= nil and hole.kind == "water").toBe(true)
 	end)
 
@@ -851,11 +854,13 @@ describe("Cave engine: ice and the Frost Peaks (S51)", function()
 		"keeps the Grotto: the chimney open to the sky, the King's Den above the Chimney, the nests out of reach",
 		function()
 			local T = assert(CaveTerrain.get("frostpeak_grotto"))
-			expect(T.ceiling(20, 80) or 0).toBe(1e4)
+			-- S134h: the authored points as drawn (Logic/CavePlan.point)
+			local cx, cz = CavePlan.point("frostpeak_grotto", 20, 80)
+			expect(T.ceiling(cx, cz) or 0).toBe(1e4)
 			local r3, r4 = T.rooms[3], T.rooms[4]
 			expect((T.floor(r4.x, r4.z) or 0) >= (T.floor(r3.x, r3.z) or 0) + 3).toBe(true)
 			for _, p in { { -29, 59 }, { 68, 74 }, { 50, 95 } } do
-				local top = T.floor(p[1], p[2])
+				local top = T.floor(CavePlan.point("frostpeak_grotto", p[1], p[2]))
 				if top then
 					expect(top >= (T.floor(r3.x, r3.z) or 0) + 8).toBe(true)
 				end
@@ -884,13 +889,16 @@ describe("Cave engine: ice and the Frost Peaks (S51)", function()
 						local lx, lz = p.p[1], p.p[3]
 						local x = b.at.x + math.cos(rot) * lx + math.sin(rot) * lz
 						local z = b.at.z - math.sin(rot) * lx + math.cos(rot) * lz
-						if x > -240 and x < 284 and math.abs(z) < 9 then
+						-- S134h: the way as drawn (the scaled cave)
+						local from, to = CavePlan.coord("frostpeak_cave", -240), CavePlan.coord("frostpeak_cave", 284)
+						if x > from and x < to and math.abs(z) < 9 then
 							error(`Heart: {b.name} collides on the Dragon's Way at {math.floor(x)}, {math.floor(z)}`)
 						end
 					end
 				end
 			end
-			for x = 150, 170, 4 do
+			for px = 150, 170, 4 do
+				local x = CavePlan.coord("frostpeak_cave", px) -- S134h: as drawn
 				for _, z in { -6, 0, 6 } do
 					expect(T.headroom(x, z) >= 18).toBe(true)
 					expect(T.walkable(x, z, 1)).toBe(true)

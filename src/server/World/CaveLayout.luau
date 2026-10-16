@@ -20,6 +20,7 @@ local Shared = ReplicatedStorage.Shared
 local BlueprintBuild = require(Shared.Util.BlueprintBuild)
 local Areas = require(Shared.Data.Areas)
 local Caves = require(Shared.Data.Areas.Caves)
+local CavePlan = require(Shared.Logic.CavePlan)
 local CaveTerrain = require(Shared.Logic.CaveTerrain)
 local Log = require(Shared.Util.Log)
 local WorldGen = require(Shared.Logic.WorldGen)
@@ -81,7 +82,7 @@ function CaveLayout.build(ctx: Build.Context)
 	end
 	-- S102: quest anchors of the cave (story objectives of S104-S105), on the floor like the nodes
 	local cave = Caves.get(mapId)
-	local anchors: { Areas.QuestAnchor } = if cave then cave.questAnchors or {} else {}
+	local anchors: { Areas.QuestAnchor } = if cave then CavePlan.anchors(cave) else {} -- S134h: scaled
 	for _, a in anchors do
 		Build.questAnchor(ctx, a.id, a.x, a.z, a.y)
 	end

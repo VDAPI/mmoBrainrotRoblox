@@ -6,6 +6,7 @@
 
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Areas = require("../src/shared/Data/Areas")
+local CavePlan = require("../src/shared/Logic/CavePlan")
 local Config = require("../src/shared/Config")
 local CutsceneData = require("../src/shared/Data/Cutscenes")
 local Cutscenes = require("../src/shared/Logic/Cutscenes")
@@ -636,9 +637,10 @@ end)
 describe("Cave quest anchors (S102 T7)", function()
 	it("Areas.anchorById finds every anchor of the caves", function()
 		for _, cave in Areas.caves.list do
-			for _, anchor in cave.questAnchors or {} do
+			-- S134h: anchorById gives the anchor as drawn in the scaled cave (Logic/CavePlan.anchors)
+			for _, anchor in CavePlan.anchors(cave) do
 				local found, mapId = Areas.anchorById(anchor.id)
-				expect(found).toBe(anchor)
+				expect(found).toEqual(anchor)
 				expect(mapId).toBe(cave.id)
 			end
 		end

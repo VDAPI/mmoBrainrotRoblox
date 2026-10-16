@@ -15,6 +15,7 @@
 -- Thorn of Vael, a lantern).
 
 local Areas = require("./Areas")
+local CavePlan = require("../Logic/CavePlan")
 local Npcs = require("./Npcs")
 
 export type Shot = {
@@ -906,6 +907,28 @@ local list: { Scene } = {
 		subtitle = "cutscene.firstSpring.subtitle",
 	},
 }
+
+-- S134h: a shot in a scaled cave (Logic/CavePlan) is written in plan units: its point, figures and props are drawn
+-- scaled here, once (anchors come scaled from Areas.anchorById).
+for _, scene in list do
+	local shot = scene.shot
+	local mapId = if shot.kind == "point"
+		then shot.map
+		elseif shot.kind == "anchor" then select(2, Areas.anchorById(shot.anchor or ""))
+		else nil
+	local s = if mapId then CavePlan.scale(mapId) else 1
+	if s ~= 1 then
+		if shot.kind == "point" and shot.x and shot.z then
+			shot.x, shot.z = shot.x * s, shot.z * s
+		end
+		for _, f in scene.figures or {} :: { Figure } do
+			f.x, f.z = f.x * s, f.z * s
+		end
+		for _, p in scene.props or {} :: { Prop } do
+			p.x, p.z = p.x * s, p.z * s
+		end
+	end
+end
 
 local byId: { [string]: Scene } = {}
 local byQuest: { [string]: { Scene } } = {}

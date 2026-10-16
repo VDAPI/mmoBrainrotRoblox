@@ -29,6 +29,7 @@
 --     Chains of Winter): an iron post with two hoops, a chain hanging to the floor and a wooden bowl; detail only,
 --     built last so nothing above moves. Pure.
 
+local CavePlan = require("../CavePlan")
 local Kit = require("./Kit")
 
 local o = Kit.o
@@ -163,7 +164,7 @@ end
 
 local function gate(env: Env, out: { Build })
 	-- the wings of the gate behind the exit (-278, 0), ajar, on the west wall
-	local w = Kit.build(env, "DeepGate", "landmark", -286, 0, 90)
+	local w = Kit.build(env, "DeepGate", "landmark", Kit.at(env, -286), 0, 90)
 	for _, s in { -1, 1 } do
 		w.bp:rbox(9, 18, 1, s * 7, 9, 3, 0, s * 18, 0, o(IRON, "detail", { col = false }))
 		for k = 0, 3 do
@@ -173,7 +174,7 @@ local function gate(env: Env, out: { Build })
 	w.bp:box(22, 3, 1, 0, 20, 4, o({ c = "#141012", m = "Slate" }, "detail", { col = false })) -- soot
 	table.insert(out, w)
 	-- two kneeling kings by the way east
-	local k = Kit.build(env, "GateKings", "landmark", -222, 0, 270)
+	local k = Kit.build(env, "GateKings", "landmark", Kit.at(env, -222), 0, 270)
 	for _, s in { -1, 1 } do
 		king(k.bp, s * 22, Kit.gy(env, k, s * 22, 0), 0, 1.3, 0, { kneel = true })
 	end
@@ -207,7 +208,7 @@ end
 -- A forge bay of the Great Forge at bearing `a` (radians) from the hall's centre.
 local function bay(env: Env, out: { Build }, n: number, a: number)
 	local r = env.T.rooms[2]
-	local cx, cz = r.x + math.cos(a) * 66, r.z + math.sin(a) * 66
+	local cx, cz = r.x + math.cos(a) * Kit.at(env, 66), r.z + math.sin(a) * Kit.at(env, 66)
 	-- the frame faces the hall: local +Z points out towards the wall
 	local b = Kit.build(env, `ForgeBay_{n}`, "forge", cx, cz, math.deg(math.atan2(math.cos(a), math.sin(a))))
 	local bp = b.bp
@@ -252,7 +253,7 @@ local function greatForge(env: Env, out: { Build })
 	for _, mouth in { 0, 90, 180, 270 } do
 		for _, side in { -14, 14 } do
 			local a = math.rad(mouth + side)
-			local lx, lz = math.cos(a) * 57, math.sin(a) * 57
+			local lx, lz = math.cos(a) * Kit.at(env, 57), math.sin(a) * Kit.at(env, 57)
 			n += 1
 			king(
 				s.bp,
@@ -265,7 +266,7 @@ local function greatForge(env: Env, out: { Build })
 			)
 		end
 		local a = math.rad(mouth + 45)
-		local lx, lz = math.cos(a) * 60, math.sin(a) * 60
+		local lx, lz = math.cos(a) * Kit.at(env, 60), math.sin(a) * Kit.at(env, 60)
 		local top = (Kit.ceil(env, r.x + lx, r.z + lz) or 30) - s.at.y
 		s.bp:box(0.3, 8, 0.3, lx, top - 4, lz, o(IRON, "fine", { col = false }))
 		s.bp:rbox(4, 10, 0.2, lx, top - 13, lz, 0, math.deg(-a) + 90, 0, o(BANNER, "detail", { col = false }))
@@ -303,8 +304,8 @@ end
 
 local function bridges(env: Env, out: { Build })
 	for k, zs in { -1, 1 } do
-		local z0 = 92 * zs
-		local b = Kit.build(env, `FireBridge_{k}`, "bridge", -100, z0, 0)
+		local z0 = Kit.at(env, 92) * zs -- S134h: the bridges and lava faces as drawn
+		local b = Kit.build(env, `FireBridge_{k}`, "bridge", Kit.at(env, -100), z0, 0)
 		local bp = b.bp
 		local y = Kit.gy(env, b, 0, 0)
 		-- the arch under the deck and the railings over the lava span
@@ -320,7 +321,7 @@ local function bridges(env: Env, out: { Build })
 		Kit.lifeAt(env.ctx, b, "haze", 0, y - 4, 0, 10)
 		table.insert(out, b)
 		-- the dwarf's face spewing the lava fall at the west end; steam from the chasm at the east end
-		local f = Kit.build(env, `LavaFace_{k}`, "landmark", -190, z0, 270)
+		local f = Kit.build(env, `LavaFace_{k}`, "landmark", Kit.at(env, -190), z0, 270)
 		local fy = Kit.gy(env, f, 0, 0)
 		f.bp:box(10, 10, 2, 0, fy + 14, 3, o(STONE, "detail", { col = false }))
 		f.bp:rbox(8, 6, 1.6, 0, fy + 10, 2, -15, 0, 0, o(STONE, "detail", { col = false })) -- the beard
@@ -328,8 +329,8 @@ local function bridges(env: Env, out: { Build })
 			glowBox(f.bp, 1.4, 0.8, 0.2, s * 2.2, fy + 16, 1.9, EMBER)
 		end
 		table.insert(out, f)
-		Kit.life(env.ctx, "steam", -24, -8, z0, 6)
-		Kit.life(env.ctx, "smokeColumn", -24, -6, z0, 4)
+		Kit.life(env.ctx, "steam", Kit.at(env, -24), -8, z0, 6)
+		Kit.life(env.ctx, "smokeColumn", Kit.at(env, -24), -6, z0, 4)
 	end
 end
 
@@ -362,14 +363,14 @@ local function gullet(env: Env, out: { Build })
 		end
 	end
 	-- the balustrade of the lake gallery and the golems rising from the lava
-	local g = Kit.build(env, "GulletLake", "landmark", -105, -216, 0)
+	local g = Kit.build(env, "GulletLake", "landmark", Kit.at(env, -105), Kit.at(env, -216), 0)
 	local gy = Kit.gy(env, g, 0, 0)
 	for t = -3, 3 do
 		g.bp:box(5.4, 2.4, 0.8, t * 6, gy + 1.2, -2, o(STONE, "shell", { q = false }))
 		g.bp:box(1.2, 3, 1.2, t * 6 + 3, gy + 1.5, -2, o(STONE, "detail", { col = false }))
 	end
 	for k, p in { { 0, -24 }, { -12, -18 }, { 10, -14 } } do
-		local wx, wz = -105 + p[1], -216 + p[2]
+		local wx, wz = g.at.x + p[1], g.at.z + p[2]
 		local l = env.T.liquid(wx, wz)
 		if l then
 			local ly = l.level - g.at.y
@@ -404,7 +405,7 @@ end
 local function smelter(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	-- the tilted crucible on its scaffold over the pool (-100, 230), pouring the lava fall
-	local c = Kit.build(env, "SmelterCrucible", "forge", -100, 244, 0)
+	local c = Kit.build(env, "SmelterCrucible", "forge", Kit.at(env, -100), Kit.at(env, 244), 0)
 	local y = Kit.gy(env, c, 0, 0)
 	for _, s in { -1, 1 } do
 		c.bp:box(1.4, 22, 1.4, s * 9, y + 11, 0, o(Kit.wood, "shell", { q = false }))
@@ -416,11 +417,11 @@ local function smelter(env: Env, out: { Build })
 	c.bp:light(0, y + 24, -4, Kit.METAL, 34, 1.6, "lava")
 	table.insert(out, c)
 	-- the moulds along the gutter cooling from orange to grey
-	local m = Kit.build(env, "IngotMoulds", "traces", -130, 221, 0)
+	local m = Kit.build(env, "IngotMoulds", "traces", Kit.at(env, -130), Kit.at(env, 221), 0)
 	for k = 0, 9 do
 		local lx = 26 - k * 5.5
-		local wx = -130 + lx
-		local f = env.T.floor(wx, 221)
+		local wx = m.at.x + lx
+		local f = env.T.floor(wx, m.at.z)
 		if f then
 			local my = f - m.at.y
 			m.bp:box(4, 0.6, 2.4, lx, my + 0.3, 0, o(IRON, "detail", { col = false }))
@@ -470,12 +471,12 @@ local function smelter(env: Env, out: { Build })
 			table.insert(out, b)
 		end
 	end
-	local ch = Kit.build(env, "SmelterChimney", "landmark", -128, 236, 0)
+	local ch = Kit.build(env, "SmelterChimney", "landmark", Kit.at(env, -128), Kit.at(env, 236), 0)
 	local cy = Kit.gy(env, ch, 0, 0)
 	ch.bp:add("cyl", 18, 4, 4, 0, cy + 9, 0, 0, 0, 90, o(STONE, "detail", { col = false }))
 	Kit.lifeAt(env.ctx, ch, "smoke", 0, cy + 18, 0, 2)
 	table.insert(out, ch)
-	Kit.life(env.ctx, "embers", -100, -5, 230, 6)
+	Kit.life(env.ctx, "embers", Kit.at(env, -100), -5, Kit.at(env, 230), 6)
 	Kit.life(env.ctx, "drips", r.x, 18, r.z, 24)
 end
 
@@ -528,8 +529,8 @@ local function foundry(env: Env, out: { Build })
 		table.insert(out, b)
 	end
 	-- the torso cooling in the casting pit (103, -190)
-	local p = Kit.build(env, "CastingPit", "forge", 103, -190, 0)
-	local l = env.T.liquid(103, -190)
+	local p = Kit.build(env, "CastingPit", "forge", Kit.at(env, 103), Kit.at(env, -190), 0)
+	local l = env.T.liquid(p.at.x, p.at.z)
 	if l then
 		local ly = l.level - p.at.y
 		p.bp:add("ball", 6, 3, 4, 0, ly + 0.8, 0, 0, 20, 0, o(GOLEM, "detail", { col = false }))
@@ -622,7 +623,7 @@ local function armory(env: Env, out: { Build })
 	local d = Kit.build(env, "TornBanners", "traces", r.x, r.z, 0)
 	for k = 0, 2 do
 		local a = k * 2.1 + 0.6
-		local lx, lz = math.cos(a) * 30, math.sin(a) * 30
+		local lx, lz = math.cos(a) * Kit.at(env, 30), math.sin(a) * Kit.at(env, 30)
 		d.bp:rbox(3, 0.1, 5, lx, Kit.gy(env, d, lx, lz) + 0.06, lz, 0, k * 50, 0, o(CLAN, "fine", { col = false }))
 	end
 	table.insert(out, d)
@@ -674,7 +675,7 @@ local function heart(env: Env, out: { Build })
 	Kit.lifeAt(env.ctx, h, "embers", 0, y - 3, 0, 3)
 	table.insert(out, h)
 	-- the First Smith's anvil on its dais (110, -58) with the hammer and runes; the bowl of metal (110, 60)
-	local a = Kit.build(env, "FirstSmithAnvil", "landmark", 110, -60, 0)
+	local a = Kit.build(env, "FirstSmithAnvil", "landmark", Kit.at(env, 110), Kit.at(env, -60), 0)
 	local ay = Kit.gy(env, a, 0, 0)
 	anvil(a.bp, 0, ay, 0, 1.8, 0)
 	a.bp:rbox(0.5, 4, 0.5, 0.6, ay + 4.8, 0, 0, 0, 20, o(Kit.wood, "detail", { col = false }))
@@ -682,9 +683,9 @@ local function heart(env: Env, out: { Build })
 	for k = -2, 2 do
 		glowBox(a.bp, 0.8, 0.12, 0.8, k * 1.6, ay + 0.08, 3.6, RUNE)
 	end
-	Kit.clear(env, 110, -60, 4)
+	Kit.clear(env, a.at.x, a.at.z, 4)
 	table.insert(out, a)
-	local w = Kit.build(env, "MetalBowl", "forge", 110, 60, 0)
+	local w = Kit.build(env, "MetalBowl", "forge", Kit.at(env, 110), Kit.at(env, 60), 0)
 	local wy = Kit.gy(env, w, 0, 0)
 	for k = 0, 7 do
 		local t = k * math.pi / 4
@@ -706,7 +707,7 @@ local function heart(env: Env, out: { Build })
 	local k = Kit.build(env, "HeartKings", "landmark", r.x, r.z, 0)
 	for n, deg in { 45, 135, 225, 315 } do
 		local t = math.rad(deg)
-		local lx, lz = math.cos(t) * 40, math.sin(t) * 40
+		local lx, lz = math.cos(t) * Kit.at(env, 40), math.sin(t) * Kit.at(env, 40)
 		king(
 			k.bp,
 			lx,
@@ -723,7 +724,7 @@ end
 
 local function antechamber(env: Env, out: { Build })
 	-- Azgor's horned flame over the gate (282, 0) with lava in its grooves and a small fall into a bowl
-	local s = Kit.build(env, "AzgorSign", "landmark", 290, 0, 270)
+	local s = Kit.build(env, "AzgorSign", "landmark", Kit.at(env, 290), 0, 270)
 	local y = Kit.gy(env, s, 0, 0)
 	local bp = s.bp
 	bp:box(16, 14, 1, 0, y + 22, 1, o(STONE, "detail", { col = false }))
@@ -736,7 +737,7 @@ local function antechamber(env: Env, out: { Build })
 	bp:light(0, y + 20, -2, AZGOR, 40, 1.8, "lava")
 	table.insert(out, s)
 	-- kneeling chained kings by the gate, a row of fire baskets, the offering of helmets and broken hammers
-	local k = Kit.build(env, "ChainedKings", "landmark", 272, 0, 270)
+	local k = Kit.build(env, "ChainedKings", "landmark", Kit.at(env, 272), 0, 270)
 	for _, side in { -1, 1 } do
 		king(k.bp, side * 15, Kit.gy(env, k, side * 15, 0), 0, 1.3, 0, { kneel = true, chiselled = true })
 		k.bp:beam(
@@ -751,7 +752,7 @@ local function antechamber(env: Env, out: { Build })
 		)
 	end
 	table.insert(out, k)
-	local f = Kit.build(env, "FireBaskets", "lamp", 240, 0, 0)
+	local f = Kit.build(env, "FireBaskets", "lamp", Kit.at(env, 240), 0, 0)
 	for t = 0, 4 do
 		for _, side in { -1, 1 } do
 			local lx, lz = -30 + t * 14, side * 18
@@ -761,7 +762,7 @@ local function antechamber(env: Env, out: { Build })
 		end
 	end
 	table.insert(out, f)
-	local o2 = Kit.build(env, "HelmetOffering", "traces", 262, 12, 0)
+	local o2 = Kit.build(env, "HelmetOffering", "traces", Kit.at(env, 262), Kit.at(env, 12), 0)
 	local oy = Kit.gy(env, o2, 0, 0)
 	for t = 0, 8 do
 		local a = t * 2.1
@@ -782,14 +783,14 @@ local function antechamber(env: Env, out: { Build })
 	o2.bp:rbox(0.4, 3, 0.4, 2, oy + 0.3, 1, 0, 30, 85, o(Kit.wood, "fine", { col = false }))
 	o2.bp:box(1.6, 1, 1, 3.4, oy + 0.5, 1.4, o(STEEL, "fine", { col = false }))
 	table.insert(out, o2)
-	Kit.life(env.ctx, "haze", 270, 0.5, 0, 8)
+	Kit.life(env.ctx, "haze", Kit.at(env, 270), 0.5, 0, 8)
 	runes(env, out, 8, AZGOR, 10, 9)
-	Kit.life(env.ctx, "drips", 220, 20, 0, 20)
+	Kit.life(env.ctx, "drips", Kit.at(env, 220), 20, 0, 20)
 end
 
 -- S104: one post per quest anchor of the cave, 1.6 studs north of it (the anchor is where the player stands).
 local function captivePosts(env: Env, out: { Build })
-	local anchors: { any } = if env.cave then env.cave.questAnchors or {} else {}
+	local anchors: { any } = if env.cave then CavePlan.anchors(env.cave) else {} -- S134h: scaled
 	for _, anchor in anchors do
 		local b = Kit.build(env, `CaptivePost_{anchor.id}`, "traces", anchor.x, anchor.z - 1.6, 0)
 		local bp = b.bp

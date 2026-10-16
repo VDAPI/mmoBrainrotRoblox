@@ -6,6 +6,7 @@
 -- story before side quests); one map. Failing (the player dead or lost while led) sends it back to its start; it
 -- never dies. Positions are map-relative flat points (y = 0).
 
+local CavePlan = require("./CavePlan")
 local Config = require("../Config")
 local Locale = require("../Util/Locale")
 local Maps = require("../Data/Maps")
@@ -160,7 +161,9 @@ end
 -- Where the companion joins: `from`, else the NPC's own place when it stands on the companion's map.
 function Companion.fromOf(def: CompanionDef): Flat?
 	if def.from then
-		return { x = def.from.x, z = def.from.z }
+		-- S134h: authored in plan units; a cave map is drawn scaled (Logic/CavePlan)
+		local x, z = CavePlan.point(def.map, def.from.x, def.from.z)
+		return { x = x, z = z }
 	end
 	local npc = Npcs.get(def.npc)
 	if npc and npc.map == def.map then

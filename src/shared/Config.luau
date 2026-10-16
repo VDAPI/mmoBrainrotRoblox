@@ -335,7 +335,14 @@ local Config = {
 	-- "World detail" setting (Controllers/RegionLightController).
 	RegionLights = { low = 4, mid = 8, high = 12 },
 	-- S48: lights on at once in a cave, crypt or boss chamber (nearest the camera; RegionLightController)
-	CaveLights = { low = 8, mid = 16, high = 24 },
+	-- S134h: low 8 -> 12 (a phone with low graphics sees more rooms); `player` = the soft light the local player carries
+	-- underground (RegionLightController; looks only, outside the lamps' count)
+	CaveLights = {
+		low = 12,
+		mid = 16,
+		high = 24,
+		player = { range = 26, brightness = 0.8, color = "#FFD9A8" },
+	},
 	-- Day and night on maps with `dayNight` (S21): one full day in real seconds; night (19:00-6:00) takes
 	-- DayNightShare of it.
 	DayLength = 2400,

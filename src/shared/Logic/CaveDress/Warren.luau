@@ -220,7 +220,7 @@ local function diggings(env: Env, out: { Build })
 	end
 	table.insert(out, b)
 	-- webs in the caved-in side gallery (the dug step)
-	local w = Kit.build(env, "DiggingsWebs", "traces", -40, -84, 0)
+	local w = Kit.build(env, "DiggingsWebs", "traces", Kit.at(env, -40), Kit.at(env, -84), 0)
 	Kit.web(w.bp, -4, Kit.gy(env, w, -4, 0) + 1, 0, 4, Kit.gy(env, w, 4, 0) + 9, 0)
 	Kit.web(w.bp, 0, Kit.gy(env, w, 0, -3) + 1, -3, 3, Kit.gy(env, w, 3, 3) + 8, 3)
 	table.insert(out, w)
@@ -230,7 +230,7 @@ local function shaft(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	local ctx = env.ctx
 	-- the shaft in the niche (180, 0): a dark disc in the pit, mist and ore glow, a rail of logs, the winch tower
-	local s = Kit.build(env, "ChiefShaft", "landmark", 180, 0, 90)
+	local s = Kit.build(env, "ChiefShaft", "landmark", Kit.at(env, 180), 0, 90)
 	local bp = s.bp
 	local y = Kit.gy(env, s, 0, 0)
 	bp:add("cyl", 0.2, 10, 10, 0, y + 0.1, 0, 0, 0, 90, o(Kit.dark, "detail", { col = false }))
@@ -367,7 +367,7 @@ function Warren.all(env: Env, out: { Build })
 	diggings(env, out)
 	shaft(env, out)
 	spiderpit(env, out)
-	Kit.life(env.ctx, "drips", 40, 10, -10, 30)
+	Kit.life(env.ctx, "drips", Kit.at(env, 40), 10, Kit.at(env, -10), 30)
 end
 
 return Warren

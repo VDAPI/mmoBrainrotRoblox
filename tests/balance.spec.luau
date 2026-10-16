@@ -247,6 +247,35 @@ T.describe("Balance: Elite II kit (S134e)", function()
 	end)
 end)
 
+-- S134h (C2): Elite II loot (Balance.targetsS134h): Heroics and Legendaries for the class per hour of a cave's two Elite IIs
+-- / the state before the session 0.85-1.25 (mean of the 4 classes; a single class printed), crystal equivalents at most
+-- 1.25, every Elite II worth something to its best class; every row without `report` asserted.
+T.describe("Balance: Elite II loot (S134h)", function()
+	local rows = B.targetsS134h()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134h, docs/sessions S134h C2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134h targets (printed); the per-class ratios, two Elite IIs a cave", function()
+		printReport("S134h", rows, 20)
+		for _, row in rows do
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)}`)
+			end
+		end
+		T.expect(#rows >= 12 * 4).toBe(true)
+		for _, cave in require("../src/shared/Data/Areas").caves.list do
+			T.expect(#B.elite2Spawners(cave.id)).toBe(2)
+		end
+	end)
+end)
+
 -- S134g (E2): Legendary and Mythic with skill effects (Balance.targetsS134g): stats Legendary / Heroic 1.03-1.07 and
 -- Mythic / Heroic 1.08-1.12 at the same level, Mythic > Legendary > Heroic with the effects, a Heroic catches a
 -- Legendary weapon 2-5 levels above and a Mythic 5-9, the owner's Legendary L36 loses to a Heroic L48 (every class,
@@ -1123,7 +1152,8 @@ T.describe("Balance 20-100: items, loot, defence (S84)", function()
 			if not near(share, topShare, math.sqrt(topShare * (1 - topShare)), items) then
 				error(`{variant}: top rarity share {share}, model {topShare}`, 0)
 			end
-			local expectedUsable = B.usableAt(tableDef.slotWeights, level, tableDef.classBias, "Mage")
+			-- S134h: an Elite II drops only its own slot groups (LootTables.slotsFor)
+			local expectedUsable = B.usableAt(LootTables.slotsFor(kind, variant), level, tableDef.classBias, "Mage")
 			local p = usable / items
 			if not near(p, expectedUsable, math.sqrt(expectedUsable * (1 - expectedUsable)), items) then
 				error(`{variant}: class share {p}, model {expectedUsable}`, 0)

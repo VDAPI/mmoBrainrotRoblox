@@ -6,6 +6,7 @@ local Shared = game:GetService("ReplicatedStorage").Shared
 
 local Areas = require(Shared.Data.Areas)
 local BudgetData = require(Shared.Data.QuestBudget)
+local CavePlan = require(Shared.Logic.CavePlan)
 local CutsceneData = require(Shared.Data.Cutscenes)
 local Maps = require(Shared.Data.Maps)
 local NpcMarks = require(Shared.Logic.NpcMarks)
@@ -275,7 +276,7 @@ commands.anchor = function(player, args)
 	end
 	-- S102: anchors inside caves (Areas.anchorById knows them too)
 	for _, cave in Areas.caves.list do
-		for _, anchor in (cave.questAnchors or {}) :: { Areas.QuestAnchor } do
+		for _, anchor in CavePlan.anchors(cave) do -- S134h: as drawn (scaled cave)
 			table.insert(names, anchor.id)
 			if anchor.id == id then
 				found, mapId = anchor, cave.id

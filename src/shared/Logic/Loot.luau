@@ -182,9 +182,11 @@ function Loot.rollMonsterLoot(
 		if drops.extra and rng:chance(drops.extra) then
 			count += 1
 		end
+		-- S134h: an Elite II drops only its own slot groups (LootTables.ELITE2_SLOTS)
+		local slots = LootTables.slotsFor(monsterId, variant)
 		for _ = 1, count do
 			local ilvl = ItemRoll.dropLevel(mods.dropLevel or level, rng)
-			local defId = Loot.pickItem(tableDef.slotWeights, ilvl, tableDef.classBias, mods.classId, rng)
+			local defId = Loot.pickItem(slots, ilvl, tableDef.classBias, mods.classId, rng)
 			if defId then
 				table.insert(result.items, {
 					defId = defId,

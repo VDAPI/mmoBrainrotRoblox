@@ -73,7 +73,7 @@ end
 local function threshold(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- the arch of thick roots over the exit (-211, 0)
-	local arch = Kit.build(env, "RootArch", "landmark", -205, 0, 90)
+	local arch = Kit.build(env, "RootArch", "landmark", Kit.at(env, -205), 0, 90)
 	for k = -2, 2 do
 		local x = k * 4
 		arch.bp:beam(
@@ -168,7 +168,7 @@ local function feeding(env: Env, out: { Build })
 	local bp = b.bp
 	local g = ground(env, b)
 	for _, p in { { -142, -66 }, { -78, -114 }, { -52, -100 } } do
-		local lx, lz = p[1] - r.x, p[2] - r.z
+		local lx, lz = Kit.at(env, p[1]) - r.x, Kit.at(env, p[2]) - r.z -- S134h: fixed points as drawn
 		Kit.bones(bp, lx, 0, lz, 7, g)
 		Kit.glowCap(bp, lx + 2, g(lx + 2, lz + 2), lz + 2, 0.4, GHOUL, false, "fine")
 	end
@@ -233,8 +233,9 @@ local function feeding(env: Env, out: { Build })
 		end
 	end
 	-- the claw sign over the way east
-	bp:push(r.x + 48 - b.at.x, 0, -10, 0, 90, 0)
-	Kit.claws(bp, 0, g(48, -10) + 8, 0, 2.4)
+	local cwx, cwz = Kit.at(env, 48), Kit.at(env, -10) -- S134h: as drawn
+	bp:push(r.x + cwx - b.at.x, 0, cwz, 0, 90, 0)
+	Kit.claws(bp, 0, g(cwx, cwz) + 8, 0, 2.4)
 	bp:pop()
 	table.insert(out, b)
 	Kit.life(env.ctx, "drips", r.x, 18, r.z, 30)
@@ -247,16 +248,17 @@ local function bearden(env: Env, out: { Build })
 	local bp = b.bp
 	local g = ground(env, b)
 	-- bark round the taproot (pillar at (20, -52))
-	local tx, tz = 20 - r.x, -52 - r.z
+	local px, pz = Kit.at(env, 20), Kit.at(env, -52) -- S134h: the pillar as drawn
+	local tx, tz = px - r.x, pz - r.z
 	for k = 0, 7 do
 		local a = k * math.pi / 4
 		bp:rbox(
 			1.4,
 			24,
 			2.6,
-			tx + math.cos(a) * 4.6,
+			tx + math.cos(a) * Kit.at(env, 4.6),
 			g(tx, tz) + 10,
-			tz + math.sin(a) * 4.6,
+			tz + math.sin(a) * Kit.at(env, 4.6),
 			0,
 			math.deg(-a),
 			4,
@@ -264,7 +266,7 @@ local function bearden(env: Env, out: { Build })
 		)
 	end
 	-- the wild hive high in the roots dripping amber honey (glow)
-	local hy = (Kit.ceil(env, 20, -52) or 30) - b.at.y - 6
+	local hy = (Kit.ceil(env, px, pz) or 30) - b.at.y - 6
 	bp:add(
 		"ball",
 		4,
@@ -419,12 +421,12 @@ local function wetden(env: Env, out: { Build })
 	-- fungi round the spring pool in the niche (-112, 120)
 	for k = 0, 3 do
 		local a = k * 1.4
-		local lx, lz = -112 + math.cos(a) * 11 - r.x, 120 + math.sin(a) * 11 - r.z
+		local lx, lz = Kit.at(env, -112) + math.cos(a) * 11 - r.x, Kit.at(env, 120) + math.sin(a) * 11 - r.z
 		Kit.glowCap(bp, lx, g(lx, lz), lz, 0.5, FUNGUS, k == 0, "fine")
 	end
 	table.insert(out, b)
 	Kit.life(env.ctx, "drips", r.x, 14, r.z, 24)
-	Kit.life(env.ctx, "drips", -112, 10, 120, 8)
+	Kit.life(env.ctx, "drips", Kit.at(env, -112), 10, Kit.at(env, 120), 8)
 end
 
 function Den.all(env: Env, out: { Build })

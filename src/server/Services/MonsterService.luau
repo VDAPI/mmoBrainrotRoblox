@@ -483,7 +483,8 @@ function MonsterService.Despawn(monster: Monster.Monster)
 	monster:Destroy()
 end
 
--- Spawns the whole group (all members at once). Elite II picks its kind from `choices`.
+-- Spawns the whole group (all members at once). A spawner with `choices` picks its kind from them (S134h: the cave
+-- Elite IIs have fixed kinds and none).
 local function spawnGroup(spawner: SpawnerRuntime, announce: boolean)
 	local data = spawner.data
 	spawner.spawned = true
@@ -616,16 +617,22 @@ function MonsterService.GroupStats(mapId: string?): (number, { number }, number)
 	return total, sizes, active
 end
 
--- Respawns the Elite II of a cave right away (admin /e2 spawn). Returns false when the map has none.
-function MonsterService.RespawnElite2(mapId: string): boolean
+-- Respawns the Elite IIs of a map right away (admin /e2 spawn [kind]; S134h: a cave has two, each on its own spawner):
+-- every one, or only the one of `kind`. Returns false when the map has none (of that kind).
+function MonsterService.RespawnElite2(mapId: string, kind: string?): boolean
+	local any = false
 	for _, spawner in spawners do
-		if spawner.mapId == mapId and spawner.data.variant == "elite2" then
+		if
+			spawner.mapId == mapId
+			and spawner.data.variant == "elite2"
+			and (kind == nil or spawner.data.monster == kind)
+		then
 			despawnGroup(spawner)
 			spawnGroup(spawner, true)
-			return true
+			any = true
 		end
 	end
-	return false
+	return any
 end
 
 function MonsterService.Stats(): (number, number, number, number)

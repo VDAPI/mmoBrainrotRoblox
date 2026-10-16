@@ -4973,6 +4973,42 @@ return {
 				why = "G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08)",
 			},
 		},
-
+		-- S134h: Elite II loot assigned to the kind, two Elite IIs in every cave (docs/SESJE.md S134h)
+		["LootTables:ELITE2_BANDS*"] = {
+			{
+				session = "S134h",
+				why = "new table: two level bands per region (7-14, 14-20, 21-33, 33-45, 46-58, 58-70, 71-86, 86-100); in every band the Elite IIs of the caves together drop all nine slot groups (tests/elite2loot.spec)",
+			},
+		},
+		["Rarities:itemDrops.elite2.min"] = {
+			{
+				session = "S134h",
+				why = "2 -> 1: two Elite IIs in every cave (each with its own respawn) instead of one; 1-2 items a kill keep the Heroics and Legendaries for the class per hour of a cave at 1.18-1.22 of before (Balance.targetsS134h 0.85-1.25)",
+			},
+		},
+		["Rarities:itemDrops.elite2.max"] = {
+			{
+				session = "S134h",
+				why = "3 -> 2: with the min 1-2 items a kill (see min)",
+			},
+		},
+		["LootTables:byId.ashOrc.variantMaterials.elite2[essence_shard].chance"] = {
+			{
+				session = "S134h",
+				why = "0.8 -> 0.4 (every kind's table shares VARIANT_MATERIALS): two Elite IIs a cave, crystal equivalents per hour 1.12 of before (<= 1.25)",
+			},
+		},
+		["LootTables:byId.ashOrc.variantMaterials.elite2[essence_crystal].chance"] = {
+			{
+				session = "S134h",
+				why = "0.3 -> 0.15: halved with the shards (two Elite IIs a cave)",
+			},
+		},
+		["LootTables:byId.ashOrc.variantMaterials.elite2[scroll_protection].chance"] = {
+			{
+				session = "S134h",
+				why = "0.08 -> 0.04: halved with the essence (two Elite IIs a cave: the same protection scrolls per hour as one before)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

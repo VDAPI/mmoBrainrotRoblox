@@ -2774,7 +2774,7 @@ return {
 	-- S19: admin
 	["admin.usage.groups"] = "/groups: monster groups on this map (count, sizes 1–4, active)",
 	["admin.groups.info"] = "{map}: {total} groups (1: {s1}, 2: {s2}, 3: {s3}, 4: {s4}), {active} active.",
-	["admin.usage.e2"] = "/e2 spawn: respawn this cave's Elite II right away",
+	["admin.usage.e2"] = "/e2 spawn [kind]: respawn this cave's Elite IIs right away (both, or only the one of that kind)",
 	["admin.e2.ok"] = "Elite II respawned.",
 	["admin.e2.none"] = "There is no Elite II on this map.",
 	["admin.nodes.count"] = "Nodes on {map}: {list}",
@@ -2817,7 +2817,8 @@ return {
 	-- S20: world map v2
 	["worldmap.groups"] = "Monster groups: {n}",
 	["worldmap.elites"] = "Elites:",
-	["worldmap.elite2"] = "Elite II (one at a time):",
+	["worldmap.elite2"] = "Elite IIs (two, each with its own loot):",
+	["worldmap.elite2Loot"] = "Loot: {slots}",
 	["worldmap.rooms"] = "Chambers: {n}",
 	["worldmap.layer.areas"] = "Areas",
 	["worldmap.layer.icons"] = "Portals",

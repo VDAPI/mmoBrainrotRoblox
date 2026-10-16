@@ -5,9 +5,12 @@
 -- "World detail") and turns the others off; it is the only owner of their `Enabled`. S47: the Frost Peaks' crystals,
 -- rune stones and the Ice Watch's loopholes (tag "crystal"). S48: on a cave, crypt or boss chamber map it owns every
 -- light of that map (fires, lamps, candles, crystals: any light with an Fx tag) and keeps Config.CaveLights of them on
--- (8 low, 16 mid, 24 high; hysteresis of 10 studs, every 0.3 s; admin /lights forces a number).
+-- (S134h: 12 low, 16 mid, 24 high; hysteresis of 10 studs, every 0.3 s; admin /lights forces a number). S134h: underground
+-- the local player carries one soft warm PointLight (Config.CaveLights.player, no shadows, outside that count), taken
+-- off on the surface.
 
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -75,6 +78,29 @@ end
 
 local caveOn: { [BasePart]: boolean } = {}
 
+-- S134h: the soft light of the local player underground (on the root part; rebuilt after a respawn).
+local TORCH = "CaveTorch"
+local function setTorch(on: boolean)
+	local character = Players.LocalPlayer and Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	local light = root:FindFirstChild(TORCH) :: PointLight?
+	if on and not light then
+		local spec = (Config.CaveLights :: any).player
+		local created = Instance.new("PointLight")
+		created.Name = TORCH
+		created.Range = spec.range
+		created.Brightness = spec.brightness
+		created.Color = Color3.fromHex(spec.color)
+		created.Shadows = false
+		created.Parent = root
+	elseif not on and light then
+		light:Destroy()
+	end
+end
+
 -- Caves: the N lights of the current map nearest the camera, hysteresis of 10 studs for the last few.
 local function updateCave(map: Maps.MapDef, at: Vector3)
 	local value = State.Get({ "account", "settings", "decor" })
@@ -115,6 +141,7 @@ local function update()
 	end
 	local at = camera.Focus.Position
 	local cave = caveMap()
+	setTorch(cave ~= nil)
 	if cave then
 		updateCave(cave, at)
 		return

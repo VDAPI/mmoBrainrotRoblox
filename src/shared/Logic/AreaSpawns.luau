@@ -9,11 +9,12 @@
 --     group never bigger than without the profile), extra members from a second generator, so the group
 --     positions (and the `arrive` points) never move;
 --   * caves: normal groups in every room but the entrance (and the boss antechamber), 3–5 elite groups of
---     1–2 of the two elite kinds, one Elite II spawner in the deepest room.
+--     1–2 of the two elite kinds, two Elite II spawners (S134h): A in the deepest room, B in the fighting room
+--     farthest from it (at least ELITE2_SEPARATION apart), each of its fixed kind with its own respawn.
 
 local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
-local CaveGen = require("./CaveGen")
+local CavePlan = require("./CavePlan")
 local Combat = require("../Data/Combat")
 local LevelCurves = require("./LevelCurves")
 local MapTerrain = require("./MapTerrain")
@@ -36,6 +37,8 @@ AreaSpawns.CLIFF_CLEARANCE = 10 -- radius of gentle, dry ground around a group (
 AreaSpawns.EDGE = 40
 AreaSpawns.RESPAWN = { min = 30, max = 45 }
 AreaSpawns.ELITE_RESPAWN = { min = 90, max = 150 }
+AreaSpawns.THREE_GROUPS_RADIUS = 70 -- S134h: rooms this big (after the cave's scale) hold three normal groups
+AreaSpawns.ELITE2_SEPARATION = 140 -- S134h: least distance between the two Elite IIs of a cave (tests)
 
 -- Elite II respawn window (seconds) in a cave whose top level is `level` (FIX 2026-10-09: longer for higher levels).
 function AreaSpawns.elite2Respawn(level: number): { min: number, max: number }
@@ -227,12 +230,9 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 	return spawners
 end
 
--- Room plan of a cave: listed rooms (boss caves) or the generated plan.
+-- Room plan of a cave: listed rooms (boss caves) or the generated plan, as drawn (S134h: Logic/CavePlan, scaled).
 function AreaSpawns.caveRooms(cave: AreaTypes.Cave): { AreaTypes.Room }
-	if cave.rooms then
-		return cave.rooms
-	end
-	return CaveGen.generate(cave.seed or seedOf(cave.id)).rooms
+	return CavePlan.rooms(cave)
 end
 
 -- Rooms that hold monsters: all but the entrance (and the boss antechamber).
@@ -268,7 +268,7 @@ function AreaSpawns.cave(cave: AreaTypes.Cave, opts: { pairChance: number? }?): 
 		return nil, nil
 	end
 
-	local function add(id: string, variant: any, kinds: { string }, room: AreaTypes.Room, respawn: any, extra: any?)
+	local function add(id: string, variant: any, kinds: { string }, room: AreaTypes.Room, respawn: any)
 		local x, z = pointIn(room)
 		if not x or not z then
 			return
@@ -291,20 +291,18 @@ function AreaSpawns.cave(cave: AreaTypes.Cave, opts: { pairChance: number? }?): 
 			respawn = respawn,
 			areaId = cave.id,
 		}
-		if extra then
-			spawner.choices = extra
-		end
 		table.insert(spawners, spawner)
 	end
 
-	-- Elite II in the deepest (easternmost) room.
+	-- Elite II A in the deepest (easternmost) room (S134h: a fixed kind, no `choices`).
 	local deepest = rooms[1]
 	for _, room in rooms do
 		if room.x > deepest.x then
 			deepest = room
 		end
 	end
-	add("elite2", "elite2", { cave.elite2[1] }, deepest, AreaSpawns.elite2Respawn(range[2]), cave.elite2)
+	local elite2Respawn = AreaSpawns.elite2Respawn(range[2])
+	add("elite2", "elite2", { cave.elite2[1] }, deepest, elite2Respawn)
 
 	-- Elite groups, alternating the two kinds, spread over the rooms.
 	for i = 1, cave.eliteGroups do
@@ -314,14 +312,29 @@ function AreaSpawns.cave(cave: AreaTypes.Cave, opts: { pairChance: number? }?): 
 		add(`elite_{i}`, "elite", kinds, rooms[(i - 1) % #rooms + 1], AreaSpawns.ELITE_RESPAWN)
 	end
 
-	-- Normal groups: two per room (one in small rooms).
+	-- Normal groups: two per room (one in small rooms; S134h: three in the big rooms of the bigger caves).
 	local n = 0
 	for _, room in rooms do
-		local per = if room.r >= 45 then 2 else 1
+		local per = if room.r >= AreaSpawns.THREE_GROUPS_RADIUS then 3 elseif room.r >= 45 then 2 else 1
 		for _ = 1, per do
 			n += 1
 			local count = rng:weighted(AreaSpawns.GROUP_SIZE_WEIGHTS)
 			add(`group_{n}`, "normal", members(cave.normal, count, rng), room, AreaSpawns.RESPAWN)
+		end
+	end
+
+	-- S134h: Elite II B (the cave's second kind) in the fighting room farthest from A, on its own spawner and respawn;
+	-- placed last so that its rolls never move the other spawners.
+	if cave.elite2[2] then
+		local far, farD = nil :: AreaTypes.Room?, -1
+		for _, room in rooms do
+			local d = (room.x - deepest.x) ^ 2 + (room.z - deepest.z) ^ 2
+			if room ~= deepest and d > farD then
+				far, farD = room, d
+			end
+		end
+		if far then
+			add("elite2b", "elite2", { cave.elite2[2] }, far, elite2Respawn)
 		end
 	end
 	return spawners

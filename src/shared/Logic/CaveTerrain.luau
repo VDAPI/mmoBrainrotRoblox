@@ -24,6 +24,7 @@
 -- Does not require Logic/AreaSpawns (AreaSpawns -> MapTerrain -> CaveTerrain).
 
 local CaveGen = require("./CaveGen")
+local CavePlan = require("./CavePlan")
 local CaveShapes = require("../Data/CaveShapes")
 local Caves = require("../Data/Areas/Caves")
 local TerrainLayers = require("./TerrainLayers")
@@ -136,6 +137,10 @@ local function segment(ax: number, az: number, bx: number, bz: number, x: number
 end
 
 local function build(mapId: string, shape: CaveShapes.Shape): Cave
+	-- S134h: a scaled cave (Logic/CavePlan) is this plan stretched: every point (x, z) of the drawn cave reads the plan
+	-- at (x / S, z / S), and the gap between floor and ceiling grows by HS (open sky stays open). Floors, liquids and
+	-- their levels are the plan's, so every rule tuned on the plan (shores, steps, cores) holds in the drawn cave.
+	local S, HS = CavePlan.scale(mapId), CavePlan.heightScale(mapId)
 	local SEED = seedOf(mapId)
 	local F = shape.floorY or 0
 	local mats = shape.materials
@@ -154,15 +159,11 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	local rooms: { Room } = {}
 	local corridors: { CaveShapes.Tunnel } = {}
 	if cave then
-		local planRooms
-		if cave.rooms then
-			planRooms = cave.rooms
-		else
-			local plan = CaveGen.generate(cave.seed or 1)
-			planRooms = plan.rooms
-			for _, c in plan.corridors do
-				table.insert(corridors, { ax = c.ax, az = c.az, bx = c.bx, bz = c.bz, w = c.w })
-			end
+		-- S134h: the plan in plan units (Logic/CavePlan.basePlan); a scaled cave is stretched at the end of build
+		local plan = CavePlan.basePlan(cave)
+		local planRooms = plan.rooms
+		for _, c in plan.corridors do
+			table.insert(corridors, { ax = c.ax, az = c.az, bx = c.bx, bz = c.bz, w = c.w })
 		end
 		local last = if cave.boss then #planRooms - 1 else #planRooms
 		for i, r in planRooms do
@@ -296,8 +297,8 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	for _, r in rooms do
 		maxH = math.max(maxH, r.h + r.dy)
 	end
-	local TOP = math.ceil((F + maxH + 14) / 4) * 4
-	local HALF = halfOf(mapId)
+	local TOP = math.ceil((F + maxH * HS + 14) / 4) * 4
+	local HALF = halfOf(mapId) * S -- S134h: the drawn map
 
 	-- Core of a fighting room (and of an arena) at a point.
 	local function inCore(x: number, z: number): boolean
@@ -580,7 +581,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	end
 
 	-- The column at (x, z).
-	local function column(x: number, z: number): Column
+	local function planColumn(x: number, z: number): Column
 		local open, fl, ce = 0, math.huge, -math.huge
 		local best, room = 0, nil :: number?
 		for i, r in rooms do
@@ -909,16 +910,50 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		return { open = true, floor = fl, ceiling = ce, liquid = liquid, floorMat = floorMat, room = room }
 	end
 
+	-- S134h: a column of the drawn cave (the plan's at (x / S, z / S), the headroom grown by HS).
+	local function column(x: number, z: number): Column
+		if S == 1 then
+			return planColumn(x, z)
+		end
+		local c = planColumn(x / S, z / S)
+		if c.open and c.ceiling < SKY then
+			return {
+				open = true,
+				floor = c.floor,
+				ceiling = c.floor + (c.ceiling - c.floor) * HS,
+				liquid = c.liquid,
+				floorMat = c.floorMat,
+				room = c.room,
+			}
+		end
+		return c
+	end
+
+	-- S134h: the rooms as drawn (the plan's for an unscaled map)
+	local drawnRooms: { Room } = rooms
+	if S ~= 1 then
+		drawnRooms = {}
+		for i, r in rooms do
+			local copy = table.clone(r)
+			copy.x, copy.z, copy.r, copy.h = r.x * S, r.z * S, r.r * S, r.h * HS
+			copy.hx, copy.hz, copy.core = r.hx * S, r.hz * S, r.core * S
+			drawnRooms[i] = copy
+		end
+	end
+	local drawnShape: CaveShapes.Shape = CavePlan.shape(mapId) or shape
+
 	local T = {} :: Cave
 	T.mapId = mapId
-	T.shape = shape
-	T.rooms = rooms
+	T.shape = drawnShape
+	T.rooms = drawnRooms
 	T.HALF = HALF
 	T.VOXEL = CaveTerrain.VOXEL
 	T.BOTTOM = CaveTerrain.BOTTOM
 	T.TOP = TOP
 	T.column = column
-	T.inCore = inCore
+	T.inCore = function(x: number, z: number): boolean
+		return inCore(x / S, z / S)
+	end
 
 	local matSet: { [string]: boolean } = { Water = true, Air = true }
 	for _, m in { mats.wall, mats.floor, mats.accent, mats.bed, mats.moss or mats.floor } :: { string } do
@@ -1042,6 +1077,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	end
 
 	function T.roomAt(x: number, z: number): number?
+		x, z = x / S, z / S
 		for i = 1, nRooms do
 			local r = rooms[i]
 			local dx, dz = x - r.x, z - r.z
@@ -1091,7 +1127,8 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	end
 
 	-- S50: distance from (x, z) to the nearest lava of the features (analytic; bridges are not subtracted).
-	function T.lavaDistance(x: number, z: number): number
+	function T.lavaDistance(wx: number, wz: number): number
+		local x, z = wx / S, wz / S
 		local best = math.huge
 		for _, f in features do
 			local kind = f.kind
@@ -1127,14 +1164,14 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 		for _, c in cracks do
 			best = math.min(best, (TerrainLayers.nearest(c.line, x, z)) - c.half)
 		end
-		return best
+		return best * S
 	end
 
 	-- S51: the frozen waterfalls (their features) and the ice windows (`windows` of the icewall features and the
 	-- standalone `window` features): x, z by the wall, width, height, yaw facing into the room.
 	function T.icefalls(): { CaveShapes.Feature }
 		local out = {}
-		for _, f in features do
+		for _, f in drawnShape.features do
 			if f.kind == "icefall" then
 				table.insert(out, f)
 			end
@@ -1144,7 +1181,7 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 
 	function T.windows(): { { x: number, z: number, w: number, h: number, yaw: number } }
 		local out = {}
-		for _, f in features do
+		for _, f in drawnShape.features do
 			if f.kind == "window" then
 				table.insert(out, { x = f.x, z = f.z, w = f.w or 8, h = f.h or 10, yaw = f.yaw or 0 })
 			elseif f.kind == "icewall" then
@@ -1160,9 +1197,9 @@ local function build(mapId: string, shape: CaveShapes.Shape): Cave
 	-- facing into the room, the room's index. The terrain keeps a plain wall; the dressing builds the shelves.
 	function T.niches(): { { x: number, z: number, yaw: number, room: number, tiers: number, w: number, h: number } }
 		local out = {}
-		for _, f in features do
+		for _, f in drawnShape.features do
 			if f.kind == "niches" then
-				local room = rooms[f.room]
+				local room = drawnRooms[f.room]
 				if room then
 					local spacing = f.spacing or 8
 					local n = math.floor(2 * math.pi * room.r / spacing)
@@ -1245,6 +1282,7 @@ function CaveTerrain.get(mapId: string): Cave?
 	if cached then
 		return cached
 	end
+	-- S134h: built on the authored shape; a scaled map is stretched inside build (T.shape = CavePlan.shape)
 	local shape = CaveShapes.byMap[mapId]
 	if not shape then
 		return nil

@@ -430,6 +430,12 @@ type CharacterData = {
     `ROLES`, `decor`, `dy`, `floor`, `flat`, `h`; `tunnels` i `extraRooms` dla jaskiń bossów i komnat, `features`: `pool`,
     `stream`, `waterfall`, `skyhole`, `terrace`, `pit`, `pillar`, `stalagmites`, `stalactites`, `niche`; `arena`); plan
     sal i potwory dalej z `Data/Areas/Caves` / `CaveGen`;
+  - S134h `Logic/CavePlan`: jedyne źródło planu jaskini. Pole `scale` wpisu `CaveShapes` (12 jaskiń: 1,35) rozciąga plan:
+    `CavePlan.plan`/`rooms`/`shape`/`anchors`/`point`/`coord` dają sale, korytarze, cechy, kotwice i stałe punkty tak, jak
+    są narysowane; `CaveTerrain` czyta kolumnę planu w (x / s, z / s) i podnosi strop o (1 + (s − 1) / 2), więc reguły
+    planu (brzegi lawy, progi, rdzenie) trzymają się same; `AreaSpawns`, ubiór (`Kit.at`), `Data/Portals`, `Data/Maps`
+    (rozmiar, spawn, wejście do lochu), `Data/Cutscenes`, `Companion.fromOf`, `World/CaveLayout` i narzędzia czytają
+    plan tylko przez `CavePlan`;
   - `Logic/CaveTerrain` (model kolumnowy: jedna szczelina powietrza na kolumnę między `floor` a `ceiling`; ściany sal
     wybrzuszają się tylko na zewnątrz, strefa ściany nigdy nie wchodzi w rdzeń sali walki `0,65 r + 8`; tunele wiją się;
     `floor`, `ceiling`, `solid`, `material`, `liquid`, `walkable`, `headroom`, `roomAt`, `column`, `inCore`, `voxels`,

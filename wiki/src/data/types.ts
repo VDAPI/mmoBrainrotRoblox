@@ -450,6 +450,7 @@ export interface Cave {
   arrival?: Point;
   boss: boolean;
   elite2: string[]; // ids in monsters.json
+  elite2Loot: CaveElite2Loot[];
   eliteGroups: number;
   elites: string[]; // ids in monsters.json
   entrance?: CaveEntrance;
@@ -464,6 +465,11 @@ export interface Cave {
   ores: string[];
   profile?: string;
   region: string; // id in maps.json
+}
+
+export interface CaveElite2Loot {
+  kind: string; // id in monsters.json
+  slots: Name[];
 }
 
 export interface CaveEntrance {
@@ -1101,6 +1107,7 @@ export interface MonsterLoot {
   materials: MaterialChance[];
   rarities: Record<string, number>;
   rolls: number;
+  slots?: Name[];
 }
 
 export interface MonsterSpawn {

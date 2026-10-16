@@ -47,6 +47,10 @@
   Podgląd: `lune run tools/cavedump.luau <mapa> out.json 4` + `python tools/cavemap.py out.json out.png --overlay
   [--section x1 z1 x2 z2]`. Komnata bossa: kontrakt aren w `docs/ARCHITECTURE.md` §8. Admin: `/tpcave`, `/caveinfo`,
   `/cavestats`, `/lights`.
+  S134h: pole `scale` wpisu (domyślnie 1; 12 jaskiń 1,35) rozciąga cały plan (sale, korytarze, cechy z promieniami i
+  szerokościami, strop × (1 + (s − 1) / 2)); plan i współrzędne w `Data/Areas/Caves` i `CaveShapes` zostają w jednostkach
+  planu, każdy czytelnik bierze je przez `Logic/CavePlan` (`plan`, `rooms`, `shape`, `anchors`), a stałe współrzędne
+  ubioru przez `Kit.at(env, v)` (= `CavePlan.coord`) albo `CavePlan.point`.
 
 ## S45: API silnika krain (dla S46–S48)
 

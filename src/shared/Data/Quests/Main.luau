@@ -935,13 +935,14 @@ q({
 	barks = { by = "runesmith_brokk", accept = 1, half = 1, near = 3, death = 1, done = 1 },
 	choices = Talk.onPage(2, { Talk.answer("alone"), Talk.answer("smiths", Talk.focus(2)), Talk.answer("keys") }),
 	recall = { p1 = "warcampCages" },
-	-- by the cave's respawn point (-240 / 0): Brokk does not stand on the cave map
+	-- by the cave's respawn point (-240 / 0): Brokk does not stand on the cave map (plan units; S134h: drawn scaled, so
+	-- 6 studs closer to the respawn to stay within Config.Companion.rejoin of the map's spawn)
 	companion = Talk.follow(
 		"runesmith_brokk",
 		"ashen_cave",
 		{ 1 },
 		{ join = 1, wait = 1, back = 1 },
-		{ x = -232, z = 8 }
+		{ x = -238, z = 6 }
 	),
 })
 q({

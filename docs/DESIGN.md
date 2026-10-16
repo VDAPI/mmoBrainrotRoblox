@@ -89,8 +89,16 @@ Każda strefa terenowa ma też podstrefy (np. łąka, las, ruiny) z innymi pozio
 - Zawartość każdej jaskini:
   - 2–3 rodzaje zwykłych potworów z przedziału jaskini (w grupach 1–4, §15.1);
   - **2 różne rodzaje Elit** (po 3–5 grup Elit na jaskinię, grupy po 1–2 Elity);
-  - **dokładnie 1 Elita II naraz** (jeden punkt odrodzenia; przy każdym odrodzeniu może wylosować jeden z 1–2 rodzajów przypisanych do jaskini), odrodzenie 10–20 min, ogłoszenie na mapie;
-  - 6–10 węzłów rud (§12).
+  - **2 Elity II różnych rodzajów** (S134h; wcześniej jedna naraz z losowanym rodzajem): A w najdalszej sali walki, B w
+    sali walki najdalszej od A (co najmniej 140 st.), każda na swoim punkcie odrodzenia (300 + 3 × poziom jaskini s ±15%,
+    S134e), ze swoim licznikiem, ogłoszeniem na mapie i **swoim łupem** (§5.5);
+  - 8–12 węzłów rud (§12; S134h: +2).
+- **Wielkość (S134h):** jaskinie są rysowane 1,35 × większe niż ich plan (`Data/CaveShapes.scale`, jedyne źródło planu
+  `Logic/CavePlan`): sale, korytarze i cechy rosną w poziomie, wysokość sal o połowę tego (×1,175), powierzchnia sal
+  ok. ×1,8; komnaty bossów bez zmian. W salach od promienia 70 (po skali) stoją 3 grupy zwykłych potworów.
+- **Światło (S134h):** podziemia czytelne także bez lamp i na telefonie: presety jasności 0,9, otoczenie w barwie
+  jaskini (jasność względna ≥ 0,10), mgła od 380+, gracz niesie miękkie ciepłe światło; na niskiej jakości 12
+  najbliższych lamp (było 8).
 - Wejście z zewnątrz jest wyraźne: wylot jaskini (skały, łuk, pochodnie), płaski teren wokół portalu, tabliczka z nazwą i poziomami.
 - Ostatnia jaskinia regionu ma wejście do lochu bossa.
 - Elity i Elity II są na każdym poziomie 7–100 bez luk (S91–S94: jaskinie Boru od 21., Pustkowi od 46., Szczytów od
@@ -403,7 +411,15 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 
 ### 5.5 Drop
 
-- Szansa na przedmiot z potwora (podniesione po testach S17): zwykły **20%**, Elita **75%** (+25% na drugi), Elita II **100%, 2–3 przedmioty**, boss 3–4 przedmioty gwarantowane.
+- Szansa na przedmiot z potwora (podniesione po testach S17): zwykły **20%**, Elita **75%** (+25% na drugi), Elita II **100%, 1–2 przedmioty** (S134h; było 2–3 przy jednej Elicie II na jaskinię), boss 3–4 przedmioty gwarantowane.
+- **Łup Elity II przypisany (S134h):** każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
+  (`Data/LootTables.ELITE2_SLOTS`, klucz = rodzaj, wagi slotów jak zwykle obcięte do nich; np. Goblin Rzeźnik: hełm,
+  rękawice, druga ręka; Komtur Wiecznej Zimy: zbroja, druga ręka, pierścień), także broń i biżuteria. W każdym z pasm
+  7–14, 14–20, 21–33, 33–45, 46–58, 58–70, 71–86, 86–100 Elity II razem dają wszystkie 9 grup; dwie Elity II jednej
+  jaskini nie dzielą grupy; broń z co najmniej 2 Elit II regionu. Przedmiot innej klasy w przypisanej grupie wypada jak
+  dotąd (bez przerzutu na inne grupy). Elity II wydarzeń (Inwazja, Krwawy Księżyc) spoza listy dają wszystkie grupy.
+  Heroiki i Legendarne dla klasy na godzinę obu Elit II jaskini: ×1,18–1,22 stanu sprzed sesji, esencja ×1,12 (materiały
+  Elity II o połowę).
 - Broń ma większą wagę w losowaniu slotu (ok. 30% dropów), a przedmioty dla klasy zabójcy wypadają częściej (preferencja klasy ok. 80%, także w grupie przed rozdziałem łupu).
 - **Rzadkość zależy od źródła** (S30; sufit nigdy nieprzekraczany, `Rarities.cap`):
   - handlarz broni i kowal: zawsze Zwykły;
@@ -675,7 +691,7 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 ### 15.1 Zasady
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×3, obrażenia ×1.25, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×10, obrażenia ×1.35, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem). (S32; wcześniej ×4 / ×1.5 i ×12 / ×2.)
-- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
+- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i 2 Elity II (S134h, każda ze swoim łupem §5.5) na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
 - **Zestawy Elit** (S134e, `Data/MonsterAbilities.KITS`, wybór `Logic/MonsterCast`): Elita II ma obok własnej zdolności
   **Druzgocący Cios** (krąg 9 st. zamrożony pod celem w chwili zapowiedzi, zapowiadany do 45 st., 2,2 s, ×10,8 ataku,
   nigdy krytyk, co 16 s, ciemny karmin i komunikat dla celu), **Doskok** (gdy cel ucieka 2,5 s i stoi 12–45 st. dalej:
@@ -775,12 +791,12 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 **Spalone Pustkowia (45–70) / jaskinie 46–70 (S93)**
 - *nowy* Hiena Pustkowi (46–52), *nowy* Sęp Popiołu (50–56, latający), *nowy* Ognisty Chochlik (55–61), *nowy* Bazyliszek (61–69), *nowy* Mumia Pustyni (66–70)
-- Salamandra (45–52), Ork Popiołu (46–56), Ognisty Golem (52–60), Skorpion Pustyni (55–63), Wywerna (56–66); Krasnolud Renegat (60–70), Golem Magmowy (62–70), Kowal Płomieni (63–70) (jaskinia). Elity: Kopalnia ork i hiena (Elita II ork), Leże wywerna i skorpion (Elita II wywerna), Kuźnia krasnolud i golem magmowy (Elita II Kowal Płomieni) na każdym poziomie jaskini.
+- Salamandra (45–52), Ork Popiołu (46–56), Ognisty Golem (52–60), Skorpion Pustyni (55–63), Wywerna (56–66); Krasnolud Renegat (60–70), Golem Magmowy (62–70), Kowal Płomieni (63–70) (jaskinia). Elity: Kopalnia ork i hiena (Elity II ork i hiena, S134h), Leże wywerna i skorpion (Elity II wywerna i skorpion), Kuźnia krasnolud i golem magmowy (Elity II Kowal Płomieni i golem magmowy) na każdym poziomie jaskini.
 - **Boss 70: Azgor, Pan Płomieni**
 
 **Lodowe Szczyty (70–100) / jaskinie 71–100 (S94)**
 - *nowy* Śnieżny Lampart (71–78), *nowy* Harpia Szczytów (76–83, latająca), *nowy* Mamut Lodowy (82–89), *nowy* Zamarznięty Rycerz (83–100), *nowy* Wyrm Szronu (95–100)
-- Lodowy Wilk (70–78), Yeti (71–82), Mroźny Olbrzym (78–88), Lodowy Żywiołak (82–92), Smoczy Pomiot (85–95); Kryształowy Strażnik (90–96), Młody Smok Lodu (92–100) (jaskinia). Elity: Grota yeti i wilk (Elita II yeti), Twierdza Rycerz i olbrzym (Elita II Rycerz), Serce strażnik i młody smok (Elita II młody smok albo strażnik) na każdym poziomie jaskini.
+- Lodowy Wilk (70–78), Yeti (71–82), Mroźny Olbrzym (78–88), Lodowy Żywiołak (82–92), Smoczy Pomiot (85–95); Kryształowy Strażnik (90–96), Młody Smok Lodu (92–100) (jaskinia). Elity: Grota yeti i wilk (Elity II yeti i wilk, S134h), Twierdza Rycerz i olbrzym (Elity II Rycerz i olbrzym), Serce strażnik i młody smok (Elity II młody smok i strażnik) na każdym poziomie jaskini.
 - **Boss 100: Vaelgrath, Smok Mrozu**
 
 ### 15.3 Timery Elit II (dodatek po testach S17, jak w Margonem)

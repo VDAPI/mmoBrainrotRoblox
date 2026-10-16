@@ -219,7 +219,9 @@ commands.e2 = function(player, args)
 	end
 	local character = PlayerStateService.GetCharacter(player)
 	local mapId = character and character.location.map or ""
-	if MonsterService.RespawnElite2(mapId) then
+	-- S134h: /e2 spawn [kind]: both Elite IIs of the cave, or only the one of that kind
+	local kind = if args[2] and args[2] ~= "" then args[2] else nil
+	if MonsterService.RespawnElite2(mapId, kind) then
 		reply(player, "admin.e2.ok")
 	else
 		reply(player, "admin.e2.none")

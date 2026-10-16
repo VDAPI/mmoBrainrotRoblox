@@ -88,7 +88,7 @@ end
 
 local function crevasse(env: Env, out: { Build })
 	local r = env.T.rooms[1]
-	local b = Kit.build(env, "CrevasseThreshold", "traces", -268, 0, 0)
+	local b = Kit.build(env, "CrevasseThreshold", "traces", Kit.at(env, -268), 0, 0)
 	local y = Kit.gy(env, b, 0, 0)
 	for k = 0, 5 do
 		b.bp:rbox(
@@ -118,8 +118,8 @@ local function crevasse(env: Env, out: { Build })
 	end
 	Kit.bones(b.bp, 4, y, 9, 6)
 	table.insert(out, b)
-	Kit.life(env.ctx, "snowBeam", -250, 28, 0, 6)
-	Kit.life(env.ctx, "snowGust", -270, 0.5, 0, 8)
+	Kit.life(env.ctx, "snowBeam", Kit.at(env, -250), 28, 0, 6)
+	Kit.life(env.ctx, "snowGust", Kit.at(env, -270), 0.5, 0, 8)
 	veins(env, out, 1, 4, false)
 	Kit.life(env.ctx, "drips", r.x, 20, r.z, 20)
 end
@@ -127,29 +127,31 @@ end
 local function crystalHall(env: Env, out: { Build })
 	local r = env.T.rooms[2]
 	-- the four colossal crystals round the rock shafts
-	for k, p in { { -60, -40 }, { -60, 40 }, { -140, -40 }, { -140, 40 } } do
+	for k, p0 in { { -60, -40 }, { -60, 40 }, { -140, -40 }, { -140, 40 } } do
+		local p = { Kit.at(env, p0[1]), Kit.at(env, p0[2]) } -- S134h: as drawn (the shafts grow with the cave)
 		-- the Build stands on the floor beside the rock shaft (towards the axis); the crystal wraps the shaft
 		local sgn = if p[2] > 0 then 1 else -1
-		local c = Kit.build(env, `ColossalCrystal_{k}`, "glow", p[1], p[2] - 6 * sgn, 0)
-		local ox, oz = 0, 6 * sgn
+		local off = Kit.at(env, 6) * sgn
+		local c = Kit.build(env, `ColossalCrystal_{k}`, "glow", p[1], p[2] - off, 0)
+		local ox, oz = 0, off
 		local y = Kit.gy(env, c, 0, 0)
-		local top = (Kit.ceil(env, p[1], p[2] - 6 * sgn) or 40) - c.at.y
+		local top = (Kit.ceil(env, p[1], p[2] - off) or 40) - c.at.y
 		for m = 0, 5 do
 			local a = m * math.pi / 3
 			c.bp:rbox(
 				2.4,
 				top - y,
 				2.4,
-				ox + math.cos(a) * 4.2,
+				ox + math.cos(a) * Kit.at(env, 4.2),
 				(top + y) / 2,
-				oz + math.sin(a) * 4.2,
+				oz + math.sin(a) * Kit.at(env, 4.2),
 				0,
 				math.deg(-a),
 				3,
 				o(ICEGLASS, "detail", { col = false, t = 0.3 })
 			)
 		end
-		heartBox(c.bp, 1, top - y - 4, 1, ox + 4.8, (top + y) / 2, oz, 0, 0, 0)
+		heartBox(c.bp, 1, top - y - 4, 1, ox + Kit.at(env, 4.8), (top + y) / 2, oz, 0, 0, 0)
 		c.bp:light(0, y + 12, 0, CRYSTAL, 34, 1.4, "heart")
 		Kit.lifeAt(env.ctx, c, "sparkle", 0, y + 6, 0, 6)
 		table.insert(out, c)
@@ -187,7 +189,8 @@ end
 
 local function hatchery(env: Env, out: { Build })
 	local r = env.T.rooms[3]
-	for k, p in { { -110, -226 }, { -154, -202 }, { -68, -212 } } do
+	for k, p0 in { { -110, -226 }, { -154, -202 }, { -68, -212 } } do
+		local p = { Kit.at(env, p0[1]), Kit.at(env, p0[2]) } -- S134h: as drawn
 		local f = env.T.floor(p[1], p[2])
 		if f then
 			local e = Kit.build(env, `DragonEggs_{k}`, "glow", p[1], p[2], k * 50)
@@ -214,7 +217,7 @@ local function hatchery(env: Env, out: { Build })
 	local s = Kit.build(env, "EggShells", "traces", r.x, r.z, 0)
 	for k = 0, 5 do
 		local a = k * 1.05
-		local lx, lz = math.cos(a) * 26, math.sin(a) * 26
+		local lx, lz = math.cos(a) * Kit.at(env, 26), math.sin(a) * Kit.at(env, 26)
 		s.bp:rbox(
 			1.6,
 			1.2,
@@ -241,11 +244,11 @@ local function organ(env: Env, out: { Build })
 		end
 	end
 	-- the curtains of giant icicles like organ pipes
-	local p = Kit.build(env, "IceOrgan", "glow", -110, 214, 0)
+	local p = Kit.build(env, "IceOrgan", "glow", Kit.at(env, -110), Kit.at(env, 214), 0)
 	local y = Kit.gy(env, p, 0, 0)
 	for k = -6, 6 do
 		local lx = k * 2.6
-		local top = (Kit.ceil(env, -110 + lx, 216) or 28) - p.at.y
+		local top = (Kit.ceil(env, p.at.x + lx, Kit.at(env, 216)) or 28) - p.at.y
 		local len = top - y - 4 - math.abs(k) * 0.6
 		p.bp:add(
 			"cyl",
@@ -270,7 +273,8 @@ end
 local function burrows(env: Env, out: { Build })
 	local r = env.T.rooms[5]
 	local b = Kit.build(env, "WyrmTraces", "traces", r.x, r.z, 0)
-	for k, p in { { 60, -196 }, { 97, -181 }, { 106, -140 }, { 24, -187 } } do
+	for k, p0 in { { 60, -196 }, { 97, -181 }, { 106, -140 }, { 24, -187 } } do
+		local p = { Kit.at(env, p0[1]), Kit.at(env, p0[2]) } -- S134h: as drawn
 		local lx, lz = p[1] - r.x, p[2] - r.z
 		local f = env.T.floor(p[1], p[2])
 		if f then
@@ -355,7 +359,7 @@ local function ribcage(env: Env, out: { Build })
 	for deg = 200, 340, 10 do
 		if deg < 236 or deg > 256 then
 			local a = math.rad(deg)
-			local lx, lz = math.cos(a) * 45, math.sin(a) * 45
+			local lx, lz = math.cos(a) * Kit.at(env, 45), math.sin(a) * Kit.at(env, 45)
 			local y = Kit.gy(env, s, lx, lz) + 6
 			bp:add("ball", 3, 2.4, 2.4, lx, y, lz, 0, 0, 0, o(BONE, "detail", { col = false }))
 			if last then
@@ -367,11 +371,13 @@ local function ribcage(env: Env, out: { Build })
 		end
 	end
 	-- the ribs arching over the hall (feet by the walls, 16+ studs over the floor inside the core)
-	for _, lx in { -6, 6, 18 } do
+	-- S134h: the ribs span the scaled hall (feet by its walls)
+	for _, rx in { -6, 6, 18 } do
+		local lx = Kit.at(env, rx)
 		local prev: { number }? = nil
 		for t = 0, 10 do
 			local u = t / 10
-			local lz = -44 + 88 * u
+			local lz = Kit.at(env, -44 + 88 * u)
 			local y = fy + 4 + 32 * math.sin(math.pi * u) ^ 0.4
 			if prev then
 				bp:beam(prev[1], prev[2], prev[3], lx, y, lz, 0.8, o(BONE, "detail", { col = false }))
@@ -379,7 +385,8 @@ local function ribcage(env: Env, out: { Build })
 			prev = { lx, y, lz }
 		end
 		for _, side in { -1, 1 } do
-			bp:box(2.4, 6, 2.4, lx, Kit.gy(env, s, lx, side * 46) + 3, side * 46, o(BONE, "shell", { q = false }))
+			local fz = side * Kit.at(env, 46)
+			bp:box(2.4, 6, 2.4, lx, Kit.gy(env, s, lx, fz) + 3, fz, o(BONE, "shell", { q = false }))
 		end
 		heartBox(bp, 0.6, 4, 0.6, lx, fy + 30, 0, 30, 0, 0)
 	end
@@ -391,9 +398,9 @@ local function ribcage(env: Env, out: { Build })
 			2 - k * 0.2,
 			1.6 - k * 0.15,
 			2 - k * 0.2,
-			math.cos(a) * 46,
-			Kit.gy(env, s, math.cos(a) * 46, math.sin(a) * 46) + 1,
-			math.sin(a) * 46,
+			math.cos(a) * Kit.at(env, 46),
+			Kit.gy(env, s, math.cos(a) * Kit.at(env, 46), math.sin(a) * Kit.at(env, 46)) + 1,
+			math.sin(a) * Kit.at(env, 46),
 			0,
 			0,
 			0,
@@ -403,7 +410,7 @@ local function ribcage(env: Env, out: { Build })
 	bp:light(0, fy + 24, 0, CRYSTAL, 50, 1.4, "heart")
 	table.insert(out, s)
 	-- the skull by the east wall, its jaws open over the tunnel to the antechamber (no collision; passage 12+ wide, 18+)
-	local k = Kit.build(env, "DragonSkull", "landmark", 156, 0, 90)
+	local k = Kit.build(env, "DragonSkull", "landmark", Kit.at(env, 156), 0, 90)
 	local ky = Kit.gy(env, k, 0, 0)
 	k.bp:box(16, 8, 12, 0, ky + 24, 4, o(BONE, "detail", { col = false })) -- the cranium over the mouth
 	k.bp:rbox(14, 2, 10, 0, ky + 19, -4, -18, 0, 0, o(BONE, "detail", { col = false })) -- the upper jaw
@@ -454,7 +461,7 @@ end
 
 local function antechamber(env: Env, out: { Build })
 	-- the claw marks on the north and south walls, the fan of frost, the paw prints, the scales
-	local b = Kit.build(env, "VaelgrathTraces", "traces", 245, 0, 0)
+	local b = Kit.build(env, "VaelgrathTraces", "traces", Kit.at(env, 245), 0, 0)
 	local bp = b.bp
 	for _, side in { -1, 1 } do
 		for g = 0, 3 do
@@ -463,8 +470,8 @@ local function antechamber(env: Env, out: { Build })
 				1,
 				0.4,
 				-6 + g * 1.5,
-				Kit.gy(env, b, 0, side * 39) + 10 + g * 1.4,
-				side * 39.5,
+				Kit.gy(env, b, 0, side * Kit.at(env, 39)) + 10 + g * 1.4,
+				side * Kit.at(env, 39.5),
 				0,
 				0,
 				-12,
@@ -474,12 +481,12 @@ local function antechamber(env: Env, out: { Build })
 	end
 	for k = 0, 7 do
 		local a = math.rad(150 + k * 8)
-		local lx, lz = 39 + math.cos(a) * 30, math.sin(a) * 30
+		local lx, lz = Kit.at(env, 39) + math.cos(a) * Kit.at(env, 30), math.sin(a) * Kit.at(env, 30)
 		bp:rbox(
 			30,
 			0.05,
 			3,
-			(39 + lx) / 2,
+			(Kit.at(env, 39) + lx) / 2,
 			Kit.gy(env, b, lx, lz) + 0.04,
 			lz / 2,
 			0,
@@ -519,7 +526,7 @@ local function antechamber(env: Env, out: { Build })
 	end
 	table.insert(out, b)
 	-- the two ice claws round the gate (284, 0), the baskets of cold fire, the mist
-	local g = Kit.build(env, "ClawGate", "landmark", 290, 0, 270)
+	local g = Kit.build(env, "ClawGate", "landmark", Kit.at(env, 290), 0, 270)
 	local gy = Kit.gy(env, g, 0, 0)
 	for _, side in { -1, 1 } do
 		for t = 0, 4 do
@@ -538,16 +545,16 @@ local function antechamber(env: Env, out: { Build })
 		end
 	end
 	table.insert(out, g)
-	local f = Kit.build(env, "ColdBaskets", "lamp", 272, 0, 0)
+	local f = Kit.build(env, "ColdBaskets", "lamp", Kit.at(env, 272), 0, 0)
 	for _, side in { -1, 1 } do
 		local fy = Kit.gy(env, f, 0, side * 14)
 		f.bp:box(0.8, 7, 0.8, 0, fy + 3.5, side * 14, o(Kit.iron, "shell", { q = false }))
 		Kit.fire(f.bp, 0, fy + 7.6, side * 14, 1.6, "#9FE0FF", "detail")
 	end
 	table.insert(out, f)
-	Kit.life(env.ctx, "mist", 276, 0.5, 0, 12)
+	Kit.life(env.ctx, "mist", Kit.at(env, 276), 0.5, 0, 12)
 	veins(env, out, 8, 4, true)
-	Kit.life(env.ctx, "drips", 230, 24, 0, 20)
+	Kit.life(env.ctx, "drips", Kit.at(env, 230), 24, 0, 20)
 end
 
 function Heart.all(env: Env, out: { Build })

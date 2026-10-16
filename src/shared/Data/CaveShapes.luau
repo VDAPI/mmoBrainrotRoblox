@@ -14,6 +14,9 @@
 --   theme       dressing module (Logic/CaveDress: S48 "Moss", "Smugglers", "Warren", "GoblinThrone"; S49 "Den",
 --               "Barrow", "Crypt", "Tomb"; S50 "Mine", "Lair", "Forge", "Furnace"; S51 "Grotto", "Hold", "Heart",
 --               "DragonLair")
+--   scale       S134h: horizontal scale of the drawn cave (default 1; the 12 caves of Data/Areas/Caves 1.35): every
+--               position and radius here and in the room plan grows by it, room heights and corridor widths by half
+--               of it; read only through Logic/CavePlan (CavePlan.shape, CavePlan.plan, CavePlan.point)
 --   floorY      floor of the plan (default 0; entrances, the boss antechamber and arenas stay on it)
 --   wall        { amp, scale }: how far the walls bulge out (studs) and the noise scale along the wall
 --   ceiling     { amp, scale }: ceiling noise (studs) outside the cores
@@ -139,6 +142,7 @@ export type Materials = {
 
 export type Shape = {
 	theme: string,
+	scale: number?, -- S134h: horizontal scale of the drawn cave (default 1), read only through Logic/CavePlan
 	floorY: number?,
 	wall: { amp: number, scale: number },
 	ceiling: { amp: number, scale: number },
@@ -250,6 +254,7 @@ local byMap: { [string]: Shape } = {}
 -- glows, Grimrok's goblins camp, spiders hunt the goblins.
 byMap.meadows_cave = {
 	theme = "Moss",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 14, scale = 26 },
 	ceiling = { amp = 3, scale = 24 },
 	materials = { wall = "Rock", floor = "Rock", accent = "Slate", bed = "Salt", moss = "LeafyGrass" },
@@ -302,6 +307,7 @@ byMap.meadows_cave = {
 -- robbed wagons, the moon in a sinkhole.
 byMap.meadows_hideout = {
 	theme = "Smugglers",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 12, scale = 24 },
 	ceiling = { amp = 2.5, scale = 22 },
 	wiggle = 8,
@@ -334,6 +340,7 @@ byMap.meadows_hideout = {
 -- the old diggings.
 byMap.meadows_burrow = {
 	theme = "Warren",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 11, scale = 20 },
 	ceiling = { amp = 2, scale = 18 },
 	materials = { wall = "Ground", floor = "Ground", accent = "Mud", bed = "Salt" },
@@ -388,6 +395,7 @@ byMap.dungeon_meadows = {
 -- roots, claw marks, fur; the Moon Chamber's shaft of moonlight on the moonstone.
 byMap.duskwood_den = {
 	theme = "Den",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 12, scale = 22 },
 	ceiling = { amp = 2.5, scale = 18 },
 	materials = { wall = "Slate", floor = "Ground", accent = "Rock", bed = "Mud", moss = "LeafyGrass" },
@@ -421,6 +429,7 @@ byMap.duskwood_den = {
 -- ghouls dug in from the side, the lower crypt is flooded with black water and snakes.
 byMap.duskwood_barrow = {
 	theme = "Barrow",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 9, scale = 20 },
 	ceiling = { amp = 1.5, scale = 18 },
 	materials = { wall = "Slate", floor = "Ground", accent = "Basalt", bed = "Mud" },
@@ -459,6 +468,7 @@ byMap.duskwood_barrow = {
 -- barrel vaults, paved floors, the procession axis z = 0 from the entrance to the seal of Morvane.
 byMap.duskwood_cave = {
 	theme = "Crypt",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 0, scale = 30 },
 	ceiling = { amp = 0, scale = 30 },
 	materials = { wall = "Slate", floor = "Basalt", accent = "Basalt", bed = "Mud" },
@@ -589,6 +599,7 @@ byMap.dungeon_duskwood = {
 -- by the Ash Orcs with their hyenas and vultures. The rails lead in; deeper is quieter and bluer.
 byMap.ashen_mine = {
 	theme = "Mine",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	edgeFloors = true,
 	wall = { amp = 10, scale = 26 },
 	ceiling = { amp = 3, scale = 22 },
@@ -620,6 +631,7 @@ byMap.ashen_mine = {
 -- lava, scorpions dig in the sand the wind pours in through the holes.
 byMap.ashen_lair = {
 	theme = "Lair",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	edgeFloors = true,
 	wall = { amp = 12, scale = 24 },
 	ceiling = { amp = 4, scale = 22 },
@@ -673,6 +685,7 @@ byMap.ashen_lair = {
 -- Gullet and the Smelter -> the Foundry and the Armoury -> the Heart of the Forge -> the Antechamber -> the gate.
 byMap.ashen_cave = {
 	theme = "Forge",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 8, scale = 24 },
 	ceiling = { amp = 3, scale = 22 },
 	materials = { wall = "Basalt", floor = "Basalt", accent = "Slate", bed = "Salt" },
@@ -863,6 +876,7 @@ byMap.dungeon_ashen = {
 -- side burrow, harpies in the chimney. Light comes from the ice; one warm lantern of the trappers by the entrance.
 byMap.frostpeak_grotto = {
 	theme = "Grotto",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	edgeFloors = true,
 	wall = { amp = 12, scale = 24 },
 	ceiling = { amp = 3, scale = 20 },
@@ -918,6 +932,7 @@ byMap.frostpeak_grotto = {
 -- side always the pressing ice; vaulted masonry corridors 22 studs high (giant-sized doors).
 byMap.frostpeak_hold = {
 	theme = "Hold",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	edgeFloors = true,
 	masonry = true,
 	tunnelH = 22,
@@ -991,6 +1006,7 @@ byMap.frostpeak_hold = {
 -- tunnels of the wyrms. The crystals' veins beat with one heart (every 2.4 s).
 byMap.frostpeak_cave = {
 	theme = "Heart",
+	scale = 1.35, -- S134h: bigger caves (Logic/CavePlan)
 	wall = { amp = 8, scale = 26 },
 	ceiling = { amp = 3, scale = 22 },
 	materials = { wall = "Glacier", floor = "Ice", accent = "Slate", bed = "Salt" },

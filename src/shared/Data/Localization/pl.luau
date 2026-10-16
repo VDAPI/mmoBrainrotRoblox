@@ -2772,7 +2772,7 @@ return {
 	-- S19: admin
 	["admin.usage.groups"] = "/groups: grupy potworów na tej mapie (liczba, rozkład 1–4, aktywne)",
 	["admin.groups.info"] = "{map}: {total} grup (1: {s1}, 2: {s2}, 3: {s3}, 4: {s4}), aktywnych {active}.",
-	["admin.usage.e2"] = "/e2 spawn: od razu odródź Elitę II w tej jaskini",
+	["admin.usage.e2"] = "/e2 spawn [rodzaj]: od razu odródź Elity II tej jaskini (obie albo tylko tę jednego rodzaju)",
 	["admin.e2.ok"] = "Elita II odrodzona.",
 	["admin.e2.none"] = "Na tej mapie nie ma Elity II.",
 	["admin.nodes.count"] = "Węzły na {map}: {list}",
@@ -2815,7 +2815,8 @@ return {
 	-- S20: world map v2
 	["worldmap.groups"] = "Grup potworów: {n}",
 	["worldmap.elites"] = "Elity:",
-	["worldmap.elite2"] = "Elita II (jedna naraz):",
+	["worldmap.elite2"] = "Elity II (dwie, każda z własnym łupem):",
+	["worldmap.elite2Loot"] = "Łup: {slots}",
 	["worldmap.rooms"] = "Komnat: {n}",
 	["worldmap.layer.areas"] = "Obszary",
 	["worldmap.layer.icons"] = "Portale",

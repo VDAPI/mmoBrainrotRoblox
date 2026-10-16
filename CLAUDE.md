@@ -153,6 +153,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `tests/BreakpointKeys`.
 - **Premia czaru do obszaru / jednego celu** (S79): tag z `Skills.tag`, handler podaje `areaHits` i `secondary` w
   `ctx.damage`; strefy przez `Skills.castZones` i `ctx.lingering(center, percent, wave, inCircle)`.
+- **Łup Elity II** (S134h): `LootTables.ELITE2_SLOTS[kind]` (2–3 grupy, czytane tylko przez `LootTables.slotsFor`), pasma
+  `ELITE2_BANDS` (test pokrycia `tests/elite2loot.spec`); jaskinia: `scale` w `CaveShapes`, plan i współrzędne przez
+  `Logic/CavePlan` (ubiór: `Kit.at`).
 - **Zlecenia łowieckie** (S99): reguły w nagłówku `Data/Quests/Contracts` (`RULES`); po każdej zmianie `lv` / `groups`
   łowisk albo reguł `lune run tools/contracts_gen.luau`, potem `lune run tools/quest_budget.luau` (i powody w księdze);
   test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`.

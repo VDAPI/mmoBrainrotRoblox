@@ -87,7 +87,7 @@ export type Cave = {
 	levels: { number }, -- { min, max }
 	normal: { string }, -- 2–3 normal kinds (groups of 1–4)
 	elites: { string }, -- exactly 2 elite kinds (3–5 groups of 1–2)
-	elite2: { string }, -- 1–2 kinds; one Elite II at a time, picked on every respawn
+	elite2: { string }, -- S134h: exactly 2 different kinds, each on its own spawner (A: {id}_elite2, B: {id}_elite2b)
 	eliteGroups: number,
 	ores: { string }, -- gathering node kinds
 	oreCount: number,

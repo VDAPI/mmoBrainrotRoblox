@@ -70,7 +70,9 @@ local function torches(env: Env, out: { Build }, i: number, n: number)
 end
 
 local function glacierTongue(env: Env, out: { Build }, name: string, x: number, z: number, r: number)
-	local b = Kit.build(env, name, "traces", x, z, 0)
+	-- S134h: x, z and r are the authored icewall (Data/CaveShapes), drawn scaled
+	r = Kit.at(env, r)
+	local b = Kit.build(env, name, "traces", Kit.at(env, x), Kit.at(env, z), 0)
 	local y = Kit.gy(env, b, 0, 0)
 	for k = 0, 5 do
 		local a = k * 1.05
@@ -107,7 +109,7 @@ end
 
 local function gatehouse(env: Env, out: { Build })
 	-- the raised frozen portcullis over the exit (-211, 0): lower edge 20+ over the floor
-	local p = Kit.build(env, "FrozenPortcullis", "landmark", -214, 0, 90)
+	local p = Kit.build(env, "FrozenPortcullis", "landmark", Kit.at(env, -214), 0, 90)
 	for k = -4, 4 do
 		p.bp:box(0.6, 6, 0.6, k * 2, 23, 0, o(Kit.iron, "detail", { col = false }))
 		p.bp:add("cyl", 2, 0.5, 0.5, k * 2, 19, 0, 0, 0, 90, o(ICE, "fine", { col = false }))
@@ -117,19 +119,21 @@ local function gatehouse(env: Env, out: { Build })
 	end
 	table.insert(out, p)
 	-- guard niches with empty armour in the ice, the frozen banner
-	local g = Kit.build(env, "GuardNiches", "landmark", -185, 0, 0)
+	local g = Kit.build(env, "GuardNiches", "landmark", Kit.at(env, -185), 0, 0)
 	for _, side in { -1, 1 } do
-		local lz = side * 24
-		local y = Kit.gy(env, g, 8, lz)
-		knight(g.bp, 8, y, lz, if side > 0 then 180 else 0, "shell")
-		g.bp:box(4, 9, 3, 8, y + 4.5, lz, o(ICEGLASS, "detail", { col = false, t = 0.4 }))
+		-- S134h: by the walls of the scaled gatehouse
+		local lx, lz = Kit.at(env, 8), side * Kit.at(env, 24)
+		local y = Kit.gy(env, g, lx, lz)
+		knight(g.bp, lx, y, lz, if side > 0 then 180 else 0, "shell")
+		g.bp:box(4, 9, 3, lx, y + 4.5, lz, o(ICEGLASS, "detail", { col = false, t = 0.4 }))
 	end
-	banner(g.bp, 30, Kit.gy(env, g, 30, 18), 18, 10, 270)
+	local bx, bz = Kit.at(env, 30), Kit.at(env, 18)
+	banner(g.bp, bx, Kit.gy(env, g, bx, bz), bz, 10, 270)
 	table.insert(out, g)
 	glacierTongue(env, out, "GateGlacier", -185, -24, 7)
 	torches(env, out, 1, 4)
-	Kit.life(env.ctx, "snowGust", -205, 0.5, 0, 8)
-	Kit.life(env.ctx, "drips", -185, 18, 0, 16)
+	Kit.life(env.ctx, "snowGust", Kit.at(env, -205), 0.5, 0, 8)
+	Kit.life(env.ctx, "drips", Kit.at(env, -185), 18, 0, 16)
 end
 
 local function breach(env: Env, out: { Build })
@@ -190,7 +194,7 @@ local function courtyard(env: Env, out: { Build })
 	for k = 0, 15 do
 		local deg = k * 22.5 + 11.25
 		local t = math.rad(deg)
-		local lx, lz = math.cos(t) * 46, math.sin(t) * 46
+		local lx, lz = math.cos(t) * Kit.at(env, 46), math.sin(t) * Kit.at(env, 46)
 		if Kit.free(env, r.x + lx, r.z + lz, 1.6) then
 			local y = Kit.gy(env, a, lx, lz)
 			a.bp:add("cyl", 18, 2.4, 2.4, lx, y + 9, lz, 0, 0, 90, o(STONE, "shell", { q = false }))
@@ -281,7 +285,7 @@ end
 local function chapel(env: Env, out: { Build })
 	local r = env.T.rooms[4]
 	-- the altar on its dais (130, -77): the order's sword in a block of ice
-	local a = Kit.build(env, "IceAltar", "landmark", 130, -78, 0)
+	local a = Kit.build(env, "IceAltar", "landmark", Kit.at(env, 130), Kit.at(env, -78), 0)
 	local y = Kit.gy(env, a, 0, 0)
 	a.bp:box(6, 3, 3, 0, y + 1.5, 0, o(STONE, "shell", { q = false }))
 	a.bp:box(2.4, 6, 2.4, 0, y + 6, 0, o(ICEGLASS, "detail", { col = false, t = 0.35 }))
@@ -289,7 +293,7 @@ local function chapel(env: Env, out: { Build })
 	a.bp:box(1.8, 0.4, 0.4, 0, y + 7.4, 0, o(SILVER, "fine", { col = false }))
 	Kit.candles(a.bp, -2.4, y + 3, 0, 3, BLUE)
 	Kit.candles(a.bp, 2.4, y + 3, 0, 3, BLUE)
-	Kit.clear(env, 130, -78, 5)
+	Kit.clear(env, a.at.x, a.at.z, 5)
 	table.insert(out, a)
 	-- the ice windows (light from the glacier)
 	for k, w in env.T.windows() do
@@ -341,7 +345,7 @@ local function barracks(env: Env, out: { Build })
 		end
 	end
 	glacierTongue(env, out, "BarracksBreach", -110, -111, 5)
-	local t = Kit.build(env, "GiantFootprints", "traces", -110, -104, 0)
+	local t = Kit.build(env, "GiantFootprints", "traces", Kit.at(env, -110), Kit.at(env, -104), 0)
 	for k = 0, 3 do
 		t.bp:rbox(
 			4,
@@ -365,13 +369,13 @@ end
 local function commandery(env: Env, out: { Build })
 	local r = env.T.rooms[6]
 	-- the high chair on its dais under the banner frozen mid-flap
-	local c = Kit.build(env, "CommanderChair", "landmark", 209, 95, 270)
+	local c = Kit.build(env, "CommanderChair", "landmark", Kit.at(env, 209), Kit.at(env, 95), 270)
 	local y = Kit.gy(env, c, 0, 0)
 	c.bp:box(4, 2, 3.4, 0, y + 1, 0, o(STONE, "shell", { q = false }))
 	c.bp:box(4, 9, 0.8, 0, y + 5.5, 1.6, o(STONE, "detail", { col = false }))
 	c.bp:rbox(8, 12, 0.3, 0, y + 16, 3, 0, 0, 6, o(ORDER, "detail", { col = false }))
 	c.bp:box(2.6, 2.6, 0.35, 0, y + 17, 2.8, o(SILVER, "fine", { col = false }))
-	Kit.clear(env, 209, 95, 5)
+	Kit.clear(env, c.at.x, c.at.z, 5)
 	table.insert(out, c)
 	-- the Wall of the Fallen
 	for k, w in env.T.windows() do

@@ -1,10 +1,11 @@
 --!strict
 -- Monster, cave and dungeon cards of the world map (S25): a monster in three variants with a 3D preview, its
 -- levels, HP and attack in the middle of the range, element, where it lives and interesting loot (no
--- percentages) and the best rarity the variant can drop (S30); a cave with its kinds, elites, Elite II (timer,
--- 3D) and rooms; a boss dungeon with the boss in 3D, the required level, today's runs ("Dziś: 1/3") with the
--- time to the UTC reset, the current personal Legendary / Mythic chances (growing with the pity counters), the
--- party rule and the boss's named mythic items (item tooltips).
+-- percentages) and the best rarity the variant can drop (S30; S134h: an Elite II its own kinds of items); a
+-- cave with its kinds, elites, its two Elite IIs (each with its loot; the player's own timer, 3D) and rooms; a boss
+-- dungeon with the boss in 3D, the required level, today's runs ("Dziś: 1/3") with the time to the UTC reset, the
+-- current personal Legendary / Mythic chances (growing with the pity counters), the party rule and the boss's named
+-- mythic items (item tooltips).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -48,6 +49,19 @@ local T = CardKit.T
 local mapName, bandColor, whereLine, moveActions =
 	CardKit.mapName, CardKit.bandColor, CardKit.whereLine, CardKit.moveActions
 local kindRow, rarityWord = CardKit.kindRow, CardKit.rarityWord
+
+-- S134h: "Loot: Helmet, Gloves" of an Elite II kind (its own slot groups, Data/LootTables.ELITE2_SLOTS); nil for a kind
+-- outside the table (the Elite IIs of events drop every group).
+local function elite2Loot(kind: string): string?
+	if not LootTables.ELITE2_SLOTS[kind] then
+		return nil
+	end
+	local names: { string } = {}
+	for _, group in LootTables.elite2Groups(kind) do
+		table.insert(names, T(LootTables.slotKey(group)))
+	end
+	return T("worldmap.elite2Loot", { slots = table.concat(names, ", ") })
+end
 
 local function homes(kind: string): { string }
 	local out = {}
@@ -174,6 +188,11 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 	local loot: { DetailCard.Line } = {
 		{ text = T("worldmap.card.rarityCap", { rarity = T(cap.nameKey) }), color = cap.color, bold = true },
 	}
+	-- S134h: an Elite II drops only its own kinds of items
+	local own = if variant == "elite2" then elite2Loot(kind) else nil
+	if own then
+		table.insert(loot, { text = own, color = Theme.Colors.GoldBright })
+	end
 	local tableDef = LootTables.get(def.lootTable)
 	if tableDef then
 		local drops = table.clone(tableDef.materials)
@@ -268,8 +287,11 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 		table.insert(elites, kindRow(ctx, kind, cave.levels, "elite", from))
 	end
 	local elite2: { DetailCard.Row } = {}
+	-- S134h: two Elite IIs, each with its own loot
 	for _, kind in cave.elite2 do
-		table.insert(elite2, kindRow(ctx, kind, cave.levels, "elite2", from))
+		local row = kindRow(ctx, kind, cave.levels, "elite2", from)
+		row.sub = elite2Loot(kind)
+		table.insert(elite2, row)
 	end
 	local info: { DetailCard.Line } = {}
 	local now = workspace:GetServerTimeNow()

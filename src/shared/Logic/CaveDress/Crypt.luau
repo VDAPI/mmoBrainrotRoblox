@@ -61,7 +61,7 @@ local function torchAt(env: Env, out: { Build }, name: string, x: number, z: num
 end
 
 local function gate(env: Env, out: { Build })
-	local b = Kit.build(env, "CryptGate", "landmark", -268, 0, 90)
+	local b = Kit.build(env, "CryptGate", "landmark", Kit.at(env, -268), 0, 90)
 	local bp = b.bp
 	for _, s in { -1, 1 } do
 		bp:box(3, 20, 3, s * 9, 9, 3, o(STONE, "shell", { q = false }))
@@ -72,7 +72,7 @@ local function gate(env: Env, out: { Build })
 	bp:box(22, 3, 4, 0, 20, 3, o(STONE, "detail", { col = false }))
 	table.insert(out, b)
 	-- the hooded mourners with cold lamps at the start of the axis
-	local m = Kit.build(env, "CryptMourners", "landmark", -228, 0, 90)
+	local m = Kit.build(env, "CryptMourners", "landmark", Kit.at(env, -228), 0, 90)
 	for _, s in { -1, 1 } do
 		statue(m.bp, s * 14, Kit.gy(env, m, s * 14, 0), 0, 1.2, 0, false)
 		Kit.lantern(m.bp, s * 14 + 2, Kit.gy(env, m, s * 14, 0), -2, COLD, 7, "detail")
@@ -88,7 +88,9 @@ local function columns(env: Env, out: { Build })
 		for _, z in { -52, 52 } do
 			n += 1
 			if n % 2 == 0 then
-				local b = Kit.build(env, `PillarTorch_{n}`, "lamp", x, z + (if z < 0 then 4 else -4), 0)
+				-- S134h: the pillars as drawn (they keep their radius)
+				local px, pz = Kit.at(env, x), Kit.at(env, z + (if z < 0 then 4 else -4))
+				local b = Kit.build(env, `PillarTorch_{n}`, "lamp", px, pz, 0)
 				Kit.fire(b.bp, 0, Kit.gy(env, b, 0, 0) + 9, 0, 0.8, COLD, "detail")
 				b.bp:box(0.4, 1.6, 0.4, 0, Kit.gy(env, b, 0, 0) + 8, 0, o(Kit.iron, "fine", { col = false }))
 				table.insert(out, b)
@@ -96,11 +98,12 @@ local function columns(env: Env, out: { Build })
 		end
 	end
 	for k, p in { { -150, -60 }, { -80, -60 }, { -150, 60 }, { -80, 60 } } do
-		if Kit.free(env, p[1], p[2], 3) then
-			local b = Kit.build(env, `AisleSarcophagus_{k}`, "traces", p[1], p[2], 0)
+		local sx, sz = Kit.at(env, p[1]), Kit.at(env, p[2]) -- S134h: as drawn
+		if Kit.free(env, sx, sz, 3) then
+			local b = Kit.build(env, `AisleSarcophagus_{k}`, "traces", sx, sz, 0)
 			b.bp:box(8, 2.6, 3.4, 0, Kit.gy(env, b, 0, 0) + 1.3, 0, o(STONE, "shell", { q = false }))
 			b.bp:box(8.4, 0.6, 3.8, 0, Kit.gy(env, b, 0, 0) + 2.9, 0, o(PALE, "detail", { col = false }))
-			Kit.clear(env, p[1], p[2], 5)
+			Kit.clear(env, sx, sz, 5)
 			table.insert(out, b)
 		end
 	end
@@ -194,7 +197,7 @@ end
 
 local function soulwell(env: Env, out: { Build })
 	local r = env.T.rooms[5]
-	local b = Kit.build(env, "SoulWell", "landmark", 40, -228, 0)
+	local b = Kit.build(env, "SoulWell", "landmark", Kit.at(env, 40), Kit.at(env, -228), 0)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	for k = 0, 11 do
@@ -232,13 +235,13 @@ local function soulwell(env: Env, out: { Build })
 	bp:light(0, y + 4, 0, GHOST, 30, 1.6, "crystal")
 	Kit.lifeAt(env.ctx, b, "mist", 0, 1, 0, 6)
 	Kit.lifeAt(env.ctx, b, "wisp", 0, 8, 0, 6)
-	Kit.clear(env, 40, -228, 9)
+	Kit.clear(env, b.at.x, b.at.z, 9)
 	table.insert(out, b)
 	-- chains hanging from the vault over the room
 	local c = Kit.build(env, "WellChains", "traces", r.x, r.z, 0)
 	for k = 0, 3 do
 		local a = k * math.pi / 2 + 0.6
-		local lx, lz = math.cos(a) * 24, math.sin(a) * 24
+		local lx, lz = math.cos(a) * Kit.at(env, 24), math.sin(a) * Kit.at(env, 24)
 		local top = (Kit.ceil(env, r.x + lx, r.z + lz) or 24) - c.at.y
 		local fy = Kit.gy(env, c, lx, lz)
 		if top - fy > 16 then
@@ -389,7 +392,7 @@ end
 
 local function antechamber(env: Env, out: { Build })
 	-- the seal of Morvane (262, 0): a breathing glow over the mosaic
-	local b = Kit.build(env, "MorvaneSeal", "landmark", 262, 0, 0)
+	local b = Kit.build(env, "MorvaneSeal", "landmark", Kit.at(env, 262), 0, 0)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	bp:add(
@@ -409,7 +412,7 @@ local function antechamber(env: Env, out: { Build })
 	bp:light(0, y + 3, 0, VIOLET, 24, 1, "crystal")
 	table.insert(out, b)
 	-- two kneeling knights by the gate (282, 0), a lintel of skulls, violet banners, a path of candles, ghost flames
-	local k = Kit.build(env, "SealKnights", "landmark", 272, 0, 90)
+	local k = Kit.build(env, "SealKnights", "landmark", Kit.at(env, 272), 0, 90)
 	for _, s in { -1, 1 } do
 		statue(k.bp, s * 14, Kit.gy(env, k, s * 14, 0), 2, 1.3, 0, true)
 		Kit.banner(k.bp, s * 20, Kit.gy(env, k, s * 20, 4), 4, 12, ROYAL)
@@ -420,14 +423,14 @@ local function antechamber(env: Env, out: { Build })
 		Kit.skull(k.bp, t * 1.6, 18, 6, 1.2, 0)
 	end
 	table.insert(out, k)
-	local c = Kit.build(env, "CandlePath", "traces", 238, 0, 0)
+	local c = Kit.build(env, "CandlePath", "traces", Kit.at(env, 238), 0, 0)
 	for t = 0, 5 do
 		for _, s in { -1, 1 } do
 			Kit.candles(c.bp, -18 + t * 7, Kit.gy(env, c, -18 + t * 7, s * 8), s * 8, 2, "#FFC46E")
 		end
 	end
 	table.insert(out, c)
-	Kit.life(env.ctx, "mist", 270, 0.5, 0, 12)
+	Kit.life(env.ctx, "mist", Kit.at(env, 270), 0.5, 0, 12)
 end
 
 function Crypt.all(env: Env, out: { Build })
@@ -440,7 +443,7 @@ function Crypt.all(env: Env, out: { Build })
 	gallery(env, out)
 	sanctum(env, out)
 	antechamber(env, out)
-	Kit.life(env.ctx, "drips", -110, 20, 0, 40)
+	Kit.life(env.ctx, "drips", Kit.at(env, -110), 20, 0, 40)
 end
 
 return Crypt
