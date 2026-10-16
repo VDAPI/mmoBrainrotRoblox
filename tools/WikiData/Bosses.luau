@@ -1,6 +1,7 @@
 --!strict
--- bosses.json (S34): Data/Bosses with HP and attack for 1-5 players (MonsterStats.compute on the kind the server's
--- Entities/Boss builds: hpMul = BossScaling.hpMultiplier(players) x def.hpMul), attacks with damage min-max like an
+-- bosses.json (S34): Data/Bosses with HP and attack (MonsterStats.compute on the kind the server's Entities/Boss
+-- builds: hpMul = BossScaling.hpMultiplier() x def.hpMul; S134: one HP for every party, `stats` instead of the list for
+-- 1-5 players), attacks with damage min-max like an
 -- Elite II ability, summons, phases, enrage, the loot (FIX 2026-10-09: one item per winner, Monte Carlo of
 -- Loot.rollBossItem; Legendary / Mythic chances by kills that day, Loot.bossChances) and the dungeon. Fills ctx.bossDrops for items.json.
 
@@ -24,8 +25,6 @@ local S = Schema
 local arr, map, rec, enum = S.arr, S.map, S.rec, S.enum
 
 local Bosses = {}
-
-Bosses.PLAYERS = 5
 
 local PityLine = rec("PityLine", {
 	chance = "number",
@@ -55,15 +54,14 @@ S.file(
 			phases = arr("number"),
 			phaseTexts = arr("name"),
 			["enrageText?"] = "name",
-			byPlayers = arr(rec("BossScale", {
-				players = "int",
+			-- S134: one HP for every party (bosses never scale with the party)
+			stats = rec("BossStats", {
 				hp = "int",
 				armor = "number",
 				mres = "number",
 				dmgMin = "int",
 				dmgMax = "int",
-				extraItems = "int",
-			})),
+			}),
 			attacks = arr(rec("BossAttack", {
 				id = "string",
 				["name?"] = "name",
@@ -82,6 +80,13 @@ S.file(
 				["element?"] = enum("ElementId"),
 				["damageKind?"] = "string",
 				["leap?"] = "bool",
+				-- S134: a big blow to dodge and the party mechanics (text from Locale boss.mechanic.<kind>.about)
+				["avoid?"] = "bool",
+				["mechanic?"] = "string",
+				["mechanicText?"] = "name",
+				["split?"] = rec("BossSplit", { missAll = "number" }),
+				["mark?"] = rec("BossMark", { seconds = "number", self = "number" }),
+				["channel?"] = rec("BossChannel", { seconds = "number", breakPct = "number", stagger = "number" }),
 				dmgMin = "int",
 				dmgMax = "int",
 			})),
@@ -132,9 +137,9 @@ function Bosses.scriptConsts(text: string?): { [string]: number }
 	return out
 end
 
-local function kindFor(def: BossData.BossDef, players: number): any
+local function kindFor(def: BossData.BossDef): any
 	return {
-		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
+		hpMul = BossScaling.hpMultiplier() * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
 		mresMul = def.mresMul, -- S66: magic resistance like in the game
@@ -172,25 +177,14 @@ function Bosses.build(ctx: any): any
 	for _, def in BossData.list do
 		if not ctx.hidden[def.id] then
 			local tableDef = LootTables.bosses[def.id]
-			local byPlayers = {}
-			for players = 1, Bosses.PLAYERS do
-				local s = MonsterStats.compute(kindFor(def, players), def.level, "boss")
-				local low, high = Monsters.damageRange(s, nil, nil)
-				table.insert(byPlayers, {
-					players = players,
-					hp = s.maxHp,
-					armor = s.armor,
-					mres = s.mres,
-					dmgMin = low,
-					dmgMax = high,
-					extraItems = 0, -- FIX 2026-10-09: one item per winner, no extra shared items
-				})
-			end
-			local stats = MonsterStats.compute(kindFor(def, 1), def.level, "boss")
+			local stats = MonsterStats.compute(kindFor(def), def.level, "boss")
+			local low, high = Monsters.damageRange(stats, nil, nil)
 			local attacks = {}
 			for _, a in def.attacks do
 				local entry = Clean.clean(a)
 				entry.name = Names.opt(`boss.{def.id}.attack.{a.id}`)
+				local kind = a.mechanic or (if a.avoid then "avoid" else nil)
+				entry.mechanicText = if kind then Names.opt(`boss.mechanic.{kind}.about`) else nil
 				entry.dmgMin, entry.dmgMax =
 					Monsters.damageRange(stats, a.damage, a.element, a.damageKind or stats.damageKind)
 				table.insert(attacks, entry)
@@ -263,7 +257,13 @@ function Bosses.build(ctx: any): any
 				phases = Clean.clean(def.phases),
 				phaseTexts = phaseTexts,
 				enrageText = Names.opt(`boss.{def.id}.enrage`),
-				byPlayers = byPlayers,
+				stats = {
+					hp = stats.maxHp,
+					armor = stats.armor,
+					mres = stats.mres,
+					dmgMin = low,
+					dmgMax = high,
+				},
 				attacks = attacks,
 				summons = Clean.clean(def.summons),
 				haste = if def.haste then Clean.clean(def.haste) else nil,

@@ -10,7 +10,8 @@
 -- through the exit portal.
 -- S60: Fortune of the winners (Logic/Luck.boss: Legendary multiplier, Unique -> Heroic, a second item), the class
 -- variety bonus on the boss EXP and a fight summary (damage share, healing, shields) on every winner's reward card.
--- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded }.
+-- Fighters see the state branch `boss` = { id, nameKey, hp, maxHp, phase, endsAt, enraged, shielded, staggered,
+-- channel? } (S134: `channel` = { id, endsAt, need, done } while the boss channels a spell to break).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -176,6 +177,16 @@ end
 local function announce(run: Run, key: string, args: { [string]: any }?)
 	for _, member in present(run) do
 		Net.Fire(member, "BossAnnounce", key, args)
+	end
+end
+
+-- S134: a big message to some of the players present (a boss mark).
+local function announceTo(run: Run, players: { Player }, key: string, args: { [string]: any }?)
+	local here = present(run)
+	for _, player in players do
+		if table.find(here, player) then
+			Net.Fire(player, "BossAnnounce", key, args)
+		end
 	end
 end
 
@@ -401,6 +412,7 @@ local function win(run: Run)
 	run.cleared = true
 	run.releaseAt = os.clock() + Bosses.RELEASE_AFTER
 	if boss then
+		boss:ClearMechanics() -- S134: no mark left on a character (Boss.Step does not run after the kill)
 		for _, summon in boss:Summons() do
 			if summon:IsAlive() then
 				MonsterService.Despawn(summon)
@@ -433,7 +445,19 @@ local function publish(run: Run)
 		endsAt = run.endsAt,
 		enraged = boss.enraged,
 		shielded = monster.invulnerable == true,
+		staggered = boss:IsStaggered(), -- S134
+		channel = nil :: any,
 	}
+	-- S134: the channel to break (end in server time, need / done as shares of the max HP)
+	local channel = boss:ChannelState()
+	if channel then
+		value.channel = {
+			id = channel.id,
+			endsAt = Workspace:GetServerTimeNow() + math.max(0, channel.endsAt - os.clock()),
+			need = channel.need,
+			done = math.min(channel.done, channel.need),
+		}
+	end
 	for _, member in present(run) do
 		PlayerStateService.Set(member, { "boss" }, value)
 	end
@@ -446,8 +470,18 @@ local function services(run: Run): Boss.Services
 			return MonsterService.SpawnAt(monsterId, "normal", level, at, nil, attributes)
 		end,
 		despawn = MonsterService.Despawn,
-		telegraph = CombatService.MonsterTelegraph,
-		resolve = CombatService.MonsterResolve,
+		telegraph = function(monster: any, ability: any, area: CFrame, opts: any?)
+			CombatService.MonsterTelegraph(monster, ability, area, opts)
+		end,
+		resolve = function(monster: any, ability: any, area: CFrame, opts: any?)
+			CombatService.MonsterResolve(monster, ability, area, opts)
+		end,
+		blow = function(monster: any, ability: any, area: CFrame)
+			CombatService.MonsterBlow(monster, ability, area)
+		end,
+		cancelMark = function(monster: any, ability: any, player: Player)
+			CombatService.MonsterTelegraphCancel(monster, ability, player)
+		end,
 		fighters = function()
 			return fighters(run)
 		end,
@@ -459,6 +493,10 @@ local function services(run: Run): Boss.Services
 		announce = function(key: string, args: { [string]: any }?)
 			announce(run, key, args)
 		end,
+		announceTo = function(players: { Player }, key: string, args: { [string]: any }?)
+			announceTo(run, players, key, args)
+		end,
+		nameOf = nameOf,
 	}
 end
 
@@ -505,7 +543,8 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		if runs[region] ~= run or run.cleared then
 			return
 		end
-		run.boss = Boss.new(def, #members, arenaCentre(mapId), services(run))
+		-- S134: the boss is the same for every party (the log above keeps the party size)
+		run.boss = Boss.new(def, arenaCentre(mapId), services(run))
 		run.startedAt = os.clock()
 		announce(run, `boss.{def.id}.phase1`, nil)
 	end)

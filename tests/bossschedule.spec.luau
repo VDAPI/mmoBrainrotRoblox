@@ -63,26 +63,29 @@ T.describe("BossSchedule (S87)", function()
 
 	-- Control numbers of the default rule (S87; +-0.15 / min): 600 s in one phase, 0.05 s step, first use 5 s.
 	T.it("the default rule reproduces the S87 control numbers (+-0.15 / min)", function()
+		-- S134: the data of bosses 2.0 (new attacks, longer cooldowns, phases of the big blows)
 		local CONTROL: { { string | number } } = {
-			{ "grimrok", 1, "sweep", 7.5 },
-			{ "grimrok", 1, "leap", 3.7 },
-			{ "grimrok", 3, "sweep", 4.7 },
-			{ "grimrok", 3, "leap", 4.6 },
-			{ "grimrok", 3, "whirlwind", 4.6 },
-			-- S92: Morvane's curse field every 6.5 s (was 11; 8.0 / 4.0 / 4.0 before)
-			{ "morvane", 3, "shadowBoltFast", 8.5 },
-			{ "morvane", 3, "curseField", 5.7 },
-			{ "morvane", 3, "deathRing", 2.8 },
-			-- S93: Azgor's meteor every 18 s (was 10; 4.5 / 4.4 / 4.4 / 2.9 before)
-			{ "azgor", 3, "fireWave", 5.5 },
-			{ "azgor", 3, "flameCleave", 5.4 },
-			{ "azgor", 3, "meteor", 2.7 },
-			{ "azgor", 3, "inferno", 2.8 },
-			{ "vaelgrath", 3, "frostBreath", 4.1 },
-			{ "vaelgrath", 3, "wingBuffet", 4.0 },
-			{ "vaelgrath", 3, "tailSwipe", 4.0 },
-			{ "vaelgrath", 3, "blizzard", 2.1 },
-			{ "vaelgrath", 3, "glacialRing", 2.1 },
+			{ "grimrok", 1, "sweep", 7.4 },
+			{ "grimrok", 1, "leap", 3.8 },
+			{ "grimrok", 1, "groundSplitter", 3.7 },
+			{ "grimrok", 3, "sweep", 4.9 },
+			{ "grimrok", 3, "leap", 2.5 },
+			{ "grimrok", 3, "whirlwind", 2.5 },
+			{ "grimrok", 3, "boulder", 2.4 },
+			{ "morvane", 3, "shadowBoltFast", 5.4 },
+			{ "morvane", 3, "curseField", 5.4 },
+			{ "morvane", 3, "deathRing", 2.7 },
+			{ "morvane", 3, "requiem", 1.4 },
+			{ "azgor", 3, "fireWave", 4.4 },
+			{ "azgor", 3, "flameCleave", 4.4 },
+			{ "azgor", 3, "meteor", 2.4 },
+			{ "azgor", 3, "inferno", 2.4 },
+			{ "azgor", 3, "cinderBrand", 2.0 },
+			{ "vaelgrath", 3, "frostBreath", 3.5 },
+			{ "vaelgrath", 3, "blizzard", 2.3 },
+			{ "vaelgrath", 3, "glacialRing", 2.3 },
+			{ "vaelgrath", 3, "avalanche", 2.5 },
+			{ "vaelgrath", 3, "absoluteZero", 1.3 },
 		}
 		for _, c in CONTROL do
 			local cad = B.bossCadence(Bosses.byId[c[1] :: string], c[2] :: number)
@@ -93,7 +96,7 @@ T.describe("BossSchedule (S87)", function()
 		end
 		-- the S83 list order stays reproducible through Balance.PICK_LIST_ORDER
 		local old = B.bossCadence(Bosses.byId.grimrok, 3, { pick = B.PICK_LIST_ORDER })
-		T.expect(old.perMinute.sweep).toBeNear(6.4, 0.15)
+		T.expect(old.perMinute.sweep).toBeNear(5.0, 0.15) -- S134 (6.4 before)
 	end)
 
 	-- S93: Azgor's lava 0.7 -> 2.2 (one tick ~20 % of a level 70 Mage after atkMul 0.36). S94: Vaelgrath's storm

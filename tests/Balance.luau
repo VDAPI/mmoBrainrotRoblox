@@ -36,6 +36,7 @@ local Bases = require("../src/shared/Data/Items/Bases")
 local Blessings = require("../src/shared/Data/Blessings")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Bosses = require("../src/shared/Data/Bosses")
+local BossMechanics = require("../src/shared/Logic/BossMechanics")
 local BossScaling = require("../src/shared/Logic/BossScaling")
 local BossSchedule = require("../src/shared/Logic/BossSchedule")
 local BossTuning = require("../src/shared/Data/BossTuning")
@@ -229,10 +230,12 @@ Balance.TRAIT_TARGETS = {
 	-- = the Frost Peaks) with the S94 shield waves at 86 / 87 (<= 110 % per member of a party of 3, C7): fewer helper
 	-- attacks to counter (0.050 -> 0.037 / 0.051 -> 0.039); waves at 99 / 100 give 2.9 per member, a faster swing
 	-- breaks the S32 tank (speed 1.5: 5.1 HP / min)
+	-- S134: 45 in the report too: bosses 2.0 call 8 helpers per wave for every party (a party of 3 had 14) and cast
+	-- more telegraphed attacks, so the tank counters fewer helper and basic blows (0.044 -> 0.037 at 45)
 	traitTarget("swordplay", "guardian.loner", "sword1h", "shield", { "group", "elite", "boss" }, {
-		reportSession = "S94",
-		reportAt = { 70, 100 },
-		reportWhy = "poza zasięgiem dźwigni S94: 0.037 / 0.039 at 70 / 100 (the S84 boss at 70 and 100 is Vaelgrath with the S94 waves 86 / 87; waves at 99 / 100 lose 2.9 HP per member, a faster swing breaks the S32 tank); owner: the boss of the situation at 70",
+		reportSession = "S134", -- S94 (70, 100), S134 (45)
+		reportAt = { 45, 70, 100 },
+		reportWhy = "poza zasięgiem dźwigni S94: 0.037 / 0.039 at 70 / 100 (the S84 boss at 70 and 100 is Vaelgrath with the S94 waves 86 / 87; waves at 99 / 100 lose 2.9 HP per member, a faster swing breaks the S32 tank); owner: the boss of the situation at 70. S134: 0.037 at 45 (bosses 2.0: 8 helpers per wave instead of 14 for a party of 3, more telegraphed casts, fewer blows to counter); owner: the trait value or the boss of the situation",
 	}),
 	-- S89 (F4): 0.044 at 45 and 70 after the S89 nodes (asserted); 100 stays report
 	-- S93: 45 in the report too: the S84 boss situation at 45 is Azgor moved to 45 (Balance.bossFightAt), whose shield
@@ -953,11 +956,12 @@ function Balance.elite2(team: { Player }, kind: string, level: number): Fight
 end
 
 -- Grimrok (or another boss): fight length for `team`, the biggest single hit on each team member and the tank's
--- HP lost per minute from basic attacks + the threat attacks.
+-- HP lost per minute from basic attacks + the threat attacks. S134: the HP never scales with the party, and the
+-- biggest hit is the biggest attack that cannot be dodged (no `avoid`, no mechanic: Balance.bossFight has those).
 function Balance.boss(bossId: string, team: { Player }): any
 	local def = Bosses.byId[bossId] :: any
 	local kind = {
-		hpMul = BossScaling.hpMultiplier(#team) * (def.hpMul or 1),
+		hpMul = BossScaling.hpMultiplier() * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
 		mresMul = def.mresMul, -- S66
@@ -975,7 +979,9 @@ function Balance.boss(bossId: string, team: { Player }): any
 	local biggest = {}
 	local biggestMul = 1
 	for _, attack in def.attacks do
-		biggestMul = math.max(biggestMul, attack.damage)
+		if not attack.avoid and attack.mechanic == nil then
+			biggestMul = math.max(biggestMul, attack.damage)
+		end
 	end
 	for i, p in team do
 		biggest[i] = {
@@ -2396,10 +2402,10 @@ function Balance.bossCadence(def: any, phase: number, opts: CadenceOpts?): Caden
 	return { perMinute = perMinute, rateShare = rateShare, casting = math.min(1, casting / seconds) }
 end
 
--- Kind table of a boss for a party of `players` (Entities/Boss kindFor).
-function Balance.bossKind(def: any, players: number): any
+-- Kind table of a boss (Entities/Boss kindFor; S134: the same for every party).
+function Balance.bossKind(def: any): any
 	return {
-		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
+		hpMul = BossScaling.hpMultiplier() * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
 		mresMul = def.mresMul,
@@ -2431,6 +2437,26 @@ export type BossOpts = {
 	-- S91 (Grimrok bez wsparcia): multiplier of member i's Balance.dps on the boss and on the shield helpers (the
 	-- skill model's DPS on the boss / the convention's); nil = 1
 	dpsMul: { number }?,
+	-- S134: share of the big blows to dodge (`avoid`) that still land (default 0: the party dodges them)
+	avoidHit: number?,
+	-- S134: players standing together in a `split` area (default: the whole party)
+	splitInside: number?,
+}
+
+-- S134: seconds of reaction the model takes off a channel before the party starts breaking it
+Balance.CHANNEL_REACTION = 0.5
+
+-- S134: the party mechanics of one fight (Balance.bossFight). `split`: one blow on a member standing in the area /
+-- its max HP (x Combat.randomMax), by class, the biggest over the boss's split attacks; `channel`: seconds the party
+-- needs to break the boss's channel (the slowest one) and whether it does in time (seconds - CHANNEL_REACTION).
+export type BossMechanicsReport = {
+	split: { [string]: number },
+	hasSplit: boolean,
+	channelSeconds: number, -- needed (0 without a channel)
+	channelLimit: number, -- seconds - CHANNEL_REACTION of the strictest channel (math.huge without one)
+	channelBroken: boolean, -- true without a channel
+	hasChannel: boolean,
+	channelHit: { [string]: number }, -- an unbroken channel on a member / its max HP (x randomMax), by class
 }
 export type BossFight = {
 	hp: number,
@@ -2460,6 +2486,9 @@ export type BossFight = {
 	raid: { [string]: number },
 	-- S93: one tick of the scripted hazard / the class's max HP (hazards.perTick; empty without a hazard)
 	hazardTick: { [string]: number },
+	-- S134: the biggest big blow to dodge (`avoid`) one member of each class would take (x Combat.randomMax) / max HP
+	biggestAvoidable: { [string]: number },
+	mechanics: BossMechanicsReport,
 }
 
 -- S92: the helpers of a boss summon as the server spawns them: Boss.spawnSummons -> DungeonService spawnMonster ->
@@ -2477,8 +2506,13 @@ end
 -- schedule per phase (bossCadence), damage per attack and kind on its targets (threat / nearest -> tank, self
 -- circle -> melee, self ring -> ranged, random -> min(count, n) / n each, all -> everyone) x specialHit, the basic
 -- attack on the tank every attackInterval / haste outside the casting share, enrage after enrageAfter (x
--- enrageDamage on everything), shield waves (count + SUMMON_PER_PLAYER x (n - 1) helpers killed by the team while
--- they hit the tank), Vaelgrath's flight in phase 2 and the scripted hazards.
+-- enrageDamage on everything), shield waves (the summon's count of helpers killed by the team while they hit the
+-- tank), Vaelgrath's flight in phase 2 and the scripted hazards.
+-- S134 (bosses 2.0, Logic/BossMechanics): `avoid` blows land x avoidHit (default 0, dodged); `split`: the party
+-- stands together (splitInside, default n) and shares the blow (always lands); `mark`: only the marked member (1 / n
+-- each) takes damage x self (the others step away); `channel`: broken when breakPct x HP / dps <= seconds -
+-- CHANNEL_REACTION (the boss only stands), otherwise it hits everyone. biggestHit counts only the attacks that cannot
+-- be dodged and are no split / channel (mechanics reports those).
 function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): BossFight
 	local o: BossOpts = opts or {}
 	local def = Bosses.byId[bossId] :: any
@@ -2496,7 +2530,9 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	end
 	local n = #team
 	local specialHit = o.specialHit or Balance.SPECIAL_HIT
-	local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+	local avoidHit = o.avoidHit or 0
+	local splitInside = o.splitInside or n
+	local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
 	local function memberDps(i: number, p: Player, target: any): number
 		return Balance.dps(p, target) * (if o.dpsMul then o.dpsMul[i] or 1 else 1)
 	end
@@ -2518,6 +2554,26 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	local tankTotal, fightingTotal, shieldTankHp = 0, 0, 0
 	local shieldAttacks, shieldKills, shieldTotal = 0, 0, 0
 	local biggest: { [string]: number } = {}
+	local avoidable: { [string]: number } = {}
+	local mech: BossMechanicsReport = {
+		split = {},
+		hasSplit = false,
+		channelSeconds = 0,
+		channelLimit = math.huge,
+		channelBroken = true,
+		hasChannel = false,
+		channelHit = {},
+	}
+	for _, attack in def.attacks do
+		if attack.mechanic == "channel" and attack.channel then
+			local need = BossMechanics.breakSeconds(attack.channel.breakPct, m.maxHp, dps)
+			local limit = attack.channel.seconds - Balance.CHANNEL_REACTION
+			mech.hasChannel = true
+			mech.channelSeconds = math.max(mech.channelSeconds, need)
+			mech.channelLimit = math.min(mech.channelLimit, limit)
+			mech.channelBroken = mech.channelBroken and need <= limit
+		end
+	end
 	-- S93: damage of `all` attacks per member over the active phases (per member: a class can be in the team twice)
 	local raidTotal: { number } = {}
 	for phase = 1, #thresholds - 1 do
@@ -2527,7 +2583,7 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		local shieldSeconds = 0
 		for _, summon in def.summons do
 			if summon.phase == phase and summon.shield then
-				local count = summon.count + Bosses.SUMMON_PER_PLAYER * (n - 1)
+				local count = summon.count -- S134: no helpers per player
 				local waves = 1 + (if summon.every then math.floor(fighting / summon.every) else 0)
 				local helperDef = Monsters.get(summon.monster) :: any
 				-- S92: still with the S32 group reduction (the server has none, Balance.summonHelpers): without it the
@@ -2574,9 +2630,26 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 			if perMinute and perMinute > 0 then
 				casts += perMinute * active / 60
 				local kind = attack.damageKind or def.damageKind
+				local mechanic = attack.mechanic
+				local dodge = BossMechanics.isAvoidable(attack)
 				for i, p in team do
 					local share: number = 0
-					if attack.target == "threat" or attack.target == "nearest" then
+					-- S134: the multiplier of one hit and the share of casts that land on this member
+					local mul = attack.damage
+					local lands = if dodge then avoidHit else specialHit
+					if mechanic == "split" then
+						local missAll = if attack.split then attack.split.missAll else 0
+						mul = BossMechanics.splitShare(attack.damage, splitInside, missAll)
+						share = if splitInside <= 0 or i <= splitInside then 1 else 0
+						lands = 1
+					elseif mechanic == "mark" then
+						share = 1 / n
+						mul = BossMechanics.markDamage(true, attack.damage, attack.mark :: any)
+						lands = 1
+					elseif mechanic == "channel" then
+						share = if mech.channelBroken then 0 else 1
+						lands = 1
+					elseif attack.target == "threat" or attack.target == "nearest" then
 						share = if i == 1 then 1 else 0
 					elseif attack.target == "self" then
 						local melee = Balance.MELEE[p.classId] == true
@@ -2586,17 +2659,28 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 					else -- all
 						share = 1
 					end
-					if share > 0 then
-						local hit = Balance.hit(m, p, attack.damage, kind, false)
-						local perSecond = hit * specialHit * share * perMinute / 60
+					local hit = Balance.hit(m, p, mul, kind, false)
+					local top = hit * Combat.randomMax / p.values.maxHp
+					if mechanic == "split" then
+						mech.split[p.classId] = math.max(mech.split[p.classId] or 0, top)
+						mech.hasSplit = true
+					elseif mechanic == "channel" then
+						mech.channelHit[p.classId] = math.max(mech.channelHit[p.classId] or 0, top)
+					elseif dodge then
+						if share > 0 then
+							avoidable[p.classId] = math.max(avoidable[p.classId] or 0, top)
+						end
+					elseif share > 0 then
+						biggest[p.classId] = math.max(biggest[p.classId] or 0, top)
+					end
+					if share > 0 and lands > 0 then
+						local perSecond = hit * lands * share * perMinute / 60
 						taken[i] += perSecond * active * dmgMul
 						if i == 1 then
 							tankPerSecond += perSecond
 						else
 							raidPerSecond += perSecond
 						end
-						local top = hit * Combat.randomMax / p.values.maxHp
-						biggest[p.classId] = math.max(biggest[p.classId] or 0, top)
 						if attack.target == "all" then
 							-- S93: meteor per minute (Boss.luau targetsFor: `all` = a circle under every player)
 							raidTotal[i] = (raidTotal[i] or 0) + perSecond * active
@@ -2682,6 +2766,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 			return out
 		end)(),
 		hazardTick = if hazards then hazards.perTick else {},
+		biggestAvoidable = avoidable,
+		mechanics = mech,
 	}
 end
 
@@ -2866,54 +2952,8 @@ function Balance.targets1_20(): { TargetRow }
 		local trio = Balance.elite2({ w, m, h }, kind, spawner).hpLost
 		target(rows, `{id}.trio`, "elite2", `{label}: 3 graczy HP`, trio, E2.trio[1], E2.trio[2], nil, L)
 	end
-	for n = 3, 5 do
-		local minutes = Balance.boss("grimrok", Balance.team(n, 19)).seconds / 60
-		target(rows, `S32.grimrok.team{n}.minutes`, "grimrok", `Grimrok, {n} graczy L19: min`, minutes, 4, 6, nil, 19)
-		-- S91 (B1): the team with the nodes of each class's combat build (Balance.COMBAT_BUILD)
-		local nodes = Balance.boss("grimrok", Balance.team(n, 19, true)).seconds / 60
-		target(
-			rows,
-			`S32.grimrok.team{n}.minutes@nodes`,
-			"grimrok",
-			`Grimrok, {n} graczy L19 z węzłami: min`,
-			nodes,
-			4,
-			6,
-			nil,
-			19
-		)
-	end
-	-- S91 (D1, B1): both player variants (without nodes and with the Mage's combat build)
-	for _, nodes in { false, true } do
-		local at = if nodes then "@nodes" else ""
-		local opts = if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil
-		local suffix = if nodes then " z węzłami" else ""
-		local mage = Balance.boss("grimrok", { Balance.player("Mage", 20, opts) }).biggest[1].share
-		target(
-			rows,
-			`S32.grimrok.mage20.biggest{at}`,
-			"grimrok",
-			`Grimrok: największy cios / HP Maga L20{suffix}`,
-			mage,
-			nil,
-			0.7,
-			"Mage",
-			20
-		)
-		-- A level 18 Mage survives one hit too (S32: below 1).
-		local mage18 = Balance.boss("grimrok", { Balance.player("Mage", 18, opts) }).biggest[1].share
-		target(
-			rows,
-			`S32.grimrok.mage18.biggest{at}`,
-			"grimrok",
-			`Grimrok: największy cios / HP Maga L18{suffix}`,
-			mage18,
-			nil,
-			1 - 1e-9,
-			"Mage",
-			18
-		)
-	end
+	-- S134: the S32 Grimrok rows (4-6 min for 3-5 players, no hit above 70 % of a Mage) gave way to
+	-- Balance.targetsS134 (bosses 2.0: a bigger party kills faster, big blows to dodge)
 	-- Items
 	for _, c in Balance.CLASSES do
 		for _, L in { 5, 10, 20 } do
@@ -3194,21 +3234,22 @@ local noSupportCache: { [string]: NoSupport } = {}
 -- `level` (default boss level - 1): no interception, no heals of others, no taunts (own heals and life steal count).
 -- The players' damage is the skill model's (tests/SkillModel.fight on the boss for ASSUMPTIONS.bossSeconds, x the
 -- convention's BOSS_UPTIME in Balance.bossFight through `dpsMul`), the boss's damage from Balance.bossFight.
-function Balance.bossNoSupport(bossId: string, n: number, level: number?): NoSupport
+-- S134: `gear` = GearOpts of every member (the solo with overpowered gear: Mythic +9), nil = the convention's.
+function Balance.bossNoSupport(bossId: string, n: number, level: number?, gear: GearOpts?): NoSupport
 	local def = Bosses.byId[bossId] :: any
 	local L = level or def.level - 1
-	local key = `{bossId}|{n}|{L}`
+	local key = `{bossId}|{n}|{L}|{if gear then `{gear.rarity or "-"}+{gear.up or 0}` else "-"}`
 	local cached = noSupportCache[key]
 	if cached then
 		return cached
 	end
 	local SkillModel = (require :: any)("./SkillModel")
-	local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+	local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
 	local team: { Player } = {}
 	local mul: { number } = {}
 	for i = 1, n do
 		local buildKey = Balance.S91.noSupportTeam[i]
-		local sp = SkillModel.player(SkillModel.build(buildKey), L)
+		local sp = SkillModel.player(SkillModel.build(buildKey), L, if gear then { gear = gear } else nil)
 		local skill = SkillModel.fight(sp, { targets = { m }, seconds = SkillModel.ASSUMPTIONS.bossSeconds }).dps
 		team[i] = sp.p
 		mul[i] = skill / math.max(1e-9, Balance.dps(sp.p, m))
@@ -3282,24 +3323,7 @@ function Balance.targetsS91(): { TargetRow }
 			/ math.max(1e-9, Balance.paceWindowAt("Warrior", 19).hours)
 		add("pace.raw.20", "pace", "Tempo: h(20) / h(19)", raw, nil, P.raw, "Warrior", 20)
 	end
-	-- Grimrok in the S83 / S87 model (Balance.bossFight with BossSchedule), both player variants
-	for _, nodes in { false, true } do
-		local at = if nodes then "@nodes" else ""
-		local suffix = if nodes then " z węzłami" else ""
-		for n = 3, 5 do
-			local f = Balance.bossFight("grimrok", Balance.team(n, 19, nodes))
-			local label = `Grimrok (model S83), {n} graczy L19{suffix}: min`
-			add(`grimrok.model.team{n}{at}`, "grimrok", label, f.seconds / 60, 4, 6, nil, 19)
-		end
-		for _, spec in { { 20, 0.7 }, { 18, 1 - 1e-9 } } do
-			local L = spec[1]
-			local team = Balance.team(5, 19, nodes)
-			team[2] = Balance.player("Mage", L, if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
-			local hit = Balance.bossFight("grimrok", team).biggestHit.Mage or 0
-			local label = `Grimrok (model S83): największy cios / HP Maga L{L}{suffix}`
-			add(`grimrok.model.mage{L}{at}`, "grimrok", label, hit, nil, spec[2], "Mage", L)
-		end
-	end
+	-- S134: Grimrok's fight length and biggest blows are Balance.targetsS134 rows (bosses 2.0)
 	-- T-SK6 (plan D1, S86 F4): the dungeon Healer on the Defender (team S92) at the boss level - 1
 	do
 		local healer = SkillModel.build("healer.dungeon", "Cleric")
@@ -3436,8 +3460,6 @@ local Rng = require("../src/shared/Logic/Rng")
 
 Balance.S92 = {
 	bossLevel = 44, -- the parties of the Morvane rows (balance plan D4: 3-5 players of level 44)
-	minutes = { 4, 6 },
-	mageHit = 0.70, -- biggest hit / HP of a level 45 Mage
 	basicHit = { 0.07, 0.12 }, -- Morvane's basic hit / HP of a level 45 Mage
 	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
 	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
@@ -3474,7 +3496,7 @@ Balance.S92 = {
 
 export type WaveLoss = { seconds: number, worst: number, byMember: { number } }
 
--- S92 (B2): the shield waves of `bossId` against `team` one by one: count + SUMMON_PER_PLAYER x (n - 1) helpers at
+-- S92 (B2): the shield waves of `bossId` against `team` one by one: the summon's count of helpers (S134: fixed) at
 -- their level, killed one after another by the whole team (as Balance.bossFight); every living helper attacks a
 -- member in turn (helper j -> member (j - 1) % n + 1), so the helpers spread over the party. Per wave: its seconds
 -- and the HP each member loses / its max HP (worst = the biggest share of any wave).
@@ -3484,7 +3506,7 @@ function Balance.shieldWaves(bossId: string, team: { Player }, opts: BossOpts?):
 	local out: { WaveLoss } = {}
 	for _, summon in def.summons do
 		if summon.shield then
-			local count = summon.count + Bosses.SUMMON_PER_PLAYER * (n - 1)
+			local count = summon.count -- S134: no helpers per player
 			local helperDef = Monsters.get(summon.monster) :: any
 			local members = Balance.summonHelpers(helperDef, summon.level, count)
 			local lost: { number } = table.create(n, 0)
@@ -3582,18 +3604,7 @@ function Balance.targetsS92(): { TargetRow }
 	for _, nodes in { false, true } do
 		local at = if nodes then "@nodes" else ""
 		local suffix = if nodes then " z węzłami" else ""
-		for n = 3, 5 do
-			local f = Balance.bossFight("morvane", Balance.team(n, L, nodes))
-			local label = `Morvane, {n} graczy L{L}{suffix}: min`
-			add(`morvane.team{n}{at}`, "morvane", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
-		end
-		for _, spec in { { 45, S.mageHit }, { 43, 1 - 1e-9 } } do
-			local team = Balance.team(5, L, nodes)
-			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
-			local hit = Balance.bossFight("morvane", team).biggestHit.Mage or 0
-			local label = `Morvane: największy cios / HP Maga L{spec[1]}{suffix}`
-			add(`morvane.mage{spec[1]}{at}`, "morvane", label, hit, nil, spec[2], "Mage", spec[1])
-		end
+		-- S134: the fight length and the biggest blows are Balance.targetsS134 rows (bosses 2.0)
 		-- the shield waves: HP per member per wave (S32 order)
 		for n = 3, 5 do
 			local worst = 0
@@ -3668,7 +3679,7 @@ function Balance.targetsS92(): { TargetRow }
 		add(`morvane.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
 		local team: { Player } = {}
 		local mul: { number } = {}
-		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
 		for i, mem in r.members do
 			local sp = SkillModel.player(SkillModel.build(mem.key), L)
 			team[i] = sp.p
@@ -3859,6 +3870,11 @@ end
 
 -- S92 (K2): rows of targetsS92 out of reach of the S92 levers (printed with the reason; docs/DECYZJE.md S92).
 Balance.S92_REPORT = {} :: { [string]: string }
+-- S134: T-SK6 Morvane poza zasięgiem: the big blows to dodge and the mechanics no longer hit the tank and take the
+-- boss's time; the curse field on the tank is held by Morvane bez wsparcia (biggest hit <= 1.0: 11.5 -> 12.3 gives
+-- 1.00) and the basic attack by the S32 tank row (<= 3.5 HP / min, 3.38), so the Healer's heal stays ~3.5 x the need
+Balance.S92_REPORT["R.duskwood.morvane.tsk6"] =
+	"poza zasięgiem dźwigni S134: ok. 3,5 > 2,7 (wielkie ciosy do unikania nie trafiają tanka; Pole Klątwy trzyma noSupport.hit ≤ 1,0, atak podstawowy wiersz tanka S32 ≤ 3,5); dla właściciela"
 do
 	local R = Balance.S92_REPORT
 	-- S92: Elita / Elita II ścieżek wsparcia i tanka poza zasięgiem dźwigni S92: każda ścieżka wygrywa Elitę II solo
@@ -3926,8 +3942,6 @@ end
 
 Balance.S93 = {
 	bossLevel = 69, -- the parties of the Azgor rows (3-5 players of level 69)
-	minutes = { 4, 6 },
-	mageHit = 0.70, -- biggest hit / HP of a level 70 Mage (inferno on a ranged Mage)
 	basicHit = { 0.07, 0.12 }, -- Azgor's basic hit / HP of a level 70 Mage
 	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
 	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
@@ -4064,18 +4078,7 @@ function Balance.targetsS93(): { TargetRow }
 	for _, nodes in { false, true } do
 		local at = if nodes then "@nodes" else ""
 		local suffix = if nodes then " z węzłami" else ""
-		for n = 3, 5 do
-			local f = Balance.bossFight("azgor", Balance.team(n, L, nodes))
-			local label = `Azgor, {n} graczy L{L}{suffix}: min`
-			add(`azgor.team{n}{at}`, "azgor", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
-		end
-		for _, spec in { { 70, S.mageHit }, { 68, 1 - 1e-9 } } do
-			local team = Balance.team(5, L, nodes)
-			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
-			local hit = Balance.bossFight("azgor", team).biggestHit.Mage or 0
-			local label = `Azgor: największy cios / HP Maga L{spec[1]}{suffix}`
-			add(`azgor.mage{spec[1]}{at}`, "azgor", label, hit, nil, spec[2], "Mage", spec[1])
-		end
+		-- S134: the fight length and the biggest blows are Balance.targetsS134 rows (bosses 2.0)
 		for n = 3, 5 do
 			local worst = 0
 			for _, w in Balance.shieldWaves("azgor", Balance.team(n, L, nodes)) do
@@ -4179,7 +4182,7 @@ function Balance.targetsS93(): { TargetRow }
 		add(`azgor.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
 		local team: { Player } = {}
 		local mul: { number } = {}
-		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
 		for i, mem in r.members do
 			local sp = SkillModel.player(SkillModel.build(mem.key), L)
 			team[i] = sp.p
@@ -4481,8 +4484,6 @@ end
 
 Balance.S94 = {
 	bossLevel = 99, -- the parties of the Vaelgrath rows (3-5 players of level 99)
-	minutes = { 4, 6 },
-	mageHit = 0.70, -- biggest hit / HP of a level 100 Mage (glacial ring on a ranged Mage)
 	basicHit = { 0.07, 0.12 }, -- Vaelgrath's basic hit / HP of a level 100 Mage
 	tankPerMinute = 3.5, -- S32 model: the tank's HP per minute from basic and threat attacks
 	wave = 1.10, -- HP per member per shield wave (the S32 group limit)
@@ -4586,18 +4587,7 @@ function Balance.targetsS94(): { TargetRow }
 	for _, nodes in { false, true } do
 		local at = if nodes then "@nodes" else ""
 		local suffix = if nodes then " z węzłami" else ""
-		for n = 3, 5 do
-			local f = Balance.bossFight("vaelgrath", Balance.team(n, L, nodes))
-			local label = `Vaelgrath, {n} graczy L{L}{suffix}: min`
-			add(`vaelgrath.team{n}{at}`, "vaelgrath", label, f.seconds / 60, S.minutes[1], S.minutes[2], nil, L)
-		end
-		for _, spec in { { 100, S.mageHit }, { 98, 1 - 1e-9 } } do
-			local team = Balance.team(5, L, nodes)
-			team[2] = Balance.player("Mage", spec[1], if nodes then { nodes = Balance.COMBAT_BUILD.Mage } else nil)
-			local hit = Balance.bossFight("vaelgrath", team).biggestHit.Mage or 0
-			local label = `Vaelgrath: największy cios / HP Maga L{spec[1]}{suffix}`
-			add(`vaelgrath.mage{spec[1]}{at}`, "vaelgrath", label, hit, nil, spec[2], "Mage", spec[1])
-		end
+		-- S134: the fight length and the biggest blows are Balance.targetsS134 rows (bosses 2.0)
 		for n = 3, 5 do
 			local worst = 0
 			for _, w in Balance.shieldWaves("vaelgrath", Balance.team(n, L, nodes)) do
@@ -4701,7 +4691,7 @@ function Balance.targetsS94(): { TargetRow }
 		add(`vaelgrath.noSupport.{n}.hit`, "noSupport", hitLabel, hit, nil, Balance.S91.noSupport.hit, nil, L)
 		local team: { Player } = {}
 		local mul: { number } = {}
-		local m = Balance.monster(Balance.bossKind(def, n), def.level, "boss")
+		local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
 		for i, mem in r.members do
 			local sp = SkillModel.player(SkillModel.build(mem.key), L)
 			team[i] = sp.p
@@ -5037,6 +5027,218 @@ do
 			R[`R.frostpeak.guard.{spec[1]}.{spec[2]}.{lv}`] = (guardReasons :: any)[spec[4]]
 		end
 	end
+end
+
+-- S134: bosses 2.0 ------------------------------------------------------------------------------------------------
+
+-- Targets of the boss rework (docs/sessions S134 E2; test data, never game numbers): a boss never scales with the
+-- party, so 5 players beat it faster than 3 and 3 faster than 2; the big blows (`avoid`) are dodged, the regular
+-- attacks stay survivable, the party mechanics need the party, and a solo player loses on equal gear but wins with
+-- overpowered gear (the Fury Warrior with a Mythic set +9).
+Balance.S134 = {
+	bosses = { "grimrok", "morvane", "azgor", "vaelgrath" },
+	five = { 3, 4.5 }, -- minutes of 5 players at the boss level - 1
+	three = { 5, 7.5 }, -- minutes of 3 players, and at most threeEnrage x enrageAfter
+	threeEnrage = 0.8,
+	avoid = { 0.60, 0.90 }, -- the biggest big blow / HP of a Mage at the boss level (convention gear)
+	avoidTank = 0.70, -- ... of a Warrior at the boss level
+	hit = 0.50, -- the biggest blow that cannot be dodged (no split, no channel) / HP of a Mage at the boss level
+	split3 = 0.75, -- a split blow on 3 players standing together / HP of the Mage
+	splitSolo = 1.0, -- ... on a lone player (kills)
+	wave = 1.10, -- HP per member per shield wave, 3 players (the S32 group limit, S92-S94)
+	op = { rarity = Rarities.MYTHIC, up = 9 }, -- the overpowered solo: the Fury Warrior (S91.noSupportTeam[1]) with this gear
+	opGap = 10, -- Grimrok and Morvane: the same also at the boss level + opGap (Combat.levelGap*)
+	opGapBosses = { grimrok = true, morvane = true } :: { [string]: boolean },
+}
+
+-- S134: rows of targetsS134 out of reach of the S134 levers (printed with the reason; docs/DECYZJE.md S134).
+Balance.S134_REPORT = {} :: { [string]: string }
+
+-- S134 (E2): the boss targets in one place (ids "S134.<boss>..."); balance.spec ("Balance: bosses 2.0 (S134)")
+-- asserts every row without `report`.
+function Balance.targetsS134(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `S134.{id}`, group, label, value, low, high, c, lv)
+	end
+	for _, bossId in S.bosses do
+		local def = Bosses.byId[bossId] :: any
+		local L = def.level - 1
+		local name = (string.gsub(bossId, "^%l", string.upper))
+		-- the fight gets shorter with the party (both player variants)
+		for _, nodes in { false, true } do
+			local at = if nodes then "@nodes" else ""
+			local suffix = if nodes then " z węzłami" else ""
+			local seconds: { [number]: number } = {}
+			for n = 2, 5 do
+				seconds[n] = Balance.bossFight(bossId, Balance.team(n, L, nodes)).seconds
+				local low, high = nil, nil
+				if n == 5 then
+					low, high = S.five[1], S.five[2]
+				elseif n == 3 then
+					low, high = S.three[1], math.min(S.three[2], S.threeEnrage * def.enrageAfter / 60)
+				end
+				local label = `{name}, {n} graczy L{L}{suffix}: min`
+				add(`{bossId}.team{n}{at}`, bossId, label, seconds[n] / 60, low, high, nil, L)
+			end
+			for n = 2, 4 do
+				local label = `{name}{suffix}: czas {n + 1} graczy / {n} graczy`
+				add(`{bossId}.faster{n + 1}{at}`, bossId, label, seconds[n + 1] / seconds[n], nil, 1 - 1e-9, nil, L)
+			end
+		end
+		-- the big blows and the regular hits on a Mage and a Warrior of the boss level
+		do
+			local team = Balance.team(5, L)
+			team[1] = Balance.player("Warrior", def.level)
+			team[2] = Balance.player("Mage", def.level)
+			local f = Balance.bossFight(bossId, team)
+			local lv = def.level
+			local avoidLabel = `{name}: największy cios do uniknięcia / HP Maga L{lv}`
+			add(
+				`{bossId}.avoid.mage`,
+				bossId,
+				avoidLabel,
+				f.biggestAvoidable.Mage or 0,
+				S.avoid[1],
+				S.avoid[2],
+				"Mage",
+				lv
+			)
+			local tankLabel = `{name}: największy cios do uniknięcia / HP Wojownika L{lv}`
+			add(
+				`{bossId}.avoid.tank`,
+				bossId,
+				tankLabel,
+				f.biggestAvoidable.Warrior or 0,
+				nil,
+				S.avoidTank,
+				"Warrior",
+				lv
+			)
+			local hitLabel = `{name}: największy cios nie do uniknięcia / HP Maga L{lv}`
+			add(`{bossId}.hit.mage`, bossId, hitLabel, f.biggestHit.Mage or 0, nil, S.hit, "Mage", lv)
+		end
+		-- the mechanics with 3 players standing together and alone (equal gear)
+		local three = Balance.bossFight(bossId, Balance.team(3, L))
+		local solo = Balance.bossNoSupport(bossId, 1, L)
+		local soloMech = solo.fight.mechanics
+		local soloClass = solo.members[1].classId
+		if three.mechanics.hasSplit then
+			local label = `{name}: wspólny cios, 3 graczy razem / HP Maga`
+			add(`{bossId}.split3`, bossId, label, three.mechanics.split.Mage or 0, nil, S.split3, "Mage", L)
+			local soloLabel = `{name}: wspólny cios w pojedynkę / HP`
+			add(
+				`{bossId}.split.solo`,
+				bossId,
+				soloLabel,
+				soloMech.split[soloClass] or 0,
+				S.splitSolo,
+				nil,
+				soloClass,
+				L
+			)
+		end
+		if three.mechanics.hasChannel then
+			local m3 = three.mechanics
+			local label = `{name}: przerwanie zaklęcia, 3 graczy: s`
+			add(`{bossId}.channel3`, bossId, label, m3.channelSeconds, nil, m3.channelLimit, nil, L)
+			local soloLabel = `{name}: przerwanie zaklęcia w pojedynkę: s`
+			add(
+				`{bossId}.channel.solo`,
+				bossId,
+				soloLabel,
+				soloMech.channelSeconds,
+				soloMech.channelLimit + 1e-9,
+				nil,
+				soloClass,
+				L
+			)
+		end
+		do
+			local worst = 0
+			for _, w in Balance.shieldWaves(bossId, Balance.team(3, L)) do
+				worst = math.max(worst, w.worst)
+			end
+			add(`{bossId}.wave3`, bossId, `{name}, fala tarczy, 3 graczy: HP na członka`, worst, nil, S.wave, nil, L)
+		end
+		-- solo on equal gear loses: the split kills, the channel is not broken, the intake beats the sustain or the
+		-- fight runs into the enrage
+		do
+			local ratio = solo.members[1].ratio
+			local splitKills = (soloMech.split[soloClass] or 0) >= S.splitSolo
+			local loses = splitKills
+				or not soloMech.channelBroken
+				or ratio > Balance.S91.noSupport.sustain
+				or solo.seconds > def.enrageAfter
+			local label = `{name}: solo na równym sprzęcie przegrywa (1 = tak)`
+			add(`{bossId}.solo.loses`, bossId, label, if loses then 1 else 0, 1, nil, soloClass, L)
+		end
+		-- solo with overpowered gear wins (at the boss level; Grimrok and Morvane also at the boss level + opGap)
+		local variants = { { def.level, "" } }
+		if S.opGapBosses[bossId] then
+			table.insert(variants, { def.level + S.opGap, `@gap{S.opGap}` })
+		end
+		for _, v in variants do
+			local lv, at = v[1], v[2]
+			local op = Balance.bossNoSupport(bossId, 1, lv, S.op :: any)
+			local mech = op.fight.mechanics
+			local c = op.members[1].classId
+			local tag = `{name}: solo Mityczny +9 L{lv}`
+			if mech.hasSplit then
+				add(
+					`{bossId}.op{at}.split`,
+					bossId,
+					`{tag}, wspólny cios / HP`,
+					mech.split[c] or 0,
+					nil,
+					S.splitSolo - 1e-9,
+					c,
+					lv
+				)
+			end
+			if mech.hasChannel then
+				add(
+					`{bossId}.op{at}.channel`,
+					bossId,
+					`{tag}, przerwanie: s`,
+					mech.channelSeconds,
+					nil,
+					mech.channelLimit,
+					c,
+					lv
+				)
+			end
+			local sustain = Balance.S91.noSupport.sustain
+			add(
+				`{bossId}.op{at}.sustain`,
+				bossId,
+				`{tag}, przyjmowane / podtrzymanie`,
+				op.members[1].ratio,
+				nil,
+				sustain,
+				c,
+				lv
+			)
+			add(`{bossId}.op{at}.seconds`, bossId, `{tag}: s`, op.seconds, nil, def.timeLimit - 1e-9, c, lv)
+		end
+	end
+	for _, row in rows do
+		local why = Balance.S134_REPORT[row.id]
+		if why then
+			row.report = `właściciel: {why}`
+		end
+	end
+	return rows
 end
 
 -- S94 (L3): the cross rows 1-100 no band checked in full (ids "X.<group>..."): the pace step h(L) / h(L - 1) <= 1.3
@@ -6015,7 +6217,7 @@ function Balance.situationCtx(p: Player, name: string, level: number?): Situatio
 		ctx.attacks = (1 + d / m.attackInterval) / d
 	elseif name == "boss" then
 		local def, f = Balance.bossFightAt(p.classId, L)
-		local m = Balance.monster(Balance.bossKind(def, S.bossTeam), L, "boss")
+		local m = Balance.monster(Balance.bossKind(def), L, "boss")
 		ctx = make(m, f.seconds, "power")
 		local wave = f.shieldSeconds / math.max(1e-9, f.seconds)
 		ctx.attacks = (f.activeSeconds / m.attackInterval + f.shieldAttacks) / math.max(1e-9, f.seconds)

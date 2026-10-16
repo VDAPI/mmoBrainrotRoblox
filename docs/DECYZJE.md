@@ -4412,3 +4412,52 @@
   poza `CONFIG_KEYS` (mały odpływ złota poza modelem ekonomii). List bez zawartości czyta się i usuwa wszędzie; złoto i
   przedmioty tylko przy skrzynce (jak odbiór). „Odeślij” zwraca złoto i przedmioty bez opłaty (`mail.subject.bounced`).
 - **S133** Brak `BRAKI-GRAFIK.md` w repozytorium: ikona menu `hud/menu_friends` (znak ☺) zapisana w „Niedokończone”.
+- **S134** Bossowie nie skalują się z drużyną: HP = `Bosses.HP_BASE` (84, dawne 4 graczy) × `hpMul`, fala tarczy 8
+  pomocników dla każdej drużyny (`SUMMON_PER_PLAYER` usunięte, `BossScaling.hpMultiplier()` bez argumentu). Większa
+  drużyna ma łatwiej: więcej obrażeń, cele losowe i wspólny cios dzielone na więcej osób. Boss projektowany pod 3–5
+  graczy, solo tylko z przepakowanym sprzętem.
+- **S134** Nowa filozofia bossów zastępuje S32 „żaden cios > 70% HP Maga” i cele 4–6 min dla 3–5 graczy z S91–S94
+  (`S32.grimrok.team*` / `mage*`, `S91.grimrok.model.*`, `R.duskwood.morvane.team*` / `mage45|43`,
+  `R.ashen.azgor.team*` / `mage70|68`, `R.frostpeak.vaelgrath.team*` / `mage100|98` usunięte): wielkie ciosy do unikania
+  (`avoid`) 60–90% HP Maga, ≤ 70% HP Wojownika, zapowiedź ≥ 1,8 s; ciosy zwykłe ≤ 50% HP Maga; czas 5 graczy 3–4,5 min,
+  3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (`Balance.targetsS134`, asertowane w `balance.spec`).
+- **S134** Mechaniki w `Logic/BossMechanics` (serwer i model): `split` dzieli `damage` przez stojących w obszarze w chwili
+  uderzenia, pusty obszar = `missAll` (udział pełnego ciosu) w każdego walczącego; `mark` wybucha wokół aktualnej pozycji
+  naznaczonego, naznaczony dostaje `damage × self`, śmierć / wyjście przed wybuchem kasuje piętno; `channel` przerywają
+  obrażenia (`breakPct` maks. HP od startu zaklęcia; leczenie bossa przerwania nie daje), nie kontrola (bossowie są na nią
+  odporni), nieprzerwane trafia każdego walczącego bez telegrafu; za tarczą się nie zaczyna, fala tarczy w trakcie gasi je.
+- **S134** Piętno (`m = "mark"`, `f` = encja gracza) i zaklęcie (`m = "channel"`) nie trafiają do `redZones` ani czujności
+  Zwiadowcy (poruszają się / nie mają obszaru); złoty krąg wspólnego ciosu trafia (to obszar, w którym się stoi).
+- **S134** Czas mechaniki: `split` ma zapowiedź ≥ 3 s; `mark` ma krótki gest bossa (`windup` 1,2 s, pole `cw` zdarzenia) i
+  osobne `mark.seconds` ≥ 3 s do wybuchu; `channel` ma `windup` = `channel.seconds` (≥ 4 s, harmonogram liczy ten czas jako
+  rzucanie). Model: wielkie ciosy uniknięte (`avoidHit` 0), drużyna stoi razem we wspólnym ciosie, piętno trafia tylko
+  naznaczonego (1 / n rzutów), zaklęcie przerwane, gdy `breakPct × HP / DPS ≤ seconds − 0,5`.
+- **S134** Harmonogram (G11) z nowymi atakami: dźwignią są odnowienia i fazy ataków (`globalGap` 2,2 bez zmian): część
+  ciosów tylko w wybranych fazach (Morvane: Żniwo Dusz i Piętno Krypty w 1–2; Azgor: Fala Ognia w 1 i 3, Erupcja i Serce
+  Wulkanu w 1–2; Vaelgrath: Uderzenie Skrzydeł w 1, Smagnięcie Ogonem i Lodowy Grobowiec w 1–2, Lodowa Kometa w 1 i 3).
+  Liczby kontrolne harmonogramu (`bossschedule.spec`, `balancemodel.spec`) odnowione na danych S134.
+- **S134** Solo w modelu = Wojownik Furii bez wsparcia (`Balance.bossNoSupport(id, 1)`, nowy parametr `gear`):
+  na równym sprzęcie przegrywa każdego bossa (wspólny cios ≥ 1,0 HP albo nieprzerwane zaklęcie); z Mitycznym kompletem +9
+  wygrywa wszystkich czterech na poziomie bossa (Grimrok i Morvane także na poziomie bossa + 10).
+- **S134** T-SK6 Morvane (`R.duskwood.morvane.tsk6`, ok. 3,5 > 2,7) poza zasięgiem dźwigni S134 (raport): wielkie ciosy
+  nie trafiają tanka, Pole Klątwy trzyma „bez wsparcia” (największy cios ≤ 1,0; 11,5 → 12,3 daje 1,00), atak podstawowy
+  wiersz tanka S32 (≤ 3,5). Swordplay Strażnika samotnika na 45 (0,037 < 0,040) w raporcie: 8 pomocników zamiast 14 dla
+  3 osób i więcej telegrafów to mniej ciosów do kontry. Zamach Grimroka ×6 → ×7,2 trzyma T-SK6 Grimroka ≤ 2,0 (1,96).
+- **S134** Nowa baza 1–20 (`balance_1_20.json`, `meta.session = "S134"`): zmienione tylko sekcje Grimroka („Grimrok
+  (poziom 20)”, „Grimrok w modelu S83 / S87 (S91)” z dwiema nowymi kolumnami, „Grimrok bez wsparcia (S91)”, T-SK6 Grimroka
+  w „Kotwica L20”): 74 wartości zastąpione, 22 dodane, `ALLOWED_1_20_DIFFS` pusta.
+- **S134** Wiki: jedno HP bossa (`stats` zamiast `byPlayers`, bez przycisków 1–5 i tabeli „Na liczbę graczy”; prostsze niż
+  lista pięciu takich samych liczb); ataki mają `avoid`, `mechanic` i `mechanicText` (`boss.mechanic.<rodzaj>.about`).
+  Zmiana kształtu danych jest celowa (`WIKI_KEYS_ALLOW="bosses:*,types.ts"` do commita).
+- **S134** Nowe ataki pozują stylami ogólnymi z `Data/MonsterMotions` (`overhead`, `jumpSlam`, `wide`, `cast`,
+  `castBurst`, `erupt`, `slam`, `stomp`, `rear`, `screech`, `nova`), każdy inny niż reszta ataków bossa; dźwięki
+  mechanik `boss.mechanic.<mark|split|channel>` bez ID (wybór właściciela).
+- **S134** Po przeglądzie: wspólny cios liczy tylko żywych w kręgu (ciało w kręgu nie bierze udziału i nie kasuje
+  `missAll`). Piętno skasowane przed wybuchem (śmierć, wyjście, śmierć bossa, `win`) wysyła zdarzenie `teleCancel` (`e` +
+  `a`, klucz `GroundTelegraph.cancel`), klient zdejmuje krąg i poświatę bez wybuchu; `Boss.ClearMechanics` wspólne dla
+  `Step`, `Destroy` i `win`. Nieprzerwane zaklęcie wysyła `blow` (efekt `impact` / `shake` z `BossMotions` przy bossie).
+- **S134** Model Przechwytu (B7): cios w Maga = większy z `biggestHit` i `biggestAvoidable` (nieuniknięty cios do
+  unikania), Mur Tarcz bierze największy atak bez mechaniki (suma wspólnego ciosu nie jest strefą na każdego). Przykład
+  ROZWOJ 10.6 (115% / 116%) zostaje jako stan sprzed S134; na L100 teraz ok. 85% → 60%, Mur 66% / 54%.
+- **S134** Wiki: piętno pokazuje `mark.seconds` i obrażenia naznaczonego, wspólny cios sumę i udział przy 3 graczach
+  (`SPLIT_SHOWN`), zaklęcie bez kształtu (czas, próg przerwania, oszołomienie).

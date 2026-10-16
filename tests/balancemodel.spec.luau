@@ -1,6 +1,6 @@
 --!strict
--- The S83 world and boss model in tests/Balance.luau: boss schedule (control numbers on the data of 05b859d, the
--- attacks did not change since; S87: reproduced with Balance.PICK_LIST_ORDER, the default is Logic/BossSchedule and
+-- The S83 world and boss model in tests/Balance.luau: boss schedule (control numbers on the data of 05b859d, renewed on
+-- the data of S134 bosses 2.0; S87: reproduced with Balance.PICK_LIST_ORDER, the default is Logic/BossSchedule and
 -- has its own spec), the opts.pick hook, the server constants the model mirrors, regions,
 -- quests on their own level, potions on the S54 interval and the cave Elites from the real spawners.
 local fs = require("@lune/fs")
@@ -15,26 +15,23 @@ local T = require("./Test")
 
 T.describe("Balance model: boss schedule", function()
 	-- Boss.Step every 0.05 s, list order (S83 rule), 600 s in one phase, nextGlobal from 4 s, first use 5 s, gap 2.2
+	-- S134: the data of bosses 2.0 (the S83 rule still starves Morvane's ring and her new attacks)
 	local CONTROL: { { string | number } } = {
-		{ "grimrok", 1, "sweep", 7.5 },
-		{ "grimrok", 1, "leap", 3.7 },
-		{ "grimrok", 3, "sweep", 6.4 },
-		{ "grimrok", 3, "leap", 4.3 },
-		{ "grimrok", 3, "whirlwind", 4.2 },
-		-- S92: Morvane's curse field every 6.5 s starves the ring in the list order (8.0 / 4.0 / 4.0 before)
+		{ "grimrok", 1, "sweep", 7.4 },
+		{ "grimrok", 1, "leap", 3.8 },
+		{ "grimrok", 3, "sweep", 5.0 },
+		{ "grimrok", 3, "leap", 3.4 },
+		{ "grimrok", 3, "whirlwind", 3.3 },
 		{ "morvane", 3, "shadowBoltFast", 8.8 },
 		{ "morvane", 3, "curseField", 8.7 },
 		{ "morvane", 3, "deathRing", 0 },
-		-- S93: Azgor's meteor every 18 s leaves the inferno its turn in the list order too (5.6 / 5.6 / 5.5 / 0 before)
-		{ "azgor", 3, "fireWave", 5.5 },
-		{ "azgor", 3, "flameCleave", 5.5 },
-		{ "azgor", 3, "meteor", 2.7 },
-		{ "azgor", 3, "inferno", 2.7 },
-		{ "vaelgrath", 3, "frostBreath", 5.5 },
-		{ "vaelgrath", 3, "wingBuffet", 3.6 },
-		{ "vaelgrath", 3, "tailSwipe", 3.6 },
-		{ "vaelgrath", 3, "blizzard", 1.8 },
-		{ "vaelgrath", 3, "glacialRing", 1.8 },
+		{ "azgor", 3, "fireWave", 5.2 },
+		{ "azgor", 3, "flameCleave", 5.1 },
+		{ "azgor", 3, "meteor", 2.6 },
+		{ "azgor", 3, "inferno", 2.5 },
+		{ "vaelgrath", 3, "frostBreath", 4.7 },
+		{ "vaelgrath", 3, "blizzard", 3.1 },
+		{ "vaelgrath", 3, "glacialRing", 2.4 },
 	}
 
 	T.it("the S83 list order reproduces the control numbers (+-0.15 / min)", function()
@@ -48,8 +45,9 @@ T.describe("Balance model: boss schedule", function()
 			end
 		end
 		local grimrok = B.bossCadence(Bosses.byId.grimrok, 3, listOrder)
-		T.expect(grimrok.casting).toBeBetween(0.33, 0.37)
-		T.expect(B.bossCadence(Bosses.byId.grimrok, 1, listOrder).rateShare.sweep).toBeNear(1, 1e-9)
+		T.expect(grimrok.casting).toBeBetween(0.42, 0.46) -- S134 (0.33-0.37 before)
+		-- S134: the ground splitter takes a turn from the sweep in phase 1 too (1.0 before)
+		T.expect(B.bossCadence(Bosses.byId.grimrok, 1, listOrder).rateShare.sweep).toBeBetween(0.95, 1)
 	end)
 
 	-- S93: Azgor's meteor every 18 s no longer starves the inferno in the list order; Morvane's ring stays the case

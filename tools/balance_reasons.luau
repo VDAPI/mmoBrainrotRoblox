@@ -4219,5 +4219,348 @@ return {
 				why = "the arena server map arena_pit: levels 20-100 = Data/Arena brackets, built only on arena and tournament servers",
 			},
 		},
+		-- S134: bosses 2.0 (no party scaling, big blows to dodge, party mechanics; docs/SESJE.md S134)
+		["Bosses:HP_BASE"] = {
+			{
+				session = "S134",
+				why = "new: the boss HP multiplier for every party (BossScaling.hpMultiplier() = 84 = the old 30 x 2.8 for 4 players); bosses 2.0 never scale with the party, 5 players beat a boss in 3.7-4.2 min, 3 in 5.3-6.2 (S134 E2)",
+			},
+		},
+		["Bosses:SUMMON_PER_PLAYER"] = {
+			{
+				session = "S134",
+				why = "removed: no extra helpers per player (bosses 2.0 do not get harder with a bigger party; S134 A2)",
+			},
+		},
+		["Bosses:byId.grimrok.summons[1].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.grimrok.summons[2].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.morvane.summons[1].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.morvane.summons[2].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.azgor.summons[1].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.azgor.summons[2].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.vaelgrath.summons[1].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.vaelgrath.summons[2].count"] = {
+			{
+				session = "S134",
+				why = "10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[groundSplitter]*"] = {
+			{
+				session = "S134",
+				why = "new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[boulder]*"] = {
+			{
+				session = "S134",
+				why = "new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24",
+			},
+		},
+		["Bosses:byId.morvane.attacks[soulReap]*"] = {
+			{
+				session = "S134",
+				why = "new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[cryptBrand]*"] = {
+			{
+				session = "S134",
+				why = "new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[requiem]*"] = {
+			{
+				session = "S134",
+				why = "new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36",
+			},
+		},
+		["Bosses:byId.azgor.attacks[eruption]*"] = {
+			{
+				session = "S134",
+				why = "new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[volcanoHeart]*"] = {
+			{
+				session = "S134",
+				why = "new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26",
+			},
+		},
+		["Bosses:byId.azgor.attacks[cinderBrand]*"] = {
+			{
+				session = "S134",
+				why = "new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[avalanche]*"] = {
+			{
+				session = "S134",
+				why = "new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[iceComet]*"] = {
+			{
+				session = "S134",
+				why = "new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[frostTomb]*"] = {
+			{
+				session = "S134",
+				why = "new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[absoluteZero]*"] = {
+			{
+				session = "S134",
+				why = "new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[leap].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[leap].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[leap].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[whirlwind].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[whirlwind].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[whirlwind].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11)",
+			},
+		},
+		["Bosses:byId.grimrok.attacks[sweep].damage"] = {
+			{
+				session = "S134",
+				why = "6 -> 7.2: T-SK6 of the dungeon Healer 2.12 -> <= 2.0 (the big blows no longer hit the tank in the model)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[deathRing].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[deathRing].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[deathRing].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[shadowBolt].damage"] = {
+			{
+				session = "S134",
+				why = "4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[shadowBolt].cooldown"] = {
+			{
+				session = "S134",
+				why = "4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[shadowBoltFast].damage"] = {
+			{
+				session = "S134",
+				why = "4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3)",
+			},
+		},
+		["Bosses:byId.morvane.attacks[shadowBoltFast].cooldown"] = {
+			{
+				session = "S134",
+				why = "4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].phases[2]"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[fireWave].phases[3]"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[inferno].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[inferno].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.azgor.attacks[inferno].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[tailSwipe].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[tailSwipe].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[tailSwipe].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[tailSwipe].phases[3]"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[glacialRing].windup"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[glacialRing].damage"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[glacialRing].cooldown"] = {
+			{
+				session = "S134",
+				why = "big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11)",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[wingBuffet].cooldown"] = {
+			{
+				session = "S134",
+				why = "cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[wingBuffet].phases[2]"] = {
+			{
+				session = "S134",
+				why = "cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[wingBuffet].phases[3]"] = {
+			{
+				session = "S134",
+				why = "cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics",
+			},
+		},
+		["Bosses:byId.vaelgrath.attacks[frostBreath].cooldown"] = {
+			{
+				session = "S134",
+				why = "8 -> 10: G11 with the new attacks (0.33 -> 0.58 of its rate in phase 3)",
+			},
+		},
+		["Bosses:byId.azgor.hpMul"] = {
+			{
+				session = "S134",
+				why = "1.25 -> 1.3: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.08 (3-4.5) with HP no longer scaled by the party",
+			},
+		},
+		["Bosses:byId.vaelgrath.hpMul"] = {
+			{
+				session = "S134",
+				why = "1.3 -> 1.35: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.24 (3-4.5) with HP no longer scaled by the party",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

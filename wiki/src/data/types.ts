@@ -279,7 +279,6 @@ export interface Boss {
   attack: string;
   attacks: BossAttack[];
   aura: string;
-  byPlayers: BossScale[];
   damageKind: string;
   dungeon: string; // id in maps.json
   enrageAfter: number;
@@ -303,12 +302,15 @@ export interface Boss {
   requiredLevel: number;
   scriptConsts: Record<string, number>;
   size: number;
+  stats: BossStats;
   summons: BossSummon[];
   timeLimit: number;
 }
 
 export interface BossAttack {
   angle?: number;
+  avoid?: boolean;
+  channel?: BossChannel;
   cooldown: number;
   count?: number;
   damage: number;
@@ -320,13 +322,23 @@ export interface BossAttack {
   inner?: number;
   leap?: boolean;
   length?: number;
+  mark?: BossMark;
+  mechanic?: string;
+  mechanicText?: Name;
   name?: Name;
   phases: number[];
   radius?: number;
   shape: string;
+  split?: BossSplit;
   target: string;
   width?: number;
   windup: number;
+}
+
+export interface BossChannel {
+  breakPct: number;
+  seconds: number;
+  stagger: number;
 }
 
 export interface BossContract {
@@ -356,6 +368,11 @@ export interface BossLoot {
   rolls: number;
 }
 
+export interface BossMark {
+  seconds: number;
+  self: number;
+}
+
 export interface BossMaterial {
   chance: number;
   id: string; // id in items.json
@@ -378,14 +395,16 @@ export interface BossQuest {
   where?: PlaceRef;
 }
 
-export interface BossScale {
+export interface BossSplit {
+  missAll: number;
+}
+
+export interface BossStats {
   armor: number;
   dmgMax: number;
   dmgMin: number;
-  extraItems: number;
   hp: number;
   mres: number;
-  players: number;
 }
 
 export interface BossSummon {

@@ -681,7 +681,8 @@ local function stageTelegraph(
 	dims: { r: number?, ir: number?, an: number?, l: number?, w: number? },
 	windup: number,
 	element: string?,
-	id: string
+	id: string,
+	mechanic: string? -- S134: the boss mechanic (`m` of the event: golden split, purple mark, thick avoid rim)
 ): CFrame
 	local at = model:GetPivot().Position
 	local casterAt = Vector3.new(at.X, centre.Y, at.Z)
@@ -703,6 +704,7 @@ local function stageTelegraph(
 		t = windup,
 		el = element,
 		a = id,
+		m = mechanic,
 	}, model)
 	return area
 end
@@ -859,7 +861,8 @@ local function playBoss(command: Command)
 		{ r = attack.radius, ir = attack.inner, an = attack.angle, l = attack.length, w = attack.width },
 		attack.windup,
 		attack.element,
-		attack.id
+		attack.id,
+		if attack.mechanic then attack.mechanic elseif attack.avoid then "avoid" else nil
 	)
 	-- S117: a leap flies its arc to the area (the stage has no server teleport: it stays there to the end)
 	if attack.leap and motion and motion.arc then

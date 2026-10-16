@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { occurringVariants, signatureDrop } from "./bestiary";
 import { getBoss, getItem, getMonster, monsters } from "./data";
 import { formatNumber } from "./format";
-import { levelCells, lootRarities, lootRows, pageVariants } from "./monster";
+import { attackText, levelCells, lootRarities, lootRows, pageVariants, SPLIT_SHOWN } from "./monster";
 
 describe("monster page", () => {
   it("shows the variants that have spawns", () => {
@@ -12,7 +12,7 @@ describe("monster page", () => {
     }
   });
 
-  it("takes the stat cells from the export (wolf lvl 5, an Elite II, a boss for 3 players)", () => {
+  it("takes the stat cells from the export (wolf lvl 5, an Elite II, a boss with one HP for every party)", () => {
     const wolf = getMonster("wolf")!;
     const row = wolf.variants.normal.levels.find((l) => l.finalLevel === 5)!;
     const cells = levelCells(row, "pl");
@@ -25,7 +25,21 @@ describe("monster page", () => {
     expect(c2.armor).toBe(formatNumber(r2.armor, "en"));
     expect(c2.ability).toBe(`${formatNumber(r2.abilityMin!, "en")}–${formatNumber(r2.abilityMax!, "en")}`);
     const boss = getBoss("grimrok")!;
-    expect(boss.byPlayers.find((p) => p.players === 3)!.hp).toBeGreaterThan(boss.byPlayers[0].hp);
+    expect(boss.stats.hp).toBeGreaterThan(0);
+    expect(boss.stats.dmgMax).toBeGreaterThanOrEqual(boss.stats.dmgMin);
+  });
+
+  it("describes the S134 boss mechanics with their own numbers (mark seconds, split share, channel without area)", () => {
+    const morvane = getBoss("morvane")!;
+    const mark = morvane.attacks.find((a) => a.mechanic === "mark")!;
+    const markText = attackText(mark, "pl", morvane.damageKind);
+    expect(markText).toContain(`${formatNumber(mark.mark!.seconds, "pl")} s`);
+    expect(markText).toContain(formatNumber(Math.round(mark.dmgMax * mark.mark!.self), "pl"));
+    const channel = morvane.attacks.find((a) => a.mechanic === "channel")!;
+    expect(attackText(channel, "en", morvane.damageKind)).toContain(`${formatNumber(channel.channel!.seconds, "en")} s`);
+    const grimrok = getBoss("grimrok")!;
+    const split = grimrok.attacks.find((a) => a.mechanic === "split")!;
+    expect(attackText(split, "pl", grimrok.damageKind)).toContain(formatNumber(Math.round(split.dmgMax / SPLIT_SHOWN), "pl"));
   });
 
   it("sorts loot rows rarest first with the material chances of the tables", () => {

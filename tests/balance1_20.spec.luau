@@ -5,8 +5,9 @@
 -- exists, no fixture key is gone (a renamed table, row or column would hide a change) and no allowed difference is
 -- dead. Rows that depend on S92's data (fights with monsters above level 20, the window pace at 20) are not in the
 -- fixture (`fixture = false`) and are asserted by balance.spec.
--- New fixture: `lune run tools/balance_report.luau fixture S<n> "<note>"` (only on the owner's decision; last S109: the
--- 1-20 baseline after the quest series S95-S109, DESIGN-15 §0.4). Full list of the differences: build/balance1_20_diff.txt.
+-- New fixture: `lune run tools/balance_report.luau fixture S<n> "<note>"` (only on the owner's decision; S109: the
+-- 1-20 baseline after the quest series S95-S109, DESIGN-15 §0.4; last S134: bosses 2.0, only the Grimrok sections
+-- moved). Full list of the differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
 local fs = require("@lune/fs")
@@ -58,9 +59,9 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 		T.expect(report.count >= 1000).toBe(true)
 	end)
 
-	T.it("the fixture is the S109 baseline (the quest series S95-S109)", function()
+	T.it("the fixture is the S134 baseline (bosses 2.0: the Grimrok sections)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S109")
+		T.expect(file and file.meta and file.meta.session).toBe("S134")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

@@ -9,10 +9,19 @@
 --   phases in which phases (1..3) the attack is used; `cooldown` seconds between uses
 --   leap   the boss jumps to the area when it lands
 -- Phase thresholds are HP fractions. `summons` happen when a phase starts (and every `every` seconds). Since
--- 2026-10-10 every wave is a shield wave: ~10 helpers (+ SUMMON_PER_PLAYER per extra player) attack at once and the
--- boss is invulnerable and holds still at the arena centre until all of them are dead; helpers drop nothing.
+-- 2026-10-10 every wave is a shield wave: the helpers attack at once and the boss is invulnerable and holds still at
+-- the arena centre until all of them are dead; helpers drop nothing.
+-- S134 (bosses 2.0): a boss never scales with the party (HP = HP_BASE x hpMul, fixed helper count); it is built for
+-- 3-5 players, solo only with overpowered gear. `avoid` = a big blow to dodge (60-90 % of a Mage's HP, windup >= 1.8 s);
+-- `mechanic` = a party mechanic (Logic/BossMechanics): `split` (stand together in the golden circle, the blow is
+-- shared), `mark` (the marked player walks away from the party), `channel` (break the spell with damage).
 
 local Families = require("./Families")
+
+-- S134: the numbers of a party mechanic (rules in Logic/BossMechanics).
+export type SplitSpec = { missAll: number }
+export type MarkSpec = { seconds: number, self: number }
+export type ChannelSpec = { seconds: number, breakPct: number, stagger: number }
 
 export type Attack = {
 	id: string,
@@ -33,6 +42,14 @@ export type Attack = {
 	leap: boolean?,
 	-- S64 (STATY 6): nil = neither (telegraphed areas); melee / ranged protection only when set
 	delivery: ("melee" | "ranged")?,
+	-- S134: a big blow to dodge (the model counts it as dodged); never on a mechanic
+	avoid: boolean?,
+	-- S134: a party mechanic (Logic/BossMechanics) and its numbers
+	mechanic: ("split" | "mark" | "channel")?,
+	split: SplitSpec?, -- missAll: share of the damage every fighter takes when nobody stands inside
+	mark: MarkSpec?, -- seconds to the blast; self: the marked one's damage multiplier
+	-- seconds of the spell (= windup), breakPct: share of the max HP that breaks it, stagger: seconds stunned after
+	channel: ChannelSpec?,
 }
 
 export type Summon = {
@@ -49,7 +66,7 @@ export type BossDef = {
 	nameKey: string,
 	region: string, -- dungeon region, map "dungeon_<region>"
 	level: number,
-	hpMul: number?, -- S32: on top of BossScaling.hpMultiplier (fight length), default 1
+	hpMul: number?, -- S32: on top of BossScaling.hpMultiplier() = HP_BASE (S134: no party scaling), default 1
 	atkMul: number,
 	defMul: number,
 	mresMul: number?, -- S66: magic resistance multiplier, default 1; armour keeps defMul
@@ -105,7 +122,7 @@ boss({
 			radius = 15,
 			angle = 120,
 			windup = 1.2,
-			damage = 6,
+			damage = 7.2,
 			cooldown = 8,
 			phases = { 1, 2, 3 },
 		},
@@ -114,26 +131,54 @@ boss({
 			shape = "circle",
 			target = "random",
 			radius = 8,
-			windup = 1.5,
-			damage = 6,
-			cooldown = 13,
+			windup = 1.8,
+			damage = 7.6,
+			cooldown = 15,
 			phases = { 1, 2, 3 },
 			leap = true,
+			avoid = true,
 		},
 		{
 			id = "whirlwind",
 			shape = "circle",
 			target = "self",
 			radius = 10,
-			windup = 1.6,
-			damage = 7,
-			cooldown = 10,
+			windup = 2.0,
+			damage = 9.2,
+			cooldown = 14,
 			phases = { 3 },
+			avoid = true,
+		},
+		-- S134: the axe splits the ground towards a random fighter (a big blow to dodge)
+		{
+			id = "groundSplitter",
+			shape = "line",
+			target = "random",
+			length = 40,
+			width = 6,
+			windup = 1.8,
+			damage = 8.2,
+			cooldown = 16,
+			phases = { 1, 2, 3 },
+			avoid = true,
+		},
+		-- S134: the chieftain's boulder (split): stand together in the golden circle
+		{
+			id = "boulder",
+			shape = "circle",
+			target = "random",
+			radius = 6,
+			windup = 3.0,
+			damage = 21,
+			cooldown = 24,
+			phases = { 2, 3 },
+			mechanic = "split",
+			split = { missAll = 0.25 },
 		},
 	},
 	summons = {
-		{ phase = 2, monster = "goblinScout", level = 19, count = 10, shield = true },
-		{ phase = 3, monster = "goblinScout", level = 20, count = 10, shield = true },
+		{ phase = 2, monster = "goblinScout", level = 19, count = 8, shield = true },
+		{ phase = 3, monster = "goblinScout", level = 20, count = 8, shield = true },
 	},
 	haste = { [3] = 1.25 },
 	enrageAfter = 600,
@@ -170,8 +215,8 @@ boss({
 			count = 3,
 			radius = 4.5,
 			windup = 1.1,
-			damage = 4.5,
-			cooldown = 6,
+			damage = 4.2,
+			cooldown = 7,
 			phases = { 1, 2 },
 			damageKind = "magic",
 		},
@@ -182,8 +227,8 @@ boss({
 			count = 3,
 			radius = 4.5,
 			windup = 0.8,
-			damage = 4.5,
-			cooldown = 4,
+			damage = 4.2,
+			cooldown = 6,
 			phases = { 3 },
 			damageKind = "magic",
 		},
@@ -205,18 +250,61 @@ boss({
 			target = "self",
 			radius = 32,
 			inner = 7,
-			windup = 2.2,
-			damage = 5.8,
-			cooldown = 15,
+			windup = 2.5,
+			damage = 6.8,
+			cooldown = 16,
 			phases = { 3 },
 			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: a scythe of souls in a cone towards a random fighter (a big blow to dodge)
+		{
+			id = "soulReap",
+			shape = "cone",
+			target = "random",
+			radius = 26,
+			angle = 70,
+			windup = 1.8,
+			damage = 6.2,
+			cooldown = 16,
+			phases = { 1, 2 },
+			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: the crypt brand (mark): the marked fighter carries the blast away from the party
+		{
+			id = "cryptBrand",
+			shape = "circle",
+			target = "random",
+			radius = 9,
+			windup = 1.2,
+			damage = 6,
+			cooldown = 22,
+			phases = { 1, 2 },
+			damageKind = "magic",
+			mechanic = "mark",
+			mark = { seconds = 5, self = 0.43 },
+		},
+		-- S134: the requiem (channel): break it with damage or it hits everyone
+		{
+			id = "requiem",
+			shape = "circle",
+			target = "self",
+			radius = 6,
+			windup = 5,
+			damage = 7.7,
+			cooldown = 36,
+			phases = { 2, 3 },
+			damageKind = "magic",
+			mechanic = "channel",
+			channel = { seconds = 5, breakPct = 0.012, stagger = 3 },
 		},
 	},
 	summons = {
 		-- S92: the waves at 36 / 37 (were 44 / 45): a party of 3 loses <= 110 % HP per member per wave (S32 limit;
 		-- summoned helpers hit without the group damage reduction, Balance.summonHelpers)
-		{ phase = 2, monster = "skeletonGuard", level = 36, count = 10, shield = true },
-		{ phase = 3, monster = "skeletonGuard", level = 37, count = 10, shield = true },
+		{ phase = 2, monster = "skeletonGuard", level = 36, count = 8, shield = true },
+		{ phase = 3, monster = "skeletonGuard", level = 37, count = 8, shield = true },
 	},
 	enrageAfter = 600,
 	enrageDamage = 1.6,
@@ -236,7 +324,7 @@ boss({
 	-- ranged Mage ~66 % (<= 70 %), the meteor softened to ~54 % of a Mage's HP per minute (variant (a) of plan 8.5),
 	-- the S32 tank ~346 %/min from a faster basic swing (speed 1.35: more hits to counter, S88 swordplay) and a
 	-- lighter flame cleave; a party without support lives on potions (Azgor bez wsparcia).
-	hpMul = 1.25,
+	hpMul = 1.3,
 	atkMul = 0.36,
 	defMul = 1.3,
 	speed = 1.35,
@@ -251,12 +339,13 @@ boss({
 			target = "random",
 			length = 40,
 			width = 9,
-			windup = 1.3,
-			damage = 5.2,
-			cooldown = 7,
-			phases = { 1, 2, 3 },
+			windup = 1.8,
+			damage = 7,
+			cooldown = 10,
+			phases = { 1, 3 },
 			element = "fire",
 			damageKind = "magic",
+			avoid = true,
 		},
 		{
 			id = "flameCleave",
@@ -288,19 +377,65 @@ boss({
 			target = "self",
 			radius = 30,
 			inner = 8,
-			windup = 2,
-			damage = 6.6,
-			cooldown = 14,
+			windup = 2.4,
+			damage = 8,
+			cooldown = 16,
 			phases = { 3 },
 			element = "fire",
 			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: three fire columns under random fighters (a big blow to dodge)
+		{
+			id = "eruption",
+			shape = "circle",
+			target = "random",
+			count = 3,
+			radius = 7,
+			windup = 2.0,
+			damage = 7.3,
+			cooldown = 16,
+			phases = { 1, 2 },
+			element = "fire",
+			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: the heart of the volcano (split): stand together in the golden circle
+		{
+			id = "volcanoHeart",
+			shape = "circle",
+			target = "random",
+			radius = 7,
+			windup = 3.0,
+			damage = 17.5,
+			cooldown = 26,
+			phases = { 1, 2 },
+			element = "fire",
+			damageKind = "magic",
+			mechanic = "split",
+			split = { missAll = 0.25 },
+		},
+		-- S134: the cinder brand (mark): the marked fighter carries the blast away from the party
+		{
+			id = "cinderBrand",
+			shape = "circle",
+			target = "random",
+			radius = 10,
+			windup = 1.2,
+			damage = 7,
+			cooldown = 24,
+			phases = { 2, 3 },
+			element = "fire",
+			damageKind = "magic",
+			mechanic = "mark",
+			mark = { seconds = 5, self = 0.43 },
 		},
 	},
 	summons = {
 		-- S93: the waves at 58 / 59 (were 69 / 70): a party of 3 loses <= 110 % HP per member per wave (S32 limit;
 		-- summoned helpers hit without the group damage reduction, Balance.summonHelpers)
-		{ phase = 2, monster = "fireGolem", level = 58, count = 10, shield = true },
-		{ phase = 3, monster = "fireGolem", level = 59, count = 10, shield = true },
+		{ phase = 2, monster = "fireGolem", level = 58, count = 8, shield = true },
+		{ phase = 3, monster = "fireGolem", level = 59, count = 8, shield = true },
 	},
 	haste = { [3] = 1.2 },
 	enrageAfter = 600,
@@ -316,7 +451,7 @@ boss({
 	nameKey = "boss.vaelgrath.name",
 	region = "frostpeak",
 	level = 100,
-	hpMul = 1.3,
+	hpMul = 1.35,
 	atkMul = 0.38,
 	defMul = 1.4,
 	speed = 0.85,
@@ -333,7 +468,7 @@ boss({
 			angle = 70,
 			windup = 1.4,
 			damage = 3.6,
-			cooldown = 8,
+			cooldown = 10,
 			phases = { 1, 2, 3 },
 			element = "ice",
 			damageKind = "magic",
@@ -345,8 +480,8 @@ boss({
 			radius = 14,
 			windup = 1.2,
 			damage = 3.7,
-			cooldown = 11,
-			phases = { 1, 2, 3 },
+			cooldown = 14,
+			phases = { 1 },
 		},
 		{
 			id = "tailSwipe",
@@ -354,10 +489,11 @@ boss({
 			target = "random",
 			length = 26,
 			width = 8,
-			windup = 1.2,
-			damage = 4.1,
-			cooldown = 9,
-			phases = { 1, 2, 3 },
+			windup = 1.8,
+			damage = 6.2,
+			cooldown = 14,
+			phases = { 1, 2 },
+			avoid = true,
 		},
 		{
 			id = "blizzard",
@@ -377,17 +513,78 @@ boss({
 			target = "self",
 			radius = 34,
 			inner = 8,
-			windup = 2.2,
-			damage = 6.2,
-			cooldown = 15,
+			windup = 2.5,
+			damage = 8.1,
+			cooldown = 18,
 			phases = { 3 },
 			element = "ice",
 			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: an avalanche in a wide cone towards a random fighter (a big blow to dodge)
+		{
+			id = "avalanche",
+			shape = "cone",
+			target = "random",
+			radius = 30,
+			angle = 90,
+			windup = 2.0,
+			damage = 7,
+			cooldown = 14,
+			phases = { 2, 3 },
+			element = "ice",
+			damageKind = "magic",
+			avoid = true,
+		},
+		-- S134: the ice comet (split): stand together in the golden circle
+		{
+			id = "iceComet",
+			shape = "circle",
+			target = "random",
+			radius = 7,
+			windup = 3.2,
+			damage = 17.7,
+			cooldown = 26,
+			phases = { 1, 3 },
+			element = "ice",
+			damageKind = "magic",
+			mechanic = "split",
+			split = { missAll = 0.25 },
+		},
+		-- S134: the frost tomb (mark): the marked fighter carries the blast away from the party
+		{
+			id = "frostTomb",
+			shape = "circle",
+			target = "random",
+			radius = 10,
+			windup = 1.2,
+			damage = 7.1,
+			cooldown = 24,
+			phases = { 1, 2 },
+			element = "ice",
+			damageKind = "magic",
+			mechanic = "mark",
+			mark = { seconds = 5, self = 0.4 },
+		},
+		-- S134: absolute zero (channel, phase 3): break it with damage or it hits everyone
+		{
+			id = "absoluteZero",
+			shape = "circle",
+			target = "self",
+			radius = 6,
+			windup = 5,
+			damage = 8.6,
+			cooldown = 36,
+			phases = { 3 },
+			element = "ice",
+			damageKind = "magic",
+			mechanic = "channel",
+			channel = { seconds = 5, breakPct = 0.012, stagger = 3 },
 		},
 	},
 	summons = {
-		{ phase = 2, monster = "dragonspawn", level = 86, count = 10, shield = true },
-		{ phase = 3, monster = "dragonspawn", level = 87, count = 10, shield = true },
+		{ phase = 2, monster = "dragonspawn", level = 86, count = 8, shield = true },
+		{ phase = 3, monster = "dragonspawn", level = 87, count = 8, shield = true },
 	},
 	haste = { [3] = 1.2 },
 	enrageAfter = 600,
@@ -417,5 +614,7 @@ return table.freeze({
 	RELEASE_AFTER = 60, -- seconds after the kill
 	COUNTDOWN = 5, -- seconds before the boss appears
 	TIME_WARNINGS = { 5, 1 }, -- minutes left when the fighters get a warning
-	SUMMON_PER_PLAYER = 2, -- extra helpers per wave for every player above the first
+	-- S134: HP multiplier on top of a normal monster of the boss's level, whatever the party (BossScaling.hpMultiplier;
+	-- the old 30 x (1 + 0.6 x (players - 1)) for 4 players)
+	HP_BASE = 84,
 })

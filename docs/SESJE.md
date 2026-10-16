@@ -10558,3 +10558,117 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Logic/{Social (nowy),Mail,A
 (nowe).luau`, `src/client/UI/Screens/{MailWindow,GameMenu}.luau`, `src/client/UI/Screens/Hud/TargetFrame.luau`,
 `tests/{social (nowy),character,data}.spec.luau`, `wiki/src/data/{mechanics,meta}.json`,
 `docs/{PRZEDMIOTY,DECYZJE,PROGRESS,SESJE}.md`.
+
+### S134: Bossowie 2.0
+
+Prośba właściciela z 2026-10-15: bossowie za łatwi, ciosy, których trzeba unikać, większa drużyna ma mieć łatwiej, boss
+to mechanika do zbicia z kimś (chyba że z przepakowanym sprzętem).
+
+- **Bez skalowania z drużyną** (A): HP = `Bosses.HP_BASE` 84 × `hpMul` (`BossScaling.hpMultiplier()` bez argumentu; `Boss.new`
+  bez liczby graczy, `DungeonService` dalej ją loguje), fala tarczy 8 pomocników dla każdej drużyny (`SUMMON_PER_PLAYER`
+  usunięte z gry i modelu). `hpMul` Azgora 1,25 → 1,3, Vaelgratha 1,3 → 1,35.
+- **Wielkie ciosy i mechaniki w danych** (B): pola `Attack` `avoid`, `mechanic` (`split` / `mark` / `channel`) i `split = {
+  missAll }`, `mark = { seconds, self }`, `channel = { seconds, breakPct, stagger }`; 12 nowych ataków, stare ciosy
+  telegrafowane przerobione na `avoid` z dłuższą zapowiedzią; każdy nowy atak ma ruch w `Data/BossMotions` (style ogólne
+  `Data/MonsterMotions`), nazwę PL i EN i wchodzi do harmonogramu S87 (G11: odnowienia i fazy).
+- **Serwer** (C): czysta logika `Logic/BossMechanics` (`splitShare`, `markDamage`, `channelDone` / `channelBroken`,
+  `breakSeconds`, `isAvoidable`), `CombatService.MonsterTelegraph(…, opts)` (pola `m`, `f`, `cw` zdarzenia `tele`; piętno i
+  zaklęcie poza `redZones` i czujnością) i `MonsterResolve(…, opts)` (`split` / `missAll`, `marked` / `markSelf`, `all`; jedna
+  ścieżka `monsterHitsPlayer` z mnożnikiem). `Entities/Boss`: piętno (atrybut `BossMark`, `BossAnnounce` do naznaczonego i
+  do reszty, wybuch w `Step` wokół aktualnej pozycji, śmierć / wyjście kasuje), zaklęcie (stan `cast`, przerwanie w `Step`,
+  oszołomienie z atrybutem `Staggered`, nieprzerwane trafia wszystkich, za tarczą się nie zaczyna), stan `{"boss"}` z
+  `staggered` i `channel = { id, endsAt, need, done }`.
+- **Klient** (D): złoty krąg z napisem „Razem” (`Config.Telegraph.mechanicColors`, `tagHeight`), fioletowy krąg piętna
+  przyklejony do postaci (`GroundTelegraph.Spec.follow`, pozycja co klatkę, efekt wybuchu w aktualnym miejscu) i fioletowa
+  poświata naznaczonego (`Highlight` z puli 4, u niego i w zasięgu `markRange` 60 st.), grubszy brzeg wielkich ciosów
+  (`rimWidthAvoid`), zaklęcie bez kręgu (tylko poza bossa i dźwięk), pasek przerwania pod paskiem HP z czasem i znak
+  „oszołomienie” w nagłówku paska bossa; AnimLab (`/animlab boss <id> <atak>`) rysuje kolory mechanik. Klucze `boss.mechanic.*`, `boss.staggered`, dźwięki `boss.mechanic.<mark|split|
+  channel>` (bez ID).
+- **Model** (E): `Balance.bossFight` z `avoidHit` (0), `splitInside` (cała drużyna), piętnem 1 / n, zaklęciem przerwanym, gdy
+  `breakPct × HP / DPS ≤ seconds − 0,5` (`Balance.CHANNEL_REACTION`), pola `biggestAvoidable` i `mechanics`; `biggestHit` tylko
+  z ataków nie do uniknięcia. Nowe cele `Balance.S134` / `targetsS134` (blok „Balance: bosses 2.0 (S134)” w
+  `balance.spec`, 105 wierszy w paśmie, bez raportu); stare wiersze 4–6 min i ≤ 70% (S32, S91–S94) usunięte;
+  `bossNoSupport(id, n, L, gear)`; sekcja „Bossowie 2.0 (S134)” w `docs/BALANS.md`.
+- **Wiki** (F): `bosses.json` z `stats` (jedno HP) zamiast `byPlayers`, ataki z `avoid`, `mechanic`, `mechanicText`; strona
+  bossa bez przycisków 1–5 i tabeli „Na liczbę graczy” (zdanie `boss.noScaling`); teksty `azgor`, `vaelgrath`,
+  `vaelgrath-storm` (PL, EN) o piętnach i Zerze Absolutnym. DESIGN §16 przepisany.
+
+Ataki bossów (HP Maga z ekwipunkiem konwencji na poziomie bossa, × `Combat.randomMax`; „unik” = `avoid`):
+
+| boss | atak | rodzaj | zapowiedź / odnowienie s | fazy | × ataku | HP Maga |
+|---|---|---|---|---|---|---|
+| Grimrok L20 | Zamach (`sweep`, w tanka) | zwykły | 1,2 / 8 | 1–3 | 7,2 | 66% (tylko tank) |
+| | Skok (`leap`) | unik | 1,8 / 15 | 1–3 | 7,6 | 70% |
+| | Wir ostrzy (`whirlwind`, krąg 10) | unik | 2,0 / 14 | 3 | 9,2 | 85% |
+| | Rozłupanie Ziemi (`groundSplitter`, linia 40×6) | unik | 1,8 / 16 | 1–3 | 8,2 | 75% |
+| | Głaz Wodza (`boulder`, krąg 6) | split | 3,0 / 24 | 2–3 | 21 | 193% razem (3 os. 64%, pusty 48%) |
+| Morvane L45 | Pocisk cienia (3 losowych) | zwykły | 1,1 / 7 | 1–2 | 4,2 | 49% |
+| | Szybki pocisk cienia | zwykły | 0,8 / 6 | 3 | 4,2 | 49% |
+| | Pole klątwy (najbliższy) | zwykły | 1,6 / 6,5 | 1–3 | 11,5 | 135% (tank) |
+| | Pierścień śmierci (32 / 7) | unik | 2,5 / 16 | 3 | 6,8 | 80% |
+| | Żniwo Dusz (stożek 26 / 70°) | unik | 1,8 / 16 | 1–2 | 6,2 | 73% |
+| | Piętno Krypty (krąg 9) | mark | 1,2 + 5 / 22 | 1–2 | 6 | 70% (naznaczony 30%) |
+| | Requiem Umarłych | channel | 5 / 36 | 2–3 | 7,7 | 90% (przerwanie 1,2% HP, 3 s) |
+| Azgor L70 | Fala ognia (linia 40×9) | unik | 1,8 / 10 | 1, 3 | 7 | 70% |
+| | Płomienne cięcie (w tanka) | zwykły | 1,2 / 9 | 1–3 | 3 | 32% |
+| | Meteor (pod każdym) | zwykły | 1,6 / 18 | 1–3 | 4 | 40% |
+| | Piekielny krąg (30 / 8) | unik | 2,4 / 16 | 3 | 8 | 80% |
+| | Erupcja (3 × krąg 7) | unik | 2,0 / 16 | 1–2 | 7,3 | 73% |
+| | Serce Wulkanu (krąg 7) | split | 3,0 / 26 | 1–2 | 17,5 | 176% razem (3 os. 59%, pusty 44%) |
+| | Popielne Piętno (krąg 10) | mark | 1,2 + 5 / 24 | 2–3 | 7 | 70% (naznaczony 30%) |
+| Vaelgrath L100 | Mroźny oddech (w tanka) | zwykły | 1,4 / 10 | 1–3 | 3,6 | 38% |
+| | Uderzenie skrzydeł (krąg 14) | zwykły | 1,2 / 14 | 1 | 3,7 | 39% |
+| | Smagnięcie ogonem (linia 26×8) | unik | 1,8 / 14 | 1–2 | 6,2 | 65% |
+| | Zamieć (pod każdym) | zwykły | 1,8 / 16 | 2–3 | 4,4 | 46% |
+| | Lodowy pierścień (34 / 8) | unik | 2,5 / 18 | 3 | 8,1 | 85% |
+| | Lawina (stożek 30 / 90°) | unik | 2,0 / 14 | 2–3 | 7 | 74% |
+| | Lodowa Kometa (krąg 7) | split | 3,2 / 26 | 1, 3 | 17,7 | 186% razem (3 os. 62%, pusty 47%) |
+| | Lodowy Grobowiec (krąg 10) | mark | 1,2 + 5 / 24 | 1–2 | 7,1 | 75% (naznaczony 30%) |
+| | Zero Absolutne | channel | 5 / 36 | 3 | 8,6 | 90% (przerwanie 1,2% HP, 3 s) |
+
+Model przed i po (`Balance.bossFight`, drużyna `Balance.team` na poziomie bossa − 1, bez węzłów; min dla 1 / 2 / 3 / 4 / 5
+graczy):
+
+| boss | przed (S94) | po (S134) |
+|---|---|---|
+| Grimrok | 9,8 / 6,3 / 5,4 / 5,6 / 5,4 | 22,1 / 9,5 / 6,2 / 5,1 / 4,1 |
+| Morvane | 8,4 / 5,4 / 4,8 / 5,0 / 4,9 | 20,4 / 8,7 / 5,6 / 4,7 / 3,8 |
+| Azgor | 9,0 / 5,6 / 4,9 / 5,2 / 5,1 | 22,1 / 9,1 / 5,9 / 5,0 / 4,1 |
+| Vaelgrath | 8,4 / 5,5 / 4,8 / 5,1 / 5,0 | 22,0 / 9,2 / 6,1 / 5,2 / 4,2 |
+
+Po: największy cios do uniknięcia na Magu 75 / 80 / 80 / 85% (Wojownik ≤ 69%), największy zwykły ≤ 49%; wspólny cios przy 3
+osobach 59–67% HP Maga, w pojedynkę 116–122% HP Wojownika Furii (ginie); zaklęcie: 3 graczy przerywa w 3,8 / 4,1 s
+(limit 4,5), sam na równym sprzęcie potrzebuje 5,6 / 5,1 s; fala tarczy 3 graczy 0,36–0,91 HP na członka. Solo na równym
+sprzęcie przegrywa z każdym bossem; Wojownik Furii z Mitycznym kompletem +9 wygrywa wszystkich czterech na poziomie bossa
+(1,4–2,2 min, przyjmuje 6–17% podtrzymania). Bez wsparcia 3–5 graczy dalej wygrywa (S91–S94). T-SK6 Grimroka 1,96
+(≤ 2,0); Azgora 13,4 i Vaelgratha 18,9 dalej w raporcie (S93, S94).
+
+Dla właściciela:
+- T-SK6 Morvane ok. 3,5 (cel ≤ 2,7, raport): Uzdrowiciel lochowy leczy ponad potrzebę tanka, bo wielkie ciosy go nie
+  trafiają; dźwignie to mocniejsze Pole Klątwy (blokuje „bez wsparcia”, największy cios ≤ 1,0) albo atak podstawowy
+  (blokuje wiersz tanka S32 ≤ 3,5). Propozycja: przy decyzji o T-SK6 Azgora i Vaelgratha przyjąć jeden próg dla bossów 2.0.
+- Swordplay Strażnika samotnika na 45 (0,037 < 0,040, raport): mniej pomocników do kontry; wartość cechy albo sytuacja
+  bossa (S88 / S94).
+- Ataki z ogólnymi stylami ruchu (Głaz, Rozłupanie, Żniwo Dusz, Requiem, Erupcja, Serce Wulkanu, Lawina, Kometa, Grobowiec,
+  Zero Absolutne) i dźwięki mechanik bez ID: do obejrzenia w AnimLab (`/animlab boss <id>`) i do wybrania dźwięków.
+
+Testy: nowy `tests/bossmechanics.spec.luau`; `balance.spec` (blok S134, raport Morvane T-SK6 i Swordplay 45),
+`party.spec` (HP bez drużyny, 8 pomocników, okna zapowiedzi), `bossmotions.spec` (nowy przypadek: `avoid` ≥ 1,8 s,
+mechanika ≥ 3 s, kanał ≥ 4 s, dane mechanik), `bossschedule.spec` i `balancemodel.spec` (liczby kontrolne na danych S134),
+`wikidump.spec` (`stats`, `mechanicText`), `balance1_20.spec` (baza S134). Nowa baza 1–20: 74 wartości sekcji Grimroka
+zastąpione, 22 dodane. Fixture przedmiotów dalej nieaktualny (S122; teraz 856 wartości, też przez `Bosses`).
+
+Po przeglądzie: wspólny cios liczy tylko żywych; skasowane piętno znika u klientów (`teleCancel`), nieprzerwane zaklęcie
+ma wybuch i wstrząs (`blow`), `win` czyści piętna (`Boss.ClearMechanics`); model Przechwytu (B7) bez sum mechanik; DESIGN
+„Cele balansu” z celami S134; wiki opisuje piętno, wspólny cios i zaklęcie ich własnymi liczbami (test w `monster.test.ts`).
+
+Pliki: `src/shared/Logic/{BossMechanics (nowy),BossScaling}.luau`, `src/shared/Data/{Bosses,BossMotions,Sfx}.luau`,
+`src/shared/Config.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Entities/Boss.luau`,
+`src/server/Services/{Combat,Dungeon}Service.luau`, `src/client/Controllers/{CombatFx,Dungeon,AnimLab}Controller.luau`,
+`src/client/Vfx/GroundTelegraph.luau`, `tests/{Balance,BalanceTables,SkillModel}.luau`,
+`tests/{bossmechanics (nowy),balance,balance1_20,balancemodel,bossmotions,bossschedule,party,wikidump}.spec.luau`,
+`tests/fixtures/balance_1_20.json`, `tools/{balance_reasons,balance_report,balance_before.json}`, `tools/WikiData/Bosses.luau`,
+`wiki/src/{components/BossHeader,views/BossView,views/Styleguide}.astro`, `wiki/src/scripts/boss.ts`,
+`wiki/src/lib/{monster,monster.test}.ts`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/bosses/{pl,en}/{azgor,vaelgrath,vaelgrath-storm}.md`,
+`wiki/src/data/{bosses,meta}.json`, `wiki/src/data/types.ts`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.

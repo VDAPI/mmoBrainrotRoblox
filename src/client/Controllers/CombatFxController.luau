@@ -1213,6 +1213,115 @@ local function warnSound(event: { [string]: any }, area: CFrame)
 	SfxController.Play("telegraph.warn", area.Position, who, if type(event.e) == "string" then event.e else nil)
 end
 
+-- S134 (bosses 2.0): the boss mechanics of a "tele" event (field `m`) -----------------------------------------------
+
+local MECHANIC_COLORS: { [string]: Color3 } = {
+	split = Color3.fromHex(Config.Telegraph.mechanicColors.split),
+	mark = Color3.fromHex(Config.Telegraph.mechanicColors.mark),
+}
+-- The marked players' purple glow: a few pooled Highlights (Roblox draws 31 at once).
+local MARK_GLOWS = 4
+local markGlows: { { highlight: Highlight, untilAt: number } } = {}
+
+local function markGlow(model: Model, seconds: number)
+	local root = playerRoot()
+	local own = model == player.Character
+	local markRoot = model:FindFirstChild("HumanoidRootPart")
+	if not own then
+		if not root or not markRoot or not markRoot:IsA("BasePart") then
+			return
+		end
+		if (markRoot.Position - root.Position).Magnitude > Config.Telegraph.markRange then
+			return
+		end
+	end
+	local now = Clock.now()
+	local slot: { highlight: Highlight, untilAt: number }? = nil
+	for _, glow in markGlows do
+		if glow.highlight.Adornee == model or glow.untilAt <= now then
+			slot = glow
+			break
+		end
+	end
+	if not slot then
+		if #markGlows >= MARK_GLOWS then
+			return
+		end
+		local created = Instance.new("Highlight")
+		created.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		created.Parent = guiFolder
+		local fresh = { highlight = created, untilAt = 0 }
+		table.insert(markGlows, fresh)
+		slot = fresh
+	end
+	local glow = slot :: { highlight: Highlight, untilAt: number }
+	local h = glow.highlight
+	h.Adornee = model
+	h.FillColor = MECHANIC_COLORS.mark
+	h.OutlineColor = MECHANIC_COLORS.mark
+	h.FillTransparency = 0.6
+	h.OutlineTransparency = 0.1
+	h.Enabled = true
+	glow.untilAt = now + seconds
+	Clock.after(seconds, function()
+		if glow.untilAt <= Clock.now() + 0.01 and h.Adornee == model then
+			h.Enabled = false
+			h.Adornee = nil
+		end
+	end)
+end
+
+-- A cancelled mark: its glow goes at once.
+local function markUnglow(model: Model)
+	for _, glow in markGlows do
+		if glow.highlight.Adornee == model then
+			glow.untilAt = 0
+			glow.highlight.Enabled = false
+			glow.highlight.Adornee = nil
+		end
+	end
+end
+
+-- The key of a mark's telegraph (its caster and attack; the server's "teleCancel" names the same pair).
+local function markKey(event: { [string]: any }): string?
+	if type(event.e) == "string" and type(event.a) == "string" then
+		return `{event.e}|{event.a}`
+	end
+	return nil
+end
+
+-- The "Together" label over a split circle for its windup.
+local function splitTag(area: CFrame, windup: number)
+	local anchor = Instance.new("Part")
+	anchor.Name = "SplitTag"
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+	anchor.CanTouch = false
+	anchor.Transparency = 1
+	anchor.Size = Vector3.new(0.2, 0.2, 0.2)
+	anchor.CFrame = area * CFrame.new(0, Config.Telegraph.tagHeight, 0)
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromOffset(220, 48)
+	gui.AlwaysOnTop = true
+	gui.LightInfluence = 0
+	gui.MaxDistance = 250
+	gui.Parent = anchor
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Text = Text.now("boss.mechanic.split.tag")
+	label.FontFace = Theme.Fonts.Heading
+	label.TextScaled = true
+	label.TextColor3 = MECHANIC_COLORS.split
+	label.TextStrokeTransparency = 0.2
+	label.Parent = gui
+	anchor.Parent = guiFolder
+	Clock.after(windup + 0.3, function()
+		anchor:Destroy()
+	end)
+end
+
 -- One "tele" event (or an AnimLab preview): the ground telegraph, the warning, the blow's sound, effect and shake.
 local function telegraph(event: { [string]: any }, caster: Model?)
 	local area = event.cf
@@ -1226,6 +1335,28 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 	local windup = Telegraph.windup(tonumber(event.t))
 	local color = ELEMENT_COLORS[event.el or ""] or TELEGRAPH_COLOR
 	local motion, bossId, magic = attackInfo(event, caster)
+	-- S134: the boss mechanics: a channel has no area (the boss only poses), a split is golden with its label, a mark
+	-- is purple, follows the marked character and makes it glow, a big blow to dodge has a thicker rim
+	local mechanic = if type(event.m) == "string" then event.m else nil
+	if mechanic == "channel" then
+		SfxController.Play("boss.mechanic.channel", area.Position, "party")
+		return
+	end
+	local follow: Model? = nil
+	local key: string? = nil
+	if mechanic == "split" then
+		color = MECHANIC_COLORS.split
+		splitTag(area, windup)
+		SfxController.Play("boss.mechanic.split", area.Position, "party")
+	elseif mechanic == "mark" then
+		color = MECHANIC_COLORS.mark
+		follow = findModel(if type(event.f) == "string" then event.f else nil)
+		key = markKey(event)
+		if follow then
+			markGlow(follow, windup)
+		end
+		SfxController.Play("boss.mechanic.mark", if follow then follow else area.Position, "party")
+	end
 	local first = firstOfGroup(event)
 	local low = lowQuality()
 	local camera = Workspace.CurrentCamera
@@ -1251,12 +1382,23 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 		color = color,
 		magic = magic,
 		low = low,
+		follow = follow,
+		rimWidth = if mechanic == "avoid" then Config.Telegraph.rimWidthAvoid else nil,
+		key = key,
 		onBlow = function()
 			if casterGone(caster) then
 				return
 			end
+			-- S134: a mark blasts where the marked character stands now
+			local blow = event
+			local followRoot = follow and follow:FindFirstChild("HumanoidRootPart")
+			if followRoot and followRoot:IsA("BasePart") then
+				blow = table.clone(event)
+				local p = followRoot.Position
+				blow.cf = CFrame.new(p.X, area.Position.Y, p.Z)
+			end
 			if motion then
-				bossImpact(motion, event, color, simpleFx)
+				bossImpact(motion, blow, color, simpleFx)
 			else
 				eliteImpact(event, color, simpleFx)
 			end
@@ -1276,6 +1418,44 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 			end
 		end,
 	})
+end
+
+-- S134: a boss mark gone before its blast ("teleCancel"): its circle and glow stop, no blow.
+local function cancelMark(event: { [string]: any })
+	local key = markKey(event)
+	if key then
+		GroundTelegraph.cancel(key)
+	end
+	local follow = findModel(if type(event.f) == "string" then event.f else nil)
+	if follow then
+		markUnglow(follow)
+	end
+end
+
+-- S134: an unbroken channel lands on everyone ("blow", no ground telegraph): the attack's effect and shake at the
+-- boss and its sound.
+local function channelBlow(event: { [string]: any })
+	if typeof(event.cf) ~= "CFrame" then
+		return
+	end
+	local caster = findModel(event.e)
+	if casterGone(caster) then
+		return
+	end
+	local motion, bossId = attackInfo(event, caster)
+	if not motion then
+		return
+	end
+	local area = event.cf :: CFrame
+	local color = ELEMENT_COLORS[event.el or ""] or TELEGRAPH_COLOR
+	local camera = Workspace.CurrentCamera
+	local far = camera ~= nil and (area.Position - camera.CFrame.Position).Magnitude > Config.Vfx.simpleBeyond * 2
+	bossImpact(motion, event, color, lowQuality() or far)
+	shakeNear(area.Position, motion.shake or 0)
+	if caster and bossId then
+		local key = motion.sound or `boss.{bossId}.attack`
+		SfxController.Play(key, caster, SfxController.WhoOf(caster), sourceOf(caster))
+	end
 end
 
 -- S117 (E4): a boss's new phase: the camera of players near it shakes (Data/BossMotions roar), its aura flashes in the
@@ -1479,12 +1659,16 @@ local function handle(event: { [string]: any })
 		if caster then
 			AnimationController.MonsterAttack(
 				caster,
-				tonumber(event.t),
+				tonumber(event.cw) or tonumber(event.t), -- S134: a mark's gesture is shorter than its circle
 				false,
 				if type(event.a) == "string" then event.a else nil,
 				if typeof(event.cf) == "CFrame" then event.cf else nil
 			)
 		end
+	elseif kind == "teleCancel" then
+		cancelMark(event) -- S134
+	elseif kind == "blow" then
+		channelBlow(event) -- S134
 	elseif kind == "reward" then
 		local character = player.Character
 		-- S111: the gold of the reward clinks once

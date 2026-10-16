@@ -5,7 +5,9 @@
 
 ## Stan
 
-S01–S115 i S117–S133 gotowe (ostatnia S133: menu gracza „Akcje”, szept po imieniu postaci, listy do graczy, znajomi i ignorowani) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
+S01–S115 i S117–S134 gotowe (ostatnia S134: bossowie 2.0, czyli HP i fale bez skalowania z drużyną, wielkie ciosy do
+unikania, wspólny cios, piętno i zaklęcie do przerwania; większa drużyna kończy szybciej, solo tylko z przepakowanym
+sprzętem) (lista i zakres w `docs/SESJE.md`; S116 pominięta do czasu modeli właściciela), potem FIX 2026-10-14 (duch przeciągania, NPC i
 tablice miasta na planie, sklep ikonami w grupach, bez okna Postaci, drzewka ścieżek) i IMPORT-GRAFIK 2026-10-14
 (dograne grafiki, lista blokad treści); seria DESIGN-15 (sprzedawcy klas, wierzchowce, questy
 1–100, nagroda za logowanie, wydarzenia świata) zamknięta. Ostatnie: S48–S51 silnik jaskiń, FIX 2026-10-10, S53
@@ -258,6 +260,11 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S134:** nowe ataki bossów pozują ogólnymi stylami `Data/MonsterMotions` (bez własnych póz), mechaniki i ruchy
+  nieobejrzane w Studio (`/animlab boss <id> <atak>`); dźwięki `boss.mechanic.<mark|split|channel>` bez ID (wybór
+  właściciela, gra je pomija). W raporcie: T-SK6 Morvane ok. 3,5 > 2,7 i Swordplay Strażnika samotnika na 45 (0,037 <
+  0,040); decyzje właściciela w `docs/SESJE.md` → S134. Piętno w AnimLab stoi w miejscu (scena nie ma encji gracza).
+
 - **S133:** szept działa tylko na tym samym serwerze (do gracza na innym serwerze gra proponuje list); możliwy krok:
   szept między serwerami przez MessagingService. Ikona menu `hud/menu_friends` bez obrazka (znak ☺). „Zgłoś” w menu
   gracza i przy liście nie istnieje (brak API klienta do okna zgłoszeń Roblox). Obecność, „jest w grze” i listy między
@@ -287,7 +294,8 @@ zakończone; testy i decyzje właściciela po nich.
   „Rankingi (S125)”); adresy Open Cloud v2 w `tools/Rankings/OpenCloud.luau` niesprawdzone na żywym API
   (`TODO(owner): verify`). Medalion tytułu `weekly_diligent` bez obrazka (`tytuly/title_weekly_diligent.png`).
 - **S122:** fixture przedmiotów `tests/fixtures/balance_items.json` nieaktualny
-  (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, `balance.spec` tylko je drukuje).
+  (476 wartości przesuniętych przez `QuestBudget` / `Quests/Contracts` przed S122, od S134 856 z `Bosses`; `balance.spec`
+  tylko je drukuje).
 - **Assety od właściciela** (kod gotowy, puste pola): dźwięki `id = ""` w `Data/Ambience` (podpowiedzi w `hint`);
   puste klucze `Data/Sfx` (66 ze 123: 24 `mob.*`, 16 `boss.*`, 22 `skill.*`, `hit.armor/wood/stone`, `bow.draw`; lista:
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
@@ -307,7 +315,7 @@ zakończone; testy i decyzje właściciela po nich.
   `AreaSpawns.cave`).
 - **Balans 1–100 zamknięty (S94)**; decyzje właściciela: `docs/SESJE.md` → S94 („Dla właściciela”, „Otwarte cele
   1–100”; m.in. drabina Mityka Vaelgratha, komplet +9 366 h, mikstury łańcuchowe, strażniki D1 w pasmach, G7 / G8 z S88).
-- **Balans (S94)**: T-SK6 Vaelgratha 15,9 wobec ≤ 2,5 (S94 C6) niedokończone jak Azgora (wiersz w raporcie
+- **Balans (S94)**: T-SK6 Vaelgratha 15,9 (S134: 18,9) wobec ≤ 2,5 (S94 C6) niedokończone jak Azgora (wiersz w raporcie
   `Balance.S94_REPORT`); decyzja właściciela razem z Azgorem (S93).
 - **Sprzedawcy klas (S95)**: remis ciężkich rękawic progu 5 z najsłabszym Unikatem (`TIE_OK` w
   `tests/classvendors.spec`) i komplet u sprzedawcy tańszy niż kuźnia z kupionymi rudami (decyzje właściciela:
@@ -375,7 +383,7 @@ zakończone; testy i decyzje właściciela po nich.
 - **Balans**: propozycje S92 dla właściciela w `docs/SESJE.md` → S92 (T-SK6 Morvane ≤ 2,7, Elita II ścieżek
   wsparcia, mikstury łańcuchowe, Odnowa 5A, strażniki planu D1 a pasma ścieżek, tank Morvane z Polem Klątwy, G8
   kostura na 20); obszary Boru szersze niż 5 poziomów (D6, opcjonalne).
-- **Balans (S93)**: T-SK6 Azgora 12,8 wobec ≤ 2,5 (S93 C6) niedokończone: wiersz w raporcie
+- **Balans (S93)**: T-SK6 Azgora 12,8 (S134: 13,4) wobec ≤ 2,5 (S93 C6) niedokończone: wiersz w raporcie
   (`Balance.S93_REPORT`), dźwignie S93 nie sięgają (samo Leczenie z rang ≤ 45 daje ok. 4); decyzja właściciela.
 - **Balans**: propozycje S93 dla właściciela w `docs/SESJE.md` → S93 (T-SK6 Azgora, meteor, mikstury łańcuchowe
   28–82%, Elita II ścieżek wsparcia, 229 strażników T-SK ponad limitem D1 w paśmie, Rozpłatanie 10A, T1 Chorążego na

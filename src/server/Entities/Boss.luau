@@ -9,10 +9,17 @@
 --   * the Phase attribute (clients tint the look per Data/MonsterLooks phases, S24),
 --   * FIX 2026-10-15 (owner): BossTuning.extra: a shielded boss keeps casting at the fighters from the centre (it
 --     cannot be hurt, but it does not stand idle), and a boss nobody stands next to (kiting) throws a ranged attack.
+--   * S134 (bosses 2.0, Logic/BossMechanics): no scaling with the party (HP and helpers fixed); big blows to dodge
+--     (`avoid`: a thicker rim, the same telegraph and hit) and three party mechanics: `split` (the blow is shared by
+--     everyone standing in the golden circle at the hit, nobody inside = `missAll` on every fighter), `mark` (a random
+--     fighter is branded, the circle follows them and blasts at their position after `seconds`) and `channel` (the boss
+--     stands; `breakPct` of its max HP dealt in time staggers it, otherwise the spell hits every fighter). The server
+--     counts every hit at the blow; the clients only draw.
 -- Services are injected (DungeonService), so the module never requires them.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BossMechanics = require(ReplicatedStorage.Shared.Logic.BossMechanics)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local BossSchedule = require(ReplicatedStorage.Shared.Logic.BossSchedule)
 local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
@@ -26,13 +33,26 @@ export type Services = {
 	spawnCustom: (def: Monsters.MonsterDef, variant: any, level: number, at: CFrame) -> any,
 	spawnMonster: (monsterId: string, level: number, at: CFrame, attributes: { [string]: any }?) -> any,
 	despawn: (monster: any) -> (),
-	telegraph: (monster: any, ability: any, area: CFrame) -> (),
-	resolve: (monster: any, ability: any, area: CFrame) -> (),
+	-- S134: opts = CombatService.TelegraphOpts / ResolveOpts (mechanics)
+	telegraph: (monster: any, ability: any, area: CFrame, opts: any?) -> (),
+	resolve: (monster: any, ability: any, area: CFrame, opts: any?) -> (),
+	-- S134: an unbroken channel's blast on the clients (CombatService.MonsterBlow)
+	blow: (monster: any, ability: any, area: CFrame) -> (),
+	-- S134: a mark gone before its blast: its circle and glow stop on the clients (CombatService.MonsterTelegraphCancel)
+	cancelMark: (monster: any, ability: any, player: Player) -> (),
 	-- Players currently fighting (alive, inside the arena).
 	fighters: () -> { Player },
 	position: (player: Player) -> Vector3?,
 	announce: (key: string, args: { [string]: any }?) -> (),
+	-- S134: a big message to some players only (the marked one and the rest)
+	announceTo: (players: { Player }, key: string, args: { [string]: any }?) -> (),
+	nameOf: (player: Player) -> string,
 }
+
+-- S134: a mark in flight (the blast comes at `at`).
+type Mark = { player: Player, attack: Bosses.Attack, ability: any, at: number }
+-- S134: the channel the boss is casting.
+type Channel = { attack: Bosses.Attack, ability: any, startHp: number, endsAt: number }
 
 export type Script = {
 	onPhase: ((boss: any, phase: number) -> ())?,
@@ -57,7 +77,6 @@ export type Boss = typeof(setmetatable(
 		nextGlobal: number,
 		summons: { any },
 		shielded: { any },
-		players: number,
 		nextSummon: { [number]: number },
 		baseAttack: number,
 		baseInterval: number,
@@ -65,19 +84,23 @@ export type Boss = typeof(setmetatable(
 		nextShieldCast: number,
 		nextFar: number,
 		farSince: number?,
+		marks: { Mark },
+		channel: Channel?,
+		staggerUntil: number,
 	},
 	Boss
 ))
 
 -- S87: the gap between two attacks of any kind lives in Data/BossTuning.globalGap (balance plan D3).
 
-local function kindFor(def: Bosses.BossDef, players: number): Monsters.MonsterDef
+-- S134: the same kind for every party (BossScaling.hpMultiplier() = Bosses.HP_BASE).
+local function kindFor(def: Bosses.BossDef): Monsters.MonsterDef
 	return {
 		id = def.id,
 		region = 0,
 		cave = true,
 		levels = { min = def.level, max = def.level },
-		hpMul = BossScaling.hpMultiplier(players) * (def.hpMul or 1),
+		hpMul = BossScaling.hpMultiplier() * (def.hpMul or 1),
 		atkMul = def.atkMul,
 		defMul = def.defMul,
 		mresMul = def.mresMul or 1, -- S66
@@ -100,11 +123,12 @@ local function kindFor(def: Bosses.BossDef, players: number): Monsters.MonsterDe
 	}
 end
 
-function Boss.new(def: Bosses.BossDef, players: number, centre: CFrame, services: Services): Boss
+-- S134: the boss does not know the party size (DungeonService logs it).
+function Boss.new(def: Bosses.BossDef, centre: CFrame, services: Services): Boss
 	local scriptModule = script.Parent:FindFirstChild("BossScripts")
 		and (script.Parent :: any).BossScripts:FindFirstChild(def.id)
 	local bossScript: Script = if scriptModule then (require :: any)(scriptModule) else {}
-	local monster = services.spawnCustom(kindFor(def, players), "boss", def.level, centre)
+	local monster = services.spawnCustom(kindFor(def), "boss", def.level, centre)
 	monster.isBoss = true
 	monster.leashRange = 400
 	local self = setmetatable({
@@ -120,7 +144,6 @@ function Boss.new(def: Bosses.BossDef, players: number, centre: CFrame, services
 		nextGlobal = os.clock() + 4,
 		summons = {},
 		shielded = {},
-		players = math.max(1, players),
 		nextSummon = {},
 		baseAttack = monster.stats.attack,
 		baseInterval = monster.stats.attackInterval,
@@ -128,6 +151,9 @@ function Boss.new(def: Bosses.BossDef, players: number, centre: CFrame, services
 		nextShieldCast = 0,
 		nextFar = 0,
 		farSince = nil,
+		marks = {},
+		channel = nil,
+		staggerUntil = 0,
 	}, Boss)
 	for _, attack in def.attacks do
 		self.nextAttack[attack.id] = os.clock() + 3 + self.random:NextNumber() * 4
@@ -181,7 +207,7 @@ local function holdStill(self: Boss, hold: boolean)
 end
 
 local function spawnSummons(self: Boss, summon: Bosses.Summon)
-	local count = summon.count + Bosses.SUMMON_PER_PLAYER * (self.players - 1)
+	local count = summon.count -- S134: the same helpers for every party
 	for i = 1, count do
 		local angle = (i / count) * math.pi * 2 + self.random:NextNumber()
 		local radius = 14 + self.random:NextNumber() * 6
@@ -283,6 +309,175 @@ local function targetsFor(self: Boss, attack: Bosses.Attack): { Vector3? }
 	return list
 end
 
+-- S134 mark: a random fighter carries a circle for `mark.seconds` (the telegraph follows the character, `f` in the
+-- "tele" event; no red zone); Step blasts it at the marked one's position then. A big message to the marked one and
+-- to the rest; the attribute BossMark marks the character for the clients.
+local function startMark(self: Boss, attack: Bosses.Attack, ability: any)
+	local fighters = self.services.fighters()
+	if #fighters == 0 or not attack.mark then
+		return
+	end
+	local player = fighters[self.random:NextInteger(1, #fighters)]
+	local position = self.services.position(player)
+	if not position then
+		return
+	end
+	local markAbility = table.clone(ability)
+	markAbility.windup = attack.mark.seconds
+	local character = player.Character
+	if character then
+		character:SetAttribute("BossMark", attack.id)
+	end
+	table.insert(
+		self.marks,
+		{ player = player, attack = attack, ability = markAbility, at = os.clock() + attack.mark.seconds }
+	)
+	self.services.telegraph(
+		self.monster,
+		markAbility,
+		areaFor(self, attack, position),
+		{ mechanic = "mark", follow = player, castWindup = attack.windup }
+	)
+	self.services.announceTo({ player }, "boss.mechanic.mark.you", nil)
+	local others = {}
+	for _, other in fighters do
+		if other ~= player then
+			table.insert(others, other)
+		end
+	end
+	if #others > 0 then
+		self.services.announceTo(others, "boss.mechanic.mark.other", { name = self.services.nameOf(player) })
+	end
+end
+
+local function clearMark(mark: Mark)
+	local character = mark.player.Character
+	if character and character:GetAttribute("BossMark") == mark.attack.id then
+		character:SetAttribute("BossMark", nil)
+	end
+end
+
+-- S134: a mark that will not blast (the marked one is gone, the boss died or is removed): the attribute goes and the
+-- clients drop its circle.
+local function cancelMark(self: Boss, mark: Mark)
+	clearMark(mark)
+	self.services.cancelMark(self.monster, mark.ability, mark.player)
+end
+
+-- S134: drops every mark in flight and the channel (the boss died, won or removed: no blast, no spell).
+function Boss.ClearMechanics(self: Boss)
+	for _, mark in self.marks do
+		cancelMark(self, mark)
+	end
+	self.marks = {}
+	self.channel = nil
+end
+
+-- S134 channel: the boss stands for `channel.seconds` (no telegraph to dodge; the "tele" event with m = "channel"
+-- only poses it on the clients) and remembers its HP; Step checks the break every tick. Never behind the shield.
+local function startChannel(self: Boss, attack: Bosses.Attack, ability: any)
+	local spec = attack.channel
+	if not spec or #self.shielded > 0 then
+		return
+	end
+	local monster = self.monster
+	local now = os.clock()
+	monster.state = "cast"
+	monster.castEnd = now + spec.seconds
+	monster.castArea = nil
+	self.channel = { attack = attack, ability = ability, startHp = monster.hp, endsAt = now + spec.seconds }
+	self.services.telegraph(monster, ability, areaFor(self, attack, nil), { mechanic = "channel" })
+	self.services.announce("boss.mechanic.channel.start", { boss = `@{self.def.nameKey}` })
+end
+
+-- S134: the marks and the channel, once per tick.
+local function stepMechanics(self: Boss, now: number)
+	local monster = self.monster
+	if #self.marks > 0 then
+		local fighters = self.services.fighters()
+		for i = #self.marks, 1, -1 do
+			local mark = self.marks[i]
+			-- death or leaving the arena before the blast: the mark is gone
+			if not table.find(fighters, mark.player) then
+				cancelMark(self, mark)
+				table.remove(self.marks, i)
+			elseif now >= mark.at then
+				table.remove(self.marks, i)
+				clearMark(mark)
+				local position = self.services.position(mark.player)
+				if position and mark.attack.mark then
+					self.services.resolve(
+						monster,
+						mark.ability,
+						areaFor(self, mark.attack, position),
+						{ marked = mark.player, markSelf = mark.attack.mark.self }
+					)
+				end
+			end
+		end
+	end
+	local channel = self.channel
+	if channel then
+		local spec = channel.attack.channel :: Bosses.ChannelSpec
+		if #self.shielded > 0 then
+			-- a shield wave began in the spell: it fizzles
+			self.channel = nil
+		elseif BossMechanics.channelBroken(channel.startHp, monster.hp, monster.stats.maxHp, spec.breakPct) then
+			self.channel = nil
+			self.staggerUntil = now + spec.stagger
+			monster.state = "cast"
+			monster.castEnd = now + spec.stagger
+			monster.castArea = nil
+			monster.model:SetAttribute("Staggered", true)
+			self.nextGlobal = math.max(self.nextGlobal, now + spec.stagger)
+			self.services.announce("boss.mechanic.channel.broken", { boss = `@{self.def.nameKey}` })
+		elseif now >= channel.endsAt then
+			self.channel = nil
+			local area = CFrame.new(monster.root.Position)
+			self.services.resolve(monster, channel.ability, area, { all = true, fighters = self.services.fighters() })
+			self.services.blow(monster, channel.ability, area)
+			self.services.announce("boss.mechanic.channel.failed", { boss = `@{self.def.nameKey}` })
+		end
+	end
+	if self.staggerUntil > 0 and now >= self.staggerUntil then
+		self.staggerUntil = 0
+		monster.model:SetAttribute("Staggered", nil)
+	end
+end
+
+-- S134: the channel the boss is casting for the fight state (`{"boss"}.channel`): need and done as shares of the
+-- max HP, the end in seconds of os.clock (DungeonService turns it into server time). nil without one.
+function Boss.ChannelState(self: Boss): { id: string, endsAt: number, need: number, done: number }?
+	local channel = self.channel
+	local spec = channel and channel.attack.channel
+	if not channel or not spec then
+		return nil
+	end
+	local monster = self.monster
+	return {
+		id = channel.attack.id,
+		endsAt = channel.endsAt,
+		need = spec.breakPct,
+		done = BossMechanics.channelDone(channel.startHp, monster.hp, monster.stats.maxHp),
+	}
+end
+
+-- S134: the boss is staggered after a broken channel.
+function Boss.IsStaggered(self: Boss): boolean
+	return self.staggerUntil > 0
+end
+
+-- S134: the telegraph options of an attack (the client's colour, rim and follow; mechanics never enter redZones but
+-- the split, which is an area to stand in).
+local function teleOpts(attack: Bosses.Attack): any?
+	if attack.mechanic == "split" then
+		return { mechanic = "split" }
+	elseif BossMechanics.isAvoidable(attack) then
+		return { mechanic = "avoid" }
+	end
+	return nil
+end
+
 local function cast(self: Boss, attack: Bosses.Attack, keepState: boolean?)
 	local monster = self.monster
 	local ability = {
@@ -309,18 +504,34 @@ local function cast(self: Boss, attack: Bosses.Attack, keepState: boolean?)
 		monster.castArea = nil
 		monster.humanoid:MoveTo(monster.root.Position)
 	end
+	-- S134: the mark and the channel have their own flow (Step resolves them)
+	if attack.mechanic == "mark" and attack.mark then
+		startMark(self, attack, ability)
+		return
+	elseif attack.mechanic == "channel" and attack.channel then
+		startChannel(self, attack, ability)
+		return
+	end
+	local opts = teleOpts(attack)
+	if attack.mechanic == "split" then
+		self.services.announce("boss.mechanic.split.hint", nil)
+	end
 	local areas = {}
 	for _, position in targetsFor(self, attack) do
 		local area = areaFor(self, attack, position)
 		table.insert(areas, area)
-		self.services.telegraph(monster, ability, area)
+		self.services.telegraph(monster, ability, area, opts)
 	end
 	task.delay(attack.windup, function()
 		if not monster:IsAlive() then
 			return
 		end
+		-- S134: a split blow is shared by everyone inside; nobody inside = missAll on every fighter (CombatService)
+		local resolveOpts = if attack.mechanic == "split" and attack.split
+			then { split = true, missAll = attack.split.missAll, fighters = self.services.fighters() }
+			else nil
 		for _, area in areas do
-			self.services.resolve(monster, ability, area)
+			self.services.resolve(monster, ability, area, resolveOpts)
 		end
 		if attack.leap and areas[1] then
 			local root = monster.root :: BasePart
@@ -369,6 +580,8 @@ end
 function Boss.Step(self: Boss, now: number)
 	local monster = self.monster
 	if not monster:IsAlive() then
+		-- S134: a dead boss blasts no mark and finishes no spell
+		self:ClearMechanics()
 		return
 	end
 	-- Phase by HP
@@ -418,6 +631,7 @@ function Boss.Step(self: Boss, now: number)
 	if self.script.onTick then
 		self.script.onTick(self, now)
 	end
+	stepMechanics(self, now)
 	local extra = (BossTuning.extra :: any)[self.def.id]
 	-- Behind the helpers' shield: no schedule, but the shield attack keeps coming (FIX 2026-10-15).
 	if #self.shielded > 0 then
@@ -472,6 +686,7 @@ function Boss.Destroy(self: Boss)
 	if self.script.onDestroy then
 		self.script.onDestroy(self)
 	end
+	self:ClearMechanics()
 	for _, summon in self.summons do
 		if summon:IsAlive() then
 			self.services.despawn(summon)

@@ -12,6 +12,9 @@
 -- band and the area are left out; low quality uses segmentsLow pieces and no texture. A magic area (Elite II and boss
 -- spells) carries a turning magic circle, a physical round one dark cracks (S112 textures; none without their ids or
 -- over the beam / decal limits).
+-- S134 (bosses 2.0): `follow` keeps a circle under a character (a boss mark: moved every frame from its root, no
+-- texture layer), `rimWidth` thickens the rim of a big blow to dodge, `key` + GroundTelegraph.cancel drop a mark that
+-- will not blast.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -45,6 +48,9 @@ export type Spec = {
 	low: boolean, -- low graphics quality: segmentsLow, no texture
 	simple: boolean?, -- outline and front only (also forced over maxActive)
 	onBlow: (() -> ())?, -- once, in the frame of the flash (the server's hit)
+	follow: Model?, -- S134: a circle that follows this character (its HumanoidRootPart, on the area's ground plane)
+	rimWidth: number?, -- S134: studs of the bright rim (default Config.Telegraph.rimWidth)
+	key: string?, -- S134: what GroundTelegraph.cancel matches (a boss mark)
 }
 
 type Trapezoid = { block: BasePart, left: BasePart, right: BasePart }
@@ -65,6 +71,7 @@ type Surface = {
 
 type Active = {
 	spec: Spec,
+	area: CFrame, -- S134: spec.area, moved with spec.follow
 	start: number,
 	windup: number,
 	simple: boolean,
@@ -253,6 +260,7 @@ end
 local function build(a: Active)
 	local spec = a.spec
 	local color = spec.color
+	local rimWidth = spec.rimWidth or CFG.rimWidth
 	local shape = spec.shape
 	local dims = spec.dims
 	if shape == "circle" or shape == "ring" then
@@ -272,9 +280,9 @@ local function build(a: Active)
 		surface.underStroke.Color = DARK
 		surface.underStroke.Thickness = CFG.underRim * ppu
 		surface.underStroke.Transparency = 0.5
-		px(surface.rim, 2 * (r - CFG.rimWidth) * ppu)
+		px(surface.rim, 2 * (r - rimWidth) * ppu)
 		surface.rimStroke.Color = color:Lerp(WHITE, 0.15)
-		surface.rimStroke.Thickness = CFG.rimWidth * ppu
+		surface.rimStroke.Thickness = rimWidth * ppu
 		surface.rimStroke.Transparency = 0.2
 		surface.frontStroke.Color = color:Lerp(WHITE, 0.55)
 		surface.frontStroke.Thickness = math.max(1.5, FRONT_WIDTH * ppu)
@@ -311,7 +319,7 @@ local function build(a: Active)
 		-- the under-rim and the rim: the arc and both sides
 		for _, list in { a.underParts, a.rimParts } do
 			local isRim = list == a.rimParts
-			local width = if isRim then CFG.rimWidth else CFG.rimWidth + 2 * CFG.underRim
+			local width = if isRim then rimWidth else rimWidth + 2 * CFG.underRim
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 0, count - 1 do
 				local y0, y1 = -angle / 2 + slice * i, -angle / 2 + slice * (i + 1)
@@ -348,7 +356,7 @@ local function build(a: Active)
 		local corners = { { -w / 2, 0 }, { w / 2, 0 }, { w / 2, -l }, { -w / 2, -l } }
 		for _, list in { a.underParts, a.rimParts } do
 			local isRim = list == a.rimParts
-			local width = if isRim then CFG.rimWidth else CFG.rimWidth + 2 * CFG.underRim
+			local width = if isRim then rimWidth else rimWidth + 2 * CFG.underRim
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 1, 4 do
 				local c0, c1 = corners[i], corners[i % 4 + 1]
@@ -390,9 +398,27 @@ local function finish(a: Active)
 	end
 end
 
+-- S134: the area under a followed character (its root on the area's ground plane); the last one when it is gone.
+local function followArea(a: Active): CFrame
+	local model = a.spec.follow
+	local root = model and model.Parent and model:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		local p = root.Position
+		return CFrame.new(p.X, a.area.Position.Y, p.Z)
+	end
+	return a.area
+end
+
 -- One frame of one telegraph; false when it is over.
 local function update(a: Active, now: number): boolean
 	local spec = a.spec
+	if spec.follow then
+		a.area = followArea(a)
+		if a.surface then
+			a.surface.part.CFrame = a.area * CFrame.new(0, CFG.lift + 0.1, 0)
+		end
+	end
+	local area = a.area
 	local elapsed = now - a.start
 	local w = a.windup
 	if elapsed >= Telegraph.duration(w, CFG) then
@@ -423,7 +449,7 @@ local function update(a: Active, now: number): boolean
 		for i, t in a.band do
 			local piece = pieces[i]
 			if piece then
-				placeTrapezoid(t, spec.area, piece, CFG.lift + 0.02, BAND_THICK)
+				placeTrapezoid(t, area, piece, CFG.lift + 0.02, BAND_THICK)
 			end
 			t.block.Color, t.left.Color, t.right.Color = lit, lit, lit
 			t.block.Transparency, t.left.Transparency, t.right.Transparency = fill, fill, fill
@@ -471,7 +497,7 @@ local function update(a: Active, now: number): boolean
 				if show then
 					placeEdge(
 						part,
-						spec.area,
+						area,
 						-math.sin(y0) * front,
 						-math.cos(y0) * front,
 						-math.sin(y1) * front,
@@ -480,7 +506,7 @@ local function update(a: Active, now: number): boolean
 						CFG.lift + 0.06
 					)
 				else
-					part.CFrame = spec.area * CFrame.new(0, -5, 0)
+					part.CFrame = area * CFrame.new(0, -5, 0)
 				end
 			end
 		else
@@ -488,9 +514,9 @@ local function update(a: Active, now: number): boolean
 			for i, part in a.frontParts do
 				local x = (if i == 1 then -1 else 1) * front
 				if show then
-					placeEdge(part, spec.area, x, 0, x, -l, FRONT_WIDTH, CFG.lift + 0.06)
+					placeEdge(part, area, x, 0, x, -l, FRONT_WIDTH, CFG.lift + 0.06)
 				else
-					part.CFrame = spec.area * CFrame.new(0, -5, 0)
+					part.CFrame = area * CFrame.new(0, -5, 0)
 				end
 			end
 		end
@@ -521,6 +547,7 @@ function GroundTelegraph.start(spec: Spec)
 	local windup = Telegraph.windup(spec.windup)
 	local a: Active = {
 		spec = spec,
+		area = spec.area,
 		start = Clock.now(),
 		windup = windup,
 		simple = spec.simple == true or #active >= CFG.maxActive,
@@ -539,7 +566,7 @@ function GroundTelegraph.start(spec: Spec)
 	build(a)
 	-- S112 texture layer: a turning magic circle for spells, dark cracks under a physical round area
 	local round = spec.shape == "circle" or spec.shape == "ring"
-	if round and not a.simple and not spec.low and Config.Vfx.textures then
+	if round and not a.simple and not spec.low and Config.Vfx.textures and not spec.follow then
 		local r = Telegraph.radius(spec.shape, spec.dims)
 		local seconds = windup + CFG.flashSeconds
 		if spec.magic and Textures.id("magicCircle") then
@@ -563,6 +590,17 @@ function GroundTelegraph.start(spec: Spec)
 	update(a, a.start)
 	if not connection then
 		connection = RunService.Heartbeat:Connect(step)
+	end
+end
+
+-- S134: removes the telegraphs with `key` that have not blown yet, without their `onBlow` (a cancelled boss mark).
+function GroundTelegraph.cancel(key: string)
+	for i = #active, 1, -1 do
+		local a = active[i]
+		if a.spec.key == key and not a.blown then
+			pcall(finish, a)
+			table.remove(active, i)
+		end
 	end
 end
 

@@ -253,10 +253,49 @@ export function abilityText(a: Ability, cells: LevelCells | undefined, lang: Lan
   });
 }
 
-/** Boss attack: shape, target and count, warning, damage, cooldown and element. */
+/** Players a boss's shared blow (split) is shown for on the wiki: each of them takes the total / this. */
+export const SPLIT_SHOWN = 3;
+
+/** Boss attack: shape, target and count, warning, damage, cooldown and element. S134: a mark blasts after its
+ *  `mark.seconds` (the marked one takes `self` of it), a split's range is the total shared by those inside, a channel
+ *  has no area (it hits everyone unless broken). */
 export function attackText(a: BossAttack, lang: Lang, kind: string): string {
   const origin = a.target === "self" ? "self" : a.target === "all" ? "under" : "target";
   const target = t(lang, `target.${a.target}` as Key, { count: a.count ?? 1 });
+  const dmgKind = elementText(a.element, a.damageKind ?? kind, lang);
+  if (a.mechanic === "channel" && a.channel) {
+    return t(lang, "attack.descChannel", {
+      seconds: n(a.channel.seconds, lang),
+      pct: n(Math.round(a.channel.breakPct * 1000) / 10, lang),
+      stagger: n(a.channel.stagger, lang),
+      dmg: range(lang, a.dmgMin, a.dmgMax),
+      kind: dmgKind,
+      cd: n(a.cooldown, lang),
+    });
+  }
+  if (a.mechanic === "split") {
+    return t(lang, "attack.descSplit", {
+      shape: shapeText(a, origin, lang),
+      target,
+      windup: n(a.windup, lang),
+      dmg: range(lang, a.dmgMin, a.dmgMax),
+      players: SPLIT_SHOWN,
+      share: range(lang, Math.round(a.dmgMin / SPLIT_SHOWN), Math.round(a.dmgMax / SPLIT_SHOWN)),
+      kind: dmgKind,
+      cd: n(a.cooldown, lang),
+    });
+  }
+  if (a.mechanic === "mark" && a.mark) {
+    return t(lang, "attack.descMark", {
+      shape: shapeText(a, origin, lang),
+      target,
+      windup: n(a.mark.seconds, lang),
+      dmg: range(lang, a.dmgMin, a.dmgMax),
+      self: range(lang, Math.round(a.dmgMin * a.mark.self), Math.round(a.dmgMax * a.mark.self)),
+      kind: dmgKind,
+      cd: n(a.cooldown, lang),
+    });
+  }
   return t(lang, a.leap ? "attack.descLeap" : "attack.desc", {
     shape: shapeText(a, origin, lang),
     target,

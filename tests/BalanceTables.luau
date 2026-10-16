@@ -272,15 +272,19 @@ function BalanceTables.tables1_20(): { Table }
 		}, if L + 4 > 20 then false else nil)
 	end
 
-	section("Grimrok (poziom 20)", {
-		"drużyna",
-		"HP bossa",
-		"walka min",
-		"max cios Mag",
-		"max cios Wojownik",
-		"zwykły cios Mag",
-		"tank HP/min",
-	}, "Cel: 3–5 graczy L18–20, żaden cios > 70% HP Maga, 4–6 min. 75% czasu na biciu.")
+	section(
+		"Grimrok (poziom 20)",
+		{
+			"drużyna",
+			"HP bossa",
+			"walka min",
+			"max cios Mag",
+			"max cios Wojownik",
+			"zwykły cios Mag",
+			"tank HP/min",
+		},
+		"S134: HP bossa bez skalowania z drużyną (`Bosses.HP_BASE`); cele bossów 2.0 w `Balance.targetsS134` (5 graczy 3–4,5 min, 3 graczy 5–7,5 min). Największy cios = atak, którego nie da się uniknąć (bez wielkich ciosów i mechanik). 75% czasu na biciu."
+	)
 	do
 		local order = { "Warrior", "Mage", "Hunter", "Cleric", "Warrior" }
 		for _, n in { 1, 2, 3, 4, 5 } do
@@ -797,8 +801,16 @@ function BalanceTables.tables1_20(): { Table }
 
 	section(
 		"Grimrok w modelu S83 / S87 (S91)",
-		{ "drużyna", "walka min", "tank obrażenia/s", "największy cios Mag", "fazy tarczy s" },
-		"`Balance.bossFight` z harmonogramem `Logic/BossSchedule` (S87), drużyna L19 (W, M, Ł, K, W), bez i z węzłami (`Balance.COMBAT_BUILD`). Bez wsparcia: buildy bojowe przycięte do 19 (Furia, Królobójca, Arkanista boss, Inkwizytor solo, Niszczyciel boss), obrażenia graczy z `tests/SkillModel.luau`."
+		{
+			"drużyna",
+			"walka min",
+			"tank obrażenia/s",
+			"największy cios Mag",
+			"fazy tarczy s",
+			"cios do uniknięcia Mag",
+			"wspólny cios Mag",
+		},
+		"`Balance.bossFight` z harmonogramem `Logic/BossSchedule` (S87), drużyna L19 (W, M, Ł, K, W), bez i z węzłami (`Balance.COMBAT_BUILD`). S134: wielkie ciosy uniknięte, wspólny cios dzielony przez stojących razem (cała drużyna), największy cios tylko z ataków, których nie da się uniknąć. Bez wsparcia: buildy bojowe przycięte do 19 (Furia, Królobójca, Arkanista boss, Inkwizytor solo, Niszczyciel boss), obrażenia graczy z `tests/SkillModel.luau`."
 	)
 	for _, withNodes in { false, true } do
 		for n = 1, 5 do
@@ -806,8 +818,10 @@ function BalanceTables.tables1_20(): { Table }
 			row(`{n}{if withNodes then " z węzłami" else ""}`, {
 				{ f.seconds / 60, "2" },
 				{ f.tankDps, "1" },
-				{ f.biggestHit.Mage or 0 / 0, "%" },
+				{ f.biggestHit.Mage or 0, "%" },
 				{ f.shieldSeconds, "s" },
+				{ f.biggestAvoidable.Mage or 0, "%" },
+				{ f.mechanics.split.Mage or 0, "%" },
 			})
 		end
 	end
@@ -2146,7 +2160,7 @@ function BalanceTables.tablesPaths(): { Table }
 			"Mur Tarcz bez limitu",
 			"Mur Tarcz z limitem",
 		},
-		"`SkillModel.interceptReport` (`Logic/Intercept`: `resolve`, `part`, `take` z `caps.interceptPerSecond`, `split` z Męczennikiem): największy cios bossa pasma w Maga drużyny domyślnej i czerwona strefa na całą drużynę z Murem Tarcz „Obrońcy”. ROZWOJ 10.6 na L100: cios 115% HP Maga → 80% (z Osłoną 72%), Mur Tarcz bez limitu ok. 116% HP Strażnika, z limitem ok. 74%. "
+		"`SkillModel.interceptReport` (`Logic/Intercept`: `resolve`, `part`, `take` z `caps.interceptPerSecond`, `split` z Męczennikiem): największy cios bossa pasma w Maga drużyny domyślnej (S134: zwykły albo nieuniknięty cios do unikania) i czerwona strefa na całą drużynę z Murem Tarcz „Obrońcy” (S134: bez mechanik; podział, znamię i zaklęcie nie są strefą na każdego). Przykład ROZWOJ 10.6 (115% → 80%, Mur 116% / 74%) liczono przed S134; od S134 na L100 ok. 85% → 60% (z Osłoną 54%), Mur ok. 66% / 54%. "
 			.. PATHS_INTRO
 	)
 	for _, L in LEVELS do
@@ -3208,7 +3222,7 @@ function BalanceTables.tablesItems(): { Table }
 		tb.row(entry.id, cells)
 	end
 	for _, def in Bosses.list do
-		local m = B.monster(B.bossKind(def, 1), def.level, "boss")
+		local m = B.monster(B.bossKind(def), def.level, "boss")
 		local cells: { { any } } = {}
 		for _, L in B.ITEM_LEVELS do
 			table.insert(cells, { if L == def.level then B.armorShare(m, L, false) else 0 / 0, "%" })

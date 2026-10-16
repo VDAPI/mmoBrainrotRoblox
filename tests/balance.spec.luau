@@ -124,6 +124,63 @@ T.describe("Balance 1-20: S91", function()
 	end)
 end)
 
+-- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
+-- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
+-- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).
+T.describe("Balance: bosses 2.0 (S134)", function()
+	local rows = B.targetsS134()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local who = if row.classId then `{row.classId} ` else ""
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{who}{at}{describeRow(row)} (S134, docs/sessions S134 E2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134 targets (printed) and the old S32 / S91-S94 fight length and biggest-hit rows are gone", function()
+		printReport("S134", rows, 20)
+		for _, row in rows do
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		T.expect(#rows > 80).toBe(true)
+		for _, row in allRows1_20 do
+			T.expect({ row.id, string.find(row.id, "grimrok.team", 1, true) == nil }).toEqual({ row.id, true })
+			T.expect({ row.id, string.find(row.id, "grimrok.mage", 1, true) == nil }).toEqual({ row.id, true })
+		end
+		for _, row in B.targetsS91() do
+			T.expect({ row.id, string.find(row.id, "grimrok.model", 1, true) == nil }).toEqual({ row.id, true })
+		end
+	end)
+	T.it("every boss has at least two big blows to dodge and a party mechanic; Vaelgrath has all three", function()
+		local Bosses = require("../src/shared/Data/Bosses")
+		for _, def in Bosses.list do
+			local avoid, mechanics = 0, {} :: { [string]: boolean }
+			for _, attack in def.attacks do
+				if attack.avoid then
+					avoid += 1
+				end
+				if attack.mechanic then
+					mechanics[attack.mechanic] = true
+				end
+			end
+			T.expect({ def.id, avoid >= 2, next(mechanics) ~= nil }).toEqual({ def.id, true, true })
+		end
+		local v = Bosses.byId.vaelgrath :: any
+		local all: { [string]: boolean } = {}
+		for _, attack in v.attacks do
+			if attack.mechanic then
+				all[attack.mechanic] = true
+			end
+		end
+		T.expect({ all.split, all.mark, all.channel }).toEqual({ true, true, true })
+	end)
+end)
+
 T.describe("Balance S32: structural checks", function()
 	T.it("bigger groups hit softer per member", function()
 		local last = math.huge

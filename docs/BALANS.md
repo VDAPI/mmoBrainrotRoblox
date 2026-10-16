@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S109 (commit 46b15f3, 2026-10-14) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S134 (commit cd0676b, 2026-10-16) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -17,15 +17,15 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | blok | wiersze | w paśmie | asertowane | raport (sesja powodu: wiersze) |
 | --- | --: | --: | --: | --: |
-| 1–20: cele S32 (S91) | 995 | 995 | 995 | 0 |
-| 1–20: cele S91 | 140 | 134 | 134 | S90 3, – 3 |
-| 20–100: globalne G1–G13 (S87) | 1812 | 1468 | 1271 | S103 4, S88 285, S91 12, S92 5, – 235 |
-| region meadows (S91) | 388 | 388 | 388 | 0 |
-| region duskwood (S92) | 967 | 781 | 710 | S32 3, S90 20, S92 234 |
-| region ashen (S93) | 1148 | 810 | 779 | S32 3, S90 24, S93 342 |
-| region frostpeak (S94) | 1332 | 861 | 830 | S32 3, S90 28, S94 471 |
+| 1–20: cele S32 (S91) | 985 | 985 | 985 | 0 |
+| 1–20: cele S91 | 130 | 124 | 124 | S90 3, – 3 |
+| 20–100: globalne G1–G13 (S87) | 1832 | 1490 | 1291 | S103 4, S88 285, S91 12, S92 5, – 235 |
+| region meadows (S91) | 393 | 393 | 393 | 0 |
+| region duskwood (S92) | 963 | 776 | 705 | S134 1, S32 3, S90 20, S92 234 |
+| region ashen (S93) | 1143 | 805 | 774 | S32 3, S90 24, S93 342 |
+| region frostpeak (S94) | 1326 | 855 | 824 | S32 3, S90 28, S94 471 |
 | 1–100: wiersze przekrojowe (S94) | 240 | 240 | 240 | 0 |
-| 20–100: cechy, linie, obrona (S88) | 516 | 452 | 452 | S89 25, S90 22, S94 5, – 12 |
+| 20–100: cechy, linie, obrona (S88) | 516 | 451 | 451 | S134 3, S89 25, S90 22, S94 3, – 12 |
 | 20–100: ścieżki (S89–S90) | 1019 | 550 | 452 | S90 24, S94 24, – 519 |
 
 ### Otwarte cele 1–100 (wiersze w trybie raportu, po powodach)
@@ -37,7 +37,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | 1–20: cele S91 | S90 | 1/1 | właściciel: rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90) |
 | 1–20: cele S91 | – | 3/3 | właściciel (R4_REPORT) |
 | 20–100: globalne G1–G13 (S87) | S88 | 16/16 | S88: poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception) |
-| 20–100: globalne G1–G13 (S87) | S88 | 251/260 | S88: poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
+| 20–100: globalne G1–G13 (S87) | S88 | 249/260 | S88: poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
 | 20–100: globalne G1–G13 (S87) | S91 | 4/4 | S91: poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
 | 20–100: globalne G1–G13 (S87) | S88 | 9/9 | S88: poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
 | 20–100: globalne G1–G13 (S87) | S92 | 1/1 | S92: poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit) |
@@ -47,6 +47,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | 20–100: globalne G1–G13 (S87) | S103 | 4/4 | S103: poza zasięgiem dźwigni S103: 11.06 < 12 at 40 (11.91 with the window kills before S103; the gold of the new story quests of 20-44; Config.Upgrade global, an owner decision) |
 | 20–100: globalne G1–G13 (S87) | – | 58/235 | tylko raport |
 | region duskwood (S92) | S32 | 0/3 | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
+| region duskwood (S92) | S134 | 1/1 | poza zasięgiem dźwigni S134: ok. 3,5 > 2,7 (wielkie ciosy do unikania nie trafiają tanka; Pole Klątwy trzyma noSupport.hit ≤ 1,0, atak podstawowy wiersz tanka S32 ≤ 3,5); dla właściciela |
 | region duskwood (S92) | S90 | 0/20 | tylko raport (T-SK3 podstawy, S90 I3) |
 | region duskwood (S92) | S92 | 10/10 | poza zasięgiem dźwigni S92: skok z węzła ścieżki kupionego 44. punktem (kolejność S89–S90), rangi 44 = 45; dla S93 |
 | region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.17 |
@@ -110,7 +111,8 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region frostpeak (S94) | S94 | 10/10 | poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150 %); dla właściciela |
 | region frostpeak (S94) | S94 | 116/116 | poza zasięgiem dźwigni S94: Potężna 1800 to dół kolejności cen (0,18 ≥ 0,175 zł/HP), ceny 1–4 i potionCooldown globalne; dla właściciela |
 | region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: 366 h wobec 150–300 (złoto ulepszeń z Config.Upgrade, S87, to ok. 83 % kosztu); dla właściciela: goldHigh 20 → ok. 15 |
-| 20–100: cechy, linie, obrona (S88) | S94 | 5/5 | S94 |
+| 20–100: cechy, linie, obrona (S88) | S134 | 3/3 | S134 |
+| 20–100: cechy, linie, obrona (S88) | S94 | 3/3 | S94 |
 | 20–100: cechy, linie, obrona (S88) | S89 | 25/25 | S89 |
 | 20–100: cechy, linie, obrona (S88) | S90 | 22/22 | S90 |
 | 20–100: cechy, linie, obrona (S88) | – | 12/12 | właściciel |
@@ -131,395 +133,152 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `Progression:variantMultiplier.elite` | 4 | 1,5 | S117 | FIX 2026-10-15 (owner): 4 -> 1.5, Elites are for drops, not levelling (EXP per HP below a normal monster; pace model counts normals only) |
-| `Progression:variantMultiplier.elite2` | 12 | 4 | S117 | FIX 2026-10-15 (owner): 12 -> 4, Elite II is for drops, not levelling (HP x10) |
-| `QuestBudget:MONSTER_EXP_MUL[20]` | 0,575 | 1,231 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[21]` | 1,18 | 1,151 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[22]` | 1,18 | 1,151 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[23]` | 1,179 | 1,151 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[24]` | 1,051 | 1,06 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[25]` | 1,189 | 1,06 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[26]` | 1,189 | 1,06 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[27]` | 1,085 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[28]` | 1,176 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[29]` | 1,176 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[30]` | 1,143 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[31]` | 1,171 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[32]` | 1,171 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[33]` | 1,102 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[34]` | 1,102 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[35]` | 1,102 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[36]` | 1,102 | 1,043 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[37]` | 0,929 | 0,98 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[38]` | 0,929 | 0,98 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[39]` | 0,929 | 0,968 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[3]` | 0,5 | 0,875 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[40]` | 0,929 | 0,968 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[41]` | 0,953 | 0,978 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[42]` | 0,953 | 0,978 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[43]` | 0,953 | 0,978 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[44]` | 0,735 | 0,902 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[45]` | 0,9 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[46]` | 0,9 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[47]` | 0,899 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[48]` | 0,9 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[49]` | 0,762 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[50]` | 0,921 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[51]` | 0,921 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[52]` | 0,82 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[53]` | 0,902 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[54]` | 0,902 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[55]` | 0,861 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[56]` | 0,861 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[57]` | 0,843 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[58]` | 0,843 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[59]` | 0,861 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[60]` | 0,861 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[61]` | 0,73 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[62]` | 0,822 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[63]` | 0,822 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[64]` | 0,822 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[65]` | 0,822 | 0,843 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[66]` | 0,84 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[67]` | 0,84 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[68]` | 0,84 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[69]` | 0,823 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[70]` | 0,823 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[71]` | 0,823 | 0,844 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[72]` | 0,836 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[73]` | 0,836 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[74]` | 0,853 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[75]` | 0,853 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[76]` | 0,836 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[77]` | 0,836 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[78]` | 0,853 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[79]` | 0,853 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[80]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[81]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[82]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[83]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[84]` | 0,799 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[85]` | 0,799 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[86]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[87]` | 0,815 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[88]` | 0,815 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[89]` | 0,815 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[90]` | 0,775 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[91]` | 0,775 | 0,803 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[92]` | 0,838 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[93]` | 0,838 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[94]` | 0,717 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[95]` | 0,768 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[96]` | 0,872 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[97]` | 0,872 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[98]` | 0,803 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `QuestBudget:MONSTER_EXP_MUL[99]` | 0,512 | 0,804 | S109 | regenerated (S109 audit): story weights of 20-99 and contracts 1-3 without EXP; 1-19 unchanged but L3 0.500 (clamped) -> 0.875, 20 0.575 -> 1.231, 21-36 1.04-1.15, 37-44 0.90-0.98, 45-71 0.843-0.844, 72-99 0.803-0.804 (L99 0.512 -> 0.804); no level clamped, hours of grinding per level x1.000 |
-| `Quests/Contracts:byId.contract_1.reward.exp` | 12 | 0 | S109 | S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN) |
-| `Quests/Contracts:byId.contract_2.reward.exp` | 25 | 0 | S109 | S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN) |
-| `Quests/Contracts:byId.contract_3.reward.exp` | 45 | 0 | S109 | S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN) |
-| `Quests/Main:STORY_SCALE[20]` | 0,1455 | 0,04995 | S109 | S109: derived by settleStory from the audit weights (20: 0.0499, 45: 0.1250, 70: 0.1200; toDuskwood joined the rule of band 20) |
-| `Quests/Main:STORY_SCALE[45]` | 0,1622 | 0,125 | S109 | S109: derived by settleStory from the audit weights (20: 0.0499, 45: 0.1250, 70: 0.1200; toDuskwood joined the rule of band 20) |
-| `Quests/Main:STORY_SCALE[70]` | 0,151 | 0,12 | S109 | S109: derived by settleStory from the audit weights (20: 0.0499, 45: 0.1250, 70: 0.1200; toDuskwood joined the rule of band 20) |
-| `Quests/Main:STORY_WEIGHT.ashRoad` | 1,2 | 0,76 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.ashen` | 1 | 2,06 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.barrow` | 0,8 | 4,04 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.burntTemple` | 1,2 | 1,55 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.coldFire` | 1,5 | 1,48 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.crypt` | 0,8 | 0,6 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.cryptGate` | 0,8 | 1,02 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.cult` | 0,8 | 3,58 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.deadOasis` | 1 | 2,06 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.deepforge` | 1 | 0,98 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.dragonTemple` | 1,3 | 1 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.dragonsBrood` | 1 | 0,4 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.elderHeart` | 0,8 | 5,95 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.emberCores` | 1,2 | 2,33 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.ents` | 0,8 | 2,88 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.eveOfBattle` | 0,8 | 2,02 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.forgeChains` | 1,2 | 1,48 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.frostpeak` | 1,2 | 2 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.frozenHold` | 1,2 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.frozenLake` | 1 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.giants` | 1 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.glacier` | 1,2 | 2,02 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.golems` | 1 | 1,55 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.harpyRocks` | 1 | 2 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.houseOfVael` | 2,2 | 9,45 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.iceGrotto` | 1,2 | 2 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.iceWatch` | 1 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.lostHunters` | 1,8 | 5,52 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.mammothTundra` | 1 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.mineDepths` | 1 | 1,14 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.moonstone` | 1,8 | 5,52 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.oathWords` | 1,5 | 1,44 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.orcs` | 1 | 2,33 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.queensLegacy` | 1,5 | 1,6 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.ruins` | 1,6 | 4,55 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.runesOfBinding` | 1 | 0,98 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.snowInSummer` | 0,8 | 1 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.swamp` | 0,8 | 4,05 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.trappersCamp` | 1 | 2 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.turncoat` | 1,4 | 7,38 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.voiceOfWinter` | 1,5 | 0,6 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.warcampCages` | 1,2 | 1,01 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.werewolves` | 1,8 | 5,52 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.witchCounsel` | 0,8 | 1,02 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:STORY_WEIGHT.wyvernLair` | 1 | 1,55 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `Quests/Main:byId.ashRoad.reward.exp` | 1,922e+04 | 9378 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.ashen.reward.exp` | 8988 | 1,427e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.barrow.reward.exp` | 4005 | 6940 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.burntTemple.reward.exp` | 1,689e+04 | 1,682e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.coldFire.reward.exp` | 3,035e+04 | 2,308e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.crypt.reward.exp` | 4450 | 1145 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.cryptGate.reward.exp` | 5407 | 2365 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.cult.reward.exp` | 2990 | 4591 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.deadOasis.reward.exp` | 9761 | 1,55e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.deepforge.reward.exp` | 1,652e+04 | 1,247e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.dragonTemple.reward.exp` | 4,405e+04 | 2,693e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.dragonsBrood.reward.exp` | 3,739e+04 | 1,188e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.elderHeart.reward.exp` | 2623 | 6696 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.emberCores.reward.exp` | 1,471e+04 | 2,202e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.ents.reward.exp` | 2448 | 3025 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.eveOfBattle.reward.exp` | 2,822e+04 | 5,661e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.forgeChains.reward.exp` | 2,232e+04 | 2,121e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.frostpeak.reward.exp` | 2,451e+04 | 3,246e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.frozenHold.reward.exp` | 3,284e+04 | 3,132e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.frozenLake.reward.exp` | 2,862e+04 | 3,275e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.giants.reward.exp` | 2,495e+04 | 2,854e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.glacier.reward.exp` | 3,904e+04 | 5,222e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.golems.reward.exp` | 1,316e+04 | 1,571e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.harpyRocks.reward.exp` | 2,378e+04 | 3,778e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.houseOfVael.reward.exp` | 5820 | 8580 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.iceGrotto.reward.exp` | 2,716e+04 | 3,596e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.iceWatch.reward.exp` | 2,99e+04 | 3,421e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.lostHunters.reward.exp` | 4067 | 4280 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.mammothTundra.reward.exp` | 2,614e+04 | 2,992e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.mineDepths.reward.exp` | 1,183e+04 | 1,039e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.moonstone.reward.exp` | 3738 | 3934 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.oathWords.reward.exp` | 4,68e+04 | 3,57e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.orcs.reward.exp` | 1,098e+04 | 1,971e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.queensLegacy.reward.exp` | 1,159e+04 | 4243 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.ruins.reward.exp` | 3918 | 3823 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.runesOfBinding.reward.exp` | 1,754e+04 | 1,325e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.snowInSummer.reward.exp` | 2,934e+04 | 2,914e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.swamp.reward.exp` | 3582 | 6223 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.toDuskwood.reward.exp` | 7150 | 4023 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.trappersCamp.reward.exp` | 2,151e+04 | 3,419e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.turncoat.reward.exp` | 5568 | 1,007e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.voiceOfWinter.reward.exp` | 5,609e+04 | 1,783e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.warcampCages.reward.exp` | 1,268e+04 | 8222 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.werewolves.reward.exp` | 3423 | 3603 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.witchCounsel.reward.exp` | 4917 | 2151 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.wyrmSpire.reward.exp` | 3,458e+04 | 2,747e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
-| `Quests/Main:byId.wyvernLair.reward.exp` | 1,503e+04 | 1,795e+04 | S109 | S109 audit (D1): story EXP from the new weights (settleStory, band share unchanged: TARGET.main); toDuskwood 7150 -> 4023 on the story rule |
+| `Bosses:byId.azgor.attacks[fireWave].cooldown` | 7 | 10 | S134 | big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].damage` | 5,2 | 7 | S134 | big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].phases[2]` | 2 | 3 | S134 | big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].windup` | 1,3 | 1,8 | S134 | big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[inferno].cooldown` | 14 | 16 | S134 | big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
+| `Bosses:byId.azgor.attacks[inferno].damage` | 6,6 | 8 | S134 | big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
+| `Bosses:byId.azgor.attacks[inferno].windup` | 2 | 2,4 | S134 | big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
+| `Bosses:byId.azgor.hpMul` | 1,25 | 1,3 | S134 | 1.25 -> 1.3: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.08 (3-4.5) with HP no longer scaled by the party |
+| `Bosses:byId.azgor.summons[1].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.azgor.summons[2].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.grimrok.attacks[leap].cooldown` | 13 | 15 | S134 | big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[leap].damage` | 6 | 7,6 | S134 | big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[leap].windup` | 1,5 | 1,8 | S134 | big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[sweep].damage` | 6 | 7,2 | S134 | 6 -> 7.2: T-SK6 of the dungeon Healer 2.12 -> <= 2.0 (the big blows no longer hit the tank in the model) |
+| `Bosses:byId.grimrok.attacks[whirlwind].cooldown` | 10 | 14 | S134 | big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
+| `Bosses:byId.grimrok.attacks[whirlwind].damage` | 7 | 9,2 | S134 | big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
+| `Bosses:byId.grimrok.attacks[whirlwind].windup` | 1,6 | 2 | S134 | big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
+| `Bosses:byId.grimrok.summons[1].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.grimrok.summons[2].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.morvane.attacks[deathRing].cooldown` | 15 | 16 | S134 | big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[deathRing].damage` | 5,8 | 6,8 | S134 | big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[deathRing].windup` | 2,2 | 2,5 | S134 | big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[shadowBoltFast].cooldown` | 4 | 6 | S134 | 4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3) |
+| `Bosses:byId.morvane.attacks[shadowBoltFast].damage` | 4,5 | 4,2 | S134 | 4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3) |
+| `Bosses:byId.morvane.attacks[shadowBolt].cooldown` | 6 | 7 | S134 | 4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks) |
+| `Bosses:byId.morvane.attacks[shadowBolt].damage` | 4,5 | 4,2 | S134 | 4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks) |
+| `Bosses:byId.morvane.summons[1].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.morvane.summons[2].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.vaelgrath.attacks[frostBreath].cooldown` | 8 | 10 | S134 | 8 -> 10: G11 with the new attacks (0.33 -> 0.58 of its rate in phase 3) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].cooldown` | 15 | 18 | S134 | big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].damage` | 6,2 | 8,1 | S134 | big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].windup` | 2,2 | 2,5 | S134 | big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].cooldown` | 9 | 14 | S134 | big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].damage` | 4,1 | 6,2 | S134 | big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].windup` | 1,2 | 1,8 | S134 | big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].cooldown` | 11 | 14 | S134 | cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
+| `Bosses:byId.vaelgrath.hpMul` | 1,3 | 1,35 | S134 | 1.3 -> 1.35: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.24 (3-4.5) with HP no longer scaled by the party |
+| `Bosses:byId.vaelgrath.summons[1].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.vaelgrath.summons[2].count` | 10 | 8 | S134 | 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Arena:BLESSING_PRICE[1]` | 15 | S128 | arena blessings of every line by rarity 1-3: 15 / 35 / 70 tokens = 0.4 / 0.8 / 1.7 days of 3 matches; the gold price 20 x rarity^2 (20 / 80 / 180) is not comparable, they are bound |
-| `Arena:BLESSING_PRICE[2]` | 35 | S128 | arena blessings of every line by rarity 1-3: 15 / 35 / 70 tokens = 0.4 / 0.8 / 1.7 days of 3 matches; the gold price 20 x rarity^2 (20 / 80 / 180) is not comparable, they are bound |
-| `Arena:BLESSING_PRICE[3]` | 70 | S128 | arena blessings of every line by rarity 1-3: 15 / 35 / 70 tokens = 0.4 / 0.8 / 1.7 days of 3 matches; the gold price 20 x rarity^2 (20 / 80 / 180) is not comparable, they are bound |
-| `Arena:BRACKETS[20_39].max` | 39 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[20_39].min` | 20 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[40_59].max` | 59 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[40_59].min` | 40 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[60_79].max` | 79 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[60_79].min` | 60 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[80_100].max` | 100 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:BRACKETS[80_100].min` | 80 | S126 | DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling |
-| `Arena:ELO.floor` | 0 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:ELO.k` | 32 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:ELO.kNew` | 48 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:ELO.newGames` | 10 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:ELO.scale` | 400 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:ELO.start` | 1000 | S126 | DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale |
-| `Arena:LIMITS.history` | 10 | S126 | DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches |
-| `Arena:LIMITS.sameOpponentDaily` | 3 | S126 | DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches |
-| `Arena:MIN_LEVEL` | 20 | S126 | DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket) |
-| `Arena:MODES.1v1.between` | 5 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.countdown` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.maxRounds` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.potions` | 3 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.roundTime` | 180 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.teamSize` | 1 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.1v1.winsNeeded` | 2 | S126 | DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision |
-| `Arena:MODES.3v3.between` | 0 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.countdown` | 3 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.maxRounds` | 1 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.potions` | 3 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.roundTime` | 240 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.teamSize` | 3 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:MODES.3v3.winsNeeded` | 1 | S128 | DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round) |
-| `Arena:QUEUE.acceptSeconds` | 15 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:QUEUE.declinePenalty` | 300 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:QUEUE.tick` | 1 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:QUEUE.widen` | 100 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:QUEUE.widenEvery` | 15 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:QUEUE.window` | 100 | S126 | DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical |
-| `Arena:SEASON.keep` | 0,5 | S126 | DESIGN-17 §6 monthly season with the soft reset 1000 + (rating - 1000) x 0.5 |
-| `Arena:SEASON_REWARDS.diamond.shards` | 150 | S128 | DESIGN-17 §6 season rewards: Diamond 150 and Master 300 Dragon Shards = about 2-4 of the smallest packs (100 SO), once a month for Diamond / Master; free shards for play, never sold |
-| `Arena:SEASON_REWARDS.master.shards` | 300 | S128 | DESIGN-17 §6 season rewards: Diamond 150 and Master 300 Dragon Shards = about 2-4 of the smallest packs (100 SO), once a month for Diamond / Master; free shards for play, never sold |
-| `Arena:SHOP[aura_gladiator].price` | 1200 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_1].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_1].price` | 15 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_2].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_2].price` | 35 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_3].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_fortune_3].price` | 70 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_1].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_1].price` | 15 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_2].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_2].price` | 35 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_3].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_guardian_3].price` | 70 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_1].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_1].price` | 15 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_2].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_2].price` | 35 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_3].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_hunter_3].price` | 70 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_1].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_1].price` | 15 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_2].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_2].price` | 35 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_3].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_sage_3].price` | 70 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_1].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_1].price` | 15 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_2].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_2].price` | 35 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_3].n` | 1 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[blessing_warrior_3].price` | 70 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[chatframe_gladiator].price` | 250 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[frame_gladiator].price` | 250 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[stone_return].n` | 5 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[stone_return].price` | 10 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[title_ironwill].price` | 400 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP[title_sandveteran].price` | 600 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:SHOP_MAX_BLESSING_RARITY` | 3 | S128 | arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound |
-| `Arena:TIERS[bronze].min` | 0 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
-| `Arena:TIERS[diamond].min` | 1500 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
-| `Arena:TIERS[gold].min` | 1300 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
-| `Arena:TIERS[master].min` | 1700 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
-| `Arena:TIERS[silver].min` | 1100 | S126 | DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700 |
-| `Arena:TOKENS.firstMatches` | 3 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOKENS.firstMul` | 2 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOKENS.loss1v1` | 4 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOKENS.loss3v3` | 5 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOKENS.win1v1` | 10 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOKENS.win3v3` | 12 | S128 | DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days) |
-| `Arena:TOURNEY.cap` | 32 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.fields` | 4 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.hallWeeks` | 4 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.minPlayers` | 4 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.participantTokens` | 30 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.restBetween` | 30 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[1].place` | 1 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[1].shards` | 200 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[1].titleDays` | 7 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[2].place` | 2 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[2].shards` | 100 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[3].place` | 3 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.rewards[3].shards` | 50 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.window.close` | -600 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.window.invite` | 120 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.window.open` | -3600 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:TOURNEY.window.organize` | -300 | S130 | new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold |
-| `Arena:seasonMinPlayed` | 5 | S128 | 5 rated matches (1v1 + 3v3) in a season before any season reward (S128 decision): without it every character that queued once would get Bronze |
-| `Arena:tokensWeekCap` | 600 | S128 | DESIGN-17 §6: 600 a week (Monday 00:00 UTC) = 2.04 weeks of the 3-matches-a-day income (294): the cap stops farming (about 15 matches a day for 6 days), not normal play |
-| `BossTuning:extra.azgor.far.cooldown` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.far.damage` | 3,6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.far.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.far.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.shield.damage` | 3,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.shield.length` | 40 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.shield.width` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.azgor.shield.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.far.cooldown` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.far.damage` | 4,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.far.length` | 48 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.far.width` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.far.windup` | 1,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.shield.length` | 40 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.shield.width` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.grimrok.shield.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.morvane.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.morvane.shield.every` | 4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.morvane.shield.radius` | 4,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.morvane.shield.windup` | 1,2 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.far.cooldown` | 7 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.far.damage` | 3,8 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.far.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.far.windup` | 1,4 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.shield.damage` | 3 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.shield.every` | 5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.shield.radius` | 6 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:extra.vaelgrath.shield.windup` | 1,5 | S117 | FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule |
-| `BossTuning:farAfter` | 2,5 | S117 | FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s |
-| `BossTuning:farRange` | 14 | S117 | FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s |
-| `Config:FullElixir.cooldown` | 180 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
-| `Config:FullElixir.dailyLimit` | 10 | S122 | DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
-| `Config:LookChange.goldMin` | 300 | S132 | 300 gold below level 20 (= 15 x 20, the price of level 20): a new character pays no more than at 20; the free first change covers the creator's regrets |
-| `Config:LookChange.goldPerLevel` | 15 | S132 | look change at the barber = 15 x level gold: 300 / 675 / 1050 / 1500 at 20 / 45 / 70 / 100 = 13.3 / 4.5 / 3.1 / 2.4% of a level's income (Balance.levelIncome 2260 / 14926 / 33468 / 61396), inside the 2-15% band of tests/balance.spec S132; a gold sink, the first change is free |
-| `Config:Lure.interval` | 8 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Config:Lure.levelGap` | 10 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Config:Lure.maxPulled` | 6 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Config:Lure.pullThreat` | 1 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Config:Lure.radius` | 25 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Config:Lure.tick` | 1 | S122 | DESIGN-17 §3: every 8 s, radius 25, ±10 levels, at most 6 fighting; pullThreat 1 and tick 1 s technical |
-| `Items/Consumables:[potion_full].level` | 1 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
-| `Items/Consumables:[potion_full].maxStack` | 999 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
-| `Items/Consumables:[potion_full].price` | 1 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
-| `Items/Consumables:[potion_full].tier` | 5 | S122 | DESIGN-17 §3: new premium Elixir of Wholeness (level 1, tier 5 for the icon, maxStack 999, sell price 1, noSell); no NPC price |
-| `Leaderboards:WEEK_BRACKETS[1][1]` | 1 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[1][2]` | 19 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[2][1]` | 20 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[2][2]` | 44 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[3][1]` | 45 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[3][2]` | 69 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[4][1]` | 70 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_BRACKETS[4][2]` | 100 | S125 | weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers |
-| `Leaderboards:WEEK_REWARDS.shards[1]` | 100 | S125 | top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
-| `Leaderboards:WEEK_REWARDS.shards[2]` | 50 | S125 | top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
-| `Leaderboards:WEEK_REWARDS.shards[3]` | 25 | S125 | top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
-| `Leaderboards:WEEK_REWARDS.titleDays` | 7 | S125 | top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
-| `Maps:byId.arena_pit.maxLevel` | 100 | S127 | the arena server map arena_pit: levels 20-100 = Data/Arena brackets, built only on arena and tournament servers |
-| `Maps:byId.arena_pit.minLevel` | 20 | S127 | the arena server map arena_pit: levels 20-100 = Data/Arena brackets, built only on arena and tournament servers |
-| `Quests/Contracts:RULES.expFrom` | 4 | S109 | S109 audit (D3): contracts 1-3 give gold only; the tutorial pays levels 1-2 in full (no grinding in the S94 base), so their EXP (12 + 25 + 45) only carried into level 3 and clamped monsterExpMul(3) at MUL_MIN (raw 0.14); now 0.875 as in S98 |
-| `Quests/Main:STORY_WEIGHT.toDuskwood` | 6,76 | S109 | S109 audit (D1): story weights shape monsterExpMul inside each band (T-QB3 moving mean <= 0.50, T-QB5 steps <= 0.10, no clamp, >= 0.55): 20-44 per window to the S94 kill shares with 20-23 kept under the S94 story (unit 0.05), 45-69 flat 0.844 (unit 0.125), 70-99 flat 0.803 (unit 0.12); toDuskwood on the rule (6.76; its 60% of level 20 broke T-QB3 and the 0.10 step to 21); band shares unchanged (TARGET.main) |
-| `ScheduledEvents:bloodMoon.eliteChance` | 0,15 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.levelGap` | 8 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.points.elite` | 1 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.points.elite2` | 5 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.points.player` | 10 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.blessingRarity` | 2 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.frameTop` | 10 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.minPoints` | 5 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.shards` | 100 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.shardsTop` | 1 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.titleDays` | 7 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.titleTop` | 100 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.reward.tokens` | 20 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:bloodMoon.sameVictimMax` | 2 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].duration` | 1800 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].quietBefore` | 600 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[1].hour` | 19 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[1].minute` | 0 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[1].weekday` | 2 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[2].hour` | 19 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[2].minute` | 0 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].slots[2].weekday` | 4 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].warn[1]` | 600 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[1].warn[2]` | 60 | S129 | new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon |
-| `ScheduledEvents:list[2].duration` | 1,08e+04 | S130 | the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
-| `ScheduledEvents:list[2].quietBefore` | 0 | S130 | the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
-| `ScheduledEvents:list[2].slots[1].hour` | 19 | S130 | the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
-| `ScheduledEvents:list[2].slots[1].minute` | 0 | S130 | the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
-| `ScheduledEvents:list[2].slots[1].weekday` | 6 | S130 | the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
+| `Bosses:HP_BASE` | 84 | S134 | new: the boss HP multiplier for every party (BossScaling.hpMultiplier() = 84 = the old 30 x 2.8 for 4 players); bosses 2.0 never scale with the party, 5 players beat a boss in 3.7-4.2 min, 3 in 5.3-6.2 (S134 E2) |
+| `Bosses:byId.azgor.attacks[cinderBrand].cooldown` | 24 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].damage` | 7 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].mark.seconds` | 5 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].mark.self` | 0,43 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].phases[1]` | 2 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].phases[2]` | 3 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].radius` | 10 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].windup` | 1,2 | S134 | new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[eruption].cooldown` | 16 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].count` | 3 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].damage` | 7,3 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].phases[1]` | 1 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].phases[2]` | 2 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].radius` | 7 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].windup` | 2 | S134 | new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[volcanoHeart].cooldown` | 26 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].damage` | 17,5 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].phases[1]` | 1 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].phases[2]` | 2 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].radius` | 7 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].split.missAll` | 0,25 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].windup` | 3 | S134 | new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.grimrok.attacks[boulder].cooldown` | 24 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].damage` | 21 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].phases[1]` | 2 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].phases[2]` | 3 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].radius` | 6 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].split.missAll` | 0,25 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].windup` | 3 | S134 | new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[groundSplitter].cooldown` | 16 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].damage` | 8,2 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].length` | 40 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[1]` | 1 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[2]` | 2 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[3]` | 3 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].width` | 6 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].windup` | 1,8 | S134 | new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].cooldown` | 22 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].damage` | 6 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].mark.seconds` | 5 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].mark.self` | 0,43 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].phases[1]` | 1 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].phases[2]` | 2 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].radius` | 9 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].windup` | 1,2 | S134 | new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[requiem].channel.breakPct` | 0,012 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].channel.seconds` | 5 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].channel.stagger` | 3 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].cooldown` | 36 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].damage` | 7,7 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].phases[1]` | 2 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].phases[2]` | 3 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].radius` | 6 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].windup` | 5 | S134 | new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[soulReap].angle` | 70 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].cooldown` | 16 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].damage` | 6,2 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].phases[1]` | 1 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].phases[2]` | 2 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].radius` | 26 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].windup` | 1,8 | S134 | new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.breakPct` | 0,012 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.seconds` | 5 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.stagger` | 3 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].cooldown` | 36 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].damage` | 8,6 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].phases[1]` | 3 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].radius` | 6 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].windup` | 5 | S134 | new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].angle` | 90 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].cooldown` | 14 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].damage` | 7 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].phases[1]` | 2 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].phases[2]` | 3 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].radius` | 30 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].windup` | 2 | S134 | new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].cooldown` | 24 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].damage` | 7,1 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].mark.seconds` | 5 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].mark.self` | 0,4 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].phases[1]` | 1 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].phases[2]` | 2 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].radius` | 10 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].windup` | 1,2 | S134 | new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].cooldown` | 26 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].damage` | 17,7 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].phases[1]` | 1 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].phases[2]` | 3 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].radius` | 7 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].split.missAll` | 0,25 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].windup` | 3,2 | S134 | new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+
+### Usunięte klucze
+
+| klucz | wartość | sesja | powód |
+| --- | --: | --: | --: |
+| `Bosses:SUMMON_PER_PLAYER` | 2 | S134 | removed: no extra helpers per player (bosses 2.0 do not get harder with a bigger party; S134 A2) |
+| `Bosses:byId.azgor.attacks[fireWave].phases[3]` | 3 | S134 | big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].phases[3]` | 3 | S134 | big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].phases[2]` | 2 | S134 | cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].phases[3]` | 3 | S134 | cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
 
 ### Księga: pominięte funkcje
 
@@ -530,7 +289,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4279 kluczy zmienionych od bazy, 0 bez powodu.
+4405 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -599,36 +358,162 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bonuses:scaling.flatPer` | – | 20 | nowy od S87 | S87: C1 / G7: scale constants moved from ItemRoll.scaleFor; new pctCapIlvl 20 (pct x1.33 instead of x2.67 at 100): Legendary W 31.7 % at 100 (was 41.1) |
 | `Bonuses:scaling.pctCapIlvl` | – | 20 | nowy od S87 | S87: C1 / G7: scale constants moved from ItemRoll.scaleFor; new pctCapIlvl 20 (pct x1.33 instead of x2.67 at 100): Legendary W 31.7 % at 100 (was 41.1) |
 | `Bonuses:scaling.pctPer` | – | 60 | nowy od S87 | S87: C1 / G7: scale constants moved from ItemRoll.scaleFor; new pctCapIlvl 20 (pct x1.33 instead of x2.67 at 100): Legendary W 31.7 % at 100 (was 41.1) |
+| `Bosses:HP_BASE` | – | 84 | nowy od S134 | S134: new: the boss HP multiplier for every party (BossScaling.hpMultiplier() = 84 = the old 30 x 2.8 for 4 players); bosses 2.0 never scale with the party, 5 players beat a boss in 3.7-4.2 min, 3 in 5.3-6.2 (S134 E2) |
+| `Bosses:SUMMON_PER_PLAYER` | 2 | – | usunięty | S134: removed: no extra helpers per player (bosses 2.0 do not get harder with a bigger party; S134 A2) |
 | `Bosses:byId.azgor.atkMul` | 1,25 | 0,36 | S93 | S93: 1.25 -> 0.36 (C2): basic hit 35 % -> 10 % of a level 70 Mage (7-12 %), S32 tank 816 -> 235 %/min before the attack lifts |
-| `Bosses:byId.azgor.attacks[fireWave].damage` | 2,4 | 5,2 | S93 | S93: 2.4 -> 5.2 (C2): ~52 % of a level 70 Mage per wave after atkMul 0.36, below the inferno |
+| `Bosses:byId.azgor.attacks[cinderBrand].cooldown` | – | 24 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].damage` | – | 7 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].mark.seconds` | – | 5 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].mark.self` | – | 0,43 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].phases[1]` | – | 2 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].phases[2]` | – | 3 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].radius` | – | 10 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[cinderBrand].windup` | – | 1,2 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7 = ~70 %, the marked one x0.43 = ~30 %; phases 2-3, cooldown 24 |
+| `Bosses:byId.azgor.attacks[eruption].cooldown` | – | 16 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].count` | – | 3 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].damage` | – | 7,3 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].phases[1]` | – | 1 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].phases[2]` | – | 2 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].radius` | – | 7 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[eruption].windup` | – | 2 | nowy od S134 | S134: new big blow to dodge: circles 7 under 3 random fighters, windup 2, 7.3 = ~73 % of a level 70 Mage (Warrior 69 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.azgor.attacks[fireWave].cooldown` | 7 | 10 | S134 | S134: big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].damage` | 2,4 | 7 | S134 | S134: big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].phases[2]` | 2 | 3 | S134 | S134: big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].phases[3]` | 3 | – | usunięty | S134: big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
+| `Bosses:byId.azgor.attacks[fireWave].windup` | 1,3 | 1,8 | S134 | S134: big blow to dodge: windup 1.3 -> 1.8, 5.2 -> 7 = ~70 % of a level 70 Mage, cooldown 7 -> 10 and phases 1, 3 (phase 2 has the eruption and the volcano heart; G11) |
 | `Bosses:byId.azgor.attacks[flameCleave].damage` | 2,2 | 3 | S93 | S93: 2.2 -> 3 (C2, C6): 3 x the basic hit on the tank; S32 tank 346 %/min with speed 1.35 (<= 350 %) |
-| `Bosses:byId.azgor.attacks[inferno].damage` | 3,4 | 6,6 | S93 | S93: 3.4 -> 6.6 (C2): the biggest hit 66 % of a level 70 Mage (<= 70 %), 68 % of a level 68 Mage (< 100 %); G11 phase 3 0.65 |
+| `Bosses:byId.azgor.attacks[inferno].cooldown` | 14 | 16 | S134 | S134: big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
+| `Bosses:byId.azgor.attacks[inferno].damage` | 3,4 | 8 | S134 | S134: big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
+| `Bosses:byId.azgor.attacks[inferno].windup` | 2 | 2,4 | S134 | S134: big blow to dodge (phase 3 ring): windup 2 -> 2.4, 6.6 -> 8 = ~80 % of a Mage, cooldown 14 -> 16 (G11) |
 | `Bosses:byId.azgor.attacks[meteor].cooldown` | 10 | 18 | S93 | S93: 10 -> 18 (C4 a): meteor per minute 258 % (3f935c1) / 215 % (S92 data) -> 54 % of a level 70 Mage (<= 60 %); G11 phase 3 0.81 |
 | `Bosses:byId.azgor.attacks[meteor].damage` | 2,6 | 4 | S93 | S93: 2.6 -> 4 (C4 a): one meteor ~40 % of a level 70 Mage (x randomMax), dodgeable |
-| `Bosses:byId.azgor.hpMul` | – | 1,25 | nowy od S93 | S93: new 1.25 (C2): 3 / 4 / 5 players L69 4.9 / 5.2 / 5.1 min, with nodes 4.4 / 4.6 / 4.6 (band 4-6; 4.4-4.7 / 3.9-4.1 with nodes at 1.0 after the waves 58 / 59) |
+| `Bosses:byId.azgor.attacks[volcanoHeart].cooldown` | – | 26 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].damage` | – | 17,5 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].phases[1]` | – | 1 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].phases[2]` | – | 2 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].radius` | – | 7 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].split.missAll` | – | 0,25 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.attacks[volcanoHeart].windup` | – | 3 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3, 17.5 = ~175 % of a Mage shared (3 players 59 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1-2, cooldown 26 |
+| `Bosses:byId.azgor.hpMul` | – | 1,3 | nowy od S134 | S134: 1.25 -> 1.3: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.08 (3-4.5) with HP no longer scaled by the party |
 | `Bosses:byId.azgor.speed` | 0,9 | 1,35 | S93 | S93: 0.9 -> 1.35 (C6): more basic hits on the tank within the S32 tank <= 350 %/min (346 %); counters of S88 swordplay at 45 (guardian.loner 0.041) |
+| `Bosses:byId.azgor.summons[1].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.azgor.summons[1].level` | 69 | 58 | S93 | S93: 69 -> 58 (C7): a party of 3 loses 85 % HP per member per wave (helpers without the group reduction like the server; 263 % at 69, limit 110 %) |
+| `Bosses:byId.azgor.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.azgor.summons[2].level` | 70 | 59 | S93 | S93: 70 -> 59 (C7): 98 % per member for a party of 3 (275 % at 70, limit 110 %) |
-| `Bosses:byId.grimrok.attacks[sweep].damage` | 4,5 | 6 | S91 | S91: 4.5 -> 6: D2 T-SK6 (dungeon Healer on the Defender) 2.04 -> 1.83 with heal cost 12 (band 1.0-2.0); the sweep hits only the tank, the Mage L20 keeps 64 % (S32) / 55 % (S83) |
+| `Bosses:byId.grimrok.attacks[boulder].cooldown` | – | 24 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].damage` | – | 21 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].phases[1]` | – | 2 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].phases[2]` | – | 3 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].radius` | – | 6 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].split.missAll` | – | 0,25 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[boulder].windup` | – | 3 | nowy od S134 | S134: new split mechanic: a circle 6 under a random fighter, windup 3, 21 = ~200 % of a Mage shared by those inside (3 players 67 %, alone 122 % of the Fury Warrior's HP), nobody inside = 25 % on everyone; phases 2-3, cooldown 24 |
+| `Bosses:byId.grimrok.attacks[groundSplitter].cooldown` | – | 16 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].damage` | – | 8,2 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].length` | – | 40 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[1]` | – | 1 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[2]` | – | 2 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].phases[3]` | – | 3 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].width` | – | 6 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[groundSplitter].windup` | – | 1,8 | nowy od S134 | S134: new big blow to dodge: a line 40 x 6 at a random fighter, windup 1.8, 8.2 = ~75 % of a level 20 Mage's HP, cooldown 16 (G11) |
+| `Bosses:byId.grimrok.attacks[leap].cooldown` | 13 | 15 | S134 | S134: big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[leap].damage` | 6 | 7,6 | S134 | S134: big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[leap].windup` | 1,5 | 1,8 | S134 | S134: big blow to dodge (avoid): windup 1.5 -> 1.8 (time to react on a phone), 6 -> 7.6 = ~70 % of a level 20 Mage, cooldown 13 -> 15 (G11 with the new attacks) |
+| `Bosses:byId.grimrok.attacks[sweep].damage` | 4,5 | 7,2 | S134 | S134: 6 -> 7.2: T-SK6 of the dungeon Healer 2.12 -> <= 2.0 (the big blows no longer hit the tank in the model) |
+| `Bosses:byId.grimrok.attacks[whirlwind].cooldown` | 10 | 14 | S134 | S134: big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
+| `Bosses:byId.grimrok.attacks[whirlwind].damage` | 7 | 9,2 | S134 | S134: big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
+| `Bosses:byId.grimrok.attacks[whirlwind].windup` | 1,6 | 2 | S134 | S134: big blow to dodge (phase 3, circle 10 around the boss): windup 1.6 -> 2, 7 -> 9.2 = ~85 % of a Mage, cooldown 10 -> 14 (G11) |
 | `Bosses:byId.grimrok.hpMul` | 1,4 | 1,2 | S91 | S91: 1.4 -> 1.2: D1 Grimrok in the S83 / S87 model 6.15-6.33 -> 5.33-5.57 min (band 4-6); S32 model 4.36-4.56 min |
+| `Bosses:byId.grimrok.summons[1].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.grimrok.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.morvane.atkMul` | 1,1 | 0,42 | S92 | S92: 1.1 -> 0.42 (C2): basic hit 28 % -> 11 % of a level 45 Mage (7-12 %), S32 tank 770 -> 338 %/min |
+| `Bosses:byId.morvane.attacks[cryptBrand].cooldown` | – | 22 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].damage` | – | 6 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].mark.seconds` | – | 5 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].mark.self` | – | 0,43 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].phases[1]` | – | 1 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].phases[2]` | – | 2 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].radius` | – | 9 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
+| `Bosses:byId.morvane.attacks[cryptBrand].windup` | – | 1,2 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
 | `Bosses:byId.morvane.attacks[curseField].cooldown` | 11 | 6,5 | S92 | S92: 11 -> 6.5 (C4, C7): tank damage; G11 phase 3 0.62 (>= 0.5) |
 | `Bosses:byId.morvane.attacks[curseField].damage` | 2,4 | 11,5 | S92 | S92: 2.4 -> 11.5 (C4): the nearest member's attack carries the tank damage (T-SK6 2.70 -> 2.68); without support the biggest hit is 93 % of the Berserker |
-| `Bosses:byId.morvane.attacks[deathRing].damage` | 3,5 | 5,8 | S92 | S92: 3.5 -> 5.8 (C2): the biggest hit 68 % of a level 45 Mage (<= 70 %), 71 % of a level 43 Mage |
-| `Bosses:byId.morvane.attacks[shadowBoltFast].damage` | 1,9 | 4,5 | S92 | S92: 1.9 -> 4.5 (C2): phase 3 like the phase 1-2 bolt |
-| `Bosses:byId.morvane.attacks[shadowBolt].damage` | 1,8 | 4,5 | S92 | S92: 1.8 -> 4.5 (C2): 49 % of a level 45 Mage, ~4 x the basic hit after atkMul 0.42 |
+| `Bosses:byId.morvane.attacks[deathRing].cooldown` | 15 | 16 | S134 | S134: big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[deathRing].damage` | 3,5 | 6,8 | S134 | S134: big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[deathRing].windup` | 2,2 | 2,5 | S134 | S134: big blow to dodge (safe centre): windup 2.2 -> 2.5, 5.8 -> 6.8 = ~80 % of a Mage, cooldown 15 -> 16 (G11) |
+| `Bosses:byId.morvane.attacks[requiem].channel.breakPct` | – | 0,012 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].channel.seconds` | – | 5 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].channel.stagger` | – | 3 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].cooldown` | – | 36 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].damage` | – | 7,7 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].phases[1]` | – | 2 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].phases[2]` | – | 3 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].radius` | – | 6 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[requiem].windup` | – | 5 | nowy od S134 | S134: new channel mechanic: 5 s spell, broken by 1.2 % of the max HP (3 players in 3.8 s <= 4.5, alone on equal gear 5.6 s), staggered 3 s, else 7.7 = ~90 % of a Mage on everyone; phases 2-3, cooldown 36 |
+| `Bosses:byId.morvane.attacks[shadowBoltFast].cooldown` | 4 | 6 | S134 | S134: 4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3) |
+| `Bosses:byId.morvane.attacks[shadowBoltFast].damage` | 1,9 | 4,2 | S134 | S134: 4.5 -> 4.2 (<= 50 % of a Mage); cooldown 4 -> 6 (G11 in phase 3) |
+| `Bosses:byId.morvane.attacks[shadowBolt].cooldown` | 6 | 7 | S134 | S134: 4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks) |
+| `Bosses:byId.morvane.attacks[shadowBolt].damage` | 1,8 | 4,2 | S134 | S134: 4.5 -> 4.2: a regular attack <= 50 % of a level 45 Mage (49 %); cooldown 6 -> 7 (G11 with the new attacks) |
+| `Bosses:byId.morvane.attacks[soulReap].angle` | – | 70 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].cooldown` | – | 16 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].damage` | – | 6,2 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].phases[1]` | – | 1 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].phases[2]` | – | 2 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].radius` | – | 26 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
+| `Bosses:byId.morvane.attacks[soulReap].windup` | – | 1,8 | nowy od S134 | S134: new big blow to dodge: a cone 26 / 70 at a random fighter, windup 1.8, 6.2 = ~74 % of a level 45 Mage (the Warrior 69 % <= 70 %), phases 1-2 and cooldown 16 (G11) |
 | `Bosses:byId.morvane.hpMul` | – | 1,2 | nowy od S92 | S92: new 1.2 (C2): 3 / 4 / 5 players L44 4.6-4.8 -> 4.7-5.0 min in the S83 / S87 model (band 4-6) |
 | `Bosses:byId.morvane.speed` | 1 | 1,15 | S92 | S92: 1 -> 1.15 (C4): more basic hits on the tank for T-SK6 within the S32 tank <= 350 %/min (338 %) |
+| `Bosses:byId.morvane.summons[1].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.morvane.summons[1].level` | 44 | 36 | S92 | S92: 44 -> 36 (C6): a party of 3 loses 88 % HP per member per wave (helpers without the group reduction like the server, Balance.summonHelpers; 223 % at 44, limit 110 %) |
+| `Bosses:byId.morvane.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.morvane.summons[2].level` | 45 | 37 | S92 | S92: 45 -> 37 (C6): 106 % per member for a party of 3 (239 % at 45, limit 110 %) |
 | `Bosses:byId.vaelgrath.atkMul` | 1,3 | 0,38 | S94 | S94: C2: 1.3 -> 0.38: basic hit 33 % -> 9.7 % of a level 100 Mage's HP (target 7-12 %, like Grimrok, Morvane, Azgor) |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.breakPct` | – | 0,012 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.seconds` | – | 5 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].channel.stagger` | – | 3 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].cooldown` | – | 36 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].damage` | – | 8,6 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].phases[1]` | – | 3 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].radius` | – | 6 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[absoluteZero].windup` | – | 5 | nowy od S134 | S134: new channel mechanic (phase 3): 5 s, broken by 1.2 % of the max HP (3 players 4.1 s <= 4.5, alone on equal gear 5.1 s), staggered 3 s, else 8.6 = ~90 % of a Mage on everyone; cooldown 36 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].angle` | – | 90 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].cooldown` | – | 14 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].damage` | – | 7 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].phases[1]` | – | 2 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].phases[2]` | – | 3 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].radius` | – | 30 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
+| `Bosses:byId.vaelgrath.attacks[avalanche].windup` | – | 2 | nowy od S134 | S134: new big blow to dodge: a cone 30 / 90 at a random fighter, windup 2, 7 = ~74 % of a level 100 Mage (Warrior 69 %), phases 2-3, cooldown 14 |
 | `Bosses:byId.vaelgrath.attacks[blizzard].damage` | 2,6 | 4,4 | S94 | S94: C3 (variant a, as the meteor in S93): 2.6 -> 4.4, blizzard 34 % of a level 100 Mage's HP per minute (<= 60 %) |
+| `Bosses:byId.vaelgrath.attacks[frostBreath].cooldown` | 8 | 10 | S134 | S134: 8 -> 10: G11 with the new attacks (0.33 -> 0.58 of its rate in phase 3) |
 | `Bosses:byId.vaelgrath.attacks[frostBreath].damage` | 2,6 | 3,6 | S94 | S94: C2: 2.6 -> 3.6 after atkMul 0.38: specials stronger than the basic hit, S32 tank 3.45 HP / min (<= 3.5) |
-| `Bosses:byId.vaelgrath.attacks[glacialRing].damage` | 3,6 | 6,2 | S94 | S94: C2: 3.6 -> 6.2: biggest hit 65 % of a level 100 Mage (<= 70 %), 67 % of a level 98 Mage (< 100 %) |
-| `Bosses:byId.vaelgrath.attacks[tailSwipe].damage` | 2,4 | 4,1 | S94 | S94: C2: 2.4 -> 4.1 after atkMul 0.38 (draft direction 4.7 at atkMul 0.33) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].cooldown` | – | 24 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].damage` | – | 7,1 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].mark.seconds` | – | 5 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].mark.self` | – | 0,4 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].phases[1]` | – | 1 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].phases[2]` | – | 2 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].radius` | – | 10 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[frostTomb].windup` | – | 1,2 | nowy od S134 | S134: new mark mechanic: 5 s, circle 10: others 7.1 = ~75 %, the marked one x0.4 = ~30 %; phases 1-2, cooldown 24 (G11) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].cooldown` | 15 | 18 | S134 | S134: big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].damage` | 3,6 | 8,1 | S134 | S134: big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[glacialRing].windup` | 2,2 | 2,5 | S134 | S134: big blow to dodge (phase 3 ring): windup 2.2 -> 2.5, 6.2 -> 8.1 = ~85 % of a Mage, cooldown 15 -> 18 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].cooldown` | – | 26 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].damage` | – | 17,7 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].phases[1]` | – | 1 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].phases[2]` | – | 3 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].radius` | – | 7 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].split.missAll` | – | 0,25 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[iceComet].windup` | – | 3,2 | nowy od S134 | S134: new split mechanic: a circle 7, windup 3.2, 17.7 = ~180 % of a Mage shared (3 players 63 %, alone 116 % of the Fury Warrior, Mythic +9 96 %), nobody inside = 25 %; phases 1 and 3, cooldown 26 (G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].cooldown` | 9 | 14 | S134 | S134: big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].damage` | 2,4 | 6,2 | S134 | S134: big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].phases[3]` | 3 | – | usunięty | S134: big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[tailSwipe].windup` | 1,2 | 1,8 | S134 | S134: big blow to dodge: windup 1.2 -> 1.8, 4.1 -> 6.2 = ~70 % of a level 100 Mage, cooldown 9 -> 14, phases 1-2 (phase 3 has the glacial ring and the avalanche; G11) |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].cooldown` | 11 | 14 | S134 | S134: cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
 | `Bosses:byId.vaelgrath.attacks[wingBuffet].damage` | 2,2 | 3,7 | S94 | S94: C2: 2.2 -> 3.7 after atkMul 0.38 (draft direction 4.3 at atkMul 0.33) |
-| `Bosses:byId.vaelgrath.hpMul` | – | 1,3 | nowy od S94 | S94: C2: new 1.3: 3-5 players of level 99 need 4.8-5.1 min (with nodes 4.2-4.5) with waves and flight (target 4-6) |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].phases[2]` | 2 | – | usunięty | S134: cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
+| `Bosses:byId.vaelgrath.attacks[wingBuffet].phases[3]` | 3 | – | usunięty | S134: cooldown 11 -> 14 and phase 1 only: nine attacks in phase 3 starved each other (G11 0.35); phases 2-3 have the avalanche and the mechanics |
+| `Bosses:byId.vaelgrath.hpMul` | – | 1,35 | nowy od S134 | S134: 1.3 -> 1.35: 3 players with nodes 5.13 -> 5.32 min (band 5-7.5), 5 players 4.24 (3-4.5) with HP no longer scaled by the party |
+| `Bosses:byId.vaelgrath.summons[1].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.vaelgrath.summons[1].level` | 99 | 86 | S94 | S94: C7: shield wave 99 -> 86: a party of 3 loses 95 % HP per member per wave (<= 110 %; 290 % at 99) |
+| `Bosses:byId.vaelgrath.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.vaelgrath.summons[2].level` | 100 | 87 | S94 | S94: C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59) |
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
 | `Config:FullElixir.cooldown` | – | 180 | nowy od S122 | S122: DESIGN-17 §3: own 180 s cooldown, 10 uses per character and UTC day |
@@ -2415,7 +2300,7 @@ DPS z 1–2 umiejętnościami (×1,2) przeciw zwykłemu potworowi tego samego po
 | --- | --: | --: | --: | --: | --: | --: |
 | 1 | 69 | 6,5 | 10 | 14 | 3,0 | 100 |
 | 2 | 95 | 8,6 | 20 | 22 | 6,0 | 209 |
-| 3 | 129 | 10,6 | 30 | 16 → 28 | 9,0 | 383 |
+| 3 | 129 | 10,6 | 30 | 28 | 9,0 | 383 |
 | 4 | 171 | 12,5 | 40 | 27 | 12,0 | 617 |
 | 5 | 219 | 14,3 | 50 | 34 | 15,0 | 911 |
 | 6 | 272 | 16,1 | 60 | 42 | 18,0 | 1264 |
@@ -2432,7 +2317,7 @@ DPS z 1–2 umiejętnościami (×1,2) przeciw zwykłemu potworowi tego samego po
 | 17 | 1145 | 34,3 | 170 | 132 | 51,0 | 8768 |
 | 18 | 1246 | 35,8 | 180 | 141 | 54,0 | 9767 |
 | 19 | 1350 | 37,4 | 190 | 151 | 57,0 | 10 817 |
-| 20 | 1458 | 38,9 | 200 | 151 → 323 | 60,0 | 11 918 |
+| 20 | 1458 | 38,9 | 200 | 323 | 60,0 | 11 918 |
 
 ### 1 na 1 z potworem na poziomie gracza
 
@@ -2561,15 +2446,15 @@ Cel: 2–3 graczy na poziomie. Połowa ciosów specjalnych trafia.
 
 ### Grimrok (poziom 20)
 
-Cel: 3–5 graczy L18–20, żaden cios > 70% HP Maga, 4–6 min. 75% czasu na biciu.
+S134: HP bossa bez skalowania z drużyną (`Bosses.HP_BASE`); cele bossów 2.0 w `Balance.targetsS134` (5 graczy 3–4,5 min, 3 graczy 5–7,5 min). Największy cios = atak, którego nie da się uniknąć (bez wielkich ciosów i mechanik). 75% czasu na biciu.
 
 | drużyna | HP bossa | walka min | max cios Mag | max cios Wojownik | zwykły cios Mag | tank HP/min |
 | --- | --: | --: | --: | --: | --: | --: |
-| 1 | 52 473 | 7,1 | 67% | 50% | 9% | 317% |
-| 2 | 83 957 | 4,9 | 67% | 50% | 9% | 317% |
-| 3 | 115 441 | 4,4 | 67% | 50% | 9% | 317% |
-| 4 | 146 925 | 4,6 | 67% | 50% | 9% | 317% |
-| 5 | 178 409 | 4,5 | 67% | 50% | 9% | 317% |
+| 1 | 52 473 → 146 925 | 7,1 → 20,0 | 67% → 69% | 50% → 51% | 9% | 317% → 347% |
+| 2 | 83 957 → 146 925 | 4,9 → 8,6 | 67% → 69% | 50% → 51% | 9% | 317% → 347% |
+| 3 | 115 441 → 146 925 | 4,4 → 5,5 | 67% → 69% | 50% → 51% | 9% | 317% → 347% |
+| 4 | 146 925 | 4,6 | 67% → 69% | 50% → 51% | 9% | 317% → 347% |
+| 5 | 178 409 → 146 925 | 4,5 → 3,7 | 67% → 69% | 50% → 51% | 9% | 317% → 347% |
 
 ### Moc przedmiotów (pełny komplet tej rzadkości vs Zwykły, ten sam ilvl)
 
@@ -2617,20 +2502,20 @@ Grupy rodzaju z poziomu, odpoczynek z regeneracji 0,5%/s, 1 s przerwy i 6 s mars
 | --- | --: | --: | --: | --: | --: | --: | --: |
 | 1 wolf | 14 | 1 | 25,6 | 0,01 | 2039 | 437 | 70% |
 | 2 wolf | 23 | 1 | 37,2 | 0,01 | 2203 | 601 | 75% |
-| 3 wolf | 17 → 29 | 3 → 2 | 51,6 | 0,04 → 0,02 | 1156 → 2023 | 650 | 79% |
+| 3 wolf | 29 | 2 | 51,6 | 0,02 | 2023 | 650 | 79% |
 | 4 wolf | 28 | 3 | 52,9 | 0,04 | 1920 | 845 | 79% |
 | 5 lynx | 36 | 3 | 56,7 | 0,05 | 2285 | 996 | 80% |
-| 6 swampToad | 44 | 3 | 46,6 | 0,04 → 0,05 | 3386 | 1456 | 75% |
+| 6 swampToad | 44 | 3 | 46,6 | 0,05 | 3386 | 1456 | 75% |
 | 7 boar | 49 | 4 | 50,1 | 0,06 | 3515 | 1564 | 77% |
-| 8 boar | 57 | 4 → 5 | 51,1 | 0,06 | 4031 | 1753 | 78% |
+| 8 boar | 57 | 5 | 51,1 | 0,06 | 4031 | 1753 | 78% |
 | 9 carrionCrow | 54 | 6 | 46,6 | 0,08 | 4208 | 1797 | 81% |
 | 10 bandit | 75 | 5 | 47,6 | 0,07 | 5658 | 2267 | 77% |
 | 11 bandit | 83 | 6 | 47,9 | 0,07 | 6262 | 2480 | 77% |
 | 12 bandit | 84 | 7 | 48,2 | 0,09 | 6279 | 2689 | 77% |
-| 13 koboldMiner | 89 | 7 | 47,6 | 0,09 → 0,10 | 6724 | 2839 | 77% |
+| 13 koboldMiner | 89 | 7 | 47,6 | 0,10 | 6724 | 2839 | 77% |
 | 14 goblinScout | 103 | 7 | 51,9 | 0,10 | 7154 | 2985 | 79% |
-| 15 goblinScout | 112 | 7 | 50,6 | 0,10 → 0,11 | 7979 | 3278 | 79% |
-| 16 goblinScout | 126 | 7 → 8 | 50,6 | 0,11 | 8934 | 3498 | 79% |
+| 15 goblinScout | 112 | 7 | 50,6 | 0,11 | 7979 | 3278 | 79% |
+| 16 goblinScout | 126 | 8 | 50,6 | 0,11 | 8934 | 3498 | 79% |
 | 17 caveSpider | 127 | 8 | 49,3 | 0,11 | 9316 | 3605 | 79% |
 | 18 goblinShaman | 136 | 9 | 52,4 | 0,13 | 9314 | 3567 | 80% |
 | 19 goblinShaman | 145 | 9 | 52,3 | 0,13 | 9980 | 3772 | 80% |
@@ -2643,34 +2528,34 @@ Ulepszanie broni ilvl = poziom − 2, oczekiwana liczba prób (bez spadków).
 | --- | --: | --: | --: | --: | --: | --: | --: |
 | 1 | 3 | 4 | 25 | 0 | 12 | 84 | 1979 |
 | 2 | 7 | 6 | 51 | 1 | 12 | 84 | 1979 |
-| 3 | 26 → 15 | 16 → 9 | 94 | 5 → 3 | 12 | 84 | 1979 |
-| 4 | 33 | 17 → 18 | 151 | 5 | 24 | 168 | 3957 |
+| 3 | 15 | 9 | 94 | 3 | 12 | 84 | 1979 |
+| 4 | 33 | 18 | 151 | 5 | 24 | 168 | 3957 |
 | 5 | 48 | 26 | 224 | 7 | 36 | 251 | 5940 |
-| 6 | 65 → 66 | 34 | 310 | 2 | 49 | 336 | 7918 |
-| 7 | 89 → 90 | 46 | 411 | 7 | 61 | 420 | 9898 |
-| 8 | 112 → 113 | 55 → 56 | 525 | 8 | 73 | 504 | 11 875 |
-| 9 | 136 → 138 | 78 → 79 | 653 | 4 | 85 | 586 | 13 857 |
-| 10 | 156 → 157 | 82 → 83 | 795 | 3 | 97 | 671 | 15 834 |
-| 11 | 184 → 186 | 94 → 95 | 950 | 4 | 109 | 755 | 17 815 |
-| 12 | 234 → 236 | 117 → 118 | 1118 | 4 | 121 | 839 | 19 789 |
-| 13 | 268 → 271 | 120 → 121 | 1299 | 5 | 133 | 921 | 21 775 |
-| 14 | 305 → 307 | 142 → 143 | 1493 | 17 | 146 | 1006 | 23 750 |
-| 15 | 342 → 345 | 157 → 158 | 1700 | 18 | 158 | 1091 | 25 733 |
-| 16 | 368 → 371 | 166 → 167 | 1920 | 18 | 170 | 1175 | 27 712 |
-| 17 | 407 → 411 | 200 → 201 | 2152 | 20 | 182 | 1257 | 29 691 |
-| 18 | 449 → 453 | 211 → 212 | 2398 | 21 | 194 | 1341 | 31 670 |
-| 19 | 491 → 495 | 227 → 229 | 2655 | 28 | 206 | 1425 | 33 647 |
-| suma | 3721 → 3743 | 1795 → 1804 | 18 923 | 178 | – | 12 998 | – |
+| 6 | 66 | 34 | 310 | 2 | 49 | 336 | 7918 |
+| 7 | 90 | 46 | 411 | 7 | 61 | 420 | 9898 |
+| 8 | 113 | 56 | 525 | 8 | 73 | 504 | 11 875 |
+| 9 | 138 | 79 | 653 | 4 | 85 | 586 | 13 857 |
+| 10 | 157 | 83 | 795 | 3 | 97 | 671 | 15 834 |
+| 11 | 186 | 95 | 950 | 4 | 109 | 755 | 17 815 |
+| 12 | 236 | 118 | 1118 | 4 | 121 | 839 | 19 789 |
+| 13 | 271 | 121 | 1299 | 5 | 133 | 921 | 21 775 |
+| 14 | 307 | 143 | 1493 | 17 | 146 | 1006 | 23 750 |
+| 15 | 345 | 158 | 1700 | 18 | 158 | 1091 | 25 733 |
+| 16 | 371 | 167 | 1920 | 18 | 170 | 1175 | 27 712 |
+| 17 | 411 | 201 | 2152 | 20 | 182 | 1257 | 29 691 |
+| 18 | 453 | 212 | 2398 | 21 | 194 | 1341 | 31 670 |
+| 19 | 495 | 229 | 2655 | 28 | 206 | 1425 | 33 647 |
+| suma | 3743 | 1804 | 18 923 | 178 | – | 12 998 | – |
 
 ### Kara złota za różnicę poziomów (gracz 20)
 
 | poziom potwora | złoto | EXP |
 | --- | --: | --: |
-| 10 | 18,8 | 16,5 → 35,4 |
-| 14 | 38,9 | 83,1 → 177,9 |
-| 15 | 45,0 | 106,4 → 227,7 |
-| 18 | 54,0 | 132,2 → 283,1 |
-| 20 | 60,0 | 150,6 → 322,5 |
+| 10 | 18,8 | 35,4 |
+| 14 | 38,9 | 177,9 |
+| 15 | 45,0 | 227,7 |
+| 18 | 54,0 | 283,1 |
+| 20 | 60,0 | 322,5 |
 
 ### Rodzaje Łąk: nagroda względem wytrzymałości
 
@@ -2699,11 +2584,11 @@ Wojownik. Elity: walka + odpoczynek do pełna + marsz; Unikatowe ze zwykłych po
 | --- | --: | --: | --: | --: | --: | --: | --: |
 | 1 | 1,0 | 100% | 1,0 | 1,0 | 1,0 | 0,05 | 1,05 |
 | 2 | 1,5 | 100% | 1,5 | 1,5 | 1,4 | 0,07 | 0,79 |
-| 5 | 4,0 | 100% | 4,0 | 4,0 | 4,3 → 4,4 | 0,22 | 0,78 |
+| 5 | 4,0 | 100% | 4,0 | 4,0 | 4,4 | 0,22 | 0,78 |
 | 10 | 9,0 | 100% | 9,0 | 9,0 | 9,9 | 0,50 | 0,94 |
 | 15 | 14,0 | 100% | 14,0 | 14,0 | 17,4 | 0,89 | 1,05 |
-| 18 | 17,0 | 100% | 17,0 | 17,0 | 22,7 → 22,8 | 1,16 | 1,09 |
-| 20 | 19,0 | 100% | 19,0 | 19,0 | 27,0 → 21,8 | 1,38 → 1,11 | 1,10 |
+| 18 | 17,0 | 100% | 17,0 | 17,0 | 22,8 | 1,16 | 1,09 |
+| 20 | 19,0 | 100% | 19,0 | 19,0 | 21,8 | 1,11 | 1,10 |
 
 ### Elita II: przedmioty na zabicie
 
@@ -2850,14 +2735,14 @@ Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywka
 
 | poziom | h | m (średnia h z 5 poziomów) | m / m − 1 | EXP zadań poziomu | EXP przeniesione | h / h − 1 |
 | --- | --: | --: | --: | --: | --: | --: |
-| 1 | 0,00 | 0,00 | – | 319 → 307 | 0 | – |
-| 2 | 0,00 | 0,00 | – | 154 → 129 | 219 → 207 | – |
-| 3 | 0,01 → 0,05 | 0,00 → 0,02 | – | 204 → 159 | 163 → 126 | – |
-| 4 | 0,08 | 0,02 → 0,03 | 5,48 → 2,04 | 458 | 0 | 6,31 → 1,73 |
-| 5 | 0,09 | 0,04 | 1,57 → 1,36 | 675 | 0 | 1,11 |
-| 6 | 0,10 | 0,06 | 1,58 → 1,49 | 931 | 0 | 1,19 |
-| 7 | 0,12 | 0,08 → 0,09 | 1,42 → 1,37 | 1256 | 0 | 1,13 |
-| 8 | 0,13 | 0,10 | 1,30 → 1,20 | 1606 | 0 | 1,11 |
+| 1 | 0,00 | 0,00 | – | 307 | 0 | – |
+| 2 | 0,00 | 0,00 | – | 129 | 207 | – |
+| 3 | 0,05 | 0,02 | – | 159 | 126 | – |
+| 4 | 0,08 | 0,03 | 2,04 | 458 | 0 | 1,73 |
+| 5 | 0,09 | 0,04 | 1,36 | 675 | 0 | 1,11 |
+| 6 | 0,10 | 0,06 | 1,49 | 931 | 0 | 1,19 |
+| 7 | 0,12 | 0,09 | 1,37 | 1256 | 0 | 1,13 |
+| 8 | 0,13 | 0,10 | 1,20 | 1606 | 0 | 1,11 |
 | 9 | 0,14 | 0,12 | 1,13 | 1999 | 0 | 1,10 |
 | 10 | 0,15 | 0,13 | 1,11 | 2391 | 0 | 1,05 |
 | 11 | 0,16 | 0,14 | 1,09 | 2857 | 0 | 1,08 |
@@ -2869,11 +2754,11 @@ Gracz konwencji S32 (Zwykły, ilvl = poziom − 2, `Balance.statsFor`) z pasywka
 | 17 | 0,22 | 0,20 | 1,05 | 6606 | 0 | 1,04 |
 | 18 | 0,22 | 0,21 | 1,04 | 7358 | 0 | 1,04 |
 | 19 | 0,23 | 0,21 | 1,04 | 8149 | 0 | 1,03 |
-| 20 | 0,23 | 0,22 | 1,03 | 9176 → 6049 | 0 | 1,01 |
-| 21 | 0,29 | 0,24 | 1,08 | 5644 → 5824 | 0 | 1,25 |
-| suma 1–19 | 2,60 → 2,63 | – | – | – | – |
-| suma 1–19 z zadaniem Grimroka | 1,72 → 1,76 | – |
-| suma 1–19 z rodzajami Łąk (`kindAt`) | 2,76 → 2,79 | – |
+| 20 | 0,23 | 0,22 | 1,03 | 6049 | 0 | 1,01 |
+| 21 | 0,29 | 0,24 | 1,08 | 5824 | 0 | 1,25 |
+| suma 1–19 | 2,63 | – | – | – | – |
+| suma 1–19 z zadaniem Grimroka | 1,76 | – |
+| suma 1–19 z rodzajami Łąk (`kindAt`) | 2,79 | – |
 
 ### Warstwa umiejętności na 5 / 10 / 15 / 20 (S91)
 
@@ -2975,7 +2860,7 @@ Stan po przestrojeniu 1–20 (S91): podstawa klasy bez ścieżki głównej i ka�
 | Cleric fortune.plunder | 1,93 | 2,05 | 1,41 | 255 | 381 | 1485 | 44,7 | 0,19 |
 | Cleric inquisitor.solo | 2,06 | 2,20 | 1,35 | 227 | 327 | 1677 | 51,1 | 0,21 |
 | Cleric inquisitor.bulwark | 2,06 | 2,20 | 1,35 | 217 | 312 | 1759 | 57,9 | 0,21 |
-| T-SK6 Grimrok (Uzdrowiciel lochowy na Obrońcy) | 1,83 |
+| T-SK6 Grimrok (Uzdrowiciel lochowy na Obrońcy) | 1,83 → 1,96 |
 | konwencja Warrior 20: 1 na 1 s / HP, grupa | 7,6 | 14% | 40% |
 | konwencja Hunter 20: 1 na 1 s / HP, grupa | 6,1 | 15% | 41% |
 | konwencja Mage 20: 1 na 1 s / HP, grupa | 6,0 | 17% | 47% |
@@ -3263,20 +3148,20 @@ Stan po przestrojeniu 1–20 (S91): podstawa klasy bez ścieżki głównej i ka�
 
 ### Grimrok w modelu S83 / S87 (S91)
 
-`Balance.bossFight` z harmonogramem `Logic/BossSchedule` (S87), drużyna L19 (W, M, Ł, K, W), bez i z węzłami (`Balance.COMBAT_BUILD`). Bez wsparcia: buildy bojowe przycięte do 19 (Furia, Królobójca, Arkanista boss, Inkwizytor solo, Niszczyciel boss), obrażenia graczy z `tests/SkillModel.luau`.
+`Balance.bossFight` z harmonogramem `Logic/BossSchedule` (S87), drużyna L19 (W, M, Ł, K, W), bez i z węzłami (`Balance.COMBAT_BUILD`). S134: wielkie ciosy uniknięte, wspólny cios dzielony przez stojących razem (cała drużyna), największy cios tylko z ataków, których nie da się uniknąć. Bez wsparcia: buildy bojowe przycięte do 19 (Furia, Królobójca, Arkanista boss, Inkwizytor solo, Niszczyciel boss), obrażenia graczy z `tests/SkillModel.luau`.
 
-| drużyna | walka min | tank obrażenia/s | największy cios Mag | fazy tarczy s |
-| --- | --: | --: | --: | --: |
-| 1 | 9,83 | 59,9 | – | 162,5 |
-| 2 | 6,33 | 53,6 | 58% | 86,2 |
-| 3 | 5,43 | 51,5 | 58% | 64,4 |
-| 4 | 5,57 | 50,5 | 58% | 60,8 |
-| 5 | 5,43 | 49,8 | 58% | 55,4 |
-| 1 z węzłami | 9,83 | 59,4 | – | 162,5 |
-| 2 z węzłami | 6,31 | 53,1 | 58% | 85,9 |
-| 3 z węzłami | 5,35 | 51,1 | 58% | 63,4 |
-| 4 z węzłami | 5,44 | 50,0 | 58% | 59,4 |
-| 5 z węzłami | 5,32 | 49,4 | 58% | 54,4 |
+| drużyna | walka min | tank obrażenia/s | największy cios Mag | fazy tarczy s | cios do uniknięcia Mag | wspólny cios Mag |
+| --- | --: | --: | --: | --: | --: | --: |
+| 1 | 9,83 → 22,12 | 59,9 → 102,1 | 0% | 162,5 → 130,0 | 0% | 0% |
+| 2 | 6,33 → 9,52 | 53,6 → 56,1 | 58% → 0% | 86,2 → 57,4 | 79% | 101% |
+| 3 | 5,43 → 6,16 | 51,5 → 50,4 | 58% → 0% | 64,4 → 36,8 | 79% | 67% |
+| 4 | 5,57 → 5,06 | 50,5 → 47,5 | 58% → 0% | 60,8 → 30,4 | 79% | 50% |
+| 5 | 5,43 → 4,12 | 49,8 → 45,7 | 58% → 0% | 55,4 → 24,6 | 79% | 40% |
+| 1 z węzłami | 9,83 → 22,12 | 59,4 → 101,1 | 0% | 162,5 → 130,0 | 0% | 0% |
+| 2 z węzłami | 6,31 → 9,50 | 53,1 → 55,6 | 58% → 0% | 85,9 → 57,3 | 79% | 101% |
+| 3 z węzłami | 5,35 → 6,06 | 51,1 → 49,9 | 58% → 0% | 63,4 → 36,2 | 79% | 67% |
+| 4 z węzłami | 5,44 → 4,94 | 50,0 → 47,0 | 58% → 0% | 59,4 → 29,7 | 79% | 50% |
+| 5 z węzłami | 5,32 → 4,04 | 49,4 → 45,3 | 58% → 0% | 54,4 → 24,2 | 79% | 40% |
 
 ### S91: tylko raport (tempo, mikstury, rangi)
 
@@ -3292,19 +3177,19 @@ Pozycje „tylko raport” z S91 (bez fixture): EXP na godzinę z miksturami ła
 | mikstury / złoto z walki L15 | 17% |
 | EXP/h łańcuch / odpoczynek L19 | 4,32 |
 | mikstury / złoto z walki L19 | 15% |
-| tempo 1 → 20 Warrior (h) | 2,60 → 2,63 |
+| tempo 1 → 20 Warrior (h) | 2,63 |
 | rangi podstawy Warrior L10 | 8 |
 | rangi podstawy Warrior L15 | 14 |
 | rangi podstawy Warrior L20 | 19 |
-| tempo 1 → 20 Hunter (h) | 2,67 → 2,71 |
+| tempo 1 → 20 Hunter (h) | 2,71 |
 | rangi podstawy Hunter L10 | 8 |
 | rangi podstawy Hunter L15 | 14 |
 | rangi podstawy Hunter L20 | 19 |
-| tempo 1 → 20 Mage (h) | 2,86 → 2,90 |
+| tempo 1 → 20 Mage (h) | 2,90 |
 | rangi podstawy Mage L10 | 8 |
 | rangi podstawy Mage L15 | 14 |
 | rangi podstawy Mage L20 | 20 |
-| tempo 1 → 20 Cleric (h) | 2,34 → 2,37 |
+| tempo 1 → 20 Cleric (h) | 2,37 |
 | rangi podstawy Cleric L10 | 8 |
 | rangi podstawy Cleric L15 | 13 |
 | rangi podstawy Cleric L20 | 19 |
@@ -3315,9 +3200,9 @@ Odpowiedź 26, ROZWOJ 7.5: bez przechwytu, leczenia innych i prowokacji; mikstur
 
 | drużyna | walka s | limit s | przyjmowane / podtrzymanie (najgorszy) | największy cios / HP | mikstury (najwięcej) |
 | --- | --: | --: | --: | --: | --: |
-| 3 | 186,0 | 480,0 | 0,06 | 58% | 7,2 |
-| 4 | 193,5 | 480,0 | 0,06 | 58% | 7,5 |
-| 5 | 184,9 | 480,0 | 0,06 | 58% | 7,3 |
+| 3 | 186,0 → 210,8 | 480,0 | 0,06 → 0,05 | 58% → 42% | 7,2 → 7,1 |
+| 4 | 193,5 → 175,9 | 480,0 | 0,06 → 0,05 | 58% → 42% | 7,5 → 5,6 |
+| 5 | 184,9 → 140,2 | 480,0 | 0,06 → 0,05 | 58% → 42% | 7,3 → 4,3 |
 
 ### Rodzaje regionu (1-20, meadows)
 
@@ -3388,10 +3273,12 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| sweep | 7,5 | 100% | 7,5 | 100% | 4,7 | 63% |
-| leap | 3,7 | 80% | 3,7 | 80% | 4,6 | 100% |
-| whirlwind | – | – | – | – | 4,6 | 77% |
-| udział rzucania | 24% | – | 24% | – | 33% | – |
+| sweep | 7,5 → 7,4 | 100% → 99% | 7,5 → 5,3 | 100% → 71% | 4,7 → 4,9 | 63% → 65% |
+| leap | 3,7 → 3,8 | 80% → 95% | 3,7 → 3,2 | 80% | 4,6 → 2,5 | 100% → 63% |
+| whirlwind | – | – | – | – | 4,6 → 2,5 | 77% → 58% |
+| groundSplitter | 3,7 | 99% | 3,2 | 85% | 2,5 | 67% |
+| boulder | – | – | 2,1 | 84% | 2,4 | 96% |
+| udział rzucania | 24% → 37% | – | 24% → 40% | – | 33% → 45% | – |
 
 ### Boss grimrok: walka (1-20, meadows)
 
@@ -3399,14 +3286,14 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 4,9 | 58,2 | 451% | 0 | 51 | 5% | 1000 | 47% | 50% | 55% | – |
-| 3 · wszystkie | 4,9 | 58,2 | 451% | 0 | 81 | 8% | 1000 | 47% | 50% | 55% | – |
-| 5 · połowa | 4,9 | 50,0 | 491% | 0 | 49 | 5% | 1000 | 47% | 50% | 55% | 30% |
-| 5 · wszystkie | 4,9 | 50,0 | 491% | 0 | 78 | 8% | 1000 | 47% | 50% | 55% | 30% |
+| 3 · połowa | 4,9 → 5,6 | 58,2 → 33,3 | 451% → 154% | 0 | 51 → 50 | 5% | 1000 | 47% → 49% | 50% → – | 55% → – | – |
+| 3 · wszystkie | 4,9 → 5,6 | 58,2 → 33,3 | 451% → 154% | 0 | 81 → 71 | 8% → 7% | 1000 | 47% → 49% | 50% → – | 55% → – | – |
+| 5 · połowa | 4,9 → 3,7 | 50,0 → 22,2 | 491% → 103% | 0 | 49 → 45 | 5% | 1000 | 47% → 49% | 50% → – | 55% → – | 30% → – |
+| 5 · wszystkie | 4,9 → 3,7 | 50,0 → 22,2 | 491% → 103% | 0 | 78 → 67 | 8% → 7% | 1000 | 47% → 49% | 50% → – | 55% → – | 30% → – |
 
 ### Cele 1–20 (S32 i S91)
 
-1129/1135 w paśmie. S91: poziomy 1–20 przestrojone i zamrożone. Bloki S32 w `balance.spec` asertują znowu (gracz konwencji bez węzłów i z węzłami buildów wzorcowych przyciętych do poziomu, wiersze „@<build>”), nowe cele S91 (tempo z modelu okna, Grimrok w modelu S83 / S87, T-SK6, bez wsparcia, warstwa umiejętności na L20, R4 rangi 5, ścieżki na 20) w bloku „Balance 1-20: S91”; wiersze z opisem w kolumnie „kto asertuje” są poza zasięgiem dźwigni S91 (raport). Liczby „przed” (start S91) i porównanie z 05b859d: `docs/SESJE.md` → S91.
+1109/1115 w paśmie. S91: poziomy 1–20 przestrojone i zamrożone. Bloki S32 w `balance.spec` asertują znowu (gracz konwencji bez węzłów i z węzłami buildów wzorcowych przyciętych do poziomu, wiersze „@<build>”), nowe cele S91 (tempo z modelu okna, Grimrok w modelu S83 / S87, T-SK6, bez wsparcia, warstwa umiejętności na L20, R4 rangi 5, ścieżki na 20) w bloku „Balance 1-20: S91”; wiersze z opisem w kolumnie „kto asertuje” są poza zasięgiem dźwigni S91 (raport). Liczby „przed” (start S91) i porównanie z 05b859d: `docs/SESJE.md` → S91.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -4226,16 +4113,6 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | goblinShaman 18: solo HP | 2,80 | ≥ 1,80 | w paśmie | S91 (asertowane) |
 | goblinShaman 18: 2 graczy HP | 1,27 | ≤ 1,50 | w paśmie | S91 (asertowane) |
 | goblinShaman 18: 3 graczy HP | 0,84 | 0,60–1,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 3 graczy L19: min | 4,36 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 3 graczy L19 z węzłami: min | 4,29 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 4 graczy L19: min | 4,56 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 4 graczy L19 z węzłami: min | 4,45 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 5 graczy L19: min | 4,50 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok, 5 graczy L19 z węzłami: min | 4,42 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok: największy cios / HP Maga L20 | 0,64 | ≤ 0,70 | w paśmie | S91 (asertowane) |
-| Grimrok: największy cios / HP Maga L18 | 0,70 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok: największy cios / HP Maga L20 z węzłami | 0,64 | ≤ 0,70 | w paśmie | S91 (asertowane) |
-| Grimrok: największy cios / HP Maga L18 z węzłami | 0,70 | ≤ 1,00 | w paśmie | S91 (asertowane) |
 | Warrior 5: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Warrior 5: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
 | Warrior 5: Legendarny | 0,31 | 0,25–0,42 | w paśmie | S91 (asertowane) |
@@ -4420,26 +4297,16 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | Tempo: m(19) / m(18) | 1,04 | 0,97–1,30 | w paśmie | S91 (asertowane) |
 | Tempo: m(20) / m(19) | 1,03 | ≤ 1,30 | w paśmie | S91 (asertowane) |
 | Tempo: h(20) / h(19) | 1,01 | ≤ 1,30 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 3 graczy L19: min | 5,43 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 4 graczy L19: min | 5,57 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 5 graczy L19: min | 5,43 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83): największy cios / HP Maga L20 | 0,55 | ≤ 0,70 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83): największy cios / HP Maga L18 | 0,60 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 3 graczy L19 z węzłami: min | 5,35 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 4 graczy L19 z węzłami: min | 5,44 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83), 5 graczy L19 z węzłami: min | 5,32 | 4,00–6,00 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83): największy cios / HP Maga L20 z węzłami | 0,55 | ≤ 0,70 | w paśmie | S91 (asertowane) |
-| Grimrok (model S83): największy cios / HP Maga L18 z węzłami | 0,60 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| T-SK6 Grimrok: Uzdrowiciel lochowy na Obrońcy | 1,83 | 1,00–2,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 3 graczy: s | 185,97 | ≤ 480,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,06 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 3 graczy: największy cios / HP | 0,58 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 4 graczy: s | 193,50 | ≤ 480,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,06 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 4 graczy: największy cios / HP | 0,58 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 5 graczy: s | 184,91 | ≤ 480,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,06 | ≤ 1,00 | w paśmie | S91 (asertowane) |
-| Grimrok bez wsparcia, 5 graczy: największy cios / HP | 0,58 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| T-SK6 Grimrok: Uzdrowiciel lochowy na Obrońcy | 1,96 | 1,00–2,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 3 graczy: s | 210,84 | ≤ 480,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,05 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 3 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 4 graczy: s | 175,86 | ≤ 480,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,05 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 4 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 5 graczy: s | 140,23 | ≤ 480,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,05 | ≤ 1,00 | w paśmie | S91 (asertowane) |
+| Grimrok bez wsparcia, 5 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S91 (asertowane) |
 | R1 berserker.fury L20 | 2,13 | 1,60–2,18 | w paśmie | S91 (asertowane) |
 | T-SK2 berserker.fury L20 | 2,81 | ≤ 2,89 | w paśmie | S91 (asertowane) |
 | berserker.fury L20: obrażenia / bez węzłów | 1,07 | ≥ 1,03 | w paśmie | S91 (asertowane) |
@@ -4557,13 +4424,13 @@ G12 (fixture 1–20): 0 różnic powyżej 0,5% (0 dozwolonych), 0 brakujących k
 | 1 na 1 L20 Mag: s / HP | 6,1 s / 17% | 6,0 s / 17% |
 | 1 na 1 L20 Kapłan: s / HP | 10,4 s / 12% | 10,3 s / 11% |
 | Elita II (S32): solo / 3 graczy HP | 238–307% / 72–94% | 273%–298% / 81%–90% |
-| Grimrok 3 / 4 / 5 graczy (model S83 / S87): min | 5,0 / 5,3 / 5,2 (model S32) | 5,4 / 5,6 / 5,4 |
-| Grimrok: największy cios / HP Maga L20 (model S32) | 67% | 64% |
+| Grimrok 3 / 4 / 5 graczy (model S83 / S87): min | 5,0 / 5,3 / 5,2 (model S32) | 6,2 / 5,1 / 4,1 |
+| Grimrok: największy cios / HP Maga L20 (model S32) | 67% | 66% |
 | Tempo 1 → 20 Wojownika: h | ok. 2,3 (model S32, z Grimrokiem) | 2,63 (model okna, bez Grimroka) |
 
 ### Cele (1–20)
 
-Globalne (G): 1/1 w paśmie; regionu: 146/146 w paśmie.
+Globalne (G): 1/1 w paśmie; regionu: 151/151 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -4707,13 +4574,18 @@ Globalne (G): 1/1 w paśmie; regionu: 146/146 w paśmie.
 | carrionCrow 8: EXP/s ÷ zwykły | 1,15 | 0,85–1,20 | w paśmie | S91 (asertowane) |
 | koboldMiner 12: EXP/s ÷ zwykły | 0,98 | 0,85–1,20 | w paśmie | S91 (asertowane) |
 | brownBear 18: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S91 (asertowane) |
-| grimrok faza 1: sweep | 1,00 | ≥ 0,50 | w paśmie | S91 (asertowane) |
-| grimrok faza 1: leap | 0,80 | ≥ 0,50 | w paśmie | S91 (asertowane) |
-| grimrok faza 2: sweep | 1,00 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 1: sweep | 0,99 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 1: leap | 0,95 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 1: groundSplitter | 0,99 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 2: sweep | 0,71 | ≥ 0,50 | w paśmie | S91 (asertowane) |
 | grimrok faza 2: leap | 0,80 | ≥ 0,50 | w paśmie | S91 (asertowane) |
-| grimrok faza 3: sweep | 0,63 | ≥ 0,50 | w paśmie | S91 (asertowane) |
-| grimrok faza 3: leap | 1,00 | ≥ 0,50 | w paśmie | S91 (asertowane) |
-| grimrok faza 3: whirlwind | 0,77 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 2: groundSplitter | 0,85 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 2: boulder | 0,84 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 3: sweep | 0,65 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 3: leap | 0,62 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 3: whirlwind | 0,58 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 3: groundSplitter | 0,67 | ≥ 0,50 | w paśmie | S91 (asertowane) |
+| grimrok faza 3: boulder | 0,96 | ≥ 0,50 | w paśmie | S91 (asertowane) |
 
 ## Pasmo 20–45 (duskwood)
 
@@ -4734,12 +4606,12 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 20 | 1458 | 38,9 | 200 | 151 → 323 | 60,0 | 11 918 |
-| 25 | 2142 | 47,3 | 250 | 408 → 364 | 75,0 | 18 179 |
-| 30 | 2941 | 55,7 | 300 | 490 → 447 | 90,0 | 25 681 |
-| 35 | 3849 | 64,0 | 350 | 572 → 541 | 105,0 | 34 399 |
-| 40 | 4864 | 72,3 | 400 | 569 → 592 | 120,0 | 44 316 |
-| 45 | 5982 | 80,5 | 450 | 636 → 597 | 135,0 | 55 416 |
+| 20 | 1458 | 38,9 | 200 | 323 | 60,0 | 11 918 |
+| 25 | 2142 | 47,3 | 250 | 364 | 75,0 | 18 179 |
+| 30 | 2941 | 55,7 | 300 | 447 | 90,0 | 25 681 |
+| 35 | 3849 | 64,0 | 350 | 541 | 105,0 | 34 399 |
+| 40 | 4864 | 72,3 | 400 | 592 | 120,0 | 44 316 |
+| 45 | 5982 | 80,5 | 450 | 597 | 135,0 | 55 416 |
 
 ### 1 na 1 z potworem poziomu (G1) (20-45)
 
@@ -4804,13 +4676,13 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 20 werewolf | 166 → 355 | 53,5 | 0,28 → 0,26 | 74% → 48% | 79% | 0,24 → 0,22 | 0,06 | 0,26 → 0,25 |
-| 25 werewolf | 449 → 400 | 54,8 | 0,33 → 0,27 | 46% → 61% | 79% | 0,28 → 0,23 | 0,07 → 0,06 | 0,31 → 0,25 |
-| 30 rotEnt | 786 → 717 | 61,4 | 0,41 | 26% → 32% | 74% | 0,39 | 0,11 | 0,52 |
-| 35 swampTroll | 867 → 820 | 66,3 | 0,56 → 0,52 | 24% → 32% | 76% | 0,54 → 0,51 | 0,13 | 0,61 → 0,58 |
-| 40 marshWitch | 503 → 524 | 49,7 | 0,61 → 0,58 | 50% | 80% | 0,44 → 0,43 | 0,12 | 0,52 → 0,50 |
+| 20 werewolf | 355 | 53,5 | 0,26 | 48% | 79% | 0,22 | 0,06 | 0,25 |
+| 25 werewolf | 400 | 54,8 | 0,27 | 61% | 79% | 0,23 | 0,06 | 0,25 |
+| 30 rotEnt | 717 | 61,4 | 0,41 | 32% | 74% | 0,39 | 0,11 | 0,52 |
+| 35 swampTroll | 820 | 66,3 | 0,52 | 32% | 76% | 0,51 | 0,13 | 0,58 |
+| 40 marshWitch | 524 | 49,7 | 0,58 | 50% | 80% | 0,43 | 0,12 | 0,50 |
 | suma pasma | – | – | 15,0 | – | – | 13,2 | 3,3 | 14,4 |
-| suma z bossami w zadaniach | – | – | 13,1 → 13,3 | – | – | – | – | – |
+| suma z bossami w zadaniach | – | – | 13,3 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 14,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (20-45)
@@ -4819,31 +4691,31 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
-| 20 | 7150 → 4023 | 258 | 0 | 5361 | 45% | 1252 |
-| 21 | 3423 → 3603 | 1590 | 0 | 5880 | 45% | 1812 |
-| 22 | 3738 → 3934 | 1022 | 0 | 6420 | 45% | 1631 |
-| 23 | 4067 → 4280 | 671 | 0 | 6984 | 45% | 1644 |
-| 24 | 3918 → 3823 | 1018 | 0 | 7572 | 45% | 1712 |
-| 25 | 5820 → 8580 | 393 | 0 | 8178 | 45% | 1542 |
+| 20 | 4023 | 258 | 0 | 5361 | 45% | 1252 |
+| 21 | 3603 | 1590 | 0 | 5880 | 45% | 1812 |
+| 22 | 3934 | 1022 | 0 | 6420 | 45% | 1631 |
+| 23 | 4280 | 671 | 0 | 6984 | 45% | 1644 |
+| 24 | 3823 | 1018 | 0 | 7572 | 45% | 1712 |
+| 25 | 8580 | 393 | 0 | 8178 | 45% | 1542 |
 | 26 | 0 | 423 | 0 | 8811 | 45% | 370 |
-| 27 | 2448 → 3025 | 1727 | 0 | 9462 | 45% | 2167 |
-| 28 | 2623 → 6696 | 0 | 0 | 10 137 | 45% | 1452 |
+| 27 | 3025 | 1727 | 0 | 9462 | 45% | 2167 |
+| 28 | 6696 | 0 | 0 | 10 137 | 45% | 1452 |
 | 29 | 0 | 1458 | 0 | 10 836 | 45% | 681 |
-| 30 | 2990 → 4591 | 555 | 0 | 11 556 | 45% | 1832 |
-| 31 | 5568 → 10 072 | 1063 | 0 | 12 297 | 45% | 1890 |
+| 30 | 4591 | 555 | 0 | 11 556 | 45% | 1832 |
+| 31 | 10 072 | 1063 | 0 | 12 297 | 45% | 1890 |
 | 32 | 0 | 627 | 0 | 13 059 | 45% | 448 |
-| 33 | 3582 → 6223 | 0 | 0 | 13 845 | 45% | 1697 |
+| 33 | 6223 | 0 | 0 | 13 845 | 45% | 1697 |
 | 34 | 0 | 1970 | 0 | 14 649 | 45% | 792 |
-| 35 | 4005 → 6940 | 0 | 0 | 15 477 | 45% | 1795 |
+| 35 | 6940 | 0 | 0 | 15 477 | 45% | 1795 |
 | 36 | 0 | 784 | 0 | 16 329 | 45% | 500 |
-| 37 | 4450 → 1145 | 826 | 0 | 17 199 | 45% | 2238 |
+| 37 | 1145 | 826 | 0 | 17 199 | 45% | 2238 |
 | 38 | 0 | 1564 | 0 | 18 093 | 45% | 526 |
-| 39 | 4917 → 2151 | 913 | 0 | 19 005 | 45% | 2354 |
+| 39 | 2151 | 913 | 0 | 19 005 | 45% | 2354 |
 | 40 | 0 | 1724 | 0 | 19 941 | 45% | 3342 |
-| 41 | 5407 → 2365 | 1004 | 0 | 20 898 | 45% | 2470 |
+| 41 | 2365 | 1004 | 0 | 20 898 | 45% | 2470 |
 | 42 | 0 | 1051 | 0 | 21 876 | 45% | 578 |
 | 43 | 0 | 0 | 66 499 | 22 875 | 45% | 6447 |
-| 44 | 11 592 → 4243 | 2066 | 0 | 23 895 | 45% | 4684 |
+| 44 | 4243 | 2066 | 0 | 23 895 | 45% | 4684 |
 
 ### Premia za różne klasy (poziom 30) (20-45)
 
@@ -4851,10 +4723,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 46 097 → 42 064 | 15,0 |
-| 3 × Wojownik | 1,00 | 46 097 → 42 064 | 15,0 |
-| Wojownik + Łowca + Mag | 1,10 | 50 747 → 46 307 | 13,6 |
-| cztery klasy | 1,15 | 54 626 → 49 847 | 12,8 → 12,7 |
+| solo (Wojownik) | 1,00 | 42 064 | 15,0 |
+| 3 × Wojownik | 1,00 | 42 064 | 15,0 |
+| Wojownik + Łowca + Mag | 1,10 | 46 307 | 13,6 |
+| cztery klasy | 1,15 | 49 847 | 12,7 |
 
 ### Ekonomia (Wojownik) (20-45)
 
@@ -4952,11 +4824,14 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| shadowBolt | 8,4 | 84% | 8,4 | 84% | – | – |
-| shadowBoltFast | – | – | – | – | 8,5 | 57% |
-| curseField | 8,4 | 91% | 8,4 | 91% | 5,7 | 62% |
-| deathRing | – | – | – | – | 2,8 | 70% |
-| udział rzucania | 38% | – | 38% | – | 37% | – |
+| shadowBolt | 8,4 → 6,0 | 84% → 70% | 8,4 → 5,1 | 84% → 60% | – | – |
+| shadowBoltFast | – | – | – | – | 8,5 → 5,4 | 57% → 54% |
+| curseField | 8,4 → 5,9 | 91% → 64% | 8,4 → 5,1 | 91% → 55% | 5,7 → 5,4 | 62% → 59% |
+| deathRing | – | – | – | – | 2,8 → 2,7 | 70% → 72% |
+| soulReap | 2,4 | 64% | 2,3 | 61% | – | – |
+| cryptBrand | 2,3 | 84% | 1,7 | 62% | – | – |
+| requiem | – | – | 1,2 | 72% | 1,4 | 84% |
+| udział rzucania | 38% → 39% | – | 38% → 43% | – | 37% → 45% | – |
 
 ### Boss morvane: walka (20-45, duskwood)
 
@@ -4964,14 +4839,14 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 4,5 | 30,6 | 176% | 0 | 278 | 14% | 667 | 125% | 72% | 68% | – |
-| 3 · wszystkie | 4,5 | 30,6 | 176% | 0 | 487 | 24% | 667 | 125% | 72% | 68% | – |
-| 5 · połowa | 4,6 | 26,8 | 195% | 0 | 253 | 13% | 667 | 125% | 72% | 68% | 28% |
-| 5 · wszystkie | 4,6 | 26,8 | 195% | 0 | 436 | 22% | 667 | 125% | 72% | 68% | 28% |
+| 3 · połowa | 4,5 → 5,3 | 30,6 → 17,5 | 176% → 60% | 0 | 278 → 212 | 14% → 11% | 667 | 125% | 72% → 52% | 68% → 49% | – |
+| 3 · wszystkie | 4,5 → 5,3 | 30,6 → 17,5 | 176% → 60% | 0 | 487 → 357 | 24% → 18% | 667 | 125% | 72% → 52% | 68% → 49% | – |
+| 5 · połowa | 4,6 → 3,6 | 26,8 → 11,9 | 195% → 41% | 0 | 253 → 195 | 13% → 10% | 667 | 125% | 72% → 52% | 68% → 49% | 28% → 26% |
+| 5 · wszystkie | 4,6 → 3,6 | 26,8 → 11,9 | 195% → 41% | 0 | 436 → 324 | 22% → 16% | 667 | 125% | 72% → 52% | 68% → 49% | 28% → 26% |
 
 ### Cele (20–45)
 
-Globalne (G): 164/164 w paśmie; regionu: 192/192 w paśmie.
+Globalne (G): 169/169 w paśmie; regionu: 198/198 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -5130,13 +5005,18 @@ Globalne (G): 164/164 w paśmie; regionu: 192/192 w paśmie.
 | 40: DPS Łowca / Wojownik | 1,27 | 1,15–1,35 | w paśmie | S87 (asertowane) |
 | 40: moc Łowca / Wojownik | 1,01 | 0,95–1,10 | w paśmie | S87 (asertowane) |
 | 40: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza) | 1,92 | ≤ 2,20 | w paśmie | S87 (asertowane) |
-| grimrok faza 1: sweep (tempo / odnowienie) | 1,00 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| grimrok faza 1: leap (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| grimrok faza 2: sweep (tempo / odnowienie) | 1,00 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 1: sweep (tempo / odnowienie) | 0,99 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 1: leap (tempo / odnowienie) | 0,95 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 1: groundSplitter (tempo / odnowienie) | 0,99 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 2: sweep (tempo / odnowienie) | 0,71 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | grimrok faza 2: leap (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| grimrok faza 3: sweep (tempo / odnowienie) | 0,63 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| grimrok faza 3: leap (tempo / odnowienie) | 1,00 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| grimrok faza 3: whirlwind (tempo / odnowienie) | 0,77 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 2: groundSplitter (tempo / odnowienie) | 0,85 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 2: boulder (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 3: sweep (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 3: leap (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 3: whirlwind (tempo / odnowienie) | 0,58 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 3: groundSplitter (tempo / odnowienie) | 0,67 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| grimrok faza 3: boulder (tempo / odnowienie) | 0,96 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 25–99: spadki h/poziom rodzaju ogólnego bez zadań (Wojownik) | 0,00 | ≤ 0,00 | w paśmie | S87 (asertowane) |
 | 20–45: godzin (cel D4 14 h) | 14,99 | 10,50–17,50 | w paśmie | S87 (asertowane) |
 | duskwood_den werewolf 21 Warrior: Elita HP | 0,73 | 0,45–1,10 | w paśmie | S92 (asertowane) |
@@ -5284,13 +5164,19 @@ Globalne (G): 164/164 w paśmie; regionu: 192/192 w paśmie.
 | marshWitch 40: EXP/s ÷ zwykły | 1,04 | 0,85–1,20 | w paśmie | S92 (asertowane) |
 | marshWitch 40: HP/EXP rzucającego ÷ średnia regionu | 1,16 | ≤ 1,25 | w paśmie | S92 (asertowane) |
 | bloodBat 42: EXP/s ÷ zwykły | 1,03 | 0,85–1,20 | w paśmie | S92 (asertowane) |
-| morvane faza 1: shadowBolt | 0,84 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 1: curseField | 0,91 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 2: shadowBolt | 0,84 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 2: curseField | 0,91 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 3: shadowBoltFast | 0,57 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 3: curseField | 0,62 | ≥ 0,50 | w paśmie | S92 (asertowane) |
-| morvane faza 3: deathRing | 0,70 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 1: shadowBolt | 0,70 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 1: curseField | 0,64 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 1: soulReap | 0,64 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 1: cryptBrand | 0,84 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 2: shadowBolt | 0,59 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 2: curseField | 0,55 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 2: soulReap | 0,61 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 2: cryptBrand | 0,62 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 2: requiem | 0,72 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 3: shadowBoltFast | 0,54 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 3: curseField | 0,59 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 3: deathRing | 0,72 | ≥ 0,50 | w paśmie | S92 (asertowane) |
+| morvane faza 3: requiem | 0,84 | ≥ 0,50 | w paśmie | S92 (asertowane) |
 | Warrior 20: Unikaty dla klasy na h expienia | 3,10 | 2,00–4,00 | w paśmie | S92 (asertowane) |
 | Warrior 20: Heroiki dla klasy na h Elit | 0,78 | 0,50–1,50 | w paśmie | S92 (asertowane) |
 | Hunter 20: Unikaty dla klasy na h expienia | 3,10 | 2,00–4,00 | w paśmie | S92 (asertowane) |
@@ -5338,17 +5224,17 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 
 | liczba | start S92 | teraz | cel |
 | --- | --: | --: | --: |
-| Morvane 3 / 4 / 5 graczy L44: min | 4,6 / 4,8 / 4,7 | 4,75 / 5,00 / 4,90 | 4–6 |
-| Morvane: największy cios Maga L45 / L43 | 107% / 112% | 68% / 71% | ≤ 70% / < 100% |
+| Morvane 3 / 4 / 5 graczy L44: min | 4,6 / 4,8 / 4,7 | 5,62 / 4,72 / 3,83 | S134: 3 graczy 5–7,5, 5 graczy 3–4,5 |
+| Morvane: największy cios Maga L45 nie do uniknięcia / do uniknięcia (S134) | 107% / – | 49% / 80% | ≤ 50% / 60–90% |
 | Morvane: zwykły cios Maga L45 | 28% | 11% | 7–12% |
 | Morvane: tank HP na minutę (model S32) | 770% | 338% | ≤ 350% |
-| Morvane: tank HP na minutę (bossFight, z Polem Klątwy; 3 / 4 / 5) | – | 788% / 756% / 737% | raport |
-| Morvane: fala tarczy, HP na członka (3 / 4 / 5; pomocnicy bez redukcji grupy) | 239% / 158% / 154% | 106% / 71% / 69% | ≤ 110% |
-| Morvane: T-SK6 Uzdrowiciela lochowego | 2,70 | 2,68 | 1,0–2,70 |
-| Morvane bez wsparcia 3 / 4 / 5: s | 107 / 109 / 103 | 110,0 / 113,8 / 108,8 | ≤ 480 |
-| Morvane bez wsparcia 3 / 4 / 5: przyjmowane / podtrzymanie (najgorszy) | 0,99 / 0,97 / 0,96 | 0,99 / 0,95 / 0,93 | ≤ 1,0 |
+| Morvane: tank HP na minutę (bossFight, z Polem Klątwy; 3 / 4 / 5) | – | 622% / 592% / 573% | raport |
+| Morvane: fala tarczy, HP na członka (3 / 4 / 5; pomocnicy bez redukcji grupy) | 239% / 158% / 154% | 40% / 19% / 17% | ≤ 110% |
+| Morvane: T-SK6 Uzdrowiciela lochowego | 2,70 | 3,53 | 1,0–2,70 |
+| Morvane bez wsparcia 3 / 4 / 5: s | 107 / 109 / 103 | 130,4 / 107,4 / 85,3 | ≤ 480 |
+| Morvane bez wsparcia 3 / 4 / 5: przyjmowane / podtrzymanie (najgorszy) | 0,99 / 0,97 / 0,96 | 0,78 / 0,74 / 0,72 | ≤ 1,0 |
 | Morvane bez wsparcia: największy cios / HP członka | 110% | 93% | ≤ 100% |
-| Morvane: G11 (najmniejsze tempo ataku) | 53% | 57% | ≥ 50% |
+| Morvane: G11 (najmniejsze tempo ataku) | 53% | 54% | ≥ 50% |
 | Elity: spotkanie Wojownik / Mag (najgorsze) | 191% / 206% | 106% / 118% | ≤ 110% / ≤ 125% |
 | Spawnery Elit na poziomach 21–45 | 18/25 | 25/25 | każdy |
 | Expowiska na 43–44 | 1 | 2 / 2 | ≥ 2 |
@@ -5364,45 +5250,35 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S92 (`Balance.targetsS92`)
 
-589/775 w paśmie (z wierszami raportu). Strażniki T-SK i mikstury łańcuchowe w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (20–45)”.
+578/765 w paśmie (z wierszami raportu). Strażniki T-SK i mikstury łańcuchowe w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (20–45)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
-| Morvane, 3 graczy L44: min | 4,75 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane, 4 graczy L44: min | 5,00 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane, 5 graczy L44: min | 4,90 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane: największy cios / HP Maga L45 | 0,68 | ≤ 0,70 | w paśmie | S92 (asertowane) |
-| Morvane: największy cios / HP Maga L43 | 0,71 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 3 graczy L44: HP na członka | 1,06 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 4 graczy L44: HP na członka | 0,71 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 5 graczy L44: HP na członka | 0,69 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane, 3 graczy L44 z węzłami: min | 4,61 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane, 4 graczy L44 z węzłami: min | 4,83 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane, 5 graczy L44 z węzłami: min | 4,76 | 4,00–6,00 | w paśmie | S92 (asertowane) |
-| Morvane: największy cios / HP Maga L45 z węzłami | 0,68 | ≤ 0,70 | w paśmie | S92 (asertowane) |
-| Morvane: największy cios / HP Maga L43 z węzłami | 0,71 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 3 graczy L44 z węzłami: HP na członka | 1,03 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 4 graczy L44 z węzłami: HP na członka | 0,68 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane, fala tarczy, 5 graczy L44 z węzłami: HP na członka | 0,67 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 3 graczy L44: HP na członka | 0,40 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 4 graczy L44: HP na członka | 0,19 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 5 graczy L44: HP na członka | 0,17 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 3 graczy L44 z węzłami: HP na członka | 0,38 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 4 graczy L44 z węzłami: HP na członka | 0,17 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane, fala tarczy, 5 graczy L44 z węzłami: HP na członka | 0,16 | ≤ 1,10 | w paśmie | S92 (asertowane) |
 | Morvane: zwykły cios / HP Maga L45 | 0,11 | 0,07–0,12 | w paśmie | S92 (asertowane) |
 | Morvane (model S32): tank HP na minutę, L44 | 3,38 | ≤ 3,50 | w paśmie | S92 (asertowane) |
-| Morvane (bossFight): tank HP na minutę, 3 graczy | 7,88 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
-| Morvane (bossFight): tank HP na minutę, 4 graczy | 7,56 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
-| Morvane (bossFight): tank HP na minutę, 5 graczy | 7,37 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
+| Morvane (bossFight): tank HP na minutę, 3 graczy | 6,22 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
+| Morvane (bossFight): tank HP na minutę, 4 graczy | 5,92 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
+| Morvane (bossFight): tank HP na minutę, 5 graczy | 5,73 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
 | Morvane ma hpMul | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
-| T-SK6 Morvane: Uzdrowiciel lochowy na Obrońcy | 2,68 | 1,00–2,70 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 3 graczy: s | 109,95 | ≤ 480,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,99 | ≤ 1,00 | w paśmie | S92 (asertowane) |
+| T-SK6 Morvane: Uzdrowiciel lochowy na Obrońcy | 3,53 | 1,00–2,70 | **poza** | poza zasięgiem dźwigni S134: ok. 3,5 > 2,7 (wielkie ciosy do unikania nie trafiają tanka; Pole Klątwy trzyma noSupport.hit ≤ 1,0, atak podstawowy wiersz tanka S32 ≤ 3,5); dla właściciela |
+| Morvane bez wsparcia, 3 graczy: s | 130,41 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,78 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 3 graczy: największy cios / HP | 0,93 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,30 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 4 graczy: s | 113,80 | ≤ 480,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,95 | ≤ 1,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,09 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 4 graczy: s | 107,45 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,74 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 4 graczy: największy cios / HP | 0,93 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,30 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 5 graczy: s | 108,79 | ≤ 480,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,93 | ≤ 1,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,08 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 5 graczy: s | 85,32 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,72 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 5 graczy: największy cios / HP | 0,93 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,27 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,07 | ≤ 1,10 | w paśmie | S92 (asertowane) |
 | Morvane: Mityki nieużyteczne dla Warrior | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
 | Morvane: Mityki nieużyteczne dla Hunter | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
 | Morvane: Mityki nieużyteczne dla Mage | 0,00 | ≤ 0,00 | w paśmie | S92 (asertowane) |
@@ -5775,12 +5651,12 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | liczba | wartość |
 | --- | --: |
-| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 18,8, marksman.kingslayer 4,5, arcanist.arcanistBoss 4,1 |
-| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 18,7, marksman.kingslayer 3,7, arcanist.arcanistBoss 3,3, inquisitor.solo 2,6 |
-| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 17,4, marksman.kingslayer 2,9, arcanist.arcanistBoss 2,7, inquisitor.solo 1,9, destroyer.destroyerBoss 2,6 |
+| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 17,6, marksman.kingslayer 3,3, arcanist.arcanistBoss 2,9 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 13,8, marksman.kingslayer 2,0, arcanist.arcanistBoss 1,8, inquisitor.solo 1,6 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 10,6, marksman.kingslayer 1,2, arcanist.arcanistBoss 1,1, inquisitor.solo 1,0, destroyer.destroyerBoss 1,1 |
 | trapper.poisoner na Morvane: DPS 300 s ÷ DPS 60 s | 0,93 (1870 → 1747) |
 | inquisitor.solo na Morvane: DPS 300 s ÷ DPS 60 s | 1,00 (1397 → 1397) |
-| fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 16,4 / 19,2 s, 4: 15,6 / 18,3 s, 5: 14,4 / 16,8 s |
+| fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 9,4 / 11,0 s, 4: 7,8 / 9,1 s, 5: 6,4 / 7,5 s |
 
 ### Przełomy A / B osiągane w 21–45 (tylko raport, S92, G3)
 
@@ -5869,12 +5745,12 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 45 | 5982 | 80,5 | 450 | 636 → 597 | 135,0 | 55 416 |
-| 50 | 7193 | 88,7 | 500 | 742 → 680 | 150,0 | 67 684 |
-| 55 | 8500 | 96,8 | 550 | 781 → 766 | 165,0 | 81 109 |
-| 60 | 9901 | 105,0 | 600 | 870 → 852 | 180,0 | 95 680 |
-| 65 | 11 395 | 113,0 | 650 | 917 → 940 | 195,0 | 111 386 |
-| 70 | 12 979 | 121,1 | 700 | 1007 → 1032 | 210,0 | 128 218 |
+| 45 | 5982 | 80,5 | 450 | 597 | 135,0 | 55 416 |
+| 50 | 7193 | 88,7 | 500 | 680 | 150,0 | 67 684 |
+| 55 | 8500 | 96,8 | 550 | 766 | 165,0 | 81 109 |
+| 60 | 9901 | 105,0 | 600 | 852 | 180,0 | 95 680 |
+| 65 | 11 395 | 113,0 | 650 | 940 | 195,0 | 111 386 |
+| 70 | 12 979 | 121,1 | 700 | 1032 | 210,0 | 128 218 |
 
 ### 1 na 1 z potworem poziomu (G1) (45-70)
 
@@ -5939,13 +5815,13 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 45 salamander | 652 → 611 | 51,4 | 0,84 → 0,78 | 31% → 40% | 78% | 0,76 → 0,70 | 0,18 → 0,17 | 0,81 → 0,74 |
-| 50 wasteHyena | 777 → 712 | 54,6 | 0,89 → 0,78 | 33% → 46% | 80% | 0,76 → 0,67 | 0,18 → 0,16 | 0,81 → 0,72 |
-| 55 fireGolem | 1499 → 1470 | 67,3 | 0,73 → 0,71 | 28% → 31% | 73% | 0,83 → 0,81 | 0,19 | 0,98 → 0,96 |
-| 60 desertScorpion | 910 → 892 | 53,8 | 1,35 → 1,37 | 14% | 80% | 1,05 → 1,07 | 0,27 → 0,28 | 1,24 → 1,26 |
-| 65 basilisk | 1051 → 1078 | 57,2 | 0,78 → 0,76 | 54% | 77% | 0,69 → 0,67 | 0,18 → 0,17 | 0,73 → 0,71 |
-| suma pasma | – | – | 26,3 | – | – | 23,8 → 23,9 | 5,9 | 25,9 → 26,0 |
-| suma z bossami w zadaniach | – | – | 24,3 → 24,4 | – | – | – | – | – |
+| 45 salamander | 611 | 51,4 | 0,78 | 40% | 78% | 0,70 | 0,17 | 0,74 |
+| 50 wasteHyena | 712 | 54,6 | 0,78 | 46% | 80% | 0,67 | 0,16 | 0,72 |
+| 55 fireGolem | 1470 | 67,3 | 0,71 | 31% | 73% | 0,81 | 0,19 | 0,96 |
+| 60 desertScorpion | 892 | 53,8 | 1,37 | 14% | 80% | 1,07 | 0,28 | 1,26 |
+| 65 basilisk | 1078 | 57,2 | 0,76 | 54% | 77% | 0,67 | 0,17 | 0,71 |
+| suma pasma | – | – | 26,3 | – | – | 23,9 | 5,9 | 26,0 |
+| suma z bossami w zadaniach | – | – | 24,4 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 25,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (45-70)
@@ -5954,31 +5830,31 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 
 | poziom | główne EXP | poboczne EXP (×0,5) | boss EXP | dzienne EXP/dzień | dzienne ÷ poziom | główne złoto |
 | --- | --: | --: | --: | --: | --: | --: |
-| 45 | 8988 → 14 267 | 1302 | 0 | 24 936 | 45% | 2702 |
+| 45 | 14 267 | 1302 | 0 | 24 936 | 45% | 2702 |
 | 46 | 0 | 2714 | 0 | 25 998 | 45% | 1056 |
-| 47 | 9761 → 15 495 | 1414 | 0 | 27 081 | 45% | 2818 |
+| 47 | 15 495 | 1414 | 0 | 27 081 | 45% | 2818 |
 | 48 | 0 | 2649 | 0 | 28 185 | 45% | 656 |
-| 49 | 12 677 → 8222 | 2754 | 0 | 29 310 | 45% | 2934 |
-| 50 | 10 977 → 19 710 | 3179 | 0 | 30 456 | 45% | 3454 |
+| 49 | 8222 | 2754 | 0 | 29 310 | 45% | 2934 |
+| 50 | 19 710 | 3179 | 0 | 30 456 | 45% | 3454 |
 | 51 | 0 | 1651 | 0 | 31 623 | 45% | 695 |
-| 52 | 11 826 → 10 389 | 1713 | 0 | 32 811 | 45% | 3108 |
-| 53 | 14 714 → 22 016 | 3197 | 0 | 34 020 | 45% | 3166 |
+| 52 | 10 389 | 1713 | 0 | 32 811 | 45% | 3108 |
+| 53 | 22 016 | 3197 | 0 | 34 020 | 45% | 3166 |
 | 54 | 0 | 1840 | 0 | 35 247 | 45% | 734 |
-| 55 | 13 155 → 15 712 | 0 | 0 | 36 498 | 45% | 2775 |
+| 55 | 15 712 | 0 | 0 | 36 498 | 45% | 2775 |
 | 56 | 0 | 3549 | 0 | 37 767 | 45% | 760 |
-| 57 | 16 894 → 16 815 | 2039 | 0 | 39 060 | 45% | 3398 |
+| 57 | 16 815 | 2039 | 0 | 39 060 | 45% | 3398 |
 | 58 | 0 | 2107 | 0 | 40 371 | 45% | 786 |
-| 59 | 15 030 → 17 953 | 2177 | 0 | 41 703 | 45% | 3514 |
+| 59 | 17 953 | 2177 | 0 | 41 703 | 45% | 3514 |
 | 60 | 0 | 2248 | 0 | 43 056 | 45% | 812 |
-| 61 | 19 215 → 9378 | 4175 | 0 | 44 427 | 45% | 3630 |
-| 62 | 16 515 → 12 472 | 4306 | 0 | 45 819 | 45% | 3688 |
+| 61 | 9378 | 4175 | 0 | 44 427 | 45% | 3630 |
+| 62 | 12 472 | 4306 | 0 | 45 819 | 45% | 3688 |
 | 63 | 0 | 2466 | 0 | 47 235 | 45% | 851 |
-| 64 | 17 541 → 13 247 | 5081 | 0 | 48 669 | 45% | 4392 |
+| 64 | 13 247 | 5081 | 0 | 48 669 | 45% | 4392 |
 | 65 | 0 | 2617 | 0 | 50 121 | 45% | 5354 |
-| 66 | 22 316 → 21 209 | 2694 | 0 | 51 597 | 45% | 3920 |
+| 66 | 21 209 | 2694 | 0 | 51 597 | 45% | 3920 |
 | 67 | 0 | 4989 | 0 | 53 091 | 45% | 903 |
 | 68 | 0 | 5131 | 153 861 | 54 606 | 45% | 10 546 |
-| 69 | 30 353 → 23 078 | 0 | 0 | 56 142 | 45% | 3461 |
+| 69 | 23 078 | 0 | 0 | 56 142 | 45% | 3461 |
 
 ### Premia za różne klasy (poziom 55) (45-70)
 
@@ -5986,10 +5862,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 80 195 → 78 612 | 26,3 |
-| 3 × Wojownik | 1,00 | 80 195 → 78 612 | 26,3 |
-| Wojownik + Łowca + Mag | 1,10 | 91 602 → 89 794 | 24,1 |
-| cztery klasy | 1,15 | 98 956 → 97 002 | 22,6 |
+| solo (Wojownik) | 1,00 | 78 612 | 26,3 |
+| 3 × Wojownik | 1,00 | 78 612 | 26,3 |
+| Wojownik + Łowca + Mag | 1,10 | 89 794 | 24,1 |
+| cztery klasy | 1,15 | 97 002 | 22,6 |
 
 ### Ekonomia (Wojownik) (45-70)
 
@@ -6083,11 +5959,14 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| fireWave | 6,1 | 71% | 6,1 | 71% | 5,5 | 64% |
-| flameCleave | 6,0 | 90% | 6,0 | 90% | 5,4 | 81% |
-| meteor | 3,0 | 90% | 3,0 | 90% | 2,7 | 81% |
-| inferno | – | – | – | – | 2,8 | 65% |
-| udział rzucania | 33% | – | 33% | – | 39% | – |
+| fireWave | 6,1 → 4,2 | 71% → 70% | 6,1 → – | 71% → – | 5,5 → 4,4 | 64% → 73% |
+| flameCleave | 6,0 → 4,2 | 90% → 63% | 6,0 → 4,8 | 90% → 72% | 5,4 → 4,4 | 81% → 66% |
+| meteor | 3,0 → 2,4 | 90% → 72% | 3,0 → 2,7 | 90% → 81% | 2,7 → 2,4 | 81% → 72% |
+| inferno | – | – | – | – | 2,8 → 2,4 | 65% → 64% |
+| eruption | 2,4 | 64% | 2,8 | 75% | – | – |
+| volcanoHeart | 1,8 | 78% | 2,1 | 91% | – | – |
+| cinderBrand | – | – | 2,1 | 84% | 2,0 | 80% |
+| udział rzucania | 33% → 44% | – | 33% → 41% | – | 39% → 42% | – |
 
 ### Boss azgor: walka (45-70, ashen)
 
@@ -6095,10 +5974,10 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 4,7 | 38,8 | 170% | 0 | 172 | 6% | 1000 | 49% | 70% | 66% | – |
-| 3 · wszystkie | 4,7 | 38,8 | 170% | 0 | 451 | 15% | 1000 | 49% | 70% | 66% | – |
-| 5 · połowa | 4,9 | 34,3 | 190% | 0 | 163 | 5% | 1000 | 49% | 70% | 66% | 27% |
-| 5 · wszystkie | 4,9 | 34,3 | 190% | 0 | 434 | 14% | 1000 | 49% | 70% | 66% | 27% |
+| 3 · połowa | 4,7 → 5,7 | 38,8 → 22,2 | 170% → 58% | 0 | 172 → 168 | 6% | 1000 | 49% → 37% | 70% → 43% | 66% → 40% | – |
+| 3 · wszystkie | 4,7 → 5,7 | 38,8 → 22,2 | 170% → 58% | 0 | 451 → 415 | 15% → 14% | 1000 | 49% → 37% | 70% → 43% | 66% → 40% | – |
+| 5 · połowa | 4,9 → 3,9 | 34,3 → 15,2 | 190% → 40% | 0 | 163 → 153 | 5% | 1000 | 49% → 37% | 70% → 43% | 66% → 40% | 27% → 21% |
+| 5 · wszystkie | 4,9 → 3,9 | 34,3 → 15,2 | 190% → 40% | 0 | 434 → 400 | 14% → 13% | 1000 | 49% → 37% | 70% → 43% | 66% → 40% | 27% → 21% |
 
 ### Boss azgor: zagrożenie skryptu (45-70, ashen)
 
@@ -6113,7 +5992,7 @@ Faza 3: ×2.2 ataku bossa (magic) co 1 s na każdego poza bezpiecznym miejscem. 
 
 ### Cele (45–70)
 
-Globalne (G): 163/163 w paśmie; regionu: 179/179 w paśmie.
+Globalne (G): 169/169 w paśmie; regionu: 184/184 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -6272,13 +6151,19 @@ Globalne (G): 163/163 w paśmie; regionu: 179/179 w paśmie.
 | 65: DPS Łowca / Wojownik | 1,28 | 1,15–1,35 | w paśmie | S87 (asertowane) |
 | 65: moc Łowca / Wojownik | 1,01 | 0,95–1,10 | w paśmie | S87 (asertowane) |
 | 65: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza) | 2,05 | ≤ 2,20 | w paśmie | S87 (asertowane) |
-| morvane faza 1: shadowBolt (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 1: curseField (tempo / odnowienie) | 0,91 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 2: shadowBolt (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 2: curseField (tempo / odnowienie) | 0,91 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 3: shadowBoltFast (tempo / odnowienie) | 0,57 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 3: curseField (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| morvane faza 3: deathRing (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 1: shadowBolt (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 1: curseField (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 1: soulReap (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 1: cryptBrand (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 2: shadowBolt (tempo / odnowienie) | 0,59 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 2: curseField (tempo / odnowienie) | 0,55 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 2: soulReap (tempo / odnowienie) | 0,61 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 2: cryptBrand (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 2: requiem (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 3: shadowBoltFast (tempo / odnowienie) | 0,54 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 3: curseField (tempo / odnowienie) | 0,59 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 3: deathRing (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| morvane faza 3: requiem (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 45–70: godzin (cel D4 25 h) | 26,32 | 18,75–31,25 | w paśmie | S87 (asertowane) |
 | ashen_mine ashOrc 46 Warrior: Elita HP | 0,77 | 0,45–1,10 | w paśmie | S93 (asertowane) |
 | ashen_mine ashOrc 46 Warrior: spotkanie Elit (q = 0.25) | 1,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
@@ -6409,16 +6294,21 @@ Globalne (G): 163/163 w paśmie; regionu: 179/179 w paśmie.
 | fireImp 58: HP/EXP rzucającego ÷ średnia regionu | 1,12 | ≤ 1,25 | w paśmie | S93 (asertowane) |
 | basilisk 65: EXP/s ÷ zwykły | 0,90 | 0,85–1,20 | w paśmie | S93 (asertowane) |
 | desertMummy 68: EXP/s ÷ zwykły | 0,94 | 0,85–1,20 | w paśmie | S93 (asertowane) |
-| azgor faza 1: fireWave | 0,71 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 1: flameCleave | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 1: meteor | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 2: fireWave | 0,71 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 2: flameCleave | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 2: meteor | 0,90 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 3: fireWave | 0,64 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 3: flameCleave | 0,81 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 3: meteor | 0,81 | ≥ 0,50 | w paśmie | S93 (asertowane) |
-| azgor faza 3: inferno | 0,65 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: fireWave | 0,70 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: flameCleave | 0,63 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: meteor | 0,72 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: eruption | 0,64 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 1: volcanoHeart | 0,78 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: flameCleave | 0,72 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: meteor | 0,81 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: eruption | 0,75 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: volcanoHeart | 0,91 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 2: cinderBrand | 0,84 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: fireWave | 0,73 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: flameCleave | 0,66 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: meteor | 0,72 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: inferno | 0,64 | ≥ 0,50 | w paśmie | S93 (asertowane) |
+| azgor faza 3: cinderBrand | 0,80 | ≥ 0,50 | w paśmie | S93 (asertowane) |
 | Warrior 45: Unikaty dla klasy na h expienia | 3,41 | 2,00–4,00 | w paśmie | S93 (asertowane) |
 | Warrior 45: Heroiki dla klasy na h Elit | 0,80 | 0,50–1,50 | w paśmie | S93 (asertowane) |
 | Hunter 45: Unikaty dla klasy na h expienia | 3,45 | 2,00–4,00 | w paśmie | S93 (asertowane) |
@@ -6466,20 +6356,20 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 
 | liczba | start S93 | teraz | cel |
 | --- | --: | --: | --: |
-| Azgor 3 / 4 / 5 graczy L69: min | 5,14 / 5,30 / 5,13 | 4,90 / 5,17 / 5,07 | 4–6 |
-| Azgor z węzłami 3 / 4 / 5: min | 4,62 / 4,77 / 4,71 | 4,39 / 4,65 / 4,64 | 4–6 |
-| Azgor: największy cios Maga L70 / L68 (inferno) | 118% / 122% | 66% / 68% | ≤ 70% / < 100% |
+| Azgor 3 / 4 / 5 graczy L69: min | 5,14 / 5,30 / 5,13 | 5,94 / 5,00 / 4,08 | S134: 5–7,5 / – / 3–4,5 |
+| Azgor z węzłami 3 / 4 / 5: min | 4,62 / 4,77 / 4,71 | 5,32 / 4,50 / 3,74 | S134: 5–7,5 / – / 3–4,5 |
+| Azgor: największy cios Maga L70 nie do uniknięcia / do uniknięcia (S134) | 118% / – | 40% / 80% | ≤ 50% / 60–90% |
 | Azgor: zwykły cios Maga L70 | 35% | 10% | 7–12% |
 | Azgor: tank HP na minutę (model S32) | 816% | 346% | ≤ 350% |
-| Azgor: tank HP na minutę (bossFight; 3 / 4 / 5) | 649% / 665% / 678% | 335% / 331% / 330% | raport |
-| Azgor: meteor na minutę / HP Maga L70 | 215% | 54% | ≤ 60% |
+| Azgor: tank HP na minutę (bossFight; 3 / 4 / 5) | 649% / 665% / 678% | 327% / 309% / 298% | raport |
+| Azgor: meteor na minutę / HP Maga L70 | 215% | 47% | ≤ 60% |
 | Azgor: tick lawy / HP Maga L70 | 23% (6% po cięciu atkMul) | 20% | 15–25% |
-| Azgor: fala tarczy, HP na członka (3 / 4 / 5) | 275% / 183% / 179% | 98% / 65% / 64% | ≤ 110% |
-| Azgor: G11 (najmniejsze tempo ataku; inferno w fazie 3) | 53% (inferno 68%) | 64% | ≥ 50% |
-| Azgor: T-SK6 Uzdrowiciela lochowego | 5,23 | 12,78 | 1,0–2,50 |
-| Azgor bez wsparcia 3 / 4 / 5: s | 108 / 107 / 101 | 102,7 / 104,2 / 100,8 | ≤ 480 |
-| Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,79 / 0,81 / 0,83 | 0,41 / 0,40 / 0,40 | ≤ 1,0 |
-| Azgor bez wsparcia: największy cios / HP członka | 111% | 62% | ≤ 100% |
+| Azgor: fala tarczy, HP na członka (3 / 4 / 5) | 275% / 183% / 179% | 37% / 17% / 15% | ≤ 110% |
+| Azgor: G11 (najmniejsze tempo ataku; inferno w fazie 3) | 53% (inferno 68%) | 63% | ≥ 50% |
+| Azgor: T-SK6 Uzdrowiciela lochowego | 5,23 | 13,35 | 1,0–2,50 |
+| Azgor bez wsparcia 3 / 4 / 5: s | 108 / 107 / 101 | 124,6 / 100,9 / 81,2 | ≤ 480 |
+| Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,79 / 0,81 / 0,83 | 0,40 / 0,38 / 0,36 | ≤ 1,0 |
+| Azgor bez wsparcia: największy cios / HP członka | 111% | 38% | ≤ 100% |
 | Elity: spotkanie Wojownik / Mag (najgorsze) | 158% / 163% | 106% / 117% | ≤ 110% / ≤ 125% |
 | Elita II solo / 2 / 3 graczy | 2,55–3,45 / 1,11–1,42 / 0,74–0,95 | 2,54–3,45 / 1,11–1,35 / 0,74–0,92 | ≥ 1,8 / ≤ 1,5 / 0,6–1,0 |
 | Elity dropią ilvl 46–70 | 22/25 | 25/25 | każdy |
@@ -6497,50 +6387,40 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S93 (`Balance.targetsS93`)
 
-631/969 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.
+621/959 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
-| Azgor, 3 graczy L69: min | 4,90 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor, 4 graczy L69: min | 5,17 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor, 5 graczy L69: min | 5,07 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor: największy cios / HP Maga L70 | 0,66 | ≤ 0,70 | w paśmie | S93 (asertowane) |
-| Azgor: największy cios / HP Maga L68 | 0,68 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 3 graczy L69: HP na członka | 0,98 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 4 graczy L69: HP na członka | 0,65 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 5 graczy L69: HP na członka | 0,64 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor, 3 graczy L69 z węzłami: min | 4,39 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor, 4 graczy L69 z węzłami: min | 4,65 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor, 5 graczy L69 z węzłami: min | 4,64 | 4,00–6,00 | w paśmie | S93 (asertowane) |
-| Azgor: największy cios / HP Maga L70 z węzłami | 0,66 | ≤ 0,70 | w paśmie | S93 (asertowane) |
-| Azgor: największy cios / HP Maga L68 z węzłami | 0,68 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 3 graczy L69 z węzłami: HP na członka | 0,86 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 4 graczy L69 z węzłami: HP na członka | 0,58 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor, fala tarczy, 5 graczy L69 z węzłami: HP na członka | 0,58 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 3 graczy L69: HP na członka | 0,37 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 4 graczy L69: HP na członka | 0,17 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 5 graczy L69: HP na członka | 0,15 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 3 graczy L69 z węzłami: HP na członka | 0,32 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 4 graczy L69 z węzłami: HP na członka | 0,15 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor, fala tarczy, 5 graczy L69 z węzłami: HP na członka | 0,14 | ≤ 1,10 | w paśmie | S93 (asertowane) |
 | Azgor: zwykły cios / HP Maga L70 | 0,10 | 0,07–0,12 | w paśmie | S93 (asertowane) |
 | Azgor (model S32): tank HP na minutę, L69 | 3,46 | ≤ 3,50 | w paśmie | S93 (asertowane) |
-| Azgor (bossFight): tank HP na minutę, 3 graczy | 3,35 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
-| Azgor (bossFight): tank HP na minutę, 4 graczy | 3,31 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
-| Azgor (bossFight): tank HP na minutę, 5 graczy | 3,30 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
-| Azgor: meteor na minutę / HP Maga L70 | 0,54 | ≤ 0,60 | w paśmie | S93 (asertowane) |
+| Azgor (bossFight): tank HP na minutę, 3 graczy | 3,27 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor (bossFight): tank HP na minutę, 4 graczy | 3,09 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor (bossFight): tank HP na minutę, 5 graczy | 2,98 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
+| Azgor: meteor na minutę / HP Maga L70 | 0,47 | ≤ 0,60 | w paśmie | S93 (asertowane) |
 | Azgor: jeden tick lawy / HP Maga L70 | 0,20 | 0,15–0,25 | w paśmie | S93 (asertowane) |
 | Azgor ma hpMul | 1,00 | ≥ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor, 3 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | Azgor, 4 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | Azgor, 5 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
-| T-SK6 Azgor: Uzdrowiciel lochowy na Obrońcy | 12,78 | 1,00–2,50 | **poza** | NIEDOKOŃCZONE S93: T-SK6 12,8 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S93 (Leczenie z rang ≤ 45 samo daje ok. 4, tank S32 346%/min); decyzja właściciela |
-| Azgor bez wsparcia, 3 graczy: s | 102,65 | ≤ 480,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,41 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 3 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,23 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 4 graczy: s | 104,18 | ≤ 480,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,40 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 4 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,23 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 5 graczy: s | 100,80 | ≤ 480,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,40 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 5 graczy: największy cios / HP | 0,62 | ≤ 1,00 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,21 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| T-SK6 Azgor: Uzdrowiciel lochowy na Obrońcy | 13,35 | 1,00–2,50 | **poza** | NIEDOKOŃCZONE S93: T-SK6 12,8 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S93 (Leczenie z rang ≤ 45 samo daje ok. 4, tank S32 346%/min); decyzja właściciela |
+| Azgor bez wsparcia, 3 graczy: s | 124,62 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,40 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 3 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,07 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: s | 100,91 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: s | 81,22 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,36 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
 | Azgor: Mityki nieużyteczne dla Warrior | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | Azgor: Mityki nieużyteczne dla Hunter | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | Azgor: Mityki nieużyteczne dla Mage | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
@@ -6796,17 +6676,17 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | liczba | wartość |
 | --- | --: |
-| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 4,2, marksman.kingslayer 1,2, arcanist.arcanistBoss 1,1 |
-| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 4,2, marksman.kingslayer 1,2, arcanist.arcanistBoss 1,0, inquisitor.solo 0,6 |
-| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 4,1, marksman.kingslayer 1,1, arcanist.arcanistBoss 1,0, inquisitor.solo 0,6, destroyer.destroyerBoss 0,9 |
-| lawa przy hazardShare = 1: tank HP na minutę w fazie 3 (z lawą / bez) | 1488% / 330% |
-| faza 3: sekundy, przez które bezpieczny krąg mieści walczących z dystansu poza inferno (promień ≥ zasięg inferno) | 80 s z 92 s fazy 3 (5 graczy) |
+| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 5,0, marksman.kingslayer 1,6, arcanist.arcanistBoss 1,5 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 3,8, marksman.kingslayer 1,1, arcanist.arcanistBoss 1,0, inquisitor.solo 0,9 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 2,9, marksman.kingslayer 0,8, arcanist.arcanistBoss 0,7, inquisitor.solo 0,6, destroyer.destroyerBoss 0,7 |
+| lawa przy hazardShare = 1: tank HP na minutę w fazie 3 (z lawą / bez) | 1448% / 291% |
+| faza 3: sekundy, przez które bezpieczny krąg mieści walczących z dystansu poza inferno (promień ≥ zasięg inferno) | 80 s z 79 s fazy 3 (5 graczy) |
 | trapper.poisoner na Azgorze: DPS 300 s ÷ DPS 60 s | 0,90 (5025 → 4512) |
 | inquisitor.solo na Azgorze: DPS 300 s ÷ DPS 60 s | 1,00 (3818 → 3818) |
-| fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 20,5 / 23,2 s, 4: 19,6 / 22,1 s, 5: 18,1 / 20,4 s |
-| harmonogram fazy 1 | fireWave 6,1/min (71%), flameCleave 6,0/min (90%), meteor 3,0/min (90%) |
-| harmonogram fazy 2 | fireWave 6,1/min (71%), flameCleave 6,0/min (90%), meteor 3,0/min (90%) |
-| harmonogram fazy 3 | fireWave 5,5/min (64%), flameCleave 5,4/min (81%), meteor 2,7/min (81%), inferno 2,8/min (65%) |
+| fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 11,7 / 13,2 s, 4: 9,8 / 11,1 s, 5: 8,1 / 9,1 s |
+| harmonogram fazy 1 | fireWave 4,2/min (70%), flameCleave 4,2/min (63%), meteor 2,4/min (72%), eruption 2,4/min (64%), volcanoHeart 1,8/min (78%) |
+| harmonogram fazy 2 | flameCleave 4,8/min (72%), meteor 2,7/min (81%), eruption 2,8/min (75%), volcanoHeart 2,1/min (91%), cinderBrand 2,1/min (84%) |
+| harmonogram fazy 3 | fireWave 4,4/min (73%), flameCleave 4,4/min (66%), meteor 2,4/min (72%), inferno 2,4/min (64%), cinderBrand 2,0/min (80%) |
 
 ### Przełomy A / B osiągane w 46–70 (tylko raport, S93, G3)
 
@@ -6901,12 +6781,12 @@ Zwykłe, ilvl = poziom − 2, oczekiwane bonusy; DPS z 1–2 umiejętnościami (
 
 | poziom | HP | atak | pancerz | EXP | złoto | EXP do poziomu |
 | --- | --: | --: | --: | --: | --: | --: |
-| 70 | 12 979 | 121,1 | 700 | 1007 → 1032 | 210,0 | 128 218 |
-| 75 | 14 740 | 129,1 | 750 | 1136 → 1070 | 225,0 | 146 169 |
-| 80 | 16 603 | 137,0 | 800 | 1177 → 1161 | 240,0 | 165 230 |
-| 85 | 18 568 | 144,9 | 850 | 1244 → 1252 | 255,0 | 185 394 |
-| 90 | 20 633 | 152,8 | 900 | 1295 → 1342 | 270,0 | 206 655 |
-| 95 | 22 799 | 160,7 | 950 | 1373 → 1438 | 285,0 | 229 007 |
+| 70 | 12 979 | 121,1 | 700 | 1032 | 210,0 | 128 218 |
+| 75 | 14 740 | 129,1 | 750 | 1070 | 225,0 | 146 169 |
+| 80 | 16 603 | 137,0 | 800 | 1161 | 240,0 | 165 230 |
+| 85 | 18 568 | 144,9 | 850 | 1252 | 255,0 | 185 394 |
+| 90 | 20 633 | 152,8 | 900 | 1342 | 270,0 | 206 655 |
+| 95 | 22 799 | 160,7 | 950 | 1438 | 285,0 | 229 007 |
 | 100 | 25 064 | 168,6 | 1000 | 1905 | 300,0 | 252 443 |
 
 ### 1 na 1 z potworem poziomu (G1) (70-100)
@@ -6978,14 +6858,14 @@ Sklep: zbroja z progu `tierFor`, broń z progu kowala. Cel G4: ≤ 15,5 s (Kapł
 
 | poziom · rodzaj | EXP/zabicie | s/zabicie | h/poziom | udział zadań | odpoczynek | h najlepsze łowisko | h mikstury | h rodzaj ogólny |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| 70 iceWolf | 1042 → 1069 | 51,3 | 1,49 → 1,46 | 15% | 79% | 1,59 → 1,55 | 0,31 | 1,40 → 1,37 |
-| 75 snowLeopard | 1201 → 1131 | 59,5 | 1,77 → 1,88 | 12% | 80% | 1,45 → 1,54 | 0,35 → 0,37 | 1,45 → 1,54 |
-| 80 peakHarpy | 1090 → 1076 | 49,3 | 1,41 → 1,38 | 32% → 34% | 79% | 1,19 → 1,17 | 0,29 | 1,22 → 1,20 |
-| 85 iceMammoth | 1796 → 1808 | 59,6 | 1,46 → 1,45 | 15% | 76% | 1,26 | 0,36 → 0,35 | 1,62 → 1,61 |
-| 90 dragonspawn | 1538 → 1593 | 63,6 | 1,48 → 1,56 | 37% → 32% | 80% | 1,20 → 1,26 | 0,30 → 0,32 | 1,27 → 1,33 |
-| 95 frostWyrm | 1839 → 1925 | 60,5 | 0,51 → 0,55 | 76% → 72% | 77% | 0,48 → 0,52 | 0,12 | 0,51 → 0,55 |
+| 70 iceWolf | 1069 | 51,3 | 1,46 | 15% | 79% | 1,55 | 0,31 | 1,37 |
+| 75 snowLeopard | 1131 | 59,5 | 1,88 | 12% | 80% | 1,54 | 0,37 | 1,54 |
+| 80 peakHarpy | 1076 | 49,3 | 1,38 | 34% | 79% | 1,17 | 0,29 | 1,20 |
+| 85 iceMammoth | 1808 | 59,6 | 1,45 | 15% | 76% | 1,26 | 0,35 | 1,61 |
+| 90 dragonspawn | 1593 | 63,6 | 1,56 | 32% | 80% | 1,26 | 0,32 | 1,33 |
+| 95 frostWyrm | 1925 | 60,5 | 0,55 | 72% | 77% | 0,52 | 0,12 | 0,55 |
 | suma pasma | – | – | 43,1 | – | – | 38,0 | 9,4 | 41,3 |
-| suma z bossami w zadaniach | – | – | 40,1 → 39,9 | – | – | – | – | – |
+| suma z bossami w zadaniach | – | – | 39,9 | – | – | – | – | – |
 | cel D4 (wstępny) | – | – | 41,0 | – | – | – | – | – |
 
 ### Zadania na swoim poziomie (70-100)
@@ -6996,32 +6876,32 @@ Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją 
 | --- | --: | --: | --: | --: | --: | --: |
 | 70 | 0 | 3634 | 0 | 57 696 | 45% | 942 |
 | 71 | 0 | 3734 | 0 | 59 271 | 45% | 955 |
-| 72 | 24 507 → 32 455 | 0 | 0 | 60 867 | 45% | 3608 |
+| 72 | 32 455 | 0 | 0 | 60 867 | 45% | 3608 |
 | 73 | 0 | 7085 | 0 | 62 484 | 45% | 981 |
-| 74 | 21 513 → 34 189 | 4039 | 0 | 64 119 | 45% | 4384 |
+| 74 | 34 189 | 4039 | 0 | 64 119 | 45% | 4384 |
 | 75 | 0 | 0 | 0 | 65 775 | 45% | 320 |
-| 76 | 27 157 → 35 965 | 4249 | 0 | 67 449 | 45% | 4500 |
+| 76 | 35 965 | 4249 | 0 | 67 449 | 45% | 4500 |
 | 77 | 0 | 4356 | 0 | 69 147 | 45% | 1033 |
-| 78 | 23 775 → 37 784 | 8034 | 0 | 70 860 | 45% | 4616 |
+| 78 | 37 784 | 8034 | 0 | 70 860 | 45% | 4616 |
 | 79 | 0 | 4573 | 0 | 72 597 | 45% | 1059 |
-| 80 | 24 946 → 28 544 | 8430 | 0 | 74 352 | 45% | 4732 |
-| 82 | 26 144 → 29 915 | 4908 | 0 | 77 922 | 45% | 4848 |
-| 84 | 32 842 → 31 316 | 5138 | 0 | 81 573 | 45% | 4964 |
+| 80 | 28 544 | 8430 | 0 | 74 352 | 45% | 4732 |
+| 82 | 29 915 | 4908 | 0 | 77 922 | 45% | 4848 |
+| 84 | 31 316 | 5138 | 0 | 81 573 | 45% | 4964 |
 | 85 | 0 | 5255 | 0 | 83 427 | 45% | 1137 |
-| 86 | 28 619 → 32 747 | 9672 | 0 | 85 299 | 45% | 5080 |
+| 86 | 32 747 | 9672 | 0 | 85 299 | 45% | 5080 |
 | 87 | 0 | 10 984 | 0 | 87 195 | 45% | 1957 |
-| 88 | 29 897 → 34 209 | 0 | 0 | 89 109 | 45% | 4392 |
+| 88 | 34 209 | 0 | 0 | 89 109 | 45% | 4392 |
 | 89 | 0 | 16 057 | 0 | 91 041 | 45% | 2001 |
-| 90 | 46 801 → 35 701 | 5858 | 0 | 92 994 | 45% | 9422 |
+| 90 | 35 701 | 5858 | 0 | 92 994 | 45% | 9422 |
 | 91 | 0 | 10 767 | 0 | 94 965 | 45% | 1215 |
-| 92 | 39 037 → 52 216 | 6107 | 0 | 96 957 | 45% | 5428 |
+| 92 | 52 216 | 6107 | 0 | 96 957 | 45% | 5428 |
 | 93 | 0 | 11 221 | 0 | 98 970 | 45% | 1241 |
-| 94 | 44 054 → 26 927 | 6362 | 0 | 101 001 | 45% | 5544 |
-| 95 | 34 575 → 27 474 | 0 | 0 | 103 053 | 45% | 11 237 |
-| 96 | 28 216 → 56 612 | 6622 | 0 | 105 123 | 45% | 5660 |
+| 94 | 26 927 | 6362 | 0 | 101 001 | 45% | 5544 |
+| 95 | 27 474 | 0 | 0 | 103 053 | 45% | 11 237 |
+| 96 | 56 612 | 6622 | 0 | 105 123 | 45% | 5660 |
 | 97 | 0 | 6753 | 371 503 | 107 211 | 45% | 24 093 |
-| 98 | 29 343 → 29 145 | 0 | 0 | 109 320 | 45% | 4882 |
-| 99 | 93 483 → 29 712 | 12 636 | 0 | 111 450 | 45% | 14 864 |
+| 98 | 29 145 | 0 | 0 | 109 320 | 45% | 4882 |
+| 99 | 29 712 | 12 636 | 0 | 111 450 | 45% | 14 864 |
 
 ### Premia za różne klasy (poziom 85) (70-100)
 
@@ -7029,10 +6909,10 @@ Założenie modelu: drużyna bije na tym samym łowisku osobno i dzieli zaliczen
 
 | drużyna | mnożnik EXP | EXP/h członka | h pasma |
 | --- | --: | --: | --: |
-| solo (Wojownik) | 1,00 | 108 502 → 109 181 | 43,1 |
-| 3 × Wojownik | 1,00 | 108 502 → 109 181 | 43,1 |
-| Wojownik + Łowca + Mag | 1,10 | 118 185 → 118 925 | 39,1 |
-| cztery klasy | 1,15 | 124 120 → 124 897 | 37,0 |
+| solo (Wojownik) | 1,00 | 109 181 | 43,1 |
+| 3 × Wojownik | 1,00 | 109 181 | 43,1 |
+| Wojownik + Łowca + Mag | 1,10 | 118 925 | 39,1 |
+| cztery klasy | 1,15 | 124 897 | 37,0 |
 
 ### Ekonomia (Wojownik) (70-100)
 
@@ -7127,12 +7007,16 @@ Drużyna w kolejności Wojownik, Mag, Łowca, Kapłan na min(100, spawner + 2), 
 
 | atak | faza 1 /min | faza 1 tempo | faza 2 /min | faza 2 tempo | faza 3 /min | faza 3 tempo |
 | --- | --: | --: | --: | --: | --: | --: |
-| frostBreath | 5,5 | 73% | 4,8 | 64% | 4,1 | 55% |
-| wingBuffet | 5,4 | 99% | 4,6 | 84% | 4,0 | 73% |
-| tailSwipe | 5,4 | 81% | 4,7 | 71% | 4,0 | 60% |
-| blizzard | – | – | 2,4 | 64% | 2,1 | 56% |
-| glacialRing | – | – | – | – | 2,1 | 53% |
-| udział rzucania | 34% | – | 37% | – | 40% | – |
+| frostBreath | 5,5 → 4,4 | 73% | 4,8 → 4,1 | 64% → 68% | 4,1 → 3,5 | 55% → 58% |
+| wingBuffet | 5,4 → 3,3 | 99% → 77% | 4,6 → – | 84% → – | 4,0 → – | 73% → – |
+| tailSwipe | 5,4 → 3,3 | 81% → 77% | 4,7 → 3,2 | 71% → 75% | 4,0 → – | 60% → – |
+| blizzard | – | – | 2,4 → 3,1 | 64% → 83% | 2,1 → 2,3 | 56% → 61% |
+| glacialRing | – | – | – | – | 2,1 → 2,3 | 53% → 69% |
+| avalanche | – | – | 3,1 | 72% | 2,5 | 58% |
+| iceComet | 2,2 | 95% | – | – | 1,3 | 56% |
+| frostTomb | 2,2 | 88% | 2,0 | 80% | – | – |
+| absoluteZero | – | – | – | – | 1,3 | 78% |
+| udział rzucania | 34% → 43% | – | 37% → 43% | – | 40% → 51% | – |
 
 ### Boss vaelgrath: walka (70-100, frostpeak)
 
@@ -7140,10 +7024,10 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 
 | drużyna · wariant | walka min | tarcze s | pomocnicy na tanku HP | wściekłość | tank HP/s | tank HP/s ÷ HP | mikstura HP/s | max cios Wojownik | max cios Łowca | max cios Mag | max cios Kapłan |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| 3 · połowa | 4,6 | 24,7 | 171% | 0 | 256 | 6% | 1000 | 43% | 69% | 65% | – |
-| 3 · wszystkie | 4,6 | 24,7 | 171% | 0 | 584 | 14% | 1000 | 43% | 69% | 65% | – |
-| 5 · połowa | 4,9 | 22,0 | 192% | 0 | 248 | 6% | 1000 | 43% | 69% | 65% | 24% |
-| 5 · wszystkie | 4,9 | 22,0 | 192% | 0 | 566 | 13% | 1000 | 43% | 69% | 65% | 24% |
+| 3 · połowa | 4,6 → 5,9 | 24,7 → 14,1 | 171% → 59% | 0 | 256 → 224 | 6% → 5% | 1000 | 43% | 69% → 49% | 65% → 46% | – |
+| 3 · wszystkie | 4,6 → 5,9 | 24,7 → 14,1 | 171% → 59% | 0 | 584 → 480 | 14% → 11% | 1000 | 43% | 69% → 49% | 65% → 46% | – |
+| 5 · połowa | 4,9 → 4,1 | 22,0 → 9,8 | 192% → 40% | 0 | 248 → 204 | 6% → 5% | 1000 | 43% | 69% → 49% | 65% → 46% | 24% |
+| 5 · wszystkie | 4,9 → 4,1 | 22,0 → 9,8 | 192% → 40% | 0 | 566 → 458 | 13% → 11% | 1000 | 43% | 69% → 49% | 65% → 46% | 24% |
 
 ### Boss vaelgrath: zagrożenie skryptu (70-100, frostpeak)
 
@@ -7158,7 +7042,7 @@ Faza 3: ×3.9 ataku bossa (magic) co 3 s na każdego poza bezpiecznym miejscem.
 
 ### Cele (70–100)
 
-Globalne (G): 240/240 w paśmie; regionu: 188/188 w paśmie.
+Globalne (G): 249/249 w paśmie; regionu: 192/192 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -7379,28 +7263,37 @@ Globalne (G): 240/240 w paśmie; regionu: 188/188 w paśmie.
 | 100: DPS Łowca / Wojownik | 1,29 | 1,15–1,35 | w paśmie | S87 (asertowane) |
 | 100: moc Łowca / Wojownik | 1,03 | 0,95–1,10 | w paśmie | S87 (asertowane) |
 | 100: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza) | 2,14 | ≤ 2,20 | w paśmie | S87 (asertowane) |
-| azgor faza 1: fireWave (tempo / odnowienie) | 0,71 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 1: flameCleave (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 1: meteor (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: fireWave (tempo / odnowienie) | 0,71 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: flameCleave (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 2: meteor (tempo / odnowienie) | 0,90 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: fireWave (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: flameCleave (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: meteor (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| azgor faza 3: inferno (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: fireWave (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: flameCleave (tempo / odnowienie) | 0,63 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: meteor (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: eruption (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 1: volcanoHeart (tempo / odnowienie) | 0,78 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: flameCleave (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: meteor (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: eruption (tempo / odnowienie) | 0,75 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: volcanoHeart (tempo / odnowienie) | 0,91 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 2: cinderBrand (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: fireWave (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: flameCleave (tempo / odnowienie) | 0,66 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: meteor (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: inferno (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| azgor faza 3: cinderBrand (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 1: frostBreath (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 1: wingBuffet (tempo / odnowienie) | 0,99 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 1: tailSwipe (tempo / odnowienie) | 0,81 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 2: frostBreath (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 2: wingBuffet (tempo / odnowienie) | 0,84 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 2: tailSwipe (tempo / odnowienie) | 0,70 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 2: blizzard (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 3: frostBreath (tempo / odnowienie) | 0,55 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 3: wingBuffet (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 3: tailSwipe (tempo / odnowienie) | 0,60 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 3: blizzard (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
-| vaelgrath faza 3: glacialRing (tempo / odnowienie) | 0,53 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 1: wingBuffet (tempo / odnowienie) | 0,77 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 1: tailSwipe (tempo / odnowienie) | 0,77 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 1: iceComet (tempo / odnowienie) | 0,95 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 1: frostTomb (tempo / odnowienie) | 0,88 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 2: frostBreath (tempo / odnowienie) | 0,68 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 2: tailSwipe (tempo / odnowienie) | 0,75 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 2: blizzard (tempo / odnowienie) | 0,83 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 2: avalanche (tempo / odnowienie) | 0,72 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 2: frostTomb (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: frostBreath (tempo / odnowienie) | 0,58 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: blizzard (tempo / odnowienie) | 0,61 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: glacialRing (tempo / odnowienie) | 0,69 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: avalanche (tempo / odnowienie) | 0,58 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: iceComet (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| vaelgrath faza 3: absoluteZero (tempo / odnowienie) | 0,78 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 70–100: godzin (cel D4 41 h) | 43,08 | 30,75–51,25 | w paśmie | S87 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S94 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: spotkanie Elit (q = 0.25) | 1,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
@@ -7531,17 +7424,21 @@ Globalne (G): 240/240 w paśmie; regionu: 188/188 w paśmie.
 | frozenKnight 91: EXP/s ÷ zwykły | 0,96 | 0,85–1,20 | w paśmie | S94 (asertowane) |
 | frostWyrm 97: EXP/s ÷ zwykły | 0,96 | 0,85–1,20 | w paśmie | S94 (asertowane) |
 | vaelgrath faza 1: frostBreath | 0,73 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 1: wingBuffet | 0,99 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 1: tailSwipe | 0,81 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 2: frostBreath | 0,64 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 2: wingBuffet | 0,84 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 2: tailSwipe | 0,70 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 2: blizzard | 0,64 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 3: frostBreath | 0,55 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 3: wingBuffet | 0,73 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 3: tailSwipe | 0,60 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 3: blizzard | 0,56 | ≥ 0,50 | w paśmie | S94 (asertowane) |
-| vaelgrath faza 3: glacialRing | 0,53 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 1: wingBuffet | 0,77 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 1: tailSwipe | 0,77 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 1: iceComet | 0,95 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 1: frostTomb | 0,88 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 2: frostBreath | 0,68 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 2: tailSwipe | 0,75 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 2: blizzard | 0,83 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 2: avalanche | 0,72 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 2: frostTomb | 0,80 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: frostBreath | 0,58 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: blizzard | 0,61 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: glacialRing | 0,69 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: avalanche | 0,58 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: iceComet | 0,56 | ≥ 0,50 | w paśmie | S94 (asertowane) |
+| vaelgrath faza 3: absoluteZero | 0,78 | ≥ 0,50 | w paśmie | S94 (asertowane) |
 | Warrior 70: Unikaty dla klasy na h expienia | 3,42 | 2,00–4,00 | w paśmie | S94 (asertowane) |
 | Warrior 70: Heroiki dla klasy na h Elit | 0,84 | 0,50–1,50 | w paśmie | S94 (asertowane) |
 | Hunter 70: Unikaty dla klasy na h expienia | 3,48 | 2,00–4,00 | w paśmie | S94 (asertowane) |
@@ -7597,21 +7494,21 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 
 | liczba | start S94 | teraz | cel |
 | --- | --: | --: | --: |
-| Vaelgrath 3 / 4 / 5 graczy L99: min | 4,58 / 4,82 / 4,67 | 4,78 / 5,12 / 5,03 | 4–6 |
-| Vaelgrath z węzłami 3 / 4 / 5: min | 4,01 / 4,25 / 4,21 | 4,19 / 4,52 / 4,55 | 4–6 |
-| Vaelgrath: największy cios Maga L100 / L98 (Lodowy Pierścień) | 130% / 132% | 65% / 67% | ≤ 70% / < 100% |
+| Vaelgrath 3 / 4 / 5 graczy L99: min | 4,58 / 4,82 / 4,67 | 6,05 / 5,18 / 4,24 | S134: 5–7,5 / – / 3–4,5 |
+| Vaelgrath z węzłami 3 / 4 / 5: min | 4,01 / 4,25 / 4,21 | 5,32 / 4,58 / 3,84 | S134: 5–7,5 / – / 3–4,5 |
+| Vaelgrath: największy cios Maga L100 nie do uniknięcia / do uniknięcia (S134) | 130% / – | 46% / 85% | ≤ 50% / 60–90% |
 | Vaelgrath: zwykły cios Maga L100 | 33% | 10% | 7–12% |
-| Vaelgrath: tank HP na minutę (model S32) | 1063% | 345% | ≤ 350% |
-| Vaelgrath: tank HP na minutę (bossFight; 3 / 4 / 5) | 849% / 865% / 880% | 371% / 369% / 369% | raport |
-| Vaelgrath: zamieć na minutę / HP Maga L100 | 68% | 34% | ≤ 60% |
+| Vaelgrath: tank HP na minutę (model S32) | 1063% | 320% | ≤ 350% |
+| Vaelgrath: tank HP na minutę (bossFight; 3 / 4 / 5) | 849% / 865% / 880% | 317% / 300% / 289% | raport |
+| Vaelgrath: zamieć na minutę / HP Maga L100 | 68% | 41% | ≤ 60% |
 | Vaelgrath: tick burzy / HP Maga L100 | 47% | 38% | 30–45% |
-| Vaelgrath: fala tarczy, HP na członka (3 / 4 / 5) | 291% / 198% / 191% | 95% / 65% / 62% | ≤ 110% |
+| Vaelgrath: fala tarczy, HP na członka (3 / 4 / 5) | 291% / 198% / 191% | 36% / 16% / 15% | ≤ 110% |
 | Vaelgrath: nietykalność fazy 2 / max(lot, fala) (3 / 4 / 5) | 1,00 (model) | 1,00 / 1,00 / 1,00 | 1,00 |
-| Vaelgrath: G11 (najmniejsze tempo ataku; pierścień w fazie 3) | 53% (pierścień 53%) | 53% | ≥ 50% |
-| Vaelgrath: T-SK6 Uzdrowiciela lochowego | 5,98 | 15,85 | 1,0–2,0 |
-| Vaelgrath bez wsparcia 3 / 4 / 5: s | 89 / 90 / 89 | 100,6 / 103,3 / 102,0 | ≤ 480 |
-| Vaelgrath bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,60 / 0,61 / 0,63 | 0,26 / 0,26 / 0,26 | ≤ 1,0 |
-| Vaelgrath bez wsparcia: największy cios / HP członka | 117% | 59% | ≤ 100% |
+| Vaelgrath: G11 (najmniejsze tempo ataku; pierścień w fazie 3) | 53% (pierścień 53%) | 56% | ≥ 50% |
+| Vaelgrath: T-SK6 Uzdrowiciela lochowego | 5,98 | 18,92 | 1,0–2,0 |
+| Vaelgrath bez wsparcia 3 / 4 / 5: s | 89 / 90 / 89 | 125,7 / 104,5 / 87,4 | ≤ 480 |
+| Vaelgrath bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,60 / 0,61 / 0,63 | 0,22 / 0,21 / 0,20 | ≤ 1,0 |
+| Vaelgrath bez wsparcia: największy cios / HP członka | 117% | 42% | ≤ 100% |
 | Vaelgrath: Mityki nieużyteczne (4 klasy) | 0% | 0%–0% | 0% |
 | Vaelgrath: zabicia do Mityka / Grimrok | 1,00 (50 / 50) | 1,54 (77 / 50) | 1,4–1,6 |
 | Elity pojedyncze w paśmie (20–36 s, 55–95%) | 44% | 94% | ≥ 72% |
@@ -7637,32 +7534,22 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S94 (`Balance.targetsS94`)
 
-673/1144 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (70–100)”.
+663/1134 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (70–100)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
-| Vaelgrath, 3 graczy L99: min | 4,78 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, 4 graczy L99: min | 5,12 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, 5 graczy L99: min | 5,03 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath: największy cios / HP Maga L100 | 0,65 | ≤ 0,70 | w paśmie | S94 (asertowane) |
-| Vaelgrath: największy cios / HP Maga L98 | 0,67 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 3 graczy L99: HP na członka | 0,95 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 4 graczy L99: HP na członka | 0,65 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 5 graczy L99: HP na członka | 0,62 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath, 3 graczy L99 z węzłami: min | 4,19 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, 4 graczy L99 z węzłami: min | 4,52 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, 5 graczy L99 z węzłami: min | 4,55 | 4,00–6,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath: największy cios / HP Maga L100 z węzłami | 0,65 | ≤ 0,70 | w paśmie | S94 (asertowane) |
-| Vaelgrath: największy cios / HP Maga L98 z węzłami | 0,67 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 3 graczy L99 z węzłami: HP na członka | 0,81 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 4 graczy L99 z węzłami: HP na członka | 0,56 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath, fala tarczy, 5 graczy L99 z węzłami: HP na członka | 0,55 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 3 graczy L99: HP na członka | 0,36 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 4 graczy L99: HP na członka | 0,16 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 5 graczy L99: HP na członka | 0,15 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 3 graczy L99 z węzłami: HP na członka | 0,30 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 4 graczy L99 z węzłami: HP na członka | 0,14 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath, fala tarczy, 5 graczy L99 z węzłami: HP na członka | 0,13 | ≤ 1,10 | w paśmie | S94 (asertowane) |
 | Vaelgrath: zwykły cios / HP Maga L100 | 0,10 | 0,07–0,12 | w paśmie | S94 (asertowane) |
-| Vaelgrath (model S32): tank HP na minutę, L99 | 3,45 | ≤ 3,50 | w paśmie | S94 (asertowane) |
-| Vaelgrath (bossFight): tank HP na minutę, 3 graczy | 3,71 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
-| Vaelgrath (bossFight): tank HP na minutę, 4 graczy | 3,69 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
-| Vaelgrath (bossFight): tank HP na minutę, 5 graczy | 3,69 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
-| Vaelgrath: zamieć na minutę / HP Maga L100 | 0,34 | ≤ 0,60 | w paśmie | S94 (asertowane) |
+| Vaelgrath (model S32): tank HP na minutę, L99 | 3,20 | ≤ 3,50 | w paśmie | S94 (asertowane) |
+| Vaelgrath (bossFight): tank HP na minutę, 3 graczy | 3,17 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
+| Vaelgrath (bossFight): tank HP na minutę, 4 graczy | 3,00 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
+| Vaelgrath (bossFight): tank HP na minutę, 5 graczy | 2,89 | ≤  | w paśmie | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
+| Vaelgrath: zamieć na minutę / HP Maga L100 | 0,41 | ≤ 0,60 | w paśmie | S94 (asertowane) |
 | Vaelgrath: jeden tick burzy / HP Maga L100 | 0,38 | 0,30–0,45 | w paśmie | S94 (asertowane) |
 | Vaelgrath ma hpMul | 1,00 | ≥ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath, 3 graczy: nietykalność fazy 2 / max(lot, fala) | 1,00 | 1,00–1,00 | w paśmie | S94 (asertowane) |
@@ -7671,19 +7558,19 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Vaelgrath, 4 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath, 5 graczy: nietykalność fazy 2 / max(lot, fala) | 1,00 | 1,00–1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath, 5 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
-| T-SK6 Vaelgrath: Uzdrowiciel lochowy na Obrońcy | 15,85 | 1,00–2,00 | **poza** | NIEDOKOŃCZONE S94: T-SK6 15,9 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S94 (tank S32 3,45 / min ≤ 3,5, leczenie od maks. HP celu, S69); decyzja właściciela jak dla Azgora (S93) |
-| Vaelgrath bez wsparcia, 3 graczy: s | 100,63 | ≤ 480,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,26 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 3 graczy: największy cios / HP | 0,59 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,20 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 4 graczy: s | 103,27 | ≤ 480,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,26 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 4 graczy: największy cios / HP | 0,59 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,20 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 5 graczy: s | 102,04 | ≤ 480,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,26 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 5 graczy: największy cios / HP | 0,59 | ≤ 1,00 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,19 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| T-SK6 Vaelgrath: Uzdrowiciel lochowy na Obrońcy | 18,92 | 1,00–2,00 | **poza** | NIEDOKOŃCZONE S94: T-SK6 15,9 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S94 (tank S32 3,45 / min ≤ 3,5, leczenie od maks. HP celu, S69); decyzja właściciela jak dla Azgora (S93) |
+| Vaelgrath bez wsparcia, 3 graczy: s | 125,73 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,22 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 3 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 4 graczy: s | 104,49 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,21 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 4 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 5 graczy: s | 87,40 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,20 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 5 graczy: największy cios / HP | 0,42 | ≤ 1,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
 | Vaelgrath: Mityki nieużyteczne dla Warrior | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath: Mityki nieużyteczne dla Hunter | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath: Mityki nieużyteczne dla Mage | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
@@ -7943,16 +7830,16 @@ Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie 27,
 
 | liczba | wartość |
 | --- | --: |
-| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 2,6, marksman.kingslayer 0,5, arcanist.arcanistBoss 0,4 |
-| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 2,6, marksman.kingslayer 0,4, arcanist.arcanistBoss 0,4, inquisitor.solo 0,7 |
-| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 2,6, marksman.kingslayer 0,4, arcanist.arcanistBoss 0,4, inquisitor.solo 0,7, destroyer.destroyerBoss 0,4 |
-| burza przy hazardShare 0 / 0,5 / 1 (faza 3) | 0,0: tank 353%/min, 0,5: tank 710%/min, 1,0: tank 1066%/min |
-| fale tarczy i okno bez obrażeń w fazie 2 (drużyna S32) | 3: fale 13,0 / 14,4 s, okno fazy 2 13,0 s (lot po fali 0,0 s); 4: fale 12,6 / 14,0 s, okno fazy 2 12,6 s (lot po fali 0,0 s); 5: fale 11,5 / 12,8 s, okno fazy 2 12,0 s (lot po fali 0,5 s) |
+| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 2,7, marksman.kingslayer 0,8, arcanist.arcanistBoss 0,8 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 2,1, marksman.kingslayer 0,6, arcanist.arcanistBoss 0,5, inquisitor.solo 0,5 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 1,7, marksman.kingslayer 0,4, arcanist.arcanistBoss 0,4, inquisitor.solo 0,4, destroyer.destroyerBoss 0,4 |
+| burza przy hazardShare 0 / 0,5 / 1 (faza 3) | 0,0: tank 277%/min, 0,5: tank 634%/min, 1,0: tank 990%/min |
+| fale tarczy i okno bez obrażeń w fazie 2 (drużyna S32) | 3: fale 7,4 / 8,2 s, okno fazy 2 12,0 s (lot po fali 4,6 s); 4: fale 6,3 / 7,0 s, okno fazy 2 12,0 s (lot po fali 5,7 s); 5: fale 5,1 / 5,7 s, okno fazy 2 12,0 s (lot po fali 6,9 s) |
 | trapper.poisoner na Vaelgracie: DPS 300 s ÷ DPS 60 s | 0,89 (1,022e+04 → 9130) |
 | inquisitor.solo na Vaelgracie: DPS 300 s ÷ DPS 60 s | 1,00 (7835 → 7836) |
-| harmonogram fazy 1 | frostBreath 5,5/min (73%), wingBuffet 5,4/min (99%), tailSwipe 5,4/min (81%) |
-| harmonogram fazy 2 | frostBreath 4,8/min (64%), wingBuffet 4,6/min (84%), tailSwipe 4,7/min (71%), blizzard 2,4/min (64%) |
-| harmonogram fazy 3 | frostBreath 4,1/min (55%), wingBuffet 4,0/min (73%), tailSwipe 4,0/min (60%), blizzard 2,1/min (56%), glacialRing 2,1/min (53%) |
+| harmonogram fazy 1 | frostBreath 4,4/min (73%), wingBuffet 3,3/min (77%), tailSwipe 3,3/min (77%), iceComet 2,2/min (95%), frostTomb 2,2/min (88%) |
+| harmonogram fazy 2 | frostBreath 4,1/min (68%), tailSwipe 3,2/min (75%), blizzard 3,1/min (83%), avalanche 3,1/min (72%), frostTomb 2,0/min (80%) |
+| harmonogram fazy 3 | frostBreath 3,5/min (58%), blizzard 2,3/min (61%), glacialRing 2,3/min (69%), avalanche 2,5/min (58%), iceComet 1,3/min (56%), absoluteZero 1,3/min (78%) |
 | grimrok: oczekiwane zabicia / dni do Mityka (3 dziennie, K0) | 50 / 16,7 |
 | morvane: oczekiwane zabicia / dni do Mityka (3 dziennie, K0) | 50 / 16,7 |
 | azgor: oczekiwane zabicia / dni do Mityka (3 dziennie, K0) | 50 / 16,7 |
@@ -8327,46 +8214,46 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,95** | 1,01 | **0,96** | 0,97 | 0,94 | 0,97 | 0,98 | 0,94 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,96 | 0,94 | 0,96 | 0,94 | 0,94 |
-| Zwykły · +0 · 70 | **0,95** | 1,00 | **0,95** | 0,96 | 0,93 | 0,96 | 0,98 | 0,93 |
-| Zwykły · +0 · 100 | **0,94** | 1,00 | **0,95** | 0,96 | 0,93 | 0,96 | 0,98 | 0,93 |
-| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,97** | 0,98 | 0,94 | 0,98 | 1,00 | 0,94 |
-| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,94 | 0,98 | 0,95 | 0,94 |
-| Zwykły · +9 · 70 | **0,94** | 1,00 | **0,96** | 0,98 | 0,94 | 0,97 | 1,01 | 0,94 |
-| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,96** | 0,97 | 0,94 | 0,97 | 1,01 | 0,94 |
-| Unikatowy · +0 · 20 | **0,96** | 1,02 | **0,97** | 0,98 | 0,94 | 0,98 | 0,99 | 0,94 |
-| Unikatowy · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,98 | 0,94 | 0,97 | 0,95 | 0,94 |
-| Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,96** | 0,97 | 0,93 | 0,97 | 0,99 | 0,93 |
-| Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,96** | 0,97 | 0,94 | 0,97 | 1,00 | 0,94 |
-| Unikatowy · +9 · 20 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,01 | 0,94 |
-| Unikatowy · +9 · 45 | **0,95** | 1,00 | **0,96** | 0,99 | 0,94 | 0,99 | 0,97 | 0,94 |
-| Unikatowy · +9 · 70 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,03 | 0,94 |
-| Unikatowy · +9 · 100 | **0,95** | 1,01 | **0,97** | 0,99 | 0,94 | 0,98 | 1,02 | 0,94 |
-| Heroiczny · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
-| Heroiczny · +0 · 45 | **0,95** | 1,01 | **0,95** | 0,98 | 0,94 | 0,98 | 0,96 | 0,94 |
-| Heroiczny · +0 · 70 | **0,96** | 1,01 | **0,96** | 0,98 | 0,94 | 0,98 | 1,00 | 0,94 |
-| Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,96** | 0,98 | 0,93 | 0,98 | 1,00 | 0,93 |
-| Heroiczny · +9 · 20 | **0,95** | 1,01 | 0,97 | 1,00 | 0,94 | 1,00 | 1,02 | 0,94 |
-| Heroiczny · +9 · 45 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,97 | 0,94 |
-| Heroiczny · +9 · 70 | **0,96** | 1,02 | 0,98 | 1,00 | 0,94 | 0,99 | 1,04 | 0,94 |
-| Heroiczny · +9 · 100 | **0,95** | 1,01 | **0,97** | 0,99 | 0,94 | 0,99 | 1,03 | 0,94 |
-| Legendarny · +0 · 20 | 0,98 | **1,04** | 1,01 | 1,03 | 0,98 | 1,03 | 1,04 | 0,98 |
-| Legendarny · +0 · 45 | **0,95** | 1,00 | 0,97 | 1,00 | 0,96 | 1,00 | 0,98 | 0,96 |
-| Legendarny · +0 · 70 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,02 | 0,95 |
-| Legendarny · +0 · 100 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,02 | 0,95 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 | 0,97 |
-| Legendarny · +9 · 45 | **0,95** | 1,00 | 0,98 | 1,01 | 0,96 | 1,01 | 0,99 | 0,96 |
-| Legendarny · +9 · 70 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,05 | 0,95 |
-| Legendarny · +9 · 100 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,05 | 0,95 |
-| Mityczny · +0 · 20 | **0,94** | 1,00 | 1,02 | 1,04 | 0,99 | 1,04 | 1,05 | 0,99 |
-| Mityczny · +0 · 45 | **0,93** | 0,98 | 1,00 | 1,03 | 0,98 | 1,02 | 1,01 | 0,98 |
-| Mityczny · +0 · 70 | **0,93** | 0,98 | 1,00 | 1,02 | 0,98 | 1,02 | 1,05 | 0,98 |
-| Mityczny · +0 · 100 | **0,93** | 0,98 | 1,00 | 1,02 | 0,97 | 1,02 | 1,05 | 0,97 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 | 0,97 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | 0,98 | 1,02 | 0,96 | 1,01 | 1,00 | 0,96 |
-| Mityczny · +9 · 70 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 | 0,95 |
-| Mityczny · +9 · 100 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 | 0,95 |
+| Zwykły · +0 · 20 | **0,95** | 1,01 | **0,96** | 0,97 | 0,94 | 0,97 | 0,98 → 0,99 | 0,94 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,96 | 0,94 | 0,96 | 0,94 → 0,95 | 0,94 |
+| Zwykły · +0 · 70 | **0,95** | 1,00 | **0,95** | 0,96 | 0,93 | 0,96 | 0,98 → 0,99 | 0,93 |
+| Zwykły · +0 · 100 | **0,94** | 1,00 | **0,95** | 0,96 | 0,93 | 0,96 | 0,98 → 0,99 | 0,93 |
+| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,97** | 0,98 | 0,94 | 0,98 | 1,00 → 1,01 | 0,94 |
+| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,94 | 0,98 | 0,95 → 0,97 | 0,94 |
+| Zwykły · +9 · 70 | **0,94** | 1,00 | **0,96 → 0,97** | 0,98 | 0,94 | 0,97 | 1,01 → 1,02 | 0,94 |
+| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,96** | 0,97 | 0,94 | 0,97 | 1,01 → 1,02 | 0,94 |
+| Unikatowy · +0 · 20 | **0,96** | 1,02 | **0,97** | 0,98 | 0,94 | 0,98 | 0,99 → 1,00 | 0,94 |
+| Unikatowy · +0 · 45 | **0,95** | 1,00 | **0,95** | 0,98 | 0,94 | 0,97 | 0,95 → 0,96 | 0,94 |
+| Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,96** | 0,97 | 0,93 | 0,97 | 0,99 → 1,00 | 0,93 |
+| Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,96** | 0,97 | 0,94 | 0,97 | 1,00 → 1,01 | 0,94 |
+| Unikatowy · +9 · 20 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,01 → 1,03 | 0,94 |
+| Unikatowy · +9 · 45 | **0,95** | 1,00 | **0,96** | 0,99 | 0,94 | 0,99 | 0,97 → 0,98 | 0,94 |
+| Unikatowy · +9 · 70 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,03 → 1,04 | 0,94 |
+| Unikatowy · +9 · 100 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,98 | 1,02 → 1,04 | 0,94 |
+| Heroiczny · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 → 0,99 | 0,93 |
+| Heroiczny · +0 · 45 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,94 | 0,98 | 0,96 → 0,97 | 0,94 |
+| Heroiczny · +0 · 70 | **0,96** | 1,01 | **0,96 → 0,97** | 0,98 | 0,94 | 0,98 | 1,00 → 1,02 | 0,94 |
+| Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,96** | 0,98 | 0,93 | 0,98 | 1,00 → 1,01 | 0,93 |
+| Heroiczny · +9 · 20 | **0,95** | 1,01 | 0,97 → 0,98 | 1,00 | 0,94 | 1,00 | 1,02 → 1,03 | 0,94 |
+| Heroiczny · +9 · 45 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,97 → 0,98 | 0,94 |
+| Heroiczny · +9 · 70 | **0,96** | 1,02 | 0,98 | 1,00 | 0,94 | 0,99 | 1,04 → 1,05 | 0,94 |
+| Heroiczny · +9 · 100 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,03 → 1,04 | 0,94 |
+| Legendarny · +0 · 20 | 0,98 | **1,04** | 1,01 | 1,03 | 0,98 | 1,03 | 1,04 → 1,05 | 0,98 |
+| Legendarny · +0 · 45 | **0,95** | 1,00 | 0,97 → 0,98 | 1,00 | 0,96 | 1,00 | 0,98 → 0,99 | 0,96 |
+| Legendarny · +0 · 70 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,02 → 1,04 | 0,95 |
+| Legendarny · +0 · 100 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,02 → 1,04 | 0,95 |
+| Legendarny · +9 · 20 | **0,97** | 1,03 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 → 1,07 | 0,97 |
+| Legendarny · +9 · 45 | **0,95** | 1,00 | 0,98 | 1,01 | 0,96 | 1,01 | 0,99 → 1,00 | 0,96 |
+| Legendarny · +9 · 70 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,05 → 1,06 | 0,95 |
+| Legendarny · +9 · 100 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,05 → 1,06 | 0,95 |
+| Mityczny · +0 · 20 | **0,94** | 1,00 | 1,02 | 1,04 | 0,99 | 1,04 | 1,05 → 1,06 | 0,99 |
+| Mityczny · +0 · 45 | **0,93** | 0,98 | 1,00 | 1,03 | 0,98 | 1,02 | 1,01 → 1,02 | 0,98 |
+| Mityczny · +0 · 70 | **0,93** | 0,98 | 1,00 → 1,01 | 1,02 | 0,98 | 1,02 | 1,05 → 1,06 | 0,98 |
+| Mityczny · +0 · 100 | **0,93** | 0,98 | 1,00 | 1,02 | 0,97 | 1,02 | 1,05 → 1,06 | 0,97 |
+| Mityczny · +9 · 20 | **0,94** | 1,00 | 1,01 | 1,03 | 0,97 | 1,03 | 1,06 → 1,07 | 0,97 |
+| Mityczny · +9 · 45 | **0,93** | 0,98 | 0,98 | 1,02 | 0,96 | 1,01 | 1,00 → 1,01 | 0,96 |
+| Mityczny · +9 · 70 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 → 1,07 | 0,95 |
+| Mityczny · +9 · 100 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 → 1,07 | 0,95 |
 
 ### G8: Wojownik axe2h wobec zestawu domyślnego
 
@@ -8374,46 +8261,46 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
-| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,94 | 0,92 |
-| Zwykły · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,98 | 0,92 |
-| Zwykły · +0 · 100 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,98 | 0,92 |
-| Zwykły · +9 · 20 | **0,95** | 1,00 | **0,95** | 0,99 | 0,92 | 0,98 | 1,01 | 0,92 |
-| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,94** | 0,98 | 0,91 | 0,97 | 0,96 | 0,91 |
-| Zwykły · +9 · 70 | **0,94** | 1,00 | **0,95** | 0,98 | 0,91 | 0,97 | 1,02 | 0,91 |
-| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,94** | 0,98 | 0,91 | 0,97 | 1,01 | 0,91 |
-| Unikatowy · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,98 | 0,92 | 0,98 | 0,99 | 0,92 |
-| Unikatowy · +0 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,98 | 0,96 | 0,92 |
-| Unikatowy · +0 · 70 | **0,94** | 0,99 | **0,95** | 0,97 | 0,92 | 0,97 | 1,00 | 0,92 |
-| Unikatowy · +0 · 100 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,97 | 1,00 | 0,92 |
-| Unikatowy · +9 · 20 | **0,94** | 1,00 | **0,96** | 1,01 | 0,91 | 0,99 | 1,03 | 0,91 |
-| Unikatowy · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,01 | 0,91 | 1,00 | 0,99 | 0,91 |
-| Unikatowy · +9 · 70 | **0,94** | 1,00 | **0,96** | 1,00 | 0,90 | 0,99 | 1,04 | 0,90 |
-| Unikatowy · +9 · 100 | **0,94** | 1,00 | **0,95** | 1,00 | 0,90 | 0,99 | 1,04 | 0,90 |
+| Zwykły · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 → 0,99 | 0,93 |
+| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,94 → 0,95 | 0,92 |
+| Zwykły · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,98 → 0,99 | 0,92 |
+| Zwykły · +0 · 100 | **0,94** | 0,99 | **0,94** | 0,96 | 0,92 | 0,96 | 0,98 → 0,99 | 0,92 |
+| Zwykły · +9 · 20 | **0,95** | 1,00 | **0,95 → 0,96** | 0,99 | 0,92 | 0,98 | 1,01 → 1,02 | 0,92 |
+| Zwykły · +9 · 45 | **0,94** | 0,99 | **0,94** | 0,98 | 0,91 | 0,97 | 0,96 → 0,97 | 0,91 |
+| Zwykły · +9 · 70 | **0,94** | 1,00 | **0,95** | 0,98 | 0,91 | 0,97 | 1,02 → 1,03 | 0,91 |
+| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,94 → 0,95** | 0,98 | 0,91 | 0,97 | 1,01 → 1,03 | 0,91 |
+| Unikatowy · +0 · 20 | **0,94** | 1,00 | **0,95** | 0,98 | 0,92 | 0,98 | 0,99 → 1,00 | 0,92 |
+| Unikatowy · +0 · 45 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,98 | 0,96 → 0,97 | 0,92 |
+| Unikatowy · +0 · 70 | **0,94** | 0,99 | **0,95** | 0,97 | 0,92 | 0,97 | 1,00 → 1,01 | 0,92 |
+| Unikatowy · +0 · 100 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,97 | 1,00 → 1,01 | 0,92 |
+| Unikatowy · +9 · 20 | **0,94** | 1,00 | **0,96** | 1,01 | 0,91 | 0,99 | 1,03 → 1,04 | 0,91 |
+| Unikatowy · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,01 | 0,91 | 1,00 | 0,99 → 1,00 | 0,91 |
+| Unikatowy · +9 · 70 | **0,94** | 1,00 | **0,96** | 1,00 | 0,90 | 0,99 | 1,04 → 1,06 | 0,90 |
+| Unikatowy · +9 · 100 | **0,94** | 1,00 | **0,95 → 0,96** | 1,00 | 0,90 | 0,99 | 1,04 → 1,06 | 0,90 |
 | Heroiczny · +0 · 20 | **0,92** | 0,98 | **0,94** | 0,97 | 0,90 | 0,96 | 0,99 | 0,90 |
-| Heroiczny · +0 · 45 | **0,94** | 0,99 | **0,95** | 0,99 | 0,92 | 0,98 | 0,97 | 0,92 |
-| Heroiczny · +0 · 70 | **0,94** | 1,00 | **0,96** | 0,99 | 0,92 | 0,98 | 1,02 | 0,92 |
-| Heroiczny · +0 · 100 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,98 | 1,01 | 0,92 |
-| Heroiczny · +9 · 20 | **0,94** | 0,99 | **0,96** | 1,02 | 0,90 | 1,00 | 1,05 | 0,90 |
-| Heroiczny · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,02 | 0,90 | 1,00 | 1,00 | 0,90 |
-| Heroiczny · +9 · 70 | **0,94** | 1,00 | **0,96** | 1,02 | 0,90 | 1,00 | 1,06 | 0,90 |
-| Heroiczny · +9 · 100 | **0,94** | 0,99 | **0,95** | 1,02 | 0,89 | 1,00 | 1,06 | 0,89 |
-| Legendarny · +0 · 20 | **0,95** | 1,01 | **0,97** | 1,00 | 0,93 | 1,00 | 1,02 | 0,93 |
-| Legendarny · +0 · 45 | **0,93** | 0,98 | **0,94** | 0,98 | 0,91 | 0,98 | 0,97 | 0,91 |
-| Legendarny · +0 · 70 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,01 | 0,91 |
-| Legendarny · +0 · 100 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,01 | 0,91 |
-| Legendarny · +9 · 20 | **0,95** | 1,00 | **0,96** | 1,03 | 0,90 | 1,01 | 1,07 | 0,90 |
-| Legendarny · +9 · 45 | **0,93** | 0,98 | **0,94** | 1,02 | 0,89 | 1,00 | 1,00 | 0,89 |
-| Legendarny · +9 · 70 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,06 | 0,88 |
-| Legendarny · +9 · 100 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,06 | 0,88 |
-| Mityczny · +0 · 20 | **0,92** | **0,97** | **0,93** | 0,97 | 0,89 | 0,96 | 0,99 | 0,89 |
-| Mityczny · +0 · 45 | **0,91** | **0,95** | **0,91** | 0,96 | 0,88 | 0,95 | 0,95 | 0,88 |
-| Mityczny · +0 · 70 | **0,90** | **0,96** | **0,92** | 0,96 | 0,88 | 0,95 | 0,99 | 0,88 |
-| Mityczny · +0 · 100 | **0,90** | **0,96** | **0,92** | 0,96 | 0,87 | 0,95 | 0,99 | 0,87 |
-| Mityczny · +9 · 20 | **0,92** | 0,97 | **0,92** | 1,01 | 0,85 | 0,98 | 1,04 | 0,85 |
-| Mityczny · +9 · 45 | **0,91** | **0,95** | **0,90** | 0,99 | 0,84 | 0,96 | 0,98 | 0,84 |
-| Mityczny · +9 · 70 | **0,90** | **0,95** | **0,90** | 0,99 | 0,83 | 0,96 | 1,04 | 0,83 |
-| Mityczny · +9 · 100 | **0,90** | **0,96** | **0,90** | 0,99 | 0,82 | 0,96 | 1,04 | 0,82 |
+| Heroiczny · +0 · 45 | **0,94** | 0,99 | **0,95** | 0,99 | 0,92 | 0,98 | 0,97 → 0,98 | 0,92 |
+| Heroiczny · +0 · 70 | **0,94** | 1,00 | **0,96** | 0,99 | 0,92 | 0,98 | 1,02 → 1,03 | 0,92 |
+| Heroiczny · +0 · 100 | **0,94** | 0,99 | **0,95** | 0,98 | 0,92 | 0,98 | 1,01 → 1,02 | 0,92 |
+| Heroiczny · +9 · 20 | **0,94** | 0,99 | **0,96** | 1,02 | 0,90 | 1,00 | 1,05 → 1,06 | 0,90 |
+| Heroiczny · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,02 | 0,90 | 1,00 | 1,00 → 1,01 | 0,90 |
+| Heroiczny · +9 · 70 | **0,94** | 1,00 | **0,96** | 1,02 | 0,90 | 1,00 | 1,06 → 1,08 | 0,90 |
+| Heroiczny · +9 · 100 | **0,94** | 0,99 | **0,95 → 0,96** | 1,02 | 0,89 | 1,00 | 1,06 → 1,07 | 0,89 |
+| Legendarny · +0 · 20 | **0,95** | 1,01 | **0,97** | 1,00 | 0,93 | 1,00 | 1,02 → 1,03 | 0,93 |
+| Legendarny · +0 · 45 | **0,93** | 0,98 | **0,94 → 0,95** | 0,98 | 0,91 | 0,98 | 0,97 → 0,98 | 0,91 |
+| Legendarny · +0 · 70 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,01 → 1,02 | 0,91 |
+| Legendarny · +0 · 100 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,01 → 1,02 | 0,91 |
+| Legendarny · +9 · 20 | **0,95** | 1,00 | **0,96 → 0,97** | 1,03 | 0,90 | 1,01 | 1,07 → 1,08 | 0,90 |
+| Legendarny · +9 · 45 | **0,93** | 0,98 | **0,94 → 0,95** | 1,02 | 0,89 | 1,00 | 1,00 → 1,01 | 0,89 |
+| Legendarny · +9 · 70 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,06 → 1,07 | 0,88 |
+| Legendarny · +9 · 100 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,06 → 1,08 | 0,88 |
+| Mityczny · +0 · 20 | **0,92** | **0,97** | **0,93** | 0,97 | 0,89 | 0,96 | 0,99 → 1,00 | 0,89 |
+| Mityczny · +0 · 45 | **0,91** | **0,95** | **0,91 → 0,92** | 0,96 | 0,88 | 0,95 | 0,95 → 0,96 | 0,88 |
+| Mityczny · +0 · 70 | **0,90** | **0,96** | **0,92** | 0,96 | 0,88 | 0,95 | 0,99 → 1,00 | 0,88 |
+| Mityczny · +0 · 100 | **0,90** | **0,96** | **0,92** | 0,96 | 0,87 | 0,95 | 0,99 → 1,00 | 0,87 |
+| Mityczny · +9 · 20 | **0,92** | 0,97 | **0,92** | 1,01 | 0,85 | 0,98 | 1,04 → 1,05 | 0,85 |
+| Mityczny · +9 · 45 | **0,91** | **0,95** | **0,90** | 0,99 | 0,84 | 0,96 | 0,98 → 0,99 | 0,84 |
+| Mityczny · +9 · 70 | **0,90** | **0,95** | **0,90 → 0,91** | 0,99 | 0,83 | 0,96 | 1,04 → 1,05 | 0,83 |
+| Mityczny · +9 · 100 | **0,90** | **0,96** | **0,90** | 0,99 | 0,82 | 0,96 | 1,04 → 1,05 | 0,82 |
 
 ### G8: Wojownik hammer2h wobec zestawu domyślnego
 
@@ -8421,46 +8308,46 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 | 0,93 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94** | 0,97 | 0,92 | 0,96 | 0,96 | 0,92 |
-| Zwykły · +0 · 70 | **0,95** | 1,00 | **0,95** | 0,96 | 0,92 | 0,96 | 1,00 | 0,92 |
-| Zwykły · +0 · 100 | **0,95** | 1,00 | **0,95** | 0,96 | 0,92 | 0,96 | 1,00 | 0,92 |
-| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 1,01 | 0,91 |
-| Zwykły · +9 · 45 | **0,95** | 1,00 | **0,94** | 0,98 | 0,91 | 0,98 | 0,98 | 0,91 |
-| Zwykły · +9 · 70 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 1,04 | 0,91 |
-| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,95** | 0,98 | 0,91 | 0,97 | 1,04 | 0,91 |
-| Unikatowy · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 0,99 | 0,92 |
-| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,97 | 0,92 |
-| Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 1,01 | 0,92 |
-| Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 1,01 | 0,92 |
-| Unikatowy · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,91 | 0,99 | 1,02 | 0,91 |
-| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,99 | 0,91 |
-| Unikatowy · +9 · 70 | **0,96** | 1,02 | **0,96** | 1,00 | 0,91 | 0,98 | 1,06 | 0,91 |
-| Unikatowy · +9 · 100 | **0,95** | 1,01 | **0,96** | 0,99 | 0,90 | 0,98 | 1,06 | 0,90 |
-| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,96 | 0,91 | 0,96 | 0,98 | 0,91 |
-| Heroiczny · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,98 | 0,98 | 0,92 |
-| Heroiczny · +0 · 70 | **0,96** | 1,02 | **0,96** | 0,98 | 0,92 | 0,98 | 1,03 | 0,92 |
-| Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 1,02 | 0,92 |
-| Heroiczny · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,90 | 0,99 | 1,02 | 0,90 |
-| Heroiczny · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,99 | 0,91 |
-| Heroiczny · +9 · 70 | **0,96** | 1,02 | **0,96** | 1,00 | 0,90 | 0,99 | 1,06 | 0,90 |
-| Heroiczny · +9 · 100 | **0,95** | 1,01 | **0,95** | 0,99 | 0,90 | 0,98 | 1,06 | 0,90 |
-| Legendarny · +0 · 20 | 0,97 | 1,03 | **0,97** | 0,99 | 0,93 | 0,99 | 1,01 | 0,93 |
-| Legendarny · +0 · 45 | **0,95** | 1,01 | **0,94** | 0,98 | 0,92 | 0,97 | 0,97 | 0,92 |
-| Legendarny · +0 · 70 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 1,02 | 0,92 |
-| Legendarny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,97 | 1,02 | 0,91 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | **0,96** | 1,00 | 0,91 | 0,99 | 1,03 | 0,91 |
-| Legendarny · +9 · 45 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 0,99 | 0,90 |
-| Legendarny · +9 · 70 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,06 | 0,89 |
-| Legendarny · +9 · 100 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,06 | 0,89 |
-| Mityczny · +0 · 20 | **0,94** | 0,99 | **0,93** | 0,96 | 0,89 | 0,96 | 0,98 | 0,89 |
+| Zwykły · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,93 | 0,97 | 0,98 → 0,99 | 0,93 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **0,94 → 0,95** | 0,97 | 0,92 | 0,96 | 0,96 → 0,97 | 0,92 |
+| Zwykły · +0 · 70 | **0,95** | 1,00 | **0,95** | 0,96 | 0,92 | 0,96 | 1,00 → 1,01 | 0,92 |
+| Zwykły · +0 · 100 | **0,95** | 1,00 | **0,95** | 0,96 | 0,92 | 0,96 | 1,00 → 1,01 | 0,92 |
+| Zwykły · +9 · 20 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,98 | 1,01 → 1,02 | 0,91 |
+| Zwykły · +9 · 45 | **0,95** | 1,00 | **0,94 → 0,95** | 0,98 | 0,91 | 0,98 | 0,98 → 0,99 | 0,91 |
+| Zwykły · +9 · 70 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,91 | 0,98 | 1,04 → 1,06 | 0,91 |
+| Zwykły · +9 · 100 | **0,94** | 1,00 | **0,95** | 0,98 | 0,91 | 0,97 | 1,04 → 1,06 | 0,91 |
+| Unikatowy · +0 · 20 | **0,96** | 1,01 | **0,95** | 0,97 | 0,92 | 0,97 | 0,99 → 1,00 | 0,92 |
+| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,97 → 0,98 | 0,92 |
+| Unikatowy · +0 · 70 | **0,95** | 1,01 | **0,95 → 0,96** | 0,97 | 0,92 | 0,97 | 1,01 → 1,03 | 0,92 |
+| Unikatowy · +0 · 100 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,92 | 0,97 | 1,01 → 1,03 | 0,92 |
+| Unikatowy · +9 · 20 | **0,96** | 1,02 | **0,95 → 0,96** | 0,99 | 0,91 | 0,99 | 1,02 → 1,03 | 0,91 |
+| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,99 → 1,01 | 0,91 |
+| Unikatowy · +9 · 70 | **0,96** | 1,02 | **0,96** | 1,00 | 0,91 | 0,98 | 1,06 → 1,07 | 0,91 |
+| Unikatowy · +9 · 100 | **0,95** | 1,01 | **0,96** | 0,99 | 0,90 | 0,98 | 1,06 → 1,07 | 0,90 |
+| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,96 | 0,91 | 0,96 | 0,98 → 0,99 | 0,91 |
+| Heroiczny · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,98 | 0,98 → 0,99 | 0,92 |
+| Heroiczny · +0 · 70 | **0,96** | 1,02 | **0,96** | 0,98 | 0,92 | 0,98 | 1,03 → 1,04 | 0,92 |
+| Heroiczny · +0 · 100 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,92 | 0,97 | 1,02 → 1,03 | 0,92 |
+| Heroiczny · +9 · 20 | **0,96** | 1,02 | **0,95** | 0,99 | 0,90 | 0,99 | 1,02 → 1,03 | 0,90 |
+| Heroiczny · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 0,99 → 1,01 | 0,91 |
+| Heroiczny · +9 · 70 | **0,96** | 1,02 | **0,96** | 1,00 | 0,90 | 0,99 | 1,06 → 1,08 | 0,90 |
+| Heroiczny · +9 · 100 | **0,95** | 1,01 → 1,02 | **0,95** | 0,99 | 0,90 | 0,98 | 1,06 → 1,07 | 0,90 |
+| Legendarny · +0 · 20 | 0,97 | 1,03 | **0,97** | 0,99 | 0,93 | 0,99 | 1,01 → 1,02 | 0,93 |
+| Legendarny · +0 · 45 | **0,95** | 1,01 | **0,94 → 0,95** | 0,98 | 0,92 | 0,97 | 0,97 → 0,98 | 0,92 |
+| Legendarny · +0 · 70 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,92 | 0,97 | 1,02 → 1,04 | 0,92 |
+| Legendarny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,97 | 1,02 → 1,04 | 0,91 |
+| Legendarny · +9 · 20 | **0,97** | 1,03 | **0,96** | 1,00 | 0,91 | 0,99 | 1,03 → 1,04 | 0,91 |
+| Legendarny · +9 · 45 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 0,99 → 1,00 | 0,90 |
+| Legendarny · +9 · 70 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,06 → 1,07 | 0,89 |
+| Legendarny · +9 · 100 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,06 → 1,07 | 0,89 |
+| Mityczny · +0 · 20 | **0,94** | 0,99 | **0,93** | 0,96 | 0,89 | 0,96 | 0,98 → 0,99 | 0,89 |
 | Mityczny · +0 · 45 | **0,93** | 0,98 | **0,92** | 0,96 | 0,89 | 0,95 | 0,96 | 0,89 |
-| Mityczny · +0 · 70 | **0,92** | 0,98 | **0,92** | 0,95 | 0,88 | 0,95 | 1,00 | 0,88 |
-| Mityczny · +0 · 100 | **0,92** | 0,98 | **0,92** | 0,95 | 0,88 | 0,95 | 1,00 | 0,88 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | **0,92** | 0,97 | 0,87 | 0,96 | 1,01 | 0,87 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | **0,91** | 0,96 | 0,86 | 0,95 | 0,96 | 0,86 |
-| Mityczny · +9 · 70 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,03 | 0,86 |
-| Mityczny · +9 · 100 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,03 | 0,86 |
+| Mityczny · +0 · 70 | **0,92** | 0,98 | **0,92 → 0,93** | 0,95 | 0,88 | 0,95 | 1,00 → 1,01 | 0,88 |
+| Mityczny · +0 · 100 | **0,92** | 0,98 | **0,92 → 0,93** | 0,95 | 0,88 | 0,95 | 1,00 → 1,01 | 0,88 |
+| Mityczny · +9 · 20 | **0,94** | 1,00 | **0,92** | 0,97 | 0,87 | 0,96 | 1,01 → 1,02 | 0,87 |
+| Mityczny · +9 · 45 | **0,93** | 0,98 | **0,91** | 0,96 | 0,86 | 0,95 | 0,96 → 0,97 | 0,86 |
+| Mityczny · +9 · 70 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,03 → 1,04 | 0,86 |
+| Mityczny · +9 · 100 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,03 → 1,05 | 0,86 |
 
 ### G8: Wojownik spear2h wobec zestawu domyślnego
 
@@ -8469,29 +8356,29 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
 | Zwykły · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,94 | 0,92 |
-| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,93** | 0,91 | 0,96 | 0,91 | 0,90 | 0,90 |
-| Zwykły · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,91 | 0,95 | 0,91 | 0,93 | 0,91 |
-| Zwykły · +0 · 100 | **0,93** | 0,99 | **0,93** | 0,91 | 0,95 | 0,91 | 0,93 | 0,91 |
+| Zwykły · +0 · 45 | **0,94** | 0,99 | **0,93** | 0,91 | 0,96 | 0,91 | 0,90 → 0,91 | 0,90 → 0,91 |
+| Zwykły · +0 · 70 | **0,94** | 0,99 | **0,94** | 0,91 | 0,95 | 0,91 | 0,93 → 0,94 | 0,91 |
+| Zwykły · +0 · 100 | **0,93** | 0,99 | **0,93 → 0,94** | 0,91 | 0,95 | 0,91 | 0,93 → 0,94 | 0,91 |
 | Zwykły · +9 · 20 | **0,95** | 1,01 | **0,96** | 0,92 | 0,99 | 0,92 | 0,95 | 0,92 |
-| Zwykły · +9 · 45 | **0,93** | 0,98 | **0,94** | 0,90 | 0,98 | 0,90 | 0,89 | 0,89 |
-| Zwykły · +9 · 70 | **0,93** | 0,99 | **0,95** | 0,90 | 0,98 | 0,90 | 0,94 | 0,90 |
-| Zwykły · +9 · 100 | **0,93** | 0,99 | **0,94** | 0,90 | 0,97 | 0,90 | 0,94 | 0,90 |
-| Unikatowy · +0 · 20 | 0,97 | 1,02 | **0,97** | 0,94 | 0,98 | 0,94 | 0,96 | 0,94 |
-| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,93 | 0,98 | 0,93 | 0,92 | 0,92 |
-| Unikatowy · +0 · 70 | **0,96** | 1,01 | **0,95** | 0,93 | 0,97 | 0,93 | 0,96 | 0,93 |
-| Unikatowy · +0 · 100 | **0,96** | 1,01 | **0,95** | 0,93 | 0,97 | 0,93 | 0,96 | 0,93 |
-| Unikatowy · +9 · 20 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,93 | 0,96 | 0,93 |
-| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,96** | 0,93 | 1,00 | 0,93 | 0,92 | 0,92 |
+| Zwykły · +9 · 45 | **0,93** | 0,98 | **0,94** | 0,90 | 0,98 | 0,90 | 0,89 → 0,90 | 0,89 → 0,90 |
+| Zwykły · +9 · 70 | **0,93** | 0,99 | **0,95** | 0,90 | 0,98 | 0,90 | 0,94 → 0,95 | 0,90 |
+| Zwykły · +9 · 100 | **0,93** | 0,99 | **0,94 → 0,95** | 0,90 | 0,97 | 0,90 | 0,94 → 0,95 | 0,90 |
+| Unikatowy · +0 · 20 | 0,97 | 1,02 | **0,97** | 0,94 | 0,98 | 0,94 | 0,96 → 0,97 | 0,94 |
+| Unikatowy · +0 · 45 | **0,96** | 1,01 | **0,95** | 0,93 | 0,98 | 0,93 | 0,92 → 0,93 | 0,92 → 0,93 |
+| Unikatowy · +0 · 70 | **0,96** | 1,01 | **0,95 → 0,96** | 0,93 | 0,97 | 0,93 | 0,96 | 0,93 |
+| Unikatowy · +0 · 100 | **0,96** | 1,01 | **0,95 → 0,96** | 0,93 | 0,97 | 0,93 | 0,96 | 0,93 |
+| Unikatowy · +9 · 20 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,93 | 0,96 → 0,97 | 0,93 |
+| Unikatowy · +9 · 45 | **0,96** | 1,01 | **0,96** | 0,93 | 1,00 | 0,93 | 0,92 → 0,93 | 0,92 → 0,93 |
 | Unikatowy · +9 · 70 | **0,96** | 1,01 | **0,97** | 0,92 | 1,00 | 0,92 | 0,97 | 0,92 |
 | Unikatowy · +9 · 100 | **0,96** | 1,01 | **0,97** | 0,92 | 0,99 | 0,92 | 0,97 | 0,92 |
-| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,94 | 0,92 |
+| Heroiczny · +0 · 20 | **0,95** | 1,00 | **0,95** | 0,92 | 0,97 | 0,92 | 0,94 → 0,95 | 0,92 |
 | Heroiczny · +0 · 45 | **0,97** | 1,01 | **0,96** | 0,94 | 0,98 | 0,94 | 0,93 | 0,93 |
-| Heroiczny · +0 · 70 | 0,97 | 1,02 | **0,97** | 0,94 | 0,98 | 0,94 | 0,97 | 0,94 |
-| Heroiczny · +0 · 100 | **0,97** | 1,01 | **0,96** | 0,93 | 0,98 | 0,93 | 0,96 | 0,93 |
-| Heroiczny · +9 · 20 | 0,97 | 1,03 | 0,98 | 0,94 | 1,01 | 0,94 | 0,97 | 0,94 |
+| Heroiczny · +0 · 70 | 0,97 | 1,02 | **0,97** | 0,94 | 0,98 | 0,94 | 0,97 → 0,98 | 0,94 |
+| Heroiczny · +0 · 100 | **0,97** | 1,01 → 1,02 | **0,96** | 0,93 | 0,98 | 0,93 | 0,96 → 0,97 | 0,93 |
+| Heroiczny · +9 · 20 | 0,97 | 1,03 | 0,98 | 0,94 | 1,01 | 0,94 | 0,97 → 0,98 | 0,94 |
 | Heroiczny · +9 · 45 | 0,97 | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,93 | 0,93 |
-| Heroiczny · +9 · 70 | **0,97** | 1,02 | 0,98 | 0,93 | 1,01 | 0,93 | 0,98 | 0,93 |
-| Heroiczny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,97 | 0,92 |
+| Heroiczny · +9 · 70 | **0,97** | 1,02 | 0,98 | 0,93 | 1,01 | 0,93 | 0,98 → 0,99 | 0,93 |
+| Heroiczny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,97 → 0,98 | 0,92 |
 | Legendarny · +0 · 20 | 0,99 | **1,04** | 0,98 | 0,96 | 1,00 | 0,96 | 0,98 | 0,96 |
 | Legendarny · +0 · 45 | **0,97** | 1,01 | **0,96** | 0,94 | 0,98 | 0,94 | 0,93 | 0,93 |
 | Legendarny · +0 · 70 | **0,97** | 1,02 | **0,96** | 0,93 | 0,98 | 0,93 | 0,97 | 0,93 |
@@ -8500,14 +8387,14 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Legendarny · +9 · 45 | **0,97** | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,93 | 0,93 |
 | Legendarny · +9 · 70 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,98 | 0,92 |
 | Legendarny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,98 | 0,92 |
-| Mityczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,92 | 0,96 | 0,92 | 0,94 | 0,92 |
+| Mityczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,92 | 0,96 | 0,92 | 0,94 → 0,95 | 0,92 |
 | Mityczny · +0 · 45 | **0,95** | 0,99 | **0,93** | 0,92 | 0,95 | 0,92 | 0,91 | 0,91 |
-| Mityczny · +0 · 70 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,94 | 0,91 |
-| Mityczny · +0 · 100 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,94 | 0,91 |
+| Mityczny · +0 · 70 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,94 → 0,95 | 0,91 |
+| Mityczny · +0 · 100 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,94 → 0,95 | 0,91 |
 | Mityczny · +9 · 20 | **0,96** | 1,00 | **0,96** | 0,92 | 0,98 | 0,92 | 0,96 | 0,92 |
 | Mityczny · +9 · 45 | **0,94** | 0,98 | **0,93** | 0,90 | 0,97 | 0,90 | 0,90 | 0,90 |
-| Mityczny · +9 · 70 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 | 0,90 |
-| Mityczny · +9 · 100 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 | 0,90 |
+| Mityczny · +9 · 70 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 → 0,96 | 0,90 |
+| Mityczny · +9 · 100 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,95 → 0,96 | 0,90 |
 
 ### G8: Mag staff wobec zestawu domyślnego
 
@@ -8524,11 +8411,11 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Zwykły · +9 · 70 | 0,97 | 0,99 | **0,92** | 0,92 | 0,92 | 0,92 | 0,92 | 0,92 |
 | Zwykły · +9 · 100 | **0,96** | 0,98 | **0,91** | 0,91 | 0,91 | 0,91 | 0,91 | 0,91 |
 | Unikatowy · +0 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,95 | 0,94 |
-| Unikatowy · +0 · 45 | 1,00 | 1,01 | **0,94** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
+| Unikatowy · +0 · 45 | 1,00 | 1,01 | **0,94** | 0,95 | 0,94 | 0,95 | 0,94 → 0,95 | 0,94 |
 | Unikatowy · +0 · 70 | 0,99 | 1,01 | **0,94** | 0,94 | 0,93 | 0,94 | 0,94 | 0,93 |
 | Unikatowy · +0 · 100 | 0,99 | 1,00 | **0,93** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
 | Unikatowy · +9 · 20 | 1,00 | 1,02 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 | 0,95 |
-| Unikatowy · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,94 | 0,95 | 0,94 | 0,94 |
+| Unikatowy · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,94 | 0,95 | 0,94 → 0,95 | 0,94 |
 | Unikatowy · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 | 0,93 |
 | Unikatowy · +9 · 100 | 0,97 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
 | Heroiczny · +0 · 20 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
@@ -8545,10 +8432,10 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Legendarny · +0 · 100 | 0,98 | 1,00 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
 | Legendarny · +9 · 20 | 1,00 | 1,02 | **0,96** | 0,96 | 0,96 | 0,96 | 0,96 | 0,96 |
 | Legendarny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 | 0,95 |
-| Legendarny · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 | 0,93 |
-| Legendarny · +9 · 100 | **0,97** | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 | 0,92 |
+| Legendarny · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,93 → 0,94 | 0,93 → 0,94 |
+| Legendarny · +9 · 100 | **0,97** | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,92 → 0,93 | 0,92 → 0,93 |
 | Mityczny · +0 · 20 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
-| Mityczny · +0 · 45 | 0,98 | 1,00 | **0,93** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
+| Mityczny · +0 · 45 | 0,98 | 1,00 | **0,93 → 0,94** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
 | Mityczny · +0 · 70 | **0,97** | 0,98 | **0,92** | 0,92 | 0,92 | 0,93 | 0,92 | 0,92 |
 | Mityczny · +0 · 100 | **0,96** | 0,98 | **0,92** | 0,92 | 0,92 | 0,92 | 0,91 | 0,91 |
 | Mityczny · +9 · 20 | 0,97 | 0,99 | **0,94** | 0,94 | 0,95 | 0,95 | 0,94 | 0,94 |
@@ -8563,7 +8450,7 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
 | Zwykły · +0 · 20 | 1,00 | 1,01 | **0,90** | 0,90 | 0,89 | 0,90 | 0,93 | 0,89 |
-| Zwykły · +0 · 45 | 0,99 | 1,00 | **0,90** | 0,89 | 0,89 | 0,89 | 0,92 | 0,89 |
+| Zwykły · +0 · 45 | 0,99 | 1,00 | **0,90** | 0,89 | 0,89 | 0,89 | 0,92 → 0,93 | 0,89 |
 | Zwykły · +0 · 70 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 | 0,88 |
 | Zwykły · +0 · 100 | 0,98 | 0,99 | **0,89** | 0,88 | 0,88 | 0,88 | 0,91 | 0,88 |
 | Zwykły · +9 · 20 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,88 | 0,92 | 0,87 |
@@ -8571,10 +8458,10 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Zwykły · +9 · 70 | 0,98 | 0,99 | **0,87** | 0,86 | 0,86 | 0,86 | 0,91 | 0,86 |
 | Zwykły · +9 · 100 | **0,97** | 0,98 | **0,86** | 0,85 | 0,85 | 0,85 | 0,90 | 0,85 |
 | Unikatowy · +0 · 20 | 1,01 | 1,03 | **0,91** | 0,91 | 0,90 | 0,91 | 0,94 | 0,90 |
-| Unikatowy · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,90 | 0,89 | 0,90 | 0,93 | 0,89 |
+| Unikatowy · +0 · 45 | 1,00 | 1,02 | **0,90 → 0,91** | 0,90 | 0,89 | 0,90 | 0,93 → 0,94 | 0,89 |
 | Unikatowy · +0 · 70 | 1,00 | 1,01 | **0,90** | 0,89 | 0,89 | 0,90 | 0,93 | 0,89 |
 | Unikatowy · +0 · 100 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,92 | 0,88 |
-| Unikatowy · +9 · 20 | 1,01 | 1,02 | **0,89** | 0,89 | 0,88 | 0,89 | 0,94 | 0,88 |
+| Unikatowy · +9 · 20 | 1,01 | 1,02 | **0,89 → 0,90** | 0,89 | 0,88 | 0,89 | 0,94 | 0,88 |
 | Unikatowy · +9 · 45 | 1,00 | 1,02 | **0,89** | 0,88 | 0,88 | 0,88 | 0,93 | 0,88 |
 | Unikatowy · +9 · 70 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 | 0,87 |
 | Unikatowy · +9 · 100 | 0,98 | 0,99 | **0,87** | 0,86 | 0,86 | 0,86 | 0,91 | 0,86 |
@@ -8592,7 +8479,7 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Legendarny · +0 · 100 | 0,99 | 1,00 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 | 0,88 |
 | Legendarny · +9 · 20 | 1,00 | 1,03 | **0,90** | 0,88 | 0,88 | 0,89 | 0,94 | 0,88 |
 | Legendarny · +9 · 45 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,93 | 0,87 |
-| Legendarny · +9 · 70 | 0,98 | 1,00 | **0,87** | 0,86 | 0,86 | 0,87 | 0,92 | 0,86 |
+| Legendarny · +9 · 70 | 0,98 | 1,00 | **0,87 → 0,88** | 0,86 | 0,86 | 0,87 | 0,92 | 0,86 |
 | Legendarny · +9 · 100 | **0,97** | 0,99 | **0,87** | 0,85 | 0,85 | 0,86 | 0,91 | 0,85 |
 | Mityczny · +0 · 20 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 | 0,88 |
 | Mityczny · +0 · 45 | 0,98 | 0,99 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 | 0,88 |
@@ -8601,7 +8488,7 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Mityczny · +9 · 20 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,93 | 0,87 |
 | Mityczny · +9 · 45 | **0,96** | 0,98 | **0,87** | 0,85 | 0,86 | 0,85 | 0,91 | 0,85 |
 | Mityczny · +9 · 70 | **0,95** | 0,98 | **0,86** | 0,84 | 0,85 | 0,85 | 0,90 | 0,84 |
-| Mityczny · +9 · 100 | **0,95** | **0,97** | **0,85** | 0,84 | 0,84 | 0,84 | 0,89 | 0,84 |
+| Mityczny · +9 · 100 | **0,95** | **0,97** | **0,85** | 0,84 | 0,84 | 0,84 | 0,89 → 0,90 | 0,84 |
 
 ### G8: Kapłan holystaff wobec zestawu domyślnego
 
@@ -8609,43 +8496,43 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 
 | rzadkość · ulepszenie · poziom | S32 | bez cech (MIX) | z cechami (MIX) | single | group | elite | boss | najgorsza |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Zwykły · +0 · 20 | **0,94** | 1,00 | **1,04** | 1,15 | 1,07 | 1,05 | 0,96 | 0,96 |
-| Zwykły · +0 · 45 | **0,95** | 1,00 | **1,19** | 1,50 | 1,25 | 1,24 | 0,99 | 0,99 |
-| Zwykły · +0 · 70 | **0,95** | 1,00 | **1,41** | 2,16 | 1,50 | 1,50 | 1,08 | 1,08 |
-| Zwykły · +0 · 100 | **0,95** | 1,00 | **1,83** | 4,43 | 2,00 | 2,06 | 1,15 | 1,15 |
-| Zwykły · +9 · 20 | **0,94** | 1,00 | **1,34** | 2,22 | 1,43 | 1,42 | 1,02 | 1,02 |
-| Zwykły · +9 · 45 | **0,95** | 1,00 | **2,66** | 4,28 | 2,99 | 3,34 | 1,20 | 1,20 |
-| Zwykły · +9 · 70 | **0,95** | 1,01 | **3,72** | 4,28 | 4,47 | 4,29 | 1,51 | 1,51 |
-| Zwykły · +9 · 100 | **0,95** | 1,01 | **3,85** | 4,27 | 4,47 | 4,28 | 1,97 | 1,97 |
-| Unikatowy · +0 · 20 | **0,96** | 1,01 | **1,17** | 1,44 | 1,22 | 1,20 | 1,01 | 1,01 |
-| Unikatowy · +0 · 45 | **0,97** | 1,02 | **1,56** | 2,86 | 1,69 | 1,69 | 1,09 | 1,09 |
-| Unikatowy · +0 · 70 | **0,96** | 1,02 | **2,37** | 4,50 | 2,65 | 2,80 | 1,26 | 1,26 |
-| Unikatowy · +0 · 100 | **0,96** | 1,02 | **3,80** | 4,50 | 4,60 | 4,51 | 1,42 | 1,42 |
-| Unikatowy · +9 · 20 | **0,97** | 1,03 | **1,93** | 4,35 | 2,11 | 2,21 | 1,13 | 1,13 |
-| Unikatowy · +9 · 45 | **0,97** | 1,02 | **3,76** | 4,35 | 4,53 | 4,37 | 1,55 | 1,55 |
-| Unikatowy · +9 · 70 | **0,96** | 1,02 | **4,00** | 4,33 | 4,50 | 4,34 | 2,41 | 2,41 |
+| Zwykły · +0 · 20 | **0,94** | 1,00 | **1,04** | 1,15 | 1,07 | 1,05 | 0,96 → 0,97 | 0,96 → 0,97 |
+| Zwykły · +0 · 45 | **0,95** | 1,00 | **1,19 → 1,20** | 1,50 | 1,25 | 1,24 | 0,99 → 1,02 | 0,99 → 1,02 |
+| Zwykły · +0 · 70 | **0,95** | 1,00 | **1,41 → 1,43** | 2,16 | 1,50 | 1,50 | 1,08 → 1,17 | 1,08 → 1,17 |
+| Zwykły · +0 · 100 | **0,95** | 1,00 | **1,83 → 1,87** | 4,43 | 2,00 | 2,06 | 1,15 → 1,31 | 1,15 → 1,31 |
+| Zwykły · +9 · 20 | **0,94** | 1,00 | **1,34 → 1,35** | 2,22 | 1,43 | 1,42 | 1,02 → 1,06 | 1,02 → 1,06 |
+| Zwykły · +9 · 45 | **0,95** | 1,00 | **2,66 → 2,70** | 4,28 | 2,99 | 3,34 | 1,20 → 1,34 | 1,20 → 1,34 |
+| Zwykły · +9 · 70 | **0,95** | 1,01 | **3,72 → 3,89** | 4,28 | 4,47 | 4,29 | 1,51 → 2,10 | 1,51 → 2,10 |
+| Zwykły · +9 · 100 | **0,95** | 1,01 | **3,85 → 4,37** | 4,27 | 4,47 | 4,28 | 1,97 → 4,24 | 1,97 → 4,24 |
+| Unikatowy · +0 · 20 | **0,96** | 1,01 | **1,17** | 1,44 | 1,22 | 1,20 | 1,01 → 1,03 | 1,01 → 1,03 |
+| Unikatowy · +0 · 45 | **0,97** | 1,02 | **1,56 → 1,58** | 2,86 | 1,69 | 1,69 | 1,09 → 1,16 | 1,09 → 1,16 |
+| Unikatowy · +0 · 70 | **0,96** | 1,02 | **2,37 → 2,43** | 4,50 | 2,65 | 2,80 | 1,26 → 1,47 | 1,26 → 1,47 |
+| Unikatowy · +0 · 100 | **0,96** | 1,02 | **3,80 → 3,93** | 4,50 | 4,60 | 4,51 | 1,42 → 1,86 | 1,42 → 1,86 |
+| Unikatowy · +9 · 20 | **0,97** | 1,03 | **1,93 → 1,95** | 4,35 | 2,11 | 2,21 | 1,13 → 1,21 | 1,13 → 1,21 |
+| Unikatowy · +9 · 45 | **0,97** | 1,02 | **3,76 → 3,88** | 4,35 | 4,53 | 4,37 | 1,55 → 1,94 | 1,55 → 1,94 |
+| Unikatowy · +9 · 70 | **0,96** | 1,02 | **4,00 → 4,46** | 4,33 | 4,50 | 4,34 | 2,41 → 4,54 | 2,41 → 4,33 |
 | Unikatowy · +9 · 100 | **0,96** | 1,02 | **4,45** | 4,32 | 4,50 | 4,33 | 4,54 | 4,32 |
-| Heroiczny · +0 · 20 | **0,95** | 1,01 | **1,28** | 1,82 | 1,35 | 1,34 | 1,03 | 1,03 |
-| Heroiczny · +0 · 45 | **0,97** | 1,02 | **2,11** | 4,51 | 2,36 | 2,42 | 1,18 | 1,18 |
-| Heroiczny · +0 · 70 | 0,97 | 1,03 | **3,82** | 4,52 | 4,61 | 4,52 | 1,44 | 1,44 |
-| Heroiczny · +0 · 100 | **0,97** | 1,02 | **3,90** | 4,50 | 4,60 | 4,51 | 1,75 | 1,75 |
-| Heroiczny · +9 · 20 | **0,97** | 1,02 | **3,18** | 4,30 | 3,56 | 4,20 | 1,22 | 1,22 |
-| Heroiczny · +9 · 45 | 0,97 | 1,02 | **3,90** | 4,33 | 4,51 | 4,35 | 2,08 | 2,08 |
+| Heroiczny · +0 · 20 | **0,95** | 1,01 | **1,28 → 1,29** | 1,82 | 1,35 | 1,34 | 1,03 → 1,07 | 1,03 → 1,07 |
+| Heroiczny · +0 · 45 | **0,97** | 1,02 | **2,11 → 2,14** | 4,51 | 2,36 | 2,42 | 1,18 → 1,28 | 1,18 → 1,28 |
+| Heroiczny · +0 · 70 | 0,97 | 1,03 | **3,82 → 3,95** | 4,52 | 4,61 | 4,52 | 1,44 → 1,85 | 1,44 → 1,85 |
+| Heroiczny · +0 · 100 | **0,97** | 1,02 | **3,90 → 4,20** | 4,50 | 4,60 | 4,51 | 1,75 → 2,87 | 1,75 → 2,87 |
+| Heroiczny · +9 · 20 | **0,97** | 1,02 | **3,18 → 3,22** | 4,30 | 3,56 | 4,20 | 1,22 → 1,35 | 1,22 → 1,35 |
+| Heroiczny · +9 · 45 | 0,97 | 1,02 | **3,90 → 4,20** | 4,33 | 4,51 | 4,35 | 2,08 → 3,27 | 2,08 → 3,27 |
 | Heroiczny · +9 · 70 | 0,97 | 1,03 | **4,47** | 4,33 | 4,51 | 4,34 | 4,56 | 4,33 |
 | Heroiczny · +9 · 100 | **0,97** | 1,03 | **4,45** | 4,31 | 4,49 | 4,32 | 4,55 | 4,31 |
-| Legendarny · +0 · 20 | **0,97** | 1,02 | **1,86** | 4,48 | 2,05 | 2,09 | 1,14 | 1,14 |
-| Legendarny · +0 · 45 | **0,96** | 1,01 | **3,80** | 4,48 | 4,57 | 4,49 | 1,48 | 1,48 |
-| Legendarny · +0 · 70 | **0,96** | 1,01 | **4,01** | 4,45 | 4,55 | 4,46 | 2,24 | 2,24 |
-| Legendarny · +0 · 100 | **0,96** | 1,02 | **4,49** | 4,48 | 4,57 | 4,48 | 4,30 | 4,30 |
-| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,71** | 4,27 | 4,45 | 4,29 | 1,48 | 1,48 |
+| Legendarny · +0 · 20 | **0,97** | 1,02 | **1,86 → 1,88** | 4,48 | 2,05 | 2,09 | 1,14 → 1,22 | 1,14 → 1,22 |
+| Legendarny · +0 · 45 | **0,96** | 1,01 | **3,80 → 3,89** | 4,48 | 4,57 | 4,49 | 1,48 → 1,78 | 1,48 → 1,78 |
+| Legendarny · +0 · 70 | **0,96** | 1,01 | **4,01 → 4,54** | 4,45 | 4,55 | 4,46 | 2,24 → 4,62 | 2,24 → 4,45 |
+| Legendarny · +0 · 100 | **0,96** | 1,02 | **4,49 → 4,56** | 4,48 | 4,57 | 4,48 | 4,30 → 4,65 | 4,30 → 4,48 |
+| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,71 → 3,81** | 4,27 | 4,45 | 4,29 | 1,48 → 1,81 | 1,48 → 1,81 |
 | Legendarny · +9 · 45 | **0,97** | 1,01 | **4,38** | 4,28 | 4,46 | 4,30 | 4,30 | 4,28 |
 | Legendarny · +9 · 70 | **0,96** | 1,02 | **4,39** | 4,25 | 4,43 | 4,27 | 4,49 | 4,25 |
 | Legendarny · +9 · 100 | **0,96** | 1,02 | **4,42** | 4,28 | 4,46 | 4,29 | 4,52 | 4,28 |
-| Mityczny · +0 · 20 | **0,93** | 0,98 | **3,62** | 4,28 | 4,38 | 4,30 | 1,34 | 1,34 |
-| Mityczny · +0 · 45 | **0,94** | 0,99 | **4,15** | 4,35 | 4,45 | 4,37 | 3,15 | 3,15 |
+| Mityczny · +0 · 20 | **0,93** | 0,98 | **3,62 → 3,69** | 4,28 | 4,38 | 4,30 | 1,34 → 1,57 | 1,34 → 1,57 |
+| Mityczny · +0 · 45 | **0,94** | 0,99 | **4,15 → 4,41** | 4,35 | 4,45 | 4,37 | 3,15 → 4,37 | 3,15 → 4,35 |
 | Mityczny · +0 · 70 | **0,93** | 0,98 | **4,38** | 4,30 | 4,39 | 4,31 | 4,47 | 4,30 |
 | Mityczny · +0 · 100 | **0,93** | 0,99 | **4,40** | 4,32 | 4,41 | 4,33 | 4,49 | 4,32 |
-| Mityczny · +9 · 20 | **0,93** | 0,98 | **3,91** | 4,09 | 4,27 | 4,11 | 2,79 | 2,79 |
+| Mityczny · +9 · 20 | **0,93** | 0,98 | **3,91 → 4,23** | 4,09 | 4,27 | 4,11 | 2,79 → 4,30 | 2,79 → 4,09 |
 | Mityczny · +9 · 45 | **0,94** | 0,99 | **4,24** | 4,14 | 4,32 | 4,16 | 4,17 | 4,14 |
 | Mityczny · +9 · 70 | **0,93** | 0,98 | **4,23** | 4,09 | 4,26 | 4,10 | 4,33 | 4,09 |
 | Mityczny · +9 · 100 | **0,93** | 0,99 | **4,25** | 4,11 | 4,29 | 4,13 | 4,36 | 4,11 |
@@ -8672,11 +8559,11 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | runestaff · wand + tome · Mityczny +9 · 45 | 1,04 | 0,97 |
 | runestaff · wand + tome · Mityczny +9 · 70 | 1,03 | 0,96 |
 | runestaff · wand + tome · Mityczny +9 · 100 | 1,02 | 0,96 |
-| holystaff · scepter + shield · Zwykły +0 · 20 | 1,01 | 1,10 |
-| holystaff · scepter + shield · Zwykły +0 · 45 | 1,00 | 1,25 |
-| holystaff · scepter + shield · Zwykły +0 · 70 | 1,01 | 1,48 |
-| holystaff · scepter + shield · Zwykły +0 · 100 | 1,00 | 1,92 |
-| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 | 4,30 |
+| holystaff · scepter + shield · Zwykły +0 · 20 | 1,01 | 1,10 → 1,11 |
+| holystaff · scepter + shield · Zwykły +0 · 45 | 1,00 | 1,25 → 1,26 |
+| holystaff · scepter + shield · Zwykły +0 · 70 | 1,01 | 1,48 → 1,50 |
+| holystaff · scepter + shield · Zwykły +0 · 100 | 1,00 | 1,92 → 1,96 |
+| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 | 4,30 → 4,64 |
 | holystaff · scepter + shield · Mityczny +9 · 45 | 0,99 | 4,63 |
 | holystaff · scepter + shield · Mityczny +9 · 70 | 0,99 | 4,63 |
 | holystaff · scepter + shield · Mityczny +9 · 100 | 0,99 | 4,65 |
@@ -8693,7 +8580,7 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | Zwykły +0 · 100 | 1,00 | 0,95 | 0,92 | 0,91 | 0,94 |
 | Mityczny +9 · 20 | 1,00 | 0,98 | 0,94 | 0,91 | 0,97 |
 | Mityczny +9 · 45 | 1,00 | 0,98 | 0,93 | 0,90 | 0,97 |
-| Mityczny +9 · 70 | 1,00 | 0,98 | 0,94 | 0,91 | 0,98 |
+| Mityczny +9 · 70 | 1,00 | 0,98 | 0,94 | 0,91 → 0,90 | 0,98 |
 | Mityczny +9 · 100 | 1,00 | 0,97 | 0,94 | 0,90 | 0,98 |
 
 ### Cechy broni: Zwykły +0
@@ -8702,14 +8589,14 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 
 | cecha · poziom (klasa, zestaw) | single | group | elite | boss | armored | tank | solo | controlled | still | mana | dungeon | MIX | zestaw bez cech (MIX) | STATY 14 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% | – | – | – | – | – | – | – | 5% | 10% | 4% |
+| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% → 3% | – | – | – | – | – | – | – | 5% → 4% | 10% | 4% |
 | twinCut · 20 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
 | bonebreaker · 20 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 20 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 20 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | sundering · 20 (Wojownik, hammer2h) | 4% | – | – | – | 7% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 20 (Wojownik, spear2h) | – | 8% | – | 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
+| runThrough · 20 (Wojownik, spear2h) | – | 8% | – | 1% → 0% | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 10% | 5% |
 | harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 20 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
@@ -8717,10 +8604,10 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | easyPrey · 20 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 5% | – | – | – | 0% | 7% | 6% |
 | bodkinBolt · 20 (Łowca, heavycrossbow + quiver) | 3% | – | – | – | 6% | – | – | – | – | – | – | 4% | 11% | 5% |
 | fullDraw · 20 (Łowca, bow + quiver) | 7% | 7% | 7% | 7% | – | – | – | – | – | – | – | 7% | 18% | 5% |
-| elementalSpark · 20 (Mag, wand + orb) | 8% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 13% | 5% |
+| elementalSpark · 20 (Mag, wand + orb) | 8% | 9% | – | 9% → 8% | – | – | – | – | – | – | – | 9% | 13% | 5% |
 | elementalSpark (fire) · 20 (Mag, wand + orb) | 11% | 9% | – | 11% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalSpark (ice) · 20 (Mag, wand + orb) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 11% | 5% |
-| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
+| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% → 13% | 5% |
 | elementalMight · 20 (Mag, staff) | 5% | 5% | – | 5% | – | – | – | – | – | – | – | 5% | 5% | 7% |
 | elementalMight (fire) · 20 (Mag, staff) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 7% | 7% |
 | elementalMight (ice) · 20 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8729,18 +8616,18 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 20 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 20 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 26% | – | – | – | – | 15% | 15% | 4% |
+| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 26% | – | – | – | – | 15% → 16% | 15% → 16% | 4% |
 | concussion · 20 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 20 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 5% | – | – | – | – | – | – | – | 5% | 11% | 4% |
+| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 5% → 4% | – | – | – | – | – | – | – | 5% | 11% → 10% | 4% |
 | twinCut · 45 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 2% | 8% | 5% |
 | bonebreaker · 45 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 45 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 45 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | sundering · 45 (Wojownik, hammer2h) | 5% | – | – | – | 7% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 45 (Wojownik, spear2h) | – | 8% | – | 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
-| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 11% | 5% |
+| runThrough · 45 (Wojownik, spear2h) | – | 8% | – | 1% → 0% | – | – | – | – | – | – | – | 4% | 4% | 5% |
+| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 11% → 10% | 5% |
 | harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 45 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
 | criticalForce · 45 (Łowca, longbow + quiver) | 2% | 2% | 2% | 2% | – | – | – | – | – | – | – | 2% | 10% | 5% |
@@ -8759,17 +8646,17 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 45 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 45 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 45 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 60% | – | – | – | – | 32% | 32% | 4% |
+| savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 60% | – | – | – | – | 32% → 33% | 32% → 33% | 4% |
 | concussion · 45 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 45 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% | – | – | – | – | – | – | – | 5% | 10% | 4% |
+| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% → 3% | – | – | – | – | – | – | – | 5% → 4% | 10% | 4% |
 | twinCut · 70 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 3% | 8% | 5% |
+| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 3% → 2% | 8% | 5% |
 | bonebreaker · 70 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 70 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 70 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | sundering · 70 (Wojownik, hammer2h) | 5% | – | – | – | 8% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 70 (Wojownik, spear2h) | – | 8% | – | 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
+| runThrough · 70 (Wojownik, spear2h) | – | 8% | – | 1% → 0% | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | parry · 70 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 10% | 5% |
 | harrying · 70 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 70 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
@@ -8777,10 +8664,10 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | easyPrey · 70 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 5% | – | – | – | 0% | 7% | 6% |
 | bodkinBolt · 70 (Łowca, heavycrossbow + quiver) | 4% | – | – | – | 6% | – | – | – | – | – | – | 4% | 12% | 5% |
 | fullDraw · 70 (Łowca, bow + quiver) | 7% | 7% | 7% | 7% | – | – | – | – | – | – | – | 7% | 18% | 5% |
-| elementalSpark · 70 (Mag, wand + orb) | 8% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 13% | 5% |
+| elementalSpark · 70 (Mag, wand + orb) | 8% | 9% | – | 9% → 8% | – | – | – | – | – | – | – | 9% | 13% | 5% |
 | elementalSpark (fire) · 70 (Mag, wand + orb) | 11% | 9% | – | 11% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalSpark (ice) · 70 (Mag, wand + orb) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 11% | 5% |
-| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
+| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% → 13% | 5% |
 | elementalMight · 70 (Mag, staff) | 5% | 5% | – | 5% | – | – | – | – | – | – | – | 5% | 5% | 7% |
 | elementalMight (fire) · 70 (Mag, staff) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 7% | 7% |
 | elementalMight (ice) · 70 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8789,17 +8676,17 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 70 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 70 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 70 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 70 (Kapłan, holystaff) | – | – | – | – | – | – | 118% | – | – | – | – | 56% | 56% | 4% |
+| savingBlow · 70 (Kapłan, holystaff) | – | – | – | – | – | – | 118% | – | – | – | – | 56% → 58% | 56% → 58% | 4% |
 | concussion · 70 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 70 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 100 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% | – | – | – | – | – | – | – | 5% | 10% | 4% |
+| swordplay · 100 (Wojownik, sword1h + shield) | 3% | 6% | 3% | 4% → 3% | – | – | – | – | – | – | – | 5% → 4% | 10% | 4% |
 | twinCut · 100 (Wojownik, saber1h + shield) | 6% | – | 6% | – | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | reaping · 100 (Wojownik, axe1h + shield) | – | – | – | 1% | – | – | 5% | – | – | – | – | 3% | 8% | 5% |
 | bonebreaker · 100 (Wojownik, mace1h + shield) | 6% | – | – | 6% | – | 5% | – | – | – | – | – | 5% | 11% | 6% |
 | beheading · 100 (Wojownik, sword2h) | 5% | 5% | 5% | 5% | – | – | – | – | – | – | – | 5% | 5% | 5% |
 | rendingGash · 100 (Wojownik, axe2h) | 5% | – | 5% | – | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | sundering · 100 (Wojownik, hammer2h) | 5% | – | – | – | 8% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 100 (Wojownik, spear2h) | – | 8% | – | 1% | – | – | – | – | – | – | – | 4% | 4% | 5% |
+| runThrough · 100 (Wojownik, spear2h) | – | 8% | – | 1% → 0% | – | – | – | – | – | – | – | 4% | 4% | 5% |
 | parry · 100 (Wojownik, sword1h + shield) | – | – | – | – | – | 5% | – | – | – | – | – | 5% | 10% | 5% |
 | harrying · 100 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 5% | – | – | – | – | 3% | 11% | 5% |
 | toxicBarbs · 100 (Łowca, bow + quiver) | 13% | – | 13% | – | – | – | – | – | – | – | – | 10% | 18% | 5% |
@@ -8807,10 +8694,10 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | easyPrey · 100 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 5% | – | – | – | 0% | 7% | 6% |
 | bodkinBolt · 100 (Łowca, heavycrossbow + quiver) | 4% | – | – | – | 6% | – | – | – | – | – | – | 4% | 12% | 5% |
 | fullDraw · 100 (Łowca, bow + quiver) | 7% | 7% | 7% | 7% | – | – | – | – | – | – | – | 7% | 18% | 5% |
-| elementalSpark · 100 (Mag, wand + orb) | 8% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 13% | 5% |
+| elementalSpark · 100 (Mag, wand + orb) | 8% | 9% | – | 9% → 8% | – | – | – | – | – | – | – | 9% | 13% | 5% |
 | elementalSpark (fire) · 100 (Mag, wand + orb) | 11% | 9% | – | 11% | – | – | – | – | – | – | – | 10% | 14% | 5% |
 | elementalSpark (ice) · 100 (Mag, wand + orb) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 11% | 5% |
-| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% | 5% |
+| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% | 12% | – | 8% | – | – | – | – | – | – | – | 10% | 14% → 13% | 5% |
 | elementalMight · 100 (Mag, staff) | 5% | 5% | – | 5% | – | – | – | – | – | – | – | 5% | 5% | 7% |
 | elementalMight (fire) · 100 (Mag, staff) | 7% | 7% | – | 7% | – | – | – | – | – | – | – | 7% | 7% | 7% |
 | elementalMight (ice) · 100 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8819,7 +8706,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 100 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 100 (Mag, wand + orb) | 3% | 3% | 3% | 3% | – | – | – | – | – | – | – | 3% | 13% | 5% |
 | anointment · 100 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 100 (Kapłan, holystaff) | – | – | – | – | – | – | 308% | – | – | – | – | 102% | 102% | 4% |
+| savingBlow · 100 (Kapłan, holystaff) | – | – | – | – | – | – | 308% | – | – | – | – | 102% → 106% | 102% → 106% | 4% |
 | concussion · 100 (Kapłan, flail1h + shield) | 9% | 4% | – | – | – | – | – | – | – | – | – | 5% | 11% | 5% |
 | prosperity · 100 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
 
@@ -8829,14 +8716,14 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 
 | cecha · poziom (klasa, zestaw) | single | group | elite | boss | armored | tank | solo | controlled | still | mana | dungeon | MIX | zestaw bez cech (MIX) | STATY 14 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 5% | – | – | – | – | – | – | – | 6% | 12% | 4% |
+| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 5% → 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | twinCut · 20 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 47% | – | – | 313% | – | – | – | – | 314% | 339% | 5% |
+| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 47% → 24% | – | – | 313% | – | – | – | – | 314% → 306% | 339% → 330% | 5% |
 | bonebreaker · 20 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 20 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 20 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
 | sundering · 20 (Wojownik, hammer2h) | 6% | – | – | – | 10% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 20 (Wojownik, spear2h) | – | 14% | – | 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 20 (Wojownik, spear2h) | – | 14% | – | 1% → 0% | – | – | – | – | – | – | – | 7% | 7% | 5% |
 | parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
 | harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 9% | – | – | – | – | 6% | 19% | 5% |
 | toxicBarbs · 20 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
@@ -8847,7 +8734,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 20 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
 | elementalSpark (fire) · 20 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | elementalSpark (ice) · 20 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 11% | – | 8% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 11% | – | 8% → 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
 | elementalMight · 20 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 20 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 20 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8856,17 +8743,17 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
 | powerLens · 20 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
 | anointment · 20 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% | – | – | – | – | 363% | 363% | 4% |
+| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% | – | – | – | – | 363% → 400% | 363% → 400% | 4% |
 | concussion · 20 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 20 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 5% | – | – | – | – | – | – | – | 6% | 12% | 4% |
+| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 5% → 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | twinCut · 45 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 67% | – | – | 305% | – | – | – | – | 317% | 342% | 5% |
+| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 67% → 30% | – | – | 305% | – | – | – | – | 317% → 304% | 342% → 329% | 5% |
 | bonebreaker · 45 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 45 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 45 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
 | sundering · 45 (Wojownik, hammer2h) | 7% | – | – | – | 11% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 45 (Wojownik, spear2h) | – | 14% | – | 2% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 45 (Wojownik, spear2h) | – | 14% | – | 2% → 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
 | parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
 | harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
 | toxicBarbs · 45 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
@@ -8889,14 +8776,14 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 307% | – | – | – | – | 400% | 400% | 4% |
 | concussion · 45 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 45 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
+| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 4% → 3% | – | – | – | – | – | – | – | 6% → 5% | 12% | 4% |
 | twinCut · 70 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 59% | – | – | 303% | – | – | – | – | 317% | 343% | 5% |
+| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 59% → 30% | – | – | 303% | – | – | – | – | 317% → 308% | 343% → 333% | 5% |
 | bonebreaker · 70 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 70 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 70 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
 | sundering · 70 (Wojownik, hammer2h) | 7% | – | – | – | 12% | – | – | – | – | – | – | 5% | 5% | 5% |
-| runThrough · 70 (Wojownik, spear2h) | – | 14% | – | 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 70 (Wojownik, spear2h) | – | 14% | – | 1% → 0% | – | – | – | – | – | – | – | 7% | 7% | 5% |
 | parry · 70 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
 | harrying · 70 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
 | toxicBarbs · 70 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
@@ -8907,7 +8794,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 70 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
 | elementalSpark (fire) · 70 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | elementalSpark (ice) · 70 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% | 11% | – | 8% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% | 11% | – | 8% → 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
 | elementalMight · 70 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 70 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 70 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8919,9 +8806,9 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | savingBlow · 70 (Kapłan, holystaff) | – | – | – | – | – | – | 304% | – | – | – | – | 400% | 400% | 4% |
 | concussion · 70 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 70 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 100 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
+| swordplay · 100 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 4% → 3% | – | – | – | – | – | – | – | 6% | 12% | 4% |
 | twinCut · 100 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 100 (Wojownik, axe1h + shield) | – | – | – | 58% | – | – | 302% | – | – | – | – | 317% | 342% | 5% |
+| reaping · 100 (Wojownik, axe1h + shield) | – | – | – | 58% → 31% | – | – | 302% | – | – | – | – | 317% → 308% | 342% → 333% | 5% |
 | bonebreaker · 100 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
 | beheading · 100 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
 | rendingGash · 100 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
@@ -8937,7 +8824,7 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 | elementalSpark · 100 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
 | elementalSpark (fire) · 100 (Mag, wand + orb) | 11% | 4% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | elementalSpark (ice) · 100 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% | 11% | – | 8% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% | 11% | – | 8% → 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
 | elementalMight · 100 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 100 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 100 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
@@ -8956,14 +8843,14 @@ Wartość Przeszycia (`Balance.runThroughValue`, moc² jak w tabeli cech) przy `
 
 | rzadkość · poziom | group 0.15 | group 0.3 | group 0.5 | boss 0.15 | boss 0.3 | boss 0.5 |
 | --- | --: | --: | --: | --: | --: | --: |
-| Zwykły +0 · 20 | 4% | 8% | 14% | 0% | 1% | 1% |
-| Zwykły +0 · 45 | 4% | 8% | 14% | 0% | 1% | 2% |
-| Zwykły +0 · 70 | 4% | 8% | 14% | 0% | 1% | 1% |
-| Zwykły +0 · 100 | 4% | 8% | 14% | 0% | 1% | 1% |
-| Mityczny +9 · 20 | 7% | 14% | 23% | 0% | 1% | 2% |
-| Mityczny +9 · 45 | 7% | 14% | 23% | 1% | 2% | 3% |
-| Mityczny +9 · 70 | 7% | 14% | 23% | 1% | 1% | 2% |
-| Mityczny +9 · 100 | 7% | 14% | 23% | 1% | 1% | 2% |
+| Zwykły +0 · 20 | 4% | 8% | 14% | 0% | 1% → 0% | 1% → 0% |
+| Zwykły +0 · 45 | 4% | 8% | 14% | 0% | 1% → 0% | 2% → 1% |
+| Zwykły +0 · 70 | 4% | 8% | 14% | 0% | 1% → 0% | 1% → 0% |
+| Zwykły +0 · 100 | 4% | 8% | 14% | 0% | 1% → 0% | 1% |
+| Mityczny +9 · 20 | 7% | 14% | 23% | 0% | 1% → 0% | 2% → 1% |
+| Mityczny +9 · 45 | 7% | 14% | 23% | 1% → 0% | 2% → 1% | 3% → 1% |
+| Mityczny +9 · 70 | 7% | 14% | 23% | 1% → 0% | 1% → 0% | 2% → 1% |
+| Mityczny +9 · 100 | 7% | 14% | 23% | 1% → 0% | 1% | 2% → 1% |
 
 ## Ulepszenia i materiały (S84)
 
@@ -8975,70 +8862,70 @@ Broń domyślna klasy z ilvl poziom − 2, Zwykła. Dochód poziomu (`Balance.le
 
 | klasa · poziom | dochód poziomu | +1…+3 / dochód | +1…+6 / dochód | +1…+9 z ochroną (poziomy) | +1…+9 bez ochrony (poziomy) | zestaw +9 bez ochrony (poziomy) | goldEq +9 z ochroną (poziomy) | zwoje +9 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: |
-| Wojownik · 20 | 2261 → 2260 | 0,67 | 3,63 | 15,8 | 112,9 → 113,0 | 1129 → 1130 | 107,0 | 18,3 |
-| Łowca · 20 | 2261 → 2260 | 0,67 | 3,63 | 15,8 | 112,9 → 113,0 | 1129 → 1130 | 107,0 | 18,3 |
-| Mag · 20 | 2261 → 2260 | 0,67 | 3,63 | 15,8 | 112,9 → 113,0 | 1129 → 1130 | 107,0 | 18,3 |
-| Kapłan · 20 | 2261 → 2260 | 0,67 | 3,63 | 15,8 | 112,9 → 113,0 | 1129 → 1130 | 107,0 | 18,3 |
-| Wojownik · 25 | 4261 → 4262 | 0,52 | 2,83 | 12,3 | 88,1 → 88,0 | 881 → 880 | 60,7 | 18,3 |
-| Łowca · 25 | 4261 → 4262 | 0,52 | 2,83 | 12,3 | 88,1 → 88,0 | 881 → 880 | 60,7 | 18,3 |
-| Mag · 25 | 4261 → 4262 | 0,52 | 2,83 | 12,3 | 88,1 → 88,0 | 881 → 880 | 60,7 | 18,3 |
-| Kapłan · 25 | 4261 → 4262 | 0,52 | 2,83 | 12,3 | 88,1 → 88,0 | 881 → 880 | 60,7 | 18,3 |
-| Wojownik · 30 | 5726 → 5727 | 0,57 | 3,12 | 13,6 → 13,5 | 97,1 | 971 | 49,6 | 18,3 |
-| Łowca · 30 | 5726 → 5727 | 0,57 | 3,12 | 13,6 → 13,5 | 97,1 | 971 | 49,6 | 18,3 |
-| Mag · 30 | 5726 → 5727 | 0,57 | 3,12 | 13,6 → 13,5 | 97,1 | 971 | 49,6 | 18,3 |
-| Kapłan · 30 | 5726 → 5727 | 0,57 | 3,12 | 13,6 → 13,5 | 97,1 | 971 | 49,6 | 18,3 |
-| Wojownik · 35 | 8188 → 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
-| Łowca · 35 | 8188 → 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
-| Mag · 35 | 8188 → 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
-| Kapłan · 35 | 8188 → 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
-| Wojownik · 40 | 13 376 → 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
-| Łowca · 40 | 13 376 → 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
-| Mag · 40 | 13 376 → 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
-| Kapłan · 40 | 13 376 → 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
-| Wojownik · 45 | 14 926 → 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
-| Łowca · 45 | 14 926 → 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
-| Mag · 45 | 14 926 → 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
-| Kapłan · 45 | 14 926 → 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
-| Wojownik · 50 | 16 015 → 16 003 | 0,60 | 3,28 | 14,2 | 102,0 → 102,1 | 1020 → 1021 | 27,1 | 18,3 |
-| Łowca · 50 | 16 015 → 16 003 | 0,60 | 3,28 | 14,2 | 102,0 → 102,1 | 1020 → 1021 | 27,1 | 18,3 |
-| Mag · 50 | 16 015 → 16 003 | 0,60 | 3,28 | 14,2 | 102,0 → 102,1 | 1020 → 1021 | 27,1 | 18,3 |
-| Kapłan · 50 | 16 015 → 16 003 | 0,60 | 3,28 | 14,2 | 102,0 → 102,1 | 1020 → 1021 | 27,1 | 18,3 |
-| Wojownik · 55 | 18 707 → 18 692 | 0,63 | 3,42 → 3,43 | 14,9 | 106,5 → 106,6 | 1065 → 1066 | 25,9 | 18,3 |
-| Łowca · 55 | 18 707 → 18 692 | 0,63 | 3,42 → 3,43 | 14,9 | 106,5 → 106,6 | 1065 → 1066 | 25,9 | 18,3 |
-| Mag · 55 | 18 707 → 18 692 | 0,63 | 3,42 → 3,43 | 14,9 | 106,5 → 106,6 | 1065 → 1066 | 25,9 | 18,3 |
-| Kapłan · 55 | 18 707 → 18 692 | 0,63 | 3,42 → 3,43 | 14,9 | 106,5 → 106,6 | 1065 → 1066 | 25,9 | 18,3 |
-| Wojownik · 60 | 24 410 → 24 389 | 0,58 | 3,14 → 3,15 | 13,6 → 13,7 | 97,7 → 97,8 | 977 → 978 | 22,1 | 18,3 |
-| Łowca · 60 | 24 410 → 24 389 | 0,58 | 3,14 → 3,15 | 13,6 → 13,7 | 97,7 → 97,8 | 977 → 978 | 22,1 | 18,3 |
-| Mag · 60 | 24 410 → 24 389 | 0,58 | 3,14 → 3,15 | 13,6 → 13,7 | 97,7 → 97,8 | 977 → 978 | 22,1 | 18,3 |
-| Kapłan · 60 | 24 410 → 24 389 | 0,58 | 3,14 → 3,15 | 13,6 → 13,7 | 97,7 → 97,8 | 977 → 978 | 22,1 | 18,3 |
-| Wojownik · 65 | 26 847 → 26 859 | 0,62 | 3,37 | 14,6 | 104,9 → 104,8 | 1049 → 1048 | 22,3 | 18,3 |
-| Łowca · 65 | 26 847 → 26 859 | 0,62 | 3,37 | 14,6 | 104,9 → 104,8 | 1049 → 1048 | 22,3 | 18,3 |
-| Mag · 65 | 26 847 → 26 859 | 0,62 | 3,37 | 14,6 | 104,9 → 104,8 | 1049 → 1048 | 22,3 | 18,3 |
-| Kapłan · 65 | 26 847 → 26 859 | 0,62 | 3,37 | 14,6 | 104,9 → 104,8 | 1049 → 1048 | 22,3 | 18,3 |
-| Wojownik · 70 | 33 478 → 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
-| Łowca · 70 | 33 478 → 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
-| Mag · 70 | 33 478 → 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
-| Kapłan · 70 | 33 478 → 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
-| Wojownik · 75 | 32 997 → 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
-| Łowca · 75 | 32 997 → 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
-| Mag · 75 | 32 997 → 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
-| Kapłan · 75 | 32 997 → 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
-| Wojownik · 80 | 39 636 → 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
-| Łowca · 80 | 39 636 → 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
-| Mag · 80 | 39 636 → 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
-| Kapłan · 80 | 39 636 → 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
-| Wojownik · 85 | 42 053 → 42 029 | 0,69 | 3,74 | 16,2 | 116,2 → 116,3 | 1162 → 1163 | 21,1 | 18,3 |
-| Łowca · 85 | 42 053 → 42 029 | 0,69 | 3,74 | 16,2 | 116,2 → 116,3 | 1162 → 1163 | 21,1 | 18,3 |
-| Mag · 85 | 42 053 → 42 029 | 0,69 | 3,74 | 16,2 | 116,2 → 116,3 | 1162 → 1163 | 21,1 | 18,3 |
-| Kapłan · 85 | 42 053 → 42 029 | 0,69 | 3,74 | 16,2 | 116,2 → 116,3 | 1162 → 1163 | 21,1 | 18,3 |
-| Wojownik · 90 | 50 201 → 50 240 | 0,65 | 3,52 | 15,3 | 109,4 → 109,3 | 1094 → 1093 | 19,4 | 18,3 |
-| Łowca · 90 | 50 201 → 50 240 | 0,65 | 3,52 | 15,3 | 109,4 → 109,3 | 1094 → 1093 | 19,4 | 18,3 |
-| Mag · 90 | 50 201 → 50 240 | 0,65 | 3,52 | 15,3 | 109,4 → 109,3 | 1094 → 1093 | 19,4 | 18,3 |
-| Kapłan · 90 | 50 201 → 50 240 | 0,65 | 3,52 | 15,3 | 109,4 → 109,3 | 1094 → 1093 | 19,4 | 18,3 |
-| Wojownik · 95 | 50 585 → 50 531 | 0,72 | 3,90 | 16,9 | 121,3 → 121,4 | 1213 → 1214 | 21,0 | 18,3 |
-| Łowca · 95 | 50 585 → 50 531 | 0,72 | 3,90 | 16,9 | 121,3 → 121,4 | 1213 → 1214 | 21,0 | 18,3 |
-| Mag · 95 | 50 585 → 50 531 | 0,72 | 3,90 | 16,9 | 121,3 → 121,4 | 1213 → 1214 | 21,0 | 18,3 |
-| Kapłan · 95 | 50 585 → 50 531 | 0,72 | 3,90 | 16,9 | 121,3 → 121,4 | 1213 → 1214 | 21,0 | 18,3 |
+| Wojownik · 20 | 2260 | 0,67 | 3,63 | 15,8 | 113,0 | 1130 | 107,0 | 18,3 |
+| Łowca · 20 | 2260 | 0,67 | 3,63 | 15,8 | 113,0 | 1130 | 107,0 | 18,3 |
+| Mag · 20 | 2260 | 0,67 | 3,63 | 15,8 | 113,0 | 1130 | 107,0 | 18,3 |
+| Kapłan · 20 | 2260 | 0,67 | 3,63 | 15,8 | 113,0 | 1130 | 107,0 | 18,3 |
+| Wojownik · 25 | 4262 | 0,52 | 2,83 | 12,3 | 88,0 | 880 | 60,7 | 18,3 |
+| Łowca · 25 | 4262 | 0,52 | 2,83 | 12,3 | 88,0 | 880 | 60,7 | 18,3 |
+| Mag · 25 | 4262 | 0,52 | 2,83 | 12,3 | 88,0 | 880 | 60,7 | 18,3 |
+| Kapłan · 25 | 4262 | 0,52 | 2,83 | 12,3 | 88,0 | 880 | 60,7 | 18,3 |
+| Wojownik · 30 | 5727 | 0,57 | 3,12 | 13,5 | 97,1 | 971 | 49,6 | 18,3 |
+| Łowca · 30 | 5727 | 0,57 | 3,12 | 13,5 | 97,1 | 971 | 49,6 | 18,3 |
+| Mag · 30 | 5727 | 0,57 | 3,12 | 13,5 | 97,1 | 971 | 49,6 | 18,3 |
+| Kapłan · 30 | 5727 | 0,57 | 3,12 | 13,5 | 97,1 | 971 | 49,6 | 18,3 |
+| Wojownik · 35 | 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
+| Łowca · 35 | 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
+| Mag · 35 | 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
+| Kapłan · 35 | 8187 | 0,56 | 3,03 | 13,2 | 94,3 | 943 | 38,3 | 18,3 |
+| Wojownik · 40 | 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
+| Łowca · 40 | 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
+| Mag · 40 | 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
+| Kapłan · 40 | 13 369 | 0,45 | 2,46 | **10,7** | 76,6 | 766 | 26,1 | 18,3 |
+| Wojownik · 45 | 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
+| Łowca · 45 | 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
+| Mag · 45 | 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
+| Kapłan · 45 | 14 927 | 0,52 | 2,82 | 12,3 | 87,9 | 879 | 26,1 | 18,3 |
+| Wojownik · 50 | 16 003 | 0,60 | 3,28 | 14,2 | 102,1 | 1021 | 27,1 | 18,3 |
+| Łowca · 50 | 16 003 | 0,60 | 3,28 | 14,2 | 102,1 | 1021 | 27,1 | 18,3 |
+| Mag · 50 | 16 003 | 0,60 | 3,28 | 14,2 | 102,1 | 1021 | 27,1 | 18,3 |
+| Kapłan · 50 | 16 003 | 0,60 | 3,28 | 14,2 | 102,1 | 1021 | 27,1 | 18,3 |
+| Wojownik · 55 | 18 692 | 0,63 | 3,43 | 14,9 | 106,6 | 1066 | 25,9 | 18,3 |
+| Łowca · 55 | 18 692 | 0,63 | 3,43 | 14,9 | 106,6 | 1066 | 25,9 | 18,3 |
+| Mag · 55 | 18 692 | 0,63 | 3,43 | 14,9 | 106,6 | 1066 | 25,9 | 18,3 |
+| Kapłan · 55 | 18 692 | 0,63 | 3,43 | 14,9 | 106,6 | 1066 | 25,9 | 18,3 |
+| Wojownik · 60 | 24 389 | 0,58 | 3,15 | 13,7 | 97,8 | 978 | 22,1 | 18,3 |
+| Łowca · 60 | 24 389 | 0,58 | 3,15 | 13,7 | 97,8 | 978 | 22,1 | 18,3 |
+| Mag · 60 | 24 389 | 0,58 | 3,15 | 13,7 | 97,8 | 978 | 22,1 | 18,3 |
+| Kapłan · 60 | 24 389 | 0,58 | 3,15 | 13,7 | 97,8 | 978 | 22,1 | 18,3 |
+| Wojownik · 65 | 26 859 | 0,62 | 3,37 | 14,6 | 104,8 | 1048 | 22,3 | 18,3 |
+| Łowca · 65 | 26 859 | 0,62 | 3,37 | 14,6 | 104,8 | 1048 | 22,3 | 18,3 |
+| Mag · 65 | 26 859 | 0,62 | 3,37 | 14,6 | 104,8 | 1048 | 22,3 | 18,3 |
+| Kapłan · 65 | 26 859 | 0,62 | 3,37 | 14,6 | 104,8 | 1048 | 22,3 | 18,3 |
+| Wojownik · 70 | 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
+| Łowca · 70 | 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
+| Mag · 70 | 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
+| Kapłan · 70 | 33 468 | 0,58 | 3,15 | 13,7 | 98,0 | 980 | 19,8 | 18,3 |
+| Wojownik · 75 | 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
+| Łowca · 75 | 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
+| Mag · 75 | 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
+| Kapłan · 75 | 33 013 | 0,68 | 3,68 | 16,0 | 114,5 | 1145 | 22,2 | 18,3 |
+| Wojownik · 80 | 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
+| Łowca · 80 | 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
+| Mag · 80 | 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
+| Kapłan · 80 | 39 609 | 0,64 | 3,50 | 15,2 | 108,9 | 1089 | 20,4 | 18,3 |
+| Wojownik · 85 | 42 029 | 0,69 | 3,74 | 16,2 | 116,3 | 1163 | 21,1 | 18,3 |
+| Łowca · 85 | 42 029 | 0,69 | 3,74 | 16,2 | 116,3 | 1163 | 21,1 | 18,3 |
+| Mag · 85 | 42 029 | 0,69 | 3,74 | 16,2 | 116,3 | 1163 | 21,1 | 18,3 |
+| Kapłan · 85 | 42 029 | 0,69 | 3,74 | 16,2 | 116,3 | 1163 | 21,1 | 18,3 |
+| Wojownik · 90 | 50 240 | 0,65 | 3,52 | 15,3 | 109,3 | 1093 | 19,4 | 18,3 |
+| Łowca · 90 | 50 240 | 0,65 | 3,52 | 15,3 | 109,3 | 1093 | 19,4 | 18,3 |
+| Mag · 90 | 50 240 | 0,65 | 3,52 | 15,3 | 109,3 | 1093 | 19,4 | 18,3 |
+| Kapłan · 90 | 50 240 | 0,65 | 3,52 | 15,3 | 109,3 | 1093 | 19,4 | 18,3 |
+| Wojownik · 95 | 50 531 | 0,72 | 3,90 | 16,9 | 121,4 | 1214 | 21,0 | 18,3 |
+| Łowca · 95 | 50 531 | 0,72 | 3,90 | 16,9 | 121,4 | 1214 | 21,0 | 18,3 |
+| Mag · 95 | 50 531 | 0,72 | 3,90 | 16,9 | 121,4 | 1214 | 21,0 | 18,3 |
+| Kapłan · 95 | 50 531 | 0,72 | 3,90 | 16,9 | 121,4 | 1214 | 21,0 | 18,3 |
 | Wojownik · 100 | 61 397 | 0,66 | 3,57 | 15,5 | 110,9 | 1109 | 18,8 | 18,3 |
 | Łowca · 100 | 61 397 | 0,66 | 3,57 | 15,5 | 110,9 | 1109 | 18,8 | 18,3 |
 | Mag · 100 | 61 397 | 0,66 | 3,57 | 15,5 | 110,9 | 1109 | 18,8 | 18,3 |
@@ -9130,7 +9017,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 
 ### Cele G7–G9 (S84; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
-683/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
+685/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -9159,26 +9046,24 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior sword2h common +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h heroic +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h common +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h common +9 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h heroic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h heroic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h unique +9 L100: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h heroic +9 L100: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h common +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h common +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +9 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L20: bez cech | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9188,10 +9073,10 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior axe2h unique +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L45: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L45: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +0 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +9 L45: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +9 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9205,13 +9090,13 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior axe2h mythic +0 L70: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +9 L70: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L70: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +9 L70: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h common +9 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h unique +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h unique +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h heroic +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h heroic +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h mythic +0 L100: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9221,42 +9106,42 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior hammer2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h unique +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h unique +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h common +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h common +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h common +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +0 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +9 L45: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h common +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h unique +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h common +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +9 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h unique +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h heroic +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h mythic +9 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9277,15 +9162,15 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior spear2h mythic +9 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h unique +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +9 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h mythic +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h mythic +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h common +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h common +9 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h unique +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h common +0 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +9 L100: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9310,7 +9195,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage staff heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff mythic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9336,7 +9221,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff common +0 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L20: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +0 L20: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff unique +9 L20: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff unique +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +0 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
@@ -9346,7 +9231,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff mythic +9 L20: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L45: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff unique +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff unique +0 L45: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +9 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +9 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9361,7 +9246,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff heroic +0 L70: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +9 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +0 L70: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff legendary +9 L70: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff legendary +9 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff mythic +0 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff mythic +9 L70: z cechami | 0,86 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L100: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9376,42 +9261,42 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff mythic +9 L100: bez cech | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff mythic +9 L100: z cechami | 0,85 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L20: z cechami | 1,04 | 0,97–1,03 | **poza** | raport → S92 |
-| Cleric holystaff common +9 L20: z cechami | 1,34 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff common +9 L20: z cechami | 1,35 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L20: z cechami | 1,17 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff unique +9 L20: z cechami | 1,93 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff heroic +0 L20: z cechami | 1,28 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff heroic +9 L20: z cechami | 3,18 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L20: z cechami | 1,86 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L20: z cechami | 3,71 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L20: z cechami | 3,62 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L20: z cechami | 3,91 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff common +0 L45: z cechami | 1,19 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff common +9 L45: z cechami | 2,66 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff unique +0 L45: z cechami | 1,56 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff unique +9 L45: z cechami | 3,76 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff heroic +0 L45: z cechami | 2,11 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff heroic +9 L45: z cechami | 3,90 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L45: z cechami | 3,80 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff unique +9 L20: z cechami | 1,95 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff heroic +0 L20: z cechami | 1,29 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff heroic +9 L20: z cechami | 3,22 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L20: z cechami | 1,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L20: z cechami | 3,81 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L20: z cechami | 3,69 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L20: z cechami | 4,23 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff common +0 L45: z cechami | 1,20 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +9 L45: z cechami | 2,70 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff unique +0 L45: z cechami | 1,58 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff unique +9 L45: z cechami | 3,88 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff heroic +0 L45: z cechami | 2,14 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff heroic +9 L45: z cechami | 4,20 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L45: z cechami | 3,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff legendary +9 L45: z cechami | 4,38 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L45: z cechami | 4,15 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L45: z cechami | 4,41 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L45: z cechami | 4,24 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff common +0 L70: z cechami | 1,41 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff common +9 L70: z cechami | 3,72 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff unique +0 L70: z cechami | 2,37 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff unique +9 L70: z cechami | 4,00 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff heroic +0 L70: z cechami | 3,82 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +0 L70: z cechami | 1,43 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +9 L70: z cechami | 3,89 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff unique +0 L70: z cechami | 2,43 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff unique +9 L70: z cechami | 4,46 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff heroic +0 L70: z cechami | 3,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L70: z cechami | 4,47 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L70: z cechami | 4,01 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L70: z cechami | 4,54 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff legendary +9 L70: z cechami | 4,39 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff mythic +0 L70: z cechami | 4,38 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L70: z cechami | 4,23 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff common +0 L100: z cechami | 1,83 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff common +9 L100: z cechami | 3,85 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff unique +0 L100: z cechami | 3,80 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +0 L100: z cechami | 1,87 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff common +9 L100: z cechami | 4,37 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff unique +0 L100: z cechami | 3,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff unique +9 L100: z cechami | 4,45 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff heroic +0 L100: z cechami | 3,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff heroic +0 L100: z cechami | 4,20 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L100: z cechami | 4,45 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L100: z cechami | 4,49 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L100: z cechami | 4,56 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff legendary +9 L100: z cechami | 4,42 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff mythic +0 L100: z cechami | 4,40 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff mythic +9 L100: z cechami | 4,25 | 0,97–1,06 | **poza** | raport → S88 |
@@ -11263,30 +11148,30 @@ Rotacja buildu Kapłana z ograniczeniem many przez czas `Balance.bossFight`, lec
 
 | build · boss (poziom drużyny) | drużyna domyślna | drużyna S92 | leczenie / s (domyślna) | obrażenia tanka / s | czas walki s | mana: zapotrzebowanie / regeneracja |
 | --- | --: | --: | --: | --: | --: | --: |
-| base · grimrok (19) | 1,13 | 1,73 | 56 | 50 | 325,7 | 5,55 |
-| base · morvane (44) | **0,88** | 1,34 | 223 | 253 | 291,3 | 2,62 |
-| base · azgor (69) | **2,19** | **4,49** | 357 | 163 | 301,9 | 2,11 |
-| base · vaelgrath (99) | **2,49** | **4,92** | 618 | 248 | 299,5 | 1,50 |
-| healer.dungeon · grimrok (19) | 1,20 | 1,83 | 60 | 50 | 325,0 | 5,55 |
-| healer.dungeon · morvane (44) | **2,10** | **2,68** | 531 | 253 | 291,2 | 2,49 |
-| healer.dungeon · azgor (69) | **8,31** | **12,78** | 1357 | 163 | 301,7 | 1,63 |
-| healer.dungeon · vaelgrath (99) | **10,65** | **15,85** | 2645 | 248 | 299,5 | 1,12 |
-| healer.solo · grimrok (19) | **0,14** | **0,14** | 7 | 50 | 321,0 | 1,37 |
-| healer.solo · morvane (44) | 1,25 | 1,28 | 317 | 253 | 287,4 | 0,52 |
-| healer.solo · azgor (69) | **5,88** | **6,74** | 961 | 163 | 298,1 | 0,65 |
-| healer.solo · vaelgrath (99) | **7,63** | **8,27** | 1895 | 248 | 296,2 | 0,41 |
-| fortune.plunder · grimrok (19) | 1,03 | 1,58 | 51 | 50 | 320,3 | 3,87 |
-| fortune.plunder · morvane (44) | **0,82** | 1,24 | 207 | 253 | 288,5 | 2,15 |
-| fortune.plunder · azgor (69) | 1,91 | **4,00** | 313 | 163 | 298,9 | 1,48 |
-| fortune.plunder · vaelgrath (99) | **2,05** | **4,00** | 508 | 248 | 296,6 | 1,15 |
-| inquisitor.solo · grimrok (19) | **0,00** | **0,00** | 0 | 50 | 328,6 | 1,72 |
-| inquisitor.solo · morvane (44) | **0,00** | **0,00** | 0 | 253 | 299,0 | 1,47 |
-| inquisitor.solo · azgor (69) | **0,00** | **0,00** | 0 | 163 | 310,0 | 1,49 |
-| inquisitor.solo · vaelgrath (99) | **0,00** | **0,00** | 0 | 248 | 307,4 | 1,22 |
-| inquisitor.bulwark · grimrok (19) | **0,00** | **0,00** | 0 | 50 | 330,7 | 1,72 |
-| inquisitor.bulwark · morvane (44) | **0,00** | **0,00** | 0 | 253 | 300,8 | 1,47 |
-| inquisitor.bulwark · azgor (69) | **0,00** | **0,00** | 0 | 163 | 312,0 | 1,49 |
-| inquisitor.bulwark · vaelgrath (99) | **0,00** | **0,00** | 0 | 248 | 309,3 | 1,22 |
+| base · grimrok (19) | 1,13 → 1,28 | 1,73 → 1,87 | 56 → 59 | 50 → 46 | 325,7 → 247,2 | 5,55 |
+| base · morvane (44) | 0,88 → 1,24 | 1,34 → 1,77 | 223 → 242 | 253 → 195 | 291,3 → 228,1 | 2,62 |
+| base · azgor (69) | **2,19 → 2,41** | **4,49 → 4,67** | 357 → 368 | 163 → 153 | 301,9 → 242,8 | 2,11 |
+| base · vaelgrath (99) | **2,49 → 3,05** | **4,92 → 5,83** | 618 → 621 | 248 → 204 | 299,5 → 252,7 | 1,50 |
+| healer.dungeon · grimrok (19) | 1,20 → 1,36 | 1,83 → 1,96 | 60 → 62 | 50 → 46 | 325,0 → 246,6 | 5,55 |
+| healer.dungeon · morvane (44) | **2,10 → 2,79** | **2,68 → 3,53** | 531 → 546 | 253 → 195 | 291,2 → 228,1 | 2,49 |
+| healer.dungeon · azgor (69) | **8,31 → 9,03** | **12,78 → 13,35** | 1357 → 1383 | 163 → 153 | 301,7 → 242,7 | 1,63 |
+| healer.dungeon · vaelgrath (99) | **10,65 → 12,97** | **15,85 → 18,92** | 2645 → 2642 | 248 → 204 | 299,5 → 252,7 | 1,12 |
+| healer.solo · grimrok (19) | **0,14 → 0,15** | **0,14 → 0,15** | 7 | 50 → 46 | 321,0 → 243,7 | 1,37 |
+| healer.solo · morvane (44) | 1,25 → 1,62 | 1,28 → 1,67 | 317 → 316 | 253 → 195 | 287,4 → 225,1 | 0,52 |
+| healer.solo · azgor (69) | **5,88 → 6,25** | **6,74 → 6,99** | 961 → 956 | 163 → 153 | 298,1 → 239,8 | 0,65 |
+| healer.solo · vaelgrath (99) | **7,63 → 9,35** | **8,27 → 9,87** | 1895 → 1906 | 248 → 204 | 296,2 → 249,9 | 0,41 |
+| fortune.plunder · grimrok (19) | 1,03 → 1,15 | 1,58 → 1,68 | 51 → 53 | 50 → 46 | 320,3 → 243,1 | 3,87 |
+| fortune.plunder · morvane (44) | 0,82 → 1,13 | 1,24 → 1,65 | 207 → 221 | 253 → 195 | 288,5 → 226,0 | 2,15 |
+| fortune.plunder · azgor (69) | **1,91 → 2,03** | **4,00 → 4,14** | 313 → 311 | 163 → 153 | 298,9 → 240,4 | 1,48 |
+| fortune.plunder · vaelgrath (99) | **2,05 → 2,49** | **4,00 → 4,79** | 508 → 507 | 248 → 204 | 296,6 → 250,2 | 1,15 |
+| inquisitor.solo · grimrok (19) | **0,00** | **0,00** | 0 | 50 → 46 | 328,6 → 249,4 | 1,72 |
+| inquisitor.solo · morvane (44) | **0,00** | **0,00** | 0 | 253 → 195 | 299,0 → 234,2 | 1,47 |
+| inquisitor.solo · azgor (69) | **0,00** | **0,00** | 0 | 163 → 153 | 310,0 → 249,3 | 1,49 |
+| inquisitor.solo · vaelgrath (99) | **0,00** | **0,00** | 0 | 248 → 204 | 307,4 → 259,3 | 1,22 |
+| inquisitor.bulwark · grimrok (19) | **0,00** | **0,00** | 0 | 50 → 46 | 330,7 → 251,0 | 1,72 |
+| inquisitor.bulwark · morvane (44) | **0,00** | **0,00** | 0 | 253 → 195 | 300,8 → 235,6 | 1,47 |
+| inquisitor.bulwark · azgor (69) | **0,00** | **0,00** | 0 | 163 → 153 | 312,0 → 250,9 | 1,49 |
+| inquisitor.bulwark · vaelgrath (99) | **0,00** | **0,00** | 0 | 248 → 204 | 309,3 → 260,9 | 1,22 |
 
 ### Porównanie z diagnozą i ROZWOJ
 
@@ -11308,7 +11193,7 @@ L20: baza z bronią `Balance.LOADOUT` wobec diagnozy `3f935c1` (plan balansu D1)
 | D1 T-SK3 Kapłan L20 (rotacja) | 1,79 | 1,48 | **21%** |
 | D1 T-SK4 Mag L20 (rotacja) | 1,77 | 2,80 | **-37%** |
 | D1 T-SK5 Kapłan L20 (tank Wojownik) (wzór) | 0,22 | 0,28 | **-23%** |
-| D1 T-SK6 Kapłan Grimrok (rotacja) | 1,13 | 1,11 | 2% |
+| D1 T-SK6 Kapłan Grimrok (rotacja) | 1,13 → 1,28 | 1,11 | **2% → 15%** |
 | ROZWOJ 2.5 T-SK1 Wojownik L20 (węzły) | 1,92 | 1,84 | 4% |
 | ROZWOJ 2.5 T-SK1 Łowca L20 (węzły) | 2,20 | 1,97 | **12%** |
 | ROZWOJ 2.5 T-SK1 Mag L20 (rangi) | 2,49 | 2,22 | **12%** |
@@ -11463,14 +11348,14 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK3 Cleric fortune.plunder 20 | 1,41 | ≤ 2,00 | w paśmie | S86 (asercja) |
 | T-SK3 Cleric inquisitor.solo 20 | 1,35 | ≤ 2,00 | w paśmie | S86 (asercja) |
 | T-SK3 Cleric inquisitor.bulwark 20 | 1,35 | ≤ 2,00 | w paśmie | S86 (asercja) |
-| T-SK6 Cleric base grimrok | 1,13 | 1,00–2,00 | w paśmie | S86 (asercja) |
-| T-SK6 Cleric healer.dungeon grimrok | 1,20 | 1,00–2,00 | w paśmie | S86 (asercja) |
-| T-SK6 Cleric healer.solo grimrok | 0,14 | 1,00–2,00 | **poza** | właściciel |
-| T-SK6 Cleric fortune.plunder grimrok | 1,03 | 1,00–2,00 | w paśmie | S86 (asercja) |
+| T-SK6 Cleric base grimrok | 1,28 | 1,00–2,00 | w paśmie | S86 (asercja) |
+| T-SK6 Cleric healer.dungeon grimrok | 1,36 | 1,00–2,00 | w paśmie | S86 (asercja) |
+| T-SK6 Cleric healer.solo grimrok | 0,15 | 1,00–2,00 | **poza** | właściciel |
+| T-SK6 Cleric fortune.plunder grimrok | 1,15 | 1,00–2,00 | w paśmie | S86 (asercja) |
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 2,6 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 2,5 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -12422,10 +12307,10 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 45 | 0,76 | 1 | 1 | 1,14 | **-34%** | 7,5 |
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 70 | 0,93 | 1 | 1 | 1,35 | **-31%** | 7,5 |
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 100 | 1,28 | 1 | 1 | 1,11 | **15%** | 7,5 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 20 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | 1,83 | 1 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **2,68** | 0 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **12,78** | 0 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 100 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **15,85** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 20 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | 1,83 → 1,96 | 1 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **2,68 → 3,53** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **12,78 → 13,35** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 100 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **15,85 → 18,92** | 0 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 20 [raport: właściciel (F4)] | 2,06 | 1 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 45 [raport: właściciel (F4)] | **4,35** | 0 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 70 [raport: właściciel (F4)] | **5,04** | 0 | 0 | – | – | 0,0 |
@@ -12652,48 +12537,48 @@ Założenia S84 (Balance.SITUATIONS) w kolumnach obok: atak podst. 0.5 (Mag 0.4)
 
 | build · poziom | atak podst. 1 cel | atak podst. grupa | odstęp rzutów s | żywioł broni | lód: kontrola | obszar w grupie | kontrola 1 cel | kontrola boss | bez ruchu | bez ruchu boss | mana (boss 180 s) | leczenie / s tanka |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| berserker.fury · 45 | 42% | 36% | 2,3 | 0% | 5% | 21% | 5% | 5% | 87% | 27% | – | – |
-| berserker.fury · 70 | 41% | 34% | 2,2 | 0% | 9% | 22% | 9% | 9% | 87% | 22% | – | – |
-| berserker.fury · 100 | 40% | 32% | 2,2 | 0% | 9% | 27% | 9% | 9% | 87% | 22% | – | – |
-| guardian.defender · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 30% | – | – |
-| guardian.defender · 70 | 51% | 30% | 2,2 | 0% | 10% | 36% | 10% | 10% | 97% | 24% | – | – |
-| guardian.defender · 100 | 51% | 30% | 2,2 | 0% | 5% | 35% | 5% | 5% | 97% | 25% | – | – |
-| guardian.loner · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 30% | – | – |
-| guardian.loner · 70 | 54% | 33% | 2,4 | 0% | 5% | 31% | 5% | 5% | 97% | 24% | – | – |
-| guardian.loner · 100 | 55% | 34% | 2,5 | 0% | 5% | 28% | 5% | 5% | 97% | 25% | – | – |
-| standard.commander · 45 | 50% | 29% | 2,3 | 0% | 0% | 39% | 0% | 0% | 97% | 30% | – | – |
-| standard.commander · 70 | 47% | 29% | 2,3 | 0% | 0% | 35% | 0% | 0% | 97% | 24% | – | – |
-| standard.commander · 100 | 42% | 25% | 1,9 | 0% | 0% | 39% | 0% | 0% | 97% | 25% | – | – |
-| marksman.kingslayer · 45 | 46% | 44% | 1,9 | 0% | 28% | 8% | 28% | 28% | 97% | 30% | – | – |
-| marksman.kingslayer · 70 | 47% | 44% | 1,9 | 0% | 27% | 6% | 27% | 27% | 97% | 24% | – | – |
-| marksman.kingslayer · 100 | 46% | 44% | 1,9 | 0% | 28% | 6% | 28% | 28% | 97% | 25% | – | – |
-| trapper.poacher · 45 | 44% | 31% | 1,8 | 0% | 55% | 36% | 55% | 55% | 97% | 30% | – | – |
-| trapper.poacher · 70 | 41% | 26% | 1,8 | 0% | 51% | 44% | 51% | 51% | 97% | 24% | – | – |
-| trapper.poacher · 100 | 42% | 26% | 1,7 | 0% | 57% | 45% | 57% | 56% | 97% | 25% | – | – |
-| scout.partyHunter · 45 | 43% | 36% | 1,9 | 0% | 31% | 11% | 31% | 31% | 97% | 30% | – | – |
-| scout.partyHunter · 70 | 42% | 35% | 1,9 | 0% | 31% | 10% | 31% | 31% | 97% | 24% | – | – |
-| scout.partyHunter · 100 | 38% | 33% | 1,8 | 0% | 30% | 11% | 30% | 27% | 97% | 25% | – | – |
-| destroyer.destroyerExp · 45 | 31% | 18% | 1,7 | 8% | 99% | 28% | 33% | 33% | 97% | 30% | 98% | – |
-| destroyer.destroyerExp · 70 | 29% | 16% | 1,6 | 9% | 99% | 37% | 33% | 33% | 97% | 24% | 89% | – |
-| destroyer.destroyerExp · 100 | 27% | 14% | 1,6 | 11% | 99% | 42% | 33% | 33% | 97% | 25% | 91% | – |
-| destroyer.destroyerBoss · 45 | 25% | 18% | 1,4 | 10% | 99% | 31% | 33% | 33% | 97% | 30% | 98% | – |
-| destroyer.destroyerBoss · 70 | 22% | 15% | 1,2 | 10% | 99% | 42% | 33% | 33% | 97% | 24% | 90% | – |
-| destroyer.destroyerBoss · 100 | 21% | 13% | 1,2 | 12% | 99% | 46% | 33% | 33% | 97% | 25% | 91% | – |
-| arcanist.arcanistBoss · 45 | 24% | 19% | 1,2 | 4% | 98% | 21% | 33% | 33% | 97% | 30% | 97% | – |
-| arcanist.arcanistBoss · 70 | 21% | 17% | 1,3 | 4% | 92% | 24% | 31% | 31% | 97% | 24% | 96% | – |
-| arcanist.arcanistBoss · 100 | 20% | 16% | 1,3 | 4% | 90% | 23% | 30% | 30% | 97% | 25% | 88% | – |
-| inquisitor.solo · 45 | 23% | 17% | 2,0 | 0% | 32% | 25% | 32% | 32% | 97% | 30% | – | – |
-| inquisitor.solo · 70 | 20% | 14% | 2,0 | 0% | 31% | 22% | 31% | 31% | 97% | 24% | – | – |
-| inquisitor.solo · 100 | 18% | 11% | 1,9 | 0% | 33% | 27% | 33% | 33% | 97% | 25% | – | – |
-| healer.dungeon · 45 | 40% | 27% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 30% | – | 531 |
-| healer.dungeon · 70 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 24% | – | 1357 |
-| healer.dungeon · 100 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 25% | – | 2645 |
-| healer.solo · 45 | 36% | 20% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 30% | – | 317 |
-| healer.solo · 70 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 24% | – | 961 |
-| healer.solo · 100 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 25% | – | 1895 |
-| fortune.plunder · 45 | 38% | 25% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 30% | – | 207 |
-| fortune.plunder · 70 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 24% | – | 313 |
-| fortune.plunder · 100 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 25% | – | 508 |
+| berserker.fury · 45 | 42% | 36% | 2,3 | 0% | 5% | 21% | 5% | 5% | 87% | 27% → 25% | – | – |
+| berserker.fury · 70 | 41% | 34% | 2,2 | 0% | 9% | 22% | 9% | 9% | 87% | 22% → 26% | – | – |
+| berserker.fury · 100 | 40% | 32% | 2,2 | 0% | 9% | 27% | 9% | 9% | 87% | 22% → 26% | – | – |
+| guardian.defender · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 30% → 28% | – | – |
+| guardian.defender · 70 | 51% | 30% | 2,2 | 0% | 10% | 36% | 10% | 10% | 97% | 24% → 28% | – | – |
+| guardian.defender · 100 | 51% | 30% | 2,2 | 0% | 5% | 35% | 5% | 5% | 97% | 25% → 29% | – | – |
+| guardian.loner · 45 | 53% | 32% | 2,3 | 0% | 5% | 35% | 5% | 5% | 97% | 30% → 28% | – | – |
+| guardian.loner · 70 | 54% | 33% | 2,4 | 0% | 5% | 31% | 5% | 5% | 97% | 24% → 28% | – | – |
+| guardian.loner · 100 | 55% | 34% | 2,5 | 0% | 5% | 28% | 5% | 5% | 97% | 25% → 29% | – | – |
+| standard.commander · 45 | 50% | 29% | 2,3 | 0% | 0% | 39% | 0% | 0% | 97% | 30% → 28% | – | – |
+| standard.commander · 70 | 47% | 29% | 2,3 | 0% | 0% | 35% | 0% | 0% | 97% | 24% → 28% | – | – |
+| standard.commander · 100 | 42% | 25% | 1,9 | 0% | 0% | 39% | 0% | 0% | 97% | 25% → 29% | – | – |
+| marksman.kingslayer · 45 | 46% | 44% | 1,9 | 0% | 28% | 8% | 28% | 28% | 97% | 30% → 28% | – | – |
+| marksman.kingslayer · 70 | 47% | 44% | 1,9 | 0% | 27% | 6% | 27% | 27% | 97% | 24% → 28% | – | – |
+| marksman.kingslayer · 100 | 46% | 44% | 1,9 | 0% | 28% | 6% | 28% | 28% | 97% | 25% → 29% | – | – |
+| trapper.poacher · 45 | 44% | 31% | 1,8 | 0% | 55% | 36% | 55% | 55% | 97% | 30% → 28% | – | – |
+| trapper.poacher · 70 | 41% | 26% | 1,8 | 0% | 51% | 44% | 51% | 51% | 97% | 24% → 28% | – | – |
+| trapper.poacher · 100 | 42% | 26% | 1,7 | 0% | 57% | 45% | 57% | 56% | 97% | 25% → 29% | – | – |
+| scout.partyHunter · 45 | 43% | 36% | 1,9 | 0% | 31% | 11% | 31% | 31% | 97% | 30% → 28% | – | – |
+| scout.partyHunter · 70 | 42% | 35% | 1,9 | 0% | 31% | 10% | 31% | 31% | 97% | 24% → 28% | – | – |
+| scout.partyHunter · 100 | 38% | 33% | 1,8 | 0% | 30% | 11% | 30% | 27% | 97% | 25% → 29% | – | – |
+| destroyer.destroyerExp · 45 | 31% | 18% | 1,7 | 8% | 99% | 28% | 33% | 33% | 97% | 30% → 28% | 98% | – |
+| destroyer.destroyerExp · 70 | 29% | 16% | 1,6 | 9% | 99% | 37% | 33% | 33% | 97% | 24% → 28% | 89% | – |
+| destroyer.destroyerExp · 100 | 27% | 14% | 1,6 | 11% | 99% | 42% | 33% | 33% | 97% | 25% → 29% | 91% | – |
+| destroyer.destroyerBoss · 45 | 25% | 18% | 1,4 | 10% | 99% | 31% | 33% | 33% | 97% | 30% → 28% | 98% | – |
+| destroyer.destroyerBoss · 70 | 22% | 15% | 1,2 | 10% | 99% | 42% | 33% | 33% | 97% | 24% → 28% | 90% | – |
+| destroyer.destroyerBoss · 100 | 21% | 13% | 1,2 | 12% | 99% | 46% | 33% | 33% | 97% | 25% → 29% | 91% | – |
+| arcanist.arcanistBoss · 45 | 24% | 19% | 1,2 | 4% | 98% | 21% | 33% | 33% | 97% | 30% → 28% | 97% | – |
+| arcanist.arcanistBoss · 70 | 21% | 17% | 1,3 | 4% | 92% | 24% | 31% | 31% | 97% | 24% → 28% | 96% | – |
+| arcanist.arcanistBoss · 100 | 20% | 16% | 1,3 | 4% | 90% | 23% | 30% | 30% | 97% | 25% → 29% | 88% | – |
+| inquisitor.solo · 45 | 23% | 17% | 2,0 | 0% | 32% | 25% | 32% | 32% | 97% | 30% → 28% | – | – |
+| inquisitor.solo · 70 | 20% | 14% | 2,0 | 0% | 31% | 22% | 31% | 31% | 97% | 24% → 29% | – | – |
+| inquisitor.solo · 100 | 18% | 11% | 1,9 | 0% | 33% | 27% | 33% | 33% | 97% | 25% → 29% | – | – |
+| healer.dungeon · 45 | 40% | 27% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 30% → 28% | – | 531 → 546 |
+| healer.dungeon · 70 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 24% → 29% | – | 1357 → 1383 |
+| healer.dungeon · 100 | 37% | 25% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 25% → 29% | – | 2645 → 2642 |
+| healer.solo · 45 | 36% | 20% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 30% → 28% | – | 317 → 316 |
+| healer.solo · 70 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 24% → 29% | – | 961 → 956 |
+| healer.solo · 100 | 31% | 18% | 2,5 | 0% | 7% | 19% | 7% | 7% | 97% | 25% → 29% | – | 1895 → 1906 |
+| fortune.plunder · 45 | 38% | 25% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 30% → 28% | – | 207 → 221 |
+| fortune.plunder · 70 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 24% → 29% | – | 313 → 311 |
+| fortune.plunder · 100 | 36% | 24% | 3,0 | 0% | 27% | 0% | 27% | 27% | 97% | 25% → 29% | – | 508 → 507 |
 
 ### Cechy w modelu umiejętności (C6)
 
@@ -13457,10 +13342,10 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK3 Cleric fortune.plunder 20 | 1,41 | 1 |
 | T-SK3 Cleric inquisitor.solo 20 | 1,35 | 1 |
 | T-SK3 Cleric inquisitor.bulwark 20 | 1,35 | 1 |
-| T-SK6 Cleric base grimrok | 1,13 | 1 |
-| T-SK6 Cleric healer.dungeon grimrok | 1,20 | 1 |
-| T-SK6 Cleric healer.solo grimrok | **0,14** | 0 |
-| T-SK6 Cleric fortune.plunder grimrok | 1,03 | 1 |
+| T-SK6 Cleric base grimrok | 1,13 → 1,28 | 1 |
+| T-SK6 Cleric healer.dungeon grimrok | 1,20 → 1,36 | 1 |
+| T-SK6 Cleric healer.solo grimrok | **0,14 → 0,15** | 0 |
+| T-SK6 Cleric fortune.plunder grimrok | 1,03 → 1,15 | 1 |
 | T-SK6 Cleric inquisitor.solo grimrok | **0,00** | 0 |
 | T-SK6 Cleric inquisitor.bulwark grimrok | **0,00** | 0 |
 
@@ -13842,14 +13727,14 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 
 ### Przechwyt w modelu bossa (B7)
 
-`SkillModel.interceptReport` (`Logic/Intercept`: `resolve`, `part`, `take` z `caps.interceptPerSecond`, `split` z Męczennikiem): największy cios bossa pasma w Maga drużyny domyślnej i czerwona strefa na całą drużynę z Murem Tarcz „Obrońcy”. ROZWOJ 10.6 na L100: cios 115% HP Maga → 80% (z Osłoną 72%), Mur Tarcz bez limitu ok. 116% HP Strażnika, z limitem ok. 74%. S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (cele 1–20 na L20), S92–S94 (regiony i bossy). „Boss bez wsparcia” (ROZWOJ 7.5): metryka `Balance.bossNoSupport` od S91 (Grimrok), S92–S94 stosują ją do swoich bossów.
+`SkillModel.interceptReport` (`Logic/Intercept`: `resolve`, `part`, `take` z `caps.interceptPerSecond`, `split` z Męczennikiem): największy cios bossa pasma w Maga drużyny domyślnej (S134: zwykły albo nieuniknięty cios do unikania) i czerwona strefa na całą drużynę z Murem Tarcz „Obrońcy” (S134: bez mechanik; podział, znamię i zaklęcie nie są strefą na każdego). Przykład ROZWOJ 10.6 (115% → 80%, Mur 116% / 74%) liczono przed S134; od S134 na L100 ok. 85% → 60% (z Osłoną 54%), Mur ok. 66% / 54%. S86: mechaniki klas w `tests/SkillModel.luau` (każda z `mirrors`), ekwipunek konwencji S32 z cechami na zdarzeniu; raport, asertują S87 (G10), S89 (Kapłan, Wojownik), S90 (Łowca, Mag), S91 (cele 1–20 na L20), S92–S94 (regiony i bossy). „Boss bez wsparcia” (ROZWOJ 7.5): metryka `Balance.bossNoSupport` od S91 (Grimrok), S92–S94 stosują ją do swoich bossów.
 
 | boss pasma (poziom) | cios w Maga / HP | z Przechwyceniem | z Przechwyceniem i Osłoną | część Strażnika / jego HP | Mur Tarcz bez limitu | Mur Tarcz z limitem |
 | --- | --: | --: | --: | --: | --: | --: |
-| grimrok (20) | 55% | 55% | 55% | 0% | 27% | 27% |
-| morvane (45) | 68% | 51% | 46% | 8% | 63% | 63% |
-| azgor (70) | 66% | 46% | 42% | 9% | 23% | 23% |
-| vaelgrath (100) | 65% | 46% | 41% | 6% | 51% | 45% |
+| grimrok (20) | 55% → 75% | 55% → 75% | 55% → 75% | 0% | 27% → 35% | 27% → 35% |
+| morvane (45) | 68% → 80% | 51% → 60% | 46% → 54% | 8% → 9% | 63% | 63% |
+| azgor (70) | 66% → 80% | 46% → 56% | 42% → 51% | 9% → 10% | 23% → 28% | 23% → 28% |
+| vaelgrath (100) | 65% → 85% | 46% → 60% | 41% → 54% | 6% → 7% | 51% → 66% | 45% → 54% |
 
 ### Premia Fortuny dla drużyny (B2)
 
@@ -14182,7 +14067,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 22,0 s.
+Tabele S86 liczą się 20,1 s.
 
 ## Poprawki globalne (S87)
 
@@ -14250,42 +14135,62 @@ G6 (rozrzut czasu 1 na 1, ≤ 2,2): 20: 1,71, 45: 1,95, 70: 2,06, 100: 2,14.
 
 | atak | na minutę | tempo / odnowienie (G11 ≥ 50%) | rzucanie |
 | --- | --: | --: | --: |
-| grimrok f1 sweep | 7,5 → 7,5 | 100% → 100% | 24% → 24% |
-| grimrok f1 leap | 3,7 → 3,7 | 80% → 80% | 24% → 24% |
-| grimrok f2 sweep | 7,5 → 7,5 | 100% → 100% | 24% → 24% |
-| grimrok f2 leap | 3,7 → 3,7 | 80% → 80% | 24% → 24% |
-| grimrok f3 sweep | 6,4 → 4,7 | 85% → 63% | 35% → 33% |
-| grimrok f3 leap | 4,3 → 4,6 | 93% → 100% | 35% → 33% |
-| grimrok f3 whirlwind | 4,2 → 4,6 | 70% → 77% | 35% → 33% |
-| morvane f1 shadowBolt | 8,4 → 8,4 | 84% → 84% | 38% → 38% |
-| morvane f1 curseField | 8,4 → 8,4 | 91% → 91% | 38% → 38% |
-| morvane f2 shadowBolt | 8,4 → 8,4 | 84% → 84% | 38% → 38% |
-| morvane f2 curseField | 8,4 → 8,4 | 91% → 91% | 38% → 38% |
-| morvane f3 shadowBoltFast | 8,8 → 8,5 | 59% → 57% | 35% → 37% |
-| morvane f3 curseField | 8,7 → 5,7 | 94% → 62% | 35% → 37% |
-| morvane f3 deathRing | 0,0 → 2,8 | 0% → 70% | 35% → 37% |
-| azgor f1 fireWave | 7,7 → 6,1 | 90% → 71% | 34% → 33% |
-| azgor f1 flameCleave | 5,2 → 6,0 | 78% → 90% | 34% → 33% |
-| azgor f1 meteor | 2,6 → 3,0 | 78% → 90% | 34% → 33% |
-| azgor f2 fireWave | 7,7 → 6,1 | 90% → 71% | 34% → 33% |
-| azgor f2 flameCleave | 5,2 → 6,0 | 78% → 90% | 34% → 33% |
-| azgor f2 meteor | 2,6 → 3,0 | 78% → 90% | 34% → 33% |
-| azgor f3 fireWave | 5,5 → 5,5 | 64% → 64% | 39% → 39% |
-| azgor f3 flameCleave | 5,5 → 5,4 | 83% → 81% | 39% → 39% |
-| azgor f3 meteor | 2,7 → 2,7 | 81% → 81% | 39% → 39% |
-| azgor f3 inferno | 2,7 → 2,8 | 63% → 65% | 39% → 39% |
-| vaelgrath f1 frostBreath | 5,5 → 5,5 | 73% → 73% | 34% → 34% |
-| vaelgrath f1 wingBuffet | 5,4 → 5,4 | 99% → 99% | 34% → 34% |
-| vaelgrath f1 tailSwipe | 5,4 → 5,4 | 81% → 81% | 34% → 34% |
-| vaelgrath f2 frostBreath | 5,5 → 4,8 | 73% → 64% | 38% → 37% |
-| vaelgrath f2 wingBuffet | 4,2 → 4,6 | 77% → 84% | 38% → 37% |
-| vaelgrath f2 tailSwipe | 4,1 → 4,7 | 61% → 71% | 38% → 37% |
-| vaelgrath f2 blizzard | 2,7 → 2,4 | 72% → 64% | 38% → 37% |
-| vaelgrath f3 frostBreath | 5,5 → 4,1 | 73% → 55% | 39% → 40% |
-| vaelgrath f3 wingBuffet | 3,6 → 4,0 | 66% → 73% | 39% → 40% |
-| vaelgrath f3 tailSwipe | 3,6 → 4,0 | 54% → 60% | 39% → 40% |
-| vaelgrath f3 blizzard | 1,8 → 2,1 | 48% → 56% | 39% → 40% |
-| vaelgrath f3 glacialRing | 1,8 → 2,1 | 45% → 53% | 39% → 40% |
+| grimrok f1 sweep | 7,4 → 7,4 | 99% → 99% | 37% → 37% |
+| grimrok f1 leap | 3,8 → 3,8 | 95% → 95% | 37% → 37% |
+| grimrok f1 groundSplitter | 3,7 → 3,7 | 99% → 99% | 37% → 37% |
+| grimrok f2 sweep | 5,2 → 5,3 | 69% → 71% | 39% → 40% |
+| grimrok f2 leap | 3,4 → 3,2 | 85% → 80% | 39% → 40% |
+| grimrok f2 groundSplitter | 3,4 → 3,2 | 91% → 85% | 39% → 40% |
+| grimrok f2 boulder | 1,7 → 2,1 | 68% → 84% | 39% → 40% |
+| grimrok f3 sweep | 5,0 → 4,9 | 67% → 65% | 44% → 45% |
+| grimrok f3 leap | 3,4 → 2,5 | 85% → 63% | 44% → 45% |
+| grimrok f3 whirlwind | 3,3 → 2,5 | 77% → 58% | 44% → 45% |
+| grimrok f3 groundSplitter | 1,7 → 2,5 | 45% → 67% | 44% → 45% |
+| grimrok f3 boulder | 1,6 → 2,4 | 64% → 96% | 44% → 45% |
+| morvane f1 shadowBolt | 8,4 → 6,0 | 98% → 70% | 38% → 39% |
+| morvane f1 curseField | 8,4 → 5,9 | 91% → 64% | 38% → 39% |
+| morvane f1 soulReap | 0,0 → 2,4 | 0% → 64% | 38% → 39% |
+| morvane f1 cryptBrand | 0,0 → 2,3 | 0% → 84% | 38% → 39% |
+| morvane f2 shadowBolt | 8,4 → 5,1 | 98% → 60% | 38% → 43% |
+| morvane f2 curseField | 8,4 → 5,1 | 91% → 55% | 38% → 43% |
+| morvane f2 soulReap | 0,0 → 2,3 | 0% → 61% | 38% → 43% |
+| morvane f2 cryptBrand | 0,0 → 1,7 | 0% → 62% | 38% → 43% |
+| morvane f2 requiem | 0,0 → 1,2 | 0% → 72% | 38% → 43% |
+| morvane f3 shadowBoltFast | 8,8 → 5,4 | 88% → 54% | 35% → 45% |
+| morvane f3 curseField | 8,7 → 5,4 | 94% → 59% | 35% → 45% |
+| morvane f3 deathRing | 0,0 → 2,7 | 0% → 72% | 35% → 45% |
+| morvane f3 requiem | 0,0 → 1,4 | 0% → 84% | 35% → 45% |
+| azgor f1 fireWave | 5,3 → 4,2 | 88% → 70% | 42% → 44% |
+| azgor f1 flameCleave | 5,2 → 4,2 | 78% → 63% | 42% → 44% |
+| azgor f1 meteor | 2,6 → 2,4 | 78% → 72% | 42% → 44% |
+| azgor f1 eruption | 2,6 → 2,4 | 69% → 64% | 42% → 44% |
+| azgor f1 volcanoHeart | 0,0 → 1,8 | 0% → 78% | 42% → 44% |
+| azgor f2 flameCleave | 5,4 → 4,8 | 81% → 72% | 40% → 41% |
+| azgor f2 meteor | 2,7 → 2,7 | 81% → 81% | 40% → 41% |
+| azgor f2 eruption | 2,7 → 2,8 | 72% → 75% | 40% → 41% |
+| azgor f2 volcanoHeart | 1,8 → 2,1 | 78% → 91% | 40% → 41% |
+| azgor f2 cinderBrand | 1,8 → 2,1 | 72% → 84% | 40% → 41% |
+| azgor f3 fireWave | 5,2 → 4,4 | 87% → 73% | 43% → 42% |
+| azgor f3 flameCleave | 5,1 → 4,4 | 76% → 66% | 43% → 42% |
+| azgor f3 meteor | 2,6 → 2,4 | 78% → 72% | 43% → 42% |
+| azgor f3 inferno | 2,5 → 2,4 | 67% → 64% | 43% → 42% |
+| azgor f3 cinderBrand | 0,0 → 2,0 | 0% → 80% | 43% → 42% |
+| vaelgrath f1 frostBreath | 5,2 → 4,4 | 87% → 73% | 42% → 43% |
+| vaelgrath f1 wingBuffet | 3,5 → 3,3 | 82% → 77% | 42% → 43% |
+| vaelgrath f1 tailSwipe | 3,5 → 3,3 | 82% → 77% | 42% → 43% |
+| vaelgrath f1 iceComet | 1,7 → 2,2 | 74% → 95% | 42% → 43% |
+| vaelgrath f1 frostTomb | 1,7 → 2,2 | 68% → 88% | 42% → 43% |
+| vaelgrath f2 frostBreath | 5,2 → 4,1 | 87% → 68% | 43% → 43% |
+| vaelgrath f2 tailSwipe | 3,4 → 3,2 | 79% → 75% | 43% → 43% |
+| vaelgrath f2 blizzard | 2,9 → 3,1 | 77% → 83% | 43% → 43% |
+| vaelgrath f2 avalanche | 2,8 → 3,1 | 65% → 72% | 43% → 43% |
+| vaelgrath f2 frostTomb | 1,1 → 2,0 | 44% → 80% | 43% → 43% |
+| vaelgrath f3 frostBreath | 4,7 → 3,5 | 78% → 58% | 48% → 51% |
+| vaelgrath f3 blizzard | 3,1 → 2,3 | 83% → 61% | 48% → 51% |
+| vaelgrath f3 glacialRing | 2,4 → 2,3 | 72% → 69% | 48% → 51% |
+| vaelgrath f3 avalanche | 2,3 → 2,5 | 54% → 58% | 48% → 51% |
+| vaelgrath f3 iceComet | 0,8 → 1,3 | 35% → 56% | 48% → 51% |
+| vaelgrath f3 absoluteZero | 0,7 → 1,3 | 42% → 78% | 48% → 51% |
 
 ### (e) Przedmioty: G7 po limicie skali, G8, G9, Rdzenie
 
@@ -14303,75 +14208,75 @@ G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; l
 | para | 20 | 45 | 70 | 100 |
 | --- | --: | --: | --: | --: |
 | Warrior sword2h common +0 | 1,01 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
-| Warrior sword2h common +9 | 1,01 / 0,97 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 1,00 / 0,96 / 0,96 |
+| Warrior sword2h common +9 | 1,01 / 0,97 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,97 / 0,96 | 1,00 / 0,96 / 0,96 |
 | Warrior sword2h unique +0 | 1,02 / 0,97 / 0,95 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior sword2h unique +9 | 1,01 / 0,97 / 0,96 | 1,00 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
-| Warrior sword2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
-| Warrior sword2h heroic +9 | 1,01 / 0,97 / 0,96 | 1,01 / 0,96 / 0,96 | 1,02 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 |
-| Warrior sword2h legendary +0 | **1,04** / 1,01 / 0,97 | 1,00 / 0,97 / 0,97 | 1,01 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 |
+| Warrior sword2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior sword2h heroic +9 | 1,01 / 0,98 / 0,96 | 1,01 / 0,96 / 0,96 | 1,02 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 |
+| Warrior sword2h legendary +0 | **1,04** / 1,01 / 0,97 | 1,00 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 |
 | Warrior sword2h legendary +9 | 1,03 / 1,01 / 0,98 | 1,00 / 0,98 / 0,98 | 1,01 / 0,99 / 0,98 | 1,01 / 0,99 / 0,98 |
-| Warrior sword2h mythic +0 | 1,00 / 1,02 / 1,02 | 0,98 / 1,00 / 1,02 | 0,98 / 1,00 / 1,02 | 0,98 / 1,00 / 1,02 |
-| Warrior sword2h mythic +9 | 1,00 / 1,01 / 1,00 | 0,98 / 0,98 / 1,00 | 0,98 / 0,99 / 1,01 | 0,98 / 0,99 / 1,00 |
+| Warrior sword2h mythic +0 | 1,00 / 1,02 / 1,02 | 0,98 / 1,00 / 1,02 | 0,98 / 1,01 / 1,02 | 0,98 / 1,00 / 1,02 |
+| Warrior sword2h mythic +9 | 1,00 / 1,01 / 1,01 | 0,98 / 0,98 / 1,01 | 0,98 / 0,99 / 1,01 | 0,98 / 0,99 / 1,01 |
 | Warrior axe2h common +0 | 1,00 / 0,95 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
-| Warrior axe2h common +9 | 1,00 / 0,95 / 0,95 | 0,99 / 0,94 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,94 / 0,95 |
+| Warrior axe2h common +9 | 1,00 / 0,96 / 0,95 | 0,99 / 0,94 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
 | Warrior axe2h unique +0 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h unique +9 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 1,00 / 0,95 / 0,96 |
+| Warrior axe2h unique +9 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 1,00 / 0,96 / 0,96 |
 | Warrior axe2h heroic +0 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h heroic +9 | 0,99 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h legendary +0 | 1,01 / 0,97 / 0,96 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h legendary +9 | 1,00 / 0,96 / 0,96 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h mythic +0 | **0,97** / 0,93 / 0,96 | **0,95** / 0,91 / 0,96 | **0,96** / 0,92 / 0,96 | **0,96** / 0,92 / 0,96 |
-| Warrior axe2h mythic +9 | 0,97 / 0,92 / 0,95 | **0,95** / 0,90 / 0,95 | **0,95** / 0,90 / 0,95 | **0,96** / 0,90 / 0,94 |
-| Warrior hammer2h common +0 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
-| Warrior hammer2h common +9 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,95 | 1,01 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
-| Warrior hammer2h unique +0 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h unique +9 | 1,02 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
-| Warrior hammer2h heroic +0 | 1,00 / 0,94 / 0,93 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h heroic +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h legendary +0 | 1,03 / 0,97 / 0,93 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h legendary +9 | 1,03 / 0,96 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h mythic +0 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
-| Warrior hammer2h mythic +9 | 1,00 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 | 0,98 / 0,92 / 0,93 | 0,98 / 0,92 / 0,93 |
-| Warrior spear2h common +0 | 1,00 / 0,95 / 0,94 | 0,99 / 0,93 / 0,94 | 0,99 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Warrior spear2h common +9 | 1,01 / 0,96 / 0,95 | 0,98 / 0,94 / 0,95 | 0,99 / 0,95 / 0,96 | 0,99 / 0,94 / 0,95 |
-| Warrior spear2h unique +0 | 1,02 / 0,97 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,95 | 1,01 / 0,95 / 0,95 |
-| Warrior spear2h unique +9 | 1,02 / 0,97 / 0,96 | 1,01 / 0,96 / 0,95 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
-| Warrior spear2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior axe2h heroic +9 | 0,99 / 0,96 / 0,97 | 0,99 / 0,95 / 0,97 | 1,00 / 0,96 / 0,97 | 0,99 / 0,96 / 0,96 |
+| Warrior axe2h legendary +0 | 1,01 / 0,97 / 0,96 | 0,98 / 0,95 / 0,96 | 0,99 / 0,95 / 0,97 | 0,99 / 0,95 / 0,96 |
+| Warrior axe2h legendary +9 | 1,00 / 0,97 / 0,96 | 0,98 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
+| Warrior axe2h mythic +0 | **0,97** / 0,93 / 0,96 | **0,95** / 0,92 / 0,96 | **0,96** / 0,92 / 0,96 | **0,96** / 0,92 / 0,96 |
+| Warrior axe2h mythic +9 | 0,97 / 0,92 / 0,95 | **0,95** / 0,90 / 0,95 | **0,95** / 0,91 / 0,95 | **0,96** / 0,90 / 0,95 |
+| Warrior hammer2h common +0 | 1,01 / 0,95 / 0,94 | 1,00 / 0,95 / 0,94 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
+| Warrior hammer2h common +9 | 1,01 / 0,95 / 0,94 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 |
+| Warrior hammer2h unique +0 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior hammer2h unique +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior hammer2h heroic +0 | 1,00 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
+| Warrior hammer2h heroic +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,02 / 0,95 / 0,94 |
+| Warrior hammer2h legendary +0 | 1,03 / 0,97 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 |
+| Warrior hammer2h legendary +9 | 1,03 / 0,96 / 0,93 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
+| Warrior hammer2h mythic +0 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,93 / 0,94 | 0,98 / 0,93 / 0,94 |
+| Warrior hammer2h mythic +9 | 1,00 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,93 |
+| Warrior spear2h common +0 | 1,00 / 0,95 / 0,94 | 0,99 / 0,93 / 0,94 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
+| Warrior spear2h common +9 | 1,01 / 0,96 / 0,96 | 0,98 / 0,94 / 0,95 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
+| Warrior spear2h unique +0 | 1,02 / 0,97 / 0,95 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior spear2h unique +9 | 1,02 / 0,97 / 0,96 | 1,01 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
+| Warrior spear2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,97 / 0,95 | 1,02 / 0,96 / 0,95 |
 | Warrior spear2h heroic +9 | 1,03 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,98 / 0,96 | 1,02 / 0,97 / 0,96 |
 | Warrior spear2h legendary +0 | **1,04** / 0,98 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior spear2h legendary +9 | 1,03 / 0,99 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 |
 | Warrior spear2h mythic +0 | 1,00 / 0,94 / 0,95 | 0,99 / 0,93 / 0,95 | 0,99 / 0,93 / 0,95 | 0,99 / 0,93 / 0,95 |
-| Warrior spear2h mythic +9 | 1,00 / 0,96 / 0,95 | 0,98 / 0,93 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
+| Warrior spear2h mythic +9 | 1,00 / 0,96 / 0,95 | 0,98 / 0,93 / 0,95 | 0,99 / 0,94 / 0,96 | 0,99 / 0,94 / 0,95 |
 | Mage staff common +0 | 1,00 / 0,93 / 0,94 | 1,00 / 0,93 / 0,94 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 |
 | Mage staff common +9 | 0,99 / 0,93 / 0,93 | 0,99 / 0,92 / 0,93 | 0,99 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 |
 | Mage staff unique +0 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
-| Mage staff unique +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,00 / 0,94 / 0,93 | 0,99 / 0,93 / 0,94 |
+| Mage staff unique +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage staff heroic +0 | 1,01 / 0,94 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
 | Mage staff heroic +9 | 1,03 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage staff legendary +0 | **1,04** / 0,96 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
 | Mage staff legendary +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Mage staff mythic +0 | 1,00 / 0,94 / 0,94 | 1,00 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
+| Mage staff mythic +0 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
 | Mage staff mythic +9 | 0,99 / 0,94 / 0,95 | 0,98 / 0,94 / 0,95 | 0,98 / 0,93 / 0,95 | **0,96** / 0,92 / 0,95 |
 | Mage runestaff common +0 | 1,01 / 0,90 / 0,89 | 1,00 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 | 0,99 / 0,89 / 0,89 |
 | Mage runestaff common +9 | 1,01 / 0,88 / 0,88 | 1,00 / 0,87 / 0,88 | 0,99 / 0,87 / 0,88 | 0,98 / 0,86 / 0,88 |
-| Mage runestaff unique +0 | 1,03 / 0,91 / 0,89 | 1,02 / 0,90 / 0,89 | 1,01 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 |
-| Mage runestaff unique +9 | 1,02 / 0,89 / 0,87 | 1,02 / 0,89 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,87 |
+| Mage runestaff unique +0 | 1,03 / 0,91 / 0,89 | 1,02 / 0,91 / 0,89 | 1,01 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 |
+| Mage runestaff unique +9 | 1,02 / 0,90 / 0,87 | 1,02 / 0,89 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,88 |
 | Mage runestaff heroic +0 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 |
 | Mage runestaff heroic +9 | 1,03 / 0,90 / 0,87 | 1,02 / 0,89 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 |
 | Mage runestaff legendary +0 | **1,04** / 0,92 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 | 1,00 / 0,89 / 0,88 |
-| Mage runestaff legendary +9 | 1,03 / 0,90 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 | 0,99 / 0,87 / 0,87 |
+| Mage runestaff legendary +9 | 1,03 / 0,90 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,87 |
 | Mage runestaff mythic +0 | 1,00 / 0,89 / 0,89 | 0,99 / 0,89 / 0,89 | 0,99 / 0,88 / 0,89 | 0,98 / 0,87 / 0,89 |
 | Mage runestaff mythic +9 | 1,00 / 0,88 / 0,88 | 0,98 / 0,87 / 0,88 | 0,98 / 0,86 / 0,88 | **0,97** / 0,85 / 0,88 |
-| Cleric holystaff common +0 | 1,00 / 1,04 / 1,04 | 1,00 / 1,19 / 1,20 | 1,00 / 1,41 / 1,41 | 1,00 / 1,83 / 1,83 |
-| Cleric holystaff common +9 | 1,00 / 1,34 / 1,34 | 1,00 / 2,66 / 2,66 | 1,01 / 3,72 / 3,70 | 1,01 / 3,85 / 3,83 |
-| Cleric holystaff unique +0 | 1,01 / 1,17 / 1,15 | 1,02 / 1,56 / 1,54 | 1,02 / 2,37 / 2,34 | 1,02 / 3,80 / 3,73 |
-| Cleric holystaff unique +9 | 1,03 / 1,93 / 1,88 | 1,02 / 3,76 / 3,69 | 1,02 / 4,00 / 3,92 | 1,02 / 4,45 / 4,37 |
-| Cleric holystaff heroic +0 | 1,01 / 1,28 / 1,28 | 1,02 / 2,11 / 2,07 | 1,03 / 3,82 / 3,73 | 1,02 / 3,90 / 3,82 |
-| Cleric holystaff heroic +9 | 1,02 / 3,18 / 3,11 | 1,02 / 3,90 / 3,82 | 1,03 / 4,47 / 4,34 | 1,03 / 4,45 / 4,34 |
-| Cleric holystaff legendary +0 | 1,02 / 1,86 / 1,83 | 1,01 / 3,80 / 3,75 | 1,01 / 4,01 / 3,95 | 1,02 / 4,49 / 4,41 |
-| Cleric holystaff legendary +9 | 1,02 / 3,71 / 3,64 | 1,01 / 4,38 / 4,32 | 1,02 / 4,39 / 4,32 | 1,02 / 4,42 / 4,32 |
-| Cleric holystaff mythic +0 | 0,98 / 3,62 / 3,70 | 0,99 / 4,15 / 4,20 | 0,98 / 4,38 / 4,46 | 0,99 / 4,40 / 4,46 |
-| Cleric holystaff mythic +9 | 0,98 / 3,91 / 3,98 | 0,99 / 4,24 / 4,29 | 0,98 / 4,23 / 4,29 | 0,99 / 4,25 / 4,29 |
+| Cleric holystaff common +0 | 1,00 / 1,04 / 1,05 | 1,00 / 1,20 / 1,20 | 1,00 / 1,43 / 1,43 | 1,00 / 1,87 / 1,86 |
+| Cleric holystaff common +9 | 1,00 / 1,35 / 1,35 | 1,00 / 2,70 / 2,70 | 1,01 / 3,89 / 3,86 | 1,01 / 4,37 / 4,34 |
+| Cleric holystaff unique +0 | 1,01 / 1,17 / 1,16 | 1,02 / 1,58 / 1,55 | 1,02 / 2,43 / 2,39 | 1,02 / 3,93 / 3,86 |
+| Cleric holystaff unique +9 | 1,03 / 1,95 / 1,90 | 1,02 / 3,88 / 3,81 | 1,02 / 4,46 / 4,37 | 1,02 / 4,45 / 4,37 |
+| Cleric holystaff heroic +0 | 1,01 / 1,29 / 1,28 | 1,02 / 2,14 / 2,10 | 1,03 / 3,95 / 3,85 | 1,02 / 4,20 / 4,11 |
+| Cleric holystaff heroic +9 | 1,02 / 3,22 / 3,15 | 1,02 / 4,20 / 4,11 | 1,03 / 4,47 / 4,34 | 1,03 / 4,45 / 4,34 |
+| Cleric holystaff legendary +0 | 1,02 / 1,88 / 1,85 | 1,01 / 3,89 / 3,84 | 1,01 / 4,54 / 4,47 | 1,02 / 4,56 / 4,47 |
+| Cleric holystaff legendary +9 | 1,02 / 3,81 / 3,74 | 1,01 / 4,38 / 4,32 | 1,02 / 4,39 / 4,32 | 1,02 / 4,42 / 4,32 |
+| Cleric holystaff mythic +0 | 0,98 / 3,69 / 3,77 | 0,99 / 4,41 / 4,46 | 0,98 / 4,38 / 4,46 | 0,99 / 4,40 / 4,46 |
+| Cleric holystaff mythic +9 | 0,98 / 4,23 / 4,30 | 0,99 / 4,24 / 4,29 | 0,98 / 4,23 / 4,29 | 0,99 / 4,25 / 4,29 |
 
 G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):
 
@@ -14429,9 +14334,9 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 
 | boss | mikstura HP/s | obrażenia tanka /s | pokrycie |
 | --- | --: | --: | --: |
-| azgor (45) | 667 | 115 | 581% |
-| vaelgrath (70) | 1000 | 184 | 542% |
-| vaelgrath (100) | 1000 | 256 | 390% |
+| azgor (45) | 667 | 112 | 594% |
+| vaelgrath (70) | 1000 | 161 | 622% |
+| vaelgrath (100) | 1000 | 224 | 447% |
 
 ### (h) G10: mana Maga i leczenie Kapłana
 
@@ -14495,7 +14400,7 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | cel | wiersze | poza pasmem | sesja | powód |
 | --- | --: | --: | --: | --: |
 | G7 | 16 | 16 | S88 | poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception) |
-| G8 | 260 | 251 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
+| G8 | 260 | 249 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
 | G8 | 4 | 4 | S91 | poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
 | G8 | 9 | 9 | S88 | poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
 | G8 | 1 | 1 | S92 | poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit) |
@@ -14515,11 +14420,11 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 
 | cecha | build | sytuacje | 20 | 45 | 70 | 100 | Mityczny +9 (45 / 70 / 100) | z węzłami | raport | kto |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 4,3% | 4,1% | **3,7%** | **3,9%** | 4,7% / 4,4% / 4,6% | – | – | S88; raport → S94 (70, 100) |
-| swordplay | standard.commander@sword1h + shield | group, elite, boss | 4,0% | **3,8%** | **3,3%** | **3,0%** | 4,4% / 3,9% / 3,5% | – | – | raport → S94 |
+| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 3,9% | **3,7%** | **3,3%** | **3,4%** | 4,3% / 4,0% / 4,1% | – | – | raport → S134 |
+| swordplay | standard.commander@sword1h + shield | group, elite, boss | 3,6% | **3,4%** | **2,9%** | **2,6%** | 4,0% / 3,5% / 3,1% | – | – | raport → S94 |
 | twinCut | standard.commander@saber1h + shield | single, elite | 6,0% | 5,7% | 5,3% | 4,8% | 9,1% / 8,9% / 8,0% | – | – | S88 |
 | twinCut | guardian.defender@saber1h + shield | single, elite | 6,4% | **6,1%** | 5,9% | 5,9% | 9,6% / 9,7% / 9,8% | – | – | S88; raport → S89 (45) |
-| reaping | guardian.loner@axe1h + shield | solo | 5,2% | 5,0% | 5,2% | 5,3% | 304,7% / 303,4% / 302,4% | – | boss 1,2% (70) | S88 |
+| reaping | guardian.loner@axe1h + shield | solo | 5,2% | 5,0% | 5,2% | 5,3% | 304,7% / 303,4% / 302,4% | – | boss 0,7% (70) | S88 |
 | bonebreaker | guardian.defender@mace1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,6% / 10,6% / 10,6% | – | – | S88 |
 | bonebreaker | inquisitor.solo@mace1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,7% / 10,7% / 10,7% | – | – | S88 |
 | bonebreaker | fortune.plunder@mace1h + relic | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,6% / 10,6% / 10,6% | – | – | S88 |
@@ -14561,7 +14466,7 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 
 Powody wierszy w raporcie (H4):
 
-- swordplay: poza zasięgiem dźwigni S94: 0.037 / 0.039 at 70 / 100 (the S84 boss at 70 and 100 is Vaelgrath with the S94 waves 86 / 87; waves at 99 / 100 lose 2.9 HP per member, a faster swing breaks the S32 tank); owner: the boss of the situation at 70 → S94.
+- swordplay: poza zasięgiem dźwigni S94: 0.037 / 0.039 at 70 / 100 (the S84 boss at 70 and 100 is Vaelgrath with the S94 waves 86 / 87; waves at 99 / 100 lose 2.9 HP per member, a faster swing breaks the S32 tank); owner: the boss of the situation at 70. S134: 0.037 at 45 (bosses 2.0: 8 helpers per wave instead of 14 for a party of 3, more telegraphed casts, fewer blows to counter); owner: the trait value or the boss of the situation → S134.
 - swordplay: poza zasięgiem dźwigni S89: 0.039 at 100; the Standard-Bearer counters only with the sword's fixed 10 % (no Counterattack node in its rows 4-11), trait values are S88's (owner). Poza zasięgiem dźwigni S93: 0.038 at 45 (the S84 boss at 45 is Azgor with the S93 waves 58 / 59; owner: the boss of the situation at 45). Poza zasięgiem dźwigni S94: 0.033 at 70 (the S84 boss at 70 is Vaelgrath with the S94 waves 86 / 87) → S94.
 - twinCut: poza zasięgiem dźwigni S89: 0.0615 at 45; R1 (S89) raised the basic attack share of every Warrior and the Guardian has no damage lever at 45 (owner: the trait value, S88) → S89.
 - rendingGash: poza zasięgiem dźwigni S89: 0.0400 at 45, 0.039 at 100 (band from 0.04): Mighty Strike 10B and Rend 10A bleeds (R4) take the share of the hits that proc it (owner: the trait value, S88) → S89.
@@ -14587,9 +14492,9 @@ Zestawy broni jednej ścieżki w `Balance.MIX` (grupa 0,5, Elita 0,3, boss 0,2) 
 | guardian · 45 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,99, mace1h + shield 0,92 | **11,0%** | raport → S89 |
 | guardian · 70 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,99, mace1h + shield 0,92 | **10,6%** | raport → S89 |
 | guardian · 100 | sword1h + shield 1,00, saber1h + shield 1,02, axe1h + shield 0,99, mace1h + shield 0,92 | **10,7%** | raport → S89 |
-| standard · 45 | sword1h + shield 1,00, saber1h + shield 1,02 | 2,1% | S88 |
-| standard · 70 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,3% | S88 |
-| standard · 100 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,2% | S88 |
+| standard · 45 | sword1h + shield 1,00, saber1h + shield 1,02 | 2,2% | S88 |
+| standard · 70 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,4% | S88 |
+| standard · 100 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,3% | S88 |
 | marksman · 45 | longbow + quiver 1,00, heavycrossbow + quiver 0,99 | 0,6% | S88 |
 | marksman · 70 | longbow + quiver 1,00, heavycrossbow + quiver 1,00 | 0,5% | S88 |
 | marksman · 100 | longbow + quiver 1,00, heavycrossbow + quiver 0,99 | 0,8% | S88 |
@@ -14859,12 +14764,12 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
-| T1 · swordplay · guardian.loner@sword1h · L45 | 4,1% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · swordplay · guardian.loner@sword1h · L70 | 3,7% | 4,0%–6,0% | **poza** | raport → S94 |
-| T1 · swordplay · guardian.loner@sword1h · L100 | 3,9% | 4,0%–6,0% | **poza** | raport → S94 |
-| T1 · swordplay · standard.commander@sword1h · L45 | 3,8% | 4,0%–6,0% | **poza** | raport → S94 |
-| T1 · swordplay · standard.commander@sword1h · L70 | 3,3% | 4,0%–6,0% | **poza** | raport → S94 |
-| T1 · swordplay · standard.commander@sword1h · L100 | 3,0% | 4,0%–6,0% | **poza** | raport → S94 |
+| T1 · swordplay · guardian.loner@sword1h · L45 | 3,7% | 4,0%–6,0% | **poza** | raport → S134 |
+| T1 · swordplay · guardian.loner@sword1h · L70 | 3,3% | 4,0%–6,0% | **poza** | raport → S134 |
+| T1 · swordplay · guardian.loner@sword1h · L100 | 3,4% | 4,0%–6,0% | **poza** | raport → S134 |
+| T1 · swordplay · standard.commander@sword1h · L45 | 3,4% | 4,0%–6,0% | **poza** | raport → S94 |
+| T1 · swordplay · standard.commander@sword1h · L70 | 2,9% | 4,0%–6,0% | **poza** | raport → S94 |
+| T1 · swordplay · standard.commander@sword1h · L100 | 2,6% | 4,0%–6,0% | **poza** | raport → S94 |
 | T1 · twinCut · standard.commander@saber1h · L45 | 5,7% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · twinCut · standard.commander@saber1h · L70 | 5,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · twinCut · standard.commander@saber1h · L100 | 4,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
@@ -15003,9 +14908,9 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T2 · guardian · L45 | 11,0% | ≤ 5,0% | **poza** | raport → S89 |
 | T2 · guardian · L70 | 10,6% | ≤ 5,0% | **poza** | raport → S89 |
 | T2 · guardian · L100 | 10,7% | ≤ 5,0% | **poza** | raport → S89 |
-| T2 · standard · L45 | 2,1% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · standard · L70 | 1,3% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · standard · L100 | 1,2% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · standard · L45 | 2,2% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · standard · L70 | 1,4% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · standard · L100 | 1,3% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · marksman · L45 | 0,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · marksman · L70 | 0,5% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · marksman · L100 | 0,8% | ≤ 5,0% | w paśmie | S88 (asertowane) |
@@ -15425,6 +15330,122 @@ Elity w otwartych regionach (`eliteChance` = 0.15): każda zwykła grupa przy od
 | loot | 52,5 | 34,3 | 5,1 |
 | gold | 37,5 | 48,0 | 7,2 |
 
+## Bossowie 2.0 (S134)
+
+HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba pomocników fali; wielkie ciosy (`avoid`) w modelu uniknięte, wspólny cios (`split`) dzielony przez stojących razem, piętno (`mark`) tylko w naznaczonego, zaklęcie (`channel`) przerwane, gdy drużyna zada `breakPct` maks. HP w czasie zaklęcia − 0,5 s. Solo = Wojownik (Furia) bez wsparcia; przepakowany = Mityczny komplet +9. Asertuje `balance.spec` („Balance: bosses 2.0 (S134)”).
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| Grimrok, 3 graczy L19: min | 6,16 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Grimrok, 5 graczy L19: min | 4,12 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Grimrok: czas 3 graczy / 2 graczy | 0,65 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: czas 4 graczy / 3 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: czas 5 graczy / 4 graczy | 0,81 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok, 3 graczy L19 z węzłami: min | 6,06 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Grimrok, 5 graczy L19 z węzłami: min | 4,04 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Grimrok z węzłami: czas 3 graczy / 2 graczy | 0,64 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok z węzłami: czas 4 graczy / 3 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok z węzłami: czas 5 graczy / 4 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: największy cios do uniknięcia / HP Maga L20 | 0,75 | 0,60–0,90 | w paśmie | S134 (asertowane) |
+| Grimrok: największy cios do uniknięcia / HP Wojownika L20 | 0,66 | ≤ 0,70 | w paśmie | S134 (asertowane) |
+| Grimrok: największy cios nie do uniknięcia / HP Maga L20 | 0,00 | ≤ 0,50 | w paśmie | S134 (asertowane) |
+| Grimrok: wspólny cios, 3 graczy razem / HP Maga | 0,67 | ≤ 0,75 | w paśmie | S134 (asertowane) |
+| Grimrok: wspólny cios w pojedynkę / HP | 1,22 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok, fala tarczy, 3 graczy: HP na członka | 0,91 | ≤ 1,10 | w paśmie | S134 (asertowane) |
+| Grimrok: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L20, wspólny cios / HP | 0,68 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L20, przyjmowane / podtrzymanie | 0,06 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L20: s | 129,49 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30, wspólny cios / HP | 0,40 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30, przyjmowane / podtrzymanie | 0,06 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30: s | 29,11 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Morvane, 3 graczy L44: min | 5,62 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Morvane, 5 graczy L44: min | 3,83 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Morvane: czas 3 graczy / 2 graczy | 0,65 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: czas 4 graczy / 3 graczy | 0,84 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: czas 5 graczy / 4 graczy | 0,81 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane, 3 graczy L44 z węzłami: min | 5,46 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Morvane, 5 graczy L44 z węzłami: min | 3,73 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Morvane z węzłami: czas 3 graczy / 2 graczy | 0,63 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane z węzłami: czas 4 graczy / 3 graczy | 0,83 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane z węzłami: czas 5 graczy / 4 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: największy cios do uniknięcia / HP Maga L45 | 0,80 | 0,60–0,90 | w paśmie | S134 (asertowane) |
+| Morvane: największy cios do uniknięcia / HP Wojownika L45 | 0,69 | ≤ 0,70 | w paśmie | S134 (asertowane) |
+| Morvane: największy cios nie do uniknięcia / HP Maga L45 | 0,49 | ≤ 0,50 | w paśmie | S134 (asertowane) |
+| Morvane: przerwanie zaklęcia, 3 graczy: s | 3,81 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane: przerwanie zaklęcia w pojedynkę: s | 5,58 | ≥ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane, fala tarczy, 3 graczy: HP na członka | 0,40 | ≤ 1,10 | w paśmie | S134 (asertowane) |
+| Morvane: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45, przerwanie: s | 0,97 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45, przyjmowane / podtrzymanie | 0,17 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45: s | 85,00 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55, przerwanie: s | 0,36 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55, przyjmowane / podtrzymanie | 0,11 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55: s | 31,50 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Azgor, 3 graczy L69: min | 5,94 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Azgor, 5 graczy L69: min | 4,08 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Azgor: czas 3 graczy / 2 graczy | 0,65 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: czas 4 graczy / 3 graczy | 0,84 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: czas 5 graczy / 4 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor, 3 graczy L69 z węzłami: min | 5,32 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Azgor, 5 graczy L69 z węzłami: min | 3,74 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Azgor z węzłami: czas 3 graczy / 2 graczy | 0,59 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor z węzłami: czas 4 graczy / 3 graczy | 0,85 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor z węzłami: czas 5 graczy / 4 graczy | 0,83 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: największy cios do uniknięcia / HP Maga L70 | 0,80 | 0,60–0,90 | w paśmie | S134 (asertowane) |
+| Azgor: największy cios do uniknięcia / HP Wojownika L70 | 0,69 | ≤ 0,70 | w paśmie | S134 (asertowane) |
+| Azgor: największy cios nie do uniknięcia / HP Maga L70 | 0,40 | ≤ 0,50 | w paśmie | S134 (asertowane) |
+| Azgor: wspólny cios, 3 graczy razem / HP Maga | 0,59 | ≤ 0,75 | w paśmie | S134 (asertowane) |
+| Azgor: wspólny cios w pojedynkę / HP | 1,16 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor, fala tarczy, 3 graczy: HP na członka | 0,37 | ≤ 1,10 | w paśmie | S134 (asertowane) |
+| Azgor: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70, wspólny cios / HP | 0,73 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70, przyjmowane / podtrzymanie | 0,10 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70: s | 88,06 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath, 3 graczy L99: min | 6,05 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath, 5 graczy L99: min | 4,24 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath: czas 3 graczy / 2 graczy | 0,66 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: czas 4 graczy / 3 graczy | 0,86 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: czas 5 graczy / 4 graczy | 0,82 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath, 3 graczy L99 z węzłami: min | 5,32 | 5,00–7,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath, 5 graczy L99 z węzłami: min | 3,84 | 3,00–4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath z węzłami: czas 3 graczy / 2 graczy | 0,58 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath z węzłami: czas 4 graczy / 3 graczy | 0,86 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath z węzłami: czas 5 graczy / 4 graczy | 0,84 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: największy cios do uniknięcia / HP Maga L100 | 0,85 | 0,60–0,90 | w paśmie | S134 (asertowane) |
+| Vaelgrath: największy cios do uniknięcia / HP Wojownika L100 | 0,69 | ≤ 0,70 | w paśmie | S134 (asertowane) |
+| Vaelgrath: największy cios nie do uniknięcia / HP Maga L100 | 0,46 | ≤ 0,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath: wspólny cios, 3 graczy razem / HP Maga | 0,63 | ≤ 0,75 | w paśmie | S134 (asertowane) |
+| Vaelgrath: wspólny cios w pojedynkę / HP | 1,16 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: przerwanie zaklęcia, 3 graczy: s | 4,11 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath: przerwanie zaklęcia w pojedynkę: s | 5,09 | ≥ 4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath, fala tarczy, 3 graczy: HP na członka | 0,36 | ≤ 1,10 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, wspólny cios / HP | 0,73 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, przerwanie: s | 1,00 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, przyjmowane / podtrzymanie | 0,09 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100: s | 96,70 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+
+
+| walka bez pasma (2 i 4 graczy) | min |
+| --- | --: |
+| Grimrok, 2 graczy L19: min | 9,52 |
+| Grimrok, 4 graczy L19: min | 5,06 |
+| Grimrok, 2 graczy L19 z węzłami: min | 9,50 |
+| Grimrok, 4 graczy L19 z węzłami: min | 4,94 |
+| Morvane, 2 graczy L44: min | 8,69 |
+| Morvane, 4 graczy L44: min | 4,72 |
+| Morvane, 2 graczy L44 z węzłami: min | 8,66 |
+| Morvane, 4 graczy L44 z węzłami: min | 4,56 |
+| Azgor, 2 graczy L69: min | 9,08 |
+| Azgor, 4 graczy L69: min | 5,00 |
+| Azgor, 2 graczy L69 z węzłami: min | 9,00 |
+| Azgor, 4 graczy L69 z węzłami: min | 4,50 |
+| Vaelgrath, 2 graczy L99: min | 9,22 |
+| Vaelgrath, 4 graczy L99: min | 5,18 |
+| Vaelgrath, 2 graczy L99 z węzłami: min | 9,15 |
+| Vaelgrath, 4 graczy L99 z węzłami: min | 4,58 |
+
 ## Wzory (stan obecny)
 
 - Potwór: HP = (55 + 0.9·15·L^1.55) × monsterHp(L), atak = (4 + 2.5·L^0.88) × monsterAtk(L) (S87: krzywe od poziomu końcowego, 1 do 20.; Elita × eliteHp / eliteDmg), pancerz 10·L × defMul, odporność magiczna 8·L × mresMul, atak co 2 s / szybkość.
@@ -15433,10 +15454,10 @@ Elity w otwartych regionach (`eliteChance` = 0.15): każda zwykła grupa przy od
 - Wariant elite: +2 poz., HP ×3, obrażenia ×1.25.
 - Wariant elite2: +4 poz., HP ×10, obrażenia ×1.35.
 - Wariant boss: +0 poz., HP ×1, obrażenia ×6.
-- grimrok (L20): HP ×1.2, atak ×0.32, ciosy sweep ×6, leap ×6, whirlwind ×7.
-- morvane (L45): HP ×1.2, atak ×0.42, ciosy shadowBolt ×4.5, shadowBoltFast ×4.5, curseField ×11.5, deathRing ×5.8.
-- azgor (L70): HP ×1.25, atak ×0.36, ciosy fireWave ×5.2, flameCleave ×3, meteor ×4, inferno ×6.6.
-- vaelgrath (L100): HP ×1.3, atak ×0.38, ciosy frostBreath ×3.6, wingBuffet ×3.7, tailSwipe ×4.1, blizzard ×4.4, glacialRing ×6.2.
+- grimrok (L20): HP ×1.2, atak ×0.32, ciosy sweep ×7.2, leap ×7.6, whirlwind ×9.2, groundSplitter ×8.2, boulder ×21.
+- morvane (L45): HP ×1.2, atak ×0.42, ciosy shadowBolt ×4.2, shadowBoltFast ×4.2, curseField ×11.5, deathRing ×6.8, soulReap ×6.2, cryptBrand ×6, requiem ×7.7.
+- azgor (L70): HP ×1.3, atak ×0.36, ciosy fireWave ×7, flameCleave ×3, meteor ×4, inferno ×8, eruption ×7.3, volcanoHeart ×17.5, cinderBrand ×7.
+- vaelgrath (L100): HP ×1.35, atak ×0.38, ciosy frostBreath ×3.6, wingBuffet ×3.7, tailSwipe ×6.2, blizzard ×4.4, glacialRing ×8.1, avalanche ×7, iceComet ×17.7, frostTomb ×7.1, absoluteZero ×8.6.
 - EXP i złoto rodzaju × mnożnik HP^0.75 × (mnożnik ataku × szybkość)^0.25 × rewardMul rodzaju (S92, domyślnie 1).
 - Mikstury (S54): odstęp `Potions.interval` = 1.5 s × krzywa `potionCooldown` (20: 1,5 s, 45: 6,0 s, 70: 10,0 s, 100: 10,0 s).
   Model łańcuchowy: regeneracja poza walką w przerwie, potem najtańsza dozwolona jakość (`level` ≤ poziom), której

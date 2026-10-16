@@ -5615,7 +5615,7 @@ function SkillModel.healerVsBoss(build: Build, bossId: string, opts: { team: str
 		end
 	end
 	local fightOf = B.bossFight(bossId, team)
-	local m = B.monster(B.bossKind(def, #team), def.level, "boss")
+	local m = B.monster(B.bossKind(def), def.level, "boss")
 	local heal = { tank = team[1], team = #team }
 	local r = SkillModel.fight(sp, { targets = { m }, seconds = fightOf.seconds, heal = heal })
 	local cd = SkillModel.fight(sp, { targets = { m }, seconds = A.sustainedSeconds, heal = heal, unlimited = true })
@@ -6351,7 +6351,7 @@ end
 
 export type InterceptReport = {
 	level: number,
-	mageHit: number, -- the boss's biggest hit on the Mage / Mage max HP
+	mageHit: number, -- the boss's biggest hit on the Mage (S134: plain or an `avoid` blow taken) / Mage max HP
 	mageKept: number, -- with Intercept (Logic/Intercept.resolve)
 	mageCovered: number, -- with Intercept and Cover (allyGuard)
 	guardTook: number, -- the guard's part after Martyr (Intercept.split) / guard max HP
@@ -6370,7 +6370,8 @@ function SkillModel.interceptReport(L: number): InterceptReport
 	end
 	local f = B.bossFight(bossId, team)
 	local mage = team[2]
-	local mageHit = (f.biggestHit.Mage or 0) * mage.values.maxHp
+	-- S134: the biggest blow that can land on the Mage: a plain one or an `avoid` blow taken (not dodged)
+	local mageHit = math.max(f.biggestHit.Mage or 0, f.biggestAvoidable.Mage or 0) * mage.values.maxHp
 	local guardBuild = byKey("guardian.defender")
 	local gsp = SkillModel.player(guardBuild, L)
 	local guardHp = gsp.p.values.maxHp
@@ -6405,12 +6406,15 @@ function SkillModel.interceptReport(L: number): InterceptReport
 			cover = math.max(cover, aura.stats.value or 0)
 		end
 	end
-	-- Shield Wall: the biggest special attack as a red zone on every member, its share of the four others moves
+	-- Shield Wall: the biggest special attack as a red zone on every member, its share of the four others moves.
+	-- S134: no mechanic (a split's total is shared by those inside, a mark hits one, a channel has no area)
 	local wall = valueOf("shieldWall", "share")
-	local m = B.monster(B.bossKind(def, #team), def.level, "boss")
+	local m = B.monster(B.bossKind(def), def.level, "boss")
 	local biggest = 1
 	for _, attack in def.attacks do
-		biggest = math.max(biggest, attack.damage)
+		if attack.mechanic == nil then
+			biggest = math.max(biggest, attack.damage)
+		end
 	end
 	local own = FightSim.hit(m, gsp.p, biggest, nil, false)
 	local parts, capped = 0, 0

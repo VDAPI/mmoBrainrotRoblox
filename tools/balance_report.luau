@@ -738,6 +738,20 @@ for _, t in tables do
 	table.insert(byBand[t.band], t)
 end
 
+-- S134: the boss rows of bosses 2.0 by id (lazy; the S92-S94 sections read their fight length and biggest blows
+-- here since S134 replaced those rows).
+local s134ById: { [string]: B.TargetRow }? = nil
+local function s134Row(id: string): B.TargetRow?
+	if not s134ById then
+		local byId: { [string]: B.TargetRow } = {}
+		for _, row in B.targetsS134() do
+			byId[row.id] = row
+		end
+		s134ById = byId
+	end
+	return (s134ById :: { [string]: B.TargetRow })[`S134.{id}`]
+end
+
 -- S92 (L1): the Dark Forest section: start S92 -> now, the S92 targets (Balance.targetsS92) and the "Tylko raport"
 -- items of the session file.
 local function s92Section()
@@ -748,7 +762,7 @@ local function s92Section()
 		byId[row.id] = row
 	end
 	local function v(id: string): number
-		local row = byId[`R.duskwood.{id}`]
+		local row = byId[`R.duskwood.{id}`] or s134Row(id)
 		return if row then row.value else 0 / 0
 	end
 	local function range(prefix: string, fmt: string): string
@@ -823,13 +837,13 @@ local function s92Section()
 				v("morvane.team5"),
 				"2"
 			)}`,
-			"4–6",
+			"S134: 3 graczy 5–7,5, 5 graczy 3–4,5",
 		},
 		{
-			"Morvane: największy cios Maga L45 / L43",
-			"107% / 112%",
-			`{fmtValue(v("morvane.mage45"), "%")} / {fmtValue(v("morvane.mage43"), "%")}`,
-			"≤ 70% / < 100%",
+			"Morvane: największy cios Maga L45 nie do uniknięcia / do uniknięcia (S134)",
+			"107% / –",
+			`{fmtValue(v("morvane.hit.mage"), "%")} / {fmtValue(v("morvane.avoid.mage"), "%")}`,
+			"≤ 50% / 60–90%",
 		},
 		{ "Morvane: zwykły cios Maga L45", "28%", fmtValue(v("morvane.basic45"), "%"), "7–12%" },
 		{ "Morvane: tank HP na minutę (model S32)", "770%", fmtValue(v("morvane.tank"), "%"), "≤ 350%" },
@@ -1096,7 +1110,7 @@ local function s92Section()
 		table.insert(mRows, { `bez wsparcia, {n} graczy: mikstury na walkę`, table.concat(pots, ", ") })
 	end
 	local def = Bosses.byId.morvane :: any
-	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	local m = B.monster(B.bossKind(def), def.level, "boss")
 	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
 		local sp = SkillModel.player(SkillModel.build(key), 44)
 		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
@@ -1174,7 +1188,7 @@ local function s93Section()
 		byId[row.id] = row
 	end
 	local function v(id: string): number
-		local row = byId[`R.ashen.{id}`]
+		local row = byId[`R.ashen.{id}`] or s134Row(id)
 		return if row then row.value else 0 / 0
 	end
 	local function range(prefix: string, fmt: string): string
@@ -1251,13 +1265,18 @@ local function s93Section()
 			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
 	end
 	local rows = {
-		{ "Azgor 3 / 4 / 5 graczy L69: min", "5,14 / 5,30 / 5,13", three("azgor.team", "", "2"), "4–6" },
-		{ "Azgor z węzłami 3 / 4 / 5: min", "4,62 / 4,77 / 4,71", three("azgor.team", "@nodes", "2"), "4–6" },
+		{ "Azgor 3 / 4 / 5 graczy L69: min", "5,14 / 5,30 / 5,13", three("azgor.team", "", "2"), "S134: 5–7,5 / – / 3–4,5" },
 		{
-			"Azgor: największy cios Maga L70 / L68 (inferno)",
-			"118% / 122%",
-			`{fmtValue(v("azgor.mage70"), "%")} / {fmtValue(v("azgor.mage68"), "%")}`,
-			"≤ 70% / < 100%",
+			"Azgor z węzłami 3 / 4 / 5: min",
+			"4,62 / 4,77 / 4,71",
+			three("azgor.team", "@nodes", "2"),
+			"S134: 5–7,5 / – / 3–4,5",
+		},
+		{
+			"Azgor: największy cios Maga L70 nie do uniknięcia / do uniknięcia (S134)",
+			"118% / –",
+			`{fmtValue(v("azgor.hit.mage"), "%")} / {fmtValue(v("azgor.avoid.mage"), "%")}`,
+			"≤ 50% / 60–90%",
 		},
 		{ "Azgor: zwykły cios Maga L70", "35%", fmtValue(v("azgor.basic70"), "%"), "7–12%" },
 		{ "Azgor: tank HP na minutę (model S32)", "816%", fmtValue(v("azgor.tank"), "%"), "≤ 350%" },
@@ -1598,7 +1617,7 @@ local function s93Section()
 			`{fmtValue(seconds, "0")} s z {fmtValue(share0.phases[3].seconds, "0")} s fazy 3 (5 graczy)`,
 		})
 	end
-	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	local m = B.monster(B.bossKind(def), def.level, "boss")
 	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
 		local sp = SkillModel.player(SkillModel.build(key), S.bossLevel)
 		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
@@ -1708,7 +1727,7 @@ local function s94Section()
 		byId[row.id] = row
 	end
 	local function v(id: string): number
-		local row = byId[`R.frostpeak.{id}`]
+		local row = byId[`R.frostpeak.{id}`] or s134Row(id)
 		return if row then row.value else 0 / 0
 	end
 	local function range(prefix: string, fmt: string): string
@@ -1793,18 +1812,23 @@ local function s94Section()
 			math.max(step, B.paceWindowAt("Warrior", L).hours / math.max(1e-9, B.paceWindowAt("Warrior", L - 1).hours))
 	end
 	local rows = {
-		{ "Vaelgrath 3 / 4 / 5 graczy L99: min", "4,58 / 4,82 / 4,67", three("vaelgrath.team", "", "2"), "4–6" },
+		{
+			"Vaelgrath 3 / 4 / 5 graczy L99: min",
+			"4,58 / 4,82 / 4,67",
+			three("vaelgrath.team", "", "2"),
+			"S134: 5–7,5 / – / 3–4,5",
+		},
 		{
 			"Vaelgrath z węzłami 3 / 4 / 5: min",
 			"4,01 / 4,25 / 4,21",
 			three("vaelgrath.team", "@nodes", "2"),
-			"4–6",
+			"S134: 5–7,5 / – / 3–4,5",
 		},
 		{
-			"Vaelgrath: największy cios Maga L100 / L98 (Lodowy Pierścień)",
-			"130% / 132%",
-			`{fmtValue(v("vaelgrath.mage100"), "%")} / {fmtValue(v("vaelgrath.mage98"), "%")}`,
-			"≤ 70% / < 100%",
+			"Vaelgrath: największy cios Maga L100 nie do uniknięcia / do uniknięcia (S134)",
+			"130% / –",
+			`{fmtValue(v("vaelgrath.hit.mage"), "%")} / {fmtValue(v("vaelgrath.avoid.mage"), "%")}`,
+			"≤ 50% / 60–90%",
 		},
 		{ "Vaelgrath: zwykły cios Maga L100", "33%", fmtValue(v("vaelgrath.basic100"), "%"), "7–12%" },
 		{ "Vaelgrath: tank HP na minutę (model S32)", "1063%", fmtValue(v("vaelgrath.tank"), "%"), "≤ 350%" },
@@ -2242,7 +2266,7 @@ local function s94Section()
 		)
 	end
 	table.insert(vRows, { "fale tarczy i okno bez obrażeń w fazie 2 (drużyna S32)", table.concat(waves, "; ") })
-	local m = B.monster(B.bossKind(def, 4), def.level, "boss")
+	local m = B.monster(B.bossKind(def), def.level, "boss")
 	for _, key in { "trapper.poisoner", "inquisitor.solo" } do
 		local sp = SkillModel.player(SkillModel.build(key), S.bossLevel)
 		local d60 = SkillModel.fight(sp, { targets = { m }, seconds = 60 }).dps
@@ -3953,6 +3977,29 @@ do
 		})
 	end
 	tableOut({ "odrodzenie (profil łowiska)", "średnio s", "odrodzeń w 30 min", "Elit na grupę" }, rows)
+end
+
+-- S134: bosses 2.0 (Balance.targetsS134): no party scaling, big blows to dodge, party mechanics, solo on equal and
+-- on overpowered gear.
+do
+	add("## Bossowie 2.0 (S134)")
+	add()
+	add(
+		"HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba pomocników fali; wielkie ciosy (`avoid`) w modelu uniknięte, wspólny cios (`split`) dzielony przez stojących razem, piętno (`mark`) tylko w naznaczonego, zaklęcie (`channel`) przerwane, gdy drużyna zada `breakPct` maks. HP w czasie zaklęcia − 0,5 s. Solo = Wojownik (Furia) bez wsparcia; przepakowany = Mityczny komplet +9. Asertuje `balance.spec` („Balance: bosses 2.0 (S134)”)."
+	)
+	add()
+	local banded: { B.TargetRow } = {}
+	local free: { { string } } = {}
+	for _, row in B.targetsS134() do
+		if row.low or row.high then
+			table.insert(banded, row)
+		else
+			table.insert(free, { row.label, fmtValue(row.value, "2") })
+		end
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134 (asertowane)"))
+	add()
+	tableOut({ "walka bez pasma (2 i 4 graczy)", "min" }, free)
 end
 
 -- Formulas ------------------------------------------------------------------------------------------------------

@@ -696,13 +696,13 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   | ekwipunek ze sklepów (broń do 9 poziomów za nisko) | 1 potwór ≤ 15 s, ≤ 35% HP |
   | Elita solo (poziom +2) | 20–35 s, 60–90% HP; Elity z prawdziwych spawnerów Łąk: ≥ 26/36 walk w paśmie, żadna ponad 110% HP (S91) |
   | Elita II | 2–3 graczy na poziomie (S91, jak regiony: solo co najmniej 180% HP, dwóch najwyżej 150%, trzech 60–100%) |
-  | Grimrok | 3–5 graczy L19, 4–6 min (model S83 / S87), żaden cios > 70% HP Maga L20; leczący 1,0–2,0 obrażeń tanka (T-SK6); do pokonania bez wsparcia (S91) |
+  | Grimrok | L19: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L20 (≤ 70% Wojownika), zwykłe ≤ 50%; leczący 1,0–2,0 obrażeń tanka (T-SK6); do pokonania bez wsparcia (S91) |
   | Mroczny Bór (S92) | Elity jaskiń od 21. na każdym poziomie do 45; spotkanie Elit (pojedyncza albo para) ≤ 110% HP Wojownika, ≤ 125% Maga; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie; tempo 20 → 45 11,9–16,1 h, krok ≤ ×1,3 |
-  | Morvane (S92) | 3–5 graczy L44, 4–6 min; największy cios ≤ 70% HP Maga L45, zwykły 7–12%; tank ≤ 350% HP/min (model S32: atak podstawowy i `threat`; z Polem Klątwy ok. 740–790%); fala tarczy ≤ 110% HP na członka; do pokonania bez wsparcia; T-SK6 ≤ 2,7 (cel planu 2,0 poza zasięgiem, DECYZJE S92) |
+  | Morvane (S92) | L44: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L45 (≤ 70% Wojownika), zwykłe ≤ 50%, atak podstawowy 7–12%; tank ≤ 350% HP/min (model S32: atak podstawowy i `threat`; z Polem Klątwy ok. 740–790%); fala tarczy ≤ 110% HP na członka; do pokonania bez wsparcia; T-SK6 ≤ 2,7 (cel planu 2,0 poza zasięgiem, DECYZJE S92) |
   | Spalone Pustkowia (S93) | Elity jaskiń od 46. na każdym poziomie do 70; spotkanie Elit ≤ 110% HP Wojownika, ≤ 125% Maga; Elita II solo ≥ 180%, dwóch ≤ 150%, trzech 60–100%; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie 46–70; tempo 45 → 70 21,25–28,75 h, h(69) 0,98–1,32 h, krok ≤ ×1,3 |
-  | Azgor (S93) | 3–5 graczy L69, 4–6 min; największy cios ≤ 70% HP Maga L70 (inferno), zwykły 7–12%; tank ≤ 350% HP/min (model S32); meteor ≤ 60% HP Maga na minutę; tick lawy 15–25%; fala tarczy ≤ 110% HP na członka; każdy atak ≥ 50% tempa (inferno w fazie 3); do pokonania bez wsparcia; T-SK6 1,0–2,0 (sufit 2,5; dziś 12,8, niedokończone, DECYZJE S93) |
+  | Azgor (S93) | L69: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L70 (≤ 70% Wojownika), zwykłe ≤ 50%, atak podstawowy 7–12%; tank ≤ 350% HP/min (model S32); meteor ≤ 60% HP Maga na minutę; tick lawy 15–25%; fala tarczy ≤ 110% HP na członka; każdy atak ≥ 50% tempa (inferno w fazie 3); do pokonania bez wsparcia; T-SK6 1,0–2,0 (sufit 2,5; dziś 12,8, niedokończone, DECYZJE S93) |
   | Lodowe Szczyty (S94) | Elity jaskiń od 71. na każdym poziomie do 100; spotkanie Elit ≤ 110% HP Wojownika, ≤ 125% Maga; Elita II solo ≥ 180% (także Zamarznięty Rycerz), dwóch ≤ 150%, trzech 60–100%; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie 71–100; tempo 70 → 100 34,9–47,2 h, h(99) 1,36–1,84 h, krok ≤ ×1,3 |
-  | Vaelgrath (S94) | 3–5 graczy L99, 4–6 min z falami i lotem; największy cios ≤ 70% HP Maga L100 (Lodowy Pierścień), zwykły 7–12%; tank ≤ 350% HP/min (model S32); zamieć ≤ 60% HP Maga na minutę; tick burzy 30–45%; fala tarczy ≤ 110% HP na członka; nietykalny przez max(lot, fala); do pokonania bez wsparcia; Mityk dla każdej klasy, 1,4–1,6 × tyle zabić co u Grimroka; T-SK6 1,0–2,0 (dziś 15,9, niedokończone, DECYZJE S94) |
+  | Vaelgrath (S94) | L99 z falami i lotem: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L100 (≤ 70% Wojownika), zwykłe ≤ 50%, atak podstawowy 7–12%; tank ≤ 350% HP/min (model S32); zamieć ≤ 60% HP Maga na minutę; tick burzy 30–45%; fala tarczy ≤ 110% HP na członka; nietykalny przez max(lot, fala); do pokonania bez wsparcia; Mityk dla każdej klasy, 1,4–1,6 × tyle zabić co u Grimroka; T-SK6 1,0–2,0 (dziś 15,9, niedokończone, DECYZJE S94) |
   | 1 → 100 (S94, bez bramki) | każdy cel regionów i globalny asertowany albo w raporcie z powodem; krok tempa ≤ ×1,3 na 20–99; ≥ 2 expowiska i drop Elit na każdym poziomie 21–100; 1 → 100 69,7–94,3 h; strażniki T-SK1 ≤ 1,15, T-SK2 ≤ 1,25 × własne L20, T-SK3 ≤ areaCap, T-SK4 2–3 × regeneracji, T-SK5 25–35% HP tanka (`docs/BALANS.md` → „Cele 1–100”) |
   | tempo 1 → 20 (Wojownik, model okna, bez zadania z bossem) | 1,8–2,8 h, średnia z 5 poziomów rośnie najwyżej o 30% na poziom (S91) |
   | rzadkość (pełny komplet vs Zwykły) | Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40% |
@@ -787,47 +787,44 @@ wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy 
 ## 16. Bossy i lochy
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 5), stan „Wolny / Zajęty przez grupę X (mm:ss)”.
-- **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; projektowany pod 5). Inni czekają.
+- **Tylko jedna grupa naraz** na serwerze. Wchodzi lider grupy z członkami w zasięgu 20 st. (grupa 1–5 osób; S134: projektowany pod 3–5, solo tylko z przepakowanym sprzętem). Inni czekają.
 - **Do 3 zabić jednego bossa dziennie na postać** (S30, `Config.Boss.dailyRuns`; reset o 00:00 UTC; karta lochu i brama pokazują „Dziś: 1/3” i czas do resetu). Próbę zużywa zabicie bossa i porażka (czas albo wszyscy padli; FIX 2026-10-10), a szanse osobistego łupu liczą się z
   zabić tego bossa dziś.
 - Limit czasu walki 15 min; po wybiciu całej grupy lub przekroczeniu czasu: wyrzucenie, boss się resetuje, loch wolny.
-- Boss: HP `30 × HP zwykłego potwora tego poziomu × (1 + 0.6 × (gracze − 1)) × hpMul bossa` (S32; Grimrok 1,2 od S91), 2–3 fazy (przejścia przy 70% i 35%), ataki telegrafowane (czerwone strefy na ziemi 1–1.5 s przed uderzeniem), przyzwania, wściekłość po 10 min.
-- Przykład Grimrok (20): Faza 1: zamach (stożek), skok na losowego gracza (okrąg). Faza 2 (70%): przyzywa 4 gobliny co 20 s. Faza 3 (35%): wir (okrąg 10 st., trzeba uciec), +25% szybkości.
-  S32: zwykłe ciosy słabsze (`atkMul` 1,2 → 0,32), niebezpieczne są ataki z telegrafem (zamach ×4,5, skok ×6, wir ×7
-  ataku): wir trafia Maga L20 z ekwipunkiem na poziomie za ok. 67% HP (wcześniej ok. 150% — zabijał jednym ciosem).
-  S91: `hpMul` 1,4 → 1,2 i zamach (tylko w tanka) ×6: 3–5 graczy L19 bije go 5,3–5,6 min w modelu z prawdziwym
-  harmonogramem ataków (S83 / S87), wir dalej ok. 64% HP Maga L20, Uzdrowiciel lochowy leczy 1,8 obrażeń Obrońcy.
-  **Bez wsparcia** (odpowiedź 26): drużyna ze ścieżek bojowych przyciętych do 19 (Furia, Królobójca, Arkanista; +
-  Inkwizytor solo; + Niszczyciel boss), bez przechwytu, leczenia innych i prowokacji, z miksturami co 1,5 s, kończy
-  walkę w ok. 3 min (limit 80% czasu do wściekłości), przyjmuje najwyżej 6% tego, co podtrzymują mikstury, regeneracja
-  i kradzież życia, a żaden cios nie zabiera więcej niż 58% HP członka.
-- Przykład Morvane (45, S92): `hpMul` 1,2, zwykły cios słaby (`atkMul` 0,42, ok. 11% HP Maga L45), groźne są ataki
-  z telegrafem: Cienisty Pocisk ×4,5 na 3 losowych (ok. 49% HP Maga), Pole Klątwy ×11,5 co 6,5 s w najbliższego (tank),
-  w 3. fazie Pierścień Śmierci ×5,8 (68% HP Maga L45; bezpieczny środek przy bossie). Fale tarczy szkieletów na 36 / 37
-  (było 44 / 45; przywołani biją bez redukcji grupy): drużyna 3 osób traci na falę 88–106% HP na członka. 3–5 graczy
-  L44 bije go 4,7–5,0 min; drużyna bez wsparcia (Furia, Królobójca, Arkanista; + Inkwizytor; + Niszczyciel) wygrywa
-  w ok. 2 min na miksturach (przyjmuje do 99% tego, co podtrzymują mikstury, regeneracja i kradzież życia);
-  Uzdrowiciel lochowy leczy 2,68 obrażeń Obrońcy.
-- Przykład Azgor (70, S93): `hpMul` 1,25, zwykły cios słaby (`atkMul` 0,36, ok. 10% HP Maga L70) i szybki (`speed`
-  1,35), Płomienne Cięcie ×3 w tanka, Fala Ognia ×5,2 w losowego (ok. 52% HP Maga), Meteor ×4 pod każdym graczem co 18 s
-  (złagodzony, wariant (a) planu: ok. 54% HP Maga na minutę; wariant „sprawdzian leczenia” czeka na decyzję
-  właściciela), w 3. fazie Piekielny Krąg ×6,6 (66% HP Maga L70 z dystansu; bezpieczny środek przy bossie) i lawa poza
-  kurczącym się kręgiem (tick ok. 20% HP Maga L70, `Data/BossTuning` 2,2). Fale tarczy ognistych golemów na 58 / 59 (było
-  69 / 70): drużyna 3 osób traci na falę 85–98% HP na członka. 3–5 graczy L69 bije go 4,9–5,2 min; drużyna bez wsparcia
-  wygrywa w ok. 1,7 min na miksturach (przyjmuje do 41% tego, co podtrzymują mikstury, regeneracja i kradzież życia);
-  Uzdrowiciel lochowy leczy ok. 12,8 obrażeń Obrońcy (cel 1,0–2,0, sufit 2,5: niedokończone, DECYZJE S93).
-- Przykład Vaelgrath (100, S94): `hpMul` 1,3, zwykły cios słaby (`atkMul` 0,38, ok. 10% HP Maga L100), Mroźny Oddech
-  ×3,6 w tanka, Uderzenie Skrzydeł ×3,7 wokół siebie, Smagnięcie Ogonem ×4,1 w losowego, Zamieć ×4,4 pod każdym graczem
-  co 16 s w fazach 2–3 (złagodzona, wariant (a) jak meteor: ok. 34% HP Maga na minutę), w 3. fazie Lodowy Pierścień ×6,2
-  (65% HP Maga L100 z dystansu; bezpieczny środek przy smoku) i burza poza zasięgiem koksowników (tick ok. 38% HP Maga
-  L100, `Data/BossTuning` 3,9). Na początku fazy 2 smok leci 12 s nad falą tarczy smoczych pomiotów (86 / 87, było 99 /
-  100) i jest nietykalny do końca lotu i do upadku fali (FIX S94). 3–5 graczy L99 bije go 4,8–5,1 min; drużyna 3 osób
-  traci na falę ok. 95% HP na członka; drużyna bez wsparcia wygrywa w ok. 1,7 min na miksturach (przyjmuje ok. 26% tego,
-  co podtrzymują mikstury, regeneracja i kradzież życia); Uzdrowiciel lochowy leczy ok. 15,9 obrażeń Obrońcy
-  (niedokończone jak u Azgora, DECYZJE S94).
+- Boss: HP `84 × HP zwykłego potwora tego poziomu × hpMul bossa` (S134, `Bosses.HP_BASE`): **to samo HP i ta sama fala
+  pomocników (8) dla każdej drużyny**, więc większa drużyna tylko szybciej bije. Boss jest projektowany pod 3–5 graczy;
+  solo wygrywa tylko gracz z przepakowanym sprzętem (w modelu Wojownik Furii z Mitycznym kompletem +9). 2–3 fazy
+  (przejścia przy 70% i 35%), wściekłość po 10 min. Cele (S134, `Balance.targetsS134`): 5 graczy na poziomie bossa − 1
+  3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę; wynik modelu bez węzłów: 5 graczy ok. 3,7–4,2 min,
+  3 graczy 5,6–6,2 min, 2 graczy ok. 8,7–9,5 min.
+- **Bossowie 2.0** (S134, `Logic/BossMechanics`): ataki zwykłe zabierają najwyżej połowę HP Maga z ekwipunkiem na
+  poziomie bossa; **wielkie ciosy do unikania** (`avoid`, zapowiedź ≥ 1,8 s, grubszy brzeg telegrafu) zabierają 60–90%
+  HP Maga i co najwyżej 70% HP Wojownika; trzy **mechaniki drużyny**: **wspólny cios** (złoty krąg „Razem”: obrażenia
+  dzielą się między stojących w kręgu, pusty krąg rani wszystkich), **piętno** (fioletowy krąg idzie za naznaczonym przez
+  5 s i wybucha wokół niego: inni w kręgu dostają pełny cios, naznaczony ok. 30% HP; naznaczony odchodzi od drużyny) i
+  **zaklęcie do przerwania** (boss stoi 5 s; drużyna musi zadać 1,2% jego maks. HP, wtedy boss traci równowagę na 3 s,
+  inaczej czar trafia wszystkich za ok. 90% HP Maga; pasek przerwania pod paskiem HP). Przerwanie liczy się z obrażeń, nie
+  z kontroli (bossowie są odporni na ogłuszenie). Trafienie każdej mechaniki liczy serwer w chwili uderzenia.
+- Przykład Grimrok (20, wódz goblinów): zamach w tanka, wielkie ciosy do unikania: Skok na losowego (ok. 70% HP Maga),
+  Rozłupanie Ziemi (linia do losowego, ok. 75%), w 3. fazie Wir Ostrzy wokół siebie (krąg 10, ok. 85%: uciekaj);
+  od 2. fazy Głaz Wodza (wspólny cios: ok. 190% HP Maga razem, 3 osoby po ok. 64%, sam gracz ginie). Fale 8 goblinów w
+  fazach 2–3. 3 graczy L19 bije go ok. 6,1 min, 5 graczy ok. 4,1 min.
+- Przykład Morvane (45, królowa krypt): Cienisty Pocisk na 3 losowych (49% HP Maga), Pole Klątwy w najbliższego (tank),
+  Żniwo Dusz (stożek do losowego, ok. 73%) w fazach 1–2, w 3. fazie Pierścień Śmierci (ok. 80%, bezpieczny środek);
+  Piętno Krypty w fazach 1–2, Requiem Umarłych (zaklęcie do przerwania) w fazach 2–3. 3 graczy L44 bije ją ok. 5,6 min,
+  5 graczy ok. 3,8 min; sam gracz na równym sprzęcie nie przerywa Requiem.
+- Przykład Azgor (70, pan płomieni): Płomienne Cięcie w tanka, Meteor pod każdym (40% HP Maga), Fala Ognia (ok. 70%) w
+  fazach 1 i 3, Erupcja (3 kręgi pod losowymi, ok. 73%) i Serce Wulkanu (wspólny cios, ok. 176% razem) w fazach 1–2,
+  Popielne Piętno w fazach 2–3, w 3. fazie Piekielny Krąg (ok. 80%) i lawa poza kurczącym się kręgiem (piętno w
+  kurczącym się kręgu to najtrudniejszy moment). 3 graczy L69 ok. 5,9 min, 5 graczy ok. 4,1 min.
+- Przykład Vaelgrath (100, smok mrozu, wszystkie trzy mechaniki): Mroźny Oddech w tanka, Smagnięcie Ogonem (ok. 65%) w
+  fazach 1–2, Uderzenie Skrzydeł w 1. fazie, Zamieć pod każdym i Lawina (stożek, ok. 74%) w fazach 2–3, Lodowa Kometa
+  (wspólny cios, ok. 186% razem) w fazach 1 i 3, Lodowy Grobowiec (piętno) w fazach 1–2, w 3. fazie Lodowy Pierścień
+  (ok. 85%), Zero Absolutne (zaklęcie do przerwania) i burza poza koksownikami. Lot 12 s nad falą tarczy w 2. fazie
+  zostaje. 3 graczy L99 ok. 6,1 min, 5 graczy ok. 4,2 min.
 - **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
   z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
-  Azgora i pierścień lodu Vaelgratha wchodzą). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
+  Azgora i pierścień lodu Vaelgratha wchodzą; S134: mechaniki też idą przez harmonogram). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
 - Łup wspólny (FIX 2026-10-09, `Loot.rollBossLoot`): bez przedmiotów, tylko złoto i materiały z tabeli bossa (Odłamki i Kryształy Esencji, Rdzeń Legendy, Zwój Ochrony, Zwój Rozwiązania). Przedmioty daje rzut osobisty niżej i drugi przedmiot Fortuny (S60).
 - **Przedmiot osobisty** (FIX 2026-10-09, `Loot.rollBossItem`, każdy zwycięzca dostaje dokładnie jeden przedmiot we własnym worku): Legendarny 6% + 1 pkt. proc. za każde zabicie tego bossa dziś, Mityczny 1% + 1 pkt. proc. (przy 3 zabiciach dziennie średnio 2%, ok. 50 zabić do pierwszego Mityka); bez progów litości. **Osobisty Mityk u Vaelgratha** (S94, plan 8.4): 0,3% + 1 pkt. proc. na zabicie tego dnia, średnio ok. 77 zabić (×1,54 Grimroka). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 

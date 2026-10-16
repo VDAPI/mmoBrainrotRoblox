@@ -39,6 +39,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
 local Bonuses = require(Shared.Data.Bonuses)
+local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Classes = require(Shared.Data.Classes)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -1755,13 +1756,28 @@ local function vigilance(monster: any, ability: MonsterAbilities.Ability)
 	end
 end
 
-local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
-	table.insert(redZones, {
-		monster = monster,
-		ability = ability,
-		area = area,
-		endsAt = os.clock() + ability.windup + Combat.redZoneGrace,
-	})
+-- S134 (bosses 2.0): what a boss telegraph tells the clients. `mechanic`: "avoid" (a big blow: a thicker rim),
+-- "split" (the golden circle to stand in together), "mark" (the circle follows `follow`'s character; no red zone, no
+-- vigilance: it moves) or "channel" (no ground area: the clients only pose the boss); `castWindup`: the boss's own
+-- gesture when it differs from the area's windup (a mark).
+export type TelegraphOpts = {
+	mechanic: ("avoid" | "split" | "mark" | "channel")?,
+	follow: Player?,
+	castWindup: number?,
+}
+
+local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: TelegraphOpts?)
+	local mechanic = if opts then opts.mechanic else nil
+	local moving = mechanic == "mark" or mechanic == "channel"
+	if not moving then
+		table.insert(redZones, {
+			monster = monster,
+			ability = ability,
+			area = area,
+			endsAt = os.clock() + ability.windup + Combat.redZoneGrace,
+		})
+	end
+	local followEntity = if opts and opts.follow then EntityService.GetPlayerEntity(opts.follow) else nil
 	queueFx(area.Position, {
 		k = "tele",
 		e = if monster.entity then monster.entity.id else nil,
@@ -1775,24 +1791,78 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 		t = ability.windup,
 		el = ability.element,
 		a = ability.id, -- S117: the attack's id (the client picks its pose / effect; looks only, DESIGN-16 §0.2.3)
+		m = mechanic, -- S134: the boss mechanic (TelegraphOpts)
+		f = if followEntity then followEntity.id else nil, -- S134: the marked player's entity (the circle follows it)
+		cw = if opts then opts.castWindup else nil, -- S134: the boss's gesture when it differs from `t`
 	})
-	vigilance(monster, ability)
+	if not moving then
+		vigilance(monster, ability)
+	end
 end
 
-local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+-- S134 (bosses 2.0, Logic/BossMechanics): how a boss blow lands. `split`: everyone inside shares the damage, nobody
+-- inside = `missAll` of it on every one of `fighters`; `marked` (a mark's blast): that player takes damage x
+-- `markSelf` (also outside the area), the others inside the full damage; `all` (an unbroken channel): every one of
+-- `fighters`, no area. Every hit goes through monsterHitsPlayer with its own multiplier.
+export type ResolveOpts = {
+	split: boolean?,
+	missAll: number?,
+	fighters: { Player }?,
+	marked: Player?,
+	markSelf: number?,
+	all: boolean?,
+}
+
+local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: ResolveOpts?)
 	local params: Damage.Params = {
 		kind = ability.damageKind or monster.stats.damageKind,
 		multiplier = ability.damage,
 		element = ability.element,
 		canDodge = false, -- telegraphed attacks are dodged by moving out of the area
 	}
-	local reach = (ability.radius or 0) + (ability.length or 0) + 10
-	for _, entity in EntityService.QueryPlayers(area.Position, reach) do
-		local player = entity.player :: Player
-		local position = EntityService.Position(entity)
-		if position and insideArea(ability, area, position) then
-			monsterHitsPlayer(monster, player, params, nil, ability.delivery)
+	local o: ResolveOpts = opts or {}
+	local inside: { Player } = {}
+	local fighters: { Player } = o.fighters or {}
+	if o.all then
+		for _, player in fighters do
+			table.insert(inside, player)
 		end
+	else
+		local reach = (ability.radius or 0) + (ability.length or 0) + 10
+		for _, entity in EntityService.QueryPlayers(area.Position, reach) do
+			local player = entity.player :: Player
+			local position = EntityService.Position(entity)
+			-- a split counts only the living (a body left in the circle neither takes a share nor cancels `missAll`)
+			local counts = not o.split or playerAlive(player)
+			if counts and position and insideArea(ability, area, position) then
+				table.insert(inside, player)
+			end
+		end
+		if o.marked and not table.find(inside, o.marked) then
+			table.insert(inside, o.marked)
+		end
+	end
+	local targets: { Player } = inside
+	local multiplier = ability.damage
+	if o.split then
+		multiplier = BossMechanics.splitShare(ability.damage, #inside, o.missAll or 0)
+		if #inside == 0 then
+			targets = fighters
+		end
+	end
+	for _, player in targets do
+		local hit = params
+		if o.marked or multiplier ~= ability.damage then
+			hit = table.clone(params)
+			hit.multiplier = if o.marked
+				then BossMechanics.markDamage(
+					player == o.marked,
+					ability.damage,
+					{ seconds = 0, self = o.markSelf or 1 }
+				)
+				else multiplier
+		end
+		monsterHitsPlayer(monster, player, hit, nil, ability.delivery)
 	end
 	for i, zone in redZones do
 		if zone.monster == monster and zone.ability == ability and zone.area == area then
@@ -1819,13 +1889,46 @@ function CombatService.InRedZone(position: Vector3): RedZone?
 	return nil
 end
 
--- Boss attacks (DungeonService): the same telegraph and area damage as Elite II abilities.
-function CombatService.MonsterTelegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
-	telegraph(monster, ability, area)
+-- Boss attacks (DungeonService): the same telegraph and area damage as Elite II abilities; S134: `opts` carry the
+-- boss mechanics (TelegraphOpts / ResolveOpts).
+function CombatService.MonsterTelegraph(
+	monster: any,
+	ability: MonsterAbilities.Ability,
+	area: CFrame,
+	opts: TelegraphOpts?
+)
+	telegraph(monster, ability, area, opts)
 end
 
-function CombatService.MonsterResolve(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
-	resolveAbility(monster, ability, area)
+function CombatService.MonsterResolve(monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: ResolveOpts?)
+	resolveAbility(monster, ability, area, opts)
+end
+
+-- S134: a boss blow without a ground telegraph (an unbroken channel landing on everyone): the clients play the
+-- attack's effect, shake and sound at `area` ("blow").
+function CombatService.MonsterBlow(monster: any, ability: MonsterAbilities.Ability, area: CFrame)
+	queueFx(area.Position, {
+		k = "blow",
+		e = if monster.entity then monster.entity.id else nil,
+		a = ability.id,
+		sh = ability.shape,
+		cf = area,
+		r = ability.radius,
+		el = ability.element,
+	})
+end
+
+-- S134: a mark gone before its blast (the marked one died or left, the boss died): the clients stop its following
+-- circle and glow without a blow ("teleCancel", matched by caster `e` and attack `a`; `f` = the marked entity).
+function CombatService.MonsterTelegraphCancel(monster: any, ability: MonsterAbilities.Ability, follow: Player?)
+	local followEntity = if follow then EntityService.GetPlayerEntity(follow) else nil
+	local position = if followEntity then EntityService.Position(followEntity) else nil
+	queueFx(position or monster:Position(), {
+		k = "teleCancel",
+		e = if monster.entity then monster.entity.id else nil,
+		a = ability.id,
+		f = if followEntity then followEntity.id else nil,
+	})
 end
 
 -- Lets skills draw damage numbers / heals / swings with the same batching.

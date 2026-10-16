@@ -16,6 +16,7 @@
 -- skill.<skillId>.trigger / .wave and skill.falcon.strike (S115: a trap springing, a later wave or a storm's strike,
 -- the falcon's strike),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
+-- boss.mechanic.<mark|split|channel> (S134),
 -- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error>. S112-S117 call sounds by these keys.
 
 local Bosses = require("./Bosses")
@@ -146,6 +147,10 @@ local defs: { [string]: Def } = {
 	["skill.default.trap"] = d("trap set metal click", 0.6, 90, { ids = { "rbxassetid://12222170" } }),
 	["skill.default.call"] = d("hawk screech bird call", 0.6, 90, { ids = { "rbxassetid://15675062723" } }),
 	["telegraph.warn"] = d("warning alarm magic hum short", 0.55, 120, { ids = { "rbxassetid://12221990" } }),
+	-- S134: the party mechanics of bosses 2.0 (no ids yet: the owner picks them, docs/ASSETS.md)
+	["boss.mechanic.mark"] = d("dark curse brand ominous whisper", 0.7, 150),
+	["boss.mechanic.split"] = d("heavy rumble incoming impact gather", 0.7, 150),
+	["boss.mechanic.channel"] = d("magic channel spell chant rising", 0.7, 200),
 	-- Interface (2D).
 	["ui.loot"] = d(
 		"item pickup bag rustle",

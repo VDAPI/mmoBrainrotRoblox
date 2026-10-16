@@ -1,6 +1,6 @@
 ---
-// Boss header (.vw-boss): picture, badges, name, player chips 1–5 (S39: switch the HP on the bar and every element
-// with data-by-players on the page), HP bar with phase thresholds, phase tabs "Phase 1 · 100–70%" with the phase
+// Boss header (.vw-boss): picture, badges, name, HP bar with phase thresholds (S134: one HP for every party, the player
+// chips 1–5 of S39 are gone), phase tabs "Phase 1 · 100–70%" with the phase
 // shout (and the -p2 / -p3 render when it exists) and the mechanics of each phase: attacks with their telegraph,
 // summons, shield, haste, enrage and `notes` (script mechanics from src/content/bosses). Without JS every phase panel
 // is shown one under another. Behaviour: src/scripts/boss.ts.
@@ -21,13 +21,12 @@ import ZoneBadge from "./ZoneBadge.astro";
 interface Props {
   boss: Boss;
   lang: Lang;
-  players?: 1 | 2 | 3 | 4 | 5;
   notes?: { phase: number; title: string; html: string }[];
   heading?: "h1" | "h2";
 }
-const { boss, lang, players = 1, notes = [], heading = "h2" } = Astro.props;
+const { boss, lang, notes = [], heading = "h2" } = Astro.props;
 const Heading = heading;
-const scale = boss.byPlayers.find((p) => p.players === players) ?? boss.byPlayers[0];
+const scale = boss.stats;
 const dungeon = getMap(boss.dungeon);
 const bounds = [1, ...boss.phases, 0];
 const phases = boss.phases.map((_, i) => i).concat(boss.phases.length).map((i) => ({
@@ -38,7 +37,6 @@ const phases = boss.phases.map((_, i) => i).concat(boss.phases.length).map((i) =
   src: i > 0 && renderFiles().has(`${boss.id}-p${i + 1}.webp`) ? `/img/mobs/${boss.id}-p${i + 1}.webp` : null,
 }));
 const base = renderFiles().has(`${boss.id}.webp`) ? `/img/mobs/${boss.id}.webp` : null;
-const hpTexts = boss.byPlayers.map((p) => `${formatNumber(p.hp, lang)} / ${formatNumber(p.hp, lang)}`);
 
 type Mech = { type: "area" | "leap" | "summon" | "zone" | "buff" | "kill"; title: string; text: string; shape?: Record<string, unknown>; href?: string };
 function mechanics(phase: number): Mech[] {
@@ -48,8 +46,10 @@ function mechanics(phase: number): Mech[] {
     out.push({
       type: a.leap ? "leap" : "area",
       title: name(a.name, lang) || a.id,
-      text: attackText(a, lang, boss.damageKind),
-      shape: { shape: a.shape, radius: a.radius, inner: a.inner, angle: a.angle, length: a.length, width: a.width, origin, label: t(lang, "telegraph.label", { shape: shapeText(a, origin, lang) }) },
+      // S134: a big blow to dodge and the party mechanics carry their rule from the game's texts
+      text: a.mechanicText ? `${attackText(a, lang, boss.damageKind)} ${name(a.mechanicText, lang)}` : attackText(a, lang, boss.damageKind),
+      // S134: a channel has no area (it hits everyone unless broken)
+      shape: a.mechanic === "channel" ? undefined : { shape: a.shape, radius: a.radius, inner: a.inner, angle: a.angle, length: a.length, width: a.width, origin, label: t(lang, "telegraph.label", { shape: shapeText(a, origin, lang) }) },
     });
   }
   for (const s of boss.summons.filter((x) => x.phase === phase)) {
@@ -80,14 +80,8 @@ function mechanics(phase: number): Mech[] {
       <ZoneBadge zone={dungeon?.zone ?? "red"} lang={lang} />
     </div>
     <Heading class="name">{name(boss.name, lang)}</Heading>
-    <div class="players js-only" role="group" aria-label={t(lang, "boss.playersPick")}>
-      <span class="vw-label">{t(lang, "boss.playersPick")}</span>
-      {boss.byPlayers.map((p) => (
-        <button type="button" class="vw-chip" data-players={p.players} aria-pressed={p.players === players ? "true" : "false"}>{p.players}</button>
-      ))}
-    </div>
     <div class="hp">
-      <div data-by-players={JSON.stringify(hpTexts)} data-target="label">
+      <div>
         <Bar value={scale.hp} max={scale.hp} lang={lang} />
       </div>
       {boss.phases.map((p) => <span class="mark" style={`left: ${p * 100}%`} aria-hidden="true"></span>)}
@@ -145,10 +139,6 @@ function mechanics(phase: number): Mech[] {
   .body { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; }
   .name { margin: 0; font: 700 72px/1 var(--vw-font-display); color: var(--vw-text); }
-  .players { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .players .vw-label { margin-right: 6px; }
-  .players .vw-chip { min-width: 44px; min-height: 44px; justify-content: center; }
-  :global(html:not(.js)) .js-only { display: none; }
   .hp { position: relative; max-width: 760px; }
   .hp :global(.vw-bar) { height: 28px; }
   .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--vw-gold-bright); box-shadow: 0 0 6px var(--vw-gold-bright); }

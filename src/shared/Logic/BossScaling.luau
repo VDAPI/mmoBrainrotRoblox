@@ -1,15 +1,17 @@
 --!strict
 -- Boss numbers (DESIGN §16). Pure functions (Lune tests).
 
+local Bosses = require("../Data/Bosses")
 local Config = require("../Config")
 local Time = require("./Time")
 local Types = require("../Types")
 
 local BossScaling = {}
 
--- HP multiplier on top of a normal monster of the boss's level: 30 x (1 + 0.6 x (players - 1)).
-function BossScaling.hpMultiplier(players: number): number
-	return 30 * (1 + 0.6 * (math.max(1, players) - 1))
+-- HP multiplier on top of a normal monster of the boss's level (x the boss's own hpMul). S134: the same for every
+-- party (Data/Bosses.HP_BASE; before: 30 x (1 + 0.6 x (players - 1))), a bigger party only kills it faster.
+function BossScaling.hpMultiplier(): number
+	return Bosses.HP_BASE
 end
 
 -- Item drops: 3–4 (rolled by the caller) + 1 per player above 3.

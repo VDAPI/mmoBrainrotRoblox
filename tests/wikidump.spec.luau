@@ -519,12 +519,16 @@ T.describe("Wiki export: consistency", function()
 		local consts: { [string]: any } = {}
 		for _, b in d.bosses.bosses do
 			consts[b.id] = b.scriptConsts
-			for i = 2, #b.byPlayers do
-				T.expect(b.byPlayers[i].hp > b.byPlayers[i - 1].hp).toBe(true)
-			end
+			-- S134: one HP for every party (no list for 1-5 players)
+			T.expect(b.byPlayers).toBeNil()
+			T.expect(b.stats.hp > 0 and b.stats.dmgMax >= b.stats.dmgMin).toBe(true)
 			for _, a in b.attacks do
 				if not a.name then
 					error(`{b.id}.{a.id}: no name`)
+				end
+				-- S134: a big blow to dodge and a party mechanic carry their rule text
+				if (a.avoid or a.mechanic) and not a.mechanicText then
+					error(`{b.id}.{a.id}: no mechanic text`)
 				end
 			end
 		end

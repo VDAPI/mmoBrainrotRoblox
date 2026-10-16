@@ -66,7 +66,7 @@ local Definitions: { [string]: Definition } = {
 	MobViz = { kind = "event", dir = "s2c" }, -- ("show", {target, variant, anim}) | ("clear") | ("stats"): admin look preview (S24)
 	AttackRejected = { kind = "event", dir = "s2c" }, -- (reason locale key), at most one per 2 s (S18)
 	SetTitle = { kind = "function", dir = "c2s", rate = 2, args = { "string?" } }, -- (titleId or nil = no title), S16; S59 stores Data/Titles.NONE
-	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "reward", ... }
+	CombatFx = { kind = "event", dir = "s2c" }, -- batched { k = "dmg" | "heal" | "atk" | "tele" | "teleCancel" | "blow" | "reward", ... }
 
 	-- Items (S04). Functions answer (ok, errorKey?).
 	MoveItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer" } }, -- (from, to)

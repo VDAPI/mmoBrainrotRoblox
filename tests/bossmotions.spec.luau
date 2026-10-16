@@ -63,6 +63,45 @@ T.describe("BossMotions (S117)", function()
 	end)
 end)
 
+-- S134 (bosses 2.0): time to react (a phone too) and complete mechanic data.
+T.describe("Boss big blows and mechanics (S134)", function()
+	T.it("an avoid blow winds up >= 1.8 s, a mechanic >= 3 s (a channel >= 4 s, its windup), data complete", function()
+		for _, boss in Bosses.list do
+			for _, attack in boss.attacks do
+				local tag = `{boss.id}.{attack.id}`
+				if attack.avoid then
+					T.expect({ tag, attack.windup >= 1.8, attack.mechanic }).toEqual({ tag, true, nil })
+				end
+				if attack.mechanic == "split" then
+					local split = attack.split
+					T.expect({ tag, attack.windup >= 3, split ~= nil }).toEqual({ tag, true, true })
+					if split then
+						T.expect({ tag, split.missAll > 0 and split.missAll < 1 }).toEqual({ tag, true })
+					end
+				elseif attack.mechanic == "mark" then
+					local mark = attack.mark
+					T.expect({ tag, mark ~= nil }).toEqual({ tag, true })
+					if mark then
+						T.expect({ tag, mark.seconds >= 3, mark.self > 0 and mark.self < 1 })
+							.toEqual({ tag, true, true })
+					end
+				elseif attack.mechanic == "channel" then
+					local channel = attack.channel
+					T.expect({ tag, channel ~= nil }).toEqual({ tag, true })
+					if channel then
+						T.expect({ tag, channel.seconds >= 4, attack.windup == channel.seconds })
+							.toEqual({ tag, true, true })
+						T.expect({ tag, channel.breakPct > 0, channel.stagger > 0 }).toEqual({ tag, true, true })
+					end
+				else
+					T.expect({ tag, attack.split == nil and attack.mark == nil and attack.channel == nil })
+						.toEqual({ tag, true })
+				end
+			end
+		end
+	end)
+end)
+
 T.describe("BossTuning.extra (FIX 2026-10-15)", function()
 	T.it("shield and kiting attacks borrow a motion of their own boss and have sane numbers", function()
 		local BossTuning = require("../src/shared/Data/BossTuning")

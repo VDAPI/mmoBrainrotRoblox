@@ -109,9 +109,11 @@ describe("PartyLoot sharing", function()
 end)
 
 describe("BossScaling", function()
-	it("scales HP by players", function()
-		expect(BossScaling.hpMultiplier(1)).toBe(30)
-		expect(math.abs(BossScaling.hpMultiplier(5) - 102) < 1e-9).toBe(true)
+	-- S134: a boss never scales with the party (the old 30 x (1 + 0.6 x (players - 1)) for 4 players)
+	it("keeps the boss HP the same for every party", function()
+		expect(BossScaling.hpMultiplier()).toBe(Bosses.HP_BASE)
+		expect(Bosses.HP_BASE).toBe(84)
+		expect((Bosses :: any).SUMMON_PER_PLAYER).toBeNil()
 	end)
 
 	it("picks phases by HP", function()
@@ -185,7 +187,9 @@ describe("Boss data", function()
 		for _, def in Bosses.list do
 			local usedPhases = {}
 			for _, attack in def.attacks do
-				expect(attack.windup >= 0.8 and attack.windup <= 2.5).toBe(true)
+				-- S134: a split winds up to 3.2 s, a channel's windup is its spell (5 s)
+				local most = if attack.mechanic == "channel" then 5 elseif attack.mechanic then 3.5 else 2.5
+				expect({ attack.id, attack.windup >= 0.8 and attack.windup <= most }).toEqual({ attack.id, true })
 				expect(attack.cooldown > attack.windup).toBe(true)
 				expect(attack.damage > 0).toBe(true)
 				if attack.shape == "ring" then
@@ -208,11 +212,11 @@ describe("Boss data", function()
 		local morvane = Bosses.get("morvane")
 		assert(grimrok and morvane, "bosses")
 		expect((grimrok.haste or {})[3]).toBe(1.25)
-		-- 2026-10-10: every boss calls two shield waves of 10 helpers (phases 2 and 3).
+		-- 2026-10-10: every boss calls two shield waves (phases 2 and 3); S134: 8 helpers for every party.
 		for _, def in Bosses.list do
 			expect(#def.summons).toBe(2)
 			for _, summon in def.summons do
-				expect(summon.count).toBe(10)
+				expect(summon.count).toBe(8)
 				expect(summon.shield).toBe(true)
 				expect(summon.every).toBe(nil)
 			end
@@ -224,6 +228,6 @@ describe("Boss data", function()
 			end
 		end
 		assert(ring, "ring")
-		expect(ring.cooldown).toBe(15)
+		expect(ring.cooldown).toBe(16) -- S134: 15 -> 16 (G11 with the new attacks)
 	end)
 end)

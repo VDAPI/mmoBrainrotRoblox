@@ -369,6 +369,12 @@ local Config = {
 		safePulse = 0.3, -- seconds before the blow the safe centre of a ring pulses
 		shakeRange = 60, -- studs: players farther feel no boss shake
 		lift = 0.12, -- studs above the ground
+		-- S134 (bosses 2.0): a big blow to dodge keeps its colour with a thicker rim; the party mechanics have their own
+		-- colours (split: the golden circle to stand in together, mark: the purple circle on the marked player)
+		rimWidthAvoid = 0.7,
+		mechanicColors = { split = "#F2C14E", mark = "#A35BFF" },
+		markRange = 60, -- studs: the marked player's glow shows for players this close (and the marked one)
+		tagHeight = 4, -- studs above the split circle of its "Together" label
 	},
 	-- Interactive map and the guide (S25, DESIGN §23): a target counts as reached within `arrive` studs
 	-- (`arriveNpc` for NPCs, who stand behind their counter); the path is recomputed when the player is more than

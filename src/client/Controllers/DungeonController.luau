@@ -1,6 +1,7 @@
 --!strict
 -- Dungeons on the client (DESIGN §16): the gate prompt and window (tag "DungeonEntrance"), the boss HP bar at
--- the top of the screen (state `boss`: name, phase, HP, time left, enrage / shield) and big centred
+-- the top of the screen (state `boss`: name, phase, HP, time left, enrage / shield / stagger, S134: the bar of a channel
+-- to break under it) and big centred
 -- messages of the fight (BossAnnounce: countdown, phases, victory, wipe); the post-fight reward card with the
 -- grind progress (S30, ShowReward from the CombatFx "reward" event). S103 (FABULA §2.3): when Morvane enters her last
 -- phase and the player is on the story quest `morvane`, the same message speaks her true name a moment later (text
@@ -54,11 +55,20 @@ local function bossBar(): Instance
 		return if type(b) == "table" then math.clamp(b.hp / math.max(1, b.maxHp), 0, 1) else 0
 	end)
 	local animated = scope:Tween(ratio, TweenInfo.new(0.25))
+	-- S134: the channel to break (`channel` = { id, endsAt, need, done }): its share done of the share needed
+	local channel = scope:Computed(function(use): any
+		local b = use(boss)
+		return if type(b) == "table" and type(b.channel) == "table" then b.channel else nil
+	end)
+	local channelRatio = scope:Computed(function(use): number
+		local c = use(channel)
+		return if c then math.clamp((tonumber(c.done) or 0) / math.max(1e-9, tonumber(c.need) or 1), 0, 1) else 0
+	end)
 	return scope:New("Frame")({
 		Name = "BossBar",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 16),
-		Size = UDim2.fromOffset(720, 84),
+		Size = UDim2.fromOffset(720, 112),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return type(use(boss)) == "table"
@@ -78,6 +88,9 @@ local function bossBar(): Instance
 					end
 					if b.shielded then
 						table.insert(tags, Text.get(use, "boss.shielded"))
+					end
+					if b.staggered then
+						table.insert(tags, Text.get(use, "boss.staggered"))
 					end
 					local suffix = if #tags > 0 then `  ·  {table.concat(tags, " · ")}` else ""
 					return `{Text.get(use, b.nameKey)}  ·  {Text.get(use, "boss.phase", { phase = b.phase })}{suffix}`
@@ -112,6 +125,44 @@ local function bossBar(): Instance
 						Text = scope:Computed(function(use): string
 							local b = use(boss)
 							return if type(b) == "table" then `{b.hp} / {b.maxHp}` else ""
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = 15,
+						TextColor3 = Theme.Colors.Text,
+						TextStrokeTransparency = 0.3,
+						ZIndex = 2,
+					}),
+				},
+			}),
+			-- S134: the channel bar (purple fill = damage dealt of the damage that breaks it, the time left)
+			scope:New("Frame")({
+				Name = "ChannelBar",
+				Position = UDim2.fromOffset(110, 86),
+				Size = UDim2.new(1, -220, 0, 22),
+				BackgroundColor3 = Theme.Colors.Background,
+				Visible = scope:Computed(function(use): boolean
+					return use(channel) ~= nil
+				end),
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
+					scope:New("UIStroke")({ Color = Theme.Colors.Accent, Thickness = 1.5 }),
+					scope:New("Frame")({
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromScale(use(channelRatio), 1)
+						end),
+						BackgroundColor3 = Theme.Colors.Accent,
+						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
+					}),
+					scope:New("TextLabel")({
+						Size = UDim2.fromScale(1, 1),
+						BackgroundTransparency = 1,
+						Text = scope:Computed(function(use): string
+							local c = use(channel)
+							if not c then
+								return ""
+							end
+							local left = Time.remaining(tonumber(c.endsAt) or 0, use(now))
+							return Text.get(use, "boss.mechanic.channel.bar", { time = string.format("%.1f", left) })
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = 15,
