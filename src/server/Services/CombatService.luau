@@ -54,6 +54,7 @@ local ItemTraits = require(Shared.Data.ItemTraits)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
+local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local QuestBudget = require(Shared.Logic.QuestBudget)
 local Net = require(Shared.Net)
@@ -1683,6 +1684,12 @@ local function monsterBasicAttack(monster: any, player: Player)
 	)
 end
 
+-- S134e: an Elite II's throw at a fleeing target (Data/MonsterAbilities.KITS.elite2.throw): a regular ranged blow
+-- through the same path as the basic attack (dodge, block, ranged protection; an arrow or a bolt on the clients).
+local function monsterThrow(monster: any, player: Player, params: Damage.Params)
+	monsterHitsPlayer(monster, player, params, if params.kind == "magic" then "bolt" else "arrow", "ranged")
+end
+
 local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, position: Vector3): boolean
 	local localPos = area:PointToObjectSpace(position)
 	local flatLocal = Vector3.new(localPos.X, 0, localPos.Z)
@@ -1796,11 +1803,14 @@ end
 -- S134 (bosses 2.0): what a boss telegraph tells the clients. `mechanic`: "avoid" (a big blow: a thicker rim),
 -- "split" (the golden circle to stand in together), "mark" (the circle follows `follow`'s character; no red zone, no
 -- vigilance: it moves) or "channel" (no ground area: the clients only pose the boss); `castWindup`: the boss's own
--- gesture when it differs from the area's windup (a mark).
+-- gesture when it differs from the area's windup (a mark). S134e: `lethal` (an Elite II's Crushing Blow: its own colour
+-- and faster pulse, field `x`), `warn` = the player it aims at (a warning toast).
 export type TelegraphOpts = {
 	mechanic: ("avoid" | "split" | "mark" | "channel")?,
 	follow: Player?,
 	castWindup: number?,
+	lethal: boolean?,
+	warn: Player?,
 }
 
 local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: CFrame, opts: TelegraphOpts?)
@@ -1831,9 +1841,17 @@ local function telegraph(monster: any, ability: MonsterAbilities.Ability, area: 
 		m = mechanic, -- S134: the boss mechanic (TelegraphOpts)
 		f = if followEntity then followEntity.id else nil, -- S134: the marked player's entity (the circle follows it)
 		cw = if opts then opts.castWindup else nil, -- S134: the boss's gesture when it differs from `t`
+		x = if opts and opts.lethal then true else nil, -- S134e: a lethal blow (Config.Telegraph.lethalColor)
 	})
 	if not moving then
 		vigilance(monster, ability)
+	end
+	local warned = if opts then opts.warn else nil
+	if warned and warned.Parent ~= nil then
+		local name = if monster.Name then monster:Name() else nil
+		if type(name) == "string" then
+			Net.Fire(warned, "Toast", "monster.crush.warn", { name = "@" .. name }, "warning")
+		end
 	end
 end
 
@@ -1856,6 +1874,7 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 		multiplier = ability.damage,
 		element = ability.element,
 		canDodge = false, -- telegraphed attacks are dodged by moving out of the area
+		canCrit = ability.canCrit, -- S134e: a lethal blow never crits (nil = may)
 	}
 	local o: ResolveOpts = opts or {}
 	local inside: { Player } = {}
@@ -1898,6 +1917,16 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 					{ seconds = 0, self = o.markSelf or 1 }
 				)
 				else multiplier
+		end
+		if ability.lethal then
+			-- S134e: the lethal blow's ramp of the monster's level advantage (Logic/MonsterCast.lethalMul; from 6 levels
+			-- Damage.levelGap in computeDamage adds its own)
+			local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+			local mul = MonsterCast.lethalMul(ability, monster.stats.level, if character then character.level else 1)
+			if mul ~= 1 then
+				hit = table.clone(hit)
+				hit.multiplier = (hit.multiplier or 1) * mul
+			end
 		end
 		monsterHitsPlayer(monster, player, hit, nil, ability.delivery)
 	end
@@ -2152,6 +2181,7 @@ function CombatService.Init(registry)
 		basicAttack = monsterBasicAttack,
 		telegraph = telegraph,
 		resolveAbility = resolveAbility,
+		rangedThrow = monsterThrow,
 		died = onMonsterDied,
 		-- S72 Menace (ROZWOJ 10.3): the threat hook raises the threat of every damage of the player (not the credit).
 		threatMultiplier = function(_monster: any, player: Player): number

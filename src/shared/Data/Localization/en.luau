@@ -1772,6 +1772,11 @@ return {
 	["ability.warlordCleave.name"] = "Warlord's Cleave",
 	["ability.warlordLeap.name"] = "Warlord's Leap",
 	["ability.warlordRally.name"] = "Warlord's Command",
+	-- S134e: the Elite II / Elite kits
+	["ability.crush.name"] = "Crushing Blow",
+	["ability.pounce.name"] = "Pounce",
+	["ability.heavyBlow.name"] = "Heavy Blow",
+	["monster.crush.warn"] = "{name} is winding up a Crushing Blow — leave the circle!",
 	["boss.grimrok.attack.sweep"] = "Sweep",
 	["boss.grimrok.attack.leap"] = "Leap",
 	["boss.grimrok.attack.whirlwind"] = "Whirlwind",

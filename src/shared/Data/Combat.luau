@@ -102,9 +102,10 @@ return table.freeze({
 	levelGapCrit = 5,
 	levelGapMaxSteps = 10,
 	-- Elite II respawn (FIX 2026-10-09, Logic/AreaSpawns.elite2Respawn): base + perLevel x cave level seconds,
-	-- +-spread around it (level 20: ~12 min, level 100: ~28 min; was a flat 10-20 min).
-	elite2RespawnBase = 480,
-	elite2RespawnPerLevel = 12,
+	-- +-spread around it. S134e (owner 2026-10-15: "too long a wait for the Elite II"): level 20 ~6 min, 66 ~8 min,
+	-- 100 ~10 min (was 480 + 12 x level: ~12 / ~21 / ~28 min).
+	elite2RespawnBase = 300,
+	elite2RespawnPerLevel = 3,
 	elite2RespawnSpread = 0.15,
 
 	-- Variants (DESIGN §15.1).

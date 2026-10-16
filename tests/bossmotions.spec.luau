@@ -127,6 +127,33 @@ T.describe("Monster big blows and mechanics (S134c)", function()
 	end)
 end)
 
+-- S134e: the kits of Elites / Elites II have a motion on every plan (KIT_STYLES or special.default), every KIT_STYLES
+-- entry names a style and a plan; the reaction times: a lethal blow >= 2.0 s, Pounce >= 1.2 s, Heavy Blow >= 1.6 s.
+T.describe("Monster kits (S134e)", function()
+	T.it("every kit ability has a style on every plan; the windups of the kit", function()
+		local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
+		for variant, kit in MonsterAbilities.KITS do
+			for _, id in kit.abilities do
+				for plan in MonsterMotions.PLANS do
+					local style = MonsterMotions.styleFor(plan, nil, id)
+					T.expect({ variant, plan, id, style ~= nil and MonsterMotions.STYLES[style] ~= nil })
+						.toEqual({ variant, plan, id, true })
+				end
+			end
+		end
+		for plan, styles in MonsterMotions.KIT_STYLES do
+			T.expect({ plan, MonsterMotions.PLANS[plan] ~= nil }).toEqual({ plan, true })
+			for id, style in styles do
+				T.expect({ plan, id, MonsterAbilities.get(id) ~= nil, MonsterMotions.STYLES[style] ~= nil })
+					.toEqual({ plan, id, true, true })
+			end
+		end
+		T.expect((MonsterAbilities.get("crush") :: any).windup >= 2.0).toBe(true)
+		T.expect((MonsterAbilities.get("pounce") :: any).windup >= 1.2).toBe(true)
+		T.expect((MonsterAbilities.get("heavyBlow") :: any).windup >= 1.6).toBe(true)
+	end)
+end)
+
 T.describe("BossTuning.extra (FIX 2026-10-15)", function()
 	T.it("shield and kiting attacks borrow a motion of their own boss and have sane numbers", function()
 		local BossTuning = require("../src/shared/Data/BossTuning")

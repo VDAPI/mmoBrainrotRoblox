@@ -19,6 +19,7 @@ export interface Ability {
   id: string;
   inner?: number;
   length?: number;
+  lethal?: boolean;
   name?: Name;
   origin: string;
   radius?: number;
@@ -1102,6 +1103,7 @@ export interface MonsterSpawn {
 }
 
 export interface MonsterVariant {
+  kit?: Ability[];
   levelMax: number;
   levelMin: number;
   levels: MonsterLevel[];

@@ -55,14 +55,17 @@ function FightSim.dps(p: Player, m: MonsterStats.MonsterStats, skill: number?): 
 end
 
 -- Expected damage of one monster attack (`mul` x attack) on the player, after armour / magic resistance. Regular
--- blows (canDodge ~= false) also lose the dodge, block and protection share; abilities have no delivery.
-function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: boolean?): number
+-- blows (canDodge ~= false) also lose the dodge, block and protection share; abilities have no delivery. S134e:
+-- `canCrit = false` (a lethal Elite II blow, Damage.Params.canCrit) leaves the expected crit out.
+function FightSim.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: boolean?, canCrit: boolean?): number
 	local v = p.values
 	local magic = (kind or m.damageKind) == "magic"
 	local defense = if magic then v.mres or 0 else v.armor or 0
 	local gapMul, gapCrit = Damage.levelGap(m.level, p.level)
 	local critMul = Damage.critMultiplier(Combat.monsterCritDmg, v.critResist)
-	local crit = 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (critMul - 1)
+	local crit = if canCrit == false
+		then 1
+		else 1 + math.min(Combat.monsterCritChance + gapCrit, 100) / 100 * (critMul - 1)
 	local avoid, guard = 0, 0
 	if canDodge ~= false then
 		local d, _, b = Damage.avoidance(v.dodge or 0, 0, 0, Traits.blockChance(p.hooks.block or 0, false))

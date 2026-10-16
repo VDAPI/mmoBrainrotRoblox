@@ -6,7 +6,9 @@
 --            while nobody hits the group, hard leash, lost target, stuck)
 --   cast   : Elite II special: telegraph for `windup` seconds, then resolve. S134c: a world event commander also has
 --            extra abilities (SetExtraAbilities: big blows to dodge and a shared blow, the bosses 2.0 telegraph and
---            resolve options of Logic/BossMechanics)
+--            resolve options of Logic/BossMechanics). S134e: an Elite / Elite II has a kit (Data/MonsterAbilities.KITS:
+--            Crushing Blow, Pounce, the throw at a fleeing target; Heavy Blow), picked by Logic/MonsterCast
+--            together with its own ability; a target-centred area is frozen on the ground under the target
 --   return : walk back to the group centre (S22: no healing, no invulnerability; a hit within the hard leash
 --            turns it back into the fight), then to its own spot and idle. Bosses keep the old return: their
 --            arena centre, full HP and invulnerable on the way.
@@ -27,6 +29,7 @@ local BossMechanics = require(Shared.Logic.BossMechanics)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
+local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
 local RigBuilder = require(script.Parent.RigBuilder)
@@ -63,7 +66,10 @@ export type Context = {
 	-- (damageBy) never uses it.
 	threatMultiplier: ((monster: any, player: Player) -> number)?,
 	-- S134c: ground below a point (a "random" ability lands on the chosen fighter's ground, not the caster's).
+	-- S134e: also a "target" one (the target's ground: on a slope the caster's height missed it).
 	groundAt: ((position: Vector3) -> Vector3)?,
+	-- S134e: the kit's throw at a fleeing target (a regular ranged blow, CombatService.monsterHitsPlayer)
+	rangedThrow: ((monster: any, player: Player, params: any) -> ())?,
 }
 
 local Monster = {}
@@ -101,6 +107,13 @@ export type Monster = typeof(setmetatable(
 		nextGlobal: number,
 		fighters: (() -> { Player })?,
 		onCast: ((ability: MonsterAbilities.Ability, area: CFrame) -> ())?,
+		-- S134e: the kit (nil = none), its abilities' ready times, when the last ability landed, since when the target
+		-- is out of reach (0 = in reach) and the next throw
+		kit: MonsterAbilities.Kit?,
+		kitNext: { [string]: number },
+		lastCast: number,
+		outOfReachSince: number,
+		nextThrow: number,
 		returnStarted: number,
 		random: Random,
 		entity: any, -- EntityService entity (set by MonsterService)
@@ -213,6 +226,11 @@ function Monster.new(
 		nextGlobal = 0,
 		fighters = nil,
 		onCast = nil,
+		kit = MonsterAbilities.kit(variant),
+		kitNext = {},
+		lastCast = -math.huge,
+		outOfReachSince = 0,
+		nextThrow = 0,
 		returnStarted = 0,
 		random = Random.new(),
 		entity = nil,
@@ -281,6 +299,7 @@ end
 local function setTarget(self: Monster, player: Player?)
 	if self.target ~= player then
 		self.target = player
+		self.outOfReachSince = 0 -- S134e: a new target is not fleeing yet
 		self.model:SetAttribute("AggroUserId", if player then player.UserId else nil)
 	end
 end
@@ -523,14 +542,32 @@ local function engage(self: Monster, player: Player)
 		for _, extra in extras do
 			self.extraNext[extra.id] = now + 3 + self.random:NextNumber() * 3
 		end
+		-- S134e: the kit's abilities (Crushing Blow first after 6-9 s)
+		local kit = self.kit
+		if kit then
+			for _, id in kit.abilities do
+				local ability = MonsterAbilities.get(id)
+				if ability then
+					self.kitNext[id] = now + MonsterCast.firstReady(ability, self.random:NextNumber())
+				end
+			end
+			self.nextThrow = now
+		end
 	end
+end
+
+-- S134e: removes the kit (the world event commander and champion: MonsterService.SpawnAt `noKit`).
+function Monster.ClearKit(self: Monster)
+	self.kit = nil
+	table.clear(self.kitNext)
 end
 
 local function abilityArea(self: Monster, ability: MonsterAbilities.Ability, targetPosition: Vector3): CFrame
 	local from = self.root.Position
 	local ground = from.Y - self.humanoid.HipHeight - self.root.Size.Y / 2
-	if ability.origin == "random" and self.ctx.groundAt then
-		-- S134c: the chosen fighter may stand far away on higher or lower ground (insideArea checks height).
+	if (ability.origin == "random" or ability.origin == "target") and self.ctx.groundAt then
+		-- S134c: the chosen fighter may stand far away on higher or lower ground (insideArea checks height). S134e: so
+		-- may the target (a slope 12+ studs above or below the caster left it untouchable); frozen when announced.
 		return CFrame.new(self.ctx.groundAt(targetPosition))
 	end
 	if ability.origin == "target" or ability.origin == "random" then
@@ -610,11 +647,62 @@ local function pickAbility(
 	return nil, nil
 end
 
+-- S134e: the kit's choice (Logic/MonsterCast.pick): an ability id, "throw" or nil.
+local function kitPick(self: Monster, now: number, distance: number, reach: number): string?
+	local kit = self.kit :: MonsterAbilities.Kit
+	local ready: { [string]: boolean } = {}
+	for _, id in kit.abilities do
+		ready[id] = now >= (self.kitNext[id] or math.huge)
+	end
+	local own = self.ability
+	if own then
+		ready[own.id] = now >= self.nextAbility
+	end
+	return MonsterCast.pick({
+		now = now,
+		distance = distance,
+		reach = reach,
+		outOfReachFor = if self.outOfReachSince > 0 then now - self.outOfReachSince else 0,
+		ready = ready,
+		lastCast = self.lastCast,
+		kit = kit,
+		own = own,
+		throwReady = now >= self.nextThrow,
+	})
+end
+
+-- S63: interval between regular attacks under attack slow (bosses' special abilities keep their own cooldowns).
+local function attackInterval(self: Monster): number
+	local slow = if self.ctx.attackSlow then self.ctx.attackSlow(self) else 0
+	return Traits.slowedInterval(self.stats.attackInterval, slow)
+end
+
+-- S134e: the kit's throw at a fleeing target: a regular ranged blow (dodge, block and ranged protection count), every
+-- attack interval x intervalMul, harder the farther below the monster the target is (MonsterCast.throwMul). Returns
+-- whether it threw.
+local function throwAt(self: Monster, now: number, target: Player, targetPosition: Vector3): boolean
+	local kit = self.kit
+	local throw = kit and kit.throw
+	local send = self.ctx.rangedThrow
+	if not throw or not send then
+		return false
+	end
+	self.nextThrow = now + attackInterval(self) * throw.intervalMul
+	face(self, targetPosition)
+	local multiplier = MonsterCast.throwMul(throw, self.stats.level, self.ctx.playerLevel(target))
+	send(self, target, { kind = self.stats.damageKind, multiplier = multiplier, element = self.def.element })
+	return true
+end
+
 -- S134c: the bosses 2.0 telegraph options of an ability (the golden shared circle, the thicker rim of a big blow).
-local function teleOpts(ability: MonsterAbilities.Ability): any?
+-- S134e: a lethal blow is marked (`lethal`: its own colour and pulse) and warns its target (`warn`).
+local function teleOpts(ability: MonsterAbilities.Ability, target: Player?): any?
 	if ability.mechanic == "split" then
 		return { mechanic = "split" }
 	elseif BossMechanics.isAvoidable(ability :: any) then
+		if ability.lethal then
+			return { mechanic = "avoid", lethal = true, warn = target }
+		end
 		return { mechanic = "avoid" }
 	end
 	return nil
@@ -674,12 +762,6 @@ local function noteMovement(self: Monster, now: number, attacking: boolean)
 	end
 end
 
--- S63: interval between regular attacks under attack slow (bosses' special abilities keep their own cooldowns).
-local function attackInterval(self: Monster): number
-	local slow = if self.ctx.attackSlow then self.ctx.attackSlow(self) else 0
-	return Traits.slowedInterval(self.stats.attackInterval, slow)
-end
-
 -- S134c: extra abilities of a world event commander (Data/MonsterAbilities with the bosses 2.0 fields): tried in list
 -- order before its own ability, `gap` seconds after every cast, `fighters` = the players a "random" ability aims at
 -- and a shared blow hits when nobody stands in it (from the spawning service), `onCast` = a hook on each cast (the
@@ -722,9 +804,31 @@ local function stepChase(self: Monster, now: number)
 	end
 	local distance = distanceFlat(position, targetPosition)
 	local reach = self.stats.range + self.root.Size.Z / 2
+	-- S134e: since when the target keeps out of reach (the kit's fleeing rule)
+	if distance <= reach then
+		self.outOfReachSince = 0
+	elseif self.outOfReachSince == 0 then
+		self.outOfReachSince = now
+	end
 
-	-- Elite II special ability (telegraphed); S134c: a commander's extra abilities first.
-	local ability, area = pickAbility(self, now, distance, reach, targetPosition)
+	-- Elite II special ability (telegraphed); S134c: a commander's extra abilities first. S134e: a monster with a
+	-- kit picks through Logic/MonsterCast (the kit, its own ability, the throw at a fleeing target).
+	local ability: MonsterAbilities.Ability?, area: CFrame? = nil, nil
+	local threw = false
+	if self.kit then
+		local choice = kitPick(self, now, distance, reach)
+		if choice == "throw" then
+			threw = throwAt(self, now, target, targetPosition)
+		elseif choice then
+			local own = self.ability
+			ability = if own and own.id == choice then own else MonsterAbilities.get(choice)
+			if ability then
+				area = abilityArea(self, ability, targetPosition)
+			end
+		end
+	else
+		ability, area = pickAbility(self, now, distance, reach, targetPosition)
+	end
 	if ability and area then
 		stop(self)
 		face(self, if ability.origin == "random" then area.Position else targetPosition)
@@ -735,14 +839,14 @@ local function stepChase(self: Monster, now: number)
 		if self.extra then
 			self.nextGlobal = now + ability.windup + self.extraGap
 		end
-		self.ctx.telegraph(self, ability, area, teleOpts(ability))
+		self.ctx.telegraph(self, ability, area, teleOpts(ability, target))
 		if self.onCast then
 			self.onCast(ability, area)
 		end
 		return
 	end
 
-	noteMovement(self, now, distance <= reach)
+	noteMovement(self, now, distance <= reach or threw)
 	if distance <= reach then
 		stop(self)
 		face(self, targetPosition)
@@ -773,11 +877,15 @@ local function stepCast(self: Monster, now: number)
 	self.castArea = nil
 	self.castAbility = nil
 	if ability and area then
+		local kit = self.kit
 		if ability == self.ability then
 			self.nextAbility = now + ability.cooldown
+		elseif kit and table.find(kit.abilities, ability.id) then
+			self.kitNext[ability.id] = now + ability.cooldown
 		else
 			self.extraNext[ability.id] = now + ability.cooldown
 		end
+		self.lastCast = now -- S134e: the kit's globalGap counts from here
 		self.nextAttack = now + attackInterval(self) * 0.5
 		-- S134c: a shared blow is split by everyone inside; nobody inside = missAll on every fighter (CombatService)
 		local split = if ability.mechanic == "split" then ability.split else nil
@@ -789,11 +897,20 @@ local function stepCast(self: Monster, now: number)
 			}
 			else nil
 		self.ctx.resolveAbility(self, ability, area, opts)
-		if ability.leap then
+		-- S134e: a leap lands only outside safe zones and within the hard leash (Logic/MonsterCast.canLand)
+		local point = area.Position
+		if
+			ability.leap
+			and self.state ~= "dead"
+			and MonsterCast.canLand(self.ctx.isSafePosition(point), distanceFlat(point, homeOf(self)), leashMax(self))
+		then
 			self.model:PivotTo(
-				CFrame.new(area.Position + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
+				CFrame.new(point + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
 					* self.root.CFrame.Rotation
 			)
+			self.movedAt = now
+			self.movedFrom = self.root.Position
+			self.outOfReachSince = 0
 		end
 	end
 end

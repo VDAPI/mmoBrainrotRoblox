@@ -1772,6 +1772,11 @@ return {
 	["ability.warlordCleave.name"] = "Cios Wodza",
 	["ability.warlordLeap.name"] = "Skok Wodza",
 	["ability.warlordRally.name"] = "Rozkaz Wodza",
+	-- S134e: the Elite II / Elite kits
+	["ability.crush.name"] = "Druzgocący Cios",
+	["ability.pounce.name"] = "Doskok",
+	["ability.heavyBlow.name"] = "Ciężki Cios",
+	["monster.crush.warn"] = "{name} szykuje Druzgocący Cios — zejdź z kręgu!",
 	["boss.grimrok.attack.sweep"] = "Zamach",
 	["boss.grimrok.attack.leap"] = "Skok",
 	["boss.grimrok.attack.whirlwind"] = "Wir ostrzy",

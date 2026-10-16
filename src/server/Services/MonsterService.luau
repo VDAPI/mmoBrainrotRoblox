@@ -48,6 +48,8 @@ export type Handlers = {
 	died: (monster: Monster.Monster) -> (),
 	-- S72 (ROZWOJ 10.3): threat multiplier of a player's damage (the threat hook); nil = 1.
 	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
+	-- S134e: the kit's throw at a fleeing target (a regular ranged blow)
+	rangedThrow: ((monster: Monster.Monster, player: Player, params: any) -> ())?,
 }
 
 type SpawnerRuntime = {
@@ -252,6 +254,12 @@ local context: Monster.Context = {
 			handlers.resolveAbility(monster, ability, area, opts)
 		end
 	end,
+	rangedThrow = function(monster, player, params)
+		local throw = handlers and handlers.rangedThrow
+		if throw then
+			throw(monster, player, params)
+		end
+	end,
 	died = function(monster)
 		MonsterService.OnDied(monster)
 	end,
@@ -275,7 +283,8 @@ end
 
 -- Spawns one monster. Returns nil when the server budget is full or the id is unknown. S101: `mods` multiply the
 -- HP and attack on top of the hunting ground profile (world event commander / champion). Without a spawner (world
--- events, admin) the monster has no group, no Elite II timers and no Elite II announcement.
+-- events, admin) the monster has no group, no Elite II timers and no Elite II announcement. S134e: an Elite / Elite II
+-- gets its kit (Data/MonsterAbilities.KITS); `opts.noKit` spawns it without (the world event commander and champion).
 function MonsterService.SpawnAt(
 	monsterId: string,
 	variant: "normal" | "elite" | "elite2",
@@ -283,7 +292,8 @@ function MonsterService.SpawnAt(
 	at: CFrame,
 	spawner: SpawnerRuntime?,
 	attributes: { [string]: any }?,
-	mods: MonsterStats.Mods?
+	mods: MonsterStats.Mods?,
+	opts: { noKit: boolean? }?
 ): Monster.Monster?
 	local def = Monsters.get(monsterId)
 	if not def then
@@ -297,6 +307,9 @@ function MonsterService.SpawnAt(
 	local ground = groundAt(at.Position)
 	local monster =
 		Monster.new(def, actualVariant, level, CFrame.new(ground) * at.Rotation, context, folder, attributes, mods)
+	if opts and opts.noKit then
+		monster:ClearKit()
+	end
 	monster.entity = EntityService.RegisterMonster(monster, monster.model)
 	monster.spawnerId = if spawner then spawner.data.id else nil
 	if spawner then

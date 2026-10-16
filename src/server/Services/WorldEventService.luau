@@ -416,14 +416,24 @@ local function spawnOne(
 	level: number,
 	at: Vector3,
 	groupSize: number?,
-	mods: any?
+	mods: any?,
+	noKit: boolean? -- S134e: the commander and the champion fight without the Elite II kit
 ): any?
 	local attributes: { [string]: any } = { AreaId = e.area.id, WorldEvent = e.id }
 	if groupSize then
 		attributes.GroupSize = groupSize
 	end
 	local facing = CFrame.Angles(0, rng:float(0, math.pi * 2), 0)
-	local monster = MonsterService.SpawnAt(kind, variant, level, CFrame.new(at) * facing, nil, attributes, mods)
+	local monster = MonsterService.SpawnAt(
+		kind,
+		variant,
+		level,
+		CFrame.new(at) * facing,
+		nil,
+		attributes,
+		mods,
+		if noKit then { noKit = true } else nil
+	)
 	if not monster then
 		return nil
 	end
@@ -519,7 +529,7 @@ local function spawnCommander(e: Event)
 	end
 	local players = math.max(1, #playersNear(e, e.centre, e.def.radius))
 	local level = math.min(e.area.lv[2], e.level + 1)
-	local monster = spawnOne(e, kind, "elite2", level, e.centre, nil, WorldEvents.scaleOf("commander", players))
+	local monster = spawnOne(e, kind, "elite2", level, e.centre, nil, WorldEvents.scaleOf("commander", players), true)
 	if monster then
 		e.boss = monster
 		e.bossKey = monster:Name()
@@ -548,7 +558,7 @@ local function spawnChampion(e: Event)
 	end
 	local players = math.max(1, #playersNear(e, route[1], e.def.radius))
 	local level = math.min(e.area.lv[2], e.level + 2)
-	local monster = spawnOne(e, kind, "elite2", level, route[1], nil, WorldEvents.scaleOf("champion", players))
+	local monster = spawnOne(e, kind, "elite2", level, route[1], nil, WorldEvents.scaleOf("champion", players), true)
 	if monster then
 		monster:SetPatrol(route, Data.kinds.champion.pause)
 		e.boss = monster

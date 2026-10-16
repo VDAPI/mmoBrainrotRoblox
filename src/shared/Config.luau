@@ -399,6 +399,10 @@ local Config = {
 		mechanicColors = { split = "#F2C14E", mark = "#A35BFF" },
 		markRange = 60, -- studs: the marked player's glow shows for players this close (and the marked one)
 		tagHeight = 4, -- studs above the split circle of its "Together" label
+		-- S134e: a lethal blow (an Elite II's Crushing Blow): dark crimson (not an element's colour, not the golden
+		-- split), the thick rim of a big blow and a faster pulse at the end (seconds per pulse instead of pulseFast)
+		lethalColor = "#8B0A1E",
+		pulseLethal = 0.07,
 	},
 	-- Interactive map and the guide (S25, DESIGN §23): a target counts as reached within `arrive` studs
 	-- (`arriveNpc` for NPCs, who stand behind their counter); the path is recomputed when the player is more than

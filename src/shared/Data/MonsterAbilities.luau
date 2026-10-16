@@ -10,8 +10,29 @@
 -- Data/Bosses read by Logic/BossMechanics: `avoid` (a big blow to dodge, windup >= 1.8 s), `mechanic = "split"` with
 -- `split.missAll` (stand together in the golden circle, windup >= 3 s), plus `fromHp` (used only at or below this
 -- share of the max HP) and `leap` (the monster lands in the area). Ordinary Elite II abilities have none of them.
+-- S134e (KITS): every Elite II of a spawner (and of the last Invasion wave) also has the kit `elite2` (Crushing Blow,
+-- Pounce, the throw at a fleeing target), every Elite the kit `elite` (Heavy Blow). The kit's fields, read by
+-- Logic/MonsterCast (the server's pick, the lethal multiplier, the landing check):
+--   lethal     a killing blow: dodge it or die from a few levels of the monster's advantage (windup >= 2.0 s)
+--   canCrit    false = never crits (Damage.Params.canCrit; a lethal blow must be predictable)
+--   castRange  the target may stand this far (flat studs) when the blow is announced (default max(reach, size))
+--   minRange   ... and at least this far
+--   kiteOnly   only at a target that keeps out of reach for the kit's `kiteSeconds` (the fleeing rule)
+--   firstAfter seconds after the fight starts it is ready first ({ min, max }; default 3-6 s)
+--   gapRamp    lethal only: +perLevel of the damage per level of the monster's advantage from `from`, up to maxSteps
+--              levels (Logic/MonsterCast.lethalMul; a player above the monster gets nothing)
 
 export type SplitSpec = { missAll: number }
+export type GapRamp = { from: number, perLevel: number, maxSteps: number }
+-- S134e: the regular ranged attack of a kit at a fleeing target (x the monster's attack, every interval x intervalMul;
+-- gapRamp as a lethal blow's: the farther below the monster the fleeing player is, the harder it hits)
+export type ThrowSpec = { range: number, intervalMul: number, damage: number, gapRamp: GapRamp? }
+export type Kit = {
+	abilities: { string }, -- priority order; the monster's own ability comes after them
+	globalGap: number, -- seconds after every blow before the next ability (the throw is a regular attack)
+	kiteSeconds: number?, -- a target out of reach this long is fleeing (kiteOnly abilities, the throw)
+	throw: ThrowSpec?,
+}
 
 export type Ability = {
 	id: string,
@@ -35,6 +56,14 @@ export type Ability = {
 	split: SplitSpec?,
 	fromHp: number?,
 	leap: boolean?,
+	-- S134e: the kit fields (see the header)
+	lethal: boolean?,
+	canCrit: boolean?,
+	castRange: number?,
+	minRange: number?,
+	kiteOnly: boolean?,
+	firstAfter: { number }?,
+	gapRamp: GapRamp?,
 }
 
 local ABILITIES: { [string]: Ability } = {
@@ -183,10 +212,76 @@ local ABILITIES: { [string]: Ability } = {
 		split = { missAll = 0.33 },
 		fromHp = 0.6,
 	},
+	-- S134e: the Elite II kit (owner 2026-10-15: a blow that nearly one-shots at the monster's level advantage, and no
+	-- free kiting). Crushing Blow: a circle frozen under the target when announced, up to 45 studs away (past the
+	-- Mage's 35), never a crit; x10.8 = 0.61-0.79 of a Mage's HP at the Elite II's level, kills from 10 levels below.
+	crush = {
+		id = "crush",
+		shape = "circle",
+		origin = "target",
+		radius = 9,
+		windup = 2.2,
+		damage = 10.8,
+		cooldown = 16,
+		avoid = true,
+		lethal = true,
+		canCrit = false,
+		castRange = 45,
+		firstAfter = { 6, 9 },
+		gapRamp = { from = 1, perLevel = 0.02, maxSteps = 5 },
+	},
+	-- Pounce: at a fleeing target 12-45 studs away, a circle under it; the Elite II lands there (not in a safe zone,
+	-- not past its hard leash).
+	pounce = {
+		id = "pounce",
+		shape = "circle",
+		origin = "target",
+		radius = 6,
+		windup = 1.4,
+		damage = 3.2,
+		cooldown = 10,
+		castRange = 45,
+		minRange = 12,
+		kiteOnly = true,
+		leap = true,
+	},
+	-- The Elite kit: Heavy Blow, a cone in front of it to dodge (no leap, no throw: an Elite is solo content).
+	heavyBlow = {
+		id = "heavyBlow",
+		shape = "cone",
+		origin = "self",
+		radius = 10,
+		angle = 90,
+		windup = 1.8,
+		damage = 7,
+		cooldown = 14,
+		avoid = true,
+		canCrit = false,
+	},
+}
+
+-- S134e: the kits by variant (Entities/Monster; the world event commander and champion spawn without one).
+local KITS: { [string]: Kit } = {
+	elite2 = {
+		abilities = { "crush", "pounce" },
+		globalGap = 2.5,
+		kiteSeconds = 2.5,
+		throw = {
+			range = 42,
+			intervalMul = 1.3,
+			damage = 1.25,
+			gapRamp = { from = 1, perLevel = 0.3, maxSteps = 15 },
+		},
+	},
+	elite = { abilities = { "heavyBlow" }, globalGap = 2.5 },
 }
 
 return table.freeze({
 	byId = ABILITIES,
+	KITS = KITS,
+	kit = function(variant: string): Kit?
+		return KITS[variant]
+	end,
 	get = function(id: string): Ability?
 		return ABILITIES[id]
 	end,

@@ -666,7 +666,19 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
 ### 15.1 Zasady
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×3, obrażenia ×1.25, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×10, obrażenia ×1.35, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem). (S32; wcześniej ×4 / ×1.5 i ×12 / ×2.)
-- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 10–20 min (losowo), ogłoszenie na mapie przy pojawieniu się.
+- Elity i Elity II **tylko w jaskiniach** (czerwone strefy), zasady w §3.5: 2 rodzaje Elit i dokładnie 1 Elita II na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
+- **Zestawy Elit** (S134e, `Data/MonsterAbilities.KITS`, wybór `Logic/MonsterCast`): Elita II ma obok własnej zdolności
+  **Druzgocący Cios** (krąg 9 st. zamrożony pod celem w chwili zapowiedzi, zapowiadany do 45 st., 2,2 s, ×10,8 ataku,
+  nigdy krytyk, co 16 s, ciemny karmin i komunikat dla celu), **Doskok** (gdy cel ucieka 2,5 s i stoi 12–45 st. dalej:
+  krąg 6 st. pod nim, 1,4 s, ×3,2, Elita II ląduje w kręgu poza strefą bezpieczną i w smyczy, co 10 s) i **rzut** w
+  uciekający cel (do 42 st., co interwał × 1,3, ×1,25 ataku, zwykły cios dystansowy). Między zdolnościami zestawu 2,5 s.
+  Elita ma **Ciężki Cios** (stożek 10 st. / 90°, 1,8 s, ×7, bez krytyka, co 14 s), bez doskoku i rzutu. Dowódca i czempion
+  wydarzeń świata walczą bez zestawu.
+- **Przewaga poziomu = zabójczość** (S134e): Druzgocący Cios i rzut rosną z przewagą poziomu potwora nad graczem
+  (`Damage.levelGap` od 6 poziomów; Druzgocący dodatkowo +2%/poziom za 1–5 poziomów, rzut +30%/poziom do 15): na
+  poziomie Elity II Druzgocący zabiera Magowi 60–80% HP, 5 poziomów niżej ≤ 95%, od 10 poziomów niżej zabija; gracz
+  uciekający 15 poziomów niżej przegrywa nawet przy unikaniu wszystkich telegrafów (rzut między dwiema miksturami
+  zabiera więcej niż całe HP). Przewaga gracza nic nie zmienia.
 - Statystyki z poziomu (od S18, `Data/Combat`): `HP = 55 + c·15·L^1.55` (c = `monsterHpComp`, S66),
   `atak = 4 + 2.5·L^0.88`, `obrona = 10·L × defMul`, `odporność magiczna = 8·L × mresMul` (S66), atak co 2,0 s /
   szybkość rodzaju. Mnożniki per rodzaj (`hpMul`, `atkMul`, `defMul`, `mresMul`, `speed`) w danych. Rodzina z
@@ -695,7 +707,8 @@ tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
   | grupa 4 na poziomie gracza | ≤ 110% HP (do przeżycia z jedną miksturą) |
   | ekwipunek ze sklepów (broń do 9 poziomów za nisko) | 1 potwór ≤ 15 s, ≤ 35% HP |
   | Elita solo (poziom +2) | 20–35 s, 60–90% HP; Elity z prawdziwych spawnerów Łąk: ≥ 26/36 walk w paśmie, żadna ponad 110% HP (S91) |
-  | Elita II | 2–3 graczy na poziomie (S91, jak regiony: solo co najmniej 180% HP, dwóch najwyżej 150%, trzech 60–100%) |
+  | Elita II | 2–3 graczy na poziomie (S91, jak regiony: solo co najmniej 180% HP, dwóch najwyżej 150%, trzech 60–100%; S134e: Druzgocący Cios uniknięty) |
+  | Druzgocący Cios (S134e) | nieuniknięty na Magu na poziomie Elity II 60–80% HP (Wojownik ≤ 60%), 5 niżej ≤ 95%, 10 niżej ≥ 105% (Wojownik ≥ 85%); uciekający solo 15 niżej przegrywa (Mag i Łowca); przypadek właściciela (Mag L48 vs L66) ≥ 130% |
   | Grimrok | L19: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L20 (≤ 70% Wojownika), zwykłe ≤ 50%; leczący 1,0–2,0 obrażeń tanka (T-SK6); do pokonania bez wsparcia (S91) |
   | Mroczny Bór (S92) | Elity jaskiń od 21. na każdym poziomie do 45; spotkanie Elit (pojedyncza albo para) ≤ 110% HP Wojownika, ≤ 125% Maga; rodzaje 0,85–1,20 EXP/s zwykłego; ≥ 2 expowiska na każdym poziomie; tempo 20 → 45 11,9–16,1 h, krok ≤ ×1,3 |
   | Morvane (S92) | L44: 5 graczy 3–4,5 min, 3 graczy 5–7,5 min, każdy kolejny gracz skraca walkę (S134); ciosy do unikania 60–90% HP Maga L45 (≤ 70% Wojownika), zwykłe ≤ 50%, atak podstawowy 7–12%; tank ≤ 350% HP/min (model S32: atak podstawowy i `threat`; z Polem Klątwy ok. 740–790%); fala tarczy ≤ 110% HP na członka; do pokonania bez wsparcia; T-SK6 ≤ 2,7 (cel planu 2,0 poza zasięgiem, DECYZJE S92) |

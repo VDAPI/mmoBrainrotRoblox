@@ -5,9 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S134d gotowe (ostatnia S134d: odwet stojącej postaci przy „Automatycznym celu” (bije najbliższego
-atakującego w miejscu), Samoczynne Mikstury (na zawsze / czasowo, progi życia i zasobu, nie w PvP) i Samodzielne Łowy
-(bank czasu, najwyżej 3 h dziennie, EXP i złoto ×0,7 poza rankingiem tygodniowym, blokady, Zwój Łowów z bossów);
+S01–S115 i S117–S134e gotowe (ostatnia S134e: Elita II z Druzgocącym Ciosem (krąg pod celem, 2,2 s, na równym
+poziomie 60–80% HP Maga, od 10 poziomów przewagi zabija), Doskokiem i rzutem w uciekającego (ucieczka 15 poziomów niżej
+przegrywa), Ciężki Cios Elity, krótszy powrót Elity II (ok. 8 min na 66.); wcześniej S134d: odwet stojącej postaci przy
+„Automatycznym celu”, Samoczynne Mikstury i Samodzielne Łowy (bank czasu, najwyżej 3 h dziennie, EXP i złoto ×0,7);
 wcześniej S134c: do lochu od poziomu bossa − 10 z pełnym łupem i EXP niższego gracza
 „jak na starym progu”, quest bossa dalej od − 5; Inwazja z falami 13 / 19 / 25, Elitami w każdej fali, Elitą II w
 ostatniej, dowódcą bez zniżki solo z ciosami do unikania i „Rozkazem”, skrzynia do Legendarnej; wcześniej S134b: pula
@@ -264,6 +265,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134e:** Druzgocący Cios, Doskok, rzut i Ciężki Cios bez przeglądu w grze (kolor karminu, puls, ruchy z
+  `KIT_STYLES` są ogólnymi stylami planów, bez własnych póz; Doskok przenosi Elitę II bez łuku skoku). Model ucieczki
+  (`Balance.elite2Kite`) to oszacowanie z założeniami `KITE_UPTIME` / `PIN_SECONDS`; w raporcie: uciekający Mag na
+  poziomie Elity II wciąż wygrywa (mikstury odrabiają rzut) i trójka 10 poziomów niżej w modelu S32 bez leczenia
+  (decyzje właściciela A / B w `docs/SESJE.md` → S134e). Ikony wiki nieprzeliczone (bez `node_modules`).
 
 - **S134d:** odwet, Samoczynne Mikstury i Samodzielne Łowy bez przeglądu w grze (chodzenie Łowów po ścieżce
   `PathfindingService`, anty-AFK `VirtualUser` w `pcall`: czy Roblox pozwala na nie w LocalScripcie, sprawdzi dopiero

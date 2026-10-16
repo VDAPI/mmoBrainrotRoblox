@@ -253,6 +253,17 @@ export function abilityText(a: Ability, cells: LevelCells | undefined, lang: Lan
   });
 }
 
+/** S134e: a kit blow of an Elite / Elite II (no damage range: the kit is not in the level rows). */
+export function kitText(a: Ability, lang: Lang, kind: string): string {
+  return t(lang, "kit.desc", {
+    windup: n(a.windup, lang),
+    shape: shapeText(a, a.origin, lang),
+    mul: n(a.damage, lang),
+    kind: elementText(a.element, a.damageKind ?? kind, lang),
+    cd: n(a.cooldown, lang),
+  });
+}
+
 /** Players a boss's shared blow (split) is shown for on the wiki: each of them takes the total / this. */
 export const SPLIT_SHOWN = 3;
 

@@ -61,6 +61,7 @@ local Loot = require("../src/shared/Logic/Loot")
 local LootTables = require("../src/shared/Data/LootTables")
 local Luck = require("../src/shared/Logic/Luck")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
+local MonsterCast = require("../src/shared/Logic/MonsterCast")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
 local Monsters = require("../src/shared/Data/Monsters")
 local MountData = require("../src/shared/Data/Mounts")
@@ -896,8 +897,8 @@ function Balance.dps(p: Player, m: any): number
 end
 
 -- Damage of one monster attack (multiplier `mul`) against the player, expected, after armour / resistance.
-function Balance.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: boolean?): number
-	return FightSim.hit(m, p :: any, mul, kind, canDodge)
+function Balance.hit(m: any, p: Player, mul: number?, kind: string?, canDodge: boolean?, canCrit: boolean?): number
+	return FightSim.hit(m, p :: any, mul, kind, canDodge, canCrit)
 end
 
 export type Fight = FightSim.Fight
@@ -937,8 +938,27 @@ function Balance.elite(p: Player, kind: any, level: number): Fight
 	return Balance.duel(p, Balance.monster(kind, level, "elite"))
 end
 
--- Elite II with its ability, against `players` copies of the team (damage on the first one, the tank).
-function Balance.elite2(team: { Player }, kind: string, level: number): Fight
+-- S134e: one lethal kit blow (Crushing Blow) of monster `m` on `p`: x the ability's damage and its gap ramp
+-- (Logic/MonsterCast.lethalMul), never a crit, no dodge (a red zone).
+function Balance.lethalHit(m: any, p: Player, ability: any): number
+	return Balance.hit(
+		m,
+		p,
+		ability.damage * MonsterCast.lethalMul(ability, m.level, p.level),
+		ability.damageKind,
+		false,
+		ability.canCrit
+	)
+end
+
+-- S134e: options of the Elite II fights: `avoidHit` = share of the `avoid` blows of the kit that land (default 0:
+-- dodged, like the bosses 2.0 of S134).
+export type Elite2Opts = { avoidHit: number? }
+
+-- Elite II with its ability, against `players` copies of the team (damage on the first one, the tank). S134e: the kit
+-- (Data/MonsterAbilities.KITS.elite2) in a standing fight: Crushing Blow x avoidHit (default 0); Pounce and the throw
+-- never come (the tank stays in reach: they answer a fleeing target, Balance.elite2Kite).
+function Balance.elite2(team: { Player }, kind: string, level: number, opts: Elite2Opts?): Fight
 	local def = Monsters.get(kind) :: any
 	local m = table.clone(Balance.monster(def, level, "elite2"))
 	m.ability = if def.ability then MonsterAbilities.get(def.ability) else nil
@@ -952,8 +972,99 @@ function Balance.elite2(team: { Player }, kind: string, level: number): Fight
 	if m.ability then
 		lost += Balance.hit(m, tank, m.ability.damage, m.ability.damageKind, false) * Balance.SPECIAL_HIT * seconds / m.ability.cooldown
 	end
+	local avoidHit = if opts then opts.avoidHit or 0 else 0
+	if avoidHit > 0 then
+		local crush = MonsterAbilities.get("crush") :: any
+		lost += Balance.lethalHit(m, tank, crush) * avoidHit * seconds / (crush.cooldown + crush.windup)
+	end
 	lost -= (tank.values.hpRegenCombat or 0) * seconds
 	return { seconds = seconds, hpLost = math.max(0, lost) / tank.values.maxHp, playerHp = tank.values.maxHp }
+end
+
+-- S134e (C1): assumptions of the kiting model (not game numbers): the share of the time a kiting ranged player
+-- shoots, and the seconds of regular blows it takes after each Pounce before it runs again.
+Balance.KITE_UPTIME = 0.6
+Balance.PIN_SECONDS = 2
+
+export type KiteFight = {
+	seconds: number,
+	-- share of the max HP: the bigger of the deficit over the fight (after in-combat regeneration and the potions) and
+	-- the biggest loss between two potions (burst)
+	hpLost: number,
+	sustained: number, -- the deficit over the fight
+	burst: number, -- the biggest loss inside one potion interval
+	throwHit: number, -- one throw / max HP
+	crushHit: number, -- one Crushing Blow not dodged / max HP
+	dies: boolean,
+	throws: number,
+	pounces: number,
+	crushes: number,
+}
+
+-- S134e (C1): one ranged player keeping an Elite II (spawner `level`) at a distance: shoots `KITE_UPTIME` of the time,
+-- takes the throws (regular ranged blows: dodge, block, ranged protection; x MonsterCast.throwMul, the gap ramp) every
+-- attack interval x intervalMul while it runs, after each Pounce (x SPECIAL_HIT, every windup + cooldown)
+-- PIN_SECONDS of regular melee blows, Crushing Blow x avoidHit (default 0: it dodges them all). Healing: in-combat
+-- regeneration and the best allowed potion at its interval, at most the max HP a drink (a potion never heals past it;
+-- Balance.potionHps counts the whole potion: up to twice the HP of a Mage from 45). It dies when the deficit over the
+-- fight passes the max HP or when one potion interval holds more than it (the hits it takes before it may drink
+-- again). Its own ability stays out (an area around itself or a small circle: it does not reach a kiting target).
+function Balance.elite2Kite(p: Player, kind: string, level: number, opts: Elite2Opts?): KiteFight
+	local def = Monsters.get(kind) :: any
+	local m = table.clone(Balance.monster(def, level, "elite2"))
+	local kit = MonsterAbilities.KITS.elite2
+	local crush = MonsterAbilities.get("crush") :: any
+	local pounce = MonsterAbilities.get("pounce") :: any
+	local throw = kit.throw :: any
+	local avoidHit = if opts then opts.avoidHit or 0 else 0
+	local maxHp = p.values.maxHp
+	local seconds = m.maxHp / (Balance.dps(p, m) * Balance.KITE_UPTIME)
+	local pounces = seconds / (pounce.cooldown + pounce.windup)
+	local crushes = seconds / (crush.cooldown + crush.windup)
+	-- the throws fill the time it neither casts nor holds the player after a Pounce
+	local busy = pounces * (pounce.windup + Balance.PIN_SECONDS) + crushes * crush.windup
+	local running = math.max(0, seconds - busy)
+	local throwEvery = m.attackInterval * throw.intervalMul
+	local throws = running / throwEvery
+	local ranged = table.clone(m)
+	ranged.delivery = "ranged"
+	local melee = table.clone(m)
+	melee.delivery = "melee"
+	local throwHit = Balance.hit(ranged, p, MonsterCast.throwMul(throw, m.level, p.level))
+	local pinHits = Balance.PIN_SECONDS / m.attackInterval
+	local pinHit = Balance.hit(melee, p)
+	local pounceHit = Balance.hit(m, p, pounce.damage, pounce.damageKind, false) * Balance.SPECIAL_HIT
+	local lost = throwHit * throws + pinHit * pinHits * pounces + pounceHit * pounces
+	local crushHit = Balance.lethalHit(m, p, crush)
+	lost += crushHit * avoidHit * crushes
+	-- potions: the best allowed one, at most the max HP a drink
+	local best = 0
+	for _, potion in Balance.hpPotions() do
+		if (potion.level or 1) <= p.level then
+			best = math.max(best, potion.heal)
+		end
+	end
+	local interval = Potions.interval(p.level)
+	local heal = (p.values.hpRegenCombat or 0) + math.min(best, maxHp) / interval
+	local sustained = math.max(0, lost - heal * seconds) / maxHp
+	-- between two potions: the throws of one interval (at least the one that lands on full HP), or a Pounce with its
+	-- pin
+	local inWindow = math.max(1, math.floor(interval / throwEvery))
+	local burst = math.max(throwHit * inWindow, pounceHit + pinHit * pinHits) / maxHp
+	local hpLost = math.max(sustained, burst)
+	local crushShare = crushHit / maxHp
+	return {
+		seconds = seconds,
+		hpLost = hpLost,
+		sustained = sustained,
+		burst = burst,
+		throwHit = throwHit / maxHp,
+		crushHit = crushShare,
+		dies = hpLost > 1 or (avoidHit > 0 and crushShare >= 1),
+		throws = throws,
+		pounces = pounces,
+		crushes = crushes,
+	}
 end
 
 -- Grimrok (or another boss): fight length for `team`, the biggest single hit on each team member and the tank's
@@ -9047,6 +9158,214 @@ function Balance.targetsS134c(): { TargetRow }
 		local why = Balance.S134C_REPORT[row.id]
 		if why then
 			row.report = `S134c: {why}`
+		end
+	end
+	return rows
+end
+
+-- Elite II kit (S134e, docs/sessions/S134e.md C) ----------------------------------------------------------------------
+-- Crushing Blow (lethal from the monster's level advantage), Pounce and the throw against kiting, Heavy Blow of the
+-- Elites. One Elite II kind of a cave of each region (spawner level -> Elite II level spawner + 4): 26, 46, 66, 96.
+
+Balance.S134e = {
+	kinds = {
+		{ kind = "werewolf", spawner = 22, map = "duskwood", cave = "duskwood_den" },
+		{ kind = "necromancer", spawner = 42, map = "duskwood", cave = "duskwood_cave" },
+		{ kind = "flameSmith", spawner = 62, map = "ashen", cave = "ashen_cave" },
+		{ kind = "youngFrostDragon", spawner = 92, map = "frostpeak", cave = "frostpeak_cave" },
+	},
+	gaps = { 0, 5, 10, 15, 18 }, -- levels of the Elite II's advantage in the Crushing Blow table
+	owner = { classId = "Mage", level = 48, kind = "flameSmith", spawner = 62 }, -- the owner's fight (2026-10-15)
+	ownerGear = { rarity = 3, up = 3 }, -- Heroic +3 (the owner's gear)
+	crushEqualMage = { 0.60, 0.80 }, -- a Crushing Blow not dodged at the Elite II's level: big, survivable
+	crushEqualWarrior = 0.60,
+	crushGap5Mage = 0.95, -- 5 levels below: still survivable from full HP
+	crushGap10Mage = 1.05, -- 10 levels below: kills
+	crushGap10Warrior = 0.85,
+	crushOwner = 1.30,
+	crushTrioTank = 0.70, -- on the tank of a trio at the level
+	kiteGap15 = 1.0, -- a kiting solo 15 levels below loses (hpLost above it), dodging every telegraph
+	kiteEqual = 0.8, -- a kiting solo at the level loses or ends at least this low (S32 "solo dies")
+	trioGap10 = 1.0, -- a trio 10 levels below, owner's gear, Crushing Blow dodged: the tank's HP lost at most
+	heavyBlowEqualMage = { 0.35, 0.50 }, -- Heavy Blow not dodged on a Mage at the Elite's level (report)
+}
+
+-- S134e: rows of targetsS134e out of reach of the S134e levers (printed with the reason; docs/DECYZJE.md S134e).
+Balance.S134E_REPORT = {
+	["S134e.kite.equal.werewolf.Mage"] = "a kiting Mage at the Elite II's level is not hurt enough by the throws (x1.25 at an equal level, about 0.08-0.09 of its HP every 2.6 s) to lose; the potions heal it between two hits; the lever is the potion interval (S54) or the S32 melee balance, not this session",
+	["S134e.kite.equal.necromancer.Mage"] = "as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it",
+	["S134e.kite.equal.flameSmith.Mage"] = "as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it",
+	["S134e.kite.equal.youngFrostDragon.Mage"] = "as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it",
+	["S134e.trio.gap10.werewolf"] = "the S32 melee model (Balance.elite2) has no Cleric healing and no potions; with the tank's potions (at most its max HP a drink) it ends at full HP; the S32 levers (Elite II HP and attack) are not this session's",
+	["S134e.trio.gap10.necromancer"] = "as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP",
+	["S134e.trio.gap10.flameSmith"] = "as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP",
+	["S134e.trio.gap10.youngFrostDragon"] = "as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP",
+} :: { [string]: string }
+
+-- S134e: one Crushing Blow not dodged on `classId` `gap` levels below the Elite II (`kind` at `spawner`) / its max HP.
+function Balance.crushShare(classId: string, kind: string, spawner: number, gap: number, gear: GearOpts?): number
+	local m = Balance.monster(kind, spawner, "elite2")
+	local p = Balance.player(classId, m.level - gap, gear)
+	return Balance.lethalHit(m, p, MonsterAbilities.get("crush")) / p.values.maxHp
+end
+
+-- S134e (D): one Heavy Blow not dodged on `classId` `gap` levels below an Elite (`kind` at `spawner`) / its max HP.
+function Balance.heavyBlowShare(classId: string, kind: any, spawner: number, gap: number): number
+	local m = Balance.monster(kind, spawner, "elite")
+	local p = Balance.player(classId, m.level - gap)
+	local blow = MonsterAbilities.get("heavyBlow") :: any
+	return Balance.hit(m, p, blow.damage, blow.damageKind, false, blow.canCrit) / p.values.maxHp
+end
+
+-- S134e (D): the Elite kind and its spawner level of a cave (the first Elite spawner's kind, its top level).
+function Balance.caveElite(mapId: string, caveId: string): (string?, number)
+	for _, cave in Balance.caveSpawners(mapId) do
+		if cave.id == caveId and #cave.elites > 0 then
+			local e = cave.elites[1]
+			return e.kind, e.max
+		end
+	end
+	return nil, 0
+end
+
+-- S134e (C2): the targets in one place (ids "S134e.*"); balance.spec ("Balance: Elite II kit (S134e)") asserts every
+-- row without `report`.
+function Balance.targetsS134e(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134e
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		lv: number?
+	)
+		target(rows, `S134e.{id}`, group, label, value, low, high, nil, lv)
+	end
+	for _, spec in S.kinds do
+		local kind, spawner = spec.kind, spec.spawner
+		local m = Balance.monster(kind, spawner, "elite2")
+		local L = m.level
+		local tag = `{kind} L{L}`
+		add(
+			`crush.equal.{kind}.Mage`,
+			"crush",
+			`{tag}: Druzgocący Cios na Magu L{L} / HP`,
+			Balance.crushShare("Mage", kind, spawner, 0),
+			S.crushEqualMage[1],
+			S.crushEqualMage[2],
+			L
+		)
+		add(
+			`crush.equal.{kind}.Warrior`,
+			"crush",
+			`{tag}: Druzgocący Cios na Wojowniku L{L} / HP`,
+			Balance.crushShare("Warrior", kind, spawner, 0),
+			nil,
+			S.crushEqualWarrior,
+			L
+		)
+		add(
+			`crush.gap5.{kind}.Mage`,
+			"crush",
+			`{tag}: Druzgocący Cios na Magu L{L - 5} / HP`,
+			Balance.crushShare("Mage", kind, spawner, 5),
+			nil,
+			S.crushGap5Mage,
+			L
+		)
+		add(
+			`crush.gap10.{kind}.Mage`,
+			"crush",
+			`{tag}: Druzgocący Cios na Magu L{L - 10} / HP`,
+			Balance.crushShare("Mage", kind, spawner, 10),
+			S.crushGap10Mage,
+			nil,
+			L
+		)
+		add(
+			`crush.gap10.{kind}.Warrior`,
+			"crush",
+			`{tag}: Druzgocący Cios na Wojowniku L{L - 10} / HP`,
+			Balance.crushShare("Warrior", kind, spawner, 10),
+			S.crushGap10Warrior,
+			nil,
+			L
+		)
+		local tank = Balance.team(3, L)[1]
+		add(
+			`crush.notDodged.trio.{kind}`,
+			"crush",
+			`{tag}: Druzgocący Cios na tanku trójki L{L} / HP`,
+			Balance.lethalHit(m, tank, MonsterAbilities.get("crush")) / tank.values.maxHp,
+			nil,
+			S.crushTrioTank,
+			L
+		)
+		for _, c in { "Mage", "Hunter" } do
+			local kite = Balance.elite2Kite(Balance.player(c, L - 15, S.ownerGear :: any), kind, spawner)
+			add(
+				`kite.gap15.{kind}.{c}`,
+				"kite",
+				`{tag}: {c} L{L - 15} (Heroiczne +3) ucieka i unika wszystkiego, HP stracone`,
+				kite.hpLost,
+				S.kiteGap15 + 1e-9,
+				nil,
+				L
+			)
+		end
+		local equal = Balance.elite2Kite(Balance.player("Mage", L), kind, spawner)
+		add(
+			`kite.equal.{kind}.Mage`,
+			"kite",
+			`{tag}: Mag L{L} ucieka i unika wszystkiego, HP stracone`,
+			equal.hpLost,
+			S.kiteEqual,
+			nil,
+			L
+		)
+		local trio = Balance.elite2(
+			Balance.classTeam({ "Warrior", "Mage", "Cleric" }, L - 10, S.ownerGear :: any),
+			kind,
+			spawner
+		)
+		add(
+			`trio.gap10.{kind}`,
+			"trio",
+			`{tag}: W + M + K L{L - 10} (Heroiczne +3), cios uniknięty, HP tanka`,
+			trio.hpLost,
+			nil,
+			S.trioGap10,
+			L
+		)
+	end
+	local o = S.owner
+	local om = Balance.monster(o.kind, o.spawner, "elite2")
+	local owner = Balance.player(o.classId, o.level, S.ownerGear :: any)
+	add(
+		"crush.owner",
+		"crush",
+		`{o.kind} L{om.level}: Druzgocący Cios na Magu L{o.level} (Heroiczne +3) / HP`,
+		Balance.lethalHit(om, owner, MonsterAbilities.get("crush")) / owner.values.maxHp,
+		S.crushOwner,
+		nil,
+		om.level
+	)
+	add(
+		"kite.owner",
+		"kite",
+		`{o.kind} L{om.level}: Mag L{o.level} (Heroiczne +3) ucieka i unika wszystkiego, HP stracone`,
+		Balance.elite2Kite(owner, o.kind, o.spawner).hpLost,
+		S.kiteGap15 + 1e-9,
+		nil,
+		om.level
+	)
+	for _, row in rows do
+		local why = Balance.S134E_REPORT[row.id]
+		if why then
+			row.report = `S134e: {why}`
 		end
 	end
 	return rows

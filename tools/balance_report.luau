@@ -2840,6 +2840,95 @@ do
 	add()
 end
 
+-- S134e: the Elite II kit (Balance.targetsS134e): the Crushing Blow by the level gap for a Mage and a Warrior in four
+-- regions, kiting before (no kit: nothing reaches a kiting player) and after, the Heavy Blow of the Elites, the rows.
+do
+	local S = B.S134e
+	add("## Elita II: Druzgocący Cios i koniec darmowego uciekania (S134e)")
+	add()
+	add(
+		"Druzgocący Cios (`Data/MonsterAbilities.crush`) nieuniknięty, bez krytyka, × rampa przewagi (`Logic/MonsterCast.lethalMul`) i `Damage.levelGap`; ułamek HP postaci konwencji o tyle poziomów niżej. Ucieczka: `Balance.elite2Kite` (gracz dystansowy bije `KITE_UPTIME` czasu, rzuty w uciekającego z rampą przewagi, po Doskoku `PIN_SECONDS` zwykłych ciosów, mikstury najwyżej pełne HP na łyk w ich odstępie; przegrywa, gdy strata przez walkę albo między dwiema miksturami przekracza HP). „Przed” = bez zestawu: nic nie sięga uciekającego (strata 0). Asertuje `balance.spec` („Balance: Elite II kit (S134e)”)."
+	)
+	add()
+	local crushRows: { { string } } = {}
+	for _, spec in S.kinds do
+		local m = B.monster(spec.kind, spec.spawner, "elite2")
+		for _, c in { "Mage", "Warrior" } do
+			local row = { `{spec.kind} L{m.level}`, c }
+			for _, gap in S.gaps do
+				table.insert(row, fmtValue(B.crushShare(c, spec.kind, spec.spawner, gap), "2"))
+			end
+			table.insert(crushRows, row)
+		end
+	end
+	local gapCols = { "Elita II", "klasa" }
+	for _, gap in S.gaps do
+		table.insert(gapCols, `przewaga {gap}`)
+	end
+	tableOut(gapCols, crushRows)
+	add()
+	local kiteRows: { { string } } = {}
+	for _, spec in S.kinds do
+		local m = B.monster(spec.kind, spec.spawner, "elite2")
+		for _, gap in { 0, 10, 15 } do
+			for _, c in { "Mage", "Hunter" } do
+				local gear = if gap >= 10 then S.ownerGear :: any else nil
+				local k = B.elite2Kite(B.player(c, m.level - gap, gear), spec.kind, spec.spawner)
+				table.insert(kiteRows, {
+					`{spec.kind} L{m.level}`,
+					`{c} L{m.level - gap}{if gear then " (H+3)" else ""}`,
+					"0,00",
+					fmtValue(k.hpLost, "2"),
+					fmtValue(k.throwHit, "2"),
+					fmtValue(k.seconds, "i"),
+					if k.dies then "przegrywa" else "wygrywa",
+				})
+			end
+		end
+	end
+	local o = S.owner
+	local ok = B.elite2Kite(B.player(o.classId, o.level, S.ownerGear :: any), o.kind, o.spawner)
+	table.insert(kiteRows, {
+		`{o.kind} L{B.monster(o.kind, o.spawner, "elite2").level}`,
+		`{o.classId} L{o.level} (H+3, właściciel)`,
+		"0,00",
+		fmtValue(ok.hpLost, "2"),
+		fmtValue(ok.throwHit, "2"),
+		fmtValue(ok.seconds, "i"),
+		if ok.dies then "przegrywa" else "wygrywa",
+	})
+	tableOut(
+		{ "Elita II", "gracz", "przed: HP stracone", "po: HP stracone", "po: rzut / HP", "po: s walki", "po: wynik" },
+		kiteRows
+	)
+	add()
+	local heavyRows: { { string } } = {}
+	for _, spec in S.kinds do
+		local kind, spawner = B.caveElite(spec.map, spec.cave)
+		if kind then
+			local level = B.monster(kind, spawner, "elite").level
+			table.insert(heavyRows, {
+				`{kind} L{level}`,
+				fmtValue(B.heavyBlowShare("Mage", kind, spawner, 0), "2"),
+				fmtValue(B.heavyBlowShare("Mage", kind, spawner, 10), "2"),
+				fmtValue(B.heavyBlowShare("Warrior", kind, spawner, 0), "2"),
+			})
+		end
+	end
+	add(
+		"Ciężki Cios Elity (`heavyBlow`, nieuniknięty; w modelu Elit S32 uniknięty, wiersze bez zmian), ułamek HP; cel sesji na Magu na poziomie Elity 0,35–0,50 (raport)."
+	)
+	add()
+	tableOut({ "Elita", "Mag na poziomie", "Mag 10 niżej", "Wojownik na poziomie" }, heavyRows)
+	add()
+	local banded: { B.TargetRow } = {}
+	for _, row in B.targetsS134e() do
+		table.insert(banded, row)
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134e (asertowane)"))
+	add()
+end
+
 -- S134d: Auto Hunt, a report only (no assertion, no pace change): EXP/h while hunting = the solo pace x
 -- Progression.autoGrindExpPct x a walking efficiency (a report assumption, never a game number), the hand-play hours a
 -- capped day is worth, and the Scroll of the Hunt minutes the daily boss runs give.

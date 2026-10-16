@@ -12,6 +12,7 @@
 --            the blow / the arrival (at most 0.5 s), the server's damage itself is not delayed
 --   tele   : red ground telegraph that fills during the windup (circle / cone / line / ring); S117: telegraphs 2.0
 --            (Vfx/GroundTelegraph: from the edge to the centre, pulsing rim, flash and effect at the blow)
+--            S134e: a lethal blow (`x`) dark crimson, thick-rimmed, pulsing faster at the end
 --   reward : "+EXP · +gold" above our character
 -- Damage numbers: setting "all / mine and received / off" (settings.dmgMode, DamageText.mode; the old
 -- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
@@ -82,6 +83,7 @@ local DungeonController: any = nil
 local player = Players.LocalPlayer
 
 local TELEGRAPH_COLOR = Color3.fromHex("#D64A3E")
+local LETHAL_COLOR = Color3.fromHex(Config.Telegraph.lethalColor) -- S134e
 
 local ELEMENT_COLORS: { [string]: Color3 } = {
 	fire = Color3.fromHex("#FF7A1A"),
@@ -1344,6 +1346,11 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 	end
 	local follow: Model? = nil
 	local key: string? = nil
+	-- S134e: a lethal blow (an Elite II's Crushing Blow, field `x`): dark crimson, the thick rim, a faster pulse
+	local lethal = event.x == true
+	if lethal then
+		color = LETHAL_COLOR
+	end
 	if mechanic == "split" then
 		color = MECHANIC_COLORS.split
 		splitTag(area, windup)
@@ -1383,8 +1390,9 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 		magic = magic,
 		low = low,
 		follow = follow,
-		rimWidth = if mechanic == "avoid" then Config.Telegraph.rimWidthAvoid else nil,
+		rimWidth = if mechanic == "avoid" or lethal then Config.Telegraph.rimWidthAvoid else nil,
 		key = key,
+		pulseFast = if lethal then Config.Telegraph.pulseLethal else nil,
 		onBlow = function()
 			if casterGone(caster) then
 				return

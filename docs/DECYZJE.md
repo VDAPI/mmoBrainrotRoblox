@@ -4573,3 +4573,47 @@
   z `Data/Progression`, Zwój jako `ref:items`, bez szans i cen); zmiana kształtu celowa
   (`WIKI_KEYS_ALLOW="premium:*,types.ts"` do commita). `npm run data` bez `sharp` (brak `node_modules`): dane przez
   `lune run tools/wikidump.luau`, ikony wiki nieprzeliczone (Zwój ma wspólny klucz `misc/scroll`).
+- **S134e** Dlaczego Mag L48 wygrał z Elitą II L66: `Damage.levelGap` działał w stronę potwór → gracz (+100% obrażeń,
+  +50% kryt., przypięte w `damage.spec`), ale Elita II w ogóle nie trafiała uciekającego (zdolność tylko w zasięgu jej
+  obszaru, zwykły cios wręcz, potwór wolniejszy od gracza, smycz odnawiana strzałami). Ta sesja dodaje cios, który
+  trafia, i zabiera ucieczce darmowość; ucieczka dalej jest możliwa, ale kosztuje: rzuty co ~2,6 s, doskok co ~11 s i
+  Druzgocący co ~18 s, którego trzeba unikać w bok.
+- **S134e** Druzgocący Cios (`crush`): ×10,8 (start 11; 11 dawało Magowi na równym poziomie z `flameSmith` 0,80 i 1,00
+  przy 5 poziomach), `canCrit = false` (krytyk z `levelGap` +50% robiłby z „prawie zabija” loterię), rampa przewagi
+  zostaje (`perLevel` 0,02 zamiast 0,03, 5 kroków): bez niej Wojownik 10 poziomów pod L96 dostawał 0,83 (< 0,85), z
+  0,03 Mag 5 poziomów pod `flameSmith` 1,00 (> 0,95). Pierwszy po 6–9 s walki, potem co 16 s + 2,2 s zapowiedzi.
+- **S134e** Rzut w uciekającego z własną rampą przewagi (`KITS.elite2.throw.gapRamp`: +30%/poziom do 15 poziomów, ×1,25
+  ataku): mikstury leczą w modelu więcej, niż Elita II zadaje w ich odstępie (Wielka 4000 HP co ~6,5 s przy L48 = ponad
+  2 × HP Maga; do 20. poziomu odstęp 1,5 s), więc „solo 15 niżej przegrywa nawet unikając wszystkiego” da się spełnić
+  tylko ciosem, który między dwiema miksturami zabiera całe HP. Na równym poziomie rzut to zwykły cios ×1,25 (0,08–0,09
+  HP Maga), 15 poziomów niżej ×6,9 (≥ 1 HP). Rzut celuje tylko w cel spoza zasięgu od 2,5 s (członek drużyny niebędący
+  celem go nie dostaje).
+- **S134e** Model ucieczki `Balance.elite2Kite`: mikstura leczy najwyżej pełne HP na łyk (nie całą swoją wartość jak
+  `Balance.potionHps` modelu bossów, który zostaje bez zmian); przegrana = strata przez walkę albo strata między dwiema
+  miksturami (`burst`: rzuty jednego odstępu, co najmniej jeden; albo Doskok z przytrzymaniem) ponad HP. `KITE_UPTIME`
+  0,6 i `PIN_SECONDS` 2 to założenia modelu, nie liczby gry. Własna zdolność Elity II poza modelem ucieczki (nie sięga).
+- **S134e** `Balance.elite2` (walka w miejscu): Druzgocący × `avoidHit` (domyślnie 0 = uniknięty), Doskoku i rzutu nie
+  ma (tank stoi w zasięgu; oba odpowiadają tylko uciekającemu celowi), więc wiersze S32 / regionów Elit II bez zmian.
+- **S134e** Raporty (zasada 8): `kite.equal` (Mag uciekający na poziomie Elity II traci 0,15–0,28 HP: mikstury
+  odrabiają zwykły rzut; dźwignią byłby odstęp mikstur S54 albo balans S32, nie ta sesja) i `trio.gap10` (W + M + K 10
+  poziomów niżej, Heroiczne +3: tank 1,03–2,52 HP w modelu S32 bez leczenia Kapłana i bez mikstur; z miksturami kończy z
+  pełnym HP). Pozostałe cele asertowane.
+- **S134e** Ciężki Cios Elity: `windup` 1,8 zamiast 1,6 z planu (reguła S134 `avoid` ≥ 1,8 bez wyjątku), ×7 zamiast 6
+  (6 dawało Magowi na poziomie Elity 0,34–0,36, poniżej celu 0,35–0,50; 7 = 0,40–0,42, 10 niżej 0,70–0,83). Elita bez
+  doskoku i rzutu (treść solo S32; decyzja A dla właściciela). W modelu Elit uniknięty: wiersze S32 / S91 bez zmian.
+- **S134e** Dowódca Inwazji i czempion wydarzenia (oba Elita II z `mods` wydarzenia) bez zestawu (`SpawnAt(..., { noKit
+  = true })`): dowódca ma własne ciosy S134c, czempion jest bossem wydarzenia dla wielu graczy. Elita II ostatniej fali
+  Inwazji i Elity fal mają zestawy jak w jaskini.
+- **S134e** Obszar z `origin = "target"` (każdej Elity II, nie tylko zestawu) stoi na ziemi pod celem (`ctx.groundAt`,
+  jak „random” S134c), zamrożony w chwili zapowiedzi; wcześniej na wysokości ziemi potwora, więc cel 12+ st. wyżej / niżej
+  na zboczu był nietykalny.
+- **S134e** W `globalGap` (2,5 s po każdej zdolności) zestaw nie rzuca zdolności, ale rzut może przyjść (to zwykły cios ze
+  swoim odstępem). Doskok ląduje tylko poza strefą bezpieczną i w twardej smyczy (`MonsterCast.canLand`), ta sama reguła
+  dla skoku dowódcy S134c; inaczej cios bez przeniesienia. Ostrzeżenie celu: `Toast` „warning” (`monster.crush.warn`),
+  bez nowego remote'u; nie `BossAnnounce` (ten gra dźwięk awansu).
+- **S134e** Krótszy powrót Elity II (właściciel 2026-10-15, wybór „a”): 300 + 3 × poziom jaskini s (L20 ~6 min, L66
+  ~8 min, L100 ~10 min; było ~12 / ~21 / ~28). Elity II na godzinę jednej jaskini ×2,0–2,8 (L70 materiały Elity II / h:
+  Rdzenie 0,31 → 0,82); żaden cel łupu (S33 / S84 / D5) nie pęka, więc wagi Legendarnego Elity II i `ITEM_DROPS.elite2`
+  bez zmian. `tests/fixtures/balance_items.json` przeliczony (`--fixture-items`).
+- **S134e** Wiki: nowe pole `monsters.variants.*.kit` (nazwa, kształt, zapowiedź, mnożnik, odnowienie, `lethal`) i akapit
+  na stronie walki bez liczb; zmiana kształtu celowa (`WIKI_KEYS_ALLOW` z 12 kluczami `kit` i `types.ts` do commita).

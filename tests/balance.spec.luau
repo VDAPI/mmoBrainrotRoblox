@@ -215,6 +215,38 @@ T.describe("Balance: Invasion (S134c)", function()
 	end)
 end)
 
+-- S134e (C2): the Elite II kit (Balance.targetsS134e): Crushing Blow big but survivable at the level, lethal from 10
+-- levels below (the owner's L48 vs L66 too), a kiting solo 15 levels below loses even dodging every telegraph; every
+-- row without `report` asserted (Balance.S134E_REPORT prints the rest with the reason). The S32 Elite II rows (Crushing
+-- Blow dodged) stay in "Balance S32: targets 1-20" and the region block with their thresholds.
+T.describe("Balance: Elite II kit (S134e)", function()
+	local rows = B.targetsS134e()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134e, docs/sessions S134e C2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134e targets (printed); a dodged Crushing Blow adds nothing, a landed one does", function()
+		printReport("S134e", rows, 20)
+		for _, row in rows do
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		T.expect(#rows >= 4 * 10 + 2).toBe(true)
+		local spec = B.S134e.kinds[3]
+		local team = B.team(3, B.monster(spec.kind, spec.spawner, "elite2").level)
+		local dodged = B.elite2(team, spec.kind, spec.spawner).hpLost
+		T.expect(B.elite2(team, spec.kind, spec.spawner, { avoidHit = 0 }).hpLost).toBe(dodged)
+		T.expect(B.elite2(team, spec.kind, spec.spawner, { avoidHit = 1 }).hpLost > dodged).toBe(true)
+	end)
+end)
+
 -- S134b: the party EXP pool (PartyLoot.poolMul in Balance.paceAt): solo unchanged, the member's EXP/h = the mean of
 -- the solo rates x pool x class bonus and grows with the party, the solo hours 1-19 as in the 1-20 fixture.
 T.describe("Balance: party EXP pool (S134b)", function()

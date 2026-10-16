@@ -278,6 +278,10 @@ describe("World spawns", function()
 		local low, high = AreaSpawns.elite2Respawn(10), AreaSpawns.elite2Respawn(90)
 		expect(low.min < low.max).toBe(true)
 		expect(high.min > low.max).toBe(true)
+		-- S134e: shorter (owner 2026-10-15): the 66th level cave about 8 min (was about 21), level 100 at most 12 min
+		local mid = AreaSpawns.elite2Respawn(66)
+		expect((mid.min + mid.max) / 2 >= 7 * 60 and (mid.min + mid.max) / 2 <= 9 * 60).toBe(true)
+		expect(AreaSpawns.elite2Respawn(100).max <= 12 * 60).toBe(true)
 		for _, cave in Areas.caves.list do
 			for _, spawner in Spawns.byMap[cave.id] do
 				if spawner.variant == "elite2" then

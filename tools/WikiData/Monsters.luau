@@ -50,7 +50,39 @@ local Ability = rec("Ability", {
 	cooldown = "number",
 	["element?"] = enum("ElementId"),
 	["damageKind?"] = "string",
+	["lethal?"] = "bool", -- S134e: a lethal kit blow (Crushing Blow)
 })
+
+-- S134e: one blow of a variant's kit (Data/MonsterAbilities.KITS: Elite II Crushing Blow and Pounce, Elite Heavy Blow).
+local function kitOf(variant: string): { any }?
+	local kit = MonsterAbilities.kit(variant)
+	if not kit then
+		return nil
+	end
+	local out = {}
+	for _, id in kit.abilities do
+		local a = MonsterAbilities.get(id)
+		if a then
+			table.insert(out, {
+				id = a.id,
+				name = Names.opt(`ability.{a.id}.name`),
+				shape = a.shape,
+				origin = a.origin,
+				radius = a.radius,
+				angle = a.angle,
+				length = a.length,
+				width = a.width,
+				windup = a.windup,
+				damage = a.damage,
+				cooldown = a.cooldown,
+				element = a.element,
+				damageKind = a.damageKind,
+				lethal = if a.lethal then true else nil,
+			})
+		end
+	end
+	return out
+end
 
 local LevelStats = rec("MonsterLevel", {
 	level = "int", -- spawner level
@@ -87,6 +119,7 @@ local Spawn = rec("MonsterSpawn", {
 
 local VariantInfo = rec("MonsterVariant", {
 	name = "name",
+	["kit?"] = arr(Ability), -- S134e: the variant's kit blows
 	levelMin = "int",
 	levelMax = "int",
 	levels = arr(LevelStats),
@@ -396,6 +429,7 @@ function Monsters.build(ctx: any): any
 				end
 				variants[variant] = {
 					name = Names.of((def.nameKeys :: any)[variant] or def.nameKeys.normal),
+					kit = kitOf(variant),
 					levelMin = low,
 					levelMax = high,
 					levels = levelRows,

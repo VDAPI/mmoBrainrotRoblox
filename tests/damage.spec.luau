@@ -302,6 +302,36 @@ T.describe("Damage", function()
 		-- same rolls and no armor, so only the rounding differs
 		T.expect(ahead.amount).toBeNear(even.amount * 1.3, 1)
 	end)
+
+	-- S134e: the owner's Elite II L66 against his Mage L48 (the rule works monster -> player too), and a lethal blow
+	-- (canCrit = false) never crits even with the full gap crit of +50 %
+	T.it("S134e: levelGap(66, 48) = (2.0, 50) and (1, 0) the other way; canCrit = false never crits", function()
+		local mul, crit = Damage.levelGap(66, 48)
+		T.expect(mul).toBeNear(2.0)
+		T.expect(crit).toBe(50)
+		mul, crit = Damage.levelGap(48, 66)
+		T.expect(mul).toBe(1)
+		T.expect(crit).toBe(0)
+		local monster = attacker({ level = 66, critChance = 50 })
+		local player = defender({ level = 48 })
+		local rng = Rng.new(5)
+		local crits = 0
+		for _ = 1, 200 do
+			if
+				Damage.computeDamage(monster, player, { kind = "phys", canCrit = false, canDodge = false }, rng).crit
+			then
+				crits += 1
+			end
+		end
+		T.expect(crits).toBe(0)
+		local any = 0
+		for _ = 1, 200 do
+			if Damage.computeDamage(monster, player, { kind = "phys", canDodge = false }, rng).crit then
+				any += 1
+			end
+		end
+		T.expect(any > 0).toBe(true)
+	end)
 end)
 
 T.describe("MonsterStats", function()

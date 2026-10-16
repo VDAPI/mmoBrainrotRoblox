@@ -10909,3 +10909,88 @@ Pliki: `src/shared/Logic/{AutoPotion,AutoGrind,UseBlocks,Premium,AccountSchema}.
 `tools/WikiData/Premium.luau`, `wiki/src/components/blocks/PremiumItems.astro`, `wiki/src/i18n/{pl,en}.ts`,
 `wiki/src/content/mechanics/{pl/sklep-premium,en/premium-shop}.mdx`, `wiki/src/data/*`,
 `docs/{DESIGN,DESIGN-17,DECYZJE,SESJE,PROGRESS,BALANS,SKLEP-ID,PRZEDMIOTY}.md`.
+
+### S134e: Druzgocący Cios Elity II, koniec darmowego uciekania
+
+Prośba właściciela (2026-10-15): Mag L48 zabił Elitę II L66, uciekając i strzelając z miksturami; Elita II ma mieć cios,
+który przy przewadze poziomu praktycznie zabija jednym trafieniem (na równym poziomie duży, ale do przeżycia), czytelnie
+zapowiedziany i do uniknięcia, a uciekanie ma przestać być darmowe. Cel: solo 15+ poziomów niżej przegrywa, 2–3 graczy
+daje radę. Do tego krótszy powrót Elity II (wybór „a”).
+
+Dlaczego wygrał: `Damage.levelGap` działał (L66 vs L48 = +100% obrażeń, +50% kryt.), ale Elita II nie trafiała: zdolność
+tylko w zasięgu własnego obszaru (11–20 st.), zwykły cios wręcz, potwór wolniejszy od gracza, a strzały odnawiały smycz.
+
+Co zrobiono:
+- `Data/MonsterAbilities`: zestawy `KITS` (Elita II: Druzgocący Cios + Doskok, przerwa 2,5 s, „ucieka” po 2,5 s poza
+  zasięgiem, rzut; Elita: Ciężki Cios), nowe pola `Ability` (`lethal`, `canCrit`, `castRange`, `minRange`, `kiteOnly`,
+  `firstAfter`, `gapRamp`), typy `Kit`, `ThrowSpec`, `GapRamp`.
+- `Logic/MonsterCast` (czyste): `pick` (zestaw w kolejności, własna zdolność w dawnym zasięgu, rzut w uciekającego; nic
+  przed `globalGap`), `canLand`, `lethalMul` / `gapMul` / `throwMul`, `firstReady`.
+- `Entities/Monster`: zestaw z wariantu (`ClearKit` dla dowódcy i czempiona), licznik `outOfReachSince`, wybór przez
+  `MonsterCast.pick`, rzut przez `ctx.rangedThrow`, doskok z `canLand` (także skok dowódcy S134c), obszar „target” na
+  ziemi pod celem (`ctx.groundAt`), opcje telegrafu `lethal` + `warn`.
+- `CombatService`: `canCrit` z umiejętności, rampa `lethalMul` w `resolveAbility` (ta sama ścieżka `monsterHitsPlayer`
+  → `Damage.computeDamage`), `monsterThrow` (zwykły cios dystansowy, styl strzała / pocisk), pole `x` zdarzenia `"tele"`,
+  `Toast` „warning” `monster.crush.warn` dla celu. `MonsterService.SpawnAt(..., opts.noKit)`, `WorldEventService`
+  (dowódca i czempion bez zestawu).
+- Klient: `Config.Telegraph.lethalColor` (#8B0A1E) i `pulseLethal` 0,07 s, gruby brzeg; `GroundTelegraph.Spec.pulseFast`.
+  `Data/MonsterMotions.KIT_STYLES` (ruch zestawów na każdym planie).
+- `Data/Combat`: powrót Elity II 300 + 3 × poziom (było 480 + 12 × poziom).
+- Model: `Balance.lethalHit`, `Balance.elite2(…, { avoidHit })`, `Balance.elite2Kite`, `Balance.S134e`,
+  `Balance.targetsS134e` (42 wiersze, 34 asertowane, 8 raportów `S134E_REPORT`), `Balance.crushShare`,
+  `heavyBlowShare`, `caveElite`; `FightSim.hit(…, canCrit)`. Raport: sekcja „Elita II: Druzgocący Cios…” w
+  `docs/BALANS.md`, księga S134e bez „BRAK POWODU”, `tests/fixtures/balance_items.json` przeliczony.
+- Wiki: `monsters.variants.*.kit`, karta zestawu i rzutu w `MonsterView`, akapit na stronie walki (PL, EN).
+
+Zdolności:
+
+| zdolność | kto | obszar | zapowiedź | obrażenia | odnowienie | uwagi |
+|---|---|---|---|---|---|---|
+| Druzgocący Cios `crush` | Elita II | krąg 9 st. pod celem (zamrożony), do 45 st. | 2,2 s | ×10,8, bez krytyka, rampa +2%/poz. za 1–5 poz. | 16 s (pierwszy po 6–9 s) | `avoid`, `lethal`, karmin, komunikat |
+| Doskok `pounce` | Elita II | krąg 6 st. pod celem, cel uciekający, 12–45 st. | 1,4 s | ×3,2 | 10 s | ląduje w kręgu (poza strefą bezpieczną, w smyczy) |
+| rzut | Elita II | cel uciekający ≥ 2,5 s, do 42 st. | — | ×1,25, +30%/poz. przewagi do 15 | interwał × 1,3 | zwykły cios dystansowy (unik, blok, ochrona) |
+| Ciężki Cios `heavyBlow` | Elita | stożek 10 st. / 90° | 1,8 s | ×7, bez krytyka | 14 s | `avoid` |
+
+Druzgocący Cios na Magu (konwencja) wg przewagi poziomu Elity II, ułamek HP:
+
+| Elita II | 0 | 5 | 10 | 15 | 18 |
+|---|---|---|---|---|---|
+| Pradawny Wilkołak (`werewolf`) L26, Mroczny Bór | 0,64 | 0,85 | 1,60 | 2,82 | 3,48 |
+| Lisz Zapomnianych (`necromancer`) L46, Mroczny Bór | 0,61 | 0,76 | 1,29 | 1,99 | 2,19 |
+| Pierwszy Kowal (`flameSmith`) L66, Spalone Pustkowia | 0,79 | 0,94 | 1,53 | 2,23 | 2,37 |
+| Starszy Smok Lodu (`youngFrostDragon`) L96, Lodowe Szczyty | 0,69 | 0,80 | 1,27 | 1,79 | 1,86 |
+
+Wojownik: 0,47–0,57 na równym poziomie, 0,90–1,24 przy 10. Tank trójki na równym poziomie 0,47–0,57 (≤ 0,70).
+
+Model przed / po:
+
+| wiersz | przed | po |
+|---|---|---|
+| Mag L48 (H+3) vs Pierwszy Kowal L66 (spawner 62), ucieczka | wygrywa, strata 0 (nic go nie sięga), ~120 s | przegrywa: rzut 1,33 HP, Druzgocący 1,87 HP |
+| Mag / Łowca 15 niżej (H+3), ucieczka, unika wszystkiego | strata 0 | 1,08–18,3 HP (przegrywa we wszystkich regionach) |
+| Mag na poziomie Elity II, ucieczka | strata 0 | 0,15–0,28 (raport) |
+| S32 / regiony Elita II solo / duo / trio (cios uniknięty) | bez zmian | bez zmian (asertowane) |
+| W + M + K 10 niżej (H+3), cios uniknięty, tank | — | 1,03–2,52 w modelu S32 bez leczenia i mikstur (raport; z miksturami pełne HP) |
+| Elita II na godzinę jednej jaskini | L20 5,0 / L70 2,7 / L100 2,1 | L20 10,0 / L70 7,1 / L100 6,0 |
+
+Testy: nowy `tests/monstercast.spec.luau` (pick, canLand, lethalMul, throwMul, firstReady, okna reakcji),
+`damage.spec` (`levelGap(66, 48) = (2,0, 50)`, odwrotnie (1, 0), `canCrit = false` bez krytyka), `bossmotions.spec`
+(„Monster kits (S134e)”), `balance.spec` („Balance: Elite II kit (S134e)”), `world.spec` i `data.spec` (powrót Elity II;
+asercje zmienione z komentarzem S134e). `telegraph.spec` 14 obejmuje nowe obszary sam (pętla po `byId`). `balance1_20`: 0
+różnic (bez nowej bazy). `quest_budget check` zielony, `wikidump --check` aktualne.
+Wiki: `WIKI_KEYS_ALLOW` = 12 kluczy `monsters:monsters.monsters[].variants.*.kit…` + `types.ts` do commita.
+
+Dla właściciela:
+- A: czy zwykła Elita też ma doskok i rzut? Dziś nie (treść solo S32); to jedna linia w `KITS.elite`.
+- B: mikstury są dziś silniejsze niż każdy zwykły cios (do 20. poziomu co 1,5 s, Wielka od 45 leczy ponad 2 × HP Maga),
+  dlatego uciekający na równym poziomie wciąż wygrywa (tylko wolniej i drożej). Jeśli ma przegrywać, dźwignią jest
+  odstęp mikstur (S54) albo mikstury leczące przez czas, nie ten zestaw.
+
+Pliki: `src/shared/Data/{MonsterAbilities,MonsterMotions,Combat}.luau`, `src/shared/Logic/{MonsterCast,FightSim}.luau`,
+`src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Entities/Monster.luau`,
+`src/server/Services/{Combat,Monster,WorldEvent}Service.luau`, `src/client/Controllers/CombatFxController.luau`,
+`src/client/Vfx/GroundTelegraph.luau`, `tests/{Balance,monstercast.spec,damage.spec,bossmotions.spec,balance.spec,world.spec,data.spec}.luau`,
+`tests/fixtures/balance_items.json`, `tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`,
+`tools/WikiData/Monsters.luau`, `wiki/src/{views/MonsterView.astro,lib/monster.ts,i18n/pl.ts,i18n/en.ts}`,
+`wiki/src/content/mechanics/{pl/walka,en/combat}.mdx`, `wiki/src/data/*`,
+`docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.

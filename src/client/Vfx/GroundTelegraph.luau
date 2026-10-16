@@ -14,7 +14,7 @@
 -- over the beam / decal limits).
 -- S134 (bosses 2.0): `follow` keeps a circle under a character (a boss mark: moved every frame from its root, no
 -- texture layer), `rimWidth` thickens the rim of a big blow to dodge, `key` + GroundTelegraph.cancel drop a mark that
--- will not blast.
+-- will not blast. S134e: `pulseFast` speeds up the end of the rim pulse (a lethal blow).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -51,6 +51,7 @@ export type Spec = {
 	follow: Model?, -- S134: a circle that follows this character (its HumanoidRootPart, on the area's ground plane)
 	rimWidth: number?, -- S134: studs of the bright rim (default Config.Telegraph.rimWidth)
 	key: string?, -- S134: what GroundTelegraph.cancel matches (a boss mark)
+	pulseFast: number?, -- S134e: seconds per rim pulse at the end (a lethal blow: Config.Telegraph.pulseLethal)
 }
 
 type Trapezoid = { block: BasePart, left: BasePart, right: BasePart }
@@ -86,6 +87,7 @@ type Active = {
 	ppu: number,
 	stopTexture: (() -> ())?,
 	blown: boolean,
+	pulseCfg: Telegraph.Cfg, -- S134e: CFG, or a copy with the spec's pulseFast
 }
 
 local active: { Active } = {}
@@ -436,7 +438,7 @@ local function update(a: Active, now: number): boolean
 	end
 	local color = spec.color
 	local lit = color:Lerp(WHITE, 0.7 * flash)
-	local rim = Telegraph.rimPulse(elapsed, w, CFG)
+	local rim = Telegraph.rimPulse(elapsed, w, a.pulseCfg)
 	local function faded(t: number): number
 		return t + (1 - t) * fade
 	end
@@ -562,7 +564,13 @@ function GroundTelegraph.start(spec: Spec)
 		ppu = 1,
 		stopTexture = nil,
 		blown = false,
+		pulseCfg = CFG,
 	}
+	if spec.pulseFast then
+		local cfg = table.clone(CFG) :: any
+		cfg.pulseFast = spec.pulseFast
+		a.pulseCfg = cfg
+	end
 	build(a)
 	-- S112 texture layer: a turning magic circle for spells, dark cracks under a physical round area
 	local round = spec.shape == "circle" or spec.shape == "ring"

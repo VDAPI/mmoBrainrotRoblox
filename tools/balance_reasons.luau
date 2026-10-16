@@ -4735,5 +4735,42 @@ return {
 		["LootTables:bosses.vaelgrath.materials[scroll_hunt]*"] = {
 			{ session = "S134d", why = "new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day)" },
 		},
+		-- S134e: Crushing Blow of the Elite II, no more free kiting, Heavy Blow of the Elite (docs/SESJE.md S134e)
+		["MonsterAbilities:byId.crush*"] = {
+			{
+				session = "S134e",
+				why = "new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s",
+			},
+		},
+		["MonsterAbilities:byId.pounce*"] = {
+			{
+				session = "S134e",
+				why = "new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10",
+			},
+		},
+		["MonsterAbilities:byId.heavyBlow*"] = {
+			{
+				session = "S134e",
+				why = "new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged)",
+			},
+		},
+		["MonsterAbilities:KITS*"] = {
+			{
+				session = "S134e",
+				why = "new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow",
+			},
+		},
+		["Combat:elite2RespawnBase"] = {
+			{
+				session = "S134e",
+				why = "480 -> 300: owner 2026-10-15 ('too long a wait for the Elite II', answer a): level 66 cave about 8 min instead of about 21",
+			},
+		},
+		["Combat:elite2RespawnPerLevel"] = {
+			{
+				session = "S134e",
+				why = "12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

@@ -734,6 +734,29 @@ local PLANS: { [string]: PlanMotion } = {
 	elemental = { basic = "pulse", special = { frostNova = "nova", default = "nova" }, death = "dissolve" },
 }
 
+-- S134e: the kit blows of Elites / Elites II (Data/MonsterAbilities.KITS) by plan: Crushing Blow a heavy overhead /
+-- rearing blow, Pounce a lunge, Heavy Blow the plan's sweep; a plan without an entry takes special.default.
+local KIT_STYLES: { [string]: { [string]: string } } = {
+	canine = { crush = "rear", pounce = "pounce", heavyBlow = "bite" },
+	bear = { crush = "stomp", pounce = "charge", heavyBlow = "swipe" },
+	boar = { crush = "rear", pounce = "charge", heavyBlow = "gore" },
+	toad = { crush = "squash", pounce = "squash", heavyBlow = "squash" },
+	lizard = { crush = "rear", pounce = "charge", heavyBlow = "snap" },
+	mammoth = { crush = "rear", pounce = "charge", heavyBlow = "tusk" },
+	serpent = { crush = "strike", pounce = "strike", heavyBlow = "strike" },
+	spider = { crush = "fang", pounce = "fang", heavyBlow = "fang" },
+	scorpion = { crush = "sting", pounce = "pincer", heavyBlow = "pincer" },
+	bird = { crush = "dive", pounce = "dive", heavyBlow = "dive" },
+	bat = { crush = "dive", pounce = "dive", heavyBlow = "dive" },
+	dragon = { crush = "stomp", pounce = "dive", heavyBlow = "bite" },
+	humanoid = { crush = "overhead", pounce = "jumpSlam", heavyBlow = "wide" },
+	beast = { crush = "overhead", pounce = "beastPounce", heavyBlow = "claw" },
+	golem = { crush = "slam", pounce = "punch", heavyBlow = "punch" },
+	treant = { crush = "rootSlam", pounce = "branch", heavyBlow = "branch" },
+	ghost = { crush = "reach", pounce = "reach", heavyBlow = "reach" },
+	elemental = { crush = "nova", pounce = "pulse", heavyBlow = "pulse" },
+}
+
 -- Basic attacks of humanoids and beasts by the weapon of their look (Data/MonsterLooks `weapon`).
 local WEAPON_BASIC: { [string]: string } = {
 	saber1h = "slash",
@@ -864,20 +887,22 @@ local DEATH: { [string]: DeathStyle } = {
 local MonsterMotions = {
 	STYLES = STYLES,
 	PLANS = PLANS,
+	KIT_STYLES = KIT_STYLES,
 	WEAPON_BASIC = WEAPON_BASIC,
 	DEATH = DEATH,
 }
 
--- The style of an attack: an Elite II special (`abilityId`) -> PLANS[plan].special[abilityId] or special.default; a
--- regular attack -> WEAPON_BASIC[weapon] for humanoids and beasts with a weapon, else PLANS[plan].basic. Nil for a plan
--- without an entry.
+-- The style of an attack: an Elite II special (`abilityId`) -> PLANS[plan].special[abilityId], KIT_STYLES (S134e) or
+-- special.default; a regular attack -> WEAPON_BASIC[weapon] for humanoids and beasts with a weapon, else
+-- PLANS[plan].basic. Nil for a plan without an entry.
 function MonsterMotions.styleFor(plan: string, weapon: string?, abilityId: string?): string?
 	local entry = PLANS[plan]
 	if not entry then
 		return nil
 	end
 	if abilityId then
-		return entry.special[abilityId] or entry.special.default
+		local kit = KIT_STYLES[plan]
+		return entry.special[abilityId] or (kit and kit[abilityId]) or entry.special.default
 	end
 	if weapon and (plan == "humanoid" or plan == "beast") and WEAPON_BASIC[weapon] then
 		return WEAPON_BASIC[weapon]

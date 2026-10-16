@@ -22,7 +22,7 @@ import { bossHref, familyName, finalLevels, monsterHref, placesOf, type MonsterR
 import { getMonster, load } from "../lib/data";
 import { formatChance, formatNumber } from "../lib/format";
 import { name, t } from "../lib/i18n";
-import { abilityText, levelCells, lootRows, neighboursOf, pageVariants, questsFor, respawnText, shapeText, summonedBy } from "../lib/monster";
+import { abilityText, kitText, levelCells, lootRows, neighboursOf, pageVariants, questsFor, respawnText, shapeText, summonedBy } from "../lib/monster";
 import { sectionHref } from "../lib/sections";
 import { tooltipData } from "../lib/tooltip";
 import { caveOf, placeHref, respawn } from "../lib/world";
@@ -261,6 +261,27 @@ const statCols = [
                       <p class="kicker">{t(lang, "monster.ability")}</p>
                       <p>{abilityText(m.ability, view.v === "elite2" ? cell : abilityCells, lang, m.damageKind)}</p>
                       {view.v !== "elite2" && <p class="muted">{t(lang, "monster.abilityOnly")}</p>}
+                    </div>
+                  </li>
+                )}
+                {(view.info.kit ?? []).map((a) => (
+                  <li class="skill">
+                    <Telegraph shape={a.shape} radius={a.radius} inner={a.inner} angle={a.angle} length={a.length} width={a.width} origin={a.origin} size={44} label={t(lang, "telegraph.label", { shape: shapeText(a, a.origin, lang) })} />
+                    <div>
+                      <h4>{name(a.name, lang) || a.id}</h4>
+                      <p class="kicker">{t(lang, view.v === "elite2" ? "monster.kit.elite2" : "monster.kit.elite")}</p>
+                      <p>{kitText(a, lang, m.damageKind)}</p>
+                      {a.lethal && <p class="muted">{t(lang, "monster.kit.lethal")}</p>}
+                    </div>
+                  </li>
+                ))}
+                {view.v === "elite2" && view.info.kit && (
+                  <li class="skill">
+                    <span class="sicon" aria-hidden="true">➶</span>
+                    <div>
+                      <h4>{t(lang, "monster.kit.throw")}</h4>
+                      <p class="kicker">{t(lang, "monster.kit.elite2")}</p>
+                      <p>{t(lang, "monster.kit.throw.desc")}</p>
                     </div>
                   </li>
                 )}

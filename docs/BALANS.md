@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S134c (commit 623b698, 2026-10-16) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S134e (commit ea19ac7, 2026-10-16) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -133,118 +133,54 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `Maps:byId.dungeon_ashen.minLevel` | 65 | 60 | S134c | the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5) |
-| `Maps:byId.dungeon_duskwood.minLevel` | 40 | 35 | S134c | the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5) |
-| `Maps:byId.dungeon_frostpeak.minLevel` | 95 | 90 | S134c | the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5) |
-| `Maps:byId.dungeon_meadows.minLevel` | 15 | 10 | S134c | the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5) |
-| `Recipes:byId.stone_dungeon_ashen.level` | 65 | 60 | S134c | the dungeon stones from the level the dungeon opens (boss level - Bosses.ENTRY_GAP; before boss level - 5) |
-| `Recipes:byId.stone_dungeon_duskwood.level` | 40 | 35 | S134c | the dungeon stones from the level the dungeon opens (boss level - Bosses.ENTRY_GAP; before boss level - 5) |
-| `Recipes:byId.stone_dungeon_frostpeak.level` | 95 | 90 | S134c | the dungeon stones from the level the dungeon opens (boss level - Bosses.ENTRY_GAP; before boss level - 5) |
-| `Recipes:byId.stone_dungeon_meadows.level` | 15 | 10 | S134c | the dungeon stones from the level the dungeon opens (boss level - Bosses.ENTRY_GAP; before boss level - 5) |
-| `WorldEvents:kinds.invasion.commanderAt` | 480 | 630 | S134c | 480 -> 630: the commander at the latest after 10.5 min of the 15 (the waves need longer) |
-| `WorldEvents:kinds.invasion.duration` | 720 | 900 | S134c | 720 -> 900: bigger waves need more time; 3 players end in 0.46-0.61 of it (<= 0.8, Balance.invasion), solo on equal gear runs out of time (1.09-1.43) |
-| `WorldEvents:kinds.invasion.wave.base` | 4 | 10 | S134c | owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4) |
-| `WorldEvents:kinds.invasion.wave.cluster` | 4 | 5 | S134c | owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4) |
-| `WorldEvents:kinds.invasion.wave.max` | 16 | 25 | S134c | owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4) |
-| `WorldEvents:kinds.invasion.wave.perPlayer` | 2 | 3 | S134c | owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4) |
-| `WorldEvents:kinds.invasion.waveEvery` | 80 | 90 | S134c | owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4) |
-| `WorldEvents:reward.chest.rarity[2]` | 80 | 60 | S134c | owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20) |
-| `WorldEvents:reward.chest.rarity[3]` | 20 | 37 | S134c | owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20) |
-| `WorldEvents:reward.goldKills` | 12 | 18 | S134c | 12 -> 18 (+50 %) for the harder event; Full income (S109) blocks stay green |
-| `WorldEvents:scale.commander.atk[1]` | 0,85 | 1 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.hp[1]` | 0,45 | 1,6 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
+| `Combat:elite2RespawnBase` | 480 | 300 | S134e | 480 -> 300: owner 2026-10-15 ('too long a wait for the Elite II', answer a): level 66 cave about 8 min instead of about 21 |
+| `Combat:elite2RespawnPerLevel` | 12 | 3 | S134e | 12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows) |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Bosses:ENTRY_GAP` | 10 | S134c | new: owner request 2026-10-15 (answer 1a), a character enters a boss dungeon from boss level - 10 (Grimrok 10, Morvane 35, Azgor 60, Vaelgrath 90; before - 5) to beat the boss together with stronger friends; = partyCarryGap of S134b, so a member on the entry level is not carried |
-| `Bosses:QUEST_GAP` | 5 | S134c | new: the old entry level (boss level - 5) kept for the boss quest, the weekly boss contract (S98 quest budget bands unchanged) and the lower winner's EXP rule (Exp.bossExpFor: below it the share of the own level a winner on the old entry level gets) |
-| `Config:AutoGrind.arrive` | 12 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.bossRadius` | 90 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.dailySeconds` | 1,08e+04 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.leaveMargin` | 40 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.levelGap` | 10 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.minFreeSlots` | 1 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.saveEvery` | 60 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.scrollSeconds` | 1800 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.seekRadius` | 60 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.stopHpPct` | 30 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.stuckSeconds` | 180 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoGrind.tick` | 1 | S134d | new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
-| `Config:AutoPotion.hp` | 50 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.maxPct` | 90 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.minPct` | 10 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.noneEvery` | 60 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.res` | 30 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.step` | 5 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Config:AutoPotion.tick` | 0,25 | S134d | new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key) |
-| `Items/Consumables:[scroll_hunt].level` | 1 | S134d | new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
-| `Items/Consumables:[scroll_hunt].maxStack` | 999 | S134d | new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
-| `Items/Consumables:[scroll_hunt].price` | 1 | S134d | new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
-| `LootTables:bosses.azgor.materials[scroll_hunt].chance` | 0,25 | S134d | new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day) |
-| `LootTables:bosses.azgor.materials[scroll_hunt].max` | 1 | S134d | new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day) |
-| `LootTables:bosses.azgor.materials[scroll_hunt].min` | 1 | S134d | new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day) |
-| `LootTables:bosses.grimrok.materials[scroll_hunt].chance` | 0,15 | S134d | new: Scroll of the Hunt 15 % per winner (the free way to Auto Hunt: 3 runs a day = 0.45 scrolls = about 13 min a day, slower than buying) |
-| `LootTables:bosses.grimrok.materials[scroll_hunt].max` | 1 | S134d | new: Scroll of the Hunt 15 % per winner (the free way to Auto Hunt: 3 runs a day = 0.45 scrolls = about 13 min a day, slower than buying) |
-| `LootTables:bosses.grimrok.materials[scroll_hunt].min` | 1 | S134d | new: Scroll of the Hunt 15 % per winner (the free way to Auto Hunt: 3 runs a day = 0.45 scrolls = about 13 min a day, slower than buying) |
-| `LootTables:bosses.morvane.materials[scroll_hunt].chance` | 0,2 | S134d | new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day) |
-| `LootTables:bosses.morvane.materials[scroll_hunt].max` | 1 | S134d | new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day) |
-| `LootTables:bosses.morvane.materials[scroll_hunt].min` | 1 | S134d | new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day) |
-| `LootTables:bosses.vaelgrath.materials[scroll_hunt].chance` | 0,3 | S134d | new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day) |
-| `LootTables:bosses.vaelgrath.materials[scroll_hunt].max` | 1 | S134d | new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day) |
-| `LootTables:bosses.vaelgrath.materials[scroll_hunt].min` | 1 | S134d | new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day) |
-| `MonsterAbilities:byId.warlordCleave.angle` | 100 | S134c | new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
-| `MonsterAbilities:byId.warlordCleave.cooldown` | 12 | S134c | new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
-| `MonsterAbilities:byId.warlordCleave.damage` | 7,5 | S134c | new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
-| `MonsterAbilities:byId.warlordCleave.radius` | 16 | S134c | new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
-| `MonsterAbilities:byId.warlordCleave.windup` | 1,8 | S134c | new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
-| `MonsterAbilities:byId.warlordLeap.cooldown` | 16 | S134c | new: the Invasion commander's Warlord's Leap, a big blow to dodge: circle 8 under a random fighter, windup 2.0, x8.7 (the commander lands there), cooldown 16 |
-| `MonsterAbilities:byId.warlordLeap.damage` | 8,7 | S134c | new: the Invasion commander's Warlord's Leap, a big blow to dodge: circle 8 under a random fighter, windup 2.0, x8.7 (the commander lands there), cooldown 16 |
-| `MonsterAbilities:byId.warlordLeap.radius` | 8 | S134c | new: the Invasion commander's Warlord's Leap, a big blow to dodge: circle 8 under a random fighter, windup 2.0, x8.7 (the commander lands there), cooldown 16 |
-| `MonsterAbilities:byId.warlordLeap.windup` | 2 | S134c | new: the Invasion commander's Warlord's Leap, a big blow to dodge: circle 8 under a random fighter, windup 2.0, x8.7 (the commander lands there), cooldown 16 |
-| `MonsterAbilities:byId.warlordRally.cooldown` | 24 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `MonsterAbilities:byId.warlordRally.damage` | 17,5 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `MonsterAbilities:byId.warlordRally.fromHp` | 0,6 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `MonsterAbilities:byId.warlordRally.radius` | 6 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `MonsterAbilities:byId.warlordRally.split.missAll` | 0,33 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `MonsterAbilities:byId.warlordRally.windup` | 3 | S134c | new: the Invasion commander's Warlord's Command, the S134 split: circle 6 under a random fighter from 60 % HP, windup 3.0, x17.5 = 1.3-1.5 of a Mage's HP alone (kills), 0.43-0.50 each for 3 together (<= 0.60), nobody inside missAll 0.33 = 0.43-0.49 on everyone (<= 0.50), cooldown 24 |
-| `Progression:autoGrindExpPct` | 70 | S134d | new: owner answer 4d, EXP of kills while Auto Hunt walks for the player x0.7 (source autoGrind, outside the weekly EXP ranking); pace solo 1-100 unchanged (hand play) |
-| `Progression:autoGrindGoldPct` | 70 | S134d | new: gold of kills while hunting x0.7 like the EXP (AFK gold would flood the economy); item drops unchanged |
-| `WorldEvents:kinds.invasion.commanderGap` | 2,2 | S134c | new: the gap after each of the commander's casts = Data/BossTuning.globalGap (the bosses 2.0 cadence) |
-| `WorldEvents:kinds.invasion.elitesPerWave[1]` | 1 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:kinds.invasion.elitesPerWave[2]` | 1 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:kinds.invasion.elitesPerWave[3]` | 1 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:kinds.invasion.elitesPerWave[4]` | 1 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:kinds.invasion.elitesPerWave[5]` | 2 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:kinds.invasion.elitesPerWave[6]` | 2 | S134c | new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2) |
-| `WorldEvents:reward.chest.rarity[4]` | 3 | S134c | owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20) |
-
-### Usunięte klucze
-
-| klucz | wartość | sesja | powód |
-| --- | --: | --: | --: |
-| `WorldEvents:kinds.invasion.eliteWaves[1]` | 3 | S134c | removed: replaced by elitesPerWave (an Elite in every wave, owner answer 4) |
-| `WorldEvents:kinds.invasion.eliteWaves[2]` | 6 | S134c | removed: replaced by elitesPerWave (an Elite in every wave, owner answer 4) |
-| `WorldEvents:scale.commander.atk[2]` | 0,95 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.atk[3]` | 1 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.atk[4]` | 1 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.atk[5]` | 1 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.hp[2]` | 0,7 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.hp[3]` | 1 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.hp[4]` | 1,2 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
-| `WorldEvents:scale.commander.hp[5]` | 1,4 | S134c | owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
+| `MonsterAbilities:KITS.elite.globalGap` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.globalGap` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.kiteSeconds` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.damage` | 1,25 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.from` | 1 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.maxSteps` | 15 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.perLevel` | 0,3 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.intervalMul` | 1,3 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.range` | 42 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:byId.crush.castRange` | 45 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.cooldown` | 16 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.damage` | 10,8 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.firstAfter[1]` | 6 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.firstAfter[2]` | 9 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.from` | 1 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.maxSteps` | 5 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.perLevel` | 0,02 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.radius` | 9 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.windup` | 2,2 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.heavyBlow.angle` | 90 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.cooldown` | 14 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.damage` | 7 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.radius` | 10 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.windup` | 1,8 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.pounce.castRange` | 45 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.cooldown` | 10 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.damage` | 3,2 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.minRange` | 12 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.radius` | 6 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.windup` | 1,4 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
 
 ### Księga: pominięte funkcje
 
 Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):
-AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, Monsters:get, Mounts:get, Paths/init:get, Quests/Boss:get, Quests/Boss:ofBoss, Quests/Contracts:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Quests/Weekly:get, Recipes:get, ScheduledEvents:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
+AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, MonsterAbilities:kit, Monsters:get, Mounts:get, Paths/init:get, Quests/Boss:get, Quests/Boss:ofBoss, Quests/Contracts:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Quests/Weekly:get, Recipes:get, ScheduledEvents:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
 
 ## Pełna księga S83–S94 (od migawki przed S83)
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4464 kluczy zmienionych od bazy, 0 bez powodu.
+4496 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -472,6 +408,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bosses:byId.vaelgrath.summons[1].level` | 99 | 86 | S94 | S94: C7: shield wave 99 -> 86: a party of 3 loses 95 % HP per member per wave (<= 110 %; 290 % at 99) |
 | `Bosses:byId.vaelgrath.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.vaelgrath.summons[2].level` | 100 | 87 | S94 | S94: C7: shield wave 100 -> 87 (boss level - 14 / - 13, like Azgor's 58 / 59) |
+| `Combat:elite2RespawnBase` | 480 | 300 | S134e | S134e: 480 -> 300: owner 2026-10-15 ('too long a wait for the Elite II', answer a): level 66 cave about 8 min instead of about 21 |
+| `Combat:elite2RespawnPerLevel` | 12 | 3 | S134e | S134e: 12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows) |
 | `Combat:riposteCap` | 30 | 34 | S88 | S88: E1: 30 -> 34 %: Counterattack 12 + Retaliation 12 + Swordplay 10 on Samotnik at 100 (STATY 10) |
 | `Config:AutoGrind.arrive` | – | 12 | nowy od S134d | S134d: new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
 | `Config:AutoGrind.bossRadius` | – | 90 | nowy od S134d | S134d: new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical) |
@@ -747,6 +685,36 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `LootTables:byId.wasteHyena.materials[thick_hide].chance` | – | 0,3 | nowy od S93 | S93: new part thick_hide (J1, SWIAT §2) |
 | `LootTables:byId.wasteHyena.materials[thick_hide].max` | – | 2 | nowy od S93 | S93: new part thick_hide (J1, SWIAT §2) |
 | `LootTables:byId.wasteHyena.materials[thick_hide].min` | – | 1 | nowy od S93 | S93: new part thick_hide (J1, SWIAT §2) |
+| `MonsterAbilities:KITS.elite.globalGap` | – | 2,5 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.globalGap` | – | 2,5 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.kiteSeconds` | – | 2,5 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.damage` | – | 1,25 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.from` | – | 1 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.maxSteps` | – | 15 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.gapRamp.perLevel` | – | 0,3 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.intervalMul` | – | 1,3 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:KITS.elite2.throw.range` | – | 42 | nowy od S134e | S134e: new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
+| `MonsterAbilities:byId.crush.castRange` | – | 45 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.cooldown` | – | 16 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.damage` | – | 10,8 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.firstAfter[1]` | – | 6 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.firstAfter[2]` | – | 9 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.from` | – | 1 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.maxSteps` | – | 5 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.gapRamp.perLevel` | – | 0,02 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.radius` | – | 9 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.crush.windup` | – | 2,2 | nowy od S134e | S134e: new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
+| `MonsterAbilities:byId.heavyBlow.angle` | – | 90 | nowy od S134e | S134e: new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.cooldown` | – | 14 | nowy od S134e | S134e: new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.damage` | – | 7 | nowy od S134e | S134e: new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.radius` | – | 10 | nowy od S134e | S134e: new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.heavyBlow.windup` | – | 1,8 | nowy od S134e | S134e: new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
+| `MonsterAbilities:byId.pounce.castRange` | – | 45 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.cooldown` | – | 10 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.damage` | – | 3,2 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.minRange` | – | 12 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.radius` | – | 6 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `MonsterAbilities:byId.pounce.windup` | – | 1,4 | nowy od S134e | S134e: new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
 | `MonsterAbilities:byId.warlordCleave.angle` | – | 100 | nowy od S134c | S134c: new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
 | `MonsterAbilities:byId.warlordCleave.cooldown` | – | 12 | nowy od S134c | S134c: new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
 | `MonsterAbilities:byId.warlordCleave.damage` | – | 7,5 | nowy od S134c | S134c: new: the Invasion commander's Warlord's Cleave, a big blow to dodge (S134 avoid): cone 16 / 100 deg at its target, windup 1.8, x7.5 = 0.65-0.74 of a Mage's HP at the event level (S134 band 0.60-0.85, Balance.targetsS134c), cooldown 12 |
@@ -7833,7 +7801,7 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 | Warrior 99 | 2,90 / 0,86 | 3,42 / 1,01 | 4,30 / 1,15 | 5,55 / 1,15 |
 | Cleric 99 | 3,02 / 0,94 | 3,56 / 1,11 | 4,46 / 1,26 | 5,76 / 1,26 |
 
-Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie 27,0 min): 0,31 na godzinę na jaskinię; z bossów (4 bossy × 3 zabicia dziennie): 0,84 na dobę.
+Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie 9,7 min): 0,85 na godzinę na jaskinię; z bossów (4 bossy × 3 zabicia dziennie): 0,84 na dobę.
 
 ### Pary Elit i rodzaje rzucające (tylko raport, S94)
 
@@ -9006,22 +8974,22 @@ Wartości oczekiwane z tabel łupu (szansa × średnia ilość, jak `Loot.rollMo
 | 20 · expienie / h | 44,2 | 0,86 | 0,00 | 0,00 | 0,00 |
 | 20 · Elity / h | 66,6 | 7,97 | 0,17 | 0,00 | 0,00 |
 | 20 · Elita II / zabicie | 3,7 | 3,96 | 0,70 | 0,08 | 0,12 |
-| 20 · Elita II / h odrodzeń | 15,6 | 16,76 | 2,96 | 0,34 | 0,53 |
+| 20 · Elita II / h odrodzeń | 15,6 → 33,8 | 16,76 → 36,36 | 2,96 → 6,42 | 0,34 → 0,73 | 0,53 → 1,15 |
 | 20 · boss / tydzień | 0,0 | 84,00 | 25,20 | 6,30 | 3,15 |
 | 45 · expienie / h | 54,7 | 0,94 | 0,00 | 0,00 | 0,00 |
 | 45 · Elity / h | 67,6 | 7,98 | 0,18 | 0,00 | 0,00 |
 | 45 · Elita II / zabicie | 3,8 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 45 · Elita II / h odrodzeń | 11,9 | 12,83 | 2,23 | 0,25 | 0,39 |
+| 45 · Elita II / h odrodzeń | 11,9 → 29,2 | 12,83 → 31,60 | 2,23 → 5,49 | 0,25 → 0,62 | 0,39 → 0,96 |
 | 45 · boss / tydzień | 0,0 | 0,00 | 52,50 | 11,02 | 4,20 |
 | 70 · expienie / h | 64,6 | 0,95 | 0,00 | 0,00 | 0,00 |
 | 70 · Elity / h | 73,6 | 8,39 | 0,19 | 0,00 | 0,00 |
 | 70 · Elita II / zabicie | 3,9 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 70 · Elita II / h odrodzeń | 9,7 | 10,09 | 1,75 | 0,20 | 0,31 |
+| 70 · Elita II / h odrodzeń | 9,7 → 26,0 | 10,09 → 27,08 | 1,75 → 4,70 | 0,20 → 0,53 | 0,31 → 0,82 |
 | 70 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 | 100 · expienie / h | 55,1 | 0,81 | 0,00 | 0,00 | 0,00 |
 | 100 · Elity / h | 75,6 | 8,61 | 0,19 | 0,00 | 0,00 |
 | 100 · Elita II / zabicie | 3,9 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 100 · Elita II / h odrodzeń | 8,4 | 8,80 | 1,53 | 0,17 | 0,27 |
+| 100 · Elita II / h odrodzeń | 8,4 → 23,6 | 8,80 → 24,62 | 1,53 → 4,28 | 0,17 → 0,48 | 0,27 → 0,75 |
 | 100 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 
 ### Godziny na +9 broni, Rdzenie i zwoje (Wojownik)
@@ -10286,6 +10254,107 @@ Model `Balance.invasion`: drużyna bije gromady i Elity osobno (każdy swoją, t
 | frostpeak_tundra L85: solo na równym sprzęcie, czas / limit | 1,42 |
 
 
+## Elita II: Druzgocący Cios i koniec darmowego uciekania (S134e)
+
+Druzgocący Cios (`Data/MonsterAbilities.crush`) nieuniknięty, bez krytyka, × rampa przewagi (`Logic/MonsterCast.lethalMul`) i `Damage.levelGap`; ułamek HP postaci konwencji o tyle poziomów niżej. Ucieczka: `Balance.elite2Kite` (gracz dystansowy bije `KITE_UPTIME` czasu, rzuty w uciekającego z rampą przewagi, po Doskoku `PIN_SECONDS` zwykłych ciosów, mikstury najwyżej pełne HP na łyk w ich odstępie; przegrywa, gdy strata przez walkę albo między dwiema miksturami przekracza HP). „Przed” = bez zestawu: nic nie sięga uciekającego (strata 0). Asertuje `balance.spec` („Balance: Elite II kit (S134e)”).
+
+| Elita II | klasa | przewaga 0 | przewaga 5 | przewaga 10 | przewaga 15 | przewaga 18 |
+| --- | --: | --: | --: | --: | --: | --: |
+| werewolf L26 | Mage | 0,64 | 0,85 | 1,60 | 2,82 | 3,48 |
+| werewolf L26 | Warrior | 0,47 | 0,64 | 1,24 | 2,27 | 2,90 |
+| necromancer L46 | Mage | 0,61 | 0,76 | 1,29 | 1,99 | 2,19 |
+| necromancer L46 | Warrior | 0,57 | 0,70 | 1,18 | 1,80 | 1,97 |
+| flameSmith L66 | Mage | 0,79 | 0,94 | 1,53 | 2,23 | 2,37 |
+| flameSmith L66 | Warrior | 0,55 | 0,67 | 1,10 | 1,63 | 1,74 |
+| youngFrostDragon L96 | Mage | 0,69 | 0,80 | 1,27 | 1,79 | 1,86 |
+| youngFrostDragon L96 | Warrior | 0,48 | 0,56 | 0,90 | 1,28 | 1,34 |
+
+
+| Elita II | gracz | przed: HP stracone | po: HP stracone | po: rzut / HP | po: s walki | po: wynik |
+| --- | --: | --: | --: | --: | --: | --: |
+| werewolf L26 | Mage L26 | 0,00 | 0,16 | 0,08 | 112 | wygrywa |
+| werewolf L26 | Hunter L26 | 0,00 | 0,15 | 0,07 | 113 | wygrywa |
+| werewolf L26 | Mage L16 (H+3) | 0,00 | 0,61 | 0,61 | 174 | wygrywa |
+| werewolf L26 | Hunter L16 (H+3) | 0,00 | 0,53 | 0,53 | 182 | wygrywa |
+| werewolf L26 | Mage L11 (H+3) | 0,00 | 1,66 | 1,66 | 334 | przegrywa |
+| werewolf L26 | Hunter L11 (H+3) | 0,00 | 1,47 | 1,47 | 353 | przegrywa |
+| necromancer L46 | Mage L46 | 0,00 | 0,15 | 0,07 | 91 | wygrywa |
+| necromancer L46 | Hunter L46 | 0,00 | 0,16 | 0,07 | 94 | wygrywa |
+| necromancer L46 | Mage L36 (H+3) | 0,00 | 0,48 | 0,48 | 95 | wygrywa |
+| necromancer L46 | Hunter L36 (H+3) | 0,00 | 0,47 | 0,47 | 97 | wygrywa |
+| necromancer L46 | Mage L31 (H+3) | 0,00 | 1,12 | 1,12 | 126 | przegrywa |
+| necromancer L46 | Hunter L31 (H+3) | 0,00 | 1,08 | 1,08 | 130 | przegrywa |
+| flameSmith L66 | Mage L66 | 0,00 | 0,28 | 0,09 | 96 | wygrywa |
+| flameSmith L66 | Hunter L66 | 0,00 | 0,23 | 0,08 | 101 | wygrywa |
+| flameSmith L66 | Mage L56 (H+3) | 0,00 | 1,70 | 0,57 | 87 | przegrywa |
+| flameSmith L66 | Hunter L56 (H+3) | 0,00 | 0,92 | 0,46 | 91 | wygrywa |
+| flameSmith L66 | Mage L51 (H+3) | 0,00 | 18,28 | 1,26 | 104 | przegrywa |
+| flameSmith L66 | Hunter L51 (H+3) | 0,00 | 13,07 | 1,03 | 109 | przegrywa |
+| youngFrostDragon L96 | Mage L96 | 0,00 | 0,24 | 0,08 | 118 | wygrywa |
+| youngFrostDragon L96 | Hunter L96 | 0,00 | 0,20 | 0,07 | 126 | wygrywa |
+| youngFrostDragon L96 | Mage L86 (H+3) | 0,00 | 2,07 | 0,46 | 96 | przegrywa |
+| youngFrostDragon L96 | Hunter L86 (H+3) | 0,00 | 1,11 | 0,37 | 102 | przegrywa |
+| youngFrostDragon L96 | Mage L81 (H+3) | 0,00 | 16,68 | 1,00 | 109 | przegrywa |
+| youngFrostDragon L96 | Hunter L81 (H+3) | 0,00 | 12,21 | 0,80 | 116 | przegrywa |
+| flameSmith L66 | Mage L48 (H+3, właściciel) | 0,00 | 22,04 | 1,33 | 119 | przegrywa |
+
+
+Ciężki Cios Elity (`heavyBlow`, nieuniknięty; w modelu Elit S32 uniknięty, wiersze bez zmian), ułamek HP; cel sesji na Magu na poziomie Elity 0,35–0,50 (raport).
+
+| Elita | Mag na poziomie | Mag 10 niżej | Wojownik na poziomie |
+| --- | --: | --: | --: |
+| werewolf L33 | 0,40 | 0,83 | 0,29 |
+| skeletonGuard L47 | 0,41 | 0,78 | 0,29 |
+| renegadeDwarf L72 | 0,42 | 0,73 | 0,29 |
+| crystalGuardian L98 | 0,42 | 0,70 | 0,29 |
+
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| werewolf L26: Druzgocący Cios na Magu L26 / HP | 0,64 | 0,60–0,80 | w paśmie | S134e (asertowane) |
+| werewolf L26: Druzgocący Cios na Wojowniku L26 / HP | 0,47 | ≤ 0,60 | w paśmie | S134e (asertowane) |
+| werewolf L26: Druzgocący Cios na Magu L21 / HP | 0,85 | ≤ 0,95 | w paśmie | S134e (asertowane) |
+| werewolf L26: Druzgocący Cios na Magu L16 / HP | 1,60 | ≥ 1,05 | w paśmie | S134e (asertowane) |
+| werewolf L26: Druzgocący Cios na Wojowniku L16 / HP | 1,24 | ≥ 0,85 | w paśmie | S134e (asertowane) |
+| werewolf L26: Druzgocący Cios na tanku trójki L26 / HP | 0,47 | ≤ 0,70 | w paśmie | S134e (asertowane) |
+| werewolf L26: Mage L11 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 1,66 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| werewolf L26: Hunter L11 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 1,47 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| werewolf L26: Mag L26 ucieka i unika wszystkiego, HP stracone | 0,16 | ≥ 0,80 | **poza** | S134e: a kiting Mage at the Elite II's level is not hurt enough by the throws (x1.25 at an equal level, about 0.08-0.09 of its HP every 2.6 s) to lose; the potions heal it between two hits; the lever is the potion interval (S54) or the S32 melee balance, not this session |
+| werewolf L26: W + M + K L16 (Heroiczne +3), cios uniknięty, HP tanka | 2,52 | ≤ 1,00 | **poza** | S134e: the S32 melee model (Balance.elite2) has no Cleric healing and no potions; with the tank's potions (at most its max HP a drink) it ends at full HP; the S32 levers (Elite II HP and attack) are not this session's |
+| necromancer L46: Druzgocący Cios na Magu L46 / HP | 0,61 | 0,60–0,80 | w paśmie | S134e (asertowane) |
+| necromancer L46: Druzgocący Cios na Wojowniku L46 / HP | 0,57 | ≤ 0,60 | w paśmie | S134e (asertowane) |
+| necromancer L46: Druzgocący Cios na Magu L41 / HP | 0,76 | ≤ 0,95 | w paśmie | S134e (asertowane) |
+| necromancer L46: Druzgocący Cios na Magu L36 / HP | 1,29 | ≥ 1,05 | w paśmie | S134e (asertowane) |
+| necromancer L46: Druzgocący Cios na Wojowniku L36 / HP | 1,18 | ≥ 0,85 | w paśmie | S134e (asertowane) |
+| necromancer L46: Druzgocący Cios na tanku trójki L46 / HP | 0,57 | ≤ 0,70 | w paśmie | S134e (asertowane) |
+| necromancer L46: Mage L31 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 1,12 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| necromancer L46: Hunter L31 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 1,08 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| necromancer L46: Mag L46 ucieka i unika wszystkiego, HP stracone | 0,15 | ≥ 0,80 | **poza** | S134e: as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it |
+| necromancer L46: W + M + K L36 (Heroiczne +3), cios uniknięty, HP tanka | 1,26 | ≤ 1,00 | **poza** | S134e: as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP |
+| flameSmith L66: Druzgocący Cios na Magu L66 / HP | 0,79 | 0,60–0,80 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Druzgocący Cios na Wojowniku L66 / HP | 0,55 | ≤ 0,60 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Druzgocący Cios na Magu L61 / HP | 0,94 | ≤ 0,95 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Druzgocący Cios na Magu L56 / HP | 1,53 | ≥ 1,05 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Druzgocący Cios na Wojowniku L56 / HP | 1,10 | ≥ 0,85 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Druzgocący Cios na tanku trójki L66 / HP | 0,55 | ≤ 0,70 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Mage L51 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 18,28 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Hunter L51 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 13,07 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Mag L66 ucieka i unika wszystkiego, HP stracone | 0,28 | ≥ 0,80 | **poza** | S134e: as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it |
+| flameSmith L66: W + M + K L56 (Heroiczne +3), cios uniknięty, HP tanka | 1,07 | ≤ 1,00 | **poza** | S134e: as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP |
+| youngFrostDragon L96: Druzgocący Cios na Magu L96 / HP | 0,69 | 0,60–0,80 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Druzgocący Cios na Wojowniku L96 / HP | 0,48 | ≤ 0,60 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Druzgocący Cios na Magu L91 / HP | 0,80 | ≤ 0,95 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Druzgocący Cios na Magu L86 / HP | 1,27 | ≥ 1,05 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Druzgocący Cios na Wojowniku L86 / HP | 0,90 | ≥ 0,85 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Druzgocący Cios na tanku trójki L96 / HP | 0,48 | ≤ 0,70 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Mage L81 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 16,68 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Hunter L81 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 12,21 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+| youngFrostDragon L96: Mag L96 ucieka i unika wszystkiego, HP stracone | 0,24 | ≥ 0,80 | **poza** | S134e: as the werewolf row: the throw at an equal level is a regular blow, the potions out-heal it |
+| youngFrostDragon L96: W + M + K L86 (Heroiczne +3), cios uniknięty, HP tanka | 1,03 | ≤ 1,00 | **poza** | S134e: as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP |
+| flameSmith L66: Druzgocący Cios na Magu L48 (Heroiczne +3) / HP | 1,87 | ≥ 1,30 | w paśmie | S134e (asertowane) |
+| flameSmith L66: Mag L48 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 22,04 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+
+
 ## Samodzielne Łowy (S134d)
 
 Tylko raport: EXP/h Łowów = tempo solo (`Balance.paceAt`, Wojownik, region poziomu) × 70% × sprawność chodzenia 0,8 (założenie raportu, nie liczba gry). Dzień z limitem 3,0 h = 1,68 h ręcznej gry. Tempo solo 1–100, zamrożone 1–20 i budżet questów bez zmian (Łowy nie są w modelu tempa).
@@ -11480,7 +11549,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 4,4 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 4,2 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -14192,7 +14261,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 33,3 s.
+Tabele S86 liczą się 31,0 s.
 
 ## Poprawki globalne (S87)
 
