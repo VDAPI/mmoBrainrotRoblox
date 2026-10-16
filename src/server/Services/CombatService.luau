@@ -38,6 +38,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
+local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
@@ -190,6 +191,11 @@ local sparkSpec: Traits.ElementSpec = {
 }
 
 local attackers: { [Player]: Attacker } = {}
+
+-- S134d: Auto Hunt (AutoGrindService registers it; CombatService never depends on it): who hunts now (rewards x0.7
+-- with the source "autoGrind") and what to do when the client picks a target itself while hunting (a manual stop).
+export type AutoGrindHooks = { active: (player: Player) -> boolean, manual: (player: Player) -> () }
+local autoGrindHooks: AutoGrindHooks? = nil
 local rng = Rng.new()
 local fxQueue: { { position: Vector3, event: FxEvent } } = {}
 
@@ -660,11 +666,19 @@ local function reward(player: Player, monster: any, baseExp: number, goldShare: 
 	local goldMul = MonsterStats.goldLevelMultiplier(character.level, level)
 	local gold = math.floor(goldShare * goldMul * (1 + (goldBonus + luckGold) / 100) + 0.5)
 	local expBonus = StatService.GetValue(player, "expBonus")
-	LevelService.GiveExp(player, exp, "monster")
+	-- S134d: a player in Auto Hunt gets x Progression.autoGrindExpPct / GoldPct after the pool, the level difference
+	-- and the quest budget, with the EXP source "autoGrind" (never in the weekly ranking). Per player: a party member
+	-- who plays by hand gets the full reward of the same kill.
+	local source = "monster"
+	local hooks = autoGrindHooks
+	if hooks and hooks.active(player) then
+		exp, gold, source = AutoGrind.reward(exp, gold)
+	end
+	LevelService.GiveExp(player, exp, source)
 	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 		return current + gold
 	end)
-	Analytics.gold(player, gold, balance, "monster")
+	Analytics.gold(player, gold, balance, source)
 	-- killHeal: lines, legends and Reaping (S64, the axe's trait); monsters only, so never in PvP. S88: capped by
 	-- Traits.killHeal (the lifesteal cap).
 	local killHeal = Traits.killHeal(hook(player, "killHeal"))
@@ -1978,7 +1992,7 @@ local function resetWeakSpot(state: Attacker)
 	state.weakStacks = 0
 end
 
-local function onSetTarget(player: Player, entityId: string?, attack: boolean?)
+local function applyTarget(player: Player, entityId: string?, attack: boolean?)
 	local state = attackerState(player)
 	if state.target ~= entityId then
 		resetWeakSpot(state)
@@ -2007,6 +2021,27 @@ local function onSetTarget(player: Player, entityId: string?, attack: boolean?)
 		-- Switching targets never makes the next swing come sooner.
 		state.nextAttack = math.max(state.nextAttack, os.clock())
 	end
+end
+
+-- SetTarget from the client. S134d: while Auto Hunt picks the targets, a target from the client is the player taking
+-- over: the hunt stops (manual) and the client's choice applies.
+local function onSetTarget(player: Player, entityId: string?, attack: boolean?)
+	local hooks = autoGrindHooks
+	if hooks and hooks.active(player) then
+		hooks.manual(player)
+	end
+	applyTarget(player, entityId, attack)
+end
+
+-- S134d: the target Auto Hunt chose (the same state as SetTarget with attack = true; nil = no target). The server
+-- attacks whenever it is in range, the client walks there.
+function CombatService.SetServerTarget(player: Player, entityId: string?)
+	applyTarget(player, entityId, true)
+end
+
+-- S134d: AutoGrindService registers its hooks (see AutoGrindHooks).
+function CombatService.SetAutoGrindHooks(hooks: AutoGrindHooks?)
+	autoGrindHooks = hooks
 end
 
 function CombatService.Init(registry)

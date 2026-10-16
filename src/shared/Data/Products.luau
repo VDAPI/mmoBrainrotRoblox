@@ -10,6 +10,8 @@
 -- S122: the Elixir of Wholeness (potion_full_*) and the Cloak of Luring (lure_*) are the two explicit exceptions of
 -- DESIGN-17 §0.2 (healing outside fights with players and bosses, faster farming without strength), listed with their
 -- limits in tests/paywall.spec.luau.
+-- S134d: Auto Potions (autopotion_*, comfort) and Auto Hunt (hunt_*, the third exception: faster farming without
+-- playing, x0.7 EXP and gold, daily cap, never in the weekly ranking), see tests/paywall.spec.luau.
 
 export type ShardPack = { key: string, productId: number, shards: number, robux: number }
 export type Pass = {
@@ -29,11 +31,14 @@ export type Subscription = { key: string, subscriptionId: string, enabled: boole
 export type ShopCat = "scroll" | "service" | "consumable" | "backpack"
 export type ShopEntry = {
 	key: string,
-	kind: "item" | "rename" | "lure", -- how the server grants it (S122: "lure" = Cloak of Luring time)
+	-- how the server grants it (S122: "lure" = Cloak of Luring time; S134d: "autoPotion" = Auto Potions time or forever,
+	-- "autoGrind" = Auto Hunt seconds in the bank)
+	kind: "item" | "rename" | "lure" | "autoPotion" | "autoGrind",
 	cat: ShopCat, -- the section of the "Items" tab (DESIGN-17 §1)
 	itemId: string?,
 	n: number?, -- S122: stack size of an item entry, default 1 (the price is per pack)
-	seconds: number?, -- S122: lure time added by a `lure` entry (real time, account.lure.untilTs)
+	seconds: number?, -- S122: lure time added by a `lure` entry (real time, account.lure.untilTs); S134d: service time
+	permanent: boolean?, -- S134d: an autoPotion entry bought once per account, forever (no `seconds`)
 	price: number, -- Dragon Shards
 	dailyLimit: number?, -- purchases per account and UTC day
 	weeklyLimit: number?, -- purchases per account and week (Monday 00:00 UTC, Logic/Time.weekNumber)
@@ -108,6 +113,16 @@ local SHOP: { ShopEntry } = {
 	-- S122 (DESIGN-17 §3): Cloak of Luring, real time added to account.lure.untilTs (also offline).
 	{ key = "lure_1h", kind = "lure", cat = "service", seconds = 3600, price = 150 },
 	{ key = "lure_7d", kind = "lure", cat = "service", seconds = 7 * 86400, price = 990 },
+	-- S134d: Auto Potions (comfort: the own potions at the thresholds, the same cooldown, never against players):
+	-- timed (real time, adds up) or forever (once per account; timed entries are refused after it)
+	{ key = "autopotion_1d", kind = "autoPotion", cat = "service", seconds = 86400, price = 60 },
+	{ key = "autopotion_7d", kind = "autoPotion", cat = "service", seconds = 7 * 86400, price = 250 },
+	{ key = "autopotion_perm", kind = "autoPotion", cat = "service", permanent = true, price = 800 },
+	-- S134d (DESIGN-17 §0.2, third exception): Auto Hunt seconds into account.autoGrind.bank (spent only while hunting,
+	-- at most Config.AutoGrind.dailySeconds a day, EXP and gold x0.7, outside the weekly ranking)
+	{ key = "hunt_1h", kind = "autoGrind", cat = "service", seconds = 3600, price = 100 },
+	{ key = "hunt_5h", kind = "autoGrind", cat = "service", seconds = 5 * 3600, price = 420 },
+	{ key = "hunt_24h", kind = "autoGrind", cat = "service", seconds = 24 * 3600, price = 1500 },
 }
 
 -- S97: disabled until the owner decides (price in Robux, product id from the Creator Hub). Same speed cap as every

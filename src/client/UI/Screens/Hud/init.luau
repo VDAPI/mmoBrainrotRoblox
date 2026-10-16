@@ -20,6 +20,8 @@ local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
 local LureButton = require(script.LureButton)
+local AutoGrindButton = require(script.AutoGrindButton) -- S134d
+local AutoPotionButton = require(script.AutoPotionButton) -- S134d
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local PotionBar = require(script.PotionBar)
@@ -449,6 +451,15 @@ local function Hud(scope: Scope, props: Props): Instance
 			LureButton(
 				scope,
 				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+			),
+			-- S134d: Auto Hunt and Auto Potions right of the cloak (each only while the account has it)
+			AutoGrindButton(
+				scope,
+				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 56, Theme.Padding.Large + 136 - 64)
+			),
+			AutoPotionButton(
+				scope,
+				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 112, Theme.Padding.Large + 136 - 64)
 			),
 			CastBar(scope),
 			EffectIcons(scope, {

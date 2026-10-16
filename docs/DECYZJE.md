@@ -4528,3 +4528,48 @@
   (zgodnie z modelem: zaległość przed dowódcą). Ciosy `origin = "random"` stają na ziemi pod wybranym graczem
   (`groundAt`, nie wysokość dowódcy), a cel losowy tylko w twardej smyczy dowódcy (skok nie wynosi go poza nią).
 - **S134c** Wiki „Doświadczenie”: jedno zdanie o wyjątku bossa lochu dla gracza poniżej progu questu, bez liczb.
+- **S134d** Odwet (darmowy, `TargetController.retaliateStep` / `Retaliate`): przy opcji „Automatyczny cel” stojąca
+  postać bez ataku (bez celu, z martwym / przyjaznym celem albo zatrzymanym ruchem) bierze najbliższego potwora z
+  `AggroUserId` w 35 st. i bije **w miejscu** (`approaching = false`); po zabiciu następny atakujący też w miejscu.
+  Postać wręcz bita z dystansu stoi i nie oddaje (odpowiedź 1: „nie goni”). Tylko potwory, więc nigdy PvP; serwer bez
+  zmian (`onSetTarget` przyjmuje cel bez podejścia). Bez nowego ustawienia; tekst opcji „Automatyczny cel (następny i odwet)”.
+- **S134d** Samoczynne Mikstury: piją przez `PotionService.DrinkKind` (pasek, poziom, strażnicy areny S126, odnowienie,
+  `notNeeded` jak klawisz), nigdy Eliksir Pełni z paska (ograniczony przedmiot S122). Blokady: każda walka z graczami;
+  **loch bossa dozwolony** (to tylko szybsze naciśnięcie klawisza; decyzja B dla właściciela). „Brak mikstury”: toast raz
+  na 60 s na rodzaj. Panel progów na HUD (przycisk „A” obok Płaszcza, −/+ co 5%), nie w pasku mikstur (prostszy układ
+  na telefonie). Klucze tekstów `autoPotion.none.hp/.res`, `threshold.hp/.mana/.energy` zamiast `none` / `threshold.res`.
+- **S134d** Samodzielne Łowy, **uczciwość**: Samodzielne Łowy to płatny EXP bez gry; łagodzą to ×0,7, limit dzienny,
+  Zwój z bossów jako darmowa droga, brak w rankingu tygodniowym, blokady; ranking poziomu i tak to odczuje — właściciel
+  świadomie przyjął ryzyko 2026-10-15.
+- **S134d** Łowy: limit **3 h na dzień UTC** (odpowiedź 4c „kilka godzin”); czas z banku płynie tylko w trakcie łowów
+  (nie offline, inaczej niż Płaszcz). Bank na koncie, nie na postaci (jak Płaszcz). EXP **i złoto** ×0,7 (AFK-owe złoto
+  zalewałoby gospodarkę), łup przedmiotów bez zmian (decyzja C). Mnożnik na gracza (członek drużyny grający ręcznie
+  dostaje pełną nagrodę tego samego zabicia), po puli S134b, różnicy poziomów i budżecie questów; EXP ze źródłem
+  `autoGrind` (poza `WEEK_SOURCES`). Questy i zlecenia liczą zabicia normalnie.
+- **S134d** Łowisko = nazwany obszar mapy regionu (`rect`) albo **cała jaskinia** (spawnery jaskini mają `areaId` =
+  id jaskini); `Logic/AutoGrind.groundAt`. Trasa tylko po zwykłych grupach (`MonsterService.GroupsIn`, bez Elit), grupa
+  czekająca na odrodzenie pomijana, po pełnym kółku od nowa; „odwiedzona” w 12 st. od środka (`Config.AutoGrind.arrive`).
+- **S134d** Każda blokada i postój **kończy** Łowy (bez pauzy). Cel z klienta w trakcie Łowów = przejęcie sterowania:
+  serwer kończy Łowy (`manual`) i przyjmuje wybór klienta (`CombatService.SetAutoGrindHooks`, bez zależności
+  CombatService → AutoGrindService). Klient kończy Łowy przy WASD / joysticku, skoku, kliknięciu celu, Tab, umiejętności,
+  przycisku ataku i rozmowie z NPC. Cel trzymany, dopóki żyje i się kwalifikuje, chyba że gracza bije inny potwór.
+- **S134d** Kandydaci na cel: tylko `eligible` (zwykły, ze spawnera tego łowiska, ±10 poz., bez walki z graczem spoza
+  drużyny); atakująca Elita nie jest celem (postój „mało życia” / mikstury ją rozwiązują). Elita II, boss, dowódca i
+  czempion wydarzenia (Elity II) w 90 st. = blokada `bossNear` (rejestruje `AutoGrindService`); `worldEvent` =
+  promień trwającego wydarzenia (`WorldEventService.inRange`). Jaskinie dozwolone.
+- **S134d** „Brak mikstur” tylko przy aktywnych Samoczynnych Miksturach z progiem HP (bez nich działa „mało życia” < 30%);
+  „pełny plecak” tylko z przepustką `autoLoot` (bez niej worki zostają na ziemi). „Utknąłem” po 180 s bez zabicia.
+- **S134d** Anty-AFK: tylko w trakcie aktywnych Łowów `Players.LocalPlayer.Idled` → jedno kliknięcie `VirtualUser`
+  (w `pcall`), odłączane przy każdym postoju — świadome obejście wyrzucenia Robloxa wyłącznie dla opłaconej / zdobytej
+  usługi; Łowy trwają najwyżej 3 h dziennie, więc „nieskończonego AFK” nie ma. Poza Łowami bez zmian.
+- **S134d** Chodzenie Łowów: własna, prosta ścieżka w `AutoGrindController` (ten sam agent `PathfindingService` i
+  `NavPath.simplify` co przewodnik), bez wyciągania pomocników z `NavController` (zachowanie przewodnika bez zmian).
+- **S134d** Zwój Łowów (`scroll_hunt`, 30 min): tylko łup bossów (Grimrok 15%, Morvane 20%, Azgor 25%, Vaelgrath 30% na
+  zwycięzcę), związany i bez sprzedaży, w żadnym sklepie ani paczce; 3 walki dziennie = 13–27 min Łowów za darmo
+  („darmowa droga ma być odczuwalna, ale wolniejsza niż zakup”). Nie z Elit II ani wydarzeń (decyzja C).
+- **S134d** Ceny (Smocza Waluta, bez id z Creator Hub): `autopotion_1d` 60, `_7d` 250, `_perm` 800; `hunt_1h` 100,
+  `_5h` 420, `_24h` 1500 (jak w planie; koszt w R$ w `docs/SKLEP-ID.md` bez zastrzeżeń). Nowego gamepassa nie ma.
+- **S134d** Wiki: nowe pola `premium.items.autoPotion` / `autoGrind` (zasady, nazwy blokad, godziny z `Config`, procenty
+  z `Data/Progression`, Zwój jako `ref:items`, bez szans i cen); zmiana kształtu celowa
+  (`WIKI_KEYS_ALLOW="premium:*,types.ts"` do commita). `npm run data` bez `sharp` (brak `node_modules`): dane przez
+  `lune run tools/wikidump.luau`, ikony wiki nieprzeliczone (Zwój ma wspólny klucz `misc/scroll`).

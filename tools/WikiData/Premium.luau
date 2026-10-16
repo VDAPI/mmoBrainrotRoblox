@@ -9,10 +9,13 @@
 -- of the Elixir of Wholeness and the Cloak of Luring with the names of their blocks) and `starterPacks` (the contents
 -- without a price: cosmetic ids, pass keys, `currency` instead of an amount). Never a subscription id, a price, an
 -- amount of Dragon Shards or the premium mounts (S97).
+-- S134d: `items` also carries the rules of Auto Potions (thresholds, blocks) and Auto Hunt (hours a day from Config,
+-- EXP and gold % from Data/Progression, the Scroll of the Hunt item that drops from bosses, blocks); never a chance.
 
 local Config = require("../../src/shared/Config")
 local Cosmetics = require("../../src/shared/Data/Cosmetics")
 local Market = require("../../src/shared/Data/Market")
+local AutoGrind = require("../../src/shared/Logic/AutoGrind")
 local Names = require("./Names")
 local Products = require("../../src/shared/Data/Products")
 local Recipes = require("../../src/shared/Data/Recipes")
@@ -55,6 +58,22 @@ S.file(
 				interval = "int",
 				maxPulled = "int",
 				levelGap = "int",
+				blocked = arr("name"),
+			}),
+			-- S134d
+			autoPotion = rec("AutoPotionInfo", {
+				minPct = "int",
+				maxPct = "int",
+				step = "int",
+				blocked = arr("name"),
+			}),
+			autoGrind = rec("AutoGrindInfo", {
+				dailyHours = "number",
+				expPct = "int",
+				goldPct = "int",
+				scrollMin = "int",
+				levelGap = "int",
+				scroll = "ref:items",
 				blocked = arr("name"),
 			}),
 		}),
@@ -143,6 +162,7 @@ function Premium.build(ctx: any): any
 	end
 
 	local vip = Config.Vip
+	local grind = AutoGrind.descArgs() -- S134d
 	return {
 		passes = passes,
 		shop = shop,
@@ -168,6 +188,21 @@ function Premium.build(ctx: any): any
 				maxPulled = Config.Lure.maxPulled,
 				levelGap = Config.Lure.levelGap,
 				blocked = blocks("lure"),
+			},
+			autoPotion = {
+				minPct = Config.AutoPotion.minPct,
+				maxPct = Config.AutoPotion.maxPct,
+				step = Config.AutoPotion.step,
+				blocked = blocks("autoPotion"),
+			},
+			autoGrind = {
+				dailyHours = grind.hours,
+				expPct = grind.exp,
+				goldPct = grind.gold,
+				scrollMin = grind.scroll,
+				levelGap = Config.AutoGrind.levelGap,
+				scroll = "scroll_hunt",
+				blocked = blocks("autoGrind"),
 			},
 		},
 		starterPacks = packs,

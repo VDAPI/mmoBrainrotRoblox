@@ -10816,3 +10816,96 @@ Pliki: `src/shared/Data/{Bosses,Maps,Recipes,MonsterAbilities,MonsterMotions,Wor
 `wiki/src/content/mechanics/{pl/wydarzenia-swiata,en/world-events,pl/doswiadczenie,en/experience}.mdx`,
 `wiki/src/data/*.json`,
 `docs/{DESIGN,DESIGN-15,DECYZJE,SESJE,PROGRESS,BALANS,PRZEDMIOTY}.md`.
+
+### S134d: Odwet, Samoczynne Mikstury, Samodzielne Łowy
+
+Prośba właściciela (2026-10-15): postać stojąca AFK ma oddawać bijącym ją potworom; Samoczynne Mikstury (na zawsze /
+czasowo) i Samodzielne Łowy (czasowe, za Smoczą Walutę i z bossów).
+
+Co zrobiono:
+- **A. Odwet** (darmowy): `TargetController.retaliateStep` w pętli podchodzenia (opcja „Automatyczny cel”, żywy, bez
+  ataku, bez ruchu i 1,5 s po ruchu, poza Łowami) → `Retaliate(model)` = cel i atak bez podchodzenia; po zabiciu
+  `retarget` bierze następnego atakującego też w miejscu; klik / umiejętność / Tab / ruch zerują odwet. Tekst opcji
+  „Automatyczny cel (następny i odwet)”, DESIGN §24.
+- **B. Samoczynne Mikstury**: `Logic/AutoPotion` (stan konta, `owned` / `active` / `extend` / `clampThreshold` / `wants`
+  / `canBuy`), `AutoPotionService` (pętla 0,25 s, `PotionService.DrinkKind`: pasek, poziom, strażnicy, odnowienie;
+  bez Eliksiru Pełni), remote `AutoPotionSet(on, hp, res)`, blokady `UseBlocks.LISTS.autoPotion`, stan `autoPotion`
+  dla HUD, przycisk „A” z panelem progów (−/+ co 5%) obok Płaszcza. `Premium.canBuy` odmawia wpisów po zakupie na zawsze.
+- **C/D. Samodzielne Łowy**: `Logic/AutoGrind` (bank z limitem dnia UTC, `eligible`, `pickTarget`, `nextGoal` po całym
+  łowisku, `groundAt` obszar / jaskinia, `stopReason` w jednej kolejności, `reward` ×0,7 ze źródłem `autoGrind`),
+  `AutoGrindService` (remote `AutoGrind(on)`, pętla 1 s, czas z banku, zapis co 60 s, postoje z toastem, cel przez
+  `CombatService.SetServerTarget`, kolejna grupa przez `MonsterService.GroupsIn`, blokada `bossNear`, handler Zwoju),
+  `CombatService` (nagroda ×0,7 i źródło `autoGrind` tylko dla gracza w Łowach; cel klienta w trakcie Łowów = `manual`),
+  `WorldEventService` (blokada `worldEvent`), `AutoGrindController` (chodzenie ścieżką do celu / grupy, przejęcie
+  sterowania, anty-AFK tylko w trakcie Łowów), przycisk Łowów na HUD, `TargetController.SetServerDriven` /
+  `ShowServerTarget`. Admin: `/autogrind add|clear|stop|status`, `/autopotion grant|perm|clear|status`, `/useblocks`
+  wszystkich czterech funkcji.
+- **E. Zwój Łowów** `scroll_hunt` (+30 min, związany, bez sprzedaży, `use.kind = "autoGrind"`) w łupie bossów.
+- **F.** Wpisy sklepu `autopotion_1d/_7d/_perm`, `hunt_1h/_5h/_24h` (zakup w `PremiumShopService`, karty usług w oknie
+  sklepu: czas / „na zawsze” / bank i dziś; przycisk „Posiadane”), `paywall.spec` (blok „S134d auto services”, nowe
+  `ALLOWED_SHOP_KINDS`, `SERVICE_KEYS`), `docs/SKLEP-ID.md` przeliczony.
+- **G.** Teksty PL / EN (usługi, blokady, postoje, Zwój, admin), wiki `premium.items.autoPotion/autoGrind` + blok
+  `PremiumItems` i akapit na stronie sklepu (PL, EN), DESIGN-17 §0.2 i §3, raport `docs/BALANS.md` („Samodzielne Łowy
+  (S134d)”), księga (`Config:AutoPotion*`, `Config:AutoGrind*`, `Progression:autoGrind*Pct`, Zwój i jego szanse).
+
+Ceny (Smocza Waluta; bez id z Creator Hub):
+
+| klucz | usługa | czas | cena | koszt R$ (SKLEP-ID) |
+|---|---|---|---|---|
+| `autopotion_1d` | Samoczynne Mikstury | 1 d (czas rzeczywisty) | 60 | ok. 43–59 |
+| `autopotion_7d` | Samoczynne Mikstury | 7 d | 250 | ok. 179–248 |
+| `autopotion_perm` | Samoczynne Mikstury | na zawsze, raz na konto | 800 | ok. 571–792 |
+| `hunt_1h` | Samodzielne Łowy | 1 h w banku | 100 | ok. 71–99 |
+| `hunt_5h` | Samodzielne Łowy | 5 h | 420 | ok. 300–416 |
+| `hunt_24h` | Samodzielne Łowy | 24 h (≥ 8 dni przy limicie) | 1500 | ok. 1071–1485 |
+
+Blokady (`Logic/UseBlocks.LISTS`):
+
+| powód | Samoczynne Mikstury | Samodzielne Łowy | kto rejestruje |
+|---|---|---|---|
+| `dead` | tak | tak | ResourceService |
+| `duel` | tak | tak | DuelService |
+| `arena` | tak | tak | ArenaService, PvpService, ServerMode |
+| `pvpLock` | tak | tak | PvpService |
+| `tourney` | tak | tak | TourneyService |
+| `bloodMoon` | tak | tak | BloodMoonService |
+| `city` | — | tak | ZoneService |
+| `dungeon` | — (loch dozwolony) | tak | DungeonService, ZoneService |
+| `redZone` | — | tak | ZoneService |
+| `worldEvent` | — | tak | WorldEventService (nowy) |
+| `bossNear` | — | tak | AutoGrindService (nowy) |
+| `mounted` | — | tak | MountService |
+
+Postoje Łowów (kolejność `Logic/AutoGrind.stopReason`): blokada → śmierć → brak czasu → limit dnia → zejście z
+łowiska (40 st. poza `rect` albo inna mapa) → boss w pobliżu → mało życia (< 30%, bez Samoczynnych Mikstur) → brak
+mikstur życia (z nimi) → pełny plecak (z `autoLoot`) → 180 s bez zabicia → ręczne przejęcie.
+
+Model (raport, `docs/BALANS.md`): EXP/h Łowów = tempo solo × 70% × sprawność chodzenia 0,8 (założenie raportu) = 0,56
+tempa ręcznego (L10 5658 → 3168, L50 46 982 → 26 310, L90 90 174 → 50 497 EXP/h); dzień z limitem 3 h = ok. 1,7 h
+ręcznej gry. Zwój Łowów przy 3 walkach z bossem dziennie: Grimrok 0,45 (13,5 min), Morvane 0,6 (18 min), Azgor 0,75
+(22,5 min), Vaelgrath 0,9 (27 min). Tempo solo, zamrożone 1–20 i budżet questów bez zmian.
+
+Dla właściciela:
+- A (gamepass): Samoczynne Mikstury za Robux to jedna linia w `Data/Products.PASSES`, jeśli chcesz; dziś tylko za Smoczą
+  Walutę.
+- B: Samoczynne Mikstury działają w lochu bossa (to tylko szybsze naciśnięcie klawisza, te same mikstury i odnowienie);
+  jeśli boss ma być bez nich, wystarczy dopisać `dungeon` do `UseBlocks.LISTS.autoPotion`.
+- C: łup przedmiotów w Łowach bez zmian (tylko EXP i złoto ×0,7); Zwój tylko z bossów (nie z Elit II ani wydarzeń).
+- Nowe wpisy sklepu idą za Smoczą Walutę: nie potrzebują id z Creator Hub.
+
+Testy: `autopotion.spec` (stan, `extend`, `canBuy` po „na zawsze”, progi, `wants`, szablon konta, blokady),
+`autogrind.spec` (dzień UTC, bank i limit, `spend`, `canStart`, `eligible`, `pickTarget`, `nextGoal`, `inside`,
+`groundAt`, kolejność postojów i ich teksty, nagroda 70% i źródło poza rankingiem), `paywall.spec` (blok „S134d auto
+services”, nowe listy dozwolonych), `premiumuse.spec` (cztery funkcje pytają swoich list), `data.spec` (+1 przedmiot).
+Wiki: `WIKI_KEYS_ALLOW="premium:*,types.ts"` do commita (nowe pola `items`).
+
+Pliki: `src/shared/Logic/{AutoPotion,AutoGrind,UseBlocks,Premium,AccountSchema}.luau`, `src/shared/{Config,Types}.luau`,
+`src/shared/Data/{Products,Progression,LootTables,AdminCommands}.luau`, `src/shared/Data/Items/{Consumables,Types}.luau`,
+`src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Net/Definitions.luau`,
+`src/server/Services/{AutoPotion,AutoGrind,Combat,Potion,PremiumShop,Monster,WorldEvent,Admin}Service.luau`,
+`src/server/Admin/{Economy,Character}.luau`, `src/client/Controllers/{AutoGrind,Target}Controller.luau`,
+`src/client/UI/Screens/Hud/{init,AutoGrindButton,AutoPotionButton}.luau`, `src/client/UI/Screens/PremiumShop/Items.luau`,
+`tests/{autopotion,autogrind,paywall,premiumuse,data}.spec.luau`, `tools/{balance_reasons,balance_report}.luau`,
+`tools/WikiData/Premium.luau`, `wiki/src/components/blocks/PremiumItems.astro`, `wiki/src/i18n/{pl,en}.ts`,
+`wiki/src/content/mechanics/{pl/sklep-premium,en/premium-shop}.mdx`, `wiki/src/data/*`,
+`docs/{DESIGN,DESIGN-17,DECYZJE,SESJE,PROGRESS,BALANS,SKLEP-ID,PRZEDMIOTY}.md`.

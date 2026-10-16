@@ -48,6 +48,8 @@ local ALLOWED_SHOP_KINDS: { [string]: string } = {
 	item = "an item, checked below",
 	rename = "a service",
 	lure = "DESIGN-17 §0.2/§3: faster farming without strength (Cloak of Luring)",
+	autoPotion = "comfort: drinks the player's own potions at thresholds; same cooldown and PotionService path; never in PvP",
+	autoGrind = "EXCEPTION (S134d, owner 2026-10-15): AFK farming time, x0.7 EXP and gold, daily cap, blocks, never in the weekly ranking",
 }
 local ALLOWED_ITEM_CATEGORIES: { [string]: string } = {
 	scroll = "resets and unbinding (protection only with a daily limit of 1)",
@@ -1269,6 +1271,12 @@ local SERVICE_KEYS: { [string]: string } = {
 	rename = "a new name for the active character",
 	lure_1h = "Cloak of Luring time (DESIGN-17 §3 exception)",
 	lure_7d = "Cloak of Luring time (DESIGN-17 §3 exception)",
+	autopotion_1d = "Auto Potions time (S134d, comfort)",
+	autopotion_7d = "Auto Potions time (S134d, comfort)",
+	autopotion_perm = "Auto Potions forever (S134d, comfort)",
+	hunt_1h = "Auto Hunt time (S134d, the third DESIGN-17 §0.2 exception)",
+	hunt_5h = "Auto Hunt time (S134d, the third DESIGN-17 §0.2 exception)",
+	hunt_24h = "Auto Hunt time (S134d, the third DESIGN-17 §0.2 exception)",
 }
 -- words that would name power in a key split at camelCase (statusRefresh = status + refresh, never "stat")
 local POWER_PARTS = { "exp", "gold", "drop", "loot", "luck", "stat", "stats", "dmg", "damage", "crit", "hp", "armor" }
@@ -1571,6 +1579,171 @@ T.describe("Paywall S131: the window and the server use one rule (C8)", function
 		T.expect(string.find(money, "Premium.canBuyPack(", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(money, "Premium.canBuyMount(", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(money, "NotProcessedYet", 1, true) ~= nil).toBe(true)
+	end)
+end)
+
+-- S134d: Auto Potions (comfort) and Auto Hunt (the third exception of DESIGN-17 §0.2, owner 2026-10-15). Every
+-- condition that keeps Auto Hunt from being plain pay-to-win is pinned here.
+T.describe("S134d auto services", function()
+	local AutoGrind = require("../src/shared/Logic/AutoGrind")
+	local AutoPotion = require("../src/shared/Logic/AutoPotion")
+	local Leaderboards = require("../src/shared/Data/Leaderboards")
+	local LootTables = require("../src/shared/Data/LootTables")
+	local Progression = require("../src/shared/Data/Progression")
+
+	local function has(list: { string }, reason: string): boolean
+		return table.find(list, reason) ~= nil
+	end
+
+	T.it("Auto Hunt: a daily cap of at most 4 h, EXP and gold at most 70 %, never in the weekly ranking", function()
+		T.expect(Config.AutoGrind.dailySeconds <= 4 * 3600).toBe(true)
+		T.expect(Progression.autoGrindExpPct <= 70).toBe(true)
+		T.expect(Progression.autoGrindGoldPct <= 70).toBe(true)
+		T.expect(AutoGrind.SOURCE).toBe("autoGrind")
+		T.expect(Leaderboards.WEEK_SOURCES.autoGrind).toBeNil()
+		T.expect(Leaderboards.WEEK_SOURCES[AutoGrind.SOURCE]).toBeNil()
+		local exp, gold, source = AutoGrind.reward(1000, 100)
+		T.expect({ exp, gold, source }).toEqual({ 700, 70, "autoGrind" })
+		-- the reward goes through the "autoGrind" source in CombatService
+		local combat = fs.readFile("src/server/Services/CombatService.luau")
+		T.expect(string.find(combat, "AutoGrind.reward(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(combat, "LevelService.GiveExp(player, exp, source)", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("Auto Hunt stops in dungeons, near bosses, on the arena, in PvP and in events", function()
+		for _, reason in
+			{
+				"dead",
+				"city",
+				"dungeon",
+				"arena",
+				"duel",
+				"pvpLock",
+				"redZone",
+				"bloodMoon",
+				"tourney",
+				"worldEvent",
+				"bossNear",
+				"mounted",
+			}
+		do
+			if not has(UseBlocks.LISTS.autoGrind, reason) then
+				error(`{reason}: owner 2026-10-15 (answer 4b): Auto Hunt must not work there`)
+			end
+		end
+		T.expect(next(UseBlocks.PENDING)).toBeNil()
+	end)
+
+	T.it("Auto Potions never work against players", function()
+		for _, reason in { "dead", "duel", "arena", "pvpLock", "tourney", "bloodMoon" } do
+			if not has(UseBlocks.LISTS.autoPotion, reason) then
+				error(`{reason}: DESIGN-17 §0.2: Auto Potions must not work in fights with players`)
+			end
+		end
+	end)
+
+	T.it("Auto Hunt fights only ordinary monsters of its ground that nobody else fights", function()
+		local base: { [string]: any } = {
+			ref = 1,
+			variant = "normal",
+			boss = false,
+			summoned = false,
+			fromSpawner = true,
+			area = "meadows_x",
+			targetable = true,
+			level = 30,
+			distance = 5,
+			fightsOther = false,
+			attacksMe = false,
+		}
+		T.expect(AutoGrind.eligible(base :: any, 30, "meadows_x")).toBe(true)
+		for _, change in
+			{
+				{ variant = "elite" },
+				{ variant = "elite2" },
+				{ variant = "boss" },
+				{ boss = true },
+				{ summoned = true },
+				{ fromSpawner = false },
+				{ area = "meadows_y" },
+				{ fightsOther = true },
+				{ targetable = false },
+				{ level = 30 + Config.AutoGrind.levelGap + 1 },
+			} :: { { [string]: any } }
+		do
+			local c = table.clone(base)
+			for k, v in change do
+				c[k] = v
+			end
+			T.expect(AutoGrind.eligible(c :: any, 30, "meadows_x")).toBe(false)
+		end
+	end)
+
+	T.it("shop entries: timed with seconds, forever without, Auto Hunt only timed", function()
+		local keys: { [string]: string } = {}
+		for _, entry in Products.shop do
+			if entry.kind == "autoPotion" or entry.kind == "autoGrind" then
+				keys[entry.key] = entry.kind
+				T.expect({ entry.key, entry.itemId }).toEqual({ entry.key, nil })
+				T.expect({ entry.key, entry.cat }).toEqual({ entry.key, "service" })
+				if entry.permanent then
+					T.expect({ entry.key, entry.kind, entry.seconds }).toEqual({ entry.key, "autoPotion", nil })
+				else
+					T.expect({ entry.key, (entry.seconds or 0) > 0 }).toEqual({ entry.key, true })
+				end
+			end
+		end
+		T.expect(keys).toEqual({
+			autopotion_1d = "autoPotion",
+			autopotion_7d = "autoPotion",
+			autopotion_perm = "autoPotion",
+			hunt_1h = "autoGrind",
+			hunt_5h = "autoGrind",
+			hunt_24h = "autoGrind",
+		})
+		local perm = Products.getShop("autopotion_perm") :: Products.ShopEntry
+		T.expect(perm.permanent).toBe(true)
+		-- owned forever: no Auto Potions entry can be bought again (the window and the server ask Premium.canBuy)
+		local rich = { dragonShards = 99999, autoPotion = AutoPotion.extend(nil, 0, 0, true) }
+		for _, key in { "autopotion_1d", "autopotion_7d", "autopotion_perm" } do
+			T.expect({ key, Premium.canBuy(Products.getShop(key), rich :: any, 0) })
+				.toEqual({ key, false, "premium.error.owned" })
+		end
+		T.expect({ Premium.canBuy(Products.getShop("hunt_1h"), rich :: any, 0) }).toEqual({ true })
+	end)
+
+	T.it("the Scroll of the Hunt is bound, never sold, only from bosses", function()
+		local def = Items.get("scroll_hunt")
+		assert(def, "scroll_hunt")
+		T.expect(def.use and def.use.kind).toBe("autoGrind")
+		T.expect(def.bindOnPickup).toBe(true)
+		T.expect(def.noSell).toBe(true)
+		T.expect(ALLOWED_USE_KINDS.autoGrind).toBeNil()
+		for _, entry in Products.shop do
+			T.expect({ entry.key, entry.itemId ~= "scroll_hunt" }).toEqual({ entry.key, true })
+		end
+		for id, shop in Shops.byId do
+			for _, entry in shop.entries do
+				T.expect({ id, entry.item ~= "scroll_hunt" }).toEqual({ id, true })
+			end
+		end
+		for _, pack in starterPacks do
+			T.expect({ pack.key, table.find(pack.cosmetics, "scroll_hunt") }).toEqual({ pack.key, nil })
+		end
+		local stack = ItemRoll.makeStack("scroll_hunt", 1, "paywall")
+		T.expect(stack.bound).toBe(true)
+		T.expect({ Trade.canOffer(stack) }).toEqual({ false, "trade.error.bound" })
+		T.expect(ItemValue.canSell(stack, def)).toBe(false)
+		local bosses = 0
+		for _, boss in LootTables.bosses do
+			for _, drop in boss.materials do
+				if drop.id == "scroll_hunt" then
+					bosses += 1
+					T.expect({ boss.id, drop.chance > 0 and drop.chance <= 0.3 }).toEqual({ boss.id, true })
+				end
+			end
+		end
+		T.expect(bosses).toBe(4)
 	end)
 end)
 

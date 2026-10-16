@@ -253,6 +253,9 @@ local Definitions: { [string]: Definition } = {
 	BuyPass = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (pass key)
 	PremiumBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (shop key) for Dragon Shards
 	LureToggle = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) Cloak of Luring switch, S122
+	-- (on, hp %, class resource %) S134d: Auto Potions switch and thresholds (Logic/AutoPotion.clampThreshold)
+	AutoPotionSet = { kind = "function", dir = "c2s", rate = 4, args = { "boolean", "number", "number" } },
+	AutoGrind = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) S134d: Auto Hunt start / stop
 	-- (cosmetic id, expected price) S123: the weekly price can change at Monday 00:00 UTC
 	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string", "number?" } },
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)

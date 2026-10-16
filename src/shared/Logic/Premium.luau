@@ -7,6 +7,7 @@
 -- (Logic/WeeklyOffer.priceOf), free cosmetics (Logic/CosmeticRules), kinds without a slot (emote, title) and the
 -- starter packs (once per account).
 
+local AutoPotion = require("./AutoPotion")
 local CharacterLook = require("./CharacterLook")
 local Config = require("../Config")
 local CosmeticRules = require("./CosmeticRules")
@@ -30,6 +31,8 @@ export type ShopAccount = {
 	dragonShards: number,
 	shopLimits: ShopLimits?,
 	dailyLimits: OldDailyLimits?,
+	-- S134d: Auto Potions (an account that owns it forever buys none of its entries again)
+	autoPotion: AutoPotion.State?,
 }
 
 -- Tabs of the shop window in order (texts premium.tab.<id>).
@@ -88,6 +91,13 @@ function Premium.canBuy(entry: Products.ShopEntry?, account: ShopAccount, now: n
 		end
 		if entry.weeklyLimit and thisWeek >= entry.weeklyLimit then
 			return false, "premium.error.weeklyLimit"
+		end
+	end
+	-- S134d: Auto Potions owned forever: none of its entries again (timed time would be wasted)
+	if entry.kind == "autoPotion" then
+		local ok, err = AutoPotion.canBuy(entry, account.autoPotion, now)
+		if not ok then
+			return false, err
 		end
 	end
 	if (account.dragonShards or 0) < entry.price then

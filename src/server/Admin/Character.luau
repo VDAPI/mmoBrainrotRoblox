@@ -133,14 +133,15 @@ commands.elixir = function(player, args)
 	end)
 end
 
--- S122: what blocks the elixir and the cloak for the caller right now (src/server/UseGuards) and what waits.
+-- S122: what blocks the elixir and the cloak for the caller right now (src/server/UseGuards) and what waits; S134d: Auto
+-- Potions and Auto Hunt too (every UseBlocks feature).
 commands.useblocks = function(player)
 	local pending: { string } = {}
 	for reason, session in UseBlocks.PENDING do
 		table.insert(pending, `{reason} ({session})`)
 	end
 	table.sort(pending)
-	for _, feature in { "fullElixir", "lure" } :: { UseBlocks.Feature } do
+	for _, feature in UseBlocks.FEATURES do
 		local list = UseBlocks.LISTS[feature]
 		local active = UseGuards.active(player, list)
 		reply(player, "admin.useblocks.line", {

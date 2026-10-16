@@ -77,6 +77,15 @@ function AccountSchema.accountTemplate(): AccountData
 		outfits = {},
 		-- S122: Cloak of Luring (Logic/Lure): real-time end (os.time) and the switch; no migration (reconcile)
 		lure = { untilTs = 0, on = false },
+		-- S134d: Auto Potions (Logic/AutoPotion) and the Auto Hunt time bank (Logic/AutoGrind); no migration (reconcile)
+		autoPotion = {
+			untilTs = 0,
+			permanent = false,
+			on = false,
+			hp = Config.AutoPotion.hp,
+			res = Config.AutoPotion.res,
+		},
+		autoGrind = { bank = 0, day = 0, used = 0 },
 		-- S123: starter packs bought once per account; passes granted by a pack, honoured by HasPass (no migration)
 		packs = {},
 		grantedPasses = {},

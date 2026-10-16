@@ -106,6 +106,14 @@ other("scroll_protection", "scroll", "scroll", "📜", "#4FD16B", 200, nil, { ki
 other("scroll_oblivion", "scroll", "scroll", "📜", "#C9A45C", 100, nil, { kind = "scroll", target = "oblivion" })
 other("scroll_skillreset", "scroll", "scroll", "📜", "#4A8FE7", 100, nil, { kind = "scroll", target = "skillreset" })
 other("scroll_unbind", "scroll", "scroll", "📜", "#E8C25A", 500, nil, { kind = "scroll", target = "unbind" })
+-- S134d: Scroll of the Hunt, only from bosses (Data/LootTables.BOSSES): Auto Hunt time into the bank. Bound from
+-- creation and never sold (nobody buys hunting time for gold or sells it), in no shop (tests/paywall.spec).
+other("scroll_hunt", "scroll", "scroll", "📜", "#B5452E", 1, nil, { kind = "autoGrind" })
+do
+	local hunt = LIST[#LIST] :: any
+	hunt.bindOnPickup = true
+	hunt.noSell = true
+end
 -- Gathering tools (S07)
 other("pickaxe", "tool", "tool", "⛏", "#8E8E93", 25, 100, { kind = "none" }, false)
 other("fishing_rod", "tool", "tool", "🎣", "#8A6B4A", 25, 100, { kind = "none" }, false)

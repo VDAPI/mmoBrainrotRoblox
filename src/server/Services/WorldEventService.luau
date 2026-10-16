@@ -39,6 +39,7 @@ local Schedule = require(Shared.Logic.Schedule)
 local ScheduledEvents = require(Shared.Data.ScheduledEvents)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Types = require(Shared.Types)
+local UseGuards = require(script.Parent.Parent.UseGuards)
 local WorldEvents = require(Shared.Logic.WorldEvents)
 
 local Data = WorldEvents.Data
@@ -1058,6 +1059,11 @@ end
 
 function WorldEventService.Start()
 	nextAt = WorldEvents.firstStart(now(), rng)
+	-- S134d (Logic/UseBlocks): Auto Hunt stops in the radius of a running event (the measure of its contributions)
+	UseGuards.register("worldEvent", function(player: Player): boolean
+		local e = current
+		return e ~= nil and e.phase == "active" and inRange(e, player)
+	end, "WorldEventService")
 	CombatService.MonsterKilled:Connect(function(info: any)
 		local e = current
 		local monster = e and e.byEntity[info.entityId]

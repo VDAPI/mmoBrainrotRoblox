@@ -1,6 +1,7 @@
 ---
 // The two explicit exceptions of the premium shop (S131, DESIGN-17 §3): premium.json `items` (Config.FullElixir,
 // Config.Lure and the texts of their blocks from Logic/UseBlocks). Rules and limits only, never a price.
+// S134d: Auto Potions (Config.AutoPotion) and Auto Hunt (Config.AutoGrind, Data/Progression), the same way.
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
@@ -11,6 +12,8 @@ const items = load("premium").items;
 const n = (v: number) => formatNumber(v, lang);
 const elixir = items.fullElixir;
 const lure = items.lure;
+const potion = items.autoPotion;
+const grind = items.autoGrind;
 ---
 <div class="vw-pitems">
   <section>
@@ -34,8 +37,31 @@ const lure = items.lure;
     <p class="vw-label">{t(lang, "premiumItems.blocked")}</p>
     <ul class="blocked">{lure.blocked.map((b) => <li>{name(b, lang)}</li>)}</ul>
   </section>
+  <section>
+    <h3 class="vw-h3">{t(lang, "premiumItems.autoPotion")}</h3>
+    <ul>
+      <li>{t(lang, "premiumItems.autoPotion.same")}</li>
+      <li>{t(lang, "premiumItems.autoPotion.thresholds", { min: n(potion.minPct), max: n(potion.maxPct), step: n(potion.step) })}</li>
+      <li>{t(lang, "premiumItems.autoPotion.forms")}</li>
+    </ul>
+    <p class="vw-label">{t(lang, "premiumItems.blocked")}</p>
+    <ul class="blocked">{potion.blocked.map((b) => <li>{name(b, lang)}</li>)}</ul>
+  </section>
+  <section>
+    <h3 class="vw-h3">{t(lang, "premiumItems.autoGrind")}</h3>
+    <ul>
+      <li>{t(lang, "premiumItems.autoGrind.walk")}</li>
+      <li>{t(lang, "premiumItems.autoGrind.daily", { n: n(grind.dailyHours) })}</li>
+      <li>{t(lang, "premiumItems.autoGrind.reward", { exp: n(grind.expPct), gold: n(grind.goldPct) })}</li>
+      <li>{t(lang, "premiumItems.autoGrind.gap", { n: n(grind.levelGap) })}</li>
+      <li>{t(lang, "premiumItems.autoGrind.scroll", { m: n(grind.scrollMin) })}</li>
+      <li>{t(lang, "premiumItems.autoGrind.stops")}</li>
+    </ul>
+    <p class="vw-label">{t(lang, "premiumItems.blocked")}</p>
+    <ul class="blocked">{grind.blocked.map((b) => <li>{name(b, lang)}</li>)}</ul>
+  </section>
 </div>
-<Source from="Config.FullElixir, Config.Lure (Premium.luau)" />
+<Source from="Config.FullElixir, Config.Lure, Config.AutoPotion, Config.AutoGrind, Data/Progression (Premium.luau)" />
 <style>
   .vw-pitems { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
   .vw-pitems section { padding: 12px 14px; background: var(--vw-panel); border: 1px solid var(--vw-border); }

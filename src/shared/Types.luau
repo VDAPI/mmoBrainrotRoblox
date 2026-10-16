@@ -352,7 +352,9 @@ export type Settings = {
 	minimapRotate: boolean,
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier
 	sellConfirm: boolean, -- ask before selling valuable items
-	autoTarget: boolean, -- S16: after a kill, target the next monster fighting us
+	-- S16: after a kill, target the next monster fighting us; S134d: standing without a target, fight back the
+	-- nearest attacker in place (no chasing)
+	autoTarget: boolean,
 	-- S20: loot comfort and world detail
 	betterItem: boolean, -- "Better item!" card
 	lootHideBelow: number, -- hide equipment bags below this rarity (0 = off)
@@ -407,6 +409,11 @@ export type AccountData = {
 	outfits: { Outfit }, -- S121: saved looks (Garderoba+), 1..Products.OUTFITS_PLUS without holes
 	-- S122 Cloak of Luring: real-time end (os.time) and the player's switch; active = on and untilTs > now
 	lure: { untilTs: number, on: boolean },
+	-- S134d Auto Potions (Logic/AutoPotion): timed end (os.time), bought forever, the switch, HP / class resource
+	-- thresholds in % (0 = off)
+	autoPotion: { untilTs: number, permanent: boolean, on: boolean, hp: number, res: number },
+	-- S134d Auto Hunt (Logic/AutoGrind): seconds in the bank, the UTC day of `used`, seconds hunted that day
+	autoGrind: { bank: number, day: number, used: number },
 	packs: { [string]: boolean }, -- S123: starter packs bought (key -> true), once per account
 	grantedPasses: { [string]: boolean }, -- S123: passes granted by a starter pack (MonetizationService.HasPass)
 	stats: { createdAt: number, playtime: number },
@@ -459,6 +466,20 @@ export type PvpState = { pendingTarget: boolean?, switchAt: number?, lockedUntil
 -- that pauses it (Logic/UseBlocks.key) and how many monsters the last pulse drew.
 export type LureRuntime = { blocked: string?, pulled: number? }
 
+-- S134d: Auto Potions at runtime (AutoPotionService; only while active): the Locale key of the block that pauses it.
+export type AutoPotionRuntime = { blocked: string? }
+
+-- S134d: Auto Hunt at runtime (AutoGrindService; never saved): the hunting ground (area id), where to walk (world
+-- x / y / z of the next group's centre), the target's entity id, seconds possible now and left today.
+export type AutoGrindRuntime = {
+	active: boolean,
+	area: string,
+	goal: { x: number, y: number, z: number }?,
+	target: string?,
+	left: number,
+	todayLeft: number,
+}
+
 export type ClientState = {
 	account: AccountData?,
 	slots: { [string]: SlotSummary },
@@ -474,6 +495,8 @@ export type ClientState = {
 	-- Logic/Companion ("join" | "follow" | "lead" | "wait" | "arrived" | "back")
 	companion: CompanionState?,
 	lure: LureRuntime?, -- S122
+	autoPotion: AutoPotionRuntime?, -- S134d
+	autoGrind: AutoGrindRuntime?, -- S134d
 	arenaLive: ArenaLive?, -- S126
 	-- S129: the Blood Moon results of the occurrence (BloodMoonService): { id, phase, global, updatedAt, regions }
 	bloodMoonBoard: { [string]: any }?,

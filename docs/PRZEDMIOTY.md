@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 740026d0 (`wiki/src/data/meta.json`).
+> Odcisk danych 2f28f19a (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1225,6 +1225,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Many | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Many | Mikstura | 70 | — | 1800 | 450 |
+| Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
 | Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |

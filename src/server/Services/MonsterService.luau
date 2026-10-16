@@ -118,6 +118,39 @@ function MonsterService.GroupOf(monster: Monster.Monster): { Monster.Monster }
 	return out
 end
 
+-- S134d (Auto Hunt): the named area (or cave) of the monster's spawner; nil without a spawner (world events, admin).
+function MonsterService.AreaOf(monster: Monster.Monster): string?
+	local spawner = spawnerOf[monster]
+	return if spawner then spawner.data.areaId else nil
+end
+
+-- S134d (Auto Hunt): every ordinary spawner group (no Elites) of the named area (or cave) `areaId`: its centre (world
+-- x / z) and whether it has living members or spawns when a player comes (ready; waiting for its respawn = not ready).
+function MonsterService.GroupsIn(
+	areaId: string
+): { { id: string, area: string?, x: number, y: number, z: number, ready: boolean } }
+	local out = {}
+	for _, spawner in spawners do
+		if spawner.data.areaId == areaId and spawner.data.variant == "normal" then
+			local alive = 0
+			for _, member in spawner.alive do
+				if member:IsAlive() then
+					alive += 1
+				end
+			end
+			table.insert(out, {
+				id = spawner.data.id,
+				area = spawner.data.areaId,
+				x = spawner.origin.X,
+				y = spawner.origin.Y,
+				z = spawner.origin.Z,
+				ready = alive > 0 or spawner.respawnAt == nil,
+			})
+		end
+	end
+	return out
+end
+
 -- Ground position below `position` (ignores monsters and characters). The ray starts only a little above
 -- the point so spawners inside caves (terrain roof overhead) land on the cave floor.
 local function groundAt(position: Vector3): Vector3

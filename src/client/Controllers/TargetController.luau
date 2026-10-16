@@ -5,6 +5,11 @@
 --                            the enemy drawn closest to the cursor within PICK_RADIUS pixels is used.
 --   holding LMB            = keep fighting: when the target dies the next enemy near the cursor is picked.
 --   auto target (option)   = after a kill, the nearest monster that is fighting us becomes the next target.
+--                            S134d: also a character standing without an attack (no target, a dead / friendly
+--                            one, or one stopped by moving) takes the nearest monster hitting it and fights it back
+--                            IN PLACE (no walking, `Retaliate`); after that kill the next attacker, again in place.
+--                            Monsters only (players never carry AggroUserId), so it never starts PvP. Any click,
+--                            skill, Tab or movement gives the control back (the S16 / S18 behaviour).
 --   Tab (optional)         = next nearest target in front of the camera. Q (rebindable) / click on the
 --                            ground = clear.
 -- The hovered enemy gets a faint outline so the player sees what a click will hit. The selected model gets
@@ -13,6 +18,9 @@
 -- (WASD / joystick) stops both the approach and the server auto-attack: the target stays selected but is not
 -- attacked until it is clicked again or a skill is used on it, so the player can run away. For 1.5 s after
 -- manual movement there is no auto retarget and no turning towards the target.
+-- S134d Auto Hunt: while the server picks the targets (SetServerDriven) the client shows its target
+-- (ShowServerTarget) and sends nothing by itself (no retarget, no fight back, no clear on death); a click, Tab, a skill
+-- or the mobile attack button is the player taking over (the `manual` callback stops the hunt first).
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -46,6 +54,7 @@ TargetController.Hover = scope:Value(nil :: Model?)
 local PICK_RADIUS = 70 -- pixels around the cursor that still count as clicking an enemy
 local TAB_RANGE = 60
 local RETARGET_RANGE = 35 -- studs: auto target only picks monsters this close
+local RETALIATE_RANGE = RETARGET_RANGE -- S134d: fight back only monsters this close
 local HOLD_PICK_RANGE = 30 -- studs from the character for "hold LMB" picks
 local APPROACH_INTERVAL = 0.1
 local FACE_SPEED = 14 -- turn rate toward the target while standing (higher = snappier)
@@ -59,6 +68,9 @@ local attacking = false -- the server is told to auto-attack the target
 local movedAt = -math.huge -- os.clock() of the last manual movement
 local holding = false
 local controls: any = nil
+local retaliating = false -- S134d: fighting back in place (no approach), also for the next attacker
+local serverDriven = false -- S134d: Auto Hunt picks the targets on the server
+local onManual: (() -> ())? = nil -- S134d: called when the player takes over during Auto Hunt
 
 local function entityModel(instance: Instance?): Model?
 	local node = instance
@@ -122,6 +134,32 @@ local function autoTargetEnabled(): boolean
 	return State.Get({ "account", "settings", "autoTarget" }) ~= false
 end
 
+-- S134d: during Auto Hunt every own choice of the player stops the hunt first (the server would stop it anyway).
+local function manualTakeover()
+	local callback = onManual
+	if serverDriven and callback then
+		callback()
+	end
+end
+
+-- Selects `model` (highlight), sets the attack flags and, with `send`, tells the server.
+local function apply(model: Model?, engage: boolean, approach: boolean, send: boolean)
+	if Fusion.peek(TargetController.Target) ~= model then
+		TargetController.Target:set(model)
+		highlight.Adornee = model
+		highlight.Enabled = model ~= nil
+		if model then
+			highlight.OutlineColor = if isMonster(model) then Theme.Colors.ZoneRed else Theme.Colors.GoldBright
+		end
+	end
+	approaching = engage and approach
+	attacking = engage
+	if send then
+		-- Always resend: the server may have dropped the target (death, distance, a previous stop).
+		Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil, engage)
+	end
+end
+
 -- `engage` (default: when the target is hostile) makes the character walk into range.
 function TargetController.SetTarget(model: Model?, engage: boolean?)
 	if model == player.Character then
@@ -131,22 +169,50 @@ function TargetController.SetTarget(model: Model?, engage: boolean?)
 		model = nil
 	end
 	local shouldEngage = if model == nil then false elseif engage == nil then isHostile(model) else engage
-	if Fusion.peek(TargetController.Target) ~= model then
-		TargetController.Target:set(model)
-		highlight.Adornee = model
-		highlight.Enabled = model ~= nil
-		if model then
-			highlight.OutlineColor = if isMonster(model) then Theme.Colors.ZoneRed else Theme.Colors.GoldBright
-		end
+	retaliating = false
+	apply(model, shouldEngage, true, true)
+end
+
+-- S134d: fight back `model` (a monster hitting us) where we stand: attack without walking into range. The server
+-- attacks whenever it is in reach (melee 7 / ranged 35), so a melee character hit from afar stays and waits.
+function TargetController.Retaliate(model: Model)
+	if not isAlive(model) or not isHostile(model) then
+		return
 	end
-	approaching = shouldEngage
-	attacking = shouldEngage
-	-- Always resend: the server may have dropped the target (death, distance, a previous stop).
-	Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil, shouldEngage)
+	apply(model, true, false, true)
+	retaliating = true
+end
+
+-- S134d (Auto Hunt): whether the server picks the targets; `manual` runs when the player takes over. Switching it off
+-- forgets the attack flags (the server has no target any more) and the shown target.
+function TargetController.SetServerDriven(on: boolean, manual: (() -> ())?)
+	serverDriven = on
+	onManual = if on then manual else nil
+	retaliating = false
+	if not on then
+		apply(nil, false, false, false)
+	end
+end
+
+function TargetController.IsServerDriven(): boolean
+	return serverDriven
+end
+
+-- S134d (Auto Hunt): shows the target the server chose (nil = none) without telling the server anything; the
+-- character faces it (faceStep) while AutoGrindController walks.
+function TargetController.ShowServerTarget(model: Model?)
+	if not serverDriven then
+		return
+	end
+	if model and not isAlive(model) then
+		model = nil
+	end
+	apply(model, model ~= nil, false, false)
 end
 
 -- Resumes attacking the selected target (a skill was used on it).
 function TargetController.Resume()
+	manualTakeover()
 	local model = Fusion.peek(TargetController.Target)
 	if model and isAlive(model) and isHostile(model) and not attacking then
 		TargetController.SetTarget(model, true)
@@ -166,6 +232,7 @@ function TargetController.Stop()
 	local model = Fusion.peek(TargetController.Target)
 	approaching = false
 	attacking = false
+	retaliating = false
 	Net.Send("SetTarget", if model then model:GetAttribute("EntityId") else nil, false)
 end
 
@@ -307,6 +374,7 @@ end
 -- Mobile attack button: a second tap while attacking stops; otherwise attack the current target or pick
 -- the nearest monster (fighting us first).
 function TargetController.AttackNearest()
+	manualTakeover()
 	local current = Fusion.peek(TargetController.Target)
 	if attacking and current then
 		TargetController.Stop()
@@ -328,6 +396,7 @@ end
 local function click(screenPosition: Vector2)
 	local model = enemyAt(screenPosition, true) or enemyAt(screenPosition, false)
 	if model then
+		manualTakeover()
 		TargetController.SetTarget(model)
 	elseif Fusion.peek(TargetController.Target) then
 		TargetController.Clear()
@@ -380,7 +449,12 @@ function TargetController.MoveInput(): Vector3
 end
 
 -- Next target after the current one died: a monster fighting us, or (holding LMB) the one near the cursor.
+-- S134d: after a fight back the next attacker is fought back in place too; during Auto Hunt the server picks.
 local function retarget()
+	if serverDriven then
+		apply(nil, false, false, false)
+		return
+	end
 	if holding and not Fusion.peek(Device.Touch) then
 		local mouse = UserInputService:GetMouseLocation()
 		local found = enemyAt(mouse, true)
@@ -396,13 +470,40 @@ local function retarget()
 		end
 	end
 	if autoTargetEnabled() and attacking and os.clock() - movedAt > MANUAL_GRACE then
-		local found = nearestAttacker(RETARGET_RANGE)
+		local found = nearestAttacker(if retaliating then RETALIATE_RANGE else RETARGET_RANGE)
 		if found then
-			TargetController.SetTarget(found, true)
+			if retaliating then
+				TargetController.Retaliate(found)
+			else
+				TargetController.SetTarget(found, true)
+			end
 			return
 		end
 	end
 	TargetController.Clear()
+end
+
+-- S134d: fight back while standing. With "Auto target" on, alive, playing, not attacking, not moving (and not for
+-- MANUAL_GRACE after moving), outside Auto Hunt: the nearest monster hitting us within RETALIATE_RANGE is fought back
+-- in place, whatever was selected (nothing, a dead or friendly target, or one stopped by moving away).
+local function retaliateStep()
+	if serverDriven or attacking or holding or not autoTargetEnabled() then
+		return
+	end
+	if State.Get({ "session", "phase" }) ~= "playing" or State.Get({ "death" }) ~= nil then
+		return
+	end
+	local humanoid = myHumanoid()
+	if not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	if os.clock() - movedAt <= MANUAL_GRACE or moveInput().Magnitude > 0.1 then
+		return
+	end
+	local found = nearestAttacker(RETALIATE_RANGE)
+	if found then
+		TargetController.Retaliate(found)
+	end
 end
 
 local function approachStep()
@@ -534,6 +635,7 @@ function TargetController.Start()
 		if Keybinds.is(input.KeyCode, "target_next") then
 			local found = TargetController.FindNearest(TAB_RANGE, true, true)
 			if found then
+				manualTakeover()
 				TargetController.SetTarget(found)
 			end
 		elseif Keybinds.is(input.KeyCode, "target_clear") then
@@ -562,7 +664,9 @@ function TargetController.Start()
 	-- Leaving the world or dying clears the target.
 	State.Changed:Connect(function()
 		if State.Get({ "session", "phase" }) ~= "playing" or State.Get({ "death" }) ~= nil then
-			if Fusion.peek(TargetController.Target) then
+			if serverDriven then
+				apply(nil, false, false, false) -- S134d: the server ends Auto Hunt itself
+			elseif Fusion.peek(TargetController.Target) then
 				TargetController.Clear()
 			end
 		end
@@ -598,6 +702,7 @@ function TargetController.Start()
 			if not pcall(approachStep) then
 				approaching = false
 			end
+			pcall(retaliateStep) -- S134d
 		end
 	end)
 end

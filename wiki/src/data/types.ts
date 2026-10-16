@@ -182,6 +182,23 @@ export interface AuctionRules {
   maxListings: number;
 }
 
+export interface AutoGrindInfo {
+  blocked: Name[];
+  dailyHours: number;
+  expPct: number;
+  goldPct: number;
+  levelGap: number;
+  scroll: string; // id in items.json
+  scrollMin: number;
+}
+
+export interface AutoPotionInfo {
+  blocked: Name[];
+  maxPct: number;
+  minPct: number;
+  step: number;
+}
+
 export interface BaseInfo {
   affinity?: Record<string, Record<string, number>>;
   bonusGroup: string;
@@ -1253,6 +1270,8 @@ export interface PremiumFile {
 }
 
 export interface PremiumItems {
+  autoGrind: AutoGrindInfo;
+  autoPotion: AutoPotionInfo;
   fullElixir: FullElixirInfo;
   lure: LureInfo;
 }

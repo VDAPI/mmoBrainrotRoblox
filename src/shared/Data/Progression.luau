@@ -44,4 +44,9 @@ return table.freeze({
 	-- S134b: a credited member more than this many levels below the monster is carried: does not grow the pool and
 	-- gets a share without the pool bonus (total / n).
 	partyCarryGap = 10,
+
+	-- S134d: % of a kill's EXP and gold a player gets while Auto Hunt walks for them (Logic/AutoGrind.reward; the EXP
+	-- goes with the source "autoGrind", outside the weekly EXP ranking). Item drops unchanged.
+	autoGrindExpPct = 70,
+	autoGrindGoldPct = 70,
 })

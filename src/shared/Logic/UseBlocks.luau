@@ -3,8 +3,11 @@
 -- first active reason wins and its text is `<prefix>.block.<reason>`. WHO decides whether a reason is active lives
 -- on the server (src/server/UseGuards.luau): every owning service registers one check in its Start. A reason with
 -- no check yet is never active (PENDING: the session that builds the feature registers it and removes the entry).
+-- S134d: Auto Potions (autoPotion: everywhere players fight players) and Auto Hunt (autoGrind: the owner's list) with
+-- two new reasons: worldEvent = in the radius of a running world event (WorldEventService) and bossNear = a living
+-- Elite II or boss close by (AutoGrindService).
 
-export type Feature = "fullElixir" | "lure"
+export type Feature = "fullElixir" | "lure" | "autoPotion" | "autoGrind"
 export type Reason =
 	"dead"
 	| "duel"
@@ -17,6 +20,8 @@ export type Reason =
 	| "mounted"
 	| "bloodMoon"
 	| "tourney"
+	| "worldEvent"
+	| "bossNear"
 
 local UseBlocks = {}
 
@@ -26,10 +31,37 @@ UseBlocks.LISTS = table.freeze({
 	-- DESIGN-17 §3: city, caves and dungeons, red zone, arena, Blood Moon, on a mount, dead; S131: a tournament bracket
 	-- too (a local bracket waits on Ristalle between its matches; arena / tournament servers are "arena" already)
 	lure = table.freeze({ "dead", "city", "underground", "redZone", "arena", "tourney", "bloodMoon", "mounted" }),
+	-- S134d: comfort, never against players (DESIGN-17 §0.2: rankings and the arena without purchases); the boss
+	-- dungeon is allowed (the same potions, path and cooldowns as the key)
+	autoPotion = table.freeze({ "dead", "duel", "arena", "pvpLock", "tourney", "bloodMoon" }),
+	-- S134d (owner 2026-10-15, answer 4b): no dungeons, bosses, arena, PvP or events; caves are hunting grounds
+	autoGrind = table.freeze({
+		"dead",
+		"city",
+		"dungeon",
+		"arena",
+		"duel",
+		"pvpLock",
+		"redZone",
+		"bloodMoon",
+		"tourney",
+		"worldEvent",
+		"bossNear",
+		"mounted",
+	}),
 })
-UseBlocks.PREFIX = table.freeze({ fullElixir = "fullElixir", lure = "lure" })
+UseBlocks.PREFIX = table.freeze({
+	fullElixir = "fullElixir",
+	lure = "lure",
+	autoPotion = "autoPotion",
+	autoGrind = "autoGrind",
+})
+-- Every feature in the order /useblocks prints them (S134d).
+local FEATURES: { Feature } = { "fullElixir", "lure", "autoPotion", "autoGrind" }
+UseBlocks.FEATURES = table.freeze(FEATURES)
 -- Reasons whose check a later session registers (no check = never blocks until then). S129 registered bloodMoon
--- (BloodMoonService), S130 tourney (TourneyService): nothing left.
+-- (BloodMoonService), S130 tourney (TourneyService), S134d worldEvent (WorldEventService) and bossNear
+-- (AutoGrindService): nothing left.
 local PENDING: { [string]: string } = {}
 UseBlocks.PENDING = table.freeze(PENDING)
 -- Reasons that have a check now and get one more later (documentation for S126/S127). S127 registered the arena
@@ -59,8 +91,8 @@ end
 function UseBlocks.reasons(): { string }
 	local seen: { [string]: boolean } = {}
 	local out: { string } = {}
-	for _, list in { UseBlocks.LISTS.fullElixir, UseBlocks.LISTS.lure } do
-		for _, reason in list do
+	for _, feature in FEATURES do
+		for _, reason in UseBlocks.LISTS[feature] do
 			if not seen[reason] then
 				seen[reason] = true
 				table.insert(out, reason)

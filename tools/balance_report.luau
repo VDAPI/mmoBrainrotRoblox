@@ -2840,6 +2840,46 @@ do
 	add()
 end
 
+-- S134d: Auto Hunt, a report only (no assertion, no pace change): EXP/h while hunting = the solo pace x
+-- Progression.autoGrindExpPct x a walking efficiency (a report assumption, never a game number), the hand-play hours a
+-- capped day is worth, and the Scroll of the Hunt minutes the daily boss runs give.
+do
+	local WALK_EFFICIENCY = 0.8
+	local mul = Progression.autoGrindExpPct / 100 * WALK_EFFICIENCY
+	local capHours = Config.AutoGrind.dailySeconds / 3600
+	add("## Samodzielne Łowy (S134d)")
+	add()
+	add(
+		`Tylko raport: EXP/h Łowów = tempo solo (\`Balance.paceAt\`, Wojownik, region poziomu) × {Progression.autoGrindExpPct}% × sprawność chodzenia {fmtValue(WALK_EFFICIENCY, "1")} (założenie raportu, nie liczba gry). Dzień z limitem {fmtValue(capHours, "1")} h = {fmtValue(capHours * mul, "2")} h ręcznej gry. Tempo solo 1–100, zamrożone 1–20 i budżet questów bez zmian (Łowy nie są w modelu tempa).`
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, L in { 10, 30, 50, 70, 90 } do
+		local hand = B.paceAt("Warrior", L).expPerHour
+		table.insert(rows, { tostring(L), fmtValue(hand, "i"), fmtValue(hand * mul, "i"), fmtValue(capHours * mul, "2") })
+	end
+	tableOut({ "poziom", "EXP/h ręcznie", "EXP/h Łowów", "dzień z limitem = h ręcznie" }, rows)
+	add()
+	local scrolls: { { string } } = {}
+	local LootTables = require("../src/shared/Data/LootTables")
+	for _, id in { "grimrok", "morvane", "azgor", "vaelgrath" } do
+		local boss = LootTables.bosses[id]
+		for _, drop in boss.materials do
+			if drop.id == "scroll_hunt" then
+				local perDay = Config.Boss.dailyRuns * drop.chance
+				table.insert(scrolls, {
+					id,
+					fmtValue(drop.chance, "%"),
+					fmtValue(perDay, "2"),
+					fmtValue(perDay * Config.AutoGrind.scrollSeconds / 60, "1"),
+				})
+			end
+		end
+	end
+	tableOut({ "boss", "szansa Zwoju", `Zwoje / dzień ({Config.Boss.dailyRuns} walki)`, "min Łowów / dzień" }, scrolls)
+	add()
+end
+
 -- Quest audit (S109) ----------------------------------------------------------------------------------------------
 
 do

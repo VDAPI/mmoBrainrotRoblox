@@ -106,7 +106,19 @@ return {
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
 	} :: { ModuleEntry },
-	CONFIG_KEYS = { "MaxLevel", "PotionCooldown", "Upgrade", "BossLoot", "Mount", "FullElixir", "Lure", "LookChange" },
+	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
+	CONFIG_KEYS = {
+		"MaxLevel",
+		"PotionCooldown",
+		"Upgrade",
+		"BossLoot",
+		"Mount",
+		"FullElixir",
+		"Lure",
+		"LookChange",
+		"AutoPotion",
+		"AutoGrind",
+	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
 		["Data/Codes"] = "sekret",
@@ -4676,6 +4688,52 @@ return {
 				session = "S134c",
 				why = "owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20)",
 			},
+		},
+		-- S134d: fight back, Auto Potions, Auto Hunt (docs/SESJE.md S134d)
+		["Config:AutoPotion*"] = {
+			{
+				session = "S134d",
+				why = "new: Auto Potions thresholds 10-90 % in steps of 5 (0 = off), defaults HP 50 / class resource 30, loop 0.25 s (the potion cooldown of PotionService decides how often it drinks), 'no potion' said at most every 60 s per kind; no pace number (the same potions and cooldown as the key)",
+			},
+		},
+		["Config:AutoGrind*"] = {
+			{
+				session = "S134d",
+				why = "new: Auto Hunt (owner 2026-10-15): at most 3 h a UTC day (answer 4c 'a few hours'; a capped day = about 1.7 h of hand play at x0.7 and 0.8 walking efficiency), Scroll of the Hunt 30 min, ordinary monsters of the ground within 10 levels (= Config.Lure.levelGap), seek 60 studs, stops: Elite II / boss within 90, HP under 30 % without Auto Potions, 1 free slot with autoLoot, no kill for 180 s, 40 studs off the ground; tick 1 s, bank saved every 60 s, a group visited within 12 studs (technical)",
+			},
+		},
+		["Progression:autoGrindExpPct"] = {
+			{
+				session = "S134d",
+				why = "new: owner answer 4d, EXP of kills while Auto Hunt walks for the player x0.7 (source autoGrind, outside the weekly EXP ranking); pace solo 1-100 unchanged (hand play)",
+			},
+		},
+		["Progression:autoGrindGoldPct"] = {
+			{
+				session = "S134d",
+				why = "new: gold of kills while hunting x0.7 like the EXP (AFK gold would flood the economy); item drops unchanged",
+			},
+		},
+		["Items/Consumables:[scroll_hunt]*"] = {
+			{
+				session = "S134d",
+				why = "new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt",
+			},
+		},
+		["LootTables:bosses.grimrok.materials[scroll_hunt]*"] = {
+			{
+				session = "S134d",
+				why = "new: Scroll of the Hunt 15 % per winner (the free way to Auto Hunt: 3 runs a day = 0.45 scrolls = about 13 min a day, slower than buying)",
+			},
+		},
+		["LootTables:bosses.morvane.materials[scroll_hunt]*"] = {
+			{ session = "S134d", why = "new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day)" },
+		},
+		["LootTables:bosses.azgor.materials[scroll_hunt]*"] = {
+			{ session = "S134d", why = "new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day)" },
+		},
+		["LootTables:bosses.vaelgrath.materials[scroll_hunt]*"] = {
+			{ session = "S134d", why = "new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day)" },
 		},
 	} :: { [string]: { Reason } },
 }

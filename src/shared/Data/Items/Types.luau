@@ -27,7 +27,8 @@ export type WeaponStats = {
 
 export type UseEffect = {
 	-- S122: "fullElixir" = Elixir of Wholeness, restores everything; PotionService, Logic/FullElixir
-	kind: "potion" | "teleport" | "scroll" | "blessing" | "elixir" | "fullElixir" | "none",
+	-- S134d: "autoGrind" = Scroll of the Hunt, Config.AutoGrind.scrollSeconds into the Auto Hunt bank (AutoGrindService)
+	kind: "potion" | "teleport" | "scroll" | "blessing" | "elixir" | "fullElixir" | "autoGrind" | "none",
 	resource: ("hp" | "mana" | "energy")?,
 	amount: number?,
 	target: string?, -- teleport / scroll specifics (S06–S07)

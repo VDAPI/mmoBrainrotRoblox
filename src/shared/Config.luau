@@ -250,6 +250,30 @@ local Config = {
 	-- studs and `levelGap` levels are pulled onto the player, at most `maxPulled` fighting the player at once;
 	-- `pullThreat` = threat of the pull (any real hit outweighs it); `tick` = LureService loop step.
 	Lure = { interval = 8, radius = 25, levelGap = 10, maxPulled = 6, pullThreat = 1, tick = 1 },
+	-- S134d: Auto Potions (account.autoPotion, Logic/AutoPotion): the HP / class resource thresholds the player may set
+	-- (% of the maximum, `step` apart; 0 switches a threshold off), the default thresholds, the AutoPotionService loop
+	-- step and how often "no potion" may be said per kind (s). Where it does not work: Logic/UseBlocks.LISTS.autoPotion.
+	AutoPotion = { minPct = 10, maxPct = 90, step = 5, hp = 50, res = 30, tick = 0.25, noneEvery = 60 },
+	-- S134d: Auto Hunt (account.autoGrind, Logic/AutoGrind). The banked time runs only while hunting, at most
+	-- `dailySeconds` per UTC day; `scrollSeconds` = one Scroll of the Hunt. AutoGrindService: loop step `tick`, the bank
+	-- saved every `saveEvery` s; stops: no kill for `stuckSeconds`, `leaveMargin` studs outside the hunting ground,
+	-- an Elite II / boss within `bossRadius`, HP under `stopHpPct` % without Auto Potions, fewer than `minFreeSlots`
+	-- free slots with the autoLoot pass. Targets: ordinary monsters of the ground within `levelGap` levels, looked for
+	-- `seekRadius` studs around the player (further: the next group of the ground).
+	AutoGrind = {
+		dailySeconds = 3 * 3600,
+		scrollSeconds = 1800,
+		tick = 1,
+		saveEvery = 60,
+		stuckSeconds = 180,
+		leaveMargin = 40,
+		bossRadius = 90,
+		levelGap = 10,
+		seekRadius = 60,
+		arrive = 12, -- studs from a group's centre that count as "visited" on the round of the ground
+		stopHpPct = 30,
+		minFreeSlots = 1,
+	},
 	-- S132 (DESIGN-17 §9a): class looks; looks only, not balance (not in CONFIG_KEYS). maxPieces = procedural parts
 	-- one character may wear (outfit + hairstyle + the S122 lure cape, Logic/CharacterLook.resolve); avatarScale =
 	-- the Roblox avatar's scales allowed in "Show my Roblox avatar" (Logic/CharacterLook.clampScales: standard R15

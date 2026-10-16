@@ -94,6 +94,12 @@ się dla nich nie ustawia.
 | `potion_full_20` | consumable | 400 | 20 | 285,66 | 396 | — |
 | `lure_1h` | service | 150 | — | 107,12 | 148,50 | — |
 | `lure_7d` | service | 990 | — | 707 | 980,10 | — |
+| `autopotion_1d` | service | 60 | — | 42,85 | 59,40 | — |
+| `autopotion_7d` | service | 250 | — | 178,54 | 247,50 | — |
+| `autopotion_perm` | service | 800 | — | 571,31 | 792 | — |
+| `hunt_1h` | service | 100 | — | 71,41 | 99 | — |
+| `hunt_5h` | service | 420 | — | 299,94 | 415,80 | — |
+| `hunt_24h` | service | 1 500 | — | 1 071,21 | 1 485 | — |
 
 ### Kosmetyki za Smoczą Walutę (przedziały cen wg rodzaju)
 

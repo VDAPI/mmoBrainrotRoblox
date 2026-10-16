@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local AutoPotion = require(Shared.Logic.AutoPotion)
 local Blessings = require(Shared.Data.Blessings)
 local Clock = require(Shared.Util.Clock)
 local Cosmetics = require(Shared.Data.Cosmetics)
@@ -38,6 +39,7 @@ local CosmeticService = Context.services.CosmeticService
 local LoginRewardService = Context.services.LoginRewardService
 local VipService = Context.services.VipService
 local LureService = Context.services.LureService
+local AutoGrindService = Context.services.AutoGrindService -- S134d: /autogrind
 local PremiumShopService = Context.services.PremiumShopService -- S123: /pack
 local ArenaService = Context.services.ArenaService -- S131: /weekreset tokens
 
@@ -269,6 +271,73 @@ commands.lure = function(player, args)
 		reply(player, "admin.lure.pulse", { n = n, reason = if blocked then `@{blocked}` else "-" })
 	else
 		reply(player, "admin.usage.lure")
+	end
+end
+
+-- S134d: Auto Hunt of the caller's account: bank time without shards, clear, stop the hunt, the state.
+commands.autogrind = function(player, args)
+	local action = args[1]
+	if type(PlayerStateService.Get(player, { "account" })) ~= "table" then
+		reply(player, "admin.usage.autogrind")
+		return
+	end
+	if action == "add" then
+		local minutes = math.clamp(math.floor(tonumber(args[2]) or 60), 1, 1440)
+		local bank = AutoGrindService.Add(player, minutes * 60)
+		reply(player, "admin.autogrind.added", { minutes = minutes, bank = math.floor(bank) })
+	elseif action == "clear" then
+		AutoGrindService.Clear(player)
+		reply(player, "admin.autogrind.cleared")
+	elseif action == "stop" then
+		AutoGrindService.Toggle(player, false)
+		reply(player, "admin.autogrind.stopped")
+	elseif action == "status" then
+		local bank, left, today = AutoGrindService.Status(player)
+		reply(player, "admin.autogrind.status", {
+			active = if AutoGrindService.IsActive(player) then "ON" else "OFF",
+			bank = math.floor(bank),
+			left = math.floor(left),
+			today = math.floor(today),
+		})
+	else
+		reply(player, "admin.usage.autogrind")
+	end
+end
+
+-- S134d: Auto Potions of the caller's account without shards: days of time, forever, clear, the state.
+commands.autopotion = function(player, args)
+	local action = args[1]
+	local acc = PlayerStateService.Get(player, { "account" })
+	if type(acc) ~= "table" then
+		reply(player, "admin.usage.autopotion")
+		return
+	end
+	local now = os.time()
+	if action == "grant" then
+		local days = math.clamp(math.floor(tonumber(args[2]) or 1), 1, 365)
+		PlayerStateService.Set(
+			player,
+			{ "account", "autoPotion" },
+			AutoPotion.extend(acc.autoPotion, days * 86400, now)
+		)
+		reply(player, "admin.autopotion.granted", { days = days })
+	elseif action == "perm" then
+		PlayerStateService.Set(player, { "account", "autoPotion" }, AutoPotion.extend(acc.autoPotion, 0, now, true))
+		reply(player, "admin.autopotion.perm")
+	elseif action == "clear" then
+		PlayerStateService.Set(player, { "account", "autoPotion" }, AutoPotion.default())
+		reply(player, "admin.autopotion.cleared")
+	elseif action == "status" then
+		local state = acc.autoPotion
+		reply(player, "admin.autopotion.status", {
+			on = if AutoPotion.active(state, now) then "ON" else "OFF",
+			perm = if state and state.permanent then "yes" else "no",
+			left = math.floor(AutoPotion.left(state, now)),
+			hp = if state then state.hp else 0,
+			res = if state then state.res else 0,
+		})
+	else
+		reply(player, "admin.usage.autopotion")
 	end
 end
 

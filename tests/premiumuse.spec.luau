@@ -120,14 +120,19 @@ T.describe("S122 UseBlocks", function()
 		end
 	end)
 
-	T.it("only the two features ask, and no server file spells a block text", function()
+	T.it("only the features ask their own lists, and no server file spells a block text", function()
 		local potion = fs.readFile("src/server/Services/PotionService.luau")
 		local lure = fs.readFile("src/server/Services/LureService.luau")
 		T.expect(string.find(potion, "UseBlocks.LISTS.fullElixir", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(lure, "UseBlocks.LISTS.lure", 1, true) ~= nil).toBe(true)
+		-- S134d: Auto Potions and Auto Hunt ask their own lists
+		local autoPotion = fs.readFile("src/server/Services/AutoPotionService.luau")
+		local autoGrind = fs.readFile("src/server/Services/AutoGrindService.luau")
+		T.expect(string.find(autoPotion, "UseBlocks.LISTS.autoPotion", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(autoGrind, "UseBlocks.LISTS.autoGrind", 1, true) ~= nil).toBe(true)
 		for _, path in sources("src/server", {}) do
 			local text = fs.readFile(path)
-			for _, literal in { '"fullElixir.block.', '"lure.block.' } do
+			for _, literal in { '"fullElixir.block.', '"lure.block.', '"autoPotion.block.', '"autoGrind.block.' } do
 				if string.find(text, literal, 1, true) then
 					error(`{path}: block texts only through UseBlocks.key`)
 				end

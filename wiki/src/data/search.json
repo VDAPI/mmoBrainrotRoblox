@@ -717,6 +717,7 @@
     {"id":"scepter_85","key":"pradawne berlo ancient scepter","level":85,"name":{"en":"Ancient Scepter","pl":"Pradawne Berło"},"rarity":"mythic","type":"item"},
     {"id":"scepter_90","key":"niebianskie berlo celestial scepter","level":90,"name":{"en":"Celestial Scepter","pl":"Niebiańskie Berło"},"rarity":"mythic","type":"item"},
     {"id":"scepter_95","key":"eteryczne berlo ethereal scepter","level":95,"name":{"en":"Ethereal Scepter","pl":"Eteryczne Berło"},"rarity":"mythic","type":"item"},
+    {"id":"scroll_hunt","key":"zwoj lowow scroll of the hunt","level":1,"name":{"en":"Scroll of the Hunt","pl":"Zwój Łowów"},"rarity":"common","type":"item"},
     {"id":"scroll_oblivion","key":"zwoj zapomnienia scroll of oblivion","level":1,"name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"},"rarity":"common","type":"item"},
     {"id":"scroll_protection","key":"zwoj ochrony scroll of protection","level":1,"name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"},"rarity":"common","type":"item"},
     {"id":"scroll_skillreset","key":"zwoj nowej sciezki scroll of a new path","level":1,"name":{"en":"Scroll of a New Path","pl":"Zwój Nowej Ścieżki"},"rarity":"common","type":"item"},

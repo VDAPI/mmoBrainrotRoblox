@@ -511,6 +511,13 @@ cmd(
 	"lure",
 	{ enum("action", { "add", "clear", "on", "off", "pulse" }), int("minutes", 1, 20160, true, "60") }
 )
+-- S134d: Auto Hunt bank of the caller's account (no shards), stop and state; Auto Potions without shards
+cmd(
+	"economy",
+	"autogrind",
+	{ enum("action", { "add", "clear", "stop", "status" }), int("minutes", 1, 1440, true, "60") }
+)
+cmd("economy", "autopotion", { enum("action", { "grant", "perm", "clear", "status" }), int("days", 1, 365, true, "1") })
 cmd("economy", "bless", { ref("id", "blessing", true) })
 -- S100: the login reward streak of the caller's account (state, set, simulate days passing)
 cmd("economy", "login", {})

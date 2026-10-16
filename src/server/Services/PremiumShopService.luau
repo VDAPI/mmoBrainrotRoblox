@@ -6,6 +6,8 @@
 -- the change; renaming yields for the name store and checks again afterwards.
 -- S122 (DESIGN-17 §3): item entries give `n` items (Elixir of Wholeness packs, bound from creation through
 -- ItemRoll.makeStack); `lure` entries add real time to account.lure (Logic/Lure.extend, buying switches it on).
+-- S134d: `autoPotion` entries add real time or mark the account forever (Logic/AutoPotion.extend), `autoGrind` entries
+-- add seconds to the Auto Hunt bank (Logic/AutoGrind.add).
 -- S123 (DESIGN-17 §4): a cosmetic costs Logic/WeeklyOffer.priceOf at Util/Clock.now() (the offer of the week, the
 -- same clock as the window, /time moves both); a client that saw another price (the week changed in between) is
 -- refused with premium.error.priceChanged before anything is paid. Starter packs: the grant handlers of
@@ -22,6 +24,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local AutoGrind = require(Shared.Logic.AutoGrind)
+local AutoPotion = require(Shared.Logic.AutoPotion)
 local Clock = require(Shared.Util.Clock)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -132,11 +136,76 @@ local function buyLure(player: Player, key: string): (boolean, string?)
 	return true, nil
 end
 
+-- S134d: Auto Potions, timed (real time, adds up) or forever (once; Premium.canBuy refuses everything after it).
+local function buyAutoPotion(player: Player, key: string): (boolean, string?)
+	local data = account(player)
+	local entry = Products.getShop(key)
+	if not data or not entry or entry.kind ~= "autoPotion" then
+		return false, "error.badRequest"
+	end
+	if entry.permanent ~= true and (not entry.seconds or entry.seconds <= 0) then
+		return false, "error.badRequest"
+	end
+	local now = os.time()
+	local ok, err = Premium.canBuy(entry, data, now)
+	if not ok then
+		return false, err
+	end
+	local fresh = AutoPotion.extend(data.autoPotion, entry.seconds or 0, now, entry.permanent)
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, entry.price, key, entry.cat)
+	countLimit(player, entry, data, now)
+	PlayerStateService.Set(player, { "account", "autoPotion" }, fresh)
+	DataService.Save(player)
+	if fresh.permanent then
+		Net.Fire(player, "Toast", "autoPotion.addedPerm", nil, "success")
+	else
+		local addedKey, addedArgs = Lure.timeKey(entry.seconds or 0)
+		local leftKey, leftArgs = Lure.timeKey(AutoPotion.left(fresh, now))
+		Net.Fire(player, "Toast", "autoPotion.added", {
+			time = { key = addedKey, args = addedArgs },
+			left = { key = leftKey, args = leftArgs },
+		}, "success")
+	end
+	return true, nil
+end
+
+-- S134d: Auto Hunt seconds into the bank (spent only while hunting, Logic/AutoGrind).
+local function buyAutoGrind(player: Player, key: string): (boolean, string?)
+	local data = account(player)
+	local entry = Products.getShop(key)
+	if not data or not entry or entry.kind ~= "autoGrind" or not entry.seconds or entry.seconds <= 0 then
+		return false, "error.badRequest"
+	end
+	local now = os.time()
+	local ok, err = Premium.canBuy(entry, data, now)
+	if not ok then
+		return false, err
+	end
+	local fresh = AutoGrind.add(data.autoGrind, entry.seconds)
+	PremiumFunnel.step(player, "shop", "prompt")
+	spend(player, entry.price, key, entry.cat)
+	countLimit(player, entry, data, now)
+	PlayerStateService.Set(player, { "account", "autoGrind" }, fresh)
+	DataService.Save(player)
+	local addedKey, addedArgs = Lure.timeKey(entry.seconds)
+	local leftKey, leftArgs = Lure.timeKey(fresh.bank)
+	Net.Fire(player, "Toast", "autoGrind.added", {
+		time = { key = addedKey, args = addedArgs },
+		left = { key = leftKey, args = leftArgs },
+	}, "success")
+	return true, nil
+end
+
 -- PremiumBuy: one remote for every shop entry, split by the entry's kind.
 local function buy(player: Player, key: string): (boolean, string?)
 	local entry = Products.getShop(key)
 	if entry and entry.kind == "lure" then
 		return buyLure(player, key)
+	elseif entry and entry.kind == "autoPotion" then
+		return buyAutoPotion(player, key)
+	elseif entry and entry.kind == "autoGrind" then
+		return buyAutoGrind(player, key)
 	end
 	return buyItem(player, key)
 end

@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S134c gotowe (ostatnia S134c: do lochu od poziomu bossa − 10 z pełnym łupem i EXP niższego gracza
+S01–S115 i S117–S134d gotowe (ostatnia S134d: odwet stojącej postaci przy „Automatycznym celu” (bije najbliższego
+atakującego w miejscu), Samoczynne Mikstury (na zawsze / czasowo, progi życia i zasobu, nie w PvP) i Samodzielne Łowy
+(bank czasu, najwyżej 3 h dziennie, EXP i złoto ×0,7 poza rankingiem tygodniowym, blokady, Zwój Łowów z bossów);
+wcześniej S134c: do lochu od poziomu bossa − 10 z pełnym łupem i EXP niższego gracza
 „jak na starym progu”, quest bossa dalej od − 5; Inwazja z falami 13 / 19 / 25, Elitami w każdej fali, Elitą II w
 ostatniej, dowódcą bez zniżki solo z ciosami do unikania i „Rozkazem”, skrzynia do Legendarnej; wcześniej S134b: pula
 EXP drużyny +50% za członka, S134: bossowie 2.0, czyli HP i fale bez skalowania z drużyną, wielkie ciosy do unikania,
@@ -261,6 +264,13 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134d:** odwet, Samoczynne Mikstury i Samodzielne Łowy bez przeglądu w grze (chodzenie Łowów po ścieżce
+  `PathfindingService`, anty-AFK `VirtualUser` w `pcall`: czy Roblox pozwala na nie w LocalScripcie, sprawdzi dopiero
+  żywy serwer). Ikona Zwoju Łowów to wspólna `misc/scroll` (bez własnego PNG), przyciski HUD „⚔” i „A” to znaki, karty
+  usług w sklepie bez obrazków `sklep/autoPotion`, `sklep/autoGrind`, `sklep/autopotion_*`, `sklep/hunt_*`. Ikony wiki
+  nieprzeliczone (`npm run icons` / `sharp` niezainstalowane w tej sesji). Łowy nie biją atakującej Elity (tylko
+  zwykłe potwory łowiska).
 
 - **S134c:** ciosy dowódcy Inwazji (`warlord*`) pozują stylami planu (`humanoid`, `beast`, `canine`, reszta `default`),
   bez własnych póz i bez obejrzenia w Studio; „Skok Wodza” przenosi dowódcę bez łuku skoku. Model Inwazji

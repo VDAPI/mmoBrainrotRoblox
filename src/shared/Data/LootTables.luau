@@ -185,6 +185,8 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "legend_core", chance = 0.1, min = 1, max = 1 },
 			{ id = "scroll_protection", chance = 0.25, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.08, min = 1, max = 1 },
+			-- S134d: Scroll of the Hunt (Auto Hunt time; the free way, slower than buying)
+			{ id = "scroll_hunt", chance = 0.15, min = 1, max = 1 },
 		},
 		legendaryChance = BOSS_ROLL.legendaryChance,
 		mythicChance = BOSS_ROLL.mythicChance,
@@ -200,6 +202,7 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "legend_core", chance = 0.15, min = 1, max = 1 },
 			{ id = "scroll_protection", chance = 0.3, min = 1, max = 1 },
 			{ id = "scroll_unbind", chance = 0.1, min = 1, max = 1 },
+			{ id = "scroll_hunt", chance = 0.2, min = 1, max = 1 }, -- S134d
 		},
 		legendaryChance = BOSS_ROLL.legendaryChance,
 		mythicChance = BOSS_ROLL.mythicChance,
@@ -214,6 +217,7 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "legend_core", chance = 0.2, min = 1, max = 1 },
 			{ id = "scroll_protection", chance = 0.35, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.12, min = 1, max = 1 },
+			{ id = "scroll_hunt", chance = 0.25, min = 1, max = 1 }, -- S134d
 		},
 		legendaryChance = BOSS_ROLL.legendaryChance,
 		mythicChance = BOSS_ROLL.mythicChance,
@@ -228,6 +232,7 @@ local BOSSES: { [string]: BossTable } = {
 			{ id = "legend_core", chance = 0.3, min = 1, max = 2 },
 			{ id = "scroll_protection", chance = 0.4, min = 1, max = 2 },
 			{ id = "scroll_unbind", chance = 0.15, min = 1, max = 1 },
+			{ id = "scroll_hunt", chance = 0.3, min = 1, max = 1 }, -- S134d
 		},
 		legendaryChance = BOSS_ROLL.legendaryChance,
 		-- S94 (balance plan 8.4, D2): the Mythic rarer than at the bosses of regions 1-3: 0.3 / 1.3 / 2.3 % on the

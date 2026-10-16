@@ -17,6 +17,7 @@ local Shared = ReplicatedStorage.Shared
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Classes = require(Shared.Data.Classes)
 local Config = require(Shared.Config)
 local FullElixir = require(Shared.Logic.FullElixir)
 local Items = require(Shared.Data.Items)
@@ -160,6 +161,47 @@ local function usePotion(player: Player, kind: string): (boolean, string?)
 		return drinkFull(player, index)
 	end
 	return drink(player, index)
+end
+
+-- S134d (Auto Potions): drinks the potion of the bar slot `kind` exactly like the key ("res" = the class resource,
+-- Data/Classes.resource). The Elixir of Wholeness in a slot is skipped ("potion.none"): it is the limited premium
+-- elixir of S122, never drunk by the service.
+function PotionService.DrinkKind(player: Player, kind: string): (boolean, string?)
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return false, "error.wrongPhase"
+	end
+	local slot = kind
+	if kind == "res" then
+		local class = Classes.get(character.class)
+		slot = if class then class.resource else "mana"
+	end
+	local itemId = (character.potionBar :: any)[slot]
+	local def = itemId and Items.get(itemId)
+	if def and def.use and def.use.kind == "fullElixir" then
+		return false, "potion.none"
+	end
+	return usePotion(player, slot)
+end
+
+-- S134d: whether the potion of the bar slot `kind` ("hp", "mana", "energy", "res") is in the backpack (Auto Hunt stops
+-- without HP potions while Auto Potions drink them). The Elixir of Wholeness does not count.
+function PotionService.HasPotion(player: Player, kind: string): boolean
+	local character: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not character then
+		return false
+	end
+	local slot = kind
+	if kind == "res" then
+		local class = Classes.get(character.class)
+		slot = if class then class.resource else "mana"
+	end
+	local itemId = (character.potionBar :: any)[slot]
+	local def = itemId and Items.get(itemId)
+	if not def or not def.use or def.use.kind ~= "potion" then
+		return false
+	end
+	return InventoryService.Find(player, itemId) ~= nil
 end
 
 local function setPotionSlot(player: Player, kind: string, itemId: string?): (boolean, string?)
