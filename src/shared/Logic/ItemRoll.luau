@@ -6,6 +6,7 @@ local Classes = require("../Data/Classes")
 local Elements = require("../Data/Elements")
 local Families = require("../Data/Families")
 local ItemValue = require("./ItemValue")
+local ItemEffects = require("./ItemEffects")
 local ItemTraits = require("../Data/ItemTraits")
 local Items = require("../Data/Items")
 local LootRules = require("../Data/LootRules")
@@ -228,18 +229,6 @@ function ItemRoll.bonusPool(defId: string, forClass: string?): { string }
 	return out
 end
 
-function ItemRoll.legendaryPool(defId: string, forClass: string?): { string }
-	local def = Items.get(defId)
-	local classes = if def then classesFor(def, forClass) elseif forClass then { forClass } else nil
-	return filtered(Bonuses.pools.legendary, classes)
-end
-
-function ItemRoll.mythicPool(defId: string, forClass: string?): { string }
-	local def = Items.get(defId)
-	local classes = if def then classesFor(def, forClass) elseif forClass then { forClass } else nil
-	return filtered(Bonuses.pools.mythic, classes)
-end
-
 -- Exact chance (0..1) that each line is among `count` weighted draws without replacement (Rng.weighted per draw).
 function ItemRoll.inclusion(weights: { [string]: number }, count: number): { [string]: number }
 	local ids: { string } = {}
@@ -287,9 +276,10 @@ local function expandParam(id: string, rng: Rng.Rng, ctx: RollContext?): string
 	return Bonuses.classLine(param.prefix, rng:pick(Classes.order :: any) :: string)
 end
 
--- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats) plus
--- `legendaryLines` distinct lines from the legendary pool and `mythicLines` from the mythic pool; named boss items get their fixed bonuses and fixed
--- rarity (Mythic); everything else is a single unit of its definition's rarity. `forClass` (S32) is the class a
+-- Rolls an item instance. Equipment gets bonusMin..bonusMax random bonuses of its rarity (no repeats); S134g:
+-- Legendary and Mythic items add `legendaryEffects` / `mythicEffects` skill effects (`fx`, Logic/ItemEffects.roll)
+-- instead of lines from the old legendary / mythic pools; named boss items get their fixed bonuses, fixed effects
+-- (read from the definition) and fixed rarity (Mythic); everything else is a single unit of its definition's rarity. `forClass` (S32) is the class a
 -- class-free item (jewellery) dropped for: its bonuses are useful to that class. `ctx` (S67): the family of the
 -- monster that dropped it; without it a family marker rolls a random family.
 function ItemRoll.rollItem(
@@ -341,22 +331,10 @@ function ItemRoll.rollItem(
 			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 		end
 	end
-	if rarityDef.legendaryLines > 0 then
-		local legendary = ItemRoll.legendaryPool(defId, forClass)
-		rng:shuffle(legendary)
-		for i = 1, math.min(rarityDef.legendaryLines, #legendary) do
-			local id = legendary[i]
-			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
-		end
-	end
-	if rarityDef.mythicLines > 0 then
-		local mythic = ItemRoll.mythicPool(defId, forClass)
-		rng:shuffle(mythic)
-		for i = 1, math.min(rarityDef.mythicLines, #mythic) do
-			local id = mythic[i]
-			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
-		end
-	end
+	-- Mage weapons roll their element (S18). S134g: before the effects (a Mage weapon prefers its element's effects);
+	-- the legendary / mythic lines are gone, Legendary and Mythic items roll skill effects instead (Logic/ItemEffects).
+	local el: string? = if def.elemental then rng:pick(Elements.WEAPON) else nil
+	local fx = ItemEffects.roll(defId, rarityId, rng, forClass, el)
 
 	return {
 		uid = uid,
@@ -367,9 +345,9 @@ function ItemRoll.rollItem(
 		up = 0,
 		bound = false,
 		n = 1,
-		-- Mage weapons roll their element (S18).
-		el = if def.elemental then rng:pick(Elements.WEAPON) else nil,
+		el = el,
 		rv = Rarities.RV,
+		fx = if #fx > 0 then fx else nil,
 	}
 end
 
@@ -531,6 +509,10 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 		end
 		trait.contrib = contrib
 		result.trait = trait
+	end
+	-- S134g: hooks of the item's skill effects (Data/ItemEffects `hook`; none of today's effects has one)
+	for hookId, v in ItemEffects.hooks(item) do
+		result.hooks[hookId] = (result.hooks[hookId] or 0) + v
 	end
 	return result
 end

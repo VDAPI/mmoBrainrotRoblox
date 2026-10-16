@@ -26,8 +26,9 @@ T.describe("ItemRoll", function()
 			for _ = 1, 50 do
 				local item = ItemRoll.rollItem("sword1h_30", 31, rarity, rng, uid())
 				local def = Rarities.get(rarity)
-				local extra = def.legendaryLines + def.mythicLines
-				T.expect(#item.bonuses).toBeBetween(def.bonusMin + extra, def.bonusMax + extra)
+				-- S134g: no legendary / mythic lines; Legendary and Mythic carry skill effects (item.fx) instead
+				T.expect(#item.bonuses).toBeBetween(def.bonusMin, def.bonusMax)
+				T.expect(#(item.fx or {})).toBe(def.legendaryEffects + def.mythicEffects)
 				T.expect(item.rv).toBe(Rarities.RV)
 				local seen = {}
 				for _, bonus in item.bonuses do
@@ -39,53 +40,53 @@ T.describe("ItemRoll", function()
 		end
 	end)
 
-	T.it("legendary items get one legendary-pool bonus, mythic two different ones", function()
+	-- S134g: Legendary 1 effect (legendary pool), Mythic 2 (one legendary, one mythic), Heroic none; never a line of
+	-- the old legendary / mythic pools (1000 rolls per rarity, every item kind)
+	T.it("legendary items get one skill effect, mythic one legendary and one mythic, no legendary lines", function()
+		local ItemEffects = require("../src/shared/Logic/ItemEffects")
 		local rng = Rng.new(2)
-		for _, case in { { Rarities.LEGENDARY, 1 }, { Rarities.MYTHIC, 2 }, { Rarities.HEROIC, 0 } } do
-			for _ = 1, 100 do
-				local item = ItemRoll.rollItem("ring_50", 52, case[1], rng, uid())
-				local legendary = 0
-				local seen = {}
+		local bases = { "ring_50", "sword1h_50", "wand_50", "armor_light_50", "necklace_50" }
+		for _, case in { { Rarities.LEGENDARY, 1, 0 }, { Rarities.MYTHIC, 1, 1 }, { Rarities.HEROIC, 0, 0 } } do
+			for n = 1, 1000 do
+				local item = ItemRoll.rollItem(bases[(n - 1) % #bases + 1], 52, case[1], rng, uid())
 				for _, bonus in item.bonuses do
-					if table.find(Bonuses.pools.legendary, bonus.stat) then
-						legendary += 1
-						T.expect(seen[bonus.stat]).toBeNil()
-						seen[bonus.stat] = true
-					end
+					T.expect({ bonus.stat, (Bonuses.get(bonus.stat) :: any).tier }).toEqual({ bonus.stat, "regular" })
 				end
-				T.expect(legendary).toBe(case[2])
-				if case[1] ~= Rarities.HEROIC then
-					local r = Rarities.get(case[1])
-					local extra = case[2] + r.mythicLines
-					T.expect(#item.bonuses).toBeBetween(r.bonusMin + extra, r.bonusMax + extra)
+				local tiers = { legendary = 0, mythic = 0 }
+				local classes: { [string]: boolean } = {}
+				for _, id in item.fx or {} do
+					local def = ItemEffects.resolve(id) :: any
+					tiers[def.tier] += 1
+					classes[def.class] = true
 				end
+				T.expect({ tiers.legendary, tiers.mythic }).toEqual({ case[2], case[3] })
+				local count = 0
+				for _ in classes do
+					count += 1
+				end
+				T.expect(count <= 1).toBe(true)
 			end
 		end
 	end)
 
-	T.it("bonus lines per rarity: unique 2, heroic 3, legendary 3 + 1, mythic 3 + 2 + 1 mythic", function()
-		local rng = Rng.new(21)
-		local cases = {
-			{ Rarities.UNIQUE, 2, 0, 0 },
-			{ Rarities.HEROIC, 3, 0, 0 },
-			{ Rarities.LEGENDARY, 3, 1, 0 },
-			{ Rarities.MYTHIC, 3, 2, 1 },
-		}
-		for _, case in cases do
-			for _ = 1, 50 do
-				local item = ItemRoll.rollItem("sword1h_30", 31, case[1], rng, uid())
-				local counts = { 0, 0, 0 }
-				for _, bonus in item.bonuses do
-					local slot = if table.find(Bonuses.pools.mythic, bonus.stat)
-						then 3
-						elseif table.find(Bonuses.pools.legendary, bonus.stat) then 2
-						else 1
-					counts[slot] += 1
+	T.it(
+		"bonus lines per rarity: unique 2, heroic 3, legendary 3, mythic 3 (S134g: the edge is in the effects)",
+		function()
+			local rng = Rng.new(21)
+			local cases = {
+				{ Rarities.UNIQUE, 2, 0 },
+				{ Rarities.HEROIC, 3, 0 },
+				{ Rarities.LEGENDARY, 3, 1 },
+				{ Rarities.MYTHIC, 3, 2 },
+			}
+			for _, case in cases do
+				for _ = 1, 50 do
+					local item = ItemRoll.rollItem("sword1h_30", 31, case[1], rng, uid())
+					T.expect({ #item.bonuses, #(item.fx or {}) }).toEqual({ case[2], case[3] })
 				end
-				T.expect(counts).toEqual({ case[2], case[3], case[4] })
 			end
 		end
-	end)
+	)
 
 	T.it("bonus values stay inside their scaled range", function()
 		local rng = Rng.new(3)
@@ -119,14 +120,26 @@ T.describe("ItemRoll", function()
 		T.expect(item.bonuses).toEqual((Items.get("unique_grimrok_cleaver") :: any).fixedBonuses)
 	end)
 
-	T.it("S88 (D4): named Mythics keep 4 lines within their limits and the base type's trait", function()
+	-- S134g (G): 3 lines (was 4 with a legendary line) and 2 fixed effects like a rolled Mythic
+	T.it("S88 (D4): named Mythics keep 3 lines within their limits, 2 effects and the base type's trait", function()
 		local B = require("./Balance")
+		local ItemEffects = require("../src/shared/Logic/ItemEffects")
+		local Classes = require("../src/shared/Data/Classes")
 		local named = 0
 		for _, def in Items.byId do
 			local d: any = def
 			if d.fixedBonuses and d.rarity == Rarities.MYTHIC then
 				named += 1
-				T.expect({ d.id, #d.fixedBonuses }).toEqual({ d.id, 4 })
+				T.expect({ d.id, #d.fixedBonuses }).toEqual({ d.id, 3 })
+				-- every class that can wear it gets one legendary and one mythic effect of its own class
+				for _, classId in d.classes or Classes.order do
+					local tiers: { string } = {}
+					for _, effect in ItemEffects.ofItem({ id = d.id }, classId) do
+						T.expect({ d.id, classId, effect.class }).toEqual({ d.id, classId, classId })
+						table.insert(tiers, effect.tier)
+					end
+					T.expect({ d.id, classId, tiers }).toEqual({ d.id, classId, { "legendary", "mythic" } })
+				end
 				for _, line in d.fixedBonuses do
 					T.expect({ d.id, line.stat, Bonuses.get(line.stat) ~= nil }).toEqual({ d.id, line.stat, true })
 				end
@@ -166,19 +179,20 @@ T.describe("ItemRoll", function()
 		T.expect((ItemRoll.itemStats(mythic).weapon :: any).dmg).toBe(math.floor(def.weapon.dmg * mythMul + 0.5))
 	end)
 
-	T.it("named boss items keep their ×1.3 base (S30 B.2; S32: axe 1.14, Grimrok's cleaver has 74 damage)", function()
+	-- S134g (G): UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines; named power 1.03-1.08, BALANS D4)
+	T.it("named boss items keep their ×1.26 base (S30 B.2; S134g: Grimrok's cleaver has 72 damage)", function()
 		local item: any = ItemRoll.rollItem("unique_grimrok_cleaver", 20, 1, Rng.new(6), uid())
 		local base = (Items.bases.byType.axe1h.weapon :: any)(20)
 		local dmg = (ItemRoll.itemStats(item).weapon :: any).dmg
-		T.expect(dmg).toBe(math.floor(base.dmg * 1.3 + 0.5))
-		T.expect(dmg).toBe(74)
+		T.expect(dmg).toBe(math.floor(base.dmg * 1.26 + 0.5))
+		T.expect(dmg).toBe(72)
 		local totem: any = ItemRoll.rollItem("unique_grimrok_totem", 20, 1, Rng.new(6), uid())
 		local raw = (Items.bases.byType.talisman.stats :: any)(20)
 		for stat, value in raw do
-			T.expect(ItemRoll.itemStats(totem).base[stat]).toBeNear(value * 1.3, 0.11)
+			T.expect(ItemRoll.itemStats(totem).base[stat]).toBeNear(value * 1.26, 0.11)
 		end
 		item.up = 9
-		T.expect((ItemRoll.itemStats(item).weapon :: any).dmg).toBe(math.floor(74 * 1.54 + 0.5))
+		T.expect((ItemRoll.itemStats(item).weapon :: any).dmg).toBe(math.floor(72 * 1.54 + 0.5))
 	end)
 
 	T.it("itemStats scales with ilvl: every level beats the one before", function()
@@ -621,7 +635,7 @@ T.describe("S62 traits and weighted pools", function()
 		Rarities.upgradeItem(bow, Items.get(bow.id))
 		local trait = ItemRoll.trait(bow) :: any
 		T.expect(trait.id).toBe("criticalForce")
-		T.expect(trait.power).toBe(1.16)
+		T.expect(trait.power).toBe(1.17) -- S134g: Legendary baseMul 1.16 -> 1.17
 	end)
 end)
 

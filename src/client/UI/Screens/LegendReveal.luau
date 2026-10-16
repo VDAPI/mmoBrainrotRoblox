@@ -1,6 +1,7 @@
 --!strict
 -- Legendary reveal (DESIGN §5.5): the item in the middle, its name, then the bonuses appear one by one with
 -- a sound and their roll quality. "Equip" equips it straight from the backpack, "OK" closes.
+-- S134g: the skill effects of the item come after the lines.
 -- S30: colours come from the item's rarity; a Mythic item gets the red variant: a darker red backdrop, a
 -- rotating red-pink frame, a pulsing icon that grows bigger and a slower, heavier reveal.
 
@@ -11,12 +12,14 @@ local Bonuses = require(ReplicatedStorage.Shared.Data.Bonuses)
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.IconState)
+local ItemEffects = require(ReplicatedStorage.Shared.Logic.ItemEffects)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Sounds = require(script.Parent.Parent.Sounds)
+local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -65,16 +68,19 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 		end)
 	)
 
+	-- S134g: the skill effects come last (Logic/ItemEffects; a named item shows the reader's class's pair)
+	local effects = ItemEffects.ofItem(item, State.Get({ "character", "class" }))
+	local steps = #stats.bonuses + #effects
 	task.spawn(function()
 		task.wait(if mythic then 1.0 else 0.6)
 		glow:set(1)
 		if mythic then
 			Sounds.play("levelUp")
 		end
-		for i = 1, #stats.bonuses do
+		for i = 1, steps do
 			task.wait(if mythic then MYTHIC_STEP else REVEAL_STEP)
 			revealed:set(i)
-			Sounds.play(if i == #stats.bonuses then "levelUp" else "open")
+			Sounds.play(if i == steps then "levelUp" else "open")
 		end
 	end)
 
@@ -109,6 +115,31 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 					then Rarities.get(Rarities.MYTHIC).color
 					elseif legendary then Rarities.get(Rarities.LEGENDARY).color
 					else Theme.Colors.Text,
+			})
+		)
+	end
+	for k, effect in effects do
+		local i = #stats.bonuses + k
+		table.insert(
+			rows,
+			scope:New("TextLabel")({
+				LayoutOrder = 10 + i,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(revealed) >= i
+				end),
+				RichText = true,
+				TextWrapped = true,
+				Text = scope:Computed(function(use): string
+					local lang = use(Text.Lang)
+					local title = Text.get(use, `tooltip.fx.{effect.tier}`, { name = Text.get(use, effect.nameKey) })
+					return `<b>{title}</b>\n{ItemEffects.line(effect, lang)}`
+				end),
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Rarities.get(if effect.tier == "mythic" then Rarities.MYTHIC else Rarities.LEGENDARY).color,
 			})
 		)
 	end

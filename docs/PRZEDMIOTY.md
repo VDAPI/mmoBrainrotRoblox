@@ -1,17 +1,50 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych b35f7a5c (`wiki/src/data/meta.json`).
+> Odcisk danych b90c918c (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
-| Rzadkość | Kolor | Bonusy | Linie legendarne | Linie mityczne | Mnożnik statystyk | Mnożnik wartości |
+| Rzadkość | Kolor | Bonusy | Efekty legendarne | Efekty mityczne | Mnożnik statystyk | Mnożnik zakresu linii | Mnożnik wartości |
+|---|---|---|---|---|---|---|---|
+| Zwykły | `#9DA3AB` | 0 | 0 | 0 | ×1 | ×1 | ×1 |
+| Unikatowy | `#F2D33A` | 2 | 0 | 0 | ×1,05 | ×1 | ×1,12 |
+| Heroiczny | `#3D8BFF` | 3 | 0 | 0 | ×1,12 | ×1 | ×1,25 |
+| Legendarny | `#FF9F1C` | 3 | 1 | 0 | ×1,17 | ×1,05 | ×1,45 |
+| Mityczny | `#E5302A` | 3 | 1 | 1 | ×1,22 | ×1,1 | ×1,7 |
+
+## Efekty przedmiotów Legendarnych i Mitycznych
+
+Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny i 1 mityczny; efekt zmienia umiejętność i działa tylko dla tej klasy (ten sam efekt z dwóch przedmiotów działa raz).
+
+| Klasa | Rzadkość | Efekt | Umiejętność | Rola | Pula | Działanie |
 |---|---|---|---|---|---|---|
-| Zwykły | `#9DA3AB` | 0 | 0 | 0 | ×1 | ×1 |
-| Unikatowy | `#F2D33A` | 2 | 0 | 0 | ×1,05 | ×1,12 |
-| Heroiczny | `#3D8BFF` | 3 | 0 | 0 | ×1,12 | ×1,25 |
-| Legendarny | `#FF9F1C` | 3 | 1 | 0 | ×1,16 | ×1,45 |
-| Mityczny | `#E5302A` | 3 | 2 | 1 | ×1,22 | ×1,7 |
+| Mage | Legendarny | Wtórny Wybuch | Kula Ognia | A1 | fire | Kula Ognia wybucha drugi raz po 1 s za 30% |
+| Mage | Legendarny | Pocisk Kata | Magiczny Pocisk | S1 | fire | Magiczny Pocisk: pewny krytyk na celach poniżej 25% życia |
+| Mage | Legendarny | Lodowe Odpryski | Lodowy Odłamek | S1 | ice | Lodowy Odłamek roztrzaskuje się: wrogowie do 4 st. od celu dostają 25% |
+| Mage | Legendarny | Dodatkowy Łuk | Łańcuch Błyskawic | A1 | lightning | Łańcuch Błyskawic przeskakuje na 1 cel więcej |
+| Mage | Legendarny | Przenikliwy Chłód | Lodowa Nova | K1 | ice | Lodowa Nova: promień +2 st., zamrożenie o 0,5 s dłuższe |
+| Mage | Legendarny | Przypływ Mocy | Błysk | C1 | common | Błysk: przez 4 s po teleportacji atak magiczny +10% |
+| Mage | Mityczny | Deszcz Odłamków | Meteor | A2 | fire | Meteor rozpada się na 3 mniejsze wybuchy po 35% |
+| Mage | Mityczny | Echo Burzy | Burza Piorunów | A2 | lightning | Burza Piorunów: druga fala po 1,5 s za 40% |
+| Mage | Mityczny | Lodowy Wir | Lodowa Nova | K1 | ice | Lodowa Nova najpierw przyciąga wrogów z promienia 14 st. |
+| Warrior | Legendarny | Oszałamiający Impet | Szarża | C1 | common | Szarża ogłusza o 0,7 s dłużej |
+| Warrior | Legendarny | Spragnione Ostrze | Potężne Uderzenie | S1 | onehand | Potężne Uderzenie leczy cię o 15% zadanych obrażeń |
+| Warrior | Legendarny | Zbiórka | Prowokacja | C2 | common | Prowokacja najpierw przyciąga wrogów z promienia 12 st. |
+| Warrior | Mityczny | Rozłam | Trzęsienie Ziemi | A2 | onehand | Trzęsienie Ziemi: ostatnia fala ogłusza na 1 s |
+| Warrior | Mityczny | Drugi Oddech | Wir Ostrzy | A2 | twohand | Wir Ostrzy leczy cię o 5% maks. HP |
+| Hunter | Legendarny | Rozrywający Grot | Celny Strzał | S1 | bow | Celny Strzał: grot rozrywa się, wrogowie do 4 st. od celu dostają 30% |
+| Hunter | Legendarny | Druga Ulewa | Deszcz Strzał | A1 | bow | Deszcz Strzał: druga fala po 1 s za 30% |
+| Hunter | Legendarny | Roznoszona Trucizna | Zatruta Strzała | S2 | crossbow | Zatruta Strzała: śmierć zatrutego wroga przenosi truciznę na 2 najbliższych |
+| Hunter | Legendarny | Wiatr w Plecy | Odskok | C1 | common | Odskok: szybkość ruchu +25% przez 4 s |
+| Hunter | Mityczny | Druga Salwa | Salwa | A2 | bow | Salwa: druga salwa po 1 s za 35% |
+| Hunter | Mityczny | Szybka Ręka | Podwójny Strzał | S2 | bow | Podwójny Strzał: pierwszy krytyk skraca odnowienie o 30% |
+| Cleric | Legendarny | Święty Głód | Święte Uderzenie | S1 | hammer | Święte Uderzenie leczy cię o 20% zadanych obrażeń |
+| Cleric | Legendarny | Karzące Światło | Leczenie | C1 | common | Leczenie: wrogowie do 6 st. od leczonego dostają 40% ataku magicznego |
+| Cleric | Legendarny | Olśnienie | Światłość | A1 | light | Światłość spowalnia trafionych o 25% na 2 s |
+| Cleric | Legendarny | Niezłomna Wiara | Tarcza Wiary | O1 | light | Tarcza Wiary: tarcza silniejsza o 4% maks. życia celu i trwa 4 s dłużej |
+| Cleric | Mityczny | Rozliczenie | Sąd | S3 | hammer | Sąd: wrogowie do 6 st. od celu dostają 50% |
+| Cleric | Mityczny | Egida Światła | Krąg Światła | C2 | common | Krąg Światła: nadmiar leczenia staje się tarczą |
 
 Źródła dropu: szansa przedmiotu na zabicie, liczba i najwyższa możliwa rzadkość (sufit).
 
@@ -1110,18 +1143,18 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 
 | Przedmiot | Boss | Poziom | Statystyki | Bonusy stałe |
 |---|---|---|---|---|
-| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 561,6 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Silny przeciw żywiołakom i demonom +{v}% +12%, +{v}% obrażeń przeciw elitom +12% |
-| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 133,9, hp 169 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10%, Odbija {v}% otrzymanych obrażeń +10% |
-| Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 306, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15%, +{v}% obrażeń przeciw bossom +10% |
-| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 74, szybkość 1,05 | +{v}% Ataku fizycznego +7%, +{v} Siły +8, Silny przeciw ludziom i plemionom +{v}% +12%, +{v}% obrażeń celom poniżej 30% życia +15% |
-| Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,3, Atak fizyczny % 5,3 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6, +{v}% obrażeń ataku podstawowego +4% |
-| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 28,6, hp 85,8, Odporność magiczna 28,6 | +{v} Witalności +8, +{v}% Życia +6%, Odporność na ludzi i plemiona {v}% +8%, Zabicie potwora leczy {v}% maks. życia +3% |
-| Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 157, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5%, {v}% szansy na podwójny atak +5% |
-| Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 55, obr. mag. 151, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8%, Trafienia przywracają {v}% maks. many +2% |
-| Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 61,1, hp 92,3, mana 153,4, Odporność magiczna 84,5 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10%, -{v}% otrzymanych obrażeń poniżej 30% życia +15% |
-| Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,6 | +{v}% Ataku magicznego +8,5%, +{v} Intelektu +32, Przebicie magii {v}% +10%, +{v}% obrażeń celom poniżej 30% życia +18% |
-| Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 471, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40%, +{v}% obrażeń przeciw bossom +10% |
-| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Obrona 211,9, hp 533 | +{v} Obrony +160, +{v}% Życia +8%, Odporność na smoki {v}% +10%, -{v}% otrzymanych obrażeń poniżej 30% życia +18% |
+| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 544,3 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Silny przeciw żywiołakom i demonom +{v}% +12% |
+| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 129,8, hp 163,8 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10% |
+| Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 296, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15% |
+| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Silny przeciw ludziom i plemionom +{v}% +12% |
+| Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,2, Atak fizyczny % 5,2 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6 |
+| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 27,7, hp 83,2, Odporność magiczna 27,7 | +{v} Witalności +6, +{v}% Życia +5%, Odporność na ludzi i plemiona {v}% +8% |
+| Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 152, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5% |
+| Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 53, obr. mag. 146, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8% |
+| Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 59,2, hp 89,5, mana 148,7, Odporność magiczna 81,9 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10% |
+| Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +29, Przebicie magii {v}% +10% |
+| Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 456, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40% |
+| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Obrona 205,4, hp 516,6 | +{v} Obrony +160, +{v}% Życia +7%, Odporność na smoki {v}% +10% |
 
 ## Materiały
 

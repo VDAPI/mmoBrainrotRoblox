@@ -1,16 +1,19 @@
 --!strict
 -- How good an item is for a class and its main path ("Better item!", DESIGN §5.9; S20, rebuilt in S67). Weights in
 -- Data/ItemWeights: every stat, hook and trait lands on one of four axes (damage, survival, support, utility);
--- situational lines (families, classes, bosses, elites) count half; the trait counts once by its STATY 14 estimate.
+-- situational lines (families, classes, bosses, elites) count half; the trait counts once by its STATY 14 estimate;
+-- S134g: every skill effect of the context's class once by its Data/ItemEffects score (another class's: nothing).
 -- A main path with `itemWeights` multiplies the class weights. Pure.
 
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
+local ItemEffects = require("./ItemEffects")
 local ItemRoll = require("./ItemRoll")
 local ItemTraits = require("../Data/ItemTraits")
 local ItemWeights = require("../Data/ItemWeights")
 local Items = require("../Data/Items")
 local PathData = require("../Data/Paths")
+local Rarities = require("../Data/Rarities")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -105,6 +108,29 @@ function ItemScore.weaponDps(item: ItemInstance, classId: string): number
 	return (if isMagic(classId) then weapon.mdmg else weapon.dmg) * weapon.speed
 end
 
+-- S134g: points of one item effect on its axis (score.pct x PCT_POINTS; fixed, like a trait at Common +0).
+function ItemScore.effectPoints(effect: ItemEffects.ItemEffectDef): number
+	return effect.score.pct * ItemWeights.PCT_POINTS
+end
+
+-- S134g: expected effect points of a new item of `rarity` for `classId` (the mean of each pool it rolls from; the
+-- model's "expected effects", tests/Balance rarityEdge).
+function ItemScore.expectedEffectPoints(classId: string, rarity: number): number
+	local rarityDef = Rarities.get(rarity)
+	local function mean(tier: ItemEffects.Tier, count: number): number
+		local pool = ItemEffects.pool(classId, tier)
+		if count <= 0 or #pool == 0 then
+			return 0
+		end
+		local sum = 0
+		for _, effect in pool do
+			sum += ItemScore.effectPoints(effect)
+		end
+		return count * sum / #pool
+	end
+	return mean("legendary", rarityDef.legendaryEffects) + mean("mythic", rarityDef.mythicEffects)
+end
+
 -- Points of an item on each axis (before axis multipliers) and the total for the context.
 function ItemScore.breakdown(item: ItemInstance, context: Context | string): Breakdown
 	local ctx = contextOf(context)
@@ -147,6 +173,13 @@ function ItemScore.breakdown(item: ItemInstance, context: Context | string): Bre
 		if weight then
 			local mul = if path and path.traits then path.traits[trait.id] or 1 else 1
 			add(weight.axis, weight.pct * ItemWeights.PCT_POINTS * trait.power * mul)
+		end
+	end
+	-- S134g: every skill effect of the context's class counts once by its estimate (Data/ItemEffects score: % of one
+	-- axis, like a trait); an effect of another class is worth nothing to this one
+	for _, effect in ItemEffects.ofItem(item, classId) do
+		if effect.class == classId then
+			add(effect.score.axis, ItemScore.effectPoints(effect))
 		end
 	end
 	if stats.weapon then

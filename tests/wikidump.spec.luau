@@ -998,9 +998,40 @@ T.describe("Wiki export: items and monsters (S68)", function()
 		for _, m in d.monsters.monsters do
 			T.expect({ m.id, m.family }).toEqual({ m.id, (Monsters.get(m.id) :: any).family })
 		end
+		-- S134g: the rarity records carry the skill effects (were legendary / mythic lines)
 		for _, r in d.rarities.rarities do
-			T.expect({ r.key, r.mythicLines }).toEqual({ r.key, Rarities.get(r.id).mythicLines })
+			local rarity = Rarities.get(r.id)
+			T.expect({ r.key, r.legendaryEffects, r.mythicEffects })
+				.toEqual({ r.key, rarity.legendaryEffects, rarity.mythicEffects })
 		end
+	end)
+
+	T.it("S134g: every published item effect with its finished line, no legacy pools, named items' effects", function()
+		local ItemEffectData = require("../src/shared/Data/ItemEffects")
+		local hiddenIds = require("../tools/WikiData/Visibility").collect()
+		local published = 0
+		for _, def in ItemEffectData.list do
+			-- an effect of a skill hidden on the wiki (an unpublished path) waits with it
+			if def.wiki and def.replacedBy == nil and not hiddenIds[def.skill] then
+				published += 1
+			end
+		end
+		T.expect(published >= 4 * 3).toBe(true)
+		T.expect(#d.items.effects).toBe(published)
+		for _, e in d.items.effects do
+			for _, lang in { "pl", "en" } do
+				T.expect({ e.id, lang, string.find(e.line[lang], "{", 1, true) }).toEqual({ e.id, lang, nil })
+			end
+		end
+		T.expect(d.bonuses.pools.legendary).toBeNil()
+		T.expect(d.bonuses.pools.mythic).toBeNil()
+		local named = 0
+		for _, item in d.items.items do
+			if item.fixedEffects then
+				named += 1
+			end
+		end
+		T.expect(named).toBe(12)
 	end)
 
 	T.it("keeps weights, node hooks and cap references out and lists four markers", function()

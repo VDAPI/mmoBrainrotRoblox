@@ -4665,3 +4665,61 @@
 - **S134f** Nowe okna i ekrany na listę S135 / S136: okno `fightlog` (`FightLogWindow`), zakładka `PartyFinder` (idzie
   z oknem `party`), ekrany `ReadyCheck` (pergamin), `FightCard` (żelazo), `Hud/LowHpVignette` (żelazo). Okno `party`
   urosło do 660 × 620 (pasek zakładek).
+- **S134g** Rzadkość (owner 2026-10-15, statystyki ≈ Heroiczny +5% / +10%): Legendarny `baseMul` 1,16 → 1,17 i
+  `rangeMul` 1,1 → 1,05, 1 efekt umiejętności; Mityczny `baseMul` 1,22 bez zmian (1,21 dawało broni 1,077 < 1,08),
+  `rangeMul` 1,2 → 1,10, 1 efekt legendarny + 1 mityczny. Wynik `ItemScore` bez efektów: L / H 1,039–1,053, M / H
+  1,081–1,099 (wszystkie klasy, broń, zbroja, biżuteria, L 20–100).
+- **S134g** Efekty mają stałe liczby (rosną z rangą umiejętności, nie z poziomem ani ulepszeniem przedmiotu); jeden efekt
+  działa raz, nawet z dwóch przedmiotów; efekt innej klasy nic nie robi (opis: „działa dla: …”); efekty wchodzą do
+  `Skills.effective` po węzłach ścieżki (`Paths.effectiveFor`), bez osobnego mnożnika PvP.
+- **S134g** Reguła odbiorcy zaostrzona: klucz `bp` nie może być ani w przełomach, ani w węzłach „modify” tej samej
+  umiejętności („później wygrywa” skasowałby węzeł). Odbiorcy: klucze tego samego typu w innych umiejętnościach i
+  węzłach, wspólne dla każdego typu (`Skills/Context.damage`: lifesteal, knockback, execute, critCdr; `selfHeal` z
+  `SkillService`), związane z rodzajem efektu (`poisonSpread` z trucizną, `markJump` z podatnością) i dwa nowe
+  odbiorniki S134g: `echo` w `cone` (Salwa) i `overhealShield` w `groupHeal` (Krąg Światła, przez `healOne`).
+- **S134g** Zamiany efektów w tej samej roli i puli: `blink_frostprint` → `blink_arcaneSurge` (10B Błysku to pułapka),
+  `iceShard_volley` → `frostNova_maelstrom` (płaskie `values.dmg` dla 3 odłamków zależy od rangi: poniżej 7. trzy
+  odłamki biłyby słabiej niż jeden), `taunt_bulwark` → `taunt_muster` (węzeł Strażnika „Przysięga Obrońcy” ma `shieldPerHit`),
+  `huntersMark_relay` → `huntersMark_spread` (węzeł Zwiadowcy „Tropem Rannego” ma `markJump`), `shieldOfFaith_shards` →
+  `shieldOfFaith_steadfast` (węzeł Uzdrowiciela „Pękająca Tarcza” ma `shieldBurst`), `judgement_verdict` → `judgement_reckoning`
+  (węzeł Inkwizytora „Sąd Ostateczny” ma `stunSplash`). Szarża już ogłusza, więc `charge_stagger` wydłuża jej ogłuszenie
+  (`add.stunDuration` 0,7, S75) zamiast drugiego ogłuszenia; `sanctuary_haven` bez oczyszczenia (ma je 5B): czas + promień.
+- **S134g** Zwykłe linie starych Legendarnych i Mitycznych zostają z wartościami, bez przelosowania (gracz nie traci
+  linii zwykłych; jakość ponad 1 z dawnego `rangeMul` przycina `bonusQuality` przy odczycie). Linie `leg_*` / `myth_*`
+  zostają w danych z `wiki = false` dla nieprzeliczonych przedmiotów; listy `pools.legendary` / `mythic` zostają jako
+  dane historyczne, nigdy losowane i poza wiki.
+- **S134g** Szczęście z Legend przechodzi w efekty umiejętności; łup i EXP tylko z linii zwykłych (`dropBonus`,
+  `expBonus`, `goldBonus` w pulach biżuterii). Profile szczęścia K2 / K3 bez linii `leg_dropBonus` (pasma D5 zielone).
+- **S134g** Opis przedmiotu bez porównania w liczbach: zostają „Zastąpi: <nazwa>” (dwuręczna przy tarczy wymienia obie
+  rzeczy; zastępuje „Zdejmie też”) i czerwone „Broń dwuręczna blokuje drugą rękę”; porównanie = drugi panel z
+  założonym. `ItemScore.percentDelta` zostaje dla admina i modelu. Klucze `tooltip.compare*`, `tooltip.bonuses`,
+  `tooltip.classes` usunięte.
+- **S134g** Linia nagłówka: chwyt zawsze widoczny, broń dystansowa też (`itemCat.weaponRanged1h` / `2h`; Łuk, Kusza i
+  Różdżka jednoręczne, Kostury dwuręczne, jak w danych); poziom pomijany przy 1. Główna wartość przedmiotu bez broni to
+  pancerz bazy; reszta bazy idzie do grup statystyk. Grupy: lifesteal i efekty przy trafieniu w „atak”, `resourceOnHit`,
+  `costReduce`, `healPower`, ruch, łup, EXP i złoto w „zasoby i reszta”.
+- **S134g** Migracja 10: poczta przelicza przy odczycie dla klasy aktywnej postaci, gdy paczka jest do niej albo do
+  konta (inaczej klasy przedmiotu); aukcje bez klasy. Ta sama funkcja i ziarno z `uid`, więc przedmiot dostaje te same
+  efekty, gdziekolwiek zostanie przeliczony pierwszy (przy tej samej podpowiedzi klasy). Flaga konta `legendRework`
+  tylko, gdy migracja coś przeliczyła; toast pokazuje serwer przy wejściu do świata i czyści flagę (bez nowego remote'u).
+- **S134g** Nazwane Mityczne (G): linia legendarna zastąpiona stałymi efektami z definicji (`fx`: para dla każdej klasy,
+  która może nosić; biżuteria cztery pary), `UNIQUE_MUL` 1,3 → 1,26, Kieł Grimroka bez 4. linii (`basicDmg`), korekty linii
+  (Rozłupywacz `physAtk` 6, `str` 6; Totem `vit` 6, `hpPct` 5; Oko Vaelgratha `magAtk` 8, `int` 29; Łuska `hpPct` 7, limit
+  2,5 × nowy szczyt Mityczny). Moc 1,03–1,08 oczekiwanego Mityka.
+- **S134g** `ItemScore` wycenia efekt jak cechę (`score.pct` × `PCT_POINTS`, tylko klasa kontekstu). Biżuteria nie rośnie
+  z poziomem (S87: linie procentowe do ilvl 20), więc każdy efekt > 0 bije Heroiczną biżuterię dowolnie wyżej: wiersz
+  właściciela (Legendarny L36 < Heroiczny L48) na biżuterii asertowany na statystykach, z efektem w raporcie; na broni i
+  zbroi z efektem. Przewagi (`rarityEdge`) asertowane na broni L45 / L70; broń L20, zbroja i biżuteria w raporcie.
+- **S134g** Model rzadkości (`Balance.rarityScore`) na gładkich oczekiwanych liniach: środek zakresu bez zaokrąglenia
+  (zaokrąglony środek `expectedBonuses` robił z +5% linii całkowitej +33%, 3 → 4).
+- **S134g** Wiersze: `S32.rarity.*.legendary` = Legendarny − Heroiczny w (0; 0,08] (było 0,25–0,42 z linią legendarną),
+  G7 Legendarny = Heroiczny ×1,02–1,08 tej samej klasy i poziomu; 12 wierszy G8 broni dwuręcznej (Legendarny / Mityczny)
+  w `GLOBAL_REPORT_ONLY`: linie dwuręcznej (×2,7) tracą więcej na niższym `rangeMul` (dźwignia: `twoHandedBonusMul` na
+  rzadkość, S87).
+- **S134g** Fixture 1–20: nowa baza S134g, 24 zastąpione wpisy (wiersze „Moc przedmiotów” Legendarnego i Mitycznego dla
+  4 klas na 5 / 10 / 20), `ALLOWED_1_20_DIFFS` pusta.
+- **S134g** Wiki: efekty umiejętności ukrytych ścieżek (Visibility) nie wychodzą na wiki razem z umiejętnością; rekord
+  `ItemEffect` w `items.json`, `fixedEffects` nazwanych, rzadkość z `legendaryEffects` / `mythicEffects`; świadoma zmiana
+  kształtu danych (`WIKI_KEYS_ALLOW` przy tej sesji). Wiki nie ma strony mechaniki przedmiotów: akapit w „Statystyki”.
+- **S134g** Pole `hook` efektu sumuje `ItemRoll.itemStats` bez filtra klasy; żaden dzisiejszy efekt go nie ma. Sesja,
+  która doda hook, liczy go przez `ItemEffects.hooks(item, classId)` (filtr klasy) albo dopisuje filtr w czytelniku.

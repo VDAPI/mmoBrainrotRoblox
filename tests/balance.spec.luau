@@ -247,6 +247,35 @@ T.describe("Balance: Elite II kit (S134e)", function()
 	end)
 end)
 
+-- S134g (E2): Legendary and Mythic with skill effects (Balance.targetsS134g): stats Legendary / Heroic 1.03-1.07 and
+-- Mythic / Heroic 1.08-1.12 at the same level, Mythic > Legendary > Heroic with the effects, a Heroic catches a
+-- Legendary weapon 2-5 levels above and a Mythic 5-9, the owner's Legendary L36 loses to a Heroic L48 (every class,
+-- weapon, armour, jewellery); every row without `report` asserted (Balance.S134G_REPORT prints the rest with the reason).
+T.describe("Balance: Legendary and Mythic (S134g)", function()
+	local rows = B.targetsS134g()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134g, docs/sessions S134g E2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134g targets (printed); the owner's rows and the stats rows are never report rows", function()
+		printReport("S134g", rows, 20)
+		for _, row in rows do
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+				local kind = string.match(row.id, "^S134g%.(%a+)%.")
+				T.expect({ row.id, kind == "edge" or kind == "ownerFx" }).toEqual({ row.id, true })
+			end
+		end
+		T.expect(#rows >= 4 * 5 * 4 * 4).toBe(true)
+	end)
+end)
+
 -- S134b: the party EXP pool (PartyLoot.poolMul in Balance.paceAt): solo unchanged, the member's EXP/h = the mean of
 -- the solo rates x pool x class bonus and grows with the party, the solo hours 1-19 as in the 1-20 fixture.
 T.describe("Balance: party EXP pool (S134b)", function()

@@ -451,15 +451,17 @@ Support.groupHeal = function(ctx)
 	local radius = ctx.skill.radius or 14
 	ctx.fx({ p = ctx.root.Position, r = radius })
 	for _, ally in ctx.alliesInCircle(ctx.root.Position, radius) do
-		ctx.heal(ally, ctx.healAmount(ally, "heal"))
 		local entity = ctx.services.Entity.GetPlayerEntity(ally)
+		local amount = ctx.healAmount(ally, "heal")
 		if entity then
-			if ctx.bp.cleanse then
-				ctx.services.StatusEffect.Cleanse(entity)
-			end
+			-- S134g (Circle of Light's item effect): healOne turns the overflow into a shield (overhealShield) and
+			-- cleanses with the breakpoint, as the single heal does
+			healOne(ctx, ally, entity, amount)
 			for _, effect in ctx.skill.allyEffects or NO_EFFECTS do
 				ctx.applyEffect(entity, effect)
 			end
+		else
+			ctx.heal(ally, amount)
 		end
 	end
 	-- S69 (Circle of Light 10B): a healing field stays where the circle was cast

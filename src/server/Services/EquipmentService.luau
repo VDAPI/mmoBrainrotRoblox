@@ -429,6 +429,20 @@ function EquipmentService.Start()
 		hookCache[player] = nil
 		previews[player] = nil
 	end)
+	-- S134g: once after migration 10 converted a Legendary / Mythic of the account: one toast in the world, then the
+	-- flag is cleared (no remote: the server shows it and forgets it)
+	CharacterService.CharacterEntered:Connect(function(player: Player)
+		task.delay(4, function()
+			if not PlayerStateService.HasState(player) then
+				return
+			end
+			if PlayerStateService.Get(player, { "account", "legendRework" }) ~= true then
+				return
+			end
+			PlayerStateService.Set(player, { "account", "legendRework" }, false)
+			Net.Fire(player, "Toast", "items.toast.legendRework", nil, "info")
+		end)
+	end)
 end
 
 return EquipmentService

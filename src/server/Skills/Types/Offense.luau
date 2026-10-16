@@ -207,6 +207,26 @@ Offense.cone = function(ctx)
 	else
 		hitAll(ctx, enemies, ctx.value("dmg"), true)
 	end
+	-- S134g (Volley's item effect, Data/ItemEffects): the cone strikes again after echo.delay for echo.pct % (the
+	-- enemies in the same cone then; a volley shoots its arrows again), like the echo of circleSelf / circleTarget
+	local echo = ctx.bp.echo
+	if echo then
+		task.delay(echo.delay, function()
+			local again = ctx.enemiesInCone(origin, radius, angle)
+			if #again == 0 then
+				return
+			end
+			ctx.fx({ cf = origin, r = radius, a = angle })
+			local percent = ctx.value("dmg") * echo.pct / 100
+			if hits then
+				for i = 1, hits do
+					ctx.damage(again[(i - 1) % #again + 1], percent, { consumeShot = false, areaHits = #again })
+				end
+			else
+				hitAll(ctx, again, percent, false)
+			end
+		end)
+	end
 	return true, nil
 end
 

@@ -90,8 +90,8 @@ S.file(
 			textColor = "color",
 			bonusMin = "int",
 			bonusMax = "int",
-			legendaryLines = "int",
-			mythicLines = "int", -- S68
+			legendaryEffects = "int", -- S134g: skill effects (were legendaryLines / mythicLines)
+			mythicEffects = "int",
 			baseMul = "number",
 			rangeMul = "number",
 			sellMul = "number",
@@ -413,8 +413,8 @@ function Basics.rarities(_ctx: any): any
 			textColor = r.textHex,
 			bonusMin = r.bonusMin,
 			bonusMax = r.bonusMax,
-			legendaryLines = r.legendaryLines,
-			mythicLines = r.mythicLines,
+			legendaryEffects = r.legendaryEffects,
+			mythicEffects = r.mythicEffects,
 			baseMul = r.baseMul,
 			rangeMul = r.rangeMul,
 			sellMul = r.sellMul,

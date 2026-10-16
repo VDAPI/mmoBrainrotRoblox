@@ -2929,6 +2929,68 @@ do
 	add()
 end
 
+-- S134g: Legendary and Mythic with skill effects (Balance.targetsS134g, Balance.rarityEdge): the levels a Heroic needs
+-- to catch an item of the rarity (before / after), the stats against a Heroic of the same level and the owner's case.
+do
+	local S = B.S134g
+	add("## Rzadkość a poziom (S134g)")
+	add()
+	add(
+		`Legendarny: baza ×{fmtValue(Rarities.get(Rarities.LEGENDARY).baseMul, "2")}, linie ×{fmtValue(Rarities.get(Rarities.LEGENDARY).rangeMul, "2")}, 1 efekt umiejętności; Mityczny: ×{fmtValue(Rarities.get(Rarities.MYTHIC).baseMul, "2")} / ×{fmtValue(Rarities.get(Rarities.MYTHIC).rangeMul, "2")}, 2 efekty (\`Data/ItemEffects\`). „Przewaga” = najwięcej poziomów, o które Heroiczny tego samego typu może być wyżej i nie bić przedmiotu w \`ItemScore\` z oczekiwanymi efektami (\`Balance.rarityEdge\`, gładkie oczekiwane linie, +0; 40 = nigdy). „Przed” = pomiar ze stanu sprzed S134g (\`Balance.S134g.before\`, wtedy z zaokrąglonymi oczekiwanymi liniami). Asertuje \`balance.spec\` („Balance: Legendary and Mythic (S134g)”).`
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, c in B.CLASSES do
+		for _, slot in { "weapon", "armor", "ring" } do
+			local before = S.before[c][slot]
+			for i, L in S.beforeLevels do
+				table.insert(rows, {
+					c,
+					slot,
+					`L{L}`,
+					`{before[i][1]} / {before[i][2]}`,
+					`{B.rarityEdge(c, L, Rarities.LEGENDARY, slot)} / {B.rarityEdge(c, L, Rarities.MYTHIC, slot)}`,
+					fmtValue(B.rarityStats(c, slot, L, Rarities.LEGENDARY), "g"),
+					fmtValue(B.rarityStats(c, slot, L, Rarities.MYTHIC), "g"),
+				})
+			end
+		end
+	end
+	tableOut({
+		"klasa",
+		"slot",
+		"poziom",
+		"przed: przewaga L / M",
+		"po: przewaga L / M",
+		"po: statystyki L / H",
+		"po: statystyki M / H",
+	}, rows)
+	add()
+	local o = S.owner
+	local ownerRows: { { string } } = {}
+	for _, c in B.CLASSES do
+		for _, slot in S.slots do
+			table.insert(ownerRows, {
+				c,
+				slot,
+				fmtValue(B.rarityScore(c, slot, o.legendary, Rarities.LEGENDARY), "1"),
+				fmtValue(B.rarityScore(c, slot, o.legendary, Rarities.LEGENDARY, true), "1"),
+				fmtValue(B.rarityScore(c, slot, o.heroic, Rarities.HEROIC), "1"),
+			})
+		end
+	end
+	add(`Przypadek właściciela: Legendarny L{o.legendary} i Heroiczny L{o.heroic} (\`ItemScore\`).`)
+	add()
+	tableOut({ "klasa", "slot", "Legendarny: statystyki", "Legendarny: z efektem", "Heroiczny" }, ownerRows)
+	add()
+	local banded: { B.TargetRow } = {}
+	for _, row in B.targetsS134g() do
+		table.insert(banded, row)
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134g (asertowane)"))
+	add()
+end
+
 -- S134d: Auto Hunt, a report only (no assertion, no pace change): EXP/h while hunting = the solo pace x
 -- Progression.autoGrindExpPct x a walking efficiency (a report assumption, never a game number), the hand-play hours a
 -- capped day is worth, and the Scroll of the Hunt minutes the daily boss runs give.

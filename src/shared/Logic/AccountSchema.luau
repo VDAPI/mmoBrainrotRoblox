@@ -10,6 +10,7 @@ local Cosmetics = require("../Data/Cosmetics")
 local Config = require("../Config")
 local Contracts = require("../Data/Quests/Contracts")
 local Exp = require("./Exp")
+local ItemEffects = require("./ItemEffects")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
 local Skills = require("./Skills")
@@ -24,7 +25,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 9
+AccountSchema.CURRENT = 10
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -95,6 +96,7 @@ function AccountSchema.accountTemplate(): AccountData
 		redeemed = {},
 		-- S133: friends and ignored players (Logic/Social), keys tostring(userId); reconcile adds it, no migration
 		social = { friends = {}, ignored = {} },
+		legendRework = false, -- S134g: migration 10 converted a Legendary / Mythic (one toast, EquipmentService clears it)
 	}
 end
 
@@ -409,6 +411,55 @@ MIGRATIONS[9] = function(data, _newId)
 		end
 	end
 	equipped.outfit = nil
+end
+
+-- S134g: Logic/ItemEffects.migrateItem on every item of a list (type-safe); true when any changed.
+local function legendItems(list: any, classHint: string?): boolean
+	if type(list) ~= "table" then
+		return false
+	end
+	local changed = false
+	for _, item in list do
+		if type(item) == "table" and type(item.id) == "string" then
+			if ItemEffects.migrateItem(item, Items.get(item.id), classHint) then
+				changed = true
+			end
+		end
+	end
+	return changed
+end
+
+-- 10 (S134g, docs/STATY.md 12): Legendary and Mythic items carry skill effects instead of the legendary / mythic lines.
+-- Every Legendary / Mythic of every character (equipment, backpack, side quest reward choices) and of the deposit
+-- loses those lines, keeps its regular lines and gets its effects (Logic/ItemEffects.migrateItem: seed from the uid,
+-- the character's class when the item fits it). Rarities.RV stays 2. A converted item sets account.legendRework (the
+-- one-time toast). Idempotent.
+MIGRATIONS[10] = function(data, _newId)
+	local changed = false
+	if type(data.characters) == "table" then
+		for _, character in data.characters do
+			if type(character) ~= "table" then
+				continue
+			end
+			local classId = if type(character.class) == "string" then character.class else nil
+			changed = legendItems(character.equipment, classId) or changed
+			changed = legendItems(character.inventory, classId) or changed
+			local quests = character.quests
+			if type(quests) == "table" and type(quests.side) == "table" and type(quests.side.active) == "table" then
+				for _, entry in quests.side.active do
+					if type(entry) == "table" then
+						changed = legendItems(entry.choice, classId) or changed
+					end
+				end
+			end
+		end
+	end
+	if type(data.deposit) == "table" then
+		changed = legendItems(data.deposit.items, nil) or changed
+	end
+	if changed then
+		data.legendRework = true
+	end
 end
 
 -- Upgrades and reconciles account data in place. Returns the list of applied migration numbers.

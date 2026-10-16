@@ -128,7 +128,7 @@ end)
 T.describe("TooltipModel (S31)", function()
 	T.it("every category has its stats or effect and the value line", function()
 		local cases: { { id: string, role: string } } = {
-			{ id = "sword1h_15", role = "dps" },
+			{ id = "sword1h_15", role = "speedDps" }, -- S134g: speed and DPS in one line
 			{ id = "shield_15", role = "stat" },
 			{ id = "helmet_heavy_15", role = "stat" },
 			{ id = "ring_15", role = "stat" },
@@ -144,7 +144,8 @@ T.describe("TooltipModel (S31)", function()
 		}
 		for _, case in cases do
 			local found = roles(sample(case.id))
-			if not found[case.role] or found.value ~= 1 or found.name ~= 1 or found.type ~= 1 then
+			-- S134g: the header is name, head ("Kind · Category · Level · Classes") and rarity for every category
+			if not found[case.role] or found.value ~= 1 or found.name ~= 1 or found.head ~= 1 or found.rarity ~= 1 then
 				error(`{case.id}: missing {case.role} / value / header`)
 			end
 		end
@@ -184,15 +185,17 @@ T.describe("TooltipModel (S31)", function()
 		local item = sample("sword1h_45", 45)
 		T.expect(roles(item, { lang = "pl", merchantOpen = true }).sellFor).toBe(1)
 		T.expect(roles(item, { lang = "pl" }).sellFor).toBeNil()
+		-- S134g: the unmet level is the red part of the head line; the comparison is "Zastąpi: <name>" (no numbers)
 		local low = false
 		for _, line in TooltipModel.build(item, nil, { lang = "pl", level = 10 }).lines do
-			if line.role == "requires" then
-				low = line.tone == "bad"
+			if line.role == "head" then
+				low = string.find(line.text, TooltipModel.BAD_HEX, 1, true) ~= nil
 			end
 		end
 		T.expect(low).toBe(true)
 		local found = roles(item, { lang = "pl", equipped = sample("sword1h_5", 5) })
-		T.expect(found.compare).toBe(1)
+		T.expect(found.replaces).toBe(1)
+		T.expect(found.compare).toBeNil()
 	end)
 
 	T.it("statLine: compact weapon and off-hand rows", function()

@@ -20,7 +20,8 @@ usunięto w S62.
 ## 0. W skrócie
 
 1. Trzy warstwy: **cecha broni** (stała dla typu, od Zwykłego w górę), **losowe linie** z pul ważonych typem broni,
-   **linie legendarne i mityczne** jak dziś. Liczba losowych linii na rzadkość bez zmian (0/2/3/3+1/3+2+1).
+   **efekty umiejętności** Legendarnych i Mitycznych (S134g, `Data/ItemEffects`; wcześniej linie legendarne i
+   mityczne). Losowe linie: 0/2/3/3/3, Legendarny dokłada 1 efekt, Mityczny 1 legendarny i 1 mityczny.
 2. Każdy z 24 typów broni i drugiej ręki ma własną cechę (24 cechy, 24 kategorie): rana, trucizna, niszczenie i
    przebicie pancerza, kontra, blok, osłabienie ciosów celu, dobijanie, przeszycie, rytm ciosów, żywioł, leczenie z
    obrażeń i inne (tabela 3). Trzy z nich to premie do obrażeń z innym warunkiem (Ścięcie, Łatwy cel, Pieczęć
@@ -104,7 +105,12 @@ wybierają wariant. Bazy wspólne dla kilku klas (`mace1h`, `shield`: Wojownik i
 też linie Wojownika i jej pula przekroczyłaby 14 pozycji. `data.spec`: pula buławy i tarczy dla każdej klasy ma 11–14
 linii.
 
-**C. Legendarne i mityczne.** Bez zmian w liczbie. Dochodzą `leg_cooldown` (skrócenie odnowienia umiejętności 6–10%)
+**C. Legendarne i mityczne.** S134g (owner 2026-10-15): linie legendarne i mityczne przestały się losować; Legendarny
+ma 1 efekt umiejętności z puli legendarnej klasy, Mityczny 1 legendarny i 1 mityczny (`Data/ItemEffects`,
+`Logic/ItemEffects`, `ItemInstance.fx`), działające przez `Paths.effectiveFor` po węzłach ścieżki; statystyki
+Legendarnego ≈ Heroiczny +5%, Mitycznego ≈ +10% (`baseMul` 1,17 / 1,22, `rangeMul` 1,05 / 1,10). Definicje `leg_*` /
+`myth_*` zostają z `wiki = false` dla przedmiotów jeszcze nieprzeliczonych (poczta, aukcje); `leg_cooldown` /
+`myth_cooldown` już się nie losują. Opis do S134g: Dochodzą `leg_cooldown` (skrócenie odnowienia umiejętności 6–10%)
 i `myth_cooldown` (12–16%), oba z hakiem `cooldownReduction` (zrobione w S64: `Skills.cooldown`, stan
 `{ "skills", "cdr" }`); limit razem 20% (`Data/Combat.cdrCap`). Haki sumują się po przedmiotach (`CombatService.hook` →
 `EquipmentService.GetHook`), więc skrócenie odnowienia ma limit razem 20% (`Data/Combat.cdrCap`). Nie skraca
@@ -429,8 +435,9 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 
 ## 9. Rzadkość, pule i wagi
 
-- Linie: Zwykły 0, Unikatowy 2, Heroiczny 3, Legendarny 3 + 1 legendarna, Mityczny 3 + 2 legendarne + 1 mityczna, plus
-  cecha na broni i drugiej ręce (zbroja i biżuteria bez cechy). Najwięcej na ekranie: cecha + 6 linii.
+- Linie: Zwykły 0, Unikatowy 2, Heroiczny 3, Legendarny 3 + 1 efekt umiejętności, Mityczny 3 + 2 efekty (legendarny i
+  mityczny; S134g, wcześniej 3 + 1 i 3 + 2 + 1 linie), plus cecha na broni i drugiej ręce (zbroja i biżuteria bez cechy).
+  Najwięcej na ekranie: 3 linie, cecha i 2 efekty. Efekt działa tylko dla swojej klasy i raz (ten sam z dwóch przedmiotów).
 - Pule po filtrze klas mają 11–14 linii (`data.spec`: co najmniej `max(bonusMax, 5)`), np. broń Wojownika 13: physAtk,
   critChance, critDmg, atkSpeed, pierce, lifesteal, accuracy, str, woundChance, dotPower, skillDmg, basicDmg,
   `@vsFamily`. Zbroja 14, tarcza 14 (S64: bez `hpRegen`, żeby z `blockChance`, `meleeGuard`, `rangedGuard` zostało 13
@@ -445,10 +452,13 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   Hełm Azgora `res_elemental` 10, Łuska `res_dragon` 10), broń i druga ręka linię z `affinity` typu (Berło `healPower`
   8, Łuk `poisonChance` 5, Kostur `dotPower` 15, Oko `magicPierce` 10, Kieł `critDmg` 40, Łuska `hpPct` 8), Kieł Grimroka
   `basicDmg` 4; linie zwykłe najwyżej 2,5 × górna granica Mityczna na poziomie przedmiotu (broń dwuręczna × 2,7),
-  legendarna w swoim zakresie; moc 1,01–1,07 oczekiwanego wylosowanego Mityka (`docs/BALANS.md` → „Nazwane Mityczne”).
+  S134g: zamiast linii legendarnej dwa stałe efekty (`fx`, para dla każdej klasy noszącej), `UNIQUE_MUL` 1,26; moc 1,03–1,08
+  oczekiwanego wylosowanego Mityka (`docs/BALANS.md` → „Nazwane Mityczne”).
 
 ## 10. Skalowanie, ulepszanie, wartość
 
+- S134g: `baseMul` 1 / 1,05 / 1,12 / 1,17 / 1,22, `rangeMul` linii 1 / 1 / 1 / 1,05 / 1,10; efekty umiejętności mają stałe
+  liczby (rosną z rangą umiejętności, nie z poziomem ani ulepszeniem przedmiotu).
 - Cecha: stała dla typu, × rzadkość (`baseMul` także dla nazwanych przedmiotów z bossów), × ulepszenie (+6% za
   poziom). Liczba, która rośnie, jest pogrubiona w tabeli 3; szanse Rany rąbanej i Jadowitych grotów są stałe, a
   rośnie ich siła, żeby szybkie bronie nie dostawały więcej efektów niż wolne. Niszczenie pancerza: rośnie stos i
@@ -470,9 +480,12 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 
 ## 11. Opis przedmiotu na telefonie
 
-- Kolejność: nazwa i rzadkość, obrażenia i szybkość (albo obrona), **Cecha** (własny kolor, ikona, nazwa i jedna linia
-  do ok. 30 znaków z tabeli niżej, np. „Rana rąbana” i „15%: rana 30% ciosu w 4 s”), linie z paskiem jakości, linie
-  legendarne i mityczne, wymagania.
+- Kolejność (S134g, `TooltipModel.build`): nazwa, linia „Rodzaj · Kategoria (chwyt) · Poziom N · Klasy” (pogrubiona,
+  niespełniona część na czerwono), rzadkość i ulepszenie małym, główna wartość (obrażenia z szybkością i DPS albo
+  pancerz), statystyki małym w stałych grupach `TooltipModel.STAT_GROUPS` (atrybuty, atak, obrona, zasoby i reszta) z
+  cienkim odstępem i paskiem jakości, premia rzadkości, **Cecha** (własny kolor, ikona, nazwa i jedna linia do ok. 30
+  znaków z tabeli niżej, np. „Rana rąbana” i „15%: rana 30% ciosu w 4 s”), efekty („Efekt legendarny: …”, „Efekt
+  mityczny: …”; innej klasy z dopiskiem „działa dla”), opis, „Zastąpi: …”, wiązanie, poziom przedmiotu, cena.
 - Dotknięcie linii (albo ikony ⓘ) w otwartym opisie na telefonie, najechanie myszą na PC, otwiera szczegóły: co robi,
   limit, czy działa w PvP. Nie przytrzymanie, bo przytrzymanie przedmiotu to już menu akcji (DESIGN, okno Postać).
   Dziś `ItemTooltip` rysuje statyczne linie, więc okienko szczegółów to nowa część `ItemTooltip` i `TooltipModel`.
@@ -481,7 +494,8 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   przedmiotu” (`item_details`, domyślnie Alt, zmieniany w opcjach) zatrzymuje opis, a wskazanie linii otwiera szczegóły
   obok. Na telefonie ikona „i” jest rysowana kształtem (koło z literą), nie znakiem ⓘ, a stuknięcie w otwarty opis
   nigdy nie trafia w slot pod nim (`DragDrop.SetBlocker`).
-- Porównanie z założonym: zmiana obrażeń i przeżywalności w procentach z `ItemScore`, nie tylko lista liczb.
+- Porównanie z założonym (S134g, owner 2026-10-15): drugi panel z opisem założonego przedmiotu, ta sama kolejność, czyste
+  statystyki; bez procentów i strzałek (`ItemScore.percentDelta` zostaje dla admina i modelu).
 - Każda liczba widoczna; żadnych ukrytych premii.
 
 Linia cechy (`trait.<id>.line`, liczby z przedmiotu, tu Zwykły +0; szczegóły Naciągu podają premię dla założonej
@@ -534,6 +548,11 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
   `armorPen` o jakości 0,7 daje `pierce` o jakości 0,7; stary topór z `rv = 2` pokazuje Żniwo od S64; w S62 test
   sprawdza Łuk Długi (Siła krytyka).
 - Bez przelosowań, bez zamiany przedmiotów.
+- S134g: pole `ItemInstance.fx` (id efektów `Data/ItemEffects`; nazwane przedmioty czytają `fx` z definicji). Migracja 10
+  (`AccountSchema`): Legendarny i Mityczny w ekwipunku, plecaku, wyborach questów i depozycie tracą linie
+  legendarne / mityczne, zachowują zwykłe linie i ich wartości (bez przelosowania; jakość ponad 1 przycięta przy odczycie)
+  i dostają brakujące efekty (`ItemEffects.migrateItem`, ziarno z `uid`, klasa postaci, gdy przedmiot do niej pasuje);
+  poczta (`Mail.box`, klasa adresata) i aukcje przeliczają przy odczycie tą samą funkcją. `RV` zostaje 2.
 
 ## 13. Mapa kodu
 
@@ -562,6 +581,7 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | `client/Vfx/Library.luau`, `Data/DamageNumbers.luau` | krótki `lineBeam` Przeszycia, runa pod Magiem (Pieczęć), liczba „Zablokowano” (Zastawa) |
 | `Logic/TooltipModel.luau`, `client/UI/Components/ItemTooltip.luau`, `client/UI/Screens/LegendReveal.luau` | sekcja Cecha z linią `trait.<id>.line`, styl z `tier`, okienko szczegółów linii i cechy po dotknięciu (telefon) i najechaniu (PC) |
 | `Logic/ItemScore.luau`, `Logic/FightSim.luau`, `tests/Balance.luau` | wagi i wartość oczekiwana efektów i cech (tabela 14) |
+| `Data/ItemEffects.luau`, `Logic/ItemEffects.luau` (S134g) | efekty umiejętności Legendarnych i Mitycznych: dane (`skill`, `role`, `pool`, `bp`, `score`), losowanie, efekty ekwipunku dla `Paths.effectiveFor`, migracja przedmiotu, argumenty tekstu; `tests/itemeffects.spec` |
 | `Data/Localization/pl.luau`, `en.luau` | `bonus.*`, `trait.*` (nazwa, linia, szczegóły; nazwy w obu językach inne niż `skill.*` i `effect.*`, np. Fechtunek / Swordplay, bo „Riposte” to angielska nazwa Kontrataku, i Zastawa / Parry), `family.*` |
 | `tools/WikiData/Items.luau`, `Basics`, `Monsters`, `ItemsMd` | S68: `bases.affinity` (wagi ≠ 1 po klasie, broń i druga ręka), `bases.poolClasses`, `items.traits` (linia cechy dla każdej rzadkości i +0…+9 przez `TooltipModel.traitLine`, teksty `does` / `pvp` / `cap` z `TooltipModel.details`), `bonuses.params` (znaczniki z wariantami), częstość linii na typ bazy → klasa → rzadkość (`sampleOfType`, `TYPE_ROLLS` 2000, wariant liczony pod znacznikiem), `rarities.mythicLines`, `monsters.family` = rodzina gry, `monsters.families`, `dodge`; `wiki = false` i `live = false` ukrywają nieopublikowane; `ItemWeights`, `nodeHooks`, `capRef`, `BonusDef.pvp` nie wychodzą (tylko gotowe teksty) |
 | `tests/items.spec`, `data.spec`, `damage.spec`, `balance.spec`, `wikidump.spec`, `traits.spec` (nowy), `effectstack.spec` | pule (buława i tarcza dla każdej klasy 11–14), wagi, limity (`blockCap`, `riposteCap`, `executionerCap`, `enemyDamageDown`, niszczenie z przedmiotów 25% × siła, najwyżej 40%, razem 50%), efekty („30% w 4 s” zadaje razem 30% ciosu, drugie trafienie po 1,5 s nic nie traci; czerwona strefa nigdy nie wywołuje kontry; ogłuszenie z Wstrząsu opóźnia następny atak potwora), rzadkość `rv = 2` bez zmian, przeliczenie `armorPen`, stary topór ma Żniwo, cecha nazwanych na sile Mitycznej, 24 różne kategorie cech, nazwy `trait.*` bez powtórzeń z `skill.*`, `effect.*`, węzłami i odmianami (Przebijający/Przebijająca, Głęboka/Głębokie) w `pl.luau` i `en.luau`, ścieżki z tabeli 3 zgodne z `Logic/Paths.weaponOk`, przebicie po niszczeniu, wybór wroga za celem, Pieczęć gaśnie po kroku, częstość na typ bazy |
@@ -599,6 +619,10 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | Pomyślność | łup | +8% szansy na przedmiot | cecha łupu, poza celem walki |
 
 Pomiar po strojeniu (S88, model `tests/Balance.luau` i `tests/SkillModel.luau`): `docs/BALANS.md` → »Cechy broni (S88)«.
+
+- S134g: wartość efektów przedmiotów w `ItemScore` to `score` w `Data/ItemEffects` (legendarne 3–5% osi, mityczne 6–7%,
+  jak szacunki cech), w modelu tylko przez `ItemScore` (`Balance.rarityEdge`, wiersze `S134g.*`); S146–S147 przeliczają
+  je z nowymi umiejętnościami. Wynik: `docs/BALANS.md` → „Rzadkość a poziom (S134g)”.
 
 - Szanse i siła efektów, liczba stosów, przerwy; wpływ umiejętności obszarowych (1/3 szansy).
 - Pancerz, odporność magiczna i unik potworów oraz kompensata ich życia (czas walki i utrata HP z `balance.spec`).

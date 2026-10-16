@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S134e (commit ea19ac7, 2026-10-16) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S134g (commit 699ce83, 2026-10-16) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -19,7 +19,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | --- | --: | --: | --: | --: |
 | 1–20: cele S32 (S91) | 985 | 985 | 985 | 0 |
 | 1–20: cele S91 | 130 | 124 | 124 | S90 3, – 3 |
-| 20–100: globalne G1–G13 (S87) | 1832 | 1490 | 1291 | S103 4, S88 285, S91 12, S92 5, – 235 |
+| 20–100: globalne G1–G13 (S87) | 1832 | 1496 | 1279 | S103 4, S134 12, S88 285, S91 12, S92 5, – 235 |
 | region meadows (S91) | 393 | 393 | 393 | 0 |
 | region duskwood (S92) | 963 | 776 | 705 | S134 1, S32 3, S90 20, S92 234 |
 | region ashen (S93) | 1143 | 805 | 774 | S32 3, S90 24, S93 342 |
@@ -37,9 +37,10 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | 1–20: cele S91 | S90 | 1/1 | właściciel: rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90) |
 | 1–20: cele S91 | – | 3/3 | właściciel (R4_REPORT) |
 | 20–100: globalne G1–G13 (S87) | S88 | 16/16 | S88: poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception) |
-| 20–100: globalne G1–G13 (S87) | S88 | 249/260 | S88: poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
-| 20–100: globalne G1–G13 (S87) | S91 | 4/4 | S91: poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
-| 20–100: globalne G1–G13 (S87) | S88 | 9/9 | S88: poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
+| 20–100: globalne G1–G13 (S87) | S88 | 244/260 | S88: poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
+| 20–100: globalne G1–G13 (S87) | S91 | 0/4 | S91: poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
+| 20–100: globalne G1–G13 (S87) | S134 | 12/12 | S134g: poza zasięgiem dźwigni S134g: the two-hander's lines (x2.7) lose more of the lower Legendary / Mythic rangeMul than weapon + off-hand (lever: twoHandedBonusMul per rarity, S87 C2) |
+| 20–100: globalne G1–G13 (S87) | S88 | 0/9 | S88: poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
 | 20–100: globalne G1–G13 (S87) | S92 | 1/1 | S92: poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit) |
 | 20–100: globalne G1–G13 (S87) | S91 | 0/4 | S91: poza zasięgiem dźwigni S91: 0.442 < 0.45 (Config.Upgrade global, income of 20 from the band 20-45) |
 | 20–100: globalne G1–G13 (S87) | S91 | 0/4 | S91: poza zasięgiem dźwigni S91: 10.43 < 12 (Config.Upgrade global, income of 20 from the band 20-45) |
@@ -133,54 +134,179 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `Combat:elite2RespawnBase` | 480 | 300 | S134e | 480 -> 300: owner 2026-10-15 ('too long a wait for the Elite II', answer a): level 66 cave about 8 min instead of about 21 |
-| `Combat:elite2RespawnPerLevel` | 12 | 3 | S134e | 12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows) |
+| `Items/Uniques:[unique_azgor_heart].base.hp` | 561,6 | 544,3 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_helm].base.armor` | 133,9 | 129,8 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_helm].base.hp` | 169 | 163,8 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_staff].weapon.mdmg` | 306 | 296 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[1].v` | 7 | 6 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[2].v` | 8 | 6 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].weapon.dmg` | 74 | 72 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_fang].base.magAtkPct` | 5,3 | 5,2 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_fang].base.physAtkPct` | 5,3 | 5,2 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].base.armor` | 28,6 | 27,7 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].base.hp` | 85,8 | 83,2 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].base.mres` | 28,6 | 27,7 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[1].v` | 8 | 6 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[2].v` | 6 | 5 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].weapon.dmg` | 157 | 152 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_scepter].weapon.dmg` | 55 | 53 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_scepter].weapon.mdmg` | 151 | 146 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.armor` | 61,1 | 59,2 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.hp` | 92,3 | 89,5 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.mana` | 153,4 | 148,7 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.mres` | 84,5 | 81,9 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_eye].base.magAtkPct` | 15,6 | 15,1 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[1].v` | 8,5 | 8 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[2].v` | 32 | 29 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_fang].weapon.dmg` | 471 | 456 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].base.armor` | 211,9 | 205,4 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].base.hp` | 533 | 516,6 | S134g | G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[2].v` | 8 | 7 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Rarities:get.f(20).rangeMul` | 1,2 | 1,1 | S134g | 1.2 -> 1.1: the lines of a Mythic about Heroic +10 % (ItemScore Mythic / Heroic 1.081-1.099, band 1.08-1.12); baseMul 1.22 kept (1.21 gave weapons 1.077) |
+| `Rarities:list[4].baseMul` | 1,16 | 1,17 | S134g | 1.16 -> 1.17: owner 2026-10-15 (a Legendary L36 beat a Heroic L48): stats about Heroic +5 % (ItemScore Legendary / Heroic 1.039-1.053, Balance.targetsS134g stats 1.03-1.07; at 1.16 a Hunter bow L45 had 1.030); the edge is one skill effect |
+| `Rarities:list[4].rangeMul` | 1,1 | 1,05 | S134g | 1.1 -> 1.05: the lines of a Legendary about Heroic +5 % (the legendary line is gone; with rangeMul 1.1 and the 4th line it was +25-42 % power over Common, Heroic +15-26 %) |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `MonsterAbilities:KITS.elite.globalGap` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.globalGap` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.kiteSeconds` | 2,5 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.damage` | 1,25 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.gapRamp.from` | 1 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.gapRamp.maxSteps` | 15 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.gapRamp.perLevel` | 0,3 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.intervalMul` | 1,3 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:KITS.elite2.throw.range` | 42 | S134e | new: the kits: Elite II Crushing Blow + Pounce, 2.5 s after each blow, fleeing = 2.5 s out of reach, the throw at a fleeing target up to 42 studs every attack interval x1.3, x1.25 +30 %/level of the monster's advantage up to 15 levels (a kiting solo 15 below dies even dodging every telegraph: one or two throws between two potions, Balance.elite2Kite); Elite Heavy Blow |
-| `MonsterAbilities:byId.crush.castRange` | 45 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.cooldown` | 16 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.damage` | 10,8 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.firstAfter[1]` | 6 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.firstAfter[2]` | 9 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.gapRamp.from` | 1 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.gapRamp.maxSteps` | 5 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.gapRamp.perLevel` | 0,02 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.radius` | 9 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.crush.windup` | 2,2 | S134e | new: owner 2026-10-15 (a blow that nearly one-shots at the monster's level advantage): circle 9 frozen under the target, announced up to 45 studs (past the Mage's 35), windup 2.2, x10.8 never a crit = 0.61-0.79 of a Mage's HP at the Elite II's level, <= 0.94 at 5 levels below, 1.27-1.60 at 10 below (Balance.targetsS134e); gap ramp +2 %/level for 1-5 levels (the flameSmith Mage 5 below at 0.94 <= 0.95, the Warrior 10 below >= 0.85), cooldown 16, first after 6-9 s |
-| `MonsterAbilities:byId.heavyBlow.angle` | 90 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
-| `MonsterAbilities:byId.heavyBlow.cooldown` | 14 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
-| `MonsterAbilities:byId.heavyBlow.damage` | 7 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
-| `MonsterAbilities:byId.heavyBlow.radius` | 10 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
-| `MonsterAbilities:byId.heavyBlow.windup` | 1,8 | S134e | new: the Elite's Heavy Blow, a cone 10 / 90 deg to dodge, windup 1.8 (the S134 avoid rule; the session's 1.6 was below it), x7 never a crit (0.40-0.42 of a Mage's HP at the Elite's level, 0.70-0.83 at 10 below; x6 gave 0.34-0.36 under the 0.35-0.50 aim), cooldown 14; dodged in the model (S32 Elite rows unchanged) |
-| `MonsterAbilities:byId.pounce.castRange` | 45 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
-| `MonsterAbilities:byId.pounce.cooldown` | 10 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
-| `MonsterAbilities:byId.pounce.damage` | 3,2 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
-| `MonsterAbilities:byId.pounce.minRange` | 12 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
-| `MonsterAbilities:byId.pounce.radius` | 6 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
-| `MonsterAbilities:byId.pounce.windup` | 1,4 | S134e | new: Pounce at a target fleeing for 2.5 s, 12-45 studs away: circle 6 under it, windup 1.4, x3.2 (about 0.20 of a Mage's HP at the level), the Elite II lands there (not in a safe zone, not past its hard leash), cooldown 10 |
+| `ItemEffects:list[aimedShot_burst].bp.splash.pct` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[aimedShot_burst].bp.splash.radius` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[aimedShot_burst].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[arrowRain_second].bp.echo.delay` | 1 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[arrowRain_second].bp.echo.pct` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[arrowRain_second].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[bladeWhirl_secondwind].bp.selfHeal` | 5 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[bladeWhirl_secondwind].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[blink_arcaneSurge].bp.selfEffect.duration` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[blink_arcaneSurge].bp.values.surgePower` | 10 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[blink_arcaneSurge].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[brandOfLight_mercy].bp.healWounded` | 20 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[brandOfLight_mercy].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[chainLightning_arc].bp.add.jumps` | 1 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[chainLightning_arc].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[charge_stagger].bp.add.stunDuration` | 0,7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[charge_stagger].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[circleOfLight_aegis].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[cleave_wide].bp.knockback` | 5 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[cleave_wide].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[crushingBlow_finisher].bp.execute` | 25 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[crushingBlow_finisher].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[disengage_tailwind].bp.selfEffect.duration` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[disengage_tailwind].bp.values.tailwind` | 25 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[disengage_tailwind].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[doubleShot_instinct].bp.critCdr` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[doubleShot_instinct].score.pct` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[earthquake_rupture].bp.stunLast` | 1 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[earthquake_rupture].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[fireball_afterblast].bp.echo.delay` | 1 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[fireball_afterblast].bp.echo.pct` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[fireball_afterblast].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[firebolt_executioner].bp.execute` | 25 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[firebolt_executioner].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[firewall_aftershock].bp.echo.delay` | 1,5 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[firewall_aftershock].bp.echo.pct` | 40 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[firewall_aftershock].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostNova_deepcold].bp.add.freezeDuration` | 0,5 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostNova_deepcold].bp.add.radius` | 2 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostNova_deepcold].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostNova_maelstrom].bp.pull` | 14 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostNova_maelstrom].score.pct` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostTrap_snare].bp.pull` | 8 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[frostTrap_snare].score.pct` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[heal_smite].bp.burst.pct` | 40 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[heal_smite].bp.burst.radius` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[heal_smite].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[holyStrike_zeal].bp.lifesteal` | 20 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[holyStrike_zeal].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[huntersMark_spread].bp.add.radius` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[huntersMark_spread].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[iceShard_shatter].bp.splash.pct` | 25 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[iceShard_shatter].bp.splash.radius` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[iceShard_shatter].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[judgement_reckoning].bp.splash.pct` | 50 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[judgement_reckoning].bp.splash.radius` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[judgement_reckoning].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[meteor_shards].bp.split.count` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[meteor_shards].bp.split.pct` | 35 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[meteor_shards].bp.split.radius` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[meteor_shards].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[mightyStrike_bloodthirst].bp.lifesteal` | 15 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[mightyStrike_bloodthirst].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[piercingArrow_venom].bp.effect.duration` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[piercingArrow_venom].bp.effect.value` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[piercingArrow_venom].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[radiance_dazzle].bp.effect.duration` | 2 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[radiance_dazzle].bp.effect.value` | 25 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[radiance_dazzle].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[rend_hamstring].bp.effect.duration` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[rend_hamstring].bp.effect.value` | 30 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[rend_hamstring].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[renew_lasting].bp.add.duration` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[renew_lasting].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[sanctuary_haven].bp.add.duration` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[sanctuary_haven].bp.add.radius` | 2 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[sanctuary_haven].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[shieldOfFaith_steadfast].bp.add.duration` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[shieldOfFaith_steadfast].bp.values.shieldHp` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[shieldOfFaith_steadfast].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[shieldWall_rally].bp.pull` | 10 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[shieldWall_rally].score.pct` | 6 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[taunt_muster].bp.pull` | 12 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[taunt_muster].score.pct` | 4 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[venomArrow_contagion].bp.poisonSpread` | 2 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[venomArrow_contagion].score.pct` | 3 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[volley_followup].bp.echo.delay` | 1 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[volley_followup].bp.echo.pct` | 35 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `ItemEffects:list[volley_followup].score.pct` | 7 | S134g | new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
+| `Rarities:get.f(1).legendaryEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(1).mythicEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).legendaryEffects` | 1 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).mythicEffects` | 1 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].legendaryEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].mythicEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].legendaryEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].mythicEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].legendaryEffects` | 1 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].mythicEffects` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+
+### Usunięte klucze
+
+| klucz | wartość | sesja | powód |
+| --- | --: | --: | --: |
+| `Items/Uniques:[unique_azgor_heart].fixedBonuses[4].v` | 12 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_helm].fixedBonuses[4].v` | 10 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_staff].fixedBonuses[4].v` | 10 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[4].v` | 15 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_fang].fixedBonuses[4].v` | 4 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[4].v` | 3 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].fixedBonuses[4].v` | 5 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_scepter].fixedBonuses[4].v` | 2 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_shroud].fixedBonuses[4].v` | 15 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[4].v` | 18 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_fang].fixedBonuses[4].v` | 10 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[4].v` | 18 | S134g | G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Rarities:get.f(1).legendaryLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(1).mythicLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).legendaryLines` | 2 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).mythicLines` | 1 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].legendaryLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].mythicLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].legendaryLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].mythicLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].legendaryLines` | 1 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].mythicLines` | 0 | S134g | new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
 
 ### Księga: pominięte funkcje
 
 Funkcje modułów księgi, które dla poziomów 1, 20, 45, 70, 100 nie zwracają liczby ani tabeli (np. `get(id)`):
-AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, MonsterAbilities:kit, Monsters:get, Mounts:get, Paths/init:get, Quests/Boss:get, Quests/Boss:ofBoss, Quests/Contracts:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Quests/Weekly:get, Recipes:get, ScheduledEvents:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
+AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings:of, Bonuses:classLine, Bonuses:familyLine, Bonuses:get, Bonuses:isParam, Bosses:forRegion, Bosses:get, BuffCategories:get, Classes:get, Crafting:get, Crafting:oreFor, Families:defence, Families:get, GuildSkills:get, ItemEffects:get, ItemTraits:get, Items/init:generate.definition, Items/init:get, LootTables:get, Maps:get, Market:getCategory, MonsterAbilities:get, MonsterAbilities:kit, Monsters:get, Mounts:get, Paths/init:get, Quests/Boss:get, Quests/Boss:ofBoss, Quests/Contracts:get, Quests/Daily:get, Quests/Main:get, Quests/Side:get, Quests/Weekly:get, Recipes:get, ScheduledEvents:get, Shops:get, Shops:vendorOf, Skills/init:get, Stats:get.
 
 ## Pełna księga S83–S94 (od migawki przed S83)
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4496 kluczy zmienionych od bazy, 0 bez powodu.
+4554 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -520,23 +646,58 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Items/Materials:[cursed_bone].maxStack` | – | 999 | nowy od S92 | S92: new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
 | `Items/Materials:[cursed_bone].price` | – | 26 | nowy od S92 | S92: new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
 | `Items/Materials:[cursed_bone].tier` | – | 27 | nowy od S92 | S92: new part (J1): the ghoul's and the marsh witch's, level 27, price 26 (between the claw and the ectoplasm) |
-| `Items/Uniques:[unique_azgor_heart].fixedBonuses[3].v` | 25 | 12 | S88 | S88: D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035 |
-| `Items/Uniques:[unique_azgor_helm].fixedBonuses[3].v` | 25 | 10 | S88 | S88: D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034 |
-| `Items/Uniques:[unique_azgor_staff].fixedBonuses[3].v` | 8 | 15 | S88 | S88: D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030 |
-| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[3].v` | 15 | 12 | S88 | S88: D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic |
-| `Items/Uniques:[unique_grimrok_fang].fixedBonuses[4].v` | 10 | 4 | S88 | S88: D4: goldBonus 10 -> basicDmg 4: power 1.012 -> 1.022 |
-| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[3].v` | 15 | 8 | S88 | S88: D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes) |
-| `Items/Uniques:[unique_morvane_bow].fixedBonuses[1].v` | 8 | 6 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073 |
-| `Items/Uniques:[unique_morvane_bow].fixedBonuses[2].v` | 14 | 10 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073 |
-| `Items/Uniques:[unique_morvane_bow].fixedBonuses[3].v` | 6 | 5 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073 |
-| `Items/Uniques:[unique_morvane_scepter].fixedBonuses[3].v` | 6 | 8 | S88 | S88: D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070 |
-| `Items/Uniques:[unique_morvane_shroud].fixedBonuses[3].v` | 18 | 10 | S88 | S88: D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011 |
-| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[1].v` | 10 | 8,5 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046 |
-| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[2].v` | 35 | 32 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046 |
-| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[3].v` | 12 | 10 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046 |
-| `Items/Uniques:[unique_vaelgrath_fang].fixedBonuses[4].v` | 12 | 10 | S88 | S88: D4: leg_bossDamage 12 -> 10 (the legendary range): power 1.053 |
-| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[2].v` | 10 | 8 | S88 | S88: D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039 |
-| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[3].v` | 30 | 10 | S88 | S88: D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039 |
+| `Items/Uniques:[unique_azgor_heart].base.hp` | 561,6 | 544,3 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_heart].fixedBonuses[3].v` | 25 | 12 | S88 | S88: D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_heart].fixedBonuses[4].v` | 12 | – | usunięty | S88: D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_helm].base.armor` | 133,9 | 129,8 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_helm].base.hp` | 169 | 163,8 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_azgor_helm].fixedBonuses[3].v` | 25 | 10 | S88 | S88: D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_helm].fixedBonuses[4].v` | 10 | – | usunięty | S88: D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_staff].fixedBonuses[3].v` | 8 | 15 | S88 | S88: D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_staff].fixedBonuses[4].v` | 10 | – | usunięty | S88: D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_azgor_staff].weapon.mdmg` | 306 | 296 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[1].v` | 7 | 6 | S88 | S88: D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[2].v` | 8 | 6 | S88 | S88: D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[3].v` | 15 | 12 | S88 | S88: D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].fixedBonuses[4].v` | 15 | – | usunięty | S88: D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_cleaver].weapon.dmg` | 74 | 72 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_fang].base.magAtkPct` | 5,3 | 5,2 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_fang].base.physAtkPct` | 5,3 | 5,2 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_fang].fixedBonuses[4].v` | 10 | – | usunięty | S88: D4: goldBonus 10 -> basicDmg 4: power 1.012 -> 1.022; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].base.armor` | 28,6 | 27,7 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].base.hp` | 85,8 | 83,2 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].base.mres` | 28,6 | 27,7 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[1].v` | 8 | 6 | S88 | S88: D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes); S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[2].v` | 6 | 5 | S88 | S88: D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes); S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[3].v` | 15 | 8 | S88 | S88: D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes); S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_grimrok_totem].fixedBonuses[4].v` | 3 | – | usunięty | S88: D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes); S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].fixedBonuses[1].v` | 8 | 6 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].fixedBonuses[2].v` | 14 | 10 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].fixedBonuses[3].v` | 6 | 5 | S88 | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].fixedBonuses[4].v` | 5 | – | usunięty | S88: D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_bow].weapon.dmg` | 157 | 152 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_scepter].fixedBonuses[3].v` | 6 | 8 | S88 | S88: D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_scepter].fixedBonuses[4].v` | 2 | – | usunięty | S88: D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_scepter].weapon.dmg` | 55 | 53 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_scepter].weapon.mdmg` | 151 | 146 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.armor` | 61,1 | 59,2 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.hp` | 92,3 | 89,5 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.mana` | 153,4 | 148,7 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].base.mres` | 84,5 | 81,9 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_morvane_shroud].fixedBonuses[3].v` | 18 | 10 | S88 | S88: D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_morvane_shroud].fixedBonuses[4].v` | 15 | – | usunięty | S88: D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].base.magAtkPct` | 15,6 | 15,1 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[1].v` | 10 | 8 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[2].v` | 35 | 29 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[3].v` | 12 | 10 | S88 | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_eye].fixedBonuses[4].v` | 18 | – | usunięty | S88: D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_fang].fixedBonuses[4].v` | 12 | – | usunięty | S88: D4: leg_bossDamage 12 -> 10 (the legendary range): power 1.053; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_fang].weapon.dmg` | 471 | 456 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].base.armor` | 211,9 | 205,4 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].base.hp` | 533 | 516,6 | S134g | S134g: G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08) |
+| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[2].v` | 10 | 7 | S88 | S88: D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[3].v` | 30 | 10 | S88 | S88: D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
+| `Items/Uniques:[unique_vaelgrath_scale].fixedBonuses[4].v` | 18 | – | usunięty | S88: D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039; S134g: G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4) |
 | `LevelCurves:curves.elite2Dmg[1][1]` | – | 20 | nowy od S87 | S87: D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions |
 | `LevelCurves:curves.elite2Dmg[1][2]` | – | 1 | nowy od S87 | S87: D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions |
 | `LevelCurves:curves.elite2Dmg[2][1]` | – | 45 | nowy od S87 | S87: D4: new Elite II curve, neutral 1 / 1 / 1 / 1 until the region sessions |
@@ -1899,6 +2060,29 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Quests/Side:byArc.waymarks[side_lostLetters].pages` | – | 3 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
 | `Quests/Side:byArc.waymarks[side_lostLetters].reward.exp` | – | 1254 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
 | `Quests/Side:byArc.waymarks[side_lostLetters].reward.gold` | – | 600 | nowy od S106 | S106: S106: Duskwood side arc waymarks: False Waymarks 30-34 (Zbyszko; Misty Crossroads, Cultist Village); kills 6-10, drops 5-6 at 0.35-0.4, uses 2-3 s, Elites in the arc's cave |
+| `Rarities:get.f(1).legendaryEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(1).legendaryLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(1).mythicEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(1).mythicLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).legendaryEffects` | – | 1 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).legendaryLines` | 2 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).mythicEffects` | – | 1 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).mythicLines` | 1 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:get.f(20).rangeMul` | 1,2 | 1,1 | S134g | S134g: 1.2 -> 1.1: the lines of a Mythic about Heroic +10 % (ItemScore Mythic / Heroic 1.081-1.099, band 1.08-1.12); baseMul 1.22 kept (1.21 gave weapons 1.077) |
+| `Rarities:list[2].legendaryEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].legendaryLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].mythicEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[2].mythicLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].legendaryEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].legendaryLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].mythicEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[3].mythicLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].baseMul` | 1,16 | 1,17 | S134g | S134g: 1.16 -> 1.17: owner 2026-10-15 (a Legendary L36 beat a Heroic L48): stats about Heroic +5 % (ItemScore Legendary / Heroic 1.039-1.053, Balance.targetsS134g stats 1.03-1.07; at 1.16 a Hunter bow L45 had 1.030); the edge is one skill effect |
+| `Rarities:list[4].legendaryEffects` | – | 1 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].legendaryLines` | 1 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].mythicEffects` | – | 0 | nowy od S134g | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].mythicLines` | 0 | – | usunięty | S134g: new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic) |
+| `Rarities:list[4].rangeMul` | 1,1 | 1,05 | S134g | S134g: 1.1 -> 1.05: the lines of a Legendary about Heroic +5 % (the legendary line is gone; with rangeMul 1.1 and the 4th line it was +25-42 % power over Common, Heroic +15-26 %) |
 | `Rarities:twoHandedBonusMul` | – | 2,7 | nowy od S87 | S87: C2 / G8: regular lines of a rolled two-handed weapon x2.7 (bez cech 269/280 in band; plan start 1.75 gave 237) |
 | `Rarities:upgradeStatPerLevelTwoHanded` | – | 0,066 | nowy od S87 | S87: C2 / G8: two-handed base +6.6 % per upgrade level (Common +9 up to 1.035; plan start 7 %) |
 | `Recipes:byId.blessing_fortune_3.ingredients[crow_feather].n` | – | 3 | nowy od S92 | S92: Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE) |
@@ -2131,6 +2315,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | Arena | 111 | S128: arena blessings of every line by rarity 1-3: 15 / 35 / 70 tokens = 0.4 / 0.8 / 1.7 days of 3 matches; the gold price 20 x rarity^2 (20 / 80 / 180) is not comparable, they are bound; S126: DESIGN-17 §6 level brackets 20-39 / 40-59 / 60-79 / 80-100: matches only within a bracket, no gear levelling; S126: DESIGN-17 §6: Elo start 1000, K 32 (48 for the first 10 rated matches of a season), minimum 0, the usual 400-point scale; S126: DESIGN-17 §6 anti-farming: more than 3 matches a UTC day against the same opponent do not change the rating; the window shows the last 10 matches; S126: DESIGN-17 §6: the ranked arena opens at level 20 (the first bracket); S126: DESIGN-17 §6 1v1 rules: first to 2 of at most 3 rounds, 180 s a round, 3 potions a match, the duel countdown of 3 s; 5 s between rounds is an S126 decision; S128: DESIGN-17 §6 3v3: one round of at most 240 s, teams of 3, the team with fighters left wins; potions (3) and the countdown (3 s) copied from 1v1, no break between rounds (one round); S126: DESIGN-17 §6 rating window ±100 widened by 100 every 15 s; 15 s to accept and 300 s penalty for declining come from §6 S127 and are used locally already; 1 s queue tick technical; S126: DESIGN-17 §6 monthly season with the soft reset 1000 + (rating - 1000) x 0.5; S128: DESIGN-17 §6 season rewards: Diamond 150 and Master 300 Dragon Shards = about 2-4 of the smallest packs (100 SO), once a month for Diamond / Master; free shards for play, never sold; S128: arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound; S128: DESIGN-17 §6: blessings in the arena shop up to Heroic (rarity 3); S128: arena shop (DESIGN-17 §6) at 42 tokens a day (3 matches, 50%): 5 Return Stones 10 = 0.24 day (100 gold at the merchant); blessings 15 / 35 / 70 = 0.4 / 0.8 / 1.7 days (Heroic <= 2 days); frames 250 = 6 days, titles 400 / 600 = 9.5 / 14.3 days, the Gladiator aura 1200 = 28.6 days (4.1 weeks); everything bought here is bound; S126: DESIGN-17 §6 tiers: Bronze below 1100, Silver 1100, Gold 1300, Diamond 1500, Master 1700; S128: DESIGN-17 §6: 1v1 win 10 / loss 4, 3v3 win 12 / loss 5, the first 3 matches of a UTC day x2; 3 matches a day at 50% wins = 3 x 7 x 2 = 42 a day, ok. 294 a week; 10 matches a day = 42 + 7 x 7 = 91 a day (the cap in 6.6 days); S130: new table (DESIGN-17 §8): 32 per bracket, at least 4, signups 18:00-18:50 UTC (open -3600, close -600 s), organizer 18:55 (-300), 120 s to accept, 4 fields on a tournament server; restBetween 30 s and hallWeeks 4 are S130 decisions. Rewards: a weekly reward for 1 of 32 in a bracket; 200 SO (champion) = about the price of an average cosmetic, 100 (finalist) and 50 (each semifinal loser) less, looks and the cosmetic shop's currency only; 30 Arena Tokens to every fighter who showed up = 5% of the 600 week cap (outside it, like the S129 event tokens); a 7-day title, an aura and a frame never sold; S128: 5 rated matches (1v1 + 3v3) in a season before any season reward (S128 decision): without it every character that queued once would get Bronze; S128: DESIGN-17 §6: 600 a week (Monday 00:00 UTC) = 2.04 weeks of the 3-matches-a-day income (294): the cap stops farming (about 15 matches a day for 6 days), not normal play |
 | BossTuning | 36 | S117: FIX 2026-10-15 (owner): new table, shield-phase casts and anti-kiting ranged attacks outside the S87 schedule; S117: FIX 2026-10-15 (owner): new keys, kiting = no fighter within 14 studs for 2.5 s; S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S93: 0.7 -> 2.2 (C2): one lava tick 6.5 % -> 20 % of a level 70 Mage after atkMul 0.36 (15-25 %); S87: D3: constants moved from Boss.luau and the scripts without changing their values (new module); S94: C4: 1.4 -> 3.9: one storm tick 38 % of a level 100 Mage's HP after atkMul 0.38 (30-45 %) |
 | Crafting | 1494 | S94: K2: chest pieces, gloves and boots of tiers 75-85 take 2 yeti fur, of 90-100 2 frost scale (first use of the scale) |
+| ItemEffects | 89 | S134g: new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates) |
 | Leaderboards | 12 | S125: weekly ranking (DESIGN-17 §5): brackets 1-19 / 20-44 / 45-69 / 70-100 follow the region bands, so new characters compete with their peers; S125: top 3 weekly rewards 100/50/25 Dragon Shards = cosmetic currency, about one premium skin per month for a weekly winner, no stats (DESIGN-17 §0.2); the timed title lasts 7 days from the next Monday |
 | LoginReward | 37 | S100: new module: login reward 7-day streak (DESIGN-15 §5); week 0.27-0.47 h of income at 10-99 (0.33-0.39 h at 45, 0.27-0.30 h at 99), dearest day <= 0.11 h; Great potions from 70, shards instead of crystals (a crystal ~3 900 gold), chest Unique 85 / Heroic 15 (T-LR5 <= 5% of D5) |
 | Maps | 44 | S127: the arena server map arena_pit: levels 20-100 = Data/Arena brackets, built only on arena and tournament servers; S134c: the dungeon maps' minLevel = boss level - Bosses.ENTRY_GAP (the entry level shown on the map; before boss level - 5); S94: E1: the Ice Grotto's map from 71 |
@@ -2444,18 +2629,18 @@ Moc = √(DPS × efektywne HP). Cel: Unikatowy +8–15%, Heroiczny +15–25%, Le
 
 | klasa · poziom | Unikatowy | Heroiczny | Legendarny | Mityczny |
 | --- | --: | --: | --: | --: |
-| Warrior 5 | 12% | 21% | 31% | 64% |
-| Warrior 10 | 13% | 24% | 32% | 63% |
-| Warrior 20 | 12% | 24% | 33% | 66% |
-| Hunter 5 | 10% | 21% | 29% | 62% |
-| Hunter 10 | 11% | 22% | 30% | 64% |
-| Hunter 20 | 12% | 22% | 34% | 69% |
-| Mage 5 | 11% | 21% | 29% | 61% |
-| Mage 10 | 11% | 23% | 30% | 60% |
-| Mage 20 | 12% | 23% | 32% | 64% |
-| Cleric 5 | 11% | 20% | 28% | 60% |
-| Cleric 10 | 11% | 21% | 29% | 58% |
-| Cleric 20 | 11% | 21% | 30% | 62% |
+| Warrior 5 | 12% | 21% | 31% → 23% | 64% → 34% |
+| Warrior 10 | 13% | 24% | 32% → 28% | 63% → 33% |
+| Warrior 20 | 12% | 24% | 33% → 29% | 66% → 35% |
+| Hunter 5 | 10% | 21% | 29% → 22% | 62% → 31% |
+| Hunter 10 | 11% | 22% | 30% → 28% | 64% → 33% |
+| Hunter 20 | 12% | 22% | 34% → 29% | 69% → 36% |
+| Mage 5 | 11% | 21% | 29% → 23% | 61% → 32% |
+| Mage 10 | 11% | 23% | 30% → 27% | 60% → 31% |
+| Mage 20 | 12% | 23% | 32% → 28% | 64% → 34% |
+| Cleric 5 | 11% | 20% | 28% → 21% | 60% → 31% |
+| Cleric 10 | 11% | 21% | 29% → 25% | 58% → 29% |
+| Cleric 20 | 11% | 21% | 30% → 26% | 62% → 32% |
 
 ### Broń dwuręczna vs jednoręczna + druga ręka (moc, poziom 20)
 
@@ -4097,52 +4282,52 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | goblinShaman 18: 3 graczy HP | 0,84 | 0,60–1,00 | w paśmie | S91 (asertowane) |
 | Warrior 5: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Warrior 5: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Warrior 5: Legendarny | 0,31 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Warrior 5: Mityczny − Legendarny | 0,33 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Warrior 5: Legendarny − Heroiczny | 0,01 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Warrior 5: Mityczny − Legendarny | 0,11 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Warrior 10: Unikatowy | 0,13 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Warrior 10: Heroiczny | 0,24 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Warrior 10: Legendarny | 0,32 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Warrior 10: Mityczny − Legendarny | 0,31 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Warrior 10: Legendarny − Heroiczny | 0,04 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Warrior 10: Mityczny − Legendarny | 0,05 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Warrior 20: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Warrior 20: Heroiczny | 0,24 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Warrior 20: Legendarny | 0,33 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Warrior 20: Mityczny − Legendarny | 0,33 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Warrior 20: Legendarny − Heroiczny | 0,06 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Warrior 20: Mityczny − Legendarny | 0,06 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Hunter 5: Unikatowy | 0,10 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Hunter 5: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Hunter 5: Legendarny | 0,29 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Hunter 5: Mityczny − Legendarny | 0,33 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Hunter 5: Legendarny − Heroiczny | 0,02 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Hunter 5: Mityczny − Legendarny | 0,09 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Hunter 10: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Hunter 10: Heroiczny | 0,22 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Hunter 10: Legendarny | 0,30 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Hunter 10: Mityczny − Legendarny | 0,34 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Hunter 10: Legendarny − Heroiczny | 0,06 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Hunter 10: Mityczny − Legendarny | 0,04 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Hunter 20: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Hunter 20: Heroiczny | 0,22 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Hunter 20: Legendarny | 0,34 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Hunter 20: Mityczny − Legendarny | 0,35 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Hunter 20: Legendarny − Heroiczny | 0,06 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Hunter 20: Mityczny − Legendarny | 0,07 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Mage 5: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Mage 5: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Mage 5: Legendarny | 0,29 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Mage 5: Mityczny − Legendarny | 0,32 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Mage 5: Legendarny − Heroiczny | 0,02 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Mage 5: Mityczny − Legendarny | 0,09 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Mage 10: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Mage 10: Heroiczny | 0,23 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Mage 10: Legendarny | 0,30 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Mage 10: Mityczny − Legendarny | 0,30 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Mage 10: Legendarny − Heroiczny | 0,04 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Mage 10: Mityczny − Legendarny | 0,04 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Mage 20: Unikatowy | 0,12 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Mage 20: Heroiczny | 0,23 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Mage 20: Legendarny | 0,32 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Mage 20: Mityczny − Legendarny | 0,32 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Mage 20: Legendarny − Heroiczny | 0,05 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Mage 20: Mityczny − Legendarny | 0,06 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Cleric 5: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Cleric 5: Heroiczny | 0,20 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Cleric 5: Legendarny | 0,28 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Cleric 5: Mityczny − Legendarny | 0,32 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Cleric 5: Legendarny − Heroiczny | 0,01 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Cleric 5: Mityczny − Legendarny | 0,09 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Cleric 10: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Cleric 10: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Cleric 10: Legendarny | 0,29 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Cleric 10: Mityczny − Legendarny | 0,30 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Cleric 10: Legendarny − Heroiczny | 0,04 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Cleric 10: Mityczny − Legendarny | 0,04 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Cleric 20: Unikatowy | 0,11 | 0,07–0,15 | w paśmie | S91 (asertowane) |
 | Cleric 20: Heroiczny | 0,21 | 0,15–0,26 | w paśmie | S91 (asertowane) |
-| Cleric 20: Legendarny | 0,30 | 0,25–0,42 | w paśmie | S91 (asertowane) |
-| Cleric 20: Mityczny − Legendarny | 0,32 | ≥ 0,00 | w paśmie | S91 (asertowane) |
+| Cleric 20: Legendarny − Heroiczny | 0,05 | 0,00–0,08 | w paśmie | S91 (asertowane) |
+| Cleric 20: Mityczny − Legendarny | 0,06 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Warrior sword2h 5: moc² / 1H | 0,96 | 0,93–1,03 | w paśmie | S91 (asertowane) |
 | Warrior axe2h 5: moc² / 1H | 0,95 | 0,93–1,03 | w paśmie | S91 (asertowane) |
 | Warrior hammer2h 5: moc² / 1H | 0,97 | 0,93–1,03 | w paśmie | S91 (asertowane) |
@@ -4164,7 +4349,7 @@ Gracze na poziomie bossa (najwyżej 100), kolejność Wojownik (tank), Mag, Łow
 | Cleric holystaff 5: moc² / 1H | 0,95 | 0,93–1,03 | w paśmie | S91 (asertowane) |
 | Cleric holystaff 10: moc² / 1H | 0,94 | 0,93–1,03 | w paśmie | S91 (asertowane) |
 | Cleric holystaff 20: moc² / 1H | 0,94 | 0,93–1,03 | w paśmie | S91 (asertowane) |
-| Tasak Grimroka / Legendarny topór L20 (DPS) | 1,22 | ≥ 1,00 | w paśmie | S91 (asertowane) |
+| Tasak Grimroka / Legendarny topór L20 (DPS) | 1,15 | ≥ 1,00 | w paśmie | S91 (asertowane) |
 | Lekka zbroja L20: HP | 33,00 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Talizman L20: HP | 66,00 | ≥ 0,00 | w paśmie | S91 (asertowane) |
 | Talizman L20: pancerz | 22,00 | ≥ 0,00 | w paśmie | S91 (asertowane) |
@@ -5603,14 +5788,14 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | klasa · poziom | K0 | K1 | K1 + Fortuna | K2 + Fortuna |
 | --- | --: | --: | --: | --: |
-| Warrior 25 | 3,02 / 0,77 | 3,57 / 0,91 | 4,47 / 1,03 | 5,78 / 1,03 |
-| Cleric 25 | 3,35 / 0,84 | 3,96 / 0,99 | 4,96 / 1,12 | 6,41 / 1,12 |
-| Warrior 30 | 2,70 / 0,76 | 3,19 / 0,90 | 4,00 / 1,02 | 5,16 / 1,02 |
-| Cleric 30 | 3,08 / 0,83 | 3,63 / 0,98 | 4,56 / 1,11 | 5,89 / 1,11 |
-| Warrior 35 | 2,50 / 0,92 | 2,95 / 1,08 | 3,70 / 1,22 | 4,78 / 1,22 |
-| Cleric 35 | 2,68 / 1,01 | 3,16 / 1,19 | 3,96 / 1,34 | 5,12 / 1,34 |
-| Warrior 40 | 3,34 / 0,85 | 3,94 / 1,01 | 4,94 / 1,14 | 6,38 / 1,14 |
-| Cleric 40 | 3,84 / 0,95 | 4,53 / 1,12 | 5,68 / 1,27 | 7,34 / 1,27 |
+| Warrior 25 | 3,02 / 0,77 | 3,57 / 0,91 | 4,47 / 1,03 | 5,38 / 1,03 |
+| Cleric 25 | 3,35 / 0,84 | 3,96 / 0,99 | 4,96 / 1,12 | 5,97 / 1,12 |
+| Warrior 30 | 2,70 / 0,76 | 3,19 / 0,90 | 4,00 / 1,02 | 4,81 / 1,02 |
+| Cleric 30 | 3,08 / 0,83 | 3,63 / 0,98 | 4,56 / 1,11 | 5,49 / 1,11 |
+| Warrior 35 | 2,50 / 0,92 | 2,95 / 1,08 | 3,70 / 1,22 | 4,45 / 1,22 |
+| Cleric 35 | 2,68 / 1,01 | 3,16 / 1,19 | 3,96 / 1,34 | 4,77 / 1,34 |
+| Warrior 40 | 3,34 / 0,85 | 3,94 / 1,01 | 4,94 / 1,14 | 5,94 / 1,14 |
+| Cleric 40 | 3,84 / 0,95 | 4,53 / 1,12 | 5,68 / 1,27 | 6,84 / 1,27 |
 
 ### Rodzaje rzucające i pary Elit (tylko raport, S92)
 
@@ -6632,16 +6817,16 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | klasa · poziom | K0 | K1 | K1 + Fortuna | K2 + Fortuna |
 | --- | --: | --: | --: | --: |
-| Warrior 50 | 3,22 / 0,81 | 3,79 / 0,95 | 4,76 / 1,08 | 6,15 / 1,08 |
-| Cleric 50 | 3,47 / 0,90 | 4,09 / 1,07 | 5,13 / 1,20 | 6,63 / 1,20 |
-| Warrior 55 | 2,61 / 0,82 | 3,08 / 0,96 | 3,86 / 1,09 | 4,98 / 1,09 |
-| Cleric 55 | 3,13 / 0,91 | 3,69 / 1,07 | 4,63 / 1,21 | 5,97 / 1,21 |
-| Warrior 60 | 3,26 / 0,92 | 3,85 / 1,08 | 4,82 / 1,23 | 6,23 / 1,23 |
-| Cleric 60 | 3,49 / 0,97 | 4,11 / 1,14 | 5,16 / 1,29 | 6,66 / 1,29 |
-| Warrior 65 | 3,07 / 0,81 | 3,62 / 0,96 | 4,54 / 1,08 | 5,86 / 1,08 |
-| Cleric 65 | 3,38 / 0,95 | 3,98 / 1,12 | 5,00 / 1,27 | 6,45 / 1,27 |
-| Warrior 69 | 3,60 / 0,81 | 4,24 / 0,96 | 5,32 / 1,09 | 6,87 / 1,09 |
-| Cleric 69 | 3,75 / 0,95 | 4,43 / 1,12 | 5,55 / 1,27 | 7,17 / 1,27 |
+| Warrior 50 | 3,22 / 0,81 | 3,79 / 0,95 | 4,76 / 1,08 | 5,73 / 1,08 |
+| Cleric 50 | 3,47 / 0,90 | 4,09 / 1,07 | 5,13 / 1,20 | 6,18 / 1,20 |
+| Warrior 55 | 2,61 / 0,82 | 3,08 / 0,96 | 3,86 / 1,09 | 4,64 / 1,09 |
+| Cleric 55 | 3,13 / 0,91 | 3,69 / 1,07 | 4,63 / 1,21 | 5,57 / 1,21 |
+| Warrior 60 | 3,26 / 0,92 | 3,85 / 1,08 | 4,82 / 1,23 | 5,81 / 1,23 |
+| Cleric 60 | 3,49 / 0,97 | 4,11 / 1,14 | 5,16 / 1,29 | 6,21 / 1,29 |
+| Warrior 65 | 3,07 / 0,81 | 3,62 / 0,96 | 4,54 / 1,08 | 5,46 / 1,08 |
+| Cleric 65 | 3,38 / 0,95 | 3,98 / 1,12 | 5,00 / 1,27 | 6,01 / 1,27 |
+| Warrior 69 | 3,60 / 0,81 | 4,24 / 0,96 | 5,32 / 1,09 | 6,40 / 1,09 |
+| Cleric 69 | 3,75 / 0,95 | 4,43 / 1,12 | 5,55 / 1,27 | 6,68 / 1,27 |
 
 ### Rodzaje rzucające i pary Elit (tylko raport, S93)
 
@@ -7792,14 +7977,14 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | klasa · poziom | K0 | K1 | K1 + Fortuna | K2 + Fortuna |
 | --- | --: | --: | --: | --: |
-| Warrior 75 | 2,95 / 0,85 | 3,48 / 1,00 | 4,36 / 1,13 | 5,64 / 1,13 |
-| Cleric 75 | 3,12 / 0,88 | 3,68 / 1,04 | 4,61 / 1,17 | 5,95 / 1,17 |
-| Warrior 85 | 2,94 / 0,85 | 3,47 / 1,00 | 4,36 / 1,13 | 5,63 / 1,13 |
-| Cleric 85 | 3,03 / 0,93 | 3,57 / 1,09 | 4,48 / 1,24 | 5,78 / 1,24 |
-| Warrior 95 | 2,90 / 0,86 | 3,42 / 1,01 | 4,29 / 1,14 | 5,54 / 1,14 |
-| Cleric 95 | 3,02 / 0,94 | 3,56 / 1,11 | 4,47 / 1,25 | 5,77 / 1,25 |
-| Warrior 99 | 2,90 / 0,86 | 3,42 / 1,01 | 4,30 / 1,15 | 5,55 / 1,15 |
-| Cleric 99 | 3,02 / 0,94 | 3,56 / 1,11 | 4,46 / 1,26 | 5,76 / 1,26 |
+| Warrior 75 | 2,95 / 0,85 | 3,48 / 1,00 | 4,36 / 1,13 | 5,25 / 1,13 |
+| Cleric 75 | 3,12 / 0,88 | 3,68 / 1,04 | 4,61 / 1,17 | 5,55 / 1,17 |
+| Warrior 85 | 2,94 / 0,85 | 3,47 / 1,00 | 4,36 / 1,13 | 5,24 / 1,13 |
+| Cleric 85 | 3,03 / 0,93 | 3,57 / 1,09 | 4,48 / 1,24 | 5,39 / 1,24 |
+| Warrior 95 | 2,90 / 0,86 | 3,42 / 1,01 | 4,29 / 1,14 | 5,17 / 1,14 |
+| Cleric 95 | 3,02 / 0,94 | 3,56 / 1,11 | 4,47 / 1,25 | 5,37 / 1,25 |
+| Warrior 99 | 2,90 / 0,86 | 3,42 / 1,01 | 4,30 / 1,15 | 5,17 / 1,15 |
+| Cleric 99 | 3,02 / 0,94 | 3,56 / 1,11 | 4,46 / 1,26 | 5,37 / 1,26 |
 
 Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie 9,7 min): 0,85 na godzinę na jaskinię; z bossów (4 bossy × 3 zabicia dziennie): 0,84 na dobę.
 
@@ -7904,72 +8089,72 @@ Pełny domyślny zestaw rzadkości R wobec Zwykłego, ten sam ilvl. S32: `power`
 | --- | --: | --: | --: | --: | --: |
 | 20 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 20 · Heroiczny | 24% | 23% | 23% | 10% | 14% |
-| 20 · Legendarny | 33% | 32% | 32% | 13% | 19% |
-| 20 · Mityczny | 66% | 65% | 65% | 18% | 47% |
+| 20 · Legendarny | 33% → 29% | 32% → 29% | 32% → 29% | 13% → 15% | 19% → 15% |
+| 20 · Mityczny | 66% → 35% | 65% → 35% | 65% → 35% | 18% | 47% → 17% |
 | 25 · Unikatowy | 14% | 13% | 13% | 4% | 9% |
 | 25 · Heroiczny | 25% | 24% | 24% | 10% | 14% |
-| 25 · Legendarny | 32% | 32% | 32% | 13% | 19% |
-| 25 · Mityczny | 67% | 66% | 66% | 19% | 47% |
+| 25 · Legendarny | 32% → 30% | 32% → 30% | 32% → 30% | 13% → 15% | 19% → 15% |
+| 25 · Mityczny | 67% → 35% | 66% → 35% | 66% → 35% | 19% | 47% → 16% |
 | 30 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 30 · Heroiczny | 24% | 24% | 24% | 10% | 14% |
-| 30 · Legendarny | 32% | 32% | 32% | 14% | 18% |
-| 30 · Mityczny | 66% | 65% | 65% | 19% | 46% |
+| 30 · Legendarny | 32% → 30% | 32% → 29% | 32% → 29% | 14% → 15% | 18% → 15% |
+| 30 · Mityczny | 66% → 35% | 65% → 34% | 65% → 35% | 19% | 46% → 16% |
 | 35 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 35 · Heroiczny | 23% | 23% | 23% | 10% | 13% |
-| 35 · Legendarny | 32% | 32% | 32% | 14% | 18% |
-| 35 · Mityczny | 67% | 66% | 66% | 19% | 48% |
+| 35 · Legendarny | 32% → 29% | 32% → 29% | 32% → 29% | 14% | 18% → 14% |
+| 35 · Mityczny | 67% → 34% | 66% → 34% | 66% → 34% | 19% | 48% → 15% |
 | 40 · Unikatowy | 13% | 13% | 13% | 5% | 8% |
 | 40 · Heroiczny | 24% | 23% | 23% | 10% | 13% |
-| 40 · Legendarny | 33% | 32% | 32% | 14% | 19% |
-| 40 · Mityczny | 67% | 67% | 67% | 19% | 47% |
+| 40 · Legendarny | 33% → 30% | 32% → 30% | 32% → 30% | 14% → 15% | 19% → 15% |
+| 40 · Mityczny | 67% → 36% | 67% → 35% | 67% → 36% | 19% | 47% → 16% |
 | 45 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 45 · Heroiczny | 25% | 24% | 24% | 10% | 14% |
-| 45 · Legendarny | 33% | 32% | 32% | 14% | 19% |
-| 45 · Mityczny | 68% | 67% | 67% | 19% | 48% |
+| 45 · Legendarny | 33% → 30% | 32% → 30% | 32% → 30% | 14% → 15% | 19% → 15% |
+| 45 · Mityczny | 68% → 35% | 67% → 35% | 67% → 35% | 19% | 48% → 16% |
 | 50 · Unikatowy | 13% | 13% | 13% | 5% | 9% |
 | 50 · Heroiczny | 24% | 24% | 24% | 10% | 14% |
-| 50 · Legendarny | 33% | 32% | 32% | 14% | 18% |
-| 50 · Mityczny | 68% | 67% | 67% | 19% | 48% |
+| 50 · Legendarny | 33% → 30% | 32% → 29% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 50 · Mityczny | 68% → 36% | 67% → 35% | 67% → 35% | 19% | 48% → 16% |
 | 55 · Unikatowy | 13% | 13% | 13% | 4% | 8% |
 | 55 · Heroiczny | 24% | 24% | 24% | 11% | 13% |
-| 55 · Legendarny | 33% | 33% | 33% | 14% | 19% |
-| 55 · Mityczny | 67% | 66% | 66% | 19% | 47% |
+| 55 · Legendarny | 33% → 30% | 33% → 30% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 55 · Mityczny | 67% → 36% | 66% → 35% | 66% → 36% | 19% | 47% → 16% |
 | 60 · Unikatowy | 13% | 13% | 13% | 5% | 9% |
 | 60 · Heroiczny | 25% | 24% | 24% | 10% | 14% |
-| 60 · Legendarny | 33% | 32% | 32% | 14% | 18% |
-| 60 · Mityczny | 68% | 67% | 67% | 19% | 48% |
+| 60 · Legendarny | 33% → 30% | 32% → 30% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 60 · Mityczny | 68% → 35% | 67% → 35% | 67% → 35% | 19% | 48% → 16% |
 | 65 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 65 · Heroiczny | 24% | 24% | 24% | 10% | 14% |
-| 65 · Legendarny | 33% | 32% | 32% | 14% | 18% |
-| 65 · Mityczny | 68% | 67% | 67% | 20% | 47% |
+| 65 · Legendarny | 33% → 30% | 32% → 30% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 65 · Mityczny | 68% → 36% | 67% → 35% | 67% → 35% | 20% | 47% → 16% |
 | 70 · Unikatowy | 13% | 13% | 13% | 4% | 8% |
 | 70 · Heroiczny | 24% | 24% | 24% | 11% | 14% |
-| 70 · Legendarny | 33% | 33% | 33% | 14% | 19% |
-| 70 · Mityczny | 67% | 67% | 66% | 19% | 47% |
+| 70 · Legendarny | 33% → 31% | 33% → 30% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 70 · Mityczny | 67% → 36% | 67% → 36% | 66% → 36% | 19% | 47% → 16% |
 | 75 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 75 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 75 · Legendarny | 33% | 33% | 33% | 14% | 18% |
-| 75 · Mityczny | 68% | 68% | 68% | 20% | 48% |
+| 75 · Legendarny | 33% → 30% | 33% → 30% | 33% → 30% | 14% → 15% | 18% → 15% |
+| 75 · Mityczny | 68% → 36% | 68% → 36% | 68% → 36% | 20% | 48% → 16% |
 | 80 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 80 · Heroiczny | 25% | 24% | 24% | 11% | 14% |
-| 80 · Legendarny | 33% | 32% | 32% | 14% | 18% |
-| 80 · Mityczny | 68% | 67% | 67% | 20% | 47% |
+| 80 · Legendarny | 33% → 30% | 32% → 30% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 80 · Mityczny | 68% → 36% | 67% → 35% | 67% → 36% | 20% | 47% → 16% |
 | 85 · Unikatowy | 13% | 12% | 12% | 4% | 8% |
 | 85 · Heroiczny | 25% | 25% | 25% | 11% | 14% |
-| 85 · Legendarny | 33% | 33% | 33% | 14% | 19% |
-| 85 · Mityczny | 67% | 67% | 67% | 20% | 47% |
+| 85 · Legendarny | 33% → 30% | 33% → 30% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 85 · Mityczny | 67% → 36% | 67% → 36% | 67% → 36% | 20% | 47% → 16% |
 | 90 · Unikatowy | 13% | 13% | 13% | 4% | 8% |
 | 90 · Heroiczny | 24% | 24% | 24% | 11% | 13% |
-| 90 · Legendarny | 33% | 33% | 33% | 14% | 19% |
-| 90 · Mityczny | 68% | 67% | 67% | 20% | 47% |
+| 90 · Legendarny | 33% → 31% | 33% → 30% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 90 · Mityczny | 68% → 36% | 67% → 36% | 67% → 36% | 20% | 47% → 16% |
 | 95 · Unikatowy | 13% | 13% | 13% | 5% | 9% |
 | 95 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 95 · Legendarny | 33% | 33% | 33% | 14% | 18% |
-| 95 · Mityczny | 68% | 67% | 67% | 20% | 47% |
+| 95 · Legendarny | 33% → 31% | 33% → 30% | 33% → 30% | 14% → 15% | 18% → 15% |
+| 95 · Mityczny | 68% → 36% | 67% → 36% | 67% → 36% | 20% | 47% → 16% |
 | 100 · Unikatowy | 13% | 13% | 13% | 4% | 8% |
 | 100 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 100 · Legendarny | 33% | 33% | 33% | 14% | 19% |
-| 100 · Mityczny | 68% | 67% | 67% | 20% | 47% |
+| 100 · Legendarny | 33% → 31% | 33% → 30% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 100 · Mityczny | 68% → 36% | 67% → 36% | 67% → 36% | 20% | 47% → 16% |
 
 ### G7: zysk mocy z rzadkości, Łowca
 
@@ -7979,72 +8164,72 @@ Pełny domyślny zestaw rzadkości R wobec Zwykłego, ten sam ilvl. S32: `power`
 | --- | --: | --: | --: | --: | --: |
 | 20 · Unikatowy | 12% | 12% | 13% | 5% | 9% |
 | 20 · Heroiczny | 22% | 22% | 24% | 10% | 14% |
-| 20 · Legendarny | 34% | 34% | 36% | 14% | 22% |
-| 20 · Mityczny | 69% | 69% | 71% | 19% | 52% |
+| 20 · Legendarny | 34% → 29% | 34% → 28% | 36% → 31% | 14% → 15% | 22% → 16% |
+| 20 · Mityczny | 69% → 36% | 69% → 35% | 71% → 39% | 19% | 52% → 19% |
 | 25 · Unikatowy | 13% | 13% | 14% | 4% | 10% |
 | 25 · Heroiczny | **25%** | 25% | **27%** | 11% | 16% |
-| 25 · Legendarny | 33% | 33% | 35% | 14% | 21% |
-| 25 · Mityczny | 69% | 68% | 71% | 19% | 52% |
+| 25 · Legendarny | 33% → 30% | 33% → 30% | 35% → 33% | 14% → 15% | 21% → 18% |
+| 25 · Mityczny | 69% → 35% | 68% → 35% | 71% → 38% | 19% | 52% → 19% |
 | 30 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 30 · Heroiczny | 25% | 24% | **26%** | 11% | 16% |
-| 30 · Legendarny | 33% | 32% | 35% | 14% | 21% |
-| 30 · Mityczny | 69% | 68% | 71% | 20% | 51% |
+| 30 · Legendarny | 33% → 30% | 32% → 29% | 35% → 32% | 14% → 15% | 21% → 17% |
+| 30 · Mityczny | 69% → 35% | 68% → 35% | 71% → 38% | 20% | 51% → 18% |
 | 35 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 35 · Heroiczny | 24% | 24% | **26%** | 11% | 15% |
-| 35 · Legendarny | 32% | 32% | 34% | 14% | 20% |
-| 35 · Mityczny | 71% | 70% | 73% | 20% | 52% |
+| 35 · Legendarny | 32% → 30% | 32% → 29% | 34% → 32% | 14% → 16% | 20% → 17% |
+| 35 · Mityczny | 71% → 35% | 70% → 35% | 73% → 38% | 20% | 52% → 18% |
 | 40 · Unikatowy | 12% | 12% | 13% | 4% | 9% |
 | 40 · Heroiczny | 24% | 24% | **26%** | 11% | 15% |
-| 40 · Legendarny | 33% | 33% | 35% | 14% | 21% |
-| 40 · Mityczny | 70% | 69% | 72% | 20% | 52% |
+| 40 · Legendarny | 33% → 31% | 33% → 30% | 35% → 33% | 14% → 16% | 21% → 17% |
+| 40 · Mityczny | 70% → 36% | 69% → 36% | 72% → 39% | 20% | 52% → 18% |
 | 45 · Unikatowy | 13% | 13% | 14% | 5% | 10% |
 | 45 · Heroiczny | 25% | 25% | **27%** | 11% | 16% |
-| 45 · Legendarny | 34% | 33% | 36% | 15% | 21% |
-| 45 · Mityczny | 72% | 71% | 74% | 21% | 53% |
+| 45 · Legendarny | 34% → 30% | 33% → 30% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 45 · Mityczny | 72% → 36% | 71% → 36% | 74% → 39% | 21% | 53% → 18% |
 | 50 · Unikatowy | 13% | 13% | 14% | 4% | 9% |
 | 50 · Heroiczny | 25% | 24% | **26%** | 11% | 15% |
-| 50 · Legendarny | 33% | 33% | 35% | 15% | 20% |
-| 50 · Mityczny | 71% | 70% | 73% | 21% | 53% |
+| 50 · Legendarny | 33% → 30% | 33% → 30% | 35% → 32% | 15% → 16% | 20% → 17% |
+| 50 · Mityczny | 71% → 36% | 70% → 35% | 73% → 38% | 21% | 53% → 18% |
 | 55 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 55 · Heroiczny | 25% | 24% | **26%** | 11% | 15% |
-| 55 · Legendarny | 34% | 34% | 36% | 15% | 21% |
-| 55 · Mityczny | 71% | 70% | 73% | 21% | 52% |
+| 55 · Legendarny | 34% → 31% | 34% → 31% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 55 · Mityczny | 71% → 37% | 70% → 36% | 73% → 39% | 21% | 52% → 19% |
 | 60 · Unikatowy | 14% | 13% | 14% | 5% | 10% |
 | 60 · Heroiczny | **25%** | 25% | **27%** | 11% | 16% |
-| 60 · Legendarny | 34% | 34% | 36% | 15% | 21% |
-| 60 · Mityczny | 71% | 70% | 73% | 21% | 53% |
+| 60 · Legendarny | 34% → 31% | 34% → 30% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 60 · Mityczny | 71% → 36% | 70% → 36% | 73% → 39% | 21% | 53% → 18% |
 | 65 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 65 · Heroiczny | **25%** | 25% | **27%** | 11% | 16% |
-| 65 · Legendarny | 34% | 34% | 36% | 15% | 21% |
-| 65 · Mityczny | 71% | 71% | 73% | 21% | 52% |
+| 65 · Legendarny | 34% → 31% | 34% → 30% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 65 · Mityczny | 71% → 36% | 71% → 36% | 73% → 39% | 21% | 52% → 18% |
 | 70 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 70 · Heroiczny | 25% | 24% | **26%** | 11% | 15% |
-| 70 · Legendarny | 35% | 34% | 37% | 15% | 21% |
-| 70 · Mityczny | 70% | 70% | 73% | 21% | 52% |
+| 70 · Legendarny | 35% → 31% | 34% → 31% | 37% → 33% | 15% → 16% | 21% → 17% |
+| 70 · Mityczny | 70% → 37% | 70% → 36% | 73% → 39% | 21% | 52% → 19% |
 | 75 · Unikatowy | 13% | 13% | 14% | 5% | 10% |
 | 75 · Heroiczny | **25%** | 25% | **27%** | 11% | 16% |
-| 75 · Legendarny | 34% | 33% | 36% | 15% | 21% |
-| 75 · Mityczny | 71% | 70% | 73% | 21% | 53% |
+| 75 · Legendarny | 34% → 31% | 33% → 30% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 75 · Mityczny | 71% → 36% | 70% → 36% | 73% → 39% | 21% | 53% → 18% |
 | 80 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 80 · Heroiczny | 25% | 25% | **27%** | 11% | 15% |
-| 80 · Legendarny | 34% | 33% | 36% | 15% | 21% |
-| 80 · Mityczny | 71% | 71% | 74% | 21% | 52% |
+| 80 · Legendarny | 34% → 31% | 33% → 31% | 36% → 33% | 15% → 16% | 21% → 17% |
+| 80 · Mityczny | 71% → 37% | 71% → 36% | 74% → 39% | 21% | 52% → 18% |
 | 85 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 85 · Heroiczny | **25%** | 25% | **27%** | 12% | 15% |
-| 85 · Legendarny | 35% | 34% | 37% | 15% | 21% |
-| 85 · Mityczny | 71% | 70% | 73% | 21% | 52% |
+| 85 · Legendarny | 35% → 31% | 34% → 30% | 37% → 33% | 15% → 16% | 21% → 17% |
+| 85 · Mityczny | 71% → 37% | 70% → 36% | 73% → 40% | 21% | 52% → 19% |
 | 90 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 90 · Heroiczny | 25% | 25% | **27%** | 12% | 15% |
-| 90 · Legendarny | 35% | 34% | 37% | 15% | 21% |
-| 90 · Mityczny | 72% | 71% | 74% | 21% | 52% |
+| 90 · Legendarny | 35% → 31% | 34% → 31% | 37% → 33% | 15% → 16% | 21% → 17% |
+| 90 · Mityczny | 72% → 37% | 71% → 37% | 74% → 40% | 21% | 52% → 18% |
 | 95 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 95 · Heroiczny | **26%** | **25%** | **27%** | 12% | 16% |
-| 95 · Legendarny | 35% | 34% | 37% | 16% | 21% |
-| 95 · Mityczny | 71% | 71% | 74% | 22% | 52% |
+| 95 · Legendarny | 35% → 31% | 34% → 31% | 37% → 33% | 16% | 21% → 17% |
+| 95 · Mityczny | 71% → 37% | 71% → 37% | 74% → 40% | 22% | 52% → 18% |
 | 100 · Unikatowy | 13% | 13% | 14% | 5% | 9% |
 | 100 · Heroiczny | **26%** | **25%** | **27%** | 12% | 16% |
-| 100 · Legendarny | 35% | 34% | 37% | 16% | 21% |
-| 100 · Mityczny | 71% | 71% | 74% | 22% | 52% |
+| 100 · Legendarny | 35% → 31% | 34% → 31% | 37% → 33% | 16% → 17% | 21% → 17% |
+| 100 · Mityczny | 71% → 37% | 71% → 37% | 74% → 40% | 22% | 52% → 19% |
 
 ### G7: zysk mocy z rzadkości, Mag
 
@@ -8054,72 +8239,72 @@ Pełny domyślny zestaw rzadkości R wobec Zwykłego, ten sam ilvl. S32: `power`
 | --- | --: | --: | --: | --: | --: |
 | 20 · Unikatowy | 12% | 11% | 12% | 4% | 8% |
 | 20 · Heroiczny | 23% | 22% | 23% | 10% | 13% |
-| 20 · Legendarny | 32% | 32% | 33% | 13% | 20% |
-| 20 · Mityczny | 64% | 64% | 65% | 18% | 47% |
+| 20 · Legendarny | 32% → 28% | 32% → 28% | 33% → 29% | 13% → 14% | 20% → 14% |
+| 20 · Mityczny | 64% → 34% | 64% → 34% | 65% → 35% | 18% | 47% → 18% |
 | 25 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 25 · Heroiczny | 25% | 24% | 25% | 10% | 15% |
-| 25 · Legendarny | 32% | 31% | 32% | 13% | 19% |
-| 25 · Mityczny | 65% | 64% | 65% | 18% | 47% |
+| 25 · Legendarny | 32% → 30% | 31% → 29% | 32% → 30% | 13% → 14% | 19% → 16% |
+| 25 · Mityczny | 65% → 35% | 64% → 34% | 65% → 35% | 18% | 47% → 17% |
 | 30 · Unikatowy | 12% | 12% | 13% | 4% | 9% |
 | 30 · Heroiczny | 24% | 23% | 24% | 10% | 14% |
-| 30 · Legendarny | 32% | 31% | 32% | 13% | 19% |
-| 30 · Mityczny | 64% | 63% | 64% | 18% | 46% |
+| 30 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 13% → 14% | 19% → 15% |
+| 30 · Mityczny | 64% → 34% | 63% → 33% | 64% → 35% | 18% | 46% → 16% |
 | 35 · Unikatowy | 13% | 12% | 13% | 4% | 8% |
 | 35 · Heroiczny | 23% | 23% | 24% | 10% | 14% |
-| 35 · Legendarny | 31% | 31% | 32% | 14% | 18% |
-| 35 · Mityczny | 65% | 64% | 65% | 18% | 47% |
+| 35 · Legendarny | 31% → 28% | 31% → 28% | 32% → 29% | 14% | 18% → 15% |
+| 35 · Mityczny | 65% → 33% | 64% → 33% | 65% → 34% | 18% | 47% → 16% |
 | 40 · Unikatowy | 13% | 12% | 13% | 4% | 8% |
 | 40 · Heroiczny | 23% | 23% | 24% | 10% | 14% |
-| 40 · Legendarny | 32% | 31% | 32% | 13% | 19% |
-| 40 · Mityczny | 65% | 64% | 65% | 19% | 47% |
+| 40 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 13% → 14% | 19% → 16% |
+| 40 · Mityczny | 65% → 35% | 64% → 34% | 65% → 35% | 19% | 47% → 17% |
 | 45 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 45 · Heroiczny | 24% | 24% | 24% | 10% | 14% |
-| 45 · Legendarny | 32% | 31% | 32% | 14% | 19% |
-| 45 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 45 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 14% | 19% → 15% |
+| 45 · Mityczny | 66% → 34% | 65% → 34% | 66% → 35% | 19% | 47% → 16% |
 | 50 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 50 · Heroiczny | 24% | 23% | 24% | 10% | 14% |
-| 50 · Legendarny | 32% | 31% | 32% | 14% | 18% |
-| 50 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 50 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 50 · Mityczny | 66% → 34% | 65% → 34% | 66% → 35% | 19% | 47% → 16% |
 | 55 · Unikatowy | 13% | 12% | 13% | 4% | 8% |
 | 55 · Heroiczny | 24% | 23% | 24% | 10% | 14% |
-| 55 · Legendarny | 32% | 32% | 33% | 14% | 19% |
-| 55 · Mityczny | 65% | 64% | 65% | 19% | 46% |
+| 55 · Legendarny | 32% → 30% | 32% → 29% | 33% → 30% | 14% → 15% | 19% → 16% |
+| 55 · Mityczny | 65% → 35% | 64% → 34% | 65% → 36% | 19% | 46% → 17% |
 | 60 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 60 · Heroiczny | 24% | 24% | 25% | 10% | 14% |
-| 60 · Legendarny | 32% | 31% | 32% | 14% | 19% |
-| 60 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 60 · Legendarny | 32% → 30% | 31% → 29% | 32% → 30% | 14% → 15% | 19% → 16% |
+| 60 · Mityczny | 66% → 34% | 65% → 34% | 66% → 35% | 19% | 47% → 17% |
 | 65 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 65 · Heroiczny | 24% | 24% | 24% | 10% | 14% |
-| 65 · Legendarny | 32% | 31% | 32% | 14% | 18% |
-| 65 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 65 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 65 · Mityczny | 66% → 35% | 65% → 34% | 66% → 35% | 19% | 47% → 16% |
 | 70 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 70 · Heroiczny | 24% | 24% | 25% | 11% | 14% |
-| 70 · Legendarny | 32% | 32% | 33% | 14% | 19% |
-| 70 · Mityczny | 65% | 64% | 65% | 19% | 46% |
+| 70 · Legendarny | 32% → 30% | 32% → 30% | 33% → 31% | 14% → 15% | 19% → 16% |
+| 70 · Mityczny | 65% → 35% | 64% → 34% | 65% → 36% | 19% | 46% → 17% |
 | 75 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 75 · Heroiczny | 24% | 24% | 25% | 10% | 14% |
-| 75 · Legendarny | 32% | 32% | 33% | 14% | 19% |
-| 75 · Mityczny | 66% | 66% | 66% | 19% | 47% |
+| 75 · Legendarny | 32% → 30% | 32% → 29% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 75 · Mityczny | 66% → 35% | 66% → 35% | 66% → 36% | 19% | 47% → 17% |
 | 80 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 80 · Heroiczny | 24% | 24% | 25% | 10% | 14% |
-| 80 · Legendarny | 32% | 31% | 32% | 14% | 18% |
-| 80 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 80 · Legendarny | 32% → 29% | 31% → 29% | 32% → 30% | 14% → 15% | 18% → 15% |
+| 80 · Mityczny | 66% → 35% | 65% → 34% | 66% → 35% | 19% | 47% → 16% |
 | 85 · Unikatowy | 13% | 12% | 13% | 4% | 9% |
 | 85 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 85 · Legendarny | 33% | 32% | 33% | 14% | 19% |
-| 85 · Mityczny | 65% | 65% | 66% | 19% | 47% |
+| 85 · Legendarny | 33% → 29% | 32% → 29% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 85 · Mityczny | 65% → 35% | 65% → 35% | 66% → 36% | 19% | 47% → 17% |
 | 90 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 90 · Heroiczny | 24% | 24% | 24% | 11% | 14% |
-| 90 · Legendarny | 33% | 32% | 33% | 14% | 19% |
-| 90 · Mityczny | 66% | 65% | 66% | 19% | 47% |
+| 90 · Legendarny | 33% → 30% | 32% → 30% | 33% → 31% | 14% → 15% | 19% → 16% |
+| 90 · Mityczny | 66% → 35% | 65% → 35% | 66% → 36% | 19% | 47% → 17% |
 | 95 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 95 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 95 · Legendarny | 32% | 32% | 33% | 14% | 19% |
-| 95 · Mityczny | 66% | 65% | 66% | 19% | 46% |
+| 95 · Legendarny | 32% → 30% | 32% → 29% | 33% → 31% | 14% → 15% | 19% → 16% |
+| 95 · Mityczny | 66% → 35% | 65% → 35% | 66% → 36% | 19% | 46% → 17% |
 | 100 · Unikatowy | 13% | 13% | 13% | 4% | 9% |
 | 100 · Heroiczny | 25% | 24% | 25% | 11% | 14% |
-| 100 · Legendarny | 33% | 32% | 33% | 14% | 19% |
-| 100 · Mityczny | 66% | 65% | 66% | 19% | 46% |
+| 100 · Legendarny | 33% → 30% | 32% → 29% | 33% → 30% | 14% → 15% | 19% → 15% |
+| 100 · Mityczny | 66% → 35% | 65% → 35% | 66% → 36% | 19% | 46% → 17% |
 
 ### G7: zysk mocy z rzadkości, Kapłan
 
@@ -8129,72 +8314,72 @@ Pełny domyślny zestaw rzadkości R wobec Zwykłego, ten sam ilvl. S32: `power`
 | --- | --: | --: | --: | --: | --: |
 | 20 · Unikatowy | 11% | 11% | 11% | 3% | 7% |
 | 20 · Heroiczny | 21% | 21% | 22% | 9% | 12% |
-| 20 · Legendarny | 30% | 30% | 31% | 12% | 18% |
-| 20 · Mityczny | 62% | 61% | 63% | 17% | 46% |
+| 20 · Legendarny | 30% → 26% | 30% → 26% | 31% → 27% | 12% → 14% | 18% → 13% |
+| 20 · Mityczny | 62% → 32% | 61% → 32% | 63% → 33% | 17% | 46% → 16% |
 | 25 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 25 · Heroiczny | 23% | 22% | 23% | 10% | 13% |
-| 25 · Legendarny | 29% | 29% | 30% | 12% | 18% |
-| 25 · Mityczny | 62% | 62% | 63% | 18% | 46% |
+| 25 · Legendarny | 29% → 28% | 29% → 27% | 30% → 28% | 12% → 14% | 18% → 14% |
+| 25 · Mityczny | 62% → 32% | 62% → 32% | 63% → 33% | 18% | 46% → 15% |
 | 30 · Unikatowy | 11% | 11% | 12% | 4% | 8% |
 | 30 · Heroiczny | 22% | 22% | 22% | 9% | 13% |
-| 30 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 30 · Mityczny | 62% | 61% | 63% | 18% | 45% |
+| 30 · Legendarny | 29% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 30 · Mityczny | 62% → 32% | 61% → 31% | 63% → 32% | 18% | 45% → 15% |
 | 35 · Unikatowy | 12% | 11% | 12% | 4% | 8% |
 | 35 · Heroiczny | 21% | 21% | 22% | 9% | 13% |
-| 35 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 35 · Mityczny | 62% | 62% | 63% | 17% | 46% |
+| 35 · Legendarny | 29% → 26% | 29% → 26% | 30% → 27% | 13% | 17% → 14% |
+| 35 · Mityczny | 62% → 31% | 62% → 31% | 63% → 32% | 17% | 46% → 15% |
 | 40 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 40 · Heroiczny | 22% | 21% | 22% | 10% | 12% |
-| 40 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 40 · Mityczny | 62% | 62% | 63% | 18% | 46% |
+| 40 · Legendarny | 29% → 27% | 29% → 27% | 30% → 28% | 13% | 17% → 14% |
+| 40 · Mityczny | 62% → 32% | 62% → 32% | 63% → 33% | 18% | 46% → 15% |
 | 45 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 45 · Heroiczny | 22% | 22% | 22% | 10% | 13% |
-| 45 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 45 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 45 · Legendarny | 29% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 45 · Mityczny | 63% → 32% | 62% → 32% | 64% → 33% | 18% | 46% → 15% |
 | 50 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 50 · Heroiczny | 22% | 22% | 22% | 9% | 13% |
-| 50 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 50 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 50 · Legendarny | 29% → 27% | 29% → 27% | 30% → 27% | 13% → 14% | 17% → 14% |
+| 50 · Mityczny | 63% → 32% | 62% → 32% | 64% → 33% | 18% | 46% → 15% |
 | 55 · Unikatowy | 12% | 11% | 12% | 4% | 8% |
 | 55 · Heroiczny | 22% | 22% | 22% | 10% | 13% |
-| 55 · Legendarny | 30% | 29% | 30% | 13% | 17% |
-| 55 · Mityczny | 62% | 61% | 63% | 18% | 45% |
+| 55 · Legendarny | 30% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 55 · Mityczny | 62% → 32% | 61% → 32% | 63% → 33% | 18% | 45% → 15% |
 | 60 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 60 · Heroiczny | 22% | 22% | 22% | 10% | 13% |
-| 60 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 60 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 60 · Legendarny | 29% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 60 · Mityczny | 63% → 32% | 62% → 31% | 64% → 32% | 18% | 46% → 15% |
 | 65 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 65 · Heroiczny | 22% | 22% | 22% | 10% | 13% |
-| 65 · Legendarny | 29% | 29% | 30% | 13% | 17% |
-| 65 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 65 · Legendarny | 29% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 65 · Mityczny | 63% → 32% | 62% → 31% | 64% → 33% | 18% | 46% → 15% |
 | 70 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 70 · Heroiczny | 22% | 22% | 22% | 10% | 12% |
-| 70 · Legendarny | 30% | 30% | 31% | 13% | 18% |
-| 70 · Mityczny | 62% | 62% | 63% | 18% | 45% |
+| 70 · Legendarny | 30% → 28% | 30% → 27% | 31% → 28% | 13% → 14% | 18% → 14% |
+| 70 · Mityczny | 62% → 32% | 62% → 32% | 63% → 33% | 18% | 45% → 15% |
 | 75 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 75 · Heroiczny | 23% | 22% | 23% | 10% | 13% |
-| 75 · Legendarny | 30% | 30% | 30% | 13% | 17% |
-| 75 · Mityczny | 63% | 63% | 64% | 18% | 46% |
+| 75 · Legendarny | 30% → 27% | 30% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 75 · Mityczny | 63% → 32% | 63% → 32% | 64% → 33% | 18% | 46% → 15% |
 | 80 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 80 · Heroiczny | 22% | 22% | 23% | 10% | 13% |
-| 80 · Legendarny | 30% | 29% | 30% | 13% | 17% |
-| 80 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 80 · Legendarny | 30% → 27% | 29% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 80 · Mityczny | 63% → 32% | 62% → 32% | 64% → 33% | 18% | 46% → 15% |
 | 85 · Unikatowy | 11% | 11% | 12% | 4% | 8% |
 | 85 · Heroiczny | 23% | 22% | 23% | 10% | 13% |
-| 85 · Legendarny | 30% | 30% | 31% | 13% | 17% |
-| 85 · Mityczny | 62% | 62% | 63% | 18% | 45% |
+| 85 · Legendarny | 30% → 27% | 30% → 27% | 31% → 28% | 13% → 14% | 17% → 14% |
+| 85 · Mityczny | 62% → 32% | 62% → 32% | 63% → 33% | 18% | 45% → 15% |
 | 90 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 90 · Heroiczny | 22% | 22% | 22% | 10% | 13% |
-| 90 · Legendarny | 30% | 30% | 30% | 13% | 17% |
-| 90 · Mityczny | 63% | 62% | 64% | 18% | 46% |
+| 90 · Legendarny | 30% → 27% | 30% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 90 · Mityczny | 63% → 32% | 62% → 32% | 64% → 33% | 18% | 46% → 15% |
 | 95 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 95 · Heroiczny | 22% | 22% | 23% | 10% | 13% |
-| 95 · Legendarny | 30% | 30% | 30% | 13% | 17% |
-| 95 · Mityczny | 62% | 62% | 63% | 18% | 45% |
+| 95 · Legendarny | 30% → 27% | 30% → 27% | 30% → 28% | 13% → 14% | 17% → 14% |
+| 95 · Mityczny | 62% → 32% | 62% → 32% | 63% → 33% | 18% | 45% → 15% |
 | 100 · Unikatowy | 12% | 12% | 12% | 4% | 8% |
 | 100 · Heroiczny | 22% | 22% | 23% | 10% | 13% |
-| 100 · Legendarny | 30% | 30% | 31% | 13% | 17% |
-| 100 · Mityczny | 62% | 62% | 63% | 18% | 45% |
+| 100 · Legendarny | 30% → 27% | 30% → 27% | 31% → 28% | 13% → 14% | 17% → 14% |
+| 100 · Mityczny | 62% → 33% | 62% → 32% | 63% → 33% | 18% | 45% → 15% |
 
 ### G8: Wojownik sword2h wobec zestawu domyślnego
 
@@ -8226,22 +8411,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | **0,95** | 1,01 | **0,96** | 0,99 | 0,94 | 0,99 | 0,98 | 0,94 |
 | Heroiczny · +9 · 70 | **0,96** | 1,02 | 0,98 | 1,00 | 0,94 | 0,99 | 1,05 | 0,94 |
 | Heroiczny · +9 · 100 | **0,95** | 1,01 | 0,97 | 0,99 | 0,94 | 0,99 | 1,04 | 0,94 |
-| Legendarny · +0 · 20 | 0,98 | **1,04** | 1,01 | 1,03 | 0,98 | 1,03 | 1,05 | 0,98 |
-| Legendarny · +0 · 45 | **0,95** | 1,00 | 0,98 | 1,00 | 0,96 | 1,00 | 0,99 | 0,96 |
-| Legendarny · +0 · 70 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,04 | 0,95 |
-| Legendarny · +0 · 100 | **0,95** | 1,01 | 0,98 | 1,00 | 0,95 | 1,00 | 1,04 | 0,95 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | 1,01 | 1,03 | 0,97 | 1,03 | 1,07 | 0,97 |
-| Legendarny · +9 · 45 | **0,95** | 1,00 | 0,98 | 1,01 | 0,96 | 1,01 | 1,00 | 0,96 |
-| Legendarny · +9 · 70 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 | 0,95 |
-| Legendarny · +9 · 100 | **0,95** | 1,01 | 0,99 | 1,01 | 0,95 | 1,01 | 1,06 | 0,95 |
-| Mityczny · +0 · 20 | **0,94** | 1,00 | 1,02 | 1,04 | 0,99 | 1,04 | 1,06 | 0,99 |
-| Mityczny · +0 · 45 | **0,93** | 0,98 | 1,00 | 1,03 | 0,98 | 1,02 | 1,02 | 0,98 |
-| Mityczny · +0 · 70 | **0,93** | 0,98 | 1,01 | 1,02 | 0,98 | 1,02 | 1,06 | 0,98 |
-| Mityczny · +0 · 100 | **0,93** | 0,98 | 1,00 | 1,02 | 0,97 | 1,02 | 1,06 | 0,97 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | 1,01 | 1,03 | 0,97 | 1,03 | 1,07 | 0,97 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | 0,98 | 1,02 | 0,96 | 1,01 | 1,01 | 0,96 |
-| Mityczny · +9 · 70 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,07 | 0,95 |
-| Mityczny · +9 · 100 | **0,92** | 0,98 | 0,99 | 1,01 | 0,95 | 1,01 | 1,07 | 0,95 |
+| Legendarny · +0 · 20 | **0,98 → 0,94** | 1,04 → 1,00 | **1,01 → 0,95** | 1,03 → 0,97 | 0,98 → 0,93 | 1,03 → 0,97 | 1,05 → 0,99 | 0,98 → 0,93 |
+| Legendarny · +0 · 45 | **0,95** | 1,00 | **0,98 → 0,96** | 1,00 → 0,98 | 0,96 → 0,94 | 1,00 → 0,98 | 0,99 → 0,97 | 0,96 → 0,94 |
+| Legendarny · +0 · 70 | **0,95** | 1,01 | **0,98 → 0,96** | 1,00 → 0,98 | 0,95 → 0,93 | 1,00 → 0,98 | 1,04 → 1,01 | 0,95 → 0,93 |
+| Legendarny · +0 · 100 | **0,95** | 1,01 | **0,98 → 0,96** | 1,00 → 0,98 | 0,95 → 0,93 | 1,00 → 0,97 | 1,04 → 1,01 | 0,95 → 0,93 |
+| Legendarny · +9 · 20 | **0,97 → 0,95** | 1,03 → 1,01 | **1,01 → 0,97** | 1,03 → 0,99 | 0,97 → 0,93 | 1,03 → 0,99 | 1,07 → 1,03 | 0,97 → 0,93 |
+| Legendarny · +9 · 45 | **0,95** | 1,00 | **0,98 → 0,96** | 1,01 → 0,99 | 0,96 → 0,94 | 1,01 → 0,99 | 1,00 → 0,98 | 0,96 → 0,94 |
+| Legendarny · +9 · 70 | **0,95** | 1,01 | 0,99 → 0,97 | 1,01 → 0,99 | 0,95 → 0,94 | 1,01 → 0,99 | 1,06 → 1,05 | 0,95 → 0,94 |
+| Legendarny · +9 · 100 | **0,95** | 1,01 | 0,99 → 0,97 | 1,01 → 0,99 | 0,95 → 0,93 | 1,01 → 0,99 | 1,06 → 1,04 | 0,95 → 0,93 |
+| Mityczny · +0 · 20 | **0,94 → 0,97** | 1,00 → 1,03 | 1,02 → 0,98 | 1,04 → 1,00 | 0,99 → 0,95 | 1,04 → 1,00 | 1,06 → 1,02 | 0,99 → 0,95 |
+| Mityczny · +0 · 45 | **0,93 → 0,95** | 0,98 → 1,00 | **1,00 → 0,95** | 1,03 → 0,98 | 0,98 → 0,93 | 1,02 → 0,98 | 1,02 → 0,97 | 0,98 → 0,93 |
+| Mityczny · +0 · 70 | **0,93 → 0,95** | 0,98 → 1,01 | **1,01 → 0,97** | 1,02 → 0,98 | 0,98 → 0,94 | 1,02 → 0,98 | 1,06 → 1,02 | 0,98 → 0,94 |
+| Mityczny · +0 · 100 | **0,93 → 0,95** | 0,98 → 1,01 | **1,00 → 0,96** | 1,02 → 0,98 | 0,97 → 0,93 | 1,02 → 0,98 | 1,06 → 1,02 | 0,97 → 0,93 |
+| Mityczny · +9 · 20 | **0,94 → 0,97** | 1,00 → 1,03 | 1,01 → 0,99 | 1,03 → 1,02 | 0,97 → 0,96 | 1,03 → 1,01 | 1,07 → 1,06 | 0,97 → 0,96 |
+| Mityczny · +9 · 45 | **0,93 → 0,95** | 0,98 → 1,00 | **0,98 → 0,96** | 1,02 → 0,99 | 0,96 → 0,93 | 1,01 → 0,99 | 1,01 → 0,98 | 0,96 → 0,93 |
+| Mityczny · +9 · 70 | **0,92 → 0,95** | 0,98 → 1,01 | 0,99 → 0,97 | 1,01 → 0,99 | 0,95 → 0,93 | 1,01 → 0,99 | 1,07 → 1,05 | 0,95 → 0,93 |
+| Mityczny · +9 · 100 | **0,92 → 0,95** | 0,98 → 1,01 | 0,99 → 0,97 | 1,01 → 0,99 | 0,95 → 0,93 | 1,01 → 0,99 | 1,07 → 1,05 | 0,95 → 0,93 |
 
 ### G8: Wojownik axe2h wobec zestawu domyślnego
 
@@ -8273,22 +8458,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | **0,94** | 0,99 | **0,95** | 1,02 | 0,90 | 1,00 | 1,01 | 0,90 |
 | Heroiczny · +9 · 70 | **0,94** | 1,00 | **0,96** | 1,02 | 0,90 | 1,00 | 1,08 | 0,90 |
 | Heroiczny · +9 · 100 | **0,94** | 0,99 | **0,96** | 1,02 | 0,89 | 1,00 | 1,07 | 0,89 |
-| Legendarny · +0 · 20 | **0,95** | 1,01 | **0,97** | 1,00 | 0,93 | 1,00 | 1,03 | 0,93 |
-| Legendarny · +0 · 45 | **0,93** | 0,98 | **0,95** | 0,98 | 0,91 | 0,98 | 0,98 | 0,91 |
-| Legendarny · +0 · 70 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,02 | 0,91 |
+| Legendarny · +0 · 20 | **0,95 → 0,93** | 1,01 → 0,98 | **0,97 → 0,95** | 1,00 → 0,98 | 0,93 → 0,91 | 1,00 → 0,97 | 1,03 → 1,01 | 0,93 → 0,91 |
+| Legendarny · +0 · 45 | **0,93 → 0,94** | 0,98 → 0,99 | **0,95** | 0,98 → 0,99 | 0,91 → 0,92 | 0,98 | 0,98 | 0,91 → 0,92 |
+| Legendarny · +0 · 70 | **0,93 → 0,94** | 0,99 | **0,95 → 0,96** | 0,99 | 0,91 → 0,92 | 0,98 | 1,02 → 1,03 | 0,91 → 0,92 |
 | Legendarny · +0 · 100 | **0,93** | 0,99 | **0,95** | 0,99 | 0,91 | 0,98 | 1,02 | 0,91 |
-| Legendarny · +9 · 20 | **0,95** | 1,00 | **0,97** | 1,03 | 0,90 | 1,01 | 1,08 | 0,90 |
-| Legendarny · +9 · 45 | **0,93** | 0,98 | **0,95** | 1,02 | 0,89 | 1,00 | 1,01 | 0,89 |
-| Legendarny · +9 · 70 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,07 | 0,88 |
-| Legendarny · +9 · 100 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 | 1,08 | 0,88 |
-| Mityczny · +0 · 20 | **0,92** | **0,97** | **0,93** | 0,97 | 0,89 | 0,96 | 1,00 | 0,89 |
-| Mityczny · +0 · 45 | **0,91** | **0,95** | **0,92** | 0,96 | 0,88 | 0,95 | 0,96 | 0,88 |
-| Mityczny · +0 · 70 | **0,90** | **0,96** | **0,92** | 0,96 | 0,88 | 0,95 | 1,00 | 0,88 |
-| Mityczny · +0 · 100 | **0,90** | **0,96** | **0,92** | 0,96 | 0,87 | 0,95 | 1,00 | 0,87 |
-| Mityczny · +9 · 20 | **0,92** | 0,97 | **0,92** | 1,01 | 0,85 | 0,98 | 1,05 | 0,85 |
-| Mityczny · +9 · 45 | **0,91** | **0,95** | **0,90** | 0,99 | 0,84 | 0,96 | 0,99 | 0,84 |
-| Mityczny · +9 · 70 | **0,90** | **0,95** | **0,91** | 0,99 | 0,83 | 0,96 | 1,05 | 0,83 |
-| Mityczny · +9 · 100 | **0,90** | **0,96** | **0,90** | 0,99 | 0,82 | 0,96 | 1,05 | 0,82 |
+| Legendarny · +9 · 20 | **0,95 → 0,94** | 1,00 → 0,99 | **0,97 → 0,96** | 1,03 → 1,02 | 0,90 → 0,89 | 1,01 → 1,00 | 1,08 → 1,06 | 0,90 → 0,89 |
+| Legendarny · +9 · 45 | **0,93 → 0,94** | 0,98 | **0,95** | 1,02 | 0,89 | 1,00 | 1,01 | 0,89 |
+| Legendarny · +9 · 70 | **0,93 → 0,94** | 0,99 | **0,95 → 0,96** | 1,02 | 0,88 → 0,89 | 0,99 → 1,00 | 1,07 → 1,08 | 0,88 → 0,89 |
+| Legendarny · +9 · 100 | **0,93** | 0,99 | **0,95** | 1,02 | 0,88 | 0,99 → 1,00 | 1,08 | 0,88 |
+| Mityczny · +0 · 20 | **0,92 → 0,95** | 0,97 → 1,01 | 0,93 → 0,97 | 0,97 → 1,01 | 0,89 → 0,93 | 0,96 → 1,00 | 1,00 → 1,03 | 0,89 → 0,93 |
+| Mityczny · +0 · 45 | **0,91 → 0,93** | 0,95 → 0,98 | **0,92 → 0,95** | 0,96 → 0,99 | 0,88 → 0,91 | 0,95 → 0,98 | 0,96 → 0,98 | 0,88 → 0,91 |
+| Mityczny · +0 · 70 | **0,90 → 0,94** | 0,96 → 0,99 | **0,92 → 0,96** | 0,96 → 0,99 | 0,88 → 0,92 | 0,95 → 0,98 | 1,00 → 1,03 | 0,88 → 0,92 |
+| Mityczny · +0 · 100 | **0,90 → 0,94** | 0,96 → 0,99 | **0,92 → 0,96** | 0,96 → 0,99 | 0,87 → 0,91 | 0,95 → 0,98 | 1,00 → 1,03 | 0,87 → 0,91 |
+| Mityczny · +9 · 20 | **0,92 → 0,95** | 0,97 → 1,01 | 0,92 → 0,97 | 1,01 → 1,05 | 0,85 → 0,90 | 0,98 → 1,02 | 1,05 → 1,09 | 0,85 → 0,90 |
+| Mityczny · +9 · 45 | **0,91 → 0,93** | 0,95 → 0,98 | **0,90 → 0,95** | 0,99 → 1,02 | 0,84 → 0,89 | 0,96 → 1,00 | 0,99 → 1,02 | 0,84 → 0,89 |
+| Mityczny · +9 · 70 | **0,90 → 0,93** | 0,95 → 0,99 | **0,91 → 0,95** | 0,99 → 1,02 | 0,83 → 0,88 | 0,96 → 1,00 | 1,05 → 1,08 | 0,83 → 0,88 |
+| Mityczny · +9 · 100 | **0,90 → 0,93** | 0,96 → 0,99 | **0,90 → 0,95** | 0,99 → 1,03 | 0,82 → 0,88 | 0,96 → 1,00 | 1,05 → 1,09 | 0,82 → 0,88 |
 
 ### G8: Wojownik hammer2h wobec zestawu domyślnego
 
@@ -8320,22 +8505,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | **0,96** | 1,01 | **0,95** | 1,00 | 0,91 | 0,99 | 1,01 | 0,91 |
 | Heroiczny · +9 · 70 | **0,96** | 1,02 | **0,96** | 1,00 | 0,90 | 0,99 | 1,08 | 0,90 |
 | Heroiczny · +9 · 100 | **0,95** | 1,02 | **0,95** | 0,99 | 0,90 | 0,98 | 1,07 | 0,90 |
-| Legendarny · +0 · 20 | 0,97 | 1,03 | **0,97** | 0,99 | 0,93 | 0,99 | 1,02 | 0,93 |
-| Legendarny · +0 · 45 | **0,95** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 | 0,98 | 0,92 |
-| Legendarny · +0 · 70 | **0,95** | 1,01 | **0,96** | 0,98 | 0,92 | 0,97 | 1,04 | 0,92 |
-| Legendarny · +0 · 100 | **0,95** | 1,01 | **0,95** | 0,98 | 0,91 | 0,97 | 1,04 | 0,91 |
-| Legendarny · +9 · 20 | **0,97** | 1,03 | **0,96** | 1,00 | 0,91 | 0,99 | 1,04 | 0,91 |
-| Legendarny · +9 · 45 | **0,95** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 1,00 | 0,90 |
-| Legendarny · +9 · 70 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,07 | 0,89 |
+| Legendarny · +0 · 20 | **0,97 → 0,95** | 1,03 → 1,01 | **0,97 → 0,94** | 0,99 → 0,97 | 0,93 → 0,91 | 0,99 → 0,97 | 1,02 → 1,00 | 0,93 → 0,91 |
+| Legendarny · +0 · 45 | **0,95 → 0,96** | 1,01 | **0,95** | 0,98 | 0,92 | 0,97 → 0,98 | 0,98 → 0,99 | 0,92 |
+| Legendarny · +0 · 70 | **0,95 → 0,96** | 1,01 | **0,96** | 0,98 | 0,92 | 0,97 → 0,98 | 1,04 | 0,92 |
+| Legendarny · +0 · 100 | **0,95** | 1,01 | **0,95 → 0,96** | 0,98 | 0,91 | 0,97 | 1,04 | 0,91 |
+| Legendarny · +9 · 20 | **0,97 → 0,95** | 1,03 → 1,01 | **0,96 → 0,94** | 1,00 → 0,98 | 0,91 → 0,89 | 0,99 → 0,98 | 1,04 → 1,03 | 0,91 → 0,89 |
+| Legendarny · +9 · 45 | **0,95 → 0,96** | 1,01 | **0,94** | 0,99 | 0,90 | 0,98 | 1,00 | 0,90 |
+| Legendarny · +9 · 70 | **0,95 → 0,96** | 1,01 → 1,02 | **0,95 → 0,96** | 0,99 | 0,89 → 0,90 | 0,98 | 1,07 → 1,08 | 0,89 → 0,90 |
 | Legendarny · +9 · 100 | **0,95** | 1,01 | **0,95** | 0,99 | 0,89 | 0,98 | 1,07 | 0,89 |
-| Mityczny · +0 · 20 | **0,94** | 0,99 | **0,93** | 0,96 | 0,89 | 0,96 | 0,99 | 0,89 |
-| Mityczny · +0 · 45 | **0,93** | 0,98 | **0,92** | 0,96 | 0,89 | 0,95 | 0,96 | 0,89 |
-| Mityczny · +0 · 70 | **0,92** | 0,98 | **0,93** | 0,95 | 0,88 | 0,95 | 1,01 | 0,88 |
-| Mityczny · +0 · 100 | **0,92** | 0,98 | **0,93** | 0,95 | 0,88 | 0,95 | 1,01 | 0,88 |
-| Mityczny · +9 · 20 | **0,94** | 1,00 | **0,92** | 0,97 | 0,87 | 0,96 | 1,02 | 0,87 |
-| Mityczny · +9 · 45 | **0,93** | 0,98 | **0,91** | 0,96 | 0,86 | 0,95 | 0,97 | 0,86 |
-| Mityczny · +9 · 70 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,04 | 0,86 |
-| Mityczny · +9 · 100 | **0,92** | 0,98 | **0,92** | 0,96 | 0,86 | 0,94 | 1,05 | 0,86 |
+| Mityczny · +0 · 20 | **0,94 → 0,97** | 0,99 → 1,03 | **0,93 → 0,96** | 0,96 → 0,99 | 0,89 → 0,93 | 0,96 → 0,99 | 0,99 → 1,02 | 0,89 → 0,93 |
+| Mityczny · +0 · 45 | **0,93 → 0,96** | 0,98 → 1,01 | **0,92 → 0,95** | 0,96 → 0,98 | 0,89 → 0,92 | 0,95 → 0,98 | 0,96 → 0,99 | 0,89 → 0,92 |
+| Mityczny · +0 · 70 | **0,92 → 0,96** | 0,98 → 1,02 | **0,93 → 0,96** | 0,95 → 0,98 | 0,88 → 0,92 | 0,95 → 0,98 | 1,01 → 1,04 | 0,88 → 0,92 |
+| Mityczny · +0 · 100 | **0,92 → 0,96** | 0,98 → 1,02 | **0,93 → 0,96** | 0,95 → 0,98 | 0,88 → 0,91 | 0,95 → 0,98 | 1,01 → 1,04 | 0,88 → 0,91 |
+| Mityczny · +9 · 20 | 0,94 → 0,97 | 1,00 → 1,03 | **0,92 → 0,96** | 0,97 → 1,00 | 0,87 → 0,91 | 0,96 → 0,99 | 1,02 → 1,05 | 0,87 → 0,91 |
+| Mityczny · +9 · 45 | **0,93 → 0,95** | 0,98 → 1,00 | **0,91 → 0,94** | 0,96 → 0,99 | 0,86 → 0,89 | 0,95 → 0,98 | 0,97 → 1,00 | 0,86 → 0,89 |
+| Mityczny · +9 · 70 | **0,92 → 0,95** | 0,98 → 1,02 | **0,92 → 0,95** | 0,96 → 0,99 | 0,86 → 0,89 | 0,94 → 0,98 | 1,04 → 1,07 | 0,86 → 0,89 |
+| Mityczny · +9 · 100 | **0,92 → 0,95** | 0,98 → 1,02 | **0,92 → 0,95** | 0,96 → 0,99 | 0,86 → 0,89 | 0,94 → 0,98 | 1,05 → 1,08 | 0,86 → 0,89 |
 
 ### G8: Wojownik spear2h wobec zestawu domyślnego
 
@@ -8367,22 +8552,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | 0,97 | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,93 | 0,93 |
 | Heroiczny · +9 · 70 | **0,97** | 1,02 | 0,98 | 0,93 | 1,01 | 0,93 | 0,99 | 0,93 |
 | Heroiczny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,98 | 0,92 |
-| Legendarny · +0 · 20 | 0,99 | **1,04** | 0,98 | 0,96 | 1,00 | 0,96 | 0,98 | 0,96 |
+| Legendarny · +0 · 20 | **0,99 → 0,96** | 1,04 → 1,01 | **0,98 → 0,96** | 0,96 → 0,93 | 1,00 → 0,98 | 0,96 → 0,93 | 0,98 → 0,96 | 0,96 → 0,93 |
 | Legendarny · +0 · 45 | **0,97** | 1,01 | **0,96** | 0,94 | 0,98 | 0,94 | 0,93 | 0,93 |
-| Legendarny · +0 · 70 | **0,97** | 1,02 | **0,96** | 0,93 | 0,98 | 0,93 | 0,97 | 0,93 |
-| Legendarny · +0 · 100 | **0,96** | 1,01 | **0,96** | 0,93 | 0,97 | 0,93 | 0,97 | 0,93 |
-| Legendarny · +9 · 20 | 0,98 | 1,03 | 0,99 | 0,94 | 1,02 | 0,94 | 0,98 | 0,94 |
+| Legendarny · +0 · 70 | **0,97 → 0,96** | 1,02 → 1,01 | **0,96** | 0,93 | 0,98 | 0,93 | 0,97 | 0,93 |
+| Legendarny · +0 · 100 | **0,96** | 1,01 | **0,96** | 0,93 | 0,97 → 0,98 | 0,93 | 0,97 | 0,93 |
+| Legendarny · +9 · 20 | **0,98 → 0,97** | 1,03 → 1,02 | 0,99 → 0,98 | 0,94 → 0,93 | 1,02 → 1,01 | 0,94 → 0,93 | 0,98 → 0,97 | 0,94 → 0,93 |
 | Legendarny · +9 · 45 | **0,97** | 1,01 | **0,97** | 0,93 | 1,01 | 0,93 | 0,93 | 0,93 |
-| Legendarny · +9 · 70 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,98 | 0,92 |
-| Legendarny · +9 · 100 | **0,96** | 1,02 | 0,97 | 0,93 | 1,00 | 0,92 | 0,98 | 0,92 |
-| Mityczny · +0 · 20 | **0,95** | 1,00 | **0,94** | 0,92 | 0,96 | 0,92 | 0,95 | 0,92 |
-| Mityczny · +0 · 45 | **0,95** | 0,99 | **0,93** | 0,92 | 0,95 | 0,92 | 0,91 | 0,91 |
-| Mityczny · +0 · 70 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,95 | 0,91 |
-| Mityczny · +0 · 100 | **0,94** | 0,99 | **0,93** | 0,91 | 0,94 | 0,91 | 0,95 | 0,91 |
-| Mityczny · +9 · 20 | **0,96** | 1,00 | **0,96** | 0,92 | 0,98 | 0,92 | 0,96 | 0,92 |
-| Mityczny · +9 · 45 | **0,94** | 0,98 | **0,93** | 0,90 | 0,97 | 0,90 | 0,90 | 0,90 |
-| Mityczny · +9 · 70 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,96 | 0,90 |
-| Mityczny · +9 · 100 | **0,94** | 0,99 | **0,94** | 0,90 | 0,96 | 0,90 | 0,96 | 0,90 |
+| Legendarny · +9 · 70 | **0,96 → 0,97** | 1,02 | 0,97 → 0,98 | 0,93 | 1,00 → 1,01 | 0,92 → 0,93 | 0,98 → 0,99 | 0,92 → 0,93 |
+| Legendarny · +9 · 100 | **0,96** | 1,02 → 1,01 | 0,97 | 0,93 → 0,92 | 1,00 | 0,92 | 0,98 | 0,92 |
+| Mityczny · +0 · 20 | 0,95 → 0,98 | 1,00 → 1,03 | 0,94 → 0,98 | 0,92 → 0,95 | 0,96 → 1,00 | 0,92 → 0,95 | 0,95 → 0,98 | 0,92 → 0,95 |
+| Mityczny · +0 · 45 | **0,95 → 0,97** | 0,99 → 1,01 | **0,93 → 0,96** | 0,92 → 0,94 | 0,95 → 0,98 | 0,92 → 0,94 | 0,91 → 0,93 | 0,91 → 0,93 |
+| Mityczny · +0 · 70 | **0,94 → 0,97** | 0,99 → 1,02 | **0,93 → 0,97** | 0,91 → 0,93 | 0,94 → 0,98 | 0,91 → 0,93 | 0,95 → 0,98 | 0,91 → 0,93 |
+| Mityczny · +0 · 100 | **0,94 → 0,97** | 0,99 → 1,02 | **0,93 → 0,97** | 0,91 → 0,93 | 0,94 → 0,98 | 0,91 → 0,93 | 0,95 → 0,98 | 0,91 → 0,93 |
+| Mityczny · +9 · 20 | 0,96 → 0,99 | **1,00 → 1,04** | 0,96 → 1,00 | 0,92 → 0,95 | 0,98 → 1,03 | 0,92 → 0,95 | 0,96 → 0,99 | 0,92 → 0,95 |
+| Mityczny · +9 · 45 | **0,94 → 0,96** | 0,98 → 1,01 | **0,93 → 0,96** | 0,90 → 0,92 | 0,97 → 1,01 | 0,90 → 0,92 | 0,90 → 0,92 | 0,90 → 0,92 |
+| Mityczny · +9 · 70 | **0,94 → 0,97** | 0,99 → 1,02 | 0,94 → 0,98 | 0,90 → 0,93 | 0,96 → 1,01 | 0,90 → 0,92 | 0,96 → 0,99 | 0,90 → 0,92 |
+| Mityczny · +9 · 100 | **0,94 → 0,97** | 0,99 → 1,02 | 0,94 → 0,98 | 0,90 → 0,92 | 0,96 → 1,01 | 0,90 → 0,92 | 0,96 → 0,99 | 0,90 → 0,92 |
 
 ### G8: Mag staff wobec zestawu domyślnego
 
@@ -8414,22 +8599,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 | 0,95 |
 | Heroiczny · +9 · 70 | 0,99 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 | 0,94 | 0,94 |
 | Heroiczny · +9 · 100 | 0,97 | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
-| Legendarny · +0 · 20 | 1,02 | **1,04** | **0,96** | 0,97 | 0,96 | 0,97 | 0,96 | 0,96 |
+| Legendarny · +0 · 20 | 1,02 → 1,00 | 1,04 → 1,01 | **0,96 → 0,94** | 0,97 → 0,94 | 0,96 → 0,94 | 0,97 → 0,94 | 0,96 → 0,94 | 0,96 → 0,94 |
 | Legendarny · +0 · 45 | 1,00 | 1,02 | **0,95** | 0,95 | 0,94 | 0,95 | 0,95 | 0,94 |
-| Legendarny · +0 · 70 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 | 0,94 | 0,94 |
-| Legendarny · +0 · 100 | 0,98 | 1,00 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
-| Legendarny · +9 · 20 | 1,00 | 1,02 | **0,96** | 0,96 | 0,96 | 0,96 | 0,96 | 0,96 |
-| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 | 0,95 |
+| Legendarny · +0 · 70 | 1,00 | 1,01 | **0,94** | 0,94 | 0,94 | 0,95 → 0,94 | 0,94 | 0,94 |
+| Legendarny · +0 · 100 | 0,98 → 0,99 | 1,00 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
+| Legendarny · +9 · 20 | 1,00 → 0,99 | 1,02 → 1,01 | **0,96 → 0,95** | 0,96 → 0,95 | 0,96 → 0,95 | 0,96 → 0,95 | 0,96 → 0,95 | 0,96 → 0,95 |
+| Legendarny · +9 · 45 | 0,99 | 1,01 | **0,95** | 0,95 | 0,95 | 0,95 | 0,95 → 0,94 | 0,95 → 0,94 |
 | Legendarny · +9 · 70 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
-| Legendarny · +9 · 100 | **0,97** | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 | 0,93 |
-| Mityczny · +0 · 20 | 0,98 | 1,00 | **0,94** | 0,94 | 0,94 | 0,94 | 0,94 | 0,94 |
-| Mityczny · +0 · 45 | 0,98 | 1,00 | **0,94** | 0,94 | 0,93 | 0,94 | 0,93 | 0,93 |
-| Mityczny · +0 · 70 | **0,97** | 0,98 | **0,92** | 0,92 | 0,92 | 0,93 | 0,92 | 0,92 |
-| Mityczny · +0 · 100 | **0,96** | 0,98 | **0,92** | 0,92 | 0,92 | 0,92 | 0,91 | 0,91 |
-| Mityczny · +9 · 20 | 0,97 | 0,99 | **0,94** | 0,94 | 0,95 | 0,95 | 0,94 | 0,94 |
-| Mityczny · +9 · 45 | **0,96** | 0,98 | **0,94** | 0,93 | 0,94 | 0,94 | 0,93 | 0,93 |
-| Mityczny · +9 · 70 | **0,95** | 0,98 | **0,93** | 0,92 | 0,93 | 0,93 | 0,92 | 0,92 |
-| Mityczny · +9 · 100 | **0,94** | **0,96** | **0,92** | 0,91 | 0,92 | 0,92 | 0,91 | 0,91 |
+| Legendarny · +9 · 100 | **0,97** | 0,99 | **0,93** | 0,93 | 0,93 | 0,93 | 0,93 → 0,92 | 0,93 → 0,92 |
+| Mityczny · +0 · 20 | 0,98 → 1,01 | 1,00 → 1,03 | **0,94 → 0,96** | 0,94 → 0,96 | 0,94 → 0,95 | 0,94 → 0,96 | 0,94 → 0,96 | 0,94 → 0,95 |
+| Mityczny · +0 · 45 | 0,98 → 1,00 | 1,00 → 1,02 | **0,94 → 0,95** | 0,94 → 0,95 | 0,93 → 0,95 | 0,94 → 0,95 | 0,93 → 0,95 | 0,93 → 0,95 |
+| Mityczny · +0 · 70 | 0,97 → 1,00 | 0,98 → 1,01 | **0,92 → 0,94** | 0,92 → 0,94 | 0,92 → 0,94 | 0,93 → 0,94 | 0,92 → 0,94 | 0,92 → 0,94 |
+| Mityczny · +0 · 100 | 0,96 → 0,99 | 0,98 → 1,00 | **0,92 → 0,93** | 0,92 → 0,93 | 0,92 → 0,93 | 0,92 → 0,94 | 0,91 → 0,93 | 0,91 → 0,93 |
+| Mityczny · +9 · 20 | 0,97 → 1,00 | 0,99 → 1,02 | **0,94 → 0,96** | 0,94 → 0,96 | 0,95 → 0,96 | 0,95 → 0,96 | 0,94 → 0,96 | 0,94 → 0,96 |
+| Mityczny · +9 · 45 | 0,96 → 0,98 | 0,98 → 1,01 | **0,94 → 0,95** | 0,93 → 0,94 | 0,94 → 0,95 | 0,94 → 0,95 | 0,93 → 0,94 | 0,93 → 0,94 |
+| Mityczny · +9 · 70 | 0,95 → 0,98 | 0,98 → 1,00 | **0,93 → 0,94** | 0,92 → 0,94 | 0,93 → 0,94 | 0,93 → 0,94 | 0,92 → 0,93 | 0,92 → 0,93 |
+| Mityczny · +9 · 100 | **0,94 → 0,97** | 0,96 → 0,99 | **0,92 → 0,93** | 0,91 → 0,93 | 0,92 → 0,93 | 0,92 → 0,93 | 0,91 → 0,92 | 0,91 → 0,92 |
 
 ### G8: Mag runestaff wobec zestawu domyślnego
 
@@ -8461,22 +8646,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | 0,99 | 1,02 | **0,89** | 0,87 | 0,87 | 0,88 | 0,93 | 0,87 |
 | Heroiczny · +9 · 70 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,92 | 0,87 |
 | Heroiczny · +9 · 100 | 0,98 | 1,00 | **0,87** | 0,86 | 0,86 | 0,86 | 0,91 | 0,86 |
-| Legendarny · +0 · 20 | 1,02 | **1,04** | **0,92** | 0,91 | 0,91 | 0,91 | 0,95 | 0,91 |
-| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,89 | 0,89 | 0,89 | 0,93 | 0,89 |
-| Legendarny · +0 · 70 | 1,00 | 1,01 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 | 0,88 |
-| Legendarny · +0 · 100 | 0,99 | 1,00 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 | 0,88 |
-| Legendarny · +9 · 20 | 1,00 | 1,03 | **0,90** | 0,88 | 0,88 | 0,89 | 0,94 | 0,88 |
+| Legendarny · +0 · 20 | 1,02 → 1,01 | 1,04 → 1,02 | **0,92 → 0,90** | 0,91 → 0,90 | 0,91 → 0,89 | 0,91 → 0,90 | 0,95 → 0,94 | 0,91 → 0,89 |
+| Legendarny · +0 · 45 | 1,00 | 1,02 | **0,90** | 0,89 | 0,89 | 0,89 → 0,90 | 0,93 | 0,89 |
+| Legendarny · +0 · 70 | 1,00 → 0,99 | 1,01 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 → 0,92 | 0,88 |
+| Legendarny · +0 · 100 | 0,99 | 1,00 | **0,89 → 0,88** | 0,88 | 0,88 → 0,87 | 0,88 | 0,92 | 0,88 → 0,87 |
+| Legendarny · +9 · 20 | 1,00 → 0,99 | 1,03 → 1,02 | **0,90 → 0,88** | 0,88 → 0,87 | 0,88 → 0,87 | 0,89 → 0,88 | 0,94 → 0,93 | 0,88 → 0,87 |
 | Legendarny · +9 · 45 | 0,99 | 1,01 | **0,88** | 0,87 | 0,87 | 0,87 | 0,93 | 0,87 |
 | Legendarny · +9 · 70 | 0,98 | 1,00 | **0,88** | 0,86 | 0,86 | 0,87 | 0,92 | 0,86 |
-| Legendarny · +9 · 100 | **0,97** | 0,99 | **0,87** | 0,85 | 0,85 | 0,86 | 0,91 | 0,85 |
-| Mityczny · +0 · 20 | 0,99 | 1,00 | **0,89** | 0,89 | 0,88 | 0,89 | 0,93 | 0,88 |
-| Mityczny · +0 · 45 | 0,98 | 0,99 | **0,89** | 0,88 | 0,88 | 0,88 | 0,92 | 0,88 |
-| Mityczny · +0 · 70 | **0,97** | 0,99 | **0,88** | 0,87 | 0,87 | 0,87 | 0,91 | 0,87 |
-| Mityczny · +0 · 100 | **0,96** | 0,98 | **0,87** | 0,86 | 0,86 | 0,86 | 0,90 | 0,86 |
-| Mityczny · +9 · 20 | 0,98 | 1,00 | **0,88** | 0,87 | 0,87 | 0,87 | 0,93 | 0,87 |
-| Mityczny · +9 · 45 | **0,96** | 0,98 | **0,87** | 0,85 | 0,86 | 0,85 | 0,91 | 0,85 |
-| Mityczny · +9 · 70 | **0,95** | 0,98 | **0,86** | 0,84 | 0,85 | 0,85 | 0,90 | 0,84 |
-| Mityczny · +9 · 100 | **0,95** | **0,97** | **0,85** | 0,84 | 0,84 | 0,84 | 0,90 | 0,84 |
+| Legendarny · +9 · 100 | 0,97 | 0,99 | **0,87** | 0,85 | 0,85 | 0,86 | 0,91 | 0,85 |
+| Mityczny · +0 · 20 | 0,99 → 1,02 | **1,00 → 1,04** | **0,89 → 0,91** | 0,89 → 0,91 | 0,88 → 0,90 | 0,89 → 0,91 | 0,93 → 0,95 | 0,88 → 0,90 |
+| Mityczny · +0 · 45 | 0,98 → 1,00 | 0,99 → 1,02 | **0,89 → 0,90** | 0,88 → 0,89 | 0,88 → 0,89 | 0,88 → 0,89 | 0,92 → 0,93 | 0,88 → 0,89 |
+| Mityczny · +0 · 70 | 0,97 → 1,00 | 0,99 → 1,01 | **0,88 → 0,89** | 0,87 → 0,89 | 0,87 → 0,88 | 0,87 → 0,89 | 0,91 → 0,93 | 0,87 → 0,88 |
+| Mityczny · +0 · 100 | 0,96 → 0,99 | 0,98 → 1,00 | **0,87 → 0,88** | 0,86 → 0,88 | 0,86 → 0,87 | 0,86 → 0,88 | 0,90 → 0,92 | 0,86 → 0,87 |
+| Mityczny · +9 · 20 | 0,98 → 1,01 | 1,00 → 1,03 | **0,88 → 0,90** | 0,87 → 0,88 | 0,87 → 0,88 | 0,87 → 0,89 | 0,93 → 0,95 | 0,87 → 0,88 |
+| Mityczny · +9 · 45 | 0,96 → 0,98 | 0,98 → 1,01 | **0,87 → 0,88** | 0,85 → 0,86 | 0,86 | 0,85 → 0,87 | 0,91 → 0,92 | 0,85 → 0,86 |
+| Mityczny · +9 · 70 | 0,95 → 0,98 | 0,98 → 1,00 | **0,86 → 0,87** | 0,84 → 0,86 | 0,85 → 0,86 | 0,85 → 0,86 | 0,90 → 0,92 | 0,84 → 0,86 |
+| Mityczny · +9 · 100 | **0,95 → 0,97** | 0,97 → 0,99 | **0,85 → 0,86** | 0,84 → 0,85 | 0,84 → 0,85 | 0,84 → 0,85 | 0,90 → 0,91 | 0,84 → 0,85 |
 
 ### G8: Kapłan holystaff wobec zestawu domyślnego
 
@@ -8508,22 +8693,22 @@ moc² zestawu z bronią dwuręczną (bez drugiej ręki) / moc² zestawu domyśln
 | Heroiczny · +9 · 45 | 0,97 | 1,02 | **4,20** | 4,33 | 4,51 | 4,35 | 3,27 | 3,27 |
 | Heroiczny · +9 · 70 | 0,97 | 1,03 | **4,47** | 4,33 | 4,51 | 4,34 | 4,56 | 4,33 |
 | Heroiczny · +9 · 100 | **0,97** | 1,03 | **4,45** | 4,31 | 4,49 | 4,32 | 4,55 | 4,31 |
-| Legendarny · +0 · 20 | **0,97** | 1,02 | **1,88** | 4,48 | 2,05 | 2,09 | 1,22 | 1,22 |
-| Legendarny · +0 · 45 | **0,96** | 1,01 | **3,89** | 4,48 | 4,57 | 4,49 | 1,78 | 1,78 |
-| Legendarny · +0 · 70 | **0,96** | 1,01 | **4,54** | 4,45 | 4,55 | 4,46 | 4,62 | 4,45 |
-| Legendarny · +0 · 100 | **0,96** | 1,02 | **4,56** | 4,48 | 4,57 | 4,48 | 4,65 | 4,48 |
-| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,81** | 4,27 | 4,45 | 4,29 | 1,81 | 1,81 |
-| Legendarny · +9 · 45 | **0,97** | 1,01 | **4,38** | 4,28 | 4,46 | 4,30 | 4,30 | 4,28 |
-| Legendarny · +9 · 70 | **0,96** | 1,02 | **4,39** | 4,25 | 4,43 | 4,27 | 4,49 | 4,25 |
-| Legendarny · +9 · 100 | **0,96** | 1,02 | **4,42** | 4,28 | 4,46 | 4,29 | 4,52 | 4,28 |
-| Mityczny · +0 · 20 | **0,93** | 0,98 | **3,69** | 4,28 | 4,38 | 4,30 | 1,57 | 1,57 |
-| Mityczny · +0 · 45 | **0,94** | 0,99 | **4,41** | 4,35 | 4,45 | 4,37 | 4,37 | 4,35 |
-| Mityczny · +0 · 70 | **0,93** | 0,98 | **4,38** | 4,30 | 4,39 | 4,31 | 4,47 | 4,30 |
-| Mityczny · +0 · 100 | **0,93** | 0,99 | **4,40** | 4,32 | 4,41 | 4,33 | 4,49 | 4,32 |
-| Mityczny · +9 · 20 | **0,93** | 0,98 | **4,23** | 4,09 | 4,27 | 4,11 | 4,30 | 4,09 |
-| Mityczny · +9 · 45 | **0,94** | 0,99 | **4,24** | 4,14 | 4,32 | 4,16 | 4,17 | 4,14 |
-| Mityczny · +9 · 70 | **0,93** | 0,98 | **4,23** | 4,09 | 4,26 | 4,10 | 4,33 | 4,09 |
-| Mityczny · +9 · 100 | **0,93** | 0,99 | **4,25** | 4,11 | 4,29 | 4,13 | 4,36 | 4,11 |
+| Legendarny · +0 · 20 | **0,97 → 0,96** | 1,02 | **1,88 → 1,39** | 4,48 → 2,16 | 2,05 → 1,47 | 2,09 → 1,46 | 1,22 → 1,10 | 1,22 → 1,10 |
+| Legendarny · +0 · 45 | **0,96 → 0,97** | 1,01 → 1,02 | **3,89 → 2,58** | 4,48 → 4,50 | 4,57 → 2,89 | 4,49 → 3,04 | 1,78 → 1,35 | 1,78 → 1,35 |
+| Legendarny · +0 · 70 | **0,96** | 1,01 → 1,02 | **4,54 → 3,97** | 4,45 → 4,46 | 4,55 → 4,56 | 4,46 → 4,47 | 4,62 → 2,08 | 4,45 → 2,08 |
+| Legendarny · +0 · 100 | **0,96** | 1,02 | **4,56 → 4,38** | 4,48 → 4,47 | 4,57 | 4,48 | 4,65 → 3,77 | 4,48 → 3,77 |
+| Legendarny · +9 · 20 | **0,96** | 1,02 | **3,81 → 3,69** | 4,27 | 4,45 | 4,29 | 1,81 → 1,42 | 1,81 → 1,42 |
+| Legendarny · +9 · 45 | **0,97** | 1,01 → 1,02 | **4,38 → 4,39** | 4,28 → 4,29 | 4,46 → 4,47 | 4,30 | 4,30 → 4,31 | 4,28 → 4,29 |
+| Legendarny · +9 · 70 | **0,96** | 1,02 | **4,39 → 4,41** | 4,25 → 4,27 | 4,43 → 4,45 | 4,27 → 4,28 | 4,49 → 4,51 | 4,25 → 4,27 |
+| Legendarny · +9 · 100 | **0,96** | 1,02 | **4,42 → 4,41** | 4,28 → 4,27 | 4,46 → 4,45 | 4,29 | 4,52 → 4,51 | 4,28 → 4,27 |
+| Mityczny · +0 · 20 | **0,93 → 0,96** | 0,98 → 1,02 | **3,69 → 1,45** | 4,28 → 2,48 | 4,38 → 1,54 | 4,30 → 1,54 | 1,57 → 1,12 | 1,57 → 1,12 |
+| Mityczny · +0 · 45 | **0,94 → 0,97** | 0,99 → 1,01 | **4,41 → 3,29** | 4,35 → 4,46 | 4,45 → 3,75 | 4,37 → 4,09 | 4,37 → 1,42 | 4,35 → 1,42 |
+| Mityczny · +0 · 70 | **0,93 → 0,96** | 0,98 → 1,02 | **4,38 → 4,05** | 4,30 → 4,45 | 4,39 → 4,55 | 4,31 → 4,46 | 4,47 → 2,40 | 4,30 → 2,40 |
+| Mityczny · +0 · 100 | **0,93 → 0,97** | 0,99 → 1,02 | **4,40 → 4,56** | 4,32 → 4,47 | 4,41 → 4,57 | 4,33 → 4,48 | 4,49 → 4,65 | 4,32 → 4,47 |
+| Mityczny · +9 · 20 | **0,93 → 0,96** | 0,98 → 1,02 | **4,23 → 3,70** | 4,09 → 4,24 | 4,27 → 4,43 | 4,11 → 4,26 | 4,30 → 1,51 | 4,09 → 1,51 |
+| Mityczny · +9 · 45 | **0,94 → 0,96** | 0,99 → 1,01 | **4,24 → 4,35** | 4,14 → 4,25 | 4,32 → 4,44 | 4,16 → 4,26 | 4,17 → 4,27 | 4,14 → 4,25 |
+| Mityczny · +9 · 70 | **0,93 → 0,96** | 0,98 → 1,02 | **4,23 → 4,37** | 4,09 → 4,23 | 4,26 → 4,42 | 4,10 → 4,24 | 4,33 → 4,47 | 4,09 → 4,23 |
+| Mityczny · +9 · 100 | **0,93 → 0,97** | 0,99 → 1,02 | **4,25 → 4,40** | 4,11 → 4,25 | 4,29 → 4,44 | 4,13 → 4,27 | 4,36 → 4,50 | 4,11 → 4,25 |
 
 ### G8: broń dwuręczna wobec zestawu jednoręcznego tej samej ścieżki (raport)
 
@@ -8535,26 +8720,26 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | staff · wand + orb · Zwykły +0 · 45 | 1,00 | 0,93 |
 | staff · wand + orb · Zwykły +0 · 70 | 0,99 | 0,93 |
 | staff · wand + orb · Zwykły +0 · 100 | 0,98 | 0,92 |
-| staff · wand + orb · Mityczny +9 · 20 | 0,99 | 0,94 |
-| staff · wand + orb · Mityczny +9 · 45 | 0,98 | 0,94 |
-| staff · wand + orb · Mityczny +9 · 70 | 0,98 | 0,93 |
-| staff · wand + orb · Mityczny +9 · 100 | 0,96 | 0,92 |
+| staff · wand + orb · Mityczny +9 · 20 | 0,99 → 1,02 | 0,94 → 0,96 |
+| staff · wand + orb · Mityczny +9 · 45 | 0,98 → 1,01 | 0,94 → 0,95 |
+| staff · wand + orb · Mityczny +9 · 70 | 0,98 → 1,00 | 0,93 → 0,94 |
+| staff · wand + orb · Mityczny +9 · 100 | 0,96 → 0,99 | 0,92 → 0,93 |
 | runestaff · wand + tome · Zwykły +0 · 20 | 1,04 | 0,96 |
 | runestaff · wand + tome · Zwykły +0 · 45 | 1,03 | 0,95 |
 | runestaff · wand + tome · Zwykły +0 · 70 | 1,03 | 0,95 |
 | runestaff · wand + tome · Zwykły +0 · 100 | 1,02 | 0,95 |
-| runestaff · wand + tome · Mityczny +9 · 20 | 1,05 | 0,98 |
-| runestaff · wand + tome · Mityczny +9 · 45 | 1,04 | 0,97 |
-| runestaff · wand + tome · Mityczny +9 · 70 | 1,03 | 0,96 |
-| runestaff · wand + tome · Mityczny +9 · 100 | 1,02 | 0,96 |
+| runestaff · wand + tome · Mityczny +9 · 20 | 1,05 → 1,09 | 0,98 → 1,00 |
+| runestaff · wand + tome · Mityczny +9 · 45 | 1,04 → 1,06 | 0,97 → 0,98 |
+| runestaff · wand + tome · Mityczny +9 · 70 | 1,03 → 1,06 | 0,96 → 0,98 |
+| runestaff · wand + tome · Mityczny +9 · 100 | 1,02 → 1,05 | 0,96 → 0,97 |
 | holystaff · scepter + shield · Zwykły +0 · 20 | 1,01 | 1,11 |
 | holystaff · scepter + shield · Zwykły +0 · 45 | 1,00 | 1,26 |
 | holystaff · scepter + shield · Zwykły +0 · 70 | 1,01 | 1,50 |
 | holystaff · scepter + shield · Zwykły +0 · 100 | 1,00 | 1,96 |
-| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 | 4,64 |
-| holystaff · scepter + shield · Mityczny +9 · 45 | 0,99 | 4,63 |
-| holystaff · scepter + shield · Mityczny +9 · 70 | 0,99 | 4,63 |
-| holystaff · scepter + shield · Mityczny +9 · 100 | 0,99 | 4,65 |
+| holystaff · scepter + shield · Mityczny +9 · 20 | 0,99 → 1,02 | 4,64 → 4,07 |
+| holystaff · scepter + shield · Mityczny +9 · 45 | 0,99 → 1,01 | 4,63 → 4,75 |
+| holystaff · scepter + shield · Mityczny +9 · 70 | 0,99 → 1,02 | 4,63 → 4,79 |
+| holystaff · scepter + shield · Mityczny +9 · 100 | 0,99 → 1,02 | 4,65 → 4,81 |
 
 ### Bronie Łowcy z kołczanem (MIX, moc² / Łuk)
 
@@ -8566,10 +8751,10 @@ Dla S89–S90: moc² w MIX wobec jednoręcznej z drugą ręką tej samej ścież
 | Zwykły +0 · 45 | 1,00 | 0,96 | 0,92 | 0,91 | 0,94 |
 | Zwykły +0 · 70 | 1,00 | 0,95 | 0,92 | 0,91 | 0,94 |
 | Zwykły +0 · 100 | 1,00 | 0,95 | 0,92 | 0,91 | 0,94 |
-| Mityczny +9 · 20 | 1,00 | 0,98 | 0,94 | 0,91 | 0,97 |
-| Mityczny +9 · 45 | 1,00 | 0,98 | 0,93 | 0,90 | 0,97 |
-| Mityczny +9 · 70 | 1,00 | 0,98 | 0,94 | 0,90 | 0,98 |
-| Mityczny +9 · 100 | 1,00 | 0,97 | 0,94 | 0,90 | 0,98 |
+| Mityczny +9 · 20 | 1,00 | 0,98 → 0,97 | 0,94 | 0,91 → 0,90 | 0,97 → 0,96 |
+| Mityczny +9 · 45 | 1,00 | 0,98 → 0,97 | 0,93 | 0,90 → 0,89 | 0,97 → 0,96 |
+| Mityczny +9 · 70 | 1,00 | 0,98 → 0,97 | 0,94 → 0,93 | 0,90 | 0,98 → 0,97 |
+| Mityczny +9 · 100 | 1,00 | 0,97 | 0,94 → 0,93 | 0,90 | 0,98 → 0,97 |
 
 ### Cechy broni: Zwykły +0
 
@@ -8704,122 +8889,122 @@ Wartość cechy = M(z cechą) / M(bez niej) − 1 (`Balance.traitValue`; druga c
 
 | cecha · poziom (klasa, zestaw) | single | group | elite | boss | armored | tank | solo | controlled | still | mana | dungeon | MIX | zestaw bez cech (MIX) | STATY 14 |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| twinCut · 20 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 24% | – | – | 313% | – | – | – | – | 306% | 330% | 5% |
+| swordplay · 20 (Wojownik, sword1h + shield) | 3% | 8% | 3% → 4% | 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
+| twinCut · 20 (Wojownik, saber1h + shield) | 9% → 11% | – | 9% → 11% | – | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 4% |
+| reaping · 20 (Wojownik, axe1h + shield) | – | – | – | 24% → 2% | – | – | 313% → 51% | – | – | – | – | 306% → 19% | 330% → 27% | 5% |
 | bonebreaker · 20 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
-| beheading · 20 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
-| rendingGash · 20 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
+| beheading · 20 (Wojownik, sword2h) | 13% → 8% | 13% → 8% | 13% → 8% | 13% → 8% | – | – | – | – | – | – | – | 13% → 8% | 13% → 8% | 5% |
+| rendingGash · 20 (Wojownik, axe2h) | 13% → 14% | – | 10% → 12% | – | – | – | – | – | – | – | – | 6% → 8% | 6% → 8% | 5% |
 | sundering · 20 (Wojownik, hammer2h) | 6% | – | – | – | 10% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 20 (Wojownik, spear2h) | – | 14% | – | 0% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 20 (Wojownik, spear2h) | – | 14% → 16% | – | 0% → 1% | – | – | – | – | – | – | – | 7% → 8% | 7% → 8% | 5% |
 | parry · 20 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
-| harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 9% | – | – | – | – | 6% | 19% | 5% |
-| toxicBarbs · 20 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| criticalForce · 20 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
-| easyPrey · 20 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% | 6% |
-| bodkinBolt · 20 (Łowca, heavycrossbow + quiver) | 7% | – | – | – | 11% | – | – | – | – | – | – | 7% | 20% | 5% |
-| fullDraw · 20 (Łowca, bow + quiver) | 10% | 12% | 11% | 10% | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| elementalSpark · 20 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (fire) · 20 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| harrying · 20 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 9% → 10% | – | – | – | – | 6% | 19% → 21% | 5% |
+| toxicBarbs · 20 (Łowca, bow + quiver) | 21% | – | 16% → 18% | – | – | – | – | – | – | – | – | 11% → 12% | 24% → 27% | 5% |
+| criticalForce · 20 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% → 19% | 5% |
+| easyPrey · 20 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% → 14% | 6% |
+| bodkinBolt · 20 (Łowca, heavycrossbow + quiver) | 7% | – | – | – | 11% | – | – | – | – | – | – | 7% | 20% → 22% | 5% |
+| fullDraw · 20 (Łowca, bow + quiver) | 10% → 12% | 12% → 14% | 11% → 12% | 10% → 12% | – | – | – | – | – | – | – | 11% → 13% | 24% → 27% | 5% |
+| elementalSpark · 20 (Mag, wand + orb) | 8% → 9% | 8% → 9% | – | 9% → 10% | – | – | – | – | – | – | – | 8% → 9% | 15% → 17% | 5% |
+| elementalSpark (fire) · 20 (Mag, wand + orb) | 11% → 12% | 5% → 7% | – | 11% → 12% | – | – | – | – | – | – | – | 7% → 10% | 14% → 17% | 5% |
 | elementalSpark (ice) · 20 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% | 11% | – | 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 20 (Mag, wand + orb) | 7% → 8% | 11% → 13% | – | 7% → 9% | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 5% |
 | elementalMight · 20 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 20 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 20 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
 | elementalMight (lightning) · 20 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | runicSeal · 20 (Mag, runestaff) | – | – | – | 7% | – | – | – | – | 7% | – | – | 1% | 1% | 6% |
-| learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
-| powerLens · 20 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
+| learnedFormulae · 20 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% → 10% | 2% |
+| powerLens · 20 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% → 17% | 5% |
 | anointment · 20 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
-| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% | – | – | – | – | 400% | 400% | 4% |
-| concussion · 20 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| savingBlow · 20 (Kapłan, holystaff) | – | – | – | – | – | – | 318% → 317% | – | – | – | – | 400% → 323% | 400% → 323% | 4% |
+| concussion · 20 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% → 13% | 5% |
 | prosperity · 20 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% | 4% | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| twinCut · 45 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 30% | – | – | 305% | – | – | – | – | 304% | 329% | 5% |
+| swordplay · 45 (Wojownik, sword1h + shield) | 3% | 8% | 3% → 4% | 4% → 5% | – | – | – | – | – | – | – | 6% | 12% → 13% | 4% |
+| twinCut · 45 (Wojownik, saber1h + shield) | 9% → 11% | – | 9% → 11% | – | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 4% |
+| reaping · 45 (Wojownik, axe1h + shield) | – | – | – | 30% → 2% | – | – | 305% → 53% | – | – | – | – | 304% → 19% | 329% → 27% | 5% |
 | bonebreaker · 45 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
-| beheading · 45 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
-| rendingGash · 45 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
-| sundering · 45 (Wojownik, hammer2h) | 7% | – | – | – | 11% | – | – | – | – | – | – | 4% | 4% | 5% |
-| runThrough · 45 (Wojownik, spear2h) | – | 14% | – | 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
-| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
-| harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
-| toxicBarbs · 45 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| criticalForce · 45 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
-| easyPrey · 45 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% | 6% |
-| bodkinBolt · 45 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 12% | – | – | – | – | – | – | 8% | 21% | 5% |
-| fullDraw · 45 (Łowca, bow + quiver) | 10% | 12% | 11% | 10% | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| elementalSpark · 45 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (fire) · 45 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| beheading · 45 (Wojownik, sword2h) | 13% → 8% | 13% → 8% | 13% → 8% | 13% → 8% | – | – | – | – | – | – | – | 13% → 8% | 13% → 8% | 5% |
+| rendingGash · 45 (Wojownik, axe2h) | 13% → 14% | – | 10% → 12% | – | – | – | – | – | – | – | – | 6% → 9% | 6% → 9% | 5% |
+| sundering · 45 (Wojownik, hammer2h) | 7% | – | – | – | 11% → 12% | – | – | – | – | – | – | 4% → 5% | 4% → 5% | 5% |
+| runThrough · 45 (Wojownik, spear2h) | – | 14% → 16% | – | 1% | – | – | – | – | – | – | – | 7% → 8% | 7% → 8% | 5% |
+| parry · 45 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% → 13% | 5% |
+| harrying · 45 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% → 21% | 5% |
+| toxicBarbs · 45 (Łowca, bow + quiver) | 21% | – | 16% → 18% | – | – | – | – | – | – | – | – | 11% → 12% | 24% → 27% | 5% |
+| criticalForce · 45 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% → 19% | 5% |
+| easyPrey · 45 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% → 14% | 6% |
+| bodkinBolt · 45 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 12% | – | – | – | – | – | – | 8% | 21% → 23% | 5% |
+| fullDraw · 45 (Łowca, bow + quiver) | 10% → 12% | 12% → 14% | 11% → 13% | 10% → 12% | – | – | – | – | – | – | – | 11% → 13% | 24% → 27% | 5% |
+| elementalSpark · 45 (Mag, wand + orb) | 8% → 9% | 8% → 9% | – | 9% → 10% | – | – | – | – | – | – | – | 8% → 9% | 15% → 17% | 5% |
+| elementalSpark (fire) · 45 (Mag, wand + orb) | 11% → 12% | 5% → 7% | – | 11% → 12% | – | – | – | – | – | – | – | 7% → 10% | 14% → 17% | 5% |
 | elementalSpark (ice) · 45 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% | 11% | – | 8% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 45 (Mag, wand + orb) | 7% → 8% | 11% → 13% | – | 8% → 9% | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 5% |
 | elementalMight · 45 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 45 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 45 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
 | elementalMight (lightning) · 45 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | runicSeal · 45 (Mag, runestaff) | – | – | – | 7% | – | – | – | – | 7% | – | – | 1% | 1% | 6% |
-| learnedFormulae · 45 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% | 2% |
-| powerLens · 45 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
+| learnedFormulae · 45 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 9% → 10% | 2% |
+| powerLens · 45 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% → 17% | 5% |
 | anointment · 45 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
 | savingBlow · 45 (Kapłan, holystaff) | – | – | – | – | – | – | 307% | – | – | – | – | 400% | 400% | 4% |
-| concussion · 45 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| concussion · 45 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% → 13% | 5% |
 | prosperity · 45 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
-| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 3% | – | – | – | – | – | – | – | 5% | 12% | 4% |
-| twinCut · 70 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 30% | – | – | 303% | – | – | – | – | 308% | 333% | 5% |
+| swordplay · 70 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 3% | – | – | – | – | – | – | – | 5% → 6% | 12% | 4% |
+| twinCut · 70 (Wojownik, saber1h + shield) | 9% → 11% | – | 9% → 11% | – | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 4% |
+| reaping · 70 (Wojownik, axe1h + shield) | – | – | – | 30% → 2% | – | – | 303% → 57% | – | – | – | – | 308% → 21% | 333% → 28% | 5% |
 | bonebreaker · 70 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
-| beheading · 70 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
-| rendingGash · 70 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
+| beheading · 70 (Wojownik, sword2h) | 13% → 8% | 13% → 8% | 13% → 8% | 13% → 8% | – | – | – | – | – | – | – | 13% → 8% | 13% → 8% | 5% |
+| rendingGash · 70 (Wojownik, axe2h) | 13% → 14% | – | 10% → 11% | – | – | – | – | – | – | – | – | 6% → 8% | 6% → 8% | 5% |
 | sundering · 70 (Wojownik, hammer2h) | 7% | – | – | – | 12% | – | – | – | – | – | – | 5% | 5% | 5% |
-| runThrough · 70 (Wojownik, spear2h) | – | 14% | – | 0% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 70 (Wojownik, spear2h) | – | 14% → 16% | – | 0% → 1% | – | – | – | – | – | – | – | 7% → 8% | 7% → 8% | 5% |
 | parry · 70 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
-| harrying · 70 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
-| toxicBarbs · 70 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| criticalForce · 70 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
-| easyPrey · 70 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% | 6% |
-| bodkinBolt · 70 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 13% | – | – | – | – | – | – | 8% | 21% | 5% |
-| fullDraw · 70 (Łowca, bow + quiver) | 10% | 12% | 11% | 10% | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| elementalSpark · 70 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (fire) · 70 (Mag, wand + orb) | 11% | 5% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| harrying · 70 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% → 21% | 5% |
+| toxicBarbs · 70 (Łowca, bow + quiver) | 21% | – | 16% → 18% | – | – | – | – | – | – | – | – | 11% → 12% | 24% → 27% | 5% |
+| criticalForce · 70 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% → 19% | 5% |
+| easyPrey · 70 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% → 14% | 6% |
+| bodkinBolt · 70 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 13% | – | – | – | – | – | – | 8% | 21% → 23% | 5% |
+| fullDraw · 70 (Łowca, bow + quiver) | 10% → 12% | 12% → 14% | 11% → 13% | 10% → 12% | – | – | – | – | – | – | – | 11% → 13% | 24% → 27% | 5% |
+| elementalSpark · 70 (Mag, wand + orb) | 8% → 9% | 8% → 9% | – | 9% → 10% | – | – | – | – | – | – | – | 8% → 9% | 15% → 16% | 5% |
+| elementalSpark (fire) · 70 (Mag, wand + orb) | 11% → 12% | 5% → 7% | – | 11% → 12% | – | – | – | – | – | – | – | 7% → 9% | 14% → 17% | 5% |
 | elementalSpark (ice) · 70 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% | 11% | – | 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 70 (Mag, wand + orb) | 7% → 8% | 11% → 13% | – | 7% → 9% | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 5% |
 | elementalMight · 70 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 70 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 70 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
 | elementalMight (lightning) · 70 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | runicSeal · 70 (Mag, runestaff) | – | – | – | 7% | – | – | – | – | 7% | – | – | 1% | 1% | 6% |
-| learnedFormulae · 70 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 8% | 2% |
-| powerLens · 70 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
+| learnedFormulae · 70 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 8% → 10% | 2% |
+| powerLens · 70 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% → 16% | 5% |
 | anointment · 70 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
 | savingBlow · 70 (Kapłan, holystaff) | – | – | – | – | – | – | 304% | – | – | – | – | 400% | 400% | 4% |
 | concussion · 70 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
 | prosperity · 70 (Kapłan, scepter + relic) | – | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 8% |
 | swordplay · 100 (Wojownik, sword1h + shield) | 3% | 8% | 4% | 3% | – | – | – | – | – | – | – | 6% | 12% | 4% |
-| twinCut · 100 (Wojownik, saber1h + shield) | 9% | – | 9% | – | – | – | – | – | – | – | – | 9% | 16% | 4% |
-| reaping · 100 (Wojownik, axe1h + shield) | – | – | – | 31% | – | – | 302% | – | – | – | – | 308% | 333% | 5% |
+| twinCut · 100 (Wojownik, saber1h + shield) | 9% → 11% | – | 9% → 11% | – | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 4% |
+| reaping · 100 (Wojownik, axe1h + shield) | – | – | – | 31% → 2% | – | – | 302% → 61% | – | – | – | – | 308% → 22% | 333% → 30% | 5% |
 | bonebreaker · 100 (Wojownik, mace1h + shield) | 13% | – | – | 13% | – | 11% | – | – | – | – | – | 9% | 16% | 6% |
-| beheading · 100 (Wojownik, sword2h) | 13% | 13% | 13% | 13% | – | – | – | – | – | – | – | 13% | 13% | 5% |
-| rendingGash · 100 (Wojownik, axe2h) | 13% | – | 10% | – | – | – | – | – | – | – | – | 6% | 6% | 5% |
+| beheading · 100 (Wojownik, sword2h) | 13% → 8% | 13% → 8% | 13% → 8% | 13% → 8% | – | – | – | – | – | – | – | 13% → 8% | 13% → 8% | 5% |
+| rendingGash · 100 (Wojownik, axe2h) | 13% → 14% | – | 10% → 11% | – | – | – | – | – | – | – | – | 6% → 8% | 6% → 8% | 5% |
 | sundering · 100 (Wojownik, hammer2h) | 7% | – | – | – | 12% | – | – | – | – | – | – | 5% | 5% | 5% |
-| runThrough · 100 (Wojownik, spear2h) | – | 14% | – | 1% | – | – | – | – | – | – | – | 7% | 7% | 5% |
+| runThrough · 100 (Wojownik, spear2h) | – | 14% → 16% | – | 1% | – | – | – | – | – | – | – | 7% → 8% | 7% → 8% | 5% |
 | parry · 100 (Wojownik, sword1h + shield) | – | – | – | – | – | 6% | – | – | – | – | – | 6% | 12% | 5% |
-| harrying · 100 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% | 5% |
-| toxicBarbs · 100 (Łowca, bow + quiver) | 21% | – | 16% | – | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| criticalForce · 100 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% | 5% |
-| easyPrey · 100 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% | 6% |
-| bodkinBolt · 100 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 13% | – | – | – | – | – | – | 8% | 21% | 5% |
-| fullDraw · 100 (Łowca, bow + quiver) | 10% | 12% | 11% | 10% | – | – | – | – | – | – | – | 11% | 24% | 5% |
-| elementalSpark · 100 (Mag, wand + orb) | 8% | 8% | – | 9% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (fire) · 100 (Mag, wand + orb) | 11% | 4% | – | 11% | – | – | – | – | – | – | – | 7% | 14% | 5% |
+| harrying · 100 (Łowca, shortbow + quiver) | – | – | – | – | – | – | 10% | – | – | – | – | 6% | 19% → 21% | 5% |
+| toxicBarbs · 100 (Łowca, bow + quiver) | 21% | – | 16% → 18% | – | – | – | – | – | – | – | – | 11% | 24% → 27% | 5% |
+| criticalForce · 100 (Łowca, longbow + quiver) | 4% | 4% | 4% | 4% | – | – | – | – | – | – | – | 4% | 16% → 19% | 5% |
+| easyPrey · 100 (Łowca, crossbow + quiver) | – | – | – | – | – | – | – | 10% | – | – | – | 0% | 12% → 14% | 6% |
+| bodkinBolt · 100 (Łowca, heavycrossbow + quiver) | 8% | – | – | – | 13% | – | – | – | – | – | – | 8% | 21% → 23% | 5% |
+| fullDraw · 100 (Łowca, bow + quiver) | 10% → 12% | 12% → 14% | 11% → 13% | 10% → 12% | – | – | – | – | – | – | – | 11% → 13% | 24% → 27% | 5% |
+| elementalSpark · 100 (Mag, wand + orb) | 8% → 9% | 8% → 9% | – | 9% → 10% | – | – | – | – | – | – | – | 8% → 9% | 15% → 16% | 5% |
+| elementalSpark (fire) · 100 (Mag, wand + orb) | 11% → 12% | 4% → 7% | – | 11% → 12% | – | – | – | – | – | – | – | 7% → 9% | 14% → 16% | 5% |
 | elementalSpark (ice) · 100 (Mag, wand + orb) | 8% | 8% | – | 8% | – | – | – | – | – | – | – | 8% | 15% | 5% |
-| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% | 11% | – | 7% | – | – | – | – | – | – | – | 9% | 16% | 5% |
+| elementalSpark (lightning) · 100 (Mag, wand + orb) | 7% → 8% | 11% → 13% | – | 7% → 9% | – | – | – | – | – | – | – | 9% → 11% | 16% → 18% | 5% |
 | elementalMight · 100 (Mag, staff) | 9% | 9% | – | 9% | – | – | – | – | – | – | – | 9% | 9% | 7% |
 | elementalMight (fire) · 100 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | elementalMight (ice) · 100 (Mag, staff) | 3% | 3% | – | 3% | – | – | – | – | – | – | – | 3% | 3% | 7% |
 | elementalMight (lightning) · 100 (Mag, staff) | 13% | 13% | – | 13% | – | – | – | – | – | – | – | 13% | 13% | 7% |
 | runicSeal · 100 (Mag, runestaff) | – | – | – | 7% | – | – | – | – | 7% | – | – | 1% | 1% | 6% |
-| learnedFormulae · 100 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 8% | 2% |
-| powerLens · 100 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% | 5% |
+| learnedFormulae · 100 (Mag, wand + tome) | – | – | – | – | – | – | – | – | – | 0% | – | 0% | 8% → 10% | 2% |
+| powerLens · 100 (Mag, wand + orb) | 6% | 6% | 6% | 6% | – | – | – | – | – | – | – | 6% | 15% → 16% | 5% |
 | anointment · 100 (Kapłan, scepter + shield) | – | – | – | – | – | – | – | – | – | – | 0% | 0% | 6% | 5% |
 | savingBlow · 100 (Kapłan, holystaff) | – | – | – | – | – | – | 302% | – | – | – | – | 400% | 400% | 4% |
 | concussion · 100 (Kapłan, flail1h + shield) | 13% | 6% | – | – | – | – | – | – | – | – | – | 7% | 14% | 5% |
@@ -8835,10 +9020,10 @@ Wartość Przeszycia (`Balance.runThroughValue`, moc² jak w tabeli cech) przy `
 | Zwykły +0 · 45 | 4% | 8% | 14% | 0% | 0% | 1% |
 | Zwykły +0 · 70 | 4% | 8% | 14% | 0% | 0% | 0% |
 | Zwykły +0 · 100 | 4% | 8% | 14% | 0% | 0% | 1% |
-| Mityczny +9 · 20 | 7% | 14% | 23% | 0% | 0% | 1% |
-| Mityczny +9 · 45 | 7% | 14% | 23% | 0% | 1% | 1% |
-| Mityczny +9 · 70 | 7% | 14% | 23% | 0% | 0% | 1% |
-| Mityczny +9 · 100 | 7% | 14% | 23% | 0% | 1% | 1% |
+| Mityczny +9 · 20 | 7% → 8% | 14% → 16% | 23% → 26% | 0% | 0% → 1% | 1% |
+| Mityczny +9 · 45 | 7% → 8% | 14% → 16% | 23% → 26% | 0% | 1% | 1% |
+| Mityczny +9 · 70 | 7% → 8% | 14% → 16% | 23% → 26% | 0% | 0% → 1% | 1% |
+| Mityczny +9 · 100 | 7% → 8% | 14% → 16% | 23% → 26% | 0% | 1% | 1% |
 
 ## Ulepszenia i materiały (S84)
 
@@ -8974,22 +9159,22 @@ Wartości oczekiwane z tabel łupu (szansa × średnia ilość, jak `Loot.rollMo
 | 20 · expienie / h | 44,2 | 0,86 | 0,00 | 0,00 | 0,00 |
 | 20 · Elity / h | 66,6 | 7,97 | 0,17 | 0,00 | 0,00 |
 | 20 · Elita II / zabicie | 3,7 | 3,96 | 0,70 | 0,08 | 0,12 |
-| 20 · Elita II / h odrodzeń | 15,6 → 33,8 | 16,76 → 36,36 | 2,96 → 6,42 | 0,34 → 0,73 | 0,53 → 1,15 |
+| 20 · Elita II / h odrodzeń | 33,8 | 36,36 | 6,42 | 0,73 | 1,15 |
 | 20 · boss / tydzień | 0,0 | 84,00 | 25,20 | 6,30 | 3,15 |
 | 45 · expienie / h | 54,7 | 0,94 | 0,00 | 0,00 | 0,00 |
 | 45 · Elity / h | 67,6 | 7,98 | 0,18 | 0,00 | 0,00 |
 | 45 · Elita II / zabicie | 3,8 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 45 · Elita II / h odrodzeń | 11,9 → 29,2 | 12,83 → 31,60 | 2,23 → 5,49 | 0,25 → 0,62 | 0,39 → 0,96 |
+| 45 · Elita II / h odrodzeń | 29,2 | 31,60 | 5,49 | 0,62 | 0,96 |
 | 45 · boss / tydzień | 0,0 | 0,00 | 52,50 | 11,02 | 4,20 |
 | 70 · expienie / h | 64,6 | 0,95 | 0,00 | 0,00 | 0,00 |
 | 70 · Elity / h | 73,6 | 8,39 | 0,19 | 0,00 | 0,00 |
 | 70 · Elita II / zabicie | 3,9 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 70 · Elita II / h odrodzeń | 9,7 → 26,0 | 10,09 → 27,08 | 1,75 → 4,70 | 0,20 → 0,53 | 0,31 → 0,82 |
+| 70 · Elita II / h odrodzeń | 26,0 | 27,08 | 4,70 | 0,53 | 0,82 |
 | 70 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 | 100 · expienie / h | 55,1 | 0,81 | 0,00 | 0,00 | 0,00 |
 | 100 · Elity / h | 75,6 | 8,61 | 0,19 | 0,00 | 0,00 |
 | 100 · Elita II / zabicie | 3,9 | 4,10 | 0,71 | 0,08 | 0,12 |
-| 100 · Elita II / h odrodzeń | 8,4 → 23,6 | 8,80 → 24,62 | 1,53 → 4,28 | 0,17 → 0,48 | 0,27 → 0,75 |
+| 100 · Elita II / h odrodzeń | 23,6 | 24,62 | 4,28 | 0,48 | 0,75 |
 | 100 · boss / tydzień | 0,0 | 0,00 | 84,00 | 12,60 | 9,45 |
 
 ### Godziny na +9 broni, Rdzenie i zwoje (Wojownik)
@@ -9005,7 +9190,7 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 
 ### Cele G7–G9 (S84; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
-685/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
+691/968 w paśmie (G7: kolumna „z cechami”, G8: MIX „bez cech” i „z cechami”, G9: +1…+3 / dochód i +1…+9 z ochroną). Poza pasmem:
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -9029,32 +9214,38 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior sword2h common +9 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior sword2h legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
+| Warrior sword2h legendary +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior sword2h legendary +9 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S134g |
 | Warrior sword2h common +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h legendary +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h legendary +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior sword2h mythic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior sword2h mythic +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
 | Warrior sword2h common +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +9 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior sword2h mythic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S134g |
 | Warrior sword2h common +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h common +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior sword2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior sword2h legendary +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior sword2h mythic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
 | Warrior axe2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +9 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L20: bez cech | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9063,22 +9254,18 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior axe2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L45: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L45: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h heroic +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h legendary +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L70: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L70: bez cech | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L70: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h legendary +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +0 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h unique +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9087,20 +9274,18 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior axe2h heroic +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior axe2h legendary +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L100: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +0 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L100: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior axe2h mythic +9 L100: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior axe2h mythic +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +9 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +9 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9109,8 +9294,8 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior hammer2h heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +9 L45: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9118,26 +9303,25 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior hammer2h heroic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +9 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +9 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h unique +9 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h heroic +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h legendary +0 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h legendary +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior hammer2h legendary +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior hammer2h mythic +9 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior hammer2h mythic +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L20: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
-| Warrior spear2h mythic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h legendary +0 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S134g |
+| Warrior spear2h mythic +9 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S134g |
 | Warrior spear2h common +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9146,35 +9330,32 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Warrior spear2h heroic +9 L45: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +9 L45: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +9 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h mythic +0 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h mythic +9 L45: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L70: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +9 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L70: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h mythic +0 L70: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +0 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h common +9 L100: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h unique +9 L100: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h heroic +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Warrior spear2h legendary +0 L100: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Warrior spear2h mythic +9 L100: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Warrior spear2h mythic +0 L100: z cechami | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L20: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff heroic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff heroic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
-| Mage staff legendary +0 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff legendary +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff legendary +0 L20: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff legendary +9 L20: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +0 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +9 L20: z cechami | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L45: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L45: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9183,8 +9364,8 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage staff heroic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +0 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L45: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +0 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +9 L45: z cechami | 0,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9193,8 +9374,8 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage staff heroic +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +0 L70: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L70: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +0 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +9 L70: z cechami | 0,94 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +0 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff common +9 L100: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff unique +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9203,20 +9384,19 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage staff heroic +9 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage staff legendary +9 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +0 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L100: bez cech | 0,96 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage staff mythic +9 L100: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +0 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage staff mythic +9 L100: z cechami | 0,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L20: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +0 L20: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +0 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff legendary +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S91 |
-| Mage runestaff legendary +0 L20: z cechami | 0,92 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff legendary +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +0 L20: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +9 L20: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff legendary +0 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff legendary +9 L20: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +0 L20: bez cech | 1,04 | 0,97–1,03 | **poza** | raport → S134g |
+| Mage runestaff mythic +0 L20: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +9 L20: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L45: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +0 L45: z cechami | 0,91 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9225,8 +9405,8 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff heroic +9 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +9 L45: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +0 L45: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +9 L45: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +0 L45: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +9 L45: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L70: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L70: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +0 L70: z cechami | 0,90 | 0,97–1,03 | **poza** | raport → S88 |
@@ -9235,59 +9415,58 @@ Godziny: materiały +9 jednej broni (odłamki zwojów z receptury przy ochronie)
 | Mage runestaff heroic +9 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +0 L70: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +9 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +0 L70: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +9 L70: z cechami | 0,86 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +0 L70: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +9 L70: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +0 L100: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff common +9 L100: z cechami | 0,86 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +0 L100: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff unique +9 L100: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +0 L100: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff heroic +9 L100: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff legendary +0 L100: z cechami | 0,89 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff legendary +0 L100: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
 | Mage runestaff legendary +9 L100: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +0 L100: z cechami | 0,87 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +9 L100: bez cech | 0,97 | 0,97–1,03 | **poza** | raport → S88 |
-| Mage runestaff mythic +9 L100: z cechami | 0,85 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +0 L100: z cechami | 0,88 | 0,97–1,03 | **poza** | raport → S88 |
+| Mage runestaff mythic +9 L100: z cechami | 0,86 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L20: z cechami | 1,04 | 0,97–1,03 | **poza** | raport → S92 |
 | Cleric holystaff common +9 L20: z cechami | 1,35 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L20: z cechami | 1,17 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff unique +9 L20: z cechami | 1,95 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff heroic +0 L20: z cechami | 1,29 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L20: z cechami | 3,22 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L20: z cechami | 1,88 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L20: z cechami | 3,81 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L20: z cechami | 3,69 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L20: z cechami | 4,23 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L20: z cechami | 1,39 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L20: z cechami | 3,69 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L20: z cechami | 1,45 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L20: z cechami | 3,70 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L45: z cechami | 1,20 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +9 L45: z cechami | 2,70 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L45: z cechami | 1,58 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff unique +9 L45: z cechami | 3,88 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff heroic +0 L45: z cechami | 2,14 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L45: z cechami | 4,20 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L45: z cechami | 3,89 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L45: z cechami | 4,38 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L45: z cechami | 4,41 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L45: z cechami | 4,24 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L45: z cechami | 2,58 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L45: z cechami | 4,39 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L45: z cechami | 3,29 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L45: z cechami | 4,35 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L70: z cechami | 1,43 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +9 L70: z cechami | 3,89 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L70: z cechami | 2,43 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff unique +9 L70: z cechami | 4,46 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff heroic +0 L70: z cechami | 3,95 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L70: z cechami | 4,47 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L70: z cechami | 4,54 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L70: z cechami | 4,39 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L70: z cechami | 4,38 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L70: z cechami | 4,23 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L70: z cechami | 3,97 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L70: z cechami | 4,41 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L70: z cechami | 4,05 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L70: z cechami | 4,37 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff common +0 L100: z cechami | 1,87 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff common +9 L100: z cechami | 4,37 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff unique +0 L100: z cechami | 3,93 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff unique +9 L100: z cechami | 4,45 | 0,97–1,06 | **poza** | raport → S88 |
 | Cleric holystaff heroic +0 L100: z cechami | 4,20 | 0,97–1,03 | **poza** | raport → S88 |
 | Cleric holystaff heroic +9 L100: z cechami | 4,45 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff legendary +0 L100: z cechami | 4,56 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff legendary +9 L100: z cechami | 4,42 | 0,97–1,06 | **poza** | raport → S88 |
-| Cleric holystaff mythic +0 L100: z cechami | 4,40 | 0,97–1,03 | **poza** | raport → S88 |
-| Cleric holystaff mythic +9 L100: z cechami | 4,25 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff legendary +0 L100: z cechami | 4,38 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff legendary +9 L100: z cechami | 4,41 | 0,97–1,06 | **poza** | raport → S88 |
+| Cleric holystaff mythic +0 L100: z cechami | 4,56 | 0,97–1,03 | **poza** | raport → S88 |
+| Cleric holystaff mythic +9 L100: z cechami | 4,40 | 0,97–1,06 | **poza** | raport → S88 |
 | Warrior 40: +1…+9 z ochroną (poziomy dochodu) | 10,69 | 12,00–25,00 | **poza** | raport → S103 |
 | Hunter 40: +1…+9 z ochroną (poziomy dochodu) | 10,69 | 12,00–25,00 | **poza** | raport → S103 |
 | Mage 40: +1…+9 z ochroną (poziomy dochodu) | 10,69 | 12,00–25,00 | **poza** | raport → S103 |
@@ -9311,14 +9490,14 @@ Drop na godzinę przez `AreaRates.itemsPerKill`, `Logic/Luck` i udział przedmio
 | K1 (zwykły) · 45 | 4,9 | 0,0 | 5,0 | 0,0 | 8,0 | 17,9 | 30,0 | 47,9 | 47,9 | 0,0 |
 | K1 (zwykły) · 70 | 4,9 | 0,0 | 5,0 | 0,0 | 8,0 | 17,9 | 30,0 | 47,9 | 47,9 | 0,0 |
 | K1 (zwykły) · 100 | 4,9 | 0,0 | 5,0 | 0,0 | 8,0 | 17,9 | 30,0 | 47,9 | 47,9 | 0,0 |
-| K2 (łowca łupu) · 25 | 20,0 | 13,0 | 8,0 | 5,0 | 15,0 | 61,0 | 30,0 | 91,0 | 91,0 | 0,0 |
-| K2 (łowca łupu) · 45 | 20,0 | 13,0 | 8,0 | 5,0 | 15,0 | 61,0 | 30,0 | 91,0 | 91,0 | 0,0 |
-| K2 (łowca łupu) · 70 | 20,0 | 13,0 | 8,0 | 5,0 | 15,0 | 61,0 | 30,0 | 91,0 | 91,0 | 0,0 |
-| K2 (łowca łupu) · 100 | 20,0 | 13,0 | 8,0 | 5,0 | 15,0 | 61,0 | 30,0 | 91,0 | 91,0 | 0,0 |
-| K3 (maks.) · 25 | 32,0 | 150,0 | 22,0 | 5,0 | 15,0 | 224,0 | 30,0 | 254,0 | 100,0 | 154,0 |
-| K3 (maks.) · 45 | 32,0 | 150,0 | 22,0 | 5,0 | 15,0 | 224,0 | 30,0 | 254,0 | 100,0 | 154,0 |
-| K3 (maks.) · 70 | 32,0 | 150,0 | 22,0 | 5,0 | 15,0 | 224,0 | 30,0 | 254,0 | 100,0 | 154,0 |
-| K3 (maks.) · 100 | 32,0 | 150,0 | 22,0 | 5,0 | 15,0 | 224,0 | 30,0 | 254,0 | 100,0 | 154,0 |
+| K2 (łowca łupu) · 25 | 20,0 | 13,0 → 0,0 | 8,0 | 5,0 | 15,0 | 61,0 → 48,0 | 30,0 | 91,0 → 78,0 | 91,0 → 78,0 | 0,0 |
+| K2 (łowca łupu) · 45 | 20,0 | 13,0 → 0,0 | 8,0 | 5,0 | 15,0 | 61,0 → 48,0 | 30,0 | 91,0 → 78,0 | 91,0 → 78,0 | 0,0 |
+| K2 (łowca łupu) · 70 | 20,0 | 13,0 → 0,0 | 8,0 | 5,0 | 15,0 | 61,0 → 48,0 | 30,0 | 91,0 → 78,0 | 91,0 → 78,0 | 0,0 |
+| K2 (łowca łupu) · 100 | 20,0 | 13,0 → 0,0 | 8,0 | 5,0 | 15,0 | 61,0 → 48,0 | 30,0 | 91,0 → 78,0 | 91,0 → 78,0 | 0,0 |
+| K3 (maks.) · 25 | 32,0 → 28,0 | 150,0 → 0,0 | 22,0 | 5,0 | 15,0 | 224,0 → 70,0 | 30,0 | 254,0 → 100,0 | 100,0 | 154,0 → 0,0 |
+| K3 (maks.) · 45 | 32,0 → 28,0 | 150,0 → 0,0 | 22,0 | 5,0 | 15,0 | 224,0 → 70,0 | 30,0 | 254,0 → 100,0 | 100,0 | 154,0 → 0,0 |
+| K3 (maks.) · 70 | 32,0 → 28,0 | 150,0 → 0,0 | 22,0 | 5,0 | 15,0 | 224,0 → 70,0 | 30,0 | 254,0 → 100,0 | 100,0 | 154,0 → 0,0 |
+| K3 (maks.) · 100 | 32,0 → 28,0 | 150,0 → 0,0 | 22,0 | 5,0 | 15,0 | 224,0 → 70,0 | 30,0 | 254,0 → 100,0 | 100,0 | 154,0 → 0,0 |
 
 ### Pola szczęścia Fortuny (`Paths.luckOfNodes`)
 
@@ -9337,68 +9516,68 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | 25 · K0 | 3,02 | 3,93 | 1,30 | 0,77 | 1,00 | 0,11 | 0,13 | 0,0 | 65,7 | 17,8 |
 | 25 · K1 | 3,57 | 4,47 | 1,25 | 0,91 | 1,03 | 0,11 | 0,13 | 14,6 | 65,7 | 17,8 |
-| 25 · K2 | 4,87 | 5,78 | 1,19 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 | 65,7 | 17,8 |
-| 25 · K3 | 6,05 | 6,05 | 1,00 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 65,7 | 17,8 |
+| 25 · K2 | 4,87 → 4,48 | 5,78 → 5,38 | 1,19 → 1,20 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 → 44,7 | 65,7 | 17,8 |
+| 25 · K3 | 6,05 → 5,14 | 6,05 | 1,00 → 1,18 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 65,7 | 17,8 |
 | 30 · K0 | 2,70 | 3,51 | 1,30 | 0,76 | 0,99 | 0,11 | 0,13 | 0,0 | 58,7 | 17,7 |
 | 30 · K1 | 3,19 | 4,00 | 1,25 | 0,90 | 1,02 | 0,11 | 0,13 | 14,6 | 58,7 | 17,7 |
-| 30 · K2 | 4,35 | 5,16 | 1,19 | 1,02 | 1,02 | 0,11 | 0,13 | 57,7 | 58,7 | 17,7 |
-| 30 · K3 | 5,40 | 5,40 | 1,00 | 1,02 | 1,02 | 0,11 | 0,13 | 66,7 | 58,7 | 17,7 |
+| 30 · K2 | 4,35 → 4,00 | 5,16 → 4,81 | 1,19 → 1,20 | 1,02 | 1,02 | 0,11 | 0,13 | 57,7 → 44,7 | 58,7 | 17,7 |
+| 30 · K3 | 5,40 → 4,59 | 5,40 | 1,00 → 1,18 | 1,02 | 1,02 | 0,11 | 0,13 | 66,7 | 58,7 | 17,7 |
 | 35 · K0 | 2,50 | 3,25 | 1,30 | 0,92 | 1,19 | 0,11 | 0,13 | 0,0 | 54,3 | 21,3 |
 | 35 · K1 | 2,95 | 3,70 | 1,25 | 1,08 | 1,22 | 0,11 | 0,13 | 14,6 | 54,3 | 21,3 |
-| 35 · K2 | 4,03 | 4,78 | 1,19 | 1,22 | 1,22 | 0,11 | 0,13 | 57,7 | 54,3 | 21,3 |
-| 35 · K3 | 5,00 | 5,00 | 1,00 | 1,22 | 1,22 | 0,11 | 0,13 | 66,7 | 54,3 | 21,3 |
+| 35 · K2 | 4,03 → 3,70 | 4,78 → 4,45 | 1,19 → 1,20 | 1,22 | 1,22 | 0,11 | 0,13 | 57,7 → 44,7 | 54,3 | 21,3 |
+| 35 · K3 | 5,00 → 4,25 | 5,00 | 1,00 → 1,18 | 1,22 | 1,22 | 0,11 | 0,13 | 66,7 | 54,3 | 21,3 |
 | 40 · K0 | 3,34 | 4,34 | 1,30 | 0,85 | 1,11 | 0,11 | 0,13 | 0,0 | 72,5 | 19,8 |
 | 40 · K1 | 3,94 | 4,94 | 1,25 | 1,01 | 1,14 | 0,11 | 0,13 | 14,6 | 72,5 | 19,8 |
-| 40 · K2 | 5,37 | 6,38 | 1,19 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 | 72,5 | 19,8 |
-| 40 · K3 | 6,68 | 6,68 | 1,00 | 1,14 | 1,14 | 0,11 | 0,13 | 66,7 | 72,5 | 19,8 |
+| 40 · K2 | 5,37 → 4,94 | 6,38 → 5,94 | 1,19 → 1,20 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 → 44,7 | 72,5 | 19,8 |
+| 40 · K3 | 6,68 → 5,68 | 6,68 | 1,00 → 1,18 | 1,14 | 1,14 | 0,11 | 0,13 | 66,7 | 72,5 | 19,8 |
 | 45 · K0 | 3,41 | 4,44 | 1,30 | 0,80 | 1,04 | 0,11 | 0,13 | 0,0 | 70,0 | 17,6 |
 | 45 · K1 | 4,02 | 5,05 | 1,25 | 0,95 | 1,07 | 0,11 | 0,13 | 14,6 | 70,0 | 17,6 |
-| 45 · K2 | 5,49 | 6,52 | 1,19 | 1,07 | 1,07 | 0,11 | 0,13 | 57,7 | 70,0 | 17,6 |
-| 45 · K3 | 6,82 | 6,82 | 1,00 | 1,07 | 1,07 | 0,11 | 0,13 | 66,7 | 70,0 | 17,6 |
+| 45 · K2 | 5,49 → 5,05 | 6,52 → 6,07 | 1,19 → 1,20 | 1,07 | 1,07 | 0,11 | 0,13 | 57,7 → 44,7 | 70,0 | 17,6 |
+| 45 · K3 | 6,82 → 5,80 | 6,82 | 1,00 → 1,18 | 1,07 | 1,07 | 0,11 | 0,13 | 66,7 | 70,0 | 17,6 |
 | 50 · K0 | 3,22 | 4,18 | 1,30 | 0,81 | 1,05 | 0,11 | 0,13 | 0,0 | 66,0 | 17,7 |
 | 50 · K1 | 3,79 | 4,76 | 1,25 | 0,95 | 1,08 | 0,11 | 0,13 | 14,6 | 66,0 | 17,7 |
-| 50 · K2 | 5,18 | 6,15 | 1,19 | 1,08 | 1,08 | 0,11 | 0,13 | 57,7 | 66,0 | 17,7 |
-| 50 · K3 | 6,43 | 6,43 | 1,00 | 1,08 | 1,08 | 0,11 | 0,13 | 66,7 | 66,0 | 17,7 |
+| 50 · K2 | 5,18 → 4,76 | 6,15 → 5,73 | 1,19 → 1,20 | 1,08 | 1,08 | 0,11 | 0,13 | 57,7 → 44,7 | 66,0 | 17,7 |
+| 50 · K3 | 6,43 → 5,47 | 6,43 | 1,00 → 1,18 | 1,08 | 1,08 | 0,11 | 0,13 | 66,7 | 66,0 | 17,7 |
 | 55 · K0 | 2,61 | 3,39 | 1,30 | 0,82 | 1,06 | 0,11 | 0,13 | 0,0 | 53,5 | 17,9 |
 | 55 · K1 | 3,08 | 3,86 | 1,25 | 0,96 | 1,09 | 0,11 | 0,13 | 14,6 | 53,5 | 17,9 |
-| 55 · K2 | 4,20 | 4,98 | 1,19 | 1,09 | 1,09 | 0,11 | 0,13 | 57,7 | 53,5 | 17,9 |
-| 55 · K3 | 5,22 | 5,22 | 1,00 | 1,09 | 1,09 | 0,11 | 0,13 | 66,7 | 53,5 | 17,9 |
+| 55 · K2 | 4,20 → 3,86 | 4,98 → 4,64 | 1,19 → 1,20 | 1,09 | 1,09 | 0,11 | 0,13 | 57,7 → 44,7 | 53,5 | 17,9 |
+| 55 · K3 | 5,22 → 4,43 | 5,22 | 1,00 → 1,18 | 1,09 | 1,09 | 0,11 | 0,13 | 66,7 | 53,5 | 17,9 |
 | 60 · K0 | 3,26 | 4,24 | 1,30 | 0,92 | 1,19 | 0,11 | 0,13 | 0,0 | 66,9 | 20,1 |
 | 60 · K1 | 3,85 | 4,82 | 1,25 | 1,08 | 1,23 | 0,11 | 0,13 | 14,6 | 66,9 | 20,1 |
-| 60 · K2 | 5,25 | 6,23 | 1,19 | 1,23 | 1,23 | 0,11 | 0,13 | 57,7 | 66,9 | 20,1 |
-| 60 · K3 | 6,52 | 6,52 | 1,00 | 1,23 | 1,23 | 0,11 | 0,13 | 66,7 | 66,9 | 20,1 |
+| 60 · K2 | 5,25 → 4,83 | 6,23 → 5,81 | 1,19 → 1,20 | 1,23 | 1,23 | 0,11 | 0,13 | 57,7 → 44,7 | 66,9 | 20,1 |
+| 60 · K3 | 6,52 → 5,54 | 6,52 | 1,00 → 1,18 | 1,23 | 1,23 | 0,11 | 0,13 | 66,7 | 66,9 | 20,1 |
 | 65 · K0 | 3,07 | 3,99 | 1,30 | 0,81 | 1,06 | 0,11 | 0,13 | 0,0 | 62,9 | 17,8 |
 | 65 · K1 | 3,62 | 4,54 | 1,25 | 0,96 | 1,08 | 0,11 | 0,13 | 14,6 | 62,9 | 17,8 |
-| 65 · K2 | 4,94 | 5,86 | 1,19 | 1,08 | 1,08 | 0,11 | 0,13 | 57,7 | 62,9 | 17,8 |
-| 65 · K3 | 6,13 | 6,13 | 1,00 | 1,08 | 1,08 | 0,11 | 0,13 | 66,7 | 62,9 | 17,8 |
+| 65 · K2 | 4,94 → 4,54 | 5,86 → 5,46 | 1,19 → 1,20 | 1,08 | 1,08 | 0,11 | 0,13 | 57,7 → 44,7 | 62,9 | 17,8 |
+| 65 · K3 | 6,13 → 5,21 | 6,13 | 1,00 → 1,18 | 1,08 | 1,08 | 0,11 | 0,13 | 66,7 | 62,9 | 17,8 |
 | 70 · K0 | 3,42 | 4,44 | 1,30 | 0,84 | 1,10 | 0,11 | 0,13 | 0,0 | 70,1 | 18,4 |
 | 70 · K1 | 4,03 | 5,06 | 1,25 | 0,99 | 1,12 | 0,11 | 0,13 | 14,6 | 70,1 | 18,4 |
-| 70 · K2 | 5,51 | 6,53 | 1,19 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 | 70,1 | 18,4 |
-| 70 · K3 | 6,84 | 6,84 | 1,00 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 70,1 | 18,4 |
+| 70 · K2 | 5,51 → 5,06 | 6,53 → 6,09 | 1,19 → 1,20 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 → 44,7 | 70,1 | 18,4 |
+| 70 · K3 | 6,84 → 5,81 | 6,84 | 1,00 → 1,18 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 70,1 | 18,4 |
 | 75 · K0 | 2,95 | 3,84 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 60,5 | 18,6 |
 | 75 · K1 | 3,48 | 4,36 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 60,5 | 18,6 |
-| 75 · K2 | 4,75 | 5,64 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 60,5 | 18,6 |
-| 75 · K3 | 5,90 | 5,90 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,5 | 18,6 |
+| 75 · K2 | 4,75 → 4,37 | 5,64 → 5,25 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 60,5 | 18,6 |
+| 75 · K3 | 5,90 → 5,02 | 5,90 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,5 | 18,6 |
 | 80 · K0 | 3,56 | 4,63 | 1,30 | 0,85 | 1,11 | 0,11 | 0,13 | 0,0 | 73,1 | 18,6 |
 | 80 · K1 | 4,20 | 5,27 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 73,1 | 18,6 |
-| 80 · K2 | 5,74 | 6,80 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 73,1 | 18,6 |
-| 80 · K3 | 7,12 | 7,12 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 73,1 | 18,6 |
+| 80 · K2 | 5,74 → 5,27 | 6,80 → 6,34 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 73,1 | 18,6 |
+| 80 · K3 | 7,12 → 6,06 | 7,12 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 73,1 | 18,6 |
 | 85 · K0 | 2,94 | 3,83 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 60,4 | 18,5 |
 | 85 · K1 | 3,47 | 4,36 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 60,4 | 18,5 |
-| 85 · K2 | 4,74 | 5,63 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 60,4 | 18,5 |
-| 85 · K3 | 5,89 | 5,89 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,4 | 18,5 |
+| 85 · K2 | 4,74 → 4,36 | 5,63 → 5,24 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 60,4 | 18,5 |
+| 85 · K3 | 5,89 → 5,01 | 5,89 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,4 | 18,5 |
 | 90 · K0 | 2,76 | 3,59 | 1,30 | 0,85 | 1,11 | 0,11 | 0,13 | 0,0 | 56,6 | 18,6 |
 | 90 · K1 | 3,25 | 4,08 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 56,6 | 18,6 |
-| 90 · K2 | 4,44 | 5,27 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 56,6 | 18,6 |
-| 90 · K3 | 5,52 | 5,52 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 56,6 | 18,6 |
+| 90 · K2 | 4,44 → 4,08 | 5,27 → 4,91 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 56,6 | 18,6 |
+| 90 · K3 | 5,52 → 4,69 | 5,52 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 56,6 | 18,6 |
 | 95 · K0 | 2,90 | 3,77 | 1,30 | 0,86 | 1,11 | 0,11 | 0,13 | 0,0 | 59,5 | 18,7 |
 | 95 · K1 | 3,42 | 4,29 | 1,25 | 1,01 | 1,14 | 0,11 | 0,13 | 14,6 | 59,5 | 18,7 |
-| 95 · K2 | 4,67 | 5,54 | 1,19 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 | 59,5 | 18,7 |
-| 95 · K3 | 5,80 | 5,80 | 1,00 | 1,14 | 1,14 | 0,11 | 0,13 | 66,7 | 59,5 | 18,7 |
+| 95 · K2 | 4,67 → 4,30 | 5,54 → 5,17 | 1,19 → 1,20 | 1,14 | 1,14 | 0,11 | 0,13 | 57,7 → 44,7 | 59,5 | 18,7 |
+| 95 · K3 | 5,80 → 4,93 | 5,80 | 1,00 → 1,18 | 1,14 | 1,14 | 0,11 | 0,13 | 66,7 | 59,5 | 18,7 |
 | 100 · K0 | 2,91 | 3,79 | 1,30 | 0,87 | 1,13 | 0,11 | 0,13 | 0,0 | 59,8 | 18,9 |
 | 100 · K1 | 3,44 | 4,31 | 1,25 | 1,02 | 1,15 | 0,11 | 0,13 | 14,6 | 59,8 | 18,9 |
-| 100 · K2 | 4,69 | 5,57 | 1,19 | 1,15 | 1,15 | 0,11 | 0,13 | 57,7 | 59,8 | 18,9 |
-| 100 · K3 | 5,83 | 5,83 | 1,00 | 1,15 | 1,15 | 0,11 | 0,13 | 66,7 | 59,8 | 18,9 |
+| 100 · K2 | 4,69 → 4,31 | 5,57 → 5,19 | 1,19 → 1,20 | 1,15 | 1,15 | 0,11 | 0,13 | 57,7 → 44,7 | 59,8 | 18,9 |
+| 100 · K3 | 5,83 → 4,96 | 5,83 | 1,00 → 1,18 | 1,15 | 1,15 | 0,11 | 0,13 | 66,7 | 59,8 | 18,9 |
 
 ### D5: drop na godzinę, Łowca
 
@@ -9408,68 +9587,68 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | 25 · K0 | 3,04 | 3,95 | 1,30 | 0,79 | 1,02 | 0,11 | 0,13 | 0,0 | 66,6 | 18,4 |
 | 25 · K1 | 3,58 | 4,49 | 1,25 | 0,93 | 1,05 | 0,11 | 0,13 | 14,6 | 66,6 | 18,4 |
-| 25 · K2 | 4,89 | 5,80 | 1,19 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 | 66,6 | 18,4 |
-| 25 · K3 | 6,08 | 6,08 | 1,00 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 66,6 | 18,4 |
+| 25 · K2 | 4,89 → 4,50 | 5,80 → 5,41 | 1,19 → 1,20 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 → 44,7 | 66,6 | 18,4 |
+| 25 · K3 | 6,08 → 5,17 | 6,08 | 1,00 → 1,18 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 66,6 | 18,4 |
 | 30 · K0 | 2,75 | 3,58 | 1,30 | 0,78 | 1,02 | 0,11 | 0,13 | 0,0 | 60,4 | 18,4 |
 | 30 · K1 | 3,25 | 4,07 | 1,25 | 0,93 | 1,05 | 0,11 | 0,13 | 14,6 | 60,4 | 18,4 |
-| 30 · K2 | 4,43 | 5,26 | 1,19 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 | 60,4 | 18,4 |
-| 30 · K3 | 5,51 | 5,51 | 1,00 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 60,4 | 18,4 |
+| 30 · K2 | 4,43 → 4,08 | 5,26 → 4,90 | 1,19 → 1,20 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 → 44,7 | 60,4 | 18,4 |
+| 30 · K3 | 5,51 → 4,68 | 5,51 | 1,00 → 1,18 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 60,4 | 18,4 |
 | 35 · K0 | 2,53 | 3,29 | 1,30 | 0,98 | 1,28 | 0,11 | 0,13 | 0,0 | 55,5 | 23,0 |
 | 35 · K1 | 2,98 | 3,74 | 1,25 | 1,16 | 1,31 | 0,11 | 0,13 | 14,6 | 55,5 | 23,0 |
-| 35 · K2 | 4,07 | 4,83 | 1,19 | 1,31 | 1,31 | 0,11 | 0,13 | 57,7 | 55,5 | 23,0 |
-| 35 · K3 | 5,06 | 5,06 | 1,00 | 1,31 | 1,31 | 0,11 | 0,13 | 66,7 | 55,5 | 23,0 |
+| 35 · K2 | 4,07 → 3,75 | 4,83 → 4,50 | 1,19 → 1,20 | 1,31 | 1,31 | 0,11 | 0,13 | 57,7 → 44,7 | 55,5 | 23,0 |
+| 35 · K3 | 5,06 → 4,30 | 5,06 | 1,00 → 1,18 | 1,31 | 1,31 | 0,11 | 0,13 | 66,7 | 55,5 | 23,0 |
 | 40 · K0 | 3,65 | 4,74 | 1,30 | 0,91 | 1,18 | 0,11 | 0,13 | 0,0 | 80,0 | 21,3 |
 | 40 · K1 | 4,30 | 5,40 | 1,25 | 1,07 | 1,21 | 0,11 | 0,13 | 14,6 | 80,0 | 21,3 |
-| 40 · K2 | 5,87 | 6,97 | 1,19 | 1,21 | 1,21 | 0,11 | 0,13 | 57,7 | 80,0 | 21,3 |
-| 40 · K3 | 7,29 | 7,29 | 1,00 | 1,21 | 1,21 | 0,11 | 0,13 | 66,7 | 80,0 | 21,3 |
+| 40 · K2 | 5,87 → 5,40 | 6,97 → 6,49 | 1,19 → 1,20 | 1,21 | 1,21 | 0,11 | 0,13 | 57,7 → 44,7 | 80,0 | 21,3 |
+| 40 · K3 | 7,29 → 6,20 | 7,29 | 1,00 → 1,18 | 1,21 | 1,21 | 0,11 | 0,13 | 66,7 | 80,0 | 21,3 |
 | 45 · K0 | 3,45 | 4,48 | 1,30 | 0,83 | 1,08 | 0,11 | 0,13 | 0,0 | 71,4 | 18,3 |
 | 45 · K1 | 4,06 | 5,10 | 1,25 | 0,98 | 1,10 | 0,11 | 0,13 | 14,6 | 71,4 | 18,3 |
-| 45 · K2 | 5,55 | 6,58 | 1,19 | 1,10 | 1,10 | 0,11 | 0,13 | 57,7 | 71,4 | 18,3 |
-| 45 · K3 | 6,89 | 6,89 | 1,00 | 1,10 | 1,10 | 0,11 | 0,13 | 66,7 | 71,4 | 18,3 |
+| 45 · K2 | 5,55 → 5,10 | 6,58 → 6,13 | 1,19 → 1,20 | 1,10 | 1,10 | 0,11 | 0,13 | 57,7 → 44,7 | 71,4 | 18,3 |
+| 45 · K3 | 6,89 → 5,86 | 6,89 | 1,00 → 1,18 | 1,10 | 1,10 | 0,11 | 0,13 | 66,7 | 71,4 | 18,3 |
 | 50 · K0 | 3,24 | 4,21 | 1,30 | 0,83 | 1,08 | 0,11 | 0,13 | 0,0 | 67,1 | 18,4 |
 | 50 · K1 | 3,82 | 4,79 | 1,25 | 0,98 | 1,11 | 0,11 | 0,13 | 14,6 | 67,1 | 18,4 |
-| 50 · K2 | 5,22 | 6,19 | 1,19 | 1,11 | 1,11 | 0,11 | 0,13 | 57,7 | 67,1 | 18,4 |
-| 50 · K3 | 6,48 | 6,48 | 1,00 | 1,11 | 1,11 | 0,11 | 0,13 | 66,7 | 67,1 | 18,4 |
+| 50 · K2 | 5,22 → 4,79 | 6,19 → 5,77 | 1,19 → 1,20 | 1,11 | 1,11 | 0,11 | 0,13 | 57,7 → 44,7 | 67,1 | 18,4 |
+| 50 · K3 | 6,48 → 5,51 | 6,48 | 1,00 → 1,18 | 1,11 | 1,11 | 0,11 | 0,13 | 66,7 | 67,1 | 18,4 |
 | 55 · K0 | 2,68 | 3,49 | 1,30 | 0,84 | 1,10 | 0,11 | 0,13 | 0,0 | 55,6 | 18,6 |
 | 55 · K1 | 3,17 | 3,97 | 1,25 | 0,99 | 1,12 | 0,11 | 0,13 | 14,6 | 55,6 | 18,6 |
-| 55 · K2 | 4,32 | 5,13 | 1,19 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 | 55,6 | 18,6 |
-| 55 · K3 | 5,37 | 5,37 | 1,00 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 55,6 | 18,6 |
+| 55 · K2 | 4,32 → 3,97 | 5,13 → 4,78 | 1,19 → 1,20 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 → 44,7 | 55,6 | 18,6 |
+| 55 · K3 | 5,37 → 4,56 | 5,37 | 1,00 → 1,18 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 55,6 | 18,6 |
 | 60 · K0 | 3,31 | 4,30 | 1,30 | 0,95 | 1,23 | 0,11 | 0,13 | 0,0 | 68,5 | 21,0 |
 | 60 · K1 | 3,90 | 4,89 | 1,25 | 1,12 | 1,27 | 0,11 | 0,13 | 14,6 | 68,5 | 21,0 |
-| 60 · K2 | 5,33 | 6,32 | 1,19 | 1,27 | 1,27 | 0,11 | 0,13 | 57,7 | 68,5 | 21,0 |
-| 60 · K3 | 6,62 | 6,62 | 1,00 | 1,27 | 1,27 | 0,11 | 0,13 | 66,7 | 68,5 | 21,0 |
+| 60 · K2 | 5,33 → 4,90 | 6,32 → 5,89 | 1,19 → 1,20 | 1,27 | 1,27 | 0,11 | 0,13 | 57,7 → 44,7 | 68,5 | 21,0 |
+| 60 · K3 | 6,62 → 5,63 | 6,62 | 1,00 → 1,18 | 1,27 | 1,27 | 0,11 | 0,13 | 66,7 | 68,5 | 21,0 |
 | 65 · K0 | 3,13 | 4,07 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 64,8 | 18,7 |
 | 65 · K1 | 3,69 | 4,63 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 64,8 | 18,7 |
-| 65 · K2 | 5,04 | 5,98 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 64,8 | 18,7 |
-| 65 · K3 | 6,26 | 6,26 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 64,8 | 18,7 |
+| 65 · K2 | 5,04 → 4,63 | 5,98 → 5,57 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 64,8 | 18,7 |
+| 65 · K3 | 6,26 → 5,32 | 6,26 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 64,8 | 18,7 |
 | 70 · K0 | 3,48 | 4,52 | 1,30 | 0,87 | 1,14 | 0,11 | 0,13 | 0,0 | 72,0 | 19,3 |
 | 70 · K1 | 4,10 | 5,14 | 1,25 | 1,03 | 1,16 | 0,11 | 0,13 | 14,6 | 72,0 | 19,3 |
-| 70 · K2 | 5,60 | 6,64 | 1,19 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 | 72,0 | 19,3 |
-| 70 · K3 | 6,95 | 6,95 | 1,00 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 72,0 | 19,3 |
+| 70 · K2 | 5,60 → 5,15 | 6,64 → 6,19 | 1,19 → 1,20 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 → 44,7 | 72,0 | 19,3 |
+| 70 · K3 | 6,95 → 5,91 | 6,95 | 1,00 → 1,18 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 72,0 | 19,3 |
 | 75 · K0 | 3,03 | 3,93 | 1,30 | 0,88 | 1,15 | 0,11 | 0,13 | 0,0 | 62,7 | 19,5 |
 | 75 · K1 | 3,57 | 4,48 | 1,25 | 1,04 | 1,18 | 0,11 | 0,13 | 14,6 | 62,7 | 19,5 |
-| 75 · K2 | 4,87 | 5,78 | 1,19 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 | 62,7 | 19,5 |
-| 75 · K3 | 6,05 | 6,05 | 1,00 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 62,7 | 19,5 |
+| 75 · K2 | 4,87 → 4,48 | 5,78 → 5,39 | 1,19 → 1,20 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 → 44,7 | 62,7 | 19,5 |
+| 75 · K3 | 6,05 → 5,14 | 6,05 | 1,00 → 1,18 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 62,7 | 19,5 |
 | 80 · K0 | 3,63 | 4,72 | 1,30 | 0,88 | 1,15 | 0,11 | 0,13 | 0,0 | 75,1 | 19,5 |
 | 80 · K1 | 4,28 | 5,37 | 1,25 | 1,04 | 1,18 | 0,11 | 0,13 | 14,6 | 75,1 | 19,5 |
-| 80 · K2 | 5,84 | 6,93 | 1,19 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 | 75,1 | 19,5 |
-| 80 · K3 | 7,26 | 7,26 | 1,00 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 75,1 | 19,5 |
+| 80 · K2 | 5,84 → 5,37 | 6,93 → 6,46 | 1,19 → 1,20 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 → 44,7 | 75,1 | 19,5 |
+| 80 · K3 | 7,26 → 6,17 | 7,26 | 1,00 → 1,18 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 75,1 | 19,5 |
 | 85 · K0 | 3,05 | 3,96 | 1,30 | 0,89 | 1,15 | 0,11 | 0,13 | 0,0 | 63,1 | 19,6 |
 | 85 · K1 | 3,59 | 4,51 | 1,25 | 1,05 | 1,18 | 0,11 | 0,13 | 14,6 | 63,1 | 19,6 |
-| 85 · K2 | 4,91 | 5,82 | 1,19 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 | 63,1 | 19,6 |
-| 85 · K3 | 6,10 | 6,10 | 1,00 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 63,1 | 19,6 |
+| 85 · K2 | 4,91 → 4,51 | 5,82 → 5,43 | 1,19 → 1,20 | 1,18 | 1,18 | 0,11 | 0,13 | 57,7 → 44,7 | 63,1 | 19,6 |
+| 85 · K3 | 6,10 → 5,18 | 6,10 | 1,00 → 1,18 | 1,18 | 1,18 | 0,11 | 0,13 | 66,7 | 63,1 | 19,6 |
 | 90 · K0 | 2,85 | 3,71 | 1,30 | 0,89 | 1,16 | 0,11 | 0,13 | 0,0 | 59,0 | 19,8 |
 | 90 · K1 | 3,36 | 4,22 | 1,25 | 1,06 | 1,19 | 0,11 | 0,13 | 14,6 | 59,0 | 19,8 |
-| 90 · K2 | 4,59 | 5,45 | 1,19 | 1,19 | 1,19 | 0,11 | 0,13 | 57,7 | 59,0 | 19,8 |
-| 90 · K3 | 5,70 | 5,70 | 1,00 | 1,19 | 1,19 | 0,11 | 0,13 | 66,7 | 59,0 | 19,8 |
+| 90 · K2 | 4,59 → 4,22 | 5,45 → 5,08 | 1,19 → 1,20 | 1,19 | 1,19 | 0,11 | 0,13 | 57,7 → 44,7 | 59,0 | 19,8 |
+| 90 · K3 | 5,70 → 4,85 | 5,70 | 1,00 → 1,18 | 1,19 | 1,19 | 0,11 | 0,13 | 66,7 | 59,0 | 19,8 |
 | 95 · K0 | 3,02 | 3,92 | 1,30 | 0,90 | 1,17 | 0,11 | 0,13 | 0,0 | 62,5 | 19,9 |
 | 95 · K1 | 3,56 | 4,46 | 1,25 | 1,06 | 1,20 | 0,11 | 0,13 | 14,6 | 62,5 | 19,9 |
-| 95 · K2 | 4,86 | 5,76 | 1,19 | 1,20 | 1,20 | 0,11 | 0,13 | 57,7 | 62,5 | 19,9 |
-| 95 · K3 | 6,04 | 6,04 | 1,00 | 1,20 | 1,20 | 0,11 | 0,13 | 66,7 | 62,5 | 19,9 |
+| 95 · K2 | 4,86 → 4,47 | 5,76 → 5,37 | 1,19 → 1,20 | 1,20 | 1,20 | 0,11 | 0,13 | 57,7 → 44,7 | 62,5 | 19,9 |
+| 95 · K3 | 6,04 → 5,13 | 6,04 | 1,00 → 1,18 | 1,20 | 1,20 | 0,11 | 0,13 | 66,7 | 62,5 | 19,9 |
 | 100 · K0 | 3,04 | 3,95 | 1,30 | 0,92 | 1,19 | 0,11 | 0,13 | 0,0 | 63,0 | 20,2 |
 | 100 · K1 | 3,58 | 4,50 | 1,25 | 1,08 | 1,22 | 0,11 | 0,13 | 14,6 | 63,0 | 20,2 |
-| 100 · K2 | 4,89 | 5,81 | 1,19 | 1,22 | 1,22 | 0,11 | 0,13 | 57,7 | 63,0 | 20,2 |
-| 100 · K3 | 6,08 | 6,08 | 1,00 | 1,22 | 1,22 | 0,11 | 0,13 | 66,7 | 63,0 | 20,2 |
+| 100 · K2 | 4,89 → 4,50 | 5,81 → 5,41 | 1,19 → 1,20 | 1,22 | 1,22 | 0,11 | 0,13 | 57,7 → 44,7 | 63,0 | 20,2 |
+| 100 · K3 | 6,08 → 5,17 | 6,08 | 1,00 → 1,18 | 1,22 | 1,22 | 0,11 | 0,13 | 66,7 | 63,0 | 20,2 |
 
 ### D5: drop na godzinę, Mag
 
@@ -9479,68 +9658,68 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | 25 · K0 | 2,70 | 3,51 | 1,30 | 0,70 | 0,91 | 0,11 | 0,13 | 0,0 | 59,4 | 16,5 |
 | 25 · K1 | 3,19 | 4,00 | 1,25 | 0,83 | 0,94 | 0,11 | 0,13 | 14,6 | 59,4 | 16,5 |
-| 25 · K2 | 4,35 | 5,16 | 1,19 | 0,94 | 0,94 | 0,11 | 0,13 | 57,7 | 59,4 | 16,5 |
-| 25 · K3 | 5,40 | 5,40 | 1,00 | 0,94 | 0,94 | 0,11 | 0,13 | 66,7 | 59,4 | 16,5 |
+| 25 · K2 | 4,35 → 4,00 | 5,16 → 4,81 | 1,19 → 1,20 | 0,94 | 0,94 | 0,11 | 0,13 | 57,7 → 44,7 | 59,4 | 16,5 |
+| 25 · K3 | 5,40 → 4,59 | 5,40 | 1,00 → 1,18 | 0,94 | 0,94 | 0,11 | 0,13 | 66,7 | 59,4 | 16,5 |
 | 30 · K0 | 2,60 | 3,38 | 1,30 | 0,70 | 0,91 | 0,11 | 0,13 | 0,0 | 57,1 | 16,3 |
 | 30 · K1 | 3,06 | 3,84 | 1,25 | 0,82 | 0,93 | 0,11 | 0,13 | 14,6 | 57,1 | 16,3 |
-| 30 · K2 | 4,18 | 4,96 | 1,19 | 0,93 | 0,93 | 0,11 | 0,13 | 57,7 | 57,1 | 16,3 |
-| 30 · K3 | 5,20 | 5,20 | 1,00 | 0,93 | 0,93 | 0,11 | 0,13 | 66,7 | 57,1 | 16,3 |
+| 30 · K2 | 4,18 → 3,85 | 4,96 → 4,63 | 1,19 → 1,20 | 0,93 | 0,93 | 0,11 | 0,13 | 57,7 → 44,7 | 57,1 | 16,3 |
+| 30 · K3 | 5,20 → 4,42 | 5,20 | 1,00 → 1,18 | 0,93 | 0,93 | 0,11 | 0,13 | 66,7 | 57,1 | 16,3 |
 | 35 · K0 | 2,26 | 2,94 | 1,30 | 0,93 | 1,22 | 0,11 | 0,13 | 0,0 | 49,8 | 21,9 |
 | 35 · K1 | 2,67 | 3,35 | 1,25 | 1,10 | 1,25 | 0,11 | 0,13 | 14,6 | 49,8 | 21,9 |
-| 35 · K2 | 3,65 | 4,33 | 1,19 | 1,25 | 1,25 | 0,11 | 0,13 | 57,7 | 49,8 | 21,9 |
-| 35 · K3 | 4,53 | 4,53 | 1,00 | 1,25 | 1,25 | 0,11 | 0,13 | 66,7 | 49,8 | 21,9 |
+| 35 · K2 | 3,65 → 3,35 | 4,33 → 4,03 | 1,19 → 1,20 | 1,25 | 1,25 | 0,11 | 0,13 | 57,7 → 44,7 | 49,8 | 21,9 |
+| 35 · K3 | 4,53 → 3,85 | 4,53 | 1,00 → 1,18 | 1,25 | 1,25 | 0,11 | 0,13 | 66,7 | 49,8 | 21,9 |
 | 40 · K0 | 3,71 | 4,82 | 1,30 | 0,88 | 1,14 | 0,11 | 0,13 | 0,0 | 81,5 | 20,6 |
 | 40 · K1 | 4,37 | 5,49 | 1,25 | 1,04 | 1,17 | 0,11 | 0,13 | 14,6 | 81,5 | 20,6 |
-| 40 · K2 | 5,97 | 7,09 | 1,19 | 1,17 | 1,17 | 0,11 | 0,13 | 57,7 | 81,5 | 20,6 |
-| 40 · K3 | 7,42 | 7,42 | 1,00 | 1,17 | 1,17 | 0,11 | 0,13 | 66,7 | 81,5 | 20,6 |
+| 40 · K2 | 5,97 → 5,49 | 7,09 → 6,60 | 1,19 → 1,20 | 1,17 | 1,17 | 0,11 | 0,13 | 57,7 → 44,7 | 81,5 | 20,6 |
+| 40 · K3 | 7,42 → 6,31 | 7,42 | 1,00 → 1,18 | 1,17 | 1,17 | 0,11 | 0,13 | 66,7 | 81,5 | 20,6 |
 | 45 · K0 | 3,06 | 3,97 | 1,30 | 0,77 | 1,00 | 0,11 | 0,13 | 0,0 | 63,4 | 17,1 |
 | 45 · K1 | 3,60 | 4,52 | 1,25 | 0,91 | 1,03 | 0,11 | 0,13 | 14,6 | 63,4 | 17,1 |
-| 45 · K2 | 4,92 | 5,84 | 1,19 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 | 63,4 | 17,1 |
-| 45 · K3 | 6,11 | 6,11 | 1,00 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 63,4 | 17,1 |
+| 45 · K2 | 4,92 → 4,52 | 5,84 → 5,44 | 1,19 → 1,20 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 → 44,7 | 63,4 | 17,1 |
+| 45 · K3 | 6,11 → 5,20 | 6,11 | 1,00 → 1,18 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 63,4 | 17,1 |
 | 50 · K0 | 2,88 | 3,75 | 1,30 | 0,78 | 1,01 | 0,11 | 0,13 | 0,0 | 59,8 | 17,3 |
 | 50 · K1 | 3,40 | 4,26 | 1,25 | 0,92 | 1,04 | 0,11 | 0,13 | 14,6 | 59,8 | 17,3 |
-| 50 · K2 | 4,64 | 5,50 | 1,19 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 | 59,8 | 17,3 |
-| 50 · K3 | 5,76 | 5,76 | 1,00 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 59,8 | 17,3 |
+| 50 · K2 | 4,64 → 4,27 | 5,50 → 5,13 | 1,19 → 1,20 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 → 44,7 | 59,8 | 17,3 |
+| 50 · K3 | 5,76 → 4,90 | 5,76 | 1,00 → 1,18 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 59,8 | 17,3 |
 | 55 · K0 | 2,77 | 3,61 | 1,30 | 0,79 | 1,03 | 0,11 | 0,13 | 0,0 | 57,6 | 17,5 |
 | 55 · K1 | 3,27 | 4,10 | 1,25 | 0,93 | 1,05 | 0,11 | 0,13 | 14,6 | 57,6 | 17,5 |
-| 55 · K2 | 4,47 | 5,30 | 1,19 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 | 57,6 | 17,5 |
-| 55 · K3 | 5,55 | 5,55 | 1,00 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 57,6 | 17,5 |
+| 55 · K2 | 4,47 → 4,11 | 5,30 → 4,94 | 1,19 → 1,20 | 1,05 | 1,05 | 0,11 | 0,13 | 57,7 → 44,7 | 57,6 | 17,5 |
+| 55 · K3 | 5,55 → 4,72 | 5,55 | 1,00 → 1,18 | 1,05 | 1,05 | 0,11 | 0,13 | 66,7 | 57,6 | 17,5 |
 | 60 · K0 | 2,93 | 3,81 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 60,8 | 18,8 |
 | 60 · K1 | 3,45 | 4,33 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 60,8 | 18,8 |
-| 60 · K2 | 4,71 | 5,59 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 60,8 | 18,8 |
-| 60 · K3 | 5,86 | 5,86 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,8 | 18,8 |
+| 60 · K2 | 4,71 → 4,33 | 5,59 → 5,21 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 60,8 | 18,8 |
+| 60 · K3 | 5,86 → 4,98 | 5,86 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 60,8 | 18,8 |
 | 65 · K0 | 2,91 | 3,78 | 1,30 | 0,87 | 1,13 | 0,11 | 0,13 | 0,0 | 60,4 | 19,2 |
 | 65 · K1 | 3,43 | 4,31 | 1,25 | 1,02 | 1,16 | 0,11 | 0,13 | 14,6 | 60,4 | 19,2 |
-| 65 · K2 | 4,69 | 5,56 | 1,19 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 | 60,4 | 19,2 |
-| 65 · K3 | 5,82 | 5,82 | 1,00 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 60,4 | 19,2 |
+| 65 · K2 | 4,69 → 4,31 | 5,56 → 5,18 | 1,19 → 1,20 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 → 44,7 | 60,4 | 19,2 |
+| 65 · K3 | 5,82 → 4,95 | 5,82 | 1,00 → 1,18 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 60,4 | 19,2 |
 | 70 · K0 | 3,08 | 4,00 | 1,30 | 0,77 | 1,01 | 0,11 | 0,13 | 0,0 | 63,9 | 17,1 |
 | 70 · K1 | 3,63 | 4,55 | 1,25 | 0,91 | 1,03 | 0,11 | 0,13 | 14,6 | 63,9 | 17,1 |
-| 70 · K2 | 4,96 | 5,88 | 1,19 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 | 63,9 | 17,1 |
-| 70 · K3 | 6,16 | 6,16 | 1,00 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 63,9 | 17,1 |
+| 70 · K2 | 4,96 → 4,56 | 5,88 → 5,48 | 1,19 → 1,20 | 1,03 | 1,03 | 0,11 | 0,13 | 57,7 → 44,7 | 63,9 | 17,1 |
+| 70 · K3 | 6,16 → 5,23 | 6,16 | 1,00 → 1,18 | 1,03 | 1,03 | 0,11 | 0,13 | 66,7 | 63,9 | 17,1 |
 | 75 · K0 | 2,67 | 3,47 | 1,30 | 0,78 | 1,01 | 0,11 | 0,13 | 0,0 | 55,3 | 17,3 |
 | 75 · K1 | 3,15 | 3,95 | 1,25 | 0,92 | 1,04 | 0,11 | 0,13 | 14,6 | 55,3 | 17,3 |
-| 75 · K2 | 4,29 | 5,09 | 1,19 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 | 55,3 | 17,3 |
-| 75 · K3 | 5,33 | 5,33 | 1,00 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 55,3 | 17,3 |
+| 75 · K2 | 4,29 → 3,95 | 5,09 → 4,75 | 1,19 → 1,20 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 → 44,7 | 55,3 | 17,3 |
+| 75 · K3 | 5,33 → 4,53 | 5,33 | 1,00 → 1,18 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 55,3 | 17,3 |
 | 80 · K0 | 3,21 | 4,17 | 1,30 | 0,78 | 1,02 | 0,11 | 0,13 | 0,0 | 66,6 | 17,3 |
 | 80 · K1 | 3,78 | 4,74 | 1,25 | 0,92 | 1,04 | 0,11 | 0,13 | 14,6 | 66,6 | 17,3 |
-| 80 · K2 | 5,16 | 6,13 | 1,19 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 | 66,6 | 17,3 |
-| 80 · K3 | 6,41 | 6,41 | 1,00 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 66,6 | 17,3 |
+| 80 · K2 | 5,16 → 4,75 | 6,13 → 5,71 | 1,19 → 1,20 | 1,04 | 1,04 | 0,11 | 0,13 | 57,7 → 44,7 | 66,6 | 17,3 |
+| 80 · K3 | 6,41 → 5,45 | 6,41 | 1,00 → 1,18 | 1,04 | 1,04 | 0,11 | 0,13 | 66,7 | 66,6 | 17,3 |
 | 85 · K0 | 2,69 | 3,50 | 1,30 | 0,84 | 1,09 | 0,11 | 0,13 | 0,0 | 55,9 | 18,6 |
 | 85 · K1 | 3,18 | 3,99 | 1,25 | 0,99 | 1,12 | 0,11 | 0,13 | 14,6 | 55,9 | 18,6 |
-| 85 · K2 | 4,34 | 5,15 | 1,19 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 | 55,9 | 18,6 |
-| 85 · K3 | 5,39 | 5,39 | 1,00 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 55,9 | 18,6 |
+| 85 · K2 | 4,34 → 3,99 | 5,15 → 4,80 | 1,19 → 1,20 | 1,12 | 1,12 | 0,11 | 0,13 | 57,7 → 44,7 | 55,9 | 18,6 |
+| 85 · K3 | 5,39 → 4,58 | 5,39 | 1,00 → 1,18 | 1,12 | 1,12 | 0,11 | 0,13 | 66,7 | 55,9 | 18,6 |
 | 90 · K0 | 2,53 | 3,29 | 1,30 | 0,85 | 1,10 | 0,11 | 0,13 | 0,0 | 52,5 | 18,7 |
 | 90 · K1 | 2,98 | 3,74 | 1,25 | 1,00 | 1,13 | 0,11 | 0,13 | 14,6 | 52,5 | 18,7 |
-| 90 · K2 | 4,07 | 4,83 | 1,19 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 | 52,5 | 18,7 |
-| 90 · K3 | 5,06 | 5,06 | 1,00 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 52,5 | 18,7 |
+| 90 · K2 | 4,07 → 3,74 | 4,83 → 4,50 | 1,19 → 1,20 | 1,13 | 1,13 | 0,11 | 0,13 | 57,7 → 44,7 | 52,5 | 18,7 |
+| 90 · K3 | 5,06 → 4,30 | 5,06 | 1,00 → 1,18 | 1,13 | 1,13 | 0,11 | 0,13 | 66,7 | 52,5 | 18,7 |
 | 95 · K0 | 2,69 | 3,49 | 1,30 | 0,86 | 1,12 | 0,11 | 0,13 | 0,0 | 55,7 | 19,0 |
 | 95 · K1 | 3,17 | 3,97 | 1,25 | 1,01 | 1,15 | 0,11 | 0,13 | 14,6 | 55,7 | 19,0 |
-| 95 · K2 | 4,32 | 5,13 | 1,19 | 1,15 | 1,15 | 0,11 | 0,13 | 57,7 | 55,7 | 19,0 |
-| 95 · K3 | 5,37 | 5,37 | 1,00 | 1,15 | 1,15 | 0,11 | 0,13 | 66,7 | 55,7 | 19,0 |
+| 95 · K2 | 4,32 → 3,98 | 5,13 → 4,78 | 1,19 → 1,20 | 1,15 | 1,15 | 0,11 | 0,13 | 57,7 → 44,7 | 55,7 | 19,0 |
+| 95 · K3 | 5,37 → 4,57 | 5,37 | 1,00 → 1,18 | 1,15 | 1,15 | 0,11 | 0,13 | 66,7 | 55,7 | 19,0 |
 | 100 · K0 | 2,70 | 3,51 | 1,30 | 0,87 | 1,13 | 0,11 | 0,13 | 0,0 | 56,0 | 19,3 |
 | 100 · K1 | 3,18 | 3,99 | 1,25 | 1,03 | 1,16 | 0,11 | 0,13 | 14,6 | 56,0 | 19,3 |
-| 100 · K2 | 4,35 | 5,16 | 1,19 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 | 56,0 | 19,3 |
-| 100 · K3 | 5,40 | 5,40 | 1,00 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 56,0 | 19,3 |
+| 100 · K2 | 4,35 → 4,00 | 5,16 → 4,81 | 1,19 → 1,20 | 1,16 | 1,16 | 0,11 | 0,13 | 57,7 → 44,7 | 56,0 | 19,3 |
+| 100 · K3 | 5,40 → 4,59 | 5,40 | 1,00 → 1,18 | 1,16 | 1,16 | 0,11 | 0,13 | 66,7 | 56,0 | 19,3 |
 
 ### D5: drop na godzinę, Kapłan
 
@@ -9550,68 +9729,68 @@ Przedmioty dla klasy: zabicia na godzinę (`paceAt`) × `AreaRates.itemsPerKill`
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | 25 · K0 | 3,35 | 4,36 | 1,30 | 0,84 | 1,10 | 0,12 | 0,14 | 0,0 | 71,5 | 19,2 |
 | 25 · K1 | 3,96 | 4,96 | 1,25 | 0,99 | 1,12 | 0,12 | 0,14 | 14,6 | 71,5 | 19,2 |
-| 25 · K2 | 5,40 | 6,41 | 1,19 | 1,12 | 1,12 | 0,12 | 0,14 | 57,7 | 71,5 | 19,2 |
-| 25 · K3 | 6,71 | 6,71 | 1,00 | 1,12 | 1,12 | 0,12 | 0,14 | 66,7 | 71,5 | 19,2 |
+| 25 · K2 | 5,40 → 4,97 | 6,41 → 5,97 | 1,19 → 1,20 | 1,12 | 1,12 | 0,12 | 0,14 | 57,7 → 44,7 | 71,5 | 19,2 |
+| 25 · K3 | 6,71 → 5,70 | 6,71 | 1,00 → 1,18 | 1,12 | 1,12 | 0,12 | 0,14 | 66,7 | 71,5 | 19,2 |
 | 30 · K0 | 3,08 | 4,01 | 1,30 | 0,83 | 1,08 | 0,12 | 0,14 | 0,0 | 65,7 | 18,8 |
 | 30 · K1 | 3,63 | 4,56 | 1,25 | 0,98 | 1,11 | 0,12 | 0,14 | 14,6 | 65,7 | 18,8 |
-| 30 · K2 | 4,96 | 5,89 | 1,19 | 1,11 | 1,11 | 0,12 | 0,14 | 57,7 | 65,7 | 18,8 |
-| 30 · K3 | 6,16 | 6,16 | 1,00 | 1,11 | 1,11 | 0,12 | 0,14 | 66,7 | 65,7 | 18,8 |
+| 30 · K2 | 4,96 → 4,56 | 5,89 → 5,49 | 1,19 → 1,20 | 1,11 | 1,11 | 0,12 | 0,14 | 57,7 → 44,7 | 65,7 | 18,8 |
+| 30 · K3 | 6,16 → 5,24 | 6,16 | 1,00 → 1,18 | 1,11 | 1,11 | 0,12 | 0,14 | 66,7 | 65,7 | 18,8 |
 | 35 · K0 | 2,68 | 3,48 | 1,30 | 1,01 | 1,31 | 0,12 | 0,14 | 0,0 | 57,1 | 22,9 |
 | 35 · K1 | 3,16 | 3,96 | 1,25 | 1,19 | 1,34 | 0,12 | 0,14 | 14,6 | 57,1 | 22,9 |
-| 35 · K2 | 4,31 | 5,12 | 1,19 | 1,34 | 1,34 | 0,12 | 0,14 | 57,7 | 57,1 | 22,9 |
-| 35 · K3 | 5,36 | 5,36 | 1,00 | 1,34 | 1,34 | 0,12 | 0,14 | 66,7 | 57,1 | 22,9 |
+| 35 · K2 | 4,31 → 3,96 | 5,12 → 4,77 | 1,19 → 1,20 | 1,34 | 1,34 | 0,12 | 0,14 | 57,7 → 44,7 | 57,1 | 22,9 |
+| 35 · K3 | 5,36 → 4,55 | 5,36 | 1,00 → 1,18 | 1,34 | 1,34 | 0,12 | 0,14 | 66,7 | 57,1 | 22,9 |
 | 40 · K0 | 3,84 | 4,99 | 1,30 | 0,95 | 1,24 | 0,12 | 0,14 | 0,0 | 81,9 | 21,6 |
 | 40 · K1 | 4,53 | 5,68 | 1,25 | 1,12 | 1,27 | 0,12 | 0,14 | 14,6 | 81,9 | 21,6 |
-| 40 · K2 | 6,18 | 7,34 | 1,19 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 | 81,9 | 21,6 |
-| 40 · K3 | 7,68 | 7,68 | 1,00 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 81,9 | 21,6 |
+| 40 · K2 | 6,18 → 5,69 | 7,34 → 6,84 | 1,19 → 1,20 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 → 44,7 | 81,9 | 21,6 |
+| 40 · K3 | 7,68 → 6,53 | 7,68 | 1,00 → 1,18 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 81,9 | 21,6 |
 | 45 · K0 | 3,68 | 4,78 | 1,30 | 0,90 | 1,17 | 0,12 | 0,14 | 0,0 | 74,1 | 19,3 |
 | 45 · K1 | 4,34 | 5,45 | 1,25 | 1,06 | 1,20 | 0,12 | 0,14 | 14,6 | 74,1 | 19,3 |
-| 45 · K2 | 5,93 | 7,03 | 1,19 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 | 74,1 | 19,3 |
-| 45 · K3 | 7,36 | 7,36 | 1,00 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 74,1 | 19,3 |
+| 45 · K2 | 5,93 → 5,45 | 7,03 → 6,55 | 1,19 → 1,20 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 → 44,7 | 74,1 | 19,3 |
+| 45 · K3 | 7,36 → 6,26 | 7,36 | 1,00 → 1,18 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 74,1 | 19,3 |
 | 50 · K0 | 3,47 | 4,51 | 1,30 | 0,90 | 1,17 | 0,12 | 0,14 | 0,0 | 69,8 | 19,4 |
 | 50 · K1 | 4,09 | 5,13 | 1,25 | 1,07 | 1,20 | 0,12 | 0,14 | 14,6 | 69,8 | 19,4 |
-| 50 · K2 | 5,59 | 6,63 | 1,19 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 | 69,8 | 19,4 |
-| 50 · K3 | 6,94 | 6,94 | 1,00 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 69,8 | 19,4 |
+| 50 · K2 | 5,59 → 5,14 | 6,63 → 6,18 | 1,19 → 1,20 | 1,20 | 1,20 | 0,12 | 0,14 | 57,7 → 44,7 | 69,8 | 19,4 |
+| 50 · K3 | 6,94 → 5,90 | 6,94 | 1,00 → 1,18 | 1,20 | 1,20 | 0,12 | 0,14 | 66,7 | 69,8 | 19,4 |
 | 55 · K0 | 3,13 | 4,07 | 1,30 | 0,91 | 1,18 | 0,12 | 0,14 | 0,0 | 63,0 | 19,5 |
 | 55 · K1 | 3,69 | 4,63 | 1,25 | 1,07 | 1,21 | 0,12 | 0,14 | 14,6 | 63,0 | 19,5 |
-| 55 · K2 | 5,04 | 5,97 | 1,19 | 1,21 | 1,21 | 0,12 | 0,14 | 57,7 | 63,0 | 19,5 |
-| 55 · K3 | 6,26 | 6,26 | 1,00 | 1,21 | 1,21 | 0,12 | 0,14 | 66,7 | 63,0 | 19,5 |
+| 55 · K2 | 5,04 → 4,63 | 5,97 → 5,57 | 1,19 → 1,20 | 1,21 | 1,21 | 0,12 | 0,14 | 57,7 → 44,7 | 63,0 | 19,5 |
+| 55 · K3 | 6,26 → 5,32 | 6,26 | 1,00 → 1,18 | 1,21 | 1,21 | 0,12 | 0,14 | 66,7 | 63,0 | 19,5 |
 | 60 · K0 | 3,49 | 4,53 | 1,30 | 0,97 | 1,26 | 0,12 | 0,14 | 0,0 | 70,2 | 20,8 |
 | 60 · K1 | 4,11 | 5,16 | 1,25 | 1,14 | 1,29 | 0,12 | 0,14 | 14,6 | 70,2 | 20,8 |
-| 60 · K2 | 5,61 | 6,66 | 1,19 | 1,29 | 1,29 | 0,12 | 0,14 | 57,7 | 70,2 | 20,8 |
-| 60 · K3 | 6,97 | 6,97 | 1,00 | 1,29 | 1,29 | 0,12 | 0,14 | 66,7 | 70,2 | 20,8 |
+| 60 · K2 | 5,61 → 5,16 | 6,66 → 6,21 | 1,19 → 1,20 | 1,29 | 1,29 | 0,12 | 0,14 | 57,7 → 44,7 | 70,2 | 20,8 |
+| 60 · K3 | 6,97 → 5,93 | 6,97 | 1,00 → 1,18 | 1,29 | 1,29 | 0,12 | 0,14 | 66,7 | 70,2 | 20,8 |
 | 65 · K0 | 3,38 | 4,39 | 1,30 | 0,95 | 1,24 | 0,12 | 0,14 | 0,0 | 68,0 | 20,4 |
 | 65 · K1 | 3,98 | 5,00 | 1,25 | 1,12 | 1,27 | 0,12 | 0,14 | 14,6 | 68,0 | 20,4 |
-| 65 · K2 | 5,44 | 6,45 | 1,19 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 | 68,0 | 20,4 |
-| 65 · K3 | 6,75 | 6,75 | 1,00 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 68,0 | 20,4 |
+| 65 · K2 | 5,44 → 5,00 | 6,45 → 6,01 | 1,19 → 1,20 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 → 44,7 | 68,0 | 20,4 |
+| 65 · K3 | 6,75 → 5,74 | 6,75 | 1,00 → 1,18 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 68,0 | 20,4 |
 | 70 · K0 | 3,63 | 4,71 | 1,30 | 0,88 | 1,14 | 0,12 | 0,14 | 0,0 | 73,0 | 18,9 |
 | 70 · K1 | 4,28 | 5,36 | 1,25 | 1,04 | 1,17 | 0,12 | 0,14 | 14,6 | 73,0 | 18,9 |
-| 70 · K2 | 5,84 | 6,93 | 1,19 | 1,17 | 1,17 | 0,12 | 0,14 | 57,7 | 73,0 | 18,9 |
-| 70 · K3 | 7,25 | 7,25 | 1,00 | 1,17 | 1,17 | 0,12 | 0,14 | 66,7 | 73,0 | 18,9 |
+| 70 · K2 | 5,84 → 5,37 | 6,93 → 6,46 | 1,19 → 1,20 | 1,17 | 1,17 | 0,12 | 0,14 | 57,7 → 44,7 | 73,0 | 18,9 |
+| 70 · K3 | 7,25 → 6,17 | 7,25 | 1,00 → 1,18 | 1,17 | 1,17 | 0,12 | 0,14 | 66,7 | 73,0 | 18,9 |
 | 75 · K0 | 3,12 | 4,05 | 1,30 | 0,88 | 1,15 | 0,12 | 0,14 | 0,0 | 62,7 | 18,9 |
 | 75 · K1 | 3,68 | 4,61 | 1,25 | 1,04 | 1,17 | 0,12 | 0,14 | 14,6 | 62,7 | 18,9 |
-| 75 · K2 | 5,02 | 5,95 | 1,19 | 1,17 | 1,17 | 0,12 | 0,14 | 57,7 | 62,7 | 18,9 |
-| 75 · K3 | 6,23 | 6,23 | 1,00 | 1,17 | 1,17 | 0,12 | 0,14 | 66,7 | 62,7 | 18,9 |
+| 75 · K2 | 5,02 → 4,61 | 5,95 → 5,55 | 1,19 → 1,20 | 1,17 | 1,17 | 0,12 | 0,14 | 57,7 → 44,7 | 62,7 | 18,9 |
+| 75 · K3 | 6,23 → 5,30 | 6,23 | 1,00 → 1,18 | 1,17 | 1,17 | 0,12 | 0,14 | 66,7 | 62,7 | 18,9 |
 | 80 · K0 | 3,77 | 4,90 | 1,30 | 0,88 | 1,15 | 0,12 | 0,14 | 0,0 | 75,9 | 19,0 |
 | 80 · K1 | 4,45 | 5,58 | 1,25 | 1,04 | 1,18 | 0,12 | 0,14 | 14,6 | 75,9 | 19,0 |
-| 80 · K2 | 6,07 | 7,21 | 1,19 | 1,18 | 1,18 | 0,12 | 0,14 | 57,7 | 75,9 | 19,0 |
-| 80 · K3 | 7,54 | 7,54 | 1,00 | 1,18 | 1,18 | 0,12 | 0,14 | 66,7 | 75,9 | 19,0 |
+| 80 · K2 | 6,07 → 5,58 | 7,21 → 6,72 | 1,19 → 1,20 | 1,18 | 1,18 | 0,12 | 0,14 | 57,7 → 44,7 | 75,9 | 19,0 |
+| 80 · K3 | 7,54 → 6,41 | 7,54 | 1,00 → 1,18 | 1,18 | 1,18 | 0,12 | 0,14 | 66,7 | 75,9 | 19,0 |
 | 85 · K0 | 3,03 | 3,93 | 1,30 | 0,93 | 1,21 | 0,12 | 0,14 | 0,0 | 60,9 | 19,9 |
 | 85 · K1 | 3,57 | 4,48 | 1,25 | 1,09 | 1,24 | 0,12 | 0,14 | 14,6 | 60,9 | 19,9 |
-| 85 · K2 | 4,87 | 5,78 | 1,19 | 1,24 | 1,24 | 0,12 | 0,14 | 57,7 | 60,9 | 19,9 |
-| 85 · K3 | 6,05 | 6,05 | 1,00 | 1,24 | 1,24 | 0,12 | 0,14 | 66,7 | 60,9 | 19,9 |
+| 85 · K2 | 4,87 → 4,48 | 5,78 → 5,39 | 1,19 → 1,20 | 1,24 | 1,24 | 0,12 | 0,14 | 57,7 → 44,7 | 60,9 | 19,9 |
+| 85 · K3 | 6,05 → 5,14 | 6,05 | 1,00 → 1,18 | 1,24 | 1,24 | 0,12 | 0,14 | 66,7 | 60,9 | 19,9 |
 | 90 · K0 | 2,92 | 3,79 | 1,30 | 0,93 | 1,21 | 0,12 | 0,14 | 0,0 | 58,7 | 20,0 |
 | 90 · K1 | 3,44 | 4,32 | 1,25 | 1,10 | 1,24 | 0,12 | 0,14 | 14,6 | 58,7 | 20,0 |
-| 90 · K2 | 4,70 | 5,57 | 1,19 | 1,24 | 1,24 | 0,12 | 0,14 | 57,7 | 58,7 | 20,0 |
-| 90 · K3 | 5,84 | 5,84 | 1,00 | 1,24 | 1,24 | 0,12 | 0,14 | 66,7 | 58,7 | 20,0 |
+| 90 · K2 | 4,70 → 4,32 | 5,57 → 5,19 | 1,19 → 1,20 | 1,24 | 1,24 | 0,12 | 0,14 | 57,7 → 44,7 | 58,7 | 20,0 |
+| 90 · K3 | 5,84 → 4,96 | 5,84 | 1,00 → 1,18 | 1,24 | 1,24 | 0,12 | 0,14 | 66,7 | 58,7 | 20,0 |
 | 95 · K0 | 3,02 | 3,92 | 1,30 | 0,94 | 1,22 | 0,12 | 0,14 | 0,0 | 60,8 | 20,2 |
 | 95 · K1 | 3,56 | 4,47 | 1,25 | 1,11 | 1,25 | 0,12 | 0,14 | 14,6 | 60,8 | 20,2 |
-| 95 · K2 | 4,86 | 5,77 | 1,19 | 1,25 | 1,25 | 0,12 | 0,14 | 57,7 | 60,8 | 20,2 |
-| 95 · K3 | 6,04 | 6,04 | 1,00 | 1,25 | 1,25 | 0,12 | 0,14 | 66,7 | 60,8 | 20,2 |
+| 95 · K2 | 4,86 → 4,47 | 5,77 → 5,37 | 1,19 → 1,20 | 1,25 | 1,25 | 0,12 | 0,14 | 57,7 → 44,7 | 60,8 | 20,2 |
+| 95 · K3 | 6,04 → 5,13 | 6,04 | 1,00 → 1,18 | 1,25 | 1,25 | 0,12 | 0,14 | 66,7 | 60,8 | 20,2 |
 | 100 · K0 | 3,03 | 3,94 | 1,30 | 0,95 | 1,24 | 0,12 | 0,14 | 0,0 | 61,0 | 20,4 |
 | 100 · K1 | 3,57 | 4,48 | 1,25 | 1,12 | 1,27 | 0,12 | 0,14 | 14,6 | 61,0 | 20,4 |
-| 100 · K2 | 4,88 | 5,79 | 1,19 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 | 61,0 | 20,4 |
-| 100 · K3 | 6,06 | 6,06 | 1,00 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 61,0 | 20,4 |
+| 100 · K2 | 4,88 → 4,48 | 5,79 → 5,39 | 1,19 → 1,20 | 1,27 | 1,27 | 0,12 | 0,14 | 57,7 → 44,7 | 61,0 | 20,4 |
+| 100 · K3 | 6,06 → 5,15 | 6,06 | 1,00 → 1,18 | 1,27 | 1,27 | 0,12 | 0,14 | 66,7 | 61,0 | 20,4 |
 
 ### Boss z Fortuną: przedmioty dla klasy na dzień
 
@@ -9765,21 +9944,21 @@ Do którego poziomu pełny zestaw rzadkości R z ilvl X ma moc (S32) co najmniej
 | Wojownik · Heroiczny · 20 | 24 | 4 |
 | Wojownik · Heroiczny · 45 | 53 | 8 |
 | Wojownik · Heroiczny · 70 | 80 | 10 |
-| Wojownik · Legendarny · 20 | 24 | 4 |
-| Wojownik · Legendarny · 45 | 50 | 5 |
-| Wojownik · Legendarny · 70 | 77 | 7 |
-| Wojownik · Mityczny · 20 | 29 | 9 |
-| Wojownik · Mityczny · 45 | 61 | 16 |
-| Wojownik · Mityczny · 70 | 93 | 23 |
+| Wojownik · Legendarny · 20 | 24 → 23 | 4 → 3 |
+| Wojownik · Legendarny · 45 | 50 → 49 | 5 → 4 |
+| Wojownik · Legendarny · 70 | 77 → 75 | 7 → 5 |
+| Wojownik · Mityczny · 20 | 29 → 23 | 9 → 3 |
+| Wojownik · Mityczny · 45 | 61 → 49 | 16 → 4 |
+| Wojownik · Mityczny · 70 | 93 → 75 | 23 → 5 |
 | Mag · Heroiczny · 20 | 24 | 4 |
 | Mag · Heroiczny · 45 | 53 | 8 |
 | Mag · Heroiczny · 70 | 80 | 10 |
-| Mag · Legendarny · 20 | 24 | 4 |
-| Mag · Legendarny · 45 | 50 | 5 |
-| Mag · Legendarny · 70 | 78 | 8 |
-| Mag · Mityczny · 20 | 29 | 9 |
-| Mag · Mityczny · 45 | 63 | 18 |
-| Mag · Mityczny · 70 | 94 | 24 |
+| Mag · Legendarny · 20 | 24 → 23 | 4 → 3 |
+| Mag · Legendarny · 45 | 50 → 49 | 5 → 4 |
+| Mag · Legendarny · 70 | 78 → 75 | 8 → 5 |
+| Mag · Mityczny · 20 | 29 → 23 | 9 → 3 |
+| Mag · Mityczny · 45 | 63 → 49 | 18 → 4 |
+| Mag · Mityczny · 70 | 94 → 75 | 24 → 5 |
 
 ## Rodziny i obrona potworów (S84)
 
@@ -10353,6 +10532,564 @@ Ciężki Cios Elity (`heavyBlow`, nieuniknięty; w modelu Elit S32 uniknięty, w
 | youngFrostDragon L96: W + M + K L86 (Heroiczne +3), cios uniknięty, HP tanka | 1,03 | ≤ 1,00 | **poza** | S134e: as the werewolf row: no Cleric healing and no potions in the S32 model; with potions the tank ends at full HP |
 | flameSmith L66: Druzgocący Cios na Magu L48 (Heroiczne +3) / HP | 1,87 | ≥ 1,30 | w paśmie | S134e (asertowane) |
 | flameSmith L66: Mag L48 (Heroiczne +3) ucieka i unika wszystkiego, HP stracone | 22,04 | ≥ 1,00 | w paśmie | S134e (asertowane) |
+
+
+## Rzadkość a poziom (S134g)
+
+Legendarny: baza ×1,17, linie ×1,05, 1 efekt umiejętności; Mityczny: ×1,22 / ×1,10, 2 efekty (`Data/ItemEffects`). „Przewaga” = najwięcej poziomów, o które Heroiczny tego samego typu może być wyżej i nie bić przedmiotu w `ItemScore` z oczekiwanymi efektami (`Balance.rarityEdge`, gładkie oczekiwane linie, +0; 40 = nigdy). „Przed” = pomiar ze stanu sprzed S134g (`Balance.S134g.before`, wtedy z zaokrąglonymi oczekiwanymi liniami). Asertuje `balance.spec` („Balance: Legendary and Mythic (S134g)”).
+
+| klasa | slot | poziom | przed: przewaga L / M | po: przewaga L / M | po: statystyki L / H | po: statystyki M / H |
+| --- | --: | --: | --: | --: | --: | --: |
+| Warrior | weapon | L20 | 1 / 5 | 2 / 3 | 1,053 | 1,09 |
+| Warrior | weapon | L36 | 1 / 6 | 1 / 4 | 1,042 | 1,095 |
+| Warrior | weapon | L45 | 2 / 7 | 2 / 5 | 1,043 | 1,085 |
+| Warrior | weapon | L70 | 3 / 9 | 3 / 7 | 1,045 | 1,09 |
+| Warrior | armor | L20 | 6 / 27 | 5 / 13 | 1,051 | 1,091 |
+| Warrior | armor | L36 | 7 / 28 | 5 / 15 | 1,042 | 1,092 |
+| Warrior | armor | L45 | 8 / 30 | 6 / 16 | 1,048 | 1,097 |
+| Warrior | armor | L70 | 9 / 32 | 7 / 18 | 1,043 | 1,09 |
+| Warrior | ring | L20 | 40 / 40 | 40 / 40 | 1,046 | 1,092 |
+| Warrior | ring | L36 | 40 / 40 | 40 / 40 | 1,043 | 1,087 |
+| Warrior | ring | L45 | 40 / 40 | 40 / 40 | 1,042 | 1,094 |
+| Warrior | ring | L70 | 40 / 40 | 30 / 30 | 1,048 | 1,088 |
+| Hunter | weapon | L20 | 1 / 5 | 1 / 3 | 1,047 | 1,094 |
+| Hunter | weapon | L36 | 2 / 7 | 2 / 5 | 1,046 | 1,091 |
+| Hunter | weapon | L45 | 2 / 8 | 3 / 6 | 1,044 | 1,088 |
+| Hunter | weapon | L70 | 3 / 10 | 3 / 8 | 1,044 | 1,088 |
+| Hunter | armor | L20 | 9 / 37 | 6 / 16 | 1,053 | 1,099 |
+| Hunter | armor | L36 | 9 / 39 | 6 / 18 | 1,046 | 1,092 |
+| Hunter | armor | L45 | 10 / 40 | 7 / 19 | 1,043 | 1,09 |
+| Hunter | armor | L70 | 12 / 40 | 8 / 21 | 1,045 | 1,091 |
+| Hunter | ring | L20 | 40 / 40 | 40 / 40 | 1,046 | 1,092 |
+| Hunter | ring | L36 | 40 / 40 | 40 / 40 | 1,043 | 1,087 |
+| Hunter | ring | L45 | 40 / 40 | 40 / 40 | 1,042 | 1,094 |
+| Hunter | ring | L70 | 40 / 40 | 30 / 30 | 1,048 | 1,088 |
+| Mage | weapon | L20 | 1 / 5 | 2 / 3 | 1,053 | 1,09 |
+| Mage | weapon | L36 | 1 / 6 | 1 / 5 | 1,042 | 1,095 |
+| Mage | weapon | L45 | 2 / 7 | 2 / 6 | 1,043 | 1,085 |
+| Mage | weapon | L70 | 3 / 9 | 3 / 8 | 1,045 | 1,09 |
+| Mage | armor | L20 | 7 / 29 | 6 / 15 | 1,039 | 1,089 |
+| Mage | armor | L36 | 7 / 30 | 6 / 16 | 1,041 | 1,084 |
+| Mage | armor | L45 | 8 / 31 | 7 / 17 | 1,042 | 1,084 |
+| Mage | armor | L70 | 9 / 33 | 8 / 20 | 1,043 | 1,09 |
+| Mage | ring | L20 | 40 / 40 | 40 / 40 | 1,045 | 1,089 |
+| Mage | ring | L36 | 40 / 40 | 40 / 40 | 1,042 | 1,084 |
+| Mage | ring | L45 | 40 / 40 | 40 / 40 | 1,041 | 1,092 |
+| Mage | ring | L70 | 40 / 40 | 30 / 30 | 1,048 | 1,086 |
+| Cleric | weapon | L20 | 1 / 4 | 2 / 3 | 1,053 | 1,09 |
+| Cleric | weapon | L36 | 1 / 6 | 1 / 5 | 1,042 | 1,095 |
+| Cleric | weapon | L45 | 2 / 7 | 2 / 6 | 1,043 | 1,085 |
+| Cleric | weapon | L70 | 3 / 8 | 3 / 8 | 1,045 | 1,09 |
+| Cleric | armor | L20 | 5 / 21 | 5 / 14 | 1,051 | 1,09 |
+| Cleric | armor | L36 | 5 / 23 | 5 / 15 | 1,042 | 1,092 |
+| Cleric | armor | L45 | 6 / 24 | 6 / 16 | 1,048 | 1,097 |
+| Cleric | armor | L70 | 7 / 27 | 7 / 18 | 1,043 | 1,09 |
+| Cleric | ring | L20 | 40 / 40 | 40 / 40 | 1,045 | 1,089 |
+| Cleric | ring | L36 | 40 / 40 | 40 / 40 | 1,042 | 1,084 |
+| Cleric | ring | L45 | 40 / 40 | 40 / 40 | 1,041 | 1,093 |
+| Cleric | ring | L70 | 40 / 40 | 30 / 30 | 1,048 | 1,087 |
+
+
+Przypadek właściciela: Legendarny L36 i Heroiczny L48 (`ItemScore`).
+
+| klasa | slot | Legendarny: statystyki | Legendarny: z efektem | Heroiczny |
+| --- | --: | --: | --: | --: |
+| Warrior | weapon | 618,6 | 625,6 | 773,8 |
+| Warrior | armor | 83,4 | 90,4 | 101,9 |
+| Warrior | ring | 21,0 | 28,0 | 21,5 |
+| Warrior | necklace | 20,4 | 27,4 | 21,9 |
+| Warrior | talisman | 65,8 | 72,8 | 80,0 |
+| Hunter | weapon | 600,9 | 607,9 | 740,1 |
+| Hunter | armor | 68,7 | 75,7 | 83,1 |
+| Hunter | ring | 21,3 | 28,3 | 21,8 |
+| Hunter | necklace | 21,4 | 28,4 | 22,9 |
+| Hunter | talisman | 65,8 | 72,8 | 80,0 |
+| Mage | weapon | 593,4 | 601,1 | 742,2 |
+| Mage | armor | 76,4 | 84,1 | 93,1 |
+| Mage | ring | 18,9 | 26,6 | 19,7 |
+| Mage | necklace | 23,5 | 31,2 | 25,9 |
+| Mage | talisman | 71,1 | 78,8 | 86,7 |
+| Cleric | weapon | 572,2 | 579,6 | 714,3 |
+| Cleric | armor | 82,5 | 89,9 | 100,8 |
+| Cleric | ring | 18,7 | 26,0 | 19,4 |
+| Cleric | necklace | 21,8 | 29,1 | 24,2 |
+| Cleric | talisman | 71,1 | 78,5 | 86,7 |
+
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| Warrior weapon L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior weapon L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior weapon L20: Legendarny − Heroiczny (z efektem) | 26,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L20: Mityczny − Legendarny (z efektami) | 26,43 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior weapon L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior weapon L45: Legendarny − Heroiczny (z efektem) | 38,14 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L45: Mityczny − Legendarny (z efektami) | 44,47 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: Legendarny − Heroiczny (z efektem) | 56,18 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: Mityczny − Legendarny (z efektami) | 62,51 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior weapon L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior weapon L100: Legendarny − Heroiczny (z efektem) | 74,22 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L100: Mityczny − Legendarny (z efektami) | 86,55 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L20: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Warrior weapon L20: poziomy, które Heroiczny potrzebuje na Mityczny | 3,00 | 5,00–9,00 | **poza** | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Warrior weapon L45: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L45: poziomy, które Heroiczny potrzebuje na Mityczny | 5,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: poziomy, które Heroiczny potrzebuje na Legendarny | 3,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon L70: poziomy, które Heroiczny potrzebuje na Mityczny | 7,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Warrior weapon: Heroiczny L48 − Legendarny L36 (z efektem) | 148,24 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior armor L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior armor L20: Legendarny − Heroiczny (z efektem) | 9,59 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L20: Mityczny − Legendarny (z efektami) | 15,33 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior armor L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior armor L45: Legendarny − Heroiczny (z efektem) | 11,67 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L45: Mityczny − Legendarny (z efektami) | 18,01 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior armor L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior armor L70: Legendarny − Heroiczny (z efektem) | 13,15 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L70: Mityczny − Legendarny (z efektami) | 20,08 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior armor L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior armor L100: Legendarny − Heroiczny (z efektem) | 15,89 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L100: Mityczny − Legendarny (z efektami) | 22,82 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior armor L20: poziomy, które Heroiczny potrzebuje na Legendarny | 5,00 | 2,00–5,00 | w paśmie | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor L20: poziomy, które Heroiczny potrzebuje na Mityczny | 13,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor L45: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor L45: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor L70: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor L70: poziomy, które Heroiczny potrzebuje na Mityczny | 18,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior armor: Heroiczny L48 − Legendarny L36 (z efektem) | 11,51 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior ring L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior ring L20: Legendarny − Heroiczny (z efektem) | 7,82 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L20: Mityczny − Legendarny (z efektami) | 14,15 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior ring L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior ring L45: Legendarny − Heroiczny (z efektem) | 7,90 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L45: Mityczny − Legendarny (z efektami) | 14,43 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior ring L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior ring L70: Legendarny − Heroiczny (z efektem) | 8,18 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L70: Mityczny − Legendarny (z efektami) | 14,31 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior ring L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior ring L100: Legendarny − Heroiczny (z efektem) | 8,28 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L100: Mityczny − Legendarny (z efektami) | 14,61 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring L20: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring L45: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior ring: Heroiczny L48 − Legendarny L36 (statystyki) | 0,50 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior ring: Heroiczny L48 − Legendarny L36 (z efektem) | -6,50 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Warrior necklace L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior necklace L20: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior necklace L20: Legendarny − Heroiczny (z efektem) | 7,79 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L20: Mityczny − Legendarny (z efektami) | 14,13 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior necklace L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior necklace L45: Legendarny − Heroiczny (z efektem) | 8,05 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L45: Mityczny − Legendarny (z efektami) | 14,38 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior necklace L70: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior necklace L70: Legendarny − Heroiczny (z efektem) | 8,30 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L70: Mityczny − Legendarny (z efektami) | 14,63 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior necklace L100: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior necklace L100: Legendarny − Heroiczny (z efektem) | 8,60 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L100: Mityczny − Legendarny (z efektami) | 14,94 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace L20: poziomy, które Heroiczny potrzebuje na Legendarny | 38,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace L45: poziomy, które Heroiczny potrzebuje na Legendarny | 39,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior necklace: Heroiczny L48 − Legendarny L36 (statystyki) | 1,47 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior necklace: Heroiczny L48 − Legendarny L36 (z efektem) | -5,53 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Warrior talisman L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior talisman L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior talisman L20: Legendarny − Heroiczny (z efektem) | 8,81 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L20: Mityczny − Legendarny (z efektami) | 15,15 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior talisman L45: Mityczny / Heroiczny (statystyki) | 1,08 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior talisman L45: Legendarny − Heroiczny (z efektem) | 10,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L45: Mityczny − Legendarny (z efektami) | 16,43 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior talisman L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior talisman L70: Legendarny − Heroiczny (z efektem) | 11,38 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L70: Mityczny − Legendarny (z efektami) | 18,81 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Warrior talisman L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Warrior talisman L100: Legendarny − Heroiczny (z efektem) | 13,80 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L100: Mityczny − Legendarny (z efektami) | 20,13 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman L20: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman L20: poziomy, które Heroiczny potrzebuje na Mityczny | 17,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman L45: poziomy, które Heroiczny potrzebuje na Mityczny | 19,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman L70: poziomy, które Heroiczny potrzebuje na Legendarny | 8,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman L70: poziomy, które Heroiczny potrzebuje na Mityczny | 22,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Warrior talisman: Heroiczny L48 − Legendarny L36 (statystyki) | 14,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Warrior talisman: Heroiczny L48 − Legendarny L36 (z efektem) | 7,12 | ≥ 0,00 | w paśmie | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Hunter weapon L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter weapon L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter weapon L20: Legendarny − Heroiczny (z efektem) | 23,16 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L20: Mityczny − Legendarny (z efektami) | 28,83 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter weapon L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter weapon L45: Legendarny − Heroiczny (z efektem) | 38,20 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L45: Mityczny − Legendarny (z efektami) | 43,86 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: Legendarny − Heroiczny (z efektem) | 53,23 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: Mityczny − Legendarny (z efektami) | 58,90 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter weapon L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter weapon L100: Legendarny − Heroiczny (z efektem) | 73,27 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L100: Mityczny − Legendarny (z efektami) | 78,94 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L20: poziomy, które Heroiczny potrzebuje na Legendarny | 1,00 | 2,00–5,00 | **poza** | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Hunter weapon L20: poziomy, które Heroiczny potrzebuje na Mityczny | 3,00 | 5,00–9,00 | **poza** | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Hunter weapon L45: poziomy, które Heroiczny potrzebuje na Legendarny | 3,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L45: poziomy, które Heroiczny potrzebuje na Mityczny | 6,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: poziomy, które Heroiczny potrzebuje na Legendarny | 3,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon L70: poziomy, które Heroiczny potrzebuje na Mityczny | 8,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Hunter weapon: Heroiczny L48 − Legendarny L36 (z efektem) | 132,16 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter armor L20: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter armor L20: Legendarny − Heroiczny (z efektem) | 9,27 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L20: Mityczny − Legendarny (z efektami) | 14,64 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter armor L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter armor L45: Legendarny − Heroiczny (z efektem) | 10,42 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L45: Mityczny − Legendarny (z efektami) | 16,39 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter armor L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter armor L70: Legendarny − Heroiczny (z efektem) | 12,17 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L70: Mityczny − Legendarny (z efektami) | 17,84 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter armor L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter armor L100: Legendarny − Heroiczny (z efektem) | 13,67 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L100: Mityczny − Legendarny (z efektami) | 20,23 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter armor L20: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor L20: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor L45: poziomy, które Heroiczny potrzebuje na Mityczny | 19,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor L70: poziomy, które Heroiczny potrzebuje na Legendarny | 8,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor L70: poziomy, które Heroiczny potrzebuje na Mityczny | 21,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter armor: Heroiczny L48 − Legendarny L36 (z efektem) | 7,36 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter ring L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter ring L20: Legendarny − Heroiczny (z efektem) | 7,84 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L20: Mityczny − Legendarny (z efektami) | 13,50 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter ring L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter ring L45: Legendarny − Heroiczny (z efektem) | 7,92 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L45: Mityczny − Legendarny (z efektami) | 13,78 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter ring L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter ring L70: Legendarny − Heroiczny (z efektem) | 8,20 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L70: Mityczny − Legendarny (z efektami) | 13,66 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter ring L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter ring L100: Legendarny − Heroiczny (z efektem) | 8,29 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L100: Mityczny − Legendarny (z efektami) | 13,96 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring L20: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring L45: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter ring: Heroiczny L48 − Legendarny L36 (statystyki) | 0,48 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter ring: Heroiczny L48 − Legendarny L36 (z efektem) | -6,52 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Hunter necklace L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter necklace L20: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter necklace L20: Legendarny − Heroiczny (z efektem) | 7,84 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L20: Mityczny − Legendarny (z efektami) | 13,51 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter necklace L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter necklace L45: Legendarny − Heroiczny (z efektem) | 8,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L45: Mityczny − Legendarny (z efektami) | 13,76 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter necklace L70: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter necklace L70: Legendarny − Heroiczny (z efektem) | 8,35 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L70: Mityczny − Legendarny (z efektami) | 14,02 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter necklace L100: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter necklace L100: Legendarny − Heroiczny (z efektem) | 8,65 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L100: Mityczny − Legendarny (z efektami) | 14,32 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace L20: poziomy, które Heroiczny potrzebuje na Legendarny | 38,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace L45: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter necklace: Heroiczny L48 − Legendarny L36 (statystyki) | 1,42 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter necklace: Heroiczny L48 − Legendarny L36 (z efektem) | -5,58 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Hunter talisman L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter talisman L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter talisman L20: Legendarny − Heroiczny (z efektem) | 8,81 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L20: Mityczny − Legendarny (z efektami) | 14,48 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter talisman L45: Mityczny / Heroiczny (statystyki) | 1,08 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter talisman L45: Legendarny − Heroiczny (z efektem) | 10,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L45: Mityczny − Legendarny (z efektami) | 15,76 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter talisman L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter talisman L70: Legendarny − Heroiczny (z efektem) | 11,38 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L70: Mityczny − Legendarny (z efektami) | 18,14 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Hunter talisman L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Hunter talisman L100: Legendarny − Heroiczny (z efektem) | 13,80 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L100: Mityczny − Legendarny (z efektami) | 19,46 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman L20: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman L20: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman L45: poziomy, które Heroiczny potrzebuje na Mityczny | 18,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman L70: poziomy, które Heroiczny potrzebuje na Legendarny | 8,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman L70: poziomy, które Heroiczny potrzebuje na Mityczny | 21,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Hunter talisman: Heroiczny L48 − Legendarny L36 (statystyki) | 14,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Hunter talisman: Heroiczny L48 − Legendarny L36 (z efektem) | 7,12 | ≥ 0,00 | w paśmie | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Mage weapon L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage weapon L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage weapon L20: Legendarny − Heroiczny (z efektem) | 25,99 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L20: Mityczny − Legendarny (z efektami) | 25,91 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage weapon L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage weapon L45: Legendarny − Heroiczny (z efektem) | 37,53 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L45: Mityczny − Legendarny (z efektami) | 43,20 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: Legendarny − Heroiczny (z efektem) | 54,82 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: Mityczny − Legendarny (z efektami) | 60,49 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage weapon L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage weapon L100: Legendarny − Heroiczny (z efektem) | 72,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L100: Mityczny − Legendarny (z efektami) | 83,54 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L20: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Mage weapon L20: poziomy, które Heroiczny potrzebuje na Mityczny | 3,00 | 5,00–9,00 | **poza** | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Mage weapon L45: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L45: poziomy, które Heroiczny potrzebuje na Mityczny | 6,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: poziomy, które Heroiczny potrzebuje na Legendarny | 3,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Mage weapon L70: poziomy, które Heroiczny potrzebuje na Mityczny | 8,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Mage weapon: Heroiczny L48 − Legendarny L36 (z efektem) | 141,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage armor L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage armor L20: Legendarny − Heroiczny (z efektem) | 9,54 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L20: Mityczny − Legendarny (z efektami) | 15,70 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage armor L45: Mityczny / Heroiczny (statystyki) | 1,08 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage armor L45: Legendarny − Heroiczny (z efektem) | 11,39 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L45: Mityczny − Legendarny (z efektami) | 17,05 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage armor L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage armor L70: Legendarny − Heroiczny (z efektem) | 13,24 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L70: Mityczny − Legendarny (z efektami) | 19,50 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage armor L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage armor L100: Legendarny − Heroiczny (z efektem) | 15,73 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L100: Mityczny − Legendarny (z efektami) | 21,40 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage armor L20: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor L20: poziomy, które Heroiczny potrzebuje na Mityczny | 15,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor L45: poziomy, które Heroiczny potrzebuje na Mityczny | 17,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor L70: poziomy, które Heroiczny potrzebuje na Legendarny | 8,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor L70: poziomy, które Heroiczny potrzebuje na Mityczny | 20,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage armor: Heroiczny L48 − Legendarny L36 (z efektem) | 9,00 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage ring L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage ring L20: Legendarny − Heroiczny (z efektem) | 8,37 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L20: Mityczny − Legendarny (z efektami) | 14,04 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage ring L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage ring L45: Legendarny − Heroiczny (z efektem) | 8,46 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L45: Mityczny − Legendarny (z efektami) | 14,33 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage ring L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage ring L70: Legendarny − Heroiczny (z efektem) | 8,76 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L70: Mityczny − Legendarny (z efektami) | 14,22 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage ring L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage ring L100: Legendarny − Heroiczny (z efektem) | 8,87 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L100: Mityczny − Legendarny (z efektami) | 14,54 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring L20: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring L45: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage ring: Heroiczny L48 − Legendarny L36 (statystyki) | 0,74 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage ring: Heroiczny L48 − Legendarny L36 (z efektem) | -6,93 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Mage necklace L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage necklace L20: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage necklace L20: Legendarny − Heroiczny (z efektem) | 8,53 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L20: Mityczny − Legendarny (z efektami) | 14,19 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage necklace L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage necklace L45: Legendarny − Heroiczny (z efektem) | 8,88 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L45: Mityczny − Legendarny (z efektami) | 14,55 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage necklace L70: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage necklace L70: Legendarny − Heroiczny (z efektem) | 9,24 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L70: Mityczny − Legendarny (z efektami) | 14,91 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage necklace L100: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage necklace L100: Legendarny − Heroiczny (z efektem) | 9,67 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L100: Mityczny − Legendarny (z efektami) | 15,34 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace L20: poziomy, które Heroiczny potrzebuje na Legendarny | 29,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace L45: poziomy, które Heroiczny potrzebuje na Legendarny | 31,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage necklace: Heroiczny L48 − Legendarny L36 (statystyki) | 2,34 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage necklace: Heroiczny L48 − Legendarny L36 (z efektem) | -5,33 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Mage talisman L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage talisman L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage talisman L20: Legendarny − Heroiczny (z efektem) | 9,62 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L20: Mityczny − Legendarny (z efektami) | 15,29 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage talisman L45: Mityczny / Heroiczny (statystyki) | 1,08 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage talisman L45: Legendarny − Heroiczny (z efektem) | 11,08 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L45: Mityczny − Legendarny (z efektami) | 16,75 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage talisman L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage talisman L70: Legendarny − Heroiczny (z efektem) | 12,54 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L70: Mityczny − Legendarny (z efektami) | 19,31 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Mage talisman L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Mage talisman L100: Legendarny − Heroiczny (z efektem) | 15,17 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L100: Mityczny − Legendarny (z efektami) | 20,84 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman L20: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman L20: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman L45: poziomy, które Heroiczny potrzebuje na Mityczny | 18,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman L70: poziomy, które Heroiczny potrzebuje na Legendarny | 8,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman L70: poziomy, które Heroiczny potrzebuje na Mityczny | 21,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Mage talisman: Heroiczny L48 − Legendarny L36 (statystyki) | 15,58 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Mage talisman: Heroiczny L48 − Legendarny L36 (z efektem) | 7,91 | ≥ 0,00 | w paśmie | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Cleric weapon L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric weapon L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric weapon L20: Legendarny − Heroiczny (z efektem) | 25,06 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L20: Mityczny − Legendarny (z efektami) | 26,23 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric weapon L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric weapon L45: Legendarny − Heroiczny (z efektem) | 36,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L45: Mityczny − Legendarny (z efektami) | 42,77 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: Legendarny − Heroiczny (z efektem) | 52,64 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: Mityczny − Legendarny (z efektami) | 59,30 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric weapon L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric weapon L100: Legendarny − Heroiczny (z efektem) | 69,18 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L100: Mityczny − Legendarny (z efektami) | 81,35 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L20: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Cleric weapon L20: poziomy, które Heroiczny potrzebuje na Mityczny | 3,00 | 5,00–9,00 | **poza** | S134g: at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45 |
+| Cleric weapon L45: poziomy, które Heroiczny potrzebuje na Legendarny | 2,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L45: poziomy, które Heroiczny potrzebuje na Mityczny | 6,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: poziomy, które Heroiczny potrzebuje na Legendarny | 3,00 | 2,00–5,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon L70: poziomy, które Heroiczny potrzebuje na Mityczny | 8,00 | 5,00–9,00 | w paśmie | S134g (asertowane) |
+| Cleric weapon: Heroiczny L48 − Legendarny L36 (z efektem) | 134,78 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric armor L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric armor L20: Legendarny − Heroiczny (z efektem) | 9,90 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L20: Mityczny − Legendarny (z efektami) | 15,97 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric armor L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric armor L45: Legendarny − Heroiczny (z efektem) | 11,95 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L45: Mityczny − Legendarny (z efektami) | 18,62 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric armor L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric armor L70: Legendarny − Heroiczny (z efektem) | 13,40 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L70: Mityczny − Legendarny (z efektami) | 20,67 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric armor L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric armor L100: Legendarny − Heroiczny (z efektem) | 16,10 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L100: Mityczny − Legendarny (z efektami) | 23,37 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric armor L20: poziomy, które Heroiczny potrzebuje na Legendarny | 5,00 | 2,00–5,00 | w paśmie | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor L20: poziomy, które Heroiczny potrzebuje na Mityczny | 14,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor L45: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor L45: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor L70: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor L70: poziomy, które Heroiczny potrzebuje na Mityczny | 18,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric armor: Heroiczny L48 − Legendarny L36 (z efektem) | 10,93 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric ring L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric ring L20: Legendarny − Heroiczny (z efektem) | 8,03 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L20: Mityczny − Legendarny (z efektami) | 14,69 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric ring L45: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric ring L45: Legendarny − Heroiczny (z efektem) | 8,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L45: Mityczny − Legendarny (z efektami) | 14,99 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric ring L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric ring L70: Legendarny − Heroiczny (z efektem) | 8,41 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L70: Mityczny − Legendarny (z efektami) | 14,88 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L100: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric ring L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric ring L100: Legendarny − Heroiczny (z efektem) | 8,53 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L100: Mityczny − Legendarny (z efektami) | 15,19 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring L20: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring L45: poziomy, które Heroiczny potrzebuje na Legendarny | 40,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric ring: Heroiczny L48 − Legendarny L36 (statystyki) | 0,75 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric ring: Heroiczny L48 − Legendarny L36 (z efektem) | -6,59 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Cleric necklace L20: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric necklace L20: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric necklace L20: Legendarny − Heroiczny (z efektem) | 8,12 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L20: Mityczny − Legendarny (z efektami) | 14,79 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L45: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric necklace L45: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric necklace L45: Legendarny − Heroiczny (z efektem) | 8,48 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L45: Mityczny − Legendarny (z efektami) | 15,14 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L70: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric necklace L70: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric necklace L70: Legendarny − Heroiczny (z efektem) | 8,83 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L70: Mityczny − Legendarny (z efektami) | 15,50 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric necklace L100: Mityczny / Heroiczny (statystyki) | 1,10 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric necklace L100: Legendarny − Heroiczny (z efektem) | 9,26 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L100: Mityczny − Legendarny (z efektami) | 15,93 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace L20: poziomy, które Heroiczny potrzebuje na Legendarny | 28,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace L20: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace L45: poziomy, które Heroiczny potrzebuje na Legendarny | 29,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace L45: poziomy, które Heroiczny potrzebuje na Mityczny | 40,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace L70: poziomy, które Heroiczny potrzebuje na Legendarny | 30,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace L70: poziomy, które Heroiczny potrzebuje na Mityczny | 30,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric necklace: Heroiczny L48 − Legendarny L36 (statystyki) | 2,41 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric necklace: Heroiczny L48 − Legendarny L36 (z efektem) | -4,92 | ≥ 0,00 | **poza** | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
+| Cleric talisman L20: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric talisman L20: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric talisman L20: Legendarny − Heroiczny (z efektem) | 9,29 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L20: Mityczny − Legendarny (z efektami) | 15,95 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L45: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric talisman L45: Mityczny / Heroiczny (statystyki) | 1,08 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric talisman L45: Legendarny − Heroiczny (z efektem) | 10,75 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L45: Mityczny − Legendarny (z efektami) | 17,41 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L70: Legendarny / Heroiczny (statystyki) | 1,04 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric talisman L70: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric talisman L70: Legendarny − Heroiczny (z efektem) | 12,21 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L70: Mityczny − Legendarny (z efektami) | 19,97 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L100: Legendarny / Heroiczny (statystyki) | 1,05 | 1,03–1,07 | w paśmie | S134g (asertowane) |
+| Cleric talisman L100: Mityczny / Heroiczny (statystyki) | 1,09 | 1,08–1,12 | w paśmie | S134g (asertowane) |
+| Cleric talisman L100: Legendarny − Heroiczny (z efektem) | 14,84 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L100: Mityczny − Legendarny (z efektami) | 21,51 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman L20: poziomy, które Heroiczny potrzebuje na Legendarny | 6,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman L20: poziomy, które Heroiczny potrzebuje na Mityczny | 16,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman L45: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman L45: poziomy, które Heroiczny potrzebuje na Mityczny | 18,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman L70: poziomy, które Heroiczny potrzebuje na Legendarny | 7,00 | 2,00–5,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman L70: poziomy, które Heroiczny potrzebuje na Mityczny | 21,00 | 5,00–9,00 | **poza** | S134g: an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect estimates) are the effects' real value, the weapon rows are asserted |
+| Cleric talisman: Heroiczny L48 − Legendarny L36 (statystyki) | 15,58 | ≥ 0,00 | w paśmie | S134g (asertowane) |
+| Cleric talisman: Heroiczny L48 − Legendarny L36 (z efektem) | 8,25 | ≥ 0,00 | w paśmie | S134g: jewellery does not grow with the level (S87: % lines stop at ilvl 20), so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats |
 
 
 ## Samodzielne Łowy (S134d)
@@ -11549,7 +12286,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 4,2 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 4,0 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -12805,23 +13542,23 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | concussion · inquisitor.solo@flail1h+shield · group · 45 · Zwykły +0 | 4% | 5% | 5% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 45 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 45 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 45 · Mityczny +9 | 9% | 10% | 10% | 4% | **6%** |
-| reaping · guardian.defender@axe1h+shield · solo · 45 · Mityczny +9 | 305% | 305% | 305% | 5% | **300%** |
+| twinCut · guardian.defender@saber1h+shield · single · 45 · Mityczny +9 | 9% → 11% | 10% → 12% | 10% → 11% | 4% | **6% → 7%** |
+| reaping · guardian.defender@axe1h+shield · solo · 45 · Mityczny +9 | 305% → 53% | 305% → 53% | 305% → 53% | 5% | **300% → 48%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 45 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
-| beheading · berserker.fury@sword2h · single · 45 · Mityczny +9 | 13% | 13% | 3% | 5% | -1% |
-| rendingGash · berserker.fury · single · 45 · Mityczny +9 | 13% | 14% | 22% | 5% | **18%** |
-| sundering · berserker.fury@hammer2h · armored · 45 · Mityczny +9 | 11% | 11% | 11% | 5% | **6%** |
-| runThrough · berserker.fury@spear2h · group · 45 · Mityczny +9 | 14% | 11% | 10% | 5% | **5%** |
+| beheading · berserker.fury@sword2h · single · 45 · Mityczny +9 | 13% → 8% | 13% → 8% | 3% → 9% | 5% | **-1% → 5%** |
+| rendingGash · berserker.fury · single · 45 · Mityczny +9 | 13% → 14% | 14% | 22% → 15% | 5% | **18% → 10%** |
+| sundering · berserker.fury@hammer2h · armored · 45 · Mityczny +9 | 11% → 12% | 11% → 12% | 11% | 5% | **6%** |
+| runThrough · berserker.fury@spear2h · group · 45 · Mityczny +9 | 14% → 16% | 11% → 13% | 10% → 11% | 5% | **5% → 6%** |
 | parry · guardian.defender · tank · 45 · Mityczny +9 | 6% | 6% | 6% | 5% | 1% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 45 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
-| toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 21% | 21% | 13% | 5% | **8%** |
-| criticalForce · marksman.kingslayer@longbow+quiver · single · 45 · Mityczny +9 | 4% | 4% | 8% | 5% | **3%** |
-| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 8% | 9% | 6% | **3%** |
+| toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 21% | 21% | 13% | 5% | **8% → 9%** |
+| criticalForce · marksman.kingslayer@longbow+quiver · single · 45 · Mityczny +9 | 4% | 4% | 8% → 9% | 5% | **3% → 4%** |
+| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 8% | 9% → 8% | 6% | **3% → 2%** |
 | bodkinBolt · marksman.kingslayer · armored · 45 · Mityczny +9 | 12% | 12% | 12% | 5% | **7%** |
-| fullDraw · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 10% | 12% | 15% | 5% | **10%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Mityczny +9 | 8% | 7% | 6% | 5% | 1% |
-| elementalMight · destroyer.destroyerExp · single · 45 · Mityczny +9 | 9% | 5% | 10% | 7% | **3%** |
-| runicSeal · arcanist.arcanistBoss · still · 45 · Mityczny +9 | 7% | 10% | 8% | 6% | **3%** |
+| fullDraw · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 10% → 12% | 12% → 14% | 15% → 14% | 5% | **10% → 9%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Mityczny +9 | 8% → 9% | 7% → 8% | 6% → 7% | 5% | **1% → 3%** |
+| elementalMight · destroyer.destroyerExp · single · 45 · Mityczny +9 | 9% | 5% | 10% | 7% | **3% → 4%** |
+| runicSeal · arcanist.arcanistBoss · still · 45 · Mityczny +9 | 7% | 10% | 8% → 9% | 6% | **3% → 4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 45 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 45 · Mityczny +9 | 6% | 7% | 7% | 5% | **2%** |
 | anointment · healer.dungeon · dungeon · 45 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
@@ -12853,23 +13590,23 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | concussion · inquisitor.solo@flail1h+shield · group · 70 · Zwykły +0 | 4% | 5% | 5% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 70 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 70 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 70 · Mityczny +9 | 9% | 10% | 10% | 4% | **6%** |
-| reaping · guardian.defender@axe1h+shield · solo · 70 · Mityczny +9 | 303% | 303% | 303% | 5% | **298%** |
+| twinCut · guardian.defender@saber1h+shield · single · 70 · Mityczny +9 | 9% → 11% | 10% → 12% | 10% | 4% | **6%** |
+| reaping · guardian.defender@axe1h+shield · solo · 70 · Mityczny +9 | 303% → 57% | 303% → 57% | 303% → 57% | 5% | **298% → 52%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 70 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
-| beheading · berserker.fury@sword2h · single · 70 · Mityczny +9 | 13% | 13% | 2% | 5% | **-2%** |
-| rendingGash · berserker.fury · single · 70 · Mityczny +9 | 13% | 14% | 18% | 5% | **13%** |
+| beheading · berserker.fury@sword2h · single · 70 · Mityczny +9 | 13% → 8% | 13% → 8% | 2% → 9% | 5% | **-2% → 4%** |
+| rendingGash · berserker.fury · single · 70 · Mityczny +9 | 13% → 14% | 14% | 18% → 13% | 5% | **13% → 9%** |
 | sundering · berserker.fury@hammer2h · armored · 70 · Mityczny +9 | 12% | 12% | 11% | 5% | **6%** |
-| runThrough · berserker.fury@spear2h · group · 70 · Mityczny +9 | 14% | 11% | 10% | 5% | **5%** |
+| runThrough · berserker.fury@spear2h · group · 70 · Mityczny +9 | 14% → 16% | 11% → 13% | 10% → 11% | 5% | **5% → 6%** |
 | parry · guardian.defender · tank · 70 · Mityczny +9 | 6% | 6% | 6% | 5% | 1% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 70 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
-| toxicBarbs · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 21% | 21% | 11% | 5% | **6%** |
-| criticalForce · marksman.kingslayer@longbow+quiver · single · 70 · Mityczny +9 | 4% | 4% | 8% | 5% | **3%** |
-| easyPrey · trapper.poacher · controlled · 70 · Mityczny +9 | 10% | 8% | 9% | 6% | **3%** |
-| bodkinBolt · marksman.kingslayer · armored · 70 · Mityczny +9 | 13% | 13% | 13% | 5% | **8%** |
-| fullDraw · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 10% | 12% | 14% | 5% | **9%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 8% | 7% | 6% | 5% | 1% |
+| toxicBarbs · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 21% | 21% | 11% | 5% | **6% → 7%** |
+| criticalForce · marksman.kingslayer@longbow+quiver · single · 70 · Mityczny +9 | 4% | 4% | 8% → 9% | 5% | **3% → 5%** |
+| easyPrey · trapper.poacher · controlled · 70 · Mityczny +9 | 10% | 8% → 7% | 9% | 6% | **3%** |
+| bodkinBolt · marksman.kingslayer · armored · 70 · Mityczny +9 | 13% | 13% | 13% → 12% | 5% | **8% → 7%** |
+| fullDraw · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 10% → 12% | 12% → 14% | 14% → 12% | 5% | **9% → 8%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 8% → 9% | 7% → 8% | 6% → 7% | 5% | **1% → 2%** |
 | elementalMight · destroyer.destroyerExp · single · 70 · Mityczny +9 | 9% | 6% | 10% | 7% | **4%** |
-| runicSeal · arcanist.arcanistBoss · still · 70 · Mityczny +9 | 7% | 10% | 9% | 6% | **3%** |
+| runicSeal · arcanist.arcanistBoss · still · 70 · Mityczny +9 | 7% | 10% | 9% → 10% | 6% | **3% → 4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 70 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 6% | 7% | 7% | 5% | **3%** |
 | anointment · healer.dungeon · dungeon · 70 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
@@ -12901,25 +13638,25 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | concussion · inquisitor.solo@flail1h+shield · group · 100 · Zwykły +0 | 4% | 5% | 5% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 100 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 100 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 100 · Mityczny +9 | 9% | 10% | 10% | 4% | **6%** |
-| reaping · guardian.defender@axe1h+shield · solo · 100 · Mityczny +9 | 302% | 302% | 302% | 5% | **297%** |
+| twinCut · guardian.defender@saber1h+shield · single · 100 · Mityczny +9 | 9% → 11% | 10% → 12% | 10% → 11% | 4% | **6% → 7%** |
+| reaping · guardian.defender@axe1h+shield · solo · 100 · Mityczny +9 | 302% → 61% | 302% → 61% | 302% → 61% | 5% | **297% → 56%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 100 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
-| beheading · berserker.fury@sword2h · single · 100 · Mityczny +9 | 13% | 13% | 2% | 5% | **-2%** |
-| rendingGash · berserker.fury · single · 100 · Mityczny +9 | 13% | 14% | 13% | 5% | **8%** |
+| beheading · berserker.fury@sword2h · single · 100 · Mityczny +9 | 13% → 8% | 13% → 8% | 2% → 9% | 5% | **-2% → 4%** |
+| rendingGash · berserker.fury · single · 100 · Mityczny +9 | 13% → 14% | 14% | 13% → 16% | 5% | **8% → 12%** |
 | sundering · berserker.fury@hammer2h · armored · 100 · Mityczny +9 | 12% | 12% | 11% | 5% | **6%** |
-| runThrough · berserker.fury@spear2h · group · 100 · Mityczny +9 | 14% | 10% | 9% | 5% | **4%** |
+| runThrough · berserker.fury@spear2h · group · 100 · Mityczny +9 | 14% → 16% | 10% → 12% | 9% → 10% | 5% | **4% → 5%** |
 | parry · guardian.defender · tank · 100 · Mityczny +9 | 6% | 6% | 6% | 5% | 1% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 100 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
-| toxicBarbs · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 21% | 21% | 13% | 5% | **8%** |
-| criticalForce · marksman.kingslayer@longbow+quiver · single · 100 · Mityczny +9 | 4% | 4% | 8% | 5% | **4%** |
-| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 8% | 9% | 6% | **3%** |
+| toxicBarbs · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 21% | 21% | 13% → 12% | 5% | **8%** |
+| criticalForce · marksman.kingslayer@longbow+quiver · single · 100 · Mityczny +9 | 4% | 4% | 8% → 10% | 5% | **4% → 5%** |
+| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 8% | 9% → 8% | 6% | **3% → 2%** |
 | bodkinBolt · marksman.kingslayer · armored · 100 · Mityczny +9 | 13% | 13% | 13% | 5% | **8%** |
-| fullDraw · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 10% | 12% | 13% | 5% | **9%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 8% | 7% | 6% | 5% | 1% |
-| elementalMight · destroyer.destroyerExp · single · 100 · Mityczny +9 | 9% | 7% | 12% | 7% | **5%** |
-| runicSeal · arcanist.arcanistBoss · still · 100 · Mityczny +9 | 7% | 10% | 8% | 6% | **3%** |
+| fullDraw · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 10% → 12% | 12% → 14% | 13% | 5% | **9% → 8%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 8% → 9% | 7% | 6% → 7% | 5% | **1% → 2%** |
+| elementalMight · destroyer.destroyerExp · single · 100 · Mityczny +9 | 9% | 7% | 12% → 11% | 7% | **5%** |
+| runicSeal · arcanist.arcanistBoss · still · 100 · Mityczny +9 | 7% | 10% | 8% → 10% | 6% | **3% → 4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
-| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 8% | 8% | 5% | **3%** |
+| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 8% | 8% → 7% | 5% | **3%** |
 | anointment · healer.dungeon · dungeon · 100 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
 | savingBlow · healer.dungeon@holystaff · solo · 100 · Mityczny +9 | 302% | 302% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 100 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
@@ -14261,7 +14998,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 31,0 s.
+Tabele S86 liczą się 30,0 s.
 
 ## Poprawki globalne (S87)
 
@@ -14392,10 +15129,10 @@ G7 (z cechami) Legenda / Mityk:
 
 | klasa | 20 | 45 | 70 | 100 |
 | --- | --: | --: | --: | --: |
-| Wojownik | 32% / 65% | 32% / 67% | 33% / 66% | 33% / 67% |
-| Łowca | 36% / 71% | 36% / 74% | 37% / 73% | 37% / 74% |
-| Mag | 33% / 65% | 32% / 66% | 33% / 65% | 33% / 66% |
-| Kapłan | 31% / 63% | 30% / 64% | 31% / 63% | 31% / 63% |
+| Wojownik | 29% / 35% | 30% / 35% | 30% / 36% | 30% / 36% |
+| Łowca | 31% / 39% | 33% / 39% | 33% / 39% | 33% / 40% |
+| Mag | 29% / 35% | 30% / 35% | 31% / 36% | 30% / 36% |
+| Kapłan | 27% / 33% | 28% / 33% | 28% / 33% | 28% / 33% |
 
 G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; linie zwykłe ×2,70, baza +6,6% na poziom ulepszenia. Komórka: bez cech / z cechami / luka cechy (z / bez). Pasmo 0,97–1,035 (Kostur Święty +9 do 1,06).
 
@@ -14407,70 +15144,70 @@ G8: broń dwuręczna (bez drugiej ręki) wobec zestawu domyślnego, MIX moc²; l
 | Warrior sword2h unique +9 | 1,01 / 0,97 / 0,96 | 1,00 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
 | Warrior sword2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,97 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior sword2h heroic +9 | 1,01 / 0,98 / 0,96 | 1,01 / 0,96 / 0,96 | 1,02 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 |
-| Warrior sword2h legendary +0 | **1,04** / 1,01 / 0,97 | 1,00 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 | 1,01 / 0,98 / 0,97 |
-| Warrior sword2h legendary +9 | 1,03 / 1,01 / 0,98 | 1,00 / 0,98 / 0,98 | 1,01 / 0,99 / 0,98 | 1,01 / 0,99 / 0,98 |
-| Warrior sword2h mythic +0 | 1,00 / 1,02 / 1,02 | 0,98 / 1,00 / 1,02 | 0,98 / 1,01 / 1,02 | 0,98 / 1,00 / 1,02 |
-| Warrior sword2h mythic +9 | 1,00 / 1,01 / 1,01 | 0,98 / 0,98 / 1,01 | 0,98 / 0,99 / 1,01 | 0,98 / 0,99 / 1,01 |
+| Warrior sword2h legendary +0 | 1,00 / 0,95 / 0,95 | 1,00 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior sword2h legendary +9 | 1,01 / 0,97 / 0,96 | 1,00 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
+| Warrior sword2h mythic +0 | 1,03 / 0,98 / 0,95 | 1,00 / 0,95 / 0,95 | 1,01 / 0,97 / 0,96 | 1,01 / 0,96 / 0,95 |
+| Warrior sword2h mythic +9 | 1,03 / 0,99 / 0,96 | 1,00 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
 | Warrior axe2h common +0 | 1,00 / 0,95 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
 | Warrior axe2h common +9 | 1,00 / 0,96 / 0,95 | 0,99 / 0,94 / 0,95 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
 | Warrior axe2h unique +0 | 1,00 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
 | Warrior axe2h unique +9 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 1,00 / 0,96 / 0,96 |
 | Warrior axe2h heroic +0 | 0,98 / 0,94 / 0,96 | 0,99 / 0,95 / 0,96 | 1,00 / 0,96 / 0,96 | 0,99 / 0,95 / 0,96 |
 | Warrior axe2h heroic +9 | 0,99 / 0,96 / 0,97 | 0,99 / 0,95 / 0,97 | 1,00 / 0,96 / 0,97 | 0,99 / 0,96 / 0,96 |
-| Warrior axe2h legendary +0 | 1,01 / 0,97 / 0,96 | 0,98 / 0,95 / 0,96 | 0,99 / 0,95 / 0,97 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h legendary +9 | 1,00 / 0,97 / 0,96 | 0,98 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
-| Warrior axe2h mythic +0 | **0,97** / 0,93 / 0,96 | **0,95** / 0,92 / 0,96 | **0,96** / 0,92 / 0,96 | **0,96** / 0,92 / 0,96 |
-| Warrior axe2h mythic +9 | 0,97 / 0,92 / 0,95 | **0,95** / 0,90 / 0,95 | **0,95** / 0,91 / 0,95 | **0,96** / 0,90 / 0,95 |
+| Warrior axe2h legendary +0 | 0,98 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 | 0,99 / 0,96 / 0,97 | 0,99 / 0,95 / 0,97 |
+| Warrior axe2h legendary +9 | 0,99 / 0,96 / 0,97 | 0,98 / 0,95 / 0,97 | 0,99 / 0,96 / 0,97 | 0,99 / 0,95 / 0,96 |
+| Warrior axe2h mythic +0 | 1,01 / 0,97 / 0,97 | 0,98 / 0,95 / 0,97 | 0,99 / 0,96 / 0,97 | 0,99 / 0,96 / 0,97 |
+| Warrior axe2h mythic +9 | 1,01 / 0,97 / 0,96 | 0,98 / 0,95 / 0,97 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
 | Warrior hammer2h common +0 | 1,01 / 0,95 / 0,94 | 1,00 / 0,95 / 0,94 | 1,00 / 0,95 / 0,95 | 1,00 / 0,95 / 0,95 |
 | Warrior hammer2h common +9 | 1,01 / 0,95 / 0,94 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,00 / 0,95 / 0,95 |
 | Warrior hammer2h unique +0 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior hammer2h unique +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior hammer2h heroic +0 | 1,00 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
 | Warrior hammer2h heroic +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,02 / 0,95 / 0,94 |
-| Warrior hammer2h legendary +0 | 1,03 / 0,97 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h legendary +9 | 1,03 / 0,96 / 0,93 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 |
-| Warrior hammer2h mythic +0 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,93 / 0,94 | 0,98 / 0,93 / 0,94 |
-| Warrior hammer2h mythic +9 | 1,00 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,93 |
+| Warrior hammer2h legendary +0 | 1,01 / 0,94 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,94 | 1,01 / 0,96 / 0,94 |
+| Warrior hammer2h legendary +9 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 |
+| Warrior hammer2h mythic +0 | 1,03 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,02 / 0,96 / 0,94 | 1,02 / 0,96 / 0,94 |
+| Warrior hammer2h mythic +9 | 1,03 / 0,96 / 0,93 | 1,00 / 0,94 / 0,93 | 1,02 / 0,95 / 0,94 | 1,02 / 0,95 / 0,94 |
 | Warrior spear2h common +0 | 1,00 / 0,95 / 0,94 | 0,99 / 0,93 / 0,94 | 0,99 / 0,94 / 0,95 | 0,99 / 0,94 / 0,95 |
 | Warrior spear2h common +9 | 1,01 / 0,96 / 0,96 | 0,98 / 0,94 / 0,95 | 0,99 / 0,95 / 0,96 | 0,99 / 0,95 / 0,96 |
 | Warrior spear2h unique +0 | 1,02 / 0,97 / 0,95 | 1,01 / 0,95 / 0,94 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
 | Warrior spear2h unique +9 | 1,02 / 0,97 / 0,96 | 1,01 / 0,96 / 0,96 | 1,01 / 0,97 / 0,96 | 1,01 / 0,97 / 0,96 |
 | Warrior spear2h heroic +0 | 1,00 / 0,95 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,97 / 0,95 | 1,02 / 0,96 / 0,95 |
 | Warrior spear2h heroic +9 | 1,03 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,98 / 0,96 | 1,02 / 0,97 / 0,96 |
-| Warrior spear2h legendary +0 | **1,04** / 0,98 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
-| Warrior spear2h legendary +9 | 1,03 / 0,99 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 | 1,02 / 0,97 / 0,96 |
-| Warrior spear2h mythic +0 | 1,00 / 0,94 / 0,95 | 0,99 / 0,93 / 0,95 | 0,99 / 0,93 / 0,95 | 0,99 / 0,93 / 0,95 |
-| Warrior spear2h mythic +9 | 1,00 / 0,96 / 0,95 | 0,98 / 0,93 / 0,95 | 0,99 / 0,94 / 0,96 | 0,99 / 0,94 / 0,95 |
+| Warrior spear2h legendary +0 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 | 1,01 / 0,96 / 0,95 |
+| Warrior spear2h legendary +9 | 1,02 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 | 1,02 / 0,98 / 0,96 | 1,01 / 0,97 / 0,96 |
+| Warrior spear2h mythic +0 | 1,03 / 0,98 / 0,95 | 1,01 / 0,96 / 0,95 | 1,02 / 0,97 / 0,95 | 1,02 / 0,97 / 0,95 |
+| Warrior spear2h mythic +9 | **1,04** / 1,00 / 0,96 | 1,01 / 0,96 / 0,96 | 1,02 / 0,98 / 0,96 | 1,02 / 0,98 / 0,96 |
 | Mage staff common +0 | 1,00 / 0,93 / 0,94 | 1,00 / 0,93 / 0,94 | 0,99 / 0,93 / 0,94 | 0,98 / 0,92 / 0,94 |
 | Mage staff common +9 | 0,99 / 0,93 / 0,93 | 0,99 / 0,92 / 0,93 | 0,99 / 0,92 / 0,93 | 0,98 / 0,91 / 0,93 |
 | Mage staff unique +0 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
 | Mage staff unique +9 | 1,02 / 0,95 / 0,93 | 1,01 / 0,95 / 0,93 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage staff heroic +0 | 1,01 / 0,94 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
 | Mage staff heroic +9 | 1,03 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,01 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Mage staff legendary +0 | **1,04** / 0,96 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
-| Mage staff legendary +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
-| Mage staff mythic +0 | 1,00 / 0,94 / 0,94 | 1,00 / 0,94 / 0,94 | 0,98 / 0,92 / 0,94 | 0,98 / 0,92 / 0,94 |
-| Mage staff mythic +9 | 0,99 / 0,94 / 0,95 | 0,98 / 0,94 / 0,95 | 0,98 / 0,93 / 0,95 | **0,96** / 0,92 / 0,95 |
+| Mage staff legendary +0 | 1,01 / 0,94 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
+| Mage staff legendary +9 | 1,01 / 0,95 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
+| Mage staff mythic +0 | 1,03 / 0,96 / 0,93 | 1,02 / 0,95 / 0,93 | 1,01 / 0,94 / 0,93 | 1,00 / 0,93 / 0,93 |
+| Mage staff mythic +9 | 1,02 / 0,96 / 0,94 | 1,01 / 0,95 / 0,94 | 1,00 / 0,94 / 0,94 | 0,99 / 0,93 / 0,94 |
 | Mage runestaff common +0 | 1,01 / 0,90 / 0,89 | 1,00 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 | 0,99 / 0,89 / 0,89 |
 | Mage runestaff common +9 | 1,01 / 0,88 / 0,88 | 1,00 / 0,87 / 0,88 | 0,99 / 0,87 / 0,88 | 0,98 / 0,86 / 0,88 |
 | Mage runestaff unique +0 | 1,03 / 0,91 / 0,89 | 1,02 / 0,91 / 0,89 | 1,01 / 0,90 / 0,89 | 1,00 / 0,89 / 0,89 |
 | Mage runestaff unique +9 | 1,02 / 0,90 / 0,87 | 1,02 / 0,89 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,88 |
 | Mage runestaff heroic +0 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 |
 | Mage runestaff heroic +9 | 1,03 / 0,90 / 0,87 | 1,02 / 0,89 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 |
-| Mage runestaff legendary +0 | **1,04** / 0,92 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 | 1,00 / 0,89 / 0,88 |
-| Mage runestaff legendary +9 | 1,03 / 0,90 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,87 |
-| Mage runestaff mythic +0 | 1,00 / 0,89 / 0,89 | 0,99 / 0,89 / 0,89 | 0,99 / 0,88 / 0,89 | 0,98 / 0,87 / 0,89 |
-| Mage runestaff mythic +9 | 1,00 / 0,88 / 0,88 | 0,98 / 0,87 / 0,88 | 0,98 / 0,86 / 0,88 | **0,97** / 0,85 / 0,88 |
+| Mage runestaff legendary +0 | 1,02 / 0,90 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 | 1,00 / 0,88 / 0,88 |
+| Mage runestaff legendary +9 | 1,02 / 0,88 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,88 / 0,87 | 0,99 / 0,87 / 0,87 |
+| Mage runestaff mythic +0 | **1,04** / 0,91 / 0,88 | 1,02 / 0,90 / 0,88 | 1,01 / 0,89 / 0,88 | 1,00 / 0,88 / 0,88 |
+| Mage runestaff mythic +9 | 1,03 / 0,90 / 0,87 | 1,01 / 0,88 / 0,87 | 1,00 / 0,87 / 0,87 | 0,99 / 0,86 / 0,87 |
 | Cleric holystaff common +0 | 1,00 / 1,04 / 1,05 | 1,00 / 1,20 / 1,20 | 1,00 / 1,43 / 1,43 | 1,00 / 1,87 / 1,86 |
 | Cleric holystaff common +9 | 1,00 / 1,35 / 1,35 | 1,00 / 2,70 / 2,70 | 1,01 / 3,89 / 3,86 | 1,01 / 4,37 / 4,34 |
 | Cleric holystaff unique +0 | 1,01 / 1,17 / 1,16 | 1,02 / 1,58 / 1,55 | 1,02 / 2,43 / 2,39 | 1,02 / 3,93 / 3,86 |
 | Cleric holystaff unique +9 | 1,03 / 1,95 / 1,90 | 1,02 / 3,88 / 3,81 | 1,02 / 4,46 / 4,37 | 1,02 / 4,45 / 4,37 |
 | Cleric holystaff heroic +0 | 1,01 / 1,29 / 1,28 | 1,02 / 2,14 / 2,10 | 1,03 / 3,95 / 3,85 | 1,02 / 4,20 / 4,11 |
 | Cleric holystaff heroic +9 | 1,02 / 3,22 / 3,15 | 1,02 / 4,20 / 4,11 | 1,03 / 4,47 / 4,34 | 1,03 / 4,45 / 4,34 |
-| Cleric holystaff legendary +0 | 1,02 / 1,88 / 1,85 | 1,01 / 3,89 / 3,84 | 1,01 / 4,54 / 4,47 | 1,02 / 4,56 / 4,47 |
-| Cleric holystaff legendary +9 | 1,02 / 3,81 / 3,74 | 1,01 / 4,38 / 4,32 | 1,02 / 4,39 / 4,32 | 1,02 / 4,42 / 4,32 |
-| Cleric holystaff mythic +0 | 0,98 / 3,69 / 3,77 | 0,99 / 4,41 / 4,46 | 0,98 / 4,38 / 4,46 | 0,99 / 4,40 / 4,46 |
-| Cleric holystaff mythic +9 | 0,98 / 4,23 / 4,30 | 0,99 / 4,24 / 4,29 | 0,98 / 4,23 / 4,29 | 0,99 / 4,25 / 4,29 |
+| Cleric holystaff legendary +0 | 1,02 / 1,39 / 1,36 | 1,02 / 2,58 / 2,54 | 1,02 / 3,97 / 3,91 | 1,02 / 4,38 / 4,30 |
+| Cleric holystaff legendary +9 | 1,02 / 3,69 / 3,62 | 1,02 / 4,39 / 4,32 | 1,02 / 4,41 / 4,32 | 1,02 / 4,41 / 4,32 |
+| Cleric holystaff mythic +0 | 1,02 / 1,45 / 1,43 | 1,01 / 3,29 / 3,25 | 1,02 / 4,05 / 3,98 | 1,02 / 4,56 / 4,46 |
+| Cleric holystaff mythic +9 | 1,02 / 3,70 / 3,64 | 1,01 / 4,35 / 4,30 | 1,02 / 4,37 / 4,30 | 1,02 / 4,40 / 4,30 |
 
 G9 (Wojownik, broń domyślna ilvl − 2, Zwykła): +1…+3 / dochód poziomu (0,45–1,05), +1…+9 z ochroną w poziomach dochodu (12–25):
 
@@ -14594,9 +15331,10 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | cel | wiersze | poza pasmem | sesja | powód |
 | --- | --: | --: | --: | --: |
 | G7 | 16 | 16 | S88 | poza zasięgiem dźwigni S88: Hunter Heroic 0.257-0.273 with traits after the D1 line cuts (owner: exception) |
-| G8 | 260 | 249 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
-| G8 | 4 | 4 | S91 | poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
-| G8 | 9 | 9 | S88 | poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
+| G8 | 260 | 244 | S88 | poza zasięgiem dźwigni S88: one trait against two (Berserker 0.90-0.97, staves 0.85-0.96, Holy Staff 1.15-3.66 with Saving Blow solo); owner: an E6 exception for the Warrior |
+| G8 | 4 | 0 | S91 | poza zasięgiem dźwigni S91: 1.036-1.039 at 20 (Legendary lines x2.7, Data/Rarities; items are not an S91 lever) |
+| G8 | 12 | 12 | S134g | poza zasięgiem dźwigni S134g: the two-hander's lines (x2.7) lose more of the lower Legendary / Mythic rangeMul than weapon + off-hand (lever: twoHandedBonusMul per rarity, S87 C2) |
+| G8 | 9 | 0 | S88 | poza zasięgiem dźwigni S88: axe Mythic 0.953-0.969 (L20 since the class-filtered pools), staves Mythic +9 0.966-0.970 (mythic lines without x2.7, Data/Rarities) |
 | G8 | 1 | 1 | S92 | poza zasięgiem dźwigni S92: 1.040 > 1.035 (Morvane at 20 in the S84 boss situation, atkMul 0.42 for the 7-12 % basic hit) |
 | G9.up3 | 4 | 0 | S91 | poza zasięgiem dźwigni S91: 0.442 < 0.45 (Config.Upgrade global, income of 20 from the band 20-45) |
 | G9.up9 | 4 | 0 | S91 | poza zasięgiem dźwigni S91: 10.43 < 12 (Config.Upgrade global, income of 20 from the band 20-45) |
@@ -14614,47 +15352,47 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 
 | cecha | build | sytuacje | 20 | 45 | 70 | 100 | Mityczny +9 (45 / 70 / 100) | z węzłami | raport | kto |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
-| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 3,9% | **3,7%** | **3,3%** | **3,4%** | 4,3% / 4,0% / 4,1% | – | – | raport → S134 |
-| swordplay | standard.commander@sword1h + shield | group, elite, boss | 3,6% | **3,4%** | **2,9%** | **2,6%** | 4,0% / 3,5% / 3,1% | – | – | raport → S94 |
-| twinCut | standard.commander@saber1h + shield | single, elite | 6,0% | 5,7% | 5,3% | 4,8% | 9,1% / 8,9% / 8,0% | – | – | S88 |
-| twinCut | guardian.defender@saber1h + shield | single, elite | 6,4% | **6,1%** | 5,9% | 5,9% | 9,6% / 9,7% / 9,8% | – | – | S88; raport → S89 (45) |
-| reaping | guardian.loner@axe1h + shield | solo | 5,2% | 5,0% | 5,2% | 5,3% | 304,7% / 303,4% / 302,4% | – | boss 0,7% (70) | S88 |
-| bonebreaker | guardian.defender@mace1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,6% / 10,6% / 10,6% | – | – | S88 |
+| swordplay | guardian.loner@sword1h + shield | group, elite, boss | 3,9% | **3,7%** | **3,3%** | **3,4%** | 4,9% / 4,4% / 4,6% | – | – | raport → S134 |
+| swordplay | standard.commander@sword1h + shield | group, elite, boss | 3,6% | **3,4%** | **2,9%** | **2,6%** | 4,5% / 3,9% / 3,5% | – | – | raport → S94 |
+| twinCut | standard.commander@saber1h + shield | single, elite | 6,0% | 5,7% | 5,3% | 4,8% | 10,2% / 9,6% / 8,5% | – | – | S88 |
+| twinCut | guardian.defender@saber1h + shield | single, elite | 6,4% | **6,1%** | 5,9% | 5,9% | 10,9% / 10,3% / 10,5% | – | – | S88; raport → S89 (45) |
+| reaping | guardian.loner@axe1h + shield | solo | 5,2% | 5,0% | 5,2% | 5,3% | 53,1% / 57,5% / 61,5% | – | boss 0,7% (70) | S88 |
+| bonebreaker | guardian.defender@mace1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,7% / 10,7% / 10,7% | – | – | S88 |
 | bonebreaker | inquisitor.solo@mace1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,7% / 10,7% / 10,7% | – | – | S88 |
 | bonebreaker | fortune.plunder@mace1h + relic | tank | 5,4% | 5,4% | 5,4% | 5,4% | 10,6% / 10,6% / 10,6% | – | – | S88 |
-| beheading | berserker.fury@sword2h | single, group | 5,2% | 5,0% | 4,9% | 4,9% | 3,4% / 3,3% / 3,3% | 5,0% / 4,8% / 4,8% | – | S88 |
-| rendingGash | berserker.fury@axe2h | single, elite | 4,3% | **4,0%** | 4,5% | **3,9%** | 12,1% / 11,9% / 8,7% | 6,3% / 4,4% / 5,8% | – | S88; raport → S89 (45, 100) |
-| sundering | berserker.fury@hammer2h | single, armored | 5,3% | 5,6% | 5,6% | 5,7% | 8,8% / 8,9% / 9,0% | – | – | S88 |
-| runThrough | berserker.fury@spear2h | group | 6,7% | **6,3%** | 6,0% | 5,6% | 10,5% / 9,9% / 9,3% | – | boss 0,0% (70) | S88; raport → S89 (45) |
-| parry | guardian.defender@sword1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 6,1% / 6,1% / 6,1% | – | – | S88 |
-| parry | standard.commander@sword1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 6,1% / 6,1% / 6,1% | – | – | S88 |
-| parry | healer.dungeon@scepter + shield | tank | 5,5% | 5,5% | 5,6% | 5,6% | 6,4% / 6,4% / 6,4% | – | – | S88 |
-| parry | inquisitor.bulwark@mace1h + shield | tank | 5,6% | 5,6% | 5,6% | 5,6% | 6,5% / 6,5% / 6,6% | – | – | S88 |
-| harrying | scout.partyHunter@shortbow + quiver | solo | 4,9% | 5,0% | 5,0% | 5,0% | 10,0% / 10,1% / 10,2% | – | – | S88 |
-| toxicBarbs | trapper.poacher@bow + quiver | single, elite | 5,9% | 4,3% | 4,8% | 5,9% | 10,6% / 10,5% / 11,0% | 5,4% / 4,6% / 7,8% | – | S88 |
-| toxicBarbs | scout.partyHunter@bow + quiver | single, elite | 5,2% | **6,2%** | 4,7% | 4,2% | 10,4% / 11,0% / 8,5% | – | – | S88; raport → S90 (45) |
-| criticalForce | marksman.kingslayer@longbow + quiver | single, group | 2,6% | 4,5% | 4,9% | 5,1% | 7,5% / 7,9% / 8,0% | – | – | S88 |
-| easyPrey | trapper.poacher@crossbow + quiver | controlled | 0,5% | 4,7% | 4,5% | 5,1% | 9,2% / 9,1% / 9,1% | – | – | S88 |
-| bodkinBolt | marksman.kingslayer@heavycrossbow + quiver | single, armored | 4,4% | 4,9% | 5,0% | 5,1% | 10,0% / 10,3% / 10,5% | – | – | S88 |
-| fullDraw | marksman.kingslayer@longbow + quiver | single, group | 7,8% | **6,6%** | **6,8%** | **6,3%** | 12,6% / 11,8% / 11,7% | – | – | raport → S90 |
-| fullDraw | marksman.kingslayer@heavycrossbow + quiver | single, group | 7,5% | **6,5%** | **6,2%** | **6,1%** | 12,4% / 11,9% / 11,2% | – | – | raport → S90 |
-| fullDraw | trapper.poacher@bow + quiver | single, group | 7,7% | 5,9% | 5,4% | 5,2% | 12,4% / 11,2% / 11,3% | – | – | S88 |
-| fullDraw | scout.partyHunter@shortbow + quiver | single, group | 8,1% | **6,2%** | 5,9% | 5,4% | 11,7% / 11,3% / 10,0% | – | – | S88; raport → S90 (45) |
-| elementalSpark fire | destroyer.destroyerExp@wand + orb | mana, group | 9,2% | **6,5%** | **6,3%** | **6,5%** | 6,0% / 5,3% / 5,7% | – | – | raport → S90 |
-| elementalSpark ice | destroyer.destroyerExp@wand + orb | mana, group | 4,9% | 5,0% | 5,2% | 4,7% | 3,7% / 3,9% / 3,7% | – | – | S88 |
-| elementalSpark lightning | destroyer.destroyerExp@wand + orb | mana, group | 10,3% | **6,7%** | **6,2%** | **6,3%** | 6,1% / 5,3% / 5,4% | – | – | raport → S90 |
-| elementalSpark fire | arcanist.arcanistBoss@wand + tome | mana, group | 9,1% | 5,4% | 5,0% | 4,8% | 5,4% / 4,6% / 3,9% | – | – | S88 |
-| elementalSpark ice | arcanist.arcanistBoss@wand + tome | mana, group | 5,1% | 4,9% | 4,5% | 4,2% | 3,5% / 3,4% / 2,9% | – | – | S88 |
-| elementalSpark lightning | arcanist.arcanistBoss@wand + tome | mana, group | 10,5% | **6,2%** | 5,5% | 4,8% | 6,0% / 4,9% / 4,1% | – | – | S88; raport → S90 (45) |
-| elementalMight fire | destroyer.destroyerExp@staff | single, group | 4,0% | 5,0% | 5,6% | 5,7% | 10,3% / 11,3% / 11,9% | – | – | S88 |
-| elementalMight ice | destroyer.destroyerExp@staff | single, group | 4,8% | 4,6% | 4,6% | 4,6% | 3,7% / 4,1% / 4,9% | – | – | S88 |
-| elementalMight lightning | destroyer.destroyerExp@staff | single, group | 6,5% | 8,1% | 8,4% | **9,9%** | 15,4% / 16,2% / 17,7% | – | – | S88; raport → S90 (100) |
-| runicSeal | arcanist.arcanistBoss@runestaff | still, boss | 5,2% | 5,2% | 5,3% | 5,3% | 7,7% / 7,8% / 7,8% | – | – | S88 |
+| beheading | berserker.fury@sword2h | single, group | 5,2% | 5,0% | 4,9% | 4,9% | 9,2% / 9,0% / 8,9% | 5,0% / 4,8% / 4,8% | – | S88 |
+| rendingGash | berserker.fury@axe2h | single, elite | 4,3% | **4,0%** | 4,5% | **3,9%** | 13,2% / 12,9% / 11,9% | 6,3% / 4,4% / 5,8% | – | S88; raport → S89 (45, 100) |
+| sundering | berserker.fury@hammer2h | single, armored | 5,3% | 5,6% | 5,6% | 5,7% | 8,6% / 8,7% / 8,8% | – | – | S88 |
+| runThrough | berserker.fury@spear2h | group | 6,7% | **6,3%** | 6,0% | 5,6% | 11,3% / 10,7% / 10,2% | – | boss 0,0% (70) | S88; raport → S89 (45) |
+| parry | guardian.defender@sword1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 6,0% / 6,0% / 6,0% | – | – | S88 |
+| parry | standard.commander@sword1h + shield | tank | 5,4% | 5,4% | 5,4% | 5,4% | 6,0% / 6,0% / 6,0% | – | – | S88 |
+| parry | healer.dungeon@scepter + shield | tank | 5,5% | 5,5% | 5,6% | 5,6% | 6,3% / 6,3% / 6,3% | – | – | S88 |
+| parry | inquisitor.bulwark@mace1h + shield | tank | 5,6% | 5,6% | 5,6% | 5,6% | 6,4% / 6,4% / 6,4% | – | – | S88 |
+| harrying | scout.partyHunter@shortbow + quiver | solo | 4,9% | 5,0% | 5,0% | 5,0% | 10,0% / 10,2% / 10,3% | – | – | S88 |
+| toxicBarbs | trapper.poacher@bow + quiver | single, elite | 5,9% | 4,3% | 4,8% | 5,9% | 11,0% / 11,6% / 11,6% | 5,4% / 4,6% / 7,8% | – | S88 |
+| toxicBarbs | scout.partyHunter@bow + quiver | single, elite | 5,2% | **6,2%** | 4,7% | 4,2% | 11,1% / 9,4% / 10,7% | – | – | S88; raport → S90 (45) |
+| criticalForce | marksman.kingslayer@longbow + quiver | single, group | 2,6% | 4,5% | 4,9% | 5,1% | 8,6% / 9,3% / 9,5% | – | – | S88 |
+| easyPrey | trapper.poacher@crossbow + quiver | controlled | 0,5% | 4,7% | 4,5% | 5,1% | 7,8% / 8,6% / 8,1% | – | – | S88 |
+| bodkinBolt | marksman.kingslayer@heavycrossbow + quiver | single, armored | 4,4% | 4,9% | 5,0% | 5,1% | 9,7% / 10,1% / 10,3% | – | – | S88 |
+| fullDraw | marksman.kingslayer@longbow + quiver | single, group | 7,8% | **6,6%** | **6,8%** | **6,3%** | 13,0% / 13,3% / 12,8% | – | – | raport → S90 |
+| fullDraw | marksman.kingslayer@heavycrossbow + quiver | single, group | 7,5% | **6,5%** | **6,2%** | **6,1%** | 13,2% / 12,6% / 12,2% | – | – | raport → S90 |
+| fullDraw | trapper.poacher@bow + quiver | single, group | 7,7% | 5,9% | 5,4% | 5,2% | 11,2% / 10,7% / 10,4% | – | – | S88 |
+| fullDraw | scout.partyHunter@shortbow + quiver | single, group | 8,1% | **6,2%** | 5,9% | 5,4% | 12,9% / 12,2% / 10,9% | – | – | S88; raport → S90 (45) |
+| elementalSpark fire | destroyer.destroyerExp@wand + orb | mana, group | 9,2% | **6,5%** | **6,3%** | **6,5%** | 7,3% / 6,5% / 7,0% | – | – | raport → S90 |
+| elementalSpark ice | destroyer.destroyerExp@wand + orb | mana, group | 4,9% | 5,0% | 5,2% | 4,7% | 4,9% / 5,0% / 4,6% | – | – | S88 |
+| elementalSpark lightning | destroyer.destroyerExp@wand + orb | mana, group | 10,3% | **6,7%** | **6,2%** | **6,3%** | 7,6% / 6,4% / 6,6% | – | – | raport → S90 |
+| elementalSpark fire | arcanist.arcanistBoss@wand + tome | mana, group | 9,1% | 5,4% | 5,0% | 4,8% | 6,4% / 5,2% / 4,4% | – | – | S88 |
+| elementalSpark ice | arcanist.arcanistBoss@wand + tome | mana, group | 5,1% | 4,9% | 4,5% | 4,2% | 4,9% / 4,1% / 3,5% | – | – | S88 |
+| elementalSpark lightning | arcanist.arcanistBoss@wand + tome | mana, group | 10,5% | **6,2%** | 5,5% | 4,8% | 7,3% / 5,7% / 4,7% | – | – | S88; raport → S90 (45) |
+| elementalMight fire | destroyer.destroyerExp@staff | single, group | 4,0% | 5,0% | 5,6% | 5,7% | 10,2% / 11,0% / 11,5% | – | – | S88 |
+| elementalMight ice | destroyer.destroyerExp@staff | single, group | 4,8% | 4,6% | 4,6% | 4,6% | 4,7% / 4,8% / 5,2% | – | – | S88 |
+| elementalMight lightning | destroyer.destroyerExp@staff | single, group | 6,5% | 8,1% | 8,4% | **9,9%** | 15,1% / 15,8% / 17,2% | – | – | S88; raport → S90 (100) |
+| runicSeal | arcanist.arcanistBoss@runestaff | still, boss | 5,2% | 5,2% | 5,3% | 5,3% | 9,5% / 9,7% / 9,7% | – | – | S88 |
 | learnedFormulae | arcanist.arcanistBoss@wand + tome | mana | 0,1% | **0,3%** | **0,4%** | **1,5%** | 0,0% / 0,0% / 0,0% | – | – | raport → S90 |
-| powerLens | destroyer.destroyerExp@wand + orb | single, group | 3,5% | 4,3% | 4,4% | 4,5% | 7,9% / 8,3% / 8,4% | – | – | S88 |
-| anointment | healer.dungeon@scepter + shield | dungeon | 5,0% | 5,0% | 5,2% | 5,2% | 9,2% / 9,3% / 9,3% | – | – | S88 |
-| anointment | fortune.plunder@scepter + relic | dungeon | 5,0% | 4,8% | 4,6% | 4,5% | 8,8% / 8,4% / 8,4% | – | – | S88 |
-| savingBlow | healer.dungeon@holystaff | dungeon | 4,3% | 4,9% | 5,8% | 5,7% | 13,9% / 17,1% / 16,9% | – | solo -0,0% (70) | S88 |
+| powerLens | destroyer.destroyerExp@wand + orb | single, group | 3,5% | 4,3% | 4,4% | 4,5% | 7,7% / 8,1% / 8,2% | – | – | S88 |
+| anointment | healer.dungeon@scepter + shield | dungeon | 5,0% | 5,0% | 5,2% | 5,2% | 9,2% / 9,4% / 9,4% | – | – | S88 |
+| anointment | fortune.plunder@scepter + relic | dungeon | 5,0% | 4,8% | 4,6% | 4,5% | 8,8% / 8,4% / 8,2% | – | – | S88 |
+| savingBlow | healer.dungeon@holystaff | dungeon | 4,3% | 4,9% | 5,8% | 5,7% | 12,3% / 16,1% / 15,5% | – | solo -0,0% (70) | S88 |
 | concussion | inquisitor.solo@flail1h + shield | group | 4,2% | 4,5% | 4,5% | 4,5% | 6,2% / 6,2% / 6,2% | – | boss 0,0% (70) | S88 |
 | concussion | fortune.plunder@flail1h + relic | group | 4,3% | 4,3% | 4,3% | 4,3% | 5,9% / 5,9% / 5,9% | – | boss 0,0% (70) | S88 |
 
@@ -14752,22 +15490,22 @@ Udział pancerza i odporności magicznej w obrażeniach ataku podstawowego gracz
 | Bełt przeciwpancerny, Zwykły +0 · 45 | 3,8% | 6,1% |
 | Bełt przeciwpancerny, Mityczny +9 · 45 | 7,4% | 12,1% |
 | linia pierce (Legendarny, środek rzutu) · 45 | 1,0% | 1,6% |
-| linia magicPierce (Legendarny, środek rzutu) · 45 | 0,7% | 1,1% |
-| linia accuracy (Legendarny, środek rzutu 2,9) · 45 | 0% | 2,9% |
+| linia magicPierce (Legendarny, środek rzutu) · 45 | 0,6% | 1,0% |
+| linia accuracy (Legendarny, środek rzutu 2,8) · 45 | 0% | 2,8% |
 | Niszczenie pancerza, Zwykły +0, pełne stosy · 70 | 5,0% | 8,0% |
 | Niszczenie pancerza, Mityczny +9, pełne stosy · 70 | 8,2% | 13,4% |
 | Bełt przeciwpancerny, Zwykły +0 · 70 | 3,9% | 6,3% |
 | Bełt przeciwpancerny, Mityczny +9 · 70 | 7,7% | 12,5% |
-| linia pierce (Legendarny, środek rzutu) · 70 | 1,1% | 1,7% |
+| linia pierce (Legendarny, środek rzutu) · 70 | 1,0% | 1,6% |
 | linia magicPierce (Legendarny, środek rzutu) · 70 | 0,7% | 1,1% |
-| linia accuracy (Legendarny, środek rzutu 2,9) · 70 | 0% | 2,9% |
+| linia accuracy (Legendarny, środek rzutu 2,8) · 70 | 0% | 2,8% |
 | Niszczenie pancerza, Zwykły +0, pełne stosy · 100 | 5,1% | 8,1% |
 | Niszczenie pancerza, Mityczny +9, pełne stosy · 100 | 8,3% | 13,6% |
 | Bełt przeciwpancerny, Zwykły +0 · 100 | 4,0% | 6,4% |
 | Bełt przeciwpancerny, Mityczny +9 · 100 | 7,8% | 12,7% |
-| linia pierce (Legendarny, środek rzutu) · 100 | 1,1% | 1,7% |
+| linia pierce (Legendarny, środek rzutu) · 100 | 1,0% | 1,6% |
 | linia magicPierce (Legendarny, środek rzutu) · 100 | 0,7% | 1,1% |
-| linia accuracy (Legendarny, środek rzutu 2,9) · 100 | 0% | 2,9% |
+| linia accuracy (Legendarny, środek rzutu 2,8) · 100 | 0% | 2,8% |
 
 Unik: harpia (beast) 10% (S88: 15 → 10), ryś / nietoperz / lampart (animal) 12% (wspólny z rysiem z Łąk; S91: decyzja właściciela, Data/Families). Bossowie bez zmian (S66; życie i ataki S92–S94).
 
@@ -14775,10 +15513,10 @@ Unik: harpia (beast) 10% (S88: 15 → 10), ryś / nietoperz / lampart (animal) 1
 
 | linia (100. poziom) | Zwykły | Legenda | Mityk | cel (odp. 23) | Zwykły na broni dwuręcznej |
 | --- | --: | --: | --: | --: | --: |
-| vs_<rodzina> | 5,0–12,0 | 5,5–13,2 | 6,0–14,4 | 5,0–12,0 (Mityk ≤ 14,5) | 13,5–32,4 |
-| res_<rodzina> | 5,0–11,0 | 5,5–12,1 | 6,0–13,2 | 5,0–11,0 (Mityk ≤ 13,5) | – |
-| vs_<klasa> | 4,0–9,0 | 4,4–9,9 | 4,8–10,8 | 4,0–9,0 (Mityk ≤ 11,0) | – |
-| res_<klasa> | 4,0–9,0 | 4,4–9,9 | 4,8–10,8 | 4,0–9,0 (Mityk ≤ 11,0) | – |
+| vs_<rodzina> | 5,0–12,0 | 5,2–12,6 | 5,5–13,2 | 5,0–12,0 (Mityk ≤ 14,5) | 13,5–32,4 |
+| res_<rodzina> | 5,0–11,0 | 5,2–11,5 | 5,5–12,1 | 5,0–11,0 (Mityk ≤ 13,5) | – |
+| vs_<klasa> | 4,0–9,0 | 4,2–9,4 | 4,4–9,9 | 4,0–9,0 (Mityk ≤ 11,0) | – |
+| res_<klasa> | 4,0–9,0 | 4,2–9,4 | 4,4–9,9 | 4,0–9,0 (Mityk ≤ 11,0) | – |
 
 Parytet linii (D2, raport): zysk mocy² jednej linii średniego rzutu (Heroiczny, 70. poziom, `single`) wobec linii ataku klasy; kandydat do zmiany poza 0,5–2,0.
 
@@ -14797,18 +15535,18 @@ Moc w MIX postaci klasy docelowej z nazwanym przedmiotem w slocie / z oczekiwany
 
 | przedmiot | moc / wylosowany Mityk | klasy | linie |
 | --- | --: | --: | --: |
-| unique_azgor_heart (necklace, 70) | 1,03 | Wojownik 1,03, Łowca 1,04, Mag 1,04, Kapłan 1,02 | hp 260,0 (≤ 351,2), resFire 25,0 (≤ 32,0), vs_elemental 12,0 (≤ 36,0), leg_eliteDamage 12,0 (≤ 12,0) |
-| unique_azgor_helm (helmet_heavy, 70) | 1,03 | Wojownik 1,04, Kapłan 1,03 | vit 20,0 (≤ 24,3), armor 90,0 (≤ 146,3), res_elemental 10,0 (≤ 33,0), leg_thorns 10,0 (≤ 10,0) |
-| unique_azgor_staff (staff, 70) | 1,03 | Mag 1,03 | magAtk 9,0 (≤ 23,8), int 22,0 (≤ 65,6), dotPower 15,0 (≤ 86,4), leg_bossDamage 10,0 (≤ 10,0) |
-| unique_grimrok_cleaver (axe1h, 20) | 1,05 | Wojownik 1,05 | physAtk 7,0 (≤ 8,8), str 8,0 (≤ 10,8), vs_humanoid 12,0 (≤ 36,0), leg_executioner 15,0 (≤ 18,0) |
-| unique_grimrok_fang (ring, 20) | 1,02 | Łowca 1,02 | critChance 4,0 (≤ 4,8), lifesteal 2,0 (≤ 6,0), dex 6,0 (≤ 10,8), basicDmg 4,0 (≤ 8,8) |
-| unique_grimrok_totem (talisman, 20) | 1,07 | Wojownik 1,07, Łowca 1,07, Mag 1,08, Kapłan 1,05 | vit 8,0 (≤ 10,8), hpPct 6,0 (≤ 8,0), res_humanoid 8,0 (≤ 33,0), leg_killHeal 3,0 (≤ 4,0) |
-| unique_morvane_bow (bow, 45) | 1,07 | Łowca 1,07 | physAtk 6,0 (≤ 8,8), dex 10,0 (≤ 17,5), poisonChance 5,0 (≤ 9,6), leg_doubleAttack 5,0 (≤ 6,0) |
-| unique_morvane_scepter (scepter, 45) | 1,07 | Kapłan 1,07 | magAtk 8,0 (≤ 8,8), int 12,0 (≤ 17,5), healPower 8,0 (≤ 14,0), leg_manaOnHit 2,0 (≤ 3,0) |
-| unique_morvane_shroud (armor_light, 45) | 1,01 | Mag 1,01 | int 14,0 (≤ 17,5), mana 120,0 (≤ 230,5), res_undead 10,0 (≤ 33,0), leg_lastStand 15,0 (≤ 18,0) |
-| unique_vaelgrath_eye (orb, 100) | 1,04 | Mag 1,04 | magAtk 8,5 (≤ 8,8), int 32,0 (≤ 32,4), magicPierce 10,0 (≤ 16,0), leg_executioner 18,0 (≤ 18,0) |
-| unique_vaelgrath_fang (sword2h, 100) | 1,05 | Wojownik 1,05 | physAtk 11,0 (≤ 23,8), str 35,0 (≤ 87,5), critDmg 40,0 (≤ 54,0), leg_bossDamage 10,0 (≤ 10,0) |
-| unique_vaelgrath_scale (shield, 100) | 1,04 | Wojownik 1,04, Kapłan 1,04 | armor 160,0 (≤ 206,7), hpPct 8,0 (≤ 8,0), res_dragon 10,0 (≤ 33,0), leg_lastStand 18,0 (≤ 18,0) |
+| unique_azgor_heart (necklace, 70) | 1,05 | Wojownik 1,05, Łowca 1,06, Mag 1,06, Kapłan 1,04 | hp 260,0 (≤ 322,0), resFire 25,0 (≤ 29,3), vs_elemental 12,0 (≤ 33,0) |
+| unique_azgor_helm (helmet_heavy, 70) | 1,05 | Wojownik 1,06, Kapłan 1,05 | vit 20,0 (≤ 22,3), armor 90,0 (≤ 134,1), res_elemental 10,0 (≤ 30,3) |
+| unique_azgor_staff (staff, 70) | 1,04 | Mag 1,04 | magAtk 9,0 (≤ 21,8), int 22,0 (≤ 60,1), dotPower 15,0 (≤ 79,2) |
+| unique_grimrok_cleaver (axe1h, 20) | 1,08 | Wojownik 1,08 | physAtk 6,0 (≤ 8,1), str 6,0 (≤ 9,9), vs_humanoid 12,0 (≤ 33,0) |
+| unique_grimrok_fang (ring, 20) | 1,03 | Łowca 1,03 | critChance 4,0 (≤ 4,4), lifesteal 2,0 (≤ 5,5), dex 6,0 (≤ 9,9) |
+| unique_grimrok_totem (talisman, 20) | 1,07 | Wojownik 1,07, Łowca 1,08, Mag 1,08, Kapłan 1,06 | vit 6,0 (≤ 9,9), hpPct 5,0 (≤ 7,3), res_humanoid 8,0 (≤ 30,3) |
+| unique_morvane_bow (bow, 45) | 1,06 | Łowca 1,06 | physAtk 6,0 (≤ 8,1), dex 10,0 (≤ 16,1), poisonChance 5,0 (≤ 8,8) |
+| unique_morvane_scepter (scepter, 45) | 1,07 | Kapłan 1,07 | magAtk 8,0 (≤ 8,1), int 12,0 (≤ 16,1), healPower 8,0 (≤ 12,8) |
+| unique_morvane_shroud (armor_light, 45) | 1,03 | Mag 1,03 | int 14,0 (≤ 16,1), mana 120,0 (≤ 211,3), res_undead 10,0 (≤ 30,3) |
+| unique_vaelgrath_eye (orb, 100) | 1,06 | Mag 1,06 | magAtk 8,0 (≤ 8,1), int 29,0 (≤ 29,7), magicPierce 10,0 (≤ 14,7) |
+| unique_vaelgrath_fang (sword2h, 100) | 1,07 | Wojownik 1,07 | physAtk 11,0 (≤ 21,8), str 35,0 (≤ 80,2), critDmg 40,0 (≤ 49,5) |
+| unique_vaelgrath_scale (shield, 100) | 1,05 | Wojownik 1,05, Kapłan 1,05 | armor 160,0 (≤ 189,5), hpPct 7,0 (≤ 7,3), res_dragon 10,0 (≤ 30,3) |
 
 ### Kontrole klasowe
 
@@ -14856,9 +15594,9 @@ Uzdrowiciel (E4): T-SK5 (jedno Leczenie / maks. HP Obrońcy, cel 0,25–0,35) z 
 
 | poziom | T-SK5 Zwykły | T-SK5 Mityczny +9 | Zbawczy cios + wampiryzm Zwykły | Mityczny +9 |
 | --- | --: | --: | --: | --: |
-| 45 | 0,30 | 0,39 | 2,5 / 15 | 9,8 / 15 |
-| 70 | 0,31 | 0,35 | 2,5 / 15 | 9,8 / 15 |
-| 100 | 0,35 | 0,42 | 2,5 / 15 | 9,8 / 15 |
+| 45 | 0,30 | 0,38 | 2,5 / 15 | 6,1 / 15 |
+| 70 | 0,31 | 0,35 | 2,5 / 15 | 6,1 / 15 |
+| 100 | 0,35 | 0,41 | 2,5 / 15 | 6,1 / 15 |
 
 Leczenie za zabicie (E5): suma haka `killHeal` i po limicie `Traits.killHeal` (limit kradzieży życia 15%), utrata HP na zabicie w G1 i leczenie z ok. 20 zabić fal bossa.
 
@@ -14931,26 +15669,26 @@ Wojownik na expowisku swojego poziomu (`Balance.dropsPerHour`): Unikaty dla klas
 | K0 + Fortuna · 45 | 4,44 | 1,04 | 0,13 | 30 | 0 | 0 |
 | K1 · 45 | 4,02 | 0,95 | 0,11 | 18 | 0 | 0 |
 | K1 + Fortuna · 45 | 5,05 | 1,07 | 0,13 | 48 | 0 | 15 |
-| K2 · 45 | 5,49 | 1,07 | 0,11 | 61 | 0 | 28 |
-| K2 + Fortuna · 45 | 6,52 | 1,07 | 0,13 | 91 | 0 | 58 |
-| K3 · 45 | 6,82 | 1,07 | 0,11 | 224 | 124 | 67 |
-| K3 + Fortuna · 45 | 6,82 | 1,07 | 0,13 | 254 | 154 | 67 |
+| K2 · 45 | 5,05 | 1,07 | 0,11 | 48 | 0 | 15 |
+| K2 + Fortuna · 45 | 6,07 | 1,07 | 0,13 | 78 | 0 | 45 |
+| K3 · 45 | 5,80 | 1,07 | 0,11 | 70 | 0 | 37 |
+| K3 + Fortuna · 45 | 6,82 | 1,07 | 0,13 | 100 | 0 | 67 |
 | K0 · 70 | 3,42 | 0,84 | 0,11 | 0 | 0 | 0 |
 | K0 + Fortuna · 70 | 4,44 | 1,10 | 0,13 | 30 | 0 | 0 |
 | K1 · 70 | 4,03 | 0,99 | 0,11 | 18 | 0 | 0 |
 | K1 + Fortuna · 70 | 5,06 | 1,12 | 0,13 | 48 | 0 | 15 |
-| K2 · 70 | 5,51 | 1,12 | 0,11 | 61 | 0 | 28 |
-| K2 + Fortuna · 70 | 6,53 | 1,12 | 0,13 | 91 | 0 | 58 |
-| K3 · 70 | 6,84 | 1,12 | 0,11 | 224 | 124 | 67 |
-| K3 + Fortuna · 70 | 6,84 | 1,12 | 0,13 | 254 | 154 | 67 |
+| K2 · 70 | 5,06 | 1,12 | 0,11 | 48 | 0 | 15 |
+| K2 + Fortuna · 70 | 6,09 | 1,12 | 0,13 | 78 | 0 | 45 |
+| K3 · 70 | 5,81 | 1,12 | 0,11 | 70 | 0 | 37 |
+| K3 + Fortuna · 70 | 6,84 | 1,12 | 0,13 | 100 | 0 | 67 |
 | K0 · 100 | 2,91 | 0,87 | 0,11 | 0 | 0 | 0 |
 | K0 + Fortuna · 100 | 3,79 | 1,13 | 0,13 | 30 | 0 | 0 |
 | K1 · 100 | 3,44 | 1,02 | 0,11 | 18 | 0 | 0 |
 | K1 + Fortuna · 100 | 4,31 | 1,15 | 0,13 | 48 | 0 | 15 |
-| K2 · 100 | 4,69 | 1,15 | 0,11 | 61 | 0 | 28 |
-| K2 + Fortuna · 100 | 5,57 | 1,15 | 0,13 | 91 | 0 | 58 |
-| K3 · 100 | 5,83 | 1,15 | 0,11 | 224 | 124 | 67 |
-| K3 + Fortuna · 100 | 5,83 | 1,15 | 0,13 | 254 | 154 | 67 |
+| K2 · 100 | 4,31 | 1,15 | 0,11 | 48 | 0 | 15 |
+| K2 + Fortuna · 100 | 5,19 | 1,15 | 0,13 | 78 | 0 | 45 |
+| K3 · 100 | 4,96 | 1,15 | 0,11 | 70 | 0 | 37 |
+| K3 + Fortuna · 100 | 5,83 | 1,15 | 0,13 | 100 | 0 | 67 |
 
 Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +9) szansy na przedmiot, czyli ×1,08–1,15 Unikatów bez innego szczęścia; poza pasmem 4–6% (wyjątek STATY 2A, odpowiedź 12).
 
@@ -15167,28 +15905,28 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | B5 · Cleric beast · agile · L100: czas / zwykły | 1,09 | ≤ 1,10 | w paśmie | S88 (asertowane) |
 | D3 · vs_<rodzina>: Zwykły min · L100 | 5,00 | 4,95–5,05 | w paśmie | S88 (asertowane) |
 | D3 · vs_<rodzina>: Zwykły max · L100 | 12,00 | 11,95–12,05 | w paśmie | S88 (asertowane) |
-| D3 · vs_<rodzina>: Mityk max · L100 | 14,40 | ≤ 14,50 | w paśmie | S88 (asertowane) |
+| D3 · vs_<rodzina>: Mityk max · L100 | 13,20 | ≤ 14,50 | w paśmie | S88 (asertowane) |
 | D3 · res_<rodzina>: Zwykły min · L100 | 5,00 | 4,95–5,05 | w paśmie | S88 (asertowane) |
 | D3 · res_<rodzina>: Zwykły max · L100 | 11,00 | 10,95–11,05 | w paśmie | S88 (asertowane) |
-| D3 · res_<rodzina>: Mityk max · L100 | 13,20 | ≤ 13,50 | w paśmie | S88 (asertowane) |
+| D3 · res_<rodzina>: Mityk max · L100 | 12,10 | ≤ 13,50 | w paśmie | S88 (asertowane) |
 | D3 · vs_<klasa>: Zwykły min · L100 | 4,00 | 3,95–4,05 | w paśmie | S88 (asertowane) |
 | D3 · vs_<klasa>: Zwykły max · L100 | 9,00 | 8,95–9,05 | w paśmie | S88 (asertowane) |
-| D3 · vs_<klasa>: Mityk max · L100 | 10,80 | ≤ 11,00 | w paśmie | S88 (asertowane) |
+| D3 · vs_<klasa>: Mityk max · L100 | 9,90 | ≤ 11,00 | w paśmie | S88 (asertowane) |
 | D3 · res_<klasa>: Zwykły min · L100 | 4,00 | 3,95–4,05 | w paśmie | S88 (asertowane) |
 | D3 · res_<klasa>: Zwykły max · L100 | 9,00 | 8,95–9,05 | w paśmie | S88 (asertowane) |
-| D3 · res_<klasa>: Mityk max · L100 | 10,80 | ≤ 11,00 | w paśmie | S88 (asertowane) |
-| D4 · unique_azgor_heart · L70 | 1,03 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_azgor_helm · L70 | 1,03 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_azgor_staff · L70 | 1,03 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_grimrok_cleaver · L20 | 1,05 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_grimrok_fang · L20 | 1,02 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D3 · res_<klasa>: Mityk max · L100 | 9,90 | ≤ 11,00 | w paśmie | S88 (asertowane) |
+| D4 · unique_azgor_heart · L70 | 1,05 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_azgor_helm · L70 | 1,05 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_azgor_staff · L70 | 1,04 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_grimrok_cleaver · L20 | 1,08 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_grimrok_fang · L20 | 1,03 | 1,00–1,08 | w paśmie | S88 (asertowane) |
 | D4 · unique_grimrok_totem · L20 | 1,07 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_morvane_bow · L45 | 1,07 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_morvane_bow · L45 | 1,06 | 1,00–1,08 | w paśmie | S88 (asertowane) |
 | D4 · unique_morvane_scepter · L45 | 1,07 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_morvane_shroud · L45 | 1,01 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_vaelgrath_eye · L100 | 1,04 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_vaelgrath_fang · L100 | 1,05 | 1,00–1,08 | w paśmie | S88 (asertowane) |
-| D4 · unique_vaelgrath_scale · L100 | 1,04 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_morvane_shroud · L45 | 1,03 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_vaelgrath_eye · L100 | 1,06 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_vaelgrath_fang · L100 | 1,07 | 1,00–1,08 | w paśmie | S88 (asertowane) |
+| D4 · unique_vaelgrath_scale · L100 | 1,05 | 1,00–1,08 | w paśmie | S88 (asertowane) |
 | E1.block · guardian.loner@sword1h · L45 | 15,00 | ≤ 25,00 | w paśmie | S88 (asertowane) |
 | E1.riposte · guardian.loner@sword1h · L45 | 18,00 | ≤ 34,00 | w paśmie | S88 (asertowane) |
 | E1.avoid · guardian.loner@sword1h · L45 | 15,1% | ≤ 40,0% | w paśmie | S88 (asertowane) |
@@ -15224,7 +15962,7 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | E3 · Ścięcie + Kat · common +0 · L45 | 18,00 | ≤ 60,00 | w paśmie | S88 (asertowane) |
 | E4.self · Zbawczy cios na noszącym + wampiryzm · common +0 · L45 | 2,50 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E3 · Ścięcie + Kat · mythic +9 · L45 | 33,82 | ≤ 60,00 | w paśmie | S88 (asertowane) |
-| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L45 | 9,82 | ≤ 15,00 | w paśmie | S88 (asertowane) |
+| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L45 | 6,13 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E4.tsk5 · T-SK5 healer.dungeon na guardian.defender · L45 | 0,30 | 0,25–0,35 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 1× leg_killHeal · L45 | 13,32 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 3× leg_killHeal · L45 | 15,00 | ≤ 15,00 | w paśmie | S88 (asertowane) |
@@ -15265,7 +16003,7 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | E3 · Ścięcie + Kat · common +0 · L70 | 22,50 | ≤ 60,00 | w paśmie | S88 (asertowane) |
 | E4.self · Zbawczy cios na noszącym + wampiryzm · common +0 · L70 | 2,50 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E3 · Ścięcie + Kat · mythic +9 · L70 | 38,32 | ≤ 60,00 | w paśmie | S88 (asertowane) |
-| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L70 | 9,82 | ≤ 15,00 | w paśmie | S88 (asertowane) |
+| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L70 | 6,13 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E4.tsk5 · T-SK5 healer.dungeon na guardian.defender · L70 | 0,31 | 0,25–0,35 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 1× leg_killHeal · L70 | 13,32 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 3× leg_killHeal · L70 | 15,00 | ≤ 15,00 | w paśmie | S88 (asertowane) |
@@ -15306,7 +16044,7 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | E3 · Ścięcie + Kat · common +0 · L100 | 22,50 | ≤ 60,00 | w paśmie | S88 (asertowane) |
 | E4.self · Zbawczy cios na noszącym + wampiryzm · common +0 · L100 | 2,50 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E3 · Ścięcie + Kat · mythic +9 · L100 | 38,32 | ≤ 60,00 | w paśmie | S88 (asertowane) |
-| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L100 | 9,82 | ≤ 15,00 | w paśmie | S88 (asertowane) |
+| E4.self · Zbawczy cios na noszącym + wampiryzm · mythic +9 · L100 | 6,13 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E4.tsk5 · T-SK5 healer.dungeon na guardian.defender · L100 | 0,35 | 0,25–0,35 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 1× leg_killHeal · L100 | 13,32 | ≤ 15,00 | w paśmie | S88 (asertowane) |
 | E5 · Strażnik: Żniwo M+9 + myth_killHeal + 3× leg_killHeal · L100 | 15,00 | ≤ 15,00 | w paśmie | S88 (asertowane) |
@@ -15466,13 +16204,13 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | F.half · elementalMight · L100 | 50,0% | ≤ 55,0% | w paśmie | S88 (asertowane) |
 | F.stun · Wstrząs: ogłuszenie / czas walki · L100 | 1,3% | ≤ 2,0% | w paśmie | S88 (asertowane) |
 | G.cap · K1 + Fortuna: szczęście przed limitem · L45 | 47,94 | ≤ 100,00 | w paśmie | S88 (asertowane) |
-| G.cap · K2 + Fortuna: szczęście przed limitem · L45 | 91,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
+| G.cap · K2 + Fortuna: szczęście przed limitem · L45 | 78,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
 | G.fortune · K1: Unikaty z Fortuną / bez · L45 | 1,25 | 1,20–1,35 | w paśmie | S88 (asertowane) |
 | G.cap · K1 + Fortuna: szczęście przed limitem · L70 | 47,94 | ≤ 100,00 | w paśmie | S88 (asertowane) |
-| G.cap · K2 + Fortuna: szczęście przed limitem · L70 | 91,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
+| G.cap · K2 + Fortuna: szczęście przed limitem · L70 | 78,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
 | G.fortune · K1: Unikaty z Fortuną / bez · L70 | 1,25 | 1,20–1,35 | w paśmie | S88 (asertowane) |
 | G.cap · K1 + Fortuna: szczęście przed limitem · L100 | 47,94 | ≤ 100,00 | w paśmie | S88 (asertowane) |
-| G.cap · K2 + Fortuna: szczęście przed limitem · L100 | 91,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
+| G.cap · K2 + Fortuna: szczęście przed limitem · L100 | 78,03 | ≤ 100,00 | w paśmie | S88 (asertowane) |
 | G.fortune · K1: Unikaty z Fortuną / bez · L100 | 1,25 | 1,20–1,35 | w paśmie | S88 (asertowane) |
 
 ## Arena: Żetony i sklep (S128)
@@ -15547,12 +16285,12 @@ HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba
 | Grimrok: wspólny cios w pojedynkę / HP | 1,22 | ≥ 1,00 | w paśmie | S134 (asertowane) |
 | Grimrok, fala tarczy, 3 graczy: HP na członka | 0,91 | ≤ 1,10 | w paśmie | S134 (asertowane) |
 | Grimrok: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
-| Grimrok: solo Mityczny +9 L20, wspólny cios / HP | 0,68 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L20, wspólny cios / HP | 0,75 | ≤ 1,00 | w paśmie | S134 (asertowane) |
 | Grimrok: solo Mityczny +9 L20, przyjmowane / podtrzymanie | 0,06 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Grimrok: solo Mityczny +9 L20: s | 129,49 | ≤ 900,00 | w paśmie | S134 (asertowane) |
-| Grimrok: solo Mityczny +9 L30, wspólny cios / HP | 0,40 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Grimrok: solo Mityczny +9 L30, przyjmowane / podtrzymanie | 0,06 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Grimrok: solo Mityczny +9 L30: s | 29,11 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L20: s | 246,21 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30, wspólny cios / HP | 0,44 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30, przyjmowane / podtrzymanie | 0,09 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Grimrok: solo Mityczny +9 L30: s | 64,42 | ≤ 900,00 | w paśmie | S134 (asertowane) |
 | Morvane, 3 graczy L44: min | 5,62 | 5,00–7,50 | w paśmie | S134 (asertowane) |
 | Morvane, 5 graczy L44: min | 3,83 | 3,00–4,50 | w paśmie | S134 (asertowane) |
 | Morvane: czas 3 graczy / 2 graczy | 0,65 | ≤ 1,00 | w paśmie | S134 (asertowane) |
@@ -15570,12 +16308,12 @@ HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba
 | Morvane: przerwanie zaklęcia w pojedynkę: s | 5,58 | ≥ 4,50 | w paśmie | S134 (asertowane) |
 | Morvane, fala tarczy, 3 graczy: HP na członka | 0,40 | ≤ 1,10 | w paśmie | S134 (asertowane) |
 | Morvane: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L45, przerwanie: s | 0,97 | ≤ 4,50 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L45, przyjmowane / podtrzymanie | 0,17 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L45: s | 85,00 | ≤ 900,00 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L55, przerwanie: s | 0,36 | ≤ 4,50 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L55, przyjmowane / podtrzymanie | 0,11 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Morvane: solo Mityczny +9 L55: s | 31,50 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45, przerwanie: s | 1,92 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45, przyjmowane / podtrzymanie | 0,26 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L45: s | 169,26 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55, przerwanie: s | 0,76 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55, przyjmowane / podtrzymanie | 0,25 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Morvane: solo Mityczny +9 L55: s | 66,76 | ≤ 900,00 | w paśmie | S134 (asertowane) |
 | Azgor, 3 graczy L69: min | 5,94 | 5,00–7,50 | w paśmie | S134 (asertowane) |
 | Azgor, 5 graczy L69: min | 4,08 | 3,00–4,50 | w paśmie | S134 (asertowane) |
 | Azgor: czas 3 graczy / 2 graczy | 0,65 | ≤ 1,00 | w paśmie | S134 (asertowane) |
@@ -15593,9 +16331,9 @@ HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba
 | Azgor: wspólny cios w pojedynkę / HP | 1,16 | ≥ 1,00 | w paśmie | S134 (asertowane) |
 | Azgor, fala tarczy, 3 graczy: HP na członka | 0,37 | ≤ 1,10 | w paśmie | S134 (asertowane) |
 | Azgor: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
-| Azgor: solo Mityczny +9 L70, wspólny cios / HP | 0,73 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Azgor: solo Mityczny +9 L70, przyjmowane / podtrzymanie | 0,10 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Azgor: solo Mityczny +9 L70: s | 88,06 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70, wspólny cios / HP | 0,79 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70, przyjmowane / podtrzymanie | 0,17 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Azgor: solo Mityczny +9 L70: s | 170,33 | ≤ 900,00 | w paśmie | S134 (asertowane) |
 | Vaelgrath, 3 graczy L99: min | 6,05 | 5,00–7,50 | w paśmie | S134 (asertowane) |
 | Vaelgrath, 5 graczy L99: min | 4,24 | 3,00–4,50 | w paśmie | S134 (asertowane) |
 | Vaelgrath: czas 3 graczy / 2 graczy | 0,66 | ≤ 1,00 | w paśmie | S134 (asertowane) |
@@ -15615,10 +16353,10 @@ HP bossa bez skalowania z drużyną (`Bosses.HP_BASE` × `hpMul`), stała liczba
 | Vaelgrath: przerwanie zaklęcia w pojedynkę: s | 5,09 | ≥ 4,50 | w paśmie | S134 (asertowane) |
 | Vaelgrath, fala tarczy, 3 graczy: HP na członka | 0,36 | ≤ 1,10 | w paśmie | S134 (asertowane) |
 | Vaelgrath: solo na równym sprzęcie przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S134 (asertowane) |
-| Vaelgrath: solo Mityczny +9 L100, wspólny cios / HP | 0,73 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Vaelgrath: solo Mityczny +9 L100, przerwanie: s | 1,00 | ≤ 4,50 | w paśmie | S134 (asertowane) |
-| Vaelgrath: solo Mityczny +9 L100, przyjmowane / podtrzymanie | 0,09 | ≤ 1,00 | w paśmie | S134 (asertowane) |
-| Vaelgrath: solo Mityczny +9 L100: s | 96,70 | ≤ 900,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, wspólny cios / HP | 0,79 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, przerwanie: s | 1,75 | ≤ 4,50 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100, przyjmowane / podtrzymanie | 0,20 | ≤ 1,00 | w paśmie | S134 (asertowane) |
+| Vaelgrath: solo Mityczny +9 L100: s | 160,63 | ≤ 900,00 | w paśmie | S134 (asertowane) |
 
 
 | walka bez pasma (2 i 4 graczy) | min |

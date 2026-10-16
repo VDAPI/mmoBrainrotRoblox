@@ -47,8 +47,9 @@
   // S68: pool of the chosen class (local state, not in the URL).
   let cls = $state<string>(detail.poolClasses[0]?.id ?? "");
   const pool = $derived(detail.pool?.[cls] ?? []);
-  const legendaryPool = $derived(detail.legendaryPool?.[cls] ?? []);
-  const mythicPool = $derived(detail.mythicPool?.[cls] ?? []);
+  // S134g: the skill effects the class can roll (Legendary 1, Mythic 1 + 1) instead of the legendary / mythic lines
+  const legendaryPool = $derived(detail.effectPool?.[cls]?.legendary ?? []);
+  const mythicPool = $derived(detail.effectPool?.[cls]?.mythic ?? []);
   const classIndex = $derived(detail.poolClasses.findIndex((c) => c.id === cls));
   const traitLine = $derived(detail.trait?.line[state.rarity]?.[state.up]);
 
@@ -198,7 +199,7 @@
         </div>
       {/if}
       {#if rarity.bonusMax > 0}
-        <p class="lead">{fill(labels.poolText, { n: rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}` })}{rarity.legendaryLines > 0 ? ` ${fill(labels.poolLegendaryText, { n: rarity.legendaryLines })}` : ""}{rarity.mythicLines > 0 ? ` ${fill(labels.poolMythicText, { n: rarity.mythicLines })}` : ""}</p>
+        <p class="lead">{fill(labels.poolText, { n: rarity.bonusMin === rarity.bonusMax ? rarity.bonusMin : `${rarity.bonusMin}–${rarity.bonusMax}` })}{rarity.legendaryEffects > 0 ? ` ${fill(labels.poolLegendaryText, { n: rarity.legendaryEffects })}` : ""}{rarity.mythicEffects > 0 ? ` ${fill(labels.poolMythicText, { n: rarity.mythicEffects })}` : ""}</p>
       {:else}
         <p class="lead muted">{fill(labels.poolText, { n: 0 })}</p>
       {/if}
@@ -223,27 +224,27 @@
           {/each}
         </tbody>
       </table>
-      {#if legendaryPool.length > 0 && rarity.legendaryLines > 0}
+      {#if legendaryPool.length > 0 && rarity.legendaryEffects > 0}
         <details class="legpool">
           <summary class="vw-label">{labels.poolLegendary}</summary>
           <table class="vw-table pool">
             <caption class="vw-sr">{labels.poolLegendary}</caption>
             <tbody>
-              {#each legendaryPool.filter((b) => range(b) && b.chance[state.rarity] > 0) as b (b.id)}
-                <tr><td class="bonus leg">{bonusText(b.name[lang], range(b), lang, b.decimals)}</td><td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td></tr>
+              {#each legendaryPool as e (e.id)}
+                <tr><td class="bonus leg"><b>{e.name[lang]}</b>: {e.line[lang]}</td></tr>
               {/each}
             </tbody>
           </table>
         </details>
       {/if}
-      {#if mythicPool.length > 0 && rarity.mythicLines > 0}
+      {#if mythicPool.length > 0 && rarity.mythicEffects > 0}
         <details class="legpool">
           <summary class="vw-label">{labels.poolMythic}</summary>
           <table class="vw-table pool">
             <caption class="vw-sr">{labels.poolMythic}</caption>
             <tbody>
-              {#each mythicPool.filter((b) => range(b) && b.chance[state.rarity] > 0) as b (b.id)}
-                <tr><td class="bonus myth">{bonusText(b.name[lang], range(b), lang, b.decimals)}</td><td class="r">{b.chance[state.rarity] ? formatChance(b.chance[state.rarity], lang) : "—"}</td></tr>
+              {#each mythicPool as e (e.id)}
+                <tr><td class="bonus myth"><b>{e.name[lang]}</b>: {e.line[lang]}</td></tr>
               {/each}
             </tbody>
           </table>

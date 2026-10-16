@@ -14,9 +14,11 @@
 local Bonuses = require("../../src/shared/Data/Bonuses")
 local Classes = require("../../src/shared/Data/Classes")
 local Clean = require("./Clean")
+local EffectData = require("../../src/shared/Data/ItemEffects")
 local Elements = require("../../src/shared/Data/Elements")
 local Fish = require("../../src/shared/Data/Fish")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
+local ItemEffects = require("../../src/shared/Logic/ItemEffects")
 local ItemRoll = require("../../src/shared/Logic/ItemRoll")
 local ItemValue = require("../../src/shared/Logic/ItemValue")
 local ItemData = require("../../src/shared/Data/Items")
@@ -91,6 +93,7 @@ S.file(
 			["use?"] = "data",
 			["bonusGroup?"] = "string",
 			["fixedBonuses?"] = arr(rec("FixedBonus", { stat = "ref:bonuses", v = "number" })),
+			["fixedEffects?"] = map(arr("string")), -- S134g: a named item's fixed effects by class (ItemEffect ids)
 			["boss?"] = "ref:bosses",
 			noSell = "bool",
 			rarities = arr(enum("RarityKey")),
@@ -125,6 +128,19 @@ S.file(
 			pvp = "name",
 			["cap?"] = "name",
 			line = map(arr("name")),
+		})),
+		-- S134g: skill effects of Legendary and Mythic items (Data/ItemEffects, wiki = true); the line is the game's text
+		-- (Logic/ItemEffects.line) with the skill's current name; role and pool from docs/DESIGN-18.md §5-§6.
+		effects = arr(rec("ItemEffect", {
+			id = "string",
+			tier = enum("RarityKey"),
+			class = enum("ClassId"),
+			skill = "string",
+			skillName = "name",
+			role = "string",
+			pool = "string",
+			name = "name",
+			line = "name",
 		})),
 	})
 )
@@ -380,6 +396,61 @@ local function affinityOf(base: any): { [string]: { [string]: number } }?
 end
 
 -- S68: a live trait with its line for every rarity and upgrade and the tooltip detail texts at Common +0.
+-- S134g: the published skill effects (Data/ItemEffects, wiki = true, not retired, skill not hidden), in data order.
+local function effectList(hidden: { [string]: boolean }): { any }
+	local out = {}
+	for _, def in EffectData.list do
+		-- an effect of an unpublished skill (a path skill hidden on the wiki) waits with its skill (docs/WIKI.md §1)
+		if def.wiki and def.replacedBy == nil and not hidden[def.skill] then
+			table.insert(out, {
+				id = def.id,
+				tier = def.tier,
+				class = def.class,
+				skill = def.skill,
+				skillName = Names.of(`skill.{def.skill}.name`),
+				role = def.role,
+				pool = def.pool,
+				name = Names.of(def.nameKey),
+				line = Names.combine(function(lang: string): string
+					return ItemEffects.line(def, lang)
+				end),
+			})
+		end
+	end
+	return out
+end
+
+-- S134g: a named item's fixed effects by class (every class that can wear it; Logic/ItemEffects.idsOf), nil without.
+local function fixedEffectsOf(def: any, hidden: { [string]: boolean }): { [string]: { string } }?
+	if def.fx == nil then
+		return nil
+	end
+	local out: { [string]: { string } } = {}
+	for _, classId in def.classes or Classes.order do
+		local ids: { string } = {}
+		for _, effect in ItemEffects.ofItem({ id = def.id }, classId) do
+			if effect.class == classId and not hidden[effect.skill] then
+				table.insert(ids, effect.id)
+			end
+		end
+		if #ids > 0 then
+			out[classId] = ids
+		end
+	end
+	return out
+end
+
+-- S134g: the pools a new item rolls from (the legacy legendary / mythic lists are never rolled and stay off the wiki).
+local function rolledPools(): { [string]: { string } }
+	local out: { [string]: { string } } = {}
+	for _, group in Clean.keys(Bonuses.pools) do
+		if group ~= "legendary" and group ~= "mythic" then
+			out[group] = Clean.clean(Bonuses.pools[group])
+		end
+	end
+	return out
+end
+
 local function traitInfo(traitId: string, baseType: string): any
 	local def = ItemTraits.get(traitId) :: ItemTraits.TraitDef
 	local lines = {}
@@ -514,6 +585,7 @@ function Items.build(ctx: any): any
 				use = if def.use then Clean.clean(def.use) else nil,
 				bonusGroup = def.bonusGroup,
 				fixedBonuses = if def.fixedBonuses then Clean.clean(def.fixedBonuses) else nil,
+				fixedEffects = fixedEffectsOf(def, ctx.hidden),
 				boss = def.bossId,
 				noSell = def.noSell == true,
 				rarities = keys,
@@ -560,7 +632,14 @@ function Items.build(ctx: any): any
 			traits[traitDef.id] = traitInfo(traitDef.id, base.type)
 		end
 	end
-	return { items = list, slots = slots, categories = categories, bases = bases, traits = traits }
+	return {
+		items = list,
+		slots = slots,
+		categories = categories,
+		bases = bases,
+		traits = traits,
+		effects = effectList(ctx.hidden),
+	}
 end
 
 function Items.bonuses(ctx: any): any
@@ -618,7 +697,7 @@ function Items.bonuses(ctx: any): any
 			for _, classId in poolClassesOf(base) do
 				local byRarity = {}
 				for _, r in Rarities.list do
-					if r.bonusMax > 0 or r.legendaryLines > 0 or r.mythicLines > 0 then
+					if r.bonusMax > 0 then -- S134g: no legendary / mythic lines any more
 						local rng = Rng.new(StubRng.seedOf(`bonus:{base.type}:{classId}:{r.key}`))
 						local counts: { [string]: number } = {}
 						for _ = 1, rolls do
@@ -647,7 +726,7 @@ function Items.bonuses(ctx: any): any
 	end
 	return {
 		bonuses = list,
-		pools = Clean.clean(Bonuses.pools),
+		pools = rolledPools(),
 		params = params,
 		frequency = frequency,
 		classStats = classStats,

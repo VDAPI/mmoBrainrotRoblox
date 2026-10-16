@@ -1,6 +1,6 @@
 --!strict
 -- S68: item tooltip order (STATY 11), the details panel model (TooltipModel.details, traitNodes, capValue), the
--- details hint and the % comparison lines.
+-- details hint; S134g: the head line, the stat groups, the skill effects and no comparison numbers.
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Combat = require("../src/shared/Data/Combat")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
@@ -67,47 +67,175 @@ local function traitTypes(): { [string]: string }
 	return out
 end
 
-T.describe("TooltipModel order (S68)", function()
-	T.it("name, damage, trait, regular, legendary, mythic lines, requirements", function()
-		for _, id in { "sword1h_60", "shield_60" } do
-			local lines = TooltipModel.build(sample(id, Rarities.MYTHIC), nil, { lang = "pl", class = "Warrior" }).lines
-			local first: { [string]: number } = {}
-			local lastTier = 0
-			for index, line in lines do
-				first[line.role] = first[line.role] or index
-				if line.role == "bonus" then
-					local rank = TooltipModel.TIER_ORDER[line.tier or "regular"]
-					T.expect(rank >= lastTier).toBe(true)
-					lastTier = rank
-				end
+-- S134g (F1): every category starts with name, head, rarity; equipment goes main value, statistics in fixed groups,
+-- trait, effects, description, replace notes, binding, item level, value. Replaces the S68 order test and the FIX
+-- 2026-10-15 readability test (the type line became the head line, the requirements and classes moved into it).
+local function firstOf(lines: { TooltipModel.Line }): { [string]: number }
+	local first: { [string]: number } = {}
+	for index, line in lines do
+		first[line.role] = first[line.role] or index
+	end
+	return first
+end
+
+T.describe("TooltipModel order (S134g)", function()
+	T.it("every category: name, head, rarity first", function()
+		for _, id in { "sword1h_60", "armor_heavy_60", "ring_60", "potion_hp_2", "spider_silk", "stone_return" } do
+			local item = sample(id, Rarities.HEROIC)
+			local lines = TooltipModel.build(item, nil, { lang = "pl", class = "Warrior", level = 60 }).lines
+			T.expect({ id, lines[1].role, lines[2].role, lines[3].role }).toEqual({ id, "name", "head", "rarity" })
+			T.expect({ id, lines[2].size, lines[2].font, lines[3].size }).toEqual({ id, "body", "bold", "small" })
+			for _, line in lines do
+				T.expect({ id, line.role ~= "type" and line.role ~= "requires" and line.role ~= "classes" })
+					.toEqual({ id, true })
 			end
-			local stat = first.dps or first.stat
-			T.expect(first.name < stat).toBe(true)
-			T.expect(stat < first.traitName).toBe(true)
-			T.expect(first.traitName < first.trait).toBe(true)
-			T.expect(first.trait < first.bonus).toBe(true)
-			T.expect(first.bonus < first.requires).toBe(true)
-			T.expect(lastTier).toBe(3)
+		end
+	end)
+
+	T.it("weapon, armour, jewellery: main value, stats, trait, effects, description, binding, level, value", function()
+		for _, id in { "sword1h_60", "shield_60", "armor_heavy_60", "ring_60" } do
+			local item = sample(id, Rarities.MYTHIC)
+			local first = firstOf(TooltipModel.build(item, nil, { lang = "pl", class = "Warrior" }).lines)
+			-- the main value (damage or armour) before the statistics; a ring has none (its base stats are statistics)
+			local main = if id == "ring_60" then first.bonus else first.speedDps or first.stat
+			T.expect({ id, first.rarity < main, main <= first.bonus }).toEqual({ id, true, true })
+			if first.traitName then
+				T.expect({ id, first.bonus < first.traitName, first.traitName < first.fxTitle })
+					.toEqual({ id, true, true })
+			end
+			T.expect({ id, first.bonus < first.fxTitle, first.fxTitle < first.fx }).toEqual({ id, true, true })
+			T.expect({ id, first.fx < first.bind, first.bind < first.ilvl, first.ilvl < first.value })
+				.toEqual({ id, true, true, true })
+		end
+	end)
+
+	T.it("head: kind, grip, level and classes; the unmet part red", function()
+		local sword = sample("sword1h_60", Rarities.HEROIC)
+		local def = Items.get("sword1h_60") :: Items.ItemDef
+		local lines = TooltipModel.build(sword, nil, { lang = "pl", class = "Warrior", level = 99 }).lines
+		local head = lines[2].text
+		T.expect(string.find(head, Locale.T("itemBase.sword1h", nil, "pl"), 1, true) ~= nil).toBe(true)
+		T.expect(string.find(head, Locale.T("itemCat.weapon1h", nil, "pl"), 1, true) ~= nil).toBe(true)
+		T.expect(string.find(head, Locale.T("tooltip.head.level", { level = def.level }, "pl"), 1, true) ~= nil)
+			.toBe(true)
+		T.expect(string.find(head, TooltipModel.BAD_HEX, 1, true)).toBeNil()
+		local low = TooltipModel.build(sword, nil, { lang = "pl", class = "Warrior", level = 1 }).lines[2].text
+		local red = `<font color="{TooltipModel.BAD_HEX}">{Locale.T("tooltip.head.level", { level = def.level }, "pl")}`
+		T.expect(string.find(low, red, 1, true) ~= nil).toBe(true)
+		local mage = TooltipModel.build(sword, nil, { lang = "pl", class = "Mage", level = 99 }).lines[2].text
+		local className = Locale.T("class.Warrior.name", nil, "pl")
+		T.expect(string.find(mage, `<font color="{TooltipModel.BAD_HEX}">{className}`, 1, true) ~= nil).toBe(true)
+		-- every weapon names its grip (owner 2026-10-15), ranged ones too
+		local bow = TooltipModel.build(sample("bow_60", Rarities.COMMON), nil, { lang = "pl" }).lines[2].text
+		T.expect(string.find(bow, Locale.T("itemCat.weaponRanged1h", nil, "pl"), 1, true) ~= nil).toBe(true)
+		local staff = TooltipModel.build(sample("staff_60", Rarities.COMMON), nil, { lang = "en" }).lines[2].text
+		T.expect(string.find(staff, Locale.T("itemCat.weaponRanged2h", nil, "en"), 1, true) ~= nil).toBe(true)
+		-- level 1 items leave the level out; the rarity line carries the upgrade
+		local upgraded = sample("sword1h_60", Rarities.LEGENDARY, 3)
+		local rarity = TooltipModel.build(upgraded, nil, { lang = "pl" }).lines[3].text
+		T.expect(string.find(TooltipModel.plain(rarity), "+3", 1, true) ~= nil).toBe(true)
+		local potion = TooltipModel.build(sample("potion_hp_2", Rarities.COMMON), nil, { lang = "pl" }).lines
+		T.expect(potion[3].text)
+			.toBe(TooltipModel.rarityLine(sample("potion_hp_2", Rarities.COMMON), Items.get("potion_hp_2") :: any, "pl"))
+	end)
+
+	T.it(
+		"the statistics are small, in the fixed group order whatever the roll order, with gaps between groups",
+		function()
+			local lines = { { stat = "goldBonus", v = 5 }, { stat = "vit", v = 4 }, { stat = "critChance", v = 2 } }
+			local reversed = { lines[3], lines[2], lines[1] }
+			local function order(bonuses: { any }): { string }
+				local out: { string } = {}
+				for _, line in TooltipModel.build(made("ring_60", Rarities.HEROIC, bonuses), nil, { lang = "pl" }).lines do
+					if line.role == "bonus" or line.role == "stat" or line.role == "gap" then
+						table.insert(out, if line.role == "bonus" then (line.detail :: any).id else line.role)
+						if line.role ~= "gap" then
+							T.expect(line.size).toBe("small")
+						end
+					end
+				end
+				return out
+			end
+			local a = order(lines)
+			T.expect(a).toEqual(order(reversed))
+			local at: { [string]: number } = {}
+			for index, id in a do
+				at[id] = at[id] or index
+			end
+			T.expect(at.vit < at.critChance and at.critChance < at.goldBonus).toBe(true)
+			T.expect(table.find(a, "gap") ~= nil).toBe(true)
+			local groups: { string } = {}
+			for _, group in TooltipModel.STAT_GROUPS do
+				table.insert(groups, group.id)
+			end
+			T.expect(groups).toEqual({ "attributes", "attack", "defence", "resources" })
+		end
+	)
+
+	T.it("every published line of Data/Bonuses has a group", function()
+		for id, def in Bonuses.byId do
+			if def.wiki == true then
+				T.expect({ id, (TooltipModel.groupOf(id)) ~= nil }).toEqual({ id, true })
+			end
+		end
+	end)
+
+	T.it("rarity bonus after the stats, no rarity bonus on a Common item, item level in the footer", function()
+		local first = firstOf(TooltipModel.build(sample("sword1h_60", Rarities.HEROIC), nil, { lang = "pl" }).lines)
+		T.expect(first.rarityBonus > first.bonus and first.rarityBonus < first.traitName).toBe(true)
+		T.expect(first.ilvl > first.bind).toBe(true)
+		for _, line in TooltipModel.build(sample("sword1h_60", Rarities.COMMON), nil, { lang = "pl" }).lines do
+			T.expect(line.role ~= "rarityBonus").toBe(true)
 		end
 	end)
 end)
 
-T.describe("TooltipModel readability (FIX 2026-10-15)", function()
-	T.it("type line names the kind, rarity bonus before the trait, item level in the footer", function()
-		local item = sample("sword1h_60", Rarities.HEROIC)
+T.describe("TooltipModel skill effects (S134g)", function()
+	T.it("effects after the trait in the tier colour; another class's effect says whom it works for", function()
+		local item = made("sword1h_60", Rarities.MYTHIC, {})
+		item.fx = { "charge_stagger", "earthquake_rupture" }
 		local lines = TooltipModel.build(item, nil, { lang = "pl", class = "Warrior" }).lines
-		local first: { [string]: number } = {}
-		for index, line in lines do
-			first[line.role] = first[line.role] or index
+		local titles, fx, notes = 0, 0, 0
+		for _, line in lines do
+			if line.role == "fxTitle" then
+				titles += 1
+				local hex = Rarities.get(if line.tier == "mythic" then Rarities.MYTHIC else Rarities.LEGENDARY).textHex
+				T.expect(line.hex).toBe(hex)
+				T.expect(clean(line.text)).toBe(true)
+			elseif line.role == "fx" then
+				fx += 1
+				T.expect(clean(line.text)).toBe(true)
+				T.expect((line.detail :: any).kind).toBe("effect")
+			elseif line.role == "fxClass" then
+				notes += 1
+			end
 		end
-		T.expect(string.find(lines[first.type].text, Locale.T("itemBase.sword1h", nil, "pl"), 1, true) ~= nil)
-			.toBe(true)
-		T.expect(first.rarityBonus ~= nil and first.rarityBonus < first.traitName).toBe(true)
-		T.expect(first.bonusTitle < first.bonus).toBe(true)
-		T.expect(first.ilvl > first.requires).toBe(true)
-		local common = TooltipModel.build(sample("sword1h_60", Rarities.COMMON), nil, { lang = "pl" }).lines
-		for _, line in common do
-			T.expect(line.role ~= "rarityBonus").toBe(true)
+		T.expect({ titles, fx, notes }).toEqual({ 2, 2, 0 })
+		local other = TooltipModel.build(item, nil, { lang = "en", class = "Mage" }).lines
+		local note = 0
+		for _, line in other do
+			if line.role == "fxClass" then
+				note += 1
+				T.expect(line.text).toBe(Locale.T("tooltip.fx.otherClass", { class = "Warrior" }, "en"))
+			end
+		end
+		T.expect(note).toBe(2)
+	end)
+
+	T.it("effect details: what it does, the skill, breakpoints, once, the class", function()
+		local item = made("wand_60", Rarities.LEGENDARY, {})
+		item.fx = { "meteor_shards" }
+		for _, lang in { "pl", "en" } do
+			local details = TooltipModel.details(item, { kind = "effect", id = "meteor_shards" }, { lang = lang })
+			T.expect(details.tier).toBe("mythic")
+			for _, role in { "does", "skill", "works", "once", "class" } do
+				local row = rowOf(details, role)
+				T.expect({ lang, role, row ~= nil and clean(row.text) }).toEqual({ lang, role, true })
+			end
+			T.expect(
+				string.find((rowOf(details, "skill") :: any).text, Locale.T("skill.meteor.name", nil, lang), 1, true)
+					~= nil
+			).toBe(true)
 		end
 	end)
 end)
@@ -128,7 +256,7 @@ T.describe("TooltipModel Elixir of Wholeness (S122)", function()
 			T.expect(byRole.blocked.tone).toBe("bad")
 			T.expect(byRole.bind.text).toBe(Locale.T("tooltip.bound", nil, lang))
 			T.expect(clean(byRole.rules.text) and clean(byRole.blocked.text)).toBe(true)
-			T.expect(byRole.type.text ~= nil).toBe(true)
+			T.expect(byRole.head.text ~= nil).toBe(true) -- S134g: the head line replaced the type line
 		end
 	end)
 end)
@@ -304,22 +432,40 @@ T.describe("TooltipModel hint and comparison (S68)", function()
 		T.expect(count(mouse, "detailsHint")).toBe(1)
 	end)
 
-	T.it("an upgraded sword shows the damage change in %", function()
+	-- S134g (F2, owner 2026-10-15): no comparison numbers in the tooltip (the second panel shows the equipped item's own
+	-- stats); only "Zastąpi: <name>" without numbers and the two-hander note. Was: % and ↑↓ lines (S68).
+	T.it("an upgraded sword shows no comparison numbers, only what it replaces", function()
 		local better = made("sword1h_30", Rarities.COMMON, {}, 5)
 		local worn = made("sword1h_30", Rarities.COMMON, {}, 0)
 		worn.uid = "worn"
-		local withClass = TooltipModel.build(better, nil, { lang = "pl", class = "Warrior", equipped = worn }).lines
-		T.expect(count(withClass, "comparePct")).toBe(1)
-		T.expect(count(withClass, "compare")).toBe(1)
-		local without = TooltipModel.build(better, nil, { lang = "pl", equipped = worn }).lines
-		T.expect(count(without, "comparePct")).toBe(0)
+		local lines = TooltipModel.build(better, nil, { lang = "pl", class = "Warrior", equipped = worn }).lines
+		for _, role in { "compare", "comparePct", "compareTitle", "bonusTitle", "type", "requires", "classes" } do
+			T.expect({ role, count(lines, role) }).toEqual({ role, 0 })
+		end
+		T.expect(count(lines, "replaces")).toBe(1)
+		for _, line in lines do
+			if line.role == "replaces" then
+				local name = require("../src/shared/Logic/ItemName").get("pl", worn.id, worn.up)
+				T.expect(line.text).toBe(Locale.T("tooltip.replaces", { item = name }, "pl"))
+				T.expect(string.find(line.text, "%%")).toBeNil()
+			end
+		end
+		local self = TooltipModel.build(worn, nil, { lang = "pl", class = "Warrior", equipped = worn }).lines
+		T.expect(count(self, "replaces")).toBe(0)
 	end)
 
-	T.it("a two-hander into an empty weapon slot shows no % block, even next to a shield", function()
+	T.it("a two-hander next to a shield replaces the shield too; an off-hand under a two-hander is red", function()
 		local axe = made("axe2h_50", Rarities.COMMON, {}, 0)
 		local shield = made("shield_50", Rarities.COMMON, {}, 0)
 		local lines = TooltipModel.build(axe, nil, { lang = "pl", class = "Warrior", offhand = shield }).lines
 		T.expect(count(lines, "comparePct")).toBe(0)
-		T.expect(count(lines, "compareTitle")).toBe(0)
+		T.expect(count(lines, "replaces")).toBe(1)
+		local under = TooltipModel.build(shield, nil, { lang = "pl", class = "Warrior", mainHand = axe }).lines
+		T.expect(count(under, "compareNote")).toBe(1)
+		for _, line in under do
+			if line.role == "compareNote" then
+				T.expect({ line.text, line.tone }).toEqual({ Locale.T("equip.error.twoHanded", nil, "pl"), "bad" })
+			end
+		end
 	end)
 end)

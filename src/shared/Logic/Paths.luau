@@ -18,6 +18,7 @@
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
 local EffectStack = require("./EffectStack")
+local ItemEffects = require("./ItemEffects")
 local Items = require("../Data/Items")
 local LuckData = require("../Data/Luck")
 local PathData = require("../Data/Paths")
@@ -897,8 +898,9 @@ local function buildApi(source: Source)
 		return out
 	end
 
-	-- The skill as it works for the character: rank (at least 1, as the locked preview of S56), path.bp choices and
-	-- the modify nodes. The one call for every consumer (server, skill bar, aim, description).
+	-- The skill as it works for the character: rank (at least 1, as the locked preview of S56), path.bp choices,
+	-- the modify nodes and (S134g) the skill effects of the equipped Legendary / Mythic items of the character's class
+	-- (Logic/ItemEffects.mods, after the nodes). The one call for every consumer (server, skill bar, aim, description).
 	local function effectiveFor(
 		character: Char,
 		skillId: string,
@@ -908,7 +910,11 @@ local function buildApi(source: Source)
 		local skill = source.skill(skillId)
 		assert(skill, `Paths.effectiveFor: unknown skill {skillId}`)
 		local r = rank or math.max(1, skillRank(character, skillId))
-		return Skills.effective(skill, r, stateOf(character).bp, skillMods(character, skillId, weapons))
+		local mods = skillMods(character, skillId, weapons)
+		for _, mod in ItemEffects.mods(character, skillId) do
+			table.insert(mods, mod :: any)
+		end
+		return Skills.effective(skill, r, stateOf(character).bp, mods)
 	end
 
 	-- Base passives (rank > 0), path skill passives only while usable, and node.passive of the active nodes.

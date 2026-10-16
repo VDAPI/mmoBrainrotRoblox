@@ -50,6 +50,7 @@ local Exp = require("../src/shared/Logic/Exp")
 local FightSim = require("../src/shared/Logic/FightSim")
 local GuildSkills = require("../src/shared/Data/GuildSkills")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemScore = require("../src/shared/Logic/ItemScore")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
@@ -159,7 +160,7 @@ Balance.HUNTER_WEAPONS = { "bow", "shortbow", "longbow", "crossbow", "heavycross
 -- number comes from the data (Bonuses, Blessings, GuildSkills, ItemRoll.trait) through Balance.luckProfile.
 --   jewellery: "heroic" = expected dropBonus lines of a Heroic set (expectedBonuses); "legendary" = one dropBonus
 --              line of a middle Legendary roll on each of the 4 jewellery items; "mythic" = top of the Mythic range
---   legendaryLines: leg_dropBonus lines (middle Legendary roll) or "all" (top Mythic roll on every item that can roll it)
+--   (S134g: the legendaryLines field (leg_dropBonus lines) is gone with the lines; luckProfile.legendary is 0)
 Balance.LUCK_PROFILES = {
 	{ id = "K0", label = "bez szczęścia" },
 	{ id = "K1", label = "zwykły", jewellery = "heroic", blessing = 3, guild = 0, relic = { rarity = 1, up = 0 } },
@@ -167,7 +168,6 @@ Balance.LUCK_PROFILES = {
 		id = "K2",
 		label = "łowca łupu",
 		jewellery = "legendary",
-		legendaryLines = 1,
 		blessing = 4,
 		guild = 5,
 		relic = { rarity = 5, up = 9 },
@@ -176,7 +176,6 @@ Balance.LUCK_PROFILES = {
 		id = "K3",
 		label = "maks.",
 		jewellery = "mythic",
-		legendaryLines = "all",
 		blessing = 5,
 		guild = 5,
 		relic = { rarity = 5, up = 9 },
@@ -440,7 +439,8 @@ Balance.TYPE_SETS = {
 -- D4 (STATY 9): the 12 named Mythics against the expected rolled Mythic of the same base and ilvl (Balance.namedPower,
 -- the S84 F definition): power in MIX of the target classes (the main stat of the item; none: the classes that wear
 -- it) within NAMED_BAND; every regular line at most NAMED_LINE_MAX x the Mythic top of ItemRoll.bonusRange at the
--- item's level (a named item has 4 lines instead of 6).
+-- item's level (S134g: a named item has 3 lines and 2 fixed skill effects like a rolled Mythic; the effects are on
+-- both sides, so the power compares the stats).
 Balance.NAMED_BAND = { 1.00, 1.08 }
 Balance.NAMED_LINE_MAX = 2.5
 Balance.NAMED_TARGETS = {
@@ -576,21 +576,8 @@ expectedBonusesRaw = function(defId: string, ilvl: number, rarity: number, class
 			end
 		end
 	end
-	-- S88: the class-filtered pools the server draws from (ItemRoll.legendaryPool / mythicPool), not the whole lists
-	local legendary = ItemRoll.legendaryPool(defId, classId)
-	if rarityDef.legendaryLines > 0 and #legendary > 0 then
-		local share = math.min(1, rarityDef.legendaryLines / #legendary)
-		for _, id in legendary do
-			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
-		end
-	end
-	local mythic = ItemRoll.mythicPool(defId, classId)
-	if rarityDef.mythicLines > 0 and #mythic > 0 then
-		local share = math.min(1, rarityDef.mythicLines / #mythic)
-		for _, id in mythic do
-			table.insert(out, { stat = id, v = ItemRoll.rollBonusValue(id, ilvl, rarity, 0.5) * share })
-		end
-	end
+	-- S134g: no legendary / mythic lines any more (Legendary and Mythic roll skill effects, valued in ItemScore only:
+	-- Balance.rarityEdge); the power model sees their stats alone
 	return out
 end
 
@@ -3081,7 +3068,19 @@ function Balance.targets1_20(): { TargetRow }
 			target(rows, `{id}.unique`, "rarity", `{c} {L}: Unikatowy`, unique, 0.07, 0.15, c, L)
 			-- FIX 2026-10-09: Heroic always rolls 3 bonuses (was 2-3), up to ~25.1 %
 			target(rows, `{id}.heroic`, "rarity", `{c} {L}: Heroiczny`, heroic, 0.15, 0.26, c, L)
-			target(rows, `{id}.legendary`, "rarity", `{c} {L}: Legendarny`, legendary, 0.25, 0.42, c, L)
+			-- S134g: Legendary = Heroic +~5 % in stats plus a skill effect (no power here): Legendary - Heroic in
+			-- (0, 0.08] (was Legendary 0.25-0.42 with its fourth, legendary line)
+			target(
+				rows,
+				`{id}.legendary`,
+				"rarity",
+				`{c} {L}: Legendarny − Heroiczny`,
+				legendary - heroic,
+				1e-9,
+				0.08,
+				c,
+				L
+			)
 			-- Mythic beats Legendary: Mythic - Legendary strictly above 0.
 			target(
 				rows,
@@ -5562,6 +5561,30 @@ do
 		assert(R[key] == nil, `GLOBAL_REPORT_ONLY: duplicate {key}`)
 		R[key] = { session = session, why = why }
 	end
+	-- S134g: poza zasięgiem dźwigni S134g (G8 bands unchanged, docs/sessions S134g E3): a rolled two-hander's regular
+	-- lines count x Rarities.twoHandedBonusMul (2.7), so the lower Legendary / Mythic rangeMul (1.1 -> 1.05, 1.2 -> 1.1)
+	-- and the end of the legendary lines take more from the two-handed set than from weapon + off-hand; the lever is
+	-- twoHandedBonusMul per rarity (S87 C2), the owner decides
+	local twoHandedWhy = "poza zasięgiem dźwigni S134g: the two-hander's lines (x2.7) lose more of the lower Legendary / "
+		.. "Mythic rangeMul than weapon + off-hand (lever: twoHandedBonusMul per rarity, S87 C2)"
+	for _, label in
+		{
+			"Warrior sword2h legendary +0 L20: z cechami",
+			"Warrior sword2h legendary +9 L20: z cechami",
+			"Warrior sword2h legendary +9 L45: z cechami",
+			"Warrior sword2h mythic +0 L45: z cechami",
+			"Warrior sword2h mythic +9 L45: z cechami",
+			"Warrior sword2h legendary +0 L70: z cechami",
+			"Warrior sword2h mythic +0 L70: z cechami",
+			"Warrior sword2h legendary +0 L100: z cechami",
+			"Warrior sword2h mythic +0 L100: z cechami",
+			"Warrior spear2h legendary +0 L20: z cechami",
+			"Warrior spear2h mythic +9 L20: bez cech",
+			"Mage runestaff mythic +0 L20: bez cech",
+		}
+	do
+		add(`G8|{label}`, "S134g", twoHandedWhy)
+	end
 	-- G7 (D1): the Hunter's Heroic set "z cechami" (band 15-25 %). S88 (H4): out of reach of the S88 levers: the new
 	-- lines are cut to the D1 floor and the bow's traits grow with rarity; an owner decision (a Hunter exception like
 	-- the Legendary <= 43 %)
@@ -6980,7 +7003,10 @@ function Balance.g7Band(classId: string, level: number, rarity: number): (number
 	elseif rarity == Rarities.HEROIC then
 		return 0.15, 0.25
 	elseif rarity == Rarities.LEGENDARY then
-		return 0.25, if classId == "Hunter" then 0.43 else 0.40
+		-- S134g (A2): Legendary = the Heroic of the same class and level x 1.02-1.08 in power (its edge is a skill
+		-- effect, not stats; was 0.25-0.40, Hunter 0.43, with the legendary line)
+		local heroic = Balance.rarityGainAt(classId, level, Rarities.HEROIC).traits
+		return (1 + heroic) * 1.02 - 1, (1 + heroic) * 1.08 - 1
 	end
 	return Balance.rarityGainAt(classId, level, Rarities.LEGENDARY).traits, nil
 end
@@ -7788,22 +7814,7 @@ function Balance.luckProfile(id: string, level: number): LuckProfile
 	elseif spec.jewellery == "mythic" then
 		lines = #Balance.JEWELLERY * ItemRoll.rollBonusValue("dropBonus", ilvl, Rarities.MYTHIC, 1)
 	end
-	if type(spec.legendaryLines) == "number" then
-		legendary = spec.legendaryLines * ItemRoll.rollBonusValue("leg_dropBonus", ilvl, Rarities.LEGENDARY, 0.5)
-	elseif spec.legendaryLines == "all" then
-		local set = { "scepter", "relic" }
-		for _, slot in Balance.ARMOR_SLOTS do
-			table.insert(set, `{slot}_{Balance.LOADOUT.Cleric.weight}`)
-		end
-		for _, slot in Balance.JEWELLERY do
-			table.insert(set, slot)
-		end
-		for _, base in set do
-			if table.find(ItemRoll.legendaryPool(tierId(base, ilvl), "Cleric"), "leg_dropBonus") then
-				legendary += ItemRoll.rollBonusValue("leg_dropBonus", ilvl, Rarities.MYTHIC, 1)
-			end
-		end
-	end
+	-- S134g: no item rolls leg_dropBonus any more (Legendary and Mythic roll skill effects); `legendary` stays 0
 	if spec.blessing then
 		local def = Blessings.of("fortune", spec.blessing) :: any
 		blessing = def.stats.dropBonus or 0
@@ -9827,6 +9838,291 @@ function Balance.bloodMoon(): BloodMoonBalance
 		shards = rules.reward.shards,
 		perWeek = #def.slots,
 	}
+end
+
+-- S134g: Legendary and Mythic with skill effects (docs/sessions/S134g.md E) ------------------------------------------
+-- The stats of a Legendary / Mythic against a Heroic of the same level, the levels a Heroic needs to catch up
+-- (rarityEdge, ItemScore with the expected effect points) and the owner's case (Legendary L36 against Heroic L48).
+-- Expected lines here are smooth (the middle of ItemRoll.bonusRange, not rounded): the rounded middle of
+-- expectedBonuses turns +5 % of a small integer line into +33 % (3 -> 4), which no player gets on average.
+
+-- S134g test data (targets of the rarity tuning; never game numbers).
+Balance.S134g = {
+	levels = { 20, 45, 70, 100 }, -- stats and order rows
+	edgeLevels = { 20, 45, 70 }, -- edge rows (the Heroic up to 9 levels above stays below the level cap)
+	reportLevels = { 20, 36, 45, 70, 90 }, -- the report table
+	slots = { "weapon", "armor", "ring", "necklace", "talisman" },
+	statsLegendary = { 1.03, 1.07 }, -- A2: ItemScore without effects, Legendary / Heroic of the same level
+	statsMythic = { 1.08, 1.12 }, -- A2: Mythic / Heroic
+	edgeLegendary = { 2, 5 }, -- E2: levels a Heroic needs to beat a Legendary with its effect
+	edgeMythic = { 5, 9 },
+	owner = { legendary = 36, heroic = 48 }, -- owner 2026-10-15: a Legendary L36 beat a Heroic L48
+	edgeMax = 40, -- the search stops here
+	-- the measurement before S134g (state 699ce83: Legendary x1.16 / 1.1 + a legendary line, Mythic x1.22 / 1.2 + 3 lines;
+	-- ItemScore of expectedBonuses, levels 20 / 36 / 45 / 70): { legendary edge, mythic edge } per class and slot
+	before = {
+		Warrior = {
+			weapon = { { 1, 5 }, { 1, 6 }, { 2, 7 }, { 3, 9 } },
+			armor = { { 6, 27 }, { 7, 28 }, { 8, 30 }, { 9, 32 } },
+			ring = { { 40, 40 }, { 40, 40 }, { 40, 40 }, { 40, 40 } },
+		},
+		Hunter = {
+			weapon = { { 1, 5 }, { 2, 7 }, { 2, 8 }, { 3, 10 } },
+			armor = { { 9, 37 }, { 9, 39 }, { 10, 40 }, { 12, 40 } },
+			ring = { { 40, 40 }, { 40, 40 }, { 40, 40 }, { 40, 40 } },
+		},
+		Mage = {
+			weapon = { { 1, 5 }, { 1, 6 }, { 2, 7 }, { 3, 9 } },
+			armor = { { 7, 29 }, { 7, 30 }, { 8, 31 }, { 9, 33 } },
+			ring = { { 40, 40 }, { 40, 40 }, { 40, 40 }, { 40, 40 } },
+		},
+		Cleric = {
+			weapon = { { 1, 4 }, { 1, 6 }, { 2, 7 }, { 3, 8 } },
+			armor = { { 5, 21 }, { 5, 23 }, { 6, 24 }, { 7, 27 } },
+			ring = { { 40, 40 }, { 40, 40 }, { 40, 40 }, { 40, 40 } },
+		},
+	},
+	beforeLevels = { 20, 36, 45, 70 },
+	-- the owner's case before (ItemScore Legendary L36 / Heroic L48): weapon 629 / 774, armour 94 / 102, ring 31 / 21,
+	-- necklace 31 / 22 (Warrior; the other classes alike)
+}
+
+-- The base type of a slot name of S134g.slots for `classId` (the default loadout's weapon and armour weight).
+function Balance.s134gBase(classId: string, slot: string): string
+	local loadout = Balance.LOADOUT[classId]
+	if slot == "weapon" then
+		return loadout.weapon
+	elseif slot == "armor" then
+		return `armor_{loadout.weight}`
+	end
+	return slot
+end
+
+local smoothCache: { [string]: { any } } = {}
+-- Expected lines of a new item like expectedBonuses (ItemRoll.inclusion of the weighted pool, family markers spread),
+-- with the unrounded middle of every range.
+function Balance.smoothBonuses(defId: string, ilvl: number, rarity: number, classId: string?): { any }
+	local key = `{defId}|{ilvl}|{rarity}|{classId}`
+	local cached = smoothCache[key]
+	if cached then
+		return cached
+	end
+	local rarityDef = Rarities.get(rarity)
+	local out = {}
+	if rarityDef.bonusMax > 0 then
+		local weights = ItemRoll.poolWeights(defId, classId)
+		local share: { [string]: number } = {}
+		local n = rarityDef.bonusMax - rarityDef.bonusMin + 1
+		for k = rarityDef.bonusMin, rarityDef.bonusMax do
+			for id, p in ItemRoll.inclusion(weights, k) do
+				share[id] = (share[id] or 0) + p / n
+			end
+		end
+		local function middle(id: string): number
+			local low, high = ItemRoll.bonusRange(id, ilvl, rarity)
+			return (low + high) / 2
+		end
+		for _, id in poolFor(defId, classId) do
+			local s = share[id] or 0
+			local param = Bonuses.params[id]
+			if not param then
+				table.insert(out, { stat = id, v = middle(id) * s })
+			elseif param.over == "family" then
+				for _, family in Families.ids do
+					local variant = Bonuses.familyLine(param.prefix, family)
+					table.insert(out, { stat = variant, v = middle(variant) * s * FAMILY_MATCH })
+				end
+			end
+		end
+	end
+	smoothCache[key] = out
+	return out
+end
+
+-- ItemScore of the expected item of `slot` for `classId` at `ilvl` and `rarity` (+0); `withFx` adds the expected
+-- effect points of the rarity (ItemScore.expectedEffectPoints).
+function Balance.rarityScore(classId: string, slot: string, ilvl: number, rarity: number, withFx: boolean?): number
+	local id = tierId(Balance.s134gBase(classId, slot), ilvl)
+	local item = makeItem(id, ilvl, rarity, 0, Balance.smoothBonuses(id, ilvl, rarity, classId))
+	local score = ItemScore.score(item, { classId = classId, level = ilvl })
+	if withFx then
+		score += ItemScore.expectedEffectPoints(classId, rarity)
+	end
+	return score
+end
+
+-- A2: stats (no effects) of `rarity` / Heroic, same slot, level and upgrade.
+function Balance.rarityStats(classId: string, slot: string, ilvl: number, rarity: number): number
+	return Balance.rarityScore(classId, slot, ilvl, rarity) / Balance.rarityScore(classId, slot, ilvl, Rarities.HEROIC)
+end
+
+-- E2: the most levels g a Heroic of the same slot can be above an item of `rarity` at `ilvl` (with its expected
+-- effects) and still not beat it (ItemScore; the Heroic at ilvl + g is the same base type at that level, like a drop).
+-- Never past the level cap (Config.MaxLevel) or S134g.edgeMax.
+function Balance.rarityEdge(classId: string, ilvl: number, rarity: number, slot: string?): number
+	local s = slot or "weapon"
+	local score = Balance.rarityScore(classId, s, ilvl, rarity, true)
+	local g = 0
+	while
+		g < Balance.S134g.edgeMax
+		and ilvl + g + 1 <= Config.MaxLevel
+		and Balance.rarityScore(classId, s, ilvl + g + 1, Rarities.HEROIC) <= score
+	do
+		g += 1
+	end
+	return g
+end
+
+-- S134g: rows of targetsS134g out of reach of the S134g levers (printed with the reason; docs/DECYZJE.md S134g).
+Balance.S134G_REPORT = {} :: { [string]: string }
+do
+	local report = Balance.S134G_REPORT
+	local slotWhy = "an effect is a fixed estimate in ItemScore (Data/ItemEffects score, 3-7 % of an axis = 6-14 points) "
+		.. "while armour scores 5-10x and jewellery 20-30x fewer points than a weapon, so the same effect is many levels "
+		.. "there (jewellery barely grows with the level since S87: its % lines stop at ilvl 20); the levers (effect "
+		.. "estimates) are the effects' real value, the weapon rows are asserted"
+	for _, c in Balance.CLASSES do
+		for _, slot in { "armor", "ring", "necklace", "talisman" } do
+			for _, L in Balance.S134g.edgeLevels do
+				report[`S134g.edge.legendary.{c}.{slot}.{L}`] = slotWhy
+				report[`S134g.edge.mythic.{c}.{slot}.{L}`] = slotWhy
+			end
+		end
+		for _, slot in { "ring", "necklace", "talisman" } do
+			report[`S134g.ownerFx.{c}.{slot}`] = "jewellery does not grow with the level (S87: % lines stop at ilvl 20), "
+				.. "so any effect > 0 beats a Heroic of any level; the owner's row on jewellery is asserted on the stats"
+		end
+		local lowWhy = "at L20 a weapon gains about 4 % a level, so +4-9 % of stats (A2: at most 1.07 / 1.12) and an "
+			.. "effect worth about 1 % of a weapon's score are 1-3 levels; the band holds from L45"
+		report[`S134g.edge.legendary.{c}.weapon.20`] = lowWhy
+		report[`S134g.edge.mythic.{c}.weapon.20`] = lowWhy
+	end
+end
+
+-- S134g (E2): the targets in one place (ids "S134g.*"); balance.spec ("Balance: Legendary and Mythic (S134g)") asserts
+-- every row without `report`.
+function Balance.targetsS134g(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134g
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		L: number?
+	)
+		target(rows, `S134g.{id}`, group, label, value, low, high, c, L)
+	end
+	local JEWELLERY: { [string]: boolean } = { ring = true, necklace = true, talisman = true }
+	for _, c in Balance.CLASSES do
+		for _, slot in S.slots do
+			for _, L in S.levels do
+				add(
+					`stats.legendary.{c}.{slot}.{L}`,
+					"stats",
+					`{c} {slot} L{L}: Legendarny / Heroiczny (statystyki)`,
+					Balance.rarityStats(c, slot, L, Rarities.LEGENDARY),
+					S.statsLegendary[1],
+					S.statsLegendary[2],
+					c,
+					L
+				)
+				add(
+					`stats.mythic.{c}.{slot}.{L}`,
+					"stats",
+					`{c} {slot} L{L}: Mityczny / Heroiczny (statystyki)`,
+					Balance.rarityStats(c, slot, L, Rarities.MYTHIC),
+					S.statsMythic[1],
+					S.statsMythic[2],
+					c,
+					L
+				)
+				local h = Balance.rarityScore(c, slot, L, Rarities.HEROIC, true)
+				local l = Balance.rarityScore(c, slot, L, Rarities.LEGENDARY, true)
+				local m = Balance.rarityScore(c, slot, L, Rarities.MYTHIC, true)
+				add(
+					`order.legendary.{c}.{slot}.{L}`,
+					"order",
+					`{c} {slot} L{L}: Legendarny − Heroiczny (z efektem)`,
+					l - h,
+					1e-9,
+					nil,
+					c,
+					L
+				)
+				add(
+					`order.mythic.{c}.{slot}.{L}`,
+					"order",
+					`{c} {slot} L{L}: Mityczny − Legendarny (z efektami)`,
+					m - l,
+					1e-9,
+					nil,
+					c,
+					L
+				)
+			end
+			for _, L in S.edgeLevels do
+				add(
+					`edge.legendary.{c}.{slot}.{L}`,
+					"edge",
+					`{c} {slot} L{L}: poziomy, które Heroiczny potrzebuje na Legendarny`,
+					Balance.rarityEdge(c, L, Rarities.LEGENDARY, slot),
+					S.edgeLegendary[1],
+					S.edgeLegendary[2],
+					c,
+					L
+				)
+				add(
+					`edge.mythic.{c}.{slot}.{L}`,
+					"edge",
+					`{c} {slot} L{L}: poziomy, które Heroiczny potrzebuje na Mityczny`,
+					Balance.rarityEdge(c, L, Rarities.MYTHIC, slot),
+					S.edgeMythic[1],
+					S.edgeMythic[2],
+					c,
+					L
+				)
+			end
+			-- The owner's case: Heroic L48 - Legendary L36 above 0. Weapons and armour with the effect; jewellery on its
+			-- stats (its lines stop growing at ilvl 20, S87, so any effect beats a Heroic of any level: report row).
+			local o = S.owner
+			local heroic = Balance.rarityScore(c, slot, o.heroic, Rarities.HEROIC)
+			local legendary = Balance.rarityScore(c, slot, o.legendary, Rarities.LEGENDARY, not JEWELLERY[slot])
+			local what = if JEWELLERY[slot] then "statystyki" else "z efektem"
+			add(
+				`owner.{c}.{slot}`,
+				"owner",
+				`{c} {slot}: Heroiczny L{o.heroic} − Legendarny L{o.legendary} ({what})`,
+				heroic - legendary,
+				1e-9,
+				nil,
+				c,
+				o.legendary
+			)
+			if JEWELLERY[slot] then
+				add(
+					`ownerFx.{c}.{slot}`,
+					"owner",
+					`{c} {slot}: Heroiczny L{o.heroic} − Legendarny L{o.legendary} (z efektem)`,
+					heroic - Balance.rarityScore(c, slot, o.legendary, Rarities.LEGENDARY, true),
+					1e-9,
+					nil,
+					c,
+					o.legendary
+				)
+			end
+		end
+	end
+	for _, row in rows do
+		local why = Balance.S134G_REPORT[row.id]
+		if why then
+			row.report = `S134g: {why}`
+		end
+	end
+	return rows
 end
 
 return Balance

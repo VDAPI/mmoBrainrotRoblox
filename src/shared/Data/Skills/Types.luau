@@ -111,7 +111,7 @@ export type SkillEffect = {
 --   lingering = { pct, duration, radius?, kind, slow? }  the area keeps hurting (pct of the hit per second); kind
 --                            "element": the weapon element's ground (burn / frost / spark), stronger with the
 --                            elementRider hook (Elemental Might and Elements in the Veins) (S79)
---   echo = { delay, pct }    the area hits again after `delay` seconds for pct
+--   echo = { delay, pct }    the area hits again after `delay` seconds for pct (S134g: cone too, Volley's item effect)
 --   pierce = pct             a projectile also hits the next enemy behind the target
 --   execute = hp%            guaranteed crit on a target below hp%
 --   trap = { radius, duration, slow }  leaves a slowing trap where the caster stood
@@ -119,7 +119,7 @@ export type SkillEffect = {
 --   stunLast = seconds       the last wave / jump stuns
 --   splash = { radius, pct } a single-target hit also hurts enemies around the target
 --   secondTarget = pct       heal / shield / heal-over-time also on the second most wounded ally
---   overhealShield = true    healing above full HP becomes an absorb shield
+--   overhealShield = true    healing above full HP becomes an absorb shield (heal; S134g: groupHeal too)
 --   cleanse = true           also removes harmful effects (heal, hot, groupHeal, shield, groupBuff (S69))
 --   lifesteal = pct          the caster heals for pct of the damage dealt
 --   selfHeal = pct           the caster heals pct of max HP on cast

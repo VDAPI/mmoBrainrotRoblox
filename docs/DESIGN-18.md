@@ -37,6 +37,15 @@ S137 dopisuje w ROZWOJ §0 odsyłacz „§2.4–2.6, 2.8–2.10, 3–5: zastąpi
    komponentach, bez literałów koloru i rozmiaru, i nie robią własnego stylu; zmieniają układ i treść okna.
 8. Pliki właściciela (`AGENTS.md`, `DALEJ.md` w korzeniu, `assets/`, niezacommitowane `docs/sessions/*`) nigdy nie
    trafiają do commita: `git add` z jawnymi ścieżkami.
+9. **Efekty przedmiotów (S134g):** `Data/ItemEffects` stoi na `skill` + `role` + `pool` (przedmiot zapisuje tylko `id`
+   efektu, `ItemInstance.fx`). Sesja, która zmienia, zastępuje albo usuwa umiejętność, w tym samym commicie przepina
+   efekty jej roli (`skill`, a gdy klucz `bp` traci odbiorcę, też `bp`; usunięty efekt dostaje `replacedBy`, nigdy nie
+   znika bez następcy), `tests/itemeffects.spec.luau` musi być zielony, opis przepięcia w DECYZJE. Zapisy graczy się
+   nie zmieniają. Kto co robi: S137 włącza gałąź `pool` / `role` testu (efekt umiejętności spoza aktywnej puli nie
+   działa, bo jej nie rzucisz; opis przedmiotu dopisuje „(pula: …)” z `SkillPools`), S138 waży efekt w `ItemScore`
+   tylko dla puli noszonej broni (inna pula połowa), S139 pokazuje „Wzmocnione przez przedmiot: <nazwa>” w szczegółach
+   umiejętności (oznaczone źródła z przedmiotów w `Skills.effective`), S140–S145 przepinają efekty swojej klasy i mogą
+   dodać nowe (nowe `id`) dla nowych umiejętności S2 / A2 / U, S146–S147 przeliczają `score`, S148 audytuje.
 
 ## 1. Decyzje właściciela (2026-10-15)
 
@@ -211,6 +220,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | P2 50 | Serce Feniksa `phoenixHeart` (nowa; ocalenie od śmierci raz na 3 min) | Lodowa Krew `iceBlood` (nowa; redukcja obrażeń od spowolnionych) | Przewodnik `conductor` (nowa; każdy czar przeskakuje na drugi cel) |
 | U 60 | Deszcz Meteorów `meteorStorm` (istn. Gniew Żywiołów, odtąd ogień) | Zamieć `blizzard` (nowa; wielki krąg, narastające spowolnienie do zamrożenia) | Nawałnica `tempest` (nowa; największe obrażenia obszarowe klasy) |
 
+- Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Kula Ognia, Ognisty Pocisk, Lodowy Odłamek, Łańcuch Błyskawic,
+  Lodowa Nova (dwa), Błysk, Meteor, Burza Piorunów.
 - Kierunki Maga: Niszczyciel (obszar) z węzłami `skill` Wir Żywiołów `elementalVortex` (rząd 4) i Kataklizm
   `cataclysm` (rząd 8), oba `adaptive` (żywioł puli); Arkanista (jeden cel, mana) z Wyładowaniem Arkanów
   `arcaneDischarge` (rząd 4) i Strumieniem Arkanów `arcaneTorrent` (rząd 8). Mistrz Żywiołów `elementalist` i Tajemny
@@ -238,6 +249,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | P2 50 | Kontratak `riposte` (istn.) | Niepowstrzymany `unstoppable` (nowa; odporność na kontrolę przy pełnej Furii) |
 | U 60 | Mur Tarcz `shieldWall` (istn.) | Gniew Tytana `titansWrath` (istn.) |
 
+- Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Szarża, Potężne Uderzenie, Rozpłatanie, Miażdżący Cios,
+  Rozdarcie, Prowokacja, Trzęsienie Ziemi, Wir Ostrzy, Mur Tarcz.
 - Kierunki: Strażnik (tank; węzeł `skill` Ostatni Bastion `lastBastion`), Berserker (obrażenia; Rzeź `carnage` w
   rzędzie 8, z `weapon` dwuręcznej), Chorąży (wsparcie; Rozkaz Natarcia `advanceOrder` w rzędzie 8).
 - Cel (S146): `twohand` obrażenia 1,15–1,25 × `onehand`, `onehand` EHP ≥ 1,4 × `twohand`.
@@ -258,6 +271,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | P2 50 | Zwinność `agility` (istn.) | Szybki Naciąg `quickReload` (nowa; krótsze odnowienia bełtów) |
 | U 60 | Strzała Burzy `stormArrow` (istn.) | Pole Sideł `snarefield` (istn.) |
 
+- Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Celny Strzał, Deszcz Strzał, Zatruta Strzała, Odskok, Znak
+  Łowcy, Strzała Przebijająca, Salwa, Podwójny Strzał, Pułapka Lodowa.
 - Kierunki: Strzelec Wyborowy, Traper, Zwiadowca (węzeł `skill` Nagonka `drive` w rzędzie 8).
 - Cel (S147): obie pule ±10% obrażeń w jeden cel (R5 w nowej postaci), łuk z ruchem w walce, kusza z większym udziałem
   obrażeń w czasie.
@@ -278,6 +293,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | P2 50 | Światło Przewodnie `guidingLight` (nowa; leczenie zostawia małą tarczę) | Gorliwość `zeal` (nowa; trafienia skracają odnowienia) |
 | U 60 | Anioł Stróż `guardianAngel` (istn.) | Młot Niebios `hammerOfHeaven` (istn.) |
 
+- Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Święte Uderzenie, Leczenie, Światłość, Tarcza Wiary, Odnowa,
+  Piętno Światła, Sąd, Sanktuarium, Krąg Światła.
 - Kierunki: Uzdrowiciel (węzły `skill` Modlitwa `prayer` w rzędzie 4, Boska Interwencja `divineIntervention` w 8),
   Kapłan Fortuny (Rzut Kośćmi `fortuneDice` w 4, Koło Fortuny `wheelOfFortune` w 8; węzły szczęścia zachowują wymóg
   `relic`), Inkwizytor (bez węzłów `skill`).
@@ -331,6 +348,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | `Logic/SkillPoints` (nowy) | `pointsAt(L)`, `cap(skill, L)`, `rank(character, skillId, poolId?)`, `spent(character, poolId)`, `free(character, poolId)`, `canBuy(character, poolId, skillId, n?)`, `canRefund(character, poolId, skillId, ctx)`, `refundCost(L, n)`, `apply(character, poolId, plan)`, `suggest(character, poolId)`, `legacy(classId, level, poolId, oldBar)` (migracja), `clean(character)` (rangi spoza puli, ponad limit i budżet), `startBar(character, poolId)`, `needsRespec(character)` (wersja puli) |
 | `Logic/Paths` | `skillRank` → `SkillPoints.rank` dla umiejętności spoza kierunków; bez `canChooseMain`; nowe `mainOf`, `capstoneOf`; `cleanSet` czyści też `ranks` / `bars`; zestawy (`emptySet`, `cloneSet`, `swapSets`, `copySet`, `setView`) niosą `ranks`, `bars`, `barPool` |
 | `Logic/Skills` | `rankAt` / `rankLevel` zostają jako limit; `unlocked`, `startHotbar`, `newlyUnlocked` filtrują po puli |
+| `Data/ItemEffects`, `Logic/ItemEffects` (S134g) | efekty przedmiotów Legendarnych i Mitycznych na `skill` + `role` + `pool` (§0.9); `Logic/Paths.effectiveFor` dokłada `ItemEffects.mods` po węzłach |
 
 Zapis postaci (aktywny zestaw w polach postaci, drugi w `buildOther`):
 
@@ -413,6 +431,8 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   - R1–R7, T-SK1–6, G10, cele bossów S134 (część gracza) wracają z nowymi buildami wzorcowymi (jeden na pulę i
     kierunek przewodni, jak dziś jeden na ścieżkę).
   - Wpisy `GLOBAL_REPORT_ONLY` z sesji S137–S145 znikają.
+- Efekty przedmiotów w modelu tylko przez `score` w `Data/ItemEffects` (`ItemScore`); S146–S147 przeliczają `score` z
+  nowymi umiejętnościami (wiersze `S134g.*` w `balance.spec`).
 - **Fixtures:** `tests/fixtures/balance_paths.json` (`--fixture-paths`) i `balance_1_20.json` przepisane świadomie z
   notą sesji; `tests/fixtures/paths.luau` (ścieżka testowa) dostaje zasady kierunków; `tests/fixtures/skill_timing.luau`
   wiersz każdej nowej umiejętności.
@@ -423,6 +443,7 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   schowany za „Planer wkrótce” (`SkillPlanner.svelte`, `ClassView.astro`, testy planera pominięte jawnie).
 - S138: `Schema.rec` dostaje `pool`, `role` przy umiejętności i `pools` klasy (id, nazwa, broń, drabina); `rules` bez
   `mainPathLevel`, z `skillPointsByLevel`, `freeRespecLevel`, `capstonesMax`, `mainMinPoints`.
+- Strona efektów przedmiotów na wiki z danych (`items.json` `effects`, S134g); S148 dopisuje ją do stron klas.
 - S148: strona klasy z zakładkami pul (drzewko według drabiny jak w grze, `short` i pełny opis), kierunki, planer v3
   (kod `3<KLASA><poziom>.<pula>:<rangi>….<talenty>.<przełomy>`; stary kod v2 otwiera pusty planer z komunikatem),
   parzystość TS z `SkillPoints.canBuy` i `Paths.canBuy` przez `wiki/test-fixtures/planner.json`.

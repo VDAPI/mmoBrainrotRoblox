@@ -119,6 +119,18 @@ local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
 end
 
+-- S134g: the class Logic/Mail.box converts a parcel's Legendary / Mythic items for: the active character's when the
+-- parcel is addressed to it (or to the whole account), else nil (the item's own classes).
+local function classOf(player: Player): (charId: string?) -> string?
+	return function(charId: string?): string?
+		local char = character(player)
+		if char and (charId == nil or charId == char.id) then
+			return char.class
+		end
+		return nil
+	end
+end
+
 local function publish(player: Player)
 	if not PlayerStateService.HasState(player) then
 		return
@@ -137,7 +149,7 @@ end
 function MailService.Refresh(player: Player)
 	local ok, value = store:get(key(player.UserId))
 	if ok and player.Parent == Players then
-		boxes[player] = Mail.box(value)
+		boxes[player] = Mail.box(value, classOf(player))
 		publish(player)
 	end
 end
@@ -273,7 +285,7 @@ local function claim(player: Player, id: string): (boolean, string?)
 	end
 	local taken: Mail.Parcel? = nil
 	local ok, newBox, err = store:update(key(player.UserId), function(current: any?)
-		local b = Mail.box(current)
+		local b = Mail.box(current, classOf(player))
 		taken = Mail.take(b, id, char.id, os.time())
 		if not taken then
 			return nil, "mail.error.gone"
@@ -284,7 +296,7 @@ local function claim(player: Player, id: string): (boolean, string?)
 		MailService.Refresh(player)
 		return false, err
 	end
-	boxes[player] = Mail.box(newBox)
+	boxes[player] = Mail.box(newBox, classOf(player))
 	local parcel = taken :: Mail.Parcel
 	-- The character may have switched while the store yielded: deliver to whoever is active, else re-mail (S125: the
 	-- shards and the title go back in the same parcel).
@@ -582,7 +594,7 @@ local function sendBack(player: Player, id: string): (boolean, string?)
 	end
 	local taken: Mail.Parcel? = nil
 	local ok, newBox, err = store:update(key(player.UserId), function(current: any?)
-		local b = Mail.box(current)
+		local b = Mail.box(current, classOf(player))
 		local parcel = b.parcels[id]
 		if not parcel or not Mail.returnable(parcel) then
 			return nil, "mail.error.gone"
@@ -597,7 +609,7 @@ local function sendBack(player: Player, id: string): (boolean, string?)
 		MailService.Refresh(player)
 		return false, err
 	end
-	boxes[player] = Mail.box(newBox)
+	boxes[player] = Mail.box(newBox, classOf(player))
 	local parcel = taken :: Mail.Parcel
 	local sent = MailService.Send(parcel.fromId :: number, {
 		from = "system",
@@ -610,7 +622,7 @@ local function sendBack(player: Player, id: string): (boolean, string?)
 	if not sent then
 		-- the sender's mailbox refused it: the letter goes back where it was
 		store:update(key(player.UserId), function(current: any?)
-			local b = Mail.box(current)
+			local b = Mail.box(current, classOf(player))
 			local added, reason = Mail.add(b, parcel, os.time())
 			if not added then
 				return nil, reason

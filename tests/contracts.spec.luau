@@ -332,13 +332,13 @@ describe("Contracts: save and migration 7", function()
 		local template: any = AccountSchema.characterTemplate()
 		expect(template.quests.contract).toEqual({ done = 0 })
 		expect(Config.Quest.contractBacklog).toBe(3)
-		expect(AccountSchema.CURRENT).toBe(9) -- S102: 8 = story progress, S132: 9 = class outfits
+		expect(AccountSchema.CURRENT).toBe(10) -- S102: 8 = story progress, S132: 9 = class outfits; S134g: 10 = item effects
 	end)
 
 	it("existing characters keep 3 levels of backlog, never lose progress, get no rewards", function()
 		local data = oldAccount()
 		local applied = AccountSchema.migrate(data)
-		expect(applied).toEqual({ 7, 8, 9 })
+		expect(applied).toEqual({ 7, 8, 9, 10 }) -- S134g: 10 = item effects
 		local chars = data.characters
 		expect(chars.a.quests.contract).toEqual({ done = 77 })
 		expect(chars.b.quests.contract).toEqual({ done = 0 })

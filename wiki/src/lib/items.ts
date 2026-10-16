@@ -1,7 +1,7 @@
 // Items (S40, build time): the detail of one item (src/lib/item-model.ts ItemDetail) from the export — names, stats on
 // every rarity and +0..+9, upgrade steps and costs, bonus pools with ranges and chances, icons — plus the list rows,
 // sources and crafting helpers of the item pages. Numbers only from wiki/src/data; nothing here repeats game formulas.
-import type { Item, RarityKey } from "../data/types";
+import type { Item, ItemEffect, RarityKey } from "../data/types";
 import type { Lang } from "../i18n/routes";
 import { getItem, items, load, rarities } from "./data";
 import { itemHd } from "./art";
@@ -12,6 +12,7 @@ import {
   buildTooltip,
   mainStat,
   type BonusTier,
+  type EffectRef,
   type ItemDetail,
   type MaterialRef,
   type PoolBonus,
@@ -115,6 +116,24 @@ export function materialRef(id: string): MaterialRef {
 
 const detailCache = new Map<string, ItemDetail>();
 
+// S134g: a skill effect of items.json as the item page shows it (with its class's name).
+function effectRef(effect: ItemEffect): EffectRef {
+  const cls = load("classes").classes.find((c) => c.id === effect.class);
+  return {
+    id: effect.id,
+    name: effect.name,
+    line: effect.line,
+    skillName: effect.skillName,
+    tier: effect.tier === "mythic" ? "mythic" : "legendary",
+    className: cls?.name ?? { pl: effect.class, en: effect.class },
+  };
+}
+
+// S134g: the effects a new item rolls for a class (Logic/ItemEffects.pool; a Mage weapon prefers its element's pool).
+function effectsOf(classId: string, tier: "legendary" | "mythic"): EffectRef[] {
+  return load("items").effects.filter((e) => e.class === classId && e.tier === tier).map(effectRef);
+}
+
 export function itemDetail(id: string): ItemDetail | undefined {
   const cached = detailCache.get(id);
   if (cached) return cached;
@@ -146,7 +165,11 @@ export function itemDetail(id: string): ItemDetail | undefined {
   const poolClasses = generated && base ? base.poolClasses : [];
   const traitInfo = base?.trait ? file.traits[base.trait] : undefined;
   const rarityInfo = (key: string) => rarities().find((x) => x.key === key);
-  const hasLines = (field: "legendaryLines" | "mythicLines") => allowed.some((r) => (rarityInfo(r)?.[field] ?? 0) > 0);
+  const hasEffects = allowed.some((r) => (rarityInfo(r)?.legendaryEffects ?? 0) + (rarityInfo(r)?.mythicEffects ?? 0) > 0);
+  const byId = new Map(file.effects.map((e) => [e.id, e]));
+  const fixedEffects = item.fixedEffects
+    ? Object.values(item.fixedEffects).flatMap((ids) => ids.map((fx) => byId.get(fx)).filter((e): e is ItemEffect => e !== undefined).map(effectRef))
+    : undefined;
   const detail: ItemDetail = {
     id: item.id,
     name: item.name,
@@ -165,7 +188,7 @@ export function itemDetail(id: string): ItemDetail | undefined {
     generated,
     rarities: allowed.map((key) => {
       const r = rarities().find((x) => x.key === key)!;
-      return { key, name: r.name, bonusMin: r.bonusMin, bonusMax: r.bonusMax, legendaryLines: r.legendaryLines, mythicLines: r.mythicLines };
+      return { key, name: r.name, bonusMin: r.bonusMin, bonusMax: r.bonusMax, legendaryEffects: r.legendaryEffects, mythicEffects: r.mythicEffects };
     }),
     stats: Object.fromEntries(allowed.map((r) => [r, statRows(item, r)])),
     value: item.value,
@@ -186,8 +209,11 @@ export function itemDetail(id: string): ItemDetail | undefined {
     trait: traitInfo && base?.trait ? { id: base.trait, ...traitInfo } : undefined,
     poolClasses: poolClasses.map((id) => ({ id, name: classes.find((c) => c.id === id)?.name ?? { pl: id, en: id } })),
     pool: generated && item.bonusGroup ? byClass(poolClasses, (c) => poolOf(item, item.bonusGroup!, c, item.tier!, allowed)) : undefined,
-    legendaryPool: generated && hasLines("legendaryLines") ? byClass(poolClasses, (c) => poolOf(item, "legendary", c, item.tier!, allowed)) : undefined,
-    mythicPool: generated && hasLines("mythicLines") ? byClass(poolClasses, (c) => poolOf(item, "mythic", c, item.tier!, allowed)) : undefined,
+    effectPool:
+      generated && hasEffects
+        ? Object.fromEntries(poolClasses.map((c) => [c, { legendary: effectsOf(c, "legendary"), mythic: effectsOf(c, "mythic") }]))
+        : undefined,
+    fixedEffects: fixedEffects && fixedEffects.length > 0 ? fixedEffects : undefined,
     upgrade,
     materials,
     icon: iconFor(item.id),

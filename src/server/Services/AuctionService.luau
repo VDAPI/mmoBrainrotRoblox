@@ -20,6 +20,7 @@ local Shared = ReplicatedStorage.Shared
 local Auction = require(Shared.Logic.Auction)
 local Config = require(Shared.Config)
 local Index = require(script.Parent.Parent.Market.Index)
+local ItemEffects = require(Shared.Logic.ItemEffects)
 local ItemName = require(Shared.Logic.ItemName)
 local Items = require(Shared.Data.Items)
 local KeyStore = require(script.Parent.Parent.Market.KeyStore)
@@ -30,10 +31,14 @@ local Notify = require(script.Parent.Parent.Market.Notify)
 local Rarities = require(Shared.Data.Rarities)
 local Types = require(Shared.Types)
 
--- S30: full listings stored before the new rarity ladder get their item upgraded when read (idempotent).
+-- S30: full listings stored before the new rarity ladder get their item upgraded when read (idempotent). S134g: a
+-- Legendary / Mythic gets its skill effects instead of the legendary / mythic lines (Logic/ItemEffects.migrateItem,
+-- seeded by the uid; no class known here: the item's own classes).
 local function upgraded(listing: any): any
 	if type(listing) == "table" and type(listing.item) == "table" then
-		Rarities.upgradeItem(listing.item, Items.get(listing.item.id))
+		local def = Items.get(listing.item.id)
+		Rarities.upgradeItem(listing.item, def)
+		ItemEffects.migrateItem(listing.item, def, nil)
 	end
 	return listing
 end

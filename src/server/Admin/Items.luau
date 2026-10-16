@@ -639,7 +639,8 @@ commands.rarities = function(player)
 			bonuses = if rarity.bonusMin == rarity.bonusMax
 				then tostring(rarity.bonusMin)
 				else `{rarity.bonusMin}-{rarity.bonusMax}`,
-			legendary = rarity.legendaryLines,
+			legendary = rarity.legendaryEffects, -- S134g: skill effects instead of the legendary lines
+			mythic = rarity.mythicEffects,
 			base = rarity.baseMul,
 			range = rarity.rangeMul,
 			sell = rarity.sellMul,
@@ -688,7 +689,8 @@ commands.value = function(player, args)
 end
 
 -- S31: /tooltip <id> [lang] [rarity] [lines|details]: the TooltipModel lines (rich text removed) in the panel
--- console, compared like the game does (S68: ItemScore.replaced, % axes); "details" prints every row's details.
+-- console, compared like the game does (S68: ItemScore.replaced; S134g: only the "replaces" note, no numbers); "details"
+-- prints every row's details.
 commands.tooltip = function(player, args)
 	local def = Items.get(args[1] or "")
 	if not def then
@@ -721,7 +723,7 @@ commands.tooltip = function(player, args)
 	if args[4] == "details" then
 		for _, line in model.lines do
 			local ref = line.detail
-			if ref and line.role ~= "traitName" then
+			if ref and line.role ~= "traitName" and line.role ~= "fxTitle" then
 				local details = TooltipModel.details(item, ref, ctx)
 				for _, row in details.rows do
 					reply(player, "admin.tooltip.detail", {

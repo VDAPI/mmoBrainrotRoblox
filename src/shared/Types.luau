@@ -32,6 +32,7 @@ export type ItemInstance = {
 	el: string?, -- element of a mage weapon ("fire" | "ice" | "lightning"), S18
 	locked: boolean?, -- protected from selling and dismantling (S20)
 	rv: number?, -- S30: rarity format version (2 = new ladder; Rarities.upgradeItem)
+	fx: { string }?, -- S134g: item effect ids (Data/ItemEffects), Legendary 1, Mythic 2
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
@@ -421,6 +422,7 @@ export type AccountData = {
 	stats: { createdAt: number, playtime: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
+	legendRework: boolean, -- S134g: Legendary / Mythic items got skill effects (migration 10); the toast shows once
 }
 
 -- Character summary shown on the selection screen.

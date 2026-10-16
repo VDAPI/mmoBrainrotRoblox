@@ -1,8 +1,9 @@
 --!strict
--- Item tooltip (DESIGN §23). The content comes from the pure Logic/TooltipModel (S31: header, stats or effect
--- of every category, requirements, comparison with the equipped item (green ↑ / red ↓), binding, value and the
--- context price); this module only draws the lines on a parchment panel that follows the mouse, with the S30
--- rarity border. On touch it appears for the selected slot.
+-- Item tooltip (DESIGN §23). The content comes from the pure Logic/TooltipModel (S31; S134g: name, the head line
+-- "Kind · Category · Level N · Classes", the rarity in small type, the main value, the statistics in small type in
+-- fixed groups with thin gaps, trait, skill effects, description, "Replaces", binding, value and the context price);
+-- this module only draws the lines on a parchment panel that follows the mouse, with the S30 rarity border. On touch
+-- it appears for the selected slot. S134g: no comparison numbers; the comparison is the second panel below.
 --
 -- Context: `attach(..., getCtx)` may pass a function returning TooltipModel.Ctx fields (`shop`, `shopEntry`,
 -- `potionDiscount`, `merchantOpen`, `hints`); language, character level/class and the equipped item are filled
@@ -63,6 +64,7 @@ local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
 local merchantOpen = moduleScope:Value(false)
 local shownSlot = moduleScope:Value(nil :: string?)
 local GAP = 8
+local GROUP_GAP = 4 -- S134g: the thin space between two stat groups (role "gap")
 local owner: GuiObject? = nil
 local getters: { [string]: () -> ItemInstance? } = {}
 -- Root of the layer the tooltip is mounted in (FIX 2026-10-14: GUI points are measured from it, Scale.toLayer).
@@ -348,6 +350,19 @@ local function build(
 	end
 	local out: { Instance } = {}
 	for order, entry in TooltipModel.build(item, def, ctx).lines do
+		if entry.role == "gap" then
+			-- S134g: a thin space between two stat groups
+			table.insert(
+				out,
+				s:New("Frame")({
+					Name = "Gap",
+					LayoutOrder = order,
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, 0, 0, GROUP_GAP),
+				})
+			)
+			continue
+		end
 		local ref = entry.detail
 		local bonus = entry.kind == "bonus"
 		local icon: Instance? = nil
@@ -605,9 +620,9 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				local lang = use(Text.Lang)
 				if item then
 					local lines = build(s, item, lang, use(shownCtx), use(merchantOpen))
-					-- The name and the category line keep clear of the picture.
+					-- The name, the head line and the rarity line keep clear of the picture.
 					if use(showIcon) then
-						for i = 1, math.min(2, #lines) do
+						for i = 1, math.min(3, #lines) do
 							s:New("UIPadding")({ PaddingRight = UDim.new(0, ICON_SIZE + 6), Parent = lines[i] })
 						end
 					end

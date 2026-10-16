@@ -11067,3 +11067,120 @@ Dla właściciela:
 - ID dźwięku `ui.lowHp` (bicie serca, twórca Roblox): klucz jest, gra cicho do czasu ID.
 - „Dołącz” wpuszcza do drużyny bez zgody lidera (lider widzi toast i może wyrzucić); jeśli wolisz prośbę z akceptacją
   lidera, to jedna zmiana w `PartyFinderService.join`.
+
+### S134g: Legendarne i Mityczne z efektami umiejętności, czytelny opis przedmiotu
+
+Prośba właściciela (2026-10-15): Legendarny L36 bił Heroiczny L48, legendy mają być ciekawe, nie silniejsze; opis
+przedmiotu poukładany, statystyki mniejsze od poziomu i rodzaju, porównanie bez różnic w liczbach.
+
+Co zrobiono:
+- **Rzadkość** (`Data/Rarities`): `legendaryLines` / `mythicLines` → `legendaryEffects` / `mythicEffects`; Legendarny
+  `baseMul` 1,17, `rangeMul` 1,05, 1 efekt; Mityczny `baseMul` 1,22, `rangeMul` 1,10, 1 efekt legendarny + 1 mityczny.
+  Linie legendarne i mityczne nie losują się (`ItemRoll.rollItem`; definicje `leg_*` / `myth_*` z `wiki = false`).
+- **Efekty** (`Data/ItemEffects`, `Logic/ItemEffects`): 36 efektów (6 legendarnych + 3 mityczne na klasę) na dzisiejszych
+  umiejętnościach z rolą i pulą DESIGN-18; `bp` w kształcie przełomu, `score` dla `ItemScore`; losowanie z klasy
+  `forClass` (broń Maga woli pulę swojego żywiołu i wspólne), `active` / `mods` / `list` ekwipunku (klasa postaci, każdy
+  raz, sloty, legendarne przed mitycznymi), `lineArgs` (nazwa umiejętności i liczby), `migrateItem`, `resolve`
+  (`replacedBy`). Działanie: `Paths.effectiveFor` dokłada efekty po węzłach (serwer, pasek, celowanie, opis
+  umiejętności). Nowe odbiorniki: `echo` w `cone` (`Types/Offense`), `overhealShield` w `groupHeal` (`Types/Support`).
+  `ItemInstance.fx`, `Rng.seedOf`.
+- **Migracja 10** (`AccountSchema`): Legendarne i Mityczne w ekwipunku, plecaku, wyborach questów i depozycie bez linii
+  legendarnych / mitycznych, z efektami (ziarno `uid`, klasa postaci); poczta (`Mail.box(value, classOf)`,
+  `MailService`) i aukcje (`AuctionService`) przy odczycie; flaga `account.legendRework` → toast
+  `items.toast.legendRework` przy wejściu do świata (`EquipmentService`), bez nowego remote'u.
+- **Nazwane Mityczne** (`Data/Items/Uniques`): `fx` zamiast linii `leg_*`, `UNIQUE_MUL` 1,26, korekty linii (DECYZJE).
+- **Opis przedmiotu** (`Logic/TooltipModel`, `UI/Components/ItemTooltip`): nazwa → `head` „Rodzaj · Kategoria (chwyt) ·
+  Poziom N · Klasy” (pogrubiona, niespełnione na czerwono) → `rarity` mała z ulepszeniem → główna wartość (`stat`,
+  `speedDps`) → statystyki małe w `STAT_GROUPS` z `gap` → `rarityBonus` → cecha → `fxTitle` / `fx` / `fxClass` → opis →
+  `replaces` / `compareNote` → wiązanie → poziom przedmiotu → cena. Porównanie w liczbach usunięte (drugi panel
+  zostaje). Szczegóły efektu (`TooltipModel.details` `kind = "effect"`), odsłonięcie Legendy z efektami (`LegendReveal`),
+  admin `/tooltip` i `/rarities`.
+- **Model** (`tests/Balance.luau`): `smoothBonuses`, `rarityScore`, `rarityStats`, `rarityEdge`, `targetsS134g` (+ blok w
+  `balance.spec`), `S134G_REPORT`; `ItemScore.effectPoints` / `expectedEffectPoints`; pasma S32 / G7, raport G8,
+  profile szczęścia; raport „Rzadkość a poziom (S134g)” w `docs/BALANS.md`; fixture 1–20 S134g.
+- **Wiki**: rekord `ItemEffect` i `fixedEffects` w `items.json`, rzadkość z efektami, pule legendarne poza eksportem,
+  `docs/PRZEDMIOTY.md` (tabela rzadkości, tabela efektów), strona przedmiotu (efekty klasy zamiast pul, TS), akapit w
+  „Statystyki” (PL, EN). Dokumenty: STATY §0, §2 C, §9–§14, DESIGN §5 i §23, DESIGN-18 §0.9, §6.1–§6.4, §9, §13, §14,
+  `CLAUDE.md` („Efekt przedmiotu”).
+
+Rzadkość przed / po:
+
+| Rzadkość | `baseMul` | `rangeMul` | linie | dodatkowo | L / H, M / H w statystykach (`ItemScore`) |
+|---|---|---|---|---|---|
+| Heroiczny | 1,12 | 1,0 | 3 | – | 1 |
+| Legendarny przed | 1,16 | 1,1 | 3 | 1 linia legendarna | broń 1,05–1,07, zbroja 1,12–1,27, biżuteria 1,49–1,76 |
+| Legendarny po | 1,17 | 1,05 | 3 | 1 efekt | 1,039–1,053 (każdy slot) |
+| Mityczny przed | 1,22 | 1,2 | 3 | 2 legendarne + 1 mityczna | broń 1,12–1,24, zbroja 1,35–2,26, biżuteria 2,3–4,1 |
+| Mityczny po | 1,22 | 1,10 | 3 | 1 legendarny + 1 mityczny efekt | 1,081–1,099 (każdy slot) |
+
+Efekty na klasę (L = legendarny, M = mityczny; rola i pula DESIGN-18):
+
+| Klasa | Efekty |
+|---|---|
+| Mag | L: Kula Ognia drugi wybuch 30% (A1 ogień), Magiczny Pocisk pewny krytyk < 25% (S1 ogień), Lodowy Odłamek odpryski 25% (S1 lód), Łańcuch Błyskawic +1 skok (A1 błysk.), Lodowa Nova +2 promienia i +0,5 s zamrożenia (K1 lód), Błysk +10% ataku magicznego 4 s (C1); M: Meteor 3 wybuchy po 35% (A2 ogień), Burza Piorunów druga fala 40% (A2 błysk.), Lodowa Nova przyciąga z 14 st. (K1 lód) |
+| Wojownik | L: Szarża ogłusza +0,7 s (C1), Potężne Uderzenie wampiryzm 15% (S1 miecz i tarcza), Rozpłatanie odrzut 5 (A1 dwuręczna), Miażdżący Cios pewny krytyk < 25% (S2), Rozdarcie spowalnia 30% (S2 dwuręczna), Prowokacja przyciąga z 12 st. (C2); M: Trzęsienie Ziemi ostatnia fala ogłusza 1 s (A2), Wir Ostrzy leczy 5% maks. HP (A2 dwuręczna), Mur Tarcz przyciąga z 10 st. (U) |
+| Łowca | L: Celny Strzał rozprysk 30% (S1 łuk), Deszcz Strzał druga fala 30% (A1 łuk), Zatruta Strzała przenosi truciznę na 2 (S2 kusza), Odskok +25% ruchu 4 s (C1), Znak Łowcy także wrogowie do 6 st. (C2), Strzała Przebijająca zatruwa 30% w 4 s (A1 kusza); M: Salwa druga salwa 35% (A2 łuk), Podwójny Strzał krytyk −30% odnowienia (S2 łuk), Pułapka Lodowa wciąga z 8 st. (K1 kusza) |
+| Kapłan | L: Święte Uderzenie wampiryzm 20% (S1 buzdygan), Leczenie razi wrogów 40% ataku magicznego (C1), Światłość spowalnia 25% (A1 światło), Tarcza Wiary +4% maks. HP i +4 s (O1 światło), Odnowa +3 s (S2 światło), Piętno Światła leczy najbardziej rannego 20% (S2 buzdygan); M: Sąd rozprysk 50% (S3 buzdygan), Sanktuarium +3 s i +2 promienia (A2 światło), Krąg Światła nadmiar leczenia w tarczę (C2) |
+
+Ile poziomów wyżej Heroiczny dogania (przewaga L / M, `ItemScore` z oczekiwanymi efektami; przed: linie zaokrąglone):
+
+| Slot | L20 przed → po | L45 przed → po | L70 przed → po |
+|---|---|---|---|
+| broń (każda klasa) | 1 / 4–5 → 1–2 / 3 | 2 / 7–8 → 2–3 / 5–6 | 3 / 8–10 → 3 / 7–8 |
+| zbroja | 5–9 / 21–37 → 5–6 / 13–16 | 6–10 / 24–40 → 6–7 / 15–19 | 7–12 / 27–40 → 7–8 / 18–21 |
+| pierścień | nigdy / nigdy → nigdy / nigdy | nigdy → nigdy | nigdy → 30 / 30 (do limitu 100) |
+
+Przypadek właściciela (Legendarny L36 / Heroiczny L48, `ItemScore`, Wojownik; inne klasy tak samo): broń przed 629 / 774,
+po 619 (626 z efektem) / 774; zbroja przed 94 / 102, po 83 (90) / 102; pierścień przed 31 / 21, po 21,0 (28,0 z
+efektem) / 21,5; naszyjnik przed 31 / 22, po 20,4 (27,4) / 21,9. W dawnym modelu przegrana była biżuteria (linia
+legendarna = +50% pierścienia); teraz Legendarny L36 przegrywa w statystykach każdym slotem, a z efektem bronią i zbroją
+(biżuteria nie rośnie z poziomem od S87, więc efekt zawsze ją wygrywa: wiersz raportu, DECYZJE).
+
+Nazwane Mityczne (efekt legendarny / mityczny):
+
+| Przedmiot | Efekty |
+|---|---|
+| Rozłupywacz Grimroka (topór) | Miażdżący Cios: pewny krytyk / Trzęsienie Ziemi: ogłuszenie |
+| Kieł Grimroka (pierścień) | W: Potężne Uderzenie, Wir Ostrzy; Ł: Celny Strzał, Podwójny Strzał; M: Magiczny Pocisk, Meteor; K: Święte Uderzenie, Sąd |
+| Totem Plemienia (talizman) | W: Prowokacja, Wir Ostrzy; Ł: Odskok, Pułapka Lodowa; M: Lodowa Nova ×2; K: Odnowa, Krąg Światła |
+| Całun Morvane | M: Błysk, Lodowa Nova (wir); K: Tarcza Wiary, Sanktuarium |
+| Berło Morvane | Leczenie (razi) / Krąg Światła (tarcza z nadmiaru) |
+| Łuk Morvane | Zatruta Strzała (trucizna przechodzi) / Salwa (druga) |
+| Serce Azgora (naszyjnik) | W: Rozdarcie, Trzęsienie Ziemi; Ł: Deszcz Strzał, Salwa; M: Kula Ognia, Meteor; K: Światłość, Sąd |
+| Kostur Azgora | Kula Ognia (drugi wybuch) / Meteor (3 wybuchy) |
+| Hełm Azgora | W: Prowokacja, Mur Tarcz; K: Tarcza Wiary, Sanktuarium |
+| Kieł Vaelgratha (miecz dwuręczny) | Rozdarcie (spowolnienie) / Wir Ostrzy (leczenie) |
+| Łuska Vaelgratha (tarcza) | W: Szarża, Mur Tarcz; K: Tarcza Wiary, Krąg Światła |
+| Oko Vaelgratha (kula) | Lodowy Odłamek (odpryski) / Lodowa Nova (wir) |
+
+Testy: nowy `tests/itemeffects.spec.luau` (dane D1, reguła odbiorcy B2, `replacedBy`, liczebność, losowanie, ekwipunek,
+`Paths.effectiveFor`, migracja przedmiotu, konta i poczty); przepisane z komentarzem `-- S134g`: `items.spec` (linie i
+efekty na rzadkość, 1000 losowań bez linii legendarnych, nazwane 3 linie + 2 efekty, ×1,26, moc cechy 1,17),
+`rarities.spec`, `tooltip.spec` (kolejność ról, nagłówek, grupy, efekty, bez porównania w liczbach), `itemvalue.spec`
+(rola `head`, `speedDps`, „Zastąpi”), `wikidump.spec`, `balance1_20.spec` (baza S134g), schemat 10 w testach migracji
+(`character`, `contracts`, `leaderboard`, `mounts`, `premiumuse`, `rarities`, `sidequests`, `story`, `tourney`,
+`worldmap`), blok „Balance: Legendary and Mythic (S134g)” w `balance.spec`. Narzędzia: `balance_report` bez „BRAK
+POWODU”, `quest_budget check` zielony, `wikidump --check` aktualne, `wiki_keys_diff` 0 z `WIKI_KEYS_ALLOW` (19 świadomych
+kluczy: `items.effects`, `fixedEffects`, rzadkość z efektami, `types.ts`). Wiki bez `node_modules` na tej maszynie:
+TypeScript i Svelte nie sprawdzone (`npm run check` przy następnej sesji wiki).
+
+Pliki: `src/shared/Data/{ItemEffects,Rarities,Bonuses}.luau`, `src/shared/Data/Items/{Uniques,Types}.luau`,
+`src/shared/Data/Skills/Types.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/shared/Logic/{ItemEffects,ItemRoll,ItemScore,TooltipModel,Paths,AccountSchema,Mail,Rng}.luau`,
+`src/shared/Types.luau`, `src/server/Skills/Types/{Offense,Support}.luau`,
+`src/server/Services/{Equipment,Mail,Auction}Service.luau`, `src/server/Admin/Items.luau`,
+`src/client/UI/Components/ItemTooltip.luau`, `src/client/UI/Screens/LegendReveal.luau`, `tests/itemeffects.spec.luau`,
+`tests/{Balance,balance.spec,balance1_20.spec,items.spec,rarities.spec,tooltip.spec,itemvalue.spec,wikidump.spec}.luau`,
+testy migracji, `tests/fixtures/balance_1_20.json`, `tools/{balance_reasons,balance_report}.luau`,
+`tools/balance_before.json`, `tools/WikiData/{Items,Basics,ItemsMd}.luau`, `wiki/src/data/*`,
+`wiki/src/lib/{items,item-model}.ts`, `wiki/src/islands/{ItemUpgradeView,ItemTooltipLive}.svelte`,
+`wiki/src/i18n/{pl,en}.ts`, `wiki/src/content/mechanics/{pl/statystyki,en/stats}.mdx`, `CLAUDE.md`,
+`docs/{STATY,DESIGN,DESIGN-18,BALANS,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`.
+
+Dla właściciela:
+- Strzałka „Lepszy przedmiot” liczy efekt jak cechę (3–7% osi), więc Legendarny pierścień czy naszyjnik zostaje
+  „lepszy” od Heroicznego dowolnie wyżej (biżuteria nie rośnie z poziomem od S87); w statystykach już przegrywa. Jeśli
+  wolisz, efekt w strzałce może liczyć się tylko na broni (jedna zmiana w `ItemScore.breakdown`).
+- Liczby efektów (np. Meteor 3 × 35%, Szarża +0,7 s) są startowe; po testach w grze zmieniasz je w `Data/ItemEffects`.
+- 12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej (0,95–0,97) w raporcie: dźwignia `twoHandedBonusMul` na
+  rzadkość (S87).

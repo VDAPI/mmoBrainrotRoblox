@@ -335,8 +335,8 @@ describe("Story progress: migration 8 (S102 T3)", function()
 	it("recounts every character in the new list, fixes broken branches and is idempotent", function()
 		local data = account()
 		local applied8 = AccountSchema.migrate(data)
-		expect(applied8).toEqual({ 8, 9 }) -- S132: 9 = class outfits
-		expect(data.schema).toBe(9)
+		expect(applied8).toEqual({ 8, 9, 10 }) -- S132: 9 = class outfits; S134g: 10 = item effects
+		expect(data.schema).toBe(10) -- S134g
 		local chars = data.characters
 		expect(chars.c.quests.mainLast).toBe("banditRoad")
 		expect(chars.c.quests.mainDone).toBe(indexOf.banditRoad)
@@ -373,7 +373,7 @@ describe("Story progress: migration 8 (S102 T3)", function()
 			},
 		}
 		local list = AccountSchema.migrate(data)
-		expect(list[#list]).toBe(9) -- S132: 9 = class outfits
+		expect(list[#list]).toBe(10) -- S132: 9 = class outfits; S134g: 10 = item effects
 		expect(data.schema).toBe(AccountSchema.CURRENT)
 		local q = data.characters["1"].quests
 		expect(q.mainLast).toBe("goblinCamp")
@@ -1010,7 +1010,7 @@ describe("Chapter II: players in the middle of the story (S103, A6)", function()
 	end)
 
 	it("(g) a schema 7 save through the migration: same places, no story migration after 8", function()
-		expect(AccountSchema.CURRENT).toBe(9) -- S132: 9 = class outfits (no story change)
+		expect(AccountSchema.CURRENT).toBe(10) -- S132: 9 = class outfits (no story change); S134g: 10 = item effects
 		local wolves = migrated({ mainDone = 17 })
 		expect(wolves.mainLast).toBe("werewolves")
 		expect(wolves.mainDone).toBe(indexOf.werewolves)
@@ -1524,7 +1524,7 @@ describe("Main story, chapter III: players in the middle of the story (S104, F3)
 		expect(StoryProgress.legacyId(25)).toBe("orcs")
 		expect(StoryProgress.legacyId(28)).toBe("azgor")
 		expect(StoryProgress.legacyId(29)).toBe("frostpeak")
-		expect(AccountSchema.CURRENT).toBe(9) -- S132: 9 = class outfits
+		expect(AccountSchema.CURRENT).toBe(10) -- S132: 9 = class outfits; S134g: 10 = item effects
 	end)
 
 	it("1. old mainDone 24 (ashen handed in): deadOasis next", function()
@@ -1952,7 +1952,7 @@ describe("Story chapter IV and the finale: players in the middle of the story (S
 		expect(StoryProgress.legacyId(30)).toBe("giants")
 		expect(StoryProgress.legacyId(31)).toBe("glacier")
 		expect(StoryProgress.legacyId(32)).toBe("vaelgrath")
-		expect(AccountSchema.CURRENT).toBe(9) -- S132: 9 = class outfits
+		expect(AccountSchema.CURRENT).toBe(10) -- S132: 9 = class outfits; S134g: 10 = item effects
 	end)
 
 	it("1. the dragon slayers of before (old 32): vaelgrath handed in, the finale next", function()

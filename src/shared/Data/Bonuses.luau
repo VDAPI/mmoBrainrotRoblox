@@ -3,7 +3,8 @@
 --
 -- A bonus instance on an item is { stat = <bonus id>, v = <value> }. Each bonus id maps to a StatCalc stat
 -- (`stat`) applied as a flat addition or a percentage multiplier (`mode`), or to a special effect `hook`
--- handled by CombatService/LootService (legendary and mythic pools).
+-- handled by CombatService/LootService (S134g: the legendary and mythic pools are legacy, never rolled; Legendary and
+-- Mythic items roll skill effects, Data/ItemEffects).
 --
 -- Value = lerp(min, max, roll) x scale(ilvl) x rarity.rangeMul, where (constants in SCALING below)
 --   scale = 1 + ilvl / 20 for "flat" scaling (primary stats),
@@ -125,7 +126,7 @@ bonus("expBonus", "expBonus", "flat", 2, 5, "pct", 0, true)
 bonus("goldBonus", "goldBonus", "flat", 3, 8, "pct", 0, true)
 bonus("dropBonus", "dropBonus", "flat", 2, 5, "pct", 0, true)
 
--- Legendary pool (one extra bonus on every legendary item) --------------------------------------------------
+-- Legacy legendary lines (S134g: never rolled; items from before S134g convert to skill effects) ----------------
 bonus("leg_bossDamage", nil, "flat", 6, 10, "none", 1, true, "bossDamage", "legendary") -- +% damage against bosses
 bonus("leg_eliteDamage", nil, "flat", 8, 12, "none", 1, true, "eliteDamage", "legendary") -- +% damage against elites
 bonus("leg_doubleAttack", nil, "flat", 4, 6, "none", 1, true, "doubleAttack", "legendary") -- % chance to hit twice
@@ -143,8 +144,8 @@ bonus("leg_critDmg", "critDmg", "flat", 20, 30, "none", 0, true, nil, "legendary
 -- S64 (STATY 2C, owner answer 26): no scaling like the other leg_/myth_ lines, capped by Combat.cdrCap.
 bonus("leg_cooldown", nil, "flat", 6, 10, "none", 1, true, "cooldownReduction", "legendary") -- -% skill cooldowns
 
--- Mythic pool (FIX 2026-10-09: one line on every mythic item, on top of its 2 legendary lines). Stronger
--- versions of the legendary effects; the hooks add up with legendary lines of the same effect.
+-- Legacy mythic lines (FIX 2026-10-09 to S134g: one on every mythic item; S134g: never rolled, converted to effects).
+-- Stronger versions of the legendary effects; the hooks add up with legendary lines of the same effect.
 bonus("myth_bossDamage", nil, "flat", 15, 20, "none", 1, true, "bossDamage", "mythic")
 bonus("myth_eliteDamage", nil, "flat", 18, 25, "none", 1, true, "eliteDamage", "mythic")
 bonus("myth_doubleAttack", nil, "flat", 8, 12, "none", 1, true, "doubleAttack", "mythic")
@@ -159,6 +160,15 @@ bonus("myth_cooldown", nil, "flat", 12, 16, "none", 1, true, "cooldownReduction"
 
 DEFS.armorPen.wiki = false
 DEFS.armorPen.replacedBy = "pierce"
+
+-- S134g (STATY 2C): nothing rolls the legendary and mythic lines any more (Legendary and Mythic items roll skill
+-- effects, Data/ItemEffects). The definitions stay for items not yet converted (mail, auctions; Logic/ItemEffects
+-- .migrateItem) and are off the wiki.
+for _, def in DEFS do
+	if def.tier ~= "regular" then
+		def.wiki = false
+	end
+end
 
 -- S68: caps and PvP behaviour of the lines for the tooltip details (the numbers stay where they are enforced).
 local function cap(source: "stat" | "combat" | "category" | "luck", key: string): Types.CapRef
@@ -411,6 +421,7 @@ local POOLS: { [string]: { string } } = {
 		"@vsClass",
 		"@resClass",
 	},
+	-- S134g: legacy lists of the old legendary / mythic lines; never rolled (ItemRoll.rollItem rolls skill effects)
 	legendary = {
 		"leg_bossDamage",
 		"leg_eliteDamage",

@@ -5,6 +5,7 @@
 
 local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
+local ItemEffects = require("./ItemEffects")
 local Items = require("../Data/Items")
 local Market = require("../Data/Market")
 local Rarities = require("../Data/Rarities")
@@ -54,17 +55,23 @@ end
 
 -- Accepts nil/garbage from the store and returns a usable box.
 -- Normalises a stored mailbox. S30: items of parcels sent before the new rarity ladder are upgraded
--- (Rarities.upgradeItem, idempotent; parcels live up to 30 days).
-function Mail.box(value: any): Box
+-- (Rarities.upgradeItem, idempotent; parcels live up to 30 days). S134g: Legendary and Mythic items get their skill
+-- effects instead of the legendary / mythic lines (Logic/ItemEffects.migrateItem, idempotent, seeded by the uid) for
+-- the class `classOf(parcel.charId)` gives (the addressee; nil = the item's own classes).
+function Mail.box(value: any, classOf: ((charId: string?) -> string?)?): Box
 	if type(value) == "table" and type(value.parcels) == "table" then
 		if value.sent ~= nil and type(value.sent) ~= "table" then
 			value.sent = nil
 		end
 		for _, parcel in value.parcels do
 			if type(parcel) == "table" and type(parcel.items) == "table" then
+				local charId = if type(parcel.charId) == "string" then parcel.charId else nil
+				local classHint = if classOf then classOf(charId) else nil
 				for _, item in parcel.items do
 					if type(item) == "table" and type(item.id) == "string" then
-						Rarities.upgradeItem(item, Items.get(item.id))
+						local def = Items.get(item.id)
+						Rarities.upgradeItem(item, def)
+						ItemEffects.migrateItem(item, def, classHint)
 					end
 				end
 			end

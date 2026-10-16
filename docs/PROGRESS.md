@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S134f gotowe (ostatnia S134f: tablica drużyn „Szukam drużyny” z „Dołącz” w oknie grupy, gotowość przed
+S01–S115 i S117–S134g gotowe (ostatnia S134g: Legendarne i Mityczne niewiele silniejsze w statystykach od Heroicznego
+(×1,17 / ×1,22 bazy, ×1,05 / ×1,10 linii; Legendarny L36 przegrywa w statystykach z Heroicznym L48) i z efektami
+zmieniającymi umiejętność klasy zamiast linii legendarnych (`Data/ItemEffects`, 36 efektów na rolach i pulach DESIGN-18,
+1 na Legendarnym, 2 na Mitycznym, nazwane Mityczne ze stałą parą), migracja 10 starych przedmiotów (konto, poczta,
+aukcje), opis przedmiotu z linią „Rodzaj · Kategoria · Poziom · Klasy”, statystykami w stałych grupach i bez porównania w
+liczbach; wcześniej S134f: tablica drużyn „Szukam drużyny” z „Dołącz” w oknie grupy, gotowość przed
 bossem z 3‑2‑1 przy bramie, licznik walki po walce z bossem, Elitą II i Inwazją (tylko własna drużyna, okno „Ostatnie
 walki”), podsumowanie bossa z czasem, śmierciami, unikami i łupem drużyny, czerwona winieta i bicie serca poniżej 25%
 HP, poprawka lagu przy sprzedaży (jedno odświeżenie na paczkę, slot słucha swojego klucza); wcześniej S134e: Elita II z Druzgocącym Ciosem (krąg pod celem, 2,2 s, na równym
@@ -268,6 +273,13 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
+  Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów
+  startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie bez przeglądu na PC i telefonie; S135 / S136 przemalują go
+  („Pergamin i żelazo”). Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
+  check` (bez `node_modules`). W raporcie (decyzje właściciela): strzałka „Lepszy przedmiot” z efektem na biżuterii,
+  12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej.
 
 - **S134f:** okna i ekrany S134f do przemalowania w S135 / S136 („Pergamin i żelazo”): okno `fightlog`
   (`FightLogWindow`), zakładka `PartyFinder` (z oknem `party`), `ReadyCheck` (pergamin), `FightCard` (żelazo),

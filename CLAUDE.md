@@ -82,6 +82,11 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `trait.<id>.line` przez `TooltipModel.traitArgs`), rozgałęzienie w `CombatService.applyTraitEffect`, efekty z
   `skillId = "item"` i stosami przez `EffectStack.restack`; ciosy wtórne z `DealOptions.noProc`; pomocniki i testy w
   `Logic/Traits` / `tests/traits.spec`.
+- **Efekt przedmiotu** (S134g): wpis w `Data/ItemEffects` (`fx(id, { tier, class, skill, role, pool, bp, score })`, `bp`
+  w kształcie przełomu; klucz zachowania ma odbiorcę w typie umiejętności i nie występuje w jej przełomach ani węzłach,
+  `score` = szacunek `ItemScore`) + teksty `itemfx.<id>.name/.line` (PL, EN; `{skill}` i liczby `bp` z
+  `ItemEffects.lineArgs`), `tests/itemeffects.spec`. `id` jest trwały (zapis `ItemInstance.fx`), wycofany efekt dostaje
+  `replacedBy`; działa przez `Paths.effectiveFor`. Przy zmianie umiejętności przepnij efekty jej roli (DESIGN-18 §0.9).
 - **Efekt żywiołu broni** (S65): przepis w `Logic/Traits.elementPlan`, wykonanie w `server/Skills/Elements.luau`
   (umiejętności z `Data/Skills.ADAPTIVE`, Iskra z `ItemTraits.params`), wzmocnienie hakiem `elementRider`; leczenie
   sojusznika spoza umiejętności przez `Context.healFrom`, wybór rannego przez `Context.mostWounded`.

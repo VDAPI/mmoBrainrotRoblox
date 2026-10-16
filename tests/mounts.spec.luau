@@ -361,8 +361,8 @@ describe("Mounts: seat, rider pose and save", function()
 
 	it("adds mounts through the template and reconcile, without a new schema", function()
 		-- S96 added no schema; the next ones are S99 (7, hunting contracts), S102 (8, story progress), S132 (9, class
-		-- outfits)
-		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96 + 3)
+		-- outfits), S134g (10, item effects)
+		expect(AccountSchema.CURRENT).toBe(SCHEMA_BEFORE_S96 + 4)
 		local template = AccountSchema.characterTemplate().mounts
 		expect(template).toEqual({ owned = {}, riding = false })
 		local data: any = {

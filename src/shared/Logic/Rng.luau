@@ -22,6 +22,17 @@ function Rng.new(seed: number?): Rng
 	return setmetatable({ _state = normalizeSeed(initial) }, Rng)
 end
 
+-- S134g: a stable seed from a text (FNV-1a, 32 bit), so a string id (an item uid) always gives the same rolls.
+function Rng.seedOf(text: string): number
+	local hash = 2166136261
+	for i = 1, #text do
+		hash = bit32.bxor(hash, string.byte(text, i))
+		-- x 16777619 mod 2^32 without losing precision: split the multiplier
+		hash = (hash * 403 + bit32.lshift(hash, 24)) % UINT32
+	end
+	return normalizeSeed(hash)
+end
+
 -- Returns a uint32 and advances the state.
 function Rng.nextUint(self: Rng): number
 	local x = self._state

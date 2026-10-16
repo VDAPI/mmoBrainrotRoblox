@@ -55,8 +55,18 @@ export interface RarityInfo {
   name: Name;
   bonusMin: number;
   bonusMax: number;
-  legendaryLines: number;
-  mythicLines: number;
+  legendaryEffects: number; // S134g: skill effects (were legendary / mythic lines)
+  mythicEffects: number;
+}
+
+/** S134g: a skill effect of a Legendary / Mythic item (items.json `effects`). */
+export interface EffectRef {
+  id: string;
+  name: Name;
+  line: Name;
+  skillName: Name;
+  tier: "legendary" | "mythic";
+  className: Name;
 }
 
 export interface MaterialRef {
@@ -98,8 +108,8 @@ export interface ItemDetail {
   trait?: TraitDetail; // S68: the type's trait
   poolClasses: { id: string; name: Name }[]; // S68: classes with their own pool (chances and x3 weights)
   pool?: Record<string, PoolBonus[]>; // S68: class -> rows
-  legendaryPool?: Record<string, PoolBonus[]>;
-  mythicPool?: Record<string, PoolBonus[]>;
+  effectPool?: Record<string, { legendary: EffectRef[]; mythic: EffectRef[] }>; // S134g: class -> effects it can roll
+  fixedEffects?: EffectRef[]; // S134g: a named item's fixed effects (every class that can wear it)
   upgrade?: { steps: UpgradeStepInfo[]; costs: Record<string, UpgradeCostInfo[]> };
   materials: Record<string, MaterialRef>; // upgrade / crafting materials by id
   icon: string | null; // base URL without "-64.webp" / "-128.webp"
@@ -213,10 +223,17 @@ export function buildTooltip(detail: ItemDetail, options: TooltipOptions, L: Too
   if (detail.fixed) {
     const fixed = detail.fixed.map((b, i) => ({ b, i })).sort((x, y) => order[x.b.tier] - order[y.b.tier] || x.i - y.i);
     for (const { b } of fixed) bonuses.push({ text: b.text[lang], tier: b.tier });
+    // S134g: a named item's fixed skill effects (with the class when it fits several)
+    const classes = new Set((detail.fixedEffects ?? []).map((e) => e.className[lang]));
+    for (const e of detail.fixedEffects ?? []) {
+      const who = classes.size > 1 ? `${e.className[lang]}: ` : "";
+      bonuses.push({ text: `${who}${e.name[lang]}: ${e.line[lang]}`, tier: e.tier });
+    }
   } else if (detail.equipment && rarity) {
     for (let i = 0; i < rarity.bonusMax; i++) bonuses.push({ text: L.randomBonus, tier: "regular", random: true });
-    for (let i = 0; i < rarity.legendaryLines; i++) bonuses.push({ text: L.legendaryBonus, tier: "legendary", random: true });
-    for (let i = 0; i < rarity.mythicLines; i++) bonuses.push({ text: L.mythicBonus, tier: "mythic", random: true });
+    // S134g: Legendary and Mythic roll skill effects instead of extra lines
+    for (let i = 0; i < rarity.legendaryEffects; i++) bonuses.push({ text: L.legendaryBonus, tier: "legendary", random: true });
+    for (let i = 0; i < rarity.mythicEffects; i++) bonuses.push({ text: L.mythicBonus, tier: "mythic", random: true });
   }
   const traitLine = detail.trait?.line[rarityKey]?.[up];
   const trait = detail.trait && traitLine ? { name: detail.trait.name[lang], line: traitLine[lang] } : undefined;

@@ -86,16 +86,35 @@ function ItemsMd.generate(ctx: any): string
 		"",
 		"## Rzadkości",
 		"",
-		"| Rzadkość | Kolor | Bonusy | Linie legendarne | Linie mityczne | Mnożnik statystyk | Mnożnik wartości |",
-		"|---|---|---|---|---|---|---|",
+		"| Rzadkość | Kolor | Bonusy | Efekty legendarne | Efekty mityczne | Mnożnik statystyk | Mnożnik zakresu linii | Mnożnik wartości |",
+		"|---|---|---|---|---|---|---|---|",
 	}
 	for _, r in (d.rarities and d.rarities.rarities or {}) do
 		local bonuses = if r.bonusMin == r.bonusMax then `{r.bonusMin}` else `{r.bonusMin}–{r.bonusMax}`
 		table.insert(
 			out,
-			`| {r.name.pl} | \`{r.color}\` | {bonuses} | {r.legendaryLines} | {r.mythicLines or 0} | ×{fmt(r.baseMul)} | ×{fmt(
-				r.sellMul
-			)} |`
+			`| {r.name.pl} | \`{r.color}\` | {bonuses} | {r.legendaryEffects or 0} | {r.mythicEffects or 0} | ×{fmt(
+				r.baseMul
+			)} | ×{fmt(r.rangeMul)} | ×{fmt(r.sellMul)} |`
+		)
+	end
+	table.insert(out, "")
+	-- S134g: the skill effects of Legendary and Mythic items (the edge of the rarity instead of extra lines).
+	table.insert(out, "## Efekty przedmiotów Legendarnych i Mitycznych")
+	table.insert(out, "")
+	table.insert(
+		out,
+		"Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny i 1 mityczny; efekt zmienia "
+			.. "umiejętność i działa tylko dla tej klasy (ten sam efekt z dwóch przedmiotów działa raz)."
+	)
+	table.insert(out, "")
+	table.insert(out, "| Klasa | Rzadkość | Efekt | Umiejętność | Rola | Pula | Działanie |")
+	table.insert(out, "|---|---|---|---|---|---|---|")
+	for _, e in (d.items and d.items.effects or {}) do
+		local tier = if e.tier == "mythic" then "Mityczny" else "Legendarny"
+		table.insert(
+			out,
+			`| {e.class} | {tier} | {e.name.pl} | {e.skillName.pl} | {e.role} | {e.pool} | {e.line.pl} |`
 		)
 	end
 	table.insert(out, "")

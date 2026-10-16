@@ -59,9 +59,10 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 		T.expect(report.count >= 1000).toBe(true)
 	end)
 
-	T.it("the fixture is the S134 baseline (bosses 2.0: the Grimrok sections)", function()
+	-- S134g: the new baseline (24 rarity rows: Legendary and Mythic with skill effects instead of the legendary lines)
+	T.it("the fixture is the S134g baseline (rarity: Legendary and Mythic with skill effects)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S134")
+		T.expect(file and file.meta and file.meta.session).toBe("S134g")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

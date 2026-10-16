@@ -26,8 +26,9 @@ export type RarityDef = {
 	bonusMax: number,
 	baseMul: number, -- base stat multiplier of rolled items
 	rangeMul: number, -- multiplier of random bonus values
-	legendaryLines: number, -- distinct lines from the legendary bonus pool
-	mythicLines: number, -- distinct lines from the mythic bonus pool (FIX 2026-10-09)
+	-- S134g: skill effects instead of the legendary / mythic lines (Data/ItemEffects, Logic/ItemEffects.roll)
+	legendaryEffects: number, -- distinct effects from the class's legendary effect pool
+	mythicEffects: number, -- distinct effects from the class's mythic effect pool
 	sellMul: number, -- "mnożnik rzadkości" in the sell price formula (DESIGN §18)
 	frame: FrameStyle,
 	valuable: boolean, -- confirm before selling/dismantling, light at the weapon
@@ -57,8 +58,8 @@ local function def(spec: {
 	bonusMax: number,
 	baseMul: number,
 	rangeMul: number,
-	legendaryLines: number,
-	mythicLines: number?,
+	legendaryEffects: number?,
+	mythicEffects: number?,
 	sellMul: number,
 	thickness: number,
 	gradient: { string }?,
@@ -89,8 +90,8 @@ local function def(spec: {
 		bonusMax = spec.bonusMax,
 		baseMul = spec.baseMul,
 		rangeMul = spec.rangeMul,
-		legendaryLines = spec.legendaryLines,
-		mythicLines = spec.mythicLines or 0,
+		legendaryEffects = spec.legendaryEffects or 0,
+		mythicEffects = spec.mythicEffects or 0,
 		sellMul = spec.sellMul,
 		frame = table.freeze({ thickness = spec.thickness, gradient = gradient, glow = spec.glow, spin = spec.spin }),
 		valuable = spec.valuable,
@@ -113,7 +114,6 @@ local LIST: { RarityDef } = {
 		bonusMax = 0,
 		baseMul = 1.0,
 		rangeMul = 1.0,
-		legendaryLines = 0,
 		sellMul = 1.0,
 		thickness = 1.5,
 		glow = false,
@@ -133,7 +133,6 @@ local LIST: { RarityDef } = {
 		bonusMax = 2,
 		baseMul = 1.05,
 		rangeMul = 1.0,
-		legendaryLines = 0,
 		sellMul = 1.12,
 		thickness = 2,
 		glow = false,
@@ -156,7 +155,6 @@ local LIST: { RarityDef } = {
 		bonusMax = 3,
 		baseMul = 1.12,
 		rangeMul = 1.0, -- FIX 2026-10-09: 3 bonuses always (was 2-3), so no extra range
-		legendaryLines = 0,
 		sellMul = 1.25,
 		thickness = 2.5,
 		glow = true,
@@ -177,9 +175,10 @@ local LIST: { RarityDef } = {
 		textHex = "#C26A00",
 		bonusMin = 3,
 		bonusMax = 3,
-		baseMul = 1.16,
-		rangeMul = 1.1,
-		legendaryLines = 1,
+		baseMul = 1.17,
+		-- S134g: stats about Heroic +5 % (was rangeMul 1.1 and a 4th, legendary line); the edge is one skill effect
+		rangeMul = 1.05,
+		legendaryEffects = 1,
 		sellMul = 1.45,
 		thickness = 2.5,
 		gradient = { "#FF9F1C", "#FFE08A" },
@@ -202,10 +201,11 @@ local LIST: { RarityDef } = {
 		textHex = "#B01E19",
 		bonusMin = 3,
 		bonusMax = 3,
+		-- S134g: stats about Heroic +10 % (was rangeMul 1.2 and 2 legendary + 1 mythic line); two effects
 		baseMul = 1.22,
-		rangeMul = 1.2,
-		legendaryLines = 2,
-		mythicLines = 1,
+		rangeMul = 1.10,
+		legendaryEffects = 1,
+		mythicEffects = 1,
 		sellMul = 1.70,
 		thickness = 3,
 		gradient = { "#E5302A", "#FF8FB1" },

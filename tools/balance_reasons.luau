@@ -40,6 +40,8 @@ return {
 		{ path = "Data/Families", omit = LOOKS },
 		{ path = "Data/GuildSkills", omit = LOOKS },
 		{ path = "Data/ItemTraits", omit = LOOKS },
+		-- S134g: skill effects of Legendary and Mythic items (bp numbers and the ItemScore estimate); byId repeats `list`
+		{ path = "Data/ItemEffects", omit = { "byId", "nameKey", "lineKey", "TIERS", table.unpack(LOOKS) } },
 		{ path = "Data/ItemValue" },
 		{ path = "Data/ItemWeights" },
 		{ path = "Data/Items/Backpacks", omit = LOOKS },
@@ -477,26 +479,50 @@ return {
 		["Bonuses:byId.poisonChance.max"] = { { session = "S88", why = "D1 / G7: poisonChance 2-4 -> 1.2-2.4" } },
 		["Items/Uniques:[unique_grimrok_cleaver].fixedBonuses*"] = {
 			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
+			{
 				session = "S88",
 				why = "D4: critDmg 15 -> vs_humanoid 12 (Grimrok's family, STATY 9): power 1.033 -> 1.055 of a rolled Mythic",
 			},
 		},
 		["Items/Uniques:[unique_grimrok_fang].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{ session = "S88", why = "D4: goldBonus 10 -> basicDmg 4: power 1.012 -> 1.022" },
 		},
 		["Items/Uniques:[unique_grimrok_totem].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{
 				session = "S88",
 				why = "D4: resPoison 15 -> res_humanoid 8: power 1.052 -> 1.070 (mean of the four classes)",
 			},
 		},
 		["Items/Uniques:[unique_morvane_shroud].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{ session = "S88", why = "D4: resIce 18 -> res_undead 10 (Morvane's family): power 0.990 -> 1.011" },
 		},
 		["Items/Uniques:[unique_morvane_scepter].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{ session = "S88", why = "D4: hpRegen 6 -> healPower 8 (the scepter's affinity): power 1.070" },
 		},
 		["Items/Uniques:[unique_morvane_bow].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{
 				session = "S88",
 				why = "D4: critChance 6 (over the Mythic top) -> poisonChance 5, physAtk 8 -> 6, dex 14 -> 10: power 1.094 -> 1.073",
@@ -504,29 +530,53 @@ return {
 		},
 		["Items/Uniques:[unique_azgor_heart].fixedBonuses*"] = {
 			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
+			{
 				session = "S88",
 				why = "D4: critDmg 25 (over 2.5 x the Mythic top) -> vs_elemental 12: power 1.019 -> 1.035",
 			},
 		},
 		["Items/Uniques:[unique_azgor_staff].fixedBonuses*"] = {
 			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
+			{
 				session = "S88",
 				why = "D4: critChance 8 (over the Mythic top) -> dotPower 15 (affinity): power 1.050 -> 1.030",
 			},
 		},
 		["Items/Uniques:[unique_azgor_helm].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{ session = "S88", why = "D4: resFire 25 -> res_elemental 10 (Azgor's family): power 1.013 -> 1.034" },
 		},
 		["Items/Uniques:[unique_vaelgrath_fang].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{ session = "S88", why = "D4: leg_bossDamage 12 -> 10 (the legendary range): power 1.053" },
 		},
 		["Items/Uniques:[unique_vaelgrath_scale].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{
 				session = "S88",
 				why = "D4: hpPct 10 -> 8 (2.5 x the Mythic top), resIce 30 -> res_dragon 10: power 1.027 -> 1.039",
 			},
 		},
 		["Items/Uniques:[unique_vaelgrath_eye].fixedBonuses*"] = {
+			{
+				session = "S134g",
+				why = "G: the legendary line (fixedBonuses[4]) became two fixed skill effects (Data/Items/Uniques fx); Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, the Fang's 4th line basicDmg 4 removed, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29 and scale hpPct 8 -> 7 (NAMED_LINE_MAX x the lower Mythic top, rangeMul 1.1): named power 1.03-1.08 of the expected Mythic (S88 D4)",
+			},
 			{
 				session = "S88",
 				why = "D4: magAtk 10 -> 8.5, int 35 -> 32 (2.5 x the Mythic top), manaRegen 12 -> magicPierce 10 (affinity): power 1.045 -> 1.046",
@@ -4772,5 +4822,157 @@ return {
 				why = "12 -> 3 with the base: level 20 ~6 min, 100 ~10 min (was ~12 / ~28); loot per hour checked in balance.spec (S33 / S84 rows)",
 			},
 		},
+		["Rarities:get.f(1).legendaryEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(1).legendaryLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(1).mythicEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(1).mythicLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(20).legendaryEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(20).legendaryLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(20).mythicEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(20).mythicLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:get.f(20).rangeMul"] = {
+			{
+				session = "S134g",
+				why = "1.2 -> 1.1: the lines of a Mythic about Heroic +10 % (ItemScore Mythic / Heroic 1.081-1.099, band 1.08-1.12); baseMul 1.22 kept (1.21 gave weapons 1.077)",
+			},
+		},
+		["Rarities:list[2].legendaryEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[2].legendaryLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[2].mythicEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[2].mythicLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[3].legendaryEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[3].legendaryLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[3].mythicEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[3].mythicLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[4].baseMul"] = {
+			{
+				session = "S134g",
+				why = "1.16 -> 1.17: owner 2026-10-15 (a Legendary L36 beat a Heroic L48): stats about Heroic +5 % (ItemScore Legendary / Heroic 1.039-1.053, Balance.targetsS134g stats 1.03-1.07; at 1.16 a Hunter bow L45 had 1.030); the edge is one skill effect",
+			},
+		},
+		["Rarities:list[4].legendaryEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[4].legendaryLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[4].mythicEffects"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[4].mythicLines"] = {
+			{
+				session = "S134g",
+				why = "new / removed: S134g: the legendary / mythic lines became skill effects (Data/ItemEffects, owner 2026-10-15): legendaryLines / mythicLines -> legendaryEffects / mythicEffects (Legendary 1, Mythic 1 legendary + 1 mythic)",
+			},
+		},
+		["Rarities:list[4].rangeMul"] = {
+			{
+				session = "S134g",
+				why = "1.1 -> 1.05: the lines of a Legendary about Heroic +5 % (the legendary line is gone; with rangeMul 1.1 and the 4th line it was +25-42 % power over Common, Heroic +15-26 %)",
+			},
+		},
+		-- S134g: Legendary and Mythic with skill effects instead of the legendary / mythic lines (docs/SESJE.md S134g)
+		["ItemEffects:*"] = {
+			{
+				session = "S134g",
+				why = "new module: 36 skill effects (6 legendary + 3 mythic per class) on today's skills of the DESIGN-18 roles and pools; bp numbers fixed (they grow with the skill, never with the item), from the session plan and the skills' own breakpoints (echo 30-40 %, split 3 x 35 %, execute 25 %, splash 25-30 %, lifesteal 15-20 %, pull 8-14 studs, Charge stun +0.7 s); score = ItemScore estimate, legendary 3-5 % of an axis, mythic 6-7 % (like the STATY 14 trait estimates)",
+			},
+		},
+		["Items/Uniques:*"] = {
+			{
+				session = "S134g",
+				why = "G: each named Mythic's legendary line (fixedBonuses[4], leg_*; the Fang's basicDmg 4) became two fixed skill effects like a rolled Mythic; UNIQUE_MUL 1.3 -> 1.26 (the rolled Mythic lost its 3 extra lines, so the named items stood at 1.03-1.10 of it) and Grimrok's cleaver physAtk 7 -> 6, str 8 -> 6, totem vit 8 -> 6, hpPct 6 -> 5, Vaelgrath's eye magAtk 8.5 -> 8, int 32 -> 29, scale hpPct 8 -> 7: named power 1.03-1.08 of the expected Mythic (S88 D4 band 1.00-1.08)",
+			},
+		},
+
 	} :: { [string]: { Reason } },
 }

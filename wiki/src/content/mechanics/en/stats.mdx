@@ -3,7 +3,7 @@ title: Stats
 description: "The four attributes, points per level, how attributes turn into health, attack and defence, stat limits and resetting points."
 key: stats
 order: 2
-updated: 2026-10-12
+updated: 2026-10-16
 tags: [Attributes, Character]
 ---
 
@@ -22,6 +22,10 @@ Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribut
 Attributes turn into stats by the game's formulas. Bonuses from gear, blessings and the guild are added on top. Dexterity gives its full crit chance, attack speed and dodge up to <Stat path="mechanics.dexRatingLevel" format="lvl" />; after that each point gives proportionally less, while attack from Dexterity stays the same.
 
 <StatFormulaTable />
+
+## Legendary and Mythic items
+
+Legendary and Mythic items are only a little stronger in stats than Heroic ones (base multiplier <Stat path="rarities.rarities[legendary].baseMul" format="x" /> and <Stat path="rarities.rarities[mythic].baseMul" format="x" /> against <Stat path="rarities.rarities[heroic].baseMul" format="x" />); what sets them apart are effects that change the skills of the class. A Legendary item has <Stat path="rarities.rarities[legendary].legendaryEffects" /> effect from the class's legendary pool, a Mythic one <Stat path="rarities.rarities[mythic].legendaryEffects" /> legendary and <Stat path="rarities.rarities[mythic].mythicEffects" /> mythic, for example a Meteor that breaks into smaller blasts or a Charge that stuns longer. An effect works only for its class, together with breakpoints and path nodes, and the same effect from two items works once. The effects an item can roll are on its page.
 
 ## Limits
 

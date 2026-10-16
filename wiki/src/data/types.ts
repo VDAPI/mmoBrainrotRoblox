@@ -782,6 +782,7 @@ export interface Item {
   desc?: Name;
   elemental: boolean;
   fixedBonuses?: FixedBonus[];
+  fixedEffects?: Record<string, string[]>;
   glyph: string;
   iconKey?: string;
   id: string;
@@ -808,6 +809,18 @@ export interface Item {
 export interface ItemChance {
   chance: number;
   id: string; // id in items.json
+}
+
+export interface ItemEffect {
+  class: ClassId;
+  id: string;
+  line: Name;
+  name: Name;
+  pool: string;
+  role: string;
+  skill: string;
+  skillName: Name;
+  tier: RarityKey;
 }
 
 export interface ItemRarityStats {
@@ -845,6 +858,7 @@ export interface ItemWeapon {
 export interface ItemsFile {
   bases: Record<string, BaseInfo>;
   categories: Record<string, CategoryInfo>;
+  effects: ItemEffect[];
   items: Item[];
   slots: Record<string, SlotInfo>;
   traits: Record<string, TraitInfo>;
@@ -1435,8 +1449,8 @@ export interface Rarity {
   dismantle: AmountRange[];
   id: number;
   key: RarityKey;
-  legendaryLines: number;
-  mythicLines: number;
+  legendaryEffects: number;
+  mythicEffects: number;
   name: Name;
   rangeMul: number;
   sellMul: number;

@@ -57,7 +57,10 @@ describe("Rarities S30", function()
 		expect(Rarities.get(Rarities.LEGENDARY).frame.spin).toBe(true)
 		expect(Rarities.get(Rarities.MYTHIC).frame.gradient ~= nil).toBe(true)
 		expect(Rarities.get(Rarities.HEROIC).frame.glow).toBe(true)
-		expect(Rarities.get(Rarities.MYTHIC).legendaryLines).toBe(2)
+		-- S134g: skill effects instead of the legendary / mythic lines (Mythic: 2 legendary + 1 mythic line before)
+		expect(Rarities.get(Rarities.LEGENDARY).legendaryEffects).toBe(1)
+		expect(Rarities.get(Rarities.MYTHIC).legendaryEffects + Rarities.get(Rarities.MYTHIC).mythicEffects).toBe(2)
+		expect(Rarities.get(Rarities.HEROIC).legendaryEffects + Rarities.get(Rarities.HEROIC).mythicEffects).toBe(0)
 		expect(Rarities.get(99).id).toBe(Rarities.MAX) -- clamped, never nil
 	end)
 
@@ -84,7 +87,8 @@ describe("Rarities S30", function()
 		end
 	end)
 
-	it("bonus pools hold at least bonusMax entries, legendary pool at least 2 lines", function()
+	-- S134g: the legendary / mythic lists stay as legacy data (never rolled); every class has effects for both tiers
+	it("bonus pools hold at least bonusMax entries, every class has legendary and mythic effects", function()
 		local most = 0
 		for _, rarity in Rarities.list do
 			most = math.max(most, rarity.bonusMax)
@@ -92,7 +96,11 @@ describe("Rarities S30", function()
 		for group, pool in Bonuses.pools do
 			expect({ group = group, ok = #pool >= most }).toEqual({ group = group, ok = true })
 		end
-		expect(#Bonuses.pools.legendary >= 2).toBe(true)
+		local ItemEffects = require("../src/shared/Logic/ItemEffects")
+		for _, classId in { "Warrior", "Hunter", "Mage", "Cleric" } do
+			expect(#ItemEffects.pool(classId, "legendary") >= 2).toBe(true)
+			expect(#ItemEffects.pool(classId, "mythic") >= 1).toBe(true)
+		end
 	end)
 
 	it("every rarity has a name and a short filter name in both languages", function()
@@ -383,7 +391,7 @@ describe("Rarity migration S30", function()
 		}
 		local applied = AccountSchema.migrate(data)
 		AccountSchema.now = savedNow
-		expect(applied).toEqual({ 5, 6, 7, 8, 9 })
+		expect(applied).toEqual({ 5, 6, 7, 8, 9, 10 }) -- S134g: 10 = item effects
 		local char = data.characters["1"]
 		expect(char.equipment.weapon.rarity).toBe(Rarities.LEGENDARY)
 		expect(char.equipment.ring1.rarity).toBe(Rarities.MYTHIC)

@@ -62,6 +62,9 @@ export type ItemDef = {
 	capacity: number?, -- backpacks
 	-- Named (hand-made Mythic) boss items: fixed bonuses and the boss that drops them.
 	fixedBonuses: { { stat: string, v: number } }?,
+	-- S134g: fixed skill effects of a named boss item (Data/ItemEffects ids): a list for a one-class item, or a list per
+	-- class (Classes.order form) for a shared one; read from the definition like fixedBonuses (Logic/ItemEffects.idsOf)
+	fx: ({ string } | { [string]: { string } })?,
 	bossId: string?,
 	bindOnPickup: boolean?,
 	noSell: boolean?, -- S31: merchants refuse it (the tooltip says "Cannot be sold"; its value still shows)

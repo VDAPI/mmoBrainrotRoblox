@@ -3,7 +3,7 @@ title: Statystyki
 description: "Cztery atrybuty, punkty za poziom, jak atrybuty zmieniają się w życie, atak i obronę, limity statystyk i reset punktów."
 key: stats
 order: 2
-updated: 2026-10-12
+updated: 2026-10-16
 tags: [Atrybuty, Postać]
 ---
 
@@ -22,6 +22,10 @@ Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktó
 Atrybuty zamieniają się w statystyki według wzorów gry. Bonusy z ekwipunku, błogosławieństw i gildii dochodzą na końcu. Zręczność daje pełną premię do krytyka, szybkości ataku i uniku do <Stat path="mechanics.dexRatingLevel" format="lvl" />; potem każdy punkt daje proporcjonalnie mniej, a atak ze Zręczności się nie zmienia.
 
 <StatFormulaTable />
+
+## Przedmioty Legendarne i Mityczne
+
+Legendarny i Mityczny są niewiele silniejsze w statystykach od Heroicznego (mnożnik bazy <Stat path="rarities.rarities[legendary].baseMul" format="x" /> i <Stat path="rarities.rarities[mythic].baseMul" format="x" /> wobec <Stat path="rarities.rarities[heroic].baseMul" format="x" />); wyróżniają je efekty zmieniające umiejętności klasy. Legendarny ma <Stat path="rarities.rarities[legendary].legendaryEffects" /> efekt z puli legendarnej klasy, Mityczny <Stat path="rarities.rarities[mythic].legendaryEffects" /> legendarny i <Stat path="rarities.rarities[mythic].mythicEffects" /> mityczny, na przykład Meteor rozpadający się na mniejsze wybuchy albo Szarża ogłuszająca dłużej. Efekt działa tylko dla swojej klasy, razem z przełomami i węzłami ścieżki, a ten sam efekt z dwóch przedmiotów działa raz. Efekty, które może wylosować przedmiot, są na jego stronie.
 
 ## Limity
 

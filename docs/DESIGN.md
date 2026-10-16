@@ -313,24 +313,32 @@ Broń, Druga ręka, Hełm, Zbroja, Rękawice, Buty, Naszyjnik, Pierścień 1, Pi
 
 Od S30 pięć rzadkości (rosnące id, `Data/Rarities.luau`); rzadkość widać po kolorze ramki slotu i nazwy.
 
-| id | Rzadkość PL / EN | Ramka | Bonusy losowe | Mnożnik bazy | Mnożnik zakresu | Linie z puli legendarnej | Mnożnik ceny |
+| id | Rzadkość PL / EN | Ramka | Bonusy losowe | Mnożnik bazy | Mnożnik zakresu | Efekty umiejętności (S134g) | Mnożnik ceny |
 |---|---|---|---|---|---|---|---|
 | 1 | Zwykły / Common | szary `#9DA3AB`, 1,5 px | 0 | 1.00 | 1.0 | 0 | 1.00 |
-| 2 | Unikatowy / Unique | żółty `#F2D33A`, 2 px | 1–2 | 1.05 | 1.0 | 0 | 1.12 |
-| 3 | Heroiczny / Heroic | niebieski `#3D8BFF`, 2,5 px + poświata | 2–3 | 1.12 | 1.05 | 0 | 1.25 |
-| 4 | Legendarny / Legendary | pomarańczowy `#FF9F1C`, obracający się gradient | 3–4 | 1.16 | 1.1 | 1 | 1.45 |
-| 5 | Mityczny / Mythic | czerwony `#E5302A`, obracający się gradient + mocna poświata | 4 (losowany) albo stałe (ręczny) | 1.22 (losowany) | 1.2 | 2 różne | 1.70 |
+| 2 | Unikatowy / Unique | żółty `#F2D33A`, 2 px | 2 | 1.05 | 1.0 | 0 | 1.12 |
+| 3 | Heroiczny / Heroic | niebieski `#3D8BFF`, 2,5 px + poświata | 3 | 1.12 | 1.0 | 0 | 1.25 |
+| 4 | Legendarny / Legendary | pomarańczowy `#FF9F1C`, obracający się gradient | 3 | 1.17 | 1.05 | 1 legendarny | 1.45 |
+| 5 | Mityczny / Mythic | czerwony `#E5302A`, obracający się gradient + mocna poświata | 3 (losowany) albo stałe (ręczny) | 1.22 (losowany) | 1.10 | 1 legendarny + 1 mityczny | 1.70 |
+
+S134g (owner 2026-10-15): Legendarny i Mityczny są w statystykach niewiele silniejsze od Heroicznego tego samego poziomu
+(`ItemScore` +5% i +10%); wyróżniają je **efekty zmieniające umiejętność klasy** (`Data/ItemEffects`, np. „Meteor
+rozpada się na 3 wybuchy”, „Szarża ogłusza dłużej”), działające tylko dla swojej klasy, raz (ten sam z dwóch przedmiotów)
+i razem z przełomami i węzłami. Heroiczny dogania Legendarną broń 2–3 poziomy wyżej, Mityczną 5–8 (`docs/BALANS.md` →
+„Rzadkość a poziom”).
 
 Cel mocy (S32, `docs/BALANS.md`, moc = √(DPS × efektywne HP), pełny komplet vs komplet Zwykły tego samego ilvl):
-Unikatowy +8–15%, Heroiczny +15–25%, Legendarny +25–40%, Mityczny wyżej od Legendarnego. Przed S32 rzadkości dawały
+Unikatowy +8–15%, Heroiczny +15–25%, Legendarny = Heroiczny ×1,02–1,08 (S134g; było +25–40%), Mityczny wyżej od
+Legendarnego. Przed S32 rzadkości dawały
 ok. +18 / +40 / +85 / +120%.
 
 Zdolności rzadkości są w danych, nie w porównaniach id: `valuable` (potwierdzenie sprzedaży i rozbioru, światło przy
 broni; od Heroicznego), `announce` (legenda / mityk), `reveal` (okno odsłonięcia; od Legendarnego), `legendCore`
 (rdzeń legendy przy ulepszaniu od +8, S87; wcześniej od +7), `quickSell` (Zwykły, Unikatowy), `dismantle`.
 
-**Ręcznie zrobione przedmioty bossów** (12, `Items/Uniques.luau`) są **Mityczne**: stałe bonusy, baza ×1.3 (bez
-dodatkowego mnożnika rzadkości), własna nazwa i opis. Próg 95 broni nazywa się „Eteryczny” (nie „Mityczny”).
+**Ręcznie zrobione przedmioty bossów** (12, `Items/Uniques.luau`) są **Mityczne**: 3 stałe bonusy i 2 stałe efekty
+umiejętności (para dla każdej klasy noszącej, S134g), baza ×1,26 (S134g, było ×1,3; bez dodatkowego mnożnika
+rzadkości), własna nazwa i opis. Próg 95 broni nazywa się „Eteryczny” (nie „Mityczny”).
 
 Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane do poziomu (zawsze średnia wartość, bez bonusów). Są pewnym, przeciętnym wyborem; drop jest lepszy.
 
@@ -351,7 +359,7 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 
 ### 5.3a Tooltip i wartość (S31)
 
-Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwuręczna/dystansowa, druga ręka, hełm, zbroja, rękawice, buty, naszyjnik, pierścień, talizman, mikstura, błogosławieństwo, eliksir, kamień, zwój, narzędzie, materiał, plecak), swoje statystyki albo efekt (broń z DPS, mikstury ile przywracają, błogosławieństwa i eliksiry efekt z czasem, kamienie / zwoje / narzędzia co robią, materiały „Używany do:” liczone z danych i poziom materiału, plecaki miejsca i poziom) oraz zawsze „Wartość: X złota”; w sklepie „Cena”, przy otwartym kupcu „Sprzedasz za”. Treść buduje czysta funkcja `Logic/TooltipModel`. Na dotyku tap w przedmiot w sklepie / nagrodzie pokazuje tooltip.
+Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom · Klasy” i małą linię rzadkości (broń jedno-/dwuręczna, dystansowa jedno-/dwuręczna, druga ręka, hełm, zbroja, rękawice, buty, naszyjnik, pierścień, talizman, mikstura, błogosławieństwo, eliksir, kamień, zwój, narzędzie, materiał, plecak), swoje statystyki albo efekt (broń z DPS, mikstury ile przywracają, błogosławieństwa i eliksiry efekt z czasem, kamienie / zwoje / narzędzia co robią, materiały „Używany do:” liczone z danych i poziom materiału, plecaki miejsca i poziom) oraz zawsze „Wartość: X złota”; w sklepie „Cena”, przy otwartym kupcu „Sprzedasz za”. Treść buduje czysta funkcja `Logic/TooltipModel`. Na dotyku tap w przedmiot w sklepie / nagrodzie pokazuje tooltip.
 
 ### 5.3b Ikony przedmiotów (S35)
 
@@ -388,7 +396,8 @@ Każdy przedmiot ma w tooltipie „Rzadkość · Kategoria” (broń jedno-/dwur
 - **Pula filtrowana po klasie** (S32, `Bonuses.classStats`): przedmiot losuje tylko bonusy przydatne którejś z jego
   klas (miecz Wojownika bez INT i ataku magicznego); biżuteria (bez klasy) losuje dla klasy, dla której wypadła.
 - Bez powtórzeń tego samego bonusu na jednym przedmiocie.
-- Legendarny: dodatkowo 1 bonus z puli legendarnej (np. „+8% obrażeń przeciw bossom”, „5% szansy na podwójny atak”, „+15% bonusu EXP”, „po zabiciu potwora 3% HP”).
+- Legendarny: dodatkowo 1 efekt umiejętności z puli legendarnej klasy, Mityczny 1 legendarny i 1 mityczny (S134g; do S134g
+  linia z puli legendarnej, np. „+8% obrażeń przeciw bossom”; stare przedmioty przeliczyła migracja 10).
 - Tooltip pokazuje bonus i **jakość rzutu** (np. pasek lub `95%` zakresu) — gracze kochają porównywać rzuty.
 - **Brak przerzucania bonusów** (decyzja projektowa, może wrócić w przyszłości).
 
@@ -1204,7 +1213,11 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **HUD**: lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa z nazwą mapy i kolorem strefy, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (podstawa klasy i zakładki ścieżek, ROZWOJ §4; S59: 920 × 640, zakładki Podstawa i ścieżek, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
-- Tooltip przedmiotu: nazwa w kolorze rzadkości, typ, slot, wymagania (czerwone gdy niespełnione), statystyki bazowe (+ulepszenie), bonusy z jakością rzutu, porównanie z założonym (zielone ↑ / czerwone ↓), związany/niezwiązany, cena.
+- Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
+  pogrubione (niespełniona część na czerwono); rzadkość i ulepszenie małym; główna wartość (obrażenia, szybkość i DPS albo
+  pancerz); statystyki mniejszą czcionką w stałych grupach (atrybuty, atak, obrona, zasoby i reszta) z jakością rzutu;
+  cecha; efekty legendarny / mityczny; opis; „Zastąpi: …”; związany/niezwiązany; poziom przedmiotu; cena. Porównanie =
+  drugi panel z założonym przedmiotem (ta sama kolejność, czyste statystyki), bez procentów i strzałek.
 - Liczby obrażeń nad celami (S29): każde rozstrzygnięte trafienie ma liczbę. Moje duże białe, krytyk „KRYT! 1 234” pomarańczowo-złoty z wyskokiem, cudze mniejsze i przygaszone, otrzymane czerwone, „Pochłonięto” (tarcza), „Odporny”, „Unik”, leczenie i HoT zielone, ticki DoT małe w kolorze żywiołu. Liczby układają się w stos nad celem (maks. 6, powyżej 8/s łączą się w sumę), żyją ok. 1,2 s. Opcja: wszystkie / moje i otrzymane / wyłączone.
 - **Jedno główne okno naraz**: otwarcie okna zamyka poprzednie. Wyjątek: okna usług (sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz) otwierają się razem z plecakiem-towarzyszem, który znika razem z ostatnią usługą (✕, Esc, odejście od NPC, koniec handlu, śmierć, zmiana mapy), chyba że gracz otworzył go sam wcześniej (S29). Depozyt ma własną siatkę plecaka.
 - **Mapa świata** (przebudowa po testach S17): duże okno (do 85% ekranu) ze **szczegółowym rysunkiem mapy** wygenerowanym z danych layoutu (teren i biomy kolorami, drogi, woda, lasy jako skupiska drzew, budynki, mosty, wzgórza), **obszary potworów** z nazwą i poziomami (§3.6, lista potworów po najechaniu), portale podpisane nazwą celu i poziomami, wejścia do jaskiń i lochów osobnymi ikonami, NPC w mieście z podpisami, węzły zbierackie, łowiska, członkowie grupy, cel questa; legenda z przełącznikami warstw, przybliżanie kółkiem/szczypaniem, przesuwanie, „wyśrodkuj na mnie”. Znacznik gracza porusza się na żywo i obraca w kierunku, w którym idzie postać.
