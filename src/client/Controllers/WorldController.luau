@@ -135,7 +135,10 @@ local function graphicsLevel(): typeof(Config.Graphics.levels.high)
 	return levels[if type(quality) == "string" then quality else Config.Graphics.default] or levels.high
 end
 
--- W01: the map's sky from ReplicatedStorage.Assets.Sky (the default sky when the key or the asset is missing).
+-- W01: the map's sky from ReplicatedStorage.Assets.Sky (the default sky when the key or the asset is missing). The
+-- place's own Sky is the default; it leaves Lighting while a map sky shows (two skies in Lighting pick one at random).
+local defaultSky: Sky? = nil
+
 local function applySky(key: string?)
 	local current = Lighting:FindFirstChild("VaelthornSky")
 	if current and current:GetAttribute("Key") == key then
@@ -148,10 +151,15 @@ local function applySky(key: string?)
 	local folder = assets and assets:FindFirstChild("Sky")
 	local source = if key and folder then folder:FindFirstChild(key) else nil
 	if source and source:IsA("Sky") then
+		if defaultSky then
+			defaultSky.Parent = nil
+		end
 		local sky = source:Clone()
 		sky.Name = "VaelthornSky"
 		sky:SetAttribute("Key", key)
 		sky.Parent = Lighting
+	elseif defaultSky then
+		defaultSky.Parent = Lighting
 	end
 end
 
@@ -711,7 +719,14 @@ function WorldController.Start()
 	grade = Instance.new("ColorCorrectionEffect")
 	grade.Name = "VaelthornGrade"
 	grade.Parent = Lighting
-	-- W01: post effects of the map look (Data/MapLooks), off until a map is applied
+	-- W01: post effects of the map look (Data/MapLooks), off until a map is applied. The place's own bloom, sun rays
+	-- and depth of field (left in Lighting from before W01) go off: one owner for every post effect.
+	for _, child in Lighting:GetChildren() do
+		if child:IsA("BloomEffect") or child:IsA("SunRaysEffect") or child:IsA("DepthOfFieldEffect") then
+			child.Enabled = false
+		end
+	end
+	defaultSky = Lighting:FindFirstChildOfClass("Sky")
 	bloom = Instance.new("BloomEffect")
 	bloom.Name = "VaelthornBloom"
 	bloom.Intensity = 0

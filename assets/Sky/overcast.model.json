@@ -1,0 +1,14 @@
+{
+  "className": "Sky",
+  "properties": {
+    "SkyboxBk": "rbxassetid://4495864450",
+    "SkyboxDn": "rbxassetid://4495864887",
+    "SkyboxFt": "rbxassetid://4495865458",
+    "SkyboxLf": "rbxassetid://4495866035",
+    "SkyboxRt": "rbxassetid://4495866584",
+    "SkyboxUp": "rbxassetid://4495867486",
+    "StarCount": 0,
+    "SunAngularSize": 8,
+    "MoonAngularSize": 8
+  }
+}

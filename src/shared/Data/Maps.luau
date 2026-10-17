@@ -90,7 +90,17 @@ local function lighting(overrides: { [string]: any }): Lighting
 end
 
 local LIGHT = {
-	city = lighting({ clockTime = 15, fogEnd = 1200 }),
+	-- W01 (Studio): warm stone in the sun, softer brightness so the pale paving of the square keeps its texture
+	city = lighting({
+		clockTime = 15,
+		brightness = 2,
+		ambient = "#6A6A70",
+		outdoorAmbient = "#8A8A90",
+		fogEnd = 1200,
+		atmosphere = { density = 0.3, haze = 1.2, glare = 0.3, color = "#DCD8D0", decay = "#7A8696" },
+		tint = "#FFF4E4",
+		saturation = 0.1,
+	}),
 	-- Night in the city (S21): cool moonlight, dark blue fog; windows, lamps and fires do the rest.
 	cityNight = lighting({
 		clockTime = 0,
@@ -103,7 +113,17 @@ local LIGHT = {
 		tint = "#D8E0FF",
 		saturation = -0.15,
 	}),
-	meadows = lighting({ clockTime = 13, saturation = 0.12, fogColor = "#D8E6C9" }),
+	-- W01 (Studio): the golden late afternoon of Data/MapLooks: warm ambient and haze towards the sun, cool far away
+	meadows = lighting({
+		clockTime = 13,
+		brightness = 2.6,
+		ambient = "#6A6050",
+		outdoorAmbient = "#A89880",
+		fogColor = "#E6D2AE",
+		atmosphere = { density = 0.3, haze = 1, glare = 0.6, color = "#EAD8BA", decay = "#B8C4CE" },
+		tint = "#FFF2DE",
+		saturation = 0.18,
+	}),
 	-- Night on the Meadows (S26): moonlight bright enough to fight in, blue-green fog; fireflies and fires glow.
 	meadowsNight = lighting({
 		clockTime = 0,
@@ -128,26 +148,29 @@ local LIGHT = {
 		tint = "#C8D2FF",
 		saturation = -0.2,
 	}),
+	-- W01 (Studio): an overcast day under the crowns instead of the navy dusk: dark green ambient and mist, readable
 	duskwood = lighting({
 		clockTime = 18.2,
-		brightness = 1.2,
-		ambient = "#3A3448",
-		outdoorAmbient = "#4A4458",
-		fogColor = "#3A3F4A",
+		brightness = 2.1,
+		ambient = "#3E4A40",
+		outdoorAmbient = "#5C6A5A",
+		fogColor = "#4A544A",
 		fogEnd = 420,
-		atmosphere = { density = 0.45, haze = 2.4, glare = 0, color = "#5A5F6E", decay = "#2A2A3A" },
-		tint = "#D8D0F0",
-		saturation = -0.15,
+		atmosphere = { density = 0.4, haze = 2.2, glare = 0.2, color = "#6C746C", decay = "#30363A" },
+		tint = "#E2EAD8",
+		saturation = -0.08,
 	}),
+	-- W01 (Studio): the sunset through dust: thinner haze (it was brown milk), strong glare towards the sun
 	ashen = lighting({
 		clockTime = 16,
-		ambient = "#7A5A4A",
-		outdoorAmbient = "#9A6A4A",
-		fogColor = "#C98A5A",
+		brightness = 2.8,
+		ambient = "#6A4A3C",
+		outdoorAmbient = "#9A6E52",
+		fogColor = "#E2A47A",
 		fogEnd = 700,
-		atmosphere = { density = 0.4, haze = 2, glare = 0.4, color = "#D9A27A", decay = "#7A3A2A" },
-		tint = "#FFE2C9",
-		saturation = 0,
+		atmosphere = { density = 0.32, haze = 1.2, glare = 0.9, color = "#E2A47A", decay = "#6A3A2E" },
+		tint = "#FFEAD8",
+		saturation = 0.02,
 	}),
 	-- Night on the Ashen Wastes (S46): no stars through the ash, a reddish fog, a dark maroon ambient bright enough
 	-- to fight in; the light comes from the lava, the cracks, the forges, the fires and the runes.
@@ -175,16 +198,17 @@ local LIGHT = {
 		tint = "#D0E2FF",
 		saturation = -0.08,
 	}),
+	-- W01 (Studio): a crisp cold morning: blue ambient for blue shadows on the snow, thin haze (it was white milk)
 	frostpeak = lighting({
 		clockTime = 11,
-		brightness = 2.6,
-		ambient = "#7A8AA0",
-		outdoorAmbient = "#A8B8D0",
-		fogColor = "#E4F0F7",
+		brightness = 2.3,
+		ambient = "#5A6E8E",
+		outdoorAmbient = "#8296B8",
+		fogColor = "#D2E4F4",
 		fogEnd = 600,
-		atmosphere = { density = 0.42, haze = 1.6, glare = 0.5, color = "#E4F0F7", decay = "#9FB6C9" },
-		tint = "#E8F4FF",
-		saturation = -0.1,
+		atmosphere = { density = 0.34, haze = 1, glare = 0.6, color = "#D2E4F4", decay = "#6C8AAA" },
+		tint = "#E6F0FF",
+		saturation = 0.02,
 	}),
 	cave = lighting({
 		clockTime = 0,
@@ -202,16 +226,17 @@ local LIGHT = {
 	-- with low graphics): brightness 0.9, ambient of relative luminance >= 0.10 in the preset's hue, fog from 380+,
 	-- atmosphere density <= 0.42 and haze <= 0.4 (tests/cavelight.spec); the player carries a soft light
 	-- (Config.CaveLights.player)
+	-- W01 (Studio): the walls were near black; a brighter emerald ambient and a turquoise air (docs/WYGLAD.md §4.3)
 	caveMoss = lighting({
 		clockTime = 0,
 		brightness = 0.9,
-		ambient = "#4D614D",
-		outdoorAmbient = "#445144",
-		fogColor = "#1D2F20",
+		ambient = "#62806A",
+		outdoorAmbient = "#4E6A56",
+		fogColor = "#1D2F2A",
 		fogEnd = 420,
-		atmosphere = { density = 0.4, haze = 0.4, glare = 0, color = "#263A2A", decay = "#132016" },
-		tint = "#D8F4D0",
-		saturation = -0.05,
+		atmosphere = { density = 0.4, haze = 0.4, glare = 0, color = "#22403A", decay = "#10201C" },
+		tint = "#D4F4E2",
+		saturation = 0.05,
 	}),
 	caveSmugglers = lighting({
 		clockTime = 0,

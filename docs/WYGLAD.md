@@ -74,10 +74,10 @@ Właściciel akceptuje plan mapy, zanim sesja ją przebuduje.
 | Miejsce | Pora i światło | Kolor przewodni / akcent | Pogoda |
 |---|---|---|---|
 | Miasto | cykl dnia i nocy; latarnie i okna świecą nocą | ciepły kamień, czerwone dachy / złoto | czasem deszcz |
-| Szepczące Łąki | późne popołudnie, złote słońce | jasna zieleń, złoto / czerwone maki | lekki wiatr, pyłki |
-| Mroczny Bór | pochmurny dzień, snopy światła przez korony | ciemna zieleń, mech / fiolet kultu | mgła przy ziemi, deszcz na Bagnach |
-| Spalone Pustkowia | zachód słońca, gorące powietrze | ochra, rdza / pomarańcz lawy | burze piasku, popiół |
-| Lodowe Szczyty | zimny poranek, niskie słońce | biel, błękit / turkus lodu | zamieć, śnieg |
+| Szepczące Łąki | późne popołudnie, złote słońce (W01: 17,0, słońce `#FFB46A`) | jasna zieleń, złoto / czerwone maki | lekki wiatr, pyłki |
+| Mroczny Bór | pochmurny dzień, snopy światła przez korony (W01: 15,5, szare niebo `overcast`, zielona mgła) | ciemna zieleń, mech / fiolet kultu | mgła przy ziemi, deszcz na Bagnach |
+| Spalone Pustkowia | zachód słońca, gorące powietrze (W01: 17,2, słońce `#FF9A50`, niebo `dustSunset`) | ochra, rdza / pomarańcz lawy | burze piasku, popiół |
+| Lodowe Szczyty | zimny poranek, niskie słońce (W01: 7,6, ciepłe słońce `#FFE2C8`, niebieskie cienie) | biel, błękit / turkus lodu | zamieć, śnieg |
 
 ### 4.3 Motywy jaskiń (każda inna)
 

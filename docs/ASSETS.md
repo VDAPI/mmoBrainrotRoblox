@@ -176,6 +176,20 @@ z neonowych części). Przebudowa, podmiana na własną teksturę i wgranie: `do
 `IsLoaded` (`/animlab vfx tex`). Osierocone wgrania z tej sesji (nieużywane, można usunąć w Creator Hub):
 `132519633221746` (bąbel 512 px), `82964945104988` i `82584722869054` (łuki cięcia w pierwszym ułożeniu).
 
+## Niebo map (W01)
+
+Plik `assets/Sky/<klucz>.model.json` (Rojo → `ReplicatedStorage.Assets.Sky`), klucz w `Data/MapLooks` (`sky`). Do repo
+idą tylko ID tekstur (sześć ścian), bez modeli i skryptów z rynku. Mapy bez klucza mają niebo miejsca (`Lighting.Sky`).
+
+| Klucz | Mapa | Tekstury (Bk) | Model w Creator Store | Twórca | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `overcast` | Mroczny Bór | `4495864450` (+5) | „Rain Sky” `12376964583` | srnatsuno | darmowy model Creator Store | 2026-10-17 | szare, zachmurzone; bez skryptów |
+| `dustSunset` | Spalone Pustkowia | `252760981` (+5) | „Realistic Clouded Sunset Skybox” `6681543281` | porkythepig66 | darmowy model Creator Store | 2026-10-17 | sepia, chmury o zachodzie; bez skryptów |
+
+Odrzucone na zrzutach: „Cartoon Sky” `10594688909` (malowane, ale turkus zabarwia całą scenę przez światło otoczenia
+Future), „HD Mountain Sunset” `248161486` (góry w niebie kłócą się z brzegiem mapy). Malowane niebo na 4 pory:
+`docs/wyglad/ZAKUPY.md`.
+
 ## Ikony przedmiotów (S35)
 
 Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach, rysowane kodem) i indeks

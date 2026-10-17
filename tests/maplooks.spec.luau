@@ -21,7 +21,7 @@ describe("Map looks (W01)", function()
 				and look.bloom.intensity >= 0
 				and look.bloom.intensity <= 1
 				and look.bloom.threshold >= 0.8
-				and look.bloom.threshold <= 1
+				and look.bloom.threshold <= 1.4
 				and look.bloom.size >= 8
 				and look.bloom.size <= 56
 				and look.sunRays >= 0

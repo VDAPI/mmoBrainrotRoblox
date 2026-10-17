@@ -31,10 +31,12 @@ export type Look = {
 
 local UNDERGROUND = { cave = true, crypt = true, dungeon = true }
 
+-- W01 (Studio): bloom from 1.15 up: under Future the sunlit sand, snow and pale paving pass 1.0 and bloomed white;
+-- lamps, runes and skill effects stay far above it.
 local OUTDOOR: Look = {
 	clock = nil,
 	sunColor = "#FFFFFF",
-	bloom = { intensity = 0.4, size = 24, threshold = 0.95 },
+	bloom = { intensity = 0.45, size = 24, threshold = 1.15 },
 	sunRays = 0.05,
 	contrast = 0.08,
 	brightness = 0,
@@ -44,14 +46,15 @@ local OUTDOOR: Look = {
 }
 
 -- Underground: the light comes from lamps, fires, moss and crystals (Data/Maps presets, RegionLightController); a
--- stronger bloom makes them glow, a little contrast keeps the rooms readable.
+-- stronger bloom makes them glow, a little contrast keeps the rooms readable. W01 (Studio): +0.04 brightness and more
+-- contrast lift the near-black walls without washing the lamps out.
 local UNDER: Look = {
 	clock = nil,
 	sunColor = "#FFFFFF",
 	bloom = { intensity = 0.55, size = 20, threshold = 0.9 },
 	sunRays = 0,
-	contrast = 0.06,
-	brightness = 0,
+	contrast = 0.1,
+	brightness = 0.04,
 	clouds = nil,
 	farBlur = 0,
 	sky = nil,
@@ -65,45 +68,50 @@ local function with(base: Look, overrides: { [string]: any }): Look
 	return look :: Look
 end
 
--- Per map (docs/WYGLAD.md §4.2). The city keeps its day and night cycle (clock nil).
+-- Per map (docs/WYGLAD.md §4.2). The city keeps its day and night cycle (clock nil). W01 (Studio): hours and colours
+-- tuned on screenshots (docs/wyglad/SESJE-W.md "W01 (Studio)"); the presets' light and air are in Data/Maps.
 local BY_MAP: { [string]: Look } = {
 	city = with(OUTDOOR, {
 		sunColor = "#FFE6C4",
-		contrast = 0.1,
+		contrast = 0.14,
+		brightness = -0.03,
 		clouds = { cover = 0.4, density = 0.55, color = "#F6EFE6" },
 	}),
-	-- Late afternoon, golden sun.
+	-- Late afternoon, golden sun (16.6 still looked like noon: the sun is low enough from 17).
 	meadows = with(OUTDOOR, {
-		clock = 16.6,
-		sunColor = "#FFC98A",
+		clock = 17,
+		sunColor = "#FFB46A",
 		sunRays = 0.08,
-		contrast = 0.1,
-		clouds = { cover = 0.42, density = 0.55, color = "#FFF2DE" },
+		contrast = 0.12,
+		clouds = { cover = 0.55, density = 0.5, color = "#FFE8CC" },
 	}),
-	-- Overcast, light shafts through the crowns (the eternal dusk of S45 stays in the preset's colours).
+	-- Overcast day under a grey sky, shafts through the crowns (the sun high enough to reach between the trees).
 	duskwood = with(OUTDOOR, {
-		clock = 17.8,
-		sunColor = "#D8C8FF",
+		clock = 15.5,
+		sunColor = "#E6DCC0",
 		sunRays = 0.12,
-		contrast = 0.12,
-		clouds = { cover = 0.8, density = 0.75, color = "#8A8C9A" },
+		contrast = 0.14,
+		clouds = { cover = 0.85, density = 0.8, color = "#7A8078" },
+		sky = "overcast",
 	}),
-	-- Sunset, hot air.
+	-- Sunset through dust, hot air.
 	ashen = with(OUTDOOR, {
-		clock = 17.6,
-		sunColor = "#FF9A5A",
-		sunRays = 0.1,
-		contrast = 0.12,
-		bloom = { intensity = 0.5, size = 24, threshold = 0.92 },
-		clouds = { cover = 0.3, density = 0.5, color = "#E8A27A" },
+		clock = 17.2,
+		sunColor = "#FF9A50",
+		sunRays = 0.12,
+		contrast = 0.16,
+		bloom = { intensity = 0.5, size = 24, threshold = 1.15 },
+		clouds = { cover = 0.25, density = 0.5, color = "#E8A27A" },
+		sky = "dustSunset",
 	}),
-	-- Cold morning, low sun.
+	-- Cold morning, low sun: warm light on the snow, blue shadows.
 	frostpeak = with(OUTDOOR, {
-		clock = 8.5,
-		sunColor = "#CFE4FF",
-		sunRays = 0.07,
-		contrast = 0.1,
-		clouds = { cover = 0.5, density = 0.6, color = "#FFFFFF" },
+		clock = 7.6,
+		sunColor = "#FFE2C8",
+		sunRays = 0.08,
+		contrast = 0.16,
+		brightness = -0.02,
+		clouds = { cover = 0.45, density = 0.55, color = "#FFFFFF" },
 	}),
 }
 
