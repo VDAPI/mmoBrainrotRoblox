@@ -4,6 +4,7 @@
 // previous / next). Story texts never reach the index page nor the search index.
 // S109: the index in the order story by chapter (#chapter-<n>), hunting contracts by land, side quests by land and NPC,
 // boss quests with the weekly boss contract, weekly and daily contracts (level chips); a section without data is not
+// S134k: the hunting contracts show their Hunter's Marks and the Huntmaster's shop for them follows the lands;
 // rendered. A main quest's page names its chapter.
 import Base from "../layouts/Base.astro";
 import Article from "../components/Article.astro";
@@ -246,7 +247,7 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
               <div class="vw-scroll" tabindex="0">
                 <table class="vw-table vw-table--plain vw-table--keep">
                   <caption class="vw-sr">{t(lang, "quests.contracts")}: {regionName(g.map)}</caption>
-                  <thead><tr><th scope="col">{t(lang, "quests.contractLevel")}</th><th scope="col">{t(lang, "quests.contractGround")}</th><th scope="col">{t(lang, "quests.contractGoal")}</th><th scope="col" style="text-align: right">{t(lang, "quests.expLabel")}</th><th scope="col" style="text-align: right">{t(lang, "quests.goldLabel")}</th><th scope="col">{t(lang, "quests.milestone")}</th></tr></thead>
+                  <thead><tr><th scope="col">{t(lang, "quests.contractLevel")}</th><th scope="col">{t(lang, "quests.contractGround")}</th><th scope="col">{t(lang, "quests.contractGoal")}</th><th scope="col" style="text-align: right">{t(lang, "quests.expLabel")}</th><th scope="col" style="text-align: right">{t(lang, "quests.goldLabel")}</th><th scope="col" style="text-align: right">{t(lang, "quests.marksLabel")}</th><th scope="col">{t(lang, "quests.milestone")}</th></tr></thead>
                   <tbody>
                     {g.contracts.map((c) => (
                       <tr>
@@ -255,6 +256,7 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
                         <td>{name(c.label, lang)}</td>
                         <td style="text-align: right">{c.reward.exp > 0 ? formatNumber(c.reward.exp, lang) : "–"}</td>
                         <td style="text-align: right">{formatNumber(c.reward.gold, lang)}</td>
+                        <td style="text-align: right">{c.reward.marks ? formatNumber(c.reward.marks, lang) : "–"}</td>
                         <td>
                           <span class="mats">
                             {c.reward.items.map((it) => {
@@ -271,6 +273,28 @@ const minLevel = q ? Math.max(1, q.level - (side ? file.sideLevelSlack : file.le
               </div>
             </section>
           ))}
+          {file.contracts.shop.length > 0 && (
+            <section class="qgroup">
+              <h3 class="vw-h3 ghead" id="contracts-shop">{t(lang, "quests.huntShop")}</h3>
+              <p>{t(lang, "quests.huntShopText", { total: file.contracts.marksTotal })}</p>
+              <div class="vw-scroll" tabindex="0">
+                <table class="vw-table vw-table--plain vw-table--keep">
+                  <caption class="vw-sr">{t(lang, "quests.huntShop")}</caption>
+                  <thead><tr><th scope="col">{t(lang, "quests.huntShopItem")}</th><th scope="col" style="text-align: right">{t(lang, "quests.marksLabel")}</th><th scope="col">{t(lang, "quests.huntShopLevels")}</th><th scope="col" style="text-align: right">{t(lang, "quests.huntShopWeekly")}</th></tr></thead>
+                  <tbody>
+                    {file.contracts.shop.map((e) => (
+                      <tr>
+                        <th scope="row" class="rowhead">{name(e.name, lang)}{e.n ? ` ×${e.n}` : ""}</th>
+                        <td style="text-align: right">{e.marksByQuality ? e.marksByQuality.join(" / ") : e.marks}</td>
+                        <td>{`${e.minLevel ?? 1}–${e.maxLevel ?? 100}`}</td>
+                        <td style="text-align: right">{e.weeklyLimit ?? "–"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </Fragment>
       )}
 

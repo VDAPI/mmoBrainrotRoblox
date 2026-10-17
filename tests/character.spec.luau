@@ -138,7 +138,7 @@ T.describe("AccountSchema", function()
 	end)
 
 	T.it("S121: vip and outfits come from the template without a migration, nothing saved is overwritten", function()
-		T.expect(AccountSchema.CURRENT).toBe(10) -- S132: 9 = class outfits; S134g: 10 = item effects
+		T.expect(AccountSchema.CURRENT).toBe(11) -- S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts
 		local template = AccountSchema.accountTemplate()
 		T.expect(template.vip).toEqual({ shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} })
 		T.expect(template.outfits).toEqual({})
@@ -164,7 +164,7 @@ T.describe("AccountSchema", function()
 	T.it(
 		"S133: social lists, whisper and alert settings, the mail counter and the hint flag come from reconcile",
 		function()
-			T.expect(AccountSchema.CURRENT).toBe(10) -- S133: no migration; S134g: 10 = item effects
+			T.expect(AccountSchema.CURRENT).toBe(11) -- S133: no migration; S134g: 10 = item effects; S134k: 11 = contracts
 			local friend = { name = "Borys", class = "Hunter", since = 100 }
 			local old: any = {
 				schema = AccountSchema.CURRENT,
@@ -205,7 +205,15 @@ T.describe("AccountSchema", function()
 		AccountSchema.migrate(data)
 		local quests = data.characters["1"].quests
 		T.expect(quests.weekly).toEqual({ week = 0, list = {}, rerolls = 0 })
-		T.expect(quests.contract).toEqual({ done = 0 })
+		-- S134k: the shape of migration 11 (several active contracts, marks)
+		T.expect(quests.contract).toEqual({
+			done = 0,
+			extra = {},
+			active = {},
+			marks = 0,
+			auto = false,
+			shopWeek = { week = 0, counts = {} },
+		})
 		T.expect(quests.side).toEqual({
 			active = { side_granary = { progress = { 1 }, used = {} } },
 			done = { side_fence = true },
@@ -214,7 +222,7 @@ T.describe("AccountSchema", function()
 	end)
 
 	T.it("S101b: dialogue answers and the comments switch come from the templates, without a migration", function()
-		T.expect(AccountSchema.CURRENT).toBe(10) -- S102: 8 = story progress (mainLast), S132: 9 = class outfits; S134g: 10 = item effects
+		T.expect(AccountSchema.CURRENT).toBe(11) -- S102: 8 = story progress (mainLast), S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts
 		T.expect(AccountSchema.characterTemplate().quests.said).toEqual({})
 		-- S102: cutscenes start empty, the story anchor has no default
 		T.expect(AccountSchema.characterTemplate().quests.scenes).toEqual({})
@@ -272,7 +280,7 @@ T.describe("AccountSchema", function()
 		local older: any = AccountSchema.accountTemplate()
 		older.schema = 6
 		older.login = nil
-		T.expect(AccountSchema.migrate(older)).toEqual({ 7, 8, 9, 10 }) -- S134g: 10 = item effects
+		T.expect(AccountSchema.migrate(older)).toEqual({ 7, 8, 9, 10, 11 }) -- S134g: 10 = item effects; S134k: 11 = contracts
 		T.expect(older.login).toEqual({ day = 0, last = 0 })
 	end)
 
@@ -337,7 +345,7 @@ end
 T.describe("Migration 6 (S56)", function()
 	T.it("level 1 Warrior", function()
 		local data, c = oldSave("Warrior", 1, { skills = { mightyStrike = 1 }, skillPoints = 0 })
-		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7, 8, 9, 10 }) -- S99: 7 = hunting contracts, S102: 8 = story progress, S132: 9, S134g: 10
+		T.expect(AccountSchema.migrate(data)).toEqual({ 6, 7, 8, 9, 10, 11 }) -- S99: 7 = hunting contracts, S102: 8 = story progress, S132: 9, S134g: 10, S134k: 11
 		T.expect(data.schema).toBe(AccountSchema.CURRENT)
 		T.expect(c.skills).toBeNil()
 		T.expect(c.skillPoints).toBeNil()
@@ -463,7 +471,7 @@ T.describe("Class looks: creation and migration 9 (S132)", function()
 			owned = { outfit_ranger = true },
 			equipped = { outfit = "outfit_ranger", aura = "aura_gold", dye = "dye_crimson" },
 		})
-		T.expect(AccountSchema.migrate(data)).toEqual({ 9, 10 }) -- S134g: 10 = item effects
+		T.expect(AccountSchema.migrate(data)).toEqual({ 9, 10, 11 }) -- S134g: 10 = item effects; S134k: 11 = contracts
 		local want = {}
 		for _, classId in Classes.order do
 			want[classId] = "outfit_ranger"

@@ -230,7 +230,15 @@ describe("Weeks (S98)", function()
 	it("the save has the weekly and contract branches, S99 fills the 99 contracts", function()
 		local character: any = AccountSchema.characterTemplate()
 		expect(character.quests.weekly).toEqual({ week = 0, list = {}, rerolls = 0 })
-		expect(character.quests.contract).toEqual({ done = 0 })
+		-- S134k: the shape of migration 11 (several active contracts, marks)
+		expect(character.quests.contract).toEqual({
+			done = 0,
+			extra = {},
+			active = {},
+			marks = 0,
+			auto = false,
+			shopWeek = { week = 0, counts = {} },
+		})
 		expect(#Quests.Contracts.list).toBe(99)
 		expect((Quests.Contracts.forLevel(5) :: any).id).toBe("contract_5")
 		expect(Quests.categoryOf("contract_5")).toBe("contract")

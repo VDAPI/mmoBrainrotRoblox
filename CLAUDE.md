@@ -158,7 +158,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Logic/CavePlan` (ubiór: `Kit.at`).
 - **Zlecenia łowieckie** (S99): reguły w nagłówku `Data/Quests/Contracts` (`RULES`); po każdej zmianie `lv` / `groups`
   łowisk albo reguł `lune run tools/contracts_gen.luau`, potem `lune run tools/quest_budget.luau` (i powody w księdze);
-  test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`.
+  test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`. S134k: rodzaj
+  potwora wybiera `ContractGen` (udział z `AreaSpawns.kindShares`), Znaki tylko z `RULES.marks` (`Contracts.marksFor`),
+  sklep Łowczego `Data/HuntShop` + `Logic/HuntShop` (serwer `HuntShopService`).
 - **Rozmowy w questach** (S101b): `choices` / `recall` (`Logic/Dialogue`, konstruktory `Data/Quests/Talk`, remote
   `QuestSay`, `quests.said`), `barks` (`Logic/Barks`, `BarkController`, ustawienie `barks`, wyciszanie
   `BarkController.SetQuiet`), `companion` + cel `escort` (`Logic/Companion`, `CompanionService`, najwyżej jeden, bez

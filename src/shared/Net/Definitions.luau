@@ -181,9 +181,15 @@ local Definitions: { [string]: Definition } = {
 	QuestSay = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } },
 	-- S102: (sceneId) the client finished or skipped a queued story cutscene
 	CutsceneDone = { kind = "function", dir = "c2s", rate = 4, args = { "string" } },
-	-- Hunting contracts (S99): (npcId) the contract board or the scout of the contract's region
+	-- Hunting contracts (S99): (npcId) the contract board or the scout of the contract's region. S134k: also the
+	-- Huntmaster; ContractAccept takes every contract that NPC gives (-> ok, err, count), ContractTurnIn hands in every
+	-- finished one it takes (-> ok, err, sums); (npcId, level) one contract; (level) drops an active one
 	ContractAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	ContractTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	ContractAcceptOne = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } },
+	ContractAbandon = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
+	-- S134k: (npcId, entry key of Data/HuntShop, amount) a purchase at the Huntmaster for Hunter's Marks
+	HuntShopBuy = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string", "integer" } },
 	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
 	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	SideTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer?" } },

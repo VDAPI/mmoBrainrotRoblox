@@ -81,7 +81,8 @@ commands.weekly = function(player, args)
 	end)
 end
 
--- S99: /contract info | set <level> | complete | reset
+-- S99: /contract info | set <level> | complete | reset; S134k: all (take every contract up to the level without an NPC),
+-- finish [level|all] (fill one or every active contract), complete = finish all
 commands.contract = function(player, args)
 	local action = args[1]
 	withCharacter(player, function()
@@ -93,10 +94,11 @@ commands.contract = function(player, args)
 			reply(player, "admin.contract.info", {
 				done = info.done,
 				max = Quests.Contracts.MAX_LEVEL,
-				active = info.active or "-",
-				have = info.have or 0,
-				need = info.need or 0,
-				next = info.next or "-",
+				extra = info.extra,
+				active = info.active,
+				ready = info.ready,
+				eligible = info.eligible,
+				marks = info.marks,
 			})
 		elseif action == "set" then
 			local level = tonumber(args[2])
@@ -106,12 +108,29 @@ commands.contract = function(player, args)
 			else
 				reply(player, "admin.usage.contract")
 			end
-		elseif action == "complete" and ContractService.Complete(player) then
-			reply(player, "admin.contract.complete")
+		elseif action == "all" then
+			reply(player, "admin.contract.all", { n = ContractService.AcceptAll(player) })
+		elseif action == "finish" or action == "complete" then
+			local level = tonumber(args[2])
+			local n = ContractService.Finish(player, if level then math.floor(level) else nil)
+			reply(player, "admin.contract.complete", { n = n })
 		elseif action == "reset" and ContractService.Reset(player) then
 			reply(player, "admin.contract.reset")
 		else
 			reply(player, "admin.usage.contract")
+		end
+	end)
+end
+
+-- S134k: /huntmarks <n>: adds (or takes) Hunter's Marks of the caller's character
+commands.huntmarks = function(player, args)
+	withCharacter(player, function()
+		local amount = tonumber(args[1])
+		local balance = if amount then ContractService.AddMarks(player, amount) else nil
+		if balance then
+			reply(player, "admin.huntmarks.done", { n = balance })
+		else
+			reply(player, "admin.usage.huntmarks")
 		end
 	end)
 end

@@ -46,9 +46,14 @@ local function maxStack(item: ItemInstance): number
 	return if def and def.stackable then def.maxStack else 1
 end
 
--- Two stacks can merge when they are the same stackable item with the same binding.
+-- Two stacks can merge when they are the same stackable item with the same binding (S134k: and the same `ns`).
 function Inventory.canMerge(a: ItemInstance, b: ItemInstance): boolean
-	return a.id == b.id and a.bound == b.bound and maxStack(a) > 1 and a.up == 0 and b.up == 0
+	return a.id == b.id
+		and a.bound == b.bound
+		and (a.ns == true) == (b.ns == true)
+		and maxStack(a) > 1
+		and a.up == 0
+		and b.up == 0
 end
 
 function Inventory.firstFree(inv: Inventory, capacity: number): number?

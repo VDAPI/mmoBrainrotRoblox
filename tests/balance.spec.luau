@@ -339,6 +339,33 @@ T.describe("Balance: bonus reroll (S134j)", function()
 	)
 end)
 
+-- S134k (F2): hunting contracts on a monster kind and Hunter's Marks (Balance.targetsS134k): a contract on its kind
+-- <= 1.2 x the S99 time on every level 4-99, the shop's value of an hour of contracts 5-15% of its gold income, the
+-- essence of the weekly limits <= 10% of 14 h of the band's grinding, the Hunter's Chest >= 2 h of the band's contracts,
+-- the Heroic chest once a week while the loot gives >= 1 Heroic a week, the retro marks of a level 99 character = the
+-- marks of contracts 1-99; every row asserted (no report rows).
+T.describe("Balance: hunting contracts and marks (S134k)", function()
+	local rows = B.targetsS134k()
+	for _, row in rows do
+		if row.report == nil and (row.low or row.high) then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S134k, docs/sessions S134k F2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S134k targets (printed); no report rows", function()
+		printReport("S134k", rows, 20)
+		for _, row in rows do
+			T.expect({ row.id, row.report }).toEqual({ row.id, nil })
+		end
+		-- time 4-99, value 4 classes x 5 levels, essence 4 x 3 bands, chest hours 3, heroic 1, loot 4 x 3, retro 1
+		T.expect(#rows).toBe(96 + 20 + 12 + 3 + 1 + 12 + 1)
+	end)
+end)
+
 -- S134g (E2): Legendary and Mythic with skill effects (Balance.targetsS134g): stats Legendary / Heroic 1.03-1.07 and
 -- Mythic / Heroic 1.08-1.12 at the same level, Mythic > Legendary > Heroic with the effects, a Heroic catches a
 -- Legendary weapon 2-5 levels above and a Mythic 5-9, the owner's Legendary L36 loses to a Heroic L48 (every class,

@@ -11516,3 +11516,79 @@ PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
 - Ulepszenie zestawu do +9 z ochroną to 6,9–14,9 dochodu złota pasma (G9), więc „przemiana razem z +9 ≤ dochód pasma” jest
   nieosiągalne dźwigniami przemiany (przemiany same to 0,39–0,45 dochodu pasma). Do wyboru: traktować +9 jako cel na
   kilka pasm (dziś) albo osobna sesja balansu kosztu ulepszeń.
+
+### S134k: zlecenia łowieckie na rodzaj potwora, wiele aktywnych, Znaki Łowcy
+
+- Cel zlecenia to „Ubij n× rodzaj (łowisko)”: `Logic/ContractGen` po wyborze łowiska (jak S99) wybiera rodzaj z
+  `area.kinds` (kary `kindPrevious` / `kindPerUse`, rodzaj ≥ `minKindShare` łowiska, bez Elit), n = max(`minKindKills`,
+  round(killsAt × udział rodzaju)); udział z grup `Data/Spawns` (`AreaSpawns.kindShares`). `report` dopisuje użycia
+  rodzajów i najdłuższą serię; nowa lista `GENERATED` (z `reward.marks`, tytuł zlecenia 99).
+- Stan wielu aktywnych bez limitu (`Logic/Contracts` przepisane: `stateOf` z ochroną typów, `eligible`, `activeList`,
+  `complete`, `ready`, `acceptable`, `canAccept`, `credit`, `withAccepted / withHandedIn / withAbandoned`, `marksFor`,
+  `retroMarks`), migracja 11 (`AccountSchema.CURRENT = 11`), samo przyjmowanie po pierwszym przyjęciu (awans).
+- Serwer: `ContractService` (zabicie do każdego pasującego aktywnego jednym zapisem, toasty `ready` / `readyMany`,
+  „Przyjmij wszystkie” / jedno / „Oddaj wszystkie” / „Porzuć”, nadmiar przedmiotów pocztą, jeden `CombatFx` i
+  `QuestCompleted`, `Analytics ContractTurnIn`), nowy `HuntShopService` (`HuntShopBuy`), remote'y `ContractAcceptOne`,
+  `ContractAbandon`, `HuntShopBuy`; admin `/contract info|set|all|finish|reset`, `/huntmarks <n>`.
+- Łowczy Bartosz przy tablicy zleceń (`Data/Npcs`, `Town/npcExtra`), sklep `Data/HuntShop` + `Logic/HuntShop`
+  (`canBuy`, `priceAt`, limit tygodnia `contract.shopWeek`), okno `HuntShopWindow`, skrzynie przez `LoginReward.rollItem`,
+  kosmetyki `title_bountyhunter`, `frame_trophy` (`obtain.hunt`), tytuł `title_huntlord` za zlecenie 99.
+  Towary za Znaki mają `ItemInstance.ns` (kupiec ich nie bierze, `ItemValue.canSell`; osobny stos).
+- Interfejs: dziennik „Łowieckie” (Znaki, przyciski przy NPC wydającym, lista po łowiskach z „Śledź” / „Porzuć”, do
+  przyjęcia, następne), tablica (liczby i dwa przyciski), tracker (do 3 + „+N”), karta łowiska na mapie świata (każde
+  aktywne z rodzajem i postępem, „Prowadź”), znaki nad NPC (Łowczy też), `QuestRewards` / `CombatFx` ze Znakami.
+- Model: `Balance.contractTime / huntMarks / huntMarksDecade / huntMarksValue / huntShopEssence`, `Balance.targetsS134k`
+  (balance.spec „Balance: hunting contracts and marks (S134k)”, bez trybu raportu), sekcja raportu „Zlecenia łowieckie i
+  Znaki (S134k)” w `docs/BALANS.md`. `quest_budget` bez zmian (EXP zleceń jak S109), `balance1_20` 0 różnic.
+- Wiki: zlecenia z rodzajem i Znakami, sklep Łowczego (`quests.contracts.shop`), wpis aktualności; zmiana kształtu z
+  `WIKI_KEYS_ALLOW="quests:*,types.ts"`.
+- Poprawki po przeglądzie: porzucone zlecenie bieżącego poziomu nie wraca samo przy wejściu / przyjęciu questu,
+  „Mistrz Łowów” po wszystkich 99 (i wstecz), tytuł zlecenia z rodzajem (`contract.title`, tracker `contract.titleShort`
+  nad wierszem celu), karta NPC na mapie tylko ze zleceniami tego NPC, kolejność trackera po zmianie obszaru.
+
+**Znaki za zlecenie** (`marksFor`: 2 + floor(L / 10) + 10 co 10. poziom)
+
+| L | 1 | 10 | 20 | 45 | 70 | 99 | suma 1–99 |
+|---|---|---|---|---|---|---|---|
+| Znaki | 2 | 13 | 14 | 6 | 19 | 11 | 738 |
+
+**Sklep Łowczego** (`Data/HuntShop`; wszystko związane)
+
+| pozycja | cena (Znaki) | poziomy | limit tygodnia |
+|---|---|---|---|
+| 5 mikstur zdrowia / zasobu jakości poziomu | 4 / 6 / 10 / 20 (jakość 1–4) | 1–100 | – |
+| 5 Kamieni Powrotu / 2 Kamienie Mapy | 4 / 16 | 1–100 | – |
+| Błogosławieństwo Fortuny Zwykłe / Unikatowe / Heroiczne | 6 / 14 / 30 | 1 / 20 / 45+ | – |
+| 10 pyłu esencji | 8 | 1–100 | 1 |
+| odłamek esencji | 6 | 45–69 | 5 |
+| kryształ esencji | 15 | 70–100 | 1 |
+| Skrzynia Łowcy (Unikat dla klasy) | 60 | 10+ | – |
+| Heroiczna Skrzynia Łowcy | 200 | 20+ | 1 |
+| tytuł „Łowca Nagród” / ramka „Trofeum” | 200 / 400 | – | – |
+
+**Model (F):** czas zlecenia na rodzaj 0,96–1,19 × S99 na 4–99 (cel ≤ 1,2); 10–15 Znaków na godzinę zleceń swojego
+poziomu (średnia dziesiątki); wartość zakupów za Znaki z godziny zleceń 5,9–12,5% dochodu złota tej godziny (cel 5–15%);
+esencja limitów tygodnia 1,1–9,5% esencji 14 h expienia pasma (cel ≤ 10%); Skrzynia Łowcy 4,6–5,3 h zleceń pasma (cel ≥ 2);
+łup daje 10,8–13,2 Heroika na tydzień przy 14 h (Heroiczna skrzynia 1 / tydzień); retro Znaki postaci 99 = 738.
+
+**Pliki:** `src/shared/Data/{HuntShop}.luau` (nowy), `Data/Quests/{Contracts,Types}.luau`, `Data/{Npcs,Cosmetics,
+Titles,AdminCommands}.luau`, `Data/Town/npcExtra.luau`, `Data/Localization/{pl,en}.luau`, `Logic/{HuntShop}.luau`
+(nowy), `Logic/{Contracts,ContractGen,AreaSpawns,AccountSchema,LoginReward,NpcMarks,Inventory,ItemValue}.luau`, `Types.luau`, `Config.luau`,
+`Net/Definitions.luau`, `src/server/Services/{ContractService,QuestService}.luau`, `Services/HuntShopService.luau`
+(nowy), `src/server/Admin/Quests.luau`, `src/client/UI/{ContractActions,NpcPresence}.luau` (nowe),
+`UI/Screens/HuntShopWindow.luau` (nowy), `UI/{QuestText,QuestTrack,NpcQuests}.luau`, `UI/Screens/{QuestJournal,
+QuestBoard,QuestDialog,NpcDialog,AreaPicker,Wardrobe}.luau`, `UI/Screens/Hud/QuestTracker.luau`,
+`UI/Screens/WorldMap/Cards.luau`, `UI/Components/{CurrencyIcon,QuestRewards}.luau`,
+`Controllers/{QuestController,NpcController,CombatFxController}.luau`, `tests/huntshop.spec.luau` (nowy),
+`tests/{contracts,npcmarks,balance,character,questcategories,story,worldmap,itemeffects,leaderboard,mounts,premium,
+premiumuse,rarities,sidequests,tourney}.spec.luau`, `tests/Balance.luau`, `tools/{contracts_gen,balance_reasons,
+balance_report}.luau`, `tools/balance_before.json`, `tools/WikiData/Quests.luau`, `wiki/src/…` (dane, typy, widok zadań,
+i18n, aktualność), `wiki/public/img/maps/city.svg`, `docs/{DESIGN-15,BALANS,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`,
+`CLAUDE.md`.
+
+**Dla właściciela**
+- Esencja w sklepie jest mała, bo cel to ≤ 10% esencji z expienia: 10 pyłu na tydzień, do tego 5 odłamków (45–69) albo
+  1 kryształ (od 70). Start z prośby (30 pyłu / 10 odłamków / 3 kryształy) dawał 18–39%. Jeśli chcesz więcej, trzeba
+  podnieść cel (np. 20%).
+- Retro Znaki: postać 99. poziomu dostaje od razu 738 Znaków (12 Skrzyń Łowcy albo 3 Heroiczne na 3 tygodnie). Do wyboru:
+  zostawić (nic nie przepada) albo przyciąć retro (np. połowa).

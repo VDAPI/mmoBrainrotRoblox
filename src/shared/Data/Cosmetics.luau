@@ -56,6 +56,7 @@ export type Skin = {
 -- S128: arena = "shop" (Arena Tokens shop, Data/Arena.SHOP) or "season" (a season reward, Data/Arena.SEASON_REWARDS).
 -- S129: event = a reward of a wall-clock event (Data/ScheduledEvents key, "bloodmoon"; S130 "tourney"), never sold
 -- S132: bossWin = a class outfit for every winner of that class over the boss (deterministic, no roll; CosmeticService)
+-- S134k: hunt = "shop" (the Huntmaster's shop for Hunter's Marks, Data/HuntShop)
 export type Obtain = {
 	boss: string?,
 	quest: string?,
@@ -64,6 +65,7 @@ export type Obtain = {
 	arena: ("shop" | "season")?,
 	event: string?,
 	bossWin: string?,
+	hunt: "shop"?, -- S134k: the Huntmaster's shop (Hunter's Marks, Data/HuntShop)
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -470,6 +472,17 @@ add("frame_tourney", "frame", 0, "⚔", "#6E7480", {
 	obtain = { event = "tourney" },
 	frame = { stroke = "#6E7480", stroke2 = "#C9CED6", thickness = 5, ornament = "⚔", glow = true },
 })
+
+-- S134k (DESIGN-15 §3.3): the hunting contracts' cosmetics, never sold for shards (price 0): the title and the frame of
+-- the Huntmaster's shop (Hunter's Marks, Data/HuntShop; obtain.hunt) and the title of the 99th contract (its reward).
+-- Procedural like the arena's (no pictures yet).
+add("title_bountyhunter", "title", 0, "✎", "#A8743A", { obtain = { hunt = "shop" }, title = "bountyhunter" })
+add("frame_trophy", "frame", 0, "➶", "#6B5A2E", {
+	color2 = "#C9A45C",
+	obtain = { hunt = "shop" },
+	frame = { stroke = "#6B5A2E", stroke2 = "#C9A45C", thickness = 4, ornament = "➶" },
+})
+add("title_huntlord", "title", 0, "✎", "#7FA04A", { obtain = { quest = "contract_99" }, title = "huntlord" })
 
 -- S132 (DESIGN-17 §9a): class outfits. Each replaces the default outfit of its class (Data/ClassLooks): per class
 -- three for Dragon Shards, one for the end of the story's chapter II and one for defeating Azgor with that class. All

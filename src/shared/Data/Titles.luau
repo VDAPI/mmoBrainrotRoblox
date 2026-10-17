@@ -205,6 +205,20 @@ local list: { TitleDef } = {
 		req = { kind = "cosmetic", id = "title_sandveteran" },
 		color = "#D9B26A",
 	},
+	-- S134k (DESIGN-15 §3.3): the hunting contracts' titles (Data/Cosmetics kind "title"): bought with Hunter's Marks at
+	-- the Huntmaster (obtain.hunt) and the reward of the 99th contract
+	{
+		id = "bountyhunter",
+		nameKey = "title.bountyhunter",
+		req = { kind = "cosmetic", id = "title_bountyhunter" },
+		color = "#A8743A",
+	},
+	{
+		id = "huntlord",
+		nameKey = "title.huntlord",
+		req = { kind = "cosmetic", id = "title_huntlord" },
+		color = "#7FA04A",
+	},
 	-- the season titles of each tier (Data/Arena.SEASON_REWARDS), carrying the season of the latest one
 	{
 		id = "arena_bronze",

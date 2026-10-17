@@ -101,6 +101,7 @@ export type Reward = {
 	choice: ("normal" | "final")?,
 	mount: string?, -- S96: a Data/Mounts id given on hand-in (once per character)
 	cosmetic: string?, -- S97: account cosmetic granted on turn-in; nothing when already owned
+	marks: number?, -- S134k: Hunter's Marks of a hunting contract (Logic/Contracts.marksFor)
 }
 
 export type MainQuest = {
@@ -155,7 +156,8 @@ export type DailyTemplate = {
 
 -- S98 (docs/DESIGN-15.md §3.3): a hunting contract of Data/Quests/Contracts (filled by S99), one per level 1-99, id
 -- `contract_<level>`; `map` is the region of the hunting ground (its scout is `scout_<map>`). No giver / turnIn: the
--- NPCs that hand it out (the questboard and the scout) come from S99's Logic/Contracts.giversOf.
+-- NPCs that hand it out (the questboard and the scout) come from S99's Logic/Contracts.giversOf. S134k: the objective
+-- names one normal monster kind of the area (`monster` and `area`); S134k also gives it the Huntmaster.
 export type ContractQuest = {
 	id: string,
 	level: number,

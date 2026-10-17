@@ -1186,6 +1186,13 @@
     "Config:Mount.mountTimeFast": 1,
     "Config:Mount.moveLimit": 2.5,
     "Config:PotionCooldown": 1.5,
+    "Config:Reroll.essence.heroic.n": 1,
+    "Config:Reroll.essence.legendary.n": 2,
+    "Config:Reroll.essence.mythic.n": 3,
+    "Config:Reroll.essence.unique.n": 1,
+    "Config:Reroll.goldMul": 1.8,
+    "Config:Reroll.growth": 0.25,
+    "Config:Reroll.growthCap": 3,
     "Config:Upgrade.goldExponent": 1.6,
     "Config:Upgrade.goldHigh": 20,
     "Config:Upgrade.goldLow": 4,
@@ -4011,6 +4018,9 @@
     "Items/Consumables:[potion_mana_5].price": 450,
     "Items/Consumables:[potion_mana_5].tier": 5,
     "Items/Consumables:[potion_mana_5].use.amount": 10000,
+    "Items/Consumables:[reroll_stone].level": 1,
+    "Items/Consumables:[reroll_stone].maxStack": 999,
+    "Items/Consumables:[reroll_stone].price": 1,
     "Items/Consumables:[scroll_hunt].level": 1,
     "Items/Consumables:[scroll_hunt].maxStack": 999,
     "Items/Consumables:[scroll_hunt].price": 1,
@@ -13336,9 +13346,9 @@
     "WorldEvents:share.shieldMul": 1
   },
   "meta": {
-    "commit": "d2fbce5",
+    "commit": "a1ce637",
     "date": "2026-10-17",
-    "session": "S134j"
+    "session": "S134k"
   },
   "tables": {
     "1 na 1 z potworem na poziomie gracza|10|Kapłan HP": 0.1156774216132393,

@@ -3,7 +3,8 @@
 -- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
 -- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09). S99: the hunting
 -- contract between the story and the daily contracts (on top with the arrow when tracked; the next one to take with
--- "From: Contract board"; nothing while waiting for a level or after the 99th). S101b: targets follow the saved
+-- "From: Contract board"; nothing while waiting for a level or after the 99th; S134k: up to three active ones and "+N").
+-- S101b: targets follow the saved
 -- answers (QuestText `quests`), and a quest with a companion shows "<NPC> is waiting for you" / "went back".
 
 local Players = game:GetService("Players")
@@ -12,6 +13,8 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local AreaState = require(script.Parent.Parent.Parent.AreaState)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
@@ -263,29 +266,50 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local level = use(State.Value({ "character", "level" })) or 1
 		local focus = use(QuestTrack.Focus)
 
-		-- S99: the hunting contract (active: title and objective; to take: "!" and where)
+		-- S99: the hunting contract (active: title and objective; to take: "!" and where). S134k: up to
+		-- Config.Quest.trackerContracts active contracts in the tracker's order (the tracked one, the finished ones, the
+		-- nearest on this map; QuestText.contractOrder), "+N hunting contracts" under them; none active: how many to take
 		local contractState = Contracts.stateOf(q)
-		local function lookup(key: string, args: { [string]: any }?): string
-			return Text.get(use, key, args)
-		end
 		local function contractBlock(): boolean
-			local active, entry = Contracts.active(contractState)
-			if active and entry then
-				local map = use(State.Value({ "character", "location", "map" }))
-				local target = QuestText.contractTarget(active, entry, level, map)
-				local turnIn = if target and target.npc then target.npc else Contracts.BOARD
-				line(`◈ {QuestText.contractTitle(lookup, active)}`, Theme.Colors.Gold, 16, Theme.Fonts.BodyBold)
-				objectives(
-					`contract:{active.id}`,
-					QuestText.rows(use, active.objectives, entry.progress, turnIn),
-					target
-				)
+			local map = use(State.Value({ "character", "location", "map" }))
+			-- the nearest-ground order follows the player: re-sorted on entering another monster area
+			use(AreaState.Current)
+			local x, z = QuestText.mapPosition()
+			local focusId = if focus and focus.kind == "contract" then focus.id else nil
+			local list = QuestText.contractOrder(contractState, focusId, map, x, z)
+			if #list > 0 then
+				local shown = math.min(#list, Config.Quest.trackerContracts)
+				for i = 1, shown do
+					local taken = list[i]
+					local target = QuestText.contractTarget(taken.contract, taken.entry, level, map)
+					local turnIn = if target and target.npc then target.npc else Contracts.BOARD
+					-- the kind, ground and progress are on the objective row below (one line)
+					line(
+						`◈ {Text.get(use, "contract.titleShort", { n = taken.contract.level })}`,
+						Theme.Colors.Gold,
+						15,
+						Theme.Fonts.BodyBold
+					)
+					objectives(
+						`contract:{taken.contract.id}`,
+						QuestText.rows(use, taken.contract.objectives, taken.entry.progress, turnIn),
+						target
+					)
+				end
+				if #list > shown then
+					line(
+						Text.get(use, "contract.trackerMore", { n = #list - shown }),
+						Theme.Colors.TextMuted,
+						14,
+						Theme.Fonts.Body
+					)
+				end
 				return true
 			end
-			local nextContract = Contracts.next(contractState)
-			if nextContract and Contracts.canAccept(contractState, level) then
+			local eligible = Contracts.eligible(contractState, level)
+			if #eligible > 0 then
 				line(
-					`! {QuestText.contractTitle(lookup, nextContract)}`,
+					`! {Text.get(use, "contract.toTake", { n = #eligible })}`,
 					Theme.Colors.GoldBright,
 					16,
 					Theme.Fonts.BodyBold

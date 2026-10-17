@@ -4,14 +4,16 @@
 -- contracts (new set on Monday 00:00 UTC) and the week's boss contract (no card below the first boss's entry level);
 -- the list scrolls (phones). S99 (§3.3): over both tabs the hunting contract (the active one with "Hand in" once done
 -- and "Track" before, or the next one with "Accept", or "Next contract from level N" instead of a button; hidden once
--- all 99 are done), its hunting ground in the colour of its level band with the S33 profile, and the backlog.
+-- all 99 are done), its hunting ground in the colour of its level band with the S33 profile, and the backlog. S134k: the
+-- hunting contracts' counts (to take, active, finished), the Hunter's Marks and "Accept all" / "Hand in all" instead.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local ContractActions = require(script.Parent.Parent.ContractActions)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
-local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
+local NpcPresence = require(script.Parent.Parent.NpcPresence)
 local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
@@ -32,7 +34,7 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
--- S99: "Track" on the board (QuestController.Track); without them the contract has no track button.
+-- S99: "Track" on the board (QuestController.Track). S134k: tracking moved to the journal's rows (kept for the caller).
 export type Props = {
 	Tracked: Fusion.Value<boolean>?,
 	Focus: Fusion.Value<QuestTrack.Focus>?,
@@ -41,94 +43,41 @@ export type Props = {
 
 local CONTRACT_HEIGHT = 168 -- header 26 + card 134 + gap 8
 
-local function invoke(name: string)
-	task.spawn(function()
-		local ok, err = Net.Invoke(name, Contracts.BOARD)
-		if ok then
-			Sounds.play("levelUp")
-		else
-			Sounds.play("error")
-			Toast.push(Text.now(err or "error.internal"), "error")
-		end
-	end)
-end
-
--- S99: the hunting contract section (nil when every contract is done or the list is empty).
-local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: number, props: Props): Instance?
+-- S99: the hunting contract section (nil when every contract is done or the list is empty). S134k: the counts of the
+-- contracts to take, active and finished, the Hunter's Marks and "Accept all" / "Hand in all" at this NPC.
+local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: number, _props: Props): Instance?
 	local state = Contracts.stateOf(quests)
-	local active, entry = Contracts.active(state)
-	local contract = active or Contracts.next(state)
-	if not contract then
+	if Contracts.allDone(state) or #Quests.Contracts.list == 0 then
 		return nil
 	end
-	local function lookup(key: string, args: { [string]: any }?): string
-		return Text.get(use, key, args)
-	end
-	local progress = if entry then entry.progress else QuestLogic.emptyProgress(contract.objectives)
-	local done = active ~= nil and Contracts.isComplete(state)
-	local canTake = active == nil and Contracts.canAccept(state, lvl)
-	local areaLine = QuestText.contractAreaLine(use, contract, lvl)
-	local backlog = Contracts.backlog(state, lvl)
-	local action: Instance
-	if active and done then
-		action = Button(s, {
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, -4),
-			Size = UDim2.fromOffset(150, 50),
+	-- S134k: the NPC the player talks to (the board; the Huntmaster's "quests" opens the journal instead)
+	local npcId = use(NpcPresence.Current) or Contracts.BOARD
+	local canTake = #Contracts.acceptable(state, lvl, npcId)
+	local canHand = #Contracts.ready(state, npcId)
+	local header =
+		Text.get(use, "contract.board.title", { done = Contracts.doneCount(state), max = Quests.Contracts.MAX_LEVEL })
+	header ..= `   <font color="#9BC46A">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
+	local counts = Text.get(use, "contract.boardCounts", {
+		available = #Contracts.eligible(state, lvl),
+		active = #state.active,
+		ready = #Contracts.complete(state),
+	})
+	local nextOne = Contracts.upcoming(state, lvl, 1)[1]
+	local hint = if canTake == 0
+			and canHand == 0
+			and nextOne
+		then Text.get(use, "contract.waiting", { level = nextOne.level })
+		else Text.get(use, "contract.boardHint")
+	local function button(order: number, key: string, n: number, act: () -> ()): Instance
+		return Button(s, {
+			LayoutOrder = order,
+			Size = UDim2.fromOffset(200, 44),
 			Variant = "primary",
-			Text = Text.get(use, "contract.turnIn"),
-			OnClick = function()
-				invoke("ContractTurnIn")
-			end,
-		})
-	elseif active then
-		local focus: any = if props.Focus then use(props.Focus) else nil
-		local tracked = props.Tracked ~= nil and use(props.Tracked) and focus ~= nil and focus.kind == "contract"
-		action = Button(s, {
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, -4),
-			Size = UDim2.fromOffset(150, 40),
-			Variant = "secondary",
-			Text = Text.get(use, if tracked then "quest.untrack" else "quest.track"),
-			Disabled = props.Track == nil,
-			OnClick = function()
-				local track = props.Track
-				if track then
-					track(if tracked then nil else { kind = "contract" })
-				end
-			end,
-		})
-	elseif canTake then
-		action = Button(s, {
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, -4),
-			Size = UDim2.fromOffset(150, 50),
-			Variant = "primary",
-			Text = Text.get(use, "contract.accept"),
-			OnClick = function()
-				invoke("ContractAccept")
-			end,
-		})
-	else
-		-- waiting for the level: the reason instead of a button that does nothing
-		action = s:New("TextLabel")({
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, -4),
-			Size = UDim2.fromOffset(150, 50),
-			BackgroundTransparency = 1,
-			Text = Text.get(use, "contract.waiting", { level = contract.level }),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
-			TextXAlignment = Enum.TextXAlignment.Right,
+			Disabled = n == 0,
+			Text = Text.get(use, key, { n = n }),
+			OnClick = act,
 		})
 	end
-	local header = Text.get(use, "contract.board.title", { done = state.done, max = Quests.Contracts.MAX_LEVEL })
-	if backlog > 1 then
-		header ..= `   <font color="#9A9DA8">{Text.get(use, "contract.backlog", { n = backlog })}</font>`
-	end
-	local objective = contract.objectives[1]
 	return s:New("Frame")({
 		Size = UDim2.new(1, 0, 0, CONTRACT_HEIGHT - 8),
 		BackgroundTransparency = 1,
@@ -150,48 +99,51 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 				BackgroundTransparency = 0.35,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					s:New("UIPadding")({ PaddingLeft = UDim.new(0, 12), PaddingTop = UDim.new(0, 8) }),
+					s:New("UIPadding")({
+						PaddingLeft = UDim.new(0, 12),
+						PaddingRight = UDim.new(0, 12),
+						PaddingTop = UDim.new(0, 8),
+					}),
 					s:New("TextLabel")({
-						Size = UDim2.new(1, -170, 0, 24),
+						Size = UDim2.new(1, 0, 0, 24),
 						BackgroundTransparency = 1,
-						Text = QuestText.contractTitle(lookup, contract),
+						Text = counts,
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = if active or canTake then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+						TextColor3 = Theme.Colors.GoldBright,
 						TextXAlignment = Enum.TextXAlignment.Left,
-						[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 20, MinTextSize = 14 }),
+						[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 19, MinTextSize = 12 }),
 					}),
 					s:New("TextLabel")({
-						Position = UDim2.fromOffset(0, 25),
-						Size = UDim2.new(1, -170, 0, 20),
+						Position = UDim2.fromOffset(0, 26),
+						Size = UDim2.new(1, 0, 0, 40),
 						BackgroundTransparency = 1,
-						RichText = true,
-						Text = areaLine,
-						TextTruncate = Enum.TextTruncate.AtEnd,
+						Text = hint,
+						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Colors.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
+						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
-					s:New("TextLabel")({
-						Position = UDim2.fromOffset(0, 46),
-						Size = UDim2.new(1, -170, 0, 24),
+					s:New("Frame")({
+						Position = UDim2.fromOffset(0, 70),
+						Size = UDim2.new(1, 0, 0, 48),
 						BackgroundTransparency = 1,
-						Text = QuestText.objective(use, objective, progress[1] or 0),
-						TextScaled = true,
-						FontFace = Theme.Fonts.BodyMedium,
-						TextColor3 = if done then Theme.Colors.Success else Theme.Colors.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 17, MinTextSize = 11 }),
+						[Children] = {
+							s:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								Padding = UDim.new(0, 10),
+							}),
+							button(1, "contract.acceptAll", canTake, function()
+								ContractActions.acceptAll(npcId)
+							end),
+							button(2, "contract.turnInAll", canHand, function()
+								ContractActions.turnInAll(npcId)
+							end),
+						},
 					}),
-					QuestRewards(s, {
-						Id = "contract",
-						Reward = contract.reward,
-						SlotSize = 38,
-						Position = UDim2.fromOffset(0, 76),
-						Width = UDim.new(1, -170),
-					}),
-					action,
 				},
 			}),
 		},

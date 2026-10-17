@@ -3216,6 +3216,85 @@ do
 	add()
 end
 
+-- S134k: hunting contracts on a monster kind and Hunter's Marks (Balance.contractTime / huntMarks / huntMarksValue,
+-- Balance.targetsS134k): the marks of a contract by level, the contract time S99 -> S134k, the shop's value of an hour
+-- of contracts, the prices.
+do
+	local ContractRules = require("../src/shared/Logic/Contracts")
+	local HuntShop = require("../src/shared/Logic/HuntShop")
+	local HuntShopData = require("../src/shared/Data/HuntShop")
+	add("## Zlecenia łowieckie i Znaki (S134k)")
+	add()
+	add(
+		`Zlecenie łowieckie to „Ubij n× rodzaj na łowisku” (\`Logic/ContractGen\`): n = max(\`minKindKills\`, round(zabicia S99 × udział rodzaju wśród zwykłych potworów łowiska)), więc czas zlecenia (zabicia łowiska potrzebne do n rodzaju × \`paceAt.secondsPerKill\` Wojownika) zostaje jak w S99. Znaki = \`Contracts.marksFor(L)\` (suma 1–99: {ContractRules.retroMarks(
+			99
+		)}); Znaki na godzinę = Znaki zlecenia / czas zlecenia (średnia dziesiątki poziomów dla wartości sklepu: zlecenie kamienia milowego daje +10). Wartość godziny = Znaki tej godziny wydane od najlepszego złota na Znak (mikstury i kamienie po cenie kupca, esencja po \`materialPrices\`, limit tygodnia = 1/14 na godzinę). Asertuje \`balance.spec\` („Balance: hunting contracts and marks (S134k)”).`
+	)
+	add()
+	local rows: { { string } } = {}
+	for _, L in { 1, 10, 20, 45, 70, 99 } do
+		local old, new = B.contractTime(L, true), B.contractTime(L)
+		local contract = Quests.Contracts.forLevel(L) :: any
+		local value, income = 0, 0
+		for _, c in B.CLASSES do
+			value += B.huntMarksValue(c, L) / #B.CLASSES
+			income += B.economyAt(c, L).incomePerHour / #B.CLASSES
+		end
+		table.insert(rows, {
+			`{L}`,
+			`{ContractRules.marksFor(L)}`,
+			`{contract.objectives[1].n}× {contract.objectives[1].monster}`,
+			fmtValue(old / 60, "1"),
+			fmtValue(new / 60, "1"),
+			fmtValue(B.huntMarks(L), "1"),
+			fmtValue(B.huntMarksDecade(L), "1"),
+			fmtValue(value / math.max(1e-9, income), "%"),
+		})
+	end
+	tableOut({
+		"L",
+		"Znaki",
+		"cel",
+		"min S99",
+		"min S134k",
+		"Znaki/h",
+		"Znaki/h (dziesiątka)",
+		"wartość godziny / dochód",
+	}, rows)
+	add()
+	local priceRows: { { string } } = {}
+	for _, entry in HuntShopData.ENTRIES do
+		local prices = if entry.qualityPrices
+			then table.concat(
+				(function()
+					local out = {}
+					for _, p in entry.qualityPrices :: { number } do
+						table.insert(out, tostring(p))
+					end
+					return out
+				end)(),
+				" / "
+			)
+			else tostring(HuntShop.priceAt(entry, 1))
+		local levels = `{entry.minLevel or 1}–{entry.maxLevel or 100}`
+		table.insert(priceRows, {
+			entry.key,
+			entry.group,
+			`{entry.n or 1}`,
+			prices,
+			levels,
+			if entry.weeklyLimit then tostring(entry.weeklyLimit) else "–",
+		})
+	end
+	tableOut({ "pozycja", "grupa", "ilość", "cena (Znaki)", "poziomy", "limit tygodnia" }, priceRows)
+	add()
+	tableOut(
+		{ "cel", "wartość", "próg", "wynik", "kto asertuje" },
+		targetRows(B.targetsS134k(), "S134k (asertowane)")
+	)
+	add()
+end
+
 -- S134d: Auto Hunt, a report only (no assertion, no pace change): EXP/h while hunting = the solo pace x
 -- Progression.autoGrindExpPct x a walking efficiency (a report assumption, never a game number), the hand-play hours a
 -- capped day is worth, and the Scroll of the Hunt minutes the daily boss runs give.

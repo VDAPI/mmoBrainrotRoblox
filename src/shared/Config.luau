@@ -449,6 +449,7 @@ local Config = {
 	Quest = {
 		greyGap = 6,
 		contractBacklog = 3, -- S99: levels of backlog an existing character keeps at the first load after S99
+		trackerContracts = 3, -- S134k: hunting contracts on the HUD tracker (then "+N hunting contracts (J)")
 	},
 	-- Quest dialogue (S101b, DESIGN-15 §3.5): the only items an answer may give (`item` effect of Logic/Dialogue),
 	-- id -> at most this many in one gift, once per character and quest. Small consumables only: no equipment, no

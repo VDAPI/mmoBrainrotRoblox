@@ -480,13 +480,16 @@ cmd(
 cmd("quests", "anchor", { str("id", true) })
 -- S101b: the quest companion of the caller (or of a named player): what it is, or send it back to its start
 cmd("quests", "companion", { enum("action", { "info", "reset" }), ref("player", "player", true) })
--- S99: hunting contracts of the caller's character (`set <level>` = that contract active, the ones before done)
+-- S99: hunting contracts of the caller's character (`set <level>` = that contract active, the ones before done). S134k:
+-- `all` takes every contract up to the level, `finish [level]` fills one (no level: every active one)
 cmd(
 	"quests",
 	"contract",
-	{ enum("action", { "info", "set", "complete", "reset" }), int("level", 1, 99, true) },
+	{ enum("action", { "info", "set", "all", "finish", "complete", "reset" }), int("level", 1, 99, true) },
 	{ dangerActions = { "reset" } }
 )
+-- S134k: Hunter's Marks of the caller's character (negative takes, never below 0)
+cmd("quests", "huntmarks", { int("amount", -BIG, BIG) })
 
 -- Economy and community
 cmd("economy", "gold", { int("amount", -BIG, BIG) })

@@ -4838,3 +4838,50 @@
   raportu: samo +9 to 6,9–14,9 dochodu pasma (G9, dźwignia poza `Config.Reroll`); przemiany dokładają 0,39–0,45.
 - **S134j** Kowal zmieniający założony przedmiot (ulepszenie, przemiana) zrzuca pamięć haków ekwipunku
   (`EquipmentService.InvalidateHooks`), bo linie przy trafieniu i `vs_*` są hakami, nie statystykami `StatService`.
+- **S134k** Cel zlecenia = rodzaj **i** łowisko (`objectives = { { type = "kill", n, monster, area } }`): potwór tego
+  rodzaju z innego łowiska się nie liczy; pole `area` zostaje, prowadzenie i mapa wskazują jedno miejsce. Wariant
+  nieustawiony: Elita tego rodzaju (np. z Krwawego Księżyca) też się liczy (`QuestLogic.amount`).
+- **S134k** Wybór łowiska jak w S99 (te same kary, osobny drugi przebieg), potem rodzaj z `area.kinds`: kara
+  `penalty.kindPrevious` (100) za rodzaj L − 1 + `kindPerUse` (3) × użycia rodzaju; remis → niższe id. Rodzaj poniżej
+  `RULES.minKindShare` (20%) zwykłych potworów łowiska nie jest celem, gdy łowisko ma inny (Bandyta Kruczego Pola, 8%).
+- **S134k** Liczba zabić = max(`minKindKills`, round(killsAt(L) × udział rodzaju)), udział z wygenerowanych grup
+  (`Logic/AreaSpawns.kindShares` na `Data/Spawns`, bez grup: 1 / #kinds). Kotwice `kills` bez zmian, więc czas
+  zlecenia zostaje: 0,95–1,19 × S99 na 4–99. `minKindKills` 6 → 4 (przy 6 zlecenia 5 i 8 trwały 1,8–4,3 × dłużej).
+- **S134k** Wiele aktywnych bez limitu: `character.quests.contract = { done, extra, active[], marks, auto, shopWeek }`;
+  `done` = ciągły prefiks oddanych, `extra` = oddane poza kolejnością (kompaktowane). Oddanie poza kolejnością wolno.
+- **S134k** Znaki Łowcy na postaci, nie na koncie (zlecenia i skrzynie są postaci; konto pozwalałoby farmić tanie
+  zlecenia 1–20 na drugich postaciach dla głównej). `marksFor(L) = 2 + floor(L / 10) + 10 co 10. poziom` (suma 738).
+- **S134k** Migracja 11: oddane 1..done zostają, stare aktywne zlecenie zostaje aktywne z postępem
+  min(stary postęp, nowe n) (stary cel liczył każdy potwór łowiska), retro Znaki = Σ `marksFor(1..done)` (z premią
+  kamieni milowych w Znakach, bez przedmiotów kamieni milowych, które postać już dostała), `auto` = coś kiedyś przyjęte.
+  Nowa postać `{ done = 0, extra = {}, active = {}, marks = 0, auto = false, shopWeek = { week = 0, counts = {} } }`.
+- **S134k** Samo przyjmowanie: po pierwszym przyjęciu przy NPC (`auto`) awans przyjmuje zlecenia nowych poziomów
+  (`LeveledUp` → `QuestService.handle("level", { level, gained })`); porzucone zlecenia niższych poziomów wracają tylko
+  ręcznie (porzucenie ma sens). Oddanie nie przyjmuje samo nic poza tym, co da awans z jego EXP.
+- **S134k** Oddanie wielu naraz nigdy nie odmawia przez pełny plecak (zmiana wobec S99): przedmioty kamieni milowych,
+  które się nie zmieszczą (albo przy blokadzie handlu), idą pocztą systemową (`mail.subject.contract`) po zapisaniu
+  oddania; EXP po kolei rosnąco jednym `GiveExp` na zlecenie (awans w trakcie liczy się poprawnie).
+- **S134k** Łowczy Bartosz (`huntmaster`, przy tablicy zleceń) przyjmuje i oddaje każde zlecenie jak tablica; jego
+  „Zadania” otwierają zakładkę „Łowieckie” dziennika (przyciski „Przyjmij / Oddaj wszystkie”), tablica zostaje przy
+  swoim oknie; zwiadowca wydaje tylko zlecenia swojego regionu. W oknach NPC jeden wiersz zleceń na tryb z liczbą.
+- **S134k** Skrzynie Łowcy losują przedmiot od razu przy zakupie (jak skrzynia dnia 7 S100: `LoginReward.rollItem`,
+  wyciągnięte z `rollChest`), Unikat albo Heroik dla klasy i poziomu postaci, związany; nigdy Legendarny ani Mityczny.
+  Heroiczna 1 / tydzień (łup daje 11–13 Heroików na tydzień przy 14 h). Wszystko ze sklepu związane.
+- **S134k** Esencja w sklepie (model F, ≤ 10% esencji 14 h expienia pasma): 10 pyłu / tydzień (8 Znaków), 5 odłamków /
+  tydzień na 45–69 (po 6), 1 kryształ / tydzień od 70 (15). Kryształ to 80 pyłu, więc odłamki kończą się tam, gdzie
+  zaczyna kryształ (pole `maxLevel`); start 30 pyłu / 10 odłamków / 3 kryształy dawał 18–39%.
+- **S134k** Mikstury w sklepie: 5 sztuk jakości `LoginReward.potionQuality(poziom)`, cena rośnie z jakością
+  (`qualityPrices` 4 / 6 / 10 / 20); kamienie 25 złota za Znak. Wartość godziny zleceń (Znaki średnio z dziesiątki
+  poziomów, bo kamień milowy daje +10) to 6–13% jej dochodu złota.
+- **S134k** Znaki poza premium: żaden produkt ich nie daje (`huntshop.spec`); kosmetyki sklepu (`obtain.hunt`) i tytuł
+  „Mistrz Łowów” (nagroda zlecenia 99, `obtain.quest = "contract_99"`) za 0 Smoczej Waluty, nie na sprzedaż.
+- **S134k** Okno sklepu Łowczego to osobny ekran `HuntShopWindow` (wzór zakładki sklepu areny, bez wyciągania
+  wspólnego kawałka: inne pola wpisu, ceny zależne od poziomu, limity tygodnia). Admin `/huntmarks <n>` (nie `/marks`:
+  to już znaczniki mapy).
+- **S134k** Wiki: świadoma zmiana kształtu `quests.json` (rodzaj, Znaki, sklep Łowczego): `WIKI_KEYS_ALLOW="quests:*,types.ts"`.
+- **S134k** Brak skupu dla towarów za Znaki: przedmiot ze sklepu Łowczego ma `ItemInstance.ns = true` (bez migracji),
+  kupiec go nie bierze (`ItemValue.canSell`), stos łączy się tylko z takim samym (`Inventory.canMerge`). Rozbiór
+  przedmiotu ze skrzyni zostaje (jak przedmiotu ze skrzyni logowania).
+- **S134k** Tytuł „Mistrz Łowów” dopiero po oddaniu wszystkich 99 (`Contracts.earnedCosmetics`: zlecenie 99 oddane poza
+  kolejnością go nie daje, daje je ostatnie oddane), też wstecz przy wejściu do świata (postać z `done = 99` sprzed
+  S134k). Samo przyjmowanie tylko na prawdziwy awans (`gained` z `LeveledUp`), nie na „level” z `catchUp`.

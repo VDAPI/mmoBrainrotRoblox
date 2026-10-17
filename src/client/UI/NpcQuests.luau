@@ -2,7 +2,9 @@
 -- What an NPC has for the local character (S27): one list for the NPC dialog and the world map card. Rows in the
 -- order of DESIGN §20: to hand in (?), new (!), in progress (…), later (level too low). Story and side quests alike
 -- (S98: the scouts' boss quests too, with their category). S99: the hunting contract at the board and the scout of its
--- region (kind "contract", id = contract_<level>).
+-- region (kind "contract", id = contract_<level>). S134k: at most one contract row per mode at a giver (the board, the
+-- Huntmaster, the region's scout) for every contract it takes back ("turnIn"), gives ("offer") or has running ("active"),
+-- `count` = how many; the row opens the board window or the journal's hunting tab.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -15,7 +17,7 @@ export type Mode = "turnIn" | "offer" | "active" | "later"
 -- S98: `kind` is the machinery ("side" = every quest taken at an NPC, boss quests too), `category` the journal tab
 -- (Data/Quests.categoryOf).
 export type Kind = "main" | "side" | "contract"
-export type Row = { kind: Kind, id: string, mode: Mode, level: number, category: Quests.Category }
+export type Row = { kind: Kind, id: string, mode: Mode, level: number, category: Quests.Category, count: number? }
 
 local NpcQuests = {}
 
@@ -76,21 +78,25 @@ function NpcQuests.rows(quests: any, level: number, npcId: string): { Row }
 		end
 		table.insert(rows, row("side", quest.id, "later", quest.level))
 	end
-	-- S99: the hunting contract (only at its givers: the board and the scout of its region)
+	-- S99: the hunting contract (only at its givers: the board and the scout of its region); S134k: one row per mode
+	-- with the number of contracts (the Huntmaster too)
 	local state = Contracts.stateOf(quests)
-	local active = Contracts.active(state)
-	if active then
-		if Contracts.isGiver(npcId, active) then
-			local mode: Mode = if Contracts.isComplete(state) then "turnIn" else "active"
-			table.insert(rows, row("contract", active.id, mode, active.level))
-		end
-	else
-		local nextContract = Contracts.next(state)
-		if nextContract and Contracts.isGiver(npcId, nextContract) then
-			local mode: Mode = if Contracts.canAccept(state, level) then "offer" else "later"
-			table.insert(rows, row("contract", nextContract.id, mode, nextContract.level))
+	local function contractRow(mode: Mode, list: { Quests.ContractQuest })
+		if #list > 0 then
+			local r = row("contract", list[1].id, mode, list[1].level)
+			r.count = #list
+			table.insert(rows, r)
 		end
 	end
+	local ready, running = {}, {}
+	for _, taken in Contracts.activeList(state) do
+		if Contracts.isGiver(npcId, taken.contract) then
+			table.insert(if Contracts.isTakenComplete(taken) then ready else running, taken.contract)
+		end
+	end
+	contractRow("turnIn", ready)
+	contractRow("offer", Contracts.acceptable(state, level, npcId))
+	contractRow("active", running)
 	table.sort(rows, function(a, b)
 		if ORDER[a.mode] ~= ORDER[b.mode] then
 			return ORDER[a.mode] < ORDER[b.mode]

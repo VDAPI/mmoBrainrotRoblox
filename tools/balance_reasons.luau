@@ -39,6 +39,8 @@ return {
 		{ path = "Data/Crafting", pick = { "materials" } },
 		{ path = "Data/Families", omit = LOOKS },
 		{ path = "Data/GuildSkills", omit = LOOKS },
+		-- S134k: the Huntmaster's shop (prices in Hunter's Marks, weekly limits); byKey repeats ENTRIES
+		{ path = "Data/HuntShop", omit = { "byKey", "GROUPS" } },
 		{ path = "Data/ItemTraits", omit = LOOKS },
 		-- S134g: skill effects of Legendary and Mythic items (bp numbers and the ItemScore estimate); byId repeats `list`
 		{ path = "Data/ItemEffects", omit = { "byId", "nameKey", "lineKey", "TIERS", table.unpack(LOOKS) } },
@@ -5061,6 +5063,37 @@ return {
 			{
 				session = "S134j",
 				why = "new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1",
+			},
+		},
+		-- S134k (docs/DESIGN-15.md §3.3): hunting contracts on a monster kind, Hunter's Marks and the Huntmaster's shop
+		["Quests/Contracts:byId.*"] = {
+			{
+				session = "S134k",
+				why = "regenerated list: n = the kills of one monster kind (max(minKindKills, round(killsAt x the kind's share of the area))), a contract takes 0.95-1.19 x the S99 time on 4-99 (Balance.targetsS134k time); reward.marks = Logic/Contracts.marksFor(L) (2-11, +10 on every 10th, 738 over 1-99); EXP and gold unchanged",
+			},
+		},
+		["Quests/Contracts:RULES.minKindKills"] = {
+			{
+				session = "S134k",
+				why = "new: at least 4 kills of the kind (6, the start, made contracts 5 and 8 1.8-4.3 x as long as in S99; 4 keeps every level 4-99 <= 1.2 x)",
+			},
+		},
+		["Quests/Contracts:RULES.minKindShare"] = {
+			{
+				session = "S134k",
+				why = "new: a kind under 20% of the area's normal monsters is not the target while the area has another (the Bandit of the Crow Field, 8%: 2 kills took 25 kills of the area)",
+			},
+		},
+		["Quests/Contracts:RULES.marks*"] = {
+			{
+				session = "S134k",
+				why = "new: Hunter's Marks per contract base 2 + 1 per 10 levels + 10 on every 10th (2 / 13 / 14 / 6 / 19 / 11 at L1 / 10 / 20 / 45 / 70 / 99, 738 over 1-99): 10-15 marks an hour of contracts of the own level (decade mean), the shop's value of that hour 6-13% of its gold (Balance.targetsS134k value)",
+			},
+		},
+		["HuntShop:*"] = {
+			{
+				session = "S134k",
+				why = "new module: the Huntmaster's shop for Hunter's Marks: 5 potions of the level's quality 4 / 6 / 10 / 20 marks (50-175 gold a mark), 5 Return Stones 4, 2 Map Stones 16, Fortune blessings 6 / 14 / 30, essence 10 dust a week (8), 5 shards a week 45-69 (6 each), 1 crystal a week from 70 (15): 1-10% of 14 h of the band's essence; Hunter's Chest (Unique) 60 = 4.6-5.3 h of contracts, Heroic chest 200 once a week (the loot gives 11-13 Heroics a week at 14 h); title 200, frame 400",
 			},
 		},
 	} :: { [string]: { Reason } },

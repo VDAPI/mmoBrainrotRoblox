@@ -43,6 +43,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HuntShop = require(ReplicatedStorage.Shared.Data.HuntShop)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Mounts = require(ReplicatedStorage.Shared.Logic.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -149,8 +150,15 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 			"wardrobe.obtain.bossWin",
 			{ boss = if boss then Text.get(use, boss.nameKey) else obtain.bossWin }
 		)
+	elseif obtain and obtain.quest and string.sub(obtain.quest, 1, 9) == "contract_" then
+		-- S134k: the reward of the last hunting contract
+		return Text.get(use, "wardrobe.obtain.contracts")
 	elseif obtain and obtain.quest then
 		return Text.get(use, "wardrobe.obtain.quest", { quest = Text.get(use, `quest.{obtain.quest}.title`) })
+	elseif obtain and obtain.hunt == "shop" then
+		-- S134k: the Huntmaster's shop (Hunter's Marks)
+		local entry = HuntShop.byKey[def.id]
+		return Text.get(use, "wardrobe.obtain.hunt", { price = if entry then entry.price else 0 })
 	elseif obtain and obtain.pack then
 		-- S123: only in a starter pack
 		return Text.get(use, "wardrobe.obtain.pack", { pack = Text.get(use, `premium.pack.{obtain.pack}`) })

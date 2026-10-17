@@ -25,6 +25,7 @@ export type Service =
 	| "arena" -- S126: the ranked arena window (ArenaController)
 	| "arenashop" -- S128: Arena Tokens shop (opens the arena window on its shop tab)
 	| "look" -- S132: change face, skin and hair (the look window; paid changes only here, Logic/CharacterLook)
+	| "huntshop" -- S134k: the Huntmaster's shop for Hunter's Marks (Data/HuntShop)
 
 export type NpcDef = {
 	id: string,
@@ -291,6 +292,15 @@ npc({
 	icon = "🏆",
 	lines = 3,
 })
+
+-- S134k (DESIGN-15 §3.3): the Huntmaster by the contract board (Data/Town/npcExtra): takes and hands in the hunting
+-- contracts like the board ("quests" opens the journal's hunting tab) and keeps the shop for Hunter's Marks.
+townsfolk(
+	"huntmaster",
+	{ body = "#4F5A2E", accent = "#A8743A" },
+	"➶",
+	{ services = { "talk", "quests", "huntshop" } }
+)
 
 -- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
 -- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`; S104: `extra.showFrom`.

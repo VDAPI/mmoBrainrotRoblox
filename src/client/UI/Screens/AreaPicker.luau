@@ -68,7 +68,8 @@ end
 
 local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 	local level = State.Value({ "character", "level" })
-	-- S99: the hunting ground of the active hunting contract gets "◈ Contract" (the default choice stays, S22)
+	-- S99: the hunting ground of the active hunting contract gets "◈ Contract" (the default choice stays, S22); S134k: of
+	-- every active one
 	local contractState = State.Value({ "character", "quests", "contract" })
 
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
@@ -76,8 +77,13 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 		local playerLevel = use(level) or 1
 		local list = {}
 		local best = AreaAdvice.bestByProfile(playerLevel, mapId or "")
-		local activeContract = Contracts.active(Contracts.stateOf({ contract = use(contractState) }))
-		local contractArea = if activeContract then activeContract.area else nil
+		-- S134k: every hunting ground of an active, unfinished contract
+		local contractAreas: { [string]: boolean } = {}
+		for _, taken in Contracts.activeList(Contracts.stateOf({ contract = use(contractState) })) do
+			if not Contracts.isTakenComplete(taken) then
+				contractAreas[taken.contract.area] = true
+			end
+		end
 		for i, area in AreaAdvice.sorted(mapId or "") do
 			local locked = AreaAdvice.locked(area, playerLevel)
 			local band = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
@@ -180,7 +186,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							Size = UDim2.fromOffset(220, 20),
 							BackgroundTransparency = 1,
 							RichText = true,
-							Text = tagText(use, area, locked, recommended, contractArea == area.id),
+							Text = tagText(use, area, locked, recommended, contractAreas[area.id] == true),
 							TextXAlignment = Enum.TextXAlignment.Right,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,

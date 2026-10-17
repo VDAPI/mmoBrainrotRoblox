@@ -6,9 +6,13 @@
 -- `main[].chapter` (Main.chapterOf; a quest with offer pages exports them as `text`, the pages joined by a blank
 -- line), `bossQuests` (Data/Quests/Boss), `weekly` (the templates on the daily levels, the boss contract on the levels
 -- with a boss) and `contracts` (Data/Quests/Contracts without the generator's rules). The cutscenes stay off the wiki.
+-- S134k: a contract's monster kind (`monster`), its Hunter's Marks (`reward.marks`), the Huntmaster and his shop for
+-- the marks (`contracts.shop`, Data/HuntShop; prices in marks are not premium) and the marks of contracts 1-99.
 
 local Bosses = require("../../src/shared/Data/Bosses")
 local Clean = require("./Clean")
+local Cosmetics = require("../../src/shared/Data/Cosmetics")
+local HuntShopData = require("../../src/shared/Data/HuntShop")
 local Config = require("../../src/shared/Config")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
 local Maps = require("../../src/shared/Data/Maps")
@@ -67,6 +71,7 @@ local Reward = rec("QuestReward", {
 	["choice?"] = "string",
 	["mount?"] = "ref:mounts", -- S97: the stable arc's horse
 	["cosmetic?"] = "ref:cosmetics", -- S97: a mount skin
+	["marks?"] = "int", -- S134k: Hunter's Marks of a hunting contract
 })
 
 local DailyLevel = rec("DailyLevel", { level = "int", objective = Objective, reward = Reward })
@@ -158,9 +163,27 @@ S.file(
 				level = "int",
 				map = "ref:maps",
 				area = "ref:areas",
+				monster = "ref:monsters", -- S134k: the kind to kill
 				n = "int",
 				label = "name",
 				reward = Reward,
+			})),
+			-- S134k: the Huntmaster (takes and hands in like the board) and his shop for Hunter's Marks
+			huntmaster = "ref:npcs",
+			marksTotal = "int",
+			shop = arr(rec("HuntShopEntry", {
+				id = "string",
+				kind = "string",
+				group = "string",
+				["item?"] = "ref:items",
+				["n?"] = "int",
+				["cosmetic?"] = "string",
+				name = "name",
+				marks = "int",
+				["marksByQuality?"] = arr("int"),
+				["minLevel?"] = "int",
+				["maxLevel?"] = "int",
+				["weeklyLimit?"] = "int",
 			})),
 		}),
 		levelSlack = "int",
@@ -315,6 +338,7 @@ local function reward(r: any, hidden: { [string]: boolean }): any
 		-- S97: never an unpublished mount or cosmetic
 		mount = if r.mount and not hidden[r.mount] then r.mount else nil,
 		cosmetic = if r.cosmetic and not hidden[r.cosmetic] then r.cosmetic else nil,
+		marks = r.marks, -- S134k
 	}
 end
 
@@ -506,6 +530,7 @@ function Quests.build(ctx: any): any
 				level = c.level,
 				map = c.map,
 				area = c.area,
+				monster = o.monster,
 				n = o.n,
 				label = Names.combine(function(lang: string): string
 					return Quests.label(o, nil, lang)
@@ -517,6 +542,35 @@ function Quests.build(ctx: any): any
 	local every = math.huge
 	for level in Contracts.RULES.milestones do
 		every = math.min(every, level)
+	end
+	-- S134k: the Huntmaster's shop (potions by the level's quality: their name and the price of every quality)
+	local shop = {}
+	for _, e in HuntShopData.ENTRIES do
+		if not ctx.hidden[e.id] then
+			local item = if e.kind == "item" then e.id else nil
+			table.insert(shop, {
+				id = e.key,
+				kind = e.kind,
+				group = e.group,
+				item = item,
+				n = if (e.n or 1) > 1 then e.n else nil,
+				cosmetic = if e.kind == "cosmetic" then e.id else nil,
+				name = if item
+					then Names.item(item)
+					elseif e.kind == "cosmetic" then Names.of((Cosmetics.get(e.id) :: any).nameKey)
+					elseif e.kind == "chest" then Names.of(`item.{e.key}.name`)
+					else Names.of(`huntshop.potion.{e.id}`),
+				marks = e.price,
+				marksByQuality = e.qualityPrices,
+				minLevel = e.minLevel,
+				maxLevel = e.maxLevel,
+				weeklyLimit = e.weeklyLimit,
+			})
+		end
+	end
+	local marksTotal = 0
+	for _, c in Contracts.list do
+		marksTotal += c.reward.marks or 0
 	end
 	return {
 		main = main,
@@ -535,6 +589,9 @@ function Quests.build(ctx: any): any
 			scouts = scouts,
 			milestoneEvery = if every == math.huge then 10 else every,
 			list = contractList,
+			huntmaster = "huntmaster",
+			marksTotal = marksTotal,
+			shop = shop,
 		},
 		levelSlack = QuestData.Main.LEVEL_SLACK,
 		sideLevelSlack = Config.SideQuest.levelSlack,

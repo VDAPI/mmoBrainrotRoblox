@@ -10948,4 +10948,219 @@ function Balance.targetsS134j(): { TargetRow }
 	return rows
 end
 
+-- Hunting contracts on a monster kind and Hunter's Marks (S134k, docs/sessions/S134k.md F) ------------------------------
+-- The contract time: the kills of the hunting ground it takes to kill n of the kind (n / its share of the area's normal
+-- monsters, Logic/ContractGen) at the Warrior's grinding pace of the level (paceAt.secondsPerKill), against S99 (any
+-- monster of the area: killsAt(L)). Marks per hour of contracts of the own level = marksFor(L) / that time. The shop's
+-- value: the marks of one hour spent on the potions, stones, blessings and essence the level may buy, best gold per
+-- mark first (Balance.materialPrices for essence, the merchant price for the rest), a weekly limit giving 1 / 14 of
+-- itself per hour (14 h of play a week). The EXP and gold of the contracts did not change (the S109 budget stays).
+
+local ContractGen = require("../src/shared/Logic/ContractGen")
+local ContractRules = require("../src/shared/Logic/Contracts")
+local HuntShop = require("../src/shared/Logic/HuntShop")
+local HuntShopData = require("../src/shared/Data/HuntShop")
+
+Balance.S134k = {
+	time = 1.2, -- contract time on a kind / S99 contract time, every level 4-99
+	value = { 0.05, 0.15 }, -- shop value of one hour of contracts / the gold income of that hour
+	essence = 0.10, -- essence of the weekly limits / the essence of 14 h of grinding of the band
+	chestHours = 2, -- the Hunter's Chest in hours of contracts of its band (at least)
+	heroicWeekly = 1, -- the Heroic chest per week
+	lootHeroics = 1, -- Heroics of the loot per week at 14 h (at least)
+	weekHours = 14,
+	levels = { 10, 20, 45, 70, 99 },
+	bands = { { 20, 44 }, { 45, 69 }, { 70, 99 } },
+}
+Balance.S134K_REPORT = {} :: { [string]: string }
+
+local contractPicks: { ContractGen.Pick }? = nil
+local function picks(): { ContractGen.Pick }
+	if not contractPicks then
+		contractPicks = ContractGen.picks(Quests.Contracts.RULES)
+	end
+	return contractPicks :: { ContractGen.Pick }
+end
+
+-- Seconds of the contract of `level` (S99 with `legacy`: any monster of the area counts).
+function Balance.contractTime(level: number, legacy: boolean?): number
+	local rules = Quests.Contracts.RULES
+	local kills = ContractGen.killsAt(rules, level)
+	if not legacy then
+		local contract = Quests.Contracts.forLevel(level) :: Quests.ContractQuest
+		local share = picks()[level].share or 1
+		kills = contract.objectives[1].n / share
+	end
+	return kills * Balance.paceAt("Warrior", level).secondsPerKill
+end
+
+-- Hunter's Marks per hour of contracts of the own level.
+function Balance.huntMarks(level: number): number
+	return ContractRules.marksFor(level) * 3600 / math.max(1e-9, Balance.contractTime(level))
+end
+
+-- Marks per hour of contracts over the decade of `level` (1-10, 11-20, ...): the milestone contract spread over its
+-- ten levels (the value row; one level's marks jump x2-4 on every 10th).
+function Balance.huntMarksDecade(level: number): number
+	local first = math.floor((level - 1) / 10) * 10 + 1
+	local last = math.min(Quests.Contracts.MAX_LEVEL, first + 9)
+	local sum = 0
+	for L = first, last do
+		sum += Balance.huntMarks(L)
+	end
+	return sum / (last - first + 1)
+end
+
+-- Gold of what one purchase of `entry` gives at `level` (nil for chests and cosmetics).
+local function entryGold(entry: HuntShopData.Entry, level: number, classId: string): number?
+	local grant = HuntShop.grant(entry, level, classId)
+	if not grant then
+		return nil
+	end
+	local prices = Balance.materialPrices()
+	local def = Items.get(grant.id) :: any
+	local unit = prices[grant.id] or (if def then def.buyPrice or def.price or 0 else 0)
+	return unit * grant.n
+end
+
+-- Gold of the marks of one hour of contracts at `level` (Balance.huntMarksDecade) spent best gold per mark first
+-- (weekly limits pro rata).
+function Balance.huntMarksValue(classId: string, level: number): number
+	local marks = Balance.huntMarksDecade(level)
+	local offers: { { perMark: number, price: number, cap: number, gold: number } } = {}
+	for _, entry in HuntShopData.ENTRIES do
+		local gold = entryGold(entry, level, classId)
+		if gold and level >= (entry.minLevel or 1) and HuntShop.offered(entry, level) then
+			local cap = if entry.weeklyLimit then entry.weeklyLimit / Balance.S134k.weekHours else math.huge
+			local price = HuntShop.priceAt(entry, level)
+			table.insert(offers, { perMark = gold / price, price = price, cap = cap, gold = gold })
+		end
+	end
+	table.sort(offers, function(a, b)
+		return a.perMark > b.perMark
+	end)
+	local value = 0
+	for _, offer in offers do
+		if marks <= 0 then
+			break
+		end
+		local n = math.min(marks / offer.price, offer.cap)
+		value += n * offer.gold
+		marks -= n * offer.price
+	end
+	return value
+end
+
+-- Essence (dust equivalents) of every weekly limit a character of `level` may buy.
+function Balance.huntShopEssence(level: number): number
+	local materials: { [string]: number } = {}
+	for _, entry in HuntShopData.ENTRIES do
+		if entry.group == "essence" and level >= (entry.minLevel or 1) and HuntShop.offered(entry, level) then
+			local grant = HuntShop.grant(entry, level, "Warrior") :: HuntShop.Grant
+			materials[grant.id] = (materials[grant.id] or 0) + grant.n * (entry.weeklyLimit or 0)
+		end
+	end
+	return Balance.dustEq(materials)
+end
+
+-- S134k (F2): the targets in one place (ids "S134k.*"); balance.spec ("Balance: hunting contracts and marks (S134k)")
+-- asserts every row without `report`.
+function Balance.targetsS134k(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134k
+	local function add(id: string, label: string, value: number, low: number?, high: number?, c: string?, lv: number?)
+		target(rows, `S134k.{id}`, "huntmarks", label, value, low, high, c, lv)
+	end
+	for L = 4, Quests.Contracts.MAX_LEVEL do
+		add(
+			`time.L{L}`,
+			`L{L}: czas zlecenia na rodzaj / czas zlecenia S99`,
+			Balance.contractTime(L) / Balance.contractTime(L, true),
+			nil,
+			S.time,
+			nil,
+			L
+		)
+	end
+	for _, c in Balance.CLASSES do
+		for _, L in S.levels do
+			local income = math.max(1e-9, Balance.economyAt(c, L).incomePerHour)
+			add(
+				`value.{c}.L{L}`,
+				`{c} L{L}: wartość zakupów za Znaki z 1 h zleceń / dochód złota tej godziny`,
+				Balance.huntMarksValue(c, L) / income,
+				S.value[1],
+				S.value[2],
+				c,
+				L
+			)
+		end
+	end
+	for _, c in Balance.CLASSES do
+		for _, band in S.bands do
+			local mid = math.floor((band[1] + band[2]) / 2)
+			local supply = Balance.dustEq(Balance.materialSupply(c, mid).normal) * S.weekHours
+			add(
+				`essence.{c}.{band[1]}-{band[2]}`,
+				`{c} {band[1]}–{band[2]}: esencja z limitów tygodnia / esencja {S.weekHours} h bicia`,
+				Balance.huntShopEssence(mid) / math.max(1e-9, supply),
+				nil,
+				S.essence,
+				c,
+				mid
+			)
+		end
+	end
+	local chest = HuntShopData.byKey.hunt_chest
+	for _, band in S.bands do
+		local sum, n = 0, 0
+		for L = band[1], band[2] do
+			sum += Balance.huntMarks(L)
+			n += 1
+		end
+		add(
+			`chest.hours.{band[1]}-{band[2]}`,
+			`{band[1]}–{band[2]}: Skrzynia Łowcy w godzinach zleceń pasma`,
+			chest.price / (sum / n),
+			S.chestHours,
+			nil,
+			nil,
+			band[2]
+		)
+	end
+	local heroic = HuntShopData.byKey.hunt_chest_heroic
+	add(
+		"chest.heroicWeekly",
+		"Heroiczna Skrzynia Łowcy: limit tygodnia",
+		heroic.weeklyLimit or math.huge,
+		1,
+		S.heroicWeekly
+	)
+	for _, c in Balance.CLASSES do
+		for _, L in { 45, 70, 99 } do
+			add(
+				`chest.loot.{c}.L{L}`,
+				`{c} L{L}: Heroiki z łupu na tydzień ({S.weekHours} h jaskiniowych Elit)`,
+				Balance.dropsPerHour(c, L, "K0", false).heroic * S.weekHours,
+				S.lootHeroics,
+				nil,
+				c,
+				L
+			)
+		end
+	end
+	local sum = 0
+	for L = 1, Quests.Contracts.MAX_LEVEL do
+		sum += ContractRules.marksFor(L)
+	end
+	add("retro.L99", "retro Znaki postaci 99 / suma marksFor(1..99)", ContractRules.retroMarks(99) / sum, 1, 1)
+	for _, row in rows do
+		local why = Balance.S134K_REPORT[row.id]
+		if why then
+			row.report = `S134k: {why}`
+		end
+	end
+	return rows
+end
+
 return Balance

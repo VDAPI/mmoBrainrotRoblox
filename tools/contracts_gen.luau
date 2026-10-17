@@ -4,6 +4,7 @@
 --   lune run tools/contracts_gen.luau          rewrites the GENERATED block of src/shared/Data/Quests/Contracts.luau
 --   lune run tools/contracts_gen.luau check    exit 1 when the list in the file differs from Logic/ContractGen.build
 -- Both print the area use counts, the longest run, the fallbacks and n / kills of a whole level (Warrior model).
+-- S134k: also the monster kind uses, the longest run of one kind and the contract time against S99 (Balance.contractTime).
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
@@ -58,7 +59,11 @@ local function render(list: { any }): string
 		table.insert(lines, `\t\tcategory = "contract",`)
 		table.insert(lines, `\t\tmap = "{c.map}",`)
 		table.insert(lines, `\t\tarea = "{c.area}",`)
-		table.insert(lines, `\t\tobjectives = \{ \{ type = "kill", n = {obj.n}, area = "{obj.area}" \} \},`)
+		-- S134k: the monster kind of the hunting ground
+		table.insert(
+			lines,
+			`\t\tobjectives = \{ \{ type = "kill", n = {obj.n}, monster = "{obj.monster}", area = "{obj.area}" \} \},`
+		)
 		local reward = `exp = {c.reward.exp}, gold = {c.reward.gold}`
 		if c.reward.items then
 			local items = {}
@@ -66,6 +71,12 @@ local function render(list: { any }): string
 				table.insert(items, `\{ id = "{item.id}", n = {item.n} \}`)
 			end
 			reward ..= `, items = \{ {table.concat(items, ", ")} \}`
+		end
+		if c.reward.marks then
+			reward ..= `, marks = {c.reward.marks}` -- S134k: Hunter's Marks
+		end
+		if c.reward.cosmetic then
+			reward ..= `, cosmetic = "{c.reward.cosmetic}"` -- S134k: the title of the last contract
 		end
 		table.insert(lines, `\t\treward = \{ {reward} \},`)
 		table.insert(lines, "\t},")
