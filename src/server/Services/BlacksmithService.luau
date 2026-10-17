@@ -2,7 +2,8 @@
 -- Blacksmith (DESIGN §6–§8): crafting fixed-stat Common items for gold + ore, upgrading +0..+9 (backpack or
 -- equipped items, optional Scroll of Protection), dismantling into essences. Each operation checks the NPC
 -- distance, the costs and changes data in one step. +7 and higher is announced on the server; +9 on a
--- legendary also across servers.
+-- legendary also across servers. S134j: bonus reroll (Logic/Reroll, docs/DESIGN.md §6a): one regular line, locked
+-- after the first reroll, essence or a Stone of Transmutation + gold, each attempt on the item dearer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,6 +19,7 @@ local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
+local Reroll = require(Shared.Logic.Reroll)
 local Rng = require(Shared.Logic.Rng)
 local Types = require(Shared.Types)
 local Upgrade = require(Shared.Logic.Upgrade)
@@ -45,6 +47,7 @@ local NpcService: any
 local MailService: any
 local StatService: any
 local AnnounceService: any
+local EquipmentService: any
 
 local rng = Rng.new()
 
@@ -121,6 +124,7 @@ local function locate(player: Player, location: string, key: string): (ItemInsta
 		return item,
 			function()
 				PlayerStateService.Set(player, { "character", "equipment", key }, item)
+				EquipmentService.InvalidateHooks(player) -- S134j: on-hit / vs_* lines are cached hooks
 				StatService.Invalidate(player)
 			end
 	elseif location == "inv" then
@@ -183,6 +187,104 @@ local function upgrade(player: Player, location: string, key: string, protect: b
 	end
 	log:info("%s upgrade %s +%d -> +%d", player.Name, item.id, result.from, result.to)
 	return true, nil, { success = result.success, from = result.from, to = result.to, protected = result.protected }
+end
+
+-- Bonus reroll (S134j) -----------------------------------------------------------------------------------------
+
+export type RerollOpts = {
+	anywhere: boolean?, -- admin: no distance check
+	free: boolean?, -- admin: no cost
+}
+
+-- Rerolls line `index` of an item (backpack or equipped). `expected` is the line's stat the client saw: a different
+-- one (item changed in another window or by a trade) refuses before anything is paid. With `useStone` a Stone of
+-- Transmutation pays the essence (never silently the essence when the stone is missing). Pay, roll and write without
+-- yields in between; the server's rng only.
+function BlacksmithService.Reroll(
+	player: Player,
+	location: string,
+	key: string,
+	index: number,
+	expected: string,
+	useStone: boolean,
+	opts: RerollOpts?
+): (boolean, string?, any)
+	local o: RerollOpts = opts or {}
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not o.anywhere and not nearSmith(player) then
+		return false, "npc.error.tooFar"
+	end
+	local item, commit = locate(player, location, key)
+	if not item then
+		return false, "error.badRequest"
+	end
+	local ok, err = Reroll.canLine(item, index)
+	if not ok then
+		return false, err
+	end
+	local current = item.bonuses[index]
+	if current.stat ~= expected then
+		return false, "smith.reroll.error.changed"
+	end
+	if next(Reroll.pool(item, index, char.class)) == nil then
+		return false, "smith.reroll.error.empty"
+	end
+	local stone = useStone and not o.free
+	if stone and InventoryService.Count(player, Reroll.STONE) < 1 then
+		return false, "smith.reroll.error.noStone"
+	end
+	local cost = if o.free
+		then { gold = 0, materials = {} }
+		elseif stone then Reroll.costWithStone(item)
+		else Reroll.cost(item)
+	if char.gold < cost.gold then
+		return false, "shop.error.gold"
+	end
+	if not hasMaterials(player, cost.materials) then
+		return false, "smith.missing"
+	end
+	-- Pay, roll, write — no yields in between.
+	if cost.gold > 0 then
+		addGold(player, -cost.gold)
+	end
+	takeMaterials(player, cost.materials)
+	if stone then
+		InventoryService.Remove(player, Reroll.STONE, 1)
+	end
+	local old = { stat = current.stat, v = current.v }
+	local line = Reroll.roll(item, index, char.class, rng)
+	Reroll.apply(item, index, line)
+	commit()
+	local n = Reroll.state(item).n
+	Analytics.custom(player, "Reroll", item.rarity)
+	log:info(
+		"%s reroll %s line %d %s -> %s (n=%d, stone=%s)",
+		player.Name,
+		item.id,
+		index,
+		old.stat,
+		line.stat,
+		n,
+		tostring(stone)
+	)
+	return true, nil, { index = index, old = old, new = { stat = line.stat, v = line.v }, n = n }
+end
+
+local function reroll(
+	player: Player,
+	location: string,
+	key: string,
+	index: number,
+	expected: string,
+	useStone: boolean
+): (boolean, string?, any)
+	return BlacksmithService.Reroll(player, location, key, index, expected, useStone)
 end
 
 -- Dismantling -------------------------------------------------------------------------------------------------
@@ -283,6 +385,7 @@ function BlacksmithService.Init(registry)
 	MailService = registry.Get("MailService")
 	StatService = registry.Get("StatService")
 	AnnounceService = registry.Get("AnnounceService")
+	EquipmentService = registry.Get("EquipmentService")
 end
 
 function BlacksmithService.Start()
@@ -290,6 +393,7 @@ function BlacksmithService.Start()
 	Net.Handle("UpgradeItem", upgrade)
 	Net.Handle("Dismantle", dismantle)
 	Net.Handle("DismantleAll", dismantleAll)
+	Net.Handle("RerollBonus", reroll)
 end
 
 return BlacksmithService

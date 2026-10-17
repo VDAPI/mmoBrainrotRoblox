@@ -6,7 +6,8 @@
 -- every quest taken at an NPC (Data/Quests.npcList: side arcs and the boss quests of the scouts). One rule for the
 -- plates over the NPCs in the world, the world map and the minimap. The quest board shows "turnIn" when a daily,
 -- weekly or boss contract is done and not collected, "active" while some are still open. S99: the hunting contract
--- marks the board and the scout of its region (gold / grey ! to take, ? to hand in, grey ? in progress). S104: an NPC
+-- marks the board and the scout of its region (gold / grey ! to take, ? to hand in, grey ? in progress; S134k: and the
+-- Huntmaster, for every active and every eligible contract). S104: an NPC
 -- hidden from the character (Logic/NpcVisibility, NpcDef.showFrom) has no mark. Pure (Lune).
 
 local Config = require("../Config")
@@ -84,21 +85,20 @@ function NpcMarks.all(quests: any, level: number): { [string]: Mark }
 			put(NpcMarks.BOARD, "active")
 		end
 	end
-	-- S99: the hunting contract at the board and at the scout of its region
+	-- S99: the hunting contracts at the board and at the scout of their region; S134k: also the Huntmaster, several at
+	-- once: ? at the givers of a finished one, ! at the givers of one to take (gold while any of them is not low), grey
+	-- ? at the givers of one in progress (put() keeps the highest)
 	local state = Contracts.stateOf(quests)
-	local active = Contracts.active(state)
-	if active then
-		local mark: Mark = if Contracts.isComplete(state) then "turnIn" else "active"
-		for _, npcId in Contracts.giversOf(active) do
+	for _, taken in Contracts.activeList(state) do
+		local mark: Mark = if Contracts.isTakenComplete(taken) then "turnIn" else "active"
+		for _, npcId in Contracts.giversOf(taken.contract) do
 			put(npcId, mark)
 		end
-	else
-		local nextContract = Contracts.next(state)
-		if nextContract and Contracts.canAccept(state, level) then
-			local mark: Mark = if NpcMarks.isLow(nextContract.level, level) then "availableLow" else "available"
-			for _, npcId in Contracts.giversOf(nextContract) do
-				put(npcId, mark)
-			end
+	end
+	for _, contract in Contracts.eligible(state, level) do
+		local mark: Mark = if NpcMarks.isLow(contract.level, level) then "availableLow" else "available"
+		for _, npcId in Contracts.giversOf(contract) do
+			put(npcId, mark)
 		end
 	end
 	-- S104: no mark over an NPC the character does not see yet

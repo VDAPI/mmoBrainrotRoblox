@@ -67,6 +67,11 @@ function EquipmentService.GetHook(player: Player, hook: string): number
 	return EquipmentService.GetHooks(player)[hook] or 0
 end
 
+-- S134j: drops the hook sum after an equipped item changed in place (blacksmith upgrade or reroll).
+function EquipmentService.InvalidateHooks(player: Player)
+	hookCache[player] = nil
+end
+
 -- Weapon visuals ------------------------------------------------------------------------------------------
 
 local HELD_NAMES = { weapon = "VaelthornWeapon", offhand = "VaelthornOffhand" }

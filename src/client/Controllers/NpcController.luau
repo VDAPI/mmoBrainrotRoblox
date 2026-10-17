@@ -14,11 +14,14 @@ local AlchemyWindow = require(script.Parent.Parent.UI.Screens.AlchemyWindow)
 local BackpackShop = require(script.Parent.Parent.UI.Screens.BackpackShop)
 local BlacksmithWindow = require(script.Parent.Parent.UI.Screens.BlacksmithWindow)
 local DepositWindow = require(script.Parent.Parent.UI.Screens.DepositWindow)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HuntShopWindow = require(script.Parent.Parent.UI.Screens.HuntShopWindow)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
+local NpcPresence = require(script.Parent.Parent.UI.NpcPresence)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local ShopWindow = require(script.Parent.Parent.UI.Screens.ShopWindow)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
@@ -45,7 +48,8 @@ local NpcController = {
 }
 
 local scope = Fusion.scoped(Fusion)
-NpcController.Current = scope:Value(nil :: string?)
+-- S134k: the same Value as UI/NpcPresence (screens outside the NPC windows read it there)
+NpcController.Current = NpcPresence.Current
 NpcController.Quests = nil :: any
 NpcController.Guild = nil :: any
 NpcController.Market = nil :: any
@@ -53,6 +57,8 @@ NpcController.Arena = nil :: any
 NpcController.Nav = nil :: any
 -- Target of the forge's upgrade tab ({ location, key }), set by dropping an item on the anvil.
 NpcController.UpgradeTarget = scope:Value(nil :: any)
+-- S134j: target of the forge's Transmute tab, set by dropping an item on its anvil.
+NpcController.RerollTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
@@ -69,6 +75,7 @@ local SERVICE_WINDOWS = {
 	"guildfound",
 	"auction",
 	"mail",
+	"huntshop", -- S134k
 }
 -- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
 -- stablemaster's dialog opened it. S126: the arena window the same way (U, the HUD menu, the Arena Master).
@@ -142,7 +149,17 @@ function NpcController.OpenService(service: string)
 	end
 	if service == "quests" then
 		WindowManager.Close("npc")
-		NpcController.Quests.OpenBoard()
+		-- S134k: the Huntmaster's "quests" is the journal's hunting tab (the board keeps its window)
+		if npcId == Contracts.HUNTMASTER then
+			NpcController.Quests.OpenContracts()
+		else
+			NpcController.Quests.OpenBoard()
+		end
+		return
+	elseif service == "huntshop" then
+		-- S134k: the Huntmaster's shop for Hunter's Marks
+		WindowManager.Close("npc")
+		WindowManager.Open("huntshop")
 		return
 	elseif service == "guild" then
 		NpcController.Guild.OpenFromNpc()
@@ -196,6 +213,12 @@ end
 function NpcController.SetUpgradeTarget(location: string, key: string)
 	NpcController.UpgradeTarget:set({ location = location, key = key })
 	NpcController.SmithTab:set("upgrade")
+end
+
+-- S134j: the Transmute tab with an item (drop on its anvil).
+function NpcController.SetRerollTarget(location: string, key: string)
+	NpcController.RerollTarget:set({ location = location, key = key })
+	NpcController.SmithTab:set("reroll")
 end
 
 function NpcController.OpenUnbind()
@@ -329,11 +352,15 @@ local function registerWindows()
 					if not npcId then
 						return
 					end
-					-- S99: the hunting contract at the board is handled in the board window (one place)
-					local def = Npcs.get(npcId)
-					if row.kind == "contract" and def and table.find(def.services, "quests") then
+					-- S99: the hunting contract at the board is handled in the board window (one place); S134k: at the
+					-- Huntmaster and the scouts in the journal's hunting tab ("Accept all" / "Hand in all" there)
+					if row.kind == "contract" then
 						WindowManager.Close("npc")
-						NpcController.Quests.OpenBoard()
+						if npcId == Contracts.BOARD then
+							NpcController.Quests.OpenBoard()
+						else
+							NpcController.Quests.OpenContracts()
+						end
 						return
 					end
 					NpcController.Quests.OpenQuest(npcId, row)
@@ -368,6 +395,7 @@ local function registerWindows()
 		build = function(s)
 			return BlacksmithWindow(s, {
 				UpgradeTarget = NpcController.UpgradeTarget,
+				RerollTarget = NpcController.RerollTarget,
 				ShowModal = WindowManager.ShowModal,
 				Tab = NpcController.SmithTab,
 			})
@@ -387,6 +415,15 @@ local function registerWindows()
 		size = Vector2.new(1000, 680),
 		build = function(s)
 			return AlchemyWindow(s, { NpcId = NpcController.Current })
+		end,
+	})
+	-- S134k: the Huntmaster's shop (Hunter's Marks)
+	WindowManager.Register({
+		id = "huntshop",
+		titleKey = "huntshop.title",
+		size = Vector2.new(720, 620),
+		build = function(s)
+			return HuntShopWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
 		end,
 	})
 	WindowManager.Register({

@@ -17,6 +17,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Companion = require(ReplicatedStorage.Shared.Logic.Companion)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -470,14 +471,18 @@ function QuestText.sideTarget(quest: Quests.SideQuest, entry: any, level: number
 	return nil
 end
 
--- S99: the title of a hunting contract ("Hunting contract 12: Crow Field"); `lookup` = Text.get bound to a scope's
--- `use` or the T of a card.
+-- S99: the title of a hunting contract ("Hunting contract 12: Boar (Crow Field)", S134k with the monster kind);
+-- `lookup` = Text.get bound to a scope's `use` or the T of a card.
 function QuestText.contractTitle(
 	lookup: (key: string, args: { [string]: any }?) -> string,
 	contract: Quests.ContractQuest
 ): string
 	local area = Areas.areaById(contract.area)
-	return lookup("contract.title", { n = contract.level, area = if area then lookup(area.nameKey) else "?" })
+	return lookup("contract.title", {
+		n = contract.level,
+		monster = QuestText.contractMonster(lookup, contract),
+		area = if area then lookup(area.nameKey) else "?",
+	})
 end
 
 -- S99: the hunting ground of a contract as rich text: its name and levels in the colour of the level band for the
@@ -501,6 +506,85 @@ end
 -- S99: the scout of a contract's region (the other place to take and hand it in).
 function QuestText.contractScout(contract: Quests.ContractQuest): string
 	return `scout_{contract.map}`
+end
+
+-- S134k: the monster kind of a contract in the player's language ("Boar"; "?" when unknown).
+function QuestText.contractMonster(
+	lookup: (key: string, args: { [string]: any }?) -> string,
+	contract: Quests.ContractQuest
+): string
+	local def = Monsters.get(contract.objectives[1].monster or "")
+	return if def then lookup(def.nameKeys.normal) else "?"
+end
+
+-- S134k: "Kill 15x Boar (Crow Field)", with "  3/15" when `have` is given.
+function QuestText.contractObjective(
+	lookup: (key: string, args: { [string]: any }?) -> string,
+	contract: Quests.ContractQuest,
+	have: number?
+): string
+	local objective = contract.objectives[1]
+	local area = Areas.areaById(contract.area)
+	local text = lookup("contract.objective", {
+		n = objective.n,
+		monster = QuestText.contractMonster(lookup, contract),
+		area = if area then lookup(area.nameKey) else "?",
+	})
+	if have then
+		text ..= `  {math.min(have, objective.n)}/{objective.n}`
+	end
+	return text
+end
+
+-- S134k: the active contracts in the tracker's order: the tracked one (`focusId`), then the finished ones, then the
+-- ones on the current map by the distance from (x, z) to their hunting ground, then the rest by level.
+function QuestText.contractOrder(
+	state: Contracts.State,
+	focusId: string?,
+	currentMap: string?,
+	x: number?,
+	z: number?
+): { Contracts.Taken }
+	local list = Contracts.activeList(state)
+	local function rank(taken: Contracts.Taken): (number, number)
+		if taken.contract.id == focusId then
+			return 0, 0
+		end
+		if Contracts.isTakenComplete(taken) then
+			return 1, taken.contract.level
+		end
+		if taken.contract.map == currentMap and x and z then
+			local area = Areas.areaById(taken.contract.area)
+			if area then
+				local cx, cz = AreaAdvice.centre(area)
+				return 2, math.sqrt((cx - x) ^ 2 + (cz - z) ^ 2)
+			end
+		end
+		return 3, taken.contract.level
+	end
+	table.sort(list, function(a, b)
+		local ra, ka = rank(a)
+		local rb, kb = rank(b)
+		if ra ~= rb then
+			return ra < rb
+		end
+		if ka ~= kb then
+			return ka < kb
+		end
+		return a.contract.level < b.contract.level
+	end)
+	return list
+end
+
+-- S134k: the player's position on the current map (relative to its offset), nil without a character or map.
+function QuestText.mapPosition(): (number?, number?)
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local map = Maps.get(State.Get({ "character", "location", "map" }) or "")
+	if not root or not map then
+		return nil, nil
+	end
+	return root.Position.X - map.offset.x, root.Position.Z - map.offset.z
 end
 
 -- S99: where a hunting contract points: done -> its scout when the player is on that map, else the board; open or

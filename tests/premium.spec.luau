@@ -340,6 +340,8 @@ T.describe("S97 mount skins and premium mounts", function()
 						or def.obtain.pack ~= nil
 						or def.obtain.arena ~= nil
 						or def.obtain.event ~= nil
+						or def.obtain.hunt ~= nil -- S134k: the Huntmaster's shop (Hunter's Marks)
+						or def.obtain.quest ~= nil -- S134k: the title of the last hunting contract
 						or def.class ~= nil -- S132: class outfits from a quest or a boss win
 				).toBe(true)
 				T.expect(def.price).toBe(0)

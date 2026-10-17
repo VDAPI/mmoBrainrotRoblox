@@ -1,11 +1,12 @@
 --!strict
--- Forge window (DESIGN §6–§8): Crafting / Upgrading / Dismantling tabs.
+-- Forge window (DESIGN §6–§8): Crafting / Upgrading / Dismantling tabs; S134j: Transmute (bonus reroll, §6a).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Craft = require(script.Craft)
 local Dismantle = require(script.Dismantle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Reroll = require(script.Reroll)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Upgrade = require(script.Upgrade)
@@ -16,6 +17,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	UpgradeTarget: Fusion.Value<Upgrade.Target?>,
+	-- S134j: the Transmute tab's item (its own target; dropping on that tab's anvil sets it)
+	RerollTarget: Fusion.Value<Upgrade.Target?>,
 	ShowModal: (spec: any) -> (),
 	-- Tab to open ("upgrade" after dropping an item on the anvil).
 	Tab: Fusion.Value<string>,
@@ -26,6 +29,8 @@ local function BlacksmithWindow(scope: Scope, props: Props): Fusion.Child
 		local tab = use(props.Tab)
 		if tab == "upgrade" then
 			return Upgrade(s, { Target = props.UpgradeTarget })
+		elseif tab == "reroll" then
+			return Reroll(s, { Target = props.RerollTarget, ShowModal = props.ShowModal })
 		elseif tab == "dismantle" then
 			return Dismantle(s, props.ShowModal)
 		end
@@ -37,6 +42,7 @@ local function BlacksmithWindow(scope: Scope, props: Props): Fusion.Child
 			Tabs = {
 				{ id = "craft", label = Text.T(scope, "smith.tab.craft") },
 				{ id = "upgrade", label = Text.T(scope, "smith.tab.upgrade") },
+				{ id = "reroll", label = Text.T(scope, "smith.tab.reroll") },
 				{ id = "dismantle", label = Text.T(scope, "smith.tab.dismantle") },
 			},
 		}),

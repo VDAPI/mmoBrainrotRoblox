@@ -78,6 +78,7 @@ local SERVICE_ICONS: { [string]: string } = {
 	quests = "✎",
 	story = "❗",
 	vendors = "⚔", -- S95: the dealer points to the class vendors
+	huntshop = "➶", -- S134k: the Huntmaster's shop (Hunter's Marks)
 }
 
 -- The item a shop entry sells (S31: the same instance as the shop window and the price).
@@ -141,15 +142,25 @@ end
 
 -- S29: the objective rows of a quest the character has taken (the same rows as the tracker and the journal):
 -- finished objectives green, "Return to: <NPC>" when complete and handed in elsewhere.
-local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQuests.Row)
+local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQuests.Row, npcId: string)
 	local objectives: { Quests.Objective }, progress: any, turnIn: string
 	if row.kind == "contract" then
-		-- S99: the active hunting contract (handed in at the board or its scout)
-		local contract, entry = Contracts.active(Contracts.stateOf(quests))
-		if not contract or not entry or contract.id ~= row.id then
-			return
+		-- S99: the active hunting contract (handed in at the board or its scout); S134k: one line per active contract of
+		-- the row's mode this NPC gives and takes (at most five; the row's count)
+		local shown = 0
+		for _, taken in Contracts.activeList(Contracts.stateOf(quests)) do
+			local done = Contracts.isTakenComplete(taken)
+			local mine = Contracts.isGiver(npcId, taken.contract)
+			if mine and (row.mode == "turnIn") == done and row.mode ~= "offer" and shown < 5 then
+				shown += 1
+				table.insert(lines, {
+					text = `   {QuestText.contractObjective(T, taken.contract, taken.entry.progress[1] or 0)}`,
+					size = 13,
+					color = if done then Theme.Colors.Success else Theme.Colors.Text,
+				})
+			end
 		end
-		objectives, progress, turnIn = contract.objectives, entry.progress, Contracts.BOARD
+		return
 	elseif row.kind == "main" then
 		local quest = Quests.Main.get(row.id)
 		local main = quests.main
@@ -174,8 +185,9 @@ end
 -- Rewards of a quest row (S31): shown under its line, except for quests not reachable yet.
 local function rewardOf(row: NpcQuests.Row): Quests.Reward?
 	if row.kind == "contract" then
+		-- S134k: a row of several contracts shows no single reward
 		local contract = Quests.Contracts.get(row.id)
-		return if contract then contract.reward else nil
+		return if contract and (row.count or 1) == 1 then contract.reward else nil
 	end
 	if row.kind == "main" then
 		local quest = Quests.Main.get(row.id)
@@ -188,6 +200,9 @@ end
 -- S99: the title of a quest row (the hunting contract: one key with arguments).
 local function rowTitle(row: NpcQuests.Row): string
 	if row.kind == "contract" then
+		if (row.count or 1) > 1 then
+			return T("contract.titleMany", { n = row.count }) -- S134k
+		end
 		local contract = Quests.Contracts.get(row.id)
 		return if contract then QuestText.contractTitle(T, contract) else row.id
 	end
@@ -234,7 +249,7 @@ local function questSections(npcId: string, level: number): { Section }
 				bold = strong,
 			})
 			if row.mode ~= "offer" then
-				objectiveLines(lines, quests, row)
+				objectiveLines(lines, quests, row, npcId)
 			end
 			local reward = rewardOf(row)
 			flush(if reward then { { id = row.id, reward = reward } } else nil)
@@ -439,13 +454,24 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 	if AreaAdvice.isRecommended(found, ctx.level) then
 		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Colors.GoldBright, bold = true })
 	end
-	-- S99: the hunting ground of the active hunting contract
-	local contract, entry = Contracts.active(Contracts.stateOf(State.Get({ "character", "quests" })))
-	if contract and entry and contract.area == found.id then
-		local n = contract.objectives[1].n
+	-- S99: the hunting ground of the active hunting contract; S134k: every active contract here, one line each (the
+	-- kind and the progress; "Guide" below leads to the ground)
+	local here: { Contracts.Taken } = {}
+	for _, taken in Contracts.activeList(Contracts.stateOf(State.Get({ "character", "quests" }))) do
+		if taken.contract.area == found.id then
+			table.insert(here, taken)
+		end
+	end
+	for i = #here, 1, -1 do
+		local taken = here[i]
+		local objective = taken.contract.objectives[1]
 		table.insert(lines, 1, {
-			text = T("worldmap.card.contractHere", { have = math.min(entry.progress[1] or 0, n), n = n }),
-			color = Theme.Colors.GoldBright,
+			text = T("worldmap.card.contractHere", {
+				monster = QuestText.contractMonster(T, taken.contract),
+				have = math.min(taken.entry.progress[1] or 0, objective.n),
+				n = objective.n,
+			}),
+			color = if Contracts.isTakenComplete(taken) then Theme.Colors.Success else Theme.Colors.GoldBright,
 			bold = true,
 		})
 	end

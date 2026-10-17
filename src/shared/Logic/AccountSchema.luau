@@ -8,6 +8,7 @@ local ClassLooks = require("../Data/ClassLooks")
 local Classes = require("../Data/Classes")
 local Cosmetics = require("../Data/Cosmetics")
 local Config = require("../Config")
+local ContractRules = require("./Contracts")
 local Contracts = require("../Data/Quests/Contracts")
 local Exp = require("./Exp")
 local ItemEffects = require("./ItemEffects")
@@ -25,7 +26,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 10
+AccountSchema.CURRENT = 11
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -133,7 +134,15 @@ function AccountSchema.characterTemplate(): CharacterData
 			mainDone = 0,
 			daily = { day = 0, list = {}, rerolls = 0 },
 			weekly = { week = 0, list = {}, rerolls = 0 }, -- S98 (reconcile adds it to old characters)
-			contract = { done = 0 }, -- S98; S99: hunting contracts (Logic/Contracts), migration 7
+			-- S98; S99: hunting contracts (Logic/Contracts), migration 7; S134k: several active, marks, migration 11
+			contract = {
+				done = 0,
+				extra = {},
+				active = {},
+				marks = 0,
+				auto = false,
+				shopWeek = { week = 0, counts = {} },
+			},
 			side = { active = {}, done = {} },
 			said = {}, -- S101b: dialogue answers (reconcile adds it to old characters, no migration)
 			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
@@ -460,6 +469,50 @@ MIGRATIONS[10] = function(data, _newId)
 	end
 	if changed then
 		data.legendRework = true
+	end
+end
+
+-- 11 (S134k, DESIGN-15 §3.3): several hunting contracts active at once and Hunter's Marks. The S99 shape
+-- { done, active? } becomes { done, extra = {}, active = { ... }, marks, auto, shopWeek }: contracts 1..done stay
+-- handed in, the old active contract (a kill of any monster of its area) stays active with min(its progress, the new
+-- n of its kind), retro marks = Logic/Contracts.retroMarks(done) (the marks of 1..done, no milestone items), auto =
+-- something was ever taken. A branch already in the new shape (extra and marks present) is left alone: idempotent.
+MIGRATIONS[11] = function(data, _newId)
+	if type(data.characters) ~= "table" then
+		return
+	end
+	for _, character in data.characters do
+		if type(character) ~= "table" or type(character.quests) ~= "table" then
+			-- no quests: the reconcile after the migrations adds the template
+			continue
+		end
+		local branch = character.quests.contract
+		if type(branch) == "table" and type(branch.extra) == "table" and type(branch.marks) == "number" then
+			continue
+		end
+		local old: any = if type(branch) == "table" then branch else {}
+		local doneRaw = tonumber(old.done) or 0
+		local done = if doneRaw == doneRaw then math.clamp(math.floor(doneRaw), 0, Contracts.MAX_LEVEL) else 0
+		local active = {}
+		local entry = old.active
+		local level = if type(entry) == "table" then tonumber(entry.level) else nil
+		local contract = if level and level == math.floor(level) then Contracts.forLevel(level) else nil
+		if contract and contract.level > done then
+			local need = contract.objectives[1].n
+			local have = if type(entry.progress) == "table" then tonumber(entry.progress[1]) or 0 else 0
+			if have ~= have then
+				have = 0
+			end
+			active = { { level = contract.level, progress = { math.clamp(math.floor(have), 0, need) } } }
+		end
+		character.quests.contract = {
+			done = done,
+			extra = {},
+			active = active,
+			marks = ContractRules.retroMarks(done),
+			auto = done > 0 or #active > 0,
+			shopWeek = { week = 0, counts = {} },
+		}
 	end
 end
 

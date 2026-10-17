@@ -33,6 +33,12 @@ export type ItemInstance = {
 	locked: boolean?, -- protected from selling and dismantling (S20)
 	rv: number?, -- S30: rarity format version (2 = new ladder; Rarities.upgradeItem)
 	fx: { string }?, -- S134g: item effect ids (Data/ItemEffects), Legendary 1, Mythic 2
+	-- S134j: bonus reroll state: i = index in bonuses of the only rerollable line (set by the first reroll), n = rerolls
+	-- done (cost growth); read only through Logic/Reroll.state
+	rr: { i: number, n: number }?,
+	-- S134k: bought for Hunter's Marks (the Huntmaster's shop): merchants pay nothing for it (ItemValue.canSell), it
+	-- stacks only with the same (Inventory.canMerge)
+	ns: boolean?,
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
@@ -161,9 +167,17 @@ export type CharacterData = {
 			rerolls: number,
 			boss: { boss: string, progress: number, claimed: boolean }?,
 		},
-		-- S99: hunting contracts in order (Data/Quests/Contracts); done = handed in, active = the one in progress (one
-		-- at a time)
-		contract: { done: number, active: { level: number, progress: { number } }? },
+		-- S99: hunting contracts (Data/Quests/Contracts). S134k (migration 11, Logic/Contracts.State): done = every
+		-- contract up to it handed in, extra = handed in out of order, active = taken ones (several at once), marks =
+		-- Hunter's Marks, auto = a level up takes the new level's contract, shopWeek = the Huntmaster's weekly counter
+		contract: {
+			done: number,
+			extra: { number },
+			active: { { level: number, progress: { number } } },
+			marks: number,
+			auto: boolean,
+			shopWeek: { week: number, counts: { [string]: number } },
+		},
 		-- S27: side quests. active[id] = progress per objective, anchors already used, the rolled reward choice;
 		-- done[id] = true once handed in.
 		-- S98: every quest taken at an NPC (side arcs incl. the S96 stable arc, boss) keyed by id; Data/Quests.npcQuest

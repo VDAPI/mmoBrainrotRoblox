@@ -8,16 +8,27 @@
 --   |(lv[1] + lv[2]) / 2 - L|  + penalty.previous (the area of L - 1) + penalty.beforePrevious (L - 2)
 --   + penalty.perUse x the area's uses so far + penalty.sameProfile (same S33 profile as L - 1)
 -- Without a candidate the nearest area by level is a fallback (reported; the test forbids fallbacks).
+--
+-- S134k: then the monster kind of the picked area (only its normal `kinds` with at least RULES.minKindShare of its
+-- normal monsters, never Elites or Elite IIs), the smallest score, ties to the lower id:
+--   penalty.kindPrevious (the kind of L - 1) + penalty.kindPerUse x the kind's uses so far
+-- and its kills: max(minKindKills, round(killsAt(L) x the kind's share of the area's normal monsters)), the share from
+-- the generated groups (Data/Spawns, Logic/AreaSpawns.kindShares; 1 / #kinds without groups). The reward adds
+-- Logic/Contracts.marksFor(L) Hunter's Marks and the last contract RULES.finalCosmetic.
 
 local AreaAdvice = require("./AreaAdvice")
 local AreaProfiles = require("../Data/AreaProfiles")
+local AreaSpawns = require("./AreaSpawns")
 local Areas = require("../Data/Areas")
 local Contracts = require("../Data/Quests/Contracts")
+local ContractRules = require("./Contracts")
 local Exp = require("./Exp")
+local Monsters = require("../Data/Monsters")
 local QuestTypes = require("../Data/Quests/Types")
+local Spawns = require("../Data/Spawns")
 
 export type Rules = typeof(Contracts.RULES)
-export type Pick = { area: Areas.Area, map: string, fallback: boolean }
+export type Pick = { area: Areas.Area, map: string, fallback: boolean, kind: string?, share: number? }
 
 local ContractGen = {}
 
@@ -130,7 +141,67 @@ function ContractGen.picks(rules: Rules): { Pick }
 		uses[chosen.area.id] = (uses[chosen.area.id] or 0) + 1
 		table.insert(out, chosen)
 	end
+	-- S134k: the monster kind of every pick (a second pass: the area rotation above stays exactly as in S99)
+	local kindUses: { [string]: number } = {}
+	for level, pick in out do
+		local shares = ContractGen.kindShares(pick.map, pick.area)
+		local prev = out[level - 1]
+		local best: string? = nil
+		local bestScore = math.huge
+		for _, kind in ContractGen.kindsOf(pick.map, pick.area, rules.minKindShare) do
+			local score = rules.penalty.kindPerUse * (kindUses[kind] or 0)
+			if prev and prev.kind == kind then
+				score += rules.penalty.kindPrevious
+			end
+			if score < bestScore or (score == bestScore and best and kind < best) then
+				best, bestScore = kind, score
+			end
+		end
+		local kind = best :: string
+		kindUses[kind] = (kindUses[kind] or 0) + 1
+		pick.kind = kind
+		pick.share = shares[kind] or 1 / #ContractGen.kindsOf(pick.map, pick.area)
+	end
 	return out
+end
+
+-- S134k: the share of every normal kind among the normal monsters of an area's groups (Logic/AreaSpawns.kindShares
+-- over Data/Spawns; empty when the map has no generated groups).
+function ContractGen.kindShares(mapId: string, area: Areas.Area): { [string]: number }
+	return AreaSpawns.kindShares(Spawns.byMap[mapId] or {}, area.id)
+end
+
+-- S134k: the kinds a contract on `area` may name: its normal kinds with at least `minShare` (default: any) of the
+-- area's normal monsters; the most common one when none reaches it; every known kind when no group spawns there (the
+-- share is then 1 / #kinds). In data order. Never Elites or Elite IIs (they are not in `kinds`).
+function ContractGen.kindsOf(mapId: string, area: Areas.Area, minShare: number?): { string }
+	local shares = ContractGen.kindShares(mapId, area)
+	local floor = minShare or 0
+	local out: { string } = {}
+	local known: { string } = {}
+	local top, topShare = nil :: string?, 0
+	for _, kind in area.kinds do
+		if Monsters.get(kind) then
+			table.insert(known, kind)
+			local share = shares[kind] or 0
+			if share > 0 and share >= floor then
+				table.insert(out, kind)
+			end
+			if share > topShare then
+				top, topShare = kind, share
+			end
+		end
+	end
+	assert(#known > 0, `ContractGen: {area.id} has no known monster kind`)
+	if #out > 0 then
+		return out
+	end
+	return if top then { top } else known
+end
+
+-- S134k: kills of a kind with `share` of the area's monsters for the contract of `level`.
+function ContractGen.kindKills(rules: Rules, level: number, share: number): number
+	return math.max(rules.minKindKills, math.floor(ContractGen.killsAt(rules, level) * share + 0.5))
 end
 
 -- The contracts 1..MAX_LEVEL; `share` = Data/QuestBudget.TARGET.contract (the EXP of a level's requirement), no EXP
@@ -142,21 +213,32 @@ function ContractGen.build(rules: Rules, share: number): { QuestTypes.ContractQu
 			exp = if level >= rules.expFrom then math.floor(Exp.expToNext(level) * share) else 0,
 			gold = math.floor(rules.gold.base + rules.gold.perLevel * level),
 			items = copyItems(rules.milestones[level]),
+			marks = ContractRules.marksFor(level), -- S134k
+			cosmetic = if level == Contracts.MAX_LEVEL then rules.finalCosmetic else nil,
 		}
+		local kind = pick.kind :: string
 		table.insert(out, {
 			id = `contract_{level}`,
 			level = level,
 			category = "contract",
 			map = pick.map,
 			area = pick.area.id,
-			objectives = { { type = "kill", n = ContractGen.killsAt(rules, level), area = pick.area.id } },
+			objectives = {
+				{
+					type = "kill",
+					n = ContractGen.kindKills(rules, level, pick.share or 1),
+					monster = kind,
+					area = pick.area.id,
+				},
+			},
 			reward = reward,
 		})
 	end
 	return out
 end
 
--- Lines for the tool: uses of every area (in world order), the longest run of one area, fallbacks.
+-- Lines for the tool: uses of every area (in world order), the longest run of one area, S134k: the uses of every
+-- monster kind and the longest run of one kind, fallbacks.
 function ContractGen.report(list: { QuestTypes.ContractQuest }): { string }
 	local lines: { string } = {}
 	local uses: { [string]: number } = {}
@@ -180,6 +262,32 @@ function ContractGen.report(list: { QuestTypes.ContractQuest }): { string }
 		table.insert(lines, `{mapId}: {table.concat(parts, ", ")}`)
 	end
 	table.insert(lines, `longest run: {bestArea} x{bestRun} (ending at level {bestEnd})`)
+	-- S134k: the uses of every kind (sorted by id) and the longest run of one kind
+	local kindUses: { [string]: number } = {}
+	local runKind, kindRun, bestKindRun, bestKind, bestKindEnd = "", 0, 0, "", 0
+	for _, contract in list do
+		local kind = contract.objectives[1].monster or "?"
+		kindUses[kind] = (kindUses[kind] or 0) + 1
+		if kind == runKind then
+			kindRun += 1
+		else
+			runKind, kindRun = kind, 1
+		end
+		if kindRun > bestKindRun then
+			bestKindRun, bestKind, bestKindEnd = kindRun, runKind, contract.level
+		end
+	end
+	local kinds: { string } = {}
+	for kind in kindUses do
+		table.insert(kinds, kind)
+	end
+	table.sort(kinds)
+	local kindParts = {}
+	for _, kind in kinds do
+		table.insert(kindParts, `{kind} {kindUses[kind]}`)
+	end
+	table.insert(lines, `kinds: {table.concat(kindParts, ", ")}`)
+	table.insert(lines, `longest kind run: {bestKind} x{bestKindRun} (ending at level {bestKindEnd})`)
 	local fallbacks = {}
 	for _, contract in list do
 		local area = Areas.areaById(contract.area)

@@ -67,6 +67,19 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
 ### 3.3 Zlecenia łowieckie (S99)
 - **Jedno zlecenie na każdy poziom 1–99** (`Data/Quests/Contracts`, generowane z danych łowisk: `Data/Areas`, `Data/Spawns`, `AreaProfiles`), cel `kill` n potworów z łowiska pasującego do poziomu (S99: n 10 → 30 na 1–20 i 30 → 60 na 20–99, bo na niskich poziomach poziom to kilkanaście–kilkadziesiąt potworów; łowisko w zasięgu poziomu, tylko łowiska otwartych regionów, bez jaskiń i lochów, rotacja, żeby nie powtarzać jednego miejsca). Nagroda: EXP wg budżetu (12% `expToNext(L)`), złoto (S99: 20 + 4·L, żeby nie zepsuć G9), co 10 poziomów błogosławieństwo Fortuny i kamienie (S99: bez plecaków, to zlew złota).
 - Biorący: **tablica zleceń w mieście** (`questboard`) i **zwiadowca regionu** (`scout_<region>`). Po oddaniu kolejne odblokowuje się od razu, gdy postać ma jego poziom (zlecenie L wymaga poziomu L; S99: przyjmuje się samo przy oddaniu, niezależnie od NPC). Postać z zaległościami może robić zaległe po kolei (kolejka, jedno aktywne). S99: postacie sprzed S99 zaczynają od `poziom − 2` (migracja 7, bez nagród za pominięte). Wiki zleceń: S109.
+- **S134k (prośba właściciela 2026-10-15):**
+  - cel = konkretny zwykły rodzaj potwora łowiska („Ubij 15× Dzik (łowisko)”), liczy się tylko ten rodzaj na tym
+    łowisku; rodzaje rotują (`ContractGen`: kary `kindPrevious` / `kindPerUse`, rodzaj ≥ 20% zwykłych potworów łowiska),
+    n = max(4, round(zabicia S99 × udział rodzaju)), więc czas zlecenia jak w S99 (≤ 1,2× od 4. poziomu);
+  - wszystkie zlecenia do poziomu postaci mogą być aktywne naraz (bez limitu), zabicie liczy się do każdego
+    pasującego; „Przyjmij wszystkie” / „Oddaj wszystkie” przy tablicy zleceń, u **Łowczego** (Łowczy Bartosz, obok
+    tablicy) albo u zwiadowcy regionu (tylko jego region); po pierwszym przyjęciu awans sam dokłada zlecenie nowego
+    poziomu; nadmiar przedmiotów oddania idzie pocztą;
+  - nagroda: EXP i złoto poziomu zlecenia jak dotąd + **Znaki Łowcy** (`RULES.marks`: 2 + 1 na 10 poziomów, +10 co 10.;
+    738 za 1–99; na postaci, retro w migracji 11) + tytuł „Mistrz Łowów” za 99.;
+  - **sklep Łowczego** (`Data/HuntShop`): mikstury jakości poziomu, kamienie, błogosławieństwa Fortuny do Heroicznych,
+    esencja z limitem tygodnia (≤ 10% esencji expienia), Skrzynia Łowcy (Unikat dla klasy, 60) i Heroiczna (200,
+    1 / tydzień), kosmetyki; wszystko związane, nic ponad łup, Znaki poza premium. Model: `Balance.targetsS134k`.
 
 ### 3.4 Fabuła (S102–S105) i poboczne (S106–S108)
 - Główny quest co ok. 2–3 poziomy do 100, w **rozdziałach po regionach** (Łąki 1–20, Duskwood 20–45, Spalone Pustkowia 45–70, Lodowe Szczyty 70–100), z dialogami (strony jak `pages` w pobocznych) i przerywnikami (krótkie sceny: kamera, napis rozdziału). Obecne 32 questy zostają i wchodzą w rozdziały (id bez zmian, postęp graczy zachowany). Ok. 40 nowych. Zarys: `docs/FABULA.md` (akceptuje właściciel przed S102).

@@ -536,16 +536,20 @@ export interface Contract {
   label: Name;
   level: number;
   map: string; // id in maps.json
+  monster: string; // id in monsters.json
   n: number;
   reward: QuestReward;
 }
 
 export interface Contracts {
   board: string; // id in npcs.json
+  huntmaster: string; // id in npcs.json
   list: Contract[];
+  marksTotal: number;
   max: number;
   milestoneEvery: number;
   scouts: string[]; // ids in npcs.json
+  shop: HuntShopEntry[];
 }
 
 export interface Cosmetic {
@@ -762,6 +766,21 @@ export interface GuildSkillInfo {
   id: string;
   name: Name;
   stat: string;
+}
+
+export interface HuntShopEntry {
+  cosmetic?: string;
+  group: string;
+  id: string;
+  item?: string; // id in items.json
+  kind: string;
+  marks: number;
+  marksByQuality?: number[];
+  maxLevel?: number;
+  minLevel?: number;
+  n?: number;
+  name: Name;
+  weeklyLimit?: number;
 }
 
 export interface IconLayer {
@@ -1408,6 +1427,7 @@ export interface QuestReward {
   exp: number;
   gold: number;
   items: QuestRewardItem[];
+  marks?: number;
   mount?: string; // id in mounts.json
 }
 
@@ -1506,6 +1526,21 @@ export interface ReductionRow {
 export interface ReductionTable {
   levels: number[];
   rows: ReductionRow[];
+}
+
+export interface RerollEssence {
+  id: string; // id in items.json
+  n: number;
+}
+
+export interface RerollRules {
+  attempts: number[];
+  costs: Record<string, Record<string, UpgradeCost[]>>;
+  essence: Record<string, RerollEssence>;
+  goldMul: number;
+  growth: number;
+  growthCap: number;
+  levels: number[];
 }
 
 export interface Road {
@@ -1909,6 +1944,7 @@ export interface UpgradeFile {
   costs: Record<string, Record<string, UpgradeCost[]>>;
   max: number;
   protection: string; // id in items.json
+  reroll: RerollRules;
   steps: UpgradeStep[];
   tiers: number[];
   vectors: UpgradeVector[];

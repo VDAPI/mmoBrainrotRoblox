@@ -456,7 +456,7 @@ T.describe("Item effects: migration (S134g C2)", function()
 			deposit = { size = 60, items = { ["1"] = legend("d1") } },
 		}
 		local applied = AccountSchema.migrate(data)
-		T.expect(applied).toEqual({ 10 })
+		T.expect(applied).toEqual({ 10, 11 }) -- S134k: 11 = contracts
 		local char = data.characters["1"]
 		for _, item in
 			{ char.equipment.weapon, char.inventory["3"], char.quests.side.active.q.choice[1], data.deposit.items["1"] }

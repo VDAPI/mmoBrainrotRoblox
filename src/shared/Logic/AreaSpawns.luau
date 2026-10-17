@@ -453,4 +453,25 @@ function AreaSpawns.cave(cave: AreaTypes.Cave, opts: { pairChance: number? }?): 
 	return spawners
 end
 
+-- S134k: the share of every monster kind among the normal members of an area's groups (the spawners of `spawners`
+-- with `areaId` and variant "normal"; hideout groups carry the hideout id). Empty when the area has no group.
+function AreaSpawns.kindShares(spawners: { Spawner }, areaId: string): { [string]: number }
+	local counts: { [string]: number } = {}
+	local total = 0
+	for _, spawner in spawners do
+		if spawner.areaId == areaId and spawner.variant == "normal" then
+			for i = 1, spawner.count do
+				local kind = if spawner.members then spawner.members[i] or spawner.monster else spawner.monster
+				counts[kind] = (counts[kind] or 0) + 1
+				total += 1
+			end
+		end
+	end
+	local out: { [string]: number } = {}
+	for kind, n in counts do
+		out[kind] = n / total
+	end
+	return out
+end
+
 return AreaSpawns

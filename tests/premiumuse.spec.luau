@@ -372,10 +372,10 @@ T.describe("S122 data and save", function()
 
 	T.it("save fields from the templates, no migration", function()
 		-- S122 adds no migration: the schema stays at S121's version (S132: 9 = class outfits)
-		T.expect(AccountSchema.CURRENT).toBe(10) -- S134g: 10 = item effects
+		T.expect(AccountSchema.CURRENT).toBe(11) -- S134g: 10 = item effects; S134k: 11 = contracts
 		T.expect(AccountSchema.accountTemplate().lure).toEqual({ untilTs = 0, on = false })
 		T.expect(AccountSchema.characterTemplate().fullElixir).toEqual({ day = 0, used = 0, readyAt = 0 })
-		local old: any = { schema = 10, characters = { ["1"] = { name = "Old", class = "Warrior" } } } -- S134g: 10
+		local old: any = { schema = 11, characters = { ["1"] = { name = "Old", class = "Warrior" } } } -- S134g: 10; S134k: 11
 		local applied = AccountSchema.migrate(old)
 		T.expect(#applied).toBe(0)
 		T.expect(old.lure).toEqual({ untilTs = 0, on = false })

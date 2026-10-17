@@ -19,6 +19,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
@@ -112,27 +113,29 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?, keep:
 		if not contract then
 			return nil
 		end
-		local state = Contracts.stateOf(quests)
-		local active, entry = Contracts.active(state)
-		local mine = active ~= nil and active.id == contract.id and entry ~= nil
-		local progress = if mine and entry then entry.progress else QuestLogic.emptyProgress(contract.objectives)
-		local mode: any = if mine
-			then (if Contracts.isComplete(state) then "turnIn" else "active")
+		-- S134k: this contract's own entry among the active ones
+		local entry = Contracts.activeEntry(Contracts.stateOf(quests), contract.level)
+		local progress = if entry then entry.progress else QuestLogic.emptyProgress(contract.objectives)
+		local mode: any = if entry
+			then (if QuestLogic.isComplete(entry.progress, contract.objectives) then "turnIn" else "active")
 			else (if row.mode == "later" then "later" else "offer")
 		local area = Areas.areaById(contract.area)
 		local areaArg = if area then `@{area.nameKey}` else "?"
+		local kind = Monsters.get(contract.objectives[1].monster or "")
+		local monsterArg = if kind then `@{kind.nameKeys.normal}` else "?"
 		return {
 			row = row,
 			mode = mode,
 			title = "contract.title",
-			titleArgs = { n = contract.level, area = areaArg },
+			titleArgs = { n = contract.level, monster = monsterArg, area = areaArg },
 			pages = {
 				if mode == "turnIn"
 					then "contract.done"
 					elseif mode == "active" then "contract.progress"
 					else "contract.text",
 			},
-			pageArgs = { area = areaArg, n = contract.objectives[1].n },
+			-- S134k: the monster kind of the contract
+			pageArgs = { area = areaArg, n = contract.objectives[1].n, monster = monsterArg },
 			objectives = contract.objectives,
 			progress = progress,
 			reward = contract.reward,

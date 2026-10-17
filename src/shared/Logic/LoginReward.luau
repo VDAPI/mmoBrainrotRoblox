@@ -171,14 +171,20 @@ end
 -- (Loot.pickUsable, the boss-slot weights: weapons first), like the Unique / Heroic branch of a boss. nil only when
 -- the tier has no equipment at all (the server then gives the band's essence twice).
 function LoginReward.rollChest(level: number, classId: string, rng: Rng.Rng): Loot.ItemDrop?
+	return LoginReward.rollItem(level, classId, nil, rng)
+end
+
+-- S134k: the chest item of a given rarity (nil: the day 7 weights) for a character of `level` and `classId`; the
+-- Huntmaster's chests (Data/HuntShop) roll it the same way. The rarity is picked after the base, like before.
+function LoginReward.rollItem(level: number, classId: string, rarity: number?, rng: Rng.Rng): Loot.ItemDrop?
 	local L = clampLevel(level)
 	local ilvl = ItemRoll.dropLevel(L, rng)
 	local defId = Loot.pickUsable(LootTables.bossSlots, ilvl, classId, rng)
 	if not defId then
 		return nil
 	end
-	local rarity = rng:weighted(Data.chest.rarity :: { [number]: number })
-	return { defId = defId, ilvl = ilvl, rarity = rarity, forClass = classId }
+	local picked = rarity or rng:weighted(Data.chest.rarity :: { [number]: number })
+	return { defId = defId, ilvl = ilvl, rarity = picked, forClass = classId }
 end
 
 -- What the server gives instead of a chest item when rollChest finds nothing: the band's essence twice.

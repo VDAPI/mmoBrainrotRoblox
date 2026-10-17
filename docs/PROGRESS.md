@@ -5,7 +5,14 @@
 
 ## Stan
 
-S01–S115 i S117–S134i gotowe (ostatnia S134i: 11 kryjówek Elit II na mapach regionów (Łąki 2, Bór, Pustkowia i Szczyty po
+S01–S115 i S117–S134k gotowe (ostatnia S134k: zlecenie łowieckie na konkretny rodzaj potwora łowiska, wszystkie
+zlecenia do poziomu postaci aktywne naraz (zabicie liczy się do każdego pasującego), „Przyjmij / Oddaj wszystkie” przy
+tablicy, u nowego Łowczego Bartosza albo u zwiadowcy regionu, Znaki Łowcy (738 za 1–99, retro w migracji 11) i sklep
+Łowczego (mikstury, kamienie, Fortuna, esencja z limitem tygodnia, Skrzynie Łowcy Unikat / Heroik, kosmetyki); wcześniej
+S134j: przemiana jednej losowej linii premii u kowala (zakładka
+„Przemiana”, `Logic/Reroll`, pole `rr`): pierwsza przemiana zamyka wybór na tej linii, koszt pył + złoto rośnie z
+każdą próbą na przedmiocie (`Config.Reroll`), Kamień Przemiany w sklepie Smoczej Waluty (1/dzień, płaci pył jednej
+próby); wcześniej S134i: 11 kryjówek Elit II na mapach regionów (Łąki 2, Bór, Pustkowia i Szczyty po
 3; `Data/Areas` `lairs`, `AreaSpawns.lair`, ubiór `Logic/WorldGen/Lairs`): Elita II w środku z przypisanym łupem,
 wraca po cichu ×1,5 wolniej niż w jaskini, strażnicy, węzły; pomarańczowa czaszka na mapie i minimapie, karta i
 wyszukiwarka bez stanu Elity II; tempo łupu pasma ≤ ×1,35; wcześniej S134h: każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
@@ -281,6 +288,18 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S134k:** zlecenia na rodzaj, wiele aktywnych i sklep Łowczego bez przeglądu w grze (dziennik „Łowieckie” z
+  grupami i przyciskami, karta tablicy, tracker do 3 + „+N”, okno `HuntShopWindow` na PC i telefonie, Łowczy przy
+  tablicy w mieście wiosną i poza nią). Kosmetyki sklepu (tytuł „Łowca Nagród”, ramka „Trofeum”) i tytuł „Mistrz Łowów”
+  proceduralne, bez obrazków; Skrzynie Łowcy bez ikony (znak ▣). Decyzje właściciela w `docs/SESJE.md` → S134k (mała
+  esencja sklepu przy celu ≤ 10%, wielkość retro Znaków). Wiki: tabela sklepu niesprawdzona `npm run check` (vitest
+  i `astro check` zielone poza starym `combat.mdx` „2–3”).
+- **S134j:** zakładka „Przemiana” kowala bez przeglądu w grze (układ na PC i telefonie, lista „Może wyjść”, modal z
+  ostrzeżeniem o zamknięciu, wynik „stara → nowa”, znak ↻ w opisie). Decyzje właściciela w `docs/SESJE.md` → S134j:
+  esencja sam pył (model odrzucił odłamki / kryształy), wartość Kamienia Przemiany przy pyle, tania pierwsza próba
+  (`first.vsUpgrade` w raporcie), +9 zestawu ponad dochód pasma (`sink.income` w raporcie). Wiki: akapit w poradniku
+  ulepszania niesprawdzony `npm run check` (vitest zielony poza starym `combat.mdx` „2–3”).
+
 - **S134i:** kryjówki bez przeglądu w grze (ubiór czterech motywów, wolny środek dla Doskoku i Druzgocącego Ciosu,
   strażnicy na pierścieniu, czaszka na mapie i minimapie, karta `CreatureCards.lair`). Brak obrazka `mapa/map_lair`
   (znak ☠ zastępczy; plik do `BRAKI-GRAFIK`). Wiki: sekcja kryjówek na stronie krainy, miejsce „kryjówka” w
@@ -395,8 +414,8 @@ zakończone; testy i decyzje właściciela po nich.
   (T-QB5 maks. 1,00; zadania dają tam mniej niż fabuła S94) i złoto zadań na 21–32 do 0,64 dochodu z gry (T-EC2, złoto
   fabuły `gold(level)`). Łąki 1–19 z zadaniami ok. 95% EXP poziomu z założenia (`monsterExpMul` ok. 0,6: kto pomija
   zadania, bije tam ok. 1,6× dłużej).
-- **Zlecenia łowieckie (S99)**: zlecenie 1. (10 zabić) jest dłuższe niż cały 1. poziom (ok. 7 potworów); zlecenia 1–3
-  bez EXP od S109. EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,6× ponad serwer, na 20–36 mniej
+- **Zlecenia łowieckie (S99)**: zlecenia 1–3 bez EXP od S109; S134k: zlecenie 1. to 4 Króliki (ok. 12 zabić łowiska), na
+  1–3 do 1,4 × czasu S99 (cel ≤ 1,2 dopiero od 4.). EXP potworów i EXP/h łowisk na wiki bez `monsterExpMul`: na 1–19 ok. 1,6× ponad serwer, na 20–36 mniej
   (mnożnik 1,04–1,23), od 45. ok. 1,2× więcej (decyzja właściciela).
 - **Wiki questów (S109)**: uproszczenie: strony krain bez questów bossowych (są tylko w indeksie zadań, strona bossa ich nie pokazuje).
 - **Nagroda za logowanie (S100)**: liczby skrzyni (85 / 15 zamiast planowanych 65 / 35) i to, czy dzień bez odbioru

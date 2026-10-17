@@ -286,7 +286,8 @@ local function handle(player: Player, kind: string, data: { [string]: any })
 	end
 	-- S27: the same event for every active side quest.
 	SideQuestService.Handle(player, kind, data)
-	-- S99: the hunting contract (kills of its area)
+	-- S99: the hunting contracts (S134k: kills of their kind on their area for every active one, the auto take on a
+	-- level up)
 	ContractService.Handle(player, kind, data)
 	-- S101b: progress may open or close the companion's objectives
 	refreshCompanion(player)
@@ -729,8 +730,9 @@ function QuestService.Start()
 			})
 		end
 	end)
-	LevelService.LeveledUp:Connect(function(player: Player, level: number)
-		handle(player, "level", { level = level })
+	LevelService.LeveledUp:Connect(function(player: Player, level: number, gained: number?)
+		-- S134k: `gained` lets ContractService take the contracts of every new level (auto)
+		handle(player, "level", { level = level, gained = gained })
 		ensureWeekly(player) -- S98: the boss contract from the first boss's entry level
 	end)
 	ZoneService.ZoneChanged:Connect(function(player: Player, zone: any)

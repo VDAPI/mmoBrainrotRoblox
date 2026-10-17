@@ -5,7 +5,6 @@
 -- rising sound) and then the result: golden burst and the new +N, or a red crack and the drop.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
@@ -13,9 +12,8 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
-local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
-local SelectableSlot = require(script.Parent.Parent.Parent.Components.SelectableSlot)
+local Picker = require(script.Parent.Picker)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
@@ -29,7 +27,7 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-export type Target = { location: string, key: string }
+export type Target = Picker.Target
 
 export type Props = {
 	Target: Fusion.Value<Target?>,
@@ -37,25 +35,8 @@ export type Props = {
 
 local TENSION = 1.5
 
-local function count(inv: any, itemId: string): number
-	local n = 0
-	for _, item in inv or {} do
-		if item.id == itemId then
-			n += item.n
-		end
-	end
-	return n
-end
-
-local function resolve(target: Target?, inventory: any, equipment: any): Types.ItemInstance?
-	if not target then
-		return nil
-	end
-	if target.location == "eq" then
-		return if type(equipment) == "table" then equipment[target.key] else nil
-	end
-	return if type(inventory) == "table" then inventory[target.key] else nil
-end
+local count = Picker.count
+local resolve = Picker.resolve
 
 -- Base stat lines "stat: value" for an item at an upgrade level.
 local function statLines(use: Fusion.Use, item: Types.ItemInstance, up: number): { string }
@@ -115,32 +96,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 	end)
 
 	local function sparks()
-		local holder = anvil
-		if not holder then
-			return
-		end
-		for i = 1, 18 do
-			task.delay(i * TENSION / 20, function()
-				local spark = Instance.new("Frame")
-				spark.AnchorPoint = Vector2.new(0.5, 0.5)
-				spark.Position = UDim2.fromScale(0.5, 0.55)
-				spark.Size = UDim2.fromOffset(6, 6)
-				spark.BackgroundColor3 = Color3.fromHex("#FFD36B")
-				spark.BorderSizePixel = 0
-				spark.ZIndex = 5
-				spark.Parent = holder
-				local angle = math.random() * math.pi * 2
-				local distance = 60 + math.random() * 90
-				TweenService:Create(spark, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Position = UDim2.new(0.5, math.cos(angle) * distance, 0.55, math.sin(angle) * distance - 30),
-					BackgroundTransparency = 1,
-				}):Play()
-				task.delay(0.55, function()
-					spark:Destroy()
-				end)
-				Sounds.playPitched("hit", 0.8 + i * 0.07)
-			end)
-		end
+		Picker.sparks(anvil, TENSION)
 	end
 
 	local function doUpgrade()
@@ -192,51 +148,20 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 		end)
 	end
 
-	-- Items that can be upgraded: equipped first, then the backpack.
-	local candidates = scope:Computed(function(use, s: Scope): { Instance }
-		local list = {}
-		local order = 0
-		local function add(location: string, key: string, candidate: Types.ItemInstance)
-			order += 1
-			table.insert(
-				list,
-				SelectableSlot(s, {
-					Id = `up:{location}:{key}`,
-					LayoutOrder = order,
-					Size = 56,
-					Item = candidate,
-					Selected = s:Computed(function(use2): boolean
-						local t = use2(props.Target)
-						return t ~= nil and t.location == location and t.key == key
-					end),
-					OnToggle = function()
-						props.Target:set({ location = location, key = key })
-						phase:set("idle")
-						resultText:set("")
-					end,
-				})
-			)
-		end
-		for slot, candidate in use(equipment) or {} do
-			local def = Items.get(candidate.id)
-			if slot ~= "backpack" and def and def.category == "equipment" then
-				add("eq", slot, candidate)
-			end
-		end
-		local keys = {}
-		for key in use(inventory) or {} do
-			table.insert(keys, tonumber(key) :: number)
-		end
-		table.sort(keys)
-		for _, index in keys do
-			local candidate = (use(inventory) :: any)[tostring(index)]
-			local def = Items.get(candidate.id)
-			if def and def.category == "equipment" then
-				add("inv", tostring(index), candidate)
-			end
-		end
-		return list
-	end)
+	-- Items that can be upgraded: equipped first, then the backpack (S134j: Picker, shared with Transmute).
+	local candidates = Picker.list(scope, {
+		Prefix = "up",
+		Target = props.Target,
+		Inventory = inventory,
+		Equipment = equipment,
+		Filter = function()
+			return true
+		end,
+		OnPick = function()
+			phase:set("idle")
+			resultText:set("")
+		end,
+	})
 
 	local chance = scope:Computed(function(use): number
 		local i = use(item)

@@ -390,6 +390,8 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 { uid = "GUID", id = "sword1h_30", rarity = 4, ilvl = 31, bonuses = { {stat="crit", v=3.2}, ... },
   up = 0, bound = false, n = 1 }  -- n: ilość (tylko stackowalne: mikstury, materiały, zwoje)
 ```
+- S134j: pole `rr = { i, n }` (przemiana premii, §6a): `i` = indeks jedynej linii `bonuses`, którą wolno przemieniać
+  (ustawia go pierwsza przemiana), `n` = liczba przemian (koszt). Bez migracji; odczyt tylko `Logic/Reroll.state`.
 - `ilvl` = poziom bazowy dropu − 0…2 (losowo, min 1; S32, `Data/LootRules`), nigdy wyżej niż poziom potwora, więc
   drop z potwora na poziomie gracza zawsze da się założyć (wcześniej ±2: 40% za wysoko). Poziom bazowy Elit i Elit II
   to poziom spawnera bez ich dodatkowych poziomów, przycięty do maksimum przedziału jaskini (nic z regionu 1 nie ma
@@ -524,6 +526,22 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   - +1…+3: Pył Esencji × (2N), +4…+6: Odłamek Esencji × N, +7…+9: Kryształ Esencji × (N−5). Legendarne i Mityczne zawsze dodatkowo 1 Rdzeń Legendy od +8 (S87, `Config.Upgrade.legendCoreFrom`, było od +7; zdolność `legendCore`).
 - UI ulepszania: przedmiot w środku, koszty, szansa w %, przycisk „Ulepsz”, checkbox Zwoju Ochrony. Animacja napięcia (ok. 1.5 s, iskry, narastający dźwięk) → wynik (złoty błysk sukcesu / pęknięcie przy porażce). Komunikat globalny dla +9 na legendzie.
 - Ulepszony przedmiot ma w nazwie `+N` i świecącą ramkę od +7.
+
+## 6a. Przemiana premii (kowal, S134j)
+
+- Zakładka „Przemiana” w oknie kowala (`BlacksmithWindow/Reroll`, `Logic/Reroll`, remote `RerollBonus`): gracz wybiera
+  przedmiot (broń, zbroja, biżuteria; plecak i założone) i **jedną losową dodatkową linię** premii (zwykłe linie
+  `bonuses`: Unikat 2, Heroiczny 3, Legendarny 3, Mityczny 3) i losuje ją od nowa.
+- **Pierwsza przemiana zamyka wybór:** ta linia zostaje linią przemiany (↻), odtąd na przedmiocie przemienia się tylko
+  ją; reszta zostaje na zawsze. Nie podlegają: baza, cecha broni, efekty legendarne i mityczne (`fx`), nazwane
+  przedmioty z bossów, Zwykły (bez linii).
+- Pula: pula przedmiotu (`ItemRoll.poolWeights`, klasa postaci, gdy przedmiot do niej pasuje) bez statystyk innych
+  linii i ich znaczników; obecna statystyka zostaje. Wartość jak przy upadku łupu (`rollBonusValue`). Przed zapłatą
+  okno pokazuje „Może wyjść” z szansą i zakresem; wynik zawsze zastępuje starą linię.
+- Koszt (`Config.Reroll`): pył 1 / 1 / 2 / 3 (Unikat / Heroiczny / Legendarny / Mityczny) + złoto ilvl × `k(ilvl)` ×
+  1,8 (krzywa złota ulepszania), każda kolejna próba na tym samym przedmiocie +25% (najwyżej ×3). Licznik i linia
+  idą z przedmiotem (handel, poczta, aukcje); przemiana nie zmienia wiązania, blokada sprzedaży jej nie blokuje.
+- **Kamień Przemiany** (sklep Smoczej Waluty, 1 dziennie, związany z kontem): płaci pył jednej próby, złoto zawsze.
 
 ## 7. Rozbijanie (kowal)
 

@@ -7,7 +7,9 @@
 -- strip (six tabs on a phone): Contracts (only once Data/Quests/Contracts has any, S99), Bosses (the four Slayer
 -- quests with their entry level, where to take them, progress and "Track", then the week's boss contract) and Weekly
 -- (the week's three contracts and the countdown to Monday 00:00 UTC). S99: the hunting contracts tab ("Hunting"):
--- done / 99, the backlog, the active or next contract with "Track" and where to hand it in, the next three.
+-- done / 99, the backlog, the active or next contract with "Track" and where to hand it in, the next three. S134k: every
+-- active contract grouped by hunting ground ("Track" / "Abandon"), the Hunter's Marks, "Accept all" / "Hand in all" at
+-- a giver (UI/NpcPresence) and the Huntmaster's shop, the contracts to take (folded) and the next three.
 -- S102: the story tab names the chapter over the active or next quest (story.chapter.<n>), lets the player read the
 -- offer pages again ("Recall the conversation", variants by earlier answers) and groups the story so far by chapter,
 -- one row per quest with "▶" to watch its cutscenes again (only scenes already watched; props.Replay).
@@ -21,6 +23,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local ContractActions = require(script.Parent.Parent.ContractActions)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Cutscenes = require(ReplicatedStorage.Shared.Logic.Cutscenes)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
@@ -28,6 +31,7 @@ local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
+local NpcPresence = require(script.Parent.Parent.NpcPresence)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestItemIcons = require(script.Parent.Parent.Components.QuestItemIcons)
@@ -53,6 +57,9 @@ export type Props = {
 	Track: (focus: QuestTrack.Focus) -> (),
 	ShowModal: (spec: Modal.Spec) -> (),
 	Replay: ((sceneId: string) -> ())?, -- S102: watch a story cutscene again (CutsceneController.Play)
+	-- S134k: the selected tab (QuestController opens the journal on "contract" at a giver) and the Huntmaster's shop
+	Tab: Fusion.Value<string>?,
+	OpenShop: (() -> ())?,
 }
 
 -- S102: whether a page key has text in both languages (page variants of `recall`).
@@ -143,7 +150,8 @@ local function contractRows(
 end
 
 local function QuestJournal(scope: Scope, props: Props): Fusion.Child
-	local tab = scope:Value("main")
+	local tab: Fusion.Value<string> = props.Tab or (scope:Value("main") :: any)
+	local availableOpen = scope:Value(false) -- S134k: the hunting contracts to take (folded)
 	local ids = tabIds()
 	local quests = State.Value({ "character", "quests" })
 	local level = State.Value({ "character", "level" })
@@ -685,8 +693,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				list
 			)
 		elseif use(tab) == "contract" then
-			-- S99: the hunting contracts: done / 99 and the backlog, the active one (objectives, rewards, "Track",
-			-- where to hand it in) or the next one, then the next three (a mark on every 10th)
+			-- S99 / S134k: the hunting contracts: done / 99, the Hunter's Marks, the active and finished counts; at a
+			-- giver "Accept all" / "Hand in all" (and the Huntmaster's shop), elsewhere where to go; the active contracts
+			-- grouped by map, then hunting ground (finished first, "Track" / "Abandon"), the ones to take (folded) and
+			-- the next three above the level
 			local lvl = use(level) or 1
 			local order = 0
 			local function add(item: Instance)
@@ -698,129 +708,274 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				return Text.get(use, key, args)
 			end
 			local state = Contracts.stateOf(q)
-			local allDone = Contracts.allDone(state)
-			local head = Text.get(use, "contract.doneCount", { done = state.done, max = Quests.Contracts.MAX_LEVEL })
-			local backlog = Contracts.backlog(state, lvl)
-			if backlog > 1 then
-				head ..= `   <font color="#9A9DA8">{Text.get(use, "contract.backlog", { n = backlog })}</font>`
-			end
-			add(label(s, 0, head, Theme.Fonts.Heading, 22, if allDone then Theme.Colors.Success else Theme.Colors.Gold))
-			if allDone then
+			local npcId = use(NpcPresence.Current)
+			local atGiver = npcId ~= nil and Contracts.isAnyGiver(npcId)
+			local active = Contracts.activeList(state)
+			local ready = Contracts.complete(state)
+			local head = Text.get(
+				use,
+				"contract.doneCount",
+				{ done = Contracts.doneCount(state), max = Quests.Contracts.MAX_LEVEL }
+			)
+			head ..= `   <font color="#9BC46A">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
+			add(label(s, 0, head, Theme.Fonts.Heading, 22, Theme.Colors.Gold))
+			add(
+				label(
+					s,
+					0,
+					Text.get(use, "contract.counts", { active = #active, ready = #ready }),
+					Theme.Fonts.BodyMedium,
+					16,
+					Theme.Colors.TextMuted
+				)
+			)
+			if Contracts.allDone(state) then
 				add(label(s, 0, Text.get(use, "contract.allDone"), Theme.Fonts.Body, 17, Theme.Colors.Success))
-				return list
 			end
-			local active, entry = Contracts.active(state)
-			local contract = active or Contracts.next(state)
-			if contract then
-				local canTake = active == nil and Contracts.canAccept(state, lvl)
-				local scout = Npcs.get(QuestText.contractScout(contract))
-				local scoutName = if scout then Text.get(use, scout.nameKey) else "?"
-				add(
-					label(
-						s,
-						0,
-						`<b>{QuestText.contractTitle(lookup, contract)}</b>`,
-						Theme.Fonts.BodyBold,
-						19,
-						if active or canTake then Theme.Colors.GoldBright else Theme.Colors.TextMuted
-					)
-				)
-				add(
-					label(
-						s,
-						0,
-						QuestText.contractAreaLine(use, contract, lvl),
-						Theme.Fonts.BodyMedium,
-						15,
-						Theme.Colors.Text
-					)
-				)
-				if active and entry then
-					local rows = QuestText.rows(use, contract.objectives, entry.progress)
-					add(
-						label(
-							s,
-							0,
-							table.concat(QuestText.richRows(use, rows, false), "\n"),
-							Theme.Fonts.BodyMedium,
-							16,
-							Theme.Colors.Text
-						)
-					)
-					add(QuestRewards(s, { Id = contract.id, Reward = contract.reward }))
-					add(Button(s, {
-						Size = UDim2.fromOffset(150, 40),
-						Variant = "secondary",
-						Text = s:Computed(function(use2): string
-							local focus = use2(props.Focus)
-							local tracked = use2(props.Tracked) and focus ~= nil and focus.kind == "contract"
-							return Text.get(use2, if tracked then "quest.untrack" else "quest.track")
-						end),
+			-- the giver's buttons (or where they are)
+			if atGiver and npcId then
+				local canTake = #Contracts.acceptable(state, lvl, npcId)
+				local canHand = #Contracts.ready(state, npcId)
+				local buttons: { any } = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						Padding = UDim.new(0, 8),
+						Wraps = true,
+					}),
+					Button(s, {
+						Size = UDim2.fromOffset(190, 40),
+						Variant = "primary",
+						Disabled = canTake == 0,
+						Text = Text.get(use, "contract.acceptAll", { n = canTake }),
 						OnClick = function()
-							local focus = Fusion.peek(props.Focus)
-							if focus and focus.kind == "contract" then
-								props.Track(nil)
-							else
-								props.Track({ kind = "contract" })
-							end
+							ContractActions.acceptAll(npcId)
 						end,
-					}))
-					add(
-						label(
-							s,
-							0,
-							Text.get(use, "contract.where", { scout = scoutName }),
-							Theme.Fonts.BodyBold,
-							16,
-							Theme.Colors.GoldBright
-						)
-					)
-				elseif canTake then
-					local rows = QuestText.rows(use, contract.objectives, nil)
-					add(
-						label(
-							s,
-							0,
-							table.concat(QuestText.richRows(use, rows, false), "\n"),
-							Theme.Fonts.BodyMedium,
-							16,
-							Theme.Colors.Text
-						)
-					)
-					add(QuestRewards(s, { Id = contract.id, Reward = contract.reward }))
-					add(
-						label(
-							s,
-							0,
-							Text.get(use, "contract.takeAt", { scout = scoutName }),
-							Theme.Fonts.BodyBold,
-							16,
-							Theme.Colors.GoldBright
-						)
-					)
-				else
-					add(
-						label(
-							s,
-							0,
-							Text.get(use, "contract.waiting", { level = contract.level }),
-							Theme.Fonts.Body,
-							17,
-							Theme.Colors.TextMuted
-						)
+					}),
+					Button(s, {
+						Size = UDim2.fromOffset(190, 40),
+						Variant = "primary",
+						Disabled = canHand == 0,
+						Text = Text.get(use, "contract.turnInAll", { n = canHand }),
+						OnClick = function()
+							ContractActions.turnInAll(npcId)
+						end,
+					}),
+				}
+				if npcId == Contracts.HUNTMASTER and props.OpenShop then
+					local open = props.OpenShop
+					table.insert(
+						buttons,
+						Button(s, {
+							Size = UDim2.fromOffset(190, 40),
+							Variant = "secondary",
+							Text = Text.get(use, "huntshop.title"),
+							OnClick = function()
+								open()
+							end,
+						})
 					)
 				end
+				add(s:New("Frame")({
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					[Children] = buttons :: any,
+				}))
+			else
+				add(
+					label(
+						s,
+						0,
+						Text.get(use, "contract.whereTurnIn"),
+						Theme.Fonts.BodyBold,
+						15,
+						Theme.Colors.GoldBright
+					)
+				)
 			end
-			local upcoming = Contracts.upcoming(state, 3)
+			-- the active contracts by map, then hunting ground (the world's order of maps; finished first)
+			type Group = { area: string, map: string, list: { Contracts.Taken } }
+			local groups: { Group } = {}
+			local byArea: { [string]: Group } = {}
+			for _, taken in active do
+				local g: Group? = byArea[taken.contract.area]
+				if not g then
+					local made: Group = { area = taken.contract.area, map = taken.contract.map, list = {} }
+					byArea[taken.contract.area] = made
+					table.insert(groups, made)
+					g = made
+				end
+				table.insert((g :: Group).list, taken)
+			end
+			local MAP_ORDER = { meadows = 1, duskwood = 2, ashen = 3, frostpeak = 4 }
+			table.sort(groups, function(a, b)
+				local ma, mb = MAP_ORDER[a.map] or 9, MAP_ORDER[b.map] or 9
+				if ma ~= mb then
+					return ma < mb
+				end
+				return a.list[1].contract.level < b.list[1].contract.level
+			end)
+			local focus = use(props.Focus)
+			local tracking = use(props.Tracked)
+			for _, g in groups do
+				table.sort(g.list, function(a, b)
+					local da, db = Contracts.isTakenComplete(a), Contracts.isTakenComplete(b)
+					if da ~= db then
+						return da
+					end
+					return a.contract.level < b.contract.level
+				end)
+				local area = Areas.areaById(g.area)
+				local groupHead = Text.get(use, "contract.group", {
+					area = if area then Text.get(use, area.nameKey) else "?",
+					lv = if area then `{area.lv[1]}–{area.lv[2]}` else "?",
+				}) .. `  <font color="#9A9DA8">({#g.list})</font>`
+				add(label(s, 0, groupHead, Theme.Fonts.Heading, 18, Theme.Colors.Gold))
+				for _, taken in g.list do
+					local contract = taken.contract
+					local done = Contracts.isTakenComplete(taken)
+					local tracked = tracking and focus ~= nil and focus.kind == "contract" and focus.id == contract.id
+					local mark = if done then `<font color="#4FD16B">✔</font>` else "◈"
+					local line = `{mark} <b>{QuestText.contractObjective(lookup, contract, taken.entry.progress[1] or 0)}</b>`
+						.. `  <font color="#9A9DA8">{Text.get(use, "contract.levelTag", { level = contract.level })}</font>`
+					add(s:New("Frame")({
+						Size = UDim2.fromScale(1, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundTransparency = 0.45,
+						[Children] = {
+							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+							s:New("UIPadding")({
+								PaddingLeft = UDim.new(0, 8),
+								PaddingRight = UDim.new(0, 8),
+								PaddingTop = UDim.new(0, 6),
+								PaddingBottom = UDim.new(0, 6),
+							}),
+							s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
+							label(
+								s,
+								1,
+								line,
+								Theme.Fonts.BodyMedium,
+								16,
+								if done then Theme.Colors.Success else Theme.Colors.Text
+							),
+							QuestRewards(
+								s,
+								{ Id = contract.id, Reward = contract.reward, SlotSize = 30, LayoutOrder = 2 }
+							),
+							s:New("Frame")({
+								LayoutOrder = 3,
+								Size = UDim2.new(1, 0, 0, 34),
+								BackgroundTransparency = 1,
+								[Children] = {
+									s:New("UIListLayout")({
+										FillDirection = Enum.FillDirection.Horizontal,
+										Padding = UDim.new(0, 8),
+									}),
+									Button(s, {
+										Size = UDim2.fromOffset(130, 34),
+										Variant = "secondary",
+										Text = Text.get(use, if tracked then "quest.untrack" else "quest.track"),
+										OnClick = function()
+											if tracked then
+												props.Track(nil)
+											else
+												props.Track({ kind = "contract", id = contract.id })
+											end
+										end,
+									}),
+									(
+											if done
+												then nil
+												else Button(s, {
+													Size = UDim2.fromOffset(130, 34),
+													Variant = "ghost",
+													Text = Text.get(use, "contract.abandon"),
+													OnClick = function()
+														props.ShowModal({
+															Title = Text.now("contract.abandonTitle"),
+															Message = Text.now("contract.abandonText", {
+																objective = QuestText.contractObjective(
+																	Text.now,
+																	contract
+																),
+															}),
+															ConfirmText = Text.now("contract.abandon"),
+															CancelText = Text.now("quest.back"),
+															Variant = "danger",
+															OnConfirm = function(): (boolean, string?)
+																local ok, err =
+																	Net.Invoke("ContractAbandon", contract.level)
+																if not ok then
+																	return false, Text.now(err or "error.internal")
+																end
+																return true, nil
+															end,
+														})
+													end,
+												})
+										) :: any,
+								} :: any,
+							}),
+						},
+					}))
+				end
+			end
+			-- to take (folded): every contract up to the level not taken yet
+			local eligible = Contracts.eligible(state, lvl)
+			if #eligible > 0 then
+				local open = use(availableOpen)
+				add(Button(s, {
+					Size = UDim2.new(1, 0, 0, 36),
+					Variant = "ghost",
+					Text = `{if open then "▾" else "▸"} {Text.get(use, "contract.available", { n = #eligible })}`,
+					OnClick = function()
+						availableOpen:set(not Fusion.peek(availableOpen))
+					end,
+				}))
+				if open then
+					for _, contract in eligible do
+						local here = atGiver and npcId ~= nil and Contracts.isGiver(npcId, contract)
+						local giver = npcId
+						add(s:New("Frame")({
+							Size = UDim2.new(1, 0, 0, 36),
+							BackgroundTransparency = 1,
+							[Children] = {
+								s:New("TextLabel")({
+									Size = UDim2.new(1, if here then -120 else 0, 1, 0),
+									BackgroundTransparency = 1,
+									Text = `{contract.level}. {QuestText.contractObjective(lookup, contract)}`,
+									TextWrapped = true,
+									TextTruncate = Enum.TextTruncate.AtEnd,
+									FontFace = Theme.Fonts.Body,
+									TextSize = 15,
+									TextColor3 = Theme.Colors.Text,
+									TextXAlignment = Enum.TextXAlignment.Left,
+								}),
+								(if here and giver
+									then Button(s, {
+										AnchorPoint = Vector2.new(1, 0.5),
+										Position = UDim2.fromScale(1, 0.5),
+										Size = UDim2.fromOffset(110, 32),
+										Variant = "secondary",
+										Text = Text.get(use, "contract.accept"),
+										OnClick = function()
+											ContractActions.acceptOne(giver, contract.level)
+										end,
+									})
+									else nil) :: any,
+							} :: any,
+						}))
+					end
+				end
+			end
+			-- the next three above the level (a mark on every 10th)
+			local upcoming = Contracts.upcoming(state, lvl, 3)
 			if #upcoming > 0 then
 				local lines = { `<b>{Text.get(use, "contract.upcoming")}</b>` }
 				for _, c in upcoming do
-					local area = Areas.areaById(c.area)
-					local line = Text.get(use, "contract.upcomingRow", {
-						level = c.level,
-						area = if area then Text.get(use, area.nameKey) else "?",
-						n = c.objectives[1].n,
-					})
+					local line = `{c.level}. {QuestText.contractObjective(lookup, c)}`
 					if c.reward.items then
 						line ..= `  <font color="#E8C25A">◆ {Text.get(use, "contract.milestone")}</font>`
 					end

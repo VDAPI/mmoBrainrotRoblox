@@ -122,6 +122,10 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 	if reward.gold > 0 then
 		add(chip(scope, 0, "gold", nil, Format.number(reward.gold), size))
 	end
+	-- S134k: the Hunter's Marks of a hunting contract
+	if (reward.marks or 0) > 0 then
+		add(chip(scope, 0, "huntmarks", nil, Format.number(reward.marks or 0), size))
+	end
 	for n, entry in (reward.items or {}) :: { { id: string, n: number } } do
 		if Items.get(entry.id) then
 			add(ItemSlot(scope, {

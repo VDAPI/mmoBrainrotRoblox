@@ -449,6 +449,7 @@ local Config = {
 	Quest = {
 		greyGap = 6,
 		contractBacklog = 3, -- S99: levels of backlog an existing character keeps at the first load after S99
+		trackerContracts = 3, -- S134k: hunting contracts on the HUD tracker (then "+N hunting contracts (J)")
 	},
 	-- Quest dialogue (S101b, DESIGN-15 §3.5): the only items an answer may give (`item` effect of Logic/Dialogue),
 	-- id -> at most this many in one gift, once per character and quest. Small consumables only: no equipment, no
@@ -720,6 +721,24 @@ local Config = {
 		underMax = 34,
 		-- Studs kept between the camera and a wall it would pass through.
 		wallMargin = 1.5,
+	},
+	-- S134j (docs/DESIGN.md §6a, Logic/Reroll): bonus reroll at the smith. Essence of one attempt by rarity, gold
+	-- ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), each earlier attempt on the item adds `growth`
+	-- to the multiplier, at most `growthCap` (gold rounded, essence rounded up). The Stone of Transmutation pays the
+	-- essence of one attempt, never the gold. S134j model (tests/Balance.targetsS134j): essence dust only (1 / 1 / 2 / 3
+	-- dust Unique / Heroic / Legendary / Mythic; shards or crystals put 10 attempts at 8-60 h of the level's grinding
+	-- essence, the sink at 5-15x the band's essence and one stone above 10% of 2 h; docs/DECYZJE.md S134j), goldMul 1.8;
+	-- growthCap 3 and Mythic 3 dust keep a stone used on a capped attempt (9 dust) under 10% of 2 h of grinding.
+	Reroll = {
+		essence = {
+			unique = { id = "essence_dust", n = 1 },
+			heroic = { id = "essence_dust", n = 1 },
+			legendary = { id = "essence_dust", n = 2 },
+			mythic = { id = "essence_dust", n = 3 },
+		},
+		goldMul = 1.8,
+		growth = 0.25,
+		growthCap = 3,
 	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,

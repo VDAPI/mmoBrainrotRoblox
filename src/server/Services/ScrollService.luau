@@ -1,7 +1,7 @@
 --!strict
 -- Scrolls (DESIGN §13): Oblivion (refund stat points; the active build set only, ROZWOJ 2.9), New Path (S57, ROZWOJ 2.10: never used up here; the client
 -- opens the main path choice and PathService takes the scroll on ChooseMainPath), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
--- blacksmith; using one from the backpack only explains that.
+-- blacksmith; using one from the backpack only explains that (S134j: the Stone of Transmutation too).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -38,6 +38,9 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 		return false, "paths.scroll.hint"
 	elseif target == "protection" then
 		return false, "scroll.protection.hint"
+	elseif target == "transmute" then
+		-- S134j: the Stone of Transmutation is taken by the blacksmith (Reroll tab), never used up here
+		return false, "item.reroll_stone.useHint"
 	elseif target == "unbind" then
 		-- The client opens the item picker and calls UnbindItem.
 		return false, "scroll.unbind.pick"

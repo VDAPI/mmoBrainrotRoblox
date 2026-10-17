@@ -3,7 +3,7 @@ title: Ulepszanie bez płaczu
 description: "Jak ulepszać przedmioty i nie tracić nerwów: szanse na każdy krok, co robi porażka, kiedy użyć Zwoju Ochrony i ile to kosztuje."
 key: upgrading
 order: 3
-updated: 2026-10-08
+updated: 2026-10-17
 tags: [Ulepszanie, Przedmioty]
 ---
 
@@ -26,6 +26,16 @@ Nieudana próba cofa przedmiot o jeden poziom: z +6 robi się +5. Przedmiot nie 
 ## Materiały
 
 Niższe poziomy kosztują <Item id="essence_dust" />, średnie <Item id="essence_shard" />, a najwyższe <Item id="essence_crystal" />. Przedmioty legendarne i mityczne na najwyższych poziomach potrzebują jeszcze <Item id="legend_core" />. Esencje dostajesz z rozbijania przedmiotów, z zadań i zleceń (zobacz <Link to="crafting" hash="dismantle">Rzemiosło</Link>).
+
+## Przemiana premii
+
+W zakładce „Przemiana” u kowala losujesz od nowa jedną dodatkową premię przedmiotu (broni, zbroi albo biżuterii, od Unikatu po Mityczny). Wybierasz linię, a kowal pokazuje, co może wyjść: każdą statystykę z puli przedmiotu z szansą i zakresem wartości. Może wyjść inna statystyka albo ta sama z nową wartością, nigdy taka, którą przedmiot już ma w innej linii.
+
+- Pierwsza przemiana zamyka wybór: odtąd na tym przedmiocie przemieniasz tylko tę linię, pozostałe zostają na zawsze.
+- Nie podlegają przemianie statystyki bazy, cecha broni, efekty legendarne i mityczne ani premie nazwanych przedmiotów z bossów.
+- Próba kosztuje złoto i trochę <Item id="essence_dust" />. Każda kolejna próba na tym samym przedmiocie jest droższa o <Stat path="upgrade.reroll.growth" format="frac" />, najwyżej <Stat path="upgrade.reroll.growthCap" format="x" /> pierwszej. Na przykład Heroiczny przedmiot na poziomie <Stat path="upgrade.reroll.levels.1" />: pierwsza próba <Stat path="upgrade.reroll.costs.45.heroic.0.gold" format="gold" />, dziesiąta <Stat path="upgrade.reroll.costs.45.heroic.2.gold" format="gold" />.
+- Licznik prób i zamknięta linia idą z przedmiotem przy handlu: kupujący płaci dalej tyle, ile poprzedni właściciel.
+- <Item id="reroll_stone" /> ze sklepu premium zastępuje esencję jednej próby (złoto płacisz zawsze), raz dziennie.
 
 ## Prosty plan
 

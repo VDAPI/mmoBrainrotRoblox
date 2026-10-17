@@ -1,6 +1,7 @@
 --!strict
 -- Hunting contracts (DESIGN-15 §3.3, S99): one kill contract per level 1-99 on a hunting ground that fits the
--- level. RULES are edited by hand; `list` is GENERATED from RULES and the hunting grounds (Data/Areas) by
+-- level; S134k: the target is one normal monster kind of that ground and the reward adds Hunter's Marks
+-- (several contracts active at once, Logic/Contracts). RULES are edited by hand; `list` is GENERATED from RULES and the hunting grounds (Data/Areas) by
 -- Logic/ContractGen: run `lune run tools/contracts_gen.luau`, then `lune run tools/quest_budget.luau`
 -- (tests/contracts.spec fails while the list is stale). A regenerated list may move an active contract to another
 -- area: the progress (a kill count) stays. The EXP share is Data/QuestBudget.TARGET.contract (one budget number).
@@ -25,8 +26,20 @@ local RULES = table.freeze({
 	-- grinds nothing there), so their contract EXP only carried into level 3 and clamped its monsterExpMul at MUL_MIN.
 	expFrom = 4,
 	minGroups = 4, -- hunting grounds with fewer monster groups are never picked
-	-- rotation weights (Logic/ContractGen.pick): never the previous area when another fits
-	penalty = { previous = 100, beforePrevious = 10, perUse = 2, sameProfile = 1 },
+	-- rotation weights (Logic/ContractGen.pick): never the previous area when another fits. S134k: then the monster
+	-- kind of the area (kindPrevious = the kind of L - 1, kindPerUse x the kind's uses so far; ties: the lower id)
+	penalty = { previous = 100, beforePrevious = 10, perUse = 2, sameProfile = 1, kindPrevious = 100, kindPerUse = 3 },
+	-- S134k: kills of the kind = max(minKindKills, round(kills x the kind's share of the area's normal monsters)). 6
+	-- (the start) made contracts 5 and 8 1.8-4.3 x as long as in S99; 4 keeps every level 4-99 <= 1.2 x (F time)
+	minKindKills = 4,
+	-- S134k: a kind under this share of the area's normal monsters is never the target while the area has another
+	-- (the Bandit of the Crow Field, 8 %: two kills there took 25 kills of the area)
+	minKindShare = 0.2,
+	-- S134k: Hunter's Marks per contract (Logic/Contracts.marksFor): base + per10 x floor(L / 10), + milestone every
+	-- 10th level; spent at the Huntmaster (Data/HuntShop + Logic/HuntShop)
+	marks = { base = 2, per10 = 1, milestone = 10 },
+	-- S134k: the cosmetic of the last contract (the title "Master of the Hunt", Data/Cosmetics obtain.quest)
+	finalCosmetic = "title_huntlord",
 	-- every 10th contract adds items (consumables only, never equipment; no backpacks: they are a gold sink)
 	milestones = {
 		[10] = items({ { id = "blessing_fortune_2", n = 1 }, { id = "stone_return", n = 3 } }),
@@ -53,8 +66,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_rabbitfields",
-		objectives = { { type = "kill", n = 10, area = "meadows_rabbitfields" } },
-		reward = { exp = 0, gold = 24 },
+		objectives = { { type = "kill", n = 4, monster = "rabbit", area = "meadows_rabbitfields" } },
+		reward = { exp = 0, gold = 24, marks = 2 },
 	},
 	{
 		id = "contract_2",
@@ -62,8 +75,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_rabbitfields",
-		objectives = { { type = "kill", n = 11, area = "meadows_rabbitfields" } },
-		reward = { exp = 0, gold = 28 },
+		objectives = { { type = "kill", n = 7, monster = "wolf", area = "meadows_rabbitfields" } },
+		reward = { exp = 0, gold = 28, marks = 2 },
 	},
 	{
 		id = "contract_3",
@@ -71,8 +84,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_wolfhills",
-		objectives = { { type = "kill", n = 12, area = "meadows_wolfhills" } },
-		reward = { exp = 0, gold = 32 },
+		objectives = { { type = "kill", n = 4, monster = "lynx", area = "meadows_wolfhills" } },
+		reward = { exp = 0, gold = 32, marks = 2 },
 	},
 	{
 		id = "contract_4",
@@ -80,8 +93,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_toadmire",
-		objectives = { { type = "kill", n = 13, area = "meadows_toadmire" } },
-		reward = { exp = 74, gold = 36 },
+		objectives = { { type = "kill", n = 8, monster = "swampToad", area = "meadows_toadmire" } },
+		reward = { exp = 74, gold = 36, marks = 2 },
 	},
 	{
 		id = "contract_5",
@@ -89,8 +102,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_wolfhills",
-		objectives = { { type = "kill", n = 14, area = "meadows_wolfhills" } },
-		reward = { exp = 109, gold = 40 },
+		objectives = { { type = "kill", n = 4, monster = "lynx", area = "meadows_wolfhills" } },
+		reward = { exp = 109, gold = 40, marks = 2 },
 	},
 	{
 		id = "contract_6",
@@ -98,8 +111,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_oldforest",
-		objectives = { { type = "kill", n = 16, area = "meadows_oldforest" } },
-		reward = { exp = 151, gold = 44 },
+		objectives = { { type = "kill", n = 8, monster = "boar", area = "meadows_oldforest" } },
+		reward = { exp = 151, gold = 44, marks = 2 },
 	},
 	{
 		id = "contract_7",
@@ -107,8 +120,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_toadmire",
-		objectives = { { type = "kill", n = 17, area = "meadows_toadmire" } },
-		reward = { exp = 200, gold = 48 },
+		objectives = { { type = "kill", n = 11, monster = "swampToad", area = "meadows_toadmire" } },
+		reward = { exp = 200, gold = 48, marks = 2 },
 	},
 	{
 		id = "contract_8",
@@ -116,8 +129,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_crowfield",
-		objectives = { { type = "kill", n = 18, area = "meadows_crowfield" } },
-		reward = { exp = 256, gold = 52 },
+		objectives = { { type = "kill", n = 8, monster = "carrionCrow", area = "meadows_crowfield" } },
+		reward = { exp = 256, gold = 52, marks = 2 },
 	},
 	{
 		id = "contract_9",
@@ -125,8 +138,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_oldforest",
-		objectives = { { type = "kill", n = 19, area = "meadows_oldforest" } },
-		reward = { exp = 319, gold = 56 },
+		objectives = { { type = "kill", n = 10, monster = "boar", area = "meadows_oldforest" } },
+		reward = { exp = 319, gold = 56, marks = 2 },
 	},
 	{
 		id = "contract_10",
@@ -134,11 +147,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_banditroad",
-		objectives = { { type = "kill", n = 20, area = "meadows_banditroad" } },
+		objectives = { { type = "kill", n = 14, monster = "bandit", area = "meadows_banditroad" } },
 		reward = {
 			exp = 388,
 			gold = 60,
 			items = { { id = "blessing_fortune_2", n = 1 }, { id = "stone_return", n = 3 } },
+			marks = 13,
 		},
 	},
 	{
@@ -147,8 +161,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_diggings",
-		objectives = { { type = "kill", n = 21, area = "meadows_diggings" } },
-		reward = { exp = 464, gold = 64 },
+		objectives = { { type = "kill", n = 13, monster = "goblinScout", area = "meadows_diggings" } },
+		reward = { exp = 464, gold = 64, marks = 3 },
 	},
 	{
 		id = "contract_12",
@@ -156,8 +170,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_crowfield",
-		objectives = { { type = "kill", n = 22, area = "meadows_crowfield" } },
-		reward = { exp = 546, gold = 68 },
+		objectives = { { type = "kill", n = 10, monster = "carrionCrow", area = "meadows_crowfield" } },
+		reward = { exp = 546, gold = 68, marks = 3 },
 	},
 	{
 		id = "contract_13",
@@ -165,8 +179,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_goblincamp",
-		objectives = { { type = "kill", n = 23, area = "meadows_goblincamp" } },
-		reward = { exp = 634, gold = 72 },
+		objectives = { { type = "kill", n = 10, monster = "koboldMiner", area = "meadows_goblincamp" } },
+		reward = { exp = 634, gold = 72, marks = 3 },
 	},
 	{
 		id = "contract_14",
@@ -174,8 +188,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_diggings",
-		objectives = { { type = "kill", n = 24, area = "meadows_diggings" } },
-		reward = { exp = 729, gold = 76 },
+		objectives = { { type = "kill", n = 15, monster = "goblinScout", area = "meadows_diggings" } },
+		reward = { exp = 729, gold = 76, marks = 3 },
 	},
 	{
 		id = "contract_15",
@@ -183,8 +197,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_goblincamp",
-		objectives = { { type = "kill", n = 25, area = "meadows_goblincamp" } },
-		reward = { exp = 831, gold = 80 },
+		objectives = { { type = "kill", n = 11, monster = "koboldMiner", area = "meadows_goblincamp" } },
+		reward = { exp = 831, gold = 80, marks = 3 },
 	},
 	{
 		id = "contract_16",
@@ -192,8 +206,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_bearridge",
-		objectives = { { type = "kill", n = 26, area = "meadows_bearridge" } },
-		reward = { exp = 938, gold = 84 },
+		objectives = { { type = "kill", n = 10, monster = "brownBear", area = "meadows_bearridge" } },
+		reward = { exp = 938, gold = 84, marks = 3 },
 	},
 	{
 		id = "contract_17",
@@ -201,8 +215,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_goblincamp",
-		objectives = { { type = "kill", n = 27, area = "meadows_goblincamp" } },
-		reward = { exp = 1052, gold = 88 },
+		objectives = { { type = "kill", n = 16, monster = "goblinScout", area = "meadows_goblincamp" } },
+		reward = { exp = 1052, gold = 88, marks = 3 },
 	},
 	{
 		id = "contract_18",
@@ -210,8 +224,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_bearridge",
-		objectives = { { type = "kill", n = 28, area = "meadows_bearridge" } },
-		reward = { exp = 1172, gold = 92 },
+		objectives = { { type = "kill", n = 11, monster = "brownBear", area = "meadows_bearridge" } },
+		reward = { exp = 1172, gold = 92, marks = 3 },
 	},
 	{
 		id = "contract_19",
@@ -219,8 +233,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "meadows",
 		area = "meadows_bearridge",
-		objectives = { { type = "kill", n = 29, area = "meadows_bearridge" } },
-		reward = { exp = 1298, gold = 96 },
+		objectives = { { type = "kill", n = 18, monster = "goblinScout", area = "meadows_bearridge" } },
+		reward = { exp = 1298, gold = 96, marks = 3 },
 	},
 	{
 		id = "contract_20",
@@ -228,11 +242,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_werethicket",
-		objectives = { { type = "kill", n = 30, area = "duskwood_werethicket" } },
+		objectives = { { type = "kill", n = 18, monster = "blackBear", area = "duskwood_werethicket" } },
 		reward = {
 			exp = 1430,
 			gold = 100,
 			items = { { id = "blessing_fortune_2", n = 1 }, { id = "stone_map", n = 2 } },
+			marks = 14,
 		},
 	},
 	{
@@ -241,8 +256,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_bearhollow",
-		objectives = { { type = "kill", n = 30, area = "duskwood_bearhollow" } },
-		reward = { exp = 1568, gold = 104 },
+		objectives = { { type = "kill", n = 16, monster = "werewolf", area = "duskwood_bearhollow" } },
+		reward = { exp = 1568, gold = 104, marks = 4 },
 	},
 	{
 		id = "contract_22",
@@ -250,8 +265,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_werethicket",
-		objectives = { { type = "kill", n = 31, area = "duskwood_werethicket" } },
-		reward = { exp = 1712, gold = 108 },
+		objectives = { { type = "kill", n = 19, monster = "blackBear", area = "duskwood_werethicket" } },
+		reward = { exp = 1712, gold = 108, marks = 4 },
 	},
 	{
 		id = "contract_23",
@@ -259,8 +274,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_bearhollow",
-		objectives = { { type = "kill", n = 31, area = "duskwood_bearhollow" } },
-		reward = { exp = 1863, gold = 112 },
+		objectives = { { type = "kill", n = 17, monster = "werewolf", area = "duskwood_bearhollow" } },
+		reward = { exp = 1863, gold = 112, marks = 4 },
 	},
 	{
 		id = "contract_24",
@@ -268,8 +283,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_ruins",
-		objectives = { { type = "kill", n = 32, area = "duskwood_ruins" } },
-		reward = { exp = 2019, gold = 116 },
+		objectives = { { type = "kill", n = 11, monster = "forestWraith", area = "duskwood_ruins" } },
+		reward = { exp = 2019, gold = 116, marks = 4 },
 	},
 	{
 		id = "contract_25",
@@ -277,8 +292,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_werethicket",
-		objectives = { { type = "kill", n = 32, area = "duskwood_werethicket" } },
-		reward = { exp = 2181, gold = 120 },
+		objectives = { { type = "kill", n = 19, monster = "blackBear", area = "duskwood_werethicket" } },
+		reward = { exp = 2181, gold = 120, marks = 4 },
 	},
 	{
 		id = "contract_26",
@@ -286,8 +301,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_heart",
-		objectives = { { type = "kill", n = 32, area = "duskwood_heart" } },
-		reward = { exp = 2349, gold = 124 },
+		objectives = { { type = "kill", n = 9, monster = "ghoul", area = "duskwood_heart" } },
+		reward = { exp = 2349, gold = 124, marks = 4 },
 	},
 	{
 		id = "contract_27",
@@ -295,8 +310,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_ruins",
-		objectives = { { type = "kill", n = 33, area = "duskwood_ruins" } },
-		reward = { exp = 2523, gold = 128 },
+		objectives = { { type = "kill", n = 11, monster = "forestWraith", area = "duskwood_ruins" } },
+		reward = { exp = 2523, gold = 128, marks = 4 },
 	},
 	{
 		id = "contract_28",
@@ -304,8 +319,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_heart",
-		objectives = { { type = "kill", n = 33, area = "duskwood_heart" } },
-		reward = { exp = 2703, gold = 132 },
+		objectives = { { type = "kill", n = 24, monster = "rotEnt", area = "duskwood_heart" } },
+		reward = { exp = 2703, gold = 132, marks = 4 },
 	},
 	{
 		id = "contract_29",
@@ -313,8 +328,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_cultvillage",
-		objectives = { { type = "kill", n = 33, area = "duskwood_cultvillage" } },
-		reward = { exp = 2889, gold = 136 },
+		objectives = { { type = "kill", n = 18, monster = "bogSerpent", area = "duskwood_cultvillage" } },
+		reward = { exp = 2889, gold = 136, marks = 4 },
 	},
 	{
 		id = "contract_30",
@@ -322,11 +337,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_crossroads",
-		objectives = { { type = "kill", n = 34, area = "duskwood_crossroads" } },
+		objectives = { { type = "kill", n = 19, monster = "darkCultist", area = "duskwood_crossroads" } },
 		reward = {
 			exp = 3081,
 			gold = 140,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_dungeon", n = 1 } },
+			marks = 15,
 		},
 	},
 	{
@@ -335,8 +351,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_heart",
-		objectives = { { type = "kill", n = 34, area = "duskwood_heart" } },
-		reward = { exp = 3279, gold = 144 },
+		objectives = { { type = "kill", n = 9, monster = "ghoul", area = "duskwood_heart" } },
+		reward = { exp = 3279, gold = 144, marks = 5 },
 	},
 	{
 		id = "contract_32",
@@ -344,8 +360,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_cultvillage",
-		objectives = { { type = "kill", n = 35, area = "duskwood_cultvillage" } },
-		reward = { exp = 3482, gold = 148 },
+		objectives = { { type = "kill", n = 19, monster = "bogSerpent", area = "duskwood_cultvillage" } },
+		reward = { exp = 3482, gold = 148, marks = 5 },
 	},
 	{
 		id = "contract_33",
@@ -353,8 +369,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_crossroads",
-		objectives = { { type = "kill", n = 35, area = "duskwood_crossroads" } },
-		reward = { exp = 3692, gold = 152 },
+		objectives = { { type = "kill", n = 19, monster = "darkCultist", area = "duskwood_crossroads" } },
+		reward = { exp = 3692, gold = 152, marks = 5 },
 	},
 	{
 		id = "contract_34",
@@ -362,8 +378,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_swamp",
-		objectives = { { type = "kill", n = 35, area = "duskwood_swamp" } },
-		reward = { exp = 3907, gold = 156 },
+		objectives = { { type = "kill", n = 10, monster = "marshWitch", area = "duskwood_swamp" } },
+		reward = { exp = 3907, gold = 156, marks = 5 },
 	},
 	{
 		id = "contract_35",
@@ -371,8 +387,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_cultvillage",
-		objectives = { { type = "kill", n = 36, area = "duskwood_cultvillage" } },
-		reward = { exp = 4127, gold = 160 },
+		objectives = { { type = "kill", n = 20, monster = "bogSerpent", area = "duskwood_cultvillage" } },
+		reward = { exp = 4127, gold = 160, marks = 5 },
 	},
 	{
 		id = "contract_36",
@@ -380,8 +396,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_witchmarsh",
-		objectives = { { type = "kill", n = 36, area = "duskwood_witchmarsh" } },
-		reward = { exp = 4354, gold = 164 },
+		objectives = { { type = "kill", n = 21, monster = "swampTroll", area = "duskwood_witchmarsh" } },
+		reward = { exp = 4354, gold = 164, marks = 5 },
 	},
 	{
 		id = "contract_37",
@@ -389,8 +405,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_swamp",
-		objectives = { { type = "kill", n = 36, area = "duskwood_swamp" } },
-		reward = { exp = 4586, gold = 168 },
+		objectives = { { type = "kill", n = 10, monster = "marshWitch", area = "duskwood_swamp" } },
+		reward = { exp = 4586, gold = 168, marks = 5 },
 	},
 	{
 		id = "contract_38",
@@ -398,8 +414,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_witchmarsh",
-		objectives = { { type = "kill", n = 37, area = "duskwood_witchmarsh" } },
-		reward = { exp = 4824, gold = 172 },
+		objectives = { { type = "kill", n = 21, monster = "swampTroll", area = "duskwood_witchmarsh" } },
+		reward = { exp = 4824, gold = 172, marks = 5 },
 	},
 	{
 		id = "contract_39",
@@ -407,8 +423,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_swamp",
-		objectives = { { type = "kill", n = 37, area = "duskwood_swamp" } },
-		reward = { exp = 5068, gold = 176 },
+		objectives = { { type = "kill", n = 10, monster = "marshWitch", area = "duskwood_swamp" } },
+		reward = { exp = 5068, gold = 176, marks = 5 },
 	},
 	{
 		id = "contract_40",
@@ -416,11 +432,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_bloodcliffs",
-		objectives = { { type = "kill", n = 38, area = "duskwood_bloodcliffs" } },
+		objectives = { { type = "kill", n = 19, monster = "bloodBat", area = "duskwood_bloodcliffs" } },
 		reward = {
 			exp = 5317,
 			gold = 180,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_map", n = 3 } },
+			marks = 16,
 		},
 	},
 	{
@@ -429,8 +446,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_witchmarsh",
-		objectives = { { type = "kill", n = 38, area = "duskwood_witchmarsh" } },
-		reward = { exp = 5573, gold = 184 },
+		objectives = { { type = "kill", n = 22, monster = "swampTroll", area = "duskwood_witchmarsh" } },
+		reward = { exp = 5573, gold = 184, marks = 6 },
 	},
 	{
 		id = "contract_42",
@@ -438,8 +455,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_bloodcliffs",
-		objectives = { { type = "kill", n = 38, area = "duskwood_bloodcliffs" } },
-		reward = { exp = 5833, gold = 188 },
+		objectives = { { type = "kill", n = 19, monster = "bloodBat", area = "duskwood_bloodcliffs" } },
+		reward = { exp = 5833, gold = 188, marks = 6 },
 	},
 	{
 		id = "contract_43",
@@ -447,8 +464,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_witchmarsh",
-		objectives = { { type = "kill", n = 39, area = "duskwood_witchmarsh" } },
-		reward = { exp = 6100, gold = 192 },
+		objectives = { { type = "kill", n = 17, monster = "marshWitch", area = "duskwood_witchmarsh" } },
+		reward = { exp = 6100, gold = 192, marks = 6 },
 	},
 	{
 		id = "contract_44",
@@ -456,8 +473,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "duskwood",
 		area = "duskwood_bloodcliffs",
-		objectives = { { type = "kill", n = 39, area = "duskwood_bloodcliffs" } },
-		reward = { exp = 6372, gold = 196 },
+		objectives = { { type = "kill", n = 20, monster = "bloodBat", area = "duskwood_bloodcliffs" } },
+		reward = { exp = 6372, gold = 196, marks = 6 },
 	},
 	{
 		id = "contract_45",
@@ -465,8 +482,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_flats",
-		objectives = { { type = "kill", n = 39, area = "ashen_flats" } },
-		reward = { exp = 6649, gold = 200 },
+		objectives = { { type = "kill", n = 23, monster = "salamander", area = "ashen_flats" } },
+		reward = { exp = 6649, gold = 200, marks = 6 },
 	},
 	{
 		id = "contract_46",
@@ -474,8 +491,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_oasis",
-		objectives = { { type = "kill", n = 40, area = "ashen_oasis" } },
-		reward = { exp = 6933, gold = 204 },
+		objectives = { { type = "kill", n = 25, monster = "ashVulture", area = "ashen_oasis" } },
+		reward = { exp = 6933, gold = 204, marks = 6 },
 	},
 	{
 		id = "contract_47",
@@ -483,8 +500,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_flats",
-		objectives = { { type = "kill", n = 40, area = "ashen_flats" } },
-		reward = { exp = 7222, gold = 208 },
+		objectives = { { type = "kill", n = 16, monster = "wasteHyena", area = "ashen_flats" } },
+		reward = { exp = 7222, gold = 208, marks = 6 },
 	},
 	{
 		id = "contract_48",
@@ -492,8 +509,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_warcamp",
-		objectives = { { type = "kill", n = 41, area = "ashen_warcamp" } },
-		reward = { exp = 7516, gold = 212 },
+		objectives = { { type = "kill", n = 26, monster = "ashOrc", area = "ashen_warcamp" } },
+		reward = { exp = 7516, gold = 212, marks = 6 },
 	},
 	{
 		id = "contract_49",
@@ -501,8 +518,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_oasis",
-		objectives = { { type = "kill", n = 41, area = "ashen_oasis" } },
-		reward = { exp = 7816, gold = 216 },
+		objectives = { { type = "kill", n = 25, monster = "ashVulture", area = "ashen_oasis" } },
+		reward = { exp = 7816, gold = 216, marks = 6 },
 	},
 	{
 		id = "contract_50",
@@ -510,11 +527,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_flats",
-		objectives = { { type = "kill", n = 41, area = "ashen_flats" } },
+		objectives = { { type = "kill", n = 24, monster = "salamander", area = "ashen_flats" } },
 		reward = {
 			exp = 8122,
 			gold = 220,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_dungeon", n = 2 } },
+			marks = 17,
 		},
 	},
 	{
@@ -523,8 +541,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_warcamp",
-		objectives = { { type = "kill", n = 42, area = "ashen_warcamp" } },
-		reward = { exp = 8433, gold = 224 },
+		objectives = { { type = "kill", n = 27, monster = "ashOrc", area = "ashen_warcamp" } },
+		reward = { exp = 8433, gold = 224, marks = 7 },
 	},
 	{
 		id = "contract_52",
@@ -532,8 +550,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_golemfields",
-		objectives = { { type = "kill", n = 42, area = "ashen_golemfields" } },
-		reward = { exp = 8749, gold = 228 },
+		objectives = { { type = "kill", n = 17, monster = "fireGolem", area = "ashen_golemfields" } },
+		reward = { exp = 8749, gold = 228, marks = 7 },
 	},
 	{
 		id = "contract_53",
@@ -541,8 +559,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_warcamp",
-		objectives = { { type = "kill", n = 43, area = "ashen_warcamp" } },
-		reward = { exp = 9072, gold = 232 },
+		objectives = { { type = "kill", n = 28, monster = "ashOrc", area = "ashen_warcamp" } },
+		reward = { exp = 9072, gold = 232, marks = 7 },
 	},
 	{
 		id = "contract_54",
@@ -550,8 +568,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_golemfields",
-		objectives = { { type = "kill", n = 43, area = "ashen_golemfields" } },
-		reward = { exp = 9399, gold = 236 },
+		objectives = { { type = "kill", n = 26, monster = "fireImp", area = "ashen_golemfields" } },
+		reward = { exp = 9399, gold = 236, marks = 7 },
 	},
 	{
 		id = "contract_55",
@@ -559,8 +577,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_burntruins",
-		objectives = { { type = "kill", n = 43, area = "ashen_burntruins" } },
-		reward = { exp = 9733, gold = 240 },
+		objectives = { { type = "kill", n = 34, monster = "desertScorpion", area = "ashen_burntruins" } },
+		reward = { exp = 9733, gold = 240, marks = 7 },
 	},
 	{
 		id = "contract_56",
@@ -568,8 +586,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_dunes",
-		objectives = { { type = "kill", n = 44, area = "ashen_dunes" } },
-		reward = { exp = 10071, gold = 244 },
+		objectives = { { type = "kill", n = 15, monster = "desertMummy", area = "ashen_dunes" } },
+		reward = { exp = 10071, gold = 244, marks = 7 },
 	},
 	{
 		id = "contract_57",
@@ -577,8 +595,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_golemfields",
-		objectives = { { type = "kill", n = 44, area = "ashen_golemfields" } },
-		reward = { exp = 10416, gold = 248 },
+		objectives = { { type = "kill", n = 18, monster = "fireGolem", area = "ashen_golemfields" } },
+		reward = { exp = 10416, gold = 248, marks = 7 },
 	},
 	{
 		id = "contract_58",
@@ -586,8 +604,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_burntruins",
-		objectives = { { type = "kill", n = 44, area = "ashen_burntruins" } },
-		reward = { exp = 10765, gold = 252 },
+		objectives = { { type = "kill", n = 35, monster = "desertScorpion", area = "ashen_burntruins" } },
+		reward = { exp = 10765, gold = 252, marks = 7 },
 	},
 	{
 		id = "contract_59",
@@ -595,8 +613,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_dunes",
-		objectives = { { type = "kill", n = 45, area = "ashen_dunes" } },
-		reward = { exp = 11120, gold = 256 },
+		objectives = { { type = "kill", n = 15, monster = "desertMummy", area = "ashen_dunes" } },
+		reward = { exp = 11120, gold = 256, marks = 7 },
 	},
 	{
 		id = "contract_60",
@@ -604,11 +622,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_crags",
-		objectives = { { type = "kill", n = 45, area = "ashen_crags" } },
+		objectives = { { type = "kill", n = 43, monster = "basilisk", area = "ashen_crags" } },
 		reward = {
 			exp = 11481,
 			gold = 260,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_map", n = 4 } },
+			marks = 18,
 		},
 	},
 	{
@@ -617,8 +636,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_ashroad",
-		objectives = { { type = "kill", n = 46, area = "ashen_ashroad" } },
-		reward = { exp = 11847, gold = 264 },
+		objectives = { { type = "kill", n = 36, monster = "wyvern", area = "ashen_ashroad" } },
+		reward = { exp = 11847, gold = 264, marks = 8 },
 	},
 	{
 		id = "contract_62",
@@ -626,8 +645,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_dunes",
-		objectives = { { type = "kill", n = 46, area = "ashen_dunes" } },
-		reward = { exp = 12219, gold = 268 },
+		objectives = { { type = "kill", n = 15, monster = "desertMummy", area = "ashen_dunes" } },
+		reward = { exp = 12219, gold = 268, marks = 8 },
 	},
 	{
 		id = "contract_63",
@@ -635,8 +654,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_crags",
-		objectives = { { type = "kill", n = 46, area = "ashen_crags" } },
-		reward = { exp = 12596, gold = 272 },
+		objectives = { { type = "kill", n = 44, monster = "basilisk", area = "ashen_crags" } },
+		reward = { exp = 12596, gold = 272, marks = 8 },
 	},
 	{
 		id = "contract_64",
@@ -644,8 +663,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_ashroad",
-		objectives = { { type = "kill", n = 47, area = "ashen_ashroad" } },
-		reward = { exp = 12978, gold = 276 },
+		objectives = { { type = "kill", n = 37, monster = "wyvern", area = "ashen_ashroad" } },
+		reward = { exp = 12978, gold = 276, marks = 8 },
 	},
 	{
 		id = "contract_65",
@@ -653,8 +672,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_crags",
-		objectives = { { type = "kill", n = 47, area = "ashen_crags" } },
-		reward = { exp = 13366, gold = 280 },
+		objectives = { { type = "kill", n = 45, monster = "basilisk", area = "ashen_crags" } },
+		reward = { exp = 13366, gold = 280, marks = 8 },
 	},
 	{
 		id = "contract_66",
@@ -662,8 +681,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_tombs",
-		objectives = { { type = "kill", n = 47, area = "ashen_tombs" } },
-		reward = { exp = 13759, gold = 284 },
+		objectives = { { type = "kill", n = 19, monster = "desertMummy", area = "ashen_tombs" } },
+		reward = { exp = 13759, gold = 284, marks = 8 },
 	},
 	{
 		id = "contract_67",
@@ -671,8 +690,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_ashroad",
-		objectives = { { type = "kill", n = 48, area = "ashen_ashroad" } },
-		reward = { exp = 14158, gold = 288 },
+		objectives = { { type = "kill", n = 37, monster = "wyvern", area = "ashen_ashroad" } },
+		reward = { exp = 14158, gold = 288, marks = 8 },
 	},
 	{
 		id = "contract_68",
@@ -680,8 +699,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_tombs",
-		objectives = { { type = "kill", n = 48, area = "ashen_tombs" } },
-		reward = { exp = 14562, gold = 292 },
+		objectives = { { type = "kill", n = 29, monster = "basilisk", area = "ashen_tombs" } },
+		reward = { exp = 14562, gold = 292, marks = 8 },
 	},
 	{
 		id = "contract_69",
@@ -689,8 +708,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "ashen",
 		area = "ashen_ashroad",
-		objectives = { { type = "kill", n = 49, area = "ashen_ashroad" } },
-		reward = { exp = 14971, gold = 296 },
+		objectives = { { type = "kill", n = 38, monster = "wyvern", area = "ashen_ashroad" } },
+		reward = { exp = 14971, gold = 296, marks = 8 },
 	},
 	{
 		id = "contract_70",
@@ -698,11 +717,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_valley",
-		objectives = { { type = "kill", n = 49, area = "frostpeak_valley" } },
+		objectives = { { type = "kill", n = 35, monster = "iceWolf", area = "frostpeak_valley" } },
 		reward = {
 			exp = 15386,
 			gold = 300,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_dungeon", n = 2 } },
+			marks = 19,
 		},
 	},
 	{
@@ -711,8 +731,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_slopes",
-		objectives = { { type = "kill", n = 49, area = "frostpeak_slopes" } },
-		reward = { exp = 15806, gold = 304 },
+		objectives = { { type = "kill", n = 18, monster = "snowLeopard", area = "frostpeak_slopes" } },
+		reward = { exp = 15806, gold = 304, marks = 9 },
 	},
 	{
 		id = "contract_72",
@@ -720,8 +740,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_valley",
-		objectives = { { type = "kill", n = 50, area = "frostpeak_valley" } },
-		reward = { exp = 16231, gold = 308 },
+		objectives = { { type = "kill", n = 36, monster = "iceWolf", area = "frostpeak_valley" } },
+		reward = { exp = 16231, gold = 308, marks = 9 },
 	},
 	{
 		id = "contract_73",
@@ -729,8 +749,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_slopes",
-		objectives = { { type = "kill", n = 50, area = "frostpeak_slopes" } },
-		reward = { exp = 16662, gold = 312 },
+		objectives = { { type = "kill", n = 32, monster = "yeti", area = "frostpeak_slopes" } },
+		reward = { exp = 16662, gold = 312, marks = 9 },
 	},
 	{
 		id = "contract_74",
@@ -738,8 +758,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_valley",
-		objectives = { { type = "kill", n = 51, area = "frostpeak_valley" } },
-		reward = { exp = 17098, gold = 316 },
+		objectives = { { type = "kill", n = 14, monster = "snowLeopard", area = "frostpeak_valley" } },
+		reward = { exp = 17098, gold = 316, marks = 9 },
 	},
 	{
 		id = "contract_75",
@@ -747,8 +767,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_slopes",
-		objectives = { { type = "kill", n = 51, area = "frostpeak_slopes" } },
-		reward = { exp = 17540, gold = 320 },
+		objectives = { { type = "kill", n = 32, monster = "yeti", area = "frostpeak_slopes" } },
+		reward = { exp = 17540, gold = 320, marks = 9 },
 	},
 	{
 		id = "contract_76",
@@ -756,8 +776,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_harpyrocks",
-		objectives = { { type = "kill", n = 51, area = "frostpeak_harpyrocks" } },
-		reward = { exp = 17987, gold = 324 },
+		objectives = { { type = "kill", n = 43, monster = "peakHarpy", area = "frostpeak_harpyrocks" } },
+		reward = { exp = 17987, gold = 324, marks = 9 },
 	},
 	{
 		id = "contract_77",
@@ -765,8 +785,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_slopes",
-		objectives = { { type = "kill", n = 52, area = "frostpeak_slopes" } },
-		reward = { exp = 18439, gold = 328 },
+		objectives = { { type = "kill", n = 19, monster = "snowLeopard", area = "frostpeak_slopes" } },
+		reward = { exp = 18439, gold = 328, marks = 9 },
 	},
 	{
 		id = "contract_78",
@@ -774,8 +794,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_pass",
-		objectives = { { type = "kill", n = 52, area = "frostpeak_pass" } },
-		reward = { exp = 18896, gold = 332 },
+		objectives = { { type = "kill", n = 38, monster = "frostGiant", area = "frostpeak_pass" } },
+		reward = { exp = 18896, gold = 332, marks = 9 },
 	},
 	{
 		id = "contract_79",
@@ -783,8 +803,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_harpyrocks",
-		objectives = { { type = "kill", n = 52, area = "frostpeak_harpyrocks" } },
-		reward = { exp = 19359, gold = 336 },
+		objectives = { { type = "kill", n = 44, monster = "peakHarpy", area = "frostpeak_harpyrocks" } },
+		reward = { exp = 19359, gold = 336, marks = 9 },
 	},
 	{
 		id = "contract_80",
@@ -792,11 +812,12 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_slopes",
-		objectives = { { type = "kill", n = 53, area = "frostpeak_slopes" } },
+		objectives = { { type = "kill", n = 34, monster = "yeti", area = "frostpeak_slopes" } },
 		reward = {
 			exp = 19827,
 			gold = 340,
 			items = { { id = "blessing_fortune_3", n = 1 }, { id = "stone_map", n = 5 } },
+			marks = 20,
 		},
 	},
 	{
@@ -805,8 +826,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_pass",
-		objectives = { { type = "kill", n = 53, area = "frostpeak_pass" } },
-		reward = { exp = 20301, gold = 344 },
+		objectives = { { type = "kill", n = 39, monster = "frostGiant", area = "frostpeak_pass" } },
+		reward = { exp = 20301, gold = 344, marks = 10 },
 	},
 	{
 		id = "contract_82",
@@ -814,8 +835,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_tundra",
-		objectives = { { type = "kill", n = 54, area = "frostpeak_tundra" } },
-		reward = { exp = 20779, gold = 348 },
+		objectives = { { type = "kill", n = 20, monster = "iceMammoth", area = "frostpeak_tundra" } },
+		reward = { exp = 20779, gold = 348, marks = 10 },
 	},
 	{
 		id = "contract_83",
@@ -823,8 +844,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_lake",
-		objectives = { { type = "kill", n = 54, area = "frostpeak_lake" } },
-		reward = { exp = 21263, gold = 352 },
+		objectives = { { type = "kill", n = 29, monster = "iceElemental", area = "frostpeak_lake" } },
+		reward = { exp = 21263, gold = 352, marks = 10 },
 	},
 	{
 		id = "contract_84",
@@ -832,8 +853,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_pass",
-		objectives = { { type = "kill", n = 54, area = "frostpeak_pass" } },
-		reward = { exp = 21752, gold = 356 },
+		objectives = { { type = "kill", n = 39, monster = "frostGiant", area = "frostpeak_pass" } },
+		reward = { exp = 21752, gold = 356, marks = 10 },
 	},
 	{
 		id = "contract_85",
@@ -841,8 +862,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_tundra",
-		objectives = { { type = "kill", n = 55, area = "frostpeak_tundra" } },
-		reward = { exp = 22247, gold = 360 },
+		objectives = { { type = "kill", n = 21, monster = "iceMammoth", area = "frostpeak_tundra" } },
+		reward = { exp = 22247, gold = 360, marks = 10 },
 	},
 	{
 		id = "contract_86",
@@ -850,8 +871,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_lake",
-		objectives = { { type = "kill", n = 55, area = "frostpeak_lake" } },
-		reward = { exp = 22747, gold = 364 },
+		objectives = { { type = "kill", n = 29, monster = "iceElemental", area = "frostpeak_lake" } },
+		reward = { exp = 22747, gold = 364, marks = 10 },
 	},
 	{
 		id = "contract_87",
@@ -859,8 +880,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_temple",
-		objectives = { { type = "kill", n = 55, area = "frostpeak_temple" } },
-		reward = { exp = 23252, gold = 368 },
+		objectives = { { type = "kill", n = 23, monster = "dragonspawn", area = "frostpeak_temple" } },
+		reward = { exp = 23252, gold = 368, marks = 10 },
 	},
 	{
 		id = "contract_88",
@@ -868,8 +889,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_icewatch",
-		objectives = { { type = "kill", n = 56, area = "frostpeak_icewatch" } },
-		reward = { exp = 23762, gold = 372 },
+		objectives = { { type = "kill", n = 15, monster = "frozenKnight", area = "frostpeak_icewatch" } },
+		reward = { exp = 23762, gold = 372, marks = 10 },
 	},
 	{
 		id = "contract_89",
@@ -877,8 +898,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_lake",
-		objectives = { { type = "kill", n = 56, area = "frostpeak_lake" } },
-		reward = { exp = 24277, gold = 376 },
+		objectives = { { type = "kill", n = 30, monster = "iceElemental", area = "frostpeak_lake" } },
+		reward = { exp = 24277, gold = 376, marks = 10 },
 	},
 	{
 		id = "contract_90",
@@ -886,7 +907,7 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_temple",
-		objectives = { { type = "kill", n = 57, area = "frostpeak_temple" } },
+		objectives = { { type = "kill", n = 24, monster = "dragonspawn", area = "frostpeak_temple" } },
 		reward = {
 			exp = 24798,
 			gold = 380,
@@ -895,6 +916,7 @@ local LIST: { Types.ContractQuest } = {
 				{ id = "stone_dungeon", n = 3 },
 				{ id = "essence_dust", n = 10 },
 			},
+			marks = 21,
 		},
 	},
 	{
@@ -903,8 +925,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_icewatch",
-		objectives = { { type = "kill", n = 57, area = "frostpeak_icewatch" } },
-		reward = { exp = 25324, gold = 384 },
+		objectives = { { type = "kill", n = 16, monster = "frozenKnight", area = "frostpeak_icewatch" } },
+		reward = { exp = 25324, gold = 384, marks = 11 },
 	},
 	{
 		id = "contract_92",
@@ -912,8 +934,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_temple",
-		objectives = { { type = "kill", n = 57, area = "frostpeak_temple" } },
-		reward = { exp = 25855, gold = 388 },
+		objectives = { { type = "kill", n = 24, monster = "dragonspawn", area = "frostpeak_temple" } },
+		reward = { exp = 25855, gold = 388, marks = 11 },
 	},
 	{
 		id = "contract_93",
@@ -921,8 +943,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_icewatch",
-		objectives = { { type = "kill", n = 58, area = "frostpeak_icewatch" } },
-		reward = { exp = 26392, gold = 392 },
+		objectives = { { type = "kill", n = 16, monster = "frozenKnight", area = "frostpeak_icewatch" } },
+		reward = { exp = 26392, gold = 392, marks = 11 },
 	},
 	{
 		id = "contract_94",
@@ -930,8 +952,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_wyrmspire",
-		objectives = { { type = "kill", n = 58, area = "frostpeak_wyrmspire" } },
-		reward = { exp = 26934, gold = 396 },
+		objectives = { { type = "kill", n = 58, monster = "dragonspawn", area = "frostpeak_wyrmspire" } },
+		reward = { exp = 26934, gold = 396, marks = 11 },
 	},
 	{
 		id = "contract_95",
@@ -939,8 +961,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_temple",
-		objectives = { { type = "kill", n = 58, area = "frostpeak_temple" } },
-		reward = { exp = 27480, gold = 400 },
+		objectives = { { type = "kill", n = 34, monster = "frozenKnight", area = "frostpeak_temple" } },
+		reward = { exp = 27480, gold = 400, marks = 11 },
 	},
 	{
 		id = "contract_96",
@@ -948,8 +970,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_icewatch",
-		objectives = { { type = "kill", n = 59, area = "frostpeak_icewatch" } },
-		reward = { exp = 28032, gold = 404 },
+		objectives = { { type = "kill", n = 43, monster = "iceElemental", area = "frostpeak_icewatch" } },
+		reward = { exp = 28032, gold = 404, marks = 11 },
 	},
 	{
 		id = "contract_97",
@@ -957,8 +979,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_wyrmspire",
-		objectives = { { type = "kill", n = 59, area = "frostpeak_wyrmspire" } },
-		reward = { exp = 28590, gold = 408 },
+		objectives = { { type = "kill", n = 59, monster = "dragonspawn", area = "frostpeak_wyrmspire" } },
+		reward = { exp = 28590, gold = 408, marks = 11 },
 	},
 	{
 		id = "contract_98",
@@ -966,8 +988,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_icewatch",
-		objectives = { { type = "kill", n = 60, area = "frostpeak_icewatch" } },
-		reward = { exp = 29152, gold = 412 },
+		objectives = { { type = "kill", n = 16, monster = "frozenKnight", area = "frostpeak_icewatch" } },
+		reward = { exp = 29152, gold = 412, marks = 11 },
 	},
 	{
 		id = "contract_99",
@@ -975,8 +997,8 @@ local LIST: { Types.ContractQuest } = {
 		category = "contract",
 		map = "frostpeak",
 		area = "frostpeak_wyrmspire",
-		objectives = { { type = "kill", n = 60, area = "frostpeak_wyrmspire" } },
-		reward = { exp = 29720, gold = 416 },
+		objectives = { { type = "kill", n = 60, monster = "dragonspawn", area = "frostpeak_wyrmspire" } },
+		reward = { exp = 29720, gold = 416, marks = 11, cosmetic = "title_huntlord" },
 	},
 }
 -- END GENERATED

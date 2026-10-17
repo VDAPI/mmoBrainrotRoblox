@@ -348,7 +348,12 @@ local function onDrop(from: string, to: string)
 	elseif fromKind == "inv" and toKind == "trade" then
 		invoke("TradeAddItem", tonumber(fromRest))
 	elseif (fromKind == "inv" or fromKind == "eq") and toKind == "smith" then
-		NpcController.SetUpgradeTarget(fromKind, fromRest)
+		-- S134j: the Transmute tab's anvil ("smith:reroll") sets its own target
+		if toRest == "reroll" then
+			NpcController.SetRerollTarget(fromKind, fromRest)
+		else
+			NpcController.SetUpgradeTarget(fromKind, fromRest)
+		end
 	elseif fromKind == "inv" and toKind == "pot" then
 		local item = ItemController.ItemAt(from)
 		local def = item and Items.get(item.id)

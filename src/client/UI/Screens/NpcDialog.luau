@@ -168,10 +168,15 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 			order += 1
 			local style = MARK[row.mode]
 			local contract = if row.kind == "contract" then Quests.Contracts.get(row.id) else nil
-			local title = if contract
-				then QuestText.contractTitle(function(key: string, args: { [string]: any }?): string
-					return Text.get(use, key, args)
-				end, contract)
+			-- S134k: several hunting contracts in one row ("Hunting contracts: 4")
+			local title = if contract and (row.count or 1) > 1
+				then Text.get(use, "contract.titleMany", { n = row.count })
+				elseif contract then QuestText.contractTitle(
+					function(key: string, args: { [string]: any }?): string
+						return Text.get(use, key, args)
+					end,
+					contract
+				)
 				else Text.get(use, `quest.{row.id}.title`)
 			local suffix = if row.mode == "later"
 				then `  ({Text.get(use, "quest.fromLevel", { level = NpcQuests.minLevel(row) })})`

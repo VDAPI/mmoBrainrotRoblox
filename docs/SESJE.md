@@ -11423,3 +11423,172 @@ mapa, i18n, „Walka”), `wiki/public/img/maps/*.svg`, `docs/{DESIGN,SILNIKI,BA
 - Czy kryjówki mają być czerwoną strefą jak jaskinie (dziś strefa mapy)?
 - Elita II kryjówki wraca ×1,5 wolniej niż w jaskini (7–17 min); krótszy powrót przekroczy cel tempa pasma ×1,35.
 - Ikona `mapa/map_lair` czeka na obrazek (dziś znak ☠).
+
+### S134j: przemiana premii przedmiotu u kowala, Kamień Przemiany
+
+Prośba właściciela (2026-10-15): przemiana jak zaklinanie w Diablo. U kowala gracz wybiera jedną losową dodatkową
+linię premii (broń, zbroja, biżuteria; Unikat, Heroiczny, Legendarny i Mityczny) i losuje ją od nowa z puli przedmiotu;
+pierwsza przemiana zamyka wybór na tej linii. Każda próba na tym samym przedmiocie droższa; Kamień Przemiany ze sklepu
+Smoczej Waluty płaci esencję jednej próby, raz dziennie.
+
+**Co zrobiono**
+- Logika: `Logic/Reroll` (czysta): `state` z ochroną typów, `eligible`, `canLine`, `classFor`, `pool` (wagi
+  `ItemRoll.poolWeights` bez pozostałych linii i ich znaczników), `roll` (serwerowe `rng`, `ItemRoll.expandParam`,
+  `rollBonusValue`), `apply` (tylko `bonuses[index]` i `rr`), `preview` (szanse i zakresy × `lineMultiplier`, kolejność
+  grup opisu), `growth`, `costAt`, `cost`, `costWithStone`. Pole `ItemInstance.rr = { i, n }` bez migracji.
+  `Logic/StatGroups` (grupy opisu wyjęte z `TooltipModel`), `ItemRoll.expandParam` publiczne, `BonusLine.at`.
+- Serwer: remote `RerollBonus` (`"inv"|"eq"`, klucz, linia, oczekiwana statystyka, kamień; limit 2/s),
+  `BlacksmithService.Reroll` wzorem ulepszania (blokada handlu, odległość, `canLine`, wyścig → `smith.reroll.error.changed`,
+  kamień albo esencja, płatność → los → zapis bez yieldów, `Analytics.custom("Reroll")`, log). Admin `/reroll <slot|indeks>
+  <linia> [pay|stone|free]`, `/rerollstate`. `ScrollService`: kamień użyty z plecaka tylko podpowiada.
+- Okno kowala: czwarta zakładka „Przemiana” (`BlacksmithWindow/Reroll`, osobny cel `RerollTarget`, upuszczenie na jej
+  kowadło `smith:reroll`), wspólny wybór przedmiotu i iskry w `BlacksmithWindow/Picker` (też dla ulepszania). Linie w
+  kolejności opisu z paskiem jakości (linia przemiany ↻, reszta 🔒), baza, cecha i efekty szare „Nie podlega
+  przemianie”, „Może wyjść” (szansa, zakres, obecna wyróżniona, przewijane), koszt „masz / trzeba”, „Przemiana nr n ·
+  Następna”, pole Kamienia (esencja przekreślona), potwierdzenie (przy pierwszej z ostrzeżeniem o zamknięciu), wynik
+  „stara → nowa” z paskiem jakości. Telefon: lista przedmiotów nad szczegółami.
+- Opis przedmiotu: linia przemiany z ↻ (`Line.rerolled`, `TooltipModel.REROLL_MARK`), „Przemiany u kowala: n” po
+  poziomie przedmiotu, szczegóły linii „Linię można przemienić u kowala.”; zrzut `/tooltip` z ↻.
+- Premium: `reroll_stone` (`Data/Items/Consumables`, zwój, `bindOnPickup`, `noSell`), oferta `Data/Products` 80, 1/dzień;
+  `paywall.spec` (`ALLOWED_SCROLLS.transmute`, test 2b), `docs/SKLEP-ID.md`.
+- Model: `Balance.rerollPlan`, `rerollItem`, `dustEq`, `upgradeAttemptEq`, `bandEssence`, `rerollSink`,
+  `rerollStoneShare`, `targetsS134j` (blok w `balance.spec`), sekcja „Przemiana premii (S134j)” w raporcie i
+  `docs/BALANS.md`, księga (`Config:Reroll*`, `Items/Consumables:[reroll_stone]*`), `CONFIG_KEYS` += `Reroll`.
+- Wiki: `upgrade.json` `reroll` (zasady i koszty prób 1 / 5 / 10), poradnik „Ulepszanie bez płaczu” (PL, EN) z akapitem
+  „Przemiana premii”, Kamień w danych sklepu (nazwa i opis, bez ceny).
+- Testy: nowy `tests/reroll.spec` (stan, wybór, pula, losowanie 2000 razy, `apply` porównaniem głębokim, podgląd,
+  koszt), `paywall.spec` 2b, `tooltip.spec` (znacznik i licznik), `data.spec` (+1 przedmiot), `balance.spec` S134j.
+- Poprawki po przeglądzie: kowal (ulepszenie i przemiana) przy założonym przedmiocie zrzuca pamięć haków
+  (`EquipmentService.InvalidateHooks`: linie przy trafieniu / `vs_*` działały po staremu do zmiany ekwipunku); zakładka
+  czyści wybraną linię i wynik po nowym przedmiocie na kowadle; potwierdzenie i wynik pokazują wartość jak lista (×2,7
+  broni dwuręcznej, `itemStats`); legenda „↻ Linia przemiany” nad liniami; zakres „Może wyjść” przez `smith.reroll.range`;
+  wiersz Kamienia liczony na próbie z limitem wzrostu (`growthCap` 4 → 3, Mityczny 4 → 3 pył), raport `sink.income`.
+
+**Koszt próby** (`Config.Reroll`; złoto + pył; broń o ilvl L − 2, ten sam koszt złota dla każdej rzadkości)
+
+| rzadkość | próba | L20 | L45 | L70 | L100 |
+|---|---|---|---|---|---|
+| Unikat / Heroiczny | 1 | 130 + 1 | 666 + 1 | 1665 + 1 | 3457 + 1 |
+| Unikat / Heroiczny | 5 | 259 + 2 | 1331 + 2 | 3329 + 2 | 6915 + 2 |
+| Unikat / Heroiczny | 10 | 389 + 3 | 1997 + 3 | 4994 + 3 | 10 372 + 3 |
+| Legendarny | 1 / 5 / 10 | 130 + 2 / 259 + 4 / 389 + 6 | 666 + 2 / 1331 + 4 / 1997 + 6 | 1665 + 2 / 3329 + 4 / 4994 + 6 | 3457 + 2 / 6915 + 4 / 10 372 + 6 |
+| Mityczny | 1 / 5 / 10 | 130 + 3 / 259 + 6 / 389 + 9 | 666 + 3 / 1331 + 6 / 1997 + 9 | 1665 + 3 / 3329 + 6 / 4994 + 9 | 3457 + 3 / 6915 + 6 / 10 372 + 9 |
+
+Od 9. próby koszt stały (×3 pierwszej). 10 prób: Unikat L20 0,8–1,0 h, Heroiczny / Legendarny / Mityczny L45–100
+1,2–3,4 h esencji expienia i dochodu złota poziomu (cel ok. 2 h).
+
+**Zlew esencji** (10 prób na każdym z 10 przedmiotów zestawu, 1 na slot na pasmo; średnia 4 klas)
+
+| pasmo (rzadkość) | esencja pasma (pył) | przemiana | udział | +9 zestawu z ochroną / esencja pasma | (+9 + przemiany) / dochód złota pasma |
+|---|---|---|---|---|---|
+| 20–45 (Heroiczny) | 931 | 240 | 26% | 33,0 | 15,3 (przemiany 0,39) |
+| 45–70 (Legendarny) | 1382 | 440 | 32% | 22,3 | 9,7 (przemiany 0,45) |
+| 70–100 (Mityczny) | 2673 | 660 | 25% | 11,5 | 7,3 (przemiany 0,43) |
+
+Kamień: mierzony na najdroższej próbie, którą może opłacić (od 9. próby, kamienie się stakują): 6–8% esencji 2 h gry na
+L45–100 (cel ≤ 10%; przy ×4 i 4 pyle Mitycznego było 10–14%, więc `growthCap` 3 i Mityczny 3 pył). Pierwsza próba to
+0,02–0,06 próby +7 tego samego przedmiotu (wiersz w raporcie: cel 0,3–1,0 sprzeczny z 1–4 h za 10 prób, DECYZJE).
+Suma „+9 zestawu i przemiany ≤ dochód pasma” w raporcie (`sink.income`): samo +9 to 6,9–14,9 dochodu pasma (G9),
+przemiany dokładają 0,39–0,45.
+
+**Pliki:** `src/shared/Logic/{Reroll,StatGroups}.luau` (nowe), `Logic/{ItemRoll,TooltipModel}.luau`, `Types.luau`,
+`Config.luau`, `Net/Definitions.luau`, `Data/{Products,AdminCommands}.luau`, `Data/Items/Consumables.luau`,
+`Data/Localization/{pl,en}.luau`, `src/server/Services/{BlacksmithService,EquipmentService,ScrollService,AdminService}.luau`,
+`src/server/Admin/Items.luau`, `src/client/UI/Screens/BlacksmithWindow/{init,Upgrade,Reroll,Picker}.luau` (Reroll i
+Picker nowe), `UI/Components/ItemTooltip.luau`, `Controllers/{ItemController,NpcController}.luau`,
+`tests/reroll.spec.luau` (nowy), `tests/{paywall,tooltip,data,balance}.spec.luau`, `tests/Balance.luau`,
+`tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`, `tools/WikiData/Upgrade.luau`, `wiki/src/…`
+(dane, typy, ikony, poradnik), `wiki/public/img/items/misc-scroll-*`, `docs/{STATY,DESIGN,DESIGN-17,BALANS,SKLEP-ID,
+PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+**Dla właściciela**
+- Esencja przemiany to sam pył (1 / 1 / 2 / 3). Odłamki dla Heroicznego i kryształy dla Legendarnego / Mitycznego (jak w
+  prośbie) model odrzuca: esencja z expienia to ok. 55 pyłu i 1 odłamek na godzinę, więc 10 prób to 8–60 h, a zlew
+  5–15 × esencji pasma. Jeśli chcesz odłamków / kryształów, trzeba osobnej decyzji (wtedy wiersze godzin, zlewu i Kamienia
+  przejdą w raport).
+- Przy pyle Kamień Przemiany jest wart niewiele (1–9 pyłu na próbę). Do wyboru: zostawić jako wygodę, obniżyć cenę albo
+  zdjąć ze sklepu.
+- Odrzucone warianty Kamienia: „płaci całość” (też złoto, mocniej pay2win) i „połowa kosztu bez limitu” (nielimitowany
+  zlew esencji za Robux).
+- Pierwsza przemiana kosztuje 0,02–0,06 próby ulepszenia na +7 tego samego przedmiotu (cel 0,3–1,0). Podniesienie jej do
+  0,3 przy wzroście +25% za próbę daje 8–12 h za 10 prób (cel 1–4 h). Do wyboru: niższy wzrost (np. +10%) i wyższa
+  pierwsza próba (przemiana od razu odczuwalna, kolejne mniej drożeją) albo zostawić (tania pierwsza, rośnie do ×3).
+- Ulepszenie zestawu do +9 z ochroną to 6,9–14,9 dochodu złota pasma (G9), więc „przemiana razem z +9 ≤ dochód pasma” jest
+  nieosiągalne dźwigniami przemiany (przemiany same to 0,39–0,45 dochodu pasma). Do wyboru: traktować +9 jako cel na
+  kilka pasm (dziś) albo osobna sesja balansu kosztu ulepszeń.
+
+### S134k: zlecenia łowieckie na rodzaj potwora, wiele aktywnych, Znaki Łowcy
+
+- Cel zlecenia to „Ubij n× rodzaj (łowisko)”: `Logic/ContractGen` po wyborze łowiska (jak S99) wybiera rodzaj z
+  `area.kinds` (kary `kindPrevious` / `kindPerUse`, rodzaj ≥ `minKindShare` łowiska, bez Elit), n = max(`minKindKills`,
+  round(killsAt × udział rodzaju)); udział z grup `Data/Spawns` (`AreaSpawns.kindShares`). `report` dopisuje użycia
+  rodzajów i najdłuższą serię; nowa lista `GENERATED` (z `reward.marks`, tytuł zlecenia 99).
+- Stan wielu aktywnych bez limitu (`Logic/Contracts` przepisane: `stateOf` z ochroną typów, `eligible`, `activeList`,
+  `complete`, `ready`, `acceptable`, `canAccept`, `credit`, `withAccepted / withHandedIn / withAbandoned`, `marksFor`,
+  `retroMarks`), migracja 11 (`AccountSchema.CURRENT = 11`), samo przyjmowanie po pierwszym przyjęciu (awans).
+- Serwer: `ContractService` (zabicie do każdego pasującego aktywnego jednym zapisem, toasty `ready` / `readyMany`,
+  „Przyjmij wszystkie” / jedno / „Oddaj wszystkie” / „Porzuć”, nadmiar przedmiotów pocztą, jeden `CombatFx` i
+  `QuestCompleted`, `Analytics ContractTurnIn`), nowy `HuntShopService` (`HuntShopBuy`), remote'y `ContractAcceptOne`,
+  `ContractAbandon`, `HuntShopBuy`; admin `/contract info|set|all|finish|reset`, `/huntmarks <n>`.
+- Łowczy Bartosz przy tablicy zleceń (`Data/Npcs`, `Town/npcExtra`), sklep `Data/HuntShop` + `Logic/HuntShop`
+  (`canBuy`, `priceAt`, limit tygodnia `contract.shopWeek`), okno `HuntShopWindow`, skrzynie przez `LoginReward.rollItem`,
+  kosmetyki `title_bountyhunter`, `frame_trophy` (`obtain.hunt`), tytuł `title_huntlord` za zlecenie 99.
+  Towary za Znaki mają `ItemInstance.ns` (kupiec ich nie bierze, `ItemValue.canSell`; osobny stos).
+- Interfejs: dziennik „Łowieckie” (Znaki, przyciski przy NPC wydającym, lista po łowiskach z „Śledź” / „Porzuć”, do
+  przyjęcia, następne), tablica (liczby i dwa przyciski), tracker (do 3 + „+N”), karta łowiska na mapie świata (każde
+  aktywne z rodzajem i postępem, „Prowadź”), znaki nad NPC (Łowczy też), `QuestRewards` / `CombatFx` ze Znakami.
+- Model: `Balance.contractTime / huntMarks / huntMarksDecade / huntMarksValue / huntShopEssence`, `Balance.targetsS134k`
+  (balance.spec „Balance: hunting contracts and marks (S134k)”, bez trybu raportu), sekcja raportu „Zlecenia łowieckie i
+  Znaki (S134k)” w `docs/BALANS.md`. `quest_budget` bez zmian (EXP zleceń jak S109), `balance1_20` 0 różnic.
+- Wiki: zlecenia z rodzajem i Znakami, sklep Łowczego (`quests.contracts.shop`), wpis aktualności; zmiana kształtu z
+  `WIKI_KEYS_ALLOW="quests:*,types.ts"`.
+- Poprawki po przeglądzie: porzucone zlecenie bieżącego poziomu nie wraca samo przy wejściu / przyjęciu questu,
+  „Mistrz Łowów” po wszystkich 99 (i wstecz), tytuł zlecenia z rodzajem (`contract.title`, tracker `contract.titleShort`
+  nad wierszem celu), karta NPC na mapie tylko ze zleceniami tego NPC, kolejność trackera po zmianie obszaru.
+
+**Znaki za zlecenie** (`marksFor`: 2 + floor(L / 10) + 10 co 10. poziom)
+
+| L | 1 | 10 | 20 | 45 | 70 | 99 | suma 1–99 |
+|---|---|---|---|---|---|---|---|
+| Znaki | 2 | 13 | 14 | 6 | 19 | 11 | 738 |
+
+**Sklep Łowczego** (`Data/HuntShop`; wszystko związane)
+
+| pozycja | cena (Znaki) | poziomy | limit tygodnia |
+|---|---|---|---|
+| 5 mikstur zdrowia / zasobu jakości poziomu | 4 / 6 / 10 / 20 (jakość 1–4) | 1–100 | – |
+| 5 Kamieni Powrotu / 2 Kamienie Mapy | 4 / 16 | 1–100 | – |
+| Błogosławieństwo Fortuny Zwykłe / Unikatowe / Heroiczne | 6 / 14 / 30 | 1 / 20 / 45+ | – |
+| 10 pyłu esencji | 8 | 1–100 | 1 |
+| odłamek esencji | 6 | 45–69 | 5 |
+| kryształ esencji | 15 | 70–100 | 1 |
+| Skrzynia Łowcy (Unikat dla klasy) | 60 | 10+ | – |
+| Heroiczna Skrzynia Łowcy | 200 | 20+ | 1 |
+| tytuł „Łowca Nagród” / ramka „Trofeum” | 200 / 400 | – | – |
+
+**Model (F):** czas zlecenia na rodzaj 0,96–1,19 × S99 na 4–99 (cel ≤ 1,2); 10–15 Znaków na godzinę zleceń swojego
+poziomu (średnia dziesiątki); wartość zakupów za Znaki z godziny zleceń 5,9–12,5% dochodu złota tej godziny (cel 5–15%);
+esencja limitów tygodnia 1,1–9,5% esencji 14 h expienia pasma (cel ≤ 10%); Skrzynia Łowcy 4,6–5,3 h zleceń pasma (cel ≥ 2);
+łup daje 10,8–13,2 Heroika na tydzień przy 14 h (Heroiczna skrzynia 1 / tydzień); retro Znaki postaci 99 = 738.
+
+**Pliki:** `src/shared/Data/{HuntShop}.luau` (nowy), `Data/Quests/{Contracts,Types}.luau`, `Data/{Npcs,Cosmetics,
+Titles,AdminCommands}.luau`, `Data/Town/npcExtra.luau`, `Data/Localization/{pl,en}.luau`, `Logic/{HuntShop}.luau`
+(nowy), `Logic/{Contracts,ContractGen,AreaSpawns,AccountSchema,LoginReward,NpcMarks,Inventory,ItemValue}.luau`, `Types.luau`, `Config.luau`,
+`Net/Definitions.luau`, `src/server/Services/{ContractService,QuestService}.luau`, `Services/HuntShopService.luau`
+(nowy), `src/server/Admin/Quests.luau`, `src/client/UI/{ContractActions,NpcPresence}.luau` (nowe),
+`UI/Screens/HuntShopWindow.luau` (nowy), `UI/{QuestText,QuestTrack,NpcQuests}.luau`, `UI/Screens/{QuestJournal,
+QuestBoard,QuestDialog,NpcDialog,AreaPicker,Wardrobe}.luau`, `UI/Screens/Hud/QuestTracker.luau`,
+`UI/Screens/WorldMap/Cards.luau`, `UI/Components/{CurrencyIcon,QuestRewards}.luau`,
+`Controllers/{QuestController,NpcController,CombatFxController}.luau`, `tests/huntshop.spec.luau` (nowy),
+`tests/{contracts,npcmarks,balance,character,questcategories,story,worldmap,itemeffects,leaderboard,mounts,premium,
+premiumuse,rarities,sidequests,tourney}.spec.luau`, `tests/Balance.luau`, `tools/{contracts_gen,balance_reasons,
+balance_report}.luau`, `tools/balance_before.json`, `tools/WikiData/Quests.luau`, `wiki/src/…` (dane, typy, widok zadań,
+i18n, aktualność), `wiki/public/img/maps/city.svg`, `docs/{DESIGN-15,BALANS,PRZEDMIOTY,DECYZJE,SESJE,PROGRESS}.md`,
+`CLAUDE.md`.
+
+**Dla właściciela**
+- Esencja w sklepie jest mała, bo cel to ≤ 10% esencji z expienia: 10 pyłu na tydzień, do tego 5 odłamków (45–69) albo
+  1 kryształ (od 70). Start z prośby (30 pyłu / 10 odłamków / 3 kryształy) dawał 18–39%. Jeśli chcesz więcej, trzeba
+  podnieść cel (np. 20%).
+- Retro Znaki: postać 99. poziomu dostaje od razu 738 Znaków (12 Skrzyń Łowcy albo 3 Heroiczne na 3 tygodnie). Do wyboru:
+  zostawić (nic nie przepada) albo przyciąć retro (np. połowa).

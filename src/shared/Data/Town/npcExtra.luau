@@ -18,6 +18,8 @@ local spots: { [string]: Types.Spot } = {
 	-- S126: outside the north stands of Ristalle (they end at z = -106), off the spectators' way out (190, -88),
 	-- facing the gate and the street; more than 16 studs from the arena's door point, so no `at`
 	arenamaster = { x = 204, z = -96, facing = 135 },
+	-- S134k: the Huntmaster beside the contract board on the market (the board stands at 28, -68 facing 180)
+	huntmaster = { x = 40, z = -64, facing = 200 },
 }
 
 return spots

@@ -46,7 +46,8 @@ function ItemValue.canSell(item: ItemInstance, def: ItemDef?): boolean
 	if not itemDef or itemDef.noSell then
 		return false
 	end
-	return not item.locked
+	-- S134k: bought for Hunter's Marks: no gold for it (the marks never turn into gold)
+	return not item.locked and item.ns ~= true
 end
 
 function ItemValue.sellPrice(item: ItemInstance, def: ItemDef?): number

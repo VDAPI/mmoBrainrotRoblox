@@ -54,8 +54,10 @@ local PathData = require("../Data/Paths")
 local Quests = require("../Data/Quests")
 local Rarities = require("../Data/Rarities")
 local Recipes = require("../Data/Recipes")
+local Reroll = require("./Reroll")
 local ShopPrice = require("./ShopPrice")
 local Shops = require("../Data/Shops")
+local StatGroups = require("./StatGroups")
 local Stats = require("../Data/Stats")
 local Traits = require("./Traits")
 local Types = require("../Types")
@@ -70,7 +72,7 @@ export type Tier = "regular" | "legendary" | "mythic"
 -- S68: what a row's details panel describes (a bonus line of this item, or the item's trait).
 -- S134g: or a skill effect of the item (Data/ItemEffects id).
 export type DetailRef =
-	{ kind: "bonus", id: string, v: number, quality: number? }
+	{ kind: "bonus", id: string, v: number, quality: number?, rerolled: boolean? }
 	| { kind: "trait", id: string }
 	| { kind: "effect", id: string }
 export type DetailRow = { role: string, text: string, tone: Tone? }
@@ -90,6 +92,7 @@ export type Line = {
 	mythic: boolean?, -- line from the mythic pool (FIX 2026-10-09)
 	tier: Tier?, -- Bonuses tier of a bonus row (S62)
 	detail: DetailRef?, -- S68: rows that open a details panel
+	rerolled: boolean?, -- S134j: the item's locked reroll line (ItemTooltip adds TooltipModel.REROLL_MARK)
 }
 
 export type Ctx = {
@@ -114,12 +117,15 @@ export type Model = { lines: { Line } }
 
 local TooltipModel = {}
 
+-- S134j: the mark of the locked reroll line (tooltip row, the smith's Transmute tab, the admin dump).
+TooltipModel.REROLL_MARK = "↻"
+
 -- S68 (STATY 11): the order of the line tiers (S134g: rows sort by STAT_GROUPS; the tier styles legacy lines).
 TooltipModel.TIER_ORDER = table.freeze({ regular = 1, legendary = 2, mythic = 3 })
 
 -- Formatting ----------------------------------------------------------------------------------------------
 
-local ALIASES: { [string]: string } = { hp = "maxHp", mana = "maxMana", energy = "maxEnergy" }
+local ALIASES: { [string]: string } = StatGroups.ALIASES
 
 -- Decimal number in the language's style ("1,20" in Polish, "1.20" in English).
 local function decimal(value: number, places: number, lang: string): string
@@ -149,6 +155,23 @@ local function bonusText(lang: string, id: string, value: number): string
 	local places = if def then def.decimals else 0
 	local v = if places == 0 then tostring(math.floor(value + 0.5)) else decimal(value, places, lang)
 	return Locale.T(`bonus.{id}`, { v = v }, lang)
+end
+
+-- S134j: the text of a line (the smith's Transmute tab draws the same rows as the tooltip).
+function TooltipModel.bonusText(lang: string, id: string, value: number): string
+	return bonusText(lang, id, value)
+end
+
+-- S134j: a line (or a pool marker "@vsFamily": its variants' text) with a value range ("+3–7 Siły").
+function TooltipModel.rangeText(lang: string, id: string, low: number, high: number): string
+	local marker = Bonuses.isParam(id)
+	local def = Bonuses.get(if marker then Bonuses.variants(id)[1] or id else id)
+	local places = if def then def.decimals else 0
+	local function f(value: number): string
+		return if places == 0 then tostring(math.floor(value + 0.5)) else decimal(value, places, lang)
+	end
+	local key = if marker then `bonusParam.{string.sub(id, 2)}` else `bonus.{id}`
+	return Locale.T(key, { v = Locale.T("smith.reroll.range", { min = f(low), max = f(high) }, lang) }, lang)
 end
 
 -- Trait numbers: whole when within 0.05 of an integer, else one decimal (language style).
@@ -448,98 +471,11 @@ local function builder(): Builder
 	}
 end
 
--- S134g (F1): the fixed groups of the statistics block, in order; inside a group the order of `keys` (StatCalc stat or
--- hook ids after Data/Bonuses: a line reads as its `stat` or `hook`, hp / mana / energy as maxHp / maxMana /
--- maxEnergy) and `prefixes` (lines with a parameter). Not balance numbers (CLAUDE.md): only the reading order.
--- Every published line of Data/Bonuses has a group (tooltip.spec); anything else goes last.
-TooltipModel.STAT_GROUPS = table.freeze({
-	{ id = "attributes", keys = { "str", "dex", "int", "vit" }, prefixes = {} },
-	{
-		id = "attack",
-		keys = {
-			"physAtk",
-			"magAtk",
-			"critChance",
-			"critDmg",
-			"atkSpeed",
-			"pierce",
-			"magicPierce",
-			"accuracy",
-			"skillDmg",
-			"basicDmg",
-			"lifesteal",
-			"woundChance",
-			"poisonChance",
-			"dotPower",
-		},
-		prefixes = { "vs_" },
-	},
-	{
-		id = "defence",
-		keys = {
-			"maxHp",
-			"armor",
-			"mres",
-			"resFire",
-			"resIce",
-			"resLightning",
-			"resPoison",
-			"block",
-			"dodge",
-			"critResist",
-			"meleeGuard",
-			"rangedGuard",
-		},
-		prefixes = { "res_" },
-	},
-	{
-		id = "resources",
-		keys = {
-			"maxMana",
-			"maxEnergy",
-			"hpRegen",
-			"manaRegen",
-			"energyRegen",
-			"resourceOnHit",
-			"costReduce",
-			"healPower",
-			"moveSpeed",
-			"dropBonus",
-			"expBonus",
-			"goldBonus",
-		},
-		prefixes = {},
-	},
-})
-
--- The StatCalc stat or hook a line id or base key reads as (aliases applied).
-local function readKey(key: string): string
-	local bonus = Bonuses.get(key)
-	if bonus then
-		local read = if bonus.replacedBy then Bonuses.get(bonus.replacedBy) or bonus else bonus
-		local id = read.hook or read.stat or key
-		return ALIASES[id] or id
-	end
-	local id = ItemRoll.baseKey(key)
-	return ALIASES[id] or id
-end
+-- S134g (F1): the fixed groups of the statistics block (S134j: moved to Logic/StatGroups, shared with Logic/Reroll).
+TooltipModel.STAT_GROUPS = StatGroups.LIST
 
 -- S134g: (group index, place in the group) of a line id or base key; nil when no group lists it.
-function TooltipModel.groupOf(key: string): (number?, number?)
-	local read = readKey(key)
-	for index, group in TooltipModel.STAT_GROUPS do
-		local at = table.find(group.keys, read)
-		if at then
-			return index, at
-		end
-		for p, prefix in group.prefixes do
-			if string.sub(read, 1, #prefix) == prefix then
-				return index, #group.keys + p
-			end
-		end
-	end
-	return nil, nil
-end
+TooltipModel.groupOf = StatGroups.groupOf
 
 -- The main value of a non-weapon item: its armour; everything else goes to the grouped statistics.
 local MAIN_BASE = "armor"
@@ -594,6 +530,9 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 	type Row = { group: number, place: number, base: boolean, index: number, line: Line }
 	local rows: { Row } = {}
 	local others = #TooltipModel.STAT_GROUPS + 1
+	-- S134j: the locked reroll line (rolled items only; named boss items never reroll)
+	local itemDef = Items.get(item.id)
+	local rerolledAt = if itemDef and itemDef.fixedBonuses == nil then Reroll.state(item).line else nil
 	local keys: { string } = {}
 	for stat in stats.base do
 		if stats.weapon ~= nil or stat ~= MAIN_BASE then
@@ -620,6 +559,7 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 	for index, bonus in stats.bonuses do
 		local group, place = TooltipModel.groupOf(bonus.id)
 		local tier: Tier = tierOf(bonus.id)
+		local rerolled = rerolledAt ~= nil and bonus.at == rerolledAt
 		table.insert(rows, {
 			group = group or others,
 			place = place or 0,
@@ -635,7 +575,14 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 				legendary = tier == "legendary",
 				mythic = tier == "mythic",
 				tier = tier,
-				detail = { kind = "bonus", id = bonus.id, v = bonus.v, quality = bonus.quality } :: DetailRef,
+				detail = {
+					kind = "bonus",
+					id = bonus.id,
+					v = bonus.v,
+					quality = bonus.quality,
+					rerolled = if rerolled then true else nil,
+				} :: DetailRef,
+				rerolled = if rerolled then true else nil,
 			},
 		})
 	end
@@ -956,6 +903,11 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 	-- FIX 2026-10-15: the item level is a detail (the requirement above says what matters): footer, small.
 	if d.category == "equipment" then
 		b.add("ilvl", Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), "muted", { size = "small" })
+		-- S134j: how many times the item was rerolled at the smith (the cost of the next one grows with it)
+		local rerolls = Reroll.state(item).n
+		if rerolls > 0 then
+			b.add("rerollCount", Locale.T("tooltip.reroll.count", { n = rerolls }, lang), "muted", { size = "small" })
+		end
 	end
 
 	-- Value and context price
@@ -1307,8 +1259,16 @@ function TooltipModel.details(item: ItemInstance, ref: DetailRef, ctx: Ctx?): De
 	elseif ref.kind == "effect" then
 		return effectDetails(ref.id, lang)
 	end
-	local bonus = ref :: { kind: "bonus", id: string, v: number, quality: number? }
-	return bonusDetails(item, bonus.id, bonus.v, bonus.quality, lang)
+	local bonus = ref :: { kind: "bonus", id: string, v: number, quality: number?, rerolled: boolean? }
+	local details = bonusDetails(item, bonus.id, bonus.v, bonus.quality, lang)
+	if bonus.rerolled then
+		-- S134j: the locked reroll line says where it changes
+		table.insert(
+			details.rows,
+			{ role = "reroll", text = Locale.T("tooltip.details.reroll", nil, lang), tone = "muted" }
+		)
+	end
+	return details
 end
 
 -- Compact one-line summary for shop rows (S31 C.2), e.g. "Poz. 15 · Obr. 39 · 1,20/s · DPS 46,8".

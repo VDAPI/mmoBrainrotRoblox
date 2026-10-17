@@ -43,6 +43,8 @@ usunięto w S62.
    (podniesienie RV zdegradowałoby rzadkość, patrz 12). Nic nie jest przelosowywane.
 7. Cztery sesje: model i cechy bez efektów, efekty na celu, cechy rytmu i stanu gracza, PvE/PvP z balansem (15).
    Miejsce w kolejności: po fundamencie rozwoju (global K1–K6), przed sesjami klas.
+8. S134j: u kowala można przemienić jedną losową linię przedmiotu (zakładka „Przemiana”, `Logic/Reroll`); pierwsza
+   przemiana zamyka wybór na tej linii, każda kolejna próba droższa (9, 10, 12).
 
 ## 1. Stan dziś i co blokuje „charakter”
 
@@ -445,6 +447,10 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   `@vsFamily`); po S67 broń W 13, Ł 14, M i K 12; zbroja W 14, reszta 13; hełm K 14; pierścień W i Ł 14, M i K 12;
   talizman 11; naszyjnik M 14, reszta 13. Stan po S62: broń Wojownika 10,
   Kapłana 11, tarcza 11, kołczan 10, magiczna druga ręka Maga 11 i Kapłana 12; S63 i S67 dopełniają do 11–14.
+- S134j: zwykłe linie (tier `regular`) każdej rzadkości, która je ma, można przemienić u kowala, jedną linię na
+  przedmiot (pierwsza przemiana ją zamyka); pula = pula przedmiotu (`ItemRoll.poolWeights`, klasa postaci, gdy przedmiot
+  do niej pasuje) bez statystyk pozostałych linii i ich znaczników, wartość jak przy upadku. Efekty `fx`, baza, cecha i
+  nazwane przedmioty z bossów nie podlegają przemianie.
 - `affinity` w `Data/ItemTraits.luau` (tabela 3, ostatnia kolumna) dla broni i drugiej ręki; Buława ma część wag
   zależną od klasy (W: `lifesteal`, K: `healPower`). Zbroje i biżuteria bez wag.
 - 12 nazwanych Mitycznych z bossów (`Data/Items/Uniques.luau`) czytają wartości z definicji. S88: każdy boss ma linię
@@ -475,6 +481,9 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
 - Linie: wzór z `ItemRoll` bez zmian, ulepszanie ich nie zmienia (dziś też nie). S87: linie zwykłe wylosowanej broni
   dwuręcznej liczą się ×2,7 przy odczycie (`Rarities.twoHandedBonusMul`; legendarne, mityczne i nazwane bez), a baza
   i obrażenia broni dwuręcznej rosną o 6,6% na poziom ulepszenia (`upgradeStatPerLevelTwoHanded`); cecha dalej 6%.
+- S134j: koszt przemiany (`Config.Reroll`, `Logic/Reroll.costAt`): pył 1 / 1 / 2 / 3 (Unikat / Heroiczny / Legendarny /
+  Mityczny) + złoto ilvl × `Upgrade.goldPerIlvl` × 1,8, × min(1 + 0,25 n, 3) za n wcześniejszych prób; Kamień Przemiany
+  płaci pył jednej próby. Przemiana nie zmienia ulepszenia ani wartości przedmiotu.
 - `Logic/ItemValue` bez zmian (cena od poziomu, rzadkości i ulepszenia). `Logic/ItemScore` („Lepszy przedmiot”)
   dostaje wagi dla każdej nowej linii i cechy według klasy i ścieżki głównej; linie sytuacyjne liczą się w połowie.
 
@@ -553,6 +562,9 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
   legendarne / mityczne, zachowują zwykłe linie i ich wartości (bez przelosowania; jakość ponad 1 przycięta przy odczycie)
   i dostają brakujące efekty (`ItemEffects.migrateItem`, ziarno z `uid`, klasa postaci, gdy przedmiot do niej pasuje);
   poczta (`Mail.box`, klasa adresata) i aukcje przeliczają przy odczycie tą samą funkcją. `RV` zostaje 2.
+- S134j: pole `ItemInstance.rr = { i, n }` (linia przemiany, liczba przemian), bez migracji (`AccountSchema.CURRENT` bez
+  zmian); odczyt tylko `Reroll.state` z ochroną typów (śmieci → `n = 0`, indeks spoza zakresu otwiera wybór, licznik
+  zostaje). Pole wędruje z przedmiotem (handel, poczta, aukcje, depozyt).
 
 ## 13. Mapa kodu
 
@@ -581,6 +593,7 @@ stałe `block` / `riposte` z `fixedHooks`, kontra tylko w zasięgu ataku podstaw
 | `client/Vfx/Library.luau`, `Data/DamageNumbers.luau` | krótki `lineBeam` Przeszycia, runa pod Magiem (Pieczęć), liczba „Zablokowano” (Zastawa) |
 | `Logic/TooltipModel.luau`, `client/UI/Components/ItemTooltip.luau`, `client/UI/Screens/LegendReveal.luau` | sekcja Cecha z linią `trait.<id>.line`, styl z `tier`, okienko szczegółów linii i cechy po dotknięciu (telefon) i najechaniu (PC) |
 | `Logic/ItemScore.luau`, `Logic/FightSim.luau`, `tests/Balance.luau` | wagi i wartość oczekiwana efektów i cech (tabela 14) |
+| `Logic/Reroll.luau`, `Logic/StatGroups.luau`, `server/Services/BlacksmithService.luau` (`Reroll`, remote `RerollBonus`), `client/UI/Screens/BlacksmithWindow/Reroll.luau` (S134j) | przemiana jednej linii: stan `rr`, pula, losowanie, podgląd, koszt; grupy opisu wspólne z `TooltipModel`; zakładka „Przemiana”; `tests/reroll.spec` |
 | `Data/ItemEffects.luau`, `Logic/ItemEffects.luau` (S134g) | efekty umiejętności Legendarnych i Mitycznych: dane (`skill`, `role`, `pool`, `bp`, `score`), losowanie, efekty ekwipunku dla `Paths.effectiveFor`, migracja przedmiotu, argumenty tekstu; `tests/itemeffects.spec` |
 | `Data/Localization/pl.luau`, `en.luau` | `bonus.*`, `trait.*` (nazwa, linia, szczegóły; nazwy w obu językach inne niż `skill.*` i `effect.*`, np. Fechtunek / Swordplay, bo „Riposte” to angielska nazwa Kontrataku, i Zastawa / Parry), `family.*` |
 | `tools/WikiData/Items.luau`, `Basics`, `Monsters`, `ItemsMd` | S68: `bases.affinity` (wagi ≠ 1 po klasie, broń i druga ręka), `bases.poolClasses`, `items.traits` (linia cechy dla każdej rzadkości i +0…+9 przez `TooltipModel.traitLine`, teksty `does` / `pvp` / `cap` z `TooltipModel.details`), `bonuses.params` (znaczniki z wariantami), częstość linii na typ bazy → klasa → rzadkość (`sampleOfType`, `TYPE_ROLLS` 2000, wariant liczony pod znacznikiem), `rarities.mythicLines`, `monsters.family` = rodzina gry, `monsters.families`, `dodge`; `wiki = false` i `live = false` ukrywają nieopublikowane; `ItemWeights`, `nodeHooks`, `capRef`, `BonusDef.pvp` nie wychodzą (tylko gotowe teksty) |

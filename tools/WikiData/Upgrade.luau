@@ -2,13 +2,16 @@
 -- upgrade.json (S34): the blacksmith's steps +1..+9 (Upgrade.chance as a fraction, Upgrade.statMultiplier, the
 -- level after a failure without and with the protection scroll read from Upgrade.attempt with a failing StubRng)
 -- and the cost of every step for every equipment tier and rarity (Upgrade.cost: ilvl = tier). Field names are a
--- contract for the calculator (S40).
+-- contract for the calculator (S40). S134j: `reroll` = the bonus reroll rules (Config.Reroll: essence by rarity, goldMul,
+-- growth, growthCap) and the cost of attempts 1 / 5 / 10 of a weapon at a few item levels (Logic/Reroll.costAt).
 
 local Clean = require("./Clean")
+local Config = require("../../src/shared/Config")
 local Items = require("../../src/shared/Data/Items")
 local Rarities = require("../../src/shared/Data/Rarities")
 local Schema = require("./Schema")
 local StubRng = require("./StubRng")
+local Reroll = require("../../src/shared/Logic/Reroll")
 local Rng = require("../../src/shared/Logic/Rng")
 local UpgradeLogic = require("../../src/shared/Logic/Upgrade")
 
@@ -21,6 +24,10 @@ Upgrade.PROTECTION = "scroll_protection"
 
 local Cost =
 	rec("UpgradeCost", { gold = "int", materials = arr(rec("UpgradeMaterial", { id = "ref:items", n = "int" })) })
+
+-- S134j: attempt numbers and item levels of the reroll cost table.
+Upgrade.REROLL_ATTEMPTS = { 1, 5, 10 }
+Upgrade.REROLL_LEVELS = { 20, 45, 70, 100 }
 
 S.file(
 	"upgrade",
@@ -36,6 +43,15 @@ S.file(
 		tiers = arr("int"),
 		costs = map(map(arr(Cost))),
 		protection = "ref:items",
+		reroll = rec("RerollRules", {
+			essence = map(rec("RerollEssence", { id = "ref:items", n = "int" })),
+			goldMul = "number",
+			growth = "number",
+			growthCap = "number",
+			attempts = arr("int"),
+			levels = arr("int"),
+			costs = map(map(arr(Cost))),
+		}),
 		vectors = arr(rec("UpgradeVector", {
 			from = "int",
 			to = "int",
@@ -154,12 +170,45 @@ function Upgrade.build(ctx: any): any
 	for _, case in Upgrade.VECTOR_CASES do
 		table.insert(vectors, Upgrade.simulate(case, runs))
 	end
+	-- S134j: the reroll rules and the cost of attempts 1 / 5 / 10 by item level and rarity (rarities with lines only)
+	local c = Config.Reroll
+	local essence = {}
+	local rerollCosts = {}
+	for _, r in Rarities.list do
+		local e = (c.essence :: any)[r.key]
+		if e then
+			essence[r.key] = { id = e.id, n = e.n }
+		end
+	end
+	for _, level in Upgrade.REROLL_LEVELS do
+		local byRarity = {}
+		for _, r in Rarities.list do
+			if essence[r.key] then
+				local list = {}
+				for _, attempt in Upgrade.REROLL_ATTEMPTS do
+					local cost = Reroll.costAt(instance(level, r.id, 0), attempt - 1)
+					table.insert(list, { gold = cost.gold, materials = Clean.clean(cost.materials) })
+				end
+				byRarity[r.key] = list
+			end
+		end
+		rerollCosts[tostring(level)] = byRarity
+	end
 	return {
 		max = UpgradeLogic.MAX,
 		steps = steps,
 		tiers = tiers,
 		costs = costs,
 		protection = Upgrade.PROTECTION,
+		reroll = {
+			essence = essence,
+			goldMul = c.goldMul,
+			growth = c.growth,
+			growthCap = c.growthCap,
+			attempts = Upgrade.REROLL_ATTEMPTS,
+			levels = Upgrade.REROLL_LEVELS,
+			costs = rerollCosts,
+		},
 		vectors = vectors,
 	}
 end

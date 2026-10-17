@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 73fb5e45 (`wiki/src/data/meta.json`).
+> Odcisk danych 28847f88 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1258,6 +1258,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Many | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Many | Mikstura | 70 | — | 1800 | 450 |
+| Kamień Przemiany | Zwój | 1 | Kowal przyjmie go zamiast esencji przy jednej przemianie premii. Związany z kontem. | — | 1 |
 | Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |

@@ -4803,3 +4803,85 @@
   zostaje czerwony 20 px). Wiki: świadoma zmiana kształtu danych (`WIKI_KEYS_ALLOW="areas:*,mechanics:mechanics.combat.
   lairElite2RespawnMul,monsters:monsters.monsters[].variants.*.spawns[].lair,types.ts"`); mapy SVG jaskiń odświeżone
   (po S134h były sprzed skali).
+- **S134j** Przemiana premii (`Logic/Reroll`, kowal → „Przemiana”): tylko losowe zwykłe linie `bonuses` (tier
+  `regular`) każdej rzadkości, która je ma (Mityczny też); baza, cecha, efekty `fx`, `up` i nazwane z bossów
+  (`fixedBonuses`) nigdy. Pierwsza przemiana zamyka wybór na tej linii (`rr.i`); wynik zawsze zastępuje starą linię
+  (bez „zostaw starą”).
+- **S134j** Pula przemiany: `ItemRoll.poolWeights(id, klasa postaci)`, gdy przedmiot do niej pasuje (`classes` nil albo
+  zawiera klasę), inaczej `poolWeights(id, nil)` (klasy z definicji). Bez statystyk pozostałych linii i ich znaczników
+  (linia `vs_wolf` wyklucza `@vsFamily`, stara `armorPen` także `pierce`); obecna statystyka zostaje w puli.
+- **S134j** Znacznik z przemiany rozwija się bez kontekstu (`ItemRoll.expandParam(id, rng, nil)`: losowa rodzina /
+  klasa). `ItemRoll.expandParam` publiczne, `ItemRoll.BonusLine.at` = indeks linii w `bonuses`.
+- **S134j** Pole `ItemInstance.rr = { i, n }` bez migracji; odczyt tylko `Reroll.state` (śmieci → `n = 0`; indeks spoza
+  zakresu albo na linii, której nie wolno przemieniać, otwiera wybór, nie kasuje kosztu).
+- **S134j** Przemieniony przedmiot zostaje wymienialny, jeśli był (`bound` bez zmian); `rr` idzie z nim przez handel,
+  pocztę, aukcje i depozyt (kupujący płaci dalej wyższy koszt). `locked` (blokada sprzedaży) nie blokuje przemiany.
+- **S134j** Koszt (`Config.Reroll`, model `Balance.targetsS134j`): tylko pył 1 / 1 / 2 / 3 (Unikat / Heroiczny /
+  Legendarny / Mityczny) + złoto ilvl × `Upgrade.goldPerIlvl` × 1,8, mnożnik min(1 + 0,25 n, 3) (złoto zaokrąglone,
+  esencja w górę). Wiersz Kamienia liczony na najdroższej próbie (od limitu wzrostu: kamień płaci dowolną próbę i się
+  stakuje); przy ×4 i 4 pyle Mitycznego było 10–14% 2 h gry, przy ×3 i 3 pyle 6–8%. Odłamki / kryształy z prośby właściciela odrzucone przez model: 10 prób to 8–60 h esencji expienia,
+  zlew 5–15 × esencji pasma, Kamień ponad 10% 2 h gry (propozycja w SESJE „Dla właściciela”).
+- **S134j** Wiersz `first.vsUpgrade` (0,3–1,0 próby +7) w trybie raportu: przy 0,3 już pierwsza próba to 0,37–0,55 h
+  dochodu, więc 10 prób z przyrostem 0,25 (×21,25) to 8–12 h, sprzecznie z `ten.hours` 1–4 h (cel właściciela ok. 2 h).
+  Dziś 0,02–0,06.
+- **S134j** Zlew: 1 przedmiot na slot na pasmo (D5 nie ma funkcji „zakładanych przedmiotów”), rzadkość pasma 20–45
+  Heroiczny, 45–70 Legendarny, 70–100 Mityczny; esencja pasma = expienie poziomu środkowego × godziny pasma
+  (`Balance.levelHours`). Przemiana poza tempem gry: G9, popyt / podaż materiałów i `balance1_20` bez zmian.
+- **S134j** Kamień Przemiany (`reroll_stone`, sklep 80 Smoczej Waluty, `dailyLimit = 1`): płaci esencję jednej próby,
+  złoto zawsze, licznik rośnie; `bindOnPickup`, `noSell`, nie jest materiałem (wyjątek `paywall.spec` jak Zwój Ochrony).
+  Odrzucone: „płaci całość” (też złoto) i „połowa kosztu bez limitu” (nielimitowany zlew za Robux). Z kamieniem bez
+  kamienia w plecaku serwer odmawia (`noStone`), nie płaci cicho esencją.
+- **S134j** `TooltipModel.STAT_GROUPS` / `groupOf` przeniesione do `Logic/StatGroups` (Reroll sortuje podgląd tak
+  samo, bez cyklu `TooltipModel` ↔ `Reroll`); wspólny wybór przedmiotu kowala `BlacksmithWindow/Picker`.
+- **S134j** Wiki: świadoma zmiana kształtu `upgrade.json` (`reroll`): `WIKI_KEYS_ALLOW="upgrade:*,types.ts"`.
+- **S134j** Wiersz `sink.income` (+9 zestawu z ochroną i 10 przemian × zestaw w goldEq ≤ dochód złota pasma) w trybie
+  raportu: samo +9 to 6,9–14,9 dochodu pasma (G9, dźwignia poza `Config.Reroll`); przemiany dokładają 0,39–0,45.
+- **S134j** Kowal zmieniający założony przedmiot (ulepszenie, przemiana) zrzuca pamięć haków ekwipunku
+  (`EquipmentService.InvalidateHooks`), bo linie przy trafieniu i `vs_*` są hakami, nie statystykami `StatService`.
+- **S134k** Cel zlecenia = rodzaj **i** łowisko (`objectives = { { type = "kill", n, monster, area } }`): potwór tego
+  rodzaju z innego łowiska się nie liczy; pole `area` zostaje, prowadzenie i mapa wskazują jedno miejsce. Wariant
+  nieustawiony: Elita tego rodzaju (np. z Krwawego Księżyca) też się liczy (`QuestLogic.amount`).
+- **S134k** Wybór łowiska jak w S99 (te same kary, osobny drugi przebieg), potem rodzaj z `area.kinds`: kara
+  `penalty.kindPrevious` (100) za rodzaj L − 1 + `kindPerUse` (3) × użycia rodzaju; remis → niższe id. Rodzaj poniżej
+  `RULES.minKindShare` (20%) zwykłych potworów łowiska nie jest celem, gdy łowisko ma inny (Bandyta Kruczego Pola, 8%).
+- **S134k** Liczba zabić = max(`minKindKills`, round(killsAt(L) × udział rodzaju)), udział z wygenerowanych grup
+  (`Logic/AreaSpawns.kindShares` na `Data/Spawns`, bez grup: 1 / #kinds). Kotwice `kills` bez zmian, więc czas
+  zlecenia zostaje: 0,95–1,19 × S99 na 4–99. `minKindKills` 6 → 4 (przy 6 zlecenia 5 i 8 trwały 1,8–4,3 × dłużej).
+- **S134k** Wiele aktywnych bez limitu: `character.quests.contract = { done, extra, active[], marks, auto, shopWeek }`;
+  `done` = ciągły prefiks oddanych, `extra` = oddane poza kolejnością (kompaktowane). Oddanie poza kolejnością wolno.
+- **S134k** Znaki Łowcy na postaci, nie na koncie (zlecenia i skrzynie są postaci; konto pozwalałoby farmić tanie
+  zlecenia 1–20 na drugich postaciach dla głównej). `marksFor(L) = 2 + floor(L / 10) + 10 co 10. poziom` (suma 738).
+- **S134k** Migracja 11: oddane 1..done zostają, stare aktywne zlecenie zostaje aktywne z postępem
+  min(stary postęp, nowe n) (stary cel liczył każdy potwór łowiska), retro Znaki = Σ `marksFor(1..done)` (z premią
+  kamieni milowych w Znakach, bez przedmiotów kamieni milowych, które postać już dostała), `auto` = coś kiedyś przyjęte.
+  Nowa postać `{ done = 0, extra = {}, active = {}, marks = 0, auto = false, shopWeek = { week = 0, counts = {} } }`.
+- **S134k** Samo przyjmowanie: po pierwszym przyjęciu przy NPC (`auto`) awans przyjmuje zlecenia nowych poziomów
+  (`LeveledUp` → `QuestService.handle("level", { level, gained })`); porzucone zlecenia niższych poziomów wracają tylko
+  ręcznie (porzucenie ma sens). Oddanie nie przyjmuje samo nic poza tym, co da awans z jego EXP.
+- **S134k** Oddanie wielu naraz nigdy nie odmawia przez pełny plecak (zmiana wobec S99): przedmioty kamieni milowych,
+  które się nie zmieszczą (albo przy blokadzie handlu), idą pocztą systemową (`mail.subject.contract`) po zapisaniu
+  oddania; EXP po kolei rosnąco jednym `GiveExp` na zlecenie (awans w trakcie liczy się poprawnie).
+- **S134k** Łowczy Bartosz (`huntmaster`, przy tablicy zleceń) przyjmuje i oddaje każde zlecenie jak tablica; jego
+  „Zadania” otwierają zakładkę „Łowieckie” dziennika (przyciski „Przyjmij / Oddaj wszystkie”), tablica zostaje przy
+  swoim oknie; zwiadowca wydaje tylko zlecenia swojego regionu. W oknach NPC jeden wiersz zleceń na tryb z liczbą.
+- **S134k** Skrzynie Łowcy losują przedmiot od razu przy zakupie (jak skrzynia dnia 7 S100: `LoginReward.rollItem`,
+  wyciągnięte z `rollChest`), Unikat albo Heroik dla klasy i poziomu postaci, związany; nigdy Legendarny ani Mityczny.
+  Heroiczna 1 / tydzień (łup daje 11–13 Heroików na tydzień przy 14 h). Wszystko ze sklepu związane.
+- **S134k** Esencja w sklepie (model F, ≤ 10% esencji 14 h expienia pasma): 10 pyłu / tydzień (8 Znaków), 5 odłamków /
+  tydzień na 45–69 (po 6), 1 kryształ / tydzień od 70 (15). Kryształ to 80 pyłu, więc odłamki kończą się tam, gdzie
+  zaczyna kryształ (pole `maxLevel`); start 30 pyłu / 10 odłamków / 3 kryształy dawał 18–39%.
+- **S134k** Mikstury w sklepie: 5 sztuk jakości `LoginReward.potionQuality(poziom)`, cena rośnie z jakością
+  (`qualityPrices` 4 / 6 / 10 / 20); kamienie 25 złota za Znak. Wartość godziny zleceń (Znaki średnio z dziesiątki
+  poziomów, bo kamień milowy daje +10) to 6–13% jej dochodu złota.
+- **S134k** Znaki poza premium: żaden produkt ich nie daje (`huntshop.spec`); kosmetyki sklepu (`obtain.hunt`) i tytuł
+  „Mistrz Łowów” (nagroda zlecenia 99, `obtain.quest = "contract_99"`) za 0 Smoczej Waluty, nie na sprzedaż.
+- **S134k** Okno sklepu Łowczego to osobny ekran `HuntShopWindow` (wzór zakładki sklepu areny, bez wyciągania
+  wspólnego kawałka: inne pola wpisu, ceny zależne od poziomu, limity tygodnia). Admin `/huntmarks <n>` (nie `/marks`:
+  to już znaczniki mapy).
+- **S134k** Wiki: świadoma zmiana kształtu `quests.json` (rodzaj, Znaki, sklep Łowczego): `WIKI_KEYS_ALLOW="quests:*,types.ts"`.
+- **S134k** Brak skupu dla towarów za Znaki: przedmiot ze sklepu Łowczego ma `ItemInstance.ns = true` (bez migracji),
+  kupiec go nie bierze (`ItemValue.canSell`), stos łączy się tylko z takim samym (`Inventory.canMerge`). Rozbiór
+  przedmiotu ze skrzyni zostaje (jak przedmiotu ze skrzyni logowania).
+- **S134k** Tytuł „Mistrz Łowów” dopiero po oddaniu wszystkich 99 (`Contracts.earnedCosmetics`: zlecenie 99 oddane poza
+  kolejnością go nie daje, daje je ostatnie oddane), też wstecz przy wejściu do świata (postać z `done = 99` sprzed
+  S134k). Samo przyjmowanie tylko na prawdziwy awans (`gained` z `LeveledUp`), nie na „level” z `catchUp`.

@@ -158,7 +158,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Logic/CavePlan` (ubiór: `Kit.at`).
 - **Zlecenia łowieckie** (S99): reguły w nagłówku `Data/Quests/Contracts` (`RULES`); po każdej zmianie `lv` / `groups`
   łowisk albo reguł `lune run tools/contracts_gen.luau`, potem `lune run tools/quest_budget.luau` (i powody w księdze);
-  test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`.
+  test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`. S134k: rodzaj
+  potwora wybiera `ContractGen` (udział z `AreaSpawns.kindShares`), Znaki tylko z `RULES.marks` (`Contracts.marksFor`),
+  sklep Łowczego `Data/HuntShop` + `Logic/HuntShop` (serwer `HuntShopService`).
 - **Rozmowy w questach** (S101b): `choices` / `recall` (`Logic/Dialogue`, konstruktory `Data/Quests/Talk`, remote
   `QuestSay`, `quests.said`), `barks` (`Logic/Barks`, `BarkController`, ustawienie `barks`, wyciszanie
   `BarkController.SetQuiet`), `companion` + cel `escort` (`Logic/Companion`, `CompanionService`, najwyżej jeden, bez
@@ -188,7 +190,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   węzła dostaje argumenty z `Paths.nodeArgs`.
 - **Produkt premium** (S120–S131): wpis w `Data/Products` (id `0` / `""`), przyznanie przez
   `MonetizationService.RegisterProduct` albo istniejącą ścieżkę (paragon idempotentny), sprawdzenie na serwerze przez
-  `Premium.canBuy` (okno liczy to samo), przypadek w `tests/paywall.spec.luau` (listy dozwolonych z powodem), potem
+  `Premium.canBuy` (okno liczy to samo), przypadek w `tests/paywall.spec.luau` (listy dozwolonych z powodem; wyjątek jak
+  Zwój Ochrony / Kamień Przemiany: `dailyLimit = 1` i własny test w `paywall.spec`), potem
   `lune run tools/shop_report.luau` (świeży `docs/SKLEP-ID.md`, `--check` w `premium.spec`). Wiki tylko przez
   `tools/WikiData/Premium.luau`, nigdy cena, id ani kwota Smoczej Waluty. Lejek: `src/server/PremiumFunnel` (`Logic/ShopFunnel`).
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);

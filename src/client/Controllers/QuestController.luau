@@ -65,6 +65,14 @@ function QuestController.OpenBoard()
 	WindowManager.Open("questboard")
 end
 
+-- S134k: the journal on the hunting contracts tab (the Huntmaster's and the scouts' contract rows).
+local journalTab = scope:Value("main")
+function QuestController.OpenContracts()
+	journalTab:set("contract")
+	WindowManager.Close("npc")
+	WindowManager.Open("quests")
+end
+
 -- S27: track one quest (nil = the story) and show its arrow.
 function QuestController.Track(focus: QuestTrack.Focus)
 	QuestTrack.Focus:set(focus)
@@ -117,11 +125,13 @@ local function refreshTarget()
 	-- S27: a tracked side quest that is no longer active (handed in, abandoned) gives the arrow back to the story.
 	local focus = Fusion.peek(QuestTrack.Focus)
 	if focus and focus.kind == "contract" then
-		-- S99: the active hunting contract; none active (handed in and waiting) gives the arrow back to the story
-		local contract, active = Contracts.active(Contracts.stateOf(quests))
-		if contract and active then
-			local map = State.Get({ "character", "location", "map" })
-			QuestTrack.Target:set(QuestText.contractTarget(contract, active, level, map))
+		-- S99: the active hunting contract; none active (handed in and waiting) gives the arrow back to the story.
+		-- S134k: the tracked one (focus.id) while it is active, else the first the tracker shows
+		local map = State.Get({ "character", "location", "map" })
+		local x, z = QuestText.mapPosition()
+		local first = QuestText.contractOrder(Contracts.stateOf(quests), focus.id, map, x, z)[1]
+		if first then
+			QuestTrack.Target:set(QuestText.contractTarget(first.contract, first.entry, level, map))
 			return
 		end
 		QuestTrack.Focus:set(nil)
@@ -157,6 +167,10 @@ function QuestController.Init(registry)
 				Focus = QuestTrack.Focus,
 				Track = QuestController.Track,
 				ShowModal = WindowManager.ShowModal,
+				Tab = journalTab, -- S134k
+				OpenShop = function()
+					WindowManager.Open("huntshop") -- S134k: registered by NpcController
+				end,
 				-- S102: watch a story cutscene again (CutsceneController from the registry: no Deps cycle)
 				Replay = function(sceneId: string)
 					local cutscenes = registry.Get("CutsceneController")

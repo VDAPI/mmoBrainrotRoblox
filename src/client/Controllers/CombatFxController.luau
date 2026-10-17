@@ -1664,6 +1664,11 @@ local function handle(event: { [string]: any })
 				if exp > 0 then "combat.reward" else "combat.rewardGold",
 				{ exp = Format.number(exp), gold = Format.number(event.gold or 0) }
 			)
+			-- S134k: the Hunter's Marks of handed in hunting contracts
+			local marks = tonumber(event.marks) or 0
+			if marks > 0 then
+				text ..= "  " .. Text.now("combat.rewardMarks", { n = Format.number(marks) })
+			end
 			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, { rise = 4 })
 		end
 		-- Boss kill (S30): the reward card with the personal roll and the grind progress.

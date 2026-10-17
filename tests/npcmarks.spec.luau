@@ -225,8 +225,33 @@ describe("NpcMarks", function()
 		expect(NpcMarks.of(NpcMarks.BOARD, s, 30)).toBeNil() -- below its level: nothing to take
 		local gap = Config.Quest.greyGap
 		expect(NpcMarks.of(NpcMarks.BOARD, s, 31 + gap)).toBe("available")
-		expect(NpcMarks.of(NpcMarks.BOARD, s, 32 + gap)).toBe("availableLow")
-		expect(NpcMarks.of(scoutOf(31), s, 32 + gap)).toBe("availableLow")
+		-- S134k: every contract up to the level is offered at once, so the mark is gold while any of them is fresh;
+		-- grey only when the ones left are far below the level (31 at 32 + gap, 32..38 handed in out of order)
+		expect(NpcMarks.of(NpcMarks.BOARD, s, 32 + gap)).toBe("available")
+		local old = contractState(30)
+		old.contract.extra = { 32, 33, 34, 35, 36, 37, 38 }
+		expect(NpcMarks.of(NpcMarks.BOARD, old, 32 + gap)).toBe("availableLow")
+		expect(NpcMarks.of(scoutOf(31), old, 32 + gap)).toBe("availableLow")
+	end)
+
+	-- S134k: the Huntmaster marks every contract like the board, several contracts at once
+	it("the Huntmaster: ! to take, ? when one of several is done, grey ? while all run", function()
+		local open = contractState(30)
+		expect(NpcMarks.of("huntmaster", open, 31)).toBe("available")
+		local a = Quests.Contracts.forLevel(31) :: any
+		local b = Quests.Contracts.forLevel(32) :: any
+		local running = contractState(30, { { level = 31, progress = { 0 } }, { level = 32, progress = { 0 } } })
+		expect(NpcMarks.of("huntmaster", running, 32)).toBe("active")
+		expect(NpcMarks.of(NpcMarks.BOARD, running, 32)).toBe("active")
+		local oneDone =
+			contractState(30, { { level = 31, progress = { 0 } }, { level = 32, progress = { b.objectives[1].n } } })
+		expect(NpcMarks.of("huntmaster", oneDone, 32)).toBe("turnIn")
+		expect(NpcMarks.of(NpcMarks.BOARD, oneDone, 32)).toBe("turnIn")
+		expect(NpcMarks.of(scoutOf(32), oneDone, 32)).toBe("turnIn")
+		-- one running, one more to take: the ! wins over the grey ?
+		local mixed = contractState(30, { { level = 31, progress = { 0 } } })
+		expect(NpcMarks.of("huntmaster", mixed, 32)).toBe("available")
+		expect(a.level).toBe(31)
 	end)
 
 	it("an active contract is a grey ? until done, then ? at both givers", function()
