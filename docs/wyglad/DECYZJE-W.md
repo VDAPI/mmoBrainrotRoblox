@@ -23,3 +23,4 @@
 - **W02** Modele zestawu i materiały w miejscu (`ReplicatedStorage.Assets.Kit`, `MaterialService`), nie w repo (jak broń S52): pliki z Creator Store nie idą do gita; `import_kit.luau` je odtwarza.
 - **W02** Materiały: trawa i ziemia z Material Generatora gorsze niż gołe na zrzutach, nie weszły; weszła tylko skała gór Łąk (`MapLooks.materials`, per mapa).
 - **W02** Właściciel: „zrób możliwie za darmo”. Zestaw W02 tylko z darmowych źródeł; koszyk w `ZAKUPY.md` jest propozycją, nic nie kupione.
+- **W11** Właściciel 2026-10-17: rekomendacje 1–5 (`MAPY.md` §4) przyjęte; mapy wolno przebudować całe, żeby były dopracowane treściowo (nie tylko 13 zmian z tabeli „Zmiany układu”). Mechanika dalej bez zmian: liczba grup potworów, poziomy, Elity, bossowie, questy, portale i NPC zostają; zmiana miejsc obszarów i dróg dozwolona z aktualizacją danych i testów w tej samej sesji.

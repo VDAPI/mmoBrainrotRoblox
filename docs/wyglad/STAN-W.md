@@ -9,7 +9,7 @@ W01 (Studio): liczby map i jaskini Mchów nastrojone na zrzutach, niebo Boru i P
 
 W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki i skały na Łąkach, malowana skała gór Łąk, lista zakupów i zasady importu. Ocena właściciela: W02: OK (2026-10-17).
 
-W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), czeka na ocenę właściciela; następna W08.
+W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), ocena właściciela: W11: OK (2026-10-17, rekomendacje 1–5, mapy wolno przebudować całe); następna W08.
 
 ## Niedokończone
 

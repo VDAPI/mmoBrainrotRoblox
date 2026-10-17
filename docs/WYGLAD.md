@@ -126,6 +126,7 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 - Plan (ten plik): OK (2026-10-17)
 - W01: OK (2026-10-17)
 - W02: OK (2026-10-17; „nie dużo się zmieniło”: zestaw na razie tylko na Łąkach, większa zmiana przy sesjach map)
+- W11: OK (2026-10-17): pytania 1–5 z `docs/wyglad/MAPY.md` §4 tak (wszystkie rekomendacje). Właściciel: „ogólnie mapy możesz całe przebudować, żeby były dokontentowane, pytania jestem otwarty”.
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 
