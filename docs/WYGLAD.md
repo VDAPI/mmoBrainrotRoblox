@@ -122,6 +122,7 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 ### Oceny
 
 - Plan (ten plik): OK (2026-10-17)
+- W01: OK (2026-10-17)
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 
