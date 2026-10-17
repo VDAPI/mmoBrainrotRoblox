@@ -722,6 +722,13 @@ local Config = {
 		-- Studs kept between the camera and a wall it would pass through.
 		wallMargin = 1.5,
 	},
+	-- W02: the asset kit (Data/Kit, ReplicatedStorage.Assets.Kit): models in place of the generators' trees, rocks and
+	-- bushes. `enabled = false` (or the map in `skipMaps`) builds the old pieces, for comparing; the admin command /kit
+	-- switches it for the running server and rebuilds the current map.
+	Kit = {
+		enabled = true,
+		skipMaps = {} :: { [string]: boolean },
+	},
 	-- S134j (docs/DESIGN.md §6a, Logic/Reroll): bonus reroll at the smith. Essence of one attempt by rarity, gold
 	-- ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), each earlier attempt on the item adds `growth`
 	-- to the multiplier, at most `growthCap` (gold rounded, essence rounded up). The Stone of Transmutation pays the

@@ -96,3 +96,60 @@ domyślne, wyłączenie starych efektów `Lighting`), `assets/Sky/*.model.json`,
 | Miasto 22:00 | dachy i ulice czarne, tylko okna | jaśniejszy księżycowy błękit (jasność 0,9), okna dalej się wyróżniają |
 
 Wartości z repo sprawdzone po synchronizacji w Leżu Wywerny (te same co strojenie na żywo).
+
+### W02 (2026-10-17, komputer właściciela, Studio MCP)
+
+**Inwentarz (A).** Drzewa, krzaki i skały regionów nie idą przez `World/Prefabs` (to tylko portale, znaki, wejścia
+jaskiń), tylko przez blueprinty generatorów (`Logic/WorldGen/Flora`, `Logic/MeadowsGen/Nature`, `Kit.rock`). Gniazda
+zestawu na mapę: Łąki 2503 (dąb 267, sosna 347, brzoza 126, skały 411, krzaki 659…), Bór 5693, Pustkowia 1217, Szczyty
+1013; jaskinie bez gniazd (ubiór jaskiń w W21–W24). Klocek drzewa: 5–15 części, z kolizją pnia na serwerze.
+
+**Droga podmiany (B).** `Blueprint.beginKit/endKit` (gniazdo bez zmiany losowań generatora, test), owinięte w każdy
+gatunek drzewa i podszyt (`Flora.species`, `Flora.under`, `Nature.tree/undergrowth`) i `Kit.rock`; `Data/Kit` (warianty
+na biom, rozmiar względem klocka, odcień liści), `Logic/KitPick` (wybór z pozycji, deterministyczny), `Util/KitAssets`
+(szablony z `ReplicatedStorage.Assets.Kit`, bez skryptów i kolizji), `BlueprintBuild` stawia model zamiast kawałków
+gniazda i zostawia ich kolizję jako niewidoczną. Serwer (pnie, skały) i klient (podszyt, drzewa wypełnienia) liczą to
+samo. Przełącznik `Config.Kit` i `/kit on|off|auto` (atrybut `Kit` w Workspace, przebudowa mapy).
+
+**Zestaw (E).** Darmowe: 16 drzew i 3 krzaki z „Yasu's Stylized Tree Pack”, 6 skał z „Stylized Rock Pack” (nizendo),
+w kodzie na razie tylko Łąki (`grass`). Liście paczki są bezbarwne: odcień per wariant (`tint`), drzewa o ~20%
+wyższe niż klocek (cieńsze korony).
+
+**Materiały (C).** Material Generator: trawa, ziemia, skała, bruk (po 4 warianty) w `MaterialService` miejsca.
+Na zrzutach trawa i ziemia wyszły gorzej niż gołe (ciemna trawa, czerwona ścieżka): **nie weszły**. Skała gór Łąk
+weszła (`MapLooks.meadows.materials`), bo goła jest gładka i plastikowa. Bruk niepotrzebny (plac miasta to `Limestone`).
+
+| Scena | Klocki | Zestaw |
+|---|---|---|
+| Las Łąk (3/4) | gęste kule koron, jeden kolor | malowane dęby i sosny w trzech odcieniach, gałęzie, prześwity |
+| Las Łąk (gracz) | „brokuły” | las w stylu WoW, cienie liści na ziemi |
+| Polana Królików | kule na polu | pojedyncze malowane drzewa, sylwetki czytelne z daleka |
+| Góry | gładka skała | malowana faktura skały |
+
+Zrzuty: `W02_las_klocki_34`, `W02_las_zestaw_34`, `W02_las_zestaw_gracz`, `W02_laki_klocki_34`, `W02_laki_zestaw_34`,
+`W02_laki_zestaw_gracz`, `W02_teren_goly`, `W02_teren_malowany0/1`, `W02_skala_gola`, `W02_skala_malowana`.
+
+**Koszt (F, las Łąk, PC, Studio):**
+
+| Zestaw | Poziom | kl./s | CPU renderu | GPU renderu | Części w Workspace |
+|---|---|---|---|---|---|
+| klocki | low | 60 | 2,48 ms | 0,99 ms | 7396 |
+| klocki | high | 60 | 2,48 ms | 1,32 ms | 7396 |
+| zestaw | low | 60 | 2,81 ms | 1,28 ms | 7263 |
+| zestaw | high | 60 | 2,89 ms | 1,62 ms | 7263 |
+
+Zestaw kosztuje ok. 0,3 ms CPU i GPU (przezroczyste liście), części mniej.
+
+**Zakupy (D):** `docs/wyglad/ZAKUPY.md` (wariant 0 zł, koszyk 229 zł jednej serii, 150 zł, Tripo, pluginy). Zasady
+importu: `docs/wyglad/ZASOBY.md`.
+
+**Pliki:** `src/shared/Data/Kit.luau`, `src/shared/Logic/KitPick.luau`, `src/shared/Util/KitAssets.luau` (nowe),
+`src/shared/Logic/TownGen/Blueprint.luau`, `src/shared/Logic/WorldGen/{Flora,Kit}.luau`,
+`src/shared/Logic/MeadowsGen/{Nature,Kit}.luau`, `src/shared/Util/BlueprintBuild.luau`,
+`src/server/World/{RegionLayout,Layouts/meadows}.luau`, `src/client/Controllers/{TownDetailController,WorldController}.luau`,
+`src/server/Admin/World.luau`, `src/shared/{Config,Data/MapLooks,Data/AdminCommands}.luau`, Locale, `assets/Kit`,
+`tools/studio/import_kit.luau`, `tests/kit.spec.luau`, `tools/balance_reasons.luau`, `docs/ASSETS.md`, `docs/wyglad/*`.
+
+**Dla właściciela:** modele zestawu i materiały są **w miejscu** (`ReplicatedStorage.Assets.Kit`, `MaterialService`),
+nie w repo: zapisz miejsce (Ctrl+S), żeby przetrwały zamknięcie Studio. Gdyby zginęły, `tools/studio/import_kit.luau`
+w Command Bar odtwarza modele.

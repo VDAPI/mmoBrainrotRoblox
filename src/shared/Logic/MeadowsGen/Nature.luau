@@ -352,6 +352,21 @@ local UNDER: { [string]: { n: number, kinds: { [string]: number } } } = {
 	goblin = { n = 8, kinds = { juniper = 2, bush = 2, sapling = 1 } },
 }
 
+-- W02: every tree and undergrowth clump draws one asset kit slot (Logic/TownGen/Blueprint beginKit), wherever it
+-- is called from (the forest, homes, landmarks): "tree:<kind>" on the shell, "under:<kind>" on the detail.
+local treeBody = Nature.tree
+function Nature.tree(bp: Kit.BP, kind: TreeKind, x: number, y: number, z: number, s: number, nest: boolean?)
+	bp:beginKit(`tree:{kind}`, x, y, z, s, "shell")
+	treeBody(bp, kind, x, y, z, s, nest)
+	bp:endKit()
+end
+local undergrowthBody = Nature.undergrowth
+function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: number)
+	bp:beginKit(`under:{kind}`, x, y, z, 1, "detail")
+	undergrowthBody(bp, kind, x, y, z)
+	bp:endKit()
+end
+
 local TILE = 128
 
 type Clear = { x: number, z: number, r: number }

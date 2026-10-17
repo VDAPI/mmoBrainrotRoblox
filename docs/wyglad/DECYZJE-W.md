@@ -18,3 +18,8 @@
 - **W01 (Studio)** Pod ziemią wspólna korekcja +0,04 jasności i kontrast 0,1 (`MapLooks.UNDERGROUND_LOOK`) oraz własny kolor każdej jaskini i komnaty w presetach `Data/Maps` (§4.3); trzy najciemniejsze (Leże Wywerny, Grobowiec Morvane, Palenisko Azgora) mają w `MapLooks` mocniejsze rozjaśnienie. Lodowa Grota i Leże Vaelgratha bez zmian (już czytelne).
 - **W01 (Studio)** Kamera z góry pod ziemią zostaje (płaściej i bliżej, `Config.Camera.under*`): w tunelu i w komnacie widać postać i otoczenie, bez przełączania na swobodną.
 - **W01 (Studio)** Noc w mieście jaśniejsza (`cityNight` jasność 0,9, otoczenie `#3A4462`): o 22:00 dachy i ulice były czarne; okna dalej najjaśniejsze.
+- **W02** Podmiana na poziomie gniazd blueprintu (`Blueprint.beginKit`), nie `Prefabs`: drzewa, krzaki i skały regionów stawiają generatory, `Prefabs` tylko portale i znaki. Gniazda nie zmieniają losowań, więc mapy i ich kolizje są identyczne z zestawem i bez.
+- **W02** Kolizja podmienionego modelu = dawne kawałki „shell” gniazda (niewidoczne), model bez kolizji; `/kit` przełącza atrybut `Kit` w Workspace i przebudowuje mapę (klienci przebudowują detal sami).
+- **W02** Modele zestawu i materiały w miejscu (`ReplicatedStorage.Assets.Kit`, `MaterialService`), nie w repo (jak broń S52): pliki z Creator Store nie idą do gita; `import_kit.luau` je odtwarza.
+- **W02** Materiały: trawa i ziemia z Material Generatora gorsze niż gołe na zrzutach, nie weszły; weszła tylko skała gór Łąk (`MapLooks.materials`, per mapa).
+- **W02** Właściciel: „zrób możliwie za darmo”. Zestaw W02 tylko z darmowych źródeł; koszyk w `ZAKUPY.md` jest propozycją, nic nie kupione.

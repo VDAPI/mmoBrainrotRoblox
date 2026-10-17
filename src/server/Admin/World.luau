@@ -288,6 +288,25 @@ commands.rebuild = function(player, args)
 	end
 end
 
+-- W02: /kit on|off|auto: the asset kit (Util/KitAssets, Workspace attribute "Kit"; auto = Config.Kit) and a rebuild
+-- of the map the caller is on (the clients rebuild their detail on the attribute change).
+commands.kit = function(player, args)
+	local mode = args[1]
+	if mode ~= "on" and mode ~= "off" and mode ~= "auto" then
+		reply(player, "admin.usage.kit")
+		return
+	end
+	workspace:SetAttribute("Kit", if mode == "auto" then nil else mode == "on")
+	local character = PlayerStateService.GetCharacter(player)
+	local mapId = character and character.location.map or ""
+	local started = os.clock()
+	if Maps.get(mapId) and WorldService.Rebuild(mapId) then
+		reply(player, "admin.rebuild.ok", { map = mapId, seconds = math.floor((os.clock() - started) * 10) / 10 })
+	else
+		reply(player, "admin.maps.notBuilt", { map = mapId })
+	end
+end
+
 commands.nearby = function(player, args)
 	local radius = math.clamp(tonumber(args[1]) or 150, 10, 2000)
 	local model = player.Character

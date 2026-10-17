@@ -30,7 +30,14 @@ export type Piece = {
 	t: number?, -- Transparency
 	tag: string?, -- client behaviour: "window", "smoke", "lamp", "flag", "wheel", "sail", "fire", "water"
 	fxColor: string?, -- S45: colour of the flame / glow of a "fire", "candle" or "lamp" piece (part attribute FxColor)
+	k: number?, -- W02: index of the kit slot (Blueprint.kits) this piece belongs to
 }
+
+-- W02: one prop of the asset kit (a tree, a rock, a bush...) the pieces between beginKit and endKit draw. When the
+-- kit has a model for it (Data/Kit, Util/KitAssets), Util/BlueprintBuild places the model instead of those pieces and
+-- keeps only their collision. `p` is the foot of the prop in building-local space, `s` the generator's scale, `lod`
+-- the level that builds it (shell: server, detail: client near the camera).
+export type KitSlot = { key: string, p: { number }, s: number, lod: Lod }
 
 export type Light = { p: { number }, color: string, range: number, brightness: number, tag: string? }
 
@@ -58,6 +65,9 @@ export type Blueprint = typeof(setmetatable(
 		lights: { Light },
 		rng: Rng.Rng,
 		frames: { Frame },
+		kits: { KitSlot },
+		slot: number?,
+		kitDepth: number,
 		shell: number,
 		detail: number,
 		fine: number,
@@ -97,6 +107,9 @@ function Blueprint.new(seed: number): Blueprint
 		lights = {},
 		rng = Rng.new(seed),
 		frames = { { o = { 0, 0, 0 }, r = IDENTITY } },
+		kits = {},
+		slot = nil,
+		kitDepth = 0,
 		shell = 0,
 		detail = 0,
 		fine = 0,
@@ -169,6 +182,7 @@ function Blueprint.add(
 		t = o.t,
 		tag = o.tag,
 		fxColor = o.fxColor,
+		k = self.slot,
 	}
 	table.insert(self.pieces, piece)
 	if lod == "shell" then
@@ -224,6 +238,27 @@ function Blueprint.beam(
 	local yaw = math.deg(math.atan2(-dz, dx))
 	local pitch = math.deg(math.asin(math.clamp(dy / len, -1, 1)))
 	return self:add("box", len, h or t, t, (ax + bx) / 2, (ay + by) / 2, (az + bz) / 2, 0, yaw, pitch, o)
+end
+
+-- W02: starts a kit slot `key` with its foot at (x, y, z) of the current frame; every piece added until endKit
+-- belongs to it. Slots do not nest (a nested begin is ignored, its pieces stay in the outer slot). Uses no random
+-- numbers, so a generator draws exactly the same pieces with or without slots.
+function Blueprint.beginKit(self: Blueprint, key: string, x: number, y: number, z: number, s: number, lod: Lod)
+	self.kitDepth += 1
+	if self.kitDepth > 1 then
+		return
+	end
+	local top = self.frames[#self.frames]
+	local dx, dy, dz = apply(top.r, x, y, z)
+	table.insert(self.kits, { key = key, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, s = s, lod = lod })
+	self.slot = #self.kits
+end
+
+function Blueprint.endKit(self: Blueprint)
+	self.kitDepth = math.max(0, self.kitDepth - 1)
+	if self.kitDepth == 0 then
+		self.slot = nil
+	end
 end
 
 function Blueprint.light(

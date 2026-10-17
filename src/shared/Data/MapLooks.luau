@@ -27,6 +27,9 @@ export type Look = {
 	farBlur: number,
 	-- Sky key in ReplicatedStorage.Assets.Sky (nil or missing = the default sky).
 	sky: string?,
+	-- W02: painted terrain materials (MaterialVariant in MaterialService) shown on this map: base material name ->
+	-- variant name (nil = the plain materials). The client sets them with SetBaseMaterialOverride on entering the map.
+	materials: { [string]: string }?,
 }
 
 local UNDERGROUND = { cave = true, crypt = true, dungeon = true }
@@ -84,6 +87,8 @@ local BY_MAP: { [string]: Look } = {
 		sunRays = 0.08,
 		contrast = 0.12,
 		clouds = { cover = 0.55, density = 0.5, color = "#FFE8CC" },
+		-- W02: the painted rock of the border mountains (the generated grass and dirt looked worse than the plain ones)
+		materials = { Rock = "VaelthornRock" },
 	}),
 	-- Overcast day under a grey sky, shafts through the crowns (the sun high enough to reach between the trees).
 	duskwood = with(OUTDOOR, {
@@ -125,6 +130,23 @@ local MapLooks = {}
 MapLooks.OUTDOOR = OUTDOOR
 MapLooks.UNDERGROUND_LOOK = UNDER
 MapLooks.byMap = BY_MAP
+
+-- W02: every base material some map overrides (the client clears the ones the current map does not set).
+function MapLooks.overriddenMaterials(): { string }
+	local seen: { [string]: boolean } = {}
+	local list = {}
+	for _, look in BY_MAP do
+		local materials: { [string]: string } = look.materials or {}
+		for base in materials do
+			if not seen[base] then
+				seen[base] = true
+				table.insert(list, base)
+			end
+		end
+	end
+	table.sort(list)
+	return list
+end
 
 function MapLooks.isUnderground(biome: string): boolean
 	return UNDERGROUND[biome] == true

@@ -270,6 +270,7 @@ end
 function Kit.rock(bp: BP, x: number, y: number, z: number, size: number, sw: Swatch?, lod: Blueprint.Lod?)
 	local rng = bp.rng
 	local l: Blueprint.Lod = lod or "shell"
+	bp:beginKit("rock", x, y, z, size, l) -- W02: asset kit slot
 	bp:rbox(
 		size * rng:float(1, 1.5),
 		size * rng:float(0.6, 0.95),
@@ -282,6 +283,7 @@ function Kit.rock(bp: BP, x: number, y: number, z: number, size: number, sw: Swa
 		rng:float(-12, 12),
 		Kit.o(sw or Kit.stone, l, { col = l == "shell", q = false, jitter = 0.08 })
 	)
+	bp:endKit()
 end
 
 -- Skull (fine): a ball with two dark eye holes, facing -Z of the frame.

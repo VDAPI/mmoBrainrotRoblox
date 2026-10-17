@@ -1659,6 +1659,7 @@ return {
 	-- Admin (S08)
 	["admin.usage.maps"] = "/maps: list maps (✔ = built)",
 	["admin.usage.rebuild"] = "/rebuild <mapId>: rebuild a map",
+	["admin.usage.kit"] = "/kit on, off or auto: the asset kit (trees, rocks, bushes) instead of the blocks on this server, rebuilds the current map",
 	["admin.usage.nearby"] = "/nearby [radius]: spawners near you",
 	["admin.maps.list"] = "Maps: {list}",
 	["admin.maps.notBuilt"] = "Map {map} is not built.",

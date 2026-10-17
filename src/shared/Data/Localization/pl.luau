@@ -1659,6 +1659,7 @@ return {
 	-- Admin (S08)
 	["admin.usage.maps"] = "/maps: lista map (✔ = zbudowana)",
 	["admin.usage.rebuild"] = "/rebuild <mapId>: przebuduj mapę",
+	["admin.usage.kit"] = "/kit on, off albo auto: zestaw modeli (drzewa, skały, krzaki) zamiast klocków na tym serwerze, przebudowuje bieżącą mapę",
 	["admin.usage.nearby"] = "/nearby [promień]: spawnery w pobliżu",
 	["admin.maps.list"] = "Mapy: {list}",
 	["admin.maps.notBuilt"] = "Mapa {map} nie jest zbudowana.",

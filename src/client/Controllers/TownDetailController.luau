@@ -16,6 +16,7 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
+local KitAssets = require(ReplicatedStorage.Shared.Util.KitAssets)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
@@ -65,6 +66,7 @@ local entries: { Entry }? = nil
 local entriesMap: string? = nil
 local preparing = false
 local origin = Vector3.zero
+local kit: KitAssets.Resolver? = nil -- W02: the asset kit of the prepared map
 local queue: { Job } = {}
 local stats = { builds = 0, detail = 0, fine = 0, lastMs = 0, prepareMs = 0 }
 
@@ -83,6 +85,7 @@ local function prepare(mapId: string)
 	local started = os.clock()
 	local map = Maps.get(mapId)
 	origin = if map then Vector3.new(map.offset.x, map.offset.y, map.offset.z) else Vector3.zero
+	kit = KitAssets.resolver(mapId)
 	local list: { Entry } = {}
 	for _, build in generate() do
 		local counts = { detail = 0, fine = 0 }
@@ -217,7 +220,7 @@ local function buildSome()
 			done -= 1
 			break
 		end
-		local result = BlueprintBuild.build(entry.build, origin, { [lod] = true } :: any, folder)
+		local result = BlueprintBuild.build(entry.build, origin, { [lod] = true } :: any, folder, nil, kit)
 		if result.model then
 			entry.models[lod] = result.model
 			stats[lod] += entry.counts[lod]
@@ -266,6 +269,11 @@ function TownDetailController.Start()
 				prepare(mapId)
 			end)
 		end
+	end)
+	-- W02: /kit switched the asset kit: rebuild the detail with (or without) its models
+	Workspace:GetAttributeChangedSignal("Kit"):Connect(function()
+		KitAssets.Reset()
+		clearAll(true)
 	end)
 	local accumulator = TICK
 	RunService.Heartbeat:Connect(function(dt: number)

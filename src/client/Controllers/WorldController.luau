@@ -163,6 +163,21 @@ local function applySky(key: string?)
 	end
 end
 
+-- W02: the map's painted terrain materials (Data/MapLooks `materials`): a base material shows its MaterialVariant
+-- while the map sets one and the variant exists in MaterialService (the place); every other overridden base goes back
+-- to the plain material.
+local function applyMaterials(look: MapLooks.Look)
+	local service = game:GetService("MaterialService")
+	local wanted: { [string]: string } = look.materials or {}
+	for _, base in MapLooks.overriddenMaterials() do
+		local name = wanted[base]
+		local variant = if name then service:FindFirstChild(name, true) else nil
+		pcall(function()
+			service:SetBaseMaterialOverride((Enum.Material :: any)[base], if variant then name :: string else "")
+		end)
+	end
+end
+
 -- W01: bloom, sun rays, far blur and clouds of a map at the current graphics level, tweened over `seconds`.
 local function applyPost(map: Maps.MapDef, seconds: number)
 	local look = MapLooks.of(map.id)
@@ -196,6 +211,7 @@ local function applyPost(map: Maps.MapDef, seconds: number)
 		clouds.Enabled = false
 	end
 	applySky(look.sky)
+	applyMaterials(look)
 end
 
 -- Light modulation of the current area (S26, AmbienceController): fog distance / colour, tint, saturation,

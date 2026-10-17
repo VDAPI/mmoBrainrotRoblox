@@ -20,6 +20,7 @@ local TerrainWriter = require(script.Parent.TerrainWriter)
 local Shared = ReplicatedStorage.Shared
 local Areas = require(Shared.Data.Areas)
 local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local Portals = require(Shared.Data.Portals)
 local RegionTerrain = require(Shared.Logic.RegionTerrain)
@@ -90,8 +91,9 @@ function RegionLayout.build(ctx: Build.Context, options: Options)
 	pace()
 	local shell = 0
 	local lights = 0
+	local kit = KitAssets.resolver(mapId) -- W02: asset kit models for trees, rocks and bushes
 	for _, build in builds do
-		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag))
+		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag), nil, kit)
 		shell += result.parts
 		lights += #build.bp.lights
 		pace()
