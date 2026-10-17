@@ -300,9 +300,9 @@ const statCols = [
               <h3 class="vw-label" id={`where-${view.v}`}>{t(lang, "monster.where")}</h3>
               {view.places.length === 0 && <p class="muted">{t(lang, "monster.none", { bosses: summonerNames })}</p>}
               {view.info.spawns.map((s) => {
-                const place = view.places.find((p) => p.id === (s.cave ?? s.area ?? s.map));
+                const place = view.places.find((p) => p.id === (s.cave ?? s.lair ?? s.area ?? s.map));
                 const profile = s.profile ? mech.areaProfiles?.[s.profile] : undefined;
-                const target = placeHref(lang, place?.id ?? s.map);
+                const target = placeHref(lang, place?.id ?? s.map) ?? (s.lair ? placeHref(lang, s.map) : null);
                 return (
                   <article class="wcard">
                     <MiniMap map={s.map} lang={lang} size="md" highlight={s.cave ? { caves: [s.cave] } : s.area ? { areas: [s.area] } : {}} />

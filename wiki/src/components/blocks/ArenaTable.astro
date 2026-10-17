@@ -43,7 +43,7 @@ const tokens: [string, string][] = [
 const nextMin = (i: number) => arena.tiers[i + 1]?.min;
 ---
 {part === "tiers" && (
-  <table class="vw-table vw-table--plain">
+  <table class="vw-table vw-table--plain vw-table--prose arena-kv">
     <caption class="vw-sr">{t(lang, "arena.tiers.caption")}</caption>
     <thead><tr><th scope="col">{t(lang, "arena.tiers.tier")}</th><th scope="col" style="text-align: right">{t(lang, "arena.tiers.rating")}</th></tr></thead>
     <tbody>
@@ -57,7 +57,7 @@ const nextMin = (i: number) => arena.tiers[i + 1]?.min;
   </table>
 )}
 {(part === "rules" || part === "tokens") && (
-  <table class="vw-table vw-table--plain">
+  <table class="vw-table vw-table--plain vw-table--prose arena-kv">
     <caption class="vw-sr">{t(lang, part === "rules" ? "arena.rules.caption" : "arena.tokens.caption")}</caption>
     <tbody>
       {(part === "rules" ? rules : tokens).map(([label, value]) => (
@@ -121,4 +121,7 @@ const nextMin = (i: number) => arena.tiers[i + 1]?.min;
 <Source from="Data/Arena" />
 <style>
   .gold { color: var(--vw-gold-bright); }
+  /* label/value tables stay two columns on phones; long Polish labels wrap instead of widening the page */
+  .vw-table.arena-kv { width: 100%; }
+  .vw-table.arena-kv th[scope="row"] { white-space: normal; height: auto; padding-top: 8px; padding-bottom: 8px; line-height: 1.3; }
 </style>
