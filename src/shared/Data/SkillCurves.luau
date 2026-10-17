@@ -47,9 +47,23 @@ return table.freeze({
 		holyStrike = table.freeze({ dmg = table.freeze({ [5] = 226, [6] = 190 + (340 - 190) * 5 / 9 }) }),
 		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned
 		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 196, [6] = AIMED5 + (233 - AIMED5) * 1 / 5 }) }),
-		doubleShot = table.freeze({ dmg = table.freeze({ [5] = 83, [6] = DOUBLE5 + (114 - DOUBLE5) * 1 / 5 }) }),
+		-- S144 (DESIGN-18 §6.3): Heavy Bolt, the Crossbow's S1, on Aimed Shot's knots x1.3 (its cooldown x1.3)
+		heavyBolt = table.freeze({
+			dmg = table.freeze({ [5] = 196 * 1.3, [6] = (AIMED5 + (233 - AIMED5) * 1 / 5) * 1.3 }),
+		}),
+		-- S144: Double Shot unlocks at 15 (was 3): rank 2 (level 19) keeps the old rank 5, rank 3 (23) the old rank 6
+		doubleShot = table.freeze({ dmg = table.freeze({ [2] = 83, [3] = DOUBLE5 + (114 - DOUBLE5) * 1 / 5 }) }),
 		disengage = table.freeze({ bonus = table.freeze({ [4] = 20 + 30 * 3 / 9 }) }),
-		piercingArrow = table.freeze({ dmg = table.freeze({ [3] = 200 + 160 * 2 / 9 }) }),
+		-- S144: Piercing Arrow unlocks at 3 (was the Marksman's row 1, 10): rank 5 (level 19) keeps the old rank 3 (18)
+		piercingArrow = table.freeze({ dmg = table.freeze({ [5] = 200 + 160 * 2 / 9 }) }),
+		-- S144: Arrow Rain unlocks at 3 (was 10): rank 5 (level 19) keeps the old rank 3 (level 18)
+		arrowRain = table.freeze({ dmg = table.freeze({ [5] = 45 + 40 * 2 / 9 }) }),
+		-- S144: Volley unlocks at 26 (was 30): rank 2 (level 30) keeps the old rank 1
+		volley = table.freeze({ dmg = table.freeze({ [2] = 25 }) }),
+		-- S144: Heartseeker unlocks at 40 (was the Marksman's capstone, 60): rank 6 (60) keeps the old rank 1
+		heartseeker = table.freeze({ dmg = table.freeze({ [6] = 220 }) }),
+		-- S144: the Drive is the Scout's row 8 (60, was row 10, 80): rank 6 (level 79) keeps the old rank 1
+		drive = table.freeze({ dmg = table.freeze({ [6] = 102 }) }),
 		-- S90: the Mage's base (rank 10 lower above 20, F1; Frost Nova reaches only rank 1 by 20). S91: ranks <= 20
 		-- x0.75 (Bolt) and x0.85 (the rest), the first rank above 20 pinned
 		-- S140 (the fire pool's R1 at 20 in the S91 band): Magic Bolt ranks 1-5 x0.92 (rank 5 174 -> 160), Fireball x0.94

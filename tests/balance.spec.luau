@@ -225,6 +225,25 @@ T.describe("Balance S143: Warrior pools", function()
 	end)
 end)
 
+-- S144 (D, DESIGN-18 §6.3): the Hunter's two pools (Balance.targetsS144; the R1 of both pools at 20 is in the block
+-- "Balance 1-20: S91"): the identity of the pools (the Bow / the Crossbow on one target, the Crossbow's damage over time,
+-- the Bow in motion, R7) is printed, S147 asserts it.
+T.describe("Balance S144: Hunter pools", function()
+	local rows = B.targetsS144()
+	T.it("S144 targets (printed)", function()
+		printReport("S144", rows, 60)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			T.expect({ row.id, row.report }).toEqual({ row.id, "S147" })
+		end
+		T.expect(ids["S144.hunter.single.20"]).toBe(true)
+		T.expect(ids["S144.hunter.dot.trapper.poacher.45"]).toBe(true)
+		T.expect(ids["S144.hunter.move.100"]).toBe(true)
+		T.expect(ids["S144.hunter.r7.crossbow.70"]).toBe(true)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).

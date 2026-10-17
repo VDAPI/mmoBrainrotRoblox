@@ -371,12 +371,15 @@ T.describe("Migration 6 (S56)", function()
 		AccountSchema.migrate(data)
 		T.expect(c.stats).toEqual(start)
 		T.expect(c.statPoints).toBe(95)
+		-- S144: the actives of the default pool (the Bow) unlocked by 20
 		T.expect(c.hotbar).toEqual({
 			["1"] = "aimedShot",
-			["2"] = "doubleShot",
+			["2"] = "arrowRain",
 			["3"] = "disengage",
-			["4"] = "arrowRain",
-			["5"] = "venomArrow",
+			["4"] = "pinningShot",
+			["5"] = "windstep",
+			["6"] = "huntersMark",
+			["7"] = "doubleShot",
 		})
 	end)
 

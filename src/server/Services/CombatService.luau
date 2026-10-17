@@ -43,6 +43,7 @@ local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Block = require(Shared.Logic.Block)
+local Crossbow = require(Shared.Logic.Crossbow)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
 local Shock = require(Shared.Logic.Shock)
@@ -173,6 +174,8 @@ type Attacker = {
 	vigilance: { [string]: number }?,
 	-- S143 (Logic/Block): os.clock() of the blocks inside Data/Skills.BLOCK.window (Vindicate)
 	blocks: { number }?,
+	-- S144 (Logic/Crossbow): os.clock() of the last Toxic Tips stack per target entity id (Data/Skills.CROSSBOW.tipGap)
+	tips: { [any]: number }?,
 }
 
 local REJECT_INTERVAL = 2
@@ -410,6 +413,34 @@ function CombatService.RecentBlocks(player: Player): number
 	local state = attackers[player]
 	local blocks = SkillData.BLOCK
 	return Block.count(if state then state.blocks else nil, os.clock(), blocks.window, blocks.max)
+end
+
+-- S144 (Logic/Crossbow, DESIGN-18 §6.3): Toxic Tips. A main hit of a Crossbow skill adds one stack of the player's tip
+-- poison on the target (one entry, skillId CROSSBOW.tipKey) worth `pct` % of `attack` over CROSSBOW.tipDuration s per
+-- stack (+ the poison DotBonus), at most tipStacks stacks and at most once per tipGap s per target (`gapless`: a trap of
+-- the Trapper's keystone Master Trapper, Crossbow.tipFor); through ApplyPoison (poisonSlow). PvP x0.6 comes once in
+-- StatusEffectService.Apply.
+function CombatService.ToxicTip(player: Player, entity: any, pct: number, attack: number, gapless: boolean?): boolean
+	if pct <= 0 or not entity then
+		return false
+	end
+	local rules = SkillData.CROSSBOW
+	local state = attackerState(player)
+	local t = os.clock()
+	local tips = state.tips or {}
+	if not gapless and not Crossbow.tipReady(tips[entity.id], t, rules.tipGap) then
+		return false
+	end
+	state.tips = Crossbow.tipRecord(tips, entity.id, t, rules.tipGap)
+	local tick = math.max(1, attack * pct / 100 / rules.tipDuration)
+		* (1 + CombatService.DotBonus(player, "poison") / 100)
+	return CombatService.ApplyPoison(player, entity, {
+		duration = rules.tipDuration,
+		value = pct,
+		tickAmount = tick,
+		maxStacks = rules.tipStacks,
+		skillId = rules.tipKey,
+	})
 end
 
 -- Hook values from providers only: path nodes and class passives (SkillService.PassiveHook) and the admin /hook,
@@ -940,6 +971,7 @@ export type DealOptions = {
 	-- extra multiplier: skill passives (elementalist, divine wrath) x weapon speed normalisation (S54, Skills.speedFactor)
 	multiplier: number?,
 	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
+	keepCrit: boolean?, -- S144: a sure crit of its own (Dead Eye) leaves "guaranteedCrit" (nextShot is still consumed)
 	skill: string?, -- S28: skill id shown with the damage number (bigger numbers, the name on the first hit)
 	noProc: boolean?, -- S63: no on-hit effects: second hits, counters, splashes, arcs, pierce, pulses
 	basic: boolean?, -- S63: basic attack: full on-hit chance; S62 basicDmg; S65 rhythm
@@ -1194,7 +1226,7 @@ function CombatService.DealDamage(
 	local extra = if options and options.multiplier then options.multiplier else 1
 	-- One-shot buffs from the Hunter tree.
 	if selfEntity and not (options and options.consumeShot == false) then
-		if StatusEffectService.Has(selfEntity, "guaranteedCrit") then
+		if not (options and options.keepCrit) and StatusEffectService.Has(selfEntity, "guaranteedCrit") then
 			params.forceCrit = true
 			StatusEffectService.Remove(selfEntity, "guaranteedCrit")
 		end

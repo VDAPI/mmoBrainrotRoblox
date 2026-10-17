@@ -5,7 +5,14 @@
 
 ## Stan
 
-S01–S115 i S117–S143 gotowe (ostatnia S143: Wojownik, pule Miecz i Tarcza (Potężne Uderzenie 1, Zamach Tarczą 3,
+S01–S115 i S117–S144 gotowe (ostatnia S144: Łowca, pule Łuk (Celny Strzał 1, Deszcz Strzał 3, Przyszpilenie 6, Krok
+Wiatru 10, Podwójny Strzał 15, Sokole Oko 20, Salwa 26, Sokół 33, Strzał w Serce 40, Zwinność 50, Strzała Burzy 60) i
+Kusza (Ciężki Bełt 1, Bełt Przebijający 3, Pułapka Lodowa 6, Kamuflaż 10, Zatruta Strzała 15, Zatrute Groty 20, Trujące
+Sidła 26, Sieć 33, Bełt Egzekutora 40, Szybkie Przeładowanie 50, Pole Sideł 60), wspólne Łowcy (Odskok 4, Znak Łowcy 12,
+Namierzenie 30, Instynkt Drapieżnika 45), `Logic/Crossbow` (trucizna grotów, Bełt Egzekutora na stosach, odnowienia
+kuszy), `Logic/Snare` (unieruchomienie bossa = spowolnienie), kierunki Łowcy: Nagonka w rzędzie 8 Zwiadowcy, zwieńczenia
+`keystone` Martwe Oko (Strzelec, `Logic/DeadEye`) i Mistrz Sideł (Traper), Łowca bez stanu przejściowego; wcześniej S143:
+Wojownik, pule Miecz i Tarcza (Potężne Uderzenie 1, Zamach Tarczą 3,
 Uderzenie Tarczą 6 z tarczą, Przechwycenie 10, Miażdżący Cios 15, Niezłomność 20, Trzęsienie Ziemi 26, Sztandar 33,
 Wyrok 40, Kontratak 50, Mur Tarcz 60) i Broń Dwuręczna (Brutalny Cios 1, Rozpłatanie 3, Rozbicie 6, Krwawy Szał 10,
 Rozdarcie 15, Furia 20, Wir Ostrzy 26, Tupnięcie 33, Egzekucja 40, Niepowstrzymany 50, Gniew Tytana 60), wspólne Wojownika
@@ -329,6 +336,13 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S144:** pule Łowcy bez przeglądu w grze: ruchy 5 nowych aktywnych to pozy z funkcji `ShotRig` (dopracowanie W03–W07),
+  wygląd z istniejących składników, dźwięki `skill.heavyBolt|pinningShot|windstep|netShot|deadlyBolt` bez ID (właściciel,
+  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S144.hunter.*`) do
+  S147: udział obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25), łuk / kusza w jeden cel 0,99–1,05 (w celu ±10%).
+  `GLOBAL_REPORT_ONLY` S144 (107 kluczy 21–100) do opróżnienia w S147; `tests/SkillModel.luau` na limicie 200 lokalnych
+  zmiennych (nowe lustra w tabelach, jak `Hunt`). Wiki do odświeżenia (właściciel 17.10): dwie pule Łowcy, węzły i
+  zwieńczenia kierunków.
 - **S143:** pule Wojownika bez przeglądu w grze: ruchy 7 nowych aktywnych to pozy z istniejących ruchów Wojownika
   (dopracowanie W03–W07), wygląd z istniejących składników, dźwięki `skill.shieldSweep|shieldBash|vindicate|brutalStrike|
   sunder|warStomp|execute` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki).
@@ -365,8 +379,8 @@ zakończone; testy i decyzje właściciela po nich.
   DECYZJE). Wszystkie pule są przejściowe; od S140 pula Ognia i wspólne Maga stoją na drabinie, reszta w „Pozostałe”
   do S141–S145.
   Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
-- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Wojownika, Łowcy
-  i Kapłana (`SKILL_ROWS` 4 i 8: Mag od S140, Wojownik od S143, reszta w S144–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Kapłana
+  (`SKILL_ROWS` 4 i 8: Mag od S140, Wojownik od S143, Łowca od S144, Kapłan w S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.

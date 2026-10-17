@@ -110,6 +110,9 @@ export type SkillEffect = {
 	hpPct: ValueRef?,
 	-- S141: every new application on a running entry adds a stack up to this many (value x stacks; a growing slow)
 	maxStacks: number?,
+	-- S144 (Logic/Snare): a root on a boss or an Elite II (StatusEffectService.IsBossLike) is a slow of this value %
+	-- (category enemySlow) for the same time instead (Pinning Shot, Net Shot)
+	bossSlow: ValueRef?,
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,

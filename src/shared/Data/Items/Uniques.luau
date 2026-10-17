@@ -138,7 +138,8 @@ unique("unique_morvane_bow", "bow", "morvane", 45, "➶", {
 	{ stat = "physAtk", v = 6 },
 	{ stat = "dex", v = 10 },
 	{ stat = "poisonChance", v = 5 },
-}, { "venomArrow_contagion", "volley_followup" })
+	-- S144: Hunter's Mark (common) instead of Venom Arrow, now the Crossbow's skill (DESIGN-18 §0.9)
+}, { "huntersMark_spread", "volley_followup" })
 -- Azgor, Lord of Flames (70)
 unique(
 	"unique_azgor_heart",

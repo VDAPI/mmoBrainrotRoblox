@@ -5305,3 +5305,59 @@
   strażnicy T-SK1/2 buildów Wojownika (60), G10 / T-SK5 Uzdrowiciela na Obrońcy na 50., T1 Rozłupania z młotem i T2
   Berserkera na 70., ścieżki: `berserker.base`, EHP Strażnika na 45 / 70, wsparcie i r6 Chorążego na 100., R4 10A
   Rozpłatania na 45., R7 Łowcy na 70. i stosunek Inkwizytora na 70 / 100 (mierzone do Berserkera).
+- **S144** Pule Łowcy według drabiny DESIGN-18 §5 / §6.3. Łuk (`bow`): Celny Strzał S1 1, Deszcz Strzał A1 3 (było 10),
+  Przyszpilenie K1 6 (nowa), Krok Wiatru O1 10 (nowa), Podwójny Strzał S2 15 (było 3), Sokole Oko P1 20 (było 14), Salwa
+  A2 26 (było 30), Sokół K2 33 (było rzędem 4 Zwiadowcy), Strzał w Serce S3 40 (było zwieńczeniem Strzelca), Zwinność P2
+  50 (było rzędem 1 Zwiadowcy), Strzała Burzy U 60 (było rzędem 7 Strzelca). Kusza (`crossbow`): Ciężki Bełt S1 1
+  (nowa), Bełt Przebijający A1 3 (`piercingArrow`, było rzędem 1 Strzelca), Pułapka Lodowa K1 6, Kamuflaż O1 10,
+  Zatruta Strzała S2 15 (było 18), Zatrute Groty P1 20 (nowa), Trujące Sidła A2 26, Sieć K2 33 (nowa), Bełt Egzekutora
+  S3 40 (nowa), Szybkie Przeładowanie P2 50 (nowa), Pole Sideł U 60. Wspólne: Odskok 4, Znak Łowcy 12, Namierzenie 30,
+  Instynkt Drapieżnika 45. Nowe na końcu listy `Data/Skills/Hunter`; `SkillPools/Hunter.version` 2 → 3,
+  `transitional = false`; pula tylko z broni głównej (kołczan bez znaczenia).
+- **S144** Przeniesione umiejętności zachowują liczby na dawnym poziomie (węzły `Data/SkillCurves`: Deszcz Strzał, Bełt
+  Przebijający i Podwójny Strzał na randze z poziomu 19 / 23, Salwa, Strzał w Serce, Nagonka; ranga 1 po przesunięciu
+  w górę = dawna ranga na nowym poziomie: Namierzenie, Sokół, Strzała Burzy, Zwinność). Ciężki Bełt to Celny Strzał ×1,3
+  (też węzły S91) z odnowieniem ×1,3 (5,2 s): te same obrażenia na odnowienie, wolniej.
+- **S144** „Szybki Naciąg” z tabeli DESIGN-18 nazywa się Szybkie Przeładowanie (słowo „Naciąg” ma cecha broni Pełny
+  Naciąg; `data.spec` zabrania wspólnych słów). Działa jak `cooldownReduction`, ale tylko dla umiejętności puli kuszy
+  (`Crossbow.cdrFor`, wspólny limit `Combat.cdrCap` z przedmiotami); serwer publikuje go jako `skills.reload`.
+- **S144** Zatrute Groty: główne trafienie (bez rozprysku, przebicia i strefy) umiejętności puli kuszy dokłada stos
+  jednego wpisu trucizny grotu (`skillId` `toxicTips`, 10–20% ataku przez 6 s na stos, najwyżej 5) przez
+  `CombatService.ToxicTip` / `ApplyPoison`, najwyżej raz na sekundę na cel (`Data/Skills.CROSSBOW`). Bełt Egzekutora:
+  ×(1 + `venomMul`) od 3 stosów wszystkich trucizn Łowcy na celu (`StatusEffectService.StacksBy`), na graczu najwyżej
+  `Combat.pvp.finisher`; przełomy 5A / 10A podnoszą premię (+20 / +35), bo próg 2 stosów w rotacji nic nie dawał.
+- **S144** Przyszpilenie i Sieć: `root` z polem `SkillEffect.bossSlow`; na bossie i Elicie II (`IsBossLike`) to
+  spowolnienie `values.slow` % (`enemySlow`) na ten sam czas (`Logic/Snare`), gracz dostaje unieruchomienie z regułą PvP
+  każdej kontroli (`Config.PvpCcMultiplier`). Krok Wiatru: dwa efekty `statBuff` `own` (unik, ruch) jednego klucza.
+- **S144** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Zwiadowca: Nagonka w rzędzie 8 (zwieńczenie), Królewski Sokół
+  (`keystone`) w rzędzie 10 na jej dawnym miejscu, Sokół Władcy w rzędzie 11 bez zmian. Strzelec i Traper: rzędy 4 bez
+  umiejętności, w rzędzie 8 nowe zwieńczenia `keystone` zmieniające zasadę (test kształtu: zwieńczenie to `skill` albo
+  `keystone`): Martwe Oko (`deadEye` 80: główne trafienie umiejętności typu `target` / `projectile` w cel z ≥ 80% życia
+  zawsze krytyczne bez zużycia pewnego krytyku, ale z premią następnego strzału, `DealOptions.keepCrit`,
+  `Logic/DeadEye`; +10 pkt obrażeń krytycznych) i Mistrz Sideł
+  (`masterTrapper` 15: każde trafienie pułapki daje stos trucizny grotu co najmniej 15%, bez odstępu, także bez
+  Zatrutych Grotów; trucizny +10%). Rzędy 9 i 11 Strzelca i Trapera dalej zmieniają Strzał w Serce / Pole Sideł (działają
+  z pulą tej umiejętności). Umiejętności, które poszły do pul, zostawiły węzły tej samej liczby rang (Równe Lotki,
+  Cierpliwość, Opanowanie, Myśliwska Skóra, Przynęta, Podchód, Chyży, Sokolnik, Bystry Znak), więc rzędy i `need` bez zmian.
+- **S144** Oznaczenie Zwiadowcy (`HOOK_RULES.spot.skills`) działa też z Ciężkiego Bełtu (S1 kuszy jak Celny Strzał łuku).
+- **S144** Efekty przedmiotów Łowcy (`Data/ItemEffects`) bez zmian: S134g przypiął je do ról i pul DESIGN-18 §6.3; nowych
+  efektów brak. Łuk Morvane: Szeroki Znak (`huntersMark_spread`, wspólna, ten sam `dmg(3)`) zamiast Roznoszonej Trucizny
+  (Zatruta Strzała jest teraz w kuszy); test: stałe efekty nazwanej broni wspólne albo z puli jej typu.
+- **S144** Model: buildy wzorcowe z `ranks` i rotacją umiejętności obu pul (umiejętność innej puli nie ma rangi i jest
+  pomijana), więc ten sam build mierzy się z drugą bronią. Królobójca gra długim łukiem (było ciężką kuszą; blok S91
+  mierzy go też z ciężką kuszą), Truciciel kuszą (było łukiem: pułapki i trucizna są szkołą kuszy), Kłusownik kuszą (S91
+  też z łukiem), Łowca Elit długim łukiem, Zwiadowcy łukiem i łukiem krótkim. Lustra w `tests/SkillModel` (tabela `Hunt`:
+  limit 200 lokalnych zmiennych pliku; `DEX_CAPS` jako pole `SkillModel`). R4 nowych na Kłusowniku (kusza) i Królobójcy
+  (łuk), Bełt Egzekutora w rotacji (`R4_ROTATION`); przełomy w R4: Zatruta Strzała 5A 21 → 15, 10B 60 → 28, Salwa 5B
+  5 → 4, Trujące Sidła 10A 38 → 44, Bełt Przebijający 5B krwawienie 50 → 40 (ranga 5 już na 19.).
+- **S144** Tożsamość (raport `S144.hunter.*`, asertuje S147): łuk / kusza (Strzelec) w jeden cel 1,00 / 1,05 / 1,01 /
+  0,99 na 20 / 45 / 70 / 100 (cel ±10%), udział obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25), łuk w ruchu (Krok Wiatru
+  i Odskok na odnowieniu) 0,27 → 1,0, R7 Łowca / Wojownik dwuręczny 1,0–1,35 dla obu pul.
+- **S144** Fixture 1–20 przepisany (`fixture S144 "pule Łowcy"`): 417 zmienionych wpisów, wszystkie w kluczach Łowcy albo
+  w wierszach z Łowcą (drużyny Grimroka, drużyny W + M + Ł + K Elit II jaskiń i kryjówek Łąk); `ALLOWED_1_20_DIFFS`
+  pusta. Grupa Łowcy z łukiem na 10–20 o 18–34% niżej (Bełt Przebijający poszedł do kuszy), R1 w paśmie.
+- **S144** `GLOBAL_REPORT_ONLY` S144 (107 kluczy 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  strażnicy T-SK1/2/3 buildów Łowcy w Borze, Pustkowiach i Szczytach, T1 Łatwego Celu (Kłusownik na 100.) i Pełnego
+  Naciągu (Łowczy drużyny z łukiem krótkim na 70.), T2 Trapera na 70 / 100, ścieżki: `marksman.base`, `r5a`,
+  `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`. Martwe klucze `kingslayer@longbow+quiver` z S137 i
+  S143 usunięte (długi łuk to teraz broń Królobójcy).

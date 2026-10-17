@@ -105,6 +105,10 @@ return table.freeze({
 	-- S143 (DESIGN-18 §6.2): the shield school (Logic/Block). Vindicate counts the Warrior's blocks of the last `window`
 	-- seconds, at most `max` of them (values.perBlock % each).
 	BLOCK = table.freeze({ window = 6, max = 3 }),
+	-- S144 (DESIGN-18 §6.3): the crossbow school (Logic/Crossbow). With Toxic Tips every main hit of a skill of the
+	-- `pool` pool adds one stack of the caster's tip poison (one entry per target, skillId tipKey) worth the toxicTips
+	-- hook % of the attack over tipDuration s, at most tipStacks stacks, at most once per tipGap s per target.
+	CROSSBOW = table.freeze({ pool = "crossbow", tipKey = "toxicTips", tipGap = 1, tipDuration = 6, tipStacks = 5 }),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
 	FROSTBITE = 6,

@@ -122,8 +122,9 @@ return table.freeze({
 		-- Vigilance / Warning: a red zone of a monster within monsterRange of the Scout gives the party within
 		-- partyRange the bonus for the windup + extra seconds, each kind at most once per cooldown seconds.
 		vigilance = table.freeze({ monsterRange = 30, partyRange = 40, extra = 0.5, cooldown = 8 }),
-		-- Spotting: seconds of the vulnerability and the skills (besides basic attacks) whose hits spot.
-		spot = table.freeze({ duration = 5, skills = table.freeze({ aimedShot = true }) }),
+		-- Spotting: seconds of the vulnerability and the skills (besides basic attacks) whose hits spot. S144: the S1 of
+		-- both pools (Aimed Shot of the Bow, Heavy Bolt of the Crossbow)
+		spot = table.freeze({ duration = 5, skills = table.freeze({ aimedShot = true, heavyBolt = true }) }),
 		weakSpotPerStack = 1, -- % damage per Weak Spot stack on the selected target
 		-- Royal Falcon: dive % damage, stun seconds (not bosses, never players), seconds it stays after the fight,
 		-- dive points per falconBond second, the shortest strike interval.

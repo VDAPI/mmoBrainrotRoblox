@@ -1527,6 +1527,8 @@ Po normalizacji, poziomy 20 / 45 / 70 / 100 (×Berserker):
 
 ## 11. Łowca (Energia): Strzelec Wyborowy, Traper, Zwiadowca
 
+> Podstawa i umiejętności Łowcy: DESIGN-18 §6.3 (S144).
+
 Id ścieżek: `marksman`, `trapper`, `scout`. Dane: `Data/Skills/Hunter.luau`, `Data/Paths/Hunter.luau`. Wszystkie liczby
 w tej sekcji liczą się z normalizacją obrażeń umiejętności do szybkości broni (8, `Combat.skillSpeedRef = 0.8`); bez
 niej nie obowiązują.

@@ -300,6 +300,13 @@ local OWN: { [string]: Own } = {
 	falcon = { hint = "falcon screech bird call", roll = 110, ids = { WHISTLE_LOW }, pitch = { 1, 1.08 } },
 	huntersMark = { hint = "short hunter whistle", roll = 90, ids = { WHISTLE_LOW }, pitch = { 1.13, 1.15 } },
 	drive = { hint = "hunting horn and arrows whistle", roll = 120, ids = { WHOOSH_01, SWOOSH }, pitch = HEAVY },
+	-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	heavyBolt = { hint = "heavy crossbow thunk bolt release", roll = 90 },
+	pinningShot = { hint = "bow release arrow thud into ground", roll = 90 },
+	windstep = { hint = "quick wind gust whoosh light steps", roll = 70 },
+	netShot = { hint = "crossbow thunk net whoosh rope slap", roll = 100 },
+	deadlyBolt = { hint = "deadly crossbow release hiss impact", roll = 100 },
 	-- Mage (S115): the element is heard in the hit (hit.<material>); spells by their shape
 	firebolt = { hint = "magic bolt fsst short", roll = 90, ids = { SWEEP }, pitch = { 1.02, 1.1 } },
 	fireball = { hint = "fireball explosion impact", roll = 120, ids = { BASS }, pitch = HEAVY },

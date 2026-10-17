@@ -22,6 +22,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Crossbow = require(ReplicatedStorage.Shared.Logic.Crossbow)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemEffects = require(ReplicatedStorage.Shared.Logic.ItemEffects)
@@ -217,7 +218,9 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	end
 	-- S64: the cooldown after the item reduction (Skills.cooldown, as the server counts it).
 	local base = Skills.cooldown(def, rank, 0, behaviour)
-	local reduced = Skills.cooldown(def, rank, SkillInfo.cdr(use), behaviour)
+	-- S144: Quick Reload on the Crossbow's skills (Logic/Crossbow.cdrFor, as SkillService)
+	local cdr = Crossbow.cdrFor(skill.pool, SkillInfo.cdr(use), SkillInfo.hooks(use).quickReload)
+	local reduced = Skills.cooldown(def, rank, cdr, behaviour)
 	local cooldown = math.floor(reduced * 10 + 0.5) / 10
 	if base > 0 and reduced < base - 1e-6 then
 		local pct = math.floor((1 - reduced / base) * 100 + 1e-6)

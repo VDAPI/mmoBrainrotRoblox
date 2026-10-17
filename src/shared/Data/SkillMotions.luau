@@ -1371,6 +1371,135 @@ motions.drive = {
 	variants = { crossbowOf(driveKeys) },
 }
 
+-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills from the shooting rigs (S115: one function per shot, the crossbow
+-- variant through crossbowOf; the Crossbow's skills always play it, the Bow's with a crossbow only in AnimLab); the look
+-- apart is their SkillVfx. A full motion pass comes with W03-W07.
+-- Heavy Bolt (the Crossbow's S1): a braced stance with the left foot forward, a slow full draw (0.36) and a heavy
+-- release with the shoulders kicked back (0.42, the server's release).
+local BRACED: Pose = {
+	root = { 0, 0, 0, -0.2 },
+	rHip = { -8, 0, 6 },
+	lHip = { 18, 0, -6 },
+	rKnee = { 12 },
+	lKnee = { 18 },
+}
+local function heavyBoltKeys(rig: ShotRig): { Key }
+	return {
+		k(0.18, merge(rig.aim, BRACED, body(rig, 4, 0)), "out"),
+		k(0.36, merge(rig.full, BRACED, body(rig, 0, 0)), "inOut"),
+		k(0.42, merge(rig.loose, BRACED, body(rig, 12, 0), { root = { -6, 0, 0, -0.25 } }), "out"),
+		k(0.54, merge(rig.after, BRACED, body(rig, 8, 0)), "out"),
+	}
+end
+motions.heavyBolt = {
+	keys = heavyBoltKeys(BOW),
+	recover = 0.3,
+	release = 0.42,
+	lock = true,
+	variants = { crossbowOf(heavyBoltKeys) },
+}
+
+-- Pinning Shot (the Bow's K1): a short step forward with the weapon aimed down at the target's feet, a quick draw and
+-- the release at 0.28.
+local function pinningShotKeys(rig: ShotRig): { Key }
+	local step: Pose = lunge(0.4)
+	return {
+		k(0.16, merge(lifted(rig.aim, -18), step, body(rig, -6, 6)), "out"),
+		k(0.24, merge(lifted(rig.full, -20), step, body(rig, -8, 6)), "inOut"),
+		k(0.28, merge(lifted(rig.loose, -20), step, body(rig, -4, 6)), "out"),
+		k(0.38, merge(lifted(rig.after, -16), step, body(rig, -2, 6)), "out"),
+	}
+end
+motions.pinningShot = {
+	keys = pinningShotKeys(BOW),
+	recover = 0.25,
+	release = 0.28,
+	variants = { crossbowOf(pinningShotKeys) },
+}
+
+-- Wind Step (the Bow's O1): a light skip to the left with the legs crossing, the weapon held low (the buff at 0.15),
+-- landing crouched and turned toward the enemy (0.32).
+motions.windstep = {
+	keys = {
+		k(
+			0.15,
+			merge(air(0.8, 0.6), {
+				root = { 0, 18, -10, 0.8 },
+				rShoulder = { 30, 0, 40 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 45, 20, -15 },
+				lElbow = { 10, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { -6, 14, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.32,
+			merge(crouch(0.4), {
+				root = { 0, 28, 6, -0.36 },
+				rShoulder = { 25, 0, 35 },
+				rElbow = { 30, 0, 0 },
+				lShoulder = { 60, 22, -10 },
+				lElbow = { 5, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { 0, -20, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.45,
+			merge(STAND, {
+				rShoulder = { 20, 0, 25 },
+				rElbow = { 25, 0, 0 },
+				lShoulder = { 55, 20, -10 },
+				lElbow = { 5, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { 0, -12, 0 },
+			})
+		),
+	},
+	recover = 0.25,
+	hit = 0.15,
+	land = 0.32,
+}
+
+-- Net Shot (the Crossbow's K2): the weapon raised for a high arc of the net (the release and the landing at 0.3, the
+-- body leaning back a little; lower than Arrow Rain's shot at the sky).
+local function netShotKeys(rig: ShotRig): { Key }
+	return {
+		k(0.18, merge(STAND, lifted(rig.aim, 35), body(rig, 10, 10)), "out"),
+		k(0.27, merge(STAND, lifted(rig.full, 38), body(rig, 12, 10)), "inOut"),
+		k(0.3, merge(STAND, lifted(rig.loose, 40), body(rig, 16, 10)), "out"),
+		k(0.42, merge(STAND, lifted(rig.after, 34), body(rig, 12, 10)), "out"),
+	}
+end
+motions.netShot = {
+	keys = netShotKeys(BOW),
+	recover = 0.3,
+	release = 0.3,
+	hit = 0.3,
+	variants = { crossbowOf(netShotKeys) },
+}
+
+-- Executioner's Bolt (the Crossbow's S3): kneeling, a deliberate aim with the elbow trembling (0.44), the release at
+-- 0.5 with a hard recoil.
+local function deadlyBoltKeys(rig: ShotRig): { Key }
+	return {
+		k(0.25, merge(KNEEL, rig.aim, body(rig, -2, 6)), "out"),
+		k(0.44, merge(KNEEL, tremble(rig.full, 2), body(rig, -4, 4)), "inOut"),
+		k(0.5, merge(KNEEL, rig.loose, body(rig, 10, 4), { root = { -8, 0, 0, -1.3 } }), "out"),
+		k(0.62, merge(KNEEL, rig.after, body(rig, 6, 4)), "out"),
+	}
+end
+motions.deadlyBolt = {
+	keys = deadlyBoltKeys(BOW),
+	recover = 0.35,
+	release = 0.5,
+	lock = true,
+	variants = { crossbowOf(deadlyBoltKeys) },
+}
+
 -- Mage ---------------------------------------------------------------------------------------------------------
 
 -- S115: a bolt leaves the tip of the weapon pointed at the target. A wand (one hand, a flick of the wrist; the angles

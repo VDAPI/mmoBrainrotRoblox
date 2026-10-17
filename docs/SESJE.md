@@ -12235,3 +12235,78 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance}.luau`, `tests/{block,fury,balance,balance1_20,character,paths,skillpoints,skillpools,
   skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
   balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S144: Łowca, pule i kierunki
+
+- **Dwie pule Łowcy** (`Data/Skills/Hunter`, `pool`, `role`; DESIGN-18 §6.3). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Łuk `bow` | Kusza `crossbow` |
+  |---|---|---|
+  | S1 · 1 | Celny Strzał (bez zmian, 144 / 233%) | Ciężki Bełt `heavyBolt` 187,2 / 302,9% (Celny ×1,3 z węzłami S91, 20 energii, 5,2 s); trucizna 30% / +39; przebicie 60% / +60 |
+  | A1 · 3 | Deszcz Strzał (było 10; 36 / 85% × 4, węzeł rangi 5 53,9) | Bełt Przebijający `piercingArrow` (było rząd 1 Strzelca; 164,4 / 410%, węzeł rangi 5 235,6; 5B krwawienie 40%) |
+  | K1 · 6 | Przyszpilenie `pinningShot` 70 / 130%, unieruchomienie 2 s (bossowie i Elity II: spowolnienie 40%), 20 energii, 12 s; +0,5 s / +14; ×0,8 odnowienia / +32 | Pułapka Lodowa (było rząd 1 Trapera) |
+  | O1 · 10 | Krok Wiatru `windstep`: unik +10 / 20 pkt i ruch +20 / 35% na 4 s (20 energii, 20 s); +2 s / +5 uniku; następny strzał +25% / ×0,75 odnowienia | Kamuflaż (było rząd 7 Trapera) |
+  | S2 · 15 | Podwójny Strzał (było 3; 2 × 77,75 / 114%, węzły rang 2–3) | Zatruta Strzała (było 18; 5A +15 trucizny, 10B +28) |
+  | P1 · 20 | Sokole Oko (było 14; ranga 1 bez zmian) | Zatrute Groty `toxicTips`: stos trucizny grotu 10 / 20% ataku przez 6 s, do 5 stosów, raz na sekundę na cel |
+  | A2 · 26 | Salwa (było 30; 24 / 34% × 7, węzeł rangi 2 25; 5B +4) | Trujące Sidła (było rząd 4 Trapera; 10A echo 44%) |
+  | K2 · 33 | Sokół (było rząd 4 Zwiadowcy; 28,9 / 44%) | Sieć `netShot` (krąg r 5 do 30 st.) 60 / 110%, unieruchomienie 2,5 s (bossowie: spowolnienie 40%), 30 energii, 18 s; r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Strzał w Serce (było zwieńczenie Strzelca; 170 / 290%, węzeł rangi 6 220) | Bełt Egzekutora `deadlyBolt` 180 / 260%, +50% od 3 stosów trucizn Łowcy, 25 energii, 10 s; premia +20 / +26; premia +35 / +52 |
+  | P2 · 50 | Zwinność (było rząd 1 Zwiadowcy; unik 10 / 12 pkt, ruch 15 / 18%) | Szybkie Przeładowanie `quickReload`: odnowienia umiejętności kuszy −4 / −12% |
+  | U · 60 | Strzała Burzy (było rząd 7 Strzelca, 48.; 266,7 / 400%) | Pole Sideł (było zwieńczenie Trapera) |
+
+- **Wspólne Łowcy:** Odskok C1 4 (było 6), Znak Łowcy C2 12 (było rząd 7 Zwiadowcy), Namierzenie C3 30 (było rząd 4
+  Strzelca; ranga 1 20,33 / 26,67), Instynkt Drapieżnika C4 45. `SkillPools/Hunter` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Zwiadowca z Nagonką w rzędzie 8 (było 10; ranga 1 90, węzeł rangi
+  6 102) i Królewskim Sokołem w rzędzie 10; Strzelec i Traper bez umiejętności w rzędach 4 i 8, w rzędzie 8 nowe
+  zwieńczenia `keystone`: Martwe Oko (pewny krytyk umiejętności w jeden cel na celu z ≥ 80% życia bez zużycia pewnego
+  krytyku, następny strzał zużywa się, `DealOptions.keepCrit`; +10 pkt obrażeń krytycznych) i Mistrz Sideł (trafienie pułapki daje stos trucizny grotu ≥ 15% bez odstępu, trucizny +10%). Nowe węzły
+  po umiejętnościach, które poszły do pul (ta sama liczba rang): Równe Lotki (+3 pkt obrażeń krytycznych), Cierpliwość
+  (Namierzenie +1 pkt krytyka), Opanowanie (+0,5 pkt krytyka), Myśliwska Skóra (+1% HP), Przynęta (trucizna Trujących
+  Sideł +10), Podchód (+1 pkt uniku), Chyży (+3% ruchu), Sokolnik (Sokół +2 s), Bystry Znak (+0,5 pkt podatności).
+- **Mechaniki:** `Logic/Crossbow` (nowy: `ofPool`, `tipFor`, `tipReady`, `tipStacks`, `tipRecord`, `venomMul`,
+  `cdrFor`; `Data/Skills.CROSSBOW`), `Logic/Snare` (nowy: `kindOn`, `SkillEffect.bossSlow`), `Logic/DeadEye` (nowy:
+  `applies`, `sure`). Serwer: `Skills/Context` (Bełt Egzekutora na stosach, Zatrute Groty i Mistrz Sideł po głównym
+  trafieniu, Martwe Oko jako pewny krytyk, korzeń → spowolnienie na bossie), `CombatService.ToxicTip` (stan `tips` na cel),
+  `StatusEffectService.StacksBy`, `SkillService` (odnowienie z `Crossbow.cdrFor`, `skills.reload`), `Admin/Combat`;
+  klient `Hud/SkillBar`, `UI/SkillInfo`; `Logic/Skills.descriptionArgs` (odnowienie i argumenty grotów);
+  `HOOK_RULES.spot.skills` + Ciężki Bełt.
+- **Model:** lustra w tabeli `Hunt` (`toxicTip`, `poisonStacks`, `aboveShare`; plik doszedł do limitu 200 lokalnych),
+  `dotDealt` / `dotShare` walki, Szybkie Przeładowanie w `prepare`; buildy z `ranks` i rotacją obu pul (Królobójca długim
+  łukiem, Truciciel kuszą), R4 nowych na Kłusowniku i Królobójcy, `R4_UTILITY` (kontrola, obrona Kroku Wiatru, przebicie
+  Ciężkiego Bełtu), Bełt Egzekutora w `R4_ROTATION`.
+- **Wyniki modelu:** R1 na 20. (pasmo 1,6–2,44): Królobójca z łukiem 2,17, z ciężką kuszą 2,22, Kłusownik z kuszą 2,18, z
+  łukiem 2,15; R4 nowych: Ciężki Bełt 5A / 5B 0,12–0,15, 10B 0,18; Przyszpilenie 5B 0,09, 10A / 10B 0,25 / 0,22; Sieć 5B
+  0,09, 10B 0,21; Bełt Egzekutora 5A / 5B 0,11–0,13 / 0,10–0,11, 10A / 10B 0,21 / 0,20. Tożsamość (`S144.hunter.*`,
+  raport do S147) na 20 / 45 / 70 / 100: łuk / kusza (Strzelec) w jeden cel 1,00 / 1,05 / 1,01 / 0,99 (cel ±10%), udział
+  obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25; Kłusownik 0,20–0,23, Truciciel 0,21–0,25), łuk w ruchu 0,27 / 0,57 / 0,98
+  / 1,0, R7 Łowca / Wojownik dwuręczny 1,01 / 1,22 / 1,19 / 1,33 (łuk) i 1,01 / 1,17 / 1,18 / 1,35 (kusza).
+- **1–20:** fixture przepisany (S144 „pule Łowcy”): 417 zmienionych wpisów w kluczach Łowcy i w wierszach z Łowcą;
+  `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Królobójcą z ciężką kuszą; `S91.gain` Strzelca w
+  raporcie jak od S91); w R4 na 20. Ciężki Bełt, Deszcz Strzał i Bełt Przebijający (Podwójny Strzał od 15. już nie).
+- **`GLOBAL_REPORT_ONLY` S144** (107 kluczy 21–100): strażnicy T-SK1/2/3 buildów Łowcy (Bór, Pustkowia, Szczyty), T1
+  Łatwego Celu i Pełnego Naciągu, T2 Trapera na 70 / 100, ścieżki `marksman.base` (też z ciężką kuszą), `r5a.hunter`,
+  `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`; martwe klucze `kingslayer@longbow+quiver` usunięte.
+- **Wygląd, dźwięk, teksty:** ruchy 5 nowych aktywnych z funkcji `ShotRig` (Ciężki Bełt w szerokiej postawie,
+  Przyszpilenie w stopy, Sieć wysokim łukiem, Bełt Egzekutora z klęczek; warianty `crossbowOf`) i odskok Kroku Wiatru,
+  `SkillVfx` z istniejących składników (brąz żelaza, zieleń trucizny, blady wiatr), klucze `skill.<id>` w `Data/Sfx` bez
+  ID (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, Bełt Przebijający (dawna Strzała Przebijająca), węzły
+  kierunków, pola `skills.field.tip|venomMul|venomStacks|reload`; `tests/fixtures/skill_timing.luau` (5 wierszy i
+  `netShot` w `circleTarget`).
+- **Testy:** nowy `tests/crossbow.spec.luau` (groty i odstęp, Mistrz Sideł, Bełt Egzekutora, Szybkie Przeładowanie tylko
+  dla kuszy, korzeń na bossie, Martwe Oko, lustro modelu), `skillpools.spec` (pełna drabina obu pul i wspólnych, broń
+  wybiera pulę), `paths.spec` (jedna umiejętność w kierunkach, zwieńczenia `keystone`), `skills.spec`, `character.spec`
+  (migracja 6), `skillmotion.spec` (blok S144), `balance.spec` (blok S144), `balance1_20.spec` (fixture S144).
+- **Przegląd:** łuk Morvane dostał Szeroki Znak zamiast Roznoszonej Trucizny (kusza); `itemeffects.spec` pilnuje pul
+  stałych efektów nazwanej broni; opis Zatrutych Grotów bierze odstęp z `CROSSBOW.tipGap`.
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/{Crossbow,Snare,DeadEye}.luau` (nowe), `src/shared/Logic/Skills.luau`,
+  `src/shared/Data/Skills/{init,Types,Hunter}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Hunter.luau`, `Data/Paths/{Hunter,init}.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService,SkillService}.luau`, `src/server/Skills/Context.luau`,
+  `src/server/Admin/Combat.luau`, `src/client/UI/{SkillInfo,Screens/Hud/SkillBar}.luau`, `tests/{SkillModel,Balance}.luau`,
+  `src/shared/Data/Items/Uniques.luau`,
+  `tests/{crossbow,balance,balance1_20,character,itemeffects,paths,skillmotion,skillpools,skills}.spec.luau`,
+  `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

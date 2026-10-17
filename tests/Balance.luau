@@ -3342,8 +3342,10 @@ Balance.S91 = {
 		-- S143 (session rule 4): the Warrior with Sword and Shield (the one-handed pool) holds the S91 targets of 20 too
 		{ classId = "Warrior", key = "standard.commander" },
 		{ classId = "Cleric", key = "inquisitor.solo" },
+		-- S144 (session rule 4): the Hunter with a bow (the Bow pool: the Marksman's longbow, the Trapper with a bow) and
+		-- with a crossbow (the Crossbow pool: the Trapper's crossbow, the Marksman with the heavy crossbow)
 		{ classId = "Hunter", key = "marksman.kingslayer" },
-		{ classId = "Hunter", key = "marksman.kingslayer", weapon = "longbow" },
+		{ classId = "Hunter", key = "marksman.kingslayer", weapon = "heavycrossbow" },
 		{ classId = "Hunter", key = "trapper.poacher" },
 		{ classId = "Hunter", key = "trapper.poacher", weapon = "bow" },
 		{ classId = "Mage", key = "destroyer.destroyerExp", area = true },
@@ -3364,7 +3366,6 @@ Balance.S91 = {
 		"firebolt",
 		"heal",
 		"charge",
-		"doubleShot",
 		"fireball",
 		"iceShard", -- S141: unlock 1 / 3, ranks 5 at 17 / 19
 		"hailstorm",
@@ -3373,6 +3374,10 @@ Balance.S91 = {
 		"brutalStrike", -- S143: unlock 1 / 3, ranks 5 at 17 / 19 (the Warrior's pools)
 		"cleave",
 		"shieldSweep",
+		-- S144: unlock 1 / 3, ranks 5 at 17 / 19 (the Hunter's pools); Double Shot left (unlock 15, rank 5 at 31)
+		"heavyBolt",
+		"arrowRain",
+		"piercingArrow",
 	},
 	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
 	-- tank paths; every other row at 20 is printed (bands written for 45-100)
@@ -3629,8 +3634,10 @@ Balance.S91_REPORT = {
 	-- S91: obrażenia rzędów 1-2 Strzelca i Trapera z kuszą poza zasięgiem dźwigni S91: węzły rzędów 1-2 (Pewna Ręka,
 	-- Jad Myśliwski) są globalne, a Pewna Ręka 1,5-4 (+0,5 pkt) psuje trapper.aoe na 45 (1,15 -> 1,146, S90);
 	-- Przebijająca Strzała rzędu 1 ma 2% obrażeń i rangę 3 na 18. (przypięta 4. ranga)
-	["S91.gain.marksman.kingslayer"] = "rzędy 1–2 Strzelca z ciężką kuszą +2,2% (dźwignie globalne psują S90)",
-	["S91.gain.marksman.kingslayer@longbow+quiver"] = "rzędy 1–2 Strzelca z długim łukiem +2,6% (dźwignie globalne psują S90)",
+	-- S144: "Królobójca" plays the Bow with a longbow (was the heavy crossbow), the Crossbow measured with the heavy
+	-- crossbow; Archer's Rhythm (row 2) works on the Bow's Aimed Shot only
+	["S91.gain.marksman.kingslayer"] = "rzędy 1–2 Strzelca z długim łukiem +2,6% (dźwignie globalne psują S90)",
+	["S91.gain.marksman.kingslayer@heavycrossbow+quiver"] = "rzędy 1–2 Strzelca z ciężką kuszą +2,9% (S144: Rytm Strzelca tylko na Celnym Strzale łuku)",
 	["S91.gain.trapper.poacher"] = "rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90)",
 	-- S141: przełomy 5B lodu są płaskie, a ranga 5 przypięta nisko (80, R1 na 20); cięcie do pasma na 20 zrzuca R4 na
 	-- 45 / 70 / 100 pod 0,08 (Odłamek 0,108, Grad 0,092)
@@ -4051,6 +4058,130 @@ function Balance.targetsS143(): { TargetRow }
 				def.level - 1
 			)
 		end
+	end
+	return rows
+end
+
+-- S144 (D, DESIGN-18 §6.3): the Hunter's two pools ---------------------------------------------------------------
+
+-- Thresholds of the Hunter's pool identity (DESIGN-18 §6.3, §13; test data, never game numbers). The R1 of both pools
+-- at 20 is in the block "Balance 1-20: S91" (session rule 4); everything here is printed and asserted by S147.
+Balance.S144 = {
+	levels = { 20, 45, 70, 100 },
+	-- the Bow / the Crossbow on one target 60 s: the same direction (the Marksman) with a longbow and a heavy crossbow,
+	-- within ±10 % (§6.3)
+	bow = "marksman.kingslayer",
+	crossbowWeapon = "heavycrossbow",
+	single = { 0.9, 1.1 },
+	-- the damage-over-time share (poison, bleed, burn ticks) of the Crossbow's builds on one target 60 s from 45 (§6.3)
+	dotBuilds = { "trapper.poacher", "trapper.poisoner" },
+	dotFrom = 45,
+	dotShare = 0.25,
+	-- the Bow in motion: the share of a fight under Wind Step's and Disengage's movement (a cast on cooldown)
+	moveBuild = "scout.tracker",
+	-- R7 (S89): the Hunter's / the Warrior's damage on one target (both pools against the Berserker)
+	warrior = "berserker.fury",
+}
+
+-- S144: the share of a fight a skill keeps its caster moving: the movement effect's seconds (a statBuff with
+-- moveSpeed or dodge; Disengage without one: its leap, ASSUMPTIONS-free half a second) over the skill's cooldown at the
+-- build's rank and choices; 0 without the rank.
+local function movingShare(SkillModel: any, build: any, L: number, skillId: string): number
+	local ch = SkillModel.character(build, L)
+	local character = ch.character
+	local rank = Paths.skillRank(character, skillId)
+	if rank <= 0 then
+		return 0
+	end
+	local weapons = Paths.weaponTypesOf(character.equipment)
+	local def, behaviour = Paths.effectiveFor(character, skillId, weapons, rank)
+	local seconds = 0
+	local lists: { { any } } = { def.effects or {}, def.selfEffects or {} }
+	for _, list in lists do
+		for _, effect in list do
+			local stats = effect.stats
+			if effect.kind == "statBuff" and stats and (stats.moveSpeed or stats.dodge) then
+				seconds = math.max(seconds, Skills.scaled(def, effect.duration, rank))
+			end
+		end
+	end
+	if seconds <= 0 and def.type == "blink" then
+		seconds = 0.5
+	end
+	return math.min(1, seconds / math.max(1e-9, Skills.cooldown(def, rank, 0, behaviour)))
+end
+
+-- S144: the Hunter's identity rows (ids "S144.hunter.*"); balance.spec ("Balance S144: Hunter pools") prints them and
+-- checks they exist; the rows carry report = "S147" (DESIGN-18 §13: asserted by S147).
+function Balance.targetsS144(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S144
+	local SkillModel = (require :: any)("./SkillModel")
+	local function add(id: string, label: string, value: number, low: number?, high: number?, L: number)
+		target(rows, id, "hunter", label, value, low, high, "Hunter", L)
+		rows[#rows].report = "S147"
+	end
+	local bow = SkillModel.build(S.bow, "Hunter")
+	local crossbow = SkillModel.withWeapon(bow, S.crossbowWeapon, "quiver")
+	local warrior = SkillModel.build(S.warrior, "Warrior")
+	local mover = SkillModel.build(S.moveBuild, "Hunter")
+	for _, L in S.levels do
+		local mb, mc = SkillModel.metrics(bow, L), SkillModel.metrics(crossbow, L)
+		add(
+			`S144.hunter.single.{L}`,
+			`Łuk / kusza (Strzelec): jeden cel 60 s L{L}`,
+			mb.single60 / math.max(1e-9, mc.single60),
+			S.single[1],
+			S.single[2],
+			L
+		)
+		add(
+			`S144.hunter.area.{L}`,
+			`Łuk / kusza (Strzelec): 3 cele 8 s L{L}`,
+			mb.aoe3burst / math.max(1e-9, mc.aoe3burst),
+			nil,
+			nil,
+			L
+		)
+		if L >= S.dotFrom then
+			for _, key in S.dotBuilds do
+				local m = SkillModel.metrics(SkillModel.build(key, "Hunter"), L)
+				add(
+					`S144.hunter.dot.{key}.{L}`,
+					`Udział obrażeń w czasie {key} L{L}`,
+					m.dotShare,
+					S.dotShare,
+					nil,
+					L
+				)
+			end
+		end
+		local move = movingShare(SkillModel, mover, L, "windstep") + movingShare(SkillModel, mover, L, "disengage")
+		add(
+			`S144.hunter.move.{L}`,
+			`Łuk w ruchu ({S.moveBuild}): Krok Wiatru i Odskok, udział walki L{L}`,
+			math.min(1, move),
+			nil,
+			nil,
+			L
+		)
+		local mw = SkillModel.metrics(warrior, L)
+		add(
+			`S144.hunter.r7.bow.{L}`,
+			`R7 Łowca z łukiem / Wojownik dwuręczny: jeden cel L{L}`,
+			mb.single60 / math.max(1e-9, mw.single60),
+			nil,
+			nil,
+			L
+		)
+		add(
+			`S144.hunter.r7.crossbow.{L}`,
+			`R7 Łowca z kuszą / Wojownik dwuręczny: jeden cel L{L}`,
+			mc.single60 / math.max(1e-9, mw.single60),
+			nil,
+			nil,
+			L
+		)
 	end
 	return rows
 end
@@ -6281,10 +6412,8 @@ do
 			"path.guardian.defender.L100.guardian.ehpRed",
 			"path.marksman.kingslayer.L45.marksman.base",
 			"path.marksman.kingslayer.L70.marksman.base",
-			"path.marksman.kingslayer@longbow+quiver.L45.marksman.base",
-			"path.marksman.kingslayer@longbow+quiver.L70.marksman.base",
+			-- S144: the "@longbow+quiver" rows are gone (the longbow is Królobójca's own weapon since S144)
 			"path.marksman.kingslayer.L45.marksman.r7",
-			"path.marksman.kingslayer@longbow+quiver.L45.marksman.r7",
 			"path.trapper.poacher.L45.trapper.single",
 			"path.trapper.poacher.L70.trapper.single",
 			"path.trapper.poacher@bow+quiver.L70.trapper.single",
@@ -6648,13 +6777,132 @@ do
 			"path.inquisitor.solo.L100.inquisitor.ratio",
 			"path.inquisitor.solo.L70.inquisitor.ratio",
 			"path.marksman.kingslayer.L70.marksman.r7",
-			"path.marksman.kingslayer@longbow+quiver.L70.marksman.r7",
 			"path.standard.commander.L100.r6.standard",
 			"path.standard.commander.L100.standard.support",
 			"path.standard.commander@saber1h+shield.L100.standard.support",
 		}
 	do
 		add(key, "S143", reworkWhy)
+	end
+	-- S144 (DESIGN-18 §0.4, session rule 5): the Hunter's two pools (Bow, Crossbow), the common skills and the directions'
+	-- new nodes and keystones. The guard rows (T-SK1 / T-SK2 / T-SK3 against the L20 of the same build) move because the
+	-- pools reach their area skills at 3, their S2 at 15 and the old path skills earlier or later (Draw a Bead 30, the
+	-- Falcon 33, Heartseeker 40, Storm Arrow 60, the Drive 60); the Marksman with the heavy crossbow lost the nodes of the
+	-- Bow's Aimed Shot / Heartseeker / Storm Arrow (marksman.base, r5a); the Trapper's weapons are two pools now (r5,
+	-- trapper.single / aoe with the bow, T2); the Scout's solo pace and r6 follow the Bow's new ladder. Only Hunter rows;
+	-- docs/SESJE.md S144 lists them. S147 brings them back. Never a row of 1-20.
+	for _, key in
+		{
+			"R.ashen.guard.tsk1.Hunter.base.69",
+			"R.ashen.guard.tsk1.Hunter.base.70",
+			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.55",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.69",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.70",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.50",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.69",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.70",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.50",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.55",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.60",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.69",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.70",
+			"R.ashen.guard.tsk2.Hunter.scout.tracker.55",
+			"R.ashen.guard.tsk2.Hunter.scout.tracker.60",
+			"R.ashen.guard.tsk2.Hunter.scout.tracker.69",
+			"R.ashen.guard.tsk2.Hunter.scout.tracker.70",
+			"R.ashen.guard.tsk3.Hunter.trapper.poacher.69",
+			"R.duskwood.guard.tsk1.Hunter.base.35",
+			"R.duskwood.guard.tsk1.Hunter.base.40",
+			"R.duskwood.guard.tsk1.Hunter.marksman.eliteHunter.35",
+			"R.duskwood.guard.tsk1.Hunter.marksman.eliteHunter.40",
+			"R.duskwood.guard.tsk1.Hunter.marksman.kingslayer.35",
+			"R.duskwood.guard.tsk1.Hunter.marksman.kingslayer.40",
+			"R.duskwood.guard.tsk2.Hunter.base.30",
+			"R.duskwood.guard.tsk2.Hunter.base.35",
+			"R.duskwood.guard.tsk2.Hunter.base.40",
+			"R.duskwood.guard.tsk2.Hunter.marksman.eliteHunter.30",
+			"R.duskwood.guard.tsk2.Hunter.marksman.eliteHunter.35",
+			"R.duskwood.guard.tsk2.Hunter.marksman.eliteHunter.40",
+			"R.duskwood.guard.tsk2.Hunter.marksman.kingslayer.30",
+			"R.duskwood.guard.tsk2.Hunter.marksman.kingslayer.35",
+			"R.frostpeak.guard.tsk1.Hunter.base.75",
+			"R.frostpeak.guard.tsk1.Hunter.base.80",
+			"R.frostpeak.guard.tsk1.Hunter.base.85",
+			"R.frostpeak.guard.tsk1.Hunter.base.90",
+			"R.frostpeak.guard.tsk1.Hunter.base.95",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.80",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.90",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.95",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.99",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.80",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.90",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.99",
+			"R.frostpeak.guard.tsk1.Hunter.scout.partyHunter.80",
+			"R.frostpeak.guard.tsk1.Hunter.scout.tracker.80",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.100",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.90",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.95",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.99",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.100",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.90",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.95",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.99",
+			"R.frostpeak.guard.tsk2.Hunter.base.75",
+			"R.frostpeak.guard.tsk2.Hunter.base.80",
+			"R.frostpeak.guard.tsk2.Hunter.base.90",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.80",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.85",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.90",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.95",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.99",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.80",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.90",
+			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.80",
+			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.85",
+			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.90",
+			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.95",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.100",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.75",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.80",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.85",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.90",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.95",
+			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.99",
+			"R.frostpeak.guard.tsk2.Hunter.trapper.poacher.80",
+			"R.frostpeak.guard.tsk3.Hunter.trapper.poacher.100",
+			"R.frostpeak.guard.tsk3.Hunter.trapper.poacher.99",
+			"T1|easyPrey · trapper.poacher@crossbow · L100",
+			"T1|fullDraw · scout.partyHunter@shortbow · L70",
+			"T2|trapper · L100",
+			"T2|trapper · L70",
+			"path.marksman.kingslayer.L100.marksman.base",
+			"path.marksman.kingslayer.L100.r5a.hunter",
+			"path.marksman.kingslayer.L70.r5a.hunter",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L100.marksman.base",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L45.marksman.base",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L70.marksman.base",
+			"path.scout.partyHunter.L100.r6.scout",
+			"path.scout.partyHunter.L100.scout.solo",
+			"path.scout.partyHunter.L45.scout.solo",
+			"path.scout.partyHunter.L70.scout.solo",
+			"path.scout.partyHunter@shortbow+quiver.L100.scout.solo",
+			"path.scout.partyHunter@shortbow+quiver.L45.scout.solo",
+			"path.scout.partyHunter@shortbow+quiver.L70.scout.solo",
+			"path.trapper.poacher.L100.r5.trapper",
+			"path.trapper.poacher.L100.r5a.hunter",
+			"path.trapper.poacher.L100.trapper.r3",
+			"path.trapper.poacher.L100.trapper.single",
+			"path.trapper.poacher.L45.r5.trapper",
+			"path.trapper.poacher.L70.r5.trapper",
+			"path.trapper.poacher.L70.r5a.hunter",
+			"path.trapper.poacher@bow+quiver.L100.trapper.aoe",
+			"path.trapper.poacher@bow+quiver.L100.trapper.single",
+			"path.trapper.poacher@bow+quiver.L45.trapper.aoe",
+			"path.trapper.poacher@bow+quiver.L45.trapper.single",
+			"path.trapper.poacher@bow+quiver.L70.trapper.aoe",
+		}
+	do
+		add(key, "S144", reworkWhy)
 	end
 end
 

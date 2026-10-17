@@ -936,7 +936,7 @@ T.describe("Paths: hotbar and breakpoints", function()
 		local hunter = char(30, nil, { class = "Hunter" })
 		T.expect(GamePaths.canPutOnBar(hunter, "aimedShot")).toBe(true)
 		T.expect({ GamePaths.canPutOnBar(hunter, "hawkEye") }).toEqual({ false, "skills.error.locked" })
-		T.expect(GamePaths.canPutOnBar(hunter, "piercingArrow")).toBe(false) -- S78: a marksman node
+		T.expect(GamePaths.canPutOnBar(hunter, "piercingArrow")).toBe(false) -- S144: the Crossbow's A1 (no crossbow)
 		T.expect(GamePaths.canPutOnBar(hunter, "firebolt")).toBe(false) -- other class
 		local bar, _, changed = GamePaths.validHotbar(char(20, nil, {
 			class = "Hunter",
@@ -1954,7 +1954,7 @@ T.describe("Data: Hunter paths (S78)", function()
 		T.expect(mods[1].critCdr).toBeNear(50, 1e-9)
 	end)
 
-	T.it("ranks: 42 / 42 / 40 per main path, 10 in rows 1-2 of the others, 60 nodes, 12 skill nodes", function()
+	T.it("ranks: 42 / 42 / 40 per main path, 10 in rows 1-2 of the others, 60 nodes, 1 skill node (S144)", function()
 		local paths = GamePaths.pathsOf("Hunter")
 		T.expect(#paths).toBe(3)
 		local want = { marksman = 42, trapper = 42, scout = 40 }
@@ -1978,8 +1978,23 @@ T.describe("Data: Hunter paths (S78)", function()
 				end
 			end
 		end
-		T.expect({ nodes, skills }).toEqual({ 60, 12 })
-		T.expect((GamePaths.findNode("scout_royalFalcon") :: any).kind).toBe("keystone")
+		-- S144 (DESIGN-18 §7): the Drive is the only skill node (the Scout's row 8); the Marksman's and the Trapper's
+		-- capstones are keystones, the Royal Falcon moved to row 10
+		T.expect({ nodes, skills }).toEqual({ 60, 1 })
+		T.expect((GamePaths.findNode("scout_drive") :: any).kind).toBe("skill")
+		for _, id in { "scout_royalFalcon", "marksman_deadEye", "trapper_masterTrapper" } do
+			T.expect({ id, (GamePaths.findNode(id) :: any).kind }).toEqual({ id, "keystone" })
+		end
+		local rowOf: { [string]: number } = {}
+		for _, path in paths do
+			for r, row in path.rows do
+				for _, n in row.nodes do
+					rowOf[n.id] = r
+				end
+			end
+		end
+		T.expect({ rowOf.scout_drive, rowOf.scout_royalFalcon, rowOf.marksman_deadEye, rowOf.trapper_masterTrapper })
+			.toEqual({ 8, 10, 8, 8 })
 	end)
 
 	T.it("team hooks of the Scout's rows 1-2 at 1/3 below TEAM_FULL_POINTS in Scout (S138)", function()
@@ -2079,7 +2094,9 @@ T.describe("Data: Hunter paths (S78)", function()
 			return out
 		end
 		T.expect(names("easyPrey")).toEqual({ "Uwięzienie", "Paraliżujący Jad" })
-		T.expect(names("toxicBarbs")).toEqual({ "Jad Myśliwski", "Zaraza", "Paraliżujący Jad", "Jad Bazyliszka" })
+		-- S144: Master Trapper (the keystone of row 8) strengthens every poison too
+		T.expect(names("toxicBarbs"))
+			.toEqual({ "Jad Myśliwski", "Zaraza", "Mistrz Sideł", "Paraliżujący Jad", "Jad Bazyliszka" })
 	end)
 end)
 

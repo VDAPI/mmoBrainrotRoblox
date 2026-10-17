@@ -250,6 +250,21 @@ T.describe("Item effects: data (S134g D1, B2)", function()
 		end
 	end)
 
+	-- S144: a named weapon's fixed effects work with it in hand (common or the pool its type selects; Mage staves pick
+	-- the pool by element, outside this check)
+	T.it("a named weapon's fixed effects are common or in the pool of its type", function()
+		for _, item in Items.uniques do
+			local fixed: any = item.fx
+			if item.weapon and not item.elemental and fixed and fixed[1] ~= nil then
+				for _, id in fixed do
+					local def = EffectData.get(id) :: any
+					local pool = SkillPools.poolOf(def.class, { main = item.type })
+					T.expect({ item.id, id, def.pool == "common" or def.pool == pool }).toEqual({ item.id, id, true })
+				end
+			end
+		end
+	end)
+
 	T.it("a retired effect names an existing successor of the same class and tier", function()
 		for _, def in EffectData.list do
 			if def.replacedBy then

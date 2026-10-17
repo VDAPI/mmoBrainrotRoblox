@@ -567,6 +567,19 @@ function StatusEffectService.StacksFrom(entity: any, kind: string, player: Playe
 	return 0
 end
 
+-- S144 (Logic/Crossbow, the Executioner's Bolt): the stacks of every running entry of `kind` that `player` applied (a
+-- poison of Venom Arrow, the traps, Toxic Tips and the items each counts its own stacks).
+function StatusEffectService.StacksBy(entity: any, kind: string, player: Player): number
+	local sourceKey = `p{player.UserId}`
+	local total = 0
+	for _, effect in active(entity, kind) do
+		if effect.sourceKey == sourceKey then
+			total += effect.stacks or 1
+		end
+	end
+	return total
+end
+
 -- S140 (Combustion): removes that entry and returns its stacks (0 without one); the unpaid ticks are gone.
 function StatusEffectService.TakeStacks(entity: any, kind: string, player: Player, skillId: string?): number
 	local list = entity and effects[entity.id]

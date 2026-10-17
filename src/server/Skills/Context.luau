@@ -50,14 +50,17 @@ local Block = require(Shared.Logic.Block)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
 local Chain = require(Shared.Logic.Chain)
+local Crossbow = require(Shared.Logic.Crossbow)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
+local DeadEye = require(Shared.Logic.DeadEye)
 local Elements = require(script.Parent.Elements)
 local Paths = require(Shared.Logic.Paths)
 local Push = require(script.Parent.Push)
 local Rng = require(Shared.Logic.Rng)
 local Roll = require(Shared.Logic.Roll)
 local Shock = require(Shared.Logic.Shock)
+local Snare = require(Shared.Logic.Snare)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
 local Traits = require(Shared.Logic.Traits)
@@ -733,6 +736,16 @@ function Context.new(
 					value("shieldDmg")
 				)
 			end
+			-- S144 (Logic/Crossbow): the Executioner's Bolt's main hit on a target with enough of the caster's poison stacks
+			-- (on a player at most Combat.pvp.finisher, like a finisher)
+			if main and skill.values.venomMul ~= nil then
+				local stacks = services.StatusEffect.StacksBy(entity, "poison", player)
+				local mul = Crossbow.venomMul(stacks, value("venomStacks"), value("venomMul"))
+				if entity.kind == "player" then
+					mul = math.min(mul, Combat.pvp.finisher)
+				end
+				multiplier *= mul
+			end
 			if element == "ice" and main and (skill.values.vsFrozen ~= nil or skill.values.shatter ~= nil) then
 				local frozen = services.StatusEffect.Has(entity, "freeze")
 				local deep = services.StatusEffect.SourceValue(entity, "deepChill", player) > 0
@@ -771,9 +784,21 @@ function Context.new(
 				params.forceCrit = true
 				consume = false
 			end
+			-- S144 (Logic/DeadEye): the Marksman's keystone, a sure crit on a healthy target (spends no guaranteedCrit,
+			-- still takes nextShot)
+			local keepCrit = false
+			local deadEye = hook("deadEye")
+			if deadEye > 0 then
+				local fraction = hpFraction(entity)
+				if DeadEye.sure(deadEye, skill.type, main, if fraction then fraction * 100 else nil) then
+					params.forceCrit = true
+					keepCrit = true
+				end
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,
 				consumeShot = consume,
+				keepCrit = keepCrit,
 				skill = if opts.plain then nil else skill.id,
 				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
 				-- ground pulses, the lightning arc, the second pierce target, Storm Arrow's splash, split impacts) roll none.
@@ -864,6 +889,12 @@ function Context.new(
 			if element == "ice" and main and result and not result.dodged and result.amount > 0 then
 				chillHit(entity)
 			end
+			-- S144 (Logic/Crossbow): Toxic Tips on the main hits of the Crossbow's skills (not splashes, pierces or zone ticks);
+			-- a trap's hit with Master Trapper (the Trapper's keystone) without the gap
+			local tip, gapless = Crossbow.tipFor(skill.pool, skill.type, hook("toxicTips"), hook("masterTrapper"))
+			if tip > 0 and main and result and not result.dodged and result.amount > 0 then
+				services.Combat.ToxicTip(player, entity, tip, ctx.attack(), gapless)
+			end
 			-- S142 Conductor (Logic/Shock): a single-target lightning spell's main hit jumps once (a secondary hit)
 			local conduct = hook("conduct")
 			if Shock.conducts(element, tag, main, conduct) and result and not result.dodged and result.amount > 0 then
@@ -944,6 +975,17 @@ function Context.new(
 				duration = SkillData.CHILL.deepDuration
 				skillKey = Chill.DEEP_KEY
 			end
+			-- S144 (Logic/Snare): a root with bossSlow on a boss or an Elite II is a slow of bossSlow % (enemySlow)
+			local category = effect.category
+			if effect.bossSlow ~= nil then
+				local slow = ctx.resolve(effect.bossSlow)
+				local landed = Snare.kindOn(kind, services.StatusEffect.IsBossLike(entity), slow)
+				if landed ~= kind then
+					kind = landed
+					effectValue = slow * scale
+					category = Snare.SLOW_CATEGORY
+				end
+			end
 			local tickAmount: number? = nil
 			if effect.kind == "bleed" or effect.kind == "poison" or effect.kind == "burn" then
 				-- value % of attack spread over the duration, one tick per second; S63: + dotPower (STATY 4); S70: burn
@@ -996,7 +1038,7 @@ function Context.new(
 					elseif effect.kind == "poison" then behaviour.poisonStacks
 					else effect.maxStacks,
 				skillId = skillKey,
-				category = effect.category,
+				category = category,
 				notBoss = effect.notBoss, -- S70: for every kind (Hammer of Heaven's stun)
 				element = if effect.kind == "burn" and skill.holy then "holy" else nil,
 				-- S76: carried to the copies when the bearer dies (CombatService)

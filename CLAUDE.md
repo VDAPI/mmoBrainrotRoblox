@@ -151,6 +151,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   to `deepChill` gracza, `vsFrozen`, `shatterMul`); każde zamrożenie lodu przez `ctx.applyEffect` / `ctx.freeze`,
   odwet tarczy przez tabelę `RETALIATIONS` w `CombatService`; ruchomy krąg `travel`, efekty każdej fali `waveEffects`,
   narastające spowolnienie `SkillEffect.maxStacks`; lustro w `tests/SkillModel` (`chillHit`), test `tests/chill.spec`.
+- **Kusza Łowcy / zwieńczenia Łowcy** (S144): reguły kuszy tylko w `Logic/Crossbow` (`tipFor`, `tipReady`, `venomMul`,
+  `cdrFor`; trucizna grotów przez `CombatService.ToxicTip`), unieruchomienie, które na bossie spowalnia, przez
+  `SkillEffect.bossSlow` i `Logic/Snare`, Martwe Oko w `Logic/DeadEye`; lustra w tabeli `Hunt` w `tests/SkillModel` (plik
+  na limicie 200 lokalnych: nowe pomocniki w tabelach), test `tests/crossbow.spec`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);
