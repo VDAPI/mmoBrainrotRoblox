@@ -688,13 +688,17 @@ local function buildMannequin()
 	-- outwards, before the figure is anchored
 	local root = mannequin:FindFirstChild("HumanoidRootPart")
 	if root and root:IsA("BasePart") then
-		local links: { { any } } = {}
+		type Link = { p0: Instance?, p1: Instance?, c0: CFrame, c1: CFrame }
+		local links: { Link } = {}
 		for _, item in mannequin:GetDescendants() do
 			if item:IsA("JointInstance") and item.Part0 and item.Part1 then
-				table.insert(links, { item.Part0, item.Part1, item.C0, item.C1 })
+				table.insert(
+					links,
+					{ p0 = item.Part0 :: Instance?, p1 = item.Part1 :: Instance?, c0 = item.C0, c1 = item.C1 }
+				)
 			elseif item:IsA("AnimationConstraint") and item.Attachment0 and item.Attachment1 then
 				local a0, a1 = item.Attachment0 :: Attachment, item.Attachment1 :: Attachment
-				table.insert(links, { a0.Parent, a1.Parent, a0.CFrame, a1.CFrame })
+				table.insert(links, { p0 = a0.Parent, p1 = a1.Parent, c0 = a0.CFrame, c1 = a1.CFrame })
 			end
 		end
 		local placed: { [Instance]: boolean } = { [root] = true }
@@ -702,8 +706,8 @@ local function buildMannequin()
 		while moved do
 			moved = false
 			for _, link in links do
-				local p0, p1, c0, c1 = link[1], link[2], link[3], link[4]
-				if p0:IsA("BasePart") and p1:IsA("BasePart") then
+				local p0, p1, c0, c1 = link.p0, link.p1, link.c0, link.c1
+				if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then
 					if placed[p0] and not placed[p1] then
 						p1.CFrame = p0.CFrame * c0 * c1:Inverse()
 						placed[p1], moved = true, true
