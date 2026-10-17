@@ -15,6 +15,7 @@ local ItemEffects = require("./ItemEffects")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
 local SkillPoints = require("./SkillPoints")
+local SkillPools = require("./SkillPools")
 local Skills = require("./Skills")
 local Time = require("./Time")
 local Types = require("../Types")
@@ -320,7 +321,7 @@ end
 -- 6 (S56, ROZWOJ 5): ranks come from the character level and skill points are gone. Every character drops
 -- `skills` / `skillPoints`, gets the class start stats back with every stat point to spend again
 -- (5 x (level - 1)), an empty path state (S57), build slot 1, a hotbar rebuilt from the actives unlocked at
--- its level and the one-time notice. Idempotent.
+-- its level (S143: of the weapon's pool) and the one-time notice. Idempotent.
 MIGRATIONS[6] = function(data, _newId)
 	if type(data.characters) ~= "table" then
 		return
@@ -338,7 +339,13 @@ MIGRATIONS[6] = function(data, _newId)
 		if class then
 			character.stats = table.clone(class.startStats)
 			character.statPoints = Exp.pointsForLevels(1, level)
-			character.hotbar = Skills.startHotbar(classId, level)
+			-- S143: the actives of the pool of the equipped weapon (default pool without one); a bar of every pool
+			-- mixed the Warrior's Sword and Shield with Two-Handed (Logic/SkillPools)
+			character.hotbar = Skills.startHotbar(
+				classId,
+				level,
+				SkillPools.activePool({ class = classId, equipment = character.equipment })
+			)
 		else
 			character.hotbar = {} -- unknown class: stats untouched, nothing on the bar
 		end

@@ -109,6 +109,10 @@ export type PoolTile = {
 	bp: { BpMark },
 	onBar: string?, -- the slot on the pool's bar
 	active: boolean, -- the pool of the equipped weapon
+	-- S143: the skill's own weapon fits the equipment (SkillDef.weapon, Shield Bash's shield; true without one) and the
+	-- reason when it does not (Paths.skillWeaponError: "cast.error.needShield")
+	weaponOk: boolean,
+	weaponError: string?,
 }
 export type PoolRowKind = "ladder" | "paths" | "other"
 export type PoolRow = {
@@ -589,6 +593,7 @@ local function build(api: Paths.Api)
 		local cap = Skills.rankAt(skill, character.level)
 		local buyable, buyReason = SkillPoints.canBuy(plannedChar, poolId, skill.id, 1)
 		local role = if skill.role and SkillPools.ladderOf(skill) then skill.role else nil
+		local weaponError = api.skillWeaponError(skill, api.weaponTypesOf(character.equipment))
 		return {
 			skillId = skill.id,
 			role = role,
@@ -610,6 +615,8 @@ local function build(api: Paths.Api)
 			bp = bpMarks(skill, api.bpRank(plannedChar, skill.id), choicesOf(character)),
 			onBar = slotOf(SkillPoints.barOf(character, poolId), skill.id),
 			active = active,
+			weaponOk = weaponError == nil,
+			weaponError = weaponError,
 		}
 	end
 

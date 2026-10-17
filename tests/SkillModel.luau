@@ -59,6 +59,7 @@
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local Block = require("../src/shared/Logic/Block")
 local Burn = require("../src/shared/Logic/Burn")
 local Chill = require("../src/shared/Logic/Chill")
 local Shock = require("../src/shared/Logic/Shock")
@@ -996,6 +997,18 @@ SkillModel.R4_ROTATION = {
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
 SkillModel.R4_UTILITY = {
+	-- S143 (DESIGN-18 §6.2): the Warrior pools' control, geometry, blocks and sustain options
+	["shieldSweep:5a"] = "geometria albo czas kontroli",
+	["shieldSweep:10a"] = "ogłuszenie (kontrola)",
+	["shieldBash:5a"] = "geometria albo czas kontroli",
+	["vindicate:5a"] = "bloki (manekiny nie biją)",
+	["vindicate:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["brutalStrike:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["sunder:5a"] = "geometria albo czas kontroli",
+	["sunder:10a"] = "osłabienie wroga dla drużyny (enemyArmor: najsilniejsze w kategorii, cecha Rozłupania)",
+	["warStomp:5a"] = "geometria albo czas kontroli",
+	["warStomp:10a"] = "ogłuszenie (kontrola)",
+	["execute:10a"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
 	["mightyStrike:10a"] = "obszar przy roli 1 cel (bez metryki)",
 	["charge:10a"] = "ogłuszenie (kontrola)",
 	["charge:10b"] = "obszar przy roli 1 cel (bez metryki)",
@@ -1244,6 +1257,17 @@ SkillModel.R4_CLASS_BUILDS = {
 	Mage = "arcanist.arcanistBoss",
 } :: { [string]: string }
 SkillModel.R4_SUPPORT_BUILDS = {
+	-- S143 (DESIGN-18 §6.2): the one-handed pool on the Sword and Shield builds (the Standard-Bearer deals the damage,
+	-- the Guardian guards); the two-handed pool stays on "Furia" (R4_CLASS_BUILDS)
+	mightyStrike = "standard.commander",
+	shieldSweep = "standard.commander",
+	shieldBash = "standard.commander",
+	crushingBlow = "standard.commander",
+	earthquake = "standard.commander",
+	vindicate = "standard.commander",
+	warBanner = "standard.commander",
+	intercept = "guardian.defender",
+	shieldWall = "guardian.defender",
 	heal = "healer.dungeon",
 	circleOfLight = "healer.dungeon",
 	shieldOfFaith = "healer.dungeon",
@@ -1964,6 +1988,8 @@ end
 -- Static unmodelled list of a player (I1 c): hooks the model does not count. S86: the class mechanics and the item
 -- trait hooks joined the modelled list (on the event or, in a fight with monsters that hit back, `retaliate`).
 local HOOKS_MODELLED: { [string]: boolean } = {
+	-- S143 (Logic/Fury): Rage gates Fury (furyMax); Unstoppable's immunity: the dummies never stun or push the player
+	rage = true,
 	-- S142 (Logic/Shock): Overcharge, Conductor
 	overchargeCrit = true,
 	overchargeDmg = true,
@@ -2065,6 +2091,7 @@ local HOOKS_MODELLED: { [string]: boolean } = {
 -- Hooks that change no metric (threat, movement, minimap, kills of a dying group's spread, radius of areas every dummy
 -- stands in, the mana shield's price): docs/SESJE.md S86 names the reason of each.
 local HOOKS_NONE: { [string]: boolean } = {
+	unstoppable = true, -- S143: no monster stuns or pushes the player in the model
 	threat = true,
 	manaShieldCost = true,
 	areaRadius = true,
@@ -2436,18 +2463,21 @@ end
 local FURY = PathData.HOOK_RULES.fury
 local CARNAGE = PathData.HOOK_RULES.carnage
 
--- mirrors StatusEffectService.FuryMax: the furyMax hook, at most HOOK_RULES.fury.maxStacks; 0 = no Fury
+-- mirrors StatusEffectService.FuryMax: the furyMax hook, at most HOOK_RULES.fury.maxStacks, only with Rage (S143,
+-- Logic/Fury.cap); 0 = no Fury
 local function furyMax(state: any): number
-	return math.clamp(math.floor(hook(state, "furyMax")), 0, FURY.maxStacks)
+	return Fury.cap(hook(state, "furyMax"), hook(state, "rage"), FURY.maxStacks)
 end
 
--- mirrors StatusEffectService.AddFury: one hit that dealt damage; Carnage adds HOOK_RULES.carnage.furyGain
-local function addFury(state: any)
+-- mirrors StatusEffectService.AddFury: one hit that dealt damage; Carnage adds HOOK_RULES.carnage.furyGain, S143 the
+-- skill's furyGain (Brutal Strike; Logic/Fury.hitGain)
+local function addFury(state: any, skillId: string?)
 	local max = furyMax(state)
 	if max <= 0 then
 		return
 	end
-	local amount = if has(state, state.self, "carnage") then CARNAGE.furyGain else 1
+	local def = if skillId then SkillData.get(skillId) else nil
+	local amount = Fury.hitGain(if def then def.furyGain else nil, has(state, state.self, "carnage"), CARNAGE.furyGain)
 	state.fury = Fury.gain(state.fury, state.t, max, amount, FURY)
 end
 
@@ -2471,6 +2501,20 @@ local function stepFury(state: any)
 end
 SkillModel.furyMax = furyMax
 
+-- S143 mirrors CombatService.RecentBlocks (Logic/Block.count): the expected blocks of the last BLOCK.window seconds,
+-- at most BLOCK.max (an expected value: the sum of the blows' block chances, capped)
+local function recentBlocks(state: any): number
+	local rules = SkillData.BLOCK
+	local n = 0
+	for _, b in state.blocks or {} do
+		if state.t - b.t < rules.window and b.t <= state.t + EPS then
+			n += b.n
+		end
+	end
+	return math.min(n, rules.max)
+end
+SkillModel.recentBlocks = recentBlocks
+
 -- S86 (B5 test): Fury under hits at `hits` (s) over `seconds` through the model's addFury / stepFury, with furyMax =
 -- `max`; Carnage on [carnage[1], carnage[2]). Returns the stacks at each whole second (index = second + 1).
 function SkillModel.furySim(hits: { number }, seconds: number, max: number, carnage: { number }?): { number }
@@ -2481,7 +2525,7 @@ function SkillModel.furySim(hits: { number }, seconds: number, max: number, carn
 		furyStatAt = -math.huge,
 		selfDirty = false,
 		self = { effects = {} },
-		p = { hooks = { furyMax = max } },
+		p = { hooks = { furyMax = max, rage = 1 } }, -- S143: Fury needs Rage (Logic/Fury.cap)
 		sp = { hooksAll = {} },
 	}
 	local out: { number } = {}
@@ -3089,7 +3133,7 @@ dealDamage = function(state: any, tg: any, o: HitOpts): number
 			if o.basic or (o.skill and PathData.HOOK_RULES.spot.skills[o.skill]) then
 				spot(state, tg)
 			end
-			addFury(state)
+			addFury(state, o.skill)
 			if not o.noProc then
 				if tg.hp > 0 or tg.dummy then
 					applyOnHit(state, tg, amount, o)
@@ -3509,6 +3553,15 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 	end
 	-- S141 mirrors Context.damage (Logic/Chill): Glacial Spike and Shatter on their main hits
 	local main = not (o.plain or o.secondary or o.lingering)
+	-- S143 mirrors Context.damage (Logic/Block): Vindicate's blocks of the window (the expected blocks of the fight's
+	-- monster blows, state.blocks), Shield Sweep with a shield
+	if main and def.values.perBlock ~= nil then
+		multiplier *= Block.vindicateMul(recentBlocks(state), Skills.valueAt(def, "perBlock", ctx.rank))
+	end
+	if def.values.shieldDmg ~= nil and not o.lingering then
+		local shielded = Block.hasShield(state.sp.weapons and state.sp.weapons.offhand)
+		multiplier *= Block.shieldMul(shielded, Skills.valueAt(def, "shieldDmg", ctx.rank))
+	end
 	local spend: string? = nil
 	if ctx.element == "ice" and main and (def.values.vsFrozen ~= nil or def.values.shatter ~= nil) then
 		local frozen = has(state, tg, "freeze")
@@ -4839,7 +4892,8 @@ local function condition(state: any, entry: { [string]: any }): boolean | string
 		elseif key == "beforeRedZone" then
 			return false -- no boss schedule in the fight (Guardian Angel; DECYZJE S86)
 		elseif key == "minFury" then
-			if state.fury.stacks < value then
+			-- S143: capped at the Fury cap (without Rage, e.g. below 20, the entry holds: Data/Paths/Types)
+			if state.fury.stacks < math.min(value, furyMax(state)) then
 				return false
 			end
 		elseif key == "minCharges" then
@@ -5167,6 +5221,8 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 			amount *= (1 - d1 - m1 - b1) / math.max(1e-9, 1 - d0 - b0)
 		end
 		if b1 > 0 then
+			-- S143 mirrors CombatService onBlock (Logic/Block.record): the blow's expected block for Vindicate
+			table.insert(state.blocks, { t = state.t, n = b1 })
 			if pathHook(state, "block") > 0 and state.resource == "energy" then
 				local energy = b1 * PathData.HOOK_RULES.blockEnergy
 				state.gainReturn(energy)
@@ -5367,6 +5423,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		kills = 0,
 		potionsHp = 0,
 		blockEnergy = 0,
+		blocks = {}, -- S143: { t, n } of the expected blocks (Vindicate, Logic/Block)
 		falcon = nil,
 		falconToken = 0,
 		falconStrikes = 0,

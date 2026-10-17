@@ -423,6 +423,128 @@ T.describe("Skill pools: the Mage's three pools on one ladder (S142)", function(
 	end)
 end)
 
+-- S143 (DESIGN-18 §5, §6.2): the Warrior's two pools on the shared ladder, the common skills on COMMON_LADDER, the end
+-- of the Warrior's transitional state.
+T.describe("Skill pools: the Warrior's two pools (S143)", function()
+	local WANT: { [string]: { [string]: string } } = {
+		onehand = {
+			S1 = "mightyStrike",
+			A1 = "shieldSweep",
+			K1 = "shieldBash",
+			O1 = "intercept",
+			S2 = "crushingBlow",
+			P1 = "fortitude",
+			A2 = "earthquake",
+			K2 = "warBanner",
+			S3 = "vindicate",
+			P2 = "riposte",
+			U = "shieldWall",
+		},
+		twohand = {
+			S1 = "brutalStrike",
+			A1 = "cleave",
+			K1 = "sunder",
+			O1 = "bloodlust",
+			S2 = "rend",
+			P1 = "rage",
+			A2 = "bladeWhirl",
+			K2 = "warStomp",
+			S3 = "execute",
+			P2 = "unstoppable",
+			U = "titansWrath",
+		},
+	}
+
+	T.it("every pool holds exactly one skill per LADDER code at the code's level; C1-C4 common", function()
+		T.expect(SkillPools.isTransitional("Warrior")).toBe(false)
+		T.expect(SkillPools.ids("Warrior")).toEqual({ "onehand", "twohand" })
+		for poolId, want in WANT do
+			for _, rung in PoolData.LADDER do
+				local found = {}
+				for _, skill in SkillData.byClass.Warrior do
+					if skill.path == nil and skill.pool == poolId and skill.role == rung.code then
+						table.insert(found, skill.id)
+					end
+				end
+				local expected = want[rung.code]
+				T.expect({ poolId, rung.code, found }).toEqual({ poolId, rung.code, { expected } })
+				local skill = SkillData.get(expected) :: any
+				T.expect({ expected, skill.unlock, skill.type == "passive" }).toEqual({
+					expected,
+					rung.level,
+					rung.passive == true,
+				})
+				if skill.type == "passive" then
+					T.expect({ expected, skill.maxLevel }).toEqual({ expected, 5 })
+				else
+					T.expect({ expected, skill.delivery }).toEqual({ expected, "melee" })
+				end
+				for _, other in SkillPools.ids("Warrior") do
+					T.expect({ expected, other, SkillPools.inPool("Warrior", other, expected) })
+						.toEqual({ expected, other, other == poolId })
+				end
+			end
+		end
+		local common = { C1 = "charge", C2 = "taunt", C3 = "battleCry", C4 = "steelSkin" }
+		for _, rung in PoolData.COMMON_LADDER do
+			local skill = SkillData.get(common[rung.code]) :: any
+			T.expect({ skill.id, skill.pool, skill.role, skill.unlock, skill.path })
+				.toEqual({ skill.id, "common", rung.code, rung.level, nil })
+			for _, poolId in SkillPools.ids("Warrior") do
+				T.expect(SkillPools.inPool("Warrior", poolId, skill.id)).toBe(true)
+			end
+		end
+		-- S143: 2 -> 3 (a free reset)
+		T.expect((PoolData.get("Warrior") :: any).version).toBe(3)
+	end)
+
+	T.it("every Warrior skill has a pool or a path; the directions keep only their capstones", function()
+		local onPath: { [string]: string } = {}
+		for _, skill in SkillData.byClass.Warrior do
+			T.expect({ skill.id, skill.pool ~= nil or skill.path ~= nil }).toEqual({ skill.id, true })
+			if skill.path == nil then
+				T.expect({ skill.id, skill.role ~= nil }).toEqual({ skill.id, true })
+			else
+				onPath[skill.id] = skill.path
+			end
+		end
+		T.expect(onPath).toEqual({ lastBastion = "guardian", carnage = "berserker", advanceOrder = "standard" })
+		-- Shield Bash needs a shield (SkillDef.weapon); no other pool skill has a weapon of its own
+		for _, skill in SkillData.byClass.Warrior do
+			local def: any = skill
+			T.expect({ skill.id, def.weapon ~= nil }).toEqual({ skill.id, skill.id == "shieldBash" })
+		end
+	end)
+
+	T.it("the plans: every pool's and common skill once, in ladder order, actives before passives", function()
+		local warrior = PoolData.get("Warrior") :: any
+		T.expect(warrior.commonPlan).toEqual({ "charge", "taunt", "battleCry", "steelSkin" })
+		for _, p in warrior.pools do
+			local members: { [string]: boolean } = {}
+			for _, skill in SkillData.byClass.Warrior do
+				if skill.path == nil and (skill.pool == p.id or skill.pool == "common") then
+					members[skill.id] = true
+				end
+			end
+			local passive = false
+			local lastLevel = 0
+			for _, id in p.plan do
+				T.expect({ p.id, id, members[id] }).toEqual({ p.id, id, true })
+				members[id] = nil
+				local def = SkillData.get(id) :: any
+				if def.type == "passive" then
+					passive = true
+				else
+					T.expect({ p.id, id, passive }).toEqual({ p.id, id, false })
+					T.expect({ p.id, id, def.unlock >= lastLevel }).toEqual({ p.id, id, true })
+					lastLevel = def.unlock
+				end
+			end
+			T.expect({ p.id, next(members) }).toEqual({ p.id, nil })
+		end
+	end)
+end)
+
 T.describe("Skill pools: the weapon picks the pool (S137)", function()
 	T.it("poolOf: every weapon type of every class lands in exactly one pool; no weapon = the default pool", function()
 		for _, classId in Classes.order do
@@ -483,7 +605,9 @@ T.describe("Skill pools: the weapon picks the pool (S137)", function()
 		T.expect(SkillPools.inPool("Mage", "fire", "meteor")).toBe(true)
 		T.expect(SkillPools.inPool("Mage", "lightning", "meteor")).toBe(false)
 		T.expect(SkillPools.inPool("Mage", "fire", "mightyStrike")).toBe(false)
-		T.expect(SkillPools.inPool("Warrior", "twohand", "mightyStrike")).toBe(true)
+		T.expect(SkillPools.inPool("Warrior", "onehand", "mightyStrike")).toBe(true) -- S143: the one-handed S1
+		T.expect(SkillPools.inPool("Warrior", "twohand", "mightyStrike")).toBe(false)
+		T.expect(SkillPools.inPool("Warrior", "twohand", "charge")).toBe(true) -- common
 		T.expect(SkillPools.valid("Mage", "ice")).toBe(true)
 		T.expect(SkillPools.valid("Mage", "onehand")).toBe(false)
 		T.expect(SkillPools.valid("Mage", 5)).toBe(false)

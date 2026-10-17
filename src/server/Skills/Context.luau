@@ -46,12 +46,14 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Block = require(Shared.Logic.Block)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
 local Chain = require(Shared.Logic.Chain)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Elements = require(script.Parent.Elements)
+local Paths = require(Shared.Logic.Paths)
 local Push = require(script.Parent.Push)
 local Rng = require(Shared.Logic.Rng)
 local Roll = require(Shared.Logic.Roll)
@@ -453,7 +455,9 @@ function Context.new(
 			end
 		end
 		local push = behaviour.knockback or skill.knockback -- S140: Flame Wave's own knockback
-		if push then
+		-- S143: an Unstoppable player (full Fury) is not pushed
+		local steady = entity.kind == "player" and entity.player and services.StatusEffect.Unstoppable(entity.player)
+		if push and not steady then
 			Push.knockback(entity, opts.from or root.Position, push)
 		end
 		local at = Entity.Position(entity)
@@ -719,6 +723,16 @@ function Context.new(
 			-- S141 (Logic/Chill): Glacial Spike and Shatter on their main hits; Shatter spends what it used after the hit
 			local spend: string? = nil
 			local main = not (opts.plain or opts.secondary or opts.lingering)
+			-- S143 (Logic/Block): Vindicate's main hit +perBlock % per recent block; Shield Sweep +shieldDmg % with a shield
+			if main and skill.values.perBlock ~= nil then
+				multiplier *= Block.vindicateMul(services.Combat.RecentBlocks(player), value("perBlock"))
+			end
+			if skill.values.shieldDmg ~= nil and not opts.lingering then
+				multiplier *= Block.shieldMul(
+					Block.hasShield(Paths.weaponTypesOf(character.equipment :: any).offhand),
+					value("shieldDmg")
+				)
+			end
 			if element == "ice" and main and (skill.values.vsFrozen ~= nil or skill.values.shatter ~= nil) then
 				local frozen = services.StatusEffect.Has(entity, "freeze")
 				local deep = services.StatusEffect.SourceValue(entity, "deepChill", player) > 0

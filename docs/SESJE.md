@@ -12165,3 +12165,73 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance,BalanceTables}.luau`, `tests/{shock,balance,balance1_20,paths,pathview,skillpoints,skillpools,
   skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
   balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S143: Wojownik, pule i kierunki
+
+- **Dwie pule Wojownika** (`Data/Skills/Warrior`, `pool`, `role`; DESIGN-18 §6.2). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Miecz i Tarcza `onehand` | Broń Dwuręczna `twohand` |
+  |---|---|---|
+  | S1 · 1 | Potężne Uderzenie (bez zmian) | Brutalny Cios `brutalStrike` 136 / 222% (węzły Potężnego), +2 Furii; egzekucja 30 / +28; rozprysk 50% / +50 |
+  | A1 · 3 | Zamach Tarczą `shieldSweep` (stożek 6 st. / 100°, odrzut 4) 100 / 160%, z tarczą +20%; +40° / +18; ogłuszenie 0,8 s / +36 | Rozpłatanie (było 10; 115 / 168%, węzeł rangi 5 164,4) |
+  | K1 · 6 | Uderzenie Tarczą `shieldBash` 70 / 130%, ogłuszenie 1,5 s (bez bossów), wymaga tarczy; +0,5 s / +14; odnowienie ×0,8 / +32 | Rozbicie `sunder` 60 / 110%, pancerz −10 / −20% 6 s, spowolnienie 30% 3 s; +2 s / +15; −10 pkt pancerza / +34 |
+  | O1 · 10 | Przechwycenie (było rząd 4 Strażnika; 12 / 30%, węzły rang 5–6) | Krwawy Szał (było 18; 13 / 20%, węzły rang 3–4) |
+  | S2 · 15 | Miażdżący Cios (było 48; 220 / 324,4%, węzeł rangi 9 300) | Rozdarcie (było 26; 200 / 280%) |
+  | P1 · 20 | Niezłomność (HP 6 / 20%, blok 1 / 3 pkt; ranga 1 poniżej dawnych 8%, pasmo Elity S32) | Furia `rage`: limit 6 stosów (z Bitewnym Rytmem 8 / 9 / 10), +0,2 / 0,5% obrażeń za stos |
+  | A2 · 26 | Trzęsienie Ziemi (było 30; 147 / 175%) | Wir Ostrzy (było 6; 48 / 52% × 3) |
+  | K2 · 33 | Sztandar Wojenny (było rząd 4 Chorążego; 5,5 / 10%) | Tupnięcie `warStomp` (krąg r 6) 60 / 110%, ogłuszenie 1 s (bez bossów), ataki −20% 4 s (limit kategorii); r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Wyrok `vindicate` 200 / 300%, +15% za blok z 6 s (najwyżej 3); +5% za blok / +30; rozprysk 50% / +66 | Egzekucja `execute` 180 / 260%, ×2 poniżej 30% HP, zużywa Furię +4% za stos; egzekucja 30 / +26; kradzież życia 15% / +3% za stos |
+  | P2 · 50 | Kontratak (było 45) | Niepowstrzymany `unstoppable`: przy pełnej Furii odporność na ogłuszenie i odrzut, obrażenia −3 / −9% |
+  | U · 60 | Mur Tarcz (było zwieńczenie Strażnika) | Gniew Tytana (było rząd 7 Berserkera, 48.; 120 / 150%) |
+
+- **Wspólne Wojownika:** Szarża C1 4 (było 3), Prowokacja C2 12 (było 10), Okrzyk Bojowy C3 30 (było rząd 1 Chorążego;
+  ranga 1 14,9%), Stalowa Skóra C4 45 (było 14; ranga 1 20%). `SkillPools/Warrior` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Strażnik z Ostatnim Bastionem w rzędzie 8 (ranga 1 46,7%) i
+  Podwójną Strażą w rzędzie 4 (Przechwycenie osłania drugiego sojusznika), Niezłomnym Bastionem w rzędzie 11 (ulepszenie
+  Ostatniego Bastionu zamiast Muru Tarcz), Berserker z Rzezią w rzędzie 8 (broń
+  dwuręczna), Chorąży z Rozkazem Natarcia w rzędzie 8. Nowe węzły po umiejętnościach, które poszły do pul (ta sama liczba
+  rang): Niezachwiany (+1% HP), Mistrz Uderzenia (+0,5 s ogłuszenia Uderzenia Tarczą), Blizny (+1% HP), Szał (+0,3% za
+  stos Furii), Ostatnie Cięcie (Egzekucja od 35%), Proporzec (+3% pancerza), Herold (Okrzyk +4 s), Musztra (Sztandar
+  ×0,85 odnowienia). Węzły Furii Berserkera działają tylko z pasywką Furia.
+- **Mechaniki:** `Logic/Fury` (`cap` tylko z hakiem `rage`, `hitGain`, `unstoppable`), `Logic/Block` (nowy: `record`,
+  `count`, `vindicateMul`, `hasShield`, `shieldMul`; `Data/Skills.BLOCK` okno 6 s, najwyżej 3), `SkillDef.weapon` i
+  `SkillDef.furyGain` (`Build`, `Types`), `Paths.skillWeaponError` w `skillUsable` i `passiveTotals`, kafelek puli szary
+  bez tarczy (`PathView.PoolTile.weaponOk` / `weaponError`, `PoolTree`, `Details`, `SkillController.Usable`). Serwer:
+  `StatusEffectService` (`FuryMax` przez `Fury.cap`, `AddFury` z `furyGain`, `Unstoppable` przeciw ogłuszeniu),
+  `CombatService` (czasy bloków, `RecentBlocks`, Furia z `furyGain` umiejętności), `Skills/Context` (Wyrok, Zamach z
+  tarczą, bez odrzutu przy Niepowstrzymanym), `Types/Offense` (finał bez odrzutu). Migracja 6 układa pasek z puli broni.
+- **Model:** buildy wzorcowe Strażnika i Chorążego z mieczem i tarczą, Berserkera z toporem dwuręcznym (`ranks`, nowe
+  rotacje, Szarża Berserkera na końcu rang); lustra `Fury.cap`, `furyGain`, oczekiwanych bloków Wyroku i tarczy Zamachu.
+  R1 na 20.: 2,11 (dwuręczna, `berserker.fury`) i 2,04 (jednoręczna, `standard.commander`; nowy wiersz bloku S91),
+  T-SK3 1,21–1,22. R4 nowych aktywnych w pasmach (np. Brutalny Cios 5A / 5B 0,14 / 0,10, 10B 0,20; Rozbicie 10B 0,27;
+  Wyrok 10B 0,20; Uderzenie Tarczą 10A / 10B 0,25 / 0,22). Tożsamość (`S143.warrior.*`, raport do S146) na 20 / 45 /
+  70 / 100: dwuręczna / jednoręczna w jeden cel 1,59 / 1,74 / 1,80 / 1,53, na 3 cele 1,70 / 1,61 / 1,26 / 1,32 (cel
+  1,15–1,25); EHP Strażnika / dwuręczna 1,57 / 1,87 / 2,18 / 2,17 (cel ≥ 1,4); tank na minutę 3,38 / 2,57 / 2,37 / 2,18
+  (≤ 3,5); R7 Łowca / dwuręczny 1,06 / 1,15 / 1,05 / 1,24. Berserker (wzorzec obrażeń) wobec S142: −4% / +12% / +7% na
+  45 / 70 / 100 po obcięciu Furii (0,4–1,2 → 0,2–0,5 za stos), Szału (0,5 → 0,3) i Rozbicia (80–140 → 60–110).
+- **1–20:** fixture przepisany (S143 „pule Wojownika”): 413 zmienionych i 30 nowych wpisów w kluczach Wojownika i w
+  wierszach z Wojownikiem; `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Chorążym jednoręcznym;
+  `S91.gain.standard.commander` 1,00 w raporcie).
+- **`GLOBAL_REPORT_ONLY` S143** (80 kluczy 21–100): strażnicy T-SK1/2 Wojownika w Borze, Pustkowiach i Szczytach (60),
+  `G10` i `R.ashen.tsk5.50` (Uzdrowiciel na Obrońcy 0,247), T1 Rozłupania (młot) na 45–100, T2 Berserkera na 70.,
+  ścieżki: `berserker.base` 45–100, EHP Strażnika na 45 / 70, `standard.support` i `r6.standard` na 100., R4 10A
+  Rozpłatania na 45., `marksman.r7` na 70. i `inquisitor.ratio` na 70 / 100; `S134_REPORT` Vaelgratha (Wojownik solo).
+- **Wygląd, dźwięk, teksty:** ruchy 7 nowych aktywnych jako pozy z istniejących (Zamach i Uderzenie z gardy tarczy,
+  Brutalny Cios, Rozbicie i Egzekucja z oburęcznym zamachem, Tupnięcie), `SkillVfx` w złocie tarczy i czerwieni
+  dwuręcznej z istniejących składników, klucze `skill.<id>` w `Data/Sfx` bez ID (`hint`); teksty PL / EN: nazwy,
+  `short`, `desc`, przełomy, nowe węzły kierunków, `cast.error.needShield`; `tests/fixtures/skill_timing.luau` (7 wierszy).
+- **Testy:** nowy `tests/block.spec.luau` (okno, limit, mnożniki, wymóg tarczy, szary kafelek), `fury.spec` (Furia tylko
+  z Furią, `hitGain`, `unstoppable`, dane), `skillpools.spec` (pełna drabina obu pul i wspólnych), `paths.spec`
+  (`skill` tylko w rzędach 4 i 8), `skills.spec`, `skillpoints.spec`, `character.spec` (migracja 6), `balance.spec`
+  (blok S143), `balance1_20.spec` (fixture S143).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Block.luau` (nowy), `src/shared/Logic/{Fury,Paths,PathView,Skills,AccountSchema}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Warrior}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Warrior.luau`, `Data/Paths/Warrior.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/SkillController.luau`, `src/client/UI/Screens/SkillsWindow/{Details,PoolTree}.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/{block,fury,balance,balance1_20,character,paths,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

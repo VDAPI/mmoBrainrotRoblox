@@ -277,6 +277,9 @@ end
 local CROWD_CONTROL: { [string]: boolean } =
 	{ stun = true, root = true, slow = true, freeze = true, attackSlow = true, frostbite = true }
 
+-- S143: what Unstoppable (full Fury) keeps off a player; knockbacks are kept off in Skills/Context.
+local UNSTOPPABLE: { [string]: boolean } = { stun = true }
+
 -- Applies (or refreshes) an effect. True when it was applied; callers may ignore the result.
 function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOptions): boolean
 	if not entity or options.duration <= 0 then
@@ -292,6 +295,15 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	if
 		DEBUFFS[kind]
 		and (StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield"))
+	then
+		return false
+	end
+	-- S143 (Unstoppable): a player at full Fury with the unstoppable hook shrugs off stuns
+	if
+		UNSTOPPABLE[kind]
+		and entity.kind == "player"
+		and entity.player
+		and StatusEffectService.Unstoppable(entity.player)
 	then
 		return false
 	end
@@ -803,9 +815,10 @@ local fury: { [Player]: Fury.State } = {}
 -- Last published "Fury" / "FuryMax" attributes per player (written only on change).
 local furyShown: { [Player]: { model: Instance, stacks: number, max: number } } = {}
 
--- Fury cap of a player: the furyMax hook (path nodes), at most HOOK_RULES.fury.maxStacks; 0 = no Fury.
+-- Fury cap of a player: the furyMax hook (Rage and the Berserker's nodes), at most HOOK_RULES.fury.maxStacks; S143:
+-- only with Rage (the rage hook, Logic/Fury.cap); 0 = no Fury.
 function StatusEffectService.FuryMax(player: Player): number
-	return math.clamp(math.floor(hookOf(player, "furyMax")), 0, HOOK_RULES.fury.maxStacks)
+	return Fury.cap(hookOf(player, "furyMax"), hookOf(player, "rage"), HOOK_RULES.fury.maxStacks)
 end
 
 function StatusEffectService.FuryStacks(player: Player): number
@@ -835,8 +848,9 @@ local function store(player: Player, state: Fury.State?)
 	end
 end
 
--- One hit of the player that dealt damage (CombatService.DealDamage). Carnage adds HOOK_RULES.carnage.furyGain.
-function StatusEffectService.AddFury(player: Player)
+-- One hit of the player that dealt damage (CombatService.DealDamage). Carnage adds HOOK_RULES.carnage.furyGain; S143:
+-- `skillGain` = the hitting skill's furyGain (Brutal Strike 2), the larger one counts (Logic/Fury.hitGain).
+function StatusEffectService.AddFury(player: Player, skillGain: number?)
 	local max = StatusEffectService.FuryMax(player)
 	if max <= 0 then
 		if fury[player] then
@@ -844,8 +858,19 @@ function StatusEffectService.AddFury(player: Player)
 		end
 		return
 	end
-	local amount = if StatusEffectService.PlayerHas(player, "carnage") then HOOK_RULES.carnage.furyGain else 1
+	local carnage = StatusEffectService.PlayerHas(player, "carnage")
+	local amount = Fury.hitGain(skillGain, carnage, HOOK_RULES.carnage.furyGain)
 	store(player, Fury.gain(fury[player] or Fury.new(), os.clock(), max, amount, HOOK_RULES.fury))
+end
+
+-- S143 (Unstoppable, DESIGN-18 §6.2): at full Fury the unstoppable hook keeps stuns (Apply) and knockbacks
+-- (Skills/Context) off the player.
+function StatusEffectService.Unstoppable(player: Player): boolean
+	local hook = hookOf(player, "unstoppable")
+	if hook <= 0 then
+		return false
+	end
+	return Fury.unstoppable(hook, StatusEffectService.FuryStacks(player), StatusEffectService.FuryMax(player))
 end
 
 -- Spends every stack and returns how many (furyConsume, S73).

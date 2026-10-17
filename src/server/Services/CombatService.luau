@@ -42,6 +42,7 @@ local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
+local Block = require(Shared.Logic.Block)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
 local Shock = require(Shared.Logic.Shock)
@@ -170,6 +171,8 @@ type Attacker = {
 	weakStacks: number?,
 	-- S77 Vigilance / Warning: os.clock() of this Scout's last trigger of each kind (move, guard)
 	vigilance: { [string]: number }?,
+	-- S143 (Logic/Block): os.clock() of the blocks inside Data/Skills.BLOCK.window (Vindicate)
+	blocks: { number }?,
 }
 
 local REJECT_INTERVAL = 2
@@ -401,6 +404,13 @@ local function hook(player: Player, id: string): number
 end
 
 CombatService.Hook = hook
+
+-- S143 (Logic/Block): the player's blocks of the last Data/Skills.BLOCK.window seconds, at most BLOCK.max (Vindicate).
+function CombatService.RecentBlocks(player: Player): number
+	local state = attackers[player]
+	local blocks = SkillData.BLOCK
+	return Block.count(if state then state.blocks else nil, os.clock(), blocks.window, blocks.max)
+end
 
 -- Hook values from providers only: path nodes and class passives (SkillService.PassiveHook) and the admin /hook,
 -- without items. The block's energy (ROZWOJ 10.3) comes with block nodes, not with a shield's Parry.
@@ -1114,6 +1124,9 @@ end
 -- S64 (STATY 3): every block heals blockHeal % max HP (Parry trait, grown with rarity); half vs players. No heal
 -- source, like lifesteal and killHeal: no PvP HealScale, not in the fight summary.
 local function onBlock(player: Player, entity: any?, pvp: boolean)
+	-- S143 (Logic/Block): Vindicate counts the blocks of the last BLOCK.window seconds
+	local state = attackerState(player)
+	state.blocks = Block.record(state.blocks or {}, os.clock(), SkillData.BLOCK.window)
 	-- ROZWOJ 10.3: Block returns energy; only with block from path nodes (Parry alone gives none)
 	if CombatService.NodeHook(player, "block") > 0 then
 		ResourceService.Add(player, "energy", HOOK_RULES.blockEnergy)
@@ -1355,7 +1368,9 @@ function CombatService.DealDamage(
 	-- S72 (ROZWOJ 10.4): every hit that dealt damage feeds Fury (ticks, thorns and Retribution never come here).
 	-- A hit absorbed in full by shields still counts; one stopped by invulnerability does not.
 	if not result.dodged and result.amount > 0 and not pvpImmune then
-		StatusEffectService.AddFury(player)
+		-- S143: the skill's furyGain (Brutal Strike) on its own hits
+		local skillDef = if skillId then SkillData.get(skillId) else nil
+		StatusEffectService.AddFury(player, if skillDef then skillDef.furyGain else nil)
 	end
 	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
 		local alive = if targetEntity.kind == "monster"

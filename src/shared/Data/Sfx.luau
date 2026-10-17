@@ -253,6 +253,15 @@ local OWN: { [string]: Own } = {
 	warBanner = { hint = "pole planted ground cloth flap", roll = 110, ids = { COLLIDE }, pitch = HEAVY },
 	crushingBlow = { hint = "heavy armor crush impact", roll = 70, ids = { BASS, COLLIDE }, pitch = LOW },
 	advanceOrder = { hint = "war horn blow ground hit", roll = 120 },
+	-- S143 (DESIGN-18 §6.2): the Warrior pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	shieldSweep = { hint = "shield edge sweep whoosh thud", roll = 80 },
+	shieldBash = { hint = "shield bash metal clang", roll = 70 },
+	vindicate = { hint = "heavy righteous sword strike ring", roll = 80 },
+	brutalStrike = { hint = "heavy two-handed axe chop", roll = 70 },
+	sunder = { hint = "armor crack metal break", roll = 70 },
+	warStomp = { hint = "heavy stomp ground thud shockwave", roll = 110 },
+	execute = { hint = "brutal finishing chop heavy", roll = 80 },
 	-- Cleric
 	holyStrike = { hint = "holy bell strike chime", roll = 80, ids = { SELECT_02 }, pitch = MID },
 	heal = { hint = "warm healing chord chime", roll = 80, ids = { CUTE_GOODBYE } },

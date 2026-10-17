@@ -406,11 +406,14 @@ T.describe("Migration 6 (S56)", function()
 		migration({ characters = { ["1"] = noClass } }, newId)
 		T.expect(noClass.stats).toEqual((Classes.get("Warrior") :: any).startStats)
 		T.expect(noClass.statPoints).toBe(55)
+		-- S143: the actives of the default pool (Sword and Shield) unlocked by 12
 		T.expect(noClass.hotbar).toEqual({
 			["1"] = "mightyStrike",
-			["2"] = "charge",
-			["3"] = "bladeWhirl",
-			["4"] = "taunt",
+			["2"] = "shieldSweep",
+			["3"] = "charge",
+			["4"] = "shieldBash",
+			["5"] = "intercept",
+			["6"] = "taunt",
 		})
 		-- unknown class: stats kept, empty bar, new fields
 		local bard: any = { class = "Bard", level = 30, stats = { str = 9, dex = 9, int = 9, vit = 9 }, statPoints = 7 }

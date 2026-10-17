@@ -5243,3 +5243,65 @@
   strażnicy T-SK1/2 wariantów błyskawicy, T-SK4 średnich buildów (G10, regiony, ścieżki), T1 Mocy i Iskry żywiołu, R4
   5A / 10A Ognistego Pocisku `arcanistBoss` na 45–100 (przebicie i rozprysk dzielą mniej z podpaleniem), T-SK1 podstawy
   Maga na 40. i `arcanistFire` na 50.; wpisy S140 / S141, które znowu przechodzą, usunięte.
+- **S143** Pule Wojownika według drabiny DESIGN-18 §5 / §6.2. Miecz i Tarcza (`onehand`): Potężne Uderzenie S1 1,
+  Zamach Tarczą A1 3 (nowa), Uderzenie Tarczą K1 6 (nowa), Przechwycenie O1 10 (było rzędem 4 Strażnika), Miażdżący
+  Cios S2 15 (było rzędem 7 Chorążego, 48.), Niezłomność P1 20, Trzęsienie Ziemi A2 26 (było 30), Sztandar Wojenny K2 33,
+  Wyrok S3 40 (nowa), Kontratak P2 50, Mur Tarcz U 60. Broń Dwuręczna (`twohand`): Brutalny Cios S1 1, Rozpłatanie A1 3
+  (było 10), Rozbicie K1 6, Krwawy Szał O1 10 (było 18), Rozdarcie S2 15 (było 26), Furia P1 20, Wir Ostrzy A2 26 (było
+  6), Tupnięcie K2 33, Egzekucja S3 40, Niepowstrzymany P2 50, Gniew Tytana U 60 (było 48). Wspólne: Szarża 4, Prowokacja
+  12, Okrzyk Bojowy 30, Stalowa Skóra 45. Nowe na końcu listy `Data/Skills/Warrior`; `SkillPools/Warrior.version` 2 → 3,
+  `transitional = false`.
+- **S143** Przeniesione umiejętności zachowują liczby na dawnym poziomie odblokowania (ranga na tym poziomie = dawna
+  ranga 1, węzły `Data/SkillCurves`: Krwawy Szał, Trzęsienie Ziemi, Przechwycenie, Miażdżący Cios; Rozpłatanie: węzeł z
+  rangi 3 na 5). Wyjątki: Miażdżący Cios 300–520 → 220–324,4 (S2 od 15. poniżej Rozdarcia), Rozdarcie ranga 1 280 → 200
+  (od 15., pasmo R1 S91 na 20.), Niezłomność ranga 1 na 20. 6% HP zamiast dawnych 8% (z nowym blokiem 1–3 pkt 8%
+  spychało walkę Wojownika z Elitą na 20. poniżej pasma S32: 0,54 < 0,55).
+- **S143** Furia tylko z pasywką Furia (`rage`, P1 puli dwuręcznej): `Fury.cap(furyMax, rage, maxStacks)` = 0 bez haka
+  `rage`, więc węzły Furii Berserkera (Bitewny Rytm, Amok, Zajadłość, Szał, …) i `furyConsume` (Rozdarcie, Egzekucja, Rzeź) bez
+  niej nic nie robią; sama Furia trzyma 6 stosów, Bitewny Rytm podnosi limit do 8 / 9 / 10 (`rhythmMax` 4–10 → 2–4,
+  inaczej każda ranga dawała od razu 10; `HOOK_RULES.fury` bez zmian). Każdy
+  stos +0,2–0,5% obrażeń (`furyDamage`; 0,4–1,2 dawało Berserkerowi, wzorcowi obrażeń wszystkich klas, +22% wobec S142
+  na 70.). Brutalny Cios daje 2 stosy na trafienie (`SkillDef.furyGain`, `Fury.hitGain`: większe z umiejętności i Rzezi).
+- **S143** Niepowstrzymany: przy pełnej Furii (`stacks == cap > 0`, `Fury.unstoppable`) gracz odporny na ogłuszenie
+  (`StatusEffectService.Apply`) i odrzut (`Context`, finał Kulistego Pioruna), plus 3–9% mniej obrażeń przez istniejący
+  hak `furyGuard`.
+- **S143** Tarcza: `SkillDef.weapon` (Uderzenie Tarczą: `{ offhand = { "shield" } }`) sprawdzane w jednym miejscu,
+  `Paths.skillUsable` (`Paths.skillWeaponError`: `cast.error.needShield`, inaczej `cast.error.pathWeapon`); bez tarczy
+  broń jednoręczna dalej wybiera Miecz i Tarczę, a kafelek jest szary (czerwony, gdy ranga kupiona). Pasywka z własną
+  bronią działa tylko, gdy broń pasuje. Zamach Tarczą bez wymogu, z tarczą +20% (`Block.shieldMul`).
+- **S143** Wyrok (`Logic/Block`, `Data/Skills.BLOCK` okno 6 s, najwyżej 3): serwer zapisuje czas każdego bloku
+  (`onBlock`, także Parowanie tarczy) i liczy bloki z okna (`CombatService.RecentBlocks`); +15% za blok tylko w głównym
+  trafieniu. Niezłomność dostaje 1–3 pkt bloku (szkoła tarczy), Blok Strażnika zostaje z tarczą.
+- **S143** Egzekucja: `finisher` ×2 poniżej 30% HP (węzeł Ostatnie Cięcie: 35%) i `furyConsume` +4% za stos (mniej niż
+  Rozdarcie, 6%). Rozbicie: `armorBreak` 10–20% (`enemyArmor`, najsilniejsze w kategorii) i spowolnienie 30% 3 s,
+  obrażenia 60–110% (80–140 dawało za dużo Berserkerowi). Tupnięcie: ogłuszenie 1 s z `notBoss` i 20% wolniejsze ataki
+  4 s (`enemyAttackSlow`, także bossowie; 20 = limit kategorii w `Data/BuffCategories`, 30 i tak było ścinane).
+- **S143** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Strażnik: Ostatni Bastion w rzędzie 8 (zwieńczenie), w rzędzie
+  4 Podwójna Straż (Przechwycenie osłania też drugiego sojusznika, `secondTarget`, bez wyboru 10A); ulepszenie
+  zwieńczenia w rzędzie 11 to Niezłomny Bastion (`guardian_lastBastion2`, Ostatni Bastion +1 / 2 s i +2,5 / 5 pkt
+  redukcji; zastępuje Niewzruszony Mur, bo Mur Tarcz jest w puli jednoręcznej). Berserker: Rzeź
+  w rzędzie 8 z bronią dwuręczną, Chorąży: Rozkaz Natarcia w rzędzie 8. Umiejętności, które poszły do pul, zostawiły węzły
+  tej samej liczby rang (Niezachwiany, Podwójna Straż, Mistrz Uderzenia, Blizny, Szał, Ostatnie Cięcie, Proporzec,
+  Herold, Musztra), więc rzędy i `need` bez zmian.
+- **S143** Migracja 6 (S56) układa pasek z umiejętności puli noszonej broni (bez broni: pula domyślna), nie z obu pul
+  naraz; `character.spec` z nowymi oczekiwaniami (Wojownik 12.: pula Miecz i Tarcza).
+- **S143** Efekty przedmiotów Wojownika (`Data/ItemEffects`) bez zmian: S134g przypiął je już do ról i pul DESIGN-18
+  §6.2 (Szarża C1, Potężne Uderzenie S1 `onehand`, Rozpłatanie A1 i Rozdarcie S2 `twohand`, Miażdżący Cios S2,
+  Trzęsienie Ziemi A2, Mur Tarcz U `onehand`, Wir Ostrzy A2 `twohand`, Prowokacja C2); nowych efektów brak.
+- **S143** Model: buildy wzorcowe `guardian.defender` / `guardian.loner` i `standard.commander` / `standard.warden` z
+  bronią jednoręczną i tarczą, `berserker.fury` (wzorzec obrażeń) / `berserker.butcher` z dwuręczną, wszystkie z `ranks`;
+  Szarża Berserkera na końcu kolejności rang (inaczej ranga 10 na 70. zamiast Okrzyku). Lustra w `tests/SkillModel`
+  (`Fury.cap`, `furyGain`, bloki Wyroku jako oczekiwana liczba bloków z ciosów manekina, tarcza Zamachu). Na 20. R1
+  2,11 (dwuręczna) i 2,04 (jednoręczna) w paśmie S91; `S91.gain.standard.commander` 1,00 tylko raport (rzędy 1–2
+  Chorążego nie mają na 20. obrażeń: Okrzyk od 30.).
+- **S143** Tożsamość (raport `S143.warrior.*`, asertuje S146): dwuręczna / jednoręczna (Chorąży) w jeden cel 1,59 /
+  1,74 / 1,80 / 1,53 na 20 / 45 / 70 / 100, na 3 cele 1,70 / 1,61 / 1,26 / 1,32 (cel 1,15–1,25: jednoręczna jest za
+  słaba, dźwignią są obrażenia puli tarczy, nie Berserker); EHP Strażnika / dwuręczna 1,57–2,18 (cel ≥ 1,4); tank na
+  minutę 2,2–3,4 (≤ 3,5). Berserker na 45 / 70 / 100: −4% / +12% / +7% wobec S142.
+- **S143** Fixture 1–20 przepisany (`fixture S143 "pule Wojownika"`): 413 zmienionych i 30 nowych wpisów, wszystkie w
+  kluczach Wojownika albo w wierszach z Wojownikiem (drużyny Grimroka, trójka W + M + K Elit II jaskiń i kryjówek Łąk,
+  Uzdrowiciel na Obrońcy); `ALLOWED_1_20_DIFFS` pusta.
+- **S143** `GLOBAL_REPORT_ONLY` S143 (80 kluczy 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  strażnicy T-SK1/2 buildów Wojownika (60), G10 / T-SK5 Uzdrowiciela na Obrońcy na 50., T1 Rozłupania z młotem i T2
+  Berserkera na 70., ścieżki: `berserker.base`, EHP Strażnika na 45 / 70, wsparcie i r6 Chorążego na 100., R4 10A
+  Rozpłatania na 45., R7 Łowcy na 70. i stosunek Inkwizytora na 70 / 100 (mierzone do Berserkera).

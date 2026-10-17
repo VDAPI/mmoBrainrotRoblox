@@ -643,6 +643,132 @@ motions.titansWrath = {
 	variants = { variant({ hits = 4, keys = leaps({ 0, 35, -35, 0 }), trail = { from = 0.2, to = 1.65 } }) },
 }
 
+-- S143 (DESIGN-18 §6.2): the Warrior pools' new skills from the poses above (the same rule as S140-S142); the look
+-- apart is their SkillVfx. A full motion pass comes with W03-W07.
+-- Shield Sweep: from the guard the shield arm sweeps from right to left across the cone; the shield's face crosses the
+-- middle at the hit (0.24).
+motions.shieldSweep = {
+	keys = {
+		k(0.14, merge(GUARD, { lShoulder = { 82, 70, -14 }, lElbow = { 40, 0, 0 }, waist = { -6, 32, 0 } }), "out"),
+		k(
+			0.24,
+			merge(lunge(0.5), {
+				lShoulder = { 88, 0, -10 },
+				lElbow = { 18, 0, 0 },
+				rShoulder = { 22, 0, 30 },
+				rElbow = { 65, 0, 0 },
+				waist = { -4, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.36,
+			merge(lunge(0.6), {
+				lShoulder = { 80, -70, -10 },
+				lElbow = { 14, 0, 0 },
+				rShoulder = { 22, 0, 30 },
+				rElbow = { 65, 0, 0 },
+				waist = { -6, -34, 0 },
+			}),
+			"out"
+		),
+	},
+	recover = 0.3,
+	hit = 0.24,
+}
+-- Shield Bash: the guard, then the shield driven straight into the target's face with a short lunge (hit 0.22).
+local BASH_OUT: Pose = merge(lunge(0.8), {
+	lShoulder = { 96, 0, -4 },
+	lElbow = { 4, 0, 0 },
+	rShoulder = { 20, 0, 30 },
+	rElbow = { 65, 0, 0 },
+	waist = { -12, -16, 0 },
+	root = { -6, -12, 0, -0.2 },
+})
+motions.shieldBash = {
+	keys = { k(0.12, GUARD, "out"), k(0.22, BASH_OUT, "in"), k(0.42, merge(GUARD, { waist = { -8, 0, 0 } })) },
+	recover = 0.3,
+	hit = 0.22,
+}
+-- Vindicate: Mighty Strike's diagonal cut with the shield held up in the guard (the left arm stays on the shield).
+local SHIELD_UP: Pose = { lShoulder = { 85, 10, -20 }, lElbow = { 70, 0, 0 } }
+motions.vindicate = {
+	keys = {
+		k(0.22, merge(MIGHTY_WINDUP, SHIELD_UP), "out"),
+		k(0.3, merge(MIGHTY_CUT, SHIELD_UP), "in"),
+		k(0.4, merge(MIGHTY_LOW, SHIELD_UP), "out"),
+		k(0.46, merge(MIGHTY_BOUNCE, SHIELD_UP)),
+	},
+	recover = 0.3,
+	hit = 0.3,
+	trail = { from = 0.2, to = 0.4 },
+}
+-- Brutal Strike: Mighty Strike's two-handed variant (both hands on the hilt, a longer wind-up).
+motions.brutalStrike = {
+	keys = {
+		k(0.25, twoHanded(MIGHTY_WINDUP, { 158, 0, 34 }, 70), "out"),
+		k(0.3, twoHanded(MIGHTY_CUT, { 88, 0, 14 }, 30), "in"),
+		k(0.4, twoHanded(MIGHTY_LOW, { 26, 0, -14 }, 12), "out"),
+		k(0.46, twoHanded(MIGHTY_BOUNCE, { 32, 0, -8 }, 14)),
+	},
+	recover = 0.3,
+	hit = 0.3,
+	trail = { from = 0.24, to = 0.4 },
+}
+-- Sunder: the weapon over the head turned to the right, a heavy slanting blow down across the target's armour (0.32).
+motions.sunder = {
+	keys = {
+		k(0.2, merge(STAND, OVERHEAD, { waist = { 10, 26, 0 } }), "out"),
+		k(0.32, merge(lunge(0.9), SLAMMED, { waist = { -20, -26, 0 }, root = { -8, -20, 0, -0.4 } }), "in"),
+		k(0.46, merge(lunge(0.9), SLAMMED, { waist = { -16, -20, 0 } })),
+	},
+	recover = 0.3,
+	hit = 0.32,
+	trail = { from = 0.18, to = 0.36 },
+}
+-- War Stomp: the right knee pulled up with the arms out, the foot stamped down in a crouch (the ground shakes at 0.3).
+motions.warStomp = {
+	keys = {
+		k(
+			0.15,
+			merge(STAND, {
+				rHip = { 62, 0, 0 },
+				rKnee = { 72 },
+				waist = { 8, 0, 0 },
+				rShoulder = { 40, 0, 45 },
+				lShoulder = { 40, 0, -45 },
+			}),
+			"out"
+		),
+		k(
+			0.3,
+			merge(crouch(0.6), {
+				rHip = { 12, 0, 0 },
+				rKnee = { 22 },
+				rShoulder = { 20, 0, 55 },
+				lShoulder = { 20, 0, -55 },
+				waist = { -14, 0, 0 },
+			}),
+			"in"
+		),
+		k(0.6, merge(crouch(0.5), { rShoulder = { 18, 0, 50 }, lShoulder = { 18, 0, -50 }, waist = { -10, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.3,
+	lock = true,
+}
+-- Execute: the two-handed weapon raised high behind the head, a deep lunge and a chop straight down (0.4).
+motions.execute = {
+	keys = {
+		k(0.28, merge(STAND, OVERHEAD, { waist = { 20, 0, 0 }, root = { 6, 0, 0, 0.2 } }), "out"),
+		k(0.4, merge(lunge(1.2), SLAMMED, { waist = { -36, 0, 0 }, root = { -16, 0, 0, -0.7 } }), "in"),
+		k(0.56, merge(lunge(1.1), SLAMMED, { waist = { -30, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.4,
+	trail = { from = 0.26, to = 0.42 },
+}
+
 -- Hunter -----------------------------------------------------------------------------------------------------
 
 -- S115 (DESIGN-16 §6): every shot is built by one function from a shooting rig, so a crossbow plays the same shot with

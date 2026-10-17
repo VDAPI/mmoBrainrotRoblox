@@ -324,6 +324,12 @@ export type SkillDef = {
 	-- S142 (Ball Lightning): the last wave of circleTarget knocks the enemies it hits back `knockback` studs (bosses
 	-- immune, players half) and stuns them for `stun` s (notBoss)
 	finale: { knockback: number, stun: number }?,
+	-- S143 (DESIGN-18 §4.2, §6.2): the weapons the skill needs besides its pool (Shield Bash: { offhand = { "shield" } });
+	-- the rule of node.weapon (Logic/Paths.skillUsable, "cast.error.needShield" / "cast.error.pathWeapon"); a passive
+	-- with one works only while it fits
+	weapon: { main: { string }?, offhand: { string }? }?,
+	-- S143 (Logic/Fury): Fury stacks each damaging hit of this skill gives (default 1; Brutal Strike 2), with Rage
+	furyGain: number?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

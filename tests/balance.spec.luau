@@ -206,6 +206,25 @@ T.describe("Balance S142: lightning pool", function()
 	end)
 end)
 
+-- S143 (D, DESIGN-18 §6.2): the Warrior's two pools (Balance.targetsS143; the R1 of both pools at 20 is in the block
+-- "Balance 1-20: S91"): the identity of the pools (damage, EHP, R7, the Guardian's tank minute) is printed, S146
+-- asserts it.
+T.describe("Balance S143: Warrior pools", function()
+	local rows = B.targetsS143()
+	T.it("S143 targets (printed)", function()
+		printReport("S143", rows, 60)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			T.expect({ row.id, row.report }).toEqual({ row.id, "S146" })
+		end
+		T.expect(ids["S143.warrior.single.20"]).toBe(true)
+		T.expect(ids["S143.warrior.area.100"]).toBe(true)
+		T.expect(ids["S143.warrior.ehp.45"]).toBe(true)
+		T.expect(ids["S143.warrior.tank.morvane"]).toBe(true)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).
@@ -1546,18 +1565,26 @@ T.describe("Skill model (S85)", function()
 
 	T.it("rotation from the data: order, minFury from the Fury state, minEnemies on 3 dummies", function()
 		local base = SkillModel.builds("Warrior")[1]
-		local a = variant(base, "test.order.a", { rotation = { { skill = "mightyStrike" }, { skill = "bladeWhirl" } } })
-		local b = variant(base, "test.order.b", { rotation = { { skill = "bladeWhirl" }, { skill = "mightyStrike" } } })
+		-- S143: the base Warrior (a two-handed axe) plays the two-handed pool
+		local a = variant(base, "test.order.a", { rotation = { { skill = "brutalStrike" }, { skill = "bladeWhirl" } } })
+		local b = variant(base, "test.order.b", { rotation = { { skill = "bladeWhirl" }, { skill = "brutalStrike" } } })
 		local one = { B.monster(B.GENERIC, 45) }
 		local ra = SkillModel.fight(SkillModel.player(a, 45), { targets = one, unlimited = true })
 		local rb = SkillModel.fight(SkillModel.player(b, 45), { targets = one, unlimited = true })
-		T.expect(ra.firstCasts[1]).toBe("mightyStrike")
+		T.expect(ra.firstCasts[1]).toBe("brutalStrike")
 		T.expect(rb.firstCasts[1]).toBe("bladeWhirl")
-		local fury = variant(base, "test.fury", { rotation = { { skill = "mightyStrike", minFury = 5 } } })
-		local rf = SkillModel.fight(SkillModel.player(fury, 45), { targets = one, unlimited = true })
-		-- S86: minFury reads the Fury state (B5); the base has no Fury (no furyMax), so the entry never fires
-		T.expect(rf.casts.mightyStrike).toBe(nil)
-		T.expect(rf.skipped.mightyStrike).toBe(nil)
+		-- S86: minFury reads the Fury state (B5). S143: the base has Rage's Fury from 20 (cap 6 without Battle Rhythm),
+		-- so the entry waits for its stacks; below 20 there is no Fury and minFury holds at the cap 0
+		local fury = variant(base, "test.fury", { rotation = { { skill = "brutalStrike", minFury = 5 } } })
+		local spFury = SkillModel.player(fury, 45)
+		T.expect(SkillModel.furyMax({ p = spFury.p, selfDirty = false })).toBe(6)
+		local rf = SkillModel.fight(spFury, { targets = one, unlimited = true })
+		T.expect((rf.casts.brutalStrike or 0) > 0).toBe(true)
+		T.expect(rf.firstCasts[1]).toBe("brutalStrike")
+		local young = SkillModel.player(fury, 15)
+		T.expect(SkillModel.furyMax({ p = young.p, selfDirty = false })).toBe(0)
+		local ry = SkillModel.fight(young, { targets = { B.monster(B.GENERIC, 15) }, unlimited = true })
+		T.expect((ry.casts.brutalStrike or 0) > 0).toBe(true)
 		local area = variant(base, "test.area", { rotation = { { skill = "bladeWhirl", minEnemies = 2 } } })
 		local sp = SkillModel.player(area, 45)
 		T.expect(SkillModel.fight(sp, { targets = one, unlimited = true }).casts.bladeWhirl).toBe(nil)
@@ -1567,7 +1594,7 @@ T.describe("Skill model (S85)", function()
 
 	T.it("resources and formulas: Skills.cost, flat energy / Cleric mana, weapon normalisation, DEX rating", function()
 		-- Mage mana per cast = Skills.cost (the manaCost curve), Cleric and energy flat
-		for _, spec in { { "Mage", "firebolt", 70 }, { "Cleric", "holyStrike", 70 }, { "Warrior", "mightyStrike", 70 } } do
+		for _, spec in { { "Mage", "firebolt", 70 }, { "Cleric", "holyStrike", 70 }, { "Warrior", "brutalStrike", 70 } } do
 			local classId, skillId, L = spec[1], spec[2], spec[3]
 			local base = SkillModel.builds(classId)[1]
 			local only = variant(base, `test.cost.{skillId}`, { rotation = { { skill = skillId } } })
@@ -1997,8 +2024,11 @@ T.describe("SkillModel: class mechanics (S86)", function()
 			end
 			local mul =
 				Skills.furyMultiplier(Skills.valueAt(def, def.furyConsume, Paths.skillRank(sp.character, "rend")), 10)
-			-- the same Fury in both fights (10 stacks); only the furyConsume multiplier differs
-			T.expect(near1(rendHit(hitOnly) / rendHit(plainHit), mul, 0.01)).toBe(true)
+			-- the same Fury in both fights (10 stacks); only the furyConsume multiplier differs. S143: Rage's furyDamage
+			-- (+% per stack, CombatService.offensiveMultiplier) counts on the plain hit only: the consuming hit spent the
+			-- stacks first (Types/Offense)
+			local perStack = (sp.hooksAll or {}).furyDamage or 0
+			T.expect(near1(rendHit(hitOnly) / rendHit(plainHit), mul / (1 + perStack * 10 / 100), 0.01)).toBe(true)
 		end
 	)
 

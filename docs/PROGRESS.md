@@ -5,7 +5,13 @@
 
 ## Stan
 
-S01–S115 i S117–S142 gotowe (ostatnia S142: Mag, pula Błyskawicy według wspólnej drabiny (Piorun 1, Łańcuch Błyskawic
+S01–S115 i S117–S143 gotowe (ostatnia S143: Wojownik, pule Miecz i Tarcza (Potężne Uderzenie 1, Zamach Tarczą 3,
+Uderzenie Tarczą 6 z tarczą, Przechwycenie 10, Miażdżący Cios 15, Niezłomność 20, Trzęsienie Ziemi 26, Sztandar 33,
+Wyrok 40, Kontratak 50, Mur Tarcz 60) i Broń Dwuręczna (Brutalny Cios 1, Rozpłatanie 3, Rozbicie 6, Krwawy Szał 10,
+Rozdarcie 15, Furia 20, Wir Ostrzy 26, Tupnięcie 33, Egzekucja 40, Niepowstrzymany 50, Gniew Tytana 60), wspólne Wojownika
+(Szarża 4, Prowokacja 12, Okrzyk Bojowy 30, Stalowa Skóra 45), Furia tylko z pasywką puli dwuręcznej (`Fury.cap`),
+`Logic/Block` (bloki Wyroku), `SkillDef.weapon` (tarcza), kierunki Wojownika z umiejętnościami tylko w rzędzie 8 (Ostatni
+Bastion, Rzeź, Rozkaz Natarcia), Wojownik bez stanu przejściowego; wcześniej S142: Mag, pula Błyskawicy według wspólnej drabiny (Piorun 1, Łańcuch Błyskawic
 3, Porażenie 6, Pancerz Burzy 10, Grom 15, Przeładowanie 20, Burza Piorunów 26, Kulisty Piorun 33, Lanca Błyskawic 40,
 Przewodnik 50, Nawałnica 60; krytyki, pewny krytyk Lancy, przeskok Przewodnika, odwet Pancerza, `Logic/Shock`), Ognisty
 Pocisk jako S1 puli Ognia z podpaleniem (koniec Magicznego Pocisku adaptacyjnego), Mag bez stanu przejściowego (trzy
@@ -323,6 +329,14 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S143:** pule Wojownika bez przeglądu w grze: ruchy 7 nowych aktywnych to pozy z istniejących ruchów Wojownika
+  (dopracowanie W03–W07), wygląd z istniejących składników, dźwięki `skill.shieldSweep|shieldBash|vindicate|brutalStrike|
+  sunder|warStomp|execute` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki).
+  Tożsamość pul tylko w raporcie (`S143.warrior.*`) do S146: dwuręczna / jednoręczna (Chorąży) w jeden cel 1,53–1,80,
+  na 3 cele 1,26–1,70 (cel 1,15–1,25; pula tarczy za słaba w obrażeniach); Berserker (wzorzec obrażeń) +12% / +7% wobec
+  S142 na 70 / 100. `GLOBAL_REPORT_ONLY` S143 (80 kluczy 21–100) do opróżnienia w S146; `S91.gain.standard.commander`
+  (1,00, rzędy 1–2 Chorążego bez obrażeń na 20.) w `S91_REPORT`. Wiki do odświeżenia (właściciel 17.10): dwie pule
+  Wojownika, nowe węzły kierunków.
 - **S142:** pula Błyskawicy bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z
   istniejących składników (dopracowanie W03–W07), dźwięki `skill.lightningBolt|staticShock|stormArmor|thunderStrike|
   ballLightning|lightningLance|tempest` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki).
@@ -352,7 +366,7 @@ zakończone; testy i decyzje właściciela po nich.
   do S141–S145.
   Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
 - **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Wojownika, Łowcy
-  i Kapłana (`SKILL_ROWS` 4 i 8: Mag od S140, reszta w S143–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+  i Kapłana (`SKILL_ROWS` 4 i 8: Mag od S140, Wojownik od S143, reszta w S144–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.

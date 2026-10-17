@@ -158,10 +158,10 @@ T.describe("S56 ranks from the level and the bar", function()
 	end
 
 	T.it("rankFor (base only)", function()
-		local bloodlust = SkillData.get("bloodlust") :: any
-		T.expect(Skills.rankFor("Warrior", 17, bloodlust)).toBe(0)
-		T.expect(Skills.rankFor("Warrior", 18, bloodlust)).toBe(1)
-		T.expect(Skills.rankFor("Warrior", 54, bloodlust)).toBe(10)
+		local bloodlust = SkillData.get("bloodlust") :: any -- S143: unlock 18 -> 10 (the two-handed O1)
+		T.expect(Skills.rankFor("Warrior", 9, bloodlust)).toBe(0)
+		T.expect(Skills.rankFor("Warrior", 10, bloodlust)).toBe(1)
+		T.expect(Skills.rankFor("Warrior", 46, bloodlust)).toBe(10)
 		T.expect(Skills.rankFor("Mage", 54, bloodlust)).toBe(0)
 		local onPath = table.clone(bloodlust)
 		onPath.path = "somePath"
@@ -297,7 +297,9 @@ T.describe("S56 ranks from the level and the bar", function()
 				T.expect(id ~= "prayer" and id ~= "divineIntervention").toBe(true)
 			end
 		end
-		T.expect(Skills.startHotbar("Warrior", 1)).toEqual({ ["1"] = "mightyStrike" })
+		-- S143: every Warrior pool has its own S1 (Mighty Strike, Brutal Strike)
+		T.expect(Skills.startHotbar("Warrior", 1, "onehand")).toEqual({ ["1"] = "mightyStrike" })
+		T.expect(Skills.startHotbar("Warrior", 1, "twohand")).toEqual({ ["1"] = "brutalStrike" })
 		T.expect(Skills.startHotbar("Hunter", 20)).toEqual({
 			["1"] = "aimedShot",
 			["2"] = "doubleShot",
@@ -308,8 +310,11 @@ T.describe("S56 ranks from the level and the bar", function()
 	end)
 
 	T.it("newlyUnlocked", function()
-		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6))).toEqual({ "charge", "bladeWhirl" })
-		T.expect(ids(Skills.newlyUnlocked("Warrior", 13, 14))).toEqual({ "steelSkin" })
+		-- S143: the Warrior's pools on the ladder (DESIGN-18 §6.2)
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6, "onehand")))
+			.toEqual({ "shieldSweep", "charge", "shieldBash" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6, "twohand"))).toEqual({ "cleave", "charge", "sunder" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 44, 45, "twohand"))).toEqual({ "steelSkin" })
 		T.expect(ids(Skills.newlyUnlocked("Warrior", 6, 6))).toEqual({})
 	end)
 
@@ -507,7 +512,7 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 		for r = 1, 10 do
 			table.insert(cleaveLevels, Skills.rankLevel(skill("bloodlust"), r))
 		end
-		T.expect(cleaveLevels).toEqual({ 18, 22, 26, 30, 34, 38, 42, 46, 50, 54 })
+		T.expect(cleaveLevels).toEqual({ 10, 14, 18, 22, 26, 30, 34, 38, 42, 46 }) -- S143: Bloodlust from 10
 		T.expect(Skills.rankLevel(skill("mightyStrike"), 2)).toBe(5)
 		-- S81: row 7 of the Mage paths (ROZWOJ 12.4 / 12.5). S140: Rain of Meteors at 60 (span 35), Evocation at 30
 		T.expect({ Skills.rankLevel(skill("meteorStorm"), 5), Skills.rankLevel(skill("meteorStorm"), 10) }).toEqual({
@@ -545,9 +550,9 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 			T.expect(Skills.rankAt(def, 100)).toBe(def.maxLevel)
 		end
 		local cleave = skill("bloodlust")
-		T.expect(Skills.rankAt(cleave, 17)).toBe(0)
-		T.expect(Skills.rankAt(cleave, 33)).toBe(4)
-		T.expect(Skills.rankAt(cleave, 34)).toBe(5)
+		T.expect(Skills.rankAt(cleave, 9)).toBe(0)
+		T.expect(Skills.rankAt(cleave, 33)).toBe(6)
+		T.expect(Skills.rankAt(cleave, 34)).toBe(7)
 	end)
 end)
 
@@ -1436,7 +1441,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(b.bleedStacks).toBeNil()
 
 		d, b = at("crushingBlow", 10, "b", "b")
-		T.expect(v(d, "dmg")).toBeNear(568) -- S89: 520 + 48
+		T.expect(v(d, "dmg")).toBeNear(372.4) -- S143: 324.4 + 48 (S89: 520 + 48)
 		T.expect(cd(d)).toBeNear(12.8)
 		d, b = at("crushingBlow", 10, "a", "a")
 		local kinds: { [string]: number } = {}
@@ -1466,7 +1471,8 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		d = at("battleCry", 10, "a", "b")
 		T.expect(#d.selfEffects).toBe(2)
 		d = at("battleCry", 5, "b")
-		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(14 + 2 * 2 / 7 + 3) -- S89: knot 14 at rank 3, 16 at 10
+		-- S143: 14.9 at rank 1 (level 30), 16 at 10 (S89: knot 14 at rank 3)
+		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(14.9 + 1.1 * 4 / 9 + 3)
 	end)
 
 	T.it("new kinds compose without nodes", function()
@@ -1666,14 +1672,17 @@ T.describe("Warrior S74", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 	local PartyBuffRules = require("./PartyBuffRules")
 
+	-- S143: Intercept, Shield Wall and War Banner are in the one-handed pool, Rend in the two-handed one; Carnage and
+	-- Order to Advance stay the directions' skills (id -> path or pool)
 	local NEW: { [string]: string } = {
-		intercept = "guardian",
-		shieldWall = "guardian",
-		rend = "berserker",
+		intercept = "onehand",
+		shieldWall = "onehand",
+		rend = "twohand",
 		carnage = "berserker",
-		warBanner = "standard",
+		warBanner = "onehand",
 		advanceOrder = "standard",
 	}
+	local ON_PATH: { [string]: string } = { carnage = "berserker", advanceOrder = "standard", lastBastion = "guardian" }
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.get(id) :: SkillData.SkillDef
 	end
@@ -1717,10 +1726,9 @@ T.describe("Warrior S74", function()
 			Skills.shape(skill("advanceOrder")),
 			Skills.shape(skill("warBanner")),
 		}).toEqual({ "target", "self", "self", "circle" })
-		for id, path in NEW do
+		for id, where in NEW do
 			local def = skill(id)
-			T.expect({ id, def.class, def.path, def.delivery, def.unlock == 26 or def.unlock == 60 })
-				.toEqual({ id, "Warrior", path, "melee", true })
+			T.expect({ id, def.class, def.path or def.pool, def.delivery }).toEqual({ id, "Warrior", where, "melee" })
 			local bps: any = def.breakpoints
 			for _, rank in { 5, 10 } do
 				T.expect({ id, rank, bps[rank].a ~= nil, bps[rank].b ~= nil }).toEqual({ id, rank, true, true })
@@ -1772,7 +1780,7 @@ T.describe("Warrior S74", function()
 	T.it("unreachable without their skill node", function()
 		local hotbar: { [string]: string } = {}
 		local i = 0
-		for id in NEW do
+		for id in ON_PATH do
 			i += 1
 			hotbar[tostring(i)] = id
 		end
@@ -1785,11 +1793,11 @@ T.describe("Warrior S74", function()
 			ranks = RankFill.auto("Warrior", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		local available = GamePaths.availableSkills(char)
-		for id in NEW do
+		for id in ON_PATH do
 			T.expect({ id, table.find(available, id) == nil, GamePaths.skillRank(char, id) }).toEqual({ id, true, 0 })
 		end
 		T.expect(GamePaths.validHotbar(char)).toEqual({})
-		for id in NEW do
+		for id in ON_PATH do
 			local def = SkillData.get(id) :: any
 			char.path = { nodes = { [`{def.path}_{id}`] = 1 }, bp = {} }
 			T.expect({ id, table.find(GamePaths.availableSkills(char), id) ~= nil }).toEqual({ id, true })
@@ -1797,9 +1805,10 @@ T.describe("Warrior S74", function()
 	end)
 end)
 
--- S75: the Warrior's base 8 and path skills (ROZWOJ 10.2-10.5).
+-- S75: the Warrior's base 8 and path skills (ROZWOJ 10.2-10.5). S143 (DESIGN-18 §6.2): two pools on the ladder and
+-- three direction skills.
 T.describe("S75 Warrior base and path skills", function()
-	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 12 path skills at their row level", function()
+	T.it("S143: 26 pool skills at their ladder level, 3 direction skills at their row level", function()
 		local base, onPath = {}, {}
 		local actives = 0
 		for _, def in SkillData.byClass.Warrior do
@@ -1819,29 +1828,38 @@ T.describe("S75 Warrior base and path skills", function()
 		end
 		T.expect(base).toEqual({
 			"mightyStrike:1",
-			"charge:3",
-			"bladeWhirl:6",
-			"taunt:10",
-			"steelSkin:14",
-			"bloodlust:18",
-			"earthquake:30",
-			"riposte:45",
+			"charge:4",
+			"bladeWhirl:26",
+			"taunt:12",
+			"steelSkin:45",
+			"bloodlust:10",
+			"earthquake:26",
+			"riposte:50",
+			"fortitude:20",
+			"intercept:10",
+			"shieldWall:60",
+			"cleave:3",
+			"rend:15",
+			"titansWrath:60",
+			"battleCry:30",
+			"warBanner:33",
+			"crushingBlow:15",
+			"shieldSweep:3",
+			"shieldBash:6",
+			"vindicate:40",
+			"brutalStrike:1",
+			"sunder:6",
+			"rage:20",
+			"warStomp:33",
+			"execute:40",
+			"unstoppable:50",
 		})
 		T.expect(onPath).toEqual({
-			fortitude = "guardian:10",
-			intercept = "guardian:26",
-			lastBastion = "guardian:48",
-			shieldWall = "guardian:60",
-			cleave = "berserker:10",
-			rend = "berserker:26",
-			titansWrath = "berserker:48",
+			lastBastion = "guardian:60",
 			carnage = "berserker:60",
-			battleCry = "standard:10",
-			warBanner = "standard:26",
-			crushingBlow = "standard:48",
 			advanceOrder = "standard:60",
 		})
-		T.expect(actives).toBe(17)
+		T.expect(actives).toBe(24)
 	end)
 
 	T.it("Battle Cry works on the Warrior only (team copy comes from the Commander's Voice node)", function()

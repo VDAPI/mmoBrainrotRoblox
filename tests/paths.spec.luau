@@ -865,15 +865,16 @@ T.describe("Paths: passives and active nodes", function()
 			return char(level, nil, { class = "Warrior" })
 		end
 		local at50 = GamePaths.passiveTotals(warrior(50), {})
-		T.expect(at50.pct.armor).toBe(25)
-		-- S75: Fortitude is a guardian row 1 skill, it works only with the node
-		T.expect(at50.pct.maxHp).toBeNil()
+		-- S143 (DESIGN-18 §6.2): Steel Skin is the common C4 at 45 (rank 1 = 20 %), Fortitude the one-handed P1 at 20
+		-- (life and block), Riposte the one-handed P2 at 50
+		T.expect(at50.pct.armor).toBe(20)
+		T.expect({ at50.pct.maxHp ~= nil, at50.hooks.block ~= nil }).toEqual({ true, true })
 		T.expect(at50.hooks.riposte).toBe(4)
-		T.expect(GamePaths.passiveTotals(warrior(44), {}).hooks.riposte).toBeNil()
-		T.expect(GamePaths.passiveTotals(warrior(13), {})).toEqual({ flat = {}, pct = {}, hooks = {} })
+		T.expect(GamePaths.passiveTotals(warrior(49), {}).hooks.riposte).toBeNil()
+		T.expect(GamePaths.passiveTotals(warrior(19), {})).toEqual({ flat = {}, pct = {}, hooks = {} })
 		local at100 = GamePaths.passiveTotals(warrior(100), {})
 		T.expect(at100.pct.armor).toBe(25)
-		T.expect(at100.pct.maxHp).toBeNil()
+		T.expect(at100.pct.maxHp).toBe(20) -- S143: Fortitude rank 5
 		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 
@@ -1725,7 +1726,7 @@ T.describe("Data: Warrior paths (S75)", function()
 				end
 			end
 		end
-		T.expect({ nodes, skills }).toEqual({ 60, 12 })
+		T.expect({ nodes, skills }).toEqual({ 60, 3 }) -- S143: only the capstones are skills (DESIGN-18 §7)
 	end)
 
 	T.it("model builds spend exactly 50; Fury is the only damage reference", function()
@@ -1849,13 +1850,33 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect(Skills.scaled(wrath, wrath.cooldown, 10)).toBeNear(36, 1e-9)
 	end)
 
-	T.it("Shield Wall, Intercept, Carnage", function()
+	T.it("Shield Wall, Last Bastion, Intercept, Carnage", function()
 		local bp = { ["shieldWall:5"] = "a", ["shieldWall:10"] = "a" }
-		local wall = eff("shieldWall", "guardian", { guardian_fortress = 3, guardian_shieldWall2 = 2 }, bp, SHIELD)
+		local wall = eff("shieldWall", "guardian", { guardian_fortress = 3 }, bp, SHIELD)
 		T.expect(wall.radius).toBe(20)
 		T.expect(Skills.scaled(wall, wall.cooldown, 10)).toBeNear(45, 1e-9)
-		T.expect(effectOf(wall.effects, "intercept").duration).toBeNear(10, 1e-9)
-		T.expect(Skills.valueAt(wall, "share", 10)).toBeNear(30, 1e-9)
+		T.expect(effectOf(wall.effects, "intercept").duration).toBeNear(8, 1e-9)
+		T.expect(Skills.valueAt(wall, "share", 10)).toBeNear(25, 1e-9)
+
+		-- S143: the Guardian's row 11 upgrades its capstone, Last Bastion (not the one-handed Shield Wall)
+		local bastion = eff(
+			"lastBastion",
+			"guardian",
+			{ guardian_lastBastion2 = 2 },
+			{ ["lastBastion:5"] = "b" },
+			SHIELD
+		)
+		T.expect(effectOf(bastion.effects, "damageReduction").duration).toBeNear(8, 1e-9)
+		T.expect(Skills.valueAt(bastion, "reduction", 10)).toBeNear(73, 1e-9) -- 60 + 8 (5B) + 5
+		-- a skill of the direction, not of a pool: the upgrade works with a two-handed weapon too
+		local twoHanded = eff(
+			"lastBastion",
+			"guardian",
+			{ guardian_lastBastion2 = 2 },
+			{ ["lastBastion:5"] = "b" },
+			AXE
+		)
+		T.expect(Skills.valueAt(twoHanded, "reduction", 10)).toBeNear(73, 1e-9)
 
 		local nodes = { guardian_sacrifice = 3, guardian_aegis = 3 }
 		local guard, behaviour = eff("intercept", "guardian", nodes, { ["intercept:5"] = "a" }, SHIELD)

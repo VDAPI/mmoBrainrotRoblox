@@ -274,6 +274,13 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 - Kierunki: Strażnik (tank; węzeł `skill` Ostatni Bastion `lastBastion`), Berserker (obrażenia; Rzeź `carnage` w
   rzędzie 8, z `weapon` dwuręcznej), Chorąży (wsparcie; Rozkaz Natarcia `advanceOrder` w rzędzie 8).
 - Cel (S146): `twohand` obrażenia 1,15–1,25 × `onehand`, `onehand` EHP ≥ 1,4 × `twohand`.
+- S143 (stan): obie pule według tabeli, wspólne Szarża 4, Prowokacja 12, Okrzyk Bojowy 30, Stalowa Skóra 45
+  (`transitional = false`, wersja puli 3). Furia istnieje tylko z pasywką `rage` (`Logic/Fury.cap`: 6 stosów, węzły
+  Berserkera podnoszą limit do 10, +0,2–0,5% za stos), Brutalny Cios +2 stosy (`SkillDef.furyGain`), Niepowstrzymany
+  przy pełnej Furii bez ogłuszenia i odrzutu. Tarcza: `SkillDef.weapon` (Uderzenie Tarczą), Zamach Tarczą +20% z tarczą,
+  Wyrok +15% za blok z 6 s, najwyżej 3 (`Logic/Block`). Kierunki: Ostatni Bastion, Rzeź i Rozkaz Natarcia w rzędzie 8,
+  w rzędzie 4 Strażnika Podwójna Straż (Przechwycenie na dwóch sojuszników). Po S143 dwuręczna / jednoręczna
+  (Chorąży) 1,5–1,8 w jeden cel (raport `S143.warrior.*`).
 
 ### 6.3 Łowca (wspólne: `C1` Odskok `disengage`, `C2` Znak Łowcy `huntersMark`, `C3` Namierzenie `drawBead`, `C4` Instynkt Drapieżnika `predatorInstinct`; wszystkie istn.)
 

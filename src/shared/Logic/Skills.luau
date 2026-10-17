@@ -1038,6 +1038,14 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	if hooks and hooks.conduct then
 		args.conductRadius = SkillData.SHOCK.conductRadius
 	end
+	-- S143 (Logic/Fury, Logic/Block): only for skills that have them
+	if skill.furyGain then
+		args.furyGain = round(skill.furyGain)
+	end
+	if skill.values.perBlock ~= nil then
+		args.blockWindow = SkillData.BLOCK.window
+		args.blockMax = SkillData.BLOCK.max
+	end
 	return args
 end
 

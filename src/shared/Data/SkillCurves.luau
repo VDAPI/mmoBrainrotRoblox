@@ -23,12 +23,26 @@ return table.freeze({
 	knots = table.freeze({
 		-- S91: ranks 1-5 x0.85 (rank 1 160 -> 136), rank 6 pinned (220 + 2 / 5 before S91)
 		mightyStrike = table.freeze({ dmg = table.freeze({ [5] = 187, [6] = 220 + (222 - 220) * 1 / 5 }) }),
-		-- S91: ranks 1-5 x0.85 (rank 1 120 -> 102), rank 6 pinned
+		-- S91: ranks 1-5 x0.85 (rank 1 120 -> 102), rank 6 pinned (S143: unlock 3 -> 4, rank 5 at 20)
 		charge = table.freeze({ dmg = table.freeze({ [5] = 136, [6] = 160 + (165 - 160) * 1 / 5 }) }),
-		-- S91: ranks 1-4 x0.9 (rank 1 37 -> 33), rank 5 pinned
-		bladeWhirl = table.freeze({ dmg = table.freeze({ [4] = 42, [5] = 47 + (52 - 47) * 1 / 6 }) }),
-		cleave = table.freeze({ dmg = table.freeze({ [3] = 140 + 110 * 2 / 9 }) }),
-		battleCry = table.freeze({ atk = table.freeze({ [3] = 14 }) }), -- 10 + 18 * 2 / 9
+		-- S143 (DESIGN-18 §6.2): Blade Whirl unlocks at 26 (rank 1 = the old rank 6), its S91 knots are gone; Cleave
+		-- unlocks at 3: rank 5 (level 19) keeps the old rank 3 (level 18); Battle Cry unlocks at 30 (rank 1 = the old
+		-- rank 6), its knot is gone
+		cleave = table.freeze({ dmg = table.freeze({ [5] = 140 + 110 * 2 / 9 }) }),
+		-- S143: Brutal Strike, the two-handed S1, on Mighty Strike's S91 knots
+		brutalStrike = table.freeze({ dmg = table.freeze({ [5] = 187, [6] = 220 + (222 - 220) * 1 / 5 }) }),
+		-- S143: Bloodlust unlocks at 10 (was 18): rank 3 (level 18) keeps the old rank 1, rank 4 (22) the old rank 2
+		bloodlust = table.freeze({ speed = table.freeze({ [3] = 15, [4] = 15 + 5 / 9 }) }),
+		-- S143: Earthquake unlocks at 26 (was 30): rank 2 (level 30) keeps the old rank 1
+		earthquake = table.freeze({ dmg = table.freeze({ [2] = 150 }) }),
+		-- S143: Intercept unlocks at 10 (was the Guardian's row 4, 26): rank 5 (level 26) keeps the old rank 1, rank 6
+		-- (30) the old rank 2
+		intercept = table.freeze({
+			share = table.freeze({ [5] = 20, [6] = 20 + 10 / 9 }),
+			guard = table.freeze({ [5] = 10, [6] = 10 + 5 / 9 }),
+		}),
+		-- S143: Crushing Blow unlocks at 15 (was the Standard-Bearer's row 7, 48): rank 9 (47) keeps the old rank 1
+		crushingBlow = table.freeze({ dmg = table.freeze({ [9] = 300 }) }),
 		-- S91: the Cleric's Holy Strike, ranks 1-5 x0.88 (rank 1 190 -> 167), rank 6 pinned
 		holyStrike = table.freeze({ dmg = table.freeze({ [5] = 226, [6] = 190 + (340 - 190) * 5 / 9 }) }),
 		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned

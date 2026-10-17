@@ -111,7 +111,7 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 		T.expect({ SkillPoints.canBuy(c, "fire", "firebolt", 1.5) }).toEqual({ false, "error.badRequest" })
 		-- every point spent
 		local spentAll = char("Warrior", 3, { ranks = { onehand = { mightyStrike = SkillPoints.pointsAt(3) } } })
-		T.expect({ SkillPoints.canBuy(spentAll, "onehand", "charge") }).toEqual({ false, "skills.error.points" })
+		T.expect({ SkillPoints.canBuy(spentAll, "onehand", "shieldSweep") }).toEqual({ false, "skills.error.points" })
 	end)
 
 	T.it("apply: the whole reservation or nothing; negative, fractional and unknown entries refused", function()
@@ -134,7 +134,7 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 		T.expect({ SkillPoints.apply(c, "onehand", "x") }).toEqual({ false, "error.badRequest" })
 		-- more than the free points in total
 		local poor = char("Warrior", 4)
-		T.expect({ SkillPoints.apply(poor, "onehand", { mightyStrike = 1, charge = 1, bladeWhirl = 1 }) }).toEqual({
+		T.expect({ SkillPoints.apply(poor, "onehand", { mightyStrike = 1, charge = 1, shieldBash = 1 }) }).toEqual({
 			false,
 			"skills.error.limit",
 		})
@@ -194,7 +194,7 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 		local bp = { ["mightyStrike:5"] = "b", ["bladeWhirl:10"] = "a" }
 		local c = char("Warrior", 60, {
 			ranks = { onehand = { mightyStrike = 5 }, twohand = { mightyStrike = 4, bladeWhirl = 2 } },
-			path = { nodes = { berserker_cleave = 1, guardian_fortitude = 1 }, bp = bp },
+			path = { nodes = { berserker_scars = 1, guardian_stalwart = 1 }, bp = bp },
 		})
 		local reset = SkillPoints.resetState(c)
 		T.expect(reset).toEqual({ ranks = {}, path = { nodes = {}, bp = bp } })
@@ -208,10 +208,10 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 	T.it("a node rank and a skill rank cost the same from freeRespecLevel (S138)", function()
 		local L = Progression.freeRespecLevel
 		local c =
-			char("Warrior", L + 10, { path = { nodes = { berserker_cleave = 1, guardian_fortitude = 1 }, bp = {} } })
+			char("Warrior", L + 10, { path = { nodes = { berserker_scars = 1, guardian_stalwart = 1 }, bp = {} } })
 		T.expect(SkillPoints.nodesRefundCost(c)).toBe(SkillPoints.refundCost(L + 10, 2))
 		T.expect(SkillPoints.nodesRefundCost(c)).toBe(2 * Progression.rankRefundGold * (L + 10))
-		local young = char("Warrior", L - 1, { path = { nodes = { berserker_cleave = 1 }, bp = {} } })
+		local young = char("Warrior", L - 1, { path = { nodes = { berserker_scars = 1 }, bp = {} } })
 		T.expect(SkillPoints.nodesRefundCost(young)).toBe(0)
 		-- a node refund below the level works anywhere out of combat, from it in town or at a gate
 		local function edit(level: number, place: any): any
@@ -232,35 +232,36 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 	end)
 
 	T.it("a node refund also pays for the skill ranks it drops in every pool (S138)", function()
-		local c = char("Warrior", 60, {
-			path = { nodes = { berserker_cleave = 1, guardian_fortitude = 1 }, bp = {} },
-			ranks = { onehand = { cleave = 3, mightyStrike = 2 }, twohand = { cleave = 4 } },
+		-- S143: Carnage (the Berserker's capstone) is the Warrior's direction skill of the example
+		local c = char("Warrior", 70, {
+			path = { nodes = { berserker_carnage = 1, guardian_stalwart = 1 }, bp = {} },
+			ranks = { onehand = { carnage = 3, mightyStrike = 2 }, twohand = { carnage = 4 } },
 		})
 		local kept = 0
 		for _, ranks in (Paths.cleanRanks(c)) do
-			kept += ranks.cleave or 0
+			kept += ranks.carnage or 0
 		end
 		T.expect(kept > 0).toBe(true)
-		T.expect(SkillPoints.droppedRanks(c, { guardian_fortitude = 1 })).toBe(kept)
-		T.expect(SkillPoints.nodeRefundCost(c, "berserker_cleave")).toBe(SkillPoints.refundCost(60, 1 + kept))
-		T.expect(SkillPoints.nodeRefundCost(c, "guardian_fortitude")).toBe(SkillPoints.refundCost(60, 1))
-		T.expect(SkillPoints.nodesRefundCost(c)).toBe(SkillPoints.refundCost(60, 2 + kept))
+		T.expect(SkillPoints.droppedRanks(c, { guardian_stalwart = 1 })).toBe(kept)
+		T.expect(SkillPoints.nodeRefundCost(c, "berserker_carnage")).toBe(SkillPoints.refundCost(70, 1 + kept))
+		T.expect(SkillPoints.nodeRefundCost(c, "guardian_stalwart")).toBe(SkillPoints.refundCost(70, 1))
+		T.expect(SkillPoints.nodesRefundCost(c)).toBe(SkillPoints.refundCost(70, 2 + kept))
 		local young = char("Warrior", Progression.freeRespecLevel - 1, { path = c.path, ranks = c.ranks })
-		T.expect(SkillPoints.nodeRefundCost(young, "berserker_cleave")).toBe(0)
+		T.expect(SkillPoints.nodeRefundCost(young, "berserker_carnage")).toBe(0)
 	end)
 
 	T.it("the full reset keeps a path skill's breakpoint choice through validHotbar (S138)", function()
-		local c = char("Warrior", 60, {
-			path = { nodes = { berserker_cleave = 1 }, bp = { ["cleave:5"] = "b" } },
-			ranks = { twohand = { cleave = 5 } },
+		local c = char("Warrior", 80, { -- S143: Carnage (rank 5 at 76)
+			path = { nodes = { berserker_carnage = 1 }, bp = { ["carnage:5"] = "b" } },
+			ranks = { onehand = { carnage = 5 } },
 		})
 		local _, before = Paths.validHotbar(c)
-		T.expect(before).toEqual({ ["cleave:5"] = "b" })
+		T.expect(before).toEqual({ ["carnage:5"] = "b" })
 		local reset = SkillPoints.resetState(c)
 		c.ranks = reset.ranks
 		c.path = reset.path
 		local _, after = Paths.validHotbar(c)
-		T.expect(after).toEqual({ ["cleave:5"] = "b" })
+		T.expect(after).toEqual({ ["carnage:5"] = "b" })
 	end)
 
 	T.it("suggest: the pool's order, each skill to its limit, never above the free points", function()
@@ -315,10 +316,10 @@ T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 		T.expect(all.fireball).toBeNil()
 		-- a cut budget: the bar's skills and the passives keep their old ranks, the rest loses from the end
 		local L = 45
-		local bar = { ["1"] = "earthquake", ["2"] = "bloodlust" }
+		local bar = { ["1"] = "earthquake", ["2"] = "intercept" } -- S143: the one-handed pool
 		local ranks = SkillPoints.legacy("Warrior", L, "onehand", bar, nil)
 		T.expect(sum(ranks)).toBe(SkillPoints.pointsAt(L))
-		for _, id in { "earthquake", "bloodlust", "steelSkin", "riposte" } do
+		for _, id in { "earthquake", "intercept", "steelSkin", "fortitude" } do
 			T.expect({ id, ranks[id] }).toEqual({ id, Skills.rankAt(SkillData.get(id) :: any, L) })
 		end
 		local auto = 0
@@ -328,11 +329,12 @@ T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 			end
 		end
 		T.expect(auto > SkillPoints.pointsAt(L)).toBe(true) -- the case really cuts
-		-- a path skill only with its node (after the base members: at 20 the points still cover it)
-		local path = { nodes = { berserker_cleave = 1 }, bp = {} }
-		T.expect(SkillPoints.legacy("Warrior", 20, "twohand", {}, path).cleave)
-			.toBe(Skills.rankAt(SkillData.get("cleave") :: any, 20))
-		T.expect(SkillPoints.legacy("Warrior", 20, "twohand", {}, nil).cleave).toBeNil()
+		-- a path skill only with its node (S143: Carnage on the old bar, so it comes before the cut)
+		local path = { nodes = { berserker_carnage = 1 }, bp = {} }
+		local onBar = { ["1"] = "carnage" }
+		T.expect(SkillPoints.legacy("Warrior", 64, "twohand", onBar, path).carnage)
+			.toBe(Skills.rankAt(SkillData.get("carnage") :: any, 64))
+		T.expect(SkillPoints.legacy("Warrior", 64, "twohand", onBar, nil).carnage).toBeNil()
 	end)
 
 	T.it("clean: ranks outside the pool, without a node, above the limit or the points go back", function()
@@ -421,7 +423,7 @@ T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 		local c = char("Warrior", 3)
 		T.expect(PathView.attention(c).skills).toBe(true)
 		T.expect(PathView.attention(c).any).toBe(true)
-		c.ranks = { onehand = { mightyStrike = 1, charge = 1 } }
+		c.ranks = { onehand = { mightyStrike = 1, shieldSweep = 1 } } -- S143: the one-handed A1 at 3
 		local limited = PathView.attention(c)
 		T.expect(limited.skills).toBe(false) -- free points, but every limit reached
 		c.ranks = { onehand = { mightyStrike = SkillPoints.pointsAt(3) } }
