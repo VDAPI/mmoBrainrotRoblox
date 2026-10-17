@@ -46,13 +46,13 @@ function PathBadge.new(scope: Scope, use: Fusion.Use, pathId: any, size: number,
 			Text = firstLetter(Text.get(use, def.nameKey)),
 			TextScaled = true,
 			FontFace = Theme.Fonts.BodyBold,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Brass.Bright,
 		})
 	return scope:New("Frame")({
 		Name = "PathBadge",
 		Position = position,
 		Size = UDim2.fromOffset(size, size),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface, -- S135: a small iron badge on every surface
 		ZIndex = 3,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),

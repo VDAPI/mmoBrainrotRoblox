@@ -403,7 +403,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			add(textLine(s, 0, line))
 		end
 		for _, row in (data.rewards or {}) :: { RewardRow } do
-			add(QuestRewards(s, { Id = row.id, Reward = row.reward, SlotSize = 36 }))
+			add(QuestRewards(s, { Id = row.id, Reward = row.reward, SlotSize = 36, Surface = "iron" }))
 		end
 		if data.chips and #data.chips > 0 then
 			local chips: { Instance } = {}

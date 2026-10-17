@@ -24,6 +24,7 @@ export type Props = {
 	Size: Fusion.UsedAs<UDim2>?,
 	Position: Fusion.UsedAs<UDim2>?,
 	LayoutOrder: number?,
+	Surface: Theme.SurfaceName?, -- S135: the background its buttons stand on (default "paper")
 }
 
 local TILE = Theme.Size.MinTouch
@@ -200,6 +201,7 @@ local function LookPicker(scope: Scope, props: Props): Instance
 					Button(scope, {
 						Size = UDim2.new(0.5, -4, 1, 0),
 						Variant = "secondary",
+						Surface = props.Surface,
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "look.random"),
 						OnClick = function()
@@ -216,6 +218,7 @@ local function LookPicker(scope: Scope, props: Props): Instance
 						Position = UDim2.fromScale(1, 0),
 						Size = UDim2.new(0.5, -4, 1, 0),
 						Variant = "ghost",
+						Surface = props.Surface,
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "look.default"),
 						OnClick = function()

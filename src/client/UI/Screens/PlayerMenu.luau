@@ -105,6 +105,7 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 			local children: { Instance } = {
 				s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 				Button(s, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					LayoutOrder = 1,
 					Size = UDim2.new(1, 0, 0, height),
 					TextSize = if touch then Theme.TextSize.Body else Theme.TextSize.Small,

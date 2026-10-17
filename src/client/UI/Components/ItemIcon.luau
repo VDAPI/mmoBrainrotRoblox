@@ -90,7 +90,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 				ImageRectSize = Vector2.new(ItemIcons.CELL, ItemIcons.CELL),
 				ImageColor3 = scope:Computed(function(use): Color3
 					local l = use(layer)
-					return if l and l.tint then Color3.fromHex(l.tint) else Color3.new(1, 1, 1)
+					return if l and l.tint then Color3.fromHex(l.tint) else Theme.Plain
 				end),
 				ImageTransparency = fade,
 			})
@@ -137,19 +137,19 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 				end),
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local hex = use(gem)
-					return if hex then Color3.fromHex(hex) else Color3.new(1, 1, 1)
+					return if hex then Color3.fromHex(hex) else Theme.Plain
 				end),
 				BackgroundTransparency = fade,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
 					scope:New("UIStroke")({
-						Color = Color3.fromRGB(20, 18, 16),
+						Color = Theme.Iron.Sunken,
 						Thickness = 1,
 						Transparency = fade,
 					}),
 					scope:New("UIGradient")({
 						Rotation = 45,
-						Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 150, 150)),
+						Color = ColorSequence.new(Theme.Plain, Theme.mix(Theme.Plain, Theme.Shade, 0.4)),
 					}),
 				},
 			}),

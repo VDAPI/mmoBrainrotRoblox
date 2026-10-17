@@ -137,7 +137,7 @@ local function LookWindow(scope: Scope): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, Theme.Padding.Medium),
 			}),
-			LookPicker(scope, { Look = choice, LayoutOrder = 1 }),
+			LookPicker(scope, { Look = choice, LayoutOrder = 1, Surface = "iron" }), -- S135: still the legacy dark look
 			scope:New("Frame")({
 				Name = "Cost",
 				LayoutOrder = 2,
@@ -148,6 +148,7 @@ local function LookWindow(scope: Scope): Instance
 						Currency = "gold",
 						Size = UDim2.fromOffset(24, 24),
 						Position = UDim2.fromOffset(0, 3),
+						Surface = "iron",
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(30, 0),

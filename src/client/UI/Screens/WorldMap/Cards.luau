@@ -177,7 +177,7 @@ local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQ
 		objectives, progress, turnIn = quest.objectives, entry.progress, quest.turnIn
 	end
 	local list = QuestText.rows(Fusion.peek, objectives, progress, turnIn)
-	for _, line in QuestText.richRows(Fusion.peek, list, row.mode == "active") do
+	for _, line in QuestText.richRows(Fusion.peek, list, row.mode == "active", "iron") do
 		table.insert(lines, { text = `   {line}`, size = 13, color = Theme.Colors.Text })
 	end
 end

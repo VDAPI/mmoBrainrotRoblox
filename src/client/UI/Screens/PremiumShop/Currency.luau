@@ -82,7 +82,10 @@ local function packCard(
 			"◆",
 			Theme.Colors.Accent,
 			Text.now("premium.pack", { n = Format.number(pack.shards) }),
-			CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) })
+			CurrencyIcon(
+				scope,
+				{ Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24), Surface = "iron" }
+			)
 		),
 	}
 	for i, id in pack.cosmetics do

@@ -238,6 +238,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Colors.Parchment,
 			}),
 			LanguageToggle(scope, {
+				Surface = "iron",
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -Theme.Padding.Large, 0, Theme.Padding.Large),
 			}),

@@ -43,7 +43,7 @@ local function label(scope: Scope, key: string, order: number): Instance
 		Text = Text.T(scope, key),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Parchment,
+		TextColor3 = Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -173,7 +173,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "mail.compose.noItems"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -234,7 +234,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				label(scope, "mail.compose.to", 1),
@@ -272,10 +272,10 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 				scope:New("Frame")({
 					LayoutOrder = 7,
 					Size = UDim2.new(1, 0, 0, 130),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					[Children] = {
 						scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-						scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+						scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 						scope:New("TextBox")({
 							Position = UDim2.fromOffset(10, 8),
 							Size = UDim2.new(1, -20, 1, -34),
@@ -286,10 +286,10 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextYAlignment = Enum.TextYAlignment.Top,
 							PlaceholderText = Text.T(scope, "mail.compose.bodyHint"),
-							PlaceholderColor3 = Theme.Colors.TextMuted,
+							PlaceholderColor3 = Theme.Paper.TextMuted,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Paper.Text,
 							Text = body,
 							[OnChange("Text")] = function(text: string)
 								local clamped = clampText(text, RULES.bodyMax)
@@ -308,7 +308,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 							end),
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Right,
 						}),
 					},
@@ -324,7 +324,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 							Text = Text.T(scope, "mail.compose.gold"),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Parchment,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 						scope:New("Frame")({
@@ -382,8 +382,8 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 			TextSize = Theme.TextSize.Small,
 			TextColor3 = scope:Computed(function(use): Color3
 				return if use(needsMailbox) and not use(props.AtMailbox)
-					then Theme.Colors.Danger
-					else Theme.Colors.TextMuted
+					then Theme.Paper.Danger
+					else Theme.Paper.TextMuted
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),

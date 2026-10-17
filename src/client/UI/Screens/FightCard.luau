@@ -130,6 +130,7 @@ local function FightCard(scope: Scope, props: Props): Instance
 						Padding = UDim.new(0, 8),
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 1,
 						Text = Text.T(scope, "fight.details"),
 						Variant = "primary",
@@ -138,6 +139,7 @@ local function FightCard(scope: Scope, props: Props): Instance
 						OnClick = props.OpenDetails,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 2,
 						Text = Text.T(scope, "fight.card.close"),
 						Variant = "secondary",

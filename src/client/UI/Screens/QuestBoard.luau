@@ -194,6 +194,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			}),
 			-- S31: rewards as icons and item slots with tooltips.
 			QuestRewards(s, {
+				Surface = "iron", -- S135: legacy dark window until S136
 				Id = c.id,
 				Reward = c.reward,
 				SlotSize = 38,

@@ -130,6 +130,7 @@ local function card(
 				end),
 			}),
 			QuestRewards(scope, {
+				Surface = "iron", -- S135: legacy dark window until S136
 				Id = `login{n}`,
 				Reward = reward :: any,
 				SlotSize = SLOT,
@@ -309,7 +310,10 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 							SortOrder = Enum.SortOrder.LayoutOrder,
 							Padding = UDim.new(0, 4),
 						}),
-						CurrencyIcon(s, { Currency = "gold", Size = UDim2.fromOffset(20, 20), LayoutOrder = 1 }),
+						CurrencyIcon(
+							s,
+							{ Currency = "gold", Size = UDim2.fromOffset(20, 20), LayoutOrder = 1, Surface = "iron" }
+						),
 						s:New("TextLabel")({
 							LayoutOrder = 2,
 							Size = UDim2.fromOffset(0, 20),

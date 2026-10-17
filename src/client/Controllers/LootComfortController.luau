@@ -119,6 +119,7 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				AnchorPoint = Vector2.new(1, 1),
 				Position = UDim2.new(1, -10, 1, -10),
 				Size = UDim2.fromOffset(96, 36),

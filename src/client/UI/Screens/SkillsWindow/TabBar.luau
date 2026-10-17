@@ -24,13 +24,14 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local TabBar = {}
 
-TabBar.HEIGHT = 40
-TabBar.HEIGHT_TOUCH = 44
+-- S135: parchment cards like the Tabs component (two lines: the name and the path state)
+TabBar.HEIGHT = 46
+TabBar.HEIGHT_TOUCH = 50
 
 local STATE_COLOR: { [string]: Color3 } = {
-	main = Theme.Colors.GoldBright,
-	dip = Theme.Colors.Parchment,
-	closed = Theme.Colors.TextMuted,
+	main = Theme.Paper.Heading,
+	dip = Theme.Paper.Text,
+	closed = Theme.Paper.TextMuted,
 }
 
 type Entry = { id: string, name: string, state: string?, stateColor: Color3?, icon: Instance }
@@ -77,10 +78,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			AutomaticSize = Enum.AutomaticSize.X,
 			AutoButtonColor = false,
 			BackgroundColor3 = s:Computed(function(use): Color3
-				return if use(selected) then Theme.Colors.PanelRaised else Theme.Colors.Panel
-			end),
-			BackgroundTransparency = s:Computed(function(use): number
-				return if use(selected) then 0 else 0.4
+				return if use(selected) then Theme.Paper.Surface else Theme.Paper.Sunken
 			end),
 			Text = "",
 			[OnEvent("Activated")] = function()
@@ -88,6 +86,12 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			end,
 			[Children] = {
 				s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				s:New("UIStroke")({
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					Thickness = Theme.Stroke.Normal,
+					Color = Theme.Brass.Frame,
+					Enabled = selected,
+				}),
 				s:New("UISizeConstraint")({ MinSize = Vector2.new(150, height) }),
 				s:New("Frame")({
 					Name = "Content",
@@ -116,24 +120,26 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 								s:New("TextLabel")({
 									LayoutOrder = 1,
 									BackgroundTransparency = 1,
-									Size = UDim2.fromOffset(0, 17),
+									Size = UDim2.fromOffset(0, Theme.TextSize.Small + 2),
 									AutomaticSize = Enum.AutomaticSize.X,
 									Text = entry.name,
 									FontFace = Theme.Fonts.BodyBold,
-									TextSize = 15,
-									TextColor3 = Theme.Colors.Parchment,
+									TextSize = Theme.TextSize.Small,
+									TextColor3 = s:Computed(function(use): Color3
+										return if use(selected) then Theme.Paper.Heading else Theme.Paper.Text
+									end),
 									TextXAlignment = Enum.TextXAlignment.Left,
 								}),
 								if entry.state
 									then s:New("TextLabel")({
 										LayoutOrder = 2,
 										BackgroundTransparency = 1,
-										Size = UDim2.fromOffset(0, 15),
+										Size = UDim2.fromOffset(0, Theme.TextSize.Caption + 1),
 										AutomaticSize = Enum.AutomaticSize.X,
 										Text = entry.state,
-										FontFace = Theme.Fonts.Body,
-										TextSize = 13,
-										TextColor3 = entry.stateColor or Theme.Colors.TextMuted,
+										FontFace = Theme.Fonts.BodyMedium,
+										TextSize = Theme.TextSize.Caption,
+										TextColor3 = entry.stateColor or Theme.Paper.TextMuted,
 										TextXAlignment = Enum.TextXAlignment.Left,
 									}) :: any
 									else nil,
@@ -141,14 +147,15 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 						}),
 					},
 				}),
-				-- the gold underline of the selected tab
+				-- the open bottom of the selected card (joins the page under it)
 				s:New("Frame")({
-					Name = "Underline",
-					AnchorPoint = Vector2.new(0, 1),
-					Position = UDim2.fromScale(0, 1),
-					Size = UDim2.new(1, 0, 0, 2),
-					BackgroundColor3 = Theme.Colors.Gold,
+					Name = "Join",
+					AnchorPoint = Vector2.new(0, 0),
+					Position = UDim2.new(0, 0, 1, -Theme.Stroke.Normal),
+					Size = UDim2.new(1, 0, 0, Theme.Stroke.Normal * 2 + 1),
+					BackgroundColor3 = Theme.Paper.Surface,
 					BorderSizePixel = 0,
+					ZIndex = 2,
 					Visible = selected,
 				}),
 				s:New("Frame")({
@@ -156,7 +163,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -3, 0, 3),
 					Size = UDim2.fromOffset(14, 14),
-					BackgroundColor3 = Theme.Colors.Danger,
+					BackgroundColor3 = Theme.Paper.Danger,
 					Visible = marked,
 					[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 				}),
@@ -171,7 +178,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 		end
 		local class = Classes.get(character.class)
 		local classGlyph = if class then class.icon else "✦"
-		local classColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+		local classColor = if class then Theme.readable(class.color, "paper") else Theme.Paper.Heading
 		local emblem = if class then UiArt.classEmblem(class.id) else nil
 		local entries: { Entry } = {
 			{ id = "base", name = Text.get(use, "paths.tab.base"), icon = glyph(s, classGlyph, classColor, emblem) },
@@ -181,7 +188,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			table.insert(entries, {
 				id = "soon",
 				name = Text.get(use, "paths.tab.soon"),
-				icon = glyph(s, "…", Theme.Colors.TextMuted),
+				icon = glyph(s, "…", Theme.Paper.TextMuted),
 			})
 		end
 		for _, def in paths do

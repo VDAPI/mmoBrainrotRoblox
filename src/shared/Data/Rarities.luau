@@ -18,10 +18,14 @@ export type RarityDef = {
 	key: string, -- "common" | "unique" | "heroic" | "legendary" | "mythic"
 	nameKey: string, -- "rarity.<key>"
 	shortKey: string, -- "rarity.short.<key>" (filters)
-	hex: string, -- frame colour as hex (pure code / tests)
-	textHex: string,
+	hex: string, -- frame colour as hex (pure code / tests); the rarity's identity (wiki, announcements, glow)
+	textHex: string, -- S135: name on parchment, >= 4.5:1 on UiPalette.paper.surface and .raised
+	paperHex: string, -- S135: frame on a parchment slot, >= 3:1 on UiPalette.paper.raised
+	nightHex: string, -- S135: name on the dark iron tooltip, >= 4.5:1 on UiPalette.iron.surface
 	color: Color3, -- frame colour (only a real Color3 inside Roblox; in Lune it is the hex string)
-	textColor: Color3, -- readable name colour on the tooltip parchment
+	textColor: Color3, -- readable name colour on parchment (textHex)
+	paperColor: Color3, -- S135: frame colour on parchment (paperHex)
+	nightColor: Color3, -- S135: name colour on iron (nightHex)
 	bonusMin: number,
 	bonusMax: number,
 	baseMul: number, -- base stat multiplier of rolled items
@@ -54,6 +58,8 @@ local function def(spec: {
 	key: string,
 	hex: string,
 	textHex: string,
+	paperHex: string,
+	nightHex: string?,
 	bonusMin: number,
 	bonusMax: number,
 	baseMul: number,
@@ -84,8 +90,12 @@ local function def(spec: {
 		shortKey = `rarity.short.{spec.key}`,
 		hex = spec.hex,
 		textHex = spec.textHex,
+		paperHex = spec.paperHex,
+		nightHex = spec.nightHex or spec.hex,
 		color = color(spec.hex),
 		textColor = color(spec.textHex),
+		paperColor = color(spec.paperHex),
+		nightColor = color(spec.nightHex or spec.hex),
 		bonusMin = spec.bonusMin,
 		bonusMax = spec.bonusMax,
 		baseMul = spec.baseMul,
@@ -110,6 +120,7 @@ local LIST: { RarityDef } = {
 		key = "common",
 		hex = "#9DA3AB",
 		textHex = "#565C64",
+		paperHex = "#6E747C",
 		bonusMin = 0,
 		bonusMax = 0,
 		baseMul = 1.0,
@@ -128,7 +139,8 @@ local LIST: { RarityDef } = {
 		id = 2,
 		key = "unique",
 		hex = "#F2D33A",
-		textHex = "#8C6D00",
+		textHex = "#715800", -- S135: was #8C6D00 (3.8:1 on parchment)
+		paperHex = "#887620",
 		bonusMin = 2,
 		bonusMax = 2,
 		baseMul = 1.05,
@@ -150,7 +162,8 @@ local LIST: { RarityDef } = {
 		id = 3,
 		key = "heroic",
 		hex = "#3D8BFF",
-		textHex = "#1F5BC2",
+		textHex = "#1D56B8", -- S135: was #1F5BC2 (4.2:1 on the slot)
+		paperHex = "#2F6FD6",
 		bonusMin = 3,
 		bonusMax = 3,
 		baseMul = 1.12,
@@ -172,7 +185,8 @@ local LIST: { RarityDef } = {
 		id = 4,
 		key = "legendary",
 		hex = "#FF9F1C",
-		textHex = "#C26A00",
+		textHex = "#8A4B00", -- S135: was #C26A00 (3.1:1 on parchment)
+		paperHex = "#A66712",
 		bonusMin = 3,
 		bonusMax = 3,
 		baseMul = 1.17,
@@ -199,6 +213,8 @@ local LIST: { RarityDef } = {
 		key = "mythic",
 		hex = "#E5302A",
 		textHex = "#B01E19",
+		paperHex = "#C42620",
+		nightHex = "#FF6A5E", -- S135: hex is 3.6:1 on the iron tooltip
 		bonusMin = 3,
 		bonusMax = 3,
 		-- S134g: stats about Heroic +10 % (was rangeMul 1.2 and 2 legendary + 1 mythic line); two effects

@@ -254,17 +254,19 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 							}),
 							if props.OnEquip
 								then Button(scope, {
-									Text = Text.T(scope, "reveal.equip"),
-									Variant = "primary",
-									Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
-									OnClick = function()
-										local equip = props.OnEquip :: () -> ()
-										props.Close()
-										equip()
-									end,
-								}) :: any
+										Surface = "iron", -- S135: on a dark HUD / overlay surface
+										Text = Text.T(scope, "reveal.equip"),
+										Variant = "primary",
+										Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
+										OnClick = function()
+											local equip = props.OnEquip :: () -> ()
+											props.Close()
+											equip()
+										end,
+									}) :: any
 								else nil,
 							Button(scope, {
+								Surface = "iron", -- S135: on a dark HUD / overlay surface
 								Text = Text.T(scope, "reveal.ok"),
 								Variant = "secondary",
 								Size = UDim2.fromOffset(160, Theme.Size.ButtonHeight),

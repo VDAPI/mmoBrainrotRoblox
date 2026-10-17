@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Theme = require(script.Parent.Parent.Theme)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -30,10 +31,15 @@ local function sequence(c1: Color3, c2: Color3): ColorSequence
 	})
 end
 
+-- S135: colours from Data/UiPalette.announce
 local BACKDROP = {
-	legendary = sequence(Color3.fromHex("#3A2A10"), Color3.fromHex("#1B1D23")),
-	mythic = sequence(Color3.fromHex("#4A0C0A"), Color3.fromHex("#1B1013")),
+	legendary = sequence(
+		Color3.fromHex(UiPalette.announce.legendaryGlow),
+		Color3.fromHex(UiPalette.announce.legendaryBase)
+	),
+	mythic = sequence(Color3.fromHex(UiPalette.announce.mythicGlow), Color3.fromHex(UiPalette.announce.mythicBase)),
 }
+local MYTHIC_TEXT = Color3.fromHex(UiPalette.announce.mythicText)
 local MYTHIC_COLORS = MYTHIC.frame.gradient or { MYTHIC.color, MYTHIC.color }
 local FRAME = {
 	legendary = sequence(LEGENDARY.color, LEGENDARY.color),
@@ -130,7 +136,7 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 						then Theme.Stroke.Thick + 2 + use(pulse) * 2
 						else Theme.Stroke.Thick
 				end),
-				Color = Color3.new(1, 1, 1),
+				Color = Theme.Plain,
 				[Children] = scope:New("UIGradient")({
 					Color = scope:Computed(function(use): ColorSequence
 						return if use(style) == "mythic" then FRAME.mythic else FRAME.legendary
@@ -155,10 +161,10 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 					return if use(style) == "mythic" then Theme.TextSize.Title else Theme.TextSize.Large + 2
 				end),
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(style) == "mythic" then Color3.fromHex("#FFD0C8") else Theme.Colors.GoldBright
+					return if use(style) == "mythic" then MYTHIC_TEXT else Theme.Brass.Bright
 				end),
 				TextStrokeColor3 = scope:Computed(function(use): Color3
-					return if use(style) == "mythic" then MYTHIC.color else Color3.new(0, 0, 0)
+					return if use(style) == "mythic" then MYTHIC.color else Theme.Shade
 				end),
 				TextStrokeTransparency = scope:Computed(function(use): number
 					return if use(style) == "mythic" then 0.5 - use(pulse) * 0.3 else 0.4

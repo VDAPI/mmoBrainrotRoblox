@@ -45,8 +45,8 @@ local function QuestItemIcons(
 				LayoutOrder = #chips + 1,
 				Size = UDim2.fromOffset(0, SIZE),
 				AutomaticSize = Enum.AutomaticSize.X,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
-				BackgroundTransparency = 0.35,
+				BackgroundColor3 = Theme.Paper.Raised,
+				BackgroundTransparency = 0,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIListLayout")({
@@ -71,8 +71,8 @@ local function QuestItemIcons(
 						BackgroundTransparency = 1,
 						Text = Text.get(use, `quest.item.{item}`),
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = 14,
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
 					}),
 				},
 			})

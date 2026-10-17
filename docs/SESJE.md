@@ -11592,3 +11592,109 @@ i18n, aktualność), `wiki/public/img/maps/city.svg`, `docs/{DESIGN-15,BALANS,PR
   podnieść cel (np. 20%).
 - Retro Znaki: postać 99. poziomu dostaje od razu 738 Znaków (12 Skrzyń Łowcy albo 3 Heroiczne na 3 tygodnie). Do wyboru:
   zostawić (nic nie przepada) albo przyciąć retro (np. połowa).
+
+### S135: Pergamin i żelazo (1/2)
+
+- Paleta w danych: `Data/UiPalette` (powierzchnie `paper` i `iron` z tymi samymi rolami, `brass`, `resource`, `zone`,
+  `currency`, `pvp`, `announce`, `neutral`; 98 par w `PAIRS`), wzór kontrastu w `Logic/Contrast` (przeniesiony z
+  `tools/WikiData/TokensCss`, który go teraz importuje; wiki strefy czyta z `UiPalette.zone`, `tokens.data.css` bez
+  zmian), `Logic/TextCase.upper` (polskie znaki). `Data/UiPalette` i `Data/UiWindows` w `NOT_BALANCE` („wygląd”).
+- `Theme`: role `Theme.Paper` / `Theme.Iron` / `Theme.Brass` / `Theme.Resource` / `Theme.Zone`, `Theme.surface`,
+  `Theme.readable(hex, surface)` (pamięć podręczna), `Theme.hex`, `Theme.mix`, `Theme.Plain` / `Theme.Shade`; czcionka
+  `Display` = Merriweather (też `Heading`), `TextSize` z `Caption 15`, `Small 17`, `Title 30`; `Size.RowHeight`,
+  `SlotSize`, `FrameOuter`, `FrameInner`, `HeaderRule`. `Theme.Colors` bez zmian (legacy do S136).
+- Komponenty: `Window` w dwóch trybach (`Paper` z `Data/UiWindows` przez `WindowManager`: pergamin, żelazna rama 3 px z
+  mosiężną linią, pasek tytułu z żelaza z Merriweather, ✕ 44 × 44 na czerwieni przy najechaniu), prop `Surface` w
+  `Button` (palety z ról, ghost przezroczysty z kolorem linku), `Tabs` (karty pergaminu z otwartym dołem, 44 px),
+  `SideTabs`, `Select`, `TextInput`, `NumberInput`, `Toggle`, `ItemSlot` (slot `Raised`, brzeg `Border`, ramka
+  `paperHex` z gradientem do ciemniejszego, licznik i „+N” na plakietce żelaza), `Bar` (tor `Resource.track`, brzeg
+  mosiądzu), `QuestRewards`, `CurrencyIcon` (znaki z `UiPalette.currency` przez `Theme.readable`), `LanguageToggle`,
+  `BuildSetSwitch` (zestawy jako karty zakładek); `Modal` i `ActionMenu` na pergaminie z ramą okna, `Toast`, `Tooltip` i
+  `ItemTooltip` na żelazie (nazwy `nightHex`, RichText z `TooltipModel` przemapowany); nowe `SectionLabel` i `ListRow`.
+  Literały koloru w `PvpDot`, `Announcement`, `ArtIcon`, `ItemIcon`, `PortraitFrame`, `SelectableSlot`, `PathBadge`,
+  `QuestItemIcons` zamienione na tokeny (wygląd HUD bez zmian; całość HUD w S136). Przyciski w `Hud/*`, nakładkach
+  (`BossReward`, `LegendReveal`, `ArenaOffer`, `FishingGame`, `ReadyCheck`, `FightCard`, `PlayerMenu`,
+  `CharacterSelect`) i zaproszeniach (`PartyController`, `SocialController`, `LootComfortController`) z `Surface = "iron"`.
+- Okna na pergaminie (D): `character` (ekwipunek, plecak, statystyki pochodne jako gęste `ListRow` z wartością po prawej,
+  grupy przez `SectionLabel`), `inventory`, `menu` (ustawienia w `ListRow`, przełączniki „Wył.” jako `secondary`),
+  `npc`, `shop`, `questnpc` (kategoria jako etykieta sekcji), `quests` (RichText z rolami przez `Theme.hex`,
+  `QuestText.richRows(…, surface)`), `trade`, `mail`, `mailCompose`, `profile`, `party` + `PartyFinder`. Kolory z danych
+  (klasa, tytuł, pasmo poziomu, żywioł, rzadkość) przez `Theme.readable` / `ItemText.rarityName` / `rarityFrame`.
+  `Theme.readable` poprawia względem wszystkich ról tła (`Contrast.readableOn`), glif klasy na portrecie na żelazie.
+  Listy tych okien (poza `character`, `menu`) jeszcze bez `ListRow` / `SectionLabel` (odłożone do S136).
+- Okno umiejętności (E): `BaseList` na `ListRow` (nazwa `Body` w atramencie, „Ranga 6/10 · następna na 26. poz.”
+  `Small` przygaszonym, przełomy jako plakietki, zablokowany z kłódką i przygaszonym kafelkiem), `TabBar` jako karty,
+  nagłówek z `BuildSetSwitch` jako zakładki, szczegóły z `SectionLabel`, interlinią 1,15 i pogrubionymi liczbami, karty
+  przełomów A / B `Raised` z ramą (działająca w mosiądzu, litera na zieleni), węzły ścieżek z mosiężną ramą po kupnie i
+  atramentową przy zaznaczeniu, arkusz telefonu na pergaminie, podgląd 3D na żelazie.
+- Tabliczki graczy (F): przyczyna i poprawka niżej; wygląd na płytce żelaza (przezroczystość 0,45, mosiężny brzeg 1 px),
+  nick 22 z ciemnym obrysem, tag gildii mosiądzem, tytuł w swoim kolorze przez `Theme.readable(…, "iron")`, VIP bez
+  zmian w treści, „Poz. N Klasa” 17; wróg czerwony z ⚔, własna i VIP mosiądzem; decyzja „co pokazać” w
+  `Logic/Nameplate`, liczby w `Config.Nameplate`; nick innego gracza to przycisk do `PartyController.OpenMenu`
+  (lewy i prawy klik, dotknięcie).
+- Testy: `uipalette.spec` (pary, rzadkości na obu powierzchniach, klasy, żywioły i pasma poziomu po `readableOn` na
+  każdej roli tła, liczby dawnego
+  `TokensCss`, `TextCase`), `uitheme.spec` (G1–G4, `PENDING_S136` 27 okien), `nameplate.spec`, `rarities.spec` (nowe pola).
+- Wiki: wiki do odświeżenia (właściciel 17.10); zmienią się `rarities.json` (`textColor` Unikatu, Heroika i Legendy
+  ciemniejsze, bo `textHex` przyciemniony pod pergamin), `meta.json` i `docs/PRZEDMIOTY.md`; `tokens.data.css` bez zmian.
+
+**Tokeny i kontrast** (WCAG; strona / slot dla pergaminu, tło / pasek tytułu dla żelaza; pełna lista `UiPalette.PAIRS`)
+
+| rola | hex | na `surface` | na `raised` |
+|---|---|---|---|
+| paper.text | `#2A2016` | 12,5 | 10,7 |
+| paper.textMuted | `#634C2E` | 6,3 | 5,4 |
+| paper.label | `#5A4528` | 7,1 | 6,1 |
+| paper.heading | `#3B2E1C` | 10,3 | 8,8 |
+| paper.danger | `#9A2F28` | 5,9 | 5,0 |
+| paper.success | `#2F5A22` | 6,3 | 5,4 |
+| paper.warning | `#744300` | 6,5 | 5,5 |
+| paper.link | `#1F4E9A` | 6,3 | 5,4 |
+| paper.border (krawędź) | `#7A6136` | 4,6 | 3,9 |
+| iron.text | `#F3E6C4` | 12,9 | 10,6 |
+| iron.textMuted | `#CDB98F` | 8,3 | 6,9 |
+| iron.heading | `#E8C25A` | 9,3 | 7,7 |
+| iron.danger | `#FF8A7E` | 7,0 | 5,8 |
+| iron.border (krawędź) | `#A08654` | 4,6 | 3,8 |
+
+Przycisk główny `#F3E6C4` na `#4E6A26` 5,0; tekst na czerwieni 6,0; żelazna rama `#4A3A24` na pergaminie 8,6;
+wypełnienia pasków na torze `#1A140C`: HP 3,9, mana 4,5, energia 9,0, EXP 4,5. Rzadkości (nazwa na pergaminie
+strona / slot · ramka na slocie · nazwa na żelazie): Zwykły 5,3 / 4,5 · 3,2 · 6,3; Unikat 5,3 / 4,5 · 3,0 · 10,8;
+Heroik 5,4 / 4,6 · 3,2 · 4,8; Legenda 5,3 / 4,6 · 3,1 · 7,8; Mityk 5,4 / 4,6 · 3,9 · 5,7.
+
+**Lista kontrolna okien** (`Data/UiWindows`): na pergaminie 13 okien S135 (wyżej); w starym wyglądzie do S136 27:
+`alchemy`, `arena`, `areapicker`, `auction`, `backpacks`, `blacksmith`, `bloodmoon`, `deposit`, `dev`, `dungeon`,
+`fightlog`, `friends`, `guild`, `guildfound`, `huntshop`, `login`, `look`, `lootlog`, `map`, `mounts`, `premium`,
+`questboard`, `rankings`, `stonepicker`, `unbind`, `vip`, `wardrobe`, plus ekrany poza oknami (`UiWindows.SCREENS`: HUD,
+ramki drużyny, wybór postaci, przerywnik, nagroda bossa, objawienie legendy, oferta areny, koło emotek, łowienie,
+„Wkrótce”, gotowość, karta walki, menu gracza).
+
+**Tabliczki graczy: co było przyczyną** (kod i dokumentacja strumieniowania, bez uruchamiania gry)
+1. Przyczyna: `AncestryChanged` → sprzątanie, gdy model wypadł z `game`. Z `StreamingEnabled` (promień 128–512 st.)
+   postać innego gracza poza zasięgiem (inna mapa w tym samym `Workspace`, daleki teleport) wypada z drzewa i wraca bez
+   nowego `CharacterAdded`, więc tabliczka znikała na zawsze. Teraz sprzątanie tylko przy `Destroying`, nowej postaci
+   gracza i wyjściu; powrót modelu (ta sama instancja albo nowa z `CharName` w `Workspace`, zmiana `Character`)
+   podpina tabliczkę jeszcze raz, jedna na model (`plates`, `byPlayer`).
+2. Przyczyna przy wolnym wczytaniu: czekanie na `Head` najwyżej 10 s bez ponowienia. Teraz `Head` przychodzi przez
+   `ChildAdded`, bez limitu czasu, dopóki model żyje (tak samo `Humanoid` dla paska HP).
+3. Ryzyko: `MaxDistance = 80` od kamery (kamera odsuwa się dalej): teraz `Config.Nameplate.maxDistance` 150.
+4. Ryzyko: `AlwaysOnTop` tylko dla własnej (cudze chowały się za włosami, hełmami R15, drzewami, dachami): teraz wszystkie.
+5. Ryzyko czytelności: jasny tekst bez tła na śniegu i piasku: teraz płytka żelaza i ciemny obrys.
+
+**Dla właściciela (decyzje):** (1) nagłówki Merriweather w wadze Heavy (makieta 900); gdy w grze wyjdą zbyt
+grube w małych rozmiarach, zmiana jednej linii `Theme.Fonts.Display` na Bold; (2) cudze tabliczki zawsze na wierzchu
+(widać nick przez drzewa i dachy do 150 st.); alternatywa: na wierzchu tylko do `detailDistance`; (3) czy toasty i tooltipy mają zostać
+żelazne także nad oknami na pergaminie (dziś tak: jedna zasada „nakładki na żelazie”, modale i menu akcji na pergaminie).
+
+**Pliki:** `src/shared/Data/{UiPalette,UiWindows}.luau` (nowe), `Data/Rarities.luau`, `Data/Localization/pl.luau`,
+`src/shared/Logic/{Contrast,TextCase,Nameplate}.luau` (nowe), `src/shared/Config.luau`, `src/client/UI/{Theme,ItemText,
+QuestText}.luau`, `UI/Components/{SectionLabel,ListRow}.luau` (nowe), `UI/Components/{Window,Button,Tabs,SideTabs,Select,
+TextInput,NumberInput,Toggle,ItemSlot,Bar,QuestRewards,CurrencyIcon,LanguageToggle,BuildSetSwitch,Modal,ActionMenu,Toast,
+Tooltip,ItemTooltip,PvpDot,Announcement,ArtIcon,ItemIcon,PortraitFrame,PathBadge,SelectableSlot,QuestItemIcons}.luau`,
+`UI/Screens/{SkillsWindow/*,CharacterWindow/*,BackpackPanel,GameMenu,NpcDialog,ShopWindow,QuestDialog,QuestJournal,
+TradeWindow,MailWindow,MailCompose,ProfileWindow,PartyWindow,PartyFinder}.luau`, `Surface = "iron"` w `UI/Screens/Hud/*`
+i nakładkach, `UI/Screens/{LoginReward,QuestBoard,WorldMap/DetailCard,WorldMap/Cards,ArenaWindow/init,HuntShopWindow,
+LookWindow,VipWindow,GuildFound,CharacterSelect/Creator,PremiumShop/*}.luau`, `UI/Components/LookPicker.luau`, `src/client/Controllers/{WindowManager,NameplateController,PartyController,
+SocialController,LootComfortController}.luau`, `tools/WikiData/{TokensCss,Basics}.luau`, `tools/balance_reasons.luau`,
+`tests/{uipalette,uitheme,nameplate}.spec.luau` (nowe), `tests/rarities.spec.luau`,
+`docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

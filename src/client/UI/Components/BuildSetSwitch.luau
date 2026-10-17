@@ -2,7 +2,8 @@
 -- Build set switch (S58, ROZWOJ 2.9, 4): "Set 1" / "Set 2" and, with ShowModal, "Copy" with a confirmation. The server
 -- checks every rule (place, combat, death, dungeon run, cooldown) and sends the success toast and the path weapon
 -- warning; here only an error toast. Used in the skills window header (S59 full window: Height 44 on a phone) and in
--- the character window.
+-- the character window. S135: the two sets are drawn as tab cards (the active one with an iron frame), "Copy" stays
+-- a secondary button.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,11 +29,13 @@ export type Props = {
 	AnchorPoint: UsedAs<Vector2>?,
 	Size: UsedAs<UDim2>?, -- default automatic width
 	LayoutOrder: UsedAs<number>?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local function BuildSetSwitch(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local height = props.Height or Theme.Size.ButtonHeightSmall
 	local width = props.ButtonWidth or 96
+	local roles = Theme.surface(props.Surface)
 	local busy = scope:Value(false)
 	local stored = State.Value({ "character", "buildSlot" })
 	local slot = scope:Computed(function(use): number
@@ -56,21 +59,46 @@ local function BuildSetSwitch(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 
 	local buttons: { Instance } = {}
 	for n = 1, 2 do
+		local active = scope:Computed(function(use): boolean
+			return use(slot) == n
+		end)
 		table.insert(
 			buttons,
-			Button(scope, {
+			scope:New("TextButton")({
 				Name = `Set{n}`,
-				Text = Text.T(scope, "buildset.set", { n = n }),
-				Variant = scope:Computed(function(use): Button.Variant
-					return if use(slot) == n then "primary" else "ghost"
-				end) :: any,
-				Disabled = busy,
-				Size = UDim2.fromOffset(width, height),
-				TextSize = Theme.TextSize.Small,
 				LayoutOrder = n,
-				OnClick = function()
-					switchTo(n)
+				Size = UDim2.fromOffset(width, height),
+				AutoButtonColor = false,
+				BackgroundColor3 = scope:Computed(function(use): Color3
+					return if use(active) then roles.Surface else roles.Sunken
+				end),
+				Text = Text.T(scope, "buildset.set", { n = n }),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = scope:Computed(function(use): Color3
+					return if use(active) then roles.Heading else roles.TextMuted
+				end),
+				[Fusion.OnEvent("Activated")] = function()
+					if not Fusion.peek(busy) then
+						Sounds.play("click")
+						switchTo(n)
+					end
 				end,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Thickness = scope:Computed(function(use): number
+							return if use(active) then Theme.Stroke.Normal else Theme.Stroke.Thin
+						end),
+						Color = scope:Computed(function(use): Color3
+							if use(active) then
+								return if props.Surface == "iron" then Theme.Brass.Line else Theme.Brass.Frame
+							end
+							return roles.Border
+						end),
+					}),
+				},
 			})
 		)
 	end
@@ -83,6 +111,7 @@ local function BuildSetSwitch(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 				Name = "Copy",
 				Text = Text.T(scope, "buildset.copy"),
 				Variant = "secondary",
+				Surface = props.Surface,
 				Disabled = busy,
 				Size = UDim2.fromOffset(width, height),
 				TextSize = Theme.TextSize.Small,

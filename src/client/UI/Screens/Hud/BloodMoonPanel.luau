@@ -185,6 +185,7 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 			label(2, LINE, timeText, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium),
 			label(3, INFO, infoText, Theme.Colors.Text, 13, Theme.Fonts.Body, active),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Results",
 				LayoutOrder = 4,
 				Text = Text.T(scope, "hud.bloodmoon.results"),

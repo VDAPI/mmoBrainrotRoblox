@@ -281,6 +281,7 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 									Currency = "huntmarks",
 									Size = UDim2.fromOffset(20, 20),
 									LayoutOrder = 2,
+									Surface = "iron",
 								}),
 							},
 						}),
@@ -307,7 +308,10 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 					VerticalAlignment = Enum.VerticalAlignment.Center,
 					Padding = UDim.new(0, 6),
 				}),
-				CurrencyIcon(scope, { Currency = "huntmarks", Size = UDim2.fromOffset(22, 22), LayoutOrder = 1 }),
+				CurrencyIcon(
+					scope,
+					{ Currency = "huntmarks", Size = UDim2.fromOffset(22, 22), LayoutOrder = 1, Surface = "iron" }
+				),
 				scope:New("TextLabel")({
 					LayoutOrder = 2,
 					Size = UDim2.fromOffset(0, 28),

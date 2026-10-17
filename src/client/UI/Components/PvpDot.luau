@@ -11,6 +11,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -25,12 +26,13 @@ export type Props = {
 	Tooltip: boolean?,
 }
 
+-- S135: colours from Data/UiPalette (zone, pvp)
 local COLORS: { [string]: Color3 } = {
-	off = Color3.fromHex("#4FD16B"),
-	on = Color3.fromHex("#D64A3E"),
-	forced = Color3.fromHex("#D64A3E"),
-	switching = Color3.fromHex("#F0962E"),
-	locked = Color3.fromHex("#7C7F88"),
+	off = Theme.Zone.Green,
+	on = Theme.Zone.Red,
+	forced = Theme.Zone.Red,
+	switching = Color3.fromHex(UiPalette.pvp.switching),
+	locked = Color3.fromHex(UiPalette.pvp.locked),
 }
 
 local function PvpDot(scope: Scope, props: Props): Frame

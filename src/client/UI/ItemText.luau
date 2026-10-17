@@ -30,9 +30,17 @@ function ItemText.rarityColor(rarity: number?): Color3
 	return Rarities.get(rarity or Rarities.COMMON).color
 end
 
--- Readable name colour of a rarity on light parchment (tooltips).
-function ItemText.rarityTextColor(rarity: number?): Color3
-	return Rarities.get(rarity or Rarities.COMMON).textColor
+-- S135: the rarity frame on a surface: the parchment variant (Rarities.paperHex, >= 3:1 on a slot) or the identity
+-- colour on iron.
+function ItemText.rarityFrame(rarity: number?, surface: string?): Color3
+	local r = Rarities.get(rarity or Rarities.COMMON)
+	return if surface == "iron" then r.color else r.paperColor
+end
+
+-- S135: the rarity's name colour on a surface: textHex on parchment, nightHex on iron (both >= 4.5:1).
+function ItemText.rarityName(rarity: number?, surface: string?): Color3
+	local r = Rarities.get(rarity or Rarities.COMMON)
+	return if surface == "iron" then r.nightColor else r.textColor
 end
 
 -- Resolves "#item:<id>:<up>" message arguments (announcements) into a localized item name.

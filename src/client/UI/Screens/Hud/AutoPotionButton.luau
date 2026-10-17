@@ -138,6 +138,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 					end),
 				}),
 				Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					Name = "Minus",
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, -42, 0.5, 0),
@@ -148,6 +149,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 					end,
 				}),
 				Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					Name = "Plus",
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.fromScale(1, 0.5),
@@ -195,6 +197,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 			thresholdRow(2, "hp"),
 			thresholdRow(3, "res"),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Switch",
 				LayoutOrder = 4,
 				Size = UDim2.new(1, 0, 0, 34),

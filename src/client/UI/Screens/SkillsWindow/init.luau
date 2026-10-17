@@ -58,8 +58,8 @@ local function soon(scope: Scope, ctx: Context.Ctx): Fusion.Computed<any>
 			})
 		end
 		return {
-			label(1, "paths.soon", Theme.Fonts.Heading, Theme.TextSize.Large, Theme.Colors.Gold),
-			label(2, "paths.soon.body", Theme.Fonts.Body, Theme.TextSize.Small, Theme.Colors.Text),
+			label(1, "paths.soon", Theme.Fonts.Display, Theme.TextSize.Large, Theme.Paper.Heading),
+			label(2, "paths.soon.body", Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.Text),
 		}
 	end)
 end
@@ -83,7 +83,7 @@ local function scroller(scope: Scope, name: string, position: UDim2, size: UDim2
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Label,
 		[Children] = children,
 	})
 end
@@ -135,10 +135,14 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		Name = "Details",
 		Position = UDim2.fromOffset(DETAILS_X, 0),
 		Size = UDim2.new(1, -DETAILS_X, 1, 0),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
-		BackgroundTransparency = 0.3,
+		BackgroundColor3 = Theme.Paper.Raised,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Paper.Border,
+			}),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, Theme.Padding.Medium),
 				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
@@ -165,8 +169,8 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 				BackgroundTransparency = 1,
 				Text = reason,
 				FontFace = Theme.Fonts.Body,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),

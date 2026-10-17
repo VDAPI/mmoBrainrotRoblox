@@ -5,7 +5,11 @@
 
 ## Stan
 
-S01–S115 i S117–S134k gotowe (ostatnia S134k: zlecenie łowieckie na konkretny rodzaj potwora łowiska, wszystkie
+S01–S115 i S117–S135 gotowe (ostatnia S135: „Pergamin i żelazo” 1/2: paleta interfejsu w `Data/UiPalette` z
+kontrastem w teście, role `Theme.Paper` / `Theme.Iron` / `Theme.Brass`, komponenty z propem `Surface` (`ListRow`,
+`SectionLabel`), okna na pergaminie według `Data/UiWindows` (13 okien, w tym czytelne okno umiejętności), tooltipy na
+żelazie, Merriweather w nagłówkach, tekst ≥ 17, tabliczki graczy na płytce żelaza, zawsze widoczne do 150 st., odporne na
+strumieniowanie, nick otwiera menu gracza S133; wcześniej S134k: zlecenie łowieckie na konkretny rodzaj potwora łowiska, wszystkie
 zlecenia do poziomu postaci aktywne naraz (zabicie liczy się do każdego pasującego), „Przyjmij / Oddaj wszystkie” przy
 tablicy, u nowego Łowczego Bartosza albo u zwiadowcy regionu, Znaki Łowcy (738 za 1–99, retro w migracji 11) i sklep
 Łowczego (mikstury, kamienie, Fortuna, esencja z limitem tygodnia, Skrzynie Łowcy Unikat / Heroik, kosmetyki); wcześniej
@@ -287,6 +291,16 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S135:** Niedokończone: S136 — w starym ciemnym wyglądzie (`Theme.Colors`) zostają okna `alchemy`, `arena`,
+  `areapicker`, `auction`, `backpacks`, `blacksmith`, `bloodmoon`, `deposit`, `dev`, `dungeon`, `fightlog`, `friends`,
+  `guild`, `guildfound`, `huntshop`, `login`, `look`, `lootlog`, `map`, `mounts`, `premium`, `questboard`, `rankings`,
+  `stonepicker`, `unbind`, `vip`, `wardrobe` (lista `PENDING_S136` w `tests/uitheme.spec`) i ekrany `UiWindows.SCREENS`
+  (HUD, ramki drużyny, wybór postaci, nakładki); listy i nagłówki sekcji okien `quests`, `questnpc`, `npc`, `shop`,
+  `trade`, `mail`, `mailCompose`, `profile`, `party` (z `PartyFinder`) i plecaka jeszcze bez `ListRow` / `SectionLabel`
+  (S135 D, odłożone). Bez przeglądu w grze: 13 okien na pergaminie (przycięcia po `Small` 17
+  i nowych wysokościach wierszy, karty zakładek, Merriweather Heavy), tabliczki graczy (płytka, klik w nick, powrót po
+  strumieniowaniu). Decyzje właściciela w `docs/SESJE.md` → S135.
 
 - **S134k:** zlecenia na rodzaj, wiele aktywnych i sklep Łowczego bez przeglądu w grze (dziennik „Łowieckie” z
   grupami i przyciskami, karta tablicy, tracker do 3 + „+N”, okno `HuntShopWindow` na PC i telefonie, Łowczy przy

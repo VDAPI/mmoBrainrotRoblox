@@ -373,6 +373,7 @@ local function Creator(scope: Scope, props: Props): Instance
 						LayoutOrder = 2,
 						Look = look,
 						Size = UDim2.fromOffset(460, 0),
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 					}),
 				},
 			}),
@@ -388,6 +389,7 @@ local function Creator(scope: Scope, props: Props): Instance
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			TextInput(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "NameInput",
 				LayoutOrder = 6,
 				Size = UDim2.fromOffset(460, Theme.Size.InputHeight + 22),
@@ -436,6 +438,7 @@ local function Creator(scope: Scope, props: Props): Instance
 						Padding = UDim.new(0, Theme.Padding.Medium),
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 1,
 						Text = Text.T(scope, "charSelect.create.back"),
 						Variant = "ghost",
@@ -446,6 +449,7 @@ local function Creator(scope: Scope, props: Props): Instance
 						end,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 2,
 						Text = Text.T(scope, "charSelect.create.submit"),
 						Variant = "primary",

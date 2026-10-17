@@ -228,6 +228,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			Padding = UDim.new(0, 8),
 		}),
 		Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			LayoutOrder = 1,
 			Text = Text.T(scope, "reveal.ok"),
 			Variant = "secondary",
@@ -240,6 +241,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 		table.insert(
 			buttons,
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				LayoutOrder = 2,
 				Text = Text.T(scope, "fight.details"),
 				Variant = "secondary",

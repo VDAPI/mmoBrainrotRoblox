@@ -123,6 +123,7 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 			MaxLength = Rules.nameMax,
 			Placeholder = Text.T(scope, "guild.found.name"),
 			Error = nameError,
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 		}),
 		TextInput(scope, {
 			LayoutOrder = 3,
@@ -131,6 +132,7 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 			MaxLength = Rules.tagMax,
 			Placeholder = Text.T(scope, "guild.found.tag"),
 			Error = tagError,
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 		}),
 		scope:New("TextLabel")({
 			LayoutOrder = 4,

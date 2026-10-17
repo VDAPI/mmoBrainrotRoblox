@@ -128,6 +128,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				-- S130: hide the invitation card (not a refusal), in the title's corner
 				[Children] = Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					Name = "Hide",
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, 6, 0.5, 0),
@@ -268,6 +269,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				end),
 				[Children] = {
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Position = UDim2.fromScale(0, 0),
 						Size = UDim2.new(0.5, -6, 1, 0),
 						Variant = "primary",
@@ -280,6 +282,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 						end,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.fromScale(1, 0),
 						Size = UDim2.new(0.5, -6, 1, 0),

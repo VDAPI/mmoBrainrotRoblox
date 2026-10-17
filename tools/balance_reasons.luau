@@ -155,6 +155,8 @@ return {
 		["Data/BossMotions"] = "wygląd", -- S117: poses, effects and shakes of boss attacks, roars, deaths
 		["Data/UiArt"] = "generowane", -- S119: interface picture registry (tools/icons/import_ui.py)
 		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
+		["Data/UiPalette"] = "wygląd", -- S135: interface colours (parchment and iron) and their contrast pairs
+		["Data/UiWindows"] = "wygląd", -- S135: which windows already use the parchment look
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",

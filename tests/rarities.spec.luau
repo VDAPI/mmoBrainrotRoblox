@@ -473,4 +473,17 @@ describe("Rarity migration S30", function()
 	end)
 end)
 
+describe("Rarity colour variants (S135)", function()
+	it("every rarity has hex paperHex and nightHex next to hex and textHex", function()
+		for _, r in Rarities.list do
+			for _, field in { "hex", "textHex", "paperHex", "nightHex" } do
+				local value = (r :: any)[field]
+				expect(type(value) == "string" and string.match(value, "^#%x%x%x%x%x%x$") ~= nil).toBe(true)
+			end
+		end
+		expect(Rarities.get(5).nightHex).toBe("#FF6A5E")
+		expect(Rarities.get(3).nightHex).toBe(Rarities.get(3).hex)
+	end)
+end)
+
 return nil

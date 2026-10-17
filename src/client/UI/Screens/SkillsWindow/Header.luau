@@ -34,7 +34,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			AutomaticSize = Enum.AutomaticSize.X,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = if touch then Theme.TextSize.Small else 15,
+			TextSize = Theme.TextSize.Small,
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
@@ -64,7 +64,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 				end),
 				scope:Computed(function(use): Color3
 					local attention = use(ctx.attention)
-					return if attention and attention.points then Theme.Colors.Success else Theme.Colors.TextMuted
+					return if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted
 				end),
 				260
 			),
@@ -78,7 +78,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 						then Text.get(use, "paths.main", { name = Text.get(use, def.nameKey) })
 						else Text.get(use, "paths.mainNone")
 				end),
-				Theme.Colors.Gold,
+				Theme.Paper.Heading,
 				300
 			),
 		},

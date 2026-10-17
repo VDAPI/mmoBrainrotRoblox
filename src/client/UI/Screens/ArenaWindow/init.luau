@@ -745,7 +745,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				VerticalAlignment = Enum.VerticalAlignment.Center,
 				Padding = UDim.new(0, 8),
 			}),
-			CurrencyIcon(s, { Currency = "token", Size = UDim2.fromOffset(24, 24), LayoutOrder = 1 }),
+			CurrencyIcon(s, { Currency = "token", Size = UDim2.fromOffset(24, 24), LayoutOrder = 1, Surface = "iron" }),
 			s:New("TextLabel")({
 				LayoutOrder = 2,
 				Size = UDim2.fromOffset(0, 28),

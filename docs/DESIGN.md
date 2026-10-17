@@ -1274,7 +1274,23 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 ## 23. Interfejs
 
-- Styl: **poważne fantasy**. Ciemne panele (grafit `#1B1D23`, `#252832`), złote obramowania `#C9A45C`, pergamin dla tooltipów `#EADDBE` z ciemnym tekstem, akcent niebieski `#4A8FE7` dla przycisków akcji. Czcionki: nagłówki Fondamento (lub Cinzel-podobna dostępna w Roblox), tekst BuilderSans. Wyraźne, duże przyciski, czytelne ikony, delikatne cienie i gradienty, animacje 0.15–0.25 s.
+- **Język wizualny: pergamin i żelazo (S135, wybór właściciela 2026-10-15).** Poważne fantasy. Dwie powierzchnie o tych
+  samych rolach (`surface`, `raised`, `sunken`, `hover`, `selected`, `text`, `textMuted`, `label`, `heading`, `border`,
+  `accent` …): **pergamin** dla treści okien (`#EFE3C6`, atrament `#2A2016`, sloty `#E2D2AC` z brzegiem `#7A6136`) i
+  **żelazo** dla pasków tytułu, tooltipów, HUD, nakładek i tabliczek (`#2A2016` / `#3B2E1C`, tekst `#F3E6C4`). Okno:
+  żelazna rama 3 px z wewnętrzną mosiężną linią `#B89B5E`, ciemny pasek tytułu z mosiężną linią pod spodem; przycisk
+  główny zielony `#4E6A26`. Wszystkie wartości w `Data/UiPalette`, w kodzie tylko role `Theme.Paper` / `Theme.Iron` /
+  `Theme.Brass`; kolor z danych gry (klasa, żywioł, rzadkość, tytuł) przez `Theme.readable`. Czcionki: nagłówki i
+  tytuły okien Merriweather (najcięższa waga), treść BuilderSans. Rozmiary: `Caption 15` tylko dla etykiet sekcji
+  WIELKIMI LITERAMI, treść ≥ 17 (`Small`), `Body 20`, `Large 24`, `Title 30`. Kontrast: tekst ≥ 4,5:1, informacyjne
+  krawędzie (ramka rzadkości, brzeg pola i slotu, wypełnienie paska) ≥ 3:1, każda para w `UiPalette.PAIRS` i w teście
+  (`uipalette.spec`); ozdobne linie zwolnione. Dotyk ≥ 44 px. Ramki rzadkości zostają drabiną S30, na pergaminie w
+  wariancie `paperHex`, nazwy `textHex` (pergamin) i `nightHex` (żelazo). Okna przechodzą na pergamin według listy
+  `Data/UiWindows` (S135 pierwsza partia, S136 reszta i HUD). Wyraźne, duże przyciski, animacje 0.15–0.25 s.
+- **Tabliczki graczy (S135)**: nick (BodyBold 22) z tagiem gildii, pod nim „Poz. N Klasa”, tytuł w swoim kolorze,
+  korona i plakietka VIP, pasek HP przy ranach, na lekkiej płytce żelaza z mosiężnym brzegiem; zawsze na wierzchu,
+  widoczne do `Config.Nameplate.maxDistance` (150 st.), dalej niż `detailDistance` (60 st.) sama nazwa. Wróg (PvP)
+  na czerwono z ⚔, własna nazwa i VIP mosiądzem. Klik / dotknięcie nicku innego gracza otwiera menu gracza (S133).
 - **HUD**: lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa z nazwą mapy i kolorem strefy, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (podstawa klasy i zakładki ścieżek, ROZWOJ §4; S59: 920 × 640, zakładki Podstawa i ścieżek, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).

@@ -36,6 +36,7 @@ local Schema = require("./Schema")
 local StatCalc = require("../../src/shared/Logic/StatCalc")
 local Stats = require("../../src/shared/Data/Stats")
 local Titles = require("../../src/shared/Data/Titles")
+local UiPalette = require("../../src/shared/Data/UiPalette")
 local ArenaData = require("../../src/shared/Data/Arena")
 local Leaderboards = require("../../src/shared/Data/Leaderboards")
 local ScheduledEvents = require("../../src/shared/Data/ScheduledEvents")
@@ -611,12 +612,17 @@ function Basics.bestArea(): { any }
 	return out
 end
 
--- Zone colours from src/client/UI/Theme.luau read as text (the client module does not load in Lune).
+-- Zone colours: S135 from Data/UiPalette.zone; the old reading of src/client/UI/Theme.luau as text stays as a fallback
+-- (with a warning) until S136 removes Theme.Colors.
 function Basics.zoneColors(themeText: string?, warnings: { string }): { [string]: string }
 	local out = {}
 	for zone, name in { green = "ZoneGreen", yellow = "ZoneYellow", red = "ZoneRed" } do
+		local palette = (UiPalette.zone :: any)[zone]
 		local hex = themeText and string.match(themeText, name .. '%s*=%s*Color3%.fromHex%("(#%x%x%x%x%x%x)"%)')
-		if hex then
+		if palette then
+			out[zone] = string.upper(palette)
+		elseif hex then
+			table.insert(warnings, `UiPalette.zone.{zone} missing, using Theme.luau {name}`)
 			out[zone] = string.upper(hex)
 		else
 			table.insert(warnings, `Theme.luau: {name} not found, using {ZONE_COLORS_FALLBACK[zone]}`)

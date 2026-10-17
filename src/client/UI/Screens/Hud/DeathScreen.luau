@@ -149,6 +149,7 @@ local function DeathScreen(scope: Scope): Instance
 	-- (DESIGN-17 §0.8), as in the Dragon Shop.
 	local respawnSoon = Premium.robuxState(Products.respawn.productId, RunService:IsStudio()) == "soon"
 	local robuxButton = Button(scope, {
+		Surface = "iron", -- S135: on a dark HUD / overlay surface
 		Name = "RespawnRobux",
 		LayoutOrder = 5,
 		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
@@ -171,6 +172,7 @@ local function DeathScreen(scope: Scope): Instance
 	local vipActive = State.Value({ "vip", "active" })
 	local vipState = State.Value({ "account", "vip" })
 	local vipButton = Button(scope, {
+		Surface = "iron", -- S135: on a dark HUD / overlay surface
 		Name = "VipRespawn",
 		LayoutOrder = 3,
 		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
@@ -271,6 +273,7 @@ local function DeathScreen(scope: Scope): Instance
 					}),
 					-- Countdown: pay to skip it.
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Name = "RespawnNow",
 						LayoutOrder = 4,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
@@ -290,6 +293,7 @@ local function DeathScreen(scope: Scope): Instance
 					withArt(scope, robuxButton, UiArt.shop(Products.respawn.key)),
 					-- Choice.
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Name = "RespawnCity",
 						LayoutOrder = 6,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
@@ -302,6 +306,7 @@ local function DeathScreen(scope: Scope): Instance
 						end,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Name = "RespawnHere",
 						LayoutOrder = 7,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),

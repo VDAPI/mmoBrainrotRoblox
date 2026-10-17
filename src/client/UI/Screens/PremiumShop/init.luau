@@ -104,7 +104,10 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 						SortOrder = Enum.SortOrder.LayoutOrder,
 						Padding = UDim.new(0, 6),
 					}),
-					CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) }),
+					CurrencyIcon(
+						scope,
+						{ Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24), Surface = "iron" }
+					),
 					scope:New("TextLabel")({
 						LayoutOrder = 2,
 						Size = UDim2.fromOffset(0, 32),

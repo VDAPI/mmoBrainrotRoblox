@@ -81,7 +81,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextWrapped = true,
 				FontFace = font or Theme.Fonts.Body,
 				TextSize = size or Theme.TextSize.Small,
-				TextColor3 = color or Theme.Colors.Text,
+				TextColor3 = color or Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
 		end
@@ -113,10 +113,10 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			BackgroundTransparency = 1,
 			Text = `{Text.get(use, def.nameKey)}  ⓘ`,
 			TextWrapped = true,
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
 			TextColor3 = s:Computed(function(use2): Color3
-				return if use2(pathSelected) then Theme.Colors.GoldBright else Theme.Colors.Gold
+				return if use2(pathSelected) then Theme.Paper.Heading else Theme.Paper.Heading
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			[OnEvent("Activated")] = function()
@@ -130,7 +130,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 		local weapons = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
 		label(
 			`{if view.weaponOk then "✓" else "✗"} {weapons}`,
-			if view.weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover,
+			if view.weaponOk then Theme.Paper.Success else Theme.Paper.Danger,
 			Theme.Fonts.BodyBold
 		)
 		local main = view.main
@@ -145,7 +145,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				end
 			)
 		elseif main.reason == "paths.error.sameMain" then
-			label(Text.get(use, "paths.isMain"), Theme.Colors.Success, Theme.Fonts.BodyBold)
+			label(Text.get(use, "paths.isMain"), Theme.Paper.Success, Theme.Fonts.BodyBold)
 		elseif main.reason == "paths.error.mainLevel" then
 			button(
 				Text.get(use, "paths.chooseMain"),
@@ -196,7 +196,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 					y + length / 2,
 					LINE,
 					length,
-					if nextRow.open then Theme.Colors.Gold else Theme.Colors.Border,
+					if nextRow.open then Theme.Paper.Heading else Theme.Paper.TextMuted,
 					nextRow.open
 				)
 			end
@@ -214,7 +214,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 						y,
 						math.abs(dx),
 						LINE,
-						if lit then Theme.Colors.Gold elseif row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						if lit then Theme.Paper.Heading elseif row.open then Theme.Paper.Label else Theme.Paper.TextMuted,
 						lit or row.open
 					)
 				end
@@ -234,9 +234,9 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 						Size = UDim2.fromOffset(KNOT, KNOT),
 						Rotation = if row.choice then 45 else 0,
 						BackgroundColor3 = if anyBought
-							then Theme.Colors.GoldBright
-							elseif row.open then Theme.Colors.GoldDim
-							else Theme.Colors.Border,
+							then Theme.Brass.Bright
+							elseif row.open then Theme.Paper.Rule
+							else Theme.Paper.Border,
 						BorderSizePixel = 0,
 						ZIndex = 2,
 						[Children] = if row.choice then nil else s:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
@@ -250,20 +250,20 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.fromOffset(0, y),
 				Size = UDim2.fromOffset(LEVEL_WIDTH, 24),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Paper.Sunken,
 				BackgroundTransparency = 0.3,
 				Text = if blocked then `⚠{row.level}` else tostring(row.level),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
+				TextSize = Theme.TextSize.Small,
 				TextColor3 = if blocked
-					then Theme.Colors.Warning
-					elseif row.open then Theme.Colors.Parchment
-					else Theme.Colors.TextMuted,
+					then Theme.Paper.Warning
+					elseif row.open then Theme.Paper.Text
+					else Theme.Paper.TextMuted,
 				ZIndex = 2,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					s:New("UIStroke")({
-						Color = if row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						Color = if row.open then Theme.Paper.Rule else Theme.Paper.Border,
 						Thickness = 1,
 					}),
 				},

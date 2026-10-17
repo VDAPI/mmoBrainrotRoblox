@@ -634,6 +634,10 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
   koniec handlu) przechodzi przez `WindowRules`. Dopasowanie przedmiotu do slotu przy przeciąganiu: `Logic/EquipFit`
   (tylko podpowiedź; rozstrzyga serwer).
 - `Theme.luau`: kolory, czcionki, rozmiary, odstępy, czasy animacji; **wszystkie** komponenty z niego korzystają.
+  S135: wartości kolorów w czystym `Data/UiPalette` (pary kontrastu `PAIRS`, `Logic/Contrast`), `Theme` buduje role
+  `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (`Theme.surface(name)`, `Theme.readable(hex, surface)`); tryb okna
+  (pergamin albo dawny ciemny) z `Data/UiWindows` (`WindowManager` → `Window.Paper`); komponenty mają prop `Surface`;
+  `tests/uitheme.spec` pilnuje listy okien i braku literałów koloru / rozmiaru tekstu w oknach na pergaminie.
 - Skalowanie: `UIScale` zależne od rozmiaru ekranu (bazowo 1920×1080), min. rozmiar przycisku dotykowego 44 px.
 - Ikony przedmiotów: dopóki brak grafik, `Icons.luau` generuje ikonę: tło w kolorze rzadkości + symbol typu (Unicode/tekst) + ramka. Pole `icon` w definicji pozwala później podać `rbxassetid`.
 - **Mapa świata (S25, `UI/Screens/WorldMap/`)**: `init` (okno: lista, widok, karta, wyszukiwarka, focus z

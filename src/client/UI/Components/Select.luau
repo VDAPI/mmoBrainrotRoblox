@@ -21,6 +21,7 @@ export type Props = {
 	Width: number?,
 	LayoutOrder: number?,
 	ListHeight: number?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local SEARCH_FROM = 12
@@ -29,6 +30,7 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 	local open = scope:Value(false)
 	local query = scope:Value("")
 	local width = props.Width or 220
+	local roles = Theme.surface(props.Surface)
 
 	local current = scope:Computed(function(use): Option?
 		local selected = use(props.Selected)
@@ -68,15 +70,18 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				out,
 				s:New("TextButton")({
 					LayoutOrder = i,
-					Size = UDim2.new(1, 0, 0, 34),
+					Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 					AutoButtonColor = true,
 					BackgroundColor3 = if option.value == Fusion.peek(props.Selected)
-						then Theme.Colors.PanelHover
-						else Theme.Colors.Panel,
+						then roles.Selected
+						else roles.Surface,
 					Text = option.label,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = option.color or Theme.Colors.Text,
+					-- S135: an option colour from game data is corrected for the surface
+					TextColor3 = if option.color
+						then Theme.readable(Theme.hex(option.color), props.Surface)
+						else roles.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 					[OnEvent("Activated")] = function()
@@ -107,7 +112,7 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				LayoutOrder = 1,
 				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 				AutoButtonColor = true,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = roles.Raised,
 				Text = scope:Computed(function(use): string
 					local option = use(current)
 					return `{if option then option.label else (use(props.Placeholder) or "—")}  ▾`
@@ -116,7 +121,9 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
 					local option = use(current)
-					return if option and option.color then option.color else Theme.Colors.Parchment
+					return if option and option.color
+						then Theme.readable(Theme.hex(option.color), props.Surface)
+						else roles.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -125,6 +132,11 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				end,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Thickness = Theme.Stroke.Thin,
+						Color = roles.Border,
+					}),
 					scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 6) }),
 				},
 			}),
@@ -133,22 +145,23 @@ local function Select(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				Visible = scope:Computed(function(use): boolean
 					return use(open) and #use(props.Options) > SEARCH_FROM
 				end),
-				Size = UDim2.new(1, 0, 0, 36),
-				BackgroundColor3 = Theme.Colors.Background,
+				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+				BackgroundColor3 = roles.Sunken,
 				ClearTextOnFocus = false,
 				PlaceholderText = "🔍",
 				Text = query,
 				[Out("Text")] = query,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = roles.Text,
+				PlaceholderColor3 = roles.TextMuted,
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			}),
 			scope:New("ScrollingFrame")({
 				LayoutOrder = 3,
 				Visible = open,
 				Size = UDim2.new(1, 0, 0, props.ListHeight or 220),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = roles.Surface,
 				BorderSizePixel = 0,
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,

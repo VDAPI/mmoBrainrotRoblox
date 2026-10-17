@@ -160,7 +160,7 @@ local function TitlePicker(scope: Scope, order: number): Instance
 				TextColor3 = scope:Computed(function(use): Color3
 					local id = use(current)
 					local def = if id then TitleData.get(id) else nil
-					return if def then Color3.fromHex(def.color) else Theme.Colors.TextMuted
+					return if def then Theme.readable(def.color, "paper") else Theme.Paper.TextMuted
 				end),
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -186,7 +186,8 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 	local tile = if touch then 48 else 64
 	local classColor = scope:Computed(function(use): Color3
 		local class = Classes.get(use(classId) or "")
-		return if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+		-- S135: the glyph stands on the dark portrait tile (PortraitFrame), so readable on iron
+		return if class then Theme.readable(class.color, "iron") else Theme.Iron.Heading
 	end)
 	return {
 		scope:New("UIListLayout")({
@@ -230,9 +231,9 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 					Text = scope:Computed(function(use): string
 						return use(name) or ""
 					end),
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = if touch then Theme.TextSize.Large else Theme.TextSize.Title,
-					TextColor3 = Theme.Colors.Gold,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 				}),
@@ -248,7 +249,7 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 					end),
 					FontFace = Theme.Fonts.Body,
 					TextSize = if touch then Theme.TextSize.Small else Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 				}),
@@ -292,7 +293,7 @@ local function rule(scope: Scope, name: string, x: number): Instance
 		Name = name,
 		Position = UDim2.fromOffset(x, 0),
 		Size = UDim2.new(0, 1, 1, 0),
-		BackgroundColor3 = Theme.Colors.GoldDim,
+		BackgroundColor3 = Theme.Paper.Rule,
 		BackgroundTransparency = 0.6,
 		BorderSizePixel = 0,
 	})
@@ -341,7 +342,7 @@ local function touchLayout(scope: Scope, props: Props, pending: Fusion.Value<{ [
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
 			ScrollBarThickness = 4,
-			ScrollBarImageColor3 = Theme.Colors.GoldDim,
+			ScrollBarImageColor3 = Theme.Paper.Label,
 			[Children] = heroColumn(scope, props, true),
 		}),
 		scope:New("Frame")({

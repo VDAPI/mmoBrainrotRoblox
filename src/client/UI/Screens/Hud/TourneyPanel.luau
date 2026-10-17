@@ -277,6 +277,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 
 	local function button(order: number, key: string, variant: string, visible: any, onClick: () -> ()): Instance
 		return Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			LayoutOrder = order,
 			Text = Text.T(scope, key),
 			Variant = variant :: any,
@@ -411,6 +412,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 				end),
 				[Children] = {
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Size = UDim2.new(0.5, -3, 1, 0),
 						Text = Text.T(scope, "tourney.bracketView"),
 						Variant = "secondary",
@@ -418,6 +420,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 						OnClick = props.OpenTab,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.fromScale(1, 0),
 						Size = UDim2.new(0.5, -3, 1, 0),

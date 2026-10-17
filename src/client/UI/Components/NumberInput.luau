@@ -17,6 +17,7 @@ export type Props = {
 	Integer: boolean?, -- default true
 	Size: Fusion.UsedAs<UDim2>?,
 	LayoutOrder: number?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local function NumberInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
@@ -24,6 +25,7 @@ local function NumberInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): I
 	local max = props.Max or math.huge
 	local step = props.Step or 1
 	local integer = props.Integer ~= false
+	local roles = Theme.surface(props.Surface)
 
 	local function clamp(n: number): number
 		if integer then
@@ -53,15 +55,22 @@ local function NumberInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): I
 			LayoutOrder = order,
 			Size = UDim2.fromOffset(Theme.Size.MinTouch - 6, Theme.Size.MinTouch),
 			AutoButtonColor = true,
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = roles.Raised,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = roles.Text,
 			[OnEvent("Activated")] = function()
 				props.Value:set(clamp(Fusion.peek(props.Value) + delta))
 			end,
-			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIStroke")({
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					Thickness = Theme.Stroke.Thin,
+					Color = roles.Border,
+				}),
+			},
 		})
 	end
 
@@ -81,20 +90,20 @@ local function NumberInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): I
 			scope:New("TextBox")({
 				LayoutOrder = 2,
 				Size = UDim2.new(1, -2 * (Theme.Size.MinTouch - 6) - 8, 1, 0),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = roles.Sunken,
 				ClearTextOnFocus = false,
 				Text = typed,
 				[Out("Text")] = typed,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = roles.Text,
 				[OnEvent("FocusLost")] = function()
 					apply(Fusion.peek(typed))
 				end,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
-						Color = Theme.Colors.Border,
+						Color = roles.Border,
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 					}),
 				},

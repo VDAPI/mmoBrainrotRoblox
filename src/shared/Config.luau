@@ -112,6 +112,19 @@ local Config = {
 		holdMove = 14, -- px: a finger moving further cancels the hold (camera drag)
 		followRefresh = 0.5, -- s: "Follow player" re-reads the target position
 	},
+	-- S135: nameplates above player characters (NameplateController, Logic/Nameplate).
+	Nameplate = {
+		maxDistance = 150, -- studs from the camera: other players' plates (your own has none)
+		detailDistance = 60, -- studs: beyond this only the name (no title, level line or HP bar)
+		width = 280, -- px: the BillboardGui
+		height = 104,
+		offset = 3.1, -- studs above the head
+		plateTransparency = 0.45, -- the iron plate behind the text
+		nameSize = 22, -- px
+		levelSize = 17,
+		titleSize = 15,
+		checkEvery = 0.25, -- s: distance check of all plates
+	},
 	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
 	Leaderboard = {
 		refresh = 300, -- s: one server reads the top of one board at most this often (DESIGN-17 §0.4)

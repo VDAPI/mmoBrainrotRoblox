@@ -53,7 +53,7 @@ local function BarPicker(
 				Name = `Slot{index}`,
 				LayoutOrder = index,
 				AutoButtonColor = true,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				Text = "",
 				[OnEvent("Activated")] = function()
 					actions.place(index)
@@ -63,7 +63,7 @@ local function BarPicker(
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						Thickness = 2,
-						Color = Theme.Colors.GoldDim,
+						Color = Theme.Paper.Rule,
 					}),
 					ArtIcon.Image(scope, {
 						Key = artKey,
@@ -80,7 +80,7 @@ local function BarPicker(
 						end),
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						[Children] = scope:New("UIPadding")({
 							PaddingTop = UDim.new(0.2, 0),
 							PaddingBottom = UDim.new(0.2, 0),
@@ -90,12 +90,12 @@ local function BarPicker(
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(4, 2),
-						Size = UDim2.fromOffset(20, 16),
+						Size = UDim2.fromOffset(20, 18),
 						BackgroundTransparency = 1,
 						Text = key,
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 13,
-						TextColor3 = Theme.Colors.Gold,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},
@@ -107,7 +107,7 @@ local function BarPicker(
 		Name = "Picker",
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		BackgroundTransparency = 0.25,
 		Text = "",
 		ZIndex = 20,
@@ -121,10 +121,10 @@ local function BarPicker(
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromOffset(gridWidth + 32, 2 * CELL + GAP + 40 + use(cancelHeight) + 48)
 				end),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+					scope:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 2 }),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(16, 12),
 						Size = UDim2.new(1, -32, 0, 32),
@@ -133,7 +133,7 @@ local function BarPicker(
 						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 					}),
 					scope:New("Frame")({
 						Position = UDim2.fromOffset(16, 52),

@@ -136,7 +136,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIStroke")({
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-							Color = Theme.Colors.Danger,
+							Color = Theme.Paper.Danger,
 							Thickness = Theme.Stroke.Normal,
 						}),
 					},
@@ -200,7 +200,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				-- S121: under the count, the Merchant's Pockets line or the overflow warning
@@ -222,7 +222,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 					TextScaled = true,
 					FontFace = Theme.Fonts.Body,
 					TextColor3 = scope:Computed(function(use): Color3
-						return if use(overflow) then Theme.Colors.DangerHover else Theme.Colors.TextMuted
+						return if use(overflow) then Theme.Paper.Danger else Theme.Paper.TextMuted
 					end),
 					TextXAlignment = Enum.TextXAlignment.Right,
 				}),
@@ -241,7 +241,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Body,
 					TextColor3 = scope:Computed(function(use): Color3
-						return if use(used) >= use(capacity) then Theme.Colors.DangerHover else Theme.Colors.Text
+						return if use(used) >= use(capacity) then Theme.Paper.Danger else Theme.Paper.Text
 					end),
 					TextXAlignment = Enum.TextXAlignment.Right,
 				}),
@@ -288,7 +288,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
 			ScrollBarThickness = 6,
-			ScrollBarImageColor3 = Theme.Colors.GoldDim,
+			ScrollBarImageColor3 = Theme.Paper.Label,
 			[Children] = {
 				scope:New("UIGridLayout")({
 					CellSize = UDim2.fromOffset(slotSize, slotSize),
@@ -316,7 +316,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			AutomaticCanvasSize = Enum.AutomaticSize.X,
 			ScrollingDirection = Enum.ScrollingDirection.X,
 			ScrollBarThickness = 4,
-			ScrollBarImageColor3 = Theme.Colors.GoldDim,
+			ScrollBarImageColor3 = Theme.Paper.Label,
 			[Children] = {
 				scope:New("UIListLayout")({
 					FillDirection = Enum.FillDirection.Horizontal,

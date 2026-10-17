@@ -90,6 +90,7 @@ local function invitePopup(): Instance
 				TextColor3 = Theme.Colors.Text,
 			}),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Position = UDim2.new(0, 16, 1, -62),
 				Size = UDim2.new(0.5, -24, 0, 50),
 				Variant = "primary",
@@ -99,6 +100,7 @@ local function invitePopup(): Instance
 				end,
 			}),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -16, 1, -62),
 				Size = UDim2.new(0.5, -24, 0, 50),

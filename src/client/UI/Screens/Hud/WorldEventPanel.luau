@@ -256,6 +256,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 				active
 			),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Guide",
 				LayoutOrder = 6,
 				Text = Text.T(scope, "hud.event.guide"),

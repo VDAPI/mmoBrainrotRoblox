@@ -196,6 +196,7 @@ local function ReadyCheck(scope: Scope): Instance
 						Padding = UDim.new(0, 10),
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 1,
 						Size = UDim2.fromOffset(150, 48),
 						Variant = "primary",
@@ -205,6 +206,7 @@ local function ReadyCheck(scope: Scope): Instance
 						end,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 2,
 						Size = UDim2.fromOffset(150, 48),
 						Variant = "secondary",

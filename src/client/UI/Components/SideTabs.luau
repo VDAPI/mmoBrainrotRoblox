@@ -1,6 +1,6 @@
 --!strict
 -- Vertical tab list (S23, dev panel): one button per tab in a scrolling column; the selected tab is
--- highlighted with a gold bar. Rows are 44 px high (touch).
+-- highlighted with a brass bar. Rows are 44 px high (touch). S135: roles of its `Surface`.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,9 +17,11 @@ export type Props = {
 	Selected: Fusion.Value<string>,
 	Size: Fusion.UsedAs<UDim2>?,
 	Position: Fusion.UsedAs<UDim2>?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local function SideTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
+	local roles = Theme.surface(props.Surface)
 	local rows = {}
 	for i, tab in props.Tabs do
 		local selected = scope:Computed(function(use): boolean
@@ -33,13 +35,13 @@ local function SideTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(selected) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+					return if use(selected) then roles.Selected else roles.Raised
 				end),
 				Text = tab.label,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(selected) then Theme.Colors.GoldBright else Theme.Colors.Text
+					return if use(selected) then roles.Heading else roles.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -56,7 +58,7 @@ local function SideTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 						Name = "Bar",
 						Position = UDim2.fromOffset(-14, 6),
 						Size = UDim2.new(0, 4, 1, -12),
-						BackgroundColor3 = Theme.Colors.Gold,
+						BackgroundColor3 = if props.Surface == "iron" then Theme.Brass.Line else Theme.Brass.Frame,
 						BorderSizePixel = 0,
 						Visible = selected,
 					}),

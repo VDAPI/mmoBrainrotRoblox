@@ -78,7 +78,7 @@ return {
 	["menu.language"] = "Język",
 
 	-- Nameplates and notifications
-	["nameplate.levelClass"] = "Lv {level} {class}",
+	["nameplate.levelClass"] = "Poz. {level} {class}",
 	["nameplate.vip"] = "★ VIP",
 	["toast.enterWorld"] = "Witaj w Vaelthorn, {name}!",
 

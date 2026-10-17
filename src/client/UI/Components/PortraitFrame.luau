@@ -92,7 +92,7 @@ local function PortraitFrame(scope: Scope, props: Props): Instance
 				Thickness = scope:Computed(thickness),
 				Color = scope:Computed(function(use): Color3
 					local f = use(frame)
-					return if f then Color3.new(1, 1, 1) else use(props.ClassColor)
+					return if f then Theme.Plain else use(props.ClassColor)
 				end),
 				[Children] = {
 					scope:New("UIGradient")({
@@ -103,7 +103,7 @@ local function PortraitFrame(scope: Scope, props: Props): Instance
 						Color = scope:Computed(function(use): ColorSequence
 							local f = use(frame)
 							if not f then
-								return ColorSequence.new(Color3.new(1, 1, 1))
+								return ColorSequence.new(Theme.Plain)
 							end
 							return ColorSequence.new(Color3.fromHex(f.stroke), Color3.fromHex(f.stroke2 or f.stroke))
 						end),

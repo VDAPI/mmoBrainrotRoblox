@@ -33,9 +33,10 @@ NodeCard.TILE_TOUCH = 60
 NodeCard.PIPS = 18 -- the rank line under the tile
 NodeCard.WIDTH = 92 -- the node's frame (the pips line may be wider than the tile)
 
-local WARN_HEX = "#E0A23B"
-local DANGER_HEX = "#CC5248"
-local SELECTED = Color3.new(1, 1, 1)
+-- S135: parchment roles (an ink frame while selected, a brass frame once bought)
+local WARN_HEX = Theme.hex(Theme.Paper.Warning)
+local DANGER_HEX = Theme.hex(Theme.Paper.Danger)
+local SELECTED = Theme.Paper.Heading
 
 -- "●●○  33%  ⚠" (RichText).
 local function dots(view: PathView.NodeView): string
@@ -81,9 +82,9 @@ function NodeCard.new(
 		Text = "",
 		BackgroundColor3 = s:Computed(function(use2): Color3
 			if use2(selected) then
-				return Theme.Colors.PanelHover
+				return Theme.Paper.Hover
 			end
-			return if bought then Theme.Colors.PanelRaised else Theme.Colors.Background
+			return if bought then Theme.Paper.Raised else Theme.Paper.Sunken
 		end),
 		BackgroundTransparency = if dim then 0.45 else 0,
 		ZIndex = 3,
@@ -99,22 +100,22 @@ function NodeCard.new(
 			s:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = s:Computed(function(use2): number
-					return if use2(selected) or broken then 3 else 2
+					return if use2(selected) or broken then Theme.Stroke.Thick else Theme.Stroke.Normal
 				end),
 				Color = s:Computed(function(use2): Color3
 					if use2(selected) then
 						return SELECTED
 					elseif broken then
-						return Theme.Colors.Danger
+						return Theme.Paper.Danger
 					end
-					return if bought then Theme.Colors.Gold else Theme.Colors.Border
+					return if bought then Theme.Brass.Frame else Theme.Paper.Border
 				end),
 				Transparency = if dim and not bought then 0.5 else 0,
 			}),
 			ArtIcon.Image(s, {
 				Key = artKey,
 				Corner = Theme.Corner.Medium,
-				ImageColor = if bought then nil else Color3.fromRGB(150, 150, 150),
+				ImageColor = if bought then nil else Theme.mix(Theme.Plain, Theme.Shade, 0.4),
 				Transparency = if bought then 0 elseif dim then 0.65 else 0.35,
 				ZIndex = 4,
 			}),
@@ -126,7 +127,7 @@ function NodeCard.new(
 				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = if bought then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+				TextColor3 = if bought then Theme.Paper.Heading else Theme.Paper.TextMuted,
 				TextTransparency = if dim then 0.5 else 0,
 				ZIndex = 4,
 				[Children] = s:New("UIPadding")({
@@ -143,11 +144,11 @@ function NodeCard.new(
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(1, 0),
 				Size = UDim2.fromOffset(20, 20),
-				BackgroundColor3 = Theme.Colors.Success,
+				BackgroundColor3 = Theme.Paper.Accent,
 				Text = "+",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 16,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.AccentText,
 				ZIndex = 5,
 				[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
 			}),
@@ -184,8 +185,8 @@ function NodeCard.new(
 				RichText = true,
 				Text = dots(view),
 				FontFace = Theme.Fonts.Body,
-				TextSize = 13,
-				TextColor3 = if bought then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = if bought then Theme.Paper.Heading else Theme.Paper.TextMuted,
 				TextTransparency = if dim and not bought then 0.4 else 0,
 				ZIndex = 3,
 			}),

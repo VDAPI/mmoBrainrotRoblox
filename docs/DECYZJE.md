@@ -4885,3 +4885,43 @@
 - **S134k** Tytuł „Mistrz Łowów” dopiero po oddaniu wszystkich 99 (`Contracts.earnedCosmetics`: zlecenie 99 oddane poza
   kolejnością go nie daje, daje je ostatnie oddane), też wstecz przy wejściu do świata (postać z `done = 99` sprzed
   S134k). Samo przyjmowanie tylko na prawdziwy awans (`gained` z `LeveledUp`), nie na „level” z `catchUp`.
+- **S135** Kierunek „Pergamin i żelazo” (makieta A, wybór właściciela 2026-10-15): pergamin w treści okien, żelazo w
+  paskach tytułu, tooltipach, HUD, nakładkach i tabliczkach. Wartości kolorów tylko w `Data/UiPalette` (hex, czysty),
+  każda para tekst / tło i informacyjna krawędź w `UiPalette.PAIRS` z progiem 4,5 / 3 i w teście (`uipalette.spec`);
+  wzór kontrastu przeniesiony z wiki do `Logic/Contrast` (wiki bez zmian).
+- **S135** Poprawki makiety pod kontrast: przycisk główny `#4E6A26` z tekstem `#F3E6C4` (5,0:1; makieta `#6B8A3A` z bielą
+  3,95:1), brzeg slotu `#7A6136` (3,9:1 na slocie; makieta `#8C7448` 2,98:1), czerwień `#9A2F28` (5,9:1; dawne
+  `#B8423A` 4,25:1), przygaszony `#634C2E` (5,4:1 na slocie i ≥ 4,5 na wybranym wierszu), sukces `#2F5A22`,
+  ostrzeżenie `#744300`; złoto nigdy jako tekst na pergaminie.
+- **S135** Rzadkości: drabina S30 (szary, żółty, niebieski, pomarańczowy, czerwony) zostaje mimo kolorów makiety. Nowe
+  `paperHex` (ramka na pergaminowym slocie ≥ 3:1: `#6E747C`, `#887620`, `#2F6FD6`, `#A66712`, `#C42620`) i `nightHex`
+  (nazwa na żelaznym tooltipie ≥ 4,5:1: mityczna `#FF6A5E`, reszta = `hex`); `textHex` przyciemnione do ≥ 4,5:1 na
+  stronie i slocie (Unikat `#715800`, Heroik `#1D56B8`, Legenda `#8A4B00`). `hex` (tożsamość, wiki, ogłoszenia) bez zmian.
+- **S135** Czcionki: nagłówki i tytuły okien Merriweather (waga Heavy, Roblox dobiera najbliższą) zamiast ozdobnego
+  Fondamento (też tam, gdzie stare okna wołają `Fonts.Heading`); treść zostaje BuilderSans (odpowiednik Source Sans 3 z
+  makiety, lepiej renderowany małym rozmiarem). `TextSize.Small` 16 → 17 w całej grze, `Title` 32 → 30, nowe
+  `Caption 15` tylko dla etykiet WIELKIMI LITERAMI (`Logic/TextCase.upper` z polskimi znakami).
+- **S135** Migracja oknami: `Data/UiWindows` (`paper`, pliki, sesja) i `Window.Paper`; okna S136 zostają na `Theme.Colors`
+  („legacy, removed in S136”). Komponenty dostają prop `Surface` (domyślnie pergamin, rysują własne tło, więc są
+  czytelne też w starych oknach); tekstowe komponenty bez tła (`QuestRewards`, `CurrencyIcon`, przycisk `ghost`, błąd
+  `TextInput`, `LookPicker`) i przyciski HUD / nakładek dostają w starych ekranach `Surface = "iron"`. Tooltipy (`Tooltip`, `ItemTooltip`) na żelazie dla wszystkich okien;
+  kolory z `TooltipModel` (robione pod pergamin) mapowane: `textHex` → `nightHex`, reszta przez `Theme.readable`.
+- **S135** Okna S135: `skills`, `character`, `inventory`, `menu`, `npc`, `shop`, `questnpc`, `quests`, `trade`, `mail`,
+  `mailCompose` (pisanie listu idzie z pocztą), `profile`, `party` (z zakładką `PartyFinder`). `friends` (S133) i
+  `fightlog` / `huntshop` (S134) dopisane do listy S136. Test `uitheme.spec`: rejestracje ↔ lista, brak `Theme.Colors`,
+  literałów koloru i `TextSize = <liczba>` w plikach okien na pergaminie, brak literałów koloru w komponentach.
+- **S135** Okno umiejętności: wiersze listy to `ListRow` (naprzemienny pergamin, linia, wybrany z mosiężnym paskiem),
+  przełomy jako plakietki zamiast kolorowego RichTextu, sekcje szczegółów przez `SectionLabel`, liczby opisu pogrubione
+  (`Details.boldNumbers`), podgląd 3D na żelazie (efekty lepiej widać na ciemnym tle).
+- **S135** Tabliczki graczy: przyczyną znikania było sprzątanie przy wypadnięciu modelu z `game` (strumieniowanie,
+  powrót bez `CharacterAdded`) i rezygnacja po 10 s bez `Head`; teraz jedna tabliczka na model, budowa przy
+  `CharacterAdded`, zmianie `Character` i każdym modelu z `CharName` w `Workspace`, sprzątanie tylko przy `Destroying`,
+  nowej postaci i wyjściu gracza. `AlwaysOnTop` dla wszystkich (nick przez drzewa i dachy jak w MMO), odległości w
+  `Config.Nameplate` (150 / 60 st.), dalej sama nazwa (`Logic/Nameplate`). Klik / dotknięcie nicku woła istniejące
+  `PartyController.OpenMenu(player, at)` (S133; prawy klik też). PL „Poz. {level} {class}” zamiast „Lv”.
+- **S135** `Theme.readable(hex, surface)` poprawia kolor z danych względem wszystkich ról tła powierzchni
+  (`UiPalette.BACKGROUNDS`, `Contrast.readableOn`), nie tylko `surface`: tekst na wierszach `Raised` / `Selected` też
+  ≥ 4,5:1. Glif i ramka klasy na portrecie (ciemny kafel `PortraitFrame`) przez `Theme.readable(…, "iron")`.
+- **S135** Listy i nagłówki sekcji okien D (poza `character`, `menu`, `skills`) zostają ręcznymi ramkami na rolach
+  pergaminu; przejście na `ListRow` / `SectionLabel` odłożone do S136 (zmienia układ i wysokości wierszy, bez przeglądu
+  w grze ryzyko przycięć).

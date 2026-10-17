@@ -93,7 +93,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 					Text = `{card.at}:`,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = if card.reached then Theme.Colors.Gold else Theme.Colors.TextMuted,
+					TextColor3 = if card.reached then Theme.Paper.Heading else Theme.Paper.TextMuted,
 				})
 			)
 			for _, option in card.options do
@@ -167,7 +167,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 		Name = "Sheet",
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		Text = "",
 		ZIndex = 10,
 		Visible = ctx.sheet,
@@ -195,9 +195,9 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 						Size = UDim2.new(1, -(touchTarget + 76), 1, 0),
 						BackgroundTransparency = 1,
 						Text = title,
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -215,7 +215,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Label,
 				Visible = scope:Computed(function(use): boolean
 					return not use(ctx.previewOpen)
 				end),

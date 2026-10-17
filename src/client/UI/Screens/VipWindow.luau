@@ -481,6 +481,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 			LayoutOrder = 5,
 			Size = UDim2.new(1, 0, 0, 44),
 			Variant = "ghost",
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			TextSize = Theme.TextSize.Small,
 			Text = Text.T(scope, "window.wardrobe.title"),
 			Visible = props ~= nil and props.OpenWardrobe ~= nil,

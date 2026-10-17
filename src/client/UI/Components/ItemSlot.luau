@@ -3,6 +3,8 @@
 -- `frame` data (S30: grey, yellow, blue with a glow, orange / red with a rotating gradient), stack count, "+N" upgrade, lock when bound, red tint when the
 -- character cannot use it. Interaction (select, drag & drop, double-click, tap) comes from UI/DragDrop;
 -- the rich tooltip from ItemTooltip.
+-- S135: drawn for its `Surface` (default "paper"): raised slot with an iron-brown edge, the rarity frame in its
+-- parchment variant (Rarities.paperHex, >= 3:1 on the slot), count and "+N" on a small dark iron plaque.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,6 +15,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.ItemIcon)
 local ItemTooltip = require(script.Parent.ItemTooltip)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
+local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local SameRef = require(script.Parent.Parent.SameRef)
@@ -44,6 +47,7 @@ export type Props = {
 	-- S31: extra tooltip context (shop / shopEntry / merchantOpen / hints, see Logic/TooltipModel), a table or a
 	-- function returning one when it is read (the tooltip opens).
 	TooltipCtx: (TooltipModel.Ctx | () -> TooltipModel.Ctx?)?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper"; HUD "iron")
 }
 
 local function canUse(item: ItemInstance, level: number?, classId: string?): boolean
@@ -68,29 +72,76 @@ RunService.RenderStepped:Connect(function(dt: number)
 	spin:set((Fusion.peek(spin) + dt * 90) % 360)
 end)
 
--- Selected slot: white outline and a lighter background (not gold: it would read as a Unique frame).
-local SELECTED = Color3.new(1, 1, 1)
-local SELECTED_BG = Theme.Colors.PanelHover:Lerp(Color3.new(1, 1, 1), 0.12)
+-- Selected slot: an ink outline on parchment (iron: the parchment text colour) and the selected background (not gold:
+-- it would read as a Unique frame).
+local SELECTED = { paper = Theme.Paper.Heading, iron = Theme.Iron.Text }
 
--- Gradient of a frame (c1 → c2 → c1), cached per rarity.
-local gradients: { [number]: ColorSequence } = {}
-local function gradientOf(r: Rarities.RarityDef): ColorSequence
-	local cached = gradients[r.id]
+-- Frame colour of a rarity on a surface (ItemText.rarityFrame: the parchment variant on paper, identity on iron).
+local function frameColor(r: Rarities.RarityDef, surface: string): Color3
+	return ItemText.rarityFrame(r.id, surface)
+end
+
+-- Gradient of a frame (c1 → c2 → c1), cached per rarity and surface. On parchment the light second colour would
+-- vanish, so it runs from the parchment frame colour to a darker shade of it.
+local gradients: { [string]: ColorSequence } = {}
+local function gradientOf(r: Rarities.RarityDef, surface: string): ColorSequence
+	local key = `{r.id}|{surface}`
+	local cached = gradients[key]
 	if cached then
 		return cached
 	end
 	local colors = r.frame.gradient or { r.color, r.color }
+	if surface ~= "iron" then
+		colors = { r.paperColor, Theme.mix(r.paperColor, Theme.Shade, 0.35) }
+	end
 	local sequence = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, colors[1]),
 		ColorSequenceKeypoint.new(0.5, colors[2]),
 		ColorSequenceKeypoint.new(1, colors[1]),
 	})
-	gradients[r.id] = sequence
+	gradients[key] = sequence
 	return sequence
 end
 
+-- S135: a small dark plaque with a number (stack count, "+N"); hidden while empty.
+local function plaque(
+	scope: Fusion.Scope<typeof(Fusion)>,
+	props: {
+		Name: string,
+		AnchorPoint: Vector2,
+		Position: UDim2,
+		Color: Color3,
+		Text: Fusion.UsedAs<string>,
+	}
+): Instance
+	return scope:New("TextLabel")({
+		Name = props.Name,
+		AnchorPoint = props.AnchorPoint,
+		Position = props.Position,
+		Size = UDim2.fromOffset(0, 17),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = 0.15,
+		Visible = scope:Computed(function(use): boolean
+			return use(props.Text) ~= ""
+		end),
+		Text = props.Text,
+		FontFace = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Caption,
+		TextColor3 = props.Color,
+		ZIndex = 3,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+			scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 3), PaddingRight = UDim.new(0, 3) }),
+		},
+	})
+end
+
 local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
-	local size = props.Size or 64
+	local size = props.Size or Theme.Size.SlotSize
+	local surface = props.Surface or "paper"
+	local roles = Theme.surface(surface)
+	local unusableBg = Theme.mix(roles.Raised, roles.Danger, 0.3)
 	local level = State.Value({ "character", "level" })
 	local classId = State.Value({ "character", "class" })
 
@@ -138,9 +189,9 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		Size = UDim2.fromOffset(size, size),
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			if use(selected) then
-				return SELECTED_BG
+				return roles.Selected
 			end
-			return if use(usable) then Theme.Colors.Background else Color3.fromHex("#3A1A18")
+			return if use(usable) then roles.Raised else unusableBg
 		end),
 		Active = true,
 		[Children] = {
@@ -159,20 +210,20 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Color = scope:Computed(function(use): Color3
 					local h = use(hint)
 					if h == "ok" then
-						return Theme.Colors.Success
+						return roles.Success
 					elseif h == "bad" then
-						return Theme.Colors.DangerHover
+						return roles.Danger
 					elseif use(selected) then
-						return SELECTED
+						return SELECTED[surface] or SELECTED.paper
 					end
 					local r = use(rarity)
 					if r and r.frame.gradient then
-						return Color3.new(1, 1, 1) -- the gradient carries the colour
+						return Theme.Plain -- the gradient carries the colour
 					end
-					return if r then r.color else Theme.Colors.Border
+					return if r then frameColor(r, surface) else roles.Border
 				end),
 				Transparency = scope:Computed(function(use): number
-					return if use(item) or use(selected) or use(hint) ~= nil then 0 else 0.4
+					return if use(item) or use(selected) or use(hint) ~= nil then 0 else 0.2
 				end),
 				[Children] = scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
 					local r = use(rarity)
@@ -180,7 +231,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 						return nil
 					end
 					return s:New("UIGradient")({
-						Color = gradientOf(r),
+						Color = gradientOf(r, surface),
 						Rotation = if r.frame.spin then spin else 45,
 					})
 				end) :: any,
@@ -203,7 +254,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 						s:New("UIStroke")({
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 							Thickness = width,
-							Color = r.color,
+							Color = frameColor(r, surface),
 							Transparency = if r.frame.spin then 0.45 else 0.6,
 							[Children] = s:New("UIGradient")({
 								Transparency = NumberSequence.new({
@@ -230,38 +281,27 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					return if use(dragging) then 0.7 else 0
 				end),
 			}),
-			-- Stack count
-			scope:New("TextLabel")({
+			-- Stack count (S135: on a dark iron plaque, readable on every icon)
+			plaque(scope, {
 				Name = "Count",
 				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, -3, 1, -1),
-				Size = UDim2.fromOffset(size - 6, 16),
-				BackgroundTransparency = 1,
+				Position = UDim2.new(1, -2, 1, -2),
+				Color = Theme.Iron.Text,
 				Text = scope:Computed(function(use): string
 					local i = use(item)
 					return if i and i.n > 1 then tostring(i.n) else ""
 				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.Text,
-				TextStrokeTransparency = 0.2,
-				TextXAlignment = Enum.TextXAlignment.Right,
 			}),
 			-- Upgrade level
-			scope:New("TextLabel")({
+			plaque(scope, {
 				Name = "Upgrade",
-				Position = UDim2.fromOffset(3, 1),
-				Size = UDim2.fromOffset(30, 16),
-				BackgroundTransparency = 1,
+				AnchorPoint = Vector2.zero,
+				Position = UDim2.fromOffset(2, 2),
+				Color = Theme.Brass.Bright,
 				Text = scope:Computed(function(use): string
 					local i = use(item)
 					return if i and i.up > 0 then `+{i.up}` else ""
 				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.GoldBright,
-				TextStrokeTransparency = 0.2,
-				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			-- Padlock (S20): protected from selling, dismantling and trading
 			-- S119: both marks as silhouettes in the glyph colour once loaded.
@@ -269,7 +309,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Name = "Locked",
 				Key = UiArt.hud("lock"),
 				Glyph = "🔒",
-				GlyphColor = Theme.Colors.GoldBright,
+				GlyphColor = roles.Heading,
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -2, 0, 1),
 				Size = UDim2.fromOffset(14, 14),
@@ -284,13 +324,13 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 			scope:New("Frame")({
 				Name = "SellMark",
 				Size = UDim2.fromScale(1, 1),
-				BackgroundColor3 = Theme.Colors.GoldBright,
-				BackgroundTransparency = 0.75,
+				BackgroundColor3 = Theme.Brass.Bright,
+				BackgroundTransparency = 0.7,
 				Visible = marked,
 				ZIndex = 4,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldBright, Thickness = 3 }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Frame, Thickness = Theme.Stroke.Thick }),
 					scope:New("TextLabel")({
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.new(1, -2, 0, 0),
@@ -298,9 +338,10 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 						BackgroundTransparency = 1,
 						Text = "✔",
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 18,
-						TextColor3 = Theme.Colors.GoldBright,
-						TextStrokeTransparency = 0.3,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Brass.Bright,
+						TextStrokeColor3 = Theme.Iron.Surface,
+						TextStrokeTransparency = 0,
 						ZIndex = 5,
 					}),
 				},
@@ -310,7 +351,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Name = "Bound",
 				Key = UiArt.hud("bound"),
 				Glyph = "⚿",
-				GlyphColor = Theme.Colors.TextMuted,
+				GlyphColor = roles.TextMuted,
 				AnchorPoint = Vector2.new(0, 1),
 				Position = UDim2.new(0, 3, 1, -1),
 				Size = UDim2.fromOffset(14, 14),
@@ -319,7 +360,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					local d = use(def)
 					return i ~= nil and i.bound and d ~= nil and d.category == "equipment"
 				end),
-				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 13 },
+				Label = { FontFace = Theme.Fonts.BodyBold, TextScaled = true },
 			}),
 		},
 	})

@@ -296,6 +296,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Colors.Parchment,
 			}),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				LayoutOrder = 2,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				Variant = "primary",

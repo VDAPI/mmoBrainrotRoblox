@@ -118,6 +118,7 @@ local function occupied(scope: Scope, props: Props, summary: Types.SlotSummary):
 			[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 		}),
 		Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			Name = "Play",
 			LayoutOrder = 6,
 			Text = Text.T(scope, "charSelect.play"),
@@ -127,6 +128,7 @@ local function occupied(scope: Scope, props: Props, summary: Types.SlotSummary):
 			OnClick = props.OnPlay,
 		}),
 		Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			Name = "Delete",
 			LayoutOrder = 7,
 			Text = Text.T(scope, "charSelect.delete"),
@@ -161,6 +163,7 @@ local function empty(scope: Scope, props: Props): { Instance }
 			[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 		}),
 		Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			Name = "Create",
 			LayoutOrder = 4,
 			Text = Text.T(scope, "charSelect.createButton"),
@@ -225,6 +228,7 @@ local function locked(scope: Scope, props: Props, passKey: string): { Instance }
 			[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 		}),
 		Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			Name = "Unlock",
 			LayoutOrder = 5,
 			Text = if soon
