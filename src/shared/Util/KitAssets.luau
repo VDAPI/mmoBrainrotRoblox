@@ -130,6 +130,16 @@ function KitAssets.resolver(mapId: string): Resolver?
 	end
 end
 
+-- W12: the prepared model `name` of the kit (pivot at its bottom centre) and its height, or nil when the place has none
+-- (one warning); for horizons and other placements outside the Blueprint slots.
+function KitAssets.model(name: string): (Model?, number)
+	local t = prepare(name)
+	if not t then
+		return nil, 0
+	end
+	return t.model, t.height
+end
+
 -- A placed copy of a placement's model.
 function KitAssets.place(placement: Placement, parent: Instance): Model
 	local model = placement.template:Clone()

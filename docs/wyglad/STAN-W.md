@@ -17,7 +17,7 @@ W09: ciało Roblox „Base Body - Dawson” z dynamiczną głową dla wszystkich
 
 W10: kreator postaci (8 twarzy, brwi, zarost, 12 fryzur, 12 kolorów włosów, 12 skór, budowa, malunki), zakładki, podgląd z obrotem i zbliżeniem. Czeka na ocenę.
 
-W12 (część 1): Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
+W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan Pustkowi, Szczyty); Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
 
 ## Niedokończone
 
@@ -32,5 +32,5 @@ W12 (część 1): Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, dr
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.
-- W12: pierścień horyzontu Z3 miasta (`mapy/miasto.md`) nie zrobiony.
+- W12: horyzont miasta nieobejrzany z murów (kolory, odległości do strojenia w `Data/Horizons`); pozostałe mapy dostaną wpis w swoich sesjach (W13+).
 - W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).

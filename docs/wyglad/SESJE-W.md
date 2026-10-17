@@ -275,3 +275,20 @@ domyślnego), żywa postać po `SetCharacterLook` (głowa, kolor skóry, fryzura
 `CharacterService`, `CosmeticService`, `Admin/Character`, `Localization/pl|en`, `tools/paint/make_paints.py`,
 `art/paint/*`, `tools/classlooks_slots.luau`, testy `classlooks`, `bodylooks`, `character`, `wikidump`; dane wiki
 przegenerowane (wpadły też zaległe zmiany S137–S143 z main).
+
+### W12: Miasto, część 2 (horyzont)
+
+**Zrobione:** pierścień horyzontu Z3 (`docs/wyglad/mapy/miasto.md`): dane `Data/Horizons` (łuki kompasu: rodzaj,
+odległość, wysokość, dwa odcienie; punkty orientacyjne z zestawu), czysty generator `Logic/HorizonGen` (deterministyczny,
+`Logic/Rng` z id mapy), klient `HorizonController` (części tylko u klienta, bez kolizji, zapytań i cieni; przebudowa
+przy zmianie mapy i poziomu grafiki, na „niskiej” rzadziej). Miasto: wschód złote pagórki Łąk, północ dwa rzędy
+ciemnych sosen Boru z koroną Pradrzewa (`forest_landmark_01`, 150 st.), zachód czerwone skały z piargami i wulkan
+Pustkowi (`desert_landmark_01`, 300 st.), południe szare szczyty ze śnieżnymi czapami; pod spodem pas ziemi 440–1000 st.
+w kolorze łuku. 359 części + 2 modele. `KitAssets.model` (model zestawu poza slotami).
+
+**Sprawdzone w Studio:** pierścień buduje się po wejściu do miasta (części, oba modele w zadanej skali). Wygląd z
+murów nieobejrzany.
+
+**Pliki:** `src/shared/Data/Horizons.luau`, `src/shared/Logic/HorizonGen.luau`,
+`src/client/Controllers/HorizonController.luau`, `tests/horizon.spec.luau` (nowe), `src/shared/Util/KitAssets.luau`,
+`tools/balance_reasons.luau`.
