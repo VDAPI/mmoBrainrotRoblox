@@ -40,15 +40,24 @@ return table.freeze({
 		-- x0.75 (Bolt) and x0.85 (the rest), the first rank above 20 pinned
 		-- S140 (the fire pool's R1 at 20 in the S91 band): Magic Bolt ranks 1-5 x0.92 (rank 5 174 -> 160), Fireball x0.94
 		-- (173 -> 162); rank 6 pinned
-		firebolt = table.freeze({ dmg = table.freeze({ [5] = 160, [6] = BOLT5 + (255.7 - BOLT5) * 1 / 5 }) }),
+		-- S142: Fire Bolt x0.72 at every rank (its burn stack, Logic/Burn): rank 5 160 -> 115, rank 6 x0.72
+		firebolt = table.freeze({ dmg = table.freeze({ [5] = 115, [6] = (BOLT5 + (255.7 - BOLT5) * 1 / 5) * 0.72 }) }),
 		fireball = table.freeze({ dmg = table.freeze({ [5] = 162, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
 		-- S141 (DESIGN-18 §6.1): Ice Shard unlocks at 1 (was 6), its rank r + 1 comes near the old rank r's level: rank 5
 		-- (level 17) tuned for the ice pool's R1 at 20, rank 6 (level 21) keeps the old rank 5 (level 22)
-		iceShard = table.freeze({ dmg = table.freeze({ [5] = 80, [6] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
+		-- S142: rank 5 80 -> 130 (Fire Bolt left the ice pool: Ice Shard is its only bolt again, ice 0.85-0.95 x fire)
+		iceShard = table.freeze({ dmg = table.freeze({ [5] = 130, [6] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
+		-- S142 (DESIGN-18 §6.1): Lightning Bolt like Fire Bolt's S91 knots (ranks <= 20 cut, rank 6 near rank 10)
+		lightningBolt = table.freeze({ dmg = table.freeze({ [5] = 170, [6] = 265 }) }),
 		-- S141: Frost Nova unlocks at 6 (was 18): rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old
 		-- rank 2
 		frostNova = table.freeze({ dmg = table.freeze({ [4] = 120, [5] = 120 + 21.3 / 9 }) }),
-		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 129, [4] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
+		-- S142 (DESIGN-18 §6.1): Chain Lightning unlocks at 3 (was 10): rank 5 (level 19) 140 (the old rank 3 at 18 was 129;
+		-- lightning's area at 20), rank 6 (level 23) the old rank 4 (level 22); ranks 1-4 lower (pair 100 - 200)
+		chainLightning = table.freeze({ dmg = table.freeze({ [5] = 140, [6] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
+		-- S142: Thunderstorm unlocks at 26 (was 45): rank 6 (level 46) 32 (the old rank 1 24.9 x 1.3, the lightning pool's
+		-- A2), ranks 1-5 lower
+		firewall = table.freeze({ dmg = table.freeze({ [6] = 32 }) }),
 		-- S140 (DESIGN-18 §6.1): Meteor unlocks at 26 (was 30), so its rank r + 1 comes at the old rank r's level: rank 2
 		-- (level 30) keeps the old rank 1 (98), rank 1 is one step lower (pair 89.6 - 174)
 		meteor = table.freeze({ dmg = table.freeze({ [2] = 98 }) }),

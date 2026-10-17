@@ -75,8 +75,15 @@ local function prepare(name: string): Template?
 			d.CanQuery = false
 			d.CanTouch = false
 			d.Locked = true
-		elseif d:IsA("LuaSourceContainer") then
-			d:Destroy() -- never run code from a kit model
+		elseif
+			d:IsA("LuaSourceContainer")
+			or d:IsA("ProximityPrompt")
+			or d:IsA("ClickDetector")
+			or d:IsA("DragDetector")
+			or d:IsA("Sound")
+		then
+			-- never run code or take input from a kit model (a free model's prompt would steal the interact key)
+			d:Destroy()
 		end
 	end
 	local box, size = model:GetBoundingBox()

@@ -239,6 +239,13 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   bossie / Elicie II to Głęboki Chłód gracza (+10–18% obrażeń od niego), także Lodowej Novy; Włócznia ×1,5 / ×1,25,
   Roztrzaskanie ×2 / ×1,6; Głęboki Mróz z wolniejszymi atakami na każdym; Bariera spowalnia tylko potwory; Lodowa Kula
   to `circleTarget` z `travel`). Ognisty Pocisk zostaje wspólnym S1 do S142.
+- S142 (stan): pula Błyskawicy według tabeli (Łańcuch Błyskawic A1 od 3, skoki 3 → 5; Burza Piorunów A2 od 26),
+  mechaniki w `Logic/Shock` (DECYZJE S142: krytyk Pioruna i Przeładowania tylko na czarach błyskawicy, pewny krytyk
+  Lancy bez zużywania `guaranteedCrit`, przeskok Przewodnika na najbliższego innego wroga do 10 st. jako trafienie
+  poboczne, Pancerz Burzy bez tarczy: redukcja `own` i odwet wręcz przez `RETALIATIONS`, Kulisty Piorun na wzór
+  Lodowej Kuli z wybuchem `finale`, Grom z opóźnieniem 0,5 s). Ognisty Pocisk: ogień, S1 puli Ognia, 1 stos podpalenia,
+  obrażenia ×0,72. Mag bez stanu przejściowego (`transitional = false`, wersja puli 5); `Skills.elementAllowed` usunięte
+  (żywioł broni = pula, `cast.error.wrongPool`).
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia

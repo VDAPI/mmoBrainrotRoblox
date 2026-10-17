@@ -12079,3 +12079,89 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance}.luau`, `tests/{chill,balance,balance1_20,paths,pathview,skillpoints,skillpools,
   skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
   balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S142: Mag, pula Błyskawicy
+
+- **Pula Błyskawicy** (`Data/Skills/Mage`, `pool = "lightning"`, `role`; DESIGN-18 §6.1). Liczby: ranga 1 / 10
+  (pasywki 1 / 5), koszt i odnowienie rangi 1; przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Umiejętność | Ranga 1 / 10 | Przełomy |
+  |---|---|---|---|
+  | S1 · 1 | Piorun `lightningBolt` (pocisk) | 112 / 295% (12 many, 2,5 s), +10 pkt szansy na krytyk | krytyk +25 / ×0,88; rozprysk 13% / dwa pioruny |
+  | A1 · 3 | Łańcuch Błyskawic `chainLightning` (było 10) | 100 / 200% (35, 8 s), skoki 3 / 5 | +2 skoki / +22; ogłuszenie ostatniego / ×0,83 |
+  | K1 · 6 | Porażenie `staticShock` (cel) | 70 / 150% (30, 12 s), paraliż 0,8 s (bez bossów) | +0,4 s / +16; ×0,8 / +38 |
+  | O1 · 10 | Pancerz Burzy `stormArmor` (10 s) | redukcja 6 / 10%, odwet wręcz 30 / 60% ataku mag. (30, 24 s) | odwet +20 / redukcja +3; +4 s / ×0,75 |
+  | S2 · 15 | Grom `thunderStrike` (cel, 0,5 s opóźnienia) | 100 / 400% (40, 9 s) | rozprysk 7% / +50; ogłuszenie 1 s / +90 |
+  | P1 · 20 | Przeładowanie `overcharge` | czary błyskawicy: krytyk +3 / +8 pkt, obrażenia krytyczne +10 / +30 pkt | — |
+  | A2 · 26 | Burza Piorunów `firewall` (było 45; krąg 12 st., 10 piorunów co 0,5 s) | 24 / 58% za piorun (43, 22 s) | bez zmian (+1 piorun / ×0,93; ogłuszenie 0,5 s / +13,9) |
+  | K2 · 33 | Kulisty Piorun `ballLightning` (16 st. lotu, 8 fal co 0,5 s, r 4) | 16 / 30% za falę (45, 18 s), ostatnia fala: odrzut 6 st. i ogłuszenie 1 s | r +1,5 / +3,5; ×0,8 / +7 |
+  | S3 · 40 | Lanca Błyskawic `lightningLance` (linia 26 × 3 st.) | 140 / 200% (35, 9 s), pewny krytyk, ×1,5 poniżej 30% HP | szerzej +2 / +22; ×0,8 / +50 |
+  | P2 · 50 | Przewodnik `conductor` | przeskok czaru w jeden cel na drugiego wroga do 10 st. za 20 / 40% | — |
+  | U · 60 | Nawałnica `tempest` (krąg 12 st., 12 piorunów co 0,35 s, losowe cele) | 40 / 48% za piorun (170, 50 s) | +2 pioruny / ×0,88; ogłuszenie 0,5 s / +8,5 |
+
+- **Trzy pule Maga na jednej drabinie** (wspólne: Błysk 4, Tarcza Many 12, Inwokacja 30, Skupienie 45; kierunki z
+  Wirem / Wyładowaniem w rzędzie 4 i Kataklizmem / Strumieniem w rzędzie 8):
+
+  | Kod · poz. | Ogień | Lód | Błyskawica |
+  |---|---|---|---|
+  | S1 · 1 | Ognisty Pocisk | Lodowy Odłamek | Piorun |
+  | A1 · 3 | Kula Ognia | Grad | Łańcuch Błyskawic |
+  | K1 · 6 | Fala Płomieni | Lodowa Nova | Porażenie |
+  | O1 · 10 | Żarząca Osłona | Lodowa Bariera | Pancerz Burzy |
+  | S2 · 15 | Pożoga | Lodowa Włócznia | Grom |
+  | P1 · 20 | Żar | Uścisk Zimy | Przeładowanie |
+  | A2 · 26 | Meteor | Lodowa Kula | Burza Piorunów |
+  | K2 · 33 | Zapłon | Głęboki Mróz | Kulisty Piorun |
+  | S3 · 40 | Spopielenie | Roztrzaskanie | Lanca Błyskawic |
+  | P2 · 50 | Serce Feniksa | Lodowa Krew | Przewodnik |
+  | U · 60 | Deszcz Meteorów | Zamieć | Nawałnica |
+
+- **Koniec stanu przejściowego:** Ognisty Pocisk (`firebolt`) to S1 puli Ognia (ogień, bez `adaptive`, 1 stos
+  podpalenia, obrażenia ×0,72: 85 / 184%, 10B −75), `SkillPools/Mage` `transitional = false`, `version` 5, `commonPlan`
+  bez Pocisku. Lodowy Odłamek bez Pocisku obok: 12 many, 3 s, 90 / 213% (węzeł rangi 5 130). `Skills.elementAllowed`
+  i `cast.error.wrongElement` usunięte (żywioł broni = pula, `cast.error.wrongPool`). Kierunki: każdy węzeł `modify`
+  wskazuje Wir, Kataklizm, Wyładowanie, Strumień albo Inwokację (są w każdej puli; Wir i Kataklizm biorą żywioł broni).
+- **Mechaniki błyskawicy** (`Logic/Shock`, nowy; `Data/Skills.SHOCK` r 10, odstęp 1 s): `critOf`, `sureCrit`,
+  `conducts`, `conductTarget` (`Chain.path`), `armorReady`, `finale`. Serwer: `Skills/Context` (krytyk umiejętności i
+  Przeładowania w `critAdd` / `critDmgAdd`, pewny krytyk bez zużywania `guaranteedCrit`, przeskok Przewodnika z łukiem
+  `arc`), `Types/Offense` (`target` z `delay`, `circleTarget` z `finale`), `CombatService` (`RETALIATIONS.stormArmor`,
+  Namierzenie dokłada się do krytyku umiejętności), ikona efektu `stormArmor`, efekt `finale` w `VfxController`.
+- **Model** (`tests/SkillModel.luau`, lustra `-- mirrors`): krytyk i pewny krytyk w `damage`, przeskok w drugiego
+  manekina, opóźnienie Gromu, finał kuli, odwet Pancerza w `monsterHit`; buildy `destroyer.destroyerLightning` i
+  `arcanist.arcanistLightning` (`ranks`, opcje A obszaru / B), R4 nowych na buildach błyskawicy, kontrola i geometria w
+  `R4_UTILITY`.
+- **Wyniki modelu:** R1 na 20. (pasmo 1,6–2,73): ogień 2,38 / 2,44, lód 2,21 / 2,17, błyskawica 2,63 / 2,70
+  (Niszczyciel / Arkanista); T-SK3 błyskawicy na 20. 1,17. Tożsamość (raport `S142.mage.*`, asertuje S147) na 20 / 45 /
+  70 / 100: błyskawica / ogień w jeden cel 1,11 / 1,14 / 1,13 / 1,05 (cel 1,10–1,20); lód / ogień 0,89 / 0,88 / 0,82 /
+  0,82 (cel 0,85–0,95); błyskawica na 3 cele przez 8 s / ogień bez podpalenia 0,92 / 0,93 / 1,05 / 1,31 (cel ≥ 1,0),
+  z podpaleniem 0,83 / 0,83 / 0,95 / 1,19 (cel ≤ 1,0); przyjmowane obrażenia lód / ogień 0,52–0,90, błyskawica / ogień
+  0,97–1,11 (lód < ogień ≤ błyskawica poza 20. i 45.). Udział podpalenia ognia 0,09–0,14 (było 0,05–0,09; cel 0,25).
+  T-SK4 błyskawicy 2,96–4,69 (pasmo 2,0–2,8, jak ognia i lodu: raport).
+- **1–20:** fixture przepisany (S142): 173 zmienione (6 to drużyny Grimroka bez wsparcia) i 44 nowe wpisy wariantów
+  błyskawicy, reszta w kluczach Maga; `ALLOWED_1_20_DIFFS` pusta. Blok „Balance 1-20: S91” z wariantami błyskawicy
+  (R4 5A / 5B Pioruna i 5B Łańcucha na 20. w paśmie) zielony; nowy blok „Balance S142: lightning pool”.
+- **`GLOBAL_REPORT_ONLY` S142** (101 wierszy Maga 21–100): `R.*.guard.tsk1|tsk2.Mage.<wariant błyskawicy>.<poziom>`,
+  `R.*.tsk4` i G10 średnich buildów, ścieżki `mage.tsk4`, `arcanist.single`, `r5a.mage` na 45, T1 Mocy żywiołu
+  błyskawicy i Iskry ognia na 45 / 70, R4 5A / 10A Ognistego Pocisku `arcanistBoss` 45–100, T-SK1 podstawy na 40. i
+  `arcanistFire` na 50.; usunięte wpisy S140 / S141, które przechodzą.
+- **Wygląd, dźwięk, teksty:** ruchy nowych jako warianty ruchów Maga (Ognisty Pocisk, Łańcuch, Tarcza Many, Burza
+  Piorunów, Kula Ognia, Lodowy Odłamek, Deszcz Meteorów), `SkillVfx` w kolorze błyskawicy z istniejących składników
+  (`skyBolt`, `lineBeam`, `stormCloud`, `magicCircle`, …; Grom z `landsAfter`), klucze `skill.<id>` w `Data/Sfx` bez ID
+  (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, Ognisty Pocisk (podpalenie), Burza Piorunów (`{hits}`),
+  pola `skills.field.reduce|storm|conduct`, `effect.stormArmor`.
+- **Testy:** nowy `tests/shock.spec.luau` (krytyk, pewny krytyk, przeskok: zasięg, brak powrotu, licznik obszaru,
+  odstęp Pancerza, finał, dane puli); `skillpools.spec` (trzy pule na drabinie, brak czaru innego żywiołu, plany),
+  `skills.spec` (Ognisty Pocisk nie jest adaptacyjny, brak `elementAllowed`), `skillpoints.spec`, `pathview.spec`,
+  `paths.spec`, `balance1_20.spec` (fixture S142), `balance.spec` (blok S142); `tests/fixtures/skill_timing.luau`
+  (9 wierszy).
+- Po przeglądzie: krytyk z `values.crit` tylko na czarach Błyskawicy (Rozkaz Natarcia Wojownika bez dodatkowego
+  krytyku), tekst 10B Pioruna 23%, usunięty martwy `SkillController.WeaponElement`.
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Shock.luau` (nowy), `src/shared/Logic/{Skills,Paths}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Mage}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Mage.luau`, `Data/Paths/Mage.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,SkillService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/{SkillController,VfxController}.luau`, `src/client/UI/Screens/Hud/EffectIcons.luau`,
+  `tests/{SkillModel,Balance,BalanceTables}.luau`, `tests/{shock,balance,balance1_20,paths,pathview,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.

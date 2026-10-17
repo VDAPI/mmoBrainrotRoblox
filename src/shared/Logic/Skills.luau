@@ -1023,6 +1023,21 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	if skill.values.barrier ~= nil then
 		args.barrierSlow = chill.barrierSlow
 	end
+	-- S142 (Logic/Shock): only for skills that have them
+	if skill.type == "target" and skill.delay then
+		args.delay = round(skill.delay)
+	end
+	if skill.type == "line" and skill.width then
+		args.width = round(skill.width)
+	end
+	local finale = skill.finale
+	if finale then
+		args.finaleKnockback = round(finale.knockback)
+		args.finaleStun = round(finale.stun)
+	end
+	if hooks and hooks.conduct then
+		args.conductRadius = SkillData.SHOCK.conductRadius
+	end
 	return args
 end
 
@@ -1272,16 +1287,14 @@ function Skills.offensive(def: SkillDef): boolean
 	return def.type == "shout" and def.values.dmg ~= nil
 end
 
+-- The weapon element a Mage skill belongs to (S18; shown in the skill's details and on the wiki). S142 (DESIGN-18 §4.1):
+-- no cast check reads it any more: the weapon's element picks the pool and every element skill sits in its own pool
+-- (cast.error.wrongPool), so the old Skills.elementAllowed is gone.
 function Skills.requiredElement(skill: SkillDef): string?
 	if skill.class ~= "Mage" or skill.adaptive or not skill.element then
 		return nil
 	end
 	return skill.element
-end
-
-function Skills.elementAllowed(skill: SkillDef, weaponElement: string?): boolean
-	local required = Skills.requiredElement(skill)
-	return required == nil or required == weaponElement
 end
 
 return Skills

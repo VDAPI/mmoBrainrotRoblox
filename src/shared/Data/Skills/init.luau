@@ -99,6 +99,9 @@ return table.freeze({
 		barrierSlow = 2,
 		barrierGap = 1,
 	}),
+	-- S142 (DESIGN-18 §6.1): the lightning school (Logic/Shock). Conductor's jump looks for the nearest other enemy within
+	-- conductRadius studs of the struck target; Storm Armor strikes a melee attacker back at most once per armorGap s.
+	SHOCK = table.freeze({ conductRadius = 10, armorGap = 1 }),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
 	FROSTBITE = 6,

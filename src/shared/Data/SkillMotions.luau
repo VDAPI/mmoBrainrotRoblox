@@ -1285,8 +1285,8 @@ local STAFF: CastRig = {
 	},
 }
 
--- Arcane Bolt (firebolt): a quick flick of the weapon, the tip at the target at the release (0.16); with 10B a second
--- flick for the second bolt (0.31 = release + interval 0.15). A staff pushes its tip instead.
+-- Fire Bolt (firebolt; Arcane Bolt before S142): a quick flick of the weapon, the tip at the target at the release
+-- (0.16); with 10B a second flick for the second bolt (0.31 = release + interval 0.15). A staff pushes its tip instead.
 local BOLT_STEP = 0.15 -- seconds between two bolts (Offense.projectile default interval)
 local function fireboltKeys(rig: CastRig, bolts: number): { Key }
 	local keys = { k(0.1, rig.back, "out"), k(0.16, rig.point, "out") }
@@ -1931,6 +1931,58 @@ motions.shatter = {
 }
 -- Blizzard: Rain of Meteors' arms raised and swept down across the circle in a wide stance.
 motions.blizzard = {
+	keys = motions.meteorStorm.keys,
+	recover = 0.35,
+	hit = 0.55,
+	lock = true,
+}
+
+-- S142 (DESIGN-18 §6.1): the lightning pool's new skills as variants of the Mage's S115 motions (the same rule as S140 /
+-- S141); the look apart is their SkillVfx (lightning, own pieces). A full motion pass comes with W03-W07.
+-- Lightning Bolt: Fire Bolt's flick of the weapon (a staff pushes its tip; 10B two flicks).
+motions.lightningBolt = {
+	keys = fireboltKeys(WAND, 1),
+	recover = 0.22,
+	release = 0.16,
+	variants = {
+		variant({ weapon = "staff", hits = 2, keys = fireboltKeys(STAFF, 2) }),
+		variant({ weapon = "staff", keys = fireboltKeys(STAFF, 1) }),
+		variant({ hits = 2, keys = fireboltKeys(WAND, 2) }),
+	},
+}
+-- Static Shock: Chain Lightning's throw, the spark leaving the spread fingers at the release.
+motions.staticShock = {
+	keys = motions.chainLightning.keys,
+	recover = 0.3,
+	hit = 0.26,
+}
+-- Storm Armor: Mana Shield's arms raised over the head.
+motions.stormArmor = {
+	keys = motions.manaShield.keys,
+	recover = 0.3,
+	hit = 0.28,
+}
+-- Thunder Strike: Thunderstorm's weapon raised to the clouds, the bolt called down with the left hand.
+motions.thunderStrike = {
+	keys = motions.firewall.keys,
+	recover = 0.3,
+	hit = 0.42,
+}
+-- Ball Lightning: Fireball's gather and push (the ball leaves the hands slowly).
+motions.ballLightning = {
+	keys = motions.fireball.keys,
+	recover = 0.3,
+	release = 0.38,
+	hit = 0.38,
+}
+-- Lightning Lance: Ice Shard's hands brought together and pushed (the lance leaves both palms).
+motions.lightningLance = {
+	keys = motions.iceShard.keys,
+	recover = 0.25,
+	hit = 0.26,
+}
+-- Tempest: Rain of Meteors' arms raised and swept down across the circle in a wide stance.
+motions.tempest = {
 	keys = motions.meteorStorm.keys,
 	recover = 0.35,
 	hit = 0.55,

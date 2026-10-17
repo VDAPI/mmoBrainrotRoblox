@@ -785,10 +785,8 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if StatusEffectService.IsDisabled(caster) then
 		return false, "cast.error.disabled"
 	end
-	-- Element skills need a weapon of the same element (S18, DESIGN §5.8).
-	if not Skills.elementAllowed(skill, weaponElement(player)) then
-		return false, "cast.error.wrongElement"
-	end
+	-- S142 (DESIGN-18 §4.1): no element check of its own any more (S18's wrongElement error): the weapon's element
+	-- picks the Mage's pool and a skill of another pool stops at "cast.error.wrongPool" (Paths.skillUsable above).
 	-- S74: a rooted guard cannot leap (like Charge); its self variant goes with it
 	if
 		(skill.type == "blink" or skill.type == "charge" or skill.type == "guard")

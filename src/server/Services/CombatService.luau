@@ -44,6 +44,7 @@ local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
+local Shock = require(Shared.Logic.Shock)
 local Classes = require(Shared.Data.Classes)
 local Context = require(script.Parent.Parent.Skills.Context)
 local DamageText = require(Shared.Logic.DamageText)
@@ -469,7 +470,8 @@ end
 -- per the effect's gap per attacker (its `ready`; monsters only, players are not answered): Ember Shield
 -- ("emberShield") burns it with one stack worth the effect's value % of the player's magic attack, Ice Barrier
 -- ("iceBarrier", Logic/Chill.barrierReady) slows it by the effect's value % for Data/Skills.CHILL.barrierSlow s (with
--- an ice weapon also Frostbite).
+-- an ice weapon also Frostbite). S142: Storm Armor ("stormArmor", Logic/Shock.armorReady) strikes it back for the
+-- effect's value % of the player's magic attack in lightning (a skill hit without on-hit effects).
 type Retaliation = {
 	ready: (last: number?, now: number) -> boolean,
 	act: (player: Player, attacker: any, value: number) -> (),
@@ -502,6 +504,18 @@ local RETALIATIONS: { [string]: Retaliation } = {
 			end
 		end,
 	},
+}
+RETALIATIONS.stormArmor = {
+	ready = Shock.armorReady,
+	act = function(player: Player, attacker: any, pct: number)
+		-- defined below (DealDamage reads the retaliations through monsterHitsPlayer)
+		(CombatService :: any).DealDamage(player, attacker, {
+			kind = "magic",
+			multiplier = pct / 100,
+			element = "lightning",
+			isSkill = true,
+		}, nil, { consumeShot = false, noProc = true, skill = "stormArmor", delivery = "ranged" })
+	end,
 }
 local retaliateLast: { [Player]: { [string]: { [any]: number } } } = {}
 local function shieldRetaliate(player: Player, attacker: any)
@@ -1179,8 +1193,9 @@ function CombatService.DealDamage(
 	-- S77: Draw a Bead, only the caster's hits (ROZWOJ 11.3).
 	local sight = StatusEffectService.FromSource(targetEntity, "sighted", player)
 	if sight and sight.stats then
-		params.critAdd = sight.stats.critChance
-		params.critDmgAdd = sight.stats.critDmg
+		-- S142: on top of the skill's own crit (Logic/Shock: Lightning Bolt, Overcharge)
+		params.critAdd = (params.critAdd or 0) + (sight.stats.critChance or 0)
+		params.critDmgAdd = (params.critDmgAdd or 0) + (sight.stats.critDmg or 0)
 	end
 	-- Hunter's Mark and other vulnerabilities on the target.
 	extra *= 1 + StatusEffectService.Max(targetEntity, "vulnerability") / 100
@@ -1757,7 +1772,8 @@ local function monsterHitsPlayer(
 	if regular and monster:IsAlive() and monster.entity then
 		tryCounter(player, monster.entity, false)
 	end
-	-- S140 / S141: Ember Shield burns and Ice Barrier slows a monster that strikes in melee (landed or absorbed)
+	-- S140 / S141: Ember Shield burns and Ice Barrier slows a monster that strikes in melee (landed or absorbed); S142:
+	-- Storm Armor strikes it back
 	if delivery == "melee" and not result.dodged and monster:IsAlive() and monster.entity then
 		shieldRetaliate(player, monster.entity)
 	end

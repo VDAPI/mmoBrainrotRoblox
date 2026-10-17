@@ -333,23 +333,27 @@ T.describe("S56 ranks from the level and the bar", function()
 end)
 
 T.describe("Mage weapon elements (S18)", function()
-	T.it("element skills need a matching weapon, adaptive ones do not", function()
-		local iceShard = SkillData.get("iceShard") :: any
-		T.expect(Skills.elementAllowed(iceShard, "ice")).toBe(true)
-		T.expect(Skills.elementAllowed(iceShard, "fire")).toBe(false)
-		T.expect(Skills.elementAllowed(iceShard, nil)).toBe(false)
-		local arcane = SkillData.get("firebolt") :: any
-		T.expect(arcane.adaptive).toBe(true)
-		T.expect(Skills.elementAllowed(arcane, nil)).toBe(true)
-		T.expect(Skills.elementAllowed(SkillData.get("blink") :: any, "ice")).toBe(true)
-		T.expect(Skills.requiredElement(SkillData.get("firewall") :: any)).toBe("lightning")
-		-- Other classes never depend on the weapon element.
-		for _, skill in SkillData.byId do
-			if skill.class ~= "Mage" then
-				T.expect(Skills.requiredElement(skill)).toBeNil()
+	-- S142 (DESIGN-18 §4.1, B3): the element of a Mage skill is its pool; no cast check of its own (Skills.elementAllowed is
+	-- gone, a skill of another pool is refused with wrongPool). requiredElement stays for the details and the wiki.
+	T.it(
+		"element skills show their element; Fire Bolt is fire, not adaptive; no element check apart from the pool",
+		function()
+			T.expect(Skills.requiredElement(SkillData.get("iceShard") :: any)).toBe("ice")
+			T.expect(Skills.requiredElement(SkillData.get("firewall") :: any)).toBe("lightning")
+			local bolt = SkillData.get("firebolt") :: any
+			T.expect(bolt.adaptive).toBeNil()
+			T.expect(Skills.requiredElement(bolt)).toBe("fire")
+			T.expect(Skills.requiredElement(SkillData.get("blink") :: any)).toBeNil()
+			T.expect(Skills.requiredElement(SkillData.get("elementalVortex") :: any)).toBeNil() -- adaptive: the pool's
+			T.expect((Skills :: any).elementAllowed).toBeNil()
+			-- Other classes never depend on the weapon element.
+			for _, skill in SkillData.byId do
+				if skill.class ~= "Mage" then
+					T.expect(Skills.requiredElement(skill)).toBeNil()
+				end
 			end
 		end
-	end)
+	)
 end)
 
 T.describe("S54 formulas", function()
@@ -2308,8 +2312,9 @@ T.describe("S81 Mage base, B options and nodes", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 
 	-- S140 (DESIGN-18 §6.1): the fire pool and the common skills joined the base; 4 skills stay on the directions.
-	-- S141: the ice pool (Ice Shard 1, Frost Nova 6, nine new skills at the end of the list)
-	T.it("the base (S141), 4 path skills at their row level; B on every active", function()
+	-- S141: the ice pool (Ice Shard 1, Frost Nova 6, nine new skills at the end of the list). S142: the lightning pool
+	-- (Chain Lightning 3, Thunderstorm 26, nine new skills at the end of the list)
+	T.it("the base (S142), 4 path skills at their row level; B on every active", function()
 		local base, onPath = {}, {}
 		local actives, passives = 0, 0
 		for _, def in SkillData.byClass.Mage do
@@ -2332,11 +2337,11 @@ T.describe("S81 Mage base, B options and nodes", function()
 			"firebolt:1",
 			"fireball:3",
 			"iceShard:1",
-			"chainLightning:10",
+			"chainLightning:3",
 			"blink:4",
 			"frostNova:6",
 			"meteor:26",
-			"firewall:45",
+			"firewall:26",
 			"flameWave:6",
 			"emberShield:10",
 			"pyroblast:15",
@@ -2357,15 +2362,24 @@ T.describe("S81 Mage base, B options and nodes", function()
 			"shatter:40",
 			"iceBlood:50",
 			"blizzard:60",
+			"lightningBolt:1",
+			"staticShock:6",
+			"stormArmor:10",
+			"thunderStrike:15",
+			"overcharge:20",
+			"ballLightning:33",
+			"lightningLance:40",
+			"conductor:50",
+			"tempest:60",
 		})
-		T.expect(passives).toBe(5)
+		T.expect(passives).toBe(7)
 		T.expect(onPath).toEqual({
 			elementalVortex = "destroyer:26",
 			cataclysm = "destroyer:60",
 			arcaneDischarge = "arcanist:26",
 			arcaneTorrent = "arcanist:60",
 		})
-		T.expect(actives).toBe(27)
+		T.expect(actives).toBe(34)
 		-- changed data (ROZWOJ 12.4, 12.5, 15.5.4)
 		local function v(id: string, field: string, rank: number): number
 			return Skills.valueAt(SkillData.get(id) :: any, field, rank)
@@ -2400,12 +2414,12 @@ T.describe("S81 Mage base, B options and nodes", function()
 	local STAFF = { main = "staff" }
 	local RUNESTAFF = { main = "runestaff" }
 
-	T.it("Meteor 5B + 10B and Magic Bolt 5B / 10B", function()
+	T.it("Meteor 5B + 10B and Fire Bolt 5B / 10B", function()
 		local meteor = eff("meteor", "destroyer", {}, { ["meteor:5"] = "b", ["meteor:10"] = "b" }, STAFF)
 		T.expect(Skills.valueAt(meteor, "dmg", 10)).toBeNear(239, 1e-9) -- S140: 5B +20 (was +23)
 		local bolt = eff("firebolt", "destroyer", {}, { ["firebolt:5"] = "b", ["firebolt:10"] = "b" }, STAFF)
 		T.expect(bolt.hits).toBe(2)
-		T.expect(Skills.valueAt(bolt, "dmg", 10)).toBeNear(151.7, 1e-9)
+		T.expect(Skills.valueAt(bolt, "dmg", 10)).toBeNear(109, 1e-9) -- S142: 184 - 75 (was 255.7 - 104)
 		T.expect(Skills.cooldown(bolt, 10)).toBeNear(2.2, 1e-9)
 	end)
 
@@ -2475,7 +2489,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 			local def = SkillData.get(id) :: any
 			return (Skills.effective(def, 10, { [`{id}:{at}`] = "b" } :: any, nil, true))
 		end
-		T.expect(Skills.cooldown(b("iceShard", 10), 10)).toBeNear(5 * 0.84, 1e-9)
+		T.expect(Skills.cooldown(b("iceShard", 10), 10)).toBeNear(3 * 0.84, 1e-9) -- S142: cooldown 5 -> 3
 		T.expect(b("blink", 5).length).toBe(20)
 		local _, trap = Skills.effective(SkillData.get("blink") :: any, 10, { ["blink:10"] = "b" } :: any, nil, true)
 		T.expect(trap.trap).toEqual({ radius = 6, duration = 3, slow = 40 })

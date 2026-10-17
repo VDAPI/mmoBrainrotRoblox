@@ -329,6 +329,15 @@ local OWN: { [string]: Own } = {
 	deepFreeze = { hint = "deep ice freeze crackle", roll = 110 },
 	shatter = { hint = "ice shatter glass break", roll = 110 },
 	blizzard = { hint = "blizzard howling wind storm", roll = 120 },
+	-- S142 (DESIGN-18 §6.1): the lightning pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent
+	-- keys fall back to the kind's default (Logic/SfxRules.skillKey)
+	lightningBolt = { hint = "electric zap bolt crack short", roll = 100 },
+	staticShock = { hint = "static electric shock buzz", roll = 100 },
+	stormArmor = { hint = "electric crackle shield hum", roll = 80 },
+	thunderStrike = { hint = "thunder strike lightning boom", roll = 120 },
+	ballLightning = { hint = "ball lightning electric hum crackle", roll = 100 },
+	lightningLance = { hint = "lightning spear zap crack", roll = 110 },
+	tempest = { hint = "thunderstorm many lightning strikes", roll = 120 },
 }
 -- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
 local CAST: { [string]: Own } = {

@@ -569,13 +569,6 @@ function SkillController.Start()
 	end)
 end
 
--- For the UI: can the current level / resources / range allow this skill now?
--- Element of the equipped weapon (mage weapons, S18).
-function SkillController.WeaponElement(): string?
-	local weapon = State.Get({ "derived", "weapon" })
-	return if type(weapon) == "table" then weapon.element else nil
-end
-
 -- S80 (ROZWOJ 12.5): Arcane Charges of our own character (stacks of "arcaneCharge" in the Effects attribute).
 function SkillController.ArcaneCharges(): number
 	local character = player.Character
@@ -585,7 +578,8 @@ function SkillController.ArcaneCharges(): number
 	return EffectStack.stacksOf(character:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
 end
 
--- (enough resource, in range, weapon fits: the Mage element and, S57, the path weapon of a path skill)
+-- For the UI: can the current level / resources / range allow this skill now?
+-- (enough resource, in range, weapon fits: S57 the path weapon of a path skill; S142: the Mage's element is the pool)
 function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local skill = SkillData.get(skillId)
 	if not skill then
@@ -608,7 +602,7 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2
 	local pathOk = skill.path == nil or Paths.skillUsable(c, skill.id, Paths.weaponTypesOf(c.equipment))
-	return enoughResource, inRange, Skills.elementAllowed(skill, SkillController.WeaponElement()) and pathOk
+	return enoughResource, inRange, pathOk
 end
 
 -- Theme colour of a skill's class (for icons).

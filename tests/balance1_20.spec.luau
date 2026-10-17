@@ -8,7 +8,8 @@
 -- New fixture: `lune run tools/balance_report.luau fixture S<n> "<note>"` (only on the owner's decision; S109: the
 -- 1-20 baseline after the quest series S95-S109, DESIGN-15 §0.4; last S134: bosses 2.0, only the Grimrok sections
 -- moved; S134i: the Meadows' Elite II hideouts, new rows only; S140: the Mage's fire pool, Mage keys only; S141: the
--- Mage's ice pool, Mage keys only). Full list of the differences: build/balance1_20_diff.txt.
+-- Mage's ice pool, Mage keys only; S142: the Mage's lightning pool, Mage keys and Grimrok's parties without
+-- support). Full list of the differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
 local fs = require("@lune/fs")
@@ -65,9 +66,11 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 	-- S140 (DESIGN-18 §0.3): the new baseline in the Mage's keys only (the fire pool, the common skills, the directions'
 	-- nodes; with Grimrok's parties without support, which hold two Mage builds); docs/DECYZJE.md S140
 	-- S141: the new baseline in the Mage's keys only (the ice pool: 105 changed, 44 new rows of the ice variants)
-	T.it("the fixture is the S141 baseline (the Mage's ice pool)", function()
+	-- S142: the lightning pool and the end of the transitional Mage (173 changed, 44 new rows of the lightning variants;
+	-- 6 of the changed are Grimrok's parties without support, which hold two Mage builds); docs/DECYZJE.md S142
+	T.it("the fixture is the S142 baseline (the Mage's lightning pool)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S141")
+		T.expect(file and file.meta and file.meta.session).toBe("S142")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

@@ -497,6 +497,42 @@ local ICE_SINGLE_BP: { [string]: "a" | "b" } = {
 	["blizzard:10"] = "b",
 }
 
+-- S142: the lightning pool of the area variant: A options of the area skills (jumps, bolts, radius, splash, width), B
+-- of the rest
+local LIGHTNING_AREA_BP: { [string]: "a" | "b" } = {
+	["lightningBolt:5"] = "b",
+	["lightningBolt:10"] = "b",
+	["chainLightning:5"] = "a",
+	["chainLightning:10"] = "b",
+	["staticShock:5"] = "b",
+	["staticShock:10"] = "b",
+	["thunderStrike:5"] = "a",
+	["thunderStrike:10"] = "b",
+	["firewall:5"] = "a",
+	["firewall:10"] = "b",
+	["ballLightning:5"] = "a",
+	["ballLightning:10"] = "b",
+	["lightningLance:5"] = "b",
+	["lightningLance:10"] = "b",
+	["tempest:5"] = "a",
+	["tempest:10"] = "b",
+}
+-- S142: the lightning pool of the single-target variant: B options
+local LIGHTNING_SINGLE_BP: { [string]: "a" | "b" } = {
+	["lightningBolt:5"] = "b",
+	["lightningBolt:10"] = "b",
+	["staticShock:5"] = "b",
+	["staticShock:10"] = "b",
+	["thunderStrike:5"] = "b",
+	["thunderStrike:10"] = "b",
+	["ballLightning:5"] = "b",
+	["ballLightning:10"] = "b",
+	["lightningLance:5"] = "b",
+	["lightningLance:10"] = "b",
+	["tempest:5"] = "b",
+	["tempest:10"] = "b",
+}
+
 local function merged(a: { [string]: any }, b: { [string]: any }): { [string]: "a" | "b" }
 	local out: { [string]: any } = table.clone(a)
 	for key, option in b do
@@ -550,7 +586,6 @@ local FIRE_SINGLE_RANKS = {
 local ICE_AREA_RANKS = {
 	"hailstorm",
 	"iceShard",
-	"firebolt",
 	"frostNova",
 	"glacialSpike",
 	"wintersGrip",
@@ -569,7 +604,6 @@ local ICE_AREA_RANKS = {
 }
 local ICE_SINGLE_RANKS = {
 	"iceShard",
-	"firebolt",
 	"glacialSpike",
 	"hailstorm",
 	"frostNova",
@@ -585,6 +619,46 @@ local ICE_SINGLE_RANKS = {
 	"blizzard",
 	"blink",
 	"iceBarrier",
+	"manaShield",
+}
+
+-- S142: the skill ranks of the lightning variants (the same rule as the fire and ice ones)
+local LIGHTNING_AREA_RANKS = {
+	"chainLightning",
+	"lightningBolt",
+	"staticShock",
+	"thunderStrike",
+	"overcharge",
+	"firewall",
+	"elementalVortex",
+	"ballLightning",
+	"lightningLance",
+	"focus",
+	"conductor",
+	"tempest",
+	"cataclysm",
+	"evocation",
+	"blink",
+	"stormArmor",
+	"manaShield",
+}
+local LIGHTNING_SINGLE_RANKS = {
+	"lightningBolt",
+	"thunderStrike",
+	"chainLightning",
+	"staticShock",
+	"overcharge",
+	"arcaneDischarge",
+	"firewall",
+	"lightningLance",
+	"evocation",
+	"focus",
+	"conductor",
+	"ballLightning",
+	"arcaneTorrent",
+	"tempest",
+	"blink",
+	"stormArmor",
 	"manaShield",
 }
 
@@ -605,6 +679,7 @@ destroyer.reference = {
 			{ skill = "fireball" },
 			{ skill = "chainLightning" },
 			{ skill = "iceShard" },
+			{ skill = "lightningBolt" }, -- S142: the lightning pool's S1 (Fire Bolt is fire only)
 			{ skill = "firebolt" },
 		},
 		3.0
@@ -631,7 +706,14 @@ destroyer.reference = {
 			{ skill = "elementalVortex" },
 			{ skill = "fireball" },
 			{ skill = "chainLightning" },
+			-- S142: the S2 and K1 of every pool (every damaging spell on cooldown, the strongest first)
+			{ skill = "thunderStrike" },
+			{ skill = "pyroblast" },
+			{ skill = "glacialSpike" },
+			{ skill = "staticShock" },
+			{ skill = "flameWave" },
 			{ skill = "iceShard" },
+			{ skill = "lightningBolt" },
 			{ skill = "firebolt" },
 		},
 		3.0
@@ -677,11 +759,33 @@ destroyer.reference = {
 			{ skill = "glacialSpike" },
 			{ skill = "shatter" },
 			{ skill = "iceShard" },
-			{ skill = "firebolt" },
 		},
 		3.0,
 		"ice",
 		ICE_AREA_RANKS
+	),
+	-- S142: the Destroyer with a lightning weapon (the lightning pool alone): area first, jumps and bolts
+	build(
+		"destroyerLightning",
+		"staff",
+		destroyer.statPlan :: any,
+		destroyerNodes("destroyer_volatile", "destroyer_mantle"),
+		merged(withBase({}), LIGHTNING_AREA_BP),
+		{
+			{ skill = "elementalVortex", minEnemies = 2 },
+			{ skill = "cataclysm" },
+			{ skill = "tempest" },
+			{ skill = "firewall" },
+			{ skill = "ballLightning" },
+			{ skill = "chainLightning" },
+			{ skill = "thunderStrike" },
+			{ skill = "lightningLance" },
+			{ skill = "staticShock" },
+			{ skill = "lightningBolt" },
+		},
+		3.0,
+		"lightning",
+		LIGHTNING_AREA_RANKS
 	),
 }
 
@@ -723,6 +827,7 @@ local ARCANIST_ROTATION: { { [string]: any } } = {
 	{ skill = "frostNova" },
 	{ skill = "chainLightning" },
 	{ skill = "iceShard" },
+	{ skill = "lightningBolt" }, -- S142
 	{ skill = "firebolt" },
 }
 
@@ -783,11 +888,32 @@ arcanist.reference = {
 			{ skill = "frozenOrb" },
 			{ skill = "hailstorm" },
 			{ skill = "iceShard" },
-			{ skill = "firebolt" },
 		},
 		nil,
 		"ice",
 		ICE_SINGLE_RANKS
+	),
+	-- S142: the Arcanist with a lightning weapon: one target, Thunder Strike and the sure crit of the Lance
+	build(
+		"arcanistLightning",
+		"runestaff",
+		arcanist.statPlan :: any,
+		arcanistNodes("arcanist_resonance"),
+		merged(withBase({}), LIGHTNING_SINGLE_BP),
+		{
+			{ skill = "evocation", maxManaPct = 35 },
+			{ skill = "arcaneDischarge", minCharges = 4 },
+			{ skill = "arcaneTorrent", minManaPct = 90 },
+			{ skill = "thunderStrike" },
+			{ skill = "lightningLance" },
+			{ skill = "staticShock" },
+			{ skill = "firewall" },
+			{ skill = "chainLightning" },
+			{ skill = "lightningBolt" },
+		},
+		nil,
+		"lightning",
+		LIGHTNING_SINGLE_RANKS
 	),
 }
 
