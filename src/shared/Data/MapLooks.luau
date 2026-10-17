@@ -113,6 +113,11 @@ local BY_MAP: { [string]: Look } = {
 		brightness = -0.02,
 		clouds = { cover = 0.45, density = 0.55, color = "#FFFFFF" },
 	}),
+	-- Underground rooms that stayed too dark with the shared lift (W01, Studio): the Wyvern's roosts, the tomb of
+	-- Morvane and Azgor's furnace (their lamps light the edges only).
+	ashen_lair = with(UNDER, { brightness = 0.08, contrast = 0.12 }),
+	dungeon_duskwood = with(UNDER, { brightness = 0.07 }),
+	dungeon_ashen = with(UNDER, { brightness = 0.06 }),
 }
 
 local MapLooks = {}

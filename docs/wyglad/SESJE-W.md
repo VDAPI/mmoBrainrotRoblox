@@ -73,3 +73,26 @@ domyślne, wyłączenie starych efektów `Lighting`), `assets/Sky/*.model.json`,
 
 **Dla właściciela:** nic do zrobienia w Studio (wszystko idzie przez Rojo). Plugin Rojo jest połączony z worktree
 `wyglad` na porcie 34873; żeby wrócić do `main`, połącz go znowu z portem 34872.
+
+**Druga runda (ta sama sesja, prośba właściciela „zrób to porządnie”):** wszystkie jaskinie i komnaty bossów w kolorach
+§4.3, zrzuty `W01_przed_<miejsce>` / `W01_po_<miejsce>` z tej samej kamery, oraz noc w mieście.
+
+| Miejsce | Co było źle | Co zmieniono (`Data/Maps`, `Data/MapLooks`) |
+|---|---|---|
+| Kryjówka Przemytników | ciepła szarość, motyw niewidoczny | chłodny błękit skały i powietrza, latarnie zostają ciepłe |
+| Gobliński Kopiec | brąz jak każda jaskinia | oliwkowa „zgniła” zieleń, żółte lampy |
+| Wilcza Nora | ciemno poza słupem księżyca | srebrny błękit otoczenia |
+| Kurhan Kultystów | prawie czarny fiolet | czytelny fiolet (otoczenie `#76609A`) |
+| Krypta Zapomnianych | szaro-bura | blada zieleń z bielą |
+| Opuszczona Kopalnia | jednolity brąz | chłodne ściany (mithril), ogniska zostają pomarańczowe |
+| Leże Wywerny | Gniazda prawie czarne | jaśniejsza czerwień ze złotem, własna korekcja +0,08 |
+| Kuźnia Głębin | wszystko pomarańczowe | chłodniejsze ściany obok żaru (pod błękitne runy) |
+| Lodowa Grota | dobrze | bez zmian |
+| Zamarznięta Twierdza | szaro | błękit z miejscem na złoto witraży |
+| Serce Lodowca | ten sam błękit co Grota | cyjan |
+| Grobowiec Morvane | ciemny fiolet | jaśniej (+0,07), czytelne nagrobki |
+| Palenisko Azgora | przesycona czerwień | mniej nasycone, jaśniej (+0,06) |
+| Leże Vaelgratha | dobrze | bez zmian |
+| Miasto 22:00 | dachy i ulice czarne, tylko okna | jaśniejszy księżycowy błękit (jasność 0,9), okna dalej się wyróżniają |
+
+Wartości z repo sprawdzone po synchronizacji w Leżu Wywerny (te same co strojenie na żywo).
