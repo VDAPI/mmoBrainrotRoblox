@@ -594,16 +594,24 @@ end
 
 -- S132: the look change (SetCharacterLook): free once from anywhere, then gold next to the barber. The gold, the free
 -- flag and the look are written in one step without a yield.
-local function setLook(player: Player, face: string, skin: string, hair: string): (boolean, string?)
+local function setLook(player: Player, face: string, skin: string, hair: string, ...: string?): (boolean, string?)
 	local char = PlayerStateService.GetCharacter(player)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local valid, bad = CharacterLook.isValid(face, skin, hair)
+	-- W10: the fields after hair in CharacterLook.FIELDS order; a missing one keeps the character's value
+	local current = CharacterLook.normalize(char.look) :: any
+	local look: any = { face = face, skin = skin, hair = hair }
+	local rest = { ... }
+	for i = 4, #CharacterLook.FIELDS do
+		local key = CharacterLook.FIELDS[i].key
+		local value = rest[i - 3]
+		look[key] = if value ~= nil then value else current[key]
+	end
+	local valid, bad = CharacterLook.isValid(look)
 	if not valid then
 		return false, bad
 	end
-	local look = { face = face, skin = skin, hair = hair }
 	local near = NpcService.NearService(player, "look") ~= nil
 	local ok, err, cost = CharacterLook.canChange(char, look, near)
 	if not ok then
@@ -630,10 +638,10 @@ end
 -- S132 (admin /charlook): the look without a cost and without touching the free change. False for a bad look or no
 -- character.
 function CosmeticService.AdminSetLook(player: Player, look: ClassLooks.Look): boolean
-	if not PlayerStateService.GetCharacter(player) or not CharacterLook.isValid(look.face, look.skin, look.hair) then
+	if not PlayerStateService.GetCharacter(player) or not CharacterLook.isValid(look) then
 		return false
 	end
-	PlayerStateService.Set(player, { "character", "look" }, { face = look.face, skin = look.skin, hair = look.hair })
+	PlayerStateService.Set(player, { "character", "look" }, table.clone(look))
 	CosmeticService.RefreshAppearance(player)
 	return true
 end
@@ -647,22 +655,39 @@ function CosmeticService.SetRobloxAvatar(player: Player, on: boolean)
 	CosmeticService.RefreshAppearance(player)
 end
 
--- W09: the Roblox hairstyles of Data/BodyLooks into ReplicatedStorage (AvatarBuild puts them on characters and
--- previews; a style that does not load keeps the procedural hair).
-local function loadHairs()
+-- W09, W10: the look parts of Data/BodyLooks into ReplicatedStorage (BodyLooks.PARTS_FOLDER): hairstyles, brows,
+-- lashes and heads, which AvatarBuild puts on characters (hair) and previews (all). A part that does not load keeps the
+-- fallback (procedural hair, the mannequin's head and brows).
+local function loadLookParts()
 	local folder = Instance.new("Folder")
-	folder.Name = BodyLooks.HAIR_FOLDER
-	for style, def in BodyLooks.hairs do
+	folder.Name = BodyLooks.PARTS_FOLDER
+	local jobs: { { name: string, id: number, class: string } } = {}
+	for hairId, def in BodyLooks.hairs do
+		table.insert(jobs, { name = `hair_{hairId}`, id = def.id, class = "Accessory" })
+	end
+	for browsId, id in BodyLooks.brows do
+		table.insert(jobs, { name = `brows_{browsId}`, id = id, class = "Accessory" })
+	end
+	for faceId, def in BodyLooks.heads do
+		table.insert(jobs, { name = `lashes_{faceId}`, id = def.lashes, class = "Accessory" })
+		table.insert(jobs, { name = `head_{faceId}`, id = def.head, class = "MeshPart" })
+	end
+	for _, job in jobs do
 		local ok, loaded = pcall(function()
-			return InsertService:LoadAsset(def.id)
+			return InsertService:LoadAsset(job.id)
 		end)
-		local accessory = if ok and loaded then loaded:FindFirstChildWhichIsA("Accessory", true) else nil
-		if accessory then
-			LookBuild.stripScripts(accessory)
-			accessory.Name = style
-			accessory.Parent = folder
+		local item = if ok and loaded then loaded:FindFirstChildWhichIsA(job.class, true) else nil
+		if item then
+			LookBuild.stripScripts(item)
+			for _, extra in item:GetDescendants() do
+				if extra:IsA("Camera") then
+					extra:Destroy()
+				end
+			end
+			item.Name = job.name
+			item.Parent = folder
 		else
-			log:warn("hairstyle %s (%d) did not load: procedural hair", style, def.id)
+			log:warn("look part %s (%d) did not load", job.name, job.id)
 		end
 		if ok and loaded then
 			loaded:Destroy()
@@ -789,7 +814,7 @@ function CosmeticService.Start()
 			task.spawn(avatarOf, player)
 		end
 	end)
-	task.spawn(loadHairs)
+	task.spawn(loadLookParts)
 	task.spawn(buildMannequin)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)

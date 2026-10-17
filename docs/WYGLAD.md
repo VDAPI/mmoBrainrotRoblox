@@ -112,6 +112,7 @@ Szczegóły, koszty na telefonie i źródła: `docs/wyglad/research.md`. W skró
 - **W11:** plan map `docs/wyglad/MAPY.md` (spis, horyzont, kolejność W12–W24) i `docs/wyglad/mapy/*.md` (miejsce po miejscu).
 - **W08:** lokomocja `Data/Locomotion` + własny `Animate` (`src/character/Animate.client.luau`), IK stóp `FootIkController`, lista klipów `docs/wyglad/KLIPY-RUCH.md`.
 - **W09:** ciało postaci `Data/BodyLooks` (darmowe ciało Roblox z dynamiczną głową, fryzury z katalogu, `Logic/HairTint`).
+- **W10:** kreator: wybory w `Data/ClassLooks` (głowy, brwi, fryzury, malunki w `Data/BodyLooks`), `CharacterLook.FIELDS` / `normalize` / `random`, zakładki `LookPicker`, obrót i zbliżenie `LookPreview`.
 - **W12:** punkty orientacyjne miasta jako sloty `landmark:*` w `Data/Kit` (stały obrót `turn`), okna nocą `MapLooks.windows`, słońce z porą dnia `MapLooks.sunByHour`.
 - **Świat dalej budowany z kodu i danych** (`src/server/World`, Rojo, git): zmieniamy klocki na modele z zestawu W02 i malowane materiały, ale nie przechodzimy na ręcznie zapisywany plik miejsca, bo wtedy znika historia zmian i sesje nie mogą pracować bez Studio.
 

@@ -214,6 +214,9 @@ Nic w miejscu ani w repo: serwer zakłada części przez `HumanoidDescription`, 
 |---|---|---|---|---|---|
 | ciało i dynamiczna głowa, brwi, rzęsy | pakiet `991` „Base Body - Dawson” (części `11709862883`–`11709884954`) | katalog Roblox, darmowy | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
 | fryzury | `9243987340`, `9244111257`, `9244095135`, `7193454569`, `9174353649`, `7193452166`, `9244021842` | katalog Roblox (z darmowych pakietów „Base Body”) | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
+| W10: głowy, rzęsy, brwi kreatora | 8 dynamicznych głów z pakietów „Base Body” (Dawson, Jordan, Billie, Rene, Andi, Robin, Harper, Addison), ich rzęsy, brwi 6 z nich (`Data/BodyLooks.heads`, `.brows`) | katalog Roblox, darmowe | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
+| W10: fryzury kreatora | 11 darmowych fryzur Roblox (`Data/BodyLooks.hairs`, m.in. `7193397693`, `9244134513`, `9244148336`, `376548738`, `376526888`) | katalog Roblox, darmowe | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
+| W10: malunki twarzy | `art/paint/*.png` (5), wgrane przez MCP Studio (`Data/BodyLooks.paints`) | własne, `tools/paint/make_paints.py` | własne | własne | 2026-10-17 |
 
 ## Ikony przedmiotów (S35)
 

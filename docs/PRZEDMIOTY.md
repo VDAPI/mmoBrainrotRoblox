@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 28847f88 (`wiki/src/data/meta.json`).
+> Odcisk danych f20e7743 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -20,7 +20,7 @@ Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny
 | Klasa | Rzadkość | Efekt | Umiejętność | Rola | Pula | Działanie |
 |---|---|---|---|---|---|---|
 | Mage | Legendarny | Wtórny Wybuch | Kula Ognia | A1 | fire | Kula Ognia wybucha drugi raz po 1 s za 30% |
-| Mage | Legendarny | Pocisk Kata | Magiczny Pocisk | S1 | fire | Magiczny Pocisk: pewny krytyk na celach poniżej 25% życia |
+| Mage | Legendarny | Pocisk Kata | Ognisty Pocisk | S1 | fire | Ognisty Pocisk: pewny krytyk na celach poniżej 25% życia |
 | Mage | Legendarny | Lodowe Odpryski | Lodowy Odłamek | S1 | ice | Lodowy Odłamek roztrzaskuje się: wrogowie do 4 st. od celu dostają 25% |
 | Mage | Legendarny | Dodatkowy Łuk | Łańcuch Błyskawic | A1 | lightning | Łańcuch Błyskawic przeskakuje na 1 cel więcej |
 | Mage | Legendarny | Przenikliwy Chłód | Lodowa Nova | K1 | ice | Lodowa Nova: promień +2 st., zamrożenie o 0,5 s dłuższe |
@@ -1262,7 +1262,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
-| Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |
+| Zwój Odnowy Umiejętności | Zwój | 1 | Pełny reset rozwoju: zwraca rangi umiejętności wszystkich pul broni i węzły kierunków aktywnego zestawu. Wybrane przełomy zostają. Zużywa się tylko przy resecie od 20. poziomu, gdy nie masz darmowego. | — | 100 |
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |

@@ -27,6 +27,8 @@ local ASSET_ATTRIBUTE = "VaelthornClassLook" -- an owner's accessory put on thro
 local OUTFIT_CAPE = "OutfitCape"
 local LURE_ATTRIBUTE = "LureCape"
 local QUIVER_GARMENTS = { quiver_back = true, ember_arrows = true }
+-- W10: the face accessories of the dynamic heads by name (description: Eyebrows / Lashes, loaded asset: Brows / Lashes)
+local FACE_ACCESSORY: { [string]: string } = { Eyebrows = "brows", Brows = "brows", Lashes = "lashes" }
 
 -- R6 parts take the colour of their R15 counterpart (a game set to R6 still shows the outfit).
 local R6_PART: { [string]: string } = {
@@ -93,13 +95,16 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		scales.height *= BodyLooks.scales.height
 	end
 	desc.HeightScale = scales.height
-	desc.WidthScale = scales.width
-	desc.DepthScale = scales.depth
+	desc.WidthScale = scales.width * spec.build.width
+	desc.DepthScale = scales.depth * spec.build.depth
 	desc.HeadScale = scales.head
 	desc.BodyTypeScale = scales.bodyType
 	desc.ProportionScale = scales.proportion
 	for _, field in BODY_FIELDS do
 		desc[field] = BodyLooks.parts[field] or 0
+	end
+	if spec.mode == "class" and spec.face then
+		desc.Head = spec.face.head -- W10: the face is a dynamic head
 	end
 	for _, field in ANIMATIONS do
 		desc[field] = 0
@@ -109,8 +114,7 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		for _, field in COLOR_FIELDS do
 			desc[field] = skin
 		end
-		-- a dynamic head draws its own face: a catalog face decal would not show on it
-		desc.Face = if spec.face and BodyLooks.parts.Head == 0 then spec.face.catalog else 0
+		desc.Face = 0 -- a dynamic head draws its own face (a face decal would not show on it)
 		desc.Shirt = spec.shirt
 		desc.Pants = spec.pants
 		desc.GraphicTShirt = 0
@@ -118,21 +122,22 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 			desc[field] = ""
 		end
 		pcall(function()
-			-- layered clothing of a copied description never in the class look; the dynamic head's brows and lashes
-			desc:SetAccessories({
-				{
-					AssetId = BodyLooks.eyebrows,
-					AccessoryType = Enum.AccessoryType.Eyebrow,
-					IsLayered = true,
-					Order = 1,
-				},
-				{
-					AssetId = BodyLooks.eyelashes,
-					AccessoryType = Enum.AccessoryType.Eyelash,
-					IsLayered = true,
-					Order = 2,
-				},
-			}, true)
+			-- layered clothing of a copied description never in the class look; the face's brows and lashes (W10)
+			local list = {}
+			local face = spec.face
+			if face and face.browsId ~= 0 then
+				table.insert(
+					list,
+					{ AssetId = face.browsId, AccessoryType = Enum.AccessoryType.Eyebrow, IsLayered = true, Order = 1 }
+				)
+			end
+			if face then
+				table.insert(
+					list,
+					{ AssetId = face.lashes, AccessoryType = Enum.AccessoryType.Eyelash, IsLayered = true, Order = 2 }
+				)
+			end
+			desc:SetAccessories(list, true)
 		end)
 	else
 		if spec.shirt ~= 0 then
@@ -563,129 +568,230 @@ AvatarBuild.DRAW = DRAW
 
 -- Face ----------------------------------------------------------------------------------------------
 
-local DARK = Color3.fromHex("#1E1A18")
+-- W10: facial hair from parts in the hair colour, placed from the face's front attachment (FaceFrontAttachment: the
+-- nose tip; +Y up, -Z out of the face): { width, height, depth, x, y, z, shape } in head widths.
+local BEARDS: { [string]: { { any } } } = {
+	beard_moustache = {
+		{ 0.34, 0.07, 0.12, 0, -0.15, 0.02, "block" },
+	},
+	beard_goatee = {
+		{ 0.3, 0.07, 0.1, 0, -0.15, 0.02, "block" },
+		{ 0.18, 0.2, 0.14, 0, -0.33, 0.04, "ball" },
+	},
+	beard_short = {
+		{ 0.34, 0.07, 0.12, 0, -0.15, 0.02, "block" },
+		{ 0.6, 0.24, 0.3, 0, -0.32, 0.17, "ball" },
+	},
+	beard_full = {
+		{ 0.36, 0.08, 0.12, 0, -0.15, 0.02, "block" },
+		{ 0.74, 0.32, 0.4, 0, -0.32, 0.22, "ball" },
+		{ 0.5, 0.26, 0.26, 0, -0.44, 0.12, "ball" },
+	},
+	beard_long = {
+		{ 0.36, 0.08, 0.12, 0, -0.15, 0.02, "block" },
+		{ 0.72, 0.3, 0.38, 0, -0.32, 0.21, "ball" },
+		{ 0.38, 0.55, 0.22, 0, -0.62, 0.12, "ball" },
+	},
+}
+AvatarBuild.BEARDS = BEARDS
 
--- One feature of the face at (x, y) (0..1 of the head's front, as the viewer sees it), w x h of it, turned clockwise.
-type Mark = (x: number, y: number, w: number, h: number, color: Color3, rotation: number?, round: boolean?) -> ()
-
--- Live character: Frames on a SurfaceGui on the head's front.
-local function guiMarks(ctx: Ctx, head: BasePart): Mark
-	local gui = Instance.new("SurfaceGui")
-	gui.Name = "VaelthornFace"
-	gui.Face = Enum.NormalId.Front
-	gui.LightInfluence = 0
-	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 100
-	gui.AlwaysOnTop = false
-	gui.Adornee = head
-	gui.Parent = ctx.folder
-	return function(x, y, w, h, color, rotation, round)
-		local f = Instance.new("Frame")
-		f.AnchorPoint = Vector2.new(0.5, 0.5)
-		f.Position = UDim2.fromScale(x, y)
-		f.Size = UDim2.fromScale(w, h)
-		f.BackgroundColor3 = color
-		f.BorderSizePixel = 0
-		f.Rotation = rotation or 0
-		f.Parent = gui
-		if round then
-			local corner = Instance.new("UICorner")
-			corner.CornerRadius = UDim.new(0.3, 0)
-			corner.Parent = f
-		end
+-- The beard and the face paint of the look on a dynamic head (its eyes, nose and mouth are its own).
+local function drawFace(ctx: Ctx, face: CharacterLook.FaceSpec)
+	local head = ctx.head
+	local front = head and head:FindFirstChild("FaceFrontAttachment")
+	if not head or not front or not front:IsA("Attachment") then
+		return
 	end
-end
-
--- Preview (a ViewportFrame draws no SurfaceGui): thin parts on the head's front, each a little further out than the
--- one before (a later feature covers an earlier one). The front is -Z, the viewer's left is +X.
-local function partMarks(ctx: Ctx, head: BasePart): Mark
-	local layer = 0
-	return function(x, y, w, h, color, rotation)
-		layer += 1
-		local size = head.Size
-		local offset = CFrame.new((0.5 - x) * size.X, (0.5 - y) * size.Y, -size.Z * 0.5 - 0.004 * layer)
-			* CFrame.Angles(0, 0, math.rad(rotation or 0))
-		local part = piece(ctx, head, Vector3.new(size.X * w, size.Y * h, 0.05), offset, color)
+	local w = head.Size.X
+	local hair = Color3.fromHex(face.hair)
+	local beard: { { any } } = BEARDS[face.beard] or {}
+	for _, p in beard do
+		local part = piece(
+			ctx,
+			head,
+			Vector3.new(p[1] * w, p[2] * w, p[3] * w),
+			front.CFrame * CFrame.new(p[4] * w, p[5] * w, p[6] * w),
+			hair,
+			Enum.Material.Fabric,
+			if p[7] == "ball" then Enum.PartType.Ball else Enum.PartType.Block
+		)
 		if part then
 			part.Name = "FacePiece"
 		end
 	end
+	local image = BodyLooks.paints[face.paint]
+	if image and image ~= 0 then
+		local decal = Instance.new("Decal")
+		decal.Name = "FacePaint"
+		decal.Face = Enum.NormalId.Front
+		decal.Texture = `rbxassetid://{image}`
+		decal.Color3 = Color3.fromHex(face.paintColor)
+		decal.Transparency = 0.1
+		decal.Parent = head
+		-- the folder is destroyed on clear; the decal lives on the head, so a value in the folder points at it
+		local ref = Instance.new("ObjectValue")
+		ref.Name = "FacePaintRef"
+		ref.Value = decal
+		ref.Parent = ctx.folder
+	end
 end
 
-local EYE_HEIGHT: { [string]: number } = { calm = 0.06, narrow = 0.035, wide = 0.085, tired = 0.045 }
+-- W10: a look part the server loaded into ReplicatedStorage (Data/BodyLooks.PARTS_FOLDER).
+local function lookPart(name: string): Instance?
+	local folder = ReplicatedStorage:FindFirstChild(BodyLooks.PARTS_FOLDER)
+	return folder and folder:FindFirstChild(name)
+end
 
--- The procedural face on the front of the head (eyes, brows, mouth or beard, a scar or freckles): a SurfaceGui on a
--- live character, thin parts in a preview (S132 review).
-local function drawFace(ctx: Ctx, face: CharacterLook.FaceSpec, skin: Color3, preview: boolean?)
-	local head = ctx.head
-	if not head then
-		return
+-- W10: where a layered accessory (WrapLayer) sits on the head in a preview, in head sizes (x, y, z): a ViewportFrame
+-- does not fit layered clothing to the body, so the raw mesh is placed and scaled like the fitted one on a live
+-- character (measured in Studio on the base body: hair around the head's centre, brows and lashes on the face).
+local LAYERED_AT: { [string]: Vector3 } = {
+	hair = Vector3.new(0, 0, 0),
+	brows = Vector3.new(0, 0.111, -0.21),
+	lashes = Vector3.new(0, 0.058, -0.205),
+}
+
+-- Puts an accessory on: the handle on the matching attachment of the model first (a preview or the anchored mannequin
+-- solves no weld outside the Workspace), then Humanoid:AddAccessory. Marked so clearProcedural removes it. `layered` =
+-- the LAYERED_AT kind when a preview shows a layered accessory.
+local function wear(ctx: Ctx, accessory: Accessory, layered: string?): boolean
+	local humanoid = ctx.model:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		accessory:Destroy()
+		return false
 	end
-	local front = head:FindFirstChild("FaceFrontAttachment")
-	if front and front:IsA("Attachment") and head:IsA("MeshPart") then
-		-- W09: a dynamic head has its own eyes, brows and mouth; only a beard is added (a rounded piece under the
-		-- mouth, from the face's front attachment). Scars and freckles come back with the creator's faces (W10).
-		if face.mouth == "beard" then
-			local hair = Color3.fromHex(face.hair)
-			local w = head.Size.X
-			local at0 = front.CFrame
-			local chin =
-				piece(ctx, head, Vector3.new(w * 0.62, w * 0.36, w * 0.3), at0 * CFrame.new(0, -w * 0.3, w * 0.1))
-			local jaw =
-				piece(ctx, head, Vector3.new(w * 0.78, w * 0.22, w * 0.36), at0 * CFrame.new(0, -w * 0.2, w * 0.2))
-			for _, p in { chin, jaw } do
-				if p then
-					p.Name = "FacePiece"
-					p.Color = hair
-					p.Material = Enum.Material.Fabric
+	accessory:SetAttribute(ASSET_ATTRIBUTE, true)
+	local handle = accessory:FindFirstChild("Handle")
+	if handle and handle:IsA("BasePart") then
+		handle.CanCollide = false
+		handle.CanQuery = false
+		handle.CanTouch = false
+		handle.Massless = true
+		local head = ctx.head
+		local at = if layered and handle:FindFirstChildOfClass("WrapLayer") then LAYERED_AT[layered] else nil
+		if at and head then
+			-- the raw mesh at the size the fitted one has: the head's scale against its own original size
+			local original = head:FindFirstChild("OriginalSize")
+			local k = if original
+					and original:IsA("Vector3Value")
+					and original.Value.Y > 0
+				then head.Size.Y / original.Value.Y
+				else 1
+			handle.Size *= k
+			handle.CFrame = head.CFrame * CFrame.new(at * head.Size)
+		end
+		for _, att in (if at then {} else handle:GetChildren()) :: { Instance } do
+			if att:IsA("Attachment") then
+				local target: Instance? = nil
+				for _, p in ctx.model:GetChildren() do
+					if p:IsA("BasePart") and p ~= handle then
+						target = p:FindFirstChild(att.Name)
+						if target then
+							break
+						end
+					end
+				end
+				if target and target:IsA("Attachment") then
+					handle.CFrame = target.WorldCFrame * att.CFrame:Inverse()
+					break
 				end
 			end
 		end
+	end
+	local ok = pcall(function()
+		humanoid:AddAccessory(accessory)
+	end)
+	if not ok then
+		accessory:Destroy()
+	end
+	return ok
+end
+
+-- Tints the textures of an accessory with a hair colour (Logic/HairTint): SurfaceAppearance.Color on a light texture,
+-- the plain colour for a light colour on a black one; a classic SpecialMesh takes the colour as its vertex colour.
+local function tint(accessory: Instance, hex: string, light: boolean)
+	local mode, rgb = HairTint.plan(hex, light)
+	local color = Color3.new(rgb[1], rgb[2], rgb[3])
+	for _, item in accessory:GetDescendants() do
+		if item:IsA("SurfaceAppearance") then
+			if mode == "flat" then
+				item:Destroy()
+			else
+				pcall(function()
+					(item :: any).Color = color
+				end)
+			end
+		elseif item:IsA("MeshPart") and mode == "flat" then
+			item.TextureID = ""
+			item.Color = color
+			item.Material = Enum.Material.SmoothPlastic
+		elseif item:IsA("SpecialMesh") then
+			item.VertexColor = Vector3.new(rgb[1], rgb[2], rgb[3])
+		end
+	end
+end
+
+-- W10, previews only (the server swaps the head through the description): the dynamic head of `faceId` in place of the
+-- figure's head, scaled like the head it replaces (its OriginalSize against its size) and set on the neck.
+local function swapHead(model: Model, faceId: string)
+	local old = model:FindFirstChild("Head")
+	local template = lookPart(`head_{faceId}`)
+	if not old or not old:IsA("BasePart") or old:GetAttribute("VaelthornFace") == faceId then
 		return
 	end
-	local frame = if preview == true then partMarks(ctx, head) else guiMarks(ctx, head)
-	local hair = Color3.fromHex(face.hair)
-	local brow = hair:Lerp(DARK, 0.4)
-	-- eyes
-	local eye = EYE_HEIGHT[face.eyes] or 0.06
-	for _, x in { 0.33, 0.67 } do
-		if face.eyes == "wide" then
-			frame(x, 0.43, 0.14, eye + 0.02, Color3.fromHex("#F2EEE6"))
-		end
-		frame(x, 0.43, 0.09, eye, DARK)
-		if face.eyes == "tired" then
-			frame(x, 0.395, 0.12, 0.02, skin:Lerp(DARK, 0.35))
+	if not template or not template:IsA("MeshPart") then
+		return
+	end
+	local oldOriginal = old:FindFirstChild("OriginalSize")
+	local newOriginal = template:FindFirstChild("OriginalSize")
+	local factor = Vector3.one
+	if oldOriginal and oldOriginal:IsA("Vector3Value") and oldOriginal.Value.Magnitude > 0 then
+		factor = old.Size / oldOriginal.Value
+	end
+	local head = template:Clone()
+	local base = if newOriginal and newOriginal:IsA("Vector3Value") then newOriginal.Value else head.Size
+	head.Size = base * factor
+	for _, att in head:GetChildren() do
+		if att:IsA("Attachment") then
+			att.Position *= factor
 		end
 	end
-	-- brows
-	local browY = if face.brows == "raised" then 0.28 else 0.32
-	for i, x in { 0.33, 0.67 } do
-		local side = if i == 1 then -1 else 1
-		local rotation = if face.brows == "stern" then 14 * side else 0
-		frame(x, browY, 0.17, 0.035, brow, rotation)
-	end
-	-- mouth or beard
-	if face.mouth == "beard" then
-		frame(0.5, 0.8, 0.62, 0.34, hair, nil, true)
-		frame(0.5, 0.67, 0.22, 0.025, DARK)
-	elseif face.mouth == "smile" then
-		frame(0.5, 0.68, 0.2, 0.03, DARK)
-		frame(0.39, 0.665, 0.05, 0.025, DARK, -25)
-		frame(0.61, 0.665, 0.05, 0.025, DARK, 25)
-	elseif face.mouth == "frown" then
-		frame(0.5, 0.68, 0.18, 0.028, DARK)
-		frame(0.39, 0.695, 0.05, 0.025, DARK, 25)
-		frame(0.61, 0.695, 0.05, 0.025, DARK, -25)
+	local oldNeck = old:FindFirstChild("NeckRigAttachment")
+	local newNeck = head:FindFirstChild("NeckRigAttachment")
+	if oldNeck and oldNeck:IsA("Attachment") and newNeck and newNeck:IsA("Attachment") then
+		head.CFrame = oldNeck.WorldCFrame * newNeck.CFrame:Inverse()
 	else
-		frame(0.5, 0.68, 0.22, 0.025, DARK)
+		head.CFrame = old.CFrame
 	end
-	-- mark
-	if face.mark == "scar" then
-		frame(0.68, 0.42, 0.03, 0.3, Color3.fromHex("#8A4A3E"), 20)
-	elseif face.mark == "freckles" then
-		local dot = skin:Lerp(Color3.fromHex("#6B3E22"), 0.55)
-		for _, p in { { 0.24, 0.55 }, { 0.3, 0.58 }, { 0.27, 0.62 }, { 0.7, 0.55 }, { 0.76, 0.58 }, { 0.73, 0.62 } } do
-			frame(p[1], p[2], 0.025, 0.025, dot)
+	head.Anchored = old.Anchored
+	head.CanCollide = false
+	head.Color = old.Color
+	head.Name = "Head"
+	head:SetAttribute("VaelthornFace", faceId)
+	head.Parent = model
+	old:Destroy()
+end
+
+-- W10, previews only: the build's width and depth on the body parts (the server scales the real body through the
+-- description). Each part keeps its size and its place against the root at scale 1 in attributes.
+local function scaleBuild(model: Model, build: { width: number, depth: number })
+	local root = model:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+	local k = Vector3.new(build.width, 1, build.depth)
+	for _, p in model:GetChildren() do
+		if p:IsA("BasePart") and p ~= root then
+			local size = p:GetAttribute("VaelthornSize")
+			local at = p:GetAttribute("VaelthornAt")
+			if typeof(size) ~= "Vector3" or typeof(at) ~= "CFrame" then
+				size, at = p.Size, root.CFrame:ToObjectSpace(p.CFrame)
+				p:SetAttribute("VaelthornSize", size)
+				p:SetAttribute("VaelthornAt", at)
+			end
+			local where = at :: CFrame
+			p.Size = (size :: Vector3) * k
+			p.CFrame = root.CFrame * (CFrame.new(where.Position * k) * where.Rotation)
 		end
 	end
 end
@@ -765,60 +871,18 @@ local function placeAsset(ctx: Ctx, key: string, color: Color3): boolean
 	return true
 end
 
--- W09: the Roblox hairstyle of `style` (Data/BodyLooks.hairs, loaded by the server into ReplicatedStorage), tinted
--- with the hair colour (Logic/HairTint); false when there is none (the procedural hairstyle is drawn instead).
-local function placeHair(ctx: Ctx, style: string, hex: string): boolean
-	local def = BodyLooks.hairs[style]
-	local folder = ReplicatedStorage:FindFirstChild(BodyLooks.HAIR_FOLDER)
-	local template = folder and folder:FindFirstChild(style)
-	local humanoid = ctx.model:FindFirstChildOfClass("Humanoid")
-	if not def or not template or not template:IsA("Accessory") or not humanoid then
+-- The Roblox hairstyle of the look (Data/BodyLooks.hairs, loaded by the server), tinted with the hair colour; false
+-- when there is none (the procedural hairstyle is drawn instead).
+local function placeHair(ctx: Ctx, hairId: string, hex: string, preview: boolean?): boolean
+	local def = BodyLooks.hairs[hairId]
+	local template = lookPart(`hair_{hairId}`)
+	if not def or not template or not template:IsA("Accessory") then
 		return false
 	end
 	local clone = template:Clone()
 	LookBuild.stripScripts(clone)
-	clone:SetAttribute(ASSET_ATTRIBUTE, true)
-	local mode, tint = HairTint.plan(hex, def.light)
-	local color = Color3.new(tint[1], tint[2], tint[3])
-	for _, item in clone:GetDescendants() do
-		if item:IsA("SurfaceAppearance") then
-			if mode == "flat" then
-				item:Destroy()
-			else
-				pcall(function()
-					(item :: any).Color = color
-				end)
-			end
-		elseif item:IsA("MeshPart") then
-			item.CanCollide = false
-			item.CanQuery = false
-			item.CanTouch = false
-			item.Massless = true
-			if mode == "flat" then
-				item.TextureID = ""
-				item.Color = color
-				item.Material = Enum.Material.SmoothPlastic
-			end
-		end
-	end
-	-- the handle on its attachment first: a preview (or the anchored mannequin) solves no weld outside the Workspace
-	local handle = clone:FindFirstChild("Handle")
-	if handle and handle:IsA("BasePart") then
-		for _, att in handle:GetChildren() do
-			local target = if att:IsA("Attachment") and ctx.head then ctx.head:FindFirstChild(att.Name) else nil
-			if target and target:IsA("Attachment") then
-				handle.CFrame = target.WorldCFrame * (att :: Attachment).CFrame:Inverse()
-				break
-			end
-		end
-	end
-	local ok = pcall(function()
-		humanoid:AddAccessory(clone)
-	end)
-	if not ok then
-		clone:Destroy()
-	end
-	return ok
+	tint(clone, hex, def.light)
+	return wear(ctx, clone, if preview then "hair" else nil)
 end
 
 -- Apply / clear -------------------------------------------------------------------------------------
@@ -837,6 +901,11 @@ end
 function AvatarBuild.clearProcedural(model: Model)
 	local folder = model:FindFirstChild(FOLDER)
 	if folder then
+		for _, item in folder:GetChildren() do
+			if item:IsA("ObjectValue") and item.Value then
+				item.Value:Destroy() -- W10: the face paint decal on the head
+			end
+		end
 		folder:Destroy()
 	end
 	for _, child in model:GetChildren() do
@@ -876,6 +945,12 @@ end
 -- the procedural garment for them.
 function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec, preview: boolean?)
 	AvatarBuild.clearProcedural(model)
+	if preview == true and spec.mode == "class" then
+		if spec.face then
+			swapHead(model, spec.face.id)
+		end
+		scaleBuild(model, spec.build)
+	end
 	local folder = Instance.new("Folder")
 	folder.Name = FOLDER
 	folder.Parent = model
@@ -933,21 +1008,42 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 		ctx.color = Color3.fromHex(hair.color)
 		local draw = DRAW[`hair_{hair.style}`]
 		local placed = (hair.asset ~= nil and placeAsset(ctx, hair.asset, ctx.color))
-			or (ctx.head ~= nil and ctx.head:IsA("MeshPart") and placeHair(ctx, hair.style, hair.color))
+			or (ctx.head ~= nil and ctx.head:IsA("MeshPart") and placeHair(ctx, hair.id, hair.color, preview))
 		if draw and not placed then
 			draw(ctx)
 		end
 	end
-	-- (e) face
+	-- (e) face (W10): brows and lashes (a preview puts on the chosen ones, the server has them from the description),
+	-- the brows in the hair colour, the beard and the face paint
 	local face = spec.face
 	local head = ctx.head
-	if face and head and (face.catalog == 0 or preview == true) then
+	if face and head then
 		for _, child in head:GetChildren() do
 			if child:IsA("Decal") and child.Name == "face" then
 				park(model, child)
 			end
 		end
-		drawFace(ctx, face, Color3.fromHex(spec.skin or "#D6A57C"), preview)
+		if preview == true then
+			for _, child in model:GetChildren() do
+				if child:IsA("Accessory") and FACE_ACCESSORY[child.Name] then
+					park(model, child)
+				end
+			end
+			local brows = lookPart(`brows_{face.brows}`)
+			if brows and brows:IsA("Accessory") then
+				wear(ctx, brows:Clone(), "brows")
+			end
+			local lashes = lookPart(`lashes_{face.id}`)
+			if lashes and lashes:IsA("Accessory") then
+				wear(ctx, lashes:Clone(), "lashes")
+			end
+		end
+		for _, child in model:GetChildren() do
+			if child:IsA("Accessory") and FACE_ACCESSORY[child.Name] == "brows" then
+				tint(child, face.hair, false)
+			end
+		end
+		drawFace(ctx, face)
 	end
 end
 

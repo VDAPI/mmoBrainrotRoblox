@@ -1639,12 +1639,14 @@ export interface Skill {
   passive?: Json;
   passiveSkill: boolean;
   path?: string;
+  pool?: string;
   radius?: number;
   range?: number;
   rankLevels: number[];
   ranks: SkillRank[];
   requiredElement?: ElementId;
   resource?: string;
+  role?: string;
   shape: string;
   target: string;
   type: string;
@@ -1658,6 +1660,20 @@ export interface SkillBreakpoint {
   b?: SkillOption;
   level: number;
   rank: number;
+}
+
+export interface SkillClassPools {
+  class: ClassId;
+  defaultPool: string;
+  pools: SkillPool[];
+  transitional?: boolean;
+}
+
+export interface SkillLadderRung {
+  code: string;
+  common: boolean;
+  level: number;
+  passive?: boolean;
 }
 
 export interface SkillOption {
@@ -1717,7 +1733,6 @@ export interface SkillPathVectorBuild {
   achievable: boolean;
   class: ClassId;
   level: number;
-  main?: string;
   nodes: Record<string, number>;
 }
 
@@ -1733,7 +1748,6 @@ export interface SkillPathVectorState {
   class: ClassId;
   free: number;
   level: number;
-  main?: string;
   nodes: Record<string, number>;
   results: SkillPathVectorResult[];
 }
@@ -1746,6 +1760,14 @@ export interface SkillPathVectors {
 export interface SkillPathWeapon {
   main?: string[];
   offhand?: string[];
+}
+
+export interface SkillPool {
+  element?: ElementId;
+  id: string;
+  name: Name;
+  skills: string[]; // ids in skills.json
+  weapons: string[];
 }
 
 export interface SkillRank {
@@ -1782,18 +1804,24 @@ export interface SkillRowRule {
 export interface SkillRules {
   breakpointLevels: number[];
   breakpointsEnabled: boolean;
+  capstonesMax: number;
   dipRows: number;
   dipScale: number;
-  mainPathLevel: number;
+  freeRespecLevel: number;
+  ladder: SkillLadderRung[];
+  mainMinPoints: number;
   maxLevel: number;
   pathPointsByLevel: number[];
   pathPointsEvery: number;
   ranks: SkillRankRules;
   rows: SkillRowRule[];
+  skillPointsByLevel: number[];
+  teamFullPoints: number;
   vectors: SkillPathVectors;
 }
 
 export interface SkillsFile {
+  classPools: SkillClassPools[];
   paths: SkillPath[];
   rules: SkillRules;
   skills: Skill[];

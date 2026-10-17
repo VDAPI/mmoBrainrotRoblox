@@ -19,7 +19,8 @@ Każdy element wyglądu (część stroju, twarz, fryzura, koszula, spodnie) bier
 (własna twarz, brwi, rzęsy), skalowane do wysokości dawnej postaci (`Data/BodyLooks`); skale i animacje z awatara gra
 zeruje (ruchy S110–S117, siodło, równe sylwetki w PvP). Fryzury kreatora to darmowe fryzury Roblox w kolorze z kreatora
 (`BodyLooks.hairs`, barwienie `Logic/HairTint`); „ogolona” to goła głowa. Na dynamicznej głowie gra nie rysuje oczu,
-brwi i ust z części; broda zostaje (kawałek pod ustami), blizna i piegi wracają z twarzami kreatora (W10). Przedmiot z
+brwi i ust z części. **Kreator (W10):** twarz = jedna z 8 dynamicznych głów, brwi 6, zarost z części, fryzura 12,
+kolor włosów 12, skóra 12, budowa 3, malunek 6 w 6 kolorach (`Data/ClassLooks`, zasoby w `Data/BodyLooks`). Przedmiot z
 katalogu musi pasować do postaci R15.
 
 ## 2. Puste miejsca

@@ -44,16 +44,7 @@ for _, def in Cosmetics.list do
 		outfit(owner, "src/shared/Data/Cosmetics.luau", `{def.id}.outfit`, def.outfit)
 	end
 end
-for _, face in ClassLooks.FACES do
-	if (face.catalog or 0) == 0 then
-		row(`Twarz: {pl[`look.face.{face.id}`] or face.id}`, "twarz (Face)", "—", "src/shared/Data/ClassLooks.luau", `FACES {face.id}.catalog`)
-	end
-end
-for _, hair in ClassLooks.HAIRS do
-	if (hair.catalog or 0) == 0 then
-		row(`Fryzura: {pl[`look.hair.{hair.id}`] or hair.id}`, "włosy (Hair)", hair.color, "src/shared/Data/ClassLooks.luau", `HAIRS {hair.id}.catalog`)
-	end
-end
+-- W10: faces and hairstyles are Roblox items of Data/BodyLooks (dynamic heads, catalog hair), no empty slots here
 
 print("| Klasa / strój | Element | Rola koloru | Plik | Pole |")
 print("|---|---|---|---|---|")

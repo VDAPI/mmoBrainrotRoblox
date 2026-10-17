@@ -241,3 +241,37 @@ nowych kształtów (C2) w tej sesji.
 **Pliki:** `src/shared/Data/BodyLooks.luau`, `src/shared/Logic/HairTint.luau`, `tests/bodylooks.spec.luau` (nowe),
 `src/shared/Util/AvatarBuild.luau`, `src/server/Services/CosmeticService.luau`, `tools/balance_reasons.luau`,
 `docs/ASSETS.md`, `docs/WYGLAD-KLAS.md`, `docs/wyglad/*`.
+
+### W10: Kreator postaci
+
+**Wybory (A):** twarz 8 (dynamiczne głowy z darmowych pakietów Roblox „Base Body”, każda z własnymi rzęsami; id
+twarzy z S132 zostały), brwi 6, zarost 6 (z części, od `FaceFrontAttachment`), fryzura 12 (11 darmowych fryzur Roblox i
+łysa), kolor włosów 12 (włosy, brwi, broda), skóra 12 (10 naturalnych, popielata, oliwkowoszara), budowa 3 (szerokość i
+głębokość ±5%, wysokość bez zmian), malunek 6 (piegi, pasy wojenne, runa, wzór plemienny, popiół; naklejka na twarzy
+`art/paint`), kolor malunku 6. Każdy wybór ma nazwę PL i EN. Kolor oczu niezrobiony (oczy są w teksturze dynamicznej
+głowy).
+
+**Zapis:** te same pola `look` plus `hairColor`, `brows`, `beard`, `build`, `paint`, `paintColor`; bez migracji schematu:
+`CharacterLook.normalize` uzupełnia brakujące pola, stary id fryzury (S132: styl + kolor) rozbija na fryzurę i kolor
+(`ClassLooks.LEGACY_HAIRS`), stare twarze „z brodą” i „piegowata” dostają pełną brodę i piegi. Walidacja wszystkich pól
+`CharacterLook.isValid(look)`, koszt zmiany bez zmian. Remote'y `CreateCharacter` / `SetCharacterLook` z 6 polami
+opcjonalnymi.
+
+**Ekran (B):** `LookPicker` z zakładkami Twarz / Włosy / Ciało / Malunki (strzałki dla list, kafelki dla kolorów,
+Losuj = `CharacterLook.random`, Domyślny), podgląd `LookPreview` większy, obrót przeciąganiem (mysz i palec), sam obraca
+się po 3 s, zbliżenie na twarz w zakładkach Twarz i Malunki, ciepłe światło nad chłodnym tłem; kreator: wybory po lewej,
+podgląd po prawej. To samo w oknie zmiany wyglądu.
+
+**Gra (C):** serwer zakłada głowę, brwi, rzęsy i budowę przez opis postaci, fryzurę i brodę przez `AvatarBuild`, malunek
+naklejką; podgląd na kliencie podmienia głowę (skala jak stara), brwi i rzęsy z `ReplicatedStorage.VaelthornLookParts`
+(serwer ładuje 33 części przy starcie). Akcesoria warstwowe w podglądzie: miejsce i skala zmierzone na żywej postaci
+(ViewportFrame i WorldModel ich nie dopasowują).
+
+**Sprawdzone w Studio:** 33 części się ładują, podgląd (głowa, fryzura, brwi, rzęsy, broda, malunek, budowa, powrót do
+domyślnego), żywa postać po `SetCharacterLook` (głowa, kolor skóry, fryzura w kolorze, runa, broda, szerokość 1,05).
+
+**Pliki:** `Data/ClassLooks`, `Data/BodyLooks`, `Logic/CharacterLook`, `Util/AvatarBuild`, `UI/Components/LookPicker`,
+`UI/Components/LookPreview`, `UI/Screens/CharacterSelect/Creator`, `UI/Screens/LookWindow`, `Net/Definitions`,
+`CharacterService`, `CosmeticService`, `Admin/Character`, `Localization/pl|en`, `tools/paint/make_paints.py`,
+`art/paint/*`, `tools/classlooks_slots.luau`, testy `classlooks`, `bodylooks`, `character`, `wikidump`; dane wiki
+przegenerowane (wpadły też zaległe zmiany S137–S143 z main).
