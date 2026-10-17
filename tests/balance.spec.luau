@@ -178,6 +178,34 @@ T.describe("Balance S141: ice pool", function()
 	end)
 end)
 
+-- S142 (D, DESIGN-18 §6.1): the Mage's lightning pool on the lightning variants of the reference builds
+-- (Balance.targetsS142; their R1 at 20 is in the block "Balance 1-20: S91"): T-SK3 within the build's area cap asserted;
+-- T-SK4 and the identity of the three elements (lightning and ice against fire on one target, lightning against fire on
+-- three targets with and without the burn, damage taken ice < fire < lightning) printed until S147 (`report`).
+T.describe("Balance S142: lightning pool", function()
+	local rows = B.targetsS142()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`Mage L{row.level} {describeRow(row)} (S142, docs/sessions S142 D)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S142 targets (printed)", function()
+		printReport("S142", rows, 60)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		T.expect(ids["S142.lightning.tsk3.destroyer.destroyerLightning.20"]).toBe(true)
+		T.expect(ids["S142.mage.single.lightning.45"]).toBe(true)
+		T.expect(ids["S142.mage.area.noBurn.100"]).toBe(true)
+		T.expect(ids["S142.mage.taken.lightning.arcanist.70"]).toBe(true)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).

@@ -1,8 +1,8 @@
 --!strict
--- Mage weapon pools (S137, DESIGN-18 §4.2, §6.1). Transitional until S142: S140 filled the fire pool on the shared ladder
--- and the common skills (C1 Blink 4, C2 Mana Shield 12, C3 Evocation 30, C4 Focus 45); Magic Bolt stays common and
--- adaptive (the S1 of every element until S142); S141 filled the ice pool (Ice Shard S1 at 1, Frost Nova K1 at 6 and
--- nine new skills); the lightning pool keeps the old base split by element (S142).
+-- Mage weapon pools (S137, DESIGN-18 §4.2, §6.1). S140 filled the fire pool on the shared ladder and the common skills
+-- (C1 Blink 4, C2 Mana Shield 12, C3 Evocation 30, C4 Focus 45); S141 filled the ice pool (Ice Shard S1 at 1, Frost
+-- Nova K1 at 6 and nine new skills); S142 filled the lightning pool (Lightning Bolt S1, Chain Lightning A1 at 3,
+-- Thunderstorm A2 at 26 and eight new skills) and made Fire Bolt the fire pool's S1: the Mage is no longer transitional.
 
 local Types = require("./Types")
 
@@ -20,9 +20,10 @@ end
 
 local pools: Types.ClassPools = {
 	-- S138: 2 (directions without the main path). S140: 3 (the fire pool, the common skills, the directions' new
-	-- nodes: a free reset, DESIGN-18 §10). S141: 4 (the ice pool)
-	version = 4,
-	transitional = true,
+	-- nodes: a free reset, DESIGN-18 §10). S141: 4 (the ice pool). S142: 5 (the lightning pool, Fire Bolt in the fire
+	-- pool only)
+	version = 5,
+	transitional = false,
 	defaultPool = "fire", -- Data/Elements.DEFAULT, the starting wand
 	pools = {
 		-- S140: the ladder order (DESIGN-18 §5), actives before passives
@@ -43,10 +44,9 @@ local pools: Types.ClassPools = {
 			"focus",
 			"phoenixHeart",
 		}),
-		-- S141: the ice pool in the ladder order (Ice Shard is S1; Magic Bolt stays common and adaptive until S142)
+		-- S141: the ice pool in the ladder order
 		pool("ice", "❄", {
 			"iceShard",
-			"firebolt",
 			"hailstorm",
 			"blink",
 			"frostNova",
@@ -62,13 +62,26 @@ local pools: Types.ClassPools = {
 			"focus",
 			"iceBlood",
 		}),
-		pool(
-			"lightning",
-			"ϟ",
-			{ "firebolt", "blink", "chainLightning", "manaShield", "evocation", "firewall", "focus" }
-		),
+		-- S142: the lightning pool in the ladder order
+		pool("lightning", "ϟ", {
+			"lightningBolt",
+			"chainLightning",
+			"blink",
+			"staticShock",
+			"stormArmor",
+			"manaShield",
+			"thunderStrike",
+			"firewall",
+			"evocation",
+			"ballLightning",
+			"lightningLance",
+			"tempest",
+			"overcharge",
+			"focus",
+			"conductor",
+		}),
 	},
-	commonPlan = { "firebolt", "blink", "manaShield", "evocation", "focus" },
+	commonPlan = { "blink", "manaShield", "evocation", "focus" },
 }
 
 return pools

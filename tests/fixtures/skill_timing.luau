@@ -686,6 +686,69 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = true,
 	},
+	ballLightning = { -- S142
+		hitDelay = 0.38,
+		hit = 0.38,
+		release = 0.38,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	lightningBolt = { -- S142
+		hitDelay = 0.16,
+		hit = false,
+		release = 0.16,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	lightningLance = { -- S142
+		hitDelay = 0.26,
+		hit = 0.26,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	staticShock = { -- S142
+		hitDelay = 0.26,
+		hit = 0.26,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	stormArmor = { -- S142
+		hitDelay = 0.28,
+		hit = 0.28,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	tempest = { -- S142
+		hitDelay = 0.55,
+		hit = 0.55,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = true,
+	},
+	thunderStrike = { -- S142
+		hitDelay = 0.42,
+		hit = 0.42,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 }
 
 local circleTarget: { [string]: CircleTarget } = {
@@ -700,6 +763,8 @@ local circleTarget: { [string]: CircleTarget } = {
 	hailstorm = { projectile = false, waves = true }, -- S141
 	frozenOrb = { projectile = false, waves = true }, -- S141
 	blizzard = { projectile = false, waves = true }, -- S141
+	ballLightning = { projectile = false, waves = true }, -- S142
+	tempest = { projectile = false, waves = false }, -- S142
 }
 
 return { skills = skills, circleTarget = circleTarget }

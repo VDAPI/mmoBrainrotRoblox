@@ -2177,7 +2177,8 @@ T.describe("Data: Mage paths (S81)", function()
 		function()
 			local caps = {}
 			for _, path in GamePaths.pathsOf("Mage") do
-				T.expect(#path.reference).toBe(4) -- S140: + the fire variant; S141: + the ice variant
+				-- S140: + the fire variant; S141: + the ice variant; S142: + the lightning variant
+				T.expect(#path.reference).toBe(5)
 				for _, build in path.reference do
 					T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
 					caps[build.id] = build.areaCap or 2
@@ -2214,6 +2215,8 @@ T.describe("Data: Mage paths (S81)", function()
 				destroyerFire = 3,
 				destroyerIce = 3, -- S141
 				arcanistIce = 2, -- S141
+				destroyerLightning = 3, -- S142
+				arcanistLightning = 2, -- S142
 				arcanistBoss = 2,
 				arcanistOverload = 2,
 				arcanistFire = 2,
@@ -2230,7 +2233,8 @@ T.describe("Data: Mage paths (S81)", function()
 		end
 	)
 
-	-- S140 (DESIGN-18 §6.1, §7): the target shape of the Mage's directions (asserted here while the Mage is transitional)
+	-- S140 (DESIGN-18 §6.1, §7): the target shape of the Mage's directions (S142: the Mage is past its transitional pools,
+	-- the general SKILL_ROWS test above holds it too)
 	T.it(
 		"S140: skill nodes only in rows 4 and 8, the moved skills are passive nodes, every modify skill exists",
 		function()
@@ -2243,6 +2247,9 @@ T.describe("Data: Mage paths (S81)", function()
 						end
 						if n.modify then
 							T.expect({ n.id, SkillData.get(n.modify.skill) ~= nil }).toEqual({ n.id, true })
+							-- S142 (B4): a modify node works in every pool: its skill is a direction skill or common
+							local m = SkillData.get(n.modify.skill) :: any
+							T.expect({ n.id, m.path ~= nil or m.pool == "common" }).toEqual({ n.id, true })
 						end
 					end
 				end

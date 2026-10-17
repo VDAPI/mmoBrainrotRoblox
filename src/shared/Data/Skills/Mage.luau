@@ -1,5 +1,5 @@
 --!strict
--- Mage (docs/ROZWOJ.md 12): base 8 and the skills of the destroyer and arcanist paths. Ids are kept (firebolt = Magic Bolt, firewall = Thunderstorm, meteorStorm = Rain of Meteors).
+-- Mage (docs/ROZWOJ.md 12): base 8 and the skills of the destroyer and arcanist paths. Ids are kept (firebolt = Fire Bolt, firewall = Thunderstorm, meteorStorm = Rain of Meteors).
 -- S18: element skills need a weapon of the same element; Magic Bolt is adaptive, Thunderstorm is lightning. S81:
 -- unlocks and paths of ROZWOJ 12.2 / 12.4 / 12.5, B options of the 11 older actives.
 -- S140 (DESIGN-18 §6.1): the fire pool on the shared ladder (A1 Fireball 3, K1 Flame Wave 6, O1 Ember Shield 10, S2
@@ -11,13 +11,20 @@
 -- S2 Glacial Spike 15, P1 Winter's Grip 20, A2 Frozen Orb 26, K2 Deep Freeze 33, S3 Shatter 40, P2 Ice Blood 50, U
 -- Blizzard 60; the new ones at the end of the list). Ice mechanics: Logic/Chill (the chill counter, Deep Chill on
 -- bosses, vsFrozen, Shatter, the barrier's slow, Ice Blood).
+-- S142 (DESIGN-18 §6.1): the lightning pool on the ladder (S1 Lightning Bolt 1, A1 Chain Lightning 3, K1 Static Shock 6,
+-- O1 Storm Armor 10, S2 Thunder Strike 15, P1 Overcharge 20, A2 Thunderstorm 26, K2 Ball Lightning 33, S3 Lightning Lance
+-- 40, P2 Conductor 50, U Tempest 60; the new ones at the end of the list) and Fire Bolt as the fire pool's S1 (no more
+-- adaptive S1: every Mage skill has a pool or a path). Lightning mechanics: Logic/Shock (crit, sure crit, Conductor's
+-- jump, Storm Armor's strike back, Ball Lightning's finale).
 
 local Build = require("./Build")
 
 return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firebolt",
-		pool = "common", -- S137 (DESIGN-18 §4.2)
+		-- S137 (DESIGN-18 §4.2): common and adaptive. S142: Fire Bolt, the fire pool's S1 (no longer adaptive)
+		pool = "fire",
+		role = "S1",
 		unlock = 1,
 		maxLevel = 10,
 		type = "projectile",
@@ -26,13 +33,15 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 2.5,
 		range = 38,
 		hits = 1, -- S79 (ROZWOJ 14.4): Bolt 10B adds one (add.hits)
-		adaptive = true,
-		-- S91: rank 1 170 -> 128 (ranks <= 20, Data/SkillCurves). S140: 128 -> 118 (the fire pool's R1 at 20, S91 band)
-		values = { dmg = { 118, 255.7 } },
+		element = "fire",
+		burnStacks = 1, -- S142: the fire weapon's adaptive burn became the fire school's burn (Logic/Burn)
+		-- S91: rank 1 170 -> 128 (ranks <= 20, Data/SkillCurves). S140: 128 -> 118 (the fire pool's R1 at 20, S91 band).
+		-- S142: every rank x0.72 (118 -> 85, 255.7 -> 184, knots too): its burn stack pays 30 % of each hit
+		values = { dmg = { 85, 184 } },
 		breakpoints = Build.bp2(
 			{ a = { pierce = 17 }, b = { mul = { cooldown = 0.88 } } }, -- S91: 5A pierce 40 -> 17 (R4)
-			-- 10B: two bolts at 151.7 % each (19 % more in total)
-			{ a = { splash = { radius = 4, pct = 12 } }, b = { add = { hits = 1 }, values = { dmg = -104 } } }
+			-- 10B: two bolts at 109 % each (18 % more in total; S142: -104 -> -75 with the x0.72)
+			{ a = { splash = { radius = 4, pct = 12 } }, b = { add = { hits = 1 }, values = { dmg = -75 } } }
 		),
 		glyph = "✦",
 		vfx = "arcaneBolt",
@@ -68,12 +77,13 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
-		cost = 15,
-		cooldown = 5,
+		cost = 12, -- S142: 15 -> 12 and cooldown 5 -> 3 (the ice pool's only bolt since Fire Bolt is fire only)
+		cooldown = 3,
 		range = 38,
 		element = "ice",
-		-- S91: rank 1 140 -> 119 (Data/SkillCurves). S141: 119 -> 70 at level 1 (rank-5 knot 80; DECYZJE S141)
-		values = { dmg = { 70, 213 }, slow = 30 },
+		-- S91: rank 1 140 -> 119 (Data/SkillCurves). S141: 119 -> 70 at level 1 (rank-5 knot 80; DECYZJE S141). S142:
+		-- 70 -> 90 (rank-5 knot 130)
+		values = { dmg = { 90, 213 }, slow = 30 },
 		effects = { { kind = "slow", duration = 3, value = "slow", category = "enemySlow" } },
 		breakpoints = Build.bp2(
 			{ a = { effect = { kind = "freeze", duration = 0.8 } }, b = { values = { dmg = 23 } } },
@@ -85,16 +95,19 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "chainLightning",
 		pool = "lightning",
-		unlock = 10,
+		role = "A1", -- S142: the lightning pool's A1 (unlock 10 -> 3, DESIGN-18 §5)
+		unlock = 3,
 		maxLevel = 10,
 		type = "chain",
 		delivery = "ranged",
 		cost = 35,
-		cooldown = 9,
+		cooldown = 8, -- S142: 9 -> 8 (an A1 like Fireball and Hailstorm)
 		range = 35,
 		radius = 12,
 		element = "lightning",
-		values = { dmg = { 110, 163.5 }, jumps = { 3, 6 } }, -- S91: rank 1 130 -> 110
+		-- S91: rank 1 130 -> 110. S142: rank 1 at 3 (Data/SkillCurves keeps ranks 5 / 6 at the old ranks 3 / 4), rank 10
+		-- 163.5 -> 200 (lightning: the highest area damage), jumps 3 -> 5
+		values = { dmg = { 100, 200 }, jumps = { 3, 5 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { jumps = 2 } }, b = { values = { dmg = 22 } } },
 			{ a = { stunLast = 1 }, b = { mul = { cooldown = 0.83 } } }
@@ -182,7 +195,8 @@ return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firewall",
 		pool = "lightning",
-		unlock = 45,
+		role = "A2", -- S142: the lightning pool's A2 (unlock 45 -> 26, DESIGN-18 §5)
+		unlock = 26,
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
@@ -194,7 +208,8 @@ return Build.class("Mage", "mana", "magic", {
 		interval = 0.5,
 		randomTarget = true,
 		element = "lightning",
-		values = { dmg = { 24.9, 49.8 } },
+		-- S142: rank 1 at 26 (was 45), the lightning pool's A2 (rank 10 49.8 -> 58; Data/SkillCurves rank 6, level 46)
+		values = { dmg = { 24, 58 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.93 } } },
 			{ a = { effect = { kind = "stun", duration = 0.5 } }, b = { values = { dmg = 13.9 } } }
@@ -704,5 +719,191 @@ return Build.class("Mage", "mana", "magic", {
 			{ a = { add = { radius = 3 } }, b = { values = { dmg = 3.5 } } }
 		),
 		glyph = "🌬",
+	},
+	-- S142 (DESIGN-18 §6.1): the rest of the lightning pool (Logic/Shock): the highest damage of the Mage, crits and
+	-- jumps, little defence. Starting numbers: model D of S142 (docs/SESJE.md).
+	-- Lightning Bolt: a bolt with +crit points of crit chance.
+	{
+		id = "lightningBolt",
+		pool = "lightning",
+		role = "S1",
+		unlock = 1,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 12,
+		cooldown = 2.5,
+		range = 38,
+		hits = 1,
+		element = "lightning",
+		values = { dmg = { 112, 295 }, crit = 10 },
+		breakpoints = Build.bp2(
+			{ a = { values = { crit = 25 } }, b = { mul = { cooldown = 0.88 } } },
+			-- 10B: two bolts (like Fire Bolt's)
+			{ a = { splash = { radius = 4, pct = 13 } }, b = { add = { hits = 1 }, values = { dmg = -114 } } }
+		),
+		glyph = "ϟ",
+	},
+	-- Static Shock: one target, a short paralysis (stun; bosses immune, players x0.5).
+	{
+		id = "staticShock",
+		pool = "lightning",
+		role = "K1",
+		unlock = 6,
+		maxLevel = 10,
+		type = "target",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 12,
+		range = 38,
+		element = "lightning",
+		values = { dmg = { 70, 150 } },
+		effects = { { kind = "stun", duration = 0.8, notBoss = true } },
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 0.4 } }, b = { values = { dmg = 16 } } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 38 } } }
+		),
+		glyph = "↯",
+	},
+	-- Storm Armor: a small own damage reduction; while it lasts a monster striking in melee is struck back (CombatService).
+	{
+		id = "stormArmor",
+		pool = "lightning",
+		role = "O1",
+		unlock = 10,
+		maxLevel = 10,
+		type = "buff",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 24,
+		duration = 10,
+		element = "lightning",
+		values = { reduce = { 6, 10 }, storm = { 30, 60 } },
+		effects = {
+			{ kind = "damageReduction", duration = 10, value = "reduce", target = "self", category = "own" },
+			{ kind = "stormArmor", duration = 10, value = "storm", target = "self", category = "own" },
+		},
+		breakpoints = Build.bp2(
+			{ a = { values = { storm = 20 } }, b = { values = { reduce = 3 } } },
+			{ a = { add = { effectDuration = 4, duration = 4 } }, b = { mul = { cooldown = 0.75 } } }
+		),
+		glyph = "⛨",
+	},
+	-- Thunder Strike: the bolt falls `delay` s after the cast; the Mage's heaviest S2.
+	{
+		id = "thunderStrike",
+		pool = "lightning",
+		role = "S2",
+		unlock = 15,
+		maxLevel = 10,
+		type = "target",
+		delivery = "ranged",
+		cost = 40,
+		cooldown = 9,
+		range = 38,
+		delay = 0.5,
+		element = "lightning",
+		values = { dmg = { 100, 400 } },
+		breakpoints = Build.bp2(
+			{ a = { splash = { radius = 5, pct = 7 } }, b = { values = { dmg = 50 } } },
+			{ a = { effect = { kind = "stun", duration = 1, notBoss = true } }, b = { values = { dmg = 90 } } }
+		),
+		glyph = "⚡",
+	},
+	-- Overcharge: lightning spells crit more often and harder (hooks overchargeCrit / overchargeDmg, Logic/Shock.critOf).
+	{
+		id = "overcharge",
+		pool = "lightning",
+		role = "P1",
+		unlock = 20,
+		maxLevel = 5,
+		type = "passive",
+		values = { crit = { 3, 8 }, critDmg = { 10, 30 } },
+		passive = { hooks = { overchargeCrit = "crit", overchargeDmg = "critDmg" } },
+		glyph = "✷",
+	},
+	-- Ball Lightning: a slow ball flies `travel` studs, every wave shocks around it; the last wave knocks back and stuns.
+	{
+		id = "ballLightning",
+		pool = "lightning",
+		role = "K2",
+		unlock = 33,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 45,
+		cooldown = 18,
+		range = 38,
+		radius = 4,
+		hits = 8,
+		interval = 0.5,
+		travel = 16,
+		element = "lightning",
+		finale = { knockback = 6, stun = 1 },
+		values = { dmg = { 16, 30 } },
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 1.5 } }, b = { values = { dmg = 3.5 } } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 7 } } }
+		),
+		glyph = "◉",
+	},
+	-- Lightning Lance: a narrow line, a sure crit on its main hit (sureCrit), the finisher below 30 % HP.
+	{
+		id = "lightningLance",
+		pool = "lightning",
+		role = "S3",
+		unlock = 40,
+		maxLevel = 10,
+		type = "line",
+		delivery = "ranged",
+		cost = 35,
+		cooldown = 9,
+		length = 26,
+		width = 3,
+		element = "lightning",
+		sureCrit = true,
+		finisher = { hp = 30, mul = 1.5 },
+		values = { dmg = { 140, 200 } },
+		breakpoints = Build.bp2(
+			{ a = { add = { width = 2 } }, b = { values = { dmg = 22 } } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 50 } } }
+		),
+		glyph = "➶",
+	},
+	-- Conductor: a single-target lightning spell's main hit jumps to a second enemy for conduct % (Logic/Shock).
+	{
+		id = "conductor",
+		pool = "lightning",
+		role = "P2",
+		unlock = 50,
+		maxLevel = 5,
+		type = "passive",
+		values = { conduct = { 20, 40 } },
+		passive = { hooks = { conduct = "conduct" } },
+		glyph = "⌁",
+	},
+	-- Tempest: the lightning pool's capstone; bolts strike random enemies in a big circle (randomTarget).
+	{
+		id = "tempest",
+		pool = "lightning",
+		role = "U",
+		unlock = 60,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 170,
+		cooldown = 50,
+		range = 38,
+		radius = 12,
+		hits = 12,
+		interval = 0.35,
+		randomTarget = true,
+		element = "lightning",
+		values = { dmg = { 40, 48 } },
+		breakpoints = Build.bp2(
+			{ a = { add = { hits = 2 } }, b = { mul = { cooldown = 0.88 } } },
+			{ a = { effect = { kind = "stun", duration = 0.5, notBoss = true } }, b = { values = { dmg = 8.5 } } }
+		),
+		glyph = "🌩",
 	},
 })

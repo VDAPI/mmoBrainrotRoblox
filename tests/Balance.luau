@@ -3350,6 +3350,9 @@ Balance.S91 = {
 		-- S141 (session rule 4): the Mage with an ice weapon (the ice pool alone) holds the S91 targets of 20 too
 		{ classId = "Mage", key = "destroyer.destroyerIce", area = true },
 		{ classId = "Mage", key = "arcanist.arcanistIce" },
+		-- S142 (session rule 4): the Mage with a lightning weapon (the lightning pool alone) too
+		{ classId = "Mage", key = "destroyer.destroyerLightning", area = true },
+		{ classId = "Mage", key = "arcanist.arcanistLightning" },
 	} :: { { classId: string, key: string, weapon: string?, area: boolean? } },
 	-- breakpoints of rank 5 reached by level 20 (ranks 5 at 17 / 19, ROZWOJ 2.5)
 	r4Skills = {
@@ -3363,6 +3366,8 @@ Balance.S91 = {
 		"fireball",
 		"iceShard", -- S141: unlock 1 / 3, ranks 5 at 17 / 19
 		"hailstorm",
+		"lightningBolt", -- S142: unlock 1 / 3, ranks 5 at 17 / 19
+		"chainLightning",
 	},
 	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
 	-- tank paths; every other row at 20 is printed (bands written for 45-100)
@@ -3637,10 +3642,11 @@ Balance.S140 = {
 	-- DESIGN-18 §6.1 (S147): lightning on one target 1.10-1.20 x fire; fire on 3 targets over 8 s >= lightning
 	lightningSingle = { 1.10, 1.20 },
 	fireArea = 1.0,
-	-- the comparison builds while the lightning pool is transitional (S142): the same direction, the lightning element
+	-- the comparison builds: the same direction with a lightning weapon (S142; before it the lightning element of the
+	-- mean builds)
 	compare = {
-		["destroyer.destroyerFire"] = "destroyer.destroyerExp",
-		["arcanist.arcanistFire"] = "arcanist.arcanistBoss",
+		["destroyer.destroyerFire"] = "destroyer.destroyerLightning",
+		["arcanist.arcanistFire"] = "arcanist.arcanistLightning",
 	},
 }
 
@@ -3685,7 +3691,8 @@ function Balance.targetsS140(): { TargetRow }
 				L,
 				"S147"
 			)
-			local lightning = SkillModel.metrics(other, L).byElement.lightning
+			local om = SkillModel.metrics(other, L)
+			local lightning = if om.byElement then om.byElement.lightning else om
 			if key == "destroyer.destroyerFire" then
 				add(
 					`area.{L}`,
@@ -3790,6 +3797,152 @@ function Balance.targetsS141(): { TargetRow }
 				ice.taken / math.max(1e-9, flame.taken),
 				nil,
 				S.taken,
+				L,
+				"S147"
+			)
+		end
+	end
+	return rows
+end
+
+-- S142: the Mage's lightning pool and the three elements (DESIGN-18 §6.1, §13; docs/sessions S142 D) ----------------
+
+-- The lightning variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "lightning": the lightning pool
+-- alone; their R1 at 20 is a row of the S91 block, session rule 4) and the identity of the three elements (DESIGN-18
+-- §6.1, asserted by S147). Thresholds are test data.
+Balance.S142 = {
+	lightningBuilds = { "destroyer.destroyerLightning", "arcanist.arcanistLightning" },
+	levels = { 20, 45, 70, 100 },
+	tsk4 = { 2.0, 2.8 }, -- the Mage's T-SK4 band (as S140 / S141)
+	single = { 1.10, 1.20 }, -- lightning / fire on one target 60 s (the Arcanist's variants)
+	areaLow = 1.0, -- lightning on 3 targets 8 s / fire without its burn: at least this
+	areaHigh = 1.0, -- lightning on 3 targets 8 s / fire with its burn: at most this
+	ice = { 0.85, 0.95 }, -- ice / fire on one target 60 s (the Arcanist's variants)
+	-- the builds compared, by direction
+	fire = { destroyer = "destroyer.destroyerFire", arcanist = "arcanist.arcanistFire" },
+	iceOf = { destroyer = "destroyer.destroyerIce", arcanist = "arcanist.arcanistIce" },
+	lightning = { destroyer = "destroyer.destroyerLightning", arcanist = "arcanist.arcanistLightning" },
+}
+
+-- Damage per second of `build` at L on ASSUMPTIONS.areaTargets GENERIC monsters over burstSeconds (T-SK3's fight), with
+-- and without the fire school's burn ticks (Logic/Burn.KEY bucket).
+local function areaBurst(build: any, L: number): (number, number)
+	local SkillModel = (require :: any)("./SkillModel")
+	local A = SkillModel.ASSUMPTIONS
+	local sp = SkillModel.player(build, L)
+	local three = {}
+	for _ = 1, A.areaTargets do
+		table.insert(three, Balance.monster(Balance.GENERIC, L))
+	end
+	local r = SkillModel.fight(sp, { seconds = A.burstSeconds, targets = three })
+	local burn = (r.by and r.by.burn) or 0
+	local seconds = math.max(1e-9, r.seconds)
+	return r.dealt / seconds, (r.dealt - burn) / seconds
+end
+
+-- S142 (D): the lightning pool's rows (ids "S142.lightning.*") and the three elements (ids "S142.mage.*"). Asserted
+-- (balance.spec "Balance S142: lightning pool"): T-SK3 of the lightning variants within the build's areaCap at 20 / 45 /
+-- 70 / 100 (R3). Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 / 100 and the identity of the
+-- elements at 20 / 45 / 70 / 100: lightning / fire on one target, lightning / fire on three targets over 8 s (against fire
+-- with and without its burn), ice / fire on one target, damage taken ice < fire < lightning (the Elite fight of
+-- SkillModel.chillReport, both directions).
+function Balance.targetsS142(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S142
+	local SkillModel = (require :: any)("./SkillModel")
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number,
+		report: string?
+	)
+		target(rows, id, "lightning", label, value, low, high, "Mage", L)
+		rows[#rows].report = report
+	end
+	for _, key in S.lightningBuilds do
+		local build = SkillModel.build(key, "Mage")
+		local cap = build.areaCap or 2.0
+		for _, L in S.levels do
+			local m = SkillModel.metrics(build, L)
+			add(`S142.lightning.tsk3.{key}.{L}`, `T-SK3 {key} L{L} (błyskawica)`, m.tsk3, nil, cap, L)
+			if L > 20 then
+				add(
+					`S142.lightning.tsk4.{key}.{L}`,
+					`T-SK4 {key} L{L} (błyskawica)`,
+					m.tsk4,
+					S.tsk4[1],
+					S.tsk4[2],
+					L,
+					"S147"
+				)
+			end
+		end
+	end
+	for _, L in S.levels do
+		local fireA = SkillModel.metrics(SkillModel.build(S.fire.arcanist, "Mage"), L)
+		local iceA = SkillModel.metrics(SkillModel.build(S.iceOf.arcanist, "Mage"), L)
+		local boltA = SkillModel.metrics(SkillModel.build(S.lightning.arcanist, "Mage"), L)
+		local fireSingle = math.max(1e-9, fireA.single60)
+		add(
+			`S142.mage.single.lightning.{L}`,
+			`Błyskawica / ogień: jeden cel 60 s L{L}`,
+			boltA.single60 / fireSingle,
+			S.single[1],
+			S.single[2],
+			L,
+			"S147"
+		)
+		add(
+			`S142.mage.single.ice.{L}`,
+			`Lód / ogień: jeden cel 60 s L{L}`,
+			iceA.single60 / fireSingle,
+			S.ice[1],
+			S.ice[2],
+			L,
+			"S147"
+		)
+		local fireWith, fireWithout = areaBurst(SkillModel.build(S.fire.destroyer, "Mage"), L)
+		local bolt = SkillModel.metrics(SkillModel.build(S.lightning.destroyer, "Mage"), L).aoe3burst
+		add(
+			`S142.mage.area.noBurn.{L}`,
+			`Błyskawica / ogień bez podpalenia: 3 cele 8 s L{L}`,
+			bolt / math.max(1e-9, fireWithout),
+			S.areaLow,
+			nil,
+			L,
+			"S147"
+		)
+		add(
+			`S142.mage.area.burn.{L}`,
+			`Błyskawica / ogień z podpaleniem: 3 cele 8 s L{L}`,
+			bolt / math.max(1e-9, fireWith),
+			nil,
+			S.areaHigh,
+			L,
+			"S147"
+		)
+		for _, dir in { "destroyer", "arcanist" } do
+			local fire = SkillModel.chillReport(SkillModel.build(S.fire[dir], "Mage"), L).taken
+			local ice = SkillModel.chillReport(SkillModel.build(S.iceOf[dir], "Mage"), L).taken
+			local storm = SkillModel.chillReport(SkillModel.build(S.lightning[dir], "Mage"), L).taken
+			add(
+				`S142.mage.taken.ice.{dir}.{L}`,
+				`Obrażenia przyjmowane lód / ogień (Elita) {dir} L{L}`,
+				ice / math.max(1e-9, fire),
+				nil,
+				1,
+				L,
+				"S147"
+			)
+			add(
+				`S142.mage.taken.lightning.{dir}.{L}`,
+				`Obrażenia przyjmowane błyskawica / ogień (Elita) {dir} L{L}`,
+				storm / math.max(1e-9, fire),
+				1,
+				nil,
 				L,
 				"S147"
 			)
@@ -6045,7 +6198,6 @@ do
 	-- back with the new reference builds. Never a row of 1-20.
 	for _, key in
 		{
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.50",
 			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.55",
 			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.60",
 			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.65",
@@ -6068,8 +6220,6 @@ do
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.65",
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.69",
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.70",
-			"R.ashen.tsk4.arcanist.arcanistOverload.60",
-			"R.ashen.tsk4.arcanist.arcanistOverload.65",
 			"R.ashen.tsk4.destroyer.destroyerBoss.60",
 			"R.ashen.tsk4.destroyer.destroyerExp.60",
 			"R.duskwood.guard.tsk1.Mage.destroyer.destroyerFire.44",
@@ -6103,13 +6253,6 @@ do
 			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.90",
 			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.95",
 			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.99",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.100",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.100",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.80",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.85",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.90",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.95",
-			"R.frostpeak.tsk4.destroyer.destroyerBoss.99",
 			"R.frostpeak.tsk4.destroyer.destroyerExp.100",
 			"R.frostpeak.tsk4.destroyer.destroyerExp.85",
 			"R.frostpeak.tsk4.destroyer.destroyerExp.90",
@@ -6123,8 +6266,6 @@ do
 			"path.arcanist.arcanistBoss.L45.arcanist.vsDestroyer",
 			"path.arcanist.arcanistBoss.L100.arcanist.vsDestroyer",
 			"path.destroyer.destroyerExp.L100.mage.tsk4",
-			"path.destroyer.destroyerBoss.L100.mage.tsk4",
-			"path.arcanist.arcanistOverload.L100.mage.tsk4",
 			"path.destroyer.destroyerExp.L100.r4.meteorStorm.5|a",
 			"G10|T-SK4 Mage destroyer.destroyerExp 60",
 			"G10|T-SK4 Mage destroyer.destroyerExp 85",
@@ -6161,7 +6302,6 @@ do
 			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.65",
 			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.69",
 			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.70",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.50",
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.55",
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.60",
 			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.65",
@@ -6198,10 +6338,122 @@ do
 			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.95",
 			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.99",
 			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L100",
-			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L70",
 		}
 	do
 		add(key, "S141", reworkWhy)
+	end
+	-- S142 (DESIGN-18 §0.4, session rule 5): the Mage's lightning pool and the end of its transitional state (Fire Bolt fire
+	-- only, no adaptive S1; the lightning variants grow from their 1-20 R1 in the S91 band like the fire and ice ones; the
+	-- mean builds lose the adaptive bolt in the ice and lightning elements, so their T-SK4 and single-target rows move);
+	-- only Mage rows, docs/SESJE.md S142 lists them. S146 / S147 bring them back. Never a row of 1-20. S142 also removed
+	-- the S140 / S141 entries whose rows are in band again.
+	for _, key in
+		{
+			"G10|T-SK4 Mage arcanist.arcanistBoss 45",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 50",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 55",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 95",
+			"G10|T-SK4 Mage destroyer.destroyerExp 45",
+			"G10|T-SK4 Mage destroyer.destroyerExp 50",
+			"G10|T-SK4 Mage destroyer.destroyerExp 55",
+			"G10|T-SK4 Mage destroyer.destroyerExp 70",
+			"G10|T-SK4 Mage destroyer.destroyerExp 75",
+			"G10|T-SK4 Mage destroyer.destroyerExp 80",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.50",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.70",
+			"R.ashen.tsk4.arcanist.arcanistBoss.50",
+			"R.ashen.tsk4.arcanist.arcanistBoss.55",
+			"R.ashen.tsk4.arcanist.arcanistOverload.69",
+			"R.ashen.tsk4.arcanist.arcanistOverload.70",
+			"R.ashen.tsk4.destroyer.destroyerBoss.50",
+			"R.ashen.tsk4.destroyer.destroyerBoss.55",
+			"R.ashen.tsk4.destroyer.destroyerExp.50",
+			"R.ashen.tsk4.destroyer.destroyerExp.55",
+			"R.ashen.tsk4.destroyer.destroyerExp.69",
+			"R.ashen.tsk4.destroyer.destroyerExp.70",
+			"R.duskwood.guard.tsk1.Mage.destroyer.destroyerLightning.44",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.25",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.44",
+			"R.duskwood.tsk4.destroyer.destroyerExp.25",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.99",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.85",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.90",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.90",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.100",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.90",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.99",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.95",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.75",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.80",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.85",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.90",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.95",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.75",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.80",
+			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L45",
+			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L70",
+			"T1|elementalSpark fire · arcanist.arcanistBoss@wand · L45",
+			"path.arcanist.arcanistBoss.L45.arcanist.single",
+			"path.arcanist.arcanistBoss.L45.mage.tsk4",
+			"path.arcanist.arcanistBoss.L45.r5a.mage",
+			"path.arcanist.arcanistIce.L70.r4.shatter.5||A − B|",
+			"path.arcanist.arcanistOverload.L45.mage.tsk4",
+			"path.arcanist.arcanistOverload.L70.mage.tsk4",
+			"path.destroyer.destroyerBoss.L45.mage.tsk4",
+			"path.destroyer.destroyerExp.L45.mage.tsk4",
+			"path.destroyer.destroyerExp.L45.r5a.mage",
+			"path.destroyer.destroyerExp.L70.mage.tsk4",
+			"path.destroyer.destroyerIce.L100.r4.blizzard.10|b",
+			-- Fire Bolt x0.72 with its burn stack: its pierce and splash (5A / 10A) share less of the hit with its burn
+			"path.arcanist.arcanistBoss.L45.r4.firebolt.5|a",
+			"path.arcanist.arcanistBoss.L70.r4.firebolt.5|a",
+			"path.arcanist.arcanistBoss.L100.r4.firebolt.5|a",
+			"path.arcanist.arcanistBoss.L45.r4.firebolt.10|a",
+			"path.arcanist.arcanistBoss.L70.r4.firebolt.10|a",
+			"path.arcanist.arcanistBoss.L100.r4.firebolt.10|a",
+			"R.duskwood.guard.tsk1.Mage.base.40",
+			"R.duskwood.guard.tsk1.Mage.base.loadout.40",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.50",
+		}
+	do
+		add(key, "S142", reworkWhy)
 	end
 end
 

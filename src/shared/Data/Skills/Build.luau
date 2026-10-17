@@ -46,6 +46,8 @@ export type Spec = {
 	travel: number?, -- S141 (Frozen Orb)
 	waveEffects: boolean?, -- S141
 	freezeWave: number?, -- S141 (Blizzard)
+	sureCrit: boolean?, -- S142 (Lightning Lance)
+	finale: { knockback: number, stun: number }?, -- S142 (Ball Lightning)
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -145,6 +147,8 @@ function Build.class(
 			travel = spec.travel,
 			waveEffects = spec.waveEffects,
 			freezeWave = spec.freezeWave,
+			sureCrit = spec.sureCrit,
+			finale = spec.finale,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

@@ -13,6 +13,7 @@
 --       `d` seconds after each event); traps with a `trigger` list play it when they spring (S77)
 --   v = detonate (S140) Combustion's blast of the target's burns; phoenixSave (S140) Phoenix Heart's save
 --   v = shatter (S141) Shatter breaks a freeze (or a boss's Deep Chill) of the target
+--   v = finale (S142) Ball Lightning's last wave bursts (knockback and stun around `p`, radius `r`)
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
 --       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
 --   S80 (ROZWOJ 12.4, 12.5): a beam (Arcane Torrent) loops its motion for the cast event's `d`; each tick (impact with
@@ -1199,6 +1200,14 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			Library.cracks(at, 4, color, 0.8, simple)
 			Library.shockwave(at, 5, color, 0.3, simple)
 			shakeNear(at, 0.2)
+		end
+	elseif v == "finale" then
+		-- S142 (Ball Lightning): the ball bursts: a flash, a ring and sparks
+		if at then
+			local burstRadius = tonumber(data.r) or 4
+			Library.sparks(at, color, { simple = simple, count = 14 })
+			Library.shockwave(at, burstRadius + 2, color, 0.3, simple)
+			shakeNear(at, 0.25)
 		end
 	elseif v == "lightningBurst" then
 		local strike = entry and entry.strike

@@ -37,6 +37,9 @@
 -- ctx.freeze) gives bosses and Elite II Deep Chill instead; main ice hits feed Winter's Grip's counter (chillFreeze);
 -- Glacial Spike (values.vsFrozen) and Shatter (values.shatter, which ends the freeze or spends the Deep Chill) on their
 -- main hits; an effect with maxStacks stacks (a growing slow).
+-- S142 (Logic/Shock, DESIGN-18 §6.1): every hit gets the skill's values.crit and, on lightning spells, Overcharge's crit
+-- (critAdd / critDmgAdd); a sureCrit skill's main hit always crits without spending a guaranteedCrit; Conductor makes a
+-- single-target lightning spell's main hit jump to the nearest other enemy (a secondary hit).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -45,12 +48,14 @@ local Shared = ReplicatedStorage.Shared
 
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
+local Chain = require(Shared.Logic.Chain)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Elements = require(script.Parent.Elements)
 local Push = require(script.Parent.Push)
 local Rng = require(Shared.Logic.Rng)
 local Roll = require(Shared.Logic.Roll)
+local Shock = require(Shared.Logic.Shock)
 local SkillData = require(Shared.Data.Skills)
 local Skills = require(Shared.Logic.Skills)
 local Traits = require(Shared.Logic.Traits)
@@ -572,6 +577,31 @@ function Context.new(
 		end
 	end
 
+	-- S142 Conductor: the nearest other enemy within SHOCK.conductRadius of `entity` (Logic/Shock.conductTarget, flat
+	-- distance) takes `percent` as a secondary hit; never `entity` again.
+	local function conductFrom(entity: any, percent: number)
+		local at = Entity.Position(entity)
+		if not at or percent <= 0 then
+			return
+		end
+		local radius = Shock.CONDUCT_RADIUS
+		local others: { any } = { entity }
+		local points: { Chain.Point } = { { x = at.X, z = at.Z } }
+		for _, other in ctx.enemiesInCircle(at, radius) do
+			local p = Entity.Position(other)
+			if other ~= entity and p then
+				table.insert(others, other)
+				table.insert(points, { x = p.X, z = p.Z })
+			end
+		end
+		local index = Shock.conductTarget(points, radius + 1.5) -- 1.5: the margin of enemiesInCircle
+		local other = if index then others[index] else nil
+		if other then
+			ctx.fx({ v = "arc", path = { entity.id, other.id } })
+			ctx.damage(other, percent, { consumeShot = false, secondary = true, noAdaptive = true })
+		end
+	end
+
 	ctx = {
 		player = player,
 		skill = skill,
@@ -706,9 +736,30 @@ function Context.new(
 				end
 				multiplier *= mul
 			end
+			-- S142 (Logic/Shock): the skill's crit and Overcharge's (only lightning spells), Lightning Lance's sure crit (it
+			-- spends nobody's guaranteedCrit)
+			local consume = opts.consumeShot ~= false
+			if not opts.lingering then
+				local critAdd, critDmgAdd = Shock.critOf(
+					element,
+					if skill.values.crit ~= nil then value("crit") else 0,
+					hook("overchargeCrit"),
+					hook("overchargeDmg")
+				)
+				if critAdd > 0 then
+					params.critAdd = critAdd
+				end
+				if critDmgAdd > 0 then
+					params.critDmgAdd = critDmgAdd
+				end
+			end
+			if Shock.sureCrit(skill.sureCrit, main) then
+				params.forceCrit = true
+				consume = false
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,
-				consumeShot = opts.consumeShot ~= false,
+				consumeShot = consume,
 				skill = if opts.plain then nil else skill.id,
 				-- S63 (STATY 5): area skills roll on-hit effects with a share per target; secondary hits (splash,
 				-- ground pulses, the lightning arc, the second pierce target, Storm Arrow's splash, split impacts) roll none.
@@ -798,6 +849,11 @@ function Context.new(
 			end
 			if element == "ice" and main and result and not result.dodged and result.amount > 0 then
 				chillHit(entity)
+			end
+			-- S142 Conductor (Logic/Shock): a single-target lightning spell's main hit jumps once (a secondary hit)
+			local conduct = hook("conduct")
+			if Shock.conducts(element, tag, main, conduct) and result and not result.dodged and result.amount > 0 then
+				conductFrom(entity, percent * conduct / 100)
 			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)

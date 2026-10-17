@@ -5196,3 +5196,50 @@
   `deepChill` z `DescOpts.hooks` (Uścisk Zimy do 18%); wiki bez haków pokazuje 10%.
 
 - **FIX 2026-10-17 (portale bez „E”)**: `WorldController.Start` zakłada przyciski portali na samym początku, a `applyEnvironment` przy starcie idzie przez `pcall` (błąd wyglądu mapy nie zabiera już portali). `KitAssets.prepare` usuwa z modeli zestawu także `ProximityPrompt`, `ClickDetector`, `DragDetector` i `Sound` (darmowy model nie przejmie klawisza interakcji).
+- **S142** Pula Błyskawicy Maga według drabiny DESIGN-18 §5: Piorun S1 1, Łańcuch Błyskawic A1 3 (było 10, skarga
+  właściciela; skoki 3 → 5, odnowienie 9 → 8), Porażenie K1 6, Pancerz Burzy O1 10, Grom S2 15, Przeładowanie P1 20,
+  Burza Piorunów A2 26 (było 45), Kulisty Piorun K2 33, Lanca Błyskawic S3 40, Przewodnik P2 50, Nawałnica U 60 (nowe na
+  końcu listy `Data/Skills/Mage`). Obszarówki wszystkich żywiołów na 3. i 26. `SkillPools/Mage.version` 4 → 5.
+- **S142** Koniec Magicznego Pocisku adaptacyjnego: `firebolt` to Ognisty Pocisk, S1 puli Ognia (`element = "fire"`,
+  bez `adaptive`), z jednym stosem podpalenia (`burnStacks = 1`, mechanika S140 zamiast podpalenia broni). Stos płaci
+  30% trafienia, więc obrażenia Pocisku ×0,72 na każdej randze (85 / 184, węzły 115 i ranga 6 ×0,72, 10B −104 → −75):
+  ogień w jeden cel zostaje, udział podpalenia rośnie (0,06 → 0,09–0,14). W Magu nie ma już umiejętności bez `pool` /
+  `path`; adaptacyjne zostają tylko Wir i Kataklizm kierunków (żywioł broni = pula).
+- **S142** Koniec stanu przejściowego Maga: `transitional = false`; `skillpools.spec` sprawdza pełną drabinę trzech pul
+  (jedna umiejętność żywiołu puli na kod, ta sama rola na tym samym poziomie), wspólne w `commonPlan` (bez Ognistego
+  Pocisku) i brak czaru innego żywiołu w puli.
+- **S142** `Skills.elementAllowed` usunięte (los z B3): przy pulach według żywiołu czar spoza żywiołu broni nie jest w
+  puli, więc sprawdzenie dublowało `cast.error.wrongPool` (`Paths.skillUsable`); umiejętności kierunków są adaptacyjne,
+  więc druga zapora nic by nie łapała. `SkillService.cast` i `SkillController.Usable` bez kontroli elementu, klucz
+  `cast.error.wrongElement` usunięty; `Skills.requiredElement` zostaje dla opisu i wiki.
+- **S142** Błyskawica (`Logic/Shock`, `Data/Skills.SHOCK`): `values.crit` Pioruna (+10 pkt) na każdym jego trafieniu,
+  haki Przeładowania `overchargeCrit` / `overchargeDmg`; oba tylko na czarach z `element = "lightning"` (`values.crit`
+  innych umiejętności, np. bufor Rozkazu Natarcia Wojownika, nie dokłada krytyku ich trafieniom) (`Shock.critOf` →
+  `critAdd` / `critDmgAdd` trafienia, Namierzenie Łowcy dokłada się na wierzch, tyknięcia stref bez krytyku umiejętności).
+  Lanca: `SkillDef.sureCrit` = pewny krytyk głównego trafienia (`forceCrit`, bez zużywania `guaranteedCrit` ani
+  `nextShot`). Przewodnik: główne trafienie czaru błyskawicy z tagiem `single` przeskakuje na najbliższego innego wroga
+  do `SHOCK.conductRadius` (10 st.) za `conduct`% jako trafienie poboczne (bez ponownego przeskoku, bez powrotu).
+- **S142** Pancerz Burzy bez tarczy (błyskawica ma najmniej obrony): własna redukcja 6–10% (`own`) na 10 s i efekt
+  `stormArmor`; odwet przez tabelę `RETALIATIONS` z S141 (`Shock.armorReady`, raz na `SHOCK.armorGap` 1 s od wroga):
+  cios wręcz potwora (też w tarczę, nie przy uniku) dostaje 30–60% ataku magicznego Maga w błyskawicy (trafienie
+  umiejętności bez efektów przy trafieniu). Gracze bez odwetu (jak Osłona i Bariera).
+- **S142** Porażenie: paraliż = `stun` 0,8 s z `notBoss` (gracze ×0,5 przez `PvpCcMultiplier`), jeden cel i odnowienie
+  12 s (Lodowa Nova 16 s i obszar). Grom: `target` z polem `delay` (0,5 s): zdarzenie od razu z `d`, cios po opóźnieniu
+  w cel, jeśli dalej jest wrogiem. Kulisty Piorun: `circleTarget` z `travel` 16 st. (wzór Lodowej Kuli), 8 fal co 0,5 s
+  w r 4, ostatnia fala z `finale` (odrzut 6 st., ogłuszenie 1 s bez bossów; `Shock.finale`). Nawałnica: istniejący
+  `randomTarget`, 12 piorunów co 0,35 s w kręgu 12 st.
+- **S142** Lodowy Odłamek bez Ognistego Pocisku obok: koszt 15 → 12, odnowienie 5 → 3 s, ranga 1 70 → 90, węzeł rangi 5
+  80 → 130 (warianty lodu R1 na 20. 2,21 / 2,17, lód / ogień w jeden cel 0,89 na 20.). Łańcuch: ranga 1 110 → 100 na
+  3., ranga 10 163,5 → 200, węzeł rangi 5 (19.) 140; Burza Piorunów 24 / 58, węzeł rangi 6 (46.) 32.
+- **S142** Model: buildy `destroyer.destroyerLightning` (kostur) i `arcanist.arcanistLightning` (runiczny kostur) z
+  `ranks`, oba w bloku S91 (R1 na 20. 2,63 / 2,70 przy granicy 2,73: pasmo S91 trzyma błyskawicę na 20. blisko ognia);
+  blok `Balance S142: lightning pool` (T-SK3 asertowane, T-SK4 i tożsamość trzech żywiołów `S142.mage.*` tylko raport do
+  S147). Na 20. i 45. błyskawica na 3 cele przez 8 s przegrywa z ogniem bez podpalenia (0,92 / 0,93); dźwignią byłoby
+  wyższe pasmo R1 na 20., nie ta sesja.
+- **S142** Fixture 1–20 przepisany (`fixture S142 "pula Błyskawicy, koniec stanu przejściowego Maga"`): 173 zmienione
+  (6 to drużyny Grimroka bez wsparcia z dwoma buildami Maga) i 44 nowe wpisy wariantów błyskawicy; reszta w kluczach
+  Maga; `ALLOWED_1_20_DIFFS` pusta.
+- **S142** `GLOBAL_REPORT_ONLY` S142 (101 wierszy Maga 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  strażnicy T-SK1/2 wariantów błyskawicy, T-SK4 średnich buildów (G10, regiony, ścieżki), T1 Mocy i Iskry żywiołu, R4
+  5A / 10A Ognistego Pocisku `arcanistBoss` na 45–100 (przebicie i rozprysk dzielą mniej z podpaleniem), T-SK1 podstawy
+  Maga na 40. i `arcanistFire` na 50.; wpisy S140 / S141, które znowu przechodzą, usunięte.

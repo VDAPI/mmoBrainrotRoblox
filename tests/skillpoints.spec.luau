@@ -409,7 +409,8 @@ T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 		local weapons = Paths.weaponTypesOf(c.equipment)
 		T.expect({ Paths.skillUsable(c, "fireball", weapons) }).toEqual({ false, "cast.error.wrongPool" })
 		T.expect({ Paths.skillUsable(c, "chainLightning", weapons) }).toEqual({ true, nil })
-		T.expect({ Paths.skillUsable(c, "firebolt", weapons) }).toEqual({ false, "cast.error.notLearned" })
+		-- S142: Fire Bolt is the fire pool's S1 (it was common and adaptive: notLearned in the lightning pool)
+		T.expect({ Paths.skillUsable(c, "firebolt", weapons) }).toEqual({ false, "cast.error.wrongPool" })
 		local bar = Paths.validHotbar(c)
 		T.expect(bar).toEqual({ ["1"] = "chainLightning" })
 		T.expect((Paths.canPutOnBar(c, "fireball", "fire"))).toBe(true)
@@ -525,13 +526,14 @@ T.describe("Skill points: save (S137, migration 12)", function()
 		local c = data.characters["1"]
 		T.expect(c.barPool).toBe("ice")
 		-- S140: the free slots of the ice bar fill in the plan's order (startBar). S141: the full ice pool spends the
-		-- legacy points on Hailstorm and Blink first (the old bar, the passives, then the plan; 47 points at 40)
+		-- legacy points on Hailstorm and Blink first (the old bar, the passives, then the plan; 47 points at 40). S142:
+		-- Fire Bolt is fire only, Ice Barrier takes its slot
 		T.expect(c.hotbar).toEqual({
 			["2"] = "iceShard",
-			["4"] = "firebolt",
 			["5"] = "frostNova",
 			["1"] = "hailstorm",
 			["3"] = "blink",
+			["4"] = "iceBarrier",
 		})
 		for _, id in c.hotbar do
 			T.expect({ id, (SkillData.get(id) :: any).element ~= "fire" }).toEqual({ id, true })

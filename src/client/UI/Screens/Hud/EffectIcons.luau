@@ -61,6 +61,7 @@ local GLYPHS: { [string]: Glyph } = {
 	guardianAngel = { glyph = "✟", good = true }, -- S70: a lethal monster blow leaves 1 HP
 	emberShield = { glyph = "🜂", good = true }, -- S140: melee attackers catch fire
 	iceBarrier = { glyph = "⛉", good = true }, -- S141: melee attackers are slowed
+	stormArmor = { glyph = "⛨", good = true }, -- S142: melee attackers are struck back
 	chill = { glyph = "❆", good = false }, -- S141: the caster's chill counter (count in the corner)
 	deepChill = { glyph = "✻", good = false }, -- S141: takes more damage from the source (bosses' freeze)
 	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder

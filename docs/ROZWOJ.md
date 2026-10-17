@@ -1859,6 +1859,8 @@ potwora z poziomu L; pułapki jako natychmiastowe koła (dla Trapera optymistycz
 
 ## 12. Mag (Mana): Niszczyciel, Arkanista
 
+> Podstawa i żywioły Maga: DESIGN-18 §6.1 (S140–S142).
+
 Id ścieżek: `destroyer`, `arcanist`. Dane: `Data/Skills/Mage.luau`, `Data/Paths/Mage.luau`. Wszystkie liczby w tej
 sekcji liczą się z normalizacją broni (8), z każdym węzłem ścieżki w modelu, z drugim pociskiem przełomu 10B
 Magicznego Pocisku i z przełomami na bossa u każdego buildu.

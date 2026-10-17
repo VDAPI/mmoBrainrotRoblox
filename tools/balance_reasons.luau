@@ -2012,12 +2012,14 @@ return {
 			},
 		},
 		["Skills/Mage:[firebolt].breakpoints[10].b.values.dmg"] = {
+			{ session = "S142", why = "-104 -> -75 (x0.72 with the ranks: two bolts still 18 % more in total)" },
 			{
 				session = "S90",
 				why = "-124 -> -104: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
 		},
 		["Skills/Mage:[firebolt].values.dmg[2]"] = {
+			{ session = "S142", why = "255.7 -> 184: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
 			{
 				session = "S90",
 				why = "310 -> 255.7: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
@@ -2486,6 +2488,7 @@ return {
 			{ session = "S91", why = "232.2 -> 174 (x0.75, R1 Mage builds at L20)" },
 		},
 		["SkillCurves:knots.firebolt.dmg[6]"] = {
+			{ session = "S142", why = "236.9 -> 170.6 (x0.72): Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
 			{ session = "S91", why = "new, 236.92 pinned (rank 6 before S91)" },
 		},
 		["SkillCurves:knots.fireball.dmg[5]"] = {
@@ -5261,12 +5264,14 @@ return {
 			{ session = "S140", why = "new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon)" },
 		},
 		["Skills/Mage:[firebolt].values.dmg[1]"] = {
+			{ session = "S142", why = "118 -> 85: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
 			{ session = "S140", why = "128 -> 118 (ranks <= 20 x0.92 with the knot): the fire variants' R1 at 20 in the S91 band (2.6-2.65 of 2.73)" },
 		},
 		["Skills/Mage:[fireball].values.dmg[1]"] = {
 			{ session = "S140", why = "128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band" },
 		},
 		["SkillCurves:knots.firebolt.dmg[5]"] = {
+			{ session = "S142", why = "160 -> 115: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
 			{ session = "S140", why = "174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned" },
 		},
 		["SkillCurves:knots.fireball.dmg[5]"] = {
@@ -5405,6 +5410,76 @@ return {
 		},
 		["Paths/Mage:[arcanist].reference[arcanistIce]*"] = {
 			{ session = "S141", why = "new: the Arcanist with an ice weapon (runestaff, ice, the ice pool alone; rank order, B options)" },
+		},
+		-- S142 (DESIGN-18 §6.1): the Mage's lightning pool (Logic/Shock), the end of the transitional Mage
+		["Skills/Mage:[firebolt].burnStacks"] = {
+			{ session = "S142", why = "new: Fire Bolt is the fire pool's S1 (no longer adaptive), one burn stack per hit (DESIGN-18 §6.1, the burn it had with a fire weapon)" },
+		},
+		["Skills/Mage:[lightningBolt]*"] = {
+			{ session = "S142", why = "new (S1 of the lightning pool, 1): Fire Bolt's shape, +10 crit points; rank 1 112 % (knots: rank 5 170, rank 6 265) for the lightning variants' R1 at 20 in the S91 band (2.63 / 2.70) and lightning 1.08-1.19 x fire on one target; 5A +25 crit / 5B cooldown x0.88, 10A splash 13 % / 10B two bolts in the R4 bands" },
+		},
+		["Skills/Mage:[staticShock]*"] = {
+			{ session = "S142", why = "new (K1 of the lightning pool, 6): 70-150 % and a 0.8 s paralysis (stun, bosses immune), cooldown 12 below Frost Nova's 16; 5B +16 / 10A cooldown x0.8 / 10B +38 in the R4 bands, 5A +0.4 s (control)" },
+		},
+		["Skills/Mage:[stormArmor]*"] = {
+			{ session = "S142", why = "new (O1 of the lightning pool, 10): a small own reduction 6-10 % for 10 s (no shield: lightning has the least defence) and a strike back of 30-60 % magic attack on melee attackers; options are utility (R4_UTILITY)" },
+		},
+		["Skills/Mage:[thunderStrike]*"] = {
+			{ session = "S142", why = "new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control)" },
+		},
+		["Skills/Mage:[overcharge]*"] = {
+			{ session = "S142", why = "new (P1 of the lightning pool, 20): +3-8 crit points and +10-30 crit damage points on lightning spells (Logic/Shock.critOf)" },
+		},
+		["Skills/Mage:[ballLightning]*"] = {
+			{ session = "S142", why = "new (K2 of the lightning pool, 33): a ball flying 16 studs, 8 waves of 16-30 % in 4 studs every 0.5 s, the last knocks back 6 studs and stuns 1 s (bosses immune); 5B +3.5, 10A cooldown x0.8 / 10B +7 in the R4 bands, 5A radius (geometry)" },
+		},
+		["Skills/Mage:[lightningLance]*"] = {
+			{ session = "S142", why = "new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry)" },
+		},
+		["Skills/Mage:[conductor]*"] = {
+			{ session = "S142", why = "new (P2 of the lightning pool, 50): a single-target lightning spell's main hit jumps to a second enemy within 10 studs for 20-40 % (a secondary hit)" },
+		},
+		["Skills/Mage:[tempest]*"] = {
+			{ session = "S142", why = "new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control)" },
+		},
+		["Skills/Mage:[chainLightning].unlock"] = { { session = "S142", why = "10 -> 3: A1 of the lightning pool (DESIGN-18 §5, the owner's complaint)" } },
+		["Skills/Mage:[chainLightning].cooldown"] = { { session = "S142", why = "9 -> 8: an A1 like Fireball and Hailstorm" } },
+		["Skills/Mage:[chainLightning].values.dmg*"] = {
+			{ session = "S142", why = "rank 1 110 -> 100 at level 3 and rank 10 163.5 -> 200 (lightning has the highest area damage; with the knots rank 5 at 19 is 140)" },
+		},
+		["Skills/Mage:[chainLightning].values.jumps*"] = { { session = "S142", why = "jumps 3 -> 6 became 3 -> 5 (the session plan; 5A still adds 2)" } },
+		["SkillCurves:knots.chainLightning*"] = {
+			{ session = "S142", why = "Chain Lightning unlocks at 3: rank 5 (level 19) 140 (the old rank 3 at 18 was 129: lightning's area at 20), rank 6 (level 23) keeps the old rank 4 (level 22)" },
+		},
+		["Skills/Mage:[firewall].unlock"] = { { session = "S142", why = "45 -> 26: A2 of the lightning pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[firewall].values.dmg*"] = {
+			{ session = "S142", why = "rank 1 24.9 -> 24 at level 26, rank 10 49.8 -> 58 (the lightning pool's A2 against Meteor and Frozen Orb)" },
+		},
+		["SkillCurves:knots.firewall*"] = {
+			{ session = "S142", why = "new: Thunderstorm unlocks at 26, rank 6 (level 46) 32 near the old rank 1 at 45 x 1.3" },
+		},
+		["SkillCurves:knots.lightningBolt*"] = {
+			{ session = "S142", why = "new: Lightning Bolt's ranks <= 20 cut like Fire Bolt's (rank 5 170 at 17 for the S91 band), rank 6 265 near rank 10" },
+		},
+		["Skills/Mage:[iceShard].cost"] = { { session = "S142", why = "15 -> 12: Fire Bolt left the ice pool, Ice Shard is its only bolt (like Fire Bolt's 12)" } },
+		["Skills/Mage:[iceShard].cooldown"] = { { session = "S142", why = "5 -> 3: the ice pool's only bolt without the adaptive Fire Bolt (ice 0.86-0.89 x fire on one target)" } },
+		["Skills/Mage:[iceShard].values.dmg[1]"] = {
+			{ session = "S142", why = "70 -> 90 at level 1 (the S141 cut was for the adaptive Fire Bolt beside it; ice variants' R1 at 20 2.16-2.21)" },
+		},
+		["SkillCurves:knots.iceShard*"] = {
+			{ session = "S142", why = "rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned" },
+		},
+		["Skills/init:SHOCK*"] = {
+			{ session = "S142", why = "new (Logic/Shock): Conductor's jump within 10 studs, Storm Armor strikes back at most once per 1 s per attacker" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S142", why = "4 -> 5 (DESIGN-18 §10): the lightning pool, Fire Bolt fire only, a free reset" },
+		},
+		["Paths/Mage:[destroyer].reference[destroyerLightning]*"] = {
+			{ session = "S142", why = "new: the Destroyer with a lightning weapon (staff, lightning, the lightning pool alone; rank order, area A options)" },
+		},
+		["Paths/Mage:[arcanist].reference[arcanistLightning]*"] = {
+			{ session = "S142", why = "new: the Arcanist with a lightning weapon (runestaff, lightning, the lightning pool alone; rank order, B options)" },
 		},
 	} :: { [string]: { Reason } },
 }

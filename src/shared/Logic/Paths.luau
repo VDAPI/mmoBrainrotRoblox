@@ -892,8 +892,8 @@ local function buildApi(source: Source)
 	end
 
 	-- A base skill of the active pool (S137: "cast.error.wrongPool" for a skill of another pool), rank > 0 and, for a path
-	-- skill, the node's own weapon (every row; S138: a direction has no weapon). The Mage element check stays in
-	-- SkillService.
+	-- skill, the node's own weapon (every row; S138: a direction has no weapon). S142: the Mage's element is its pool
+	-- (no element check of its own).
 	local function skillUsable(character: Char, skillId: string, weapons: WeaponTypes): (boolean, string?)
 		local def = source.skill(skillId)
 		if def and def.class == character.class and def.path == nil then

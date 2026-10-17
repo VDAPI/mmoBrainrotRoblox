@@ -51,12 +51,17 @@
 --   vsFrozen and Shatter (Context.damage), growing slows (SkillEffect.maxStacks), circleTarget's waveEffects, freezeWave
 --   and travel (a flying orb hits the dummies at ASSUMPTIONS.orbAim of its flight: SkillModel.orbHits), Ice Barrier's
 --   slow and Ice Blood's reduction on the monsters' blows (monsterHit); the fight's `chilled` / `deepChilled` shares.
+-- S142 (DESIGN-18 §6.1, Logic/Shock): the skill's crit and Overcharge's on lightning spells (critAdd / critDmgAdd of
+--   the hit), Lightning Lance's sure crit (forceShare 1, nothing spent), Conductor's jump into the other dummy
+--   (Context.damage), Thunder Strike's delay (H.target), Ball Lightning's finale stun (H.circleTarget) and Storm Armor's
+--   strike back on the monsters' melee blows (monsterHit).
 
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Burn = require("../src/shared/Logic/Burn")
 local Chill = require("../src/shared/Logic/Chill")
+local Shock = require("../src/shared/Logic/Shock")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Bosses = require("../src/shared/Data/Bosses")
 local Chain = require("../src/shared/Logic/Chain")
@@ -1146,6 +1151,16 @@ SkillModel.R4_UTILITY = {
 	["frostNova:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["meteor:5a"] = "krótsze opóźnienie (geometria, bez wartości w 60 s)",
 	["firewall:10a"] = "ogłuszenie (kontrola)",
+	-- S142: the lightning pool's control and geometry options and Storm Armor (defence; dummies never strike)
+	["staticShock:5a"] = "paraliż (kontrola)",
+	["thunderStrike:10a"] = "ogłuszenie (kontrola)",
+	["tempest:10a"] = "ogłuszenie (kontrola)",
+	["ballLightning:5a"] = "geometria albo czas kontroli",
+	["lightningLance:5a"] = "geometria albo czas kontroli",
+	["stormArmor:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["stormArmor:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["stormArmor:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["stormArmor:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["elementalVortex:5a"] = "geometria albo czas kontroli",
 	["elementalVortex:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["cataclysm:5a"] = "geometria albo czas kontroli",
@@ -1249,6 +1264,16 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	glacialSpike = "arcanist.arcanistIce",
 	deepFreeze = "arcanist.arcanistIce",
 	shatter = "arcanist.arcanistIce",
+	-- S142 (DESIGN-18 §6.1): the lightning pool on the lightning variants (area skills on the Destroyer, one target on the
+	-- Arcanist)
+	chainLightning = "destroyer.destroyerLightning",
+	firewall = "destroyer.destroyerLightning",
+	ballLightning = "destroyer.destroyerLightning",
+	tempest = "destroyer.destroyerLightning",
+	lightningBolt = "arcanist.arcanistLightning",
+	staticShock = "arcanist.arcanistLightning",
+	thunderStrike = "arcanist.arcanistLightning",
+	lightningLance = "arcanist.arcanistLightning",
 } :: { [string]: string }
 
 -- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; S91: the options of a rank
@@ -1939,6 +1964,10 @@ end
 -- Static unmodelled list of a player (I1 c): hooks the model does not count. S86: the class mechanics and the item
 -- trait hooks joined the modelled list (on the event or, in a fight with monsters that hit back, `retaliate`).
 local HOOKS_MODELLED: { [string]: boolean } = {
+	-- S142 (Logic/Shock): Overcharge, Conductor
+	overchargeCrit = true,
+	overchargeDmg = true,
+	conduct = true,
 	-- S85
 	elementDamage = true,
 	holyDamage = true,
@@ -2969,6 +2998,8 @@ export type HitOpts = {
 	area: boolean?, -- S86: an area skill hit (Traits.procShare)
 	skill: string?, -- S86: DealOptions.skill (Spotting reads HOOK_RULES.spot.skills)
 	areaHit: boolean?, -- S86: counts in areaDealt (C3)
+	critAdd: number?, -- S142: points of crit chance of this hit (Logic/Shock.critOf)
+	critDmgAdd: number?, -- S142: points of crit damage of this hit
 }
 
 -- mirrors CombatService.DealDamage + Logic/Damage.computeDamage (S85 C3), one expected hit: guaranteedCrit and
@@ -2996,11 +3027,18 @@ dealDamage = function(state: any, tg: any, o: HitOpts): number
 			extra *= 1 + shot.value / 100
 		end
 	end
-	local params: any = { kind = if o.magic then "magic" else "phys", isSkill = not o.basic, basic = o.basic }
+	local params: any = {
+		kind = if o.magic then "magic" else "phys",
+		isSkill = not o.basic,
+		basic = o.basic,
+		critAdd = o.critAdd,
+		critDmgAdd = o.critDmgAdd,
+	}
 	for _, e in effectsOf(tg, "sighted") do
 		if e.stats then
-			params.critAdd = e.stats.critChance
-			params.critDmgAdd = e.stats.critDmg
+			-- S142 mirrors CombatService.DealDamage: Draw a Bead on top of the skill's own crit
+			params.critAdd = (params.critAdd or 0) + (e.stats.critChance or 0)
+			params.critDmgAdd = (params.critDmgAdd or 0) + (e.stats.critDmg or 0)
 		end
 	end
 	extra *= 1 + maxOf(state, tg, "vulnerability") / 100 -- StatusEffectService.Max: the strongest, never a sum
@@ -3494,12 +3532,29 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 			spend = used
 		end
 	end
+	-- S142 mirrors Context.damage (Logic/Shock): the skill's crit and Overcharge's, Lightning Lance's sure crit
+	local critAdd, critDmgAdd = 0, 0
+	if not o.lingering then
+		critAdd, critDmgAdd = Shock.critOf(
+			ctx.element,
+			if def.values.crit ~= nil then Skills.valueAt(def, "crit", ctx.rank) else 0,
+			pathHook(state, "overchargeCrit"),
+			pathHook(state, "overchargeDmg")
+		)
+	end
+	local consume = o.consumeShot ~= false
+	if Shock.sureCrit(def.sureCrit, main) then
+		force = 1
+		consume = false
+	end
 	local before = tg.hp
 	local amount = dealDamage(state, tg, {
 		magic = ctx.magic,
 		percent = pct,
 		extra = multiplier,
-		consumeShot = o.consumeShot ~= false,
+		consumeShot = consume,
+		critAdd = if critAdd > 0 then critAdd else nil,
+		critDmgAdd = if critDmgAdd > 0 then critDmgAdd else nil,
 		forceShare = force,
 		noProc = o.plain == true or o.noAdaptive == true or o.noProc == true or o.secondary == true,
 		bucket = ctx.id,
@@ -3554,6 +3609,15 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 	end
 	if ctx.element == "ice" and main and amount > 0 then
 		chillHit(ctx, tg)
+	end
+	-- S142 mirrors Context.damage Conductor: a single-target lightning spell's main hit jumps into the other dummy (all
+	-- stand within SHOCK.conductRadius: dummySpread) as a secondary hit
+	local conduct = pathHook(state, "conduct")
+	if Shock.conducts(ctx.element, ctx.tag, main, conduct) and amount > 0 then
+		local other = otherTarget(state, tg)
+		if other then
+			damage(ctx, other, percent * conduct / 100, { consumeShot = false, secondary = true, noAdaptive = true })
+		end
 	end
 	if amount > 0 and not o.plain then
 		onHit(ctx, tg, percent, amount, o)
@@ -3663,6 +3727,19 @@ H.target = function(ctx)
 		ctx.furyUsed = stacks
 		state.furyConsumed += stacks
 		percent *= Skills.furyMultiplier(Skills.valueAt(ctx.def, ctx.def.furyConsume, ctx.rank), stacks)
+	end
+	-- S142 mirrors Types/Offense.target `delay` (Thunder Strike): the blow lands that many seconds later
+	local delay = ctx.def.delay or 0
+	if delay > 0 then
+		at(ctx, delay, function()
+			if tg.hp > 0 then
+				local amount = damage(ctx, tg, percent, { primary = true })
+				if amount > 0 then
+					applyEffects(ctx, tg, "enemy")
+				end
+			end
+		end)
+		return true
 	end
 	local amount = damage(ctx, tg, percent, { primary = true })
 	if amount > 0 then
@@ -3905,6 +3982,14 @@ H.circleTarget = function(ctx)
 						frozen[tg] = true
 						applyEffect(ctx, tg, { kind = "freeze", duration = Skills.valueAt(def, "freeze", ctx.rank) })
 					end
+				end
+			end
+			-- S142 mirrors Types/Offense.circleTarget finale (Ball Lightning): the last wave stuns (notBoss; the knockback
+			-- moves no dummy)
+			local finale = def.finale
+			if finale and Shock.finale(true, w, hits) and finale.stun > 0 then
+				for _, tg in enemies do
+					apply(state, tg, "stun", { duration = finale.stun, skillId = ctx.id, notBoss = true })
 				end
 			end
 			lingering(ctx, dmg, w, 0)
@@ -4802,10 +4887,6 @@ local function prepare(state: any, entry: { [string]: any }): any
 	if override then
 		def, bp = override.def, override.bp
 	end
-	if not Skills.elementAllowed(def, sp.element) then
-		out.off = true
-		return out
-	end
 	out.rank, out.def, out.bp = rank, def, bp
 	local p = state.p
 	out.cooldown = Skills.cooldown(def, rank, Skills.cooldownReduction(p.hooks.cooldownReduction or 0), bp)
@@ -5158,6 +5239,21 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 			if e.value <= 0 then
 				e.expiresAt = 0
 			end
+		end
+	end
+	-- S142 mirrors CombatService shieldRetaliate (Storm Armor, Logic/Shock.armorReady): a regular melee blow is struck
+	-- back for value % of magic attack in lightning (a skill hit, consumeShot false, noProc)
+	if regular and tg.m.delivery == "melee" and tg.hp > 0 then
+		local storm = maxOf(state, state.self, "stormArmor")
+		if storm > 0 and Shock.armorReady(tg.stormAt, state.t + EPS) then
+			tg.stormAt = state.t
+			dealDamage(state, tg, {
+				magic = true,
+				percent = storm,
+				consumeShot = false,
+				noProc = true,
+				bucket = "stormArmor",
+			})
 		end
 	end
 	-- S140 mirrors CombatService emberRetaliate: a regular melee blow burns the monster while Ember Shield lasts, at most
@@ -5711,9 +5807,7 @@ local function rawMetrics(build: Build, L: number, element: string?): Metrics
 	for _, id in Paths.availableSkills(sp.character) do
 		local def = SkillData.get(id)
 		if def and def.type ~= "passive" and not inRotation[id] and Paths.skillUsable(sp.character, id, sp.weapons) then
-			if Skills.elementAllowed(def, sp.element) then
-				table.insert(off, id)
-			end
+			table.insert(off, id)
 		end
 	end
 	local shares: { [string]: number } = {}

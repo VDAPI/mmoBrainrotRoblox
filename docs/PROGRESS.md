@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S141 gotowe (ostatnia S141: Mag, pula Lodu według wspólnej drabiny (Lodowy Odłamek 1, Grad 3, Lodowa
+S01–S115 i S117–S142 gotowe (ostatnia S142: Mag, pula Błyskawicy według wspólnej drabiny (Piorun 1, Łańcuch Błyskawic
+3, Porażenie 6, Pancerz Burzy 10, Grom 15, Przeładowanie 20, Burza Piorunów 26, Kulisty Piorun 33, Lanca Błyskawic 40,
+Przewodnik 50, Nawałnica 60; krytyki, pewny krytyk Lancy, przeskok Przewodnika, odwet Pancerza, `Logic/Shock`), Ognisty
+Pocisk jako S1 puli Ognia z podpaleniem (koniec Magicznego Pocisku adaptacyjnego), Mag bez stanu przejściowego (trzy
+pule na jednej drabinie, test drabiny), `Skills.elementAllowed` usunięte (żywioł broni = pula), warianty błyskawicy
+buildów wzorcowych w modelu i w bloku S91; wcześniej S141: Mag, pula Lodu według wspólnej drabiny (Lodowy Odłamek 1, Grad 3, Lodowa
 Nova 6, Lodowa Bariera 10, Lodowa Włócznia 15, Uścisk Zimy 20, Lodowa Kula 26, Głęboki Mróz 33, Roztrzaskanie 40, Lodowa
 Krew 50, Zamieć 60; licznik Chłodu zamraża po 4 trafieniach w spowolnionego, bossowie i Elity II zamiast zamrożenia
 dostają Głęboki Chłód, `Logic/Chill`), warianty lodu buildów wzorcowych w modelu i w bloku S91, R1 na 20. w paśmie;
@@ -318,20 +323,28 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S142:** pula Błyskawicy bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z
+  istniejących składników (dopracowanie W03–W07), dźwięki `skill.lightningBolt|staticShock|stormArmor|thunderStrike|
+  ballLightning|lightningLance|tempest` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki).
+  Tożsamość trzech żywiołów i T-SK4 wariantów błyskawicy tylko w raporcie (`S142.mage.*`, `S142.lightning.*`) do S147:
+  na 20. i 45. błyskawica na 3 cele / ogień bez podpalenia 0,92–0,93 (cel ≥ 1,0; pasmo R1 S91 na 20.), na 100.
+  błyskawica w jeden cel 1,05 (cel 1,10–1,20) i na 3 cele ponad ogniem z podpaleniem (1,19), lód / ogień na 70–100
+  0,82 (cel 0,85–0,95). `GLOBAL_REPORT_ONLY` S142 (101 wierszy Maga 21–100) do opróżnienia w S146/S147. Wiki do
+  odświeżenia (właściciel 17.10): trzy pule Maga z drabiną, Ognisty Pocisk.
 - **S141:** pula Lodu bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
   składników (dopracowanie W03–W07), dźwięki `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
   blizzard` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki). Tożsamość lodu i T-SK4
-  wariantów lodu tylko w raporcie (`S141.ice.*`: lód / ogień w jeden cel 1,02 na 20. i 0,99 na 100. przy celu
+  wariantów lodu tylko w raporcie (`S141.ice.*`; po S142 lód / ogień w jeden cel 0,89 na 20. i 0,82 na 100. przy celu
   0,85–0,95, przyjmowane obrażenia Arkanisty na 20. 0,90 przy celu 0,85) do S147; `GLOBAL_REPORT_ONLY` S141 (56 wierszy
-  Maga 21–100) do opróżnienia w S146/S147; R4 5B na 20. Lodowego Odłamka (0,29) i Gradu (0,19) ponad pasmem
-  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom) do S147. Pula Błyskawicy i S1 Maga (Ognisty Pocisk) w S142. Wiki
+  Maga 21–100) do opróżnienia w S146/S147; R4 5B na 20. Lodowego Odłamka (0,18 po S142) i Gradu (0,19) ponad pasmem
+  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom) do S147. Pula Błyskawicy i S1 Maga (Ognisty Pocisk) zrobione w S142. Wiki
   do odświeżenia (właściciel 17.10).
 - **S140:** pula Ognia bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
   składników (dopracowanie W03–W07), dźwięki `skill.flameWave|emberShield|pyroblast|combustion|immolate|phoenixHeart`
   bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość ognia i T-SK4
   wariantów ognia tylko w raporcie (`S140.fire.*`: udział podpalenia 7–13% przy celu 25%, T-SK4 2,5–4,8) do S147;
   `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100) do opróżnienia w S146/S147. Pula Lodu zrobiona w S141;
-  pula Błyskawicy i S1 Maga w S142. Wiki do odświeżenia (właściciel 17.10).
+  pula Błyskawicy i S1 Maga w S142 (udział podpalenia po S142 9–14%). Wiki do odświeżenia (właściciel 17.10).
 - **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
   podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
   „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w

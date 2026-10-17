@@ -220,7 +220,7 @@ local Progression = require("../src/shared/Data/Progression")
 local SkillData = require("../src/shared/Data/Skills")
 local SkillPoints = require("../src/shared/Logic/SkillPoints")
 
--- A real Mage (Data/Skills, transitional pools) with bought ranks in the fire pool (no weapon: the default pool).
+-- A real Mage (Data/Skills; S142: no longer transitional) with bought ranks in the fire pool (no weapon: the default pool).
 local function mage(level: number, fire: { [string]: number }, path: any?): any
 	return {
 		class = "Mage",
@@ -302,31 +302,31 @@ T.describe("PathView pool tree (S139)", function()
 		T.expect(PathView.COLUMNS).toEqual({ "S", "A", "K", "O", "P", "U", "C" })
 	end)
 
-	-- S140: the Mage is transitional until S142: the fire pool and the common skills sit on the ladder (S1 stays common),
-	-- the skills without a role in Others
-	T.it("a transitional pool: the same grid, the skills with a role on it, the rest in Others by unlock", function()
+	-- S140: the fire pool and the common skills sit on the ladder. S142: the Mage is no longer transitional (Fire Bolt is
+	-- the fire pool's S1): every ladder row holds one skill, nothing in Others
+	T.it("the Mage's full pools: one skill on every ladder row, nothing in Others", function()
 		local view = PathView.poolView(mage(10, { firebolt = 2 }), "fire") :: any
-		T.expect(view.transitional).toBe(true)
+		T.expect(view.transitional).toBe(false)
 		T.expect(view.active).toBe(true)
 		local ladder, filled = 0, 0
 		for _, row in view.rows do
 			if row.kind == "ladder" then
 				ladder += 1
 				filled += #row.tiles
-				T.expect(#row.tiles <= 1).toBe(true)
+				T.expect(#row.tiles).toBe(1)
 			end
 		end
 		T.expect(ladder).toBe(15)
-		T.expect(filled).toBe(14)
+		T.expect(filled).toBe(15)
 		T.expect(rowOf(view, "paths")).toBeNil()
-		T.expect(ids(rowOf(view, "other").tiles)).toEqual({ "firebolt" })
+		T.expect(rowOf(view, "other")).toBeNil()
 		T.expect(view.points).toBe(SkillPoints.pointsAt(10))
 		T.expect(view.free).toBe(SkillPoints.pointsAt(10) - 2)
 		T.expect(PathView.poolView(mage(10, {}), "nope")).toBeNil()
 		local other = PathView.poolView(mage(10, {}), "ice") :: any
 		T.expect(other.active).toBe(false)
-		-- S141: the ice pool sits on the ladder too (Ice Shard S1, Frost Nova K1): only Magic Bolt in Others
-		T.expect(ids(rowOf(other, "other").tiles)).toEqual({ "firebolt" })
+		-- S141: the ice pool sits on the ladder too; S142: nothing in Others
+		T.expect(rowOf(other, "other")).toBeNil()
 	end)
 
 	T.it("tiles: rank, limit, lock, bar, reservation and refund price", function()
@@ -380,18 +380,19 @@ T.describe("PathView pool tree (S139)", function()
 		T.expect(tileOf(low, "firebolt").bp[1].mark).toBe("none")
 	end)
 
+	-- S142: Fire Bolt is fire only; a common skill (Blink) shares its breakpoint choice across the pools (DESIGN-18 §8)
 	T.it("a breakpoint reached in another pool: one rank for the server, the tiles and the dot", function()
 		local c = mage(60, {})
-		c.ranks.ice = { firebolt = 10 }
-		T.expect(GamePaths.skillRank(c, "firebolt")).toBe(0) -- the active pool (fire)
-		T.expect(GamePaths.bpRank(c, "firebolt")).toBe(10)
-		local firebolt = SkillData.get("firebolt") :: any
-		local hasB = firebolt.breakpoints[5].b ~= nil
-		T.expect((GamePaths.canChooseBreakpoint(c, "firebolt", 5, "a"))).toBe(hasB)
+		c.ranks.ice = { blink = 10 }
+		T.expect(GamePaths.skillRank(c, "blink")).toBe(0) -- the active pool (fire)
+		T.expect(GamePaths.bpRank(c, "blink")).toBe(10)
+		local blink = SkillData.get("blink") :: any
+		local hasB = blink.breakpoints[5].b ~= nil
+		T.expect((GamePaths.canChooseBreakpoint(c, "blink", 5, "a"))).toBe(hasB)
 		local want = if hasB then "pending" else "a"
-		T.expect(tileOf(PathView.poolView(c, "fire") :: any, "firebolt").bp[1].mark).toBe(want)
-		T.expect(tileOf(PathView.poolView(c, "ice") :: any, "firebolt").bp[1].mark).toBe(want)
-		T.expect(hasEntry(PathView.pendingBreakpoints(c), { skillId = "firebolt", at = 5 })).toBe(hasB)
+		T.expect(tileOf(PathView.poolView(c, "fire") :: any, "blink").bp[1].mark).toBe(want)
+		T.expect(tileOf(PathView.poolView(c, "ice") :: any, "blink").bp[1].mark).toBe(want)
+		T.expect(hasEntry(PathView.pendingBreakpoints(c), { skillId = "blink", at = 5 })).toBe(hasB)
 		T.expect(PathView.attention(c).pools.ice == true).toBe(hasB)
 	end)
 

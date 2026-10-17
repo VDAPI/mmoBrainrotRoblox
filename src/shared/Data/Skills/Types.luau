@@ -86,6 +86,9 @@ export type EffectKind =
 	| "deepChill"
 	-- S141 (Ice Barrier): own; while it lasts a monster's melee blow on the bearer slows it by value % (CombatService)
 	| "iceBarrier"
+	-- S142 (Storm Armor, Logic/Shock): own; while it lasts a monster's melee blow on the bearer is struck back for
+	-- value % of the bearer's magic attack in lightning (at most once per Data/Skills.SHOCK.armorGap s per attacker)
+	| "stormArmor"
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -316,6 +319,11 @@ export type SkillDef = {
 	-- S141: from this wave of circleTarget on, every enemy in the circle freezes once per cast for values.freeze s
 	-- (bosses: Deep Chill, Logic/Chill)
 	freezeWave: number?,
+	-- S142 (Logic/Shock, Lightning Lance): the main hit always crits (forceCrit), without spending a guaranteedCrit
+	sureCrit: boolean?,
+	-- S142 (Ball Lightning): the last wave of circleTarget knocks the enemies it hits back `knockback` studs (bosses
+	-- immune, players half) and stuns them for `stun` s (notBoss)
+	finale: { knockback: number, stun: number }?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

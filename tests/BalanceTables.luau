@@ -1587,7 +1587,7 @@ function BalanceTables.tablesSkills(): { Table }
 	section(
 		"Mag: żywioły broni",
 		{ "build · poziom · żywioł", "60 s", "wybuch 8 s", "obszar 3 · 8 s", "T-SK1", "T-SK2", "T-SK3", "T-SK4" },
-		"Rozbicie średniej Maga na żywioł broni (`GearOpts.element`, `Skills.elementAllowed`, efekt adaptacyjny); raport. "
+		"Rozbicie średniej Maga na żywioł broni (`GearOpts.element`, pula `SkillPools.activePool`, efekt adaptacyjny); raport. "
 			.. SKILL_NOTE
 	)
 	for _, build in SkillModel.builds("Mage") do

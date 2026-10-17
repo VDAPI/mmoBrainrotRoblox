@@ -19,6 +19,8 @@
 -- S141 (Logic/Chill): circleTarget with `travel` (Frozen Orb) flies from the caster toward the aim, wave n centred at
 -- Chill.orbAt; `waveEffects` applies the enemy effects on every wave; from `freezeWave` (Blizzard) every enemy in the
 -- circle freezes once per cast for values.freeze s through ctx.freeze (bosses: Deep Chill).
+-- S142 (Logic/Shock): `target` with `delay` (Thunder Strike) lands that many seconds after the cast (the event first, its
+-- `d` = the delay); circleTarget with `finale` (Ball Lightning) knocks back and stuns what its last wave hits.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,6 +29,7 @@ local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
 local Chill = require(ReplicatedStorage.Shared.Logic.Chill)
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
+local Shock = require(ReplicatedStorage.Shared.Logic.Shock)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 
@@ -123,21 +126,57 @@ Offense.target = function(ctx)
 	if not target then
 		return false, "cast.error.noTarget"
 	end
-	ctx.fx({ t = target.id })
+	local delay = ctx.skill.delay or 0
+	ctx.fx(if delay > 0 then { t = target.id, d = delay } else { t = target.id })
 	local percent = ctx.value("dmg")
 	if ctx.skill.furyConsume then
 		-- spent even when the blow is dodged (the cast happened)
 		percent *= Skills.furyMultiplier(ctx.value(ctx.skill.furyConsume), ctx.consumeFury())
 	end
-	local result = ctx.damage(target, percent, { primary = true })
-	if result and not result.dodged then
-		ctx.applyEffects(target, "enemy")
-		stunSplash(ctx, target)
-		if ctx.skill.values.detonate ~= nil then
-			detonate(ctx, target)
+	local function strike()
+		local result = ctx.damage(target, percent, { primary = true })
+		if result and not result.dodged then
+			ctx.applyEffects(target, "enemy")
+			stunSplash(ctx, target)
+			if ctx.skill.values.detonate ~= nil then
+				detonate(ctx, target)
+			end
 		end
 	end
+	if delay > 0 then
+		-- S142 Thunder Strike: the bolt falls on the target where it stands then (gone or dead: nothing)
+		task.delay(delay, function()
+			if ctx.isEnemy(target) then
+				strike()
+			end
+		end)
+	else
+		strike()
+	end
 	return true, nil
+end
+
+-- S142 Ball Lightning (Logic/Shock.finale): the last wave knocks the enemies it hit back from the impact and stuns them
+-- (notBoss; Push.knockback keeps bosses in place and halves players).
+local function finale(ctx: Ctx, list: { any }, from: Vector3)
+	local spec = ctx.skill.finale
+	if not spec then
+		return
+	end
+	for _, entity in list do
+		if spec.knockback > 0 then
+			Push.knockback(entity, from, spec.knockback)
+		end
+		if spec.stun > 0 then
+			ctx.services.StatusEffect.Apply(entity, "stun", {
+				duration = spec.stun,
+				source = ctx.player,
+				skillId = ctx.skill.id,
+				notBoss = true,
+			})
+		end
+	end
+	ctx.fx({ v = "finale", p = from, r = ctx.skill.radius or 4 })
 end
 
 -- Breakpoint: a projectile goes on to the next enemy behind the target.
@@ -429,6 +468,9 @@ Offense.circleTarget = function(ctx)
 
 			if last then
 				stunLast(ctx, enemies)
+			end
+			if Shock.finale(ctx.skill.finale ~= nil, wave, hits) then
+				finale(ctx, enemies, impactAt)
 			end
 			-- S79: Skills.castZones keeps the zones of the first wave
 			ctx.lingering(impactAt, ctx.value("dmg"), wave, 0)
