@@ -312,6 +312,14 @@ local OWN: { [string]: Own } = {
 	manaShield = { hint = "glass hum magic shield", roll = 80, ids = { SELECT_02 }, pitch = { 0.85, 0.9 } },
 	arcaneDischarge = { hint = "arcane discharge blast", roll = 110, ids = { BASS }, pitch = { 0.94, 1.02 } },
 	arcaneTorrent = { hint = "arcane beam start hum", roll = 100, ids = { SWEEP }, pitch = { 0.85, 0.87 } },
+	-- S140 (DESIGN-18 §6.1): the fire pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey). Phoenix Heart plays at its save (VfxController).
+	flameWave = { hint = "fire whoosh wave roar burst", roll = 100 },
+	emberShield = { hint = "fire crackle shield ignite hum", roll = 80 },
+	pyroblast = { hint = "big fireball launch roar", roll = 120 },
+	combustion = { hint = "fire explosion burst pop", roll = 110 },
+	immolate = { hint = "intense fire burn sizzle impact", roll = 100 },
+	phoenixHeart = { hint = "phoenix cry fire burst rising", roll = 120 },
 }
 -- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
 local CAST: { [string]: Own } = {
@@ -328,6 +336,7 @@ local CAST: { [string]: Own } = {
 	meteor = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	meteorStorm = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	cataclysm = { hint = "deep earth rumble summoning", roll = 120, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
+	pyroblast = { hint = "rising fire roar focus", roll = 100 }, -- S140: the focus (castTime)
 }
 -- S115: phase sounds: a trap springing (.trigger), a later wave or a storm's strike (.wave), the falcon's strike.
 local PHASE: { [string]: Own } = {

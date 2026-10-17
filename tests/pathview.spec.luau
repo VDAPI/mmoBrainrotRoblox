@@ -302,26 +302,30 @@ T.describe("PathView pool tree (S139)", function()
 		T.expect(PathView.COLUMNS).toEqual({ "S", "A", "K", "O", "P", "U", "C" })
 	end)
 
-	T.it("a transitional pool: the same grid, empty, the skills in Others by unlock", function()
+	-- S140: the Mage is transitional until S142: the fire pool and the common skills sit on the ladder (S1 stays common),
+	-- the skills without a role in Others
+	T.it("a transitional pool: the same grid, the skills with a role on it, the rest in Others by unlock", function()
 		local view = PathView.poolView(mage(10, { firebolt = 2 }), "fire") :: any
 		T.expect(view.transitional).toBe(true)
 		T.expect(view.active).toBe(true)
-		local ladder = 0
+		local ladder, filled = 0, 0
 		for _, row in view.rows do
 			if row.kind == "ladder" then
 				ladder += 1
-				T.expect(#row.tiles).toBe(0)
+				filled += #row.tiles
+				T.expect(#row.tiles <= 1).toBe(true)
 			end
 		end
 		T.expect(ladder).toBe(15)
+		T.expect(filled).toBe(14)
 		T.expect(rowOf(view, "paths")).toBeNil()
-		T.expect(ids(rowOf(view, "other").tiles)).toEqual({ "firebolt", "fireball", "blink", "meteor" })
+		T.expect(ids(rowOf(view, "other").tiles)).toEqual({ "firebolt" })
 		T.expect(view.points).toBe(SkillPoints.pointsAt(10))
 		T.expect(view.free).toBe(SkillPoints.pointsAt(10) - 2)
 		T.expect(PathView.poolView(mage(10, {}), "nope")).toBeNil()
 		local other = PathView.poolView(mage(10, {}), "ice") :: any
 		T.expect(other.active).toBe(false)
-		T.expect(ids(rowOf(other, "other").tiles)).toEqual({ "firebolt", "iceShard", "blink", "frostNova" })
+		T.expect(ids(rowOf(other, "other").tiles)).toEqual({ "firebolt", "iceShard", "frostNova" })
 	end)
 
 	T.it("tiles: rank, limit, lock, bar, reservation and refund price", function()
@@ -341,11 +345,11 @@ T.describe("PathView pool tree (S139)", function()
 		T.expect(view.free).toBe(SkillPoints.pointsAt(10) - 3)
 		local meteor = tileOf(view, "meteor")
 		T.expect(meteor.locked).toBe(true)
-		T.expect(meteor.unlock).toBe(30)
+		T.expect(meteor.unlock).toBe(26) -- S140: LADDER A2
 		T.expect(meteor.buyable).toBe(false)
 		T.expect(meteor.buyReason).toBe("skills.error.limit")
 		T.expect(meteor.refundable).toBe(false)
-		T.expect(meteor.nextLevel).toBe(30)
+		T.expect(meteor.nextLevel).toBe(26)
 		-- the limit holds the next rank back: its level
 		local capped = PathView.poolView(mage(1, { firebolt = 1 }), "fire") :: any
 		T.expect(tileOf(capped, "firebolt").nextLevel).toBe(Skills.rankLevel(firebolt, 2))

@@ -1,5 +1,9 @@
 --!strict
--- Mage paths (docs/ROZWOJ.md 12): destroyer and arcanist on the twoPathExtra rows (2.2). A third path (12.6) drops the extra nodes and takes the moved C skills; players get a free node refund.
+-- Mage paths (docs/ROZWOJ.md 12): destroyer and arcanist on the twoPathExtra rows (2.2). S140 (DESIGN-18 §6.1, §7): skill
+-- nodes only in rows 4 and 8 (SKILL_ROWS); Elementalist and Arcane Mind are 3-rank passive nodes (the old ranks 1 / 3 / 5),
+-- Mana Shield, Evocation and Focus moved to the common skills, Wrath of Elements (Rain of Meteors) to the fire pool;
+-- their rows got nodes of the same ranks (Elemental Echo, Elemental Surge, Arcane Ward, Quick Discharge); Grit (row 10)
+-- and Will (row 5, the Arcanist extra) 3 -> 2 ranks, so one whole direction stays within 50 points (DESIGN-18 §7). A third path (12.6) drops the extra nodes and takes the moved C skills; players get a free node refund.
 -- Numbers are the ROZWOJ 12.4 / 12.5 starting values ({ rank 1, rank max }, linear); the balance sessions tune them.
 -- Shape: Data/Paths/Warrior (S75) and Hunter (S78). Hooks are the S79 / S80 names (Skills/Context, SkillService,
 -- Skills/Elements, StatusEffectService, Logic/Skills.cost). Weapons split strictly as in 12.1 (STATY 3). No Mage node
@@ -91,7 +95,11 @@ local destroyer: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(D, "elementalist"),
+			-- S140: was the skill node of Elementalist (5 ranks bought with skill points); the old ranks 1 / 3 / 5
+			node(D, "elementalist", "passive", 3, "✺", {
+				values = { bonus = { 3, 15 } },
+				passive = { hooks = { elementDamage = "bonus" } },
+			}),
 			node(D, "sweep", "passive", 3, "◎", {
 				values = { sweep = { 2, 6 } },
 				passive = { hooks = { areaDamage = "sweep" } },
@@ -154,10 +162,15 @@ local destroyer: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(D, "meteorStorm"),
+			-- S140: Wrath of Elements went to the fire pool; Elemental Echo (one rank, like the skill node) repeats the
+			-- Vortex's last wave, and Storm's Wrath shortens the Vortex (cooldown 12 s, so x 0.26 of the 50 s storm's)
+			node(D, "echo", "modify", 1, "❉", {
+				values = { echo = 100 },
+				modify = { skill = "elementalVortex", bp = { echo = { delay = 0.4, pct = ref("echo") } } },
+			}),
 			node(D, "wrath", "modify", 3, "⚡", {
-				values = { wrath = { 1.15, 3.44 } },
-				modify = { skill = "meteorStorm", bp = { cdrPerTarget = { sec = ref("wrath"), max = 5 } } },
+				values = { wrath = { 0.3, 0.9 } },
+				modify = { skill = "elementalVortex", bp = { cdrPerTarget = { sec = ref("wrath"), max = 5 } } },
 			}),
 		}),
 		row(false, { skill(D, "cataclysm") }),
@@ -172,12 +185,16 @@ local destroyer: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(D, "focus"),
+			-- S140: Focus is the Mage's common C4; Elemental Surge takes its one rank
+			node(D, "surge", "passive", 1, "⇶", {
+				values = { surge = 3 },
+				passive = { hooks = { areaDamage = "surge" } },
+			}),
 			node(D, "flow", "passive", 3, "∿", {
 				values = { flow = { -1.2, -3.7 } },
 				passive = { hooks = { areaCost = "flow" } },
 			}),
-			extra(node(D, "grit", "passive", 3, "♥", {
+			extra(node(D, "grit", "passive", 2, "♥", { -- S140: 3 -> 2 ranks (the same top value)
 				values = { grit = { 1.4, 4.2 } },
 				passive = { pct = { maxHp = "grit" } },
 			})),
@@ -226,7 +243,12 @@ local arcanist: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(A, "manaShield"),
+			-- S140: Mana Shield is the Mage's common C2; Arcane Ward takes its one rank (no mana or damage change, so the
+			-- 1-20 numbers and T-SK4 of the Arcanist stay)
+			node(A, "ward", "passive", 1, "⛨", {
+				values = { ward = 3 },
+				passive = { pct = { maxHp = "ward" } },
+			}),
 			node(A, "precision", "passive", 3, "⌖", {
 				values = { precision = { 1, 3 } },
 				passive = { hooks = { singleDamage = "precision" } },
@@ -272,7 +294,7 @@ local arcanist: Types.PathDef = {
 				values = { reclaim = { 0.035, 0.105 } },
 				passive = { hooks = { chargeReclaim = "reclaim" } },
 			}),
-			extra(node(A, "will", "passive", 3, "♥", {
+			extra(node(A, "will", "passive", 2, "♥", { -- S140: 3 -> 2 ranks (the same top value)
 				values = { will = { 4, 12 } },
 				passive = { pct = { maxHp = "will" } },
 			})),
@@ -288,7 +310,11 @@ local arcanist: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(A, "evocation"),
+			-- S140: Evocation is the Mage's common C3; Quick Discharge takes its one rank
+			node(A, "quickening", "modify", 1, "✷", {
+				values = { quickening = 0.85 },
+				modify = { skill = "arcaneDischarge", bp = { mul = { cooldown = ref("quickening") } } },
+			}),
 			node(A, "invocation", "modify", 3, "☼", {
 				values = { invocation = { 3.9, 11.7 } },
 				-- S80: the effect "empowered" after a full channel (SkillService.closeChannel)
@@ -307,7 +333,11 @@ local arcanist: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(A, "arcaneMind"),
+			-- S140: was the skill node of Arcane Mind (5 ranks bought with skill points); the old ranks 1 / 3 / 5
+			node(A, "arcaneMind", "passive", 3, "✦", {
+				values = { crit = { 0.35, 1.05 }, critDmg = { 1, 2.8 } }, -- S81 (ROZWOJ 12.5, 15.5.4)
+				passive = { flat = { critChance = "crit", critDmg = "critDmg" } },
+			}),
 			node(A, "masterMind", "passive", 3, "♕", {
 				values = { masterMind = { 5.6, 16.9 } },
 				passive = { hooks = { channelGuard = "masterMind" } },
@@ -331,6 +361,8 @@ local arcanist: Types.PathDef = {
 
 -- Model builds (ROZWOJ 7.5, 12.4, 12.5, 12.7; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50
 -- points, the nodes in the priority order of the class design. areaCap (15.5.3) is read by the balance model only.
+-- S140 (DESIGN-18 §6.1, §13): `element` = the weapon element of a variant measured in that pool alone (the fire
+-- variants with `ranks`, the order the model buys skill ranks in); without it the model averages the three elements.
 local function build(
 	id: string,
 	main: string,
@@ -338,43 +370,51 @@ local function build(
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" },
 	rotation: { { [string]: any } },
-	areaCap: number?
+	areaCap: number?,
+	element: string?,
+	ranks: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
 		areaCap = areaCap,
-		weapon = { main = main },
+		weapon = { main = main, element = element },
 		nodes = nodes,
 		bp = bp,
 		stats = stats,
 		rotation = rotation,
+		ranks = ranks,
 	}
 end
 
 -- Destroyer -----------------------------------------------------------------------------------------------------
+-- S140: the moved skill nodes replaced by Elemental Echo and Elemental Surge; Elementalist's two more ranks after row 3
+-- (rank 1 at 10 as before): the points of 10-14 go to the Arcanist's row 1 (Arcane Ward, Precision 2) first, as the
+-- old Mana Shield node took the one of 10 (a direction with an open row 1 spends there otherwise); Grit 3 -> 2 (its new
+-- maximum), no Tempered (50 points).
 local function destroyerNodes(row3: string, row6: string): { { any } }
 	return {
 		{ "destroyer_elementalist", 1 },
 		{ "destroyer_sweep", 3 },
+		{ "arcanist_ward", 1 },
+		{ "arcanist_precision", 2 },
 		{ "destroyer_trace", 3 },
 		{ row3, 3 },
+		{ "destroyer_elementalist", 2 },
 		{ "destroyer_elementalVortex", 1 },
 		{ "destroyer_eye", 3 },
 		{ "destroyer_might", 3 },
 		{ row6, 3 },
-		{ "destroyer_meteorStorm", 1 },
+		{ "destroyer_echo", 1 },
 		{ "destroyer_wrath", 3 },
 		{ "destroyer_cataclysm", 1 },
 		{ "destroyer_cascade", 3 },
 		{ "destroyer_raging", 3 },
-		{ "destroyer_focus", 1 },
+		{ "destroyer_surge", 1 },
 		{ "destroyer_flow", 3 },
 		{ "destroyer_cataclysm2", 2 },
-		{ "destroyer_grit", 3 },
+		{ "destroyer_grit", 2 },
 		{ "destroyer_wide", 3 },
-		{ "destroyer_tempered", 3 },
 		{ "destroyer_veins", 3 },
-		{ "arcanist_manaShield", 1 },
 	}
 end
 
@@ -400,6 +440,79 @@ local function withBase(extraBp: { [string]: any }): { [string]: "a" | "b" }
 	end
 	return out
 end
+
+-- S140: the fire pool of the area variant: A options (area and burn), Rain of Meteors' 10B
+local FIRE_AREA_BP: { [string]: "a" | "b" } = {
+	["flameWave:5"] = "a",
+	["flameWave:10"] = "a",
+	["pyroblast:5"] = "a",
+	["pyroblast:10"] = "a",
+	["combustion:5"] = "b",
+	["combustion:10"] = "b",
+	["immolate:5"] = "a",
+	["immolate:10"] = "b",
+	["meteorStorm:10"] = "b",
+}
+-- S140: the fire pool of the single-target variant: B options
+local FIRE_SINGLE_BP: { [string]: "a" | "b" } = {
+	["flameWave:5"] = "b",
+	["flameWave:10"] = "b",
+	["pyroblast:5"] = "b",
+	["pyroblast:10"] = "b",
+	["combustion:5"] = "b",
+	["combustion:10"] = "b",
+	["immolate:5"] = "b",
+	["immolate:10"] = "b",
+}
+
+local function merged(a: { [string]: any }, b: { [string]: any }): { [string]: "a" | "b" }
+	local out: { [string]: any } = table.clone(a)
+	for key, option in b do
+		out[key] = option
+	end
+	return out
+end
+
+-- S140: the skill ranks of the fire variants, bought in this order (DESIGN-18 §13): the rotation's core first, the
+-- passives at their unlock, utility last (the model never casts Blink, Ember Shield or Mana Shield)
+local FIRE_AREA_RANKS = {
+	"fireball",
+	"firebolt",
+	"flameWave",
+	"pyroblast",
+	"kindling",
+	"meteor",
+	"elementalVortex",
+	"combustion",
+	"immolate",
+	"focus",
+	"phoenixHeart",
+	"meteorStorm",
+	"cataclysm",
+	"evocation",
+	"blink",
+	"emberShield",
+	"manaShield",
+}
+local FIRE_SINGLE_RANKS = {
+	"firebolt",
+	"fireball",
+	"pyroblast",
+	"flameWave",
+	"kindling",
+	"meteor",
+	"arcaneDischarge",
+	"immolate",
+	"combustion",
+	"evocation",
+	"focus",
+	"phoenixHeart",
+	"arcaneTorrent",
+	"meteorStorm",
+	"blink",
+	"emberShield",
+	"manaShield",
+}
 
 destroyer.reference = {
 	build(
@@ -449,12 +562,36 @@ destroyer.reference = {
 		},
 		3.0
 	),
+	-- S140: the Destroyer with a fire weapon (the fire pool alone): area first, burns stacked for Combustion
+	build(
+		"destroyerFire",
+		"staff",
+		destroyer.statPlan :: any,
+		destroyerNodes("destroyer_volatile", "destroyer_mantle"),
+		FIRE_AREA_BP,
+		{
+			{ skill = "elementalVortex", minEnemies = 2 },
+			{ skill = "cataclysm" },
+			{ skill = "meteorStorm" },
+			{ skill = "meteor" },
+			{ skill = "flameWave" },
+			{ skill = "combustion" },
+			{ skill = "fireball" },
+			{ skill = "pyroblast" },
+			{ skill = "immolate" },
+			{ skill = "firebolt" },
+		},
+		3.0,
+		"fire",
+		FIRE_AREA_RANKS
+	),
 }
 
 -- Arcanist ------------------------------------------------------------------------------------------------------
+-- S140: Arcane Ward and Quick Discharge for the moved skill nodes, Arcane Mind's two more ranks (will 3 -> 1).
 local function arcanistNodes(row3: string): { { any } }
 	return {
-		{ "arcanist_manaShield", 1 },
+		{ "arcanist_ward", 1 },
 		{ "arcanist_precision", 3 },
 		{ "destroyer_elementalist", 1 },
 		{ "arcanist_reserve", 3 },
@@ -463,17 +600,17 @@ local function arcanistNodes(row3: string): { { any } }
 		{ "arcanist_fullDischarge", 3 },
 		{ "arcanist_might", 3 },
 		{ "arcanist_mounting", 3 },
-		{ "arcanist_evocation", 1 },
+		{ "arcanist_quickening", 1 },
 		{ "arcanist_invocation", 3 },
 		{ "arcanist_arcaneTorrent", 1 },
 		{ "arcanist_rending", 3 },
-		{ "arcanist_arcaneMind", 1 },
+		{ "arcanist_arcaneMind", 3 },
 		{ "arcanist_archmage", 3 },
 		{ "arcanist_masterMind", 3 },
 		{ "arcanist_torrent2", 2 },
 		{ "arcanist_reclaim", 3 },
 		{ "arcanist_acuity", 3 },
-		{ "arcanist_will", 3 },
+		{ "arcanist_will", 1 },
 		{ "arcanist_composure", 3 },
 	}
 end
@@ -507,6 +644,28 @@ arcanist.reference = {
 		arcanistNodes("arcanist_overload"),
 		withBase({}),
 		ARCANIST_ROTATION
+	),
+	-- S140: the Arcanist with a fire weapon: one target at range (no Flame Wave), Pyroblast and Immolate on stacked burns
+	build(
+		"arcanistFire",
+		"runestaff",
+		arcanist.statPlan :: any,
+		arcanistNodes("arcanist_resonance"),
+		merged(withBase({}), FIRE_SINGLE_BP),
+		{
+			{ skill = "evocation", maxManaPct = 35 },
+			{ skill = "arcaneDischarge", minCharges = 4 },
+			{ skill = "arcaneTorrent", minManaPct = 90 },
+			{ skill = "pyroblast" },
+			{ skill = "immolate" },
+			{ skill = "combustion" },
+			{ skill = "meteor" },
+			{ skill = "fireball" },
+			{ skill = "firebolt" },
+		},
+		nil,
+		"fire",
+		FIRE_SINGLE_RANKS
 	),
 }
 

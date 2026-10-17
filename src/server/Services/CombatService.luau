@@ -42,6 +42,7 @@ local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
+local Burn = require(Shared.Logic.Burn)
 local Classes = require(Shared.Data.Classes)
 local Context = require(script.Parent.Parent.Skills.Context)
 local DamageText = require(Shared.Logic.DamageText)
@@ -441,6 +442,50 @@ function CombatService.DotBonus(player: Player, kind: string): number
 		return hook(player, "dotPower")
 	end
 	return 0
+end
+
+-- S140 (Logic/Burn, DESIGN-18 §6.1): every fire burn of a player but the items' (fire skills, the adaptive weapon burn,
+-- Ember Shield's retaliation) is applied here: ONE entry per target (skillId Burn.KEY), `stacks` more stacks up to
+-- Burn.cap with Kindling's burnStacks hook, `tick` = the damage per tick of these stacks (Burn.tick / the element plan,
+-- dotPower already in it), accumulate without the stack cap (every hit is paid in full).
+function CombatService.ApplyBurn(player: Player, entity: any, tick: number, stacks: number, duration: number?): boolean
+	local cap = Burn.cap(hook(player, "burnStacks"))
+	local current = StatusEffectService.StacksFrom(entity, "burn", player, Burn.KEY)
+	return StatusEffectService.Apply(entity, "burn", {
+		duration = duration or SkillData.BURN.duration,
+		value = SkillData.BURN.pct,
+		source = player,
+		tickAmount = tick,
+		skillId = Burn.KEY,
+		accumulate = true,
+		uncapped = true,
+		maxStacks = cap,
+		stacks = Burn.add(current, stacks, cap),
+	})
+end
+
+-- S140 (Ember Shield): a melee blow of a monster on a player with the "emberShield" effect burns the attacker with one
+-- stack worth the effect's value % of the player's magic attack, at most once per Data/Skills.EMBER.gap s per attacker
+-- (monsters only; players are not burned back).
+local emberLast: { [Player]: { [any]: number } } = {}
+local function emberRetaliate(player: Player, attacker: any)
+	local entity = EntityService.GetPlayerEntity(player)
+	local pct = if entity then StatusEffectService.Max(entity, "emberShield") else 0
+	if pct <= 0 then
+		return
+	end
+	local last = emberLast[player]
+	if not last then
+		last = setmetatable({}, { __mode = "k" }) :: any
+		emberLast[player] = last
+	end
+	local t = os.clock()
+	if not Traits.gapReady(last[attacker], t, SkillData.EMBER.gap) then
+		return
+	end
+	last[attacker] = t
+	local magAtk = StatService.GetValue(player, "magAtk")
+	CombatService.ApplyBurn(player, attacker, Burn.tick(magAtk, 1, CombatService.DotBonus(player, "burn"), pct), 1)
 end
 
 -- S76: every poison of a player (skill, item trait, spread copy) is applied here. tickAmount already holds DotBonus
@@ -1664,6 +1709,10 @@ local function monsterHitsPlayer(
 	if regular and monster:IsAlive() and monster.entity then
 		tryCounter(player, monster.entity, false)
 	end
+	-- S140: Ember Shield burns a monster that strikes in melee (the blow landed or was absorbed)
+	if delivery == "melee" and not result.dodged and monster:IsAlive() and monster.entity then
+		emberRetaliate(player, monster.entity)
+	end
 	if taken > 0 then
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then
@@ -2315,6 +2364,7 @@ function CombatService.Start()
 		attackers[player] = nil
 		incoming[player] = nil
 		adminHooks[player] = nil
+		emberLast[player] = nil -- S140
 	end)
 
 	local sealPolled = 0

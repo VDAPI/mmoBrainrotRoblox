@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S139 gotowe (ostatnia S139: Umiejętności 2.0, okno: zakładki pul broni i „Kierunki”, drzewko
+S01–S115 i S117–S140 gotowe (ostatnia S140: Mag, pula Ognia według wspólnej drabiny (Kula Ognia 3, Fala Płomieni 6,
+Żarząca Osłona 10, Pożoga 15, Żar 20, Meteor 26, Zapłon 33, Spopielenie 40, Serce Feniksa 50, Deszcz Meteorów 60;
+podpalenie kumuluje się w stosach jednego wpisu na celu, `Logic/Burn`), wspólne Maga (Błysk 4, Tarcza Many 12, Inwokacja
+30, Skupienie 45), kierunki Maga z węzłami `skill` tylko w rzędach 4 i 8 (Mistrz Żywiołów i Tajemny Umysł jako węzły),
+warianty ognia buildów wzorcowych w modelu, R1 na 20. w paśmie S91; Mag przejściowy do S142; wcześniej S139:
+Umiejętności 2.0, okno: zakładki pul broni i „Kierunki”, drzewko
 ikon puli według wspólnej drabiny (kolumny ról, nitki, kłódki, znaki przełomów), szczegóły po kliknięciu w stałych
 sekcjach z tabelą „Ranga N → N+1”, krótki opis `short` każdej umiejętności (dymek paska), telefon z arkuszem i
 przypiętym „Zatwierdź”, nazwa puli nad paskiem po zmianie broni; wcześniej S138: Umiejętności 2.0, fundament B: ścieżki to mieszalne kierunki bez ścieżki
@@ -309,13 +314,20 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S140:** pula Ognia bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
+  składników (dopracowanie W03–W07), dźwięki `skill.flameWave|emberShield|pyroblast|combustion|immolate|phoenixHeart`
+  bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość ognia i T-SK4
+  wariantów ognia tylko w raporcie (`S140.fire.*`: udział podpalenia 7–13% przy celu 25%, T-SK4 2,5–4,8) do S147;
+  `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100) do opróżnienia w S146/S147. Pule lodu i błyskawicy oraz S1 Maga
+  w S141–S142. Wiki do odświeżenia (właściciel 17.10).
 - **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
   podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
   „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w
-  DECYZJE). Wszystkie pule są przejściowe, więc drabina jest pusta, a umiejętności stoją w „Pozostałe” do S140–S145.
+  DECYZJE). Wszystkie pule są przejściowe; od S140 pula Ognia i wspólne Maga stoją na drabinie, reszta w „Pozostałe”
+  do S141–S145.
   Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
-- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych
-  (`SKILL_ROWS` 4 i 8 asertowane dopiero po S140–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Wojownika, Łowcy
+  i Kapłana (`SKILL_ROWS` 4 i 8: Mag od S140, reszta w S143–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.

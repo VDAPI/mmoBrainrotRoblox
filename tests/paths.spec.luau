@@ -247,6 +247,18 @@ local function problems(api: any, classId: string): { string }
 	end
 	local rows = api.rowsFor(classId)
 	local ids: { [string]: boolean } = {}
+	-- S140 (DESIGN-18 §7): a class whose skill nodes all sit in PathData.SKILL_ROWS (the Mage from S140) has none in
+	-- row 1; the classes before their session keep the old rule (exactly one)
+	local skillRowsOnly = true
+	for _, path in api.pathsOf(classId) do
+		for r, row in path.rows do
+			for _, n in row.nodes do
+				if n.kind == "skill" and table.find(PathData.SKILL_ROWS, r) == nil then
+					skillRowsOnly = false
+				end
+			end
+		end
+	end
 	for _, path in api.pathsOf(classId) do
 		local pid = path.id
 		if #path.rows ~= #rows then
@@ -363,8 +375,8 @@ local function problems(api: any, classId: string): { string }
 			if info.choice and skillsInRow > 0 then
 				bad(`{where}: a choice row has no skill nodes`)
 			end
-			if r == 1 and skillsInRow ~= 1 then
-				bad(`{where}: row 1 holds exactly one skill`)
+			if r == 1 and skillsInRow ~= (if skillRowsOnly then 0 else 1) then
+				bad(`{where}: row 1 holds {if skillRowsOnly then "no skill" else "exactly one skill"}`)
 			end
 		end
 		for _, skill in api.source.classSkills(classId) do
@@ -2103,7 +2115,8 @@ T.describe("Data: Mage paths (S81)", function()
 		T.expect(GamePaths.passiveTotals(c, { main = "staff" }).hooks.areaCost).toBeNear(30, 1e-9)
 	end)
 
-	T.it("twoPathExtra rows, ranks 49 / 13, 50 / 62 coverage, 46 nodes, 10 skill nodes", function()
+	-- S140: Elementalist and Arcane Mind are 3-rank nodes, Grit and Will 2 (one whole direction = 50), 4 skill nodes
+	T.it("twoPathExtra rows, ranks 50 / 15 and 13, 63 / 65 coverage, 46 nodes, 4 skill nodes", function()
 		local extraRows = {}
 		for _, row in GamePaths.rowsFor("Mage") do
 			if row.extra then
@@ -2114,17 +2127,20 @@ T.describe("Data: Mage paths (S81)", function()
 		local paths = GamePaths.pathsOf("Mage")
 		T.expect(#paths).toBe(2)
 		local nodes, skills = 0, 0
+		local early = { destroyer = 15, arcanist = 13 }
 		for _, main in paths do
 			T.expect(main.wiki).toBe(false)
-			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 49 })
-			local total = 49
+			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 50 })
+			local total = 50
 			for _, other in paths do
 				if other ~= main then
-					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) }).toEqual({ other.id, 13 })
-					total += 13
+					T.expect({ other.id, pathRanks(other, 1, PathData.DIP_ROWS) })
+						.toEqual({ other.id, early[other.id] })
+					total += early[other.id]
 				end
 			end
-			T.expect(total).toBe(62)
+			T.expect(total).toBe(if main.id == "destroyer" then 63 else 65)
+			T.expect(wholeOf(main)).toBe(GamePaths.pointsAt(100))
 			T.expect(wholeOf(main) <= GamePaths.pointsAt(100)).toBe(true) -- S138: one whole direction
 			for r, row in main.rows do
 				local extras = 0
@@ -2143,7 +2159,7 @@ T.describe("Data: Mage paths (S81)", function()
 				end
 			end
 		end
-		T.expect({ nodes, skills }).toEqual({ 46, 10 })
+		T.expect({ nodes, skills }).toEqual({ 46, 4 })
 		-- classes with three paths have no extra nodes
 		for _, path in PathData.list do
 			if path.class ~= "Mage" then
@@ -2161,7 +2177,7 @@ T.describe("Data: Mage paths (S81)", function()
 		function()
 			local caps = {}
 			for _, path in GamePaths.pathsOf("Mage") do
-				T.expect(#path.reference).toBe(2)
+				T.expect(#path.reference).toBe(3) -- S140: + the fire variant
 				for _, build in path.reference do
 					T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
 					caps[build.id] = build.areaCap or 2
@@ -2192,7 +2208,14 @@ T.describe("Data: Mage paths (S81)", function()
 					end
 				end
 			end
-			T.expect(caps).toEqual({ destroyerExp = 3, destroyerBoss = 3, arcanistBoss = 2, arcanistOverload = 2 })
+			T.expect(caps).toEqual({
+				destroyerExp = 3,
+				destroyerBoss = 3,
+				destroyerFire = 3,
+				arcanistBoss = 2,
+				arcanistOverload = 2,
+				arcanistFire = 2,
+			})
 			local references = {}
 			for _, path in PathData.list do
 				for _, build in path.reference do
@@ -2202,6 +2225,46 @@ T.describe("Data: Mage paths (S81)", function()
 				end
 			end
 			T.expect(references).toEqual({ "fury" })
+		end
+	)
+
+	-- S140 (DESIGN-18 §6.1, §7): the target shape of the Mage's directions (asserted here while the Mage is transitional)
+	T.it(
+		"S140: skill nodes only in rows 4 and 8, the moved skills are passive nodes, every modify skill exists",
+		function()
+			local skillRows: { string } = {}
+			for _, path in GamePaths.pathsOf("Mage") do
+				for r, row in path.rows do
+					for _, n in row.nodes do
+						if n.kind == "skill" then
+							table.insert(skillRows, `{path.id}:{r}:{n.skill}`)
+						end
+						if n.modify then
+							T.expect({ n.id, SkillData.get(n.modify.skill) ~= nil }).toEqual({ n.id, true })
+						end
+					end
+				end
+			end
+			T.expect(skillRows).toEqual({
+				"destroyer:4:elementalVortex",
+				"destroyer:8:cataclysm",
+				"arcanist:4:arcaneDischarge",
+				"arcanist:8:arcaneTorrent",
+			})
+			local elementalist = (GamePaths.findNode("destroyer_elementalist")) :: any
+			local mind = (GamePaths.findNode("arcanist_arcaneMind")) :: any
+			T.expect({ elementalist.kind, elementalist.maxRank }).toEqual({ "passive", 3 })
+			T.expect({ mind.kind, mind.maxRank }).toEqual({ "passive", 3 })
+			-- the old ranks 1 / 3 / 5 of the skills
+			T.expect(GamePaths.nodeValues(elementalist, 2).bonus).toBeNear(9, 1e-9)
+			T.expect(GamePaths.nodeValues(mind, 3).critDmg).toBeNear(2.8, 1e-9)
+			local c = mage(nil, { destroyer_elementalist = 3, arcanist_arcaneMind = 1 })
+			local totals = GamePaths.passiveTotals(c, { main = "staff" })
+			T.expect(totals.hooks.elementDamage).toBeNear(15, 1e-9)
+			T.expect(totals.flat.critChance).toBeNear(0.35, 1e-9)
+			for _, id in { "elementalist", "arcaneMind" } do
+				T.expect(SkillData.get(id)).toBeNil()
+			end
 		end
 	)
 

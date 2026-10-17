@@ -41,10 +41,16 @@
 --     chainHeal, shieldPerHit, allyHeal, allyShield, behindEffect, shieldBurst; item trait hooks and effects; returns.
 --   No effect on a dummy: movement, knockback, pulls, stuns, slows, freezes, roots, taunt, camouflage, damage
 --     reduction, invulnerability, mana shield, intercept, kills (poisonSpread, markJump, extendOnKill), defensive hooks.
+-- S140 (DESIGN-18 §6.1, Logic/Burn): the player's one burn per target (applyBurn mirrors CombatService.ApplyBurn: stacks
+--   up to Burn.cap, accumulate uncapped; the adaptive weapon burn joins it), burnStacks of fire hits, Kindling's
+--   burnBonus and Immolate's vsBurning (Context.damage), Combustion's detonation (Types/Offense), Ember Shield's
+--   retaliation on melee blows (retaliate) and Phoenix Heart's save (retaliate); the Mage's fire variants of the
+--   reference builds measure one element (ReferenceBuild.weapon.element, SkillModel.elementOf).
 
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local Burn = require("../src/shared/Logic/Burn")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Bosses = require("../src/shared/Data/Bosses")
 local Chain = require("../src/shared/Logic/Chain")
@@ -964,7 +970,8 @@ SkillModel.R4_BANDS = { [5] = { 0.08, 0.17 }, [10] = { 0.17, 0.28 } }
 SkillModel.R4_DIFF = 0.05
 SkillModel.R4_CASTS = 12 -- S90: a cooldown option's R4 window covers at least 12 cooldowns (SkillModel.optionGain)
 -- S90: skills measured in the build's whole rotation (their value comes from the other spells)
-SkillModel.R4_ROTATION = { arcaneDischarge = true } :: { [string]: boolean }
+-- S140: Combustion and Immolate live on the burns the other fire spells set (Logic/Burn)
+SkillModel.R4_ROTATION = { arcaneDischarge = true, combustion = true, immolate = true } :: { [string]: boolean }
 
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
@@ -1136,6 +1143,14 @@ SkillModel.R4_UTILITY = {
 	["evocation:10a"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["evocation:10b"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["arcaneTorrent:5b"] = "ruch w trakcie kanału",
+	-- S140: Ember Shield (obrona: tarcza i podpalanie bijących wręcz; manekiny nie biją)
+	["flameWave:5a"] = "geometria albo czas kontroli",
+	["combustion:5a"] = "geometria albo czas kontroli",
+	["combustion:10a"] = "ogłuszenie (kontrola)",
+	["emberShield:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	-- S91: options of rank 5 reached by 20 (ranks 5 at 17 / 19)
 	["mightyStrike:5a"] = "odrzucenie (kontrola)",
 	["charge:5a"] = "zasięg doskoku (geometria)",
@@ -1189,6 +1204,13 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	circleOfLight = "healer.dungeon",
 	shieldOfFaith = "healer.dungeon",
 	taunt = "guardian.defender",
+	-- S140 (DESIGN-18 §6.1): the fire pool on the fire variants (area skills on the Destroyer, one target on the
+	-- Arcanist); Rain of Meteors stays on the Destroyer's area build it was tuned on (S94, now a base skill)
+	flameWave = "destroyer.destroyerFire",
+	combustion = "destroyer.destroyerFire",
+	pyroblast = "arcanist.arcanistFire",
+	immolate = "arcanist.arcanistFire",
+	meteorStorm = "destroyer.destroyerExp",
 } :: { [string]: string }
 
 -- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; S91: the options of a rank
@@ -1715,6 +1737,13 @@ function SkillModel.character(build: Build, L: number, element: string?): Charac
 	return result
 end
 
+-- S140 (DESIGN-18 §13): the fixed weapon element of a Mage variant (ReferenceBuild.weapon.element: the fire variants
+-- measure the fire pool alone); nil = the mean of ASSUMPTIONS.elements (ROZWOJ 12.7).
+function SkillModel.elementOf(build: Build): string?
+	local weapon: any = build.weapon
+	return if build.classId == "Mage" and weapon then weapon.element else nil
+end
+
 -- Player ----------------------------------------------------------------------------------------------------------
 
 export type PlayerOpts = {
@@ -1780,19 +1809,21 @@ end
 -- (FightSim.dps reads it); `sp.pathHooks` is SkillService.PassiveHook (path and class passives only).
 function SkillModel.player(build: Build, L: number, opts: PlayerOpts?): any
 	local o: PlayerOpts = opts or {}
+	-- S140: a Mage variant with a fixed weapon element (ReferenceBuild.weapon.element) plays that element
+	local element = o.element or SkillModel.elementOf(build)
 	-- cached without gear options (S86 / S88 pass their own GearOpts and keep the player)
-	local key = `{build.classId}|{build.key}|{L}|{o.element or "-"}`
+	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = if o.gear then nil else playerCache[key]
 	if cached then
 		return cached
 	end
-	local ch = SkillModel.character(build, L, if build.classId == "Mage" then o.element else nil)
+	local ch = SkillModel.character(build, L, if build.classId == "Mage" then element else nil)
 	local character = ch.character
 	local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
 	local gearOpts: any = if o.gear then table.clone(o.gear :: any) else {}
 	gearOpts.weapon = build.weapon.main
 	gearOpts.offhand = if build.weapon.offhand then build.weapon.offhand else false
-	gearOpts.element = o.element or gearOpts.element
+	gearOpts.element = element or gearOpts.element
 	local items = B.gear(build.classId, L, gearOpts)
 	local start = StatPlan.startOf(build.classId) :: any
 	local stats = table.clone(start)
@@ -1950,6 +1981,12 @@ local HOOKS_MODELLED: { [string]: boolean } = {
 	poisonChance = true,
 	resourceOnHit = true,
 	frostbite = true,
+	-- S140 (Logic/Burn): Kindling, Phoenix Heart
+	burnStacks = true,
+	burnBonus = true,
+	phoenixHeart = true,
+	phoenixRest = true,
+	phoenixInvuln = true,
 }
 -- Hooks that change no metric (threat, movement, minimap, kills of a dying group's spread, radius of areas every dummy
 -- stands in, the mana shield's price): docs/SESJE.md S86 names the reason of each.
@@ -2171,7 +2208,7 @@ local function apply(state: any, entity: any, kind: string, o: any): boolean
 			else nil
 		tickAmount, nextTick = EffectStack.accumulate(scheduleOld, {
 			total = total,
-			limit = if maxStacks > 1 then maxStacks else nil,
+			limit = if maxStacks > 1 and not o.uncapped then maxStacks else nil, -- S140: uncapped (Logic/Burn)
 			duration = o.duration,
 			now = t,
 			interval = TICK,
@@ -2576,6 +2613,35 @@ local function otherTarget(state: any, tg: any): any?
 	return nil
 end
 
+-- S140 mirrors CombatService.ApplyBurn (Logic/Burn): the player's one burn on `tg` (skillId Burn.KEY), `stacks` more
+-- stacks up to Burn.cap with Kindling's burnStacks hook, `tick` per tick of these stacks, accumulate without the stack
+-- cap; `weapon` marks an adaptive weapon burn (elementDealt, C3). Its ticks land in state.by[Burn.KEY].
+local function burnStacksOf(state: any, tg: any): number
+	local e = tg.effects[`burn|{Burn.KEY}|`]
+	return if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+end
+local function applyBurn(
+	state: any,
+	tg: any,
+	tick: number,
+	stacks: number,
+	duration: number?,
+	weapon: boolean?
+): boolean
+	local cap = Burn.cap(hook(state, "burnStacks"))
+	return apply(state, tg, "burn", {
+		duration = duration or SkillData.BURN.duration,
+		value = SkillData.BURN.pct,
+		tickAmount = tick,
+		skillId = Burn.KEY,
+		accumulate = true,
+		uncapped = true,
+		maxStacks = cap,
+		stacks = Burn.add(burnStacksOf(state, tg), stacks, cap),
+		element = if weapon then "weapon" else nil,
+	})
+end
+
 -- mirrors Skills/Elements.apply (S65, S79): Traits.elementPlan with the caller's spec, elementRider and
 -- riderSameTarget, dotBonus("burn"); a burn with accumulate, an ice slow with Frostbite (chill), a lightning arc
 -- into the nearest other enemy (else on the same target with sameTarget). `jump(other, pct)` deals the arc.
@@ -2599,7 +2665,10 @@ local function elementApply(
 	if not plan then
 		return
 	end
-	if plan.kind == "burn" then
+	if plan.kind == "burn" and skillId ~= EffectStack.ITEM then
+		-- S140: a skill's weapon burn is one stack of the player's one burn (CombatService.ApplyBurn)
+		applyBurn(state, tg, plan.tick or 1, 1, plan.duration, true)
+	elseif plan.kind == "burn" then
 		apply(state, tg, "burn", {
 			duration = plan.duration,
 			value = plan.pct,
@@ -3286,6 +3355,15 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 		})
 		multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, pathHook(state, "resonance")) * ctx.castMul
 	end
+	-- S140 mirrors Context.damage: Kindling (burnBonus) on fire hits but zone ticks, Immolate's vsBurning on main hits
+	if ctx.element == "fire" and not o.lingering then
+		local perStack = pathHook(state, "burnBonus")
+		local vs = if def.values.vsBurning ~= nil and not o.plain then Skills.valueAt(def, "vsBurning", ctx.rank) else 0
+		if perStack > 0 or vs > 0 then
+			local stacks = burnStacksOf(state, tg)
+			multiplier *= Burn.stackBonus(stacks, perStack) * Burn.vsBurning(stacks, vs)
+		end
+	end
 	local before = tg.hp
 	local amount = dealDamage(state, tg, {
 		magic = ctx.magic,
@@ -3334,6 +3412,11 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 				{ noAdaptive = true, consumeShot = false, secondary = true }
 			)
 		end)
+	end
+	-- S140 mirrors Context.damage: the fire school's burn stacks on main hits (Burn.tick of the hit)
+	local stacks = def.burnStacks or 0
+	if stacks > 0 and amount > 0 and not (o.plain or o.secondary or o.lingering) then
+		applyBurn(state, tg, Burn.tick(amount, stacks, dotBonus(state, "burn")), stacks)
 	end
 	if amount > 0 and not o.plain then
 		onHit(ctx, tg, percent, amount, o)
@@ -3447,6 +3530,28 @@ H.target = function(ctx)
 	local amount = damage(ctx, tg, percent, { primary = true })
 	if amount > 0 then
 		applyEffects(ctx, tg, "enemy")
+		if ctx.def.values.detonate ~= nil then
+			-- S140 mirrors Types/Offense detonate (Combustion): the caster's burn on the target becomes a blast of
+			-- Burn.detonate % on every dummy (all stand in the radius); a stun from BURN.stunAt stacks (notBoss)
+			local key = `burn|{Burn.KEY}|`
+			local e = tg.effects[key]
+			local stacks = if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+			tg.effects[key] = nil
+			local blast, stuns = Burn.detonate(stacks, Skills.valueAt(ctx.def, "detonate", ctx.rank))
+			if blast > 0 then
+				local list = alive(state)
+				hitAll(ctx, list, blast, false)
+				if stuns then
+					for _, other in list do
+						apply(state, other, "stun", {
+							duration = Skills.valueAt(ctx.def, "stun", ctx.rank),
+							skillId = ctx.id,
+							notBoss = true,
+						})
+					end
+				end
+			end
+		end
 		if ctx.bp.stunSplash and #effectsOf(tg, "stun") > 0 then
 			local splash = percent * Skills.valueAt(ctx.def, "stunSplash", ctx.rank) / 100
 			for _, other in alive(state) do
@@ -4065,6 +4170,7 @@ H.shield = function(ctx)
 		end
 	end
 	shield(ctx, who, healAmount(ctx, who, "shield"), duration, onEnd)
+	applyEffects(ctx, ctx.state.self, "self") -- S140 mirrors Types/Support.shield (Ember Shield's emberShield)
 	return true
 end
 
@@ -4888,6 +4994,19 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 			end
 		end
 	end
+	-- S140 mirrors CombatService emberRetaliate: a regular melee blow burns the monster while Ember Shield lasts, at most
+	-- once per Data/Skills.EMBER.gap s per monster (one stack of value % magic attack, Burn.tick)
+	if regular and tg.m.delivery == "melee" and tg.hp > 0 then
+		local emberPct = maxOf(state, state.self, "emberShield")
+		if emberPct > 0 and (tg.emberAt == nil or state.t - tg.emberAt + EPS >= SkillData.EMBER.gap) then
+			tg.emberAt = state.t
+			local magAtk = current(state).values.magAtk or 0
+			applyBurn(state, tg, Burn.tick(magAtk, 1, dotBonus(state, "burn"), emberPct), 1)
+		end
+	end
+	if amount > 0 and state.phoenixUntil and state.t < state.phoenixUntil then
+		amount = 0 -- S140: Phoenix Heart's invulnerability
+	end
 	if amount > 0 then
 		state.hp -= amount
 		state.taken += amount
@@ -5050,9 +5169,25 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 			break
 		end
 		if state.retaliate and state.hp <= 0 then
-			ended = t
-			died = true
-			break
+			-- S140 mirrors SkillService phoenixFilter (Logic/Burn.phoenixSave, from a monster): 1 HP, the passive's
+			-- invulnerability and rest, the fire blast on every living monster (all stand in its radius)
+			local blast = pathHook(state, "phoenixHeart")
+			if blast > 0 and (state.phoenixReady == nil or t + EPS >= state.phoenixReady) then
+				state.hp = 1
+				state.phoenixReady = Burn.phoenixReady(t, pathHook(state, "phoenixRest"))
+				state.phoenixUntil = t + Burn.phoenixInvuln(pathHook(state, "phoenixInvuln"), false)
+				for _, tg in alive(state) do
+					dealDamage(
+						state,
+						tg,
+						{ magic = true, percent = blast, noProc = true, consumeShot = false, bucket = "phoenixHeart" }
+					)
+				end
+			else
+				ended = t
+				died = true
+				break
+			end
 		end
 		if not state.control then
 			stepFury(state)
@@ -5505,7 +5640,7 @@ function SkillModel.metrics(build: Build, L: number): Metrics
 		return cached
 	end
 	local m: Metrics
-	if build.classId == "Mage" then
+	if build.classId == "Mage" and SkillModel.elementOf(build) == nil then
 		local byElement: { [string]: Metrics } = {}
 		local runs: { Metrics } = {}
 		for _, element in A.elements do
@@ -7230,7 +7365,10 @@ local function skillRoleValue(
 	if role == "heal" then
 		return r.healTo.tank or 0
 	end
-	return r.by[skillId] or 0
+	-- S140: the player's one burn (Burn.KEY) holds the burns of the skill when it is alone in the rotation (with the
+	-- build's rotation, R4_ROTATION, the burns of the other spells are in it too: only the skill's own hits count)
+	local burns = if rotation == nil and (def.burnStacks or def.adaptive) then r.by[Burn.KEY] or 0 else 0
+	return (r.by[skillId] or 0) + burns
 end
 
 -- S86 (D7): R4 = the role value of `skillId` with option `choice` at breakpoint rank `at` / without that breakpoint
@@ -7239,8 +7377,13 @@ end
 function SkillModel.optionGain(build: Build, skillId: string, at: number, choice: string, L: number): number?
 	local base = SkillData.get(skillId) :: any
 	-- S90: the Mage on the skill's own element (lightning and ice spells need that weapon; adaptive ones fire)
+	-- S140: a variant with a fixed element measures in it
 	local element = if build.classId == "Mage"
-		then (if base and base.element and table.find(A.elements, base.element) then base.element else "fire")
+		then SkillModel.elementOf(build) or (if base
+				and base.element
+				and table.find(A.elements, base.element)
+			then base.element
+			else "fire")
 		else nil
 	local sp = SkillModel.player(build, L, if element then { element = element } else nil)
 	local rank = Paths.skillRank(sp.character, skillId)

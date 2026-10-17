@@ -14,9 +14,12 @@
 -- keeps the first); a chain decides its path first (Logic/Chain.path, flat distance).
 -- S80 (ROZWOJ 12.4, 12.5): `beam` (Arcane Torrent) starts a beam channel through services.Beam; circleTarget with
 -- SkillVfx `waves` (Cataclysm) sends one impact event per wave instead of one at the start.
+-- S140 (Logic/Burn): `target` with values.detonate (Combustion) consumes the caster's burn stacks on the target after the
+-- hit for a blast of detonate % per stack within the skill's radius, stunning from BURN.stunAt stacks (never bosses).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Burn = require(ReplicatedStorage.Shared.Logic.Burn)
 local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
@@ -86,6 +89,31 @@ local function stunSplash(ctx: Ctx, target: any)
 	ctx.fx({ v = "splash", p = at, r = spec.radius })
 end
 
+-- S140 Combustion: the caster's burn on `target` turns into a blast (Logic/Burn.detonate); nothing without stacks.
+local function detonate(ctx: Ctx, target: any)
+	local services = ctx.services
+	local at = services.Entity.Position(target)
+	local stacks = services.StatusEffect.TakeStacks(target, "burn", ctx.player, Burn.KEY)
+	local percent, stuns = Burn.detonate(stacks, ctx.value("detonate"))
+	if percent <= 0 or not at then
+		return
+	end
+	local radius = ctx.skill.radius or 6
+	local list = ctx.enemiesInCircle(at, radius)
+	ctx.fx({ v = "detonate", p = at, r = radius, n = stacks })
+	hitAll(ctx, list, percent, false, { from = at })
+	if stuns then
+		for _, entity in list do
+			services.StatusEffect.Apply(entity, "stun", {
+				duration = ctx.value("stun"),
+				source = ctx.player,
+				skillId = ctx.skill.id,
+				notBoss = true,
+			})
+		end
+	end
+end
+
 Offense.target = function(ctx)
 	local target = ctx.target
 	if not target then
@@ -101,6 +129,9 @@ Offense.target = function(ctx)
 	if result and not result.dodged then
 		ctx.applyEffects(target, "enemy")
 		stunSplash(ctx, target)
+		if ctx.skill.values.detonate ~= nil then
+			detonate(ctx, target)
+		end
 	end
 	return true, nil
 end

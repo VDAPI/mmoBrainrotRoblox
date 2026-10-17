@@ -98,12 +98,14 @@ T.describe("Skill points: points, limits and buying (S137)", function()
 		local limit = Skills.rankAt(SkillData.get("firebolt") :: any, 10)
 		T.expect({ SkillPoints.canBuy(c, "fire", "firebolt", limit) }).toEqual({ true })
 		T.expect({ SkillPoints.canBuy(c, "fire", "firebolt", limit + 1) }).toEqual({ false, "skills.error.limit" })
-		T.expect({ SkillPoints.canBuy(c, "fire", "meteor") }).toEqual({ false, "skills.error.limit" }) -- unlock 30
+		T.expect({ SkillPoints.canBuy(c, "fire", "meteor") }).toEqual({ false, "skills.error.limit" }) -- unlock 26
 		T.expect({ SkillPoints.canBuy(c, "fire", "iceShard") }).toEqual({ false, "skills.error.pool" })
 		T.expect({ SkillPoints.canBuy(c, "onehand", "firebolt") }).toEqual({ false, "skills.error.pool" })
-		T.expect({ SkillPoints.canBuy(c, "fire", "elementalist") }).toEqual({ false, "skills.error.locked" })
-		c.path = { nodes = { destroyer_elementalist = 1 }, bp = {} }
-		T.expect({ SkillPoints.canBuy(c, "fire", "elementalist") }).toEqual({ true })
+		-- S140: Elementalist is a passive node; a direction skill (row 4) needs its node
+		local high = char("Mage", 30)
+		T.expect({ SkillPoints.canBuy(high, "fire", "elementalVortex") }).toEqual({ false, "skills.error.locked" })
+		high.path = { nodes = { destroyer_elementalVortex = 1 }, bp = {} }
+		T.expect({ SkillPoints.canBuy(high, "fire", "elementalVortex") }).toEqual({ true })
 		T.expect({ SkillPoints.canBuy(c, "fire", "mightyStrike") }).toEqual({ false, "error.badRequest" })
 		T.expect({ SkillPoints.canBuy(c, "fire", "firebolt", 0) }).toEqual({ false, "error.badRequest" })
 		T.expect({ SkillPoints.canBuy(c, "fire", "firebolt", 1.5) }).toEqual({ false, "error.badRequest" })
@@ -521,11 +523,14 @@ T.describe("Skill points: save (S137, migration 12)", function()
 		AccountSchema.migrate(data)
 		local c = data.characters["1"]
 		T.expect(c.barPool).toBe("ice")
+		-- S140: the common Mana Shield and Evocation fill the free slots of the ice bar (startBar)
 		T.expect(c.hotbar).toEqual({
 			["2"] = "iceShard",
 			["4"] = "firebolt",
 			["5"] = "frostNova",
 			["1"] = "blink",
+			["3"] = "manaShield",
+			["6"] = "evocation",
 		})
 		for _, id in c.hotbar do
 			T.expect({ id, (SkillData.get(id) :: any).element ~= "fire" }).toEqual({ id, true })

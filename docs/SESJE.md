@@ -11936,3 +11936,82 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   NodeCard,PathTab,Details,Sheet,BarPicker}.luau` (`BaseList.luau` usunięty), `src/client/UI/Screens/Hud/{init,
   PoolLabel}.luau`, `src/server/Services/PathService.luau`, `tests/{pathview,localization}.spec.luau`,
   `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S140: Mag, pula Ognia
+
+- **Pula Ognia** (`Data/Skills/Mage`, `pool = "fire"`, `role`; DESIGN-18 §6.1). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  koszt i odnowienie rangi 1; przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Umiejętność | Ranga 1 / 10 | Przełomy |
+  |---|---|---|---|
+  | S1 · 1 | Ognisty Pocisk `firebolt` (wspólny, adaptacyjny do S142) | 118 / 255,7% | bez zmian |
+  | A1 · 3 | Kula Ognia `fireball` | 120 / 221,8% (35 many, 8 s) | bez zmian |
+  | K1 · 6 | Fala Płomieni `flameWave` (stożek 8 st. / 70°, odrzut 6 st., 1 stos) | 45 / 150% (40, 14 s) | +40° / +16; +1 stos / +36 |
+  | O1 · 10 | Żarząca Osłona `emberShield` (tarcza 8 s, odwet na bijących wręcz) | 8–12% HP + 10–15% ataku mag., odwet 20 / 40% (35, 24 s) | odwet +15 / tarcza +3; +4 s / ×0,75 |
+  | S2 · 15 | Pożoga `pyroblast` (celowanie 1 s, 2 stosy) | 90 / 380% (40, 10 s) | rozprysk 12% / +45; +1 stos / +80 |
+  | P1 · 20 | Żar `kindling` (do 3 stosów) | +1 / +5% za stos | — |
+  | A2 · 26 | Meteor `meteor` (było 30) | 89,6 / 174% (węzeł: ranga 2 = 98) | bez zmian, 5B +20 (było 23) |
+  | K2 · 33 | Zapłon `combustion` (krąg 6 st., ogłuszenie 1 s od 3 stosów) | 80 / 140%, wybuch 60 / 105% za stos (45, 16 s) | +2 st. / +14 za stos; +0,5 s / ×0,8 |
+  | S3 · 40 | Spopielenie `immolate` (×1,5 poniżej 30% HP) | 180 / 300%, +10 / 16% za stos (35, 9 s) | rozprysk 8% / +5 za stos; krytyk < 50% / +60 |
+  | P2 · 50 | Serce Feniksa `phoenixHeart` (raz na 180 s, 2 s nietykalności) | wybuch 150 / 300% ataku mag. | — |
+  | U · 60 | Deszcz Meteorów `meteorStorm` (było 48, ogień, 1 stos na uderzenie) | 24 / 24% × 6 (174, 50 s) | bez zmian |
+
+- **Wspólne Maga:** Błysk C1 4 (było 14), Tarcza Many C2 12, Inwokacja C3 30, Skupienie C4 45 (były węzłami `skill`
+  Arkanisty i Niszczyciela). `Data/SkillPools/Mage`: plan puli Ognia według drabiny, wspólne w planach lodu i
+  błyskawicy, `version` 3 (darmowy reset); Mag dalej `transitional` (S1 i pule lodu / błyskawicy w S141–S142).
+- **Mechaniki ognia** (`Logic/Burn`, nowy): `cap`, `add`, `tick`, `stackBonus` (Żar), `vsBurning` (Spopielenie),
+  `detonate` (Zapłon), `phoenixSave` / `phoenixInvuln` / `phoenixReady`. Serwer: `CombatService.ApplyBurn` (jedno
+  podpalenie gracza na celu, stosy, `uncapped`), odwet Żarzącej Osłony w `monsterHitsPlayer`, `Skills/Elements` (burn
+  broni przez `ApplyBurn`), `Skills/Context` (stosy `burnStacks` na trafieniach głównych, Żar i `vsBurning`, pole
+  `knockback`), `Types/Offense` (wybuch Zapłonu), `Types/Support.shield` (własne efekty tarczy),
+  `StatusEffectService` (`uncapped`, `StacksFrom`, `TakeStacks`), `SkillService` (filtr Serca Feniksa, efekt
+  `phoenixSave`), `ResourceService.FilterPriority.phoenixHeart` 85. Dane: `Data/Skills.BURN`, `EMBER`, `PHOENIX`,
+  `ADAPTIVE.burnPct` 15 (było 30), `Combat.pvp.phoenix` 0,5, pola `SkillDef.burnStacks` / `knockback`
+  (`add.burnStacks` w przełomach), efekt `emberShield`.
+- **Kierunki Maga:** węzły `skill` tylko w rzędach 4 i 8 (Wir / Kataklizm, Wyładowanie / Strumień). Mistrz Żywiołów i
+  Tajemny Umysł to węzły `passive` 3 rang; nowe węzły: Echo Żywiołów (rząd 7), Przypływ Żywiołów (rząd 10), Tajemna
+  Osłona (rząd 1 Arkanisty), Szybkie Wyładowanie (rząd 7 Arkanisty); Gniew Burzy na Wirze (0,3–0,9 s); Wytrwałość i
+  Wola 2 rangi (kierunek = 50 pkt). Buildy wzorcowe przestawione, nowe `destroyerFire` i `arcanistFire` (różdżka /
+  kostur ognia, `ranks`).
+- **Model** (`tests/SkillModel.luau`, każde lustro z `-- mirrors`): `applyBurn` (CombatService.ApplyBurn), podpalenie
+  broni w tym samym wpisie, `burnStacks`, Żar i `vsBurning` w `damage`, wybuch Zapłonu w `H.target`, efekt tarczy,
+  odwet Osłony i ocalenie Feniksa w walce z oddającymi potworami, `uncapped`; `SkillModel.elementOf`, R4 nowych
+  umiejętności na wariantach ognia (`R4_SUPPORT_BUILDS`), Zapłon i Spopielenie w rotacji (`R4_ROTATION`).
+- **Wyniki modelu** (R1 / T-SK3 / T-SK4 na 20 / 45 / 70 / 100): `destroyerFire` 2,60 / 4,23 / 5,35 / 5,65, T-SK3 1,47 /
+  2,26 / 2,28 / 2,20, T-SK4 3,4 / 4,8 / 3,6 / 3,6; `arcanistFire` 2,64 / 5,19 / 6,25 / 6,63, T-SK3 1,24 / 1,31 / 1,45 /
+  1,14, T-SK4 2,5 / 3,5 / 3,0 / 3,4. S91 (średnia żywiołów) na 20.: `destroyerExp` 2,47 → 2,31, `destroyerBoss` 2,66 →
+  2,49, `arcanistBoss` 2,58 → 2,40 (pasmo 1,6–2,73), gładkość i zysk rzędów w paśmie. R4 nowych: Fala 5B 0,11, 10A /
+  10B 0,23 / 0,24; Pożoga 5 0,15 / 0,10–0,14, 10 0,19 / 0,19; Zapłon 5B 0,09, 10B 0,25; Spopielenie 5 0,09 / 0,09–0,10,
+  10 0,23 / 0,20; Meteor 5B 0,16 (45). Tożsamość (raport `S140.fire.*`, asertuje S147): ogień / błyskawica na 3 celach
+  8 s 1,43–1,50 (≥ 1), błyskawica / ogień w jeden cel 0,63–0,70 (cel 1,10–1,20, pula błyskawicy w S142), udział
+  podpalenia 7–13% (cel ≥ 25%).
+- **1–20:** fixture przepisany (S140, „pula Ognia Maga”): 254 zmienione, 4 usunięte, 44 nowe wpisy, tylko klucze Maga
+  i 6 wierszy „Grimrok bez wsparcia” (dwa buildy Maga w drużynie); `ALLOWED_1_20_DIFFS` pusta. Blok „Balance 1-20:
+  S91” zielony; nowy blok „Balance S140: fire pool” (R1 wariantów ognia na 20., T-SK3).
+- **`GLOBAL_REPORT_ONLY` S140** (89 wierszy Maga 21–100): `R.duskwood|ashen|frostpeak.guard.tsk1|tsk2.Mage.<wariant
+  ognia>.<poziom>` (54: `destroyerFire` 40–100, `arcanistFire` 50–100), `R.ashen.tsk4.*` (destroyerExp / destroyerBoss
+  60, arcanistOverload 60 / 65), `R.frostpeak.tsk4.*` (destroyerBoss 80–100, destroyerExp 85–100, arcanistOverload 100),
+  ścieżki `destroyer.aoe` (destroyerExp 45 / 70), `destroyer.single` (destroyerBoss 100), `arcanist.single` (70 / 100),
+  `arcanist.vsDestroyer` (45 / 100), `mage.tsk4` (destroyerExp, destroyerBoss, arcanistOverload 100), `r4.meteorStorm.5|a`
+  (100), G10 T-SK4 `destroyerExp` 60 i 85–100, T1 Moc Żywiołu ogień `destroyerExp@staff` 45 / 70 / 100.
+- **Wygląd, dźwięk, teksty:** ruchy nowych umiejętności jako warianty ruchów Maga (`SkillMotions`: Łańcuch, Tarcza Many,
+  Kula Ognia z pętlą skupienia, Lodowy Odłamek, Pocisk), `SkillVfx` w trzech warstwach w kolorze ognia (Fala: `fan` +
+  `groundDecal`; Zapłon `burst` / `cracks`, Spopielenie `pillar`), efekty `detonate` i `phoenixSave` w
+  `VfxController`, ikona efektu `emberShield`; klucze `skill.<id>` w `Data/Sfx` bez ID (`hint`), `skill.pyroblast.cast`;
+  teksty PL / EN: nazwy, `short`, `desc`, przełomy, Deszcz Meteorów, węzły kierunków, pola `skills.field.*`,
+  `skills.phoenixSave`, `effect.emberShield`.
+- **Testy:** nowy `tests/burn.spec.luau` (stosy, limit, odświeżenie, `uncapped`, Żar, Spopielenie, Zapłon, Feniks raz
+  na odpoczynek, źródła, PvP); `skillpools.spec` (pula Ognia A1…U i wspólne C1–C4 na poziomach drabiny),
+  `paths.spec` (węzły `skill` Maga tylko w 4 i 8, węzły pasywne, `modify` istnieją, zasada rzędu 1 dla klas na drabinie
+  kierunków, buildy 50 pkt), `skills.spec`, `pathview.spec`, `skillpoints.spec`, `traits.spec`, `balance1_20.spec`
+  (fixture S140), `balance.spec` (blok S140); `tests/fixtures/skill_timing.luau` (5 wierszy).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Burn.luau` (nowy), `src/shared/Logic/Skills.luau`, `src/shared/Data/Skills/{init,Types,
+  Build,Mage}.luau`, `Data/{Combat,SkillCurves,SkillMotions,SkillVfx,Sfx,UiArt}.luau`, `Data/SkillPools/Mage.luau`,
+  `Data/Paths/{Mage,Types}.luau`, `Data/Localization/{pl,en}.luau`, `src/server/Services/{CombatService,
+  StatusEffectService,SkillService,ResourceService}.luau`, `src/server/Skills/{Context,Elements}.luau`,
+  `src/server/Skills/Types/{Offense,Support}.luau`, `src/client/Controllers/VfxController.luau`,
+  `src/client/UI/Screens/Hud/EffectIcons.luau`, `tests/{SkillModel,Balance}.luau`, `tests/{burn,balance,balance1_20,
+  paths,pathview,skillpoints,skillpools,skills,traits}.spec.luau`, `tests/fixtures/{balance_1_20.json,
+  skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`,
+  `CLAUDE.md`.

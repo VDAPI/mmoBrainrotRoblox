@@ -77,7 +77,11 @@ T.describe("Skill pools: data (S137)", function()
 		function()
 			for _, skill in SkillData.byClass.Mage do
 				if skill.path == nil then
-					if skill.adaptive or skill.element == nil then
+					if skill.type == "passive" and skill.pool ~= "common" then
+						-- S140: a school's passive (Kindling, Phoenix Heart) has no element, only its pool
+						T.expect({ skill.id, table.find(Elements.WEAPON, skill.pool or "") ~= nil })
+							.toEqual({ skill.id, true })
+					elseif skill.adaptive or skill.element == nil then
 						T.expect({ skill.id, skill.pool }).toEqual({ skill.id, "common" })
 					else
 						T.expect({ skill.id, skill.pool }).toEqual({ skill.id, skill.element })
@@ -154,6 +158,60 @@ T.describe("Skill pools: data (S137)", function()
 			end
 			check("common", PoolData.COMMON_LADDER)
 		end
+	end)
+end)
+
+-- S140 (DESIGN-18 §5, §6.1): the Mage's fire pool and common skills on the shared ladder; S1 (Magic Bolt) and the ice
+-- and lightning pools follow in S141 / S142 (the Mage stays transitional until then)
+T.describe("Skill pools: the Mage's fire pool and common skills (S140)", function()
+	T.it("the fire pool holds A1..U at the ladder's levels, the common skills C1..C4", function()
+		local want = {
+			A1 = "fireball",
+			K1 = "flameWave",
+			O1 = "emberShield",
+			S2 = "pyroblast",
+			P1 = "kindling",
+			A2 = "meteor",
+			K2 = "combustion",
+			S3 = "immolate",
+			P2 = "phoenixHeart",
+			U = "meteorStorm",
+		}
+		for _, rung in PoolData.LADDER do
+			local found = {}
+			for _, skill in SkillData.byClass.Mage do
+				if skill.path == nil and skill.pool == "fire" and skill.role == rung.code then
+					table.insert(found, skill.id)
+				end
+			end
+			local expected = want[rung.code]
+			T.expect({ rung.code, found }).toEqual({ rung.code, if expected then { expected } else {} })
+			if expected then
+				local skill = SkillData.get(expected) :: any
+				T.expect({ expected, skill.unlock, skill.type == "passive" }).toEqual({
+					expected,
+					rung.level,
+					rung.passive == true,
+				})
+				T.expect(SkillPools.ladderOf(skill)).toEqual(rung)
+				T.expect(SkillPools.inPool("Mage", "fire", expected)).toBe(true)
+				T.expect(SkillPools.inPool("Mage", "ice", expected)).toBe(false)
+			end
+		end
+		local common = { C1 = "blink", C2 = "manaShield", C3 = "evocation", C4 = "focus" }
+		for _, rung in PoolData.COMMON_LADDER do
+			local skill = SkillData.get(common[rung.code]) :: any
+			T.expect({ skill.id, skill.pool, skill.role, skill.unlock, skill.path })
+				.toEqual({ skill.id, "common", rung.code, rung.level, nil })
+			for _, poolId in SkillPools.ids("Mage") do
+				T.expect(SkillPools.inPool("Mage", poolId, skill.id)).toBe(true)
+			end
+		end
+		-- Magic Bolt stays the common, adaptive S1 of every element until S142
+		local bolt = SkillData.get("firebolt") :: any
+		T.expect({ bolt.pool, bolt.adaptive, bolt.role }).toEqual({ "common", true, nil })
+		T.expect(SkillPools.isTransitional("Mage")).toBe(true)
+		T.expect(PoolData.get("Mage") and (PoolData.get("Mage") :: any).version).toBe(3)
 	end)
 end)
 

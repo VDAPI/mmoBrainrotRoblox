@@ -38,10 +38,15 @@ return table.freeze({
 		piercingArrow = table.freeze({ dmg = table.freeze({ [3] = 200 + 160 * 2 / 9 }) }),
 		-- S90: the Mage's base (rank 10 lower above 20, F1; Frost Nova reaches only rank 1 by 20). S91: ranks <= 20
 		-- x0.75 (Bolt) and x0.85 (the rest), the first rank above 20 pinned
-		firebolt = table.freeze({ dmg = table.freeze({ [5] = 174, [6] = BOLT5 + (255.7 - BOLT5) * 1 / 5 }) }),
-		fireball = table.freeze({ dmg = table.freeze({ [5] = 173, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
+		-- S140 (the fire pool's R1 at 20 in the S91 band): Magic Bolt ranks 1-5 x0.92 (rank 5 174 -> 160), Fireball x0.94
+		-- (173 -> 162); rank 6 pinned
+		firebolt = table.freeze({ dmg = table.freeze({ [5] = 160, [6] = BOLT5 + (255.7 - BOLT5) * 1 / 5 }) }),
+		fireball = table.freeze({ dmg = table.freeze({ [5] = 162, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
 		iceShard = table.freeze({ dmg = table.freeze({ [4] = 150, [5] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
 		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 129, [4] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
+		-- S140 (DESIGN-18 §6.1): Meteor unlocks at 26 (was 30), so its rank r + 1 comes at the old rank r's level: rank 2
+		-- (level 30) keeps the old rank 1 (98), rank 1 is one step lower (pair 89.6 - 174)
+		meteor = table.freeze({ dmg = table.freeze({ [2] = 98 }) }),
 		-- S92 (G2, T-SK5 >= 0.25 at 25-30): Heal's rank 6 (level 23) near rank 10, rank 5 (level 19) pinned
 		heal = table.freeze({
 			healHp = table.freeze({ [5] = 16 + 2 * 4 / 9, [6] = 17.9 }),

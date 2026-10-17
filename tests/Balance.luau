@@ -3607,6 +3607,93 @@ Balance.S91_REPORT = {
 	["S91.gain.trapper.poacher"] = "rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90)",
 } :: { [string]: string }
 
+-- S140: the Mage's fire pool (DESIGN-18 §6.1, §13; docs/sessions S140 D) ------------------------------------------
+
+-- The fire variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "fire": the fire pool alone) and
+-- the levels of their rows. Thresholds are test data (S91's R1 band, the builds' areaCap, DESIGN-18 §6.1 identity).
+Balance.S140 = {
+	fireBuilds = { "destroyer.destroyerFire", "arcanist.arcanistFire" },
+	levels = { 45, 70, 100 },
+	tsk4 = { 2.0, 2.8 }, -- the Mage's T-SK4 band (ROZWOJ 12.7, SkillModel.TSK4_BANDS of destroyerExp)
+	burnShare = 0.25, -- DESIGN-18 §6.1 / S147: the burn's share of the fire builds' damage from 45
+	-- DESIGN-18 §6.1 (S147): lightning on one target 1.10-1.20 x fire; fire on 3 targets over 8 s >= lightning
+	lightningSingle = { 1.10, 1.20 },
+	fireArea = 1.0,
+	-- the comparison builds while the lightning pool is transitional (S142): the same direction, the lightning element
+	compare = {
+		["destroyer.destroyerFire"] = "destroyer.destroyerExp",
+		["arcanist.arcanistFire"] = "arcanist.arcanistBoss",
+	},
+}
+
+-- S140 (D): the fire pool's rows (ids "S140.fire.*"). Asserted (balance.spec "Balance S140: fire pool"): R1 of the fire
+-- variants at 20 in the S91 band (session rule 4) and T-SK3 within the build's areaCap at 20 / 45 / 70 / 100 (R3).
+-- Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 / 100 (S147), the identity of fire (S147:
+-- three targets over 8 s against lightning, one target against lightning, the burn's share).
+function Balance.targetsS140(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S140
+	local SkillModel = (require :: any)("./SkillModel")
+	local D1 = SkillModel.GUARD_D1
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number,
+		report: string?
+	)
+		target(rows, `S140.fire.{id}`, "fire", label, value, low, high, "Mage", L)
+		rows[#rows].report = report
+	end
+	for _, key in S.fireBuilds do
+		local build = SkillModel.build(key, "Mage")
+		local m20 = SkillModel.metrics(build, 20)
+		local cap = build.areaCap or 2.0
+		add(`r1.{key}`, `R1 {key} L20 (ogień)`, m20.r1, Balance.S91.r1Low, Balance.S91.r1Factor * D1.tsk1.Mage, 20)
+		add(`tsk3.{key}.20`, `T-SK3 {key} L20 (ogień)`, m20.tsk3, nil, cap, 20)
+		local other = SkillModel.build(S.compare[key], "Mage")
+		for _, L in S.levels do
+			local m = SkillModel.metrics(build, L)
+			add(`tsk3.{key}.{L}`, `T-SK3 {key} L{L} (ogień)`, m.tsk3, nil, cap, L)
+			add(`tsk4.{key}.{L}`, `T-SK4 {key} L{L} (ogień)`, m.tsk4, S.tsk4[1], S.tsk4[2], L, "S147")
+			add(
+				`burnShare.{key}.{L}`,
+				`Udział podpalenia w obrażeniach {key} L{L}`,
+				m.shares.burn or 0,
+				S.burnShare,
+				nil,
+				L,
+				"S147"
+			)
+			local lightning = SkillModel.metrics(other, L).byElement.lightning
+			if key == "destroyer.destroyerFire" then
+				add(
+					`area.{L}`,
+					`Ogień / błyskawica: 3 cele przez 8 s L{L}`,
+					m.aoe3burst / math.max(1e-9, lightning.aoe3burst),
+					S.fireArea,
+					nil,
+					L,
+					"S147"
+				)
+			else
+				add(
+					`single.{L}`,
+					`Błyskawica / ogień: jeden cel 60 s L{L}`,
+					lightning.single60 / math.max(1e-9, m.single60),
+					S.lightningSingle[1],
+					S.lightningSingle[2],
+					L,
+					"S147"
+				)
+			end
+		end
+	end
+	return rows
+end
+
 -- S92: the Dark Forest 20-45 and Morvane (balance plan, renumbered S54 draft) ------------------------------------
 
 local Crafting = require("../src/shared/Data/Crafting")
@@ -5847,6 +5934,105 @@ do
 		}
 	do
 		add(key, "S137", reworkWhy)
+	end
+	-- S140 (DESIGN-18 §0.4, session rule 5): the Mage's fire pool, common skills and directions (the base and the
+	-- direction builds measure the new pool, the fire variants are tuned to the S91 band at 20) and the weapon's fire
+	-- burn 30 -> 15 % (Data/Skills.ADAPTIVE); only Mage rows, docs/SESJE.md S140 lists them. S146 / S147 bring them
+	-- back with the new reference builds. Never a row of 1-20.
+	for _, key in
+		{
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.50",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.50",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.70",
+			"R.ashen.tsk4.arcanist.arcanistOverload.60",
+			"R.ashen.tsk4.arcanist.arcanistOverload.65",
+			"R.ashen.tsk4.destroyer.destroyerBoss.60",
+			"R.ashen.tsk4.destroyer.destroyerExp.60",
+			"R.duskwood.guard.tsk1.Mage.destroyer.destroyerFire.44",
+			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.40",
+			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.44",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.99",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.100",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.85",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.90",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.95",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.99",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.100",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.90",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.99",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.100",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.90",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.99",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.100",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.100",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.80",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.85",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.90",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.95",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.99",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.100",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.85",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.90",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.95",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.99",
+			"path.destroyer.destroyerExp.L45.destroyer.aoe",
+			"path.destroyer.destroyerExp.L70.destroyer.aoe",
+			"path.destroyer.destroyerBoss.L100.destroyer.single",
+			"path.arcanist.arcanistBoss.L70.arcanist.single",
+			"path.arcanist.arcanistBoss.L100.arcanist.single",
+			"path.arcanist.arcanistBoss.L45.arcanist.vsDestroyer",
+			"path.arcanist.arcanistBoss.L100.arcanist.vsDestroyer",
+			"path.destroyer.destroyerExp.L100.mage.tsk4",
+			"path.destroyer.destroyerBoss.L100.mage.tsk4",
+			"path.arcanist.arcanistOverload.L100.mage.tsk4",
+			"path.destroyer.destroyerExp.L100.r4.meteorStorm.5|a",
+			"G10|T-SK4 Mage destroyer.destroyerExp 60",
+			"G10|T-SK4 Mage destroyer.destroyerExp 85",
+			"G10|T-SK4 Mage destroyer.destroyerExp 90",
+			"G10|T-SK4 Mage destroyer.destroyerExp 95",
+			"G10|T-SK4 Mage destroyer.destroyerExp 100",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L45",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L70",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L100",
+		}
+	do
+		add(key, "S140", reworkWhy)
 	end
 end
 

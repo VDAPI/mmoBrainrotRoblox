@@ -28,6 +28,9 @@
 -- another cast; never damage). Every channel ends in closeChannel. Arcane Charges: a snapshot at the cast (cost
 -- through Skills.cost, damage through ctx.castMul), +1 after a damaging spell, all consumed by Arcane Discharge, off
 -- on death and out of combat; empowered loses a use per damaging spell; grantCharges / empower after a full channel.
+-- S140 (DESIGN-18 §6.1): Phoenix Heart is a damage filter (FilterPriority.phoenixHeart, before Guardian Angel): a lethal
+-- blow leaves 1 HP once per the passive's rest (hook phoenixRest; Logic/Burn.phoenixSave; the ready time lives on the
+-- server only, never in the save), then invulnerability (phoenixInvuln) and a fire blast around the player.
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -38,6 +41,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Banner = require(script.Parent.Parent.Skills.Banner)
+local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(script.Parent.Parent.Skills.Companion)
@@ -1133,6 +1137,71 @@ function SkillService.Cast(player: Player, skillId: string, targetId: string?, a
 	return cast(player, skillId, targetId, aim)
 end
 
+-- S140 Phoenix Heart ---------------------------------------------------------------------------------------------
+
+-- Server time the passive is ready again (no entry = ready).
+local phoenixReady: { [Player]: number } = {}
+
+-- After a save (the blow already left 1 HP, the filter already gave the invulnerability): a fire blast of `blast` %
+-- magic attack on the enemies within PHOENIX.radius (monsters and attackable players).
+local function phoenixRise(player: Player, blast: number)
+	local entity = EntityService.GetPlayerEntity(player)
+	local position = entity and EntityService.Position(entity)
+	if not entity or not position or ResourceService.IsDead(player) then
+		return
+	end
+	local radius = SkillData.PHOENIX.radius
+	local params: any = { kind = "magic", multiplier = blast / 100, element = "fire", canDodge = false, isSkill = true }
+	local options = { skill = "phoenixHeart", noProc = true, delivery = "ranged", consumeShot = false }
+	local function near(other: any): boolean
+		local at = EntityService.Position(other)
+		return at ~= nil and Vector3.new(at.X - position.X, 0, at.Z - position.Z).Magnitude <= radius + 1.5
+	end
+	for _, other in EntityService.QueryMonsters(position, radius + 4) do
+		if other.monster and other.monster:IsAlive() and near(other) then
+			CombatService.DealDamage(player, other, params, nil, options)
+		end
+	end
+	for _, other in EntityService.QueryPlayers(position, radius + 4) do
+		local victim: Player? = other.player
+		if
+			victim
+			and victim ~= player
+			and not ResourceService.IsDead(victim)
+			and near(other)
+			and (PvpService.CanAttack(player, victim))
+		then
+			CombatService.DealDamage(player, other, params, nil, options)
+		end
+	end
+	sendFx(player, { s = "phoenixHeart", v = "phoenixSave", t = entity.id, p = position, r = radius, el = "fire" })
+	Net.Fire(player, "Toast", "skills.phoenixSave", nil, "success")
+end
+
+local function phoenixFilter(player: Player, amount: number, source: string, _attacker: any?): number
+	local blast = SkillService.PassiveHook(player, "phoenixHeart")
+	if blast <= 0 then
+		return amount
+	end
+	local t = now()
+	local allowed, saved = Burn.phoenixSave(ResourceService.Get(player), amount, source, true, phoenixReady[player], t)
+	if saved then
+		phoenixReady[player] = Burn.phoenixReady(t, SkillService.PassiveHook(player, "phoenixRest"))
+		-- Invulnerability (shorter after a player's blow) right away, so the other blows of the same server step
+		-- (several monsters in one Heartbeat) already miss; only the blast, fx and toast wait.
+		local entity = EntityService.GetPlayerEntity(player)
+		if entity then
+			StatusEffectService.Apply(entity, "invuln", {
+				duration = Burn.phoenixInvuln(SkillService.PassiveHook(player, "phoenixInvuln"), source == "pvp"),
+				source = player,
+				skillId = "phoenixHeart",
+			})
+		end
+		task.defer(phoenixRise, player, blast)
+	end
+	return allowed
+end
+
 function SkillService.Init(registry)
 	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
@@ -1180,6 +1249,8 @@ function SkillService.Init(registry)
 
 	StatService.RegisterModifierSource("passives", modifierSource)
 	CombatService.RegisterHookProvider(SkillService.PassiveHook)
+	-- S140: Phoenix Heart before Guardian Angel (an angel then stays for the next lethal blow)
+	ResourceService.SetDamageFilter(phoenixFilter, ResourceService.FilterPriority.phoenixHeart)
 end
 
 function SkillService.Start()
@@ -1312,6 +1383,7 @@ function SkillService.Start()
 		chargeHolders[player] = nil -- S80
 		settling[player] = nil -- S96
 		poolLock[player] = nil -- S137
+		phoenixReady[player] = nil -- S140
 		task.defer(function()
 			runtimes[player] = nil
 			hookCache[player] = nil

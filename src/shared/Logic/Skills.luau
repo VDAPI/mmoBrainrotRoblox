@@ -172,6 +172,7 @@ local NUMERIC_FIELDS = {
 	"castTime",
 	"interval",
 	"ringRadius",
+	"burnStacks", -- S140 (Logic/Burn)
 }
 
 -- The skill as it works at `rank` (ROZWOJ 2.7). Sources in order: breakpoint 5, breakpoint 10 (chosen option, A
@@ -985,6 +986,16 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	local pull = Skills.pullRadius(skill, behaviour)
 	if pull > 0 then
 		args.pullRadius = round(pull)
+	end
+	-- S140 (Logic/Burn): only for skills that have them
+	if skill.values.detonate ~= nil then
+		args.stunAt = SkillData.BURN.stunAt
+	end
+	if skill.burnStacks then
+		args.burnStacks = round(skill.burnStacks)
+	end
+	if skill.knockback and args.knockback == nil then
+		args.knockback = round(skill.knockback)
 	end
 	return args
 end

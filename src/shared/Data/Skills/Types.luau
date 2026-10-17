@@ -77,6 +77,9 @@ export type EffectKind =
 	| "sighted"
 	| "arcaneCharge" -- S80: Arcane Charges of the arcanist, stacks 0..4 (Data/Skills ARCANE_CHARGES)
 	| "empowered" -- S80: Empowering Invocation, value = damage %, stacks = uses left
+	-- S140 (Ember Shield): own; while it lasts a melee blow on the bearer burns the attacker (value = % of the bearer's
+	-- magic attack over Data/Skills.BURN.duration, at most once per EMBER.gap s per attacker; CombatService)
+	| "emberShield"
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -291,6 +294,12 @@ export type SkillDef = {
 	pull: (number | boolean)?,
 	-- S76 (ROZWOJ 11.3): hits on a target below hp % of its life deal x mul (players: Combat.pvp.finisher at most)
 	finisher: { hp: number, mul: number }?,
+	-- S140 (DESIGN-18 §6.1, Logic/Burn): every main hit adds this many stacks of the caster's burn (fire school);
+	-- `add.burnStacks` of a breakpoint raises it
+	burnStacks: number?,
+	-- S140: hit enemies are pushed this many studs away (Push.knockback; bosses immune, players half), like the
+	-- knockback breakpoint (which wins when both are set)
+	knockback: number?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

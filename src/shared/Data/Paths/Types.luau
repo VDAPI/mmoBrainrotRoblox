@@ -46,7 +46,9 @@ export type ReferenceBuild = {
 	-- S81 (ROZWOJ 8, 15.5.3): area / single target burst cap of this build (R3 / T-SK3); nil = 2.0. Read by the
 	-- balance model (S86, S90), never by the game.
 	areaCap: number?,
-	weapon: { main: string, offhand: string? },
+	-- S140: element = the Mage weapon's element of a variant measured in that pool alone (nil: the model's mean of the
+	-- three elements, ROZWOJ 12.7)
+	weapon: { main: string, offhand: string?, element: string? },
 	-- { nodeId, rank } in purchase order: by row level, own path first at the same level (S71-S78); the Mage (S81)
 	-- lists them in the priority order of ROZWOJ 12.4 / 12.5 (the 12.7 measurement buys them in that order)
 	nodes: { { any } },

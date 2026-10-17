@@ -41,6 +41,8 @@ export type Spec = {
 	ringRadius: number?, -- S76 (ROZWOJ 11.4)
 	pull: (number | boolean)?, -- S76 (ROZWOJ 16.5)
 	finisher: { hp: number, mul: number }?, -- S76 (ROZWOJ 11.3)
+	burnStacks: number?, -- S140 (Logic/Burn)
+	knockback: number?, -- S140
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -135,6 +137,8 @@ function Build.class(
 			ringRadius = spec.ringRadius,
 			pull = spec.pull,
 			finisher = spec.finisher,
+			burnStacks = spec.burnStacks,
+			knockback = spec.knockback,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

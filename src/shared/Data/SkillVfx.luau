@@ -486,6 +486,51 @@ local SkillVfx: { [string]: Entry } = {
 		flash = 3,
 		shake = 0.5,
 	}),
+	-- S140 (DESIGN-18 §6.1, docs/WYGLAD.md §3): the fire pool's new skills from the existing pieces in the fire colour
+	-- (Elements.COLORS.fire through color "element"); a full review in W03-W07
+	flameWave = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "r", dur = 0.25 },
+		impact = { "impactFlash", "fan", "groundDecal", "smokePuff" },
+		telegraph = "cone",
+		flash = 2.5,
+		shake = 0.2,
+	}),
+	emberShield = e({
+		color = "element",
+		sound = "",
+		impact = { "impactFlash", "shield", "aura", "sparks" },
+		flash = 2,
+	}),
+	pyroblast = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "both", dur = 1 },
+		projectile = "orb",
+		launch = "both",
+		impact = { "impactFlash", "ringWave", "smokePuff", "sparks" },
+		flash = 4.5,
+		shake = 0.4,
+		size = 1.7,
+	}),
+	combustion = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "both", dur = 0.25 },
+		impact = { "burst", "ringWave", "cracks", "smokePuff" },
+		markRadius = 3,
+		shake = 0.3,
+	}),
+	immolate = e({
+		color = "element",
+		sound = "",
+		glow = { hand = "weapon", dur = 0.16 },
+		impact = { "impactFlash", "pillar", "groundDecal", "sparkle" },
+		pillar = { radius = 1.4, height = 10 },
+		markRadius = 2.5,
+		flash = 2.5,
+	}),
 	-- S80 (ROZWOJ 12.4, 12.5)
 	elementalVortex = e({
 		color = "element",

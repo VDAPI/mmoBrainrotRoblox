@@ -126,6 +126,31 @@ T.describe("Balance 1-20: S91", function()
 	end)
 end)
 
+-- S140 (D, DESIGN-18 §6.1): the Mage's fire pool on the fire variants of the reference builds (Balance.targetsS140):
+-- R1 at 20 in the S91 band and T-SK3 within the build's area cap asserted; T-SK4 and the identity of fire (three targets
+-- against lightning, one target, the burn's share) printed until S147 (`report`).
+T.describe("Balance S140: fire pool", function()
+	local rows = B.targetsS140()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`Mage L{row.level} {describeRow(row)} (S140, docs/sessions S140 D)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S140 targets (printed)", function()
+		printReport("S140", rows, 30)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		T.expect(ids["S140.fire.r1.destroyer.destroyerFire"]).toBe(true)
+		T.expect(ids["S140.fire.r1.arcanist.arcanistFire"]).toBe(true)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).

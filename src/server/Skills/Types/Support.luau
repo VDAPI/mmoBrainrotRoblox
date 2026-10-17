@@ -322,7 +322,13 @@ local function shieldOn(ctx: Ctx, entity: any, value: number, duration: number)
 end
 
 Support.shield = function(ctx)
-	local player, entity = allyTarget(ctx)
+	-- S140: a self shield (Ember Shield) never goes on the selected ally, whatever target id the client sent.
+	local player, entity
+	if ctx.skill.target == "self" then
+		player, entity = ctx.player, ctx.caster
+	else
+		player, entity = allyTarget(ctx)
+	end
 	local duration = ctx.scaled(ctx.skill.duration)
 	ctx.fx({ t = entity.id, d = duration })
 	shieldOn(ctx, entity, ctx.healAmount(player, "shield"), duration)
@@ -332,6 +338,8 @@ Support.shield = function(ctx)
 		local value = ctx.healAmount(other, "shield") * (ctx.bp.secondTarget or 0) / 100
 		shieldOn(ctx, otherEntity, value, duration)
 	end
+	-- S140: the caster's own effects of a shield skill (Ember Shield's emberShield)
+	ctx.applyEffects(ctx.caster, "self")
 	return true, nil
 end
 

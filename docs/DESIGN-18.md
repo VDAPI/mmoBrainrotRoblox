@@ -229,6 +229,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   `cataclysm` (rząd 8), oba `adaptive` (żywioł puli); Arkanista (jeden cel, mana) z Wyładowaniem Arkanów
   `arcaneDischarge` (rząd 4) i Strumieniem Arkanów `arcaneTorrent` (rząd 8). Mistrz Żywiołów `elementalist` i Tajemny
   Umysł `arcaneMind` stają się węzłami `passive` kierunków (bez `SkillDef`, wartości przeniesione).
+- S140 (stan): pula Ognia i wspólne Maga według tabeli, nowe mechaniki jak wyżej (DECYZJE S140: jedno podpalenie
+  gracza na celu ze stosami, podpalenie broni 15%, Fala Płomieni 5A szerszy stożek, Spopielenie 10A pewny krytyk
+  poniżej 50%, Serce Feniksa przed Aniołem Stróżem i także w PvP, odwet Osłony tylko na potworach). Kierunki: zamiast
+  Mistrza Żywiołów / Tajemnego Umysłu węzły `passive` 3 rang, w miejsce przeniesionych umiejętności Echo Żywiołów,
+  Przypływ Żywiołów, Tajemna Osłona (zamiast „Przepływu Many”), Szybkie Wyładowanie; Wytrwałość i Wola 2 rangi.
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia

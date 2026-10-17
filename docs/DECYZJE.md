@@ -5090,3 +5090,58 @@
 - **S139** Przełom „osiągnięty” wszędzie z `Paths.bpRank` (najwyższa ranga umiejętności w dowolnej puli klasy, ta sama
   co w `canChooseBreakpoint`): znaki kafelków każdej puli, karty PC, przypięty rząd A / B telefonu, „!” i kropka puli,
   w której umiejętność ma rangę.
+- **S140** Pula Ognia Maga według drabiny DESIGN-18 §5 (Kula Ognia A1 3, Fala Płomieni K1 6, Żarząca Osłona O1 10,
+  Pożoga S2 15, Żar P1 20, Meteor A2 26 (było 30), Zapłon K2 33, Spopielenie S3 40, Serce Feniksa P2 50, Deszcz
+  Meteorów U 60 (było 48, id `meteorStorm`, odtąd ogień bez `adaptive`)); Ognisty Pocisk zostaje wspólny i adaptacyjny
+  do S142. Wspólne Maga: Błysk C1 4 (było 14), Tarcza Many C2 12, Inwokacja C3 30, Skupienie C4 45 (były węzłami
+  `skill` kierunków). Mag zostaje `transitional` do S142; `Data/SkillPools/Mage.version` 2 → 3 (darmowy reset).
+- **S140** Podpalenie (`Logic/Burn`, `Data/Skills.BURN`): każde ogniste podpalenie gracza na celu to JEDEN wpis
+  (`skillId = "burn"`, `CombatService.ApplyBurn`): umiejętność ognia z `burnStacks` dokłada stosy (stos = 30% trafienia
+  w 4 s, `Traits.dotTick`), podpalenie broni czarów adaptacyjnych dokłada jeden. `accumulate` bez limitu stosów
+  (`ApplyOptions.uncapped`): każde trafienie płaci całość, stosy tylko liczą (bez Żaru 1, z Żarem 3). Iskra z
+  przedmiotu (`EffectStack.ITEM`) zostaje osobnym wpisem.
+- **S140** `Data/Skills.ADAPTIVE.burnPct` 30 → 15: podpalenie broni to teraz jeden stos obok podpaleń puli Ognia;
+  razem z Ognistym Pociskiem ×0,92 i Kulą Ognia ×0,94 na rangach ≤ 20 (węzły `Data/SkillCurves`) i niskimi rangami 1
+  nowych umiejętności to dźwignie R1 wariantów ognia na 20. w paśmie S91 (2,60 / 2,65 przy granicy 2,73).
+- **S140** Żar: hak `burnStacks` (+2 stosy) i `burnBonus` (+1–5% obrażeń ognia za każdy własny stos na celu, trafienia
+  bez tyknięć stref). Spopielenie: `values.vsBurning` za stos. Zapłon: po trafieniu zużywa stosy celu
+  (`StatusEffectService.TakeStacks`, niezapłacona reszta przepada) i wybucha w kręgu za `detonate`% × stosy;
+  ogłuszenie od `BURN.stunAt` (3) stosów, `notBoss`.
+- **S140** Żarząca Osłona: tarcza na siebie (jak Tarcza Wiary: % maks. życia + % ataku magicznego) i efekt
+  `emberShield` (własny) tak długi jak tarcza (10A wydłuża oba); dopóki trwa EFEKT, cios wręcz potwora (także w
+  tarczę, nie przy uniku) daje atakującemu stos podpalenia za `ember`% ataku magicznego, najwyżej raz na
+  `EMBER.gap` (1 s) od jednego wroga. Gracze bijący wręcz nie są podpalani (PvP bez odwetu). Tarcza z
+  `target = "self"` zawsze na rzucającym (`Support.shield` pomija cel wysłany przez klienta).
+- **S140** Serce Feniksa: filtr obrażeń `FilterPriority.phoenixHeart = 85` (przed Aniołem Stróżem, który zostaje na
+  następny cios); ratuje cios potwora, przejęty cios i cios gracza (PvP: nietykalność × `Combat.pvp.phoenix` 0,5),
+  nigdy tyknięcia, „world”, „admin”; odpoczynek, nietykalność i wybuch to wartości pasywki (`rest` 180, `invuln` 2,
+  `blast` 150–300% ataku magicznego, haki `phoenixRest` / `phoenixInvuln` / `phoenixHeart`); czas gotowości tylko w
+  pamięci serwera (`SkillService`), nie w zapisie; nietykalność od razu w filtrze (kolejne ciosy tego samego kroku
+  serwera już chybiają), wybuch i komunikat przez `task.defer`.
+- **S140** Fala Płomieni: odrzut 6 st. jako pole umiejętności `knockback` (`Context` onHit, przełom `knockback` wygrywa).
+  Przełomy nowych umiejętności przestrojone modelem (pasma R4): Fala 5A szerszy stożek (zamiast stosu), 10A +1 stos;
+  Pożoga 5A rozprysk 12%, 5B +45; Spopielenie 5A rozprysk 8%, 5B +5 za stos, 10A pewny krytyk poniżej 50% (było
+  `finisher` 40%: test neutralności `Skills.effective`); Zapłon 5B +14; Meteor 5B 23 → 20 (ranga 5 od 42.).
+- **S140** Kierunki Maga (DESIGN-18 §7): węzły `skill` tylko w rzędach 4 i 8. Mistrz Żywiołów i Tajemny Umysł to węzły
+  `passive` 3 rang (wartości dawnych rang 1 / 3 / 5); w miejsce węzłów umiejętności tej samej liczby rang: Echo
+  Żywiołów (rząd 7, Wir uderza jeszcze raz za 100%), Przypływ Żywiołów (rząd 10, +3% obszaru), Tajemna Osłona (rząd 1
+  Arkanisty, +3% maks. życia zamiast proponowanego „Przepływu Many”: hak kosztu obniżał asertowane T-SK4 Arkanisty na
+  50–55 pod 2,0), Szybkie Wyładowanie (rząd 7, odnowienie Wyładowania ×0,85). Gniew Burzy skraca odtąd Wir (0,3–0,9 s
+  na wroga). Wytrwałość (rząd 10) i Wola (rząd 5, dodatkowy węzeł Arkanisty) 3 → 2 rangi, żeby cały kierunek mieścił
+  się w 50 pkt.
+- **S140** Model: `ReferenceBuild.weapon.element` = wariant mierzony jednym żywiołem (`SkillModel.elementOf`); nowe
+  buildy `destroyer.destroyerFire` i `arcanist.arcanistFire` z `ranks`. Niszczyciel kupuje punkty 10–14 w rzędzie 1
+  Arkanisty (Osłona, Precyzja 2), bo otwarty rząd 1 (3 rangi Mistrza) wciągałby je w +15% żywiołu; przez to oba buildy
+  Niszczyciela na 20. nie mają węzła rzędu 3 (4 klucze fixture zniknęły). R4 Zapłonu i Spopielenia w całej rotacji
+  buildu (`R4_ROTATION`), stos podpalenia liczony skillowi tylko gdy jest sam w rotacji.
+- **S140** Fixture 1–20 przepisany (`fixture S140 "pula Ognia Maga"`): 254 zmienione, 4 usunięte i 44 nowe wpisy, wszystkie
+  w kluczach Maga plus 6 wierszy „Grimrok bez wsparcia” (drużyna ma dwa buildy Maga); `ALLOWED_1_20_DIFFS` pusta.
+- **S140** `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100, „przebudowa umiejętności DESIGN-18, wraca w
+  S146/S147”): strażnicy T-SK1/2 wariantów ognia (L / L20, bo 1–20 zbite do pasma S91), T-SK4 Niszczyciela i
+  Przeciążenia na 60–65 i 80–100, ilorazy kierunek / baza (`destroyer.aoe`, `destroyer.single`, `arcanist.single`,
+  `arcanist.vsDestroyer`), R4 Deszczu Meteorów 5A na 100 (0,174), T1 Mocy Żywiołu dla ognia (podpalenie broni 15%).
+  Wiersze `S140.fire.*`: R1 na 20. i T-SK3 asertowane, T-SK4 i tożsamość ognia tylko raport (S147).
+- **S140** `Data/UiArt` (generowany): wpisy ikon `skill_elementalist` i `skill_arcaneMind` usunięte ręcznie (nie ma
+  już takich umiejętności; importer `import_ui.py` sprawdza nazwy z gry). Nowe umiejętności bez ikon PNG (znak).
+  Efekty przedmiotów (S134g) Maga nie wymagały przepięcia: Kula Ognia (A1), Meteor (A2) i Błysk (C1) mają już role
+  DESIGN-18.

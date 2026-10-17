@@ -5207,5 +5207,140 @@ return {
 		["SkillPools/Warrior:version"] = {
 			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
 		},
+		-- S140 (DESIGN-18 §6.1, §7): the Mage's fire pool, common skills and directions
+		["Skills/Mage:[flameWave]*"] = {
+			{ session = "S140", why = "new (K1 of the fire pool, 6): a cone that throws back and burns; rank 1 45 % (the fire variants' R1 at 20 in the S91 band), breakpoints in the R4 bands at 45-100" },
+		},
+		["Skills/Mage:[emberShield]*"] = {
+			{ session = "S140", why = "new (O1 of the fire pool, 10): a self shield like Shield of Faith (8-12 % HP + 10-15 % magic attack), melee attackers burn for 20-40 % magic attack; options are utility (R4_UTILITY)" },
+		},
+		["Skills/Mage:[pyroblast]*"] = {
+			{ session = "S140", why = "new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands" },
+		},
+		["Skills/Mage:[kindling]*"] = {
+			{ session = "S140", why = "new (P1 of the fire pool, 20): the burn stacks up to 3 (+2), +1..5 % fire damage per own stack (rank 1 low for the S91 band at 20)" },
+		},
+		["Skills/Mage:[combustion]*"] = {
+			{ session = "S140", why = "new (K2 of the fire pool, 33): 80-140 % hit, then the target's burn stacks burst for 60-105 % each within 6 studs, a 1 s stun at 3 stacks; 5B +14 / 10B cooldown x0.8 in the R4 bands" },
+		},
+		["Skills/Mage:[immolate]*"] = {
+			{ session = "S140", why = "new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands" },
+		},
+		["Skills/Mage:[phoenixHeart]*"] = {
+			{ session = "S140", why = "new (P2 of the fire pool, 50): a lethal blow leaves 1 HP once per 180 s, 2 s invulnerability, a 150-300 % magic attack fire blast" },
+		},
+		["Skills/Mage:[elementalist]*"] = {
+			{ session = "S140", why = "a 3-rank passive node of the Destroyer now (Paths/Mage destroyer_elementalist, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+		},
+		["Skills/Mage:[arcaneMind]*"] = {
+			{ session = "S140", why = "a 3-rank passive node of the Arcanist now (Paths/Mage arcanist_arcaneMind, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+		},
+		["Skills/Mage:[blink].unlock"] = { { session = "S140", why = "14 -> 4: C1 of the common ladder (DESIGN-18 §5)" } },
+		["Skills/Mage:[manaShield].unlock"] = {
+			{ session = "S140", why = "10 (row 1 of the Arcanist) -> 12: C2 of the common ladder, a common skill now" },
+		},
+		["Skills/Mage:[evocation].unlock"] = {
+			{ session = "S140", why = "48 (row 7 of the Arcanist) -> 30: C3 of the common ladder, a common skill now" },
+		},
+		["Skills/Mage:[focus].unlock"] = {
+			{ session = "S140", why = "80 (row 10 of the Destroyer) -> 45: C4 of the common ladder, a common passive now" },
+		},
+		["Skills/Mage:[meteor].unlock"] = { { session = "S140", why = "30 -> 26: A2 of the ladder (DESIGN-18 §5)" } },
+		["Skills/Mage:[meteor].values.dmg[1]"] = {
+			{ session = "S140", why = "98 -> 89.6: rank 1 at 26 one step below; the knot keeps rank 2 (level 30) at the old rank 1 (98)" },
+		},
+		["Skills/Mage:[meteor].breakpoints[5].b.values.dmg"] = {
+			{ session = "S140", why = "23 -> 20: rank 5 now at 42, R4 at 45 0.182 -> 0.158 (band 0.08-0.17)" },
+		},
+		["Skills/Mage:[meteorStorm].unlock"] = {
+			{ session = "S140", why = "48 (row 7 of the Destroyer) -> 60: U of the fire pool (Rain of Meteors)" },
+		},
+		["Skills/Mage:[meteorStorm].burnStacks"] = {
+			{ session = "S140", why = "new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon)" },
+		},
+		["Skills/Mage:[firebolt].values.dmg[1]"] = {
+			{ session = "S140", why = "128 -> 118 (ranks <= 20 x0.92 with the knot): the fire variants' R1 at 20 in the S91 band (2.6-2.65 of 2.73)" },
+		},
+		["Skills/Mage:[fireball].values.dmg[1]"] = {
+			{ session = "S140", why = "128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band" },
+		},
+		["SkillCurves:knots.firebolt.dmg[5]"] = {
+			{ session = "S140", why = "174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned" },
+		},
+		["SkillCurves:knots.fireball.dmg[5]"] = {
+			{ session = "S140", why = "173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned" },
+		},
+		["SkillCurves:knots.meteor.dmg[2]"] = {
+			{ session = "S140", why = "new: Meteor unlocks at 26, rank 2 (level 30) keeps the old rank 1 (98)" },
+		},
+		["Skills/init:ADAPTIVE.burnPct"] = {
+			{ session = "S140", why = "30 -> 15: the weapon's fire burn is one stack of the player's one burn (Logic/Burn) beside the fire pool's own burns; the fire variants' R1 at 20 in the S91 band" },
+		},
+		["Skills/init:BURN*"] = {
+			{ session = "S140", why = "new (Logic/Burn): a stack is 30 % of its hit over 4 s, 1 stack without Kindling, Combustion stuns at 3" },
+		},
+		["Skills/init:EMBER*"] = {
+			{ session = "S140", why = "new: Ember Shield burns one attacker at most once per 1 s" },
+		},
+		["Skills/init:PHOENIX*"] = { { session = "S140", why = "new: Phoenix Heart's fire blast reaches 8 studs" } },
+		["Combat:pvp.phoenix"] = {
+			{ session = "S140", why = "new: Phoenix Heart saves from a player's blow too, its invulnerability x0.5 then" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S140", why = "2 -> 3 (DESIGN-18 §10): the fire pool, the common skills and the directions' new nodes, a free reset" },
+		},
+		["Skills/Mage:[arcaneDischarge].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[arcaneTorrent].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[cataclysm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[elementalVortex].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[evocation].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[focus].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[manaShield].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[meteorStorm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Paths/Mage:[destroyer].reference*"] = {
+			{ session = "S140", why = "the moved skill nodes replaced (Elemental Echo, Elemental Surge), Elementalist 3 ranks, the points of 10-14 in the Arcanist's row 1 (Ward, Precision 2), Grit 2, no Tempered; the fire variant destroyerFire (staff, fire, ranks order)" },
+		},
+		["Paths/Mage:[arcanist].reference*"] = {
+			{ session = "S140", why = "Arcane Ward and Quick Discharge for the moved skill nodes, Arcane Mind 3 ranks, Will 3 -> 1; the fire variant arcanistFire (runestaff, fire, ranks order)" },
+		},
+		["Paths/Mage:[destroyer].rows[1].nodes[destroyer_elementalist]*"] = {
+			{ session = "S140", why = "the skill node of Elementalist became a 3-rank passive node (elementDamage 3 / 9 / 15 = the old ranks 1 / 3 / 5)" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_meteorStorm]*"] = {
+			{ session = "S140", why = "Wrath of Elements left the Destroyer for the fire pool (U, Rain of Meteors)" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_echo]*"] = {
+			{ session = "S140", why = "new, one rank in place of the skill node: Elemental Vortex strikes once more for 100 % of a wave" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath]*"] = {
+			{ session = "S140", why = "Storm's Wrath shortens Elemental Vortex now (cooldown 12 s): 1.15-3.44 -> 0.3-0.9 s per enemy" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_focus]*"] = {
+			{ session = "S140", why = "Focus is the Mage's common C4 now" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_surge]*"] = {
+			{ session = "S140", why = "new, one rank in place of Focus: +3 % area damage on 2+ enemies" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].maxRank"] = {
+			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Elementalist's 3 ranks" },
+		},
+		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_manaShield]*"] = {
+			{ session = "S140", why = "Mana Shield is the Mage's common C2 now" },
+		},
+		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_ward]*"] = {
+			{ session = "S140", why = "new, one rank in place of Mana Shield: +3 % max HP (no mana or damage change: T-SK4 and 1-20 stay)" },
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_will].maxRank"] = {
+			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Arcane Mind's 3 ranks" },
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_evocation]*"] = {
+			{ session = "S140", why = "Evocation is the Mage's common C3 now" },
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_quickening]*"] = {
+			{ session = "S140", why = "new, one rank in place of Evocation: Arcane Discharge's cooldown x0.85" },
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_arcaneMind]*"] = {
+			{ session = "S140", why = "the skill node of Arcane Mind became a 3-rank passive node (the old ranks 1 / 3 / 5)" },
+		},
 	} :: { [string]: { Reason } },
 }

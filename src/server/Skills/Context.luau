@@ -30,12 +30,16 @@
 -- S80 (ROZWOJ 12.5): `castMul` (Arcane Charges and empowered of this cast, a snapshot SkillService takes at the cast)
 -- multiplies every hit but zone ticks; `chargesSpent` (Arcane Discharge) goes to the clients as `ch`; `costMods` is
 -- the CostMods the cast paid with (Arcane Torrent drains with the same); services.Beam starts a beam channel.
+-- S140 (Logic/Burn, DESIGN-18 §6.1): a skill with `burnStacks` adds that many stacks of the caster's one burn on every
+-- main hit (CombatService.ApplyBurn); fire hits get Kindling's burnBonus per own stack on the target and values.vsBurning
+-- (Immolate) per stack; the skill field `knockback` pushes like the breakpoint.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Burn = require(Shared.Logic.Burn)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Elements = require(script.Parent.Elements)
@@ -436,8 +440,9 @@ function Context.new(
 				ctx.heal(ally, result.amount * behaviour.healWounded / 100)
 			end
 		end
-		if behaviour.knockback then
-			Push.knockback(entity, opts.from or root.Position, behaviour.knockback)
+		local push = behaviour.knockback or skill.knockback -- S140: Flame Wave's own knockback
+		if push then
+			Push.knockback(entity, opts.from or root.Position, push)
 		end
 		local at = Entity.Position(entity)
 		if not opts.primary or not at then
@@ -639,6 +644,15 @@ function Context.new(
 				local bonus = Skills.spellBonus(tag, opts.areaHits or 1, opts.secondary == true, spellHooks())
 				multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, hook("resonance")) * ctx.castMul
 			end
+			-- S140 (Logic/Burn): Kindling on every fire hit but zone ticks, Immolate's vsBurning on its main hits
+			if element == "fire" and not opts.lingering then
+				local perStack = hook("burnBonus")
+				local vs = if skill.values.vsBurning ~= nil and not opts.plain then value("vsBurning") else 0
+				if perStack > 0 or vs > 0 then
+					local stacks = services.StatusEffect.StacksFrom(entity, "burn", player, Burn.KEY)
+					multiplier *= Burn.stackBonus(stacks, perStack) * Burn.vsBurning(stacks, vs)
+				end
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,
 				consumeShot = opts.consumeShot ~= false,
@@ -704,6 +718,20 @@ function Context.new(
 						ctx.fx({ v = "arc", path = { from.id, to.id } })
 					end,
 				})
+			end
+			-- S140: the fire school's burn stacks on main hits (not splashes, pierces, arcs or zone ticks); the hit before
+			-- the PvP multiplier like the weapon element
+			local stacks = skill.burnStacks or 0
+			if
+				stacks > 0
+				and result
+				and not result.dodged
+				and result.amount > 0
+				and not (opts.plain or opts.secondary or opts.lingering)
+			then
+				local tick =
+					Burn.tick(result.dotBase or result.amount, stacks, services.Combat.DotBonus(player, "burn"))
+				services.Combat.ApplyBurn(player, entity, tick, stacks)
 			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)
