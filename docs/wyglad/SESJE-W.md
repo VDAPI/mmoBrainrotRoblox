@@ -153,3 +153,12 @@ importu: `docs/wyglad/ZASOBY.md`.
 **Dla właściciela:** modele zestawu i materiały są **w miejscu** (`ReplicatedStorage.Assets.Kit`, `MaterialService`),
 nie w repo: zapisz miejsce (Ctrl+S), żeby przetrwały zamknięcie Studio. Gdyby zginęły, `tools/studio/import_kit.luau`
 w Command Bar odtwarza modele.
+
+### W11
+
+Plan wszystkich map, bez kodu i bez Studio (chmura, 2026-10-17). `docs/wyglad/MAPY.md` (spis, świat jako całość, horyzont każdej mapy, wspólny język wizualny, kolejność W12–W24, 5 pytań do właściciela) i pięć plików `docs/wyglad/mapy/{miasto,laki,bor,pustkowia,szczyty}.md`: 22 miejsca, na każde historia, punkty orientacyjne z budżetem, szkic z góry w studach (z dumpów generatora), expowiska z rekwizytami, sekrety, ujęcia do zrzutów, światło i pogoda, zasoby, zmiany układu, ryzyka, kryteria odbioru.
+
+- Zmiany układu: 13, wszystkie na mapach otwartych (miasto 3, arena 2, każdy region 2); jaskinie i komnaty bossów bez zmian.
+- Bez krwi: plany zastępują dzisiejsze „zaschnięte plamy” na ołtarzu kultu (`DuskwoodGen/Cult`), padlinę w Wilczej Norze, ciała w Kurhanie, kokony „ze stopami goblinów” i blok rzeźnika w Kopcu.
+- Doprecyzowanie: „płasko, promień 74 od (0, −10)” to kontrakt komnat bossów (`DungeonArena`), nie mapy `arena_pit` (MAPY.md §2).
+- Uwaga dla W12: `docs/miasto/MIASTO.md` podaje, że punkt startu w mieście patrzy na zachód; w kodzie patrzy na wschód, w ścianę hali targowej (`mapy/miasto.md`, Z1).
