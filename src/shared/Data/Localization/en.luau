@@ -2428,11 +2428,15 @@ return {
 	["death.respawnRobux"] = "Respawn now (R$ {robux})",
 	["menu.volume"] = "Effects volume",
 	["menu.musicVolume"] = "Music volume",
-	["menu.shake"] = "Camera shake",
+	["menu.shake"] = "Hit feel (shake and hitstop)",
 	["menu.cameraSens"] = "Camera sensitivity",
-	["menu.quality"] = "Effects quality",
+	["menu.quality"] = "Graphics quality",
 	["menu.quality.high"] = "High",
 	["menu.quality.low"] = "Low",
+	["menu.quality.medium"] = "Medium", -- W01
+	["menu.cameraMode"] = "Camera", -- W01
+	["menu.cameraMode.free"] = "Free",
+	["menu.cameraMode.top"] = "From above",
 	["menu.minimapRotate"] = "Rotating minimap",
 	["menu.sellConfirm"] = "Ask before selling valuables",
 	["menu.hotkeys"] = "Hotkeys",

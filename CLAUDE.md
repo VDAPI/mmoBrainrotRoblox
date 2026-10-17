@@ -13,7 +13,7 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Faza: gameplay.** Priorytet to poprawny, kompletny kod. Nie uruchamiaj gry, nie pisz instrukcji testu ani list
   „do sprawdzenia w Studio” (testy robi właściciel po etapie gameplayu). Lune: tylko istniejące testy w `check`; nowe
   testy wtedy, gdy logika jest nietrywialna i czysta.
-- **Wyjątek: seria S110–S119 (animacje i grafiki), `docs/sessions/IMPORT-MODELI.md` i `docs/sessions/IMPORT-GRAFIK.md`**
+- **Wyjątek: seria S110–S119 (animacje i grafiki), sesje fazy wyglądu W01–W29 (`docs/WYGLAD.md`, gałąź `wyglad`), `docs/sessions/IMPORT-MODELI.md` i `docs/sessions/IMPORT-GRAFIK.md`**
   (`docs/DESIGN-16.md` §0.1): sesja może przez serwer MCP Roblox Studio uruchomić Play, oglądać i robić zrzuty (AnimLab,
   `docs/ANIMACJE.md`), czytać konsolę i (S111, S112) wstawiać dźwięki i tekstury. Kod zmienia się tylko w repo (Rojo);
   bez edycji skryptów w Studio, zapisu i publikacji miejsca. Bez MCP sesja robi kod i wpisuje brak przeglądu do

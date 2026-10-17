@@ -696,6 +696,31 @@ local Config = {
 		goldExponent = 1.6,
 		legendCoreFrom = 8,
 	},
+	-- W01: graphics levels (settings.quality "low" / "medium" / "high"; docs/WYGLAD.md §1: a separate low mode for weak
+	-- phones). bloom multiplies Data/MapLooks bloom intensity; sunRays / clouds / farBlur switch those effects (far blur
+	-- also needs a keyboard and mouse device); particles multiplies emitter rates (low keeps the S14 third).
+	Graphics = {
+		default = "high",
+		levels = {
+			low = { bloom = 0, sunRays = false, clouds = false, farBlur = false, particles = 1 / 3 },
+			medium = { bloom = 0.6, sunRays = true, clouds = true, farBlur = false, particles = 0.7 },
+			high = { bloom = 1, sunRays = true, clouds = true, farBlur = true, particles = 1 },
+		},
+		-- Seconds the post effects tween when the map or the level changes.
+		fade = 1.5,
+	},
+	-- W01: the "from above" camera (settings.cameraMode "top"): pitch below the horizon (degrees), the zoom range
+	-- (studs from the character) and, underground (caves, crypts, boss chambers), a shorter reach and a flatter pitch.
+	Camera = {
+		topPitch = 55,
+		topMin = 22,
+		topMax = 70,
+		topDefault = 42,
+		underPitch = 42,
+		underMax = 34,
+		-- Studs kept between the camera and a wall it would pass through.
+		wallMargin = 1.5,
+	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

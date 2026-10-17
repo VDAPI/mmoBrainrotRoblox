@@ -1,6 +1,6 @@
 --!strict
 -- Applies the options (S14) on the client: effects quality (low = particle rates cut to a third on every
--- ParticleEmitter in the world, original rate remembered in an attribute), music volume (SoundGroup
+-- ParticleEmitter in the world, original rate remembered in an attribute; W01: medium = Config.Graphics factor), music volume (SoundGroup
 -- "Music", used by the map music), ambience volume (S26, SoundGroup of AmbienceController's loops), camera
 -- sensitivity (UserInputService.MouseDeltaSensitivity), effects volume (S111: SoundGroup "Effects" of every combat,
 -- monster and interface sound, SfxController and UI/Sounds; the existing settings.volume row "Effects volume").
@@ -11,14 +11,13 @@ local SoundService = game:GetService("SoundService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local State = require(script.Parent.Parent.UI.State)
 
 local SettingsController = {
 	Name = "SettingsController",
 }
-
-local LOW_FACTOR = 1 / 3
 
 local scope = Fusion.scoped(Fusion)
 local musicGroup: SoundGroup
@@ -40,8 +39,12 @@ function SettingsController.SfxGroup(): SoundGroup
 	return sfxGroup
 end
 
-local function lowQuality(): boolean
-	return State.Get({ "account", "settings", "quality" }) == "low"
+-- Particle rate factor of the graphics level (W01: low 1/3 as in S14, medium in between, high 1).
+local function particleFactor(): number
+	local quality = State.Get({ "account", "settings", "quality" })
+	local levels = (Config.Graphics.levels :: any) :: { [string]: { particles: number } }
+	local level = if type(quality) == "string" then levels[quality] else nil
+	return if level then level.particles else 1
 end
 
 local function adjust(emitter: ParticleEmitter)
@@ -50,7 +53,7 @@ local function adjust(emitter: ParticleEmitter)
 		base = emitter.Rate
 		emitter:SetAttribute("VaelthornOriginalRate", base)
 	end
-	emitter.Rate = if lowQuality() then (base :: number) * LOW_FACTOR else base :: number
+	emitter.Rate = (base :: number) * particleFactor()
 end
 
 local function adjustAll()
@@ -79,7 +82,7 @@ end
 function SettingsController.Start()
 	scope:Observer(State.Value({ "account", "settings", "quality" })):onBind(adjustAll)
 	Workspace.DescendantAdded:Connect(function(descendant)
-		if descendant:IsA("ParticleEmitter") and lowQuality() then
+		if descendant:IsA("ParticleEmitter") and particleFactor() < 1 then
 			task.defer(adjust, descendant)
 		end
 	end)

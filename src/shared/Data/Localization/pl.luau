@@ -2428,11 +2428,15 @@ return {
 	["death.respawnRobux"] = "Odródź się teraz (R$ {robux})",
 	["menu.volume"] = "Głośność efektów",
 	["menu.musicVolume"] = "Głośność muzyki",
-	["menu.shake"] = "Wstrząsy kamery",
+	["menu.shake"] = "Odczucie trafień (wstrząs i zatrzymanie)",
 	["menu.cameraSens"] = "Czułość kamery",
-	["menu.quality"] = "Jakość efektów",
+	["menu.quality"] = "Jakość grafiki",
 	["menu.quality.high"] = "Wysoka",
 	["menu.quality.low"] = "Niska",
+	["menu.quality.medium"] = "Średnia", -- W01
+	["menu.cameraMode"] = "Kamera", -- W01
+	["menu.cameraMode.free"] = "Swobodna",
+	["menu.cameraMode.top"] = "Z góry",
 	["menu.minimapRotate"] = "Obracana minimapa",
 	["menu.sellConfirm"] = "Pytaj przed sprzedażą cennych",
 	["menu.hotkeys"] = "Skróty klawiszowe",
