@@ -11,6 +11,8 @@ W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki 
 
 W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), ocena właściciela: W11: OK (2026-10-17, rekomendacje 1–5, mapy wolno przebudować całe); następna W08.
 
+W08: własny `Animate` (lokomocja z `Data/Locomotion`, przenikanie chód/bieg, skok, upadek, lądowanie, wspinanie, pływanie, warianty bezczynności), IK stóp; klipy jeszcze domyślne Roblox. Czeka na ocenę właściciela.
+
 ## Niedokończone
 
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
@@ -20,3 +22,6 @@ W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), ocena
 - W02: zestaw ma warianty tylko dla Łąk (`grass`); Bór, Pustkowia, Szczyty, miasto na klockach do czasu zakupów albo darmowych paczek (Quaternius) w sesjach map.
 - W02: modele zestawu i materiały żyją w miejscu (`Assets.Kit`, `MaterialService`): właściciel zapisuje miejsce.
 - W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).
+- W08: klipy Mixamo (`KLIPY-RUCH.md`) do pobrania przez właściciela; potem konwersja, pomiar `stride`, ID w `Locomotion.clips`.
+- W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
+- W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).

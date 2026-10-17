@@ -110,6 +110,7 @@ Szczegóły, koszty na telefonie i źródła: `docs/wyglad/research.md`. W skró
 - **W01:** wygląd każdej mapy (godzina, słońce, bloom, promienie, chmury, głębia ostrości, niebo) w `src/shared/Data/MapLooks.luau`, poziomy grafiki w `Config.Graphics`, kamera „z góry” w `Config.Camera` / `CameraController`. Dziennik i decyzje fazy: `docs/wyglad/SESJE-W.md`, `docs/wyglad/DECYZJE-W.md`, stan `docs/wyglad/STAN-W.md`.
 - **W02:** zestaw w `Data/Kit` + `ReplicatedStorage.Assets.Kit` (gniazda generatorów, `/kit`), zasady importu `docs/wyglad/ZASOBY.md`, zakupy `docs/wyglad/ZAKUPY.md`.
 - **W11:** plan map `docs/wyglad/MAPY.md` (spis, horyzont, kolejność W12–W24) i `docs/wyglad/mapy/*.md` (miejsce po miejscu).
+- **W08:** lokomocja `Data/Locomotion` + własny `Animate` (`src/character/Animate.client.luau`), IK stóp `FootIkController`, lista klipów `docs/wyglad/KLIPY-RUCH.md`.
 - **Świat dalej budowany z kodu i danych** (`src/server/World`, Rojo, git): zmieniamy klocki na modele z zestawu W02 i malowane materiały, ale nie przechodzimy na ręcznie zapisywany plik miejsca, bo wtedy znika historia zmian i sesje nie mogą pracować bez Studio.
 
 ## 6. Ocena właściciela (bramki)

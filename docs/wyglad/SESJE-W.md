@@ -162,3 +162,40 @@ Plan wszystkich map, bez kodu i bez Studio (chmura, 2026-10-17). `docs/wyglad/MA
 - Bez krwi: plany zastępują dzisiejsze „zaschnięte plamy” na ołtarzu kultu (`DuskwoodGen/Cult`), padlinę w Wilczej Norze, ciała w Kurhanie, kokony „ze stopami goblinów” i blok rzeźnika w Kopcu.
 - Doprecyzowanie: „płasko, promień 74 od (0, −10)” to kontrakt komnat bossów (`DungeonArena`), nie mapy `arena_pit` (MAPY.md §2).
 - Uwaga dla W12: `docs/miasto/MIASTO.md` podaje, że punkt startu w mieście patrzy na zachód; w kodzie patrzy na wschód, w ścianę hali targowej (`mapy/miasto.md`, Z1).
+
+### W08 (2026-10-17, komputer właściciela, Studio MCP)
+
+**Co weszło.** Własny `StarterCharacterScripts.Animate` (`src/character/Animate.client.luau`), więc Roblox nie wstawia
+już swojego domyślnego: stanie z wariantami (co 8–15 s, nie w walce), chód i bieg przenikane wagami po prędkości (bez
+skoku pozy), skok (wybicie przez `air.fallAfter`, potem upadek), lądowanie tylko po wysokim upadku, wspinanie, pływanie
+i unoszenie się, na wierzchowcu `idle` pod nogami z `RiderPose`. Dane `Data/Locomotion`, wybór `Logic/LocomotionPick`
+(test `tests/locomotion.spec.luau`). IK stóp na zboczach: `FootIkController` (własna postać + 3 najbliższe, bez `low`).
+Klipy: do czasu Mixamo grają domyślne klipy Roblox R15, teraz sterowane własną logiką (`fallback` zostaje na nich).
+
+**Sprawdzone w Studio:** `Animate` z repo zastępuje domyślny (w postaci jest tylko `LocalScript:Animate`); bieg przy
+16 st/s: `run` waga 1, prędkość ×2,0; wybicie → upadek → stanie po skoku; wariant bezczynności gra; IK: na zboczu lewa
+stopa waga 1, prawa 0 (podnosi tylko stopę nad wyższą ziemią).
+
+**Stride (pomiar w Studio, prędkość podpartej stopy względem korzenia):** domyślne `walk` i `run` Roblox obie 6,6 st/s
+(krótki krok), więc bieg przy 16 st/s potrzebowałby ×2,4: `run` = 8 (×2,0, lekki poślizg) do czasu własnego klipu biegu.
+
+**Koszt IK (PC, 4 s):** high z IK 2,64 ms CPU, medium z IK 3,47 ms, low bez IK 3,14 ms: różnica poniżej szumu
+pomiaru (2 `IKControl` na postać).
+
+**Nie sprawdzone wizualnie:** nagrania i zrzuty (Studio w tle renderuje 15 kl./s, zrzuty puste), pływanie (płytka woda
+przy Polanie), atak w biegu (mechanizm bez zmian: pozy po Animatorze, klipy ataków `Action` > `Movement`).
+
+**Animation Graphs:** dostępne w Studio (`AnimationGraphDefinition`), ale nie użyte (`DECYZJE-W`).
+
+**Dla właściciela:** pobrać klipy z `Graphics\animacje\KLIPY-RUCH.md` (5 z pierwszeństwem 1, ok. 10 min) do
+`Graphics\animacje\gracz\fbx\ruch\` i napisać „przekonwertuj ruch”.
+
+**Pliki:** `src/character/Animate.client.luau`, `src/client/Controllers/FootIkController.luau`,
+`src/shared/Data/Locomotion.luau`, `src/shared/Logic/LocomotionPick.luau` (nowe), `default.project.json`,
+`src/client/Controllers/AnimationController.luau` (znacznik `VaelthornActionAt`), `tests/locomotion.spec.luau`,
+`tools/balance_reasons.luau`, `docs/ANIMACJE.md` §14, `docs/wyglad/KLIPY-RUCH.md`, `docs/wyglad/*`.
+
+**Poza W08 (ta sama rozmowa):** pięć punktów orientacyjnych z Tripo (Iglica Ciernia, posąg Pani z Cierniem, spalony młyn,
+Stare Drzewo, Szczyt Kuźni) zaimportowane do `ReplicatedStorage.Assets.Kit` (`city_landmark_01`, `city_statue_01`,
+`grass_landmark_01`, `forest_landmark_01`, `desert_landmark_01`), 4,3–9,4 tys. trójkątów, skala gry, podstawa na
+ziemi; na mapy wchodzą w W12, W13, W15, W17.

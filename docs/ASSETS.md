@@ -202,6 +202,7 @@ Bez modelu gra stawia klocki generatora (jedno ostrzeżenie `[Kit]` na nazwę).
 |---|---|---|---|---|---|---|
 | drzewa i krzaki Łąk | `grass_tree_01`–`08`, `10`–`16`, `19`, `grass_bush_01`–`03` | „Yasu's Stylized Tree Pack”, Creator Store `79689531752352` | mvyasu | darmowy model Creator Store (użycie w grach Roblox) | 2026-10-17 | bez skryptów; 2 MeshParty na drzewo, malowane liście (`SurfaceAppearance`) |
 | skały | `common_rock_01`–`06` | „Stylized Rock Pack”, Creator Store `139056934028989` (siatki nr 2, 3, 4, 6, 7, 15) | nizendo | darmowy model Creator Store | 2026-10-17 | bez skryptów; tekstura niebiesko-szara |
+| punkty orientacyjne | `city_landmark_01`, `city_statue_01`, `grass_landmark_01`, `forest_landmark_01`, `desert_landmark_01` | Tripo (konto Pro właściciela), Smart Mesh 5000, GLB 2048 (`assets/Kit/src/*.glb`, tylko lokalnie) | właściciel | własne | 2026-10-17 | jedna MeshPart, tekstura bez krwi; skala: 95 / 11 / 36 / 75 / 420 studów |
 | materiały terenu | `VaelthornGrass`, `VaelthornGround`, `VaelthornRock`, `VaelthornCobble` (+ warianty 1–3) | Material Generator w Studio (MCP `generate_material`), `MaterialService` | własne | własne | 2026-10-17 | per mapa przez `Data/MapLooks.materials` |
 
 ## Ikony przedmiotów (S35)

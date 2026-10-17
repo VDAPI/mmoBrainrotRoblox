@@ -24,3 +24,8 @@
 - **W02** Materiały: trawa i ziemia z Material Generatora gorsze niż gołe na zrzutach, nie weszły; weszła tylko skała gór Łąk (`MapLooks.materials`, per mapa).
 - **W02** Właściciel: „zrób możliwie za darmo”. Zestaw W02 tylko z darmowych źródeł; koszyk w `ZAKUPY.md` jest propozycją, nic nie kupione.
 - **W11** Właściciel 2026-10-17: rekomendacje 1–5 (`MAPY.md` §4) przyjęte; mapy wolno przebudować całe, żeby były dopracowane treściowo (nie tylko 13 zmian z tabeli „Zmiany układu”). Mechanika dalej bez zmian: liczba grup potworów, poziomy, Elity, bossowie, questy, portale i NPC zostają; zmiana miejsc obszarów i dróg dozwolona z aktualizacją danych i testów w tej samej sesji.
+- **W08** Własny `StarterCharacterScripts.Animate` (B3), nie sterownik w kontrolerze: Roblox nie wstawia wtedy domyślnego, skrypt żyje i umiera z postacią, ślady replikują się jak dawniej. Ładowanie klipów osobno, nie przez `CharacterClips` (jego strażnik duplikatów zatrzymywałby na innych klientach zreplikowany chód innych graczy).
+- **W08** Animation Graphs (B4) nie użyte: są w Studio, ale wymagają zasobu grafu tworzonego i publikowanego w Studio; przenikanie dwóch klipów wagami w `LocomotionPick` jest proste, testowane w Lune i trzymane w repo.
+- **W08** `stride.run` = 8, nie zmierzone 6,6: domyślny bieg Roblox ma krótki krok i przy 16 st/s wyglądałby jak drobienie (×2,4); lekki poślizg do czasu własnego klipu biegu.
+- **W08** IK stóp tylko podnosi stopę nad wyższą ziemią; biodra zostają (obniżanie wymagałoby `HipHeight` albo zapisu `Root` w tym samym kroku co pozy ataków).
+- **W08** Punkty orientacyjne z Tripo: model w `Assets.Kit` z `PivotOffset` u podstawy (z `PrimaryPart` `PivotTo` bierze pivot części, nie `WorldPivot`).
