@@ -135,6 +135,8 @@ Kit.slots = {
 	-- W12: landmarks from Tripo (docs/wyglad/mapy/miasto.md A2): the Mage Tower and the Lady with the Thorn
 	["landmark:mageTower"] = { fit = "height", size = 48, city = { fixed("city_landmark_01", 0) } },
 	["landmark:fountainStatue"] = { fit = "height", size = 6.5, city = { fixed("city_statue_01", 180) } },
+	-- W13: the burnt post mill on Crow Field; its top over the saddle of the Wolf Hills (rise 9 + 34 >= 41, laki.md Z2)
+	["landmark:mill"] = { fit = "height", size = 34, grass = { fixed("grass_landmark_01", 0) } },
 } :: { [string]: Entry }
 
 return Kit

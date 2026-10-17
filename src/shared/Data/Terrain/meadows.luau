@@ -93,8 +93,8 @@ return table.freeze({
 		{ x = -240, z = -680, rx = 80, rz = 60, rot = 0, h = 8, flat = 0 },
 		{ x = 110, z = -700, rx = 70, rz = 55, rot = 0, h = 7, flat = 0 },
 		{ x = -40, z = -640, rx = 50, rz = 45, rot = 0, h = 5, flat = 0 },
-		-- Crow Field: the mill's rise
-		{ x = 40, z = -150, rx = 44, rz = 40, rot = 0, h = 3.5, flat = 0.5 },
+		-- Crow Field: the mill's rise (W13, laki.md Z2: higher and wider, the mill shows over the saddle)
+		{ x = 40, z = -150, rx = 60, rz = 55, rot = 0, h = 9, flat = 0.5 },
 		-- south: hills around the bandit camp and the hideout
 		{ x = 50, z = 610, rx = 70, rz = 60, rot = 0, h = 7, flat = 0 },
 		{ x = 210, z = 690, rx = 80, rz = 60, rot = 0, h = 9, flat = 0 },

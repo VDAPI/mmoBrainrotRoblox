@@ -138,6 +138,37 @@ local function arcPieces(out: { Piece }, def: Horizons.Horizon, arc: Horizons.Ar
 			})
 			-- a scree slope at the foot
 			tent(out, deg + arc.step * 0.4, dist - h * 0.2, y0 - 4, h * 1.1, h * 0.35, h * 0.6, arc.color2)
+		elseif arc.kind == "walls" then
+			-- a stretch of town wall across the line of sight, a tower every third step (Vaelthorn behind the gate)
+			local x, z = HorizonGen.at(deg, dist)
+			local width = 2 * math.pi * dist * arc.step / 360 * 1.05
+			table.insert(out, {
+				shape = "block",
+				x = x,
+				y = y0 + h / 2 - 4,
+				z = z,
+				sx = width,
+				sy = h,
+				sz = 12,
+				yaw = facing(deg),
+				tilt = 0,
+				color = color,
+			})
+			if math.floor((deg - arc.from) / arc.step + 0.5) % 3 == 0 then
+				table.insert(out, {
+					shape = "block",
+					x = x,
+					y = y0 + h * 0.75 - 4,
+					z = z,
+					sx = 22,
+					sy = h * 1.5,
+					sz = 22,
+					yaw = facing(deg),
+					tilt = 0,
+					color = arc.color2,
+				})
+				tent(out, deg, dist, y0 - 4 + h * 1.5, 24, 16, 24, "#7A3A2A")
+			end
 		else -- peaks: rock with a snow cap on the same apex
 			local w = h * lerp(1.1, 1.5, t)
 			tent(out, deg, dist, y0 - 10, w, h, w, arc.color)

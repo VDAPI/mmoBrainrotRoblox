@@ -292,3 +292,19 @@ murów nieobejrzany.
 **Pliki:** `src/shared/Data/Horizons.luau`, `src/shared/Logic/HorizonGen.luau`,
 `src/client/Controllers/HorizonController.luau`, `tests/horizon.spec.luau` (nowe), `src/shared/Util/KitAssets.luau`,
 `tools/balance_reasons.luau`.
+
+### W13: Łąki, część 1
+
+**Zrobione (wg `docs/wyglad/mapy/laki.md`):** Z2: wzniesienie młyna na Kruczym Polu `h` 3,5 → 9, `rx/rz` 44/40 → 60/55;
+spalony młyn jako slot zestawu `landmark:mill` (Tripo `grass_landmark_01`, wysokość 34; filary, kozioł, korpus, dach
+i skrzydła z generatora zastąpione, zwęglone belki, popiół i znaczniki dymu zostały), cienki jasny słup dymu z tlącego
+się korpusu (nowy rodzaj życia `smokePlume`, widoczny z daleka); horyzont Łąk w `Data/Horizons` (północ ośnieżone
+szczyty graniczne, północny wschód ciemna ściana Boru, zachód za bramą mury Vaelthornu z wieżami, południe złote
+pagórki, wschód za górami mapy szara skała; 315 części), nowy rodzaj łuku `walls`.
+
+**Nie zrobione:** Z1 (nowa ścieżka pod Wilczymi Wzgórzami: przelosowuje grupy, osobna część), rekwizyty expowisk z
+tabeli 1.4, kwiaty i rośliny wodne (Quaternius wymaga pobrania), kapliczka i bramy z Tripo. Młyn i horyzont
+nieobejrzane w Studio (Studio zamknięte w trakcie sesji).
+
+**Pliki:** `Data/Terrain/meadows`, `Data/Kit`, `Data/Horizons`, `Logic/MeadowsGen/Landmarks`, `Logic/HorizonGen`,
+`client/Controllers/WorldLifeController`.

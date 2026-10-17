@@ -30,6 +30,9 @@ local function mill(out: { Build })
 	local s = sites.mill
 	local b = Kit.build("BurntMill", "mill", s.x, s.z, s.rot)
 	local bp = b.bp
+	-- W13: the piers, the trestle, the body, the roof and both sails are one asset kit slot (Data/Kit "landmark:mill":
+	-- the painted burnt mill); the charred beams, the ash and the smoke around stay
+	bp:beginKit("landmark:mill", 0, Kit.gy(b, 0, 0), 0, 1, "shell")
 	for _, c in { { -3, -3 }, { 3, -3 }, { 3, 3 }, { -3, 3 } } do
 		local gy = Kit.gy(b, c[1], c[2])
 		bp:box(1.8, 2.4 - gy, 1.8, c[1], gy + (2.4 - gy) / 2 - 0.6, c[2], o(Palette.rubble[1], "shell", { q = true }))
@@ -74,6 +77,7 @@ local function mill(out: { Build })
 		0,
 		o({ c = "#3A3430", m = "Fabric" }, "detail")
 	)
+	bp:endKit()
 	-- charred beams and ash around, smoke from three places
 	for i = 1, 8 do
 		local a = i * 0.78 + 0.3
@@ -110,6 +114,9 @@ local function mill(out: { Build })
 	Kit.rect("building", s.x, s.z, 9, 11, s.rot)
 	local wx, wy, wz = Kit.worldOf(b, 0, 21, hz)
 	Kit.life("perch", wx, wy, wz)
+	-- W13: the plume from the smouldering body, seen over the saddle (laki.md 1.2)
+	local px, py, pz = Kit.worldOf(b, 0, 12, 1)
+	Kit.life("smokePlume", px, py, pz, 2)
 end
 
 -- Withered wheat fields around the mill (rows of dry stalks, client detail) and scarecrows with crows.

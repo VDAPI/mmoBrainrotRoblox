@@ -310,6 +310,35 @@ local EMITTERS: { [string]: EmitterKind } = {
 		far = true,
 		fx = "smoke",
 	},
+	-- W13: a thin pale plume rising high from smouldering beams (the burnt mill on Crow Field, laki.md 1.2), seen from
+	-- the saddle and the gate
+	smokePlume = {
+		size = function(r)
+			return Vector3.new(r * 2, 1, r * 2)
+		end,
+		props = {
+			Color = ColorSequence.new(Color3.fromHex("#6A625C"), Color3.fromHex("#B8B0A6")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.5),
+				NumberSequenceKeypoint.new(0.6, 0.7),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(3, 16),
+			Lifetime = NumberRange.new(16, 22),
+			Speed = NumberRange.new(5, 7),
+			SpreadAngle = Vector2.new(6, 6),
+			Acceleration = Vector3.new(0.9, 0.2, 0.4),
+			Rotation = NumberRange.new(0, 360),
+			RotSpeed = NumberRange.new(-8, 8),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Top,
+			Rate = 1.6,
+		},
+		on = always,
+		rate = same,
+		far = true,
+		fx = "smoke",
+	},
 	lavaBubbles = {
 		size = function(r)
 			return Vector3.new(r * 2, 0.5, r * 2)
