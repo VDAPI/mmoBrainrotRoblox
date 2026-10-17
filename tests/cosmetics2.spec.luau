@@ -112,7 +112,7 @@ end)
 
 T.describe("Cosmetics 2: bought titles (S123)", function()
 	local function hero(title: string?): any
-		return { level = 30, title = title, path = { main = nil, nodes = {}, bp = {}, freeUsed = true } }
+		return { level = 30, title = title, path = { nodes = {}, bp = {} } }
 	end
 
 	T.it("every title cosmetic has its title and every bought title its cosmetic", function()

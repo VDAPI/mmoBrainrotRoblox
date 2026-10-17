@@ -59,6 +59,10 @@ local GLYPHS: { [string]: Glyph } = {
 	attackSlow = { glyph = "⧗", good = false }, -- S63: slower attacks
 	weaken = { glyph = "⇓", good = false }, -- S63: deals less damage
 	guardianAngel = { glyph = "✟", good = true }, -- S70: a lethal monster blow leaves 1 HP
+	emberShield = { glyph = "🜂", good = true }, -- S140: melee attackers catch fire
+	iceBarrier = { glyph = "⛉", good = true }, -- S141: melee attackers are slowed
+	chill = { glyph = "❆", good = false }, -- S141: the caster's chill counter (count in the corner)
+	deepChill = { glyph = "✻", good = false }, -- S141: takes more damage from the source (bosses' freeze)
 	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder
 	runeSeal = { glyph = "◈", good = true, lasting = true }, -- S65: glowing Runic Seal
 	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice
@@ -69,7 +73,7 @@ local GLYPHS: { [string]: Glyph } = {
 	empowered = { glyph = "✪", good = true }, -- S80: Empowering Invocation (uses left in the corner)
 }
 -- S80 (ROZWOJ 12.5): counters, so the corner shows the count from a single stack
-local ALWAYS_COUNT: { [string]: boolean } = { arcaneCharge = true, empowered = true }
+local ALWAYS_COUNT: { [string]: boolean } = { arcaneCharge = true, empowered = true, chill = true } -- S141: chill
 
 -- S72: count / max / full only for the Fury counter.
 type Entry = {
@@ -153,22 +157,22 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 					[Children] = {
 						s:New("TextLabel")({
 							Size = UDim2.fromOffset(size, size),
-							BackgroundColor3 = Theme.Colors.Panel,
-							BackgroundTransparency = 0.15,
+							BackgroundColor3 = Theme.Iron.Surface,
+							BackgroundTransparency = Theme.HudAlpha,
 							Text = s:Computed(function(use): string
 								return if use(artShown) then "" else info.glyph
 							end),
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
-							TextColor3 = if info.good then Theme.Colors.Success else Theme.Colors.DangerHover,
+							TextColor3 = if info.good then Theme.Iron.Success else Theme.Iron.Danger,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 								ArtIcon.Image(s, { Key = artKey, Corner = Theme.Corner.Small }),
 								s:New("UIStroke")({
 									Color = if full
-										then Theme.Colors.GoldBright
-										elseif info.good then Theme.Colors.Success
-										else Theme.Colors.Danger,
+										then Theme.Brass.Bright
+										elseif info.good then Theme.Iron.Success
+										else Theme.Iron.Danger,
 									Thickness = if full then 2 else 1,
 								}),
 								-- S76: stacks in the corner
@@ -180,9 +184,9 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 										BackgroundTransparency = 1,
 										Text = tostring(entry.stacks),
 										FontFace = Theme.Fonts.BodyBold,
-										TextSize = 12,
+										TextSize = Theme.TextSize.Caption,
 										TextXAlignment = Enum.TextXAlignment.Right,
-										TextColor3 = Theme.Colors.Text,
+										TextColor3 = Theme.Iron.Text,
 										TextStrokeTransparency = 0.3,
 										ZIndex = 2,
 									}) :: any
@@ -195,8 +199,8 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							BackgroundTransparency = 1,
 							Text = caption,
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 12,
-							TextColor3 = if full then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = if full then Theme.Brass.Bright else Theme.Iron.Text,
 							TextStrokeTransparency = 0.3,
 						}),
 					},

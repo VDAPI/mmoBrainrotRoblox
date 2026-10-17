@@ -120,19 +120,19 @@ function Tooltip.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 		end),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Size = UDim2.fromOffset(0, 0),
-		BackgroundColor3 = Theme.Colors.Parchment,
+		BackgroundColor3 = Theme.Iron.Surface, -- S135: tooltips on iron
 		Text = scope:Computed(function(use): string
 			return use(currentText) or ""
 		end),
 		FontFace = Theme.Fonts.BodyMedium,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.TextDark,
+		TextColor3 = Theme.Iron.Text,
 		TextWrapped = true,
 		ZIndex = 100,
 
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 6),

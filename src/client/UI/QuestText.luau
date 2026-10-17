@@ -158,12 +158,13 @@ function QuestText.returnTo(use: any, list: QuestRows.List): string
 	return if npc then Text.get(use, "quest.tracker.returnTo", { npc = Text.get(use, npc.nameKey) }) else ""
 end
 
-local SUCCESS_HEX = "#" .. Theme.Colors.Success:ToHex()
-local GOLD_HEX = "#" .. Theme.Colors.GoldBright:ToHex()
-
 -- S29: the rows as rich text lines for the journal and the NPC dialog: finished objectives green with a "✔" and a
--- soft glow, open ones with a bullet, then the gold "Return to: <NPC>" line when complete (`withReturn`).
-function QuestText.richRows(use: any, list: QuestRows.List, withReturn: boolean?): { string }
+-- soft glow, open ones with a bullet, then the "Return to: <NPC>" heading line when complete (`withReturn`).
+-- S135: the colours are the roles of `surface` ("paper" in the parchment windows, "iron" on dark ones).
+function QuestText.richRows(use: any, list: QuestRows.List, withReturn: boolean?, surface: string?): { string }
+	local roles = Theme.surface(surface)
+	local SUCCESS_HEX = Theme.hex(roles.Success)
+	local GOLD_HEX = Theme.hex(roles.Heading)
 	local lines: { string } = {}
 	for _, row in list.rows do
 		local line = QuestRows.line(row)
@@ -487,17 +488,17 @@ end
 
 -- S99: the hunting ground of a contract as rich text: its name and levels in the colour of the level band for the
 -- character, then the S33 profile tag in its colour.
-function QuestText.contractAreaLine(use: any, contract: Quests.ContractQuest, level: number): string
+function QuestText.contractAreaLine(use: any, contract: Quests.ContractQuest, level: number, surface: string?): string
 	local area = Areas.areaById(contract.area)
 	if not area then
 		return ""
 	end
-	local color: string = LevelBand.COLORS[AreaAdvice.bandOf(area, level)]
+	local color = Theme.readableHex(LevelBand.COLORS[AreaAdvice.bandOf(area, level)], surface)
 	local name = `{Text.get(use, area.nameKey)} ({area.lv[1]}–{area.lv[2]})`
 	local line = `<font color="{color}">{name}</font>`
 	local profile = AreaProfiles.ofArea(area.id)
 	if profile then
-		local hex = "#" .. AreaProfileText.color(profile):ToHex()
+		local hex = Theme.hex(AreaProfileText.color(profile, surface))
 		line ..= `  <font color="{hex}">{AreaProfileText.tag(use, profile)}</font>`
 	end
 	return line

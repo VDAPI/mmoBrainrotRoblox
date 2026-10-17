@@ -47,7 +47,7 @@ local function label(scope: Scope, props: { [any]: any }): Instance
 		Size = UDim2.new(1, 0, 0, props.Height or 26),
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Paper.Text,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	}
 	props.Height = nil
@@ -58,12 +58,12 @@ local function label(scope: Scope, props: { [any]: any }): Instance
 end
 
 local function emblem(scope: Scope, class: Classes.ClassDef?, layoutOrder: number): Instance
-	local color = if class then Color3.fromHex(class.color) else Theme.Colors.GoldDim
+	local color = if class then Theme.readable(class.color, "paper") else Theme.Paper.Label
 	return scope:New("Frame")({
 		Name = "Emblem",
 		LayoutOrder = layoutOrder,
 		Size = UDim2.fromOffset(84, 84),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 			scope:New("UIStroke")({ Thickness = Theme.Stroke.Thick, Color = color }),
@@ -74,7 +74,7 @@ local function emblem(scope: Scope, class: Classes.ClassDef?, layoutOrder: numbe
 				GlyphColor = color,
 				ImageScale = 0.8,
 				Size = UDim2.fromScale(1, 1),
-				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Hero },
 			}),
 		},
 	})
@@ -90,9 +90,9 @@ local function occupied(scope: Scope, props: Props, summary: Types.SlotSummary):
 			LayoutOrder = 2,
 			Height = 40,
 			Text = summary.name,
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Title,
-			TextColor3 = Theme.Colors.Gold,
+			TextColor3 = Theme.Paper.Heading,
 		}),
 		label(scope, {
 			Name = "ClassLevel",
@@ -108,7 +108,7 @@ local function occupied(scope: Scope, props: Props, summary: Types.SlotSummary):
 			Height = 22,
 			Text = Text.T(scope, if map then map.nameKey else "map.unknown"),
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			Name = "Spacer",
@@ -149,9 +149,9 @@ local function empty(scope: Scope, props: Props): { Instance }
 			LayoutOrder = 2,
 			Height = 40,
 			Text = Text.T(scope, "charSelect.emptySlot"),
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			Name = "Spacer",
@@ -184,17 +184,17 @@ local function locked(scope: Scope, props: Props, passKey: string): { Instance }
 			Name = "Emblem",
 			LayoutOrder = 1,
 			Size = UDim2.fromOffset(84, 84),
-			BackgroundColor3 = Theme.Colors.Background,
+			BackgroundColor3 = Theme.Paper.Sunken,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-				scope:New("UIStroke")({ Thickness = Theme.Stroke.Thick, Color = Theme.Colors.GoldDim }),
+				scope:New("UIStroke")({ Thickness = Theme.Stroke.Thick, Color = Theme.Paper.Rule }),
 				scope:New("TextLabel")({
 					Size = UDim2.fromScale(1, 1),
 					BackgroundTransparency = 1,
 					Text = "🔒",
-					TextSize = 40,
+					TextSize = Theme.TextSize.Title,
 					FontFace = Theme.Fonts.BodyBold,
-					TextColor3 = Theme.Colors.GoldDim,
+					TextColor3 = Theme.Paper.Label,
 				}),
 			},
 		}),
@@ -203,9 +203,9 @@ local function locked(scope: Scope, props: Props, passKey: string): { Instance }
 			LayoutOrder = 2,
 			Height = 56,
 			Text = Text.T(scope, "charSelect.slotLocked"),
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextWrapped = true,
 		}),
 		label(scope, {
@@ -214,7 +214,7 @@ local function locked(scope: Scope, props: Props, passKey: string): { Instance }
 			Height = 44,
 			Text = Text.T(scope, if needsEarlier then "charSelect.slotNeeds4" else `premium.pass.{passKey}.desc`),
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextWrapped = true,
 		}),
 		scope:New("Frame")({
@@ -253,14 +253,14 @@ local function SlotCard(scope: Scope, props: Props): Instance
 		Name = `Slot{props.Slot}`,
 		LayoutOrder = props.Slot,
 		Size = UDim2.new(0, CARD_WIDTH, 1, -8),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.08,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Normal,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Paper.Border,
 				Transparency = scope:Computed(function(use): number
 					return if use(hasCharacter) then 0.1 else 0.55
 				end),

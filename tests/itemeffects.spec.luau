@@ -19,6 +19,7 @@ local Paths = require("../src/shared/Logic/Paths")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
 local SkillData = require("../src/shared/Data/Skills")
+local SkillPools = require("../src/shared/Logic/SkillPools")
 local T = require("./Test")
 local TableUtil = require("../src/shared/Util/TableUtil")
 
@@ -156,13 +157,18 @@ T.describe("Item effects: data (S134g D1, B2)", function()
 			T.expect({ def.id, string.sub(def.id, 1, #def.skill + 1) }).toEqual({ def.id, def.skill .. "_" })
 		end
 		T.expect(count >= 36).toBe(true)
-		-- S134g: activates with S137 (Data/SkillPools and SkillDef.pool / role)
-		local ok, pools = pcall(function(): any
-			return (require :: any)("../src/shared/Data/SkillPools")
-		end)
-		if ok and pools then
-			for _, def in EffectData.list do
-				local skill = SkillData.get(def.skill) :: any
+		-- S134g: activates with S137 (Data/SkillPools and SkillDef.pool / role). S137: a class still on its transitional
+		-- pools (SkillPools.isTransitional) has the skill common or in the effect's pool and no role yet (the class
+		-- sessions S140-S145 give roles); a finished class matches exactly
+		for _, def in EffectData.list do
+			local skill = SkillData.get(def.skill) :: any
+			if SkillPools.isTransitional(def.class) then
+				T.expect({ def.id, skill.path ~= nil or skill.pool == "common" or skill.pool == def.pool })
+					.toEqual({ def.id, true })
+				if skill.role ~= nil then
+					T.expect({ def.id, skill.role }).toEqual({ def.id, def.role })
+				end
+			else
 				T.expect({ def.id, skill.pool, skill.role }).toEqual({ def.id, def.pool, def.role })
 			end
 		end
@@ -456,7 +462,7 @@ T.describe("Item effects: migration (S134g C2)", function()
 			deposit = { size = 60, items = { ["1"] = legend("d1") } },
 		}
 		local applied = AccountSchema.migrate(data)
-		T.expect(applied).toEqual({ 10, 11 }) -- S134k: 11 = contracts
+		T.expect(applied).toEqual({ 10, 11, 12 }) -- S134k: 11 = contracts; S137: 12 = skill points
 		local char = data.characters["1"]
 		for _, item in
 			{ char.equipment.weapon, char.inventory["3"], char.quests.side.active.q.choice[1], data.deposit.items["1"] }

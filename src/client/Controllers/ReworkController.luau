@@ -3,11 +3,14 @@
 -- stats reset for free, the bar rebuilt) has character.reworkNotice = true. When it enters the world, one modal
 -- explains the change (a reset must never stay unexplained); either button sends AckRework so it never shows again,
 -- "Open skills" also opens the Skills window. Every migrated character of the account gets it once.
+-- S137 (DESIGN-18 §10): migration 12 sets the flag again; the notice now explains skill points, weapon pools and the
+-- free reset (rework2.*).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -30,18 +33,18 @@ local function check()
 		return
 	end
 	shown = true
-	local message = Text.now("rework.body", { level = SkillData.RANKS.capLevel })
-	-- S78: one paragraph per class whose skills moved to paths since the notice (keys literal for the key test)
-	local class = State.Get({ "character", "class" })
-	if class == "Hunter" then
-		message ..= "\n\n" .. Text.now("rework.class.Hunter")
-	elseif class == "Mage" then
-		message ..= "\n\n" .. Text.now("rework.class.Mage") -- S81
+	-- S137: skill points, pools and the free reset (rework2.*); the Mage paragraph names the element pools
+	local message = Text.now("rework2.body", {
+		slots = SkillData.HOTBAR_SLOTS,
+		level = Progression.freeRespecLevel,
+	})
+	if State.Get({ "character", "class" }) == "Mage" then
+		message ..= "\n\n" .. Text.now("rework2.mage")
 	end
 	WindowManager.ShowModal({
-		Title = Text.now("rework.title"),
+		Title = Text.now("rework2.title"),
 		Message = message,
-		ConfirmText = Text.now("rework.open"),
+		ConfirmText = Text.now("rework2.button"),
 		CancelText = Text.now("rework.later"),
 		OnConfirm = function(): (boolean, string?)
 			Net.Send("AckRework")

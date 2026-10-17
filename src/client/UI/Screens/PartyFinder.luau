@@ -52,7 +52,7 @@ local function small(scope: Scope, props: { [string]: any }): Instance
 		BackgroundTransparency = 1,
 		FontFace = Theme.Fonts.BodyMedium,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	}
@@ -204,7 +204,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 					Size = UDim2.new(1, -96, 1, 0),
 					Text = text,
 					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 				}),
 				Button(s, {
 					AnchorPoint = Vector2.new(1, 0),
@@ -241,7 +241,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 		LayoutOrder = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.35,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -260,7 +260,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				LayoutOrder = 0,
 				Text = Text.T(scope, "finder.mine"),
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			small(scope, {
 				LayoutOrder = 1,
@@ -268,7 +268,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 					local m = use(mine)
 					return if m then Text.get(use, "finder.mineActive") else Text.get(use, "finder.mineNone")
 				end),
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 			}),
 			stepper(
 				scope,
@@ -339,7 +339,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 						LayoutOrder = 0,
 						Size = UDim2.fromOffset(90, 44),
 						Text = Text.T(scope, "finder.want"),
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 					}),
 					classButtons :: any,
 				},
@@ -427,7 +427,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				local class = Classes.get(id)
 				table.insert(wantIcons, if class then class.icon else id)
 			end
-			local bandColor = Color3.fromHex(LevelBand.COLORS[LevelBand.of(listing.level, myLevel)])
+			local bandColor = Theme.readable(LevelBand.COLORS[LevelBand.of(listing.level, myLevel)], "paper")
 			local place = listing.at
 			local guide = props.Guide
 			local kindLabel = Text.get(use, "finder.kind." .. listing.kind)
@@ -441,7 +441,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				s:New("Frame")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, ROW),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = if ok then 0.35 else 0.6,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -450,7 +450,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 							Size = UDim2.new(1, -260, 0, 22),
 							Text = `{kindLabel}: {Text.get(use, listing.nameKey)}`,
 							FontFace = Theme.Fonts.BodyBold,
-							TextColor3 = if ok then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+							TextColor3 = if ok then Theme.Paper.Heading else Theme.Paper.TextMuted,
 						}),
 						small(s, {
 							Position = UDim2.fromOffset(8, 24),
@@ -465,7 +465,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 								use,
 								"finder.want"
 							)} {wanted}{reason}`,
-							TextColor3 = if ok then Theme.Colors.Text else Theme.Colors.Warning,
+							TextColor3 = if ok then Theme.Paper.Text else Theme.Paper.Warning,
 						}),
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
@@ -506,7 +506,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				small(s, {
 					Size = UDim2.new(1, 0, 0, 40),
 					Text = Text.get(use, "finder.none"),
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Center,
 				})
 			)

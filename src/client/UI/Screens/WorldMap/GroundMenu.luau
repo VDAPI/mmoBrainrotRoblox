@@ -44,14 +44,14 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 		Name = "GroundMenu",
 		Size = UDim2.fromOffset(200, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.03,
 		ZIndex = 45,
 		Visible = false,
 		[Children] = {
 			scope:New("UIScale")({ Scale = props.Scale }),
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 6),
@@ -86,12 +86,12 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 			Size = scope:Computed(function(use): UDim2
 				return UDim2.new(1, 0, 0, if use(props.Touch) then 46 else 34)
 			end),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = Theme.Paper.Raised,
 			Visible = visible,
 			Text = Text.T(scope, key),
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 15,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.Text,
 			ZIndex = 46,
 			[OnEvent("Activated")] = onClick,
 			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -113,13 +113,13 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 			scope:New("TextButton")({
 				LayoutOrder = i,
 				Size = UDim2.fromOffset(40, 40),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				Text = scope:Computed(function(use): string
 					return if UiArtState.ready(use, UiArt.mark(icon.id)) then "" else icon.glyph
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 22,
-				TextColor3 = Color3.fromHex(icon.color),
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.readable(icon.color, "paper", 3),
 				ZIndex = 47,
 				[OnEvent("Activated")] = take(function(p: Point)
 					props.OnMark(p, icon.id)
@@ -129,7 +129,7 @@ function GroundMenu.new(scope: Scope, props: Props): Api
 					-- S119: the mark's silhouette in its colour once loaded.
 					ArtIcon.Image(scope, {
 						Key = UiArt.mark(icon.id),
-						Tint = Color3.fromHex(icon.color),
+						Tint = Theme.readable(icon.color, "paper", 3),
 						Size = UDim2.fromScale(0.6, 0.6),
 						Position = UDim2.fromScale(0.5, 0.5),
 						AnchorPoint = Vector2.new(0.5, 0.5),

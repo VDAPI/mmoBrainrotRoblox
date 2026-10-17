@@ -3,7 +3,8 @@
 -- wiki: only tests/paths.spec reads it, through Paths.withSource(Fixture.source).
 -- Class "Mage" with two paths, so rows 2, 5 and 10 carry the twoPathExtra node. fxStorm is written out and shows
 -- every node kind; fxRune is generated with the same layout, mostly passives.
--- Ranks: 49 per path (rows 1-2: 13), so 49 + 13 = 62 for the class and pointsAt(100) = 50 covers ~81%.
+-- Ranks: 49 per path (rows 1-2: 13). S138 (DESIGN-18 §7): both paths are directions with a capstone (row 8) and an
+-- upgrade (row 11); pointsAt(100) = 50 holds one whole direction, never two, and the set has one capstone.
 
 local Build = require("../../src/shared/Data/Skills/Build")
 local Paths = require("../../src/shared/Logic/Paths")

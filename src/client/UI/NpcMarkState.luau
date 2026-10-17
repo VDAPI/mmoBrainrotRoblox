@@ -9,6 +9,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local NpcVisibility = require(ReplicatedStorage.Shared.Logic.NpcVisibility)
 local State = require(script.Parent.State)
+local Theme = require(script.Parent.Theme)
 
 local scope = Fusion.scoped(Fusion)
 
@@ -33,10 +34,11 @@ end
 -- Glyph and colour of a mark (same look on the plates and the maps; S98: the only style table, QuestController's
 -- plates read it too).
 local STYLE: { [string]: { text: string, color: Color3 } } = {
-	available = { text = "!", color = Color3.fromHex("#E8C25A") },
-	availableLow = { text = "!", color = Color3.fromHex("#9A9DA8") }, -- S98: an offer more than greyGap levels below
-	turnIn = { text = "?", color = Color3.fromHex("#E8C25A") },
-	active = { text = "?", color = Color3.fromHex("#9A9DA8") },
+	-- S136: colours from Data/UiPalette.mark (contrast-tested on the HUD tile)
+	available = { text = "!", color = Theme.Mark.Available },
+	availableLow = { text = "!", color = Theme.Mark.Low }, -- S98: an offer more than greyGap levels below
+	turnIn = { text = "?", color = Theme.Mark.TurnIn },
+	active = { text = "?", color = Theme.Mark.Active },
 }
 
 function NpcMarkState.style(mark: NpcMarks.Mark?): { text: string, color: Color3 }?

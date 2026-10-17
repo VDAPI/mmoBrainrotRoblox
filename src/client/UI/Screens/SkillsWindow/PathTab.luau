@@ -2,13 +2,17 @@
 -- A path tab of the skills window (S59, ROZWOJ 4), drawn only from Logic/PathView.path.
 -- FIX 2026-10-14 (owner: "skill trees should look like trees, descriptions only after a click, before that only
 -- connected pictures"): a short header (the path name, a click on it shows the path's description in the details;
--- the weapon ✓ / ✗; "Choose as main" / "Change path (scroll)", or the path is the main one, or a disabled button
--- with its reason in a tooltip), then the tree: one row of node tiles (NodeCard) per path row from the top, a trunk
+-- S138: the ranks in this direction, "leading direction" when it leads, "one capstone per set"), then the tree: one row of node tiles (NodeCard) per path row from the top, a trunk
 -- down the middle with a branch to every node, gold where the row is open or the node bought, a diamond on the trunk
--- for a choice row ("pick one"), a knot where branches meet, and the row's level on the left ("⚠" when the wrong
--- weapon blocks it; the row's points and kind in its tooltip). No description text on the tree: a click / tap on a
+-- for a choice row ("pick one"), a knot where branches meet, and the row's level on the left ("⚠" when the set's
+-- capstone is in another direction, S138; the row's points, kind and reason in its tooltip). No description text on the tree: a click / tap on a
 -- node shows it in the PC details panel or the phone sheet (Buy / Refund there). "Refund all nodes" at the end.
 -- Same tree on PC (510 px list) and phone (full width, bigger tiles).
+-- S139 (DESIGN-18 §12 D): the "Directions" tab: a switch of the class's directions at the top (a card per direction:
+-- its name, role and points, a dot when something waits there), then the tree of the shown one; node tiles are the
+-- pool tree's tiles (SkillsWindow/Tile). The leading direction, the capstone and the free talent points stand in the
+-- window header (the phone: only the points; the other two under the switch). A class without directions shows
+-- "Paths soon".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +21,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NodeCard = require(script.Parent.NodeCard)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -55,23 +60,126 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 	local rowHeight = tileSize + NodeCard.PIPS + (if touch then 30 else 24)
 	local spread = if touch then 124 else 112 -- distance between the centres of neighbouring nodes
 
+	local switchHeight = if touch then Theme.Size.MinTouch + 10 else 46
+
 	return scope:Computed(function(use, s: Scope): { Instance }
-		local tab = use(ctx.activeTab)
 		local character = use(ctx.character)
-		if tab == "base" or tab == "soon" or not character then
+		if use(ctx.activeTab) ~= Context.DIRECTIONS or not character then
 			return {}
 		end
-		local view = PathView.path(character, tab, use(ctx.weapons))
-		if not view then
-			return {}
-		end
-		local def = view.path
-		local lang = use(Text.Lang)
 		local out: { Instance } = {}
 		local function add(item: Instance)
 			(item :: any).LayoutOrder = #out + 1
 			table.insert(out, item)
 		end
+		local list = use(ctx.paths)
+		local shown = use(ctx.shownDirection)
+		if #list == 0 or not shown then
+			-- "Paths soon" (a class without directions, ROZWOJ 2.6)
+			for i, key in { "paths.soon", "paths.soon.body" } do
+				add(s:New("TextLabel")({
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, -8, 0, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Text = Text.get(use, key),
+					TextWrapped = true,
+					FontFace = if i == 1 then Theme.Fonts.Display else Theme.Fonts.Body,
+					TextSize = if i == 1 then Theme.TextSize.Large else Theme.TextSize.Small,
+					TextColor3 = if i == 1 then Theme.Paper.Heading else Theme.Paper.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}))
+			end
+			return out
+		end
+		-- S139: the switch of directions (name, role, points; a dot when something waits there)
+		local attention = use(ctx.attention)
+		local cards: { Instance } = {}
+		for i, pathDef in list do
+			local id = pathDef.id
+			local isShown = id == shown
+			local marked = attention ~= nil and attention.paths[id] == true
+			local role = Text.get(use, `paths.role.{pathDef.role}`)
+			local sub = `{role} · {Text.get(use, "skills.tab.spent", { n = Paths.pathSpent(character, id) })}`
+			table.insert(
+				cards,
+				s:New("TextButton")({
+					Name = id,
+					LayoutOrder = i,
+					Size = UDim2.new(1 / #list, -6, 0, switchHeight),
+					AutoButtonColor = false,
+					BackgroundColor3 = if isShown then Theme.Paper.Raised else Theme.Paper.Sunken,
+					Text = "",
+					[OnEvent("Activated")] = function()
+						ctx.direction:set(id)
+					end,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						s:New("UIStroke")({
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Thickness = if isShown then Theme.Stroke.Normal else Theme.Stroke.Thin,
+							Color = if isShown then Theme.Brass.Frame else Theme.Paper.Border,
+						}),
+						s:New("UIPadding")({
+							PaddingLeft = UDim.new(0, Theme.Padding.Small),
+							PaddingRight = UDim.new(0, Theme.Padding.Small),
+						}),
+						s:New("UIListLayout")({
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+						}),
+						s:New("TextLabel")({
+							LayoutOrder = 1,
+							BackgroundTransparency = 1,
+							Size = UDim2.new(1, 0, 0, Theme.TextSize.Small + 2),
+							Text = Text.get(use, pathDef.nameKey),
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if isShown then Theme.Paper.Heading else Theme.Paper.Text,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("TextLabel")({
+							LayoutOrder = 2,
+							BackgroundTransparency = 1,
+							Size = UDim2.new(1, 0, 0, Theme.TextSize.Caption + 1),
+							Text = sub,
+							FontFace = Theme.Fonts.BodyMedium,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = Theme.Paper.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("Frame")({
+							Name = "Dot",
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.new(1, Theme.Padding.Small - 3, 0, 3),
+							Size = UDim2.fromOffset(12, 12),
+							BackgroundColor3 = Theme.Paper.Danger,
+							Visible = marked,
+							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+						}),
+					},
+				})
+			)
+		end
+		add(s:New("Frame")({
+			Name = "Directions",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -8, 0, switchHeight),
+			[Children] = {
+				s:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				cards :: any,
+			},
+		}))
+		local view = PathView.path(character, shown, use(ctx.weapons))
+		if not view then
+			return out
+		end
+		local def = view.path
 		local function label(text: string, color: Color3?, font: Font?, size: number?)
 			add(s:New("TextLabel")({
 				BackgroundTransparency = 1,
@@ -81,26 +189,31 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextWrapped = true,
 				FontFace = font or Theme.Fonts.Body,
 				TextSize = size or Theme.TextSize.Small,
-				TextColor3 = color or Theme.Colors.Text,
+				TextColor3 = color or Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
 		end
-		local function button(text: string, enabled: boolean, reason: string?, run: () -> ())
-			local b = Button(s, {
-				Size = UDim2.fromOffset(260, buttonHeight),
-				TextSize = Theme.TextSize.Small,
-				Variant = "primary",
-				Text = text,
-				Disabled = not enabled,
-				OnClick = run,
-			})
-			if not enabled and reason then
-				Tooltip.attach(s, b :: GuiObject, reason)
-			end
-			add(b)
+		-- The phone's header has room only for the talent points: the set's leading direction (with its threshold) and
+		-- capstone stand under the switch.
+		if touch then
+			local leading = PathView.leading(character)
+			local leadingDef = if leading.pathId then PathData.get(leading.pathId) else nil
+			label(
+				if leadingDef
+					then Text.get(use, "skills.tree.leading", { name = Text.get(use, leadingDef.nameKey) })
+					else Text.get(use, "skills.tree.leadingNone", { n = leading.need }),
+				Theme.Paper.Heading,
+				Theme.Fonts.BodyBold
+			)
+			local capstone = Paths.capstoneOf(character)
+			local capstoneDef = if capstone then PathData.get(capstone) else nil
+			label(
+				if capstoneDef
+					then Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) })
+					else Text.get(use, "skills.tree.capstoneNone")
+			)
 		end
-
-		-- Header: the name (a click shows the path's description), the weapon, the main path.
+		-- Header: the name (a click shows the path's description), the ranks in the direction (S138).
 		local pathSelected = s:Computed(function(use2): boolean
 			local sel = use2(ctx.selected)
 			return sel ~= nil and sel.kind == "path" and sel.id == def.id
@@ -113,10 +226,10 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			BackgroundTransparency = 1,
 			Text = `{Text.get(use, def.nameKey)}  ⓘ`,
 			TextWrapped = true,
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
 			TextColor3 = s:Computed(function(use2): Color3
-				return if use2(pathSelected) then Theme.Colors.GoldBright else Theme.Colors.Gold
+				return if use2(pathSelected) then Theme.Paper.Heading else Theme.Paper.Heading
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			[OnEvent("Activated")] = function()
@@ -127,40 +240,11 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				end
 			end,
 		}))
-		local weapons = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
-		label(
-			`{if view.weaponOk then "✓" else "✗"} {weapons}`,
-			if view.weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover,
-			Theme.Fonts.BodyBold
-		)
-		local main = view.main
-		if main.ok then
-			local cost: ("free" | "scroll")? = main.cost
-			button(
-				Text.get(use, if cost == "scroll" then "paths.changeMain" else "paths.chooseMain"),
-				true,
-				nil,
-				function()
-					actions.chooseMain(def.id, cost)
-				end
-			)
-		elseif main.reason == "paths.error.sameMain" then
-			label(Text.get(use, "paths.isMain"), Theme.Colors.Success, Theme.Fonts.BodyBold)
-		elseif main.reason == "paths.error.mainLevel" then
-			button(
-				Text.get(use, "paths.chooseMain"),
-				false,
-				Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }),
-				function() end
-			)
-		else
-			button(
-				Text.get(use, "paths.chooseMain"),
-				false,
-				Text.get(use, main.reason or "error.internal"),
-				function() end
-			)
+		-- S138 (DESIGN-18 §7): a direction to mix, no main path choice and no direction weapon
+		if view.leading then
+			label(Text.get(use, "paths.isMain"), Theme.Paper.Success, Theme.Fonts.BodyBold)
 		end
+		label(Text.get(use, "skills.tree.oneCapstone"), Theme.Paper.TextMuted)
 
 		-- The tree.
 		local rows = view.rows
@@ -196,7 +280,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 					y + length / 2,
 					LINE,
 					length,
-					if nextRow.open then Theme.Colors.Gold else Theme.Colors.Border,
+					if nextRow.open then Theme.Paper.Heading else Theme.Paper.TextMuted,
 					nextRow.open
 				)
 			end
@@ -214,7 +298,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 						y,
 						math.abs(dx),
 						LINE,
-						if lit then Theme.Colors.Gold elseif row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						if lit then Theme.Paper.Heading elseif row.open then Theme.Paper.Label else Theme.Paper.TextMuted,
 						lit or row.open
 					)
 				end
@@ -234,9 +318,9 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 						Size = UDim2.fromOffset(KNOT, KNOT),
 						Rotation = if row.choice then 45 else 0,
 						BackgroundColor3 = if anyBought
-							then Theme.Colors.GoldBright
-							elseif row.open then Theme.Colors.GoldDim
-							else Theme.Colors.Border,
+							then Theme.Brass.Bright
+							elseif row.open then Theme.Paper.Rule
+							else Theme.Paper.Border,
 						BorderSizePixel = 0,
 						ZIndex = 2,
 						[Children] = if row.choice then nil else s:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
@@ -244,26 +328,26 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				)
 			end
 			-- the row's level on the left; its points, kind and why it is closed in the tooltip
-			local blocked = row.weaponBlocked
+			local blocked = row.closedKey == "skills.error.capstoneTaken"
 			local level = s:New("TextLabel")({
 				Name = `Level{i}`,
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.fromOffset(0, y),
 				Size = UDim2.fromOffset(LEVEL_WIDTH, 24),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Paper.Sunken,
 				BackgroundTransparency = 0.3,
 				Text = if blocked then `⚠{row.level}` else tostring(row.level),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
+				TextSize = Theme.TextSize.Small,
 				TextColor3 = if blocked
-					then Theme.Colors.Warning
-					elseif row.open then Theme.Colors.Parchment
-					else Theme.Colors.TextMuted,
+					then Theme.Paper.Warning
+					elseif row.open then Theme.Paper.Text
+					else Theme.Paper.TextMuted,
 				ZIndex = 2,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					s:New("UIStroke")({
-						Color = if row.open then Theme.Colors.GoldDim else Theme.Colors.Border,
+						Color = if row.open then Theme.Paper.Rule else Theme.Paper.Border,
 						Thickness = 1,
 					}),
 				},

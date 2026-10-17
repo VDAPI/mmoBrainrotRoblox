@@ -52,9 +52,9 @@ function MountButton.Slot(scope: Scope, props: Props): Instance
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if riding(use, props.Riding) then Theme.Colors.Accent else Theme.Colors.Panel
+			return if riding(use, props.Riding) then Theme.Iron.Accent else Theme.Iron.Raised
 		end),
-		BackgroundTransparency = 0.2,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = "",
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
@@ -64,9 +64,8 @@ function MountButton.Slot(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = Theme.Stroke.Normal,
-				Color = Theme.Colors.Gold,
-				Transparency = 0.3,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Brass.Line,
 			}),
 			scope:New("TextLabel")({
 				Name = "Icon",
@@ -74,19 +73,21 @@ function MountButton.Slot(scope: Scope, props: Props): Instance
 				Size = UDim2.fromScale(1, 1),
 				Text = GLYPH,
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 28,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Title,
+				TextColor3 = Theme.Iron.Text,
 			}),
 			scope:New("TextLabel")({
 				Name = "Key",
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -4, 0, 2),
-				Size = UDim2.fromOffset(16, 14),
-				BackgroundTransparency = 1,
+				Size = UDim2.fromOffset(16, 16),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundColor3 = Theme.Iron.Sunken, -- S136: the key on a plaque
+				BackgroundTransparency = Theme.BadgeAlpha,
 				Text = Keybinds.Label(scope, "mount"),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 12,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.Text,
 			}),
 		},
 	})
@@ -106,13 +107,13 @@ function MountButton.Touch(scope: Scope, props: Props): Instance
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if riding(use, props.Riding) then Theme.Colors.Accent else Theme.Colors.Panel
+			return if riding(use, props.Riding) then Theme.Iron.Accent else Theme.Iron.Surface
 		end),
-		BackgroundTransparency = 0.15,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = label(scope, props),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
 			props.OnToggle()
@@ -122,7 +123,7 @@ function MountButton.Touch(scope: Scope, props: Props): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thin,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Brass.Line,
 			}),
 		},
 	})

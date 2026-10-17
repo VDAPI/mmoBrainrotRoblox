@@ -112,8 +112,8 @@ local function contractRows(
 )
 	for i, entry in list do
 		local status = if entry.claimed
-			then ` <font color="#8E8E93">({Text.get(use, "quest.claimed")})</font>`
-			elseif entry.progress >= entry.objective.n then ` <font color="#4FD16B">({Text.get(
+			then ` <font color="{Theme.hex(Theme.Paper.TextMuted)}">({Text.get(use, "quest.claimed")})</font>`
+			elseif entry.progress >= entry.objective.n then ` <font color="{Theme.hex(Theme.Paper.Success)}">({Text.get(
 				use,
 				"quest.claimAtBoard"
 			)})</font>`
@@ -125,8 +125,8 @@ local function contractRows(
 				i * 3,
 				`<b>{Text.get(use, `{prefix}.{entry.template}.title`)}</b>{status}`,
 				Theme.Fonts.BodyBold,
-				18,
-				Theme.Colors.GoldBright
+				Theme.TextSize.Small,
+				Theme.Paper.Heading
 			)
 		)
 		table.insert(
@@ -136,8 +136,8 @@ local function contractRows(
 				i * 3 + 1,
 				QuestText.objective(use, entry.objective, entry.progress),
 				Theme.Fonts.Body,
-				16,
-				Theme.Colors.Text
+				Theme.TextSize.Small,
+				Theme.Paper.Text
 			)
 		)
 		if not entry.claimed then
@@ -239,8 +239,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						0,
 						Text.get(use, `story.chapter.{Quests.Main.chapterOf(current.id)}`),
 						Theme.Fonts.BodyBold,
-						15,
-						Theme.Colors.TextMuted
+						Theme.TextSize.Small,
+						Theme.Paper.TextMuted
 					)
 				)
 			end
@@ -255,15 +255,22 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					label(
 						s,
 						1,
-						title .. '\n<font size="16" color="#9A9DA8">' .. giverLine .. "</font>",
-						Theme.Fonts.Heading,
-						26,
-						Theme.Colors.GoldBright
+						`{title}\n<font size="{Theme.TextSize.Small}" color="{Theme.hex(Theme.Paper.TextMuted)}">{giverLine}</font>`,
+						Theme.Fonts.Display,
+						Theme.TextSize.Large,
+						Theme.Paper.Heading
 					)
 				)
 				table.insert(
 					list,
-					label(s, 2, Text.get(use, `quest.{quest.id}.text`), Theme.Fonts.Body, 17, Theme.Colors.Parchment)
+					label(
+						s,
+						2,
+						Text.get(use, `quest.{quest.id}.text`),
+						Theme.Fonts.Body,
+						Theme.TextSize.Small,
+						Theme.Paper.Text
+					)
 				)
 				-- S102: the offer pages again (with the variants of earlier answers)
 				local pages = quest.pages
@@ -296,7 +303,14 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					QuestText.richRows(use, QuestText.rows(use, quest.objectives, main.progress, quest.turnIn))
 				table.insert(
 					list,
-					label(s, 3, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 17, Theme.Colors.Text)
+					label(
+						s,
+						3,
+						table.concat(lines, "\n"),
+						Theme.Fonts.BodyMedium,
+						Theme.TextSize.Small,
+						Theme.Paper.Text
+					)
 				)
 				-- S118: pictures of the quest items (nothing without them)
 				local questItems = QuestItemIcons(s, use, quest.objectives, 4)
@@ -335,9 +349,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							s,
 							1,
 							Text.get(use, `quest.{nextQuest.id}.title`),
-							Theme.Fonts.Heading,
-							26,
-							Theme.Colors.GoldBright
+							Theme.Fonts.Display,
+							Theme.TextSize.Large,
+							Theme.Paper.Heading
 						)
 					)
 					table.insert(
@@ -357,14 +371,21 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 									{ level = nextQuest.level - Quests.Main.LEVEL_SLACK }
 								),
 							Theme.Fonts.BodyMedium,
-							18,
-							Theme.Colors.Parchment
+							Theme.TextSize.Small,
+							Theme.Paper.Text
 						)
 					)
 				else
 					table.insert(
 						list,
-						label(s, 1, Text.get(use, "quest.storyDone"), Theme.Fonts.Heading, 24, Theme.Colors.GoldBright)
+						label(
+							s,
+							1,
+							Text.get(use, "quest.storyDone"),
+							Theme.Fonts.Display,
+							Theme.TextSize.Large,
+							Theme.Paper.Heading
+						)
 					)
 				end
 			end
@@ -373,7 +394,14 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			if doneCount > 0 then
 				table.insert(
 					list,
-					label(s, 10, `<b>{Text.get(use, "quest.history")}</b>`, Theme.Fonts.BodyBold, 17, Theme.Colors.Gold)
+					label(
+						s,
+						10,
+						`<b>{Text.get(use, "quest.history")}</b>`,
+						Theme.Fonts.BodyBold,
+						Theme.TextSize.Small,
+						Theme.Paper.Heading
+					)
 				)
 			end
 			local scenes: { [string]: boolean } = if type(q.scenes) == "table" then q.scenes else {}
@@ -390,8 +418,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							10 + i * 2,
 							Text.get(use, `story.chapter.{n}`),
 							Theme.Fonts.BodyBold,
-							15,
-							Theme.Colors.TextMuted
+							Theme.TextSize.Small,
+							Theme.Paper.TextMuted
 						)
 					)
 				end
@@ -434,8 +462,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 								Text = `✔ {Text.get(use, `quest.{finished.id}.title`)}`,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 								FontFace = Theme.Fonts.Body,
-								TextSize = 15,
-								TextColor3 = Theme.Colors.TextMuted,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Paper.TextMuted,
 								TextXAlignment = Enum.TextXAlignment.Left,
 							}),
 							button :: any,
@@ -476,10 +504,12 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						label(
 							s,
 							0,
-							`<b>{title}</b>  <font size="14" color="#9A9DA8">{from}</font>`,
+							`<b>{title}</b>  <font size="{Theme.TextSize.Small}" color="{Theme.hex(
+								Theme.Paper.TextMuted
+							)}">{from}</font>`,
 							Theme.Fonts.BodyBold,
-							19,
-							Theme.Colors.GoldBright
+							Theme.TextSize.Body,
+							Theme.Paper.Heading
 						)
 					)
 					table.insert(
@@ -489,13 +519,20 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							0,
 							Text.get(use, `quest.{quest.id}.progress`),
 							Theme.Fonts.Body,
-							15,
-							Theme.Colors.Parchment
+							Theme.TextSize.Small,
+							Theme.Paper.Text
 						)
 					)
 					table.insert(
 						shown,
-						label(s, 0, table.concat(lines, "\n"), Theme.Fonts.BodyMedium, 16, Theme.Colors.Text)
+						label(
+							s,
+							0,
+							table.concat(lines, "\n"),
+							Theme.Fonts.BodyMedium,
+							Theme.TextSize.Small,
+							Theme.Paper.Text
+						)
 					)
 					local questItems = QuestItemIcons(s, use, quest.objectives)
 					if questItems then
@@ -522,10 +559,12 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							label(
 								s,
 								0,
-								`<font color="#E8C25A">!</font> {title}  <font size="14" color="#9A9DA8">{getFrom}</font>`,
+								`<font color="{Theme.hex(Theme.Paper.Heading)}">!</font> {title}  <font size="{Theme.TextSize.Small}" color="{Theme.hex(
+									Theme.Paper.TextMuted
+								)}">{getFrom}</font>`,
 								Theme.Fonts.BodyMedium,
-								16,
-								Theme.Colors.Parchment
+								Theme.TextSize.Small,
+								Theme.Paper.Text
 							)
 						)
 					end
@@ -537,10 +576,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						label(
 							s,
 							0,
-							`{arcName}  <font color="#9A9DA8">{done}/{total}</font>`,
-							Theme.Fonts.Heading,
-							22,
-							if done == total then Theme.Colors.Success else Theme.Colors.Gold
+							`{arcName}  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{done}/{total}</font>`,
+							Theme.Fonts.Display,
+							Theme.TextSize.Large,
+							if done == total then Theme.Paper.Success else Theme.Paper.Heading
 						)
 					)
 					for _, item in shown do
@@ -549,11 +588,20 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				end
 			end
 			if not anything then
-				add(label(s, 0, Text.get(use, "quest.side.none"), Theme.Fonts.Body, 17, Theme.Colors.TextMuted))
+				add(
+					label(
+						s,
+						0,
+						Text.get(use, "quest.side.none"),
+						Theme.Fonts.Body,
+						Theme.TextSize.Small,
+						Theme.Paper.TextMuted
+					)
+				)
 			end
 			local count =
 				Text.get(use, "quest.side.count", { n = SideQuests.activeCount(q), max = Config.SideQuest.maxActive })
-			add(label(s, 0, count, Theme.Fonts.Body, 14, Theme.Colors.TextMuted))
+			add(label(s, 0, count, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.TextMuted))
 		elseif use(tab) == "boss" then
 			local order = 0
 			local function add(item: Instance)
@@ -570,27 +618,27 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				label(
 					s,
 					0,
-					`{Text.get(use, "quest.arc.bosses")}  <font color="#9A9DA8">{done}/{#Quests.Boss.list}</font>`,
-					Theme.Fonts.Heading,
-					22,
-					if done == #Quests.Boss.list then Theme.Colors.Success else Theme.Colors.Gold
+					`{Text.get(use, "quest.arc.bosses")}  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{done}/{#Quests.Boss.list}</font>`,
+					Theme.Fonts.Display,
+					Theme.TextSize.Large,
+					if done == #Quests.Boss.list then Theme.Paper.Success else Theme.Paper.Heading
 				)
 			)
 			for _, quest in Quests.Boss.list do
 				local title = Text.get(use, `quest.{quest.id}.title`)
 				local entry = active[quest.id]
 				if SideQuests.isDone(q, quest.id) then
-					add(label(s, 0, `✔ {title}`, Theme.Fonts.BodyMedium, 17, Theme.Colors.Success))
+					add(label(s, 0, `✔ {title}`, Theme.Fonts.BodyMedium, Theme.TextSize.Small, Theme.Paper.Success))
 				elseif type(entry) == "table" then
-					add(label(s, 0, `<b>{title}</b>`, Theme.Fonts.BodyBold, 19, Theme.Colors.GoldBright))
+					add(label(s, 0, `<b>{title}</b>`, Theme.Fonts.BodyBold, Theme.TextSize.Body, Theme.Paper.Heading))
 					add(
 						label(
 							s,
 							0,
 							Text.get(use, `quest.{quest.id}.progress`),
 							Theme.Fonts.Body,
-							15,
-							Theme.Colors.Parchment
+							Theme.TextSize.Small,
+							Theme.Paper.Text
 						)
 					)
 					local rows = QuestText.rows(use, quest.objectives, entry.progress, quest.turnIn)
@@ -600,8 +648,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							0,
 							table.concat(QuestText.richRows(use, rows), "\n"),
 							Theme.Fonts.BodyMedium,
-							16,
-							Theme.Colors.Text
+							Theme.TextSize.Small,
+							Theme.Paper.Text
 						)
 					)
 					local questItems = QuestItemIcons(s, use, quest.objectives)
@@ -620,10 +668,12 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						label(
 							s,
 							0,
-							`<b>{title}</b>  <font size="14" color="#9A9DA8">{from} · {where}</font>`,
+							`<b>{title}</b>  <font size="{Theme.TextSize.Small}" color="{Theme.hex(
+								Theme.Paper.TextMuted
+							)}">{from} · {where}</font>`,
 							Theme.Fonts.BodyMedium,
-							17,
-							Theme.Colors.Parchment
+							Theme.TextSize.Small,
+							Theme.Paper.Text
 						)
 					)
 				end
@@ -635,8 +685,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				local n = Quests.Weekly.bossContract.n
 				local boss = Bosses.get(contract.boss)
 				local status = if contract.claimed
-					then ` <font color="#8E8E93">({Text.get(use, "quest.claimed")})</font>`
-					elseif contract.progress >= n then ` <font color="#4FD16B">({Text.get(
+					then ` <font color="{Theme.hex(Theme.Paper.TextMuted)}">({Text.get(use, "quest.claimed")})</font>`
+					elseif contract.progress >= n then ` <font color="{Theme.hex(Theme.Paper.Success)}">({Text.get(
 						use,
 						"quest.claimAtBoard"
 					)})</font>`
@@ -646,9 +696,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						s,
 						0,
 						`<b>{Text.get(use, "quest.bossContract.title")}</b>{status}`,
-						Theme.Fonts.Heading,
-						20,
-						Theme.Colors.Gold
+						Theme.Fonts.Display,
+						Theme.TextSize.Body,
+						Theme.Paper.Heading
 					)
 				)
 				local text = Text.get(use, "quest.bossContract.text", {
@@ -657,7 +707,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				})
 				local progress =
 					Text.get(use, "quest.bossContract.progress", { have = math.min(contract.progress, n), n = n })
-				add(label(s, 0, `{text}\n{progress}`, Theme.Fonts.Body, 16, Theme.Colors.Text))
+				add(label(s, 0, `{text}\n{progress}`, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.Text))
 				if not contract.claimed then
 					add(QuestRewards(s, {
 						Id = "bossContract",
@@ -680,8 +730,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						.. "</b>\n"
 						.. Text.get(use, "quest.weeklyReset", { days = days, hours = hours }),
 					Theme.Fonts.BodyMedium,
-					16,
-					Theme.Colors.TextMuted
+					Theme.TextSize.Small,
+					Theme.Paper.TextMuted
 				)
 			)
 			contractRows(
@@ -717,20 +767,33 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				"contract.doneCount",
 				{ done = Contracts.doneCount(state), max = Quests.Contracts.MAX_LEVEL }
 			)
-			head ..= `   <font color="#9BC46A">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
-			add(label(s, 0, head, Theme.Fonts.Heading, 22, Theme.Colors.Gold))
+			head ..= `   <font color="{Theme.hex(Theme.Paper.Success)}">{Text.get(
+				use,
+				"contract.marks",
+				{ n = state.marks }
+			)}</font>`
+			add(label(s, 0, head, Theme.Fonts.Display, Theme.TextSize.Large, Theme.Paper.Heading))
 			add(
 				label(
 					s,
 					0,
 					Text.get(use, "contract.counts", { active = #active, ready = #ready }),
 					Theme.Fonts.BodyMedium,
-					16,
-					Theme.Colors.TextMuted
+					Theme.TextSize.Small,
+					Theme.Paper.TextMuted
 				)
 			)
 			if Contracts.allDone(state) then
-				add(label(s, 0, Text.get(use, "contract.allDone"), Theme.Fonts.Body, 17, Theme.Colors.Success))
+				add(
+					label(
+						s,
+						0,
+						Text.get(use, "contract.allDone"),
+						Theme.Fonts.Body,
+						Theme.TextSize.Small,
+						Theme.Paper.Success
+					)
+				)
 			end
 			-- the giver's buttons (or where they are)
 			if atGiver and npcId then
@@ -788,8 +851,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						0,
 						Text.get(use, "contract.whereTurnIn"),
 						Theme.Fonts.BodyBold,
-						15,
-						Theme.Colors.GoldBright
+						Theme.TextSize.Small,
+						Theme.Paper.Heading
 					)
 				)
 			end
@@ -829,19 +892,23 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				local groupHead = Text.get(use, "contract.group", {
 					area = if area then Text.get(use, area.nameKey) else "?",
 					lv = if area then `{area.lv[1]}–{area.lv[2]}` else "?",
-				}) .. `  <font color="#9A9DA8">({#g.list})</font>`
-				add(label(s, 0, groupHead, Theme.Fonts.Heading, 18, Theme.Colors.Gold))
+				}) .. `  <font color="{Theme.hex(Theme.Paper.TextMuted)}">({#g.list})</font>`
+				add(label(s, 0, groupHead, Theme.Fonts.Display, Theme.TextSize.Small, Theme.Paper.Heading))
 				for _, taken in g.list do
 					local contract = taken.contract
 					local done = Contracts.isTakenComplete(taken)
 					local tracked = tracking and focus ~= nil and focus.kind == "contract" and focus.id == contract.id
-					local mark = if done then `<font color="#4FD16B">✔</font>` else "◈"
+					local mark = if done then `<font color="{Theme.hex(Theme.Paper.Success)}">✔</font>` else "◈"
 					local line = `{mark} <b>{QuestText.contractObjective(lookup, contract, taken.entry.progress[1] or 0)}</b>`
-						.. `  <font color="#9A9DA8">{Text.get(use, "contract.levelTag", { level = contract.level })}</font>`
+						.. `  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{Text.get(
+							use,
+							"contract.levelTag",
+							{ level = contract.level }
+						)}</font>`
 					add(s:New("Frame")({
 						Size = UDim2.fromScale(1, 0),
 						AutomaticSize = Enum.AutomaticSize.Y,
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.45,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -857,8 +924,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 								1,
 								line,
 								Theme.Fonts.BodyMedium,
-								16,
-								if done then Theme.Colors.Success else Theme.Colors.Text
+								Theme.TextSize.Small,
+								if done then Theme.Paper.Success else Theme.Paper.Text
 							),
 							QuestRewards(
 								s,
@@ -949,8 +1016,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 									TextWrapped = true,
 									TextTruncate = Enum.TextTruncate.AtEnd,
 									FontFace = Theme.Fonts.Body,
-									TextSize = 15,
-									TextColor3 = Theme.Colors.Text,
+									TextSize = Theme.TextSize.Small,
+									TextColor3 = Theme.Paper.Text,
 									TextXAlignment = Enum.TextXAlignment.Left,
 								}),
 								(if here and giver
@@ -977,11 +1044,23 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				for _, c in upcoming do
 					local line = `{c.level}. {QuestText.contractObjective(lookup, c)}`
 					if c.reward.items then
-						line ..= `  <font color="#E8C25A">◆ {Text.get(use, "contract.milestone")}</font>`
+						line ..= `  <font color="{Theme.hex(Theme.Paper.Heading)}">◆ {Text.get(
+							use,
+							"contract.milestone"
+						)}</font>`
 					end
 					table.insert(lines, line)
 				end
-				add(label(s, 0, table.concat(lines, "\n"), Theme.Fonts.Body, 15, Theme.Colors.TextMuted))
+				add(
+					label(
+						s,
+						0,
+						table.concat(lines, "\n"),
+						Theme.Fonts.Body,
+						Theme.TextSize.Small,
+						Theme.Paper.TextMuted
+					)
+				)
 			end
 		else
 			local daily = q.daily
@@ -999,8 +1078,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							{ time = Time.format((Time.dayNumber(use(now)) + 1) * 86400 - use(now)) }
 						),
 					Theme.Fonts.BodyMedium,
-					16,
-					Theme.Colors.TextMuted
+					Theme.TextSize.Small,
+					Theme.Paper.TextMuted
 				)
 			)
 			contractRows(

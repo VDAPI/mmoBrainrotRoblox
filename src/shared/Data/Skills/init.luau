@@ -37,9 +37,10 @@ return table.freeze({
 	get = function(id: string): SkillDef?
 		return byId[id]
 	end,
-	HOTBAR_SLOTS = 10,
-	-- S55 (ROZWOJ 2.5): ranks grow with the character level. Rank r of a skill unlocked at U comes at
-	-- U + round((r - 1) * span / (maxLevel - 1)), span = min(9 * step, capLevel - U): every skill is maxed by capLevel.
+	HOTBAR_SLOTS = 8, -- S137 (DESIGN-18 §4.1): 8 slots per weapon pool, keys 1-8 (was 10)
+	-- S55 (ROZWOJ 2.5): the rank curve. S137 (DESIGN-18 §3.1): it is the LIMIT of a bought rank, no longer the rank:
+	-- rank r of a skill unlocked at U may be bought from U + round((r - 1) * span / (maxLevel - 1)),
+	-- span = min(9 * step, capLevel - U): every skill may be maxed by capLevel.
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
 	-- S80 (ROZWOJ 12.5): Arcane Charges. Every damaging spell but the consumer adds one (up to `max`, for `duration`
@@ -62,7 +63,7 @@ return table.freeze({
 	-- S65 (DESIGN §14.4): weapon-element effect of adaptive skills (server/Skills/Elements): fire burns burnPct % of
 	-- the hit over burnDuration s, ice slows slowPct % for slowDuration s, lightning arcs within arcRadius for arcPct %.
 	ADAPTIVE = table.freeze({
-		burnPct = 30,
+		burnPct = 15,
 		burnDuration = 4,
 		slowPct = 25,
 		slowDuration = 2,
@@ -70,6 +71,33 @@ return table.freeze({
 		arcRadius = 10,
 		-- S79: skill burns pay the full burnPct over the real ticks (Traits.dotTick), like the Mage model
 		exactTicks = true,
+	}),
+	-- S140 (DESIGN-18 §6.1): the fire school's burn (Logic/Burn). Every fire burn of a player on a target is ONE entry
+	-- (StatusEffectService key skillId KEY): a fire skill's hit adds `burnStacks` stacks worth pct % of the hit over
+	-- duration s each (Traits.dotTick, accumulate: every hit is paid in full), the adaptive weapon burn adds one with
+	-- ADAPTIVE's numbers; at most maxStacks stacks (+ the burnStacks hook of Kindling). Stacks feed Kindling's
+	-- burnBonus, Combustion (detonate) and Immolate (vsBurning); stunAt stacks make Combustion stun (no bosses).
+	BURN = table.freeze({ key = "burn", pct = 30, duration = 4, maxStacks = 1, stunAt = 3 }),
+	-- S140: Ember Shield's retaliation: a melee blow on the bearer burns the attacker at most once per `gap` s.
+	EMBER = table.freeze({ gap = 1 }),
+	-- S140: Phoenix Heart's fire blast reaches this far (its rest, invulnerability and blast are the passive's values).
+	PHOENIX = table.freeze({ radius = 8 }),
+	-- S141 (DESIGN-18 §6.1): the ice school's chill (Logic/Chill). With Winter's Grip (hook chillFreeze = the freeze's
+	-- seconds) every main ice hit of the player on a slowed, not frozen enemy adds a stack to the player's chill counter
+	-- on it (one entry per target, StatusEffectService skillId `key`, refreshed for `counter` s); at `threshold` stacks
+	-- the counter is spent on a freeze. Bosses and Elite II (StatusEffectService.IsBossLike) never freeze: every freeze
+	-- of a player's ice gives them Deep Chill instead (skillId `deepKey`): +deepPct % damage from that player (the
+	-- deepChill hook of Winter's Grip when higher) for deepDuration s. Ice Barrier: a melee blow of a monster on the
+	-- bearer slows it by the effect's value % for barrierSlow s, at most once per barrierGap s per attacker.
+	CHILL = table.freeze({
+		key = "chill",
+		deepKey = "deepChill",
+		threshold = 4,
+		counter = 5,
+		deepPct = 10,
+		deepDuration = 4,
+		barrierSlow = 2,
+		barrierGap = 1,
 	}),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.

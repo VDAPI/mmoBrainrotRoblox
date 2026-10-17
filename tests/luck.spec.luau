@@ -57,20 +57,43 @@ local function makePath(id: string, order: number, weapon: any, luckRows: { [num
 end
 
 local L = "fxLuck"
-local fxLuck = makePath(L, 1, { offhand = { "relic" } }, {
+-- S138 (DESIGN-18 §7): directions have no weapon; the luck nodes past row 2 need the relic themselves (as the game's
+-- Fortune nodes)
+local RELIC_REQ = { offhand = { "relic" } }
+local fxLuck = makePath(L, 1, RELIC_REQ, {
 	[1] = { node(L, "fate", "luck", { luck = { bossLegendary = "fate" }, values = { fate = { 2, 6 } } }) },
-	[4] = { node(L, "hand", "luck", { luck = { monsterItem = "hand" }, values = { hand = { 10, 30 } } }) },
+	[4] = {
+		node(
+			L,
+			"hand",
+			"luck",
+			{ luck = { monsterItem = "hand" }, values = { hand = { 10, 30 } }, weapon = RELIC_REQ }
+		),
+	},
 	[5] = {
-		node(L, "loot", "luck", { luck = { bossUpgrade = "loot" }, values = { loot = { 12, 35 } } }),
-		node(L, "grace", "luck", { luck = { bossLegendary = "grace" }, values = { grace = { 2, 7 } } }),
+		node(
+			L,
+			"loot",
+			"luck",
+			{ luck = { bossUpgrade = "loot" }, values = { loot = { 12, 35 } }, weapon = RELIC_REQ }
+		),
+		node(
+			L,
+			"grace",
+			"luck",
+			{ luck = { bossLegendary = "grace" }, values = { grace = { 2, 7 } }, weapon = RELIC_REQ }
+		),
 	},
 	[7] = {
 		node(L, "vein", "luck", {
 			luck = { gold = "vein", elite2 = "veinElite" },
 			values = { vein = { 5, 15 }, veinElite = { 7, 20 } },
+			weapon = RELIC_REQ,
 		}),
 	},
-	[10] = { node(L, "gift", "luck", { luck = { bossExtra = "gift" }, values = { gift = { 5, 15 } } }) },
+	[10] = {
+		node(L, "gift", "luck", { luck = { bossExtra = "gift" }, values = { gift = { 5, 15 } }, weapon = RELIC_REQ }),
+	},
 })
 local fxPlain = makePath("fxPlain", 2, { main = { "mace1h" } }, {})
 
@@ -78,7 +101,7 @@ local P = Paths.withSource(Paths.sourceOf({ fxLuck, fxPlain } :: { any }))
 
 local LUCK_NODES = { "fate", "hand", "loot", "grace", "vein", "gift" }
 
-local function cleric(main: string?, rank: number?): any
+local function cleric(_main: string?, rank: number?): any
 	local nodes: { [string]: number } = {}
 	for _, name in LUCK_NODES do
 		nodes[`{L}_{name}`] = rank or 3
@@ -87,7 +110,7 @@ local function cleric(main: string?, rank: number?): any
 		class = "Cleric",
 		level = 100,
 		name = "Ava",
-		path = { main = main, nodes = nodes, bp = {}, freeUsed = true },
+		path = { nodes = nodes, bp = {} }, -- S138: no main path
 	}
 end
 
@@ -192,8 +215,8 @@ describe("Paths.luck", function()
 		expect(monster.elite2Mul).toBeNear(1.2)
 	end)
 
-	it("another main path: only row 1, at full value (x1.06)", function()
-		local luck = P.luck(cleric("fxPlain"), RELIC)
+	it("without the relic: only row 1, at full value (x1.06; S138: the weapon is on the nodes)", function()
+		local luck = P.luck(cleric(nil), { main = "mace1h", offhand = "shield" })
 		expect(luck).toEqual({ bossLegendary = 6 })
 		expect(Luck.boss({ member("Ava", luck) }).legendaryMul).toBeNear(1.06)
 		local monster = Luck.monster({ member("Ava", luck) })
@@ -202,9 +225,12 @@ describe("Paths.luck", function()
 		expect(monster.elite2Mul).toBe(1)
 	end)
 
-	it("the main path without its weapon: x1.06", function()
-		local luck = P.luck(cleric(L), { main = "mace1h", offhand = "shield" })
-		expect(Luck.boss({ member("Ava", luck) }).legendaryMul).toBeNear(1.06)
+	it("with the relic the luck works next to another direction (S138: no main path)", function()
+		local c = cleric(nil)
+		c.path.nodes.fxPlain_p1 = 3
+		c.path.nodes.fxPlain_p2 = 3
+		expect(Luck.boss({ member("Ava", P.luck(c, RELIC)) }).legendaryMul).toBeNear(1.13)
+		expect(Luck.boss({ member("Ava", P.luck(c, {})) }).legendaryMul).toBeNear(1.06)
 	end)
 
 	it("luckOfNodes on activeNodes equals luck; rank 1 is linear", function()
@@ -265,12 +291,12 @@ describe("Full Fortune on the Cleric paths (S71)", function()
 		end
 		error(`no build {pathId}/{buildId}`)
 	end
-	local function priest(main: string, nodes: { [string]: number }, name: string?): any
+	local function priest(_main: string, nodes: { [string]: number }, name: string?): any
 		return {
 			class = "Cleric",
 			level = 100,
 			name = name or "Ava",
-			path = { main = main, nodes = nodes, bp = {}, freeUsed = true },
+			path = { nodes = nodes, bp = {} }, -- S138: no main path
 		}
 	end
 	local plunder = buildNodes("fortune", "plunder")

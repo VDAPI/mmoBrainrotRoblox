@@ -24,7 +24,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 48
 local GLYPH = "⚔"
-local HUNT = Color3.fromHex("#B5452E")
+local HUNT = Theme.Glyph.Hunt
 
 local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 	local bank = State.Value({ "account", "autoGrind" })
@@ -68,13 +68,13 @@ local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 		Name = "AutoGrindButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		AutoButtonColor = true,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = GLYPH,
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
 		TextColor3 = scope:Computed(function(use): Color3
-			return if use(hunting) then HUNT else Theme.Colors.TextMuted
+			return if use(hunting) then HUNT else Theme.Iron.TextMuted
 		end),
 		[OnEvent("Activated")] = function()
 			local wanted = not Fusion.peek(hunting)
@@ -92,9 +92,9 @@ local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = 2,
+				Thickness = Theme.Stroke.Normal,
 				Color = scope:Computed(function(use): Color3
-					return if use(hunting) then Theme.Colors.GoldBright else Theme.Colors.TextMuted
+					return if use(hunting) then Theme.Brass.Bright else Theme.Iron.TextMuted
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -122,7 +122,7 @@ local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 	return scope:New("Frame")({
 		Name = "AutoGrind",
 		Position = position,
-		Size = UDim2.fromOffset(SIZE, SIZE + 16),
+		Size = UDim2.fromOffset(SIZE, SIZE + 20),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			local s = use(state)
@@ -132,14 +132,14 @@ local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 			button,
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(-12, SIZE),
-				Size = UDim2.fromOffset(SIZE + 24, 16),
+				Size = UDim2.fromOffset(SIZE + 24, 20),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					return timeText(use, use(left))
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 12,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				TextStrokeTransparency = 0.3,
 			}),
 		},

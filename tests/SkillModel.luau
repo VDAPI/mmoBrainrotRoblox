@@ -7,7 +7,9 @@
 --
 --   builds(classId)                 the class base (BASE, rows 1 of every path; Mage rows 1-2) and every
 --                                   PathDef.reference (key "<pathId>.<id>"), rotation from the data only
---   character(build, L)             the build trimmed to L: level-up simulation through Paths.canChooseMain / canBuy
+--   character(build, L, element?)   the build trimmed to L: level-up simulation through Paths.canBuy (S138: no main path);
+--                                   S137: skill ranks bought through SkillPoints.apply in the pool of the build's
+--                                   weapon (Mage: the element; order ReferenceBuild.ranks or rotation, passives, rest)
 --   player(build, L, opts?)         Balance.gear + StatPlan.suggest + Paths.passiveTotals + circle auras
 --   fight(sp, opts)                 the engine (port of Skills/Context, Types/Offense, Types/Support, Types/Movement,
 --                                   SkillService.cast, CombatService.DealDamage / tryBasicAttack, StatusEffectService)
@@ -39,10 +41,22 @@
 --     chainHeal, shieldPerHit, allyHeal, allyShield, behindEffect, shieldBurst; item trait hooks and effects; returns.
 --   No effect on a dummy: movement, knockback, pulls, stuns, slows, freezes, roots, taunt, camouflage, damage
 --     reduction, invulnerability, mana shield, intercept, kills (poisonSpread, markJump, extendOnKill), defensive hooks.
+-- S140 (DESIGN-18 §6.1, Logic/Burn): the player's one burn per target (applyBurn mirrors CombatService.ApplyBurn: stacks
+--   up to Burn.cap, accumulate uncapped; the adaptive weapon burn joins it), burnStacks of fire hits, Kindling's
+--   burnBonus and Immolate's vsBurning (Context.damage), Combustion's detonation (Types/Offense), Ember Shield's
+--   retaliation on melee blows (retaliate) and Phoenix Heart's save (retaliate); the Mage's fire variants of the
+--   reference builds measure one element (ReferenceBuild.weapon.element, SkillModel.elementOf).
+-- S141 (DESIGN-18 §6.1, Logic/Chill): Winter's Grip's chill counter (chillHit mirrors Context), every ice freeze on a
+--   boss or an Elite II as the player's Deep Chill (applyEffect) and its damage (offensiveMultiplier), Glacial Spike's
+--   vsFrozen and Shatter (Context.damage), growing slows (SkillEffect.maxStacks), circleTarget's waveEffects, freezeWave
+--   and travel (a flying orb hits the dummies at ASSUMPTIONS.orbAim of its flight: SkillModel.orbHits), Ice Barrier's
+--   slow and Ice Blood's reduction on the monsters' blows (monsterHit); the fight's `chilled` / `deepChilled` shares.
 
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local Burn = require("../src/shared/Logic/Burn")
+local Chill = require("../src/shared/Logic/Chill")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Bosses = require("../src/shared/Data/Bosses")
 local Chain = require("../src/shared/Logic/Chain")
@@ -69,6 +83,8 @@ local Roll = require("../src/shared/Logic/Roll")
 local SkillData = require("../src/shared/Data/Skills")
 local SkillGeom = require("../src/shared/Logic/SkillGeom")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
+local SkillPoints = require("../src/shared/Logic/SkillPoints")
+local SkillPools = require("../src/shared/Logic/SkillPools")
 local Skills = require("../src/shared/Logic/Skills")
 local StatPlan = require("../src/shared/Logic/StatPlan")
 local Stats = require("../src/shared/Data/Stats")
@@ -118,6 +134,8 @@ SkillModel.ASSUMPTIONS = {
 	fightRef = 8, -- s of the Berserker's group fight in that formula (ROZWOJ 10.6)
 	bossSeconds = 180, -- Mage boss window from full mana (ROZWOJ 12.7)
 	enemiesNear = 3, -- EHP: monsters within HOOK_RULES.perEnemy.radius for Front Line (ROZWOJ 10.6)
+	-- S141: the dummies stand at this share of a flying circle's travel (Frozen Orb aimed through the group)
+	orbAim = 0.5,
 }
 local A = SkillModel.ASSUMPTIONS
 
@@ -960,7 +978,15 @@ SkillModel.R4_BANDS = { [5] = { 0.08, 0.17 }, [10] = { 0.17, 0.28 } }
 SkillModel.R4_DIFF = 0.05
 SkillModel.R4_CASTS = 12 -- S90: a cooldown option's R4 window covers at least 12 cooldowns (SkillModel.optionGain)
 -- S90: skills measured in the build's whole rotation (their value comes from the other spells)
-SkillModel.R4_ROTATION = { arcaneDischarge = true } :: { [string]: boolean }
+-- S140: Combustion and Immolate live on the burns the other fire spells set (Logic/Burn)
+-- S141: Glacial Spike and Shatter live on the freezes the other ice spells set (Logic/Chill)
+SkillModel.R4_ROTATION = {
+	arcaneDischarge = true,
+	combustion = true,
+	immolate = true,
+	glacialSpike = true,
+	shatter = true,
+} :: { [string]: boolean }
 
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
@@ -1132,6 +1158,28 @@ SkillModel.R4_UTILITY = {
 	["evocation:10a"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["evocation:10b"] = "mana: wartość w dochodzie many Arkanisty (bez metryki w optionGain)",
 	["arcaneTorrent:5b"] = "ruch w trakcie kanału",
+	-- S140: Ember Shield (obrona: tarcza i podpalanie bijących wręcz; manekiny nie biją)
+	["flameWave:5a"] = "geometria albo czas kontroli",
+	["combustion:5a"] = "geometria albo czas kontroli",
+	["combustion:10a"] = "ogłuszenie (kontrola)",
+	["emberShield:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["emberShield:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	-- S141: the ice pool's control and geometry options (every dummy stands in the circle; slows and freezes do nothing
+	-- to a dummy but feed Winter's Grip) and Ice Barrier (defence; dummies never strike)
+	["hailstorm:5a"] = "geometria albo czas kontroli",
+	["hailstorm:10a"] = "spowolnienie (kontrola): lodowe pole zadaje mało, jego wartość to spowolnienie",
+	["frozenOrb:5a"] = "geometria albo czas kontroli",
+	["frozenOrb:10a"] = "geometria albo czas kontroli",
+	["deepFreeze:5a"] = "zamrożenie (kontrola)",
+	["glacialSpike:10a"] = "zamrożenie (kontrola)",
+	["shatter:10a"] = "zamrożenie (kontrola)",
+	["blizzard:10a"] = "geometria albo czas kontroli",
+	["iceBarrier:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	-- S91: options of rank 5 reached by 20 (ranks 5 at 17 / 19)
 	["mightyStrike:5a"] = "odrzucenie (kontrola)",
 	["charge:5a"] = "zasięg doskoku (geometria)",
@@ -1185,6 +1233,22 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	circleOfLight = "healer.dungeon",
 	shieldOfFaith = "healer.dungeon",
 	taunt = "guardian.defender",
+	-- S140 (DESIGN-18 §6.1): the fire pool on the fire variants (area skills on the Destroyer, one target on the
+	-- Arcanist); Rain of Meteors stays on the Destroyer's area build it was tuned on (S94, now a base skill)
+	flameWave = "destroyer.destroyerFire",
+	combustion = "destroyer.destroyerFire",
+	pyroblast = "arcanist.arcanistFire",
+	immolate = "arcanist.arcanistFire",
+	meteorStorm = "destroyer.destroyerExp",
+	-- S141 (DESIGN-18 §6.1): the ice pool on the ice variants (area skills on the Destroyer, one target on the Arcanist)
+	hailstorm = "destroyer.destroyerIce",
+	frozenOrb = "destroyer.destroyerIce",
+	blizzard = "destroyer.destroyerIce",
+	frostNova = "destroyer.destroyerIce",
+	iceShard = "arcanist.arcanistIce",
+	glacialSpike = "arcanist.arcanistIce",
+	deepFreeze = "arcanist.arcanistIce",
+	shatter = "arcanist.arcanistIce",
 } :: { [string]: string }
 
 -- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; S91: the options of a rank
@@ -1432,11 +1496,13 @@ export type Build = {
 }
 
 export type CharacterResult = {
-	character: any, -- { class, level, path = { main, nodes, bp, freeUsed }, equipment }
+	character: any, -- { class, level, path = { nodes, bp }, equipment, ranks, barPool }
 	spent: number,
 	free: number,
 	unbought: { { node: string, reason: string } },
 	rankChecks: number, -- ranks bought, each through Paths.canBuy
+	pool: string, -- S137: the weapon pool of the build
+	skillFree: number, -- S137: skill points left in the pool
 }
 
 -- Builds ------------------------------------------------------------------------------------------------------------
@@ -1571,19 +1637,77 @@ end
 
 local charCache: { [string]: CharacterResult } = {}
 
--- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape. The main path (the build's) at Paths.MAIN_LEVEL
--- through Paths.canChooseMain; on every new point the first rank of `nodes` that Paths.canBuy accepts (an entry that
--- cannot be bought yet waits, later ones may pass). Breakpoint choices from the build (Skills.effective applies them
--- from rank 5 / 10).
-function SkillModel.character(build: Build, L: number): CharacterResult
-	local key = `{build.classId}|{build.key}|{L}`
+-- S137: an item id of a base type (the model's weapon in character.equipment selects the pool).
+local function itemOfType(itemType: string): string?
+	local first = `{itemType}_1`
+	local def = Items.get(first)
+	if def and def.type == itemType then
+		return first
+	end
+	local best: string? = nil
+	for id, item in Items.byId do
+		if item.type == itemType and (best == nil or id < best) then
+			best = id
+		end
+	end
+	return best
+end
+
+-- S137 (DESIGN-18 §13): the order the build buys skill ranks in: ReferenceBuild.ranks, else the rotation, then the
+-- pool's passives, then the rest of the pool (SkillPools.members).
+function SkillModel.rankOrder(build: Build, pool: string): { string }
+	local out: { string } = {}
+	local seen: { [string]: boolean } = {}
+	local function push(id: string)
+		if not seen[id] then
+			seen[id] = true
+			table.insert(out, id)
+		end
+	end
+	local ref: any = build.ref
+	if ref and ref.ranks then
+		for _, id in ref.ranks do
+			push(id)
+		end
+	end
+	for _, entry in build.rotation do
+		push(entry.skill)
+	end
+	local members = SkillPools.members(build.classId, pool)
+	for _, id in members do
+		local def = SkillData.get(id)
+		if def and def.type == "passive" then
+			push(id)
+		end
+	end
+	for _, id in members do
+		push(id)
+	end
+	return out
+end
+
+-- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape: on every new point the first rank of `nodes` that
+-- Paths.canBuy accepts (an entry that cannot be bought yet waits, later ones may pass). S138 (DESIGN-18 §7, §13): no
+-- main path; every direction opens with level and its own points, one capstone per set (a reference build has one).
+-- Breakpoint choices from the build (Skills.effective applies them from rank 5 / 10). S137: after the nodes of a level
+-- the skill points of the level go into the build's pool (rankOrder, each skill up to its limit in turn) as one
+-- SkillPoints.apply reservation; `element` = the Mage weapon's.
+function SkillModel.character(build: Build, L: number, element: string?): CharacterResult
+	-- S141: a Mage variant with a fixed weapon element buys its ranks in that pool also when the caller names none
+	-- (evaluateTargets, rawMetrics: the ice variant's pool, not the default fire one)
+	element = element or SkillModel.elementOf(build)
+	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = charCache[key]
 	if cached then
 		return cached
 	end
-	local path =
-		{ main = nil :: string?, nodes = {} :: { [string]: number }, bp = table.clone(build.bp), freeUsed = false }
-	local character: any = { class = build.classId, level = 1, path = path, equipment = {} }
+	local path = { nodes = {} :: { [string]: number }, bp = table.clone(build.bp) }
+	local weaponId = itemOfType(build.weapon.main)
+	local equipment = if weaponId then { weapon = { id = weaponId, el = element } } else {}
+	local character: any = { class = build.classId, level = 1, path = path, equipment = equipment, ranks = {} }
+	local pool = SkillPools.activePool(character) :: string
+	character.barPool = pool
+	local order = SkillModel.rankOrder(build, pool)
 	local units: { string } = {}
 	for _, entry in build.nodes do
 		for _ = 1, entry[2] do
@@ -1594,10 +1718,6 @@ function SkillModel.character(build: Build, L: number): CharacterResult
 	local checks = 0
 	for level = 1, L do
 		character.level = level
-		if build.pathId and path.main == nil and Paths.canChooseMain(character, build.pathId) then
-			path.main = build.pathId
-			path.freeUsed = true
-		end
 		while Paths.free(character) >= 1 do
 			local bought = false
 			for i, nodeId in units do
@@ -1614,6 +1734,30 @@ function SkillModel.character(build: Build, L: number): CharacterResult
 			end
 		end
 	end
+	-- S137: the skill points of L go into the build's pool in one reservation from nothing (rankOrder, each skill up
+	-- to its limit in turn): the reference build is planned for its level, like a player who resets before measuring
+	do
+		local left = SkillPoints.free(character, pool)
+		local plan: { [string]: number } = {}
+		for _, id in order do
+			if left <= 0 then
+				break
+			end
+			local def = SkillData.get(id)
+			if def and Paths.skillOpen(character, id, pool) then
+				local add = math.min(SkillPoints.cap(def, L), left)
+				if add > 0 then
+					plan[id] = add
+					left -= add
+				end
+			end
+		end
+		if next(plan) ~= nil then
+			local ok, err, ranks = SkillPoints.apply(character, pool, plan)
+			assert(ok and ranks, `SkillModel.character: {build.key} L{L} {err}`)
+			character.ranks[pool] = ranks
+		end
+	end
 	local unbought: { { node: string, reason: string } } = {}
 	for i, nodeId in units do
 		if not done[i] then
@@ -1627,9 +1771,18 @@ function SkillModel.character(build: Build, L: number): CharacterResult
 		free = Paths.free(character),
 		unbought = unbought,
 		rankChecks = checks,
+		pool = pool,
+		skillFree = SkillPoints.free(character, pool),
 	}
 	charCache[key] = result
 	return result
+end
+
+-- S140 (DESIGN-18 §13): the fixed weapon element of a Mage variant (ReferenceBuild.weapon.element: the fire variants
+-- measure the fire pool alone); nil = the mean of ASSUMPTIONS.elements (ROZWOJ 12.7).
+function SkillModel.elementOf(build: Build): string?
+	local weapon: any = build.weapon
+	return if build.classId == "Mage" and weapon then weapon.element else nil
 end
 
 -- Player ----------------------------------------------------------------------------------------------------------
@@ -1697,19 +1850,21 @@ end
 -- (FightSim.dps reads it); `sp.pathHooks` is SkillService.PassiveHook (path and class passives only).
 function SkillModel.player(build: Build, L: number, opts: PlayerOpts?): any
 	local o: PlayerOpts = opts or {}
+	-- S140: a Mage variant with a fixed weapon element (ReferenceBuild.weapon.element) plays that element
+	local element = o.element or SkillModel.elementOf(build)
 	-- cached without gear options (S86 / S88 pass their own GearOpts and keep the player)
-	local key = `{build.classId}|{build.key}|{L}|{o.element or "-"}`
+	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = if o.gear then nil else playerCache[key]
 	if cached then
 		return cached
 	end
-	local ch = SkillModel.character(build, L)
+	local ch = SkillModel.character(build, L, if build.classId == "Mage" then element else nil)
 	local character = ch.character
 	local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
 	local gearOpts: any = if o.gear then table.clone(o.gear :: any) else {}
 	gearOpts.weapon = build.weapon.main
 	gearOpts.offhand = if build.weapon.offhand then build.weapon.offhand else false
-	gearOpts.element = o.element or gearOpts.element
+	gearOpts.element = element or gearOpts.element
 	local items = B.gear(build.classId, L, gearOpts)
 	local start = StatPlan.startOf(build.classId) :: any
 	local stats = table.clone(start)
@@ -1765,7 +1920,7 @@ function SkillModel.wrap(p: any): any
 		build = { key = "convention", classId = p.classId, rotation = {} },
 		classId = p.classId,
 		level = p.level,
-		character = { class = p.classId, level = p.level, path = { nodes = {}, bp = {}, freeUsed = false } },
+		character = { class = p.classId, level = p.level, path = { nodes = {}, bp = {} } },
 		weapons = {},
 		passives = { flat = {}, pct = {}, hooks = {} },
 		pathHooks = {},
@@ -1867,6 +2022,16 @@ local HOOKS_MODELLED: { [string]: boolean } = {
 	poisonChance = true,
 	resourceOnHit = true,
 	frostbite = true,
+	-- S140 (Logic/Burn): Kindling, Phoenix Heart
+	burnStacks = true,
+	burnBonus = true,
+	phoenixHeart = true,
+	phoenixRest = true,
+	phoenixInvuln = true,
+	-- S141 (Logic/Chill): Winter's Grip, Ice Blood
+	chillFreeze = true,
+	deepChill = true,
+	iceBlood = true,
 }
 -- Hooks that change no metric (threat, movement, minimap, kills of a dying group's spread, radius of areas every dummy
 -- stands in, the mana shield's price): docs/SESJE.md S86 names the reason of each.
@@ -1945,6 +2110,8 @@ export type FightResult = {
 	furyFull: number, -- share of the time at full Fury (furyGuard)
 	furyMax: number,
 	controlled: number, -- share of the time the focus target is slowed, rooted, frozen or stunned (B8, C3)
+	chilled: number, -- S141: share of the time the focus target is slowed or frozen
+	deepChilled: number, -- S141: share of the time the focus target has the player's Deep Chill
 	sealLit: number, -- share of the time the Runic Seal glows (standing still, C3)
 	basicDealt: number, -- damage of basic attacks (with their second hits and draws)
 	elementDealt: number, -- damage of the weapon-element effects (burn ticks, arcs; C3 elementShare)
@@ -2088,7 +2255,7 @@ local function apply(state: any, entity: any, kind: string, o: any): boolean
 			else nil
 		tickAmount, nextTick = EffectStack.accumulate(scheduleOld, {
 			total = total,
-			limit = if maxStacks > 1 then maxStacks else nil,
+			limit = if maxStacks > 1 and not o.uncapped then maxStacks else nil, -- S140: uncapped (Logic/Burn)
 			duration = o.duration,
 			now = t,
 			interval = TICK,
@@ -2436,6 +2603,11 @@ local function offensiveMultiplier(state: any, tg: any): number
 		if frost > 0 then
 			mult += frost / 100
 		end
+		-- S141 mirrors CombatService.offensiveMultiplier: this player's Deep Chill (bosses and Elite II)
+		local deep = maxOf(state, tg, "deepChill")
+		if deep > 0 then
+			mult += deep / 100
+		end
 		local perEnemy = hook(state, "damagePerEnemy")
 		if perEnemy > 0 then
 			mult += perEnemy * math.min(#alive(state), PathData.HOOK_RULES.perEnemy.max) / 100
@@ -2493,6 +2665,35 @@ local function otherTarget(state: any, tg: any): any?
 	return nil
 end
 
+-- S140 mirrors CombatService.ApplyBurn (Logic/Burn): the player's one burn on `tg` (skillId Burn.KEY), `stacks` more
+-- stacks up to Burn.cap with Kindling's burnStacks hook, `tick` per tick of these stacks, accumulate without the stack
+-- cap; `weapon` marks an adaptive weapon burn (elementDealt, C3). Its ticks land in state.by[Burn.KEY].
+local function burnStacksOf(state: any, tg: any): number
+	local e = tg.effects[`burn|{Burn.KEY}|`]
+	return if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+end
+local function applyBurn(
+	state: any,
+	tg: any,
+	tick: number,
+	stacks: number,
+	duration: number?,
+	weapon: boolean?
+): boolean
+	local cap = Burn.cap(hook(state, "burnStacks"))
+	return apply(state, tg, "burn", {
+		duration = duration or SkillData.BURN.duration,
+		value = SkillData.BURN.pct,
+		tickAmount = tick,
+		skillId = Burn.KEY,
+		accumulate = true,
+		uncapped = true,
+		maxStacks = cap,
+		stacks = Burn.add(burnStacksOf(state, tg), stacks, cap),
+		element = if weapon then "weapon" else nil,
+	})
+end
+
 -- mirrors Skills/Elements.apply (S65, S79): Traits.elementPlan with the caller's spec, elementRider and
 -- riderSameTarget, dotBonus("burn"); a burn with accumulate, an ice slow with Frostbite (chill), a lightning arc
 -- into the nearest other enemy (else on the same target with sameTarget). `jump(other, pct)` deals the arc.
@@ -2516,7 +2717,10 @@ local function elementApply(
 	if not plan then
 		return
 	end
-	if plan.kind == "burn" then
+	if plan.kind == "burn" and skillId ~= EffectStack.ITEM then
+		-- S140: a skill's weapon burn is one stack of the player's one burn (CombatService.ApplyBurn)
+		applyBurn(state, tg, plan.tick or 1, 1, plan.duration, true)
+	elseif plan.kind == "burn" then
 		apply(state, tg, "burn", {
 			duration = plan.duration,
 			value = plan.pct,
@@ -3065,6 +3269,14 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		elseif type(effect.value) == "number" then effect.value
 		else 0
 	local value = raw * s
+	-- S141 mirrors Context.applyEffect (Logic/Chill): an ice freeze on a boss or an Elite II is the player's Deep Chill
+	local skillKey = ctx.id
+	if kind == "freeze" and ctx.element == "ice" and Chill.onFreeze(bossLike(entity)) == "deepChill" then
+		kind = "deepChill"
+		value = Chill.deepPct(pathHook(state, "deepChill"))
+		duration = SkillData.CHILL.deepDuration
+		skillKey = Chill.DEEP_KEY
+	end
 	local tickAmount: number? = nil
 	if kind == "bleed" or kind == "poison" or kind == "burn" then
 		tickAmount = math.max(1, attackOf(ctx) * value / 100 / math.max(1, duration))
@@ -3097,7 +3309,9 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		end
 		stats = resolved
 	end
-	local chilly = ctx.element == "ice" and state.sp.element == "ice" and (kind == "slow" or kind == "freeze")
+	local chilly = ctx.element == "ice"
+		and state.sp.element == "ice"
+		and (kind == "slow" or kind == "freeze" or kind == "deepChill")
 	if chilly then
 		duration *= 1 + math.max(0, hook(state, "elementRider")) / 100 -- Elements.power
 	end
@@ -3107,8 +3321,11 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		tickAmount = tickAmount,
 		stats = stats,
 		pct = effect.pct,
-		maxStacks = if kind == "bleed" then ctx.bp.bleedStacks elseif kind == "poison" then ctx.bp.poisonStacks else nil,
-		skillId = ctx.id,
+		maxStacks = if kind == "bleed"
+			then ctx.bp.bleedStacks
+			elseif kind == "poison" then ctx.bp.poisonStacks
+			else effect.maxStacks, -- S141: a growing slow
+		skillId = skillKey,
 		category = effect.category,
 		notBoss = effect.notBoss,
 		area = Traits.isAreaSkill(ctx.def.type), -- the ticks of an area skill count in areaDealt (C3 areaShare)
@@ -3173,6 +3390,46 @@ local function elementHit(ctx: Ctx, tg: any, percent: number, o: { [string]: any
 	state.elementDealt += state.dealt - before
 end
 
+-- S141 mirrors Context chillHit (Logic/Chill): Winter's Grip's counter on a slowed, not frozen dummy; at the threshold
+-- the counter is spent on a freeze of chillFreeze s through applyEffect (bosses and Elite II: Deep Chill)
+local function chillHit(ctx: Ctx, tg: any)
+	local state = ctx.state
+	local seconds = pathHook(state, "chillFreeze")
+	if seconds <= 0 or tg.m == nil then
+		return
+	end
+	if not Chill.counts(true, has(state, tg, "slow"), has(state, tg, "freeze")) then
+		return
+	end
+	local key = `chill|{Chill.KEY}|`
+	local e = tg.effects[key]
+	local running = if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+	local count, freezes = Chill.chillToFreeze(running)
+	if freezes then
+		tg.effects[key] = nil
+		applyEffect(ctx, tg, { kind = "freeze", duration = seconds })
+	else
+		apply(state, tg, "chill", {
+			duration = SkillData.CHILL.counter,
+			skillId = Chill.KEY,
+			maxStacks = Chill.THRESHOLD,
+			stacks = count,
+		})
+	end
+end
+
+-- S141 mirrors Context.damage's Shatter: the freeze of the dummy (every entry) or this player's Deep Chill goes
+local function spendChill(state: any, tg: any, what: string)
+	for key, e in tg.effects do
+		if (what == "freeze" and e.kind == "freeze") or (what == "deepChill" and e.kind == "deepChill") then
+			tg.effects[key] = nil
+		end
+	end
+	if what == "freeze" then
+		state.shattered = (state.shattered or 0) + 1
+	end
+end
+
 damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }?): number
 	if tg.hp <= 0 then
 		return 0
@@ -3202,6 +3459,40 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 			spellDamage = pathHook(state, "spellDamage"),
 		})
 		multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, pathHook(state, "resonance")) * ctx.castMul
+	end
+	-- S140 mirrors Context.damage: Kindling (burnBonus) on fire hits but zone ticks, Immolate's vsBurning on main hits
+	if ctx.element == "fire" and not o.lingering then
+		local perStack = pathHook(state, "burnBonus")
+		local vs = if def.values.vsBurning ~= nil and not o.plain then Skills.valueAt(def, "vsBurning", ctx.rank) else 0
+		if perStack > 0 or vs > 0 then
+			local stacks = burnStacksOf(state, tg)
+			multiplier *= Burn.stackBonus(stacks, perStack) * Burn.vsBurning(stacks, vs)
+		end
+	end
+	-- S141 mirrors Context.damage (Logic/Chill): Glacial Spike and Shatter on their main hits
+	local main = not (o.plain or o.secondary or o.lingering)
+	local spend: string? = nil
+	if ctx.element == "ice" and main and (def.values.vsFrozen ~= nil or def.values.shatter ~= nil) then
+		local frozen = has(state, tg, "freeze")
+		local deep = maxOf(state, tg, "deepChill") > 0
+		if def.values.vsFrozen ~= nil then
+			multiplier *= Chill.vsFrozen(
+				frozen,
+				deep,
+				Skills.valueAt(def, "vsFrozen", ctx.rank),
+				Skills.valueAt(def, "vsDeepChill", ctx.rank)
+			)
+		end
+		if def.values.shatter ~= nil then
+			local mul, used = Chill.shatterMul(
+				frozen,
+				deep,
+				Skills.valueAt(def, "shatter", ctx.rank),
+				Skills.valueAt(def, "shatterDeep", ctx.rank)
+			)
+			multiplier *= mul
+			spend = used
+		end
 	end
 	local before = tg.hp
 	local amount = dealDamage(state, tg, {
@@ -3251,6 +3542,18 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 				{ noAdaptive = true, consumeShot = false, secondary = true }
 			)
 		end)
+	end
+	-- S140 mirrors Context.damage: the fire school's burn stacks on main hits (Burn.tick of the hit)
+	local stacks = def.burnStacks or 0
+	if stacks > 0 and amount > 0 and not (o.plain or o.secondary or o.lingering) then
+		applyBurn(state, tg, Burn.tick(amount, stacks, dotBonus(state, "burn")), stacks)
+	end
+	-- S141 mirrors Context.damage: Shatter spends what it used; Winter's Grip counts main ice hits
+	if spend and amount > 0 then
+		spendChill(state, tg, spend)
+	end
+	if ctx.element == "ice" and main and amount > 0 then
+		chillHit(ctx, tg)
 	end
 	if amount > 0 and not o.plain then
 		onHit(ctx, tg, percent, amount, o)
@@ -3364,6 +3667,28 @@ H.target = function(ctx)
 	local amount = damage(ctx, tg, percent, { primary = true })
 	if amount > 0 then
 		applyEffects(ctx, tg, "enemy")
+		if ctx.def.values.detonate ~= nil then
+			-- S140 mirrors Types/Offense detonate (Combustion): the caster's burn on the target becomes a blast of
+			-- Burn.detonate % on every dummy (all stand in the radius); a stun from BURN.stunAt stacks (notBoss)
+			local key = `burn|{Burn.KEY}|`
+			local e = tg.effects[key]
+			local stacks = if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+			tg.effects[key] = nil
+			local blast, stuns = Burn.detonate(stacks, Skills.valueAt(ctx.def, "detonate", ctx.rank))
+			if blast > 0 then
+				local list = alive(state)
+				hitAll(ctx, list, blast, false)
+				if stuns then
+					for _, other in list do
+						apply(state, other, "stun", {
+							duration = Skills.valueAt(ctx.def, "stun", ctx.rank),
+							skillId = ctx.id,
+							notBoss = true,
+						})
+					end
+				end
+			end
+		end
 		if ctx.bp.stunSplash and #effectsOf(tg, "stun") > 0 then
 			local splash = percent * Skills.valueAt(ctx.def, "stunSplash", ctx.rank) / 100
 			for _, other in alive(state) do
@@ -3527,6 +3852,17 @@ function SkillModel.stormShare(def: any): number
 	return math.min(1, (impactRadius + CIRCLE_TOLERANCE) / math.max(0.01, radius - impactRadius))
 end
 
+-- S141 (Types/Offense.circleTarget `travel`, Logic/Chill.orbAt): whether wave `w` of a flying circle reaches the
+-- dummies standing at ASSUMPTIONS.orbAim of its travel (enemiesInCircle's tolerance); true for every other circle.
+function SkillModel.orbHits(def: any, w: number): boolean
+	local travel = def.travel
+	if not travel then
+		return true
+	end
+	local centre = Chill.orbAt(travel, w, def.hits or 1)
+	return math.abs(centre - travel * A.orbAim) <= (def.radius or 8) + CIRCLE_TOLERANCE + EPS
+end
+
 -- mirrors Types/Offense.circleTarget: `delay` (+ Push.DURATION after a pull), waves every `interval` (0.5),
 -- firstWave, a meteor storm's impacts, Thunderstorm's bolt (one random enemy: 1 / n each, the wave counts the circle:
 -- Skills.areaCount), effects from the first wave, the zones, the split blasts (3.5 studs) and the echo.
@@ -3545,8 +3881,12 @@ H.circleTarget = function(ctx)
 	local stormShare = SkillModel.stormShare(def)
 	local dmg = Skills.valueAt(def, "dmg", ctx.rank)
 	local firstPercent = dmg * (1 + (ctx.bp.firstWave or 0) / 100)
+	local frozen: { [any]: boolean } = {} -- S141: Blizzard freezes each dummy once per cast
 	for w = 1, hits do
 		at(ctx, delay + (w - 1) * interval, function()
+			if not SkillModel.orbHits(def, w) then
+				return -- S141: a flying circle's wave away from the dummies
+			end
 			local enemies = alive(state)
 			local percent = if w == 1 then firstPercent else dmg
 			if def.randomTarget then
@@ -3557,7 +3897,16 @@ H.circleTarget = function(ctx)
 				lingering(ctx, dmg, w, n)
 				return
 			end
-			hitAll(ctx, enemies, percent * stormShare, w == 1)
+			hitAll(ctx, enemies, percent * stormShare, w == 1 or def.waveEffects == true)
+			-- S141 mirrors Types/Offense.circleTarget freezeWave (Blizzard) through ctx.freeze
+			if def.freezeWave then
+				for _, tg in enemies do
+					if Chill.waveFreezes(w, def.freezeWave, frozen[tg] == true) then
+						frozen[tg] = true
+						applyEffect(ctx, tg, { kind = "freeze", duration = Skills.valueAt(def, "freeze", ctx.rank) })
+					end
+				end
+			end
 			lingering(ctx, dmg, w, 0)
 			local split = ctx.bp.split
 			if w == 1 and split then
@@ -3982,6 +4331,7 @@ H.shield = function(ctx)
 		end
 	end
 	shield(ctx, who, healAmount(ctx, who, "shield"), duration, onEnd)
+	applyEffects(ctx, ctx.state.self, "self") -- S140 mirrors Types/Support.shield (Ember Shield's emberShield)
 	return true
 end
 
@@ -4782,6 +5132,11 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 	if poisoned > 0 and has(state, tg, "poison") then
 		table.insert(own, poisoned)
 	end
+	-- S141 mirrors CombatService's Ice Blood provider (Logic/Chill.bloodGuard): a slowed or frozen attacker
+	local blood = Chill.bloodGuard(hook(state, "iceBlood"), has(state, tg, "slow"), has(state, tg, "freeze"))
+	if blood > 0 then
+		table.insert(own, blood)
+	end
 	local furyGuard = hook(state, "furyGuard")
 	local max = furyMax(state)
 	if furyGuard > 0 and max > 0 and state.fury.stacks >= max then
@@ -4804,6 +5159,37 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 				e.expiresAt = 0
 			end
 		end
+	end
+	-- S140 mirrors CombatService emberRetaliate: a regular melee blow burns the monster while Ember Shield lasts, at most
+	-- once per Data/Skills.EMBER.gap s per monster (one stack of value % magic attack, Burn.tick)
+	if regular and tg.m.delivery == "melee" and tg.hp > 0 then
+		local emberPct = maxOf(state, state.self, "emberShield")
+		if emberPct > 0 and (tg.emberAt == nil or state.t - tg.emberAt + EPS >= SkillData.EMBER.gap) then
+			tg.emberAt = state.t
+			local magAtk = current(state).values.magAtk or 0
+			applyBurn(state, tg, Burn.tick(magAtk, 1, dotBonus(state, "burn"), emberPct), 1)
+		end
+	end
+	-- S141 mirrors CombatService shieldRetaliate (Ice Barrier): a regular melee blow slows the monster while the barrier
+	-- lasts, at most once per Data/Skills.CHILL.barrierGap s per monster (value %, CHILL.barrierSlow s, Frostbite)
+	if regular and tg.m.delivery == "melee" and tg.hp > 0 then
+		local barrier = maxOf(state, state.self, "iceBarrier")
+		if barrier > 0 and (tg.barrierAt == nil or state.t - tg.barrierAt + EPS >= SkillData.CHILL.barrierGap) then
+			tg.barrierAt = state.t
+			local seconds = SkillData.CHILL.barrierSlow
+			local slowed = apply(
+				state,
+				tg,
+				"slow",
+				{ duration = seconds, value = barrier, skillId = "iceBarrier", category = "enemySlow" }
+			)
+			if slowed then
+				chill(state, tg, seconds)
+			end
+		end
+	end
+	if amount > 0 and state.phoenixUntil and state.t < state.phoenixUntil then
+		amount = 0 -- S140: Phoenix Heart's invulnerability
 	end
 	if amount > 0 then
 		state.hp -= amount
@@ -4948,6 +5334,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 	local steps = math.floor(T / A.dt + 0.5)
 	local ended = T
 	local furySum, furyFullTime, controlTime, sealTime, chargeSum = 0, 0, 0, 0, 0
+	local chillTime, deepTime = 0, 0 -- S141
 	local died = false
 	for step = 0, steps - 1 do
 		local t = step * A.dt
@@ -4967,9 +5354,25 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 			break
 		end
 		if state.retaliate and state.hp <= 0 then
-			ended = t
-			died = true
-			break
+			-- S140 mirrors SkillService phoenixFilter (Logic/Burn.phoenixSave, from a monster): 1 HP, the passive's
+			-- invulnerability and rest, the fire blast on every living monster (all stand in its radius)
+			local blast = pathHook(state, "phoenixHeart")
+			if blast > 0 and (state.phoenixReady == nil or t + EPS >= state.phoenixReady) then
+				state.hp = 1
+				state.phoenixReady = Burn.phoenixReady(t, pathHook(state, "phoenixRest"))
+				state.phoenixUntil = t + Burn.phoenixInvuln(pathHook(state, "phoenixInvuln"), false)
+				for _, tg in alive(state) do
+					dealDamage(
+						state,
+						tg,
+						{ magic = true, percent = blast, noProc = true, consumeShot = false, bucket = "phoenixHeart" }
+					)
+				end
+			else
+				ended = t
+				died = true
+				break
+			end
 		end
 		if not state.control then
 			stepFury(state)
@@ -5068,6 +5471,12 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		if focus and controlled(state, focus) then
 			controlTime += A.dt
 		end
+		if focus and (has(state, focus, "slow") or has(state, focus, "freeze")) then
+			chillTime += A.dt
+		end
+		if focus and has(state, focus, "deepChill") then
+			deepTime += A.dt
+		end
 		if state.sealLit then
 			sealTime += A.dt
 		end
@@ -5118,6 +5527,8 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		furyFull = furyFullTime / seconds,
 		furyMax = furyMax(state),
 		controlled = controlTime / seconds,
+		chilled = chillTime / seconds,
+		deepChilled = deepTime / seconds,
 		sealLit = sealTime / seconds,
 		basicDealt = state.basicDealt,
 		elementDealt = state.elementDealt,
@@ -5422,7 +5833,7 @@ function SkillModel.metrics(build: Build, L: number): Metrics
 		return cached
 	end
 	local m: Metrics
-	if build.classId == "Mage" then
+	if build.classId == "Mage" and SkillModel.elementOf(build) == nil then
 		local byElement: { [string]: Metrics } = {}
 		local runs: { Metrics } = {}
 		for _, element in A.elements do
@@ -6347,6 +6758,39 @@ function SkillModel.duel(build: Build, L: number, kind: string, variant: string)
 	return out
 end
 
+-- S141 (DESIGN-18 §6.1, the identity of ice; Balance.targetsS141): a 60 s fight of the build's player with the cave
+-- Elite of the region of L that hits back (both potions, a dummy's HP: the window always runs out) and the Mage's boss
+-- window (ASSUMPTIONS.bossSeconds) on the GENERIC boss. chilled = the Elite's slowed-or-frozen share, taken = damage
+-- taken per second in that fight, deepChilled = the boss's share under the player's Deep Chill.
+export type ChillReport = { chilled: number, taken: number, deepChilled: number }
+local chillCache: { [string]: ChillReport } = {}
+function SkillModel.chillReport(build: Build, L: number): ChillReport
+	local key = `{build.classId}|{build.key}|{L}`
+	if chillCache[key] then
+		return chillCache[key]
+	end
+	local kind = SkillModel.eliteKinds(L)
+	local def = Monsters.get(kind or "") or B.GENERIC
+	local m = table.clone(B.monster(def, L, "elite"))
+	m.delivery = (def :: any).attack or "melee"
+	local sp = SkillModel.player(build, L)
+	local r = SkillModel.fight(sp, {
+		targets = { m },
+		retaliate = true,
+		hpPotions = true,
+		potions = true,
+		seconds = A.sustainedSeconds,
+	})
+	local boss = SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L, "boss") }, seconds = A.bossSeconds })
+	local out: ChillReport = {
+		chilled = r.chilled,
+		taken = r.taken / math.max(1e-9, r.seconds),
+		deepChilled = boss.deepChilled,
+	}
+	chillCache[key] = out
+	return out
+end
+
 -- Intercept (B7) ----------------------------------------------------------------------------------------------------
 
 export type InterceptReport = {
@@ -6692,6 +7136,12 @@ end
 -- S86 (E2): every row of PATH_TARGETS (of `classId`, or all) at its levels and at 20, without the heavy R4-R6 rows
 -- (opts.heavy keeps them out anyway: they have their own report tables). Read by the paths block of balance.spec and
 -- by the report, so both show the same pass / fail.
+-- S137: the row a PATH_TARGETS result is named by in Balance.GLOBAL_REPORT_ONLY: id "path.<build>.L<level>.<row id>",
+-- label = the row's note ("" without one).
+function SkillModel.reportRow(id: string, buildKey: string, L: number, note: string?): any
+	return { id = `path.{buildKey}.L{L}.{id}`, label = note or "" }
+end
+
 function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 	local out: { TargetResult } = {}
 	for _, row in SkillModel.PATH_TARGETS do
@@ -6738,15 +7188,18 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 					pass = value == value
 						and (low == nil or value >= low - 1e-9)
 						and (high == nil or value <= high + 1e-9),
-					-- S89 (F1, F4): a row with `report`, or a `reportAt` level, is only printed
+					-- S89 (F1, F4): a row with `report`, or a `reportAt` level, is only printed; S137: also a row named
+					-- in Balance.GLOBAL_REPORT_ONLY (SkillModel.reportRow)
 					asserted = L > 20
 						and table.find(row.levels, L) ~= nil
 						and row.report == nil
 						and not (row.reportAt and table.find(row.reportAt, L))
-						and not noMetric,
+						and not noMetric
+						and B.reportOnlyFor(SkillModel.reportRow(row.id, build.key, L, row.note)) == nil,
 					report = row.report
 						or (if row.reportAt and table.find(row.reportAt, L) then "F4" else nil)
-						or (if noMetric then "bez metryki na tym poziomie" else nil),
+						or (if noMetric then "bez metryki na tym poziomie" else nil)
+						or (B.reportOnlyFor(SkillModel.reportRow(row.id, build.key, L, row.note)) or {} :: any).session,
 					source = row.source,
 					note = row.note,
 					project = if row.project then row.project[L] else nil,
@@ -7138,7 +7591,10 @@ local function skillRoleValue(
 	if role == "heal" then
 		return r.healTo.tank or 0
 	end
-	return r.by[skillId] or 0
+	-- S140: the player's one burn (Burn.KEY) holds the burns of the skill when it is alone in the rotation (with the
+	-- build's rotation, R4_ROTATION, the burns of the other spells are in it too: only the skill's own hits count)
+	local burns = if rotation == nil and (def.burnStacks or def.adaptive) then r.by[Burn.KEY] or 0 else 0
+	return (r.by[skillId] or 0) + burns
 end
 
 -- S86 (D7): R4 = the role value of `skillId` with option `choice` at breakpoint rank `at` / without that breakpoint
@@ -7147,8 +7603,13 @@ end
 function SkillModel.optionGain(build: Build, skillId: string, at: number, choice: string, L: number): number?
 	local base = SkillData.get(skillId) :: any
 	-- S90: the Mage on the skill's own element (lightning and ice spells need that weapon; adaptive ones fire)
+	-- S140: a variant with a fixed element measures in it
 	local element = if build.classId == "Mage"
-		then (if base and base.element and table.find(A.elements, base.element) then base.element else "fire")
+		then SkillModel.elementOf(build) or (if base
+				and base.element
+				and table.find(A.elements, base.element)
+			then base.element
+			else "fire")
 		else nil
 	local sp = SkillModel.player(build, L, if element then { element = element } else nil)
 	local rank = Paths.skillRank(sp.character, skillId)

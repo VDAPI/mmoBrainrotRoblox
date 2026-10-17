@@ -174,7 +174,7 @@ local function spawnBag(data: { [string]: any })
 	end
 	local items = data.items :: { ItemInstance }
 	local best = bestOf(items)
-	local color = if best then ItemText.rarityColor(best.rarity) else Theme.Colors.Gold
+	local color = if best then ItemText.rarityColor(best.rarity) else Theme.Iron.Heading
 	local position = data.position :: Vector3
 
 	local model = Instance.new("Model")
@@ -306,7 +306,7 @@ local function onPicked(items: { ItemInstance })
 		if shown < 4 then
 			shown += 1
 			Toast.push(
-				`<font color="#{ItemText.rarityColor(item.rarity):ToHex()}">{Text.now("loot.picked", {
+				`<font color="#{ItemText.rarityName(item.rarity, "iron"):ToHex()}">{Text.now("loot.picked", {
 					n = item.n,
 					name = ItemText.name(item.id, item.up, item.el),
 				})}</font>`,

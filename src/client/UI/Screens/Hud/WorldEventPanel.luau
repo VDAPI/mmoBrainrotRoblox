@@ -38,12 +38,12 @@ local WIDTH_PC = 280
 local WIDTH_TOUCH = 220
 local PAD = 8
 local GAP = 3
-local TITLE = 20
-local LINE = 18
+local TITLE = 22
+local LINE = 20
 local BAR = 8
 local MINE = 30
-local BUTTON_PC = 30
-local BUTTON_TOUCH = 36
+local BUTTON_PC = 34
+local BUTTON_TOUCH = 44
 -- Touch: under the portrait (136 high) and the effect icons (Hud/init: Large + 136 + 6, one row of ~40).
 local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
 -- Touch in a party: under the party frames (PartyFrames: top Large + 136 + 70, rows 58 + 6 per other member).
@@ -85,7 +85,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 	end)
 	local color = scope:Computed(function(use): Color3
 		local def = use(kindDef)
-		return if def then Color3.fromHex(def.color) else Theme.Colors.Gold
+		return if def then Theme.readable(def.color, "hud") else Theme.Brass.Bright
 	end)
 	local touch = Device.Touch
 	-- Touch: the top clear of the party frames (the click targets for picking an ally to heal).
@@ -204,14 +204,14 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.25,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(current) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = color, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = color, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, PAD),
 				PaddingBottom = UDim.new(0, PAD),
@@ -219,13 +219,13 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
-			line(1, TITLE, title, color, 16, Theme.Fonts.BodyBold),
-			line(2, LINE, timeText, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium),
+			line(1, TITLE, title, color, Theme.TextSize.Small, Theme.Fonts.BodyBold),
+			line(2, LINE, timeText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium),
 			scope:New("Frame")({
 				Name = "Bar",
 				LayoutOrder = 3,
 				Size = UDim2.new(1, 0, 0, BAR),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Resource.Track,
 				BorderSizePixel = 0,
 				Visible = active,
 				[Children] = {
@@ -241,7 +241,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			line(4, LINE, progressText, Theme.Colors.Text, 14, Theme.Fonts.Body, active),
+			line(4, LINE, progressText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, active),
 			line(
 				5,
 				MINE,
@@ -249,18 +249,19 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 					return Text.get(use, if use(mineOk) then "hud.event.mineOk" else "hud.event.mineNo")
 				end),
 				scope:Computed(function(use): Color3
-					return if use(mineOk) then Theme.Colors.Success else Theme.Colors.TextMuted
+					return if use(mineOk) then Theme.Iron.Success else Theme.Iron.TextMuted
 				end),
-				13,
+				Theme.TextSize.Small,
 				Theme.Fonts.Body,
 				active
 			),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Guide",
 				LayoutOrder = 6,
 				Text = Text.T(scope, "hud.event.guide"),
 				Variant = "secondary",
-				TextSize = 14,
+				TextSize = Theme.TextSize.Small,
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.new(1, 0, 0, if use(touch) then BUTTON_TOUCH else BUTTON_PC)
 				end),

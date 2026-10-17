@@ -168,7 +168,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 		AutomaticCanvasSize = Enum.AutomaticSize.X,
 		ScrollingDirection = Enum.ScrollingDirection.X,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Brass.Line,
 		[Children] = {
 			scope:New("UIListLayout")({
 				FillDirection = Enum.FillDirection.Horizontal,
@@ -188,7 +188,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 	return scope:New("Frame")({
 		Name = "CharacterSelect",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken, -- S136: a veil over the world: iron, the cards on it parchment
 		BackgroundTransparency = 0.25,
 		Active = true,
 		[Children] = {
@@ -209,10 +209,10 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				Size = UDim2.new(1, -320, 0, 72),
 				BackgroundTransparency = 1,
 				Text = Config.GameName,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Hero,
-				TextColor3 = Theme.Colors.Gold,
-				TextStrokeColor3 = Theme.Colors.Background,
+				TextColor3 = Theme.Brass.Bright,
+				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = 0.4,
 			}),
 			scope:New("TextLabel")({
@@ -235,9 +235,12 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
+				TextStrokeColor3 = Theme.Shade,
+				TextStrokeTransparency = 0.4,
 			}),
 			LanguageToggle(scope, {
+				Surface = "iron",
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -Theme.Padding.Large, 0, Theme.Padding.Large),
 			}),
@@ -282,7 +285,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 				Text = Text.T(scope, "charSelect.mockWarning"),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Warning,
+				TextColor3 = Theme.Iron.Warning,
 				TextWrapped = true,
 			}),
 		},

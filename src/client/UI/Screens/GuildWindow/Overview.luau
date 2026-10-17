@@ -108,9 +108,9 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 					local g = use(guild)
 					return if type(g) == "table" then `[{g.tag}]  {g.name}` else ""
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Title,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -151,7 +151,7 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Success,
+				TextColor3 = Theme.Paper.Success,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 			}),
@@ -159,18 +159,18 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 			scope:New("Frame")({
 				LayoutOrder = 7,
 				Size = UDim2.new(1, 0, 0, 120),
-				BackgroundColor3 = Theme.Colors.Parchment,
+				BackgroundColor3 = Theme.Paper.Raised,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+					scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(12, 8),
 						Size = UDim2.new(1, -150, 0, 24),
 						BackgroundTransparency = 1,
 						Text = Text.T(scope, "guild.motd"),
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.TextDark,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					scope:New("TextLabel")({
@@ -186,7 +186,7 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.TextDark,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),

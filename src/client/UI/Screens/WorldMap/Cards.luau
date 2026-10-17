@@ -48,6 +48,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -125,7 +126,7 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 		table.insert(items, {
 			item = item,
 			text = ItemText.name(entry.item, nil, entry.el),
-			color = ItemText.rarityColor(item.rarity),
+			color = ItemText.rarityName(item.rarity, "paper"),
 			sub = T("worldmap.card.price", { price = Format.number(ShopPrice.unit(entry, level, discount, shop)) }),
 			tooltip = { shop = shop, shopEntry = entry, potionDiscount = discount, merchantOpen = false, hints = false },
 		})
@@ -133,7 +134,7 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 	local lines: { DetailCard.Line } = {}
 	local more = #usable - #items
 	if more > 0 then
-		table.insert(lines, { text = T("worldmap.card.shopMore", { n = more }), color = Theme.Colors.TextMuted })
+		table.insert(lines, { text = T("worldmap.card.shopMore", { n = more }), color = Theme.Paper.TextMuted })
 	end
 	return { title = T("worldmap.card.shop"), items = items, lines = lines }
 end
@@ -155,8 +156,7 @@ local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQ
 				shown += 1
 				table.insert(lines, {
 					text = `   {QuestText.contractObjective(T, taken.contract, taken.entry.progress[1] or 0)}`,
-					size = 13,
-					color = if done then Theme.Colors.Success else Theme.Colors.Text,
+					color = if done then Theme.Paper.Success else Theme.Paper.Text,
 				})
 			end
 		end
@@ -177,8 +177,8 @@ local function objectiveLines(lines: { DetailCard.Line }, quests: any, row: NpcQ
 		objectives, progress, turnIn = quest.objectives, entry.progress, quest.turnIn
 	end
 	local list = QuestText.rows(Fusion.peek, objectives, progress, turnIn)
-	for _, line in QuestText.richRows(Fusion.peek, list, row.mode == "active") do
-		table.insert(lines, { text = `   {line}`, size = 13, color = Theme.Colors.Text })
+	for _, line in QuestText.richRows(Fusion.peek, list, row.mode == "active", "paper") do
+		table.insert(lines, { text = `   {line}`, color = Theme.Paper.Text })
 	end
 end
 
@@ -239,13 +239,13 @@ local function questSections(npcId: string, level: number): { Section }
 		if row.mode == "later" then
 			table.insert(lines, {
 				text = `{title} ({T("quest.fromLevel", { level = NpcQuests.minLevel(row) })})`,
-				color = Theme.Colors.TextMuted,
+				color = Theme.Paper.TextMuted,
 			})
 		else
 			local strong = row.mode ~= "active"
 			table.insert(lines, {
 				text = T(KEYS[row.mode], { title = title }),
-				color = if strong then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+				color = if strong then Theme.Paper.Heading else Theme.Paper.TextMuted,
 				bold = strong,
 			})
 			if row.mode ~= "offer" then
@@ -269,12 +269,12 @@ local function questSections(npcId: string, level: number): { Section }
 		end
 		table.insert(lines, {
 			text = T("worldmap.card.daily", { left = left, total = total }),
-			color = Theme.Colors.Parchment,
+			color = Theme.Paper.Text,
 		})
 		if ready > 0 then
 			table.insert(lines, {
 				text = T("worldmap.card.dailyReady", { n = ready }),
-				color = Theme.Colors.GoldBright,
+				color = Theme.Paper.Heading,
 				bold = true,
 			})
 		end
@@ -286,12 +286,12 @@ local function questSections(npcId: string, level: number): { Section }
 		local total = #(weekly.list or {}) + (if type(weekly.boss) == "table" then 1 else 0)
 		table.insert(lines, {
 			text = T("worldmap.card.weekly", { left = left, total = total }),
-			color = Theme.Colors.Parchment,
+			color = Theme.Paper.Text,
 		})
 		if ready > 0 then
 			table.insert(lines, {
 				text = T("worldmap.card.weeklyReady", { n = ready }),
-				color = Theme.Colors.GoldBright,
+				color = Theme.Paper.Heading,
 				bold = true,
 			})
 		end
@@ -310,7 +310,7 @@ function Cards.npc(ctx: Context, npcId: string): Spec?
 	end
 	local map = Maps.get(def.map)
 	local intro: { DetailCard.Line } = {
-		{ text = `„{T(def.greetingKey)}”`, color = Theme.Colors.TextMuted, italic = true, size = 14 },
+		{ text = `„{T(def.greetingKey)}”`, color = Theme.Paper.TextMuted, italic = true },
 		whereLine(ctx, def.map, def.position.x, def.position.z),
 	}
 	local sections: { Section } = { { lines = intro } }
@@ -344,10 +344,10 @@ function Cards.npc(ctx: Context, npcId: string): Spec?
 		art = UiArt.serviceOfNpc(def), -- S119
 		title = T(def.nameKey),
 		subtitle = `{T(`npc.{def.id}.role`)} · {mapName(def.map)}`,
-		subtitleColor = Theme.Colors.Gold,
+		subtitleColor = Theme.Paper.Heading,
 		accent = if map then ZONE_COLORS[map.zone] else nil,
 		preview = if def.body == "board"
-			then { kind = "glyph", id = def.id, glyph = def.icon, color = Theme.Colors.Parchment }
+			then { kind = "glyph", id = def.id, glyph = def.icon, color = Theme.Paper.Text }
 			else { kind = "npc", id = def.id, glyph = def.icon },
 		sections = sections,
 		actions = moveActions(ctx, target, { centreAction(ctx, def.map, def.position.x, def.position.z) }),
@@ -384,7 +384,7 @@ function Cards.portal(ctx: Context, portalId: string): Spec?
 		end
 		table.insert(lines, whereLine(ctx, portal.map, portal.x, portal.z))
 	else
-		table.insert(lines, { text = T("worldmap.soon"), color = Theme.Colors.TextMuted, bold = true })
+		table.insert(lines, { text = T("worldmap.soon"), color = Theme.Paper.TextMuted, bold = true })
 	end
 	local walkTarget: Target = {
 		map = portal.map,
@@ -406,11 +406,11 @@ function Cards.portal(ctx: Context, portalId: string): Spec?
 		else {}
 	return {
 		icon = "◎",
-		iconColor = Color3.fromHex("#B9A8FF"),
+		iconColor = Theme.readable(UiPalette.map.portal, "paper", 3),
 		art = UiArt.mapIcon("portal"), -- S119
 		title = T(target.nameKey),
 		subtitle = if open then `{T("worldmap.card.portalTo")} · {levelsOf(target)}` else T("worldmap.soon"),
-		accent = if open then ZONE_COLORS[target.zone] else Theme.Colors.Border,
+		accent = if open then ZONE_COLORS[target.zone] else Theme.Paper.Rule,
 		grey = not open,
 		sections = { { lines = lines } },
 		actions = actions,
@@ -440,19 +440,19 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 		end
 	end
 	local lines: { DetailCard.Line } = {
-		{ text = T("worldmap.groups", { n = groups }), color = Theme.Colors.TextMuted },
+		{ text = T("worldmap.groups", { n = groups }), color = Theme.Paper.TextMuted },
 	}
 	-- S33: the hunting ground profile, its multipliers and what it feels like.
 	local profile = AreaProfiles.get(found.profile)
 	if profile then
 		local peek = Fusion.peek :: any
 		local color = AreaProfileText.color(profile)
-		table.insert(lines, 1, { text = T(profile.descKey), color = Theme.Colors.Text, size = 14 })
-		table.insert(lines, 1, { text = AreaProfileText.mults(peek, profile), color = color, size = 14 })
+		table.insert(lines, 1, { text = T(profile.descKey), color = Theme.Paper.Text })
+		table.insert(lines, 1, { text = AreaProfileText.mults(peek, profile), color = color })
 		table.insert(lines, 1, { text = AreaProfileText.tag(peek, profile), color = color, bold = true })
 	end
 	if AreaAdvice.isRecommended(found, ctx.level) then
-		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Colors.GoldBright, bold = true })
+		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Paper.Heading, bold = true })
 	end
 	-- S99: the hunting ground of the active hunting contract; S134k: every active contract here, one line each (the
 	-- kind and the progress; "Guide" below leads to the ground)
@@ -471,7 +471,7 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 				have = math.min(taken.entry.progress[1] or 0, objective.n),
 				n = objective.n,
 			}),
-			color = if Contracts.isTakenComplete(taken) then Theme.Colors.Success else Theme.Colors.GoldBright,
+			color = if Contracts.isTakenComplete(taken) then Theme.Paper.Success else Theme.Paper.Heading,
 			bold = true,
 		})
 	end
@@ -500,8 +500,8 @@ function Cards.node(ctx: Context, mapId: string, kindId: string, x: number, z: n
 		return nil
 	end
 	local lines: { DetailCard.Line } = {
-		{ text = T(`gather.category.{kind.category}`), color = Theme.Colors.Gold, bold = true },
-		{ text = T("worldmap.card.nodeLevel", { level = kind.level }), color = Theme.Colors.TextMuted },
+		{ text = T(`gather.category.{kind.category}`), color = Theme.Paper.Heading, bold = true },
+		{ text = T("worldmap.card.nodeLevel", { level = kind.level }), color = Theme.Paper.TextMuted },
 	}
 	if kind.tool then
 		local owned = false
@@ -512,7 +512,7 @@ function Cards.node(ctx: Context, mapId: string, kindId: string, x: number, z: n
 		end
 		table.insert(lines, {
 			text = T("worldmap.card.tool", { tool = ItemText.name(kind.tool) }),
-			color = if owned then Theme.Colors.ZoneGreen else Theme.Colors.Warning,
+			color = if owned then Theme.Paper.Success else Theme.Paper.Warning,
 		})
 	end
 	table.insert(lines, whereLine(ctx, mapId, x, z))
@@ -526,27 +526,26 @@ function Cards.node(ctx: Context, mapId: string, kindId: string, x: number, z: n
 		for _, fish in (if spot then spot.fish else {}) :: { Fish.FishEntry } do
 			table.insert(loot, {
 				text = `• {ItemText.name(fish.id)} — {rarityWord(fish.weight / math.max(1, total))}`,
-				color = ItemText.rarityColor(fish.rarity),
-				size = 14,
+				color = ItemText.rarityName(fish.rarity, "paper"),
 			})
 		end
 	else
 		for _, entry in kind.loot do
 			if Items.get(entry.id) then
-				table.insert(loot, { text = `• {ItemText.name(entry.id)} — {rarityWord(entry.chance)}`, size = 14 })
+				table.insert(loot, { text = `• {ItemText.name(entry.id)} — {rarityWord(entry.chance)}` })
 			end
 		end
 	end
 	local target: Target = { map = mapId, x = x, z = z, kind = "node", id = kindId, labelKey = kind.nameKey }
 	return {
 		icon = if kind.category == "fishing" then "≈" elseif kind.category == "herb" then "❀" else "⛏",
-		iconColor = Color3.fromHex(kind.look.color),
+		iconColor = Theme.readable(kind.look.color, "paper", 3),
 		art = UiArt.mapIcon(
 			if kind.category == "fishing" then "fishing" elseif kind.category == "herb" then "herb" else "vein"
 		), -- S119
 		title = T(kind.nameKey),
 		subtitle = mapName(mapId),
-		accent = Color3.fromHex(kind.look.color),
+		accent = Theme.readable(kind.look.color, "paper", 3),
 		sections = { { lines = lines }, { title = T("worldmap.card.gives"), lines = loot } },
 		actions = moveActions(ctx, target, { centreAction(ctx, mapId, x, z) }),
 	}
@@ -567,7 +566,7 @@ function Cards.party(ctx: Context, userId: number): Spec?
 						class = if class then T(class.nameKey) else member.class,
 						level = member.level,
 					}),
-					color = if class then Color3.fromHex(class.color) else Theme.Colors.Text,
+					color = if class then Theme.readable(class.color, "paper") else Theme.Paper.Text,
 					bold = true,
 				},
 				{
@@ -577,7 +576,7 @@ function Cards.party(ctx: Context, userId: number): Spec?
 						mana = Format.number(member.mana or 0),
 						maxMana = Format.number(member.maxMana or 0),
 					}),
-					color = Theme.Colors.Parchment,
+					color = Theme.Paper.Text,
 				},
 			}
 			if map then
@@ -609,11 +608,11 @@ function Cards.party(ctx: Context, userId: number): Spec?
 			})
 			return {
 				icon = if class then class.icon else "●",
-				iconColor = Theme.Colors.Accent,
+				iconColor = Theme.Paper.Link,
 				art = if class then UiArt.classEmblem(class.id) else UiArt.mapIcon("party"), -- S119
 				title = member.name,
 				subtitle = if map then mapName(map.id) else "",
-				accent = Theme.Colors.Accent,
+				accent = Theme.Paper.Link,
 				sections = { { lines = lines } },
 				actions = actions,
 			}
@@ -654,11 +653,11 @@ function Cards.mark(ctx: Context, index: number): Spec?
 	local target: Target = { map = mark.map, x = mark.x, z = mark.z, kind = "mark", id = tostring(index), label = name }
 	return {
 		icon = if icon then icon.glyph else "⚑",
-		iconColor = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright,
+		iconColor = if icon then Theme.readable(icon.color, "paper", 3) else Theme.Paper.Heading,
 		art = if icon then UiArt.mark(icon.id) else nil, -- S119
 		title = name,
 		subtitle = `{if icon then T(icon.nameKey) else ""} · {mapName(mark.map)}`,
-		accent = if icon then Color3.fromHex(icon.color) else nil,
+		accent = if icon then Theme.readable(icon.color, "paper", 3) else nil,
 		sections = { { lines = { whereLine(ctx, mark.map, mark.x, mark.z) } } },
 		actions = moveActions(ctx, target, {
 			{

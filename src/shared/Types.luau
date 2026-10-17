@@ -59,14 +59,27 @@ export type SideEntry = {
 	choice: { ItemInstance }?,
 }
 
--- S56 (ROZWOJ 3.2): the active build set's path state (filled from S57 on).
+-- S56 (ROZWOJ 3.2): the active build set's path state (filled from S57 on). S138 (DESIGN-18 §7): no main path, so the
+-- old fields `main` and `freeUsed` are gone (Logic/Paths.clampToLevel / cleanSet drop them on load).
 export type PathState = {
-	main: string?,
 	nodes: { [string]: number }, -- nodeId -> rank
 	bp: { [string]: "a" | "b" }, -- "<skillId>:<5|10>" -> option; same shape as Logic/Skills.Choices
-	freeUsed: boolean,
 }
-export type BuildSet = { path: PathState, stats: Stats, statPoints: number, hotbar: { [string]: string } }
+-- S137 (DESIGN-18 §9): bought skill ranks per weapon pool (a missing entry = 0).
+export type PoolRanks = { [string]: { [string]: number } }
+-- S58; S137 (DESIGN-18 §9): a set also carries the skill ranks of every pool, the bars of the pools other than
+-- barPool (whose bar is `hotbar`), the free full reset and the pool version the ranks were counted with.
+export type BuildSet = {
+	path: PathState,
+	stats: Stats,
+	statPoints: number,
+	hotbar: { [string]: string },
+	ranks: PoolRanks,
+	bars: { [string]: { [string]: string } },
+	barPool: string?,
+	respecFree: boolean,
+	poolsVersion: number,
+}
 -- S96: mounts of a character (Data/Mounts ids; lvl 1..Config.Mount.maxLevel).
 export type MountState = { owned: { [string]: { lvl: number } }, active: string?, riding: boolean }
 
@@ -127,8 +140,15 @@ export type CharacterData = {
 	exp: number,
 	stats: Stats,
 	statPoints: number,
-	hotbar: { [string]: string }, -- "1".."10" -> skillId
+	hotbar: { [string]: string }, -- "1".."8" -> skillId, the bar of barPool (S137)
 	path: PathState,
+	-- S137 (DESIGN-18 §9, Logic/SkillPoints): the active set's bought ranks per weapon pool, the bars of the other pools,
+	-- whose bar `hotbar` is, the free full reset (migration 12, a new pool version) and the pool version of the ranks
+	ranks: PoolRanks,
+	bars: { [string]: { [string]: string } },
+	barPool: string,
+	respecFree: boolean,
+	poolsVersion: number,
 	buildSlot: number, -- 1 | 2 (S58)
 	buildOther: BuildSet?,
 	reworkNotice: boolean, -- S56: show "Rozwój postaci się zmienił" once

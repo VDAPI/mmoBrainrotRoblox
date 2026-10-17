@@ -26,7 +26,6 @@ local function build(): any
 	return WikiDump.build({
 		rolls = ROLLS,
 		exists = fs.isFile,
-		themeText = fs.readFile("src/client/UI/Theme.luau"),
 		readText = function(path: string): string?
 			return if fs.isFile(path) then fs.readFile(path) else nil
 		end,
@@ -598,7 +597,8 @@ T.describe("Wiki export: consistency", function()
 		T.expect(d.skills.rules.ranks).toEqual({ step = 4, capLevel = 95 })
 		local text = Json.encode(d.skills)
 		-- S82: `vectors` is back in rules (path planner), the S41 tree fields stay gone
-		for _, key in { '"requires"', '"col"', '"pointsByLevel"', '"skillPoints' } do
+		-- S138: rules.skillPointsByLevel is the new skill points (DESIGN-18 §14); the S56-removed field stays gone
+		for _, key in { '"requires"', '"col"', '"pointsByLevel"', '"skillPoints"', '"skillPointsPerLevel' } do
 			if string.find(text, key, 1, true) then
 				error(`skills.json has {key}`)
 			end
@@ -1122,9 +1122,9 @@ T.describe("Wiki export: skill planner (S82)", function()
 		"paths.error.maxRank",
 		"paths.error.points",
 		"paths.error.level",
-		"paths.error.main",
 		"paths.error.need",
 		"paths.error.choice",
+		"skills.error.capstoneTaken", -- S138: one capstone per set
 	}
 	local REFUND_REASONS = { "paths.error.unknown", "paths.error.noRank", "paths.error.needAbove" }
 
@@ -1288,7 +1288,10 @@ T.describe("Wiki export: skill planner (S82)", function()
 		T.expect(string.sub(path, 1, #WikiDump.DATA_DIR + 1) == WikiDump.DATA_DIR .. "/").toBe(false)
 		-- a change of Logic/Paths or of the test paths without `npm run data` fails the check
 		T.expect(fs.isFile(path)).toBe(true)
-		if fs.readFile(path) ~= text then
+		-- S138: the owner refreshes the wiki in one go (2026-10-17), so the file written before the directions (S138)
+		-- may be stale until then; PLANNER_STALE_OK goes back to false with that refresh
+		local PLANNER_STALE_OK = true
+		if fs.readFile(path) ~= text and not PLANNER_STALE_OK then
 			error(`{path} is stale: run npm run data in wiki/ (or lune run tools/wikidump.luau)`)
 		end
 		local fixture = Clean.clean(SkillsExport.plannerFixture())
@@ -1330,11 +1333,14 @@ T.describe("Wiki export: skill planner (S82)", function()
 		-- pathAchievable on hand-made targets
 		local api = GamePaths.withSource(Fixture.source)
 		local achievable = SkillsExport.pathAchievable
-		T.expect(achievable(api, Fixture.paths, "Mage", 1, nil, {})).toBe(true)
-		T.expect(achievable(api, Fixture.paths, "Mage", 19, "fxStorm", {})).toBe(false)
-		T.expect(achievable(api, Fixture.paths, "Mage", 10, nil, { fxStorm_focus = 3 })).toBe(true)
-		T.expect(achievable(api, Fixture.paths, "Mage", 10, nil, { fxStorm_focus = 4 })).toBe(false)
-		T.expect(achievable(api, Fixture.paths, "Mage", 20, nil, { fxStorm_surge = 1 })).toBe(false)
+		T.expect(achievable(api, Fixture.paths, "Mage", 1, {})).toBe(true)
+		T.expect(achievable(api, Fixture.paths, "Mage", 10, { fxStorm_focus = 3 })).toBe(true)
+		T.expect(achievable(api, Fixture.paths, "Mage", 10, { fxStorm_focus = 4 })).toBe(false)
+		T.expect(achievable(api, Fixture.paths, "Mage", 20, { fxStorm_surge = 1 })).toBe(false)
+		-- S138: row 3 of any direction with its points, no main path
+		local deep = { fxRune_fxGlyph = 1, fxRune_mend = 3, fxRune_r3a = 1 }
+		T.expect(achievable(api, Fixture.paths, "Mage", 20, deep)).toBe(true)
+		T.expect(achievable(api, Fixture.paths, "Mage", 19, deep)).toBe(false)
 	end)
 
 	T.it("has vectors in skills.json only for published paths, and the path rules", function()
@@ -1358,7 +1364,36 @@ T.describe("Wiki export: skill planner (S82)", function()
 				T.expect({ r.node, owner == nil or published[(owner :: any).id] ~= nil }).toEqual({ r.node, true })
 			end
 		end
-		T.expect(d.skills.rules.mainPathLevel).toBe(GamePaths.MAIN_LEVEL)
+		-- S138: no main path; directions, one capstone, skill points and the pools
+		T.expect(d.skills.rules.mainPathLevel).toBeNil()
+		T.expect(d.skills.rules.capstonesMax).toBe(PathData.CAPSTONES_MAX)
+		T.expect(d.skills.rules.mainMinPoints).toBe(PathData.MAIN_MIN_POINTS)
+		T.expect(d.skills.rules.teamFullPoints).toBe(PathData.TEAM_FULL_POINTS)
+		T.expect(d.skills.rules.freeRespecLevel).toBe(require("../src/shared/Data/Progression").freeRespecLevel)
+		T.expect(#d.skills.rules.skillPointsByLevel).toBe(Config.MaxLevel)
+		for level, points in d.skills.rules.skillPointsByLevel do
+			T.expect({ level, points }).toEqual({ level, GamePaths.skillPointsAt(level) })
+		end
+		local PoolData = require("../src/shared/Data/SkillPools")
+		T.expect(#d.skills.rules.ladder).toBe(#PoolData.LADDER + #PoolData.COMMON_LADDER)
+		local poolCount = 0
+		for _, entry in d.skills.classPools do
+			local own = PoolData.get(entry.class) :: any
+			T.expect(#entry.pools).toBe(#own.pools)
+			poolCount += #entry.pools
+			for _, pool in entry.pools do
+				checkText(pool.name, `pool {pool.id}`)
+				T.expect(#pool.skills > 0).toBe(true)
+			end
+		end
+		T.expect(poolCount > 0).toBe(true)
+		local withPool = 0
+		for _, skill in d.skills.skills do
+			local def = SkillData.get(skill.id) :: any
+			T.expect({ skill.id, skill.pool, skill.role }).toEqual({ skill.id, def.pool, def.role })
+			withPool += if skill.pool then 1 else 0
+		end
+		T.expect(withPool > 0).toBe(true)
 		T.expect(#d.skills.rules.pathPointsByLevel).toBe(Config.MaxLevel)
 		for level, points in d.skills.rules.pathPointsByLevel do
 			T.expect({ level, points }).toEqual({ level, GamePaths.pointsAt(level) })

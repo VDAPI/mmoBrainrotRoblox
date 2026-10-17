@@ -11,6 +11,8 @@
 --       Angel's save; Roll of the Dice throws two small golden dice from the hand at the motion's release
 --   v = falconStrike / falconDive / falconCircle / falconEnd (S77)  the Scout's falcon (one bird per caster id, kept
 --       `d` seconds after each event); traps with a `trigger` list play it when they spring (S77)
+--   v = detonate (S140) Combustion's blast of the target's burns; phoenixSave (S140) Phoenix Heart's save
+--   v = shatter (S141) Shatter breaks a freeze (or a boss's Deep Chill) of the target
 --   v = furyConsume (S74)  a red aura on the Warrior who spent Fury; impact events with `al` play the entry's `allies`
 --       pieces on those allies (guard, shout); War Banner objects (Workspace.Vaelthorn_Banners) are drawn here
 --   S80 (ROZWOJ 12.4, 12.5): a beam (Arcane Torrent) loops its motion for the cast event's `d`; each tick (impact with
@@ -1176,6 +1178,28 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		if Sfx.playable("skill.guardianAngel.save") and (not caster or caster:IsDescendantOf(Workspace)) then
 			SfxController.Play("skill.guardianAngel.save", at, SfxController.WhoOf(caster), casterKey(data))
 		end
+	elseif v == "detonate" then
+		-- S140 (Combustion): the caster's burns on the target burst, bigger with more stacks (`n`)
+		local stacks = math.clamp(tonumber(data.n) or 1, 1, 5)
+		Library.burst(at, 3 + 2 * stacks, color, nil, simple)
+		Library.shockwave(at, radius, color, 0.4, simple)
+		shakeNear(at, 0.15 + 0.1 * stacks)
+	elseif v == "phoenixSave" then
+		-- S140 (Phoenix Heart): a fire pillar and ring on the saved Mage and the passive's own sound
+		Library.burst(at, 6, color, nil, simple)
+		Library.pillar(at, 3, 14, color, 0.8)
+		Library.shockwave(at, radius, color, 0.5, simple)
+		if Sfx.playable("skill.phoenixHeart") and (not caster or caster:IsDescendantOf(Workspace)) then
+			SfxController.Play("skill.phoenixHeart", at, SfxController.WhoOf(caster), casterKey(data))
+		end
+	elseif v == "shatter" then
+		-- S141 (Shatter): the freeze (or a boss's Deep Chill) breaks: ice sparks, cracks and a short ring
+		if at then
+			Library.sparks(at, color, { simple = simple, count = 12 })
+			Library.cracks(at, 4, color, 0.8, simple)
+			Library.shockwave(at, 5, color, 0.3, simple)
+			shakeNear(at, 0.2)
+		end
 	elseif v == "lightningBurst" then
 		local strike = entry and entry.strike
 		if entry and strike then
@@ -1290,6 +1314,7 @@ local function previewDef(skill: SkillData.SkillDef): SkillData.SkillDef
 			path = State.Get({ "character", "path" }),
 			hotbar = State.Get({ "character", "hotbar" }),
 			equipment = State.Get({ "character", "equipment" }),
+			ranks = State.Get({ "character", "ranks" }), -- S137
 		}, skill.id)
 	)
 	return (Skills.effective(skill, rank, nil, nil))

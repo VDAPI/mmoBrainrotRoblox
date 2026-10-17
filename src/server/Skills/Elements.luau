@@ -1,12 +1,14 @@
 --!strict
 -- Weapon-element effects of adaptive skills (Skills/Context) and Elemental Spark (CombatService), STATY 5; recipe in
 -- Logic/Traits.elementPlan, strengthened by the elementRider hook. Frostbite (chill) comes with every ice weapon from
--- every slow and freeze of the player's ice (STATY 3).
+-- every slow and freeze of the player's ice (STATY 3). S140: a skill's fire burn joins the player's one burn on the
+-- target (CombatService.ApplyBurn, Logic/Burn); the item's Spark keeps its own entry (EffectStack.ITEM).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local EffectStack = require(Shared.Logic.EffectStack)
 local SkillData = require(Shared.Data.Skills)
 local Traits = require(Shared.Logic.Traits)
 
@@ -93,7 +95,10 @@ function Elements.apply(services: Services, proc: Proc)
 		return
 	end
 	local target = proc.target
-	if plan.kind == "burn" then
+	if plan.kind == "burn" and proc.skillId ~= EffectStack.ITEM then
+		-- S140 (Logic/Burn): a skill's weapon burn is one stack of the player's one burn (CombatService.ApplyBurn)
+		services.Combat.ApplyBurn(player, target, plan.tick or 1, 1, plan.duration)
+	elseif plan.kind == "burn" then
 		services.StatusEffect.Apply(target, "burn", {
 			duration = plan.duration,
 			value = plan.pct,

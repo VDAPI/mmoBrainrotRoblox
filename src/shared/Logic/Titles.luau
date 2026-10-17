@@ -1,7 +1,9 @@
 --!strict
 -- Which titles a character has unlocked (pure; DESIGN §4, S16).
 -- S59 (ROZWOJ 3.2): path titles (req.kind "mainPath") are unlocked while the active set's main path is their path;
--- character.title nil = never chose (the main path title shows), Titles.NONE = the player hid the title. Every
+-- character.title nil = never chose (the main path title shows), Titles.NONE = the player hid the title. S138
+-- (DESIGN-18 §7): the "main path" is the leading direction (Logic/Paths.mainOf: the most ranks, at least
+-- MAIN_MIN_POINTS); when it changes the old title locks and a chosen one falls back as before. Every
 -- function takes an optional title list (tests); default Data/Titles.
 -- S121: an optional account context as the last argument; the VIP title (req.kind "vip") is unlocked only with
 -- ctx.vip == true, so every call without a context keeps the VIP title locked.
@@ -11,6 +13,7 @@
 -- (ctx.now, default Util/Clock.now(): the server clock with the /time offset on both sides).
 
 local Clock = require("../Util/Clock")
+local Paths = require("./Paths")
 local TitleData = require("../Data/Titles")
 
 type TitleDef = TitleData.TitleDef
@@ -39,9 +42,12 @@ local function progress(character: any, kind: string): number
 	return 0
 end
 
+-- S138: the leading direction of the active set (nil for a view without a class).
 local function mainPathOf(character: any): string?
-	local state = character.path
-	return if type(state) == "table" and type(state.main) == "string" then state.main else nil
+	if type(character) ~= "table" or type(character.class) ~= "string" then
+		return nil
+	end
+	return Paths.mainOf(character)
 end
 
 local function nowOf(ctx: Context?): number
@@ -153,7 +159,7 @@ function Titles.unlocked(character: any, list: { TitleDef }?, ctx: Context?): { 
 	return result
 end
 
--- The title of the character's main path (nil without a main path or without its title).
+-- The title of the character's leading direction (nil without one or without its title).
 function Titles.pathTitle(character: any, list: { TitleDef }?): string?
 	local main = mainPathOf(character)
 	if main == nil then
@@ -168,7 +174,8 @@ function Titles.pathTitle(character: any, list: { TitleDef }?): string?
 	return nil
 end
 
--- The title to show: none when hidden, the chosen one while it is still unlocked, otherwise the main path title.
+-- The title to show: none when hidden, the chosen one while it is still unlocked, otherwise the leading direction's
+-- title.
 function Titles.shown(character: any, list: { TitleDef }?, ctx: Context?): string?
 	local chosen = character.title
 	if chosen == Titles.NONE then

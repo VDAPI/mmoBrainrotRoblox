@@ -1,7 +1,10 @@
 --!strict
--- Skills (DESIGN §14): the 10-slot hotbar (SetHotbar, PutOnBar, the auto-put of base skills unlocked by a level-up),
--- passives as a StatService modifier source + combat hooks, and casting. S57: which skills a character has, their
--- rank, the path weapon, the passives and the skill changes of path nodes come from Logic/Paths (base + paths); the
+-- Skills (DESIGN §14): the hotbar (SetHotbar, PutOnBar; S137: 8 slots, the bar of the active weapon pool, nothing is
+-- put on it by a level-up any more: ranks are bought, PathService places a newly bought skill), passives as a
+-- StatService modifier source + combat hooks, and casting.
+-- S137 (DESIGN-18 §4.1): only a skill of the active pool casts (Paths.skillUsable "cast.error.wrongPool"); after a
+-- pool switch in combat every cast waits Config.SkillPools.swapLock ("cast.error.poolSwap", LockPool).
+-- S57: which skills a character has, their rank, the path weapon, the passives and the skill changes of path nodes come from Logic/Paths (base + paths); the
 -- bar check on load and on level changes is PathService's (Paths.validHotbar).
 --   CastSkill(skillId, targetId?, aim?) -> validate (unlocked, alive, not stunned, GCD 0.5 s, cooldown, cost,
 --   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
@@ -25,6 +28,9 @@
 -- another cast; never damage). Every channel ends in closeChannel. Arcane Charges: a snapshot at the cast (cost
 -- through Skills.cost, damage through ctx.castMul), +1 after a damaging spell, all consumed by Arcane Discharge, off
 -- on death and out of combat; empowered loses a use per damaging spell; grantCharges / empower after a full channel.
+-- S140 (DESIGN-18 §6.1): Phoenix Heart is a damage filter (FilterPriority.phoenixHeart, before Guardian Angel): a lethal
+-- blow leaves 1 HP once per the passive's rest (hook phoenixRest; Logic/Burn.phoenixSave; the ready time lives on the
+-- server only, never in the save), then invulnerability (phoenixInvuln) and a fire blast around the player.
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -35,6 +41,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Banner = require(script.Parent.Parent.Skills.Banner)
+local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(script.Parent.Parent.Skills.Companion)
@@ -146,6 +153,8 @@ type Runtime = {
 
 local runtimes: { [Player]: Runtime } = {}
 local hookCache: { [Player]: { [string]: number } } = {}
+-- S137: os.clock() until which a pool switched in combat refuses casts
+local poolLock: { [Player]: number } = {}
 -- S80: players who got an Arcane Charge (the out-of-combat sweep in Start looks only at them)
 local chargeHolders: { [Player]: boolean } = {}
 
@@ -226,10 +235,15 @@ end
 
 -- Hotbar and unlocks -----------------------------------------------------------------------------------------
 
--- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar.
+-- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar. S137: a skill
+-- of the bar's pool (barPool) with a bought rank there.
 local function setHotbar(player: Player, slot: number, skillId: string?): (boolean, string?)
 	local char = character(player)
-	if not char or not Skills.validSlot(slot) or (skillId ~= nil and not Paths.canPutOnBar(char, skillId)) then
+	if
+		not char
+		or not Skills.validSlot(slot)
+		or (skillId ~= nil and not Paths.canPutOnBar(char, skillId, Paths.barPoolOf(char)))
+	then
 		return false, "error.badRequest"
 	end
 	-- A skill sits in one slot only: moving it clears the old slot.
@@ -254,7 +268,7 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local ok, err = Paths.canPutOnBar(char, skillId)
+	local ok, err = Paths.canPutOnBar(char, skillId, Paths.barPoolOf(char))
 	if not ok then
 		return false, err
 	end
@@ -273,62 +287,21 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	return setHotbar(player, free, skillId)
 end
 
--- S56 (ROZWOJ 2.5, 5): ranks follow the level. Passive ranks and hooks are refreshed on every change; going up puts
--- the new base actives on free slots (a toast each, or one for more than 2 at once). Going down, PathService cleans
--- the bar (S57: Paths.validHotbar).
-local function onLevelChanged(player: Player, newLevel: number, oldLevel: number)
+-- S137 (DESIGN-18 §4.1): SetPoolBar of the active pool's bar (PathService): the same rules as SetHotbar.
+function SkillService.SetSlot(player: Player, slot: number, skillId: string?): (boolean, string?)
+	return setHotbar(player, slot, skillId)
+end
+
+-- S137: after a pool switch in combat every cast waits `seconds` (Config.SkillPools.swapLock).
+function SkillService.LockPool(player: Player, seconds: number)
+	poolLock[player] = os.clock() + seconds
+end
+
+-- S56: passive ranks and hooks are refreshed on every level change (a new level raises rank limits only). S137
+-- (DESIGN-18 §3): nothing is put on the bar by a level-up any more, ranks are bought (PathService); going down,
+-- LevelService and PathService clean the ranks and the bars.
+local function onLevelChanged(player: Player, _newLevel: number, _oldLevel: number)
 	passivesChanged(player)
-	local char = character(player)
-	if not char then
-		return
-	end
-	if newLevel < oldLevel then
-		return
-	end
-	local fresh = Skills.newlyUnlocked(char.class, oldLevel, newLevel)
-	if #fresh == 0 then
-		return
-	end
-	local actives: { string } = {}
-	for _, skill in fresh do
-		if skill.type ~= "passive" then
-			table.insert(actives, skill.id)
-		end
-	end
-	local placed, left = Skills.placeOnBar(char.hotbar, actives)
-	local onBar: { [string]: boolean } = {}
-	for _, place in placed do
-		if setHotbar(player, place.slot, place.id) then
-			onBar[place.id] = true
-		end
-	end
-	-- S58 (ROZWOJ 5): the same actives go to free slots of the inactive set's bar; no toast, no quest event, what
-	-- does not fit is dropped. Without buildOther the empty set takes Skills.startHotbar when first switched to.
-	local other: any = char.buildOther
-	if type(other) == "table" and type(other.hotbar) == "table" then
-		local otherPlaced = Skills.placeOnBar(other.hotbar, actives)
-		if #otherPlaced > 0 then
-			local bar = table.clone(other.hotbar)
-			for _, place in otherPlaced do
-				bar[tostring(place.slot)] = place.id
-			end
-			PlayerStateService.Set(player, { "character", "buildOther", "hotbar" }, bar)
-		end
-	end
-	if #fresh > 2 then
-		Net.Fire(player, "Toast", "skills.toast.many", { n = #fresh }, "success")
-		return
-	end
-	for _, skill in fresh do
-		local args = { skill = "@" .. skill.nameKey }
-		if skill.type == "passive" then
-			Net.Fire(player, "Toast", "skills.toast.passive", args, "success")
-		elseif onBar[skill.id] then
-			Net.Fire(player, "Toast", "skills.toast.onBar", args, "success")
-		elseif table.find(left, skill.id) then
-			Net.Fire(player, "Toast", "skills.toast.barFull", args, "info")
-		end
-	end
 end
 
 -- Admin helpers --------------------------------------------------------------------------------------------
@@ -775,15 +748,21 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if arena and arena.IsSidelined(player) then
 		return false, "arena.error.out"
 	end
-	-- S57: rank from Logic/Paths (base from the level, path skills from their node), then the path weapon
-	local rank = Paths.skillRank(char, skillId)
-	if rank <= 0 or base.type == "passive" then
-		return false, "cast.error.notLearned"
-	end
+	-- S57: rank from Logic/Paths (S137: bought in the active pool, path skills with their node), the pool, the path
+	-- weapon
 	local weapons = Paths.weaponTypesOf(char.equipment)
 	local usable, usableErr = Paths.skillUsable(char, skillId, weapons)
 	if not usable then
 		return false, usableErr
+	end
+	local rank = Paths.skillRank(char, skillId)
+	if rank <= 0 or base.type == "passive" then
+		return false, "cast.error.notLearned"
+	end
+	-- S137 (DESIGN-18 §4.1): a pool switched in combat waits Config.SkillPools.swapLock
+	local lock = poolLock[player]
+	if lock and os.clock() < lock then
+		return false, "cast.error.poolSwap"
 	end
 	-- S28/S57: numbers and behaviours at this rank (breakpoints in the chosen option, modify nodes).
 	local skill, behaviour = Paths.effectiveFor(char, skillId, weapons, rank)
@@ -1158,6 +1137,71 @@ function SkillService.Cast(player: Player, skillId: string, targetId: string?, a
 	return cast(player, skillId, targetId, aim)
 end
 
+-- S140 Phoenix Heart ---------------------------------------------------------------------------------------------
+
+-- Server time the passive is ready again (no entry = ready).
+local phoenixReady: { [Player]: number } = {}
+
+-- After a save (the blow already left 1 HP, the filter already gave the invulnerability): a fire blast of `blast` %
+-- magic attack on the enemies within PHOENIX.radius (monsters and attackable players).
+local function phoenixRise(player: Player, blast: number)
+	local entity = EntityService.GetPlayerEntity(player)
+	local position = entity and EntityService.Position(entity)
+	if not entity or not position or ResourceService.IsDead(player) then
+		return
+	end
+	local radius = SkillData.PHOENIX.radius
+	local params: any = { kind = "magic", multiplier = blast / 100, element = "fire", canDodge = false, isSkill = true }
+	local options = { skill = "phoenixHeart", noProc = true, delivery = "ranged", consumeShot = false }
+	local function near(other: any): boolean
+		local at = EntityService.Position(other)
+		return at ~= nil and Vector3.new(at.X - position.X, 0, at.Z - position.Z).Magnitude <= radius + 1.5
+	end
+	for _, other in EntityService.QueryMonsters(position, radius + 4) do
+		if other.monster and other.monster:IsAlive() and near(other) then
+			CombatService.DealDamage(player, other, params, nil, options)
+		end
+	end
+	for _, other in EntityService.QueryPlayers(position, radius + 4) do
+		local victim: Player? = other.player
+		if
+			victim
+			and victim ~= player
+			and not ResourceService.IsDead(victim)
+			and near(other)
+			and (PvpService.CanAttack(player, victim))
+		then
+			CombatService.DealDamage(player, other, params, nil, options)
+		end
+	end
+	sendFx(player, { s = "phoenixHeart", v = "phoenixSave", t = entity.id, p = position, r = radius, el = "fire" })
+	Net.Fire(player, "Toast", "skills.phoenixSave", nil, "success")
+end
+
+local function phoenixFilter(player: Player, amount: number, source: string, _attacker: any?): number
+	local blast = SkillService.PassiveHook(player, "phoenixHeart")
+	if blast <= 0 then
+		return amount
+	end
+	local t = now()
+	local allowed, saved = Burn.phoenixSave(ResourceService.Get(player), amount, source, true, phoenixReady[player], t)
+	if saved then
+		phoenixReady[player] = Burn.phoenixReady(t, SkillService.PassiveHook(player, "phoenixRest"))
+		-- Invulnerability (shorter after a player's blow) right away, so the other blows of the same server step
+		-- (several monsters in one Heartbeat) already miss; only the blast, fx and toast wait.
+		local entity = EntityService.GetPlayerEntity(player)
+		if entity then
+			StatusEffectService.Apply(entity, "invuln", {
+				duration = Burn.phoenixInvuln(SkillService.PassiveHook(player, "phoenixInvuln"), source == "pvp"),
+				source = player,
+				skillId = "phoenixHeart",
+			})
+		end
+		task.defer(phoenixRise, player, blast)
+	end
+	return allowed
+end
+
 function SkillService.Init(registry)
 	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
@@ -1205,6 +1249,8 @@ function SkillService.Init(registry)
 
 	StatService.RegisterModifierSource("passives", modifierSource)
 	CombatService.RegisterHookProvider(SkillService.PassiveHook)
+	-- S140: Phoenix Heart before Guardian Angel (an angel then stays for the next lethal blow)
+	ResourceService.SetDamageFilter(phoenixFilter, ResourceService.FilterPriority.phoenixHeart)
 end
 
 function SkillService.Start()
@@ -1336,6 +1382,8 @@ function SkillService.Start()
 		Companion.stop(player, true) -- S77: the entity is gone
 		chargeHolders[player] = nil -- S80
 		settling[player] = nil -- S96
+		poolLock[player] = nil -- S137
+		phoenixReady[player] = nil -- S140
 		task.defer(function()
 			runtimes[player] = nil
 			hookCache[player] = nil

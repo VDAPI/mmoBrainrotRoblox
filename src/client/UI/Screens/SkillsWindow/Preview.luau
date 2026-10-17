@@ -97,7 +97,7 @@ function Preview.new(
 	local frame = scope:New("ViewportFrame")({
 		Name = "Preview",
 		Size = if height then UDim2.new(1, 0, 0, height) else UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Surface, -- S135: effects read better on iron than on parchment
 		Ambient = Color3.fromRGB(150, 145, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
 		LightDirection = Vector3.new(-1, -1.2, -0.8),

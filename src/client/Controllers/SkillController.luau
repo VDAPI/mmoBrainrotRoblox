@@ -41,7 +41,7 @@ local SkillController = {
 local TargetController: any
 local player = Players.LocalPlayer
 
--- Hotbar slot of a key press (rebindable, S17: actions skill_1 .. skill_10).
+-- Hotbar slot of a key press (rebindable, S17: actions skill_1 .. skill_8 since S137).
 local function slotFor(keyCode: Enum.KeyCode): number?
 	local action = Keybinds.actionFor(keyCode)
 	local slot = if action then string.match(action, "^skill_(%d+)$") else nil
@@ -276,10 +276,12 @@ local function me(): Paths.Char
 		path = State.Get({ "character", "path" }),
 		hotbar = State.Get({ "character", "hotbar" }),
 		equipment = State.Get({ "character", "equipment" }),
+		ranks = State.Get({ "character", "ranks" }), -- S137: bought ranks per pool
+		barPool = State.Get({ "character", "barPool" }),
 	}
 end
 
--- Rank of an own-class skill (0: not available; base from the level, path skills from their node).
+-- Rank of an own-class skill (0: not available; S137: bought in the active pool, path skills with their node).
 local function rankOf(skill: SkillData.SkillDef): number
 	return Paths.skillRank(me(), skill.id)
 end
@@ -613,7 +615,7 @@ end
 function SkillController.Color(skillId: string): Color3
 	local skill = SkillData.get(skillId)
 	local class = skill and Classes.get(skill.class)
-	return if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+	return if class then Color3.fromHex(class.color) else Theme.Iron.Heading
 end
 
 return SkillController

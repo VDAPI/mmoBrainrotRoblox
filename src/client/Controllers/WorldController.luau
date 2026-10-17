@@ -362,7 +362,7 @@ local function buildLoading()
 	loadingGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	loadingFrame = Instance.new("CanvasGroup")
 	loadingFrame.Size = UDim2.fromScale(1, 1)
-	loadingFrame.BackgroundColor3 = Theme.Colors.Background
+	loadingFrame.BackgroundColor3 = Theme.Iron.Sunken
 	loadingFrame.GroupTransparency = 1
 	loadingFrame.Parent = loadingGui
 	local function label(y: number, size: number, font: Font, color: Color3): TextLabel
@@ -378,9 +378,9 @@ local function buildLoading()
 		t.Parent = loadingFrame
 		return t
 	end
-	loadingTitle = label(-40, 54, Theme.Fonts.Heading, Theme.Colors.Gold)
-	loadingSub = label(14, 24, Theme.Fonts.BodyBold, Theme.Colors.Parchment)
-	loadingTip = label(120, 20, Theme.Fonts.Body, Theme.Colors.TextMuted)
+	loadingTitle = label(-40, Theme.TextSize.Hero - 10, Theme.Fonts.Display, Theme.Brass.Bright)
+	loadingSub = label(14, Theme.TextSize.Large, Theme.Fonts.BodyBold, Theme.Iron.Text)
+	loadingTip = label(120, Theme.TextSize.Body, Theme.Fonts.Body, Theme.Iron.TextMuted)
 end
 
 local function showLoading(mapId: string?)
@@ -401,9 +401,9 @@ local function showLoading(mapId: string?)
 	local zone = Text.now(`zone.{map.zone}`)
 	loadingSub.Text = if map.id == "city" then zone else `{map.minLevel}–{map.maxLevel} · {zone}`
 	loadingSub.TextColor3 = if map.zone == "red"
-		then Theme.Colors.ZoneRed
-		elseif map.zone == "yellow" then Theme.Colors.ZoneYellow
-		else Theme.Colors.ZoneGreen
+		then Theme.ZoneText.Red
+		elseif map.zone == "yellow" then Theme.ZoneText.Yellow
+		else Theme.ZoneText.Green
 	loadingTip.Text = `{Text.now("loading.tip")}: {Text.now(`tip.{math.random(1, TIP_COUNT)}`)}`
 	loadingGui.Enabled = true
 	TweenService:Create(loadingFrame, TweenInfo.new(FADE), { GroupTransparency = 0 }):Play()
@@ -549,9 +549,9 @@ local function decoratePortal(instance: Instance)
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, 0, 0, 32)
 	title.BackgroundTransparency = 1
-	title.FontFace = Theme.Fonts.Heading
-	title.TextSize = 26
-	title.TextColor3 = Theme.Colors.GoldBright
+	title.FontFace = Theme.Fonts.Display
+	title.TextSize = Theme.TextSize.Large + 2
+	title.TextColor3 = Theme.Brass.Bright
 	title.TextStrokeTransparency = 0.3
 	title.Parent = gui
 	local sub = Instance.new("TextLabel")
@@ -559,12 +559,12 @@ local function decoratePortal(instance: Instance)
 	sub.Size = UDim2.new(1, 0, 0, 24)
 	sub.BackgroundTransparency = 1
 	sub.FontFace = Theme.Fonts.BodyBold
-	sub.TextSize = 18
+	sub.TextSize = Theme.TextSize.Small
 	sub.TextStrokeTransparency = 0.3
 	sub.TextColor3 = if target.zone == "red"
-		then Theme.Colors.ZoneRed
-		elseif target.zone == "yellow" then Theme.Colors.ZoneYellow
-		else Theme.Colors.ZoneGreen
+		then Theme.ZoneText.Red
+		elseif target.zone == "yellow" then Theme.ZoneText.Yellow
+		else Theme.ZoneText.Green
 	sub.Parent = gui
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")

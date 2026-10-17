@@ -68,14 +68,14 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(PILL_WIDTH, if use(Device.Touch) then Theme.Size.MinTouch else 36)
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.2,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(queue) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(14, 0),
 				Size = UDim2.new(1, -(14 + 44), 1, 0),
@@ -99,7 +99,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -112,7 +112,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				Text = "✕",
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Iron.TextMuted,
 				[OnEvent("Activated")] = function()
 					props.Leave()
 				end,
@@ -126,14 +126,14 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		Position = UDim2.new(0.5, 0, 0, 70),
 		Size = UDim2.fromOffset(PANEL_WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(match) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 8),
@@ -160,7 +160,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 					for side, names in m.names do
 						local text = string.gsub(table.concat(names, ", "), "[<>&]", "")
 						if side == m.side then
-							text = `<font color="#{Theme.Colors.GoldBright:ToHex()}">{text}</font>`
+							text = `<font color="#{Theme.Brass.Bright:ToHex()}">{text}</font>`
 						end
 						parts[side] = text
 					end
@@ -169,7 +169,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Iron.Text,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			scope:New("TextLabel")({
@@ -199,7 +199,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			-- S128: the result and the tokens of the match
@@ -247,7 +247,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Brass.Bright,
 			}),
 		},
 	})
@@ -263,14 +263,14 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		Position = UDim2.new(0.5, 0, 0, 160),
 		Size = UDim2.fromOffset(PANEL_WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(returnAt) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 8),
 				PaddingBottom = UDim.new(0, 8),
@@ -293,9 +293,10 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 			}),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				LayoutOrder = 2,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				Variant = "primary",
@@ -314,7 +315,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	local veil = scope:New("Frame")({
 		Name = "ArenaTransfer",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		BackgroundTransparency = 0.1,
 		Active = true,
 		ZIndex = 50,
@@ -334,9 +335,9 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 						if use(transfer) == "home" then "arena.net.returning" else "arena.net.teleporting"
 					)
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Iron.Heading,
 				TextWrapped = true,
 			}),
 		},

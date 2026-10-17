@@ -6,6 +6,7 @@ local SkillData = require("../src/shared/Data/Skills")
 local SkillGeom = require("../src/shared/Logic/SkillGeom")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
+local RankFill = require("./RankFill")
 local T = require("./Test")
 
 local VALID_TYPES = {
@@ -166,8 +167,9 @@ T.describe("S56 ranks from the level and the bar", function()
 		onPath.path = "somePath"
 		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
 		T.expect(Skills.validSlot(1)).toBe(true)
-		T.expect(Skills.validSlot(10)).toBe(true)
-		T.expect(Skills.validSlot(11)).toBe(false)
+		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; rankFor is the limit of a bought rank now
+		T.expect(Skills.validSlot(8)).toBe(true)
+		T.expect(Skills.validSlot(9)).toBe(false)
 		T.expect(Skills.validSlot(1.5)).toBe(false)
 	end)
 
@@ -217,10 +219,10 @@ T.describe("S56 ranks from the level and the bar", function()
 				"focus",
 				"chainLightning",
 				"manaShield",
-				"elementalist",
+				"kindling", -- S140: passives in the old places of Elementalist and Arcane Mind (now path nodes)
 				"frostNova",
 				"meteor",
-				"arcaneMind",
+				"phoenixHeart",
 				"firewall",
 				"evocation",
 				"meteorStorm",
@@ -288,8 +290,8 @@ T.describe("S56 ranks from the level and the bar", function()
 					n += 1
 				end
 			end
-			-- S71: a class with paths has fewer base actives than slots (Cleric 6)
-			T.expect(n).toBe(math.min(10, actives))
+			-- S71: a class with paths has fewer base actives than slots (Cleric 6); S140: the Mage more (8 slots, S137)
+			T.expect(n).toBe(math.min(SkillData.HOTBAR_SLOTS, actives))
 			for _, id in bar do
 				T.expect(id ~= "titansWrath" and id ~= "stormArrow" and id ~= "meteorStorm").toBe(true)
 				T.expect(id ~= "prayer" and id ~= "divineIntervention").toBe(true)
@@ -503,14 +505,14 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 		end
 		T.expect(cleaveLevels).toEqual({ 18, 22, 26, 30, 34, 38, 42, 46, 50, 54 })
 		T.expect(Skills.rankLevel(skill("mightyStrike"), 2)).toBe(5)
-		-- S81: row 7 of the Mage paths (ROZWOJ 12.4 / 12.5)
+		-- S81: row 7 of the Mage paths (ROZWOJ 12.4 / 12.5). S140: Rain of Meteors at 60 (span 35), Evocation at 30
 		T.expect({ Skills.rankLevel(skill("meteorStorm"), 5), Skills.rankLevel(skill("meteorStorm"), 10) }).toEqual({
-			64,
-			84,
+			76,
+			95,
 		})
 		T.expect({ Skills.rankLevel(skill("evocation"), 5), Skills.rankLevel(skill("evocation"), 10) }).toEqual({
-			64,
-			84,
+			46,
+			66,
 		})
 	end)
 
@@ -1110,21 +1112,22 @@ T.describe("S70 new Cleric actives", function()
 		T.expect(Skills.valueAt(diceB, "crit", 10)).toBeNear(9)
 	end)
 
-	-- S71: the paths have their PathDef; a path skill comes with its node (rows 1-2 anywhere, deeper rows in the main
-	-- path with its weapon for use).
+	-- S71: the paths have their PathDef; a path skill comes with its node (S138: every row in any direction, no direction
+	-- weapon).
 	T.it("reachable through their nodes (S71)", function()
 		local c: any = {
 			class = "Cleric",
 			level = 100,
-			path = { main = "fortune", nodes = { fortune_fortuneDice = 1 }, bp = {}, freeUsed = true },
+			path = { nodes = { fortune_fortuneDice = 1 }, bp = {} },
 			hotbar = { ["1"] = "fortuneDice", ["2"] = "sanctuary" },
 			equipment = {},
+			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		T.expect(GamePaths.skillRank(c, "fortuneDice")).toBe(10)
 		T.expect(GamePaths.skillRank(c, "sanctuary")).toBe(0)
 		T.expect(GamePaths.validHotbar(c)).toEqual({ ["1"] = "fortuneDice" })
 		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "relic" })).toBe(true)
-		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "shield" })).toBe(false)
+		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "shield" })).toBe(true) -- S138
 	end)
 end)
 
@@ -1133,10 +1136,11 @@ T.describe("S71 Cleric base and paths", function()
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.byId[id]
 	end
-	-- A level 100 Cleric with these nodes, main path and breakpoint choices; the skill at rank 10 with its node mods.
+	-- A level 100 Cleric with these nodes and breakpoint choices (S138: the second argument names the direction meant,
+	-- no main path); the skill at rank 10 with its node mods.
 	local function eff(
 		id: string,
-		main: string?,
+		_main: string?,
 		nodes: { [string]: number },
 		weapons: any,
 		bp: { [string]: any }?
@@ -1144,9 +1148,10 @@ T.describe("S71 Cleric base and paths", function()
 		local c: any = {
 			class = "Cleric",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp or {}, freeUsed = true },
+			path = { nodes = nodes, bp = bp or {} }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		return Skills.effective(skill(id), 10, bp or {}, GamePaths.skillMods(c, id, weapons), true)
 	end
@@ -1200,9 +1205,10 @@ T.describe("S71 Cleric base and paths", function()
 		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(40) -- S89: 10B +7
 		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(17)
 		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBe(15)
+		-- S138: no direction weapon: a relic keeps the row 3+ nodes too
 		local noWeapon = eff("shieldOfFaith", "healer", nodes, RELIC, bp)
-		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(34)
-		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(14)
+		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(40)
+		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(17)
 		local shatter = { healer_faithShield = 3, healer_bulwark = 3, healer_shatter = 3 }
 		local withBurst, b = eff("shieldOfFaith", "healer", shatter, SCEPTER, bp)
 		T.expect(b.shieldBurst.radius).toBe(10)
@@ -1230,7 +1236,8 @@ T.describe("S71 Cleric base and paths", function()
 	end)
 
 	T.it("Holy Strike with Evil Eye, Ill Omen and Heavy Hand", function()
-		local def = eff("holyStrike", "fortune", { fortune_evilEye = 3 }, RELIC)
+		-- S138: Evil Eye (a team node of row 2) in full from TEAM_FULL_POINTS ranks in Fortune (Smile changes no skill)
+		local def = eff("holyStrike", "fortune", { fortune_evilEye = 3, fortune_smile = 3 }, RELIC)
 		local stun, misfortune
 		for _, effect in def.effects :: any do
 			if effect.kind == "stun" then
@@ -1771,6 +1778,7 @@ T.describe("Warrior S74", function()
 			path = { nodes = {}, bp = {}, freeUsed = false },
 			hotbar = hotbar,
 			equipment = {},
+			ranks = RankFill.auto("Warrior", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		local available = GamePaths.availableSkills(char)
 		for id in NEW do
@@ -1779,7 +1787,7 @@ T.describe("Warrior S74", function()
 		T.expect(GamePaths.validHotbar(char)).toEqual({})
 		for id in NEW do
 			local def = SkillData.get(id) :: any
-			char.path = { main = def.path, nodes = { [`{def.path}_{id}`] = 1 }, bp = {}, freeUsed = true }
+			char.path = { nodes = { [`{def.path}_{id}`] = 1 }, bp = {} }
 			T.expect({ id, table.find(GamePaths.availableSkills(char), id) ~= nil }).toEqual({ id, true })
 		end
 	end)
@@ -1966,19 +1974,21 @@ T.describe("Hunter S77", function()
 			hotbar[tostring(slot)] = id
 		end
 		local hunter: any = { class = "Hunter", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		hunter.ranks = RankFill.auto("Hunter", 100) -- S137
 		local available = GamePaths.availableSkills(hunter)
 		for id in NEW do
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
 			T.expect({ id, GamePaths.skillRank(hunter, id) }).toEqual({ id, 0 })
 		end
 		T.expect((GamePaths.validHotbar(hunter))).toEqual({})
-		hunter.path = { main = "scout", nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {}, freeUsed = true }
+		hunter.path = { nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {} }
 		local withNodes = GamePaths.availableSkills(hunter)
 		T.expect(table.find(withNodes, "falcon") ~= nil).toBe(true)
 		T.expect(table.find(withNodes, "drive") ~= nil).toBe(true)
 		T.expect(table.find(withNodes, "drawBead")).toBeNil()
-		hunter.path.main = "marksman"
-		T.expect(GamePaths.skillRank(hunter, "falcon")).toBe(0) -- row 4 outside the main path
+		-- S138: a row-4 skill with its node in any direction mix
+		hunter.path.nodes.marksman_steadyHand = 3
+		T.expect(GamePaths.skillRank(hunter, "falcon") > 0).toBe(true)
 	end)
 end)
 
@@ -2033,13 +2043,14 @@ T.describe("S78 Hunter base, B options and nodes", function()
 		T.expect(actives).toBe(17)
 	end)
 
-	local function hunter(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+	local function hunter(_main: string, nodes: { [string]: number }, bp: { [string]: string }): any
 		return {
 			class = "Hunter",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			path = { nodes = nodes, bp = bp }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Hunter", 100), -- S137: the old automatic ranks as bought ranks
 		}
 	end
 	local function eff(
@@ -2067,7 +2078,7 @@ T.describe("S78 Hunter base, B options and nodes", function()
 	local CROSSBOW = { main = "crossbow" }
 	local BOW = { main = "bow" }
 
-	T.it("Marksman: Aimed Shot, Heartseeker and the path weapon", function()
+	T.it("Marksman: Aimed Shot, Heartseeker, any weapon (S138)", function()
 		local aimed = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, LONGBOW)
 		T.expect(Skills.valueAt(aimed, "dmg", 10)).toBeNear(271, 1e-9)
 		local _, rhythm = eff("aimedShot", "marksman", { marksman_rhythm = 3 }, {}, LONGBOW)
@@ -2079,9 +2090,9 @@ T.describe("S78 Hunter base, B options and nodes", function()
 		T.expect(tip.finisher.mul).toBe(2)
 		local sniper = eff("heartseeker", "marksman", { marksman_sniper = 3 }, {}, HEAVY)
 		T.expect(sniper.castTime).toBeNear(0.9, 1e-9)
-		-- a bow does not fit the Marksman: rows 3+ (Long Shot, row 5) are off, the B option still works
+		-- S138: no direction weapon: Long Shot (row 5) works with a bow as with a longbow
 		local bow = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, BOW)
-		T.expect(Skills.valueAt(bow, "dmg", 10)).toBeNear(263, 1e-9)
+		T.expect(Skills.valueAt(bow, "dmg", 10)).toBeNear(271, 1e-9)
 	end)
 
 	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
@@ -2271,6 +2282,7 @@ T.describe("Arcane Charges and beam (S80)", function()
 			hotbar[tostring(slot)] = id
 		end
 		local mage: any = { class = "Mage", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		mage.ranks = RankFill.auto("Mage", 100) -- S137
 		local available = GamePaths.availableSkills(mage)
 		for id in NEW do
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
@@ -2278,16 +2290,16 @@ T.describe("Arcane Charges and beam (S80)", function()
 		end
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(false)
 		T.expect((GamePaths.validHotbar(mage))).toEqual({})
-		mage.path = { main = "arcanist", nodes = { arcanist_arcaneDischarge = 1 }, bp = {}, freeUsed = true }
+		mage.path = { nodes = { arcanist_arcaneDischarge = 1 }, bp = {} }
 		local withNode = GamePaths.availableSkills(mage)
 		T.expect(table.find(withNode, "arcaneDischarge") ~= nil).toBe(true)
 		T.expect(table.find(withNode, "arcaneTorrent")).toBeNil()
-		-- Arcane Charges need the node and the Arcanist's weapon (S80 chargesEnabled)
+		-- Arcane Discharge needs its node (S138: any Mage weapon, any direction mix)
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(true)
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "wand", offhand = "tome" }))).toBe(true)
-		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "staff" }))).toBe(false)
-		mage.path.main = "destroyer"
-		T.expect(GamePaths.skillRank(mage, "arcaneDischarge")).toBe(0) -- row 4 outside the main path
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "staff" }))).toBe(true)
+		mage.path.nodes.destroyer_trace = 3
+		T.expect(GamePaths.skillRank(mage, "arcaneDischarge") > 0).toBe(true)
 	end)
 end)
 
@@ -2295,7 +2307,9 @@ end)
 T.describe("S81 Mage base, B options and nodes", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 
-	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 10 path skills at their row level; B on every active", function()
+	-- S140 (DESIGN-18 §6.1): the fire pool and the common skills joined the base; 4 skills stay on the directions.
+	-- S141: the ice pool (Ice Shard 1, Frost Nova 6, nine new skills at the end of the list)
+	T.it("the base (S141), 4 path skills at their row level; B on every active", function()
 		local base, onPath = {}, {}
 		local actives, passives = 0, 0
 		for _, def in SkillData.byClass.Mage do
@@ -2317,46 +2331,59 @@ T.describe("S81 Mage base, B options and nodes", function()
 		T.expect(base).toEqual({
 			"firebolt:1",
 			"fireball:3",
-			"iceShard:6",
+			"iceShard:1",
 			"chainLightning:10",
-			"blink:14",
-			"frostNova:18",
-			"meteor:30",
+			"blink:4",
+			"frostNova:6",
+			"meteor:26",
 			"firewall:45",
+			"flameWave:6",
+			"emberShield:10",
+			"pyroblast:15",
+			"kindling:20",
+			"combustion:33",
+			"immolate:40",
+			"phoenixHeart:50",
+			"meteorStorm:60",
+			"manaShield:12",
+			"evocation:30",
+			"focus:45",
+			"hailstorm:3",
+			"iceBarrier:10",
+			"glacialSpike:15",
+			"wintersGrip:20",
+			"frozenOrb:26",
+			"deepFreeze:33",
+			"shatter:40",
+			"iceBlood:50",
+			"blizzard:60",
 		})
-		T.expect(passives).toBe(0)
+		T.expect(passives).toBe(5)
 		T.expect(onPath).toEqual({
-			elementalist = "destroyer:10",
 			elementalVortex = "destroyer:26",
-			meteorStorm = "destroyer:48",
 			cataclysm = "destroyer:60",
-			focus = "destroyer:80",
-			manaShield = "arcanist:10",
 			arcaneDischarge = "arcanist:26",
-			evocation = "arcanist:48",
 			arcaneTorrent = "arcanist:60",
-			arcaneMind = "arcanist:80",
 		})
-		T.expect(actives).toBe(15)
+		T.expect(actives).toBe(27)
 		-- changed data (ROZWOJ 12.4, 12.5, 15.5.4)
 		local function v(id: string, field: string, rank: number): number
 			return Skills.valueAt(SkillData.get(id) :: any, field, rank)
 		end
 		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 24, 24 })
-		T.expect({ v("arcaneMind", "crit", 1), v("arcaneMind", "crit", 5) }).toEqual({ 0.35, 1.05 })
-		T.expect({ v("arcaneMind", "critDmg", 1), v("arcaneMind", "critDmg", 5) }).toEqual({ 1, 2.8 })
 		T.expect({ v("focus", "reserve", 1), v("focus", "reserve", 5) }).toEqual({ 3.1, 15.4 })
 		T.expect((SkillData.get("focus") :: any).passive).toEqual({ pct = { manaReserve = "reserve" } })
 		T.expect((SkillData.get("evocation") :: any).cooldown).toBe(120)
 	end)
 
-	local function mage(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+	local function mage(_main: string, nodes: { [string]: number }, bp: { [string]: string }): any
 		return {
 			class = "Mage",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			path = { nodes = nodes, bp = bp }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Mage", 100), -- S137: the old automatic ranks as bought ranks
 		}
 	end
 	local function eff(
@@ -2375,14 +2402,14 @@ T.describe("S81 Mage base, B options and nodes", function()
 
 	T.it("Meteor 5B + 10B and Magic Bolt 5B / 10B", function()
 		local meteor = eff("meteor", "destroyer", {}, { ["meteor:5"] = "b", ["meteor:10"] = "b" }, STAFF)
-		T.expect(Skills.valueAt(meteor, "dmg", 10)).toBeNear(242, 1e-9)
+		T.expect(Skills.valueAt(meteor, "dmg", 10)).toBeNear(239, 1e-9) -- S140: 5B +20 (was +23)
 		local bolt = eff("firebolt", "destroyer", {}, { ["firebolt:5"] = "b", ["firebolt:10"] = "b" }, STAFF)
 		T.expect(bolt.hits).toBe(2)
 		T.expect(Skills.valueAt(bolt, "dmg", 10)).toBeNear(151.7, 1e-9)
 		T.expect(Skills.cooldown(bolt, 10)).toBeNear(2.2, 1e-9)
 	end)
 
-	T.it("Arcane Discharge with Full Discharge, Elemental Vortex with Raging Vortex and the path weapon", function()
+	T.it("Arcane Discharge with Full Discharge, Elemental Vortex with Raging Vortex, any weapon (S138)", function()
 		local discharge = eff(
 			"arcaneDischarge",
 			"arcanist",
@@ -2395,26 +2422,25 @@ T.describe("S81 Mage base, B options and nodes", function()
 		local bp = { ["elementalVortex:5"] = "b" }
 		local vortex = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "orb" })
 		T.expect(Skills.valueAt(vortex, "dmg", 10)).toBeNear(10.97, 1e-9)
-		-- a tome in the Destroyer's off-hand: rows 4 and 9 need the path weapon
-		T.expect(
-			GamePaths.skillMods(mage("destroyer", nodes, bp), "elementalVortex", { main = "wand", offhand = "tome" })
-		)
-			.toEqual({})
+		-- S138: a tome in the Destroyer's off-hand: no direction weapon, rows 4 and 9 work as with the orb
 		local plain = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "tome" })
-		T.expect(Skills.valueAt(plain, "dmg", 10)).toBeNear(9.5, 1e-9)
+		T.expect(Skills.valueAt(plain, "dmg", 10)).toBeNear(10.97, 1e-9)
 	end)
 
 	T.it(
 		"node behaviours compose: Storm's Wrath, Swift Cataclysm, Empowering Invocation, Archmage, the Torrent",
 		function()
+			-- S140: Storm's Wrath and Elemental Echo shape the Vortex (Wrath of Elements left for the fire pool)
 			local _, wrath = eff(
-				"meteorStorm",
+				"elementalVortex",
 				"destroyer",
-				{ destroyer_meteorStorm = 1, destroyer_wrath = 3 },
+				{ destroyer_elementalVortex = 1, destroyer_wrath = 3, destroyer_echo = 1 },
 				{},
 				STAFF
 			)
-			T.expect(wrath.cdrPerTarget).toEqual({ sec = 3.44, max = 5 })
+			T.expect(wrath.cdrPerTarget.max).toBe(5)
+			T.expect(wrath.cdrPerTarget.sec).toBeNear(0.9, 1e-9)
+			T.expect(wrath.echo).toEqual({ delay = 0.4, pct = 100 })
 			local cataclysm = eff(
 				"cataclysm",
 				"destroyer",
@@ -2424,7 +2450,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 			)
 			T.expect(Skills.cooldown(cataclysm, 10)).toBeNear(24.42, 1e-9)
 			T.expect(cataclysm.hits).toBe(7)
-			local nodes = { arcanist_evocation = 1, arcanist_invocation = 3, arcanist_archmage = 3 }
+			local nodes = { arcanist_quickening = 1, arcanist_invocation = 3, arcanist_archmage = 3 }
 			local evocation, behaviour = eff("evocation", "arcanist", nodes, { ["evocation:5"] = "a" }, RUNESTAFF)
 			T.expect(behaviour.empower).toEqual({ pct = 11.7, uses = 3 })
 			T.expect(evocation.duration).toBeNear(1.69, 1e-9)

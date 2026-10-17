@@ -37,18 +37,18 @@ local function SprintButton(scope: Scope, props: Props): Instance
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if use(props.Sprinting) then Theme.Colors.Accent else Theme.Colors.Panel
+			return if use(props.Sprinting) then Theme.Iron.Accent else Theme.Iron.Surface
 		end),
 		BackgroundTransparency = 0.15,
 		Text = Text.T(scope, "hud.sprint"),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = scope:Computed(function(use): number
-			return if use(artShown) then 12 else Theme.TextSize.Small
+			return if use(artShown) then Theme.TextSize.Caption else Theme.TextSize.Small
 		end),
 		TextYAlignment = scope:Computed(function(use): Enum.TextYAlignment
 			return if use(artShown) then Enum.TextYAlignment.Bottom else Enum.TextYAlignment.Center
 		end),
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
 			props.OnToggle()
@@ -63,7 +63,7 @@ local function SprintButton(scope: Scope, props: Props): Instance
 			}),
 			ArtIcon.Image(scope, {
 				Key = ART,
-				Tint = Theme.Colors.Text,
+				Tint = Theme.Iron.Text,
 				Size = UDim2.fromScale(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.4),
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -71,7 +71,7 @@ local function SprintButton(scope: Scope, props: Props): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thin,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Brass.Line,
 			}),
 		},
 	})

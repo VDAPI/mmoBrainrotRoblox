@@ -1,6 +1,6 @@
 --!strict
 -- Text button with variants (primary / secondary / danger / ghost), hover/press/disabled states and a
--- click sound. Works with mouse and touch (Activated).
+-- click sound. Works with mouse and touch (Activated). S135: colours from the roles of its `Surface`.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -26,52 +26,73 @@ export type Props = {
 	TextSize: UsedAs<number>?,
 	Visible: UsedAs<boolean>?,
 	Name: string?,
+	Surface: Theme.SurfaceName?, -- S135: the background it stands on (default "paper"; HUD and overlays "iron")
 }
 
-type Palette = { base: Color3, hover: Color3, pressed: Color3, text: Color3, stroke: Color3, strokeT: number }
+type Palette = {
+	base: Color3,
+	hover: Color3,
+	pressed: Color3,
+	text: Color3,
+	stroke: Color3,
+	strokeT: number,
+	clear: boolean?, -- ghost: no background until hovered
+}
 
-local PALETTES: { [string]: Palette } = {
-	primary = {
-		base = Theme.Colors.Accent,
-		hover = Theme.Colors.AccentHover,
-		pressed = Theme.Colors.AccentPressed,
-		text = Color3.new(1, 1, 1),
-		stroke = Theme.Colors.Gold,
-		strokeT = 0.35,
-	},
-	secondary = {
-		base = Theme.Colors.PanelRaised,
-		hover = Theme.Colors.PanelHover,
-		pressed = Theme.Colors.Panel,
-		text = Theme.Colors.Text,
-		stroke = Theme.Colors.Gold,
-		strokeT = 0.2,
-	},
-	danger = {
-		base = Theme.Colors.Danger,
-		hover = Theme.Colors.DangerHover,
-		pressed = Theme.Colors.Danger:Lerp(Color3.new(0, 0, 0), 0.25),
-		text = Color3.new(1, 1, 1),
-		stroke = Theme.Colors.Gold,
-		strokeT = 0.5,
-	},
-	ghost = {
-		base = Theme.Colors.Panel,
-		hover = Theme.Colors.PanelRaised,
-		pressed = Theme.Colors.Panel,
-		text = Theme.Colors.TextMuted,
-		stroke = Theme.Colors.Border,
-		strokeT = 0,
-	},
+-- S135: palettes per surface from the roles (Data/UiPalette); hover / pressed are the base mixed towards black.
+local function palettes(r: Theme.Roles, stroke: Color3): { [string]: Palette }
+	return {
+		primary = {
+			base = r.Accent,
+			hover = Theme.mix(r.Accent, Theme.Shade, 0.12),
+			pressed = Theme.mix(r.Accent, Theme.Shade, 0.25),
+			text = r.AccentText,
+			stroke = Theme.Brass.Line,
+			strokeT = 0,
+		},
+		secondary = {
+			base = r.Raised,
+			hover = r.Hover,
+			pressed = r.Selected,
+			text = r.Text,
+			stroke = stroke,
+			strokeT = 0,
+		},
+		danger = {
+			base = r.Danger,
+			hover = Theme.mix(r.Danger, Theme.Shade, 0.12),
+			pressed = Theme.mix(r.Danger, Theme.Shade, 0.25),
+			text = r.DangerText,
+			stroke = stroke,
+			strokeT = 0.3,
+		},
+		ghost = {
+			base = r.Surface,
+			hover = r.Hover,
+			pressed = r.Selected,
+			text = r.Link,
+			stroke = stroke,
+			strokeT = 1,
+			clear = true,
+		},
+	}
+end
+
+local PALETTES: { [string]: { [string]: Palette } } = {
+	paper = palettes(Theme.Paper, Theme.Paper.Border),
+	iron = palettes(Theme.Iron, Theme.Iron.Border),
 }
 
 local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local hovered = scope:Value(false)
 	local pressed = scope:Value(false)
 
+	local surface = props.Surface or "paper"
+	local set = PALETTES[surface] or PALETTES.paper
+	local roles = Theme.surface(surface)
 	local palette = scope:Computed(function(use): Palette
 		local variant: string = use(props.Variant) or "secondary"
-		return PALETTES[variant] or PALETTES.secondary
+		return set[variant] or set.secondary
 	end)
 	local disabled = scope:Computed(function(use): boolean
 		return use(props.Disabled) == true
@@ -80,7 +101,7 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 	local background = scope:Computed(function(use): Color3
 		local p = use(palette)
 		if use(disabled) then
-			return p.base:Lerp(Theme.Colors.Panel, 0.6)
+			return Theme.mix(p.base, roles.Surface, 0.6)
 		elseif use(pressed) then
 			return p.pressed
 		elseif use(hovered) then
@@ -98,12 +119,15 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		LayoutOrder = props.LayoutOrder,
 		Visible = props.Visible,
 		BackgroundColor3 = scope:Tween(background, Theme.Anim.Fast),
+		BackgroundTransparency = scope:Computed(function(use): number
+			return if use(palette).clear and not (use(hovered) and not use(disabled)) then 1 else 0
+		end),
 		Text = props.Text,
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = props.TextSize or Theme.TextSize.Body,
 		TextColor3 = scope:Computed(function(use): Color3
 			local color = use(palette).text
-			return if use(disabled) then color:Lerp(Theme.Colors.TextMuted, 0.6) else color
+			return if use(disabled) then Theme.mix(color, roles.TextMuted, 0.6) else color
 		end),
 		TextWrapped = true,
 
@@ -144,7 +168,7 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 			}),
 			scope:New("UIGradient")({
 				Rotation = 90,
-				Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(205, 205, 205)),
+				Color = ColorSequence.new(Theme.Plain, Theme.mix(Theme.Plain, Theme.Shade, 0.08)),
 			}),
 			scope:New("UIPadding")({
 				PaddingLeft = UDim.new(0, Theme.Padding.Medium),

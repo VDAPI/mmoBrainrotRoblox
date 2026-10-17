@@ -80,14 +80,14 @@ local function Perf(s: Dev.Scope, controllers: { [string]: any }): Instance
 			LayoutOrder = order,
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
-			BackgroundColor3 = Theme.Colors.Background,
+			BackgroundColor3 = Theme.Iron.Sunken,
 			Text = s:Computed(function(use): string
 				return table.concat(use(value), "\n")
 			end),
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
-			TextSize = 14,
-			TextColor3 = Theme.Colors.Text,
+			TextSize = Theme.TextSize.Caption,
+			TextColor3 = Theme.Iron.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 			[Fusion.Children] = {

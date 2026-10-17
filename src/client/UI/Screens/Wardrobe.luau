@@ -63,6 +63,7 @@ local Toast = require(script.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 local WardrobeStart = require(script.Parent.Parent.WardrobeStart)
 local WeeklyClock = require(script.Parent.Parent.WeeklyClock)
 local WeeklyOffer = require(ReplicatedStorage.Shared.Logic.WeeklyOffer)
@@ -249,13 +250,13 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	-- Preview ------------------------------------------------------------------------------------
 	local viewport = scope:New("ViewportFrame")({
 		Size = UDim2.fromOffset(PREVIEW, PREVIEW_HEIGHT),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		Ambient = Color3.fromRGB(160, 150, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
 		LightDirection = Vector3.new(-1, -1, -1),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 		},
 	}) :: ViewportFrame
 	local camera = Instance.new("Camera")
@@ -464,7 +465,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					end)
 				)
 			end
-			local color = if classLook then classLook.outfit.colors.main else "#808080"
+			local color = if classLook then classLook.outfit.colors.main else UiPalette.neutral.swatch
 			table.insert(
 				list,
 				s:New("TextButton")({
@@ -472,9 +473,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					Size = UDim2.new(1, 0, 0, 64),
 					AutoButtonColor = false,
 					Text = "",
-					BackgroundColor3 = if use(tried) == CLASS_DEFAULT
-						then Theme.Colors.PanelHover
-						else Theme.Colors.PanelRaised,
+					BackgroundColor3 = if use(tried) == CLASS_DEFAULT then Theme.Paper.Hover else Theme.Paper.Raised,
 					BackgroundTransparency = 0.2,
 					[OnEvent("Activated")] = function()
 						Sounds.play("click")
@@ -485,11 +484,11 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(8, 8),
 							Size = UDim2.fromOffset(48, 48),
-							BackgroundColor3 = Color3.fromHex(color),
+							BackgroundColor3 = Theme.tint(color),
 							Text = (Classes.get(shownClass) or { icon = "" } :: any).icon,
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
-							TextColor3 = Color3.new(1, 1, 1),
+							TextColor3 = Theme.Plain,
 							TextStrokeTransparency = 0.4,
 							[Children] = { s:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 						}),
@@ -503,7 +502,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 							)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if isOn then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextColor3 = if isOn then Theme.Paper.Heading else Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -514,7 +513,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 							Text = `{Text.get(use, "wardrobe.classDefault")} · {Text.get(use, "premium.owned")}`,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Success,
+							TextColor3 = Theme.Paper.Success,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
@@ -643,9 +642,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					Size = UDim2.new(1, 0, 0, 64),
 					AutoButtonColor = false,
 					Text = "",
-					BackgroundColor3 = if use(tried) == def.id
-						then Theme.Colors.PanelHover
-						else Theme.Colors.PanelRaised,
+					BackgroundColor3 = if use(tried) == def.id then Theme.Paper.Hover else Theme.Paper.Raised,
 					BackgroundTransparency = 0.2,
 					[OnEvent("Activated")] = function()
 						Sounds.play("click")
@@ -656,11 +653,11 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(8, 8),
 							Size = UDim2.fromOffset(48, 48),
-							BackgroundColor3 = Color3.fromHex(def.color),
+							BackgroundColor3 = Theme.tint(def.color),
 							Text = if UiArtState.ready(use, UiArt.cosmetic(def.id)) then "" else def.icon,
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
-							TextColor3 = Color3.new(1, 1, 1),
+							TextColor3 = Theme.Plain,
 							TextStrokeTransparency = 0.4,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -675,7 +672,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 							Text = `{if isOn then "✔ " else ""}{Text.get(use, def.nameKey)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if isOn then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextColor3 = if isOn then Theme.Paper.Heading else Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -688,9 +685,9 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = if isOwned
-								then Theme.Colors.Success
-								elseif earned then Theme.Colors.TextMuted
-								else Theme.Colors.Accent,
+								then Theme.Paper.Success
+								elseif earned then Theme.Paper.TextMuted
+								else Theme.Paper.Link,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
@@ -749,7 +746,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			LayoutOrder = i,
 			Size = UDim2.fromOffset(OUTFIT_TILE, OUTFIT_TILE),
 			AutoButtonColor = false,
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = Theme.Paper.Raised,
 			BackgroundTransparency = scope:Computed(function(use): number
 				return if outfitAt(use(outfits), i) == nil or use(locked) then 0.55 else 0.1
 			end),
@@ -759,7 +756,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Body,
 			TextColor3 = scope:Computed(function(use): Color3
-				return if use(locked) then Theme.Colors.TextMuted else Theme.Colors.Text
+				return if use(locked) then Theme.Paper.TextMuted else Theme.Paper.Text
 			end),
 			[OnEvent("Activated")] = function()
 				Sounds.play("click")
@@ -780,8 +777,8 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 					Color = scope:Computed(function(use): Color3
 						return if use(selectedOutfit) == i and not use(locked)
-							then Theme.Colors.GoldBright
-							else Theme.Colors.Border
+							then Theme.Brass.Frame
+							else Theme.Paper.Rule
 					end),
 					Thickness = scope:Computed(function(use): number
 						return if use(selectedOutfit) == i and not use(locked)
@@ -800,7 +797,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					BackgroundColor3 = scope:Computed(function(use): Color3
 						local outfit = outfitAt(use(outfits), i)
 						local def = outfit and outfit.equipped.outfit and Cosmetics.get(outfit.equipped.outfit)
-						return if def then Color3.fromHex(def.color) else Theme.Colors.GoldDim
+						return if def then Theme.tint(def.color) else Theme.Paper.Label
 					end),
 					[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }) },
 				}),
@@ -839,7 +836,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				Text = Text.T(scope, "wardrobe.outfits"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
@@ -967,7 +964,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					local def = shownOf(use, "frame")
 					return if def then def.id else nil
 				end),
-				ClassColor = Theme.Colors.Gold,
+				ClassColor = Theme.Paper.Heading,
 				Visible = scope:Computed(function(use): boolean
 					return use(kind) == "frame"
 				end),
@@ -980,8 +977,8 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						return if class then class.icon else ""
 					end),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 56,
-					TextColor3 = Theme.Colors.Gold,
+					TextSize = Theme.TextSize.Hero,
+					TextColor3 = Theme.Paper.Heading,
 				}),
 			}),
 			-- the title over the character (nameplate style)
@@ -1002,7 +999,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				TextColor3 = scope:Computed(function(use): Color3
 					local def = shownOf(use, "title")
 					local title = def and def.title and TitleData.get(def.title)
-					return if title then Color3.fromHex(title.color) else Theme.Colors.Text
+					return if title then Theme.readable(title.color, "paper") else Theme.Paper.Text
 				end),
 				TextStrokeTransparency = 0.4,
 				FontFace = Theme.Fonts.BodyBold,
@@ -1014,7 +1011,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -10),
 				Size = UDim2.new(1, -20, 0, 92),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				BackgroundTransparency = 0.25,
 				Visible = scope:Computed(function(use): boolean
 					return use(kind) == "chatframe"
@@ -1033,12 +1030,12 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 							if not decor then
 								return `<b>{name}:</b> {sample}`
 							end
-							local c = Color3.fromHex(decor.color):ToHex()
+							local c = string.sub(Theme.readableHex(decor.color, "paper"), 2)
 							return `<font color="#{c}">{decor.left}</font><b>{name}</b><font color="#{c}">{decor.right}</font><b>:</b> {sample}`
 						end),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -1047,7 +1044,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						Size = UDim2.new(1, -16, 0, 48),
 						BackgroundColor3 = scope:Computed(function(use): Color3
 							local bubble = CosmeticRules.bubble(shownOf(use, "chatframe"))
-							return if bubble then Color3.fromHex(bubble.bg) else Color3.fromRGB(250, 250, 250)
+							return if bubble then Theme.tint(bubble.bg) else Theme.Neutral.BubbleBg
 						end),
 						Text = Text.T(scope, "wardrobe.chat.sample"),
 						TextWrapped = true,
@@ -1055,7 +1052,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = scope:Computed(function(use): Color3
 							local bubble = CosmeticRules.bubble(shownOf(use, "chatframe"))
-							return if bubble then Color3.fromHex(bubble.text) else Color3.fromRGB(30, 30, 30)
+							return if bubble then Theme.tint(bubble.text) else Theme.Neutral.BubbleText
 						end),
 						[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }) },
 					}),
@@ -1089,7 +1086,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -10),
 				Size = UDim2.new(1, -20, 0, 24),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				BackgroundTransparency = 0.35,
 				Visible = scope:Computed(function(use): boolean
 					return use(group) == "look" and use(kind) ~= "dye"
@@ -1101,7 +1098,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 			}),
 			-- a dye needs a worn (or tried) outfit; emotes and level-up effects play in the world
@@ -1110,7 +1107,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 1, -10),
 				Size = UDim2.new(1, -20, 0, 44),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				BackgroundTransparency = 0.25,
 				Visible = scope:Computed(function(use): boolean
 					local k = use(kind)
@@ -1129,7 +1126,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 			}),
 		},
@@ -1156,7 +1153,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		-- S97: an extra line on the mount skin tab (the look works on every mount)
 		scope:New("TextLabel")({
@@ -1170,7 +1167,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			Position = UDim2.fromOffset(PREVIEW + 16, 0),
@@ -1188,7 +1185,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Accent,
+					TextColor3 = Theme.Paper.Link,
 					TextXAlignment = Enum.TextXAlignment.Right,
 				}),
 				-- S120: "Top up" opens the Dragon Shop on the currency tab (44 px high on a phone).

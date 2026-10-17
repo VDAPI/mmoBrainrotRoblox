@@ -4,6 +4,8 @@
 -- breakpoints with option B (A also without a choice, so the "!" goes out) and the action bar (Buy, Refund, To bar,
 -- Preview / Details), every target at least 44 px. Missing actions are not shown; disabled ones have their reason in
 -- the details.
+-- S139: the sections of the window 2.0 (Details) and "+ rank" / "- rank" / "To bar"; while ranks are reserved the
+-- sheet leaves the bottom of the screen to the pinned "Cancel" / "Confirm" bar of the window (Sheet.reserveHeight).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -30,6 +32,14 @@ local GAP = 4
 
 local Sheet = {}
 
+-- The pinned reservation bar under the sheet (SkillsWindow init, touch).
+Sheet.RESERVE_BAR = Theme.Size.MinTouch + 8
+
+-- The height the reservation bar takes (0 while nothing is reserved on a pool tab).
+function Sheet.reserveHeight(use: Fusion.Use, ctx: Context.Ctx): number
+	return if use(ctx.onPools) and next(use(ctx.reserve)) ~= nil then Sheet.RESERVE_BAR else 0
+end
+
 function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
 	local touchTarget = Theme.Size.MinTouch
 	local skillId = scope:Computed(function(use): string?
@@ -45,7 +55,8 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 		if not skill or not character then
 			return {}
 		end
-		local rank = Paths.skillRank(character, skill.id)
+		-- the rank of the server's choice (any pool of the class), as the tile's "!" and the PC cards
+		local rank = Paths.bpRank(character, skill.id)
 		local choices = if character.path then character.path.bp else nil
 		local out = {}
 		for _, card in SkillInfo.breakpointCards(use, skill, rank, choices) do
@@ -93,7 +104,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 					Text = `{card.at}:`,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = if card.reached then Theme.Colors.Gold else Theme.Colors.TextMuted,
+					TextColor3 = if card.reached then Theme.Paper.Heading else Theme.Paper.TextMuted,
 				})
 			)
 			for _, option in card.options do
@@ -130,8 +141,8 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 					LayoutOrder = i,
 					Size = UDim2.new(1 / math.max(1, count), -GAP, 0, touchTarget),
 					TextSize = Theme.TextSize.Small,
-					Variant = if spec.key == "paths.node.refund" then "secondary" else "primary",
-					Text = Text.get(use, spec.key),
+					Variant = if spec.secondary then "secondary" else "primary",
+					Text = spec.text,
 					Disabled = not spec.enabled,
 					OnClick = spec.run,
 				})
@@ -165,9 +176,11 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 
 	return scope:New("TextButton")({
 		Name = "Sheet",
-		Size = UDim2.fromScale(1, 1),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 1, -Sheet.reserveHeight(use, ctx))
+		end),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		Text = "",
 		ZIndex = 10,
 		Visible = ctx.sheet,
@@ -195,9 +208,9 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 						Size = UDim2.new(1, -(touchTarget + 76), 1, 0),
 						BackgroundTransparency = 1,
 						Text = title,
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -215,7 +228,7 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Label,
 				Visible = scope:Computed(function(use): boolean
 					return not use(ctx.previewOpen)
 				end),

@@ -148,7 +148,7 @@ local function row(
 		order = order,
 		glyph = def.icon,
 		art = UiArt.cosmetic(def.id),
-		tileColor = Color3.fromHex(def.color),
+		tileColor = Theme.tint(def.color),
 		title = Text.T(scope, def.nameKey),
 		subtitle = if price < def.price
 			then scope:Computed(function(use): string
@@ -188,13 +188,13 @@ local function offerCard(
 	local discounted = price < def.price
 	return scope:New("Frame")({
 		LayoutOrder = order,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = if discounted then Theme.Colors.GoldBright else Theme.Colors.Border,
+				Color = if discounted then Theme.Brass.Frame else Theme.Paper.Rule,
 				Thickness = if discounted then Theme.Stroke.Normal else Theme.Stroke.Thin,
 			}),
 			scope:New("TextLabel")({
@@ -202,11 +202,11 @@ local function offerCard(
 				AnchorPoint = Vector2.new(0.5, 0),
 				Position = UDim2.new(0.5, 0, 0, 8),
 				Size = UDim2.fromOffset(52, 52),
-				BackgroundColor3 = Color3.fromHex(def.color),
+				BackgroundColor3 = Theme.tint(def.color),
 				Text = def.icon,
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Color3.new(1, 1, 1),
+				TextColor3 = Theme.Plain,
 				TextStrokeTransparency = 0.4,
 				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 			}),
@@ -216,13 +216,13 @@ local function offerCard(
 				Position = UDim2.new(1, -6, 0, 6),
 				Size = UDim2.fromOffset(56, 22),
 				Visible = discounted,
-				BackgroundColor3 = Theme.Colors.Accent,
+				BackgroundColor3 = Theme.Paper.Accent,
 				Text = Text.T(scope, "premium.weekly.discount", {
 					pct = math.floor(CosmeticData.weekly.discount * 100 + 0.5),
 				}),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Background,
+				TextColor3 = Theme.Paper.AccentText,
 				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 			}),
 			scope:New("TextLabel")({
@@ -232,7 +232,7 @@ local function offerCard(
 				Text = Text.T(scope, def.nameKey),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			scope:New("TextLabel")({
@@ -244,7 +244,7 @@ local function offerCard(
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			scope:New("TextLabel")({
@@ -255,7 +255,7 @@ local function offerCard(
 				Text = if isOwned then Text.T(scope, "premium.owned") else priceText(def, price),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if isOwned then Theme.Colors.Success else Theme.Colors.Accent,
+				TextColor3 = if isOwned then Theme.Paper.Success else Theme.Paper.Link,
 			}),
 			Button(scope, {
 				AnchorPoint = Vector2.new(0.5, 1),
@@ -317,7 +317,7 @@ local function weekly(scope: Scope, ctx: Cards.Ctx, shards: Fusion.Value<any>, o
 			Text = countdown,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("Frame")({

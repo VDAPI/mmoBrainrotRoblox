@@ -60,7 +60,7 @@ local function envelope(): Instance
 		Position = UDim2.new(0.5, -230, 0, Theme.Padding.Large), -- left of the target frame
 		Size = UDim2.fromOffset(84, 52),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = 0.15,
 		Visible = scope:Computed(function(use): boolean
 			return use(count) > 0 and use(State.Value({ "session", "phase" })) == "playing"
@@ -74,13 +74,13 @@ local function envelope(): Instance
 		end),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Large,
-		TextColor3 = Theme.Colors.GoldBright,
+		TextColor3 = Theme.Brass.Bright,
 		[OnEvent("Activated")] = function()
 			WindowManager.Toggle("mail")
 		end,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
 			scope:New("UIPadding")({
 				PaddingRight = scope:Computed(function(use): UDim
 					return if use(mailShown) then UDim.new(0, 14) else UDim.new()
@@ -88,7 +88,7 @@ local function envelope(): Instance
 			}),
 			ArtIcon.Image(scope, {
 				Key = MAIL_ART,
-				Tint = Theme.Colors.GoldBright,
+				Tint = Theme.Brass.Bright,
 				Size = UDim2.fromOffset(34, 34),
 				Position = UDim2.new(0, 10, 0.5, 0),
 				AnchorPoint = Vector2.new(0, 0.5),

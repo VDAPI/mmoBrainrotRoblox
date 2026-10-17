@@ -88,6 +88,15 @@ local skills: { [string]: Timing } = {
 		lock = true,
 	},
 	blink = { hitDelay = 0.1, hit = 0.1, release = false, land = false, loopFrom = false, loopTo = false, lock = false },
+	blizzard = {
+		hitDelay = 0.55,
+		hit = 0.55,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = true,
+	},
 	bloodlust = {
 		hitDelay = 0.4,
 		hit = 0.4,
@@ -169,9 +178,27 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	combustion = {
+		hitDelay = 0.26,
+		hit = 0.26,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 	crushingBlow = {
 		hitDelay = 0.4,
 		hit = 0.4,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	deepFreeze = {
+		hitDelay = 0.34,
+		hit = 0.34,
 		release = false,
 		land = false,
 		loopFrom = false,
@@ -241,6 +268,15 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	emberShield = {
+		hitDelay = 0.28,
+		hit = 0.28,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 	evocation = { hitDelay = 0.4, hit = 0.4, release = false, land = false, loopFrom = 0.4, loopTo = 2, lock = true },
 	falcon = {
 		hitDelay = 0.35,
@@ -278,6 +314,15 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	flameWave = {
+		hitDelay = 0.26,
+		hit = 0.26,
+		release = 0.26,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 	fortuneDice = {
 		hitDelay = 0.25,
 		hit = false,
@@ -305,6 +350,24 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = true,
 	},
+	frozenOrb = {
+		hitDelay = 0.38,
+		hit = 0.38,
+		release = 0.38,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	glacialSpike = {
+		hitDelay = 0,
+		hit = false,
+		release = false,
+		land = false,
+		loopFrom = 0.18,
+		loopTo = 0.26,
+		lock = false,
+	},
 	guardianAngel = {
 		hitDelay = 0.45,
 		hit = 0.45,
@@ -313,6 +376,15 @@ local skills: { [string]: Timing } = {
 		loopFrom = false,
 		loopTo = false,
 		lock = true,
+	},
+	hailstorm = {
+		hitDelay = 0.42,
+		hit = 0.42,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
 	},
 	hammerOfHeaven = {
 		hitDelay = 0.5,
@@ -359,10 +431,28 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	iceBarrier = {
+		hitDelay = 0.28,
+		hit = 0.28,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 	iceShard = {
 		hitDelay = 0.26,
 		hit = false,
 		release = 0.26,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	immolate = {
+		hitDelay = 0.16,
+		hit = 0.16,
+		release = false,
 		land = false,
 		loopFrom = false,
 		loopTo = false,
@@ -442,6 +532,15 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	pyroblast = {
+		hitDelay = 0,
+		hit = false,
+		release = false,
+		land = false,
+		loopFrom = 0.2,
+		loopTo = 0.28,
+		lock = false,
+	},
 	radiance = {
 		hitDelay = 0.3,
 		hit = 0.3,
@@ -481,6 +580,15 @@ local skills: { [string]: Timing } = {
 	sanctuary = {
 		hitDelay = 0.4,
 		hit = 0.4,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	shatter = {
+		hitDelay = 0.26,
+		hit = 0.26,
 		release = false,
 		land = false,
 		loopFrom = false,
@@ -589,6 +697,9 @@ local circleTarget: { [string]: CircleTarget } = {
 	hammerOfHeaven = { projectile = false, waves = false },
 	meteor = { projectile = false, waves = false },
 	meteorStorm = { projectile = false, waves = false },
+	hailstorm = { projectile = false, waves = true }, -- S141
+	frozenOrb = { projectile = false, waves = true }, -- S141
+	blizzard = { projectile = false, waves = true }, -- S141
 }
 
 return { skills = skills, circleTarget = circleTarget }

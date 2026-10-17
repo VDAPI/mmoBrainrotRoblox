@@ -99,9 +99,9 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			local v = use(visual)
 			if v and v.def then
-				return Theme.Colors.Background
+				return Theme.Iron.Sunken
 			end
-			return if v and v.color then Color3.fromHex(v.color) else Theme.Colors.Panel
+			return if v and v.color then Color3.fromHex(v.color) else Theme.Iron.Surface
 		end),
 		BackgroundTransparency = 0.3,
 		-- Items draw their icon (atlas or glyph tile) on top; skills keep the glyph text (S119: their picture once
@@ -112,11 +112,11 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 		end),
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		ZIndex = 300,
 		[Fusion.Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 2 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 2 }),
 			ItemIcon(scope, {
 				Def = itemDef,
 				Element = scope:Computed(function(use): string?

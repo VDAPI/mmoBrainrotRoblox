@@ -17,10 +17,14 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Drop: FightView.DropView,
 	LayoutOrder: number?,
+	Surface: Theme.SurfaceName?, -- S136: "paper" (default) or "iron"
 }
 
 local function FightLoot(scope: Scope, props: Props): Instance?
 	local drop = props.Drop
+	local surface = props.Surface or "paper"
+	local roles = Theme.surface(surface)
+	local titleColor = if surface == "iron" then Theme.Brass.Bright else roles.Heading
 	if #drop.mine == 0 and #drop.party == 0 and drop.more <= 0 then
 		return nil
 	end
@@ -40,11 +44,11 @@ local function FightLoot(scope: Scope, props: Props): Instance?
 	end
 	local lines: { Instance } = {
 		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-		line(0, Text.T(scope, "fight.drop.title"), Theme.Colors.GoldBright, Theme.Fonts.Heading),
+		line(0, Text.T(scope, "fight.drop.title"), titleColor, Theme.Fonts.Display),
 	}
 	local order = 1
 	if #drop.mine > 0 then
-		table.insert(lines, line(order, Text.T(scope, "fight.drop.mine"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold))
+		table.insert(lines, line(order, Text.T(scope, "fight.drop.mine"), roles.TextMuted, Theme.Fonts.BodyBold))
 		for _, item in drop.mine do
 			order += 1
 			table.insert(
@@ -55,7 +59,7 @@ local function FightLoot(scope: Scope, props: Props): Instance?
 						local name = ItemText.get(use, item.id, item.up)
 						return if item.n and item.n > 1 then `{name} x{item.n}` else name
 					end),
-					ItemText.rarityColor(item.r),
+					ItemText.rarityName(item.r, surface),
 					Theme.Fonts.BodyMedium
 				)
 			)
@@ -63,10 +67,7 @@ local function FightLoot(scope: Scope, props: Props): Instance?
 	end
 	if #drop.party > 0 then
 		order += 1
-		table.insert(
-			lines,
-			line(order, Text.T(scope, "fight.drop.party"), Theme.Colors.TextMuted, Theme.Fonts.BodyBold)
-		)
+		table.insert(lines, line(order, Text.T(scope, "fight.drop.party"), roles.TextMuted, Theme.Fonts.BodyBold))
 		for _, item in drop.party do
 			order += 1
 			table.insert(
@@ -76,7 +77,7 @@ local function FightLoot(scope: Scope, props: Props): Instance?
 					scope:Computed(function(use): string
 						return `{item.n}: {ItemText.get(use, item.id, item.up)}`
 					end),
-					ItemText.rarityColor(item.r),
+					ItemText.rarityName(item.r, surface),
 					Theme.Fonts.BodyMedium
 				)
 			)
@@ -86,7 +87,7 @@ local function FightLoot(scope: Scope, props: Props): Instance?
 		order += 1
 		table.insert(
 			lines,
-			line(order, Text.T(scope, "fight.drop.more", { n = drop.more }), Theme.Colors.TextMuted, Theme.Fonts.Body)
+			line(order, Text.T(scope, "fight.drop.more", { n = drop.more }), roles.TextMuted, Theme.Fonts.Body)
 		)
 	end
 	return scope:New("Frame")({

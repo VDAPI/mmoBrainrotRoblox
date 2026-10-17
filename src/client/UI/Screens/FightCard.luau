@@ -52,7 +52,7 @@ end
 local function FightCard(scope: Scope, props: Props): Instance
 	local summary = props.Summary
 	local compact = Fusion.peek(Scale.VirtualSize).X < 900
-	local outcomeColor = if summary.outcome == "win" then Theme.Colors.Success else Theme.Colors.Danger
+	local outcomeColor = if summary.outcome == "win" then Theme.Iron.Success else Theme.Iron.Danger
 
 	local function label(order: number, text: Fusion.UsedAs<string>, color: Color3, font: Font, size: number): Instance
 		return scope:New("TextLabel")({
@@ -75,15 +75,15 @@ local function FightCard(scope: Scope, props: Props): Instance
 		Position = UDim2.new(1, -Theme.Padding.Large, 1, -190),
 		Size = UDim2.fromOffset(if compact then 340 else 440, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.08,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Active = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thick,
-				Color = Theme.Colors.GoldDim,
+				Color = Theme.Iron.Rule,
 			}),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, Theme.Padding.Medium),
@@ -97,8 +97,8 @@ local function FightCard(scope: Scope, props: Props): Instance
 				scope:Computed(function(use): string
 					return Text.get(use, "fight.card.title", { name = FightView.title(use, summary) })
 				end),
-				Theme.Colors.GoldBright,
-				Theme.Fonts.Heading,
+				Theme.Brass.Bright,
+				Theme.Fonts.Display,
 				Theme.TextSize.Body
 			),
 			label(
@@ -113,11 +113,17 @@ local function FightCard(scope: Scope, props: Props): Instance
 				scope:Computed(function(use): string
 					return FightView.headerLine(use, summary.header)
 				end),
-				Theme.Colors.Parchment,
+				Theme.Iron.Text,
 				Theme.Fonts.BodyMedium,
 				Theme.TextSize.Small
 			),
-			FightTable(scope, { Rows = shortRows(summary.rows), Compact = true, LayoutOrder = 4, RowHeight = 22 }),
+			FightTable(scope, {
+				Rows = shortRows(summary.rows),
+				Compact = true,
+				LayoutOrder = 4,
+				RowHeight = 22,
+				Surface = "iron",
+			}),
 			scope:New("Frame")({
 				LayoutOrder = 5,
 				Size = UDim2.new(1, 0, 0, 44),
@@ -130,6 +136,7 @@ local function FightCard(scope: Scope, props: Props): Instance
 						Padding = UDim.new(0, 8),
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 1,
 						Text = Text.T(scope, "fight.details"),
 						Variant = "primary",
@@ -138,6 +145,7 @@ local function FightCard(scope: Scope, props: Props): Instance
 						OnClick = props.OpenDetails,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 2,
 						Text = Text.T(scope, "fight.card.close"),
 						Variant = "secondary",

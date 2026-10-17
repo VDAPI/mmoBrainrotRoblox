@@ -81,11 +81,11 @@ local function Console(s: Dev.Scope): Instance
 					Text = entry.text,
 					TextWrapped = true,
 					FontFace = if entry.ok == nil then Theme.Fonts.BodyBold else Theme.Fonts.Body,
-					TextSize = 14,
+					TextSize = Theme.TextSize.Caption,
 					TextColor3 = if entry.ok == nil
-						then Theme.Colors.GoldBright
-						elseif entry.ok then Theme.Colors.Text
-						else Theme.Colors.DangerHover,
+						then Theme.Brass.Bright
+						elseif entry.ok then Theme.Iron.Text
+						else Theme.Iron.Danger,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -96,14 +96,14 @@ local function Console(s: Dev.Scope): Instance
 	local input = s:New("TextBox")({
 		LayoutOrder = 1,
 		Size = UDim2.new(1, -110, 0, Theme.Size.MinTouch),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		ClearTextOnFocus = false,
 		PlaceholderText = "/lvl 50",
 		Text = line,
 		[Out("Text")] = line,
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		[OnEvent("FocusLost")] = function(enter: boolean)
 			if enter then
@@ -137,14 +137,14 @@ local function Console(s: Dev.Scope): Instance
 			s:New("TextLabel")({
 				Position = UDim2.fromOffset(0, Theme.Size.MinTouch + 6),
 				Size = UDim2.new(1, 0, 0, 96),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Iron.Surface,
 				Text = hints,
 				TextWrapped = true,
 				TextYAlignment = Enum.TextYAlignment.Top,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				FontFace = Theme.Fonts.Body,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.TextMuted,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					s:New("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingTop = UDim.new(0, 4) }),
@@ -153,7 +153,7 @@ local function Console(s: Dev.Scope): Instance
 			s:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, Theme.Size.MinTouch + 108),
 				Size = UDim2.new(1, 0, 1, -(Theme.Size.MinTouch + 108)),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Iron.Sunken,
 				BorderSizePixel = 0,
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,

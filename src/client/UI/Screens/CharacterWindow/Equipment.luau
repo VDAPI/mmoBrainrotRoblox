@@ -183,7 +183,7 @@ local function Equipment(scope: Scope, props: Props): Instance
 				AnchorPoint = Vector2.new(0.5, 0),
 				Position = UDim2.new(0.5, 0, 0, slot / 2),
 				Size = UDim2.fromOffset(slot + gap * 2, height - slot),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = 0.5,
 				Text = scope:Computed(function(use): string
 					local class = Classes.get(use(classId) or "")
@@ -192,7 +192,7 @@ local function Equipment(scope: Scope, props: Props): Instance
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = math.floor(slot * 0.9),
 				TextTransparency = 0.8,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				ZIndex = 0,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
@@ -216,7 +216,7 @@ local function Equipment(scope: Scope, props: Props): Instance
 				Text = hintText,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.DangerHover,
+				TextColor3 = Theme.Paper.Danger,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			if props.Unequip

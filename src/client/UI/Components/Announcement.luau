@@ -30,10 +30,12 @@ local function sequence(c1: Color3, c2: Color3): ColorSequence
 	})
 end
 
+-- S135: colours from Data/UiPalette.announce
 local BACKDROP = {
-	legendary = sequence(Color3.fromHex("#3A2A10"), Color3.fromHex("#1B1D23")),
-	mythic = sequence(Color3.fromHex("#4A0C0A"), Color3.fromHex("#1B1013")),
+	legendary = sequence(Theme.Announce.LegendaryGlow, Theme.Announce.LegendaryBase),
+	mythic = sequence(Theme.Announce.MythicGlow, Theme.Announce.MythicBase),
 }
+local MYTHIC_TEXT = Theme.Announce.MythicText
 local MYTHIC_COLORS = MYTHIC.frame.gradient or { MYTHIC.color, MYTHIC.color }
 local FRAME = {
 	legendary = sequence(LEGENDARY.color, LEGENDARY.color),
@@ -116,7 +118,7 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 		Size = scope:Computed(function(use): UDim2
 			return if use(style) == "mythic" then UDim2.fromOffset(980, 84) else UDim2.fromOffset(900, 64)
 		end),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		BackgroundTransparency = 0.15,
 		Visible = scope:Computed(function(use): boolean
 			return use(current) ~= nil
@@ -130,7 +132,7 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 						then Theme.Stroke.Thick + 2 + use(pulse) * 2
 						else Theme.Stroke.Thick
 				end),
-				Color = Color3.new(1, 1, 1),
+				Color = Theme.Plain,
 				[Children] = scope:New("UIGradient")({
 					Color = scope:Computed(function(use): ColorSequence
 						return if use(style) == "mythic" then FRAME.mythic else FRAME.legendary
@@ -150,15 +152,15 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 					return use(current) or ""
 				end),
 				RichText = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = scope:Computed(function(use): number
 					return if use(style) == "mythic" then Theme.TextSize.Title else Theme.TextSize.Large + 2
 				end),
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(style) == "mythic" then Color3.fromHex("#FFD0C8") else Theme.Colors.GoldBright
+					return if use(style) == "mythic" then MYTHIC_TEXT else Theme.Brass.Bright
 				end),
 				TextStrokeColor3 = scope:Computed(function(use): Color3
-					return if use(style) == "mythic" then MYTHIC.color else Color3.new(0, 0, 0)
+					return if use(style) == "mythic" then MYTHIC.color else Theme.Shade
 				end),
 				TextStrokeTransparency = scope:Computed(function(use): number
 					return if use(style) == "mythic" then 0.5 - use(pulse) * 0.3 else 0.4

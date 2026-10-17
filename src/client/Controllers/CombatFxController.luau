@@ -64,6 +64,11 @@ local Library = require(script.Parent.Parent.Vfx.Library)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
 
+-- S136: colours of the 3D effects (world, not interface): the old gold and magic blue of the legacy UI palette.
+local WORLD_GOLD_BRIGHT = Color3.fromHex("#E8C25A")
+local WORLD_GOLD = Color3.fromHex("#C9A45C")
+local WORLD_MAGIC = Color3.fromHex("#4A8FE7")
+
 local CombatFxController = {
 	Name = "CombatFxController",
 	Deps = {
@@ -492,7 +497,7 @@ local function impact(model: Model, crit: boolean)
 	local ball = effectPart(
 		"Impact",
 		Vector3.one * 0.4,
-		if crit then Theme.Colors.GoldBright else Color3.new(1, 1, 1),
+		if crit then WORLD_GOLD_BRIGHT else Color3.new(1, 1, 1),
 		Enum.PartType.Ball
 	)
 	ball.Transparency = 0.2
@@ -587,7 +592,7 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 			bolt.Material = Enum.Material.Metal
 			part = bolt
 		else
-			local orb = effectPart("MagicBolt", Vector3.new(0.8, 0.8, 0.8), Theme.Colors.Accent, Enum.PartType.Ball)
+			local orb = effectPart("MagicBolt", Vector3.new(0.8, 0.8, 0.8), WORLD_MAGIC, Enum.PartType.Ball)
 			local light = Instance.new("PointLight")
 			light.Range = 8
 			light.Parent = orb
@@ -612,7 +617,7 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 	end
 	local p = part :: BasePart
 	if kind == "magic" then
-		local c = color or Theme.Colors.Accent
+		local c = color or WORLD_MAGIC
 		p.Color = c
 		local light = p:FindFirstChildOfClass("PointLight")
 		if light then
@@ -861,7 +866,7 @@ local function attackFx(
 	-- the event's style decides (a weaponless Hunter / Mage shoots too: motion "unarmed", kind "magic")
 	local ranged = not melee
 	local kind = if motion == "bow" then "arrow" elseif motion == "crossbow" then "bolt" else "magic"
-	local color = ELEMENT_COLORS[element or ""] or Theme.Colors.Accent
+	local color = ELEMENT_COLORS[element or ""] or WORLD_MAGIC
 	local release: string? = nil
 	local function onHit()
 		if release then
@@ -955,7 +960,7 @@ local function hitSparks(model: Model, from: Vector3?, material: string, crit: b
 		gravity = spark.gravity,
 	})
 	if crit then
-		Library.impactFlash(at, HitFx.flashSize * HitFx.crit.flashScale, Theme.Colors.GoldBright, { simple = simple })
+		Library.impactFlash(at, HitFx.flashSize * HitFx.crit.flashScale, WORLD_GOLD_BRIGHT, { simple = simple })
 	elseif spark.flash then
 		Library.impactFlash(at, HitFx.flashSize, Color3.new(1, 1, 1), { simple = simple })
 	end
@@ -1287,7 +1292,7 @@ local function splitTag(area: CFrame, windup: number)
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
 	label.Text = Text.now("boss.mechanic.split.tag")
-	label.FontFace = Theme.Fonts.Heading
+	label.FontFace = Theme.Fonts.Display
 	label.TextScaled = true
 	label.TextColor3 = MECHANIC_COLORS.split
 	label.TextStrokeTransparency = 0.2
@@ -1522,7 +1527,7 @@ local function onDamage(event: { [string]: any })
 	-- DoT ticks get no flash or hit reaction, just the small number.
 	if amount > 0 and not event.dot then
 		-- A critical skill hit flashes gold (S28).
-		flash(model, if skill and event.c then Theme.Colors.GoldBright else nil)
+		flash(model, if skill and event.c then WORLD_GOLD_BRIGHT else nil)
 		-- S113: the attacker's position turns the reaction away from the blow and aims the sparks of a basic hit
 		local attacker = findModel(if type(event.s) == "string" then event.s else nil)
 		local from = if attacker then centre(attacker) else nil
@@ -1560,7 +1565,7 @@ local function onDamage(event: { [string]: any })
 			floatText(
 				headPosition(model) + Vector3.new(0, 1.2, 0),
 				Text.now(skill.nameKey),
-				Theme.Colors.Gold,
+				WORLD_GOLD,
 				18,
 				{ base = DamageNumbers.maxPerTarget * DamageNumbers.stackStep * 0.5, rise = 3.5 }
 			)
@@ -1669,7 +1674,7 @@ local function handle(event: { [string]: any })
 			if marks > 0 then
 				text ..= "  " .. Text.now("combat.rewardMarks", { n = Format.number(marks) })
 			end
-			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, Theme.Colors.Gold, 22, { rise = 4 })
+			floatText(headPosition(character) + Vector3.new(0, 1, 0), text, WORLD_GOLD, 22, { rise = 4 })
 		end
 		-- Boss kill (S30): the reward card with the personal roll and the grind progress.
 		if type(event.boss) == "string" then

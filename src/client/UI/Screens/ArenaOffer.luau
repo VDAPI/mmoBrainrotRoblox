@@ -107,13 +107,13 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		Visible = scope:Computed(function(use): boolean
 			return use(offer) ~= nil or use(isInvite)
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 1.5 }),
 			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(WIDTH, math.huge) }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 10),
@@ -148,9 +148,9 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 					local o = use(offer)
 					return Text.get(use, if o and o.mode == "3v3" then "arena.match.found3" else "arena.offer.title")
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			-- S127: where the match is played (another server of all worlds, or this one)
 			scope:New("TextLabel")({
@@ -169,7 +169,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				AutomaticSize = Enum.AutomaticSize.Y,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 			}),
 			scope:New("TextLabel")({
 				LayoutOrder = 3,
@@ -202,17 +202,17 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 			}),
 			-- the time left to answer
 			scope:New("Frame")({
 				LayoutOrder = 4,
 				Size = UDim2.new(1, 0, 0, 6),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Sunken,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					scope:New("Frame")({
-						BackgroundColor3 = Theme.Colors.Gold,
+						BackgroundColor3 = Theme.Brass.Frame,
 						Size = scope:Computed(function(use): UDim2
 							if use(isInvite) then
 								return UDim2.fromScale(
@@ -247,7 +247,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Warning,
+				TextColor3 = Theme.Paper.Warning,
 			}),
 			scope:New("TextLabel")({
 				LayoutOrder = 6,
@@ -257,7 +257,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				Text = Text.T(scope, "arena.offer.waiting"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Success,
+				TextColor3 = Theme.Paper.Success,
 			}),
 			scope:New("Frame")({
 				LayoutOrder = 7,
@@ -312,7 +312,7 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 			}),
 		},
 	})

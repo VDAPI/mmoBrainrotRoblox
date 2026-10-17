@@ -89,7 +89,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 	return scope:New("TextButton")({
 		Name = "ModalOverlay",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Colors.Overlay,
+		BackgroundColor3 = Theme.Shade,
 		BackgroundTransparency = 0.45,
 		AutoButtonColor = false,
 		Text = "",
@@ -102,15 +102,16 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 				Position = UDim2.fromScale(0.5, 0.5),
 				Size = UDim2.fromOffset(width, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundColor3 = Theme.Colors.Panel,
+				-- S135: parchment with the iron frame of a window (a danger dialog keeps a red frame)
+				BackgroundColor3 = Theme.Paper.Surface,
 				Active = true,
 
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = Theme.Stroke.Thick,
-						Color = if props.Variant == "danger" then Theme.Colors.Danger else Theme.Colors.Gold,
+						Thickness = Theme.Size.FrameOuter,
+						Color = if props.Variant == "danger" then Theme.Paper.Danger else Theme.Brass.Frame,
 					}),
 					scope:New("UISizeConstraint")({ MaxSize = Vector2.new(width, math.huge) }),
 					scope:New("UIPadding")({
@@ -130,9 +131,9 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, 0, 0, 36),
 						Text = props.Title,
-						FontFace = Theme.Fonts.Heading,
-						TextSize = Theme.TextSize.Title,
-						TextColor3 = Theme.Colors.Gold,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Large,
+						TextColor3 = Theme.Paper.Heading,
 						TextWrapped = true,
 					}),
 					if props.Message
@@ -146,7 +147,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 							RichText = true,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Paper.Text,
 							TextWrapped = true,
 						}) :: any
 						else nil,
@@ -175,7 +176,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 							end),
 							FontFace = Theme.Fonts.BodyMedium,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.DangerHover,
+							TextColor3 = Theme.Paper.Danger,
 							TextWrapped = true,
 						}),
 					scope:New("Frame")({

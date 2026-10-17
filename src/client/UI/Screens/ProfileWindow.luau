@@ -47,7 +47,7 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 				Text = Text.get(use, "auction.loading"),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 			})
 		end
 		local class = Classes.get(p.class)
@@ -75,9 +75,9 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 				Size = UDim2.new(1, 0, 0, (size or Theme.TextSize.Body) + 10),
 				BackgroundTransparency = 1,
 				Text = text,
-				FontFace = if size then Theme.Fonts.Heading else Theme.Fonts.BodyMedium,
+				FontFace = if size then Theme.Fonts.Display else Theme.Fonts.BodyMedium,
 				TextSize = size or Theme.TextSize.Body,
-				TextColor3 = color or Theme.Colors.Text,
+				TextColor3 = color or Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -96,14 +96,15 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 							Name = "Portrait",
 							Size = TILE,
 							FrameId = if type(p.frame) == "string" then p.frame else nil,
-							ClassColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold,
+							-- S135: on the dark portrait tile (PortraitFrame), so readable on iron
+							ClassColor = if class then Theme.readable(class.color, "iron") else Theme.Iron.Heading,
 							Content = ArtIcon(s, {
 								Key = if class then UiArt.classEmblem(class.id) else nil,
 								Glyph = if class then class.icon else "",
-								GlyphColor = if class then Color3.fromHex(class.color) else Theme.Colors.Gold,
+								GlyphColor = if class then Theme.readable(class.color, "iron") else Theme.Iron.Heading,
 								ImageScale = 0.8,
 								Size = UDim2.fromScale(1, 1),
-								Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 32 },
+								Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Title },
 							}),
 						}),
 						s:New("Frame")({
@@ -115,7 +116,7 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 									SortOrder = Enum.SortOrder.LayoutOrder,
 									VerticalAlignment = Enum.VerticalAlignment.Center,
 								}),
-								line(1, p.name, Theme.Colors.GoldBright, Theme.TextSize.Large),
+								line(1, p.name, Theme.Paper.Heading, Theme.TextSize.Large),
 								line(
 									2,
 									`{Text.get(use, "hud.level", { level = p.level })}  ·  {if class
@@ -127,7 +128,7 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 											p.titleSeason
 										) .. " »"
 										else ""}`,
-									Theme.Colors.Parchment
+									Theme.Paper.Text
 								),
 							},
 						}),
@@ -137,12 +138,12 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>): Fusion.Chil
 				line(
 					4,
 					Text.get(use, "profile.pvp", { kills = pvp.kills or 0, deaths = pvp.deaths or 0, ratio = ratio }),
-					Theme.Colors.ZoneRed
+					Theme.Paper.Danger
 				),
 				line(
 					5,
 					Text.get(use, "profile.duels", { won = pvp.duelsWon or 0, lost = pvp.duelsLost or 0 }),
-					Theme.Colors.Warning
+					Theme.Paper.Warning
 				),
 				s:New("Frame")({
 					LayoutOrder = 6,

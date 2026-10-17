@@ -547,7 +547,7 @@ describe("Contracts: save, migration 7 and migration 11", function()
 		})
 		expect(Config.Quest.contractBacklog).toBe(3)
 		-- S102: 8 = story progress, S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts
-		expect(AccountSchema.CURRENT).toBe(11)
+		expect(AccountSchema.CURRENT).toBe(12)
 	end)
 
 	it(
@@ -555,7 +555,7 @@ describe("Contracts: save, migration 7 and migration 11", function()
 		function()
 			local data = oldAccount()
 			local applied = AccountSchema.migrate(data)
-			expect(applied).toEqual({ 7, 8, 9, 10, 11 }) -- S134g: 10 = item effects; S134k: 11 = contracts
+			expect(applied).toEqual({ 7, 8, 9, 10, 11, 12 }) -- S134g: 10 = item effects; S134k: 11 = contracts; S137: 12 = skill points
 			local chars = data.characters
 			-- S134k: the S99 numbers stay `done`, now in the shape of migration 11
 			local function shape(done: number): any
@@ -629,7 +629,7 @@ describe("Contracts: save, migration 7 and migration 11", function()
 			}
 		end
 		local data = account({ done = 30, active = { level = 31, progress = { 12 } } })
-		expect(AccountSchema.migrate(data)).toEqual({ 11 })
+		expect(AccountSchema.migrate(data)).toEqual({ 11, 12 })
 		local n = Data.list[31].objectives[1].n
 		local c = data.characters.x.quests.contract
 		expect(c.done).toBe(30)

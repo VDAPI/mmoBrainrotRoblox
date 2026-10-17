@@ -43,7 +43,7 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 					Size = UDim2.new(1, 0, 0, ROW),
 					AutoButtonColor = false,
 					BackgroundColor3 = s:Computed(function(use2): Color3
-						return if use2(picked) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+						return if use2(picked) then Theme.Paper.Hover else Theme.Paper.Raised
 					end),
 					Text = s:Computed(function(use2): string
 						local outcome = Text.get(use2, `fight.outcome.{summary.outcome}`)
@@ -53,7 +53,7 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = s:Computed(function(use2): Color3
-						return if use2(picked) then Theme.Colors.GoldBright else Theme.Colors.Parchment
+						return if use2(picked) then Theme.Paper.Heading else Theme.Paper.Text
 					end),
 					[OnEvent("Activated")] = function()
 						Sounds.play("click")
@@ -78,7 +78,7 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				}),
 			}
 		end
@@ -92,9 +92,9 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 				BackgroundTransparency = 1,
 				Text = Text.get(use, "fight.card.title", { name = FightView.title(use, summary) }),
 				TextWrapped = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("TextLabel")({
@@ -106,7 +106,7 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if summary.outcome == "win" then Theme.Colors.Success else Theme.Colors.Warning,
+				TextColor3 = if summary.outcome == "win" then Theme.Paper.Success else Theme.Paper.Warning,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			FightTable(s, { Rows = summary.rows, Compact = compact, LayoutOrder = 3 }),
@@ -140,7 +140,7 @@ local function FightLogWindow(scope: Scope, props: Props): Fusion.Child
 					Text = Text.T(scope, "fight.recent"),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				list :: any,

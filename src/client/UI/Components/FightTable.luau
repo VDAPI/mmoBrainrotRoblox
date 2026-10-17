@@ -25,6 +25,7 @@ export type Props = {
 	MaxVisible: number?,
 	LayoutOrder: number?,
 	RowHeight: number?,
+	Surface: Theme.SurfaceName?, -- S136: "paper" (default; reward card, fight log) or "iron" (the HUD card)
 }
 
 type Column = { key: string, width: number, value: (row: Row) -> string }
@@ -163,13 +164,14 @@ local function FightTable(scope: Scope, props: Props): Instance
 	for _, column in columns do
 		table.insert(headers, Text.T(scope, column.key))
 	end
-	local header =
-		line(0, Text.T(scope, "dungeon.summary.member"), headers, Theme.Colors.TextMuted, Theme.Fonts.BodyBold)
+	local roles = Theme.surface(props.Surface)
+	local ownColor = if props.Surface == "iron" then Theme.Brass.Bright else roles.Heading
+	local header = line(0, Text.T(scope, "dungeon.summary.member"), headers, roles.TextMuted, Theme.Fonts.BodyBold)
 
 	local list: { Instance } = { scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }) }
 	for i, row in rows do
 		local class = if row.c then Classes.get(row.c) else nil
-		local color = if row.n == own then Theme.Colors.GoldBright else Theme.Colors.Parchment
+		local color = if row.n == own then ownColor else roles.Text
 		local values = {}
 		for _, column in columns do
 			table.insert(values, column.value(row))

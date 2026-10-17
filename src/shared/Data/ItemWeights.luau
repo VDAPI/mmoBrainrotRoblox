@@ -185,6 +185,9 @@ return table.freeze({
 	SITUATIONAL = 0.5, -- lines that work only against one family, one class, bosses or elites (STATY 10)
 	WEAPON = 5, -- points per point of weapon damage per second (S20)
 	UPGRADE_MARGIN = 1.02, -- S20
+	-- S138 (DESIGN-18 §0.9): a skill effect of another weapon pool than the equipped weapon's counts this much ("common"
+	-- effects always in full)
+	OTHER_POOL = 0.5,
 	HOOK_DEFAULT = dmg(1),
 	common = table.freeze(COMMON),
 	class = table.freeze(CLASS),

@@ -24,6 +24,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -88,32 +89,32 @@ function Overlay.new(scope: Scope): Api
 	frame.ZIndex = 8
 	table.insert(scope, frame)
 
-	local player = label(frame, "▲", Theme.Colors.Accent, 20, 12)
-	local quest = label(frame, "★", Theme.Colors.GoldBright, 18, 11)
+	local player = label(frame, "▲", Theme.Iron.Link, 20, 12)
+	local quest = label(frame, "★", Theme.Brass.Bright, 18, 11)
 	-- S101b: the name of a hinted place under the star
-	local questPlace = label(frame, "", Theme.Colors.Parchment, 12, 11)
+	local questPlace = label(frame, "", Theme.Iron.Text, 12, 11)
 	questPlace.Size = UDim2.fromOffset(160, 16)
 	questPlace.Visible = false
-	local nav = label(frame, "◆", Color3.fromHex("#F2E28A"), 16, 11)
+	local nav = label(frame, "◆", Theme.tint(UiPalette.map.guide), 16, 11)
 	UiArtState.decorate(player, UiArt.mapIcon("player"), { size = 20 })
 	UiArtState.decorate(quest, UiArt.mapIcon("quest"), { size = 18 })
 	UiArtState.decorate(nav, UiArt.mapIcon("guide"), { size = 16 })
 	-- S101: the world event on this map (warning: faded) and its time to the start / end.
-	local eventMarker = label(frame, "⚔", Theme.Colors.GoldBright, 20, 11)
+	local eventMarker = label(frame, "⚔", Theme.Brass.Bright, 20, 11)
 	eventMarker.Visible = false
-	local eventTime = label(frame, "", Theme.Colors.Parchment, 12, 11)
+	local eventTime = label(frame, "", Theme.Iron.Text, 12, 11)
 	eventTime.Size = UDim2.fromOffset(60, 16)
 	eventTime.Visible = false
 	local eventClock = 0
 	local partyMarkers: { TextButton } = {}
 	local partyIds: { number? } = {}
 	for i = 1, PARTY do
-		partyMarkers[i] = marker(frame, "●", Color3.fromHex("#4A8FE7"), 14, 10)
+		partyMarkers[i] = marker(frame, "●", Theme.tint(UiPalette.map.party), 14, 10)
 		UiArtState.decorate(partyMarkers[i]:FindFirstChild("Glyph") :: TextLabel, UiArt.mapIcon("party"), { size = 14 })
 	end
 	local markButtons: { TextButton } = {}
 	for i = 1, MARKS do
-		markButtons[i] = marker(frame, "⚑", Theme.Colors.GoldBright, 16, 10)
+		markButtons[i] = marker(frame, "⚑", Theme.Brass.Bright, 16, 10)
 		UiArtState.decorate(markButtons[i]:FindFirstChild("Glyph") :: TextLabel, nil, { size = 16 })
 	end
 
@@ -130,7 +131,7 @@ function Overlay.new(scope: Scope): Api
 	ringCorner.CornerRadius = UDim.new(0.5, 0)
 	ringCorner.Parent = ring
 	local ringStroke = Instance.new("UIStroke")
-	ringStroke.Color = Theme.Colors.GoldBright
+	ringStroke.Color = Theme.Brass.Bright
 	ringStroke.Thickness = 2.5
 	ringStroke.Parent = ring
 	local pulse = TweenService:Create(
@@ -147,8 +148,8 @@ function Overlay.new(scope: Scope): Api
 	hint.AnchorPoint = Vector2.new(0.5, 1)
 	hint.AutomaticSize = Enum.AutomaticSize.XY
 	hint.Size = UDim2.fromOffset(0, 0)
-	hint.BackgroundColor3 = Theme.Colors.Panel
-	hint.BackgroundTransparency = 0.05
+	hint.BackgroundColor3 = Theme.Iron.Surface
+	hint.BackgroundTransparency = 0
 	hint.ZIndex = 40
 	hint.Visible = false
 	hint.Parent = frame
@@ -158,7 +159,7 @@ function Overlay.new(scope: Scope): Api
 	hintCorner.CornerRadius = Theme.Corner.Small
 	hintCorner.Parent = hint
 	local hintStroke = Instance.new("UIStroke")
-	hintStroke.Color = Theme.Colors.GoldDim
+	hintStroke.Color = Theme.Brass.Line
 	hintStroke.Parent = hint
 	local hintPadding = Instance.new("UIPadding")
 	hintPadding.PaddingLeft = UDim.new(0, 8)
@@ -182,8 +183,8 @@ function Overlay.new(scope: Scope): Api
 		l.Parent = hint
 		return l
 	end
-	local hintTitle = hintLine(1, 15, Theme.Colors.GoldBright)
-	local hintSub = hintLine(2, 13, Theme.Colors.Text)
+	local hintTitle = hintLine(1, Theme.TextSize.Small, Theme.Brass.Bright)
+	local hintSub = hintLine(2, Theme.TextSize.Small, Theme.Iron.Text)
 
 	local api: Api
 	api = {
@@ -224,7 +225,7 @@ function Overlay.new(scope: Scope): Api
 						local icon = MapMarks.get(mark.icon)
 						local glyph = button:FindFirstChild("Glyph") :: TextLabel
 						glyph.Text = if icon then icon.glyph else "⚑"
-						glyph.TextColor3 = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright
+						glyph.TextColor3 = if icon then Theme.tint(icon.color) else Theme.Brass.Bright
 						UiArtState.retarget(glyph, if icon then UiArt.mark(icon.id) else nil, glyph.TextColor3)
 						local p = Canvas.toPixel(cached, mark.x, mark.z)
 						button.Position = UDim2.fromOffset(p.X, p.Y)
@@ -280,7 +281,7 @@ function Overlay.new(scope: Scope): Api
 				local p = Canvas.toPixel(cached, event.x, event.z)
 				eventMarker.Position = UDim2.fromOffset(p.X, p.Y)
 				eventMarker.Text = eventDef.glyph
-				eventMarker.TextColor3 = Color3.fromHex(eventDef.color)
+				eventMarker.TextColor3 = Theme.tint(eventDef.color)
 				eventMarker.TextTransparency = if event.phase == "warn" then 0.4 else 0
 				eventTime.Position = UDim2.fromOffset(p.X, p.Y + 16)
 				local clock = os.clock()

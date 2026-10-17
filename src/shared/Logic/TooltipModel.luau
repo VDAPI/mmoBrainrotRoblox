@@ -16,7 +16,7 @@
 --   potionDiscount: number -- guild potion discount (derived stat), for the shop price
 --   merchantOpen: boolean  -- a merchant window is open: backpack items add "Sells for: X gold"
 --   hints: boolean         -- false hides the "double click: equip/use" hint (default: shown outside shops)
---   pathId: string         -- S68: character.path.main
+--   pathId: string         -- S68: the main path; S138: the leading direction (Logic/Paths.mainOf)
 --   nodes: {[id]: number}  -- S68: character.path.nodes (owned nodes are marked in trait details)
 --   mainHand: ItemInstance -- S68: equipped weapon (Full Draw details; an off-hand against a two-hander)
 --   offhand: ItemInstance  -- S68: equipped off-hand (a two-handed candidate also replaces it)
@@ -57,6 +57,7 @@ local Recipes = require("../Data/Recipes")
 local Reroll = require("./Reroll")
 local ShopPrice = require("./ShopPrice")
 local Shops = require("../Data/Shops")
+local SkillData = require("../Data/Skills")
 local StatGroups = require("./StatGroups")
 local Stats = require("../Data/Stats")
 local Traits = require("./Traits")
@@ -636,7 +637,8 @@ local function className(classId: string, lang: string): string
 end
 
 -- S134g (F1): the skill effects after the trait: a title in the tier's colour ("Efekt legendarny: <name>") and the
--- effect's line; an effect of another class than the viewer's says whom it works for.
+-- effect's line; an effect of another class than the viewer's says whom it works for. S137 (DESIGN-18 §0.9): an effect
+-- on a skill of one weapon pool (SkillDef.pool other than "common") names that pool: it works only with its weapon.
 local function effectLines(b: Builder, item: ItemInstance, c: Ctx, lang: string)
 	for _, effect in ItemEffects.ofItem(item, c.class) do
 		local detail: DetailRef = { kind = "effect", id = effect.id }
@@ -648,6 +650,16 @@ local function effectLines(b: Builder, item: ItemInstance, c: Ctx, lang: string)
 			{ hex = hex, font = "bold", detail = detail, tier = effect.tier }
 		)
 		b.add("fx", ItemEffects.line(effect, lang), "dark", { detail = detail, tier = effect.tier })
+		local skill = SkillData.get(effect.skill)
+		local pool = skill and skill.pool
+		if pool and pool ~= "common" then
+			b.add(
+				"fxPool",
+				Locale.T("tooltip.fx.pool", { pool = Locale.T(`skills.pool.{pool}`, nil, lang) }, lang),
+				"muted",
+				{ size = "small" }
+			)
+		end
 		if c.class ~= nil and effect.class ~= c.class then
 			b.add(
 				"fxClass",

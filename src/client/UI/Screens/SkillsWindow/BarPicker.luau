@@ -1,7 +1,8 @@
 --!strict
--- Slot picker for a full bar (S56, moved in S59): 2 x 5 cells with the key and the skill on it over the whole window
--- content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot). On touch the cancel button
--- is MinTouch high (S59 F).
+-- Slot picker for a full bar (S56, moved in S59): 2 x 4 cells (S137: 8 slots per pool) with the key and the skill on
+-- it over the whole window content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot).
+-- On touch the cancel button is MinTouch high (S59 F).
+-- S139: the bar of the pool being edited (`ctx.picking.poolId`: the active pool's hotbar or another pool's bar).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -21,6 +23,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local CELL = 64
 local GAP = 8
+local COLUMNS = math.ceil(SkillData.HOTBAR_SLOTS / 2) -- two rows
 
 local function BarPicker(
 	scope: Scope,
@@ -31,19 +34,26 @@ local function BarPicker(
 	local cancelHeight = scope:Computed(function(use): number
 		return if use(touch) then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 	end)
+	-- the bar of the pool being edited
+	local function barOf(use: Fusion.Use): { [string]: string }
+		local picking = use(ctx.picking)
+		local character = use(ctx.character)
+		if not picking or not character then
+			return {}
+		end
+		return SkillPoints.barOf(character, picking.poolId)
+	end
 	local cells: { Instance } = {}
 	for index = 1, SkillData.HOTBAR_SLOTS do
-		local key = if index == 10 then "0" else tostring(index)
+		local key = tostring(index % 10)
 		local glyph = scope:Computed(function(use): string
-			local bar = use(ctx.hotbar)
-			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			local id = barOf(use)[tostring(index)]
 			local skill = id and SkillData.get(id)
 			return if skill then skill.glyph else ""
 		end)
 		-- S119: the picture of the skill on that slot once loaded (the glyph otherwise).
 		local artKey = scope:Computed(function(use): string?
-			local bar = use(ctx.hotbar)
-			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			local id = barOf(use)[tostring(index)]
 			return if id and SkillData.get(id) then UiArt.skill(id) else nil
 		end)
 		local artShown = ArtIcon.Shown(scope, artKey)
@@ -53,7 +63,7 @@ local function BarPicker(
 				Name = `Slot{index}`,
 				LayoutOrder = index,
 				AutoButtonColor = true,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				Text = "",
 				[OnEvent("Activated")] = function()
 					actions.place(index)
@@ -63,7 +73,7 @@ local function BarPicker(
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						Thickness = 2,
-						Color = Theme.Colors.GoldDim,
+						Color = Theme.Paper.Rule,
 					}),
 					ArtIcon.Image(scope, {
 						Key = artKey,
@@ -80,7 +90,7 @@ local function BarPicker(
 						end),
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						[Children] = scope:New("UIPadding")({
 							PaddingTop = UDim.new(0.2, 0),
 							PaddingBottom = UDim.new(0.2, 0),
@@ -90,24 +100,24 @@ local function BarPicker(
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(4, 2),
-						Size = UDim2.fromOffset(20, 16),
+						Size = UDim2.fromOffset(20, 18),
 						BackgroundTransparency = 1,
 						Text = key,
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 13,
-						TextColor3 = Theme.Colors.Gold,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},
 			})
 		)
 	end
-	local gridWidth = 5 * CELL + 4 * GAP
+	local gridWidth = COLUMNS * CELL + (COLUMNS - 1) * GAP
 	return scope:New("TextButton")({
 		Name = "Picker",
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		BackgroundTransparency = 0.25,
 		Text = "",
 		ZIndex = 20,
@@ -121,10 +131,10 @@ local function BarPicker(
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromOffset(gridWidth + 32, 2 * CELL + GAP + 40 + use(cancelHeight) + 48)
 				end),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+					scope:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 2 }),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(16, 12),
 						Size = UDim2.new(1, -32, 0, 32),
@@ -133,7 +143,7 @@ local function BarPicker(
 						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 					}),
 					scope:New("Frame")({
 						Position = UDim2.fromOffset(16, 52),
@@ -143,7 +153,7 @@ local function BarPicker(
 							scope:New("UIGridLayout")({
 								CellSize = UDim2.fromOffset(CELL, CELL),
 								CellPadding = UDim2.fromOffset(GAP, GAP),
-								FillDirectionMaxCells = 5,
+								FillDirectionMaxCells = COLUMNS,
 								SortOrder = Enum.SortOrder.LayoutOrder,
 							}),
 							cells :: any,

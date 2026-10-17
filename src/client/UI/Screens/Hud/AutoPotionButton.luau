@@ -29,8 +29,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 48
 local PANEL_W = 236
-local AMBER = Color3.fromHex("#D9922E")
-local POTION = Color3.fromHex("#C2352E")
+local AMBER = Theme.Glyph.Amber
+local POTION = Theme.Glyph.Potion
 
 local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 	local account = State.Value({ "account", "autoPotion" })
@@ -127,7 +127,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = Theme.Iron.Text,
 					Text = scope:Computed(function(use): string
 						local v = use(value)
 						local key = if field == "hp" then "autoPotion.threshold.hp" else use(resKey)
@@ -138,6 +138,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 					end),
 				}),
 				Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					Name = "Minus",
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, -42, 0.5, 0),
@@ -148,6 +149,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 					end,
 				}),
 				Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					Name = "Plus",
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.fromScale(1, 0.5),
@@ -163,18 +165,18 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 
 	local panel = scope:New("Frame")({
 		Name = "AutoPotionPanel",
-		Position = UDim2.fromOffset(0, SIZE + 20),
+		Position = UDim2.fromOffset(0, SIZE + 24),
 		Size = UDim2.fromOffset(PANEL_W, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Active = true,
 		Visible = scope:Computed(function(use): boolean
 			return use(open) and use(owned)
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Thickness = 1, Color = Theme.Colors.Gold, Transparency = 0.4 }),
+			scope:New("UIStroke")({ Thickness = Theme.Stroke.Thin, Color = Theme.Brass.Line }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 8),
 				PaddingBottom = UDim.new(0, 8),
@@ -189,15 +191,16 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 				TextXAlignment = Enum.TextXAlignment.Left,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Brass.Bright,
 				Text = Text.T(scope, "autoPotion.name"),
 			}),
 			thresholdRow(2, "hp"),
 			thresholdRow(3, "res"),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Switch",
 				LayoutOrder = 4,
-				Size = UDim2.new(1, 0, 0, 34),
+				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 				Variant = scope:Computed(function(use): any
 					return if use(on) then "secondary" else "primary"
 				end) :: any,
@@ -217,13 +220,13 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 		Name = "AutoPotionButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		AutoButtonColor = true,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = "A",
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
 		TextColor3 = scope:Computed(function(use): Color3
-			return if use(on) then POTION else Theme.Colors.TextMuted
+			return if use(on) then POTION else Theme.Iron.TextMuted
 		end),
 		TextTransparency = scope:Computed(function(use): number
 			return if use(blocked) ~= nil then 0.45 else 0
@@ -235,12 +238,12 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = 2,
+				Thickness = Theme.Stroke.Normal,
 				Color = scope:Computed(function(use): Color3
 					if use(blocked) ~= nil then
 						return AMBER
 					end
-					return if use(on) then Theme.Colors.GoldBright else Theme.Colors.TextMuted
+					return if use(on) then Theme.Brass.Bright else Theme.Iron.TextMuted
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -275,19 +278,19 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 	return scope:New("Frame")({
 		Name = "AutoPotion",
 		Position = position,
-		Size = UDim2.fromOffset(SIZE, SIZE + 16),
+		Size = UDim2.fromOffset(SIZE, SIZE + 20),
 		BackgroundTransparency = 1,
 		Visible = owned,
 		[Children] = {
 			button,
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(-12, SIZE),
-				Size = UDim2.fromOffset(SIZE + 24, 16),
+				Size = UDim2.fromOffset(SIZE + 24, 20),
 				BackgroundTransparency = 1,
 				Text = timeText,
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 12,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				TextStrokeTransparency = 0.3,
 			}),
 			panel,

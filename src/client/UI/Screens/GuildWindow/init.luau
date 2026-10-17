@@ -67,7 +67,7 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			Name = "TabStrip",

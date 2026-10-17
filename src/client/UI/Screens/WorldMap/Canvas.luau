@@ -31,6 +31,7 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Canvas = {}
 
@@ -86,9 +87,11 @@ export type Cached = {
 
 local PRIORITY: { [IconKind]: number } = { portal = 40, cave = 40, dungeon = 30, lair = 30, npc = 20, node = 10 }
 -- S134i: an Elite II hideout's skull: orange, smaller than the dungeon's red one
-local LAIR_COLOR = Color3.fromHex("#E0823C")
-local LAIR_CAPTION = Color3.fromHex("#F2C29A")
-local NODE_COLORS: { [string]: string } = { vein = "#E8C25A", bush = "#6FCF5A", fishing = "#5AA8E8" }
+-- S136: the drawing keeps its colours (Data/UiPalette.map)
+local MAP = UiPalette.map
+local LAIR_COLOR = Theme.tint(MAP.lair)
+local LAIR_CAPTION = Theme.tint(MAP.lairCaption)
+local NODE_COLORS: { [string]: string } = { vein = MAP.vein, bush = MAP.bush, fishing = MAP.fishing }
 
 local cache: { [string]: Cached } = {}
 local artScope = Fusion.scoped(Fusion)
@@ -215,7 +218,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"⛰",
-				Theme.Colors.ZoneRed,
+				Theme.Zone.Red,
 				20,
 				UiArt.mapIcon("cave")
 			)
@@ -225,7 +228,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				entry,
 				if cave then cave.nameKey else target.nameKey,
 				if cave then ` {cave.levels[1]}–{cave.levels[2]}` else levels,
-				Color3.fromHex("#F2B8A8"),
+				Theme.tint(MAP.caveCaption),
 				11,
 				16
 			)
@@ -239,14 +242,14 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"☠",
-				Theme.Colors.Danger,
+				Theme.tint(MAP.dungeonMark),
 				20,
 				UiArt.mapIcon("dungeon")
 			)
 			entry.target = portal.target
 			local key = bossOf(region)
 			if key then
-				caption(cached, entry, key, nil, Theme.Colors.DangerHover, 11, 15)
+				caption(cached, entry, key, nil, Theme.tint(MAP.dungeonMark), 11, 15)
 			end
 		else
 			local entry = icon(
@@ -257,12 +260,12 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"◎",
-				Color3.fromHex("#B9A8FF"),
+				Theme.tint(MAP.portal),
 				18,
 				UiArt.mapIcon("portal")
 			)
 			entry.target = portal.target
-			caption(cached, entry, target.nameKey, levels, Color3.fromHex("#D8CCFF"), 11, 14)
+			caption(cached, entry, target.nameKey, levels, Theme.tint(MAP.portalCaption), 11, 14)
 		end
 	end
 end
@@ -289,13 +292,13 @@ local function npcIcons(cached: Cached, layers: { [string]: Frame })
 				npc.position.x,
 				npc.position.z,
 				npc.icon,
-				Theme.Colors.Parchment,
+				Theme.Iron.Text,
 				15,
 				UiArt.serviceOfNpc(npc)
 			)
-			caption(cached, entry, npc.nameKey, nil, Theme.Colors.Parchment, 10, 13)
-			local mark = text(entry.button, "", Theme.Colors.GoldBright, 17, entry.button.ZIndex + 2)
-			mark.FontFace = Theme.Fonts.Heading
+			caption(cached, entry, npc.nameKey, nil, Theme.Iron.Text, 10, 13)
+			local mark = text(entry.button, "", Theme.Brass.Bright, 17, entry.button.ZIndex + 2)
+			mark.FontFace = Theme.Fonts.Display
 			mark.Position = UDim2.new(0.5, 0, 0.5, -15)
 			mark.Size = UDim2.fromOffset(20, 20)
 			mark.TextStrokeTransparency = 0.1
@@ -310,7 +313,7 @@ local function nodeIcons(cached: Cached, layers: { [string]: Frame })
 	for _, item in cached.sketch.icons do
 		if item.t == "node" and item.id then
 			local family = string.match(item.id, "^(%a+)_") or "vein"
-			local color = Color3.fromHex(NODE_COLORS[family] or "#E8C25A")
+			local color = Theme.tint(NODE_COLORS[family] or MAP.node)
 			local entry = icon(
 				cached,
 				layers.nodes,
@@ -357,7 +360,7 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		pill.Position = UDim2.fromScale(0.5, 0.5)
 		pill.AutomaticSize = Enum.AutomaticSize.XY
 		pill.Size = UDim2.fromOffset(0, 0)
-		pill.BackgroundColor3 = Theme.Colors.Background
+		pill.BackgroundColor3 = Theme.Iron.Sunken
 		pill.BackgroundTransparency = 0.2
 		pill.ZIndex = 3
 		local pillCorner = Instance.new("UICorner")
@@ -388,7 +391,7 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		end
 		local name = line(1, 12, Theme.Fonts.BodyBold)
 		name.RichText = true -- S33: the profile icon in its colour
-		local levels = line(2, 17, Theme.Fonts.Heading)
+		local levels = line(2, 17, Theme.Fonts.Display)
 		pill.Parent = f
 		local star = Instance.new("ImageLabel")
 		star.Name = "Recommended"
@@ -396,7 +399,7 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		star.Position = UDim2.new(1, -4, 0, 4)
 		star.Size = UDim2.fromOffset(18, 18)
 		star.BackgroundTransparency = 1
-		star.ImageColor3 = Theme.Colors.GoldBright
+		star.ImageColor3 = Theme.Brass.Bright
 		star.ZIndex = 4
 		star.Visible = false
 		star.Parent = f
@@ -465,7 +468,7 @@ function Canvas.applyFilter(cached: Cached, services: { [string]: boolean }?)
 			end
 		end
 		local filtering = services ~= nil and next(services) ~= nil
-		local color = if filtering and match then Theme.Colors.GoldBright else entry.color
+		local color = if filtering and match then Theme.Brass.Bright else entry.color
 		entry.glyph.TextColor3 = color
 		UiArtState.fade(entry.glyph, if match then 0 else 0.75, if match then 0.25 else 0.85, color)
 		if entry.caption then
@@ -504,17 +507,17 @@ export type View = { onlyRecommended: boolean, highlight: string?, profiles: boo
 function Canvas.refresh(cached: Cached, level: number, view: View)
 	for _, entry in cached.areas do
 		local area = entry.area
-		local color = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, level)])
+		local color = Theme.tint(LevelBand.COLORS[AreaAdvice.bandOf(area, level)])
 		local recommended = AreaAdvice.isRecommended(area, level)
 		local dim = view.onlyRecommended and not recommended
 		local highlighted = view.highlight == area.id
 		entry.frame.BackgroundColor3 = color
 		entry.frame.BackgroundTransparency = if dim then 0.9 else 0.55
-		entry.stroke.Color = if highlighted then Theme.Colors.GoldBright else color:Lerp(Color3.new(0, 0, 0), 0.45)
+		entry.stroke.Color = if highlighted then Theme.Brass.Bright else color:Lerp(Theme.Shade, 0.45)
 		entry.stroke.Thickness = if highlighted then 4 else 2
 		entry.stroke.Transparency = if dim then 0.7 else 0
 		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.2
-		local icon = if view.profiles ~= false then AreaProfileText.iconRich(area.profile, nil) else ""
+		local icon = if view.profiles ~= false then AreaProfileText.iconRich(area.profile, nil, "iron") else ""
 		local starLook = if recommended then UiArtState.lookNow(UiArt.mapIcon("recommended")) else nil
 		entry.star.Visible = starLook ~= nil
 		if starLook then

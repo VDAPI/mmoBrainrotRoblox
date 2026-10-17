@@ -3,10 +3,11 @@
 -- (wiki/design/vaelthorn.css): --vw-r-<key> and --vw-glow-<key> per rarity KEY (--vw-r-0/1/2 are radii), a text
 -- variant --vw-r-<key>-text with WCAG contrast >= 5.5:1 on --vw-panel (S44; AA on tinted surfaces too) (lighter in the dark theme, darker in
 -- [data-theme="light"]), --vw-el-<id> from Data/Elements (--vw-el-physical stays in tokens.css), --vw-class-<id>
--- from Data/Classes and --vw-zone-green|yellow|red from src/client/UI/Theme.luau (read as text).
+-- from Data/Classes and --vw-zone-green|yellow|red from Data/UiPalette.zone (S135; before: Theme.luau as text).
 
 local Basics = require("./Basics")
 local Classes = require("../../src/shared/Data/Classes")
+local Contrast = require("../../src/shared/Logic/Contrast")
 local Clean = require("./Clean")
 local Elements = require("../../src/shared/Data/Elements")
 local Places = require("./Places")
@@ -19,50 +20,15 @@ TokensCss.PANEL_DARK = "#1B1D23" -- --vw-panel in wiki/design/vaelthorn.css
 TokensCss.PANEL_LIGHT = "#FBF8F1" -- --vw-panel in [data-theme="light"]
 TokensCss.MIN_CONTRAST = 5.5 -- S44: AA also on the tinted chips and callouts (colour-mixed backgrounds)
 
-local function rgb(hex: string): (number, number, number)
-	local r, g, b = string.match(hex, "^#(%x%x)(%x%x)(%x%x)$")
-	assert(r and g and b, `TokensCss: bad colour {hex}`)
-	return tonumber(r, 16) :: number, tonumber(g, 16) :: number, tonumber(b, 16) :: number
-end
+local rgb = Contrast.rgb
 
-local function hexOf(r: number, g: number, b: number): string
-	local function c(x: number): number
-		return math.clamp(math.floor(x + 0.5), 0, 255)
-	end
-	return string.format("#%02X%02X%02X", c(r), c(g), c(b))
-end
-
--- WCAG 2 relative luminance and contrast ratio.
-function TokensCss.luminance(hex: string): number
-	local r, g, b = rgb(hex)
-	local function channel(v: number): number
-		local s = v / 255
-		return if s <= 0.03928 then s / 12.92 else ((s + 0.055) / 1.055) ^ 2.4
-	end
-	return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
-end
-
-function TokensCss.contrast(a: string, b: string): number
-	local la, lb = TokensCss.luminance(a), TokensCss.luminance(b)
-	local hi, lo = math.max(la, lb), math.min(la, lb)
-	return (hi + 0.05) / (lo + 0.05)
-end
+-- WCAG 2 relative luminance and contrast ratio (S135: the formula lives in src/shared/Logic/Contrast).
+TokensCss.luminance = Contrast.luminance
+TokensCss.contrast = Contrast.contrast
 
 -- The colour mixed towards `target` (white or black) until it reaches the contrast on `background`.
 function TokensCss.readable(hex: string, background: string, target: string): string
-	if TokensCss.contrast(hex, background) >= TokensCss.MIN_CONTRAST then
-		return string.upper(hex)
-	end
-	local r, g, b = rgb(hex)
-	local tr, tg, tb = rgb(target)
-	for step = 1, 100 do
-		local t = step / 100
-		local mixed = hexOf(r + (tr - r) * t, g + (tg - g) * t, b + (tb - b) * t)
-		if TokensCss.contrast(mixed, background) >= TokensCss.MIN_CONTRAST then
-			return mixed
-		end
-	end
-	return string.upper(target)
+	return Contrast.readable(hex, background, TokensCss.MIN_CONTRAST, target)
 end
 
 -- Glow of a rarity like the design system: stronger with the rarity (index 0 = Common).
@@ -108,7 +74,7 @@ function TokensCss.generate(ctx: any): string
 		table.insert(dark, `  --vw-class-{id}: {string.upper(c.color)};`)
 		table.insert(light, `  --vw-class-{id}: {TokensCss.readable(c.color, TokensCss.PANEL_LIGHT, "#000000")};`)
 	end
-	local zones = Basics.zoneColors(ctx.themeText, ctx.warnings)
+	local zones = Basics.zoneColors()
 	for _, zone in { "green", "yellow", "red" } do
 		table.insert(dark, `  --vw-zone-{zone}: {zones[zone]};`)
 		table.insert(light, `  --vw-zone-{zone}: {TokensCss.readable(zones[zone], TokensCss.PANEL_LIGHT, "#000000")};`)

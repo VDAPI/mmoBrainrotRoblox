@@ -39,8 +39,8 @@ function EmoteButton.Slot(scope: Scope, props: { OnOpen: () -> (), LayoutOrder: 
 			return use(Device.Touch) ~= true
 		end),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.2,
+		BackgroundColor3 = Theme.Iron.Raised,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = "",
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
@@ -50,9 +50,8 @@ function EmoteButton.Slot(scope: Scope, props: { OnOpen: () -> (), LayoutOrder: 
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = Theme.Stroke.Normal,
-				Color = Theme.Colors.Gold,
-				Transparency = 0.3,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Brass.Line,
 			}),
 			scope:New("TextLabel")({
 				Name = "Icon",
@@ -60,19 +59,21 @@ function EmoteButton.Slot(scope: Scope, props: { OnOpen: () -> (), LayoutOrder: 
 				Size = UDim2.fromScale(1, 1),
 				Text = GLYPH,
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 28,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Title,
+				TextColor3 = Theme.Iron.Text,
 			}),
 			scope:New("TextLabel")({
 				Name = "Key",
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -4, 0, 2),
-				Size = UDim2.fromOffset(16, 14),
-				BackgroundTransparency = 1,
+				Size = UDim2.fromOffset(16, 16),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundColor3 = Theme.Iron.Sunken, -- S136: the key on a plaque
+				BackgroundTransparency = Theme.BadgeAlpha,
 				Text = Keybinds.Label(scope, "emote_wheel"),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 12,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.Text,
 			}),
 		},
 	})
@@ -91,12 +92,12 @@ function EmoteButton.Touch(scope: Scope, props: { OnOpen: () -> () }): Instance
 			return use(Device.Touch) == true
 		end),
 		AutoButtonColor = false,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = GLYPH,
 		FontFace = Theme.Fonts.BodyBold,
-		TextSize = 26,
-		TextColor3 = Theme.Colors.Text,
+		TextSize = Theme.TextSize.Large,
+		TextColor3 = Theme.Iron.Text,
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
 			props.OnOpen()
@@ -106,7 +107,7 @@ function EmoteButton.Touch(scope: Scope, props: { OnOpen: () -> () }): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thin,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Brass.Line,
 			}),
 		},
 	})

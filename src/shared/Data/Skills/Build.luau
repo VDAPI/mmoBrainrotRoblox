@@ -8,6 +8,8 @@ local Build = {}
 export type Spec = {
 	id: string,
 	path: string?, -- S57: path id (unlock = the row level); nil = class base
+	pool: string?, -- S137 (DESIGN-18 §4): "common" or a pool id; nil for path skills
+	role: string?, -- S137: ladder code (DESIGN-18 §5), from the class sessions on
 	unlock: number,
 	maxLevel: number,
 	type: Types.SkillType,
@@ -39,6 +41,11 @@ export type Spec = {
 	ringRadius: number?, -- S76 (ROZWOJ 11.4)
 	pull: (number | boolean)?, -- S76 (ROZWOJ 16.5)
 	finisher: { hp: number, mul: number }?, -- S76 (ROZWOJ 11.3)
+	burnStacks: number?, -- S140 (Logic/Burn)
+	knockback: number?, -- S140
+	travel: number?, -- S141 (Frozen Orb)
+	waveEffects: boolean?, -- S141
+	freezeWave: number?, -- S141 (Blizzard)
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -101,6 +108,8 @@ function Build.class(
 			class = classId,
 			order = order,
 			path = spec.path,
+			pool = spec.pool,
+			role = spec.role,
 			unlock = spec.unlock,
 			maxLevel = spec.maxLevel,
 			type = spec.type,
@@ -131,6 +140,11 @@ function Build.class(
 			ringRadius = spec.ringRadius,
 			pull = spec.pull,
 			finisher = spec.finisher,
+			burnStacks = spec.burnStacks,
+			knockback = spec.knockback,
+			travel = spec.travel,
+			waveEffects = spec.waveEffects,
+			freezeWave = spec.freezeWave,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

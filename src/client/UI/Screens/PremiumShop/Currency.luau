@@ -33,7 +33,7 @@ local function chip(scope: Scope, order: number, glyph: string, color: Color3, l
 		LayoutOrder = order,
 		Size = UDim2.fromOffset(0, 32),
 		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -51,7 +51,7 @@ local function chip(scope: Scope, order: number, glyph: string, color: Color3, l
 				Text = glyph,
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Color3.new(1, 1, 1),
+				TextColor3 = Theme.Plain,
 				TextStrokeTransparency = 0.4,
 				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
 			}),
@@ -63,7 +63,7 @@ local function chip(scope: Scope, order: number, glyph: string, color: Color3, l
 				Text = label,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 			}),
 		},
 	})
@@ -80,7 +80,7 @@ local function packCard(
 			scope,
 			1,
 			"◆",
-			Theme.Colors.Accent,
+			Theme.Paper.Link,
 			Text.now("premium.pack", { n = Format.number(pack.shards) }),
 			CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) })
 		),
@@ -88,7 +88,7 @@ local function packCard(
 	for i, id in pack.cosmetics do
 		local def = CosmeticData.get(id)
 		if def then
-			table.insert(chips, chip(scope, 1 + i, def.icon, Color3.fromHex(def.color), Text.now(def.nameKey)))
+			table.insert(chips, chip(scope, 1 + i, def.icon, Theme.tint(def.color), Text.now(def.nameKey)))
 		end
 	end
 	local ownsPass = false
@@ -97,20 +97,20 @@ local function packCard(
 		ownsPass = ownsPass or passes[key] == true
 		table.insert(
 			chips,
-			chip(scope, 10 + i, if pass then pass.icon else "▣", Theme.Colors.GoldDim, Text.now(`premium.pass.{key}`))
+			chip(scope, 10 + i, if pass then pass.icon else "▣", Theme.Paper.Label, Text.now(`premium.pass.{key}`))
 		)
 	end
 	return scope:New("Frame")({
 		LayoutOrder = order,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = Theme.Colors.GoldDim,
+				Color = Theme.Paper.Rule,
 				Thickness = Theme.Stroke.Thin,
 			}),
 			scope:New("Frame")({
@@ -131,7 +131,7 @@ local function packCard(
 						Text = Text.T(scope, `premium.pack.{pack.key}`),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					scope:New("TextLabel")({
@@ -143,7 +143,7 @@ local function packCard(
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					scope:New("Frame")({
@@ -171,7 +171,7 @@ local function packCard(
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Warning,
+						TextColor3 = Theme.Paper.Warning,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},

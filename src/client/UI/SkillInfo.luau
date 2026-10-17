@@ -14,6 +14,9 @@
 -- S76: the aim time in the cost line, a ring of snares (trap with ringRadius), a debuff with a radius; costs and
 -- descriptions take the character's hooks (trapCost).
 -- S80: the cost counts our Arcane Charges (Skills.cost); a beam shows its mana per tick (Skills.drain, % of max mana).
+-- S139 (DESIGN-18 §12): `short` = the one sentence `skill.<id>.short` with the numbers of the rank; the bar tooltip
+-- shows it above the numbers (shape, cost, heal) instead of the full description (that one only in the skills
+-- window's details). Descriptions also count the equipped item effects (Logic/ItemEffects.mods, as effectiveFor).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,6 +24,7 @@ local Workspace = game:GetService("Workspace")
 
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ItemEffects = require(ReplicatedStorage.Shared.Logic.ItemEffects)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -94,13 +98,31 @@ end
 local function descOpts(use: any, skill: SkillData.SkillDef): Skills.DescOpts
 	local c = charOf(use)
 	local state = c.path
+	local mods = Paths.skillMods(c, skill.id, Paths.weaponTypesOf(c.equipment))
+	for _, mod in ItemEffects.mods(c, skill.id) do
+		table.insert(mods, mod :: any)
+	end
 	return {
 		level = c.level,
 		choices = if state then state.bp else nil,
-		mods = Paths.skillMods(c, skill.id, Paths.weaponTypesOf(c.equipment)),
+		mods = mods,
 		cdr = SkillInfo.cdr(use),
 		hooks = SkillInfo.hooks(use),
 	}
+end
+
+-- S139: the one sentence of the skill (`skill.<id>.short`) with the numbers of `rank` (at least 1).
+function SkillInfo.short(use: any, skill: SkillData.SkillDef, rank: number): string
+	return Text.get(
+		use,
+		`skill.{skill.id}.short`,
+		Skills.descriptionArgs(skill, math.max(1, rank), descOpts(use, skill))
+	)
+end
+
+-- S139: the full description at `rank` (at least 1), as the window's "Full description" shows it.
+function SkillInfo.full(use: any, skill: SkillData.SkillDef, rank: number): string
+	return Skills.formatDescription(skill, math.max(1, rank), use(Text.Lang), descOpts(use, skill))
 end
 
 local function levelOf(use: any): number
@@ -324,14 +346,16 @@ function SkillInfo.healLine(use: any, skill: SkillData.SkillDef, rank: number): 
 end
 
 -- The whole tooltip as plain text (the skill bar); `choices` default: path.bp of the character.
+-- S139: name and rank, the short sentence, then the numbers (shape, cost, heal) and the working breakpoints reached;
+-- the full description and the next rank only in the skills window.
 function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, choices: Skills.Choices?): string
-	local lang = use(Text.Lang)
 	local shown = math.max(1, rank)
 	local rankText = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
 	local lines = { `{Text.get(use, skill.nameKey)} · {rankText}` }
 	if rank <= 0 then
 		table.insert(lines, Text.get(use, "skills.unlockAt", { level = skill.unlock }))
 	end
+	table.insert(lines, SkillInfo.short(use, skill, shown))
 	local shape = SkillInfo.shapeLine(use, skill, shown)
 	if shape ~= "" then
 		table.insert(lines, shape)
@@ -339,19 +363,14 @@ function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, ch
 	if skill.type ~= "passive" then
 		table.insert(lines, SkillInfo.costLine(use, skill, shown))
 	end
-	local opts = descOpts(use, skill)
-	table.insert(lines, Skills.formatDescription(skill, shown, lang, opts))
 	local heal = SkillInfo.healLine(use, skill, shown)
 	if heal ~= "" then
 		table.insert(lines, heal)
 	end
-	if rank > 0 and rank < skill.maxLevel then
-		local nextText = Skills.formatDescription(skill, rank + 1, lang, opts)
-		local label = Text.get(use, "skills.nextRank", { rank = rank + 1, level = Skills.rankLevel(skill, rank + 1) })
-		table.insert(lines, `{label}: {nextText}`)
-	end
 	for _, bp in SkillInfo.breakpoints(use, skill, rank, choices) do
-		table.insert(lines, (if bp.reached then "✔ " else "· ") .. bp.text)
+		if bp.reached then
+			table.insert(lines, `✔ {bp.text}`)
+		end
 	end
 	local element = Skills.requiredElement(skill)
 	if element then

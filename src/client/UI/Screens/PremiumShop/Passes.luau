@@ -75,7 +75,7 @@ local function vipCard(scope: Scope, ctx: Cards.Ctx): Instance
 	})
 	scope:New("UIStroke")({
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-		Color = Theme.Colors.GoldBright,
+		Color = Theme.Brass.Frame,
 		Thickness = Theme.Stroke.Normal,
 		Parent = card,
 	})

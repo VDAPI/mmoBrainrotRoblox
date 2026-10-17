@@ -42,9 +42,9 @@ local ROMAN = { "I", "II", "III", "IV", "V" }
 local LONG_PRESS = 0.5
 
 local KINDS: { { kind: string, color: Color3 } } = {
-	{ kind = "hp", color = Theme.Colors.Hp },
-	{ kind = "mana", color = Theme.Colors.Mana },
-	{ kind = "energy", color = Theme.Colors.Energy },
+	{ kind = "hp", color = Theme.Resource.Hp },
+	{ kind = "mana", color = Theme.Resource.Mana },
+	{ kind = "energy", color = Theme.Resource.Energy },
 }
 
 local function PotionBar(scope: Scope, props: Props): Instance
@@ -124,8 +124,8 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			LayoutOrder = index,
 			Size = UDim2.fromOffset(SIZE, SIZE),
 			AutoButtonColor = false,
-			BackgroundColor3 = Theme.Colors.Panel,
-			BackgroundTransparency = 0.2,
+			BackgroundColor3 = Theme.Iron.Raised, -- S136: the iron slot
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = "",
 			[OnEvent("Activated")] = function()
 				if os.clock() - DragDrop.LastDropAt < 0.3 then
@@ -157,8 +157,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 				scope:New("UIStroke")({
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 					Thickness = Theme.Stroke.Normal,
-					Color = entry.color,
-					Transparency = 0.3,
+					Color = Theme.Brass.Line,
 				}),
 				-- S35: the assigned potion's picture (size and colour from its data) while the atlases are loaded.
 				ItemIcon(scope, {
@@ -183,7 +182,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Transparency = scope:Computed(function(use): number
 						return if use(amount) > 0 then 0 else 0.7
 					end),
-					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 30 },
+					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Title },
 				}),
 				scope:New("TextLabel")({
 					Name = "Quality",
@@ -201,8 +200,9 @@ local function PotionBar(scope: Scope, props: Props): Instance
 						return if def and def.tier then ROMAN[def.tier] or "" else ""
 					end),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 11,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.Text,
+					TextStrokeTransparency = 0.2,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("TextLabel")({
@@ -215,8 +215,8 @@ local function PotionBar(scope: Scope, props: Props): Instance
 						return tostring(use(amount))
 					end),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 14,
-					TextColor3 = Theme.Colors.Text,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.Text,
 					TextStrokeTransparency = 0.2,
 					TextXAlignment = Enum.TextXAlignment.Right,
 				}),
@@ -224,12 +224,14 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Name = "Key",
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -4, 0, 2),
-					Size = UDim2.fromOffset(16, 14),
-					BackgroundTransparency = 1,
+					Size = UDim2.fromOffset(16, 16),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundColor3 = Theme.Iron.Sunken, -- S136: the key on a plaque
+					BackgroundTransparency = Theme.BadgeAlpha,
 					Text = Keybinds.Label(scope, `potion_{entry.kind}`),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 12,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.Text,
 				}),
 				-- Cooldown sweep (fills from the bottom)
 				scope:New("Frame")({
@@ -239,7 +241,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					Size = scope:Computed(function(use): UDim2
 						return UDim2.fromScale(1, use(cooldown))
 					end),
-					BackgroundColor3 = Color3.new(0, 0, 0),
+					BackgroundColor3 = Theme.Shade,
 					BackgroundTransparency = 0.45,
 					ZIndex = 3,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -301,7 +303,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					TextWrapped = true,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = Theme.Iron.Text,
 				})
 			)
 		end
@@ -313,15 +315,15 @@ local function PotionBar(scope: Scope, props: Props): Instance
 				list,
 				s:New("TextButton")({
 					LayoutOrder = i,
-					Size = UDim2.fromOffset(240, 34),
+					Size = UDim2.fromOffset(240, Theme.Size.MinTouch),
 					AutoButtonColor = true,
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Iron.Raised,
 					Text = if elixirRow and def
 						then `{def.icon.glyph} {ItemText.get(use, id)} ({found[id]})`
 						else `{ItemText.get(use, id)} ({found[id]})`,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = if elixirRow and def then Color3.fromHex(def.icon.color) else Theme.Colors.Text,
+					TextColor3 = if elixirRow and def then Theme.readable(def.icon.color, "iron") else Theme.Iron.Text,
 					[OnEvent("Activated")] = function()
 						picker:set(nil)
 						props.Assign(kind, id)
@@ -358,13 +360,13 @@ local function PotionBar(scope: Scope, props: Props): Instance
 				Position = UDim2.new(0.5, 0, 0, -8),
 				Size = UDim2.fromOffset(252, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Iron.Surface,
 				Visible = scope:Computed(function(use): boolean
 					return use(picker) ~= nil
 				end),
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 					scope:New("UIPadding")({
 						PaddingTop = UDim.new(0, 6),
 						PaddingBottom = UDim.new(0, 6),

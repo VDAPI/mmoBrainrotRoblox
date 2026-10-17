@@ -3,7 +3,7 @@
 -- promote; when the leader leaves, the next member leads; a party of one dissolves. Every member gets the
 -- state branch `party` = { leader, members = { { id, name, class, level, hp, maxHp, mana, maxMana, map,
 -- x, z, dead, path, scoutRange? } }, luck } refreshed twice a second, and a private TextChannel for party chat. S60:
--- `path` = the member's main path id (or nil); `luck` = the party's Fortune on bosses (Logic/Luck.boss) or nil when
+-- `path` = the member's leading direction (S138: Logic/Paths.mainOf; or nil); `luck` = the party's Fortune on bosses (Logic/Luck.boss) or nil when
 -- neutral. S78: scoutRange: Scout's Eye bonus in studs (ROZWOJ 11.5), read by the minimaps of members within
 -- HOOK_RULES.scoutEye.shareRange.
 -- Other systems use AreAllies / SameParty / Members / MembersInRange.
@@ -20,6 +20,7 @@ local Shared = ReplicatedStorage.Shared
 local Log = require(Shared.Util.Log)
 local Luck = require(Shared.Logic.Luck)
 local Net = require(Shared.Net)
+local Paths = require(Shared.Logic.Paths)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local Types = require(Shared.Types)
@@ -61,7 +62,7 @@ local function skillService(): any
 	return SkillService
 end
 
--- S78: Scout's Eye of a member (hook minimapEliteBonus of its path nodes, already x1/3 outside the main path), nil at 0.
+-- S78: Scout's Eye of a member (hook minimapEliteBonus of its path nodes, already x1/3 below TEAM_FULL_POINTS, S138), nil at 0.
 local function scoutRange(member: Player): number?
 	local bonus = math.floor(skillService().PassiveHook(member, "minimapEliteBonus") + 0.5)
 	return if bonus > 0 then bonus else nil
@@ -197,7 +198,7 @@ local function publish(party: Party?, player: Player, luck: Luck.BossLuck?)
 			x = if root then math.floor(root.Position.X) else 0,
 			z = if root then math.floor(root.Position.Z) else 0,
 			dead = ResourceService.IsDead(member),
-			path = if char and char.path then char.path.main else nil,
+			path = if char then Paths.mainOf(char) else nil, -- S138: the leading direction's sign
 			scoutRange = scoutRange(member),
 		})
 	end

@@ -11,6 +11,7 @@ local Actions = require(script.Parent.Actions)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -55,15 +56,16 @@ function Breakpoints.new(
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 	end
-	table.insert(out, label(Text.get(use, "skills.breakpoints"), Theme.Colors.Gold, Theme.Fonts.BodyBold))
+	-- S135: the section label (upper case) and the A / B cards raised with an edge, the working one in brass
+	table.insert(out, SectionLabel(s, { Text = Text.get(use, "skills.breakpoints") }))
 	for _, card in cards do
 		table.insert(
 			out,
 			label(
 				Text.get(use, "bp.title", { rank = card.at, level = card.level }),
-				if card.reached then Theme.Colors.Parchment else Theme.Colors.TextMuted,
+				if card.reached then Theme.Paper.Text else Theme.Paper.TextMuted,
 				Theme.Fonts.BodyBold,
-				14
+				Theme.TextSize.Small
 			)
 		)
 		local hasB = #card.options > 1
@@ -82,14 +84,13 @@ function Breakpoints.new(
 					Name = `Bp{card.at}{option.option}`,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = Theme.Colors.Panel,
-					BackgroundTransparency = if card.reached then 0.2 else 0.6,
+					BackgroundColor3 = if card.reached then Theme.Paper.Raised else Theme.Paper.Sunken,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIStroke")({
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-							Thickness = if working then 2 else 1,
-							Color = if working and card.reached then Theme.Colors.Gold else Theme.Colors.Border,
+							Thickness = if working then Theme.Stroke.Normal else Theme.Stroke.Thin,
+							Color = if working and card.reached then Theme.Brass.Frame else Theme.Paper.Border,
 						}),
 						s:New("UIPadding")({
 							PaddingTop = UDim.new(0, 6),
@@ -100,11 +101,11 @@ function Breakpoints.new(
 						s:New("TextLabel")({
 							Name = "Letter",
 							Size = UDim2.fromOffset(24, 24),
-							BackgroundColor3 = if working then Theme.Colors.GoldDim else Theme.Colors.PanelRaised,
+							BackgroundColor3 = if working then Theme.Paper.Accent else Theme.Paper.Surface,
 							Text = string.upper(option.option),
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 15,
-							TextColor3 = Theme.Colors.Parchment,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if working then Theme.Paper.AccentText else Theme.Paper.Text,
 							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 						}),
 						s:New("TextLabel")({
@@ -116,32 +117,32 @@ function Breakpoints.new(
 							Text = option.text,
 							TextWrapped = true,
 							FontFace = Theme.Fonts.Body,
-							TextSize = 14,
-							TextColor3 = if card.reached then Theme.Colors.Text else Theme.Colors.TextMuted,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if card.reached then Theme.Paper.Text else Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 						s:New("TextLabel")({
 							Name = "State",
 							AnchorPoint = Vector2.new(1, 0),
 							Position = UDim2.fromScale(1, 0),
-							Size = UDim2.fromOffset(RIGHT, 18),
+							Size = UDim2.fromOffset(RIGHT, 20),
 							BackgroundTransparency = 1,
 							Text = state,
 							TextWrapped = true,
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 13,
+							TextSize = Theme.TextSize.Small,
 							TextColor3 = if card.chosen == option.option
-								then Theme.Colors.Success
-								else Theme.Colors.TextMuted,
+								then Theme.Paper.Success
+								else Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Right,
 						}),
 						if canChoose
 							then Button(s, {
 								AnchorPoint = Vector2.new(1, 0),
 								Position = UDim2.new(1, 0, 0, 20),
-								Size = UDim2.fromOffset(RIGHT, 28),
+								Size = UDim2.fromOffset(RIGHT, 32),
 								Variant = "secondary",
-								TextSize = 14,
+								TextSize = Theme.TextSize.Small,
 								Text = Text.get(use, "bp.choose"),
 								OnClick = function()
 									actions.chooseBp(skill.id, at, choice)
@@ -152,16 +153,16 @@ function Breakpoints.new(
 						s:New("Frame")({
 							Name = "MinHeight",
 							BackgroundTransparency = 1,
-							Size = UDim2.fromOffset(1, if canChoose then 48 else 24),
+							Size = UDim2.fromOffset(1, if canChoose then 54 else 24),
 						}),
 					},
 				})
 			)
 		end
 		if hasB then
-			table.insert(out, label(Text.get(use, "bp.rule"), Theme.Colors.TextMuted, nil, 14))
+			table.insert(out, label(Text.get(use, "bp.rule"), Theme.Paper.TextMuted, nil, Theme.TextSize.Small))
 			if refused and refused.key == Skills.choiceKey(skill.id, card.at) then
-				table.insert(out, label(Text.get(use, refused.err), Theme.Colors.DangerHover, nil, 14))
+				table.insert(out, label(Text.get(use, refused.err), Theme.Paper.Danger, nil, Theme.TextSize.Small))
 			end
 		end
 	end

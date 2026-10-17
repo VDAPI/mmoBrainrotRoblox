@@ -30,6 +30,7 @@ export type Props = {
 	LayoutOrder: number?,
 	Position: UDim2?,
 	Width: UDim?, -- default the full width; the height follows the content (wraps)
+	Surface: Theme.SurfaceName?, -- S135 (default "paper"; legacy dark windows "iron")
 }
 
 -- Icon and a number (EXP, gold; S35: CurrencyIcon when `iconColor` is nil) or a short note, as tall as the slots
@@ -40,8 +41,10 @@ local function chip(
 	icon: string,
 	iconColor: Color3?,
 	text: Fusion.UsedAs<string>,
-	height: number
+	height: number,
+	surface: Theme.SurfaceName?
 )
+	local roles = Theme.surface(surface)
 	return scope:New("Frame")({
 		Name = "Chip",
 		LayoutOrder = order,
@@ -62,13 +65,14 @@ local function chip(
 					BackgroundTransparency = 1,
 					Text = icon,
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 18,
+					TextSize = Theme.TextSize.Small,
 					TextColor3 = iconColor,
 				})
 				else CurrencyIcon(scope, {
 					Currency = icon :: CurrencyIcon.Currency,
 					Size = UDim2.fromOffset(20, 20),
 					LayoutOrder = 1,
+					Surface = surface,
 				}),
 			scope:New("TextLabel")({
 				LayoutOrder = 2,
@@ -77,8 +81,8 @@ local function chip(
 				BackgroundTransparency = 1,
 				Text = text,
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 16,
-				TextColor3 = Theme.Colors.Parchment,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = roles.Text,
 			}),
 		},
 	})
@@ -87,6 +91,8 @@ end
 local function QuestRewards(scope: Scope, props: Props): Instance
 	local size = props.SlotSize or 40
 	local reward = props.Reward
+	local surface = props.Surface
+	local roles = Theme.surface(surface)
 	local children: { Instance } = {}
 	local order = 0
 	local function add(instance: Instance)
@@ -103,8 +109,8 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 				return `{Text.get(use, "quest.rewards")}:`
 			end),
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 16,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = roles.Heading,
 		}))
 	end
 	if reward.exp > 0 then
@@ -116,15 +122,16 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 			scope:Computed(function(use): string
 				return Text.get(use, "quest.reward.exp", { exp = Format.number(reward.exp) })
 			end),
-			size
+			size,
+			surface
 		))
 	end
 	if reward.gold > 0 then
-		add(chip(scope, 0, "gold", nil, Format.number(reward.gold), size))
+		add(chip(scope, 0, "gold", nil, Format.number(reward.gold), size, surface))
 	end
 	-- S134k: the Hunter's Marks of a hunting contract
 	if (reward.marks or 0) > 0 then
-		add(chip(scope, 0, "huntmarks", nil, Format.number(reward.marks or 0), size))
+		add(chip(scope, 0, "huntmarks", nil, Format.number(reward.marks or 0), size, surface))
 	end
 	for n, entry in (reward.items or {}) :: { { id: string, n: number } } do
 		if Items.get(entry.id) then
@@ -133,6 +140,7 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 				Item = ItemRoll.makeStack(entry.id, entry.n, `quest:{props.Id}:{n}`),
 				Size = size,
 				TooltipCtx = { hints = false, merchantOpen = false },
+				Surface = surface,
 			}))
 		end
 	end
@@ -141,14 +149,15 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 			scope,
 			0,
 			"?",
-			Theme.Colors.GoldBright,
+			roles.Heading,
 			scope:Computed(function(use): string
 				return Text.get(
 					use,
 					if reward.choice == "final" then "quest.reward.choiceRare" else "quest.reward.choice"
 				)
 			end),
-			size
+			size,
+			surface
 		))
 	end
 	local mountDef = if reward.mount then Mounts.get(reward.mount) else nil
@@ -157,11 +166,12 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 			scope,
 			0,
 			"🐎",
-			Theme.Colors.GoldBright,
+			roles.Heading,
 			scope:Computed(function(use): string
 				return Text.get(use, "quest.reward.mount", { name = Text.get(use, mountDef.nameKey) })
 			end),
-			size
+			size,
+			surface
 		))
 	end
 	-- S97: an account cosmetic (the stable arc's and the quest vaelgrath's mount skins)
@@ -171,11 +181,12 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 			scope,
 			0,
 			cosmeticDef.icon,
-			Theme.Colors.GoldBright,
+			roles.Heading,
 			scope:Computed(function(use): string
 				return Text.get(use, "quest.reward.cosmetic", { name = Text.get(use, cosmeticDef.nameKey) })
 			end),
-			size
+			size,
+			surface
 		))
 	end
 	local width = props.Width or UDim.new(1, 0)

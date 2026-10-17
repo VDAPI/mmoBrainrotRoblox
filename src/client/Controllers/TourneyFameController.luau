@@ -88,7 +88,7 @@ local function face(scope: Scope, hall: Fusion.Value<any>, mode: Fusion.Value<an
 					Size = UDim2.new(0.94, 0, 0, 30),
 					Text = Text.get(use, "tourney.hall.empty"),
 					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextSize = 20,
 				})
 			)
@@ -103,8 +103,8 @@ local function face(scope: Scope, hall: Fusion.Value<any>, mode: Fusion.Value<an
 					Position = UDim2.new(x, 0, 0, 46),
 					Size = UDim2.new(width - 0.02, 0, 0, 18),
 					Text = `{b.min}–{b.max}`,
-					FontFace = Theme.Fonts.Heading,
-					TextColor3 = Theme.Colors.GoldBright,
+					FontFace = Theme.Fonts.Display,
+					TextColor3 = Theme.Paper.Heading,
 					TextSize = 15,
 				})
 			)
@@ -122,7 +122,7 @@ local function face(scope: Scope, hall: Fusion.Value<any>, mode: Fusion.Value<an
 						Text = text,
 						TextWrapped = true,
 						TextTruncate = Enum.TextTruncate.None,
-						TextColor3 = if row and n == 1 then Theme.Colors.GoldBright else INK,
+						TextColor3 = if row and n == 1 then Theme.Paper.Heading else INK,
 						FontFace = if row and n == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body,
 						TextSize = 13,
 					})
@@ -136,8 +136,8 @@ local function face(scope: Scope, hall: Fusion.Value<any>, mode: Fusion.Value<an
 			Position = UDim2.new(0.02, 0, 0, 8),
 			Size = UDim2.new(0.66, 0, 0, 32),
 			Text = Text.T(scope, "tourney.hall"),
-			FontFace = Theme.Fonts.Heading,
-			TextColor3 = Theme.Colors.GoldBright,
+			FontFace = Theme.Fonts.Display,
+			TextColor3 = Theme.Paper.Heading,
 			TextSize = 22,
 		}),
 		label(scope, {
@@ -145,7 +145,7 @@ local function face(scope: Scope, hall: Fusion.Value<any>, mode: Fusion.Value<an
 			Position = UDim2.new(0.98, 0, 0, 12),
 			Size = UDim2.new(0.3, 0, 0, 16),
 			Text = Text.T(scope, "tourney.hall.local"),
-			TextColor3 = Theme.Colors.Warning,
+			TextColor3 = Theme.Paper.Warning,
 			TextSize = 12,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			Visible = scope:Computed(function(use): boolean
@@ -253,7 +253,7 @@ local function writePlaque(part: Instance)
 				BackgroundTransparency = 1,
 				TextScaled = true,
 				TextWrapped = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextXAlignment = Enum.TextXAlignment.Center,
 				Text = scope:Computed(function(use): string
 					local name = use(hero)
@@ -268,7 +268,7 @@ local function writePlaque(part: Instance)
 				end),
 				TextColor3 = scope:Computed(function(use): Color3
 					local name = use(hero)
-					return if type(name) == "string" and name ~= "" then Theme.Colors.GoldBright else INK
+					return if type(name) == "string" and name ~= "" then Theme.Paper.Heading else INK
 				end),
 				[Children] = scope:New("UITextSizeConstraint")({ MaxTextSize = 20 }),
 			}),

@@ -60,7 +60,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 					Text = Text.get(use, "emote.wheel.empty"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Iron.TextMuted,
 				})
 			)
 		end
@@ -77,7 +77,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 				Position = UDim2.new(0.5, math.cos(angle) * RADIUS, 0.5, math.sin(angle) * RADIUS),
 				Size = UDim2.fromOffset(BUTTON.X, BUTTON.Y),
 				AutoButtonColor = true,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				BackgroundTransparency = s:Computed(function(use2): number
 					return if use2(blocked) then 0.55 else 0.1
 				end),
@@ -96,7 +96,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 					s:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Color3.fromHex(def.color),
+						Color = Theme.tint(def.color),
 						Thickness = Theme.Stroke.Normal,
 					}),
 					s:New("TextLabel")({
@@ -105,9 +105,9 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 						BackgroundTransparency = 1,
 						Text = def.icon,
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 26,
+						TextSize = Theme.TextSize.Large,
 						TextColor3 = s:Computed(function(use2): Color3
-							return if use2(blocked) then Theme.Colors.TextMuted else Theme.Colors.Text
+							return if use2(blocked) then Theme.Iron.TextMuted else Theme.Iron.Text
 						end),
 					}),
 					s:New("TextLabel")({
@@ -118,7 +118,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = s:Computed(function(use2): Color3
-							return if use2(blocked) then Theme.Colors.TextMuted else Theme.Colors.Parchment
+							return if use2(blocked) then Theme.Iron.TextMuted else Theme.Iron.Text
 						end),
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -145,12 +145,12 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 			Visible = scope:Computed(function(use): boolean
 				return use(pages) > 1
 			end),
-			BackgroundColor3 = Theme.Colors.Panel,
-			BackgroundTransparency = 0.15,
+			BackgroundColor3 = Theme.Iron.Surface,
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.Gold,
+			TextColor3 = Theme.Iron.Heading,
 			[OnEvent("Activated")] = function()
 				Sounds.play("click")
 				local n = Fusion.peek(pages)
@@ -163,7 +163,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 	return scope:New("TextButton")({
 		Name = "EmoteWheel",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundColor3 = Theme.Shade,
 		BackgroundTransparency = 0.6,
 		AutoButtonColor = false,
 		Text = "",
@@ -178,21 +178,21 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 				Size = UDim2.fromOffset(300, 36),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "emote.wheel"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Iron.Heading,
 			}),
 			scope:New("TextButton")({
 				Name = "Close",
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.5),
 				Size = UDim2.fromOffset(CENTER, CENTER),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.1,
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = Theme.HudAlpha,
 				Text = Text.T(scope, "emote.wheel.close"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Iron.Text,
 				[OnEvent("Activated")] = function()
 					Sounds.play("click")
 					props.Close()
@@ -201,7 +201,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Colors.GoldDim,
+						Color = Theme.Iron.Rule,
 						Thickness = Theme.Stroke.Normal,
 					}),
 				},

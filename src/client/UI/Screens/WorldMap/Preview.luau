@@ -96,7 +96,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?, options: { portrait: b
 	local viewport = scope:New("ViewportFrame")({
 		Name = "Preview",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		BackgroundTransparency = 0,
 		Ambient = Color3.fromRGB(150, 145, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
@@ -116,7 +116,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?, options: { portrait: b
 	glyph.Visible = false
 	glyph.ZIndex = viewport.ZIndex + 1
 	local glyphSize = Instance.new("UITextSizeConstraint")
-	glyphSize.MaxTextSize = 96
+	glyphSize.MaxTextSize = Theme.TextSize.Hero
 	glyphSize.Parent = glyph
 	glyph.Parent = viewport
 
@@ -191,7 +191,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?, options: { portrait: b
 		end
 		if spec.kind == "glyph" then
 			glyph.Text = spec.glyph or "?"
-			glyph.TextColor3 = spec.color or Theme.Colors.Parchment
+			glyph.TextColor3 = spec.color or Theme.Paper.Text
 			glyph.Visible = true
 			return
 		end
@@ -215,7 +215,7 @@ function Preview.new(scope: Scope, buildLook: BuildLook?, options: { portrait: b
 		end
 		if not found then
 			glyph.Text = spec.glyph or "?"
-			glyph.TextColor3 = spec.color or Theme.Colors.Parchment
+			glyph.TextColor3 = spec.color or Theme.Paper.Text
 			glyph.Visible = true
 			return
 		end

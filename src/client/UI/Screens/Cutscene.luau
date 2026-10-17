@@ -49,7 +49,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 		end
 		local speaker = use(props.Speaker)
 		if speaker then
-			local gold = "#" .. Theme.Colors.Gold:ToHex()
+			local gold = "#" .. Theme.Iron.Heading:ToHex()
 			return `<font color="{gold}"><b>{escape(speaker)}</b></font>   {escape(line)}`
 		end
 		return `<i>{escape(line)}</i>`
@@ -57,7 +57,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 	return scope:New("TextButton")({
 		Name = "Cutscene",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundColor3 = Theme.Shade,
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(props.Card) then 1 - props.CardDim else 1
 		end),
@@ -75,7 +75,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromScale(1, use(bar))
 				end),
-				BackgroundColor3 = Color3.new(0, 0, 0),
+				BackgroundColor3 = Theme.Shade,
 				BorderSizePixel = 0,
 				ZIndex = 51,
 				[Children] = {
@@ -86,20 +86,20 @@ local function Cutscene(scope: Scope, props: Props): Instance
 						Size = scope:Computed(function(use): UDim2
 							return if use(touch) then UDim2.fromOffset(120, 44) else UDim2.fromOffset(160, 48)
 						end),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Iron.Raised,
 						BackgroundTransparency = 0.2,
 						AutoButtonColor = true,
 						Text = Text.T(scope, "cutscene.skip"),
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = sized(22, 20),
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = sized(Theme.TextSize.Large, Theme.TextSize.Body),
+						TextColor3 = Theme.Iron.Text,
 						ZIndex = 52,
 						[OnEvent("Activated")] = function()
 							props.OnSkip()
 						end,
 						[Children] = {
 							scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-							scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1, Transparency = 0.4 }),
+							scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 						},
 					}),
 				},
@@ -112,7 +112,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromScale(1, use(bar))
 				end),
-				BackgroundColor3 = Color3.new(0, 0, 0),
+				BackgroundColor3 = Theme.Shade,
 				BorderSizePixel = 0,
 				ZIndex = 51,
 				[Children] = {
@@ -129,8 +129,8 @@ local function Cutscene(scope: Scope, props: Props): Instance
 						TextWrapped = true,
 						Text = lineText,
 						FontFace = Theme.Fonts.Body,
-						TextSize = sized(24, 19),
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = sized(Theme.TextSize.Large, Theme.TextSize.Body),
+						TextColor3 = Theme.Iron.Text,
 						ZIndex = 52,
 						[Children] = {
 							scope:New("UISizeConstraint")({ MaxSize = Vector2.new(1100, math.huge) }),
@@ -144,8 +144,8 @@ local function Cutscene(scope: Scope, props: Props): Instance
 						BackgroundTransparency = 1,
 						Text = Text.T(scope, "cutscene.next"),
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = sized(18, 16),
-						TextColor3 = Theme.Colors.TextMuted,
+						TextSize = sized(Theme.TextSize.Body, Theme.TextSize.Small),
+						TextColor3 = Theme.Iron.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Right,
 						ZIndex = 52,
 					}),
@@ -178,9 +178,9 @@ local function Cutscene(scope: Scope, props: Props): Instance
 						Text = scope:Computed(function(use): string
 							return use(props.Title) or ""
 						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = sized(64, 40),
-						TextColor3 = Theme.Colors.GoldBright,
+						FontFace = Theme.Fonts.Display,
+						TextSize = sized(Theme.TextSize.Hero, Theme.TextSize.Title + 10),
+						TextColor3 = Theme.Brass.Bright,
 						TextStrokeTransparency = 0.5,
 						ZIndex = 52,
 					}),
@@ -196,9 +196,9 @@ local function Cutscene(scope: Scope, props: Props): Instance
 						Text = scope:Computed(function(use): string
 							return use(props.Subtitle) or ""
 						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = sized(30, 22),
-						TextColor3 = Theme.Colors.Parchment,
+						FontFace = Theme.Fonts.Display,
+						TextSize = sized(Theme.TextSize.Title, Theme.TextSize.Large),
+						TextColor3 = Theme.Iron.Text,
 						TextStrokeTransparency = 0.6,
 						ZIndex = 52,
 					}),
@@ -208,7 +208,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Black",
 				Size = UDim2.fromScale(1, 1),
-				BackgroundColor3 = Color3.new(0, 0, 0),
+				BackgroundColor3 = Theme.Shade,
 				BackgroundTransparency = scope:Computed(function(use): number
 					return 1 - use(props.Black)
 				end),

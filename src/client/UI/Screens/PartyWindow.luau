@@ -67,7 +67,7 @@ local function bar(scope: Scope, ratio: Fusion.UsedAs<number>, color: Color3, y:
 	return scope:New("Frame")({
 		Position = UDim2.fromOffset(70, y),
 		Size = UDim2.new(1, -250, 0, 10),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Resource.Track,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
 			scope:New("Frame")({
@@ -113,7 +113,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 			return list
@@ -127,14 +127,14 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 				s:New("Frame")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 64),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = 0.35,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(8, 8),
 							Size = UDim2.fromOffset(48, 48),
-							BackgroundColor3 = Theme.Colors.Panel,
+							BackgroundColor3 = Theme.Paper.Surface,
 							-- S119: class emblem once loaded (glyph otherwise).
 							Text = s:Computed(function(use2): string
 								if class and UiArtState.ready(use2, UiArt.classEmblem(class.id)) then
@@ -143,7 +143,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 								return if class then class.icon else "?"
 							end),
 							TextScaled = true,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextColor3 = Theme.Paper.Heading,
 							FontFace = Theme.Fonts.BodyBold,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -167,12 +167,12 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 								else ""}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if isLeader then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextColor3 = if isLeader then Theme.Paper.Heading else Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
-						bar(s, member.hp / math.max(1, member.maxHp), Theme.Colors.Hp, 34),
-						bar(s, member.mana / math.max(1, member.maxMana), Theme.Colors.Mana, 48),
+						bar(s, member.hp / math.max(1, member.maxHp), Theme.Resource.Hp, 34),
+						bar(s, member.mana / math.max(1, member.maxMana), Theme.Resource.Mana, 48),
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -92, 0.5, 0),
@@ -294,7 +294,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 		}),
@@ -307,7 +307,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 		}),

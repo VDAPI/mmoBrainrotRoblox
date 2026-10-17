@@ -88,9 +88,9 @@ local function PvpToggle(scope: Scope): Instance
 
 	local glyphColor = scope:Computed(function(use): Color3
 		if use(zoneType) == "green" then
-			return Theme.Colors.TextMuted
+			return Theme.Iron.TextMuted
 		end
-		return if use(isOn) then Theme.Colors.Text else Theme.Colors.Gold
+		return if use(isOn) then Theme.Iron.Text else Theme.Iron.Heading
 	end)
 	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
@@ -101,9 +101,9 @@ local function PvpToggle(scope: Scope): Instance
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			if use(isOn) then
-				return Theme.Colors.Danger:Lerp(Theme.Colors.Panel, 0.35)
+				return Theme.Iron.Danger:Lerp(Theme.Iron.Surface, 0.35)
 			end
-			return Theme.Colors.Panel
+			return Theme.Iron.Surface
 		end),
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(zoneType) == "green" then 0.45 else 0.05
@@ -112,7 +112,7 @@ local function PvpToggle(scope: Scope): Instance
 			return if use(artShown) then "" else "⚔"
 		end),
 		FontFace = Theme.Fonts.BodyBold,
-		TextSize = 34,
+		TextSize = Theme.TextSize.Title,
 		TextColor3 = glyphColor,
 		[OnEvent("Activated")] = click,
 		[Children] = {
@@ -131,7 +131,7 @@ local function PvpToggle(scope: Scope): Instance
 					return if use(isOn) then 4 else Theme.Stroke.Normal
 				end),
 				Color = scope:Computed(function(use): Color3
-					return if use(isOn) then Theme.Colors.ZoneRed else Theme.Colors.GoldDim
+					return if use(isOn) then Theme.Zone.Red else Theme.Iron.Rule
 				end),
 			}),
 			-- Countdown / "forced" badge above the button.
@@ -140,8 +140,8 @@ local function PvpToggle(scope: Scope): Instance
 				AnchorPoint = Vector2.new(0.5, 1),
 				Position = UDim2.new(0.5, 0, 0, -4),
 				Size = UDim2.fromOffset(110, 24),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.15,
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean
 					return use(remaining) ~= nil or use(zoneType) == "red"
 				end),
@@ -154,7 +154,7 @@ local function PvpToggle(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				},

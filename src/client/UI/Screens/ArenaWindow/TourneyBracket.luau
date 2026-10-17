@@ -28,7 +28,7 @@ export type Props = {
 local CELL_W, CELL_H = 170, 46
 local GAP_X, GAP_Y = 44, 10
 local HEADER = 26
-local LINE = Color3.fromHex("#6E6658")
+local LINE = Theme.Paper.Border
 
 local function roundTitle(use: Use, round: number, rounds: number): string
 	local key = Tourney.roundKey(round, rounds)
@@ -102,9 +102,9 @@ local function TourneyBracket(scope: Scope, props: Props): Instance
 					Size = UDim2.fromOffset(CELL_W, HEADER - 4),
 					BackgroundTransparency = 1,
 					Text = roundTitle(use, r, rounds),
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Gold,
+					TextColor3 = Theme.Paper.Heading,
 				})
 			)
 		end
@@ -122,15 +122,15 @@ local function TourneyBracket(scope: Scope, props: Props): Instance
 				end
 				return s:New("TextLabel")({
 					LayoutOrder = order,
-					Size = UDim2.new(1, 0, 0, 18),
+					Size = UDim2.new(1, 0, 0, 20),
 					BackgroundTransparency = 1,
 					Text = text,
 					FontFace = if won then Theme.Fonts.BodyBold else Theme.Fonts.Body,
-					TextSize = 14,
+					TextSize = Theme.TextSize.Small,
 					TextColor3 = if won
-						then Theme.Colors.GoldBright
-						elseif lost then Theme.Colors.TextMuted
-						else Theme.Colors.Text,
+						then Theme.Paper.Heading
+						elseif lost then Theme.Paper.TextMuted
+						else Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 				})
@@ -148,11 +148,11 @@ local function TourneyBracket(scope: Scope, props: Props): Instance
 				s:New("Frame")({
 					Position = UDim2.fromOffset(x, cy - CELL_H / 2),
 					Size = UDim2.fromOffset(CELL_W, CELL_H),
-					BackgroundColor3 = if own then Theme.Colors.PanelHover else Theme.Colors.PanelRaised,
+					BackgroundColor3 = if own then Theme.Paper.Hover else Theme.Paper.Raised,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIStroke")({
-							Color = if own then Theme.Colors.GoldBright else Theme.Colors.Border,
+							Color = if own then Theme.Brass.Frame else Theme.Paper.Rule,
 							Thickness = if own then 2 else 1,
 						}),
 						s:New("UIPadding")({ PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }),
@@ -165,14 +165,14 @@ local function TourneyBracket(scope: Scope, props: Props): Instance
 						s:New("TextLabel")({
 							AnchorPoint = Vector2.new(1, 0),
 							Position = UDim2.new(1, 0, 0, 1),
-							Size = UDim2.fromOffset(70, 12),
+							Size = UDim2.fromOffset(70, 20),
 							BackgroundTransparency = 1,
 							Text = note,
 							FontFace = Theme.Fonts.Body,
-							TextSize = 11,
+							TextSize = Theme.TextSize.Small,
 							TextColor3 = if m.field ~= nil and m.winner == nil
-								then Theme.Colors.Warning
-								else Theme.Colors.TextMuted,
+								then Theme.Paper.Warning
+								else Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Right,
 							Visible = note ~= "",
 						}),
@@ -224,10 +224,10 @@ local function TourneyBracket(scope: Scope, props: Props): Instance
 			local h = if props.Height then use(props.Height) else 360
 			return UDim2.new(1, 0, 0, h)
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 8,
-		ScrollBarImageColor3 = Theme.Colors.Border,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		ScrollingDirection = Enum.ScrollingDirection.XY,
 		CanvasSize = scope:Computed(function(use): UDim2
 			local c = use(canvas)

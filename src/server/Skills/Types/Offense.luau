@@ -14,10 +14,17 @@
 -- keeps the first); a chain decides its path first (Logic/Chain.path, flat distance).
 -- S80 (ROZWOJ 12.4, 12.5): `beam` (Arcane Torrent) starts a beam channel through services.Beam; circleTarget with
 -- SkillVfx `waves` (Cataclysm) sends one impact event per wave instead of one at the start.
+-- S140 (Logic/Burn): `target` with values.detonate (Combustion) consumes the caster's burn stacks on the target after the
+-- hit for a blast of detonate % per stack within the skill's radius, stunning from BURN.stunAt stacks (never bosses).
+-- S141 (Logic/Chill): circleTarget with `travel` (Frozen Orb) flies from the caster toward the aim, wave n centred at
+-- Chill.orbAt; `waveEffects` applies the enemy effects on every wave; from `freezeWave` (Blizzard) every enemy in the
+-- circle freezes once per cast for values.freeze s through ctx.freeze (bosses: Deep Chill).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Burn = require(ReplicatedStorage.Shared.Logic.Burn)
 local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
+local Chill = require(ReplicatedStorage.Shared.Logic.Chill)
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
@@ -86,6 +93,31 @@ local function stunSplash(ctx: Ctx, target: any)
 	ctx.fx({ v = "splash", p = at, r = spec.radius })
 end
 
+-- S140 Combustion: the caster's burn on `target` turns into a blast (Logic/Burn.detonate); nothing without stacks.
+local function detonate(ctx: Ctx, target: any)
+	local services = ctx.services
+	local at = services.Entity.Position(target)
+	local stacks = services.StatusEffect.TakeStacks(target, "burn", ctx.player, Burn.KEY)
+	local percent, stuns = Burn.detonate(stacks, ctx.value("detonate"))
+	if percent <= 0 or not at then
+		return
+	end
+	local radius = ctx.skill.radius or 6
+	local list = ctx.enemiesInCircle(at, radius)
+	ctx.fx({ v = "detonate", p = at, r = radius, n = stacks })
+	hitAll(ctx, list, percent, false, { from = at })
+	if stuns then
+		for _, entity in list do
+			services.StatusEffect.Apply(entity, "stun", {
+				duration = ctx.value("stun"),
+				source = ctx.player,
+				skillId = ctx.skill.id,
+				notBoss = true,
+			})
+		end
+	end
+end
+
 Offense.target = function(ctx)
 	local target = ctx.target
 	if not target then
@@ -101,6 +133,9 @@ Offense.target = function(ctx)
 	if result and not result.dodged then
 		ctx.applyEffects(target, "enemy")
 		stunSplash(ctx, target)
+		if ctx.skill.values.detonate ~= nil then
+			detonate(ctx, target)
+		end
 	end
 	return true, nil
 end
@@ -309,7 +344,15 @@ Offense.circleTarget = function(ctx)
 	local delay = ctx.skill.delay or 0
 	local storm = hits > 1 and (ctx.skill.delay or 0) > 0 -- meteor storm: separate small impacts
 	local vfx = SkillVfx[ctx.skill.id]
-	if vfx and vfx.projectile then
+	-- S141: a flying circle (Frozen Orb) starts at the caster and moves toward the aim
+	local travel = ctx.skill.travel
+	local start = ctx.root.Position
+	local flatAim = Vector3.new(point.X - start.X, 0, point.Z - start.Z)
+	local heading = if flatAim.Magnitude > 0.1
+		then flatAim.Unit
+		else Vector3.new(ctx.root.CFrame.LookVector.X, 0, ctx.root.CFrame.LookVector.Z).Unit
+	local frozen: { [any]: boolean } = {}
+	if vfx and vfx.projectile and not travel then
 		delay += math.clamp(
 			(point - ctx.root.Position).Magnitude / CIRCLE_PROJECTILE_SPEED,
 			0.05,
@@ -335,6 +378,9 @@ Offense.circleTarget = function(ctx)
 			local angle = random:NextNumber() * math.pi * 2
 			local distance = random:NextNumber() * (radius - impactRadius)
 			at = ctx.ground(point + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance))
+		end
+		if travel then
+			at = ctx.ground(start + heading * Chill.orbAt(travel, wave, hits))
 		end
 		local impactAt = at
 		local last = wave == hits
@@ -369,7 +415,17 @@ Offense.circleTarget = function(ctx)
 				ctx.fx({ p = impactAt, r = radius, n = wave, d = 0.2 })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
-			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, { from = impactAt })
+			local withEffects = wave == 1 or ctx.skill.waveEffects == true
+			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), withEffects, { from = impactAt })
+			-- S141 Blizzard: every enemy in the circle freezes once from freezeWave on
+			if ctx.skill.freezeWave then
+				for _, entity in enemies do
+					if Chill.waveFreezes(wave, ctx.skill.freezeWave, frozen[entity] == true) then
+						frozen[entity] = true
+						ctx.freeze(entity, ctx.value("freeze"))
+					end
+				end
+			end
 
 			if last then
 				stunLast(ctx, enemies)

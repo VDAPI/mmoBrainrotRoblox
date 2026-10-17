@@ -90,19 +90,31 @@ local function MonstersTab(s: Dev.Scope): Instance
 	return Dev.column(s, {
 		Dev.header(s, 1, "dev.mon.spawn"),
 		Dev.row(s, 2, nil, {
+			Select(s, {
+				Surface = "iron",
+				Options = monsterOptions,
+				Selected = monster,
+				Width = 320,
+				Placeholder = Text.now("dev.mon.pick"),
+			}),
 			Select(
 				s,
-				{ Options = monsterOptions, Selected = monster, Width = 320, Placeholder = Text.now("dev.mon.pick") }
+				{ Surface = "iron", Options = variantOptions, Selected = variant, Width = 150, ListHeight = 120 }
 			),
-			Select(s, { Options = variantOptions, Selected = variant, Width = 150, ListHeight = 120 }),
 		}),
 		Dev.row(s, 3, Text.T(s, "dev.mon.levelCount"), {
-			NumberInput(s, { Value = level, Min = 1, Max = 100 }),
-			NumberInput(s, { Value = count, Min = 1, Max = 10, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
+			NumberInput(s, { Surface = "iron", Value = level, Min = 1, Max = 100 }),
+			NumberInput(s, {
+				Surface = "iron",
+				Value = count,
+				Min = 1,
+				Max = 10,
+				Size = UDim2.fromOffset(130, Theme.Size.MinTouch),
+			}),
 			Dev.button(s, Text.T(s, "dev.mon.spawnRun"), spawnMany, 150),
 		}),
 		Dev.row(s, 4, Text.T(s, "dev.mon.killall"), {
-			NumberInput(s, { Value = radius, Min = 1, Max = 2000, Step = 25 }),
+			NumberInput(s, { Surface = "iron", Value = radius, Min = 1, Max = 2000, Step = 25 }),
 			Dev.button(s, "▶", function()
 				Dev.run("killall", { tostring(Fusion.peek(radius)) })
 			end, 60, true),
@@ -126,14 +138,14 @@ local function MonstersTab(s: Dev.Scope): Instance
 			end, 120),
 		}),
 		Dev.row(s, 7, Text.T(s, "dev.mon.stats"), {
-			NumberInput(s, { Value = statsLevel, Min = 1, Max = 100 }),
+			NumberInput(s, { Surface = "iron", Value = statsLevel, Min = 1, Max = 100 }),
 			Dev.button(s, "/mstats", function()
 				Dev.run("mstats", { tostring(Fusion.peek(statsLevel)) })
 			end, 120),
 		}),
 		Dev.header(s, 8, "dev.mon.bosses"),
 		Dev.row(s, 9, nil, {
-			Select(s, { Options = bossOptions, Selected = boss, Width = 220 }),
+			Select(s, { Surface = "iron", Options = bossOptions, Selected = boss, Width = 220 }),
 			Dev.button(s, Text.T(s, "dev.mon.bossSpawn"), function()
 				local id = Fusion.peek(boss)
 				if id then
@@ -145,16 +157,22 @@ local function MonstersTab(s: Dev.Scope): Instance
 			end, 150),
 		}),
 		Dev.row(s, 10, Text.T(s, "dev.mon.phase"), {
-			NumberInput(s, { Value = phase, Min = 1, Max = 3, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
+			NumberInput(
+				s,
+				{ Surface = "iron", Value = phase, Min = 1, Max = 3, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }
+			),
 			Dev.button(s, "▶", function()
 				Dev.run("phase", { tostring(Fusion.peek(phase)) })
 			end, 60),
 		}),
 		Dev.header(s, 11, "dev.look.title"),
 		Dev.row(s, 12, nil, {
-			Select(s, { Options = lookOptions, Selected = lookTarget, Width = 320 }),
-			Select(s, { Options = lookVariants, Selected = lookVariant, Width = 150, ListHeight = 120 }),
-			Toggle(s, { Value = lookAnim, Label = Text.T(s, "dev.look.anim") }),
+			Select(s, { Surface = "iron", Options = lookOptions, Selected = lookTarget, Width = 320 }),
+			Select(
+				s,
+				{ Surface = "iron", Options = lookVariants, Selected = lookVariant, Width = 150, ListHeight = 120 }
+			),
+			Toggle(s, { Surface = "iron", Value = lookAnim, Label = Text.T(s, "dev.look.anim") }),
 		}),
 		Dev.row(s, 13, nil, {
 			Dev.button(s, Text.T(s, "dev.look.show"), function()

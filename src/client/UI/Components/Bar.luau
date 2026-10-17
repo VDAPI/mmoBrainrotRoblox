@@ -22,6 +22,7 @@ export type Props = {
 	AnchorPoint: UsedAs<Vector2>?,
 	LayoutOrder: UsedAs<number>?,
 	Name: string?,
+	Surface: Theme.SurfaceName?, -- S135: the bar always draws its dark track; kept so callers can say where it stands
 }
 
 local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
@@ -41,15 +42,15 @@ local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
 		LayoutOrder = props.LayoutOrder,
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Resource.Track,
 		ClipsDescendants = true,
 
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = Theme.Colors.GoldDim,
-				Thickness = 1,
+				Color = Theme.Brass.Line,
+				Thickness = Theme.Stroke.Thin,
 			}),
 			scope:New("Frame")({
 				Name = "Fill",
@@ -61,7 +62,7 @@ local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIGradient")({
 						Rotation = 90,
-						Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(170, 170, 170)),
+						Color = ColorSequence.new(Theme.Plain, Theme.mix(Theme.Plain, Theme.Shade, 0.3)),
 					}),
 				},
 			}),
@@ -79,8 +80,9 @@ local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
-				TextStrokeTransparency = 0.5,
+				TextColor3 = Theme.Iron.Text,
+				TextStrokeColor3 = Theme.Iron.Surface,
+				TextStrokeTransparency = 0.3,
 				ZIndex = 2,
 			}),
 		},

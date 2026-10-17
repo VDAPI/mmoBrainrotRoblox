@@ -25,12 +25,13 @@ export type Props = {
 	Tooltip: boolean?,
 }
 
+-- S135: colours from Data/UiPalette (zone, pvp)
 local COLORS: { [string]: Color3 } = {
-	off = Color3.fromHex("#4FD16B"),
-	on = Color3.fromHex("#D64A3E"),
-	forced = Color3.fromHex("#D64A3E"),
-	switching = Color3.fromHex("#F0962E"),
-	locked = Color3.fromHex("#7C7F88"),
+	off = Theme.Zone.Green,
+	on = Theme.Zone.Red,
+	forced = Theme.Zone.Red,
+	switching = Theme.Pvp.Switching,
+	locked = Theme.Pvp.Locked,
 }
 
 local function PvpDot(scope: Scope, props: Props): Frame
@@ -62,12 +63,12 @@ local function PvpDot(scope: Scope, props: Props): Frame
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Background, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Shade, Thickness = 1.5 }),
 			ArtIcon(scope, {
 				Name = "Lock",
 				Key = UiArt.hud("lock"), -- S119
 				Glyph = "🔒",
-				GlyphColor = Theme.Colors.Text,
+				GlyphColor = Theme.Iron.Text,
 				ImageScale = 0.75,
 				Size = UDim2.fromScale(1, 1),
 				Visible = scope:Computed(function(use): boolean

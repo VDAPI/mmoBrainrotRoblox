@@ -1,6 +1,8 @@
 --!strict
--- Game window: gold-framed panel with a title bar and close button. Draggable by the title bar on PC,
+-- Game window: framed panel with a title bar and close button. Draggable by the title bar on PC,
 -- full screen on touch devices. Opened and stacked by WindowManager; content goes in [Children].
+-- S135/S136 (Data/UiWindows `surface`): parchment body (iron for the admin overlay), iron frame with an inner brass
+-- line, dark iron title bar with a Merriweather title and a brass rule.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -23,7 +25,19 @@ export type Props = {
 	OnFocus: (() -> ())?,
 	ZIndex: UsedAs<number>?,
 	Name: string?,
+	Surface: Theme.SurfaceName?, -- S136: "paper" (default) or "iron" (the admin overlay); Data/UiWindows
 	[typeof(Children)]: Fusion.Child?,
+}
+
+-- The frame, title bar and close button are the same on both surfaces; the body is parchment or iron.
+local FRAME = {
+	frame = Theme.Brass.Frame,
+	header = Theme.Iron.Raised,
+	rule = Theme.Brass.Line,
+	title = Theme.Iron.Text,
+	close = Theme.Iron.Text,
+	closeHover = Theme.Iron.Danger,
+	closeHoverText = Theme.Iron.DangerText,
 }
 
 local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
@@ -62,6 +76,10 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 	)
 
 	local fullscreen = Device.Touch
+	local look = FRAME
+	local body = Theme.surface(props.Surface).Surface
+	-- S135: the frame is square on the phone and only slightly rounded on PC
+	local corner = Theme.Corner.Small
 
 	return scope:New("Frame")({
 		Name = props.Name or "Window",
@@ -80,7 +98,7 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 			return UDim2.fromOffset(props.Size.X, props.Size.Y)
 		end),
 		ZIndex = props.ZIndex,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = body,
 		Active = true, -- swallow clicks so they do not reach the world
 
 		[OnEvent("InputBegan")] = function(input: InputObject)
@@ -98,19 +116,38 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		[Children] = {
 			scope:New("UICorner")({
 				CornerRadius = scope:Computed(function(use): UDim
-					return if use(fullscreen) then UDim.new(0, 0) else Theme.Corner.Medium
+					return if use(fullscreen) then UDim.new(0, 0) else corner
 				end),
 			}),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = Theme.Stroke.Thick,
-				Color = Theme.Colors.Gold,
-				Transparency = 0.1,
+				Thickness = Theme.Size.FrameOuter,
+				Color = look.frame,
+			}),
+			-- S135: the inner brass line of the iron frame (decorative), above the title bar and the content
+			scope:New("Frame")({
+				Name = "InnerLine",
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(Theme.Size.FrameInner, Theme.Size.FrameInner),
+				Size = UDim2.new(1, -2 * Theme.Size.FrameInner, 1, -2 * Theme.Size.FrameInner),
+				ZIndex = 5,
+				[Children] = {
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Thickness = Theme.Size.FrameInner,
+						Color = Theme.Brass.Line,
+					}),
+					scope:New("UICorner")({
+						CornerRadius = scope:Computed(function(use): UDim
+							return if use(fullscreen) then UDim.new(0, 0) else corner
+						end),
+					}),
+				},
 			}),
 			scope:New("Frame")({
 				Name = "Header",
 				Size = UDim2.new(1, 0, 0, Theme.Size.WindowHeader),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = look.header,
 				Active = true,
 
 				[OnEvent("InputBegan")] = function(input: InputObject)
@@ -122,22 +159,22 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				end,
 
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UICorner")({ CornerRadius = corner }),
 					-- Square off the header's bottom corners.
 					scope:New("Frame")({
 						Name = "CornerFill",
 						AnchorPoint = Vector2.new(0, 1),
 						Position = UDim2.fromScale(0, 1),
 						Size = UDim2.new(1, 0, 0, 12),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = look.header,
 						BorderSizePixel = 0,
 					}),
 					scope:New("Frame")({
 						Name = "Rule",
 						AnchorPoint = Vector2.new(0, 1),
 						Position = UDim2.fromScale(0, 1),
-						Size = UDim2.new(1, 0, 0, 2),
-						BackgroundColor3 = Theme.Colors.GoldDim,
+						Size = UDim2.new(1, 0, 0, Theme.Size.HeaderRule),
+						BackgroundColor3 = look.rule,
 						BorderSizePixel = 0,
 						ZIndex = 2,
 					}),
@@ -147,9 +184,9 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 						Position = UDim2.fromOffset(Theme.Padding.Large, 0),
 						Size = UDim2.new(1, -Theme.Padding.Large * 2 - Theme.Size.WindowHeader, 1, 0),
 						Text = props.Title,
-						FontFace = Theme.Fonts.Heading,
-						TextSize = Theme.TextSize.Large + 2,
-						TextColor3 = Theme.Colors.Gold,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Large,
+						TextColor3 = look.title,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						ZIndex = 2,
@@ -160,14 +197,16 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 						Position = UDim2.new(1, -6, 0.5, 0),
 						Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
 						AutoButtonColor = false,
-						BackgroundColor3 = Theme.Colors.Danger,
+						BackgroundColor3 = look.closeHover,
 						BackgroundTransparency = scope:Computed(function(use): number
-							return if use(closeHovered) then 0.1 else 1
+							return if use(closeHovered) then 0 else 1
 						end),
 						Text = "✕",
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = scope:Computed(function(use): Color3
+							return if use(closeHovered) then look.closeHoverText else look.close
+						end),
 						ZIndex = 2,
 						[OnEvent("MouseEnter")] = function()
 							closeHovered:set(true)

@@ -59,14 +59,14 @@ local function bubble(): Instance
 			return if s then s.position else UDim2.new()
 		end),
 		Size = UDim2.fromOffset(460, 190),
-		BackgroundColor3 = Theme.Colors.Parchment,
+		BackgroundColor3 = Theme.Paper.Raised,
 		Visible = scope:Computed(function(use): boolean
 			return use(current) ~= nil
 		end),
 		ZIndex = 40,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 2 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 2 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(16, 10),
 				Size = UDim2.new(1, -32, 0, 30),
@@ -76,9 +76,9 @@ local function bubble(): Instance
 					local arrow = if s and s.arrow ~= "" then `{s.arrow}  ` else ""
 					return `{arrow}{Text.get(use, "guide.title", { n = use(step), total = #STEPS })}`
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.TextDark,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				ZIndex = 41,
 			}),
@@ -93,7 +93,7 @@ local function bubble(): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.TextDark,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 				ZIndex = 41,

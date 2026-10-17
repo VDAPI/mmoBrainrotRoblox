@@ -9,6 +9,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.IconState)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
 local Theme = require(script.Parent.Parent.Theme)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -22,22 +23,25 @@ export type Props = {
 	AnchorPoint: Fusion.UsedAs<Vector2>?,
 	LayoutOrder: Fusion.UsedAs<number>?,
 	ZIndex: Fusion.UsedAs<number>?,
+	Surface: Theme.SurfaceName?, -- S135: the background of the fallback glyph (default "paper")
 }
 
--- Glyphs and colours shown without the atlases (as before S35).
-local GLYPHS: { [string]: { glyph: string, color: Color3 } } = {
-	gold = { glyph = "◉", color = Theme.Colors.GoldBright },
-	exp = { glyph = "✦", color = Theme.Colors.Exp },
-	dragon = { glyph = "◆", color = Color3.fromHex("#E5302A") },
-	token = { glyph = "⚔", color = Color3.fromHex("#D9A441") },
-	huntmarks = { glyph = "➶", color = Color3.fromHex("#9BC46A") },
+-- Glyphs shown without the atlases (as before S35); S135: colours from UiPalette.currency, readable (3:1, an icon)
+-- on the surface.
+local GLYPHS: { [string]: string } = {
+	gold = "◉",
+	exp = "✦",
+	dragon = "◆",
+	token = "⚔",
+	huntmarks = "➶",
 }
 
 local MAX_LAYERS = 3
 
 local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local key = `ui/{props.Currency}`
-	local fallback = GLYPHS[props.Currency]
+	local glyph = GLYPHS[props.Currency]
+	local glyphColor = Theme.readable((UiPalette.currency :: any)[props.Currency], props.Surface, 3)
 	local named = scope:Computed(function(use): ItemIcons.Resolved?
 		if not use(IconState.Art) then
 			return nil
@@ -72,7 +76,7 @@ local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): 
 				ImageRectSize = Vector2.new(ItemIcons.CELL, ItemIcons.CELL),
 				ImageColor3 = scope:Computed(function(use): Color3
 					local l = use(layer)
-					return if l and l.tint then Color3.fromHex(l.tint) else Color3.new(1, 1, 1)
+					return if l and l.tint then Theme.tint(l.tint) else Theme.Plain
 				end),
 			})
 		)
@@ -94,10 +98,10 @@ local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): 
 				Visible = scope:Computed(function(use): boolean
 					return use(named) == nil
 				end),
-				Text = fallback.glyph,
+				Text = glyph,
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = fallback.color,
+				TextColor3 = glyphColor,
 			}),
 		} :: any,
 	})

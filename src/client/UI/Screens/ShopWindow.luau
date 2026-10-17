@@ -58,7 +58,7 @@ local SELL_RETRY = 0.3 -- S134f: pause before a rate-limited single sale is retr
 local CELL = 68
 local ICON = 60
 local BUY_BAR = 64
-local RED_HEX = "#" .. Theme.Colors.DangerHover:ToHex()
+local RED_HEX = "#" .. Theme.Paper.Danger:ToHex()
 
 -- Highest rarity the "sell all" buttons may include (S30: the `quickSell` rarities, Common and Unique).
 local QUICK_SELL_MAX = Rarities.COMMON
@@ -161,14 +161,14 @@ local function buyCell(
 		Name = key,
 		LayoutOrder = order,
 		Size = UDim2.fromOffset(CELL, CELL),
-		BackgroundColor3 = Theme.Colors.GoldDim,
+		BackgroundColor3 = Theme.Paper.Rule,
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(picked) then 0.45 else 1
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
-				Color = Theme.Colors.GoldBright,
+				Color = Theme.Brass.Frame,
 				Thickness = 2,
 				Enabled = picked,
 			}),
@@ -195,7 +195,7 @@ local function buyBar(
 				Text = Text.get(use, "shop.pick"),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
@@ -227,7 +227,7 @@ local function buyBar(
 			Text = ItemText.get(use, entry.item, nil, entry.el),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = ItemText.rarityTextColor(item.rarity),
+			TextColor3 = ItemText.rarityName(item.rarity, "paper"),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		}),
@@ -258,7 +258,7 @@ local function buyBar(
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		}),
@@ -286,13 +286,13 @@ local function buyBar(
 				scope:New("TextBox")({
 					LayoutOrder = 2,
 					Size = UDim2.fromOffset(52, 40),
-					BackgroundColor3 = Theme.Colors.Background,
+					BackgroundColor3 = Theme.Paper.Sunken,
 					Text = quantity,
 					[Out("Text")] = quantity,
 					ClearTextOnFocus = false,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = Theme.Paper.Text,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				}),
 				Button(scope, {
@@ -377,9 +377,9 @@ local function buyGroup(
 				Size = UDim2.new(1, 0, 0, 24),
 				BackgroundTransparency = 1,
 				Text = Text.get(use, `shop.group.{group.id}`),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = 18,
-				TextColor3 = Theme.Colors.GoldBright,
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("Frame")({
@@ -419,7 +419,7 @@ local function vendorBar(
 		Name = "VendorBar",
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 48),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.3,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -433,7 +433,7 @@ local function vendorBar(
 				}),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
@@ -688,16 +688,16 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			return use(tab) ~= "sell"
 		end),
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if use(DragDrop.Dragging) ~= nil then Theme.Colors.GoldDim else Theme.Colors.Panel
+			return if use(DragDrop.Dragging) ~= nil then Theme.Paper.Rule else Theme.Paper.Surface
 		end),
 		BackgroundTransparency = 0.3,
 		Text = Text.T(scope, "shop.dropToSell"),
 		FontFace = Theme.Fonts.BodyMedium,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Parchment,
+		TextColor3 = Theme.Paper.Text,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1, Transparency = 0.3 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 1, Transparency = 0.3 }),
 		},
 	})
 	DragDrop.register(scope, dropZone :: any, "shopsell:zone")
@@ -728,9 +728,9 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 								"shop.vendor.header",
 								{ class = Text.get(use, `class.{shop.class}.name`) }
 							),
-							FontFace = Theme.Fonts.Heading,
-							TextSize = 22,
-							TextColor3 = Theme.Colors.Gold,
+							FontFace = Theme.Fonts.Display,
+							TextSize = Theme.TextSize.Large,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						})
 					)
@@ -764,7 +764,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "shop.sellHint"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("Frame")({
@@ -847,7 +847,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -878,7 +878,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					s:New("Frame")({
 						LayoutOrder = i,
 						Size = UDim2.new(1, 0, 0, ROW),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.4,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -896,7 +896,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 								Text = ItemText.get(use, entry.item.id, entry.item.up),
 								FontFace = Theme.Fonts.BodyBold,
 								TextSize = Theme.TextSize.Body,
-								TextColor3 = ItemText.rarityColor(entry.item.rarity),
+								TextColor3 = ItemText.rarityName(entry.item.rarity, "paper"),
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
@@ -907,7 +907,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 								Text = Text.get(use, "shop.price", { price = Format.number(entry.price) }),
 								FontFace = Theme.Fonts.BodyMedium,
 								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Colors.GoldBright,
+								TextColor3 = Theme.Paper.Heading,
 								TextXAlignment = Enum.TextXAlignment.Left,
 							}),
 							Button(s, {
@@ -934,7 +934,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 						Text = Text.get(use, "shop.buybackEmpty"),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 					})
 				)
 			end
@@ -959,7 +959,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Label,
 		[Children] = {
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -995,7 +995,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Right,
 		}),
 		listFrame,
@@ -1005,7 +1005,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.new(0, 0, 1, -50),
 			Size = UDim2.new(1, 0, 0, BUY_BAR),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = Theme.Paper.Raised,
 			BackgroundTransparency = 0.4,
 			Visible = scope:Computed(function(use): boolean
 				return use(tab) == "buy"
@@ -1056,7 +1056,7 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				Button(scope, {

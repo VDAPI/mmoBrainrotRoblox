@@ -14,6 +14,7 @@ local Exp = require("./Exp")
 local ItemEffects = require("./ItemEffects")
 local Items = require("../Data/Items")
 local Rarities = require("../Data/Rarities")
+local SkillPoints = require("./SkillPoints")
 local Skills = require("./Skills")
 local Time = require("./Time")
 local Types = require("../Types")
@@ -26,7 +27,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 11
+AccountSchema.CURRENT = 12
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -114,7 +115,14 @@ function AccountSchema.characterTemplate(): CharacterData
 		statPoints = 0,
 		-- stays empty: reconcile would copy a template skill into every empty slot 1; CharacterFactory fills it
 		hotbar = {},
-		path = { nodes = {}, bp = {}, freeUsed = false },
+		path = { nodes = {}, bp = {} },
+		-- S137 (DESIGN-18 §9): bought ranks per weapon pool, the other pools' bars, whose bar `hotbar` is ("" = none yet:
+		-- the active pool), the free reset and the pool version (migration 12; CharacterFactory fills them)
+		ranks = {},
+		bars = {},
+		barPool = "",
+		respecFree = false,
+		poolsVersion = 0,
 		buildSlot = 1,
 		reworkNotice = false,
 		potionBar = {},
@@ -192,6 +200,13 @@ local MIGRATIONS: { [number]: (data: any, newId: () -> string) -> () } = {}
 MIGRATIONS[2] = function(data, newId)
 	for _, character in data.characters do
 		TableUtil.reconcile(character, AccountSchema.characterTemplate())
+		-- S137: migration 12 reads a missing `ranks` as "not migrated yet"; the current template must not pre-create
+		-- the skill point fields for a schema 1 save
+		character.ranks = nil
+		character.bars = nil
+		character.barPool = nil
+		character.respecFree = nil
+		character.poolsVersion = nil
 		StarterGear.apply(character, newId)
 	end
 end
@@ -327,7 +342,7 @@ MIGRATIONS[6] = function(data, _newId)
 		else
 			character.hotbar = {} -- unknown class: stats untouched, nothing on the bar
 		end
-		character.path = { nodes = {}, bp = {}, freeUsed = false }
+		character.path = { nodes = {}, bp = {} }
 		character.buildSlot = 1
 		character.buildOther = nil
 		character.reworkNotice = true
@@ -513,6 +528,48 @@ MIGRATIONS[11] = function(data, _newId)
 			auto = done > 0 or #active > 0,
 			shopWeek = { week = 0, counts = {} },
 		}
+	end
+end
+
+-- 12 (S137, DESIGN-18 §10): skill ranks are bought with skill points per weapon pool. Both build sets of every
+-- character (the active one in the character fields, buildOther) get Logic/SkillPoints.migrate: the old automatic
+-- ranks of every pool cut to its points (the old bar's skills first, then passives, then the rest), the bar of the
+-- equipped weapon's pool (the old bar kept to that pool and 8 slots, filled up), the other pools' bars, respecFree and
+-- the class's pool version; reworkNotice shows the "skill progression has changed" window (rework2.*). A set that
+-- already has `ranks` (a table) is left alone: idempotent. path.nodes and path.bp stay.
+local function migrateSet(classId: string, level: number, equipment: any, set: any)
+	if type(set.ranks) == "table" then
+		return
+	end
+	local path = if type(set.path) == "table" then set.path else nil
+	local moved = SkillPoints.migrate(classId, level, equipment, path, set.hotbar)
+	set.ranks = moved.ranks
+	set.hotbar = moved.hotbar
+	set.bars = moved.bars
+	set.barPool = moved.barPool
+	set.respecFree = moved.respecFree
+	set.poolsVersion = moved.poolsVersion
+end
+
+MIGRATIONS[12] = function(data, _newId)
+	if type(data.characters) ~= "table" then
+		return
+	end
+	for _, character in data.characters do
+		if type(character) ~= "table" then
+			continue
+		end
+		local level = math.clamp(math.floor(tonumber(character.level) or 1), 1, Config.MaxLevel)
+		local classId = if type(character.class) == "string" then character.class else "Warrior"
+		local equipment = if type(character.equipment) == "table" then character.equipment else {}
+		local fresh = type(character.ranks) ~= "table"
+		migrateSet(classId, level, equipment, character)
+		if type(character.buildOther) == "table" then
+			migrateSet(classId, level, equipment, character.buildOther)
+		end
+		if fresh then
+			character.reworkNotice = true
+		end
 	end
 end
 

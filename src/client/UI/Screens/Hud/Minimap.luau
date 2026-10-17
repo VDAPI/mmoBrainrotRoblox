@@ -46,6 +46,7 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -60,17 +61,19 @@ local MAX_MARKS = 8
 local EDGE = SIZE / 2 - 14 -- pixels from the centre where the edge arrow sits
 local ELITE_PINS = 8 -- S78: edge markers of Elites beyond the disc (Scout's Eye)
 local ZONE_COLORS = {
-	green = Theme.Colors.ZoneGreen,
-	yellow = Theme.Colors.ZoneYellow,
-	red = Theme.Colors.ZoneRed,
+	green = Theme.Zone.Green,
+	yellow = Theme.Zone.Yellow,
+	red = Theme.Zone.Red,
 }
+-- S136: the drawing keeps its colours (Data/UiPalette.map)
+local MAP = UiPalette.map
 local ICONS: { [string]: { glyph: string, color: string } } = {
-	portal = { glyph = "◎", color = "#B9A8FF" },
-	cave = { glyph = "⛰", color = "#D9C9A8" },
-	dungeon = { glyph = "☠", color = "#D64A3E" },
-	node = { glyph = "•", color = "#E8C25A" },
-	spawn = { glyph = "", color = "#C9A45C" },
-	lair = { glyph = "☠", color = "#E0823C" }, -- S134i: an Elite II hideout (a fixed marker, like a cave)
+	portal = { glyph = "◎", color = MAP.portal },
+	cave = { glyph = "⛰", color = MAP.cave },
+	dungeon = { glyph = "☠", color = MAP.dungeon },
+	node = { glyph = "•", color = MAP.node },
+	spawn = { glyph = "", color = MAP.spawn },
+	lair = { glyph = "☠", color = MAP.lair }, -- S134i: an Elite II hideout (a fixed marker, like a cave)
 }
 
 local PLAYER_ART = UiArt.mapIcon("player")
@@ -84,7 +87,7 @@ local function glyph(parent: Instance, text: string, color: string, position: Ve
 	label.Text = text
 	label.TextScaled = true
 	label.FontFace = Theme.Fonts.BodyBold
-	label.TextColor3 = Color3.fromHex(color)
+	label.TextColor3 = Theme.tint(color)
 	label.TextStrokeTransparency = 0.3
 	label.ZIndex = z or 3
 	label.Parent = parent
@@ -125,34 +128,34 @@ local function Minimap(scope: Scope, props: Props): Instance
 	}) :: Frame
 
 	-- Pools of the moving markers (S25): created once, only moved and shown / hidden.
-	local questStar = glyph(dynamic, "★", "#E8C25A", Vector2.zero, 20, 6)
+	local questStar = glyph(dynamic, "★", MAP.quest, Vector2.zero, 20, 6)
 	questStar.Visible = false
 	UiArtState.decorate(questStar, UiArt.mapIcon("quest"))
-	local navGlyph = glyph(dynamic, "◆", "#F2E28A", Vector2.zero, 18, 7)
+	local navGlyph = glyph(dynamic, "◆", MAP.guide, Vector2.zero, 18, 7)
 	navGlyph.Visible = false
 	UiArtState.decorate(navGlyph, UiArt.mapIcon("guide"))
-	local navArrow = glyph(dynamic, "▲", "#F2E28A", Vector2.zero, 20, 8)
+	local navArrow = glyph(dynamic, "▲", MAP.guide, Vector2.zero, 20, 8)
 	navArrow.TextStrokeTransparency = 0
 	navArrow.Visible = false
 	local markPool: { TextLabel } = {}
 	for i = 1, MAX_MARKS do
-		markPool[i] = glyph(dynamic, "⚑", "#E8C25A", Vector2.zero, 16, 6)
+		markPool[i] = glyph(dynamic, "⚑", MAP.flag, Vector2.zero, 16, 6)
 		markPool[i].Visible = false
 		UiArtState.decorate(markPool[i], nil)
 	end
-	local eventGlyph = glyph(dynamic, "⚔", "#E0564A", Vector2.zero, 20, 6)
+	local eventGlyph = glyph(dynamic, "⚔", MAP.event, Vector2.zero, 20, 6)
 	eventGlyph.Visible = false
 	local partyPool: { TextLabel } = {}
 	for i = 1, 4 do
-		partyPool[i] = glyph(dynamic, "●", "#4A8FE7", Vector2.zero, 14, 5)
+		partyPool[i] = glyph(dynamic, "●", MAP.party, Vector2.zero, 14, 5)
 		partyPool[i].Visible = false
 		UiArtState.decorate(partyPool[i], UiArt.mapIcon("party"))
 	end
 	-- S78: Elites beyond the disc (Scout's Eye), nearest first.
 	local elitePins: { TextLabel } = {}
 	for i = 1, ELITE_PINS do
-		local pin = glyph(dynamic, "▲", "#FFFFFF", Vector2.zero, 14, 7)
-		pin.TextColor3 = Theme.Colors.GoldBright
+		local pin = glyph(dynamic, "▲", MAP.label, Vector2.zero, 14, 7)
+		pin.TextColor3 = Theme.Brass.Bright
 		pin.TextStrokeTransparency = 0.3
 		pin.Visible = false
 		elitePins[i] = pin
@@ -259,7 +262,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			local r = area.rect
 			local a1 = MapSketch.toPixel(sketch, s, r[1], r[2])
 			local a2 = MapSketch.toPixel(sketch, s, r[3], r[4])
-			local color = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
+			local color = Theme.tint(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
 			local f = Instance.new("Frame")
 			f.Name = "Area"
 			f.Position = UDim2.fromOffset(a1.X + 1, a1.Y + 1)
@@ -270,9 +273,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 			f.ZIndex = 1
 			f.Parent = canvas
 			if closest then
-				local levels = glyph(canvas, `{area.lv[1]}–{area.lv[2]}`, "#FFFFFF", (a1 + a2) / 2, 16, 2)
+				local levels = glyph(canvas, `{area.lv[1]}–{area.lv[2]}`, MAP.label, (a1 + a2) / 2, 16, 2)
 				levels.TextScaled = false
-				levels.TextSize = 13
+				levels.TextSize = Theme.TextSize.Caption
 				levels.Size = UDim2.fromOffset(60, 16)
 				levels.TextColor3 = color
 				levels.TextStrokeTransparency = 0.1
@@ -309,10 +312,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 		for _, npc in Npcs.list do
 			if npc.map == id and not npc.decoration then
 				local p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z)
-				npcGlyphs[npc.id] = glyph(canvas, npc.icon, "#F2E8C9", p, 18, 2)
+				npcGlyphs[npc.id] = glyph(canvas, npc.icon, MAP.npc, p, 18, 2)
 				UiArtState.decorate(npcGlyphs[npc.id], UiArt.serviceOfNpc(npc), { size = 16 })
-				local mark = glyph(canvas, "", "#E8C25A", p - Vector2.new(0, 14), 18, 3)
-				mark.FontFace = Theme.Fonts.Heading
+				local mark = glyph(canvas, "", MAP.quest, p - Vector2.new(0, 14), 18, 3)
+				mark.FontFace = Theme.Fonts.Display
 				mark.TextStrokeTransparency = 0.1
 				mark.Visible = false
 				npcMarks[npc.id] = mark
@@ -433,7 +436,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 						local label = markPool[usedMarks]
 						local icon = MapMarks.get(mark.icon)
 						label.Text = if icon then icon.glyph else "⚑"
-						label.TextColor3 = if icon then Color3.fromHex(icon.color) else Theme.Colors.GoldBright
+						label.TextColor3 = if icon then Theme.tint(icon.color) else Theme.Brass.Bright
 						UiArtState.retarget(label, if icon then UiArt.mark(icon.id) else nil, label.TextColor3)
 						local p = at(mark.x, mark.z)
 						label.Position = UDim2.fromOffset(p.X, p.Y)
@@ -474,7 +477,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			if eventDef and eventPoint and type(event) == "table" then
 				eventGlyph.Position = UDim2.fromOffset(eventPoint.X, eventPoint.Y)
 				eventGlyph.Text = eventDef.glyph
-				eventGlyph.TextColor3 = Color3.fromHex(eventDef.color)
+				eventGlyph.TextColor3 = Theme.tint(eventDef.color)
 				eventGlyph.TextTransparency = if event.phase == "warn" then 0.4 else 0
 			end
 			-- Monsters nearby (S19: normal ones in the colour of their group size, elites gold).
@@ -519,7 +522,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 								dot.Size = UDim2.fromOffset(size, size)
 								dot.BackgroundColor3 = if variant == "normal" or variant == nil
 									then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
-									else Theme.Colors.GoldBright
+									else Theme.Iron.Selected
 								dot.Visible = true
 							end
 						end
@@ -548,16 +551,16 @@ local function Minimap(scope: Scope, props: Props): Instance
 	local function zoomButton(text: string, delta: number, order: number): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(36, 36),
-			BackgroundColor3 = Theme.Colors.Panel,
-			BackgroundTransparency = 0.1,
+			Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
+			BackgroundColor3 = Theme.Iron.Surface,
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 22,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Large,
+			TextColor3 = Theme.Iron.Text,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
-				scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Line, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 			},
 			[OnEvent("Activated")] = function()
 				zoomIndex:set(math.clamp(Fusion.peek(zoomIndex) + delta, 1, #ZOOMS))
@@ -605,15 +608,12 @@ local function Minimap(scope: Scope, props: Props): Instance
 							return if UiArtState.ready(use, PLAYER_ART) then "" else "▲"
 						end),
 						TextScaled = true,
-						TextColor3 = Theme.Colors.Accent,
+						TextColor3 = Theme.Iron.Link,
 						TextStrokeTransparency = 0,
 						Rotation = arrowRotation,
 						ZIndex = 10,
 						-- S119: the player silhouette (turns with the label) once loaded.
-						[Children] = ArtIcon.Image(
-							scope,
-							{ Key = PLAYER_ART, Tint = Theme.Colors.Accent, ZIndex = 10 }
-						),
+						[Children] = ArtIcon.Image(scope, { Key = PLAYER_ART, Tint = Theme.Iron.Link, ZIndex = 10 }),
 					}),
 					scope:New("TextLabel")({
 						Name = "North",
@@ -623,10 +623,22 @@ local function Minimap(scope: Scope, props: Props): Instance
 						BackgroundTransparency = 1,
 						Text = "N",
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 14,
-						TextColor3 = Theme.Colors.Gold,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Iron.Heading,
 						ZIndex = 10,
 					}),
+				},
+			}),
+			-- S136: the brass frame around the disc
+			scope:New("Frame")({
+				Name = "Frame",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(1, -SIZE / 2, 0, SIZE / 2),
+				Size = UDim2.fromOffset(SIZE + 6, SIZE + 6),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UIStroke")({ Thickness = Theme.Size.FrameOuter, Color = Theme.Brass.Frame }),
 				},
 			}),
 			-- Ring with the zone colour
@@ -643,8 +655,8 @@ local function Minimap(scope: Scope, props: Props): Instance
 						Color = scope:Computed(function(use): Color3
 							local z = use(zone)
 							return if type(z) == "table"
-								then ZONE_COLORS[z.pvp] or Theme.Colors.Gold
-								else Theme.Colors.Gold
+								then ZONE_COLORS[z.pvp] or Theme.Iron.Heading
+								else Theme.Iron.Heading
 						end),
 					}),
 				},
@@ -652,8 +664,8 @@ local function Minimap(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Zoom",
 				AnchorPoint = Vector2.new(0, 0),
-				Position = UDim2.fromOffset(0, SIZE - 80),
-				Size = UDim2.fromOffset(36, 80),
+				Position = UDim2.fromOffset(0, SIZE - 2 * Theme.Size.MinTouch - 6),
+				Size = UDim2.fromOffset(Theme.Size.MinTouch, 2 * Theme.Size.MinTouch + 6),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
@@ -683,17 +695,17 @@ local function Minimap(scope: Scope, props: Props): Instance
 							"area.label",
 							{ name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] }
 						)
-					) .. AreaProfileText.iconRich(area.profile, " ")
+					) .. AreaProfileText.iconRich(area.profile, " ", "iron")
 				end),
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = 15,
+				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
 					local area = use(AreaState.Current)
 					if not area then
-						return Theme.Colors.Parchment
+						return Theme.Iron.Text
 					end
-					return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)])
+					return Theme.readable(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)], "iron")
 				end),
 				TextStrokeTransparency = 0.2,
 			}),
@@ -702,8 +714,8 @@ local function Minimap(scope: Scope, props: Props): Instance
 				AnchorPoint = Vector2.new(1, 1),
 				Position = UDim2.fromScale(1, 1),
 				Size = UDim2.fromOffset(SIZE + 30, 36),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.15,
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = Theme.HudAlpha,
 				Text = scope:Computed(function(use): string
 					local z = use(zone)
 					local map = Maps.get(use(mapId) or "")
@@ -713,20 +725,15 @@ local function Minimap(scope: Scope, props: Props): Instance
 					return if map then Text.get(use, map.nameKey) else ""
 				end),
 				TextTruncate = Enum.TextTruncate.AtEnd,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = Theme.Stroke.Normal,
-						Color = scope:Computed(function(use): Color3
-							local z = use(zone)
-							return if type(z) == "table"
-								then ZONE_COLORS[z.pvp] or Theme.Colors.Border
-								else Theme.Colors.Border
-						end),
+						Thickness = Theme.Stroke.Thin,
+						Color = Theme.Brass.Line,
 					}),
 				},
 			}),

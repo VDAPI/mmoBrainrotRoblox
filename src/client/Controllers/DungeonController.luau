@@ -98,27 +98,25 @@ local function bossBar(): Instance
 					local suffix = if #tags > 0 then `  ·  {table.concat(tags, " · ")}` else ""
 					return `{Text.get(use, b.nameKey)}  ·  {Text.get(use, "boss.phase", { phase = b.phase })}{suffix}`
 				end),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = 24,
-				TextColor3 = Theme.Colors.GoldBright,
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Brass.Bright,
 				TextStrokeTransparency = 0.3,
 			}),
 			scope:New("Frame")({
 				Position = UDim2.fromOffset(0, 32),
 				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Iron.Sunken,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
-					scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
 					scope:New("Frame")({
 						Size = scope:Computed(function(use): UDim2
 							return UDim2.fromScale(use(animated), 1)
 						end),
 						BackgroundColor3 = scope:Computed(function(use): Color3
 							local b = use(boss)
-							return if type(b) == "table" and b.shielded
-								then Theme.Colors.Accent
-								else Theme.Colors.Danger
+							return if type(b) == "table" and b.shielded then Theme.Iron.Link else Theme.Iron.Danger
 						end),
 						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
 					}),
@@ -130,8 +128,8 @@ local function bossBar(): Instance
 							return if type(b) == "table" then `{b.hp} / {b.maxHp}` else ""
 						end),
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 15,
-						TextColor3 = Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Iron.Text,
 						TextStrokeTransparency = 0.3,
 						ZIndex = 2,
 					}),
@@ -142,18 +140,18 @@ local function bossBar(): Instance
 				Name = "ChannelBar",
 				Position = UDim2.fromOffset(110, 86),
 				Size = UDim2.new(1, -220, 0, 22),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Iron.Sunken,
 				Visible = scope:Computed(function(use): boolean
 					return use(channel) ~= nil
 				end),
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
-					scope:New("UIStroke")({ Color = Theme.Colors.Accent, Thickness = 1.5 }),
+					scope:New("UIStroke")({ Color = Theme.Iron.Link, Thickness = 1.5 }),
 					scope:New("Frame")({
 						Size = scope:Computed(function(use): UDim2
 							return UDim2.fromScale(use(channelRatio), 1)
 						end),
-						BackgroundColor3 = Theme.Colors.Accent,
+						BackgroundColor3 = Theme.Iron.Accent,
 						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
 					}),
 					scope:New("TextLabel")({
@@ -168,8 +166,8 @@ local function bossBar(): Instance
 							return Text.get(use, "boss.mechanic.channel.bar", { time = string.format("%.1f", left) })
 						end),
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 15,
-						TextColor3 = Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Iron.Text,
 						TextStrokeTransparency = 0.3,
 						ZIndex = 2,
 					}),
@@ -188,15 +186,15 @@ local function bossBar(): Instance
 					local left = Time.format(Time.remaining(b.endsAt or 0, use(now)))
 					return `⌛ {Text.get(use, "boss.timeLeft", { time = left })}`
 				end),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = 22,
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large,
 				TextColor3 = scope:Computed(function(use): Color3
 					local b = use(boss)
 					local left = if type(b) == "table" then Time.remaining(b.endsAt or 0, use(now)) else math.huge
 					return if left <= 60
-						then Theme.Colors.Danger
-						elseif left <= 180 then Theme.Colors.Warning
-						else Theme.Colors.Parchment
+						then Theme.Iron.Danger
+						elseif left <= 180 then Theme.Iron.Warning
+						else Theme.Iron.Text
 				end),
 				TextStrokeTransparency = 0.25,
 			}),
@@ -213,9 +211,9 @@ local function announcer(): Instance
 		BackgroundTransparency = 1,
 		Text = announceText,
 		TextWrapped = true,
-		FontFace = Theme.Fonts.Heading,
-		TextSize = 40,
-		TextColor3 = Theme.Colors.GoldBright,
+		FontFace = Theme.Fonts.Display,
+		TextSize = Theme.TextSize.Title + 10,
+		TextColor3 = Theme.Brass.Bright,
 		TextStrokeTransparency = scope:Computed(function(use): number
 			return 0.2 + use(announceAlpha) * 0.8
 		end),
@@ -287,9 +285,9 @@ local function decorate(instance: Instance)
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, 0, 0, 32)
 	title.BackgroundTransparency = 1
-	title.FontFace = Theme.Fonts.Heading
-	title.TextSize = 26
-	title.TextColor3 = Theme.Colors.DangerHover
+	title.FontFace = Theme.Fonts.Display
+	title.TextSize = Theme.TextSize.Large
+	title.TextColor3 = Theme.Iron.Danger
 	title.TextStrokeTransparency = 0.3
 	title.Parent = gui
 	local sub = Instance.new("TextLabel")
@@ -297,8 +295,8 @@ local function decorate(instance: Instance)
 	sub.Size = UDim2.new(1, 0, 0, 24)
 	sub.BackgroundTransparency = 1
 	sub.FontFace = Theme.Fonts.BodyBold
-	sub.TextSize = 18
-	sub.TextColor3 = Theme.Colors.Parchment
+	sub.TextSize = Theme.TextSize.Small
+	sub.TextColor3 = Theme.Iron.Text
 	sub.TextStrokeTransparency = 0.3
 	sub.Parent = gui
 	local prompt = Instance.new("ProximityPrompt")

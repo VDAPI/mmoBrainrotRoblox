@@ -38,7 +38,7 @@ export type Props = {
 local ROW_HEIGHT = 66
 local PROFILE_ROW_HEIGHT = 88
 
-local CONTRACT_HEX = "#" .. Theme.Colors.GoldBright:ToHex()
+local CONTRACT_HEX = "#" .. Theme.Paper.Heading:ToHex()
 
 -- The tag under an area's levels: "from level X" when locked, else S99 "◈ Contract" and "★ Recommended".
 local function tagText(use: Fusion.Use, area: any, locked: boolean, recommended: boolean, contract: boolean): string
@@ -86,7 +86,9 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 		end
 		for i, area in AreaAdvice.sorted(mapId or "") do
 			local locked = AreaAdvice.locked(area, playerLevel)
-			local band = Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)])
+			local bandHex = LevelBand.COLORS[AreaAdvice.bandOf(area, playerLevel)]
+			local band = Theme.tint(bandHex)
+			local bandText = Theme.readable(bandHex, "paper")
 			local recommended = best[area.profile or "none"] == area
 			local profile = AreaProfiles.get(area.profile)
 			local selected = s:Computed(function(use2): boolean
@@ -101,7 +103,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					AutoButtonColor = false,
 					Text = "",
 					BackgroundColor3 = s:Computed(function(use2): Color3
-						return if use2(selected) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+						return if use2(selected) then Theme.Paper.Hover else Theme.Paper.Raised
 					end),
 					BackgroundTransparency = if locked then 0.45 else 0,
 					[Fusion.OnEvent("Activated")] = function()
@@ -117,7 +119,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 								return if use2(selected) then 2 else 1
 							end),
 							Color = s:Computed(function(use2): Color3
-								return if use2(selected) then Theme.Colors.GoldBright else Theme.Colors.Border
+								return if use2(selected) then Theme.Brass.Frame else Theme.Paper.Rule
 							end),
 						}),
 						-- band stripe
@@ -137,7 +139,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if locked then Theme.Colors.TextMuted else Theme.Colors.Text,
+							TextColor3 = if locked then Theme.Paper.TextMuted else Theme.Paper.Text,
 						}),
 						s:New("TextLabel")({
 							Name = "Kinds",
@@ -149,7 +151,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 						}),
 						if profile
 							then s:New("TextLabel")({
@@ -174,10 +176,9 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							BackgroundTransparency = 1,
 							Text = `{area.lv[1]}–{area.lv[2]}`,
 							TextXAlignment = Enum.TextXAlignment.Right,
-							FontFace = Theme.Fonts.Heading,
-							TextSize = 28,
-							TextColor3 = band,
-							TextStrokeTransparency = 0.6,
+							FontFace = Theme.Fonts.Display,
+							TextSize = Theme.TextSize.Title,
+							TextColor3 = bandText,
 						}),
 						s:New("TextLabel")({
 							Name = "Tag",
@@ -190,7 +191,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 							TextXAlignment = Enum.TextXAlignment.Right,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = if locked then Theme.Colors.TextMuted else Theme.Colors.GoldBright,
+							TextColor3 = if locked then Theme.Paper.TextMuted else Theme.Paper.Heading,
 						}),
 					},
 				})
@@ -243,7 +244,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					TextXAlignment = Enum.TextXAlignment.Left,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 				}),
 				scope:New("TextLabel")({
 					Name = "Warnings",
@@ -257,7 +258,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					TextXAlignment = Enum.TextXAlignment.Left,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Warning,
+					TextColor3 = Theme.Paper.Warning,
 				}),
 				scope:New("ScrollingFrame")({
 					Name = "List",
@@ -293,7 +294,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					TextYAlignment = Enum.TextYAlignment.Top,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 				}),
 				Button(scope, {
 					Name = "Go",

@@ -5,7 +5,37 @@
 
 ## Stan
 
-S01–S115 i S117–S134k gotowe (ostatnia S134k: zlecenie łowieckie na konkretny rodzaj potwora łowiska, wszystkie
+S01–S115 i S117–S141 gotowe (ostatnia S141: Mag, pula Lodu według wspólnej drabiny (Lodowy Odłamek 1, Grad 3, Lodowa
+Nova 6, Lodowa Bariera 10, Lodowa Włócznia 15, Uścisk Zimy 20, Lodowa Kula 26, Głęboki Mróz 33, Roztrzaskanie 40, Lodowa
+Krew 50, Zamieć 60; licznik Chłodu zamraża po 4 trafieniach w spowolnionego, bossowie i Elity II zamiast zamrożenia
+dostają Głęboki Chłód, `Logic/Chill`), warianty lodu buildów wzorcowych w modelu i w bloku S91, R1 na 20. w paśmie;
+Mag przejściowy do S142; wcześniej S140: Mag, pula Ognia według wspólnej drabiny (Kula Ognia 3, Fala Płomieni 6,
+Żarząca Osłona 10, Pożoga 15, Żar 20, Meteor 26, Zapłon 33, Spopielenie 40, Serce Feniksa 50, Deszcz Meteorów 60;
+podpalenie kumuluje się w stosach jednego wpisu na celu, `Logic/Burn`), wspólne Maga (Błysk 4, Tarcza Many 12, Inwokacja
+30, Skupienie 45), kierunki Maga z węzłami `skill` tylko w rzędach 4 i 8 (Mistrz Żywiołów i Tajemny Umysł jako węzły),
+warianty ognia buildów wzorcowych w modelu, R1 na 20. w paśmie S91; Mag przejściowy do S142; wcześniej S139:
+Umiejętności 2.0, okno: zakładki pul broni i „Kierunki”, drzewko
+ikon puli według wspólnej drabiny (kolumny ról, nitki, kłódki, znaki przełomów), szczegóły po kliknięciu w stałych
+sekcjach z tabelą „Ranga N → N+1”, krótki opis `short` każdej umiejętności (dymek paska), telefon z arkuszem i
+przypiętym „Zatwierdź”, nazwa puli nad paskiem po zmianie broni; wcześniej S138: Umiejętności 2.0, fundament B: ścieżki to mieszalne kierunki bez ścieżki
+głównej i broni ścieżki (rzędy otwierają poziom i punkty w kierunku, wymóg broni tylko na węźle), jedno zwieńczenie na
+zestaw, kierunek przewodni `Paths.mainOf` (≥ 12 pkt: tytuł, plan statystyk, wagi przedmiotów, znak w drużynie), efekty
+drużynowe rzędów 1–2 w pełni od 6 pkt w kierunku, zwrot węzłów od 20. za złoto jak ranga, Zwój Odnowy Umiejętności =
+pełny reset (rangi wszystkich pul i węzły), pule klas w wersji 2 (darmowy reset), `ItemScore` waży efekt innej puli
+×0,5, eksport pul do wiki w narzędziach; wcześniej S137: Umiejętności 2.0, fundament A (`docs/DESIGN-18.md`): rangi kupowane
+punktami umiejętności (`Logic/SkillPoints`, 1 na poziom + 7 w każdej puli, limit z dawnej krzywej), pule broni
+(`Data/SkillPools`, `Logic/SkillPools`: Mag ogień / lód / błyskawica według żywiołu broni, reszta klas po dwie pule z
+wspólną podstawą, dane przejściowe), pasek 8 miejsc na pulę, zapis w schemacie 12 z darmowym resetem, remote'y
+`AllocateSkills` / `RefundSkillRank` / `ResetSkills` / `SetPoolBar`, minimalne okno z „+” / „−” / „Zatwierdź”, model na
+kupionych rangach, 80 wierszy 21–100 w raporcie do S146/S147; wcześniej S136: „Pergamin i żelazo” 2/2: wszystkie okna na pergaminie (panel admina na
+żelazie), HUD, nakładki, tabliczki potworów i NPC na płytkach żelaza z mosiężnym brzegiem, paski na ciemnym torze,
+sloty w wariancie żelaza, minimapa i mapa świata w mosiężnych ramach (rysunek bez zmian), medale rankingów jako
+plakietki, `Theme.Colors` usunięte, `uitheme.spec` ścisły (`Data/UiWindows` z `surface` i `SCREENS`); wcześniej S135:
+„Pergamin i żelazo” 1/2: paleta interfejsu w `Data/UiPalette` z
+kontrastem w teście, role `Theme.Paper` / `Theme.Iron` / `Theme.Brass`, komponenty z propem `Surface` (`ListRow`,
+`SectionLabel`), okna na pergaminie według `Data/UiWindows` (13 okien, w tym czytelne okno umiejętności), tooltipy na
+żelazie, Merriweather w nagłówkach, tekst ≥ 17, tabliczki graczy na płytce żelaza, zawsze widoczne do 150 st., odporne na
+strumieniowanie, nick otwiera menu gracza S133; wcześniej S134k: zlecenie łowieckie na konkretny rodzaj potwora łowiska, wszystkie
 zlecenia do poziomu postaci aktywne naraz (zabicie liczy się do każdego pasującego), „Przyjmij / Oddaj wszystkie” przy
 tablicy, u nowego Łowczego Bartosza albo u zwiadowcy regionu, Znaki Łowcy (738 za 1–99, retro w migracji 11) i sklep
 Łowczego (mikstury, kamienie, Fortuna, esencja z limitem tygodnia, Skrzynie Łowcy Unikat / Heroik, kosmetyki); wcześniej
@@ -288,6 +318,41 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S141:** pula Lodu bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
+  składników (dopracowanie W03–W07), dźwięki `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
+  blizzard` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki). Tożsamość lodu i T-SK4
+  wariantów lodu tylko w raporcie (`S141.ice.*`: lód / ogień w jeden cel 1,02 na 20. i 0,99 na 100. przy celu
+  0,85–0,95, przyjmowane obrażenia Arkanisty na 20. 0,90 przy celu 0,85) do S147; `GLOBAL_REPORT_ONLY` S141 (56 wierszy
+  Maga 21–100) do opróżnienia w S146/S147; R4 5B na 20. Lodowego Odłamka (0,29) i Gradu (0,19) ponad pasmem
+  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom) do S147. Pula Błyskawicy i S1 Maga (Ognisty Pocisk) w S142. Wiki
+  do odświeżenia (właściciel 17.10).
+- **S140:** pula Ognia bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
+  składników (dopracowanie W03–W07), dźwięki `skill.flameWave|emberShield|pyroblast|combustion|immolate|phoenixHeart`
+  bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość ognia i T-SK4
+  wariantów ognia tylko w raporcie (`S140.fire.*`: udział podpalenia 7–13% przy celu 25%, T-SK4 2,5–4,8) do S147;
+  `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100) do opróżnienia w S146/S147. Pula Lodu zrobiona w S141;
+  pula Błyskawicy i S1 Maga w S142. Wiki do odświeżenia (właściciel 17.10).
+- **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
+  podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
+  „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w
+  DECYZJE). Wszystkie pule są przejściowe; od S140 pula Ognia i wspólne Maga stoją na drabinie, reszta w „Pozostałe”
+  do S141–S145.
+  Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
+- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Wojownika, Łowcy
+  i Kapłana (`SKILL_ROWS` 4 i 8: Mag od S140, reszta w S143–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+  `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
+  `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
+  `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
+- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
+  `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
+
+- **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`
+  i nowych wysokościach: przycięcia w panelach mapy świata, trackerze, panelach wydarzeń, tabliczkach potworów; karty
+  postaci z portretem pod pergaminową zasłoną; mosiężna rama minimapy). Listy okien S135 i S136 (poza `character`,
+  `menu`, `skills`, `lootlog`) dalej ręcznymi wierszami na rolach pergaminu, bez `ListRow` / `SectionLabel` (zmiana
+  układu bez przeglądu w grze). Tabliczki graczy z S135 (płytka 0,45) bez przeglądu. Decyzje właściciela w
+  `docs/SESJE.md` → S135 i S136. Wiki do odświeżenia (właściciel 17.10).
+
 - **S134k:** zlecenia na rodzaj, wiele aktywnych i sklep Łowczego bez przeglądu w grze (dziennik „Łowieckie” z
   grupami i przyciskami, karta tablicy, tracker do 3 + „+N”, okno `HuntShopWindow` na PC i telefonie, Łowczy przy
   tablicy w mieście wiosną i poza nią). Kosmetyki sklepu (tytuł „Łowca Nagród”, ramka „Trofeum”) i tytuł „Mistrz Łowów”
@@ -314,16 +379,14 @@ zakończone; testy i decyzje właściciela po nich.
 
 - **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
   Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów
-  startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie bez przeglądu na PC i telefonie; S135 / S136 przemalują go
-  („Pergamin i żelazo”). Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
+  startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie i na żelazie (S135) bez przeglądu na PC i telefonie.
+  Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
   check` (bez `node_modules`). W raporcie (decyzje właściciela): strzałka „Lepszy przedmiot” z efektem na biżuterii,
   12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej.
 
-- **S134f:** okna i ekrany S134f do przemalowania w S135 / S136 („Pergamin i żelazo”): okno `fightlog`
-  (`FightLogWindow`), zakładka `PartyFinder` (z oknem `party`), `ReadyCheck` (pergamin), `FightCard` (żelazo),
-  `Hud/LowHpVignette` (żelazo); muszą wejść do `Data/UiWindows` / `UiWindows.SCREENS`. Dla właściciela: ID dźwięku
-  `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez przeglądu w grze: tablica, gotowość,
-  karta po walce i winieta; pomiar lagu sprzedaży jest na modelu lustra w Lune (Fusion nie ładuje się w Lune).
+- **S134f:** dla właściciela: ID dźwięku `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez
+  przeglądu w grze: tablica, gotowość, karta po walce i winieta; pomiar lagu sprzedaży jest na modelu lustra w Lune
+  (Fusion nie ładuje się w Lune).
 
 - **S134e:** Druzgocący Cios, Doskok, rzut i Ciężki Cios bez przeglądu w grze (kolor karminu, puls, ruchy z
   `KIT_STYLES` są ogólnymi stylami planów, bez własnych póz; Doskok przenosi Elitę II bez łuku skoku). Model ucieczki

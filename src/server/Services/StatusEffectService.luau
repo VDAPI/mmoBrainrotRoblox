@@ -116,6 +116,8 @@ local DEBUFFS = {
 	weaken = true, -- S63: the bearer deals less (category enemyDamageDown)
 	frostbite = true, -- S65: the source's ice: +% damage from that player (SourceValue); lives as long as the slow
 	sighted = true, -- S77: Draw a Bead, the source's crit on the bearer (FromSource); never the bearer's stats
+	chill = true, -- S141 (Logic/Chill): the source's chill counter (StacksFrom / TakeStacks)
+	deepChill = true, -- S141: the source's Deep Chill on a boss: +% damage from that player (SourceValue)
 }
 -- S65 kinds without a table entry: nextBasic (one-shot bonus of the next basic attack, Full Draw; only a basic attack
 -- consumes it, so it never collides with nextShot), runeSeal (marker of a glowing Runic Seal; CombatService puts it
@@ -242,6 +244,9 @@ export type ApplyOptions = {
 	spread: number?, -- S76: kept on the effect (Effect.spread)
 	jump: number?, -- S76: kept on the effect (Effect.jump)
 	keepLonger: boolean?, -- a refresh never ends the running effect sooner (EffectStack.restack; Frostbite)
+	-- S140 (Logic/Burn): accumulate pays the whole unpaid rest (no maxStacks x total cap): the player's one burn counts
+	-- its stacks (maxStacks) but keeps every hit's damage
+	uncapped: boolean?,
 }
 
 -- S71: runs an effect's end callback once, outside the caller's loop (an error never stops ticking).
@@ -390,7 +395,7 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 		local maxStacks = options.maxStacks or 1
 		e.tickAmount, e.nextTick = EffectStack.accumulate(schedule, {
 			total = total,
-			limit = if maxStacks > 1 then maxStacks else nil,
+			limit = if maxStacks > 1 and not options.uncapped then maxStacks else nil,
 			duration = duration,
 			now = t,
 			interval = TICK_INTERVAL,
@@ -537,6 +542,40 @@ function StatusEffectService.Stacks(entity: any, kind: string): (number, number,
 	local stacks = best.stacks or 1
 	local unit = if best.unit ~= nil then best.unit else best.value / stacks
 	return stacks, best.expiresAt, unit
+end
+
+-- S140 (Logic/Burn): stacks of the running entry of `kind` that `player` applied with `skillId` (0 without one).
+function StatusEffectService.StacksFrom(entity: any, kind: string, player: Player, skillId: string?): number
+	local sourceKey = `p{player.UserId}`
+	for _, effect in active(entity, kind) do
+		if effect.sourceKey == sourceKey and effect.skillId == skillId then
+			return effect.stacks or 1
+		end
+	end
+	return 0
+end
+
+-- S140 (Combustion): removes that entry and returns its stacks (0 without one); the unpaid ticks are gone.
+function StatusEffectService.TakeStacks(entity: any, kind: string, player: Player, skillId: string?): number
+	local list = entity and effects[entity.id]
+	if not list then
+		return 0
+	end
+	local sourceKey = `p{player.UserId}`
+	local t = now()
+	for i, effect in list do
+		if
+			effect.kind == kind
+			and effect.sourceKey == sourceKey
+			and effect.skillId == skillId
+			and effect.expiresAt > t
+		then
+			table.remove(list, i)
+			changed(entity, kind)
+			return effect.stacks or 1
+		end
+	end
+	return 0
 end
 
 -- S80: takes one stack off the running entry of `kind` with the most stacks and returns one stack's value; the last

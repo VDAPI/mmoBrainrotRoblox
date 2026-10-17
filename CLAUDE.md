@@ -140,13 +140,26 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   warianty ruchu `SkillMotions.<id>.variants` (`variant({ weapon?, hits?, move?, keys })`, bez zdarzeń, `SkillPose.pick`);
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
   warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
+- **Okno umiejętności** (S139): drzewko puli i szczegóły tylko z `PathView.poolView` / `skillDetails` (rezerwacja przez
+  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 90 znaków,
+  najwyżej jeden placeholder z `values`), nowe pole `values` etykietę `skills.field.<pole>` (`localization.spec`).
+- **Podpalenie Ognia / ocalenie** (S140): stosy przez pole `burnStacks` (`add.burnStacks` w przełomach) i
+  `CombatService.ApplyBurn` (jeden wpis `Burn.KEY` na celu, `uncapped`), reguły tylko w `Logic/Burn` (`cap`, `add`,
+  `tick`, `stackBonus`, `vsBurning`, `detonate`, `phoenixSave`); lustro w `tests/SkillModel` (`applyBurn`), test
+  `tests/burn.spec`. Wariant buildu wzorcowego Maga jednego żywiołu: `ReferenceBuild.weapon.element`.
+- **Chłód Lodu** (S141): reguły tylko w `Logic/Chill` (licznik `chillToFreeze`, `onFreeze`: zamrożenie lodu na bossie
+  to `deepChill` gracza, `vsFrozen`, `shatterMul`); każde zamrożenie lodu przez `ctx.applyEffect` / `ctx.freeze`,
+  odwet tarczy przez tabelę `RETALIATIONS` w `CombatService`; ruchomy krąg `travel`, efekty każdej fali `waveEffects`,
+  narastające spowolnienie `SkillEffect.maxStacks`; lustro w `tests/SkillModel` (`chillHit`), test `tests/chill.spec`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);
   przerwanie kanału tylko przez `Logic/Channel.stops`; ocalenie od śmierci przez filtr `guardianAngel` (priorytet 90).
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
   `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
-  zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. Reguły
+  zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. S138: ścieżki to mieszalne kierunki (bez ścieżki
+  głównej i broni ścieżki; wymóg broni tylko `node.weapon`), jedno zwieńczenie na zestaw, kierunek przewodni tylko
+  przez `Paths.mainOf` (tytuł, `statPlan`, `itemWeights`, znak w drużynie). Reguły
   (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`. Wzór pełnej klasy: Kapłan (S71,
   `Data/Paths/Cleric`): buildy w kształcie `ReferenceBuild`, opis węzła = placeholdery pól `values` (mnożniki
   `{<pole>Pct}`), każdy hak węzła z odbiorcą w kodzie (test), nowy klucz przełomu w `Data/Skills/Types` i
@@ -177,6 +190,14 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   pole `props` w `Data/Cutscenes` (rodzaj w `Cutscenes.PROPS`, budowa w `client/Util/StoryProps`).
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
+- **Punkty umiejętności / pula broni** (S137, `docs/DESIGN-18.md`): pule klasy w `Data/SkillPools/<Klasa>` (`pools`
+  z `weapon` i `plan`, `defaultPool`, `version`), umiejętność podstawy z `SkillDef.pool` (`"common"` albo id puli) i
+  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`), pula z broni
+  `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i darmowy reset przy wczytaniu), bez migracji.
+- **Okno / kolor UI** (S135, S136): okno w `Data/UiWindows` (`surface = "paper" | "iron"`), ekran poza oknem w
+  `UiWindows.SCREENS`; kolory tylko z ról `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (wartości `Data/UiPalette`, para w
+  `PAIRS`; `Theme.Colors` nie istnieje), kolor z danych jako tekst przez `Theme.readable`, jako grafika przez
+  `Theme.tint`; HUD na żelazie (`Theme.HudAlpha`); test `uitheme.spec` (ścisły: bez literałów koloru i `TextSize`).
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).

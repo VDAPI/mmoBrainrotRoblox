@@ -64,6 +64,65 @@ T.describe("Localization of data tables", function()
 		end)
 	end
 
+	-- S139 (DESIGN-18 §12): one sentence per skill for the bar tooltip and the window ("What it does"): in both
+	-- languages, at most SHORT_MAX characters, at most one placeholder and only fields of the skill's `values`.
+	T.it("every skill has a short description (S139)", function()
+		local SHORT_MAX = 90
+		local bad = {}
+		for _, skill in MODULES.Skills.byId do
+			local key = `skill.{skill.id}.short`
+			for lang, texts in { pl = pl, en = en } do
+				local text = texts[key]
+				if type(text) ~= "string" then
+					table.insert(bad, `{key} ({lang}): missing`)
+				else
+					if utf8.len(text) > SHORT_MAX then
+						table.insert(bad, `{key} ({lang}): {utf8.len(text)} characters`)
+					end
+					local count = 0
+					for name in string.gmatch(text, "{([%w_]+)}") do
+						count += 1
+						if skill.values[name] == nil then
+							table.insert(bad, `{key} ({lang}): \{{name}\} is not a value of the skill`)
+						end
+					end
+					if count > 1 then
+						table.insert(bad, `{key} ({lang}): {count} placeholders`)
+					end
+				end
+			end
+		end
+		table.sort(bad)
+		T.expect(bad).toEqual({})
+	end)
+
+	-- S139: the rank table of the skills window names every value field and every effect time of a skill.
+	T.it("every skill value field and effect has a label (S139)", function()
+		local missing = {}
+		local function check(key: string)
+			if (en[key] == nil or pl[key] == nil) and not table.find(missing, key) then
+				table.insert(missing, key)
+			end
+		end
+		for _, skill in MODULES.Skills.byId do
+			for field in skill.values do
+				check(`skills.field.{field}`)
+			end
+			local effects: { any } = skill.effects or {}
+			for _, effect in effects do
+				check(`effect.{effect.kind}`)
+			end
+		end
+		for _, column in { "S", "A", "K", "O", "P", "U", "C" } do
+			check(`skills.role.{column}`)
+		end
+		for _, section in { "what", "rank", "cost", "directions", "items", "full" } do
+			check(`skills.section.{section}`)
+		end
+		table.sort(missing)
+		T.expect(missing).toEqual({})
+	end)
+
 	T.it("every Elite II ability and boss attack has a name (S39)", function()
 		local Abilities = require("../src/shared/Data/MonsterAbilities")
 		local missing = {}

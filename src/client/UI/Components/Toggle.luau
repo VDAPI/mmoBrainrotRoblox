@@ -17,16 +17,18 @@ export type Props = {
 	Size: Fusion.UsedAs<UDim2>?,
 	LayoutOrder: number?,
 	Disabled: Fusion.UsedAs<boolean>?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local function Toggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
+	local roles = Theme.surface(props.Surface)
 	return scope:New("TextButton")({
 		Name = "Toggle",
 		LayoutOrder = props.LayoutOrder,
 		Size = props.Size or UDim2.fromOffset(220, Theme.Size.MinTouch),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if use(props.Value) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+			return if use(props.Value) then roles.Selected else roles.Raised
 		end),
 		Text = scope:Computed(function(use): string
 			return `{if use(props.Value) then "☑" else "☐"}  {use(props.Label)}`
@@ -35,9 +37,9 @@ local function Toggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = scope:Computed(function(use): Color3
 			if use(props.Disabled) == true then
-				return Theme.Colors.TextMuted
+				return roles.TextMuted
 			end
-			return if use(props.Value) then Theme.Colors.GoldBright else Theme.Colors.Parchment
+			return if use(props.Value) then roles.Heading else roles.Text
 		end),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
@@ -54,6 +56,11 @@ local function Toggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		end,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Thickness = Theme.Stroke.Thin,
+				Color = roles.Border,
+			}),
 			scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 6) }),
 		},
 	})

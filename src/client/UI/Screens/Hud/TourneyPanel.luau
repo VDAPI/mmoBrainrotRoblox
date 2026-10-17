@@ -39,14 +39,14 @@ export type Props = {
 	Above: Fusion.UsedAs<number>?,
 }
 
-local GOLD = Color3.fromHex("#F2C14E")
+local GOLD = Theme.Brass.Bright
 local WIDTH_PC = 280
 local WIDTH_TOUCH = 240
 local PAD = 8
 local GAP = 3
-local TITLE = 20
-local LINE = 18
-local BUTTON_PC = 30
+local TITLE = 22
+local LINE = 20
+local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
 -- the anchors of Hud/WorldEventPanel and Hud/BloodMoonPanel
 local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
@@ -277,10 +277,11 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 
 	local function button(order: number, key: string, variant: string, visible: any, onClick: () -> ()): Instance
 		return Button(scope, {
+			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			LayoutOrder = order,
 			Text = Text.T(scope, key),
 			Variant = variant :: any,
-			TextSize = 14,
+			TextSize = Theme.TextSize.Small,
 			Visible = visible,
 			Size = scope:Computed(function(use): UDim2
 				return UDim2.new(1, 0, 0, use(buttonH))
@@ -308,12 +309,12 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.25,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = shown,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = GOLD, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, PAD),
 				PaddingBottom = UDim.new(0, PAD),
@@ -332,7 +333,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 					return `{use(headline)} · {use(line1)}`
 				end),
 				TextColor3 = GOLD,
-				TextSize = 14,
+				TextSize = Theme.TextSize.Small,
 				FontFace = Theme.Fonts.BodyBold,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -349,7 +350,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 				Visible = notFolded,
 				Text = headline,
 				TextColor3 = GOLD,
-				TextSize = 16,
+				TextSize = Theme.TextSize.Small,
 				FontFace = Theme.Fonts.BodyBold,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -359,13 +360,13 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 					end
 				end,
 			}),
-			label(2, LINE, line1, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium, notFolded),
+			label(2, LINE, line1, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium, notFolded),
 			label(
 				3,
 				LINE,
 				line2,
-				Theme.Colors.Text,
-				13,
+				Theme.Iron.Text,
+				Theme.TextSize.Small,
 				Theme.Fonts.Body,
 				scope:Computed(function(use): boolean
 					return not use(folded) and use(kind) == "live"
@@ -411,19 +412,21 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 				end),
 				[Children] = {
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						Size = UDim2.new(0.5, -3, 1, 0),
 						Text = Text.T(scope, "tourney.bracketView"),
 						Variant = "secondary",
-						TextSize = 14,
+						TextSize = Theme.TextSize.Small,
 						OnClick = props.OpenTab,
 					}),
 					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.fromScale(1, 0),
 						Size = UDim2.new(0.5, -3, 1, 0),
 						Text = Text.T(scope, "tourney.leave"),
 						Variant = "danger",
-						TextSize = 14,
+						TextSize = Theme.TextSize.Small,
 						OnClick = props.Leave,
 					}),
 				},

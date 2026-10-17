@@ -10,8 +10,12 @@
 --   Skills.cost on the effective def, Skills.cooldown with its behaviour) for A/A plus `variants` for every other
 --   choice pair ("ba", "ab", "bb": first letter = rank 5, second = rank 10). Modify nodes are never folded in.
 -- * `paths`: only paths with PathDef.wiki ~= false (ctx.hiddenPaths), built by the pure Skills.pathEntry.
--- * `rules`: the path rules (pathPointsEvery, pathPointsByLevel, mainPathLevel, rows, dipRows, dipScale) and the
---   planner vectors of Logic/Paths.canBuy / canRefund for published paths (Skills.pathVectors, seed 8282).
+-- * `rules`: the path rules (pathPointsEvery, pathPointsByLevel, rows, dipRows, dipScale) and the planner vectors of
+--   Logic/Paths.canBuy / canRefund for published paths (Skills.pathVectors, seed 8282).
+-- S138 (DESIGN-18 §7, §14): no main path (no mainPathLevel, no `main` in the vectors); rules add capstonesMax,
+--   mainMinPoints, teamFullPoints, skillPointsByLevel, freeRespecLevel and the shared ladder of the weapon pools;
+--   every skill has `pool` / `role` (Data/Skills, empty when none) and `classPools` lists the pools of every class
+--   (id, name, weapon types, element, members). The planner stays hidden until S148.
 -- * wiki/test-fixtures/planner.json (Skills.plannerFixture): the same records for the test paths of
 --   tests/fixtures/paths.luau, so the TypeScript rules are checked before any path is published. Never in
 --   wiki/src/data.
@@ -27,8 +31,10 @@ local PathData = require("../../src/shared/Data/Paths")
 local PathLogic = require("../../src/shared/Logic/Paths")
 local Progression = require("../../src/shared/Data/Progression")
 local Rng = require("../../src/shared/Logic/Rng")
+local PoolData = require("../../src/shared/Data/SkillPools")
 local Schema = require("./Schema")
 local SkillData = require("../../src/shared/Data/Skills")
+local SkillPoolLogic = require("../../src/shared/Logic/SkillPools")
 local SkillLogic = require("../../src/shared/Logic/Skills")
 local Titles = require("../../src/shared/Data/Titles")
 
@@ -86,7 +92,6 @@ local SkillPath = rec("SkillPath", {
 local SkillPathVectorState = rec("SkillPathVectorState", {
 	class = enum("ClassId"),
 	level = "int",
-	["main?"] = "string",
 	nodes = map("int"),
 	free = "int",
 	results = arr(rec("SkillPathVectorResult", {
@@ -100,7 +105,6 @@ local SkillPathVectorState = rec("SkillPathVectorState", {
 local SkillPathVectorBuild = rec("SkillPathVectorBuild", {
 	class = enum("ClassId"),
 	level = "int",
-	["main?"] = "string",
 	nodes = map("int"),
 	achievable = "bool",
 })
@@ -120,6 +124,8 @@ S.file(
 			order = "int",
 			name = "name",
 			["path?"] = "string", -- S82: id of a published path (base skills have none)
+			["pool?"] = "string", -- S138: DESIGN-18 §4.2 pool id or "common" (Data/Skills `pool`)
+			["role?"] = "string", -- S138: DESIGN-18 §5 role (filled by the class sessions S140-S145)
 			unlock = "int",
 			maxLevel = "int",
 			type = "string",
@@ -171,15 +177,36 @@ S.file(
 			})),
 		})),
 		paths = arr(SkillPath), -- S82: published paths only
+		-- S138 (DESIGN-18 §4.2, §14): the weapon pools of every class
+		classPools = arr(rec("SkillClassPools", {
+			class = enum("ClassId"),
+			["transitional?"] = "bool",
+			defaultPool = "string",
+			pools = arr(rec("SkillPool", {
+				id = "string",
+				name = "name",
+				weapons = arr("string"),
+				["element?"] = enum("ElementId"),
+				skills = arr("ref:skills"),
+			})),
+		})),
 		rules = rec("SkillRules", {
 			maxLevel = "int",
 			ranks = rec("SkillRankRules", { step = "int", capLevel = "int" }),
 			breakpointsEnabled = "bool",
 			breakpointLevels = arr("int"),
-			-- S82: path rules of Logic/Paths (pathPointsByLevel and mainPathLevel so the wiki repeats no formula)
+			-- S82: path rules of Logic/Paths (pathPointsByLevel so the wiki repeats no formula); S138: no mainPathLevel
 			pathPointsEvery = "int",
 			pathPointsByLevel = arr("int"),
-			mainPathLevel = "int",
+			-- S138 (DESIGN-18 §3, §7): directions and skill points
+			capstonesMax = "int",
+			mainMinPoints = "int",
+			teamFullPoints = "int",
+			skillPointsByLevel = arr("int"),
+			freeRespecLevel = "int",
+			ladder = arr(
+				rec("SkillLadderRung", { code = "string", level = "int", common = "bool", ["passive?"] = "bool" })
+			),
 			rows = arr(rec("SkillRowRule", {
 				row = "int",
 				level = "int",
@@ -321,6 +348,8 @@ local function skillEntry(skill: any): any
 		order = skill.order,
 		name = Names.of(skill.nameKey),
 		path = skill.path,
+		pool = skill.pool,
+		role = skill.role,
 		unlock = skill.unlock,
 		maxLevel = skill.maxLevel,
 		type = skill.type,
@@ -408,9 +437,7 @@ function Skills.pathEntry(
 				if node.modify then
 					entry.modify = { skill = node.modify.skill, at = node.modify.at, option = node.modify.option }
 				end
-				local scale = if i <= api.DIP_ROWS and api.isTeamNode(node)
-					then node.dipScale or api.DIP_SCALE
-					else nil
+				local scale = if i <= api.DIP_ROWS and api.isTeamNode(node) then node.dipScale or api.DIP_SCALE else nil
 				entry.dipScale = scale
 				local ranks = {}
 				for r = 1, node.maxRank do
@@ -495,11 +522,11 @@ local function copyNodes(nodes: { [string]: number }): { [string]: number }
 	return out
 end
 
-local function character(classId: string, level: number, main: string?, nodes: { [string]: number }): any
+local function character(classId: string, level: number, nodes: { [string]: number }): any
 	local c: any = AccountSchema.characterTemplate()
 	c.class = classId
 	c.level = level
-	c.path = { main = main, nodes = nodes, bp = {}, freeUsed = false }
+	c.path = { nodes = nodes, bp = {} }
 	return c
 end
 
@@ -554,24 +581,17 @@ local function rowIndexOfKind(api: any, classId: string, kind: string): number?
 	return nil
 end
 
--- Whether a new character of `level` reaches `nodes` (id -> rank) with `main`: the main path must be choosable
--- (api.canChooseMain with freeUsed = false); then it buys in a loop while anything changes: paths by order, rows
--- ascending, nodes in row order, each `while rank < target and canBuy`. The order is the TypeScript contract (B3).
+-- Whether a new character of `level` reaches `nodes` (id -> rank): it buys in a loop while anything changes: paths by
+-- order, rows ascending, nodes in row order, each `while rank < target and canBuy`. The order is the TypeScript
+-- contract (B3). S138: no main path (directions and one capstone per set, Logic/Paths.canBuy).
 function Skills.pathAchievable(
 	api: any,
 	paths: { any },
 	classId: string,
 	level: number,
-	main: string?,
 	nodes: { [string]: number }
 ): boolean
-	if main then
-		local ok = api.canChooseMain(character(classId, level, nil, {}), main)
-		if not ok then
-			return false
-		end
-	end
-	local c = character(classId, level, main, {})
+	local c = character(classId, level, {})
 	local have: { [string]: number } = c.path.nodes
 	local classPaths = pathsOfClass(paths, classId)
 	local changed = true
@@ -612,8 +632,8 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 		table.insert(probe, missing)
 		local info = api.rowsFor(classId)
 
-		local function addState(level: number, main: string?, nodes: { [string]: number })
-			local c = character(classId, level, main, copyNodes(nodes))
+		local function addState(level: number, nodes: { [string]: number })
+			local c = character(classId, level, copyNodes(nodes))
 			local results = {}
 			for _, id in probe do
 				local ok, reason = api.canBuy(c, id)
@@ -629,7 +649,6 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 			table.insert(states, {
 				class = classId,
 				level = level,
-				main = main,
 				nodes = copyNodes(nodes),
 				free = api.free(c),
 				results = results,
@@ -639,26 +658,25 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 		local p1 = classPaths[1]
 		local p2 = classPaths[2]
 		-- edge states
-		addState(1, nil, {})
-		addState(9, nil, {})
-		addState(10, nil, {})
+		addState(1, {})
+		addState(9, {})
+		addState(10, {})
 		local row1 = {}
 		fillRow(row1, p1, 1, math.huge)
 		local short = {}
 		fillRow(short, p1, 1, math.max(0, info[2].need - 1))
 		for _, level in { 14, 15 } do
-			addState(level, nil, row1)
-			addState(level, nil, short)
+			addState(level, row1)
+			addState(level, short)
 		end
 		local r12 = table.clone(row1)
 		fillRow(r12, p1, 2, 4)
-		addState(19, nil, r12)
-		addState(20, nil, r12)
-		addState(20, p1.id, r12)
+		addState(19, r12)
+		addState(20, r12)
 		if p2 then
 			local both = table.clone(r12)
 			fillRow(both, p2, 1, math.huge)
-			addState(20, p2.id, both)
+			addState(20, both)
 		end
 		-- a choice row with one node bought (rows below at exactly the requirement)
 		local choiceRow = rowIndexOfKind(api, classId, "choice")
@@ -669,36 +687,48 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 				left = fillRow(nodes, p1, r, left)
 			end
 			nodes[p1.rows[choiceRow].nodes[1].id] = 1
-			addState(info[choiceRow].level, p1.id, nodes)
-			addState(info[choiceRow].level + 10, p1.id, nodes)
+			addState(info[choiceRow].level, nodes)
+			addState(info[choiceRow].level + 10, nodes)
 		end
 		-- every point spent
-		local spent = character(classId, 30, p1.id, {})
+		local spent = character(classId, 30, {})
 		greedy(api, spent, p1, #p1.rows)
-		addState(30, p1.id, spent.path.nodes)
+		addState(30, spent.path.nodes)
 		if p2 then
-			local other = character(classId, 26, p1.id, {})
+			local other = character(classId, 26, {})
 			greedy(api, other, p2, #p2.rows)
-			addState(26, p1.id, other.path.nodes)
+			addState(26, other.path.nodes)
 		end
 		-- the capstone, one level before and at its level
 		local cap = rowIndexOfKind(api, classId, "capstone")
 		if cap then
 			local capLevel = info[cap].level
-			local before = character(classId, capLevel - 1, p1.id, {})
+			local before = character(classId, capLevel - 1, {})
 			greedy(api, before, p1, cap - 1)
-			addState(capLevel - 1, p1.id, before.path.nodes)
-			addState(capLevel, p1.id, before.path.nodes)
+			addState(capLevel - 1, before.path.nodes)
+			addState(capLevel, before.path.nodes)
+			-- S138: the capstone of a second direction while the first one has it (one per set) and the upgrade rule
+			-- (rows below each capstone filled to exactly its requirement, so points are left)
+			if p2 then
+				local two = {}
+				for _, path in { p1, p2 } do
+					local left = info[cap].need
+					for r = 1, cap - 1 do
+						left = fillRow(two, path, r, left)
+					end
+				end
+				two[p1.rows[cap].nodes[1].id] = 1
+				addState(maxLevel, two)
+			end
 		end
-		-- the whole main path at the top level
-		local full = character(classId, maxLevel, p1.id, {})
+		-- a whole direction at the top level
+		local full = character(classId, maxLevel, {})
 		greedy(api, full, p1, #p1.rows)
-		addState(maxLevel, p1.id, full.path.nodes)
+		addState(maxLevel, full.path.nodes)
 
-		-- random walks: a level, a main path from mainPathLevel, purchases through canBuy (half of them on a node
-		-- already bought)
-		local function walk(level: number, main: string?): { [string]: number }
-			local c = character(classId, level, main, {})
+		-- random walks: a level, purchases through canBuy (half of them on a node already bought)
+		local function walk(level: number): { [string]: number }
+			local c = character(classId, level, {})
 			local attempts = rng:int(0, api.pointsAt(level) * 3 + 3)
 			for _ = 1, attempts do
 				local bought = {}
@@ -714,33 +744,25 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 			end
 			return c.path.nodes
 		end
-		local function randomMain(level: number): string?
-			if level >= api.MAIN_LEVEL and rng:chance(0.8) then
-				return rng:pick(classPaths).id
-			end
-			return nil
-		end
 		for _ = 1, Skills.RANDOM_STATES do
 			local level = rng:int(1, maxLevel)
-			local main = randomMain(level)
-			addState(level, main, walk(level, main))
+			addState(level, walk(level))
 		end
 
 		-- target builds: random walks, some broken on purpose, and the empty build at level 1
-		local function addBuild(level: number, main: string?, nodes: { [string]: number })
+		local function addBuild(level: number, nodes: { [string]: number })
 			table.insert(builds, {
 				class = classId,
 				level = level,
-				main = main,
 				nodes = copyNodes(nodes),
-				achievable = Skills.pathAchievable(api, paths, classId, level, main, nodes),
+				achievable = Skills.pathAchievable(api, paths, classId, level, nodes),
 			})
 		end
-		addBuild(1, nil, {})
+		addBuild(1, {})
+		local deepLevel = info[api.DIP_ROWS + 1].level -- the first row past the team-node rows
 		for i = 1, Skills.RANDOM_BUILDS do
-			local level = rng:int(api.MAIN_LEVEL, maxLevel)
-			local main = randomMain(level)
-			local nodes = walk(level, main)
+			local level = rng:int(deepLevel, maxLevel)
+			local nodes = walk(level)
 			local kind = i % 8
 			if kind == 2 then
 				-- one rank more on a random node
@@ -772,17 +794,18 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 						break
 					end
 				end
-			elseif kind == 5 then
-				main = nil
+			elseif kind == 5 and p2 and cap then
+				-- S138: the capstones of two directions (one per set: never achievable)
+				nodes[p1.rows[cap].nodes[1].id] = 1
+				nodes[p2.rows[cap].nodes[1].id] = 1
 			elseif kind == 6 then
-				level = api.MAIN_LEVEL - 1
-				main = p1.id
+				level = deepLevel - 1
 			elseif kind == 7 and choiceRow then
 				for _, node in p1.rows[choiceRow].nodes do
 					nodes[node.id] = math.max(1, rankIn(nodes, node.id))
 				end
 			end
-			addBuild(level, main, nodes)
+			addBuild(level, nodes)
 		end
 	end
 	return { states = states, builds = builds }
@@ -864,12 +887,51 @@ function Skills.build(ctx: any): any
 		table.insert(paths, entry)
 	end
 	local pointsByLevel = {}
+	local skillPointsByLevel = {}
 	for level = 1, Config.MaxLevel do
 		table.insert(pointsByLevel, PathLogic.pointsAt(level))
+		table.insert(skillPointsByLevel, PathLogic.skillPointsAt(level))
+	end
+	-- S138: the shared ladder (school, then common rungs) and the pools of every class
+	local ladder = {}
+	for _, rung in PoolData.LADDER do
+		table.insert(ladder, { code = rung.code, level = rung.level, common = false, passive = rung.passive })
+	end
+	for _, rung in PoolData.COMMON_LADDER do
+		table.insert(ladder, { code = rung.code, level = rung.level, common = true, passive = rung.passive })
+	end
+	local classPools = {}
+	for _, classId in Classes.order do
+		local own = PoolData.get(classId)
+		if own then
+			local pools = {}
+			for _, def in own.pools do
+				local skills = {}
+				for _, id in SkillPoolLogic.members(classId, def.id) do
+					if not ctx.hidden[id] and SkillData.get(id) then
+						table.insert(skills, id)
+					end
+				end
+				table.insert(pools, {
+					id = def.id,
+					name = Names.of(def.nameKey),
+					weapons = Clean.clean(def.weapon.main),
+					element = def.weapon.element,
+					skills = skills,
+				})
+			end
+			table.insert(classPools, {
+				class = classId,
+				transitional = if own.transitional then true else nil,
+				defaultPool = own.defaultPool,
+				pools = pools,
+			})
+		end
 	end
 	return {
 		skills = list,
 		paths = paths,
+		classPools = classPools,
 		rules = {
 			maxLevel = Config.MaxLevel,
 			ranks = { step = SkillData.RANKS.step, capLevel = SkillData.RANKS.capLevel },
@@ -877,7 +939,12 @@ function Skills.build(ctx: any): any
 			breakpointLevels = Clean.clean(SkillLogic.BREAKPOINT_LEVELS),
 			pathPointsEvery = Progression.pathPointsEvery,
 			pathPointsByLevel = pointsByLevel,
-			mainPathLevel = PathLogic.MAIN_LEVEL,
+			capstonesMax = PathData.CAPSTONES_MAX,
+			mainMinPoints = PathData.MAIN_MIN_POINTS,
+			teamFullPoints = PathData.TEAM_FULL_POINTS,
+			skillPointsByLevel = skillPointsByLevel,
+			freeRespecLevel = Progression.freeRespecLevel,
+			ladder = ladder,
 			rows = rowRules(),
 			dipRows = PathData.DIP_ROWS,
 			dipScale = PathData.DIP_SCALE,

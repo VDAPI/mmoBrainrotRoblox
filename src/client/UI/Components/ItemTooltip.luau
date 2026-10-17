@@ -51,10 +51,34 @@ local ItemTooltip = {}
 local WIDTH = 340
 local OFFSET = Vector2.new(20, 20)
 local ICON_SIZE = 44 -- S35: item picture next to the name (the atlas cell is 128 px)
-local DARK = Theme.Colors.TextDark
-local MUTED = Color3.fromHex("#6B5E48")
-local GOOD = Color3.fromHex("#2E8B3E")
-local BAD = Color3.fromHex("#B8423A")
+-- S135: the tooltip is on iron (dark surface, parchment-coloured text, brass edge); colours from the roles.
+local DARK = Theme.Iron.Text
+local MUTED = Theme.Iron.TextMuted
+local GOOD = Theme.Iron.Success
+local BAD = Theme.Iron.Danger
+local BONUS = Theme.Iron.Link
+
+-- A colour from game data or TooltipModel (made for parchment) as text on the iron tooltip: a rarity's parchment name
+-- colour becomes its night colour (Rarities.nightHex), anything else is lightened to 4.5:1 (Theme.readable).
+local NIGHT_OF: { [string]: string } = {}
+for _, r in Rarities.list do
+	NIGHT_OF[string.upper(r.textHex)] = r.nightHex
+	NIGHT_OF[string.upper(r.hex)] = r.nightHex
+end
+local function nightHex(hex: string): string
+	return NIGHT_OF[string.upper(hex)] or Theme.readableHex(hex, "iron")
+end
+local function night(hex: string): Color3
+	return Theme.readable(nightHex(hex), "iron")
+end
+-- RichText from TooltipModel carries parchment colours (`<font color="#…">`): the same mapping for each.
+local function nightText(text: string): string
+	return (
+		string.gsub(text, 'color="(#%x%x%x%x%x%x)"', function(hex: string): string
+			return `color="{nightHex(hex)}"`
+		end)
+	)
+end
 
 local moduleScope = Fusion.scoped(Fusion)
 local shown = moduleScope:Value(nil :: ItemInstance?)
@@ -99,12 +123,9 @@ function ItemTooltip.setMerchantOpen(open: boolean)
 	merchantOpen:set(open == true)
 end
 
+-- S138: the leading direction and the equipped weapon's pool (ItemScore.contextFor).
 local function scoreContext(): ItemScore.Context
-	return {
-		classId = State.Get({ "character", "class" }) or "",
-		level = State.Get({ "character", "level" }),
-		pathId = State.Get({ "character", "path", "main" }),
-	}
+	return ItemScore.contextFor(State.Get({ "character" }))
 end
 
 -- Equipped item to compare with: the one the item would replace (S68: ItemScore.replaced, rings the weaker one, the
@@ -125,7 +146,7 @@ local function line(s: Scope, order: number, text: string, color: Color3, size: 
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Text = text,
+		Text = nightText(text),
 		RichText = true,
 		TextWrapped = true,
 		FontFace = font or Theme.Fonts.BodyMedium,
@@ -136,8 +157,8 @@ local function line(s: Scope, order: number, text: string, color: Color3, size: 
 end
 
 -- Legendary bonus lines take the Legendary rarity's parchment text colour (S30: from data, not hard-coded).
-local LEGENDARY_LINE = Rarities.get(Rarities.LEGENDARY).textColor
-local MYTHIC_LINE = Rarities.get(Rarities.MYTHIC).textColor
+local LEGENDARY_LINE = Rarities.get(Rarities.LEGENDARY).nightColor
+local MYTHIC_LINE = Rarities.get(Rarities.MYTHIC).nightColor
 
 local function bonusRow(
 	s: Scope,
@@ -161,10 +182,7 @@ local function bonusRow(
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if mythic
-					then MYTHIC_LINE
-					elseif legendary then LEGENDARY_LINE
-					else Color3.fromHex("#1F4E9A"),
+				TextColor3 = if mythic then MYTHIC_LINE elseif legendary then LEGENDARY_LINE else BONUS,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("Frame")({
@@ -172,7 +190,7 @@ local function bonusRow(
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.fromScale(1, 0.5),
 				Size = UDim2.fromOffset(46, 6),
-				BackgroundColor3 = Color3.fromHex("#CDBF9C"),
+				BackgroundColor3 = Theme.Iron.Raised,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
 					s:New("Frame")({
@@ -194,9 +212,9 @@ local TONES: { [string]: Color3 } = {
 	muted = MUTED,
 	good = GOOD,
 	bad = BAD,
-	bonus = Color3.fromHex("#1F4E9A"),
+	bonus = BONUS,
 	legendary = LEGENDARY_LINE,
-	trait = Color3.fromHex(ItemTraits.COLOR), -- S62 trait section
+	trait = night(ItemTraits.COLOR), -- S62 trait section
 }
 local SIZES: { [string]: number } = {
 	large = Theme.TextSize.Large,
@@ -204,7 +222,7 @@ local SIZES: { [string]: number } = {
 	small = Theme.TextSize.Small,
 }
 local FONTS: { [string]: Font } = {
-	heading = Theme.Fonts.Heading,
+	heading = Theme.Fonts.Display,
 	bold = Theme.Fonts.BodyBold,
 	medium = Theme.Fonts.BodyMedium,
 }
@@ -216,7 +234,7 @@ local function infoIcon(s: Scope, anchor: Vector2, position: UDim2): Instance
 		AnchorPoint = anchor,
 		Position = position,
 		Size = UDim2.fromOffset(ICON, ICON),
-		BackgroundColor3 = Theme.Colors.GoldDim,
+		BackgroundColor3 = Theme.Brass.Bright,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
 			s:New("TextLabel")({
@@ -225,7 +243,7 @@ local function infoIcon(s: Scope, anchor: Vector2, position: UDim2): Instance
 				Text = "i",
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Surface,
 			}),
 		},
 	})
@@ -336,7 +354,7 @@ local function build(
 		class = State.Get({ "character", "class" }),
 		equipped = if def and not worn then equippedFor(def) else nil,
 		merchantOpen = merchant,
-		pathId = State.Get({ "character", "path", "main" }),
+		pathId = scoreContext().pathId,
 		nodes = State.Get({ "character", "path", "nodes" }),
 		mainHand = gear.weapon,
 		offhand = gear.offhand,
@@ -377,7 +395,7 @@ local function build(
 			local text = if entry.rerolled then `{entry.text} {TooltipModel.REROLL_MARK}` else entry.text
 			row = bonusRow(s, order, text, entry.quality or 0, entry.legendary == true, entry.mythic == true, icon)
 		else
-			local color = if entry.hex then Color3.fromHex(entry.hex) else TONES[entry.tone] or DARK
+			local color = if entry.hex then night(entry.hex) else TONES[entry.tone] or DARK
 			local size = if entry.size then SIZES[entry.size] else nil
 			local font = if entry.font then FONTS[entry.font] else nil
 			local label = line(s, order, entry.text, color, size, font) :: TextLabel
@@ -577,7 +595,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		LayoutOrder = 2,
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Parchment,
+		BackgroundColor3 = Theme.Iron.Surface,
 		ZIndex = 200,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -585,7 +603,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				Thickness = 2,
 				Color = scope:Computed(function(use): Color3
 					local item = use(shown)
-					return if item then ItemText.rarityColor(item.rarity) else Theme.Colors.GoldDim
+					return if item then ItemText.rarityColor(item.rarity) else Theme.Brass.Line
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -639,7 +657,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		LayoutOrder = 1,
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Parchment,
+		BackgroundColor3 = Theme.Iron.Surface,
 		ZIndex = 200,
 		Visible = scope:Computed(function(use): boolean
 			return use(compared) ~= nil
@@ -650,7 +668,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				Thickness = 2,
 				Color = scope:Computed(function(use): Color3
 					local item = use(compared)
-					return if item then ItemText.rarityColor(item.rarity) else Theme.Colors.GoldDim
+					return if item then ItemText.rarityColor(item.rarity) else Theme.Brass.Line
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -724,7 +742,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		Parent = parent,
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Parchment,
+		BackgroundColor3 = Theme.Iron.Surface,
 		ZIndex = 210,
 		Visible = scope:Computed(function(use): boolean
 			return use(model) ~= nil and use(shown) ~= nil and use(DragDrop.Dragging) == nil

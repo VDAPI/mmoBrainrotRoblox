@@ -39,6 +39,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local TourneyTab = require(script.Tourney)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -61,18 +62,16 @@ export type Props = {
 }
 
 -- Tier colours and sign (client only; Data/Arena holds the numbers).
-local TIER_COLORS: { [string]: Color3 } = {
-	bronze = Color3.fromHex("#A8703A"),
-	silver = Color3.fromHex("#B8BCC4"),
-	gold = Color3.fromHex("#D4A537"),
-	diamond = Color3.fromHex("#5EC8E6"),
-	master = Color3.fromHex("#B04AE0"),
-}
+-- S136: the identity colours (Data/UiPalette.league) made readable on parchment
+local TIER_COLORS: { [string]: Color3 } = {}
+for id, hex in UiPalette.league :: { [string]: string } do
+	TIER_COLORS[id] = Theme.readable(hex, "paper")
+end
 local TIER_SIGN = "◆"
 local ROW = 30
 
 local function tierColor(id: string): Color3
-	return TIER_COLORS[id] or Theme.Colors.Text
+	return TIER_COLORS[id] or Theme.Paper.Text
 end
 
 local function tierMin(id: string): number
@@ -121,7 +120,7 @@ local function label(
 		TextWrapped = true,
 		FontFace = font or Theme.Fonts.Body,
 		TextSize = size or Theme.TextSize.Small,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -131,10 +130,10 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 		LayoutOrder = order,
 		Size = size,
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			s:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			s:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 1 }),
 			s:New("UIPadding")({
 				PaddingTop = UDim.new(0, 10),
 				PaddingBottom = UDim.new(0, 12),
@@ -142,7 +141,7 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 				PaddingRight = UDim.new(0, 12),
 			}),
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Colors.Gold, Theme.Fonts.Heading),
+			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display),
 			body,
 		},
 	})
@@ -234,8 +233,8 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				1,
 				`<font color="#{color:ToHex()}">{TIER_SIGN}</font> {rating}`,
 				Theme.TextSize.Title,
-				Theme.Colors.Parchment,
-				Theme.Fonts.Heading
+				Theme.Paper.Text,
+				Theme.Fonts.Display
 			)
 		)
 		table.insert(
@@ -264,7 +263,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			s:New("Frame")({
 				LayoutOrder = 3,
 				Size = UDim2.new(1, 0, 0, 10),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					s:New("Frame")({
@@ -288,7 +287,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					)
 					else Text.get(use, "arena.tier.top"),
 				nil,
-				Theme.Colors.TextMuted
+				Theme.Paper.TextMuted
 			)
 		)
 		local bracket = Arena.bracket(ArenaRules.bracketOf(use(myLevel)) or "")
@@ -312,7 +311,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				7,
 				Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) }),
 				nil,
-				Theme.Colors.TextMuted
+				Theme.Paper.TextMuted
 			)
 		)
 		-- the numbers of this season (a state from the month before shows zeros until the server rolls it)
@@ -345,7 +344,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						peak = last.peak,
 					}),
 					nil,
-					Theme.Colors.TextMuted
+					Theme.Paper.TextMuted
 				)
 			)
 		end
@@ -428,7 +427,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						elixir = Text.get(use, "item.potion_full.name"),
 					}),
 					nil,
-					Theme.Colors.Parchment
+					Theme.Paper.Text
 				)
 			)
 		end
@@ -447,13 +446,13 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				nextOrder(),
 				Text.get(use, if global then "arena.scope.global" else "arena.scope.local"),
 				nil,
-				Theme.Colors.Gold
+				Theme.Paper.Heading
 			)
 		)
 		if not global then
 			table.insert(
 				items,
-				label(s, nextOrder(), Text.get(use, "arena.net.scope.localHint"), nil, Theme.Colors.TextMuted)
+				label(s, nextOrder(), Text.get(use, "arena.net.scope.localHint"), nil, Theme.Paper.TextMuted)
 			)
 		end
 		local waiting: number? = nil
@@ -472,7 +471,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		if type(q) == "table" and q.waitingLocal == true then
 			table.insert(
 				items,
-				label(s, nextOrder(), Text.get(use, "arena.net.waitingLocal"), nil, Theme.Colors.TextMuted)
+				label(s, nextOrder(), Text.get(use, "arena.net.waitingLocal"), nil, Theme.Paper.TextMuted)
 			)
 		end
 		for _, mode in ArenaRules.enabledModes() do
@@ -492,7 +491,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							{ mode = mode.id, time = Time.format(use(now) - (tonumber(q.since) or use(now))) }
 						),
 						Theme.TextSize.Body,
-						Theme.Colors.Success,
+						Theme.Paper.Success,
 						Theme.Fonts.BodyBold
 					)
 				)
@@ -528,7 +527,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							nextOrder(),
 							Text.get(use, "arena.queue3.members", { names = table.concat(rows, ", ") }),
 							nil,
-							Theme.Colors.Parchment
+							Theme.Paper.Text
 						)
 					)
 				end
@@ -556,12 +555,12 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				if mode.id == "3v3" and reason == nil then
 					table.insert(
 						items,
-						label(s, nextOrder(), Text.get(use, "arena.queue3.soloHint"), nil, Theme.Colors.TextMuted)
+						label(s, nextOrder(), Text.get(use, "arena.queue3.soloHint"), nil, Theme.Paper.TextMuted)
 					)
 				end
 				if reason then
 					use(now) -- the penalty countdown ticks
-					table.insert(items, label(s, nextOrder(), props.ErrorText(reason), nil, Theme.Colors.Warning))
+					table.insert(items, label(s, nextOrder(), props.ErrorText(reason), nil, Theme.Paper.Warning))
 				end
 			end
 		end
@@ -575,7 +574,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					nextOrder(),
 					Text.get(use, "arena.now", { a = busy.names[1] or "?", b = busy.names[2] or "?" }),
 					nil,
-					Theme.Colors.Parchment,
+					Theme.Paper.Text,
 					Theme.Fonts.BodyBold
 				)
 			)
@@ -595,7 +594,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		if pending and pending > 0 then
 			table.insert(
 				items,
-				label(s, nextOrder(), Text.get(use, "arena.pending", { n = pending }), nil, Theme.Colors.TextMuted)
+				label(s, nextOrder(), Text.get(use, "arena.pending", { n = pending }), nil, Theme.Paper.TextMuted)
 			)
 		end
 		return items
@@ -607,18 +606,18 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		local list = if type(a.history) == "table" then a.history else {}
 		local isTouch = use(touch)
 		if #list == 0 then
-			return { label(s, 1, Text.get(use, "arena.history.empty"), nil, Theme.Colors.TextMuted) }
+			return { label(s, 1, Text.get(use, "arena.history.empty"), nil, Theme.Paper.TextMuted) }
 		end
 		local items: { any } = {
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 		}
 		local t = use(clock)
 		for i, entry in list do
-			local glyph, color = "=", Theme.Colors.TextMuted
+			local glyph, color = "=", Theme.Paper.TextMuted
 			if entry.score >= 1 then
-				glyph, color = "✓", Theme.Colors.Success
+				glyph, color = "✓", Theme.Paper.Success
 			elseif entry.score <= 0 then
-				glyph, color = "✗", Theme.Colors.Danger
+				glyph, color = "✗", Theme.Paper.Danger
 			end
 			local className = Text.get(use, `class.{entry.oppClass}.name`)
 			local delta = if not entry.rated
@@ -632,7 +631,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				s:New("Frame")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, ROW),
-					BackgroundColor3 = Theme.Colors.Panel,
+					BackgroundColor3 = Theme.Paper.Surface,
 					BackgroundTransparency = if i % 2 == 0 then 0 else 1,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -658,7 +657,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							Text = `{entry.opp} ({className})`,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -669,7 +668,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							Text = entry.rounds,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Parchment,
+							TextColor3 = Theme.Paper.Text,
 						}),
 						s:New("TextLabel")({
 							LayoutOrder = 4,
@@ -679,9 +678,9 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = if not entry.rated
-								then Theme.Colors.TextMuted
-								elseif entry.delta >= 0 then Theme.Colors.Success
-								else Theme.Colors.Danger,
+								then Theme.Paper.TextMuted
+								elseif entry.delta >= 0 then Theme.Paper.Success
+								else Theme.Paper.Danger,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
 						s:New("TextLabel")({
@@ -691,7 +690,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 							Text = agoText(use, t - entry.t),
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Right,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -717,7 +716,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						{ n = Arena.LIMITS.sameOpponentDaily }
 					)}`,
 					nil,
-					Theme.Colors.TextMuted
+					Theme.Paper.TextMuted
 				)
 			)
 		end
@@ -754,7 +753,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				Text = `{tonumber(a.tokens) or 0}`,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			s:New("TextLabel")({
 				LayoutOrder = 3,
@@ -770,7 +769,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					else ""}`,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextWrapped = true,
 			}),
 		}
@@ -792,7 +791,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			return order
 		end
 		if not atMaster then
-			table.insert(items, label(s, nextOrder(), Text.get(use, "arena.shop.atMaster"), nil, Theme.Colors.Warning))
+			table.insert(items, label(s, nextOrder(), Text.get(use, "arena.shop.atMaster"), nil, Theme.Paper.Warning))
 		end
 		for _, group in { "cosmetic", "blessing", "travel" } do
 			table.insert(
@@ -802,8 +801,8 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					nextOrder(),
 					Text.get(use, `arena.shop.group.{group}`),
 					Theme.TextSize.Body,
-					Theme.Colors.Gold,
-					Theme.Fonts.Heading
+					Theme.Paper.Heading,
+					Theme.Fonts.Display
 				)
 			)
 			for _, entry in Arena.SHOP do
@@ -821,7 +820,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					icon = ArtIcon(s, {
 						Key = UiArt.cosmetic(entry.id),
 						Glyph = if def then def.icon else "?",
-						GlyphColor = if def then Color3.fromHex(def.color) else Theme.Colors.Text,
+						GlyphColor = if def then Theme.readable(def.color, "paper", 3) else Theme.Paper.Text,
 						Size = UDim2.fromOffset(48, 48),
 						LayoutOrder = 1,
 					})
@@ -829,7 +828,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				local priceText = Text.get(use, "arena.shop.price", { price = entry.price })
 				local action: any
 				if isOwned then
-					action = label(s, 4, Text.get(use, "arena.shop.owned"), nil, Theme.Colors.Success)
+					action = label(s, 4, Text.get(use, "arena.shop.owned"), nil, Theme.Paper.Success)
 				else
 					action = Button(s, {
 						LayoutOrder = 4,
@@ -848,7 +847,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					s:New("Frame")({
 						LayoutOrder = nextOrder(),
 						Size = UDim2.new(1, 0, 0, 64),
-						BackgroundColor3 = Theme.Colors.Panel,
+						BackgroundColor3 = Theme.Paper.Surface,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 							s:New("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
@@ -868,9 +867,9 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 										SortOrder = Enum.SortOrder.LayoutOrder,
 										VerticalAlignment = Enum.VerticalAlignment.Center,
 									}),
-									label(s, 1, name, Theme.TextSize.Small, Theme.Colors.Text, Theme.Fonts.BodyBold),
+									label(s, 1, name, Theme.TextSize.Small, Theme.Paper.Text, Theme.Fonts.BodyBold),
 									if hint
-										then label(s, 2, hint, Theme.TextSize.Small, Theme.Colors.TextMuted)
+										then label(s, 2, hint, Theme.TextSize.Small, Theme.Paper.TextMuted)
 										else nil :: any,
 								} :: any,
 							}),
@@ -881,7 +880,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 								Text = `⚔ {priceText}`,
 								FontFace = Theme.Fonts.BodyBold,
 								TextSize = Theme.TextSize.Small,
-								TextColor3 = Color3.fromHex("#D9A441"),
+								TextColor3 = Theme.readable(UiPalette.currency.token, "paper"),
 								TextXAlignment = Enum.TextXAlignment.Right,
 							}),
 							action,
@@ -927,7 +926,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				nextOrder(),
 				Text.get(use, "arena.season.minPlayed", { n = played, min = Arena.seasonMinPlayed }),
 				nil,
-				if played >= Arena.seasonMinPlayed then Theme.Colors.Success else Theme.Colors.Warning
+				if played >= Arena.seasonMinPlayed then Theme.Paper.Success else Theme.Paper.Warning
 			)
 		)
 		local d, h = Time.split(ArenaRules.seasonEndsAt(season) - t)
@@ -938,7 +937,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				nextOrder(),
 				Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) }),
 				nil,
-				Theme.Colors.TextMuted
+				Theme.Paper.TextMuted
 			)
 		)
 		for i, tier in Arena.TIERS do
@@ -965,7 +964,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					LayoutOrder = nextOrder(),
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = if mineRow then Theme.Colors.PanelHover else Theme.Colors.Panel,
+					BackgroundColor3 = if mineRow then Theme.Paper.Hover else Theme.Paper.Surface,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIStroke")({
@@ -988,15 +987,15 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 								`arena.tier.{tier.id}`
 							)} · {range}`,
 							Theme.TextSize.Body,
-							Theme.Colors.Parchment,
+							Theme.Paper.Text,
 							Theme.Fonts.BodyBold
 						),
-						label(s, 2, table.concat(parts, " · "), nil, Theme.Colors.Text),
+						label(s, 2, table.concat(parts, " · "), nil, Theme.Paper.Text),
 					},
 				})
 			)
 		end
-		table.insert(items, label(s, nextOrder(), Text.get(use, "arena.season.howTo"), nil, Theme.Colors.TextMuted))
+		table.insert(items, label(s, nextOrder(), Text.get(use, "arena.season.howTo"), nil, Theme.Paper.TextMuted))
 		local last = a.last
 		if type(last) == "table" and last.rewarded == true then
 			local month, year = ArenaRules.seasonLabel(last.season)
@@ -1011,7 +1010,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						tier = Text.get(use, `arena.tier.{lastTier}`),
 					}),
 					Theme.TextSize.Body,
-					Theme.Colors.Gold,
+					Theme.Paper.Heading,
 					Theme.Fonts.BodyBold
 				)
 			)
@@ -1094,7 +1093,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.Border,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,

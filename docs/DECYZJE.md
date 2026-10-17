@@ -4885,3 +4885,312 @@
 - **S134k** Tytuł „Mistrz Łowów” dopiero po oddaniu wszystkich 99 (`Contracts.earnedCosmetics`: zlecenie 99 oddane poza
   kolejnością go nie daje, daje je ostatnie oddane), też wstecz przy wejściu do świata (postać z `done = 99` sprzed
   S134k). Samo przyjmowanie tylko na prawdziwy awans (`gained` z `LeveledUp`), nie na „level” z `catchUp`.
+- **S135** Kierunek „Pergamin i żelazo” (makieta A, wybór właściciela 2026-10-15): pergamin w treści okien, żelazo w
+  paskach tytułu, tooltipach, HUD, nakładkach i tabliczkach. Wartości kolorów tylko w `Data/UiPalette` (hex, czysty),
+  każda para tekst / tło i informacyjna krawędź w `UiPalette.PAIRS` z progiem 4,5 / 3 i w teście (`uipalette.spec`);
+  wzór kontrastu przeniesiony z wiki do `Logic/Contrast` (wiki bez zmian).
+- **S135** Poprawki makiety pod kontrast: przycisk główny `#4E6A26` z tekstem `#F3E6C4` (5,0:1; makieta `#6B8A3A` z bielą
+  3,95:1), brzeg slotu `#7A6136` (3,9:1 na slocie; makieta `#8C7448` 2,98:1), czerwień `#9A2F28` (5,9:1; dawne
+  `#B8423A` 4,25:1), przygaszony `#634C2E` (5,4:1 na slocie i ≥ 4,5 na wybranym wierszu), sukces `#2F5A22`,
+  ostrzeżenie `#744300`; złoto nigdy jako tekst na pergaminie.
+- **S135** Rzadkości: drabina S30 (szary, żółty, niebieski, pomarańczowy, czerwony) zostaje mimo kolorów makiety. Nowe
+  `paperHex` (ramka na pergaminowym slocie ≥ 3:1: `#6E747C`, `#887620`, `#2F6FD6`, `#A66712`, `#C42620`) i `nightHex`
+  (nazwa na żelaznym tooltipie ≥ 4,5:1: mityczna `#FF6A5E`, reszta = `hex`); `textHex` przyciemnione do ≥ 4,5:1 na
+  stronie i slocie (Unikat `#715800`, Heroik `#1D56B8`, Legenda `#8A4B00`). `hex` (tożsamość, wiki, ogłoszenia) bez zmian.
+- **S135** Czcionki: nagłówki i tytuły okien Merriweather (waga Heavy, Roblox dobiera najbliższą) zamiast ozdobnego
+  Fondamento (też tam, gdzie stare okna wołają `Fonts.Heading`); treść zostaje BuilderSans (odpowiednik Source Sans 3 z
+  makiety, lepiej renderowany małym rozmiarem). `TextSize.Small` 16 → 17 w całej grze, `Title` 32 → 30, nowe
+  `Caption 15` tylko dla etykiet WIELKIMI LITERAMI (`Logic/TextCase.upper` z polskimi znakami).
+- **S135** Migracja oknami: `Data/UiWindows` (`paper`, pliki, sesja) i `Window.Paper`; okna S136 zostają na `Theme.Colors`
+  („legacy, removed in S136”). Komponenty dostają prop `Surface` (domyślnie pergamin, rysują własne tło, więc są
+  czytelne też w starych oknach); tekstowe komponenty bez tła (`QuestRewards`, `CurrencyIcon`, przycisk `ghost`, błąd
+  `TextInput`, `LookPicker`) i przyciski HUD / nakładek dostają w starych ekranach `Surface = "iron"`. Tooltipy (`Tooltip`, `ItemTooltip`) na żelazie dla wszystkich okien;
+  kolory z `TooltipModel` (robione pod pergamin) mapowane: `textHex` → `nightHex`, reszta przez `Theme.readable`.
+- **S135** Okna S135: `skills`, `character`, `inventory`, `menu`, `npc`, `shop`, `questnpc`, `quests`, `trade`, `mail`,
+  `mailCompose` (pisanie listu idzie z pocztą), `profile`, `party` (z zakładką `PartyFinder`). `friends` (S133) i
+  `fightlog` / `huntshop` (S134) dopisane do listy S136. Test `uitheme.spec`: rejestracje ↔ lista, brak `Theme.Colors`,
+  literałów koloru i `TextSize = <liczba>` w plikach okien na pergaminie, brak literałów koloru w komponentach.
+- **S135** Okno umiejętności: wiersze listy to `ListRow` (naprzemienny pergamin, linia, wybrany z mosiężnym paskiem),
+  przełomy jako plakietki zamiast kolorowego RichTextu, sekcje szczegółów przez `SectionLabel`, liczby opisu pogrubione
+  (`Details.boldNumbers`), podgląd 3D na żelazie (efekty lepiej widać na ciemnym tle).
+- **S135** Tabliczki graczy: przyczyną znikania było sprzątanie przy wypadnięciu modelu z `game` (strumieniowanie,
+  powrót bez `CharacterAdded`) i rezygnacja po 10 s bez `Head`; teraz jedna tabliczka na model, budowa przy
+  `CharacterAdded`, zmianie `Character` i każdym modelu z `CharName` w `Workspace`, sprzątanie tylko przy `Destroying`,
+  nowej postaci i wyjściu gracza. `AlwaysOnTop` dla wszystkich (nick przez drzewa i dachy jak w MMO), odległości w
+  `Config.Nameplate` (150 / 60 st.), dalej sama nazwa (`Logic/Nameplate`). Klik / dotknięcie nicku woła istniejące
+  `PartyController.OpenMenu(player, at)` (S133; prawy klik też). PL „Poz. {level} {class}” zamiast „Lv”.
+- **S135** `Theme.readable(hex, surface)` poprawia kolor z danych względem wszystkich ról tła powierzchni
+  (`UiPalette.BACKGROUNDS`, `Contrast.readableOn`), nie tylko `surface`: tekst na wierszach `Raised` / `Selected` też
+  ≥ 4,5:1. Glif i ramka klasy na portrecie (ciemny kafel `PortraitFrame`) przez `Theme.readable(…, "iron")`.
+- **S135** Listy i nagłówki sekcji okien D (poza `character`, `menu`, `skills`) zostają ręcznymi ramkami na rolach
+  pergaminu; przejście na `ListRow` / `SectionLabel` odłożone do S136 (zmienia układ i wysokości wierszy, bez przeglądu
+  w grze ryzyko przycięć).
+- **S136** HUD na żelazie: płytki `Iron.Surface` z jedną przezroczystością `UiPalette.HUD_ALPHA` 0,15 (`Theme.HudAlpha`)
+  i mosiężnym brzegiem 1 px; kontrast płytek liczony na płytce zmieszanej ze śniegiem `WORLD_BRIGHT` `#E8EEF2`
+  (`Contrast.mix`; wszystkie role tekstu żelaza ≥ 4,5:1). Sloty umiejętności i mikstur `Iron.Raised` z brzegiem
+  `Brass.Line` (dawny brzeg w kolorze klasy / mikstury zniknął), klawisz na plakietce `Iron.Sunken`, zasłony z `Shade`.
+- **S136** Nad światem tekst nie stoi na pergaminie: na żelazie HUD, nakładki, ekran śmierci, przerywnik, koło emotek,
+  łowienie, karta walki, ramki drużyny i tło wyboru postaci (`CharacterSelect/init`); na pergaminie karty (nagroda bossa,
+  objawienie legendy, oferta areny, gotowość, menu gracza, „Wkrótce”, karty postaci i kreatora: portret klasy pod
+  pergaminową zasłoną 0,15–0,3, żeby atrament był czytelny). Lista w `UiWindows.SCREENS`.
+- **S136** Medale rankingów: miejsca 1–3 jako plakietka `Iron.Raised` z jasną cyfrą w kolorze `UiPalette.medal` (złoto
+  `#E8C25A` ma na pergaminie < 2:1, więc nie jest tekstem na pergaminie; brąz rozjaśniony do `#D69A66`). Ligi areny
+  (`UiPalette.league`) jako tekst przez `Theme.readable`.
+- **S136** Panel admina (F2) jedynym oknem na żelazie (`surface = "iron"`, powód w `Data/UiWindows`): nakładka przy
+  prawej krawędzi, komponenty z `Surface = "iron"`. `Window` nie ma już trybu dawnego; ciało okna z `Theme.surface`.
+- **S136** Rysunki map poza tokenami ról: teren, obszary, ikony i podpisy mapy świata i minimapy to grafika w
+  `UiPalette.map` (dawne wartości) przez `Theme.tint`; ramy (mosiężna 3 px wokół płótna i tarczy), karty, panele,
+  legenda i przyciski na rolach. Kolor z danych jako grafika (próbka barwnika, wierzchowca, kosmetyku, znacznik, odcień
+  ikony) przez `Theme.tint`, jako tekst zawsze `Theme.readable` (ikony-znaki na pergaminie z progiem 3:1).
+- **S136** Nowe pary w `UiPalette.PAIRS`: role tekstu żelaza i `brass.bright` na płytce HUD, `zoneText` (czerwień
+  strefy jako tekst `#FF9080`), `plate` (zwykły `#F3E6C4`, Elita `#FF9080`, Elita II `#D9A0FF`, boss `#FF9F1C`), `mark`
+  (szary znak questu `#B3B6BF`), `group` na plakietce (4 = `#FF7A7A`), `medal`, `chat` na oknie czatu Roblox `#191B1D`
+  (kanały bez zmian), `glyph` (znaki przycisków HUD ≥ 3:1 na żelazie i na płytce HUD; czerwienie rozjaśnione, pierwsze
+  wartości miały tam 2,4–2,8:1), ogłoszenia. Kolory świata w efektach walki
+  (`CombatFxController`) zostają dawnymi wartościami w stałych modułu.
+- **S136** Koniec `Theme.Colors` i aliasu `Fonts.Heading`; `uitheme.spec` ścisły: żadnego `Theme.Colors` w `src/client`,
+  żadnych literałów koloru, `TextSize = <liczba>` (też `if … then <liczba>` i liczba zwracana w `TextSize = Computed`),
+  `size = <liczba>`, `size="<liczba>"` ani `Color3.fromHex` w `UI/Screens`, `UI/Components` i `UI/*.luau` (zwolnione:
+  `Theme`, `MapSketch`; `ALLOWED`: oświetlenie podglądów 3D w `LookPreview`, `SkillsWindow/Preview`, `MountWindow`,
+  `Wardrobe`, `WorldMap/Preview`, rozmiar ikon `UiArtState.decorate` w `Minimap` i `WorldMap/Overlay`). Linie
+  `DetailCard` domyślnie `Small`. Okno `lootlog` w `UI/Screens/LootLog.luau`.
+  Wiki: `Basics.zoneColors` tylko z `UiPalette.zone` (bez `themeText`).
+- **S136** Tabliczki potworów, NPC i towarzyszy w stylu tabliczek graczy (płytka żelaza z mosiężnym brzegiem, nazwa z
+  obrysem, poziom `Small` w kolorze pasma przez `Theme.readable`); wiersze z `Logic/Nameplate.monster` / `.npc`
+  (`UI/PlateStyle` dla etykiet budowanych przez `Instance.new`).
+- **S136** Kolor z danych jako tekst na przezroczystej płytce HUD: `Theme.readable(hex, "hud")` (role żelaza plus
+  `UiPalette.HUD_TILES`, płytki `Surface` / `Raised` zmieszane ze śniegiem); tytuł panelu wydarzenia i kolumn areny.
+- **S136** Listy i nagłówki sekcji okien S135 i S136 (poza `character`, `menu`, `skills`, `lootlog`) dalej ręczne na
+  rolach pergaminu, bez `ListRow` / `SectionLabel`: zmiana układu i wysokości wierszy bez przeglądu w grze grozi
+  przycięciami; przejście okno po oknie po przeglądzie właściciela (faza wyglądu), wpis w PROGRESS.
+- **S137** Rangi umiejętności są kupowane punktami umiejętności (`Logic/SkillPoints`), osobno w każdej puli broni; dawna
+  krzywa `Skills.rankAt` / `rankFor` jest tylko limitem rangi na poziomie. Zastępuje decyzje S56 o rangach z poziomu i
+  automatycznym wkładaniu na pasek (awans nic nie kupuje ani nie wkłada; nowo kupiona ranga 1 trafia na wolne miejsce
+  paska swojej puli z toastem).
+- **S137** Punkty: `pointsAt(L) = L × perLevel + bonus`, `perLevel` 1, `bonus` 7 (27 na 20., 107 na 100.). Odejście od
+  „równo 1 na poziom” (DESIGN-18 §3.1, poprawione): umiejętności ścieżek też kosztują punkty, a buildy wzorcowe
+  potrzebują do 27–28 rang na 19.–20.; przy `bonus` 6 zostawały 4 różnice fixture 1–20 (zasada 5 sesji).
+- **S137** Budżet na pulę: `free(pula) = pointsAt(L) − Σ rang tej puli`; wspólne umiejętności i umiejętności ścieżek
+  kupuje się w każdej puli osobno. Umiejętność ścieżki ma rangę tylko z kupionym węzłem (reguła S57 w
+  `Paths.pathSkillOpen`); zwrot węzła oddaje jej rangi (czyszczenie po zmianie). Jedno miejsce reguły rangi:
+  `Paths.skillRank(character, skillId, poolId?)` (domyślnie pula noszonej broni).
+- **S137** Dane przejściowe pul (`transitional = true`, `version` 1): Mag ma pule `fire` / `ice` / `lightning` według
+  żywiołu czarów (Magiczny Pocisk i Błysk wspólne), Wojownik, Łowca i Kapłan po dwie pule z całą podstawą wspólną;
+  `role` dopiero w sesjach klas. Test drabiny DESIGN-18 §5 pomija klasy przejściowe; test efektów przedmiotów (S134g)
+  dla klas przejściowych sprawdza tylko „umiejętność wspólna, ścieżki albo z puli efektu”.
+- **S137** Serwis: rozszerzony `PathService` (nie nowy `SkillPointService`): ma już kontekst miejsca, zestawy i
+  czyszczenie przy wczytaniu. Zmienia `ranks`, `bars`, `barPool`, `respecFree`; pasek aktywnej puli dalej przez
+  `SkillService` (`PutOnBar`, `SetHotbar`, nowe `SetSlot`). Blokada po zmianie puli w walce: `SkillService.LockPool`.
+- **S137** Zwroty: kupno wszędzie poza walką; zwrot rangi poniżej 20. za darmo wszędzie poza walką, od 20. w mieście
+  lub przy bramie za `10 × poziom` złota; `ResetSkills` (rangi wszystkich pul aktywnego zestawu, węzły i przełomy
+  zostają) za darmo poniżej 20. albo z `respecFree`, inaczej `skills.error.resetNeedsScroll` (Zwój Odnowy: S138).
+- **S137** Przełomy: wybór A/B należy do zestawu, nie do puli (`canChooseBreakpoint` liczy najwyższą rangę z pul klasy);
+  `validHotbar` zostawia wybór umiejętności podstawy także bez rangi (DESIGN-18 §8), umiejętności ścieżki tylko z węzłem.
+- **S137** Migracja 12 (`SkillPoints.migrate`, oba zestawy): rangi z automatu przycięte do punktów puli w kolejności
+  pasek → pasywki → reszta, pasek puli noszonej broni (stary pasek przefiltrowany do puli i 8 miejsc, uzupełniony
+  `startBar`), paski innych pul ze `startBar`, `respecFree`, `poolsVersion`, `reworkNotice` (okno `rework2.*`).
+  Zestaw z polem `ranks` jest pomijany (idempotentna). Pusty drugi zestaw nie ma rang ani paska.
+- **S137** Pasek 8 miejsc (`HOTBAR_SLOTS`): akcje `skill_9` / `skill_10` usunięte (klawisze 9 i 0 wolne), siatka
+  wyboru 2 × 4, druga strona łuku na telefonie ma 3 przyciski.
+- **S137** Toasty: awans pokazuje „+N pkt umiejętności” (argument `skillPoints` na końcu `LevelUp`) zamiast rang;
+  przełom osiągnięty kupioną rangą 5 / 10 z opcją B zgłasza serwer po `AllocateSkills`; nowa wersja pul: jeden toast
+  `skills.toast.respecFree` przy wczytaniu.
+  Kupno węzła umiejętności ścieżki tylko ją odblokowuje (toast `skills.toast.unlocked`), na pasek trafia z rangą 1.
+- **S137** Minimalne okno: zakładki pul, wolne punkty, „Rozdaj jak zaleca pula”, „Zatwierdź” i „Resetuj” stoją nad
+  listą zakładki „Podstawa” (nagłówek ma tylko etykietę puli i punktów, bo nie mieści przycisków); lista pokazuje
+  członków wybranej puli i umiejętności ścieżek z węzłem, „+” / „−” z rezerwacją (wzór `StatAllocator`).
+- **S137** Model (`SkillModel.character(build, L, element?)`): rangi poziomu L jedną rezerwacją od zera (`SkillPoints.apply`)
+  w puli broni buildu, kolejność `ReferenceBuild.ranks` albo rotacja → pasywki → reszta puli; Mag: żywioł z opcji
+  `element` przez broń w `equipment`. `GLOBAL_REPORT_ONLY` działa teraz też w blokach S88, regionów i ścieżek
+  (`SkillModel.reportRow`, klucz `path.<build>.L<poziom>.<id>`), test martwych kluczy na końcu `balance.spec`.
+- **S137** `GLOBAL_REPORT_ONLY` (`session = "S137"`, wraca w S146/S147): 57 wierszy regionów (Morvane bez wsparcia
+  3–5 graczy, strażnicy T-SK1/2/3 na 40–100), 4 wiersze T1 (S88), 19 wierszy ścieżek (Strażnik EHP, Strzelec, Traper,
+  R5a, Inkwizytor HP); lista w `docs/SESJE.md` S137.
+- **S137** Wiki: `tools/WikiData` i planer bez zmian w tej sesji (właściciel 17.10: dane wiki odświeża później hurtem);
+  `rules.skillPointsByLevel` / `freeRespecLevel` i „Planer wkrótce” zostają do odświeżenia wiki.
+- **S138** Koniec ścieżki głównej (zastępuje S57 „ścieżka główna + początki” i ROZWOJ 2.8 „broń ścieżki”): ścieżki to
+  mieszalne kierunki. Każdy rząd każdego kierunku otwierają poziom rzędu i `need` (rangi w niższych rzędach tego
+  kierunku); `ChooseMainPath`, `/path`, `canChooseMain`, `MAIN_LEVEL`, `mainWeaponOk` i pola `main` / `freeUsed` znikają
+  (zapis czyści `clampToLevel` / `cleanSet` przy wczytaniu, bez migracji).
+- **S138** Jedno zwieńczenie na zestaw (`Paths.CAPSTONES_MAX = 1`, `skills.error.capstoneTaken`), ulepszenie (rząd 11)
+  tylko w kierunku z kupionym zwieńczeniem (`paths.error.upgrade`); zwrot zwieńczenia z kupionym ulepszeniem odrzucony
+  (`paths.error.needAbove`). Dwa zwieńczenia (stara ścieżka główna + admin): przy wczytaniu zostaje zwieńczenie kierunku
+  przewodniego (inaczej niższe `order`), drugie wraca z ulepszeniem jako punkty.
+- **S138** Kierunek przewodni `Paths.mainOf`: najwięcej rang, co najmniej `MAIN_MIN_POINTS = 12`, remis = niższe
+  `order`. Bierze go tytuł ścieżki, `Paths.statPlan`, `ItemScore` (`itemWeights` przez `ItemScore.contextFor`), znak
+  w drużynie i admin `/itemscore`, `/tooltip`.
+- **S138** Odejście od DESIGN-18 §7: `TEAM_FULL_POINTS = 6` zamiast 12. Przy 12 zwiadowca z buildów wzorcowych traci na
+  20. poziomie Oznaczenie w pełni (dawniej ścieżka główna od 20.), 4 wiersze zamrożonego 1–20 (DPS kotwicy −2,5%);
+  6 to najwyższy próg bez różnic 1–20 (balance1_20 bez `ALLOWED_1_20_DIFFS`). DESIGN-18 §7 poprawiony.
+- **S138** Broń: `PathDef.weapon` niczego nie blokuje (tylko ikona zakładki); `node.weapon` działa w każdym rzędzie.
+  Przykłady z DESIGN-18 §7 dostały wymóg na węźle: szczęście Fortuny w rzędach 4–10 (Szczęśliwa Ręka, Hojny Łup, Łaska Fortuny,
+  Złota Żyła, Dar Bogini) relikwia, Rzeź Berserkera broń dwuręczna (Blok z tarczą miał go już). Reszta dawnych rzędów 3–11
+  działa z każdą bronią klasy.
+- **S138** Zwroty węzłów (zastępuje darmowy zwrot z ROZWOJ 2.10): poniżej `freeRespecLevel` za darmo wszędzie poza
+  walką (`Paths.canEdit` z `ctx.level`), od 20. w mieście lub przy bramie za `SkillPoints.refundCost` (ta sama cena co
+  ranga umiejętności) za rangę; `ResetPaths` = zwrot wszystkich węzłów za sumę rang (`nodesRefundCost`), za darmo z
+  `respecFree` (flaga zostaje na pełny reset) albo poniżej 20.
+- **S138** Zwój Odnowy Umiejętności = pełny reset (`PathService.FullReset`): rangi wszystkich pul i węzły aktywnego
+  zestawu, przełomy zostają. Płaci kolejno: poziom < 20, `respecFree` (zużyty, zwój zostaje), zwój z plecaka (zużyty
+  tylko przy sukcesie). Woła go `ResetSkills` i użycie zwoju (`ScrollService`, klient pyta `skills.reset.confirm`).
+  Sklep Nauczyciela: `needsPaths = true` zostaje (każda klasa ma kierunki, więc zwój jest dla wszystkich od 20.).
+- **S138** Admin: `/resetskills` = darmowy pełny reset aktywnego zestawu (rangi i węzły, przełomy i `respecFree` zostają),
+  `/skillreset` dalej tylko rangi; `/pathmax [pathId]` kupuje jak gracz przez `canBuy` (podany kierunek najpierw, także
+  zwieńczenie, gdy wolne).
+- **S138** `version` wszystkich `Data/SkillPools/<Klasa>` 1 → 2 (DESIGN-18 §10): przy wczytaniu darmowy reset do
+  przemyślenia kierunków.
+- **S138** DESIGN-18 §0.9: `ItemScore` waży efekt przedmiotu z innej puli niż noszona broń × `ItemWeights.OTHER_POOL`
+  (0,5); kontekst bez `poolId` (model balansu) liczy każdy efekt w pełni, więc model się nie zmienia.
+- **S138** Okno (minimum przed S139): zakładki kierunków zostają (stan „przewodni” / „N pkt” / „zamknięty”), bez
+  przycisków ścieżki głównej i paska broni ścieżki; nagłówek „Kierunek przewodni: …” albo „brak (12 pkt w jednym
+  kierunku)”; rząd zwieńczenia innego kierunku zamknięty z powodem `skills.error.capstoneTaken` (ten powód i
+  `paths.error.upgrade` mają pierwszeństwo przed poziomem i punktami rzędu); „−” na węźle i „Zwróć wszystkie węzły” od
+  20. z ceną w potwierdzeniu; „Resetuj” aktywny także ze zwojem w plecaku.
+- **S138** Model: `SkillModel.character` bez wyboru ścieżki głównej (węzły w kolejności buildu przez `canBuy`); klucz
+  wariantu `Balance.buildsAt` zostaje z id ścieżki buildu od dawnego poziomu ścieżki głównej (rząd 3), żeby tabele 1–20
+  miały te same wiersze. 21–100: żaden asertowany wiersz nie padł, `GLOBAL_REPORT_ONLY` bez wpisów S138.
+- **S138** Wiki (`tools/WikiData/Skills`): umiejętność ma `pool` / `role`, pole `classPools` (pule klas: id, nazwa,
+  typy broni, żywioł, członkowie; w `skills.json`, nie w `classes.json`), `rules` bez `mainPathLevel`, z
+  `capstonesMax`, `mainMinPoints`, `teamFullPoints`, `skillPointsByLevel`, `freeRespecLevel`, `ladder`; wektory planera
+  bez `main`. Dane wiki i `wiki/test-fixtures/planner.json` nieodświeżone (właściciel 17.10), więc
+  `wikidump.spec` przepuszcza nieaktualny plik planera (`PLANNER_STALE_OK`, wraca do `false` przy odświeżeniu).
+- **S138** Cena zwrotu węzła (uzupełnia „Zwroty węzłów”): `RefundNode` / `ResetPaths` płacą `refundCost` za rangi
+  węzłów plus rangi umiejętności kierunku, które zwrot zabiera we wszystkich pulach (`SkillPoints.nodeRefundCost`,
+  `nodesRefundCost`, `droppedRanks`), żeby zwrot węzła i darmowy zakup nie były tańszą drogą niż `RefundSkillRank`.
+- **S138** Przełom umiejętności kierunku zostaje w `path.bp` także bez kupionego węzła (zastępuje S71–S81 „zwrot węzła
+  kasuje wybór”; DESIGN-18 §8): `validHotbar` usuwa tylko wpisy nieznanych umiejętności, innej klasy i złych opcji, więc
+  zwrot węzła, `ResetPaths` i pełny reset nie gubią wyborów (bez węzła ranga 0, więc wybór nie działa).
+- **S139** Okno umiejętności 2.0: zakładki `pool:<id>` (pula noszonej broni pierwsza, inne pule z „załóż: …”, pełna
+  rezerwacja i „Na pasek” przez `SetPoolBar`) i „Kierunki” (przełącznik kierunków, drzewko jednego; „Ścieżki wkrótce”
+  w tej zakładce). Zakładka „Podstawa” znika; okno otwiera się na puli noszonej broni (było: kierunek przewodni).
+- **S139** `PathView.poolView(character, poolId, reserve?)` i `skillDetails(character, poolId, skillId, reserve?)` biorą
+  rezerwację okna (rozszerzenie sygnatur z pliku sesji: okno nie liczy planu samo, `PathView.planned` zastępuje kopię
+  w `Context`). Wiersz „Z kierunków” tylko z umiejętnościami kierunków z kupionym węzłem (bez węzła rangi nie da się
+  kupić).
+- **S139** Pula przejściowa (dziś wszystkie): wiersz „Pozostałe” (według `unlock`) i „Z kierunków” stoją nad pustą
+  drabiną (niskie szczeble z kodem roli), żeby okno było czytelne do S140–S145; bez `transitional`: drabina, „Z
+  kierunków”, „Pozostałe”. Szczebel drabiny ma jedną rolę (poziomy obu drabin się nie powtarzają).
+- **S139** „Zmiany z kierunków” pokazuje wszystkie węzły `modify` klasy dla umiejętności (działa / teraz nie działa /
+  do kupienia w rzędzie N), nie tylko działające (`Paths.skillMods` daje same liczby).
+- **S139** Tabela „Ranga N → N+1”: pola `values` zawsze, czas działania, czasy efektów, koszt i odnowienie tylko gdy
+  następna ranga je zmienia; liczby z `Skills.descriptionArgs` (wybory, węzły, efekty przedmiotów, haki pasywek kosztu
+  i promienia jak w opisie), bez skrócenia
+  odnowienia z przedmiotów (to pokazuje „Koszt i odnowienie” z `SkillInfo.costLine`). Etykiety `skills.field.<pole>`.
+- **S139** Dymek paska: nazwa i ranga, `short`, kształt, koszt, leczenie, tylko osiągnięte przełomy (bez pełnego opisu
+  i następnej rangi). Opisy w `UI/SkillInfo` liczą też efekty przedmiotów (jak `Paths.effectiveFor`).
+- **S139** Telefon: kolumny ról stałej szerokości (62 px, drzewko 468 px) z ikonami ról (nazwa po przytrzymaniu), bez
+  łamania ról w dwa rzędy; „Anuluj / Zatwierdź (+N)” przypięte u dołu ekranu także nad arkuszem; w nagłówku kierunków
+  tylko punkty talentów, kierunek przewodni (z progiem) i zwieńczenie pod przełącznikiem kierunków. PC: przyciski
+  szczegółów po dwa w rzędzie, podgląd 3D tylko po „Podgląd”.
+- **S139** Toast „Pula: <nazwa>” (`skills.toast.pool`, `PathService.syncPool` przy zmianie broni) i ten sam napis nad
+  paskiem na 2 s (`Hud/PoolLabel`, nie po wczytaniu postaci).
+- **S139** Usunięte nieużywane klucze okna: `skills.hint`, `skills.dragHint`, `skills.current`, `skills.next`,
+  `skills.notLearned`, `skills.pool.equipped`, `skills.points.{free,header,confirm}`, `paths.tab.{base,soon,main,open,
+  closed}`.
+- **S139** Przełom „osiągnięty” wszędzie z `Paths.bpRank` (najwyższa ranga umiejętności w dowolnej puli klasy, ta sama
+  co w `canChooseBreakpoint`): znaki kafelków każdej puli, karty PC, przypięty rząd A / B telefonu, „!” i kropka puli,
+  w której umiejętność ma rangę.
+- **S140** Pula Ognia Maga według drabiny DESIGN-18 §5 (Kula Ognia A1 3, Fala Płomieni K1 6, Żarząca Osłona O1 10,
+  Pożoga S2 15, Żar P1 20, Meteor A2 26 (było 30), Zapłon K2 33, Spopielenie S3 40, Serce Feniksa P2 50, Deszcz
+  Meteorów U 60 (było 48, id `meteorStorm`, odtąd ogień bez `adaptive`)); Ognisty Pocisk zostaje wspólny i adaptacyjny
+  do S142. Wspólne Maga: Błysk C1 4 (było 14), Tarcza Many C2 12, Inwokacja C3 30, Skupienie C4 45 (były węzłami
+  `skill` kierunków). Mag zostaje `transitional` do S142; `Data/SkillPools/Mage.version` 2 → 3 (darmowy reset).
+- **S140** Podpalenie (`Logic/Burn`, `Data/Skills.BURN`): każde ogniste podpalenie gracza na celu to JEDEN wpis
+  (`skillId = "burn"`, `CombatService.ApplyBurn`): umiejętność ognia z `burnStacks` dokłada stosy (stos = 30% trafienia
+  w 4 s, `Traits.dotTick`), podpalenie broni czarów adaptacyjnych dokłada jeden. `accumulate` bez limitu stosów
+  (`ApplyOptions.uncapped`): każde trafienie płaci całość, stosy tylko liczą (bez Żaru 1, z Żarem 3). Iskra z
+  przedmiotu (`EffectStack.ITEM`) zostaje osobnym wpisem.
+- **S140** `Data/Skills.ADAPTIVE.burnPct` 30 → 15: podpalenie broni to teraz jeden stos obok podpaleń puli Ognia;
+  razem z Ognistym Pociskiem ×0,92 i Kulą Ognia ×0,94 na rangach ≤ 20 (węzły `Data/SkillCurves`) i niskimi rangami 1
+  nowych umiejętności to dźwignie R1 wariantów ognia na 20. w paśmie S91 (2,60 / 2,65 przy granicy 2,73).
+- **S140** Żar: hak `burnStacks` (+2 stosy) i `burnBonus` (+1–5% obrażeń ognia za każdy własny stos na celu, trafienia
+  bez tyknięć stref). Spopielenie: `values.vsBurning` za stos. Zapłon: po trafieniu zużywa stosy celu
+  (`StatusEffectService.TakeStacks`, niezapłacona reszta przepada) i wybucha w kręgu za `detonate`% × stosy;
+  ogłuszenie od `BURN.stunAt` (3) stosów, `notBoss`.
+- **S140** Żarząca Osłona: tarcza na siebie (jak Tarcza Wiary: % maks. życia + % ataku magicznego) i efekt
+  `emberShield` (własny) tak długi jak tarcza (10A wydłuża oba); dopóki trwa EFEKT, cios wręcz potwora (także w
+  tarczę, nie przy uniku) daje atakującemu stos podpalenia za `ember`% ataku magicznego, najwyżej raz na
+  `EMBER.gap` (1 s) od jednego wroga. Gracze bijący wręcz nie są podpalani (PvP bez odwetu). Tarcza z
+  `target = "self"` zawsze na rzucającym (`Support.shield` pomija cel wysłany przez klienta).
+- **S140** Serce Feniksa: filtr obrażeń `FilterPriority.phoenixHeart = 85` (przed Aniołem Stróżem, który zostaje na
+  następny cios); ratuje cios potwora, przejęty cios i cios gracza (PvP: nietykalność × `Combat.pvp.phoenix` 0,5),
+  nigdy tyknięcia, „world”, „admin”; odpoczynek, nietykalność i wybuch to wartości pasywki (`rest` 180, `invuln` 2,
+  `blast` 150–300% ataku magicznego, haki `phoenixRest` / `phoenixInvuln` / `phoenixHeart`); czas gotowości tylko w
+  pamięci serwera (`SkillService`), nie w zapisie; nietykalność od razu w filtrze (kolejne ciosy tego samego kroku
+  serwera już chybiają), wybuch i komunikat przez `task.defer`.
+- **S140** Fala Płomieni: odrzut 6 st. jako pole umiejętności `knockback` (`Context` onHit, przełom `knockback` wygrywa).
+  Przełomy nowych umiejętności przestrojone modelem (pasma R4): Fala 5A szerszy stożek (zamiast stosu), 10A +1 stos;
+  Pożoga 5A rozprysk 12%, 5B +45; Spopielenie 5A rozprysk 8%, 5B +5 za stos, 10A pewny krytyk poniżej 50% (było
+  `finisher` 40%: test neutralności `Skills.effective`); Zapłon 5B +14; Meteor 5B 23 → 20 (ranga 5 od 42.).
+- **S140** Kierunki Maga (DESIGN-18 §7): węzły `skill` tylko w rzędach 4 i 8. Mistrz Żywiołów i Tajemny Umysł to węzły
+  `passive` 3 rang (wartości dawnych rang 1 / 3 / 5); w miejsce węzłów umiejętności tej samej liczby rang: Echo
+  Żywiołów (rząd 7, Wir uderza jeszcze raz za 100%), Przypływ Żywiołów (rząd 10, +3% obszaru), Tajemna Osłona (rząd 1
+  Arkanisty, +3% maks. życia zamiast proponowanego „Przepływu Many”: hak kosztu obniżał asertowane T-SK4 Arkanisty na
+  50–55 pod 2,0), Szybkie Wyładowanie (rząd 7, odnowienie Wyładowania ×0,85). Gniew Burzy skraca odtąd Wir (0,3–0,9 s
+  na wroga). Wytrwałość (rząd 10) i Wola (rząd 5, dodatkowy węzeł Arkanisty) 3 → 2 rangi, żeby cały kierunek mieścił
+  się w 50 pkt.
+- **S140** Model: `ReferenceBuild.weapon.element` = wariant mierzony jednym żywiołem (`SkillModel.elementOf`); nowe
+  buildy `destroyer.destroyerFire` i `arcanist.arcanistFire` z `ranks`. Niszczyciel kupuje punkty 10–14 w rzędzie 1
+  Arkanisty (Osłona, Precyzja 2), bo otwarty rząd 1 (3 rangi Mistrza) wciągałby je w +15% żywiołu; przez to oba buildy
+  Niszczyciela na 20. nie mają węzła rzędu 3 (4 klucze fixture zniknęły). R4 Zapłonu i Spopielenia w całej rotacji
+  buildu (`R4_ROTATION`), stos podpalenia liczony skillowi tylko gdy jest sam w rotacji.
+- **S140** Fixture 1–20 przepisany (`fixture S140 "pula Ognia Maga"`): 254 zmienione, 4 usunięte i 44 nowe wpisy, wszystkie
+  w kluczach Maga plus 6 wierszy „Grimrok bez wsparcia” (drużyna ma dwa buildy Maga); `ALLOWED_1_20_DIFFS` pusta.
+- **S140** `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100, „przebudowa umiejętności DESIGN-18, wraca w
+  S146/S147”): strażnicy T-SK1/2 wariantów ognia (L / L20, bo 1–20 zbite do pasma S91), T-SK4 Niszczyciela i
+  Przeciążenia na 60–65 i 80–100, ilorazy kierunek / baza (`destroyer.aoe`, `destroyer.single`, `arcanist.single`,
+  `arcanist.vsDestroyer`), R4 Deszczu Meteorów 5A na 100 (0,174), T1 Mocy Żywiołu dla ognia (podpalenie broni 15%).
+  Wiersze `S140.fire.*`: R1 na 20. i T-SK3 asertowane, T-SK4 i tożsamość ognia tylko raport (S147).
+- **S140** `Data/UiArt` (generowany): wpisy ikon `skill_elementalist` i `skill_arcaneMind` usunięte ręcznie (nie ma
+  już takich umiejętności; importer `import_ui.py` sprawdza nazwy z gry). Nowe umiejętności bez ikon PNG (znak).
+  Efekty przedmiotów (S134g) Maga nie wymagały przepięcia: Kula Ognia (A1), Meteor (A2) i Błysk (C1) mają już role
+  DESIGN-18.
+- **S141** Pula Lodu Maga według drabiny DESIGN-18 §5: Lodowy Odłamek S1 1 (było 6), Grad A1 3, Lodowa Nova K1 6 (było
+  18), Lodowa Bariera O1 10, Lodowa Włócznia S2 15, Uścisk Zimy P1 20, Lodowa Kula A2 26, Głęboki Mróz K2 33,
+  Roztrzaskanie S3 40, Lodowa Krew P2 50, Zamieć U 60 (nowe na końcu listy `Data/Skills/Mage`, bez zmian `order`).
+  Ognisty Pocisk zostaje wspólny i adaptacyjny do S142, więc pula Lodu ma dziś dwa S1. `SkillPools/Mage.version` 3 → 4.
+- **S141** Chłód (`Logic/Chill`, `Data/Skills.CHILL`): z Uściskiem Zimy (hak `chillFreeze` = sekundy zamrożenia)
+  każde główne trafienie lodem (nie rozprysk, przebicie, tyknięcie strefy) we wroga spowolnionego, a nie zamrożonego,
+  dokłada stos licznika (efekt `chill`, jeden wpis gracza na celu, 5 s); przy 4 stosach licznik się zużywa na
+  zamrożenie. Liczy się spowolnienie z dowolnego źródła.
+- **S141** Odporni na kontrolę (`IsBossLike`: bossowie i Elity II) nigdy nie zamarzają od lodu gracza: KAŻDE
+  zamrożenie lodu (efekty umiejętności, także Lodowej Novy, licznik, Zamieć) zamienia się w `Context.applyEffect` na
+  Głęboki Chłód: nowy rodzaj `deepChill` od rzucającego (+10% obrażeń tylko od niego, `SourceValue` w
+  `CombatService.offensiveMultiplier`, albo hak `deepChill` Uścisku Zimy 10–18%, gdy wyższy; 4 s). Nie `vulnerability`
+  (kategoria `enemyWeak` dałaby premię całej drużynie) i nie `own`. Zmiana działania: Lodowa Nova już nie zamraża bossów.
+- **S141** Lodowa Włócznia: `values.vsFrozen` ×1,5 na zamrożonym, `vsDeepChill` ×1,25 na odpornym z Głębokim Chłodem
+  gracza. Roztrzaskanie: `values.shatter` ×2 na zamrożonym (kończy zamrożenie każdego źródła) albo `shatterDeep` ×1,6 na
+  odpornym (zużywa Głęboki Chłód gracza). Przeciw graczom premia najwyżej `Combat.pvp.finisher` (1,5).
+- **S141** Głęboki Mróz: zamrożenie 3 s (gracze ×0,5 przez `PvpCcMultiplier`) i drugi efekt `attackSlow` 30% na 4 s,
+  który ląduje na każdym (na odpornych to „spowolnienie ataków” z planu sesji). 5A to `add.effectDuration` +1 s
+  (`add.freezeDuration` łamał test neutralności `Skills.effective`).
+- **S141** Lodowa Bariera: tarcza jak Żarząca Osłona i własny efekt `iceBarrier`; odwet z jednej funkcji
+  `CombatService.shieldRetaliate` z tabelą `RETALIATIONS` (rodzaj efektu → `ready` i działanie; Bariera przez
+  `Chill.barrierReady`): Osłona podpala, Bariera
+  spowalnia atakującego wręcz potwora o wartość efektu na `CHILL.barrierSlow` (2 s), najwyżej raz na 1 s od wroga, z
+  bronią lodu także Przemarznięcie. Lodowa Krew: dostawca redukcji (`own`) od spowolnionego lub zamrożonego atakującego
+  (potwór albo gracz).
+- **S141** Ruchoma kula: istniejący `circleTarget` z polem `travel` (Lodowa Kula leci 20 st. od Maga w stronę celu,
+  środek fali n = `Chill.orbAt`), `waveEffects` (efekty każdej fali: narastające spowolnienie przez nowe
+  `SkillEffect.maxStacks`), `freezeWave` (Zamieć zamraża każdego wroga raz od 5. fali). Model: kula trafia manekiny
+  stojące w połowie lotu (`ASSUMPTIONS.orbAim` 0,5: 7 z 10 fal).
+- **S141** Lodowy Odłamek: koszt 15 i odnowienie 5 s bez zmian (z 3 s / 12 lód na 20. był ×1,16 ognia), ranga 1 119 →
+  70 (węzeł rangi 5 = 80, ranga 6 przypięta): obok adaptacyjnego Ognistego Pocisku z Przemarznięciem kostura (10%)
+  warianty lodu mają R1 na 20. 2,69 (granica 2,73). Lodowa Nova: ranga 1 90%, węzeł rangi 4 (poziom 18) = dawne 120,
+  koszt 45 → 40, odnowienie 18 → 16, zamrożenie 1–2 s.
+- **S141** Model: `SkillModel.character` bierze żywioł wariantu (`elementOf`), gdy wywołujący go nie poda (wcześniej
+  `evaluateTargets` i `rawMetrics` liczyły rangi wariantu w puli Ognia: przy wariantach ognia bez skutku). Nowe buildy
+  `destroyer.destroyerIce` i `arcanist.arcanistIce` z `ranks`; oba w bloku S91 (zasada sesji 4: R1, T-SK2, zysk rzędów,
+  gładkość na 20. asertowane). R4 Włóczni i Roztrzaskania w całej rotacji (`R4_ROTATION`); opcje kontroli i geometrii
+  puli Lodu w `R4_UTILITY`.
+- **S141** Fixture 1–20 przepisany (`fixture S141 "pula Lodu Maga"`): 105 zmienionych i 44 nowe wpisy, wszystkie w
+  kluczach Maga (średnia żywiołów buildów Maga i nowe warianty lodu); `ALLOWED_1_20_DIFFS` pusta.
+- **S141** `GLOBAL_REPORT_ONLY` S141 (56 wierszy Maga 21–100): strażnicy T-SK1/2 wariantów lodu (L / L20) w Spalonych
+  Pustkowiach i Mroźnych Szczytach, T-SK4 Przeciążenia na 50 i 55 (2,57–2,59 przy dole 2,6: średnia żywiołów), T1
+  Iskry żywiołu lodu na 70 i 100 (0,037–0,039 przy dole 0,04). Wiersze `S141.ice.*`: T-SK3 asertowane, T-SK4 i
+  tożsamość lodu tylko raport (S147).
+- **S141** R4 rangi 5 na 20. Lodowego Odłamka (ranga 5 na 17.) i Gradu (19.) w `Balance.S91.r4Skills`; oba 5B ponad
+  pasmem 0,08–0,17 (0,29 / 0,19) zostają w `Balance.S91_REPORT`: przełom jest płaski, ranga 5 przypięta nisko (R1),
+  a cięcie zrzuca R4 na 45–100 pod pasmo (0,108 / 0,092). Do decyzji przy S147 (np. przełom mnożnikowy).
+- **S141** Opisy Lodowej Novy i Głębokiego Mrozu pokazują Głęboki Chłód jak serwer: `Chill.deepPct` z hakiem
+  `deepChill` z `DescOpts.hooks` (Uścisk Zimy do 18%); wiki bez haków pokazuje 10%.

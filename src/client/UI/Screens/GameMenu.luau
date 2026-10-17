@@ -17,6 +17,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
+local ListRow = require(script.Parent.Parent.Components.ListRow)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -39,24 +40,20 @@ local FIXED_KEYS = {
 	{ "Esc", "menu.keys.close" },
 }
 
+-- S135: a settings row is a ListRow (alternating parchment) with the control on the right.
+local rowCount = 0
 local function row(scope: Scope, order: number, labelKey: string, control: Instance): Instance
-	return scope:New("Frame")({
+	rowCount += 1
+	local width = if control:IsA("GuiObject") then control.Size.X.Offset else 0
+	local controlAny: any = control
+	controlAny.Position = UDim2.new(1, -4, 0, 3)
+	return ListRow(scope, {
 		LayoutOrder = order,
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 46),
-		[Children] = {
-			scope:New("TextLabel")({
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(0.5, 1),
-				Text = Text.T(scope, labelKey),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
-			}),
-			control,
-		},
+		Index = rowCount,
+		Height = Theme.Size.MinTouch + 6,
+		Text = Text.T(scope, labelKey),
+		RightInset = (if width > 0 then width else 160) + 8,
+		[Children] = control,
 	})
 end
 
@@ -109,7 +106,7 @@ local function toggle(scope: Scope, name: string, default: boolean): Instance
 		Position = UDim2.fromScale(1, 0),
 		Size = UDim2.fromOffset(150, 44),
 		Variant = scope:Computed(function(use): any
-			return if use(on) then "primary" else "ghost"
+			return if use(on) then "primary" else "secondary"
 		end),
 		Text = scope:Computed(function(use): string
 			return Text.get(use, if use(on) then "menu.on" else "menu.off")
@@ -139,7 +136,7 @@ local function avatarRow(scope: Scope, order: number): Instance
 				Text = Text.T(scope, "menu.robloxAvatar.hint"),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			}),
@@ -203,7 +200,7 @@ local function stepper(scope: Scope, name: string, default: number, step: number
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			Button(scope, {
 				AnchorPoint = Vector2.new(1, 0),
@@ -250,7 +247,7 @@ local function codeRow(scope: Scope): Instance
 				Text = Text.T(scope, "codes.title"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			}),
@@ -399,7 +396,7 @@ local function lureRow(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			}),
@@ -470,7 +467,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 						Text = Text.T(scope, action.labelKey),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -508,14 +505,11 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				RichText = true,
 				Text = scope:Computed(function(use): string
 					local key = if string.find(entry[1], ".", 1, true) then Text.get(use, entry[1]) else entry[1]
-					return `<font color="#{Theme.Colors.GoldBright:ToHex()}"><b>{key}</b></font>   {Text.get(
-						use,
-						entry[2]
-					)}`
+					return `<font color="#{Theme.Paper.Heading:ToHex()}"><b>{key}</b></font>   {Text.get(use, entry[2])}`
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			})
 		)
@@ -531,7 +525,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			Text = Text.T(scope, "keys.hint"),
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
@@ -689,9 +683,9 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				Size = UDim2.new(1, 0, 0, 34),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "menu.hotkeys"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
@@ -719,7 +713,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				Text = Text.T(scope, "charSelect.mockWarning"),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Warning,
+				TextColor3 = Theme.Paper.Warning,
 				TextWrapped = true,
 			}),
 		},

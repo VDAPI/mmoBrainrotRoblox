@@ -39,7 +39,7 @@ local function Data(s: Dev.Scope): Instance
 				Dev.run("help")
 				Dev.Tab:set("console")
 			end, 100),
-			NumberInput(s, { Value = logCount, Min = 1, Max = 200, Step = 10 }),
+			NumberInput(s, { Surface = "iron", Value = logCount, Min = 1, Max = 200, Step = 10 }),
 			Dev.button(s, "/adminlog", function()
 				Dev.run("adminlog", { tostring(Fusion.peek(logCount)) })
 				Dev.Tab:set("console")

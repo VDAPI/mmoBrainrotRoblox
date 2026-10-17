@@ -6382,7 +6382,7 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Mounts,Keybinds,Admin
 `src/shared/Data/Quests/{Side,Types}.luau`, `src/shared/Data/Areas/meadows.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
 `src/shared/Logic/{Mounts,RiderPose,SideQuests,AccountSchema}.luau`, `src/shared/Logic/Anatomy/{init,Accessories}.luau`,
 `src/shared/Logic/Anatomy/Plans/{init,Quadrupeds}.luau`, `src/shared/Util/MountLook.luau`, `src/shared/Net/Definitions.luau`,
-`src/server/Services/{Mount,Stat,Skill,Travel,SideQuest,Gather,Fishing,Admin}Service.luau`, `src/server/Admin/Character.luau`,
+`src/server/Services/{Mount,Stat,Skill,Travel,SideQuest,Gather,Fishing,Admin}Service.luau`, `src/server/Admin/{Character,Items}.luau`,
 `src/client/Controllers/{Mount,Animation,Movement,Screen,QuestAnchor,CombatFx,Target}Controller.luau`,
 `src/client/UI/Screens/{Wardrobe,SkillsWindow/Preview}.luau`,
 `src/client/UI/Screens/Hud/{init,MountButton,SprintButton,CastBar}.luau`, `src/client/UI/Components/QuestRewards.luau`,
@@ -11592,3 +11592,490 @@ i18n, aktualność), `wiki/public/img/maps/city.svg`, `docs/{DESIGN-15,BALANS,PR
   podnieść cel (np. 20%).
 - Retro Znaki: postać 99. poziomu dostaje od razu 738 Znaków (12 Skrzyń Łowcy albo 3 Heroiczne na 3 tygodnie). Do wyboru:
   zostawić (nic nie przepada) albo przyciąć retro (np. połowa).
+
+### S135: Pergamin i żelazo (1/2)
+
+- Paleta w danych: `Data/UiPalette` (powierzchnie `paper` i `iron` z tymi samymi rolami, `brass`, `resource`, `zone`,
+  `currency`, `pvp`, `announce`, `neutral`; 98 par w `PAIRS`), wzór kontrastu w `Logic/Contrast` (przeniesiony z
+  `tools/WikiData/TokensCss`, który go teraz importuje; wiki strefy czyta z `UiPalette.zone`, `tokens.data.css` bez
+  zmian), `Logic/TextCase.upper` (polskie znaki). `Data/UiPalette` i `Data/UiWindows` w `NOT_BALANCE` („wygląd”).
+- `Theme`: role `Theme.Paper` / `Theme.Iron` / `Theme.Brass` / `Theme.Resource` / `Theme.Zone`, `Theme.surface`,
+  `Theme.readable(hex, surface)` (pamięć podręczna), `Theme.hex`, `Theme.mix`, `Theme.Plain` / `Theme.Shade`; czcionka
+  `Display` = Merriweather (też `Heading`), `TextSize` z `Caption 15`, `Small 17`, `Title 30`; `Size.RowHeight`,
+  `SlotSize`, `FrameOuter`, `FrameInner`, `HeaderRule`. `Theme.Colors` bez zmian (legacy do S136).
+- Komponenty: `Window` w dwóch trybach (`Paper` z `Data/UiWindows` przez `WindowManager`: pergamin, żelazna rama 3 px z
+  mosiężną linią, pasek tytułu z żelaza z Merriweather, ✕ 44 × 44 na czerwieni przy najechaniu), prop `Surface` w
+  `Button` (palety z ról, ghost przezroczysty z kolorem linku), `Tabs` (karty pergaminu z otwartym dołem, 44 px),
+  `SideTabs`, `Select`, `TextInput`, `NumberInput`, `Toggle`, `ItemSlot` (slot `Raised`, brzeg `Border`, ramka
+  `paperHex` z gradientem do ciemniejszego, licznik i „+N” na plakietce żelaza), `Bar` (tor `Resource.track`, brzeg
+  mosiądzu), `QuestRewards`, `CurrencyIcon` (znaki z `UiPalette.currency` przez `Theme.readable`), `LanguageToggle`,
+  `BuildSetSwitch` (zestawy jako karty zakładek); `Modal` i `ActionMenu` na pergaminie z ramą okna, `Toast`, `Tooltip` i
+  `ItemTooltip` na żelazie (nazwy `nightHex`, RichText z `TooltipModel` przemapowany); nowe `SectionLabel` i `ListRow`.
+  Literały koloru w `PvpDot`, `Announcement`, `ArtIcon`, `ItemIcon`, `PortraitFrame`, `SelectableSlot`, `PathBadge`,
+  `QuestItemIcons` zamienione na tokeny (wygląd HUD bez zmian; całość HUD w S136). Przyciski w `Hud/*`, nakładkach
+  (`BossReward`, `LegendReveal`, `ArenaOffer`, `FishingGame`, `ReadyCheck`, `FightCard`, `PlayerMenu`,
+  `CharacterSelect`) i zaproszeniach (`PartyController`, `SocialController`, `LootComfortController`) z `Surface = "iron"`.
+- Okna na pergaminie (D): `character` (ekwipunek, plecak, statystyki pochodne jako gęste `ListRow` z wartością po prawej,
+  grupy przez `SectionLabel`), `inventory`, `menu` (ustawienia w `ListRow`, przełączniki „Wył.” jako `secondary`),
+  `npc`, `shop`, `questnpc` (kategoria jako etykieta sekcji), `quests` (RichText z rolami przez `Theme.hex`,
+  `QuestText.richRows(…, surface)`), `trade`, `mail`, `mailCompose`, `profile`, `party` + `PartyFinder`. Kolory z danych
+  (klasa, tytuł, pasmo poziomu, żywioł, rzadkość) przez `Theme.readable` / `ItemText.rarityName` / `rarityFrame`.
+  `Theme.readable` poprawia względem wszystkich ról tła (`Contrast.readableOn`), glif klasy na portrecie na żelazie.
+  Listy tych okien (poza `character`, `menu`) jeszcze bez `ListRow` / `SectionLabel` (odłożone do S136).
+- Okno umiejętności (E): `BaseList` na `ListRow` (nazwa `Body` w atramencie, „Ranga 6/10 · następna na 26. poz.”
+  `Small` przygaszonym, przełomy jako plakietki, zablokowany z kłódką i przygaszonym kafelkiem), `TabBar` jako karty,
+  nagłówek z `BuildSetSwitch` jako zakładki, szczegóły z `SectionLabel`, interlinią 1,15 i pogrubionymi liczbami, karty
+  przełomów A / B `Raised` z ramą (działająca w mosiądzu, litera na zieleni), węzły ścieżek z mosiężną ramą po kupnie i
+  atramentową przy zaznaczeniu, arkusz telefonu na pergaminie, podgląd 3D na żelazie.
+- Tabliczki graczy (F): przyczyna i poprawka niżej; wygląd na płytce żelaza (przezroczystość 0,45, mosiężny brzeg 1 px),
+  nick 22 z ciemnym obrysem, tag gildii mosiądzem, tytuł w swoim kolorze przez `Theme.readable(…, "iron")`, VIP bez
+  zmian w treści, „Poz. N Klasa” 17; wróg czerwony z ⚔, własna i VIP mosiądzem; decyzja „co pokazać” w
+  `Logic/Nameplate`, liczby w `Config.Nameplate`; nick innego gracza to przycisk do `PartyController.OpenMenu`
+  (lewy i prawy klik, dotknięcie).
+- Testy: `uipalette.spec` (pary, rzadkości na obu powierzchniach, klasy, żywioły i pasma poziomu po `readableOn` na
+  każdej roli tła, liczby dawnego
+  `TokensCss`, `TextCase`), `uitheme.spec` (G1–G4, `PENDING_S136` 27 okien), `nameplate.spec`, `rarities.spec` (nowe pola).
+- Wiki: wiki do odświeżenia (właściciel 17.10); zmienią się `rarities.json` (`textColor` Unikatu, Heroika i Legendy
+  ciemniejsze, bo `textHex` przyciemniony pod pergamin), `meta.json` i `docs/PRZEDMIOTY.md`; `tokens.data.css` bez zmian.
+
+**Tokeny i kontrast** (WCAG; strona / slot dla pergaminu, tło / pasek tytułu dla żelaza; pełna lista `UiPalette.PAIRS`)
+
+| rola | hex | na `surface` | na `raised` |
+|---|---|---|---|
+| paper.text | `#2A2016` | 12,5 | 10,7 |
+| paper.textMuted | `#634C2E` | 6,3 | 5,4 |
+| paper.label | `#5A4528` | 7,1 | 6,1 |
+| paper.heading | `#3B2E1C` | 10,3 | 8,8 |
+| paper.danger | `#9A2F28` | 5,9 | 5,0 |
+| paper.success | `#2F5A22` | 6,3 | 5,4 |
+| paper.warning | `#744300` | 6,5 | 5,5 |
+| paper.link | `#1F4E9A` | 6,3 | 5,4 |
+| paper.border (krawędź) | `#7A6136` | 4,6 | 3,9 |
+| iron.text | `#F3E6C4` | 12,9 | 10,6 |
+| iron.textMuted | `#CDB98F` | 8,3 | 6,9 |
+| iron.heading | `#E8C25A` | 9,3 | 7,7 |
+| iron.danger | `#FF8A7E` | 7,0 | 5,8 |
+| iron.border (krawędź) | `#A08654` | 4,6 | 3,8 |
+
+Przycisk główny `#F3E6C4` na `#4E6A26` 5,0; tekst na czerwieni 6,0; żelazna rama `#4A3A24` na pergaminie 8,6;
+wypełnienia pasków na torze `#1A140C`: HP 3,9, mana 4,5, energia 9,0, EXP 4,5. Rzadkości (nazwa na pergaminie
+strona / slot · ramka na slocie · nazwa na żelazie): Zwykły 5,3 / 4,5 · 3,2 · 6,3; Unikat 5,3 / 4,5 · 3,0 · 10,8;
+Heroik 5,4 / 4,6 · 3,2 · 4,8; Legenda 5,3 / 4,6 · 3,1 · 7,8; Mityk 5,4 / 4,6 · 3,9 · 5,7.
+
+**Lista kontrolna okien** (`Data/UiWindows`): na pergaminie 13 okien S135 (wyżej); w starym wyglądzie do S136 27:
+`alchemy`, `arena`, `areapicker`, `auction`, `backpacks`, `blacksmith`, `bloodmoon`, `deposit`, `dev`, `dungeon`,
+`fightlog`, `friends`, `guild`, `guildfound`, `huntshop`, `login`, `look`, `lootlog`, `map`, `mounts`, `premium`,
+`questboard`, `rankings`, `stonepicker`, `unbind`, `vip`, `wardrobe`, plus ekrany poza oknami (`UiWindows.SCREENS`: HUD,
+ramki drużyny, wybór postaci, przerywnik, nagroda bossa, objawienie legendy, oferta areny, koło emotek, łowienie,
+„Wkrótce”, gotowość, karta walki, menu gracza).
+
+**Tabliczki graczy: co było przyczyną** (kod i dokumentacja strumieniowania, bez uruchamiania gry)
+1. Przyczyna: `AncestryChanged` → sprzątanie, gdy model wypadł z `game`. Z `StreamingEnabled` (promień 128–512 st.)
+   postać innego gracza poza zasięgiem (inna mapa w tym samym `Workspace`, daleki teleport) wypada z drzewa i wraca bez
+   nowego `CharacterAdded`, więc tabliczka znikała na zawsze. Teraz sprzątanie tylko przy `Destroying`, nowej postaci
+   gracza i wyjściu; powrót modelu (ta sama instancja albo nowa z `CharName` w `Workspace`, zmiana `Character`)
+   podpina tabliczkę jeszcze raz, jedna na model (`plates`, `byPlayer`).
+2. Przyczyna przy wolnym wczytaniu: czekanie na `Head` najwyżej 10 s bez ponowienia. Teraz `Head` przychodzi przez
+   `ChildAdded`, bez limitu czasu, dopóki model żyje (tak samo `Humanoid` dla paska HP).
+3. Ryzyko: `MaxDistance = 80` od kamery (kamera odsuwa się dalej): teraz `Config.Nameplate.maxDistance` 150.
+4. Ryzyko: `AlwaysOnTop` tylko dla własnej (cudze chowały się za włosami, hełmami R15, drzewami, dachami): teraz wszystkie.
+5. Ryzyko czytelności: jasny tekst bez tła na śniegu i piasku: teraz płytka żelaza i ciemny obrys.
+
+**Dla właściciela (decyzje):** (1) nagłówki Merriweather w wadze Heavy (makieta 900); gdy w grze wyjdą zbyt
+grube w małych rozmiarach, zmiana jednej linii `Theme.Fonts.Display` na Bold; (2) cudze tabliczki zawsze na wierzchu
+(widać nick przez drzewa i dachy do 150 st.); alternatywa: na wierzchu tylko do `detailDistance`; (3) czy toasty i tooltipy mają zostać
+żelazne także nad oknami na pergaminie (dziś tak: jedna zasada „nakładki na żelazie”, modale i menu akcji na pergaminie).
+
+**Pliki:** `src/shared/Data/{UiPalette,UiWindows}.luau` (nowe), `Data/Rarities.luau`, `Data/Localization/pl.luau`,
+`src/shared/Logic/{Contrast,TextCase,Nameplate}.luau` (nowe), `src/shared/Config.luau`, `src/client/UI/{Theme,ItemText,
+QuestText}.luau`, `UI/Components/{SectionLabel,ListRow}.luau` (nowe), `UI/Components/{Window,Button,Tabs,SideTabs,Select,
+TextInput,NumberInput,Toggle,ItemSlot,Bar,QuestRewards,CurrencyIcon,LanguageToggle,BuildSetSwitch,Modal,ActionMenu,Toast,
+Tooltip,ItemTooltip,PvpDot,Announcement,ArtIcon,ItemIcon,PortraitFrame,PathBadge,SelectableSlot,QuestItemIcons}.luau`,
+`UI/Screens/{SkillsWindow/*,CharacterWindow/*,BackpackPanel,GameMenu,NpcDialog,ShopWindow,QuestDialog,QuestJournal,
+TradeWindow,MailWindow,MailCompose,ProfileWindow,PartyWindow,PartyFinder}.luau`, `Surface = "iron"` w `UI/Screens/Hud/*`
+i nakładkach, `UI/Screens/{LoginReward,QuestBoard,WorldMap/DetailCard,WorldMap/Cards,ArenaWindow/init,HuntShopWindow,
+LookWindow,VipWindow,GuildFound,CharacterSelect/Creator,PremiumShop/*}.luau`, `UI/Components/LookPicker.luau`, `src/client/Controllers/{WindowManager,NameplateController,PartyController,
+SocialController,LootComfortController}.luau`, `tools/WikiData/{TokensCss,Basics}.luau`, `tools/balance_reasons.luau`,
+`tests/{uipalette,uitheme,nameplate}.spec.luau` (nowe), `tests/rarities.spec.luau`,
+`docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S136: Pergamin i żelazo (2/2)
+
+- Wszystkie okna na pergaminie (27 z `PENDING_S136` + `lootlog`), panel admina jedynym oknem na żelazie. `Data/UiWindows`:
+  pole `surface = "paper" | "iron"` zamiast `paper` (iron z powodem), `UiWindows.surface(id)` zamiast `isPaper`,
+  `UiWindows.SCREENS` jako mapa plik → powierzchnia. `Window` bez dawnego trybu (prop `Surface`, ciało z
+  `Theme.surface`). Okno `lootlog` przeniesione z `LootComfortController` do `UI/Screens/LootLog.luau` (wiersze
+  `ListRow`, nazwa w kolorze rzadkości, klucz `lootlog.sub` zamiast `lootlog.entry`).
+- `Theme.Colors` i alias `Fonts.Heading` usunięte; ok. 1180 użyć przepisanych na role według powierzchni pliku i
+  właściwości (tekst / tło / brzeg). Nowe w `Theme`: `tint(hex)` (kolor danych jako grafika), `ZoneText`, `Medal`,
+  `Plate`, `Chat`, `Glyph`, `Mark`, `Announce`, `Pvp`, `Neutral`, `HudAlpha`, `BadgeAlpha`. Nowe w `Data/UiPalette`:
+  `medal`, `HUD_ALPHA` / `BADGE_ALPHA` / `WORLD_BRIGHT`, `plate`, `mark`, `group`, `zoneText`, `chat`, `glyph`, `league`,
+  `map` (rysunek map), `announce.mythicVeil` / `deathGlow`, `neutral.swatch` / `bubbleBg` / `bubbleText`; pary kontrastu
+  dla płytek HUD (zmieszanych ze śniegiem), tabliczek, znaków, grup, medali, czatu, znaków HUD i ogłoszeń.
+- HUD na żelazie: portret, ramka celu („Akcje” jako przycisk `secondary` żelaza, bez zmiany zachowania), tracker i
+  pasek prowadzenia (treść `Small`, wysokość 44), panele wydarzeń / Krwawego Księżyca / turnieju / areny (płytki
+  `HudAlpha`, brzeg 1 px, przyciski 34 / 44), sloty umiejętności i mikstur (`Iron.Raised`, brzeg `Brass.Line`, klawisz
+  na plakietce, zasłony z `Shade`), przyciski HUD (znaki z `UiPalette.glyph`), minimapa (mosiężna rama, nazwa na
+  plakietce, rysunek z `UiPalette.map`, przyciski zoomu 44), banery (strefa przez `ZoneText`), winieta, ekran śmierci.
+- Tabliczki potworów (płytka żelaza za nazwą, poziom i „×N” na plakietkach `Small`, tor HP `Resource.track`), NPC i
+  towarzyszy (`UI/PlateStyle`) w stylu tabliczek graczy; `Logic/Nameplate.monster` / `.npc`; znaki questów nad NPC z
+  `UiPalette.mark`, kolory grup z `UiPalette.group`, kanały czatu z `UiPalette.chat`.
+- Ekrany poza oknami: tło wyboru postaci na żelazie, karty postaci i kreatora na pergaminie (portret klasy pod
+  pergaminową zasłoną), nagroda bossa i objawienie legendy jako karty pergaminu (nazwy rzadkości `textColor`, ramka
+  `paperColor`, poświata bez zmian), oferta areny i gotowość z paskiem czasu w `Brass.Frame`, przerywnik, koło emotek,
+  łowienie, ramki drużyny na żelazie. `FightTable` / `FightLoot` z propem `Surface`.
+- Rankingi: miejsca 1–3 jako plakietki żelaza z jasną cyfrą (`UiPalette.medal`), ligi areny przez `Theme.readable`.
+- Wiki: `Basics.zoneColors()` tylko z `UiPalette.zone`, `themeText` usunięte z `tools/wikidump.luau`,
+  `WikiData/init`, `TokensCss`, `wikidump.spec`. Wiki do odświeżenia (właściciel 17.10).
+- Poprawki po przeglądzie: znaki HUD (`glyph` hunt / lure / potion / enemy / blood) rozjaśnione do ≥ 3:1 na płytce HUD
+  zmieszanej ze śniegiem (nowe pary, `UiPalette.HUD_TILES`), `Theme.readable(hex, "hud")` dla tytułu panelu wydarzenia
+  i kolumn areny; karty mapy świata: nazwy przedmiotów i próg rzadkości `textColor` / `rarityName(…, "paper")`, szanse
+  bossa przez `Theme.readable`, cele questów w kolorach pergaminu, linie `DetailCard` domyślnie `Small` (bez `size = 13/14`);
+  lista map `Body` / `Small`, dymek komentarza `Small`, podpis sprintu `Caption`; nagłówek lochu na banerze tekstem
+  żelaza z obrysem (bez banera atrament), linia lochu i „ulepszono” nagrody bossa w `textColor`. `uitheme.spec` łapie też
+  `TextSize = if … then <liczba>`, `size = <liczba>` i liczby zwracane w `TextSize = Computed`.
+
+**Okna i ekrany** (`Data/UiWindows`)
+
+| okno / ekran | powierzchnia | ✓ |
+|---|---|---|
+| `deposit`, `blacksmith`, `alchemy`, `backpacks`, `unbind`, `huntshop`, `auction` | pergamin | ✓ |
+| `questboard`, `guild`, `guildfound`, `map` (rysunek bez zmian), `areapicker`, `mounts` | pergamin | ✓ |
+| `rankings`, `arena`, `bloodmoon`, `dungeon`, `login`, `lootlog`, `stonepicker` | pergamin | ✓ |
+| `premium`, `vip`, `wardrobe`, `look`, `fightlog`, `friends` | pergamin | ✓ |
+| `dev` (panel admina) | żelazo | ✓ |
+| `Hud/*` (32 pliki), `PartyFrames`, `Cutscene`, `EmoteWheel`, `FishingGame`, `FightCard`, `CharacterSelect/init` | żelazo | ✓ |
+| `CharacterSelect/SlotCard`, `Creator`, `BossReward`, `LegendReveal`, `ArenaOffer`, `ComingSoon`, `ReadyCheck`, `PlayerMenu` | pergamin | ✓ |
+
+**Wyjątki testu** (`tests/uitheme.spec`): zwolnione całe pliki `UI/Theme.luau` (buduje role) i `UI/MapSketch.luau`
+(rysunek mapy); `ALLOWED`: `Ambient` / `LightColor` podglądów 3D w `LookPreview`, `MountWindow`, `Wardrobe`,
+`WorldMap/Preview` oraz kolory manekina, ziemi i światła w `SkillsWindow/Preview` (S135), rozmiary ikon
+`UiArtState.decorate` w `Hud/Minimap` i `WorldMap/Overlay`.
+
+**Pliki:** `src/shared/Data/{UiPalette,UiWindows}.luau`, `Data/Localization/{pl,en}.luau`, `src/shared/Logic/Nameplate.luau`,
+`src/client/UI/{Theme,AreaProfileText,GroupColors,NpcMarkState,QuestText,UiArtState}.luau`, `UI/PlateStyle.luau` (nowy),
+`UI/Components/{Window,IconButton,Announcement,CurrencyIcon,FightLoot,FightTable,ItemIcon,LookPicker,LookPreview,
+PortraitFrame,PvpDot}.luau`, `UI/Screens/LootLog.luau` (nowy), `UI/Screens/{AlchemyWindow,AreaPicker,ArenaOffer,BackpackShop,
+BloodMoonWindow,BossReward,ComingSoon,Cutscene,DepositWindow,DungeonWindow,EmoteWheel,FightCard,FightLogWindow,FishingGame,
+FriendsWindow,GuildFound,HuntShopWindow,LegendReveal,LoginReward,LookWindow,MountWindow,PartyFrames,PlayerMenu,QuestBoard,
+RankingsWindow,ReadyCheck,StonePicker,UnbindPicker,VipWindow,Wardrobe}.luau`, `UI/Screens/{ArenaWindow,AuctionWindow,
+BlacksmithWindow,CharacterSelect,DevWindow,GuildWindow,Hud,PremiumShop,WorldMap}/*`, `src/client/Controllers/{ArenaFame,
+Bark,Chat,CombatFx,Companion,Dev,Dungeon,FameBoard,Guide,Guild,Icon,LootComfort,Loot,Market,MonsterPlate,Npc,Party,
+QuestAnchor,Quest,Sign,Skill,Social,Target,TourneyFame,UI,WindowManager,World}Controller.luau`,
+`src/shared/Logic/CosmeticRules.luau` (komentarz), `tools/{wikidump,WikiData/Basics,WikiData/TokensCss,WikiData/init}.luau`,
+`tests/{uitheme,uipalette,nameplate,wikidump}.spec.luau`, `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS,WIKI}.md`, `CLAUDE.md`.
+
+**Dla właściciela (decyzje):** (1) przezroczystość płytek HUD 0,15 (jedna wartość `UiPalette.HUD_ALPHA`; tabliczki
+graczy zostają 0,45 z S135, tabliczki potworów i NPC mają 0,15); (2) sloty umiejętności z mosiężnym brzegiem zamiast
+brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portret klasy pod pergaminową zasłoną
+(0,15–0,3) zamiast ciemnej; gdy portret ma być wyraźniejszy, alternatywą jest ciemna zasłona z tekstem na żelazie.
+
+### S137: Umiejętności 2.0, fundament A
+
+- **Punkty umiejętności** (`Logic/SkillPoints`, DESIGN-18 §3): ranga = kupione punkty w puli broni
+  (`character.ranks[poolId][skillId]`), limit = dawna krzywa `Skills.rankAt`; `pointsAt(L) = L × 1 + 7` w każdej puli
+  (`Data/Progression.skillPoints`, `freeRespecLevel` 20, `rankRefundGold` 10). `pointsAt`, `cap`, `rank`, `spent`,
+  `free`, `canBuy`, `apply` (cała rezerwacja albo nic), `canRefund`, `refundCost`, `canReset`, `suggest`, `legacy`,
+  `clean`, `startBar`, `needsRespec`, `barOf`, `switchPool`, `migrate`. Reguła rangi w jednym miejscu:
+  `Paths.skillRank(character, skillId, poolId?)` (pula, węzeł umiejętności ścieżki, limit); nowe w `Logic/Paths`:
+  `skillOpen`, `pathSkillOpen`, `boughtIn`, `barPoolOf`, `validBar`, `cleanRanks`, `skillPointsAt`; zestawy niosą
+  `ranks`, `bars`, `barPool`, `respecFree`, `poolsVersion`; `skillUsable` zwraca `cast.error.wrongPool`.
+- **Pule broni** (`Data/SkillPools/{init,Types,Mage,Warrior,Hunter,Cleric}`, `Logic/SkillPools`): drabina `LADDER` /
+  `COMMON_LADDER`, pule klas z DESIGN-18 §4.2, `version` 1, `transitional = true`; `SkillDef.pool` (Mag: `fire` / `ice` /
+  `lightning` / `common`, reszta podstawy `common`) i `role` (puste do sesji klas); `poolOf`, `activePool`, `members`,
+  `inPool`, `memberDef`, `ladderOf`, `isTransitional`. `HOTBAR_SLOTS` 10 → 8 (klawisze 1–8, siatka 2 × 4, telefon 5 + 3).
+- **Zapis:** schemat 12 (`MIGRATIONS[12]` → `SkillPoints.migrate` na obu zestawach, `reworkNotice`); nowe pola postaci
+  i `BuildSet`: `ranks`, `bars`, `barPool`, `respecFree`, `poolsVersion`. Nowa postać: ranga 1 pierwszej umiejętności w
+  domyślnej puli, na miejscu 1. Przy wczytaniu `PathService` czyści rangi, przy nowej wersji pul daje darmowy reset
+  (toast `skills.toast.respecFree`), ustawia pasek puli noszonej broni.
+- **Serwer:** `PathService` (wybór serwisu w DECYZJE): remote'y `AllocateSkills(poolId, plan)` (rate 2),
+  `RefundSkillRank(poolId, skillId)` (rate 4, złoto), `ResetSkills()` (rate 0,5), `SetPoolBar(poolId, slot, skillId?)`
+  (rate 10); zamiana pasków przy zmianie broni (`EquipmentService.Changed`), w walce `SkillService.LockPool`
+  (`Config.SkillPools.swapLock` 2 s, `cast.error.poolSwap`); nowo kupiona ranga 1 na wolne miejsce paska swojej puli,
+  toast przełomu po kupnie rangi 5 / 10; kupno węzła umiejętności ścieżki daje toast `skills.toast.unlocked`. `SkillService`: koniec auto-wkładania przy awansie, `SetSlot`, `LockPool`, pasek
+  aktywnej puli. `LevelService`: `LevelUp` z `skillPoints` na końcu, `SetLevel` w dół czyści rangi. Admin:
+  `/skillrank`, `/skillmax`, `/skillreset`, `/pool`, `/respecfree`.
+- **Okno (minimalne):** nad listą „Podstawa” zakładki pul, wolne punkty, „Resetuj (za darmo / Zwój)”, „Rozdaj jak
+  zaleca pula”, „Zatwierdź”; wiersz „Ranga 4/10 (limit 6)”, „+” / „−” z rezerwacją (zwrot rangi od 20. z ceną),
+  członkowie wybranej puli i umiejętności ścieżek z węzłem; w nagłówku pula i punkty; „!” przy punkcie do wydania;
+  okno `rework2.*`; toast „+N pkt umiejętności” po awansie zamiast toastów rang. Opis przedmiotu: efekt na
+  umiejętności jednej puli dopisuje „(pula: …)” (`tooltip.fx.pool`).
+- **Model i balans:** `SkillModel.character(build, L, element?)` kupuje rangi poziomu L jedną rezerwacją
+  (`SkillPoints.apply`) w puli broni buildu (`rankOrder`: `ReferenceBuild.ranks` → rotacja → pasywki → reszta);
+  `ReferenceBuild.ranks` w typie. 1–20 bez zmian (`balance1_20.spec` bez `ALLOWED_1_20_DIFFS`) dzięki `bonus` 7 (przy 6:
+  4 różnice). `GLOBAL_REPORT_ONLY` działa w blokach S88, regionów i ścieżek (`SkillModel.reportRow`), test martwych
+  kluczy na końcu `balance.spec`. Księga: `Progression:skillPoints.*`, `freeRespecLevel`, `rankRefundGold`,
+  `Skills/init:HOTBAR_SLOTS`, `Config:SkillPools.swapLock`, `SkillPools/*` (nowe w `BALANCE_MODULES`).
+- **`GLOBAL_REPORT_ONLY` S137** (80 wierszy, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”): regiony:
+  `duskwood.morvane.noSupport.{3,4,5}.hit`, `duskwood.guard.tsk{1,2}.Cleric.healer.dungeon.40`;
+  `ashen.guard.*` (28: berserker.butcher 50/60, Hunter base 50–70, kingslayer 65/70, eliteHunter 60–70, poisoner T-SK3
+  65–70, partyHunter 50–65, tracker 55–65); `frostpeak.guard.*` (24: Warrior base / base.loadout 75–100, fury 75, butcher
+  75, kingslayer / eliteHunter 85, poacher / poisoner 75–85, partyHunter / tracker 75); S88 T1: runThrough
+  berserker.fury@spear2h L70, easyPrey trapper.poacher@crossbow L45/L70, savingBlow healer.dungeon@holystaff L70;
+  ścieżki: guardian.defender ehp L70/L100 i ehpRed L100, marksman.kingslayer (oraz @longbow+quiver) base L45/L70 i r7
+  L45, trapper.poacher single L45/L70 (@bow+quiver L70), all.r1 @bow+quiver L45/L70, r5a.hunter (kingslayer, poacher)
+  L45, inquisitor.solo hp L45/L70/L100.
+- **R1 przed / po** (model, ta sama broń buildu): berserker.fury 45: 2,407 → 2,437, 100: 2,598 → 2,598;
+  guardian.defender 2,075 → 2,101 / 2,144 → 2,144; marksman.kingslayer 2,893 → 3,066 / 2,919 → 2,919; trapper.poacher
+  2,798 → 2,910 / 2,901 → 2,901; arcanist.arcanistBoss 4,337 / 4,862 i destroyer.destroyerExp 3,294 / 3,814 bez zmian;
+  inquisitor.solo 4,355 / 5,737 bez zmian; healer.dungeon 2,525 → 2,412 / 2,697 → 2,697. Na 100. budżet wystarcza
+  rotacji i pasywkom; na 45. bazy tracą rangi rzadkich umiejętności, więc część ilorazów rośnie.
+- **Poprawki po przeglądzie:** migracja 2 nie tworzy już pól S137 z szablonu (zapis ze schematu 1 przechodzi przez
+  migrację 12); `/element` (`editWeapon`) wysyła `EquipmentService.Changed`, więc pasek przechodzi do puli nowego żywiołu.
+- **Testy:** nowe `tests/skillpoints.spec.luau`, `tests/skillpools.spec.luau`, pomocnik `tests/RankFill.luau` (dawne rangi
+  z automatu jako kupione, dla testów sprzed S137); poprawione `paths`, `pathview`, `skills` (8 miejsc), `itemeffects`
+  (gałąź pool / role dla klas przejściowych), testy schematu (11 → 12).
+- wiki do odświeżenia (właściciel 17.10): `rules.skillPointsByLevel` / `freeRespecLevel` w `tools/WikiData/Skills`,
+  planer schowany za „Planer wkrótce” — bez zmian w tej sesji.
+- **Pliki:** `src/shared/Data/SkillPools/*` (nowe), `src/shared/Logic/{SkillPoints,SkillPools}.luau` (nowe),
+  `src/shared/Logic/{Paths,Skills,PathView,AccountSchema,CharacterFactory,TooltipModel}.luau`,
+  `src/shared/Data/{Progression,Keybinds,AdminCommands}.luau`, `Data/Paths/Types.luau`,
+  `Data/Skills/{init,Types,Build,Mage,Warrior,Hunter,Cleric}`,
+  `Data/Localization/{pl,en}.luau`, `src/shared/{Config,Types}.luau`, `Net/Definitions.luau`,
+  `src/server/Services/{PathService,SkillService,LevelService}.luau`, `src/server/Admin/{Character,Items}.luau`,
+  `src/client/Controllers/{EffectsController,ReworkController,SkillController,VfxController}.luau`,
+  `src/client/UI/SkillsAttention.luau`, `UI/Screens/Hud/{SkillBar,MobileSkills}.luau`,
+  `UI/Screens/SkillsWindow/{Actions,BarPicker,BaseList,Context,Header}.luau`, `tests/{SkillModel,Balance,RankFill}.luau`,
+  `tests/{skillpoints,skillpools,balance,paths,pathview,skills,itemeffects,character,contracts,leaderboard,mounts,
+  premiumuse,rarities,sidequests,story,tourney,worldmap}.spec.luau`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S138: Umiejętności 2.0, fundament B
+
+- **Kierunki** (`Logic/Paths`, DESIGN-18 §7): bez ścieżki głównej i broni ścieżki; `rowOpen` = poziom rzędu i `need`
+  w tym kierunku; `canBuy`: zwieńczenie w najwyżej `CAPSTONES_MAX` (1) kierunkach (`skills.error.capstoneTaken`),
+  ulepszenie tylko przy własnym zwieńczeniu (`paths.error.upgrade`); `canRefund` nie zdejmie zwieńczenia przed
+  ulepszeniem. Nowe: `mainOf` (najwięcej rang, ≥ `MAIN_MIN_POINTS` 12, remis = niższe `order`), `capstoneOf`,
+  `pathSpent`; `nodeScale` = `DIP_SCALE` w rzędach 1–2 poniżej `TEAM_FULL_POINTS` (6, odejście od 12 w DECYZJE);
+  `skillUsable` / `activeNodes` / `passiveTotals` sprawdzają tylko `node.weapon`; `clampToLevel` / `cleanSet` / zestawy
+  bez `main` i `freeUsed`, przy dwóch zwieńczeniach zostaje zwieńczenie kierunku przewodniego. Usunięte:
+  `canChooseMain`, `MAIN_LEVEL`, `mainWeaponOk`, akcje `chooseMain` / `changeMain`. `canEdit` z `ctx.level` (zwrot
+  poniżej 20. wszędzie poza walką). `Data/Paths/init`: `CAPSTONES_MAX`, `MAIN_MIN_POINTS`, `TEAM_FULL_POINTS`,
+  `SKILL_ROWS = { 4, 8 }` (test danych tylko dla klas nieprzejściowych, dziś żadnej).
+- **Wymóg broni na węzłach** (przykłady DESIGN-18 §7): szczęście Fortuny w rzędach 4–10 (relikwia), Rzeź Berserkera
+  (dwuręczna).
+- **Odbiorcy kierunku przewodniego:** tytuł (`Logic/Titles`), `Paths.statPlan` („Rozdaj jak zaleca ścieżka”),
+  `ItemScore.contextFor` (wagi kierunku i pula noszonej broni; efekt innej puli × `ItemWeights.OTHER_POOL` 0,5,
+  DESIGN-18 §0.9), tooltip, „Lepszy przedmiot!”, znak w drużynie (`PartyService`), admin `/itemscore`, `/tooltip`.
+- **Serwer:** `PathService` bez `ChooseMainPath` / `AdminSetMain`; `RefundNode` od 20. za `SkillPoints.nodeRefundCost`
+  (ranga węzła i rangi jego umiejętności zabrane we wszystkich pulach) w mieście / przy bramie, `ResetPaths` za
+  `nodesRefundCost` (to samo dla wszystkich węzłów; darmowy z `respecFree` albo poniżej 20.), toast
+  `paths.toast.refundPaid`; `FullReset` (= `ResetSkills` i użycie Zwoju Odnowy w `ScrollService`): rangi wszystkich pul
+  i węzły, przełomy zostają, płaci poziom < 20 → `respecFree` → zwój (`SkillPoints.canReset(char, ctx, zwoje)`,
+  `resetState`; `Paths.validHotbar` nie kasuje przełomu umiejętności kierunku bez węzła). Pule klas `version` 2 (darmowy reset przy wczytaniu). Admin: `/path` usunięte, `/pathmax [kierunek]`
+  przez `canBuy`, `/resetskills` = darmowy pełny reset.
+- **Okno (minimum, pełne w S139):** zakładki kierunków ze stanem „przewodni” / „N pkt” / „zamknięty”, nagłówek
+  „Kierunek przewodni: …” / „brak (12 pkt w jednym kierunku)”, w drzewku „N pkt w kierunku” i „Jedno zwieńczenie w
+  zestawie”, rząd zwieńczenia innego kierunku z „⚠” i `skills.error.capstoneTaken`; bez przycisków ścieżki głównej i
+  linii broni ścieżki; „−” na węźle i „Zwróć wszystkie węzły” od 20. z ceną; „Resetuj” aktywny też ze zwojem; użycie
+  zwoju z plecaka pyta `skills.reset.confirm`.
+- **Teksty:** nowe `skills.tree.*`, `skills.error.capstoneTaken` / `refundGold`, `skills.reset.confirm`,
+  `paths.error.upgrade`, `paths.tab.open`, `paths.confirm.refund.*`, `paths.confirm.reset.paid`,
+  `paths.toast.refundPaid`; „Zwój Odnowy Umiejętności” (nazwa, opis, tooltip, sklep premium); usunięte klucze ścieżki
+  głównej (`paths.main*`, `paths.chooseMain`, `paths.error.main` …, `admin.usage.path`) i nieużywany
+  `skills.points.resetMessage`; `buildset.copy.message` bez ścieżki głównej.
+- **Model i balans:** `SkillModel.character` bez `canChooseMain`; `balance1_20.spec` bez różnic (przy
+  `TEAM_FULL_POINTS` 12 były 4: kotwica L20 zwiadowcy), klucz `Balance.buildsAt` z id ścieżki buildu od 20.
+  21–100: żaden asertowany wiersz nie padł, brak wpisów `GLOBAL_REPORT_ONLY` S138. Księga: `Paths/init:*` (4 nowe),
+  `ItemWeights:OTHER_POOL`, `SkillPools/*:version`.
+- **Wiki:** `tools/WikiData/Skills` z `pool` / `role`, `classPools`, nowymi `rules` (bez `mainPathLevel`) i wektorami
+  planera bez `main` (stan z dwoma zwieńczeniami). wiki do odświeżenia (właściciel 17.10): dane `wiki/src/data`,
+  `types.ts` i `wiki/test-fixtures/planner.json` nieodświeżone, `wiki/src/lib/skills.ts` (`canSetMain`, `replay`,
+  `mainPathLevel`) do przepisania przy odświeżeniu; `wikidump.spec` z `PLANNER_STALE_OK`.
+- **Testy:** `paths.spec` (kierunki: zwieńczenie, ulepszenie, `mainOf`, broń węzła w każdym rzędzie, pokrycie „jeden
+  cały kierunek, nigdy dwa”, dwa zwieńczenia w `clampToLevel`, zwrot poniżej 20., `SKILL_ROWS`), `pathview.spec`,
+  `skillpoints.spec` (pełny reset z przełomem kierunku przez `validHotbar`, cena węzła = cena rangi plus zabrane
+  rangi umiejętności, `canReset` ze zwojem), `titles.spec`, `luck.spec`,
+  `skills.spec`, `lootcomfort.spec` (`contextFor`, `OTHER_POOL`), `admin.spec`, `wikidump.spec`, `balance.spec`.
+- **Pliki:** `src/shared/Logic/{Paths,PathView,SkillPoints,Titles,ItemScore,TooltipModel,AccountSchema}.luau`,
+  `src/shared/Data/Paths/{init,Types,Cleric,Warrior}.luau`, `Data/SkillPools/{Mage,Warrior,Hunter,Cleric}.luau`,
+  `Data/{ItemWeights,Shops,AdminCommands}.luau`, `Data/Localization/{pl,en}.luau`, `src/shared/{Types,Net/Definitions}.luau`,
+  `src/server/Services/{PathService,ScrollService,PartyService,TitleService}.luau`, `src/server/Admin/{Character,Items}.luau`,
+  `src/client/Controllers/{ItemController,LootComfortController}.luau`, `UI/Components/{ItemTooltip,PathBadge}.luau`,
+  `UI/SkillsTab.luau`, `UI/Screens/CharacterWindow/StatAllocator.luau`,
+  `UI/Screens/SkillsWindow/{Actions,BaseList,Context,Details,Header,NodeCard,PathTab,TabBar,init}.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/fixtures/paths.luau`, `tests/{paths,pathview,skillpoints,titles,luck,skills,
+  lootcomfort,admin,wikidump,balance,character,cosmetics2}.spec.luau`, `tools/WikiData/Skills.luau`,
+  `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S139: Okno umiejętności 2.0
+
+- **Widok (`Logic/PathView`):** `COLUMNS` (S, A, K, O, P, U, C), `SECTIONS`, `layout(base, directions)` (wiersz na każdy
+  szczebel obu drabin według poziomu, umiejętność w kolumnie swojej roli, „Z kierunków”, „Pozostałe” według `unlock`),
+  `planned(character, poolId, reserve)` (postać z kupioną rezerwacją), `poolView(character, poolId, reserve?)`
+  (kafelki: ranga z rezerwacją, kupione, limit, kłódka z poziomem, następna ranga za limitem, `buyable` z powodem,
+  zwrot z ceną, znaki przełomów 5 / 10, miejsce na pasku, pula aktywna; wolne punkty po rezerwacji),
+  `skillDetails(character, poolId, skillId, reserve?)` (rola, typ, `short` z argumentami, tabela ranga N / N+1 z
+  różnicą, przełomy, węzły `modify` klasy ze stanem, efekty przedmiotów, stan kupna i paska, lista sekcji),
+  `attention` z `pools` (kropka zakładki aktywnej puli) i `directions`.
+- **Okno (`UI/Screens/SkillsWindow`):** zakładki pul (pula noszonej broni pierwsza z ikoną broni i „N pkt do wydania”,
+  inne z „załóż: …”) i „Kierunki”; nagłówek: zestaw 1 / 2, kopiuj, punkty puli, „Zatwierdź (+N)” i „Anuluj” (PC), na
+  kierunkach punkty talentów, kierunek przewodni i zwieńczenie (telefon: dwa ostatnie pod przełącznikiem). Drzewko puli (`PoolTree`): „Rozdaj jak zaleca pula”,
+  „Resetuj”, podpisy kolumn ról, szczeble z poziomem po lewej, nitki w kolumnie, kafelki (`Tile`: obraz, „4+1/10”,
+  kłódka, złoty „!” / litery przełomów, zielony „+”, miejsce na pasku), dymek PC z nazwą i `short`, przeciąganie na
+  pasek. Szczegóły po kliknięciu w stałych sekcjach (Co robi, Ranga N → N+1 z tabelą, Koszt i odnowienie, Przełomy,
+  Zmiany z kierunków, Z przedmiotów, Pełny opis zwinięty), przyciski „+ ranga”, „− ranga (cena od 20.)”, „Na pasek”
+  (pasek pokazanej puli; pełny → siatka 2 × 4 tej puli), „Podgląd”. Kierunki: przełącznik kierunków (nazwa, rola,
+  punkty, kropka) i drzewko z tymi samymi kafelkami (`NodeCard` na `Tile`), szczegóły węzła w sekcjach Węzeł / Stan.
+- **Telefon:** pełny ekran, zakładki 50 px, drzewko w jednej kolumnie (kafelki 52 px, kolumny 62 px, ikony ról),
+  dotknięcie kafelka otwiera arkusz z sekcjami i przyciskami (≥ 44 px), „Anuluj / Zatwierdź (+N)” przypięte u dołu.
+- **Krótkie opisy:** `skill.<id>.short` PL i EN dla wszystkich 78 umiejętności (≤ 90 znaków, najwyżej jeden
+  placeholder z `values`); role `skills.role.*`, sekcje `skills.section.*`, etykiety pól `skills.field.*`, wiersze,
+  zakładki, stany. Dymek paska (`UI/SkillInfo.tooltip`) z `short` zamiast pełnego opisu (`SkillInfo.short`, `full`).
+- **HUD i toasty:** `Hud/PoolLabel` (nazwa puli nad paskiem na 2 s po zmianie broni), toast `skills.toast.pool` z
+  `PathService.syncPool`; toasty punktów i przełomów z S137 bez zmian.
+- **Testy:** `pathview.spec` (układ według drabiny, pula przejściowa w „Pozostałe”, kafelki: ranga, limit, kłódka,
+  pasek, rezerwacja, budżet 0, cena zwrotu, znaki przełomów, wiersz kierunków, szczegóły: sekcje, tabela, najwyższa
+  ranga, niekupiona, węzły `modify`, pasywka bez kosztu, `planned`, „!” pul i kierunków, przełom osiągnięty w innej
+  puli przez `Paths.bpRank`), `localization.spec` (`short`
+  każdej umiejętności, etykiety pól i efektów, role, sekcje).
+- wiki do odświeżenia (właściciel 17.10): `wikidump --check` pominięty; eksport nie bierze kluczy `skill.<id>.short`
+  (krótkie opisy na wiki w S148).
+- **Pliki:** `src/shared/Logic/{PathView,Paths}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/client/UI/SkillInfo.luau`, `src/client/UI/Screens/SkillsWindow/{init,Context,Actions,TabBar,Header,PoolTree,Tile,
+  NodeCard,PathTab,Details,Sheet,BarPicker}.luau` (`BaseList.luau` usunięty), `src/client/UI/Screens/Hud/{init,
+  PoolLabel}.luau`, `src/server/Services/PathService.luau`, `tests/{pathview,localization}.spec.luau`,
+  `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S140: Mag, pula Ognia
+
+- **Pula Ognia** (`Data/Skills/Mage`, `pool = "fire"`, `role`; DESIGN-18 §6.1). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  koszt i odnowienie rangi 1; przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Umiejętność | Ranga 1 / 10 | Przełomy |
+  |---|---|---|---|
+  | S1 · 1 | Ognisty Pocisk `firebolt` (wspólny, adaptacyjny do S142) | 118 / 255,7% | bez zmian |
+  | A1 · 3 | Kula Ognia `fireball` | 120 / 221,8% (35 many, 8 s) | bez zmian |
+  | K1 · 6 | Fala Płomieni `flameWave` (stożek 8 st. / 70°, odrzut 6 st., 1 stos) | 45 / 150% (40, 14 s) | +40° / +16; +1 stos / +36 |
+  | O1 · 10 | Żarząca Osłona `emberShield` (tarcza 8 s, odwet na bijących wręcz) | 8–12% HP + 10–15% ataku mag., odwet 20 / 40% (35, 24 s) | odwet +15 / tarcza +3; +4 s / ×0,75 |
+  | S2 · 15 | Pożoga `pyroblast` (celowanie 1 s, 2 stosy) | 90 / 380% (40, 10 s) | rozprysk 12% / +45; +1 stos / +80 |
+  | P1 · 20 | Żar `kindling` (do 3 stosów) | +1 / +5% za stos | — |
+  | A2 · 26 | Meteor `meteor` (było 30) | 89,6 / 174% (węzeł: ranga 2 = 98) | bez zmian, 5B +20 (było 23) |
+  | K2 · 33 | Zapłon `combustion` (krąg 6 st., ogłuszenie 1 s od 3 stosów) | 80 / 140%, wybuch 60 / 105% za stos (45, 16 s) | +2 st. / +14 za stos; +0,5 s / ×0,8 |
+  | S3 · 40 | Spopielenie `immolate` (×1,5 poniżej 30% HP) | 180 / 300%, +10 / 16% za stos (35, 9 s) | rozprysk 8% / +5 za stos; krytyk < 50% / +60 |
+  | P2 · 50 | Serce Feniksa `phoenixHeart` (raz na 180 s, 2 s nietykalności) | wybuch 150 / 300% ataku mag. | — |
+  | U · 60 | Deszcz Meteorów `meteorStorm` (było 48, ogień, 1 stos na uderzenie) | 24 / 24% × 6 (174, 50 s) | bez zmian |
+
+- **Wspólne Maga:** Błysk C1 4 (było 14), Tarcza Many C2 12, Inwokacja C3 30, Skupienie C4 45 (były węzłami `skill`
+  Arkanisty i Niszczyciela). `Data/SkillPools/Mage`: plan puli Ognia według drabiny, wspólne w planach lodu i
+  błyskawicy, `version` 3 (darmowy reset); Mag dalej `transitional` (S1 i pule lodu / błyskawicy w S141–S142).
+- **Mechaniki ognia** (`Logic/Burn`, nowy): `cap`, `add`, `tick`, `stackBonus` (Żar), `vsBurning` (Spopielenie),
+  `detonate` (Zapłon), `phoenixSave` / `phoenixInvuln` / `phoenixReady`. Serwer: `CombatService.ApplyBurn` (jedno
+  podpalenie gracza na celu, stosy, `uncapped`), odwet Żarzącej Osłony w `monsterHitsPlayer`, `Skills/Elements` (burn
+  broni przez `ApplyBurn`), `Skills/Context` (stosy `burnStacks` na trafieniach głównych, Żar i `vsBurning`, pole
+  `knockback`), `Types/Offense` (wybuch Zapłonu), `Types/Support.shield` (własne efekty tarczy),
+  `StatusEffectService` (`uncapped`, `StacksFrom`, `TakeStacks`), `SkillService` (filtr Serca Feniksa, efekt
+  `phoenixSave`), `ResourceService.FilterPriority.phoenixHeart` 85. Dane: `Data/Skills.BURN`, `EMBER`, `PHOENIX`,
+  `ADAPTIVE.burnPct` 15 (było 30), `Combat.pvp.phoenix` 0,5, pola `SkillDef.burnStacks` / `knockback`
+  (`add.burnStacks` w przełomach), efekt `emberShield`.
+- **Kierunki Maga:** węzły `skill` tylko w rzędach 4 i 8 (Wir / Kataklizm, Wyładowanie / Strumień). Mistrz Żywiołów i
+  Tajemny Umysł to węzły `passive` 3 rang; nowe węzły: Echo Żywiołów (rząd 7), Przypływ Żywiołów (rząd 10), Tajemna
+  Osłona (rząd 1 Arkanisty), Szybkie Wyładowanie (rząd 7 Arkanisty); Gniew Burzy na Wirze (0,3–0,9 s); Wytrwałość i
+  Wola 2 rangi (kierunek = 50 pkt). Buildy wzorcowe przestawione, nowe `destroyerFire` i `arcanistFire` (różdżka /
+  kostur ognia, `ranks`).
+- **Model** (`tests/SkillModel.luau`, każde lustro z `-- mirrors`): `applyBurn` (CombatService.ApplyBurn), podpalenie
+  broni w tym samym wpisie, `burnStacks`, Żar i `vsBurning` w `damage`, wybuch Zapłonu w `H.target`, efekt tarczy,
+  odwet Osłony i ocalenie Feniksa w walce z oddającymi potworami, `uncapped`; `SkillModel.elementOf`, R4 nowych
+  umiejętności na wariantach ognia (`R4_SUPPORT_BUILDS`), Zapłon i Spopielenie w rotacji (`R4_ROTATION`).
+- **Wyniki modelu** (R1 / T-SK3 / T-SK4 na 20 / 45 / 70 / 100): `destroyerFire` 2,60 / 4,23 / 5,35 / 5,65, T-SK3 1,47 /
+  2,26 / 2,28 / 2,20, T-SK4 3,4 / 4,8 / 3,6 / 3,6; `arcanistFire` 2,64 / 5,19 / 6,25 / 6,63, T-SK3 1,24 / 1,31 / 1,45 /
+  1,14, T-SK4 2,5 / 3,5 / 3,0 / 3,4. S91 (średnia żywiołów) na 20.: `destroyerExp` 2,47 → 2,31, `destroyerBoss` 2,66 →
+  2,49, `arcanistBoss` 2,58 → 2,40 (pasmo 1,6–2,73), gładkość i zysk rzędów w paśmie. R4 nowych: Fala 5B 0,11, 10A /
+  10B 0,23 / 0,24; Pożoga 5 0,15 / 0,10–0,14, 10 0,19 / 0,19; Zapłon 5B 0,09, 10B 0,25; Spopielenie 5 0,09 / 0,09–0,10,
+  10 0,23 / 0,20; Meteor 5B 0,16 (45). Tożsamość (raport `S140.fire.*`, asertuje S147): ogień / błyskawica na 3 celach
+  8 s 1,43–1,50 (≥ 1), błyskawica / ogień w jeden cel 0,63–0,70 (cel 1,10–1,20, pula błyskawicy w S142), udział
+  podpalenia 7–13% (cel ≥ 25%).
+- **1–20:** fixture przepisany (S140, „pula Ognia Maga”): 254 zmienione, 4 usunięte, 44 nowe wpisy, tylko klucze Maga
+  i 6 wierszy „Grimrok bez wsparcia” (dwa buildy Maga w drużynie); `ALLOWED_1_20_DIFFS` pusta. Blok „Balance 1-20:
+  S91” zielony; nowy blok „Balance S140: fire pool” (R1 wariantów ognia na 20., T-SK3).
+- **`GLOBAL_REPORT_ONLY` S140** (89 wierszy Maga 21–100): `R.duskwood|ashen|frostpeak.guard.tsk1|tsk2.Mage.<wariant
+  ognia>.<poziom>` (54: `destroyerFire` 40–100, `arcanistFire` 50–100), `R.ashen.tsk4.*` (destroyerExp / destroyerBoss
+  60, arcanistOverload 60 / 65), `R.frostpeak.tsk4.*` (destroyerBoss 80–100, destroyerExp 85–100, arcanistOverload 100),
+  ścieżki `destroyer.aoe` (destroyerExp 45 / 70), `destroyer.single` (destroyerBoss 100), `arcanist.single` (70 / 100),
+  `arcanist.vsDestroyer` (45 / 100), `mage.tsk4` (destroyerExp, destroyerBoss, arcanistOverload 100), `r4.meteorStorm.5|a`
+  (100), G10 T-SK4 `destroyerExp` 60 i 85–100, T1 Moc Żywiołu ogień `destroyerExp@staff` 45 / 70 / 100.
+- **Wygląd, dźwięk, teksty:** ruchy nowych umiejętności jako warianty ruchów Maga (`SkillMotions`: Łańcuch, Tarcza Many,
+  Kula Ognia z pętlą skupienia, Lodowy Odłamek, Pocisk), `SkillVfx` w trzech warstwach w kolorze ognia (Fala: `fan` +
+  `groundDecal`; Zapłon `burst` / `cracks`, Spopielenie `pillar`), efekty `detonate` i `phoenixSave` w
+  `VfxController`, ikona efektu `emberShield`; klucze `skill.<id>` w `Data/Sfx` bez ID (`hint`), `skill.pyroblast.cast`;
+  teksty PL / EN: nazwy, `short`, `desc`, przełomy, Deszcz Meteorów, węzły kierunków, pola `skills.field.*`,
+  `skills.phoenixSave`, `effect.emberShield`.
+- **Testy:** nowy `tests/burn.spec.luau` (stosy, limit, odświeżenie, `uncapped`, Żar, Spopielenie, Zapłon, Feniks raz
+  na odpoczynek, źródła, PvP); `skillpools.spec` (pula Ognia A1…U i wspólne C1–C4 na poziomach drabiny),
+  `paths.spec` (węzły `skill` Maga tylko w 4 i 8, węzły pasywne, `modify` istnieją, zasada rzędu 1 dla klas na drabinie
+  kierunków, buildy 50 pkt), `skills.spec`, `pathview.spec`, `skillpoints.spec`, `traits.spec`, `balance1_20.spec`
+  (fixture S140), `balance.spec` (blok S140); `tests/fixtures/skill_timing.luau` (5 wierszy).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Burn.luau` (nowy), `src/shared/Logic/Skills.luau`, `src/shared/Data/Skills/{init,Types,
+  Build,Mage}.luau`, `Data/{Combat,SkillCurves,SkillMotions,SkillVfx,Sfx,UiArt}.luau`, `Data/SkillPools/Mage.luau`,
+  `Data/Paths/{Mage,Types}.luau`, `Data/Localization/{pl,en}.luau`, `src/server/Services/{CombatService,
+  StatusEffectService,SkillService,ResourceService}.luau`, `src/server/Skills/{Context,Elements}.luau`,
+  `src/server/Skills/Types/{Offense,Support}.luau`, `src/client/Controllers/VfxController.luau`,
+  `src/client/UI/Screens/Hud/EffectIcons.luau`, `tests/{SkillModel,Balance}.luau`, `tests/{burn,balance,balance1_20,
+  paths,pathview,skillpoints,skillpools,skills,traits}.spec.luau`, `tests/fixtures/{balance_1_20.json,
+  skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`,
+  `CLAUDE.md`.
+
+### S141: Mag, pula Lodu
+
+- **Pula Lodu** (`Data/Skills/Mage`, `pool = "ice"`, `role`; DESIGN-18 §6.1). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  koszt i odnowienie rangi 1; przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Umiejętność | Ranga 1 / 10 | Przełomy |
+  |---|---|---|---|
+  | S1 · 1 | Lodowy Odłamek `iceShard` (było 6) | 70 / 213% (15 many, 5 s), spowolnienie 30% 3 s | bez zmian (zamrożenie 0,8 s / +23; przebicie 27% / ×0,84) |
+  | A1 · 3 | Grad `hailstorm` (krąg 7 st., 3 fale co 0,5 s) | 18 / 60% za falę (35, 8 s), każda fala spowalnia 30% 2 s | spowolnienie +15 / +7; lodowe pole / +16 |
+  | K1 · 6 | Lodowa Nova `frostNova` (było 18) | 90 / 141,3% (40, 16 s), zamrożenie 1 / 2 s | bez zmian |
+  | O1 · 10 | Lodowa Bariera `iceBarrier` (tarcza 8 s) | 8–12% HP + 10–15% ataku mag., spowolnienie bijących wręcz 40 / 55% na 2 s (35, 24 s) | +15 / tarcza +3; +4 s / ×0,75 |
+  | S2 · 15 | Lodowa Włócznia `glacialSpike` (celowanie 0,8 s) | 70 / 330% (40, 10 s), ×1,5 na zamrożonych, ×1,25 z Głębokim Chłodem | rozprysk 9% / +45; zamrożenie 1,5 s / +75 |
+  | P1 · 20 | Uścisk Zimy `wintersGrip` (próg 4) | zamrożenie 1,5 / 2,5 s, Głęboki Chłód 10 / 18% | — |
+  | A2 · 26 | Lodowa Kula `frozenOrb` (20 st. lotu, 10 fal co 0,4 s, r 5) | 12 / 24% za falę (60, 16 s), spowolnienie 8% × do 5 stosów | spowolnienie +2 za stos / +2,5; r +2 / +5 |
+  | K2 · 33 | Głęboki Mróz `deepFreeze` | 70 / 120% (45, 20 s), zamrożenie 3 s, ataki wolniej o 30% na 4 s | +1 s / +13; ×0,85 / +30 |
+  | S3 · 40 | Roztrzaskanie `shatter` | 160 / 230% (35, 9 s), ×2 na zamrożonych (koniec zamrożenia), ×1,6 z Głębokim Chłodem | rozprysk 12% / premia +30; zamrożenie 1 s / +55 |
+  | P2 · 50 | Lodowa Krew `iceBlood` | −4 / −12% obrażeń od spowolnionych i zamrożonych | — |
+  | U · 60 | Zamieć `blizzard` (krąg 12 st., 8 fal co 0,75 s) | 17 / 21% za falę (170, 50 s), spowolnienie 6% × do 8 stosów, od 5. fali zamrożenie 1 s raz na cel | +1 fala / ×0,88; r +3 / +3,5 |
+
+- **Mechaniki chłodu** (`Logic/Chill`, nowy): `counts`, `chillToFreeze` (licznik, reset po zamrożeniu), `onFreeze`
+  (odporni: Głęboki Chłód), `deepPct`, `vsFrozen`, `shatterMul`, `pvpMul`, `barrierReady`, `bloodGuard`, `waveFreezes`,
+  `orbAt`. Dane `Data/Skills.CHILL` (próg 4, licznik 5 s, Głęboki Chłód 10% na 4 s, Bariera 2 s co 1 s). Serwer:
+  `Skills/Context` (licznik na głównych trafieniach lodu, zamrożenie lodu → `deepChill` na bossach i Elitach II,
+  `ctx.freeze`, Włócznia i Roztrzaskanie, `SkillEffect.maxStacks`), `Types/Offense.circleTarget` (`travel`,
+  `waveEffects`, `freezeWave`), `CombatService` (Głęboki Chłód w mnożniku, `shieldRetaliate` dla Osłony i Bariery,
+  dostawca redukcji Lodowej Krwi), `StatusEffectService` (`chill`, `deepChill` w osłabieniach), `EffectStack`
+  (`deepChill` z wartością), ikony `chill` (licznik), `deepChill`, `iceBarrier`, efekt `shatter` w `VfxController`.
+- **Model** (`tests/SkillModel.luau`, lustra z `-- mirrors`): `chillHit`, Głęboki Chłód w `applyEffect` i
+  `offensiveMultiplier`, Włócznia i Roztrzaskanie w `damage` (`spendChill`), `waveEffects` / `freezeWave` /
+  `SkillModel.orbHits` w `H.circleTarget`, Bariera i Lodowa Krew w `monsterHit`, udziały `chilled` / `deepChilled`
+  walki, `SkillModel.chillReport` (Elita 60 s, boss 180 s). `SkillModel.character` bierze żywioł wariantu. Nowe buildy
+  `destroyer.destroyerIce` i `arcanist.arcanistIce` (kostur / runiczny kostur lodu, `ranks`), R4 nowych w pasmach.
+- **Wyniki modelu:** R1 na 20.: `destroyerIce` 2,69, `arcanistIce` 2,69 (pasmo 1,6–2,73), T-SK3 1,47 / 1,29; średnia
+  żywiołów S91: `destroyerExp` 2,31 → 2,24, `destroyerBoss` 2,49 → 2,43, `arcanistBoss` 2,40 → 2,35. Tożsamość
+  (raport `S141.ice.*`, asertuje S147): lód / ogień w jeden cel (Arkanista) 1,02 / 0,95 / 0,93 / 0,99 na 20 / 45 / 70 /
+  100 (cel 0,85–0,95); Elita spowolniona lub zamrożona 94–99% walki (cel ≥ 60%); boss pod Głębokim Chłodem 62–99%
+  (cel ≥ 50%); przyjmowane obrażenia lód / ogień 0,49–0,90 (cel ≤ 0,85; tylko Arkanista na 20. 0,90). T-SK4 wariantów
+  lodu 1,97–4,31 (pasmo 2,0–2,8, jak ognia: raport). R4 nowych: Grad 5B 0,09, 10B 0,24; Włócznia 5A / 5B 0,11–0,16,
+  10B 0,20; Kula 5B 0,09, 10B 0,21; Głęboki Mróz 5B 0,09, 10A / 10B 0,25 / 0,23; Roztrzaskanie 5A / 5B 0,13 / 0,13,
+  10B 0,24. R4 na 20. (blok S91): Lodowy Odłamek 5B 0,29 i Grad 5B 0,19 ponad pasmem, w `Balance.S91_REPORT`.
+- **1–20:** fixture przepisany (S141, „pula Lodu Maga”): 105 zmienionych i 44 nowe wpisy, tylko klucze Maga;
+  `ALLOWED_1_20_DIFFS` pusta. Blok „Balance 1-20: S91” z wariantami lodu (`Balance.S91.damage`) zielony; nowy blok
+  „Balance S141: ice pool” (T-SK3 asertowane, reszta raport).
+- **`GLOBAL_REPORT_ONLY` S141** (56 wierszy Maga 21–100): `R.ashen|frostpeak.guard.tsk1|tsk2.Mage.<wariant lodu>.<poziom>`
+  (52: 50–70 i 75–100), `R.ashen.tsk4.arcanist.arcanistOverload.50|55`, T1 Iskry lodu `arcanistBoss@wand` 70 / 100.
+- **Wygląd, dźwięk, teksty:** ruchy nowych jako warianty ruchów Maga (`SkillMotions`: Burza Piorunów, Tarcza Many,
+  Lodowy Odłamek z pętlą skupienia, Kula Ognia, Lodowa Nova, Łańcuch, Deszcz Meteorów), `SkillVfx` w trzech warstwach
+  w kolorze lodu z odłamkami `iceShard` (Grad, Kula i Zamieć z falami `waves`), klucze `skill.<id>` w `Data/Sfx` bez ID
+  (`hint`), `skill.glacialSpike.cast`; teksty PL / EN: nazwy, `short`, `desc`, przełomy, nowy opis Lodowej Novy
+  (Głęboki Chłód, `{deepPct}` z hakiem Uścisku Zimy), pola `skills.field.*`, efekty `effect.iceBarrier|chill|deepChill`.
+- **Testy:** nowy `tests/chill.spec.luau` (licznik, odporni, `vsFrozen`, `shatterMul`, PvP, odstęp Bariery, Lodowa
+  Krew, Zamieć, lot Kuli, lustro modelu); `skillpools.spec` (pula Lodu S1…U na poziomach drabiny, plan),
+  `skills.spec`, `skillpoints.spec`, `pathview.spec`, `paths.spec`, `balance1_20.spec` (fixture S141), `balance.spec`
+  (blok S141); `tests/fixtures/skill_timing.luau` (7 wierszy, 3 `circleTarget`).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Chill.luau` (nowy), `src/shared/Logic/{Skills,EffectStack}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Mage}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Mage.luau`, `Data/Paths/Mage.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/VfxController.luau`, `src/client/UI/Screens/Hud/EffectIcons.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/{chill,balance,balance1_20,paths,pathview,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

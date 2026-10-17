@@ -30,12 +30,21 @@
 -- S80 (ROZWOJ 12.5): `castMul` (Arcane Charges and empowered of this cast, a snapshot SkillService takes at the cast)
 -- multiplies every hit but zone ticks; `chargesSpent` (Arcane Discharge) goes to the clients as `ch`; `costMods` is
 -- the CostMods the cast paid with (Arcane Torrent drains with the same); services.Beam starts a beam channel.
+-- S140 (Logic/Burn, DESIGN-18 §6.1): a skill with `burnStacks` adds that many stacks of the caster's one burn on every
+-- main hit (CombatService.ApplyBurn); fire hits get Kindling's burnBonus per own stack on the target and values.vsBurning
+-- (Immolate) per stack; the skill field `knockback` pushes like the breakpoint.
+-- S141 (Logic/Chill, DESIGN-18 §6.1): every freeze of the player's ice (effects, the chill counter, Blizzard through
+-- ctx.freeze) gives bosses and Elite II Deep Chill instead; main ice hits feed Winter's Grip's counter (chillFreeze);
+-- Glacial Spike (values.vsFrozen) and Shatter (values.shatter, which ends the freeze or spends the Deep Chill) on their
+-- main hits; an effect with maxStacks stacks (a growing slow).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Burn = require(Shared.Logic.Burn)
+local Chill = require(Shared.Logic.Chill)
 local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local Elements = require(script.Parent.Elements)
@@ -122,6 +131,8 @@ export type Ctx = {
 	consumeFury: () -> number,
 	applyEffects: (entity: any, side: "enemy" | "self" | "allies") -> (),
 	applyEffect: (entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?) -> (), -- one effect
+	-- S141 (Logic/Chill): an ice freeze of `duration` s through applyEffect (bosses and Elite II: Deep Chill)
+	freeze: (entity: any, duration: number) -> (),
 	-- S70 (ROZWOJ 9.4): Fortune's dice / wheel for the party around the caster; half = one face, half the duration
 	rollDice: (opts: { half: boolean? }?) -> (),
 	-- the lasting areas of a cast (S28): the breakpoint's zone and (S79) the areaLingering zone, both only on wave 1
@@ -436,8 +447,9 @@ function Context.new(
 				ctx.heal(ally, result.amount * behaviour.healWounded / 100)
 			end
 		end
-		if behaviour.knockback then
-			Push.knockback(entity, opts.from or root.Position, behaviour.knockback)
+		local push = behaviour.knockback or skill.knockback -- S140: Flame Wave's own knockback
+		if push then
+			Push.knockback(entity, opts.from or root.Position, push)
 		end
 		local at = Entity.Position(entity)
 		if not opts.primary or not at then
@@ -531,6 +543,32 @@ function Context.new(
 					end
 				end
 			end)
+		end
+	end
+
+	-- S141 (Logic/Chill): Winter's Grip. A main ice hit on a slowed, not frozen enemy adds a stack to the caster's
+	-- counter on it; at CHILL.threshold the counter is spent on a freeze of chillFreeze s (bosses: Deep Chill).
+	local function chillHit(entity: any)
+		local seconds = hook("chillFreeze")
+		if seconds <= 0 or not isEnemy(entity) then
+			return
+		end
+		local status = services.StatusEffect
+		if not Chill.counts(true, status.Has(entity, "slow"), status.Has(entity, "freeze")) then
+			return
+		end
+		local count, freezes = Chill.chillToFreeze(status.StacksFrom(entity, "chill", player, Chill.KEY))
+		if freezes then
+			status.TakeStacks(entity, "chill", player, Chill.KEY)
+			ctx.freeze(entity, seconds)
+		else
+			status.Apply(entity, "chill", {
+				duration = SkillData.CHILL.counter,
+				source = player,
+				skillId = Chill.KEY,
+				maxStacks = Chill.THRESHOLD,
+				stacks = count,
+			})
 		end
 	end
 
@@ -639,6 +677,35 @@ function Context.new(
 				local bonus = Skills.spellBonus(tag, opts.areaHits or 1, opts.secondary == true, spellHooks())
 				multiplier *= (1 + bonus / 100) * Skills.resonanceMul(ctx.manaFraction, hook("resonance")) * ctx.castMul
 			end
+			-- S140 (Logic/Burn): Kindling on every fire hit but zone ticks, Immolate's vsBurning on its main hits
+			if element == "fire" and not opts.lingering then
+				local perStack = hook("burnBonus")
+				local vs = if skill.values.vsBurning ~= nil and not opts.plain then value("vsBurning") else 0
+				if perStack > 0 or vs > 0 then
+					local stacks = services.StatusEffect.StacksFrom(entity, "burn", player, Burn.KEY)
+					multiplier *= Burn.stackBonus(stacks, perStack) * Burn.vsBurning(stacks, vs)
+				end
+			end
+			-- S141 (Logic/Chill): Glacial Spike and Shatter on their main hits; Shatter spends what it used after the hit
+			local spend: string? = nil
+			local main = not (opts.plain or opts.secondary or opts.lingering)
+			if element == "ice" and main and (skill.values.vsFrozen ~= nil or skill.values.shatter ~= nil) then
+				local frozen = services.StatusEffect.Has(entity, "freeze")
+				local deep = services.StatusEffect.SourceValue(entity, "deepChill", player) > 0
+				local mul = 1
+				if skill.values.vsFrozen ~= nil then
+					mul *= Chill.vsFrozen(frozen, deep, value("vsFrozen"), value("vsDeepChill"))
+				end
+				if skill.values.shatter ~= nil then
+					local shatterMul, used = Chill.shatterMul(frozen, deep, value("shatter"), value("shatterDeep"))
+					mul *= shatterMul
+					spend = used
+				end
+				if entity.kind == "player" then
+					mul = Chill.pvpMul(mul, Combat.pvp.finisher)
+				end
+				multiplier *= mul
+			end
 			local result = services.Combat.DealDamage(player, entity, params, nil, {
 				multiplier = multiplier,
 				consumeShot = opts.consumeShot ~= false,
@@ -705,6 +772,33 @@ function Context.new(
 					end,
 				})
 			end
+			-- S140: the fire school's burn stacks on main hits (not splashes, pierces, arcs or zone ticks); the hit before
+			-- the PvP multiplier like the weapon element
+			local stacks = skill.burnStacks or 0
+			if
+				stacks > 0
+				and result
+				and not result.dodged
+				and result.amount > 0
+				and not (opts.plain or opts.secondary or opts.lingering)
+			then
+				local tick =
+					Burn.tick(result.dotBase or result.amount, stacks, services.Combat.DotBonus(player, "burn"))
+				services.Combat.ApplyBurn(player, entity, tick, stacks)
+			end
+			-- S141: Shatter ends the freeze (anyone's) or spends the caster's Deep Chill; Winter's Grip's counter on main ice
+			-- hits (Logic/Chill)
+			if spend and result and not result.dodged then
+				if spend == "freeze" then
+					services.StatusEffect.Remove(entity, "freeze")
+				else
+					services.StatusEffect.TakeStacks(entity, "deepChill", player, Chill.DEEP_KEY)
+				end
+				ctx.fx({ v = "shatter", p = Entity.Position(entity), t = entity.id })
+			end
+			if element == "ice" and main and result and not result.dodged and result.amount > 0 then
+				chillHit(entity)
+			end
 			if result and not result.dodged and result.amount > 0 and not opts.plain then
 				onHit(entity, percent, result, opts)
 			end
@@ -767,6 +861,19 @@ function Context.new(
 				elseif type(effect.value) == "number" then effect.value
 				else 0
 			local effectValue = rawValue * scale
+			-- S141 (Logic/Chill): an ice freeze on a boss or an Elite II is the caster's Deep Chill
+			local kind: string = effect.kind
+			local skillKey = skill.id
+			if
+				kind == "freeze"
+				and element == "ice"
+				and Chill.onFreeze(services.StatusEffect.IsBossLike(entity)) == "deepChill"
+			then
+				kind = "deepChill"
+				effectValue = Chill.deepPct(hook("deepChill"))
+				duration = SkillData.CHILL.deepDuration
+				skillKey = Chill.DEEP_KEY
+			end
 			local tickAmount: number? = nil
 			if effect.kind == "bleed" or effect.kind == "poison" or effect.kind == "burn" then
 				-- value % of attack spread over the duration, one tick per second; S63: + dotPower (STATY 4); S70: burn
@@ -801,7 +908,7 @@ function Context.new(
 			-- (Frostbite) enemies; `element` is the weapon's for adaptive skills.
 			local chill = element == "ice"
 				and services.WeaponElement(player) == "ice"
-				and (effect.kind == "slow" or effect.kind == "freeze")
+				and (kind == "slow" or kind == "freeze" or kind == "deepChill")
 			if chill then
 				duration *= Elements.power(services, player)
 			end
@@ -813,11 +920,12 @@ function Context.new(
 				stats = statValues,
 				pct = effect.pct,
 				-- S76: poison stacks like bleed (poisonStacks), on its own key (the bow's poison has "item")
+				-- S141: an effect with maxStacks (a growing slow) gains a stack on every application
 				maxStacks = if effect.kind == "bleed"
 					then behaviour.bleedStacks
 					elseif effect.kind == "poison" then behaviour.poisonStacks
-					else nil,
-				skillId = skill.id,
+					else effect.maxStacks,
+				skillId = skillKey,
 				category = effect.category,
 				notBoss = effect.notBoss, -- S70: for every kind (Hammer of Heaven's stun)
 				element = if effect.kind == "burn" and skill.holy then "holy" else nil,
@@ -826,11 +934,16 @@ function Context.new(
 				jump = if effect.kind == "vulnerability" then behaviour.markJump else nil,
 			}
 			-- S76: every poison of a player through CombatService.ApplyPoison (poisonSlow)
-			local applied = if effect.kind == "poison"
+			local applied = if kind == "poison"
 				then services.Combat.ApplyPoison(player, entity, options)
-				else services.StatusEffect.Apply(entity, effect.kind, options)
+				else services.StatusEffect.Apply(entity, kind, options)
 			if chill and applied and isEnemy(entity) then
 				Elements.chill(services, player, entity, duration, "ice")
+			end
+		end,
+		freeze = function(entity: any, duration: number)
+			if duration > 0 then
+				ctx.applyEffect(entity, { kind = "freeze", duration = duration })
 			end
 		end,
 		-- S70 (ROZWOJ 9.4, 14.1): Fortune's dice. Faces are the skill's effects with `face`. Dice: each ally in the

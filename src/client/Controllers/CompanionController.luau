@@ -10,6 +10,8 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Nameplate = require(ReplicatedStorage.Shared.Logic.Nameplate)
+local PlateStyle = require(script.Parent.Parent.UI.PlateStyle)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -36,34 +38,35 @@ local function plate(figureScope: any, model: Model)
 		return
 	end
 	local mine = model:GetAttribute("CompanionOf") == Players.LocalPlayer.UserId
+	-- S136: the name on an iron plate, the tag under it only on your own companion (Logic/Nameplate.npc)
+	local view = Nameplate.npc({ icon = nil, companion = true, mine = mine })
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "VaelthornPlate"
 	gui.Adornee = head
-	gui.Size = UDim2.fromOffset(240, if mine then 44 else 26)
+	gui.Size = UDim2.fromOffset(260, if view.showTag then 52 else 30)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0)
 	gui.MaxDistance = 70
 	gui.LightInfluence = 0
 	gui.Parent = model
 	local name = Instance.new("TextLabel")
-	name.BackgroundTransparency = 1
-	name.Size = UDim2.new(1, 0, 0, 24)
+	name.Size = UDim2.new(1, 0, 0, 28)
 	name.Text = Text.now(`npc.{npcId}.name`)
-	name.TextSize = 20
+	name.TextSize = Theme.TextSize.Body
 	name.FontFace = Theme.Fonts.BodyBold
-	name.TextColor3 = Theme.Colors.Parchment
-	name.TextStrokeTransparency = 0.35
+	PlateStyle.name(name)
 	name.Parent = gui
 	local tag: TextLabel? = nil
-	if mine then
+	if view.showTag then
 		local label = Instance.new("TextLabel")
 		label.BackgroundTransparency = 1
-		label.Position = UDim2.fromOffset(0, 24)
-		label.Size = UDim2.new(1, 0, 0, 18)
+		label.Position = UDim2.fromOffset(0, 30)
+		label.Size = UDim2.new(1, 0, 0, 20)
 		label.Text = Text.now("companion.tag")
-		label.TextSize = 15
+		label.TextSize = Theme.TextSize.Small
 		label.FontFace = Theme.Fonts.BodyMedium
-		label.TextColor3 = Theme.Colors.GoldBright
-		label.TextStrokeTransparency = 0.4
+		label.TextColor3 = Theme.Brass.Bright
+		label.TextStrokeColor3 = Theme.Shade
+		label.TextStrokeTransparency = 0.3
 		label.Parent = gui
 		tag = label
 	end

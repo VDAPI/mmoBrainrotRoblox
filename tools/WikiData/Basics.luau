@@ -36,6 +36,7 @@ local Schema = require("./Schema")
 local StatCalc = require("../../src/shared/Logic/StatCalc")
 local Stats = require("../../src/shared/Data/Stats")
 local Titles = require("../../src/shared/Data/Titles")
+local UiPalette = require("../../src/shared/Data/UiPalette")
 local ArenaData = require("../../src/shared/Data/Arena")
 local Leaderboards = require("../../src/shared/Data/Leaderboards")
 local ScheduledEvents = require("../../src/shared/Data/ScheduledEvents")
@@ -70,8 +71,6 @@ Basics.CONFIG_KEYS = {
 	"PotionCooldown",
 	"DefaultCapacity",
 }
-
-local ZONE_COLORS_FALLBACK = { green = "#4FD16B", yellow = "#E0C23B", red = "#D64A3E" }
 
 -- Schemas ----------------------------------------------------------------------------------------------------
 
@@ -611,17 +610,11 @@ function Basics.bestArea(): { any }
 	return out
 end
 
--- Zone colours from src/client/UI/Theme.luau read as text (the client module does not load in Lune).
-function Basics.zoneColors(themeText: string?, warnings: { string }): { [string]: string }
+-- Zone colours from Data/UiPalette.zone (S135; S136 removed the old reading of Theme.luau as text).
+function Basics.zoneColors(): { [string]: string }
 	local out = {}
-	for zone, name in { green = "ZoneGreen", yellow = "ZoneYellow", red = "ZoneRed" } do
-		local hex = themeText and string.match(themeText, name .. '%s*=%s*Color3%.fromHex%("(#%x%x%x%x%x%x)"%)')
-		if hex then
-			out[zone] = string.upper(hex)
-		else
-			table.insert(warnings, `Theme.luau: {name} not found, using {ZONE_COLORS_FALLBACK[zone]}`)
-			out[zone] = ZONE_COLORS_FALLBACK[zone]
-		end
+	for _, zone in { "green", "yellow", "red" } do
+		out[zone] = string.upper((UiPalette.zone :: any)[zone])
 	end
 	return out
 end
@@ -646,7 +639,7 @@ function Basics.mechanics(ctx: any): any
 		assert(type(value) == "number", `Config.{key} is not a number`)
 		config[key] = value
 	end
-	local colors = Basics.zoneColors(ctx.themeText, ctx.warnings)
+	local colors = Basics.zoneColors()
 	local zones = {}
 	for _, zone in { "green", "yellow", "red" } do
 		zones[zone] = { name = Names.of(`zone.{zone}`), rule = Names.of(`pvp.rules.{zone}`), color = colors[zone] }

@@ -38,10 +38,10 @@ local GOSSIP_LINES = 3
 local HIDDEN_SERVICES: { [string]: boolean } = { story = true, talk = true }
 
 local MARK: { [string]: { glyph: string, color: Color3 } } = {
-	turnIn = { glyph = "?", color = Theme.Colors.GoldBright },
-	offer = { glyph = "!", color = Theme.Colors.GoldBright },
-	active = { glyph = "…", color = Theme.Colors.TextMuted },
-	later = { glyph = "·", color = Theme.Colors.TextMuted },
+	turnIn = { glyph = "?", color = Theme.Paper.Heading },
+	offer = { glyph = "!", color = Theme.Paper.Heading },
+	active = { glyph = "…", color = Theme.Paper.TextMuted },
+	later = { glyph = "·", color = Theme.Paper.TextMuted },
 }
 
 -- S102: the `line` of a talk / deliver objective of an active quest that points at this NPC (story first, then side
@@ -150,7 +150,7 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		preview.show(
 			if d and d.body ~= "board"
 				then { kind = "npc", id = d.id, glyph = d.icon }
-				else { kind = "glyph", id = "", glyph = if d then d.icon else "?", color = Theme.Colors.Parchment }
+				else { kind = "glyph", id = "", glyph = if d then d.icon else "?", color = Theme.Paper.Text }
 		)
 	end
 	scope:Observer(def):onChange(showPortrait)
@@ -192,8 +192,8 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 					Name = `Quest_{row.id}`,
 					LayoutOrder = order,
 					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
-					BackgroundTransparency = if row.mode == "later" then 0.6 else 0.15,
+					BackgroundColor3 = Theme.Paper.Raised,
+					BackgroundTransparency = if row.mode == "later" then 0.5 else 0,
 					AutoButtonColor = row.mode ~= "later",
 					Text = "",
 					[OnEvent("Activated")] = function()
@@ -211,8 +211,8 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 							Size = UDim2.new(0, 36, 1, 0),
 							BackgroundTransparency = 1,
 							Text = style.glyph,
-							FontFace = Theme.Fonts.Heading,
-							TextSize = 26,
+							FontFace = Theme.Fonts.Display,
+							TextSize = Theme.TextSize.Large,
 							TextColor3 = style.color,
 						}),
 						s:New("TextLabel")({
@@ -221,10 +221,10 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 							BackgroundTransparency = 1,
 							RichText = true,
 							TextTruncate = Enum.TextTruncate.AtEnd,
-							Text = `<font color="#9A9DA8">{tag}</font>  {title}{suffix}`,
+							Text = `<font color="{Theme.hex(Theme.Paper.TextMuted)}">{tag}</font>  {title}{suffix}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if row.mode == "later" then Theme.Colors.TextMuted else Theme.Colors.Text,
+							TextColor3 = if row.mode == "later" then Theme.Paper.TextMuted else Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 					},
@@ -248,7 +248,7 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "quest.nothing"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -282,11 +282,11 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		scope:New("Frame")({
 			Name = "Portrait",
 			Size = UDim2.fromOffset(PORTRAIT.X, PORTRAIT.Y),
-			BackgroundColor3 = Theme.Colors.Background,
+			BackgroundColor3 = Theme.Paper.Sunken,
 			ClipsDescendants = true,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
-				scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 3 }),
+				scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 3 }),
 				preview.frame,
 			},
 		}),
@@ -299,9 +299,9 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 				local d = use(def)
 				return if d then Text.get(use, d.nameKey) else ""
 			end),
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Title,
-			TextColor3 = Theme.Colors.Gold,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		}),
@@ -316,7 +316,7 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("TextLabel")({
@@ -331,7 +331,7 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 		}),

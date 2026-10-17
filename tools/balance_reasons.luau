@@ -97,6 +97,13 @@ return {
 		{ path = "Data/Recipes" },
 		{ path = "Data/Shops" },
 		{ path = "Data/SkillCurves" },
+		-- S137 (DESIGN-18 §5, §9): the shared ladder of the weapon pools and the pool version of every class (the rest of
+		-- the pool files are ids, names and buying orders)
+		{ path = "Data/SkillPools/init", pick = { "LADDER", "COMMON_LADDER" }, omit = { "byClass" } },
+		{ path = "Data/SkillPools/Cleric", pick = { "version" } },
+		{ path = "Data/SkillPools/Hunter", pick = { "version" } },
+		{ path = "Data/SkillPools/Mage", pick = { "version" } },
+		{ path = "Data/SkillPools/Warrior", pick = { "version" } },
 		{ path = "Data/Skills/Cleric" },
 		{ path = "Data/Skills/Hunter" },
 		{ path = "Data/Skills/Mage" },
@@ -123,6 +130,7 @@ return {
 		"AutoPotion",
 		"AutoGrind",
 		"Reroll", -- S134j: bonus reroll at the smith
+		"SkillPools", -- S137: the lock after a weapon pool switch in combat
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -157,6 +165,8 @@ return {
 		["Data/BossMotions"] = "wygląd", -- S117: poses, effects and shakes of boss attacks, roars, deaths
 		["Data/UiArt"] = "generowane", -- S119: interface picture registry (tools/icons/import_ui.py)
 		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
+		["Data/UiPalette"] = "wygląd", -- S135: interface colours (parchment and iron) and their contrast pairs
+		["Data/UiWindows"] = "wygląd", -- S135: which windows already use the parchment look
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
@@ -5092,11 +5102,309 @@ return {
 				why = "new: Hunter's Marks per contract base 2 + 1 per 10 levels + 10 on every 10th (2 / 13 / 14 / 6 / 19 / 11 at L1 / 10 / 20 / 45 / 70 / 99, 738 over 1-99): 10-15 marks an hour of contracts of the own level (decade mean), the shop's value of that hour 6-13% of its gold (Balance.targetsS134k value)",
 			},
 		},
+		-- S137 (DESIGN-18): skill points per weapon pool instead of ranks from the level
+		["Progression:skillPoints.perLevel"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.1, owner 2026-10-15): one skill point per level in every weapon pool, one point = one rank, the old rank curve (Skills.rankAt) is the limit",
+			},
+		},
+		["Progression:skillPoints.bonus"] = {
+			{
+				session = "S137",
+				why = "new: +7 points in every pool (27 at 20, 107 at 100) so the reference builds of 1-20 keep the ranks of the old automatic curve (balance1_20.spec without ALLOWED_1_20_DIFFS, session rule 5): path skills cost skill points too and the base build needs 27 ranks at 19-20 (bonus 6 left 4 diffs, the Warrior base's Fortitude)",
+			},
+		},
+		["Progression:freeRespecLevel"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.2, owner 2026-10-15): below level 20 a rank refund and the full reset are free anywhere out of combat",
+			},
+		},
+		["Progression:rankRefundGold"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.1): from level 20 one rank back costs 10 x level gold (200 at 20, 1000 at 100), in town or at a dungeon gate",
+			},
+		},
+		["Skills/init:HOTBAR_SLOTS"] = {
+			{
+				session = "S137",
+				why = "10 -> 8 (DESIGN-18 §4.1, owner 2026-10-15): 8 slots per weapon pool, keys 1-8; migration 12 keeps the old bar's first 8 slots",
+			},
+		},
+		["Config:SkillPools.swapLock"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §4.1): a weapon pool switched in combat refuses casts for 2 s (no cooldown is reset by switching)",
+			},
+		},
+		["SkillPools/init:*"] = {
+			{
+				session = "S137",
+				why = "new module (DESIGN-18 §5): the shared ladder, school S1 1, A1 3, K1 6, O1 10, S2 15, P1 20, A2 26, K2 33, S3 40, P2 50, U 60, common C1 4, C2 12, C3 30, C4 45; asserted for classes past their transitional pools (S140-S145)",
+			},
+		},
+		["SkillPools/Cleric:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (light, hammer; transitional)" },
+		},
+		["SkillPools/Hunter:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (bow, crossbow; transitional)" },
+		},
+		["SkillPools/Mage:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional)" },
+		},
+		["SkillPools/Warrior:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (onehand, twohand; transitional)" },
+		},
 		["HuntShop:*"] = {
 			{
 				session = "S134k",
 				why = "new module: the Huntmaster's shop for Hunter's Marks: 5 potions of the level's quality 4 / 6 / 10 / 20 marks (50-175 gold a mark), 5 Return Stones 4, 2 Map Stones 16, Fortune blessings 6 / 14 / 30, essence 10 dust a week (8), 5 shards a week 45-69 (6 each), 1 crystal a week from 70 (15): 1-10% of 14 h of the band's essence; Hunter's Chest (Unique) 60 = 4.6-5.3 h of contracts, Heroic chest 200 once a week (the loot gives 11-13 Heroics a week at 14 h); title 200, frame 400",
 			},
+		},
+		-- S138 (DESIGN-18 §7): directions instead of the main path
+		["Paths/init:CAPSTONES_MAX"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): one capstone (row 8) per build set; the upgrade (row 11) only in the direction with it",
+			},
+		},
+		["Paths/init:MAIN_MIN_POINTS"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): the leading direction (title, stat plan, item weights, party sign) needs 12 ranks, the most of the class's directions (a tie goes to the lower order)",
+			},
+		},
+		["Paths/init:TEAM_FULL_POINTS"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7, 12 proposed): team nodes of rows 1-2 work in full from 6 ranks in their direction; 6 is the highest threshold that keeps 1-20 unchanged (the Scout reference builds hold 6 Scout ranks at level 20, where the old main path gave Spotting in full; 12 cut their L20 anchor DPS by 2.5 %, 4 frozen 1-20 rows)",
+			},
+		},
+		["Paths/init:SKILL_ROWS[1]"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): target rows of skill nodes (4 and 8); asserted for classes past their transitional pools (S140-S145)",
+			},
+		},
+		["Paths/init:SKILL_ROWS[2]"] = {
+			{ session = "S138", why = "new (DESIGN-18 §7): the second skill node row (8, the capstone row)" },
+		},
+		["ItemWeights:OTHER_POOL"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §0.9): a skill effect of a weapon pool other than the equipped weapon's counts half in the item score (the model scores without a pool, so every effect in full as before)",
+			},
+		},
+		["SkillPools/Cleric:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Hunter:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Warrior:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		-- S140 (DESIGN-18 §6.1, §7): the Mage's fire pool, common skills and directions
+		["Skills/Mage:[flameWave]*"] = {
+			{ session = "S140", why = "new (K1 of the fire pool, 6): a cone that throws back and burns; rank 1 45 % (the fire variants' R1 at 20 in the S91 band), breakpoints in the R4 bands at 45-100" },
+		},
+		["Skills/Mage:[emberShield]*"] = {
+			{ session = "S140", why = "new (O1 of the fire pool, 10): a self shield like Shield of Faith (8-12 % HP + 10-15 % magic attack), melee attackers burn for 20-40 % magic attack; options are utility (R4_UTILITY)" },
+		},
+		["Skills/Mage:[pyroblast]*"] = {
+			{ session = "S140", why = "new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands" },
+		},
+		["Skills/Mage:[kindling]*"] = {
+			{ session = "S140", why = "new (P1 of the fire pool, 20): the burn stacks up to 3 (+2), +1..5 % fire damage per own stack (rank 1 low for the S91 band at 20)" },
+		},
+		["Skills/Mage:[combustion]*"] = {
+			{ session = "S140", why = "new (K2 of the fire pool, 33): 80-140 % hit, then the target's burn stacks burst for 60-105 % each within 6 studs, a 1 s stun at 3 stacks; 5B +14 / 10B cooldown x0.8 in the R4 bands" },
+		},
+		["Skills/Mage:[immolate]*"] = {
+			{ session = "S140", why = "new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands" },
+		},
+		["Skills/Mage:[phoenixHeart]*"] = {
+			{ session = "S140", why = "new (P2 of the fire pool, 50): a lethal blow leaves 1 HP once per 180 s, 2 s invulnerability, a 150-300 % magic attack fire blast" },
+		},
+		["Skills/Mage:[elementalist]*"] = {
+			{ session = "S140", why = "a 3-rank passive node of the Destroyer now (Paths/Mage destroyer_elementalist, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+		},
+		["Skills/Mage:[arcaneMind]*"] = {
+			{ session = "S140", why = "a 3-rank passive node of the Arcanist now (Paths/Mage arcanist_arcaneMind, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+		},
+		["Skills/Mage:[blink].unlock"] = { { session = "S140", why = "14 -> 4: C1 of the common ladder (DESIGN-18 §5)" } },
+		["Skills/Mage:[manaShield].unlock"] = {
+			{ session = "S140", why = "10 (row 1 of the Arcanist) -> 12: C2 of the common ladder, a common skill now" },
+		},
+		["Skills/Mage:[evocation].unlock"] = {
+			{ session = "S140", why = "48 (row 7 of the Arcanist) -> 30: C3 of the common ladder, a common skill now" },
+		},
+		["Skills/Mage:[focus].unlock"] = {
+			{ session = "S140", why = "80 (row 10 of the Destroyer) -> 45: C4 of the common ladder, a common passive now" },
+		},
+		["Skills/Mage:[meteor].unlock"] = { { session = "S140", why = "30 -> 26: A2 of the ladder (DESIGN-18 §5)" } },
+		["Skills/Mage:[meteor].values.dmg[1]"] = {
+			{ session = "S140", why = "98 -> 89.6: rank 1 at 26 one step below; the knot keeps rank 2 (level 30) at the old rank 1 (98)" },
+		},
+		["Skills/Mage:[meteor].breakpoints[5].b.values.dmg"] = {
+			{ session = "S140", why = "23 -> 20: rank 5 now at 42, R4 at 45 0.182 -> 0.158 (band 0.08-0.17)" },
+		},
+		["Skills/Mage:[meteorStorm].unlock"] = {
+			{ session = "S140", why = "48 (row 7 of the Destroyer) -> 60: U of the fire pool (Rain of Meteors)" },
+		},
+		["Skills/Mage:[meteorStorm].burnStacks"] = {
+			{ session = "S140", why = "new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon)" },
+		},
+		["Skills/Mage:[firebolt].values.dmg[1]"] = {
+			{ session = "S140", why = "128 -> 118 (ranks <= 20 x0.92 with the knot): the fire variants' R1 at 20 in the S91 band (2.6-2.65 of 2.73)" },
+		},
+		["Skills/Mage:[fireball].values.dmg[1]"] = {
+			{ session = "S140", why = "128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band" },
+		},
+		["SkillCurves:knots.firebolt.dmg[5]"] = {
+			{ session = "S140", why = "174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned" },
+		},
+		["SkillCurves:knots.fireball.dmg[5]"] = {
+			{ session = "S140", why = "173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned" },
+		},
+		["SkillCurves:knots.meteor.dmg[2]"] = {
+			{ session = "S140", why = "new: Meteor unlocks at 26, rank 2 (level 30) keeps the old rank 1 (98)" },
+		},
+		["Skills/init:ADAPTIVE.burnPct"] = {
+			{ session = "S140", why = "30 -> 15: the weapon's fire burn is one stack of the player's one burn (Logic/Burn) beside the fire pool's own burns; the fire variants' R1 at 20 in the S91 band" },
+		},
+		["Skills/init:BURN*"] = {
+			{ session = "S140", why = "new (Logic/Burn): a stack is 30 % of its hit over 4 s, 1 stack without Kindling, Combustion stuns at 3" },
+		},
+		["Skills/init:EMBER*"] = {
+			{ session = "S140", why = "new: Ember Shield burns one attacker at most once per 1 s" },
+		},
+		["Skills/init:PHOENIX*"] = { { session = "S140", why = "new: Phoenix Heart's fire blast reaches 8 studs" } },
+		["Combat:pvp.phoenix"] = {
+			{ session = "S140", why = "new: Phoenix Heart saves from a player's blow too, its invulnerability x0.5 then" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S140", why = "2 -> 3 (DESIGN-18 §10): the fire pool, the common skills and the directions' new nodes, a free reset" },
+		},
+		["Skills/Mage:[arcaneDischarge].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[arcaneTorrent].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[cataclysm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[elementalVortex].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[evocation].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[focus].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[manaShield].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[meteorStorm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Paths/Mage:[destroyer].reference*"] = {
+			{ session = "S140", why = "the moved skill nodes replaced (Elemental Echo, Elemental Surge), Elementalist 3 ranks, the points of 10-14 in the Arcanist's row 1 (Ward, Precision 2), Grit 2, no Tempered; the fire variant destroyerFire (staff, fire, ranks order)" },
+		},
+		["Paths/Mage:[arcanist].reference*"] = {
+			{ session = "S140", why = "Arcane Ward and Quick Discharge for the moved skill nodes, Arcane Mind 3 ranks, Will 3 -> 1; the fire variant arcanistFire (runestaff, fire, ranks order)" },
+		},
+		["Paths/Mage:[destroyer].rows[1].nodes[destroyer_elementalist]*"] = {
+			{ session = "S140", why = "the skill node of Elementalist became a 3-rank passive node (elementDamage 3 / 9 / 15 = the old ranks 1 / 3 / 5)" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_meteorStorm]*"] = {
+			{ session = "S140", why = "Wrath of Elements left the Destroyer for the fire pool (U, Rain of Meteors)" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_echo]*"] = {
+			{ session = "S140", why = "new, one rank in place of the skill node: Elemental Vortex strikes once more for 100 % of a wave" },
+		},
+		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath]*"] = {
+			{ session = "S140", why = "Storm's Wrath shortens Elemental Vortex now (cooldown 12 s): 1.15-3.44 -> 0.3-0.9 s per enemy" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_focus]*"] = {
+			{ session = "S140", why = "Focus is the Mage's common C4 now" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_surge]*"] = {
+			{ session = "S140", why = "new, one rank in place of Focus: +3 % area damage on 2+ enemies" },
+		},
+		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].maxRank"] = {
+			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Elementalist's 3 ranks" },
+		},
+		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_manaShield]*"] = {
+			{ session = "S140", why = "Mana Shield is the Mage's common C2 now" },
+		},
+		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_ward]*"] = {
+			{ session = "S140", why = "new, one rank in place of Mana Shield: +3 % max HP (no mana or damage change: T-SK4 and 1-20 stay)" },
+		},
+		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_will].maxRank"] = {
+			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Arcane Mind's 3 ranks" },
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_evocation]*"] = {
+			{ session = "S140", why = "Evocation is the Mage's common C3 now" },
+		},
+		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_quickening]*"] = {
+			{ session = "S140", why = "new, one rank in place of Evocation: Arcane Discharge's cooldown x0.85" },
+		},
+		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_arcaneMind]*"] = {
+			{ session = "S140", why = "the skill node of Arcane Mind became a 3-rank passive node (the old ranks 1 / 3 / 5)" },
+		},
+		-- S141 (DESIGN-18 §6.1): the Mage's ice pool (Logic/Chill)
+		["Skills/Mage:[hailstorm]*"] = {
+			{ session = "S141", why = "new (A1 of the ice pool, 3): three waves on a 7-stud circle, each slows 30 % (waveEffects); rank 1 18 % a wave for the ice variants' R1 at 20 in the S91 band; 5B +7 / 10B +16 in the R4 bands, A options control" },
+		},
+		["Skills/Mage:[iceBarrier]*"] = {
+			{ session = "S141", why = "new (O1 of the ice pool, 10): Ember Shield's shield (8-12 % HP + 10-15 % magic attack), melee attackers slowed 40-55 % for 2 s; options are utility (R4_UTILITY)" },
+		},
+		["Skills/Mage:[glacialSpike]*"] = {
+			{ session = "S141", why = "new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control)" },
+		},
+		["Skills/Mage:[wintersGrip]*"] = {
+			{ session = "S141", why = "new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill)" },
+		},
+		["Skills/Mage:[frozenOrb]*"] = {
+			{ session = "S141", why = "new (A2 of the ice pool, 26): an orb flying 20 studs, 10 waves of 12-24 % in 5 studs every 0.4 s, a slow of up to 5 stacks of 8 %; 5B +2.5 / 10B +5 in the R4 bands, A options control and geometry" },
+		},
+		["Skills/Mage:[deepFreeze]*"] = {
+			{ session = "S141", why = "new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control)" },
+		},
+		["Skills/Mage:[shatter]*"] = {
+			{ session = "S141", why = "new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control)" },
+		},
+		["Skills/Mage:[iceBlood]*"] = {
+			{ session = "S141", why = "new (P2 of the ice pool, 50): 4-12 % less damage from slowed or frozen attackers (own reduction)" },
+		},
+		["Skills/Mage:[blizzard]*"] = {
+			{ session = "S141", why = "new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage)" },
+		},
+		["Skills/Mage:[iceShard].unlock"] = { { session = "S141", why = "6 -> 1: S1 of the ice pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[iceShard].values.dmg[1]"] = {
+			{ session = "S141", why = "119 -> 70 at level 1 (with the knots): beside the adaptive Magic Bolt the ice variants' R1 at 20 stays in the S91 band (2.69 of 2.73); ranks above 20 keep their values" },
+		},
+		["SkillCurves:knots.iceShard*"] = {
+			{ session = "S141", why = "Ice Shard unlocks at 1: rank 5 (level 17) 80 for the S91 band, rank 6 (level 21) keeps the old rank 5 (182.7); the old knot of rank 4 goes" },
+		},
+		["Skills/Mage:[frostNova].unlock"] = { { session = "S141", why = "18 -> 6: K1 of the ice pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[frostNova].values.dmg[1]"] = {
+			{ session = "S141", why = "120 -> 90: rank 1 at 6 below the old rank 1; the knot keeps rank 4 (level 18) at the old 120" },
+		},
+		["Skills/Mage:[frostNova].values.freeze*"] = {
+			{ session = "S141", why = "1.5-2.5 -> 1-2 s (session plan): the freeze comes at 6 now, Winter's Grip and Deep Freeze add more" },
+		},
+		["Skills/Mage:[frostNova].effects[1].duration*"] = {
+			{ session = "S141", why = "1.5-2.5 -> 1-2 s with values.freeze (the effect's own pair)" },
+		},
+		["Skills/Mage:[frostNova].cost"] = { { session = "S141", why = "45 -> 40: a K1 at 6 (Flame Wave's cost)" } },
+		["Skills/Mage:[frostNova].cooldown"] = { { session = "S141", why = "18 -> 16: a K1 at 6 (near Flame Wave's 14)" } },
+		["SkillCurves:knots.frostNova*"] = {
+			{ session = "S141", why = "new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2" },
+		},
+		["Skills/init:CHILL*"] = {
+			{ session = "S141", why = "new (Logic/Chill): Winter's Grip freezes at 4 counted hits (the counter lasts 5 s), Deep Chill +10 % for 4 s, Ice Barrier slows 2 s at most once per 1 s per attacker" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S141", why = "3 -> 4 (DESIGN-18 §10): the ice pool, a free reset" },
+		},
+		["Paths/Mage:[destroyer].reference[destroyerIce]*"] = {
+			{ session = "S141", why = "new: the Destroyer with an ice weapon (staff, ice, the ice pool alone; rank order, area B options)" },
+		},
+		["Paths/Mage:[arcanist].reference[arcanistIce]*"] = {
+			{ session = "S141", why = "new: the Arcanist with an ice weapon (runestaff, ice, the ice pool alone; rank order, B options)" },
 		},
 	} :: { [string]: { Reason } },
 }

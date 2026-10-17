@@ -132,7 +132,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					Size = UDim2.new(1, 0, 0, 58),
 					AutoButtonColor = false,
 					Text = "",
-					BackgroundColor3 = if isSelected then Theme.Colors.PanelHover else Theme.Colors.PanelRaised,
+					BackgroundColor3 = if isSelected then Theme.Paper.Hover else Theme.Paper.Raised,
 					BackgroundTransparency = 0.2,
 					[Fusion.OnEvent("Activated")] = function()
 						Sounds.play("click")
@@ -140,7 +140,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					end,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-						s:New("UIStroke")({ Color = Theme.Colors.Gold, Transparency = if isSelected then 0 else 1 }),
+						s:New("UIStroke")({ Color = Theme.Paper.Border, Transparency = if isSelected then 0 else 1 }),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(10, 4),
 							Size = UDim2.new(1, -20, 0, 26),
@@ -155,7 +155,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 								else "✉ "}{subject(use, parcel, props.ResolveArgs)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -171,7 +171,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 							}),
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 					} :: any,
@@ -187,7 +187,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "mail.empty"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -228,7 +228,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("TextLabel")({
@@ -238,9 +238,9 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					BackgroundTransparency = 1,
 					Text = subject(use, parcel, props.ResolveArgs),
 					TextWrapped = true,
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Large,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("TextLabel")({
@@ -251,7 +251,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					Visible = parcel.gold > 0,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				-- S125: Dragon Shards and a timed title (rankings, events)
@@ -263,7 +263,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					Visible = (parcel.shards or 0) > 0,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("TextLabel")({
@@ -276,7 +276,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				-- S129: Arena Tokens and cosmetics (events)
@@ -288,7 +288,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					Visible = (parcel.tokens or 0) > 0,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("TextLabel")({
@@ -301,7 +301,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				s:New("Frame")({
@@ -410,7 +410,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.fromScale(1, 0),
 			Size = UDim2.new(0.55, -6, 1, -56),
-			BackgroundColor3 = Theme.Colors.Panel,
+			BackgroundColor3 = Theme.Paper.Surface,
 			BackgroundTransparency = 0.3,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -457,7 +457,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Right,
 		}),
 	}

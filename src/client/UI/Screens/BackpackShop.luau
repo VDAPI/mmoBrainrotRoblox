@@ -51,7 +51,7 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 				Name = def.id,
 				LayoutOrder = i,
 				Size = UDim2.new(1, 0, 0, 70),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = 0.4,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -72,7 +72,7 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					scope:New("TextLabel")({
@@ -93,13 +93,16 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 							if def.level > 1 then
 								local ok = (use(level) or 1) >= def.level
 								local text = Text.get(use, "tooltip.requiresLevel", { level = def.level })
-								table.insert(parts, if ok then text else `<font color="#CC5248">{text}</font>`)
+								table.insert(
+									parts,
+									if ok then text else `<font color="{Theme.hex(Theme.Paper.Danger)}">{text}</font>`
+								)
 							end
 							return table.concat(parts, " · ")
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					Button(scope, {
@@ -145,7 +148,7 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
-			ScrollBarImageColor3 = Theme.Colors.GoldDim,
+			ScrollBarImageColor3 = Theme.Paper.Rule,
 			[Children] = {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),

@@ -514,7 +514,7 @@ end)
 
 T.describe("Tourney T6: the save", function()
 	T.it("character.tourney from the template and reconcile, without a migration", function()
-		T.expect(AccountSchema.CURRENT).toBe(11) -- S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts
+		T.expect(AccountSchema.CURRENT).toBe(12) -- S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts; S137: 12 = skill points
 		local fresh = AccountSchema.characterTemplate()
 		T.expect((fresh :: any).tourney).toEqual({ played = 0, won = 0, best = 0 })
 		local old: any = AccountSchema.accountTemplate()

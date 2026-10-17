@@ -48,7 +48,7 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 		BackgroundTransparency = 1,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Paper.Text,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.new(1, 0, 0, 20),
@@ -81,7 +81,7 @@ local function card(
 		Name = `Day{n}`,
 		LayoutOrder = n,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if use(isToday) then Theme.Colors.PanelRaised else Theme.Colors.Panel
+			return if use(isToday) then Theme.Paper.Raised else Theme.Paper.Surface
 		end),
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(done) and not use(isToday) then 0.55 else 0.05
@@ -91,7 +91,7 @@ local function card(
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = scope:Computed(function(use): Color3
-					return if use(isToday) then Theme.Colors.GoldBright else Theme.Colors.Border
+					return if use(isToday) then Theme.Brass.Frame else Theme.Paper.Rule
 				end),
 				Thickness = scope:Tween(
 					scope:Computed(function(use): number
@@ -124,9 +124,9 @@ local function card(
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = scope:Computed(function(use): Color3
 					if use(isToday) then
-						return Theme.Colors.GoldBright
+						return Theme.Paper.Heading
 					end
-					return if use(done) then Theme.Colors.TextMuted else Theme.Colors.Parchment
+					return if use(done) then Theme.Paper.TextMuted else Theme.Paper.Text
 				end),
 			}),
 			QuestRewards(scope, {
@@ -145,8 +145,8 @@ local function card(
 						local className = if class then Text.get(use, class.nameKey) else classId
 						return `{CHEST_GLYPH} {Text.get(use, "login.chest", { class = className })}`
 					end),
-					TextColor3 = Theme.Colors.GoldBright,
-					TextSize = 14,
+					TextColor3 = Theme.Paper.Heading,
+					TextSize = Theme.TextSize.Small,
 				}) :: any
 				else nil,
 		},
@@ -236,14 +236,14 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				Text = scope:Computed(function(use): string
 					return `{Text.get(use, "login.title")} · {Text.get(use, "login.streak", { day = use(status).day })}`
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			label(scope, {
 				LayoutOrder = 2,
 				Text = Text.T(scope, "login.reset"),
-				TextColor3 = Theme.Colors.Warning,
+				TextColor3 = Theme.Paper.Warning,
 				Visible = scope:Computed(function(use): boolean
 					return use(status).resets
 				end),
@@ -289,7 +289,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				AutomaticSize = Enum.AutomaticSize.X,
 				Text = Text.T(s, "login.got"),
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 		}
 		if got.gold > 0 then
@@ -317,8 +317,8 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 							BackgroundTransparency = 1,
 							Text = Format.number(got.gold),
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 16,
-							TextColor3 = Theme.Colors.Parchment,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.Text,
 						}),
 					},
 				})
@@ -378,7 +378,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 			label(scope, {
 				LayoutOrder = 2,
 				Text = Text.T(scope, "login.mailed"),
-				TextColor3 = Theme.Colors.Warning,
+				TextColor3 = Theme.Paper.Warning,
 				Visible = scope:Computed(function(use): boolean
 					local got = use(result)
 					return got ~= nil and got.mailed == true
@@ -393,7 +393,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 						level = if type(L) == "number" then L else 1,
 					})
 				end),
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				Visible = claimable,
 			}),
 			label(scope, {
@@ -409,7 +409,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 					return `{Text.get(use, "login.claimed")} {tomorrow}\n{Text.get(use, "login.timer", { time = left })}`
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				Visible = claimed,
 			}),
 			Button(scope, {

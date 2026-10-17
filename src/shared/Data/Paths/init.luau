@@ -1,5 +1,7 @@
 --!strict
 -- Class paths (ROZWOJ 2.2-2.4, 3.1, S57): the shared row layout and every path of every class. Rules in Logic/Paths.
+-- S138 (DESIGN-18 §7): paths are mixable "directions": no main path and no path weapon; every row of every direction
+-- opens with its level and the ranks in the lower rows of that direction; one capstone per build set.
 
 local Classes = require("./Classes")
 local Cleric = require("@self/Cleric")
@@ -20,8 +22,8 @@ export type RowKind = Types.RowKind
 export type RowDef = Types.RowDef
 
 -- ROZWOJ 2.2: row levels and the ranks needed in the lower rows of the same path. Rows 3, 6, 9 pick 1 of 2 nodes,
--- row 8 is the capstone (one node, rank 1), row 11 its upgrade (one node, rank 2). In a class with two paths rows
--- 2, 5 and 10 get one extra node (twoPathExtra).
+-- row 8 is the capstone (one node, rank 1; S138: CAPSTONES_MAX per set), row 11 its upgrade (one node, rank 2; only in
+-- the direction with the capstone). In a class with two paths rows 2, 5 and 10 get one extra node (twoPathExtra).
 local ROWS: { RowDef } = {
 	{ level = 10, need = 0, kind = "normal" },
 	{ level = 15, need = 2, kind = "normal", twoPathExtra = true },
@@ -71,8 +73,17 @@ end
 
 return table.freeze({
 	ROWS = ROWS,
-	DIP_ROWS = 2, -- rows open in every path (ROZWOJ 2.2); the rest only in the main path
-	DIP_SCALE = 1 / 3, -- team effect strength of rows 1..DIP_ROWS outside the main path
+	DIP_ROWS = 2, -- S138: rows whose team nodes work at DIP_SCALE in a direction with < TEAM_FULL_POINTS ranks
+	DIP_SCALE = 1 / 3, -- team effect strength of those nodes (node.dipScale overrides it)
+	-- S138 (DESIGN-18 §7): capstones (row kind "capstone") bought in at most this many directions of a set
+	CAPSTONES_MAX = 1,
+	-- the leading direction (Logic/Paths.mainOf: title, stat plan, item weights, party sign) needs this many ranks
+	MAIN_MIN_POINTS = 12,
+	-- from this many ranks in a direction its team nodes of rows 1..DIP_ROWS work in full
+	TEAM_FULL_POINTS = 6,
+	-- the target rows of "skill" nodes (at most one each per direction); tests/paths.spec asserts it only for classes
+	-- whose pools are no longer transitional (Data/SkillPools.<Class>.transitional)
+	SKILL_ROWS = table.freeze({ 4, 8 }),
 	-- ROZWOJ 7.3: party auras from path nodes (PartyAuraService, Logic/Paths.inAura).
 	AURA = table.freeze({
 		radius = 30, -- "circle" default

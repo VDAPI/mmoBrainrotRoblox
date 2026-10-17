@@ -69,9 +69,9 @@ local function ReadyCheck(scope: Scope): Instance
 		for i, member in c.members do
 			local mark = if member.answer == true then "✓" elseif member.answer == false then "✗" else "…"
 			local color = if member.answer == true
-				then Theme.Colors.Success
-				elseif member.answer == false then Theme.Colors.Danger
-				else Theme.Colors.TextMuted
+				then Theme.Paper.Success
+				elseif member.answer == false then Theme.Paper.Danger
+				else Theme.Paper.TextMuted
 			table.insert(
 				out,
 				s:New("TextLabel")({
@@ -95,8 +95,8 @@ local function ReadyCheck(scope: Scope): Instance
 		Position = UDim2.fromScale(0.5, 0.42),
 		Size = UDim2.fromOffset(380, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Paper.Surface,
+		BackgroundTransparency = 0,
 		Active = true,
 		Visible = scope:Computed(function(use): boolean
 			return type(use(check)) == "table"
@@ -106,7 +106,7 @@ local function ReadyCheck(scope: Scope): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thick,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Paper.Border,
 			}),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, Theme.Padding.Medium),
@@ -128,9 +128,9 @@ local function ReadyCheck(scope: Scope): Instance
 					return Text.get(use, "dungeon.ready.title", { boss = boss })
 				end),
 				TextWrapped = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			scope:New("Frame")({
 				LayoutOrder = 2,
@@ -146,7 +146,7 @@ local function ReadyCheck(scope: Scope): Instance
 			scope:New("Frame")({
 				LayoutOrder = 3,
 				Size = UDim2.new(1, 0, 0, 8),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Paper.Sunken,
 				Visible = scope:Computed(function(use): boolean
 					return not use(going)
 				end),
@@ -162,7 +162,7 @@ local function ReadyCheck(scope: Scope): Instance
 							local left = math.clamp(c.endsAt - use(now), 0, total)
 							return UDim2.fromScale(left / total, 1)
 						end),
-						BackgroundColor3 = Theme.Colors.Gold,
+						BackgroundColor3 = Theme.Brass.Frame,
 						[Children] = { scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }) },
 					}),
 				},
@@ -179,7 +179,7 @@ local function ReadyCheck(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 			}),
 			scope:New("Frame")({
 				LayoutOrder = 5,

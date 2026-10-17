@@ -112,7 +112,7 @@ local function Sell(scope: Scope): Instance
 			Text = text,
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = color or Theme.Colors.Text,
+			TextColor3 = color or Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
@@ -198,7 +198,7 @@ local function Sell(scope: Scope): Instance
 							local name = ItemText.get(use, current.id, current.up, current.el)
 							return if current.n > 1 then `{name} x{current.n}` else name
 						end),
-						Theme.Colors.GoldBright
+						Theme.Paper.Heading
 					),
 					TextInput(scope, {
 						LayoutOrder = 2,
@@ -228,7 +228,7 @@ local function Sell(scope: Scope): Instance
 								gold = if p then Format.number(Auction.deposit(p)) else "-",
 							})
 						end),
-						Theme.Colors.TextMuted
+						Theme.Paper.TextMuted
 					),
 					line(
 						5,
@@ -240,7 +240,7 @@ local function Sell(scope: Scope): Instance
 								gold = if p then Format.number(Auction.fee(p, pct)) else "-",
 							})
 						end),
-						Theme.Colors.TextMuted
+						Theme.Paper.TextMuted
 					),
 					line(
 						6,
@@ -252,7 +252,7 @@ local function Sell(scope: Scope): Instance
 									else "-",
 							})
 						end),
-						Theme.Colors.Success
+						Theme.Paper.Success
 					),
 					line(
 						7,
@@ -270,7 +270,7 @@ local function Sell(scope: Scope): Instance
 								total = Format.number(avg * current.n),
 							})
 						end),
-						Theme.Colors.Accent
+						Theme.Paper.Link
 					),
 					line(
 						8,
@@ -281,7 +281,7 @@ local function Sell(scope: Scope): Instance
 							end
 							return ""
 						end),
-						Theme.Colors.Danger
+						Theme.Paper.Danger
 					),
 					Button(scope, {
 						LayoutOrder = 9,
@@ -307,7 +307,7 @@ local function Sell(scope: Scope): Instance
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
@@ -322,7 +322,7 @@ local function Sell(scope: Scope): Instance
 						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},

@@ -24,16 +24,16 @@ export type Props = {}
 
 local WIDTH = 360
 local ROW = 30
-local ALLY = Color3.fromHex("#B8C85A")
-local ENEMY = Color3.fromHex("#C2352E")
+local ALLY = Theme.Glyph.Ally
+local ENEMY = Theme.Glyph.Enemy
 
 local function hpColor(pct: number): Color3
 	if pct > 0.5 then
-		return Theme.Colors.Success
+		return Theme.Iron.Success
 	elseif pct > 0.2 then
-		return Theme.Colors.Warning
+		return Theme.Iron.Warning
 	end
-	return Theme.Colors.Hp
+	return Theme.Resource.Hp
 end
 
 local function row(s: Scope, order: number, f: any, accent: Color3): Instance
@@ -49,7 +49,7 @@ local function row(s: Scope, order: number, f: any, accent: Color3): Instance
 			ArtIcon(s, {
 				Key = UiArt.classEmblem(f.class),
 				Glyph = if class then class.icon else "◆",
-				GlyphColor = if out then Theme.Colors.TextMuted else accent,
+				GlyphColor = if out then Theme.Iron.TextMuted else accent,
 				Size = UDim2.fromOffset(22, 22),
 				Position = UDim2.fromOffset(0, 4),
 				Transparency = if out then 0.5 else 0,
@@ -61,14 +61,14 @@ local function row(s: Scope, order: number, f: any, accent: Color3): Instance
 				Text = if out then `{f.name} · {Text.now("arena.team.outMark")}` else f.name,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = if out then Theme.Colors.TextMuted else Theme.Colors.Text,
+				TextColor3 = if out then Theme.Iron.TextMuted else Theme.Iron.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			s:New("Frame")({
 				Position = UDim2.fromOffset(26, 19),
 				Size = UDim2.new(1, -26, 0, 7),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					s:New("Frame")({
@@ -92,7 +92,7 @@ local function column(s: Scope, order: number, titleKey: string, list: { any }, 
 			Text = Text.now(titleKey),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = accent,
+			TextColor3 = Theme.readable(Theme.hex(accent), "hud"),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 	}
@@ -149,7 +149,7 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 						s:New("Frame")({
 							LayoutOrder = n + (side - 1) * 10,
 							Size = UDim2.fromOffset(14, 14),
-							BackgroundColor3 = if f.out then Theme.Colors.TextMuted else hpColor(pct),
+							BackgroundColor3 = if f.out then Theme.Iron.Rule else hpColor(pct),
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 								s:New("UIStroke")({ Color = if side == 1 then ALLY else ENEMY, Thickness = 2 }),
@@ -165,7 +165,7 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 							Size = UDim2.fromOffset(16, 14),
 							BackgroundTransparency = 1,
 							Text = "⚔",
-							TextColor3 = Theme.Colors.Gold,
+							TextColor3 = Theme.Iron.Heading,
 							TextSize = Theme.TextSize.Small,
 						})
 					)
@@ -198,8 +198,8 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 		AutomaticSize = scope:Computed(function(use): Enum.AutomaticSize
 			return if use(Device.Touch) and not use(open) then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(teams) ~= nil
 		end),
@@ -210,7 +210,7 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 		end,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 6),

@@ -49,7 +49,7 @@ local Definitions: { [string]: Definition } = {
 
 	-- Stats and progression
 	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer?" } }, -- ({ str, dex, int, vit }, buildSlot?)
-	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints, fromLevel) to nearby players; S59 adds fromLevel
+	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints, fromLevel, skillPoints) to nearby players; S59 adds fromLevel, S137 skillPoints
 
 	-- Combat
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
@@ -87,14 +87,18 @@ local Definitions: { [string]: Definition } = {
 	Announce = { kind = "event", dir = "s2c" }, -- (key, args) banner + system chat for everyone
 
 	-- Skills (S05)
-	SetHotbar = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "string?" } }, -- (slot 1..10, skillId?)
-	PutOnBar = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (skillId, slot 1..10?) S56
+	SetHotbar = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "string?" } }, -- (slot 1..8, skillId?) the active pool's bar
+	PutOnBar = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (skillId, slot 1..8?) S56
 	AckRework = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- S56: the rework notice was seen
-	-- Class paths (S57, PathService); every handler returns (ok, errKey?)
+	-- Skill points and weapon pools (S137, DESIGN-18 §11; PathService); every handler returns (ok, errKey?)
+	AllocateSkills = { kind = "function", dir = "c2s", rate = 2, args = { "string", "table" } }, -- (poolId, { [skillId] = +n })
+	RefundSkillRank = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } }, -- (poolId, skillId)
+	ResetSkills = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- S138: the full reset (ranks and nodes; scroll)
+	SetPoolBar = { kind = "function", dir = "c2s", rate = 10, args = { "string", "integer", "string?" } }, -- (poolId, slot 1..8, skillId?)
+	-- Class paths (S57, PathService; S138: directions, no main path); every handler returns (ok, errKey?)
 	BuyNode = { kind = "function", dir = "c2s", rate = 8, args = { "string" } }, -- (nodeId)
 	RefundNode = { kind = "function", dir = "c2s", rate = 8, args = { "string" } }, -- (nodeId)
-	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node
-	ChooseMainPath = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (pathId)
+	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node (S138: gold from L20)
 	ChooseBreakpoint = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer", "string" } }, -- (skillId, 5|10, "a"|"b")
 	SwitchBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: build set 1 <-> 2 (ROZWOJ 2.9)
 	CopyBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: copy the active set onto the other one

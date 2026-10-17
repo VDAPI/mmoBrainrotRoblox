@@ -70,7 +70,7 @@ local function LoginButton(scope: Scope, props: Props): Instance
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Colors.GoldBright,
+						Color = Theme.Brass.Bright,
 						Thickness = Theme.Stroke.Thick,
 						Transparency = scope:Computed(function(use): number
 							return 0.6 * use(pulse)

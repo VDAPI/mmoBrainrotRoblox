@@ -77,7 +77,7 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Body,
 			TextColor3 = scope:Computed(function(use): Color3
-				return if use(ok) then Theme.Colors.Success else Theme.Colors.Danger
+				return if use(ok) then Theme.Paper.Success else Theme.Paper.Danger
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
@@ -112,7 +112,7 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
 		}),
@@ -141,9 +141,9 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 				local n = use(name)
 				return if t ~= "" and n ~= "" then Text.get(use, "guild.found.preview", { tag = t, name = n }) else ""
 			end),
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		requirement(5, "guild.found.level", { level = Rules.createLevel }, levelOk),

@@ -116,7 +116,8 @@ local SHOPS: { [string]: ShopDef } = {
 		id = "teacher",
 		entries = {
 			{ item = "scroll_oblivion", pricePerLevel = 500 }, -- DESIGN §4.3
-			-- S57 (ROZWOJ 2.10): Scroll of a New Path, only for classes with paths
+			-- S57 (ROZWOJ 2.10); S138 (DESIGN-18 §3.2): Scroll of Skill Renewal, the full reset (ranks and nodes) from 20;
+			-- needsPaths stays true: every class has directions now, so every class is offered it
 			{ item = "scroll_skillreset", pricePerLevel = 400, level = 20, needsPaths = true },
 		},
 	},

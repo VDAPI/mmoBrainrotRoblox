@@ -1,6 +1,7 @@
 --!strict
--- Scrolls (DESIGN §13): Oblivion (refund stat points; the active build set only, ROZWOJ 2.9), New Path (S57, ROZWOJ 2.10: never used up here; the client
--- opens the main path choice and PathService takes the scroll on ChooseMainPath), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
+-- Scrolls (DESIGN §13): Oblivion (refund stat points; the active build set only, ROZWOJ 2.9), Skill Renewal (S138,
+-- DESIGN-18 §3.2: PathService.FullReset, every pool's ranks and the active set's nodes; used up only on success and
+-- never with respecFree or below Progression.freeRespecLevel; the client asks first), Unbinding (pick a bound item — UnbindItem — and unbind it, uniques too). Scrolls of Protection are consumed by the
 -- blacksmith; using one from the backpack only explains that (S134j: the Stone of Transmutation too).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,17 +10,17 @@ local Shared = ReplicatedStorage.Shared
 
 local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
-local Paths = require(Shared.Logic.Paths)
 local Types = require(Shared.Types)
 
 local ScrollService = {
 	Name = "ScrollService",
-	Deps = { "PlayerStateService", "InventoryService", "LevelService" },
+	Deps = { "PlayerStateService", "InventoryService", "LevelService", "PathService" },
 }
 
 local PlayerStateService: any
 local InventoryService: any
 local LevelService: any
+local PathService: any
 
 local function useScroll(player: Player, index: number, item: Types.ItemInstance): (boolean, string?)
 	local def = Items.get(item.id)
@@ -30,12 +31,8 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 		Net.Fire(player, "Toast", "scroll.oblivion.done", nil, "success")
 		return true, nil
 	elseif target == "skillreset" then
-		-- S57: Scroll of a New Path. Not used up on use; ChooseMainPath takes it.
-		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
-		if not char or not Paths.classHasPaths(char.class) then
-			return false, "paths.soon"
-		end
-		return false, "paths.scroll.hint"
+		-- S138: Scroll of Skill Renewal = the full reset (PathService takes the scroll when it pays)
+		return PathService.FullReset(player)
 	elseif target == "protection" then
 		return false, "scroll.protection.hint"
 	elseif target == "transmute" then
@@ -81,6 +78,7 @@ function ScrollService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	InventoryService = registry.Get("InventoryService")
 	LevelService = registry.Get("LevelService")
+	PathService = registry.Get("PathService")
 	InventoryService.UseHandlers.scroll = useScroll
 end
 

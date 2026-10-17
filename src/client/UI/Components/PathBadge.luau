@@ -1,7 +1,7 @@
 --!strict
--- The main path sign of a party member (S60): the same mark as the path tab of the skills window (S59), the weapon
+-- The leading direction sign of a party member (S60; S138: Paths.mainOf, PartyService): the same mark as the path tab of the skills window (S59), the weapon
 -- icon of Paths.iconWeapon, else the first letter of the path name, on a small Panel-coloured plate. nil for a
--- member without a main path or with a path that has no PathDef.
+-- member without a leading direction or with a path that has no PathDef.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -46,13 +46,13 @@ function PathBadge.new(scope: Scope, use: Fusion.Use, pathId: any, size: number,
 			Text = firstLetter(Text.get(use, def.nameKey)),
 			TextScaled = true,
 			FontFace = Theme.Fonts.BodyBold,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Brass.Bright,
 		})
 	return scope:New("Frame")({
 		Name = "PathBadge",
 		Position = position,
 		Size = UDim2.fromOffset(size, size),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface, -- S135: a small iron badge on every surface
 		ZIndex = 3,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),

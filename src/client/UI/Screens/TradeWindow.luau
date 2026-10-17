@@ -118,14 +118,14 @@ local function column(
 		Name = sideKey,
 		Position = position,
 		Size = UDim2.fromOffset(4 * (SLOT + 6) + 16, 330),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.4,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
 				Thickness = 3,
 				Color = scope:Computed(function(use): Color3
-					return if use(accepted) then Theme.Colors.Success else Theme.Colors.Border
+					return if use(accepted) then Theme.Paper.Success else Theme.Paper.Border
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -137,9 +137,9 @@ local function column(
 				Size = UDim2.new(1, 0, 0, 32),
 				BackgroundTransparency = 1,
 				Text = title,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			grid(scope, sideKey, editable),
@@ -167,7 +167,7 @@ local function column(
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 			if editable
@@ -199,7 +199,7 @@ local function column(
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 		},
@@ -262,7 +262,7 @@ local function TradeWindow(scope: Scope): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.Warning,
+			TextColor3 = Theme.Paper.Warning,
 		}),
 		scope:New("Frame")({
 			Name = "Actions",

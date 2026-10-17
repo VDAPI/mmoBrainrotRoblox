@@ -14,6 +14,7 @@ return Build.class("Hunter", "energy", "phys", {
 	-- Base (ROZWOJ 11.2): eight skills, two passives.
 	{
 		id = "aimedShot",
+		pool = "common", -- S137 (DESIGN-18 §4.2)
 		unlock = 1,
 		maxLevel = 10,
 		type = "projectile",
@@ -31,6 +32,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "doubleShot",
+		pool = "common",
 		unlock = 3,
 		maxLevel = 10,
 		type = "projectile",
@@ -53,6 +55,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "disengage",
+		pool = "common",
 		unlock = 6,
 		maxLevel = 10,
 		type = "blink",
@@ -84,6 +87,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "arrowRain",
+		pool = "common",
 		unlock = 10,
 		maxLevel = 10,
 		type = "circleTarget",
@@ -103,6 +107,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "hawkEye",
+		pool = "common",
 		unlock = 14,
 		maxLevel = 5,
 		type = "passive",
@@ -112,6 +117,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "venomArrow",
+		pool = "common",
 		unlock = 18,
 		maxLevel = 10,
 		type = "projectile",
@@ -131,6 +137,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "volley",
+		pool = "common",
 		unlock = 30,
 		maxLevel = 10,
 		type = "cone",
@@ -149,6 +156,7 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "predatorInstinct",
+		pool = "common",
 		unlock = 45,
 		maxLevel = 5,
 		type = "passive",

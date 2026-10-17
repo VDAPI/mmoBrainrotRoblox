@@ -10,6 +10,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local SelectableSlot = require(script.Parent.Parent.Parent.Components.SelectableSlot)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
+local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -111,7 +112,7 @@ function Picker.sparks(holder: Instance?, duration: number)
 			spark.AnchorPoint = Vector2.new(0.5, 0.5)
 			spark.Position = UDim2.fromScale(0.5, 0.55)
 			spark.Size = UDim2.fromOffset(6, 6)
-			spark.BackgroundColor3 = Color3.fromHex("#FFD36B")
+			spark.BackgroundColor3 = Theme.Brass.Bright
 			spark.BorderSizePixel = 0
 			spark.ZIndex = 5
 			spark.Parent = holder

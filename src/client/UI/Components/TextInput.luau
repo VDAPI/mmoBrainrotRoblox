@@ -21,6 +21,7 @@ export type Props = {
 	LayoutOrder: UsedAs<number>?,
 	OnSubmit: ((text: string) -> ())?,
 	Name: string?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local function clampLength(text: string, max: number?): string
@@ -36,6 +37,7 @@ local function clampLength(text: string, max: number?): string
 end
 
 local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
+	local roles = Theme.surface(props.Surface)
 	local focused = scope:Value(false)
 	local hasError = scope:Computed(function(use): boolean
 		local err = use(props.Error)
@@ -54,14 +56,14 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 			scope:New("TextBox")({
 				Name = "Box",
 				Size = UDim2.new(1, 0, 0, Theme.Size.InputHeight),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = roles.Sunken,
 				ClearTextOnFocus = false,
 				Text = props.Text,
 				PlaceholderText = props.Placeholder,
-				PlaceholderColor3 = Theme.Colors.TextMuted,
+				PlaceholderColor3 = roles.TextMuted,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = roles.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 
 				[Out("Text")] = props.Text,
@@ -88,9 +90,9 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 						Thickness = Theme.Stroke.Normal,
 						Color = scope:Computed(function(use): Color3
 							if use(hasError) then
-								return Theme.Colors.Danger
+								return roles.Danger
 							end
-							return if use(focused) then Theme.Colors.Gold else Theme.Colors.Border
+							return if use(focused) then roles.Heading else roles.Border
 						end),
 					}),
 					scope:New("UIPadding")({
@@ -110,7 +112,7 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.DangerHover,
+				TextColor3 = roles.Danger,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),

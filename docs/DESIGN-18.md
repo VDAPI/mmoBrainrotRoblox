@@ -78,8 +78,9 @@ Cytaty z odpowiedzi na propozycję:
 
 ## 3. Model docelowy w skrócie
 
-1. **Punkty umiejętności** (ręczne): `pointsAt(L) = L × perLevel` (1 punkt na poziom: 20 na 20., 45 na 45., 100 na
-   100.; właściciel 2026-10-15). 1 punkt = 1 ranga. Ranga r umiejętności jest dostępna od poziomu `Skills.rankLevel(skill, r)` (dzisiejsza
+1. **Punkty umiejętności** (ręczne): `pointsAt(L) = L × perLevel + bonus` (1 punkt na poziom, właściciel 2026-10-15;
+   S137: `bonus` 7 w każdej puli, czyli 27 na 20., 52 na 45., 107 na 100., żeby buildy wzorcowe 1–20 zachowały rangi
+   automatu, zasada 0.3). 1 punkt = 1 ranga. Ranga r umiejętności jest dostępna od poziomu `Skills.rankLevel(skill, r)` (dzisiejsza
    krzywa staje się **limitem**, nie automatem).
 2. **Zestaw broni = pula.** Założona broń wybiera pulę klasy (Mag: żywioł broni; Wojownik: jedno- albo dwuręczna;
    Łowca: łuk albo kusza; Kapłan: berło/kostur albo buzdygan/kiścień). Pula = 11 umiejętności szkoły + 4 wspólne klasy.
@@ -99,13 +100,15 @@ Cytaty z odpowiedzi na propozycję:
 
 | Pole | Start | Znaczenie |
 |---|---|---|
-| `skillPoints.perLevel` | 1 | punkt na każdy poziom (poziom 1 daje 1) |
+| `skillPoints.perLevel` | 1 | punkt na każdy poziom |
+| `skillPoints.bonus` | 7 | S137: punkty startowe każdej puli (umiejętności ścieżek też kosztują punkty; bez nich buildy wzorcowe 1–20 tracą rangi) |
 | `freeRespecLevel` | 20 | poniżej: zwrot rang i reset za darmo, wszędzie poza walką |
 | `rankRefundGold` | 10 | od 20.: zwrot 1 rangi kosztuje `10 × poziom` złota (w mieście lub ≤ 52 st. od bramy lochu) |
 
-- Uzasadnienie: na 20. poziomie limity rang puli dają razem 28 rang (§5), a punktów jest 20, więc wybór zaczyna się
-  wcześnie; dawny automat dawał 19 rang na 20. Na 100. pula ma 12 aktywnych × 10 + 3 pasywki × 5 = 135 rang; 100
-  punktów wystarcza na 8 aktywnych na pasku i wszystkie pasywki (95) oraz ok. 5 na resztę: każdy maksuje to, co nosi.
+- Uzasadnienie: na 20. poziomie limity rang puli dają razem 28 rang (§5) plus rangi umiejętności ścieżek, a punktów
+  jest 27, więc wybór zaczyna się wcześnie; dawny automat dawał 19 rang podstawy na 20. Na 100. pula ma 12 aktywnych × 10
+  + 3 pasywki × 5 = 135 rang; 107 punktów wystarcza na 8 aktywnych na pasku i wszystkie pasywki (95) oraz ok. 12 na
+  resztę: każdy maksuje to, co nosi.
 - Każda pula liczy punkty osobno: `free(pool) = pointsAt(L) − Σ rang tej puli`. Mag ma więc trzy pełne buildy (ogień,
   lód, błyskawica), a zmiana broni nigdy nie zostawia go bez rang.
 - Pasywki: rangi 1–5, aktywne 1–10 (jak dziś). Limit rangi = `Skills.rankAt(skill, L)` (dzisiejsza krzywa, `RANKS` i
@@ -187,7 +190,7 @@ Szkoła (każda pula, 9 aktywnych + 2 pasywki):
 Wspólne klasy (w każdej puli tej klasy): `C1` 4 (ruch / znak klasy), `C2` 12, `C3` 30 (aktywne), `C4` 45 (pasywka).
 
 - Na 20. poziomie pula ma 7 aktywnych i 1 pasywkę (S1, A1, C1, K1, O1, C2, S2, P1); limity rang na 20. dają razem 28
-  rang przy 22 punktach. Od 40. aktywnych jest więcej niż 8 miejsc na pasku (12 + do 2 z kierunków).
+  rang przy 27 punktach (S137: `bonus` 7). Od 40. aktywnych jest więcej niż 8 miejsc na pasku (12 + do 2 z kierunków).
 - Test (`tests/skillpools.spec.luau`): każda pula klasy bez `transitional` ma dokładnie jedną umiejętność na każdy kod
   `LADDER` z `unlock` równym poziomowi kodu (pasywki `type = "passive"`, `maxLevel = 5`), wspólne klasy dokładnie po
   jednej na `COMMON_LADDER`; analogiczna rola ma ten sam poziom we wszystkich pulach wszystkich klas.
@@ -226,6 +229,16 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   `cataclysm` (rząd 8), oba `adaptive` (żywioł puli); Arkanista (jeden cel, mana) z Wyładowaniem Arkanów
   `arcaneDischarge` (rząd 4) i Strumieniem Arkanów `arcaneTorrent` (rząd 8). Mistrz Żywiołów `elementalist` i Tajemny
   Umysł `arcaneMind` stają się węzłami `passive` kierunków (bez `SkillDef`, wartości przeniesione).
+- S140 (stan): pula Ognia i wspólne Maga według tabeli, nowe mechaniki jak wyżej (DECYZJE S140: jedno podpalenie
+  gracza na celu ze stosami, podpalenie broni 15%, Fala Płomieni 5A szerszy stożek, Spopielenie 10A pewny krytyk
+  poniżej 50%, Serce Feniksa przed Aniołem Stróżem i także w PvP, odwet Osłony tylko na potworach). Kierunki: zamiast
+  Mistrza Żywiołów / Tajemnego Umysłu węzły `passive` 3 rang, w miejsce przeniesionych umiejętności Echo Żywiołów,
+  Przypływ Żywiołów, Tajemna Osłona (zamiast „Przepływu Many”), Szybkie Wyładowanie; Wytrwałość i Wola 2 rangi.
+- S141 (stan): pula Lodu według tabeli (Lodowy Odłamek S1 od 1, Lodowa Nova K1 od 6), mechaniki w `Logic/Chill`
+  (DECYZJE S141: licznik Chłodu Uścisku Zimy na trafieniach lodu w spowolnionych, próg 4; każde zamrożenie lodu na
+  bossie / Elicie II to Głęboki Chłód gracza (+10–18% obrażeń od niego), także Lodowej Novy; Włócznia ×1,5 / ×1,25,
+  Roztrzaskanie ×2 / ×1,6; Głęboki Mróz z wolniejszymi atakami na każdym; Bariera spowalnia tylko potwory; Lodowa Kula
+  to `circleTarget` z `travel`). Ognisty Pocisk zostaje wspólnym S1 do S142.
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia
@@ -308,9 +321,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   kierunku), jak dziś w ścieżce głównej. `ChooseMainPath`, `canChooseMain`, `freeUsed` i `PathState.main` znikają
   (S138; pola w zapisie czyści `Paths.cleanSet`, bez migracji).
 - **Jedno zwieńczenie na zestaw** (`Paths.CAPSTONES_MAX = 1`): rząd 8 (`capstone`) można kupić tylko w jednym
-  kierunku; ulepszenie (rząd 11) tylko w tym samym.
+  kierunku; ulepszenie (rząd 11) tylko w tym samym. Zwroty węzłów jak zwroty rang (§3.2: od 20. za złoto, w mieście
+  lub przy bramie; `ResetPaths` za sumę rang, za darmo z `respecFree`); pełny reset zwojem obejmuje węzły (S138).
 - **Bez broni kierunku:** `PathDef.weapon` przestaje blokować (zostaje jako podpowiedź ikony); wymóg broni ma tylko
-  węzeł (`node.weapon`, np. Blok z tarczą, szczęście Fortuny z relikwiarzem, Rzeź z dwuręczną).
+  węzeł (`node.weapon`, np. Blok z tarczą, szczęście Fortuny z relikwiarzem, Rzeź z dwuręczną; S138 dopisała wymóg tym
+  węzłom: szczęście Fortuny w rzędach 4–10 i Rzeź).
 - **Węzły `skill`:** najwyżej dwa na kierunek, w rzędach 4 i 8 (`Paths.SKILL_ROWS = { 4, 8 }`); dają umiejętność
   klasy, którą można włożyć na pasek każdej puli. Rangi tej umiejętności kupuje się punktami umiejętności **w każdej
   puli osobno** (jak wspólne). Do czasu sesji klasy dzisiejsze węzły `skill` w innych rzędach zostają (stan
@@ -321,8 +336,9 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   `Paths.MAIN_MIN_POINTS` (start 12); remis: niższe `order`. Zastępuje dzisiejsze `state.main` u wszystkich odbiorców:
   tytuł ścieżki (`Logic/Titles` `req.kind = "mainPath"`), „Rozdaj jak zaleca ścieżka” (`Paths.statPlan`), wagi
   przedmiotów (`ItemScore`, `itemWeights`), znak przy członku drużyny.
-- **Efekty drużynowe rzędów 1–2:** `DIP_SCALE` (1/3) działa, gdy kierunek ma mniej niż `Paths.TEAM_FULL_POINTS` (start
-  12) punktów; od 12 pełna siła.
+- **Efekty drużynowe rzędów 1–2:** `DIP_SCALE` (1/3) działa, gdy kierunek ma mniej niż `Paths.TEAM_FULL_POINTS`
+  punktów; od progu pełna siła. S138: próg 6 (nie 12): najwyższy, przy którym 1–20 się nie zmienia (zwiadowca buildów
+  wzorcowych ma 6 rang na 20., gdzie dawna ścieżka główna dawała Oznaczenie w pełni; DECYZJE S138).
 - Punkty talentów bez zmian: 1 na parzysty poziom (`Progression.pathPointsEvery = 2`, 50 na 100.). Test pokrycia
   (dziś 75–88% głównej + początków) zmienia się na: 50 punktów wystarcza na cały jeden kierunek ze zwieńczeniem i
   ulepszeniem, a nie wystarcza na dwa całe (S138).
@@ -362,7 +378,7 @@ respecFree = false, -- darmowy pełny reset (migracja, nowa wersja pul klasy)
 poolsVersion = 1,   -- Data/SkillPools/<Klasa>.version, z którą policzono rangi
 ```
 
-## 10. Migracja (S137, schemat = następny po `AccountSchema.CURRENT`; dziś 9 → 10, S133–S136 mogą przesunąć)
+## 10. Migracja (S137: schemat 11 → 12, `MIGRATIONS[12]`, `SkillPoints.migrate`)
 
 Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów (`buildOther` też):
 1. `ranks[poolId] = SkillPoints.legacy(classId, level, poolId, oldHotbar)`: dawna ranga z poziomu
@@ -391,8 +407,8 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   pasywki tylko z aktywnej puli i kierunków, zamiana pasków przy zmianie puli (nasłuch `EquipmentService.Changed`),
   koniec automatycznego wkładania przy awansie; `PassiveHook` cache unieważniany przy zmianie puli.
 - `LevelService`: zdarzenie `LevelUp` niesie też punkty umiejętności (`skillPts`), toast „+N punktów umiejętności”.
-- Nowy `SkillPointService` albo rozszerzenie `PathService` (S137 wybiera i zapisuje w DECYZJE; jeden serwis zmienia
-  `ranks`, `hotbar`, `bars`, `barPool`).
+- S137: rozszerzony `PathService` (miejsce edycji, zestawy, czyszczenie przy wczytaniu już tam są) zmienia `ranks`,
+  `bars`, `barPool`, `respecFree`; `hotbar` dalej przez `SkillService` (`PutOnBar`, `SetHotbar`, `SetSlot`).
 - Admin (`Data/AdminCommands`, `Admin/Character.luau`, `admin.usage.*`): `/skillrank <skillId> <ranga> [pula]` (bez
   punktów i limitu), `/skillmax [pula]` (kupuje jak gracz do limitu), `/skillreset` (darmowy reset), `/pool` (pokazuje
   aktywną pulę i punkty), `/respecfree` (ustawia flagę). `/path` znika w S138; `/node`, `/pathmax`, `/bp`, `/buildset`
@@ -416,14 +432,18 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   albo wolny punkt talentu (dzisiejsze `PathView.attention` rozszerzone).
 - Teksty: każdy `skill.<id>` dostaje `short` (≤ 90 znaków, jedno zdanie, bez liczb ponad jedną; test parytetu i
   długości); okno nie liczy niczego samo (dane z `Logic/SkillPoints`, `Logic/PathView`, `UI/SkillInfo`).
+- S139 (stan): `PathView.poolView` / `skillDetails` / `planned` z rezerwacją okna; pula przejściowa pokazuje
+  „Pozostałe” i „Z kierunków” nad pustą drabiną; telefon: dotknięcie kafelka otwiera arkusz (pierwsza sekcja to
+  `short`), kolumny ról stałej szerokości z ikonami (DECYZJE S139).
 
 ## 13. Balans
 
 - **Model** (`tests/SkillModel.luau`): build wzorcowy (`PathDef.reference`, typ `ReferenceBuild`) dostaje `ranks: {
   string }?` (kolejność kupowania rang; domyślnie `rotation`, potem pasywki) i pulę z `weapon`; `SkillModel.character(build,
   L)` kupuje rangi przez `SkillPoints.canBuy` / `apply` i talenty przez `Paths.canBuy` (bez `canChooseMain` od S138).
-- **1–20:** S137 dowodzi, że rangi buildów wzorcowych na L ≤ 20 są takie jak z automatu (22 punkty ≥ dawne 19–21
-  rang buildów; gdy nie, sesja podnosi `skillPoints` w danych z wpisem w księdze, aż fixture się nie zmieni).
+- **1–20:** S137 dowodzi, że rangi buildów wzorcowych na L ≤ 20 są takie jak z automatu: buildy potrzebują do 27–28
+  rang na 19.–20. (podstawa + umiejętności ścieżek), więc `skillPoints.bonus` = 7 (przy 6 zostawały 4 różnice fixture);
+  model kupuje rangi poziomu L jedną rezerwacją od zera w kolejności rotacja → pasywki → reszta puli.
 - **Nowe cele (S146 / S147, wiersze asertowane w `tests/balance.spec.luau`):**
   - R8 „kierunkowanie”: na 100. poziomie 8 aktywnych na pasku z rangą 10 i wszystkie pasywki puli mieszczą się w
     budżecie; maksymalnie 10 aktywnych z rangą 10 (więcej się nie da); na 45. budżet ≤ 75% sumy limitów puli.

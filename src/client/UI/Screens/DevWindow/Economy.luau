@@ -67,7 +67,7 @@ local function Economy(s: Dev.Scope): Instance
 	return Dev.column(s, {
 		Dev.header(s, 1, "dev.eco.blessings"),
 		Dev.row(s, 2, nil, {
-			Select(s, { Options = blessingOptions, Selected = blessing, Width = 300 }),
+			Select(s, { Surface = "iron", Options = blessingOptions, Selected = blessing, Width = 300 }),
 			Dev.button(s, Text.T(s, "dev.give"), function()
 				local id = Fusion.peek(blessing)
 				if id then
@@ -82,7 +82,7 @@ local function Economy(s: Dev.Scope): Instance
 		passRows :: any,
 		Dev.header(s, 20, "dev.eco.mail"),
 		Dev.row(s, 21, Text.T(s, "dev.eco.mailGold"), {
-			NumberInput(s, { Value = mailGold, Min = 1, Max = 1e9, Step = 1000 }),
+			NumberInput(s, { Surface = "iron", Value = mailGold, Min = 1, Max = 1e9, Step = 1000 }),
 			Dev.button(s, "▶", function()
 				Dev.run("mail", { "gold", tostring(Fusion.peek(mailGold)) })
 			end, 60),
@@ -100,7 +100,7 @@ local function Economy(s: Dev.Scope): Instance
 			Dev.button(s, "info", function()
 				Dev.run("guild", { "info" })
 			end, 80),
-			NumberInput(s, { Value = treasury, Min = 0, Max = 1e9, Step = 1000 }),
+			NumberInput(s, { Surface = "iron", Value = treasury, Min = 0, Max = 1e9, Step = 1000 }),
 			Dev.button(s, Text.T(s, "dev.eco.treasury"), function()
 				Dev.run("guild", { "treasury", tostring(Fusion.peek(treasury)) })
 			end, 140),
@@ -109,7 +109,7 @@ local function Economy(s: Dev.Scope): Instance
 			end, 160),
 		}),
 		Dev.row(s, 25, nil, {
-			NumberInput(s, { Value = bots, Min = 1, Max = 40 }),
+			NumberInput(s, { Surface = "iron", Value = bots, Min = 1, Max = 40 }),
 			Dev.button(s, Text.T(s, "dev.eco.bots"), function()
 				Dev.run("guild", { "bots", tostring(Fusion.peek(bots)) })
 			end, 140),
@@ -122,13 +122,25 @@ local function Economy(s: Dev.Scope): Instance
 			Dev.button(s, Text.T(s, "dev.eco.trade"), function()
 				Dev.run("tradetest")
 			end, 160),
-			NumberInput(s, { Value = partyCount, Min = 1, Max = 5, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
+			NumberInput(s, {
+				Surface = "iron",
+				Value = partyCount,
+				Min = 1,
+				Max = 5,
+				Size = UDim2.fromOffset(130, Theme.Size.MinTouch),
+			}),
 			Dev.button(s, Text.T(s, "dev.eco.partyloot"), function()
 				Dev.run("partyloot", { tostring(Fusion.peek(partyCount)) })
 			end, 160),
 		}),
 		Dev.row(s, 28, Text.T(s, "dev.eco.player"), {
-			Select(s, { Options = players, Selected = other, Width = 260, Placeholder = Text.now("dev.eco.nobody") }),
+			Select(s, {
+				Surface = "iron",
+				Options = players,
+				Selected = other,
+				Width = 260,
+				Placeholder = Text.now("dev.eco.nobody"),
+			}),
 			Dev.button(s, "/goto", function()
 				local name = Fusion.peek(other)
 				if name then

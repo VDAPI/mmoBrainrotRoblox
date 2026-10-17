@@ -4,6 +4,10 @@
 -- situational lines (families, classes, bosses, elites) count half; the trait counts once by its STATY 14 estimate;
 -- S134g: every skill effect of the context's class once by its Data/ItemEffects score (another class's: nothing).
 -- A main path with `itemWeights` multiplies the class weights. Pure.
+-- S138 (DESIGN-18 §0.9, §7): the path is the leading direction (Logic/Paths.mainOf) and an effect of a pool other than
+-- the context's `poolId` (the equipped weapon's, Logic/SkillPools.activePool) counts ItemWeights.OTHER_POOL; a context
+-- without poolId (the balance model) counts every effect in full. ItemScore.contextFor builds the context of a
+-- character the same way on the server and the client.
 
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
@@ -13,13 +17,21 @@ local ItemTraits = require("../Data/ItemTraits")
 local ItemWeights = require("../Data/ItemWeights")
 local Items = require("../Data/Items")
 local PathData = require("../Data/Paths")
+local Paths = require("./Paths")
 local Rarities = require("../Data/Rarities")
+local SkillPools = require("./SkillPools")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
 type Weight = ItemWeights.Weight
 
-export type Context = { classId: string, level: number?, pathId: string?, weights: ItemWeights.ItemWeights? }
+export type Context = {
+	classId: string,
+	level: number?,
+	pathId: string?,
+	weights: ItemWeights.ItemWeights?,
+	poolId: string?, -- S138: the equipped weapon's pool (effects of other pools count OTHER_POOL)
+}
 export type Breakdown = { dmg: number, surv: number, support: number, util: number, total: number }
 -- S68: change in % of each axis when the candidate replaces the listed items (percent points, rounded to 0.1).
 export type Delta = { dmg: number, surv: number, support: number }
@@ -33,6 +45,21 @@ local function contextOf(ctx: Context | string): Context
 		return { classId = ctx }
 	end
 	return ctx
+end
+
+-- S138: the score context of a character (class, level, the leading direction, the pool of the equipped weapon); the
+-- character is the save shape or a view of it (class, level, path, equipment).
+function ItemScore.contextFor(character: any): Context
+	local classId = if type(character) == "table" and type(character.class) == "string" then character.class else ""
+	if classId == "" then
+		return { classId = classId }
+	end
+	return {
+		classId = classId,
+		level = if type(character.level) == "number" then character.level else nil,
+		pathId = Paths.mainOf(character),
+		poolId = SkillPools.activePool(character),
+	}
 end
 
 -- A Data/Bonuses line id becomes the stat or hook its value lands under; anything else stays.
@@ -176,10 +203,12 @@ function ItemScore.breakdown(item: ItemInstance, context: Context | string): Bre
 		end
 	end
 	-- S134g: every skill effect of the context's class counts once by its estimate (Data/ItemEffects score: % of one
-	-- axis, like a trait); an effect of another class is worth nothing to this one
+	-- axis, like a trait); an effect of another class is worth nothing to this one. S138: an effect of another pool than
+	-- ctx.poolId counts OTHER_POOL.
 	for _, effect in ItemEffects.ofItem(item, classId) do
 		if effect.class == classId then
-			add(effect.score.axis, ItemScore.effectPoints(effect))
+			local other = ctx.poolId ~= nil and effect.pool ~= "common" and effect.pool ~= ctx.poolId
+			add(effect.score.axis, ItemScore.effectPoints(effect) * (if other then ItemWeights.OTHER_POOL else 1))
 		end
 	end
 	if stats.weapon then

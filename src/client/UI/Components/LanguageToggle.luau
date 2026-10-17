@@ -18,11 +18,13 @@ export type Props = {
 	Position: UsedAs<UDim2>?,
 	AnchorPoint: UsedAs<Vector2>?,
 	LayoutOrder: UsedAs<number>?,
+	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
 local BUTTON = Vector2.new(64, 44)
 
 local function LanguageToggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
+	local roles = Theme.surface(props.Surface)
 	local buttons = {}
 	-- Display order: Polish first (primary audience), then the rest of Config.Languages.
 	local order = { "pl" }
@@ -44,13 +46,13 @@ local function LanguageToggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 				Size = UDim2.fromOffset(BUTTON.X, BUTTON.Y),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(active) then Theme.Colors.PanelHover else Theme.Colors.Panel
+					return if use(active) then roles.Selected else roles.Raised
 				end),
 				Text = string.upper(lang),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(active) then Theme.Colors.Gold else Theme.Colors.TextMuted
+					return if use(active) then roles.Heading else roles.TextMuted
 				end),
 				[OnEvent("Activated")] = function()
 					if Fusion.peek(active) then
@@ -65,7 +67,7 @@ local function LanguageToggle(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						Thickness = Theme.Stroke.Normal,
-						Color = Theme.Colors.Gold,
+						Color = roles.Border,
 						Transparency = scope:Computed(function(use): number
 							return if use(active) then 0 else 0.6
 						end),

@@ -152,6 +152,19 @@ describe("AdminCommands", function()
 	end)
 end)
 
+describe("S138 path commands", function()
+	it("/path is gone with the main path; /node, /pathmax, /resetskills and /skillreset stay", function()
+		local pl = require("../src/shared/Data/Localization/pl") :: any
+		local en = require("../src/shared/Data/Localization/en") :: any
+		expect(AdminCommands.get("path")).toBeNil()
+		expect(pl["admin.usage.path"]).toBeNil()
+		expect(en["admin.usage.path"]).toBeNil()
+		for _, name in { "node", "pathmax", "resetskills", "skillreset", "bp", "buildset" } do
+			expect(AdminCommands.get(name) ~= nil).toBe(true)
+		end
+	end)
+end)
+
 describe("S101b /companion", function()
 	it("has its entry, its usage in both languages and its implementation", function()
 		local def = assert(AdminCommands.get("companion"), "companion")

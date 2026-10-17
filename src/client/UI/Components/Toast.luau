@@ -20,11 +20,12 @@ local MAX_VISIBLE = 4
 local DEFAULT_DURATION = 3.5
 local WIDTH = 520
 
+-- S135: an iron toast with a brass edge; the kind colours the edge (roles of the iron surface).
 local ACCENT: { [Kind]: Color3 } = {
-	info = Theme.Colors.Gold,
-	success = Theme.Colors.Success,
-	warning = Theme.Colors.Warning,
-	error = Theme.Colors.Danger,
+	info = Theme.Brass.Line,
+	success = Theme.Iron.Success,
+	warning = Theme.Iron.Warning,
+	error = Theme.Iron.Danger,
 }
 
 local moduleScope = Fusion.scoped(Fusion)
@@ -100,7 +101,7 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 					LayoutOrder = entry.id,
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundColor3 = Theme.Colors.Panel,
+					BackgroundColor3 = Theme.Iron.Surface,
 					BackgroundTransparency = innerScope:Computed(function(use): number
 						return 0.08 + use(animated) * 0.92
 					end),
@@ -126,7 +127,7 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 							RichText = true,
 							FontFace = Theme.Fonts.BodyMedium,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Iron.Text,
 							TextTransparency = animated,
 							TextWrapped = true,
 						}),

@@ -42,6 +42,8 @@ local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
+local Burn = require(Shared.Logic.Burn)
+local Chill = require(Shared.Logic.Chill)
 local Classes = require(Shared.Data.Classes)
 local Context = require(script.Parent.Parent.Skills.Context)
 local DamageText = require(Shared.Logic.DamageText)
@@ -443,6 +445,92 @@ function CombatService.DotBonus(player: Player, kind: string): number
 	return 0
 end
 
+-- S140 (Logic/Burn, DESIGN-18 §6.1): every fire burn of a player but the items' (fire skills, the adaptive weapon burn,
+-- Ember Shield's retaliation) is applied here: ONE entry per target (skillId Burn.KEY), `stacks` more stacks up to
+-- Burn.cap with Kindling's burnStacks hook, `tick` = the damage per tick of these stacks (Burn.tick / the element plan,
+-- dotPower already in it), accumulate without the stack cap (every hit is paid in full).
+function CombatService.ApplyBurn(player: Player, entity: any, tick: number, stacks: number, duration: number?): boolean
+	local cap = Burn.cap(hook(player, "burnStacks"))
+	local current = StatusEffectService.StacksFrom(entity, "burn", player, Burn.KEY)
+	return StatusEffectService.Apply(entity, "burn", {
+		duration = duration or SkillData.BURN.duration,
+		value = SkillData.BURN.pct,
+		source = player,
+		tickAmount = tick,
+		skillId = Burn.KEY,
+		accumulate = true,
+		uncapped = true,
+		maxStacks = cap,
+		stacks = Burn.add(current, stacks, cap),
+	})
+end
+
+-- S140 / S141: a melee blow of a monster on a player with an own retaliation effect answers the attacker, at most once
+-- per the effect's gap per attacker (its `ready`; monsters only, players are not answered): Ember Shield
+-- ("emberShield") burns it with one stack worth the effect's value % of the player's magic attack, Ice Barrier
+-- ("iceBarrier", Logic/Chill.barrierReady) slows it by the effect's value % for Data/Skills.CHILL.barrierSlow s (with
+-- an ice weapon also Frostbite).
+type Retaliation = {
+	ready: (last: number?, now: number) -> boolean,
+	act: (player: Player, attacker: any, value: number) -> (),
+}
+local RETALIATIONS: { [string]: Retaliation } = {
+	emberShield = {
+		ready = function(last: number?, now: number): boolean
+			return Traits.gapReady(last, now, SkillData.EMBER.gap)
+		end,
+		act = function(player: Player, attacker: any, pct: number)
+			local magAtk = StatService.GetValue(player, "magAtk")
+			local tick = Burn.tick(magAtk, 1, CombatService.DotBonus(player, "burn"), pct)
+			CombatService.ApplyBurn(player, attacker, tick, 1)
+		end,
+	},
+	iceBarrier = {
+		ready = Chill.barrierReady,
+		act = function(player: Player, attacker: any, pct: number)
+			local duration = SkillData.CHILL.barrierSlow
+			local slowed = StatusEffectService.Apply(attacker, "slow", {
+				duration = duration,
+				value = pct,
+				source = player,
+				skillId = "iceBarrier",
+				category = "enemySlow",
+			})
+			if slowed then
+				local _, element = weaponFx(player)
+				Elements.chill(elementServices, player, attacker, duration, element)
+			end
+		end,
+	},
+}
+local retaliateLast: { [Player]: { [string]: { [any]: number } } } = {}
+local function shieldRetaliate(player: Player, attacker: any)
+	local entity = EntityService.GetPlayerEntity(player)
+	if not entity then
+		return
+	end
+	for kind, spec in RETALIATIONS do
+		local value = StatusEffectService.Max(entity, kind)
+		if value > 0 then
+			local byKind = retaliateLast[player]
+			if not byKind then
+				byKind = {}
+				retaliateLast[player] = byKind
+			end
+			local last = byKind[kind]
+			if not last then
+				last = setmetatable({}, { __mode = "k" }) :: any
+				byKind[kind] = last
+			end
+			local t = os.clock()
+			if spec.ready(last[attacker], t) then
+				last[attacker] = t
+				spec.act(player, attacker, value)
+			end
+		end
+	end
+end
+
 -- S76: every poison of a player (skill, item trait, spread copy) is applied here. tickAmount already holds DotBonus
 -- (dotPower + poisonDamage); this adds poisonSlow (Numbing Venom: slowed while poisoned, enemySlow).
 function CombatService.ApplyPoison(player: Player, entity: any, options: any): boolean
@@ -606,6 +694,11 @@ local function offensiveMultiplier(player: Player, targetEntity: any): number
 	local frost = StatusEffectService.SourceValue(targetEntity, "frostbite", player)
 	if frost > 0 then
 		mult += (if pvp then frost * Combat.pvp.frostbite else frost) / 100
+	end
+	-- S141 (Logic/Chill): this player's Deep Chill (bosses and Elite II only)
+	local deep = StatusEffectService.SourceValue(targetEntity, "deepChill", player)
+	if deep > 0 then
+		mult += deep / 100
 	end
 	-- S72 Menace (ROZWOJ 10.3): +damagePerEnemy % per living monster within 10 studs, at most 5.
 	local perEnemy = hook(player, "damagePerEnemy")
@@ -1664,6 +1757,10 @@ local function monsterHitsPlayer(
 	if regular and monster:IsAlive() and monster.entity then
 		tryCounter(player, monster.entity, false)
 	end
+	-- S140 / S141: Ember Shield burns and Ice Barrier slows a monster that strikes in melee (landed or absorbed)
+	if delivery == "melee" and not result.dodged and monster:IsAlive() and monster.entity then
+		shieldRetaliate(player, monster.entity)
+	end
 	if taken > 0 then
 		local thorns = hook(player, "thorns")
 		if thorns > 0 and monster:IsAlive() then
@@ -2155,6 +2252,25 @@ function CombatService.Init(registry)
 		local guard = hook(player, "poisonedGuard")
 		return if guard > 0 and StatusEffectService.HasFrom(entity, "poison", player) then guard else 0
 	end)
+	-- S141 Ice Blood (Logic/Chill.bloodGuard): less damage from a slowed or frozen attacker (own).
+	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string, attacker: any?): number
+		local guard = hook(player, "iceBlood")
+		if guard <= 0 or not attacker then
+			return 0
+		end
+		local entity = if source == "monster"
+			then attacker.entity
+			elseif source == "pvp" then EntityService.GetPlayerEntity(attacker)
+			else nil
+		if not entity then
+			return 0
+		end
+		return Chill.bloodGuard(
+			guard,
+			StatusEffectService.Has(entity, "slow"),
+			StatusEffectService.Has(entity, "freeze")
+		)
+	end)
 	-- S72 Relentless: furyGuard % while Fury is full.
 
 	StatusEffectService.RegisterReductionProvider(function(player: Player, source: string): number
@@ -2315,6 +2431,7 @@ function CombatService.Start()
 		attackers[player] = nil
 		incoming[player] = nil
 		adminHooks[player] = nil
+		retaliateLast[player] = nil -- S140 / S141
 	end)
 
 	local sealPolled = 0

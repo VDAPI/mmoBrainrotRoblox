@@ -48,8 +48,8 @@ local function icon(
 		[Children] = {
 			scope:New("TextLabel")({
 				Size = UDim2.fromOffset(SIZE, SIZE),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.1,
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = Theme.HudAlpha,
 				Text = scope:Computed(function(use): string
 					return if use(art) then "" else glyph
 				end),
@@ -76,8 +76,8 @@ local function icon(
 					return Time.format(use(left))
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.Text,
 				TextStrokeTransparency = 0.3,
 			}),
 		},
@@ -117,7 +117,7 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 						s,
 						order,
 						"⚱",
-						Theme.Colors.Accent,
+						Theme.Iron.Link,
 						s:Computed(function(use2): number
 							return Time.remaining(expiresAt, use2(now))
 						end),

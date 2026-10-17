@@ -1,10 +1,14 @@
 --!strict
--- Details of the selection in the skills window (S59, ROZWOJ 4): a skill (rank, shape, cost and cooldown only from
--- UI/SkillInfo, element, the description at the current and the next rank with the chosen breakpoints and the path
--- nodes, the A / B cards of ranks 5 and 10) or a path node (kind, rank, its text now and at the next rank with
--- Paths.nodeArgs, one-third strength, weapon, why it does not work or why its row is closed). A skill node shows the
--- skill and under it only the node's own part. Details.actions lists the buttons (Buy, Refund, To bar) for the PC
--- panel and the phone sheet. Same lines on PC (panel) and phone (sheet, `touch`).
+-- Details of the selection in the skills window (S59, ROZWOJ 4).
+-- S139 (DESIGN-18 §12, owner: "more readable descriptions"): a skill shows fixed sections with headers, only from
+-- Logic/PathView.skillDetails and UI/SkillInfo: the name with its picture, role and type; "What it does" (the short
+-- sentence); "Rank N → N+1" (the rank, the limit, a table of the values now / after buying / the change in bold, "next
+-- rank from level X" while the limit holds it back); "Cost and cooldown"; "Breakpoints" (A / B cards); "Changes from
+-- directions" (the modify nodes of the class for this skill and their state); "From items" (S134g effects); "Full
+-- description" folded. A direction node (FIX 2026-10-14) shows its name, kind, the state (rank, one-third strength,
+-- node weapon, why it does not work or why its row is closed) and its text now and at the next rank (Paths.nodeArgs);
+-- a skill node shows its skill above. Details.actions lists the buttons ("+ rank", "- rank" with the gold price,
+-- "To bar"; Buy / Refund for a node) for the PC panel and the phone sheet. Same lines on PC (panel) and phone (sheet).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +21,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
@@ -26,7 +31,7 @@ local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 type SkillDef = SkillData.SkillDef
@@ -37,10 +42,14 @@ export type Resolved = {
 	node: PathData.PathNode?,
 	view: PathView.NodeView?,
 	row: PathView.RowView?,
+	details: PathView.SkillDetails?, -- S139: the skill in the shown pool (with the reservation)
 }
-export type ActionSpec = { key: string, enabled: boolean, reason: string?, run: () -> () } -- reason: shown text
+-- S139: `text` is the shown (localised) label; `reason` the shown reason of a disabled button.
+export type ActionSpec = { text: string, enabled: boolean, reason: string?, run: () -> (), secondary: boolean? }
 
 local Details = {}
+
+local NUMBER_W = 56 -- a number column of the rank table
 
 -- The selection as a skill and / or a node with its current view.
 function Details.resolve(use: Fusion.Use, ctx: Context.Ctx): Resolved
@@ -48,13 +57,21 @@ function Details.resolve(use: Fusion.Use, ctx: Context.Ctx): Resolved
 	if not sel then
 		return {}
 	end
+	local character = use(ctx.character)
+	local function withDetails(out: Resolved): Resolved
+		local skill = out.skill
+		local pool = use(ctx.pool)
+		if skill and character and pool then
+			out.details = PathView.skillDetails(character, pool, skill.id, use(ctx.reserve))
+		end
+		return out
+	end
 	if sel.kind == "skill" then
-		return { skill = SkillData.get(sel.id) }
+		return withDetails({ skill = SkillData.get(sel.id) })
 	elseif sel.kind == "path" then
 		return { path = PathData.get(sel.id) }
 	end
 	local node, def = Paths.findNode(sel.id)
-	local character = use(ctx.character)
 	if not node or not def or not character then
 		return {}
 	end
@@ -73,7 +90,7 @@ function Details.resolve(use: Fusion.Use, ctx: Context.Ctx): Resolved
 			end
 		end
 	end
-	return out
+	return withDetails(out)
 end
 
 -- The active skill the preview plays for the selection (a skill, a skill node, a modify node's skill).
@@ -87,7 +104,8 @@ function Details.previewSkill(use: Fusion.Use, ctx: Context.Ctx): string?
 	return if skill and skill.type ~= "passive" then skill.id else nil
 end
 
--- Buttons of the selection: Buy and Refund for a node, To bar for an available active.
+-- Buttons of the selection: Buy and Refund for a node; for a skill (S139) "+ rank" and "- rank" (the reservation, a
+-- bought rank back with its price) unless the selection is a node, and "To bar" for an active.
 function Details.actions(use: Fusion.Use, ctx: Context.Ctx, actions: Actions.Actions): { ActionSpec }
 	local out: { ActionSpec } = {}
 	local resolved = Details.resolve(use, ctx)
@@ -95,7 +113,7 @@ function Details.actions(use: Fusion.Use, ctx: Context.Ctx, actions: Actions.Act
 	if view then
 		local id = view.node.id
 		table.insert(out, {
-			key = "paths.node.buy",
+			text = Text.get(use, "paths.node.buy"),
 			enabled = view.canBuy,
 			reason = if view.buyReason then Text.get(use, view.buyReason) else nil,
 			run = function()
@@ -103,77 +121,112 @@ function Details.actions(use: Fusion.Use, ctx: Context.Ctx, actions: Actions.Act
 			end,
 		})
 		table.insert(out, {
-			key = "paths.node.refund",
+			text = Text.get(use, "paths.node.refund"),
 			enabled = view.canRefund,
 			reason = if view.refundReason then Text.get(use, view.refundReason) else nil,
 			run = function()
 				actions.refund(id)
 			end,
+			secondary = true,
 		})
 	end
-	local skill = resolved.skill
-	local character = use(ctx.character)
-	if skill and skill.type ~= "passive" and character and Paths.skillRank(character, skill.id) > 0 then
-		local slot = Actions.slotOf(use(ctx.hotbar), skill.id)
-		local skillId = skill.id
+	local d = resolved.details
+	if not d then
+		return out
+	end
+	local skillId = d.skillId
+	if not view then
 		table.insert(out, {
-			key = "skills.toBar",
-			enabled = slot == nil,
-			reason = if slot then Text.get(use, "skills.onBar", { slot = slot }) else nil,
+			text = Text.get(use, "skills.action.add"),
+			enabled = d.buyable,
+			reason = if d.buyReason then Text.get(use, d.buyReason) else nil,
+			run = function()
+				actions.addRank(skillId)
+			end,
+		})
+		table.insert(out, {
+			text = if d.refundCost > 0
+				then Text.get(use, "skills.action.refundGold", { gold = d.refundCost })
+				else Text.get(use, "skills.action.remove"),
+			enabled = d.refundable,
+			reason = if d.refundable then nil else Text.get(use, "skills.error.noRank"),
+			run = function()
+				actions.removeRank(skillId)
+			end,
+			secondary = true,
+		})
+	end
+	if not d.passive then
+		table.insert(out, {
+			text = Text.get(use, "skills.toBar"),
+			enabled = d.canBar and d.onBar == nil,
+			reason = if d.onBar
+				then Text.get(use, "skills.onBar", { slot = d.onBar })
+				elseif not d.canBar then Text.get(use, "skills.error.locked")
+				else nil,
 			run = function()
 				actions.toBar(skillId)
 			end,
+			secondary = true,
 		})
 	end
 	return out
 end
 
--- FIX 2026-10-14: the path's description (moved off the tree): name, role, description, weapon, title, main path
--- and the wrong-weapon warning.
+-- FIX 2026-10-14: the path's description (moved off the tree): name, role, description, title; S138: the ranks in the
+-- direction and whether it leads (no main path, no direction weapon).
 function Details.pathLines(
 	use: Fusion.Use,
 	character: Paths.Char,
 	def: PathData.PathDef,
 	weapons: Paths.WeaponTypes,
-	lang: string,
 	line: (text: string, color: Color3?, size: number?, font: Font?) -> (),
 	heading: (text: string) -> ()
 )
 	local view = PathView.path(character, def.id, weapons)
 	heading(Text.get(use, def.nameKey))
-	line(Text.get(use, `paths.role.{def.role}`), Theme.Colors.Parchment, nil, Theme.Fonts.BodyBold)
+	line(Text.get(use, `paths.role.{def.role}`), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
 	line(Text.get(use, def.descKey))
-	local weaponOk = view == nil or view.weaponOk
-	local weaponText = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
-	line(
-		`{if weaponOk then "✓" else "✗"} {weaponText}`,
-		if weaponOk then Theme.Colors.Success else Theme.Colors.DangerHover,
-		nil,
-		Theme.Fonts.BodyBold
-	)
-	if not weaponOk then
-		line(Text.get(use, "paths.weapon.missing"), Theme.Colors.DangerHover)
-	end
 	if view then
-		for _, row in view.rows do
-			if row.weaponBlocked then
-				line(Text.get(use, "paths.weapon.bar"), Theme.Colors.Warning)
-				break
-			end
-		end
+		line(Text.get(use, "skills.tree.points", { n = view.spent }), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
 	end
 	local title = TitleData.get(def.titleId)
 	if title then
-		line(Text.get(use, "paths.title", { title = Text.get(use, title.nameKey) }), Theme.Colors.Parchment)
+		line(Text.get(use, "paths.title", { title = Text.get(use, title.nameKey) }), Theme.Paper.Text)
 	end
-	local main = if view then view.main else nil
-	if main and main.reason == "paths.error.sameMain" then
-		line(Text.get(use, "paths.isMain"), Theme.Colors.Success, nil, Theme.Fonts.BodyBold)
-	elseif main and main.reason == "paths.error.mainLevel" then
-		line(Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }), Theme.Colors.TextMuted)
-	elseif main and not main.ok and main.reason then
-		line(Text.get(use, main.reason), Theme.Colors.TextMuted)
+	if view and view.leading then
+		line(Text.get(use, "paths.isMain"), Theme.Paper.Success, nil, Theme.Fonts.BodyBold)
+	else
+		line(Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS }), Theme.Paper.TextMuted)
 	end
+end
+
+-- S135: the numbers of a description in bold (RichText), so the values stand out in the ink text.
+function Details.boldNumbers(text: string): string
+	if string.find(text, "<", 1, true) then
+		return text -- already rich text: leave it alone
+	end
+	return (string.gsub(text, "(%d[%d%.,]*%%?)", "<b>%1</b>"))
+end
+
+-- S139: the label of a row of the rank table (a value field, the time of an effect, cost, cooldown).
+function Details.fieldLabel(use: Fusion.Use, field: string): string
+	local effect = string.match(field, "^(%w+)Duration$")
+	if effect and effect ~= "" then
+		return Text.get(use, "skills.field.effectDuration", { effect = Text.get(use, `effect.{effect}`) })
+	end
+	return Text.get(use, `skills.field.{field}`)
+end
+
+local function number(value: number?): string
+	return if value == nil then "—" else tostring(value)
+end
+
+local function signed(value: number?): string
+	if value == nil or value == 0 then
+		return if value == 0 then "0" else ""
+	end
+	return if value > 0 then `+{value}` else `−{-value}`
 end
 
 -- The detail lines of the selection (instances in the inner scope `s`).
@@ -199,8 +252,9 @@ function Details.lines(
 			TextWrapped = true,
 			FontFace = font or Theme.Fonts.Body,
 			TextSize = size or Theme.TextSize.Small,
-			TextColor3 = color or Theme.Colors.Text,
+			TextColor3 = color or Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			LineHeight = 1.15, -- S135
 		}))
 	end
 	-- S119: a line with a picture in front (skill heading, element) only while that picture is loaded; the plain
@@ -243,10 +297,53 @@ function Details.lines(
 		}))
 	end
 	local function heading(text: string)
-		line(text, Theme.Colors.Gold, Theme.TextSize.Large, Theme.Fonts.Heading)
+		line(text, Theme.Paper.Heading, Theme.TextSize.Large, Theme.Fonts.Display)
 	end
+	-- S135: sections as upper-case labels with a rule
 	local function sub(text: string)
-		line(text, Theme.Colors.Gold, nil, Theme.Fonts.BodyBold)
+		add(SectionLabel(s, { Text = text }))
+	end
+	-- S139: a row of the rank table: the label, then three number columns (the last one bold)
+	local function tableRow(cells: { string }, head: boolean, changeColor: Color3?)
+		local labels: { Instance } = {}
+		for i, text in cells do
+			local first = i == 1
+			table.insert(
+				labels,
+				s:New("TextLabel")({
+					LayoutOrder = i,
+					BackgroundTransparency = 1,
+					Size = if first
+						then UDim2.new(1, -3 * NUMBER_W, 0, 0)
+						else UDim2.fromOffset(NUMBER_W, Theme.TextSize.Small + 4),
+					AutomaticSize = if first then Enum.AutomaticSize.Y else Enum.AutomaticSize.None,
+					Text = text,
+					TextWrapped = first,
+					FontFace = if head
+						then Theme.Fonts.BodyBold
+						elseif i == 4 then Theme.Fonts.BodyBold
+						else Theme.Fonts.Body,
+					TextSize = if head then Theme.TextSize.Caption else Theme.TextSize.Small,
+					TextColor3 = if head
+						then Theme.Paper.Label
+						elseif i == 4 then changeColor or Theme.Paper.Text
+						else Theme.Paper.Text,
+					TextXAlignment = if first then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right,
+				})
+			)
+		end
+		add(s:New("Frame")({
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			[Children] = {
+				s:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				}),
+				labels :: any,
+			},
+		}))
 	end
 
 	local character = use(ctx.character)
@@ -256,93 +353,199 @@ function Details.lines(
 	local weapons = use(ctx.weapons)
 	local pathDef = resolved.path
 	if character and pathDef then
-		Details.pathLines(use, character, pathDef, weapons, lang, line, heading)
+		Details.pathLines(use, character, pathDef, weapons, line, heading)
 		return out
 	end
 	if not character or (not skill and not node) then
-		-- FIX 2026-10-14: a tree tab shows nothing until a node (or the path's name) is clicked
-		local tab = use(ctx.activeTab)
-		local onTree = tab ~= "base" and tab ~= "soon"
-		line(Text.get(use, if onTree then "paths.tree.hint" else "skills.dragHint"), Theme.Colors.TextMuted)
+		-- FIX 2026-10-14: a tree shows nothing until a tile (or the direction's name) is clicked
+		line(Text.get(use, if use(ctx.onPools) then "skills.tree.hint" else "paths.tree.hint"), Theme.Paper.TextMuted)
 		return out
 	end
 
-	if skill then
-		local rank = Paths.skillRank(character, skill.id)
-		local shown = math.max(1, rank)
-		local choices = if character.path then character.path.bp else nil
-		local opts: Skills.DescOpts = {
-			level = character.level,
-			choices = choices,
-			mods = Paths.skillMods(character, skill.id, weapons),
-			cdr = SkillInfo.cdr(use), -- S64
-			hooks = SkillInfo.hooks(use), -- S76: trapCost
-		}
+	local d = resolved.details
+	if skill and not d then
+		-- a skill of another pool than the shown one (the selection outlived a tab change)
+		heading(Text.get(use, skill.nameKey))
+		line(SkillInfo.short(use, skill, 1))
+		line(Text.get(use, "skills.error.pool"), Theme.Paper.TextMuted)
+	elseif skill and d then
+		local pool = use(ctx.pool)
+		local actual = if pool then Paths.skillRank(character, skill.id, pool) else 0
+		local shown = math.max(1, d.rank)
+		-- the name, the role and the type
 		pictureLine(
 			UiArt.skill(skill.id),
 			48,
 			Text.get(use, skill.nameKey),
-			Theme.Colors.Gold,
+			Theme.Paper.Heading,
 			Theme.TextSize.Large,
-			Theme.Fonts.Heading
+			Theme.Fonts.Display
 		)
-		local header = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
-		if skill.type == "passive" then
-			header ..= ` · {Text.get(use, "skills.passive")}`
+		local parts: { string } = {}
+		if d.column then
+			table.insert(parts, Text.get(use, `skills.role.{d.column}`))
 		end
-		line(header, Theme.Colors.Parchment, Theme.TextSize.Body, Theme.Fonts.BodyBold)
-		if rank <= 0 then
-			line(Text.get(use, "skills.unlockAt", { level = skill.unlock }), Theme.Colors.DangerHover)
+		table.insert(parts, Text.get(use, if d.passive then "skills.passive" else "skills.kind.active"))
+		if not d.passive and d.delivery then
+			table.insert(parts, Text.get(use, `skills.delivery.{d.delivery}`))
 		end
-		if skill.type ~= "passive" then
-			local shape = SkillInfo.shapeLine(use, skill, shown)
-			if shape ~= "" then
-				line(shape, Theme.Colors.Parchment)
+		line(table.concat(parts, " · "), Theme.Paper.Text, Theme.TextSize.Body, Theme.Fonts.BodyBold)
+		local fromPath = if d.path then PathData.get(d.path) else nil
+		if fromPath then
+			line(Text.get(use, "skills.detail.direction", { path = Text.get(use, fromPath.nameKey) }), Theme.Paper.Text)
+		end
+		if not d.active then
+			line(Text.get(use, "skills.detail.otherPool"), Theme.Paper.TextMuted)
+		end
+		if d.cap <= 0 then
+			line(Text.get(use, "skills.unlockAt", { level = skill.unlock }), Theme.Paper.Danger)
+		end
+		-- "What it does"
+		sub(Text.get(use, "skills.section.what"))
+		line(Details.boldNumbers(SkillInfo.short(use, skill, shown)), Theme.Paper.Text, Theme.TextSize.Body)
+		-- "Rank N → N+1"
+		sub(
+			if d.nextRank
+				then Text.get(use, "skills.section.rank", { rank = d.rank, next = d.nextRank })
+				else Text.get(use, "skills.section.rankMax", { rank = d.rank })
+		)
+		local rankText = Text.get(use, "skills.points.rank", { rank = d.rank, max = d.max, limit = d.cap })
+		if d.reserved > 0 then
+			rankText ..= ` {Text.get(use, "skills.points.reserved", { n = d.reserved })}`
+		end
+		line(rankText, Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
+		if d.rank <= 0 then
+			line(Text.get(use, "skills.detail.notLearned"), Theme.Paper.TextMuted)
+		end
+		if d.nextRank and d.nextLevel then
+			line(Text.get(use, "skills.nextRank", { rank = d.nextRank, level = d.nextLevel }), Theme.Paper.Warning)
+		elseif not d.nextRank then
+			line(Text.get(use, "skills.detail.maxRank"), Theme.Paper.TextMuted)
+		end
+		if #d.rows > 0 then
+			tableRow({
+				Text.get(use, "skills.table.field"),
+				Text.get(use, "skills.table.now"),
+				Text.get(use, "skills.table.after"),
+				Text.get(use, "skills.table.diff"),
+			}, true)
+			for _, entry in d.rows do
+				local diff = entry.diff
+				tableRow(
+					{ Details.fieldLabel(use, entry.field), number(entry.now), number(entry.after), signed(diff) },
+					false,
+					if diff and diff ~= 0 then Theme.Paper.Success else Theme.Paper.TextMuted
+				)
 			end
-			line(SkillInfo.costLine(use, skill, shown), Theme.Colors.TextMuted)
 		end
-		-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
-		local element = Skills.requiredElement(skill)
-		if element then
-			local weapon = use(ctx.weapon)
-			local fits = type(weapon) == "table" and weapon.element == element
-			pictureLine(
-				UiArt.element(element),
-				20,
-				Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
-				if fits then Color3.fromHex(Elements.COLORS[element]) else Theme.Colors.DangerHover
-			)
-		elseif skill.adaptive then
-			line(Text.get(use, "skill.adaptive"), Theme.Colors.Parchment)
-		end
-		if skill.path and rank > 0 then
-			local usable, err = Paths.skillUsable(character, skill.id, weapons)
-			if not usable and err then
-				line(Text.get(use, err), Theme.Colors.DangerHover)
-			end
-		end
-		sub(Text.get(use, if rank > 0 then "skills.current" else "skills.notLearned"))
-		line(Skills.formatDescription(skill, shown, lang, opts))
 		local heal = SkillInfo.healLine(use, skill, shown) -- S69
 		if heal ~= "" then
-			line(heal, Theme.Colors.Parchment)
+			line(heal, Theme.Paper.Text)
 		end
-		if rank < skill.maxLevel then
-			local nextRank = rank + 1
-			sub(Text.get(use, "skills.next"))
-			line(
-				Text.get(use, "skills.nextRank", { rank = nextRank, level = Skills.rankLevel(skill, nextRank) }),
-				Theme.Colors.TextMuted
-			)
-			line(Skills.formatDescription(skill, nextRank, lang, opts), Theme.Colors.Success)
+		-- "Cost and cooldown"
+		if table.find(d.sections, "cost") then
+			sub(Text.get(use, "skills.section.cost"))
+			local shape = SkillInfo.shapeLine(use, skill, shown)
+			if shape ~= "" then
+				line(shape, Theme.Paper.Text)
+			end
+			line(SkillInfo.costLine(use, skill, shown), Theme.Paper.Text)
+			-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
+			local element = Skills.requiredElement(skill)
+			if element then
+				local weapon = use(ctx.weapon)
+				local fits = type(weapon) == "table" and weapon.element == element
+				pictureLine(
+					UiArt.element(element),
+					20,
+					Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
+					if fits then Theme.readable(Elements.COLORS[element], "paper") else Theme.Paper.Danger
+				)
+			elseif skill.adaptive then
+				line(Text.get(use, "skill.adaptive"), Theme.Paper.Text)
+			end
+			if skill.path and actual > 0 then
+				local usable, err = Paths.skillUsable(character, skill.id, weapons)
+				if not usable and err then
+					line(Text.get(use, err), Theme.Paper.Danger)
+				end
+			end
 		end
-		for _, item in Breakpoints.new(s, use, ctx, actions, skill, rank, not touch) do
+		-- "Breakpoints" (the cards have their own section label)
+		for _, item in Breakpoints.new(s, use, ctx, actions, skill, Paths.bpRank(character, skill.id), not touch) do
 			add(item)
+		end
+		-- "Changes from directions"
+		if #d.mods > 0 then
+			sub(Text.get(use, "skills.section.directions"))
+			for _, mod in d.mods do
+				local args = {
+					node = Text.get(use, mod.nameKey),
+					path = Text.get(use, mod.pathNameKey),
+					rank = mod.rank,
+					max = mod.maxRank,
+					row = mod.row,
+				}
+				if mod.rank <= 0 then
+					line(`• {Text.get(use, "skills.mod.idle", args)}`, Theme.Paper.TextMuted)
+				elseif mod.active then
+					line(`• {Text.get(use, "skills.mod.active", args)}`, Theme.Paper.Success)
+				else
+					line(`• {Text.get(use, "skills.mod.inactive", args)}`, Theme.Paper.Warning)
+				end
+			end
+		end
+		-- "From items" (S134g, DESIGN-18 §0.9)
+		if #d.items > 0 then
+			sub(Text.get(use, "skills.section.items"))
+			for _, nameKey in d.items do
+				line(Text.get(use, "skills.item.line", { name = Text.get(use, nameKey) }), Theme.Paper.Success)
+			end
+		end
+		-- "Full description", folded
+		sub(Text.get(use, "skills.section.full"))
+		local open = use(ctx.fullOpen)
+		add(s:New("TextButton")({
+			Name = "FullToggle",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, if touch then Theme.Size.MinTouch else Theme.TextSize.Small + 10),
+			AutoButtonColor = false,
+			Text = Text.get(use, if open then "skills.full.hide" else "skills.full.show"),
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.Link,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			[OnEvent("Activated")] = function()
+				ctx.fullOpen:set(not Fusion.peek(ctx.fullOpen))
+			end,
+		}))
+		if open then
+			line(Details.boldNumbers(SkillInfo.full(use, skill, shown)))
 		end
 	end
 
 	if node and view then
 		local rank = view.rank
+		if skill then
+			-- the skill's node: only its own part (the skill text is above)
+			sub(Text.get(use, "skills.section.node"))
+			line(
+				Text.get(use, "paths.node.rank", { rank = rank, max = node.maxRank }),
+				Theme.Paper.Text,
+				nil,
+				Theme.Fonts.BodyBold
+			)
+		else
+			heading(Text.get(use, node.nameKey))
+			local kind = Text.get(use, `paths.kind.{node.kind}`)
+			local modified = node.modify and SkillData.get(node.modify.skill)
+			if modified then
+				kind ..= ` · {Text.get(use, "paths.node.modifies", { skill = Text.get(use, modified.nameKey) })}`
+			end
+			line(kind, Theme.Paper.Text, Theme.TextSize.Body, Theme.Fonts.BodyBold)
+			sub(Text.get(use, "skills.section.state"))
+			line(Text.get(use, "paths.node.rank", { rank = rank, max = node.maxRank }), Theme.Paper.Text)
+		end
 		-- FIX 2026-10-14: the row's place in the tree (the tree shows only its level)
 		if row then
 			local head = if row.need == 0
@@ -355,54 +558,42 @@ function Details.lines(
 			if row.kind ~= "normal" then
 				head ..= ` · {Text.get(use, `paths.row.{row.kind}`)}`
 			end
-			line(head, Theme.Colors.TextMuted, 14)
+			line(head, Theme.Paper.TextMuted, Theme.TextSize.Small)
 		end
-		if skill then
-			-- the skill's node: only its own part (the skill text is above)
+		if view.scale < 1 then
 			line(
-				Text.get(use, "paths.node.rank", { rank = rank, max = node.maxRank }),
-				Theme.Colors.Parchment,
-				nil,
-				Theme.Fonts.BodyBold
+				Text.get(
+					use,
+					"paths.node.dip",
+					{ pct = math.floor(view.scale * 100 + 0.5), n = Paths.TEAM_FULL_POINTS }
+				),
+				Theme.Paper.Warning
 			)
-		else
-			heading(Text.get(use, node.nameKey))
-			local kind = Text.get(use, `paths.kind.{node.kind}`)
-			local modified = node.modify and SkillData.get(node.modify.skill)
-			if modified then
-				kind ..= ` · {Text.get(use, "paths.node.modifies", { skill = Text.get(use, modified.nameKey) })}`
-			end
-			line(kind, Theme.Colors.Parchment, nil, Theme.Fonts.BodyBold)
-			line(Text.get(use, "paths.node.rank", { rank = rank, max = node.maxRank }), Theme.Colors.Parchment)
+		end
+		if node.weapon then
+			line(
+				Text.get(use, "paths.node.weapon", { weapons = PathView.weaponText(node.weapon, lang) }),
+				if view.weaponOk then Theme.Paper.Text else Theme.Paper.Danger
+			)
+		end
+		if rank > 0 and not view.active then
+			line(Text.get(use, "paths.node.inactive"), Theme.Paper.Danger)
+		end
+		if row and row.closedKey then
+			line(Text.get(use, row.closedKey, row.closedArgs), Theme.Paper.TextMuted)
+		end
+		if not skill then
 			if rank > 0 then
 				sub(Text.get(use, "paths.node.now"))
 				line(Text.get(use, node.descKey, Paths.nodeArgs(node, rank, view.scale)))
 				if rank < node.maxRank then
 					sub(Text.get(use, "paths.node.atRank", { rank = rank + 1 }))
-					line(Text.get(use, node.descKey, Paths.nodeArgs(node, rank + 1, view.scale)), Theme.Colors.Success)
+					line(Text.get(use, node.descKey, Paths.nodeArgs(node, rank + 1, view.scale)), Theme.Paper.Success)
 				end
 			else
 				sub(Text.get(use, "paths.node.atRank", { rank = 1 }))
-				line(Text.get(use, node.descKey, Paths.nodeArgs(node, 1, view.scale)), Theme.Colors.TextMuted)
+				line(Text.get(use, node.descKey, Paths.nodeArgs(node, 1, view.scale)), Theme.Paper.TextMuted)
 			end
-			if view.scale < 1 then
-				line(
-					Text.get(use, "paths.node.dip", { pct = math.floor(view.scale * 100 + 0.5) }),
-					Theme.Colors.Warning
-				)
-			end
-		end
-		if node.weapon then
-			line(
-				Text.get(use, "paths.node.weapon", { weapons = PathView.weaponText(node.weapon, lang) }),
-				if view.weaponOk then Theme.Colors.Parchment else Theme.Colors.DangerHover
-			)
-		end
-		if rank > 0 and not view.active then
-			line(Text.get(use, "paths.node.inactive"), Theme.Colors.DangerHover)
-		end
-		if row and row.closedKey then
-			line(Text.get(use, row.closedKey, row.closedArgs), Theme.Colors.TextMuted)
 		end
 	end
 
@@ -410,7 +601,7 @@ function Details.lines(
 	if touch then
 		for _, spec in Details.actions(use, ctx, actions) do
 			if not spec.enabled and spec.reason then
-				line(`{Text.get(use, spec.key)}: {spec.reason}`, Theme.Colors.TextMuted)
+				line(`{spec.text}: {spec.reason}`, Theme.Paper.TextMuted)
 			end
 		end
 	end

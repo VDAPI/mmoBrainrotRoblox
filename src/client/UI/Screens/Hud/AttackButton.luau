@@ -34,18 +34,18 @@ local function AttackButton(scope: Scope, props: Props): Instance
 		Visible = Device.Touch,
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
-			return if use(pressed) then Theme.Colors.AccentPressed else Theme.Colors.Danger
+			return if use(pressed) then Theme.Iron.Accent else Theme.Paper.Danger -- S136: dark red under light text
 		end),
 		BackgroundTransparency = 0.1,
 		Text = Text.T(scope, "combat.attack"),
-		FontFace = Theme.Fonts.Heading,
+		FontFace = Theme.Fonts.Display,
 		TextSize = scope:Computed(function(use): number
 			return if use(artShown) then Theme.TextSize.Small else Theme.TextSize.Large
 		end),
 		TextYAlignment = scope:Computed(function(use): Enum.TextYAlignment
 			return if use(artShown) then Enum.TextYAlignment.Bottom else Enum.TextYAlignment.Center
 		end),
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		[OnEvent("MouseButton1Down")] = function()
 			pressed:set(true)
 		end,
@@ -66,7 +66,7 @@ local function AttackButton(scope: Scope, props: Props): Instance
 			}),
 			ArtIcon.Image(scope, {
 				Key = ART,
-				Tint = Theme.Colors.Text,
+				Tint = Theme.Iron.Text,
 				Size = UDim2.fromScale(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.4),
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -74,7 +74,7 @@ local function AttackButton(scope: Scope, props: Props): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Thick,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Brass.Line,
 			}),
 		},
 	})

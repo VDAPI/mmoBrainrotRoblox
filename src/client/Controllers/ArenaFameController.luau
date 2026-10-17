@@ -78,7 +78,7 @@ local function face(scope: Scope, record: Fusion.Value<any>, mode: Fusion.Value<
 					Size = UDim2.new(0.94, 0, 0, 30),
 					Text = Text.get(use, "arena.hof.empty"),
 					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextSize = 20,
 				})
 			)
@@ -94,8 +94,8 @@ local function face(scope: Scope, record: Fusion.Value<any>, mode: Fusion.Value<
 					Position = UDim2.new(x, 0, 0, 46),
 					Size = UDim2.new(width - 0.02, 0, 0, 18),
 					Text = Text.get(use, "arena.hof.bracket", { min = b.min, max = b.max }),
-					FontFace = Theme.Fonts.Heading,
-					TextColor3 = Theme.Colors.GoldBright,
+					FontFace = Theme.Fonts.Display,
+					TextColor3 = Theme.Paper.Heading,
 					TextSize = 15,
 				})
 			)
@@ -108,7 +108,7 @@ local function face(scope: Scope, record: Fusion.Value<any>, mode: Fusion.Value<
 						Position = UDim2.new(x, 0, 0, 68 + (n - 1) * 19),
 						Size = UDim2.new(width - 0.02, 0, 0, 18),
 						Text = if row then `{n}. {row.name}  ·  {row.rating}` else Text.get(use, "arena.hof.free"),
-						TextColor3 = if row then INK else Theme.Colors.TextMuted,
+						TextColor3 = if row then INK else Theme.Paper.TextMuted,
 						TextSize = 13,
 					})
 				)
@@ -127,8 +127,8 @@ local function face(scope: Scope, record: Fusion.Value<any>, mode: Fusion.Value<
 					else Text.get(use, "arena.hof.title", { season = "—" })
 				return `{title} · {Text.get(use, `arena.mode.{modeId}`)}`
 			end),
-			FontFace = Theme.Fonts.Heading,
-			TextColor3 = Theme.Colors.GoldBright,
+			FontFace = Theme.Fonts.Display,
+			TextColor3 = Theme.Paper.Heading,
 			TextSize = 22,
 		}),
 		label(scope, {
@@ -136,7 +136,7 @@ local function face(scope: Scope, record: Fusion.Value<any>, mode: Fusion.Value<
 			Position = UDim2.new(0.98, 0, 0, 12),
 			Size = UDim2.new(0.3, 0, 0, 16),
 			Text = Text.T(scope, "arena.hof.local"),
-			TextColor3 = Theme.Colors.Warning,
+			TextColor3 = Theme.Paper.Warning,
 			TextSize = 12,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			Visible = scope:Computed(function(use): boolean
@@ -268,9 +268,9 @@ local function writePlaque(part: Instance)
 				24,
 				scope:Computed(function(use): Color3
 					local name = use(hero)
-					return if type(name) == "string" and name ~= "" then Theme.Colors.GoldBright else INK
+					return if type(name) == "string" and name ~= "" then Theme.Paper.Heading else INK
 				end),
-				Theme.Fonts.Heading
+				Theme.Fonts.Display
 			),
 		},
 	})

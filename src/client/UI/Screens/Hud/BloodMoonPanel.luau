@@ -30,15 +30,15 @@ export type Props = {
 	Offset: Fusion.Value<number>?,
 }
 
-local BLOOD = Color3.fromHex("#C0262D")
+local BLOOD = Theme.Glyph.Blood
 local WIDTH_PC = 280
 local WIDTH_TOUCH = 240
 local PAD = 8
 local GAP = 3
-local TITLE = 20
-local LINE = 18
-local INFO = 34 -- two lines: the points and the place, or the city hint
-local BUTTON_PC = 30
+local TITLE = 22
+local LINE = 20
+local INFO = 40 -- two lines: the points and the place, or the city hint
+local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
 -- the same anchors as Hud/WorldEventPanel
 local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
@@ -159,12 +159,12 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.25,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = shown,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = BLOOD, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = BLOOD, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, PAD),
 				PaddingBottom = UDim.new(0, PAD),
@@ -178,18 +178,19 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 				scope:Computed(function(use): string
 					return `☾ {Text.get(use, "bloodmoon.name")}`
 				end),
-				BLOOD,
-				16,
+				Theme.Iron.Danger,
+				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			),
-			label(2, LINE, timeText, Theme.Colors.Parchment, 14, Theme.Fonts.BodyMedium),
-			label(3, INFO, infoText, Theme.Colors.Text, 13, Theme.Fonts.Body, active),
+			label(2, LINE, timeText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium),
+			label(3, INFO, infoText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, active),
 			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Results",
 				LayoutOrder = 4,
 				Text = Text.T(scope, "hud.bloodmoon.results"),
 				Variant = "secondary",
-				TextSize = 14,
+				TextSize = Theme.TextSize.Small,
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.new(1, 0, 0, if use(touch) then BUTTON_TOUCH else BUTTON_PC)
 				end),

@@ -10,6 +10,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Theme = require(script.Parent.Parent.Theme)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 
 local Children = Fusion.Children
@@ -71,9 +72,9 @@ local function colorOf(
 		return o
 	end
 	if look and look.tint then
-		return use(tint) or Color3.new(1, 1, 1)
+		return use(tint) or Theme.Plain
 	end
-	return Color3.new(1, 1, 1)
+	return Theme.Plain
 end
 
 local function image(scope: Scope, props: ImageProps, look: Fusion.Computed<UiArtState.Look?>): ImageLabel

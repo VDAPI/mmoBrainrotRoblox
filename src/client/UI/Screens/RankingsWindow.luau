@@ -48,7 +48,9 @@ local FOOTER = 58
 local INFO = 22 -- S125: the countdown / hint line of the week and guild boards
 local ALL = "all" -- the filter value of the board without a class
 
-type Cell = { text: string, width: number?, color: Color3?, bold: boolean?, rich: boolean? }
+-- S136: `medal` draws the cell as an iron plaque with a bright digit (places 1-3: gold is not readable as text on
+-- parchment).
+type Cell = { text: string, width: number?, color: Color3?, bold: boolean?, rich: boolean?, medal: Color3? }
 
 local function sortedTabs(): { Leaderboards.TabDef }
 	local list = table.clone(Leaderboards.tabs)
@@ -119,15 +121,16 @@ local function escape(text: string): string
 	return (string.gsub(text, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" }))
 end
 
-local function rankColor(rank: number): Color3
+-- S136: the medal colour of places 1-3 (Data/UiPalette.medal, contrast-tested on iron), nil below.
+local function medalColor(rank: number): Color3?
 	if rank == 1 then
-		return Theme.Colors.GoldBright
+		return Theme.Medal.Gold
 	elseif rank == 2 then
-		return Theme.Colors.Silver
+		return Theme.Medal.Silver
 	elseif rank == 3 then
-		return Theme.Colors.Bronze
+		return Theme.Medal.Bronze
 	end
-	return Theme.Colors.Text
+	return nil
 end
 
 local function line(scope: Scope, cells: { Cell }, height: number, order: number, background: Color3?): Instance
@@ -147,6 +150,35 @@ local function line(scope: Scope, cells: { Cell }, height: number, order: number
 		table.insert(children, scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }))
 	end
 	for i, cell in cells do
+		if cell.medal then
+			table.insert(
+				children,
+				scope:New("Frame")({
+					LayoutOrder = i,
+					Size = UDim2.new(0, cell.width or 44, 1, 0),
+					BackgroundTransparency = 1,
+					[Children] = scope:New("TextLabel")({
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = UDim2.fromScale(0, 0.5),
+						Size = UDim2.fromOffset(36, 26),
+						BackgroundColor3 = Theme.Iron.Raised,
+						Text = cell.text,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = cell.medal,
+						[Children] = {
+							scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+							scope:New("UIStroke")({
+								ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+								Color = cell.medal,
+								Thickness = Theme.Stroke.Thin,
+							}),
+						},
+					}),
+				})
+			)
+			continue
+		end
 		table.insert(
 			children,
 			scope:New("TextLabel")({
@@ -157,7 +189,7 @@ local function line(scope: Scope, cells: { Cell }, height: number, order: number
 				RichText = cell.rich == true,
 				FontFace = if cell.bold then Theme.Fonts.BodyBold else Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = cell.color or Theme.Colors.Text,
+				TextColor3 = cell.color or Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -166,14 +198,14 @@ local function line(scope: Scope, cells: { Cell }, height: number, order: number
 	return scope:New("Frame")({
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, height),
-		BackgroundColor3 = background or Theme.Colors.Panel,
+		BackgroundColor3 = background or Theme.Paper.Surface,
 		BackgroundTransparency = if background then 0 else 1,
 		[Children] = children,
 	})
 end
 
 local function headerCells(use: Use, format: string, touch: boolean): { Cell }
-	local muted = Theme.Colors.TextMuted
+	local muted = Theme.Paper.TextMuted
 	if format == "guild" then
 		-- S125: place, guild, members, score
 		return {
@@ -224,14 +256,15 @@ end
 
 local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: boolean): { Cell }
 	local top = row.r <= 3
-	local color = rankColor(row.r)
+	local medal = medalColor(row.r)
+	local color = Theme.Paper.Text
 	local name = if row.n == "" then Text.get(use, "leaderboard.unknown") else row.n
 	local nameText = escape(name)
 	if format == "guild" then
 		-- S125: "[TAG] Name", members, the decoded sum of levels
-		local tag = if row.g then `<font color="#9A9DA8">[{escape(row.g)}]</font> ` else ""
+		local tag = if row.g then `<font color="{Theme.hex(Theme.Paper.TextMuted)}">[{escape(row.g)}]</font> ` else ""
 		return {
-			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top, medal = medal },
 			{ text = tag .. nameText, color = color, bold = top, rich = true },
 			{ text = if row.m then Format.number(row.m) else "", width = if touch then 90 else 120 },
 			{ text = Format.number(row.s), width = if touch then 80 else 120, bold = top },
@@ -239,10 +272,12 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 	elseif format == "int" or format == "rating" then
 		-- S125: weekly EXP; S126: the arena rating
 		if touch and row.g then
-			nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
+			nameText ..= ` <font size="{Theme.TextSize.Small}" color="{Theme.hex(Theme.Paper.TextMuted)}">[{escape(
+				row.g
+			)}]</font>`
 		end
 		local cells: { Cell } = {
-			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top, medal = medal },
 			{ text = nameText, color = color, bold = top, rich = true },
 		}
 		if not touch then
@@ -250,7 +285,7 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 			table.insert(cells, { text = class, width = 150 })
 			table.insert(
 				cells,
-				{ text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Colors.TextMuted }
+				{ text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Paper.TextMuted }
 			)
 		end
 		table.insert(cells, { text = if row.l then tostring(row.l) else "", width = if touch then 56 else 80 })
@@ -258,11 +293,11 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 		return cells
 	end
 	if touch and row.g then
-		nameText ..= ` <font size="13" color="#9A9DA8">[{escape(row.g)}]</font>`
+		nameText ..= ` <font size="{Theme.TextSize.Small}" color="{Theme.hex(Theme.Paper.TextMuted)}">[{escape(row.g)}]</font>`
 	end
 	local class = if row.c and string.sub(row.c, 1, 1) == "@" then Text.get(use, string.sub(row.c, 2)) else ""
 	local cells: { Cell } = {
-		{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top },
+		{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top, medal = medal },
 		{ text = nameText, color = color, bold = top, rich = true },
 		{ text = class, width = if touch then 110 else 150 },
 	}
@@ -272,7 +307,7 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 		return cells
 	end
 	if not touch then
-		table.insert(cells, { text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Colors.TextMuted })
+		table.insert(cells, { text = if row.g then `[{row.g}]` else "", width = 110, color = Theme.Paper.TextMuted })
 	end
 	local level = if row.p
 		then Text.get(use, "leaderboard.levelPct", { level = row.l or 1, pct = row.p })
@@ -282,7 +317,7 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 end
 
 local function freeCells(use: Use, rank: number, touch: boolean): { Cell }
-	local muted = Theme.Colors.TextMuted
+	local muted = Theme.Paper.TextMuted
 	return {
 		{ text = tostring(rank), width = if touch then 44 else 56, color = muted },
 		{ text = Text.get(use, "leaderboard.hof.free"), color = muted },
@@ -535,7 +570,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					[Children] = {
 						s:New("UIPadding")({
@@ -552,7 +587,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				items,
 				line(
 					s,
-					{ { text = Text.get(use, "leaderboard.loading"), color = Theme.Colors.TextMuted } },
+					{ { text = Text.get(use, "leaderboard.loading"), color = Theme.Paper.TextMuted } },
 					rowHeight,
 					1
 				)
@@ -560,10 +595,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			return items
 		end
 		for i, row in snap.rows do
-			local background = if row.mine
-				then Theme.Colors.PanelHover
-				elseif i % 2 == 0 then Theme.Colors.PanelRaised
-				else nil
+			local background = if row.mine then Theme.Paper.Hover elseif i % 2 == 0 then Theme.Paper.Raised else nil
 			table.insert(items, line(s, rowCells(use, row, format, isTouch), rowHeight, i, background))
 		end
 		if format == "date" then
@@ -574,7 +606,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		elseif #snap.rows == 0 then
 			table.insert(
 				items,
-				line(s, { { text = Text.get(use, "leaderboard.empty"), color = Theme.Colors.TextMuted } }, rowHeight, 1)
+				line(s, { { text = Text.get(use, "leaderboard.empty"), color = Theme.Paper.TextMuted } }, rowHeight, 1)
 			)
 		end
 		local last = snap.last
@@ -583,17 +615,18 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			local base = #snap.rows + 10
 			table.insert(
 				items,
-				line(
-					s,
-					{ { text = Text.get(use, "leaderboard.week.lastWinners"), color = Theme.Colors.Gold, bold = true } },
-					rowHeight,
-					base
-				)
+				line(s, {
+					{
+						text = Text.get(use, "leaderboard.week.lastWinners"),
+						color = Theme.Paper.Heading,
+						bold = true,
+					},
+				}, rowHeight, base)
 			)
 			for i, row in last.rows do
 				table.insert(
 					items,
-					line(s, rowCells(use, row, "int", isTouch), rowHeight, base + i, Theme.Colors.PanelRaised)
+					line(s, rowCells(use, row, "int", isTouch), rowHeight, base + i, Theme.Paper.Raised)
 				)
 			end
 		end
@@ -659,9 +692,9 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 						local def = if id then Leaderboard.resolve(id) else nil
 						return if def then Text.get(use, def.nameKey) else ""
 					end),
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Large,
-					TextColor3 = Theme.Colors.Gold,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 				}),
@@ -694,7 +727,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
-					ScrollBarImageColor3 = Theme.Colors.Border,
+					ScrollBarImageColor3 = Theme.Paper.Rule,
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -720,7 +753,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 							Text = infoText,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Gold,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -746,7 +779,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 							end),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Parchment,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -765,7 +798,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 									then Text.get(use, "leaderboard.updatedNow")
 									else Text.get(use, "leaderboard.updated", { time = Format.time(age) })
 								if snap.mode == "local" then
-									local warning = Theme.Colors.Warning:ToHex()
+									local warning = Theme.Paper.Warning:ToHex()
 									return `{escape(updated)}   <font color="#{warning}">⚠ {escape(
 										Text.get(use, "leaderboard.local")
 									)}</font>`
@@ -774,7 +807,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 							end),
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),

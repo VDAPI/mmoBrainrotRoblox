@@ -34,6 +34,7 @@ local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
+local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 
@@ -288,7 +289,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 				kind = "glyph",
 				id = "",
 				glyph = if def then def.icon else "?",
-				color = Theme.Colors.Parchment,
+				color = Theme.Paper.Text,
 			})
 	end
 	scope:Observer(props.NpcId):onChange(showPortrait)
@@ -429,12 +430,12 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 				children,
 				s:New("TextLabel")({
 					LayoutOrder = 0,
-					Size = UDim2.new(1, 0, 0, 16),
+					Size = UDim2.new(1, 0, 0, 20),
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "quest.say.pick"),
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -467,7 +468,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "quest.say.you", { answer = Text.get(use, `quest.{id}.say.{v.said}`) }),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -483,7 +484,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					Text = `<i>{Text.get(use, `quest.{id}.say.{v.said}.reply`)}</i>`,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -538,32 +539,33 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		scope:New("Frame")({
 			Name = "Portrait",
 			Size = UDim2.fromOffset(PORTRAIT.X, PORTRAIT.Y),
-			BackgroundColor3 = Theme.Colors.Background,
+			BackgroundColor3 = Theme.Paper.Sunken,
 			ClipsDescendants = true,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-				scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 2 }),
+				scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 2 }),
 				preview.frame,
 			},
 		}),
 		scope:New("TextLabel")({
 			Name = "Category",
 			Position = UDim2.fromOffset(PORTRAIT.X + 14, 0),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 14),
+			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 18),
 			BackgroundTransparency = 1,
+			-- S135: a section label (upper case with the Polish letters, Caption, Label role)
 			Text = scope:Computed(function(use): string
 				local v = use(view)
-				return if v then string.upper(Text.get(use, `quest.tab.{v.row.category}`)) else ""
+				return if v then TextCase.upper(Text.get(use, `quest.tab.{v.row.category}`)) else ""
 			end),
-			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = 12,
-			TextColor3 = Theme.Colors.TextMuted,
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = Theme.TextSize.Caption,
+			TextColor3 = Theme.Paper.Label,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("TextLabel")({
 			Name = "Title",
-			Position = UDim2.fromOffset(PORTRAIT.X + 14, 14),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 32),
+			Position = UDim2.fromOffset(PORTRAIT.X + 14, 18),
+			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 30),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local v = use(view)
@@ -571,10 +573,13 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			end),
 			TextWrapped = true,
 			TextScaled = true,
-			FontFace = Theme.Fonts.Heading,
-			TextColor3 = Theme.Colors.GoldBright,
+			FontFace = Theme.Fonts.Display,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			[Children] = scope:New("UITextSizeConstraint")({ MaxTextSize = 26, MinTextSize = 16 }),
+			[Children] = scope:New("UITextSizeConstraint")({
+				MaxTextSize = Theme.TextSize.Large,
+				MinTextSize = Theme.TextSize.Small,
+			}),
 		}),
 		scope:New("TextLabel")({
 			Name = "Speaker",
@@ -590,7 +595,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.Gold,
+			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("ScrollingFrame")({
@@ -621,7 +626,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("TextLabel")({
@@ -633,7 +638,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					Text = bodyText,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Parchment,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
@@ -651,7 +656,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Text,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
@@ -667,12 +672,12 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			Visible = hasChoice,
 			[Children] = {
 				scope:New("TextLabel")({
-					Size = UDim2.new(1, 0, 0, 14),
+					Size = UDim2.new(1, 0, 0, 18),
 					BackgroundTransparency = 1,
 					Text = Text.T(scope, "quest.choose"),
 					FontFace = Theme.Fonts.BodyMedium,
-					TextSize = 14,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("Frame")({

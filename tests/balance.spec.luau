@@ -35,6 +35,8 @@ local T = require("./Test")
 -- S87 (J1): rows of the global block left to a later session (the table lives in tests/Balance.luau, the report reads
 -- it too); every other row without `report` is asserted.
 local GLOBAL_REPORT_ONLY = B.GLOBAL_REPORT_ONLY
+-- S137: every row a GLOBAL_REPORT_ONLY key may name (global, S88, regions, paths), for the dead-key check at the end
+local REPORT_ROWS: { any } = {}
 -- S94 (L3): the switches S32_ASSERT, GLOBAL_ASSERT, TUNED and PATHS_TUNED (all true) removed: every row without
 -- `report` is asserted. Region thresholds live in tests/Balance.luau (REGION_TARGETS: the report reads them too).
 local REGION_TARGETS = B.REGION_TARGETS
@@ -121,6 +123,58 @@ T.describe("Balance 1-20: S91", function()
 			T.expect(byTable.expPerKill).toBe(byId.expPerKill)
 			T.expect(byTable.hours).toBe(byId.hours)
 		end
+	end)
+end)
+
+-- S140 (D, DESIGN-18 §6.1): the Mage's fire pool on the fire variants of the reference builds (Balance.targetsS140):
+-- R1 at 20 in the S91 band and T-SK3 within the build's area cap asserted; T-SK4 and the identity of fire (three targets
+-- against lightning, one target, the burn's share) printed until S147 (`report`).
+T.describe("Balance S140: fire pool", function()
+	local rows = B.targetsS140()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`Mage L{row.level} {describeRow(row)} (S140, docs/sessions S140 D)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S140 targets (printed)", function()
+		printReport("S140", rows, 30)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		T.expect(ids["S140.fire.r1.destroyer.destroyerFire"]).toBe(true)
+		T.expect(ids["S140.fire.r1.arcanist.arcanistFire"]).toBe(true)
+	end)
+end)
+
+-- S141 (C, DESIGN-18 §6.1): the Mage's ice pool on the ice variants of the reference builds (Balance.targetsS141; their
+-- R1 at 20 is in the block "Balance 1-20: S91"): T-SK3 within the build's area cap asserted; T-SK4 and the identity of
+-- ice (one target against fire, the Elite slowed or frozen, the boss's Deep Chill, damage taken against fire) printed
+-- until S147 (`report`).
+T.describe("Balance S141: ice pool", function()
+	local rows = B.targetsS141()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`Mage L{row.level} {describeRow(row)} (S141, docs/sessions S141 C)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S141 targets (printed)", function()
+		printReport("S141", rows, 40)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		T.expect(ids["S141.ice.tsk3.destroyer.destroyerIce.20"]).toBe(true)
+		T.expect(ids["S141.ice.single.45"]).toBe(true)
+		T.expect(ids["S141.ice.deepChill.arcanist.arcanistIce.100"]).toBe(true)
 	end)
 end)
 
@@ -668,6 +722,7 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 	end
 	local asserted, reported = {}, {}
 	for _, row in rows do
+		table.insert(REPORT_ROWS, row)
 		if row.report ~= nil then
 			continue
 		elseif B.reportOnlyFor(row) then
@@ -685,23 +740,6 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 		end
 		if #bad > 0 then
 			error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
-		end
-	end)
-	T.it("GLOBAL_REPORT_ONLY: every key matches a row, every session is above S87", function()
-		for key, entry in GLOBAL_REPORT_ONLY do
-			local found = false
-			for _, row in rows do
-				if B.reportKeyMatches(key, row) then
-					found = true
-					break
-				end
-			end
-			if not found then
-				error(`GLOBAL_REPORT_ONLY: dead key {key}`, 0)
-			end
-			T.expect({ key = key, later = (B.sessionNumber(entry.session) or 0) > 87 })
-				.toEqual({ key = key, later = true })
-			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
 		end
 	end)
 	T.it("global targets G1-G13 (printed)", function()
@@ -758,7 +796,9 @@ T.describe("Balance 20-100: items, traits, defence (S88)", function()
 	local groups: { [string]: { B.TargetRow } } = {}
 	local order: { string } = {}
 	for _, row in rows do
-		if row.report == nil then
+		table.insert(REPORT_ROWS, row)
+		-- S137: a row named in GLOBAL_REPORT_ONLY is only printed
+		if row.report == nil and B.reportOnlyFor(row) == nil then
 			if not groups[row.id] then
 				groups[row.id] = {}
 				table.insert(order, row.id)
@@ -850,7 +890,9 @@ T.describe("Balance 20-100: regions", function()
 				end
 			end
 			for _, row in all do
-				if row.report == nil then
+				table.insert(REPORT_ROWS, row)
+				-- S137: a row named in GLOBAL_REPORT_ONLY is only printed
+				if row.report == nil and B.reportOnlyFor(row) == nil then
 					T.it(`{row.id}`, function()
 						if not B.inBand(row) then
 							error(describeRow(row), 0)
@@ -1440,7 +1482,7 @@ T.describe("Skill model (S85)", function()
 	end)
 
 	T.it(
-		"builds: reference ranks through Paths.canBuy, at most pointsAt(100); main path from 20; base rows only",
+		"builds: reference ranks through Paths.canBuy, at most pointsAt(100); own leading direction and capstone; base rows only",
 		function()
 			for _, classId in B.CLASSES do
 				for _, build in SkillModel.builds(classId) do
@@ -1448,13 +1490,14 @@ T.describe("Skill model (S85)", function()
 					if at100.spent > Paths.pointsAt(100) or at100.rankChecks ~= at100.spent then
 						error(`{classId} {build.key}: spent {at100.spent}, canBuy {at100.rankChecks}`, 0)
 					end
-					T.expect(SkillModel.character(build, 19).character.path.main).toBe(nil)
+					-- S138: no main path; the leading direction needs MAIN_MIN_POINTS (never by 19)
+					T.expect(Paths.mainOf(SkillModel.character(build, 19).character)).toBe(nil)
 					local at20 = SkillModel.character(build, 20)
 					if at20.spent ~= Paths.pointsAt(20) and #at20.unbought == 0 then
 						error(`{classId} {build.key}: {at20.spent} of {Paths.pointsAt(20)} at 20 without a reason`, 0)
 					end
 					if build.base then
-						T.expect(at20.character.path.main).toBe(nil)
+						T.expect(Paths.mainOf(at20.character)).toBe(nil)
 						local rows = SkillModel.BASE[classId].rows
 						for nodeId in at100.character.path.nodes do
 							local _, _, row = Paths.findNode(nodeId)
@@ -1463,7 +1506,9 @@ T.describe("Skill model (S85)", function()
 							end
 						end
 					else
-						T.expect(at20.character.path.main).toBe(build.pathId)
+						-- S138: the build's own direction leads at 100 and holds the set's one capstone
+						T.expect({ build.key, Paths.mainOf(at100.character) }).toEqual({ build.key, build.pathId })
+						T.expect({ build.key, Paths.capstoneOf(at100.character) }).toEqual({ build.key, build.pathId })
 						T.expect(at100.spent).toBe(Paths.pointsAt(100))
 					end
 				end
@@ -2273,6 +2318,9 @@ end)
 -- lives in SkillModel so the report column "asertowany" reads the same one (S90 flips Hunter and Mage there)
 T.describe("Balance 20-100: paths", function()
 	local results = SkillModel.evaluateTargets()
+	for _, r in results do
+		table.insert(REPORT_ROWS, SkillModel.reportRow(r.id, r.build, r.L, r.note))
+	end
 	for _, classId in B.CLASSES do
 		for _, r in results do
 			if r.classId == classId and r.asserted then
@@ -2697,5 +2745,26 @@ T.describe("Blood Moon (S129)", function()
 			T.expect({ row.id, row.elites > 0.5 and row.elites < 20 }).toEqual({ row.id, true })
 		end
 		T.expect(bm.perWeek).toBe(2)
+	end)
+end)
+
+-- S137: moved from the global block (S87): a key may name a row of any block (global, S88, regions, paths).
+T.describe("Balance: GLOBAL_REPORT_ONLY keys", function()
+	T.it("every key matches a row, every session is above S87", function()
+		for key, entry in GLOBAL_REPORT_ONLY do
+			local found = false
+			for _, row in REPORT_ROWS do
+				if B.reportKeyMatches(key, row) then
+					found = true
+					break
+				end
+			end
+			if not found then
+				error(`GLOBAL_REPORT_ONLY: dead key {key}`, 0)
+			end
+			T.expect({ key = key, later = (B.sessionNumber(entry.session) or 0) > 87 })
+				.toEqual({ key = key, later = true })
+			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
+		end
 	end)
 end)

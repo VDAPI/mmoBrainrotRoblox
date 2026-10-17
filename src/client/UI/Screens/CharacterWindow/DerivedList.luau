@@ -6,6 +6,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
+local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local StatCalc = require(ReplicatedStorage.Shared.Logic.StatCalc)
 local State = require(script.Parent.Parent.Parent.State)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
@@ -24,7 +26,7 @@ export type Props = {
 	Size: UDim2?,
 }
 
-local ROW_HEIGHT = 26
+local ROW_HEIGHT = 30 -- S135: a dense ListRow (Small text)
 
 local function formatValue(def: Stats.StatDef, value: number): string
 	local text = string.format(`%.{def.decimals}f`, value)
@@ -64,21 +66,17 @@ local function DerivedList(scope: Scope, props: Props): Instance
 
 	local children = {}
 	local order = 0
+	local rowIndex = 0
 	for _, group in Stats.groups do
 		order += 1
 		table.insert(
 			children,
-			scope:New("TextLabel")({
+			-- S135: the group as a section label
+			SectionLabel(scope, {
 				Name = `Group_{group}`,
 				LayoutOrder = order,
-				Size = UDim2.new(1, 0, 0, 30),
-				BackgroundTransparency = 1,
 				Text = Text.T(scope, `statGroup.{group}`),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Bottom,
+				Size = UDim2.new(1, 0, 0, 34),
 			})
 		)
 		for _, def in Stats.list do
@@ -90,52 +88,28 @@ local function DerivedList(scope: Scope, props: Props): Instance
 				local d = use(derived)
 				return if type(d) == "table" then d.values[def.id] or 0 else 0
 			end)
-			local row = scope:New("Frame")({
+			-- S135: a dense ListRow (alternating parchment, the value aligned right)
+			rowIndex += 1
+			local row = ListRow(scope, {
 				Name = def.id,
 				LayoutOrder = order,
-				Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
-				BackgroundTransparency = if order % 2 == 0 then 1 else 0.93,
-				BackgroundColor3 = Theme.Colors.Parchment,
-				Active = true,
-				[Children] = {
-					scope:New("UIPadding")({
-						PaddingLeft = UDim.new(0, Theme.Padding.Small),
-						PaddingRight = UDim.new(0, Theme.Padding.Small),
-					}),
-					scope:New("TextLabel")({
-						Name = "Name",
-						Size = UDim2.fromScale(0.68, 1), -- S29: narrower column, long names keep more room
-						BackgroundTransparency = 1,
-						Text = Text.T(scope, def.nameKey),
-						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Small + 1,
-						TextColor3 = Theme.Colors.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextTruncate = Enum.TextTruncate.AtEnd,
-					}),
-					scope:New("TextLabel")({
-						Name = "Value",
-						AnchorPoint = Vector2.new(1, 0),
-						Position = UDim2.fromScale(1, 0),
-						Size = UDim2.fromScale(0.32, 1),
-						BackgroundTransparency = 1,
-						RichText = true,
-						Text = scope:Computed(function(use): string
-							local current = use(value)
-							local p = use(preview)
-							local text = formatValue(def, current)
-							if p and p[def.id] and math.abs(p[def.id] - current) > 1e-6 then
-								return `<font color="#4FD16B">{formatValue(def, p[def.id])}</font>`
-							end
-							return text
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Small + 1,
-						TextColor3 = Theme.Colors.Parchment,
-						TextXAlignment = Enum.TextXAlignment.Right,
-					}),
-				},
+				Index = rowIndex,
+				Height = ROW_HEIGHT,
+				Dense = true,
+				RichText = true,
+				Text = Text.T(scope, def.nameKey),
+				Value = scope:Computed(function(use): string
+					local current = use(value)
+					local p = use(preview)
+					local text = formatValue(def, current)
+					if p and p[def.id] and math.abs(p[def.id] - current) > 1e-6 then
+						return `<font color="{Theme.hex(Theme.Paper.Success)}">{formatValue(def, p[def.id])}</font>`
+					end
+					return text
+				end),
 			})
+			local rowAny: any = row
+			rowAny.Active = true
 			Tooltip.attach(
 				scope,
 				row :: GuiObject,
@@ -171,7 +145,7 @@ local function DerivedList(scope: Scope, props: Props): Instance
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Label,
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
 			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),

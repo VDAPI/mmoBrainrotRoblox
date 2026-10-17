@@ -143,20 +143,21 @@ local function ItemsTab(s: Dev.Scope): Instance
 			if i > MAX_RESULTS then
 				break
 			end
-			local color = ItemText.rarityColor(def.rarity or (if def.bossId then Rarities.MYTHIC else Rarities.COMMON))
+			local color =
+				ItemText.rarityName(def.rarity or (if def.bossId then Rarities.MYTHIC else Rarities.COMMON), "iron")
 			table.insert(
 				out,
 				inner:New("TextButton")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 30),
 					AutoButtonColor = true,
-					BackgroundColor3 = if use(chosen) == def.id then Theme.Colors.PanelHover else Theme.Colors.Panel,
+					BackgroundColor3 = if use(chosen) == def.id then Theme.Iron.Hover else Theme.Iron.Surface,
 					Text = `{ItemText.name(def.id)}   ·   {def.type}   ·   {Text.now(
 						"dev.items.level",
 						{ level = def.level }
 					)}`,
 					FontFace = Theme.Fonts.Body,
-					TextSize = 14,
+					TextSize = Theme.TextSize.Caption,
 					TextColor3 = color,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
@@ -177,8 +178,8 @@ local function ItemsTab(s: Dev.Scope): Instance
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "dev.items.more", { n = #list - MAX_RESULTS }),
 					FontFace = Theme.Fonts.Body,
-					TextSize = 13,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.TextMuted,
 				})
 			)
 		end
@@ -202,17 +203,17 @@ local function ItemsTab(s: Dev.Scope): Instance
 		Dev.header(s, 1, "dev.items.search"),
 		Dev.row(s, 2, nil, {
 			Dev.textBox(s, query, Text.now("dev.items.searchHint"), 220),
-			Select(s, { Options = kinds, Selected = kind, Width = 170 }),
-			Select(s, { Options = classOptions :: any, Selected = class, Width = 150 }),
+			Select(s, { Surface = "iron", Options = kinds, Selected = kind, Width = 170 }),
+			Select(s, { Surface = "iron", Options = classOptions :: any, Selected = class, Width = 150 }),
 		}),
 		Dev.row(s, 3, Text.T(s, "dev.items.levels"), {
-			NumberInput(s, { Value = minLevel, Min = 1, Max = 100, Step = 5 }),
-			NumberInput(s, { Value = maxLevel, Min = 1, Max = 100, Step = 5 }),
+			NumberInput(s, { Surface = "iron", Value = minLevel, Min = 1, Max = 100, Step = 5 }),
+			NumberInput(s, { Surface = "iron", Value = maxLevel, Min = 1, Max = 100, Step = 5 }),
 		}),
 		s:New("Frame")({
 			LayoutOrder = 4,
 			Size = UDim2.new(1, 0, 0, 240),
-			BackgroundColor3 = Theme.Colors.Background,
+			BackgroundColor3 = Theme.Iron.Sunken,
 			[Children] = {
 				s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				s:New("ScrollingFrame")({
@@ -240,15 +241,27 @@ local function ItemsTab(s: Dev.Scope): Instance
 			end),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Brass.Bright,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Dev.row(s, 6, nil, {
-			Select(s, { Options = rarityOptions, Selected = rarity, Width = 150, ListHeight = 180 }),
-			NumberInput(s, { Value = ilvl, Min = 1, Max = 100, Step = 5 }),
-			NumberInput(s, { Value = up, Min = 0, Max = 9, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
-			Select(s, { Options = elementOptions, Selected = element, Width = 130, ListHeight = 160 }),
-			NumberInput(s, { Value = count, Min = 1, Max = 999, Size = UDim2.fromOffset(140, Theme.Size.MinTouch) }),
+			Select(s, { Surface = "iron", Options = rarityOptions, Selected = rarity, Width = 150, ListHeight = 180 }),
+			NumberInput(s, { Surface = "iron", Value = ilvl, Min = 1, Max = 100, Step = 5 }),
+			NumberInput(
+				s,
+				{ Surface = "iron", Value = up, Min = 0, Max = 9, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }
+			),
+			Select(
+				s,
+				{ Surface = "iron", Options = elementOptions, Selected = element, Width = 130, ListHeight = 160 }
+			),
+			NumberInput(s, {
+				Surface = "iron",
+				Value = count,
+				Min = 1,
+				Max = 999,
+				Size = UDim2.fromOffset(140, Theme.Size.MinTouch),
+			}),
 		}),
 		s:New("TextLabel")({
 			LayoutOrder = 7,
@@ -256,8 +269,8 @@ local function ItemsTab(s: Dev.Scope): Instance
 			BackgroundTransparency = 1,
 			Text = Text.T(s, "dev.items.detailHint"),
 			FontFace = Theme.Fonts.Body,
-			TextSize = 13,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextSize = Theme.TextSize.Caption,
+			TextColor3 = Theme.Iron.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Dev.row(s, 8, nil, {
@@ -274,7 +287,7 @@ local function ItemsTab(s: Dev.Scope): Instance
 		}),
 		Dev.header(s, 9, "dev.items.quick"),
 		Dev.row(s, 10, nil, {
-			NumberInput(s, { Value = mats, Min = 1, Max = 999, Step = 10 }),
+			NumberInput(s, { Surface = "iron", Value = mats, Min = 1, Max = 999, Step = 10 }),
 			Dev.button(s, Text.T(s, "dev.items.mats"), function()
 				Dev.run("mats", { tostring(Fusion.peek(mats)) })
 			end, 140),
@@ -289,16 +302,25 @@ local function ItemsTab(s: Dev.Scope): Instance
 			end, 160, true),
 		}),
 		Dev.row(s, 11, Text.T(s, "dev.items.upgrade"), {
-			Select(s, { Options = slotOptions, Selected = upSlot, Width = 150 }),
-			NumberInput(s, { Value = upLevel, Min = 0, Max = 9, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
+			Select(s, { Surface = "iron", Options = slotOptions, Selected = upSlot, Width = 150 }),
+			NumberInput(s, {
+				Surface = "iron",
+				Value = upLevel,
+				Min = 0,
+				Max = 9,
+				Size = UDim2.fromOffset(130, Theme.Size.MinTouch),
+			}),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("up", { Fusion.peek(upSlot) or "weapon", tostring(Fusion.peek(upLevel)) })
 			end),
 		}),
 		Dev.row(s, 12, Text.T(s, "dev.items.lootsim"), {
-			Select(s, { Options = monsterOptions, Selected = simMonster, Width = 220 }),
-			Select(s, { Options = variantOptions, Selected = simVariant, Width = 140, ListHeight = 120 }),
-			NumberInput(s, { Value = simCount, Min = 1, Max = 100000, Step = 100 }),
+			Select(s, { Surface = "iron", Options = monsterOptions, Selected = simMonster, Width = 220 }),
+			Select(
+				s,
+				{ Surface = "iron", Options = variantOptions, Selected = simVariant, Width = 140, ListHeight = 120 }
+			),
+			NumberInput(s, { Surface = "iron", Value = simCount, Min = 1, Max = 100000, Step = 100 }),
 			Dev.button(s, "▶", function()
 				local monster = Fusion.peek(simMonster)
 				if monster then

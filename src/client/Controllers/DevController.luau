@@ -55,18 +55,18 @@ function DevController.Init(registry)
 			return use(isAdmin) and use(phase) == "playing"
 		end),
 		AutoButtonColor = true,
-		BackgroundColor3 = Theme.Colors.GoldDim,
+		BackgroundColor3 = Theme.Iron.Rule,
 		Text = "DEV",
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.GoldBright,
+		TextColor3 = Theme.Brass.Bright,
 		ZIndex = 5,
 		[Fusion.OnEvent("Activated")] = function()
 			WindowManager.Toggle("dev")
 		end,
 		[Fusion.Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 		},
 	})
 end

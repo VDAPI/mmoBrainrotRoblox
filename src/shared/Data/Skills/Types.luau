@@ -77,6 +77,15 @@ export type EffectKind =
 	| "sighted"
 	| "arcaneCharge" -- S80: Arcane Charges of the arcanist, stacks 0..4 (Data/Skills ARCANE_CHARGES)
 	| "empowered" -- S80: Empowering Invocation, value = damage %, stacks = uses left
+	-- S140 (Ember Shield): own; while it lasts a melee blow on the bearer burns the attacker (value = % of the bearer's
+	-- magic attack over Data/Skills.BURN.duration, at most once per EMBER.gap s per attacker; CombatService)
+	| "emberShield"
+	-- S141 (Logic/Chill): the caster's chill counter on an enemy (stacks; Winter's Grip freezes at CHILL.threshold)
+	| "chill"
+	-- S141: Deep Chill, the freeze of bosses and Elite II: value = % more damage from the source only (CombatService)
+	| "deepChill"
+	-- S141 (Ice Barrier): own; while it lasts a monster's melee blow on the bearer slows it by value % (CombatService)
+	| "iceBarrier"
 
 export type SkillEffect = {
 	kind: EffectKind,
@@ -96,6 +105,8 @@ export type SkillEffect = {
 	notBoss: boolean?,
 	-- "hot": heals hpPct % of the target's max HP per second (ROZWOJ 7.5, 14.2)
 	hpPct: ValueRef?,
+	-- S141: every new application on a running entry adds a stack up to this many (value x stacks; a growing slow)
+	maxStacks: number?,
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
@@ -239,6 +250,11 @@ export type SkillDef = {
 	class: string,
 	order: number, -- position in the class list
 	path: string?, -- S57 (ROZWOJ 2.2): the path that gives the skill (a node of kind "skill"); nil = class base
+	-- S137 (DESIGN-18 §4, §5): the weapon pool of a base skill ("common" = every pool of the class, else a pool id of
+	-- Data/SkillPools/<Class>); path skills have none (they work in every pool). role = the ladder code ("S1".."U",
+	-- "C1".."C4"), filled by the class sessions S140-S145.
+	pool: string?,
+	role: string?,
 	unlock: number, -- character level for rank 1
 	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,
@@ -286,6 +302,20 @@ export type SkillDef = {
 	pull: (number | boolean)?,
 	-- S76 (ROZWOJ 11.3): hits on a target below hp % of its life deal x mul (players: Combat.pvp.finisher at most)
 	finisher: { hp: number, mul: number }?,
+	-- S140 (DESIGN-18 §6.1, Logic/Burn): every main hit adds this many stacks of the caster's burn (fire school);
+	-- `add.burnStacks` of a breakpoint raises it
+	burnStacks: number?,
+	-- S140: hit enemies are pushed this many studs away (Push.knockback; bosses immune, players half), like the
+	-- knockback breakpoint (which wins when both are set)
+	knockback: number?,
+	-- S141 (DESIGN-18 §6.1, Types/Offense.circleTarget): the circle flies this many studs from the caster toward the
+	-- aim, wave n centred at travel x n / hits (Frozen Orb)
+	travel: number?,
+	-- S141: circleTarget applies its enemy effects on every wave, not only the first (growing slows)
+	waveEffects: boolean?,
+	-- S141: from this wave of circleTarget on, every enemy in the circle freezes once per cast for values.freeze s
+	-- (bosses: Deep Chill, Logic/Chill)
+	freezeWave: number?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,
