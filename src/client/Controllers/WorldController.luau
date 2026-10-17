@@ -730,6 +730,14 @@ end
 
 function WorldController.Start()
 	Net.On("AdminClient", onAdminClient)
+	-- Portal prompts first (owner report 2026-10-17: no "Travel [E]"): an error later in Start (lighting, post
+	-- effects, sky, materials) must never leave the portals without their prompt.
+	for _, instance in CollectionService:GetTagged("Portal") do
+		task.spawn(decoratePortal, instance)
+	end
+	CollectionService:GetInstanceAddedSignal("Portal"):Connect(function(instance)
+		task.defer(decoratePortal, instance)
+	end)
 	atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Parent = Lighting
 	grade = Instance.new("ColorCorrectionEffect")
@@ -777,7 +785,10 @@ function WorldController.Start()
 	end)
 	local initial = State.Get({ "character", "location", "map" })
 	if type(initial) == "string" then
-		applyEnvironment(initial)
+		local ok: boolean, err: any = pcall(applyEnvironment, initial)
+		if not ok then
+			warn("[WorldController] applyEnvironment failed:", err)
+		end
 	end
 	-- W01: a new graphics level re-applies the post effects of the current map
 	scope:Observer(State.Value({ "account", "settings", "quality" })):onChange(function()
@@ -869,13 +880,6 @@ function WorldController.Start()
 		for key, value in gradeProps do
 			(grade :: any)[key] = value
 		end
-	end)
-
-	for _, instance in CollectionService:GetTagged("Portal") do
-		task.spawn(decoratePortal, instance)
-	end
-	CollectionService:GetInstanceAddedSignal("Portal"):Connect(function(instance)
-		task.defer(decoratePortal, instance)
 	end)
 end
 

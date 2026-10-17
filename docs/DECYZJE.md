@@ -5194,3 +5194,5 @@
   a cięcie zrzuca R4 na 45–100 pod pasmo (0,108 / 0,092). Do decyzji przy S147 (np. przełom mnożnikowy).
 - **S141** Opisy Lodowej Novy i Głębokiego Mrozu pokazują Głęboki Chłód jak serwer: `Chill.deepPct` z hakiem
   `deepChill` z `DescOpts.hooks` (Uścisk Zimy do 18%); wiki bez haków pokazuje 10%.
+
+- **FIX 2026-10-17 (portale bez „E”)**: `WorldController.Start` zakłada przyciski portali na samym początku, a `applyEnvironment` przy starcie idzie przez `pcall` (błąd wyglądu mapy nie zabiera już portali). `KitAssets.prepare` usuwa z modeli zestawu także `ProximityPrompt`, `ClickDetector`, `DragDetector` i `Sound` (darmowy model nie przejmie klawisza interakcji).
