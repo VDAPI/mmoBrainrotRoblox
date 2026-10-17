@@ -23,8 +23,6 @@ local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
-local SkillsTab = require(script.Parent.Parent.UI.SkillsTab)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -129,16 +127,18 @@ function ItemController.Use(index: number)
 		return
 	end
 	if item and item.id == "scroll_skillreset" then
-		-- S57: Scroll of a New Path: the choice happens on the main path's tab (the server takes the scroll then).
-		local classId = State.Get({ "character", "class" }) or ""
-		local paths = Paths.pathsOf(classId)
-		if #paths == 0 then
-			Toast.push(Text.now("paths.soon"), "info")
-			return
-		end
-		local main = State.Get({ "character", "path", "main" })
-		SkillsTab.request(if type(main) == "string" then main else paths[1].id)
-		WindowManager.Open("skills")
+		-- S138: Scroll of Skill Renewal = the full reset (ScrollService -> PathService.FullReset); ask first
+		WindowManager.ShowModal({
+			Title = Text.now("skills.points.resetTitle"),
+			Message = Text.now("skills.reset.confirm"),
+			ConfirmText = Text.now("common.confirm"),
+			CancelText = Text.now("common.cancel"),
+			Variant = "danger",
+			OnConfirm = function(): (boolean, string?)
+				local ok, err = Net.Invoke("UseItem", index)
+				return ok, if ok then nil else Text.now(err or "error.internal")
+			end,
+		})
 		return
 	end
 	local def = item and Items.get(item.id)

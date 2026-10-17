@@ -149,8 +149,8 @@ cmd("character", "avatarmode", { enum("mode", { "on", "off" }) })
 cmd("character", "preset", { int("level", 1, MAX_LEVEL), int("rarity", 1, 5), int("up", 0, 9, true, "0") })
 -- S28: skill tools (S56: ranks come from the level; /lvl sets them)
 cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })
--- S57: class paths (PathService admin helpers: no place, combat or scroll rules)
-cmd("character", "path", { str("pathId") })
+-- S57: class paths (PathService admin helpers: no place, combat or scroll rules); S138: /path is gone (no main path),
+-- /resetskills is the free full reset (ranks and nodes), /skillreset the ranks only
 cmd("character", "node", { str("nodeId"), int("rank", 0, 3, true) })
 cmd("character", "pathmax", { str("pathId", true) })
 cmd("character", "bp", { str("skillId"), enum("rank", { "5", "10" }), enum("option", { "a", "b" }) })

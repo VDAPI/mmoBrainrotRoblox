@@ -80,6 +80,54 @@ T.describe("ItemScore", function()
 		T.expect(b.dmg + b.surv + b.support + b.util).toBeNear(b.total, 1e-9)
 	end)
 
+	T.it("S138: contextFor = the leading direction and the weapon's pool; another pool's effect counts half", function()
+		local PathData = require("../src/shared/Data/Paths")
+		local guardian = PathData.get("guardian") :: any
+		local nodes: { [string]: number } = {}
+		local have = 0
+		for _, row in guardian.rows do
+			for _, node in row.nodes do
+				if have < PathData.MAIN_MIN_POINTS then
+					nodes[node.id] = node.maxRank
+					have += node.maxRank
+				end
+				if row.choice then
+					break
+				end
+			end
+		end
+		local hero = {
+			class = "Warrior",
+			level = 50,
+			path = { nodes = nodes, bp = {} },
+			equipment = { weapon = made("sword1h_30", {}) },
+		}
+		local ctx = ItemScore.contextFor(hero)
+		T.expect({ ctx.classId, ctx.level, ctx.pathId, ctx.poolId }).toEqual({ "Warrior", 50, "guardian", "onehand" })
+		local thin = table.clone(hero)
+		thin.path = { nodes = {}, bp = {} }
+		T.expect(ItemScore.contextFor(thin).pathId).toBeNil()
+		T.expect(ItemScore.contextFor(nil)).toEqual({ classId = "" })
+		-- a Legendary with one effect of each Warrior pool: the other pool's counts OTHER_POOL
+		local own = made("sword1h_30", {})
+		own.fx = { "mightyStrike_bloodthirst" } -- onehand
+		local other = made("sword1h_30", {})
+		other.fx = { "cleave_wide" } -- twohand
+		local bare = ItemScore.score(made("sword1h_30", {}), ctx)
+		local ownGain = ItemScore.score(own, ctx) - bare
+		local otherGain = ItemScore.score(other, ctx) - bare
+		local function points(id: string): number
+			return ItemScore.effectPoints(require("../src/shared/Logic/ItemEffects").resolve(id) :: any)
+		end
+		T.expect(ownGain > 0).toBe(true)
+		T.expect(otherGain / points("cleave_wide"))
+			.toBeNear(ItemWeights.OTHER_POOL * ownGain / points("mightyStrike_bloodthirst"), 1e-9)
+		-- without a pool (the balance model) every effect counts in full
+		local plain = { classId = "Warrior", level = 50, pathId = ctx.pathId }
+		T.expect(ItemScore.score(other, plain) - ItemScore.score(made("sword1h_30", {}), plain))
+			.toBeNear(otherGain / ItemWeights.OTHER_POOL, 1e-9)
+	end)
+
 	T.it("S67: every line and trait has a weight", function()
 		local function classHas(key: string): boolean
 			for _, byClass in ItemWeights.class do

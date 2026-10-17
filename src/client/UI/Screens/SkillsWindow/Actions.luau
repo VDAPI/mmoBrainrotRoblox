@@ -1,17 +1,20 @@
 --!strict
--- Server calls of the skills window (S59): nodes, the main path, breakpoints and the bar, one at a time. The server
+-- Server calls of the skills window (S59): nodes, breakpoints and the bar, one at a time. The server
 -- checks every rule (place, combat, weapon); a refusal plays the error sound and shows its reason as a toast. Build
 -- sets and their copy are handled by Components/BuildSetSwitch (S58).
 -- S137 (DESIGN-18 §3): skill ranks are reserved in the window ("+", "-", "Spend as the pool suggests") and sent as one
 -- AllocateSkills; "-" on a bought rank asks RefundSkillRank (with the gold price from Progression.freeRespecLevel);
 -- "Reset" asks ResetSkills.
+-- S138 (DESIGN-18 §3.2, §7): no main path choice; "-" on a node and "Refund all nodes" from Progression.freeRespecLevel
+-- show the gold price (SkillPoints.refundCost) in the confirmation; "Reset" is the full reset (ranks and nodes; the
+-- scroll pays when the reset is not free).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
-local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -24,7 +27,6 @@ export type Actions = {
 	buy: (nodeId: string) -> (),
 	refund: (nodeId: string) -> (),
 	resetAll: () -> (),
-	chooseMain: (pathId: string, cost: ("free" | "scroll")?) -> (),
 	chooseBp: (skillId: string, at: number, option: SkillData.BreakpointOption) -> (),
 	toBar: (skillId: string) -> (),
 	place: (slot: number) -> (),
@@ -95,25 +97,32 @@ function Actions.new(ctx: Context.Ctx): Actions
 			invoke("BuyNode", { nodeId })
 		end,
 		refund = function(nodeId: string)
-			invoke("RefundNode", { nodeId })
-		end,
-		resetAll = function()
-			confirm("paths.confirm.reset.title", "paths.confirm.reset.message", nil, function()
-				invoke("ResetPaths", {})
-			end)
-		end,
-		chooseMain = function(pathId: string, cost: ("free" | "scroll")?)
-			local def = PathData.get(pathId)
-			local name = if def then Text.now(def.nameKey) else pathId
-			local paid = cost == "scroll"
+			local character = Fusion.peek(ctx.character)
+			local cost = if character then SkillPoints.nodeRefundCost(character, nodeId) else 0
+			if cost <= 0 then
+				invoke("RefundNode", { nodeId })
+				return
+			end
+			local node = Paths.findNode(nodeId)
+			local name = if node then Text.now(node.nameKey) else nodeId
 			confirm(
-				if paid then "paths.confirm.change.title" else "paths.confirm.choose.title",
-				if paid then "paths.confirm.change.message" else "paths.confirm.choose.message",
-				{ name = name },
+				"paths.confirm.refund.title",
+				"paths.confirm.refund.message",
+				{ node = name, gold = cost },
 				function()
-					invoke("ChooseMainPath", { pathId })
+					invoke("RefundNode", { nodeId })
 				end
 			)
+		end,
+		resetAll = function()
+			local character: any = Fusion.peek(ctx.character)
+			local cost = if character and character.respecFree ~= true
+				then SkillPoints.nodesRefundCost(character)
+				else 0
+			local message = if cost > 0 then "paths.confirm.reset.paid" else "paths.confirm.reset.message"
+			confirm("paths.confirm.reset.title", message, { gold = cost }, function()
+				invoke("ResetPaths", {})
+			end)
 		end,
 		chooseBp = function(skillId: string, at: number, option: SkillData.BreakpointOption)
 			invoke("ChooseBreakpoint", { skillId, at, option }, function(ok: boolean, err: string?)
@@ -238,7 +247,7 @@ function Actions.new(ctx: Context.Ctx): Actions
 			end)
 		end,
 		resetSkills = function()
-			confirm("skills.points.resetTitle", "skills.points.resetMessage", nil, function()
+			confirm("skills.points.resetTitle", "skills.reset.confirm", nil, function()
 				invoke("ResetSkills", {})
 			end)
 		end,

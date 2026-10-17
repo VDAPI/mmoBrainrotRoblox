@@ -43,6 +43,13 @@ local function skill(pathId: string, skillId: string): PathNode
 	return out :: PathNode
 end
 
+-- S138 (DESIGN-18 §7): a node with its own weapon requirement (directions have none).
+local function needs(n: PathNode, weapon: Types.WeaponReq): PathNode
+	local out: any = n
+	out.weapon = weapon
+	return out :: PathNode
+end
+
 local function row(choice: boolean, nodes: { PathNode }): PathRow
 	return { choice = choice, nodes = nodes }
 end
@@ -294,7 +301,8 @@ local berserker: Types.PathDef = {
 				modify = { skill = "titansWrath", bp = { mul = { cooldown = ref("thunder") } } },
 			}),
 		}),
-		row(false, { skill(B, "carnage") }),
+		-- S138: Carnage needs a two-handed weapon (the old Berserker path weapon, now on the node)
+		row(false, { needs(skill(B, "carnage"), { main = { "sword2h", "axe2h", "hammer2h", "spear2h" } }) }),
 		row(true, {
 			node(B, "drinker", "passive", 3, "⚗", {
 				values = { drinker = { 2, 6 } },

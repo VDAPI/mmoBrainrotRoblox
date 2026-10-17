@@ -2,8 +2,8 @@
 -- A node of a path tree (FIX 2026-10-14, owner: the path tabs look like trees and show descriptions only after a
 -- click; before it the S59 card with text and "+" / "−"). Only pictures on the tree: the tile (S119 skill picture or
 -- the glyph), a gold frame once bought, a white frame while selected, a red frame when a bought node does not work
--- now, a green "+" corner while a rank can be bought, and the rank pips under it ("●●○", "33%" for team nodes outside
--- the main path, "⚠" when the node's weapon does not fit). Greyed in a closed row or when the other node of a choice
+-- now, a green "+" corner while a rank can be bought, and the rank pips under it ("●●○", "33%" for team nodes below
+-- TEAM_FULL_POINTS in their direction (S138), "⚠" when the node's weapon does not fit). Greyed in a closed row or when the other node of a choice
 -- row was taken. A click / tap selects it: the PC details panel or the phone sheet show its text with Buy / Refund
 -- (Details). PC hover shows only the name. A bought active skill node drags onto the bar. Everything comes from a
 -- PathView.NodeView.

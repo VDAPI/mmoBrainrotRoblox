@@ -123,12 +123,9 @@ function ItemTooltip.setMerchantOpen(open: boolean)
 	merchantOpen:set(open == true)
 end
 
+-- S138: the leading direction and the equipped weapon's pool (ItemScore.contextFor).
 local function scoreContext(): ItemScore.Context
-	return {
-		classId = State.Get({ "character", "class" }) or "",
-		level = State.Get({ "character", "level" }),
-		pathId = State.Get({ "character", "path", "main" }),
-	}
+	return ItemScore.contextFor(State.Get({ "character" }))
 end
 
 -- Equipped item to compare with: the one the item would replace (S68: ItemScore.replaced, rings the weaker one, the
@@ -357,7 +354,7 @@ local function build(
 		class = State.Get({ "character", "class" }),
 		equipped = if def and not worn then equippedFor(def) else nil,
 		merchantOpen = merchant,
-		pathId = State.Get({ "character", "path", "main" }),
+		pathId = scoreContext().pathId,
 		nodes = State.Get({ "character", "path", "nodes" }),
 		mainHand = gear.weapon,
 		offhand = gear.offhand,

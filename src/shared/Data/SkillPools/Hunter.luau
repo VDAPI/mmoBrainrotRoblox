@@ -8,7 +8,7 @@ local PLAN =
 	{ "aimedShot", "doubleShot", "disengage", "arrowRain", "venomArrow", "volley", "hawkEye", "predatorInstinct" }
 
 local pools: Types.ClassPools = {
-	version = 1,
+	version = 2, -- S138: directions without the main path (DESIGN-18 §7, §10): a free reset to rethink the talents
 	transitional = true,
 	defaultPool = "bow", -- the starting bow_1
 	pools = {

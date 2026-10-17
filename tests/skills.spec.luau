@@ -1112,13 +1112,13 @@ T.describe("S70 new Cleric actives", function()
 		T.expect(Skills.valueAt(diceB, "crit", 10)).toBeNear(9)
 	end)
 
-	-- S71: the paths have their PathDef; a path skill comes with its node (rows 1-2 anywhere, deeper rows in the main
-	-- path with its weapon for use).
+	-- S71: the paths have their PathDef; a path skill comes with its node (S138: every row in any direction, no direction
+	-- weapon).
 	T.it("reachable through their nodes (S71)", function()
 		local c: any = {
 			class = "Cleric",
 			level = 100,
-			path = { main = "fortune", nodes = { fortune_fortuneDice = 1 }, bp = {}, freeUsed = true },
+			path = { nodes = { fortune_fortuneDice = 1 }, bp = {} },
 			hotbar = { ["1"] = "fortuneDice", ["2"] = "sanctuary" },
 			equipment = {},
 			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
@@ -1127,7 +1127,7 @@ T.describe("S70 new Cleric actives", function()
 		T.expect(GamePaths.skillRank(c, "sanctuary")).toBe(0)
 		T.expect(GamePaths.validHotbar(c)).toEqual({ ["1"] = "fortuneDice" })
 		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "relic" })).toBe(true)
-		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "shield" })).toBe(false)
+		T.expect(GamePaths.skillUsable(c, "fortuneDice", { main = "mace1h", offhand = "shield" })).toBe(true) -- S138
 	end)
 end)
 
@@ -1136,10 +1136,11 @@ T.describe("S71 Cleric base and paths", function()
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.byId[id]
 	end
-	-- A level 100 Cleric with these nodes, main path and breakpoint choices; the skill at rank 10 with its node mods.
+	-- A level 100 Cleric with these nodes and breakpoint choices (S138: the second argument names the direction meant,
+	-- no main path); the skill at rank 10 with its node mods.
 	local function eff(
 		id: string,
-		main: string?,
+		_main: string?,
 		nodes: { [string]: number },
 		weapons: any,
 		bp: { [string]: any }?
@@ -1147,7 +1148,7 @@ T.describe("S71 Cleric base and paths", function()
 		local c: any = {
 			class = "Cleric",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp or {}, freeUsed = true },
+			path = { nodes = nodes, bp = bp or {} }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
 			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
@@ -1204,9 +1205,10 @@ T.describe("S71 Cleric base and paths", function()
 		T.expect(Skills.valueAt(def, "shieldHp", 10)).toBeNear(40) -- S89: 10B +7
 		T.expect(Skills.scaled(def, def.duration, 10)).toBeNear(17)
 		T.expect(Skills.valueAt(def, "shieldMag", 10)).toBe(15)
+		-- S138: no direction weapon: a relic keeps the row 3+ nodes too
 		local noWeapon = eff("shieldOfFaith", "healer", nodes, RELIC, bp)
-		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(34)
-		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(14)
+		T.expect(Skills.valueAt(noWeapon, "shieldHp", 10)).toBeNear(40)
+		T.expect(Skills.scaled(noWeapon, noWeapon.duration, 10)).toBeNear(17)
 		local shatter = { healer_faithShield = 3, healer_bulwark = 3, healer_shatter = 3 }
 		local withBurst, b = eff("shieldOfFaith", "healer", shatter, SCEPTER, bp)
 		T.expect(b.shieldBurst.radius).toBe(10)
@@ -1234,7 +1236,8 @@ T.describe("S71 Cleric base and paths", function()
 	end)
 
 	T.it("Holy Strike with Evil Eye, Ill Omen and Heavy Hand", function()
-		local def = eff("holyStrike", "fortune", { fortune_evilEye = 3 }, RELIC)
+		-- S138: Evil Eye (a team node of row 2) in full from TEAM_FULL_POINTS ranks in Fortune (Smile changes no skill)
+		local def = eff("holyStrike", "fortune", { fortune_evilEye = 3, fortune_smile = 3 }, RELIC)
 		local stun, misfortune
 		for _, effect in def.effects :: any do
 			if effect.kind == "stun" then
@@ -1784,7 +1787,7 @@ T.describe("Warrior S74", function()
 		T.expect(GamePaths.validHotbar(char)).toEqual({})
 		for id in NEW do
 			local def = SkillData.get(id) :: any
-			char.path = { main = def.path, nodes = { [`{def.path}_{id}`] = 1 }, bp = {}, freeUsed = true }
+			char.path = { nodes = { [`{def.path}_{id}`] = 1 }, bp = {} }
 			T.expect({ id, table.find(GamePaths.availableSkills(char), id) ~= nil }).toEqual({ id, true })
 		end
 	end)
@@ -1978,13 +1981,14 @@ T.describe("Hunter S77", function()
 			T.expect({ id, GamePaths.skillRank(hunter, id) }).toEqual({ id, 0 })
 		end
 		T.expect((GamePaths.validHotbar(hunter))).toEqual({})
-		hunter.path = { main = "scout", nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {}, freeUsed = true }
+		hunter.path = { nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {} }
 		local withNodes = GamePaths.availableSkills(hunter)
 		T.expect(table.find(withNodes, "falcon") ~= nil).toBe(true)
 		T.expect(table.find(withNodes, "drive") ~= nil).toBe(true)
 		T.expect(table.find(withNodes, "drawBead")).toBeNil()
-		hunter.path.main = "marksman"
-		T.expect(GamePaths.skillRank(hunter, "falcon")).toBe(0) -- row 4 outside the main path
+		-- S138: a row-4 skill with its node in any direction mix
+		hunter.path.nodes.marksman_steadyHand = 3
+		T.expect(GamePaths.skillRank(hunter, "falcon") > 0).toBe(true)
 	end)
 end)
 
@@ -2039,11 +2043,11 @@ T.describe("S78 Hunter base, B options and nodes", function()
 		T.expect(actives).toBe(17)
 	end)
 
-	local function hunter(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+	local function hunter(_main: string, nodes: { [string]: number }, bp: { [string]: string }): any
 		return {
 			class = "Hunter",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			path = { nodes = nodes, bp = bp }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
 			ranks = RankFill.auto("Hunter", 100), -- S137: the old automatic ranks as bought ranks
@@ -2074,7 +2078,7 @@ T.describe("S78 Hunter base, B options and nodes", function()
 	local CROSSBOW = { main = "crossbow" }
 	local BOW = { main = "bow" }
 
-	T.it("Marksman: Aimed Shot, Heartseeker and the path weapon", function()
+	T.it("Marksman: Aimed Shot, Heartseeker, any weapon (S138)", function()
 		local aimed = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, LONGBOW)
 		T.expect(Skills.valueAt(aimed, "dmg", 10)).toBeNear(271, 1e-9)
 		local _, rhythm = eff("aimedShot", "marksman", { marksman_rhythm = 3 }, {}, LONGBOW)
@@ -2086,9 +2090,9 @@ T.describe("S78 Hunter base, B options and nodes", function()
 		T.expect(tip.finisher.mul).toBe(2)
 		local sniper = eff("heartseeker", "marksman", { marksman_sniper = 3 }, {}, HEAVY)
 		T.expect(sniper.castTime).toBeNear(0.9, 1e-9)
-		-- a bow does not fit the Marksman: rows 3+ (Long Shot, row 5) are off, the B option still works
+		-- S138: no direction weapon: Long Shot (row 5) works with a bow as with a longbow
 		local bow = eff("aimedShot", "marksman", { marksman_longShot = 3 }, { ["aimedShot:5"] = "b" }, BOW)
-		T.expect(Skills.valueAt(bow, "dmg", 10)).toBeNear(263, 1e-9)
+		T.expect(Skills.valueAt(bow, "dmg", 10)).toBeNear(271, 1e-9)
 	end)
 
 	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
@@ -2286,16 +2290,16 @@ T.describe("Arcane Charges and beam (S80)", function()
 		end
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(false)
 		T.expect((GamePaths.validHotbar(mage))).toEqual({})
-		mage.path = { main = "arcanist", nodes = { arcanist_arcaneDischarge = 1 }, bp = {}, freeUsed = true }
+		mage.path = { nodes = { arcanist_arcaneDischarge = 1 }, bp = {} }
 		local withNode = GamePaths.availableSkills(mage)
 		T.expect(table.find(withNode, "arcaneDischarge") ~= nil).toBe(true)
 		T.expect(table.find(withNode, "arcaneTorrent")).toBeNil()
-		-- Arcane Charges need the node and the Arcanist's weapon (S80 chargesEnabled)
+		-- Arcane Discharge needs its node (S138: any Mage weapon, any direction mix)
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "runestaff" }))).toBe(true)
 		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "wand", offhand = "tome" }))).toBe(true)
-		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "staff" }))).toBe(false)
-		mage.path.main = "destroyer"
-		T.expect(GamePaths.skillRank(mage, "arcaneDischarge")).toBe(0) -- row 4 outside the main path
+		T.expect((GamePaths.skillUsable(mage, "arcaneDischarge", { main = "staff" }))).toBe(true)
+		mage.path.nodes.destroyer_trace = 3
+		T.expect(GamePaths.skillRank(mage, "arcaneDischarge") > 0).toBe(true)
 	end)
 end)
 
@@ -2358,11 +2362,11 @@ T.describe("S81 Mage base, B options and nodes", function()
 		T.expect((SkillData.get("evocation") :: any).cooldown).toBe(120)
 	end)
 
-	local function mage(main: string, nodes: { [string]: number }, bp: { [string]: string }): any
+	local function mage(_main: string, nodes: { [string]: number }, bp: { [string]: string }): any
 		return {
 			class = "Mage",
 			level = 100,
-			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
+			path = { nodes = nodes, bp = bp }, -- S138: no main path
 			hotbar = {},
 			equipment = {},
 			ranks = RankFill.auto("Mage", 100), -- S137: the old automatic ranks as bought ranks
@@ -2391,7 +2395,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 		T.expect(Skills.cooldown(bolt, 10)).toBeNear(2.2, 1e-9)
 	end)
 
-	T.it("Arcane Discharge with Full Discharge, Elemental Vortex with Raging Vortex and the path weapon", function()
+	T.it("Arcane Discharge with Full Discharge, Elemental Vortex with Raging Vortex, any weapon (S138)", function()
 		local discharge = eff(
 			"arcaneDischarge",
 			"arcanist",
@@ -2404,13 +2408,9 @@ T.describe("S81 Mage base, B options and nodes", function()
 		local bp = { ["elementalVortex:5"] = "b" }
 		local vortex = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "orb" })
 		T.expect(Skills.valueAt(vortex, "dmg", 10)).toBeNear(10.97, 1e-9)
-		-- a tome in the Destroyer's off-hand: rows 4 and 9 need the path weapon
-		T.expect(
-			GamePaths.skillMods(mage("destroyer", nodes, bp), "elementalVortex", { main = "wand", offhand = "tome" })
-		)
-			.toEqual({})
+		-- S138: a tome in the Destroyer's off-hand: no direction weapon, rows 4 and 9 work as with the orb
 		local plain = eff("elementalVortex", "destroyer", nodes, bp, { main = "wand", offhand = "tome" })
-		T.expect(Skills.valueAt(plain, "dmg", 10)).toBeNear(9.5, 1e-9)
+		T.expect(Skills.valueAt(plain, "dmg", 10)).toBeNear(10.97, 1e-9)
 	end)
 
 	T.it(

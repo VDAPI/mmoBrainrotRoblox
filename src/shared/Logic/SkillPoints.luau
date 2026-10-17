@@ -1,8 +1,9 @@
 --!strict
 -- Skill points (S137, DESIGN-18 §3, §9, §10). Pure. Every weapon pool (Logic/SkillPools) has its own points,
 -- pointsAt(L) = L x Progression.skillPoints.perLevel, and its own bought ranks (character.ranks[poolId][skillId]); one
--- point buys one rank up to the limit Skills.rankAt (the old level curve). Nothing is bought by itself: the window
--- reserves ranks and the server applies the whole reservation (apply) or nothing. Refunds: free below
+-- point buys one rank up to the limit Skills.rankAt (the old level curve). S138: the full reset (canReset with the
+-- scroll, resetState) and the node refund price (refundCost, nodeRefundCost, nodesRefundCost). Nothing is bought by
+-- itself: the window reserves ranks and the server applies the whole reservation (apply) or nothing. Refunds: free below
 -- Progression.freeRespecLevel anywhere out of combat, from it in town or at a dungeon gate for rankRefundGold x level
 -- gold a rank. The rank rule itself (pool, node of a path skill, limit) is Logic/Paths.skillRank; the rank part of a
 -- set's cleaning is Logic/Paths.cleanRanks.
@@ -160,7 +161,8 @@ function SkillPoints.apply(character: any, poolId: string, plan: any): (boolean,
 	return true, nil, ranks
 end
 
--- Gold for refunding `n` ranks at `level` (0 below freeRespecLevel).
+-- Gold for refunding `n` ranks at `level` (0 below freeRespecLevel). S138: the same price for a skill rank and a node
+-- rank (RefundNode, ResetPaths).
 function SkillPoints.refundCost(level: number, n: number): number
 	if level < Progression.freeRespecLevel then
 		return 0
@@ -193,19 +195,76 @@ function SkillPoints.canRefund(
 	return true, nil, SkillPoints.refundCost(level, 1)
 end
 
--- The full reset of every pool's ranks (ResetSkills): out of combat; free with respecFree or below freeRespecLevel,
--- otherwise "skills.error.resetNeedsScroll" (the Scroll of Renewal comes in S138). Third value: it uses respecFree.
-function SkillPoints.canReset(character: any, ctx: PlaceCtx): (boolean, string?, boolean)
+-- How a full reset is paid (S138): "level" (below freeRespecLevel), "respec" (the respecFree flag, used up) or
+-- "scroll" (one Scroll of Skill Renewal, used up).
+export type ResetPay = "level" | "respec" | "scroll"
+
+-- The full reset (ResetSkills, the Scroll of Skill Renewal; S138, DESIGN-18 §3.2): every pool's ranks and the active
+-- set's nodes back, breakpoint choices kept. Out of combat, anywhere; free below freeRespecLevel, then with respecFree
+-- (the scroll is not used up), else with a scroll in the backpack (`scrolls` = how many the character has), otherwise
+-- "skills.error.resetNeedsScroll". Third value: how it is paid (nil when refused).
+function SkillPoints.canReset(character: any, ctx: PlaceCtx, scrolls: number?): (boolean, string?, ResetPay?)
 	if ctx.inCombat then
-		return false, "paths.error.combat", false
+		return false, "paths.error.combat", nil
 	end
 	if character.level < Progression.freeRespecLevel then
-		return true, nil, false
+		return true, nil, "level"
 	end
 	if character.respecFree == true then
-		return true, nil, true
+		return true, nil, "respec"
 	end
-	return false, "skills.error.resetNeedsScroll", false
+	if (scrolls or 0) >= 1 then
+		return true, nil, "scroll"
+	end
+	return false, "skills.error.resetNeedsScroll", nil
+end
+
+-- The state after a full reset: no ranks in any pool, no nodes, the breakpoint choices of the set kept (a copy).
+function SkillPoints.resetState(
+	character: any
+): { ranks: { [string]: Ranks }, path: { nodes: { [string]: number }, bp: any } }
+	local path = character.path
+	local bp = if type(path) == "table" and type(path.bp) == "table" then TableUtil.deepCopy(path.bp) else {}
+	return { ranks = {}, path = { nodes = {}, bp = bp } }
+end
+
+local function keptRanks(character: any): number
+	local total = 0
+	for _, ranks in (Paths.cleanRanks(character)) do
+		for _, n in ranks do
+			total += n
+		end
+	end
+	return total
+end
+
+-- S138: skill ranks (all pools) that `nodes` in place of the active set's nodes would drop (Paths.cleanRanks: a path
+-- skill without its node holds no ranks). A node refund pays for them too, so it never refunds ranks for less than
+-- RefundSkillRank.
+function SkillPoints.droppedRanks(character: any, nodes: { [string]: number }): number
+	local path = if type(character.path) == "table" then character.path else {}
+	local after = table.clone(character)
+	after.path = { nodes = nodes, bp = path.bp or {} }
+	return math.max(0, keptRanks(character) - keptRanks(after))
+end
+
+-- S138: gold for refunding one rank of `nodeId` (RefundNode) = refundCost of that rank and of the skill ranks it drops.
+function SkillPoints.nodeRefundCost(character: any, nodeId: string): number
+	local path = if type(character.path) == "table" then character.path else {}
+	local nodes = table.clone(path.nodes or {})
+	local rank = (if type(nodes[nodeId]) == "number" then nodes[nodeId] else 0) - 1
+	nodes[nodeId] = if rank > 0 then rank else nil
+	return SkillPoints.refundCost(character.level, 1 + SkillPoints.droppedRanks(character, nodes))
+end
+
+-- S138: gold for refunding every node of the active set (ResetPaths) = refundCost of all their ranks and of the skill
+-- ranks they drop (0 below freeRespecLevel).
+function SkillPoints.nodesRefundCost(character: any): number
+	local n = Paths.spent(character)
+	if n <= 0 then
+		return 0
+	end
+	return SkillPoints.refundCost(character.level, n + SkillPoints.droppedRanks(character, {}))
 end
 
 -- The buying order of a pool (SkillPools.members: the plan, other base members, the class's path skills).

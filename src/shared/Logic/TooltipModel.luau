@@ -16,7 +16,7 @@
 --   potionDiscount: number -- guild potion discount (derived stat), for the shop price
 --   merchantOpen: boolean  -- a merchant window is open: backpack items add "Sells for: X gold"
 --   hints: boolean         -- false hides the "double click: equip/use" hint (default: shown outside shops)
---   pathId: string         -- S68: character.path.main
+--   pathId: string         -- S68: the main path; S138: the leading direction (Logic/Paths.mainOf)
 --   nodes: {[id]: number}  -- S68: character.path.nodes (owned nodes are marked in trait details)
 --   mainHand: ItemInstance -- S68: equipped weapon (Full Draw details; an off-hand against a two-hander)
 --   offhand: ItemInstance  -- S68: equipped off-hand (a two-handed candidate also replaces it)

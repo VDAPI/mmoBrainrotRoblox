@@ -8,7 +8,7 @@ local PLAN =
 	{ "holyStrike", "heal", "radiance", "circleOfLight", "shieldOfFaith", "judgement", "devotion", "divineWrath" }
 
 local pools: Types.ClassPools = {
-	version = 1,
+	version = 2, -- S138: directions without the main path (DESIGN-18 §7, §10): a free reset to rethink the talents
 	transitional = true,
 	defaultPool = "hammer", -- the starting mace1h_1
 	pools = {

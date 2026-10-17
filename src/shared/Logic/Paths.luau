@@ -1,15 +1,14 @@
 --!strict
--- Class paths (ROZWOJ 2.2-2.10, 3.1; S57). Pure. Points, rows, buying and refunding nodes, the main path, path
--- skills, breakpoint choices, the path weapon, node values and skill changes, passives, the hotbar check and the
--- edit rules. Every function reads paths and skills through a Source: the game uses the default module (Data/Paths,
+-- Class paths (ROZWOJ 2.2-2.10, 3.1; S57). Pure. Points, rows, buying and refunding nodes, path skills, breakpoint
+-- choices, node values and skill changes, passives, the hotbar check and the edit rules. Every function reads paths and skills through a Source: the game uses the default module (Data/Paths,
 -- Data/Skills), tests build their own with Paths.withSource(Paths.sourceOf(paths, skills)).
 -- From a character only `class`, `level`, `path`, `hotbar` and `equipment` are read; a missing `path` is empty.
 -- Build sets (S58, ROZWOJ 2.9): swapSets / copySet / cleanSet and friends also read `stats`, `statPoints`,
 -- `buildSlot` and `buildOther`.
 -- Node numbers (B3): values that depend on the node rank sit in node.values ({ rank 1, rank max }); passive / aura /
 -- luck map a stat or field to a values field; in modify.bp any number is { ref = "<values field>" } (inside `mul`
--- it becomes 1 + (x - 1) * scale, elsewhere x * scale). Team nodes of rows 1..DIP_ROWS work outside the main path
--- with scale node.dipScale or DIP_SCALE.
+-- it becomes 1 + (x - 1) * scale, elsewhere x * scale). Team nodes of rows 1..DIP_ROWS work with scale node.dipScale or
+-- DIP_SCALE while their direction has fewer than TEAM_FULL_POINTS ranks (S138).
 -- S59: nodeScale (that rule for any node), nodeArgs (node description arguments), iconWeapon, isTwoHanded; the
 -- window's views live in Logic/PathView.
 -- S60: luckOfNodes / luck (raw Data/Luck fields of the active nodes).
@@ -19,6 +18,13 @@
 -- skills are in every pool but still need their node), the bought rank, the limit; the pool defaults to the active one
 -- (the equipped weapon). Build sets carry ranks, bars, barPool, respecFree and poolsVersion; cleanRanks is the rank
 -- part of cleanSet (Logic/SkillPoints.clean). Points and the other rank rules: Logic/SkillPoints.
+-- S138 (DESIGN-18 §7): paths are mixable directions. No main path (canChooseMain, MAIN_LEVEL, mainWeaponOk, `main` and
+-- `freeUsed` are gone; clampToLevel / cleanSet drop the old fields): every row of every direction opens with its level
+-- and the ranks in its lower rows; a capstone (row kind "capstone") in at most CAPSTONES_MAX directions, the upgrade only
+-- in the direction with the capstone; PathDef.weapon blocks nothing (node.weapon still does, in every row). The leading
+-- direction (mainOf: the most ranks, at least MAIN_MIN_POINTS, a tie goes to the lower order) replaces the main path for
+-- the title, statPlan, item weights and the party sign. Node refunds below Progression.freeRespecLevel work anywhere out
+-- of combat (canEdit with ctx.level); from it they cost gold (PathService, Logic/SkillPoints.refundCost).
 
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
@@ -49,20 +55,13 @@ export type Flat = { x: number, z: number }
 export type Aura = {
 	nodeId: string, -- buff skillId; "admin_aura" for /aura
 	category: string, -- Data/BuffCategories ally category
-	stats: { [string]: number }, -- resolved at the node's rank (x dipScale outside the main path); value categories: { value = n }
+	stats: { [string]: number }, -- resolved at the node's rank (x nodeScale); value categories: { value = n }
 	shape: "circle" | "behind",
 	radius: number,
 }
-export type EditAction =
-	"buy"
-	| "refund"
-	| "chooseMain"
-	| "changeMain"
-	| "chooseBp"
-	| "changeBp"
-	| "switchSet"
-	| "copySet"
--- dead / inRun (S58): only the build set actions read them; nil = false.
+export type EditAction = "buy" | "refund" | "chooseBp" | "changeBp" | "switchSet" | "copySet"
+-- dead / inRun (S58): only the build set actions read them; nil = false. level (S138): a refund below
+-- Progression.freeRespecLevel may happen anywhere out of combat (nil = the town / gate rule).
 export type EditCtx = {
 	action: EditAction,
 	inCombat: boolean,
@@ -70,6 +69,7 @@ export type EditCtx = {
 	nearGate: boolean,
 	dead: boolean?,
 	inRun: boolean?,
+	level: number?,
 }
 export type RefundOpts = { path: string?, fromRow: number?, points: number? }
 export type PathState = Types.PathState
@@ -98,7 +98,9 @@ export type Source = {
 local ROWS = PathData.ROWS
 local DIP_ROWS = PathData.DIP_ROWS
 local DIP_SCALE = PathData.DIP_SCALE
-local MAIN_LEVEL = ROWS[DIP_ROWS + 1].level
+local CAPSTONES_MAX = PathData.CAPSTONES_MAX
+local MAIN_MIN_POINTS = PathData.MAIN_MIN_POINTS
+local TEAM_FULL_POINTS = PathData.TEAM_FULL_POINTS
 local BP_RANKS = Skills.BREAKPOINT_LEVELS
 
 -- Two-handed weapon types, from the item bases.
@@ -163,7 +165,7 @@ local function inAura(
 	return angle <= AURA.behindAngle / 2 + 1e-9
 end
 
-local EMPTY: PathState = table.freeze({ main = nil, nodes = table.freeze({}), bp = table.freeze({}), freeUsed = false })
+local EMPTY: PathState = table.freeze({ nodes = table.freeze({}), bp = table.freeze({}) })
 
 local function stateOf(character: Char): PathState
 	local state = character.path
@@ -276,7 +278,8 @@ end
 
 -- ROZWOJ 2.10 (B5): where an edit may happen. The server builds the context itself. Build sets (S58, ROZWOJ 2.9):
 -- switching needs a living character outside a dungeon run, out of combat, in town or at a gate; copying only a
--- living character out of combat (it does not touch the active set).
+-- living character out of combat (it does not touch the active set). S138 (DESIGN-18 §3.2): a node refund below
+-- Progression.freeRespecLevel (ctx.level) works anywhere out of combat, from it in town or at a gate (and costs gold).
 local function canEdit(ctx: EditCtx): (boolean, string?)
 	local action = ctx.action
 	if action == "switchSet" or action == "copySet" then
@@ -297,18 +300,16 @@ local function canEdit(ctx: EditCtx): (boolean, string?)
 	if ctx.inCombat then
 		return false, "paths.error.combat"
 	end
-	if action == "buy" or action == "chooseMain" or action == "chooseBp" then
+	if action == "buy" or action == "chooseBp" then
 		return true, nil
 	elseif action == "refund" or action == "changeBp" then
 		if ctx.inTown or ctx.nearGate then
 			return true, nil
 		end
-		return false, "paths.error.place"
-	elseif action == "changeMain" then
-		if ctx.inTown then
+		if action == "refund" and ctx.level ~= nil and ctx.level < Progression.freeRespecLevel then
 			return true, nil
 		end
-		return false, "paths.error.town"
+		return false, "paths.error.place"
 	end
 	return false, "error.badRequest"
 end
@@ -642,16 +643,84 @@ local function buildApi(source: Source)
 		if character.level < ROWS[row].level then
 			return false, "paths.error.level"
 		end
-		if row > DIP_ROWS and state.main ~= pathId then
-			return false, "paths.error.main"
-		end
 		if ranksBelow(state.nodes, path, row) < ROWS[row].need then
 			return false, "paths.error.need"
 		end
 		return true, nil
 	end
 
-	-- Buying a rank; the weapon is not a condition.
+	-- Ranks bought in one path (every row).
+	local function spentIn(nodes: { [string]: number }, path: PathDef): number
+		return ranksBelow(nodes, path, #ROWS + 1)
+	end
+
+	-- S138: does the path have its capstone (row kind "capstone") bought?
+	local function hasCapstone(nodes: { [string]: number }, path: PathDef): boolean
+		for r, row in ROWS do
+			if row.kind == "capstone" and rowRanks(nodes, path, r) > 0 then
+				return true
+			end
+		end
+		return false
+	end
+
+	-- S138 (DESIGN-18 §7): the leading direction of a node map: the path of the class with the most ranks, at least
+	-- MAIN_MIN_POINTS; a tie goes to the lower order (pathsOf is sorted by order); nil below the threshold.
+	local function mainOfNodes(classId: string, nodes: { [string]: number }): string?
+		local best: string?, bestRanks = nil, MAIN_MIN_POINTS - 1
+		for _, path in source.pathsOf(classId) do
+			local ranks = spentIn(nodes, path)
+			if ranks > bestRanks then
+				best, bestRanks = path.id, ranks
+			end
+		end
+		return best
+	end
+
+	local function mainOf(character: Char): string?
+		return mainOfNodes(character.class, stateOf(character).nodes)
+	end
+
+	-- Ranks the character has in one direction (S138: the leading direction, the team node rule).
+	local function pathSpent(character: Char, pathId: string): number
+		local path = source.path(pathId)
+		if not path or path.class ~= character.class then
+			return 0
+		end
+		return spentIn(stateOf(character).nodes, path)
+	end
+
+	-- S138: the direction whose capstone is bought, nil without one. With two (only an old save or an admin leaves that;
+	-- clampToLevel keeps one) the leading direction's, else the lower order's.
+	local function capstoneOf(character: Char): string?
+		local nodes = stateOf(character).nodes
+		local main = mainOf(character)
+		local first: string? = nil
+		for _, path in source.pathsOf(character.class) do
+			if hasCapstone(nodes, path) then
+				if path.id == main then
+					return path.id
+				end
+				first = first or path.id
+			end
+		end
+		return first
+	end
+
+	-- Directions other than `pathId` with a bought capstone.
+	local function otherCapstones(classId: string, nodes: { [string]: number }, pathId: string): number
+		local count = 0
+		for _, path in source.pathsOf(classId) do
+			if path.id ~= pathId and hasCapstone(nodes, path) then
+				count += 1
+			end
+		end
+		return count
+	end
+
+	-- Buying a rank; the weapon is not a condition. S138: a capstone only while fewer than CAPSTONES_MAX other
+	-- directions have theirs ("skills.error.capstoneTaken"), the upgrade only in the direction with its capstone
+	-- ("paths.error.upgrade").
 	local function canBuy(character: Char, nodeId: string): (boolean, string?)
 		local found = find(nodeId)
 		if not found or found.path.class ~= character.class then
@@ -675,6 +744,13 @@ local function buildApi(source: Source)
 				end
 			end
 		end
+		local kind = ROWS[found.row].kind
+		if kind == "capstone" and otherCapstones(character.class, state.nodes, found.path.id) >= CAPSTONES_MAX then
+			return false, "skills.error.capstoneTaken"
+		end
+		if kind == "upgrade" and not hasCapstone(state.nodes, found.path) then
+			return false, "paths.error.upgrade"
+		end
 		return true, nil
 	end
 
@@ -695,22 +771,24 @@ local function buildApi(source: Source)
 			if rowRanks(nodes, found.path, r) > 0 and ranksBelow(nodes, found.path, r) < ROWS[r].need then
 				return false, "paths.error.needAbove"
 			end
+			-- S138: an upgrade stays only with its capstone
+			if
+				ROWS[r].kind == "upgrade"
+				and rowRanks(nodes, found.path, r) > 0
+				and not hasCapstone(nodes, found.path)
+			then
+				return false, "paths.error.needAbove"
+			end
 		end
 		return true, nil
 	end
 
 	local function copyState(state: PathState, nodes: { [string]: number }): PathState
-		return {
-			main = state.main,
-			nodes = nodes,
-			bp = table.clone(state.bp or {}),
-			freeUsed = state.freeUsed == true,
-		}
+		return { nodes = nodes, bp = table.clone(state.bp or {}) }
 	end
 
 	-- Refunds ranks from the top (highest rows first, in a row from the last node, rank by rank). `path` limits it to
-	-- one path, `fromRow` to rows >= fromRow, `points` to that many ranks (nil = every matching rank). main, freeUsed
-	-- and bp stay.
+	-- one path, `fromRow` to rows >= fromRow, `points` to that many ranks (nil = every matching rank). bp stays.
 	local function refundNodes(classId: string, nodesIn: { [string]: number }, opts: RefundOpts?): { [string]: number }
 		local nodes = table.clone(nodesIn)
 		local budget = if opts and opts.points then opts.points else math.huge
@@ -748,34 +826,14 @@ local function buildApi(source: Source)
 		return copyState(state, refundNodes(character.class, state.nodes, opts))
 	end
 
-	-- The third value is the cost: "free" while freeUsed is false, else "scroll".
-	local function canChooseMain(character: Char, pathId: string): (boolean, string?, ("free" | "scroll")?)
-		local path = source.path(pathId)
-		if not path or path.class ~= character.class then
-			return false, "paths.error.unknown", nil
-		end
-		if character.level < MAIN_LEVEL then
-			return false, "paths.error.mainLevel", nil
-		end
-		local state = stateOf(character)
-		if state.main == pathId then
-			return false, "paths.error.sameMain", nil
-		end
-		return true, nil, if state.freeUsed then "scroll" else "free"
-	end
-
-	-- A path skill's node rule (S57): a PathDef, its "skill" node bought, its row open for the character (rows above
-	-- DIP_ROWS only in the main path, the row level reached).
+	-- A path skill's node rule (S57; S138: in every direction): a PathDef, its "skill" node bought, the row level
+	-- reached. Its ranks are bought in every pool (Logic/SkillPoints).
 	local function pathSkillOpen(character: Char, skill: SkillDef): boolean
 		local found = skillNode(skill)
 		if not found then
 			return false
 		end
-		local state = stateOf(character)
-		if rankIn(state.nodes, found.node.id) <= 0 then
-			return false
-		end
-		if found.row > DIP_ROWS and state.main ~= found.path.id then
+		if rankIn(stateOf(character).nodes, found.node.id) <= 0 then
 			return false
 		end
 		return character.level >= ROWS[found.row].level
@@ -834,8 +892,8 @@ local function buildApi(source: Source)
 	end
 
 	-- A base skill of the active pool (S137: "cast.error.wrongPool" for a skill of another pool), rank > 0 and, for a path
-	-- skill, the path weapon (rows above DIP_ROWS) and the node's own weapon (every row). The Mage element check stays
-	-- in SkillService.
+	-- skill, the node's own weapon (every row; S138: a direction has no weapon). The Mage element check stays in
+	-- SkillService.
 	local function skillUsable(character: Char, skillId: string, weapons: WeaponTypes): (boolean, string?)
 		local def = source.skill(skillId)
 		if def and def.class == character.class and def.path == nil then
@@ -852,26 +910,24 @@ local function buildApi(source: Source)
 			return true, nil
 		end
 		local found = skillNode(skill) :: Found
-		if found.row > DIP_ROWS and not weaponOk(found.path.weapon, weapons) then
-			return false, "cast.error.pathWeapon"
-		end
 		if found.node.weapon and not weaponOk(found.node.weapon, weapons) then
 			return false, "cast.error.pathWeapon"
 		end
 		return true, nil
 	end
 
-	-- B3 for any node, bought or not (S59): a team node of rows 1..DIP_ROWS outside the main path (also without one)
-	-- works at node.dipScale or DIP_SCALE, everything else at 1. The one place of the rule (activeNodes, the window).
+	-- B3 for any node, bought or not (S59; S138, DESIGN-18 §7): a team node of rows 1..DIP_ROWS works at node.dipScale or
+	-- DIP_SCALE while its direction has fewer than TEAM_FULL_POINTS ranks, everything else at 1. The one place of the
+	-- rule (activeNodes, the window).
 	local function nodeScale(character: Char, pathId: string, row: number, node: PathNode): number
-		if row <= DIP_ROWS and stateOf(character).main ~= pathId and isTeamNode(node) then
+		if row <= DIP_ROWS and isTeamNode(node) and pathSpent(character, pathId) < TEAM_FULL_POINTS then
 			return node.dipScale or DIP_SCALE
 		end
 		return 1
 	end
 
-	-- Nodes that work now: rank > 0, row level reached, rows above DIP_ROWS only of the main path and with its weapon,
-	-- node.weapon in every row. Order: row, then path order, then place in the row.
+	-- Nodes that work now: rank > 0, row level reached, node.weapon fits (every row; S138: no main path and no
+	-- direction weapon). Order: row, then path order, then place in the row.
 	local function activeNodes(character: Char, weapons: WeaponTypes): { ActiveNode }
 		local out: { ActiveNode } = {}
 		local state = stateOf(character)
@@ -881,9 +937,6 @@ local function buildApi(source: Source)
 				break
 			end
 			for _, path in paths do
-				if r > DIP_ROWS and (state.main ~= path.id or not weaponOk(path.weapon, weapons)) then
-					continue
-				end
 				local def = path.rows[r]
 				local list: { PathNode } = if def then def.nodes else {}
 				for _, node in list do
@@ -926,8 +979,8 @@ local function buildApi(source: Source)
 		return luckOfNodes(activeNodes(character, weapons))
 	end
 
-	-- Party auras of the active aura nodes (ROZWOJ 7.3, S61): stats at the node rank times entry.scale (already the
-	-- dip scale outside the main path), shape and radius with their defaults.
+	-- Party auras of the active aura nodes (ROZWOJ 7.3, S61): stats at the node rank times entry.scale (nodeScale),
+	-- shape and radius with their defaults.
 	local function auras(character: Char, weapons: WeaponTypes): { Aura }
 		local out: { Aura } = {}
 		for _, entry in activeNodes(character, weapons) do
@@ -998,7 +1051,7 @@ local function buildApi(source: Source)
 		local totals: Skills.PassiveTotals = { flat = {}, pct = {}, hooks = {} }
 		for _, skill in source.classSkills(character.class) do
 			if skill.passive then
-				-- a path skill's passive needs the skill usable (path weapon above DIP_ROWS, node.weapon)
+				-- a path skill's passive needs the skill usable (node.weapon)
 				if skill.path == nil or skillUsable(character, skill.id, weapons) then
 					Skills.addPassive(totals, skill, skillRank(character, skill.id))
 				end
@@ -1071,9 +1124,10 @@ local function buildApi(source: Source)
 	end
 
 	-- The hotbar and path.bp the character may keep (B6): the hotbar as validBar in its pool (barPool, else the active
-	-- pool); bp entries "<skillId>:<5|10>" = "a" | "b" of a skill whose breakpoint at that rank has option B: a base
-	-- skill of the class always (S137, DESIGN-18 §8: a refunded rank keeps the choice), a path skill while its node
-	-- rule holds. Third value: anything changed.
+	-- pool); bp entries "<skillId>:<5|10>" = "a" | "b" of a skill of the class whose breakpoint at that rank has option
+	-- B: a base skill always (S137, DESIGN-18 §8: a refunded rank keeps the choice), a path skill while its node exists
+	-- (S138: also with the node refunded, so a node refund and the full reset keep the choice; without the node the
+	-- skill has rank 0 and the choice does nothing). Third value: anything changed.
 	local function validHotbar(character: Char): ({ [string]: string }, { [string]: "a" | "b" }, boolean)
 		local bar, changed = validBar(character, barPoolOf(character), character.hotbar)
 		local bp: { [string]: "a" | "b" } = {}
@@ -1092,7 +1146,7 @@ local function buildApi(source: Source)
 				and pair
 				and pair.b
 				and skill.class == character.class
-				and (skill.path == nil or pathSkillOpen(character, skill))
+				and (skill.path == nil or skillNode(skill) ~= nil)
 			then
 				bp[key] = option
 			else
@@ -1133,30 +1187,26 @@ local function buildApi(source: Source)
 	end
 
 	-- The state a character of `level` may keep (load, SetLevel down, admin leftovers): unknown / other class / rank <= 0
-	-- nodes go, ranks above maxRank are cut, rows above the level and rows above DIP_ROWS of paths other than the main
-	-- one go, a main that is not a path of the class becomes nil, a choice row keeps its first bought node, a row
-	-- without its requirement goes with every higher row of its path, and points above pointsAt(level) are refunded
-	-- from the top. bp and freeUsed stay. Deterministic.
+	-- nodes go, ranks above maxRank are cut, rows above the level go, a choice row keeps its first bought node; S138:
+	-- capstones of more than CAPSTONES_MAX directions keep the leading direction's (else the lower order's) and the
+	-- others go with their upgrades; a row without its requirement (or an upgrade without its capstone) goes with every
+	-- higher row of its path, and points above pointsAt(level) are refunded from the top. bp stays; the old `main` and
+	-- `freeUsed` are not copied. Deterministic.
 	local function clampToLevel(character: Char, level: number): PathState
 		local state = stateOf(character)
 		local classId = character.class
-		local main = state.main
-		local mainPath = if main then source.path(main) else nil
-		if not mainPath or mainPath.class ~= classId then
-			main = nil
-		end
 		local nodes: { [string]: number } = {}
 		local saved: { [string]: number } = state.nodes or {}
 		for id, rank in saved do
 			local found = if type(id) == "string" then find(id) else nil
 			if found and found.path.class == classId and type(rank) == "number" and rank >= 1 then
-				local row = found.row
-				if ROWS[row].level <= level and (row <= DIP_ROWS or found.path.id == main) then
+				if ROWS[found.row].level <= level then
 					nodes[id] = math.min(math.floor(rank), found.node.maxRank)
 				end
 			end
 		end
-		for _, path in source.pathsOf(classId) do
+		local paths = source.pathsOf(classId)
+		for _, path in paths do
 			for _, row in path.rows do
 				if row.choice then
 					local keep = false
@@ -1170,8 +1220,37 @@ local function buildApi(source: Source)
 					end
 				end
 			end
+		end
+		-- S138: at most CAPSTONES_MAX capstones, the leading direction's first, then by order
+		local keptCapstones: { [string]: boolean } = {}
+		local capstones = 0
+		local leading = mainOfNodes(classId, nodes)
+		local leadingPath = if leading then source.path(leading) else nil
+		if leadingPath and hasCapstone(nodes, leadingPath) then
+			keptCapstones[leadingPath.id] = true
+			capstones = 1
+		end
+		for _, path in paths do
+			if not keptCapstones[path.id] and hasCapstone(nodes, path) then
+				if capstones < CAPSTONES_MAX then
+					keptCapstones[path.id] = true
+					capstones += 1
+				else
+					for r, row in ROWS do
+						if row.kind == "capstone" or row.kind == "upgrade" then
+							for _, node in path.rows[r].nodes do
+								nodes[node.id] = nil
+							end
+						end
+					end
+				end
+			end
+		end
+		for _, path in paths do
 			for r = 1, #ROWS do
-				if rowRanks(nodes, path, r) > 0 and ranksBelow(nodes, path, r) < ROWS[r].need then
+				local broken = ranksBelow(nodes, path, r) < ROWS[r].need
+					or (ROWS[r].kind == "upgrade" and not hasCapstone(nodes, path))
+				if rowRanks(nodes, path, r) > 0 and broken then
 					for above = r, #ROWS do
 						for _, node in path.rows[above].nodes do
 							nodes[node.id] = nil
@@ -1185,7 +1264,7 @@ local function buildApi(source: Source)
 		if excess > 0 then
 			nodes = refundNodes(classId, nodes, { points = excess })
 		end
-		return { main = main, nodes = nodes, bp = table.clone(state.bp or {}), freeUsed = state.freeUsed == true }
+		return { nodes = nodes, bp = table.clone(state.bp or {}) }
 	end
 
 	-- S137 (DESIGN-18 §10, Logic/SkillPoints.clean): the bought ranks a character may keep. Every pool of the class
@@ -1254,7 +1333,7 @@ local function buildApi(source: Source)
 	-- S137: an empty set has no bought ranks and empty bars (nothing is bought by itself, DESIGN-18 §3).
 	local function emptySet(classId: string, level: number): BuildSet
 		return {
-			path = { main = nil, nodes = {}, bp = {}, freeUsed = false },
+			path = { nodes = {}, bp = {} },
 			stats = StatPlan.startOf(classId),
 			statPoints = StatPlan.total(level),
 			hotbar = {},
@@ -1291,11 +1370,10 @@ local function buildApi(source: Source)
 			points = math.max(0, StatPlan.total(level) - StatPlan.spent(classId, stats :: any))
 		end
 		return {
+			-- S138: the old `main` / `freeUsed` are not copied
 			path = {
-				main = if type(pathIn.main) == "string" then pathIn.main else nil,
 				nodes = if type(pathIn.nodes) == "table" then TableUtil.deepCopy(pathIn.nodes) else {},
 				bp = if type(pathIn.bp) == "table" then TableUtil.deepCopy(pathIn.bp) else {},
-				freeUsed = pathIn.freeUsed == true,
 			},
 			stats = stats,
 			statPoints = points,
@@ -1338,12 +1416,10 @@ local function buildApi(source: Source)
 		}
 	end
 
-	-- The new buildOther: the active set, but the target keeps its own freeUsed and respecFree (a copy never returns a
-	-- free choice).
+	-- The new buildOther: the active set, but the target keeps its own respecFree (a copy never returns a free reset).
 	local function copySet(character: any): BuildSet
 		local set = activeSet(character)
 		local other = character.buildOther
-		set.path.freeUsed = type(other) == "table" and type(other.path) == "table" and other.path.freeUsed == true
 		set.respecFree = type(other) == "table" and other.respecFree == true
 		return set
 	end
@@ -1391,20 +1467,10 @@ local function buildApi(source: Source)
 		return out, not TableUtil.deepEqual(out, set)
 	end
 
-	-- The main path's weapon (ROZWOJ 2.8): false and its PathDef when the weapons do not fit; true without a main path
-	-- or for an id without a PathDef.
-	local function mainWeaponOk(character: Char, weapons: WeaponTypes): (boolean, PathDef?)
-		local main = stateOf(character).main
-		local def = if main then source.path(main) else nil
-		if def and not weaponOk(def.weapon, weapons) then
-			return false, def
-		end
-		return true, nil
-	end
-
-	-- ROZWOJ 2.11: the main path's statPlan (and its PathDef), else the class plan; unknown class {}.
+	-- ROZWOJ 2.11: the leading direction's statPlan (S138: mainOf) and its PathDef, else the class plan; unknown
+	-- class {}.
 	local function statPlan(character: Char): ({ [string]: number }, PathDef?)
-		local main = stateOf(character).main
+		local main = mainOf(character)
 		local def = if main then source.path(main) else nil
 		local own = def and def.statPlan
 		if def and own and next(own) ~= nil then
@@ -1418,7 +1484,10 @@ local function buildApi(source: Source)
 		ROWS = ROWS,
 		DIP_ROWS = DIP_ROWS,
 		DIP_SCALE = DIP_SCALE,
-		MAIN_LEVEL = MAIN_LEVEL,
+		CAPSTONES_MAX = CAPSTONES_MAX,
+		MAIN_MIN_POINTS = MAIN_MIN_POINTS,
+		TEAM_FULL_POINTS = TEAM_FULL_POINTS,
+		SKILL_ROWS = PathData.SKILL_ROWS,
 		source = source,
 		withSource = function(other: Source): any
 			return build(other)
@@ -1438,7 +1507,9 @@ local function buildApi(source: Source)
 		canBuy = canBuy,
 		canRefund = canRefund,
 		refund = refund,
-		canChooseMain = canChooseMain,
+		mainOf = mainOf,
+		pathSpent = pathSpent,
+		capstoneOf = capstoneOf,
 		skillRank = skillRank,
 		skillOpen = skillOpen,
 		pathSkillOpen = pathSkillOpen,
@@ -1478,7 +1549,6 @@ local function buildApi(source: Source)
 		copySet = copySet,
 		setView = setView,
 		cleanSet = cleanSet,
-		mainWeaponOk = mainWeaponOk,
 		statPlan = statPlan,
 	}
 end

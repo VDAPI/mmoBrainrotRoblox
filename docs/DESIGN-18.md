@@ -311,9 +311,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   kierunku), jak dziś w ścieżce głównej. `ChooseMainPath`, `canChooseMain`, `freeUsed` i `PathState.main` znikają
   (S138; pola w zapisie czyści `Paths.cleanSet`, bez migracji).
 - **Jedno zwieńczenie na zestaw** (`Paths.CAPSTONES_MAX = 1`): rząd 8 (`capstone`) można kupić tylko w jednym
-  kierunku; ulepszenie (rząd 11) tylko w tym samym.
+  kierunku; ulepszenie (rząd 11) tylko w tym samym. Zwroty węzłów jak zwroty rang (§3.2: od 20. za złoto, w mieście
+  lub przy bramie; `ResetPaths` za sumę rang, za darmo z `respecFree`); pełny reset zwojem obejmuje węzły (S138).
 - **Bez broni kierunku:** `PathDef.weapon` przestaje blokować (zostaje jako podpowiedź ikony); wymóg broni ma tylko
-  węzeł (`node.weapon`, np. Blok z tarczą, szczęście Fortuny z relikwiarzem, Rzeź z dwuręczną).
+  węzeł (`node.weapon`, np. Blok z tarczą, szczęście Fortuny z relikwiarzem, Rzeź z dwuręczną; S138 dopisała wymóg tym
+  węzłom: szczęście Fortuny w rzędach 4–10 i Rzeź).
 - **Węzły `skill`:** najwyżej dwa na kierunek, w rzędach 4 i 8 (`Paths.SKILL_ROWS = { 4, 8 }`); dają umiejętność
   klasy, którą można włożyć na pasek każdej puli. Rangi tej umiejętności kupuje się punktami umiejętności **w każdej
   puli osobno** (jak wspólne). Do czasu sesji klasy dzisiejsze węzły `skill` w innych rzędach zostają (stan
@@ -324,8 +326,9 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   `Paths.MAIN_MIN_POINTS` (start 12); remis: niższe `order`. Zastępuje dzisiejsze `state.main` u wszystkich odbiorców:
   tytuł ścieżki (`Logic/Titles` `req.kind = "mainPath"`), „Rozdaj jak zaleca ścieżka” (`Paths.statPlan`), wagi
   przedmiotów (`ItemScore`, `itemWeights`), znak przy członku drużyny.
-- **Efekty drużynowe rzędów 1–2:** `DIP_SCALE` (1/3) działa, gdy kierunek ma mniej niż `Paths.TEAM_FULL_POINTS` (start
-  12) punktów; od 12 pełna siła.
+- **Efekty drużynowe rzędów 1–2:** `DIP_SCALE` (1/3) działa, gdy kierunek ma mniej niż `Paths.TEAM_FULL_POINTS`
+  punktów; od progu pełna siła. S138: próg 6 (nie 12): najwyższy, przy którym 1–20 się nie zmienia (zwiadowca buildów
+  wzorcowych ma 6 rang na 20., gdzie dawna ścieżka główna dawała Oznaczenie w pełni; DECYZJE S138).
 - Punkty talentów bez zmian: 1 na parzysty poziom (`Progression.pathPointsEvery = 2`, 50 na 100.). Test pokrycia
   (dziś 75–88% głównej + początków) zmienia się na: 50 punktów wystarcza na cały jeden kierunek ze zwieńczeniem i
   ulepszeniem, a nie wystarcza na dwa całe (S138).

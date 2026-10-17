@@ -5161,5 +5161,51 @@ return {
 				why = "new module: the Huntmaster's shop for Hunter's Marks: 5 potions of the level's quality 4 / 6 / 10 / 20 marks (50-175 gold a mark), 5 Return Stones 4, 2 Map Stones 16, Fortune blessings 6 / 14 / 30, essence 10 dust a week (8), 5 shards a week 45-69 (6 each), 1 crystal a week from 70 (15): 1-10% of 14 h of the band's essence; Hunter's Chest (Unique) 60 = 4.6-5.3 h of contracts, Heroic chest 200 once a week (the loot gives 11-13 Heroics a week at 14 h); title 200, frame 400",
 			},
 		},
+		-- S138 (DESIGN-18 §7): directions instead of the main path
+		["Paths/init:CAPSTONES_MAX"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): one capstone (row 8) per build set; the upgrade (row 11) only in the direction with it",
+			},
+		},
+		["Paths/init:MAIN_MIN_POINTS"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): the leading direction (title, stat plan, item weights, party sign) needs 12 ranks, the most of the class's directions (a tie goes to the lower order)",
+			},
+		},
+		["Paths/init:TEAM_FULL_POINTS"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7, 12 proposed): team nodes of rows 1-2 work in full from 6 ranks in their direction; 6 is the highest threshold that keeps 1-20 unchanged (the Scout reference builds hold 6 Scout ranks at level 20, where the old main path gave Spotting in full; 12 cut their L20 anchor DPS by 2.5 %, 4 frozen 1-20 rows)",
+			},
+		},
+		["Paths/init:SKILL_ROWS[1]"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §7): target rows of skill nodes (4 and 8); asserted for classes past their transitional pools (S140-S145)",
+			},
+		},
+		["Paths/init:SKILL_ROWS[2]"] = {
+			{ session = "S138", why = "new (DESIGN-18 §7): the second skill node row (8, the capstone row)" },
+		},
+		["ItemWeights:OTHER_POOL"] = {
+			{
+				session = "S138",
+				why = "new (DESIGN-18 §0.9): a skill effect of a weapon pool other than the equipped weapon's counts half in the item score (the model scores without a pool, so every effect in full as before)",
+			},
+		},
+		["SkillPools/Cleric:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Hunter:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
+		["SkillPools/Warrior:version"] = {
+			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+		},
 	} :: { [string]: { Reason } },
 }

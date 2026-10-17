@@ -3,9 +3,9 @@
 -- with "Confirm"; holding + or - repeats faster. The pending values feed a live preview of derived stats.
 -- FIX 2026-10-09: every stat says what one point gives (numbers from Data/Stats.Formula).
 -- S54: DEX crit, speed and dodge per point at the current character level (StatCalc.dexFactor).
--- S58 (ROZWOJ 2.11): "Spend as the path suggests" adds the free points to the reservation by the plan of the main path
--- (or the class, Logic/Paths.statPlan; split by Logic/StatPlan.suggest); the player confirms as usual. A line below
--- the buttons names the plan.
+-- S58 (ROZWOJ 2.11): "Spend as the path suggests" adds the free points to the reservation by the plan of the leading
+-- direction (S138, Logic/Paths.mainOf; or the class, Logic/Paths.statPlan; split by Logic/StatPlan.suggest); the
+-- player confirms as usual. A line below the buttons names the plan.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -139,7 +139,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 	local classId = State.Value({ "character", "class" })
 	local pathState = State.Value({ "character", "path" })
 
-	-- The plan of the main path, else of the class; nil without a class or with an empty plan.
+	-- The plan of the leading direction (S138), else of the class; nil without a class or with an empty plan.
 	local planInfo = scope:Computed(function(use): PlanInfo?
 		local c = use(classId)
 		if type(c) ~= "string" or Classes.get(c) == nil then

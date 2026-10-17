@@ -7,6 +7,10 @@
 -- S137 (DESIGN-18 §3, §12): ranks are bought (Logic/SkillPoints), so rankUps / newBreakpoints between two levels stay
 -- empty for bought ranks (a level only raises limits); the "!" also shows free skill points of the active pool with a
 -- rank to buy (Attention.skills; the views then also read `ranks`).
+-- S138 (DESIGN-18 §7): paths are directions: the tab state is "main" for the leading direction (Paths.mainOf), "open"
+-- or "closed"; the capstone row of a direction is closed with "skills.error.capstoneTaken" while another direction has
+-- the set's capstone, the upgrade row with "paths.error.upgrade" without this direction's capstone; no main path
+-- choice and no path weapon in the view (`leading` says which direction leads and the threshold).
 
 local Locale = require("../Util/Locale")
 local PathData = require("../Data/Paths")
@@ -21,11 +25,11 @@ type PathNode = PathData.PathNode
 type Char = Paths.Char
 type WeaponTypes = Paths.WeaponTypes
 
-export type TabState = "main" | "dip" | "closed"
+export type TabState = "main" | "open" | "closed" -- main = the leading direction (S138)
 export type NodeView = {
 	node: PathNode,
 	rank: number,
-	scale: number, -- Paths.nodeScale: < 1 for team nodes in rows 1..DIP_ROWS outside the main path
+	scale: number, -- Paths.nodeScale: < 1 for team nodes in rows 1..DIP_ROWS below TEAM_FULL_POINTS in the direction
 	active: boolean, -- listed by Paths.activeNodes (works right now)
 	weaponOk: boolean, -- node.weapon fits (true when the node has none)
 	canBuy: boolean,
@@ -42,20 +46,20 @@ export type RowView = {
 	kind: PathData.RowKind,
 	choice: boolean,
 	open: boolean,
-	closedKey: string?, -- paths.closed.level | paths.closed.main | paths.closed.need
+	-- paths.closed.level | paths.closed.need | skills.error.capstoneTaken | paths.error.upgrade (S138)
+	closedKey: string?,
 	closedArgs: { [string]: number }?,
-	weaponBlocked: boolean, -- main path, index > DIP_ROWS and the path weapon does not fit
 	nodes: { NodeView },
 }
-export type MainView = { ok: boolean, reason: string?, cost: ("free" | "scroll")? } -- Paths.canChooseMain
 export type View = {
 	path: PathDef,
 	state: TabState,
-	weaponOk: boolean,
-	spent: number,
-	main: MainView,
+	spent: number, -- ranks in this direction
+	leading: boolean, -- S138: the leading direction (Paths.mainOf)
 	rows: { RowView },
 }
+-- S138: the leading direction of the set (nil below the threshold) and the ranks it needs.
+export type Leading = { pathId: string?, need: number }
 export type Pending = { skillId: string, at: number }
 export type RankUp = { skillId: string, rank: number }
 -- S137: skills = a free skill point of the active pool with a rank to buy (the Base tab shows "!" too)
@@ -69,7 +73,6 @@ export type Attention = {
 
 local CLOSED_KEY: { [string]: string } = {
 	["paths.error.level"] = "paths.closed.level",
-	["paths.error.main"] = "paths.closed.main",
 	["paths.error.need"] = "paths.closed.need",
 }
 
@@ -84,11 +87,6 @@ local function choicesOf(character: Char): { [string]: any }
 	return if type(state) == "table" and type(state.bp) == "table" then state.bp else {}
 end
 
-local function mainOf(character: Char): string?
-	local state = character.path
-	return if type(state) == "table" then state.main else nil
-end
-
 local function atLevel(character: Char, level: number): Char
 	local copy = table.clone(character)
 	copy.level = level
@@ -99,13 +97,18 @@ local function build(api: Paths.Api)
 	local source = api.source
 
 	local function tabState(character: Char, pathId: string): TabState
-		if mainOf(character) == pathId then
+		if api.mainOf(character) == pathId then
 			return "main"
 		end
 		if character.level < PathData.ROWS[1].level then
 			return "closed"
 		end
-		return "dip"
+		return "open"
+	end
+
+	-- S138: the leading direction (nil below MAIN_MIN_POINTS) and the threshold, for the window's header.
+	local function leading(character: Char): Leading
+		return { pathId = api.mainOf(character), need = api.MAIN_MIN_POINTS }
 	end
 
 	local function path(character: Char, pathId: string, weapons: WeaponTypes): View?
@@ -113,8 +116,7 @@ local function build(api: Paths.Api)
 		if not def or def.class ~= character.class then
 			return nil
 		end
-		local isMain = mainOf(character) == pathId
-		local weaponOk = api.weaponOk(def.weapon, weapons)
+		local capstone = api.capstoneOf(character)
 		local active: { [string]: boolean } = {}
 		for _, entry in api.activeNodes(character, weapons) do
 			active[entry.node.id] = true
@@ -125,6 +127,13 @@ local function build(api: Paths.Api)
 			local i = info.index
 			local rowDef = def.rows[i]
 			local open, err = api.rowOpen(character, pathId, i)
+			-- S138: one capstone per set; the upgrade only in the direction with the capstone (these reasons come first:
+			-- no level or point makes the row buyable)
+			if info.kind == "capstone" and capstone ~= nil and capstone ~= pathId then
+				open, err = false, "skills.error.capstoneTaken"
+			elseif info.kind == "upgrade" and capstone ~= pathId then
+				open, err = false, "paths.error.upgrade"
+			end
 			local closedKey: string?, closedArgs: { [string]: number }? = nil, nil
 			if not open and err then
 				closedKey = CLOSED_KEY[err] or err
@@ -167,19 +176,16 @@ local function build(api: Paths.Api)
 				open = open,
 				closedKey = closedKey,
 				closedArgs = closedArgs,
-				weaponBlocked = isMain and i > api.DIP_ROWS and not weaponOk,
 				nodes = nodes,
 			})
 			have += rowRanks
 			spent += rowRanks
 		end
-		local ok, reason, cost = api.canChooseMain(character, pathId)
 		return {
 			path = def,
 			state = tabState(character, pathId),
-			weaponOk = weaponOk,
 			spent = spent,
-			main = { ok = ok, reason = reason, cost = cost },
+			leading = api.mainOf(character) == pathId,
 			rows = rows,
 		}
 	end
@@ -335,6 +341,7 @@ local function build(api: Paths.Api)
 
 	return {
 		tabState = tabState,
+		leading = leading,
 		path = path,
 		weaponText = weaponText,
 		pendingBreakpoints = pendingBreakpoints,

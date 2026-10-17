@@ -7,7 +7,7 @@
 --
 --   builds(classId)                 the class base (BASE, rows 1 of every path; Mage rows 1-2) and every
 --                                   PathDef.reference (key "<pathId>.<id>"), rotation from the data only
---   character(build, L, element?)   the build trimmed to L: level-up simulation through Paths.canChooseMain / canBuy;
+--   character(build, L, element?)   the build trimmed to L: level-up simulation through Paths.canBuy (S138: no main path);
 --                                   S137: skill ranks bought through SkillPoints.apply in the pool of the build's
 --                                   weapon (Mage: the element; order ReferenceBuild.ranks or rotation, passives, rest)
 --   player(build, L, opts?)         Balance.gear + StatPlan.suggest + Paths.passiveTotals + circle auras
@@ -1436,7 +1436,7 @@ export type Build = {
 }
 
 export type CharacterResult = {
-	character: any, -- { class, level, path = { main, nodes, bp, freeUsed }, equipment, ranks, barPool }
+	character: any, -- { class, level, path = { nodes, bp }, equipment, ranks, barPool }
 	spent: number,
 	free: number,
 	unbought: { { node: string, reason: string } },
@@ -1626,19 +1626,19 @@ function SkillModel.rankOrder(build: Build, pool: string): { string }
 	return out
 end
 
--- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape. The main path (the build's) at Paths.MAIN_LEVEL
--- through Paths.canChooseMain; on every new point the first rank of `nodes` that Paths.canBuy accepts (an entry that
--- cannot be bought yet waits, later ones may pass). Breakpoint choices from the build (Skills.effective applies them
--- from rank 5 / 10). S137: after the nodes of a level the skill points of the level go into the build's pool
--- (rankOrder, each skill up to its limit in turn) as one SkillPoints.apply reservation; `element` = the Mage weapon's.
+-- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape: on every new point the first rank of `nodes` that
+-- Paths.canBuy accepts (an entry that cannot be bought yet waits, later ones may pass). S138 (DESIGN-18 §7, §13): no
+-- main path; every direction opens with level and its own points, one capstone per set (a reference build has one).
+-- Breakpoint choices from the build (Skills.effective applies them from rank 5 / 10). S137: after the nodes of a level
+-- the skill points of the level go into the build's pool (rankOrder, each skill up to its limit in turn) as one
+-- SkillPoints.apply reservation; `element` = the Mage weapon's.
 function SkillModel.character(build: Build, L: number, element: string?): CharacterResult
 	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = charCache[key]
 	if cached then
 		return cached
 	end
-	local path =
-		{ main = nil :: string?, nodes = {} :: { [string]: number }, bp = table.clone(build.bp), freeUsed = false }
+	local path = { nodes = {} :: { [string]: number }, bp = table.clone(build.bp) }
 	local weaponId = itemOfType(build.weapon.main)
 	local equipment = if weaponId then { weapon = { id = weaponId, el = element } } else {}
 	local character: any = { class = build.classId, level = 1, path = path, equipment = equipment, ranks = {} }
@@ -1655,10 +1655,6 @@ function SkillModel.character(build: Build, L: number, element: string?): Charac
 	local checks = 0
 	for level = 1, L do
 		character.level = level
-		if build.pathId and path.main == nil and Paths.canChooseMain(character, build.pathId) then
-			path.main = build.pathId
-			path.freeUsed = true
-		end
 		while Paths.free(character) >= 1 do
 			local bought = false
 			for i, nodeId in units do
@@ -1852,7 +1848,7 @@ function SkillModel.wrap(p: any): any
 		build = { key = "convention", classId = p.classId, rotation = {} },
 		classId = p.classId,
 		level = p.level,
-		character = { class = p.classId, level = p.level, path = { nodes = {}, bp = {}, freeUsed = false } },
+		character = { class = p.classId, level = p.level, path = { nodes = {}, bp = {} } },
 		weapons = {},
 		passives = { flat = {}, pct = {}, hooks = {} },
 		pathHooks = {},

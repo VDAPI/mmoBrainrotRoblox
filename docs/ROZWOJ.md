@@ -144,6 +144,8 @@ Wspólne:
 
 ### 2.2 Ścieżki i rzędy
 
+> Zastąpione przez DESIGN-18 §7 (S138).
+
 Ścieżka zawiera 2 umiejętności przeniesione z dzisiejszych 14 (Mag 3) i 2–3 nowe (zwieńczenie może być jedną z nich).
 Układ rzędów jest wspólny (`Data/Paths/init.luau`, `ROWS`); sekcje klas wypełniają węzły. Liczby w nawiasach to rangi
 węzła.
@@ -186,6 +188,8 @@ węzła.
 
 ### 2.3 Węzły
 
+> Zastąpione przez DESIGN-18 §7 (S138).
+
 - Rodzaje: `skill` (daje umiejętność, 1 ranga), `passive` (statystyki i haki), `modify` (zmienia umiejętność słownikiem
   przełomów: `add`, `mul`, `values`, zachowania), `aura` (7.3), `luck` (6), `keystone` (zwieńczenie z nową zasadą w
   kodzie).
@@ -199,6 +203,8 @@ węzła.
   `healer_renew`). Teksty: `path.<pathId>.<nazwa>.name` i `.desc`.
 
 ### 2.4 Punkty i etapy
+
+> Zastąpione przez DESIGN-18 §7 (S138).
 
 - 1 punkt na każdym parzystym poziomie (`Progression.pathPointsEvery = 2`): 5 na 10., 10 na 20., 30 na 60., 50 na
   100. Punkty nie są zapisywane: wolne = `Paths.pointsAt(level) − suma rang węzłów aktywnego zestawu`. Tempo czeka na
@@ -265,6 +271,8 @@ węzła.
 
 ### 2.8 Broń ścieżki
 
+> Zastąpione przez DESIGN-18 §7 (S138).
+
 - Węzły i umiejętności z rzędów 3–11 ścieżki głównej działają tylko z bronią ścieżki. Podstawa działa zawsze (z
   dzisiejszym wymogiem żywiołu Maga). Rzędy 1–2 każdej ścieżki, także głównej, działają z każdą bronią klasy: to wspólny
   start i małe wersje efektów (dzięki temu np. Uzdrowiciel bierze część szczęścia Fortuny). To odczytanie odpowiedzi
@@ -323,6 +331,8 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
   zestawu, a `SetLevel` w dół robi na nim `cleanSet` + `StatPlan.refit`.
 
 ### 2.10 Zmiany w zestawie i Zwój Nowej Ścieżki
+
+> Zastąpione przez DESIGN-18 §7 (S138).
 
 - Kupno rangi węzła: wszędzie poza walką. Zwrot rangi i „Zwróć wszystkie węzły” (`ResetPaths`): za darmo, w mieście
   albo przy wejściu do lochu; `Paths.refund` zwraca najpierw wyższe rzędy, żeby żaden rząd nie stracił wymogu punktów.

@@ -129,14 +129,14 @@ function Details.actions(use: Fusion.Use, ctx: Context.Ctx, actions: Actions.Act
 	return out
 end
 
--- FIX 2026-10-14: the path's description (moved off the tree): name, role, description, weapon, title, main path
--- and the wrong-weapon warning.
+-- FIX 2026-10-14: the path's description (moved off the tree): name, role, description, title; S138: the ranks in the
+-- direction and whether it leads (no main path, no direction weapon).
 function Details.pathLines(
 	use: Fusion.Use,
 	character: Paths.Char,
 	def: PathData.PathDef,
 	weapons: Paths.WeaponTypes,
-	lang: string,
+	_lang: string,
 	line: (text: string, color: Color3?, size: number?, font: Font?) -> (),
 	heading: (text: string) -> ()
 )
@@ -144,36 +144,17 @@ function Details.pathLines(
 	heading(Text.get(use, def.nameKey))
 	line(Text.get(use, `paths.role.{def.role}`), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
 	line(Text.get(use, def.descKey))
-	local weaponOk = view == nil or view.weaponOk
-	local weaponText = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
-	line(
-		`{if weaponOk then "✓" else "✗"} {weaponText}`,
-		if weaponOk then Theme.Paper.Success else Theme.Paper.Danger,
-		nil,
-		Theme.Fonts.BodyBold
-	)
-	if not weaponOk then
-		line(Text.get(use, "paths.weapon.missing"), Theme.Paper.Danger)
-	end
 	if view then
-		for _, row in view.rows do
-			if row.weaponBlocked then
-				line(Text.get(use, "paths.weapon.bar"), Theme.Paper.Warning)
-				break
-			end
-		end
+		line(Text.get(use, "skills.tree.points", { n = view.spent }), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
 	end
 	local title = TitleData.get(def.titleId)
 	if title then
 		line(Text.get(use, "paths.title", { title = Text.get(use, title.nameKey) }), Theme.Paper.Text)
 	end
-	local main = if view then view.main else nil
-	if main and main.reason == "paths.error.sameMain" then
+	if view and view.leading then
 		line(Text.get(use, "paths.isMain"), Theme.Paper.Success, nil, Theme.Fonts.BodyBold)
-	elseif main and main.reason == "paths.error.mainLevel" then
-		line(Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }), Theme.Paper.TextMuted)
-	elseif main and not main.ok and main.reason then
-		line(Text.get(use, main.reason), Theme.Paper.TextMuted)
+	else
+		line(Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS }), Theme.Paper.TextMuted)
 	end
 end
 
@@ -397,7 +378,14 @@ function Details.lines(
 				line(Text.get(use, node.descKey, Paths.nodeArgs(node, 1, view.scale)), Theme.Paper.TextMuted)
 			end
 			if view.scale < 1 then
-				line(Text.get(use, "paths.node.dip", { pct = math.floor(view.scale * 100 + 0.5) }), Theme.Paper.Warning)
+				line(
+					Text.get(
+						use,
+						"paths.node.dip",
+						{ pct = math.floor(view.scale * 100 + 0.5), n = Paths.TEAM_FULL_POINTS }
+					),
+					Theme.Paper.Warning
+				)
 			end
 		end
 		if node.weapon then

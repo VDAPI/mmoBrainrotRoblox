@@ -11839,3 +11839,61 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{skillpoints,skillpools,balance,paths,pathview,skills,itemeffects,character,contracts,leaderboard,mounts,
   premiumuse,rarities,sidequests,story,tourney,worldmap}.spec.luau`, `tools/{balance_reasons.luau,balance_before.json}`,
   `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S138: Umiejętności 2.0, fundament B
+
+- **Kierunki** (`Logic/Paths`, DESIGN-18 §7): bez ścieżki głównej i broni ścieżki; `rowOpen` = poziom rzędu i `need`
+  w tym kierunku; `canBuy`: zwieńczenie w najwyżej `CAPSTONES_MAX` (1) kierunkach (`skills.error.capstoneTaken`),
+  ulepszenie tylko przy własnym zwieńczeniu (`paths.error.upgrade`); `canRefund` nie zdejmie zwieńczenia przed
+  ulepszeniem. Nowe: `mainOf` (najwięcej rang, ≥ `MAIN_MIN_POINTS` 12, remis = niższe `order`), `capstoneOf`,
+  `pathSpent`; `nodeScale` = `DIP_SCALE` w rzędach 1–2 poniżej `TEAM_FULL_POINTS` (6, odejście od 12 w DECYZJE);
+  `skillUsable` / `activeNodes` / `passiveTotals` sprawdzają tylko `node.weapon`; `clampToLevel` / `cleanSet` / zestawy
+  bez `main` i `freeUsed`, przy dwóch zwieńczeniach zostaje zwieńczenie kierunku przewodniego. Usunięte:
+  `canChooseMain`, `MAIN_LEVEL`, `mainWeaponOk`, akcje `chooseMain` / `changeMain`. `canEdit` z `ctx.level` (zwrot
+  poniżej 20. wszędzie poza walką). `Data/Paths/init`: `CAPSTONES_MAX`, `MAIN_MIN_POINTS`, `TEAM_FULL_POINTS`,
+  `SKILL_ROWS = { 4, 8 }` (test danych tylko dla klas nieprzejściowych, dziś żadnej).
+- **Wymóg broni na węzłach** (przykłady DESIGN-18 §7): szczęście Fortuny w rzędach 4–10 (relikwia), Rzeź Berserkera
+  (dwuręczna).
+- **Odbiorcy kierunku przewodniego:** tytuł (`Logic/Titles`), `Paths.statPlan` („Rozdaj jak zaleca ścieżka”),
+  `ItemScore.contextFor` (wagi kierunku i pula noszonej broni; efekt innej puli × `ItemWeights.OTHER_POOL` 0,5,
+  DESIGN-18 §0.9), tooltip, „Lepszy przedmiot!”, znak w drużynie (`PartyService`), admin `/itemscore`, `/tooltip`.
+- **Serwer:** `PathService` bez `ChooseMainPath` / `AdminSetMain`; `RefundNode` od 20. za `SkillPoints.nodeRefundCost`
+  (ranga węzła i rangi jego umiejętności zabrane we wszystkich pulach) w mieście / przy bramie, `ResetPaths` za
+  `nodesRefundCost` (to samo dla wszystkich węzłów; darmowy z `respecFree` albo poniżej 20.), toast
+  `paths.toast.refundPaid`; `FullReset` (= `ResetSkills` i użycie Zwoju Odnowy w `ScrollService`): rangi wszystkich pul
+  i węzły, przełomy zostają, płaci poziom < 20 → `respecFree` → zwój (`SkillPoints.canReset(char, ctx, zwoje)`,
+  `resetState`; `Paths.validHotbar` nie kasuje przełomu umiejętności kierunku bez węzła). Pule klas `version` 2 (darmowy reset przy wczytaniu). Admin: `/path` usunięte, `/pathmax [kierunek]`
+  przez `canBuy`, `/resetskills` = darmowy pełny reset.
+- **Okno (minimum, pełne w S139):** zakładki kierunków ze stanem „przewodni” / „N pkt” / „zamknięty”, nagłówek
+  „Kierunek przewodni: …” / „brak (12 pkt w jednym kierunku)”, w drzewku „N pkt w kierunku” i „Jedno zwieńczenie w
+  zestawie”, rząd zwieńczenia innego kierunku z „⚠” i `skills.error.capstoneTaken`; bez przycisków ścieżki głównej i
+  linii broni ścieżki; „−” na węźle i „Zwróć wszystkie węzły” od 20. z ceną; „Resetuj” aktywny też ze zwojem; użycie
+  zwoju z plecaka pyta `skills.reset.confirm`.
+- **Teksty:** nowe `skills.tree.*`, `skills.error.capstoneTaken` / `refundGold`, `skills.reset.confirm`,
+  `paths.error.upgrade`, `paths.tab.open`, `paths.confirm.refund.*`, `paths.confirm.reset.paid`,
+  `paths.toast.refundPaid`; „Zwój Odnowy Umiejętności” (nazwa, opis, tooltip, sklep premium); usunięte klucze ścieżki
+  głównej (`paths.main*`, `paths.chooseMain`, `paths.error.main` …, `admin.usage.path`) i nieużywany
+  `skills.points.resetMessage`; `buildset.copy.message` bez ścieżki głównej.
+- **Model i balans:** `SkillModel.character` bez `canChooseMain`; `balance1_20.spec` bez różnic (przy
+  `TEAM_FULL_POINTS` 12 były 4: kotwica L20 zwiadowcy), klucz `Balance.buildsAt` z id ścieżki buildu od 20.
+  21–100: żaden asertowany wiersz nie padł, brak wpisów `GLOBAL_REPORT_ONLY` S138. Księga: `Paths/init:*` (4 nowe),
+  `ItemWeights:OTHER_POOL`, `SkillPools/*:version`.
+- **Wiki:** `tools/WikiData/Skills` z `pool` / `role`, `classPools`, nowymi `rules` (bez `mainPathLevel`) i wektorami
+  planera bez `main` (stan z dwoma zwieńczeniami). wiki do odświeżenia (właściciel 17.10): dane `wiki/src/data`,
+  `types.ts` i `wiki/test-fixtures/planner.json` nieodświeżone, `wiki/src/lib/skills.ts` (`canSetMain`, `replay`,
+  `mainPathLevel`) do przepisania przy odświeżeniu; `wikidump.spec` z `PLANNER_STALE_OK`.
+- **Testy:** `paths.spec` (kierunki: zwieńczenie, ulepszenie, `mainOf`, broń węzła w każdym rzędzie, pokrycie „jeden
+  cały kierunek, nigdy dwa”, dwa zwieńczenia w `clampToLevel`, zwrot poniżej 20., `SKILL_ROWS`), `pathview.spec`,
+  `skillpoints.spec` (pełny reset z przełomem kierunku przez `validHotbar`, cena węzła = cena rangi plus zabrane
+  rangi umiejętności, `canReset` ze zwojem), `titles.spec`, `luck.spec`,
+  `skills.spec`, `lootcomfort.spec` (`contextFor`, `OTHER_POOL`), `admin.spec`, `wikidump.spec`, `balance.spec`.
+- **Pliki:** `src/shared/Logic/{Paths,PathView,SkillPoints,Titles,ItemScore,TooltipModel,AccountSchema}.luau`,
+  `src/shared/Data/Paths/{init,Types,Cleric,Warrior}.luau`, `Data/SkillPools/{Mage,Warrior,Hunter,Cleric}.luau`,
+  `Data/{ItemWeights,Shops,AdminCommands}.luau`, `Data/Localization/{pl,en}.luau`, `src/shared/{Types,Net/Definitions}.luau`,
+  `src/server/Services/{PathService,ScrollService,PartyService,TitleService}.luau`, `src/server/Admin/{Character,Items}.luau`,
+  `src/client/Controllers/{ItemController,LootComfortController}.luau`, `UI/Components/{ItemTooltip,PathBadge}.luau`,
+  `UI/SkillsTab.luau`, `UI/Screens/CharacterWindow/StatAllocator.luau`,
+  `UI/Screens/SkillsWindow/{Actions,BaseList,Context,Details,Header,NodeCard,PathTab,TabBar,init}.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/fixtures/paths.luau`, `tests/{paths,pathview,skillpoints,titles,luck,skills,
+  lootcomfort,admin,wikidump,balance,character,cosmetics2}.spec.luau`, `tools/WikiData/Skills.luau`,
+  `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

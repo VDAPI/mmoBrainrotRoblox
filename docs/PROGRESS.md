@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S137 gotowe (ostatnia S137: Umiejętności 2.0, fundament A (`docs/DESIGN-18.md`): rangi kupowane
+S01–S115 i S117–S138 gotowe (ostatnia S138: Umiejętności 2.0, fundament B: ścieżki to mieszalne kierunki bez ścieżki
+głównej i broni ścieżki (rzędy otwierają poziom i punkty w kierunku, wymóg broni tylko na węźle), jedno zwieńczenie na
+zestaw, kierunek przewodni `Paths.mainOf` (≥ 12 pkt: tytuł, plan statystyk, wagi przedmiotów, znak w drużynie), efekty
+drużynowe rzędów 1–2 w pełni od 6 pkt w kierunku, zwrot węzłów od 20. za złoto jak ranga, Zwój Odnowy Umiejętności =
+pełny reset (rangi wszystkich pul i węzły), pule klas w wersji 2 (darmowy reset), `ItemScore` waży efekt innej puli
+×0,5, eksport pul do wiki w narzędziach; wcześniej S137: Umiejętności 2.0, fundament A (`docs/DESIGN-18.md`): rangi kupowane
 punktami umiejętności (`Logic/SkillPoints`, 1 na poziom + 7 w każdej puli, limit z dawnej krzywej), pule broni
 (`Data/SkillPools`, `Logic/SkillPools`: Mag ogień / lód / błyskawica według żywiołu broni, reszta klas po dwie pule z
 wspólną podstawą, dane przejściowe), pasek 8 miejsc na pulę, zapis w schemacie 12 z darmowym resetem, remote'y
@@ -301,10 +306,16 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S138:** okno kierunków minimalne (S139 buduje pełne): zakładki kierunków ze stanem, nagłówek kierunku przewodniego,
+  „⚠” przy zajętym zwieńczeniu, ceny zwrotów w potwierdzeniach, potwierdzenie zwoju z plecaka; bez przeglądu w grze
+  (szerokość nagłówka z etykietą kierunku przewodniego na telefonie). Węzły `skill` dalej w rzędach przejściowych
+  (`SKILL_ROWS` 4 i 8 asertowane dopiero po S140–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+  `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
+  `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
+  `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
 - **S137:** okno umiejętności minimalne (S139 buduje pełne): zakładki pul, „+” / „−”, „Zatwierdź”, „Rozdaj jak zaleca
   pula” i „Resetuj” nad listą „Podstawa”, bez przeglądu w grze (szerokość wierszy z przyciskami na PC i telefonie);
-  pasek innej puli tylko przez `SetPoolBar` (okno nie ma jeszcze siatki pasków innych pul). Pełny reset od 20. bez
-  `respecFree` czeka na Zwój Odnowy (S138; dziś `skills.error.resetNeedsScroll`). Kierunki bez ścieżki głównej (S138).
+  pasek innej puli tylko przez `SetPoolBar` (okno nie ma jeszcze siatki pasków innych pul).
   `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
   `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
 

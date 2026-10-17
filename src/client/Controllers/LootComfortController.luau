@@ -152,13 +152,9 @@ local function onPicked(items: any)
 	if type(classId) ~= "string" then
 		return
 	end
-	-- S67: the score follows the class and the main path's item weights
-	local mainPath = State.Get({ "character", "path", "main" })
-	local ctx: ItemScore.Context = {
-		classId = classId,
-		level = level,
-		pathId = if type(mainPath) == "string" then mainPath else nil,
-	}
+	-- S67: the score follows the class and the main path's item weights (S138: the leading direction and the equipped
+	-- weapon's pool, ItemScore.contextFor)
+	local ctx = ItemScore.contextFor(State.Get({ "character" }))
 	local best: Types.ItemInstance? = nil
 	local bestCurrent: Types.ItemInstance? = nil
 	local bestGain = 0

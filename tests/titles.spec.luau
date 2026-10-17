@@ -7,6 +7,33 @@ local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
+-- S138: a character whose leading direction (Logic/Paths.mainOf) is `pathId`: rows of that real path filled bottom-up
+-- (first node of a choice row) up to MAIN_MIN_POINTS ranks; nil = no ranks (no leading direction).
+local function leading(pathId: string?, title: string?): any
+	local path = if pathId then PathData.get(pathId) else nil
+	local nodes: { [string]: number } = {}
+	local have = 0
+	if path then
+		for _, row in path.rows do
+			for _, node in row.nodes do
+				if have < PathData.MAIN_MIN_POINTS then
+					nodes[node.id] = node.maxRank
+					have += node.maxRank
+				end
+				if row.choice then
+					break
+				end
+			end
+		end
+	end
+	return {
+		class = if path then path.class else "Mage",
+		level = 100,
+		title = title,
+		path = { nodes = nodes, bp = {} },
+	}
+end
+
 local function character(level: number, mainDone: number, kills: number, duels: number): any
 	return {
 		level = level,
@@ -89,46 +116,56 @@ T.describe("Titles", function()
 	end)
 end)
 
-T.describe("Path titles (S59)", function()
+T.describe("Path titles (S59; S138: the leading direction)", function()
+	-- two real Mage directions under test titles (Titles reads the leading direction through Logic/Paths)
 	local LIST: { any } = {
 		{ id = "wanderer", nameKey = "title.wanderer", req = { kind = "level", value = 10 }, color = "#FFFFFF" },
 		{
-			id = "path_fxStorm",
-			nameKey = "title.path_fxStorm",
-			req = { kind = "mainPath", path = "fxStorm" },
+			id = "path_a",
+			nameKey = "title.path_a",
+			req = { kind = "mainPath", path = "destroyer" },
 			color = "#FFFFFF",
 		},
 		{
-			id = "path_fxRune",
-			nameKey = "title.path_fxRune",
-			req = { kind = "mainPath", path = "fxRune" },
+			id = "path_b",
+			nameKey = "title.path_b",
+			req = { kind = "mainPath", path = "arcanist" },
 			color = "#FFFFFF",
 		},
 	}
 
 	local function hero(main: string?, title: string?): any
-		return { level = 30, title = title, path = { main = main, nodes = {}, bp = {}, freeUsed = true } }
+		return leading(main, title)
 	end
 
-	T.it("the main path title shows when nothing was chosen", function()
-		local c = hero("fxStorm", nil)
-		T.expect(Titles.shown(c, LIST)).toBe("path_fxStorm")
+	T.it("the leading direction's title shows when nothing was chosen", function()
+		local c = hero("destroyer", nil)
+		T.expect(Titles.shown(c, LIST)).toBe("path_a")
 		local set = {}
 		for _, id in Titles.unlocked(c, LIST) do
 			set[id] = true
 		end
 		T.expect(set.wanderer).toBe(true)
-		T.expect(set.path_fxStorm).toBe(true)
-		T.expect(set.path_fxRune).toBeNil()
+		T.expect(set.path_a).toBe(true)
+		T.expect(set.path_b).toBeNil()
+		-- below MAIN_MIN_POINTS no direction leads: no path title
+		local thin = hero("destroyer", nil)
+		for id in thin.path.nodes do
+			thin.path.nodes[id] = nil
+			break
+		end
+		T.expect(Titles.shown(thin, LIST)).toBeNil()
 	end)
 
 	T.it("a choice, a hidden title and a choice that is no longer unlocked", function()
-		T.expect(Titles.shown(hero("fxStorm", "wanderer"), LIST)).toBe("wanderer")
-		T.expect(Titles.shown(hero("fxStorm", Titles.NONE), LIST)).toBeNil()
-		local c = hero("fxStorm", "path_fxStorm")
-		T.expect(Titles.shown(c, LIST)).toBe("path_fxStorm")
-		c.path.main = "fxRune"
-		T.expect(Titles.shown(c, LIST)).toBe("path_fxRune")
+		T.expect(Titles.shown(hero("destroyer", "wanderer"), LIST)).toBe("wanderer")
+		T.expect(Titles.shown(hero("destroyer", Titles.NONE), LIST)).toBeNil()
+		local c = hero("destroyer", "path_a")
+		T.expect(Titles.shown(c, LIST)).toBe("path_a")
+		-- the Arcanist leads now: the chosen Destroyer title locks and falls back to the Arcanist's
+		local other = hero("arcanist", "path_a")
+		T.expect(Titles.isUnlocked(other, "path_a", LIST)).toBe(false)
+		T.expect(Titles.shown(other, LIST)).toBe("path_b")
 		T.expect(Titles.shown(hero(nil, nil), LIST)).toBeNil()
 		T.expect(Titles.shown({ level = 30 }, LIST)).toBeNil()
 		T.expect(Titles.pathTitle({ level = 30 }, LIST)).toBeNil()
@@ -162,7 +199,7 @@ end)
 
 T.describe("VIP title (S121)", function()
 	local function hero(main: string?, title: string?): any
-		return { level = 30, title = title, path = { main = main, nodes = {}, bp = {}, freeUsed = true } }
+		return leading(main, title)
 	end
 
 	local function has(list: { string }, id: string): boolean
@@ -202,7 +239,7 @@ T.describe("Timed titles (S125)", function()
 			level = 1,
 			title = title,
 			timedTitles = if untilTs then { weekly_diligent = untilTs } else {},
-			path = { main = (PathData.list[1] or {} :: any).id },
+			path = { nodes = {}, bp = {} },
 		}
 	end
 

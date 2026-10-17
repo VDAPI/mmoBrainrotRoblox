@@ -24,6 +24,7 @@ local Monsters = require(Shared.Data.Monsters)
 local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
 local PartyLoot = require(Shared.Logic.PartyLoot)
+local Paths = require(Shared.Logic.Paths)
 local Rarities = require(Shared.Data.Rarities)
 local Reroll = require(Shared.Logic.Reroll)
 local Rng = require(Shared.Logic.Rng)
@@ -711,17 +712,13 @@ commands.tooltip = function(player, args)
 		level = if character then character.level else nil,
 		class = if character then character.class else nil,
 		merchantOpen = true,
-		pathId = if path then path.main else nil,
+		pathId = if character then Paths.mainOf(character) else nil, -- S138: the leading direction
 		nodes = if path then path.nodes else nil,
 		mainHand = equipment.weapon,
 		offhand = equipment.offhand,
 	}
 	if character then
-		ctx.equipped = ItemScore.replaced(
-			def,
-			equipment,
-			{ classId = character.class, level = character.level, pathId = ctx.pathId }
-		)
+		ctx.equipped = ItemScore.replaced(def, equipment, ItemScore.contextFor(character))
 	end
 	local model = TooltipModel.build(item, def, ctx)
 	if args[4] == "details" then
@@ -916,10 +913,9 @@ end
 commands.itemscore = function(player, _args)
 	withCharacter(player, function()
 		local character = PlayerStateService.GetCharacter(player)
-		local path = character.path
-		local mainPath = if path and type(path.main) == "string" then path.main else nil
-		local ctx: ItemScore.Context =
-			{ classId = character.class :: string, level = character.level, pathId = mainPath }
+		-- S138: the leading direction and the equipped weapon's pool (ItemScore.contextFor)
+		local ctx = ItemScore.contextFor(character)
+		local mainPath = ctx.pathId
 		local hooks = EquipmentService.GetHooks(player)
 		reply(player, "admin.itemscore.head", {
 			path = if mainPath then `@path.{mainPath}.name` else "@admin.itemscore.none",

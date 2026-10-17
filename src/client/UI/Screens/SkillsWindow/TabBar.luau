@@ -1,7 +1,7 @@
 --!strict
 -- Tabs of the skills window (S59, ROZWOJ 4): "Base" with the class glyph, then one tab per path of the class (the
--- path weapon's icon, the name and the state: main / beginnings / closed, Logic/PathView.tabState) or a single "Paths
--- soon" for a class without paths. A red dot marks a tab with something to do (PathView.attention). Scrolls
+-- path weapon's icon, the name and the state, Logic/PathView.tabState; S138: directions, "leading direction" / "N pts"
+-- / closed) or a single "Paths soon" for a class without paths. A red dot marks a tab with something to do (PathView.attention). Scrolls
 -- sideways when the tabs do not fit (phone).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,7 +30,7 @@ TabBar.HEIGHT_TOUCH = 50
 
 local STATE_COLOR: { [string]: Color3 } = {
 	main = Theme.Paper.Heading,
-	dip = Theme.Paper.Text,
+	open = Theme.Paper.Text,
 	closed = Theme.Paper.TextMuted,
 }
 
@@ -201,7 +201,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			table.insert(entries, {
 				id = def.id,
 				name = Text.get(use, def.nameKey),
-				state = Text.get(use, `paths.tab.{state}`),
+				state = Text.get(use, `paths.tab.{state}`, { n = Paths.pathSpent(character, def.id) }),
 				stateColor = STATE_COLOR[state],
 				icon = icon,
 			})

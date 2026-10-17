@@ -5008,3 +5008,55 @@
   R5a, Inkwizytor HP); lista w `docs/SESJE.md` S137.
 - **S137** Wiki: `tools/WikiData` i planer bez zmian w tej sesji (właściciel 17.10: dane wiki odświeża później hurtem);
   `rules.skillPointsByLevel` / `freeRespecLevel` i „Planer wkrótce” zostają do odświeżenia wiki.
+- **S138** Koniec ścieżki głównej (zastępuje S57 „ścieżka główna + początki” i ROZWOJ 2.8 „broń ścieżki”): ścieżki to
+  mieszalne kierunki. Każdy rząd każdego kierunku otwierają poziom rzędu i `need` (rangi w niższych rzędach tego
+  kierunku); `ChooseMainPath`, `/path`, `canChooseMain`, `MAIN_LEVEL`, `mainWeaponOk` i pola `main` / `freeUsed` znikają
+  (zapis czyści `clampToLevel` / `cleanSet` przy wczytaniu, bez migracji).
+- **S138** Jedno zwieńczenie na zestaw (`Paths.CAPSTONES_MAX = 1`, `skills.error.capstoneTaken`), ulepszenie (rząd 11)
+  tylko w kierunku z kupionym zwieńczeniem (`paths.error.upgrade`); zwrot zwieńczenia z kupionym ulepszeniem odrzucony
+  (`paths.error.needAbove`). Dwa zwieńczenia (stara ścieżka główna + admin): przy wczytaniu zostaje zwieńczenie kierunku
+  przewodniego (inaczej niższe `order`), drugie wraca z ulepszeniem jako punkty.
+- **S138** Kierunek przewodni `Paths.mainOf`: najwięcej rang, co najmniej `MAIN_MIN_POINTS = 12`, remis = niższe
+  `order`. Bierze go tytuł ścieżki, `Paths.statPlan`, `ItemScore` (`itemWeights` przez `ItemScore.contextFor`), znak
+  w drużynie i admin `/itemscore`, `/tooltip`.
+- **S138** Odejście od DESIGN-18 §7: `TEAM_FULL_POINTS = 6` zamiast 12. Przy 12 zwiadowca z buildów wzorcowych traci na
+  20. poziomie Oznaczenie w pełni (dawniej ścieżka główna od 20.), 4 wiersze zamrożonego 1–20 (DPS kotwicy −2,5%);
+  6 to najwyższy próg bez różnic 1–20 (balance1_20 bez `ALLOWED_1_20_DIFFS`). DESIGN-18 §7 poprawiony.
+- **S138** Broń: `PathDef.weapon` niczego nie blokuje (tylko ikona zakładki); `node.weapon` działa w każdym rzędzie.
+  Przykłady z DESIGN-18 §7 dostały wymóg na węźle: szczęście Fortuny w rzędach 4–10 (Szczęśliwa Ręka, Hojny Łup, Łaska Fortuny,
+  Złota Żyła, Dar Bogini) relikwia, Rzeź Berserkera broń dwuręczna (Blok z tarczą miał go już). Reszta dawnych rzędów 3–11
+  działa z każdą bronią klasy.
+- **S138** Zwroty węzłów (zastępuje darmowy zwrot z ROZWOJ 2.10): poniżej `freeRespecLevel` za darmo wszędzie poza
+  walką (`Paths.canEdit` z `ctx.level`), od 20. w mieście lub przy bramie za `SkillPoints.refundCost` (ta sama cena co
+  ranga umiejętności) za rangę; `ResetPaths` = zwrot wszystkich węzłów za sumę rang (`nodesRefundCost`), za darmo z
+  `respecFree` (flaga zostaje na pełny reset) albo poniżej 20.
+- **S138** Zwój Odnowy Umiejętności = pełny reset (`PathService.FullReset`): rangi wszystkich pul i węzły aktywnego
+  zestawu, przełomy zostają. Płaci kolejno: poziom < 20, `respecFree` (zużyty, zwój zostaje), zwój z plecaka (zużyty
+  tylko przy sukcesie). Woła go `ResetSkills` i użycie zwoju (`ScrollService`, klient pyta `skills.reset.confirm`).
+  Sklep Nauczyciela: `needsPaths = true` zostaje (każda klasa ma kierunki, więc zwój jest dla wszystkich od 20.).
+- **S138** Admin: `/resetskills` = darmowy pełny reset aktywnego zestawu (rangi i węzły, przełomy i `respecFree` zostają),
+  `/skillreset` dalej tylko rangi; `/pathmax [pathId]` kupuje jak gracz przez `canBuy` (podany kierunek najpierw, także
+  zwieńczenie, gdy wolne).
+- **S138** `version` wszystkich `Data/SkillPools/<Klasa>` 1 → 2 (DESIGN-18 §10): przy wczytaniu darmowy reset do
+  przemyślenia kierunków.
+- **S138** DESIGN-18 §0.9: `ItemScore` waży efekt przedmiotu z innej puli niż noszona broń × `ItemWeights.OTHER_POOL`
+  (0,5); kontekst bez `poolId` (model balansu) liczy każdy efekt w pełni, więc model się nie zmienia.
+- **S138** Okno (minimum przed S139): zakładki kierunków zostają (stan „przewodni” / „N pkt” / „zamknięty”), bez
+  przycisków ścieżki głównej i paska broni ścieżki; nagłówek „Kierunek przewodni: …” albo „brak (12 pkt w jednym
+  kierunku)”; rząd zwieńczenia innego kierunku zamknięty z powodem `skills.error.capstoneTaken` (ten powód i
+  `paths.error.upgrade` mają pierwszeństwo przed poziomem i punktami rzędu); „−” na węźle i „Zwróć wszystkie węzły” od
+  20. z ceną w potwierdzeniu; „Resetuj” aktywny także ze zwojem w plecaku.
+- **S138** Model: `SkillModel.character` bez wyboru ścieżki głównej (węzły w kolejności buildu przez `canBuy`); klucz
+  wariantu `Balance.buildsAt` zostaje z id ścieżki buildu od dawnego poziomu ścieżki głównej (rząd 3), żeby tabele 1–20
+  miały te same wiersze. 21–100: żaden asertowany wiersz nie padł, `GLOBAL_REPORT_ONLY` bez wpisów S138.
+- **S138** Wiki (`tools/WikiData/Skills`): umiejętność ma `pool` / `role`, pole `classPools` (pule klas: id, nazwa,
+  typy broni, żywioł, członkowie; w `skills.json`, nie w `classes.json`), `rules` bez `mainPathLevel`, z
+  `capstonesMax`, `mainMinPoints`, `teamFullPoints`, `skillPointsByLevel`, `freeRespecLevel`, `ladder`; wektory planera
+  bez `main`. Dane wiki i `wiki/test-fixtures/planner.json` nieodświeżone (właściciel 17.10), więc
+  `wikidump.spec` przepuszcza nieaktualny plik planera (`PLANNER_STALE_OK`, wraca do `false` przy odświeżeniu).
+- **S138** Cena zwrotu węzła (uzupełnia „Zwroty węzłów”): `RefundNode` / `ResetPaths` płacą `refundCost` za rangi
+  węzłów plus rangi umiejętności kierunku, które zwrot zabiera we wszystkich pulach (`SkillPoints.nodeRefundCost`,
+  `nodesRefundCost`, `droppedRanks`), żeby zwrot węzła i darmowy zakup nie były tańszą drogą niż `RefundSkillRank`.
+- **S138** Przełom umiejętności kierunku zostaje w `path.bp` także bez kupionego węzła (zastępuje S71–S81 „zwrot węzła
+  kasuje wybór”; DESIGN-18 §8): `validHotbar` usuwa tylko wpisy nieznanych umiejętności, innej klasy i złych opcji, więc
+  zwrot węzła, `ResetPaths` i pełny reset nie gubią wyborów (bez węzła ranga 0, więc wybór nie działa).

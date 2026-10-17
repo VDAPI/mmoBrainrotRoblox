@@ -17,7 +17,7 @@ local function pool(id: string, glyph: string, plan: { string }): Types.PoolDef
 end
 
 local pools: Types.ClassPools = {
-	version = 1,
+	version = 2, -- S138: directions without the main path (DESIGN-18 §7, §10): a free reset to rethink the talents
 	transitional = true,
 	defaultPool = "fire", -- Data/Elements.DEFAULT, the starting wand
 	pools = {

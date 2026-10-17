@@ -57,6 +57,7 @@ export type Ctx = {
 	reserve: Fusion.Value<{ [string]: number }>, -- ranks reserved in `pool`, not sent yet
 	planned: Fusion.Computed<Paths.Char?>, -- the character with the reservation bought (SkillPoints rules on it)
 	skillFree: Fusion.Computed<number>, -- free skill points of `pool` after the reservation
+	inventory: Fusion.Value<any>, -- S138: the backpack (the Scroll of Skill Renewal enables "Reset")
 }
 
 local Context = {}
@@ -66,9 +67,13 @@ local function startTab(): string
 	if wanted then
 		return wanted
 	end
-	local state = State.Get({ "character", "path" })
-	local main = if type(state) == "table" then state.main else nil
-	return if type(main) == "string" then main else "base"
+	-- S138: the leading direction's tab (Paths.mainOf), else the Base list
+	local classId = State.Get({ "character", "class" })
+	if type(classId) ~= "string" then
+		return "base"
+	end
+	local main = Paths.mainOf({ class = classId, level = 1, path = State.Get({ "character", "path" }) })
+	return if main then main else "base"
 end
 
 function Context.new(scope: Scope, props: Props): Ctx
@@ -182,6 +187,7 @@ function Context.new(scope: Scope, props: Props): Ctx
 		ranks = ranks,
 		barPool = barPool,
 		respecFree = respecFree,
+		inventory = State.Value({ "character", "inventory" }),
 		activePool = activePool,
 		viewPool = viewPool,
 		pool = pool,
@@ -201,7 +207,7 @@ function Context.new(scope: Scope, props: Props): Ctx
 		reserve:set({})
 	end)
 
-	-- The Scroll of a New Path asks for a tab also while the window is open (S57 F3).
+	-- Another window may ask for a tab also while the window is open (S57 F3).
 	scope:Observer(SkillsTab.Requested):onChange(function()
 		local wanted = SkillsTab.take()
 		if wanted then

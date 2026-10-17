@@ -114,7 +114,7 @@ function AccountSchema.characterTemplate(): CharacterData
 		statPoints = 0,
 		-- stays empty: reconcile would copy a template skill into every empty slot 1; CharacterFactory fills it
 		hotbar = {},
-		path = { nodes = {}, bp = {}, freeUsed = false },
+		path = { nodes = {}, bp = {} },
 		-- S137 (DESIGN-18 §9): bought ranks per weapon pool, the other pools' bars, whose bar `hotbar` is ("" = none yet:
 		-- the active pool), the free reset and the pool version (migration 12; CharacterFactory fills them)
 		ranks = {},
@@ -341,7 +341,7 @@ MIGRATIONS[6] = function(data, _newId)
 		else
 			character.hotbar = {} -- unknown class: stats untouched, nothing on the bar
 		end
-		character.path = { nodes = {}, bp = {}, freeUsed = false }
+		character.path = { nodes = {}, bp = {} }
 		character.buildSlot = 1
 		character.buildOther = nil
 		character.reworkNotice = true

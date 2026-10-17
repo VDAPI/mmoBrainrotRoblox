@@ -10,7 +10,8 @@
 -- (the active one, or a pool tab above the list: preview and reservation only), base skills in the pool's order, then
 -- the path skills whose node is bought. A row reads "Rank 4/10 (limit 6)" with the reserved ranks, "+" / "-" reserve
 -- (or refund a bought rank); above the list: the pool tabs, the free skill points, "Spend as the pool suggests",
--- "Confirm" (AllocateSkills) and "Reset" (free below Progression.freeRespecLevel or with respecFree).
+-- "Confirm" (AllocateSkills) and "Reset" (free below Progression.freeRespecLevel or with respecFree; S138: else with a
+-- Scroll of Skill Renewal in the backpack, the full reset of ranks and nodes).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,6 +22,7 @@ local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Context = require(script.Parent.Context)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local PoolData = require(ReplicatedStorage.Shared.Data.SkillPools)
@@ -202,6 +204,9 @@ local function poolBar(
 		)
 	end
 	local reset = character.respecFree == true or character.level < Progression.freeRespecLevel
+	-- S138: from freeRespecLevel without respecFree the Scroll of Skill Renewal pays (ResetSkills takes it)
+	local inventory = use(ctx.inventory)
+	local scrolls = if type(inventory) == "table" then Inventory.count(inventory, "scroll_skillreset") else 0
 	local function row(order: number, children: { any }): Instance
 		return s:New("Frame")({
 			LayoutOrder = order,
@@ -244,7 +249,7 @@ local function poolBar(
 					Variant = "ghost",
 					TextSize = Theme.TextSize.Small,
 					Text = Text.get(use, if reset then "skills.points.resetFree" else "skills.points.resetScroll"),
-					Disabled = not reset,
+					Disabled = not reset and scrolls < 1,
 					OnClick = actions.resetSkills,
 				}),
 			}),

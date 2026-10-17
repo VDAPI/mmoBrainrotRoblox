@@ -1,6 +1,7 @@
 --!strict
 -- Header row of the skills window (S59, ROZWOJ 4): the build set switch of S58 ("Set 1 / Set 2", "Copy"), free path
--- points (green while a node can be bought) and the main path. PC 44 px with 32 px buttons, phone 52 px with 44 px.
+-- points (green while a node can be bought) and (S138) the leading direction ("Leading direction: <name>" or "none
+-- (12 points in one direction)", Logic/PathView.leading). PC 44 px with 32 px buttons, phone 52 px with 44 px.
 -- S137 (DESIGN-18 §12): the active weapon pool and its free skill points (green while a rank can be bought); the pool
 -- tabs and the reservation buttons stand above the Base list (BaseList.poolBar) until the S139 window.
 
@@ -10,6 +11,7 @@ local BuildSetSwitch = require(script.Parent.Parent.Parent.Components.BuildSetSw
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
 local SkillPools = require(ReplicatedStorage.Shared.Logic.SkillPools)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -75,15 +77,18 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			label(
 				3,
 				scope:Computed(function(use): string
-					local state = use(ctx.path)
-					local main = if type(state) == "table" then state.main else nil
-					local def = if type(main) == "string" then PathData.get(main) else nil
+					local c: any = use(ctx.character)
+					if not c then
+						return ""
+					end
+					local leading = PathView.leading(c)
+					local def = if leading.pathId then PathData.get(leading.pathId) else nil
 					return if def
-						then Text.get(use, "paths.main", { name = Text.get(use, def.nameKey) })
-						else Text.get(use, "paths.mainNone")
+						then Text.get(use, "skills.tree.leading", { name = Text.get(use, def.nameKey) })
+						else Text.get(use, "skills.tree.leadingNone", { n = leading.need })
 				end),
 				Theme.Paper.Heading,
-				220
+				280
 			),
 			label(
 				4,

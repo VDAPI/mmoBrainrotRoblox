@@ -2,11 +2,10 @@
 -- A path tab of the skills window (S59, ROZWOJ 4), drawn only from Logic/PathView.path.
 -- FIX 2026-10-14 (owner: "skill trees should look like trees, descriptions only after a click, before that only
 -- connected pictures"): a short header (the path name, a click on it shows the path's description in the details;
--- the weapon ✓ / ✗; "Choose as main" / "Change path (scroll)", or the path is the main one, or a disabled button
--- with its reason in a tooltip), then the tree: one row of node tiles (NodeCard) per path row from the top, a trunk
+-- S138: the ranks in this direction, "leading direction" when it leads, "one capstone per set"), then the tree: one row of node tiles (NodeCard) per path row from the top, a trunk
 -- down the middle with a branch to every node, gold where the row is open or the node bought, a diamond on the trunk
--- for a choice row ("pick one"), a knot where branches meet, and the row's level on the left ("⚠" when the wrong
--- weapon blocks it; the row's points and kind in its tooltip). No description text on the tree: a click / tap on a
+-- for a choice row ("pick one"), a knot where branches meet, and the row's level on the left ("⚠" when the set's
+-- capstone is in another direction, S138; the row's points, kind and reason in its tooltip). No description text on the tree: a click / tap on a
 -- node shows it in the PC details panel or the phone sheet (Buy / Refund there). "Refund all nodes" at the end.
 -- Same tree on PC (510 px list) and phone (full width, bigger tiles).
 
@@ -18,7 +17,6 @@ local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NodeCard = require(script.Parent.NodeCard)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
-local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
@@ -66,7 +64,6 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			return {}
 		end
 		local def = view.path
-		local lang = use(Text.Lang)
 		local out: { Instance } = {}
 		local function add(item: Instance)
 			(item :: any).LayoutOrder = #out + 1
@@ -85,22 +82,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
 		end
-		local function button(text: string, enabled: boolean, reason: string?, run: () -> ())
-			local b = Button(s, {
-				Size = UDim2.fromOffset(260, buttonHeight),
-				TextSize = Theme.TextSize.Small,
-				Variant = "primary",
-				Text = text,
-				Disabled = not enabled,
-				OnClick = run,
-			})
-			if not enabled and reason then
-				Tooltip.attach(s, b :: GuiObject, reason)
-			end
-			add(b)
-		end
-
-		-- Header: the name (a click shows the path's description), the weapon, the main path.
+		-- Header: the name (a click shows the path's description), the ranks in the direction (S138).
 		local pathSelected = s:Computed(function(use2): boolean
 			local sel = use2(ctx.selected)
 			return sel ~= nil and sel.kind == "path" and sel.id == def.id
@@ -127,40 +109,12 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				end
 			end,
 		}))
-		local weapons = Text.get(use, "paths.weapon.label", { weapons = PathView.weaponText(def.weapon, lang) })
-		label(
-			`{if view.weaponOk then "✓" else "✗"} {weapons}`,
-			if view.weaponOk then Theme.Paper.Success else Theme.Paper.Danger,
-			Theme.Fonts.BodyBold
-		)
-		local main = view.main
-		if main.ok then
-			local cost: ("free" | "scroll")? = main.cost
-			button(
-				Text.get(use, if cost == "scroll" then "paths.changeMain" else "paths.chooseMain"),
-				true,
-				nil,
-				function()
-					actions.chooseMain(def.id, cost)
-				end
-			)
-		elseif main.reason == "paths.error.sameMain" then
+		-- S138 (DESIGN-18 §7): a direction to mix, no main path choice and no direction weapon
+		label(Text.get(use, "skills.tree.points", { n = view.spent }), Theme.Paper.Text, Theme.Fonts.BodyBold)
+		if view.leading then
 			label(Text.get(use, "paths.isMain"), Theme.Paper.Success, Theme.Fonts.BodyBold)
-		elseif main.reason == "paths.error.mainLevel" then
-			button(
-				Text.get(use, "paths.chooseMain"),
-				false,
-				Text.get(use, "paths.mainFrom", { level = Paths.MAIN_LEVEL }),
-				function() end
-			)
-		else
-			button(
-				Text.get(use, "paths.chooseMain"),
-				false,
-				Text.get(use, main.reason or "error.internal"),
-				function() end
-			)
 		end
+		label(Text.get(use, "skills.tree.oneCapstone"), Theme.Paper.TextMuted)
 
 		-- The tree.
 		local rows = view.rows
@@ -244,7 +198,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				)
 			end
 			-- the row's level on the left; its points, kind and why it is closed in the tooltip
-			local blocked = row.weaponBlocked
+			local blocked = row.closedKey == "skills.error.capstoneTaken"
 			local level = s:New("TextLabel")({
 				Name = `Level{i}`,
 				AnchorPoint = Vector2.new(0, 0.5),

@@ -17,7 +17,6 @@ local MountData = require(Shared.Data.Mounts)
 local Mounts = require(Shared.Logic.Mounts)
 local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
-local PathData = require(Shared.Data.Paths)
 local Time = require(Shared.Logic.Time)
 local TitleData = require(Shared.Data.Titles)
 local UseBlocks = require(Shared.Logic.UseBlocks)
@@ -390,28 +389,6 @@ end
 
 -- S57: class paths -----------------------------------------------------------------------------------------------
 
-commands.path = function(player, args)
-	local id = args[1]
-	if not id then
-		reply(player, "admin.usage.path")
-		return
-	end
-	withCharacter(player, function()
-		local pathId = if string.lower(id) == "none" then nil else id
-		local ok = PathService.AdminSetMain(player, pathId)
-		if not ok then
-			reply(player, "admin.path.unknown", { id = id })
-			return
-		end
-		local path = if pathId then PathData.get(pathId) else nil
-		if path then
-			reply(player, "admin.path.ok", { path = "@" .. path.nameKey })
-		else
-			reply(player, "paths.mainNone")
-		end
-	end)
-end
-
 commands.node = function(player, args)
 	local id = args[1]
 	local rank = if args[2] then tonumber(args[2]) else nil
@@ -436,8 +413,7 @@ commands.pathmax = function(player, args)
 			reply(player, err, { id = args[1] })
 			return
 		end
-		local main = PlayerStateService.Get(player, { "character", "path", "main" })
-		if bought == 0 and main == nil then
+		if bought == 0 then
 			reply(player, "admin.pathmax.noPath")
 			return
 		end

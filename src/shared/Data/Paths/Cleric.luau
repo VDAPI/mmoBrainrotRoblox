@@ -57,6 +57,8 @@ local function misfortune(): any
 end
 
 local H, F, I = "healer", "fortune", "inquisitor"
+-- S138 (DESIGN-18 §7): the relic the Fortune's luck nodes past row 2 need (directions have no weapon of their own)
+local RELIC: Types.WeaponReq = { offhand = { "relic" } }
 
 local healer: Types.PathDef = {
 	id = H,
@@ -225,16 +227,19 @@ local fortune: Types.PathDef = {
 		row(false, {
 			skill(F, "fortuneDice"),
 			node(F, "luckyHand", "luck", 3, "✧", {
+				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { luckyHand = { 10, 30 } },
 				luck = { monsterItem = "luckyHand" },
 			}),
 		}),
 		row(false, {
 			node(F, "generousLoot", "luck", 3, "⚜", {
+				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { generousLoot = { 12, 35 } },
 				luck = { bossUpgrade = "generousLoot" },
 			}),
 			node(F, "grace", "luck", 3, "✺", {
+				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { fortuneGrace = { 2, 7 } },
 				luck = { bossLegendary = "fortuneGrace" },
 			}),
@@ -252,6 +257,7 @@ local fortune: Types.PathDef = {
 		row(false, {
 			skill(F, "prayer"),
 			node(F, "goldVein", "luck", 3, "◉", {
+				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { goldVein = { 5, 15 }, goldVeinElite = { 7, 20 } },
 				luck = { gold = "goldVein", elite2 = "goldVeinElite" },
 			}),
@@ -272,6 +278,7 @@ local fortune: Types.PathDef = {
 		}),
 		row(false, {
 			node(F, "gift", "luck", 3, "✹", {
+				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { gift = { 5, 15 } },
 				luck = { bossExtra = "gift" },
 			}),

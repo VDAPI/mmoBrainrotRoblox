@@ -1430,7 +1430,7 @@ T.describe("Skill model (S85)", function()
 	end)
 
 	T.it(
-		"builds: reference ranks through Paths.canBuy, at most pointsAt(100); main path from 20; base rows only",
+		"builds: reference ranks through Paths.canBuy, at most pointsAt(100); own leading direction and capstone; base rows only",
 		function()
 			for _, classId in B.CLASSES do
 				for _, build in SkillModel.builds(classId) do
@@ -1438,13 +1438,14 @@ T.describe("Skill model (S85)", function()
 					if at100.spent > Paths.pointsAt(100) or at100.rankChecks ~= at100.spent then
 						error(`{classId} {build.key}: spent {at100.spent}, canBuy {at100.rankChecks}`, 0)
 					end
-					T.expect(SkillModel.character(build, 19).character.path.main).toBe(nil)
+					-- S138: no main path; the leading direction needs MAIN_MIN_POINTS (never by 19)
+					T.expect(Paths.mainOf(SkillModel.character(build, 19).character)).toBe(nil)
 					local at20 = SkillModel.character(build, 20)
 					if at20.spent ~= Paths.pointsAt(20) and #at20.unbought == 0 then
 						error(`{classId} {build.key}: {at20.spent} of {Paths.pointsAt(20)} at 20 without a reason`, 0)
 					end
 					if build.base then
-						T.expect(at20.character.path.main).toBe(nil)
+						T.expect(Paths.mainOf(at20.character)).toBe(nil)
 						local rows = SkillModel.BASE[classId].rows
 						for nodeId in at100.character.path.nodes do
 							local _, _, row = Paths.findNode(nodeId)
@@ -1453,7 +1454,9 @@ T.describe("Skill model (S85)", function()
 							end
 						end
 					else
-						T.expect(at20.character.path.main).toBe(build.pathId)
+						-- S138: the build's own direction leads at 100 and holds the set's one capstone
+						T.expect({ build.key, Paths.mainOf(at100.character) }).toEqual({ build.key, build.pathId })
+						T.expect({ build.key, Paths.capstoneOf(at100.character) }).toEqual({ build.key, build.pathId })
 						T.expect(at100.spent).toBe(Paths.pointsAt(100))
 					end
 				end

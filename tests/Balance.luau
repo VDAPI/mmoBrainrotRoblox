@@ -853,7 +853,10 @@ function Balance.buildsAt(classId: string, level: number): { Variant }
 			end
 		end
 		table.sort(ids)
-		local set = (character.path.main or "-") .. ":" .. table.concat(ids, ",")
+		-- S138: no main path any more; the key keeps the build's own path from the old main path level (row 3, S57-S137)
+		-- so the 1-20 tables keep their rows
+		local own = if build.pathId and level >= PathData.ROWS[PathData.DIP_ROWS + 1].level then build.pathId else "-"
+		local set = own .. ":" .. table.concat(ids, ",")
 		if #ids == 0 then
 			set = ""
 		end

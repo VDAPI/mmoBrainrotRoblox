@@ -87,7 +87,7 @@ local function char(level: number, path: any?, extra: { [string]: any }?): any
 	local c: { [string]: any } = {
 		class = "Mage",
 		level = level,
-		path = path or { main = nil, nodes = {}, bp = {}, freeUsed = false },
+		path = path or { nodes = {}, bp = {} },
 		hotbar = {},
 		equipment = {},
 	}
@@ -111,8 +111,71 @@ local function availableAny(c: any): { string }
 	return out
 end
 
-local function state(main: string?, nodes: { [string]: number }?, bp: any?, freeUsed: boolean?): any
-	return { main = main, nodes = nodes or {}, bp = bp or {}, freeUsed = freeUsed == true }
+-- S138: a path state has nodes and breakpoint choices only (no main path, no freeUsed)
+local function state(nodes: { [string]: number }?, bp: any?): any
+	return { nodes = nodes or {}, bp = bp or {} }
+end
+
+-- S138: ranks of rows 1..row-1 of a fixture path, bottom-up and node by node (first node in choice rows), until the
+-- requirement of `row` (PathData.ROWS[row].need) is met: the fewest points that open `row`.
+local function upTo(pathId: string, row: number, nodes: { [string]: number }?): { [string]: number }
+	local out = nodes or {}
+	local path = Fixture.source.path(pathId) :: any
+	local left = PathData.ROWS[row].need
+	for r = 1, row - 1 do
+		for _, node in path.rows[r].nodes do
+			if left <= 0 then
+				return out
+			end
+			local add = math.min(node.maxRank, left)
+			out[node.id] = add
+			left -= add
+			if path.rows[r].choice then
+				break
+			end
+		end
+	end
+	return out
+end
+
+-- S138: `nodes` plus ranks of other nodes of rows 1..DIP_ROWS of `pathId` (game data or the fixture; nodes that are not
+-- team nodes and change no skill first) until the direction holds TEAM_FULL_POINTS ranks: its team nodes then work in
+-- full. Only the ranks of `pathId` in `nodes` count.
+local function teamFull(pathId: string, nodes: { [string]: number }): { [string]: number }
+	local out = table.clone(nodes)
+	local path = (PathData.get(pathId) or Fixture.source.path(pathId)) :: any
+	local have = 0
+	for r = 1, #PathData.ROWS do
+		for _, node in path.rows[r].nodes do
+			have += out[node.id] or 0
+		end
+	end
+	for pass = 1, 2 do
+		for r = 1, PathData.DIP_ROWS do
+			for _, node in path.rows[r].nodes do
+				local quiet = node.modify == nil and not GamePaths.isTeamNode(node)
+				if have < PathData.TEAM_FULL_POINTS and out[node.id] == nil and (quiet or pass == 2) then
+					local add = math.min(node.maxRank, PathData.TEAM_FULL_POINTS - have)
+					out[node.id] = add
+					have += add
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- The most ranks one direction can hold: every row, the larger node of a choice row (S138 coverage).
+local function wholeOf(path: any): number
+	local total = 0
+	for _, row in path.rows do
+		local best = 0
+		for _, node in row.nodes do
+			best = if row.choice then math.max(best, node.maxRank) else best + node.maxRank
+		end
+		total += best
+	end
+	return total
 end
 
 -- Every rank of rows 1..upTo of a fixture path (first node in choice rows).
@@ -329,15 +392,10 @@ local function pathRanks(path: any, fromRow: number, toRow: number): number
 	return total
 end
 
--- Buys a reference build rank by rank at level 100 through canChooseMain / canBuy / canChooseBreakpoint.
+-- Buys a reference build rank by rank at level 100 through canBuy / canChooseBreakpoint (S138: no main path; its own
+-- direction leads at the end and holds the set's one capstone).
 local function checkReference(api: any, path: any, build: any)
-	local c = char(100, state(nil, {}, {}, false), { class = path.class })
-	local ok, err = api.canChooseMain(c, path.id)
-	assert(ok, `{build.id}: main {err}`)
-	c.path.main = path.id
-	c.path.freeUsed = true
-	local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
-	assert(api.weaponOk(path.weapon, weapons), `{build.id}: weapon does not fit the path`)
+	local c = char(100, state({}, {}), { class = path.class })
 	for _, entry in build.nodes do
 		local id, rank = entry[1], entry[2]
 		for _ = 1, rank do
@@ -347,6 +405,9 @@ local function checkReference(api: any, path: any, build: any)
 		end
 	end
 	assert(api.spent(c) <= api.pointsAt(100), `{build.id}: spends more than pointsAt(100)`)
+	assert(api.mainOf(c) == path.id, `{build.id}: leading direction {api.mainOf(c)}`)
+	local capstone = api.capstoneOf(c)
+	assert(capstone == nil or capstone == path.id, `{build.id}: capstone in {capstone}`)
 	for key, option in build.bp or {} do
 		local skillId, at = string.match(key, "^(.+):(%d+)$")
 		local can, why = api.canChooseBreakpoint(c, skillId, tonumber(at), option)
@@ -371,7 +432,15 @@ T.describe("Paths: layout and points", function()
 		T.expect(P.pointsAt(20)).toBe(10)
 		T.expect(P.pointsAt(60)).toBe(30)
 		T.expect(P.pointsAt(100)).toBe(50)
-		T.expect(P.MAIN_LEVEL).toBe(20)
+		-- S138 (DESIGN-18 §7): directions instead of the main path
+		T.expect(P.MAIN_LEVEL).toBeNil()
+		T.expect(P.canChooseMain).toBeNil()
+		T.expect(P.mainWeaponOk).toBeNil()
+		T.expect(PathData.CAPSTONES_MAX).toBe(1)
+		T.expect(PathData.MAIN_MIN_POINTS).toBe(12)
+		T.expect(PathData.TEAM_FULL_POINTS).toBe(6)
+		T.expect(PathData.SKILL_ROWS).toEqual({ 4, 8 })
+		T.expect(P.CAPSTONES_MAX).toBe(PathData.CAPSTONES_MAX)
 	end)
 
 	T.it("rowsFor: twoPathExtra only with two paths", function()
@@ -443,7 +512,7 @@ T.describe("Paths: structure", function()
 end)
 
 T.describe("Paths: buying and refunding", function()
-	T.it("rows open by level, main path and points in lower rows", function()
+	T.it("rows open by level and points in the lower rows of the direction (S138: no main path)", function()
 		local c = char(10)
 		T.expect(P.free(c)).toBe(5)
 		T.expect(P.rowOpen(c, "fxStorm", 1)).toBe(true)
@@ -455,36 +524,38 @@ T.describe("Paths: buying and refunding", function()
 		c15.path.nodes = { fxStorm_focus = 2 }
 		T.expect(P.rowOpen(c15, "fxStorm", 2)).toBe(true)
 		T.expect(select(2, P.canBuy(c15, "nope_node"))).toBe("paths.error.unknown")
-		local c20 = char(20, state(nil, { fxStorm_focus = 3, fxStorm_fxSpark = 1 }))
-		T.expect(select(2, P.rowOpen(c20, "fxStorm", 3))).toBe("paths.error.main")
-		c20.path.main = "fxStorm"
+		local c20 = char(20, state({ fxStorm_focus = 3, fxStorm_fxSpark = 1 }))
 		T.expect(P.rowOpen(c20, "fxStorm", 3)).toBe(true)
+		T.expect(select(2, P.rowOpen(c20, "fxRune", 3))).toBe("paths.error.need")
+		T.expect(select(2, P.rowOpen(char(19, state({ fxStorm_focus = 3, fxStorm_fxSpark = 1 })), "fxStorm", 3)))
+			.toBe("paths.error.level")
+		-- row 3 of the second direction with its own points, next to the first one
+		local both = char(20, state({ fxStorm_focus = 3, fxStorm_fxSpark = 1, fxRune_fxGlyph = 1, fxRune_mend = 3 }))
+		T.expect(P.rowOpen(both, "fxStorm", 3)).toBe(true)
+		T.expect(P.rowOpen(both, "fxRune", 3)).toBe(true)
 		T.expect(P.canBuy(c20, "fxStorm_surge")).toBe(true)
 		c20.path.nodes.fxStorm_surge = 1
 		T.expect(select(2, P.canBuy(c20, "fxStorm_echo"))).toBe("paths.error.choice")
 		T.expect(P.canBuy(c20, "fxStorm_surge")).toBe(true)
 		c20.path.nodes.fxStorm_surge = 3
 		T.expect(select(2, P.canBuy(c20, "fxStorm_surge"))).toBe("paths.error.maxRank")
-		local poor = char(10, state(nil, { fxStorm_focus = 3, fxStorm_fxSpark = 1, fxRune_fxGlyph = 1 }))
+		local poor = char(10, state({ fxStorm_focus = 3, fxStorm_fxSpark = 1, fxRune_fxGlyph = 1 }))
 		T.expect(P.free(poor)).toBe(0)
 		T.expect(select(2, P.canBuy(poor, "fxRune_mend"))).toBe("paths.error.points")
 	end)
 
 	T.it("refunds keep the row requirements and go from the top", function()
 		local nodes = fill("fxStorm", 4)
-		local c = char(40, state("fxStorm", nodes, { ["fxSpark:5"] = "b" }, true))
+		local c = char(40, state(nodes, { ["fxSpark:5"] = "b" }))
 		-- rows 1-2 hold 13, row 4 needs 6: one rank of row 1 may go, row 3 needs 4
 		T.expect(P.canRefund(c, "fxStorm_focus")).toBe(true)
 		T.expect(select(2, P.canRefund(c, "fxStorm_echo"))).toBe("paths.error.noRank")
-		local thin = char(40, state("fxStorm", { fxStorm_fxSpark = 1, fxStorm_focus = 1, fxStorm_surge = 1 }))
+		local thin = char(40, state({ fxStorm_fxSpark = 1, fxStorm_focus = 1, fxStorm_surge = 1 }))
 		T.expect(select(2, P.canRefund(thin, "fxStorm_focus"))).toBe("paths.error.needAbove")
 		T.expect(P.canRefund(thin, "fxStorm_surge")).toBe(true)
 
 		local all = P.refund(c, nil)
-		T.expect(all.nodes).toEqual({})
-		T.expect(all.main).toBe("fxStorm")
-		T.expect(all.freeUsed).toBe(true)
-		T.expect(all.bp).toEqual({ ["fxSpark:5"] = "b" })
+		T.expect(all).toEqual({ nodes = {}, bp = { ["fxSpark:5"] = "b" } })
 		local low = P.refund(c, { fromRow = 3 })
 		T.expect(low.nodes).toEqual(fill("fxStorm", 2))
 		local two = P.refund(c, { points = 2 })
@@ -492,43 +563,134 @@ T.describe("Paths: buying and refunding", function()
 		T.expect(two.nodes.fxStorm_power).toBe(1)
 		T.expect(two.nodes.fxStorm_fxBolt).toBe(1)
 		T.expect(P.spent(char(40, two))).toBe(P.spent(c) - 2)
-		local other =
-			P.refund(char(40, state("fxStorm", fill("fxStorm", 2, { fxRune_fxGlyph = 1 }))), { path = "fxRune" })
+		local other = P.refund(char(40, state(fill("fxStorm", 2, { fxRune_fxGlyph = 1 }))), { path = "fxRune" })
 		T.expect(other.nodes.fxRune_fxGlyph).toBeNil()
 		T.expect(other.nodes.fxStorm_focus).toBe(3)
 	end)
 end)
 
-T.describe("Paths: main path", function()
-	T.it("level, cost and the same path", function()
-		T.expect(select(2, P.canChooseMain(char(19), "fxStorm"))).toBe("paths.error.mainLevel")
-		local ok, err, cost = P.canChooseMain(char(20), "fxStorm")
-		T.expect({ ok, err, cost }).toEqual({ true, nil, "free" })
-		local _, _, paid = P.canChooseMain(char(20, state("fxStorm", {}, {}, true)), "fxRune")
-		T.expect(paid).toBe("scroll")
-		T.expect(select(2, P.canChooseMain(char(20, state("fxStorm")), "fxStorm"))).toBe("paths.error.sameMain")
-		T.expect(select(2, P.canChooseMain(char(20), "fxGone"))).toBe("paths.error.unknown")
-		T.expect(select(2, P.canChooseMain(char(20, nil, { class = "Warrior" }), "fxStorm")))
-			.toBe("paths.error.unknown")
+T.describe("Paths: directions (S138, DESIGN-18 §7)", function()
+	T.it("one capstone per set; the upgrade only with its own capstone", function()
+		local capRow, upRow = 8, 11
+		T.expect(PathData.ROWS[capRow].kind).toBe("capstone")
+		T.expect(PathData.ROWS[upRow].kind).toBe("upgrade")
+		-- both directions filled to the capstone's requirement (18 + 18 of 50 points)
+		local nodes = upTo("fxRune", capRow, upTo("fxStorm", capRow))
+		local c = char(100, state(nodes))
+		T.expect(P.canBuy(c, "fxStorm_fxCataclysm")).toBe(true)
+		T.expect(P.canBuy(c, "fxRune_fxRuneStorm")).toBe(true)
+		T.expect(P.capstoneOf(c)).toBeNil()
+		c.path.nodes.fxStorm_fxCataclysm = 1
+		T.expect(P.capstoneOf(c)).toBe("fxStorm")
+		T.expect({ P.canBuy(c, "fxRune_fxRuneStorm") }).toEqual({ false, "skills.error.capstoneTaken" })
+		-- refunding the first capstone frees the slot
+		T.expect(P.canRefund(c, "fxStorm_fxCataclysm")).toBe(true)
+		c.path.nodes.fxStorm_fxCataclysm = nil
+		T.expect(P.canBuy(c, "fxRune_fxRuneStorm")).toBe(true)
+		-- the upgrade: a direction at its requirement without the capstone may not buy it
+		local bare = char(100, state(upTo("fxRune", upRow)))
+		T.expect(P.spent(bare)).toBe(PathData.ROWS[upRow].need)
+		T.expect({ P.canBuy(bare, "fxRune_runeStormPlus") }).toEqual({ false, "paths.error.upgrade" })
+		-- with its capstone it may, and then the capstone stays until the upgrade goes
+		local own = upTo("fxStorm", upRow)
+		own.fxStorm_fxCataclysm = 1
+		local deep = char(100, state(own))
+		T.expect(P.canBuy(deep, "fxStorm_cataclysmPlus")).toBe(true)
+		deep.path.nodes.fxStorm_cataclysmPlus = 1
+		T.expect({ P.canRefund(deep, "fxStorm_fxCataclysm") }).toEqual({ false, "paths.error.needAbove" })
+		T.expect(P.canRefund(deep, "fxStorm_cataclysmPlus")).toBe(true)
+	end)
+
+	T.it("mainOf: the most ranks, at least MAIN_MIN_POINTS, a tie goes to the lower order", function()
+		local need = PathData.MAIN_MIN_POINTS
+		T.expect(P.mainOf(char(100))).toBeNil()
+		local below = fill("fxStorm", 1) -- 4 ranks
+		T.expect(P.mainOf(char(100, state(below)))).toBeNil()
+		local storm = fill("fxStorm", 2) -- 13 ranks
+		T.expect(P.pathSpent(char(100, state(storm)), "fxStorm")).toBe(13)
+		T.expect(P.mainOf(char(100, state(storm)))).toBe("fxStorm")
+		-- exactly the threshold
+		local exact = upTo("fxStorm", 3) -- 4
+		exact.fxStorm_beacon = 3
+		exact.fxStorm_surge = 3
+		exact.fxStorm_power = need - 10
+		T.expect(P.pathSpent(char(100, state(exact)), "fxStorm")).toBe(need)
+		T.expect(P.mainOf(char(100, state(exact)))).toBe("fxStorm")
+		exact.fxStorm_power -= 1
+		T.expect(P.mainOf(char(100, state(exact)))).toBeNil()
+		-- more ranks in the second direction win; a tie goes to the lower order (fxStorm)
+		local rune = fill("fxRune", 2, fill("fxStorm", 2)) -- 13 + 13
+		T.expect(P.mainOf(char(100, state(rune)))).toBe("fxStorm")
+		rune.fxRune_r3a = 3
+		T.expect(P.mainOf(char(100, state(rune)))).toBe("fxRune")
+		T.expect(P.pathSpent(char(100, state(rune)), "fxGone")).toBe(0)
+		T.expect(P.mainOf(char(100, state(rune), { class = "Warrior" }))).toBeNil()
+	end)
+
+	T.it("PathDef.weapon blocks nothing; node.weapon greys its node in every row", function()
+		local c = char(40, state(fill("fxStorm", 4)))
+		for _, weapons in { { main = "runestaff" }, { main = "wand" }, {} } do
+			T.expect(P.skillUsable(c, "fxBolt", weapons)).toBe(true)
+		end
+		local active: { [string]: boolean } = {}
+		for _, a in P.activeNodes(c, { main = "runestaff" }) do
+			active[a.node.id] = true
+		end
+		T.expect(active.fxStorm_power).toBe(true) -- row 4 without the old path weapon
+		local paths = deepCopy(Fixture.paths)
+		paths[1].rows[4].nodes[1].weapon = { main = { "staff" } } -- fxBolt's node
+		paths[1].rows[4].nodes[2].weapon = { main = { "staff" } } -- power
+		local api = GamePaths.withSource(GamePaths.sourceOf(paths, Fixture.skills))
+		T.expect({ api.skillUsable(c, "fxBolt", { main = "wand" }) }).toEqual({ false, "cast.error.pathWeapon" })
+		T.expect(api.skillUsable(c, "fxBolt", { main = "staff" })).toBe(true)
+		local withWand: { [string]: boolean } = {}
+		for _, a in api.activeNodes(c, { main = "wand" }) do
+			withWand[a.node.id] = true
+		end
+		T.expect(withWand.fxStorm_power).toBeNil()
+		T.expect(withWand.fxStorm_focus).toBe(true)
+	end)
+
+	T.it("50 points: one whole direction with its capstone and upgrade, never two", function()
+		local function whole(pathId: string): number
+			local path = Fixture.source.path(pathId) :: any
+			local total = 0
+			for _, row in path.rows do
+				local best = 0
+				for _, node in row.nodes do
+					if row.choice then
+						best = math.max(best, node.maxRank)
+					else
+						best += node.maxRank
+					end
+				end
+				total += best
+			end
+			return total
+		end
+		T.expect(whole("fxStorm") <= P.pointsAt(100)).toBe(true)
+		T.expect(whole("fxRune") <= P.pointsAt(100)).toBe(true)
+		T.expect(whole("fxStorm") + whole("fxRune") > P.pointsAt(100)).toBe(true)
 	end)
 end)
 
 T.describe("Paths: skills", function()
 	T.it("skillRank, availableSkills", function()
-		local c = char(40, state("fxStorm", fill("fxStorm", 3)))
+		local c = char(40, state(fill("fxStorm", 3)))
 		T.expect(P.skillRank(c, "fxBolt")).toBe(0)
 		c.path.nodes.fxStorm_fxBolt = 1
 		local bolt = Fixture.source.skill("fxBolt") :: any
 		T.expect(P.skillRank(c, "fxBolt")).toBe(Skills.rankAt(bolt, 40))
 		T.expect(P.skillRank(c, "fxBolt") > 1).toBe(true)
-		c.path.main = "fxRune"
-		T.expect(P.skillRank(c, "fxBolt")).toBe(0) -- row 4 outside the main path
-		T.expect(P.skillRank(c, "fxSpark") > 0).toBe(true) -- row 1 anywhere
-		local orphan = char(100, state("fxStorm", { fxGone_fxOrphan = 1 }), { hotbar = { ["1"] = "fxOrphan" } })
+		-- S138: a row-4 skill works in any direction with its node (no main path)
+		T.expect(P.skillRank(c, "fxSpark") > 0).toBe(true)
+		local young = char(25, state(c.path.nodes))
+		T.expect(P.skillRank(young, "fxBolt")).toBe(0) -- the row's level (26) not reached
+		local orphan = char(100, state({ fxGone_fxOrphan = 1 }), { hotbar = { ["1"] = "fxOrphan" } })
 		T.expect(P.skillRank(orphan, "fxOrphan")).toBe(0)
 		T.expect(table.find(P.availableSkills(orphan), "fxOrphan")).toBeNil()
 		T.expect((P.validHotbar(orphan))).toEqual({})
-		local list = P.availableSkills(char(40, state("fxStorm", fill("fxStorm", 4))))
+		local list = P.availableSkills(char(40, state(fill("fxStorm", 4))))
 		T.expect(table.find(list, "firebolt") ~= nil).toBe(true) -- class base
 		T.expect(table.find(list, "fxSpark") ~= nil).toBe(true)
 		T.expect(table.find(list, "fxBolt") ~= nil).toBe(true)
@@ -554,9 +716,9 @@ T.describe("Paths: weapons", function()
 		T.expect(P.weaponTypesOf(nil)).toEqual({})
 	end)
 
-	T.it("skillUsable needs the path weapon above row 2, node.weapon everywhere", function()
-		local c = char(40, state("fxStorm", fill("fxStorm", 4)))
-		T.expect({ P.skillUsable(c, "fxBolt", { main = "runestaff" }) }).toEqual({ false, "cast.error.pathWeapon" })
+	T.it("skillUsable: no direction weapon (S138), node.weapon everywhere", function()
+		local c = char(40, state(fill("fxStorm", 4)))
+		T.expect(P.skillUsable(c, "fxBolt", { main = "runestaff" })).toBe(true)
 		T.expect(P.skillUsable(c, "fxBolt", { main = "staff" })).toBe(true)
 		T.expect(P.skillUsable(c, "fxSpark", { main = "runestaff" })).toBe(true)
 		T.expect(P.skillUsable(c, "firebolt", {})).toBe(true)
@@ -583,13 +745,13 @@ T.describe("Paths: node values and skill changes", function()
 	T.it("skillMods resolves refs, keeps row order and follows the option", function()
 		local nodes = fill("fxStorm", 2)
 		nodes.fxStorm_surge = 2
-		local c = char(40, state("fxStorm", nodes))
+		local c = char(40, state(nodes))
 		local mods = P.skillMods(c, "fxSpark", { main = "staff" })
 		T.expect(#mods).toBe(2)
 		T.expect(mods[1].values.hexGuard).toBe(9)
 		T.expect(mods[2].mul.cooldown).toBeNear(0.8, 1e-9)
-		-- rows 3+ need the path weapon
-		T.expect(#P.skillMods(c, "fxSpark", { main = "runestaff" })).toBe(1)
+		-- S138: rows 3+ need no direction weapon
+		T.expect(#P.skillMods(c, "fxSpark", { main = "runestaff" })).toBe(2)
 		-- the echo node (option b at 5) only with B chosen
 		nodes.fxStorm_surge = nil
 		nodes.fxStorm_echo = 1
@@ -604,20 +766,23 @@ T.describe("Paths: node values and skill changes", function()
 		local nodes = fill("fxStorm", 7)
 		nodes.fxStorm_fxCataclysm = 1
 		nodes.fxStorm_fury = 3
-		local c = char(70, state("fxStorm", nodes))
+		local c = char(70, state(nodes))
 		local spark = Fixture.source.skill("fxSpark") :: any
 		local rank = P.skillRank(c, "fxSpark")
 		local def = P.effectiveFor(c, "fxSpark", { main = "staff" })
 		T.expect(Skills.valueAt(def, "dmg", rank)).toBeNear(Skills.valueAt(spark, "dmg", rank) + 30 + 60, 1e-9)
 		local plain = P.effectiveFor(c, "fxSpark", { main = "runestaff" })
-		-- without the path weapon only rows 1-2 (hex) work: dmg is the base
-		T.expect(Skills.valueAt(plain, "dmg", rank)).toBeNear(Skills.valueAt(spark, "dmg", rank), 1e-9)
+		-- S138: any weapon of the class, the nodes of every row work
+		T.expect(Skills.valueAt(plain, "dmg", rank)).toBeNear(Skills.valueAt(spark, "dmg", rank) + 30 + 60, 1e-9)
 	end)
 
-	T.it("team nodes of rows 1-2 are weaker outside the main path", function()
+	T.it("team nodes of rows 1-2 are weaker below TEAM_FULL_POINTS in their direction (S138)", function()
 		local nodes = fill("fxStorm", 2, fill("fxRune", 1))
-		local outside = char(20, state("fxRune", nodes))
-		local inside = char(20, state("fxStorm", nodes))
+		-- 5 ranks in fxStorm (< TEAM_FULL_POINTS = 6): the dip scale; 13: in full
+		local few = { fxStorm_fxSpark = 1, fxStorm_beacon = 2, fxStorm_hex = 1, fxStorm_ward = 1 }
+		T.expect(P.pathSpent(char(20, state(few)), "fxStorm")).toBe(PathData.TEAM_FULL_POINTS - 1)
+		local outside = char(20, state(few))
+		local inside = char(20, state(nodes))
 		local function scaleOf(c: any, id: string): number?
 			for _, a in P.activeNodes(c, { main = "staff" }) do
 				if a.node.id == id then
@@ -629,14 +794,19 @@ T.describe("Paths: node values and skill changes", function()
 		T.expect(scaleOf(outside, "fxStorm_beacon")).toBe(1 / 3)
 		T.expect(scaleOf(outside, "fxStorm_hex")).toBe(1 / 3)
 		T.expect(scaleOf(outside, "fxStorm_ward")).toBe(0.5)
-		T.expect(scaleOf(outside, "fxStorm_focus")).toBe(1)
+		T.expect(P.nodeScale(outside, "fxStorm", 1, P.findNode("fxStorm_focus") :: any)).toBe(1)
 		T.expect(scaleOf(inside, "fxStorm_beacon")).toBe(1)
-		T.expect(scaleOf(char(20, state(nil, nodes)), "fxStorm_hex")).toBe(1 / 3)
+		T.expect(scaleOf(inside, "fxStorm_hex")).toBe(1)
+		-- the threshold itself works in full
+		local at = table.clone(few)
+		at.fxStorm_ward += 1
+		T.expect(P.pathSpent(char(20, state(at)), "fxStorm")).toBe(PathData.TEAM_FULL_POINTS)
+		T.expect(scaleOf(char(20, state(at)), "fxStorm_hex")).toBe(1)
 		local mend = P.findNode("fxRune_mend") :: any
 		T.expect(P.isTeamNode(mend)).toBe(false)
 		T.expect(scaleOf(inside, "fxRune_mend")).toBe(1)
 		local outsideMods = P.skillMods(outside, "fxSpark", { main = "staff" })
-		T.expect(outsideMods[1].values.hexGuard).toBeNear(3, 1e-9)
+		T.expect(outsideMods[1].values.hexGuard).toBeNear(1, 1e-9) -- rank 1 (3) at 1/3
 	end)
 
 	T.it("a dip-scaled mul ref resolves as 1 + (x - 1) * scale, like nodeArgs", function()
@@ -653,10 +823,11 @@ T.describe("Paths: node values and skill changes", function()
 		hex.modify.bp.mul = { cooldown = { ref = "cd" } }
 		local api = GamePaths.withSource(GamePaths.sourceOf(copy, Fixture.skills))
 		local nodes = fill("fxStorm", 2, fill("fxRune", 1))
-		local mods = api.skillMods(char(20, state("fxRune", nodes)), "fxSpark", { main = "staff" })
+		local few = { fxStorm_fxSpark = 1, fxStorm_hex = 3 } -- 4 ranks: the dip scale
+		local mods = api.skillMods(char(20, state(few)), "fxSpark", { main = "staff" })
 		T.expect(mods[1].mul.cooldown).toBeNear(1 + (0.7 - 1) / 3, 1e-9)
 		T.expect(api.nodeArgs(hex, 3, 1 / 3).cd).toBe(Skills.roundArg(mods[1].mul.cooldown))
-		local inside = api.skillMods(char(20, state("fxStorm", nodes)), "fxSpark", { main = "staff" })
+		local inside = api.skillMods(char(20, state(nodes)), "fxSpark", { main = "staff" })
 		T.expect(inside[1].mul.cooldown).toBeNear(0.7, 1e-9)
 	end)
 end)
@@ -664,15 +835,16 @@ end)
 T.describe("Paths: passives and active nodes", function()
 	T.it("passiveTotals: node passives, path skill passives, weapon", function()
 		local nodes = fill("fxStorm", 4, { fxRune_fxGlyph = 1 })
-		local c = char(40, state("fxStorm", nodes))
+		local c = char(40, state(nodes))
 		local base = P.passiveTotals(char(40), { main = "staff" })
 		local full = P.passiveTotals(c, { main = "staff" })
 		local glyph = Fixture.source.skill("fxGlyph") :: any
 		local glyphInt = Skills.valueAt(glyph, "int", Skills.rankAt(glyph, 40))
 		T.expect(full.flat.int).toBeNear((base.flat.int or 0) + 6 + glyphInt, 1e-9)
 		T.expect(full.pct.magAtk).toBe((base.pct.magAtk or 0) + 3) -- power (row 4)
+		-- S138: no direction weapon, so another weapon of the class keeps every node
 		local noWeapon = P.passiveTotals(c, { main = "runestaff" })
-		T.expect(noWeapon.pct.magAtk).toBe(base.pct.magAtk)
+		T.expect(noWeapon.pct.magAtk).toBe((base.pct.magAtk or 0) + 3)
 		T.expect(noWeapon.flat.int).toBeNear((base.flat.int or 0) + 6 + glyphInt, 1e-9)
 	end)
 
@@ -695,7 +867,7 @@ T.describe("Paths: passives and active nodes", function()
 
 	T.it("activeNodes in row order", function()
 		local nodes = fill("fxStorm", 4, { fxRune_fxGlyph = 1 })
-		local list = P.activeNodes(char(40, state("fxStorm", nodes)), { main = "staff" })
+		local list = P.activeNodes(char(40, state(nodes)), { main = "staff" })
 		local rows = {}
 		for _, a in list do
 			table.insert(rows, a.row)
@@ -713,7 +885,7 @@ end)
 T.describe("Paths: hotbar and breakpoints", function()
 	T.it("validHotbar drops what the character does not have", function()
 		local nodes = fill("fxStorm", 4)
-		local c = char(40, state("fxStorm", nodes, { ["fxSpark:5"] = "b", ["fxSpark:10"] = "a", ["fxBolt:5"] = "b" }), {
+		local c = char(40, state(nodes, { ["fxSpark:5"] = "b", ["fxSpark:10"] = "a", ["fxBolt:5"] = "b" }), {
 			hotbar = {
 				["1"] = "fxSpark",
 				["2"] = "fxBolt",
@@ -732,14 +904,14 @@ T.describe("Paths: hotbar and breakpoints", function()
 		c.path.bp = bp
 		local _, _, again = P.validHotbar(c)
 		T.expect(again).toBe(false)
-		-- refunding the node drops the skill and its choice
+		-- refunding the node drops the skill from the bar but keeps its choice (S138, DESIGN-18 §8)
 		c.path.nodes.fxStorm_fxSpark = nil
 		local bar2, bp2, changed2 = P.validHotbar(c)
 		T.expect(bar2).toEqual({ ["2"] = "fxBolt", ["7"] = "firebolt" })
-		T.expect(bp2).toEqual({})
+		T.expect(bp2).toEqual({ ["fxSpark:5"] = "b" })
 		T.expect(changed2).toBe(true)
 		-- a choice for a rank not reached yet stays
-		local young = char(10, state(nil, { fxStorm_fxSpark = 1 }, { ["fxSpark:5"] = "b" }))
+		local young = char(10, state({ fxStorm_fxSpark = 1 }, { ["fxSpark:5"] = "b" }))
 		local _, bp3, changed3 = P.validHotbar(young)
 		T.expect(bp3).toEqual({ ["fxSpark:5"] = "b" })
 		T.expect(changed3).toBe(false)
@@ -776,7 +948,7 @@ T.describe("Paths: clampToLevel", function()
 		local nodes = fill("fxStorm", 11, { fxRune_fxGlyph = 1, fxRune_r3a = 3, nope_x = 2 })
 		nodes.fxStorm_focus = 7 -- above maxRank
 		nodes.fxStorm_echo = 2 -- second node of a choice row
-		local c = char(100, state("fxStorm", nodes, { ["fxSpark:5"] = "b" }, true))
+		local c = char(100, state(nodes, { ["fxSpark:5"] = "b" }))
 		local s = P.clampToLevel(c, 30)
 		local after = char(30, s)
 		T.expect(s.nodes.nope_x).toBeNil()
@@ -794,16 +966,50 @@ T.describe("Paths: clampToLevel", function()
 		T.expect(P.spent(after) <= P.pointsAt(30)).toBe(true)
 		T.expect(P.spent(after)).toBe(P.pointsAt(30))
 		T.expect(s.bp).toEqual({ ["fxSpark:5"] = "b" })
-		T.expect(s.freeUsed).toBe(true)
-		T.expect(s.main).toBe("fxStorm")
+		-- S138: the old fields are not copied
+		T.expect(s.freeUsed).toBeNil()
+		T.expect(s.main).toBeNil()
 		-- a row without its requirement goes with every higher row
-		local holes = char(40, state("fxStorm", { fxStorm_fxSpark = 1, fxStorm_surge = 3, fxStorm_fxBolt = 1 }))
+		local holes = char(40, state({ fxStorm_fxSpark = 1, fxStorm_surge = 3, fxStorm_fxBolt = 1 }))
 		local fixed = P.clampToLevel(holes, 40)
 		T.expect(fixed.nodes).toEqual({ fxStorm_fxSpark = 1 })
-		-- a main path of another class is dropped, freeUsed stays
-		local foreign = P.clampToLevel(char(40, state("guardian", {}, {}, true)), 40)
-		T.expect(foreign.main).toBeNil()
-		T.expect(foreign.freeUsed).toBe(true)
+		-- S138: an old save with a main path and freeUsed loses both
+		local old = char(40, { main = "fxStorm", nodes = { fxStorm_fxSpark = 1 }, bp = {}, freeUsed = true })
+		T.expect(P.clampToLevel(old, 40)).toEqual({ nodes = { fxStorm_fxSpark = 1 }, bp = {} })
+	end)
+
+	T.it("two capstones (an old main path + admin): the leading direction keeps its own", function()
+		-- 19 + 19 ranks, a tie: the lower order (fxStorm) leads and keeps its capstone
+		local nodes = upTo("fxRune", 8, upTo("fxStorm", 8))
+		nodes.fxStorm_fxCataclysm = 1
+		nodes.fxRune_fxRuneStorm = 1
+		local c = char(100, state(nodes))
+		T.expect(P.mainOf(c)).toBe("fxStorm")
+		T.expect(P.capstoneOf(c)).toBe("fxStorm")
+		local s = P.clampToLevel(c, 100)
+		T.expect(s.nodes.fxStorm_fxCataclysm).toBe(1)
+		T.expect(s.nodes.fxRune_fxRuneStorm).toBeNil()
+		T.expect(s.nodes.fxRune_fxGlyph).toBe(1)
+		-- more ranks in fxRune (22 against 19): its capstone stays
+		local swap = upTo("fxRune", 9, upTo("fxStorm", 8))
+		swap.fxStorm_fxCataclysm = 1
+		swap.fxRune_fxRuneStorm = 1
+		local mixed = char(100, state(swap))
+		T.expect(P.mainOf(mixed)).toBe("fxRune")
+		T.expect(P.capstoneOf(mixed)).toBe("fxRune")
+		local kept = P.clampToLevel(mixed, 100)
+		T.expect(kept.nodes.fxRune_fxRuneStorm).toBe(1)
+		T.expect(kept.nodes.fxStorm_fxCataclysm).toBeNil()
+		-- the leading direction's upgrade stays, the other capstone goes (31 + 19 = 50 points)
+		local up = upTo("fxRune", 11, upTo("fxStorm", 8))
+		up.fxStorm_fxCataclysm = 1
+		up.fxRune_fxRuneStorm = 1
+		up.fxRune_runeStormPlus = 2
+		T.expect(P.mainOf(char(100, state(up)))).toBe("fxRune")
+		local both = P.clampToLevel(char(100, state(up)), 100)
+		T.expect(both.nodes.fxRune_runeStormPlus).toBe(2)
+		T.expect(both.nodes.fxRune_fxRuneStorm).toBe(1)
+		T.expect(both.nodes.fxStorm_fxCataclysm).toBeNil()
 	end)
 end)
 
@@ -812,11 +1018,11 @@ T.describe("Paths: edit rules and breakpoints", function()
 		local function edit(action: string, inCombat: boolean, inTown: boolean, nearGate: boolean): any
 			return { P.canEdit({ action = action, inCombat = inCombat, inTown = inTown, nearGate = nearGate } :: any) }
 		end
-		for _, action in { "buy", "refund", "chooseMain", "changeMain", "chooseBp", "changeBp" } do
+		for _, action in { "buy", "refund", "chooseBp", "changeBp" } do
 			T.expect(edit(action, true, true, true)).toEqual({ false, "paths.error.combat" })
 			T.expect(edit(action, false, true, false)[1]).toBe(true)
 		end
-		for _, action in { "buy", "chooseMain", "chooseBp" } do
+		for _, action in { "buy", "chooseBp" } do
 			T.expect(edit(action, false, false, false)[1]).toBe(true)
 			T.expect(edit(action, false, false, true)[1]).toBe(true)
 		end
@@ -824,14 +1030,27 @@ T.describe("Paths: edit rules and breakpoints", function()
 			T.expect(edit(action, false, false, true)[1]).toBe(true)
 			T.expect(edit(action, false, false, false)).toEqual({ false, "paths.error.place" })
 		end
-		T.expect(edit("changeMain", false, false, true)).toEqual({ false, "paths.error.town" })
-		T.expect(edit("changeMain", false, false, false)).toEqual({ false, "paths.error.town" })
+		-- S138 (DESIGN-18 §3.2): a node refund below freeRespecLevel anywhere out of combat (ctx.level)
+		local free = Progression.freeRespecLevel
+		local function refundAt(level: number, inCombat: boolean): any
+			return {
+				P.canEdit({ action = "refund", inCombat = inCombat, inTown = false, nearGate = false, level = level }),
+			}
+		end
+		T.expect(refundAt(free - 1, false)).toEqual({ true })
+		T.expect(refundAt(free - 1, true)).toEqual({ false, "paths.error.combat" })
+		T.expect(refundAt(free, false)).toEqual({ false, "paths.error.place" })
+		T.expect(
+			select(2, P.canEdit({ action = "changeBp", inCombat = false, inTown = false, nearGate = false, level = 1 }))
+		)
+			.toBe("paths.error.place")
+		T.expect(edit("changeMain", false, true, true)).toEqual({ false, "error.badRequest" })
 	end)
 
 	T.it("canChooseBreakpoint", function()
-		local c = char(70, state("fxStorm", { fxStorm_fxSpark = 1 }))
+		local c = char(70, state({ fxStorm_fxSpark = 1 }))
 		T.expect({ P.canChooseBreakpoint(c, "fxSpark", 10, "b") }).toEqual({ false, "bp.error.noOption", false })
-		T.expect({ P.canChooseBreakpoint(char(20, state(nil, { fxStorm_fxSpark = 1 })), "fxSpark", 5, "b") }).toEqual({
+		T.expect({ P.canChooseBreakpoint(char(20, state({ fxStorm_fxSpark = 1 })), "fxSpark", 5, "b") }).toEqual({
 			false,
 			"bp.error.rank",
 			false,
@@ -843,7 +1062,7 @@ T.describe("Paths: edit rules and breakpoints", function()
 		T.expect(select(2, P.canChooseBreakpoint(c, "fxSpark", 7, "a"))).toBe("error.badRequest")
 		T.expect(select(2, P.canChooseBreakpoint(c, "fxSpark", 5, "c"))).toBe("error.badRequest")
 		-- S81: every real class has B on both ranks, so a fixture skill without breakpoints
-		local bolt = char(70, state("fxStorm", fill("fxStorm", 4)))
+		local bolt = char(70, state(fill("fxStorm", 4)))
 		T.expect(select(2, P.canChooseBreakpoint(bolt, "fxBolt", 5, "b"))).toBe("bp.error.noOption")
 	end)
 end)
@@ -886,23 +1105,23 @@ T.describe("Paths: party auras (S61)", function()
 		T.expect(GamePaths.inAura(BEHIND, O, { x = 0, z = 5 }, O)).toBe(false)
 	end)
 
-	T.it("auras of rows 1-2: full in the main path, dip scale outside", function()
+	T.it("auras of rows 1-2: full from TEAM_FULL_POINTS in the direction, dip scale below (S138)", function()
 		local beacon = P.findNode("fxStorm_beacon") :: any
-		local nodes = { fxStorm_beacon = 3 }
-		local inside = P.auras(char(20, state("fxStorm", nodes)), {})
+		local nodes = { fxStorm_beacon = 3, fxStorm_focus = 3 }
+		local inside = P.auras(char(20, state(nodes)), {})
 		T.expect(#inside).toBe(1)
 		T.expect(inside[1].nodeId).toBe("fxStorm_beacon")
 		T.expect(inside[1].category).toBe("allyAttack")
 		T.expect(inside[1].shape).toBe("circle")
 		T.expect(inside[1].radius).toBe(PathData.AURA.radius)
 		T.expect(inside[1].stats.magAtk).toBeNear(P.nodeValues(beacon, 3, 1).atk, 1e-9)
-		local outside = P.auras(char(20, state("fxRune", nodes)), {})
+		local outside = P.auras(char(20, state({ fxStorm_beacon = 3 })), {})
 		T.expect(outside[1].stats.magAtk).toBeNear(P.nodeValues(beacon, 3, 1 / 3).atk, 1e-9)
 		T.expect(P.auras(char(20), {})).toEqual({})
 		T.expect(GamePaths.auras(char(40, nil, { class = "Warrior" }), {})).toEqual({})
 	end)
 
-	T.it("auras of deeper rows need the main path and its weapon", function()
+	T.it("auras of deeper rows: any direction and weapon (S138), the row level", function()
 		local copy = deepCopy(Fixture.paths)
 		local found = false
 		for _, row in copy[1].rows do
@@ -925,14 +1144,14 @@ T.describe("Paths: party auras (S61)", function()
 		end
 		T.expect(found).toBe(true)
 		local api = GamePaths.withSource(GamePaths.sourceOf(copy, Fixture.skills))
-		local c = char(40, state("fxStorm", { fxStorm_grit = 3 }))
+		local c = char(40, state({ fxStorm_grit = 3 }))
 		local list = api.auras(c, { main = "staff" })
 		T.expect(#list).toBe(1)
 		T.expect(list[1].stats).toEqual({ physAtk = 6, magAtk = 6 })
 		T.expect(list[1].shape).toBe("circle")
 		T.expect(list[1].radius).toBe(30)
-		T.expect(api.auras(c, { main = "runestaff" })).toEqual({})
-		T.expect(api.auras(char(40, state("fxRune", { fxStorm_grit = 3 })), { main = "staff" })).toEqual({})
+		T.expect(#api.auras(c, { main = "runestaff" })).toBe(1)
+		T.expect(api.auras(char(32, state({ fxStorm_grit = 3 })), { main = "staff" })).toEqual({}) -- row 5 at 33
 	end)
 
 	T.it("ROZWOJ 7.3: party buff rules", function()
@@ -1031,15 +1250,14 @@ T.describe("Data: Paths (game)", function()
 			for _, path in paths do
 				T.expect(PartyBuffRules.checkAuras(path)).toEqual({})
 			end
-			-- coverage of each path as the main one
+			-- S138 (DESIGN-18 §7): 50 points hold one whole direction with its capstone and upgrade, never two
 			for _, main in paths do
-				local total = pathRanks(main, 1, #PathData.ROWS)
+				T.expect({ main.id, wholeOf(main) <= GamePaths.pointsAt(100) }).toEqual({ main.id, true })
 				for _, other in paths do
 					if other ~= main then
-						total += pathRanks(other, 1, PathData.DIP_ROWS)
+						T.expect(wholeOf(main) + wholeOf(other) > GamePaths.pointsAt(100)).toBe(true)
 					end
 				end
-				T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
 			end
 			-- weapons: every class weapon fits some path, every off-hand with some one-handed weapon
 			local class = Classes.get(classId) :: any
@@ -1066,6 +1284,30 @@ T.describe("Data: Paths (game)", function()
 				T.expect({ classId, off, ok }).toEqual({ classId, off, true })
 			end
 		end
+	end)
+
+	-- S138 (DESIGN-18 §7): skill nodes sit in SKILL_ROWS, at most one per row of a direction; asserted only for classes
+	-- whose pools are no longer transitional (the class sessions S140-S145 move them out of rows 1, 7 and 10)
+	T.it("skill nodes in SKILL_ROWS for classes past their transitional pools", function()
+		local checked = 0
+		for _, classId in Classes.order do
+			if not SkillPools.isTransitional(classId) then
+				for _, path in GamePaths.pathsOf(classId) do
+					for r, row in path.rows do
+						local count = 0
+						for _, n in row.nodes do
+							count += if n.kind == "skill" then 1 else 0
+						end
+						if count > 0 then
+							checked += 1
+							T.expect({ path.id, r, table.find(PathData.SKILL_ROWS, r) ~= nil, count <= 1 })
+								.toEqual({ path.id, r, true, true })
+						end
+					end
+				end
+			end
+		end
+		T.expect(checked >= 0).toBe(true)
 	end)
 
 	T.it("texts, rule A, team nodes and reference builds", function()
@@ -1113,12 +1355,11 @@ T.describe("Data: Paths (game)", function()
 						end
 					end
 					if r <= PathData.DIP_ROWS and GamePaths.isTeamNode(n) then
-						local outside = char(100, state(nil, { [n.id] = n.maxRank }), { class = path.class })
-						for _, a in GamePaths.activeNodes(outside, {}) do
-							if a.node.id == n.id then
-								T.expect(a.scale < 1).toBe(true)
-							end
-						end
+						-- S138: below TEAM_FULL_POINTS in its direction a team node is weaker, from it in full
+						local outside = char(100, state({ [n.id] = n.maxRank }), { class = path.class })
+						T.expect(GamePaths.nodeScale(outside, path.id, r, n) < 1).toBe(true)
+						local full = char(100, state(teamFull(path.id, { [n.id] = n.maxRank })), { class = path.class })
+						T.expect(GamePaths.nodeScale(full, path.id, r, n)).toBe(1)
 					end
 				end
 			end
@@ -1136,8 +1377,8 @@ T.describe("Data: Cleric paths (S71)", function()
 	local BreakpointKeys = require("./BreakpointKeys")
 	local Locale = require("../src/shared/Util/Locale")
 
-	local function cleric(main: string?, nodes: { [string]: number }): any
-		return char(100, state(main, nodes, {}, true), { class = "Cleric" })
+	local function cleric(_main: string?, nodes: { [string]: number }): any
+		return char(100, state(nodes, {}), { class = "Cleric" })
 	end
 
 	-- Every .luau file under a directory (as tests/data.spec).
@@ -1235,20 +1476,20 @@ T.describe("Data: Cleric paths (S71)", function()
 				end
 			end
 			T.expect(total).toBe(62)
-			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			T.expect(wholeOf(main) <= GamePaths.pointsAt(100)).toBe(true) -- S138: one whole direction
 		end
 	end)
 
-	T.it("Evil Eye works at 1/3 outside the main path (dip scale)", function()
+	T.it("Evil Eye works at 1/3 below TEAM_FULL_POINTS in Fortune (dip scale, S138)", function()
 		local relic = { main = "mace1h", offhand = "relic" }
 		local skill = SkillData.get("holyStrike") :: any
-		local function misfortune(main: string): number
-			local c = cleric(main, { fortune_evilEye = 3 })
+		local function misfortune(nodes: { [string]: number }): number
+			local c = cleric(nil, nodes)
 			local def = Skills.effective(skill, 10, {}, GamePaths.skillMods(c, "holyStrike", relic), true)
 			return Skills.valueAt(def, "misfortune", 10)
 		end
-		T.expect(misfortune("fortune")).toBeNear(6, 1e-9)
-		T.expect(misfortune("healer")).toBeNear(2, 1e-9)
+		T.expect(misfortune(teamFull("fortune", { fortune_evilEye = 3 }))).toBeNear(6, 1e-9)
+		T.expect(misfortune({ fortune_evilEye = 3 })).toBeNear(2, 1e-9)
 	end)
 
 	T.it("model builds spend exactly 50 and name usable breakpoints", function()
@@ -1384,7 +1625,7 @@ T.describe("Data: Cleric paths (S71)", function()
 				end
 			end
 			for _, main in GamePaths.pathsOf(classId) do
-				local c = char(100, state(main.id, all, {}, true), { class = classId })
+				local c = char(100, state(all, {}), { class = classId })
 				local weapons = weaponsFor(main)
 				for _, skill in SkillData.byClass[classId] do
 					local mods = GamePaths.skillMods(c, skill.id, weapons)
@@ -1399,8 +1640,8 @@ end)
 -- S75: the Warrior on real paths (ROZWOJ 10) ---------------------------------------------------------------------------
 
 T.describe("Data: Warrior paths (S75)", function()
-	local function warrior(main: string?, nodes: { [string]: number }, bp: { [string]: string }?): any
-		return char(100, state(main, nodes, bp or {}, true), { class = "Warrior" })
+	local function warrior(_main: string?, nodes: { [string]: number }, bp: { [string]: string }?): any
+		return char(100, state(nodes, bp or {}), { class = "Warrior" })
 	end
 
 	local function ok(pathId: string, main: string?, offhand: string?): boolean
@@ -1464,7 +1705,7 @@ T.describe("Data: Warrior paths (S75)", function()
 				end
 			end
 			T.expect(total).toBe(62)
-			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			T.expect(wholeOf(main) <= GamePaths.pointsAt(100)).toBe(true) -- S138: one whole direction
 			for _, row in main.rows do
 				for _, n in row.nodes do
 					nodes += 1
@@ -1517,18 +1758,18 @@ T.describe("Data: Warrior paths (S75)", function()
 		end
 	end)
 
-	T.it("Cover at 1/3 outside the main path", function()
+	T.it("Cover at 1/3 below TEAM_FULL_POINTS in Guardian (S138)", function()
 		local shield = { main = "sword1h", offhand = "shield" }
-		local function cover(main: string): number
-			for _, aura in GamePaths.auras(warrior(main, { guardian_cover = 3 }), shield) do
+		local function cover(nodes: { [string]: number }): number
+			for _, aura in GamePaths.auras(warrior(nil, nodes), shield) do
 				if aura.nodeId == "guardian_cover" then
 					return aura.stats.value
 				end
 			end
 			return 0
 		end
-		T.expect(cover("guardian")).toBeNear(10, 1e-9)
-		T.expect(cover("berserker")).toBeNear(10 / 3, 1e-9)
+		T.expect(cover(teamFull("guardian", { guardian_cover = 3 }))).toBeNear(10, 1e-9)
+		T.expect(cover({ guardian_cover = 3 })).toBeNear(10 / 3, 1e-9)
 	end)
 
 	-- Composition with nodes (ROZWOJ 2.7): Skills.effective(skill, rank, choices, Paths.skillMods(...)).
@@ -1571,11 +1812,15 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect({ vigor.category, Skills.valueAt(d3, vigor.stats.armor, 10), vigor.duration })
 			.toEqual({ "allyVigor", 9, 24 })
 		T.expect(d3.effects[1].category).toBe("own")
-		local d4 = eff("battleCry", "guardian", nodes, { ["battleCry:10"] = "b" }, SHIELD)
+		-- S138: below TEAM_FULL_POINTS in Standard the team node works at 1/3
+		local d4 = eff("battleCry", "guardian", { standard_command = 3 }, { ["battleCry:10"] = "b" }, SHIELD)
 		T.expect(Skills.valueAt(d4, "cmdAtk", 10)).toBeNear(1, 1e-9)
-		-- the path weapon: rows 3+ need it, rows 1-2 do not
-		local d5 = eff("battleCry", "standard", { standard_fervor = 3, standard_command = 3 }, {}, AXE)
-		T.expect(Skills.valueAt(d5, "atk", 10)).toBeNear(16, 1e-9)
+		-- S138: no direction weapon: rows 3+ work with an axe as with a saber
+		local both = { standard_fervor = 3, standard_command = 3 }
+		local d5 = eff("battleCry", "standard", both, {}, AXE)
+		local d6 = eff("battleCry", "standard", both, {}, SABER)
+		T.expect(Skills.valueAt(d5, "atk", 10)).toBeNear(Skills.valueAt(d6, "atk", 10), 1e-9)
+		T.expect(Skills.valueAt(d5, "atk", 10) > 16).toBe(true)
 		T.expect(Skills.valueAt(d5, "cmdAtk", 10)).toBeNear(3, 1e-9)
 	end)
 
@@ -1623,8 +1868,8 @@ end)
 T.describe("Data: Hunter paths (S78)", function()
 	local TooltipModel = require("../src/shared/Logic/TooltipModel")
 
-	local function hunter(main: string?, nodes: { [string]: number }): any
-		return char(100, state(main, nodes, {}, true), { class = "Hunter" })
+	local function hunter(_main: string?, nodes: { [string]: number }): any
+		return char(100, state(nodes, {}), { class = "Hunter" })
 	end
 
 	local function ok(pathId: string, main: string?, offhand: string?): boolean
@@ -1666,11 +1911,11 @@ T.describe("Data: Hunter paths (S78)", function()
 		for _, path in GamePaths.pathsOf("Hunter") do
 			T.expect({ path.id, path.weapon.offhand }).toEqual({ path.id, nil })
 		end
-		-- a bow in a Marksman's hands: row 3 (Slayer) is off, row 2 (Rhythm) works
-		local c = hunter("marksman", { marksman_slayer = 3, marksman_rhythm = 3 })
+		-- S138: a bow in a Marksman's hands: no direction weapon, row 3 (Slayer) works as row 2 (Rhythm)
+		local c = hunter(nil, { marksman_slayer = 3, marksman_rhythm = 3 })
 		local hooks = GamePaths.passiveTotals(c, { main = "bow" }).hooks
-		T.expect(hooks.bossDamage).toBeNil()
-		T.expect(hooks.eliteDamage).toBeNil()
+		T.expect(hooks.bossDamage ~= nil).toBe(true)
+		T.expect(hooks.bossDamage).toBe(GamePaths.passiveTotals(c, { main = "longbow" }).hooks.bossDamage)
 		local mods = GamePaths.skillMods(c, "aimedShot", { main = "bow" })
 		T.expect(#mods).toBe(1)
 		T.expect(mods[1].critCdr).toBeNear(50, 1e-9)
@@ -1691,7 +1936,8 @@ T.describe("Data: Hunter paths (S78)", function()
 					total += 10
 				end
 			end
-			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			T.expect(total > GamePaths.pointsAt(100)).toBe(true)
+			T.expect(wholeOf(main) <= GamePaths.pointsAt(100)).toBe(true) -- S138: one whole direction
 			for _, row in main.rows do
 				for _, n in row.nodes do
 					nodes += 1
@@ -1703,13 +1949,14 @@ T.describe("Data: Hunter paths (S78)", function()
 		T.expect((GamePaths.findNode("scout_royalFalcon") :: any).kind).toBe("keystone")
 	end)
 
-	T.it("team hooks of the Scout's rows 1-2 at 1/3 outside the main path", function()
+	T.it("team hooks of the Scout's rows 1-2 at 1/3 below TEAM_FULL_POINTS in Scout (S138)", function()
 		local nodes = { scout_eye = 3, scout_spotting = 3, scout_vigilance = 3 }
-		local outside = GamePaths.passiveTotals(hunter("marksman", nodes), { main = "longbow" }).hooks
+		local outside = GamePaths.passiveTotals(hunter(nil, { scout_eye = 3, scout_spotting = 2 }), {}).hooks
 		T.expect(outside.minimapEliteBonus).toBeNear(60, 1e-9)
-		T.expect(outside.spotOnHit).toBeNear(2, 1e-9)
-		T.expect(outside.vigilanceMove).toBeNear(20 / 3, 1e-9)
-		local inside = GamePaths.passiveTotals(hunter("scout", nodes), { main = "bow" }).hooks
+		local spotting = GamePaths.findNode("scout_spotting") :: any
+		local field = (spotting.passive.hooks :: any).spotOnHit
+		T.expect(outside.spotOnHit).toBeNear(GamePaths.nodeValues(spotting, 2, 1 / 3)[field], 1e-9)
+		local inside = GamePaths.passiveTotals(hunter(nil, nodes), { main = "longbow" }).hooks
 		T.expect(inside.minimapEliteBonus).toBeNear(180, 1e-9)
 		T.expect(inside.spotOnHit).toBeNear(6, 1e-9)
 		T.expect(inside.vigilanceMove).toBeNear(20, 1e-9)
@@ -1808,8 +2055,8 @@ end)
 T.describe("Data: Mage paths (S81)", function()
 	local TooltipModel = require("../src/shared/Logic/TooltipModel")
 
-	local function mage(main: string?, nodes: { [string]: number }): any
-		return char(100, state(main, nodes, {}, true), { class = "Mage" })
+	local function mage(_main: string?, nodes: { [string]: number }): any
+		return char(100, state(nodes, {}), { class = "Mage" })
 	end
 
 	local function ok(pathId: string, main: string?, offhand: string?): boolean
@@ -1844,11 +2091,11 @@ T.describe("Data: Mage paths (S81)", function()
 		T.expect(fits("wand", "orb")).toEqual({ "destroyer" })
 		T.expect(fits("wand", "tome")).toEqual({ "arcanist" })
 		T.expect(fits("wand")).toEqual({})
-		-- a tome in a Destroyer's hands: row 3 (Volatile Power) is off, row 2 (Elemental Trail) works
-		local c = mage("destroyer", { destroyer_volatile = 3, destroyer_trace = 3 })
+		-- S138: a tome in a Destroyer's hands: no direction weapon, row 3 (Volatile Power) works as row 2
+		local c = mage(nil, { destroyer_volatile = 3, destroyer_trace = 3 })
 		local hooks = GamePaths.passiveTotals(c, { main = "wand", offhand = "tome" }).hooks
-		T.expect(hooks.areaDamage).toBeNil()
-		T.expect(hooks.areaCost).toBeNil()
+		T.expect(hooks.areaCost).toBeNear(30, 1e-9)
+		T.expect(hooks.areaDamage).toBe(GamePaths.passiveTotals(c, { main = "staff" }).hooks.areaDamage)
 		T.expect(hooks.areaLingering).toBeNear(2, 1e-9)
 		for _, weapons in { { main = "runestaff" }, { main = "staff" }, { main = "wand", offhand = "orb" } } do
 			T.expect(GamePaths.passiveTotals(c, weapons).hooks.areaLingering).toBeNear(2, 1e-9)
@@ -1878,7 +2125,7 @@ T.describe("Data: Mage paths (S81)", function()
 				end
 			end
 			T.expect(total).toBe(62)
-			T.expect(GamePaths.pointsAt(100) / total).toBeBetween(0.75, 0.88)
+			T.expect(wholeOf(main) <= GamePaths.pointsAt(100)).toBe(true) -- S138: one whole direction
 			for r, row in main.rows do
 				local extras = 0
 				for i, n in row.nodes do
@@ -1984,7 +2231,7 @@ T.describe("Build sets (S58)", function()
 			stats = StatPlan.startOf("Mage"),
 			statPoints = StatPlan.total(level),
 			hotbar = Skills.startHotbar("Mage", level),
-			path = { nodes = {}, bp = {}, freeUsed = false },
+			path = { nodes = {}, bp = {} },
 			buildSlot = 1,
 			buildOther = nil,
 			equipment = {},
@@ -1992,7 +2239,7 @@ T.describe("Build sets (S58)", function()
 		}
 	end
 
-	-- The fxStorm reference build at level 100: nodes, bp, main, freeUsed, 495 stat points spent, a checked bar.
+	-- The fxStorm reference build at level 100: nodes, bp, 495 stat points spent, a checked bar.
 	local function fullSet(): any
 		local ref = (Fixture.source.path("fxStorm") :: any).reference[1]
 		local nodes: { [string]: number } = {}
@@ -2000,7 +2247,7 @@ T.describe("Build sets (S58)", function()
 			nodes[entry[1]] = entry[2]
 		end
 		local c = mage(100)
-		c.path = { main = "fxStorm", nodes = nodes, bp = table.clone(ref.bp), freeUsed = true }
+		c.path = { nodes = nodes, bp = table.clone(ref.bp) }
 		local spent = StatPlan.suggest({ int = 3, vit = 2 }, StatPlan.startOf("Mage") :: any, c.stats, 495)
 		for id, n in spent do
 			c.stats[id] += n
@@ -2053,8 +2300,7 @@ T.describe("Build sets (S58)", function()
 		local c = withActive(full)
 		local swap = api.swapSets(c)
 		T.expect(swap.slot).toBe(2)
-		T.expect(swap.active.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
-		T.expect(swap.active.path.main).toBeNil()
+		T.expect(swap.active.path).toEqual({ nodes = {}, bp = {} })
 		T.expect(swap.active.stats).toEqual(StatPlan.startOf("Mage"))
 		T.expect(swap.active.statPoints).toBe(495)
 		-- S137: an empty set has no bought ranks and an empty bar (nothing is bought by itself)
@@ -2092,38 +2338,38 @@ T.describe("Build sets (S58)", function()
 		T.expect(api.spent(api.setView(c, c.buildOther))).toBe(0)
 	end)
 
-	T.it("3. a copy keeps the target's freeUsed", function()
+	T.it("3. a copy keeps the target's respecFree", function()
 		local full = fullSet()
 		local c = withActive(full)
 		local copy = api.copySet(c)
-		T.expect(copy.path.main).toBe("fxStorm")
+		T.expect(api.mainOf(api.setView(c, copy))).toBe("fxStorm")
 		T.expect(copy.path.nodes).toEqual(full.path.nodes)
 		T.expect(copy.path.bp).toEqual(full.path.bp)
 		T.expect(copy.hotbar).toEqual(full.hotbar)
 		T.expect(copy.stats).toEqual(full.stats)
 		T.expect(copy.statPoints).toBe(full.statPoints)
-		T.expect(copy.path.freeUsed).toBe(false)
+		T.expect(copy.respecFree).toBe(false)
 		T.expect(copy.path.nodes ~= c.path.nodes).toBe(true)
 		T.expect(copy.stats ~= c.stats).toBe(true)
 		T.expect(copy.hotbar ~= c.hotbar).toBe(true)
 		c.buildOther = api.emptySet("Mage", 100)
-		c.buildOther.path.freeUsed = true
-		T.expect(api.copySet(c).path.freeUsed).toBe(true)
+		c.buildOther.respecFree = true
+		T.expect(api.copySet(c).respecFree).toBe(true)
 	end)
 
-	T.it("4. copying an empty set does not return the free main path choice", function()
+	T.it("4. S138: a set with the old main path and freeUsed loses them on copy and clean", function()
 		local c = mage(30)
 		c.buildOther = api.emptySet("Mage", 30)
-		c.buildOther.path = { main = "fxRune", nodes = {}, bp = {}, freeUsed = true }
+		c.buildOther.path = { main = "fxRune", nodes = { fxRune_fxGlyph = 1 }, bp = {}, freeUsed = true }
+		local cleaned, changed = api.cleanSet(c, c.buildOther, 30)
+		T.expect(changed).toBe(true)
+		T.expect(cleaned.path).toEqual({ nodes = { fxRune_fxGlyph = 1 }, bp = {} })
+		c.path = { main = "fxStorm", nodes = {}, bp = {}, freeUsed = true }
 		local copy = api.copySet(c)
-		T.expect(copy.path.main).toBeNil()
-		T.expect(copy.path.freeUsed).toBe(true)
-		T.expect(select(3, api.canChooseMain(api.setView(c, copy), "fxStorm"))).toBe("scroll")
-		c.buildOther = nil
-		T.expect(select(3, api.canChooseMain(api.setView(c, api.copySet(c)), "fxStorm"))).toBe("free")
+		T.expect(copy.path).toEqual({ nodes = {}, bp = {} })
 	end)
 
-	T.it("5. refunds keep the main path and freeUsed in every set", function()
+	T.it("5. refunds keep the breakpoint choices and drop nothing else in every set", function()
 		local c = mage(100)
 		c.buildOther = fullSet()
 		local swap = api.swapSets(c)
@@ -2134,8 +2380,8 @@ T.describe("Build sets (S58)", function()
 		for _, view in views do
 			for _, opts in { nil, { fromRow = 3 }, { points = 3 } } :: { any } do
 				local state = api.refund(view, opts)
-				T.expect(state.main).toBe("fxStorm")
-				T.expect(state.freeUsed).toBe(true)
+				T.expect(state.bp).toEqual(view.path.bp)
+				T.expect(state.main).toBeNil()
 			end
 		end
 	end)
@@ -2168,8 +2414,7 @@ T.describe("Build sets (S58)", function()
 			end
 			T.expect(out.stats).toEqual(StatPlan.startOf("Mage"))
 			T.expect(out.statPoints).toBe(StatPlan.total(30))
-			T.expect(out.path.main).toBe("fxStorm")
-			T.expect(out.path.freeUsed).toBe(true)
+			T.expect(out.path.main).toBeNil()
 		end
 		local small = api.emptySet("Mage", 100)
 		small.stats.int += 100
@@ -2198,7 +2443,7 @@ T.describe("Build sets (S58)", function()
 		T.expect(fixed.path.bp["fxBolt:5"]).toBeNil()
 		T.expect(fixed).toEqual(base)
 		local repaired = api.cloneSet({ path = nil, stats = nil, statPoints = "x" }, "Mage", 40)
-		T.expect(repaired.path).toEqual({ nodes = {}, bp = {}, freeUsed = false })
+		T.expect(repaired.path).toEqual({ nodes = {}, bp = {} })
 		T.expect(repaired.stats).toEqual(StatPlan.startOf("Mage"))
 		T.expect(repaired.statPoints).toBe(StatPlan.total(40))
 		T.expect(repaired.hotbar).toEqual({})
@@ -2227,31 +2472,21 @@ T.describe("Build sets (S58)", function()
 		T.expect(api.canEdit(ctx("buy", {}))).toBe(true)
 		T.expect(select(2, api.canEdit(ctx("refund", {})))).toBe("paths.error.place")
 		T.expect(api.canEdit(ctx("refund", { nearGate = true, dead = true, inRun = true }))).toBe(true)
-		T.expect(select(2, api.canEdit(ctx("changeMain", { nearGate = true })))).toBe("paths.error.town")
+		T.expect(select(2, api.canEdit(ctx("changeMain", { nearGate = true })))).toBe("error.badRequest") -- S138
 		T.expect(select(2, api.canEdit(ctx("chooseBp", { inCombat = true })))).toBe("paths.error.combat")
 	end)
 
-	T.it("9. the main path weapon and the stat plan", function()
+	T.it("9. the stat plan of the leading direction (S138)", function()
 		local c = mage(40)
-		c.path = { main = "fxStorm", nodes = {}, bp = {}, freeUsed = true }
-		T.expect(api.mainWeaponOk(c, { main = "staff" })).toBe(true)
-		local fits, def = api.mainWeaponOk(c, { main = "wand" })
-		T.expect(fits).toBe(false)
-		T.expect(def and def.id).toBe("fxStorm")
-		T.expect(api.mainWeaponOk(c, { main = "runestaff" })).toBe(false)
-		c.path.main = "fxGone"
-		T.expect(api.mainWeaponOk(c, { main = "runestaff" })).toBe(true)
-		c.path.main = nil
-		T.expect(api.mainWeaponOk(c, {})).toBe(true)
-		c.path.main = "fxStorm"
+		c.path = { nodes = fill("fxStorm", 2), bp = {} } -- 13 ranks: fxStorm leads
 		local plan, planDef = api.statPlan(c)
 		T.expect(plan).toEqual({ int = 3, vit = 2 })
 		T.expect(planDef and planDef.id).toBe("fxStorm")
-		c.path.main = "fxRune"
+		c.path = { nodes = fill("fxRune", 2, fill("fxStorm", 1)), bp = {} } -- fxRune leads, it has no plan
 		local classPlan, none = api.statPlan(c)
 		T.expect(classPlan).toEqual((Classes.get("Mage") :: any).statPlan)
 		T.expect(none).toBeNil()
-		c.path.main = nil
+		c.path = { nodes = fill("fxStorm", 1), bp = {} } -- below MAIN_MIN_POINTS
 		T.expect(api.statPlan(c)).toEqual((Classes.get("Mage") :: any).statPlan)
 		c.path = nil
 		T.expect(api.statPlan(c)).toEqual((Classes.get("Mage") :: any).statPlan)

@@ -1,5 +1,5 @@
 --!strict
--- A tab the skills window should open (S57): the Scroll of a New Path asks for the main path's tab. The window watches
+-- A tab the skills window should open (S57; S138: no caller asks since the Scroll of a New Path is gone). The window watches
 -- `Requested` (also while it is open) and takes the request once.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

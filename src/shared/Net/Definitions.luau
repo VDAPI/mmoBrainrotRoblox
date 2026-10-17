@@ -93,13 +93,12 @@ local Definitions: { [string]: Definition } = {
 	-- Skill points and weapon pools (S137, DESIGN-18 §11; PathService); every handler returns (ok, errKey?)
 	AllocateSkills = { kind = "function", dir = "c2s", rate = 2, args = { "string", "table" } }, -- (poolId, { [skillId] = +n })
 	RefundSkillRank = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } }, -- (poolId, skillId)
-	ResetSkills = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- every pool's ranks of the active set
+	ResetSkills = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- S138: the full reset (ranks and nodes; scroll)
 	SetPoolBar = { kind = "function", dir = "c2s", rate = 10, args = { "string", "integer", "string?" } }, -- (poolId, slot 1..8, skillId?)
-	-- Class paths (S57, PathService); every handler returns (ok, errKey?)
+	-- Class paths (S57, PathService; S138: directions, no main path); every handler returns (ok, errKey?)
 	BuyNode = { kind = "function", dir = "c2s", rate = 8, args = { "string" } }, -- (nodeId)
 	RefundNode = { kind = "function", dir = "c2s", rate = 8, args = { "string" } }, -- (nodeId)
-	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node
-	ChooseMainPath = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (pathId)
+	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node (S138: gold from L20)
 	ChooseBreakpoint = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer", "string" } }, -- (skillId, 5|10, "a"|"b")
 	SwitchBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: build set 1 <-> 2 (ROZWOJ 2.9)
 	CopyBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: copy the active set onto the other one

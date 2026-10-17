@@ -59,12 +59,11 @@ export type SideEntry = {
 	choice: { ItemInstance }?,
 }
 
--- S56 (ROZWOJ 3.2): the active build set's path state (filled from S57 on).
+-- S56 (ROZWOJ 3.2): the active build set's path state (filled from S57 on). S138 (DESIGN-18 §7): no main path, so the
+-- old fields `main` and `freeUsed` are gone (Logic/Paths.clampToLevel / cleanSet drop them on load).
 export type PathState = {
-	main: string?,
 	nodes: { [string]: number }, -- nodeId -> rank
 	bp: { [string]: "a" | "b" }, -- "<skillId>:<5|10>" -> option; same shape as Logic/Skills.Choices
-	freeUsed: boolean,
 }
 -- S137 (DESIGN-18 §9): bought skill ranks per weapon pool (a missing entry = 0).
 export type PoolRanks = { [string]: { [string]: number } }

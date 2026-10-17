@@ -1,8 +1,8 @@
 --!strict
 -- Character titles (S16): the player picks one of the unlocked titles (Logic/Titles); it is saved on the
 -- character and mirrored to the "Title" attribute of the character model for the nameplates.
--- S59: the main path title shows by default (Titles.shown), refreshed on PathService.Changed (main path chosen or
--- changed, build set switched); "no title" is saved as Titles.NONE.
+-- S59: the main path title shows by default (Titles.shown; S138: the leading direction's), refreshed on
+-- PathService.Changed (nodes bought or refunded, build set switched); "no title" is saved as Titles.NONE.
 -- S121: the account context (VIP title while MonetizationService.HasVip), refreshed on VipChanged.
 -- S123: the context also carries the owned cosmetics (bought titles, Titles.contextOf); CosmeticService refreshes
 -- after a title cosmetic is given or taken.

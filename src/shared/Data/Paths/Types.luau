@@ -26,7 +26,7 @@ export type PathNode = {
 	aura: { category: string, stats: { [string]: string }, radius: number?, shape: ("circle" | "behind")? }?,
 	luck: { [string]: string }?, -- Data/Luck field -> values field (S60)
 	weapon: WeaponReq?, -- own requirement, valid in every row
-	dipScale: number?, -- team effect strength in rows 1..DIP_ROWS outside the main path (default DIP_SCALE)
+	dipScale: number?, -- team effect strength in rows 1..DIP_ROWS below TEAM_FULL_POINTS in the direction (default DIP_SCALE)
 	extra: boolean?, -- the twoPathExtra node of rows 2, 5, 10 (last in its row)
 	glyph: string,
 	nameKey: string, -- path.<pathId>.<name>.name (skill nodes: the skill's own keys)
@@ -47,7 +47,7 @@ export type ReferenceBuild = {
 	-- balance model (S86, S90), never by the game.
 	areaCap: number?,
 	weapon: { main: string, offhand: string? },
-	-- { nodeId, rank } in purchase order: by row level, main path first at the same level (S71-S78); the Mage (S81)
+	-- { nodeId, rank } in purchase order: by row level, own path first at the same level (S71-S78); the Mage (S81)
 	-- lists them in the priority order of ROZWOJ 12.4 / 12.5 (the 12.7 measurement buys them in that order)
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; a missing entry means A
@@ -66,11 +66,13 @@ export type PathDef = {
 	nameKey: string, -- path.<pathId>.name
 	descKey: string, -- path.<pathId>.desc
 	titleId: string, -- path_<pathId> (the title itself comes in S59)
-	weapon: WeaponReq,
+	weapon: WeaponReq, -- S138: blocks nothing (directions have no weapon); only the tab icon (Logic/Paths.iconWeapon)
 	rows: { PathRow }, -- 11; level and point requirement come from Paths.rowsFor
-	-- S58: plan of the path as main path; the class plan applies without one; never on the wiki
+	-- S58: plan of the path as the leading direction (S138: Logic/Paths.mainOf); the class plan applies without one;
+	-- never on the wiki
 	statPlan: { [string]: number }?,
-	itemWeights: ItemWeights.ItemWeights?, -- S67: multipliers on the class weights of Logic/ItemScore; never on the wiki
+	-- S67: multipliers on the class weights of Logic/ItemScore (S138: of the leading direction); never on the wiki
+	itemWeights: ItemWeights.ItemWeights?,
 	reference: { ReferenceBuild }, -- model builds; never on the wiki
 	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5)
 }

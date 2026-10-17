@@ -1,7 +1,7 @@
 --!strict
--- The main path sign of a party member (S60): the same mark as the path tab of the skills window (S59), the weapon
+-- The leading direction sign of a party member (S60; S138: Paths.mainOf, PartyService): the same mark as the path tab of the skills window (S59), the weapon
 -- icon of Paths.iconWeapon, else the first letter of the path name, on a small Panel-coloured plate. nil for a
--- member without a main path or with a path that has no PathDef.
+-- member without a leading direction or with a path that has no PathDef.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

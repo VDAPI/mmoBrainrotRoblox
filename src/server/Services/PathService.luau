@@ -1,7 +1,11 @@
 --!strict
--- Class paths (ROZWOJ 2.2-2.10, 3.3; S57): buying and refunding nodes, the main path (free first choice, later the
--- Scroll of a New Path in town), breakpoint choices, and the checks after every change (hotbar and path.bp through
--- Logic/Paths.validHotbar, passives, PathService.Changed). The rules live in Logic/Paths; this service only builds
+-- Class paths (ROZWOJ 2.2-2.10, 3.3; S57): buying and refunding nodes, breakpoint choices, and the checks after every
+-- change (hotbar and path.bp through Logic/Paths.validHotbar, passives, PathService.Changed). S138 (DESIGN-18 §3.2, §7):
+-- no main path (ChooseMainPath and /path are gone); paths are mixable directions with one capstone per set
+-- (Logic/Paths.canBuy); a node refund from Progression.freeRespecLevel costs the price of a skill rank
+-- (SkillPoints.refundCost, in town or at a gate), ResetPaths the price of all node ranks (free with respecFree or below
+-- that level); ResetSkills / the Scroll of Skill Renewal is the full reset (FullReset: every pool's ranks and the
+-- active set's nodes, breakpoint choices kept). The rules live in Logic/Paths; this service only builds
 -- the place context (combat, town, dungeon entrance) and writes the state.
 -- Build sets (ROZWOJ 2.9; S58): two sets, the active one in the character fields, the other in buildOther; switching
 -- (town or a boss gate, out of combat, alive, outside a dungeon run, Config.BuildSetCooldown) swaps them in one write
@@ -11,7 +15,7 @@
 -- S137 (DESIGN-18 §3, §4, §10, §11): the one service that changes skill ranks, the pool bars and the pool of the bar
 -- (ranks, hotbar through SkillService.PutOnBar / setHotbar, bars, barPool, respecFree): AllocateSkills (a whole
 -- reservation through Logic/SkillPoints.apply), RefundSkillRank (place, combat, gold), ResetSkills (free below
--- Progression.freeRespecLevel or with respecFree; the scroll comes in S138), SetPoolBar (the bar of another pool from
+-- Progression.freeRespecLevel or with respecFree, else the scroll; S138), SetPoolBar (the bar of another pool from
 -- the window). The equipped weapon selects the pool (Logic/SkillPools.activePool): on load and on a weapon change the
 -- bars swap (SkillPoints.switchPool), in combat the new pool's skills wait Config.SkillPools.swapLock
 -- (SkillService.LockPool). On load a changed pool version cleans the ranks and gives a free reset (needsRespec).
@@ -48,8 +52,10 @@ local PathService = {
 		"LevelService",
 		"StatService",
 	},
-	Changed = Signal.new(), -- (player) nodes, main path, breakpoints, weapon, level or (S137) skill ranks changed
+	Changed = Signal.new(), -- (player) nodes, breakpoints, weapon, level or (S137) skill ranks changed
 }
+
+-- The Scroll of Skill Renewal (S138): the full reset (FullReset).
 
 local SCROLL = "scroll_skillreset"
 
@@ -71,6 +77,7 @@ local function character(player: Player): Types.CharacterData?
 end
 
 local function ctxFor(player: Player, action: Paths.EditAction): Paths.EditCtx
+	local char = character(player)
 	return {
 		action = action,
 		inCombat = ResourceService.InCombat(player),
@@ -78,16 +85,30 @@ local function ctxFor(player: Player, action: Paths.EditAction): Paths.EditCtx
 		nearGate = DungeonService.NearAnyEntrance(player),
 		dead = ResourceService.IsDead(player),
 		inRun = DungeonService.InRun(player),
+		level = if char then char.level else nil, -- S138: a refund below freeRespecLevel anywhere
 	}
 end
 
 local function setPath(player: Player, state: Types.PathState)
 	PlayerStateService.Set(player, { "character", "path" }, {
-		main = state.main,
 		nodes = table.clone(state.nodes),
 		bp = table.clone(state.bp),
-		freeUsed = state.freeUsed,
 	})
+end
+
+-- S138: takes `cost` gold for a refund (Analytics source `reason`); false when the character has less.
+local function payRefund(player: Player, char: Types.CharacterData, cost: number, reason: string): boolean
+	if cost <= 0 then
+		return true
+	end
+	if char.gold < cost then
+		return false
+	end
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+		return gold - cost
+	end)
+	Analytics.gold(player, -cost, balance, reason)
+	return true
 end
 
 -- Drops from the bar and path.bp what the character no longer has; S137: also from the bars of the other pools.
@@ -207,12 +228,23 @@ local function refundNode(player: Player, nodeId: string): (boolean, string?)
 	if not ok then
 		return false, err
 	end
+	-- S138 (DESIGN-18 §3.2): from freeRespecLevel a node rank costs as much as a skill rank, plus the ranks of its skill
+	-- that the refund drops in every pool
+	local cost = SkillPoints.nodeRefundCost(char, nodeId)
+	if not payRefund(player, char, cost, "nodeRefund") then
+		return false, "skills.error.refundGold"
+	end
 	local rank = (char.path.nodes[nodeId] or 0) - 1
 	PlayerStateService.Set(player, { "character", "path", "nodes", nodeId }, if rank > 0 then rank else nil)
 	afterChange(player)
+	if cost > 0 then
+		Net.Fire(player, "Toast", "paths.toast.refundPaid", { gold = cost }, "info")
+	end
 	return true, nil
 end
 
+-- ResetPaths(): every node of the active set back (breakpoint choices stay). S138: from freeRespecLevel it costs the
+-- price of all node ranks, free with respecFree (the flag stays for the full reset) or below that level.
 local function resetPaths(player: Player): (boolean, string?)
 	local char = character(player)
 	if not char then
@@ -222,42 +254,15 @@ local function resetPaths(player: Player): (boolean, string?)
 	if not ok then
 		return false, err
 	end
+	local cost = if char.respecFree == true then 0 else SkillPoints.nodesRefundCost(char)
+	if not payRefund(player, char, cost, "nodeRefund") then
+		return false, "skills.error.refundGold"
+	end
 	PlayerStateService.Set(player, { "character", "path", "nodes" }, Paths.refund(char, nil).nodes)
 	afterChange(player)
-	return true, nil
-end
-
-local function chooseMainPath(player: Player, pathId: string): (boolean, string?)
-	local char = character(player)
-	if not char then
-		return false, "error.wrongPhase"
+	if cost > 0 then
+		Net.Fire(player, "Toast", "paths.toast.refundPaid", { gold = cost }, "info")
 	end
-	local ok, err, cost = Paths.canChooseMain(char, pathId)
-	if not ok then
-		return false, err
-	end
-	local action: Paths.EditAction = if cost == "free" then "chooseMain" else "changeMain"
-	ok, err = Paths.canEdit(ctxFor(player, action))
-	if not ok then
-		return false, err
-	end
-	if cost == "scroll" and InventoryService.Count(player, SCROLL) < 1 then
-		return false, "paths.error.scroll"
-	end
-	local old = char.path.main
-	local state = if old then Paths.refund(char, { path = old, fromRow = PathData.DIP_ROWS + 1 }) else char.path
-	-- The scroll goes right before the write, with no yield in between.
-	if cost == "scroll" and InventoryService.Remove(player, SCROLL, 1) ~= 1 then
-		return false, "paths.error.scroll"
-	end
-	setPath(player, {
-		main = pathId,
-		nodes = state.nodes,
-		bp = state.bp,
-		freeUsed = true,
-	})
-	afterChange(player)
-	Net.Fire(player, "Toast", "paths.main.done", nil, "success")
 	return true, nil
 end
 
@@ -368,14 +373,8 @@ local function refundSkillRank(player: Player, poolId: string, skillId: string):
 	if not ok then
 		return false, err
 	end
-	if cost > 0 then
-		if char.gold < cost then
-			return false, "skills.error.gold"
-		end
-		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
-			return gold - cost
-		end)
-		Analytics.gold(player, -cost, balance, "skillRefund")
+	if not payRefund(player, char, cost, "skillRefund") then
+		return false, "skills.error.gold"
 	end
 	local rank = SkillPoints.bought(char, poolId, skillId) - 1
 	PlayerStateService.Set(player, { "character", "ranks", poolId, skillId }, if rank > 0 then rank else nil)
@@ -386,24 +385,36 @@ local function refundSkillRank(player: Player, poolId: string, skillId: string):
 	return true, nil
 end
 
--- ResetSkills(): every pool's ranks of the active set back (bars follow); free below freeRespecLevel, else it uses
--- respecFree. Path nodes and breakpoint choices stay (DESIGN-18 §3.2; the Scroll of Renewal as a full reset: S138).
-local function resetSkills(player: Player): (boolean, string?)
+-- The full reset (S138, DESIGN-18 §3.2): every pool's ranks and the active set's nodes back (bars follow), breakpoint
+-- choices stay. Out of combat, anywhere; free below freeRespecLevel, then with respecFree (used up; the scroll stays),
+-- else one Scroll of Skill Renewal from the backpack (used up only on success). ResetSkills and the scroll's use
+-- (ScrollService) both land here.
+function PathService.FullReset(player: Player): (boolean, string?)
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local ok, err, usesFree = SkillPoints.canReset(char, placeCtx(player))
+	local ok, err, pay = SkillPoints.canReset(char, placeCtx(player), InventoryService.Count(player, SCROLL))
 	if not ok then
 		return false, err
 	end
-	PlayerStateService.Set(player, { "character", "ranks" }, {})
-	if usesFree then
+	-- The scroll goes right before the write, with no yield in between.
+	if pay == "scroll" and InventoryService.Remove(player, SCROLL, 1) ~= 1 then
+		return false, "skills.error.resetNeedsScroll"
+	end
+	local reset = SkillPoints.resetState(char)
+	PlayerStateService.Set(player, { "character", "ranks" }, reset.ranks)
+	PlayerStateService.Set(player, { "character", "path", "nodes" }, reset.path.nodes)
+	if pay == "respec" then
 		PlayerStateService.Set(player, { "character", "respecFree" }, false)
 	end
 	afterChange(player)
 	Net.Fire(player, "Toast", "skills.toast.reset", nil, "success")
 	return true, nil
+end
+
+local function resetSkills(player: Player): (boolean, string?)
+	return PathService.FullReset(player)
 end
 
 -- SetPoolBar(poolId, slot, skillId?): the bar of any pool of the class from the window; the active pool's bar goes
@@ -477,11 +488,6 @@ local function switchSet(player: Player, admin: boolean): (boolean, string?)
 	-- Cooldowns stay; HP and resources are only clamped to the new maxima (ResourceService on StatService.Changed).
 	StatService.Recompute(player)
 	Net.Fire(player, "Toast", "buildset.toast.switched", { n = swap.slot }, "success")
-	-- char is the live profile table, so it already holds the new active set
-	local fits, def = Paths.mainWeaponOk(char, EquipmentService.WeaponTypes(player))
-	if not fits and def then
-		Net.Fire(player, "Toast", "buildset.toast.weapon", { path = "@" .. def.nameKey }, "warning")
-	end
 	return true, nil
 end
 
@@ -504,7 +510,6 @@ end
 
 -- Admin (Admin/Character): no place or combat rules -----------------------------------------------------------------
 
--- Sets (or clears) the main path; rows above DIP_ROWS of the old one are refunded, freeUsed stays.
 -- Raw luck fields of the active build set (S60, ROZWOJ 6.3); {} without a character. The one server entry to a
 -- character's luck: CombatService, DungeonService, PartyService and admin /luck read it (lazily, see their Init).
 function PathService.GetLuck(player: Player): { [string]: number }
@@ -513,26 +518,6 @@ function PathService.GetLuck(player: Player): { [string]: number }
 		return {}
 	end
 	return Paths.luck(char, EquipmentService.WeaponTypes(player))
-end
-
-function PathService.AdminSetMain(player: Player, pathId: string?): (boolean, string?)
-	local char = character(player)
-	if not char then
-		return false, "error.wrongPhase"
-	end
-	if pathId ~= nil then
-		local path = PathData.get(pathId)
-		if not path or path.class ~= char.class then
-			return false, "admin.path.unknown"
-		end
-	end
-	local old = char.path.main
-	local state = if old and old ~= pathId
-		then Paths.refund(char, { path = old, fromRow = PathData.DIP_ROWS + 1 })
-		else char.path
-	setPath(player, { main = pathId, nodes = state.nodes, bp = state.bp, freeUsed = char.path.freeUsed })
-	afterChange(player)
-	return true, nil
 end
 
 -- Sets a node rank without points or requirements (nil = maxRank, 0 removes); only nodes of the class.
@@ -551,37 +536,42 @@ function PathService.AdminSetNode(player: Player, nodeId: string, rank: number?)
 	return true, nil
 end
 
--- Optionally sets the main path (from MAIN_LEVEL), then buys like a player: rows up, nodes in order, the first node of
--- a choice row, every rank through Paths.canBuy, while there are points. Returns the ranks bought.
+-- Buys like a player (S138: Paths.canBuy, so the capstone too while no other direction has one): with `pathId` that
+-- direction first (rows up), then every direction rows up; nodes in order, the first node of a choice row, while there
+-- are points. Returns the ranks bought.
 function PathService.AdminMax(player: Player, pathId: string?): (number, string?)
 	local char = character(player)
 	if not char then
 		return 0, "error.wrongPhase"
 	end
-	if pathId ~= nil and char.path.main ~= pathId then
-		local path = PathData.get(pathId)
-		if not path or path.class ~= char.class then
+	local first: PathData.PathDef? = nil
+	if pathId ~= nil then
+		first = PathData.get(pathId)
+		if not first or first.class ~= char.class then
 			return 0, "admin.path.unknown"
-		end
-		if char.level >= Paths.MAIN_LEVEL then
-			PathService.AdminSetMain(player, pathId)
 		end
 	end
 	local bought = 0
-	local paths = Paths.pathsOf(char.class)
-	for r = 1, #PathData.ROWS do
-		for _, path in paths do
-			local row = path.rows[r]
-			for _, node in row.nodes do
-				while Paths.canBuy(char, node.id) do
-					PlayerStateService.Set(
-						player,
-						{ "character", "path", "nodes", node.id },
-						(char.path.nodes[node.id] or 0) + 1
-					)
-					bought += 1
-				end
+	local function buyRow(path: PathData.PathDef, r: number)
+		for _, node in path.rows[r].nodes do
+			while Paths.canBuy(char, node.id) do
+				PlayerStateService.Set(
+					player,
+					{ "character", "path", "nodes", node.id },
+					(char.path.nodes[node.id] or 0) + 1
+				)
+				bought += 1
 			end
+		end
+	end
+	if first then
+		for r = 1, #PathData.ROWS do
+			buyRow(first, r)
+		end
+	end
+	for r = 1, #PathData.ROWS do
+		for _, path in Paths.pathsOf(char.class) do
+			buyRow(path, r)
 		end
 	end
 	afterChange(player)
@@ -715,14 +705,16 @@ function PathService.AdminRespecFree(player: Player, on: boolean): boolean
 	return true
 end
 
--- Refunds every node and breakpoint choice of the active set; the main path and freeUsed stay.
+-- /resetskills (S138): the full reset for free, anywhere (every pool's ranks and the active set's nodes; breakpoint
+-- choices stay, as with the scroll; respecFree stays). /skillreset keeps refunding the ranks only.
 function PathService.AdminReset(player: Player): (boolean, string?)
 	local char = character(player)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	PlayerStateService.Set(player, { "character", "path", "nodes" }, {})
-	PlayerStateService.Set(player, { "character", "path", "bp" }, {})
+	local reset = SkillPoints.resetState(char)
+	PlayerStateService.Set(player, { "character", "ranks" }, reset.ranks)
+	PlayerStateService.Set(player, { "character", "path", "nodes" }, reset.path.nodes)
 	afterChange(player)
 	return true, nil
 end
@@ -743,8 +735,13 @@ local function sameMap(a: { [string]: any }, b: { [string]: any }): boolean
 	return true
 end
 
+-- S138: a saved path with the old `main` / `freeUsed` fields is never the same (the write drops them).
 local function samePath(a: Types.PathState, b: Types.PathState): boolean
-	return a.main == b.main and a.freeUsed == b.freeUsed and sameMap(a.nodes, b.nodes) and sameMap(a.bp, b.bp)
+	local old: any = a
+	if old.main ~= nil or old.freeUsed ~= nil then
+		return false
+	end
+	return sameMap(a.nodes, b.nodes) and sameMap(a.bp, b.bp)
 end
 
 -- Load: the path state as the level allows, then the bar and path.bp (the only bar check on load); the same for the
@@ -828,7 +825,6 @@ function PathService.Start()
 	Net.Handle("BuyNode", buyNode)
 	Net.Handle("RefundNode", refundNode)
 	Net.Handle("ResetPaths", resetPaths)
-	Net.Handle("ChooseMainPath", chooseMainPath)
 	Net.Handle("ChooseBreakpoint", chooseBreakpoint)
 	Net.Handle("AllocateSkills", allocateSkills)
 	Net.Handle("RefundSkillRank", refundSkillRank)
@@ -844,8 +840,8 @@ function PathService.Start()
 		lastSwitch[player] = nil
 	end)
 	CharacterService.CharacterEntered:Connect(onEntered)
-	-- The path weapon switches rows 3-11 on and off: passives and hooks again, the bar only greys out. S137: the weapon
-	-- selects the pool, so the bars swap (DESIGN-18 §4.1).
+	-- A node's own weapon (node.weapon) switches it on and off: passives and hooks again, the bar only greys out. S137:
+	-- the weapon selects the pool, so the bars swap (DESIGN-18 §4.1).
 	EquipmentService.Changed:Connect(function(player: Player, slot: string)
 		if (slot == "weapon" or slot == "offhand") and character(player) then
 			if slot == "weapon" then
