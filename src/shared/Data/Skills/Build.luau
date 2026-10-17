@@ -43,6 +43,9 @@ export type Spec = {
 	finisher: { hp: number, mul: number }?, -- S76 (ROZWOJ 11.3)
 	burnStacks: number?, -- S140 (Logic/Burn)
 	knockback: number?, -- S140
+	travel: number?, -- S141 (Frozen Orb)
+	waveEffects: boolean?, -- S141
+	freezeWave: number?, -- S141 (Blizzard)
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -139,6 +142,9 @@ function Build.class(
 			finisher = spec.finisher,
 			burnStacks = spec.burnStacks,
 			knockback = spec.knockback,
+			travel = spec.travel,
+			waveEffects = spec.waveEffects,
+			freezeWave = spec.freezeWave,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

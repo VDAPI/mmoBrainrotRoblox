@@ -325,7 +325,8 @@ T.describe("PathView pool tree (S139)", function()
 		T.expect(PathView.poolView(mage(10, {}), "nope")).toBeNil()
 		local other = PathView.poolView(mage(10, {}), "ice") :: any
 		T.expect(other.active).toBe(false)
-		T.expect(ids(rowOf(other, "other").tiles)).toEqual({ "firebolt", "iceShard", "frostNova" })
+		-- S141: the ice pool sits on the ladder too (Ice Shard S1, Frost Nova K1): only Magic Bolt in Others
+		T.expect(ids(rowOf(other, "other").tiles)).toEqual({ "firebolt" })
 	end)
 
 	T.it("tiles: rank, limit, lock, bar, reservation and refund price", function()

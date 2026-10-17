@@ -304,6 +304,7 @@ EffectStack.VALUE_KINDS = table.freeze({
 	nextBasic = true, -- S65
 	runeSeal = true, -- S65
 	frostbite = true, -- S65
+	deepChill = true, -- S141
 } :: { [string]: boolean })
 
 type Group = { kind: string, at: number, value: number?, stacks: number? }

@@ -302,12 +302,13 @@ end)
 
 T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 	T.it("legacy: the old automatic ranks of the pool, the old bar first, then passives, then the rest", function()
-		-- enough points: exactly the old curve of every base member
-		local all = SkillPoints.legacy("Mage", 20, "ice", {}, nil)
+		-- enough points: exactly the old curve of every base member (S141: level 10, the full ice pool needs more than the
+		-- points of 20)
+		local all = SkillPoints.legacy("Mage", 10, "ice", {}, nil)
 		for _, id in SkillPools.members("Mage", "ice") do
 			local skill = SkillData.get(id) :: any
 			if skill.path == nil then
-				local auto = Skills.rankAt(skill, 20)
+				local auto = Skills.rankAt(skill, 10)
 				T.expect({ id, all[id] }).toEqual({ id, if auto > 0 then auto else nil })
 			end
 		end
@@ -523,14 +524,14 @@ T.describe("Skill points: save (S137, migration 12)", function()
 		AccountSchema.migrate(data)
 		local c = data.characters["1"]
 		T.expect(c.barPool).toBe("ice")
-		-- S140: the common Mana Shield and Evocation fill the free slots of the ice bar (startBar)
+		-- S140: the free slots of the ice bar fill in the plan's order (startBar). S141: the full ice pool spends the
+		-- legacy points on Hailstorm and Blink first (the old bar, the passives, then the plan; 47 points at 40)
 		T.expect(c.hotbar).toEqual({
 			["2"] = "iceShard",
 			["4"] = "firebolt",
 			["5"] = "frostNova",
-			["1"] = "blink",
-			["3"] = "manaShield",
-			["6"] = "evocation",
+			["1"] = "hailstorm",
+			["3"] = "blink",
 		})
 		for _, id in c.hotbar do
 			T.expect({ id, (SkillData.get(id) :: any).element ~= "fire" }).toEqual({ id, true })
@@ -619,8 +620,9 @@ T.describe("Skill points: save (S137, migration 12)", function()
 		-- cleanSet at a lower level: ranks within the limits and points, bars of ranked skills only
 		local cleaned = Paths.cleanSet(c, swap.other, 5)
 		T.expect(cleaned.ranks.fire.firebolt).toBe(Skills.rankAt(SkillData.get("firebolt") :: any, 5))
-		T.expect(cleaned.ranks.ice).toBeNil() -- Ice Shard unlocks at 6
-		T.expect(cleaned.bars).toEqual({ ice = {} })
+		-- S141: Ice Shard unlocks at 1, so it keeps the rank of level 5 and its slot
+		T.expect(cleaned.ranks.ice).toEqual({ iceShard = Skills.rankAt(SkillData.get("iceShard") :: any, 5) })
+		T.expect(cleaned.bars).toEqual({ ice = { ["1"] = "iceShard" } })
 	end)
 
 	T.it("the pool data the migration reads is complete", function()

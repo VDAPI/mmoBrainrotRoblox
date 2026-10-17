@@ -1889,6 +1889,54 @@ motions.immolate = {
 	variants = { variant({ weapon = "staff", keys = fireboltKeys(STAFF, 1) }) },
 }
 
+-- S141 (DESIGN-18 §6.1): the ice pool's new skills as variants of the Mage's S115 motions (the same rule as S140); the
+-- look apart is their SkillVfx (ice, own pieces). A full motion pass comes with W03-W07.
+-- Hailstorm: Thunderstorm's weapon raised to the clouds, the hail called down with the left hand.
+motions.hailstorm = {
+	keys = motions.firewall.keys,
+	recover = 0.3,
+	hit = 0.42,
+}
+-- Ice Barrier: Mana Shield's arms raised over the head.
+motions.iceBarrier = {
+	keys = motions.manaShield.keys,
+	recover = 0.3,
+	hit = 0.28,
+}
+-- Glacial Spike: Ice Shard's hands held together while focusing (the loop over the gather pose, castTime), pushed at
+-- the end.
+motions.glacialSpike = {
+	keys = motions.iceShard.keys,
+	recover = 0.25,
+	loop = { from = 0.18, to = 0.26 },
+}
+-- Frozen Orb: Fireball's gather and push (the orb leaves the hands slowly).
+motions.frozenOrb = {
+	keys = motions.fireball.keys,
+	recover = 0.3,
+	release = 0.38,
+	hit = 0.38,
+}
+-- Deep Freeze: Frost Nova's arms raised and brought down, standing (the target freezes at the low pose).
+motions.deepFreeze = {
+	keys = motions.frostNova.keys,
+	recover = 0.35,
+	hit = 0.34,
+}
+-- Shatter: Chain Lightning's throw, the palm cracking the ice at the release.
+motions.shatter = {
+	keys = motions.chainLightning.keys,
+	recover = 0.3,
+	hit = 0.26,
+}
+-- Blizzard: Rain of Meteors' arms raised and swept down across the circle in a wide stance.
+motions.blizzard = {
+	keys = motions.meteorStorm.keys,
+	recover = 0.35,
+	hit = 0.55,
+	lock = true,
+}
+
 -- Cleric -------------------------------------------------------------------------------------------------------
 
 -- Holy Strike: the mace raised high and brought down in a half lunge at the hit (0.25), the left palm opening towards

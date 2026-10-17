@@ -12015,3 +12015,67 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   paths,pathview,skillpoints,skillpools,skills,traits}.spec.luau`, `tests/fixtures/{balance_1_20.json,
   skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`,
   `CLAUDE.md`.
+
+### S141: Mag, pula Lodu
+
+- **Pula Lodu** (`Data/Skills/Mage`, `pool = "ice"`, `role`; DESIGN-18 §6.1). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  koszt i odnowienie rangi 1; przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Umiejętność | Ranga 1 / 10 | Przełomy |
+  |---|---|---|---|
+  | S1 · 1 | Lodowy Odłamek `iceShard` (było 6) | 70 / 213% (15 many, 5 s), spowolnienie 30% 3 s | bez zmian (zamrożenie 0,8 s / +23; przebicie 27% / ×0,84) |
+  | A1 · 3 | Grad `hailstorm` (krąg 7 st., 3 fale co 0,5 s) | 18 / 60% za falę (35, 8 s), każda fala spowalnia 30% 2 s | spowolnienie +15 / +7; lodowe pole / +16 |
+  | K1 · 6 | Lodowa Nova `frostNova` (było 18) | 90 / 141,3% (40, 16 s), zamrożenie 1 / 2 s | bez zmian |
+  | O1 · 10 | Lodowa Bariera `iceBarrier` (tarcza 8 s) | 8–12% HP + 10–15% ataku mag., spowolnienie bijących wręcz 40 / 55% na 2 s (35, 24 s) | +15 / tarcza +3; +4 s / ×0,75 |
+  | S2 · 15 | Lodowa Włócznia `glacialSpike` (celowanie 0,8 s) | 70 / 330% (40, 10 s), ×1,5 na zamrożonych, ×1,25 z Głębokim Chłodem | rozprysk 9% / +45; zamrożenie 1,5 s / +75 |
+  | P1 · 20 | Uścisk Zimy `wintersGrip` (próg 4) | zamrożenie 1,5 / 2,5 s, Głęboki Chłód 10 / 18% | — |
+  | A2 · 26 | Lodowa Kula `frozenOrb` (20 st. lotu, 10 fal co 0,4 s, r 5) | 12 / 24% za falę (60, 16 s), spowolnienie 8% × do 5 stosów | spowolnienie +2 za stos / +2,5; r +2 / +5 |
+  | K2 · 33 | Głęboki Mróz `deepFreeze` | 70 / 120% (45, 20 s), zamrożenie 3 s, ataki wolniej o 30% na 4 s | +1 s / +13; ×0,85 / +30 |
+  | S3 · 40 | Roztrzaskanie `shatter` | 160 / 230% (35, 9 s), ×2 na zamrożonych (koniec zamrożenia), ×1,6 z Głębokim Chłodem | rozprysk 12% / premia +30; zamrożenie 1 s / +55 |
+  | P2 · 50 | Lodowa Krew `iceBlood` | −4 / −12% obrażeń od spowolnionych i zamrożonych | — |
+  | U · 60 | Zamieć `blizzard` (krąg 12 st., 8 fal co 0,75 s) | 17 / 21% za falę (170, 50 s), spowolnienie 6% × do 8 stosów, od 5. fali zamrożenie 1 s raz na cel | +1 fala / ×0,88; r +3 / +3,5 |
+
+- **Mechaniki chłodu** (`Logic/Chill`, nowy): `counts`, `chillToFreeze` (licznik, reset po zamrożeniu), `onFreeze`
+  (odporni: Głęboki Chłód), `deepPct`, `vsFrozen`, `shatterMul`, `pvpMul`, `barrierReady`, `bloodGuard`, `waveFreezes`,
+  `orbAt`. Dane `Data/Skills.CHILL` (próg 4, licznik 5 s, Głęboki Chłód 10% na 4 s, Bariera 2 s co 1 s). Serwer:
+  `Skills/Context` (licznik na głównych trafieniach lodu, zamrożenie lodu → `deepChill` na bossach i Elitach II,
+  `ctx.freeze`, Włócznia i Roztrzaskanie, `SkillEffect.maxStacks`), `Types/Offense.circleTarget` (`travel`,
+  `waveEffects`, `freezeWave`), `CombatService` (Głęboki Chłód w mnożniku, `shieldRetaliate` dla Osłony i Bariery,
+  dostawca redukcji Lodowej Krwi), `StatusEffectService` (`chill`, `deepChill` w osłabieniach), `EffectStack`
+  (`deepChill` z wartością), ikony `chill` (licznik), `deepChill`, `iceBarrier`, efekt `shatter` w `VfxController`.
+- **Model** (`tests/SkillModel.luau`, lustra z `-- mirrors`): `chillHit`, Głęboki Chłód w `applyEffect` i
+  `offensiveMultiplier`, Włócznia i Roztrzaskanie w `damage` (`spendChill`), `waveEffects` / `freezeWave` /
+  `SkillModel.orbHits` w `H.circleTarget`, Bariera i Lodowa Krew w `monsterHit`, udziały `chilled` / `deepChilled`
+  walki, `SkillModel.chillReport` (Elita 60 s, boss 180 s). `SkillModel.character` bierze żywioł wariantu. Nowe buildy
+  `destroyer.destroyerIce` i `arcanist.arcanistIce` (kostur / runiczny kostur lodu, `ranks`), R4 nowych w pasmach.
+- **Wyniki modelu:** R1 na 20.: `destroyerIce` 2,69, `arcanistIce` 2,69 (pasmo 1,6–2,73), T-SK3 1,47 / 1,29; średnia
+  żywiołów S91: `destroyerExp` 2,31 → 2,24, `destroyerBoss` 2,49 → 2,43, `arcanistBoss` 2,40 → 2,35. Tożsamość
+  (raport `S141.ice.*`, asertuje S147): lód / ogień w jeden cel (Arkanista) 1,02 / 0,95 / 0,93 / 0,99 na 20 / 45 / 70 /
+  100 (cel 0,85–0,95); Elita spowolniona lub zamrożona 94–99% walki (cel ≥ 60%); boss pod Głębokim Chłodem 62–99%
+  (cel ≥ 50%); przyjmowane obrażenia lód / ogień 0,49–0,90 (cel ≤ 0,85; tylko Arkanista na 20. 0,90). T-SK4 wariantów
+  lodu 1,97–4,31 (pasmo 2,0–2,8, jak ognia: raport). R4 nowych: Grad 5B 0,09, 10B 0,24; Włócznia 5A / 5B 0,11–0,16,
+  10B 0,20; Kula 5B 0,09, 10B 0,21; Głęboki Mróz 5B 0,09, 10A / 10B 0,25 / 0,23; Roztrzaskanie 5A / 5B 0,13 / 0,13,
+  10B 0,24. R4 na 20. (blok S91): Lodowy Odłamek 5B 0,29 i Grad 5B 0,19 ponad pasmem, w `Balance.S91_REPORT`.
+- **1–20:** fixture przepisany (S141, „pula Lodu Maga”): 105 zmienionych i 44 nowe wpisy, tylko klucze Maga;
+  `ALLOWED_1_20_DIFFS` pusta. Blok „Balance 1-20: S91” z wariantami lodu (`Balance.S91.damage`) zielony; nowy blok
+  „Balance S141: ice pool” (T-SK3 asertowane, reszta raport).
+- **`GLOBAL_REPORT_ONLY` S141** (56 wierszy Maga 21–100): `R.ashen|frostpeak.guard.tsk1|tsk2.Mage.<wariant lodu>.<poziom>`
+  (52: 50–70 i 75–100), `R.ashen.tsk4.arcanist.arcanistOverload.50|55`, T1 Iskry lodu `arcanistBoss@wand` 70 / 100.
+- **Wygląd, dźwięk, teksty:** ruchy nowych jako warianty ruchów Maga (`SkillMotions`: Burza Piorunów, Tarcza Many,
+  Lodowy Odłamek z pętlą skupienia, Kula Ognia, Lodowa Nova, Łańcuch, Deszcz Meteorów), `SkillVfx` w trzech warstwach
+  w kolorze lodu z odłamkami `iceShard` (Grad, Kula i Zamieć z falami `waves`), klucze `skill.<id>` w `Data/Sfx` bez ID
+  (`hint`), `skill.glacialSpike.cast`; teksty PL / EN: nazwy, `short`, `desc`, przełomy, nowy opis Lodowej Novy
+  (Głęboki Chłód, `{deepPct}` z hakiem Uścisku Zimy), pola `skills.field.*`, efekty `effect.iceBarrier|chill|deepChill`.
+- **Testy:** nowy `tests/chill.spec.luau` (licznik, odporni, `vsFrozen`, `shatterMul`, PvP, odstęp Bariery, Lodowa
+  Krew, Zamieć, lot Kuli, lustro modelu); `skillpools.spec` (pula Lodu S1…U na poziomach drabiny, plan),
+  `skills.spec`, `skillpoints.spec`, `pathview.spec`, `paths.spec`, `balance1_20.spec` (fixture S141), `balance.spec`
+  (blok S141); `tests/fixtures/skill_timing.luau` (7 wierszy, 3 `circleTarget`).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Chill.luau` (nowy), `src/shared/Logic/{Skills,EffectStack}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Mage}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Mage.luau`, `Data/Paths/Mage.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/VfxController.luau`, `src/client/UI/Screens/Hud/EffectIcons.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/{chill,balance,balance1_20,paths,pathview,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

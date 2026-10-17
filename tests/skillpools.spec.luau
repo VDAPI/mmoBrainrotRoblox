@@ -211,7 +211,81 @@ T.describe("Skill pools: the Mage's fire pool and common skills (S140)", functio
 		local bolt = SkillData.get("firebolt") :: any
 		T.expect({ bolt.pool, bolt.adaptive, bolt.role }).toEqual({ "common", true, nil })
 		T.expect(SkillPools.isTransitional("Mage")).toBe(true)
-		T.expect(PoolData.get("Mage") and (PoolData.get("Mage") :: any).version).toBe(3)
+		T.expect(PoolData.get("Mage") and (PoolData.get("Mage") :: any).version).toBe(4) -- S141: 3 -> 4
+	end)
+end)
+
+-- S141 (DESIGN-18 §5, §6.1): the Mage's ice pool on the shared ladder, S1 included (Ice Shard); Magic Bolt stays common
+-- and adaptive until S142 (the Mage stays transitional)
+T.describe("Skill pools: the Mage's ice pool (S141)", function()
+	T.it("the ice pool holds every LADDER code at its level, in the plan's ladder order", function()
+		local want = {
+			S1 = "iceShard",
+			A1 = "hailstorm",
+			K1 = "frostNova",
+			O1 = "iceBarrier",
+			S2 = "glacialSpike",
+			P1 = "wintersGrip",
+			A2 = "frozenOrb",
+			K2 = "deepFreeze",
+			S3 = "shatter",
+			P2 = "iceBlood",
+			U = "blizzard",
+		}
+		local seen = 0
+		for _, rung in PoolData.LADDER do
+			local found = {}
+			for _, skill in SkillData.byClass.Mage do
+				if skill.path == nil and skill.pool == "ice" and skill.role == rung.code then
+					table.insert(found, skill.id)
+				end
+			end
+			local expected = want[rung.code]
+			T.expect({ rung.code, found }).toEqual({ rung.code, { expected } })
+			local skill = SkillData.get(expected) :: any
+			T.expect({ expected, skill.unlock, skill.type == "passive", skill.element or "ice" }).toEqual({
+				expected,
+				rung.level,
+				rung.passive == true,
+				"ice",
+			})
+			if skill.type == "passive" then
+				T.expect({ expected, skill.maxLevel }).toEqual({ expected, 5 })
+			end
+			T.expect(SkillPools.ladderOf(skill)).toEqual(rung)
+			T.expect(SkillPools.inPool("Mage", "ice", expected)).toBe(true)
+			T.expect(SkillPools.inPool("Mage", "fire", expected)).toBe(false)
+			T.expect(SkillPools.inPool("Mage", "lightning", expected)).toBe(false)
+			seen += 1
+		end
+		T.expect(seen).toBe(#PoolData.LADDER)
+		-- the plan: every ice and common skill once, actives before passives
+		local mage = PoolData.get("Mage") :: any
+		local plan: { string } = {}
+		for _, p in mage.pools do
+			if p.id == "ice" then
+				plan = p.plan
+			end
+		end
+		local members: { [string]: boolean } = {}
+		for _, skill in SkillData.byClass.Mage do
+			if skill.path == nil and (skill.pool == "ice" or skill.pool == "common") then
+				members[skill.id] = true
+			end
+		end
+		local passive = false
+		for _, id in plan do
+			T.expect({ id, members[id] }).toEqual({ id, true })
+			members[id] = nil
+			local def = SkillData.get(id) :: any
+			if def.type == "passive" then
+				passive = true
+			else
+				T.expect({ id, passive }).toEqual({ id, false })
+			end
+		end
+		T.expect(next(members)).toBe(nil)
+		T.expect(SkillPools.isTransitional("Mage")).toBe(true)
 	end)
 end)
 

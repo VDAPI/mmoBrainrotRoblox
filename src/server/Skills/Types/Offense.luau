@@ -16,11 +16,15 @@
 -- SkillVfx `waves` (Cataclysm) sends one impact event per wave instead of one at the start.
 -- S140 (Logic/Burn): `target` with values.detonate (Combustion) consumes the caster's burn stacks on the target after the
 -- hit for a blast of detonate % per stack within the skill's radius, stunning from BURN.stunAt stacks (never bosses).
+-- S141 (Logic/Chill): circleTarget with `travel` (Frozen Orb) flies from the caster toward the aim, wave n centred at
+-- Chill.orbAt; `waveEffects` applies the enemy effects on every wave; from `freezeWave` (Blizzard) every enemy in the
+-- circle freezes once per cast for values.freeze s through ctx.freeze (bosses: Deep Chill).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Burn = require(ReplicatedStorage.Shared.Logic.Burn)
 local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
+local Chill = require(ReplicatedStorage.Shared.Logic.Chill)
 local Context = require(script.Parent.Parent.Context)
 local Push = require(script.Parent.Parent.Push)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
@@ -340,7 +344,15 @@ Offense.circleTarget = function(ctx)
 	local delay = ctx.skill.delay or 0
 	local storm = hits > 1 and (ctx.skill.delay or 0) > 0 -- meteor storm: separate small impacts
 	local vfx = SkillVfx[ctx.skill.id]
-	if vfx and vfx.projectile then
+	-- S141: a flying circle (Frozen Orb) starts at the caster and moves toward the aim
+	local travel = ctx.skill.travel
+	local start = ctx.root.Position
+	local flatAim = Vector3.new(point.X - start.X, 0, point.Z - start.Z)
+	local heading = if flatAim.Magnitude > 0.1
+		then flatAim.Unit
+		else Vector3.new(ctx.root.CFrame.LookVector.X, 0, ctx.root.CFrame.LookVector.Z).Unit
+	local frozen: { [any]: boolean } = {}
+	if vfx and vfx.projectile and not travel then
 		delay += math.clamp(
 			(point - ctx.root.Position).Magnitude / CIRCLE_PROJECTILE_SPEED,
 			0.05,
@@ -366,6 +378,9 @@ Offense.circleTarget = function(ctx)
 			local angle = random:NextNumber() * math.pi * 2
 			local distance = random:NextNumber() * (radius - impactRadius)
 			at = ctx.ground(point + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance))
+		end
+		if travel then
+			at = ctx.ground(start + heading * Chill.orbAt(travel, wave, hits))
 		end
 		local impactAt = at
 		local last = wave == hits
@@ -400,7 +415,17 @@ Offense.circleTarget = function(ctx)
 				ctx.fx({ p = impactAt, r = radius, n = wave, d = 0.2 })
 			end
 			local enemies = ctx.enemiesInCircle(impactAt, impactRadius)
-			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), wave == 1, { from = impactAt })
+			local withEffects = wave == 1 or ctx.skill.waveEffects == true
+			hitAll(ctx, enemies, if wave == 1 then firstPercent else ctx.value("dmg"), withEffects, { from = impactAt })
+			-- S141 Blizzard: every enemy in the circle freezes once from freezeWave on
+			if ctx.skill.freezeWave then
+				for _, entity in enemies do
+					if Chill.waveFreezes(wave, ctx.skill.freezeWave, frozen[entity] == true) then
+						frozen[entity] = true
+						ctx.freeze(entity, ctx.value("freeze"))
+					end
+				end
+			end
 
 			if last then
 				stunLast(ctx, enemies)

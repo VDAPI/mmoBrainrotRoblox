@@ -147,6 +147,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `CombatService.ApplyBurn` (jeden wpis `Burn.KEY` na celu, `uncapped`), reguły tylko w `Logic/Burn` (`cap`, `add`,
   `tick`, `stackBonus`, `vsBurning`, `detonate`, `phoenixSave`); lustro w `tests/SkillModel` (`applyBurn`), test
   `tests/burn.spec`. Wariant buildu wzorcowego Maga jednego żywiołu: `ReferenceBuild.weapon.element`.
+- **Chłód Lodu** (S141): reguły tylko w `Logic/Chill` (licznik `chillToFreeze`, `onFreeze`: zamrożenie lodu na bossie
+  to `deepChill` gracza, `vsFrozen`, `shatterMul`); każde zamrożenie lodu przez `ctx.applyEffect` / `ctx.freeze`,
+  odwet tarczy przez tabelę `RETALIATIONS` w `CombatService`; ruchomy krąg `travel`, efekty każdej fali `waveEffects`,
+  narastające spowolnienie `SkillEffect.maxStacks`; lustro w `tests/SkillModel` (`chillHit`), test `tests/chill.spec`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);

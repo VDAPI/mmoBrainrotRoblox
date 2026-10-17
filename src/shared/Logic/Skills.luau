@@ -11,6 +11,7 @@
 -- beamTicks, beamTickPct); Skills.cost and Skills.drain share one modifier rule (applyCostMods).
 
 local BuffCategories = require("../Data/BuffCategories")
+local Chill = require("./Chill")
 local Combat = require("../Data/Combat")
 local Config = require("../Config")
 local LevelCurves = require("./LevelCurves")
@@ -996,6 +997,31 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	if skill.knockback and args.knockback == nil then
 		args.knockback = round(skill.knockback)
+	end
+	-- S141 (Logic/Chill): only for skills that have them
+	if skill.travel then
+		args.travel = round(skill.travel)
+	end
+	if skill.freezeWave then
+		args.freezeWave = skill.freezeWave
+	end
+	for _, effect in effects do
+		if effect.maxStacks then
+			args[`{effect.kind}Stacks`] = effect.maxStacks
+		end
+	end
+	local hooks = skill.passive and skill.passive.hooks
+	local chill = SkillData.CHILL
+	if hooks and hooks.chillFreeze then
+		args.threshold = chill.threshold
+	end
+	if skill.element == "ice" or (hooks and hooks.chillFreeze) then
+		-- Winter's Grip raises it (the server's Chill.deepPct); the wiki passes no hooks
+		args.deepPct = Chill.deepPct(hookValue(opts and opts.hooks, "deepChill"))
+		args.deepDuration = chill.deepDuration
+	end
+	if skill.values.barrier ~= nil then
+		args.barrierSlow = chill.barrierSlow
 	end
 	return args
 end

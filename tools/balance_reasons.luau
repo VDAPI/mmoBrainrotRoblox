@@ -5342,5 +5342,67 @@ return {
 		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_arcaneMind]*"] = {
 			{ session = "S140", why = "the skill node of Arcane Mind became a 3-rank passive node (the old ranks 1 / 3 / 5)" },
 		},
+		-- S141 (DESIGN-18 §6.1): the Mage's ice pool (Logic/Chill)
+		["Skills/Mage:[hailstorm]*"] = {
+			{ session = "S141", why = "new (A1 of the ice pool, 3): three waves on a 7-stud circle, each slows 30 % (waveEffects); rank 1 18 % a wave for the ice variants' R1 at 20 in the S91 band; 5B +7 / 10B +16 in the R4 bands, A options control" },
+		},
+		["Skills/Mage:[iceBarrier]*"] = {
+			{ session = "S141", why = "new (O1 of the ice pool, 10): Ember Shield's shield (8-12 % HP + 10-15 % magic attack), melee attackers slowed 40-55 % for 2 s; options are utility (R4_UTILITY)" },
+		},
+		["Skills/Mage:[glacialSpike]*"] = {
+			{ session = "S141", why = "new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control)" },
+		},
+		["Skills/Mage:[wintersGrip]*"] = {
+			{ session = "S141", why = "new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill)" },
+		},
+		["Skills/Mage:[frozenOrb]*"] = {
+			{ session = "S141", why = "new (A2 of the ice pool, 26): an orb flying 20 studs, 10 waves of 12-24 % in 5 studs every 0.4 s, a slow of up to 5 stacks of 8 %; 5B +2.5 / 10B +5 in the R4 bands, A options control and geometry" },
+		},
+		["Skills/Mage:[deepFreeze]*"] = {
+			{ session = "S141", why = "new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control)" },
+		},
+		["Skills/Mage:[shatter]*"] = {
+			{ session = "S141", why = "new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control)" },
+		},
+		["Skills/Mage:[iceBlood]*"] = {
+			{ session = "S141", why = "new (P2 of the ice pool, 50): 4-12 % less damage from slowed or frozen attackers (own reduction)" },
+		},
+		["Skills/Mage:[blizzard]*"] = {
+			{ session = "S141", why = "new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage)" },
+		},
+		["Skills/Mage:[iceShard].unlock"] = { { session = "S141", why = "6 -> 1: S1 of the ice pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[iceShard].values.dmg[1]"] = {
+			{ session = "S141", why = "119 -> 70 at level 1 (with the knots): beside the adaptive Magic Bolt the ice variants' R1 at 20 stays in the S91 band (2.69 of 2.73); ranks above 20 keep their values" },
+		},
+		["SkillCurves:knots.iceShard*"] = {
+			{ session = "S141", why = "Ice Shard unlocks at 1: rank 5 (level 17) 80 for the S91 band, rank 6 (level 21) keeps the old rank 5 (182.7); the old knot of rank 4 goes" },
+		},
+		["Skills/Mage:[frostNova].unlock"] = { { session = "S141", why = "18 -> 6: K1 of the ice pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[frostNova].values.dmg[1]"] = {
+			{ session = "S141", why = "120 -> 90: rank 1 at 6 below the old rank 1; the knot keeps rank 4 (level 18) at the old 120" },
+		},
+		["Skills/Mage:[frostNova].values.freeze*"] = {
+			{ session = "S141", why = "1.5-2.5 -> 1-2 s (session plan): the freeze comes at 6 now, Winter's Grip and Deep Freeze add more" },
+		},
+		["Skills/Mage:[frostNova].effects[1].duration*"] = {
+			{ session = "S141", why = "1.5-2.5 -> 1-2 s with values.freeze (the effect's own pair)" },
+		},
+		["Skills/Mage:[frostNova].cost"] = { { session = "S141", why = "45 -> 40: a K1 at 6 (Flame Wave's cost)" } },
+		["Skills/Mage:[frostNova].cooldown"] = { { session = "S141", why = "18 -> 16: a K1 at 6 (near Flame Wave's 14)" } },
+		["SkillCurves:knots.frostNova*"] = {
+			{ session = "S141", why = "new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2" },
+		},
+		["Skills/init:CHILL*"] = {
+			{ session = "S141", why = "new (Logic/Chill): Winter's Grip freezes at 4 counted hits (the counter lasts 5 s), Deep Chill +10 % for 4 s, Ice Barrier slows 2 s at most once per 1 s per attacker" },
+		},
+		["SkillPools/Mage:version"] = {
+			{ session = "S141", why = "3 -> 4 (DESIGN-18 §10): the ice pool, a free reset" },
+		},
+		["Paths/Mage:[destroyer].reference[destroyerIce]*"] = {
+			{ session = "S141", why = "new: the Destroyer with an ice weapon (staff, ice, the ice pool alone; rank order, area B options)" },
+		},
+		["Paths/Mage:[arcanist].reference[arcanistIce]*"] = {
+			{ session = "S141", why = "new: the Arcanist with an ice weapon (runestaff, ice, the ice pool alone; rank order, B options)" },
+		},
 	} :: { [string]: { Reason } },
 }

@@ -60,6 +60,9 @@ local GLYPHS: { [string]: Glyph } = {
 	weaken = { glyph = "⇓", good = false }, -- S63: deals less damage
 	guardianAngel = { glyph = "✟", good = true }, -- S70: a lethal monster blow leaves 1 HP
 	emberShield = { glyph = "🜂", good = true }, -- S140: melee attackers catch fire
+	iceBarrier = { glyph = "⛉", good = true }, -- S141: melee attackers are slowed
+	chill = { glyph = "❆", good = false }, -- S141: the caster's chill counter (count in the corner)
+	deepChill = { glyph = "✻", good = false }, -- S141: takes more damage from the source (bosses' freeze)
 	nextBasic = { glyph = "➹", good = true }, -- S65: Full Draw, the next basic attack hits harder
 	runeSeal = { glyph = "◈", good = true, lasting = true }, -- S65: glowing Runic Seal
 	frostbite = { glyph = "❅", good = false }, -- S65: takes more damage from the source's ice
@@ -70,7 +73,7 @@ local GLYPHS: { [string]: Glyph } = {
 	empowered = { glyph = "✪", good = true }, -- S80: Empowering Invocation (uses left in the corner)
 }
 -- S80 (ROZWOJ 12.5): counters, so the corner shows the count from a single stack
-local ALWAYS_COUNT: { [string]: boolean } = { arcaneCharge = true, empowered = true }
+local ALWAYS_COUNT: { [string]: boolean } = { arcaneCharge = true, empowered = true, chill = true } -- S141: chill
 
 -- S72: count / max / full only for the Fury counter.
 type Entry = {

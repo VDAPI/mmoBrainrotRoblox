@@ -46,11 +46,17 @@
 --   burnBonus and Immolate's vsBurning (Context.damage), Combustion's detonation (Types/Offense), Ember Shield's
 --   retaliation on melee blows (retaliate) and Phoenix Heart's save (retaliate); the Mage's fire variants of the
 --   reference builds measure one element (ReferenceBuild.weapon.element, SkillModel.elementOf).
+-- S141 (DESIGN-18 §6.1, Logic/Chill): Winter's Grip's chill counter (chillHit mirrors Context), every ice freeze on a
+--   boss or an Elite II as the player's Deep Chill (applyEffect) and its damage (offensiveMultiplier), Glacial Spike's
+--   vsFrozen and Shatter (Context.damage), growing slows (SkillEffect.maxStacks), circleTarget's waveEffects, freezeWave
+--   and travel (a flying orb hits the dummies at ASSUMPTIONS.orbAim of its flight: SkillModel.orbHits), Ice Barrier's
+--   slow and Ice Blood's reduction on the monsters' blows (monsterHit); the fight's `chilled` / `deepChilled` shares.
 
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Burn = require("../src/shared/Logic/Burn")
+local Chill = require("../src/shared/Logic/Chill")
 local BuffCategories = require("../src/shared/Data/BuffCategories")
 local Bosses = require("../src/shared/Data/Bosses")
 local Chain = require("../src/shared/Logic/Chain")
@@ -128,6 +134,8 @@ SkillModel.ASSUMPTIONS = {
 	fightRef = 8, -- s of the Berserker's group fight in that formula (ROZWOJ 10.6)
 	bossSeconds = 180, -- Mage boss window from full mana (ROZWOJ 12.7)
 	enemiesNear = 3, -- EHP: monsters within HOOK_RULES.perEnemy.radius for Front Line (ROZWOJ 10.6)
+	-- S141: the dummies stand at this share of a flying circle's travel (Frozen Orb aimed through the group)
+	orbAim = 0.5,
 }
 local A = SkillModel.ASSUMPTIONS
 
@@ -971,7 +979,14 @@ SkillModel.R4_DIFF = 0.05
 SkillModel.R4_CASTS = 12 -- S90: a cooldown option's R4 window covers at least 12 cooldowns (SkillModel.optionGain)
 -- S90: skills measured in the build's whole rotation (their value comes from the other spells)
 -- S140: Combustion and Immolate live on the burns the other fire spells set (Logic/Burn)
-SkillModel.R4_ROTATION = { arcaneDischarge = true, combustion = true, immolate = true } :: { [string]: boolean }
+-- S141: Glacial Spike and Shatter live on the freezes the other ice spells set (Logic/Chill)
+SkillModel.R4_ROTATION = {
+	arcaneDischarge = true,
+	combustion = true,
+	immolate = true,
+	glacialSpike = true,
+	shatter = true,
+} :: { [string]: boolean }
 
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
@@ -1151,6 +1166,20 @@ SkillModel.R4_UTILITY = {
 	["emberShield:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["emberShield:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	["emberShield:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	-- S141: the ice pool's control and geometry options (every dummy stands in the circle; slows and freezes do nothing
+	-- to a dummy but feed Winter's Grip) and Ice Barrier (defence; dummies never strike)
+	["hailstorm:5a"] = "geometria albo czas kontroli",
+	["hailstorm:10a"] = "spowolnienie (kontrola): lodowe pole zadaje mało, jego wartość to spowolnienie",
+	["frozenOrb:5a"] = "geometria albo czas kontroli",
+	["frozenOrb:10a"] = "geometria albo czas kontroli",
+	["deepFreeze:5a"] = "zamrożenie (kontrola)",
+	["glacialSpike:10a"] = "zamrożenie (kontrola)",
+	["shatter:10a"] = "zamrożenie (kontrola)",
+	["blizzard:10a"] = "geometria albo czas kontroli",
+	["iceBarrier:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:10a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["iceBarrier:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
 	-- S91: options of rank 5 reached by 20 (ranks 5 at 17 / 19)
 	["mightyStrike:5a"] = "odrzucenie (kontrola)",
 	["charge:5a"] = "zasięg doskoku (geometria)",
@@ -1211,6 +1240,15 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	pyroblast = "arcanist.arcanistFire",
 	immolate = "arcanist.arcanistFire",
 	meteorStorm = "destroyer.destroyerExp",
+	-- S141 (DESIGN-18 §6.1): the ice pool on the ice variants (area skills on the Destroyer, one target on the Arcanist)
+	hailstorm = "destroyer.destroyerIce",
+	frozenOrb = "destroyer.destroyerIce",
+	blizzard = "destroyer.destroyerIce",
+	frostNova = "destroyer.destroyerIce",
+	iceShard = "arcanist.arcanistIce",
+	glacialSpike = "arcanist.arcanistIce",
+	deepFreeze = "arcanist.arcanistIce",
+	shatter = "arcanist.arcanistIce",
 } :: { [string]: string }
 
 -- S89 (F2): r4.<skillId>.<rank> rows of every active Cleric and Warrior skill (both options; S91: the options of a rank
@@ -1655,6 +1693,9 @@ end
 -- the skill points of the level go into the build's pool (rankOrder, each skill up to its limit in turn) as one
 -- SkillPoints.apply reservation; `element` = the Mage weapon's.
 function SkillModel.character(build: Build, L: number, element: string?): CharacterResult
+	-- S141: a Mage variant with a fixed weapon element buys its ranks in that pool also when the caller names none
+	-- (evaluateTargets, rawMetrics: the ice variant's pool, not the default fire one)
+	element = element or SkillModel.elementOf(build)
 	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = charCache[key]
 	if cached then
@@ -1987,6 +2028,10 @@ local HOOKS_MODELLED: { [string]: boolean } = {
 	phoenixHeart = true,
 	phoenixRest = true,
 	phoenixInvuln = true,
+	-- S141 (Logic/Chill): Winter's Grip, Ice Blood
+	chillFreeze = true,
+	deepChill = true,
+	iceBlood = true,
 }
 -- Hooks that change no metric (threat, movement, minimap, kills of a dying group's spread, radius of areas every dummy
 -- stands in, the mana shield's price): docs/SESJE.md S86 names the reason of each.
@@ -2065,6 +2110,8 @@ export type FightResult = {
 	furyFull: number, -- share of the time at full Fury (furyGuard)
 	furyMax: number,
 	controlled: number, -- share of the time the focus target is slowed, rooted, frozen or stunned (B8, C3)
+	chilled: number, -- S141: share of the time the focus target is slowed or frozen
+	deepChilled: number, -- S141: share of the time the focus target has the player's Deep Chill
 	sealLit: number, -- share of the time the Runic Seal glows (standing still, C3)
 	basicDealt: number, -- damage of basic attacks (with their second hits and draws)
 	elementDealt: number, -- damage of the weapon-element effects (burn ticks, arcs; C3 elementShare)
@@ -2555,6 +2602,11 @@ local function offensiveMultiplier(state: any, tg: any): number
 		local frost = maxOf(state, tg, "frostbite")
 		if frost > 0 then
 			mult += frost / 100
+		end
+		-- S141 mirrors CombatService.offensiveMultiplier: this player's Deep Chill (bosses and Elite II)
+		local deep = maxOf(state, tg, "deepChill")
+		if deep > 0 then
+			mult += deep / 100
 		end
 		local perEnemy = hook(state, "damagePerEnemy")
 		if perEnemy > 0 then
@@ -3217,6 +3269,14 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		elseif type(effect.value) == "number" then effect.value
 		else 0
 	local value = raw * s
+	-- S141 mirrors Context.applyEffect (Logic/Chill): an ice freeze on a boss or an Elite II is the player's Deep Chill
+	local skillKey = ctx.id
+	if kind == "freeze" and ctx.element == "ice" and Chill.onFreeze(bossLike(entity)) == "deepChill" then
+		kind = "deepChill"
+		value = Chill.deepPct(pathHook(state, "deepChill"))
+		duration = SkillData.CHILL.deepDuration
+		skillKey = Chill.DEEP_KEY
+	end
 	local tickAmount: number? = nil
 	if kind == "bleed" or kind == "poison" or kind == "burn" then
 		tickAmount = math.max(1, attackOf(ctx) * value / 100 / math.max(1, duration))
@@ -3249,7 +3309,9 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		end
 		stats = resolved
 	end
-	local chilly = ctx.element == "ice" and state.sp.element == "ice" and (kind == "slow" or kind == "freeze")
+	local chilly = ctx.element == "ice"
+		and state.sp.element == "ice"
+		and (kind == "slow" or kind == "freeze" or kind == "deepChill")
 	if chilly then
 		duration *= 1 + math.max(0, hook(state, "elementRider")) / 100 -- Elements.power
 	end
@@ -3259,8 +3321,11 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		tickAmount = tickAmount,
 		stats = stats,
 		pct = effect.pct,
-		maxStacks = if kind == "bleed" then ctx.bp.bleedStacks elseif kind == "poison" then ctx.bp.poisonStacks else nil,
-		skillId = ctx.id,
+		maxStacks = if kind == "bleed"
+			then ctx.bp.bleedStacks
+			elseif kind == "poison" then ctx.bp.poisonStacks
+			else effect.maxStacks, -- S141: a growing slow
+		skillId = skillKey,
 		category = effect.category,
 		notBoss = effect.notBoss,
 		area = Traits.isAreaSkill(ctx.def.type), -- the ticks of an area skill count in areaDealt (C3 areaShare)
@@ -3325,6 +3390,46 @@ local function elementHit(ctx: Ctx, tg: any, percent: number, o: { [string]: any
 	state.elementDealt += state.dealt - before
 end
 
+-- S141 mirrors Context chillHit (Logic/Chill): Winter's Grip's counter on a slowed, not frozen dummy; at the threshold
+-- the counter is spent on a freeze of chillFreeze s through applyEffect (bosses and Elite II: Deep Chill)
+local function chillHit(ctx: Ctx, tg: any)
+	local state = ctx.state
+	local seconds = pathHook(state, "chillFreeze")
+	if seconds <= 0 or tg.m == nil then
+		return
+	end
+	if not Chill.counts(true, has(state, tg, "slow"), has(state, tg, "freeze")) then
+		return
+	end
+	local key = `chill|{Chill.KEY}|`
+	local e = tg.effects[key]
+	local running = if e and e.expiresAt > state.t + EPS then e.stacks or 1 else 0
+	local count, freezes = Chill.chillToFreeze(running)
+	if freezes then
+		tg.effects[key] = nil
+		applyEffect(ctx, tg, { kind = "freeze", duration = seconds })
+	else
+		apply(state, tg, "chill", {
+			duration = SkillData.CHILL.counter,
+			skillId = Chill.KEY,
+			maxStacks = Chill.THRESHOLD,
+			stacks = count,
+		})
+	end
+end
+
+-- S141 mirrors Context.damage's Shatter: the freeze of the dummy (every entry) or this player's Deep Chill goes
+local function spendChill(state: any, tg: any, what: string)
+	for key, e in tg.effects do
+		if (what == "freeze" and e.kind == "freeze") or (what == "deepChill" and e.kind == "deepChill") then
+			tg.effects[key] = nil
+		end
+	end
+	if what == "freeze" then
+		state.shattered = (state.shattered or 0) + 1
+	end
+end
+
 damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }?): number
 	if tg.hp <= 0 then
 		return 0
@@ -3362,6 +3467,31 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 		if perStack > 0 or vs > 0 then
 			local stacks = burnStacksOf(state, tg)
 			multiplier *= Burn.stackBonus(stacks, perStack) * Burn.vsBurning(stacks, vs)
+		end
+	end
+	-- S141 mirrors Context.damage (Logic/Chill): Glacial Spike and Shatter on their main hits
+	local main = not (o.plain or o.secondary or o.lingering)
+	local spend: string? = nil
+	if ctx.element == "ice" and main and (def.values.vsFrozen ~= nil or def.values.shatter ~= nil) then
+		local frozen = has(state, tg, "freeze")
+		local deep = maxOf(state, tg, "deepChill") > 0
+		if def.values.vsFrozen ~= nil then
+			multiplier *= Chill.vsFrozen(
+				frozen,
+				deep,
+				Skills.valueAt(def, "vsFrozen", ctx.rank),
+				Skills.valueAt(def, "vsDeepChill", ctx.rank)
+			)
+		end
+		if def.values.shatter ~= nil then
+			local mul, used = Chill.shatterMul(
+				frozen,
+				deep,
+				Skills.valueAt(def, "shatter", ctx.rank),
+				Skills.valueAt(def, "shatterDeep", ctx.rank)
+			)
+			multiplier *= mul
+			spend = used
 		end
 	end
 	local before = tg.hp
@@ -3417,6 +3547,13 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 	local stacks = def.burnStacks or 0
 	if stacks > 0 and amount > 0 and not (o.plain or o.secondary or o.lingering) then
 		applyBurn(state, tg, Burn.tick(amount, stacks, dotBonus(state, "burn")), stacks)
+	end
+	-- S141 mirrors Context.damage: Shatter spends what it used; Winter's Grip counts main ice hits
+	if spend and amount > 0 then
+		spendChill(state, tg, spend)
+	end
+	if ctx.element == "ice" and main and amount > 0 then
+		chillHit(ctx, tg)
 	end
 	if amount > 0 and not o.plain then
 		onHit(ctx, tg, percent, amount, o)
@@ -3715,6 +3852,17 @@ function SkillModel.stormShare(def: any): number
 	return math.min(1, (impactRadius + CIRCLE_TOLERANCE) / math.max(0.01, radius - impactRadius))
 end
 
+-- S141 (Types/Offense.circleTarget `travel`, Logic/Chill.orbAt): whether wave `w` of a flying circle reaches the
+-- dummies standing at ASSUMPTIONS.orbAim of its travel (enemiesInCircle's tolerance); true for every other circle.
+function SkillModel.orbHits(def: any, w: number): boolean
+	local travel = def.travel
+	if not travel then
+		return true
+	end
+	local centre = Chill.orbAt(travel, w, def.hits or 1)
+	return math.abs(centre - travel * A.orbAim) <= (def.radius or 8) + CIRCLE_TOLERANCE + EPS
+end
+
 -- mirrors Types/Offense.circleTarget: `delay` (+ Push.DURATION after a pull), waves every `interval` (0.5),
 -- firstWave, a meteor storm's impacts, Thunderstorm's bolt (one random enemy: 1 / n each, the wave counts the circle:
 -- Skills.areaCount), effects from the first wave, the zones, the split blasts (3.5 studs) and the echo.
@@ -3733,8 +3881,12 @@ H.circleTarget = function(ctx)
 	local stormShare = SkillModel.stormShare(def)
 	local dmg = Skills.valueAt(def, "dmg", ctx.rank)
 	local firstPercent = dmg * (1 + (ctx.bp.firstWave or 0) / 100)
+	local frozen: { [any]: boolean } = {} -- S141: Blizzard freezes each dummy once per cast
 	for w = 1, hits do
 		at(ctx, delay + (w - 1) * interval, function()
+			if not SkillModel.orbHits(def, w) then
+				return -- S141: a flying circle's wave away from the dummies
+			end
 			local enemies = alive(state)
 			local percent = if w == 1 then firstPercent else dmg
 			if def.randomTarget then
@@ -3745,7 +3897,16 @@ H.circleTarget = function(ctx)
 				lingering(ctx, dmg, w, n)
 				return
 			end
-			hitAll(ctx, enemies, percent * stormShare, w == 1)
+			hitAll(ctx, enemies, percent * stormShare, w == 1 or def.waveEffects == true)
+			-- S141 mirrors Types/Offense.circleTarget freezeWave (Blizzard) through ctx.freeze
+			if def.freezeWave then
+				for _, tg in enemies do
+					if Chill.waveFreezes(w, def.freezeWave, frozen[tg] == true) then
+						frozen[tg] = true
+						applyEffect(ctx, tg, { kind = "freeze", duration = Skills.valueAt(def, "freeze", ctx.rank) })
+					end
+				end
+			end
 			lingering(ctx, dmg, w, 0)
 			local split = ctx.bp.split
 			if w == 1 and split then
@@ -4971,6 +5132,11 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 	if poisoned > 0 and has(state, tg, "poison") then
 		table.insert(own, poisoned)
 	end
+	-- S141 mirrors CombatService's Ice Blood provider (Logic/Chill.bloodGuard): a slowed or frozen attacker
+	local blood = Chill.bloodGuard(hook(state, "iceBlood"), has(state, tg, "slow"), has(state, tg, "freeze"))
+	if blood > 0 then
+		table.insert(own, blood)
+	end
 	local furyGuard = hook(state, "furyGuard")
 	local max = furyMax(state)
 	if furyGuard > 0 and max > 0 and state.fury.stacks >= max then
@@ -5002,6 +5168,24 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 			tg.emberAt = state.t
 			local magAtk = current(state).values.magAtk or 0
 			applyBurn(state, tg, Burn.tick(magAtk, 1, dotBonus(state, "burn"), emberPct), 1)
+		end
+	end
+	-- S141 mirrors CombatService shieldRetaliate (Ice Barrier): a regular melee blow slows the monster while the barrier
+	-- lasts, at most once per Data/Skills.CHILL.barrierGap s per monster (value %, CHILL.barrierSlow s, Frostbite)
+	if regular and tg.m.delivery == "melee" and tg.hp > 0 then
+		local barrier = maxOf(state, state.self, "iceBarrier")
+		if barrier > 0 and (tg.barrierAt == nil or state.t - tg.barrierAt + EPS >= SkillData.CHILL.barrierGap) then
+			tg.barrierAt = state.t
+			local seconds = SkillData.CHILL.barrierSlow
+			local slowed = apply(
+				state,
+				tg,
+				"slow",
+				{ duration = seconds, value = barrier, skillId = "iceBarrier", category = "enemySlow" }
+			)
+			if slowed then
+				chill(state, tg, seconds)
+			end
 		end
 	end
 	if amount > 0 and state.phoenixUntil and state.t < state.phoenixUntil then
@@ -5150,6 +5334,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 	local steps = math.floor(T / A.dt + 0.5)
 	local ended = T
 	local furySum, furyFullTime, controlTime, sealTime, chargeSum = 0, 0, 0, 0, 0
+	local chillTime, deepTime = 0, 0 -- S141
 	local died = false
 	for step = 0, steps - 1 do
 		local t = step * A.dt
@@ -5286,6 +5471,12 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		if focus and controlled(state, focus) then
 			controlTime += A.dt
 		end
+		if focus and (has(state, focus, "slow") or has(state, focus, "freeze")) then
+			chillTime += A.dt
+		end
+		if focus and has(state, focus, "deepChill") then
+			deepTime += A.dt
+		end
 		if state.sealLit then
 			sealTime += A.dt
 		end
@@ -5336,6 +5527,8 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		furyFull = furyFullTime / seconds,
 		furyMax = furyMax(state),
 		controlled = controlTime / seconds,
+		chilled = chillTime / seconds,
+		deepChilled = deepTime / seconds,
 		sealLit = sealTime / seconds,
 		basicDealt = state.basicDealt,
 		elementDealt = state.elementDealt,
@@ -6562,6 +6755,39 @@ function SkillModel.duel(build: Build, L: number, kind: string, variant: string)
 	local out: Duel =
 		{ kind = kind, won = not r.died and r.seconds < A.retaliateSeconds - EPS, seconds = r.seconds, hpEnd = r.hpEnd }
 	duelCache[key] = out
+	return out
+end
+
+-- S141 (DESIGN-18 §6.1, the identity of ice; Balance.targetsS141): a 60 s fight of the build's player with the cave
+-- Elite of the region of L that hits back (both potions, a dummy's HP: the window always runs out) and the Mage's boss
+-- window (ASSUMPTIONS.bossSeconds) on the GENERIC boss. chilled = the Elite's slowed-or-frozen share, taken = damage
+-- taken per second in that fight, deepChilled = the boss's share under the player's Deep Chill.
+export type ChillReport = { chilled: number, taken: number, deepChilled: number }
+local chillCache: { [string]: ChillReport } = {}
+function SkillModel.chillReport(build: Build, L: number): ChillReport
+	local key = `{build.classId}|{build.key}|{L}`
+	if chillCache[key] then
+		return chillCache[key]
+	end
+	local kind = SkillModel.eliteKinds(L)
+	local def = Monsters.get(kind or "") or B.GENERIC
+	local m = table.clone(B.monster(def, L, "elite"))
+	m.delivery = (def :: any).attack or "melee"
+	local sp = SkillModel.player(build, L)
+	local r = SkillModel.fight(sp, {
+		targets = { m },
+		retaliate = true,
+		hpPotions = true,
+		potions = true,
+		seconds = A.sustainedSeconds,
+	})
+	local boss = SkillModel.fight(sp, { targets = { B.monster(B.GENERIC, L, "boss") }, seconds = A.bossSeconds })
+	local out: ChillReport = {
+		chilled = r.chilled,
+		taken = r.taken / math.max(1e-9, r.seconds),
+		deepChilled = boss.deepChilled,
+	}
+	chillCache[key] = out
 	return out
 end
 

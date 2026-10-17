@@ -2177,7 +2177,7 @@ T.describe("Data: Mage paths (S81)", function()
 		function()
 			local caps = {}
 			for _, path in GamePaths.pathsOf("Mage") do
-				T.expect(#path.reference).toBe(3) -- S140: + the fire variant
+				T.expect(#path.reference).toBe(4) -- S140: + the fire variant; S141: + the ice variant
 				for _, build in path.reference do
 					T.expect({ build.id, build.damageReference }).toEqual({ build.id, nil })
 					caps[build.id] = build.areaCap or 2
@@ -2212,6 +2212,8 @@ T.describe("Data: Mage paths (S81)", function()
 				destroyerExp = 3,
 				destroyerBoss = 3,
 				destroyerFire = 3,
+				destroyerIce = 3, -- S141
+				arcanistIce = 2, -- S141
 				arcanistBoss = 2,
 				arcanistOverload = 2,
 				arcanistFire = 2,

@@ -465,6 +465,38 @@ local FIRE_SINGLE_BP: { [string]: "a" | "b" } = {
 	["immolate:10"] = "b",
 }
 
+-- S141: the ice pool of the area variant: B (damage) options but Frozen Orb's and Glacial Spike's 5A (radius, splash),
+-- Deep Freeze's 10A (more freezes) and Blizzard's 5A (one more wave)
+local ICE_AREA_BP: { [string]: "a" | "b" } = {
+	["hailstorm:5"] = "b",
+	["hailstorm:10"] = "b",
+	["glacialSpike:5"] = "a",
+	["glacialSpike:10"] = "b",
+	["frozenOrb:5"] = "a",
+	["frozenOrb:10"] = "b",
+	["deepFreeze:5"] = "b",
+	["deepFreeze:10"] = "a",
+	["shatter:5"] = "a",
+	["shatter:10"] = "b",
+	["blizzard:5"] = "a",
+	["blizzard:10"] = "b",
+}
+-- S141: the ice pool of the single-target variant: B options
+local ICE_SINGLE_BP: { [string]: "a" | "b" } = {
+	["hailstorm:5"] = "b",
+	["hailstorm:10"] = "b",
+	["glacialSpike:5"] = "b",
+	["glacialSpike:10"] = "b",
+	["frozenOrb:5"] = "b",
+	["frozenOrb:10"] = "b",
+	["deepFreeze:5"] = "b",
+	["deepFreeze:10"] = "b",
+	["shatter:5"] = "b",
+	["shatter:10"] = "b",
+	["blizzard:5"] = "b",
+	["blizzard:10"] = "b",
+}
+
 local function merged(a: { [string]: any }, b: { [string]: any }): { [string]: "a" | "b" }
 	local out: { [string]: any } = table.clone(a)
 	for key, option in b do
@@ -511,6 +543,48 @@ local FIRE_SINGLE_RANKS = {
 	"meteorStorm",
 	"blink",
 	"emberShield",
+	"manaShield",
+}
+
+-- S141: the skill ranks of the ice variants (the same rule as the fire ones)
+local ICE_AREA_RANKS = {
+	"hailstorm",
+	"iceShard",
+	"firebolt",
+	"frostNova",
+	"glacialSpike",
+	"wintersGrip",
+	"frozenOrb",
+	"elementalVortex",
+	"deepFreeze",
+	"shatter",
+	"focus",
+	"iceBlood",
+	"blizzard",
+	"cataclysm",
+	"evocation",
+	"blink",
+	"iceBarrier",
+	"manaShield",
+}
+local ICE_SINGLE_RANKS = {
+	"iceShard",
+	"firebolt",
+	"glacialSpike",
+	"hailstorm",
+	"frostNova",
+	"wintersGrip",
+	"arcaneDischarge",
+	"deepFreeze",
+	"shatter",
+	"evocation",
+	"focus",
+	"frozenOrb",
+	"iceBlood",
+	"arcaneTorrent",
+	"blizzard",
+	"blink",
+	"iceBarrier",
 	"manaShield",
 }
 
@@ -584,6 +658,30 @@ destroyer.reference = {
 		3.0,
 		"fire",
 		FIRE_AREA_RANKS
+	),
+	-- S141: the Destroyer with an ice weapon (the ice pool alone): area and slows first, freezes for Shatter
+	build(
+		"destroyerIce",
+		"staff",
+		destroyer.statPlan :: any,
+		destroyerNodes("destroyer_volatile", "destroyer_mantle"),
+		merged(withBase({}), ICE_AREA_BP),
+		{
+			{ skill = "elementalVortex", minEnemies = 2 },
+			{ skill = "cataclysm" },
+			{ skill = "blizzard" },
+			{ skill = "frozenOrb" },
+			{ skill = "hailstorm" },
+			{ skill = "frostNova", minEnemies = 2 },
+			{ skill = "deepFreeze" },
+			{ skill = "glacialSpike" },
+			{ skill = "shatter" },
+			{ skill = "iceShard" },
+			{ skill = "firebolt" },
+		},
+		3.0,
+		"ice",
+		ICE_AREA_RANKS
 	),
 }
 
@@ -666,6 +764,30 @@ arcanist.reference = {
 		nil,
 		"fire",
 		FIRE_SINGLE_RANKS
+	),
+	-- S141: the Arcanist with an ice weapon: one target, Deep Freeze then Glacial Spike and Shatter on the frozen target
+	build(
+		"arcanistIce",
+		"runestaff",
+		arcanist.statPlan :: any,
+		arcanistNodes("arcanist_resonance"),
+		merged(withBase({}), ICE_SINGLE_BP),
+		{
+			{ skill = "evocation", maxManaPct = 35 },
+			{ skill = "arcaneDischarge", minCharges = 4 },
+			{ skill = "arcaneTorrent", minManaPct = 90 },
+			{ skill = "deepFreeze" },
+			{ skill = "glacialSpike" },
+			{ skill = "shatter" },
+			{ skill = "frostNova" },
+			{ skill = "frozenOrb" },
+			{ skill = "hailstorm" },
+			{ skill = "iceShard" },
+			{ skill = "firebolt" },
+		},
+		nil,
+		"ice",
+		ICE_SINGLE_RANKS
 	),
 }
 

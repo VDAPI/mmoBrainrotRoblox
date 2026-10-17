@@ -116,6 +116,8 @@ local DEBUFFS = {
 	weaken = true, -- S63: the bearer deals less (category enemyDamageDown)
 	frostbite = true, -- S65: the source's ice: +% damage from that player (SourceValue); lives as long as the slow
 	sighted = true, -- S77: Draw a Bead, the source's crit on the bearer (FromSource); never the bearer's stats
+	chill = true, -- S141 (Logic/Chill): the source's chill counter (StacksFrom / TakeStacks)
+	deepChill = true, -- S141: the source's Deep Chill on a boss: +% damage from that player (SourceValue)
 }
 -- S65 kinds without a table entry: nextBasic (one-shot bonus of the next basic attack, Full Draw; only a basic attack
 -- consumes it, so it never collides with nextShot), runeSeal (marker of a glowing Runic Seal; CombatService puts it

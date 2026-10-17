@@ -1,8 +1,8 @@
 --!strict
 -- Mage weapon pools (S137, DESIGN-18 §4.2, §6.1). Transitional until S142: S140 filled the fire pool on the shared ladder
 -- and the common skills (C1 Blink 4, C2 Mana Shield 12, C3 Evocation 30, C4 Focus 45); Magic Bolt stays common and
--- adaptive (the S1 of every element until S142); the ice and lightning pools keep the old base split by element
--- (S141, S142).
+-- adaptive (the S1 of every element until S142); S141 filled the ice pool (Ice Shard S1 at 1, Frost Nova K1 at 6 and
+-- nine new skills); the lightning pool keeps the old base split by element (S142).
 
 local Types = require("./Types")
 
@@ -20,8 +20,8 @@ end
 
 local pools: Types.ClassPools = {
 	-- S138: 2 (directions without the main path). S140: 3 (the fire pool, the common skills, the directions' new
-	-- nodes: a free reset, DESIGN-18 §10)
-	version = 3,
+	-- nodes: a free reset, DESIGN-18 §10). S141: 4 (the ice pool)
+	version = 4,
 	transitional = true,
 	defaultPool = "fire", -- Data/Elements.DEFAULT, the starting wand
 	pools = {
@@ -43,7 +43,25 @@ local pools: Types.ClassPools = {
 			"focus",
 			"phoenixHeart",
 		}),
-		pool("ice", "❄", { "firebolt", "blink", "iceShard", "manaShield", "frostNova", "evocation", "focus" }),
+		-- S141: the ice pool in the ladder order (Ice Shard is S1; Magic Bolt stays common and adaptive until S142)
+		pool("ice", "❄", {
+			"iceShard",
+			"firebolt",
+			"hailstorm",
+			"blink",
+			"frostNova",
+			"iceBarrier",
+			"manaShield",
+			"glacialSpike",
+			"frozenOrb",
+			"evocation",
+			"deepFreeze",
+			"shatter",
+			"blizzard",
+			"wintersGrip",
+			"focus",
+			"iceBlood",
+		}),
 		pool(
 			"lightning",
 			"ϟ",

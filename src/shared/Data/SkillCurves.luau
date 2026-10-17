@@ -42,7 +42,12 @@ return table.freeze({
 		-- (173 -> 162); rank 6 pinned
 		firebolt = table.freeze({ dmg = table.freeze({ [5] = 160, [6] = BOLT5 + (255.7 - BOLT5) * 1 / 5 }) }),
 		fireball = table.freeze({ dmg = table.freeze({ [5] = 162, [6] = BALL5 + (221.8 - BALL5) * 1 / 5 }) }),
-		iceShard = table.freeze({ dmg = table.freeze({ [4] = 150, [5] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
+		-- S141 (DESIGN-18 §6.1): Ice Shard unlocks at 1 (was 6), its rank r + 1 comes near the old rank r's level: rank 5
+		-- (level 17) tuned for the ice pool's R1 at 20, rank 6 (level 21) keeps the old rank 5 (level 22)
+		iceShard = table.freeze({ dmg = table.freeze({ [5] = 80, [6] = SHARD4 + (213 - SHARD4) * 1 / 6 }) }),
+		-- S141: Frost Nova unlocks at 6 (was 18): rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old
+		-- rank 2
+		frostNova = table.freeze({ dmg = table.freeze({ [4] = 120, [5] = 120 + 21.3 / 9 }) }),
 		chainLightning = table.freeze({ dmg = table.freeze({ [3] = 129, [4] = CHAIN3 + (163.5 - CHAIN3) * 1 / 7 }) }),
 		-- S140 (DESIGN-18 §6.1): Meteor unlocks at 26 (was 30), so its rank r + 1 comes at the old rank r's level: rank 2
 		-- (level 30) keeps the old rank 1 (98), rank 1 is one step lower (pair 89.6 - 174)

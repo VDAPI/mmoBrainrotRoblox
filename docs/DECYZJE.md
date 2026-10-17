@@ -5145,3 +5145,52 @@
   już takich umiejętności; importer `import_ui.py` sprawdza nazwy z gry). Nowe umiejętności bez ikon PNG (znak).
   Efekty przedmiotów (S134g) Maga nie wymagały przepięcia: Kula Ognia (A1), Meteor (A2) i Błysk (C1) mają już role
   DESIGN-18.
+- **S141** Pula Lodu Maga według drabiny DESIGN-18 §5: Lodowy Odłamek S1 1 (było 6), Grad A1 3, Lodowa Nova K1 6 (było
+  18), Lodowa Bariera O1 10, Lodowa Włócznia S2 15, Uścisk Zimy P1 20, Lodowa Kula A2 26, Głęboki Mróz K2 33,
+  Roztrzaskanie S3 40, Lodowa Krew P2 50, Zamieć U 60 (nowe na końcu listy `Data/Skills/Mage`, bez zmian `order`).
+  Ognisty Pocisk zostaje wspólny i adaptacyjny do S142, więc pula Lodu ma dziś dwa S1. `SkillPools/Mage.version` 3 → 4.
+- **S141** Chłód (`Logic/Chill`, `Data/Skills.CHILL`): z Uściskiem Zimy (hak `chillFreeze` = sekundy zamrożenia)
+  każde główne trafienie lodem (nie rozprysk, przebicie, tyknięcie strefy) we wroga spowolnionego, a nie zamrożonego,
+  dokłada stos licznika (efekt `chill`, jeden wpis gracza na celu, 5 s); przy 4 stosach licznik się zużywa na
+  zamrożenie. Liczy się spowolnienie z dowolnego źródła.
+- **S141** Odporni na kontrolę (`IsBossLike`: bossowie i Elity II) nigdy nie zamarzają od lodu gracza: KAŻDE
+  zamrożenie lodu (efekty umiejętności, także Lodowej Novy, licznik, Zamieć) zamienia się w `Context.applyEffect` na
+  Głęboki Chłód: nowy rodzaj `deepChill` od rzucającego (+10% obrażeń tylko od niego, `SourceValue` w
+  `CombatService.offensiveMultiplier`, albo hak `deepChill` Uścisku Zimy 10–18%, gdy wyższy; 4 s). Nie `vulnerability`
+  (kategoria `enemyWeak` dałaby premię całej drużynie) i nie `own`. Zmiana działania: Lodowa Nova już nie zamraża bossów.
+- **S141** Lodowa Włócznia: `values.vsFrozen` ×1,5 na zamrożonym, `vsDeepChill` ×1,25 na odpornym z Głębokim Chłodem
+  gracza. Roztrzaskanie: `values.shatter` ×2 na zamrożonym (kończy zamrożenie każdego źródła) albo `shatterDeep` ×1,6 na
+  odpornym (zużywa Głęboki Chłód gracza). Przeciw graczom premia najwyżej `Combat.pvp.finisher` (1,5).
+- **S141** Głęboki Mróz: zamrożenie 3 s (gracze ×0,5 przez `PvpCcMultiplier`) i drugi efekt `attackSlow` 30% na 4 s,
+  który ląduje na każdym (na odpornych to „spowolnienie ataków” z planu sesji). 5A to `add.effectDuration` +1 s
+  (`add.freezeDuration` łamał test neutralności `Skills.effective`).
+- **S141** Lodowa Bariera: tarcza jak Żarząca Osłona i własny efekt `iceBarrier`; odwet z jednej funkcji
+  `CombatService.shieldRetaliate` z tabelą `RETALIATIONS` (rodzaj efektu → `ready` i działanie; Bariera przez
+  `Chill.barrierReady`): Osłona podpala, Bariera
+  spowalnia atakującego wręcz potwora o wartość efektu na `CHILL.barrierSlow` (2 s), najwyżej raz na 1 s od wroga, z
+  bronią lodu także Przemarznięcie. Lodowa Krew: dostawca redukcji (`own`) od spowolnionego lub zamrożonego atakującego
+  (potwór albo gracz).
+- **S141** Ruchoma kula: istniejący `circleTarget` z polem `travel` (Lodowa Kula leci 20 st. od Maga w stronę celu,
+  środek fali n = `Chill.orbAt`), `waveEffects` (efekty każdej fali: narastające spowolnienie przez nowe
+  `SkillEffect.maxStacks`), `freezeWave` (Zamieć zamraża każdego wroga raz od 5. fali). Model: kula trafia manekiny
+  stojące w połowie lotu (`ASSUMPTIONS.orbAim` 0,5: 7 z 10 fal).
+- **S141** Lodowy Odłamek: koszt 15 i odnowienie 5 s bez zmian (z 3 s / 12 lód na 20. był ×1,16 ognia), ranga 1 119 →
+  70 (węzeł rangi 5 = 80, ranga 6 przypięta): obok adaptacyjnego Ognistego Pocisku z Przemarznięciem kostura (10%)
+  warianty lodu mają R1 na 20. 2,69 (granica 2,73). Lodowa Nova: ranga 1 90%, węzeł rangi 4 (poziom 18) = dawne 120,
+  koszt 45 → 40, odnowienie 18 → 16, zamrożenie 1–2 s.
+- **S141** Model: `SkillModel.character` bierze żywioł wariantu (`elementOf`), gdy wywołujący go nie poda (wcześniej
+  `evaluateTargets` i `rawMetrics` liczyły rangi wariantu w puli Ognia: przy wariantach ognia bez skutku). Nowe buildy
+  `destroyer.destroyerIce` i `arcanist.arcanistIce` z `ranks`; oba w bloku S91 (zasada sesji 4: R1, T-SK2, zysk rzędów,
+  gładkość na 20. asertowane). R4 Włóczni i Roztrzaskania w całej rotacji (`R4_ROTATION`); opcje kontroli i geometrii
+  puli Lodu w `R4_UTILITY`.
+- **S141** Fixture 1–20 przepisany (`fixture S141 "pula Lodu Maga"`): 105 zmienionych i 44 nowe wpisy, wszystkie w
+  kluczach Maga (średnia żywiołów buildów Maga i nowe warianty lodu); `ALLOWED_1_20_DIFFS` pusta.
+- **S141** `GLOBAL_REPORT_ONLY` S141 (56 wierszy Maga 21–100): strażnicy T-SK1/2 wariantów lodu (L / L20) w Spalonych
+  Pustkowiach i Mroźnych Szczytach, T-SK4 Przeciążenia na 50 i 55 (2,57–2,59 przy dole 2,6: średnia żywiołów), T1
+  Iskry żywiołu lodu na 70 i 100 (0,037–0,039 przy dole 0,04). Wiersze `S141.ice.*`: T-SK3 asertowane, T-SK4 i
+  tożsamość lodu tylko raport (S147).
+- **S141** R4 rangi 5 na 20. Lodowego Odłamka (ranga 5 na 17.) i Gradu (19.) w `Balance.S91.r4Skills`; oba 5B ponad
+  pasmem 0,08–0,17 (0,29 / 0,19) zostają w `Balance.S91_REPORT`: przełom jest płaski, ranga 5 przypięta nisko (R1),
+  a cięcie zrzuca R4 na 45–100 pod pasmo (0,108 / 0,092). Do decyzji przy S147 (np. przełom mnożnikowy).
+- **S141** Opisy Lodowej Novy i Głębokiego Mrozu pokazują Głęboki Chłód jak serwer: `Chill.deepPct` z hakiem
+  `deepChill` z `DescOpts.hooks` (Uścisk Zimy do 18%); wiki bez haków pokazuje 10%.

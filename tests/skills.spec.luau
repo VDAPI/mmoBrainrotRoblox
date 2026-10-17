@@ -2307,8 +2307,9 @@ end)
 T.describe("S81 Mage base, B options and nodes", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 
-	-- S140 (DESIGN-18 §6.1): the fire pool and the common skills joined the base; 4 skills stay on the directions
-	T.it("the base (S140), 4 path skills at their row level; B on every active", function()
+	-- S140 (DESIGN-18 §6.1): the fire pool and the common skills joined the base; 4 skills stay on the directions.
+	-- S141: the ice pool (Ice Shard 1, Frost Nova 6, nine new skills at the end of the list)
+	T.it("the base (S141), 4 path skills at their row level; B on every active", function()
 		local base, onPath = {}, {}
 		local actives, passives = 0, 0
 		for _, def in SkillData.byClass.Mage do
@@ -2330,10 +2331,10 @@ T.describe("S81 Mage base, B options and nodes", function()
 		T.expect(base).toEqual({
 			"firebolt:1",
 			"fireball:3",
-			"iceShard:6",
+			"iceShard:1",
 			"chainLightning:10",
 			"blink:4",
-			"frostNova:18",
+			"frostNova:6",
 			"meteor:26",
 			"firewall:45",
 			"flameWave:6",
@@ -2347,15 +2348,24 @@ T.describe("S81 Mage base, B options and nodes", function()
 			"manaShield:12",
 			"evocation:30",
 			"focus:45",
+			"hailstorm:3",
+			"iceBarrier:10",
+			"glacialSpike:15",
+			"wintersGrip:20",
+			"frozenOrb:26",
+			"deepFreeze:33",
+			"shatter:40",
+			"iceBlood:50",
+			"blizzard:60",
 		})
-		T.expect(passives).toBe(3)
+		T.expect(passives).toBe(5)
 		T.expect(onPath).toEqual({
 			elementalVortex = "destroyer:26",
 			cataclysm = "destroyer:60",
 			arcaneDischarge = "arcanist:26",
 			arcaneTorrent = "arcanist:60",
 		})
-		T.expect(actives).toBe(20)
+		T.expect(actives).toBe(27)
 		-- changed data (ROZWOJ 12.4, 12.5, 15.5.4)
 		local function v(id: string, field: string, rank: number): number
 			return Skills.valueAt(SkillData.get(id) :: any, field, rank)

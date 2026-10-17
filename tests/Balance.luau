@@ -3347,9 +3347,23 @@ Balance.S91 = {
 		{ classId = "Mage", key = "destroyer.destroyerExp", area = true },
 		{ classId = "Mage", key = "destroyer.destroyerBoss" },
 		{ classId = "Mage", key = "arcanist.arcanistBoss" },
+		-- S141 (session rule 4): the Mage with an ice weapon (the ice pool alone) holds the S91 targets of 20 too
+		{ classId = "Mage", key = "destroyer.destroyerIce", area = true },
+		{ classId = "Mage", key = "arcanist.arcanistIce" },
 	} :: { { classId: string, key: string, weapon: string?, area: boolean? } },
 	-- breakpoints of rank 5 reached by level 20 (ranks 5 at 17 / 19, ROZWOJ 2.5)
-	r4Skills = { "holyStrike", "mightyStrike", "aimedShot", "firebolt", "heal", "charge", "doubleShot", "fireball" },
+	r4Skills = {
+		"holyStrike",
+		"mightyStrike",
+		"aimedShot",
+		"firebolt",
+		"heal",
+		"charge",
+		"doubleShot",
+		"fireball",
+		"iceShard", -- S141: unlock 1 / 3, ranks 5 at 17 / 19
+		"hailstorm",
+	},
 	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
 	-- tank paths; every other row at 20 is printed (bands written for 45-100)
 	pathRows = {
@@ -3605,6 +3619,10 @@ Balance.S91_REPORT = {
 	["S91.gain.marksman.kingslayer"] = "rzędy 1–2 Strzelca z ciężką kuszą +2,2% (dźwignie globalne psują S90)",
 	["S91.gain.marksman.kingslayer@longbow+quiver"] = "rzędy 1–2 Strzelca z długim łukiem +2,6% (dźwignie globalne psują S90)",
 	["S91.gain.trapper.poacher"] = "rzędy 1–2 Trapera z kuszą +1,4% (dźwignie globalne psują S90)",
+	-- S141: przełomy 5B lodu są płaskie, a ranga 5 przypięta nisko (80, R1 na 20); cięcie do pasma na 20 zrzuca R4 na
+	-- 45 / 70 / 100 pod 0,08 (Odłamek 0,108, Grad 0,092)
+	["S91.r4.iceShard.5b"] = "Lodowy Odłamek 5B +29% na 20 (płaskie +23 na randze 5 = 80; na 45–100 0,108)",
+	["S91.r4.hailstorm.5b"] = "Grad 5B +19% na 20 (płaski przełom na niskiej randze 5; na 45–100 0,092)",
 } :: { [string]: string }
 
 -- S140: the Mage's fire pool (DESIGN-18 §6.1, §13; docs/sessions S140 D) ------------------------------------------
@@ -3689,6 +3707,92 @@ function Balance.targetsS140(): { TargetRow }
 					"S147"
 				)
 			end
+		end
+	end
+	return rows
+end
+
+-- S141: the Mage's ice pool (DESIGN-18 §6.1, §13; docs/sessions S141 C) ---------------------------------------------
+
+-- The ice variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "ice": the ice pool alone; their R1
+-- at 20 is a row of the S91 block, session rule 4) and the identity of ice (DESIGN-18 §6.1, asserted by S147).
+Balance.S141 = {
+	iceBuilds = { "destroyer.destroyerIce", "arcanist.arcanistIce" },
+	levels = { 45, 70, 100 },
+	tsk4 = { 2.0, 2.8 }, -- the Mage's T-SK4 band (as S140)
+	single = { 0.85, 0.95 }, -- ice / fire on one target 60 s (the Arcanist's variants)
+	control = 0.6, -- the Elite slowed or frozen at least this share of the fight
+	deepChill = 0.5, -- the boss under the Mage's Deep Chill at least this share of the boss window
+	taken = 0.85, -- damage taken by the ice variant / the fire variant in the Elite fight
+	compare = {
+		["destroyer.destroyerIce"] = "destroyer.destroyerFire",
+		["arcanist.arcanistIce"] = "arcanist.arcanistFire",
+	},
+}
+
+-- S141 (C): the ice pool's rows (ids "S141.ice.*"). Asserted (balance.spec "Balance S141: ice pool"): T-SK3 within the
+-- build's areaCap at 20 / 45 / 70 / 100 (R3). Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 /
+-- 100 and the identity of ice (one target against fire, the Elite's slow or freeze, the boss's Deep Chill, the damage
+-- taken against fire) at 20 / 45 / 70 / 100.
+function Balance.targetsS141(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S141
+	local SkillModel = (require :: any)("./SkillModel")
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number,
+		report: string?
+	)
+		target(rows, `S141.ice.{id}`, "ice", label, value, low, high, "Mage", L)
+		rows[#rows].report = report
+	end
+	for _, key in S.iceBuilds do
+		local build = SkillModel.build(key, "Mage")
+		local fire = SkillModel.build(S.compare[key], "Mage")
+		local cap = build.areaCap or 2.0
+		for _, L in { 20, 45, 70, 100 } do
+			local m = SkillModel.metrics(build, L)
+			local mf = SkillModel.metrics(fire, L)
+			add(`tsk3.{key}.{L}`, `T-SK3 {key} L{L} (lód)`, m.tsk3, nil, cap, L)
+			if L > 20 then
+				add(`tsk4.{key}.{L}`, `T-SK4 {key} L{L} (lód)`, m.tsk4, S.tsk4[1], S.tsk4[2], L, "S147")
+			end
+			if key == "arcanist.arcanistIce" then
+				local single = m.single60 / math.max(1e-9, mf.single60)
+				add(`single.{L}`, `Lód / ogień: jeden cel 60 s L{L}`, single, S.single[1], S.single[2], L, "S147")
+			end
+			local ice, flame = SkillModel.chillReport(build, L), SkillModel.chillReport(fire, L)
+			add(
+				`control.{key}.{L}`,
+				`Elita spowolniona albo zamrożona {key} L{L}`,
+				ice.chilled,
+				S.control,
+				nil,
+				L,
+				"S147"
+			)
+			add(
+				`deepChill.{key}.{L}`,
+				`Boss pod Głębokim Chłodem {key} L{L}`,
+				ice.deepChilled,
+				S.deepChill,
+				nil,
+				L,
+				"S147"
+			)
+			add(
+				`taken.{key}.{L}`,
+				`Obrażenia przyjmowane lód / ogień (Elita) {key} L{L}`,
+				ice.taken / math.max(1e-9, flame.taken),
+				nil,
+				S.taken,
+				L,
+				"S147"
+			)
 		end
 	end
 	return rows
@@ -6033,6 +6137,71 @@ do
 		}
 	do
 		add(key, "S140", reworkWhy)
+	end
+	-- S141 (DESIGN-18 §0.4, session rule 5): the Mage's ice pool (the ice variants grow from their 1-20 R1 in the S91
+	-- band like the fire ones; the mean of the elements of Overload's mana and the ice Spark's share move with the ice
+	-- pool); only Mage rows, docs/SESJE.md S141 lists them. S146 / S147 bring them back. Never a row of 1-20.
+	for _, key in
+		{
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.50",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.50",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.50",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.70",
+			"R.ashen.tsk4.arcanist.arcanistOverload.50",
+			"R.ashen.tsk4.arcanist.arcanistOverload.55",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.99",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.100",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.85",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.90",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.95",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.99",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.100",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.90",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.99",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.100",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.90",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.99",
+			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L100",
+			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L70",
+		}
+	do
+		add(key, "S141", reworkWhy)
 	end
 end
 

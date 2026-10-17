@@ -82,6 +82,23 @@ return table.freeze({
 	EMBER = table.freeze({ gap = 1 }),
 	-- S140: Phoenix Heart's fire blast reaches this far (its rest, invulnerability and blast are the passive's values).
 	PHOENIX = table.freeze({ radius = 8 }),
+	-- S141 (DESIGN-18 §6.1): the ice school's chill (Logic/Chill). With Winter's Grip (hook chillFreeze = the freeze's
+	-- seconds) every main ice hit of the player on a slowed, not frozen enemy adds a stack to the player's chill counter
+	-- on it (one entry per target, StatusEffectService skillId `key`, refreshed for `counter` s); at `threshold` stacks
+	-- the counter is spent on a freeze. Bosses and Elite II (StatusEffectService.IsBossLike) never freeze: every freeze
+	-- of a player's ice gives them Deep Chill instead (skillId `deepKey`): +deepPct % damage from that player (the
+	-- deepChill hook of Winter's Grip when higher) for deepDuration s. Ice Barrier: a melee blow of a monster on the
+	-- bearer slows it by the effect's value % for barrierSlow s, at most once per barrierGap s per attacker.
+	CHILL = table.freeze({
+		key = "chill",
+		deepKey = "deepChill",
+		threshold = 4,
+		counter = 5,
+		deepPct = 10,
+		deepDuration = 4,
+		barrierSlow = 2,
+		barrierGap = 1,
+	}),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
 	FROSTBITE = 6,

@@ -320,6 +320,15 @@ local OWN: { [string]: Own } = {
 	combustion = { hint = "fire explosion burst pop", roll = 110 },
 	immolate = { hint = "intense fire burn sizzle impact", roll = 100 },
 	phoenixHeart = { hint = "phoenix cry fire burst rising", roll = 120 },
+	-- S141 (DESIGN-18 §6.1): the ice pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	hailstorm = { hint = "hail ice pellets falling clatter", roll = 100 },
+	iceBarrier = { hint = "ice crystal shield forming crackle", roll = 80 },
+	glacialSpike = { hint = "ice spear launch crack", roll = 120 },
+	frozenOrb = { hint = "frost orb whoosh hum", roll = 100 },
+	deepFreeze = { hint = "deep ice freeze crackle", roll = 110 },
+	shatter = { hint = "ice shatter glass break", roll = 110 },
+	blizzard = { hint = "blizzard howling wind storm", roll = 120 },
 }
 -- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
 local CAST: { [string]: Own } = {
@@ -337,6 +346,7 @@ local CAST: { [string]: Own } = {
 	meteorStorm = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	cataclysm = { hint = "deep earth rumble summoning", roll = 120, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	pyroblast = { hint = "rising fire roar focus", roll = 100 }, -- S140: the focus (castTime)
+	glacialSpike = { hint = "rising frost hum focus", roll = 100 }, -- S141: the focus (castTime)
 }
 -- S115: phase sounds: a trap springing (.trigger), a later wave or a storm's strike (.wave), the falcon's strike.
 local PHASE: { [string]: Own } = {

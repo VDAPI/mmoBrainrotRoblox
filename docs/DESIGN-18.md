@@ -234,6 +234,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   poniżej 50%, Serce Feniksa przed Aniołem Stróżem i także w PvP, odwet Osłony tylko na potworach). Kierunki: zamiast
   Mistrza Żywiołów / Tajemnego Umysłu węzły `passive` 3 rang, w miejsce przeniesionych umiejętności Echo Żywiołów,
   Przypływ Żywiołów, Tajemna Osłona (zamiast „Przepływu Many”), Szybkie Wyładowanie; Wytrwałość i Wola 2 rangi.
+- S141 (stan): pula Lodu według tabeli (Lodowy Odłamek S1 od 1, Lodowa Nova K1 od 6), mechaniki w `Logic/Chill`
+  (DECYZJE S141: licznik Chłodu Uścisku Zimy na trafieniach lodu w spowolnionych, próg 4; każde zamrożenie lodu na
+  bossie / Elicie II to Głęboki Chłód gracza (+10–18% obrażeń od niego), także Lodowej Novy; Włócznia ×1,5 / ×1,25,
+  Roztrzaskanie ×2 / ×1,6; Głęboki Mróz z wolniejszymi atakami na każdym; Bariera spowalnia tylko potwory; Lodowa Kula
+  to `circleTarget` z `travel`). Ognisty Pocisk zostaje wspólnym S1 do S142.
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia
