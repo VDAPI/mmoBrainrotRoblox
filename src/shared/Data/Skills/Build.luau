@@ -8,6 +8,8 @@ local Build = {}
 export type Spec = {
 	id: string,
 	path: string?, -- S57: path id (unlock = the row level); nil = class base
+	pool: string?, -- S137 (DESIGN-18 §4): "common" or a pool id; nil for path skills
+	role: string?, -- S137: ladder code (DESIGN-18 §5), from the class sessions on
 	unlock: number,
 	maxLevel: number,
 	type: Types.SkillType,
@@ -101,6 +103,8 @@ function Build.class(
 			class = classId,
 			order = order,
 			path = spec.path,
+			pool = spec.pool,
+			role = spec.role,
 			unlock = spec.unlock,
 			maxLevel = spec.maxLevel,
 			type = spec.type,

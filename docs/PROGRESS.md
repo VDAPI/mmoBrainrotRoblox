@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S136 gotowe (ostatnia S136: „Pergamin i żelazo” 2/2: wszystkie okna na pergaminie (panel admina na
+S01–S115 i S117–S137 gotowe (ostatnia S137: Umiejętności 2.0, fundament A (`docs/DESIGN-18.md`): rangi kupowane
+punktami umiejętności (`Logic/SkillPoints`, 1 na poziom + 7 w każdej puli, limit z dawnej krzywej), pule broni
+(`Data/SkillPools`, `Logic/SkillPools`: Mag ogień / lód / błyskawica według żywiołu broni, reszta klas po dwie pule z
+wspólną podstawą, dane przejściowe), pasek 8 miejsc na pulę, zapis w schemacie 12 z darmowym resetem, remote'y
+`AllocateSkills` / `RefundSkillRank` / `ResetSkills` / `SetPoolBar`, minimalne okno z „+” / „−” / „Zatwierdź”, model na
+kupionych rangach, 80 wierszy 21–100 w raporcie do S146/S147; wcześniej S136: „Pergamin i żelazo” 2/2: wszystkie okna na pergaminie (panel admina na
 żelazie), HUD, nakładki, tabliczki potworów i NPC na płytkach żelaza z mosiężnym brzegiem, paski na ciemnym torze,
 sloty w wariancie żelaza, minimapa i mapa świata w mosiężnych ramach (rysunek bez zmian), medale rankingów jako
 plakietki, `Theme.Colors` usunięte, `uitheme.spec` ścisły (`Data/UiWindows` z `surface` i `SCREENS`); wcześniej S135:
@@ -295,6 +300,13 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S137:** okno umiejętności minimalne (S139 buduje pełne): zakładki pul, „+” / „−”, „Zatwierdź”, „Rozdaj jak zaleca
+  pula” i „Resetuj” nad listą „Podstawa”, bez przeglądu w grze (szerokość wierszy z przyciskami na PC i telefonie);
+  pasek innej puli tylko przez `SetPoolBar` (okno nie ma jeszcze siatki pasków innych pul). Pełny reset od 20. bez
+  `respecFree` czeka na Zwój Odnowy (S138; dziś `skills.error.resetNeedsScroll`). Kierunki bez ścieżki głównej (S138).
+  `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
+  `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
 
 - **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`
   i nowych wysokościach: przycięcia w panelach mapy świata, trackerze, panelach wydarzeń, tabliczkach potworów; karty

@@ -1,6 +1,6 @@
 --!strict
 -- The "!" of the skills window (S59, ROZWOJ 4): a free path point with a node to buy, or a breakpoint with option B
--- and no choice. One rule (Logic/PathView.attention) for the HUD button and the window tabs. Reads only the narrow
+-- and no choice; S137: a free skill point of the active pool with a rank to buy (reads ranks and equipment too). One rule (Logic/PathView.attention) for the HUD button and the window tabs. Reads only the narrow
 -- state branches it needs (class, level, path), never the whole character (HP changes several times a second).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +16,8 @@ local SkillsAttention = {}
 local classId = State.Value({ "character", "class" })
 local level = State.Value({ "character", "level" })
 local path = State.Value({ "character", "path" })
+local ranks = State.Value({ "character", "ranks" })
+local equipment = State.Value({ "character", "equipment" })
 
 function SkillsAttention.attention(scope: Scope): Fusion.Computed<PathView.Attention?>
 	return scope:Computed(function(use): PathView.Attention?
@@ -24,7 +26,13 @@ function SkillsAttention.attention(scope: Scope): Fusion.Computed<PathView.Atten
 			return nil
 		end
 		local lvl = use(level)
-		return PathView.attention({ class = class, level = if type(lvl) == "number" then lvl else 1, path = use(path) })
+		return PathView.attention({
+			class = class,
+			level = if type(lvl) == "number" then lvl else 1,
+			path = use(path),
+			ranks = use(ranks),
+			equipment = use(equipment),
+		})
 	end)
 end
 

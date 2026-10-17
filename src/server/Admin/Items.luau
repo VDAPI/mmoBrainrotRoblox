@@ -61,6 +61,8 @@ local function editWeapon(player: Player, edit: (item: any) -> ()): boolean
 	edit(copy)
 	PlayerStateService.Set(player, { "character", "equipment", "weapon" }, copy)
 	StatService.Invalidate(player)
+	-- S137: a new element switches the Mage's pool; PathService swaps the bars on this signal
+	EquipmentService.Changed:Fire(player, "weapon")
 	return true
 end
 

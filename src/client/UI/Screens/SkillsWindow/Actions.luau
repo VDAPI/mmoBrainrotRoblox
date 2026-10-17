@@ -2,6 +2,9 @@
 -- Server calls of the skills window (S59): nodes, the main path, breakpoints and the bar, one at a time. The server
 -- checks every rule (place, combat, weapon); a refusal plays the error sound and shows its reason as a toast. Build
 -- sets and their copy are handled by Components/BuildSetSwitch (S58).
+-- S137 (DESIGN-18 §3): skill ranks are reserved in the window ("+", "-", "Spend as the pool suggests") and sent as one
+-- AllocateSkills; "-" on a bought rank asks RefundSkillRank (with the gold price from Progression.freeRespecLevel);
+-- "Reset" asks ResetSkills.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,6 +12,8 @@ local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local Progression = require(ReplicatedStorage.Shared.Data.Progression)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -23,11 +28,17 @@ export type Actions = {
 	chooseBp: (skillId: string, at: number, option: SkillData.BreakpointOption) -> (),
 	toBar: (skillId: string) -> (),
 	place: (slot: number) -> (),
+	-- S137
+	addRank: (skillId: string) -> (),
+	removeRank: (skillId: string) -> (),
+	suggest: () -> (),
+	confirmRanks: () -> (),
+	resetSkills: () -> (),
 }
 
 local Actions = {}
 
--- Slot ("1".."10") holding `id` on `bar`, or nil.
+-- Slot ("1".."8") holding `id` on `bar`, or nil.
 function Actions.slotOf(bar: any, id: string): string?
 	if type(bar) ~= "table" then
 		return nil
@@ -120,7 +131,7 @@ function Actions.new(ctx: Context.Ctx): Actions
 				end
 			end)
 		end,
-		-- "To bar": the first free slot, or the 2 x 5 picker when the bar is full.
+		-- "To bar": the first free slot, or the 2 x 4 picker when the bar is full.
 		toBar = function(skillId: string)
 			if busy then
 				return
@@ -153,6 +164,82 @@ function Actions.new(ctx: Context.Ctx): Actions
 				else
 					fail(err)
 				end
+			end)
+		end,
+		-- S137: one more rank in the reservation when SkillPoints.canBuy allows it on the planned character.
+		addRank = function(skillId: string)
+			local planned = Fusion.peek(ctx.planned)
+			local pool = Fusion.peek(ctx.pool)
+			if not planned or not pool then
+				return
+			end
+			local ok, err = SkillPoints.canBuy(planned, pool, skillId, 1)
+			if not ok then
+				fail(err)
+				return
+			end
+			local reserve = table.clone(Fusion.peek(ctx.reserve))
+			reserve[skillId] = (reserve[skillId] or 0) + 1
+			ctx.reserve:set(reserve)
+		end,
+		-- S137: a reserved rank goes back at once; a bought one through the server (a price from freeRespecLevel).
+		removeRank = function(skillId: string)
+			local reserve: { [string]: number } = table.clone(Fusion.peek(ctx.reserve))
+			local reserved = reserve[skillId] or 0
+			if reserved > 0 then
+				reserve[skillId] = if reserved > 1 then reserved - 1 else nil :: any
+				ctx.reserve:set(reserve)
+				return
+			end
+			local character = Fusion.peek(ctx.character)
+			local pool = Fusion.peek(ctx.pool)
+			if not character or not pool or SkillPoints.bought(character, pool, skillId) <= 0 then
+				return
+			end
+			local skill = SkillData.get(skillId)
+			local name = if skill then Text.now(skill.nameKey) else skillId
+			if character.level < Progression.freeRespecLevel then
+				invoke("RefundSkillRank", { pool, skillId })
+				return
+			end
+			confirm(
+				"skills.points.refundTitle",
+				"skills.points.refundMessage",
+				{ skill = name, gold = SkillPoints.refundCost(character.level, 1) },
+				function()
+					invoke("RefundSkillRank", { pool, skillId })
+				end
+			)
+		end,
+		suggest = function()
+			local planned = Fusion.peek(ctx.planned)
+			local pool = Fusion.peek(ctx.pool)
+			if not planned or not pool then
+				return
+			end
+			local reserve = table.clone(Fusion.peek(ctx.reserve))
+			for id, n in SkillPoints.suggest(planned, pool) do
+				reserve[id] = (reserve[id] or 0) + n
+			end
+			ctx.reserve:set(reserve)
+		end,
+		confirmRanks = function()
+			local pool = Fusion.peek(ctx.pool)
+			local reserve = Fusion.peek(ctx.reserve)
+			if not pool or next(reserve) == nil then
+				return
+			end
+			invoke("AllocateSkills", { pool, table.clone(reserve) }, function(ok: boolean, err: string?)
+				if ok then
+					ctx.reserve:set({})
+				else
+					fail(err)
+				end
+			end)
+		end,
+		resetSkills = function()
+			confirm("skills.points.resetTitle", "skills.points.resetMessage", nil, function()
+				invoke("ResetSkills", {})
 			end)
 		end,
 	}

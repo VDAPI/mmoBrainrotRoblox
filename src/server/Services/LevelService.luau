@@ -1,7 +1,7 @@
 --!strict
 -- Experience and levels (DESIGN §4.6). GiveExp is the single entry point for every EXP source
 -- (monsters S03, quests S11); it applies the character's EXP bonus and handles level-ups:
--- stat points (skill ranks come from the level, S56; path points are not stored, S57), full resources, the LevelUp
+-- stat points (S137: skill points and path points are not stored, they follow the level), full resources, the LevelUp
 -- effect for nearby players. Stat points go to both build sets (S58, ROZWOJ 2.9); SetLevel down fits both sets to the
 -- level, ResetStats (Scroll of Oblivion, /stats reset) touches only the active one.
 
@@ -18,6 +18,7 @@ local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Paths = require(Shared.Logic.Paths)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local SkillPoints = require(Shared.Logic.SkillPoints)
 local StatPlan = require(Shared.Logic.StatPlan)
 local Types = require(Shared.Types)
 
@@ -75,7 +76,9 @@ local function onLevelsGained(player: Player, character: Types.CharacterData, fr
 	StatService.Recompute(player)
 	ResourceService.Restore(player)
 	local pathPts = Paths.pointsAt(to) - Paths.pointsAt(from)
-	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts, from)
+	-- S137 (DESIGN-18 §11): the skill points of every pool (the same number per pool), last so older listeners keep working
+	local skillPts = SkillPoints.pointsAt(to) - SkillPoints.pointsAt(from)
+	Net.FireList(nearbyPlayers(player), "LevelUp", player, to, statPts, pathPts, from, skillPts)
 	-- S124: leaderboard tie-break and Hall of Fame (DESIGN-17 §5); set before LevelChanged so LeaderboardService sees it.
 	-- SetLevel up comes here too; going down keeps the field (the first moment stays).
 	if to >= Config.MaxLevel and from < Config.MaxLevel and character.reached100At == nil then
@@ -133,8 +136,14 @@ function LevelService.SetLevel(player: Player, level: number)
 		onLevelsGained(player, character, from, target)
 		return
 	end
-	-- down: both build sets are clamped to the new level (ROZWOJ 2.9); the active bar follows on LevelChanged
-	PlayerStateService.Set(player, { "character", "path" }, Paths.clampToLevel(character, target))
+	-- down: both build sets are clamped to the new level (ROZWOJ 2.9); the active bar follows on LevelChanged.
+	-- S137: the skill ranks too (SkillPoints.clean: limits and points of the lower level)
+	local clamped = Paths.clampToLevel(character, target)
+	PlayerStateService.Set(player, { "character", "path" }, clamped)
+	local view = table.clone(character) :: any
+	view.level = target
+	view.path = clamped
+	PlayerStateService.Set(player, { "character", "ranks" }, (SkillPoints.clean(view)))
 	PlayerStateService.Set(player, { "character", "level" }, target)
 	setLevelAttribute(player, target)
 	local stats, points = StatPlan.refit(character.class, target, character.stats :: any)

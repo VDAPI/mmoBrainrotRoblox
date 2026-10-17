@@ -239,6 +239,11 @@ export type SkillDef = {
 	class: string,
 	order: number, -- position in the class list
 	path: string?, -- S57 (ROZWOJ 2.2): the path that gives the skill (a node of kind "skill"); nil = class base
+	-- S137 (DESIGN-18 §4, §5): the weapon pool of a base skill ("common" = every pool of the class, else a pool id of
+	-- Data/SkillPools/<Class>); path skills have none (they work in every pool). role = the ladder code ("S1".."U",
+	-- "C1".."C4"), filled by the class sessions S140-S145.
+	pool: string?,
+	role: string?,
 	unlock: number, -- character level for rank 1
 	maxLevel: number, -- explicit in the data: 10 active, 5 passive (ROZWOJ 2.5)
 	type: SkillType,

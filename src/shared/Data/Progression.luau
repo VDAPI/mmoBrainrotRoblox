@@ -34,6 +34,14 @@ return table.freeze({
 	-- for the owner's approval (ROZWOJ 15.1).
 	pathPointsEvery = 2,
 
+	-- S137 (DESIGN-18 §3.1): skill points, pointsAt(L) = L x perLevel per weapon pool (Logic/SkillPoints); one point
+	-- buys one rank up to Logic/Skills.rankAt (the old rank curve is the limit). Below freeRespecLevel a rank refund and
+	-- the full reset are free anywhere out of combat; from it a rank refund costs rankRefundGold x level gold (in town
+	-- or at a dungeon gate).
+	skillPoints = table.freeze({ perLevel = 1, bonus = 7 }),
+	freeRespecLevel = 20,
+	rankRefundGold = 10,
+
 	-- % EXP for each other class among the credited players, at most varietyMax (ROZWOJ 7.4, S60).
 	varietyPerClass = 5,
 	varietyMax = 15,

@@ -97,6 +97,13 @@ return {
 		{ path = "Data/Recipes" },
 		{ path = "Data/Shops" },
 		{ path = "Data/SkillCurves" },
+		-- S137 (DESIGN-18 §5, §9): the shared ladder of the weapon pools and the pool version of every class (the rest of
+		-- the pool files are ids, names and buying orders)
+		{ path = "Data/SkillPools/init", pick = { "LADDER", "COMMON_LADDER" }, omit = { "byClass" } },
+		{ path = "Data/SkillPools/Cleric", pick = { "version" } },
+		{ path = "Data/SkillPools/Hunter", pick = { "version" } },
+		{ path = "Data/SkillPools/Mage", pick = { "version" } },
+		{ path = "Data/SkillPools/Warrior", pick = { "version" } },
 		{ path = "Data/Skills/Cleric" },
 		{ path = "Data/Skills/Hunter" },
 		{ path = "Data/Skills/Mage" },
@@ -123,6 +130,7 @@ return {
 		"AutoPotion",
 		"AutoGrind",
 		"Reroll", -- S134j: bonus reroll at the smith
+		"SkillPools", -- S137: the lock after a weapon pool switch in combat
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -5091,6 +5099,61 @@ return {
 				session = "S134k",
 				why = "new: Hunter's Marks per contract base 2 + 1 per 10 levels + 10 on every 10th (2 / 13 / 14 / 6 / 19 / 11 at L1 / 10 / 20 / 45 / 70 / 99, 738 over 1-99): 10-15 marks an hour of contracts of the own level (decade mean), the shop's value of that hour 6-13% of its gold (Balance.targetsS134k value)",
 			},
+		},
+		-- S137 (DESIGN-18): skill points per weapon pool instead of ranks from the level
+		["Progression:skillPoints.perLevel"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.1, owner 2026-10-15): one skill point per level in every weapon pool, one point = one rank, the old rank curve (Skills.rankAt) is the limit",
+			},
+		},
+		["Progression:skillPoints.bonus"] = {
+			{
+				session = "S137",
+				why = "new: +7 points in every pool (27 at 20, 107 at 100) so the reference builds of 1-20 keep the ranks of the old automatic curve (balance1_20.spec without ALLOWED_1_20_DIFFS, session rule 5): path skills cost skill points too and the base build needs 27 ranks at 19-20 (bonus 6 left 4 diffs, the Warrior base's Fortitude)",
+			},
+		},
+		["Progression:freeRespecLevel"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.2, owner 2026-10-15): below level 20 a rank refund and the full reset are free anywhere out of combat",
+			},
+		},
+		["Progression:rankRefundGold"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §3.1): from level 20 one rank back costs 10 x level gold (200 at 20, 1000 at 100), in town or at a dungeon gate",
+			},
+		},
+		["Skills/init:HOTBAR_SLOTS"] = {
+			{
+				session = "S137",
+				why = "10 -> 8 (DESIGN-18 §4.1, owner 2026-10-15): 8 slots per weapon pool, keys 1-8; migration 12 keeps the old bar's first 8 slots",
+			},
+		},
+		["Config:SkillPools.swapLock"] = {
+			{
+				session = "S137",
+				why = "new (DESIGN-18 §4.1): a weapon pool switched in combat refuses casts for 2 s (no cooldown is reset by switching)",
+			},
+		},
+		["SkillPools/init:*"] = {
+			{
+				session = "S137",
+				why = "new module (DESIGN-18 §5): the shared ladder, school S1 1, A1 3, K1 6, O1 10, S2 15, P1 20, A2 26, K2 33, S3 40, P2 50, U 60, common C1 4, C2 12, C3 30, C4 45; asserted for classes past their transitional pools (S140-S145)",
+			},
+		},
+		["SkillPools/Cleric:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (light, hammer; transitional)" },
+		},
+		["SkillPools/Hunter:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (bow, crossbow; transitional)" },
+		},
+		["SkillPools/Mage:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional)" },
+		},
+		["SkillPools/Warrior:*"] = {
+			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (onehand, twohand; transitional)" },
 		},
 		["HuntShop:*"] = {
 			{

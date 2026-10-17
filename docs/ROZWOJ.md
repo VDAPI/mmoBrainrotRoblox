@@ -5,6 +5,9 @@ streszczenie, które odsyła tutaj.
 
 ## 0. Po co ten plik
 
+- **S137: §2.4–2.6, 2.8–2.10, 3–5 zastąpione przez `docs/DESIGN-18.md`** (punkty umiejętności, pule broni, kierunki;
+  pierwszeństwo: `docs/DECYZJE.md` > DESIGN-18 > ta część ROZWOJ). Reszta (przełomy §2.7, kategorie §7, szczęście §6,
+  wzory §8, klasy §9–12) dalej obowiązuje.
 - To jedyne źródło, według którego sesje przebudowy (fundament, potem Kapłan, potem Wojownik, Łowca i Mag) wdrażają
   nowy rozwój postaci, tak jak sesje wiki pracują według `docs/WIKI.md`, a sesje krain według `docs/SILNIKI.md`.
   Powstał z odpowiedzi właściciela na ankietę (sekcja 1), kodu `origin/main` 1aeb85b i diagnozy balansu.

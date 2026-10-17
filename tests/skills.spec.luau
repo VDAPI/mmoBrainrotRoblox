@@ -6,6 +6,7 @@ local SkillData = require("../src/shared/Data/Skills")
 local SkillGeom = require("../src/shared/Logic/SkillGeom")
 local Skills = require("../src/shared/Logic/Skills")
 local StatCalc = require("../src/shared/Logic/StatCalc")
+local RankFill = require("./RankFill")
 local T = require("./Test")
 
 local VALID_TYPES = {
@@ -166,8 +167,9 @@ T.describe("S56 ranks from the level and the bar", function()
 		onPath.path = "somePath"
 		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
 		T.expect(Skills.validSlot(1)).toBe(true)
-		T.expect(Skills.validSlot(10)).toBe(true)
-		T.expect(Skills.validSlot(11)).toBe(false)
+		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; rankFor is the limit of a bought rank now
+		T.expect(Skills.validSlot(8)).toBe(true)
+		T.expect(Skills.validSlot(9)).toBe(false)
 		T.expect(Skills.validSlot(1.5)).toBe(false)
 	end)
 
@@ -1119,6 +1121,7 @@ T.describe("S70 new Cleric actives", function()
 			path = { main = "fortune", nodes = { fortune_fortuneDice = 1 }, bp = {}, freeUsed = true },
 			hotbar = { ["1"] = "fortuneDice", ["2"] = "sanctuary" },
 			equipment = {},
+			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		T.expect(GamePaths.skillRank(c, "fortuneDice")).toBe(10)
 		T.expect(GamePaths.skillRank(c, "sanctuary")).toBe(0)
@@ -1147,6 +1150,7 @@ T.describe("S71 Cleric base and paths", function()
 			path = { main = main, nodes = nodes, bp = bp or {}, freeUsed = true },
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Cleric", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		return Skills.effective(skill(id), 10, bp or {}, GamePaths.skillMods(c, id, weapons), true)
 	end
@@ -1771,6 +1775,7 @@ T.describe("Warrior S74", function()
 			path = { nodes = {}, bp = {}, freeUsed = false },
 			hotbar = hotbar,
 			equipment = {},
+			ranks = RankFill.auto("Warrior", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		local available = GamePaths.availableSkills(char)
 		for id in NEW do
@@ -1966,6 +1971,7 @@ T.describe("Hunter S77", function()
 			hotbar[tostring(slot)] = id
 		end
 		local hunter: any = { class = "Hunter", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		hunter.ranks = RankFill.auto("Hunter", 100) -- S137
 		local available = GamePaths.availableSkills(hunter)
 		for id in NEW do
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
@@ -2040,6 +2046,7 @@ T.describe("S78 Hunter base, B options and nodes", function()
 			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Hunter", 100), -- S137: the old automatic ranks as bought ranks
 		}
 	end
 	local function eff(
@@ -2271,6 +2278,7 @@ T.describe("Arcane Charges and beam (S80)", function()
 			hotbar[tostring(slot)] = id
 		end
 		local mage: any = { class = "Mage", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+		mage.ranks = RankFill.auto("Mage", 100) -- S137
 		local available = GamePaths.availableSkills(mage)
 		for id in NEW do
 			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
@@ -2357,6 +2365,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 			path = { main = main, nodes = nodes, bp = bp, freeUsed = true },
 			hotbar = {},
 			equipment = {},
+			ranks = RankFill.auto("Mage", 100), -- S137: the old automatic ranks as bought ranks
 		}
 	end
 	local function eff(

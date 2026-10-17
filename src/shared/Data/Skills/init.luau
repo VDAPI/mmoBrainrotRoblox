@@ -37,9 +37,10 @@ return table.freeze({
 	get = function(id: string): SkillDef?
 		return byId[id]
 	end,
-	HOTBAR_SLOTS = 10,
-	-- S55 (ROZWOJ 2.5): ranks grow with the character level. Rank r of a skill unlocked at U comes at
-	-- U + round((r - 1) * span / (maxLevel - 1)), span = min(9 * step, capLevel - U): every skill is maxed by capLevel.
+	HOTBAR_SLOTS = 8, -- S137 (DESIGN-18 §4.1): 8 slots per weapon pool, keys 1-8 (was 10)
+	-- S55 (ROZWOJ 2.5): the rank curve. S137 (DESIGN-18 §3.1): it is the LIMIT of a bought rank, no longer the rank:
+	-- rank r of a skill unlocked at U may be bought from U + round((r - 1) * span / (maxLevel - 1)),
+	-- span = min(9 * step, capLevel - U): every skill may be maxed by capLevel.
 	RANKS = table.freeze({ step = 4, capLevel = 95 }),
 	GCD = 0.5, -- global cooldown (DESIGN §14.1)
 	-- S80 (ROZWOJ 12.5): Arcane Charges. Every damaging spell but the consumer adds one (up to `max`, for `duration`

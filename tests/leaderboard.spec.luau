@@ -809,7 +809,7 @@ T.describe("S125 weekly EXP and the guild board", function()
 		local template = AccountSchema.characterTemplate()
 		T.expect(template.expWeek).toEqual({ week = 0, exp = 0, b = 0 })
 		T.expect(template.timedTitles).toEqual({})
-		T.expect(AccountSchema.CURRENT).toBe(11) -- S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts
+		T.expect(AccountSchema.CURRENT).toBe(12) -- S132: 9 = class outfits; S134g: 10 = item effects; S134k: 11 = contracts; S137: 12 = skill points
 		local data: any = {
 			schema = AccountSchema.CURRENT,
 			characters = { ["1"] = { id = "x", name = "Old", class = "Mage", level = 40 } },

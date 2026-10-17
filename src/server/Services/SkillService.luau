@@ -1,7 +1,10 @@
 --!strict
--- Skills (DESIGN §14): the 10-slot hotbar (SetHotbar, PutOnBar, the auto-put of base skills unlocked by a level-up),
--- passives as a StatService modifier source + combat hooks, and casting. S57: which skills a character has, their
--- rank, the path weapon, the passives and the skill changes of path nodes come from Logic/Paths (base + paths); the
+-- Skills (DESIGN §14): the hotbar (SetHotbar, PutOnBar; S137: 8 slots, the bar of the active weapon pool, nothing is
+-- put on it by a level-up any more: ranks are bought, PathService places a newly bought skill), passives as a
+-- StatService modifier source + combat hooks, and casting.
+-- S137 (DESIGN-18 §4.1): only a skill of the active pool casts (Paths.skillUsable "cast.error.wrongPool"); after a
+-- pool switch in combat every cast waits Config.SkillPools.swapLock ("cast.error.poolSwap", LockPool).
+-- S57: which skills a character has, their rank, the path weapon, the passives and the skill changes of path nodes come from Logic/Paths (base + paths); the
 -- bar check on load and on level changes is PathService's (Paths.validHotbar).
 --   CastSkill(skillId, targetId?, aim?) -> validate (unlocked, alive, not stunned, GCD 0.5 s, cooldown, cost,
 --   target, range) -> spend -> SkillFx "cast" (everyone nearby plays the skill's animation, Data/SkillMotions) ->
@@ -146,6 +149,8 @@ type Runtime = {
 
 local runtimes: { [Player]: Runtime } = {}
 local hookCache: { [Player]: { [string]: number } } = {}
+-- S137: os.clock() until which a pool switched in combat refuses casts
+local poolLock: { [Player]: number } = {}
 -- S80: players who got an Arcane Charge (the out-of-combat sweep in Start looks only at them)
 local chargeHolders: { [Player]: boolean } = {}
 
@@ -226,10 +231,15 @@ end
 
 -- Hotbar and unlocks -----------------------------------------------------------------------------------------
 
--- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar.
+-- Every placement goes through here, so the quest "learn" objective fires once per skill put on the bar. S137: a skill
+-- of the bar's pool (barPool) with a bought rank there.
 local function setHotbar(player: Player, slot: number, skillId: string?): (boolean, string?)
 	local char = character(player)
-	if not char or not Skills.validSlot(slot) or (skillId ~= nil and not Paths.canPutOnBar(char, skillId)) then
+	if
+		not char
+		or not Skills.validSlot(slot)
+		or (skillId ~= nil and not Paths.canPutOnBar(char, skillId, Paths.barPoolOf(char)))
+	then
 		return false, "error.badRequest"
 	end
 	-- A skill sits in one slot only: moving it clears the old slot.
@@ -254,7 +264,7 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local ok, err = Paths.canPutOnBar(char, skillId)
+	local ok, err = Paths.canPutOnBar(char, skillId, Paths.barPoolOf(char))
 	if not ok then
 		return false, err
 	end
@@ -273,62 +283,21 @@ function SkillService.PutOnBar(player: Player, skillId: string, slot: number?): 
 	return setHotbar(player, free, skillId)
 end
 
--- S56 (ROZWOJ 2.5, 5): ranks follow the level. Passive ranks and hooks are refreshed on every change; going up puts
--- the new base actives on free slots (a toast each, or one for more than 2 at once). Going down, PathService cleans
--- the bar (S57: Paths.validHotbar).
-local function onLevelChanged(player: Player, newLevel: number, oldLevel: number)
+-- S137 (DESIGN-18 §4.1): SetPoolBar of the active pool's bar (PathService): the same rules as SetHotbar.
+function SkillService.SetSlot(player: Player, slot: number, skillId: string?): (boolean, string?)
+	return setHotbar(player, slot, skillId)
+end
+
+-- S137: after a pool switch in combat every cast waits `seconds` (Config.SkillPools.swapLock).
+function SkillService.LockPool(player: Player, seconds: number)
+	poolLock[player] = os.clock() + seconds
+end
+
+-- S56: passive ranks and hooks are refreshed on every level change (a new level raises rank limits only). S137
+-- (DESIGN-18 §3): nothing is put on the bar by a level-up any more, ranks are bought (PathService); going down,
+-- LevelService and PathService clean the ranks and the bars.
+local function onLevelChanged(player: Player, _newLevel: number, _oldLevel: number)
 	passivesChanged(player)
-	local char = character(player)
-	if not char then
-		return
-	end
-	if newLevel < oldLevel then
-		return
-	end
-	local fresh = Skills.newlyUnlocked(char.class, oldLevel, newLevel)
-	if #fresh == 0 then
-		return
-	end
-	local actives: { string } = {}
-	for _, skill in fresh do
-		if skill.type ~= "passive" then
-			table.insert(actives, skill.id)
-		end
-	end
-	local placed, left = Skills.placeOnBar(char.hotbar, actives)
-	local onBar: { [string]: boolean } = {}
-	for _, place in placed do
-		if setHotbar(player, place.slot, place.id) then
-			onBar[place.id] = true
-		end
-	end
-	-- S58 (ROZWOJ 5): the same actives go to free slots of the inactive set's bar; no toast, no quest event, what
-	-- does not fit is dropped. Without buildOther the empty set takes Skills.startHotbar when first switched to.
-	local other: any = char.buildOther
-	if type(other) == "table" and type(other.hotbar) == "table" then
-		local otherPlaced = Skills.placeOnBar(other.hotbar, actives)
-		if #otherPlaced > 0 then
-			local bar = table.clone(other.hotbar)
-			for _, place in otherPlaced do
-				bar[tostring(place.slot)] = place.id
-			end
-			PlayerStateService.Set(player, { "character", "buildOther", "hotbar" }, bar)
-		end
-	end
-	if #fresh > 2 then
-		Net.Fire(player, "Toast", "skills.toast.many", { n = #fresh }, "success")
-		return
-	end
-	for _, skill in fresh do
-		local args = { skill = "@" .. skill.nameKey }
-		if skill.type == "passive" then
-			Net.Fire(player, "Toast", "skills.toast.passive", args, "success")
-		elseif onBar[skill.id] then
-			Net.Fire(player, "Toast", "skills.toast.onBar", args, "success")
-		elseif table.find(left, skill.id) then
-			Net.Fire(player, "Toast", "skills.toast.barFull", args, "info")
-		end
-	end
 end
 
 -- Admin helpers --------------------------------------------------------------------------------------------
@@ -775,15 +744,21 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	if arena and arena.IsSidelined(player) then
 		return false, "arena.error.out"
 	end
-	-- S57: rank from Logic/Paths (base from the level, path skills from their node), then the path weapon
-	local rank = Paths.skillRank(char, skillId)
-	if rank <= 0 or base.type == "passive" then
-		return false, "cast.error.notLearned"
-	end
+	-- S57: rank from Logic/Paths (S137: bought in the active pool, path skills with their node), the pool, the path
+	-- weapon
 	local weapons = Paths.weaponTypesOf(char.equipment)
 	local usable, usableErr = Paths.skillUsable(char, skillId, weapons)
 	if not usable then
 		return false, usableErr
+	end
+	local rank = Paths.skillRank(char, skillId)
+	if rank <= 0 or base.type == "passive" then
+		return false, "cast.error.notLearned"
+	end
+	-- S137 (DESIGN-18 §4.1): a pool switched in combat waits Config.SkillPools.swapLock
+	local lock = poolLock[player]
+	if lock and os.clock() < lock then
+		return false, "cast.error.poolSwap"
 	end
 	-- S28/S57: numbers and behaviours at this rank (breakpoints in the chosen option, modify nodes).
 	local skill, behaviour = Paths.effectiveFor(char, skillId, weapons, rank)
@@ -1336,6 +1311,7 @@ function SkillService.Start()
 		Companion.stop(player, true) -- S77: the entity is gone
 		chargeHolders[player] = nil -- S80
 		settling[player] = nil -- S96
+		poolLock[player] = nil -- S137
 		task.defer(function()
 			runtimes[player] = nil
 			hookCache[player] = nil

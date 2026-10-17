@@ -3,6 +3,7 @@
 -- node helpers of Logic/Paths it relies on (nodeScale, nodeArgs, iconWeapon, isTwoHanded).
 
 local Fixture = require("./fixtures/paths")
+local RankFill = require("./RankFill")
 local GamePaths = require("../src/shared/Logic/Paths")
 local PathView = require("../src/shared/Logic/PathView")
 local Skills = require("../src/shared/Logic/Skills")
@@ -15,8 +16,10 @@ local function state(main: string?, nodes: { [string]: number }?, bp: any?): any
 	return { main = main, nodes = nodes or {}, bp = bp or {}, freeUsed = main ~= nil }
 end
 
+-- S137: the old automatic ranks as bought ranks (tests/RankFill: every pool at its limit, no free skill points)
 local function char(level: number, path: any?): any
-	return { class = "Mage", level = level, path = path or state(nil), hotbar = {}, equipment = {} }
+	local c = { class = "Mage", level = level, path = path or state(nil), hotbar = {}, equipment = {} }
+	return RankFill.fill(c, Fixture.skills)
 end
 
 local function nodeView(view: any, nodeId: string): any

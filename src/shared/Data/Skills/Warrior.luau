@@ -8,6 +8,7 @@ return Build.class("Warrior", "energy", "phys", {
 	-- Base (ROZWOJ 10.2) ------------------------------------------------------------------------------------------
 	{
 		id = "mightyStrike",
+		pool = "common", -- S137 (DESIGN-18 §4.2)
 		unlock = 1,
 		maxLevel = 10,
 		type = "target",
@@ -25,6 +26,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "charge",
+		pool = "common",
 		unlock = 3,
 		maxLevel = 10,
 		type = "charge",
@@ -42,6 +44,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "bladeWhirl",
+		pool = "common",
 		unlock = 6,
 		maxLevel = 10,
 		type = "circleSelf",
@@ -61,6 +64,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "taunt",
+		pool = "common",
 		unlock = 10,
 		maxLevel = 10,
 		type = "circleSelf",
@@ -88,6 +92,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "steelSkin",
+		pool = "common",
 		unlock = 14,
 		maxLevel = 5,
 		type = "passive",
@@ -97,6 +102,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "bloodlust",
+		pool = "common",
 		unlock = 18,
 		maxLevel = 10,
 		type = "buff",
@@ -130,6 +136,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "earthquake",
+		pool = "common",
 		unlock = 30,
 		maxLevel = 10,
 		type = "circleSelf",
@@ -149,6 +156,7 @@ return Build.class("Warrior", "energy", "phys", {
 	},
 	{
 		id = "riposte",
+		pool = "common",
 		unlock = 45,
 		maxLevel = 5,
 		type = "passive",

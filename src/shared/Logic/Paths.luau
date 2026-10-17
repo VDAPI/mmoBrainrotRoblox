@@ -14,6 +14,11 @@
 -- window's views live in Logic/PathView.
 -- S60: luckOfNodes / luck (raw Data/Luck fields of the active nodes).
 -- S61: auras (party auras of the active nodes) and inAura (pure geometry, also Paths.inAura on the module).
+-- S137 (DESIGN-18 §3, §4, §9): a rank is BOUGHT with skill points per weapon pool (character.ranks[poolId][skillId]),
+-- capped by the old level curve (Skills.rankAt). skillRank is the one rule: a skill of the pool (Logic/SkillPools; path
+-- skills are in every pool but still need their node), the bought rank, the limit; the pool defaults to the active one
+-- (the equipped weapon). Build sets carry ranks, bars, barPool, respecFree and poolsVersion; cleanRanks is the rank
+-- part of cleanSet (Logic/SkillPoints.clean). Points and the other rank rules: Logic/SkillPoints.
 
 local Bases = require("../Data/Items/Bases")
 local Classes = require("../Data/Classes")
@@ -24,6 +29,7 @@ local LuckData = require("../Data/Luck")
 local PathData = require("../Data/Paths")
 local Progression = require("../Data/Progression")
 local SkillData = require("../Data/Skills")
+local SkillPools = require("./SkillPools")
 local Skills = require("./Skills")
 local StatPlan = require("./StatPlan")
 local TableUtil = require("../Util/TableUtil")
@@ -76,6 +82,10 @@ export type Char = {
 	path: PathState?,
 	hotbar: { [string]: string }?,
 	equipment: { [string]: any }?,
+	-- S137: bought ranks per pool, the other pools' bars and whose bar `hotbar` is (nil = none)
+	ranks: { [string]: { [string]: number } }?,
+	bars: { [string]: { [string]: string } }?,
+	barPool: string?,
 }
 
 export type Source = {
@@ -305,6 +315,42 @@ end
 
 local function pointsAt(level: number): number
 	return math.floor(level / Progression.pathPointsEvery)
+end
+
+-- S137 (DESIGN-18 §3.1): skill points of one weapon pool at `level` (Logic/SkillPoints.pointsAt).
+local function skillPointsAt(level: number): number
+	local rule: any = Progression.skillPoints
+	return math.max(0, math.floor(level * rule.perLevel + (rule.bonus or 0)))
+end
+
+local NO_RANKS: { [string]: number } = table.freeze({})
+
+-- The raw bought ranks of one pool (a frozen empty table when missing or broken).
+local function ranksOf(character: Char, poolId: string): { [string]: number }
+	local all: any = character.ranks
+	if type(all) ~= "table" then
+		return NO_RANKS
+	end
+	local own = all[poolId]
+	return if type(own) == "table" then own else NO_RANKS
+end
+
+-- A bought rank as a whole number >= 0 (anything else counts 0).
+local function boughtIn(character: Char, poolId: string, skillId: string): number
+	local value = ranksOf(character, poolId)[skillId]
+	if type(value) ~= "number" or value ~= value or value < 1 then
+		return 0
+	end
+	return math.floor(math.min(value, 1e6))
+end
+
+-- The pool `hotbar` belongs to: barPool when it is a pool of the class, else the active pool.
+local function barPoolOf(character: Char): string?
+	local pool = character.barPool
+	if SkillPools.valid(character.class, pool) then
+		return pool
+	end
+	return SkillPools.activePool(character)
 end
 
 -- Resolves { ref = field } in a modify.bp copy: inside `mul` 1 + (x - 1) * scale, elsewhere x * scale.
@@ -718,45 +764,67 @@ local function buildApi(source: Source)
 		return true, nil, if state.freeUsed then "scroll" else "free"
 	end
 
-	-- Rank of a skill: the base from the level (S56); a path skill only with a PathDef, its "skill" node bought, its row
-	-- open for the character (rows above DIP_ROWS only in the main path, the row level reached).
-	local function skillRank(character: Char, skillId: string): number
+	-- A path skill's node rule (S57): a PathDef, its "skill" node bought, its row open for the character (rows above
+	-- DIP_ROWS only in the main path, the row level reached).
+	local function pathSkillOpen(character: Char, skill: SkillDef): boolean
+		local found = skillNode(skill)
+		if not found then
+			return false
+		end
+		local state = stateOf(character)
+		if rankIn(state.nodes, found.node.id) <= 0 then
+			return false
+		end
+		if found.row > DIP_ROWS and state.main ~= found.path.id then
+			return false
+		end
+		return character.level >= ROWS[found.row].level
+	end
+
+	-- S137: may `skill` hold ranks in the pool (default: the active one)? A skill of the class and of the pool
+	-- (Logic/SkillPools; path skills of every pool) and, for a path skill, its node rule.
+	local function skillOpen(character: Char, skillId: string, poolId: string?): boolean
+		local skill = source.skill(skillId)
+		if not skill or skill.class ~= character.class then
+			return false
+		end
+		local pool = poolId or SkillPools.activePool(character)
+		if pool == nil or not SkillPools.memberDef(character.class, pool, skill) then
+			return false
+		end
+		return skill.path == nil or pathSkillOpen(character, skill)
+	end
+
+	-- Rank of a skill (S137, DESIGN-18 §3.1): the rank bought in the pool (default: the active pool, the equipped
+	-- weapon), at most the old level curve (Skills.rankAt is the limit); 0 outside the pool, for a path skill without
+	-- its node (pathSkillOpen) and for another class. The one rank every consumer asks for.
+	local function skillRank(character: Char, skillId: string, poolId: string?): number
 		local skill = source.skill(skillId)
 		if not skill or skill.class ~= character.class then
 			return 0
 		end
-		if skill.path == nil then
-			return Skills.rankFor(character.class, character.level, skill)
-		end
-		local found = skillNode(skill)
-		if not found then
+		local pool = poolId or SkillPools.activePool(character)
+		if pool == nil or not SkillPools.memberDef(character.class, pool, skill) then
 			return 0
 		end
-		local state = stateOf(character)
-		if rankIn(state.nodes, found.node.id) <= 0 then
+		if skill.path ~= nil and not pathSkillOpen(character, skill) then
 			return 0
 		end
-		if found.row > DIP_ROWS and state.main ~= found.path.id then
-			return 0
-		end
-		if character.level < ROWS[found.row].level then
-			return 0
-		end
-		return Skills.rankAt(skill, character.level)
+		return math.min(boughtIn(character, pool, skillId), Skills.rankAt(skill, character.level))
 	end
 
-	-- Skills with rank > 0: the base in data order, then the paths (order, rows).
-	local function availableSkills(character: Char): { string }
+	-- Skills with rank > 0 in the pool (default: the active one): the base in data order, then the paths (order, rows).
+	local function availableSkills(character: Char, poolId: string?): { string }
 		local out: { string } = {}
 		for _, skill in source.classSkills(character.class) do
-			if skill.path == nil and skillRank(character, skill.id) > 0 then
+			if skill.path == nil and skillRank(character, skill.id, poolId) > 0 then
 				table.insert(out, skill.id)
 			end
 		end
 		for _, path in source.pathsOf(character.class) do
 			for _, row in path.rows do
 				for _, node in row.nodes do
-					if node.kind == "skill" and node.skill and skillRank(character, node.skill) > 0 then
+					if node.kind == "skill" and node.skill and skillRank(character, node.skill, poolId) > 0 then
 						table.insert(out, node.skill)
 					end
 				end
@@ -765,9 +833,17 @@ local function buildApi(source: Source)
 		return out
 	end
 
-	-- Rank > 0 and, for a path skill, the path weapon (rows above DIP_ROWS) and the node's own weapon (every row).
-	-- The Mage element check stays in SkillService.
+	-- A base skill of the active pool (S137: "cast.error.wrongPool" for a skill of another pool), rank > 0 and, for a path
+	-- skill, the path weapon (rows above DIP_ROWS) and the node's own weapon (every row). The Mage element check stays
+	-- in SkillService.
 	local function skillUsable(character: Char, skillId: string, weapons: WeaponTypes): (boolean, string?)
+		local def = source.skill(skillId)
+		if def and def.class == character.class and def.path == nil then
+			local pool = SkillPools.activePool(character)
+			if pool and not SkillPools.memberDef(character.class, pool, def) then
+				return false, "cast.error.wrongPool"
+			end
+		end
 		if skillRank(character, skillId) <= 0 then
 			return false, "cast.error.notLearned"
 		end
@@ -949,27 +1025,27 @@ local function buildApi(source: Source)
 		return totals
 	end
 
-	local function onBarAllowed(character: Char, skill: SkillDef?): boolean
+	-- S137: in the pool (default: the active one).
+	local function onBarAllowed(character: Char, skill: SkillDef?, poolId: string?): boolean
 		return skill ~= nil
 			and skill.class == character.class
 			and skill.type ~= "passive"
-			and skillRank(character, skill.id) > 0
+			and skillRank(character, skill.id, poolId) > 0
 	end
 
-	local function canPutOnBar(character: Char, skillId: string): (boolean, string?)
-		if onBarAllowed(character, source.skill(skillId)) then
+	local function canPutOnBar(character: Char, skillId: string, poolId: string?): (boolean, string?)
+		if onBarAllowed(character, source.skill(skillId), poolId) then
 			return true, nil
 		end
 		return false, "skills.error.locked"
 	end
 
-	-- The hotbar and path.bp the character may keep (B6): bar slots "1".."10" with an active of the class with rank > 0,
-	-- no repeats (the lower slot wins); bp entries "<skillId>:<5|10>" = "a" | "b" of a skill with rank > 0 whose
-	-- breakpoint at that rank has option B (an entry for a rank not reached yet stays). Third value: anything changed.
-	local function validHotbar(character: Char): ({ [string]: string }, { [string]: "a" | "b" }, boolean)
+	-- A bar of the pool as the character may keep it (S137): slots "1".."HOTBAR_SLOTS" with an active of the pool with
+	-- rank > 0 there, no repeats (the lower slot wins). Second value: anything changed.
+	local function validBar(character: Char, poolId: string?, barIn: any): ({ [string]: string }, boolean)
 		local bar: { [string]: string } = {}
 		local changed = false
-		local hotbar: any = character.hotbar
+		local hotbar: any = barIn
 		if type(hotbar) ~= "table" then
 			hotbar = {}
 			changed = true
@@ -979,7 +1055,7 @@ local function buildApi(source: Source)
 		for slot = 1, SkillData.HOTBAR_SLOTS do
 			local id = hotbar[tostring(slot)]
 			local skill = if type(id) == "string" then source.skill(id) else nil
-			if skill and not seen[skill.id] and onBarAllowed(character, skill) then
+			if skill and not seen[skill.id] and poolId ~= nil and onBarAllowed(character, skill, poolId) then
 				seen[skill.id] = true
 				bar[tostring(slot)] = skill.id
 				kept += 1
@@ -991,6 +1067,15 @@ local function buildApi(source: Source)
 		if total ~= kept then
 			changed = true
 		end
+		return bar, changed
+	end
+
+	-- The hotbar and path.bp the character may keep (B6): the hotbar as validBar in its pool (barPool, else the active
+	-- pool); bp entries "<skillId>:<5|10>" = "a" | "b" of a skill whose breakpoint at that rank has option B: a base
+	-- skill of the class always (S137, DESIGN-18 §8: a refunded rank keeps the choice), a path skill while its node
+	-- rule holds. Third value: anything changed.
+	local function validHotbar(character: Char): ({ [string]: string }, { [string]: "a" | "b" }, boolean)
+		local bar, changed = validBar(character, barPoolOf(character), character.hotbar)
 		local bp: { [string]: "a" | "b" } = {}
 		local state = stateOf(character)
 		local saved: { [string]: "a" | "b" } = state.bp or {}
@@ -1006,7 +1091,8 @@ local function buildApi(source: Source)
 				and (option == "a" or option == "b")
 				and pair
 				and pair.b
-				and skillRank(character, skill.id) > 0
+				and skill.class == character.class
+				and (skill.path == nil or pathSkillOpen(character, skill))
 			then
 				bp[key] = option
 			else
@@ -1030,7 +1116,12 @@ local function buildApi(source: Source)
 		if not table.find(BP_RANKS, rank) or (option ~= "a" and option ~= "b") then
 			return false, "error.badRequest", false
 		end
-		if skillRank(character, skillId) < rank then
+		-- S137: the choice belongs to the set, not to a pool (DESIGN-18 §8): the rank in any pool of the class counts
+		local best = 0
+		for _, poolId in SkillPools.ids(character.class) do
+			best = math.max(best, skillRank(character, skillId, poolId))
+		end
+		if best < rank then
 			return false, "bp.error.rank", false
 		end
 		local pair = skill.breakpoints and skill.breakpoints[rank]
@@ -1097,17 +1188,95 @@ local function buildApi(source: Source)
 		return { main = main, nodes = nodes, bp = table.clone(state.bp or {}), freeUsed = state.freeUsed == true }
 	end
 
-	-- Build sets (ROZWOJ 2.9; S58) ------------------------------------------------------------------------------------
-	-- The active set lives in the character fields (stats, statPoints, hotbar, path), the other one in buildOther.
-	-- Every result is a deep copy: the active set and buildOther never share tables.
+	-- S137 (DESIGN-18 §10, Logic/SkillPoints.clean): the bought ranks a character may keep. Every pool of the class
+	-- keeps whole ranks >= 1 of skills that may hold ranks there (skillOpen: of the pool, a path skill with its node),
+	-- each at most its limit (Skills.rankAt); points above skillPointsAt(level) go back from the end of the pool's order
+	-- (SkillPools.members: the plan, other base members, path skills; unknown ids last), rank by rank. Pools of another
+	-- class and broken entries go. Second value: anything changed.
+	local function cleanRanks(character: Char): ({ [string]: { [string]: number } }, boolean)
+		local out: { [string]: { [string]: number } } = {}
+		local level = character.level
+		for _, poolId in SkillPools.ids(character.class) do
+			local own: { [string]: number } = {}
+			local total = 0
+			for id, value in ranksOf(character, poolId) do
+				if type(id) == "string" and type(value) == "number" and value == value and value >= 1 then
+					local skill = source.skill(id)
+					if skill and skillOpen(character, id, poolId) then
+						local rank = math.min(math.floor(value), Skills.rankAt(skill, level))
+						if rank > 0 then
+							own[id] = rank
+							total += rank
+						end
+					end
+				end
+			end
+			local excess = total - skillPointsAt(level)
+			if excess > 0 then
+				local order = SkillPools.members(character.class, poolId)
+				local listed: { [string]: boolean } = {}
+				for _, id in order do
+					listed[id] = true
+				end
+				local extra: { string } = {}
+				for id in own do
+					if not listed[id] then
+						table.insert(extra, id)
+					end
+				end
+				table.sort(extra)
+				table.move(extra, 1, #extra, #order + 1, order)
+				for i = #order, 1, -1 do
+					local id = order[i]
+					local rank = own[id]
+					if rank then
+						local cut = math.min(rank, excess)
+						excess -= cut
+						own[id] = if rank - cut > 0 then rank - cut else nil :: any
+						if excess <= 0 then
+							break
+						end
+					end
+				end
+			end
+			if next(own) ~= nil then
+				out[poolId] = own
+			end
+		end
+		return out, not TableUtil.deepEqual(out, character.ranks)
+	end
 
+	-- Build sets (ROZWOJ 2.9; S58) ------------------------------------------------------------------------------------
+	-- The active set lives in the character fields (stats, statPoints, hotbar, path; S137: ranks, bars, barPool,
+	-- respecFree, poolsVersion), the other one in buildOther. Every result is a deep copy: the active set and buildOther
+	-- never share tables.
+
+	-- S137: an empty set has no bought ranks and empty bars (nothing is bought by itself, DESIGN-18 §3).
 	local function emptySet(classId: string, level: number): BuildSet
 		return {
 			path = { main = nil, nodes = {}, bp = {}, freeUsed = false },
 			stats = StatPlan.startOf(classId),
 			statPoints = StatPlan.total(level),
-			hotbar = Skills.startHotbar(classId, level),
+			hotbar = {},
+			ranks = {},
+			bars = {},
+			barPool = nil,
+			respecFree = false,
+			poolsVersion = SkillPools.version(classId),
 		}
+	end
+
+	-- { [string]: table } with string keys only (ranks per pool, bars per pool), deep-copied.
+	local function copyByPool(value: any): { [string]: any }
+		local out: { [string]: any } = {}
+		if type(value) == "table" then
+			for key, inner in value do
+				if type(key) == "string" and type(inner) == "table" then
+					out[key] = TableUtil.deepCopy(inner)
+				end
+			end
+		end
+		return out
 	end
 
 	-- A deep copy; missing or broken fields are filled as in emptySet (a broken save never stops the server).
@@ -1131,6 +1300,12 @@ local function buildApi(source: Source)
 			stats = stats,
 			statPoints = points,
 			hotbar = if type(src.hotbar) == "table" then TableUtil.deepCopy(src.hotbar) else {},
+			ranks = copyByPool(src.ranks),
+			bars = copyByPool(src.bars),
+			barPool = if type(src.barPool) == "string" and src.barPool ~= "" then src.barPool else nil,
+			respecFree = src.respecFree == true,
+			-- a set without the field counts as current (migration 12 writes it on every saved set)
+			poolsVersion = if type(src.poolsVersion) == "number" then src.poolsVersion else SkillPools.version(classId),
 		}
 	end
 
@@ -1140,6 +1315,11 @@ local function buildApi(source: Source)
 			stats = character.stats,
 			statPoints = character.statPoints,
 			hotbar = character.hotbar,
+			ranks = character.ranks,
+			bars = character.bars,
+			barPool = character.barPool,
+			respecFree = character.respecFree,
+			poolsVersion = character.poolsVersion,
 		}, character.class, character.level)
 	end
 
@@ -1158,15 +1338,18 @@ local function buildApi(source: Source)
 		}
 	end
 
-	-- The new buildOther: the active set, but the target keeps its own freeUsed (a copy never returns the free choice).
+	-- The new buildOther: the active set, but the target keeps its own freeUsed and respecFree (a copy never returns a
+	-- free choice).
 	local function copySet(character: any): BuildSet
 		local set = activeSet(character)
 		local other = character.buildOther
 		set.path.freeUsed = type(other) == "table" and type(other.path) == "table" and other.path.freeUsed == true
+		set.respecFree = type(other) == "table" and other.respecFree == true
 		return set
 	end
 
-	-- A character-shaped view of a set for the rules above (they read class, level, path, hotbar, equipment).
+	-- A character-shaped view of a set for the rules above (they read class, level, path, hotbar, equipment; S137:
+	-- ranks, bars, barPool).
 	local function setView(character: any, set: BuildSet, level: number?): any
 		return {
 			class = character.class,
@@ -1176,17 +1359,35 @@ local function buildApi(source: Source)
 			stats = set.stats,
 			statPoints = set.statPoints,
 			equipment = character.equipment,
+			ranks = set.ranks,
+			bars = set.bars,
+			barPool = set.barPool,
+			respecFree = set.respecFree,
+			poolsVersion = set.poolsVersion,
 		}
 	end
 
-	-- A set as `level` allows (load, SetLevel down): broken fields repaired, the path clamped, the bar and path.bp
-	-- checked; stats stay. Second value: anything changed.
+	-- A set as `level` allows (load, SetLevel down): broken fields repaired, the path clamped, the ranks cleaned
+	-- (cleanRanks), the bar of barPool, the other pools' bars and path.bp checked; stats stay. Second value: anything
+	-- changed.
 	local function cleanSet(character: any, set: any, level: number): (BuildSet, boolean)
 		local out = cloneSet(set, character.class, level)
 		out.path = clampToLevel(setView(character, out, level), level)
-		local bar, bp = validHotbar(setView(character, out, level))
+		out.ranks = (cleanRanks(setView(character, out, level)))
+		if out.barPool ~= nil and not SkillPools.valid(character.class, out.barPool) then
+			out.barPool = nil
+		end
+		local view = setView(character, out, level)
+		local bar, bp = validHotbar(view)
 		out.hotbar = bar
 		out.path.bp = bp
+		local bars: { [string]: { [string]: string } } = {}
+		for poolId, other in out.bars do
+			if poolId ~= out.barPool and SkillPools.valid(character.class, poolId) then
+				bars[poolId] = (validBar(view, poolId, other))
+			end
+		end
+		out.bars = bars
 		return out, not TableUtil.deepEqual(out, set)
 	end
 
@@ -1230,6 +1431,7 @@ local function buildApi(source: Source)
 		rowsFor = rowsFor,
 		ranksIn = ranksIn,
 		pointsAt = pointsAt,
+		skillPointsAt = skillPointsAt,
 		spent = spent,
 		free = free,
 		rowOpen = rowOpen,
@@ -1238,6 +1440,10 @@ local function buildApi(source: Source)
 		refund = refund,
 		canChooseMain = canChooseMain,
 		skillRank = skillRank,
+		skillOpen = skillOpen,
+		pathSkillOpen = pathSkillOpen,
+		boughtIn = boughtIn,
+		barPoolOf = barPoolOf,
 		availableSkills = availableSkills,
 		skillUsable = skillUsable,
 		activeNodes = activeNodes,
@@ -1256,6 +1462,8 @@ local function buildApi(source: Source)
 		effectiveFor = effectiveFor,
 		passiveTotals = passiveTotals,
 		validHotbar = validHotbar,
+		validBar = validBar,
+		cleanRanks = cleanRanks,
 		canPutOnBar = canPutOnBar,
 		canChooseBreakpoint = canChooseBreakpoint,
 		clampToLevel = clampToLevel,

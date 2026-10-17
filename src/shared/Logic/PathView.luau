@@ -4,11 +4,16 @@
 -- nothing itself. PathView.with(api) builds the functions over a Logic/Paths API (tests pass Paths.withSource(...));
 -- the module itself is PathView.with(Paths).
 -- Characters are narrow views ({ class, level, path, hotbar?, equipment? }), as Logic/Paths reads them.
+-- S137 (DESIGN-18 §3, §12): ranks are bought (Logic/SkillPoints), so rankUps / newBreakpoints between two levels stay
+-- empty for bought ranks (a level only raises limits); the "!" also shows free skill points of the active pool with a
+-- rank to buy (Attention.skills; the views then also read `ranks`).
 
 local Locale = require("../Util/Locale")
 local PathData = require("../Data/Paths")
 local Paths = require("./Paths")
 local SkillData = require("../Data/Skills")
+local SkillPoints = require("./SkillPoints")
+local SkillPools = require("./SkillPools")
 local Skills = require("./Skills")
 
 type PathDef = PathData.PathDef
@@ -53,7 +58,14 @@ export type View = {
 }
 export type Pending = { skillId: string, at: number }
 export type RankUp = { skillId: string, rank: number }
-export type Attention = { points: boolean, base: boolean, paths: { [string]: boolean }, any: boolean }
+-- S137: skills = a free skill point of the active pool with a rank to buy (the Base tab shows "!" too)
+export type Attention = {
+	points: boolean,
+	skills: boolean,
+	base: boolean,
+	paths: { [string]: boolean },
+	any: boolean,
+}
 
 local CLOSED_KEY: { [string]: string } = {
 	["paths.error.level"] = "paths.closed.level",
@@ -229,9 +241,28 @@ local function build(api: Paths.Api)
 		return out
 	end
 
-	-- The "!" (ROZWOJ 4): a free point with a node to buy, or a breakpoint with option B and no choice.
+	-- S137: a free skill point of the active pool and a member with a rank to buy (SkillPoints.canBuy).
+	local function skillsToBuy(character: Char): boolean
+		local pool = SkillPools.activePool(character)
+		if pool == nil or SkillPoints.free(character, pool) < 1 then
+			return false
+		end
+		for _, id in SkillPools.members(character.class, pool) do
+			if SkillPoints.canBuy(character, pool, id, 1) then
+				return true
+			end
+		end
+		return false
+	end
+
+	-- The "!" (ROZWOJ 4): a free point with a node to buy, or a breakpoint with option B and no choice; S137: a free
+	-- skill point with a rank to buy.
 	local function attention(character: Char): Attention
-		local out: Attention = { points = false, base = false, paths = {}, any = false }
+		local out: Attention = { points = false, skills = false, base = false, paths = {}, any = false }
+		if skillsToBuy(character) then
+			out.skills = true
+			out.base = true
+		end
 		if api.free(character) >= 1 then
 			for _, def in source.pathsOf(character.class) do
 				for _, row in def.rows do

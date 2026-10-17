@@ -1,7 +1,7 @@
 --!strict
--- Slot picker for a full bar (S56, moved in S59): 2 x 5 cells with the key and the skill on it over the whole window
--- content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot). On touch the cancel button
--- is MinTouch high (S59 F).
+-- Slot picker for a full bar (S56, moved in S59): 2 x 4 cells (S137: 8 slots per pool) with the key and the skill on
+-- it over the whole window content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot).
+-- On touch the cancel button is MinTouch high (S59 F).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,6 +21,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local CELL = 64
 local GAP = 8
+local COLUMNS = math.ceil(SkillData.HOTBAR_SLOTS / 2) -- two rows
 
 local function BarPicker(
 	scope: Scope,
@@ -33,7 +34,7 @@ local function BarPicker(
 	end)
 	local cells: { Instance } = {}
 	for index = 1, SkillData.HOTBAR_SLOTS do
-		local key = if index == 10 then "0" else tostring(index)
+		local key = tostring(index % 10)
 		local glyph = scope:Computed(function(use): string
 			local bar = use(ctx.hotbar)
 			local id = if type(bar) == "table" then bar[tostring(index)] else nil
@@ -102,7 +103,7 @@ local function BarPicker(
 			})
 		)
 	end
-	local gridWidth = 5 * CELL + 4 * GAP
+	local gridWidth = COLUMNS * CELL + (COLUMNS - 1) * GAP
 	return scope:New("TextButton")({
 		Name = "Picker",
 		Size = UDim2.fromScale(1, 1),
@@ -143,7 +144,7 @@ local function BarPicker(
 							scope:New("UIGridLayout")({
 								CellSize = UDim2.fromOffset(CELL, CELL),
 								CellPadding = UDim2.fromOffset(GAP, GAP),
-								FillDirectionMaxCells = 5,
+								FillDirectionMaxCells = COLUMNS,
 								SortOrder = Enum.SortOrder.LayoutOrder,
 							}),
 							cells :: any,

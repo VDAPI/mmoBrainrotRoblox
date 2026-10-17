@@ -8,6 +8,7 @@ local Build = require("./Build")
 return Build.class("Mage", "mana", "magic", {
 	{
 		id = "firebolt",
+		pool = "common", -- S137 (DESIGN-18 §4.2)
 		unlock = 1,
 		maxLevel = 10,
 		type = "projectile",
@@ -28,6 +29,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "fireball",
+		pool = "fire",
 		unlock = 3,
 		maxLevel = 10,
 		type = "circleTarget",
@@ -47,6 +49,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "iceShard",
+		pool = "ice",
 		unlock = 6,
 		maxLevel = 10,
 		type = "projectile",
@@ -66,6 +69,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "chainLightning",
+		pool = "lightning",
 		unlock = 10,
 		maxLevel = 10,
 		type = "chain",
@@ -84,6 +88,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "blink",
+		pool = "common",
 		unlock = 14,
 		maxLevel = 10,
 		type = "blink",
@@ -111,6 +116,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "frostNova",
+		pool = "ice",
 		unlock = 18,
 		maxLevel = 10,
 		type = "circleSelf",
@@ -134,6 +140,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "meteor",
+		pool = "fire",
 		unlock = 30,
 		maxLevel = 10,
 		type = "circleTarget",
@@ -153,6 +160,7 @@ return Build.class("Mage", "mana", "magic", {
 	},
 	{
 		id = "firewall",
+		pool = "lightning",
 		unlock = 45,
 		maxLevel = 10,
 		type = "circleTarget",

@@ -4963,3 +4963,48 @@
 - **S136** Listy i nagłówki sekcji okien S135 i S136 (poza `character`, `menu`, `skills`, `lootlog`) dalej ręczne na
   rolach pergaminu, bez `ListRow` / `SectionLabel`: zmiana układu i wysokości wierszy bez przeglądu w grze grozi
   przycięciami; przejście okno po oknie po przeglądzie właściciela (faza wyglądu), wpis w PROGRESS.
+- **S137** Rangi umiejętności są kupowane punktami umiejętności (`Logic/SkillPoints`), osobno w każdej puli broni; dawna
+  krzywa `Skills.rankAt` / `rankFor` jest tylko limitem rangi na poziomie. Zastępuje decyzje S56 o rangach z poziomu i
+  automatycznym wkładaniu na pasek (awans nic nie kupuje ani nie wkłada; nowo kupiona ranga 1 trafia na wolne miejsce
+  paska swojej puli z toastem).
+- **S137** Punkty: `pointsAt(L) = L × perLevel + bonus`, `perLevel` 1, `bonus` 7 (27 na 20., 107 na 100.). Odejście od
+  „równo 1 na poziom” (DESIGN-18 §3.1, poprawione): umiejętności ścieżek też kosztują punkty, a buildy wzorcowe
+  potrzebują do 27–28 rang na 19.–20.; przy `bonus` 6 zostawały 4 różnice fixture 1–20 (zasada 5 sesji).
+- **S137** Budżet na pulę: `free(pula) = pointsAt(L) − Σ rang tej puli`; wspólne umiejętności i umiejętności ścieżek
+  kupuje się w każdej puli osobno. Umiejętność ścieżki ma rangę tylko z kupionym węzłem (reguła S57 w
+  `Paths.pathSkillOpen`); zwrot węzła oddaje jej rangi (czyszczenie po zmianie). Jedno miejsce reguły rangi:
+  `Paths.skillRank(character, skillId, poolId?)` (domyślnie pula noszonej broni).
+- **S137** Dane przejściowe pul (`transitional = true`, `version` 1): Mag ma pule `fire` / `ice` / `lightning` według
+  żywiołu czarów (Magiczny Pocisk i Błysk wspólne), Wojownik, Łowca i Kapłan po dwie pule z całą podstawą wspólną;
+  `role` dopiero w sesjach klas. Test drabiny DESIGN-18 §5 pomija klasy przejściowe; test efektów przedmiotów (S134g)
+  dla klas przejściowych sprawdza tylko „umiejętność wspólna, ścieżki albo z puli efektu”.
+- **S137** Serwis: rozszerzony `PathService` (nie nowy `SkillPointService`): ma już kontekst miejsca, zestawy i
+  czyszczenie przy wczytaniu. Zmienia `ranks`, `bars`, `barPool`, `respecFree`; pasek aktywnej puli dalej przez
+  `SkillService` (`PutOnBar`, `SetHotbar`, nowe `SetSlot`). Blokada po zmianie puli w walce: `SkillService.LockPool`.
+- **S137** Zwroty: kupno wszędzie poza walką; zwrot rangi poniżej 20. za darmo wszędzie poza walką, od 20. w mieście
+  lub przy bramie za `10 × poziom` złota; `ResetSkills` (rangi wszystkich pul aktywnego zestawu, węzły i przełomy
+  zostają) za darmo poniżej 20. albo z `respecFree`, inaczej `skills.error.resetNeedsScroll` (Zwój Odnowy: S138).
+- **S137** Przełomy: wybór A/B należy do zestawu, nie do puli (`canChooseBreakpoint` liczy najwyższą rangę z pul klasy);
+  `validHotbar` zostawia wybór umiejętności podstawy także bez rangi (DESIGN-18 §8), umiejętności ścieżki tylko z węzłem.
+- **S137** Migracja 12 (`SkillPoints.migrate`, oba zestawy): rangi z automatu przycięte do punktów puli w kolejności
+  pasek → pasywki → reszta, pasek puli noszonej broni (stary pasek przefiltrowany do puli i 8 miejsc, uzupełniony
+  `startBar`), paski innych pul ze `startBar`, `respecFree`, `poolsVersion`, `reworkNotice` (okno `rework2.*`).
+  Zestaw z polem `ranks` jest pomijany (idempotentna). Pusty drugi zestaw nie ma rang ani paska.
+- **S137** Pasek 8 miejsc (`HOTBAR_SLOTS`): akcje `skill_9` / `skill_10` usunięte (klawisze 9 i 0 wolne), siatka
+  wyboru 2 × 4, druga strona łuku na telefonie ma 3 przyciski.
+- **S137** Toasty: awans pokazuje „+N pkt umiejętności” (argument `skillPoints` na końcu `LevelUp`) zamiast rang;
+  przełom osiągnięty kupioną rangą 5 / 10 z opcją B zgłasza serwer po `AllocateSkills`; nowa wersja pul: jeden toast
+  `skills.toast.respecFree` przy wczytaniu.
+  Kupno węzła umiejętności ścieżki tylko ją odblokowuje (toast `skills.toast.unlocked`), na pasek trafia z rangą 1.
+- **S137** Minimalne okno: zakładki pul, wolne punkty, „Rozdaj jak zaleca pula”, „Zatwierdź” i „Resetuj” stoją nad
+  listą zakładki „Podstawa” (nagłówek ma tylko etykietę puli i punktów, bo nie mieści przycisków); lista pokazuje
+  członków wybranej puli i umiejętności ścieżek z węzłem, „+” / „−” z rezerwacją (wzór `StatAllocator`).
+- **S137** Model (`SkillModel.character(build, L, element?)`): rangi poziomu L jedną rezerwacją od zera (`SkillPoints.apply`)
+  w puli broni buildu, kolejność `ReferenceBuild.ranks` albo rotacja → pasywki → reszta puli; Mag: żywioł z opcji
+  `element` przez broń w `equipment`. `GLOBAL_REPORT_ONLY` działa teraz też w blokach S88, regionów i ścieżek
+  (`SkillModel.reportRow`, klucz `path.<build>.L<poziom>.<id>`), test martwych kluczy na końcu `balance.spec`.
+- **S137** `GLOBAL_REPORT_ONLY` (`session = "S137"`, wraca w S146/S147): 57 wierszy regionów (Morvane bez wsparcia
+  3–5 graczy, strażnicy T-SK1/2/3 na 40–100), 4 wiersze T1 (S88), 19 wierszy ścieżek (Strażnik EHP, Strzelec, Traper,
+  R5a, Inkwizytor HP); lista w `docs/SESJE.md` S137.
+- **S137** Wiki: `tools/WikiData` i planer bez zmian w tej sesji (właściciel 17.10: dane wiki odświeża później hurtem);
+  `rules.skillPointsByLevel` / `freeRespecLevel` i „Planer wkrótce” zostają do odświeżenia wiki.

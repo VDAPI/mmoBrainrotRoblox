@@ -1290,6 +1290,7 @@ local function previewDef(skill: SkillData.SkillDef): SkillData.SkillDef
 			path = State.Get({ "character", "path" }),
 			hotbar = State.Get({ "character", "hotbar" }),
 			equipment = State.Get({ "character", "equipment" }),
+			ranks = State.Get({ "character", "ranks" }), -- S137
 		}, skill.id)
 	)
 	return (Skills.effective(skill, rank, nil, nil))

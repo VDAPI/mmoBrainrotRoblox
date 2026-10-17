@@ -200,6 +200,8 @@ local Config = {
 	-- Combat state: seconds after the last damage dealt/taken (DESIGN §4.4 regen, §3.3 PvP lock).
 	CombatTimeout = 5,
 	BuildSetCooldown = 5, -- S58: seconds between build set switches (ROZWOJ 2.9)
+	-- S137 (DESIGN-18 §4.1): a weapon pool switched in combat locks the new pool's skills for swapLock seconds
+	SkillPools = table.freeze({ swapLock = 2 }),
 	-- Resource regeneration tick (s). Replication is throttled to whole-number changes.
 	ResourceTick = 0.25,
 

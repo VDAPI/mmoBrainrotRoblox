@@ -468,6 +468,70 @@ commands.resetskills = function(player)
 	end)
 end
 
+-- S137 (DESIGN-18 §11): /skillrank <skillId> <rank> [pool] (no points, no limit), /skillmax [pool] (buys like a
+-- player), /skillreset (free), /pool (the active pool and the free points), /respecfree [on|off].
+commands.skillrank = function(player, args)
+	local skillId, rank, pool = args[1], tonumber(args[2]), args[3]
+	if not skillId or rank == nil then
+		reply(player, "admin.usage.skillrank")
+		return
+	end
+	withCharacter(player, function()
+		local ok, err = PathService.AdminSkillRank(player, skillId, rank :: number, pool)
+		if not ok then
+			reply(player, err or "admin.usage.skillrank")
+			return
+		end
+		reply(player, "admin.skillrank.ok", { skill = skillId, rank = math.floor(rank :: number) })
+	end)
+end
+
+commands.skillmax = function(player, args)
+	withCharacter(player, function()
+		local bought, err = PathService.AdminSkillMax(player, args[1])
+		if err then
+			reply(player, err)
+			return
+		end
+		reply(player, "admin.skillmax.ok", { n = bought })
+	end)
+end
+
+commands.skillreset = function(player)
+	withCharacter(player, function()
+		PathService.AdminSkillReset(player)
+		reply(player, "admin.skillreset.ok")
+	end)
+end
+
+commands.pool = function(player)
+	withCharacter(player, function()
+		local info = PathService.AdminPoolInfo(player)
+		if not info then
+			return
+		end
+		local parts: { string } = {}
+		for id, n in info.free do
+			table.insert(parts, `{id} {n}`)
+		end
+		table.sort(parts)
+		reply(player, "admin.pool.info", {
+			active = info.active,
+			bar = if info.barPool ~= "" then info.barPool else "-",
+			free = table.concat(parts, ", "),
+			respec = if info.respecFree then "1" else "0",
+		})
+	end)
+end
+
+commands.respecfree = function(player, args)
+	withCharacter(player, function()
+		local on = args[1] ~= "off"
+		PathService.AdminRespecFree(player, on)
+		reply(player, "admin.respecfree.ok", { mode = if on then "on" else "off" })
+	end)
+end
+
 -- S58: /buildset <1|2|copy> (ROZWOJ 3.3): everywhere, no place, combat, death or cooldown checks.
 commands.buildset = function(player, args)
 	local action = args[1]

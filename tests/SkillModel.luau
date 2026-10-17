@@ -7,7 +7,9 @@
 --
 --   builds(classId)                 the class base (BASE, rows 1 of every path; Mage rows 1-2) and every
 --                                   PathDef.reference (key "<pathId>.<id>"), rotation from the data only
---   character(build, L)             the build trimmed to L: level-up simulation through Paths.canChooseMain / canBuy
+--   character(build, L, element?)   the build trimmed to L: level-up simulation through Paths.canChooseMain / canBuy;
+--                                   S137: skill ranks bought through SkillPoints.apply in the pool of the build's
+--                                   weapon (Mage: the element; order ReferenceBuild.ranks or rotation, passives, rest)
 --   player(build, L, opts?)         Balance.gear + StatPlan.suggest + Paths.passiveTotals + circle auras
 --   fight(sp, opts)                 the engine (port of Skills/Context, Types/Offense, Types/Support, Types/Movement,
 --                                   SkillService.cast, CombatService.DealDamage / tryBasicAttack, StatusEffectService)
@@ -69,6 +71,8 @@ local Roll = require("../src/shared/Logic/Roll")
 local SkillData = require("../src/shared/Data/Skills")
 local SkillGeom = require("../src/shared/Logic/SkillGeom")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
+local SkillPoints = require("../src/shared/Logic/SkillPoints")
+local SkillPools = require("../src/shared/Logic/SkillPools")
 local Skills = require("../src/shared/Logic/Skills")
 local StatPlan = require("../src/shared/Logic/StatPlan")
 local Stats = require("../src/shared/Data/Stats")
@@ -1432,11 +1436,13 @@ export type Build = {
 }
 
 export type CharacterResult = {
-	character: any, -- { class, level, path = { main, nodes, bp, freeUsed }, equipment }
+	character: any, -- { class, level, path = { main, nodes, bp, freeUsed }, equipment, ranks, barPool }
 	spent: number,
 	free: number,
 	unbought: { { node: string, reason: string } },
 	rankChecks: number, -- ranks bought, each through Paths.canBuy
+	pool: string, -- S137: the weapon pool of the build
+	skillFree: number, -- S137: skill points left in the pool
 }
 
 -- Builds ------------------------------------------------------------------------------------------------------------
@@ -1571,19 +1577,74 @@ end
 
 local charCache: { [string]: CharacterResult } = {}
 
+-- S137: an item id of a base type (the model's weapon in character.equipment selects the pool).
+local function itemOfType(itemType: string): string?
+	local first = `{itemType}_1`
+	local def = Items.get(first)
+	if def and def.type == itemType then
+		return first
+	end
+	local best: string? = nil
+	for id, item in Items.byId do
+		if item.type == itemType and (best == nil or id < best) then
+			best = id
+		end
+	end
+	return best
+end
+
+-- S137 (DESIGN-18 §13): the order the build buys skill ranks in: ReferenceBuild.ranks, else the rotation, then the
+-- pool's passives, then the rest of the pool (SkillPools.members).
+function SkillModel.rankOrder(build: Build, pool: string): { string }
+	local out: { string } = {}
+	local seen: { [string]: boolean } = {}
+	local function push(id: string)
+		if not seen[id] then
+			seen[id] = true
+			table.insert(out, id)
+		end
+	end
+	local ref: any = build.ref
+	if ref and ref.ranks then
+		for _, id in ref.ranks do
+			push(id)
+		end
+	end
+	for _, entry in build.rotation do
+		push(entry.skill)
+	end
+	local members = SkillPools.members(build.classId, pool)
+	for _, id in members do
+		local def = SkillData.get(id)
+		if def and def.type == "passive" then
+			push(id)
+		end
+	end
+	for _, id in members do
+		push(id)
+	end
+	return out
+end
+
 -- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape. The main path (the build's) at Paths.MAIN_LEVEL
 -- through Paths.canChooseMain; on every new point the first rank of `nodes` that Paths.canBuy accepts (an entry that
 -- cannot be bought yet waits, later ones may pass). Breakpoint choices from the build (Skills.effective applies them
--- from rank 5 / 10).
-function SkillModel.character(build: Build, L: number): CharacterResult
-	local key = `{build.classId}|{build.key}|{L}`
+-- from rank 5 / 10). S137: after the nodes of a level the skill points of the level go into the build's pool
+-- (rankOrder, each skill up to its limit in turn) as one SkillPoints.apply reservation; `element` = the Mage weapon's.
+function SkillModel.character(build: Build, L: number, element: string?): CharacterResult
+	local key = `{build.classId}|{build.key}|{L}|{element or "-"}`
 	local cached = charCache[key]
 	if cached then
 		return cached
 	end
 	local path =
 		{ main = nil :: string?, nodes = {} :: { [string]: number }, bp = table.clone(build.bp), freeUsed = false }
-	local character: any = { class = build.classId, level = 1, path = path, equipment = {} }
+	local weaponId = itemOfType(build.weapon.main)
+	local equipment = if weaponId then { weapon = { id = weaponId, el = element } } else {}
+	local character: any = { class = build.classId, level = 1, path = path, equipment = equipment, ranks = {} }
+	local pool = SkillPools.activePool(character) :: string
+	character.barPool = pool
+	local order = SkillModel.rankOrder(build, pool)
 	local units: { string } = {}
 	for _, entry in build.nodes do
 		for _ = 1, entry[2] do
@@ -1614,6 +1675,30 @@ function SkillModel.character(build: Build, L: number): CharacterResult
 			end
 		end
 	end
+	-- S137: the skill points of L go into the build's pool in one reservation from nothing (rankOrder, each skill up
+	-- to its limit in turn): the reference build is planned for its level, like a player who resets before measuring
+	do
+		local left = SkillPoints.free(character, pool)
+		local plan: { [string]: number } = {}
+		for _, id in order do
+			if left <= 0 then
+				break
+			end
+			local def = SkillData.get(id)
+			if def and Paths.skillOpen(character, id, pool) then
+				local add = math.min(SkillPoints.cap(def, L), left)
+				if add > 0 then
+					plan[id] = add
+					left -= add
+				end
+			end
+		end
+		if next(plan) ~= nil then
+			local ok, err, ranks = SkillPoints.apply(character, pool, plan)
+			assert(ok and ranks, `SkillModel.character: {build.key} L{L} {err}`)
+			character.ranks[pool] = ranks
+		end
+	end
 	local unbought: { { node: string, reason: string } } = {}
 	for i, nodeId in units do
 		if not done[i] then
@@ -1627,6 +1712,8 @@ function SkillModel.character(build: Build, L: number): CharacterResult
 		free = Paths.free(character),
 		unbought = unbought,
 		rankChecks = checks,
+		pool = pool,
+		skillFree = SkillPoints.free(character, pool),
 	}
 	charCache[key] = result
 	return result
@@ -1703,7 +1790,7 @@ function SkillModel.player(build: Build, L: number, opts: PlayerOpts?): any
 	if cached then
 		return cached
 	end
-	local ch = SkillModel.character(build, L)
+	local ch = SkillModel.character(build, L, if build.classId == "Mage" then o.element else nil)
 	local character = ch.character
 	local weapons = { main = build.weapon.main, offhand = build.weapon.offhand }
 	local gearOpts: any = if o.gear then table.clone(o.gear :: any) else {}
@@ -6692,6 +6779,12 @@ end
 -- S86 (E2): every row of PATH_TARGETS (of `classId`, or all) at its levels and at 20, without the heavy R4-R6 rows
 -- (opts.heavy keeps them out anyway: they have their own report tables). Read by the paths block of balance.spec and
 -- by the report, so both show the same pass / fail.
+-- S137: the row a PATH_TARGETS result is named by in Balance.GLOBAL_REPORT_ONLY: id "path.<build>.L<level>.<row id>",
+-- label = the row's note ("" without one).
+function SkillModel.reportRow(id: string, buildKey: string, L: number, note: string?): any
+	return { id = `path.{buildKey}.L{L}.{id}`, label = note or "" }
+end
+
 function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 	local out: { TargetResult } = {}
 	for _, row in SkillModel.PATH_TARGETS do
@@ -6738,15 +6831,18 @@ function SkillModel.evaluateTargets(classId: string?): { TargetResult }
 					pass = value == value
 						and (low == nil or value >= low - 1e-9)
 						and (high == nil or value <= high + 1e-9),
-					-- S89 (F1, F4): a row with `report`, or a `reportAt` level, is only printed
+					-- S89 (F1, F4): a row with `report`, or a `reportAt` level, is only printed; S137: also a row named
+					-- in Balance.GLOBAL_REPORT_ONLY (SkillModel.reportRow)
 					asserted = L > 20
 						and table.find(row.levels, L) ~= nil
 						and row.report == nil
 						and not (row.reportAt and table.find(row.reportAt, L))
-						and not noMetric,
+						and not noMetric
+						and B.reportOnlyFor(SkillModel.reportRow(row.id, build.key, L, row.note)) == nil,
 					report = row.report
 						or (if row.reportAt and table.find(row.reportAt, L) then "F4" else nil)
-						or (if noMetric then "bez metryki na tym poziomie" else nil),
+						or (if noMetric then "bez metryki na tym poziomie" else nil)
+						or (B.reportOnlyFor(SkillModel.reportRow(row.id, build.key, L, row.note)) or {} :: any).session,
 					source = row.source,
 					note = row.note,
 					project = if row.project then row.project[L] else nil,

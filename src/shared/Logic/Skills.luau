@@ -1,6 +1,7 @@
 --!strict
 -- Skill rules (DESIGN §14.1). Pure.
--- S56 (ROZWOJ 2.5): ranks come from the character level (rankAt / rankFor); no skill points, no learning.
+-- S56 (ROZWOJ 2.5): ranks came from the character level (rankAt / rankFor). S137 (DESIGN-18): ranks are bought with
+-- skill points per weapon pool (Logic/SkillPoints); rankAt is the limit.
 -- S57: which skills a character has, the hotbar and the passive totals live in Logic/Paths (base + paths).
 -- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
@@ -372,7 +373,8 @@ function Skills.rankAt(skill: SkillDef, level: number): number
 	return 0
 end
 
--- S56 (ROZWOJ 2.5, 2.6): ranks come from the character level; no skill points ------------------------------------
+-- S56 (ROZWOJ 2.5, 2.6): ranks came from the character level. S137 (DESIGN-18 §3.1): ranks are bought with skill
+-- points (Logic/SkillPoints); rankAt / rankFor are the LIMIT of a rank at a level (and the legacy rank of migration 12).
 
 -- Rank of a class base skill for a character of `classId` at `level` (0: other class or not unlocked yet).
 -- base only; path skills: Logic/Paths (Paths.skillRank is the rank every consumer asks for)
@@ -390,14 +392,19 @@ local function byUnlock(a: SkillDef, b: SkillDef): boolean
 	return a.order < b.order
 end
 
--- Base skills of the class unlocked at `level`, by unlock level (tie: order). A class without paths keeps all its
--- skills here (transitional ladder, ROZWOJ 2.6).
+-- S137: a base skill of the weapon pool (SkillDef.pool "common" or the pool id; Logic/SkillPools.memberDef for the
+-- full rule); nil = any pool.
+local function ofPool(skill: SkillDef, poolId: string?): boolean
+	return poolId == nil or skill.pool == "common" or skill.pool == poolId
+end
+
+-- Base skills of the class unlocked at `level`, by unlock level (tie: order); S137: only those of `poolId` when given.
 -- base only; path skills: Logic/Paths
-function Skills.unlocked(classId: string, level: number): { SkillDef }
+function Skills.unlocked(classId: string, level: number, poolId: string?): { SkillDef }
 	local out: { SkillDef } = {}
 	local list: { SkillDef } = SkillData.byClass[classId] or {}
 	for _, skill in list do
-		if skill.path == nil and skill.unlock <= level then
+		if skill.path == nil and skill.unlock <= level and ofPool(skill, poolId) then
 			table.insert(out, skill)
 		end
 	end
@@ -418,10 +425,11 @@ function Skills.startingSkill(classId: string): string?
 end
 
 -- A hotbar with the base actives unlocked at `level` on "1", "2", ... in unlock order (at most HOTBAR_SLOTS; ROZWOJ 5).
-function Skills.startHotbar(classId: string, level: number): { [string]: string }
+-- S137: of `poolId` when given (the ranks are bought now: Logic/SkillPoints.startBar fills a bar from them).
+function Skills.startHotbar(classId: string, level: number, poolId: string?): { [string]: string }
 	local bar: { [string]: string } = {}
 	local slot = 0
-	for _, skill in Skills.unlocked(classId, level) do
+	for _, skill in Skills.unlocked(classId, level, poolId) do
 		if skill.type ~= "passive" and slot < SkillData.HOTBAR_SLOTS then
 			slot += 1
 			bar[tostring(slot)] = skill.id
@@ -432,9 +440,9 @@ end
 
 -- Base skills of the class with fromLevel < unlock <= toLevel, in unlock order (path skills reach the bar when their
 -- node is bought, never on a level-up).
-function Skills.newlyUnlocked(classId: string, fromLevel: number, toLevel: number): { SkillDef }
+function Skills.newlyUnlocked(classId: string, fromLevel: number, toLevel: number, poolId: string?): { SkillDef }
 	local out: { SkillDef } = {}
-	for _, skill in Skills.unlocked(classId, toLevel) do
+	for _, skill in Skills.unlocked(classId, toLevel, poolId) do
 		if skill.unlock > fromLevel then
 			table.insert(out, skill)
 		end

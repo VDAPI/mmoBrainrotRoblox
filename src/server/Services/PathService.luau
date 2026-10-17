@@ -8,19 +8,30 @@
 -- block, copying puts the active set into buildOther. On load both sets are cleaned.
 -- No service PathService depends on may list it in its Deps (DepSort rejects cycles); a service that needs it later
 -- keeps the registry and calls registry.Get("PathService") during play.
+-- S137 (DESIGN-18 §3, §4, §10, §11): the one service that changes skill ranks, the pool bars and the pool of the bar
+-- (ranks, hotbar through SkillService.PutOnBar / setHotbar, bars, barPool, respecFree): AllocateSkills (a whole
+-- reservation through Logic/SkillPoints.apply), RefundSkillRank (place, combat, gold), ResetSkills (free below
+-- Progression.freeRespecLevel or with respecFree; the scroll comes in S138), SetPoolBar (the bar of another pool from
+-- the window). The equipped weapon selects the pool (Logic/SkillPools.activePool): on load and on a weapon change the
+-- bars swap (SkillPoints.switchPool), in combat the new pool's skills wait Config.SkillPools.swapLock
+-- (SkillService.LockPool). On load a changed pool version cleans the ranks and gives a free reset (needsRespec).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
 local Config = require(Shared.Config)
 local Net = require(Shared.Net)
 local PathData = require(Shared.Data.Paths)
 local Paths = require(Shared.Logic.Paths)
 local SkillData = require(Shared.Data.Skills)
+local SkillPoints = require(Shared.Logic.SkillPoints)
+local SkillPools = require(Shared.Logic.SkillPools)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 local Skills = require(Shared.Logic.Skills)
+local TableUtil = require(Shared.Util.TableUtil)
 local Types = require(Shared.Types)
 
 local PathService = {
@@ -37,7 +48,7 @@ local PathService = {
 		"LevelService",
 		"StatService",
 	},
-	Changed = Signal.new(), -- (player) nodes, main path, breakpoints, weapon or level changed what the paths give
+	Changed = Signal.new(), -- (player) nodes, main path, breakpoints, weapon, level or (S137) skill ranks changed
 }
 
 local SCROLL = "scroll_skillreset"
@@ -79,21 +90,77 @@ local function setPath(player: Player, state: Types.PathState)
 	})
 end
 
--- Drops from the bar and path.bp what the character no longer has. Returns whether anything changed.
+-- Drops from the bar and path.bp what the character no longer has; S137: also from the bars of the other pools.
+-- Returns whether anything changed.
 local function checkBar(player: Player, char: Types.CharacterData): boolean
 	local bar, bp, changed = Paths.validHotbar(char)
 	if changed then
 		PlayerStateService.Set(player, { "character", "hotbar" }, bar)
 		PlayerStateService.Set(player, { "character", "path", "bp" }, bp)
 	end
+	local bars: any = char.bars
+	if type(bars) ~= "table" then
+		PlayerStateService.Set(player, { "character", "bars" }, {})
+		return true
+	end
+	for poolId, other in bars do
+		if type(poolId) ~= "string" or poolId == char.barPool or not SkillPools.valid(char.class, poolId) then
+			PlayerStateService.Set(player, { "character", "bars", poolId }, nil)
+			changed = true
+		else
+			local clean, barChanged = Paths.validBar(char, poolId, other)
+			if barChanged then
+				PlayerStateService.Set(player, { "character", "bars", poolId }, clean)
+				changed = true
+			end
+		end
+	end
 	return changed
 end
 
--- After every change of nodes, main path or level: the bar check, passives and hooks, Changed.
+-- S137: the place of a rank refund or a reset (Logic/SkillPoints.PlaceCtx).
+local function placeCtx(player: Player): SkillPoints.PlaceCtx
+	return {
+		inCombat = ResourceService.InCombat(player),
+		inTown = ZoneService.GetPvpZone(player) == "green",
+		nearGate = DungeonService.NearAnyEntrance(player),
+	}
+end
+
+-- S137: the bar follows the pool of the equipped weapon (DESIGN-18 §4.1). `fromWeapon` = a weapon change during play:
+-- in combat the new pool waits Config.SkillPools.swapLock. Returns whether the bars swapped.
+local function syncPool(player: Player, fromWeapon: boolean): boolean
+	local char = character(player)
+	if not char then
+		return false
+	end
+	local pool = SkillPools.activePool(char)
+	if pool == nil then
+		return false
+	end
+	local swap = SkillPoints.switchPool(char, pool)
+	if not swap then
+		return false
+	end
+	PlayerStateService.Set(player, { "character", "hotbar" }, swap.hotbar)
+	PlayerStateService.Set(player, { "character", "bars" }, swap.bars)
+	PlayerStateService.Set(player, { "character", "barPool" }, swap.barPool)
+	if fromWeapon and ResourceService.InCombat(player) then
+		SkillService.LockPool(player, Config.SkillPools.swapLock)
+	end
+	return true
+end
+
+-- After every change of nodes, main path, level or (S137) skill ranks: the rank cleaning (a refunded node takes its
+-- skill's ranks back), the bar check, passives and hooks, Changed.
 local function afterChange(player: Player)
 	local char = character(player)
 	if not char then
 		return
+	end
+	local ranks, changed = SkillPoints.clean(char)
+	if changed then
+		PlayerStateService.Set(player, { "character", "ranks" }, ranks)
 	end
 	checkBar(player, char)
 	SkillService.RefreshPassives(player)
@@ -120,17 +187,8 @@ local function buyNode(player: Player, nodeId: string): (boolean, string?)
 	local node = Paths.findNode(nodeId)
 	local skill = node and node.kind == "skill" and node.skill and SkillData.get(node.skill)
 	if skill then
-		local args = { skill = "@" .. skill.nameKey }
-		if skill.type == "passive" then
-			Net.Fire(player, "Toast", "skills.toast.passive", args, "success")
-		else
-			local placed, placeErr = SkillService.PutOnBar(player, skill.id)
-			if placed then
-				Net.Fire(player, "Toast", "skills.toast.onBar", args, "success")
-			elseif placeErr == "skills.error.barFull" then
-				Net.Fire(player, "Toast", "skills.toast.barFull", args, "info")
-			end
-		end
+		-- S137: the node only unlocks the skill; rank 1 is bought with skill points (placeNew puts it on the bar)
+		Net.Fire(player, "Toast", "skills.toast.unlocked", { skill = "@" .. skill.nameKey }, "info")
 	end
 	afterChange(player)
 	return true, nil
@@ -225,14 +283,173 @@ local function chooseBreakpoint(player: Player, skillId: string, rank: number, o
 	return true, nil
 end
 
+-- Skill points (S137, DESIGN-18 §3, §11) ---------------------------------------------------------------------------
+
+-- A newly bought skill goes to the first free slot of its pool's bar (the active pool's bar through SkillService, so
+-- the quest "learn" objective fires); passives only get a toast.
+local function placeNew(player: Player, poolId: string, skill: SkillData.SkillDef)
+	local args = { skill = "@" .. skill.nameKey }
+	if skill.type == "passive" then
+		Net.Fire(player, "Toast", "skills.toast.passive", args, "success")
+		return
+	end
+	local char = character(player)
+	if not char then
+		return
+	end
+	if poolId == char.barPool then
+		local placed, err = SkillService.PutOnBar(player, skill.id)
+		if placed then
+			Net.Fire(player, "Toast", "skills.toast.onBar", args, "success")
+		elseif err == "skills.error.barFull" then
+			Net.Fire(player, "Toast", "skills.toast.barFull", args, "info")
+		end
+		return
+	end
+	local bar = SkillPoints.barOf(char, poolId)
+	for _, id in bar do
+		if id == skill.id then
+			return
+		end
+	end
+	local slot = Skills.firstFreeSlot(bar)
+	if slot then
+		PlayerStateService.Set(player, { "character", "bars", poolId, tostring(slot) }, skill.id)
+	end
+end
+
+-- AllocateSkills(poolId, { [skillId] = +n }): the whole reservation or nothing, out of combat (DESIGN-18 §3.2).
+local function allocateSkills(player: Player, poolId: string, plan: any): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if ResourceService.InCombat(player) then
+		return false, "paths.error.combat"
+	end
+	local ok, err, ranks = SkillPoints.apply(char, poolId, plan)
+	if not ok or not ranks then
+		return false, err
+	end
+	local before: { [string]: number } = {}
+	for id in ranks do
+		before[id] = SkillPoints.bought(char, poolId, id)
+	end
+	PlayerStateService.Set(player, { "character", "ranks", poolId }, ranks)
+	local order = SkillPoints.order(char.class, poolId)
+	for _, id in order do
+		local skill = SkillData.get(id)
+		local was = before[id]
+		if skill and was ~= nil and was <= 0 and (ranks[id] or 0) > 0 then
+			placeNew(player, poolId, skill)
+		end
+		-- S137 (DESIGN-18 §8): a bought rank 5 / 10 with option B and no choice yet
+		if skill and was ~= nil and skill.type ~= "passive" and skill.breakpoints then
+			for _, at in Skills.BREAKPOINT_LEVELS do
+				local pair = skill.breakpoints[at]
+				local key = Skills.choiceKey(id, at)
+				if pair and pair.b and was < at and (ranks[id] or 0) >= at and char.path.bp[key] == nil then
+					Net.Fire(player, "Toast", "bp.toast.new", { skill = "@" .. skill.nameKey, rank = at }, "warning")
+				end
+			end
+		end
+	end
+	afterChange(player)
+	return true, nil
+end
+
+-- RefundSkillRank(poolId, skillId): one rank back; from Progression.freeRespecLevel for gold in town / at a gate.
+local function refundSkillRank(player: Player, poolId: string, skillId: string): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	local ok, err, cost = SkillPoints.canRefund(char, poolId, skillId, placeCtx(player))
+	if not ok then
+		return false, err
+	end
+	if cost > 0 then
+		if char.gold < cost then
+			return false, "skills.error.gold"
+		end
+		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+			return gold - cost
+		end)
+		Analytics.gold(player, -cost, balance, "skillRefund")
+	end
+	local rank = SkillPoints.bought(char, poolId, skillId) - 1
+	PlayerStateService.Set(player, { "character", "ranks", poolId, skillId }, if rank > 0 then rank else nil)
+	afterChange(player)
+	if cost > 0 then
+		Net.Fire(player, "Toast", "skills.toast.refundPaid", { gold = cost }, "info")
+	end
+	return true, nil
+end
+
+-- ResetSkills(): every pool's ranks of the active set back (bars follow); free below freeRespecLevel, else it uses
+-- respecFree. Path nodes and breakpoint choices stay (DESIGN-18 §3.2; the Scroll of Renewal as a full reset: S138).
+local function resetSkills(player: Player): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	local ok, err, usesFree = SkillPoints.canReset(char, placeCtx(player))
+	if not ok then
+		return false, err
+	end
+	PlayerStateService.Set(player, { "character", "ranks" }, {})
+	if usesFree then
+		PlayerStateService.Set(player, { "character", "respecFree" }, false)
+	end
+	afterChange(player)
+	Net.Fire(player, "Toast", "skills.toast.reset", nil, "success")
+	return true, nil
+end
+
+-- SetPoolBar(poolId, slot, skillId?): the bar of any pool of the class from the window; the active pool's bar goes
+-- through SkillService (the same rules as SetHotbar).
+local function setPoolBar(player: Player, poolId: string, slot: number, skillId: string?): (boolean, string?)
+	local char = character(player)
+	if not char or not SkillPools.valid(char.class, poolId) or not Skills.validSlot(slot) then
+		return false, "error.badRequest"
+	end
+	if poolId == char.barPool then
+		return SkillService.SetSlot(player, slot, skillId)
+	end
+	if skillId ~= nil then
+		local ok, err = Paths.canPutOnBar(char, skillId, poolId)
+		if not ok then
+			return false, err
+		end
+	end
+	local bar: { [string]: string } = table.clone(SkillPoints.barOf(char, poolId))
+	if skillId then
+		for key, existing in bar do
+			if existing == skillId then
+				bar[key] = nil :: any
+			end
+		end
+	end
+	bar[tostring(slot)] = skillId :: any
+	PlayerStateService.Set(player, { "character", "bars", poolId }, bar)
+	PathService.Changed:Fire(player)
+	return true, nil
+end
+
 -- Build sets (ROZWOJ 2.9; S58) -------------------------------------------------------------------------------------
 
--- Both sets change in one block without yields; the client gets one diff batch.
+-- Both sets change in one block without yields; the client gets one diff batch. S137: with the skill ranks, the pool
+-- bars and the free reset of each set.
 local function writeSwap(player: Player, swap: Paths.SetSwap)
 	PlayerStateService.Set(player, { "character", "stats" }, swap.active.stats)
 	PlayerStateService.Set(player, { "character", "statPoints" }, swap.active.statPoints)
 	PlayerStateService.Set(player, { "character", "hotbar" }, swap.active.hotbar)
 	PlayerStateService.Set(player, { "character", "path" }, swap.active.path)
+	PlayerStateService.Set(player, { "character", "ranks" }, swap.active.ranks)
+	PlayerStateService.Set(player, { "character", "bars" }, swap.active.bars)
+	PlayerStateService.Set(player, { "character", "barPool" }, swap.active.barPool or "")
+	PlayerStateService.Set(player, { "character", "respecFree" }, swap.active.respecFree)
+	PlayerStateService.Set(player, { "character", "poolsVersion" }, swap.active.poolsVersion)
 	PlayerStateService.Set(player, { "character", "buildOther" }, swap.other)
 	PlayerStateService.Set(player, { "character", "buildSlot" }, swap.slot)
 end
@@ -255,6 +472,7 @@ local function switchSet(player: Player, admin: boolean): (boolean, string?)
 	local swap = Paths.swapSets(char)
 	writeSwap(player, swap)
 	lastSwitch[player] = os.clock()
+	syncPool(player, false) -- S137: the new set's bar of the equipped weapon's pool
 	afterChange(player) -- validHotbar of the new active set, RefreshPassives (hooks + StatService), Changed
 	-- Cooldowns stay; HP and resources are only clamped to the new maxima (ResourceService on StatService.Changed).
 	StatService.Recompute(player)
@@ -398,6 +616,105 @@ function PathService.AdminCopy(player: Player): boolean
 	return (copySet(player, true))
 end
 
+-- S137 /skillrank: sets a bought rank without points or the limit (0 removes); a skill of the pool (default: active).
+function PathService.AdminSkillRank(player: Player, skillId: string, rank: number, poolId: string?): (boolean, string?)
+	local char = character(player)
+	local skill = SkillData.get(skillId)
+	if not char or not skill or skill.class ~= char.class then
+		return false, "error.badRequest"
+	end
+	local pool = poolId or SkillPools.activePool(char)
+	if pool == nil or not SkillPools.valid(char.class, pool) or not SkillPools.memberDef(char.class, pool, skill) then
+		return false, "skills.error.pool"
+	end
+	local value = math.clamp(math.floor(rank), 0, skill.maxLevel)
+	if type(char.ranks[pool]) ~= "table" then
+		PlayerStateService.Set(player, { "character", "ranks", pool }, {})
+	end
+	PlayerStateService.Set(player, { "character", "ranks", pool, skillId }, if value > 0 then value else nil)
+	if value > 0 then
+		placeNew(player, pool, skill)
+	end
+	-- no cleaning here: the rank stays above the limit and the points until the next load or level change
+	checkBar(player, char)
+	SkillService.RefreshPassives(player)
+	PathService.Changed:Fire(player)
+	return true, nil
+end
+
+-- S137 /skillmax: buys like a player (SkillPoints.suggest + apply) in the pool (default: active). Ranks bought.
+function PathService.AdminSkillMax(player: Player, poolId: string?): (number, string?)
+	local char = character(player)
+	if not char then
+		return 0, "error.wrongPhase"
+	end
+	local pool = poolId or SkillPools.activePool(char)
+	if pool == nil or not SkillPools.valid(char.class, pool) then
+		return 0, "skills.error.pool"
+	end
+	local plan = SkillPoints.suggest(char, pool)
+	local total = 0
+	for _, n in plan do
+		total += n
+	end
+	if total == 0 then
+		return 0, nil
+	end
+	local ok, err, ranks = SkillPoints.apply(char, pool, plan)
+	if not ok or not ranks then
+		return 0, err
+	end
+	PlayerStateService.Set(player, { "character", "ranks", pool }, ranks)
+	for _, id in SkillPoints.order(char.class, pool) do
+		local skill = SkillData.get(id)
+		-- a skill without a rank before: the whole reservation is its rank now
+		if skill and plan[id] and plan[id] == ranks[id] then
+			placeNew(player, pool, skill)
+		end
+	end
+	afterChange(player)
+	return total, nil
+end
+
+-- S137 /skillreset: every pool's ranks back, free, anywhere.
+function PathService.AdminSkillReset(player: Player): boolean
+	if not character(player) then
+		return false
+	end
+	PlayerStateService.Set(player, { "character", "ranks" }, {})
+	afterChange(player)
+	return true
+end
+
+-- S137 /pool: the active pool, the bar's pool and the free points of every pool.
+export type PoolInfo = { active: string, barPool: string, free: { [string]: number }, respecFree: boolean }
+function PathService.AdminPoolInfo(player: Player): PoolInfo?
+	local char = character(player)
+	if not char then
+		return nil
+	end
+	local free: { [string]: number } = {}
+	for _, id in SkillPools.ids(char.class) do
+		free[id] = SkillPoints.free(char, id)
+	end
+	return {
+		active = SkillPools.activePool(char) or "?",
+		barPool = char.barPool,
+		free = free,
+		respecFree = char.respecFree == true,
+	}
+end
+
+-- S137 /respecfree: sets the free full reset flag of the active set.
+function PathService.AdminRespecFree(player: Player, on: boolean): boolean
+	if not character(player) then
+		return false
+	end
+	PlayerStateService.Set(player, { "character", "respecFree" }, on)
+	PathService.Changed:Fire(player)
+	return true
+end
+
 -- Refunds every node and breakpoint choice of the active set; the main path and freeUsed stay.
 function PathService.AdminReset(player: Player): (boolean, string?)
 	local char = character(player)
@@ -444,6 +761,26 @@ local function onEntered(player: Player)
 		changed = true
 	end
 	char = character(player) :: Types.CharacterData
+	-- S137 (DESIGN-18 §10): the skill ranks as the level, the pools and the nodes allow; a new pool version of the
+	-- class also gives a free reset (one toast for both sets)
+	local respec = false
+	if type(char.ranks) ~= "table" then
+		PlayerStateService.Set(player, { "character", "ranks" }, {})
+	end
+	local ranks, ranksChanged = SkillPoints.clean(char)
+	if ranksChanged then
+		PlayerStateService.Set(player, { "character", "ranks" }, ranks)
+		changed = true
+	end
+	if SkillPoints.needsRespec(char) then
+		PlayerStateService.Set(player, { "character", "respecFree" }, true)
+		PlayerStateService.Set(player, { "character", "poolsVersion" }, SkillPools.version(char.class))
+		respec = true
+	end
+	if syncPool(player, false) then
+		changed = true
+	end
+	char = character(player) :: Types.CharacterData
 	if checkBar(player, char) then
 		changed = true
 	end
@@ -455,12 +792,21 @@ local function onEntered(player: Player)
 		PlayerStateService.Set(player, { "character", "buildOther" }, nil)
 	elseif type(other) == "table" then
 		local cleaned, otherChanged = Paths.cleanSet(char, other, char.level)
+		if SkillPoints.needsRespec(Paths.setView(char, cleaned)) then
+			cleaned.respecFree = true
+			cleaned.poolsVersion = SkillPools.version(char.class)
+			otherChanged = true
+			respec = true
+		end
 		if otherChanged then
-			PlayerStateService.Set(player, { "character", "buildOther" }, cleaned)
+			PlayerStateService.Set(player, { "character", "buildOther" }, TableUtil.deepCopy(cleaned))
 		end
 	end
 	SkillService.RefreshPassives(player)
-	if changed then
+	if respec then
+		Net.Fire(player, "Toast", "skills.toast.respecFree", nil, "warning")
+	end
+	if changed or respec then
 		PathService.Changed:Fire(player)
 	end
 end
@@ -484,6 +830,10 @@ function PathService.Start()
 	Net.Handle("ResetPaths", resetPaths)
 	Net.Handle("ChooseMainPath", chooseMainPath)
 	Net.Handle("ChooseBreakpoint", chooseBreakpoint)
+	Net.Handle("AllocateSkills", allocateSkills)
+	Net.Handle("RefundSkillRank", refundSkillRank)
+	Net.Handle("ResetSkills", resetSkills)
+	Net.Handle("SetPoolBar", setPoolBar)
 	Net.Handle("SwitchBuildSet", function(player: Player)
 		return switchSet(player, false)
 	end)
@@ -494,9 +844,13 @@ function PathService.Start()
 		lastSwitch[player] = nil
 	end)
 	CharacterService.CharacterEntered:Connect(onEntered)
-	-- The path weapon switches rows 3-11 on and off: passives and hooks again, the bar only greys out.
+	-- The path weapon switches rows 3-11 on and off: passives and hooks again, the bar only greys out. S137: the weapon
+	-- selects the pool, so the bars swap (DESIGN-18 §4.1).
 	EquipmentService.Changed:Connect(function(player: Player, slot: string)
 		if (slot == "weapon" or slot == "offhand") and character(player) then
+			if slot == "weapon" then
+				syncPool(player, true)
+			end
 			SkillService.RefreshPassives(player)
 			PathService.Changed:Fire(player)
 		end

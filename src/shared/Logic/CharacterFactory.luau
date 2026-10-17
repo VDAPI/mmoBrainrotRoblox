@@ -6,6 +6,7 @@ local Config = require("../Config")
 local Types = require("../Types")
 local AccountSchema = require("./AccountSchema")
 local CharacterLook = require("./CharacterLook")
+local SkillPools = require("./SkillPools")
 local Skills = require("./Skills")
 local StarterGear = require("./StarterGear")
 
@@ -29,7 +30,15 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids,
 	character.class = classId
 	character.level = 1
 	character.stats = table.clone(class.startStats)
-	character.hotbar = Skills.startHotbar(classId, 1) -- slot 1: the unlock-1 skill (ROZWOJ 5)
+	-- S137 (DESIGN-18 §10): the point of level 1 is spent on the class's first skill (S1) in the default pool, on slot 1
+	local first = Skills.startingSkill(classId)
+	local pool = SkillPools.defaultPool(classId) or ""
+	character.ranks = if first and pool ~= "" then { [pool] = { [first] = 1 } } else {}
+	character.hotbar = if first then { ["1"] = first } else {}
+	character.bars = {}
+	character.barPool = pool
+	character.respecFree = false
+	character.poolsVersion = SkillPools.version(classId)
 	character.reworkNotice = false
 	character.gold = Config.StartingGold
 	character.location = { map = Config.StartingMap, x = 0, y = 0, z = 0 }

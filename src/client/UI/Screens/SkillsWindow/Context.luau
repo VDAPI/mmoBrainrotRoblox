@@ -1,6 +1,9 @@
 --!strict
 -- Shared state of the skills window (S59): narrow character branches (never the whole character, HP changes several
 -- times a second), the views built from them and the window's own values (tab, selection, phone sheet, picker).
+-- S137 (DESIGN-18 §12, the minimal window before S139): the bought ranks per pool, the pool shown in the Base tab (the
+-- active one unless a pool tab is picked), the rank reservation of that pool ("+" / "-" before "Confirm", like
+-- CharacterWindow/StatAllocator) and the free skill points left after it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +11,8 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
+local SkillPools = require(ReplicatedStorage.Shared.Logic.SkillPools)
 local SkillsAttention = require(script.Parent.Parent.Parent.SkillsAttention)
 local SkillsTab = require(script.Parent.Parent.Parent.SkillsTab)
 local State = require(script.Parent.Parent.Parent.State)
@@ -40,8 +45,18 @@ export type Ctx = {
 	selected: Fusion.Value<Selection?>,
 	sheet: Fusion.Value<boolean>, -- phone: the details sheet is open
 	previewOpen: Fusion.Value<boolean>, -- phone: the sheet shows the 3D preview
-	picking: Fusion.Value<string?>, -- skill waiting for a slot of the full bar (2 x 5 picker)
+	picking: Fusion.Value<string?>, -- skill waiting for a slot of the full bar (2 x 4 picker)
 	bpError: Fusion.Value<BpError?>,
+	-- S137
+	ranks: Fusion.Value<any>,
+	barPool: Fusion.Value<any>,
+	respecFree: Fusion.Value<any>,
+	activePool: Fusion.Computed<string?>, -- the pool of the equipped weapon
+	viewPool: Fusion.Value<string?>, -- a pool tab picked in the Base tab (nil = the active pool)
+	pool: Fusion.Computed<string?>, -- the pool the Base tab shows
+	reserve: Fusion.Value<{ [string]: number }>, -- ranks reserved in `pool`, not sent yet
+	planned: Fusion.Computed<Paths.Char?>, -- the character with the reservation bought (SkillPoints rules on it)
+	skillFree: Fusion.Computed<number>, -- free skill points of `pool` after the reservation
 }
 
 local Context = {}
@@ -62,6 +77,10 @@ function Context.new(scope: Scope, props: Props): Ctx
 	local path = State.Value({ "character", "path" })
 	local hotbar = State.Value({ "character", "hotbar" })
 	local equipment = State.Value({ "character", "equipment" })
+	local ranks = State.Value({ "character", "ranks" })
+	local bars = State.Value({ "character", "bars" })
+	local barPool = State.Value({ "character", "barPool" })
+	local respecFree = State.Value({ "character", "respecFree" })
 
 	local character = scope:Computed(function(use): Paths.Char?
 		local class = use(classId)
@@ -75,7 +94,49 @@ function Context.new(scope: Scope, props: Props): Ctx
 			path = use(path),
 			hotbar = use(hotbar),
 			equipment = use(equipment),
-		}
+			ranks = use(ranks),
+			bars = use(bars),
+			barPool = use(barPool),
+			respecFree = use(respecFree),
+		} :: any
+	end)
+	local activePool = scope:Computed(function(use): string?
+		local c = use(character)
+		return if c then SkillPools.activePool(c) else nil
+	end)
+	local viewPool = scope:Value(nil :: string?)
+	local pool = scope:Computed(function(use): string?
+		local c = use(character)
+		local wanted = use(viewPool)
+		if c and wanted and SkillPools.valid(c.class, wanted) then
+			return wanted
+		end
+		return use(activePool)
+	end)
+	local reserve = scope:Value({} :: { [string]: number })
+	local planned = scope:Computed(function(use): Paths.Char?
+		local c = use(character)
+		local p = use(pool)
+		if not c or not p then
+			return c
+		end
+		local all: any = c.ranks
+		local copy: { [string]: { [string]: number } } = {}
+		if type(all) == "table" then
+			for id, own in all do
+				if type(own) == "table" then
+					copy[id] = table.clone(own)
+				end
+			end
+		end
+		local own = copy[p] or {}
+		for id, n in use(reserve) do
+			own[id] = SkillPoints.bought(c, p, id) + n
+		end
+		copy[p] = own
+		local view = table.clone(c :: any)
+		view.ranks = copy
+		return view
 	end)
 	local tab = scope:Value(startTab())
 	local selected = scope:Value(nil :: Selection?)
@@ -118,7 +179,27 @@ function Context.new(scope: Scope, props: Props): Ctx
 		previewOpen = scope:Value(false),
 		picking = scope:Value(nil :: string?),
 		bpError = scope:Value(nil :: BpError?),
+		ranks = ranks,
+		barPool = barPool,
+		respecFree = respecFree,
+		activePool = activePool,
+		viewPool = viewPool,
+		pool = pool,
+		reserve = reserve,
+		planned = planned,
+		skillFree = scope:Computed(function(use): number
+			local c = use(planned)
+			local p = use(pool)
+			return if c and p then math.max(0, SkillPoints.free(c, p)) else 0
+		end),
 	}
+	-- a reservation belongs to one pool and one state of the ranks
+	scope:Observer(pool):onChange(function()
+		reserve:set({})
+	end)
+	scope:Observer(ranks):onChange(function()
+		reserve:set({})
+	end)
 
 	-- The Scroll of a New Path asks for a tab also while the window is open (S57 F3).
 	scope:Observer(SkillsTab.Requested):onChange(function()
@@ -131,6 +212,7 @@ function Context.new(scope: Scope, props: Props): Ctx
 		tab:set("base")
 		selected:set(nil)
 		sheet:set(false)
+		viewPool:set(nil)
 	end)
 	return ctx
 end

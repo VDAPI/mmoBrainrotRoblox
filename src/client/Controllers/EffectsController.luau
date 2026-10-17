@@ -2,7 +2,9 @@
 -- World effects drawn locally: level-up pillar of light (DESIGN §4.6); the golden glow of the respawn
 -- protection (S22) on every character whose "Effects" attribute lists "respawnShield" (not on low quality).
 -- S59 (ROZWOJ 4): after the local level-up toast, toasts for path points, skill ranks and new breakpoints to choose
--- (Logic/PathView.rankUps / newBreakpoints between LevelUp's fromLevel and the new level).
+-- (Logic/PathView.rankUps / newBreakpoints between LevelUp's fromLevel and the new level). S137 (DESIGN-18 §3): ranks
+-- are bought now, so a level-up shows "+N skill points" (LevelUp's skillPoints) instead of rank toasts; the server
+-- toasts a breakpoint reached by a bought rank.
 -- S65: the lasting rune of a glowing Runic Seal ("runeSeal" in "Effects") under every such character.
 -- S123: the level-up effect follows the player's CosmeticLevelUp attribute (five styles, levelUpFx); PlayLevelUp is
 -- the wardrobe's local preview. LevelService is unchanged: the LevelUp event already names the player.
@@ -19,9 +21,7 @@ local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Net = require(ReplicatedStorage.Shared.Net)
-local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
-local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -254,17 +254,8 @@ local function refreshGlows()
 	end
 end
 
-local MAX_RANK_TOASTS = 3
-local MAX_BP_TOASTS = 2
-
-local function skillName(skillId: string): string
-	local skill = SkillData.get(skillId)
-	return if skill then Text.now(skill.nameKey) else skillId
-end
-
--- Path points, rank-ups and new breakpoints of a local level-up (the event comes before the state diff, so the
--- character is the class and path from State with the new level).
-local function progressToasts(from: number, to: number, pathPoints: number?)
+-- Path points and skill points of a local level-up (S137: no rank toasts, ranks do not grow with the level).
+local function progressToasts(pathPoints: number?, skillPoints: number?)
 	local class = State.Get({ "character", "class" })
 	if type(class) ~= "string" or class == "" then
 		return
@@ -277,22 +268,9 @@ local function progressToasts(from: number, to: number, pathPoints: number?)
 			else (if soon then "paths.toast.pointsSoon" else "paths.toast.points")
 		Toast.push(Text.now(key, { n = points }), "success", 4)
 	end
-	local character = { class = class, level = to, path = State.Get({ "character", "path" }) }
-	local ranks = PathView.rankUps(character, from, to)
-	if #ranks > MAX_RANK_TOASTS then
-		Toast.push(Text.now("skills.toast.ranks", { n = #ranks }), "info")
-	else
-		for _, up in ranks do
-			Toast.push(Text.now("skills.toast.rank", { skill = skillName(up.skillId), rank = up.rank }), "info")
-		end
-	end
-	local fresh = PathView.newBreakpoints(character, from, to)
-	if #fresh > MAX_BP_TOASTS then
-		Toast.push(Text.now("bp.toast.many", { n = #fresh }), "warning")
-	else
-		for _, bp in fresh do
-			Toast.push(Text.now("bp.toast.new", { skill = skillName(bp.skillId), rank = bp.at }), "warning")
-		end
+	local skills = if type(skillPoints) == "number" then skillPoints else 0
+	if skills > 0 then
+		Toast.push(Text.now("skills.toast.points", { n = skills }), "success", 4)
 	end
 end
 
@@ -307,7 +285,14 @@ function EffectsController.Start()
 	end)
 	Net.On(
 		"LevelUp",
-		function(player: Player, level: number, statPoints: number, pathPoints: number?, fromLevel: number?)
+		function(
+			player: Player,
+			level: number,
+			statPoints: number,
+			pathPoints: number?,
+			_fromLevel: number?,
+			skillPoints: number?
+		)
 			if typeof(player) ~= "Instance" or not player:IsA("Player") then
 				return
 			end
@@ -321,7 +306,7 @@ function EffectsController.Start()
 					Sounds.play("levelUp")
 				end
 				Toast.push(Text.now("toast.levelUp", { level = level, stat = statPoints }), "success", 5)
-				progressToasts(if type(fromLevel) == "number" then fromLevel else level - 1, level, pathPoints)
+				progressToasts(pathPoints, skillPoints)
 			end
 		end
 	)

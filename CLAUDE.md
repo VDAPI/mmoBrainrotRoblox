@@ -177,6 +177,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   pole `props` w `Data/Cutscenes` (rodzaj w `Cutscenes.PROPS`, budowa w `client/Util/StoryProps`).
 - **Zachowanie przełomu z liczbą od węzła** (S73): pole typu `ValueRef` (liczba albo nazwa pola `values`,
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
+- **Punkty umiejętności / pula broni** (S137, `docs/DESIGN-18.md`): pule klasy w `Data/SkillPools/<Klasa>` (`pools`
+  z `weapon` i `plan`, `defaultPool`, `version`), umiejętność podstawy z `SkillDef.pool` (`"common"` albo id puli) i
+  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`), pula z broni
+  `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i darmowy reset przy wczytaniu), bez migracji.
 - **Okno / kolor UI** (S135, S136): okno w `Data/UiWindows` (`surface = "paper" | "iron"`), ekran poza oknem w
   `UiWindows.SCREENS`; kolory tylko z ról `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (wartości `Data/UiPalette`, para w
   `PAIRS`; `Theme.Colors` nie istnieje), kolor z danych jako tekst przez `Theme.readable`, jako grafika przez

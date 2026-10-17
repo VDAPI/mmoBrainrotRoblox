@@ -53,6 +53,9 @@ export type ReferenceBuild = {
 	bp: { [string]: "a" | "b" }, -- "<skillId>:5" / "<skillId>:10"; a missing entry means A
 	stats: { [string]: number }, -- the path statPlan
 	rotation: { { [string]: any } }, -- priority list, first usable wins; conditions are data for the balance model (S85)
+	-- S137 (DESIGN-18 §13): skill ids in the order the balance model buys their ranks with skill points; nil = the
+	-- rotation, then the pool's passives, then the rest of the pool (tests/SkillModel.rankOrder)
+	ranks: { string }?,
 }
 export type Role = "damage" | "tank" | "healer" | "support" | "luck"
 export type PathDef = {

@@ -6382,7 +6382,7 @@ Pliki: `src/shared/{Config,Types}.luau`, `src/shared/Data/{Mounts,Keybinds,Admin
 `src/shared/Data/Quests/{Side,Types}.luau`, `src/shared/Data/Areas/meadows.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
 `src/shared/Logic/{Mounts,RiderPose,SideQuests,AccountSchema}.luau`, `src/shared/Logic/Anatomy/{init,Accessories}.luau`,
 `src/shared/Logic/Anatomy/Plans/{init,Quadrupeds}.luau`, `src/shared/Util/MountLook.luau`, `src/shared/Net/Definitions.luau`,
-`src/server/Services/{Mount,Stat,Skill,Travel,SideQuest,Gather,Fishing,Admin}Service.luau`, `src/server/Admin/Character.luau`,
+`src/server/Services/{Mount,Stat,Skill,Travel,SideQuest,Gather,Fishing,Admin}Service.luau`, `src/server/Admin/{Character,Items}.luau`,
 `src/client/Controllers/{Mount,Animation,Movement,Screen,QuestAnchor,CombatFx,Target}Controller.luau`,
 `src/client/UI/Screens/{Wardrobe,SkillsWindow/Preview}.luau`,
 `src/client/UI/Screens/Hud/{init,MountButton,SprintButton,CastBar}.luau`, `src/client/UI/Components/QuestRewards.luau`,
@@ -11769,3 +11769,73 @@ QuestAnchor,Quest,Sign,Skill,Social,Target,TourneyFame,UI,WindowManager,World}Co
 graczy zostają 0,45 z S135, tabliczki potworów i NPC mają 0,15); (2) sloty umiejętności z mosiężnym brzegiem zamiast
 brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portret klasy pod pergaminową zasłoną
 (0,15–0,3) zamiast ciemnej; gdy portret ma być wyraźniejszy, alternatywą jest ciemna zasłona z tekstem na żelazie.
+
+### S137: Umiejętności 2.0, fundament A
+
+- **Punkty umiejętności** (`Logic/SkillPoints`, DESIGN-18 §3): ranga = kupione punkty w puli broni
+  (`character.ranks[poolId][skillId]`), limit = dawna krzywa `Skills.rankAt`; `pointsAt(L) = L × 1 + 7` w każdej puli
+  (`Data/Progression.skillPoints`, `freeRespecLevel` 20, `rankRefundGold` 10). `pointsAt`, `cap`, `rank`, `spent`,
+  `free`, `canBuy`, `apply` (cała rezerwacja albo nic), `canRefund`, `refundCost`, `canReset`, `suggest`, `legacy`,
+  `clean`, `startBar`, `needsRespec`, `barOf`, `switchPool`, `migrate`. Reguła rangi w jednym miejscu:
+  `Paths.skillRank(character, skillId, poolId?)` (pula, węzeł umiejętności ścieżki, limit); nowe w `Logic/Paths`:
+  `skillOpen`, `pathSkillOpen`, `boughtIn`, `barPoolOf`, `validBar`, `cleanRanks`, `skillPointsAt`; zestawy niosą
+  `ranks`, `bars`, `barPool`, `respecFree`, `poolsVersion`; `skillUsable` zwraca `cast.error.wrongPool`.
+- **Pule broni** (`Data/SkillPools/{init,Types,Mage,Warrior,Hunter,Cleric}`, `Logic/SkillPools`): drabina `LADDER` /
+  `COMMON_LADDER`, pule klas z DESIGN-18 §4.2, `version` 1, `transitional = true`; `SkillDef.pool` (Mag: `fire` / `ice` /
+  `lightning` / `common`, reszta podstawy `common`) i `role` (puste do sesji klas); `poolOf`, `activePool`, `members`,
+  `inPool`, `memberDef`, `ladderOf`, `isTransitional`. `HOTBAR_SLOTS` 10 → 8 (klawisze 1–8, siatka 2 × 4, telefon 5 + 3).
+- **Zapis:** schemat 12 (`MIGRATIONS[12]` → `SkillPoints.migrate` na obu zestawach, `reworkNotice`); nowe pola postaci
+  i `BuildSet`: `ranks`, `bars`, `barPool`, `respecFree`, `poolsVersion`. Nowa postać: ranga 1 pierwszej umiejętności w
+  domyślnej puli, na miejscu 1. Przy wczytaniu `PathService` czyści rangi, przy nowej wersji pul daje darmowy reset
+  (toast `skills.toast.respecFree`), ustawia pasek puli noszonej broni.
+- **Serwer:** `PathService` (wybór serwisu w DECYZJE): remote'y `AllocateSkills(poolId, plan)` (rate 2),
+  `RefundSkillRank(poolId, skillId)` (rate 4, złoto), `ResetSkills()` (rate 0,5), `SetPoolBar(poolId, slot, skillId?)`
+  (rate 10); zamiana pasków przy zmianie broni (`EquipmentService.Changed`), w walce `SkillService.LockPool`
+  (`Config.SkillPools.swapLock` 2 s, `cast.error.poolSwap`); nowo kupiona ranga 1 na wolne miejsce paska swojej puli,
+  toast przełomu po kupnie rangi 5 / 10; kupno węzła umiejętności ścieżki daje toast `skills.toast.unlocked`. `SkillService`: koniec auto-wkładania przy awansie, `SetSlot`, `LockPool`, pasek
+  aktywnej puli. `LevelService`: `LevelUp` z `skillPoints` na końcu, `SetLevel` w dół czyści rangi. Admin:
+  `/skillrank`, `/skillmax`, `/skillreset`, `/pool`, `/respecfree`.
+- **Okno (minimalne):** nad listą „Podstawa” zakładki pul, wolne punkty, „Resetuj (za darmo / Zwój)”, „Rozdaj jak
+  zaleca pula”, „Zatwierdź”; wiersz „Ranga 4/10 (limit 6)”, „+” / „−” z rezerwacją (zwrot rangi od 20. z ceną),
+  członkowie wybranej puli i umiejętności ścieżek z węzłem; w nagłówku pula i punkty; „!” przy punkcie do wydania;
+  okno `rework2.*`; toast „+N pkt umiejętności” po awansie zamiast toastów rang. Opis przedmiotu: efekt na
+  umiejętności jednej puli dopisuje „(pula: …)” (`tooltip.fx.pool`).
+- **Model i balans:** `SkillModel.character(build, L, element?)` kupuje rangi poziomu L jedną rezerwacją
+  (`SkillPoints.apply`) w puli broni buildu (`rankOrder`: `ReferenceBuild.ranks` → rotacja → pasywki → reszta);
+  `ReferenceBuild.ranks` w typie. 1–20 bez zmian (`balance1_20.spec` bez `ALLOWED_1_20_DIFFS`) dzięki `bonus` 7 (przy 6:
+  4 różnice). `GLOBAL_REPORT_ONLY` działa w blokach S88, regionów i ścieżek (`SkillModel.reportRow`), test martwych
+  kluczy na końcu `balance.spec`. Księga: `Progression:skillPoints.*`, `freeRespecLevel`, `rankRefundGold`,
+  `Skills/init:HOTBAR_SLOTS`, `Config:SkillPools.swapLock`, `SkillPools/*` (nowe w `BALANCE_MODULES`).
+- **`GLOBAL_REPORT_ONLY` S137** (80 wierszy, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”): regiony:
+  `duskwood.morvane.noSupport.{3,4,5}.hit`, `duskwood.guard.tsk{1,2}.Cleric.healer.dungeon.40`;
+  `ashen.guard.*` (28: berserker.butcher 50/60, Hunter base 50–70, kingslayer 65/70, eliteHunter 60–70, poisoner T-SK3
+  65–70, partyHunter 50–65, tracker 55–65); `frostpeak.guard.*` (24: Warrior base / base.loadout 75–100, fury 75, butcher
+  75, kingslayer / eliteHunter 85, poacher / poisoner 75–85, partyHunter / tracker 75); S88 T1: runThrough
+  berserker.fury@spear2h L70, easyPrey trapper.poacher@crossbow L45/L70, savingBlow healer.dungeon@holystaff L70;
+  ścieżki: guardian.defender ehp L70/L100 i ehpRed L100, marksman.kingslayer (oraz @longbow+quiver) base L45/L70 i r7
+  L45, trapper.poacher single L45/L70 (@bow+quiver L70), all.r1 @bow+quiver L45/L70, r5a.hunter (kingslayer, poacher)
+  L45, inquisitor.solo hp L45/L70/L100.
+- **R1 przed / po** (model, ta sama broń buildu): berserker.fury 45: 2,407 → 2,437, 100: 2,598 → 2,598;
+  guardian.defender 2,075 → 2,101 / 2,144 → 2,144; marksman.kingslayer 2,893 → 3,066 / 2,919 → 2,919; trapper.poacher
+  2,798 → 2,910 / 2,901 → 2,901; arcanist.arcanistBoss 4,337 / 4,862 i destroyer.destroyerExp 3,294 / 3,814 bez zmian;
+  inquisitor.solo 4,355 / 5,737 bez zmian; healer.dungeon 2,525 → 2,412 / 2,697 → 2,697. Na 100. budżet wystarcza
+  rotacji i pasywkom; na 45. bazy tracą rangi rzadkich umiejętności, więc część ilorazów rośnie.
+- **Poprawki po przeglądzie:** migracja 2 nie tworzy już pól S137 z szablonu (zapis ze schematu 1 przechodzi przez
+  migrację 12); `/element` (`editWeapon`) wysyła `EquipmentService.Changed`, więc pasek przechodzi do puli nowego żywiołu.
+- **Testy:** nowe `tests/skillpoints.spec.luau`, `tests/skillpools.spec.luau`, pomocnik `tests/RankFill.luau` (dawne rangi
+  z automatu jako kupione, dla testów sprzed S137); poprawione `paths`, `pathview`, `skills` (8 miejsc), `itemeffects`
+  (gałąź pool / role dla klas przejściowych), testy schematu (11 → 12).
+- wiki do odświeżenia (właściciel 17.10): `rules.skillPointsByLevel` / `freeRespecLevel` w `tools/WikiData/Skills`,
+  planer schowany za „Planer wkrótce” — bez zmian w tej sesji.
+- **Pliki:** `src/shared/Data/SkillPools/*` (nowe), `src/shared/Logic/{SkillPoints,SkillPools}.luau` (nowe),
+  `src/shared/Logic/{Paths,Skills,PathView,AccountSchema,CharacterFactory,TooltipModel}.luau`,
+  `src/shared/Data/{Progression,Keybinds,AdminCommands}.luau`, `Data/Paths/Types.luau`,
+  `Data/Skills/{init,Types,Build,Mage,Warrior,Hunter,Cleric}`,
+  `Data/Localization/{pl,en}.luau`, `src/shared/{Config,Types}.luau`, `Net/Definitions.luau`,
+  `src/server/Services/{PathService,SkillService,LevelService}.luau`, `src/server/Admin/{Character,Items}.luau`,
+  `src/client/Controllers/{EffectsController,ReworkController,SkillController,VfxController}.luau`,
+  `src/client/UI/SkillsAttention.luau`, `UI/Screens/Hud/{SkillBar,MobileSkills}.luau`,
+  `UI/Screens/SkillsWindow/{Actions,BarPicker,BaseList,Context,Header}.luau`, `tests/{SkillModel,Balance,RankFill}.luau`,
+  `tests/{skillpoints,skillpools,balance,paths,pathview,skills,itemeffects,character,contracts,leaderboard,mounts,
+  premiumuse,rarities,sidequests,story,tourney,worldmap}.spec.luau`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

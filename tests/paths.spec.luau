@@ -10,6 +10,8 @@ local PartyBuffRules = require("./PartyBuffRules")
 local PathData = require("../src/shared/Data/Paths")
 local GamePaths = require("../src/shared/Logic/Paths")
 local ItemScore = require("../src/shared/Logic/ItemScore")
+local RankFill = require("./RankFill")
+local SkillPools = require("../src/shared/Logic/SkillPools")
 local Progression = require("../src/shared/Data/Progression")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
@@ -92,7 +94,21 @@ local function char(level: number, path: any?, extra: { [string]: any }?): any
 	for key, value in extra or {} do
 		c[key] = value
 	end
-	return c
+	-- S137: the ranks of the old automatic curve as bought ranks (tests/RankFill), unless the test gives its own
+	return RankFill.fill(c, Fixture.skills)
+end
+
+-- S137: skills with a rank in any weapon pool of the class (a reference build names skills of every element pool)
+local function availableAny(c: any): { string }
+	local out: { string } = {}
+	for _, poolId in SkillPools.ids(c.class) do
+		for _, id in GamePaths.availableSkills(c, poolId) do
+			if not table.find(out, id) then
+				table.insert(out, id)
+			end
+		end
+	end
+	return out
 end
 
 local function state(main: string?, nodes: { [string]: number }?, bp: any?, freeUsed: boolean?): any
@@ -1253,7 +1269,7 @@ T.describe("Data: Cleric paths (S71)", function()
 					end
 				end
 				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
-				local available = GamePaths.availableSkills(c)
+				local available = availableAny(c)
 				for key in build.bp do
 					local skillId, at = string.match(key, "^(.+):(%d+)$")
 					T.expect({ key, at == "5" or at == "10" }).toEqual({ key, true })
@@ -1485,7 +1501,7 @@ T.describe("Data: Warrior paths (S75)", function()
 					end
 				end
 				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
-				local available = GamePaths.availableSkills(c)
+				local available = availableAny(c)
 				for key in build.bp do
 					local skillId, at = string.match(key, "^(.+):(%d+)$")
 					local def = SkillData.get(skillId or "") :: any
@@ -1746,7 +1762,7 @@ T.describe("Data: Hunter paths (S78)", function()
 					end
 				end
 				T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
-				local available = GamePaths.availableSkills(c)
+				local available = availableAny(c)
 				for key in build.bp do
 					local skillId, at = string.match(key, "^(.+):(%d+)$")
 					local def = SkillData.get(skillId or "") :: any
@@ -1915,7 +1931,7 @@ T.describe("Data: Mage paths (S81)", function()
 						end
 					end
 					T.expect({ build.id, GamePaths.spent(c) }).toEqual({ build.id, GamePaths.pointsAt(100) })
-					local available = GamePaths.availableSkills(c)
+					local available = availableAny(c)
 					for key in build.bp do
 						local skillId, at = string.match(key, "^(.+):(%d+)$")
 						local def = SkillData.get(skillId or "") :: any
@@ -1972,6 +1988,7 @@ T.describe("Build sets (S58)", function()
 			buildSlot = 1,
 			buildOther = nil,
 			equipment = {},
+			ranks = RankFill.auto("Mage", level, Fixture.skills), -- S137
 		}
 	end
 
@@ -1990,6 +2007,7 @@ T.describe("Build sets (S58)", function()
 		end
 		c.statPoints = 0
 		c.hotbar["10"] = "fxSpark"
+		c.ranks = (api.cleanRanks(c)) -- S137: the legal ranks of the set (points per pool)
 		local bar, bp = api.validHotbar(c)
 		c.hotbar = bar
 		c.path.bp = bp
@@ -2002,6 +2020,12 @@ T.describe("Build sets (S58)", function()
 		c.stats = TableUtil.deepCopy(set.stats)
 		c.statPoints = set.statPoints
 		c.hotbar = TableUtil.deepCopy(set.hotbar)
+		-- S137: the set's ranks and pool bars
+		c.ranks = TableUtil.deepCopy(set.ranks)
+		c.bars = TableUtil.deepCopy(set.bars)
+		c.barPool = set.barPool
+		c.respecFree = set.respecFree
+		c.poolsVersion = set.poolsVersion
 		return c
 	end
 
@@ -2009,6 +2033,11 @@ T.describe("Build sets (S58)", function()
 		c.stats = swap.active.stats
 		c.statPoints = swap.active.statPoints
 		c.hotbar = swap.active.hotbar
+		c.ranks = swap.active.ranks
+		c.bars = swap.active.bars
+		c.barPool = swap.active.barPool
+		c.respecFree = swap.active.respecFree
+		c.poolsVersion = swap.active.poolsVersion
 		c.path = swap.active.path
 		c.buildOther = swap.other
 		c.buildSlot = swap.slot
@@ -2028,7 +2057,9 @@ T.describe("Build sets (S58)", function()
 		T.expect(swap.active.path.main).toBeNil()
 		T.expect(swap.active.stats).toEqual(StatPlan.startOf("Mage"))
 		T.expect(swap.active.statPoints).toBe(495)
-		T.expect(swap.active.hotbar).toEqual(Skills.startHotbar("Mage", 100))
+		-- S137: an empty set has no bought ranks and an empty bar (nothing is bought by itself)
+		T.expect(swap.active.hotbar).toEqual({})
+		T.expect(swap.active.ranks).toEqual({})
 		T.expect(swap.other).toEqual(full)
 		T.expect(swap.other.path.nodes ~= c.path.nodes).toBe(true)
 		T.expect(swap.other.stats ~= c.stats).toBe(true)
@@ -2129,9 +2160,11 @@ T.describe("Build sets (S58)", function()
 			for _, id in out.hotbar do
 				T.expect(api.skillRank(view, id) > 0).toBe(true)
 			end
+			-- S137 (DESIGN-18 §8): a choice stays without a rank; a path skill's only while its node rule holds
 			for key in out.path.bp do
 				local skillId = string.match(key, "^(.+):%d+$") :: string
-				T.expect(api.skillRank(view, skillId) > 0).toBe(true)
+				local def = api.source.skill(skillId) :: any
+				T.expect(def.path == nil or api.pathSkillOpen(view, def)).toBe(true)
 			end
 			T.expect(out.stats).toEqual(StatPlan.startOf("Mage"))
 			T.expect(out.statPoints).toBe(StatPlan.total(30))

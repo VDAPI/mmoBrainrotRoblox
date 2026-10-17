@@ -39,6 +39,7 @@ end
 return Build.class("Cleric", "mana", "magic", {
 	{
 		id = "holyStrike",
+		pool = "common", -- S137 (DESIGN-18 §4.2)
 		unlock = 1,
 		maxLevel = 10,
 		type = "target",
@@ -56,6 +57,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "heal",
+		pool = "common",
 		unlock = 3,
 		maxLevel = 10,
 		type = "heal",
@@ -72,6 +74,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "radiance",
+		pool = "common",
 		unlock = 6,
 		maxLevel = 10,
 		type = "circleSelf",
@@ -89,6 +92,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "devotion",
+		pool = "common",
 		unlock = 10,
 		maxLevel = 5,
 		type = "passive",
@@ -98,6 +102,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "circleOfLight",
+		pool = "common",
 		unlock = 14,
 		maxLevel = 10,
 		type = "groupHeal",
@@ -122,6 +127,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "shieldOfFaith",
+		pool = "common",
 		unlock = 18,
 		maxLevel = 10,
 		type = "shield",
@@ -139,6 +145,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "divineWrath",
+		pool = "common",
 		unlock = 30,
 		maxLevel = 5,
 		type = "passive",
@@ -148,6 +155,7 @@ return Build.class("Cleric", "mana", "magic", {
 	},
 	{
 		id = "judgement",
+		pool = "common",
 		unlock = 45,
 		maxLevel = 10,
 		type = "target",

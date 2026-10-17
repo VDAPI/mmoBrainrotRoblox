@@ -1,6 +1,8 @@
 --!strict
 -- Header row of the skills window (S59, ROZWOJ 4): the build set switch of S58 ("Set 1 / Set 2", "Copy"), free path
 -- points (green while a node can be bought) and the main path. PC 44 px with 32 px buttons, phone 52 px with 44 px.
+-- S137 (DESIGN-18 §12): the active weapon pool and its free skill points (green while a rank can be bought); the pool
+-- tabs and the reservation buttons stand above the Base list (BaseList.poolBar) until the S139 window.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +10,8 @@ local BuildSetSwitch = require(script.Parent.Parent.Parent.Components.BuildSetSw
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
+local SkillPools = require(ReplicatedStorage.Shared.Logic.SkillPools)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
@@ -66,7 +70,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 					local attention = use(ctx.attention)
 					return if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted
 				end),
-				260
+				200
 			),
 			label(
 				3,
@@ -79,7 +83,25 @@ function Header.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 						else Text.get(use, "paths.mainNone")
 				end),
 				Theme.Paper.Heading,
-				300
+				220
+			),
+			label(
+				4,
+				scope:Computed(function(use): string
+					local c: any = use(ctx.character)
+					local pool = use(ctx.activePool)
+					local def = if c and pool then SkillPools.def(c.class, pool) else nil
+					if not c or not pool or not def then
+						return ""
+					end
+					local free = math.max(0, SkillPoints.free(c, pool))
+					return Text.get(use, "skills.points.header", { pool = Text.get(use, def.nameKey), n = free })
+				end),
+				scope:Computed(function(use): Color3
+					local attention = use(ctx.attention)
+					return if attention and attention.skills then Theme.Paper.Success else Theme.Paper.TextMuted
+				end),
+				260
 			),
 		},
 	})

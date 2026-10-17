@@ -35,6 +35,8 @@ local T = require("./Test")
 -- S87 (J1): rows of the global block left to a later session (the table lives in tests/Balance.luau, the report reads
 -- it too); every other row without `report` is asserted.
 local GLOBAL_REPORT_ONLY = B.GLOBAL_REPORT_ONLY
+-- S137: every row a GLOBAL_REPORT_ONLY key may name (global, S88, regions, paths), for the dead-key check at the end
+local REPORT_ROWS: { any } = {}
 -- S94 (L3): the switches S32_ASSERT, GLOBAL_ASSERT, TUNED and PATHS_TUNED (all true) removed: every row without
 -- `report` is asserted. Region thresholds live in tests/Balance.luau (REGION_TARGETS: the report reads them too).
 local REGION_TARGETS = B.REGION_TARGETS
@@ -668,6 +670,7 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 	end
 	local asserted, reported = {}, {}
 	for _, row in rows do
+		table.insert(REPORT_ROWS, row)
 		if row.report ~= nil then
 			continue
 		elseif B.reportOnlyFor(row) then
@@ -685,23 +688,6 @@ T.describe("Balance 20-100: global (asserted from S87)", function()
 		end
 		if #bad > 0 then
 			error(`{#bad} row(s) out of band: {table.concat(bad, "; ", 1, math.min(#bad, 20))}`, 0)
-		end
-	end)
-	T.it("GLOBAL_REPORT_ONLY: every key matches a row, every session is above S87", function()
-		for key, entry in GLOBAL_REPORT_ONLY do
-			local found = false
-			for _, row in rows do
-				if B.reportKeyMatches(key, row) then
-					found = true
-					break
-				end
-			end
-			if not found then
-				error(`GLOBAL_REPORT_ONLY: dead key {key}`, 0)
-			end
-			T.expect({ key = key, later = (B.sessionNumber(entry.session) or 0) > 87 })
-				.toEqual({ key = key, later = true })
-			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
 		end
 	end)
 	T.it("global targets G1-G13 (printed)", function()
@@ -758,7 +744,9 @@ T.describe("Balance 20-100: items, traits, defence (S88)", function()
 	local groups: { [string]: { B.TargetRow } } = {}
 	local order: { string } = {}
 	for _, row in rows do
-		if row.report == nil then
+		table.insert(REPORT_ROWS, row)
+		-- S137: a row named in GLOBAL_REPORT_ONLY is only printed
+		if row.report == nil and B.reportOnlyFor(row) == nil then
 			if not groups[row.id] then
 				groups[row.id] = {}
 				table.insert(order, row.id)
@@ -850,7 +838,9 @@ T.describe("Balance 20-100: regions", function()
 				end
 			end
 			for _, row in all do
-				if row.report == nil then
+				table.insert(REPORT_ROWS, row)
+				-- S137: a row named in GLOBAL_REPORT_ONLY is only printed
+				if row.report == nil and B.reportOnlyFor(row) == nil then
 					T.it(`{row.id}`, function()
 						if not B.inBand(row) then
 							error(describeRow(row), 0)
@@ -2273,6 +2263,9 @@ end)
 -- lives in SkillModel so the report column "asertowany" reads the same one (S90 flips Hunter and Mage there)
 T.describe("Balance 20-100: paths", function()
 	local results = SkillModel.evaluateTargets()
+	for _, r in results do
+		table.insert(REPORT_ROWS, SkillModel.reportRow(r.id, r.build, r.L, r.note))
+	end
 	for _, classId in B.CLASSES do
 		for _, r in results do
 			if r.classId == classId and r.asserted then
@@ -2697,5 +2690,26 @@ T.describe("Blood Moon (S129)", function()
 			T.expect({ row.id, row.elites > 0.5 and row.elites < 20 }).toEqual({ row.id, true })
 		end
 		T.expect(bm.perWeek).toBe(2)
+	end)
+end)
+
+-- S137: moved from the global block (S87): a key may name a row of any block (global, S88, regions, paths).
+T.describe("Balance: GLOBAL_REPORT_ONLY keys", function()
+	T.it("every key matches a row, every session is above S87", function()
+		for key, entry in GLOBAL_REPORT_ONLY do
+			local found = false
+			for _, row in REPORT_ROWS do
+				if B.reportKeyMatches(key, row) then
+					found = true
+					break
+				end
+			end
+			if not found then
+				error(`GLOBAL_REPORT_ONLY: dead key {key}`, 0)
+			end
+			T.expect({ key = key, later = (B.sessionNumber(entry.session) or 0) > 87 })
+				.toEqual({ key = key, later = true })
+			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
+		end
 	end)
 end)

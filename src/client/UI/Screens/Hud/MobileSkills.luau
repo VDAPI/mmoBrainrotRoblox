@@ -1,6 +1,7 @@
 --!strict
 -- Touch skill buttons (DESIGN §14.1, §23): five round buttons in an arc around the attack button, a page
--- switch for slots 6–10 and a "target" button (nearest enemy). Hidden on PC.
+-- switch for slots 6–8 (S137: 8 slots, the second page shows three buttons) and a "target" button (nearest enemy).
+-- Hidden on PC.
 -- S28: dragging a button aims an area skill (the preview follows the finger, release casts there, coming back onto
 -- the button cancels); a tap casts as before.
 
@@ -63,6 +64,9 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 		local offset = Vector2.new(math.cos(rad), -math.sin(rad)) * RADIUS
 		local button = scope:New("TextButton")({
 			Name = `MobileSkill{i}`,
+			Visible = scope:Computed(function(use): boolean
+				return use(slot) <= SkillData.HOTBAR_SLOTS
+			end),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(1, CENTER.X + offset.X, 1, CENTER.Y + offset.Y),
 			Size = UDim2.fromOffset(SIZE, SIZE),

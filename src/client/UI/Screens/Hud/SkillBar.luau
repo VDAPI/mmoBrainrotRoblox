@@ -41,6 +41,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 	local level = State.Value({ "character", "level" })
 	local pathState = State.Value({ "character", "path" })
 	local equipment = State.Value({ "character", "equipment" })
+	local ranks = State.Value({ "character", "ranks" }) -- S137: bought ranks per weapon pool
 	-- The character as Logic/Paths reads it, tracked by `use`.
 	local function charOf(use: any): Paths.Char
 		return {
@@ -48,6 +49,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			level = use(level) or 1,
 			path = use(pathState),
 			equipment = use(equipment),
+			ranks = use(ranks),
 		}
 	end
 	local cooldowns = State.Value({ "skills" })

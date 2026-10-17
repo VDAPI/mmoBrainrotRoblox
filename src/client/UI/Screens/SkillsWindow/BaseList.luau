@@ -6,6 +6,11 @@
 -- S135 (owner: "the text on the left blends together"): every row is a ListRow (alternating parchment, a rule, the
 -- selected row with a brass bar), the name in Body ink, the rank line in Small muted ink, breakpoint badges as small
 -- raised plaques, "To bar" a secondary button; a locked row is muted with a padlock, never grey on grey.
+-- S137 (DESIGN-18 §3, §4; the minimal window, S139 builds the full one): the list shows the members of one weapon pool
+-- (the active one, or a pool tab above the list: preview and reservation only), base skills in the pool's order, then
+-- the path skills whose node is bought. A row reads "Rank 4/10 (limit 6)" with the reserved ranks, "+" / "-" reserve
+-- (or refund a bought rank); above the list: the pool tabs, the free skill points, "Spend as the pool suggests",
+-- "Confirm" (AllocateSkills) and "Reset" (free below Progression.freeRespecLevel or with respecFree).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,7 +23,11 @@ local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local PoolData = require(ReplicatedStorage.Shared.Data.SkillPools)
+local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
+local SkillPools = require(ReplicatedStorage.Shared.Logic.SkillPools)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -32,6 +41,12 @@ local TILE = 44
 local BADGE_W = 38
 local BADGE_GAP = 4
 local BUTTON_W = 104
+local STEP_W = 32 -- S137: the "+" / "-" buttons
+local STEP_GAP = 4
+local POOL_TAB_W = 160 -- S137: a pool tab (three fit the PC list)
+local SUGGEST_W = 220
+local CONFIRM_W = 130
+local RESET_W = 160
 
 local BaseList = {}
 
@@ -154,40 +169,151 @@ function BaseList.badge(s: Scope, badge: Badge, order: number): Instance
 	})
 end
 
+-- S137: the pool tabs, the free skill points and the reservation buttons above the list.
+local function poolBar(
+	s: Scope,
+	use: Fusion.Use,
+	ctx: Context.Ctx,
+	actions: Actions.Actions,
+	character: any,
+	shown: string,
+	buttonHeight: number
+): Instance
+	local tabs: { Instance } = {}
+	local active = use(ctx.activePool)
+	for i, poolId in SkillPools.ids(character.class) do
+		local def = SkillPools.def(character.class, poolId) :: PoolData.PoolDef
+		local name = `{def.glyph} {Text.get(use, def.nameKey)}`
+		if poolId == active then
+			name = Text.get(use, "skills.pool.equipped", { name = name })
+		end
+		table.insert(
+			tabs,
+			Button(s, {
+				LayoutOrder = i,
+				Size = UDim2.fromOffset(POOL_TAB_W, buttonHeight),
+				Variant = if poolId == shown then "primary" else "secondary",
+				TextSize = Theme.TextSize.Small,
+				Text = name,
+				OnClick = function()
+					ctx.viewPool:set(if poolId == active then nil else poolId)
+				end,
+			})
+		)
+	end
+	local reset = character.respecFree == true or character.level < Progression.freeRespecLevel
+	local function row(order: number, children: { any }): Instance
+		return s:New("Frame")({
+			LayoutOrder = order,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -8, 0, buttonHeight),
+			[Children] = {
+				s:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 8),
+				}),
+				children :: any,
+			},
+		})
+	end
+	return s:New("Frame")({
+		Name = "Pools",
+		LayoutOrder = -1,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -8, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		[Children] = {
+			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			row(1, tabs),
+			row(2, {
+				s:New("TextLabel")({
+					LayoutOrder = 1,
+					BackgroundTransparency = 1,
+					Size = UDim2.fromOffset(0, 22),
+					AutomaticSize = Enum.AutomaticSize.X,
+					Text = Text.get(use, "skills.points.free", { n = use(ctx.skillFree) }),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = if use(ctx.skillFree) > 0 then Theme.Paper.Success else Theme.Paper.TextMuted,
+				}),
+				Button(s, {
+					LayoutOrder = 2,
+					Size = UDim2.fromOffset(RESET_W, buttonHeight),
+					Variant = "ghost",
+					TextSize = Theme.TextSize.Small,
+					Text = Text.get(use, if reset then "skills.points.resetFree" else "skills.points.resetScroll"),
+					Disabled = not reset,
+					OnClick = actions.resetSkills,
+				}),
+			}),
+			row(3, {
+				Button(s, {
+					LayoutOrder = 1,
+					Size = UDim2.fromOffset(SUGGEST_W, buttonHeight),
+					Variant = "secondary",
+					TextSize = Theme.TextSize.Small,
+					Text = Text.get(use, "skills.points.suggest"),
+					OnClick = actions.suggest,
+				}),
+				Button(s, {
+					LayoutOrder = 2,
+					Size = UDim2.fromOffset(CONFIRM_W, buttonHeight),
+					Variant = "primary",
+					TextSize = Theme.TextSize.Small,
+					Text = Text.get(use, "skills.points.confirm"),
+					Visible = next(use(ctx.reserve)) ~= nil,
+					OnClick = actions.confirmRanks,
+				}),
+			}),
+		},
+	})
+end
+
+-- The skills of the pool in its order: base members, then path skills that may hold ranks there (node bought).
+local function poolSkills(character: any, poolId: string): { SkillData.SkillDef }
+	local out: { SkillData.SkillDef } = {}
+	for _, id in SkillPools.members(character.class, poolId) do
+		local skill = SkillData.get(id)
+		if skill and (skill.path == nil or Paths.skillOpen(character, id, poolId)) then
+			table.insert(out, skill)
+		end
+	end
+	return out
+end
+
 function BaseList.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): Fusion.Computed<any>
 	local rowHeight = if touch then 68 else 60
 	local buttonHeight = if touch then Theme.Size.MinTouch else 36
+	local stepWidth = if touch then Theme.Size.MinTouch else STEP_W
 
 	return scope:Computed(function(use, s: Scope): { Instance }
 		if use(ctx.activeTab) ~= "base" then
 			return {}
 		end
-		local character = use(ctx.character)
-		if not character then
+		local character: any = use(ctx.character)
+		local pool = use(ctx.pool)
+		if not character or not pool then
 			return {}
 		end
-		local skills: { SkillData.SkillDef } = {}
-		local classSkills: { SkillData.SkillDef } = SkillData.byClass[character.class] or {}
-		for _, skill in classSkills do
-			if skill.path == nil then
-				table.insert(skills, skill)
-			end
-		end
-		table.sort(skills, function(a, b)
-			return a.order < b.order
-		end)
+		local planned: any = use(ctx.planned) or character
+		local reserve = use(ctx.reserve)
+		local onActive = pool == use(ctx.activePool)
+		local skills = poolSkills(character, pool)
 		local choices = if character.path then character.path.bp else nil
 		local class = Classes.get(character.class)
 		-- S135: the class colour made readable on parchment
 		local accent = if class then Theme.readable(class.color, "paper") else Theme.Paper.Heading
 		local list: { Instance } = {
+			poolBar(s, use, ctx, actions, character, pool, buttonHeight),
 			s:New("TextLabel")({
 				Name = "Hint",
 				LayoutOrder = 0,
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, -8, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
-				Text = Text.get(use, "skills.hint"),
+				Text = Text.get(use, if onActive then "skills.hint" else "skills.pool.preview"),
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
@@ -195,25 +321,31 @@ function BaseList.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 		}
+		local stepsWidth = 2 * stepWidth + STEP_GAP
 		for i, skill in skills do
-			local rank = Paths.skillRank(character, skill.id)
+			local rank = Paths.skillRank(character, skill.id, pool)
+			local reserved = reserve[skill.id] or 0
+			local limit = SkillPoints.cap(skill, character.level)
 			local unlocked = rank > 0
 			local passive = skill.type == "passive"
 			local onBar = s:Computed(function(use2): string?
-				return Actions.slotOf(use2(ctx.hotbar), skill.id)
+				return if onActive then Actions.slotOf(use2(ctx.hotbar), skill.id) else nil
 			end)
-			local tile = BaseList.tile(s, ctx, skill, unlocked, accent, TILE)
+			local tile = BaseList.tile(s, ctx, skill, unlocked and onActive, accent, TILE)
 			local tileAny = tile :: any
 			tileAny.Position = UDim2.fromOffset(10, (rowHeight - TILE) / 2)
-			local badges = BaseList.badgeList(skill, rank, choices)
+			local badges = BaseList.badgeList(skill, rank + reserved, choices)
 			local badgeWidth = if #badges > 0 then #badges * (BADGE_W + BADGE_GAP) else 0
 			local name = Text.get(use, skill.nameKey)
-			local sub = if not unlocked
+			local rankText = Text.get(use, "skills.points.rank", { rank = rank, max = skill.maxLevel, limit = limit })
+			if reserved > 0 then
+				rankText ..= ` {Text.get(use, "skills.points.reserved", { n = reserved })}`
+			end
+			local sub = if limit <= 0
 				then `🔒 {Text.get(use, "skills.unlockAt", { level = skill.unlock })}`
-				else `{Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })} · {if rank
-						< skill.maxLevel
-					then Text.get(use, "skills.nextAt", { level = Skills.rankLevel(skill, rank + 1) })
-					else Text.get(use, "skills.maxed")}`
+				else rankText
+			local canAdd = limit > 0 and (SkillPoints.canBuy(planned, pool, skill.id, 1))
+			local canRemove = reserved > 0 or SkillPoints.bought(character, pool, skill.id) > 0
 			local plaques: { Instance } = {}
 			for n, badge in badges do
 				table.insert(plaques, BaseList.badge(s, badge, n))
@@ -226,10 +358,10 @@ function BaseList.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 					Index = i,
 					Height = rowHeight,
 					Inset = TILE + 12,
-					RightInset = BUTTON_W + 12 + badgeWidth,
+					RightInset = BUTTON_W + 12 + badgeWidth + stepsWidth + 8,
 					Text = name,
 					Sub = sub,
-					Muted = not unlocked,
+					Muted = not unlocked and reserved == 0,
 					Selected = s:Computed(function(use2): boolean
 						local sel = use2(ctx.selected)
 						return sel ~= nil and sel.id == skill.id
@@ -243,6 +375,43 @@ function BaseList.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 					end,
 					[Children] = {
 						tile,
+						s:New("Frame")({
+							Name = "Steps",
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.new(1, -(BUTTON_W + 12 + badgeWidth + 8), 0.5, 0),
+							Size = UDim2.fromOffset(stepsWidth, buttonHeight),
+							BackgroundTransparency = 1,
+							Visible = limit > 0,
+							[Children] = {
+								s:New("UIListLayout")({
+									FillDirection = Enum.FillDirection.Horizontal,
+									SortOrder = Enum.SortOrder.LayoutOrder,
+									Padding = UDim.new(0, STEP_GAP),
+								}),
+								Button(s, {
+									Name = "Minus",
+									LayoutOrder = 1,
+									Size = UDim2.fromOffset(stepWidth, buttonHeight),
+									Variant = "secondary",
+									Text = "−",
+									Disabled = not canRemove,
+									OnClick = function()
+										actions.removeRank(skill.id)
+									end,
+								}),
+								Button(s, {
+									Name = "Plus",
+									LayoutOrder = 2,
+									Size = UDim2.fromOffset(stepWidth, buttonHeight),
+									Variant = "primary",
+									Text = "+",
+									Disabled = not canAdd,
+									OnClick = function()
+										actions.addRank(skill.id)
+									end,
+								}),
+							},
+						}),
 						s:New("Frame")({
 							Name = "Badges",
 							AnchorPoint = Vector2.new(1, 0.5),
@@ -259,7 +428,9 @@ function BaseList.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 								plaques :: any,
 							},
 						}),
-						if unlocked and not passive
+						if unlocked
+								and not passive
+								and onActive
 							then Button(s, {
 								AnchorPoint = Vector2.new(1, 0.5),
 								Position = UDim2.new(1, -8, 0.5, 0),
