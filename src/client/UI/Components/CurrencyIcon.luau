@@ -76,7 +76,7 @@ local function CurrencyIcon(scope: Fusion.Scope<typeof(Fusion)>, props: Props): 
 				ImageRectSize = Vector2.new(ItemIcons.CELL, ItemIcons.CELL),
 				ImageColor3 = scope:Computed(function(use): Color3
 					local l = use(layer)
-					return if l and l.tint then Color3.fromHex(l.tint) else Theme.Plain
+					return if l and l.tint then Theme.tint(l.tint) else Theme.Plain
 				end),
 			})
 		)

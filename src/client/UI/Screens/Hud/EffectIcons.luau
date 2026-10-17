@@ -153,22 +153,22 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 					[Children] = {
 						s:New("TextLabel")({
 							Size = UDim2.fromOffset(size, size),
-							BackgroundColor3 = Theme.Colors.Panel,
-							BackgroundTransparency = 0.15,
+							BackgroundColor3 = Theme.Iron.Surface,
+							BackgroundTransparency = Theme.HudAlpha,
 							Text = s:Computed(function(use): string
 								return if use(artShown) then "" else info.glyph
 							end),
 							TextScaled = true,
 							FontFace = Theme.Fonts.BodyBold,
-							TextColor3 = if info.good then Theme.Colors.Success else Theme.Colors.DangerHover,
+							TextColor3 = if info.good then Theme.Iron.Success else Theme.Iron.Danger,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 								ArtIcon.Image(s, { Key = artKey, Corner = Theme.Corner.Small }),
 								s:New("UIStroke")({
 									Color = if full
-										then Theme.Colors.GoldBright
-										elseif info.good then Theme.Colors.Success
-										else Theme.Colors.Danger,
+										then Theme.Brass.Bright
+										elseif info.good then Theme.Iron.Success
+										else Theme.Iron.Danger,
 									Thickness = if full then 2 else 1,
 								}),
 								-- S76: stacks in the corner
@@ -180,9 +180,9 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 										BackgroundTransparency = 1,
 										Text = tostring(entry.stacks),
 										FontFace = Theme.Fonts.BodyBold,
-										TextSize = 12,
+										TextSize = Theme.TextSize.Caption,
 										TextXAlignment = Enum.TextXAlignment.Right,
-										TextColor3 = Theme.Colors.Text,
+										TextColor3 = Theme.Iron.Text,
 										TextStrokeTransparency = 0.3,
 										ZIndex = 2,
 									}) :: any
@@ -195,8 +195,8 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 							BackgroundTransparency = 1,
 							Text = caption,
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 12,
-							TextColor3 = if full then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = if full then Theme.Brass.Bright else Theme.Iron.Text,
 							TextStrokeTransparency = 0.3,
 						}),
 					},

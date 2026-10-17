@@ -80,7 +80,10 @@ local function BossReward(scope: Scope, props: Props): Instance
 	local mythic = Rarities.get(Rarities.MYTHIC)
 	local portrait = if boss then UiArt.boss(boss.id) else nil
 	UiArtState.ensureKey(portrait)
-	local accent = if reward.gotMyth then mythic.color elseif reward.gotLeg then legendary.color else Theme.Colors.Gold
+	local accent = if reward.gotMyth
+		then mythic.paperColor
+		elseif reward.gotLeg then legendary.paperColor
+		else Theme.Brass.Frame
 
 	local function label(order: number, text: Fusion.UsedAs<string>, color: Color3, size: number, font: Font): Instance
 		return scope:New("TextLabel")({
@@ -94,7 +97,6 @@ local function BossReward(scope: Scope, props: Props): Instance
 			FontFace = font,
 			TextSize = size,
 			TextColor3 = color,
-			TextStrokeTransparency = 0.6,
 		})
 	end
 
@@ -103,9 +105,9 @@ local function BossReward(scope: Scope, props: Props): Instance
 		elseif reward.gotLeg then "dungeon.reward.legendary"
 		else "dungeon.reward.none"
 	local resultColor = if reward.gotMyth
-		then mythic.color
-		elseif reward.gotLeg then legendary.color
-		else Theme.Colors.TextMuted
+		then mythic.textColor
+		elseif reward.gotLeg then legendary.textColor
+		else Theme.Paper.TextMuted
 
 	local compact = Fusion.peek(Scale.VirtualSize).Y < 600
 	local luckMul = tonumber(reward.luckMul) or 1
@@ -123,7 +125,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 						from = reward.luckFrom,
 					}) or ""
 				end),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			)
@@ -135,7 +137,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(
 				7,
 				Text.T(scope, "luck.upgraded"),
-				Rarities.get(Rarities.HEROIC).color,
+				Rarities.get(Rarities.HEROIC).textColor,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			)
@@ -144,7 +146,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 	if reward.extra then
 		table.insert(
 			extras,
-			label(8, Text.T(scope, "luck.extra"), Theme.Colors.GoldBright, Theme.TextSize.Small, Theme.Fonts.BodyBold)
+			label(8, Text.T(scope, "luck.extra"), Theme.Paper.Heading, Theme.TextSize.Small, Theme.Fonts.BodyBold)
 		)
 	end
 	local mountDef = if reward.mount then MountData.get(reward.mount) else nil
@@ -154,7 +156,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(
 				8,
 				Text.T(scope, "boss.mountGot", { mount = Text.T(scope, mountDef.nameKey) }),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Body,
 				Theme.Fonts.BodyBold
 			)
@@ -167,7 +169,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(
 				8,
 				Text.T(scope, "boss.skinGot", { skin = Text.T(scope, skinDef.nameKey) }),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			)
@@ -180,9 +182,9 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(
 				9,
 				Text.T(scope, "dungeon.summary.title"),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Body,
-				Theme.Fonts.Heading
+				Theme.Fonts.Display
 			)
 		)
 		-- S134f: "Fight time 3:42 · Deaths: Ala, Olek · Dodged blows 14 / 17" above the table
@@ -195,7 +197,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 					scope:Computed(function(use): string
 						return FightView.headerLine(use, header)
 					end),
-					Theme.Colors.Parchment,
+					Theme.Paper.Raised,
 					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium
 				)
@@ -228,7 +230,6 @@ local function BossReward(scope: Scope, props: Props): Instance
 			Padding = UDim.new(0, 8),
 		}),
 		Button(scope, {
-			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			LayoutOrder = 1,
 			Text = Text.T(scope, "reveal.ok"),
 			Variant = "secondary",
@@ -241,7 +242,6 @@ local function BossReward(scope: Scope, props: Props): Instance
 		table.insert(
 			buttons,
 			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				LayoutOrder = 2,
 				Text = Text.T(scope, "fight.details"),
 				Variant = "secondary",
@@ -260,8 +260,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 		Position = if compact then UDim2.fromScale(0.5, 0.5) else UDim2.fromScale(0.5, 0.38),
 		Size = UDim2.fromOffset(if compact then 540 else 660, 0), -- S134f: wider for the meter columns
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.08,
+		BackgroundColor3 = Theme.Paper.Surface,
 		Active = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -291,9 +290,9 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(
 				1,
 				Text.T(scope, "dungeon.reward.title", { boss = if boss then Text.T(scope, boss.nameKey) else "" }),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Large + 2,
-				Theme.Fonts.Heading
+				Theme.Fonts.Display
 			),
 			label(
 				2,
@@ -302,7 +301,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 					"combat.reward",
 					{ exp = Format.number(reward.exp or 0), gold = Format.number(reward.gold or 0) }
 				),
-				Theme.Colors.Parchment,
+				Theme.Paper.Text,
 				Theme.TextSize.Body,
 				Theme.Fonts.BodyBold
 			),
@@ -314,7 +313,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 					limit = reward.dailyRuns or 0,
 					time = Time.format(BossScaling.untilReset(Clock.now())),
 				}),
-				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Colors.Warning else Theme.Colors.Success,
+				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Paper.Warning else Theme.Paper.Success,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyMedium
 			),

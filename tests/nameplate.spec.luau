@@ -77,3 +77,49 @@ describe("Nameplate view (S135)", function()
 		expect(Config.Nameplate.maxDistance >= 150).toBe(true)
 	end)
 end)
+
+describe("Monster and NPC plates (S136)", function()
+	local function monster(over: { [string]: any }): Nameplate.MonsterInput
+		local base: { [string]: any } = { variant = "normal", returning = false, targeted = false, groupSize = nil }
+		for k, v in over do
+			base[k] = v
+		end
+		return base :: any
+	end
+
+	it("colours the name by variant, unknown variants as normal", function()
+		expect(Nameplate.monster(monster({})).nameRole).toBe("normal")
+		expect(Nameplate.monster(monster({ variant = "elite" })).nameRole).toBe("elite")
+		expect(Nameplate.monster(monster({ variant = "elite2" })).nameRole).toBe("elite2")
+		expect(Nameplate.monster(monster({ variant = "boss" })).nameRole).toBe("boss")
+		expect(Nameplate.monster(monster({ variant = "weird" })).nameRole).toBe("normal")
+		expect(Nameplate.monster(monster({ variant = nil })).nameRole).toBe("normal")
+	end)
+
+	it("shows the group badge only for two or more", function()
+		expect(Nameplate.monster(monster({})).groupSize).toBeNil()
+		expect(Nameplate.monster(monster({ groupSize = 1 })).groupSize).toBeNil()
+		expect(Nameplate.monster(monster({ groupSize = 3 })).groupSize).toBe(3)
+	end)
+
+	it("HP numbers and the wide bar only on the selected target; the return mark follows the monster", function()
+		local plain = Nameplate.monster(monster({}))
+		expect(plain.showHpNumbers).toBe(false)
+		expect(plain.wideBar).toBe(false)
+		local target = Nameplate.monster(monster({ targeted = true, returning = true }))
+		expect(target.showHpNumbers).toBe(true)
+		expect(target.wideBar).toBe(true)
+		expect(target.returning).toBe(true)
+	end)
+
+	it("NPC plates: the service glyph without companions, the tag only on your own companion", function()
+		local npc = Nameplate.npc({ icon = "⚒", companion = false, mine = false })
+		expect(npc.showIcon).toBe(true)
+		expect(npc.showTag).toBe(false)
+		expect(npc.nameRole).toBe("text")
+		expect(Nameplate.npc({ icon = "", companion = false, mine = false }).showIcon).toBe(false)
+		expect(Nameplate.npc({ icon = nil, companion = true, mine = true }).showTag).toBe(true)
+		expect(Nameplate.npc({ icon = nil, companion = true, mine = false }).showTag).toBe(false)
+		expect(Nameplate.npc({ icon = "⚒", companion = true, mine = true }).showIcon).toBe(false)
+	end)
+end)

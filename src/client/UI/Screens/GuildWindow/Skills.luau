@@ -38,21 +38,21 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 	return scope:New("Frame")({
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 84),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Transparency = 0.4 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule, Transparency = 0.4 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(10, 10),
 				Size = UDim2.fromOffset(64, 64),
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				Text = scope:Computed(function(use): string
 					return if UiArtState.ready(use, UiArt.guildSkill(def.id)) then "" else def.icon
 				end),
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIPadding")({
@@ -79,7 +79,7 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextLabel")({
@@ -99,11 +99,11 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 					local next = Text.get(use, "guild.skill.next", {
 						effect = Text.get(use, def.descKey, { value = Guild.skillEffect(def.id, lvl + 1) }),
 					})
-					return `{now}\n<font color="#{Theme.Colors.Success:ToHex()}">{next}</font>`
+					return `{now}\n<font color="#{Theme.Paper.Success:ToHex()}">{next}</font>`
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 			}),
@@ -118,7 +118,7 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Right,
 			}),
 			Button(scope, {
@@ -176,7 +176,7 @@ local function Skills(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			cards :: any,

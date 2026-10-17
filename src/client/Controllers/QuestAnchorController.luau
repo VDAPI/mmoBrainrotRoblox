@@ -1545,7 +1545,7 @@ local function register(instance: Instance)
 	glyph.Text = "✦"
 	glyph.TextScaled = true
 	glyph.FontFace = Theme.Fonts.BodyBold
-	glyph.TextColor3 = Theme.Colors.GoldBright
+	glyph.TextColor3 = Theme.Brass.Bright
 	glyph.TextStrokeTransparency = 0.3
 	glyph.Parent = marker
 	marker.Parent = instance

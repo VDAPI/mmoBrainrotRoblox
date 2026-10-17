@@ -28,7 +28,7 @@ local peek = Fusion.peek
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local BLOOD = Color3.fromHex("#C0262D")
+local BLOOD = Theme.Paper.Danger -- S136: the Blood Moon red as text on parchment
 local RULES = ScheduledEvents.bloodMoon
 local REWARD = RULES.reward
 
@@ -46,7 +46,7 @@ local function line(
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Text = text,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextSize = size or Theme.TextSize.Small,
 		FontFace = font or Theme.Fonts.Body,
 		TextWrapped = true,
@@ -59,7 +59,7 @@ local function cell(s: Scope, text: string, width: number, color: Color3?, align
 		BackgroundTransparency = 1,
 		Size = if width > 0 then UDim2.new(0, width, 1, 0) else UDim2.new(1, -400, 1, 0),
 		Text = text,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextSize = Theme.TextSize.Small,
 		FontFace = Theme.Fonts.Body,
 		TextXAlignment = align or Enum.TextXAlignment.Left,
@@ -142,7 +142,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 	end)
 	local sourceColor = scope:Computed(function(use): Color3
 		local b = use(board)
-		return if type(b) == "table" and b.global == false then Theme.Colors.Warning else Theme.Colors.TextMuted
+		return if type(b) == "table" and b.global == false then Theme.Paper.Warning else Theme.Paper.TextMuted
 	end)
 
 	local rows = scope:Computed(function(use, s: Scope): { any }
@@ -161,7 +161,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 					Name = `Row{i}`,
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, if small then 44 else 40),
-					BackgroundColor3 = if mineRow then Theme.Colors.PanelHover else Theme.Colors.PanelRaised,
+					BackgroundColor3 = if mineRow then Theme.Paper.Hover else Theme.Paper.Raised,
 					BackgroundTransparency = if mineRow then 0.1 else 0.4,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -172,17 +172,12 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 							SortOrder = Enum.SortOrder.LayoutOrder,
 							Padding = UDim.new(0, 6),
 						}),
-						cell(
-							s,
-							`#{row.rank}`,
-							44,
-							if row.rank == 1 then Theme.Colors.GoldBright else Theme.Colors.Parchment
-						),
+						cell(s, `#{row.rank}`, 44, if row.rank == 1 then Theme.Paper.Heading else Theme.Paper.Text),
 						cell(
 							s,
 							if class then class.icon else "",
 							28,
-							if class then Color3.fromHex(class.color) else nil,
+							if class then Theme.readable(class.color, "paper") else nil,
 							Enum.TextXAlignment.Center
 						),
 						cell(s, tostring(row.name or "?"), 0),
@@ -193,9 +188,9 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 								s,
 								if type(row.guild) == "string" then `[{row.guild}]` else "",
 								80,
-								Theme.Colors.TextMuted
+								Theme.Paper.TextMuted
 							)) :: any,
-						cell(s, if row.level then `{row.level}` else "", 44, Theme.Colors.TextMuted),
+						cell(s, if row.level then `{row.level}` else "", 44, Theme.Paper.TextMuted),
 						cell(s, `{row.points}`, 70, BLOOD, Enum.TextXAlignment.Right),
 					},
 				})
@@ -208,7 +203,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 					s,
 					1,
 					Text.get(use, if type(b) == "table" then "bloodmoon.window.empty" else "bloodmoon.window.noBoard"),
-					Theme.Colors.TextMuted
+					Theme.Paper.TextMuted
 				)
 			)
 		end
@@ -265,7 +260,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 	}
 	local ruleLines: { Instance } = {}
 	for i, rule in rules do
-		table.insert(ruleLines, line(scope, 20 + i, Text.T(scope, rule.key, rule.args), Theme.Colors.Parchment))
+		table.insert(ruleLines, line(scope, 20 + i, Text.T(scope, rule.key, rule.args), Theme.Paper.Text))
 	end
 
 	return scope:New("ScrollingFrame")({
@@ -274,7 +269,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.Border,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -289,10 +284,10 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 				end),
 				BLOOD,
 				Theme.TextSize.Large,
-				Theme.Fonts.Heading
+				Theme.Fonts.Display
 			),
-			line(scope, 2, header, Theme.Colors.GoldBright, Theme.TextSize.Body, Theme.Fonts.BodyBold),
-			line(scope, 3, Text.T(scope, "bloodmoon.desc"), Theme.Colors.TextMuted),
+			line(scope, 2, header, Theme.Paper.Heading, Theme.TextSize.Body, Theme.Fonts.BodyBold),
+			line(scope, 3, Text.T(scope, "bloodmoon.desc"), Theme.Paper.TextMuted),
 			Tabs(scope, {
 				Tabs = tabs,
 				Selected = selected,
@@ -311,7 +306,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 					rows :: any,
 				},
 			}),
-			line(scope, 6, you, Theme.Colors.Text, Theme.TextSize.Small, Theme.Fonts.BodyBold),
+			line(scope, 6, you, Theme.Paper.Text, Theme.TextSize.Small, Theme.Fonts.BodyBold),
 			line(scope, 7, source, sourceColor),
 			line(scope, 20, Text.T(scope, "bloodmoon.window.rules"), BLOOD, Theme.TextSize.Body, Theme.Fonts.BodyBold),
 			ruleLines :: any,

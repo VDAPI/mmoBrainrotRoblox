@@ -149,7 +149,7 @@ local function apply(model: Model?, engage: boolean, approach: boolean, send: bo
 		highlight.Adornee = model
 		highlight.Enabled = model ~= nil
 		if model then
-			highlight.OutlineColor = if isMonster(model) then Theme.Colors.ZoneRed else Theme.Colors.GoldBright
+			highlight.OutlineColor = if isMonster(model) then Theme.Zone.Red else Theme.Brass.Bright
 		end
 	end
 	approaching = engage and approach
@@ -593,7 +593,7 @@ function TargetController.Init(registry)
 	hoverHighlight.Name = "Vaelthorn_HoverHighlight"
 	hoverHighlight.FillTransparency = 0.85
 	hoverHighlight.FillColor = Color3.new(1, 1, 1)
-	hoverHighlight.OutlineColor = Theme.Colors.GoldBright
+	hoverHighlight.OutlineColor = Theme.Brass.Bright
 	hoverHighlight.OutlineTransparency = 0.45
 	hoverHighlight.DepthMode = Enum.HighlightDepthMode.Occluded
 	hoverHighlight.Enabled = false

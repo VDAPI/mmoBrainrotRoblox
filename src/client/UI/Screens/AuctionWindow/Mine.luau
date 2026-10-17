@@ -21,10 +21,10 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local STATUS_COLORS: { [string]: Color3 } = {
-	active = Theme.Colors.Success,
-	sold = Theme.Colors.GoldBright,
-	expired = Theme.Colors.Warning,
-	cancelled = Theme.Colors.TextMuted,
+	active = Theme.Paper.Success,
+	sold = Theme.Paper.Heading,
+	expired = Theme.Paper.Warning,
+	cancelled = Theme.Paper.TextMuted,
 }
 
 local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
@@ -83,7 +83,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 					Text = Text.get(use, if use(loading) then "auction.loading" else "auction.mine.empty"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 			return list
@@ -105,7 +105,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 				s:New("Frame")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 64),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = 0.3,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -122,7 +122,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Text = if entry.item.n > 1 then `{name} x{entry.item.n}` else name,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = ItemText.rarityColor(entry.item.rarity),
+							TextColor3 = ItemText.rarityName(entry.item.rarity, "paper"),
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -131,10 +131,10 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Size = UDim2.new(1, -330, 0, 22),
 							BackgroundTransparency = 1,
 							RichText = true,
-							Text = `<font color="#{(STATUS_COLORS[entry.status] or Theme.Colors.Text):ToHex()}">{status}</font>  ·  {detail}`,
+							Text = `<font color="#{(STATUS_COLORS[entry.status] or Theme.Paper.Text):ToHex()}">{status}</font>  ·  {detail}`,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 						s:New("TextLabel")({
@@ -145,7 +145,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Text = `◉ {Format.number(entry.price)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Right,
 						}),
 						Button(s, {
@@ -201,7 +201,7 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Right,
 			}),
 		},

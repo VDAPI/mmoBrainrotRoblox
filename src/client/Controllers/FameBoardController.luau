@@ -88,7 +88,7 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 					Size = UDim2.new(0.94, 0, 0, 30),
 					Text = Text.get(use, "leaderboard.loading"),
 					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextSize = 20,
 				})
 			)
@@ -104,8 +104,8 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 						Position = UDim2.new(0.02, 0, 0, 44),
 						Size = UDim2.new(0.38, 0, 0, 22),
 						Text = Text.get(use, panel.titleKey),
-						FontFace = Theme.Fonts.Heading,
-						TextColor3 = Theme.Colors.GoldBright,
+						FontFace = Theme.Fonts.Display,
+						TextColor3 = Theme.Paper.Heading,
 						TextSize = 18,
 					})
 				)
@@ -117,7 +117,7 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 							Position = UDim2.new(0.02, 0, 0, 68 + (i - 1) * 19),
 							Size = UDim2.new(0.38, 0, 0, 18),
 							Text = if row then topRow(use, row) else Text.get(use, "leaderboard.empty"),
-							TextColor3 = if row then INK else Theme.Colors.TextMuted,
+							TextColor3 = if row then INK else Theme.Paper.TextMuted,
 							TextSize = 14,
 						})
 					)
@@ -130,8 +130,8 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 						Position = UDim2.new(0.42, 0, 0, 44),
 						Size = UDim2.new(0.56, 0, 0, 22),
 						Text = Text.get(use, panel.titleKey),
-						FontFace = Theme.Fonts.Heading,
-						TextColor3 = Theme.Colors.GoldBright,
+						FontFace = Theme.Fonts.Display,
+						TextColor3 = Theme.Paper.Heading,
 						TextSize = 18,
 					})
 				)
@@ -156,7 +156,7 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 								Position = UDim2.new(x, 0, 0, 88 + (i - 1) * 18),
 								Size = UDim2.new(width, 0, 0, 17),
 								Text = if row then `{i}. {row.n}` else Text.get(use, "leaderboard.hof.free"),
-								TextColor3 = if row then INK else Theme.Colors.TextMuted,
+								TextColor3 = if row then INK else Theme.Paper.TextMuted,
 								TextSize = 13,
 							})
 						)
@@ -171,8 +171,8 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 			Position = UDim2.new(0.02, 0, 0, 6),
 			Size = UDim2.new(0.96, 0, 0, 34),
 			Text = Text.T(scope, "town.fame.title"),
-			FontFace = Theme.Fonts.Heading,
-			TextColor3 = Theme.Colors.Gold,
+			FontFace = Theme.Fonts.Display,
+			TextColor3 = Theme.Paper.Heading,
 			TextSize = 30,
 			TextXAlignment = Enum.TextXAlignment.Center,
 		}),
@@ -181,7 +181,7 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 			Position = UDim2.new(0.98, 0, 0, 10),
 			Size = UDim2.new(0.3, 0, 0, 16),
 			Text = Text.T(scope, "leaderboard.local"),
-			TextColor3 = Theme.Colors.Warning,
+			TextColor3 = Theme.Paper.Warning,
 			TextSize = 12,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			Visible = scope:Computed(function(use): boolean
@@ -194,7 +194,7 @@ local function boardFace(scope: Scope, panels: Fusion.Value<any>, mode: Fusion.V
 			Position = UDim2.new(0.02, 0, 1, -4),
 			Size = UDim2.new(0.96, 0, 0, 16),
 			Text = Text.T(scope, "town.fame.hint"),
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Center,
 		}),
@@ -344,9 +344,9 @@ local function writePlaque(part: Instance)
 				24,
 				scope:Computed(function(use): Color3
 					local name = use(hero)
-					return if type(name) == "string" and name ~= "" then Theme.Colors.GoldBright else INK
+					return if type(name) == "string" and name ~= "" then Theme.Paper.Heading else INK
 				end),
-				Theme.Fonts.Heading
+				Theme.Fonts.Display
 			),
 			row(
 				3,

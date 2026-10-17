@@ -11698,3 +11698,74 @@ LookWindow,VipWindow,GuildFound,CharacterSelect/Creator,PremiumShop/*}.luau`, `U
 SocialController,LootComfortController}.luau`, `tools/WikiData/{TokensCss,Basics}.luau`, `tools/balance_reasons.luau`,
 `tests/{uipalette,uitheme,nameplate}.spec.luau` (nowe), `tests/rarities.spec.luau`,
 `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S136: Pergamin i żelazo (2/2)
+
+- Wszystkie okna na pergaminie (27 z `PENDING_S136` + `lootlog`), panel admina jedynym oknem na żelazie. `Data/UiWindows`:
+  pole `surface = "paper" | "iron"` zamiast `paper` (iron z powodem), `UiWindows.surface(id)` zamiast `isPaper`,
+  `UiWindows.SCREENS` jako mapa plik → powierzchnia. `Window` bez dawnego trybu (prop `Surface`, ciało z
+  `Theme.surface`). Okno `lootlog` przeniesione z `LootComfortController` do `UI/Screens/LootLog.luau` (wiersze
+  `ListRow`, nazwa w kolorze rzadkości, klucz `lootlog.sub` zamiast `lootlog.entry`).
+- `Theme.Colors` i alias `Fonts.Heading` usunięte; ok. 1180 użyć przepisanych na role według powierzchni pliku i
+  właściwości (tekst / tło / brzeg). Nowe w `Theme`: `tint(hex)` (kolor danych jako grafika), `ZoneText`, `Medal`,
+  `Plate`, `Chat`, `Glyph`, `Mark`, `Announce`, `Pvp`, `Neutral`, `HudAlpha`, `BadgeAlpha`. Nowe w `Data/UiPalette`:
+  `medal`, `HUD_ALPHA` / `BADGE_ALPHA` / `WORLD_BRIGHT`, `plate`, `mark`, `group`, `zoneText`, `chat`, `glyph`, `league`,
+  `map` (rysunek map), `announce.mythicVeil` / `deathGlow`, `neutral.swatch` / `bubbleBg` / `bubbleText`; pary kontrastu
+  dla płytek HUD (zmieszanych ze śniegiem), tabliczek, znaków, grup, medali, czatu, znaków HUD i ogłoszeń.
+- HUD na żelazie: portret, ramka celu („Akcje” jako przycisk `secondary` żelaza, bez zmiany zachowania), tracker i
+  pasek prowadzenia (treść `Small`, wysokość 44), panele wydarzeń / Krwawego Księżyca / turnieju / areny (płytki
+  `HudAlpha`, brzeg 1 px, przyciski 34 / 44), sloty umiejętności i mikstur (`Iron.Raised`, brzeg `Brass.Line`, klawisz
+  na plakietce, zasłony z `Shade`), przyciski HUD (znaki z `UiPalette.glyph`), minimapa (mosiężna rama, nazwa na
+  plakietce, rysunek z `UiPalette.map`, przyciski zoomu 44), banery (strefa przez `ZoneText`), winieta, ekran śmierci.
+- Tabliczki potworów (płytka żelaza za nazwą, poziom i „×N” na plakietkach `Small`, tor HP `Resource.track`), NPC i
+  towarzyszy (`UI/PlateStyle`) w stylu tabliczek graczy; `Logic/Nameplate.monster` / `.npc`; znaki questów nad NPC z
+  `UiPalette.mark`, kolory grup z `UiPalette.group`, kanały czatu z `UiPalette.chat`.
+- Ekrany poza oknami: tło wyboru postaci na żelazie, karty postaci i kreatora na pergaminie (portret klasy pod
+  pergaminową zasłoną), nagroda bossa i objawienie legendy jako karty pergaminu (nazwy rzadkości `textColor`, ramka
+  `paperColor`, poświata bez zmian), oferta areny i gotowość z paskiem czasu w `Brass.Frame`, przerywnik, koło emotek,
+  łowienie, ramki drużyny na żelazie. `FightTable` / `FightLoot` z propem `Surface`.
+- Rankingi: miejsca 1–3 jako plakietki żelaza z jasną cyfrą (`UiPalette.medal`), ligi areny przez `Theme.readable`.
+- Wiki: `Basics.zoneColors()` tylko z `UiPalette.zone`, `themeText` usunięte z `tools/wikidump.luau`,
+  `WikiData/init`, `TokensCss`, `wikidump.spec`. Wiki do odświeżenia (właściciel 17.10).
+- Poprawki po przeglądzie: znaki HUD (`glyph` hunt / lure / potion / enemy / blood) rozjaśnione do ≥ 3:1 na płytce HUD
+  zmieszanej ze śniegiem (nowe pary, `UiPalette.HUD_TILES`), `Theme.readable(hex, "hud")` dla tytułu panelu wydarzenia
+  i kolumn areny; karty mapy świata: nazwy przedmiotów i próg rzadkości `textColor` / `rarityName(…, "paper")`, szanse
+  bossa przez `Theme.readable`, cele questów w kolorach pergaminu, linie `DetailCard` domyślnie `Small` (bez `size = 13/14`);
+  lista map `Body` / `Small`, dymek komentarza `Small`, podpis sprintu `Caption`; nagłówek lochu na banerze tekstem
+  żelaza z obrysem (bez banera atrament), linia lochu i „ulepszono” nagrody bossa w `textColor`. `uitheme.spec` łapie też
+  `TextSize = if … then <liczba>`, `size = <liczba>` i liczby zwracane w `TextSize = Computed`.
+
+**Okna i ekrany** (`Data/UiWindows`)
+
+| okno / ekran | powierzchnia | ✓ |
+|---|---|---|
+| `deposit`, `blacksmith`, `alchemy`, `backpacks`, `unbind`, `huntshop`, `auction` | pergamin | ✓ |
+| `questboard`, `guild`, `guildfound`, `map` (rysunek bez zmian), `areapicker`, `mounts` | pergamin | ✓ |
+| `rankings`, `arena`, `bloodmoon`, `dungeon`, `login`, `lootlog`, `stonepicker` | pergamin | ✓ |
+| `premium`, `vip`, `wardrobe`, `look`, `fightlog`, `friends` | pergamin | ✓ |
+| `dev` (panel admina) | żelazo | ✓ |
+| `Hud/*` (32 pliki), `PartyFrames`, `Cutscene`, `EmoteWheel`, `FishingGame`, `FightCard`, `CharacterSelect/init` | żelazo | ✓ |
+| `CharacterSelect/SlotCard`, `Creator`, `BossReward`, `LegendReveal`, `ArenaOffer`, `ComingSoon`, `ReadyCheck`, `PlayerMenu` | pergamin | ✓ |
+
+**Wyjątki testu** (`tests/uitheme.spec`): zwolnione całe pliki `UI/Theme.luau` (buduje role) i `UI/MapSketch.luau`
+(rysunek mapy); `ALLOWED`: `Ambient` / `LightColor` podglądów 3D w `LookPreview`, `MountWindow`, `Wardrobe`,
+`WorldMap/Preview` oraz kolory manekina, ziemi i światła w `SkillsWindow/Preview` (S135), rozmiary ikon
+`UiArtState.decorate` w `Hud/Minimap` i `WorldMap/Overlay`.
+
+**Pliki:** `src/shared/Data/{UiPalette,UiWindows}.luau`, `Data/Localization/{pl,en}.luau`, `src/shared/Logic/Nameplate.luau`,
+`src/client/UI/{Theme,AreaProfileText,GroupColors,NpcMarkState,QuestText,UiArtState}.luau`, `UI/PlateStyle.luau` (nowy),
+`UI/Components/{Window,IconButton,Announcement,CurrencyIcon,FightLoot,FightTable,ItemIcon,LookPicker,LookPreview,
+PortraitFrame,PvpDot}.luau`, `UI/Screens/LootLog.luau` (nowy), `UI/Screens/{AlchemyWindow,AreaPicker,ArenaOffer,BackpackShop,
+BloodMoonWindow,BossReward,ComingSoon,Cutscene,DepositWindow,DungeonWindow,EmoteWheel,FightCard,FightLogWindow,FishingGame,
+FriendsWindow,GuildFound,HuntShopWindow,LegendReveal,LoginReward,LookWindow,MountWindow,PartyFrames,PlayerMenu,QuestBoard,
+RankingsWindow,ReadyCheck,StonePicker,UnbindPicker,VipWindow,Wardrobe}.luau`, `UI/Screens/{ArenaWindow,AuctionWindow,
+BlacksmithWindow,CharacterSelect,DevWindow,GuildWindow,Hud,PremiumShop,WorldMap}/*`, `src/client/Controllers/{ArenaFame,
+Bark,Chat,CombatFx,Companion,Dev,Dungeon,FameBoard,Guide,Guild,Icon,LootComfort,Loot,Market,MonsterPlate,Npc,Party,
+QuestAnchor,Quest,Sign,Skill,Social,Target,TourneyFame,UI,WindowManager,World}Controller.luau`,
+`src/shared/Logic/CosmeticRules.luau` (komentarz), `tools/{wikidump,WikiData/Basics,WikiData/TokensCss,WikiData/init}.luau`,
+`tests/{uitheme,uipalette,nameplate,wikidump}.spec.luau`, `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS,WIKI}.md`, `CLAUDE.md`.
+
+**Dla właściciela (decyzje):** (1) przezroczystość płytek HUD 0,15 (jedna wartość `UiPalette.HUD_ALPHA`; tabliczki
+graczy zostają 0,45 z S135, tabliczki potworów i NPC mają 0,15); (2) sloty umiejętności z mosiężnym brzegiem zamiast
+brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portret klasy pod pergaminową zasłoną
+(0,15–0,3) zamiast ciemnej; gdy portret ma być wyraźniejszy, alternatywą jest ciemna zasłona z tekstem na żelazie.

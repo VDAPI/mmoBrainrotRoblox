@@ -6,7 +6,7 @@
 --
 -- opts.rolls     Monte Carlo rolls per monster variant (loot) and per pool and rarity (bonus frequency)
 -- opts.only      { file names }: build only these JSON files (+ what they need), no derived files
--- opts.exists    path -> boolean (feature detection), opts.themeText (src/client/UI/Theme.luau as text)
+-- opts.exists    path -> boolean (feature detection)
 -- opts.readText  path -> text? (S37: server layouts and UI/MapSketch.luau read as text, never required)
 -- opts.git       { commit, date } of the data (the CLI asks git; "unknown" without it)
 
@@ -64,7 +64,6 @@ export type Opts = {
 	rolls: number?,
 	only: { string }?,
 	exists: ((path: string) -> boolean)?,
-	themeText: string?,
 	readText: ((path: string) -> string?)?,
 	git: { commit: string, date: string }?,
 }
@@ -172,7 +171,6 @@ function WikiDump.build(opts: Opts?): Result
 	local ctx: any = {
 		rolls = o.rolls or WikiDump.DEFAULT_ROLLS,
 		features = features,
-		themeText = o.themeText,
 		readText = o.readText,
 		warnings = {},
 		data = {},

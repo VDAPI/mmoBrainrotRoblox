@@ -118,14 +118,15 @@ local function portrait(scope: Scope): Instance
 		Name = "Portrait",
 		Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large),
 		Size = UDim2.fromOffset(400, 136),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.12,
+		-- S136: an iron HUD tile with a 1 px brass edge
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = Theme.Stroke.Normal,
-				Color = Theme.Colors.GoldDim,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Brass.Line,
 			}),
 			-- S123: the portrait frame cosmetic (UI/Components/PortraitFrame; the class stroke without one)
 			PortraitFrame(scope, {
@@ -135,7 +136,7 @@ local function portrait(scope: Scope): Instance
 				FrameId = State.Value({ "account", "cosmetics", "equipped", "frame" }),
 				ClassColor = scope:Computed(function(use): Color3
 					local c = use(class)
-					return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
+					return if c then Theme.tint(c.color) else Theme.Brass.Bright
 				end),
 				-- S119: the class emblem (medallion) once loaded, the glyph otherwise.
 				Content = ArtIcon(scope, {
@@ -149,11 +150,11 @@ local function portrait(scope: Scope): Instance
 					end),
 					GlyphColor = scope:Computed(function(use): Color3
 						local c = use(class)
-						return if c then Color3.fromHex(c.color) else Theme.Colors.Gold
+						return if c then Theme.tint(c.color) else Theme.Brass.Bright
 					end),
 					ImageScale = 0.8,
 					Size = UDim2.fromScale(1, 1),
-					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 44 },
+					Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Hero },
 				}),
 			}),
 			scope:New("TextLabel")({
@@ -161,17 +162,17 @@ local function portrait(scope: Scope): Instance
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromOffset(54, 106),
 				Size = UDim2.fromOffset(60, 24),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				Text = Text.T(scope, "hud.level", { level = level }),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Iron.Text,
 				ZIndex = 2,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Colors.GoldDim,
+						Color = Theme.Brass.Line,
 					}),
 				},
 			}),
@@ -202,9 +203,9 @@ local function portrait(scope: Scope): Instance
 						Text = scope:Computed(function(use): string
 							return use(name) or ""
 						end),
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Iron.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						[Children] = scope:New("UISizeConstraint")({ MaxSize = Vector2.new(170, 28) }),
@@ -227,7 +228,7 @@ local function portrait(scope: Scope): Instance
 						LayoutOrder = 1,
 						Value = number(scope, { "character", "hp" }),
 						Max = number(scope, { "derived", "values", "maxHp" }),
-						Color = Theme.Colors.Hp,
+						Color = Theme.Resource.Hp,
 						Label = Text.T(scope, "hud.hp"),
 						ShowNumbers = true,
 					}),
@@ -236,7 +237,7 @@ local function portrait(scope: Scope): Instance
 						LayoutOrder = 2,
 						Value = number(scope, { "character", "mana" }),
 						Max = number(scope, { "derived", "values", "maxMana" }),
-						Color = Theme.Colors.Mana,
+						Color = Theme.Resource.Mana,
 						Label = Text.T(scope, "hud.mana"),
 						ShowNumbers = true,
 					}),
@@ -245,7 +246,7 @@ local function portrait(scope: Scope): Instance
 						LayoutOrder = 3,
 						Value = number(scope, { "character", "energy" }),
 						Max = number(scope, { "derived", "values", "maxEnergy" }),
-						Color = Theme.Colors.Energy,
+						Color = Theme.Resource.Energy,
 						Label = Text.T(scope, "hud.energy"),
 						ShowNumbers = true,
 					}),
@@ -402,7 +403,7 @@ local function expBar(scope: Scope): Instance
 		Size = UDim2.new(1, -8, 0, 16),
 		Value = exp,
 		Max = need,
-		Color = Theme.Colors.Exp,
+		Color = Theme.Resource.Exp,
 		ShowNumbers = false,
 		Label = scope:Computed(function(use): string
 			if use(level) >= Config.MaxLevel then

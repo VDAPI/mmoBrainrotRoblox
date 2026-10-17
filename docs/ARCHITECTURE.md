@@ -635,9 +635,16 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
   (tylko podpowiedź; rozstrzyga serwer).
 - `Theme.luau`: kolory, czcionki, rozmiary, odstępy, czasy animacji; **wszystkie** komponenty z niego korzystają.
   S135: wartości kolorów w czystym `Data/UiPalette` (pary kontrastu `PAIRS`, `Logic/Contrast`), `Theme` buduje role
-  `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (`Theme.surface(name)`, `Theme.readable(hex, surface)`); tryb okna
-  (pergamin albo dawny ciemny) z `Data/UiWindows` (`WindowManager` → `Window.Paper`); komponenty mają prop `Surface`;
-  `tests/uitheme.spec` pilnuje listy okien i braku literałów koloru / rozmiaru tekstu w oknach na pergaminie.
+  `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (`Theme.surface(name)`, `Theme.readable(hex, surface)`); komponenty mają
+  prop `Surface`. S136: dawne `Theme.Colors` usunięte; `Data/UiWindows` daje każdemu oknu `surface = "paper" | "iron"`
+  (`WindowManager` → `Window.Surface`; żelazo tylko panel admina) i każdemu ekranowi poza oknami wpis w
+  `UiWindows.SCREENS` (HUD i nakładki na żelazie, karty na pergaminie). Kolor z danych jako tekst przez
+  `Theme.readable` (na płytce HUD powierzchnia `"hud"`: role żelaza i `UiPalette.HUD_TILES`), jako grafika (próbka, znacznik mapy, odcień ikony) przez `Theme.tint`; płytki HUD z
+  `Theme.HudAlpha`, kolory tabliczek, znaków, grup, medali, czatu i rysunku mapy w `UiPalette` (`plate`, `mark`, `group`,
+  `medal`, `chat`, `glyph`, `map`). `tests/uitheme.spec` w trybie ścisłym: każdy plik `UI/Screens` na liście, żadnego
+  `Theme.Colors` w `src/client`, żadnych literałów koloru, rozmiaru tekstu ani `Color3.fromHex` w `UI/Screens`,
+  `UI/Components` i `UI/*.luau` (poza `Theme` i rysunkiem `MapSketch`; wyjątki `ALLOWED` z powodem: oświetlenie
+  podglądów 3D, rozmiary ikon mapy w `UiArtState.decorate`).
 - Skalowanie: `UIScale` zależne od rozmiaru ekranu (bazowo 1920×1080), min. rozmiar przycisku dotykowego 44 px.
 - Ikony przedmiotów: dopóki brak grafik, `Icons.luau` generuje ikonę: tło w kolorze rzadkości + symbol typu (Unicode/tekst) + ramka. Pole `icon` w definicji pozwala później podać `rbxassetid`.
 - **Mapa świata (S25, `UI/Screens/WorldMap/`)**: `init` (okno: lista, widok, karta, wyszukiwarka, focus z

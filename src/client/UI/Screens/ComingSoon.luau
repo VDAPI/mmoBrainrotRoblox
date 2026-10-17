@@ -24,17 +24,17 @@ local function ComingSoon(scope: Scope, icon: string): Fusion.Child
 			Size = UDim2.fromOffset(96, 96),
 			Text = icon,
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 72,
-			TextColor3 = Theme.Colors.GoldDim,
+			TextSize = Theme.TextSize.Hero,
+			TextColor3 = Theme.Paper.Label,
 		}),
 		scope:New("TextLabel")({
 			LayoutOrder = 2,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 30),
 			Text = Text.T(scope, "window.soon"),
-			FontFace = Theme.Fonts.Heading,
+			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = Theme.Paper.Text,
 		}),
 	}
 end

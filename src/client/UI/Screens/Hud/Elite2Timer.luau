@@ -17,6 +17,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
+local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 
@@ -79,14 +80,14 @@ local function Elite2Timer(scope: Scope): Instance
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.3,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return #use(list) > 0
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 6),
@@ -98,10 +99,12 @@ local function Elite2Timer(scope: Scope): Instance
 				LayoutOrder = 0,
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 20),
-				Text = Text.T(scope, "e2timer.header"),
+				Text = scope:Computed(function(use): string
+					return TextCase.upper(Text.get(use, "e2timer.header"))
+				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 15,
-				TextColor3 = Theme.Colors.Gold,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:ForPairs(list, function(_use, s: Scope, i: number, timer: any): (number, Instance)
@@ -109,11 +112,11 @@ local function Elite2Timer(scope: Scope): Instance
 					s:New("Frame")({
 						LayoutOrder = i,
 						BackgroundTransparency = 1,
-						Size = UDim2.new(1, 0, 0, 38),
+						Size = UDim2.new(1, 0, 0, 42),
 						[Children] = {
 							s:New("TextLabel")({
 								BackgroundTransparency = 1,
-								Size = UDim2.new(1, 0, 0, 18),
+								Size = UDim2.new(1, 0, 0, 20),
 								Text = s:Computed(function(use2): string
 									local def = Monsters.get(timer.kind)
 									local name = if def then Text.get(use2, def.nameKeys.elite2) else timer.kind
@@ -122,13 +125,13 @@ local function Elite2Timer(scope: Scope): Instance
 									return `{name} ({where})`
 								end),
 								FontFace = Theme.Fonts.BodyMedium,
-								TextSize = 14,
-								TextColor3 = Theme.Colors.Parchment,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Iron.Text,
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
 							s:New("TextLabel")({
-								Position = UDim2.fromOffset(0, 18),
+								Position = UDim2.fromOffset(0, 21),
 								BackgroundTransparency = 1,
 								Size = UDim2.new(1, 0, 0, 20),
 								Text = s:Computed(function(use2): string
@@ -141,9 +144,9 @@ local function Elite2Timer(scope: Scope): Instance
 									return Text.get(use2, "e2timer.any")
 								end),
 								FontFace = Theme.Fonts.BodyBold,
-								TextSize = 17,
+								TextSize = Theme.TextSize.Small,
 								TextColor3 = s:Computed(function(use2): Color3
-									return if use2(now) < timer.to then Theme.Colors.Text else Theme.Colors.Success
+									return if use2(now) < timer.to then Theme.Iron.Text else Theme.Iron.Success
 								end),
 								TextXAlignment = Enum.TextXAlignment.Left,
 							}),

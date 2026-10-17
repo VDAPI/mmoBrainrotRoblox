@@ -40,11 +40,11 @@ local function AreaBanner(scope: Scope): Instance
 	local color = scope:Computed(function(use): Color3
 		local banner = use(AreaState.Banner)
 		if not banner then
-			return Theme.Colors.Parchment
+			return Theme.Iron.Text
 		end
 		local lv = banner.area.lv
 		local band = LevelBand.of(math.floor((lv[1] + lv[2]) / 2), use(level) or 1)
-		return Color3.fromHex((LevelBand.COLORS :: any)[band])
+		return Theme.readable((LevelBand.COLORS :: any)[band], "iron")
 	end)
 	return scope:New("TextLabel")({
 		Name = "AreaBanner",
@@ -65,12 +65,12 @@ local function AreaBanner(scope: Scope): Instance
 				name = Text.get(use, banner.area.nameKey),
 				min = banner.area.lv[1],
 				max = banner.area.lv[2],
-			})) .. AreaProfileText.iconRich(banner.area.profile, " ")
+			})) .. AreaProfileText.iconRich(banner.area.profile, " ", "iron")
 		end),
-		FontFace = Theme.Fonts.Heading,
-		TextSize = 28,
+		FontFace = Theme.Fonts.Display,
+		TextSize = Theme.TextSize.Title,
 		TextColor3 = color,
-		TextStrokeColor3 = Theme.Colors.Background,
+		TextStrokeColor3 = Theme.Shade,
 		TextStrokeTransparency = scope:Computed(function(use): number
 			return 0.3 + use(animated) * 0.7
 		end),
@@ -88,13 +88,13 @@ local function AreaBanner(scope: Scope): Instance
 					return if profile then AreaProfileText.tag(use, profile) else ""
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 16,
+				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
 					local banner = use(AreaState.Banner)
 					local profile = banner and AreaProfiles.get(banner.area.profile)
-					return if profile then AreaProfileText.color(profile) else Theme.Colors.Parchment
+					return if profile then AreaProfileText.color(profile, "iron") else Theme.Iron.Text
 				end),
-				TextStrokeColor3 = Theme.Colors.Background,
+				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = scope:Computed(function(use): number
 					return 0.3 + use(animated) * 0.7
 				end),

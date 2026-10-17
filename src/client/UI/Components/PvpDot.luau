@@ -11,7 +11,6 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
-local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -31,8 +30,8 @@ local COLORS: { [string]: Color3 } = {
 	off = Theme.Zone.Green,
 	on = Theme.Zone.Red,
 	forced = Theme.Zone.Red,
-	switching = Color3.fromHex(UiPalette.pvp.switching),
-	locked = Color3.fromHex(UiPalette.pvp.locked),
+	switching = Theme.Pvp.Switching,
+	locked = Theme.Pvp.Locked,
 }
 
 local function PvpDot(scope: Scope, props: Props): Frame
@@ -64,12 +63,12 @@ local function PvpDot(scope: Scope, props: Props): Frame
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Background, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Shade, Thickness = 1.5 }),
 			ArtIcon(scope, {
 				Name = "Lock",
 				Key = UiArt.hud("lock"), -- S119
 				Glyph = "🔒",
-				GlyphColor = Theme.Colors.Text,
+				GlyphColor = Theme.Iron.Text,
 				ImageScale = 0.75,
 				Size = UDim2.fromScale(1, 1),
 				Visible = scope:Computed(function(use): boolean

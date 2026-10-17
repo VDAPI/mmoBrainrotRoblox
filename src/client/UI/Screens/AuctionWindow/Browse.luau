@@ -293,7 +293,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 					Text = Text.get(use, "auction.noResults"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -311,7 +311,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 					Size = UDim2.new(1, 0, 0, 64),
 					AutoButtonColor = false,
 					Text = "",
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = 0.3,
 					[Fusion.OnEvent("Activated")] = function()
 						loadDetails(entry.id)
@@ -331,7 +331,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Text = if entry.item.n > 1 then `{name} x{entry.item.n}` else name,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = ItemText.rarityColor(entry.item.rarity),
+							TextColor3 = ItemText.rarityName(entry.item.rarity, "paper"),
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -346,7 +346,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 							}),
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = if entry.level > level then Theme.Colors.Danger else Theme.Colors.TextMuted,
+							TextColor3 = if entry.level > level then Theme.Paper.Danger else Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -358,7 +358,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Text = `◉ {Format.number(entry.price)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Right,
 						}),
 						Button(s, {
@@ -433,7 +433,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 					}),
 					Button(scope, {
 						AnchorPoint = Vector2.new(1, 0),

@@ -13,8 +13,7 @@ local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
 local ItemSlot = require(script.Parent.Parent.UI.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
-local Maps = require(ReplicatedStorage.Shared.Data.Maps)
-local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+local LootLog = require(script.Parent.Parent.UI.Screens.LootLog)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -75,12 +74,13 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -24, 1, -230),
 		Size = UDim2.fromOffset(330, 96),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = 0.05,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldBright, Thickness = 2 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = 2 }),
 			ItemSlot(scope, {
+				Surface = "iron",
 				SlotId = `view:better:{item.uid}`,
 				Item = item,
 				Size = 64,
@@ -91,9 +91,9 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 				Size = UDim2.new(1, -96, 0, 24),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "better.title"),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = 20,
-				TextColor3 = Theme.Colors.GoldBright,
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Brass.Bright,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextLabel")({
@@ -102,8 +102,8 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 				BackgroundTransparency = 1,
 				Text = ItemText.name(item.id, item.up, item.el),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 15,
-				TextColor3 = ItemText.rarityColor(item.rarity),
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = ItemText.rarityName(item.rarity, "iron"),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -114,8 +114,8 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 				Text = instead,
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			Button(scope, {
@@ -180,89 +180,6 @@ local function onPicked(items: any)
 	end
 end
 
--- Loot log window ----------------------------------------------------------------------------------------
-
-local function timeAgo(at: number): string
-	local seconds = math.max(0, os.time() - at)
-	if seconds < 3600 then
-		return `{math.floor(seconds / 60)} min`
-	elseif seconds < 86400 then
-		return `{math.floor(seconds / 3600)} h`
-	end
-	return `{math.floor(seconds / 86400)} d`
-end
-
-local function LootLogWindow(scope: Scope): Fusion.Child
-	local log = State.Value({ "character", "lootLog" })
-	return scope:New("ScrollingFrame")({
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
-		[Children] = {
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
-			scope:Computed(function(use, s: Scope): { Instance }
-				local list = use(log)
-				local rows = {}
-				if type(list) ~= "table" or #list == 0 then
-					table.insert(
-						rows,
-						s:New("TextLabel")({
-							Size = UDim2.new(1, 0, 0, 30),
-							BackgroundTransparency = 1,
-							Text = Text.get(use, "lootlog.empty"),
-							FontFace = Theme.Fonts.Body,
-							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Colors.TextMuted,
-						})
-					)
-					return rows
-				end
-				for i, entry in list do
-					local monster = entry.src and Monsters.get(entry.src)
-					local map = entry.map and Maps.get(entry.map)
-					local source = if monster then Text.get(use, monster.nameKeys.normal) else ""
-					if map then
-						source = if source ~= ""
-							then `{source}, {Text.get(use, map.nameKey)}`
-							else Text.get(use, map.nameKey)
-					end
-					table.insert(
-						rows,
-						s:New("TextLabel")({
-							LayoutOrder = i,
-							Size = UDim2.new(1, -8, 0, 26),
-							BackgroundColor3 = Theme.Colors.PanelRaised,
-							BackgroundTransparency = 0.5,
-							RichText = true,
-							Text = Text.get(use, "lootlog.entry", {
-								time = timeAgo(entry.at or 0),
-								item = `<font color="#{ItemText.rarityColor(entry.rarity or 1):ToHex()}">{ItemText.get(
-									use,
-									entry.id,
-									nil,
-									entry.el
-								)}</font> ({entry.ilvl or 1})`,
-								source = source,
-							}),
-							FontFace = Theme.Fonts.Body,
-							TextSize = 15,
-							TextColor3 = Theme.Colors.Text,
-							TextXAlignment = Enum.TextXAlignment.Left,
-							TextTruncate = Enum.TextTruncate.AtEnd,
-							[Children] = s:New("UIPadding")({ PaddingLeft = UDim.new(0, 8) }),
-						})
-					)
-				end
-				return rows
-			end) :: any,
-		},
-	})
-end
-
 function LootComfortController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	UIController = registry.Get("UIController")
@@ -272,7 +189,7 @@ function LootComfortController.Init(registry)
 		titleKey = "lootlog.title",
 		size = Vector2.new(520, 560),
 		build = function(scope: Scope)
-			return LootLogWindow(scope)
+			return LootLog(scope)
 		end,
 	})
 end

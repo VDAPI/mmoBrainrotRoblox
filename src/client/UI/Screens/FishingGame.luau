@@ -45,7 +45,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 	local zoneCenter = scope:Value(0.5)
 	local zoneWidth = scope:Value(0.2)
 	local hits = scope:Value(0)
-	local flash = scope:Value(Theme.Colors.Success)
+	local flash = scope:Value(Theme.Iron.Success)
 	local running = false
 	local direction = 1
 	local speed = 1
@@ -96,7 +96,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 		if math.abs(p - center) <= width / 2 then
 			local count = Fusion.peek(hits) + 1
 			hits:set(count)
-			flash:set(Theme.Colors.Success)
+			flash:set(Theme.Iron.Success)
 			if count >= current.hits then
 				finish(count)
 				return
@@ -105,7 +105,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 			speed *= current.speedUp
 			newZone()
 		else
-			flash:set(Theme.Colors.Danger)
+			flash:set(Theme.Iron.Danger)
 			finish(Fusion.peek(hits))
 		end
 	end
@@ -145,14 +145,14 @@ local function FishingGame(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -230),
 		Size = UDim2.fromOffset(BAR_WIDTH + 40, 190),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.1,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
 			return use(props.Phase) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(0, 10),
 				Size = UDim2.new(1, 0, 0, 40),
@@ -163,10 +163,10 @@ local function FishingGame(scope: Scope, props: Props): Instance
 					end
 					return Text.get(use, "fish.waiting")
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(isBite) then Theme.Colors.GoldBright else Theme.Colors.Parchment
+					return if use(isBite) then Theme.Brass.Bright else Theme.Iron.Text
 				end),
 			}),
 			-- The bar (also the big tap target)
@@ -175,7 +175,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 				AnchorPoint = Vector2.new(0.5, 0),
 				Position = UDim2.new(0.5, 0, 0, 60),
 				Size = UDim2.fromOffset(BAR_WIDTH, 64),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Iron.Sunken,
 				AutoButtonColor = false,
 				Text = "",
 				Visible = isBite,
@@ -192,7 +192,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 						Size = scope:Computed(function(use): UDim2
 							return UDim2.fromScale(use(zoneWidth), 1)
 						end),
-						BackgroundColor3 = Theme.Colors.Success,
+						BackgroundColor3 = Theme.Iron.Success,
 						BackgroundTransparency = 0.35,
 						[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
@@ -203,7 +203,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 							return UDim2.fromScale(use(position), 0.5)
 						end),
 						Size = UDim2.new(0, 8, 1, 16),
-						BackgroundColor3 = Theme.Colors.GoldBright,
+						BackgroundColor3 = Theme.Iron.Selected,
 						ZIndex = 2,
 						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
 					}),
@@ -219,8 +219,8 @@ local function FishingGame(scope: Scope, props: Props): Instance
 				end),
 				Text = "〰  ◯  〰",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 34,
-				TextColor3 = Theme.Colors.Accent,
+				TextSize = Theme.TextSize.Title,
+				TextColor3 = Theme.Iron.Link,
 			}),
 			scope:New("TextLabel")({
 				Position = UDim2.new(0, 20, 1, -50),
@@ -232,7 +232,7 @@ local function FishingGame(scope: Scope, props: Props): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Iron.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			Button(scope, {

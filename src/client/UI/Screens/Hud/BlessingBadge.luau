@@ -72,7 +72,7 @@ function BlessingBadge.new(scope: Scope, layoutOrder: number): Instance
 	end)
 	local color = scope:Computed(function(use): Color3
 		local def = Blessings.get(use(activeId) or "")
-		return if def then ItemText.rarityColor(def.rarity) else Theme.Colors.Gold
+		return if def then ItemText.rarityName(def.rarity, "iron") else Theme.Iron.Heading
 	end)
 
 	local accumulator = 0
@@ -97,7 +97,7 @@ function BlessingBadge.new(scope: Scope, layoutOrder: number): Instance
 		LayoutOrder = layoutOrder,
 		Size = UDim2.fromOffset(0, 26),
 		AutomaticSize = Enum.AutomaticSize.X,
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		BackgroundTransparency = 0.35,
 		Active = true,
 		Visible = scope:Computed(function(use): boolean
@@ -128,7 +128,7 @@ function BlessingBadge.new(scope: Scope, layoutOrder: number): Instance
 				Text = "✶",
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = scope:Computed(function(use): number
-					return 20 + 4 * use(pulse)
+					return Theme.TextSize.Body + 4 * use(pulse)
 				end),
 				TextColor3 = color,
 				TextStrokeTransparency = 0.4,
@@ -146,7 +146,7 @@ function BlessingBadge.new(scope: Scope, layoutOrder: number): Instance
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(lastMinute) then Theme.Colors.ZoneRed else Theme.Colors.Text
+					return if use(lastMinute) then Theme.ZoneText.Red else Theme.Iron.Text
 				end),
 				TextStrokeTransparency = 0.4,
 			}),

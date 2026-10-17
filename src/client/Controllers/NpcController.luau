@@ -21,8 +21,10 @@ local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
+local Nameplate = require(ReplicatedStorage.Shared.Logic.Nameplate)
 local NpcPresence = require(script.Parent.Parent.UI.NpcPresence)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PlateStyle = require(script.Parent.Parent.UI.PlateStyle)
 local ShopWindow = require(script.Parent.Parent.UI.Screens.ShopWindow)
 local Shops = require(ReplicatedStorage.Shared.Data.Shops)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -281,34 +283,36 @@ local function decorate(model: Model)
 	if not def or not head or model:FindFirstChild("VaelthornPlate") then
 		return
 	end
+	-- S136: the service glyph over the name on an iron plate (Logic/Nameplate.npc, UI/PlateStyle)
+	local view = Nameplate.npc({ icon = def.icon, companion = false, mine = false })
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "VaelthornPlate"
 	gui.Adornee = head
-	gui.Size = UDim2.fromOffset(260, 56)
+	gui.Size = UDim2.fromOffset(280, 60)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0)
 	gui.MaxDistance = 70
 	gui.LightInfluence = 0
 	gui.Parent = model
 	local icon = Instance.new("TextLabel")
 	icon.BackgroundTransparency = 1
-	icon.Size = UDim2.new(1, 0, 0, 26)
+	icon.Size = UDim2.new(1, 0, 0, 28)
 	icon.Text = def.icon
-	icon.TextSize = 24
+	icon.Visible = view.showIcon
+	icon.TextSize = Theme.TextSize.Large
 	icon.FontFace = Theme.Fonts.BodyBold
-	icon.TextColor3 = Theme.Colors.GoldBright
-	icon.TextStrokeTransparency = 0.4
+	icon.TextColor3 = Theme.Brass.Bright
+	icon.TextStrokeColor3 = Theme.Shade
+	icon.TextStrokeTransparency = 0.3
 	icon.Parent = gui
 	-- S119: the silhouette of the NPC's service (Logic/UiArt.serviceOfNpc) once loaded.
 	UiArtState.decorate(icon, UiArt.serviceOfNpc(def), { size = 24 })
 	local name = Instance.new("TextLabel")
-	name.BackgroundTransparency = 1
-	name.Position = UDim2.fromOffset(0, 26)
-	name.Size = UDim2.new(1, 0, 0, 26)
+	name.Position = UDim2.fromOffset(0, 30)
+	name.Size = UDim2.new(1, 0, 0, 28)
 	name.Text = Text.now(def.nameKey)
-	name.TextSize = 20
+	name.TextSize = Theme.TextSize.Body
 	name.FontFace = Theme.Fonts.BodyBold
-	name.TextColor3 = Theme.Colors.Parchment
-	name.TextStrokeTransparency = 0.35
+	PlateStyle.name(name)
 	name.Parent = gui
 	scope:Observer(Text.Lang):onChange(function()
 		name.Text = Text.now(def.nameKey)

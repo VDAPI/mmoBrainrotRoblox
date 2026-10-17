@@ -50,7 +50,7 @@ local function grid(scope: Scope, prefix: string, count: Fusion.UsedAs<number>, 
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		[Children] = {
 			scope:New("UIGridLayout")({
 				CellSize = UDim2.fromOffset(SLOT, SLOT),
@@ -110,9 +110,9 @@ local function DepositWindow(scope: Scope): Fusion.Child
 					Size = UDim2.new(1, -110, 0, 36),
 					BackgroundTransparency = 1,
 					Text = title,
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Large,
-					TextColor3 = Theme.Colors.Gold,
+					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				Button(scope, {

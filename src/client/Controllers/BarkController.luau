@@ -151,13 +151,13 @@ local function bubble(head: BasePart, line: string)
 	box.Position = UDim2.fromScale(0.5, 1)
 	box.Size = UDim2.fromOffset(300, 0)
 	box.AutomaticSize = Enum.AutomaticSize.Y
-	box.BackgroundColor3 = Theme.Colors.Parchment
+	box.BackgroundColor3 = Theme.Paper.Raised
 	box.Parent = gui
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = Theme.Corner.Medium
 	corner.Parent = box
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Theme.Colors.Gold
+	stroke.Color = Theme.Paper.Border
 	stroke.Thickness = 2
 	stroke.Parent = box
 	local padding = Instance.new("UIPadding")
@@ -173,8 +173,8 @@ local function bubble(head: BasePart, line: string)
 	label.TextWrapped = true
 	label.Text = line
 	label.FontFace = Theme.Fonts.Body
-	label.TextSize = 18
-	label.TextColor3 = Theme.Colors.TextDark
+	label.TextSize = Theme.TextSize.Small
+	label.TextColor3 = Theme.Paper.Text
 	label.Parent = box
 	gui.Parent = head.Parent
 	task.delay(B.bubbleSeconds, function()

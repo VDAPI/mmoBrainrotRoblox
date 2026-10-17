@@ -105,7 +105,6 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 			local children: { Instance } = {
 				s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 				Button(s, {
-					Surface = "iron", -- S135: on a dark HUD / overlay surface
 					LayoutOrder = 1,
 					Size = UDim2.new(1, 0, 0, height),
 					TextSize = if touch then Theme.TextSize.Body else Theme.TextSize.Small,
@@ -133,7 +132,7 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 						Text = Text.T(s, e.reasonKey),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					})
 				)
@@ -181,14 +180,14 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 			return UDim2.fromOffset(use(width), 0)
 		end),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		Visible = scope:Computed(function(use): boolean
 			return use(props.Target) ~= nil
 		end),
 		ZIndex = 20,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 1.5 }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 8),
 				PaddingBottom = UDim.new(0, 8),
@@ -224,13 +223,13 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 							end
 							local name = escape(h.name)
 							if h.tag then
-								return `<font color="#{Theme.Colors.Gold:ToHex()}">[{escape(h.tag)}]</font> {name}`
+								return `<font color="#{Theme.Paper.Heading:ToHex()}">[{escape(h.tag)}]</font> {name}`
 							end
 							return name
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -256,7 +255,7 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 						end),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				} :: any,

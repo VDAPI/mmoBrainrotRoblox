@@ -41,9 +41,9 @@ CardKit.T = Text.now
 local T = CardKit.T
 
 local ZONE_COLORS: { [string]: Color3 } = {
-	green = Theme.Colors.ZoneGreen,
-	yellow = Theme.Colors.ZoneYellow,
-	red = Theme.Colors.ZoneRed,
+	green = Theme.Paper.Success,
+	yellow = Theme.Paper.Warning,
+	red = Theme.Paper.Danger,
 }
 
 local function isOpen(mapId: string): boolean
@@ -61,7 +61,7 @@ end
 
 local function bandColor(lv: { number }, level: number): Color3
 	local range = { lv = lv } :: any
-	return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(range, level)])
+	return Theme.readable(LevelBand.COLORS[AreaAdvice.bandOf(range, level)], "paper")
 end
 
 -- "84 m" on this map, "Another map: Meadows → City" elsewhere, or "No way there yet".
@@ -73,20 +73,20 @@ local function whereLine(ctx: Context, mapId: string, x: number, z: number): Det
 			local dz = ctx.position.Z - (map.offset.z + z)
 			return {
 				text = T("worldmap.card.distance", { n = math.floor(math.sqrt(dx * dx + dz * dz)) }),
-				color = Theme.Colors.Parchment,
+				color = Theme.Paper.Text,
 				bold = true,
 			}
 		end
 	end
 	local route = if ctx.here then MapRoute.path(ctx.here, mapId, isOpen) else nil
 	if not route then
-		return { text = T("worldmap.card.noRoute"), color = Theme.Colors.TextMuted }
+		return { text = T("worldmap.card.noRoute"), color = Theme.Paper.TextMuted }
 	end
 	local names = {}
 	for i = 2, #route do
 		table.insert(names, mapName(route[i]))
 	end
-	return { text = T("worldmap.card.route", { route = table.concat(names, " → ") }), color = Theme.Colors.TextMuted }
+	return { text = T("worldmap.card.route", { route = table.concat(names, " → ") }), color = Theme.Paper.TextMuted }
 end
 
 -- Guide (always), Walk (only on the player's map) and optional extras.

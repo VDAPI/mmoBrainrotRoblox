@@ -26,13 +26,14 @@ local ChatController = {
 	Name = "ChatController",
 }
 
+-- S136: channel colours from Data/UiPalette.chat (contrast-tested on the Roblox chat window)
 local COLORS: { [string]: Color3 } = {
-	general = Theme.Colors.Text,
-	trade = Color3.fromHex("#E0A23B"),
-	party = Color3.fromHex("#6FB3FF"),
-	guild = Color3.fromHex("#6FD38A"),
-	whisper = Color3.fromHex("#D58CFF"),
-	system = Theme.Colors.GoldBright,
+	general = Theme.Iron.Text,
+	trade = Theme.Chat.Trade,
+	party = Theme.Chat.Party,
+	guild = Theme.Chat.Guild,
+	whisper = Theme.Chat.Whisper,
+	system = Theme.Brass.Bright,
 }
 
 local function escape(text: string): string
@@ -80,16 +81,16 @@ local function onIncoming(message: TextChatMessage): TextChatMessageProperties?
 		local model = player and player.Character
 		local charName = model and model:GetAttribute("CharName")
 		local tag = model and model:GetAttribute("GuildTag")
-		local color = COLORS[kind or "general"] or Theme.Colors.Text
+		local color = COLORS[kind or "general"] or Theme.Iron.Text
 		local parts = {}
 		if kind and kind ~= "general" then
 			table.insert(parts, `<font color="#{color:ToHex()}">[{Text.now(`chat.channel.{kind}`)}]</font>`)
 		end
 		if type(tag) == "string" and tag ~= "" then
-			table.insert(parts, `<font color="#{Theme.Colors.Gold:ToHex()}">[{escape(tag)}]</font>`)
+			table.insert(parts, `<font color="#{Theme.Brass.Bright:ToHex()}">[{escape(tag)}]</font>`)
 		end
 		if player and player:GetAttribute("Vip") == true then
-			table.insert(parts, `<font color="#{Theme.Colors.GoldBright:ToHex()}">★</font>`)
+			table.insert(parts, `<font color="#{Theme.Brass.Bright:ToHex()}">★</font>`)
 		end
 		local name = if type(charName) == "string" then charName else (if player then player.DisplayName else "?")
 		local decor = CosmeticRules.chatDecor(chatFrameOf(player))

@@ -37,11 +37,12 @@ type Info = {
 	distance: number,
 }
 
+-- S136: the monster plate colours (Data/UiPalette.plate, >= 4.5:1 on the HUD tile)
 local VARIANT_COLORS: { [string]: Color3 } = {
-	normal = Color3.fromHex("#E8E4DA"),
-	elite = Color3.fromHex("#E05A4A"),
-	elite2 = Color3.fromHex("#C77BFF"),
-	boss = Color3.fromHex("#FF9F1C"),
+	normal = Theme.Plate.Normal,
+	elite = Theme.Plate.Elite,
+	elite2 = Theme.Plate.Elite2,
+	boss = Theme.Plate.Boss,
 }
 
 local BADGES: { [string]: string } = { elite = "★", elite2 = "★★", boss = "♛" }
@@ -116,27 +117,28 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, Theme.Padding.Large),
 		Size = UDim2.fromOffset(420, 92),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.12,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		-- A dungeon boss has its own bar at the top of the screen (DungeonController), so no second frame for it.
 		Visible = scope:Computed(function(use): boolean
 			local i = use(info)
 			return i ~= nil and i.variant ~= "boss"
 		end),
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("TextButton")({
 				Name = "PlayerMenu",
 				AnchorPoint = Vector2.new(0, 0),
 				-- S133: a labelled "Actions" button (the bare "⋯" was not found by players)
 				Position = UDim2.new(1, Theme.Padding.Medium + 8, 0, 0),
 				Size = UDim2.fromOffset(120, Theme.Size.MinTouch + 8),
-				BackgroundColor3 = Theme.Colors.Panel,
-				BackgroundTransparency = 0.12,
+				-- S136: styled as a secondary iron button
+				BackgroundColor3 = Theme.Iron.Raised,
+				BackgroundTransparency = Theme.HudAlpha,
 				Text = Text.T(scope, "social.actions"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Iron.Text,
 				Visible = scope:Computed(function(use): boolean
 					local i = use(info)
 					local model = use(props.Target)
@@ -158,8 +160,8 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 					end
 				end,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-					scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 				},
 			}),
 			scope:New("UIStroke")({
@@ -167,7 +169,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				Thickness = Theme.Stroke.Normal,
 				Color = scope:Computed(function(use): Color3
 					local i = use(info)
-					return if i and i.variant ~= "normal" then VARIANT_COLORS[i.variant] else Theme.Colors.GoldDim
+					return if i and i.variant ~= "normal" then VARIANT_COLORS[i.variant] else Theme.Brass.Line
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -188,11 +190,11 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 					local badge = BADGES[i.variant]
 					return if badge then `{badge} {name}` else name
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = scope:Computed(function(use): Color3
 					local i = use(info)
-					return if i then VARIANT_COLORS[i.variant] or Theme.Colors.Text else Theme.Colors.Text
+					return if i then VARIANT_COLORS[i.variant] or Theme.Iron.Text else Theme.Iron.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -209,7 +211,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Iron.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Right,
 			}),
 			scope:New("TextLabel")({
@@ -233,7 +235,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			EffectIcons(scope, {
@@ -247,7 +249,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				Size = UDim2.new(1, 0, 0, Theme.Size.BarHeight),
 				Value = hp,
 				Max = maxHp,
-				Color = Theme.Colors.Hp,
+				Color = Theme.Resource.Hp,
 				ShowNumbers = false,
 				Label = scope:Computed(function(use): string
 					local i = use(info)

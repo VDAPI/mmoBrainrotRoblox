@@ -63,7 +63,7 @@ local function recipeRow(scope: Scope, props: Props, recipe: Recipes.Recipe, ord
 		Name = recipe.id,
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 74),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = scope:Computed(function(use): number
 			return if use(locked) then 0.75 else 0.4
 		end),
@@ -89,7 +89,7 @@ local function recipeRow(scope: Scope, props: Props, recipe: Recipes.Recipe, ord
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(locked) then Theme.Colors.TextMuted else Theme.Colors.Text
+					return if use(locked) then Theme.Paper.TextMuted else Theme.Paper.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -102,26 +102,34 @@ local function recipeRow(scope: Scope, props: Props, recipe: Recipes.Recipe, ord
 				TextWrapped = true,
 				Text = scope:Computed(function(use): string
 					if use(locked) then
-						return `<font color="#CC5248">{Text.get(use, "tooltip.requiresLevel", { level = recipe.level })}</font>`
+						return `<font color="{Theme.hex(Theme.Paper.Danger)}">{Text.get(
+							use,
+							"tooltip.requiresLevel",
+							{ level = recipe.level }
+						)}</font>`
 					end
 					local inv = use(inventory)
 					local parts = {}
 					for _, ingredient in recipe.ingredients do
 						local have = count(inv, ingredient.id)
-						local color = if have >= ingredient.n then "#4FD16B" else "#CC5248"
+						local color = if have >= ingredient.n
+							then Theme.hex(Theme.Paper.Success)
+							else Theme.hex(Theme.Paper.Danger)
 						table.insert(
 							parts,
 							`<font color="{color}">{ItemText.get(use, ingredient.id)} {have}/{ingredient.n}</font>`
 						)
 					end
-					local goldColor = if (use(gold) or 0) >= recipe.gold then "#E8C25A" else "#CC5248"
+					local goldColor = if (use(gold) or 0) >= recipe.gold
+						then Theme.hex(Theme.Paper.Heading)
+						else Theme.hex(Theme.Paper.Danger)
 					table.insert(parts, `<font color="{goldColor}">◉ {Format.number(recipe.gold)}</font>`)
 					table.insert(parts, `⌛ {Time.format(recipe.time)}`)
 					return table.concat(parts, "  ")
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 			}),
@@ -200,7 +208,7 @@ local function queuePanel(scope: Scope, props: Props): Instance
 					s:New("Frame")({
 						LayoutOrder = index,
 						Size = UDim2.new(1, 0, 0, 84),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.3,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -217,7 +225,7 @@ local function queuePanel(scope: Scope, props: Props): Instance
 								Text = ItemText.get(use, recipe.result.id),
 								FontFace = Theme.Fonts.BodyBold,
 								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Colors.Text,
+								TextColor3 = Theme.Paper.Text,
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
@@ -234,14 +242,14 @@ local function queuePanel(scope: Scope, props: Props): Instance
 								FontFace = Theme.Fonts.BodyMedium,
 								TextSize = Theme.TextSize.Small,
 								TextColor3 = s:Computed(function(use2): Color3
-									return if use2(ready) then Theme.Colors.Success else Theme.Colors.Parchment
+									return if use2(ready) then Theme.Paper.Success else Theme.Paper.Text
 								end),
 								TextXAlignment = Enum.TextXAlignment.Left,
 							}),
 							s:New("Frame")({
 								Position = UDim2.new(0, 6, 1, -20),
 								Size = UDim2.new(1, -12, 0, 12),
-								BackgroundColor3 = Theme.Colors.Background,
+								BackgroundColor3 = Theme.Paper.Sunken,
 								[Children] = {
 									s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
 									s:New("Frame")({
@@ -249,7 +257,7 @@ local function queuePanel(scope: Scope, props: Props): Instance
 											return UDim2.fromScale(use2(progress), 1)
 										end),
 										BackgroundColor3 = s:Computed(function(use2): Color3
-											return if use2(ready) then Theme.Colors.Success else Theme.Colors.Accent
+											return if use2(ready) then Theme.Paper.Success else Theme.Paper.Accent
 										end),
 										[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
 									}),
@@ -264,12 +272,12 @@ local function queuePanel(scope: Scope, props: Props): Instance
 					s:New("TextLabel")({
 						LayoutOrder = index,
 						Size = UDim2.new(1, 0, 0, 84),
-						BackgroundColor3 = Theme.Colors.Background,
+						BackgroundColor3 = Theme.Paper.Sunken,
 						BackgroundTransparency = 0.5,
 						Text = Text.get(use, "alchemy.emptySlot"),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					})
 				)
@@ -293,9 +301,9 @@ local function queuePanel(scope: Scope, props: Props): Instance
 				Size = UDim2.new(1, 0, 0, 36),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "alchemy.queue"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({
@@ -368,7 +376,7 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
-					ScrollBarImageColor3 = Theme.Colors.GoldDim,
+					ScrollBarImageColor3 = Theme.Paper.Rule,
 					[Children] = {
 						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),

@@ -141,8 +141,9 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			LayoutOrder = index,
 			Size = UDim2.fromOffset(props.SlotSize, props.SlotSize),
 			AutoButtonColor = false,
-			BackgroundColor3 = Theme.Colors.Panel,
-			BackgroundTransparency = 0.2,
+			-- S136: a slot in the iron variant of ItemSlot
+			BackgroundColor3 = Theme.Iron.Raised,
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = "",
 			[OnEvent("Activated")] = function()
 				if os.clock() - DragDrop.LastDropAt < 0.3 then
@@ -159,13 +160,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 					Thickness = Theme.Stroke.Normal,
 					Color = scope:Computed(function(use): Color3
-						if use(DragDrop.Selected) == `bar:{index}` then
-							return Theme.Colors.GoldBright
-						end
-						local id = use(skillId)
-						return if id then props.Color(id) else Theme.Colors.GoldDim
+						return if use(DragDrop.Selected) == `bar:{index}` then Theme.Brass.Bright else Theme.Brass.Line
 					end),
-					Transparency = 0.2,
 				}),
 				-- S119: the skill's picture over the whole slot once loaded (glyph hidden), frame and overlays on top.
 				ArtIcon.Image(scope, { Key = artKey, Corner = Theme.Corner.Small }),
@@ -181,7 +177,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					FontFace = Theme.Fonts.BodyBold,
 					TextColor3 = scope:Computed(function(use): Color3
 						local id = use(skillId)
-						return if id then props.Color(id) else Theme.Colors.Text
+						return if id then props.Color(id) else Theme.Iron.Text
 					end),
 					[Children] = scope:New("UIPadding")({
 						PaddingTop = UDim.new(0.15, 0),
@@ -194,8 +190,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				scope:New("Frame")({
 					Name = "ElementTint",
 					Size = UDim2.fromScale(1, 1),
-					BackgroundColor3 = Color3.fromHex("#2A2A2E"),
-					BackgroundTransparency = 0.25,
+					BackgroundColor3 = Theme.Shade,
+					BackgroundTransparency = 0.4,
 					Visible = scope:Computed(function(use): boolean
 						return use(skill) ~= nil and not use(usable).element
 					end),
@@ -206,7 +202,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				scope:New("Frame")({
 					Name = "ReadyFlash",
 					Size = UDim2.fromScale(1, 1),
-					BackgroundColor3 = Theme.Colors.GoldBright,
+					BackgroundColor3 = Theme.Iron.Selected,
 					BackgroundTransparency = flash,
 					ZIndex = 6,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -215,8 +211,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				scope:New("Frame")({
 					Name = "RangeTint",
 					Size = UDim2.fromScale(1, 1),
-					BackgroundColor3 = Color3.fromHex("#2A2A2E"),
-					BackgroundTransparency = 0.45,
+					BackgroundColor3 = Theme.Shade,
+					BackgroundTransparency = 0.55,
 					Visible = scope:Computed(function(use): boolean
 						return use(skill) ~= nil and not use(usable).range
 					end),
@@ -227,7 +223,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				scope:New("Frame")({
 					Name = "ResourceTint",
 					Size = UDim2.fromScale(1, 1),
-					BackgroundColor3 = Theme.Colors.Danger,
+					BackgroundColor3 = Theme.Resource.Hp,
 					BackgroundTransparency = 0.55,
 					Visible = scope:Computed(function(use): boolean
 						return use(skill) ~= nil and not use(usable).resource
@@ -243,8 +239,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					Size = scope:Computed(function(use): UDim2
 						return UDim2.fromScale(1, use(fraction))
 					end),
-					BackgroundColor3 = Color3.new(0, 0, 0),
-					BackgroundTransparency = 0.4,
+					BackgroundColor3 = Theme.Shade,
+					BackgroundTransparency = 0.35,
 					ZIndex = 3,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				}),
@@ -260,8 +256,8 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 						return if left >= 10 then tostring(math.ceil(left)) else string.format("%.1f", left)
 					end),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 20,
-					TextColor3 = Theme.Colors.Text,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Iron.Text,
 					TextStrokeTransparency = 0.2,
 					ZIndex = 4,
 				}),
@@ -269,17 +265,18 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					Name = "Key",
 					AnchorPoint = Vector2.new(1, 1),
 					Position = UDim2.new(1, -4, 1, -2),
-					Size = UDim2.fromOffset(20, 16),
-					BackgroundTransparency = 1,
+					Size = UDim2.fromOffset(16, 16),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundColor3 = Theme.Iron.Sunken, -- S136: the key on a plaque
+					BackgroundTransparency = Theme.BadgeAlpha,
 					Text = key,
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 13,
+					TextSize = Theme.TextSize.Caption,
 					TextColor3 = scope:Computed(function(use): Color3
 						return if use(skill) ~= nil and not use(usable).range
-							then Theme.Colors.DangerHover
-							else Theme.Colors.TextMuted
+							then Theme.Iron.Danger
+							else Theme.Iron.Text
 					end),
-					TextXAlignment = Enum.TextXAlignment.Right,
 					ZIndex = 5,
 				}),
 			},

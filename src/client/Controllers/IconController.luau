@@ -113,7 +113,10 @@ local function openGrid(group: string, baseType: string?)
 			else ItemRoll.makeStack(id, 1, `icongrid:{id}`)
 		table.insert(
 			slots,
-			ItemSlot(scope, { SlotId = `view:icongrid:{id}`, Item = item, Size = SLOT, LayoutOrder = i })
+			ItemSlot(
+				scope,
+				{ SlotId = `view:icongrid:{id}`, Item = item, Size = SLOT, LayoutOrder = i, Surface = "iron" }
+			)
 		)
 	end
 	scope:New("Frame")({
@@ -122,29 +125,29 @@ local function openGrid(group: string, baseType: string?)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(720, 520),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+			scope:New("UIStroke")({ Color = Theme.Iron.Rule, Thickness = 2 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(16, 8),
 				Size = UDim2.new(1, -80, 0, 32),
 				BackgroundTransparency = 1,
 				Text = Text.now("admin.icongrid.title", { group = baseType or group, n = #ids }),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Brass.Bright,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextButton")({
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -10, 0, 8),
 				Size = UDim2.fromOffset(36, 32),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				Text = "✕",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 18,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				[OnEvent("Activated")] = closeGrid,
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			}),
@@ -187,18 +190,18 @@ local function openUiGrid(atlas: string)
 			cells,
 			scope:New("Frame")({
 				LayoutOrder = i,
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					ArtIcon(scope, {
 						Key = key,
 						Glyph = "?",
-						GlyphColor = Theme.Colors.TextMuted,
-						Tint = Theme.Colors.GoldBright,
+						GlyphColor = Theme.Iron.TextMuted,
+						Tint = Theme.Brass.Bright,
 						Size = UDim2.fromOffset(UI_CELL, UI_CELL),
 						Position = UDim2.new(0.5, 0, 0, 4),
 						AnchorPoint = Vector2.new(0.5, 0),
-						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 24 },
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Large },
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.new(0, 2, 1, -18),
@@ -206,8 +209,8 @@ local function openUiGrid(atlas: string)
 						BackgroundTransparency = 1,
 						Text = string.match(key, "/(.+)$") or key,
 						FontFace = Theme.Fonts.Body,
-						TextSize = 11,
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Iron.Text,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
 				},
@@ -220,29 +223,29 @@ local function openUiGrid(atlas: string)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromOffset(720, 520),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+			scope:New("UIStroke")({ Color = Theme.Iron.Rule, Thickness = 2 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(16, 8),
 				Size = UDim2.new(1, -80, 0, 32),
 				BackgroundTransparency = 1,
 				Text = Text.now("admin.icongrid.title", { group = `ui {atlas}`, n = #keys }),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Brass.Bright,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextButton")({
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -10, 0, 8),
 				Size = UDim2.fromOffset(36, 32),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Iron.Raised,
 				Text = "✕",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 18,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				[OnEvent("Activated")] = closeGrid,
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			}),

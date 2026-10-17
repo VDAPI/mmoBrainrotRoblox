@@ -47,7 +47,7 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 		return use(selected) == class.id
 	end)
 	local hovered = scope:Value(false)
-	local color = Color3.fromHex(class.color)
+	local color = Theme.readable(class.color, "paper")
 	local portrait = UiArt.classPortrait(class.id)
 	UiArtState.ensureKey(portrait)
 	local portraitShown = ArtIcon.Shown(scope, portrait)
@@ -60,9 +60,9 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 		Text = "",
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			if use(isSelected) then
-				return Theme.Colors.PanelHover
+				return Theme.Paper.Hover
 			end
-			return if use(hovered) then Theme.Colors.PanelRaised else Theme.Colors.Panel
+			return if use(hovered) then Theme.Paper.Raised else Theme.Paper.Surface
 		end),
 		[OnEvent("MouseEnter")] = function()
 			hovered:set(true)
@@ -82,7 +82,7 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 					return if use(isSelected) then Theme.Stroke.Thick else Theme.Stroke.Thin
 				end),
 				Color = scope:Computed(function(use): Color3
-					return if use(isSelected) then Theme.Colors.GoldBright else Theme.Colors.Border
+					return if use(isSelected) then Theme.Brass.Frame else Theme.Paper.Rule
 				end),
 			}),
 			-- S119: the class portrait (2:3) as the card background, darkened, once loaded; without it the card is as
@@ -96,12 +96,13 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 			scope:New("Frame")({
 				Name = "Shade",
 				Size = UDim2.fromScale(1, 1),
-				BackgroundColor3 = Color3.new(0, 0, 0),
+				-- S136: a parchment veil over the portrait, so the ink on the card stays readable
+				BackgroundColor3 = Theme.Paper.Surface,
 				BackgroundTransparency = scope:Computed(function(use): number
 					if use(isSelected) then
-						return 0.45
+						return 0.3
 					end
-					return if use(hovered) then 0.4 else 0.3
+					return if use(hovered) then 0.25 else 0.15
 				end),
 				Visible = portraitShown,
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -130,7 +131,7 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 						Glyph = class.icon,
 						GlyphColor = color,
 						Size = UDim2.fromOffset(64, 64),
-						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 48 },
+						Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Hero },
 					}),
 					scope:New("TextLabel")({
 						Name = "ClassName",
@@ -138,9 +139,9 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, 0, 0, 32),
 						Text = Text.T(scope, class.nameKey),
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large + 2,
-						TextColor3 = Theme.Colors.Gold,
+						TextColor3 = Theme.Paper.Heading,
 					}),
 					scope:New("TextLabel")({
 						Name = "Role",
@@ -160,7 +161,7 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 						Text = Text.T(scope, class.descKey),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextWrapped = true,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
@@ -264,7 +265,7 @@ local function Creator(scope: Scope, props: Props): Instance
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		[Children] = {
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -281,9 +282,9 @@ local function Creator(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 36),
 				Text = Text.T(scope, "charSelect.create.chooseClass"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Title,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			scope:New("Frame")({
 				Name = "Classes",
@@ -309,9 +310,9 @@ local function Creator(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 32),
 				Text = Text.T(scope, "charSelect.create.look"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			scope:New("Frame")({
 				Name = "Look",
@@ -364,7 +365,7 @@ local function Creator(scope: Scope, props: Props): Instance
 								Text = Text.T(scope, "charSelect.create.lookHint"),
 								FontFace = Theme.Fonts.Body,
 								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Colors.TextMuted,
+								TextColor3 = Theme.Paper.TextMuted,
 								TextWrapped = true,
 							}),
 						},
@@ -373,7 +374,6 @@ local function Creator(scope: Scope, props: Props): Instance
 						LayoutOrder = 2,
 						Look = look,
 						Size = UDim2.fromOffset(460, 0),
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
 					}),
 				},
 			}),
@@ -385,11 +385,10 @@ local function Creator(scope: Scope, props: Props): Instance
 				Text = Text.T(scope, "charSelect.create.name"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			TextInput(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "NameInput",
 				LayoutOrder = 6,
 				Size = UDim2.fromOffset(460, Theme.Size.InputHeight + 22),
@@ -421,7 +420,7 @@ local function Creator(scope: Scope, props: Props): Instance
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(checking) then Theme.Colors.TextMuted else Theme.Colors.Success
+					return if use(checking) then Theme.Paper.TextMuted else Theme.Paper.Success
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
@@ -438,7 +437,6 @@ local function Creator(scope: Scope, props: Props): Instance
 						Padding = UDim.new(0, Theme.Padding.Medium),
 					}),
 					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 1,
 						Text = Text.T(scope, "charSelect.create.back"),
 						Variant = "ghost",
@@ -449,7 +447,6 @@ local function Creator(scope: Scope, props: Props): Instance
 						end,
 					}),
 					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
 						LayoutOrder = 2,
 						Text = Text.T(scope, "charSelect.create.submit"),
 						Variant = "primary",

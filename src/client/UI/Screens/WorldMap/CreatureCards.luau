@@ -38,6 +38,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local CardKit = require(script.Parent.CardKit)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -50,7 +51,7 @@ local T = CardKit.T
 local mapName, bandColor, whereLine, moveActions =
 	CardKit.mapName, CardKit.bandColor, CardKit.whereLine, CardKit.moveActions
 local kindRow, rarityWord = CardKit.kindRow, CardKit.rarityWord
-local LAIR_COLOR = Color3.fromHex("#E0823C") -- S134i: the hideout's skull (WorldMap/Canvas)
+local LAIR_COLOR = Theme.readable(UiPalette.map.lair, "paper", 3) -- S134i: the hideout's skull (WorldMap/Canvas)
 
 -- S134h: "Loot: Helmet, Gloves" of an Elite II kind (its own slot groups, Data/LootTables.ELITE2_SLOTS); nil for a kind
 -- outside the table (the Elite IIs of events drop every group).
@@ -164,17 +165,17 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 				hp = Format.number(stats.maxHp),
 				atk = Format.number(math.floor(stats.attack + 0.5)),
 			}),
-			color = Theme.Colors.Parchment,
+			color = Theme.Paper.Text,
 			bold = true,
 		},
 		{
 			text = T(if def.attack == "ranged" then "worldmap.card.ranged" else "worldmap.card.melee"),
-			color = Theme.Colors.TextMuted,
+			color = Theme.Paper.TextMuted,
 		},
 		-- S66: the family (S67 lines "Strong against ...") and the defence trait.
 		{
 			text = T("worldmap.card.family", { family = T("family." .. def.family) }),
-			color = Theme.Colors.TextMuted,
+			color = Theme.Paper.TextMuted,
 		},
 	}
 	local trait = if def.defence then Families.defence(def.family, def.defence) else nil
@@ -185,23 +186,25 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 				"monsterDefence." .. def.defence .. ".line",
 				{ pct = math.floor((mul - 1) * 100 + 0.5), dodge = trait.dodge or 0 }
 			),
-			color = Theme.Colors.Parchment,
+			color = Theme.Paper.Text,
 		})
 	end
 	if def.element then
 		table.insert(statLines, {
 			text = T("worldmap.card.element", { element = T(Elements.nameKey(def.element)) }),
-			color = Color3.fromHex(Elements.COLORS[def.element] or "#FFFFFF"),
+			color = if Elements.COLORS[def.element]
+				then Theme.readable(Elements.COLORS[def.element], "paper")
+				else Theme.Paper.Text,
 			art = UiArt.element(def.element), -- S119
 		})
 	end
 	if def.passive then
-		table.insert(statLines, { text = T("worldmap.card.passive"), color = Theme.Colors.ZoneGreen })
+		table.insert(statLines, { text = T("worldmap.card.passive"), color = Theme.Paper.Success })
 	end
 	table.insert(sections, { lines = statLines })
 	local where: { DetailCard.Line } = {}
 	for _, line in homes(kind) do
-		table.insert(where, { text = `• {line}`, size = 14 })
+		table.insert(where, { text = `• {line}` })
 	end
 	if #where > 0 then
 		table.insert(sections, { title = T("worldmap.card.where"), lines = where })
@@ -210,12 +213,12 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 	-- variant's).
 	local cap = Rarities.get(Rarities.cap[variant] or Rarities.UNIQUE)
 	local loot: { DetailCard.Line } = {
-		{ text = T("worldmap.card.rarityCap", { rarity = T(cap.nameKey) }), color = cap.color, bold = true },
+		{ text = T("worldmap.card.rarityCap", { rarity = T(cap.nameKey) }), color = cap.textColor, bold = true },
 	}
 	-- S134h: an Elite II drops only its own kinds of items
 	local own = if variant == "elite2" then elite2Loot(kind) else nil
 	if own then
-		table.insert(loot, { text = own, color = Theme.Colors.GoldBright })
+		table.insert(loot, { text = own, color = Theme.Paper.Heading })
 	end
 	local tableDef = LootTables.get(def.lootTable)
 	if tableDef then
@@ -229,7 +232,6 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 				seen[drop.id] = true
 				table.insert(loot, {
 					text = `• {ItemText.name(drop.id)} — {rarityWord(drop.chance)}`,
-					size = 14,
 				})
 			end
 		end
@@ -283,7 +285,7 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 	end
 	return {
 		icon = if variant == "elite2" then "♛" elseif variant == "elite" then "★" else "⚔",
-		iconColor = if variant == "normal" then color else Theme.Colors.GoldBright,
+		iconColor = if variant == "normal" then color else Theme.Paper.Heading,
 		-- S119: Elite II has no picture of its own (glyph).
 		art = if variant == "elite2"
 			then nil
@@ -332,12 +334,12 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 					to = math.ceil((timer.to - now) / 60) .. " min",
 				})
 				else T("e2timer.any")
-			table.insert(info, { text = `⏱ {state}`, color = Color3.fromHex("#C77BFF") })
+			table.insert(info, { text = `⏱ {state}`, color = Theme.readable(UiPalette.map.elite2, "paper") })
 		end
 	end
 	table.insert(
 		info,
-		{ text = T("worldmap.rooms", { n = #AreaSpawns.caveRooms(cave) }), color = Theme.Colors.TextMuted }
+		{ text = T("worldmap.rooms", { n = #AreaSpawns.caveRooms(cave) }), color = Theme.Paper.TextMuted }
 	)
 	local entrance = Areas.entranceOf(caveId)
 	local sections: { Section } = {
@@ -368,12 +370,12 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 	local color = bandColor(cave.levels, ctx.level)
 	return {
 		icon = "⛰",
-		iconColor = Theme.Colors.ZoneRed,
+		iconColor = Theme.Paper.Danger,
 		art = UiArt.mapIcon("cave"), -- S119
 		title = T(cave.nameKey),
 		subtitle = `{T("worldmap.card.levels", { min = cave.levels[1], max = cave.levels[2] })} · {T("zone.red")}`,
 		subtitleColor = color,
-		accent = Theme.Colors.ZoneRed,
+		accent = Theme.Paper.Danger,
 		back = ctx.back,
 		preview = if cave.elite2[1]
 			then { kind = "monster", id = cave.elite2[1], variant = "elite2", glyph = "♛" }
@@ -410,7 +412,7 @@ function CreatureCards.lair(ctx: Context, lairId: string): Spec?
 	for _, kind in lair.nodes do
 		local node = GatherNodes.get(kind)
 		if node then
-			table.insert(nodes, { text = `• {T(node.nameKey)}`, size = 14 })
+			table.insert(nodes, { text = `• {T(node.nameKey)}` })
 		end
 	end
 	local sections: { Section } = {
@@ -421,9 +423,9 @@ function CreatureCards.lair(ctx: Context, lairId: string): Spec?
 			lines = {
 				{
 					text = T("worldmap.lairAbilities", { list = table.concat(abilities, ", ") }),
-					color = Theme.Colors.Parchment,
+					color = Theme.Paper.Text,
 				},
-				{ text = T("worldmap.lairQuiet"), color = Theme.Colors.TextMuted },
+				{ text = T("worldmap.lairQuiet"), color = Theme.Paper.TextMuted },
 			},
 		},
 		{ title = T("worldmap.lairGuards"), rows = guards },
@@ -486,7 +488,7 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	local lines: { DetailCard.Line } = {
 		{
 			text = T("worldmap.card.required", { level = required }),
-			color = if ctx.level >= required then Theme.Colors.ZoneGreen else Theme.Colors.ZoneRed,
+			color = if ctx.level >= required then Theme.Paper.Success else Theme.Paper.Danger,
 			bold = true,
 		},
 		{
@@ -495,22 +497,25 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 				limit = limit,
 				time = Time.format(BossScaling.untilReset(now)),
 			}),
-			color = if done >= limit then Theme.Colors.Warning else Theme.Colors.ZoneGreen,
+			color = if done >= limit then Theme.Paper.Warning else Theme.Paper.Success,
 		},
 		{
 			text = T("worldmap.card.bossChances", {
 				leg = math.floor(chances.legendary * 100 + 0.5),
 				myth = math.floor(chances.mythic * 100 + 0.5),
 			}),
-			color = Rarities.get(Rarities.MYTHIC).color:Lerp(Rarities.get(Rarities.LEGENDARY).color, 0.5),
+			color = Theme.readable(
+				Theme.hex(Rarities.get(Rarities.MYTHIC).color:Lerp(Rarities.get(Rarities.LEGENDARY).color, 0.5)),
+				"paper"
+			),
 			bold = true,
 		},
 	}
 	local luckLine = GroupLuck.line(nil, luck)
 	if luckLine then
-		table.insert(lines, { text = luckLine, color = Theme.Colors.GoldBright })
+		table.insert(lines, { text = luckLine, color = Theme.Paper.Heading })
 	end
-	table.insert(lines, { text = T("worldmap.card.group"), color = Theme.Colors.TextMuted })
+	table.insert(lines, { text = T("worldmap.card.group"), color = Theme.Paper.TextMuted })
 	table.insert(lines, whereLine(ctx, gate.map, gate.x, gate.z))
 	local items: { DetailCard.ItemRow } = {}
 	local bossTable = LootTables.bosses[boss.id]
@@ -521,7 +526,7 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 			table.insert(items, {
 				item = item,
 				text = ItemText.name(unique),
-				color = ItemText.rarityColor(item.rarity),
+				color = ItemText.rarityName(item.rarity, "paper"),
 			})
 		end
 	end
@@ -547,13 +552,13 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	end
 	return {
 		icon = "☠",
-		iconColor = Theme.Colors.Danger,
+		iconColor = Theme.Paper.Danger,
 		art = bossArt(boss.id), -- S119
 		title = T(boss.nameKey),
 		subtitle = `{T(`map.dungeon_{region}.name`)} · {T("worldmap.card.bossLevel", { level = boss.level })}`,
-		subtitleColor = Theme.Colors.DangerHover,
-		accent = Theme.Colors.Danger,
-		preview = { kind = "boss", id = boss.id, glyph = "☠", color = Theme.Colors.Danger },
+		subtitleColor = Theme.Paper.Danger,
+		accent = Theme.Paper.Danger,
+		preview = { kind = "boss", id = boss.id, glyph = "☠", color = Theme.Paper.Danger },
 		sections = sections,
 		actions = actions,
 	}

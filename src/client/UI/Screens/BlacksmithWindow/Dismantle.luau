@@ -147,7 +147,7 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
 				[Children] = {
 					scope:New("UIGridLayout")({
 						CellSize = UDim2.fromOffset(64, 64),
@@ -166,7 +166,7 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("Frame")({

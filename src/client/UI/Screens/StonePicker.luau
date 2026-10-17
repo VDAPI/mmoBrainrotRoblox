@@ -99,7 +99,7 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "teleport.noMaps"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end

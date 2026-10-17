@@ -94,21 +94,21 @@ local function CastBar(scope: Scope): Instance
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -100),
 		Size = UDim2.fromOffset(360, 26),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Resource.Track,
 		Visible = scope:Computed(function(use): boolean
 			local c = use(channel)
 			return c ~= nil and use(now) < c.endsAt
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("Frame")({
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.fromScale(use(progress), 1)
 				end),
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local c = use(channel)
-					return if c and c.aiming then Theme.Colors.Danger else Theme.Colors.Accent
+					return if c and c.aiming then Theme.Resource.Hp else Theme.Resource.Mana
 				end),
 				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			}),
@@ -121,7 +121,7 @@ local function CastBar(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Iron.Text,
 				TextStrokeTransparency = 0.4,
 				ZIndex = 2,
 			}),

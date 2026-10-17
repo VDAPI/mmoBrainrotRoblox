@@ -72,22 +72,22 @@ function BarkToast.new(scope: Scope): Api
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(use(size).X, use(size).Y)
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.08,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Visible = false,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("Frame")({
 				Name = "Portrait",
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 10, 0.5, 0),
 				Size = UDim2.fromOffset(PORTRAIT, PORTRAIT),
-				BackgroundColor3 = Theme.Colors.Background,
+				BackgroundColor3 = Theme.Iron.Sunken,
 				ClipsDescendants = true,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1 }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 					preview.frame,
 				},
 			}),
@@ -101,8 +101,8 @@ function BarkToast.new(scope: Scope): Api
 					return if def then Text.get(use, def.nameKey) else ""
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 16,
-				TextColor3 = Theme.Colors.Gold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -115,10 +115,8 @@ function BarkToast.new(scope: Scope): Api
 				TextWrapped = true,
 				TextScaled = false,
 				FontFace = Theme.Fonts.Body,
-				TextSize = scope:Computed(function(use): number
-					return if use(Device.Touch) then 14 else 15
-				end),
-				TextColor3 = Theme.Colors.Parchment,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -143,7 +141,7 @@ function BarkToast.new(scope: Scope): Api
 		preview.show(
 			if def
 				then { kind = "npc", id = def.id, glyph = def.icon }
-				else { kind = "glyph", id = "", glyph = "?", color = Theme.Colors.Parchment }
+				else { kind = "glyph", id = "", glyph = "?", color = Theme.Iron.Text }
 		)
 		box.Position = Fusion.peek(hidden)
 		box.Visible = true

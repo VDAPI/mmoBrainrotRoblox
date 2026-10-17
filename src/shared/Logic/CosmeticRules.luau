@@ -24,7 +24,8 @@ CosmeticRules.SLOT_KINDS = table.freeze({
 	"levelup",
 })
 
--- mirrors UI/Theme (Logic never reads the client theme): Theme.Colors.GoldBright and Theme.Colors.Gold, the S22 pillar
+-- The S22 pillar: GOLD_BRIGHT mirrors Data/UiPalette brass.bright, GOLD keeps the former theme gold (no palette role
+-- since S136)
 local GOLD_BRIGHT = "#E8C25A"
 local GOLD = "#C9A45C"
 

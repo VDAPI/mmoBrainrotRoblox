@@ -67,8 +67,8 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			Position = UDim2.new(1, CENTER.X + offset.X, 1, CENTER.Y + offset.Y),
 			Size = UDim2.fromOffset(SIZE, SIZE),
 			AutoButtonColor = true,
-			BackgroundColor3 = Theme.Colors.Panel,
-			BackgroundTransparency = 0.15,
+			BackgroundColor3 = Theme.Iron.Raised, -- S136: the iron slot
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = scope:Computed(function(use): string
 				local id = use(skillId)
 				local skill = id and SkillData.get(id)
@@ -81,7 +81,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			FontFace = Theme.Fonts.BodyBold,
 			TextColor3 = scope:Computed(function(use): Color3
 				local id = use(skillId)
-				return if id then props.Color(id) else Theme.Colors.TextMuted
+				return if id then props.Color(id) else Theme.Iron.TextMuted
 			end),
 			[OnEvent("Activated")] = function()
 				if suppress[i] then
@@ -132,7 +132,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			end,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-				scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 2 }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Normal }),
 				scope:New("UIPadding")({
 					PaddingTop = UDim.new(0.2, 0),
 					PaddingBottom = UDim.new(0.2, 0),
@@ -159,16 +159,16 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = position,
 			Size = UDim2.fromOffset(84, 44),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
-			BackgroundTransparency = 0.1,
+			BackgroundColor3 = Theme.Iron.Raised,
+			BackgroundTransparency = Theme.HudAlpha,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.Gold,
+			TextColor3 = Theme.Iron.Heading,
 			[OnEvent("Activated")] = onClick,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-				scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			},
 		})
 	end

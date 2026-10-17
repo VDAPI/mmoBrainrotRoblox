@@ -129,7 +129,7 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 					})}{if reason ~= "" then `  —  {reason}` else ""}`,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = if member.ok then Theme.Colors.Success else Theme.Colors.DangerHover,
+					TextColor3 = if member.ok then Theme.Paper.Success else Theme.Paper.Danger,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 				})
@@ -149,6 +149,16 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		UiArtState.ensureKey(Fusion.peek(banner))
 	end)
 	local bannerShown = ArtIcon.Shown(scope, banner)
+	-- The header lines stand on the darkened banner once it is shown: iron text with a dark stroke there, parchment
+	-- ink without it.
+	local function onBanner(paper: Color3, iron: Color3)
+		return scope:Computed(function(use): Color3
+			return if use(bannerShown) then iron else paper
+		end)
+	end
+	local headerStroke = scope:Computed(function(use): number
+		return if use(bannerShown) then 0.4 else 1
+	end)
 
 	return {
 		ArtIcon.Image(scope, {
@@ -161,7 +171,7 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		scope:New("Frame")({
 			Name = "BannerShade",
 			Size = UDim2.new(1, 0, 0, 106),
-			BackgroundColor3 = Color3.new(0, 0, 0),
+			BackgroundColor3 = Theme.Shade,
 			BackgroundTransparency = 0.35,
 			Visible = bannerShown,
 			[Children] = {
@@ -179,9 +189,11 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 				local data = use(info)
 				return if data then Text.get(use, data.nameKey) else "…"
 			end),
-			FontFace = Theme.Fonts.Heading,
-			TextSize = 30,
-			TextColor3 = Theme.Colors.GoldBright,
+			FontFace = Theme.Fonts.Display,
+			TextSize = Theme.TextSize.Title,
+			TextColor3 = onBanner(Theme.Paper.Heading, Theme.Brass.Bright),
+			TextStrokeColor3 = Theme.Shade,
+			TextStrokeTransparency = headerStroke,
 		}),
 		scope:New("TextLabel")({
 			Position = UDim2.fromOffset(0, 44),
@@ -196,7 +208,9 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = onBanner(Theme.Paper.Text, Theme.Iron.Text),
+			TextStrokeColor3 = Theme.Shade,
+			TextStrokeTransparency = headerStroke,
 		}),
 		scope:New("TextLabel")({
 			Position = UDim2.fromOffset(0, 74),
@@ -220,8 +234,11 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			TextSize = Theme.TextSize.Body,
 			TextColor3 = scope:Computed(function(use): Color3
 				local data = use(info)
-				return if data and data.busy then Theme.Colors.DangerHover else Theme.Colors.Success
+				local roles = if use(bannerShown) then Theme.Iron else Theme.Paper
+				return if data and data.busy then roles.Danger else roles.Success
 			end),
+			TextStrokeColor3 = Theme.Shade,
+			TextStrokeTransparency = headerStroke,
 		}),
 		scope:New("TextLabel")({
 			Name = "Grind",
@@ -231,7 +248,7 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			Text = grind,
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Rarities.get(Rarities.LEGENDARY).color,
+			TextColor3 = Rarities.get(Rarities.LEGENDARY).textColor,
 			TextWrapped = true,
 		}),
 		scope:New("Frame")({

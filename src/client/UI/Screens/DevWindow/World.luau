@@ -97,7 +97,7 @@ local function World(s: Dev.Scope): Instance
 	return Dev.column(s, {
 		Dev.header(s, 1, "dev.world.teleport"),
 		Dev.row(s, 2, Text.T(s, "dev.world.map"), {
-			Select(s, { Options = mapOptions, Selected = map, Width = 260 }),
+			Select(s, { Surface = "iron", Options = mapOptions, Selected = map, Width = 260 }),
 			Dev.button(s, Text.T(s, "dev.world.go"), function()
 				local id = Fusion.peek(map)
 				if id then
@@ -120,7 +120,7 @@ local function World(s: Dev.Scope): Instance
 			},
 		}),
 		Dev.row(s, 4, Text.T(s, "dev.world.cave"), {
-			Select(s, { Options = caveOptions, Selected = cave, Width = 260 }),
+			Select(s, { Surface = "iron", Options = caveOptions, Selected = cave, Width = 260 }),
 			Dev.button(s, Text.T(s, "dev.world.go"), function()
 				local id = Fusion.peek(cave)
 				if id then
@@ -129,7 +129,7 @@ local function World(s: Dev.Scope): Instance
 			end, 110),
 		}),
 		Dev.row(s, 5, Text.T(s, "dev.world.boss"), {
-			Select(s, { Options = bossOptions, Selected = boss, Width = 260 }),
+			Select(s, { Surface = "iron", Options = bossOptions, Selected = boss, Width = 260 }),
 			Dev.button(s, Text.T(s, "dev.world.go"), function()
 				local id = Fusion.peek(boss)
 				if id then
@@ -138,7 +138,7 @@ local function World(s: Dev.Scope): Instance
 			end, 110),
 		}),
 		Dev.row(s, 6, Text.T(s, "dev.world.npc"), {
-			Select(s, { Options = npcOptions, Selected = npc, Width = 260 }),
+			Select(s, { Surface = "iron", Options = npcOptions, Selected = npc, Width = 260 }),
 			Dev.button(s, Text.T(s, "dev.world.go"), function()
 				local id = Fusion.peek(npc)
 				if id then
@@ -147,20 +147,20 @@ local function World(s: Dev.Scope): Instance
 			end, 110),
 		}),
 		Dev.row(s, 7, Text.T(s, "dev.world.city"), {
-			Select(s, { Options = placeOptions, Selected = place, Width = 260 }),
+			Select(s, { Surface = "iron", Options = placeOptions, Selected = place, Width = 260 }),
 			Dev.button(s, Text.T(s, "dev.world.go"), function()
 				Dev.run("town", { "tp", Fusion.peek(place) or "rynek" })
 			end, 110),
 		}),
 		Dev.header(s, 8, "dev.world.time"),
 		Dev.row(s, 9, Text.T(s, "dev.world.clock"), {
-			NumberInput(s, { Value = seconds, Min = 1, Max = 86400 * 30, Step = 600 }),
+			NumberInput(s, { Surface = "iron", Value = seconds, Min = 1, Max = 86400 * 30, Step = 600 }),
 			Dev.button(s, Text.T(s, "dev.world.shift"), function()
 				Dev.run("time", { `+{Fusion.peek(seconds)}` })
 			end, 130),
 		}),
 		Dev.row(s, 10, Text.T(s, "dev.world.daytime"), {
-			NumberInput(s, { Value = hour, Min = 0, Max = 24 }),
+			NumberInput(s, { Surface = "iron", Value = hour, Min = 0, Max = 24 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("daytime", { tostring(Fusion.peek(hour)) })
 			end),
@@ -203,8 +203,8 @@ local function World(s: Dev.Scope): Instance
 			BackgroundTransparency = 1,
 			Text = Text.T(s, "dev.world.rebuildNote"),
 			FontFace = Theme.Fonts.Body,
-			TextSize = 13,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextSize = Theme.TextSize.Caption,
+			TextColor3 = Theme.Iron.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Dev.header(s, 15, "dev.allCommands"),

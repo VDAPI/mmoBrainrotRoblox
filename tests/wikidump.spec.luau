@@ -26,7 +26,6 @@ local function build(): any
 	return WikiDump.build({
 		rolls = ROLLS,
 		exists = fs.isFile,
-		themeText = fs.readFile("src/client/UI/Theme.luau"),
 		readText = function(path: string): string?
 			return if fs.isFile(path) then fs.readFile(path) else nil
 		end,

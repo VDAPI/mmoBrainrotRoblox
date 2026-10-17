@@ -53,7 +53,7 @@ function Common.infoRow(
 				Text = label,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextLabel")({
@@ -63,7 +63,7 @@ function Common.infoRow(
 				Text = value,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),

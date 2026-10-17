@@ -79,7 +79,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 	local protect = scope:Value(false)
 	local phase = scope:Value("idle") -- idle | forging | success | fail | saved
 	local resultText = scope:Value("")
-	local flashColor = scope:Value(Theme.Colors.Panel)
+	local flashColor = scope:Value(Theme.Paper.Surface)
 	local flash = scope:Value(1)
 	local animatedFlash = scope:Tween(flash, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
 	local anvil: Frame? = nil
@@ -124,17 +124,17 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 			flash:set(0)
 			if result.success then
 				phase:set("success")
-				flashColor:set(Theme.Colors.GoldBright)
+				flashColor:set(Theme.Paper.Heading)
 				Sounds.play("levelUp")
 				resultText:set(Text.now("smith.upgrade.success", { name = ItemText.name(current.id, result.to) }))
 			elseif result.protected then
 				phase:set("saved")
-				flashColor:set(Theme.Colors.Accent)
+				flashColor:set(Theme.Paper.Link)
 				Sounds.play("error")
 				resultText:set(Text.now("smith.upgrade.saved"))
 			else
 				phase:set("fail")
-				flashColor:set(Theme.Colors.Danger)
+				flashColor:set(Theme.Paper.Danger)
 				Sounds.playPitched("error", 0.4)
 				resultText:set(
 					if result.to == 0 and result.from == 0
@@ -180,7 +180,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 				Text = Text.T(scope, "smith.upgrade.items"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("ScrollingFrame")({
@@ -191,7 +191,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
 				[Children] = {
 					scope:New("UIGridLayout")({
 						CellSize = UDim2.fromOffset(56, 56),
@@ -247,11 +247,11 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 							return ItemText.get(use, i.id, i.up)
 						end),
 						TextWrapped = true,
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large,
 						TextColor3 = scope:Computed(function(use): Color3
 							local i = use(item)
-							return if i then ItemText.rarityColor(i.rarity) else Theme.Colors.TextMuted
+							return if i then ItemText.rarityName(i.rarity, "paper") else Theme.Paper.TextMuted
 						end),
 					}),
 					-- Stats now / after
@@ -279,13 +279,16 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 								)} +{i.up + 1}</b>`,
 							}
 							for index, line in now do
-								table.insert(lines, `{line}  <font color="#4FD16B">→ {after[index] or ""}</font>`)
+								table.insert(
+									lines,
+									`{line}  <font color="{Theme.hex(Theme.Paper.Success)}">→ {after[index] or ""}</font>`
+								)
 							end
 							return table.concat(lines, "\n")
 						end),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
@@ -298,16 +301,16 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 						Text = scope:Computed(function(use): string
 							return if use(item) then `{use(chance)}%` else ""
 						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = 56,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Hero,
 						TextColor3 = scope:Computed(function(use): Color3
 							local c = use(chance)
 							if c >= 70 then
-								return Theme.Colors.Success
+								return Theme.Paper.Success
 							elseif c >= 40 then
-								return Theme.Colors.Warning
+								return Theme.Paper.Warning
 							end
-							return Theme.Colors.DangerHover
+							return Theme.Paper.Danger
 						end),
 					}),
 					scope:New("TextLabel")({
@@ -324,12 +327,16 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 							end
 							local enoughGold = (use(gold) or 0) >= c.gold
 							local parts = {
-								`<font color="{if enoughGold then "#E8C25A" else "#CC5248"}">◉ {Format.number(c.gold)}</font>`,
+								`<font color="{if enoughGold
+									then Theme.hex(Theme.Paper.Heading)
+									else Theme.hex(Theme.Paper.Danger)}">◉ {Format.number(c.gold)}</font>`,
 							}
 							local inv = use(inventory)
 							for _, material in c.materials do
 								local have = count(inv, material.id)
-								local color = if have >= material.n then "#4FD16B" else "#CC5248"
+								local color = if have >= material.n
+									then Theme.hex(Theme.Paper.Success)
+									else Theme.hex(Theme.Paper.Danger)
 								table.insert(
 									parts,
 									`<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`
@@ -339,7 +346,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					-- Protection checkbox
@@ -358,7 +365,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						[OnEvent("Activated")] = function()
 							Sounds.play("click")
@@ -392,11 +399,11 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 						TextColor3 = scope:Computed(function(use): Color3
 							local p = use(phase)
 							if p == "success" then
-								return Theme.Colors.GoldBright
+								return Theme.Paper.Heading
 							elseif p == "fail" then
-								return Theme.Colors.DangerHover
+								return Theme.Paper.Danger
 							end
-							return Theme.Colors.AccentHover
+							return Theme.Paper.Link
 						end),
 					}),
 				},

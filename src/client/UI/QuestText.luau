@@ -488,17 +488,17 @@ end
 
 -- S99: the hunting ground of a contract as rich text: its name and levels in the colour of the level band for the
 -- character, then the S33 profile tag in its colour.
-function QuestText.contractAreaLine(use: any, contract: Quests.ContractQuest, level: number): string
+function QuestText.contractAreaLine(use: any, contract: Quests.ContractQuest, level: number, surface: string?): string
 	local area = Areas.areaById(contract.area)
 	if not area then
 		return ""
 	end
-	local color: string = LevelBand.COLORS[AreaAdvice.bandOf(area, level)]
+	local color = Theme.readableHex(LevelBand.COLORS[AreaAdvice.bandOf(area, level)], surface)
 	local name = `{Text.get(use, area.nameKey)} ({area.lv[1]}–{area.lv[2]})`
 	local line = `<font color="{color}">{name}</font>`
 	local profile = AreaProfiles.ofArea(area.id)
 	if profile then
-		local hex = "#" .. AreaProfileText.color(profile):ToHex()
+		local hex = Theme.hex(AreaProfileText.color(profile, surface))
 		line ..= `  <font color="{hex}">{AreaProfileText.tag(use, profile)}</font>`
 	end
 	return line

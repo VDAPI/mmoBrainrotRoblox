@@ -157,18 +157,18 @@ function Search.new(scope: Scope, props: Props): Api
 	local field = scope:New("Frame")({
 		Name = "Search",
 		Size = UDim2.new(1, -8, 0, 40),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(8, 0),
 				Size = UDim2.fromOffset(20, 40),
 				BackgroundTransparency = 1,
 				Text = "⌕",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 20,
-				TextColor3 = Theme.Colors.Gold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			(function(): TextBox
 				box = scope:New("TextBox")({
@@ -179,10 +179,10 @@ function Search.new(scope: Scope, props: Props): Api
 					ClearTextOnFocus = false,
 					Text = "",
 					PlaceholderText = Text.T(scope, "worldmap.search.placeholder"),
-					PlaceholderColor3 = Theme.Colors.TextMuted,
+					PlaceholderColor3 = Theme.Paper.TextMuted,
 					FontFace = Theme.Fonts.Body,
-					TextSize = 16,
-					TextColor3 = Theme.Colors.Text,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
 					[OnChange("Text")] = function(value: string)
@@ -208,8 +208,8 @@ function Search.new(scope: Scope, props: Props): Api
 				Visible = active,
 				Text = "✕",
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 16,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.TextMuted,
 				[OnEvent("Activated")] = function()
 					box.Text = ""
 					query:set("")
@@ -222,7 +222,7 @@ function Search.new(scope: Scope, props: Props): Api
 		Name = "Results",
 		Position = UDim2.fromOffset(0, 46),
 		Size = UDim2.new(1, 0, 1, -46),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.05,
 		BorderSizePixel = 0,
 		ZIndex = 5,
@@ -230,7 +230,7 @@ function Search.new(scope: Scope, props: Props): Api
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 5,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
 			scope:New("TextLabel")({
@@ -242,8 +242,8 @@ function Search.new(scope: Scope, props: Props): Api
 				end),
 				Text = Text.T(scope, "worldmap.search.none"),
 				FontFace = Theme.Fonts.Body,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.TextMuted,
 				ZIndex = 6,
 			}),
 			scope:ForValues(results, function(use, s: Scope, result: MapSearch.Result): Instance
@@ -252,7 +252,7 @@ function Search.new(scope: Scope, props: Props): Api
 					Size = s:Computed(function(inner): UDim2
 						return UDim2.new(1, -8, 0, if inner(props.Touch) then 48 else 40)
 					end),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					AutoButtonColor = true,
 					Text = "",
 					ZIndex = 6,
@@ -264,12 +264,12 @@ function Search.new(scope: Scope, props: Props): Api
 						ArtIcon(s, {
 							Key = resultArt(result), -- S119
 							Glyph = KIND_ICONS[result.kind] or "•",
-							GlyphColor = Theme.Colors.Gold,
+							GlyphColor = Theme.Paper.Heading,
 							Position = UDim2.fromOffset(6, 0),
 							Size = UDim2.new(0, 24, 1, 0),
 							ImageScale = 0.8,
 							ZIndex = 7,
-							Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 18 },
+							Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Small },
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(34, 3),
@@ -277,8 +277,8 @@ function Search.new(scope: Scope, props: Props): Api
 							BackgroundTransparency = 1,
 							Text = Text.get(use, result.labelKey),
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 15,
-							TextColor3 = Theme.Colors.Parchment,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							ZIndex = 7,
@@ -291,8 +291,8 @@ function Search.new(scope: Scope, props: Props): Api
 								then Text.get(use, map.nameKey)
 								else result.map}`,
 							FontFace = Theme.Fonts.Body,
-							TextSize = 12,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							ZIndex = 7,

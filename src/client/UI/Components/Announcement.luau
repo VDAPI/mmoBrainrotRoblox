@@ -9,7 +9,6 @@ local RunService = game:GetService("RunService")
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Theme = require(script.Parent.Parent.Theme)
-local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children = Fusion.Children
 
@@ -33,13 +32,10 @@ end
 
 -- S135: colours from Data/UiPalette.announce
 local BACKDROP = {
-	legendary = sequence(
-		Color3.fromHex(UiPalette.announce.legendaryGlow),
-		Color3.fromHex(UiPalette.announce.legendaryBase)
-	),
-	mythic = sequence(Color3.fromHex(UiPalette.announce.mythicGlow), Color3.fromHex(UiPalette.announce.mythicBase)),
+	legendary = sequence(Theme.Announce.LegendaryGlow, Theme.Announce.LegendaryBase),
+	mythic = sequence(Theme.Announce.MythicGlow, Theme.Announce.MythicBase),
 }
-local MYTHIC_TEXT = Color3.fromHex(UiPalette.announce.mythicText)
+local MYTHIC_TEXT = Theme.Announce.MythicText
 local MYTHIC_COLORS = MYTHIC.frame.gradient or { MYTHIC.color, MYTHIC.color }
 local FRAME = {
 	legendary = sequence(LEGENDARY.color, LEGENDARY.color),
@@ -122,7 +118,7 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 		Size = scope:Computed(function(use): UDim2
 			return if use(style) == "mythic" then UDim2.fromOffset(980, 84) else UDim2.fromOffset(900, 64)
 		end),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		BackgroundTransparency = 0.15,
 		Visible = scope:Computed(function(use): boolean
 			return use(current) ~= nil
@@ -156,7 +152,7 @@ function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instanc
 					return use(current) or ""
 				end),
 				RichText = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = scope:Computed(function(use): number
 					return if use(style) == "mythic" then Theme.TextSize.Title else Theme.TextSize.Large + 2
 				end),

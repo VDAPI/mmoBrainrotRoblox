@@ -69,15 +69,15 @@ local function entryIcon(s: Scope, entry: Data.Entry, level: number, classId: st
 			BackgroundTransparency = 1,
 			Text = "▣",
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 36,
-			TextColor3 = ItemText.rarityColor(rarity),
+			TextSize = Theme.TextSize.Title,
+			TextColor3 = ItemText.rarityName(rarity, "paper"),
 		})
 	end
 	local def = Cosmetics.get(entry.id)
 	return ArtIcon(s, {
 		Key = UiArt.cosmetic(entry.id),
 		Glyph = if def then def.icon else "?",
-		GlyphColor = if def then Color3.fromHex(def.color) else Theme.Colors.Text,
+		GlyphColor = if def then Theme.readable(def.color, "paper") else Theme.Paper.Text,
 		Size = UDim2.fromOffset(ICON, ICON),
 		LayoutOrder = 1,
 	})
@@ -172,13 +172,7 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 		if not here then
 			table.insert(
 				out,
-				label(
-					s,
-					nextOrder(),
-					Text.get(use, "huntshop.atHuntmaster"),
-					Theme.TextSize.Small,
-					Theme.Colors.Warning
-				)
+				label(s, nextOrder(), Text.get(use, "huntshop.atHuntmaster"), Theme.TextSize.Small, Theme.Paper.Warning)
 			)
 		end
 		local buttonWidth = if isTouch then 96 else 120
@@ -206,7 +200,7 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 			end
 			local action: Instance
 			if isOwned then
-				action = label(s, 4, Text.get(use, "huntshop.owned"), Theme.TextSize.Small, Theme.Colors.Success)
+				action = label(s, 4, Text.get(use, "huntshop.owned"), Theme.TextSize.Small, Theme.Paper.Success)
 			else
 				action = Button(s, {
 					LayoutOrder = 4,
@@ -224,7 +218,7 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 				s:New("Frame")({
 					LayoutOrder = nextOrder(),
 					Size = UDim2.new(1, 0, 0, 64),
-					BackgroundColor3 = Theme.Colors.Panel,
+					BackgroundColor3 = Theme.Paper.Surface,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIPadding")({ PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }),
@@ -244,14 +238,14 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 									SortOrder = Enum.SortOrder.LayoutOrder,
 									VerticalAlignment = Enum.VerticalAlignment.Center,
 								}),
-								label(s, 1, name, Theme.TextSize.Small, Theme.Colors.Text, Theme.Fonts.BodyBold),
+								label(s, 1, name, Theme.TextSize.Small, Theme.Paper.Text, Theme.Fonts.BodyBold),
 								if #notes > 0
 									then label(
 										s,
 										2,
 										table.concat(notes, " · "),
 										Theme.TextSize.Small,
-										Theme.Colors.TextMuted
+										Theme.Paper.TextMuted
 									)
 									else nil :: any,
 							} :: any,
@@ -275,13 +269,12 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 									Text = tostring(price),
 									FontFace = Theme.Fonts.BodyBold,
 									TextSize = Theme.TextSize.Body,
-									TextColor3 = Theme.Colors.Parchment,
+									TextColor3 = Theme.Paper.Text,
 								}),
 								CurrencyIcon(s, {
 									Currency = "huntmarks",
 									Size = UDim2.fromOffset(20, 20),
 									LayoutOrder = 2,
-									Surface = "iron",
 								}),
 							},
 						}),
@@ -308,19 +301,16 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 					VerticalAlignment = Enum.VerticalAlignment.Center,
 					Padding = UDim.new(0, 6),
 				}),
-				CurrencyIcon(
-					scope,
-					{ Currency = "huntmarks", Size = UDim2.fromOffset(22, 22), LayoutOrder = 1, Surface = "iron" }
-				),
+				CurrencyIcon(scope, { Currency = "huntmarks", Size = UDim2.fromOffset(22, 22), LayoutOrder = 1 }),
 				scope:New("TextLabel")({
 					LayoutOrder = 2,
 					Size = UDim2.fromOffset(0, 28),
 					AutomaticSize = Enum.AutomaticSize.X,
 					BackgroundTransparency = 1,
 					Text = balance,
-					FontFace = Theme.Fonts.Heading,
+					FontFace = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.Gold,
+					TextColor3 = Theme.Paper.Heading,
 				}),
 			},
 		}),
@@ -337,7 +327,7 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
-			ScrollBarImageColor3 = Theme.Colors.Border,
+			ScrollBarImageColor3 = Theme.Paper.Rule,
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollingDirection = Enum.ScrollingDirection.Y,

@@ -43,6 +43,7 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 	local rarity = Rarities.get(item.rarity)
 	local mythic = rarity.id >= Rarities.MYTHIC
 	local accent = rarity.color
+	local accentText = rarity.textColor -- S136: the rarity's name colour on the parchment card
 	local colors = rarity.frame.gradient or { accent, accent }
 	local frameGradient = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, colors[1]),
@@ -107,14 +108,14 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						else string.format(`%.{decimals}f`, bonus.v)
 					local text = Text.get(use, `bonus.{bonus.id}`, { v = v })
 					local quality = math.floor(bonus.quality * 100 + 0.5)
-					return `{text}  <font color="#9A9DA8">{quality}%</font>`
+					return `{text}  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{quality}%</font>`
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = if mythic
-					then Rarities.get(Rarities.MYTHIC).color
-					elseif legendary then Rarities.get(Rarities.LEGENDARY).color
-					else Theme.Colors.Text,
+					then Rarities.get(Rarities.MYTHIC).textColor
+					elseif legendary then Rarities.get(Rarities.LEGENDARY).textColor
+					else Theme.Paper.Text,
 			})
 		)
 	end
@@ -139,7 +140,7 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Rarities.get(if effect.tier == "mythic" then Rarities.MYTHIC else Rarities.LEGENDARY).color,
+				TextColor3 = Rarities.get(if effect.tier == "mythic" then Rarities.MYTHIC else Rarities.LEGENDARY).textColor,
 			})
 		)
 	end
@@ -149,7 +150,7 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
 		Text = "",
-		BackgroundColor3 = if mythic then Color3.fromHex("#2A0505") else Color3.new(0, 0, 0),
+		BackgroundColor3 = if mythic then Theme.Announce.MythicVeil else Theme.Shade,
 		BackgroundTransparency = if mythic then 0.25 else 0.35,
 		[Children] = {
 			scope:New("Frame")({
@@ -158,14 +159,14 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 				Position = UDim2.fromScale(0.5, 0.5),
 				Size = UDim2.fromOffset(560, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundColor3 = Theme.Colors.Panel,
+				BackgroundColor3 = Theme.Paper.Surface,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
 					scope:New("UIStroke")({
 						Thickness = scope:Computed(function(use): number
 							return if mythic then 4 + use(pulse) * 2 else 3
 						end),
-						Color = Color3.new(1, 1, 1),
+						Color = Theme.Plain,
 						Transparency = scope:Computed(function(use): number
 							return 1 - use(animatedGlow) * 0.9
 						end),
@@ -187,11 +188,9 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						Size = UDim2.new(1, 0, 0, 34),
 						BackgroundTransparency = 1,
 						Text = Text.T(scope, if mythic then "reveal.titleMythic" else "reveal.title"),
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = if mythic then Theme.TextSize.Title + 6 else Theme.TextSize.Title,
-						TextColor3 = accent,
-						TextStrokeColor3 = if mythic then Color3.fromHex("#3A0000") else Color3.new(0, 0, 0),
-						TextStrokeTransparency = if mythic then 0.2 else 1,
+						TextColor3 = accentText,
 					}),
 					scope:New("Frame")({
 						Name = "Icon",
@@ -205,16 +204,16 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						-- S35: the picture sits on the dark panel; the coloured tile only behind the glyph.
 						BackgroundColor3 = scope:Computed(function(use): Color3
 							if not def or IconState.picture(use, def, ItemRoll.elementOf(item)) ~= nil then
-								return Theme.Colors.Panel
+								return Theme.Paper.Surface
 							end
-							return Color3.fromHex(def.icon.color)
+							return Theme.tint(def.icon.color)
 						end),
 						BackgroundTransparency = 0.3,
 						[Children] = {
 							scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 							scope:New("UIStroke")({
 								Thickness = if mythic then 4 else 3,
-								Color = Color3.new(1, 1, 1),
+								Color = Theme.Plain,
 								[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
 							}),
 							-- The atlas cell is 128 px: never drawn larger than the frame (<= 142 px).
@@ -233,9 +232,9 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						Text = scope:Computed(function(use): string
 							return ItemText.get(use, item.id, item.up)
 						end),
-						FontFace = Theme.Fonts.Heading,
+						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Large + 2,
-						TextColor3 = accent,
+						TextColor3 = accentText,
 					}),
 					rows :: any,
 					scope:New("Frame")({
@@ -254,19 +253,17 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 							}),
 							if props.OnEquip
 								then Button(scope, {
-										Surface = "iron", -- S135: on a dark HUD / overlay surface
-										Text = Text.T(scope, "reveal.equip"),
-										Variant = "primary",
-										Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
-										OnClick = function()
-											local equip = props.OnEquip :: () -> ()
-											props.Close()
-											equip()
-										end,
-									}) :: any
+									Text = Text.T(scope, "reveal.equip"),
+									Variant = "primary",
+									Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
+									OnClick = function()
+										local equip = props.OnEquip :: () -> ()
+										props.Close()
+										equip()
+									end,
+								}) :: any
 								else nil,
 							Button(scope, {
-								Surface = "iron", -- S135: on a dark HUD / overlay surface
 								Text = Text.T(scope, "reveal.ok"),
 								Variant = "secondary",
 								Size = UDim2.fromOffset(160, Theme.Size.ButtonHeight),

@@ -267,13 +267,13 @@ local function invitePopup(): Instance
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 260),
 		Size = UDim2.fromOffset(460, 130),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		Visible = scope:Computed(function(use): boolean
 			return use(invite) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(16, 10),
 				Size = UDim2.new(1, -32, 0, 50),
@@ -293,7 +293,7 @@ local function invitePopup(): Instance
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Iron.Text,
 			}),
 			Button(scope, {
 				Surface = "iron", -- S135: on a dark HUD / overlay surface
@@ -328,12 +328,12 @@ local function killFeed(): Instance
 				s:New("TextLabel")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 26),
-					BackgroundColor3 = Theme.Colors.Panel,
+					BackgroundColor3 = Theme.Iron.Surface,
 					BackgroundTransparency = 0.35,
 					Text = entry.text,
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 16,
-					TextColor3 = Theme.Colors.Text,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Iron.Text,
 					TextXAlignment = Enum.TextXAlignment.Right,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),

@@ -65,13 +65,13 @@ local function tile(scope: Scope, spec: CardSpec): Instance
 	return scope:New("TextLabel")({
 		Position = UDim2.fromOffset(10, 8),
 		Size = UDim2.fromOffset(TILE, TILE),
-		BackgroundColor3 = spec.tileColor or Theme.Colors.Panel,
+		BackgroundColor3 = spec.tileColor or Theme.Paper.Surface,
 		Text = scope:Computed(function(use): string
 			return if UiArtState.ready(use, art) then "" else spec.glyph
 		end),
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
-		TextColor3 = if spec.tileColor then Color3.new(1, 1, 1) else Theme.Colors.GoldBright,
+		TextColor3 = if spec.tileColor then Theme.Plain else Theme.Paper.Heading,
 		TextStrokeTransparency = if spec.tileColor then 0.4 else 1,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -98,7 +98,7 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 	local frame = scope:New("Frame")({
 		LayoutOrder = spec.order,
 		Size = UDim2.new(1, 0, 0, CARD_HEIGHT),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -110,7 +110,7 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 				Text = spec.title,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -123,7 +123,7 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 					Text = spec.badge,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.Success,
+					TextColor3 = Theme.Paper.Success,
 					TextXAlignment = Enum.TextXAlignment.Right,
 				})
 				else nil) :: any,
@@ -136,7 +136,7 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -211,7 +211,7 @@ function Cards.sectionHeader(scope: Scope, order: number, textKey: string): Inst
 		Text = Text.T(scope, textKey),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.TextMuted,
+		TextColor3 = Theme.Paper.TextMuted,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Bottom,
 	})
@@ -228,7 +228,7 @@ function Cards.note(scope: Scope, order: number, textKey: string): Instance
 		TextWrapped = true,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.TextMuted,
+		TextColor3 = Theme.Paper.TextMuted,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		[Children] = {
 			scope:New("UIPadding")({ PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }),

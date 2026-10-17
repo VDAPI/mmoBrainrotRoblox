@@ -4925,3 +4925,41 @@
 - **S135** Listy i nagłówki sekcji okien D (poza `character`, `menu`, `skills`) zostają ręcznymi ramkami na rolach
   pergaminu; przejście na `ListRow` / `SectionLabel` odłożone do S136 (zmienia układ i wysokości wierszy, bez przeglądu
   w grze ryzyko przycięć).
+- **S136** HUD na żelazie: płytki `Iron.Surface` z jedną przezroczystością `UiPalette.HUD_ALPHA` 0,15 (`Theme.HudAlpha`)
+  i mosiężnym brzegiem 1 px; kontrast płytek liczony na płytce zmieszanej ze śniegiem `WORLD_BRIGHT` `#E8EEF2`
+  (`Contrast.mix`; wszystkie role tekstu żelaza ≥ 4,5:1). Sloty umiejętności i mikstur `Iron.Raised` z brzegiem
+  `Brass.Line` (dawny brzeg w kolorze klasy / mikstury zniknął), klawisz na plakietce `Iron.Sunken`, zasłony z `Shade`.
+- **S136** Nad światem tekst nie stoi na pergaminie: na żelazie HUD, nakładki, ekran śmierci, przerywnik, koło emotek,
+  łowienie, karta walki, ramki drużyny i tło wyboru postaci (`CharacterSelect/init`); na pergaminie karty (nagroda bossa,
+  objawienie legendy, oferta areny, gotowość, menu gracza, „Wkrótce”, karty postaci i kreatora: portret klasy pod
+  pergaminową zasłoną 0,15–0,3, żeby atrament był czytelny). Lista w `UiWindows.SCREENS`.
+- **S136** Medale rankingów: miejsca 1–3 jako plakietka `Iron.Raised` z jasną cyfrą w kolorze `UiPalette.medal` (złoto
+  `#E8C25A` ma na pergaminie < 2:1, więc nie jest tekstem na pergaminie; brąz rozjaśniony do `#D69A66`). Ligi areny
+  (`UiPalette.league`) jako tekst przez `Theme.readable`.
+- **S136** Panel admina (F2) jedynym oknem na żelazie (`surface = "iron"`, powód w `Data/UiWindows`): nakładka przy
+  prawej krawędzi, komponenty z `Surface = "iron"`. `Window` nie ma już trybu dawnego; ciało okna z `Theme.surface`.
+- **S136** Rysunki map poza tokenami ról: teren, obszary, ikony i podpisy mapy świata i minimapy to grafika w
+  `UiPalette.map` (dawne wartości) przez `Theme.tint`; ramy (mosiężna 3 px wokół płótna i tarczy), karty, panele,
+  legenda i przyciski na rolach. Kolor z danych jako grafika (próbka barwnika, wierzchowca, kosmetyku, znacznik, odcień
+  ikony) przez `Theme.tint`, jako tekst zawsze `Theme.readable` (ikony-znaki na pergaminie z progiem 3:1).
+- **S136** Nowe pary w `UiPalette.PAIRS`: role tekstu żelaza i `brass.bright` na płytce HUD, `zoneText` (czerwień
+  strefy jako tekst `#FF9080`), `plate` (zwykły `#F3E6C4`, Elita `#FF9080`, Elita II `#D9A0FF`, boss `#FF9F1C`), `mark`
+  (szary znak questu `#B3B6BF`), `group` na plakietce (4 = `#FF7A7A`), `medal`, `chat` na oknie czatu Roblox `#191B1D`
+  (kanały bez zmian), `glyph` (znaki przycisków HUD ≥ 3:1 na żelazie i na płytce HUD; czerwienie rozjaśnione, pierwsze
+  wartości miały tam 2,4–2,8:1), ogłoszenia. Kolory świata w efektach walki
+  (`CombatFxController`) zostają dawnymi wartościami w stałych modułu.
+- **S136** Koniec `Theme.Colors` i aliasu `Fonts.Heading`; `uitheme.spec` ścisły: żadnego `Theme.Colors` w `src/client`,
+  żadnych literałów koloru, `TextSize = <liczba>` (też `if … then <liczba>` i liczba zwracana w `TextSize = Computed`),
+  `size = <liczba>`, `size="<liczba>"` ani `Color3.fromHex` w `UI/Screens`, `UI/Components` i `UI/*.luau` (zwolnione:
+  `Theme`, `MapSketch`; `ALLOWED`: oświetlenie podglądów 3D w `LookPreview`, `SkillsWindow/Preview`, `MountWindow`,
+  `Wardrobe`, `WorldMap/Preview`, rozmiar ikon `UiArtState.decorate` w `Minimap` i `WorldMap/Overlay`). Linie
+  `DetailCard` domyślnie `Small`. Okno `lootlog` w `UI/Screens/LootLog.luau`.
+  Wiki: `Basics.zoneColors` tylko z `UiPalette.zone` (bez `themeText`).
+- **S136** Tabliczki potworów, NPC i towarzyszy w stylu tabliczek graczy (płytka żelaza z mosiężnym brzegiem, nazwa z
+  obrysem, poziom `Small` w kolorze pasma przez `Theme.readable`); wiersze z `Logic/Nameplate.monster` / `.npc`
+  (`UI/PlateStyle` dla etykiet budowanych przez `Instance.new`).
+- **S136** Kolor z danych jako tekst na przezroczystej płytce HUD: `Theme.readable(hex, "hud")` (role żelaza plus
+  `UiPalette.HUD_TILES`, płytki `Surface` / `Raised` zmieszane ze śniegiem); tytuł panelu wydarzenia i kolumn areny.
+- **S136** Listy i nagłówki sekcji okien S135 i S136 (poza `character`, `menu`, `skills`, `lootlog`) dalej ręczne na
+  rolach pergaminu, bez `ListRow` / `SectionLabel`: zmiana układu i wysokości wierszy bez przeglądu w grze grozi
+  przycięciami; przejście okno po oknie po przeglądzie właściciela (faza wyglądu), wpis w PROGRESS.

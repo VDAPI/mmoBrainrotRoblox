@@ -23,8 +23,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 48
 local GLYPH = "❂"
-local CLOAK = Color3.fromHex("#7A1F24")
-local AMBER = Color3.fromHex("#D9922E")
+local CLOAK = Theme.Glyph.Lure
+local AMBER = Theme.Glyph.Amber
 
 local function LureButton(scope: Scope, position: UDim2): Instance
 	local lure = State.Value({ "account", "lure" })
@@ -66,13 +66,13 @@ local function LureButton(scope: Scope, position: UDim2): Instance
 		Name = "LureButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		AutoButtonColor = true,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.05,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		Text = GLYPH,
 		TextScaled = true,
 		FontFace = Theme.Fonts.BodyBold,
 		TextColor3 = scope:Computed(function(use): Color3
-			return if use(on) then CLOAK else Theme.Colors.TextMuted
+			return if use(on) then CLOAK else Theme.Iron.TextMuted
 		end),
 		TextTransparency = scope:Computed(function(use): number
 			return if use(blocked) ~= nil then 0.45 else 0
@@ -93,12 +93,12 @@ local function LureButton(scope: Scope, position: UDim2): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = 2,
+				Thickness = Theme.Stroke.Normal,
 				Color = scope:Computed(function(use): Color3
 					if use(blocked) ~= nil then
 						return AMBER
 					end
-					return if use(on) then Theme.Colors.GoldBright else Theme.Colors.TextMuted
+					return if use(on) then Theme.Brass.Bright else Theme.Iron.TextMuted
 				end),
 			}),
 			scope:New("UIPadding")({
@@ -125,7 +125,7 @@ local function LureButton(scope: Scope, position: UDim2): Instance
 	return scope:New("Frame")({
 		Name = "Lure",
 		Position = position,
-		Size = UDim2.fromOffset(SIZE, SIZE + 16),
+		Size = UDim2.fromOffset(SIZE, SIZE + 20),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return use(left) > 0
@@ -134,12 +134,12 @@ local function LureButton(scope: Scope, position: UDim2): Instance
 			button,
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(-12, SIZE),
-				Size = UDim2.fromOffset(SIZE + 24, 16),
+				Size = UDim2.fromOffset(SIZE + 24, 20),
 				BackgroundTransparency = 1,
 				Text = timeText,
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 12,
-				TextColor3 = Theme.Colors.Text,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
 				TextStrokeTransparency = 0.3,
 			}),
 		},

@@ -613,7 +613,7 @@ end
 function SkillController.Color(skillId: string): Color3
 	local skill = SkillData.get(skillId)
 	local class = skill and Classes.get(skill.class)
-	return if class then Color3.fromHex(class.color) else Theme.Colors.Gold
+	return if class then Color3.fromHex(class.color) else Theme.Iron.Heading
 end
 
 return SkillController

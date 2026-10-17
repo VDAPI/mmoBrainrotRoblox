@@ -64,10 +64,10 @@ local function onLine(name: string?, textOrKey: string, args: any)
 	end
 	if name then
 		-- A player's line from another server (already filtered by the sender's server).
-		local color = Theme.Colors.Success:ToHex()
+		local color = Theme.Iron.Success:ToHex()
 		display(`<font color="#{color}">{escape(tagPrefix())}{escape(tostring(name))}:</font> {escape(textOrKey)}`)
 	else
-		local color = Theme.Colors.GoldBright:ToHex()
+		local color = Theme.Brass.Bright:ToHex()
 		local text = Text.now(textOrKey, NotificationController.ResolveArgs(args))
 		display(`<font color="#{color}">{escape(tagPrefix())}{text}</font>`)
 	end

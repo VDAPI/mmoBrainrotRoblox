@@ -1,9 +1,11 @@
 --!strict
 -- Visual language (DESIGN §23): serious fantasy. Every component reads colours, fonts, sizes and
 -- timings from here; never hardcode them in screens.
--- S135 "Parchment and iron": the colour values live in Shared/Data/UiPalette (hex, contrast-tested). Windows marked
--- `paper` in Shared/Data/UiWindows use the roles Theme.Paper / Theme.Iron / Theme.Brass only; a colour from game
--- data (class, element, rarity, title) reaches a TextColor3 through Theme.readable(hex, surface).
+-- S135/S136 "Parchment and iron": the colour values live in Shared/Data/UiPalette (hex, contrast-tested). Windows,
+-- cards and sheets draw on `paper`, the HUD and overlays on `iron` (Shared/Data/UiWindows); every interface file uses
+-- the roles only. A colour from game data (class, element, rarity, title) reaches a TextColor3 through
+-- Theme.readable(hex, surface), a graphic (swatch, map marker, icon tint) through Theme.tint. S136 removed the legacy
+-- dark colour table.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,7 +14,7 @@ local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Theme = {}
 
--- "paper" | "iron" (a plain string: Fusion props and locals widen literal unions)
+-- "paper" | "iron" (Theme.readable also takes "hud"; a plain string: Fusion props and locals widen literal unions)
 export type SurfaceName = string
 
 export type Roles = {
@@ -79,9 +81,30 @@ Theme.Zone = table.freeze({
 	Yellow = Color3.fromHex(UiPalette.zone.yellow),
 	Red = Color3.fromHex(UiPalette.zone.red),
 })
+-- S136: zone colours as text on iron, medals (rankings, arena, tournaments), monster plates, chat channels, and the
+-- background transparency of HUD tiles / plates and of their badges (Data/UiPalette, pairs tested on the brightest world).
+local function hexes(t: { [string]: string }): { [string]: Color3 }
+	local out = {}
+	for key, hex in t do
+		out[string.upper(string.sub(key, 1, 1)) .. string.sub(key, 2)] = Color3.fromHex(hex)
+	end
+	return table.freeze(out)
+end
+Theme.ZoneText = hexes(UiPalette.zoneText :: any)
+Theme.Medal = hexes(UiPalette.medal :: any)
+Theme.Plate = hexes(UiPalette.plate :: any)
+Theme.Chat = hexes(UiPalette.chat :: any)
+Theme.Glyph = hexes(UiPalette.glyph :: any)
+Theme.Mark = hexes(UiPalette.mark :: any)
+Theme.Announce = hexes(UiPalette.announce :: any)
+Theme.Pvp = hexes(UiPalette.pvp :: any)
+Theme.HudAlpha = UiPalette.HUD_ALPHA
+Theme.BadgeAlpha = UiPalette.BADGE_ALPHA
+
 -- Untinted image colour (ImageColor3) and the black of overlays / text strokes.
 Theme.Plain = Color3.fromHex(UiPalette.neutral.plain)
 Theme.Shade = Color3.fromHex(UiPalette.neutral.shade)
+Theme.Neutral = hexes(UiPalette.neutral :: any)
 
 -- The role table of a surface ("paper" when nil).
 function Theme.surface(name: SurfaceName?): Roles
@@ -100,12 +123,21 @@ local function backgroundsOf(surface: SurfaceName?): { string }
 	return out
 end
 
-local BACKGROUNDS = { paper = backgroundsOf("paper"), iron = backgroundsOf("iron") }
+-- S136: "hud" = the iron roles plus the translucent HUD tiles over the brightest world (UiPalette.HUD_TILES), for text
+-- on tiles with Theme.HudAlpha.
+local hudBackgrounds = backgroundsOf("iron")
+for _, tile in UiPalette.HUD_TILES do
+	table.insert(hudBackgrounds, tile)
+end
+local BACKGROUNDS = { paper = backgroundsOf("paper"), iron = backgroundsOf("iron"), hud = hudBackgrounds }
 
 -- Hex of a game-data colour corrected to the contrast `min` (default 4.5) on every background role of the surface
--- (rows on Raised / Selected included).
+-- (rows on Raised / Selected included); `surface` "hud" also covers the translucent HUD tiles.
 function Theme.readableHex(hex: string, surface: SurfaceName?, min: number?): string
-	local list = if surface == "iron" then BACKGROUNDS.iron else BACKGROUNDS.paper
+	local list = if surface == "hud"
+		then BACKGROUNDS.hud
+		elseif surface == "iron" then BACKGROUNDS.iron
+		else BACKGROUNDS.paper
 	return Contrast.readableOn(hex, list, min or UiPalette.MIN_TEXT)
 end
 
@@ -122,6 +154,12 @@ function Theme.readable(hex: string, surface: SurfaceName?, min: number?): Color
 	return color
 end
 
+-- S136: a game-data colour drawn as a graphic, never as text: a colour swatch (dye, frame, mount), a map or minimap
+-- marker, an icon tint, a ground ring. Text from such a colour goes through Theme.readable.
+function Theme.tint(hex: string): Color3
+	return Color3.fromHex(hex)
+end
+
 -- "#RRGGBB" of a token for RichText `<font color="...">`.
 function Theme.hex(color: Color3): string
 	return "#" .. string.upper(color:ToHex())
@@ -132,51 +170,6 @@ function Theme.mix(a: Color3, b: Color3, t: number): Color3
 	return a:Lerp(b, t)
 end
 
--- Legacy dark palette: windows not yet on parchment (Data/UiWindows `paper = false`) and the HUD. Removed in S136.
-Theme.Colors = {
-	-- Surfaces
-	Background = Color3.fromHex("#14161B"),
-	Panel = Color3.fromHex("#1B1D23"),
-	PanelRaised = Color3.fromHex("#252832"),
-	PanelHover = Color3.fromHex("#2E323E"),
-	Overlay = Color3.fromHex("#000000"),
-
-	-- Lines and accents
-	Gold = Color3.fromHex("#C9A45C"),
-	GoldBright = Color3.fromHex("#E8C25A"),
-	GoldDim = Color3.fromHex("#7A6438"),
-	-- S124: second and third place in rankings (with GoldBright for the first)
-	Silver = Color3.fromHex("#C9CED6"),
-	Bronze = Color3.fromHex("#C48A58"),
-	Border = Color3.fromHex("#3A3F4C"),
-	Accent = Color3.fromHex("#4A8FE7"),
-	AccentHover = Color3.fromHex("#5E9EF0"),
-	AccentPressed = Color3.fromHex("#3874C4"),
-
-	-- Text
-	Text = Color3.fromHex("#E8E4DA"),
-	TextMuted = Color3.fromHex("#9A9DA8"),
-	TextDark = Color3.fromHex("#2A2218"),
-	Parchment = Color3.fromHex("#EADDBE"),
-
-	-- Status
-	Danger = Color3.fromHex("#B8423A"),
-	DangerHover = Color3.fromHex("#CC5248"),
-	Success = Color3.fromHex("#4FD16B"),
-	Warning = Color3.fromHex("#E0A23B"),
-
-	-- Resources
-	Hp = Color3.fromHex("#C2352E"),
-	Mana = Color3.fromHex("#3D6FD6"),
-	Energy = Color3.fromHex("#D9B23A"),
-	Exp = Color3.fromHex("#8E5BD9"),
-
-	-- PvP zones
-	ZoneGreen = Color3.fromHex("#4FD16B"),
-	ZoneYellow = Color3.fromHex("#E0C23B"),
-	ZoneRed = Color3.fromHex("#D64A3E"),
-}
-
 -- Item rarity colours live in Shared.Data.Rarities (S30: `color`, `textColor`, `frame`); see UI/ItemText.
 
 -- S135: Merriweather (the heaviest weight; Roblox picks the nearest it has) for window titles and headings instead
@@ -185,7 +178,6 @@ local DISPLAY = Font.new("rbxasset://fonts/families/Merriweather.json", Enum.Fon
 
 Theme.Fonts = {
 	Display = DISPLAY,
-	Heading = DISPLAY,
 	Body = Font.fromEnum(Enum.Font.BuilderSans),
 	BodyBold = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold),
 	BodyMedium = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium),

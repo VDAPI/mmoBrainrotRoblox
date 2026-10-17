@@ -74,7 +74,7 @@ function TokensCss.generate(ctx: any): string
 		table.insert(dark, `  --vw-class-{id}: {string.upper(c.color)};`)
 		table.insert(light, `  --vw-class-{id}: {TokensCss.readable(c.color, TokensCss.PANEL_LIGHT, "#000000")};`)
 	end
-	local zones = Basics.zoneColors(ctx.themeText, ctx.warnings)
+	local zones = Basics.zoneColors()
 	for _, zone in { "green", "yellow", "red" } do
 		table.insert(dark, `  --vw-zone-{zone}: {zones[zone]};`)
 		table.insert(light, `  --vw-zone-{zone}: {TokensCss.readable(zones[zone], TokensCss.PANEL_LIGHT, "#000000")};`)

@@ -2810,7 +2810,7 @@ return {
 	["menu.all"] = "All",
 	["lootlog.title"] = "Loot log",
 	["lootlog.empty"] = "Nothing picked up yet.",
-	["lootlog.entry"] = "{time} · {item} · {source}",
+	["lootlog.sub"] = "{time} · {source}",
 	["lootlog.button"] = "Log",
 
 	-- S20: Elite II timers

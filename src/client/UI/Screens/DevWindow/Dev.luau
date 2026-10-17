@@ -181,9 +181,9 @@ function Dev.header(s: Scope, order: number, key: string): Instance
 		Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1,
 		Text = Text.T(s, key),
-		FontFace = Theme.Fonts.Heading,
+		FontFace = Theme.Fonts.Display,
 		TextSize = Theme.TextSize.Large,
-		TextColor3 = Theme.Colors.GoldBright,
+		TextColor3 = Theme.Brass.Bright,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -209,7 +209,7 @@ function Dev.row(s: Scope, order: number, label: Fusion.UsedAs<string>?, childre
 				Text = label,
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Iron.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			})
@@ -241,11 +241,11 @@ function Dev.button(
 	return s:New("TextButton")({
 		Size = UDim2.fromOffset(width or 120, Theme.Size.MinTouch),
 		AutoButtonColor = true,
-		BackgroundColor3 = if danger then Theme.Colors.Danger else Theme.Colors.PanelRaised,
+		BackgroundColor3 = if danger then Theme.Iron.Danger else Theme.Iron.Raised,
 		Text = text,
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Parchment,
+		TextColor3 = Theme.Iron.Text,
 		TextWrapped = true,
 		[OnEvent("Activated")] = function()
 			if not Fusion.peek(Dev.Busy) then
@@ -255,7 +255,7 @@ function Dev.button(
 		end,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			s:New("UIStroke")({ Color = Theme.Colors.Border, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			s:New("UIStroke")({ Color = Theme.Iron.Rule, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 		},
 	})
 end
@@ -264,17 +264,17 @@ end
 function Dev.textBox(s: Scope, value: Fusion.Value<string>, placeholder: string, width: number?): Instance
 	return s:New("TextBox")({
 		Size = UDim2.fromOffset(width or 160, Theme.Size.MinTouch),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		ClearTextOnFocus = false,
 		PlaceholderText = placeholder,
 		Text = value,
 		[Out("Text")] = value,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Iron.Text,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			s:New("UIStroke")({ Color = Theme.Colors.Border, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			s:New("UIStroke")({ Color = Theme.Iron.Rule, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 		},
 	})
 end
@@ -327,7 +327,10 @@ function Dev.commandRows(s: Scope, startOrder: number, categories: { string }): 
 						s:Value((arg.default or (if arg.optional then "" else (arg.options or {})[1])) :: string?)
 					table.insert(
 						controls,
-						Select(s, { Options = options, Selected = selected, Width = 150, ListHeight = 160 })
+						Select(
+							s,
+							{ Surface = "iron", Options = options, Selected = selected, Width = 150, ListHeight = 160 }
+						)
 					)
 					table.insert(getters, function()
 						return Fusion.peek(selected) or ""
@@ -340,6 +343,7 @@ function Dev.commandRows(s: Scope, startOrder: number, categories: { string }): 
 					table.insert(
 						controls,
 						NumberInput(s, {
+							Surface = "iron",
 							Value = value,
 							Min = arg.min,
 							Max = arg.max,
@@ -389,8 +393,8 @@ function Dev.commandRows(s: Scope, startOrder: number, categories: { string }): 
 						return if type(pins) == "table" and table.find(pins, def.name) then "★" else "☆"
 					end),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 22,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextSize = Theme.TextSize.Large,
+					TextColor3 = Theme.Brass.Bright,
 					[OnEvent("Activated")] = function()
 						Dev.togglePin(def.name)
 					end,
@@ -409,8 +413,8 @@ function Dev.commandRows(s: Scope, startOrder: number, categories: { string }): 
 					Text = Text.T(s, def.usageKey),
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
-					TextSize = 13,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)

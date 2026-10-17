@@ -99,8 +99,9 @@ local function refreshMarkers()
 				created.Position = UDim2.fromScale(0.5, 0)
 				created.Size = UDim2.fromOffset(40, 40)
 				created.BackgroundTransparency = 1
-				created.FontFace = Theme.Fonts.Heading
-				created.TextSize = 40
+				created.FontFace = Theme.Fonts.Display
+				created.TextSize = Theme.TextSize.Title + 10
+				created.TextStrokeColor3 = Theme.Shade
 				created.TextStrokeTransparency = 0.2
 				created.Parent = plate;
 				(plate :: BillboardGui).ClipsDescendants = false

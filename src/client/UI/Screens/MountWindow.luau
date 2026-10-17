@@ -100,18 +100,18 @@ local function swatch(s: Scope, def: MountData.MountDef, dim: boolean): Instance
 	return s:New("Frame")({
 		Position = UDim2.fromOffset(8, 8),
 		Size = UDim2.fromOffset(ROW - 16, ROW - 16),
-		BackgroundColor3 = Color3.fromHex(def.look.colors.base),
+		BackgroundColor3 = Theme.tint(def.look.colors.base),
 		BackgroundTransparency = if dim then 0.5 else 0,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			s:New("UIStroke")({ Color = Color3.fromHex(def.look.colors.accent), Thickness = 3 }),
+			s:New("UIStroke")({ Color = Theme.tint(def.look.colors.accent), Thickness = Theme.Stroke.Thick }),
 			s:New("TextLabel")({
 				Size = UDim2.fromScale(1, 1),
 				BackgroundTransparency = 1,
 				Text = "♞",
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Color3.fromHex(def.look.colors.accent),
+				TextColor3 = Theme.readable(def.look.colors.accent, "paper"),
 				TextStrokeTransparency = 0.4,
 			}),
 		},
@@ -134,7 +134,7 @@ local function line(
 		TextWrapped = true,
 		FontFace = Theme.Fonts.Body,
 		TextSize = size or Theme.TextSize.Small,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -179,7 +179,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		end
 		if #owned == 0 then
 			local key = if lvl >= Config.Mount.minLevel then "mount.empty" else "mount.error.level"
-			add(line(s, 0, Text.get(use, key, { level = Config.Mount.minLevel }), Theme.Colors.TextMuted))
+			add(line(s, 0, Text.get(use, key, { level = Config.Mount.minLevel }), Theme.Paper.TextMuted))
 		end
 		for _, item in owned do
 			local def = MountData.get(item.id) :: MountData.MountDef
@@ -187,7 +187,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				Size = UDim2.new(1, 0, 0, ROW),
 				AutoButtonColor = false,
 				Text = "",
-				BackgroundColor3 = if current == item.id then Theme.Colors.PanelHover else Theme.Colors.PanelRaised,
+				BackgroundColor3 = if current == item.id then Theme.Paper.Hover else Theme.Paper.Raised,
 				BackgroundTransparency = 0.2,
 				[OnEvent("Activated")] = function()
 					Sounds.play("click")
@@ -203,7 +203,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 						Text = Text.get(use, def.nameKey),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = if active == item.id then Theme.Colors.GoldBright else Theme.Colors.Text,
+						TextColor3 = if active == item.id then Theme.Paper.Heading else Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -217,7 +217,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 						)}{if active == item.id then ` · {Text.get(use, "mount.active")}` else ""}`,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = if active == item.id then Theme.Colors.GoldBright else Theme.Colors.TextMuted,
+						TextColor3 = if active == item.id then Theme.Paper.Heading else Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -237,9 +237,9 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				Size = UDim2.new(1, 0, 0, 30),
 				BackgroundTransparency = 1,
 				Text = Text.get(use, "mount.toGet"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Bottom,
 			}))
@@ -249,7 +249,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				Size = UDim2.new(1, 0, 0, ROW),
 				AutoButtonColor = false,
 				Text = "",
-				BackgroundColor3 = if current == def.id then Theme.Colors.PanelHover else Theme.Colors.Panel,
+				BackgroundColor3 = if current == def.id then Theme.Paper.Hover else Theme.Paper.Surface,
 				BackgroundTransparency = 0.3,
 				[OnEvent("Activated")] = function()
 					Sounds.play("click")
@@ -265,7 +265,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 						Text = Text.get(use, def.nameKey),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -279,7 +279,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 						)}`,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -296,13 +296,13 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		Visible = scope:Computed(function(use): boolean
 			return use(selected) ~= nil
 		end),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		Ambient = Color3.fromRGB(160, 150, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
 		LightDirection = Vector3.new(-1, -1, -1),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 		},
 	}) :: ViewportFrame
 	local camera = Instance.new("Camera")
@@ -355,7 +355,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		local chosen = use(selected)
 		local def = chosen and MountData.get(chosen)
 		if not chosen or not def then
-			table.insert(out, line(s, 2, Text.get(use, "mount.pick"), Theme.Colors.TextMuted, Theme.TextSize.Body))
+			table.insert(out, line(s, 2, Text.get(use, "mount.pick"), Theme.Paper.TextMuted, Theme.TextSize.Body))
 			return out
 		end
 		local id: string = chosen
@@ -363,9 +363,9 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		local lvl = owned or def.startLevel
 		local state = use(mounts)
 		local active = Mounts.activeOf(state)
-		table.insert(out, line(s, 2, Text.get(use, def.nameKey), Theme.Colors.GoldBright, Theme.TextSize.Large))
+		table.insert(out, line(s, 2, Text.get(use, def.nameKey), Theme.Paper.Heading, Theme.TextSize.Large))
 		local desc = Text.get(use, `mount.{def.id}.desc`)
-		table.insert(out, line(s, 3, desc, Theme.Colors.TextMuted))
+		table.insert(out, line(s, 3, desc, Theme.Paper.TextMuted))
 		table.insert(
 			out,
 			line(
@@ -386,7 +386,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 			line(s, 5, Text.get(use, "mount.mountTime", { s = AreaProfileText.mul(use, Mounts.mountTime(lvl)) }))
 		)
 		if not owned then
-			table.insert(out, line(s, 6, sourceText(use, def), Theme.Colors.Gold))
+			table.insert(out, line(s, 6, sourceText(use, def), Theme.Paper.Heading))
 			return out
 		end
 		-- Look (the account's mount skin) and the wardrobe.
@@ -408,7 +408,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					Button(s, {
@@ -440,7 +440,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		)
 		-- Upgrade panel.
 		if owned >= Config.Mount.maxLevel then
-			table.insert(out, line(s, 8, Text.get(use, "mount.upgrade.max"), Theme.Colors.Success, Theme.TextSize.Body))
+			table.insert(out, line(s, 8, Text.get(use, "mount.upgrade.max"), Theme.Paper.Success, Theme.TextSize.Body))
 			return out
 		end
 		local step = Mounts.upgradeCost(owned + 1)
@@ -462,7 +462,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				s,
 				8,
 				Text.get(use, "mount.upgrade.title", { lvl = owned + 1 }),
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.TextSize.Body
 			)
 		)
@@ -496,7 +496,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				s,
 				11,
 				Text.get(use, "mount.upgrade.needLevel", { level = step.level }),
-				if charLevel >= step.level then Theme.Colors.Text else Theme.Colors.Danger
+				if charLevel >= step.level then Theme.Paper.Text else Theme.Paper.Danger
 			)
 		)
 		table.insert(
@@ -505,7 +505,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 				s,
 				12,
 				Text.get(use, "mount.upgrade.gold", { have = Format.number(money), cost = Format.number(step.gold) }),
-				if money >= step.gold then Theme.Colors.Gold else Theme.Colors.Danger
+				if money >= step.gold then Theme.Paper.Heading else Theme.Paper.Danger
 			)
 		)
 		local mats: { Instance } = {}
@@ -528,7 +528,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 							TextWrapped = true,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = if have >= m.n then Theme.Colors.Text else Theme.Colors.Danger,
+							TextColor3 = if have >= m.n then Theme.Paper.Text else Theme.Paper.Danger,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 					},
@@ -567,7 +567,7 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 			})
 		)
 		if reason then
-			table.insert(out, line(s, 15, Text.get(use, reason, { level = step.level }), Theme.Colors.Warning))
+			table.insert(out, line(s, 15, Text.get(use, reason, { level = step.level }), Theme.Paper.Warning))
 		end
 		return out
 	end)

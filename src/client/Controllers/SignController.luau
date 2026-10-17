@@ -50,7 +50,7 @@ local function write(model: Instance)
 					return name
 				end),
 				TextScaled = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextColor3 = Color3.fromHex("#F2E6C9"),
 				TextStrokeTransparency = 0.4,
 			}),

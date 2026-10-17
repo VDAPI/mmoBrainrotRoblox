@@ -70,13 +70,13 @@ local function invitePopup(): Instance
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 120),
 		Size = UDim2.fromOffset(460, 130),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Iron.Surface,
 		Visible = scope:Computed(function(use): boolean
 			return use(inviteFrom) ~= nil
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Gold, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(16, 10),
 				Size = UDim2.new(1, -32, 0, 50),
@@ -87,7 +87,7 @@ local function invitePopup(): Instance
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Iron.Text,
 			}),
 			Button(scope, {
 				Surface = "iron", -- S135: on a dark HUD / overlay surface

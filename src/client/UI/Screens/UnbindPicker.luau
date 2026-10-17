@@ -74,7 +74,7 @@ local function UnbindPicker(scope: Scope, close: () -> ()): Fusion.Child
 					Text = Text.get(use, "scroll.unbind.none"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -88,7 +88,7 @@ local function UnbindPicker(scope: Scope, close: () -> ()): Fusion.Child
 			Text = Text.T(scope, "scroll.unbind.pick"),
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("ScrollingFrame")({

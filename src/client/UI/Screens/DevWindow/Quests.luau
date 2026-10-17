@@ -40,7 +40,7 @@ local function QuestsTab(s: Dev.Scope): Instance
 			if isCurrent then
 				local first = row:FindFirstChildWhichIsA("TextLabel")
 				if first then
-					first.TextColor3 = Theme.Colors.GoldBright
+					first.TextColor3 = Theme.Brass.Bright
 				end
 			end
 			table.insert(out, row)
@@ -77,7 +77,7 @@ local function QuestsTab(s: Dev.Scope): Instance
 			end),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.Parchment,
+			TextColor3 = Theme.Iron.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Dev.header(s, 4, "dev.quest.main"),

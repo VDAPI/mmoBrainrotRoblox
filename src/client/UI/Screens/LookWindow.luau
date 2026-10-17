@@ -137,7 +137,7 @@ local function LookWindow(scope: Scope): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, Theme.Padding.Medium),
 			}),
-			LookPicker(scope, { Look = choice, LayoutOrder = 1, Surface = "iron" }), -- S135: still the legacy dark look
+			LookPicker(scope, { Look = choice, LayoutOrder = 1 }), -- S135: still the legacy dark look
 			scope:New("Frame")({
 				Name = "Cost",
 				LayoutOrder = 2,
@@ -148,7 +148,6 @@ local function LookWindow(scope: Scope): Instance
 						Currency = "gold",
 						Size = UDim2.fromOffset(24, 24),
 						Position = UDim2.fromOffset(0, 3),
-						Surface = "iron",
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(30, 0),
@@ -163,7 +162,7 @@ local function LookWindow(scope: Scope): Instance
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextWrapped = true,
 					}),
@@ -181,7 +180,7 @@ local function LookWindow(scope: Scope): Instance
 				Text = Text.T(scope, "look.avatarOn"),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			}),
@@ -207,7 +206,7 @@ local function LookWindow(scope: Scope): Instance
 				end),
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextWrapped = true,
 			}),
@@ -223,7 +222,7 @@ local function LookWindow(scope: Scope): Instance
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		[Children] = {
 			scope:New("UIListLayout")({
 				FillDirection = scope:Computed(function(use): Enum.FillDirection

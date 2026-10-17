@@ -2808,7 +2808,7 @@ return {
 	["menu.all"] = "Wszystko",
 	["lootlog.title"] = "Dziennik łupu",
 	["lootlog.empty"] = "Jeszcze nic nie podniesiono.",
-	["lootlog.entry"] = "{time} · {item} · {source}",
+	["lootlog.sub"] = "{time} · {source}",
 	["lootlog.button"] = "Dziennik",
 
 	-- S20: Elite II timers

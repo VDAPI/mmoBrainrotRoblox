@@ -75,6 +75,75 @@ describe("UiPalette (S135)", function()
 	end)
 end)
 
+describe("S136 pairs: HUD tiles, plates, medals, chat", function()
+	local function seen(): { [string]: boolean }
+		local out = {}
+		for _, pair in UiPalette.PAIRS do
+			out[pair.what] = true
+		end
+		return out
+	end
+
+	it("covers the HUD tile, plates, marks, groups, medals, chat and glyphs", function()
+		local s = seen()
+		for _, role in UiPalette.TEXT_ROLES do
+			expect(s[`iron.{role} on the HUD tile`]).toBe(true)
+		end
+		for _, key in { "normal", "elite", "elite2", "boss" } do
+			expect(s[`plate.{key} on the HUD tile`]).toBe(true)
+		end
+		for key in UiPalette.mark :: { [string]: string } do
+			expect(s[`mark.{key} on the HUD tile`]).toBe(true)
+		end
+		for i in UiPalette.group do
+			expect(s[`group[{i}] on the plate badge`]).toBe(true)
+		end
+		for key in UiPalette.medal :: { [string]: string } do
+			expect(s[`medal.{key} on iron.raised`]).toBe(true)
+		end
+		for _, key in { "trade", "party", "guild", "whisper" } do
+			expect(s[`chat.{key} on chat.window`]).toBe(true)
+		end
+		for key in UiPalette.glyph :: { [string]: string } do
+			expect(s[`glyph.{key} on iron.surface`]).toBe(true)
+			expect(s[`glyph.{key} on the HUD tile`]).toBe(true)
+		end
+		for _, key in { "hp", "mana", "energy", "exp" } do
+			expect(s[`resource.{key} on resource.track`]).toBe(true)
+		end
+	end)
+
+	it("mixes the HUD tile with the brightest world", function()
+		local hud = Contrast.mix(UiPalette.iron.surface, UiPalette.WORLD_BRIGHT, UiPalette.HUD_ALPHA)
+		expect(hud ~= UiPalette.iron.surface).toBe(true)
+		expect(Contrast.contrast(UiPalette.iron.text, hud) >= UiPalette.MIN_TEXT).toBe(true)
+		expect(UiPalette.HUD_ALPHA > 0 and UiPalette.HUD_ALPHA <= 0.2).toBe(true)
+		expect(UiPalette.HUD_TILES[1]).toBe(hud)
+	end)
+
+	it("makes data colours readable on the HUD tiles (Theme.readable 'hud')", function()
+		-- Theme.readableHex(hex, "hud") = readableOn over the iron backgrounds plus HUD_TILES
+		local list = {}
+		for _, role in UiPalette.BACKGROUNDS do
+			table.insert(list, (UiPalette.iron :: any)[role])
+		end
+		for _, tile in UiPalette.HUD_TILES do
+			table.insert(list, tile)
+		end
+		for _, hex in { UiPalette.glyph.enemy, UiPalette.map.event, "#E0564A", "#D84A3E" } do
+			local out = Contrast.readableOn(hex, list, UiPalette.MIN_TEXT)
+			for _, tile in UiPalette.HUD_TILES do
+				expect(Contrast.contrast(out, tile) >= UiPalette.MIN_TEXT).toBe(true)
+			end
+		end
+	end)
+
+	it("keeps gold out of parchment text: the medals pass only on iron", function()
+		expect(Contrast.contrast(UiPalette.medal.gold, UiPalette.paper.surface) < UiPalette.MIN_TEXT).toBe(true)
+		expect(Contrast.contrast(UiPalette.medal.gold, UiPalette.iron.raised) >= UiPalette.MIN_TEXT).toBe(true)
+	end)
+end)
+
 describe("Rarity colours on parchment and iron (S135)", function()
 	it("names on parchment >= 4.5:1 on the page and the slot, on iron >= 4.5:1, frames on the slot >= 3:1", function()
 		for _, r in Rarities.list do

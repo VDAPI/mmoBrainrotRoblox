@@ -36,7 +36,7 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 		BackgroundTransparency = 1,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.Parchment,
+		TextColor3 = Theme.Iron.Text,
 		ZIndex = 52,
 	}
 	for key, value in props do
@@ -193,7 +193,7 @@ local function DeathScreen(scope: Scope): Instance
 	return scope:New("Frame")({
 		Name = "DeathScreen",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundColor3 = Theme.Shade,
 		BackgroundTransparency = 0.45,
 		Visible = scope:Computed(function(use): boolean
 			return use(death) ~= nil
@@ -201,7 +201,7 @@ local function DeathScreen(scope: Scope): Instance
 		ZIndex = 50,
 		[Children] = {
 			scope:New("UIGradient")({
-				Color = ColorSequence.new(Color3.fromHex("#3A0D0B"), Color3.new(0, 0, 0)),
+				Color = ColorSequence.new(Theme.Announce.DeathGlow, Theme.Shade),
 				Rotation = 90,
 			}),
 			scope:New("Frame")({
@@ -223,9 +223,9 @@ local function DeathScreen(scope: Scope): Instance
 						LayoutOrder = 0,
 						Size = UDim2.new(1, 0, 0, 80),
 						Text = Text.T(scope, "death.title"),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = 72,
-						TextColor3 = Theme.Colors.DangerHover,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Hero,
+						TextColor3 = Theme.Iron.Danger,
 						TextStrokeTransparency = 0.4,
 					}),
 					label(scope, {
@@ -256,7 +256,7 @@ local function DeathScreen(scope: Scope): Instance
 							return Text.get(use, "death.nothingLost")
 						end),
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Iron.TextMuted,
 					}),
 					vipButton,
 					label(scope, {
@@ -269,7 +269,7 @@ local function DeathScreen(scope: Scope): Instance
 						TextWrapped = true,
 						Text = Text.T(scope, "death.bloodMoonHint"),
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.DangerHover,
+						TextColor3 = Theme.Iron.Danger,
 					}),
 					-- Countdown: pay to skip it.
 					Button(scope, {
@@ -342,7 +342,7 @@ local function DeathScreen(scope: Scope): Instance
 							return Text.get(use, "death.shardsOwned", { shards = Format.number(use(shards) or 0) })
 						end),
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Iron.TextMuted,
 					}),
 					label(scope, {
 						Name = "Protection",
@@ -352,7 +352,7 @@ local function DeathScreen(scope: Scope): Instance
 						TextWrapped = true,
 						Text = Text.T(scope, "death.protectionNote"),
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Iron.TextMuted,
 					}),
 				},
 			}),

@@ -62,12 +62,12 @@ local function Character(s: Dev.Scope): Instance
 			end),
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.GoldBright,
+			TextColor3 = Theme.Brass.Bright,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Dev.header(s, 2, "dev.char.progress"),
 		Dev.row(s, 3, Text.T(s, "dev.char.level"), {
-			NumberInput(s, { Value = levelInput, Min = 1, Max = 100 }),
+			NumberInput(s, { Surface = "iron", Value = levelInput, Min = 1, Max = 100 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("lvl", { num(levelInput) })
 			end),
@@ -79,13 +79,13 @@ local function Character(s: Dev.Scope): Instance
 			end, 60),
 		}),
 		Dev.row(s, 4, Text.T(s, "dev.char.exp"), {
-			NumberInput(s, { Value = expInput, Min = 1, Max = 1e9, Step = 1000 }),
+			NumberInput(s, { Surface = "iron", Value = expInput, Min = 1, Max = 1e9, Step = 1000 }),
 			Dev.button(s, Text.T(s, "dev.give"), function()
 				Dev.run("exp", { num(expInput) })
 			end),
 		}),
 		Dev.row(s, 5, Text.T(s, "dev.char.gold"), {
-			NumberInput(s, { Value = goldInput, Min = 0, Max = 1e12, Step = 1000 }),
+			NumberInput(s, { Surface = "iron", Value = goldInput, Min = 0, Max = 1e12, Step = 1000 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("setgold", { num(goldInput) })
 			end),
@@ -94,7 +94,7 @@ local function Character(s: Dev.Scope): Instance
 			end),
 		}),
 		Dev.row(s, 6, Text.T(s, "dev.char.shards"), {
-			NumberInput(s, { Value = shardsInput, Min = 0, Max = 1e12, Step = 100 }),
+			NumberInput(s, { Surface = "iron", Value = shardsInput, Min = 0, Max = 1e12, Step = 100 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("setshards", { num(shardsInput) })
 			end),
@@ -103,7 +103,7 @@ local function Character(s: Dev.Scope): Instance
 			end),
 		}),
 		Dev.row(s, 7, Text.T(s, "dev.char.statPoints"), {
-			NumberInput(s, { Value = statInput, Min = 0, Max = 100000 }),
+			NumberInput(s, { Surface = "iron", Value = statInput, Min = 0, Max = 100000 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("statpoints", { num(statInput) })
 			end),
@@ -119,6 +119,7 @@ local function Character(s: Dev.Scope): Instance
 		Dev.header(s, 10, "dev.char.switches"),
 		Dev.row(s, 11, nil, {
 			Toggle(s, {
+				Surface = "iron",
 				Value = god,
 				Label = Text.T(s, "dev.char.god"),
 				OnChange = function()
@@ -126,6 +127,7 @@ local function Character(s: Dev.Scope): Instance
 				end,
 			}),
 			Toggle(s, {
+				Surface = "iron",
 				Value = infinite,
 				Label = Text.T(s, "dev.char.infinite"),
 				OnChange = function(on: boolean)
@@ -133,6 +135,7 @@ local function Character(s: Dev.Scope): Instance
 				end,
 			}),
 			Toggle(s, {
+				Surface = "iron",
 				Value = noCooldowns,
 				Label = Text.T(s, "dev.char.noCooldowns"),
 				OnChange = function(on: boolean)
@@ -141,7 +144,7 @@ local function Character(s: Dev.Scope): Instance
 			}),
 		}),
 		Dev.row(s, 12, Text.T(s, "dev.char.speed"), {
-			NumberInput(s, { Value = speedInput, Min = 1, Max = 300, Step = 5 }),
+			NumberInput(s, { Surface = "iron", Value = speedInput, Min = 1, Max = 300, Step = 5 }),
 			Dev.button(s, Text.T(s, "dev.set"), function()
 				Dev.run("speed", { num(speedInput) })
 			end),
@@ -151,9 +154,18 @@ local function Character(s: Dev.Scope): Instance
 		}),
 		Dev.header(s, 13, "dev.char.preset"),
 		Dev.row(s, 14, Text.T(s, "dev.char.presetHint"), {
-			NumberInput(s, { Value = presetLevel, Min = 1, Max = 100, Step = 5 }),
-			Select(s, { Options = rarityOptions, Selected = presetRarity, Width = 150, ListHeight = 180 }),
-			NumberInput(s, { Value = presetUp, Min = 0, Max = 9, Size = UDim2.fromOffset(130, Theme.Size.MinTouch) }),
+			NumberInput(s, { Surface = "iron", Value = presetLevel, Min = 1, Max = 100, Step = 5 }),
+			Select(
+				s,
+				{ Surface = "iron", Options = rarityOptions, Selected = presetRarity, Width = 150, ListHeight = 180 }
+			),
+			NumberInput(s, {
+				Surface = "iron",
+				Value = presetUp,
+				Min = 0,
+				Max = 9,
+				Size = UDim2.fromOffset(130, Theme.Size.MinTouch),
+			}),
 			Dev.button(s, Text.T(s, "dev.char.presetRun"), function()
 				Dev.run("preset", { num(presetLevel), Fusion.peek(presetRarity) or "4", num(presetUp) })
 			end, 160),

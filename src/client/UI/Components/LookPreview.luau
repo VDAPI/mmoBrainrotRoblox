@@ -40,13 +40,13 @@ local function LookPreview(scope: Scope, props: Props): Instance
 		AnchorPoint = props.AnchorPoint,
 		Size = props.Size or UDim2.fromOffset(330, 370),
 		Visible = props.Visible,
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Iron.Sunken,
 		Ambient = Color3.fromRGB(160, 150, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
 		LightDirection = Vector3.new(-1, -1, -1),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Iron.Rule }),
 		},
 	}) :: ViewportFrame
 	local camera = Instance.new("Camera")

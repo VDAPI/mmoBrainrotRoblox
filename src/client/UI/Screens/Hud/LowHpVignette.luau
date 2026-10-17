@@ -51,7 +51,7 @@ local function band(
 		Size = size,
 		Position = position,
 		AnchorPoint = anchor,
-		BackgroundColor3 = Theme.Colors.Danger,
+		BackgroundColor3 = Theme.Resource.Hp,
 		BackgroundTransparency = alpha,
 		BorderSizePixel = 0,
 		Active = false,

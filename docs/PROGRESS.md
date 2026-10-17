@@ -5,7 +5,11 @@
 
 ## Stan
 
-S01–S115 i S117–S135 gotowe (ostatnia S135: „Pergamin i żelazo” 1/2: paleta interfejsu w `Data/UiPalette` z
+S01–S115 i S117–S136 gotowe (ostatnia S136: „Pergamin i żelazo” 2/2: wszystkie okna na pergaminie (panel admina na
+żelazie), HUD, nakładki, tabliczki potworów i NPC na płytkach żelaza z mosiężnym brzegiem, paski na ciemnym torze,
+sloty w wariancie żelaza, minimapa i mapa świata w mosiężnych ramach (rysunek bez zmian), medale rankingów jako
+plakietki, `Theme.Colors` usunięte, `uitheme.spec` ścisły (`Data/UiWindows` z `surface` i `SCREENS`); wcześniej S135:
+„Pergamin i żelazo” 1/2: paleta interfejsu w `Data/UiPalette` z
 kontrastem w teście, role `Theme.Paper` / `Theme.Iron` / `Theme.Brass`, komponenty z propem `Surface` (`ListRow`,
 `SectionLabel`), okna na pergaminie według `Data/UiWindows` (13 okien, w tym czytelne okno umiejętności), tooltipy na
 żelazie, Merriweather w nagłówkach, tekst ≥ 17, tabliczki graczy na płytce żelaza, zawsze widoczne do 150 st., odporne na
@@ -292,15 +296,12 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **S135:** Niedokończone: S136 — w starym ciemnym wyglądzie (`Theme.Colors`) zostają okna `alchemy`, `arena`,
-  `areapicker`, `auction`, `backpacks`, `blacksmith`, `bloodmoon`, `deposit`, `dev`, `dungeon`, `fightlog`, `friends`,
-  `guild`, `guildfound`, `huntshop`, `login`, `look`, `lootlog`, `map`, `mounts`, `premium`, `questboard`, `rankings`,
-  `stonepicker`, `unbind`, `vip`, `wardrobe` (lista `PENDING_S136` w `tests/uitheme.spec`) i ekrany `UiWindows.SCREENS`
-  (HUD, ramki drużyny, wybór postaci, nakładki); listy i nagłówki sekcji okien `quests`, `questnpc`, `npc`, `shop`,
-  `trade`, `mail`, `mailCompose`, `profile`, `party` (z `PartyFinder`) i plecaka jeszcze bez `ListRow` / `SectionLabel`
-  (S135 D, odłożone). Bez przeglądu w grze: 13 okien na pergaminie (przycięcia po `Small` 17
-  i nowych wysokościach wierszy, karty zakładek, Merriweather Heavy), tabliczki graczy (płytka, klik w nick, powrót po
-  strumieniowaniu). Decyzje właściciela w `docs/SESJE.md` → S135.
+- **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`
+  i nowych wysokościach: przycięcia w panelach mapy świata, trackerze, panelach wydarzeń, tabliczkach potworów; karty
+  postaci z portretem pod pergaminową zasłoną; mosiężna rama minimapy). Listy okien S135 i S136 (poza `character`,
+  `menu`, `skills`, `lootlog`) dalej ręcznymi wierszami na rolach pergaminu, bez `ListRow` / `SectionLabel` (zmiana
+  układu bez przeglądu w grze). Tabliczki graczy z S135 (płytka 0,45) bez przeglądu. Decyzje właściciela w
+  `docs/SESJE.md` → S135 i S136. Wiki do odświeżenia (właściciel 17.10).
 
 - **S134k:** zlecenia na rodzaj, wiele aktywnych i sklep Łowczego bez przeglądu w grze (dziennik „Łowieckie” z
   grupami i przyciskami, karta tablicy, tracker do 3 + „+N”, okno `HuntShopWindow` na PC i telefonie, Łowczy przy
@@ -328,16 +329,14 @@ zakończone; testy i decyzje właściciela po nich.
 
 - **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
   Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów
-  startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie bez przeglądu na PC i telefonie; S135 / S136 przemalują go
-  („Pergamin i żelazo”). Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
+  startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie i na żelazie (S135) bez przeglądu na PC i telefonie.
+  Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
   check` (bez `node_modules`). W raporcie (decyzje właściciela): strzałka „Lepszy przedmiot” z efektem na biżuterii,
   12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej.
 
-- **S134f:** okna i ekrany S134f do przemalowania w S135 / S136 („Pergamin i żelazo”): okno `fightlog`
-  (`FightLogWindow`), zakładka `PartyFinder` (z oknem `party`), `ReadyCheck` (pergamin), `FightCard` (żelazo),
-  `Hud/LowHpVignette` (żelazo); muszą wejść do `Data/UiWindows` / `UiWindows.SCREENS`. Dla właściciela: ID dźwięku
-  `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez przeglądu w grze: tablica, gotowość,
-  karta po walce i winieta; pomiar lagu sprzedaży jest na modelu lustra w Lune (Fusion nie ładuje się w Lune).
+- **S134f:** dla właściciela: ID dźwięku `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez
+  przeglądu w grze: tablica, gotowość, karta po walce i winieta; pomiar lagu sprzedaży jest na modelu lustra w Lune
+  (Fusion nie ładuje się w Lune).
 
 - **S134e:** Druzgocący Cios, Doskok, rzut i Ciężki Cios bez przeglądu w grze (kolor karminu, puls, ruchy z
   `KIT_STYLES` są ogólnymi stylami planów, bez własnych póz; Doskok przenosi Elitę II bez łuku skoku). Model ucieczki

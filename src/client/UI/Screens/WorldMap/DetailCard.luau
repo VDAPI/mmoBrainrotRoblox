@@ -97,7 +97,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 5,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
 		Position = scope:Computed(function(use): UDim2
 			if use(touch) then
@@ -136,7 +136,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 
 	local previewHolder = scope:New("Frame")({
 		Name = "PreviewHolder",
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		Visible = hasPreview,
 		Position = UDim2.fromOffset(0, 56),
 		Size = scope:Computed(function(use): UDim2
@@ -148,7 +148,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		ClipsDescendants = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.Border }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 			preview.frame,
 		},
 	})
@@ -158,12 +158,12 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			AnchorPoint = Vector2.new(if right then 1 else 0, 0),
 			Position = if right then UDim2.fromScale(1, 0) else UDim2.fromOffset(0, 0),
 			Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = Theme.Paper.Raised,
 			Visible = visible,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 20,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Body,
+			TextColor3 = Theme.Paper.Text,
 			ZIndex = 3,
 			[OnEvent("Activated")] = onClick,
 			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -206,11 +206,11 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				end),
 				GlyphColor = scope:Computed(function(use): Color3
 					local s = use(spec)
-					return if s and s.iconColor then s.iconColor else Theme.Colors.Parchment
+					return if s and s.iconColor then s.iconColor else Theme.Paper.Text
 				end),
 				GlyphStroke = 0.4,
 				Corner = Theme.Corner.Small,
-				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = 30 },
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Title },
 			}),
 			scope:New("Frame")({
 				Name = "Titles",
@@ -231,28 +231,28 @@ function DetailCard.new(scope: Scope, props: Props): Api
 							local s = use(spec)
 							return if s then s.title else ""
 						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = 21,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Body,
 						TextColor3 = scope:Computed(function(use): Color3
 							local s = use(spec)
-							return if s and s.grey then Theme.Colors.TextMuted else Theme.Colors.GoldBright
+							return if s and s.grey then Theme.Paper.TextMuted else Theme.Paper.Heading
 						end),
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
 					scope:New("TextLabel")({
 						Position = UDim2.fromOffset(0, 26),
-						Size = UDim2.new(1, 0, 0, 18),
+						Size = UDim2.new(1, 0, 0, 20),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							local s = use(spec)
 							return if s and s.subtitle then s.subtitle else ""
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = 14,
+						TextSize = Theme.TextSize.Small,
 						TextColor3 = scope:Computed(function(use): Color3
 							local s = use(spec)
-							return if s and s.subtitleColor then s.subtitleColor else Theme.Colors.TextMuted
+							return if s and s.subtitleColor then s.subtitleColor else Theme.Paper.TextMuted
 						end),
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
@@ -269,7 +269,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				BorderSizePixel = 0,
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local s = use(spec)
-					return if s and s.accent then s.accent else Theme.Colors.GoldDim
+					return if s and s.accent then s.accent else Theme.Paper.Label
 				end),
 			}),
 		},
@@ -286,7 +286,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		Size = scope:Computed(function(use): UDim2
 			return if use(touch) then UDim2.new(1, -16, 0.56, 0) else UDim2.new(0, WIDTH, 1, -20)
 		end),
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.04,
 		Active = true,
 		ZIndex = 30,
@@ -295,7 +295,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1.5 }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 1.5 }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 8),
 				PaddingBottom = UDim.new(0, 8),
@@ -329,8 +329,8 @@ function DetailCard.new(scope: Scope, props: Props): Api
 					Enum.FontStyle.Italic
 				)
 				else Theme.Fonts.Body,
-			TextSize = line.size or 15,
-			TextColor3 = line.color or Theme.Colors.Text,
+			TextSize = line.size or Theme.TextSize.Small,
+			TextColor3 = line.color or Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			[Children] = if line.art
 				then {
@@ -359,7 +359,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			table.insert(children, child)
 		end
 		if data.title then
-			add(textLine(s, 0, { text = data.title, color = Theme.Colors.Gold, size = 14, bold = true }))
+			add(textLine(s, 0, { text = data.title, color = Theme.Paper.Heading, bold = true }))
 		end
 		if data.choice then
 			local choice = data.choice
@@ -371,11 +371,11 @@ function DetailCard.new(scope: Scope, props: Props): Api
 					s:New("TextButton")({
 						LayoutOrder = i,
 						Size = UDim2.new(1 / #choice.options, -4, 1, 0),
-						BackgroundColor3 = if on then Theme.Colors.Accent else Theme.Colors.PanelRaised,
+						BackgroundColor3 = if on then Theme.Paper.Accent else Theme.Paper.Raised,
 						Text = option.text,
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 14,
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
 						AutoButtonColor = true,
 						[OnEvent("Activated")] = function()
 							choice.onSelect(option.id)
@@ -403,7 +403,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			add(textLine(s, 0, line))
 		end
 		for _, row in (data.rewards or {}) :: { RewardRow } do
-			add(QuestRewards(s, { Id = row.id, Reward = row.reward, SlotSize = 36, Surface = "iron" }))
+			add(QuestRewards(s, { Id = row.id, Reward = row.reward, SlotSize = 36 }))
 		end
 		if data.chips and #data.chips > 0 then
 			local chips: { Instance } = {}
@@ -414,11 +414,11 @@ function DetailCard.new(scope: Scope, props: Props): Api
 						LayoutOrder = i,
 						AutomaticSize = Enum.AutomaticSize.X,
 						Size = UDim2.fromOffset(0, 26),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Paper.Raised,
 						Text = `{chip.icon}  {chip.text}`,
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = 14,
-						TextColor3 = Theme.Colors.Parchment,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = UDim.new(0, 13) }),
 							s:New("UIPadding")({ PaddingLeft = UDim.new(0, 9), PaddingRight = UDim.new(0, 9) }),
@@ -446,7 +446,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				Size = s:Computed(function(use): UDim2
 					return UDim2.new(1, 0, 0, if use(touch) then 44 else (if row.sub then 40 else 30))
 				end),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = if clickable then 0.2 else 0.6,
 				AutoButtonColor = clickable,
 				Active = clickable,
@@ -465,8 +465,8 @@ function DetailCard.new(scope: Scope, props: Props): Api
 						Text = (if row.icon then row.icon .. "  " else "") .. row.text,
 						RichText = true,
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = 15,
-						TextColor3 = row.color or Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = row.color or Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
@@ -477,8 +477,8 @@ function DetailCard.new(scope: Scope, props: Props): Api
 							BackgroundTransparency = 1,
 							Text = row.sub,
 							FontFace = Theme.Fonts.Body,
-							TextSize = 12,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						})
@@ -491,8 +491,8 @@ function DetailCard.new(scope: Scope, props: Props): Api
 							BackgroundTransparency = 1,
 							Text = "›",
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = 22,
-							TextColor3 = Theme.Colors.Gold,
+							TextSize = Theme.TextSize.Large,
+							TextColor3 = Theme.Paper.Heading,
 						})
 						else nil :: any,
 				},
@@ -516,20 +516,20 @@ function DetailCard.new(scope: Scope, props: Props): Api
 						BackgroundTransparency = 1,
 						Text = entry.text,
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 14,
-						TextColor3 = entry.color or Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = entry.color or Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 					}),
 					if entry.sub
 						then s:New("TextLabel")({
 							Position = UDim2.fromOffset(48, 22),
-							Size = UDim2.new(1, -48, 0, 18),
+							Size = UDim2.new(1, -48, 0, 20),
 							BackgroundTransparency = 1,
 							Text = entry.sub,
 							FontFace = Theme.Fonts.Body,
-							TextSize = 13,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						})
 						else nil :: any,
@@ -571,7 +571,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				Text = action.text,
 				Variant = if action.danger then "danger" elseif action.primary then "primary" else "secondary",
 				Size = UDim2.new(1 / count, -6 * (count - 1) / count, 1, 0),
-				TextSize = 15,
+				TextSize = Theme.TextSize.Small,
 				OnClick = action.onClick,
 			}).Parent =
 				actionsBar

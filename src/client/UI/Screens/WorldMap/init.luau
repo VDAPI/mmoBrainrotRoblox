@@ -105,9 +105,17 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		Name = "View",
 		Position = UDim2.fromOffset(LIST_WIDTH + 12, 0),
 		Size = UDim2.new(1, -(LIST_WIDTH + 12), 1, -48),
-		BackgroundColor3 = Theme.Colors.Background,
+		BackgroundColor3 = Theme.Paper.Sunken,
 		ClipsDescendants = true,
-		[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			-- S136: the brass frame around the map drawing
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Thickness = Theme.Size.FrameOuter,
+				Color = Theme.Brass.Frame,
+			}),
+		},
 	}) :: Frame
 	local holder = scope:New("Frame")({
 		Name = "Holder",
@@ -130,9 +138,9 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		BackgroundTransparency = 1,
 		Visible = false,
 		Text = Text.T(scope, "worldmap.soon"),
-		FontFace = Theme.Fonts.Heading,
-		TextSize = 28,
-		TextColor3 = Theme.Colors.Parchment,
+		FontFace = Theme.Fonts.Display,
+		TextSize = Theme.TextSize.Title,
+		TextColor3 = Theme.Paper.Text,
 	}) :: TextLabel
 
 	-- Cached canvases outlive the window: detach them before the window is destroyed.
@@ -770,7 +778,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					ScrollBarThickness = 5,
-					ScrollBarImageColor3 = Theme.Colors.GoldDim,
+					ScrollBarImageColor3 = Theme.Paper.Rule,
 					Visible = scope:Computed(function(use): boolean
 						return not use(search.active)
 					end),

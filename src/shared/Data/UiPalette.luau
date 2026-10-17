@@ -13,6 +13,8 @@
 -- with accentText, danger (error text and danger button) with dangerText (text on a danger button), success,
 -- warning, link.
 
+local Contrast = require("../Logic/Contrast")
+
 export type Surface = {
 	surface: string,
 	raised: string,
@@ -120,6 +122,18 @@ UiPalette.announce = {
 	mythicGlow = "#4A0C0A",
 	mythicBase = "#1B1013",
 	mythicText = "#FFD0C8",
+	-- S136: the mythic reveal's veil (LegendReveal), the death screen's red glow (Hud/DeathScreen)
+	mythicVeil = "#2A0505",
+	deathGlow = "#3A0D0B",
+}
+
+-- S136: arena league tiers (identity colours; text and edges through Theme.readable on parchment).
+UiPalette.league = {
+	bronze = "#A8703A",
+	silver = "#B8BCC4",
+	gold = "#D4A537",
+	diamond = "#5EC8E6",
+	master = "#B04AE0",
 }
 
 -- Currency glyphs shown before the atlases load (CurrencyIcon; identity colours, made readable per surface).
@@ -131,10 +145,112 @@ UiPalette.currency = {
 	huntmarks = "#9BC46A",
 }
 
+-- S136: medals of rankings, the arena and tournaments (places 1-3): a bright digit on an iron plaque (gold is not
+-- readable as text on parchment).
+UiPalette.medal = {
+	gold = "#E8C25A",
+	silver = "#C9CED6",
+	bronze = "#D69A66", -- the S124 bronze #C48A58 was 4.47:1 on iron.raised
+}
+
+-- S136: HUD tiles and monster / NPC plates are iron with this background transparency; their pairs are checked on the
+-- tile mixed with the brightest world behind it (snow, WORLD_BRIGHT). Badges on plates (level, group) are darker
+-- (iron.sunken) and more opaque.
+UiPalette.HUD_ALPHA = 0.15
+UiPalette.BADGE_ALPHA = 0.1
+UiPalette.WORLD_BRIGHT = "#E8EEF2"
+-- The HUD tile over the brightest world: iron.surface and iron.raised at HUD_ALPHA mixed with WORLD_BRIGHT (the
+-- backgrounds of Theme.readable(hex, "hud") and of the HUD pairs).
+UiPalette.HUD_TILES = {
+	Contrast.mix(iron.surface, UiPalette.WORLD_BRIGHT, UiPalette.HUD_ALPHA),
+	Contrast.mix(iron.raised, UiPalette.WORLD_BRIGHT, UiPalette.HUD_ALPHA),
+}
+
+-- S136: monster name colours on the plate (DESIGN §15.1: elite red, Elite II purple, boss orange), lightened from the
+-- S18 values to reach 4.5:1 on the HUD tile.
+UiPalette.plate = {
+	normal = "#F3E6C4",
+	elite = "#FF9080",
+	elite2 = "#D9A0FF",
+	boss = "#FF9F1C",
+	trail = "#F2E6C9", -- the HP bar's trail fill (a bar, not text)
+}
+
+-- S136: NPC quest marks (NpcMarkState): plates, minimap and world map.
+UiPalette.mark = {
+	available = "#E8C25A",
+	low = "#B3B6BF", -- S98 grey offer; lighter than the S25 #9A9DA8 (3.8:1 on the HUD tile)
+	turnIn = "#E8C25A",
+	active = "#B3B6BF",
+}
+
+-- S136: monster group sizes 1-4 (S19, UI/GroupColors): ground rings, the "xN" plate badge, minimap dots.
+UiPalette.group = { "#C9CED6", "#4FD16B", "#FF9F1C", "#FF7A7A" }
+
+-- S136: PvP zone colours as text on iron (ZoneBanner, minimap label): red lightened (#D64A3E is 3.7:1 on iron).
+UiPalette.zoneText = {
+	green = "#4FD16B",
+	yellow = "#E0C23B",
+	red = "#FF9080",
+}
+
+-- S136: chat channel colours (ChatController) on the Roblox chat window (`window`, its default background).
+-- General = iron.text, system = brass.bright.
+UiPalette.chat = {
+	window = "#191B1D",
+	trade = "#E0A23B",
+	party = "#6FB3FF",
+	guild = "#6FD38A",
+	whisper = "#D58CFF",
+}
+
+-- S136: HUD glyphs and edges (a graphic, >= 3:1 on iron and on the HUD tile over snow): the on-state glyphs of the
+-- auto-hunt, lure and auto-potion buttons, the arena team edges, the Blood Moon panel edge. Text in these colours goes
+-- through Theme.readable. The reds are lighter than their first S136 values (2.4-2.8:1 on the HUD tile).
+UiPalette.glyph = {
+	hunt = "#DE7058",
+	lure = "#DC707A",
+	potion = "#E06C60",
+	amber = "#D9922E",
+	ally = "#B8C85A",
+	enemy = "#E06C60",
+	blood = "#E6666C",
+}
+
+-- S136: the drawing of the world map and the minimap (Hud/Minimap, WorldMap/Canvas, WorldMap/Overlay): icons,
+-- captions and markers are graphics on the painted terrain (DESIGN §23: the map drawing keeps its colours); the
+-- frames, cards and panels around it use the roles. No pairs: the terrain behind them is the map's own picture.
+UiPalette.map = {
+	portal = "#B9A8FF",
+	portalCaption = "#D8CCFF",
+	cave = "#D9C9A8",
+	caveCaption = "#F2B8A8",
+	dungeon = "#D64A3E",
+	dungeonMark = "#B8423A",
+	lair = "#E0823C",
+	lairCaption = "#F2C29A",
+	node = "#E8C25A",
+	vein = "#E8C25A",
+	bush = "#6FCF5A",
+	fishing = "#5AA8E8",
+	spawn = "#C9A45C",
+	quest = "#E8C25A",
+	guide = "#F2E28A",
+	flag = "#E8C25A",
+	event = "#E0564A",
+	party = "#4A8FE7",
+	npc = "#F2E8C9",
+	label = "#FFFFFF",
+	elite2 = "#C77BFF", -- the Elite II return timer line on the creature card
+}
+
 -- Neutral values: `plain` is an untinted image (ImageColor3 white), `shade` the black of overlays and text strokes.
 UiPalette.neutral = {
 	plain = "#FFFFFF",
 	shade = "#000000",
+	swatch = "#808080", -- S136: a colour swatch without data (wardrobe)
+	bubbleBg = "#FAFAFA", -- S136: the default Roblox speech bubble in the wardrobe preview
+	bubbleText = "#1E1E1E",
 }
 
 UiPalette.SURFACES = { "paper", "iron" }
@@ -208,6 +324,50 @@ local function buildPairs(): { Pair }
 		min = UiPalette.MIN_TEXT,
 		what = "iron.text on resource.track",
 	})
+	-- S136: HUD tiles over the brightest world
+	local hud = UiPalette.HUD_TILES[1]
+	local badge = Contrast.mix(iron.sunken, UiPalette.WORLD_BRIGHT, UiPalette.BADGE_ALPHA)
+	local function add(fg: string, bg: string, min: number, what: string)
+		table.insert(out, { fg = fg, bg = bg, min = min, what = what })
+	end
+	for key, hex in UiPalette.glyph :: { [string]: string } do
+		add(hex, iron.surface, UiPalette.MIN_EDGE, `glyph.{key} on iron.surface`)
+		add(hex, iron.raised, UiPalette.MIN_EDGE, `glyph.{key} on iron.raised`)
+		add(hex, hud, UiPalette.MIN_EDGE, `glyph.{key} on the HUD tile`)
+	end
+	for _, role in UiPalette.TEXT_ROLES do
+		add((iron :: any)[role], hud, UiPalette.MIN_TEXT, `iron.{role} on the HUD tile`)
+	end
+	add(UiPalette.brass.bright, hud, UiPalette.MIN_TEXT, "brass.bright on the HUD tile")
+	for key, hex in UiPalette.zoneText :: { [string]: string } do
+		add(hex, hud, UiPalette.MIN_TEXT, `zoneText.{key} on the HUD tile`)
+		add(hex, iron.surface, UiPalette.MIN_TEXT, `zoneText.{key} on iron.surface`)
+	end
+	for _, key in { "normal", "elite", "elite2", "boss" } do
+		add((UiPalette.plate :: any)[key], hud, UiPalette.MIN_TEXT, `plate.{key} on the HUD tile`)
+	end
+	for key, hex in UiPalette.mark :: { [string]: string } do
+		add(hex, hud, UiPalette.MIN_TEXT, `mark.{key} on the HUD tile`)
+	end
+	for i, hex in UiPalette.group do
+		add(hex, badge, UiPalette.MIN_TEXT, `group[{i}] on the plate badge`)
+	end
+	for key, hex in UiPalette.medal :: { [string]: string } do
+		add(hex, iron.surface, UiPalette.MIN_TEXT, `medal.{key} on iron.surface`)
+		add(hex, iron.raised, UiPalette.MIN_TEXT, `medal.{key} on iron.raised`)
+	end
+	for _, key in { "trade", "party", "guild", "whisper" } do
+		add((UiPalette.chat :: any)[key], UiPalette.chat.window, UiPalette.MIN_TEXT, `chat.{key} on chat.window`)
+	end
+	add(iron.text, UiPalette.chat.window, UiPalette.MIN_TEXT, "chat general (iron.text) on chat.window")
+	add(
+		UiPalette.announce.mythicText,
+		UiPalette.announce.mythicBase,
+		UiPalette.MIN_TEXT,
+		"announce.mythicText on mythicBase"
+	)
+	add(iron.text, UiPalette.announce.legendaryBase, UiPalette.MIN_TEXT, "iron.text on announce.legendaryBase")
+	add(UiPalette.brass.bright, UiPalette.chat.window, UiPalette.MIN_TEXT, "chat system (brass.bright) on chat.window")
 	return out
 end
 

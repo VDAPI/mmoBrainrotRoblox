@@ -47,9 +47,9 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 		BackgroundColor3 = scope:Tween(
 			scope:Computed(function(use): Color3
 				if use(props.Active) == true then
-					return Theme.Colors.PanelHover
+					return Theme.Iron.Hover
 				end
-				return if use(hovered) then Theme.Colors.PanelRaised else Theme.Colors.Panel
+				return if use(hovered) then Theme.Iron.Raised else Theme.Iron.Surface
 			end),
 			Theme.Anim.Fast
 		),
@@ -58,8 +58,8 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 			return if use(artShown) then "" else use(props.Icon)
 		end),
 		FontFace = Theme.Fonts.BodyBold,
-		TextSize = 26,
-		TextColor3 = Theme.Colors.Gold,
+		TextSize = Theme.TextSize.Large,
+		TextColor3 = Theme.Iron.Heading,
 
 		[OnEvent("MouseEnter")] = function()
 			hovered:set(true)
@@ -79,7 +79,7 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Thickness = Theme.Stroke.Normal,
-				Color = Theme.Colors.Gold,
+				Color = Theme.Brass.Line,
 				Transparency = scope:Computed(function(use): number
 					return if use(hovered) or use(props.Active) == true then 0 else 0.45
 				end),
@@ -89,24 +89,30 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 			}),
 			ArtIcon.Image(scope, {
 				Key = props.ArtKey,
-				Tint = Theme.Colors.Gold,
+				Tint = Theme.Iron.Heading,
 				Size = UDim2.fromScale(0.62, 0.62),
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 			}),
 			if props.Hotkey
 				then scope:New("TextLabel")({
-					Name = "Hotkey",
-					BackgroundTransparency = 1,
-					AnchorPoint = Vector2.new(1, 1),
-					Position = UDim2.new(1, -3, 1, -1),
-					Size = UDim2.fromOffset(18, 16),
-					Text = props.Hotkey,
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 13,
-					TextColor3 = Theme.Colors.TextMuted,
-					TextXAlignment = Enum.TextXAlignment.Right,
-				}) :: any
+						Name = "Hotkey",
+						-- S136: the key on a small iron plaque in the corner
+						BackgroundColor3 = Theme.Iron.Sunken,
+						BackgroundTransparency = Theme.BadgeAlpha,
+						AnchorPoint = Vector2.new(1, 1),
+						Position = UDim2.new(1, -2, 1, -2),
+						Size = UDim2.fromOffset(18, 16),
+						AutomaticSize = Enum.AutomaticSize.X,
+						Text = props.Hotkey,
+						Visible = scope:Computed(function(use): boolean
+							return (use(props.Hotkey) or "") ~= ""
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Iron.Text,
+						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+					}) :: any
 				else nil,
 			if props.Badge
 				then scope:New("TextLabel")({
@@ -114,11 +120,11 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, 4, 0, -4),
 					Size = UDim2.fromOffset(18, 18),
-					BackgroundColor3 = Theme.Colors.Danger,
+					BackgroundColor3 = Theme.Iron.Danger,
 					Text = "!",
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = 14,
-					TextColor3 = Theme.Colors.Text,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.DangerText,
 					ZIndex = 3,
 					Visible = props.Badge,
 					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),

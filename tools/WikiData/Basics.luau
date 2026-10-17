@@ -72,8 +72,6 @@ Basics.CONFIG_KEYS = {
 	"DefaultCapacity",
 }
 
-local ZONE_COLORS_FALLBACK = { green = "#4FD16B", yellow = "#E0C23B", red = "#D64A3E" }
-
 -- Schemas ----------------------------------------------------------------------------------------------------
 
 local Amount = rec("Amount", { id = "ref:items", n = "int" })
@@ -612,22 +610,11 @@ function Basics.bestArea(): { any }
 	return out
 end
 
--- Zone colours: S135 from Data/UiPalette.zone; the old reading of src/client/UI/Theme.luau as text stays as a fallback
--- (with a warning) until S136 removes Theme.Colors.
-function Basics.zoneColors(themeText: string?, warnings: { string }): { [string]: string }
+-- Zone colours from Data/UiPalette.zone (S135; S136 removed the old reading of Theme.luau as text).
+function Basics.zoneColors(): { [string]: string }
 	local out = {}
-	for zone, name in { green = "ZoneGreen", yellow = "ZoneYellow", red = "ZoneRed" } do
-		local palette = (UiPalette.zone :: any)[zone]
-		local hex = themeText and string.match(themeText, name .. '%s*=%s*Color3%.fromHex%("(#%x%x%x%x%x%x)"%)')
-		if palette then
-			out[zone] = string.upper(palette)
-		elseif hex then
-			table.insert(warnings, `UiPalette.zone.{zone} missing, using Theme.luau {name}`)
-			out[zone] = string.upper(hex)
-		else
-			table.insert(warnings, `Theme.luau: {name} not found, using {ZONE_COLORS_FALLBACK[zone]}`)
-			out[zone] = ZONE_COLORS_FALLBACK[zone]
-		end
+	for _, zone in { "green", "yellow", "red" } do
+		out[zone] = string.upper((UiPalette.zone :: any)[zone])
 	end
 	return out
 end
@@ -652,7 +639,7 @@ function Basics.mechanics(ctx: any): any
 		assert(type(value) == "number", `Config.{key} is not a number`)
 		config[key] = value
 	end
-	local colors = Basics.zoneColors(ctx.themeText, ctx.warnings)
+	local colors = Basics.zoneColors()
 	local zones = {}
 	for _, zone in { "green", "yellow", "red" } do
 		zones[zone] = { name = Names.of(`zone.{zone}`), rule = Names.of(`pvp.rules.{zone}`), color = colors[zone] }

@@ -162,8 +162,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			if key then
 				line(
 					Text.get(use, key, { npc = npcName(companion.npc) }),
-					Theme.Colors.GoldBright,
-					14,
+					Theme.Brass.Bright,
+					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
 					6
 				)
@@ -180,8 +180,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			for _, row in rowList.rows do
 				local label = line(
 					QuestRows.line(row),
-					if row.done then Theme.Colors.Success else Theme.Colors.Text,
-					15,
+					if row.done then Theme.Iron.Success else Theme.Iron.Text,
+					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
 					6
 				)
@@ -193,19 +193,19 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						pulseUntil[pulseKey] = nil
 					end
 					local stroke = s:New("UIStroke")({
-						Color = Theme.Colors.Success,
+						Color = Theme.Iron.Success,
 						Thickness = 1 + 2 * alpha,
 						Transparency = GLOW_TRANSPARENCY * (1 - alpha),
 						Parent = label,
 					})
 					if alpha > 0 then
-						label.TextColor3 = Theme.Colors.Success:Lerp(Color3.new(1, 1, 1), alpha)
+						label.TextColor3 = Theme.Iron.Success:Lerp(Theme.Plain, alpha)
 						local info = TweenInfo.new(left, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 						task.defer(function()
 							if stroke.Parent then
 								TweenService:Create(stroke, info, { Thickness = 1, Transparency = GLOW_TRANSPARENCY })
 									:Play()
-								TweenService:Create(label, info, { TextColor3 = Theme.Colors.Success }):Play()
+								TweenService:Create(label, info, { TextColor3 = Theme.Iron.Success }):Play()
 							end
 						end)
 					end
@@ -230,8 +230,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 									TextScaled = false,
 									Text = back,
 									FontFace = Theme.Fonts.BodyBold,
-									TextSize = 15,
-									TextColor3 = Theme.Colors.GoldBright,
+									TextSize = Theme.TextSize.Small,
+									TextColor3 = Theme.Brass.Bright,
 									TextStrokeTransparency = 0.4,
 									TextXAlignment = Enum.TextXAlignment.Left,
 								}),
@@ -241,12 +241,12 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 										AnchorPoint = Vector2.new(1, 0.5),
 										Position = UDim2.fromScale(1, 0.5),
 										Size = UDim2.fromOffset(30, 26),
-										BackgroundColor3 = Theme.Colors.PanelRaised,
+										BackgroundColor3 = Theme.Iron.Raised,
 										BackgroundTransparency = 0.2,
 										Text = "➤",
 										FontFace = Theme.Fonts.BodyBold,
-										TextSize = 16,
-										TextColor3 = Theme.Colors.GoldBright,
+										TextSize = Theme.TextSize.Small,
+										TextColor3 = Theme.Brass.Bright,
 										[OnEvent("Activated")] = function()
 											if props and props.Guide and guide then
 												props.Guide(guide)
@@ -286,8 +286,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					-- the kind, ground and progress are on the objective row below (one line)
 					line(
 						`◈ {Text.get(use, "contract.titleShort", { n = taken.contract.level })}`,
-						Theme.Colors.Gold,
-						15,
+						Theme.Iron.Heading,
+						Theme.TextSize.Small,
 						Theme.Fonts.BodyBold
 					)
 					objectives(
@@ -299,8 +299,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				if #list > shown then
 					line(
 						Text.get(use, "contract.trackerMore", { n = #list - shown }),
-						Theme.Colors.TextMuted,
-						14,
+						Theme.Iron.TextMuted,
+						Theme.TextSize.Small,
 						Theme.Fonts.Body
 					)
 				end
@@ -310,14 +310,14 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			if #eligible > 0 then
 				line(
 					`! {Text.get(use, "contract.toTake", { n = #eligible })}`,
-					Theme.Colors.GoldBright,
-					16,
+					Theme.Brass.Bright,
+					Theme.TextSize.Small,
 					Theme.Fonts.BodyBold
 				)
 				line(
 					Text.get(use, "quest.tracker.from", { npc = npcName(Contracts.BOARD) }),
-					Theme.Colors.TextMuted,
-					14,
+					Theme.Iron.TextMuted,
+					Theme.TextSize.Small,
 					Theme.Fonts.Body
 				)
 				return true
@@ -332,7 +332,12 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local sideQuest = if focus and focus.id then Quests.npcQuest(focus.id) else nil
 		local sideEntry = if focus and focus.id then SideQuests.activeOf(q)[focus.id] else nil
 		if sideQuest and type(sideEntry) == "table" then
-			line(`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`, Theme.Colors.GoldBright, 17, Theme.Fonts.BodyBold)
+			line(
+				`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`,
+				Theme.Brass.Bright,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			)
 			objectives(
 				`side:{sideQuest.id}`,
 				QuestText.rows(use, sideQuest.objectives, sideEntry.progress, sideQuest.turnIn),
@@ -345,13 +350,18 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local main = q.main
 		local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
 		if quest and main and use(QuestTrack.Tracked) then
-			line(Text.get(use, `quest.{quest.id}.title`), Theme.Colors.GoldBright, 18, Theme.Fonts.BodyBold)
+			line(
+				Text.get(use, `quest.{quest.id}.title`),
+				Theme.Brass.Bright,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			)
 			local rows = QuestText.rows(use, quest.objectives, main.progress, quest.turnIn)
 			if not rows.complete then
 				line(
 					Text.get(use, "quest.tracker.from", { npc = npcName(quest.giver) }),
-					Theme.Colors.TextMuted,
-					14,
+					Theme.Iron.TextMuted,
+					Theme.TextSize.Small,
 					Theme.Fonts.Body
 				)
 			end
@@ -362,14 +372,14 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			if nextQuest and ready then
 				line(
 					`! {Text.get(use, `quest.{nextQuest.id}.title`)}`,
-					Theme.Colors.GoldBright,
-					17,
+					Theme.Brass.Bright,
+					Theme.TextSize.Small,
 					Theme.Fonts.BodyBold
 				)
 				line(
 					Text.get(use, "quest.tracker.from", { npc = npcName(nextQuest.giver) }),
-					Theme.Colors.TextMuted,
-					14,
+					Theme.Iron.TextMuted,
+					Theme.TextSize.Small,
 					Theme.Fonts.Body
 				)
 			end
@@ -400,23 +410,23 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			end
 			line(
 				Text.get(use, "quest.tracker.contracts", { npc = npcName("questboard") }),
-				Theme.Colors.Gold,
-				16,
+				Theme.Iron.Heading,
+				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			)
 			for _, entry in open do
 				local done = entry.progress >= entry.objective.n
 				line(
 					Text.get(use, `daily.{entry.template}.title`),
-					if done then Theme.Colors.Success else Theme.Colors.Parchment,
-					15,
+					if done then Theme.Iron.Success else Theme.Iron.Text,
+					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
 					4
 				)
 				line(
 					`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
-					if done then Theme.Colors.Success else Theme.Colors.Text,
-					14,
+					if done then Theme.Iron.Success else Theme.Iron.Text,
+					Theme.TextSize.Small,
 					Theme.Fonts.Body,
 					10
 				)
@@ -434,8 +444,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
-		BackgroundTransparency = 0.45,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIPadding")({
@@ -456,9 +466,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Text = scope:Computed(function(use): string
 							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "quest.tracker")}`
 						end),
-						FontFace = Theme.Fonts.Heading,
-						TextSize = 18,
-						TextColor3 = Theme.Colors.Gold,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Iron.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						[OnEvent("Activated")] = function()
 							collapsed:set(not Fusion.peek(collapsed))
@@ -469,12 +479,12 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						AnchorPoint = Vector2.new(1, 0.5),
 						Position = UDim2.new(1, -34, 0.5, 0),
 						Size = UDim2.fromOffset(30, 28),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Iron.Raised,
 						BackgroundTransparency = 0.2,
 						Text = "➤",
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = 16,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Brass.Bright,
 						Visible = scope:Computed(function(use): boolean
 							local target = use(QuestTrack.Target)
 							return props ~= nil and props.Guide ~= nil and target ~= nil and target.x ~= nil
@@ -496,7 +506,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Text = "⬆",
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextColor3 = Theme.Brass.Bright,
 						TextStrokeTransparency = 0.3,
 						Visible = scope:Computed(function(use): boolean
 							return use(arrow) ~= nil and use(QuestTrack.Tracked)

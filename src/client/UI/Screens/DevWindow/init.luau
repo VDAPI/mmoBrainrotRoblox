@@ -109,11 +109,11 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 					Size = UDim2.fromOffset(0, PIN_HEIGHT - 8),
 					AutomaticSize = Enum.AutomaticSize.X,
 					AutoButtonColor = true,
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Iron.Raised,
 					Text = `★ /{name}`,
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Colors.GoldBright,
+					TextColor3 = Theme.Brass.Bright,
 					[OnEvent("Activated")] = function()
 						if needsArgs then
 							Dev.prefill(`/{name} `)
@@ -136,8 +136,8 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "dev.pins.empty"),
 					FontFace = Theme.Fonts.Body,
-					TextSize = 13,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Iron.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				})
 			)
@@ -150,7 +150,7 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 		scope:New("ScrollingFrame")({
 			Name = "Pins",
 			Size = UDim2.new(1, 0, 0, PIN_HEIGHT),
-			BackgroundColor3 = Theme.Colors.Panel,
+			BackgroundColor3 = Theme.Iron.Surface,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.X,
@@ -169,6 +169,7 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 			},
 		}),
 		SideTabs(scope, {
+			Surface = "iron",
 			Tabs = tabs,
 			Selected = Dev.Tab,
 			Position = UDim2.fromOffset(0, PIN_HEIGHT + 8),
@@ -191,9 +192,9 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 			BackgroundColor3 = scope:Computed(function(use): Color3
 				local status = use(Dev.Status)
 				if status.text == "" then
-					return Theme.Colors.Panel
+					return Theme.Iron.Surface
 				end
-				return if status.ok then Color3.fromHex("#1F3A26") else Color3.fromHex("#4A1E1B")
+				return Theme.mix(Theme.Iron.Surface, if status.ok then Theme.Iron.Success else Theme.Iron.Danger, 0.2)
 			end),
 			Text = scope:Computed(function(use): string
 				local status = use(Dev.Status)
@@ -207,7 +208,7 @@ local function DevWindow(scope: Dev.Scope, props: Props): Fusion.Child
 			TextSize = Theme.TextSize.Small,
 			TextColor3 = scope:Computed(function(use): Color3
 				local status = use(Dev.Status)
-				return if status.text == "" or status.ok then Theme.Colors.Text else Theme.Colors.DangerHover
+				return if status.text == "" or status.ok then Theme.Iron.Text else Theme.Iron.Danger
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
 			[Children] = {

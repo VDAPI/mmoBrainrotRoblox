@@ -105,7 +105,7 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 		BackgroundTransparency = 1,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Paper.Text,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.fromScale(1, 0),
@@ -123,7 +123,7 @@ local function header(scope: Scope, order: number, key: string): Instance
 		Text = Text.T(scope, key),
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.GoldBright,
+		TextColor3 = Theme.Paper.Heading,
 	})
 end
 
@@ -146,7 +146,7 @@ local function panel(scope: Scope, order: number, children: { any }): Instance
 		LayoutOrder = order,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = list :: any,
 	})
@@ -166,7 +166,7 @@ local function benefitRow(scope: Scope, order: number, row: Vip.Benefit): Instan
 				Text = row.icon,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			label(scope, {
 				Position = UDim2.fromOffset(34, 2),
@@ -238,13 +238,13 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 	local top = scope:New("Frame")({
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 72),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = Theme.Colors.GoldBright,
+				Color = Theme.Brass.Frame,
 				Thickness = Theme.Stroke.Normal,
 			}),
 			scope:New("TextLabel")({
@@ -254,16 +254,16 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 				Text = "★",
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 			}),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(76, 8),
 				Size = UDim2.new(1, -280, 0, 28),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "vip.title"),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			scope:New("TextLabel")({
@@ -277,7 +277,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 				FontFace = Theme.Fonts.Body,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(active) then Theme.Colors.Success else Theme.Colors.TextMuted
+					return if use(active) then Theme.Paper.Success else Theme.Paper.TextMuted
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
@@ -291,7 +291,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 				Position = UDim2.new(1, -10, 0.5, 0),
 				Size = UDim2.fromOffset(190, 0),
 				Text = Text.T(scope, "vip.manage"),
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Right,
 				Visible = scope:Computed(function(use): boolean
 					return branch(use(vip)).sub == true
@@ -310,7 +310,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 		label(scope, {
 			LayoutOrder = 100,
 			Text = Text.T(scope, "vip.noPower"),
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		})
 	)
 
@@ -355,7 +355,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 		label(scope, {
 			LayoutOrder = 5,
 			Text = Text.T(scope, "vip.error.inCity"),
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			Visible = scope:Computed(function(use): boolean
 				return use(active) and use(inCity) and use(recallLeft) <= 0
 			end),
@@ -381,7 +381,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 					Size = UDim2.fromOffset(56, 56),
 					BackgroundColor3 = scope:Computed(function(use): Color3
 						local def = use(monthDef)
-						return if def then Color3.fromHex(def.color) else Theme.Colors.Panel
+						return if def then Theme.tint(def.color) else Theme.Paper.Surface
 					end),
 					Text = scope:Computed(function(use): string
 						local def = use(monthDef)
@@ -389,7 +389,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 					end),
 					TextScaled = true,
 					FontFace = Theme.Fonts.BodyBold,
-					TextColor3 = Color3.new(1, 1, 1),
+					TextColor3 = Theme.Plain,
 					TextStrokeTransparency = 0.4,
 					[Children] = {
 						scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -422,7 +422,7 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 		label(scope, {
 			LayoutOrder = 3,
 			Text = Text.T(scope, "vip.month.collection"),
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			LayoutOrder = 4,
@@ -443,11 +443,11 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 						if key and mine[def.id] == true then
 							local tile = s:New("TextLabel")({
 								LayoutOrder = tonumber(key) or 0,
-								BackgroundColor3 = Color3.fromHex(def.color),
+								BackgroundColor3 = Theme.tint(def.color),
 								Text = def.icon,
 								TextScaled = true,
 								FontFace = Theme.Fonts.BodyBold,
-								TextColor3 = Color3.new(1, 1, 1),
+								TextColor3 = Theme.Plain,
 								TextStrokeTransparency = 0.4,
 								[Children] = {
 									s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -481,7 +481,6 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 			LayoutOrder = 5,
 			Size = UDim2.new(1, 0, 0, 44),
 			Variant = "ghost",
-			Surface = "iron", -- S135: on a dark HUD / overlay surface
 			TextSize = Theme.TextSize.Small,
 			Text = Text.T(scope, "window.wardrobe.title"),
 			Visible = props ~= nil and props.OpenWardrobe ~= nil,

@@ -25,7 +25,7 @@ local function paragraph(scope: Scope, order: number, text: Fusion.UsedAs<string
 		TextWrapped = true,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Colors.TextMuted,
+		TextColor3 = Theme.Paper.TextMuted,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 	})
@@ -54,7 +54,7 @@ local function Settings(scope: Scope, showModal: (spec: any) -> ()): Instance
 				Text = Text.T(scope, "guild.settings.pvp"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			paragraph(scope, 2, Text.T(scope, "guild.settings.pvpHint"), 44),

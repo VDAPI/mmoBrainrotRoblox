@@ -42,8 +42,8 @@ type Result = { old: Types.Bonus, new: Types.Bonus, quality: number, item: Types
 
 local TENSION = 1.2
 local LIST_WIDTH = 262
-local GOOD = "#4FD16B"
-local BAD = "#CC5248"
+local GOOD = Theme.hex(Theme.Paper.Success)
+local BAD = Theme.hex(Theme.Paper.Danger)
 -- Tooltip roles that are not lines (base stats, trait, skill effects): shown grey, "Cannot be transmuted".
 local FIXED_ROLES =
 	{ stat = true, speedDps = true, element = true, traitName = true, trait = true, fxTitle = true, fx = true }
@@ -83,7 +83,7 @@ local function qualityBar(scope: Scope, quality: Fusion.UsedAs<number>, position
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = position,
 		Size = UDim2.fromOffset(46, 6),
-		BackgroundColor3 = Color3.fromHex("#3A3F4C"),
+		BackgroundColor3 = Theme.Paper.Sunken,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
 			scope:New("Frame")({
@@ -93,9 +93,9 @@ local function qualityBar(scope: Scope, quality: Fusion.UsedAs<number>, position
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local q = use(quality)
 					return if q >= 0.9
-						then Theme.Colors.GoldBright
-						elseif q >= 0.5 then Theme.Colors.Success
-						else Theme.Colors.TextMuted
+						then Theme.Paper.Heading
+						elseif q >= 0.5 then Theme.Paper.Success
+						else Theme.Paper.TextMuted
 				end),
 				[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(1, 0) }),
 			}),
@@ -114,7 +114,7 @@ local function label(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 		Text = text,
 		FontFace = Theme.Fonts.BodyMedium,
 		TextSize = size or Theme.TextSize.Small,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -295,7 +295,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					Size = UDim2.new(1, 0, 0, 30),
 					AutoButtonColor = canPick,
 					BackgroundColor3 = s:Computed(function(use2): Color3
-						return if use2(line) == at then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+						return if use2(line) == at then Theme.Paper.Hover else Theme.Paper.Raised
 					end),
 					BackgroundTransparency = if canPick then 0 else 0.5,
 					Text = "",
@@ -317,7 +317,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = if canPick then Theme.Colors.Text else Theme.Colors.TextMuted,
+							TextColor3 = if canPick then Theme.Paper.Text else Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 						qualityBar(s, bonus.quality, UDim2.new(1, -8, 0.5, 0)),
@@ -365,7 +365,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					LayoutOrder = order,
 					Size = UDim2.new(1, -8, 0, 24),
 					BackgroundTransparency = if mine then 0.4 else 1,
-					BackgroundColor3 = Theme.Colors.GoldDim,
+					BackgroundColor3 = Theme.Paper.Rule,
 					[Children] = {
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(6, 0),
@@ -375,7 +375,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							FontFace = if mine then Theme.Fonts.BodyBold else Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.Text,
+							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
 						s:New("TextLabel")({
@@ -386,7 +386,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 							Text = pctText(use, outcome.chance),
 							FontFace = Theme.Fonts.BodyMedium,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextColor3 = Theme.Paper.Heading,
 							TextXAlignment = Enum.TextXAlignment.Right,
 						}),
 					},
@@ -402,7 +402,9 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			return ""
 		end
 		local enoughGold = (use(gold) or 0) >= c.gold
-		local parts = { `<font color="{if enoughGold then "#E8C25A" else BAD}">◉ {Format.number(c.gold)}</font>` }
+		local parts = {
+			`<font color="{if enoughGold then Theme.hex(Theme.Paper.Heading) else BAD}">◉ {Format.number(c.gold)}</font>`,
+		}
 		local inv = use(inventory)
 		if use(withStone) then
 			-- the stone pays the essence: the essence of the attempt struck through
@@ -449,7 +451,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 	end)
 
 	local function section(order: number, key: string): Instance
-		return label(scope, order, Text.T(scope, key), Theme.Colors.TextMuted)
+		return label(scope, order, Text.T(scope, key), Theme.Paper.TextMuted)
 	end
 
 	local details = scope:New("ScrollingFrame")({
@@ -462,11 +464,11 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		end),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.6,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Colors.GoldDim,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
 		ClipsDescendants = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -508,11 +510,11 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					return ItemText.get(use, i.id, i.up, ItemRoll.elementOf(i))
 				end),
 				TextWrapped = true,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = scope:Computed(function(use): Color3
 					local i = use(item)
-					return if i then ItemText.rarityColor(i.rarity) else Theme.Colors.TextMuted
+					return if i then ItemText.rarityName(i.rarity, "paper") else Theme.Paper.TextMuted
 				end),
 			}),
 			label(
@@ -529,7 +531,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					end
 					return if use(line) == nil then Text.get(use, "smith.reroll.pickLine") else ""
 				end),
-				Theme.Colors.Warning
+				Theme.Paper.Warning
 			),
 			-- Lines
 			scope:New("Frame")({
@@ -554,13 +556,13 @@ local function Reroll_(scope: Scope, props: Props): Instance
 						end),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					lineRows :: any,
 				},
 			}),
-			label(scope, 5, fixedText, Theme.Colors.TextMuted),
+			label(scope, 5, fixedText, Theme.Paper.TextMuted),
 			-- Possible results
 			scope:New("Frame")({
 				Name = "Outcomes",
@@ -582,7 +584,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 						BackgroundTransparency = 1,
 						BorderSizePixel = 0,
 						ScrollBarThickness = 5,
-						ScrollBarImageColor3 = Theme.Colors.GoldDim,
+						ScrollBarImageColor3 = Theme.Paper.Rule,
 						[Children] = {
 							scope:New("UIListLayout")({
 								Padding = UDim.new(0, 2),
@@ -594,7 +596,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				},
 			}),
 			label(scope, 7, costText),
-			label(scope, 8, countText, Theme.Colors.TextMuted),
+			label(scope, 8, countText, Theme.Paper.TextMuted),
 			-- Stone of Transmutation (only when the player has one)
 			scope:New("TextButton")({
 				Name = "Stone",
@@ -610,7 +612,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				[OnEvent("Activated")] = function()
 					Sounds.play("click")
@@ -636,7 +638,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					local why = use(blocker)
 					return if why and why ~= "smith.reroll.pickLine" then Text.get(use, why) else ""
 				end),
-				Theme.Colors.DangerHover
+				Theme.Paper.Danger
 			),
 			-- Result: old (struck through) → new, with the new line's quality
 			scope:New("Frame")({
@@ -656,7 +658,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 						Text = resultText,
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					qualityBar(
@@ -684,7 +686,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				Text = Text.T(scope, "smith.upgrade.items"),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Colors.TextMuted,
+				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			-- Items (a strip on top on a phone, a column on the left on PC)
@@ -698,7 +700,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
 				[Children] = {
 					scope:New("UIGridLayout")({
 						CellSize = UDim2.fromOffset(56, 56),

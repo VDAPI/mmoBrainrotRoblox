@@ -1285,13 +1285,29 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   WIELKIMI LITERAMI, treść ≥ 17 (`Small`), `Body 20`, `Large 24`, `Title 30`. Kontrast: tekst ≥ 4,5:1, informacyjne
   krawędzie (ramka rzadkości, brzeg pola i slotu, wypełnienie paska) ≥ 3:1, każda para w `UiPalette.PAIRS` i w teście
   (`uipalette.spec`); ozdobne linie zwolnione. Dotyk ≥ 44 px. Ramki rzadkości zostają drabiną S30, na pergaminie w
-  wariancie `paperHex`, nazwy `textHex` (pergamin) i `nightHex` (żelazo). Okna przechodzą na pergamin według listy
-  `Data/UiWindows` (S135 pierwsza partia, S136 reszta i HUD). Wyraźne, duże przyciski, animacje 0.15–0.25 s.
+  wariancie `paperHex`, nazwy `textHex` (pergamin) i `nightHex` (żelazo). Wszystkie okna są na pergaminie (S135 pierwsza
+  partia, S136 reszta; panel admina F2 jako nakładka na żelazie), każde okno i ekran ma powierzchnię w `Data/UiWindows`
+  (`surface`, `SCREENS`). Wyraźne, duże przyciski, animacje 0.15–0.25 s.
+- **Nad światem tekst nie stoi na pergaminie (S136).** HUD, nakładki (ogłoszenia, liczniki wydarzeń, banery krain i
+  stref, panele areny i turnieju, ekran śmierci, przerywnik, koło emotek, łowienie, wybór postaci) są na żelazie:
+  ciemne płytki `Iron.Surface` z przezroczystością `UiPalette.HUD_ALPHA` (0,15) i mosiężnym brzegiem 1 px albo tekst
+  `Iron.Text` z ciemnym obrysem; pergamin tylko jako okno, karta (nagroda bossa, objawienie legendy, oferta areny,
+  gotowość, karty postaci) albo arkusz. Kontrast płytek liczony na płytce zmieszanej z najjaśniejszym tłem świata
+  (`WORLD_BRIGHT`, śnieg). Paski (HP, mana, energia, EXP, rzucanie, Elita II): ciemny tor `Resource.track`, mosiężny
+  brzeg, wypełnienia z `Resource`, liczby z obrysem. Sloty umiejętności i mikstur jak `ItemSlot` w wariancie żelaza
+  (`Iron.Raised`, brzeg `Brass.Line`), odnowienie jako ciemna zasłona z liczbą, klawisz na plakietce w rogu.
+- **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
+  ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
+  grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).
+- **Mapa świata i minimapa (S136)**: rysunek (teren, obszary, ikony, podpisy) zostaje grafiką w swoich kolorach
+  (`UiPalette.map`, `MapSketch`); ramy (mosiężna wokół płótna i tarczy minimapy), karty szczegółów, panele, legenda,
+  wyszukiwarka i przyciski w nowym stylu (karty na pergaminie, dymki na żelazie, zaznaczenie ikony `Brass.Bright`).
+  Miejsca 1–3 w rankingach jako plakietki żelaza z jasną cyfrą (złoto, srebro, brąz z `UiPalette.medal`).
 - **Tabliczki graczy (S135)**: nick (BodyBold 22) z tagiem gildii, pod nim „Poz. N Klasa”, tytuł w swoim kolorze,
   korona i plakietka VIP, pasek HP przy ranach, na lekkiej płytce żelaza z mosiężnym brzegiem; zawsze na wierzchu,
   widoczne do `Config.Nameplate.maxDistance` (150 st.), dalej niż `detailDistance` (60 st.) sama nazwa. Wróg (PvP)
   na czerwono z ⚔, własna nazwa i VIP mosiądzem. Klik / dotknięcie nicku innego gracza otwiera menu gracza (S133).
-- **HUD**: lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa z nazwą mapy i kolorem strefy, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
+- **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (podstawa klasy i zakładki ścieżek, ROZWOJ §4; S59: 920 × 640, zakładki Podstawa i ścieżek, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
@@ -1308,7 +1324,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
 - **Nagroda za logowanie (S100)**: przycisk ✧ (44 × 44) na prawo od portretu, wyrównany do jego dołu, na PC i telefonie
   tak samo; „!” i pulsująca złota ramka, gdy nagroda czeka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie
-  pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w złotej ramce,
+  pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w mosiężnej ramce,
   odebrane z ✓, stopka „Odbierz” albo „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
 
 ### Ikony w UI (S35)

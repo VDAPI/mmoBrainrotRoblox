@@ -38,10 +38,10 @@ export type Props = {
 
 local STATUS_ORDER: { [string]: number } = { here = 1, online = 2, unknown = 3, offline = 4 }
 local STATUS_COLOR: { [string]: Color3 } = {
-	here = Color3.fromHex("#6FD38A"),
-	online = Color3.fromHex("#6FB3FF"),
-	unknown = Theme.Colors.TextMuted,
-	offline = Theme.Colors.TextMuted,
+	here = Theme.Paper.Success,
+	online = Theme.Paper.Link,
+	unknown = Theme.Paper.TextMuted,
+	offline = Theme.Paper.TextMuted,
 }
 
 local function escape(text: string): string
@@ -83,7 +83,7 @@ local function row(s: Scope, order: number, title: Instance, buttons: { Instance
 		LayoutOrder = order,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -125,7 +125,7 @@ local function titleLabel(s: Scope, text: string, sub: string, subColor: Color3)
 		Text = `<b>{escape(text)}</b>   <font color="#{subColor:ToHex()}">{escape(sub)}</font>`,
 		FontFace = Theme.Fonts.Body,
 		TextSize = Theme.TextSize.Body,
-		TextColor3 = Theme.Colors.Text,
+		TextColor3 = Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -164,8 +164,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 				table.insert(parts, Text.get(use, "hud.level", { level = status.l }))
 			end
 			table.insert(parts, statusText(use, status))
-			local color = STATUS_COLOR[if type(status) == "table" then status.s else "unknown"]
-				or Theme.Colors.TextMuted
+			local color = STATUS_COLOR[if type(status) == "table" then status.s else "unknown"] or Theme.Paper.TextMuted
 			table.insert(
 				out,
 				row(s, i, titleLabel(s, name, table.concat(parts, " · "), color), {
@@ -194,7 +193,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "social.friends.empty"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -218,7 +217,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 			local name: string = e.entry.name
 			table.insert(
 				out,
-				row(s, i, titleLabel(s, name, className(use, e.entry.class), Theme.Colors.TextMuted), {
+				row(s, i, titleLabel(s, name, className(use, e.entry.class), Theme.Paper.TextMuted), {
 					rowButton(s, 1, "social.menu.unignore", true, function()
 						props.Actions.Unignore(userId, name)
 					end),
@@ -235,7 +234,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 					Text = Text.get(use, "social.ignored.empty"),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 				})
 			)
 		end
@@ -286,7 +285,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 			end),
 			FontFace = Theme.Fonts.Body,
 			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Colors.TextMuted,
+			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		scope:New("ScrollingFrame")({

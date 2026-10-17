@@ -26,9 +26,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local Panels = {}
 
 local ZONE_COLORS = {
-	green = Theme.Colors.ZoneGreen,
-	yellow = Theme.Colors.ZoneYellow,
-	red = Theme.Colors.ZoneRed,
+	green = Theme.Paper.Success,
+	yellow = Theme.Paper.Warning,
+	red = Theme.Paper.Danger,
 }
 
 local REGIONS = {
@@ -88,7 +88,7 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 			local map = Maps.get(id)
 			if map then
 				order += 1
-				local zoneHex = (ZONE_COLORS[map.zone] or Theme.Colors.Text):ToHex()
+				local zoneHex = (ZONE_COLORS[map.zone] or Theme.Paper.Text):ToHex()
 				table.insert(
 					rows,
 					scope:New("TextButton")({
@@ -96,9 +96,7 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 						Size = UDim2.new(1, -8, 0, if i == 1 then 34 else 28),
 						AutoButtonColor = false,
 						BackgroundColor3 = scope:Computed(function(use): Color3
-							return if use(props.Selected) == id
-								then Theme.Colors.PanelHover
-								else Theme.Colors.PanelRaised
+							return if use(props.Selected) == id then Theme.Paper.Hover else Theme.Paper.Raised
 						end),
 						BackgroundTransparency = if i == 1 then 0.1 else 0.4,
 						RichText = true,
@@ -110,13 +108,16 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 							return `{indent}<font color="#{zoneHex}">●</font> {Text.get(use, map.nameKey)}{levels}{here}{event}`
 						end),
 						FontFace = if i == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body,
-						TextSize = if i == 1 then 16 else 14,
+						TextSize = if i == 1 then Theme.TextSize.Body else Theme.TextSize.Small,
 						TextColor3 = scope:Computed(function(use): Color3
 							if id == "city" then
-								return Theme.Colors.Parchment
+								return Theme.Paper.Text
 							end
 							local range = { lv = { map.minLevel, map.maxLevel } } :: any
-							return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(range, use(props.Level) or 1)])
+							return Theme.readable(
+								LevelBand.COLORS[AreaAdvice.bandOf(range, use(props.Level) or 1)],
+								"paper"
+							)
 						end),
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
@@ -142,8 +143,8 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 							AutoButtonColor = false,
 							BackgroundColor3 = scope:Computed(function(use): Color3
 								return if use(props.Highlight) == area.id
-									then Theme.Colors.PanelHover
-									else Theme.Colors.Panel
+									then Theme.Paper.Hover
+									else Theme.Paper.Surface
 							end),
 							BackgroundTransparency = 0.2,
 							RichText = true, -- S33: the profile icon in its colour
@@ -157,9 +158,12 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 									.. eventGlyph(use(worldEvent), id, area.id)
 							end),
 							FontFace = Theme.Fonts.Body,
-							TextSize = 13,
+							TextSize = Theme.TextSize.Small,
 							TextColor3 = scope:Computed(function(use): Color3
-								return Color3.fromHex(LevelBand.COLORS[AreaAdvice.bandOf(area, use(props.Level) or 1)])
+								return Theme.readable(
+									LevelBand.COLORS[AreaAdvice.bandOf(area, use(props.Level) or 1)],
+									"paper"
+								)
 							end),
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
@@ -201,7 +205,7 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 						AnchorPoint = Vector2.new(0, 0.5),
 						Position = UDim2.fromScale(0, 0.5),
 						Size = UDim2.fromOffset(12, 12),
-						BackgroundColor3 = Color3.fromHex((LevelBand.COLORS :: any)[band]),
+						BackgroundColor3 = Theme.tint((LevelBand.COLORS :: any)[band]),
 						ZIndex = 22,
 						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
 					}),
@@ -211,8 +215,8 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 						BackgroundTransparency = 1,
 						Text = Text.T(scope, `worldmap.band.{band}`),
 						FontFace = Theme.Fonts.Body,
-						TextSize = 12,
-						TextColor3 = Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						ZIndex = 22,
@@ -229,14 +233,14 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 			rows,
 			scope:New("TextLabel")({
 				LayoutOrder = 5 + i,
-				Size = UDim2.new(1, 0, 0, 16),
+				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
 				Visible = showProfiles,
 				Text = scope:Computed(function(use): string
 					return AreaProfileText.tag(use, profile)
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = 12,
+				TextSize = Theme.TextSize.Small,
 				TextColor3 = AreaProfileText.color(profile),
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -251,14 +255,14 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 			Size = UDim2.new(1, 0, 0, 28),
 			AutoButtonColor = false,
 			BackgroundColor3 = scope:Computed(function(use): Color3
-				return if use(showProfiles) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+				return if use(showProfiles) then Theme.Paper.Hover else Theme.Paper.Raised
 			end),
 			Text = scope:Computed(function(use): string
 				return `{if use(showProfiles) then "☑" else "☐"} {Text.get(use, "worldmap.showProfiles")}`
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = 13,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.Text,
 			ZIndex = 21,
 			[OnEvent("Activated")] = function()
 				showProfiles:set(not Fusion.peek(showProfiles))
@@ -271,7 +275,7 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 		Position = props.Position,
 		Size = UDim2.fromOffset(196, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.Panel,
+		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.12,
 		ZIndex = 20,
 		Visible = scope:Computed(function(use): boolean
@@ -279,7 +283,7 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({ Color = Theme.Colors.GoldDim }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 6),
 				PaddingBottom = UDim.new(0, 6),
@@ -289,14 +293,14 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
 			scope:New("TextLabel")({
 				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 18),
+				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					return Text.get(use, "worldmap.yourLevel", { level = use(props.Level) or 1 })
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				ZIndex = 21,
 			}),
@@ -306,14 +310,14 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 				Size = UDim2.new(1, 0, 0, 28),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(onlyRecommended) then Theme.Colors.PanelHover else Theme.Colors.PanelRaised
+					return if use(onlyRecommended) then Theme.Paper.Hover else Theme.Paper.Raised
 				end),
 				Text = scope:Computed(function(use): string
 					return `{if use(onlyRecommended) then "☑" else "☐"} {Text.get(use, "worldmap.onlyRecommended")}`
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = 13,
-				TextColor3 = Theme.Colors.Parchment,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Text,
 				ZIndex = 21,
 				[OnEvent("Activated")] = function()
 					onlyRecommended:set(not Fusion.peek(onlyRecommended))
@@ -349,15 +353,15 @@ function Panels.chips(scope: Scope, props: ChipProps): Instance
 				end),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(on) then Theme.Colors.Accent else Theme.Colors.Panel
+					return if use(on) then Theme.Paper.Accent else Theme.Paper.Surface
 				end),
 				BackgroundTransparency = 0.08,
 				Text = scope:Computed(function(use): string
 					return `{chip.icon} {Text.get(use, chip.key)}`
 				end),
 				FontFace = Theme.Fonts.BodyBold,
-				TextSize = 14,
-				TextColor3 = Theme.Colors.Parchment,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Text,
 				ZIndex = 21,
 				[OnEvent("Activated")] = function()
 					local next: { [string]: boolean } = table.clone(Fusion.peek(props.Chips))
@@ -372,7 +376,7 @@ function Panels.chips(scope: Scope, props: ChipProps): Instance
 					scope:New("UICorner")({ CornerRadius = UDim.new(0, 15) }),
 					scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 					scope:New("UIStroke")({
-						Color = Theme.Colors.GoldDim,
+						Color = Theme.Paper.Rule,
 						Transparency = scope:Computed(function(use): number
 							return if use(on) then 0 else 0.5
 						end),
@@ -429,14 +433,14 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 			Size = UDim2.fromOffset(104, 34),
 			AutoButtonColor = false,
 			BackgroundColor3 = scope:Computed(function(use): Color3
-				return if use(value) then Theme.Colors.PanelHover else Theme.Colors.Panel
+				return if use(value) then Theme.Paper.Hover else Theme.Paper.Surface
 			end),
 			Text = scope:Computed(function(use): string
 				return `{if use(value) then "☑" else "☐"} {Text.get(use, key)}`
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = 14,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.Text,
 			[OnEvent("Activated")] = function()
 				value:set(not Fusion.peek(value))
 			end,
@@ -447,11 +451,11 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
 			Size = UDim2.fromOffset(if type(text) == "string" and #text <= 3 then 34 else 140, 34),
-			BackgroundColor3 = Theme.Colors.PanelRaised,
+			BackgroundColor3 = Theme.Paper.Raised,
 			Text = text,
 			FontFace = Theme.Fonts.BodyBold,
-			TextSize = 15,
-			TextColor3 = Theme.Colors.Parchment,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.Text,
 			[OnEvent("Activated")] = onClick,
 			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 		})

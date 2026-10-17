@@ -25,9 +25,9 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local RANK_COLORS: { [string]: Color3 } = {
-	leader = Theme.Colors.GoldBright,
-	officer = Theme.Colors.Accent,
-	member = Theme.Colors.TextMuted,
+	leader = Theme.Paper.Heading,
+	officer = Theme.Paper.Link,
+	member = Theme.Paper.TextMuted,
 }
 
 local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
@@ -133,14 +133,14 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 				s:New("Frame")({
 					LayoutOrder = i,
 					Size = UDim2.new(1, 0, 0, 64),
-					BackgroundColor3 = Theme.Colors.PanelRaised,
+					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = if member.online then 0.2 else 0.6,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(8, 8),
 							Size = UDim2.fromOffset(48, 48),
-							BackgroundColor3 = Theme.Colors.Panel,
+							BackgroundColor3 = Theme.Paper.Surface,
 							-- S119: class emblem once loaded (glyph otherwise).
 							Text = s:Computed(function(use2): string
 								if class and UiArtState.ready(use2, UiArt.classEmblem(class.id)) then
@@ -149,7 +149,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 								return if class then class.icon else "?"
 							end),
 							TextScaled = true,
-							TextColor3 = Theme.Colors.GoldBright,
+							TextColor3 = Theme.Paper.Heading,
 							FontFace = Theme.Fonts.BodyBold,
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -166,9 +166,9 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 							Position = UDim2.fromOffset(46, 46),
 							Size = UDim2.fromOffset(12, 12),
 							BackgroundColor3 = if member.server == "here"
-								then Theme.Colors.Success
-								elseif member.online then Theme.Colors.Accent
-								else Theme.Colors.Border,
+								then Theme.Paper.Success
+								elseif member.online then Theme.Paper.Link
+								else Theme.Paper.Rule,
 							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 						}),
 						s:New("TextLabel")({
@@ -182,7 +182,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 							)}`,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Body,
-							TextColor3 = if isMe then Theme.Colors.GoldBright else Theme.Colors.Text,
+							TextColor3 = if isMe then Theme.Paper.Heading else Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
@@ -197,7 +197,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 							)}</font>  ·  {status}  ·  ◉ {Format.number(member.contributed)}`,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Colors.TextMuted,
+							TextColor3 = Theme.Paper.TextMuted,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),

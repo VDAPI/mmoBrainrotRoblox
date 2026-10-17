@@ -19,10 +19,11 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local HOLD_SECONDS = 3.5
 
+-- S136: the zone colours as text on iron (Data/UiPalette.zoneText)
 local ZONE_COLORS: { [string]: Color3 } = {
-	green = Theme.Colors.ZoneGreen,
-	yellow = Theme.Colors.ZoneYellow,
-	red = Theme.Colors.ZoneRed,
+	green = Theme.ZoneText.Green,
+	yellow = Theme.ZoneText.Yellow,
+	red = Theme.ZoneText.Red,
 }
 
 local function ZoneBanner(scope: Scope): Instance
@@ -58,7 +59,7 @@ local function ZoneBanner(scope: Scope): Instance
 
 	local color = scope:Computed(function(use): Color3
 		local zone = use(shown)
-		return if zone then ZONE_COLORS[zone.pvp] or Theme.Colors.Gold else Theme.Colors.Gold
+		return if zone then ZONE_COLORS[zone.pvp] or Theme.Brass.Bright else Theme.Brass.Bright
 	end)
 
 	return scope:New("Frame")({
@@ -83,10 +84,10 @@ local function ZoneBanner(scope: Scope): Instance
 					local map = Maps.get(zone.map)
 					return Text.get(use, AreaState.zoneNameKey(zone, if map then map.nameKey else nil))
 				end),
-				FontFace = Theme.Fonts.Heading,
-				TextSize = 56,
-				TextColor3 = Theme.Colors.Parchment,
-				TextStrokeColor3 = Theme.Colors.Background,
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Hero,
+				TextColor3 = Theme.Iron.Text,
+				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = scope:Computed(function(use): number
 					return 0.3 + use(animated) * 0.7
 				end),
@@ -113,7 +114,7 @@ local function ZoneBanner(scope: Scope): Instance
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = color,
-				TextStrokeColor3 = Theme.Colors.Background,
+				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = scope:Computed(function(use): number
 					return 0.4 + use(animated) * 0.6
 				end),

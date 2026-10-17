@@ -56,7 +56,7 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 	local canHand = #Contracts.ready(state, npcId)
 	local header =
 		Text.get(use, "contract.board.title", { done = Contracts.doneCount(state), max = Quests.Contracts.MAX_LEVEL })
-	header ..= `   <font color="#9BC46A">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
+	header ..= `   <font color="{Theme.hex(Theme.Paper.Success)}">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
 	local counts = Text.get(use, "contract.boardCounts", {
 		available = #Contracts.eligible(state, lvl),
 		active = #state.active,
@@ -87,15 +87,15 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = header,
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Parchment,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			s:New("Frame")({
 				Position = UDim2.fromOffset(0, 26),
 				Size = UDim2.new(1, 0, 0, 134),
-				BackgroundColor3 = Theme.Colors.PanelRaised,
+				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = 0.35,
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -110,9 +110,12 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 						Text = counts,
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = Theme.Colors.GoldBright,
+						TextColor3 = Theme.Paper.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
-						[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 19, MinTextSize = 12 }),
+						[Children] = s:New("UITextSizeConstraint")({
+							MaxTextSize = Theme.TextSize.Body,
+							MinTextSize = Theme.TextSize.Small,
+						}),
 					}),
 					s:New("TextLabel")({
 						Position = UDim2.fromOffset(0, 26),
@@ -122,7 +125,7 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.TextMuted,
+						TextColor3 = Theme.Paper.TextMuted,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
@@ -165,7 +168,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 	return s:New("Frame")({
 		LayoutOrder = c.order,
 		Size = UDim2.new(1, 0, 0, 110),
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.35,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -176,9 +179,12 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				Text = c.title,
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 20, MinTextSize = 14 }),
+				[Children] = s:New("UITextSizeConstraint")({
+					MaxTextSize = Theme.TextSize.Body,
+					MinTextSize = Theme.TextSize.Small,
+				}),
 			}),
 			s:New("TextLabel")({
 				Position = UDim2.fromOffset(0, 28),
@@ -188,13 +194,15 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				TextWrapped = true,
 				TextScaled = true,
 				FontFace = Theme.Fonts.BodyMedium,
-				TextColor3 = if c.done then Theme.Colors.Success else Theme.Colors.Text,
+				TextColor3 = if c.done then Theme.Paper.Success else Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = 17, MinTextSize = 11 }),
+				[Children] = s:New("UITextSizeConstraint")({
+					MaxTextSize = Theme.TextSize.Small,
+					MinTextSize = Theme.TextSize.Small,
+				}),
 			}),
 			-- S31: rewards as icons and item slots with tooltips.
 			QuestRewards(s, {
-				Surface = "iron", -- S135: legacy dark window until S136
 				Id = c.id,
 				Reward = c.reward,
 				SlotSize = 38,
@@ -362,7 +370,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					end),
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Colors.TextMuted,
+					TextColor3 = Theme.Paper.TextMuted,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("ScrollingFrame")({

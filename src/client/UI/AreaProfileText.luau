@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Text)
+local Theme = require(script.Parent.Theme)
 
 local AreaProfileText = {}
 
@@ -16,8 +17,9 @@ function AreaProfileText.mul(use: Fusion.Use, value: number): string
 	return (text:gsub("%.", Text.get(use, "format.decimal")))
 end
 
-function AreaProfileText.color(profile: AreaProfiles.Profile): Color3
-	return Color3.fromHex(profile.color)
+-- S136: the profile colour as text on a surface (default parchment).
+function AreaProfileText.color(profile: AreaProfiles.Profile, surface: string?): Color3
+	return Theme.readable(profile.color, surface)
 end
 
 -- "⚡ Fast EXP"
@@ -39,12 +41,12 @@ function AreaProfileText.mults(use: Fusion.Use, profile: AreaProfiles.Profile): 
 end
 
 -- The icon in its colour for a RichText label (" ⚡" after a name), "" for an area without a profile.
-function AreaProfileText.iconRich(profileId: string?, before: string?): string
+function AreaProfileText.iconRich(profileId: string?, before: string?, surface: string?): string
 	local profile = AreaProfiles.get(profileId)
 	if not profile then
 		return ""
 	end
-	return `{before or ""}<font color="{profile.color}">{profile.icon}</font>`
+	return `{before or ""}<font color="{Theme.readableHex(profile.color, surface)}">{profile.icon}</font>`
 end
 
 -- Escapes text for a RichText label.

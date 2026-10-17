@@ -58,8 +58,8 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 						Name = member.name,
 						LayoutOrder = order,
 						Size = UDim2.fromOffset(WIDTH, HEIGHT),
-						BackgroundColor3 = Theme.Colors.Panel,
-						BackgroundTransparency = if far then 0.45 else 0.12,
+						BackgroundColor3 = Theme.Iron.Surface,
+						BackgroundTransparency = if far then 0.45 else Theme.HudAlpha,
 						AutoButtonColor = true,
 						Text = "",
 						[OnEvent("Activated")] = function()
@@ -69,14 +69,14 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 							s:New("UIStroke")({
 								ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-								Color = if member.id == p.leader then Theme.Colors.Gold else Theme.Colors.Border,
-								Thickness = 1.5,
+								Color = if member.id == p.leader then Theme.Brass.Bright else Theme.Brass.Line,
+								Thickness = Theme.Stroke.Thin,
 							}),
 							-- S119: class emblem once loaded (glyph otherwise).
 							ArtIcon(s, {
 								Key = if class then UiArt.classEmblem(class.id) else nil,
 								Glyph = if class then class.icon else "?",
-								GlyphColor = Theme.Colors.GoldBright,
+								GlyphColor = Theme.Brass.Bright,
 								Position = UDim2.fromOffset(6, 6),
 								Size = UDim2.fromOffset(28, 28),
 								Label = { TextScaled = true, FontFace = Theme.Fonts.BodyBold },
@@ -87,7 +87,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 							if member.id == p.leader and leaderArt
 								then ArtIcon.Image(s, {
 									Key = LEADER_ART,
-									Tint = Theme.Colors.GoldBright,
+									Tint = Theme.Brass.Bright,
 									Size = UDim2.fromOffset(14, 14),
 									Position = UDim2.fromOffset(2, 2),
 									ZIndex = 3,
@@ -96,7 +96,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 							if member.dead and deadArt
 								then ArtIcon.Image(s, {
 									Key = DEAD_ART,
-									Tint = Theme.Colors.DangerHover,
+									Tint = Theme.Iron.Danger,
 									Size = UDim2.fromOffset(22, 22),
 									Position = UDim2.fromOffset(9, 9),
 									ZIndex = 3,
@@ -111,20 +111,20 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 									elseif far then ` · {Text.get(use, "party.far")}`
 									else ""}`,
 								FontFace = Theme.Fonts.BodyBold,
-								TextSize = 15,
-								TextColor3 = if member.dead then Theme.Colors.DangerHover else Theme.Colors.Text,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = if member.dead then Theme.Iron.Danger else Theme.Iron.Text,
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
 							s:New("Frame")({
 								Position = UDim2.fromOffset(40, 28),
 								Size = UDim2.new(1, -48, 0, 12),
-								BackgroundColor3 = Theme.Colors.Background,
+								BackgroundColor3 = Theme.Iron.Sunken,
 								[Children] = {
 									s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
 									s:New("Frame")({
 										Size = UDim2.fromScale(hpRatio, 1),
-										BackgroundColor3 = Theme.Colors.Hp,
+										BackgroundColor3 = Theme.Resource.Hp,
 										[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
 									}),
 								},
@@ -132,12 +132,12 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 							s:New("Frame")({
 								Position = UDim2.fromOffset(40, 43),
 								Size = UDim2.new(1, -48, 0, 8),
-								BackgroundColor3 = Theme.Colors.Background,
+								BackgroundColor3 = Theme.Iron.Sunken,
 								[Children] = {
 									s:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
 									s:New("Frame")({
 										Size = UDim2.fromScale(manaRatio, 1),
-										BackgroundColor3 = Theme.Colors.Mana,
+										BackgroundColor3 = Theme.Resource.Mana,
 										[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
 									}),
 								},

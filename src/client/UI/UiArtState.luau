@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.IconState)
+local Theme = require(script.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local peek = Fusion.peek
@@ -172,7 +173,7 @@ local function refresh(label: TextLabel, entry: Entry)
 	local look = UiArtState.lookNow(entry.key)
 	if look then
 		UiArtState.apply(entry.image, look)
-		entry.image.ImageColor3 = if look.tint and entry.tint then entry.tint else Color3.new(1, 1, 1)
+		entry.image.ImageColor3 = if look.tint and entry.tint then entry.tint else Theme.Plain
 		entry.image.ImageTransparency = entry.alpha
 		entry.image.Rotation = entry.rotation
 		entry.image.Visible = true

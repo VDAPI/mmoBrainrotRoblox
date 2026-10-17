@@ -66,7 +66,7 @@ local function label(
 		TextWrapped = true,
 		FontFace = font or Theme.Fonts.Body,
 		TextSize = size or Theme.TextSize.Small,
-		TextColor3 = color or Theme.Colors.Text,
+		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
@@ -76,10 +76,10 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 		LayoutOrder = order,
 		Size = size,
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Colors.PanelRaised,
+		BackgroundColor3 = Theme.Paper.Raised,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			s:New("UIStroke")({ Color = Theme.Colors.GoldDim, Thickness = 1 }),
+			s:New("UIStroke")({ Color = Theme.Paper.Rule, Thickness = 1 }),
 			s:New("UIPadding")({
 				PaddingTop = UDim.new(0, 10),
 				PaddingBottom = UDim.new(0, 12),
@@ -87,7 +87,7 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 				PaddingRight = UDim.new(0, 12),
 			}),
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Colors.Gold, Theme.Fonts.Heading),
+			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display),
 			body,
 		},
 	})
@@ -161,14 +161,14 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			phase, startAt = t.phase :: Tourney.Phase, tonumber(t.startAt) :: number
 		end
 		local times = Tourney.times(startAt)
-		add(label(s, 0, Text.get(use, "tourney.desc"), nil, Theme.Colors.Parchment))
+		add(label(s, 0, Text.get(use, "tourney.desc"), nil, Theme.Paper.Text))
 		add(
 			label(
 				s,
 				0,
 				Text.get(use, "tourney.when", { utc = clockOf(startAt, true), ["local"] = clockOf(startAt, false) }),
 				Theme.TextSize.Body,
-				Theme.Colors.GoldBright,
+				Theme.Paper.Heading,
 				Theme.Fonts.BodyBold
 			)
 		)
@@ -185,24 +185,18 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 					0,
 					Text.get(use, "tourney.nextIn", { time = Time.format(Tourney.phaseEnds(phase, startAt) - clock) }),
 					nil,
-					Theme.Colors.TextMuted
+					Theme.Paper.TextMuted
 				)
 			)
 		end
 		if type(t) == "table" and t.server ~= nil and t.server ~= "world" then
-			add(label(s, 0, Text.get(use, "tourney.worldOnly"), nil, Theme.Colors.Warning))
+			add(label(s, 0, Text.get(use, "tourney.worldOnly"), nil, Theme.Paper.Warning))
 			return items
 		end
 		local bracket = Tourney.bracketOf(lvl)
 		if not bracket then
 			add(
-				label(
-					s,
-					0,
-					Text.get(use, "tourney.error.level", { level = Arena.MIN_LEVEL }),
-					nil,
-					Theme.Colors.Warning
-				)
+				label(s, 0, Text.get(use, "tourney.error.level", { level = Arena.MIN_LEVEL }), nil, Theme.Paper.Warning)
 			)
 			return items
 		end
@@ -280,7 +274,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 					0,
 					Text.get(use, "tourney.signed", { range = range }),
 					nil,
-					Theme.Colors.Success,
+					Theme.Paper.Success,
 					Theme.Fonts.BodyBold
 				)
 			)
@@ -295,13 +289,13 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 							0,
 							Text.get(use, "tourney.overflow", { rating = info.rating or 0, min = info.overflowRating }),
 							nil,
-							Theme.Colors.Warning
+							Theme.Paper.Warning
 						)
 					)
 				end
 			end
 			if info.mode == "local" then
-				add(label(s, 0, Text.get(use, "tourney.local"), nil, Theme.Colors.Warning))
+				add(label(s, 0, Text.get(use, "tourney.local"), nil, Theme.Paper.Warning))
 			end
 		end
 		return items
@@ -347,10 +341,10 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 					s:New("TextLabel")({
 						LayoutOrder = 1,
 						Size = UDim2.fromOffset(28, 28),
-						BackgroundColor3 = if def then Color3.fromHex(def.color) else Theme.Colors.Panel,
+						BackgroundColor3 = if def then Theme.tint(def.color) else Theme.Paper.Surface,
 						Text = if def then def.icon else "◆",
-						TextSize = 18,
-						TextColor3 = Theme.Colors.Text,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
 						FontFace = Theme.Fonts.Body,
 						[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
@@ -363,7 +357,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 				},
@@ -407,7 +401,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 					best = if best > 0 then placeText(use, best) else "—",
 				}),
 				nil,
-				Theme.Colors.Parchment,
+				Theme.Paper.Text,
 				Theme.Fonts.BodyMedium
 			)
 		)
@@ -430,10 +424,13 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			local list = hall[b.id]
 			local rows: { any } = {
 				s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-				label(s, 0, `{b.min}–{b.max}`, Theme.TextSize.Small, Theme.Colors.GoldBright, Theme.Fonts.BodyBold),
+				label(s, 0, `{b.min}–{b.max}`, Theme.TextSize.Small, Theme.Paper.Heading, Theme.Fonts.BodyBold),
 			}
 			if type(list) ~= "table" or #list == 0 then
-				table.insert(rows, label(s, 1, Text.get(use, "tourney.hall.empty"), 14, Theme.Colors.TextMuted))
+				table.insert(
+					rows,
+					label(s, 1, Text.get(use, "tourney.hall.empty"), Theme.TextSize.Small, Theme.Paper.TextMuted)
+				)
 			else
 				for n, row in list do
 					local className = Text.get(use, `class.{row.class}.name`)
@@ -444,7 +441,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 							n,
 							`{dateOf(use, row.id)} · {row.name} ({className})`,
 							14,
-							if n == 1 then Theme.Colors.GoldBright else Theme.Colors.Text,
+							if n == 1 then Theme.Paper.Heading else Theme.Paper.Text,
 							if n == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body
 						)
 					)
@@ -493,11 +490,11 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 				1,
 				`{Text.get(use, "tourney.title")} · {l.range}`,
 				Theme.TextSize.Body,
-				Theme.Colors.GoldBright,
-				Theme.Fonts.Heading
+				Theme.Paper.Heading,
+				Theme.Fonts.Display
 			)
 		)
-		table.insert(items, label(s, 2, status, Theme.TextSize.Body, Theme.Colors.Text, Theme.Fonts.BodyBold))
+		table.insert(items, label(s, 2, status, Theme.TextSize.Body, Theme.Paper.Text, Theme.Fonts.BodyBold))
 		if tonumber(l.endsAt) then
 			table.insert(
 				items,
@@ -510,7 +507,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 						{ s = math.max(0, math.ceil(l.endsAt - workspace:GetServerTimeNow())) }
 					),
 					nil,
-					Theme.Colors.Warning
+					Theme.Paper.Warning
 				)
 			)
 		end

@@ -75,7 +75,7 @@ local function stepper(
 				Text = Text.T(scope, labelKey),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.Text,
+				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			Button(scope, {
@@ -96,7 +96,7 @@ local function stepper(
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Colors.GoldBright,
+				TextColor3 = Theme.Paper.Heading,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 			Button(scope, {
@@ -127,7 +127,7 @@ local function skinTiles(scope: Scope, props: Props): Instance
 			LayoutOrder = i,
 			AutoButtonColor = false,
 			Text = "",
-			BackgroundColor3 = Color3.fromHex(skin.color),
+			BackgroundColor3 = Theme.tint(skin.color),
 			[OnEvent("Activated")] = function()
 				Sounds.play("click")
 				props.Look:set(with(Fusion.peek(props.Look), "skin", skin.id))
@@ -137,7 +137,7 @@ local function skinTiles(scope: Scope, props: Props): Instance
 				scope:New("UIStroke")({
 					ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 					Color = scope:Computed(function(use): Color3
-						return if use(props.Look).skin == skin.id then Theme.Colors.GoldBright else Theme.Colors.Border
+						return if use(props.Look).skin == skin.id then Theme.Brass.Frame else Theme.Paper.Rule
 					end),
 					Thickness = scope:Computed(function(use): number
 						return if use(props.Look).skin == skin.id then Theme.Stroke.Thick else Theme.Stroke.Thin
@@ -185,7 +185,7 @@ local function LookPicker(scope: Scope, props: Props): Instance
 						Text = Text.T(scope, "look.row.skin"),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Text,
+						TextColor3 = Theme.Paper.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 					}),
 					skinTiles(scope, props),

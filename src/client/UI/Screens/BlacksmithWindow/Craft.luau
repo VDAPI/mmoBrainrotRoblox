@@ -101,7 +101,9 @@ local function Craft(scope: Scope): Instance
 					if have < material.n then
 						missing = true
 					end
-					local color = if have >= material.n then "#4FD16B" else "#CC5248"
+					local color = if have >= material.n
+						then Theme.hex(Theme.Paper.Success)
+						else Theme.hex(Theme.Paper.Danger)
 					table.insert(
 						parts,
 						`<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`
@@ -113,7 +115,7 @@ local function Craft(scope: Scope): Instance
 						Name = recipe.id,
 						LayoutOrder = order,
 						Size = UDim2.new(1, 0, 0, 70),
-						BackgroundColor3 = Theme.Colors.PanelRaised,
+						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.4,
 						[Children] = {
 							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -130,7 +132,7 @@ local function Craft(scope: Scope): Instance
 								Text = ItemText.get(use, recipe.item, nil, recipe.el),
 								FontFace = Theme.Fonts.BodyBold,
 								TextSize = Theme.TextSize.Body,
-								TextColor3 = Theme.Colors.Text,
+								TextColor3 = Theme.Paper.Text,
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
@@ -143,7 +145,7 @@ local function Craft(scope: Scope): Instance
 								Text = table.concat(parts, "  "),
 								FontFace = Theme.Fonts.BodyMedium,
 								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Colors.GoldBright,
+								TextColor3 = Theme.Paper.Heading,
 								TextXAlignment = Enum.TextXAlignment.Left,
 							}),
 							Button(s, {
@@ -236,7 +238,7 @@ local function Craft(scope: Scope): Instance
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Colors.Parchment,
+						TextColor3 = Theme.Paper.Text,
 					}),
 					Button(scope, {
 						LayoutOrder = 4,
@@ -256,7 +258,7 @@ local function Craft(scope: Scope): Instance
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Colors.GoldDim,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
 				[Children] = {
 					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),

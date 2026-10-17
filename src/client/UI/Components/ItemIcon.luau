@@ -54,9 +54,9 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 		local def = use(props.Def)
 		local element = if props.Element ~= nil then use(props.Element) else nil
 		if element and Elements.COLORS[element] then
-			return Color3.fromHex(Elements.COLORS[element])
+			return Theme.tint(Elements.COLORS[element])
 		end
-		return if def then Color3.fromHex(def.icon.color) else Theme.Colors.Background
+		return if def then Theme.tint(def.icon.color) else Theme.Paper.Sunken
 	end)
 	local hasThing = scope:Computed(function(use): boolean
 		return use(props.Def) ~= nil
@@ -90,7 +90,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 				ImageRectSize = Vector2.new(ItemIcons.CELL, ItemIcons.CELL),
 				ImageColor3 = scope:Computed(function(use): Color3
 					local l = use(layer)
-					return if l and l.tint then Color3.fromHex(l.tint) else Theme.Plain
+					return if l and l.tint then Theme.tint(l.tint) else Theme.Plain
 				end),
 				ImageTransparency = fade,
 			})
@@ -137,7 +137,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 				end),
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					local hex = use(gem)
-					return if hex then Color3.fromHex(hex) else Theme.Plain
+					return if hex then Theme.tint(hex) else Theme.Plain
 				end),
 				BackgroundTransparency = fade,
 				[Children] = {
@@ -157,7 +157,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 			ArtIcon.Image(scope, {
 				Name = "EmptyArt",
 				Key = emptyKey,
-				Tint = Theme.Colors.Border,
+				Tint = Theme.Paper.Rule,
 				Size = UDim2.fromScale(0.8, 0.8),
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
@@ -184,7 +184,7 @@ local function ItemIcon(scope: Scope, props: Props): Instance
 				FontFace = Theme.Fonts.BodyBold,
 				TextScaled = true,
 				TextColor3 = scope:Computed(function(use): Color3
-					return if use(hasThing) then Theme.Colors.Text else Theme.Colors.Border
+					return if use(hasThing) then Theme.Paper.Text else Theme.Paper.Rule
 				end),
 				TextTransparency = scope:Computed(function(use): number
 					return math.min(1, use(fade) * 0.85)

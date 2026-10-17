@@ -85,9 +85,9 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 				Text = scope:Computed(function(use): string
 					return Text.get(use, `premium.tab.{use(selected)}`)
 				end),
-				FontFace = Theme.Fonts.Heading,
+				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Colors.Gold,
+				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
@@ -104,10 +104,7 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 						SortOrder = Enum.SortOrder.LayoutOrder,
 						Padding = UDim.new(0, 6),
 					}),
-					CurrencyIcon(
-						scope,
-						{ Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24), Surface = "iron" }
-					),
+					CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) }),
 					scope:New("TextLabel")({
 						LayoutOrder = 2,
 						Size = UDim2.fromOffset(0, 32),
@@ -118,7 +115,7 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 						end),
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Colors.Accent,
+						TextColor3 = Theme.Paper.Link,
 					}),
 				},
 			}),
