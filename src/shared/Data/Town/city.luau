@@ -357,7 +357,7 @@ local city: Types.City = {
 		vendor_hunter = { x = 262, z = 21, facing = 0, at = "loza" },
 		vendor_mage = { x = -246, z = -168, facing = 180, at = "wieza" },
 	},
-	spawn = { x = -30, z = -4, facing = 270 },
+	spawn = { x = -30, z = -4, facing = 20 }, -- W12 (MAPY Z1): through the fountain to the stairs and the Thorn Spire
 	arena = { x = 190, z = -160, half = 40, stands = 14, exit = { 190, -88 }, duel = { { 165, -160 }, { 215, -160 } } },
 	selectCamera = { eye = { 150, 70, 120 }, look = { -20, 10, -80 } },
 	fountain = { -30, -40 },

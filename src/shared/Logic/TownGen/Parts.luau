@@ -367,6 +367,7 @@ function Parts.tree(bp: BP, x: number, y: number, z: number, kind: TreeKind, sca
 	local rng = bp.rng
 	local s = scale * rng:float(0.85, 1.15)
 	local l: Blueprint.Lod = lod or "detail"
+	bp:beginKit(`tree:{kind}`, x, y, z, s, l) -- W12: asset kit slot (Data/Kit, biome "city")
 	local crown = CROWN[kind]
 	local leaf = { c = crown[rng:int(1, #crown)], m = "LeafyGrass" }
 	local bark = { c = if kind == "birch" then "#CFC8B8" else "#4A3A2C", m = "Wood" }
@@ -438,6 +439,7 @@ function Parts.tree(bp: BP, x: number, y: number, z: number, kind: TreeKind, sca
 			end
 		end
 	end
+	bp:endKit()
 end
 
 -- Fence from (ax, az) to (bx, bz) at ground heights ya / yb (current frame). kind: "rail", "wattle", "picket".

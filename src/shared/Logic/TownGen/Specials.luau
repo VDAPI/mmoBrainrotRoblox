@@ -421,7 +421,7 @@ local function temple(sp: any, ground: Ground): Build
 	bp:add("ball", nave + 1, 9, nave + 1, 0, NH - 4, ze, 0, 0, 0, o(Palette.slateRoof[1], "shell"))
 	-- front tower with the portal and the rose window
 	local tz = -D / 2 + towerD / 2
-	local TH = 44
+	local TH = 50 -- W12 (MAPY Z2): the Thorn Spire stands over the roofs from every gate (was 44)
 	bp:box(towerD + 1, TH, towerD + 1, 0, TH / 2, tz + 0.5, o(stone, "shell", { q = true }))
 	bp:box(towerD + 3, 0.8, towerD + 1, 0, NH, tz, o(Palette.ashlar[3]))
 	bp:box(towerD + 3, 0.8, towerD + 1, 0, TH - 8, tz, o(Palette.ashlar[3]))
@@ -471,21 +471,16 @@ local function temple(sp: any, ground: Ground): Build
 		})
 	end
 	local spireTop = TH + (towerD + 1) / 2 * math.tan(math.rad(76))
+	-- W12: the Thorn of Vael on the spire: a gilded spearhead (blade of two wedges and a socket ring) instead of the
+	-- ball, its edge glowing warm at night (the "lamp" behaviour); the silhouette piece is in the shell
+	local gold = { c = "#D8A93A", m = "Metal" }
 	bp:box(0.4, 4, 0.4, 0, spireTop + 2, tz + 0.5, o(Palette.metal[1]))
-	bp:add(
-		"ball",
-		1.6,
-		1.6,
-		1.6,
-		0,
-		spireTop + 4.4,
-		tz + 0.5,
-		0,
-		0,
-		0,
-		{ c = "#F0D070", m = "Neon", lod = "detail", tag = "lamp" }
-	)
-	bp:light(0, spireTop + 4.4, tz + 0.5, "#FFE08A", 30, 1.2, "lamp")
+	bp:add("cyl", 0.8, 1.1, 1.1, 0, spireTop + 4.2, tz + 0.5, 0, 0, 90, o(gold, "shell"))
+	-- a wedge is full height at its +Z face: the two full faces meet in the middle, the slopes make the point
+	bp:add("wedge", 0.5, 4.2, 1.1, 0, spireTop + 6.7, tz + 0.5 - 0.55, 0, 0, 0, o(gold, "shell"))
+	bp:add("wedge", 0.5, 4.2, 1.1, 0, spireTop + 6.7, tz + 0.5 + 0.55, 0, 180, 0, o(gold, "shell"))
+	bp:box(0.2, 3.6, 0.3, 0, spireTop + 6.5, tz + 0.5, { c = "#FFD878", m = "Neon", lod = "detail", tag = "lamp" })
+	bp:light(0, spireTop + 6, tz + 0.5, "#FFE08A", 40, 1.3, "lamp")
 	-- warm light from the portal at night and two braziers on the steps
 	for _, s in { -1, 1 } do
 		bp:add("cyl", 2.4, 1.2, 1.2, s * 5, 1.2, -D / 2 - 2.5, 0, 0, 90, o(Palette.metal[1], "shell"))

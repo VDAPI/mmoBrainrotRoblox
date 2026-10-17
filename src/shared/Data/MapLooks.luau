@@ -131,6 +131,44 @@ MapLooks.OUTDOOR = OUTDOOR
 MapLooks.UNDERGROUND_LOOK = UNDER
 MapLooks.byMap = BY_MAP
 
+-- W12 (docs/wyglad/mapy/miasto.md A7): windows at night: about a third glow, a warm amber instead of the yellow neon.
+MapLooks.windows = { share = 0.35, color = "#F0A050" }
+
+-- W12: the sun's colour over the city's day (hour, colour), blended between the points; used on maps with the day and
+-- night cycle instead of `sunColor` (dawn warm orange, a creamy day, a deep evening gold).
+MapLooks.sunByHour = {
+	{ 5, "#FFC090" },
+	{ 8, "#FFD8B0" },
+	{ 10, "#FFE6C4" },
+	{ 16, "#FFE6C4" },
+	{ 18, "#FFB878" },
+	{ 19.5, "#FF9A60" },
+} :: { { any } }
+
+-- The sun's colour at an hour of the cycle (MapLooks.sunByHour).
+function MapLooks.sunAt(hour: number): string
+	local list = MapLooks.sunByHour
+	if hour <= list[1][1] then
+		return list[1][2]
+	end
+	for i = 2, #list do
+		local a, b = list[i - 1], list[i]
+		if hour <= b[1] then
+			local t = (hour - a[1]) / (b[1] - a[1])
+			local function channel(hex: string, at: number): number
+				return tonumber(string.sub(hex, at, at + 1), 16) :: number
+			end
+			local out = "#"
+			for _, at in { 2, 4, 6 } do
+				local v = channel(a[2], at) + (channel(b[2], at) - channel(a[2], at)) * t
+				out ..= string.format("%02X", math.floor(v + 0.5))
+			end
+			return out
+		end
+	end
+	return list[#list][2]
+end
+
 -- W02: every base material some map overrides (the client clears the ones the current map does not set).
 function MapLooks.overriddenMaterials(): { string }
 	local seen: { [string]: boolean } = {}

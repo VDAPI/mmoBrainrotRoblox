@@ -199,3 +199,18 @@ przy Polanie), atak w biegu (mechanizm bez zmian: pozy po Animatorze, klipy atak
 Stare Drzewo, Szczyt Kuźni) zaimportowane do `ReplicatedStorage.Assets.Kit` (`city_landmark_01`, `city_statue_01`,
 `grass_landmark_01`, `forest_landmark_01`, `desert_landmark_01`), 4,3–9,4 tys. trójkątów, skala gry, podstawa na
 ziemi; na mapy wchodzą w W12, W13, W15, W17.
+
+### W12: Miasto (Vaelthorn), pierwsza część
+
+**Zrobione (wg `docs/wyglad/mapy/miasto.md`):** Iglica Ciernia (Tripo `city_landmark_01`) zamiast trzonu wieży maga
+(slot `landmark:mageTower`, cokół, drzwi i kryształy u stóp zostają), posąg Pani z Cierniem (`city_statue_01`) zamiast
+rycerza na fontannie (`landmark:fountainStatue`), drzewa miasta z zestawu (sloty `tree:<rodzaj>` w `Parts.tree`, nowe
+`tree:apple`, `tree:yew`), iglica świątyni wyższa (50) ze złotym grotem i światłem widocznym z daleka, start gracza
+obrócony na plac (`spawn.facing = 20`), okna nocą: 35% świeci bursztynem `#F0A050` zamiast 60% żółtego neonu
+(`MapLooks.windows`), kolor słońca zmienia się z porą dnia (`MapLooks.sunByHour`: świt pomarańcz, dzień krem, wieczór
+głęboki złoty). `Kit` dostał `turn` (stały obrót modelu bez losowania).
+
+**Nie zrobione:** pierścień horyzontu Z3 (wzgórza Łąk, sosny Boru, wulkan, szczyty), zostaje na kolejną część W12.
+
+**Pliki:** `Data/Kit`, `Data/MapLooks`, `Data/Town/city`, `Logic/KitPick`, `Logic/TownGen/{ClassHalls,Props,Parts,Specials}`,
+`server/World/Layouts/city`, `client/Controllers/{TownFxController,WorldController}`, `tests/kit.spec`.

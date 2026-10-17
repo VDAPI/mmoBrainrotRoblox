@@ -113,7 +113,9 @@ local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: an
 		OutdoorAmbient = mix(day.outdoorAmbient, n.outdoorAmbient, t),
 		FogColor = mix(day.fogColor, n.fogColor, t),
 		FogEnd = lerp(day.fogEnd, n.fogEnd, t),
-		ColorShift_Top = Color3.fromHex(look.sunColor):Lerp(Color3.new(1, 1, 1), t),
+		-- W12: on the cycle the sun's colour follows the hour (MapLooks.sunAt), else the map's fixed colour
+		ColorShift_Top = Color3.fromHex(if night then MapLooks.sunAt(clock) else look.sunColor)
+			:Lerp(Color3.new(1, 1, 1), t),
 	}, {
 		Density = lerp(day.atmosphere.density, n.atmosphere.density, t),
 		Haze = lerp(day.atmosphere.haze, n.atmosphere.haze, t),

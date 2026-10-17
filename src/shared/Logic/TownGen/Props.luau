@@ -250,13 +250,15 @@ local function fountain(city: any, ground: Ground): Build
 	)
 	bp:add("cyl", 2.5, 1, 1, 0, 6.2, 0, 0, 0, 90, o(STONE))
 	bp:add("cyl", 0.5, 2.6, 2.6, 0, 7.5, 0, 0, 0, 90, o(light))
-	-- the knight
+	-- the knight (W12: an asset kit slot, Data/Kit "landmark:fountainStatue": the Lady with the Thorn)
+	bp:beginKit("landmark:fountainStatue", 0, 7.75, 0, 1, "detail")
 	bp:box(1.3, 2.4, 0.8, 0, 9, 0, o(BRONZE))
 	bp:box(0.5, 1.6, 0.6, -0.35, 7.5 + 0.3, 0, o(BRONZE, "fine"))
 	bp:box(0.5, 1.6, 0.6, 0.35, 7.5 + 0.3, 0, o(BRONZE, "fine"))
 	bp:add("ball", 0.95, 1.05, 0.95, 0, 10.75, 0, 0, 0, 0, o(BRONZE))
 	bp:beam(0.6, 9.8, 0, 1.1, 13.6, -0.2, 0.25, o(BRONZE))
 	bp:add("cyl", 0.2, 1.6, 1.6, -0.75, 9, -0.2, 0, 90, 0, o(BRONZE, "fine"))
+	bp:endKit()
 	-- streams from the upper bowl
 	for i = 0, 3 do
 		local ra = math.rad(i * 90 + 45)

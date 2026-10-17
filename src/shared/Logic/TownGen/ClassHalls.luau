@@ -146,6 +146,9 @@ function ClassHalls.mageTower(sp: any, ground: Ground, kit: Kit): Build
 	end
 	-- plinth (reaching below the lowest ground) and the shaft
 	vcyl(2 + below, 13, (2 - below) / 2, o(rubble, "shell", { q = true }))
+	-- W12: the shaft, windows, balcony, roof and crystal are one asset kit slot (Data/Kit "landmark:mageTower": the
+	-- painted tower model); the plinth, the door, the steps and the crystals at the foot stay
+	bp:beginKit("landmark:mageTower", 0, 2, 0, 1, "shell")
 	vcyl(H, R * 2, H / 2, o(stone, "shell", { q = true }))
 	vcyl(0.6, R * 2 + 0.6, 12, o(Palette.ashlar[4], "detail"))
 	-- windows: three rows of four, turned away from the door
@@ -180,6 +183,7 @@ function ClassHalls.mageTower(sp: any, ground: Ground, kit: Kit): Build
 	bp:add("cyl", 2.2, 0.4, 0.4, 0, top + 1.1, 0, 0, 0, 90, o(Palette.metal[1]))
 	bp:rbox(1.7, 1.7, 1.7, 0, top + 3.2, 0, 45, 0, 35.26, { c = CRYSTAL, m = "Neon", lod = "detail", tag = "glow" })
 	bp:rbox(1, 1, 1, 0, top + 4.6, 0, 45, 0, 35.26, { c = "#B8A8F0", m = "Neon", lod = "fine", tag = "glow" })
+	bp:endKit()
 	bp:light(0, top + 2, 0, "#A08CFF", 24, 1.2, "glow")
 	-- the door on the front (local -Z) standing on the plinth top (y = 2), its stone portal, the banner, the steps
 	-- down over the plinth edge and two glowing crystals on pedestals at the plinth's foot

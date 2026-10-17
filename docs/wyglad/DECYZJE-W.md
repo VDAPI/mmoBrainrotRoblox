@@ -29,3 +29,5 @@
 - **W08** `stride.run` = 8, nie zmierzone 6,6: domyślny bieg Roblox ma krótki krok i przy 16 st/s wyglądałby jak drobienie (×2,4); lekki poślizg do czasu własnego klipu biegu.
 - **W08** IK stóp tylko podnosi stopę nad wyższą ziemią; biodra zostają (obniżanie wymagałoby `HipHeight` albo zapisu `Root` w tym samym kroku co pozy ataków).
 - **W08** Punkty orientacyjne z Tripo: model w `Assets.Kit` z `PivotOffset` u podstawy (z `PrimaryPart` `PivotTo` bierze pivot części, nie `WorldPivot`).
+- **W12** Punkty orientacyjne miasta przez sloty zestawu (`landmark:*`, stały obrót `turn`), nie osobne wstawianie: bez modelu w miejscu (`/kit off`, inne miejsce) zostaje bryła z generatora.
+- **W12** Kolor słońca miasta z tabeli godzin (`MapLooks.sunByHour`) zamiast jednego `sunColor`; mapy ze stałą godziną bez zmian.

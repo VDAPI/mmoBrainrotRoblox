@@ -71,7 +71,7 @@ function KitPick.pick(key: string, biome: string, x: number, z: number, s: numbe
 	end
 	local t = KitPick.hash(key, x, z, 2)
 	local extra = chosen.scale[1] + (chosen.scale[2] - chosen.scale[1]) * t
-	local yaw = if chosen.yaw then KitPick.hash(key, x, z, 3) * 360 else 0
+	local yaw = if chosen.yaw then KitPick.hash(key, x, z, 3) * 360 else chosen.turn or 0
 	return { variant = chosen, fit = entry.fit, size = entry.size * s * extra, yaw = yaw, sink = chosen.sink or 0 }
 end
 
