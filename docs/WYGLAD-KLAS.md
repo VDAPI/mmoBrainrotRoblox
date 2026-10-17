@@ -15,8 +15,12 @@ Każdy element wyglądu (część stroju, twarz, fryzura, koszula, spodnie) bier
    Tripo albo Studio, zakładane w miejsce części z kodu.
 3. **Nic**: część z kodu (procedural), jak dziś.
 
-Postać jest zawsze standardowym R15: skale, typ ciała i animacje z awatara gra zeruje (ruchy S110–S117, siodło,
-równe sylwetki w PvP). Przedmiot z katalogu musi pasować do zwykłej postaci R15.
+**Ciało (W09):** każda postać ma to samo ciało gry, darmowe ciało Roblox „Base Body - Dawson” z dynamiczną głową
+(własna twarz, brwi, rzęsy), skalowane do wysokości dawnej postaci (`Data/BodyLooks`); skale i animacje z awatara gra
+zeruje (ruchy S110–S117, siodło, równe sylwetki w PvP). Fryzury kreatora to darmowe fryzury Roblox w kolorze z kreatora
+(`BodyLooks.hairs`, barwienie `Logic/HairTint`); „ogolona” to goła głowa. Na dynamicznej głowie gra nie rysuje oczu,
+brwi i ust z części; broda zostaje (kawałek pod ustami), blizna i piegi wracają z twarzami kreatora (W10). Przedmiot z
+katalogu musi pasować do postaci R15.
 
 ## 2. Puste miejsca
 

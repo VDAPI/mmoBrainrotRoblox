@@ -205,6 +205,16 @@ Bez modelu gra stawia klocki generatora (jedno ostrzeżenie `[Kit]` na nazwę).
 | punkty orientacyjne | `city_landmark_01`, `city_statue_01`, `grass_landmark_01`, `forest_landmark_01`, `desert_landmark_01` | Tripo (konto Pro właściciela), Smart Mesh 5000, GLB 2048 (`assets/Kit/src/*.glb`, tylko lokalnie) | właściciel | własne | 2026-10-17 | jedna MeshPart, tekstura bez krwi; skala: 95 / 11 / 36 / 75 / 420 studów |
 | materiały terenu | `VaelthornGrass`, `VaelthornGround`, `VaelthornRock`, `VaelthornCobble` (+ warianty 1–3) | Material Generator w Studio (MCP `generate_material`), `MaterialService` | własne | własne | 2026-10-17 | per mapa przez `Data/MapLooks.materials` |
 
+## Ciało postaci (W09)
+
+Nic w miejscu ani w repo: serwer zakłada części przez `HumanoidDescription`, fryzury ładuje przy starcie
+(`InsertService`, folder `ReplicatedStorage.VaelthornHairs`). Dane `src/shared/Data/BodyLooks.luau`.
+
+| Co | Id | Źródło | Twórca | Licencja | Data |
+|---|---|---|---|---|---|
+| ciało i dynamiczna głowa, brwi, rzęsy | pakiet `991` „Base Body - Dawson” (części `11709862883`–`11709884954`) | katalog Roblox, darmowy | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
+| fryzury | `9243987340`, `9244111257`, `9244095135`, `7193454569`, `9174353649`, `7193452166`, `9244021842` | katalog Roblox (z darmowych pakietów „Base Body”) | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
+
 ## Ikony przedmiotów (S35)
 
 Trzy atlasy `art/icons/items_1..3.png` (1024×1024, komórki 128 px, 91 ikon w 145 warstwach, rysowane kodem) i indeks

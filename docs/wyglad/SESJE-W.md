@@ -214,3 +214,30 @@ głęboki złoty). `Kit` dostał `turn` (stały obrót modelu bez losowania).
 
 **Pliki:** `Data/Kit`, `Data/MapLooks`, `Data/Town/city`, `Logic/KitPick`, `Logic/TownGen/{ClassHalls,Props,Parts,Specials}`,
 `server/World/Layouts/city`, `client/Controllers/{TownFxController,WorldController}`, `tests/kit.spec`.
+
+### W09: Ciało postaci
+
+**Wybór (A):** A1, darmowe ciało Roblox „Base Body - Dawson” (pakiet 991): ludzkie proporcje, dynamiczna głowa z własną
+twarzą, brwi i rzęsy jako akcesoria warstwowe. Porównane w Studio z Harper i Jordan (ta sama wysokość 5,9–6,2 przy
+skali 1) i ze standardowym R15 (5,46): wybrane jako najbardziej neutralne pod poważne fantasy. Skala wysokości 0,9:
+postać 5,77 (+6% wobec dawnej), `HumanoidRootPart` 2 × 1,8 × 1. A2 (ciało z Tripo + Avatar Setup) niezrobione.
+
+**W grze (B):** `Data/BodyLooks` (części, brwi, rzęsy, skale, fryzury), `AvatarBuild.description` zakłada ciało w obu
+trybach (klasa i awatar: równe sylwetki), naklejka twarzy wyłączona na dynamicznej głowie; kolor skóry z `ClassLooks`
+działa na częściach siatki. Manekin podglądów: części ustawiane według stawów przed zakotwiczeniem (poza Workspace
+`AnimationConstraint` się nie liczy, głowa wisiała 7 studów nad tułowiem).
+
+**Włosy i twarz:** 7 stylów kreatora → darmowe fryzury Roblox (`BodyLooks.hairs`, serwer ładuje je do
+`ReplicatedStorage.VaelthornHairs`), kolor przez `SurfaceAppearance.Color` (jasna tekstura) albo czarna tekstura dla
+ciemnych kolorów i sam kolor dla jasnych (`Logic/HairTint`); „ogolona” = goła głowa. Na dynamicznej głowie bez oczu,
+brwi i ust z części; broda z dwóch kawałków od `FaceFrontAttachment`.
+
+**Stroje (C):** części z `GARMENTS` liczą się od rozmiarów części ciała, więc pasują do węższego tułowia same; bez
+nowych kształtów (C2) w tej sesji.
+
+**Sprawdzone w Studio:** żywa postać (głowa MeshPart, brwi, rzęsy, fryzura na głowie, 6 części stroju), manekin
+5,77 × 2,64. Nie oglądane (Studio w tle nie renderuje): przenikanie strojów w biegu i ataku, chwyt broni.
+
+**Pliki:** `src/shared/Data/BodyLooks.luau`, `src/shared/Logic/HairTint.luau`, `tests/bodylooks.spec.luau` (nowe),
+`src/shared/Util/AvatarBuild.luau`, `src/server/Services/CosmeticService.luau`, `tools/balance_reasons.luau`,
+`docs/ASSETS.md`, `docs/WYGLAD-KLAS.md`, `docs/wyglad/*`.

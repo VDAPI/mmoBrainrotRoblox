@@ -24,6 +24,7 @@
 -- the world when the save proves them. The mannequin of the client previews (ReplicatedStorage.VaelthornMannequin).
 
 local Players = game:GetService("Players")
+local InsertService = game:GetService("InsertService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -31,6 +32,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 local AvatarBuild = require(Shared.Util.AvatarBuild)
+local BodyLooks = require(Shared.Data.BodyLooks)
 local CharacterLook = require(Shared.Logic.CharacterLook)
 local ClassLooks = require(Shared.Data.ClassLooks)
 local CosmeticLook = require(Shared.Util.CosmeticLook)
@@ -645,6 +647,30 @@ function CosmeticService.SetRobloxAvatar(player: Player, on: boolean)
 	CosmeticService.RefreshAppearance(player)
 end
 
+-- W09: the Roblox hairstyles of Data/BodyLooks into ReplicatedStorage (AvatarBuild puts them on characters and
+-- previews; a style that does not load keeps the procedural hair).
+local function loadHairs()
+	local folder = Instance.new("Folder")
+	folder.Name = BodyLooks.HAIR_FOLDER
+	for style, def in BodyLooks.hairs do
+		local ok, loaded = pcall(function()
+			return InsertService:LoadAsset(def.id)
+		end)
+		local accessory = if ok and loaded then loaded:FindFirstChildWhichIsA("Accessory", true) else nil
+		if accessory then
+			LookBuild.stripScripts(accessory)
+			accessory.Name = style
+			accessory.Parent = folder
+		else
+			log:warn("hairstyle %s (%d) did not load: procedural hair", style, def.id)
+		end
+		if ok and loaded then
+			loaded:Destroy()
+		end
+	end
+	folder.Parent = ReplicatedStorage
+end
+
 -- S132: the standard figure of the client previews (creator, wardrobe, look window).
 local function buildMannequin()
 	local spec = CharacterLook.resolve({ classId = "Warrior", look = ClassLooks.DEFAULT_LOOK, robloxAvatar = false })
@@ -657,6 +683,38 @@ local function buildMannequin()
 	end
 	local mannequin = model :: Model
 	LookBuild.stripScripts(mannequin)
+	-- W09: outside the Workspace no joint is solved (the dynamic head and the brows stayed where they loaded): every
+	-- part goes where its joint (Motor6D / weld, or the AnimationConstraint of the body) puts it, from the root
+	-- outwards, before the figure is anchored
+	local root = mannequin:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		local links: { { any } } = {}
+		for _, item in mannequin:GetDescendants() do
+			if item:IsA("JointInstance") and item.Part0 and item.Part1 then
+				table.insert(links, { item.Part0, item.Part1, item.C0, item.C1 })
+			elseif item:IsA("AnimationConstraint") and item.Attachment0 and item.Attachment1 then
+				local a0, a1 = item.Attachment0 :: Attachment, item.Attachment1 :: Attachment
+				table.insert(links, { a0.Parent, a1.Parent, a0.CFrame, a1.CFrame })
+			end
+		end
+		local placed: { [Instance]: boolean } = { [root] = true }
+		local moved = true
+		while moved do
+			moved = false
+			for _, link in links do
+				local p0, p1, c0, c1 = link[1], link[2], link[3], link[4]
+				if p0:IsA("BasePart") and p1:IsA("BasePart") then
+					if placed[p0] and not placed[p1] then
+						p1.CFrame = p0.CFrame * c0 * c1:Inverse()
+						placed[p1], moved = true, true
+					elseif placed[p1] and not placed[p0] then
+						p0.CFrame = p1.CFrame * c1 * c0:Inverse()
+						placed[p0], moved = true, true
+					end
+				end
+			end
+		end
+	end
 	mannequin.Name = AvatarBuild.MANNEQUIN
 	mannequin.Archivable = true
 	for _, item in mannequin:GetDescendants() do
@@ -727,6 +785,7 @@ function CosmeticService.Start()
 			task.spawn(avatarOf, player)
 		end
 	end)
+	task.spawn(loadHairs)
 	task.spawn(buildMannequin)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)

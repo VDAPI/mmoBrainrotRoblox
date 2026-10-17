@@ -9,8 +9,10 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BodyLooks = require("../Data/BodyLooks")
 local CharacterLook = require("../Logic/CharacterLook")
 local ClassLooks = require("../Data/ClassLooks")
+local HairTint = require("../Logic/HairTint")
 local LookBuild = require("./LookBuild")
 
 local AvatarBuild = {}
@@ -72,11 +74,12 @@ end
 
 -- The description of a character (server; the client never applies descriptions). Class mode: a standard R15 body in
 -- the skin colour, the catalog face, clothing and accessories of the spec and nothing else. Avatar mode: a copy of
--- `base` (the player's own description) with the outfit's catalog clothing over it. Both: standard body parts (no
--- Rthro or dynamic heads), scales standard / clamped (Logic/CharacterLook), no animations.
+-- `base` (the player's own description) with the outfit's catalog clothing over it. Both: the game's body (W09,
+-- Data/BodyLooks: one base body with a dynamic head for everybody), scales of that body / clamped (Logic/CharacterLook),
+-- no animations.
 function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDescription?): HumanoidDescription
 	local desc: any = if base and spec.mode == "avatar" then base:Clone() else Instance.new("HumanoidDescription")
-	local scales: { [string]: number } = CharacterLook.STANDARD :: any
+	local scales: { [string]: number } = BodyLooks.scales :: any
 	if spec.mode == "avatar" and base then
 		scales = CharacterLook.clampScales({
 			height = base.HeightScale,
@@ -86,6 +89,8 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 			bodyType = base.BodyTypeScale,
 			proportion = base.ProportionScale,
 		})
+		scales = table.clone(scales)
+		scales.height *= BodyLooks.scales.height
 	end
 	desc.HeightScale = scales.height
 	desc.WidthScale = scales.width
@@ -94,7 +99,7 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 	desc.BodyTypeScale = scales.bodyType
 	desc.ProportionScale = scales.proportion
 	for _, field in BODY_FIELDS do
-		desc[field] = 0
+		desc[field] = BodyLooks.parts[field] or 0
 	end
 	for _, field in ANIMATIONS do
 		desc[field] = 0
@@ -104,7 +109,8 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		for _, field in COLOR_FIELDS do
 			desc[field] = skin
 		end
-		desc.Face = if spec.face then spec.face.catalog else 0
+		-- a dynamic head draws its own face: a catalog face decal would not show on it
+		desc.Face = if spec.face and BodyLooks.parts.Head == 0 then spec.face.catalog else 0
 		desc.Shirt = spec.shirt
 		desc.Pants = spec.pants
 		desc.GraphicTShirt = 0
@@ -112,7 +118,21 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 			desc[field] = ""
 		end
 		pcall(function()
-			desc:SetAccessories({}, true) -- layered clothing of a copied description, never in the class look
+			-- layered clothing of a copied description never in the class look; the dynamic head's brows and lashes
+			desc:SetAccessories({
+				{
+					AssetId = BodyLooks.eyebrows,
+					AccessoryType = Enum.AccessoryType.Eyebrow,
+					IsLayered = true,
+					Order = 1,
+				},
+				{
+					AssetId = BodyLooks.eyelashes,
+					AccessoryType = Enum.AccessoryType.Eyelash,
+					IsLayered = true,
+					Order = 2,
+				},
+			}, true)
 		end)
 	else
 		if spec.shirt ~= 0 then
@@ -530,6 +550,9 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 	end,
 	hair_shaved = function(ctx)
 		local h = ctx.head
+		if h and h:IsA("MeshPart") then
+			return -- W09: the dynamic head is bare (a shadow box over a sculpted scalp looks like a cap)
+		end
 		local part = piece(ctx, h, rel(h, 1.01, 0.3, 1.01), at(h, 0, 0.36, 0.02), nil, Enum.Material.SmoothPlastic)
 		if part then
 			part.Transparency = 0.35
@@ -596,6 +619,28 @@ local EYE_HEIGHT: { [string]: number } = { calm = 0.06, narrow = 0.035, wide = 0
 local function drawFace(ctx: Ctx, face: CharacterLook.FaceSpec, skin: Color3, preview: boolean?)
 	local head = ctx.head
 	if not head then
+		return
+	end
+	local front = head:FindFirstChild("FaceFrontAttachment")
+	if front and front:IsA("Attachment") and head:IsA("MeshPart") then
+		-- W09: a dynamic head has its own eyes, brows and mouth; only a beard is added (a rounded piece under the
+		-- mouth, from the face's front attachment). Scars and freckles come back with the creator's faces (W10).
+		if face.mouth == "beard" then
+			local hair = Color3.fromHex(face.hair)
+			local w = head.Size.X
+			local at0 = front.CFrame
+			local chin =
+				piece(ctx, head, Vector3.new(w * 0.62, w * 0.36, w * 0.3), at0 * CFrame.new(0, -w * 0.3, w * 0.1))
+			local jaw =
+				piece(ctx, head, Vector3.new(w * 0.78, w * 0.22, w * 0.36), at0 * CFrame.new(0, -w * 0.2, w * 0.2))
+			for _, p in { chin, jaw } do
+				if p then
+					p.Name = "FacePiece"
+					p.Color = hair
+					p.Material = Enum.Material.Fabric
+				end
+			end
+		end
 		return
 	end
 	local frame = if preview == true then partMarks(ctx, head) else guiMarks(ctx, head)
@@ -720,6 +765,62 @@ local function placeAsset(ctx: Ctx, key: string, color: Color3): boolean
 	return true
 end
 
+-- W09: the Roblox hairstyle of `style` (Data/BodyLooks.hairs, loaded by the server into ReplicatedStorage), tinted
+-- with the hair colour (Logic/HairTint); false when there is none (the procedural hairstyle is drawn instead).
+local function placeHair(ctx: Ctx, style: string, hex: string): boolean
+	local def = BodyLooks.hairs[style]
+	local folder = ReplicatedStorage:FindFirstChild(BodyLooks.HAIR_FOLDER)
+	local template = folder and folder:FindFirstChild(style)
+	local humanoid = ctx.model:FindFirstChildOfClass("Humanoid")
+	if not def or not template or not template:IsA("Accessory") or not humanoid then
+		return false
+	end
+	local clone = template:Clone()
+	LookBuild.stripScripts(clone)
+	clone:SetAttribute(ASSET_ATTRIBUTE, true)
+	local mode, tint = HairTint.plan(hex, def.light)
+	local color = Color3.new(tint[1], tint[2], tint[3])
+	for _, item in clone:GetDescendants() do
+		if item:IsA("SurfaceAppearance") then
+			if mode == "flat" then
+				item:Destroy()
+			else
+				pcall(function()
+					(item :: any).Color = color
+				end)
+			end
+		elseif item:IsA("MeshPart") then
+			item.CanCollide = false
+			item.CanQuery = false
+			item.CanTouch = false
+			item.Massless = true
+			if mode == "flat" then
+				item.TextureID = ""
+				item.Color = color
+				item.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	end
+	-- the handle on its attachment first: a preview (or the anchored mannequin) solves no weld outside the Workspace
+	local handle = clone:FindFirstChild("Handle")
+	if handle and handle:IsA("BasePart") then
+		for _, att in handle:GetChildren() do
+			local target = if att:IsA("Attachment") and ctx.head then ctx.head:FindFirstChild(att.Name) else nil
+			if target and target:IsA("Attachment") then
+				handle.CFrame = target.WorldCFrame * (att :: Attachment).CFrame:Inverse()
+				break
+			end
+		end
+	end
+	local ok = pcall(function()
+		humanoid:AddAccessory(clone)
+	end)
+	if not ok then
+		clone:Destroy()
+	end
+	return ok
+end
+
 -- Apply / clear -------------------------------------------------------------------------------------
 
 local function hasQuiver(model: Model): boolean
@@ -831,7 +932,9 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 	if hair and (hair.catalog == 0 or preview == true) then
 		ctx.color = Color3.fromHex(hair.color)
 		local draw = DRAW[`hair_{hair.style}`]
-		if draw and not (hair.asset and placeAsset(ctx, hair.asset, ctx.color)) then
+		local placed = (hair.asset ~= nil and placeAsset(ctx, hair.asset, ctx.color))
+			or (ctx.head ~= nil and ctx.head:IsA("MeshPart") and placeHair(ctx, hair.style, hair.color))
+		if draw and not placed then
 			draw(ctx)
 		end
 	end

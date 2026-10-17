@@ -31,3 +31,5 @@
 - **W08** Punkty orientacyjne z Tripo: model w `Assets.Kit` z `PivotOffset` u podstawy (z `PrimaryPart` `PivotTo` bierze pivot części, nie `WorldPivot`).
 - **W12** Punkty orientacyjne miasta przez sloty zestawu (`landmark:*`, stały obrót `turn`), nie osobne wstawianie: bez modelu w miejscu (`/kit off`, inne miejsce) zostaje bryła z generatora.
 - **W12** Kolor słońca miasta z tabeli godzin (`MapLooks.sunByHour`) zamiast jednego `sunColor`; mapy ze stałą godziną bez zmian.
+- **W09** Ciało: darmowe „Base Body - Dawson” Roblox (A1) dla wszystkich, skala 0,9 (wysokość +6%); A2 z Tripo czeka na model. Jedno ciało także w trybie awatara (równe sylwetki); wybór budowy w W10.
+- **W09** Fryzury kreatora z katalogu Roblox ładowane przez serwer do `ReplicatedStorage` (nie przez opis postaci), żeby podglądy na kliencie pokazywały to samo co postać.

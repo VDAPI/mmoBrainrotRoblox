@@ -13,6 +13,8 @@ W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), ocena
 
 W08: własny `Animate` (lokomocja z `Data/Locomotion`, przenikanie chód/bieg, skok, upadek, lądowanie, wspinanie, pływanie, warianty bezczynności), IK stóp; klipy jeszcze domyślne Roblox. Czeka na ocenę właściciela.
 
+W09: ciało Roblox „Base Body - Dawson” z dynamiczną głową dla wszystkich, fryzury z katalogu w kolorze kreatora, broda na nowej głowie. Czeka na ocenę.
+
 W12 (część 1): Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
 
 ## Niedokończone
@@ -26,5 +28,6 @@ W12 (część 1): Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, dr
 - W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).
 - W08: klipy Mixamo (`KLIPY-RUCH.md`) do pobrania przez właściciela; potem konwersja, pomiar `stride`, ID w `Locomotion.clips`.
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
+- W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W12: pierścień horyzontu Z3 miasta (`mapy/miasto.md`) nie zrobiony.
 - W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).
