@@ -120,7 +120,7 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 
 ### Oceny
 
-(puste)
+- Plan (ten plik): OK (2026-10-17)
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 
@@ -154,7 +154,13 @@ Kolejność: najpierw fundament i jeden widoczny pilot (szybka ocena właścicie
 | W28 | Interfejs: szlif po S135–S136 (HUD, animacje okien, ikony, liczby obrażeń) | zrzuty |
 | W29 | Przegląd telefonu i trybu niskiego na całym świecie, poprawki wydajności | liczby |
 
-Pliki sesji `docs/sessions/Wxx.md` powstają po kolei (najpierw W01–W03), żeby każda kolejna uwzględniała oceny poprzednich.
+### Jak to idzie (od 2026-10-17)
+
+- Faza wyglądu idzie **równolegle do mechaniki** na gałęzi **`wyglad`** (decyzja właściciela 2026-10-17). Kolejka mechaniki dalej robi `main` według `docs/sessions/DALEJ.md`. Runner fazy wyglądu: `docs/sessions/DALEJ-WYGLAD.md`.
+- Każda sesja W najpierw scala świeży `main` do `wyglad`, a po ocenie „Wxx: OK” zmiany trafiają na `main` przez PR.
+- **Kolejność na gałęzi** (nie numeracja): W01, W02, W11, W08, W09, W10, W12–W27, potem **W03–W07 dopiero po S148 na `main`** (nowe umiejętności muszą być gotowe, żeby nie robić efektów dwa razy), na końcu W28, W29.
+- Sesje W robi teraz wątek „Wzorzec wyglądu gry” w chmurze, bez Studio: kod według planu, ocena z danych, a właściciel ogląda efekt w Studio na gałęzi `wyglad` i daje ocenę.
+- Pliki sesji `docs/sessions/Wxx.md` powstają po kolei, żeby każda kolejna uwzględniała oceny poprzednich.
 
 ### Co się stało z S134l i S142b
 
