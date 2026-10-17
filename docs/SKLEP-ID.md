@@ -86,6 +86,7 @@ się dla nich nie ustawia.
 | `scroll_skillreset` | scroll | 120 | — | 85,70 | 118,80 | — |
 | `scroll_unbind` | scroll | 150 | — | 107,12 | 148,50 | — |
 | `scroll_protection` | scroll | 60 | — | 42,85 | 59,40 | 1/dzień |
+| `reroll_stone` | scroll | 80 | — | 57,13 | 79,20 | 1/dzień |
 | `rename` | service | 400 | — | 285,66 | 396 | — |
 | `backpack_premium_100` | backpack | 300 | — | 214,24 | 297 | — |
 | `backpack_premium_150` | backpack | 600 | — | 428,49 | 594 | — |

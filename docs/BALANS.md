@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S134i (commit ab414dc, 2026-10-16) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S134j (commit d2fbce5, 2026-10-17) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -136,29 +136,16 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `Areas/ashen:lairs[ashen_bonenest].lv[1]` | 62 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/ashen:lairs[ashen_bonenest].lv[2]` | 64 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/ashen:lairs[ashen_bonepit].lv[1]` | 55 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/ashen:lairs[ashen_bonepit].lv[2]` | 57 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/ashen:lairs[ashen_sunkengrave].lv[1]` | 67 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/ashen:lairs[ashen_sunkengrave].lv[2]` | 69 | S134i | new table: three hideouts 55-57 (fire golem; 56-58 reached the 58-70 band, then three hideouts there: 1.78 of the caves), 62-64 (basilisk), 67-69 (desert mummy) |
-| `Areas/duskwood:lairs[duskwood_drownedring].lv[1]` | 35 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/duskwood:lairs[duskwood_drownedring].lv[2]` | 37 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[1]` | 42 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/duskwood:lairs[duskwood_gallowsknoll].lv[2]` | 44 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/duskwood:lairs[duskwood_hangedring].lv[1]` | 30 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/duskwood:lairs[duskwood_hangedring].lv[2]` | 32 | S134i | new table: three hideouts 30-32 (rot ent), 35-37 (bog serpent: the swamp troll fails the duo / trio Elite II rows), 42-44 (blood bat), one band each but 33-45 with two (band hour 1.33 of the caves alone, <= 1.35) |
-| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[1]` | 93 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/frostpeak:lairs[frostpeak_buriedcamp].lv[2]` | 95 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[1]` | 73 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/frostpeak:lairs[frostpeak_frozencamp].lv[2]` | 75 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[1]` | 83 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/frostpeak:lairs[frostpeak_tuskcamp].lv[2]` | 85 | S134i | new table: three hideouts 73-75 (snow leopard), 83-85 (ice mammoth; 86-88 sat in both 71-86 and 86-100), 93-95 (dragonspawn) |
-| `Areas/meadows:lairs[meadows_poacherspen].lv[1]` | 9 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
-| `Areas/meadows:lairs[meadows_poacherspen].lv[2]` | 11 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
-| `Areas/meadows:lairs[meadows_snarecamp].lv[1]` | 7 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
-| `Areas/meadows:lairs[meadows_snarecamp].lv[2]` | 8 | S134i | new table: two hideouts (Snarers' Camp 7-8 in Toad Pond with the Mire Queen, Poachers' Pen 9-11 in the Old Forest with the boar Elite II), levels within their areas; the Elite II on the top level within its kind (8, 10) so the S32 Elite II rows hold (the wolf, lynx and brown bear are too strong) |
-| `Combat:lairElite2RespawnMul` | 1,5 | S134i | new: a hideout's Elite II respawns 1.5 x slower than a cave's of its top level (no red zone, near a road): Heroics / Legendaries for the class per hour of every band 1.00-1.35 of the caves alone (Balance.targetsS134i <= 1.35), one hideout 0.65-0.69 of one cave Elite II of its band (<= 1) |
+| `Config:Reroll.essence.heroic.n` | 1 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.legendary.n` | 2 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.mythic.n` | 3 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.unique.n` | 1 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.goldMul` | 1,8 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.growth` | 0,25 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.growthCap` | 3 | S134j | new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Items/Consumables:[reroll_stone].level` | 1 | S134j | new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
+| `Items/Consumables:[reroll_stone].maxStack` | 999 | S134j | new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
+| `Items/Consumables:[reroll_stone].price` | 1 | S134j | new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
 
 ### Księga: pominięte funkcje
 
@@ -169,7 +156,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-4598 kluczy zmienionych od bazy, 0 bez powodu.
+4608 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -460,6 +447,13 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Config:Mount.mountTime` | – | 1,5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Config:Mount.mountTimeFast` | – | 1 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
 | `Config:Mount.moveLimit` | – | 2,5 | nowy od S96 | S96: new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it |
+| `Config:Reroll.essence.heroic.n` | – | 1 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.legendary.n` | – | 2 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.mythic.n` | – | 3 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.essence.unique.n` | – | 1 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.goldMul` | – | 1,8 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.growth` | – | 0,25 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
+| `Config:Reroll.growthCap` | – | 3 | nowy od S134j | S134j: new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h |
 | `Config:Upgrade.goldHigh` | 40 | 20 | S87 | S87: C3 / G9: 40 -> 20, +1..+3 / income at 100 1.68 -> 0.84; +1..+9 protected 39.8 -> 19.9 levels |
 | `Config:Upgrade.legendCoreFrom` | – | 8 | nowy od S87 | S87: C4: new key, Legend Core from +8 (was +7): protected +7..+9 10.8 -> 8.3 cores |
 | `Families:byId.beast.defences.agile.dodge` | 15 | 10 | S88 | S88: B5: harpy dodge 15 -> 10 %: every class +14 % -> +9 % fight time against GENERIC (at most +10 %) |
@@ -525,6 +519,9 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Items/Consumables:[potion_mana_5].buyPrice` | 3000 | 1800 | S94 | S94: PRICES[5] shared with HP (J2) |
 | `Items/Consumables:[potion_mana_5].level` | 1 | 70 | S87 | S87: D3: Mighty potion from 70 (was 1) |
 | `Items/Consumables:[potion_mana_5].price` | 750 | 450 | S94 | S94: derived: buyPrice / 4 |
+| `Items/Consumables:[reroll_stone].level` | – | 1 | nowy od S134j | S134j: new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
+| `Items/Consumables:[reroll_stone].maxStack` | – | 999 | nowy od S134j | S134j: new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
+| `Items/Consumables:[reroll_stone].price` | – | 1 | nowy od S134j | S134j: new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1 |
 | `Items/Consumables:[scroll_hunt].level` | – | 1 | nowy od S134d | S134d: new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
 | `Items/Consumables:[scroll_hunt].maxStack` | – | 999 | nowy od S134d | S134d: new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
 | `Items/Consumables:[scroll_hunt].price` | – | 1 | nowy od S134d | S134d: new: Scroll of the Hunt (boss loot only, bound, noSell; sell price 1 is never paid), +30 min of Auto Hunt |
@@ -2732,10 +2729,10 @@ Cele (DESIGN §3.6): ⚡ ≥ 1,25× EXP/h ✦; ✦ ≥ 1,6× przedmiotów najwy�
 
 | mapa | bez profili | z profilami |
 | --- | --: | --: |
-| meadows | 142 | 145 → 155 |
-| duskwood | 120 | 135 → 151 |
-| ashen | 138 | 148 → 168 |
-| frostpeak | 141 | 148 → 164 |
+| meadows | 142 | 155 |
+| duskwood | 120 | 151 |
+| ashen | 138 | 168 |
+| frostpeak | 141 | 164 |
 
 ### Gracz z węzłami rzędów 1–3 (S91)
 
@@ -3218,6 +3215,17 @@ Stan po przestrojeniu 1–20 (S91): podstawa klasy bez ścieżki głównej i ka�
 | meadows_cave caveSpider 20 z węzłami | 250% | 112% | 73% | 60% |
 | meadows_cave goblinShaman 16 z węzłami | 274% | 124% | 81% | 67% |
 | meadows_cave goblinShaman 20 z węzłami | 260% | 117% | 76% | 63% |
+
+### Elita II kryjówek Łąk (S134i)
+
+`Balance.lairElites("meadows")`: drużyna `Balance.team` (W, M, Ł, K) na poziomie spawnera + 2. Cel `REGION_TARGETS.elite2`.
+
+| kryjówka · rodzaj · spawner · wariant | solo HP | 2 graczy HP | 3 graczy HP | 4 graczy HP |
+| --- | --: | --: | --: | --: |
+| meadows_snarecamp swampToad 8 | 312% | 143% | 96% | 78% |
+| meadows_poacherspen boar 10 | 321% | 145% | 97% | 80% |
+| meadows_snarecamp swampToad 8 z węzłami | 299% | 137% | 92% | 74% |
+| meadows_poacherspen boar 10 z węzłami | 309% | 140% | 93% | 75% |
 
 ### Grimrok w modelu S83 / S87 (S91)
 
@@ -11305,6 +11313,137 @@ Na każdej mapie regionu 2–3 kryjówki (`Data/Areas` `lairs`): Elita II w śro
 | frostpeak_buriedcamp (dragonspawn): Heroiki + Legendarne dla klasy / h / Elita II jaskini pasma 86-100 | 0,65 | ≤ 1,00 | w paśmie | S134i (asertowane) |
 
 
+## Przemiana premii (S134j)
+
+Koszt próby (`Logic/Reroll.costAt`, `Config.Reroll`): esencja według rzadkości (pył: Unikat 1, Heroiczny 1, Legendarny 2, Mityczny 3) + złoto ilvl × `Upgrade.goldPerIlvl` × 1,8, każda wcześniejsza próba na przedmiocie dokłada 25% do mnożnika, najwyżej ×3 (od 9. próby koszt stały). Przedmiot modelu: broń klasy o ilvl L − 2. Godziny = esencja z expienia poziomu (`materialSupply.normal`, `materialHours` z przetopieniem) + złoto / dochód na godzinę (`economyAt`). Zlew: 10 prób na każdym z 10 przedmiotów zestawu (1 przedmiot na slot na pasmo, rzadkość pasma) / esencja pasma (expienie poziomu środkowego × godziny pasma). Asertuje `balance.spec` („Balance: bonus reroll (S134j)”), raportem tylko pierwsza próba / próba +7.
+
+| rzadkość · poziom | próba 1 | próba 5 | próba 10 | próba 13 | h 10 prób (śr. 4 klas) |
+| --- | --: | --: | --: | --: | --: |
+| unique · L20 | 130 + 1 pyłu | 259 + 2 pyłu | 389 + 3 pyłu | 389 + 3 pyłu | 0,86 |
+| unique · L45 | 666 + 1 pyłu | 1331 + 2 pyłu | 1997 + 3 pyłu | 1997 + 3 pyłu | 1,34 |
+| unique · L70 | 1665 + 1 pyłu | 3329 + 2 pyłu | 4994 + 3 pyłu | 4994 + 3 pyłu | 1,83 |
+| unique · L100 | 3457 + 1 pyłu | 6915 + 2 pyłu | 10 372 + 3 pyłu | 10 372 + 3 pyłu | 2,51 |
+| heroic · L20 | 130 + 1 pyłu | 259 + 2 pyłu | 389 + 3 pyłu | 389 + 3 pyłu | 0,86 |
+| heroic · L45 | 666 + 1 pyłu | 1331 + 2 pyłu | 1997 + 3 pyłu | 1997 + 3 pyłu | 1,34 |
+| heroic · L70 | 1665 + 1 pyłu | 3329 + 2 pyłu | 4994 + 3 pyłu | 4994 + 3 pyłu | 1,83 |
+| heroic · L100 | 3457 + 1 pyłu | 6915 + 2 pyłu | 10 372 + 3 pyłu | 10 372 + 3 pyłu | 2,51 |
+| legendary · L20 | 130 + 2 pyłu | 259 + 4 pyłu | 389 + 6 pyłu | 389 + 6 pyłu | 1,24 |
+| legendary · L45 | 666 + 2 pyłu | 1331 + 4 pyłu | 1997 + 6 pyłu | 1997 + 6 pyłu | 1,65 |
+| legendary · L70 | 1665 + 2 pyłu | 3329 + 4 pyłu | 4994 + 6 pyłu | 4994 + 6 pyłu | 2,10 |
+| legendary · L100 | 3457 + 2 pyłu | 6915 + 4 pyłu | 10 372 + 6 pyłu | 10 372 + 6 pyłu | 2,83 |
+| mythic · L20 | 130 + 3 pyłu | 259 + 6 pyłu | 389 + 9 pyłu | 389 + 9 pyłu | 1,66 |
+| mythic · L45 | 666 + 3 pyłu | 1331 + 6 pyłu | 1997 + 9 pyłu | 1997 + 9 pyłu | 2,00 |
+| mythic · L70 | 1665 + 3 pyłu | 3329 + 6 pyłu | 4994 + 9 pyłu | 4994 + 9 pyłu | 2,40 |
+| mythic · L100 | 3457 + 3 pyłu | 6915 + 6 pyłu | 10 372 + 9 pyłu | 10 372 + 9 pyłu | 3,18 |
+
+
+Zlew esencji (pył i jego równoważniki: odłamek = 10 pyłu, kryształ = 80; średnia 4 klas). Ulepszanie zestawu do +9 z ochroną zabiera wielokrotność esencji z samego expienia pasma (modele G9 i materiałów S84 liczą je w złocie: esencja jest do kupienia), przemiana dokłada do tego 24%–34%. W złocie (goldEq, `materialPrices`) wobec dochodu pasma (`levelIncome` każdego poziomu): 10 przemian zestawu to ułamek dochodu, a samo +9 zestawu (G9) to jego wielokrotność, więc suma ≤ 1 jest poza zasięgiem `Config.Reroll` (wiersze `sink.income` w trybie raportu).
+
+| pasmo | h expienia | esencja pasma | 10 przemian × zestaw | udział przemiany | +9 zestawu / esencja pasma | przemiany / dochód pasma | (+9 + przemiany) / dochód pasma |
+| --- | --: | --: | --: | --: | --: | --: | --: |
+| 20–45 (heroic) | 14,7 | 931 | 240 | 26% | 33,0 | 0,39 | 15,3 |
+| 45–70 (legendary) | 26,3 | 1382 | 440 | 32% | 22,3 | 0,45 | 9,7 |
+| 70–100 (mythic) | 42,2 | 2673 | 660 | 25% | 11,5 | 0,43 | 7,3 |
+
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| unique L20: 1. przemiana / próba +7 (goldEq) | 0,02 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| heroic L45: 1. przemiana / próba +7 (goldEq) | 0,04 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| heroic L70: 1. przemiana / próba +7 (goldEq) | 0,05 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| heroic L100: 1. przemiana / próba +7 (goldEq) | 0,06 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| legendary L45: 1. przemiana / próba +7 (goldEq) | 0,04 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| legendary L70: 1. przemiana / próba +7 (goldEq) | 0,05 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| legendary L100: 1. przemiana / próba +7 (goldEq) | 0,06 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| mythic L45: 1. przemiana / próba +7 (goldEq) | 0,04 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| mythic L70: 1. przemiana / próba +7 (goldEq) | 0,05 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| mythic L100: 1. przemiana / próba +7 (goldEq) | 0,06 | 0,30–1,00 | **poza** | S134j: 0.3-1.0 poza zasięgiem (sprzeczne z ten.hours) |
+| Warrior unique L20: 10 przemian w godzinach poziomu | 0,86 | 0,50–2,00 | w paśmie | S134j (asertowane) |
+| Warrior heroic L45: 10 przemian w godzinach poziomu | 1,33 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior heroic L70: 10 przemian w godzinach poziomu | 1,82 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior heroic L100: 10 przemian w godzinach poziomu | 2,52 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior legendary L45: 10 przemian w godzinach poziomu | 1,64 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior legendary L70: 10 przemian w godzinach poziomu | 2,09 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior legendary L100: 10 przemian w godzinach poziomu | 2,83 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior mythic L45: 10 przemian w godzinach poziomu | 1,98 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior mythic L70: 10 przemian w godzinach poziomu | 2,38 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Warrior mythic L100: 10 przemian w godzinach poziomu | 3,18 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter unique L20: 10 przemian w godzinach poziomu | 0,85 | 0,50–2,00 | w paśmie | S134j (asertowane) |
+| Hunter heroic L45: 10 przemian w godzinach poziomu | 1,30 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter heroic L70: 10 przemian w godzinach poziomu | 1,77 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter heroic L100: 10 przemian w godzinach poziomu | 2,39 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter legendary L45: 10 przemian w godzinach poziomu | 1,61 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter legendary L70: 10 przemian w godzinach poziomu | 2,03 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter legendary L100: 10 przemian w godzinach poziomu | 2,69 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter mythic L45: 10 przemian w godzinach poziomu | 1,94 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter mythic L70: 10 przemian w godzinach poziomu | 2,32 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Hunter mythic L100: 10 przemian w godzinach poziomu | 3,02 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage unique L20: 10 przemian w godzinach poziomu | 0,96 | 0,50–2,00 | w paśmie | S134j (asertowane) |
+| Mage heroic L45: 10 przemian w godzinach poziomu | 1,46 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage heroic L70: 10 przemian w godzinach poziomu | 1,99 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage heroic L100: 10 przemian w godzinach poziomu | 2,68 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage legendary L45: 10 przemian w godzinach poziomu | 1,81 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage legendary L70: 10 przemian w godzinach poziomu | 2,29 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage legendary L100: 10 przemian w godzinach poziomu | 3,02 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage mythic L45: 10 przemian w godzinach poziomu | 2,19 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage mythic L70: 10 przemian w godzinach poziomu | 2,62 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Mage mythic L100: 10 przemian w godzinach poziomu | 3,39 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric unique L20: 10 przemian w godzinach poziomu | 0,78 | 0,50–2,00 | w paśmie | S134j (asertowane) |
+| Cleric heroic L45: 10 przemian w godzinach poziomu | 1,25 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric heroic L70: 10 przemian w godzinach poziomu | 1,75 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric heroic L100: 10 przemian w godzinach poziomu | 2,47 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric legendary L45: 10 przemian w godzinach poziomu | 1,55 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric legendary L70: 10 przemian w godzinach poziomu | 2,00 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric legendary L100: 10 przemian w godzinach poziomu | 2,78 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric mythic L45: 10 przemian w godzinach poziomu | 1,87 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric mythic L70: 10 przemian w godzinach poziomu | 2,29 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| Cleric mythic L100: 10 przemian w godzinach poziomu | 3,12 | 1,00–4,00 | w paśmie | S134j (asertowane) |
+| unique: najdroższa próba / pierwsza | 3,00 | 1,00–3,00 | w paśmie | S134j (asertowane) |
+| unique: koszt próby nie maleje (1 = tak) | 1,00 | 1,00–1,00 | w paśmie | S134j (asertowane) |
+| heroic: najdroższa próba / pierwsza | 3,00 | 1,00–3,00 | w paśmie | S134j (asertowane) |
+| heroic: koszt próby nie maleje (1 = tak) | 1,00 | 1,00–1,00 | w paśmie | S134j (asertowane) |
+| legendary: najdroższa próba / pierwsza | 3,00 | 1,00–3,00 | w paśmie | S134j (asertowane) |
+| legendary: koszt próby nie maleje (1 = tak) | 1,00 | 1,00–1,00 | w paśmie | S134j (asertowane) |
+| mythic: najdroższa próba / pierwsza | 3,00 | 1,00–3,00 | w paśmie | S134j (asertowane) |
+| mythic: koszt próby nie maleje (1 = tak) | 1,00 | 1,00–1,00 | w paśmie | S134j (asertowane) |
+| Warrior 20-45: esencja 10 przemian × 10 przedmiotów (heroic) / esencja pasma | 0,25 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Warrior 20-45: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 15,28 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Warrior 45-70: esencja 10 przemian × 10 przedmiotów (legendary) / esencja pasma | 0,34 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Warrior 45-70: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 9,67 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Warrior 70-100: esencja 10 przemian × 10 przedmiotów (mythic) / esencja pasma | 0,24 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Warrior 70-100: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 7,32 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Hunter 20-45: esencja 10 przemian × 10 przedmiotów (heroic) / esencja pasma | 0,26 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Hunter 20-45: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 15,28 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Hunter 45-70: esencja 10 przemian × 10 przedmiotów (legendary) / esencja pasma | 0,34 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Hunter 45-70: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 9,67 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Hunter 70-100: esencja 10 przemian × 10 przedmiotów (mythic) / esencja pasma | 0,24 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Hunter 70-100: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 7,32 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Mage 20-45: esencja 10 przemian × 10 przedmiotów (heroic) / esencja pasma | 0,27 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Mage 20-45: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 15,28 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Mage 45-70: esencja 10 przemian × 10 przedmiotów (legendary) / esencja pasma | 0,30 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Mage 45-70: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 9,67 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Mage 70-100: esencja 10 przemian × 10 przedmiotów (mythic) / esencja pasma | 0,25 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Mage 70-100: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 7,32 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Cleric 20-45: esencja 10 przemian × 10 przedmiotów (heroic) / esencja pasma | 0,26 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Cleric 20-45: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 15,28 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Cleric 45-70: esencja 10 przemian × 10 przedmiotów (legendary) / esencja pasma | 0,31 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Cleric 45-70: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 9,67 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Cleric 70-100: esencja 10 przemian × 10 przedmiotów (mythic) / esencja pasma | 0,25 | 0,10–0,35 | w paśmie | S134j (asertowane) |
+| Cleric 70-100: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma | 7,32 | ≤ 1,00 | **poza** | S134j: ≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9) |
+| Warrior L45: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Warrior L70: esencja jednej próby (Kamień) / esencja 2 h gry | 0,06 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Warrior L100: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Hunter L45: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Hunter L70: esencja jednej próby (Kamień) / esencja 2 h gry | 0,06 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Hunter L100: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Mage L45: esencja jednej próby (Kamień) / esencja 2 h gry | 0,08 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Mage L70: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Mage L100: esencja jednej próby (Kamień) / esencja 2 h gry | 0,08 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Cleric L45: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Cleric L70: esencja jednej próby (Kamień) / esencja 2 h gry | 0,06 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+| Cleric L100: esencja jednej próby (Kamień) / esencja 2 h gry | 0,07 | ≤ 0,10 | w paśmie | S134j (asertowane) |
+
+
 ## Samodzielne Łowy (S134d)
 
 Tylko raport: EXP/h Łowów = tempo solo (`Balance.paceAt`, Wojownik, region poziomu) × 70% × sprawność chodzenia 0,8 (założenie raportu, nie liczba gry). Dzień z limitem 3,0 h = 1,68 h ręcznej gry. Tempo solo 1–100, zamrożone 1–20 i budżet questów bez zmian (Łowy nie są w modelu tempa).
@@ -12499,7 +12638,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 3,4 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 3,0 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -15211,7 +15350,7 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,71 | 2,75 | -2% |
 | mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,78 | 2,79 | 0% |
 
-Tabele S86 liczą się 26,5 s.
+Tabele S86 liczą się 20,9 s.
 
 ## Poprawki globalne (S87)
 

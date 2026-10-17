@@ -10,6 +10,8 @@
 -- S122: the Elixir of Wholeness (potion_full_*) and the Cloak of Luring (lure_*) are the two explicit exceptions of
 -- DESIGN-17 §0.2 (healing outside fights with players and bosses, faster farming without strength), listed with their
 -- limits in tests/paywall.spec.luau.
+-- S134j: the Stone of Transmutation (reroll_stone) is an exception like the Scroll of Protection (1 a day, only the
+-- essence of one bonus reroll, account-bound), see tests/paywall.spec.luau.
 -- S134d: Auto Potions (autopotion_*, comfort) and Auto Hunt (hunt_*, the third exception: faster farming without
 -- playing, x0.7 EXP and gold, daily cap, never in the weekly ranking), see tests/paywall.spec.luau.
 
@@ -100,6 +102,15 @@ local SHOP: { ShopEntry } = {
 		cat = "scroll",
 		itemId = "scroll_protection",
 		price = 60,
+		dailyLimit = 1,
+	},
+	-- S134j: 1 a day, pays the essence of one bonus reroll (gold always), account-bound; paywall.spec exception
+	{
+		key = "reroll_stone",
+		kind = "item",
+		cat = "scroll",
+		itemId = "reroll_stone",
+		price = 80,
 		dailyLimit = 1,
 	},
 	{ key = "rename", kind = "rename", cat = "service", price = 400 },

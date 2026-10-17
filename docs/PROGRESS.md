@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S134i gotowe (ostatnia S134i: 11 kryjówek Elit II na mapach regionów (Łąki 2, Bór, Pustkowia i Szczyty po
+S01–S115 i S117–S134j gotowe (ostatnia S134j: przemiana jednej losowej linii premii u kowala (zakładka
+„Przemiana”, `Logic/Reroll`, pole `rr`): pierwsza przemiana zamyka wybór na tej linii, koszt pył + złoto rośnie z
+każdą próbą na przedmiocie (`Config.Reroll`), Kamień Przemiany w sklepie Smoczej Waluty (1/dzień, płaci pył jednej
+próby); wcześniej S134i: 11 kryjówek Elit II na mapach regionów (Łąki 2, Bór, Pustkowia i Szczyty po
 3; `Data/Areas` `lairs`, `AreaSpawns.lair`, ubiór `Logic/WorldGen/Lairs`): Elita II w środku z przypisanym łupem,
 wraca po cichu ×1,5 wolniej niż w jaskini, strażnicy, węzły; pomarańczowa czaszka na mapie i minimapie, karta i
 wyszukiwarka bez stanu Elity II; tempo łupu pasma ≤ ×1,35; wcześniej S134h: każda Elita II daje tylko swoje 2–3 rodzaje przedmiotów
@@ -280,6 +283,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **S134j:** zakładka „Przemiana” kowala bez przeglądu w grze (układ na PC i telefonie, lista „Może wyjść”, modal z
+  ostrzeżeniem o zamknięciu, wynik „stara → nowa”, znak ↻ w opisie). Decyzje właściciela w `docs/SESJE.md` → S134j:
+  esencja sam pył (model odrzucił odłamki / kryształy), wartość Kamienia Przemiany przy pyle, tania pierwsza próba
+  (`first.vsUpgrade` w raporcie), +9 zestawu ponad dochód pasma (`sink.income` w raporcie). Wiki: akapit w poradniku
+  ulepszania niesprawdzony `npm run check` (vitest zielony poza starym `combat.mdx` „2–3”).
 
 - **S134i:** kryjówki bez przeglądu w grze (ubiór czterech motywów, wolny środek dla Doskoku i Druzgocącego Ciosu,
   strażnicy na pierścieniu, czaszka na mapie i minimapie, karta `CreatureCards.lair`). Brak obrazka `mapa/map_lair`

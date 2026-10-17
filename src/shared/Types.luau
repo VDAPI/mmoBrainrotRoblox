@@ -33,6 +33,9 @@ export type ItemInstance = {
 	locked: boolean?, -- protected from selling and dismantling (S20)
 	rv: number?, -- S30: rarity format version (2 = new ladder; Rarities.upgradeItem)
 	fx: { string }?, -- S134g: item effect ids (Data/ItemEffects), Legendary 1, Mythic 2
+	-- S134j: bonus reroll state: i = index in bonuses of the only rerollable line (set by the first reroll), n = rerolls
+	-- done (cost growth); read only through Logic/Reroll.state
+	rr: { i: number, n: number }?,
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }

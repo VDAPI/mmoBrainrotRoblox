@@ -116,6 +116,13 @@ local Definitions: { [string]: Definition } = {
 	Dismantle = { kind = "function", dir = "c2s", rate = 3, args = { "table" } }, -- ({ index })
 	DismantleAll = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (max rarity)
 	UnbindItem = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- ("inv"|"eq", key)
+	-- S134j: ("inv"|"eq", key, line index, expected stat of that line, use stone) -> (ok, err, { index, old, new, n })
+	RerollBonus = {
+		kind = "function",
+		dir = "c2s",
+		rate = 2,
+		args = { "string", "string", "integer", "string", "boolean" },
+	},
 
 	-- Alchemy, blessings, gathering, fishing, stones (S07)
 	StartRecipe = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string" } }, -- (npcId, recipeId)

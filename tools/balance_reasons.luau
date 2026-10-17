@@ -120,6 +120,7 @@ return {
 		"LookChange",
 		"AutoPotion",
 		"AutoGrind",
+		"Reroll", -- S134j: bonus reroll at the smith
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -4777,13 +4778,22 @@ return {
 			},
 		},
 		["LootTables:bosses.morvane.materials[scroll_hunt]*"] = {
-			{ session = "S134d", why = "new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day)" },
+			{
+				session = "S134d",
+				why = "new: Scroll of the Hunt 20 % per winner (3 runs = 0.6 scrolls = about 18 min a day)",
+			},
 		},
 		["LootTables:bosses.azgor.materials[scroll_hunt]*"] = {
-			{ session = "S134d", why = "new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day)" },
+			{
+				session = "S134d",
+				why = "new: Scroll of the Hunt 25 % per winner (3 runs = 0.75 scrolls = about 22 min a day)",
+			},
 		},
 		["LootTables:bosses.vaelgrath.materials[scroll_hunt]*"] = {
-			{ session = "S134d", why = "new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day)" },
+			{
+				session = "S134d",
+				why = "new: Scroll of the Hunt 30 % per winner (3 runs = 0.9 scrolls = about 27 min a day)",
+			},
 		},
 		-- S134e: Crushing Blow of the Elite II, no more free kiting, Heavy Blow of the Elite (docs/SESJE.md S134e)
 		["MonsterAbilities:byId.crush*"] = {
@@ -5039,6 +5049,18 @@ return {
 			{
 				session = "S134i",
 				why = "new: a hideout's Elite II respawns 1.5 x slower than a cave's of its top level (no red zone, near a road): Heroics / Legendaries for the class per hour of every band 1.00-1.35 of the caves alone (Balance.targetsS134i <= 1.35), one hideout 0.65-0.69 of one cave Elite II of its band (<= 1)",
+			},
+		},
+		["Config:Reroll*"] = {
+			{
+				session = "S134j",
+				why = "new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h",
+			},
+		},
+		["Items/Consumables:[reroll_stone]*"] = {
+			{
+				session = "S134j",
+				why = "new item: Stone of Transmutation (premium shop, 1 a day): price 1 with noSell (never sold, like scroll_hunt), stack 999, level 1",
 			},
 		},
 	} :: { [string]: { Reason } },

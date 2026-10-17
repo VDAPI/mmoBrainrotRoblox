@@ -4803,3 +4803,38 @@
   zostaje czerwony 20 px). Wiki: świadoma zmiana kształtu danych (`WIKI_KEYS_ALLOW="areas:*,mechanics:mechanics.combat.
   lairElite2RespawnMul,monsters:monsters.monsters[].variants.*.spawns[].lair,types.ts"`); mapy SVG jaskiń odświeżone
   (po S134h były sprzed skali).
+- **S134j** Przemiana premii (`Logic/Reroll`, kowal → „Przemiana”): tylko losowe zwykłe linie `bonuses` (tier
+  `regular`) każdej rzadkości, która je ma (Mityczny też); baza, cecha, efekty `fx`, `up` i nazwane z bossów
+  (`fixedBonuses`) nigdy. Pierwsza przemiana zamyka wybór na tej linii (`rr.i`); wynik zawsze zastępuje starą linię
+  (bez „zostaw starą”).
+- **S134j** Pula przemiany: `ItemRoll.poolWeights(id, klasa postaci)`, gdy przedmiot do niej pasuje (`classes` nil albo
+  zawiera klasę), inaczej `poolWeights(id, nil)` (klasy z definicji). Bez statystyk pozostałych linii i ich znaczników
+  (linia `vs_wolf` wyklucza `@vsFamily`, stara `armorPen` także `pierce`); obecna statystyka zostaje w puli.
+- **S134j** Znacznik z przemiany rozwija się bez kontekstu (`ItemRoll.expandParam(id, rng, nil)`: losowa rodzina /
+  klasa). `ItemRoll.expandParam` publiczne, `ItemRoll.BonusLine.at` = indeks linii w `bonuses`.
+- **S134j** Pole `ItemInstance.rr = { i, n }` bez migracji; odczyt tylko `Reroll.state` (śmieci → `n = 0`; indeks spoza
+  zakresu albo na linii, której nie wolno przemieniać, otwiera wybór, nie kasuje kosztu).
+- **S134j** Przemieniony przedmiot zostaje wymienialny, jeśli był (`bound` bez zmian); `rr` idzie z nim przez handel,
+  pocztę, aukcje i depozyt (kupujący płaci dalej wyższy koszt). `locked` (blokada sprzedaży) nie blokuje przemiany.
+- **S134j** Koszt (`Config.Reroll`, model `Balance.targetsS134j`): tylko pył 1 / 1 / 2 / 3 (Unikat / Heroiczny /
+  Legendarny / Mityczny) + złoto ilvl × `Upgrade.goldPerIlvl` × 1,8, mnożnik min(1 + 0,25 n, 3) (złoto zaokrąglone,
+  esencja w górę). Wiersz Kamienia liczony na najdroższej próbie (od limitu wzrostu: kamień płaci dowolną próbę i się
+  stakuje); przy ×4 i 4 pyle Mitycznego było 10–14% 2 h gry, przy ×3 i 3 pyle 6–8%. Odłamki / kryształy z prośby właściciela odrzucone przez model: 10 prób to 8–60 h esencji expienia,
+  zlew 5–15 × esencji pasma, Kamień ponad 10% 2 h gry (propozycja w SESJE „Dla właściciela”).
+- **S134j** Wiersz `first.vsUpgrade` (0,3–1,0 próby +7) w trybie raportu: przy 0,3 już pierwsza próba to 0,37–0,55 h
+  dochodu, więc 10 prób z przyrostem 0,25 (×21,25) to 8–12 h, sprzecznie z `ten.hours` 1–4 h (cel właściciela ok. 2 h).
+  Dziś 0,02–0,06.
+- **S134j** Zlew: 1 przedmiot na slot na pasmo (D5 nie ma funkcji „zakładanych przedmiotów”), rzadkość pasma 20–45
+  Heroiczny, 45–70 Legendarny, 70–100 Mityczny; esencja pasma = expienie poziomu środkowego × godziny pasma
+  (`Balance.levelHours`). Przemiana poza tempem gry: G9, popyt / podaż materiałów i `balance1_20` bez zmian.
+- **S134j** Kamień Przemiany (`reroll_stone`, sklep 80 Smoczej Waluty, `dailyLimit = 1`): płaci esencję jednej próby,
+  złoto zawsze, licznik rośnie; `bindOnPickup`, `noSell`, nie jest materiałem (wyjątek `paywall.spec` jak Zwój Ochrony).
+  Odrzucone: „płaci całość” (też złoto) i „połowa kosztu bez limitu” (nielimitowany zlew za Robux). Z kamieniem bez
+  kamienia w plecaku serwer odmawia (`noStone`), nie płaci cicho esencją.
+- **S134j** `TooltipModel.STAT_GROUPS` / `groupOf` przeniesione do `Logic/StatGroups` (Reroll sortuje podgląd tak
+  samo, bez cyklu `TooltipModel` ↔ `Reroll`); wspólny wybór przedmiotu kowala `BlacksmithWindow/Picker`.
+- **S134j** Wiki: świadoma zmiana kształtu `upgrade.json` (`reroll`): `WIKI_KEYS_ALLOW="upgrade:*,types.ts"`.
+- **S134j** Wiersz `sink.income` (+9 zestawu z ochroną i 10 przemian × zestaw w goldEq ≤ dochód złota pasma) w trybie
+  raportu: samo +9 to 6,9–14,9 dochodu pasma (G9, dźwignia poza `Config.Reroll`); przemiany dokładają 0,39–0,45.
+- **S134j** Kowal zmieniający założony przedmiot (ulepszenie, przemiana) zrzuca pamięć haków ekwipunku
+  (`EquipmentService.InvalidateHooks`), bo linie przy trafieniu i `vs_*` są hakami, nie statystykami `StatService`.

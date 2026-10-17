@@ -3,7 +3,7 @@ title: Upgrading without tears
 description: "How to upgrade items without losing your nerve: the chance of every step, what a failure does, when to use a Scroll of Protection and what it costs."
 key: upgrading
 order: 3
-updated: 2026-10-08
+updated: 2026-10-17
 tags: [Upgrading, Items]
 ---
 
@@ -26,6 +26,16 @@ A failed attempt moves the item back one level: +6 becomes +5. The item does not
 ## Materials
 
 Low levels cost <Item id="essence_dust" />, middle ones <Item id="essence_shard" /> and the highest <Item id="essence_crystal" />. Legendary and mythic items also need a <Item id="legend_core" /> on the highest levels. You get essences from dismantling items, from quests and contracts (see <Link to="crafting" hash="dismantle">Crafting</Link>).
+
+## Bonus transmutation
+
+In the blacksmith's "Transmute" tab you reroll one extra bonus of an item (a weapon, armour or jewellery, Unique to Mythic). Pick a line and the blacksmith shows what it can become: every stat of the item's pool with its chance and value range. It can turn into another stat or the same one with a new value, never one the item already has on another line.
+
+- The first transmutation locks the choice: from then on only that line of the item can be transmuted, the other lines stay for good.
+- Base stats, the weapon trait, legendary and mythic effects and the bonuses of named boss items cannot be transmuted.
+- An attempt costs gold and a little <Item id="essence_dust" />. Every further attempt on the same item costs <Stat path="upgrade.reroll.growth" format="frac" /> more, at most <Stat path="upgrade.reroll.growthCap" format="x" /> the first. For example a Heroic item of level <Stat path="upgrade.reroll.levels.1" />: the first attempt <Stat path="upgrade.reroll.costs.45.heroic.0.gold" format="gold" />, the tenth <Stat path="upgrade.reroll.costs.45.heroic.2.gold" format="gold" />.
+- The attempt count and the locked line travel with the item in a trade: the buyer keeps paying what the previous owner did.
+- A <Item id="reroll_stone" /> from the premium shop replaces the essence of one attempt (you always pay the gold), once a day.
 
 ## A simple plan
 

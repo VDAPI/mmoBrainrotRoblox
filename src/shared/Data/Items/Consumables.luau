@@ -114,6 +114,16 @@ do
 	hunt.bindOnPickup = true
 	hunt.noSell = true
 end
+-- S134j: Stone of Transmutation, sold only in the premium shop (Data/Products reroll_stone, 1 a day): the blacksmith
+-- takes it instead of the essence of one bonus reroll (gold always, Logic/Reroll.costWithStone). Account-bound from
+-- creation (ItemRoll.makeStack binds `bindOnPickup` stacks), never sold, traded, mailed or listed; no material (no
+-- dismantling, transmutation or upgrade use). Using it from the backpack only explains it (ScrollService).
+other("reroll_stone", "scroll", "scroll", "◈", "#E8C25A", 1, nil, { kind = "scroll", target = "transmute" })
+do
+	local stone = LIST[#LIST] :: any
+	stone.bindOnPickup = true
+	stone.noSell = true
+end
 -- Gathering tools (S07)
 other("pickaxe", "tool", "tool", "⛏", "#8E8E93", 25, 100, { kind = "none" }, false)
 other("fishing_rod", "tool", "tool", "🎣", "#8A6B4A", 25, 100, { kind = "none" }, false)

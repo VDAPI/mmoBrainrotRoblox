@@ -25,6 +25,7 @@ local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
+local Reroll = require(Shared.Logic.Reroll)
 local Rng = require(Shared.Logic.Rng)
 local Shops = require(Shared.Data.Shops)
 local TooltipModel = require(Shared.Logic.TooltipModel)
@@ -44,6 +45,7 @@ local InventoryService = Context.services.InventoryService
 local EquipmentService = Context.services.EquipmentService
 local LootService = Context.services.LootService
 local StatService = Context.services.StatService
+local BlacksmithService = Context.services.BlacksmithService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -737,12 +739,100 @@ commands.tooltip = function(player, args)
 		return
 	end
 	for _, line in model.lines do
-		reply(player, "admin.tooltip.line", { role = line.role, text = TooltipModel.plain(line.text) })
+		-- S134j: the locked reroll line with its mark
+		local text = TooltipModel.plain(line.text)
+		reply(player, "admin.tooltip.line", {
+			role = line.role,
+			text = if line.rerolled then `{text} {TooltipModel.REROLL_MARK}` else text,
+		})
 	end
 	local short = TooltipModel.statLine(item, def, lang)
 	if short then
 		reply(player, "admin.tooltip.line", { role = "statLine", text = short })
 	end
+end
+
+-- S134j: the item at an equipped slot name or a backpack index, with its location for BlacksmithService.Reroll.
+local function itemAt(player: Player, where: string): (any, string, string)
+	local index = tonumber(where)
+	if index then
+		return InventoryService.Get(player, index), "inv", tostring(index)
+	end
+	local character = PlayerStateService.GetCharacter(player)
+	return if character then character.equipment[where] else nil, "eq", where
+end
+
+local function costText(cost: Reroll.Cost): string
+	local parts = { `{cost.gold} gold` }
+	for _, m in cost.materials do
+		table.insert(parts, `{m.id} x{m.n}`)
+	end
+	return table.concat(parts, ", ")
+end
+
+-- S134j: /reroll <slot|index> <line> [pay|stone|free]
+commands.reroll = function(player, args)
+	local where, line = args[1], parseAmount(args[2])
+	if not where or line == nil then
+		reply(player, "admin.usage.reroll")
+		return
+	end
+	withCharacter(player, function()
+		local item, location, key = itemAt(player, where)
+		if not item then
+			reply(player, "admin.up.none")
+			return
+		end
+		local current = item.bonuses[line]
+		if not current then
+			reply(player, "smith.reroll.error.notRegular")
+			return
+		end
+		local mode = args[3] or "pay"
+		local ok, err, result = BlacksmithService.Reroll(
+			player,
+			location,
+			key,
+			line,
+			current.stat,
+			mode == "stone",
+			{ anywhere = true, free = mode == "free" }
+		)
+		if not ok then
+			reply(player, err or "error.internal")
+			return
+		end
+		reply(player, "admin.reroll.ok", {
+			line = line,
+			old = `{result.old.stat} {result.old.v}`,
+			new = `{result.new.stat} {result.new.v}`,
+			n = result.n,
+		})
+	end)
+end
+
+-- S134j: /rerollstate <slot|index>
+commands.rerollstate = function(player, args)
+	local where = args[1]
+	if not where then
+		reply(player, "admin.usage.rerollstate")
+		return
+	end
+	withCharacter(player, function()
+		local item = itemAt(player, where)
+		if not item then
+			reply(player, "admin.up.none")
+			return
+		end
+		local state = Reroll.state(item)
+		local ok, err = Reroll.eligible(item)
+		reply(player, "admin.rerollstate.info", {
+			line = if state.line then tostring(state.line) else "-",
+			n = state.n,
+			cost = if ok then costText(Reroll.cost(item)) else `@{err}`,
+			stone = if ok then costText(Reroll.costWithStone(item)) else "-",
+		})
+	end)
 end
 
 local function round1(v: number): number

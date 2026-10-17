@@ -190,6 +190,56 @@ T.describe("TooltipModel order (S134g)", function()
 	end)
 end)
 
+-- S134j: the locked reroll line carries `rerolled` (ItemTooltip adds the mark), a rerolled item says how many times in a
+-- small muted line after the item level; its details say where it changes; the S134g order of the roles stays.
+T.describe("TooltipModel reroll mark (S134j)", function()
+	T.it("the locked line only, the count after the item level, the details line, the order unchanged", function()
+		local bonuses = { { stat = "str", v = 5 }, { stat = "critChance", v = 2 }, { stat = "physAtk", v = 3 } }
+		local plain = made("sword1h_60", Rarities.HEROIC, bonuses)
+		local rerolled = made("sword1h_60", Rarities.HEROIC, bonuses)
+		rerolled.rr = { i = 2, n = 3 }
+		local before = TooltipModel.build(plain, nil, { lang = "pl", class = "Warrior" }).lines
+		local after = TooltipModel.build(rerolled, nil, { lang = "pl", class = "Warrior" }).lines
+		local marked = {}
+		for _, line in after do
+			if line.rerolled then
+				table.insert(marked, line)
+			end
+		end
+		T.expect(#marked).toBe(1)
+		T.expect(marked[1].text).toBe(TooltipModel.bonusText("pl", "critChance", 2))
+		local roles: { string } = {}
+		for _, line in after do
+			if line.role ~= "rerollCount" then
+				table.insert(roles, line.role)
+			end
+		end
+		local plainRoles: { string } = {}
+		for _, line in before do
+			T.expect(line.rerolled).toBeNil()
+			table.insert(plainRoles, line.role)
+		end
+		-- S134j: the S134g order with one more footer line
+		T.expect(roles).toEqual(plainRoles)
+		local first = firstOf(after)
+		T.expect(first.rerollCount).toBe(first.ilvl + 1)
+		T.expect(after[first.rerollCount].text).toBe(Locale.T("tooltip.reroll.count", { n = 3 }, "pl"))
+		T.expect({ after[first.rerollCount].tone, after[first.rerollCount].size }).toEqual({ "muted", "small" })
+		local details = TooltipModel.details(rerolled, marked[1].detail :: TooltipModel.DetailRef, { lang = "en" })
+		T.expect((rowOf(details, "reroll") :: TooltipModel.DetailRow).text)
+			.toBe(Locale.T("tooltip.details.reroll", nil, "en"))
+		-- a count without a locked line (index left outside by a data change): the line, no mark
+		rerolled.rr = { i = 9, n = 1 }
+		local open = TooltipModel.build(rerolled, nil, { lang = "pl" }).lines
+		local any = false
+		for _, line in open do
+			any = any or line.rerolled == true
+		end
+		T.expect(any).toBe(false)
+		T.expect(firstOf(open).rerollCount ~= nil).toBe(true)
+	end)
+end)
+
 T.describe("TooltipModel skill effects (S134g)", function()
 	T.it("effects after the trait in the tier colour; another class's effect says whom it works for", function()
 		local item = made("sword1h_60", Rarities.MYTHIC, {})

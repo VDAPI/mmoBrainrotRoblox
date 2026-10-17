@@ -1508,6 +1508,21 @@ export interface ReductionTable {
   rows: ReductionRow[];
 }
 
+export interface RerollEssence {
+  id: string; // id in items.json
+  n: number;
+}
+
+export interface RerollRules {
+  attempts: number[];
+  costs: Record<string, Record<string, UpgradeCost[]>>;
+  essence: Record<string, RerollEssence>;
+  goldMul: number;
+  growth: number;
+  growthCap: number;
+  levels: number[];
+}
+
 export interface Road {
   material: string;
   points: number[];
@@ -1909,6 +1924,7 @@ export interface UpgradeFile {
   costs: Record<string, Record<string, UpgradeCost[]>>;
   max: number;
   protection: string; // id in items.json
+  reroll: RerollRules;
   steps: UpgradeStep[];
   tiers: number[];
   vectors: UpgradeVector[];

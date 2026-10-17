@@ -16,6 +16,7 @@ local ItemValue = require("../src/shared/Logic/ItemValue")
 local Lure = require("../src/shared/Logic/Lure")
 local Premium = require("../src/shared/Logic/Premium")
 local Products = require("../src/shared/Data/Products")
+local Rng = require("../src/shared/Logic/Rng")
 local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
 local Trade = require("../src/shared/Logic/Trade")
@@ -63,6 +64,8 @@ local ALLOWED_SCROLLS: { [string]: string } = {
 	skillreset = "redistributes own skill points",
 	unbind = "trade comfort",
 	protection = "EXCEPTION: keeps the upgrade level on a failure; dailyLimit must be 1 (DESIGN-17 §1)",
+	-- S134j: the Stone of Transmutation (test 2b)
+	transmute = "EXCEPTION (S134j): pays the essence of one bonus reroll at the smith, never gold; dailyLimit must be 1; bindOnPickup",
 }
 -- item id -> reason (DESIGN-17 §3). Never add "fullElixir" to ALLOWED_USE_KINDS: every future item of that kind
 -- would pass without an exception.
@@ -256,6 +259,54 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 			end
 		end
 		T.expect(found).toBe(1)
+	end)
+
+	-- S134j: the Stone of Transmutation pays only the essence of one reroll (gold always, the count grows), 1 a day,
+	-- bound to the account; it is no material (no dismantling, recipe or upgrade cost names it).
+	T.it("2b. the Stone of Transmutation is 1 a day, account-bound and pays only essence", function()
+		local Rarities = require("../src/shared/Data/Rarities")
+		local Recipes = require("../src/shared/Data/Recipes")
+		local Reroll = require("../src/shared/Logic/Reroll")
+		local Upgrade = require("../src/shared/Logic/Upgrade")
+		local found = 0
+		for _, entry in Products.shop do
+			local def = entry.itemId and Items.get(entry.itemId)
+			if def and def.use and def.use.target == "transmute" then
+				found += 1
+				T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 1 })
+				T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+				T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
+					.toEqual({ entry.key, false })
+			end
+		end
+		T.expect(found).toBe(1)
+		local stone = Reroll.STONE
+		for _, rarity in Rarities.list do
+			local item = ItemRoll.rollItem(
+				`sword1h_{Items.generate.tierFor(45)}`,
+				45,
+				rarity.id,
+				Rng.new(rarity.id),
+				"s",
+				"Warrior"
+			)
+			T.expect(Reroll.costWithStone(item).gold).toBe(Reroll.cost(item).gold)
+			T.expect(#Reroll.costWithStone(item).materials).toBe(0)
+			for _, drop in rarity.dismantle do
+				T.expect(drop.id ~= stone).toBe(true)
+			end
+			for n = 1, Upgrade.MAX do
+				for _, material in Upgrade.cost(item, n).materials do
+					T.expect(material.id ~= stone).toBe(true)
+				end
+			end
+		end
+		for _, recipe in Recipes.list do
+			T.expect({ recipe.id, recipe.result.id ~= stone }).toEqual({ recipe.id, true })
+			for _, ingredient in recipe.ingredients do
+				T.expect({ recipe.id, ingredient.id ~= stone }).toEqual({ recipe.id, true })
+			end
+		end
 	end)
 
 	T.it("3. the item checker refuses power and accepts comfort", function()

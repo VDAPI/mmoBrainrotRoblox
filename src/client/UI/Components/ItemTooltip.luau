@@ -373,8 +373,9 @@ local function build(
 		end
 		local row: Instance
 		if bonus then
-			row =
-				bonusRow(s, order, entry.text, entry.quality or 0, entry.legendary == true, entry.mythic == true, icon)
+			-- S134j: the locked reroll line carries the reroll mark, no new colour
+			local text = if entry.rerolled then `{entry.text} {TooltipModel.REROLL_MARK}` else entry.text
+			row = bonusRow(s, order, text, entry.quality or 0, entry.legendary == true, entry.mythic == true, icon)
 		else
 			local color = if entry.hex then Color3.fromHex(entry.hex) else TONES[entry.tone] or DARK
 			local size = if entry.size then SIZES[entry.size] else nil

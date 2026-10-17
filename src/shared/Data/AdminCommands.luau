@@ -249,6 +249,10 @@ cmd("items", "givefam", {
 	int("ilvl", 1, MAX_LEVEL, true),
 })
 cmd("items", "itemscore", {})
+-- S134j: bonus reroll of an equipped (slot) or backpack (index) item without the smith's distance: pays like the
+-- smith ("pay"), with a Stone of Transmutation ("stone") or nothing ("free"); /rerollstate shows `rr` and the next cost.
+cmd("items", "reroll", { str("where"), int("line", 1, 9), enum("mode", { "pay", "stone", "free" }, true, "pay") })
+cmd("items", "rerollstate", { str("where") })
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })

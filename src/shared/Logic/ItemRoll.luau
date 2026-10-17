@@ -18,7 +18,8 @@ type ItemInstance = Types.ItemInstance
 
 local ItemRoll = {}
 
-export type BonusLine = { id: string, v: number, quality: number }
+-- S134j: `at` = the line's index in the item's `bonuses` (unknown ids are skipped, so it can differ from the list's).
+export type BonusLine = { id: string, v: number, quality: number, at: number? }
 
 -- S67: what itemStats added from the trait (flat / hooks), so ItemScore can value the trait once.
 export type TraitContrib = { flat: { [string]: number }, hooks: { [string]: number } }
@@ -263,8 +264,9 @@ function ItemRoll.inclusion(weights: { [string]: number }, count: number): { [st
 end
 
 -- S67 (STATY 4, 7): the variant line of a pool marker. Family: the drop's family when known, else a random one;
--- class: always a random class (the wearer's too). Never nil, never a marker.
-local function expandParam(id: string, rng: Rng.Rng, ctx: RollContext?): string
+-- class: always a random class (the wearer's too). Never nil, never a marker. S134j: public (Logic/Reroll expands a
+-- rerolled marker with it, without a context: a random family).
+function ItemRoll.expandParam(id: string, rng: Rng.Rng, ctx: RollContext?): string
 	local param = Bonuses.params[id]
 	if param.over == "family" then
 		local family = ctx and ctx.family
@@ -326,7 +328,7 @@ function ItemRoll.rollItem(
 			local id = rng:weighted(remaining)
 			remaining[id] = nil
 			if Bonuses.isParam(id) then
-				id = expandParam(id, rng, ctx)
+				id = ItemRoll.expandParam(id, rng, ctx)
 			end
 			table.insert(bonuses, { stat = id, v = ItemRoll.rollBonusValue(id, level, rarityId, rng:next()) })
 		end
@@ -462,7 +464,7 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 
 	-- Named items always use their definition's bonuses (S32: values changed, saved copies follow).
 	local bonuses: { Types.Bonus } = if named then def.fixedBonuses :: any else item.bonuses
-	for _, bonus in ipairs(bonuses) do
+	for at, bonus in ipairs(bonuses) do
 		local bonusDef = Bonuses.get(bonus.stat)
 		if bonusDef then
 			local id, v = bonus.stat, bonus.v
@@ -479,7 +481,7 @@ function ItemRoll.itemStats(item: ItemInstance): ItemStats
 			if lineMul ~= 1 and ItemRoll.isRegularLine(id) then
 				v = roundTo(v * lineMul, bonusDef.decimals)
 			end
-			table.insert(result.bonuses, { id = id, v = v, quality = quality })
+			table.insert(result.bonuses, { id = id, v = v, quality = quality, at = at })
 			if bonusDef.hook then
 				result.hooks[bonusDef.hook] = (result.hooks[bonusDef.hook] or 0) + v
 			elseif bonusDef.stat then

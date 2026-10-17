@@ -20,6 +20,9 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 
 - **`Data/Products`** dostaje kategorie: wpis `SHOP` ma pole `cat: "scroll" | "service" | "consumable" | "backpack"` i opcjonalne `dailyLimit`, `weeklyLimit`, `unavailable`. Okno `PremiumShop` przebudowane na zakładki: **Waluta** (paczki odłamków), **Przepustki** (gamepassy + VIP od S121), **Przedmioty** (zwoje, usługi, plecaki premium, od S122 Eliksir Pełni i Płaszcz Przynęty), **Kosmetyki** (garderoba; od S123 tygodniowa oferta), **Wierzchowce** (tylko gdy `Premium.mountOffers()` niepusta, S97). Lewy panel zakładek na PC, poziome zakładki na telefonie; saldo Smoczych Odłamków stale na górze z przyciskiem „Doładuj”.
 - **Zwój Ochrony:** limit dzienny 5 → **1** (`dailyLimit = 1`). Cena bez zmian.
+- **Kamień Przemiany** (S134j, `reroll_stone`, sekcja zwojów): jawny wyjątek jak Zwój Ochrony: **1 dziennie**, związany z
+  kontem od zakupu, płaci tylko esencję jednej przemiany premii u kowala (złoto zawsze, licznik prób rośnie), nie jest
+  materiałem (`paywall.spec`, test 2b).
 - **Tooltip i potwierdzenie** przy każdym zakupie za odłamki (nazwa, co daje, cena, saldo po zakupie). Zakup za Robux: natywne okno Roblox.
 - **`tests/paywall.spec.luau`** (nowy): przechodzi po `Products.shop`, `Products.passes`, przyszłych `Products.subscriptions`, `Products.starterPacks` i `Data/Cosmetics` i sprawdza, że żaden wpis nie wskazuje przedmiotu z bonusami/statami, materiału ulepszania, błogosławieństwa, mikstury EXP ani waluty złota; lista dozwolonych rodzajów jest jawna w teście.
 - `Premium.luau` (Logic) zbiera reguły zakupu (`canBuy(entry, account, now)`), żeby okno i serwer liczyły to samo.

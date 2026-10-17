@@ -78,6 +78,7 @@ local Quests = require("../src/shared/Data/Quests")
 local Rarities = require("../src/shared/Data/Rarities")
 local ScheduledEvents = require("../src/shared/Data/ScheduledEvents")
 local Recipes = require("../src/shared/Data/Recipes")
+local Reroll = require("../src/shared/Logic/Reroll")
 local Shops = require("../src/shared/Data/Shops")
 local SkillData = require("../src/shared/Data/Skills")
 local Spawns = require("../src/shared/Data/Spawns")
@@ -10614,6 +10615,334 @@ function Balance.targetsS134g(): { TargetRow }
 		local why = Balance.S134G_REPORT[row.id]
 		if why then
 			row.report = `S134g: {why}`
+		end
+	end
+	return rows
+end
+
+-- Bonus reroll (S134j, docs/sessions/S134j.md F) -------------------------------------------------------------------
+-- The class weapon of ilvl L - GEAR_GAP (like upgradeVsIncome) at a rarity; Reroll.costAt for every attempt (the count
+-- grows like in the game). goldEq with Balance.materialPrices; hours = essence hours of the level's grinding
+-- (materialSupply.normal, materialHours with transmutation) + gold / economyAt.incomePerHour. The reroll is optional
+-- and outside the game's pace (no row of G9, the material demand / supply or balance1_20 changes).
+
+Balance.S134j = {
+	firstVsUpgrade = { 0.3, 1.0 }, -- first attempt / one +7 upgrade attempt of the same item (goldEq)
+	tenHours = { 1, 4 }, -- 10 attempts on a Heroic / Legendary / Mythic at L 45 / 70 / 100, hours of the level
+	tenHoursUnique = { 0.5, 2 }, -- 10 attempts on a Unique L20
+	sink = { 0.10, 0.35 }, -- essence of 10 attempts on every newly worn item / essence of the band
+	stone = 0.10, -- one stone a day / the essence of 2 h of play (L45+)
+	stoneHours = 2,
+	attempts = 10,
+	levels = { 20, 45, 70, 100 },
+	-- band -> the rarity worn in it (one item per slot per band; D5 has no "items worn" function: DECYZJE S134j)
+	sinkBands = {
+		{ band = { 20, 45 }, rarity = 3 },
+		{ band = { 45, 70 }, rarity = 4 },
+		{ band = { 70, 100 }, rarity = 5 },
+	},
+}
+Balance.S134J_REPORT = {} :: { [string]: string }
+-- S134j: first.vsUpgrade 0.3-1.0 poza zasięgiem: with 0.3 of a +7 attempt the first reroll alone costs 0.37-0.55 h of
+-- the level's income, so 10 attempts (x21.25 with growth 0.25) take 8-12 h and ten.hours (1-4 h, the owner's ~2 h) fails
+-- for every config; ten.hours, sink and stone kept (first attempt 0.02-0.06 of a +7 attempt; docs/DECYZJE.md S134j).
+for _, key in { "unique.L20", "heroic.L45", "heroic.L70", "heroic.L100", "legendary.L45" } do
+	Balance.S134J_REPORT[`S134j.first.vsUpgrade.{key}`] = "0.3-1.0 poza zasięgiem (sprzeczne z ten.hours)"
+end
+for _, key in { "legendary.L70", "legendary.L100", "mythic.L45", "mythic.L70", "mythic.L100" } do
+	Balance.S134J_REPORT[`S134j.first.vsUpgrade.{key}`] = "0.3-1.0 poza zasięgiem (sprzeczne z ten.hours)"
+end
+-- S134j: sink.income (+9 of the set with protection + 10 attempts on the set <= the band's gold income) poza zasięgiem:
+-- the +9 alone is 6.9-14.9 x the band's income (G9 goldEq9: +9 is a long-term goal paid over many bands, a lever outside
+-- Config.Reroll); the reroll adds 0.4-0.5 of the income (docs/DECYZJE.md S134j).
+for _, c in Balance.CLASSES do
+	for _, spec in Balance.S134j.sinkBands do
+		Balance.S134J_REPORT[`S134j.sink.income.{c}.{spec.band[1]}-{spec.band[2]}`] =
+			"≤ 1 poza zasięgiem (samo +9 zestawu to wielokrotność dochodu pasma, G9)"
+	end
+end
+
+export type RerollPlan = {
+	gold: number,
+	materials: { [string]: number },
+	goldEq: number,
+	essence: number, -- dust equivalents (Balance.dustEq)
+	hours: number, -- NaN without classId and level
+}
+
+-- Dust equivalents of essences (Data/Recipes: 10 dust -> shard, 8 shards -> crystal).
+function Balance.dustEq(materials: { [string]: number }): number
+	local shardRecipe = Recipes.get("transmute_shard") :: Recipes.Recipe
+	local crystalRecipe = Recipes.get("transmute_crystal") :: Recipes.Recipe
+	local dustPerShard = shardRecipe.ingredients[1].n / shardRecipe.result.n
+	local shardsPerCrystal = crystalRecipe.ingredients[1].n / crystalRecipe.result.n
+	return (materials.essence_dust or 0)
+		+ dustPerShard * (materials.essence_shard or 0)
+		+ dustPerShard * shardsPerCrystal * (materials.essence_crystal or 0)
+end
+
+-- The reroll item of the model: the class weapon of ilvl level - GEAR_GAP at `rarity`.
+function Balance.rerollItem(classId: string, level: number, rarity: number): any
+	local ilvl = math.max(1, level - Balance.GEAR_GAP)
+	return makeItem(tierId(Balance.LOADOUT[classId].weapon, ilvl), ilvl, rarity, 0, {})
+end
+
+-- Cost of `attempts` rerolls of `item` starting after `opts.from` (default 0) earlier ones.
+function Balance.rerollPlan(
+	item: any,
+	attempts: number,
+	opts: { classId: string?, level: number?, from: number? }?
+): RerollPlan
+	local o = opts or {}
+	local from = o.from or 0
+	local gold = 0
+	local materials: { [string]: number } = {}
+	for n = from, from + attempts - 1 do
+		local cost = Reroll.costAt(item, n)
+		gold += cost.gold
+		for _, m in cost.materials do
+			materials[m.id] = (materials[m.id] or 0) + m.n
+		end
+	end
+	local prices = Balance.materialPrices()
+	local goldEq = gold
+	for _, id in sortedKeys(materials) do
+		goldEq += materials[id] * (prices[id] or 0)
+	end
+	local hours = 0 / 0
+	if o.classId and o.level then
+		local supply = Balance.materialSupply(o.classId, o.level)
+		local need: MaterialNeed = {
+			label = "reroll",
+			dust = materials.essence_dust or 0,
+			shards = materials.essence_shard or 0,
+			crystals = materials.essence_crystal or 0,
+			cores = 0,
+			scrolls = 0,
+			scrollShards = 0,
+		}
+		local income = math.max(1e-9, Balance.economyAt(o.classId, o.level).incomePerHour)
+		hours = Balance.materialHours(need, supply.normal, o.level) + gold / income
+	end
+	return { gold = gold, materials = materials, goldEq = goldEq, essence = Balance.dustEq(materials), hours = hours }
+end
+
+-- goldEq of one upgrade attempt to +`to` (gold + essences; Legend Cores outside like upgradePlan).
+function Balance.upgradeAttemptEq(item: any, to: number): number
+	local cost = Upgrade.cost(item, to)
+	local prices = Balance.materialPrices()
+	local eq = cost.gold
+	for _, m in cost.materials do
+		eq += m.n * (prices[m.id] or 0)
+	end
+	return eq
+end
+
+-- Essence (dust equivalents) a class earns grinding a band { lo, hi } (materialSupply.normal of the middle level x the
+-- grinding hours of every level of the band, Balance.levelHours) and those hours.
+local bandEssenceCache: { [string]: { number } } = {}
+function Balance.bandEssence(classId: string, band: { number }): (number, number)
+	local key = `{classId}|{band[1]}|{band[2]}`
+	local cached = bandEssenceCache[key]
+	if cached then
+		return cached[1], cached[2]
+	end
+	local hours = 0
+	for L = band[1], band[2] - 1 do
+		hours += Balance.levelHours(classId, L)
+	end
+	local mid = math.floor((band[1] + band[2]) / 2)
+	local perHour = Balance.dustEq(Balance.materialSupply(classId, mid).normal)
+	bandEssenceCache[key] = { perHour * hours, hours }
+	return perHour * hours, hours
+end
+
+local SET_SIZE = 2 + #Balance.ARMOR_SLOTS + #Balance.JEWELLERY
+Balance.REROLL_SET = SET_SIZE
+
+export type RerollSink = {
+	classId: string,
+	band: { number },
+	rarity: number,
+	essence: number, -- dust eq of the band
+	hours: number, -- grinding hours of the band
+	reroll: number, -- 10 attempts on each of SET_SIZE items (dust eq)
+	upgrade: number, -- +9 with protection on each of SET_SIZE items (dust eq; the scrolls apart)
+	share: number, -- reroll / essence
+	upgradeShare: number, -- upgrade / essence
+	income: number, -- gold income of the band (Balance.levelIncome of every level of the band)
+	rerollIncome: number, -- goldEq of the set's 10 attempts / income
+	upgradeIncome: number, -- goldEq of the set's +9 with protection (G9 goldEq9 per item) / income
+}
+
+-- S134j (F2 sink): 10 attempts on every item of a set (one item per slot per band, at the band's rarity) against the
+-- essence of the band; the +9 upgrade of the same set beside it (report), both in goldEq against the band's gold income.
+function Balance.rerollSink(classId: string, spec: { band: { number }, rarity: number }): RerollSink
+	local S = Balance.S134j
+	local mid = math.floor((spec.band[1] + spec.band[2]) / 2)
+	local item = Balance.rerollItem(classId, mid, spec.rarity)
+	local essence, hours = Balance.bandEssence(classId, spec.band)
+	local rerollPlan = Balance.rerollPlan(item, S.attempts)
+	local upgradePlan = Balance.upgradePlan(item, 9, true)
+	local reroll = SET_SIZE * rerollPlan.essence
+	local upgrade = SET_SIZE * Balance.dustEq(upgradePlan.materials)
+	local income = 0
+	for L = spec.band[1], spec.band[2] - 1 do
+		income += Balance.levelIncome(classId, L)
+	end
+	income = math.max(1e-9, income)
+	return {
+		classId = classId,
+		band = spec.band,
+		rarity = spec.rarity,
+		essence = essence,
+		hours = hours,
+		reroll = reroll,
+		upgrade = upgrade,
+		share = reroll / math.max(1e-9, essence),
+		upgradeShare = upgrade / math.max(1e-9, essence),
+		income = income,
+		rerollIncome = SET_SIZE * rerollPlan.goldEq / income,
+		upgradeIncome = SET_SIZE * upgradePlan.goldEq / income,
+	}
+end
+
+-- The first attempt (count n) paying the capped cost: from it every attempt costs growthCap x the first.
+function Balance.rerollCapAttempt(): number
+	local R = Config.Reroll
+	return math.ceil((R.growthCap - 1) / R.growth)
+end
+
+-- Essence of one stone attempt (the dearest rarity of the level, at the capped attempt: a stone pays whatever attempt
+-- it is used on and stones stack) against the essence of S134j.stoneHours of grinding.
+function Balance.rerollStoneShare(classId: string, level: number): number
+	local perHour = Balance.dustEq(Balance.materialSupply(classId, level).normal)
+	local best = 0
+	local from = Balance.rerollCapAttempt()
+	for _, rarity in { Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC } do
+		best =
+			math.max(best, Balance.rerollPlan(Balance.rerollItem(classId, level, rarity), 1, { from = from }).essence)
+	end
+	return best / math.max(1e-9, perHour * Balance.S134j.stoneHours)
+end
+
+-- S134j (F2): the targets in one place (ids "S134j.*"); balance.spec ("Balance: bonus reroll (S134j)") asserts every
+-- row without `report`.
+function Balance.targetsS134j(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S134j
+	local function add(id: string, label: string, value: number, low: number?, high: number?, c: string?, lv: number?)
+		target(rows, `S134j.{id}`, "reroll", label, value, low, high, c, lv)
+	end
+	local rarities = { Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC }
+	-- first attempt against a +7 attempt (the gold curve is the same for every class: the Warrior's weapon)
+	for _, rarity in rarities do
+		local key = Rarities.get(rarity).key
+		for _, L in S.levels do
+			if (rarity == Rarities.UNIQUE) == (L == 20) then
+				local item = Balance.rerollItem("Warrior", L, rarity)
+				add(
+					`first.vsUpgrade.{key}.L{L}`,
+					`{key} L{L}: 1. przemiana / próba +7 (goldEq)`,
+					Balance.rerollPlan(item, 1).goldEq / Balance.upgradeAttemptEq(item, 7),
+					S.firstVsUpgrade[1],
+					S.firstVsUpgrade[2],
+					nil,
+					L
+				)
+			end
+		end
+	end
+	-- 10 attempts in hours of the level
+	for _, c in Balance.CLASSES do
+		local unique =
+			Balance.rerollPlan(Balance.rerollItem(c, 20, Rarities.UNIQUE), S.attempts, { classId = c, level = 20 })
+		add(
+			`ten.hours.{c}.unique.L20`,
+			`{c} unique L20: 10 przemian w godzinach poziomu`,
+			unique.hours,
+			S.tenHoursUnique[1],
+			S.tenHoursUnique[2],
+			c,
+			20
+		)
+		for _, rarity in { Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC } do
+			local key = Rarities.get(rarity).key
+			for _, L in { 45, 70, 100 } do
+				local plan =
+					Balance.rerollPlan(Balance.rerollItem(c, L, rarity), S.attempts, { classId = c, level = L })
+				add(
+					`ten.hours.{c}.{key}.L{L}`,
+					`{c} {key} L{L}: 10 przemian w godzinach poziomu`,
+					plan.hours,
+					S.tenHours[1],
+					S.tenHours[2],
+					c,
+					L
+				)
+			end
+		end
+	end
+	-- growth: monotonic, at most growthCap x the first
+	for _, rarity in rarities do
+		local item = Balance.rerollItem("Warrior", 70, rarity)
+		local first = Balance.rerollPlan(item, 1).goldEq
+		local worst, monotonic, previous = 0, 1, 0
+		for n = 0, 20 do
+			local eq = Balance.rerollPlan(item, 1, { from = n }).goldEq
+			if eq < previous then
+				monotonic = 0
+			end
+			previous = eq
+			worst = math.max(worst, eq / first)
+		end
+		local key = Rarities.get(rarity).key
+		add(`growth.cap.{key}`, `{key}: najdroższa próba / pierwsza`, worst, 1, Config.Reroll.growthCap + 1e-9)
+		add(`growth.monotonic.{key}`, `{key}: koszt próby nie maleje (1 = tak)`, monotonic, 1, 1)
+	end
+	-- sink: 10 attempts on every item of the band against its essence
+	for _, c in Balance.CLASSES do
+		for _, spec in S.sinkBands do
+			local sink = Balance.rerollSink(c, spec)
+			local name = `{spec.band[1]}-{spec.band[2]}`
+			add(
+				`sink.{c}.{name}`,
+				`{c} {name}: esencja 10 przemian × {SET_SIZE} przedmiotów ({Rarities.get(spec.rarity).key}) / esencja pasma`,
+				sink.share,
+				S.sink[1],
+				S.sink[2],
+				c,
+				spec.band[2]
+			)
+			add(
+				`sink.income.{c}.{name}`,
+				`{c} {name}: (+9 zestawu z ochroną + 10 przemian × zestaw) w goldEq / dochód złota pasma`,
+				sink.upgradeIncome + sink.rerollIncome,
+				nil,
+				1,
+				c,
+				spec.band[2]
+			)
+		end
+	end
+	-- the stone: one a day against the essence of 2 h of play (the dearest rarity of the level)
+	for _, c in Balance.CLASSES do
+		for _, L in { 45, 70, 100 } do
+			add(
+				`stone.{c}.L{L}`,
+				`{c} L{L}: esencja jednej próby (Kamień) / esencja {S.stoneHours} h gry`,
+				Balance.rerollStoneShare(c, L),
+				nil,
+				S.stone,
+				c,
+				L
+			)
+		end
+	end
+	for _, row in rows do
+		local why = Balance.S134J_REPORT[row.id]
+		if why then
+			row.report = `S134j: {why}`
 		end
 	end
 	return rows
