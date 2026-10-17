@@ -7,7 +7,7 @@
 W01 (kod): profil wyglądu każdej mapy (`Data/MapLooks`), Future + Soft w `default.project.json`, bloom / promienie / głębia ostrości / chmury / niebo w `WorldController`, trzy poziomy grafiki, kamera „z góry”, suwak odczucia trafień (wstrząs + hitstop).
 W01 (Studio): liczby map i jaskini Mchów nastrojone na zrzutach, niebo Boru i Pustkowi (`assets/Sky`), Soft zostaje, każda jaskinia i komnata bossa w swoim kolorze (§4.3), noc w mieście jaśniejsza, kamera z góry sprawdzona pod ziemią, koszt `low` / `high` zmierzony. Ocena właściciela: W01: OK (2026-10-17); następna W02.
 
-W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki i skały na Łąkach, malowana skała gór Łąk, lista zakupów i zasady importu. Czeka na ocenę właściciela.
+W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki i skały na Łąkach, malowana skała gór Łąk, lista zakupów i zasady importu. Ocena właściciela: W02: OK (2026-10-17).
 
 ## Niedokończone
 

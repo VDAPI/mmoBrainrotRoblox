@@ -124,6 +124,7 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 
 - Plan (ten plik): OK (2026-10-17)
 - W01: OK (2026-10-17)
+- W02: OK (2026-10-17; „nie dużo się zmieniło”: zestaw na razie tylko na Łąkach, większa zmiana przy sesjach map)
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 
