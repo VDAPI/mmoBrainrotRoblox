@@ -15,7 +15,7 @@ Diagnoza (stan S81):
 
 Kierunek: **hybryda**. Nic, co działa, nie znika. Proceduralne ruchy zostają zapasem i dostają poprawki po obejrzeniu; prawdziwe klipy (z Tripo, Mixamo, Moon Animator, Animation Editor) podmieniają je wtedy, gdy są. Każda sesja zostawia grę grywalną bez żadnego nowego assetu.
 
-### 0.1. Studio przez MCP (nowa zasada fazy, tylko S110–S119, `IMPORT-MODELI.md` i `IMPORT-GRAFIK.md`)
+### 0.1. Studio przez MCP (nowa zasada fazy, tylko S110–S119, `IMPORT-MODELI.md` i `IMPORT-GRAFIK.md`; od W01 także sesje fazy wyglądu W01–W29, `docs/WYGLAD.md`)
 
 `CLAUDE.md` zabrania uruchamiania gry. Ta seria **zmienia to wąsko**: sesja może używać wbudowanego serwera MCP Roblox Studio (narzędzia `mcp__Roblox_Studio__*`, dokumentacja: create.roblox.com/docs/studio/mcp), żeby **oglądać** animacje i efekty, które zmienia. Wolno:
 - `list_roblox_studios`, `get_studio_state`, `start_stop_play`, `get_console_output`;

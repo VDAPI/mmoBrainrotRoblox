@@ -756,6 +756,25 @@ Flora.under.reedbed = function(bp, x, y, z)
 	end
 end
 
+-- W02: every species and undergrowth draws one asset kit slot (Logic/TownGen/Blueprint beginKit), wherever it is
+-- called from (the forest, groves, camps, quest props): "tree:<kind>" on the server's shell for a big tree and on the
+-- client's detail for a filler tree, "under:<kind>" on the detail. Util/BlueprintBuild puts a kit model in its place
+-- when Data/Kit has one.
+for kind, fn in Flora.species do
+	Flora.species[kind] = function(bp, x, y, z, s, big, ctx)
+		bp:beginKit(`tree:{kind}`, x, y, z, s, if big then "shell" else "detail")
+		fn(bp, x, y, z, s, big, ctx)
+		bp:endKit()
+	end
+end
+for kind, fn in Flora.under do
+	Flora.under[kind] = function(bp, x, y, z)
+		bp:beginKit(`under:{kind}`, x, y, z, 1, "detail")
+		fn(bp, x, y, z)
+		bp:endKit()
+	end
+end
+
 -- Placement -------------------------------------------------------------------------------------------------------
 
 local TILE = 128

@@ -74,10 +74,10 @@ Właściciel akceptuje plan mapy, zanim sesja ją przebuduje.
 | Miejsce | Pora i światło | Kolor przewodni / akcent | Pogoda |
 |---|---|---|---|
 | Miasto | cykl dnia i nocy; latarnie i okna świecą nocą | ciepły kamień, czerwone dachy / złoto | czasem deszcz |
-| Szepczące Łąki | późne popołudnie, złote słońce | jasna zieleń, złoto / czerwone maki | lekki wiatr, pyłki |
-| Mroczny Bór | pochmurny dzień, snopy światła przez korony | ciemna zieleń, mech / fiolet kultu | mgła przy ziemi, deszcz na Bagnach |
-| Spalone Pustkowia | zachód słońca, gorące powietrze | ochra, rdza / pomarańcz lawy | burze piasku, popiół |
-| Lodowe Szczyty | zimny poranek, niskie słońce | biel, błękit / turkus lodu | zamieć, śnieg |
+| Szepczące Łąki | późne popołudnie, złote słońce (W01: 17,0, słońce `#FFB46A`) | jasna zieleń, złoto / czerwone maki | lekki wiatr, pyłki |
+| Mroczny Bór | pochmurny dzień, snopy światła przez korony (W01: 15,5, szare niebo `overcast`, zielona mgła) | ciemna zieleń, mech / fiolet kultu | mgła przy ziemi, deszcz na Bagnach |
+| Spalone Pustkowia | zachód słońca, gorące powietrze (W01: 17,2, słońce `#FF9A50`, niebo `dustSunset`) | ochra, rdza / pomarańcz lawy | burze piasku, popiół |
+| Lodowe Szczyty | zimny poranek, niskie słońce (W01: 7,6, ciepłe słońce `#FFE2C8`, niebieskie cienie) | biel, błękit / turkus lodu | zamieć, śnieg |
 
 ### 4.3 Motywy jaskiń (każda inna)
 
@@ -107,6 +107,8 @@ Szczegóły, koszty na telefonie i źródła: `docs/wyglad/research.md`. W skró
 - **Animacje:** Animation Graphs (wydane 2026-07) do mieszania i stanów, `IKControl` (stopy, patrzenie, dłonie na broni), Moon Animator 2 do własnych klipów.
 - **UI:** 9-slice, `UIStroke`, `UIShadow`, style; rzeczy w becie (gradient radialny, rozmycie) dopiero po wydaniu.
 - **Studio MCP** (wbudowany): sesje W robią zrzuty `screen_capture` i oglądają wynik same, w zakresie wyjątku `docs/DESIGN-16.md` §0.1.
+- **W01:** wygląd każdej mapy (godzina, słońce, bloom, promienie, chmury, głębia ostrości, niebo) w `src/shared/Data/MapLooks.luau`, poziomy grafiki w `Config.Graphics`, kamera „z góry” w `Config.Camera` / `CameraController`. Dziennik i decyzje fazy: `docs/wyglad/SESJE-W.md`, `docs/wyglad/DECYZJE-W.md`, stan `docs/wyglad/STAN-W.md`.
+- **W02:** zestaw w `Data/Kit` + `ReplicatedStorage.Assets.Kit` (gniazda generatorów, `/kit`), zasady importu `docs/wyglad/ZASOBY.md`, zakupy `docs/wyglad/ZAKUPY.md`.
 - **Świat dalej budowany z kodu i danych** (`src/server/World`, Rojo, git): zmieniamy klocki na modele z zestawu W02 i malowane materiały, ale nie przechodzimy na ręcznie zapisywany plik miejsca, bo wtedy znika historia zmian i sesje nie mogą pracować bez Studio.
 
 ## 6. Ocena właściciela (bramki)
@@ -121,6 +123,8 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 ### Oceny
 
 - Plan (ten plik): OK (2026-10-17)
+- W01: OK (2026-10-17)
+- W02: OK (2026-10-17; „nie dużo się zmieniło”: zestaw na razie tylko na Łąkach, większa zmiana przy sesjach map)
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 

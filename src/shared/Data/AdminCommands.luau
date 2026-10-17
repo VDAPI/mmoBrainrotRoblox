@@ -277,6 +277,8 @@ cmd("world", "nodes", { enum("action", { "respawn", "count" }) })
 cmd("world", "fish", { enum("action", { "auto" }) })
 cmd("world", "maps", {})
 cmd("world", "rebuild", { ref("map", "map") }, { danger = true })
+-- W02: the asset kit (Data/Kit) on or off for this server, then the current map is rebuilt
+cmd("world", "kit", { enum("mode", { "on", "off", "auto" }) }, { danger = true })
 cmd("world", "nearby", { int("radius", 10, 2000, true) })
 cmd("world", "area", {})
 cmd("world", "decor", { enum("level", { "low", "mid", "high" }) })

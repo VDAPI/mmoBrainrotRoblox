@@ -10,6 +10,8 @@
 
 local CollectionService = game:GetService("CollectionService")
 
+local KitAssets = require(script.Parent.KitAssets)
+
 local BlueprintBuild = {}
 
 -- CollectionService tag on every piece with a client behaviour; the behaviour name is in the "Fx" attribute
@@ -99,11 +101,31 @@ end
 -- Builds the pieces of `build` whose LOD is enabled in `lods` into a new Model named after the Build, parented to
 -- `parent`. Lights come with the "detail" level, except portal lights, which come with "shell". Returns the model
 -- (nil when nothing matched), the number of parts and the parts with a behaviour tag, grouped by tag.
-function BlueprintBuild.build(build: Build, origin: Vector3, lods: Lods, parent: Instance, pacer: Pacer?): Result
+-- W02: with a `kit` resolver (Util/KitAssets.resolver), every kit slot of the Blueprint that has a model gets that
+-- model on the slot's level instead of its pieces; the slot's colliding shell pieces stay as invisible collision.
+function BlueprintBuild.build(
+	build: Build,
+	origin: Vector3,
+	lods: Lods,
+	parent: Instance,
+	pacer: Pacer?,
+	kit: KitAssets.Resolver?
+): Result
 	local result: Result = { model = nil, parts = 0, tagged = {} }
 	local bp = build.bp
 	local model: Model? = nil
 	local base = BlueprintBuild.frame(build, origin)
+	-- W02: the slots that get a kit model (index -> placement)
+	local placed: { [number]: KitAssets.Placement } = {}
+	local slots = bp.kits
+	if kit and slots then
+		for i, slot in slots do
+			local placement = kit(slot, base)
+			if placement then
+				placed[i] = placement
+			end
+		end
+	end
 	local function ensureModel(): Model
 		if not model then
 			local m = Instance.new("Model")
@@ -116,6 +138,10 @@ function BlueprintBuild.build(build: Build, origin: Vector3, lods: Lods, parent:
 		if not (lods :: any)[piece.lod] then
 			continue
 		end
+		local hidden = piece.k ~= nil and placed[piece.k] ~= nil
+		if hidden and not (piece.col and piece.lod == "shell") then
+			continue -- W02: drawn by the kit model
+		end
 		local part = makePart(piece)
 		local p, r = piece.p, piece.r
 		part.CFrame = base * CFrame.new(p[1], p[2], p[3], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9])
@@ -127,10 +153,13 @@ function BlueprintBuild.build(build: Build, origin: Vector3, lods: Lods, parent:
 		part.CanQuery = piece.col or piece.q
 		part.CanTouch = false
 		part.Locked = true
-		local t = piece.t or 0
+		local t = if hidden then 1 else piece.t or 0
 		part.Transparency = t
 		local size = piece.size
 		part.CastShadow = t < 0.5 and math.max(size[1], size[2], size[3]) >= 2
+		if hidden then
+			part.CanQuery = false -- W02: the kit model's collision, never clicked
+		end
 		if piece.tag and piece.tag ~= "barrier" then
 			part:SetAttribute("Fx", piece.tag)
 			part:SetAttribute("Build", build.name)
@@ -154,6 +183,13 @@ function BlueprintBuild.build(build: Build, origin: Vector3, lods: Lods, parent:
 				pacer.left = pacer.every
 				task.wait()
 			end
+		end
+	end
+	-- W02: the kit models of the slots built on this level
+	for i, placement in placed do
+		if (lods :: any)[(slots :: any)[i].lod] then
+			local placedModel = KitAssets.place(placement, ensureModel())
+			result.parts += #placedModel:GetChildren()
 		end
 	end
 	for _, light in bp.lights do

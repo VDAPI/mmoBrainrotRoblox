@@ -1629,6 +1629,7 @@ return {
 	-- Admin (S08)
 	["admin.usage.maps"] = "/maps: lista map (✔ = zbudowana)",
 	["admin.usage.rebuild"] = "/rebuild <mapId>: przebuduj mapę",
+	["admin.usage.kit"] = "/kit on, off albo auto: zestaw modeli (drzewa, skały, krzaki) zamiast klocków na tym serwerze, przebudowuje bieżącą mapę",
 	["admin.usage.nearby"] = "/nearby [promień]: spawnery w pobliżu",
 	["admin.maps.list"] = "Mapy: {list}",
 	["admin.maps.notBuilt"] = "Mapa {map} nie jest zbudowana.",
@@ -2398,11 +2399,15 @@ return {
 	["death.respawnRobux"] = "Odródź się teraz (R$ {robux})",
 	["menu.volume"] = "Głośność efektów",
 	["menu.musicVolume"] = "Głośność muzyki",
-	["menu.shake"] = "Wstrząsy kamery",
+	["menu.shake"] = "Odczucie trafień (wstrząs i zatrzymanie)",
 	["menu.cameraSens"] = "Czułość kamery",
-	["menu.quality"] = "Jakość efektów",
+	["menu.quality"] = "Jakość grafiki",
 	["menu.quality.high"] = "Wysoka",
 	["menu.quality.low"] = "Niska",
+	["menu.quality.medium"] = "Średnia", -- W01
+	["menu.cameraMode"] = "Kamera", -- W01
+	["menu.cameraMode.free"] = "Swobodna",
+	["menu.cameraMode.top"] = "Z góry",
 	["menu.minimapRotate"] = "Obracana minimapa",
 	["menu.sellConfirm"] = "Pytaj przed sprzedażą cennych",
 	["menu.hotkeys"] = "Skróty klawiszowe",

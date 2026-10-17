@@ -54,6 +54,16 @@
         "StreamingIntegrityMode": "MinimumRadiusPause"
       }
     },
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "LightingStyle": "Soft",
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.2,
+        "EnvironmentDiffuseScale": 1,
+        "EnvironmentSpecularScale": 1
+      }
+    },
     "TextChatService": {
       "$properties": {
         "ChatVersion": "TextChatService"

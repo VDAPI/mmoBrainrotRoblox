@@ -67,6 +67,7 @@ function AccountSchema.accountTemplate(): AccountData
 			friendAlerts = true, -- S133: "<name> is in the game" toast (reconcile)
 			lowHpWarn = true, -- S134f: red vignette and heartbeat below 25 % HP (reconcile)
 			fightCard = true, -- S134f: the small after-fight card for Elite II and Invasion (reconcile)
+			cameraMode = "free", -- W01: free camera or from above (reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

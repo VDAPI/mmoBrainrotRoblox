@@ -24,6 +24,8 @@ właściciel (`docs/GRAFIKA.md` 6).
 
 - `assets/Monsters/<nazwa>.rbxm` → `ReplicatedStorage.Assets.Monsters.<nazwa>` (Rojo, `default.project.json`).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
+- `assets/Kit/<folder>.rbxm` (albo zapis miejsca) → `ReplicatedStorage.Assets.Kit.<folder>` (W02: modele zestawu,
+  `Data/Kit`, sekcja „Zestaw (W02)”).
 - `assets/Weapons/<paczka>.rbxm` → `ReplicatedStorage.Assets.Weapons.<paczka>` (folder MeshPartów broni nazwanych jak
   `model` w `WeaponLooks.assets`; gra szuka po nazwie w całym `Assets.Weapons`). Źródła `.glb` leżą obok tylko lokalnie.
 - `assets/Mounts/<model>.rbxm` → `ReplicatedStorage.Assets.Mounts.<model>` (S96: model wierzchowca z wpisem w
@@ -175,6 +177,32 @@ z neonowych części). Przebudowa, podmiana na własną teksturę i wgranie: `do
 **Stan (2026-10-14):** wszystkie 25 wgrane przez Studio MCP (`upload_image`, konto VDaPii) i wpisane; w Play wszystkie
 `IsLoaded` (`/animlab vfx tex`). Osierocone wgrania z tej sesji (nieużywane, można usunąć w Creator Hub):
 `132519633221746` (bąbel 512 px), `82964945104988` i `82584722869054` (łuki cięcia w pierwszym ułożeniu).
+
+## Niebo map (W01)
+
+Plik `assets/Sky/<klucz>.model.json` (Rojo → `ReplicatedStorage.Assets.Sky`), klucz w `Data/MapLooks` (`sky`). Do repo
+idą tylko ID tekstur (sześć ścian), bez modeli i skryptów z rynku. Mapy bez klucza mają niebo miejsca (`Lighting.Sky`).
+
+| Klucz | Mapa | Tekstury (Bk) | Model w Creator Store | Twórca | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `overcast` | Mroczny Bór | `4495864450` (+5) | „Rain Sky” `12376964583` | srnatsuno | darmowy model Creator Store | 2026-10-17 | szare, zachmurzone; bez skryptów |
+| `dustSunset` | Spalone Pustkowia | `252760981` (+5) | „Realistic Clouded Sunset Skybox” `6681543281` | porkythepig66 | darmowy model Creator Store | 2026-10-17 | sepia, chmury o zachodzie; bez skryptów |
+
+Odrzucone na zrzutach: „Cartoon Sky” `10594688909` (malowane, ale turkus zabarwia całą scenę przez światło otoczenia
+Future), „HD Mountain Sunset” `248161486` (góry w niebie kłócą się z brzegiem mapy). Malowane niebo na 4 pory:
+`docs/wyglad/ZAKUPY.md`.
+
+## Zestaw (W02)
+
+Modele w miejscu: `ReplicatedStorage.Assets.Kit.<folder>.<nazwa>` (`assets/Kit` ma `ignoreUnknownInstances`, Rojo ich
+nie kasuje), import `tools/studio/import_kit.luau`, dane `src/shared/Data/Kit.luau`, zasady `docs/wyglad/ZASOBY.md`.
+Bez modelu gra stawia klocki generatora (jedno ostrzeżenie `[Kit]` na nazwę).
+
+| Partia | Modele | Źródło | Twórca | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|
+| drzewa i krzaki Łąk | `grass_tree_01`–`08`, `10`–`16`, `19`, `grass_bush_01`–`03` | „Yasu's Stylized Tree Pack”, Creator Store `79689531752352` | mvyasu | darmowy model Creator Store (użycie w grach Roblox) | 2026-10-17 | bez skryptów; 2 MeshParty na drzewo, malowane liście (`SurfaceAppearance`) |
+| skały | `common_rock_01`–`06` | „Stylized Rock Pack”, Creator Store `139056934028989` (siatki nr 2, 3, 4, 6, 7, 15) | nizendo | darmowy model Creator Store | 2026-10-17 | bez skryptów; tekstura niebiesko-szara |
+| materiały terenu | `VaelthornGrass`, `VaelthornGround`, `VaelthornRock`, `VaelthornCobble` (+ warianty 1–3) | Material Generator w Studio (MCP `generate_material`), `MaterialService` | własne | własne | 2026-10-17 | per mapa przez `Data/MapLooks.materials` |
 
 ## Ikony przedmiotów (S35)
 

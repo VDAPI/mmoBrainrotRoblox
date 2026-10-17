@@ -4,6 +4,8 @@
 --     tracks) tween to the map's settings from Data/Maps; on maps with `dayNight` (S21: the city) the clock
 --     runs from the shared server time (Logic/DayCycle, offset from the Workspace attribute "DayOffset" set by
 --     /daytime) and the lighting blends between the day and night presets once a second,
+--   * look (W01, Data/MapLooks): a fixed hour per map (no day and night outside the city), the sun's colour, bloom,
+--     sun rays, depth of field, contrast, clouds and the sky, scaled by the graphics level (Config.Graphics),
 --   * mood (S26): AmbienceController hands over the current area's light modulation (Data/Ambience), applied on
 --     top of the map's light and the day and night blend, re-applied ~10 times a second while it changes,
 --   * loading screen on MapTransition (map name, levels, zone, a random tip), faded in and out,
@@ -31,6 +33,7 @@ local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
+local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -53,6 +56,9 @@ local WindowManager: any
 
 local atmosphere: Atmosphere
 local grade: ColorCorrectionEffect
+local bloom: BloomEffect
+local sunRays: SunRaysEffect
+local farBlur: DepthOfFieldEffect
 local music: Sound
 local appliedMap = ""
 
@@ -60,6 +66,11 @@ local appliedMap = ""
 
 -- Time of day on maps with day and night (S21): clock 0..24 and how dark it is (0 day .. 1 night).
 function WorldController.TimeOfDay(): (number, number)
+	-- W01: a map with a fixed hour (Data/MapLooks) shows it all the time
+	local fixed = MapLooks.of(appliedMap).clock
+	if fixed then
+		return fixed, DayCycle.nightness(fixed)
+	end
 	local offset = workspace:GetAttribute("DayOffset")
 	local now = workspace:GetServerTimeNow() + (if type(offset) == "number" then offset else 0)
 	local clock = DayCycle.clock(now, Config.DayLength, Config.DayNightShare)
@@ -69,7 +80,7 @@ end
 -- Whether the map the player is on runs the day and night cycle.
 function WorldController.HasDayNight(): boolean
 	local map = Maps.get(appliedMap)
-	return map ~= nil and map.dayNight == true and map.nightLighting ~= nil
+	return map ~= nil and map.dayNight == true and map.nightLighting ~= nil and MapLooks.of(map.id).clock == nil
 end
 
 local function mix(a: string, b: string, t: number): Color3
@@ -83,8 +94,10 @@ end
 -- Lighting, Atmosphere and colour grading properties of a map right now (day/night blend when it has one).
 local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: any }, { [string]: any })
 	local day = map.lighting
-	local night = if map.dayNight then map.nightLighting else nil
-	local clock, t = day.clockTime, 0
+	local look = MapLooks.of(map.id)
+	-- W01: a fixed hour replaces the cycle (the day preset, lit at that hour)
+	local night = if map.dayNight and look.clock == nil then map.nightLighting else nil
+	local clock, t = look.clock or day.clockTime, 0
 	if night then
 		clock, t = WorldController.TimeOfDay()
 		if map.dayClock then
@@ -100,6 +113,7 @@ local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: an
 		OutdoorAmbient = mix(day.outdoorAmbient, n.outdoorAmbient, t),
 		FogColor = mix(day.fogColor, n.fogColor, t),
 		FogEnd = lerp(day.fogEnd, n.fogEnd, t),
+		ColorShift_Top = Color3.fromHex(look.sunColor):Lerp(Color3.new(1, 1, 1), t),
 	}, {
 		Density = lerp(day.atmosphere.density, n.atmosphere.density, t),
 		Haze = lerp(day.atmosphere.haze, n.atmosphere.haze, t),
@@ -109,7 +123,95 @@ local function environment(map: Maps.MapDef): ({ [string]: any }, { [string]: an
 	}, {
 		TintColor = mix(day.tint, n.tint, t),
 		Saturation = lerp(day.saturation, n.saturation, t),
+		Contrast = look.contrast,
+		Brightness = look.brightness,
 	}
+end
+
+-- W01: the graphics level of the options (settings.quality; Config.Graphics).
+local function graphicsLevel(): typeof(Config.Graphics.levels.high)
+	local quality = State.Get({ "account", "settings", "quality" })
+	local levels = Config.Graphics.levels :: { [string]: typeof(Config.Graphics.levels.high) }
+	return levels[if type(quality) == "string" then quality else Config.Graphics.default] or levels.high
+end
+
+-- W01: the map's sky from ReplicatedStorage.Assets.Sky (the default sky when the key or the asset is missing). The
+-- place's own Sky is the default; it leaves Lighting while a map sky shows (two skies in Lighting pick one at random).
+local defaultSky: Sky? = nil
+
+local function applySky(key: string?)
+	local current = Lighting:FindFirstChild("VaelthornSky")
+	if current and current:GetAttribute("Key") == key then
+		return
+	end
+	if current then
+		current:Destroy()
+	end
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Sky")
+	local source = if key and folder then folder:FindFirstChild(key) else nil
+	if source and source:IsA("Sky") then
+		if defaultSky then
+			defaultSky.Parent = nil
+		end
+		local sky = source:Clone()
+		sky.Name = "VaelthornSky"
+		sky:SetAttribute("Key", key)
+		sky.Parent = Lighting
+	elseif defaultSky then
+		defaultSky.Parent = Lighting
+	end
+end
+
+-- W02: the map's painted terrain materials (Data/MapLooks `materials`): a base material shows its MaterialVariant
+-- while the map sets one and the variant exists in MaterialService (the place); every other overridden base goes back
+-- to the plain material.
+local function applyMaterials(look: MapLooks.Look)
+	local service = game:GetService("MaterialService")
+	local wanted: { [string]: string } = look.materials or {}
+	for _, base in MapLooks.overriddenMaterials() do
+		local name = wanted[base]
+		local variant = if name then service:FindFirstChild(name, true) else nil
+		pcall(function()
+			service:SetBaseMaterialOverride((Enum.Material :: any)[base], if variant then name :: string else "")
+		end)
+	end
+end
+
+-- W01: bloom, sun rays, far blur and clouds of a map at the current graphics level, tweened over `seconds`.
+local function applyPost(map: Maps.MapDef, seconds: number)
+	local look = MapLooks.of(map.id)
+	local level = graphicsLevel()
+	local info = TweenInfo.new(seconds, Enum.EasingStyle.Sine)
+	TweenService:Create(bloom, info, {
+		Intensity = look.bloom.intensity * level.bloom,
+		Size = look.bloom.size,
+		Threshold = look.bloom.threshold,
+	}):Play()
+	TweenService:Create(sunRays, info, { Intensity = if level.sunRays then look.sunRays else 0 }):Play()
+	local blur = level.farBlur and look.farBlur > 0 and UserInputService.KeyboardEnabled
+	farBlur.Enabled = blur
+	if blur then
+		TweenService:Create(farBlur, info, { FarIntensity = look.farBlur }):Play()
+	end
+	local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds")
+	local want = if level.clouds then look.clouds else nil
+	if want then
+		if not clouds then
+			local created = Instance.new("Clouds")
+			created.Cover = 0
+			created.Parent = Workspace.Terrain
+			clouds = created
+		end
+		local c = clouds :: Clouds
+		c.Enabled = true
+		TweenService:Create(c, info, { Cover = want.cover, Density = want.density, Color = Color3.fromHex(want.color) })
+			:Play()
+	elseif clouds then
+		clouds.Enabled = false
+	end
+	applySky(look.sky)
+	applyMaterials(look)
 end
 
 -- Light modulation of the current area (S26, AmbienceController): fog distance / colour, tint, saturation,
@@ -195,6 +297,7 @@ local function applyEnvironment(mapId: string)
 	TweenService:Create(Lighting, info, lightingProps):Play()
 	TweenService:Create(atmosphere, info, atmosphereProps):Play()
 	TweenService:Create(grade, info, gradeProps):Play()
+	applyPost(map, Config.Graphics.fade)
 	tweenUntil = os.clock() + 1.6
 	-- Music crossfade (tracks arrive with S14; empty id = silence).
 	local volume = 0.35
@@ -237,6 +340,7 @@ function WorldController.PreviewEnvironment(mapId: string?, clock: number?)
 	TweenService:Create(Lighting, info, lightingProps):Play()
 	TweenService:Create(atmosphere, info, atmosphereProps):Play()
 	TweenService:Create(grade, info, gradeProps):Play()
+	applyPost(map, 0.8)
 	tweenUntil = if previewing then math.huge else os.clock() + 0.9
 end
 
@@ -631,6 +735,31 @@ function WorldController.Start()
 	grade = Instance.new("ColorCorrectionEffect")
 	grade.Name = "VaelthornGrade"
 	grade.Parent = Lighting
+	-- W01: post effects of the map look (Data/MapLooks), off until a map is applied. The place's own bloom, sun rays
+	-- and depth of field (left in Lighting from before W01) go off: one owner for every post effect.
+	for _, child in Lighting:GetChildren() do
+		if child:IsA("BloomEffect") or child:IsA("SunRaysEffect") or child:IsA("DepthOfFieldEffect") then
+			child.Enabled = false
+		end
+	end
+	defaultSky = Lighting:FindFirstChildOfClass("Sky")
+	bloom = Instance.new("BloomEffect")
+	bloom.Name = "VaelthornBloom"
+	bloom.Intensity = 0
+	bloom.Parent = Lighting
+	sunRays = Instance.new("SunRaysEffect")
+	sunRays.Name = "VaelthornSunRays"
+	sunRays.Intensity = 0
+	sunRays.Spread = 0.6
+	sunRays.Parent = Lighting
+	farBlur = Instance.new("DepthOfFieldEffect")
+	farBlur.Name = "VaelthornFarBlur"
+	farBlur.Enabled = false
+	farBlur.FocusDistance = 60
+	farBlur.InFocusRadius = 120
+	farBlur.NearIntensity = 0
+	farBlur.FarIntensity = 0
+	farBlur.Parent = Lighting
 	music = Instance.new("Sound")
 	music.Name = "VaelthornMusic"
 	music.Looped = true
@@ -650,6 +779,13 @@ function WorldController.Start()
 	if type(initial) == "string" then
 		applyEnvironment(initial)
 	end
+	-- W01: a new graphics level re-applies the post effects of the current map
+	scope:Observer(State.Value({ "account", "settings", "quality" })):onChange(function()
+		local map = Maps.get(appliedMap)
+		if map then
+			applyPost(map, 0.5)
+		end
+	end)
 
 	-- Safe placement: tell the server once the ground under the spawn / teleport target has streamed in (a ray
 	-- from just above the target hits terrain, water or map geometry), so it can release the anchored character.
@@ -715,7 +851,7 @@ function WorldController.Start()
 		if cycle then
 			accumulator = 0
 		end
-		if not mood and not map.dayNight then
+		if not mood and (not map.dayNight or MapLooks.of(map.id).clock ~= nil) then
 			return
 		end
 		if mood then

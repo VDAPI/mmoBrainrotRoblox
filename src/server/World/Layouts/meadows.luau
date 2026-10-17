@@ -20,6 +20,7 @@ local TerrainWriter = require(script.Parent.Parent.TerrainWriter)
 local Shared = ReplicatedStorage.Shared
 local Areas = require(Shared.Data.Areas)
 local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local MeadowsGen = require(Shared.Logic.MeadowsGen)
 local MeadowsTerrain = require(Shared.Logic.MeadowsTerrain)
@@ -126,8 +127,9 @@ return function(ctx: Build.Context)
 	end
 	local builds = MeadowsGen.all()
 	local shell = 0
+	local kit = KitAssets.resolver(ctx.map.id) -- W02: asset kit models for trees, rocks and bushes
 	for _, build in builds do
-		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag))
+		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag), nil, kit)
 		shell += result.parts
 	end
 	ctx.parts += shell

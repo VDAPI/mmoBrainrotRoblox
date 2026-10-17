@@ -383,7 +383,7 @@ export type Settings = {
 	-- S14 options window
 	musicVolume: number,
 	ambientVolume: number, -- S26: area ambience loops (birds, wind, frogs, the waterfall)
-	quality: string, -- "high" | "low" (fewer particles)
+	quality: string, -- "high" | "medium" | "low" (W01: graphics level, Config.Graphics)
 	minimapRotate: boolean,
 	cameraSens: number, -- mouse/touch camera sensitivity multiplier
 	sellConfirm: boolean, -- ask before selling valuable items
@@ -405,6 +405,7 @@ export type Settings = {
 	friendAlerts: boolean, -- S133: the "<name> is in the game" toast
 	lowHpWarn: boolean, -- S134f: low health vignette and heartbeat (Hud/LowHpVignette)
 	fightCard: boolean, -- S134f: the after-fight card (FightCard; the fight log window stays)
+	cameraMode: string, -- W01: "free" | "top" (CameraController)
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class

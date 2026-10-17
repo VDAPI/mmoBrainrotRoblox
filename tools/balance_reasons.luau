@@ -156,6 +156,8 @@ return {
 		["Data/SkillVfx"] = "wygląd",
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
+		["Data/MapLooks"] = "wygląd", -- W01
+		["Data/Kit"] = "wygląd", -- W02: asset kit models for the generators' props
 		["Data/Sfx"] = "wygląd", -- S111: sound effect keys (ids, volume, pitch, roll-off)
 		["Data/VfxTextures"] = "wygląd", -- S112: effect texture ids, sizes and flipbooks
 		["Data/HitFx"] = "wygląd", -- S113: hit sparks by the target's material

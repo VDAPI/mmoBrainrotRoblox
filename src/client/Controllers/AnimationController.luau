@@ -1387,6 +1387,9 @@ end
 -- Hitstop (S28): the skill motion of `model` (and a monster's attack) stands still for `seconds`. S113: also the basic
 -- attack (its pose, or its clip's track) and a skill's clip.
 function AnimationController.Hitstop(model: Model, seconds: number)
+	-- W01: the "Hit feel" option (settings.shake 0..1) also scales the hitstop; 0 = none
+	local feel = State.Get({ "account", "settings", "shake" })
+	seconds *= if type(feel) == "number" then math.clamp(feel, 0, 1) else 1
 	local play = skills[model]
 	local now = os.clock()
 	if play and not play.frozenAt then

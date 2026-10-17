@@ -52,7 +52,11 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 		return type(value) == "number" and value == value and value >= 0 and value <= 1
 	end,
 	quality = function(value)
-		return value == "high" or value == "low"
+		return value == "high" or value == "medium" or value == "low" -- W01: medium
+	end,
+	-- W01: the camera: free (the Roblox camera) or from above at an angle (CameraController).
+	cameraMode = function(value)
+		return value == "free" or value == "top"
 	end,
 	minimapRotate = function(value)
 		return type(value) == "boolean"

@@ -428,7 +428,6 @@ end
 local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Child
 	local busy = scope:Value(false)
 	local dataMock = State.Value({ "session", "dataMock" })
-	local quality = State.Value({ "account", "settings", "quality" })
 
 	local function switchCharacter()
 		if Fusion.peek(busy) then
@@ -604,21 +603,22 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			lureRow(scope), -- S122
 			row(scope, 7, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
 			row(scope, 7.5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1)),
+			-- W01: three graphics levels (Config.Graphics) and the camera mode (CameraController)
 			row(
 				scope,
 				8,
 				"menu.quality",
-				Button(scope, {
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.fromScale(1, 0),
-					Size = UDim2.fromOffset(150, 44),
-					Text = scope:Computed(function(use): string
-						return Text.get(use, if use(quality) == "low" then "menu.quality.low" else "menu.quality.high")
-					end),
-					OnClick = function()
-						Net.Send("SetSetting", "quality", if Fusion.peek(quality) == "low" then "high" else "low")
-					end,
-				})
+				cycle(scope, "quality", "high", { "low", "medium", "high" }, function(use, value)
+					return Text.get(use, `menu.quality.{value}`)
+				end)
+			),
+			row(
+				scope,
+				8,
+				"menu.cameraMode",
+				cycle(scope, "cameraMode", "free", { "free", "top" }, function(use, value)
+					return Text.get(use, `menu.cameraMode.{value}`)
+				end)
 			),
 			row(scope, 9, "menu.damageNumbers", damageNumbers(scope)),
 			row(scope, 10, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
