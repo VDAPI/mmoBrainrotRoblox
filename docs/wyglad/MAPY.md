@@ -67,3 +67,5 @@ Każde ma rekomendację; sesje map pójdą według rekomendacji, jeśli nie napi
 3. **Fontanna w mieście:** zamiast brązowego rycerza bezimienna „Pani z Cierniem” (królowa ze złamaną włócznią), cicha zapowiedź Morvane i nazwy miasta. Rekomendacja: tak.
 4. **Pora w Borze:** zostaje pochmurne 15:30 z W01 (czytelność), księżyc tylko w jaskini i efektach. Rekomendacja: zostaje.
 5. **Pogoda w Pustkowiach:** stały rzadki popiół na całej mapie, burze piasku tylko na Wydmach i Grobowcach (widoczność powyżej 250 studów dla graczy 45–55). Rekomendacja: tak.
+
+**Odpowiedzi właściciela (2026-10-17):** 1–5 tak (w 4: Bór zostaje pochmurny). Dodatkowo: „mapy możesz całe przebudować, żeby były dokontentowane”. Sesje W12–W24 mogą więc zmieniać układ szerzej niż 13 zmian z planów regionów (także kształt mapy, drogi i położenie obszarów), z tymi samymi grupami potworów, poziomami, Elitami, bossami, questami, portalami i NPC (`DECYZJE-W.md`); każda większa zmiana dalej idzie do tabeli „Zmiany układu” i na zrzuty przed i po.
