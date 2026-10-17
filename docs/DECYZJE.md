@@ -5060,3 +5060,33 @@
 - **S138** Przełom umiejętności kierunku zostaje w `path.bp` także bez kupionego węzła (zastępuje S71–S81 „zwrot węzła
   kasuje wybór”; DESIGN-18 §8): `validHotbar` usuwa tylko wpisy nieznanych umiejętności, innej klasy i złych opcji, więc
   zwrot węzła, `ResetPaths` i pełny reset nie gubią wyborów (bez węzła ranga 0, więc wybór nie działa).
+- **S139** Okno umiejętności 2.0: zakładki `pool:<id>` (pula noszonej broni pierwsza, inne pule z „załóż: …”, pełna
+  rezerwacja i „Na pasek” przez `SetPoolBar`) i „Kierunki” (przełącznik kierunków, drzewko jednego; „Ścieżki wkrótce”
+  w tej zakładce). Zakładka „Podstawa” znika; okno otwiera się na puli noszonej broni (było: kierunek przewodni).
+- **S139** `PathView.poolView(character, poolId, reserve?)` i `skillDetails(character, poolId, skillId, reserve?)` biorą
+  rezerwację okna (rozszerzenie sygnatur z pliku sesji: okno nie liczy planu samo, `PathView.planned` zastępuje kopię
+  w `Context`). Wiersz „Z kierunków” tylko z umiejętnościami kierunków z kupionym węzłem (bez węzła rangi nie da się
+  kupić).
+- **S139** Pula przejściowa (dziś wszystkie): wiersz „Pozostałe” (według `unlock`) i „Z kierunków” stoją nad pustą
+  drabiną (niskie szczeble z kodem roli), żeby okno było czytelne do S140–S145; bez `transitional`: drabina, „Z
+  kierunków”, „Pozostałe”. Szczebel drabiny ma jedną rolę (poziomy obu drabin się nie powtarzają).
+- **S139** „Zmiany z kierunków” pokazuje wszystkie węzły `modify` klasy dla umiejętności (działa / teraz nie działa /
+  do kupienia w rzędzie N), nie tylko działające (`Paths.skillMods` daje same liczby).
+- **S139** Tabela „Ranga N → N+1”: pola `values` zawsze, czas działania, czasy efektów, koszt i odnowienie tylko gdy
+  następna ranga je zmienia; liczby z `Skills.descriptionArgs` (wybory, węzły, efekty przedmiotów, haki pasywek kosztu
+  i promienia jak w opisie), bez skrócenia
+  odnowienia z przedmiotów (to pokazuje „Koszt i odnowienie” z `SkillInfo.costLine`). Etykiety `skills.field.<pole>`.
+- **S139** Dymek paska: nazwa i ranga, `short`, kształt, koszt, leczenie, tylko osiągnięte przełomy (bez pełnego opisu
+  i następnej rangi). Opisy w `UI/SkillInfo` liczą też efekty przedmiotów (jak `Paths.effectiveFor`).
+- **S139** Telefon: kolumny ról stałej szerokości (62 px, drzewko 468 px) z ikonami ról (nazwa po przytrzymaniu), bez
+  łamania ról w dwa rzędy; „Anuluj / Zatwierdź (+N)” przypięte u dołu ekranu także nad arkuszem; w nagłówku kierunków
+  tylko punkty talentów, kierunek przewodni (z progiem) i zwieńczenie pod przełącznikiem kierunków. PC: przyciski
+  szczegółów po dwa w rzędzie, podgląd 3D tylko po „Podgląd”.
+- **S139** Toast „Pula: <nazwa>” (`skills.toast.pool`, `PathService.syncPool` przy zmianie broni) i ten sam napis nad
+  paskiem na 2 s (`Hud/PoolLabel`, nie po wczytaniu postaci).
+- **S139** Usunięte nieużywane klucze okna: `skills.hint`, `skills.dragHint`, `skills.current`, `skills.next`,
+  `skills.notLearned`, `skills.pool.equipped`, `skills.points.{free,header,confirm}`, `paths.tab.{base,soon,main,open,
+  closed}`.
+- **S139** Przełom „osiągnięty” wszędzie z `Paths.bpRank` (najwyższa ranga umiejętności w dowolnej puli klasy, ta sama
+  co w `canChooseBreakpoint`): znaki kafelków każdej puli, karty PC, przypięty rząd A / B telefonu, „!” i kropka puli,
+  w której umiejętność ma rangę.

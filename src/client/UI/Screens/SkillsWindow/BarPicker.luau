@@ -2,6 +2,7 @@
 -- Slot picker for a full bar (S56, moved in S59): 2 x 4 cells (S137: 8 slots per pool) with the key and the skill on
 -- it over the whole window content (also over the phone sheet); the chosen slot is replaced (PutOnBar with a slot).
 -- On touch the cancel button is MinTouch high (S59 F).
+-- S139: the bar of the pool being edited (`ctx.picking.poolId`: the active pool's hotbar or another pool's bar).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -32,19 +34,26 @@ local function BarPicker(
 	local cancelHeight = scope:Computed(function(use): number
 		return if use(touch) then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 	end)
+	-- the bar of the pool being edited
+	local function barOf(use: Fusion.Use): { [string]: string }
+		local picking = use(ctx.picking)
+		local character = use(ctx.character)
+		if not picking or not character then
+			return {}
+		end
+		return SkillPoints.barOf(character, picking.poolId)
+	end
 	local cells: { Instance } = {}
 	for index = 1, SkillData.HOTBAR_SLOTS do
 		local key = tostring(index % 10)
 		local glyph = scope:Computed(function(use): string
-			local bar = use(ctx.hotbar)
-			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			local id = barOf(use)[tostring(index)]
 			local skill = id and SkillData.get(id)
 			return if skill then skill.glyph else ""
 		end)
 		-- S119: the picture of the skill on that slot once loaded (the glyph otherwise).
 		local artKey = scope:Computed(function(use): string?
-			local bar = use(ctx.hotbar)
-			local id = if type(bar) == "table" then bar[tostring(index)] else nil
+			local id = barOf(use)[tostring(index)]
 			return if id and SkillData.get(id) then UiArt.skill(id) else nil
 		end)
 		local artShown = ArtIcon.Shown(scope, artKey)

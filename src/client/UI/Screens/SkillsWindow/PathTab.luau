@@ -8,6 +8,11 @@
 -- capstone is in another direction, S138; the row's points, kind and reason in its tooltip). No description text on the tree: a click / tap on a
 -- node shows it in the PC details panel or the phone sheet (Buy / Refund there). "Refund all nodes" at the end.
 -- Same tree on PC (510 px list) and phone (full width, bigger tiles).
+-- S139 (DESIGN-18 §12 D): the "Directions" tab: a switch of the class's directions at the top (a card per direction:
+-- its name, role and points, a dot when something waits there), then the tree of the shown one; node tiles are the
+-- pool tree's tiles (SkillsWindow/Tile). The leading direction, the capstone and the free talent points stand in the
+-- window header (the phone: only the points; the other two under the switch). A class without directions shows
+-- "Paths soon".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,7 +21,9 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local NodeCard = require(script.Parent.NodeCard)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
+local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
@@ -53,22 +60,126 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 	local rowHeight = tileSize + NodeCard.PIPS + (if touch then 30 else 24)
 	local spread = if touch then 124 else 112 -- distance between the centres of neighbouring nodes
 
+	local switchHeight = if touch then Theme.Size.MinTouch + 10 else 46
+
 	return scope:Computed(function(use, s: Scope): { Instance }
-		local tab = use(ctx.activeTab)
 		local character = use(ctx.character)
-		if tab == "base" or tab == "soon" or not character then
+		if use(ctx.activeTab) ~= Context.DIRECTIONS or not character then
 			return {}
 		end
-		local view = PathView.path(character, tab, use(ctx.weapons))
-		if not view then
-			return {}
-		end
-		local def = view.path
 		local out: { Instance } = {}
 		local function add(item: Instance)
 			(item :: any).LayoutOrder = #out + 1
 			table.insert(out, item)
 		end
+		local list = use(ctx.paths)
+		local shown = use(ctx.shownDirection)
+		if #list == 0 or not shown then
+			-- "Paths soon" (a class without directions, ROZWOJ 2.6)
+			for i, key in { "paths.soon", "paths.soon.body" } do
+				add(s:New("TextLabel")({
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, -8, 0, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					Text = Text.get(use, key),
+					TextWrapped = true,
+					FontFace = if i == 1 then Theme.Fonts.Display else Theme.Fonts.Body,
+					TextSize = if i == 1 then Theme.TextSize.Large else Theme.TextSize.Small,
+					TextColor3 = if i == 1 then Theme.Paper.Heading else Theme.Paper.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}))
+			end
+			return out
+		end
+		-- S139: the switch of directions (name, role, points; a dot when something waits there)
+		local attention = use(ctx.attention)
+		local cards: { Instance } = {}
+		for i, pathDef in list do
+			local id = pathDef.id
+			local isShown = id == shown
+			local marked = attention ~= nil and attention.paths[id] == true
+			local role = Text.get(use, `paths.role.{pathDef.role}`)
+			local sub = `{role} · {Text.get(use, "skills.tab.spent", { n = Paths.pathSpent(character, id) })}`
+			table.insert(
+				cards,
+				s:New("TextButton")({
+					Name = id,
+					LayoutOrder = i,
+					Size = UDim2.new(1 / #list, -6, 0, switchHeight),
+					AutoButtonColor = false,
+					BackgroundColor3 = if isShown then Theme.Paper.Raised else Theme.Paper.Sunken,
+					Text = "",
+					[OnEvent("Activated")] = function()
+						ctx.direction:set(id)
+					end,
+					[Children] = {
+						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						s:New("UIStroke")({
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Thickness = if isShown then Theme.Stroke.Normal else Theme.Stroke.Thin,
+							Color = if isShown then Theme.Brass.Frame else Theme.Paper.Border,
+						}),
+						s:New("UIPadding")({
+							PaddingLeft = UDim.new(0, Theme.Padding.Small),
+							PaddingRight = UDim.new(0, Theme.Padding.Small),
+						}),
+						s:New("UIListLayout")({
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+						}),
+						s:New("TextLabel")({
+							LayoutOrder = 1,
+							BackgroundTransparency = 1,
+							Size = UDim2.new(1, 0, 0, Theme.TextSize.Small + 2),
+							Text = Text.get(use, pathDef.nameKey),
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if isShown then Theme.Paper.Heading else Theme.Paper.Text,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("TextLabel")({
+							LayoutOrder = 2,
+							BackgroundTransparency = 1,
+							Size = UDim2.new(1, 0, 0, Theme.TextSize.Caption + 1),
+							Text = sub,
+							FontFace = Theme.Fonts.BodyMedium,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = Theme.Paper.TextMuted,
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+						}),
+						s:New("Frame")({
+							Name = "Dot",
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.new(1, Theme.Padding.Small - 3, 0, 3),
+							Size = UDim2.fromOffset(12, 12),
+							BackgroundColor3 = Theme.Paper.Danger,
+							Visible = marked,
+							[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+						}),
+					},
+				})
+			)
+		end
+		add(s:New("Frame")({
+			Name = "Directions",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -8, 0, switchHeight),
+			[Children] = {
+				s:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				cards :: any,
+			},
+		}))
+		local view = PathView.path(character, shown, use(ctx.weapons))
+		if not view then
+			return out
+		end
+		local def = view.path
 		local function label(text: string, color: Color3?, font: Font?, size: number?)
 			add(s:New("TextLabel")({
 				BackgroundTransparency = 1,
@@ -81,6 +192,26 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextColor3 = color or Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
+		end
+		-- The phone's header has room only for the talent points: the set's leading direction (with its threshold) and
+		-- capstone stand under the switch.
+		if touch then
+			local leading = PathView.leading(character)
+			local leadingDef = if leading.pathId then PathData.get(leading.pathId) else nil
+			label(
+				if leadingDef
+					then Text.get(use, "skills.tree.leading", { name = Text.get(use, leadingDef.nameKey) })
+					else Text.get(use, "skills.tree.leadingNone", { n = leading.need }),
+				Theme.Paper.Heading,
+				Theme.Fonts.BodyBold
+			)
+			local capstone = Paths.capstoneOf(character)
+			local capstoneDef = if capstone then PathData.get(capstone) else nil
+			label(
+				if capstoneDef
+					then Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) })
+					else Text.get(use, "skills.tree.capstoneNone")
+			)
 		end
 		-- Header: the name (a click shows the path's description), the ranks in the direction (S138).
 		local pathSelected = s:Computed(function(use2): boolean
@@ -110,7 +241,6 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			end,
 		}))
 		-- S138 (DESIGN-18 §7): a direction to mix, no main path choice and no direction weapon
-		label(Text.get(use, "skills.tree.points", { n = view.spent }), Theme.Paper.Text, Theme.Fonts.BodyBold)
 		if view.leading then
 			label(Text.get(use, "paths.isMain"), Theme.Paper.Success, Theme.Fonts.BodyBold)
 		end

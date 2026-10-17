@@ -19,6 +19,7 @@
 -- the window). The equipped weapon selects the pool (Logic/SkillPools.activePool): on load and on a weapon change the
 -- bars swap (SkillPoints.switchPool), in combat the new pool's skills wait Config.SkillPools.swapLock
 -- (SkillService.LockPool). On load a changed pool version cleans the ranks and gives a free reset (needsRespec).
+-- S139: a weapon change that switches the pool sends the toast "Pool: <name>".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -168,6 +169,11 @@ local function syncPool(player: Player, fromWeapon: boolean): boolean
 	PlayerStateService.Set(player, { "character", "barPool" }, swap.barPool)
 	if fromWeapon and ResourceService.InCombat(player) then
 		SkillService.LockPool(player, Config.SkillPools.swapLock)
+	end
+	-- S139 (DESIGN-18 §12 F2): "Pool: <name>" on a weapon change (the HUD also shows it over the bar)
+	local def = if fromWeapon then SkillPools.def(char.class, pool) else nil
+	if def then
+		Net.Fire(player, "Toast", "skills.toast.pool", { pool = "@" .. def.nameKey }, "info")
 	end
 	return true
 end

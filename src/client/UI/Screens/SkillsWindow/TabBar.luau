@@ -1,8 +1,9 @@
 --!strict
--- Tabs of the skills window (S59, ROZWOJ 4): "Base" with the class glyph, then one tab per path of the class (the
--- path weapon's icon, the name and the state, Logic/PathView.tabState; S138: directions, "leading direction" / "N pts"
--- / closed) or a single "Paths soon" for a class without paths. A red dot marks a tab with something to do (PathView.attention). Scrolls
--- sideways when the tabs do not fit (phone).
+-- Tabs of the skills window (S59, ROZWOJ 4). S139 (DESIGN-18 §12): one tab per weapon pool of the class, the pool of the
+-- equipped weapon first (the weapon's icon, the pool name, "N pts to spend"), the other pools with "wear: <weapon>"
+-- (their ranks are reserved and confirmed the same way, they work once that weapon is worn), then "Directions" (the
+-- leading direction's name or the free talent points). A red dot marks a tab with something to do
+-- (PathView.attention: pools / directions). Scrolls sideways when the tabs do not fit (phone).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,8 +13,10 @@ local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
-local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
+local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local SkillPoints = require(ReplicatedStorage.Shared.Logic.SkillPoints)
+local SkillPools = require(ReplicatedStorage.Shared.Logic.SkillPools)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -27,12 +30,6 @@ local TabBar = {}
 -- S135: parchment cards like the Tabs component (two lines: the name and the path state)
 TabBar.HEIGHT = 46
 TabBar.HEIGHT_TOUCH = 50
-
-local STATE_COLOR: { [string]: Color3 } = {
-	main = Theme.Paper.Heading,
-	open = Theme.Paper.Text,
-	closed = Theme.Paper.TextMuted,
-}
 
 type Entry = { id: string, name: string, state: string?, stateColor: Color3?, icon: Instance }
 
@@ -69,7 +66,11 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 			if not attention then
 				return false
 			end
-			return if entry.id == "base" then attention.base else attention.paths[entry.id] == true
+			if entry.id == Context.DIRECTIONS then
+				return attention.directions
+			end
+			local poolId = Context.poolOfTab(entry.id)
+			return poolId ~= nil and attention.pools[poolId] == true
 		end)
 		return s:New("TextButton")({
 			Name = entry.id,
@@ -172,7 +173,7 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 	end
 
 	local tabs = scope:Computed(function(use, s: Scope): { Instance }
-		local character = use(ctx.character)
+		local character: any = use(ctx.character)
 		if not character then
 			return {}
 		end
@@ -180,32 +181,70 @@ function TabBar.new(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 		local classGlyph = if class then class.icon else "✦"
 		local classColor = if class then Theme.readable(class.color, "paper") else Theme.Paper.Heading
 		local emblem = if class then UiArt.classEmblem(class.id) else nil
-		local entries: { Entry } = {
-			{ id = "base", name = Text.get(use, "paths.tab.base"), icon = glyph(s, classGlyph, classColor, emblem) },
-		}
-		local paths = use(ctx.paths)
-		if #paths == 0 then
-			table.insert(entries, {
-				id = "soon",
-				name = Text.get(use, "paths.tab.soon"),
-				icon = glyph(s, "…", Theme.Paper.TextMuted),
-			})
+		local active = use(ctx.activePool)
+		local entries: { Entry } = {}
+		-- the pools: the worn one first
+		local order = SkillPools.ids(character.class)
+		if active then
+			local at = table.find(order, active)
+			if at then
+				table.remove(order, at)
+				table.insert(order, 1, active)
+			end
 		end
-		for _, def in paths do
-			local state = PathView.tabState(character, def.id)
-			local weaponType = Paths.iconWeapon(def)
-			local item = if weaponType then Items.get(`{weaponType}_1`) else nil
-			local icon = if item
-				then ItemIcon(s, { Def = item, Size = UDim2.fromOffset(24, 24) })
-				else glyph(s, classGlyph, classColor, emblem)
-			table.insert(entries, {
-				id = def.id,
-				name = Text.get(use, def.nameKey),
-				state = Text.get(use, `paths.tab.{state}`, { n = Paths.pathSpent(character, def.id) }),
-				stateColor = STATE_COLOR[state],
-				icon = icon,
-			})
+		local equipment = use(ctx.equipment)
+		local worn = if type(equipment) == "table" then equipment.weapon else nil
+		local wornDef = if type(worn) == "table" and type(worn.id) == "string" then Items.get(worn.id) else nil
+		for _, poolId in order do
+			local def = SkillPools.def(character.class, poolId)
+			if def then
+				local isActive = poolId == active
+				local itemDef = if isActive and wornDef then wornDef else Items.get(`{def.weapon.main[1]}_1`)
+				local icon = if def.weapon.element
+					then glyph(s, def.glyph, classColor)
+					elseif itemDef then ItemIcon(s, { Def = itemDef, Size = UDim2.fromOffset(24, 24) })
+					else glyph(s, def.glyph, classColor)
+				local state: string
+				local stateColor = Theme.Paper.TextMuted
+				if isActive then
+					local free = math.max(0, SkillPoints.free(character, poolId))
+					state = Text.get(use, "skills.tab.free", { n = free })
+					if free > 0 then
+						stateColor = Theme.Paper.Success
+					end
+				elseif def.weapon.element then
+					state = Text.get(
+						use,
+						"skills.tab.wearElement",
+						{ element = Text.get(use, `element.{def.weapon.element}`) }
+					)
+				else
+					state =
+						Text.get(use, "skills.tab.wear", { weapon = Text.get(use, `itemBase.{def.weapon.main[1]}`) })
+				end
+				table.insert(entries, {
+					id = Context.poolTab(poolId),
+					name = Text.get(use, def.nameKey),
+					state = state,
+					stateColor = stateColor,
+					icon = icon,
+				})
+			end
 		end
+		-- the directions
+		local leading = Paths.mainOf(character)
+		local leadingDef = if leading then PathData.get(leading) else nil
+		local talents = math.max(0, Paths.free(character))
+		table.insert(entries, {
+			id = Context.DIRECTIONS,
+			name = Text.get(use, "skills.tab.directions"),
+			state = if talents > 0
+				then Text.get(use, "skills.tab.talents", { n = talents })
+				elseif leadingDef then Text.get(use, leadingDef.nameKey)
+				else Text.get(use, "skills.tab.talents", { n = 0 }),
+			stateColor = if talents > 0 then Theme.Paper.Success else Theme.Paper.TextMuted,
+			icon = glyph(s, classGlyph, classColor, emblem),
+		})
 		local out: { Instance } = {}
 		for i, entry in entries do
 			(entry.icon :: any).LayoutOrder = 1

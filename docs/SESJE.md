@@ -11897,3 +11897,42 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance}.luau`, `tests/fixtures/paths.luau`, `tests/{paths,pathview,skillpoints,titles,luck,skills,
   lootcomfort,admin,wikidump,balance,character,cosmetics2}.spec.luau`, `tools/WikiData/Skills.luau`,
   `tools/{balance_reasons.luau,balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S139: Okno umiejętności 2.0
+
+- **Widok (`Logic/PathView`):** `COLUMNS` (S, A, K, O, P, U, C), `SECTIONS`, `layout(base, directions)` (wiersz na każdy
+  szczebel obu drabin według poziomu, umiejętność w kolumnie swojej roli, „Z kierunków”, „Pozostałe” według `unlock`),
+  `planned(character, poolId, reserve)` (postać z kupioną rezerwacją), `poolView(character, poolId, reserve?)`
+  (kafelki: ranga z rezerwacją, kupione, limit, kłódka z poziomem, następna ranga za limitem, `buyable` z powodem,
+  zwrot z ceną, znaki przełomów 5 / 10, miejsce na pasku, pula aktywna; wolne punkty po rezerwacji),
+  `skillDetails(character, poolId, skillId, reserve?)` (rola, typ, `short` z argumentami, tabela ranga N / N+1 z
+  różnicą, przełomy, węzły `modify` klasy ze stanem, efekty przedmiotów, stan kupna i paska, lista sekcji),
+  `attention` z `pools` (kropka zakładki aktywnej puli) i `directions`.
+- **Okno (`UI/Screens/SkillsWindow`):** zakładki pul (pula noszonej broni pierwsza z ikoną broni i „N pkt do wydania”,
+  inne z „załóż: …”) i „Kierunki”; nagłówek: zestaw 1 / 2, kopiuj, punkty puli, „Zatwierdź (+N)” i „Anuluj” (PC), na
+  kierunkach punkty talentów, kierunek przewodni i zwieńczenie (telefon: dwa ostatnie pod przełącznikiem). Drzewko puli (`PoolTree`): „Rozdaj jak zaleca pula”,
+  „Resetuj”, podpisy kolumn ról, szczeble z poziomem po lewej, nitki w kolumnie, kafelki (`Tile`: obraz, „4+1/10”,
+  kłódka, złoty „!” / litery przełomów, zielony „+”, miejsce na pasku), dymek PC z nazwą i `short`, przeciąganie na
+  pasek. Szczegóły po kliknięciu w stałych sekcjach (Co robi, Ranga N → N+1 z tabelą, Koszt i odnowienie, Przełomy,
+  Zmiany z kierunków, Z przedmiotów, Pełny opis zwinięty), przyciski „+ ranga”, „− ranga (cena od 20.)”, „Na pasek”
+  (pasek pokazanej puli; pełny → siatka 2 × 4 tej puli), „Podgląd”. Kierunki: przełącznik kierunków (nazwa, rola,
+  punkty, kropka) i drzewko z tymi samymi kafelkami (`NodeCard` na `Tile`), szczegóły węzła w sekcjach Węzeł / Stan.
+- **Telefon:** pełny ekran, zakładki 50 px, drzewko w jednej kolumnie (kafelki 52 px, kolumny 62 px, ikony ról),
+  dotknięcie kafelka otwiera arkusz z sekcjami i przyciskami (≥ 44 px), „Anuluj / Zatwierdź (+N)” przypięte u dołu.
+- **Krótkie opisy:** `skill.<id>.short` PL i EN dla wszystkich 78 umiejętności (≤ 90 znaków, najwyżej jeden
+  placeholder z `values`); role `skills.role.*`, sekcje `skills.section.*`, etykiety pól `skills.field.*`, wiersze,
+  zakładki, stany. Dymek paska (`UI/SkillInfo.tooltip`) z `short` zamiast pełnego opisu (`SkillInfo.short`, `full`).
+- **HUD i toasty:** `Hud/PoolLabel` (nazwa puli nad paskiem na 2 s po zmianie broni), toast `skills.toast.pool` z
+  `PathService.syncPool`; toasty punktów i przełomów z S137 bez zmian.
+- **Testy:** `pathview.spec` (układ według drabiny, pula przejściowa w „Pozostałe”, kafelki: ranga, limit, kłódka,
+  pasek, rezerwacja, budżet 0, cena zwrotu, znaki przełomów, wiersz kierunków, szczegóły: sekcje, tabela, najwyższa
+  ranga, niekupiona, węzły `modify`, pasywka bez kosztu, `planned`, „!” pul i kierunków, przełom osiągnięty w innej
+  puli przez `Paths.bpRank`), `localization.spec` (`short`
+  każdej umiejętności, etykiety pól i efektów, role, sekcje).
+- wiki do odświeżenia (właściciel 17.10): `wikidump --check` pominięty; eksport nie bierze kluczy `skill.<id>.short`
+  (krótkie opisy na wiki w S148).
+- **Pliki:** `src/shared/Logic/{PathView,Paths}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/client/UI/SkillInfo.luau`, `src/client/UI/Screens/SkillsWindow/{init,Context,Actions,TabBar,Header,PoolTree,Tile,
+  NodeCard,PathTab,Details,Sheet,BarPicker}.luau` (`BaseList.luau` usunięty), `src/client/UI/Screens/Hud/{init,
+  PoolLabel}.luau`, `src/server/Services/PathService.luau`, `tests/{pathview,localization}.spec.luau`,
+  `docs/{DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

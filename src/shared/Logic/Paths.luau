@@ -1156,6 +1156,16 @@ local function buildApi(source: Source)
 		return bar, bp, changed
 	end
 
+	-- S137: a breakpoint choice belongs to the set, not to a pool (DESIGN-18 §8): the best rank of the skill in any pool
+	-- of the class. S139: the one rank for "reached" (server, tiles, details, phone sheet, the "!").
+	local function bpRank(character: Char, skillId: string): number
+		local best = 0
+		for _, poolId in SkillPools.ids(character.class) do
+			best = math.max(best, skillRank(character, skillId, poolId))
+		end
+		return best
+	end
+
 	-- Third value: whether this changes an existing choice. The same choice again is a success without a write.
 	local function canChooseBreakpoint(
 		character: Char,
@@ -1170,12 +1180,7 @@ local function buildApi(source: Source)
 		if not table.find(BP_RANKS, rank) or (option ~= "a" and option ~= "b") then
 			return false, "error.badRequest", false
 		end
-		-- S137: the choice belongs to the set, not to a pool (DESIGN-18 §8): the rank in any pool of the class counts
-		local best = 0
-		for _, poolId in SkillPools.ids(character.class) do
-			best = math.max(best, skillRank(character, skillId, poolId))
-		end
-		if best < rank then
+		if bpRank(character, skillId) < rank then
 			return false, "bp.error.rank", false
 		end
 		local pair = skill.breakpoints and skill.breakpoints[rank]
@@ -1536,6 +1541,7 @@ local function buildApi(source: Source)
 		validBar = validBar,
 		cleanRanks = cleanRanks,
 		canPutOnBar = canPutOnBar,
+		bpRank = bpRank,
 		canChooseBreakpoint = canChooseBreakpoint,
 		clampToLevel = clampToLevel,
 		weaponOk = weaponOk,

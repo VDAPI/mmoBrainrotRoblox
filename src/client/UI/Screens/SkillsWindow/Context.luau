@@ -1,9 +1,12 @@
 --!strict
 -- Shared state of the skills window (S59): narrow character branches (never the whole character, HP changes several
 -- times a second), the views built from them and the window's own values (tab, selection, phone sheet, picker).
--- S137 (DESIGN-18 §12, the minimal window before S139): the bought ranks per pool, the pool shown in the Base tab (the
--- active one unless a pool tab is picked), the rank reservation of that pool ("+" / "-" before "Confirm", like
--- CharacterWindow/StatAllocator) and the free skill points left after it.
+-- S137 (DESIGN-18 §12): the bought ranks per pool and the rank reservation of the shown pool ("+" / "-" before
+-- "Confirm", like CharacterWindow/StatAllocator).
+-- S139 (the window 2.0): tabs are "pool:<poolId>" (one per weapon pool of the class, the equipped one first) and
+-- "directions" (the class's directions, one shown at a time); the pool tree comes from Logic/PathView.poolView with the
+-- reservation, the planned character from PathView.planned. A pool tab may be any pool of the class: ranks are
+-- reserved and confirmed the same way, they work once its weapon is worn.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,6 +25,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 -- FIX 2026-10-14: "path" = the path's own description (a click on its name in the tree tab).
 export type Selection = { kind: "skill" | "node" | "path", id: string }
 export type BpError = { key: string, err: string } -- key = Skills.choiceKey of the refused breakpoint
+-- S139: the skill waiting for a slot of a full bar, and whose bar (a pool of the class)
+export type Picking = { skillId: string, poolId: string }
 export type Props = {
 	ShowModal: (spec: any) -> (),
 	Preview: ((model: Model, skillId: string) -> ())?,
@@ -37,43 +42,61 @@ export type Ctx = {
 	weapon: Fusion.Value<any>, -- derived.weapon (Mage element, S18)
 	character: Fusion.Computed<Paths.Char?>,
 	weapons: Fusion.Computed<Paths.WeaponTypes>,
-	free: Fusion.Computed<number>,
+	free: Fusion.Computed<number>, -- free talent points (directions)
 	attention: Fusion.Computed<PathView.Attention?>,
 	paths: Fusion.Computed<{ PathData.PathDef }>,
-	tab: Fusion.Value<string>, -- "base", a path id or "soon"
-	activeTab: Fusion.Computed<string>, -- the tab shown (tab while it still fits the class)
+	tab: Fusion.Value<string>, -- S139: "pool:<poolId>" or "directions"
+	activeTab: Fusion.Computed<string>, -- the tab shown (a valid pool tab of the class, else the active pool's)
+	onPools: Fusion.Computed<boolean>, -- a pool tab is shown
+	direction: Fusion.Value<string?>, -- S139: the direction picked in the directions tab
+	shownDirection: Fusion.Computed<string?>, -- the direction shown (picked, else the leading one, else the first)
 	selected: Fusion.Value<Selection?>,
 	sheet: Fusion.Value<boolean>, -- phone: the details sheet is open
-	previewOpen: Fusion.Value<boolean>, -- phone: the sheet shows the 3D preview
-	picking: Fusion.Value<string?>, -- skill waiting for a slot of the full bar (2 x 4 picker)
+	previewOpen: Fusion.Value<boolean>, -- the details show the 3D preview (PC panel, phone sheet)
+	fullOpen: Fusion.Value<boolean>, -- S139: "Full description" unfolded
+	picking: Fusion.Value<Picking?>,
 	bpError: Fusion.Value<BpError?>,
 	-- S137
 	ranks: Fusion.Value<any>,
 	barPool: Fusion.Value<any>,
 	respecFree: Fusion.Value<any>,
 	activePool: Fusion.Computed<string?>, -- the pool of the equipped weapon
-	viewPool: Fusion.Value<string?>, -- a pool tab picked in the Base tab (nil = the active pool)
-	pool: Fusion.Computed<string?>, -- the pool the Base tab shows
+	pool: Fusion.Computed<string?>, -- the pool of the shown pool tab (the active pool on the directions tab)
 	reserve: Fusion.Value<{ [string]: number }>, -- ranks reserved in `pool`, not sent yet
 	planned: Fusion.Computed<Paths.Char?>, -- the character with the reservation bought (SkillPoints rules on it)
 	skillFree: Fusion.Computed<number>, -- free skill points of `pool` after the reservation
+	poolView: Fusion.Computed<PathView.PoolView?>, -- S139: the tree of `pool`
 	inventory: Fusion.Value<any>, -- S138: the backpack (the Scroll of Skill Renewal enables "Reset")
 }
 
 local Context = {}
 
-local function startTab(): string
-	local wanted = SkillsTab.take()
-	if wanted then
+Context.DIRECTIONS = "directions"
+
+-- "pool:fire" -> "fire" (nil for another tab).
+function Context.poolOfTab(tab: string): string?
+	return string.match(tab, "^pool:(.+)$")
+end
+
+function Context.poolTab(poolId: string): string
+	return `pool:{poolId}`
+end
+
+-- A tab another window asked for (SkillsTab): "directions", a direction id (the directions tab on it) or a pool tab.
+local function wantedTab(wanted: string?, direction: Fusion.Value<string?>?): string?
+	if wanted == nil then
+		return nil
+	end
+	if wanted == Context.DIRECTIONS or Context.poolOfTab(wanted) then
 		return wanted
 	end
-	-- S138: the leading direction's tab (Paths.mainOf), else the Base list
-	local classId = State.Get({ "character", "class" })
-	if type(classId) ~= "string" then
-		return "base"
+	if PathData.get(wanted) then
+		if direction then
+			direction:set(wanted)
+		end
+		return Context.DIRECTIONS
 	end
-	local main = Paths.mainOf({ class = classId, level = 1, path = State.Get({ "character", "path" }) })
-	return if main then main else "base"
+	return nil
 end
 
 function Context.new(scope: Scope, props: Props): Ctx
@@ -109,14 +132,24 @@ function Context.new(scope: Scope, props: Props): Ctx
 		local c = use(character)
 		return if c then SkillPools.activePool(c) else nil
 	end)
-	local viewPool = scope:Value(nil :: string?)
-	local pool = scope:Computed(function(use): string?
+	local direction = scope:Value(nil :: string?)
+	local tab = scope:Value(wantedTab(SkillsTab.take(), direction) or "")
+	local activeTab = scope:Computed(function(use): string
+		local wanted = use(tab)
 		local c = use(character)
-		local wanted = use(viewPool)
-		if c and wanted and SkillPools.valid(c.class, wanted) then
+		if wanted == Context.DIRECTIONS then
 			return wanted
 		end
-		return use(activePool)
+		local poolId = Context.poolOfTab(wanted)
+		if c and poolId and SkillPools.valid(c.class, poolId) then
+			return wanted
+		end
+		local active = use(activePool)
+		return if active then Context.poolTab(active) else Context.DIRECTIONS
+	end)
+	local pool = scope:Computed(function(use): string?
+		local poolId = Context.poolOfTab(use(activeTab))
+		return poolId or use(activePool)
 	end)
 	local reserve = scope:Value({} :: { [string]: number })
 	local planned = scope:Computed(function(use): Paths.Char?
@@ -125,27 +158,15 @@ function Context.new(scope: Scope, props: Props): Ctx
 		if not c or not p then
 			return c
 		end
-		local all: any = c.ranks
-		local copy: { [string]: { [string]: number } } = {}
-		if type(all) == "table" then
-			for id, own in all do
-				if type(own) == "table" then
-					copy[id] = table.clone(own)
-				end
-			end
-		end
-		local own = copy[p] or {}
-		for id, n in use(reserve) do
-			own[id] = SkillPoints.bought(c, p, id) + n
-		end
-		copy[p] = own
-		local view = table.clone(c :: any)
-		view.ranks = copy
-		return view
+		return PathView.planned(c, p, use(reserve))
 	end)
-	local tab = scope:Value(startTab())
+	local paths = scope:Computed(function(use): { PathData.PathDef }
+		local class = use(classId)
+		return if type(class) == "string" then Paths.pathsOf(class) else {}
+	end)
 	local selected = scope:Value(nil :: Selection?)
 	local sheet = scope:Value(false)
+	local fullOpen = scope:Value(false)
 
 	local ctx: Ctx = {
 		props = props,
@@ -164,32 +185,39 @@ function Context.new(scope: Scope, props: Props): Ctx
 			return if c then math.max(0, Paths.free(c)) else 0
 		end),
 		attention = SkillsAttention.attention(scope),
-		paths = scope:Computed(function(use): { PathData.PathDef }
-			local class = use(classId)
-			return if type(class) == "string" then Paths.pathsOf(class) else {}
-		end),
+		paths = paths,
 		tab = tab,
-		activeTab = scope:Computed(function(use): string
-			local wanted = use(tab)
-			local class = use(classId)
-			local id = if type(class) == "string" then class else ""
-			if wanted == "soon" then
-				return if Paths.classHasPaths(id) then "base" else "soon"
+		activeTab = activeTab,
+		onPools = scope:Computed(function(use): boolean
+			return Context.poolOfTab(use(activeTab)) ~= nil
+		end),
+		direction = direction,
+		shownDirection = scope:Computed(function(use): string?
+			local list = use(paths)
+			local wanted = use(direction)
+			for _, def in list do
+				if def.id == wanted then
+					return wanted
+				end
 			end
-			local def = PathData.get(wanted)
-			return if def and def.class == id then wanted else "base"
+			local c = use(character)
+			local main = if c then Paths.mainOf(c) else nil
+			if main then
+				return main
+			end
+			return if list[1] then list[1].id else nil
 		end),
 		selected = selected,
 		sheet = sheet,
 		previewOpen = scope:Value(false),
-		picking = scope:Value(nil :: string?),
+		fullOpen = fullOpen,
+		picking = scope:Value(nil :: Picking?),
 		bpError = scope:Value(nil :: BpError?),
 		ranks = ranks,
 		barPool = barPool,
 		respecFree = respecFree,
 		inventory = State.Value({ "character", "inventory" }),
 		activePool = activePool,
-		viewPool = viewPool,
 		pool = pool,
 		reserve = reserve,
 		planned = planned,
@@ -197,6 +225,14 @@ function Context.new(scope: Scope, props: Props): Ctx
 			local c = use(planned)
 			local p = use(pool)
 			return if c and p then math.max(0, SkillPoints.free(c, p)) else 0
+		end),
+		poolView = scope:Computed(function(use): PathView.PoolView?
+			local c = use(character)
+			local p = use(pool)
+			if not c or not p then
+				return nil
+			end
+			return PathView.poolView(c, p, use(reserve))
 		end),
 	}
 	-- a reservation belongs to one pool and one state of the ranks
@@ -206,19 +242,23 @@ function Context.new(scope: Scope, props: Props): Ctx
 	scope:Observer(ranks):onChange(function()
 		reserve:set({})
 	end)
+	-- the full description folds again for every new selection
+	scope:Observer(selected):onChange(function()
+		fullOpen:set(false)
+	end)
 
 	-- Another window may ask for a tab also while the window is open (S57 F3).
 	scope:Observer(SkillsTab.Requested):onChange(function()
-		local wanted = SkillsTab.take()
+		local wanted = wantedTab(SkillsTab.take(), direction)
 		if wanted then
 			tab:set(wanted)
 		end
 	end)
 	scope:Observer(classId):onChange(function()
-		tab:set("base")
+		tab:set("")
+		direction:set(nil)
 		selected:set(nil)
 		sheet:set(false)
-		viewPool:set(nil)
 	end)
 	return ctx
 end

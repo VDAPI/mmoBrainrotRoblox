@@ -140,6 +140,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   warianty ruchu `SkillMotions.<id>.variants` (`variant({ weapon?, hits?, move?, keys })`, bez zdarzeń, `SkillPose.pick`);
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
   warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
+- **Okno umiejętności** (S139): drzewko puli i szczegóły tylko z `PathView.poolView` / `skillDetails` (rezerwacja przez
+  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 90 znaków,
+  najwyżej jeden placeholder z `values`), nowe pole `values` etykietę `skills.field.<pole>` (`localization.spec`).
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);

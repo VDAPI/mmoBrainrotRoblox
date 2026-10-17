@@ -1,18 +1,20 @@
 --!strict
--- Skills window (K), DESIGN §23, ROZWOJ 4 (S59; S56-S58 built the rules underneath). Header: build sets (S58), free
--- path points, the leading direction (S138; no main path). Tabs: "Base" and one per path of the class ("Paths soon" without paths). Base: a row
--- per skill (rank, next rank's level, breakpoint badges, "To bar"); a path tab: a short header and the tree of node
--- pictures (FIX 2026-10-14, PathTab). Details of the selection (a click): the skill, the node or the path's own
--- description, A / B breakpoint cards, the 3D preview (S28), Buy / Refund / To bar.
--- Two layouts: PC 920 x 640 (list 510 px on the left, details 354 px on the right); touch full screen (one column,
--- a tap opens the details sheet). A full bar opens the 2 x 5 slot picker. Data only from Logic/Paths,
--- Logic/PathView and UI/SkillInfo; the window computes nothing itself.
+-- Skills window (K), DESIGN §23, ROZWOJ 4 (S59; S56-S58 built the rules underneath).
+-- S139 (DESIGN-18 §12, the window 2.0): header (build sets; on a pool tab the pool's free skill points and the
+-- reservation's "Confirm (+N)" / "Cancel", on the directions tab the free talent points, the leading direction and
+-- the capstone); tabs: one per weapon pool (the worn one first) and "Directions"; a pool tab shows the pool tree
+-- (PoolTree: tiles by the shared ladder, role columns), the directions tab a switch of directions and the tree of the
+-- shown one (PathTab). Details of the selection (a click): fixed sections (Details), the 3D preview on demand
+-- (S28), "+ rank" / "- rank" / "To bar" (Buy / Refund for a node).
+-- Two layouts: PC 920 x 640 (the tree 510 px on the left, details on the right); touch full screen (one column, a tap
+-- opens the details sheet, the reservation's "Cancel" / "Confirm" pinned to the bottom). A full bar opens the 2 x 4
+-- slot picker. Data only from Logic/SkillPoints, Logic/SkillPools, Logic/Paths, Logic/PathView and UI/SkillInfo; the
+-- window computes nothing itself.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Actions = require(script.Actions)
 local BarPicker = require(script.BarPicker)
-local BaseList = require(script.BaseList)
 local Button = require(script.Parent.Parent.Components.Button)
 local Context = require(script.Context)
 local Details = require(script.Details)
@@ -20,6 +22,7 @@ local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Header = require(script.Header)
 local PathTab = require(script.PathTab)
+local PoolTree = require(script.PoolTree)
 local Preview = require(script.Preview)
 local Sheet = require(script.Sheet)
 local TabBar = require(script.TabBar)
@@ -35,45 +38,24 @@ export type Props = Context.Props
 
 local PREVIEW_HEIGHT = 150
 local DETAILS_X = PathTab.LIST_WIDTH + 12
-local BOTTOM = Theme.Size.ButtonHeightSmall + 26 -- reason line + buttons
-
--- "Paths soon" (class without paths, ROZWOJ 2.6).
-local function soon(scope: Scope, ctx: Context.Ctx): Fusion.Computed<any>
-	return scope:Computed(function(use, s: Scope): { Instance }
-		if use(ctx.activeTab) ~= "soon" then
-			return {}
-		end
-		local function label(order: number, key: string, font: Font, size: number, color: Color3): Instance
-			return s:New("TextLabel")({
-				LayoutOrder = order,
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, -8, 0, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				Text = Text.get(use, key),
-				TextWrapped = true,
-				FontFace = font,
-				TextSize = size,
-				TextColor3 = color,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			})
-		end
-		return {
-			label(1, "paths.soon", Theme.Fonts.Display, Theme.TextSize.Large, Theme.Paper.Heading),
-			label(2, "paths.soon.body", Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.Text),
-		}
-	end)
-end
+local GAP = 6
+local REASON = 20 -- the reason line over the buttons
 
 local function list(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): { any }
 	return {
-		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-		BaseList.new(scope, ctx, actions, touch),
+		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
+		PoolTree.new(scope, ctx, actions, touch),
 		PathTab.new(scope, ctx, actions, touch),
-		soon(scope, ctx),
 	}
 end
 
-local function scroller(scope: Scope, name: string, position: UDim2, size: UDim2, children: { any }): Instance
+local function scroller(
+	scope: Scope,
+	name: string,
+	position: UDim2,
+	size: Fusion.UsedAs<UDim2>,
+	children: { any }
+): Instance
 	return scope:New("ScrollingFrame")({
 		Name = name,
 		Position = position,
@@ -88,28 +70,53 @@ local function scroller(scope: Scope, name: string, position: UDim2, size: UDim2
 	})
 end
 
--- PC: details panel with the preview, the lines and the buttons of the selection.
+-- PC: details panel with the preview on demand, the sections and the buttons of the selection (two per row).
 local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
 	local skillId = scope:Computed(function(use): string?
 		return Details.previewSkill(use, ctx)
 	end)
-	local previewFrame = Preview.new(scope, ctx.props.Preview, skillId, PREVIEW_HEIGHT, true)
+	local previewFrame, play = Preview.new(scope, ctx.props.Preview, skillId, PREVIEW_HEIGHT, false)
+	local showPreview = scope:Computed(function(use): boolean
+		return use(ctx.previewOpen) and use(skillId) ~= nil
+	end)
 	local lines = scope:Computed(function(use, s: Scope): { Instance }
 		return Details.lines(s, use, ctx, actions, false)
 	end)
+	-- the selection's buttons and "Preview" / "Details" for an active skill
 	local specs = scope:Computed(function(use): { Details.ActionSpec }
-		return Details.actions(use, ctx, actions)
+		local out = table.clone(Details.actions(use, ctx, actions))
+		if use(skillId) then
+			local open = use(ctx.previewOpen)
+			table.insert(out, {
+				text = Text.get(use, if open then "skills.details" else "skills.preview"),
+				enabled = true,
+				run = function()
+					local now = not Fusion.peek(ctx.previewOpen)
+					ctx.previewOpen:set(now)
+					if now then
+						play()
+					end
+				end,
+				secondary = true,
+			})
+		end
+		return out
+	end)
+	local rows = scope:Computed(function(use): number
+		return math.max(1, math.ceil(#use(specs) / 2))
+	end)
+	local bottom = scope:Computed(function(use): number
+		local n = use(rows)
+		return n * Theme.Size.ButtonHeightSmall + (n - 1) * GAP + REASON + 4
 	end)
 	local buttons = scope:Computed(function(use, s: Scope): { Instance }
 		local out: { Instance } = {}
-		local all = use(specs)
-		for i, spec in all do
+		for i, spec in use(specs) do
 			local button = Button(s, {
 				LayoutOrder = i,
-				Size = UDim2.new(1 / #all, -6, 1, 0),
-				Variant = if spec.key == "paths.node.refund" then "secondary" else "primary",
+				Variant = if spec.secondary then "secondary" else "primary",
 				TextSize = Theme.TextSize.Small,
-				Text = Text.get(use, spec.key),
+				Text = spec.text,
 				Disabled = not spec.enabled,
 				OnClick = spec.run,
 			})
@@ -131,6 +138,9 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		end
 		return table.concat(parts, " · ")
 	end)
+	local top = scope:Computed(function(use): number
+		return if use(showPreview) then PREVIEW_HEIGHT + 8 else 0
+	end)
 	return scope:New("Frame")({
 		Name = "Details",
 		Position = UDim2.fromOffset(DETAILS_X, 0),
@@ -149,14 +159,24 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
 				PaddingRight = UDim.new(0, Theme.Padding.Medium),
 			}),
-			previewFrame,
+			scope:New("Frame")({
+				Name = "PreviewArea",
+				Size = UDim2.new(1, 0, 0, PREVIEW_HEIGHT),
+				BackgroundTransparency = 1,
+				Visible = showPreview,
+				[Children] = previewFrame,
+			}),
 			scroller(
 				scope,
 				"Lines",
-				UDim2.fromOffset(0, PREVIEW_HEIGHT + 8),
-				UDim2.new(1, 0, 1, -(PREVIEW_HEIGHT + 8 + BOTTOM + 4)),
+				scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(0, use(top))
+				end) :: any,
+				scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 1, -(use(top) + use(bottom) + 4))
+				end),
 				{
-					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
 					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
 					lines :: any,
 				}
@@ -164,8 +184,10 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 			scope:New("TextLabel")({
 				Name = "Reason",
 				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 0, 1, -(Theme.Size.ButtonHeightSmall + 4)),
-				Size = UDim2.new(1, 0, 0, 20),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0, 0, 1, -(use(bottom) - REASON))
+				end),
+				Size = UDim2.new(1, 0, 0, REASON),
 				BackgroundTransparency = 1,
 				Text = reason,
 				FontFace = Theme.Fonts.Body,
@@ -178,13 +200,16 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 				Name = "Buttons",
 				AnchorPoint = Vector2.new(0, 1),
 				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, use(bottom) - REASON - 4)
+				end),
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UIListLayout")({
-						FillDirection = Enum.FillDirection.Horizontal,
+					scope:New("UIGridLayout")({
+						CellSize = UDim2.new(0.5, -GAP / 2, 0, Theme.Size.ButtonHeightSmall),
+						CellPadding = UDim2.fromOffset(GAP, GAP),
+						FillDirectionMaxCells = 2,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, 6),
 					}),
 					buttons :: any,
 				},
@@ -200,7 +225,7 @@ local function desktop(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions)
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
-			Header.new(scope, ctx, false),
+			Header.new(scope, ctx, actions, false),
 			scope:New("Frame")({
 				Name = "TabRow",
 				Position = UDim2.fromOffset(0, Header.HEIGHT + 6),
@@ -228,6 +253,51 @@ local function desktop(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions)
 	})
 end
 
+-- Phone: the reservation's "Cancel" / "Confirm (+N)" pinned to the bottom of the screen (also over the sheet).
+local function reserveBar(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
+	local count = scope:Computed(function(use): number
+		local view = use(ctx.poolView)
+		return if view then view.reserved else 0
+	end)
+	return scope:New("Frame")({
+		Name = "ReserveBar",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+		BackgroundTransparency = 1,
+		ZIndex = 15,
+		Visible = scope:Computed(function(use): boolean
+			return Sheet.reserveHeight(use, ctx) > 0
+		end),
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, GAP),
+			}),
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0.35, -GAP, 1, 0),
+				Variant = "ghost",
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(scope, "common.cancel"),
+				OnClick = actions.cancelRanks,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.fromScale(0.65, 1),
+				Variant = "primary",
+				TextSize = Theme.TextSize.Small,
+				Text = scope:Computed(function(use): string
+					return Text.get(use, "skills.points.confirmN", { n = use(count) })
+				end),
+				OnClick = actions.confirmRanks,
+			}),
+		},
+	})
+end
+
 local function touchLayout(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
 	local top = Header.HEIGHT_TOUCH + 4 + TabBar.HEIGHT_TOUCH + 4
 	return scope:New("Frame")({
@@ -235,7 +305,7 @@ local function touchLayout(scope: Scope, ctx: Context.Ctx, actions: Actions.Acti
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
-			Header.new(scope, ctx, true),
+			Header.new(scope, ctx, actions, true),
 			scope:New("Frame")({
 				Name = "TabRow",
 				Position = UDim2.fromOffset(0, Header.HEIGHT_TOUCH + 4),
@@ -247,10 +317,13 @@ local function touchLayout(scope: Scope, ctx: Context.Ctx, actions: Actions.Acti
 				scope,
 				"List",
 				UDim2.fromOffset(0, top),
-				UDim2.new(1, 0, 1, -top),
+				scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 1, -(top + Sheet.reserveHeight(use, ctx)))
+				end),
 				list(scope, ctx, actions, true)
 			),
 			Sheet.new(scope, ctx, actions),
+			reserveBar(scope, ctx, actions),
 		},
 	})
 end

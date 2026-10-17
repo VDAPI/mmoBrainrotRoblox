@@ -8,6 +8,8 @@
 -- S138 (DESIGN-18 §3.2, §7): no main path choice; "-" on a node and "Refund all nodes" from Progression.freeRespecLevel
 -- show the gold price (SkillPoints.refundCost) in the confirmation; "Reset" is the full reset (ranks and nodes; the
 -- scroll pays when the reset is not free).
+-- S139: "To bar" works for the shown pool: the active pool's bar through PutOnBar, another pool's bar through
+-- SetPoolBar (a full bar opens the picker for that pool's bar); "Cancel" drops the reservation.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -36,6 +38,8 @@ export type Actions = {
 	suggest: () -> (),
 	confirmRanks: () -> (),
 	resetSkills: () -> (),
+	-- S139
+	cancelRanks: () -> (),
 }
 
 local Actions = {}
@@ -140,34 +144,52 @@ function Actions.new(ctx: Context.Ctx): Actions
 				end
 			end)
 		end,
-		-- "To bar": the first free slot, or the 2 x 4 picker when the bar is full.
+		-- "To bar" (S139: of the shown pool): the first free slot, or the 2 x 4 picker when the bar is full.
 		toBar = function(skillId: string)
 			if busy then
 				return
 			end
-			local bar = Fusion.peek(ctx.hotbar)
-			local current = if type(bar) == "table" then bar else {}
-			if Actions.slotOf(current, skillId) == nil and Skills.firstFreeSlot(current) == nil then
-				ctx.picking:set(skillId)
+			local character = Fusion.peek(ctx.character)
+			local pool = Fusion.peek(ctx.pool)
+			if not character or not pool then
 				return
 			end
-			invoke("PutOnBar", { skillId }, function(ok: boolean, err: string?)
+			local own = Fusion.peek(ctx.barPool) == pool
+			local bar = SkillPoints.barOf(character, pool)
+			if Actions.slotOf(bar, skillId) ~= nil then
+				return
+			end
+			local slot = Skills.firstFreeSlot(bar)
+			if slot == nil then
+				ctx.picking:set({ skillId = skillId, poolId = pool })
+				return
+			end
+			local function after(ok: boolean, err: string?)
 				if ok then
 					return
 				end
 				if err == "skills.error.barFull" then
-					ctx.picking:set(skillId)
+					ctx.picking:set({ skillId = skillId, poolId = pool })
 				else
 					fail(err)
 				end
-			end)
+			end
+			if own then
+				invoke("PutOnBar", { skillId }, after)
+			else
+				invoke("SetPoolBar", { pool, slot, skillId }, after)
+			end
 		end,
 		place = function(slot: number)
-			local skillId = Fusion.peek(ctx.picking)
-			if not skillId then
+			local picking = Fusion.peek(ctx.picking)
+			if not picking then
 				return
 			end
-			invoke("PutOnBar", { skillId, slot }, function(ok: boolean, err: string?)
+			local remote = if Fusion.peek(ctx.barPool) == picking.poolId then "PutOnBar" else "SetPoolBar"
+			local args: { any } = if remote == "PutOnBar"
+				then { picking.skillId, slot }
+				else { picking.poolId, slot, picking.skillId }
+			invoke(remote, args, function(ok: boolean, err: string?)
 				if ok then
 					ctx.picking:set(nil)
 				else
@@ -250,6 +272,9 @@ function Actions.new(ctx: Context.Ctx): Actions
 			confirm("skills.points.resetTitle", "skills.reset.confirm", nil, function()
 				invoke("ResetSkills", {})
 			end)
+		end,
+		cancelRanks = function()
+			ctx.reserve:set({})
 		end,
 	}
 	return actions

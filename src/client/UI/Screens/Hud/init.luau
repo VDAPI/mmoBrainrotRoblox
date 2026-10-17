@@ -39,6 +39,7 @@ local CastBar = require(script.CastBar)
 local EffectIcons = require(script.EffectIcons)
 local EmoteButton = require(script.EmoteButton)
 local MobileSkills = require(script.MobileSkills)
+local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -479,6 +480,8 @@ local function Hud(scope: Scope, props: Props): Instance
 			}),
 			menu(scope, props),
 			actionBar(scope, props),
+			-- S139: the weapon pool's name over the bar for a moment after a weapon change
+			PoolLabel(scope, UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium + SLOT_SIZE + Theme.Padding.Small))),
 			expBar(scope),
 			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
 			ZoneBanner(scope),

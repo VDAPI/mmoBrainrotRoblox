@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S138 gotowe (ostatnia S138: Umiejętności 2.0, fundament B: ścieżki to mieszalne kierunki bez ścieżki
+S01–S115 i S117–S139 gotowe (ostatnia S139: Umiejętności 2.0, okno: zakładki pul broni i „Kierunki”, drzewko
+ikon puli według wspólnej drabiny (kolumny ról, nitki, kłódki, znaki przełomów), szczegóły po kliknięciu w stałych
+sekcjach z tabelą „Ranga N → N+1”, krótki opis `short` każdej umiejętności (dymek paska), telefon z arkuszem i
+przypiętym „Zatwierdź”, nazwa puli nad paskiem po zmianie broni; wcześniej S138: Umiejętności 2.0, fundament B: ścieżki to mieszalne kierunki bez ścieżki
 głównej i broni ścieżki (rzędy otwierają poziom i punkty w kierunku, wymóg broni tylko na węźle), jedno zwieńczenie na
 zestaw, kierunek przewodni `Paths.mainOf` (≥ 12 pkt: tytuł, plan statystyk, wagi przedmiotów, znak w drużynie), efekty
 drużynowe rzędów 1–2 w pełni od 6 pkt w kierunku, zwrot węzłów od 20. za złoto jak ranga, Zwój Odnowy Umiejętności =
@@ -306,17 +309,17 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **S138:** okno kierunków minimalne (S139 buduje pełne): zakładki kierunków ze stanem, nagłówek kierunku przewodniego,
-  „⚠” przy zajętym zwieńczeniu, ceny zwrotów w potwierdzeniach, potwierdzenie zwoju z plecaka; bez przeglądu w grze
-  (szerokość nagłówka z etykietą kierunku przewodniego na telefonie). Węzły `skill` dalej w rzędach przejściowych
+- **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
+  podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
+  „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w
+  DECYZJE). Wszystkie pule są przejściowe, więc drabina jest pusta, a umiejętności stoją w „Pozostałe” do S140–S145.
+  Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
+- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych
   (`SKILL_ROWS` 4 i 8 asertowane dopiero po S140–S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
-- **S137:** okno umiejętności minimalne (S139 buduje pełne): zakładki pul, „+” / „−”, „Zatwierdź”, „Rozdaj jak zaleca
-  pula” i „Resetuj” nad listą „Podstawa”, bez przeglądu w grze (szerokość wierszy z przyciskami na PC i telefonie);
-  pasek innej puli tylko przez `SetPoolBar` (okno nie ma jeszcze siatki pasków innych pul).
-  `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
+- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
   `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
 
 - **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`

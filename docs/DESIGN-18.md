@@ -422,6 +422,9 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   albo wolny punkt talentu (dzisiejsze `PathView.attention` rozszerzone).
 - Teksty: każdy `skill.<id>` dostaje `short` (≤ 90 znaków, jedno zdanie, bez liczb ponad jedną; test parytetu i
   długości); okno nie liczy niczego samo (dane z `Logic/SkillPoints`, `Logic/PathView`, `UI/SkillInfo`).
+- S139 (stan): `PathView.poolView` / `skillDetails` / `planned` z rezerwacją okna; pula przejściowa pokazuje
+  „Pozostałe” i „Z kierunków” nad pustą drabiną; telefon: dotknięcie kafelka otwiera arkusz (pierwsza sekcja to
+  `short`), kolumny ról stałej szerokości z ikonami (DECYZJE S139).
 
 ## 13. Balans
 
