@@ -308,3 +308,11 @@ nieobejrzane w Studio (Studio zamknięte w trakcie sesji).
 
 **Pliki:** `Data/Terrain/meadows`, `Data/Kit`, `Data/Horizons`, `Logic/MeadowsGen/Landmarks`, `Logic/HorizonGen`,
 `client/Controllers/WorldLifeController`.
+
+### W12/W13 dodatek: horyzonty regionów
+
+`Data/Horizons` dla Boru (ciemne zalesione wzgórza, na wschodzie czerwone urwiska w stronę Pustkowi, na zachodzie
+jaśniejsze pagórki w stronę Łąk; 495 części), Pustkowi (zachód ściana Boru, północny wschód białe szczyty, wschód
+Szczyt Kuźni = model `desert_landmark_01` za granicą mapy (wybór W11), południe wydmy; 364 części) i Szczytów (korona
+białych szczytów, na zachodzie niższe szare grzbiety; 254 części). Nieobejrzane w Studio. W Borze gęsta atmosfera
+(0,4, zamglenie 2,2) przygasza horyzont z założenia.

@@ -35,5 +35,5 @@ W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan P
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.
 - W13: Z1 (nowa ścieżka) próbowana i cofnięta: przelosowuje grupę wilków (−304, −81) aż do (−413, 238), co zmienia zlecenia łowieckie (S134k, `contracts_gen`, `quest_budget`) i daje stromiznę 36° przy brodzie (−32, −420); wymaga sesji z balansem albo stałego miejsca grupy. Też: rekwizyty expowisk, kwiaty i rośliny wodne, kapliczka i bramy; młyn i horyzont nieobejrzane w Studio.
-- W12: horyzont miasta nieobejrzany z murów (kolory, odległości do strojenia w `Data/Horizons`); pozostałe mapy dostaną wpis w swoich sesjach (W13+).
+- W12/W13: horyzonty miasta, Łąk, Boru, Pustkowi i Szczytów nieobejrzane w Studio (kolory, odległości do strojenia w `Data/Horizons`).
 - W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).
