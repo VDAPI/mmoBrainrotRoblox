@@ -38,3 +38,4 @@
 - **W10** Budowa zmienia szerokość i głębokość (±5%, hitbox też), nie wysokość.
 - **W10** Akcesoria warstwowe w podglądzie ustawione według pomiaru z żywej postaci (`AvatarBuild.LAYERED_AT`), bo ViewportFrame (też z WorldModel) ich nie dopasowuje.
 - **W12** Horyzont z części u klienta (elipsoidy, „namioty” z dwóch klinów, bloki skał) zamiast jednego modelu z Tripo: darmowe, lekkie (ok. 360 części bez kolizji), ten sam generator dla każdej mapy przez `Data/Horizons`; modele zestawu tylko jako punkty orientacyjne.
+- **W13** Z1 (ścieżka pod Wilczymi Wzgórzami) nie weszła: losowanie grup z odrzucaniem przy drodze przenosi grupę Wilczych Wzgórz pod Żabie Oczko, co zmienia bilans zleceń łowieckich (S134k); sesja wyglądu nie rusza balansu.
