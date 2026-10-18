@@ -103,14 +103,38 @@ local Config = {
 		maxFriends = 50,
 		maxIgnored = 100,
 		storeName = "Vaelthorn_Social_v1", -- DataStore "Social_<userId>": ignore mirror and pending unfriends
-		presenceMap = "Vaelthorn_Presence_v1", -- MemoryStore HashMap: userId -> { j, m, l, c, n, t }
-		presenceTtl = 120, -- s: an entry without a refresh counts as offline
-		presenceRefresh = 60, -- s: how often a server rewrites its players' entries
-		statusRefresh = 30, -- s: the friends window asks again; the server caches a read for as long
+		-- S150: presence moved to Config.Friends (FriendService, Friends/Presence)
 		inviteSeconds = 30, -- friend request popup
 		holdSeconds = 0.5, -- touch: holding a player this long opens the player menu
 		holdMove = 14, -- px: a finger moving further cancels the hold (camera drag)
 		followRefresh = 0.5, -- s: "Follow player" re-reads the target position
+	},
+	-- S150: friends 2.0 (Logic/Presence, Logic/FriendJoin, FriendService, Friends/Presence). Not balance (outside
+	-- CONFIG_KEYS). Platform limits (create.roblox.com, 2026-10): MemoryStore 1000 + 120 x CCU request units per minute
+	-- for the whole experience (GetAsync / SetAsync / RemoveAsync 1 unit, UpdateAsync >= 2), hash map value <= 32 KB,
+	-- key <= 128 characters, TTL <= 45 days; MessagingService 600 + 240 x players messages sent per server and minute,
+	-- 40 + 80 x servers received per topic and minute, 20 + 8 x players subscriptions per server, message <= 1 KiB,
+	-- topic <= 80 characters; Player:GetFriendsOnlineAsync is a client call with a 30 s cache (GameId = JobId).
+	Friends = {
+		presenceMap = "Vaelthorn_Presence_v2", -- MemoryStore HashMap: userId -> { j, m, p, map, lvl, cls, name, t, pj }
+		presenceTtl = 150, -- s: an entry without a refresh counts as offline
+		presenceEvery = 60, -- s: a server rewrites its players' entries (and at once on a map or setting change)
+		changeCheck = 2, -- s: how often a server looks for such a change (no store call without one)
+		readsPerMinute = 300, -- per server: min(1000 / 2, 300) (the fixed part of the MemoryStore quota halved)
+		otherReserve = 0.25, -- share of the bucket that only window refreshes may use (Roblox friends wait)
+		cacheSeconds = 20, -- s: one read of an entry serves every viewer of this server for this long
+		refreshEvery = 30, -- s: an open friends window is refreshed this often
+		lightEvery = 2, -- s: blocks and cooldown of an open window (no store call)
+		joinCooldown = 60, -- s: after a teleport to a friend's server (done or failed)
+		inviteSeconds = 60, -- s: a party invitation from another server waits this long
+		inviteGrace = 90, -- s: the inviter's server accepts the arrival this long after the invitation expired
+		invitesPerMinute = 3, -- per player: party invitations to other servers
+		inviteTopic = "Vaelthorn_FriendInvite", -- MessagingService: one topic for every server
+		robloxMax = 200, -- Roblox friends read per player (Players:GetFriendsAsync pages)
+		robloxRefresh = 600, -- s: the Roblox friends list is read again at most this often (window open)
+		robloxReads = 20, -- Roblox friends whose presence one refresh reads (rotating)
+		robloxHint = 50, -- user ids a client may name as "Roblox friends in this game" (FriendsRobloxHint)
+		hintEvery = 30, -- s: the client sends the hint this often while the window is open
 	},
 	-- S135: nameplates above player characters (NameplateController, Logic/Nameplate).
 	Nameplate = {

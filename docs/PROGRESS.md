@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S149b gotowe (ostatnia S149b: boss świata na mapie: Kurhan Praojca na płaskowyżu Lodowej Strażnicy
+S01–S115 i S117–S150 gotowe (ostatnia S150: znajomi 2.0: przy znajomym serwer (mapa, poziom, znacznik
+serwera; arena, turniej i serwer prywatny bez „Dołącz”), „Dołącz” na serwer świata znajomego (`FriendService`,
+`Logic/FriendJoin`, blokady `UseBlocks.friendJoin`, `Arena/Transfer.toServer`, odnowienie 60 s), zaproszenie
+do grupy z innego serwera przez jeden temat i dołączenie do grupy po przybyciu, znajomi z Roblox w grze, tryb
+„niewidoczny” i „kto może dołączyć”, obecność jednym wpisem na konto (`Logic/Presence`, `Friends/Presence`,
+budżet 300 odczytów / min na serwer); wcześniej S149b: boss świata na mapie: Kurhan Praojca na płaskowyżu Lodowej Strażnicy
 jako miejsce zastrzeżone jak kryjówka (`AreaSpawns.reservedCircles`, wystrój `Logic/WorldGen/WorldBossArena`), kurhan
 i stan bossa na mapie świata i minimapie (`WorldBoss.markerOf`), karta z „Prowadź” (`WorldBoss.cardOf`), wyszukiwarka,
 panel HUD `Hud/WorldBossPanel` (HP, faza, czas, przerwanie, udział, nagroda; nad panelem wydarzenia), napis „bez PvP”
@@ -372,6 +377,10 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Znajomi 2.0 (S150):** bez przeglądu w grze (okno znajomych na PC i telefonie, arkusz „⋯”, popup „Dołącz i wejdź do
+  grupy”); teleport na serwer znajomego i zaproszenie między serwerami działają tylko w opublikowanej grze (w Studio
+  toast i atrapa „tylko ten serwer”).
 
 - **Boss świata (S149, S149b):** bez przeglądu w grze (Kurhan Praojca i jego wolny środek, panel HUD na PC i telefonie,
   znacznik i karta na mapie, karta nagrody w formie `world`, napis „bez PvP”). Wiki do odświeżenia (właściciel 17.10):

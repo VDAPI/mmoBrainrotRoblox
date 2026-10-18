@@ -406,6 +406,8 @@ export type Settings = {
 	lowHpWarn: boolean, -- S134f: low health vignette and heartbeat (Hud/LowHpVignette)
 	fightCard: boolean, -- S134f: the after-fight card (FightCard; the fight log window stays)
 	cameraMode: string, -- W01: "free" | "top" (CameraController)
+	appearOffline: boolean, -- S150: no presence entry: friends see "offline", no "is in the game" toast
+	friendJoin: string, -- S150: "friends" | "none": who may join this player's server and invite from another one
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class

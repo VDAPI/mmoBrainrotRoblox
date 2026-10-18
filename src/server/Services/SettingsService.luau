@@ -98,6 +98,13 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	friendAlerts = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S150: appear offline; who may join my server (FriendService reads both when it writes the presence entry).
+	appearOffline = function(value)
+		return type(value) == "boolean"
+	end,
+	friendJoin = function(value)
+		return value == "friends" or value == "none"
+	end,
 	-- S134f: the low health warning and the after-fight card.
 	lowHpWarn = function(value)
 		return type(value) == "boolean"

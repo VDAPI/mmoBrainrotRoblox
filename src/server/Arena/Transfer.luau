@@ -7,6 +7,8 @@
 --   * home(player, joinData, reasonKey): from an arena server back to the server the player came from
 --     (TeleportData.returnJob), then to any public server, at last a kick with a text (Logic/ArenaQueue.returnPlan).
 --   * homeAll(reasonKey): everybody home (no match here, the server closes, /arenanet home).
+--   * toServer(player, jobId, data, onFail): S150 onto a running public server (a friend's, FriendService). The same
+--     teleport, retries and watchdog; a full or missing server stops at once (onFail gets the TeleportResult name).
 -- Roblox API (create.roblox.com, TeleportService): TeleportAsync(placeId, { Player }, TeleportOptions) yields and
 -- errors on a bad request; a teleport that starts and then fails fires TeleportService.TeleportInitFailed(player,
 -- result, message, placeId, options). TeleportOptions.ReservedServerAccessCode = the code of ReserveServer;
@@ -41,6 +43,7 @@ type Pending = {
 	token: number,
 	retry: () -> (),
 	failed: boolean,
+	result: string?, -- S150: the Enum.TeleportResult name of the last TeleportInitFailed
 }
 
 local Transfer = {}
@@ -70,8 +73,9 @@ local function teleport(player: Player, options: TeleportOptions): boolean
 end
 
 -- Runs `attempt(n)` until the player leaves the server; a failure (call error, TeleportInitFailed or the watchdog)
--- moves to attempt n + 1 after the retry gap. `attempt` returns false when there is nothing left to try.
-local function drive(player: Player, attempt: (n: number) -> boolean)
+-- moves to attempt n + 1 after the retry gap. `attempt` returns false when there is nothing left to try; it gets the
+-- TeleportResult name of the last failure (S150).
+local function drive(player: Player, attempt: (n: number, lastResult: string?) -> boolean)
 	tokens += 1
 	local token = tokens
 	local n = 0
@@ -82,7 +86,7 @@ local function drive(player: Player, attempt: (n: number) -> boolean)
 		end
 		n += 1
 		entry.failed = false
-		if not attempt(n) then
+		if not attempt(n, entry.result) then
 			pending[player] = nil
 			return
 		end
@@ -127,6 +131,7 @@ function Transfer.init(d: Deps)
 		local entry = pending[player]
 		if entry then
 			log:warn("teleport of %s failed (%s): %s", player.Name, tostring(result), tostring(message))
+			entry.result = result.Name
 			entry.retry()
 		end
 	end)
@@ -155,6 +160,34 @@ function Transfer.toReserved(player: Player, code: string, data: { [string]: any
 			return false
 		end
 		if not teleport(player, options(data, code, nil)) then
+			task.defer(function()
+				local entry = pending[player]
+				if entry then
+					entry.retry()
+				end
+			end)
+		end
+		return true
+	end)
+end
+
+-- S150: onto the running public server `jobId` (TeleportOptions.ServerInstanceId) with `data` as TeleportData. The
+-- caller saved nothing yet: the profile is saved here. A full server (GameFull) or one that is gone (GameNotFound,
+-- GameEnded) or a refusal (Unauthorized) ends the attempts at once; anything else retries up to
+-- Config.ArenaNet.teleportRetries. `onFail(resultName)` after the last failure ("" = the call itself failed).
+function Transfer.toServer(player: Player, jobId: string, data: { [string]: any }, onFail: (result: string) -> ())
+	local d = need()
+	if d.inParty(player) then
+		d.toast(player, "friends.join.leavesParty", nil, "info")
+	end
+	pcall(d.save, player)
+	local final: { [string]: boolean } = { GameFull = true, GameNotFound = true, GameEnded = true, Unauthorized = true }
+	drive(player, function(n: number, lastResult: string?): boolean
+		if n > 1 and (n > NET.teleportRetries or (lastResult ~= nil and final[lastResult])) then
+			task.spawn(onFail, lastResult or "")
+			return false
+		end
+		if not teleport(player, options(data, nil, jobId)) then
 			task.defer(function()
 				local entry = pending[player]
 				if entry then

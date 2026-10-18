@@ -281,7 +281,6 @@ local Definitions: { [string]: Definition } = {
 	FriendInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	FriendRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
 	FriendRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
-	FriendsStatus = { kind = "function", dir = "c2s", rate = 0.2, args = {} }, -- -> (ok, err, { [userId]: status })
 	IgnoreAdd = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
 	IgnoreName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character name)
 	IgnoreRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
@@ -289,6 +288,15 @@ local Definitions: { [string]: Definition } = {
 	WhisperReady = { kind = "event", dir = "s2c" }, -- (channel name, character name, text to send) after "/w"
 	WhisperFailed = { kind = "event", dir = "s2c" }, -- (error key, name) after "/w"
 	SocialHintSeen = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- the one-time player menu hint
+	-- S150: friends 2.0 (FriendService). The window gets the runtime branch `friends` while it is open (FriendsWatch);
+	-- (friend userId) -> (ok, errKey?) for a join and a party invitation to another server
+	FriendJoin = { kind = "function", dir = "c2s", rate = 0.2, args = { "integer" } },
+	FriendPartyInvite = { kind = "function", dir = "c2s", rate = 0.2, args = { "integer" } },
+	FriendPartyInvited = { kind = "event", dir = "s2c" }, -- (fromName, level, classId, seconds)
+	FriendPartyRespond = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
+	FriendsWatch = { kind = "event", dir = "c2s", rate = 2, args = { "boolean" } },
+	-- user ids of Roblox friends the client sees in this game (Player:GetFriendsOnlineAsync), checked by the server
+	FriendsRobloxHint = { kind = "event", dir = "c2s", rate = 0.1, args = { "table" } },
 	AuctionSearch = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer", "boolean" } }, -- (filter, page, descending)
 	AuctionDetails = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (listing id) -> full item
 	AuctionList = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer", "integer" } }, -- (inv index, price, hours)

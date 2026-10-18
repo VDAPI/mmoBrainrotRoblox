@@ -239,7 +239,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez
-  `AnnounceService.Global` (kolejka). Wymuszenie wydarzeń: `/bloodmoon start`, `/tourney force`, terminy `/sched`.
+  `AnnounceService.Global` (kolejka). Wymuszenie wydarzeń: `/bloodmoon start`, `/tourney force`, terminy `/sched`;
+  obecność gracza: `FriendService`/`Friends/Presence` (jeden zapis na gracza, budżet odczytów `Config.Friends`).
 
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`

@@ -5634,3 +5634,49 @@
 - **Właściciel 2026-10-18 (pytania z S137/S146)**: (3.1) obrażenia bossów w tanka zostają, leczenie berła przy bossie (T-SK6) zostaje w raporcie; (3.2) miecz z tarczą zostaje tankiem, R9 dwuręczna / jednoręczna 1,45–1,80 zostaje w raporcie; (3.3) cel tempa solo Uzdrowiciela do poluzowania (bez drugiego buildu z buzdyganem); (6) punkty umiejętności zostają 1 na poziom + 7 na start (S137).
 
 - **FIX 2026-10-18 (portale bez „E” w opublikowanej grze)**: tag `Portal` dociera do klienta przed częściami łuku albo atrybutami, a `decoratePortal` wtedy wychodził i nigdy nie wracał. Teraz portal bez części lub atrybutów czeka na pierwszą część (`DescendantAdded`) albo atrybut i dekoruje się ponownie (`retryPortal`).
+
+- **S150** Limity platformy (create.roblox.com, 10.2026): MemoryStore 1000 + 120 × CCU jednostek na minutę na całe
+  doświadczenie (GetAsync / SetAsync / RemoveAsync 1, UpdateAsync ≥ 2), wartość mapy ≤ 32 KB, klucz ≤ 128 znaków,
+  TTL ≤ 45 dni; MessagingService 600 + 240 × gracze wysłanych na serwer i minutę, 40 + 80 × serwery odebranych na
+  temat, 20 + 8 × gracze subskrypcji na serwer, wiadomość ≤ 1 KiB, temat ≤ 80 znaków; `TeleportAsync` z
+  `TeleportOptions.ServerInstanceId`, błąd przez `TeleportInitFailed` (`GameFull`, `GameNotFound`, `GameEnded`, …);
+  `Players:GetFriendsAsync` na serwerze (strony `FriendPages`); `Player:GetFriendsOnlineAsync` tylko klient, pamięć
+  30 s, `GameId` = JobId, `PlaceId`; `IsFriendsWith` przestarzałe → `IsFriendsWithAsync`. Stałe w `Config.Friends`.
+- **S150** Jeden wpis obecności na konto: rozszerzony wpis S133 (`{ j, m, p, map, lvl, cls, name, t, pj }`) w nowej mapie
+  `Vaelthorn_Presence_v2` (inny kształt niż v1; stara mapa wygasa sama po TTL), `Social/Presence` zastąpione przez
+  `Friends/Presence`, pisze tylko `FriendService` (SocialService już nie). TTL 150 s, zapis co 60 s i od razu przy
+  zmianie mapy, postaci lub ustawień (sprawdzenie co 2 s bez wywołań usług). Zapis `SetAsync` (1 jednostka, wpis nigdy
+  nie jest łączony), odczyt jeden `GetAsync` bez ponowień (błąd = „nieznany”), zapis i usunięcie przez `Market/Retry`.
+- **S150** Budżet odczytów: kubeł żetonów 300 / min na serwer (min(1000 / 2, 300)), odświeżenie okna ma pierwszeństwo
+  (znajomi z Roblox zostawiają 25% kubła oknom), sprawdzenie „Dołącz” czyta zawsze (rzadkie, liczone), wspólna pamięć
+  20 s na serwer. Szacunek pełnego serwera: 40 graczy, 10 z oknem, po 50 znajomych, odświeżenie co 30 s = 1000
+  odczytów / min wobec budżetu 300 (reszta wierszy czeka z ostatnim stanem i „odświeżanie…”) + 40 zapisów / min, wobec
+  4800 jednostek, które ten serwer wnosi do limitu.
+- **S150** Serwer prywatny (`PrivateServerId ~= ""`, też zarezerwowany, który bez wpisu w rejestrze gra jako świat) =
+  status „W grze (serwer prywatny)” bez „Dołącz” (Roblox nie wpuści bez zaproszenia); zaproszenie do grupy do takiego
+  znajomego działa (to on przechodzi do mnie).
+- **S150** Przybycie przez „Dołącz” w zapisanym miejscu postaci (jak każde wejście; mapa znajomego może być inna), u
+  znajomego toast „{name} dołącza do twojego serwera” (niewidoczny przybysz bez toastu). Zapis profilu przed
+  teleportem, grupa zostaje (toast), handel i walka blokują przycisk.
+- **S150** Blokady `friendJoin` (`Logic/UseBlocks`): dead, duel, arena, dungeon, pvpLock, bloodMoon, tourney + nowe
+  `trade` (TradeService), `combat` (istniejący stan walki `ResourceService.InCombat`, `Config.CombatTimeout` = 5 s, nie
+  10 s) i `worldBoss` (koło żywego bossa świata: bez ucieczki w środku mechaniki). Odnowienie 60 s po każdej próbie
+  teleportu; pełny serwer, brak serwera i odmowa kończą próby od razu.
+- **S150** Zaproszenie do grupy z innego serwera: jeden temat `Vaelthorn_FriendInvite` dla wszystkich serwerów, 3 na
+  gracza na minutę, ważne 60 s. Serwer zapraszającego pamięta swoje zaproszenia, więc po przybyciu (`TeleportData via =
+  "friendParty"`) wpuszcza do grupy tylko zaproszonego (samo TeleportData nic nie dowodzi), gdy zapraszający jest
+  przywódcą albo bez grupy i jest miejsce (`PartyService.AddMember`); inaczej toast „zaproszenie wygasło”. Okno zaproszenia
+  = istniejący popup SocialController (bez nowego ekranu).
+- **S150** Znajomi z Roblox: serwer czyta `GetFriendsAsync` raz na sesję (do 200, ponownie najwyżej co 600 s przy
+  otwartym oknie, wynik tylko w pamięci); klient co 30 s przy otwartym oknie wysyła `FriendsRobloxHint` z userId
+  znajomych z `GetFriendsOnlineAsync`, których `PlaceId` to ta gra (≤ 50). Serwer bierze tylko tych, których sam zna
+  jako znajomych Roblox, czyta ich obecność (≤ 20 na odświeżenie, rotacyjnie, w budżecie) i nigdy nie używa JobId od
+  klienta. Wyświetlana jest nazwa postaci z wpisu, nigdy nazwa konta Roblox.
+- **S150** Niewidoczny (`settings.appearOffline`): brak wpisu (usuwany od razu), brak „jest w grze” i „dołącza”, dla
+  wszystkich „Poza grą” — także na tym samym serwerze w oknie znajomych (szept na tym serwerze dalej działa, bo i tak
+  widać go w świecie). „Kto może dołączyć” (`settings.friendJoin` = znajomi / nikt) = pole `pj`; „nikt” wyłącza „Dołącz”
+  i zaproszenia z innych serwerów. Oba ustawienia przez `SettingsService` (biała lista), bez migracji (reconcile).
+- **S150** `Config.Friends` poza księgą balansu (`CONFIG_KEYS` bez zmian): to limity usług, nie ekonomia. Licznik
+  znajomych w grze na przycisku HUD pominięty: przyciski menu mają tylko znak „!” (`IconButton.Badge`), bez liczb.
+- **S150** `FriendsStatus` (S133) usunięte: okno dostaje gałąź runtime `friends` przez `FriendsWatch` (wzór
+  `FinderWatch`), pełne odświeżenie co 30 s, lekkie (blokada, odnowienie) co 2 s, wysyłka tylko przy zmianie.

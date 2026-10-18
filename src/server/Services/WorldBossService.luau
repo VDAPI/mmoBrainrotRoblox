@@ -882,6 +882,10 @@ function WorldBossService.Start()
 	UseGuards.register("worldEvent", function(player: Player): boolean
 		return bossAlive(current) and inArena(player)
 	end, "WorldBossService")
+	-- S150 (Logic/UseBlocks friendJoin): no teleport to a friend's server from the circle of a living world boss
+	UseGuards.register("worldBoss", function(player: Player): boolean
+		return bossAlive(current) and inArena(player)
+	end, "WorldBossService")
 	CombatService.MonsterDamaged:Connect(function(monster: any, player: Player, dealt: number)
 		local f = current
 		local boss = if f then f.boss else nil

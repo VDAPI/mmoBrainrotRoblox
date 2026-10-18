@@ -69,6 +69,8 @@ function AccountSchema.accountTemplate(): AccountData
 			lowHpWarn = true, -- S134f: red vignette and heartbeat below 25 % HP (reconcile)
 			fightCard = true, -- S134f: the small after-fight card for Elite II and Invasion (reconcile)
 			cameraMode = "free", -- W01: free camera or from above (reconcile)
+			appearOffline = false, -- S150: "Appear offline" (reconcile)
+			friendJoin = "friends", -- S150: who may join my server: friends or nobody (reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

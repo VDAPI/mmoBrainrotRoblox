@@ -6,8 +6,11 @@
 -- S134d: Auto Potions (autoPotion: everywhere players fight players) and Auto Hunt (autoGrind: the owner's list) with
 -- two new reasons: worldEvent = in the radius of a running world event (WorldEventService) and bossNear = a living
 -- Elite II or boss close by (AutoGrindService).
+-- S150: "Join" a friend's server (friendJoin) with three new reasons: trade = an open trade (TradeService), combat =
+-- in combat (ResourceService.InCombat, Config.CombatTimeout) and worldBoss = in the circle of a living world boss
+-- (WorldBossService).
 
-export type Feature = "fullElixir" | "lure" | "autoPotion" | "autoGrind" | "finder"
+export type Feature = "fullElixir" | "lure" | "autoPotion" | "autoGrind" | "finder" | "friendJoin"
 export type Reason =
 	"dead"
 	| "duel"
@@ -22,6 +25,9 @@ export type Reason =
 	| "tourney"
 	| "worldEvent"
 	| "bossNear"
+	| "trade"
+	| "combat"
+	| "worldBoss"
 
 local UseBlocks = {}
 
@@ -52,6 +58,19 @@ UseBlocks.LISTS = table.freeze({
 	-- S134f: joining a party from the party finder board (PartyFinderService): never into or out of a match, a duel,
 	-- a tournament bracket or a running boss dungeon
 	finder = table.freeze({ "arena", "duel", "tourney", "dungeon" }),
+	-- S150: teleport to a friend's server: never out of a fight, a match, a dungeon, an event or an open trade
+	friendJoin = table.freeze({
+		"dead",
+		"duel",
+		"arena",
+		"dungeon",
+		"pvpLock",
+		"bloodMoon",
+		"tourney",
+		"trade",
+		"combat",
+		"worldBoss",
+	}),
 })
 UseBlocks.PREFIX = table.freeze({
 	fullElixir = "fullElixir",
@@ -59,9 +78,10 @@ UseBlocks.PREFIX = table.freeze({
 	autoPotion = "autoPotion",
 	autoGrind = "autoGrind",
 	finder = "finder",
+	friendJoin = "friends",
 })
 -- Every feature in the order /useblocks prints them (S134d).
-local FEATURES: { Feature } = { "fullElixir", "lure", "autoPotion", "autoGrind", "finder" }
+local FEATURES: { Feature } = { "fullElixir", "lure", "autoPotion", "autoGrind", "finder", "friendJoin" }
 UseBlocks.FEATURES = table.freeze(FEATURES)
 -- Reasons whose check a later session registers (no check = never blocks until then). S129 registered bloodMoon
 -- (BloodMoonService), S130 tourney (TourneyService), S134d worldEvent (WorldEventService) and bossNear

@@ -12680,3 +12680,51 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
 - **Dla właściciela:** ID dźwięków `ui.worldboss.spawn|victory` (i z S149 `boss.hrimvald.*`), obrazek
   `mapa/map_worldboss` (dziś ♛). Decyzja: panel na telefonie stoi w lewej kolumnie jak panel wydarzenia, a nie nad
   paskiem umiejętności (tam są przyciski); jedna linia w `Hud/WorldBossPanel`, jeśli wolisz inaczej.
+
+### S150: Znajomi 2.0
+
+- **Obecność 2.0:** czyste `Logic/Presence` (wpis `{ j, m, p, map, lvl, cls, name, t, pj }`, `record`, `parse`, `fresh`,
+  `statusOf` → here / world / private / arena / tournament / offline / unknown, `label`, `serverTag` — 4 znaki z
+  hasha JobId, `ORDER`, kubeł żetonów `budget`, `reader` z pamięcią na serwer) i jeden moduł serwera
+  `src/server/Friends/Presence.luau` (MemoryStore `Vaelthorn_Presence_v2` przez `SetAsync` / `GetAsync` / `RemoveAsync`,
+  temat zaproszeń, atrapa `Logic/MemoryFake` w Studio i przy braku usług). `src/server/Social/Presence.luau` usunięty.
+- **FriendService** (nowy): zapis obecności (co 60 s, od razu przy zmianie mapy / postaci / ustawień, usunięcie przy
+  niewidocznym i wyjściu), gałąź runtime `friends` = `{ list, roblox, online, at, block, cd, mode }` dla oglądających
+  (pełna co 30 s w budżecie, lekka co 2 s), „Dołącz” (`Logic/FriendJoin.canJoin`, ignorowanie obu stron, blokady,
+  odnowienie 60 s, `Arena/Transfer.toServer`, w Studio toast), zaproszenie do grupy przez temat i dołączenie do grupy
+  po przybyciu (`PartyService.AddMember`, tylko zaproszenie znane temu serwerowi), znajomi z Roblox
+  (`GetFriendsAsync` raz na sesję, wskazówka klienta), toast „dołącza do twojego serwera”.
+- **Arena/Transfer:** `toServer(player, jobId, data, onFail)` na tym samym `teleport` / `drive` / watchdogu; `drive`
+  podaje nazwę ostatniego `TeleportResult`, pełny / nieistniejący serwer kończy próby od razu.
+- **Blokady:** `UseBlocks.friendJoin` (+ powody `trade` — TradeService, `combat` — ResourceService, `worldBoss` —
+  WorldBossService), teksty `friends.block.*`.
+- **SocialService:** bez obecności i `FriendsStatus` (nazwy znajomych aktualizuje FriendService), niewidoczny nie jest
+  ogłaszany („jest w grze”).
+- **Okno „Znajomi”:** nagłówek „W grze n / max”, czas odświeżenia, przełączniki „Niewidoczny” i „Dołączać mogą”;
+  wiersz z klasą, poziomem, statusem, znacznikiem serwera i powodem przy szarym „Dołącz”; przyciski z
+  `Social.friendRowEntries` (Dołącz, Zaproś do grupy, Szepnij, Napisz list, „⋯” z Usuń / Ignoruj w arkuszu
+  `ActionMenu`; na telefonie w wierszu tylko „Dołącz”); sekcja „Znajomi z Roblox w grze” z „Dołącz” i „Dodaj do
+  znajomych”. Popup zaproszenia z innego serwera w SocialController („Dołącz i wejdź do grupy”). `GameMenu`: dwa
+  ustawienia.
+- **Remote'y:** `FriendJoin` (function, 0,2/s, integer), `FriendPartyInvite` (function, 0,2/s, integer),
+  `FriendPartyInvited` (s2c: imię, poziom, klasa, sekundy), `FriendPartyRespond` (function, 1/s, boolean),
+  `FriendsWatch` (event, 2/s, boolean), `FriendsRobloxHint` (event, 0,1/s, table ≤ 50 liczb); `FriendsStatus` usunięty.
+- **Pola zapisu:** `account.settings.appearOffline` (false), `account.settings.friendJoin` ("friends"), przez
+  reconcile, bez migracji.
+- **Limity platformy i budżet:** MemoryStore 1000 + 120 × CCU / min (doświadczenie), MessagingService 600 + 240 ×
+  gracze wysłanych na serwer / min, 40 + 80 × serwery odebranych na temat / min, wiadomość ≤ 1 KiB; budżet odczytów
+  300 / min na serwer, pamięć 20 s; pełny serwer (40 graczy, 10 okien, 50 znajomych) chce 1000 odczytów / min, dostaje
+  300 + 40 zapisów wobec 4800 jednostek swojej części limitu.
+- **Admin:** `/presence gracz|userId`, `/friends budget`, `/friendinvite gracz` (kategoria `guild`, `admin.usage.*`).
+- **Testy:** nowy `tests/friends.spec.luau` (obecność na atrapie z dwoma serwerami, TTL, niewidoczny, statusy,
+  `label`, `serverTag`, budżet i pamięć, `canJoin` — każdy powód, `canInvite`, zaproszenia przez temat, limit, przybycie
+  do grupy, `friendJoin` z tekstami i rejestracją, remote'y); `social.spec` (wiersz znajomego; test obecności przeniesiony
+  na `Logic/Presence` z komentarzem S150), `character.spec` (nowe ustawienia), `data.spec` (przestrzeń `friends`).
+- wiki do odświeżenia (właściciel 17.10); `wikidump --check` pominięty (sesja nie zmienia eksportowanych danych).
+- **Pliki:** `src/shared/Logic/{Presence,FriendJoin,Social,UseBlocks,AccountSchema}.luau`, `src/shared/Config.luau`,
+  `src/shared/Types.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Data/AdminCommands.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Friends/Presence.luau`, `src/server/Social/Presence.luau`
+  (usunięty), `src/server/Services/{FriendService,SocialService,SettingsService,AdminService,TradeService,ResourceService,WorldBossService}.luau`,
+  `src/server/Arena/Transfer.luau`, `src/server/Admin/Guild.luau`, `src/client/Controllers/SocialController.luau`,
+  `src/client/UI/Screens/{FriendsWindow,GameMenu}.luau`, `tests/{friends,social,character,data}.spec.luau`,
+  `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

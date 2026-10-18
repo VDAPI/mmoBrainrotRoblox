@@ -71,6 +71,7 @@ local AdminService = {
 		"GuildService",
 		"MailService",
 		"SocialService", -- S133: /social
+		"FriendService", -- S150: /presence, /friends, /friendinvite
 		"AuctionService",
 		"CosmeticService",
 		"StatusEffectService",

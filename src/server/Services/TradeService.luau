@@ -20,6 +20,7 @@ local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Trade = require(Shared.Logic.Trade)
 local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
+local UseGuards = require(script.Parent.Parent.UseGuards) -- S150
 local Types = require(Shared.Types)
 
 local log = Log.new("TradeService")
@@ -431,6 +432,9 @@ function TradeService.Init(registry)
 end
 
 function TradeService.Start()
+	UseGuards.register("trade", function(player: Player): boolean
+		return sessions[player] ~= nil
+	end, "TradeService") -- S150 Logic/UseBlocks (friendJoin: no teleport with an open trade)
 	Net.Handle("TradeRequest", request)
 	Net.Handle("TradeRespond", respond)
 	Net.Handle("TradeAddItem", addItem)

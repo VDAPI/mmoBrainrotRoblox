@@ -257,6 +257,7 @@ type CharacterData = {
   akcja `win_arena`, karta `UI/Screens/ArenaOffer`, `UI/Screens/Hud/ArenaPanel`), usługa NPC `arena`.
 - Zapis automatyczny (ProfileStore), dodatkowo `profile:Save()` po zakupach i transakcjach handlu/aukcji.
 - Inne store'y: `Names` (rezerwacja nazw postaci, `UpdateAsync`), `Guilds`, `GuildNames`, `Mail` (`"Mail_" .. userId`, lista przesyłek), `Auction` (escrow ofert) + MemoryStore SortedMap jako indeks wyszukiwania.
+- Znajomi 2.0 (S150): obecność i zaproszenia między serwerami tylko przez `src/server/Friends/Presence` (MemoryStore HashMap `Vaelthorn_Presence_v2`, jeden wpis na konto, temat MessagingService `Vaelthorn_FriendInvite`, atrapa `Logic/MemoryFake`), pisze i czyta `FriendService` (budżet odczytów `Config.Friends`, „Dołącz” przez `Arena/Transfer.toServer`).
 - W Studio bez opublikowanego place lub z wyłączonym API: DataService wykrywa brak dostępu do DataStore i używa **mock store w pamięci** (ProfileStore.Mock), żeby testy w Studio działały.
 
 ## 6. Replikacja stanu gracza (własny „Replica”)

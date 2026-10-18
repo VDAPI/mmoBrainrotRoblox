@@ -642,6 +642,16 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				end)
 			),
 			row(scope, 14, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
+			-- S150: appear offline and who may join my server (FriendService writes the presence entry by them)
+			row(scope, 14, "menu.appearOffline", toggle(scope, "appearOffline", false)),
+			row(
+				scope,
+				14,
+				"menu.friendJoin",
+				cycle(scope, "friendJoin", "friends", { "friends", "none" }, function(use, value)
+					return Text.get(use, `menu.friendJoin.{value}`)
+				end)
+			),
 			avatarRow(scope, 14), -- S132
 			row(
 				scope,

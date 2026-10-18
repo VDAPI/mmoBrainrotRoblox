@@ -952,6 +952,14 @@ nazw obcych) i tabelą własnej drużyny.
   Elicie II nie są pokazani. W trakcie walki nic się nie pokazuje. Po Elicie II i Inwazji mała karta (wyłączana w
   ustawieniach), okno „Ostatnie walki” trzyma 5 ostatnich walk sesji. Elita II, która wróciła na miejsce bez wybicia
   drużyny, nie daje podsumowania.
+- **Znajomi** (S133 lista, S150 „Znajomi 2.0”, `Logic/Presence`, `Logic/FriendJoin`, `FriendService`): przy znajomym widać,
+  gdzie jest: na tym serwerze z mapą, na innym serwerze świata z mapą, poziomem i znacznikiem serwera („Serwer K7QF”;
+  znajomi na tym samym obcym serwerze stoją obok siebie), na serwerze prywatnym, na arenie, na turnieju albo poza grą.
+  „Dołącz” przenosi na serwer znajomego (tylko publiczny serwer świata, z serwera świata, nie w walce, pojedynku,
+  lochu, handlu, turnieju, Krwawym Księżycu ani przy bossie świata; 60 s odnowienia; grupa zostaje; postać staje w
+  swoim zapisanym miejscu). „Zaproś do grupy” na tym serwerze to zwykłe zaproszenie, z innego serwera — okno „Dołącz i
+  wejdź do grupy” u znajomego (60 s). Sekcja „Znajomi z Roblox w grze” (nazwa postaci, „Dołącz”, „Dodaj do znajomych”).
+  Prywatność: „Niewidoczny” (dla wszystkich poza grą, bez powiadomień) i „Kto może do mnie dołączyć: znajomi / nikt”.
 
 ## 18. Handel i ekonomia
 

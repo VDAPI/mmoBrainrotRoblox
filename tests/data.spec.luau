@@ -53,6 +53,7 @@ local NAMESPACES = {
 	"bloodmoon", -- S129
 	"tourney", -- S130
 	"social", -- S133
+	"friends", -- S150
 	"animlab", -- S110
 	"paths",
 	"title",

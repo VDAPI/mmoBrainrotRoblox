@@ -578,6 +578,11 @@ cmd("guild", "rankguild", { enum("action", { "info", "push" }) })
 -- S133: the friends and ignored players of a player on this server; the daily letter limit of a character reset
 cmd("guild", "social", { ref("player", "player") })
 cmd("economy", "mailcap", { enum("action", { "reset" }), ref("player", "player", true) })
+-- S150: the raw presence entry of a player (name on this server or user id), the read budget of this server and a
+-- party invitation through the topic (in Studio through the in-memory fake)
+cmd("guild", "presence", { str("who") })
+cmd("guild", "friends", { enum("action", { "budget" }) })
+cmd("guild", "friendinvite", { ref("player", "player") })
 
 -- Performance and logs
 cmd("perf", "perf", {})

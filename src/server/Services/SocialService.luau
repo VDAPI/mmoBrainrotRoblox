@@ -7,9 +7,9 @@
 --     makes their server apply it now (or their next login does). A drop only removes a friendship older than itself.
 --   * The same record mirrors the player's ignored list, so mail (MailService) can refuse a letter from an ignored
 --     player to an account that is offline or on another server.
---   * Presence across servers: Social/Presence (MemoryStore with TTL, refreshed every Config.Social.presenceRefresh);
---     the friends window asks FriendsStatus every Config.Social.statusRefresh. Entering the game tells every server
---     on one MessagingService topic, which toasts "<name> is in the game" to that player's friends (friendAlerts).
+--   * Presence across servers and the friends window: FriendService (S150, Friends/Presence). Entering the game tells
+--     every server on one MessagingService topic, which toasts "<name> is in the game" to that player's friends
+--     (friendAlerts); a player who appears offline (S150 account.settings.appearOffline) is not announced.
 --   * Whispers: a private TextChannel per pair ("Whisper_<min>_<max>", both users added by the server, destroyed when
 --     both left or one ignores the other). TextChatService filters the text. "/w <character name> text" is our
 --     TextChatCommand (Roblox's default whisper command is switched off and its names still work: a Roblox name or
@@ -18,6 +18,7 @@
 --   * Ignored players' lines in every other channel are not delivered to the ignoring player (ShouldDeliverCallback).
 --   * Social/Ignores answers "ignores?" for trade, duel, party and guild invitations without a dependency on this.
 
+local HttpService = game:GetService("HttpService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,7 +33,6 @@ local Log = require(Shared.Util.Log)
 local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
 local Notify = require(script.Parent.Parent.Market.Notify)
-local Presence = require(script.Parent.Parent.Social.Presence)
 local Social = require(Shared.Logic.Social)
 local Types = require(Shared.Types)
 
@@ -47,6 +47,7 @@ local SocialService = {
 }
 
 local ONLINE_TOPIC = "Vaelthorn_FriendOnline"
+local ServerId = HttpService:GenerateGUID(false) -- the echo of our own announcement is ignored
 local ANNOUNCE_GAP = 60 -- s: one "is in the game" per player and minute (character switches)
 
 local DataService: any
@@ -553,84 +554,7 @@ local function unignore(player: Player, userId: number): (boolean, string?)
 	return true, nil
 end
 
--- Status of every friend: here (with map, level, class, name), online elsewhere, offline or unknown. Yields.
-local function friendsStatus(player: Player): (boolean, string?, { [string]: any }?)
-	local data = socialOf(player)
-	if not data then
-		return false, "error.wrongPhase", nil
-	end
-	local result: { [string]: any } = {}
-	local pending = 0
-	local now = os.time()
-	for key in data.friends do
-		local userId = tonumber(key)
-		if not userId then
-			continue
-		end
-		local other = Players:GetPlayerByUserId(userId)
-		local oc = if other then character(other) else nil
-		if oc then
-			result[key] = { s = "here", m = oc.location.map, l = oc.level, c = oc.class, n = oc.name }
-			continue
-		end
-		pending += 1
-		task.spawn(function()
-			local ok, entry = Presence.read(userId)
-			if not ok then
-				result[key] = { s = "unknown" }
-			else
-				local status = Social.presenceStatus(entry, now, Presence.JobId)
-				-- an entry of this server without the player here is a stale one: they left
-				if status == "here" then
-					status = "offline"
-				end
-				local e: any = entry
-				result[key] = if status == "online" and e
-					then { s = "online", l = e.l, c = e.c, n = e.n }
-					else { s = "offline" }
-			end
-			pending -= 1
-		end)
-	end
-	local deadline = os.clock() + 8
-	while pending > 0 and os.clock() < deadline do
-		task.wait(0.05)
-	end
-	-- Names and classes follow what the friend plays now.
-	local fresh = copyOf(player)
-	if fresh then
-		local changed = false
-		for key, status in result do
-			local friend = fresh.friends[key]
-			if friend and type(status.n) == "string" and (friend.name ~= status.n or friend.class ~= status.c) then
-				friend.name = status.n
-				friend.class = if type(status.c) == "string" then status.c else friend.class
-				changed = true
-			end
-		end
-		if changed then
-			writeSocial(player, fresh)
-		end
-	end
-	return true, nil, result
-end
-
--- Presence and "is in the game" ---------------------------------------------------------------------------------
-
-local function presenceOf(player: Player): Social.Presence?
-	local char = character(player)
-	if not char then
-		return nil
-	end
-	return {
-		j = Presence.JobId,
-		m = char.location.map,
-		l = char.level,
-		c = char.class :: string,
-		n = char.name,
-		t = os.time(),
-	}
-end
+-- "is in the game" ---------------------------------------------------------------------------------
 
 -- Toasts "<name> is in the game" to the friends of `userId` on this server.
 local function friendOnline(userId: number, name: string)
@@ -658,7 +582,7 @@ end
 
 local function announce(player: Player)
 	local char = character(player)
-	if not char then
+	if not char or PlayerStateService.Get(player, { "account", "settings", "appearOffline" }) == true then
 		return
 	end
 	local last = announcedAt[player.UserId]
@@ -670,7 +594,7 @@ local function announce(player: Player)
 	friendOnline(userId, name)
 	task.spawn(function()
 		pcall(function()
-			MessagingService:PublishAsync(ONLINE_TOPIC, { u = userId, n = name, j = Presence.JobId })
+			MessagingService:PublishAsync(ONLINE_TOPIC, { u = userId, n = name, j = ServerId })
 		end)
 	end)
 end
@@ -683,7 +607,7 @@ local function subscribeOnline()
 				type(data) == "table"
 				and type(data.u) == "number"
 				and type(data.n) == "string"
-				and data.j ~= Presence.JobId
+				and data.j ~= ServerId
 			then
 				friendOnline(data.u, data.n)
 			end
@@ -710,7 +634,6 @@ function SocialService.Init(registry)
 end
 
 function SocialService.Start()
-	Presence.init()
 	task.spawn(subscribeOnline)
 
 	-- The default /w (Roblox names) gives way to ours (character names first, Roblox names as a fallback).
@@ -743,7 +666,6 @@ function SocialService.Start()
 	end)
 	Net.Handle("IgnoreName", ignoreByName)
 	Net.Handle("IgnoreRemove", unignore)
-	Net.Handle("FriendsStatus", friendsStatus)
 	Net.Handle("WhisperOpen", function(player: Player, userId: number)
 		local ok, err, channel = openWhisper(player, Players:GetPlayerByUserId(userId))
 		if not ok or not channel then
@@ -763,11 +685,7 @@ function SocialService.Start()
 	end)
 
 	CharacterService.CharacterEntered:Connect(function(player: Player)
-		local entry = presenceOf(player)
 		task.spawn(function()
-			if entry then
-				Presence.write(player.UserId, entry)
-			end
 			if not synced[player] then
 				synced[player] = true
 				syncRecord(player)
@@ -787,7 +705,6 @@ function SocialService.Start()
 			end
 		end
 		local userId = player.UserId
-		task.spawn(Presence.remove, userId)
 		-- A whisper channel goes once both of its players left.
 		for name, channel in channels do
 			local a, b = channel:GetAttribute("WhisperA"), channel:GetAttribute("WhisperB")
@@ -795,18 +712,6 @@ function SocialService.Start()
 				local other = if a == userId then b else a
 				if type(other) ~= "number" or Players:GetPlayerByUserId(other) == nil then
 					destroyChannel(name)
-				end
-			end
-		end
-	end)
-
-	task.spawn(function()
-		while true do
-			task.wait(Config.Social.presenceRefresh)
-			for _, player in Players:GetPlayers() do
-				local entry = presenceOf(player)
-				if entry then
-					task.spawn(Presence.write, player.UserId, entry)
 				end
 			end
 		end

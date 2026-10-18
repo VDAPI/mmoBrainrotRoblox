@@ -1,10 +1,11 @@
 --!strict
 -- Player interactions (S133), pure: the player menu (which actions, in which order, which are greyed out and why),
--- friends and ignored players (account.social, limits in Config.Social), whisper rules, presence status and the
+-- friends and ignored players (account.social, limits in Config.Social), whisper rules, the friend row (S150) and the
 -- rules of letters between players (Config.PlayerMail: lengths, items, fee, daily limit reset at 00:00 UTC).
 -- The server (SocialService, MailService) and the client (PartyController, FriendsWindow, MailCompose) both use it.
 
 local Config = require("../Config")
+local FriendJoin = require("./FriendJoin")
 local Types = require("../Types")
 
 type ItemInstance = Types.ItemInstance
@@ -45,9 +46,15 @@ export type LetterDraft = {
 
 export type MailCounter = { day: number, n: number }
 
-export type Presence = { j: string, m: string?, l: number?, c: string?, n: string?, t: number }
+-- S150: a row of the friends window (Logic/FriendJoin view plus the local player's party).
+export type FriendRowContext = {
+	view: FriendJoin.View,
+	now: number,
+	inMyParty: boolean?, -- the friend is already in the local player's party
+	notPartyLeader: boolean?, -- the local player is in a party and does not lead it
+}
 
-export type Status = "here" | "online" | "offline" | "unknown"
+export type FriendRow = { primary: { MenuEntry }, more: { MenuEntry } }
 
 local Social = {}
 
@@ -227,12 +234,32 @@ function Social.channelName(a: number, b: number): string
 	return `Whisper_{math.min(a, b)}_{math.max(a, b)}`
 end
 
--- Presence of a player seen from server `myJob`: "here" (this server), "online" (another one), "offline".
-function Social.presenceStatus(p: Presence?, now: number, myJob: string, ttl: number?): Status
-	if type(p) ~= "table" or type(p.t) ~= "number" or now - p.t > (ttl or Config.Social.presenceTtl) then
-		return "offline"
+-- S150: the buttons of a friend's row in the friends window. Primary: Join (Logic/FriendJoin.canJoin), Invite to
+-- party (this server: the S133 invitation; another server: an invitation through the topic, FriendJoin.canInvite),
+-- Whisper (this server only) and Write a letter; "more" (the "..." sheet): Remove and Ignore. Unavailable entries stay
+-- greyed out with a reason. (Presence statuses moved to Logic/Presence.)
+function Social.friendRowEntries(ctx: FriendRowContext): FriendRow
+	local view = ctx.view
+	local here = view.status == "here"
+	local primary: { MenuEntry } = {}
+	local _, joinReason = FriendJoin.canJoin(view, ctx.now)
+	table.insert(primary, entry("join", "friends.join", joinReason))
+	local partyReason: string?
+	if here then
+		partyReason = (if ctx.inMyParty then "social.reason.inMyParty" else nil)
+			or (if ctx.notPartyLeader then "social.reason.notLeader" else nil)
+	else
+		local _, inviteReason = FriendJoin.canInvite(view)
+		partyReason = inviteReason or (if ctx.notPartyLeader then "social.reason.notLeader" else nil)
 	end
-	return if p.j == myJob then "here" else "online"
+	table.insert(primary, entry("party", "friends.party.invite", partyReason))
+	table.insert(primary, entry("whisper", "social.menu.whisper", if here then nil else "friends.reason.notHere"))
+	table.insert(primary, entry("mail", "social.menu.mail"))
+	local more: { MenuEntry } = {
+		entry("remove", "social.friends.remove"),
+		entry("ignore", "social.menu.ignore"),
+	}
+	return { primary = primary, more = more }
 end
 
 -- Letters --------------------------------------------------------------------------------------------------------
