@@ -27,6 +27,14 @@ W13 (część 1): wzgórze młyna wyżej, spalony młyn z Tripo z dymem, horyzon
 
 W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan Pustkowi, Szczyty); Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
 
+W14 / W16 / W18 / W20 (części 1, 2026-10-18/19): sekrety i brakujące rekwizyty z tabel planów map (Łąki, Bór bez krwi, Pustkowia `AshenGen/Details`, Szczyty `FrostpeakGen/Details`). Czeka na ocenę.
+
+W21–W24 (sekrety jaskiń z planów): wszystkie punkty „Sekrety” i „dodać” z `laki.md`, `bor.md`, `pustkowia.md`, `szczyty.md` w kodzie. Strojenie światła jaskiń na oko czeka na Studio.
+
+W25 / W26: prompty Tripo dla wszystkich potworów i bossów (`docs/wyglad/POTWORY-TRIPO.md`); generator czworonogów z udami, goleniami i łapami. Modele czekają na właściciela.
+
+W28 (część 1): liczby obrażeń (obrys, połysk, wyskok, dryf), okna na sprężynie. Czeka na ocenę.
+
 ## Niedokończone
 
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
