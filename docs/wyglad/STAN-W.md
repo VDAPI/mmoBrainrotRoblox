@@ -36,7 +36,6 @@ W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan P
 - W02: zestaw ma warianty tylko dla Łąk (`grass`); Bór, Pustkowia, Szczyty, miasto na klockach do czasu zakupów albo darmowych paczek (Quaternius) w sesjach map.
 - W02: modele zestawu i materiały żyją w miejscu (`Assets.Kit`, `MaterialService`): właściciel zapisuje miejsce.
 - W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).
-- W08: klipy Mixamo (`KLIPY-RUCH.md`) do pobrania przez właściciela; potem konwersja, pomiar `stride`, ID w `Locomotion.clips`.
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.

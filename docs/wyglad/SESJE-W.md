@@ -373,3 +373,11 @@ model ze stałym obrotem obraca się razem z budowlą (`KitAssets`). Nieobejrzan
 
 Las wokół miasta (`TownGen/Outside`, 534 drzewa) jako sloty zestawu `tree:pine` / `tree:oak` / `tree:birch` (miasto):
 wcześniej jedyne drzewa „lizaki” w mieście (zgłoszenie właściciela 2026-10-18).
+
+### W08: klipy ruchu z Mixamo (2026-10-18)
+
+12 klipów właściciela (Breathing Idle, Looking Around, Weight Shift, Walking, Running, Jogging, Jumping przycięty do
+wybicia 0,3–0,85 s, Falling Idle, Falling To Landing, Climbing Ladder, Swimming, Treading Water) przekonwertowane
+`mixamo_to_r15.py` (Python 3.13 + `bpy` 5.2 w `D:\Dev\cache\python313`, bez znacznika `Hit`), włożone do Studio, opublikowane
+przez właściciela; ID w `Data/Locomotion.clips` (trucht w `Locomotion.spare`). Krok zmierzony w Studio na ciele gry:
+chód 6,5, bieg 16,9 st/s (domyślne klipy Roblox: 6,6 i ślizgający się bieg przycięty do 8).
