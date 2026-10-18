@@ -381,3 +381,10 @@ wybicia 0,3–0,85 s, Falling Idle, Falling To Landing, Climbing Ladder, Swimmin
 `mixamo_to_r15.py` (Python 3.13 + `bpy` 5.2 w `D:\Dev\cache\python313`, bez znacznika `Hit`), włożone do Studio, opublikowane
 przez właściciela; ID w `Data/Locomotion.clips` (trucht w `Locomotion.spare`). Krok zmierzony w Studio na ciele gry:
 chód 6,5, bieg 16,9 st/s (domyślne klipy Roblox: 6,6 i ślizgający się bieg przycięty do 8).
+
+### W27: pogoda, część 1
+
+Przegląd: pyłki, mgła nad wodą, liście, popiół, śnieg, zawieje, zorza i pióropusze były już z S26–S51. Nowe: deszcz
+nad bagnami Boru (motywy `bog`, `witch`, lżejszy w `mist`; smugi `VelocityParallel`) i podmuchy piasku przy ziemi na
+wydmach, w nekropolii i na solnisku Pustkowi (`WorldLifeController`, `RAIN` / `SAND`, na niskiej grafice połowa);
+`/worldfx rain|sand`. Nieobejrzane w Studio.

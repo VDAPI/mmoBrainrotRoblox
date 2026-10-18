@@ -32,7 +32,8 @@
 -- S50 (caves of the Ashen Wastes): ash falling in the shafts' beams, sand pouring through holes, bursts of forge sparks;
 -- vultures in the mine's shaft (the S46 kinds `vultures` / `vulturePerch`).
 -- S51 (caves of the Frost Peaks): snow in the beams of the shafts and slits, gusts over the floor, glints of ice.
--- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow|sparks>
+-- W27: rain over the Duskwood's swamps (bog, witch marsh, misty hollows), sand gusts over the Ashen Wastes' dunes.
+-- Admin /worldfx <ash|embers|haze|smoke|vultures|devils|lavaglow|snow|drift|aurora|plume|eagles|avalanche|glow|sparks|rain|sand>
 -- <on|off|auto> switches an effect on the caller's client (AdminClient "worldfx").
 -- Only within LIFE_RADIUS; with "World detail" on low there are no animals, half the particles and half the wisps.
 
@@ -77,6 +78,10 @@ local ASH: { [string]: number } = {
 	dunes = 0,
 	necropolis = 0,
 }
+-- W27: rain over the Duskwood's swamps (bor.md A7: the Troll Swamp and the Witch Marsh; light in the misty hollows).
+local RAIN: { [string]: number } = { bog = 1, witch = 1, mist = 0.35 }
+-- W27: gusts of sand over the ground on the Ashen Wastes' dunes and tombs (pustkowia.md 1.7).
+local SAND: { [string]: number } = { dunes = 1, necropolis = 0.6, saltflat = 0.3 }
 -- Maps where a lone bat flies over the player at night.
 local BATS: { [string]: boolean } = { duskwood = true }
 local VULTURE_RADIUS = 300
@@ -890,6 +895,10 @@ local leafHolder: BasePart? = nil
 local leafEmitter: ParticleEmitter? = nil
 local ashHolder: BasePart? = nil
 local ashEmitter: ParticleEmitter? = nil
+local rainHolder: BasePart? = nil
+local rainEmitter: ParticleEmitter? = nil
+local sandHolder: BasePart? = nil
+local sandEmitter: ParticleEmitter? = nil
 type Devil = { part: BasePart, velocity: Vector3, age: number, life: number }
 local devils: { Devil } = {}
 local loneBat: Animal? = nil
@@ -1236,6 +1245,81 @@ local function updateAsh(at: Vector3, theme: string)
 	e.Enabled = density > 0 and fxOn("ash")
 end
 
+-- W27: rain falling around the player over the Duskwood's swamps: long thin streaks, faster and denser on the bog.
+local function updateRain(at: Vector3, theme: string)
+	local density = RAIN[theme] or 0
+	if density <= 0 and not rainHolder then
+		return
+	end
+	if not rainHolder then
+		local holder = part({ Name = "Rain", Size = Vector3.new(90, 1, 90), Transparency = 1 })
+		holder.Parent = folder
+		rainHolder = holder
+		rainEmitter = emitter(holder, {
+			Texture = "", -- plain: a stretched square is a streak
+			Color = ColorSequence.new(Color3.fromHex("#A8B4B8")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.55),
+				NumberSequenceKeypoint.new(1, 0.75),
+			}),
+			Size = NumberSequence.new(0.08),
+			Lifetime = NumberRange.new(0.55, 0.7),
+			Speed = NumberRange.new(55, 65),
+			SpreadAngle = Vector2.new(4, 4),
+			Acceleration = Vector3.new(2, 0, 1),
+			Orientation = Enum.ParticleOrientation.VelocityParallel,
+			Squash = NumberSequence.new(-3),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Bottom,
+			Rate = 260,
+		})
+	end
+	local holder = rainHolder :: BasePart
+	holder.CFrame = CFrame.new(at + Vector3.new(0, 34, 0))
+	local e = rainEmitter :: ParticleEmitter
+	e.Rate = 260 * density * particleFactor()
+	e.Enabled = density > 0 and fxOn("rain")
+end
+
+-- W27: sand blown low over the ground on the dunes (fast horizontal streaks, like the Frost Peaks' drifts).
+local function updateSand(at: Vector3, theme: string)
+	local density = SAND[theme] or 0
+	if density <= 0 and not sandHolder then
+		return
+	end
+	if not sandHolder then
+		local holder = part({ Name = "SandGusts", Size = Vector3.new(4, 3, 80), Transparency = 1 })
+		holder.Parent = folder
+		sandHolder = holder
+		sandEmitter = emitter(holder, {
+			Texture = "rbxasset://textures/particles/smoke_main.dds",
+			Color = ColorSequence.new(Color3.fromHex("#D8B07A"), Color3.fromHex("#B88A5A")),
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.2, 0.55),
+				NumberSequenceKeypoint.new(0.8, 0.65),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+			Size = NumberSequence.new(1.2, 2.6),
+			Lifetime = NumberRange.new(1.6, 2.4),
+			Speed = NumberRange.new(28, 36),
+			SpreadAngle = Vector2.new(6, 3),
+			Acceleration = Vector3.new(0, -0.5, 0),
+			Rotation = NumberRange.new(0, 360),
+			RotSpeed = NumberRange.new(-40, 40),
+			LightInfluence = 1,
+			EmissionDirection = Enum.NormalId.Right,
+			Rate = 24,
+		})
+	end
+	local holder = sandHolder :: BasePart
+	-- upwind of the player, blowing across
+	holder.CFrame = CFrame.new(at + Vector3.new(-40, -1.5, 0))
+	local e = sandEmitter :: ParticleEmitter
+	e.Rate = 24 * density * particleFactor()
+	e.Enabled = density > 0 and fxOn("sand")
+end
+
 -- S46: dust devils (at most DEVILS, by day, on open dusty ground), wandering slowly near the player.
 local DEVILS = 2
 local DEVIL_THEMES: { [string]: boolean } = { dunes = true, royalroad = true, ash = true, saltflat = true }
@@ -1335,6 +1419,8 @@ local function tick(dt: number)
 	local theme = if region then region.themeAt(mx, mz) else ""
 	updateLeaves(at, theme)
 	updateAsh(at, theme)
+	updateRain(at, theme)
+	updateSand(at, theme)
 	updateDevils(dt, at, origin, mapId, theme, t)
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?

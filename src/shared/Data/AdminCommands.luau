@@ -373,6 +373,8 @@ cmd("world", "worldfx", {
 		"avalanche",
 		"glow",
 		"sparks", -- S50: forge sparks in the caves
+		"rain", -- W27: rain over the Duskwood's swamps
+		"sand", -- W27: sand gusts on the Ashen Wastes' dunes
 	}),
 	enum("mode", { "on", "off", "auto" }),
 })
