@@ -392,10 +392,11 @@ T.describe("S54 formulas", function()
 	T.it("Mage mana follows the level curve, Cleric and energy stay flat", function()
 		local firebolt = skill("firebolt")
 		T.expect(Skills.cost(firebolt, 1, 20, "Mage")).toBe(12)
-		-- S87 (G10): manaCost.Mage 1.89 / 2.59 / 3.49 at 45 / 70 / 100 (was 1.4 / 1.9 / 2.5)
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.89 * Skills.cost(firebolt, 1, 20, "Mage"))
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(12 * 1.89)
-		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(12 * 3.49)
+		-- S87 (G10): manaCost.Mage 1.89 / 2.59 / 3.49 at 45 / 70 / 100 (was 1.4 / 1.9 / 2.5). S147: 1.096 / 1.865 / 2.1 (T-SK4
+		-- of the element variants)
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.096 * Skills.cost(firebolt, 1, 20, "Mage"))
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(12 * 1.096)
+		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(12 * 2.1)
 		for _, def in SkillData.byId do
 			if def.class == "Mage" and def.type ~= "passive" then
 				for _, rank in { 1, def.maxLevel } do
@@ -2141,7 +2142,7 @@ T.describe("S78 Hunter base, B options and nodes", function()
 
 	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
 		local venom = eff("venomArrow", "trapper", {}, { ["venomArrow:5"] = "a", ["venomArrow:10"] = "b" }, BOW)
-		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(93, 1e-9) -- S144: 50 + 15 (5A) + 28 (10B)
+		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(100.5, 1e-9) -- S144: 50 + 15 (5A) + 28 (10B). S147: 57.5 + 15 + 28
 		local volley = eff("volley", "scout", {}, { ["volley:5"] = "b", ["volley:10"] = "b" }, BOW)
 		T.expect(Skills.valueAt(volley, "dmg", 10)).toBeNear(47, 1e-9) -- S144: 34 + 4 (5B) + 9 (10B)
 		local mark = SkillData.get("huntersMark") :: any
@@ -2424,7 +2425,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 		local function v(id: string, field: string, rank: number): number
 			return Skills.valueAt(SkillData.get(id) :: any, field, rank)
 		end
-		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 24, 24 })
+		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 81, 107 }) -- S147: 24 -> 81-107
 		T.expect({ v("focus", "reserve", 1), v("focus", "reserve", 5) }).toEqual({ 3.1, 15.4 })
 		T.expect((SkillData.get("focus") :: any).passive).toEqual({ pct = { manaReserve = "reserve" } })
 		T.expect((SkillData.get("evocation") :: any).cooldown).toBe(120)
@@ -2547,7 +2548,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 			true
 		)
 		T.expect({ evocation.channelMove, evocation.grantCharges }).toEqual({ 50, 4 })
-		T.expect(Skills.valueAt(b("meteorStorm", 10), "dmg", 10)).toBeNear(28.4, 1e-9)
+		T.expect(Skills.valueAt(b("meteorStorm", 10), "dmg", 10)).toBeNear(131, 1e-9) -- S147: 107 + 24 (10B)
 		T.expect(Skills.cooldown(b("meteorStorm", 5), 10)).toBeNear(44, 1e-9)
 	end)
 end)

@@ -5451,3 +5451,64 @@
   Furia na 70 traci Okrzyk z paska (Gniew Tytana 3): R1 2,56 → 2,40; na 100 bez zmian (10 089, R1 2,60).
 - **S146** (przegląd) T-SK2 Strażnika na 90–100 (1,35 × L20) z powodem S146 jak 75–85: na 70 już 1,35, różnica 0,1%
   (sprzęt) zdejmowała regułę S94; T-SK1 i R1 Obrońcy w limicie.
+- **S147** Pasek w modelu także dla Łowcy i Maga (`SkillModel.BAR_CLASSES` wszystkie klasy): warianty żywiołów Maga mają
+  `ReferenceBuild.bar` (Niszczyciel: U, Kataklizm, Wir, potem czary obszaru; Arkanista: Strumień, Wyładowanie, potem
+  czary w jeden cel, Inwokacja ostatnia), Arkaniści kupują Inwokację po Strumieniu (wcześniej Strumień miał na 100.
+  rangę 2). Łowca: pasek z `ranks` (≤ 8 aktywnych swojej puli w rotacji). Średnie trzech żywiołów bez zmian. 1–20 bez zmian.
+- **S147** Tożsamość żywiołów (R9 Maga, asertowane 20–100): błyskawica / ogień w jeden cel 1,108 / 1,144 / 1,167 /
+  1,115; lód / ogień 0,889 / 0,896 / 0,863 / 0,876; ogień z podpaleniem / błyskawica na 3 cele 8 s 1,21 / 1,20 / 1,05 /
+  1,05; Elita pod kontrolą lodu 0,83–0,99, boss pod Głębokim Chłodem 0,53–0,94; obrażenia przyjmowane lód 0,50–0,90
+  ognia, błyskawica 1,00–1,11 ognia. Dźwignie: Spopielenie ranga 10 300 → 283,3, Roztrzaskanie 160–230 → 184–420,
+  Głęboki Mróz ×1,15, Lodowa Włócznia ranga 10 330 → 360, Lanca Błyskawic ranga 10 200 → 280, Grom ranga 10 400 → 460
+  (rangi ≤ 70 przypięte węzłami tam, gdzie trzeba), Deszcz Meteorów 24 → 81–107 i 7 uderzeń, Nawałnica 40–48 → 29–34.
+- **S147** NIE spełniona zasada 5 (bez trybu raportu): „błyskawica przyjmuje więcej niż ogień” u Arkanisty na 45. (0,991)
+  i obu kierunków na 20. (0,974 / 0,995; 1–20 zamrożone). Bez paraliżu Porażenia ogień i błyskawica przyjmują dokładnie
+  tyle samo (ten sam pancerz i HP), a osłony żywiołów (Żarząca Osłona, Pancerz Burzy) nie są na paskach buildów; liczby
+  tej sesji tego nie zmienią. Dla właściciela: O1 żywiołu na pasku buildów wzorcowych albo Elity w połowie odporne na
+  paraliż. Wiersze w `Balance.S147_REPORT` z powodem.
+- **S147** T-SK4 (ROZWOJ 12.0 / 12.7) mierzy warianty żywiołów (buildy gracza po S142), nie średnią trzech żywiołów z
+  mieszaną rotacją: krzywa `manaCost.Mage` 25 / 30 / 40 / 45 / 50 / 55 / 60 / 70 / 100 = 1,02 / 1,04 / 1,08 / 1,096 / 1,3 /
+  1,4 / 1,55 / 1,865 / 2,1 (była 1,37 … 3,49; rośnie dalej, nigdy nie spada), koszt U i Kataklizmu: Deszcz Meteorów 174 →
+  460, Zamieć 170 → 270, Nawałnica 170 → 360, Kataklizm 119 → 220 (rzuca je tylko Niszczyciel). Warianty: Niszczyciel
+  2,01–2,78, Arkanista 2,01–2,39 na 45 / 70 / 100; wyjątek Niszczyciel lodu na 70. 1,48 (bez rang Zamieci, lód najtańszy;
+  droższy lód podnosi Arkanistę lodu ponad 2,4), raport. Średnie żywiołów (G10, `R.<mapa>.tsk4`, `mage.tsk4` ścieżek)
+  spadają do 1,1–1,8 (3,0–3,2 na 60.): `GLOBAL_REPORT_ONLY` S147.
+- **S147** Tożsamość pul Łowcy (R9, asertowane): łuk / kusza (Strzelec) w jeden cel 0,997 / 1,047 / 0,997 / 0,986, udział
+  obrażeń w czasie kuszy (Traper Kłusownik / Truciciel) 0,285 / 0,264, 0,262 / 0,306, 0,299 / 0,318 na 45 / 70 / 100.
+  Obrażenia kuszy przeszły do trucizny: Trujące Sidła 232–236 / 285–290 → 80–82 / 405–412 (10A echo 44 → 135%),
+  Zatrute Groty 10–20 → 10–30%, Zatruta Strzała obrażenia ranga 10 152 → 137 i trucizna 50 → 57,5 (ranga 2 przypięta),
+  Ciężki Bełt od 21. ×0,93, Bełt Egzekutora ranga 10 260 → 248; Pole Sideł 30–38 → 12–14 (10A +14 → +6, R3 Trapera na
+  100. 1,996 ≤ 2,0).
+- **S147** R7 (asertowane, Strzelec z łukiem / z ciężką kuszą wobec Furii S146): 1,237 / 1,181, 1,265 / 1,269, 1,324 /
+  1,343 na 45 / 70 / 100; Traper `r7Exempt` zostaje (15.4.2: obszar i trucizna). Liczby Wojownika bez zmian.
+- **S147** R1 Łowcy i Maga na 45 / 100 (Łowca 2,8–3,3, Mag 3,2–7,3) tylko raport: właściciel (S90, S91), jak `all.r1`
+  ścieżek. R8 każdej puli Łowcy i Maga w paśmie (0,888 punktów na 100, 10 aktywnych z rangą 10, 0,55–0,61 na 45), R5 typów
+  broni ≤ 0,056 (Mag: różdżka z kulą / z księgą, kostur, kostur runiczny w jednym żywiole; `withWeapon` zachowuje żywioł).
+- **S147** R4 (asertowane): przełomy przestrojone pod nowe bazy (Głęboki Mróz 5B +13 → +15, 10B +30 → +36; Roztrzaskanie
+  10B +55 → +85; Lanca 5B +22 → +30, 10B +50 → +65; Zamieć 10B +3,5 → +3,8; Deszcz Meteorów 10B +4,4 → +24; Ognisty
+  Pocisk 10A 12 → 13%; Zatruta Strzała 10A 19 → 21%). Ognisty Pocisk 5A (przebicie 17%, ranga 5 na 17.) 0,056–0,059:
+  zmiana rusza kotwicę L20 Niszczyciela (1–20 zamrożone), raport `GLOBAL_REPORT_ONLY` S147.
+- **S147** `GLOBAL_REPORT_ONLY`: 390 kluczy S137 / S140–S142 / S144 (Łowca i Mag) usuniętych; żaden wpis z S137–S145 nie
+  zostaje (test w bloku S147). 392 klucze z powodem S147: 248 strażników T-SK1 / T-SK2 / T-SK3 Łowcy i Maga (wzrost
+  względem L20 przez pule, jak Wojownik S146), 87 T-SK4 średnich żywiołów, 14 cech broni S88 na buildach sprzed pul,
+  20 celów względem bazy klasy S85 (Strzelec × baza, Traper / Niszczyciel / Arkanista × baza, R5a), 10 tempa solo
+  Zwiadowcy (pula łuku bez pułapek), 8 Trapera z łukiem, 2 R6 Zwiadowcy (wsparcie, średnia ≈ 0), 3 Ognisty Pocisk 5A.
+- **S147** Bossowie S134 i S91–S94 z nowymi paskami: wszystkie wiersze asertowane bez zmian w danych bossów (3 graczy
+  5,2–6,2 min, 5 graczy 3,7–4,2 min, solo na równym sprzęcie przegrywa, solo z Mitycznym +9 wygrywa; największy cios do
+  uniknięcia 0,75–0,85 HP Maga). `Balance.S134_REPORT` pusty.
+- **S147** (przegląd) T-SK4 wariantów żywiołów asertowane na 45–100 (45 i poziomy wierszy `R.ashen.tsk4` /
+  `R.frostpeak.tsk4`: 50 … 100), nie tylko na 45 / 70 / 100. Zasada 5: 29 z 84 wierszy poza pasmem, w
+  `Balance.S147_REPORT` z powodem: Niszczyciel lodu 1,20–1,82 na 65–95 (bez rang Zamieci); Niszczyciel ognia i
+  błyskawicy 2,87–2,98 na 55–60, Arkanista ognia 1,78–1,999 na 50–65, lodu 1,93–1,97 na 60–69; błyskawica Niszczyciela
+  1,74–1,90 na 80–85, Arkaniści ognia i błyskawicy 1,95 na 85, Arkanista ognia 2,41–2,47 na 90–99, błyskawicy 2,41 na
+  90, Niszczyciel ognia 1,90–1,97 na 90–95. Jedna krzywa `manaCost.Mage` tego nie naprawi: na 50, 55, 60, 90, 95 i 99
+  warianty jednego poziomu rozchodzą się szerzej niż pasmo (skoki kupionych rang), a 80–85 nie wzrosną bez 90–100
+  (krzywa nie spada). Dźwignia dla właściciela: koszty czarów osobno dla żywiołów albo kolejność rang. 25–44 dalej tylko
+  raport (pasmo ROZWOJ 12.7 od 45.).
+- **S147** (przegląd) Cele S140–S142 wycofane, nie „asertuje S147” (wiersze z powodem w `report`): udział podpalenia
+  ≥ 25% (S140, 0,09–0,14), bo tożsamość ognia to wygrana z podpaleniem na 3 celach (`S147.r9.mage.area`); obrażenia
+  przyjmowane lód / ogień ≤ 0,85 (S141, 0,86 / 0,90 na 20.) zastąpione celem lód < ogień; błyskawica / ogień bez
+  podpalenia na 3 celach ≥ 1 (S142, 0,92 / 0,93 na 20 / 45), bo S147 asertuje ogień z podpaleniem ≥ błyskawica.
+- **S147** (przegląd) Teksty przełomów z liczbą w treści (`skill.<id>.bp5/.bp10/.bp5b/.bp10b`, PL i EN) zmieniane
+  razem z danymi: 11 kluczy Łowcy i Maga. Test: żaden wiersz R4 w `GLOBAL_REPORT_ONLY` / `S147_REPORT` poza Ognistym
+  Pociskiem 5A.

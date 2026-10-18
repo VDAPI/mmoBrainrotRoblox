@@ -1792,7 +1792,7 @@ end
 
 -- S146 (DESIGN-18 §13, session B1): the classes whose builds cast only the 8 skills of their bar (S147: the Hunter and
 -- the Mage).
-SkillModel.BAR_CLASSES = { Warrior = true, Cleric = true } :: { [string]: boolean }
+SkillModel.BAR_CLASSES = { Warrior = true, Cleric = true, Hunter = true, Mage = true } :: { [string]: boolean }
 
 -- S146 (DESIGN-18 §4.1, §13): the bar of a model player (SkillModel.player) at its level: the first
 -- SkillData.HOTBAR_SLOTS actives of ReferenceBuild.bar (else rankOrder) the character can cast (a rank, its pool, its
@@ -6572,9 +6572,10 @@ local function weaponKey(w: { main: string, offhand: string? }): string
 	return if w.offhand then `{w.main}+{w.offhand}` else w.main
 end
 
--- A build with another weapon (key "<key>@<weapon>"; the weapon of the path measurement, S90 R5).
+-- A build with another weapon (key "<key>@<weapon>"; the weapon of the path measurement, S90 R5). S147: a Mage element
+-- variant keeps its element (R5 inside one element's pool).
 function SkillModel.withWeapon(build: Build, main: string, offhand: string?): Build
-	local w = { main = main, offhand = offhand }
+	local w = { main = main, offhand = offhand, element = (build.weapon :: any).element }
 	if build.weapon.main == main and build.weapon.offhand == offhand then
 		return build
 	end

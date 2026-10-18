@@ -5,7 +5,13 @@
 
 ## Stan
 
-S01–S115 i S117–S146 gotowe (ostatnia S146: balans 21–100 Wojownika i Kapłana po przebudowie umiejętności: blok
+S01–S115 i S117–S147 gotowe (ostatnia S147: balans 21–100 Łowcy i Maga po przebudowie umiejętności: blok
+`Balance.targetsS147` z asertowaną tożsamością żywiołów (błyskawica 1,11–1,17 × ogień w jeden cel, lód 0,86–0,90,
+ogień z podpaleniem ≥ błyskawica na 3 cele, kontrola lodu, lód przyjmuje najmniej) i pul Łowcy (łuk / kusza ±10%,
+obrażenia w czasie kuszy ≥ 25%), R8, R7, R5, T-SK3 i T-SK4 wariantów żywiołów; pasek 8 aktywnych także Łowcy i Maga,
+krzywa `manaCost.Mage` niżej od 25., trucizna kuszy mocniejsza kosztem bezpośrednich obrażeń, Deszcz Meteorów
+mocniejszy, `GLOBAL_REPORT_ONLY` bez wpisów S137–S145 (reszta z powodem S147), bossowie dalej asertowani;
+wcześniej S146: balans 21–100 Wojownika i Kapłana po przebudowie umiejętności: blok
 `Balance.targetsS146` z asertowanymi R8 każdej puli, R9 (EHP Strażnika, buzdygan / Furia), T-SK6 berła tylko na 20, R1
 puli dwuręcznej (Furia) i jednoręcznej (Obrońca; R1 buzdygana i Chorążego tylko raport), R5 typów broni puli, R6
 Berserkera i Chorążego, T-SK5 berła; pasek 8 aktywnych w modelu (`ReferenceBuild.bar`) i rangi buildów w kolejności
@@ -351,6 +357,14 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S147:** w trybie raportu z powodem (`Balance.S147_REPORT`, `GLOBAL_REPORT_ONLY` S147; decyzje właściciela w
+  `docs/SESJE.md` → S147): obrażenia przyjmowane błyskawica / ogień u Arkanisty na 45. (0,991) i na 20. (1–20
+  zamrożone) mimo zasady 5 sesji (bez paraliżu oba żywioły przyjmują tyle samo; osłona żywiołu na pasku albo Elity
+  odporne na paraliż); T-SK4 wariantów żywiołów na 50–99 (29 z 84 wierszy: Niszczyciel lodu 1,20–1,82 na 65–95,
+  skoki rang przy jednej krzywej many; koszty czarów osobno dla żywiołów); R1 Łowcy i Maga (właściciel S90 / S91); Ognisty Pocisk
+  5A (1–20 zamrożone); strażnicy T-SK1–3 Łowcy i Maga (248), T-SK4 średnich trzech żywiołów (87), cechy broni S88
+  na buildach sprzed pul (14), cele względem bazy klasy S85 (20), tempo solo Zwiadowcy (10), Traper z łukiem (8), R6
+  Zwiadowcy. Wiki do odświeżenia (właściciel 17.10): nowe liczby Łowcy i Maga, krzywa many.
 - **S146:** w trybie raportu z powodem (`Balance.S146_REPORT`, `GLOBAL_REPORT_ONLY` S146; decyzje właściciela w
   `docs/SESJE.md` → S146): T-SK6 berła na 45 / 70 / 100 2,8 / 8,6 / 14,4 (cel 1–2; obrażenia bossów w tanka, jak S93 /
   S94) i R1 Inkwizytora 4,4–6,2 (F4 z S89) mimo zasady 5 sesji; R9 Wojownika dwuręczna / jednoręczna 1,45–1,69 w jeden
@@ -358,8 +372,7 @@ zakończone; testy i decyzje właściciela po nich.
   Strażnika, Uzdrowiciela, Fortuny i Inkwizytora; strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy 50–100), cechy broni
   dwuręcznej S88 (5), Berserker / podstawa 1,04–1,18 (cel 1,25–1,37), Fortuna leczy mniej na 70 / 100, samotny
   Uzdrowiciel kosturem na 100.
-  Łowca i Mag (pasek w modelu, R1–R9, `GLOBAL_REPORT_ONLY` S137 i S140–S144) w S147. Wiki do odświeżenia (właściciel
-  17.10).
+  Łowca i Mag zrobione w S147. Wiki do odświeżenia (właściciel 17.10).
 - **S145:** pule Kapłana bez przeglądu w grze: ruchy 7 nowych aktywnych to warianty ruchów Kapłana (dopracowanie
   W03–W07; kilka par z tą samą sylwetką, np. Promień Światła / Leczenie, różni je wygląd), wygląd z istniejących
   składników, dźwięki `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke` bez ID (właściciel,
@@ -369,9 +382,8 @@ zakończone; testy i decyzje właściciela po nich.
 
 - **S144:** pule Łowcy bez przeglądu w grze: ruchy 5 nowych aktywnych to pozy z funkcji `ShotRig` (dopracowanie W03–W07),
   wygląd z istniejących składników, dźwięki `skill.heavyBolt|pinningShot|windstep|netShot|deadlyBolt` bez ID (właściciel,
-  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S144.hunter.*`) do
-  S147: udział obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25), łuk / kusza w jeden cel 0,99–1,05 (w celu ±10%).
-  `GLOBAL_REPORT_ONLY` S144 (107 kluczy 21–100) do opróżnienia w S147; `tests/SkillModel.luau` na limicie 200 lokalnych
+  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul asertowana w bloku S147
+  (`S144.hunter.*` tylko druk); `GLOBAL_REPORT_ONLY` S144 opróżnione w S147; `tests/SkillModel.luau` na limicie 200 lokalnych
   zmiennych (nowe lustra w tabelach, jak `Hunt`). Wiki do odświeżenia (właściciel 17.10): dwie pule Łowcy, węzły i
   zwieńczenia kierunków.
 - **S143:** pule Wojownika bez przeglądu w grze: ruchy 7 nowych aktywnych to pozy z istniejących ruchów Wojownika
@@ -383,24 +395,21 @@ zakończone; testy i decyzje właściciela po nich.
 - **S142:** pula Błyskawicy bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z
   istniejących składników (dopracowanie W03–W07), dźwięki `skill.lightningBolt|staticShock|stormArmor|thunderStrike|
   ballLightning|lightningLance|tempest` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki).
-  Tożsamość trzech żywiołów i T-SK4 wariantów błyskawicy tylko w raporcie (`S142.mage.*`, `S142.lightning.*`) do S147:
-  na 20. i 45. błyskawica na 3 cele / ogień bez podpalenia 0,92–0,93 (cel ≥ 1,0; pasmo R1 S91 na 20.), na 100.
-  błyskawica w jeden cel 1,05 (cel 1,10–1,20) i na 3 cele ponad ogniem z podpaleniem (1,19), lód / ogień na 70–100
-  0,82 (cel 0,85–0,95). `GLOBAL_REPORT_ONLY` S142 (101 wierszy Maga 21–100) do opróżnienia w S146/S147. Wiki do
+  Tożsamość trzech żywiołów i T-SK4 wariantów asertowane w bloku S147 (`S142.mage.*`, `S142.lightning.*` tylko druk;
+  błyskawica na 3 cele / ogień bez podpalenia na 20. i 45. 0,92 nie jest celem S147). `GLOBAL_REPORT_ONLY` S142
+  opróżnione w S147. Wiki do
   odświeżenia (właściciel 17.10): trzy pule Maga z drabiną, Ognisty Pocisk.
 - **S141:** pula Lodu bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
   składników (dopracowanie W03–W07), dźwięki `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
   blizzard` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki). Tożsamość lodu i T-SK4
-  wariantów lodu tylko w raporcie (`S141.ice.*`; po S142 lód / ogień w jeden cel 0,89 na 20. i 0,82 na 100. przy celu
-  0,85–0,95, przyjmowane obrażenia Arkanisty na 20. 0,90 przy celu 0,85) do S147; `GLOBAL_REPORT_ONLY` S141 (56 wierszy
-  Maga 21–100) do opróżnienia w S146/S147; R4 5B na 20. Lodowego Odłamka (0,18 po S142) i Gradu (0,19) ponad pasmem
-  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom) do S147. Pula Błyskawicy i S1 Maga (Ognisty Pocisk) zrobione w S142. Wiki
+  wariantów lodu asertowane w bloku S147 (`S141.ice.*` tylko druk); `GLOBAL_REPORT_ONLY` S141 opróżnione w S147; R4 5B na 20. Lodowego Odłamka (0,18 po S142) i Gradu (0,19) ponad pasmem
+  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom; 1–20 zamrożone, S147 bez zmian). Pula Błyskawicy i S1 Maga (Ognisty Pocisk) zrobione w S142. Wiki
   do odświeżenia (właściciel 17.10).
 - **S140:** pula Ognia bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
   składników (dopracowanie W03–W07), dźwięki `skill.flameWave|emberShield|pyroblast|combustion|immolate|phoenixHeart`
   bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość ognia i T-SK4
-  wariantów ognia tylko w raporcie (`S140.fire.*`: udział podpalenia 7–13% przy celu 25%, T-SK4 2,5–4,8) do S147;
-  `GLOBAL_REPORT_ONLY` S140 (89 wierszy Maga 21–100) do opróżnienia w S146/S147. Pula Lodu zrobiona w S141;
+  wariantów ognia asertowane w bloku S147 (`S140.fire.*` tylko druk: udział podpalenia 9–14% przy dawnym celu 25% nie
+  jest celem S147); `GLOBAL_REPORT_ONLY` S140 opróżnione w S147. Pula Lodu zrobiona w S141;
   pula Błyskawicy i S1 Maga w S142 (udział podpalenia po S142 9–14%). Wiki do odświeżenia (właściciel 17.10).
 - **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
   podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
@@ -411,8 +420,8 @@ zakończone; testy i decyzje właściciela po nich.
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
-- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137: wiersze Wojownika i Kapłana zamknięte w S146,
-  Łowcy (51) do S147. Wiki do odświeżenia (właściciel 17.10):
+- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137 opróżnione (Wojownik i Kapłan w S146,
+  Łowca w S147). Wiki do odświeżenia (właściciel 17.10):
   `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
 
 - **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`

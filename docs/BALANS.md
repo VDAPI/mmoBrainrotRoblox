@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S146 (commit 6042e797, 2026-10-18) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S147 (commit be123989, 2026-10-18) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -19,15 +19,16 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | --- | --: | --: | --: | --: |
 | 1–20: cele S32 (S91) | 1003 | 1003 | 1003 | 0 |
 | 1–20: cele S91 | 171 | 164 | 163 | S143 1, S144 1, S90 2, – 4 |
-| 20–100: globalne G1–G13 (S87) | 1904 | 1395 | 1279 | S103 4, S134 12, S88 285, S91 12, S92 5, – 307 |
+| 20–100: globalne G1–G13 (S87) | 1904 | 1408 | 1279 | S103 4, S134 12, S88 285, S91 12, S92 5, – 307 |
 | region meadows (S91) | 412 | 412 | 412 | 0 |
-| region duskwood (S92) | 1062 | 766 | 714 | S134 1, S32 3, S90 20, S92 324 |
-| region ashen (S93) | 1272 | 790 | 902 | S32 3, S90 24, S93 343 |
-| region frostpeak (S94) | 1473 | 879 | 1003 | S32 3, S90 28, S94 439 |
+| region duskwood (S92) | 1062 | 759 | 711 | S134 1, S32 3, S90 20, S92 327 |
+| region ashen (S93) | 1272 | 786 | 902 | S32 3, S90 24, S93 343 |
+| region frostpeak (S94) | 1473 | 868 | 992 | S32 3, S90 28, S94 450 |
 | 1–100: wiersze przekrojowe (S94) | 240 | 240 | 240 | 0 |
 | 20–100: cechy, linie, obrona (S88) | 516 | 444 | 451 | S134 3, S89 25, S90 22, S94 3, – 12 |
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | 80 | 52 | 49 | S146 14, S147 3, S89 11, – 3 |
-| 20–100: ścieżki (S89–S90) | 1293 | 748 | 634 | S137 10, S140 9, S142 17, S144 32, S146 6, S90 24, S94 24, – 537 |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | 211 | 163 | 163 | S147 30, S90 16, – 2 |
+| 20–100: ścieżki (S89–S90) | 1293 | 754 | 649 | S146 6, S147 53, S90 24, S94 24, – 537 |
 
 ### Otwarte cele 1–100 (wiersze w trybie raportu, po powodach)
 
@@ -50,7 +51,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | 20–100: globalne G1–G13 (S87) | S91 | 0/4 | S91: poza zasięgiem dźwigni S91: 10.43 < 12 (Config.Upgrade global, income of 20 from the band 20-45) |
 | 20–100: globalne G1–G13 (S87) | S92 | 0/4 | S92: poza zasięgiem dźwigni S92: 11.36 < 12 at 25 (Config.Upgrade global, an owner decision) |
 | 20–100: globalne G1–G13 (S87) | S103 | 4/4 | S103: poza zasięgiem dźwigni S103: 11.06 < 12 at 40 (11.91 with the window kills before S103; the gold of the new story quests of 20-44; Config.Upgrade global, an owner decision) |
-| 20–100: globalne G1–G13 (S87) | – | 216/307 | tylko raport |
+| 20–100: globalne G1–G13 (S87) | – | 195/307 | tylko raport |
 | region duskwood (S92) | S32 | 0/3 | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
 | region duskwood (S92) | S134 | 1/1 | poza zasięgiem dźwigni S134: ok. 3,5 > 2,7 (wielkie ciosy do unikania nie trafiają tanka; Pole Klątwy trzyma noSupport.hit ≤ 1,0, atak podstawowy wiersz tanka S32 ≤ 3,5); dla właściciela |
 | region duskwood (S92) | S90 | 0/20 | tylko raport (T-SK3 podstawy, S90 I3) |
@@ -58,7 +59,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.40 |
 | region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.17 |
 | region duskwood (S92) | S92 | 10/10 | poza zasięgiem dźwigni S92: skok z węzła ścieżki kupionego 44. punktem (kolejność S89–S90), rangi 44 = 45; dla S93 |
-| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.91 |
+| region duskwood (S92) | S92 | 7/7 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.91 |
 | region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.33 |
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.70 |
 | region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.22 |
@@ -67,28 +68,28 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: 1,31 na 40 wobec 1,29 na 45 (rangi z 37–42 trzymają też 45, blok ścieżek); dla S93 |
 | region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.32 |
 | region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.44 |
-| region duskwood (S92) | S92 | 7/7 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.61 |
+| region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.60 |
 | region duskwood (S92) | S92 | 8/8 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.49 |
-| region duskwood (S92) | S92 | 13/13 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.73 |
+| region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.71 |
 | region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.28 |
 | region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.24 |
+| region duskwood (S92) | S92 | 20/20 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.73 |
+| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.95 |
 | region duskwood (S92) | S92 | 6/6 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.69 |
-| region duskwood (S92) | S92 | 8/8 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.92 |
-| region duskwood (S92) | S92 | 9/9 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.66 |
-| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.86 |
+| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.89 |
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.57 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.80 |
-| region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.90 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.71 |
-| region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.84 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.32 |
-| region duskwood (S92) | S92 | 14/14 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.67 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.96 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.81 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.72 |
+| region duskwood (S92) | S92 | 3/3 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.86 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.99 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.33 |
+| region duskwood (S92) | S92 | 19/19 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.67 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.01 |
 | region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.10 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.94 |
-| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.13 |
 | region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.03 |
-| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.28 |
+| region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.19 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.07 |
+| region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.30 |
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.82 |
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.37 |
 | region duskwood (S92) | S92 | 8/8 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.39 |
@@ -97,7 +98,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.26 |
 | region duskwood (S92) | S92 | 5/5 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 1.98 |
 | region duskwood (S92) | S92 | 4/4 | poza zasięgiem dźwigni S92: na 45 blok ścieżek S89–S90 trzyma 2.14 |
-| region duskwood (S92) | S92 | 0/1 | poza zasięgiem dźwigni S92: 1,90 < 2,0 (kotwica 45 trzyma arcanistOverload ≤ 2,8 na 45) |
+| region duskwood (S92) | S92 | 1/1 | poza zasięgiem dźwigni S92: 1,90 < 2,0 (kotwica 45 trzyma arcanistOverload ≤ 2,8 na 45) |
 | region duskwood (S92) | S92 | 10/10 | poza zasięgiem dźwigni S92: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
 | region duskwood (S92) | S92 | 52/100 | poza zasięgiem dźwigni S92: ceny mikstur i krzywa potionCooldown globalne; dla właściciela |
 | region ashen (S93) | S32 | 0/3 | tylko raport: całe przyjęcie tanka z meteorem i falami (miara S32 liczy atak podstawowy i threat) |
@@ -112,10 +113,10 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: skok przy progu sprzętu 65 (żadna ranga na 65), na 64 / 66 1,16 / 1,23; dla właściciela |
 | region ashen (S93) | S93 | 2/2 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 1.32 |
 | region ashen (S93) | S93 | 0/1 | poza zasięgiem dźwigni S93: Pole Sideł rangi 1–2 (0,5% ponad), ranga 3 trzyma 70 w bloku ścieżek; dla właściciela |
-| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 1.84 |
+| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 1.86 |
 | region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 2.10 |
-| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 2.03 |
-| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 2.28 |
+| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 2.07 |
+| region ashen (S93) | S93 | 1/1 | poza zasięgiem dźwigni S93: na 45 (pasmo S92) build ma już 2.30 |
 | region ashen (S93) | S93 | 10/10 | poza zasięgiem dźwigni S93: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150%); dla właściciela |
 | region ashen (S93) | S93 | 92/96 | poza zasięgiem dźwigni S93: Wielka 700 to dół kolejności cen (0,175 ≥ 0,167 zł/HP), ceny 1–3 i potionCooldown globalne; dla właściciela |
 | region frostpeak (S94) | S32 | 0/3 | tylko raport: całe przyjęcie tanka z zamiecią, pierścieniem i falami (miara S32 liczy atak podstawowy i threat) |
@@ -126,22 +127,25 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | region frostpeak (S94) | S94 | 14/14 | poza zasięgiem dźwigni S94: T-SK3 Strażnika ≤ 2,2 (S89 C1, Groźba), tu 2,18 |
 | region frostpeak (S94) | S94 | 6/13 | poza zasięgiem dźwigni S94: Furia to zamrożone odniesienie obrażeń (S89); dla właściciela |
 | region frostpeak (S94) | S94 | 28/28 | poza zasięgiem dźwigni S94: skoki z węzłów rzędów 9–11 Chorążego (S89) i rang zwieńczenia do 95; dla właściciela |
-| region frostpeak (S94) | S94 | 15/24 | poza zasięgiem dźwigni S94: przekracza limit D1 w paśmie przez sprzęt i rangi 71–95 klasy (blok ścieżek S90 trzyma 100); dla właściciela |
+| region frostpeak (S94) | S94 | 14/24 | poza zasięgiem dźwigni S94: przekracza limit D1 w paśmie przez sprzęt i rangi 71–95 klasy (blok ścieżek S90 trzyma 100); dla właściciela |
 | region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.34 |
-| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.44 |
-| region frostpeak (S94) | S94 | 4/4 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.81 |
-| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.54 |
-| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.68 |
-| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.46 |
-| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.38 |
-| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.89 |
+| region frostpeak (S94) | S94 | 3/3 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.46 |
+| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.79 |
+| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.57 |
+| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 1.67 |
+| region frostpeak (S94) | S94 | 4/4 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.26 |
+| region frostpeak (S94) | S94 | 4/4 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.19 |
+| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.32 |
+| region frostpeak (S94) | S94 | 4/4 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.60 |
+| region frostpeak (S94) | S94 | 2/2 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 3.14 |
+| region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: na 70 (pasmo S93) build ma już 2.95 |
 | region frostpeak (S94) | S94 | 10/10 | poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (krzywe Elit II trzyma duet ≤ 150 %); dla właściciela |
 | region frostpeak (S94) | S94 | 116/116 | poza zasięgiem dźwigni S94: Potężna 1800 to dół kolejności cen (0,18 ≥ 0,175 zł/HP), ceny 1–4 i potionCooldown globalne; dla właściciela |
 | region frostpeak (S94) | S94 | 1/1 | poza zasięgiem dźwigni S94: 366 h wobec 150–300 (złoto ulepszeń z Config.Upgrade, S87, to ok. 83 % kosztu); dla właściciela: goldHigh 20 → ok. 15 |
 | 20–100: cechy, linie, obrona (S88) | S134 | 3/3 | S134 |
 | 20–100: cechy, linie, obrona (S88) | S94 | 3/3 | S94 |
 | 20–100: cechy, linie, obrona (S88) | S89 | 24/25 | S89 |
-| 20–100: cechy, linie, obrona (S88) | S90 | 14/22 | S90 |
+| 20–100: cechy, linie, obrona (S88) | S90 | 13/22 | S90 |
 | 20–100: cechy, linie, obrona (S88) | – | 12/12 | właściciel |
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | S146 | 4/4 | S146: poza zasięgiem dźwigni S146: R9 1,15–1,25 sprzeczne z R1 puli jednoręcznej (atak podstawowy broni jednoręcznej ok. 0,5 dwuręcznej; Items/Bases, twoHandedBonusMul); 20 zamrożone; dla właściciela |
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | S146 | 4/4 | S146: poza zasięgiem dźwigni S146: obszar puli jednoręcznej (Trzęsienie Ziemi, Zamach Tarczą, sztandar) nie mniejszy niż dwuręcznej; mocniejszy obszar Furii psuje tempo Strażnika (≤ 1,5); 20 zamrożone |
@@ -156,17 +160,21 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | S89 | 2/2 | właściciel (F4, S89): najsłabsza część Uzdrowiciela to ratunek i mana (poza metryką) |
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | S89 | 2/2 | właściciel (E3, S89): rzędy 4–11 Fortuny to szczęście i łup (poza metryką) |
 | 20–100: umiejętności 2.0, Wojownik i Kapłan (S146) | S89 | 2/2 | właściciel (F4, S89): środkowa część Inkwizytora to przeżycie i odwet (poza metryką) |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | – | 1/1 | 1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,97 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | – | 1/1 | 1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,995 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | S147 | 1/1 | poza zasięgiem dźwigni S147: bez paraliżu Porażenia błyskawica i ogień przyjmują na 45. tyle samo (ten sam pancerz i HP); 0,991; dla właściciela (osłona żywiołu na pasku albo Elity w połowie odporne na paraliż) |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | S147 | 11/11 | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | S147 | 10/10 | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | S147 | 8/8 | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| 20–100: umiejętności 2.0, Łowca i Mag (S147) | S90 | 16/16 | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
 | 20–100: ścieżki (S89–S90) | S146 | 6/6 | S146 |
 | 20–100: ścieżki (S89–S90) | – | 36/44 | właściciel (F4) |
-| 20–100: ścieżki (S89–S90) | – | 7/8 | F4 |
+| 20–100: ścieżki (S89–S90) | – | 8/8 | F4 |
 | 20–100: ścieżki (S89–S90) | – | 4/8 | tylko raport (healer.S, tempo solo) |
 | 20–100: ścieżki (S89–S90) | – | 4/4 | tylko raport (tempo solo) |
 | 20–100: ścieżki (S89–S90) | S94 | 3/4 | poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów) |
-| 20–100: ścieżki (S89–S90) | S144 | 30/32 | S144 |
-| 20–100: ścieżki (S89–S90) | S137 | 4/10 | S137 |
-| 20–100: ścieżki (S89–S90) | S140 | 9/9 | S140 |
+| 20–100: ścieżki (S89–S90) | S147 | 53/53 | S147 |
 | 20–100: ścieżki (S89–S90) | – | 5/12 | właściciel (H4) |
-| 20–100: ścieżki (S89–S90) | S142 | 17/17 | S142 |
 | 20–100: ścieżki (S89–S90) | S90 | 18/24 | właściciel (S90, S91) |
 | 20–100: ścieżki (S89–S90) | S94 | 18/20 | poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*) |
 | 20–100: ścieżki (S89–S90) | – | 4/80 | tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*) |
@@ -178,96 +186,180 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 | klucz | przed | po | sesja | powód |
 | --- | --: | --: | --: | --: |
-| `Paths/Warrior:[berserker].reference[butcher].nodes[10][2]` | 1 | 3 | S146 | the node order of the fury build (Rending Cuts before Amok) |
-| `Paths/Warrior:[berserker].reference[butcher].nodes[11][2]` | 3 | 1 | S146 | the node order of the fury build (Rending Cuts before Amok) |
-| `Paths/Warrior:[berserker].reference[butcher].nodes[6][2]` | 1 | 3 | S146 | the node order of the fury build (Rending Cuts before Amok) |
-| `Paths/Warrior:[berserker].reference[butcher].nodes[9][2]` | 3 | 1 | S146 | the node order of the fury build (Rending Cuts before Amok) |
-| `Paths/Warrior:[berserker].reference[fury].nodes[10][2]` | 1 | 3 | S146 | the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26) |
-| `Paths/Warrior:[berserker].reference[fury].nodes[11][2]` | 3 | 1 | S146 | the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26) |
-| `Paths/Warrior:[berserker].reference[fury].nodes[6][2]` | 1 | 3 | S146 | the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26) |
-| `Paths/Warrior:[berserker].reference[fury].nodes[9][2]` | 3 | 1 | S146 | the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26) |
-| `Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[1]` | 4 | 5 | S146 | 4 -> 5 (rank 3 12 -> 15): the Standard-Bearer's own damage S at 70 >= 0.55 with the banner and the cries on its bar (0.529 -> 0.554) |
-| `Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[2]` | 12 | 15 | S146 | 12 -> 15: see fervor[1] |
-| `SkillCurves:knots.judgement.dmg[2]` | 320 | 290 | S146 | 320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45) |
-| `SkillCurves:knots.mightyStrike.dmg[6]` | 220,4 | 196 | S146 | 220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26) |
-| `Skills/Cleric:[devotion].values.heal[1]` | 20 | 6 | S146 | 20 -> 6 (rank 5 25 -> 9): T-SK5 of the light pool at 95-100 0.37 / 0.38 -> 0.33 / 0.34 (<= 0.35; the dungeon Healer buys Devotion at 95) |
-| `Skills/Cleric:[devotion].values.heal[2]` | 25 | 9 | S146 | 25 -> 9: see heal[1] (T-SK5 at 95-100) |
-| `Skills/Cleric:[divineWrath].values.bonus[2]` | 20 | 22 | S146 | 20 -> 22 (rank 4 at 47 pinned by a knot): R9 of the hammer pool at 70 / 100 0.89 / 0.91 x Furia (0.85-0.91 / 0.87-0.93) with the reference builds' ranks in the bar's order |
-| `Skills/Cleric:[grace].values.heal[2]` | 12 | 10 | S146 | 12 -> 10 (rank 1 at 20 kept): T-SK5 of the light pool at 100 0.347 -> 0.343 |
-| `Skills/Cleric:[judgement].values.dmg[1]` | 300 | 270 | S146 | 300 -> 270 (rank 2 knot 320 -> 290, rank 10 kept): R9 of the hammer pool at 45 <= 0.86 x Furia (0.862 -> 0.855) |
-| `Skills/Cleric:[zeal].values.zeal[1]` | 0,3 | 0,1 | S146 | 0.3 -> 0.1 s: the Inquisitor buys Zeal at 100 (ranks in the bar's order); 0.8 s a cast made R9 of the hammer pool 1.08 x Furia (0.87-0.93) |
-| `Skills/Cleric:[zeal].values.zeal[2]` | 0,8 | 0,2 | S146 | 0.8 -> 0.2 s: see zeal[1] (R9 of the hammer pool at 100 0.91) |
-| `Skills/Warrior:[advanceOrder].values.crit[2]` | 24 | 21 | S146 | 24 -> 21 points: with the banner on the bar and Fervor 5-15 the support at 100 5.11 > 5.1 with the sabre; now 5.07 / 5.09 (sword / sabre) |
-| `Skills/Warrior:[cleave].breakpoints[5].b.values.bleed` | 20 | 15 | S146 | +20 -> +15: R4 of 5B 0.22 -> 0.16 at 45-100 (10A's stacks with Rending Cuts first), 0.12 -> 0.09 at 20 (0.08-0.17); R4_REPORT entry removed |
-| `Skills/Warrior:[fortitude].values.hp[2]` | 20 | 14 | S146 | 20 -> 14: the Guardian's EHP / Furia 1.87 / 2.18 / 2.17 -> 1.68 / 1.78 / 1.78 at 45 / 70 / 100 (1.6-1.8), ehpRed 1.3-1.5 |
-| `Skills/Warrior:[mightyStrike].values.dmg[2]` | 222 | 200 | S146 | 222 -> 200 (rank 6 knot 196): R1 of Sword and Shield (the Defender) at 45 / 100 in band; Brutal Strike (the two-handed S1) keeps 222 |
+| `LevelCurves:curves.manaCost.Mage[10][2]` | 3,49 | 2,1 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most) |
+| `LevelCurves:curves.manaCost.Mage[2][2]` | 1,37 | 1,02 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls) |
+| `LevelCurves:curves.manaCost.Mage[3][2]` | 1,47 | 1,04 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04 |
+| `LevelCurves:curves.manaCost.Mage[4][2]` | 1,82 | 1,08 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08 |
+| `LevelCurves:curves.manaCost.Mage[5][2]` | 1,89 | 1,096 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire) |
+| `LevelCurves:curves.manaCost.Mage[6][2]` | 2,038 | 1,3 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3 |
+| `LevelCurves:curves.manaCost.Mage[7][2]` | 2,25 | 1,4 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4 |
+| `LevelCurves:curves.manaCost.Mage[8][2]` | 2,32 | 1,55 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55 |
+| `LevelCurves:curves.manaCost.Mage[9][2]` | 2,59 | 1,865 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865 |
+| `SkillCurves:knots.heavyBolt.dmg[6]` | 302,1 | 280,9 | S147 | x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100) |
+| `Skills/Hunter:[deadlyBolt].values.dmg[2]` | 260 | 248 | S147 | 260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips |
+| `Skills/Hunter:[heavyBolt].values.dmg[2]` | 302,9 | 281,7 | S147 | 302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow) |
+| `Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg` | 14 | 6 | S147 | +14 -> +6: R4 of 10A 0.34 -> 0.19 with the base 12-14 |
+| `Skills/Hunter:[snarefield].values.dmg[1]` | 30 | 12 | S147 | 30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison |
+| `Skills/Hunter:[snarefield].values.dmg[2]` | 38 | 14 | S147 | 38 -> 14: see dmg[1] |
+| `Skills/Hunter:[toxicTips].values.tip[2]` | 20 | 30 | S147 | 20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100 |
+| `Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct` | 19 | 21 | S147 | 19 -> 21: R4 of 10A 0.166 -> 0.18 with the lower dmg (|A - B| <= 0.05) |
+| `Skills/Hunter:[venomArrow].values.dmg[2]` | 152 | 137 | S147 | 152 -> 137 (rank 2 pinned): the Crossbow's damage moves to its poison (R9) |
+| `Skills/Hunter:[venomArrow].values.poison[2]` | 50 | 57,5 | S147 | 50 -> 57.5 (rank 2 pinned): R9 of the Crossbow, damage over time >= 25 % |
+| `Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct` | 44 | 135 | S147 | 44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22) |
+| `Skills/Hunter:[venomSnare].values.dmg[1]` | 232 | 80 | S147 | 232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper) |
+| `Skills/Hunter:[venomSnare].values.dmg[2]` | 236 | 82 | S147 | 236 -> 82: see dmg[1] |
+| `Skills/Hunter:[venomSnare].values.poison[1]` | 285 | 405 | S147 | 285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70) |
+| `Skills/Hunter:[venomSnare].values.poison[2]` | 290 | 412 | S147 | 290 -> 412: see poison[1] |
+| `Skills/Mage:[blizzard].breakpoints[10].b.values.dmg` | 3,5 | 3,8 | S147 | +3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18 |
+| `Skills/Mage:[blizzard].cost` | 170 | 270 | S147 | 170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve |
+| `Skills/Mage:[cataclysm].cost` | 119 | 220 | S147 | 119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it) |
+| `Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg` | 30 | 36 | S147 | +30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base |
+| `Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg` | 13 | 15 | S147 | +13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base |
+| `Skills/Mage:[deepFreeze].values.dmg[1]` | 70 | 80 | S147 | 70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before) |
+| `Skills/Mage:[deepFreeze].values.dmg[2]` | 120 | 138 | S147 | 120 -> 138: see dmg[1] |
+| `Skills/Mage:[firebolt].breakpoints[10].a.splash.pct` | 12 | 13 | S147 | 12 -> 13: R4 of 10A at 45-100 0.16 -> 0.17 (1-20 unchanged) |
+| `Skills/Mage:[glacialSpike].values.dmg[2]` | 330 | 360 | S147 | 330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862 |
+| `Skills/Mage:[immolate].values.dmg[2]` | 300 | 283,3 | S147 | 300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10 |
+| `Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg` | 50 | 65 | S147 | +50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base |
+| `Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg` | 22 | 30 | S147 | +22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base |
+| `Skills/Mage:[lightningLance].values.dmg[2]` | 200 | 280 | S147 | 200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10 |
+| `Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg` | 4,4 | 24 | S147 | +4.4 -> +24: R4 of 10B 0.035 -> 0.22 with the base 81-107 |
+| `Skills/Mage:[meteorStorm].cost` | 174 | 460 | S147 | 174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm |
+| `Skills/Mage:[meteorStorm].hits` | 6 | 7 | S147 | 6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148 |
+| `Skills/Mage:[meteorStorm].values.dmg[1]` | 24 | 81 | S147 | 24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02) |
+| `Skills/Mage:[meteorStorm].values.dmg[2]` | 24 | 107 | S147 | 24 -> 107: see dmg[1] |
+| `Skills/Mage:[shatter].breakpoints[10].b.values.dmg` | 55 | 85 | S147 | +55 -> +85: R4 of 10B at 100 0.131 -> 0.20 with the higher base |
+| `Skills/Mage:[shatter].values.dmg[1]` | 160 | 184 | S147 | 160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85 |
+| `Skills/Mage:[shatter].values.dmg[2]` | 230 | 420 | S147 | 230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86 |
+| `Skills/Mage:[tempest].cost` | 170 | 360 | S147 | 170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve |
+| `Skills/Mage:[tempest].values.dmg[1]` | 40 | 29 | S147 | 40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100 |
+| `Skills/Mage:[tempest].values.dmg[2]` | 48 | 34 | S147 | 48 -> 34: see dmg[1] |
+| `Skills/Mage:[thunderStrike].values.dmg[2]` | 400 | 460 | S147 | 400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16) |
 
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `SkillCurves:knots.brandOfLight.dmg[8]` | 186 | S146 | new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia |
-| `SkillCurves:knots.brandOfLight.dot[8]` | 237 | S146 | new: rank 8 (43) 270 -> 237 with dmg[8] |
-| `SkillCurves:knots.divineWrath.bonus[4]` | 14,67 | S146 | new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22 |
-| `Skills/Warrior:[rage].values.hp[1]` | 0 | S146 | new: Rage +maxHp, rank 1 (20) 0 (1-20 unchanged): the two-handed pool's life after Fortitude went to Sword and Shield (S143) |
-| `Skills/Warrior:[rage].values.hp[2]` | 17 | S146 | new: rank 5 (56) +17 % maxHp: Morvane's biggest blow on the Berserker 1.06 -> 0.98 HP (no support), the Inquisitor's HP / Furia 1.39-1.40 (1.3-1.4), the Guardian's EHP band |
+| `SkillCurves:knots.deadlyBolt.dmg[8]` | 242,2 | S147 | new: rank 8 (level 68) pinned for the rank 10 260 -> 248 |
+| `SkillCurves:knots.glacialSpike.dmg[7]` | 243,3 | S147 | new: rank 7 (level 39) pinned for the rank 10 330 -> 360 |
+| `SkillCurves:knots.immolate.dmg[8]` | 273,3 | S147 | new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3 |
+| `SkillCurves:knots.lightningLance.dmg[8]` | 186,7 | S147 | new: rank 8 (level 68) pinned for the rank 10 200 -> 280 |
+| `SkillCurves:knots.shatter.dmg[8]` | 247 | S147 | new: rank 8 (level 68) of the x1.15 pair pinned for the rank 10 265 -> 420 |
+| `SkillCurves:knots.thunderStrike.dmg[7]` | 300 | S147 | new: rank 7 (level 39) pinned for the rank 10 400 -> 460 |
+| `SkillCurves:knots.venomArrow.dmg[2]` | 123,6 | S147 | new: rank 2 (level 19) pinned (1-20 frozen) for the rank 10 152 -> 137 |
+| `SkillCurves:knots.venomArrow.poison[2]` | 50 | S147 | new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10 |
 
 ### Rangi (liczby pochodne, bez osobnego powodu)
 
 | umiejętność.pole | ranga | pasmo rangi | przed | po |
 | --- | --: | --: | --: | --: |
-| advanceOrder.crit | 10 | 71–100 | 24 | 21 |
-| advanceOrder.crit | 2 | 46–70 | 13,33 | 13 |
-| advanceOrder.crit | 3 | 46–70 | 14,67 | 14 |
-| advanceOrder.crit | 4 | 71–100 | 16 | 15 |
-| advanceOrder.crit | 5 | 71–100 | 17,33 | 16 |
-| advanceOrder.crit | 6 | 71–100 | 18,67 | 17 |
-| advanceOrder.crit | 7 | 71–100 | 20 | 18 |
-| advanceOrder.crit | 8 | 71–100 | 21,33 | 19 |
-| advanceOrder.crit | 9 | 71–100 | 22,67 | 20 |
-| brandOfLight.dmg | 5 | 21–45 | 143,3 | 136,5 |
-| brandOfLight.dmg | 6 | 21–45 | 166,7 | 153 |
-| brandOfLight.dmg | 7 | 21–45 | 190 | 169,5 |
-| brandOfLight.dmg | 8 | 21–45 | 213,3 | 186 |
-| brandOfLight.dmg | 9 | 46–70 | 236,7 | 223 |
-| brandOfLight.dot | 5 | 21–45 | 195 | 186,8 |
-| brandOfLight.dot | 6 | 21–45 | 220 | 203,5 |
-| brandOfLight.dot | 7 | 21–45 | 245 | 220,2 |
-| brandOfLight.dot | 8 | 21–45 | 270 | 237 |
-| brandOfLight.dot | 9 | 46–70 | 295 | 278,5 |
-| devotion.heal | 1 | 21–45 | 20 | 6 |
-| devotion.heal | 2 | 46–70 | 21,25 | 6,75 |
-| devotion.heal | 3 | 46–70 | 22,5 | 7,5 |
-| devotion.heal | 4 | 71–100 | 23,75 | 8,25 |
-| devotion.heal | 5 | 71–100 | 25 | 9 |
-| divineWrath.bonus | 5 | 46–70 | 20 | 22 |
-| fortitude.hp | 2 | 21–45 | 9,5 | 8 |
-| fortitude.hp | 3 | 21–45 | 13 | 10 |
-| fortitude.hp | 4 | 46–70 | 16,5 | 12 |
-| fortitude.hp | 5 | 46–70 | 20 | 14 |
-| grace.heal | 2 | 21–45 | 8,25 | 7,75 |
-| grace.heal | 3 | 21–45 | 9,5 | 8,5 |
-| grace.heal | 4 | 46–70 | 10,75 | 9,25 |
-| grace.heal | 5 | 46–70 | 12 | 10 |
-| judgement.dmg | 1 | 21–45 | 300 | 270 |
-| judgement.dmg | 2 | 21–45 | 320 | 290 |
-| judgement.dmg | 3 | 46–70 | 352,5 | 326,2 |
-| judgement.dmg | 4 | 46–70 | 385 | 362,5 |
-| judgement.dmg | 5 | 46–70 | 417,5 | 398,8 |
-| judgement.dmg | 6 | 46–70 | 450 | 435 |
-| judgement.dmg | 7 | 46–70 | 482,5 | 471,2 |
-| judgement.dmg | 8 | 46–70 | 515 | 507,5 |
-| judgement.dmg | 9 | 71–100 | 547,5 | 543,8 |
-| mightyStrike.dmg | 10 | 21–45 | 222 | 200 |
-| mightyStrike.dmg | 6 | 21–45 | 220,4 | 196 |
-| mightyStrike.dmg | 7 | 21–45 | 220,8 | 197 |
-| mightyStrike.dmg | 8 | 21–45 | 221,2 | 198 |
-| mightyStrike.dmg | 9 | 21–45 | 221,6 | 199 |
-| zeal.zeal | 1 | 46–70 | 0,3 | 0,1 |
-| zeal.zeal | 2 | 46–70 | 0,425 | 0,125 |
-| zeal.zeal | 3 | 46–70 | 0,55 | 0,15 |
-| zeal.zeal | 4 | 71–100 | 0,675 | 0,175 |
-| zeal.zeal | 5 | 71–100 | 0,8 | 0,2 |
+| deadlyBolt.dmg | 10 | 71–100 | 260 | 248 |
+| deadlyBolt.dmg | 9 | 71–100 | 251,1 | 245,1 |
+| deepFreeze.dmg | 1 | 21–45 | 70 | 80 |
+| deepFreeze.dmg | 10 | 46–70 | 120 | 138 |
+| deepFreeze.dmg | 2 | 21–45 | 75,56 | 86,44 |
+| deepFreeze.dmg | 3 | 21–45 | 81,11 | 92,89 |
+| deepFreeze.dmg | 4 | 21–45 | 86,67 | 99,33 |
+| deepFreeze.dmg | 5 | 46–70 | 92,22 | 105,8 |
+| deepFreeze.dmg | 6 | 46–70 | 97,78 | 112,2 |
+| deepFreeze.dmg | 7 | 46–70 | 103,3 | 118,7 |
+| deepFreeze.dmg | 8 | 46–70 | 108,9 | 125,1 |
+| deepFreeze.dmg | 9 | 46–70 | 114,4 | 131,6 |
+| glacialSpike.dmg | 10 | 46–70 | 330 | 360 |
+| glacialSpike.dmg | 8 | 21–45 | 272,2 | 282,2 |
+| glacialSpike.dmg | 9 | 46–70 | 301,1 | 321,1 |
+| heavyBolt.dmg | 10 | 21–45 | 302,9 | 281,7 |
+| heavyBolt.dmg | 6 | 21–45 | 302,1 | 280,9 |
+| heavyBolt.dmg | 7 | 21–45 | 302,3 | 281,1 |
+| heavyBolt.dmg | 8 | 21–45 | 302,5 | 281,3 |
+| heavyBolt.dmg | 9 | 21–45 | 302,7 | 281,5 |
+| immolate.dmg | 10 | 71–100 | 300 | 283,3 |
+| immolate.dmg | 9 | 71–100 | 286,7 | 278,3 |
+| lightningLance.dmg | 10 | 71–100 | 200 | 280 |
+| lightningLance.dmg | 9 | 71–100 | 193,3 | 233,3 |
+| meteorStorm.dmg | 1 | 46–70 | 24 | 81 |
+| meteorStorm.dmg | 10 | 71–100 | 24 | 107 |
+| meteorStorm.dmg | 2 | 46–70 | 24 | 83,89 |
+| meteorStorm.dmg | 3 | 46–70 | 24 | 86,78 |
+| meteorStorm.dmg | 4 | 71–100 | 24 | 89,67 |
+| meteorStorm.dmg | 5 | 71–100 | 24 | 92,56 |
+| meteorStorm.dmg | 6 | 71–100 | 24 | 95,44 |
+| meteorStorm.dmg | 7 | 71–100 | 24 | 98,33 |
+| meteorStorm.dmg | 8 | 71–100 | 24 | 101,2 |
+| meteorStorm.dmg | 9 | 71–100 | 24 | 104,1 |
+| shatter.dmg | 1 | 21–45 | 160 | 184 |
+| shatter.dmg | 10 | 71–100 | 230 | 420 |
+| shatter.dmg | 2 | 21–45 | 167,8 | 193 |
+| shatter.dmg | 3 | 46–70 | 175,6 | 202 |
+| shatter.dmg | 4 | 46–70 | 183,3 | 211 |
+| shatter.dmg | 5 | 46–70 | 191,1 | 220 |
+| shatter.dmg | 6 | 46–70 | 198,9 | 229 |
+| shatter.dmg | 7 | 46–70 | 206,7 | 238 |
+| shatter.dmg | 8 | 46–70 | 214,4 | 247 |
+| shatter.dmg | 9 | 71–100 | 222,2 | 333,5 |
+| snarefield.dmg | 1 | 46–70 | 30 | 12 |
+| snarefield.dmg | 10 | 71–100 | 38 | 14 |
+| snarefield.dmg | 2 | 46–70 | 30,89 | 12,22 |
+| snarefield.dmg | 3 | 46–70 | 31,78 | 12,44 |
+| snarefield.dmg | 4 | 71–100 | 32,67 | 12,67 |
+| snarefield.dmg | 5 | 71–100 | 33,56 | 12,89 |
+| snarefield.dmg | 6 | 71–100 | 34,44 | 13,11 |
+| snarefield.dmg | 7 | 71–100 | 35,33 | 13,33 |
+| snarefield.dmg | 8 | 71–100 | 36,22 | 13,56 |
+| snarefield.dmg | 9 | 71–100 | 37,11 | 13,78 |
+| tempest.dmg | 1 | 46–70 | 40 | 29 |
+| tempest.dmg | 10 | 71–100 | 48 | 34 |
+| tempest.dmg | 2 | 46–70 | 40,89 | 29,56 |
+| tempest.dmg | 3 | 46–70 | 41,78 | 30,11 |
+| tempest.dmg | 4 | 71–100 | 42,67 | 30,67 |
+| tempest.dmg | 5 | 71–100 | 43,56 | 31,22 |
+| tempest.dmg | 6 | 71–100 | 44,44 | 31,78 |
+| tempest.dmg | 7 | 71–100 | 45,33 | 32,33 |
+| tempest.dmg | 8 | 71–100 | 46,22 | 32,89 |
+| tempest.dmg | 9 | 71–100 | 47,11 | 33,44 |
+| thunderStrike.dmg | 10 | 46–70 | 400 | 460 |
+| thunderStrike.dmg | 8 | 21–45 | 333,3 | 353,3 |
+| thunderStrike.dmg | 9 | 46–70 | 366,7 | 406,7 |
+| toxicTips.tip | 2 | 21–45 | 12,5 | 15 |
+| toxicTips.tip | 3 | 21–45 | 15 | 20 |
+| toxicTips.tip | 4 | 46–70 | 17,5 | 25 |
+| toxicTips.tip | 5 | 46–70 | 20 | 30 |
+| venomArrow.dmg | 10 | 46–70 | 152 | 137 |
+| venomArrow.dmg | 3 | 21–45 | 127,1 | 125,2 |
+| venomArrow.dmg | 4 | 21–45 | 130,7 | 126,9 |
+| venomArrow.dmg | 5 | 21–45 | 134,2 | 128,6 |
+| venomArrow.dmg | 6 | 21–45 | 137,8 | 130,3 |
+| venomArrow.dmg | 7 | 21–45 | 141,3 | 132 |
+| venomArrow.dmg | 8 | 21–45 | 144,9 | 133,6 |
+| venomArrow.dmg | 9 | 46–70 | 148,4 | 135,3 |
+| venomArrow.poison | 10 | 46–70 | 50 | 57,5 |
+| venomArrow.poison | 3 | 21–45 | 50 | 50,94 |
+| venomArrow.poison | 4 | 21–45 | 50 | 51,88 |
+| venomArrow.poison | 5 | 21–45 | 50 | 52,81 |
+| venomArrow.poison | 6 | 21–45 | 50 | 53,75 |
+| venomArrow.poison | 7 | 21–45 | 50 | 54,69 |
+| venomArrow.poison | 8 | 21–45 | 50 | 55,62 |
+| venomArrow.poison | 9 | 46–70 | 50 | 56,56 |
+| venomSnare.dmg | 1 | 21–45 | 232 | 80 |
+| venomSnare.dmg | 10 | 46–70 | 236 | 82 |
+| venomSnare.dmg | 2 | 21–45 | 232,4 | 80,22 |
+| venomSnare.dmg | 3 | 21–45 | 232,9 | 80,44 |
+| venomSnare.dmg | 4 | 21–45 | 233,3 | 80,67 |
+| venomSnare.dmg | 5 | 21–45 | 233,8 | 80,89 |
+| venomSnare.dmg | 6 | 46–70 | 234,2 | 81,11 |
+| venomSnare.dmg | 7 | 46–70 | 234,7 | 81,33 |
+| venomSnare.dmg | 8 | 46–70 | 235,1 | 81,56 |
+| venomSnare.dmg | 9 | 46–70 | 235,6 | 81,78 |
+| venomSnare.poison | 1 | 21–45 | 285 | 405 |
+| venomSnare.poison | 10 | 46–70 | 290 | 412 |
+| venomSnare.poison | 2 | 21–45 | 285,6 | 405,8 |
+| venomSnare.poison | 3 | 21–45 | 286,1 | 406,6 |
+| venomSnare.poison | 4 | 21–45 | 286,7 | 407,3 |
+| venomSnare.poison | 5 | 21–45 | 287,2 | 408,1 |
+| venomSnare.poison | 6 | 46–70 | 287,8 | 408,9 |
+| venomSnare.poison | 7 | 46–70 | 288,3 | 409,7 |
+| venomSnare.poison | 8 | 46–70 | 288,9 | 410,4 |
+| venomSnare.poison | 9 | 46–70 | 289,4 | 411,2 |
 
 ### Księga: pominięte funkcje
 
@@ -278,7 +370,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-5825 kluczy zmienionych od bazy, 0 bez powodu.
+5826 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -755,23 +847,23 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `LevelCurves:curves.heal[5][1]` | – | 100 | nowy od S92 | S92: knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
 | `LevelCurves:curves.heal[5][2]` | – | 0,67 | nowy od S92 | S92: knot 25 = 2.05, 45-100 unchanged (G2): T-SK5 of the dungeon Healer on the Defender 0.230 -> 0.254 at 25 (with the Heal knot) |
 | `LevelCurves:curves.manaCost.Mage[10][1]` | – | 100 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[10][2]` | – | 3,49 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[10][2]` | – | 2,1 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most) |
 | `LevelCurves:curves.manaCost.Mage[2][1]` | 45 | 25 | S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[2][2]` | 1,4 | 1,37 | S87 | S87: G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need; S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[2][2]` | 1,4 | 1,02 | S87 | S87: G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need; S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls) |
 | `LevelCurves:curves.manaCost.Mage[3][1]` | 70 | 30 | S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[3][2]` | 1,9 | 1,47 | S87 | S87: G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91); S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[3][2]` | 1,9 | 1,04 | S87 | S87: G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91); S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04 |
 | `LevelCurves:curves.manaCost.Mage[4][1]` | 100 | 40 | S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[4][2]` | 2,5 | 1,82 | S87 | S87: G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0); S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[4][2]` | 2,5 | 1,08 | S87 | S87: G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0); S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08 |
 | `LevelCurves:curves.manaCost.Mage[5][1]` | – | 45 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[5][2]` | – | 1,89 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[5][2]` | – | 1,096 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire) |
 | `LevelCurves:curves.manaCost.Mage[6][1]` | – | 50 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[6][2]` | – | 2,038 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[6][2]` | – | 1,3 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3 |
 | `LevelCurves:curves.manaCost.Mage[7][1]` | – | 55 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[7][2]` | – | 2,25 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[7][2]` | – | 1,4 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4 |
 | `LevelCurves:curves.manaCost.Mage[8][1]` | – | 60 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[8][2]` | – | 2,32 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[8][2]` | – | 1,55 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55 |
 | `LevelCurves:curves.manaCost.Mage[9][1]` | – | 70 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
-| `LevelCurves:curves.manaCost.Mage[9][2]` | – | 2,59 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37 |
+| `LevelCurves:curves.manaCost.Mage[9][2]` | – | 1,865 | nowy od S92 | S92: knots 25 / 30 / 40 (1.37 / 1.47 / 1.82), 45-100 unchanged (G2): T-SK4 destroyerExp 1.79 -> 2.06 at 25, 1.98 -> 2.09 at 40, arcanistBoss 1.77 -> 2.03 at 25; S93: knots 50 / 55 / 60 (2.0375 / 2.25 / 2.3204), 45-50 and 60-100 unchanged (G2): T-SK4 at 55 arcanistOverload 2.54 -> 2.62 (2.6-2.8), arcanistBoss 2.00 -> 2.06, destroyerExp 2.42 -> 2.50, destroyerBoss 2.29 -> 2.37; S147: manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865 |
 | `LevelCurves:curves.monsterAtk[1][1]` | – | 20 | nowy od S87 | S87: D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %) |
 | `LevelCurves:curves.monsterAtk[1][2]` | – | 1 | nowy od S87 | S87: D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %) |
 | `LevelCurves:curves.monsterAtk[2][1]` | – | 45 | nowy od S87 | S87: D1 / G1-G3: new curve 1 / 1.07 / 1.11 / 1.14 (plan start; HP lost 1 on 1 13-18 %) |
@@ -2711,7 +2803,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Hunter:[deadlyBolt].range` | – | 38 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
 | `Skills/Hunter:[deadlyBolt].unlock` | – | 40 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
 | `Skills/Hunter:[deadlyBolt].values.dmg[1]` | – | 180 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
-| `Skills/Hunter:[deadlyBolt].values.dmg[2]` | – | 260 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
+| `Skills/Hunter:[deadlyBolt].values.dmg[2]` | – | 248 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52; S147: 260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips |
 | `Skills/Hunter:[deadlyBolt].values.venomMul` | – | 50 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
 | `Skills/Hunter:[deadlyBolt].values.venomStacks` | – | 3 | nowy od S144 | S144: new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52 |
 | `Skills/Hunter:[disengage].unlock` | 6 | 4 | S144 | S144: 6 -> 4: C1 of the Hunter (DESIGN-18 §5 common ladder) |
@@ -2762,7 +2854,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Hunter:[heavyBolt].range` | – | 38 | nowy od S144 | S144: new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands |
 | `Skills/Hunter:[heavyBolt].unlock` | – | 1 | nowy od S144 | S144: new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands |
 | `Skills/Hunter:[heavyBolt].values.dmg[1]` | – | 187,2 | nowy od S144 | S144: new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands |
-| `Skills/Hunter:[heavyBolt].values.dmg[2]` | – | 302,9 | nowy od S144 | S144: new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands |
+| `Skills/Hunter:[heavyBolt].values.dmg[2]` | – | 281,7 | nowy od S144 | S144: new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands; S147: 302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow) |
 | `Skills/Hunter:[huntersMark].breakpoints[10].b.values.vuln` | 2 | 1 | S90 | S90: 2 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[huntersMark].breakpoints[5].a.add.effectDuration` | 5 | 1 | S90 | S90: 5 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[huntersMark].unlock` | 48 | 12 | S144 | S144: the Scout's row 7 (48) -> 12: C2 of the Hunter (common ladder); the values stay (rank 1 = the old rank 1) |
@@ -2808,11 +2900,11 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Hunter:[quickReload].unlock` | – | 50 | nowy od S144 | S144: new (P2 of the Crossbow, 50): the Crossbow's skills only 4-12 % shorter cooldowns (Logic/Crossbow.cdrFor, one cap with the items' cooldown reduction) |
 | `Skills/Hunter:[quickReload].values.reload[1]` | – | 4 | nowy od S144 | S144: new (P2 of the Crossbow, 50): the Crossbow's skills only 4-12 % shorter cooldowns (Logic/Crossbow.cdrFor, one cap with the items' cooldown reduction) |
 | `Skills/Hunter:[quickReload].values.reload[2]` | – | 12 | nowy od S144 | S144: new (P2 of the Crossbow, 50): the Crossbow's skills only 4-12 % shorter cooldowns (Logic/Crossbow.cdrFor, one cap with the items' cooldown reduction) |
-| `Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg` | 25 | 14 | S90 | S90: 25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
+| `Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg` | 25 | 6 | S90 | S90: 25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7); S147: +14 -> +6: R4 of 10A 0.34 -> 0.19 with the base 12-14 |
 | `Skills/Hunter:[snarefield].breakpoints[5].b.values.vuln` | 2 | 1 | S90 | S90: 2 -> 1: Snarefield 5B vulnerability <= Hunter's Mark with 10B (ROZWOJ 11.4, 11.5) |
 | `Skills/Hunter:[snarefield].cooldown` | 40 | 35 | S90 | S90: 40 -> 35: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[snarefield].values.dmg[1]` | 90 | 30 | S90 | S90: 90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[snarefield].values.dmg[2]` | 150 | 38 | S90 | S90: 150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
+| `Skills/Hunter:[snarefield].values.dmg[1]` | 90 | 12 | S90 | S90: 90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison |
+| `Skills/Hunter:[snarefield].values.dmg[2]` | 150 | 14 | S90 | S90: 150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 38 -> 14: see dmg[1] |
 | `Skills/Hunter:[stormArrow].breakpoints[5].b.values.dmg` | 80 | 37 | S90 | S90: 80 -> 37: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[stormArrow].cooldown` | 40 | 29 | S90 | S90: 40 -> 29: C: Królobójca x base 1.25-1.35 and R7 1.15-1.35 (ROZWOJ 11.6) |
 | `Skills/Hunter:[stormArrow].unlock` | 48 | 60 | S144 | S144: the Marksman's row 7 (48) -> 60: U of the Bow |
@@ -2825,22 +2917,22 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Hunter:[toxicTips].order` | – | 24 | nowy od S144 | S144: new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt |
 | `Skills/Hunter:[toxicTips].unlock` | – | 20 | nowy od S144 | S144: new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt |
 | `Skills/Hunter:[toxicTips].values.tip[1]` | – | 10 | nowy od S144 | S144: new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt |
-| `Skills/Hunter:[toxicTips].values.tip[2]` | – | 20 | nowy od S144 | S144: new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt |
-| `Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct` | 40 | 19 | S90 | S90: 40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
+| `Skills/Hunter:[toxicTips].values.tip[2]` | – | 30 | nowy od S144 | S144: new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt; S147: 20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100 |
+| `Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct` | 40 | 21 | S90 | S90: 40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7); S147: 19 -> 21: R4 of 10A 0.166 -> 0.18 with the lower dmg (|A - B| <= 0.05) |
 | `Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison` | 70 | 28 | S144 | S144: 10B 60 -> 28: R4 on the Crossbow's Trapper 0.45 -> 0.22 (band 0.17-0.28, |A - B| <= 0.05) |
 | `Skills/Hunter:[venomArrow].breakpoints[5].a.values.poison` | 40 | 15 | S144 | S144: 5A 21 -> 15: R4 on the Crossbow's Trapper (stacks and poison nodes) 0.19 -> 0.14 (band 0.08-0.17) |
 | `Skills/Hunter:[venomArrow].breakpoints[5].b.values.dmg` | 40 | 28 | S90 | S90: 40 -> 28: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[venomArrow].unlock` | 18 | 15 | S144 | S144: 18 -> 15: S2 of the Crossbow (the values stay: no drop at 18) |
-| `Skills/Hunter:[venomArrow].values.dmg[2]` | 210 | 152 | S90 | S90: 210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves) |
-| `Skills/Hunter:[venomArrow].values.poison[2]` | 120 | 50 | S90 | S90: 120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves) |
-| `Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct` | 60 | 44 | S144 | S144: 10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28) |
+| `Skills/Hunter:[venomArrow].values.dmg[2]` | 210 | 137 | S90 | S90: 210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves); S147: 152 -> 137 (rank 2 pinned): the Crossbow's damage moves to its poison (R9) |
+| `Skills/Hunter:[venomArrow].values.poison[2]` | 120 | 57,5 | S90 | S90: 120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves); S147: 50 -> 57.5 (rank 2 pinned): R9 of the Crossbow, damage over time >= 25 % |
+| `Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct` | 60 | 135 | S144 | S144: 10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28); S147: 44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22) |
 | `Skills/Hunter:[venomSnare].breakpoints[10].b.values.poison` | 50 | 98 | S90 | S90: 50 -> 98: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[venomSnare].cooldown` | 10 | 14 | S90 | S90: 10 -> 14: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
 | `Skills/Hunter:[venomSnare].cost` | 25 | 16 | S90 | S90: 25 -> 16: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[venomSnare].values.dmg[1]` | 130 | 232 | S90 | S90: 130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[venomSnare].values.dmg[2]` | 220 | 236 | S90 | S90: 220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[venomSnare].values.poison[1]` | 60 | 285 | S90 | S90: 60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
-| `Skills/Hunter:[venomSnare].values.poison[2]` | 110 | 290 | S90 | S90: 110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6) |
+| `Skills/Hunter:[venomSnare].values.dmg[1]` | 130 | 80 | S90 | S90: 130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper) |
+| `Skills/Hunter:[venomSnare].values.dmg[2]` | 220 | 82 | S90 | S90: 220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 236 -> 82: see dmg[1] |
+| `Skills/Hunter:[venomSnare].values.poison[1]` | 60 | 405 | S90 | S90: 60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70) |
+| `Skills/Hunter:[venomSnare].values.poison[2]` | 110 | 412 | S90 | S90: 110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6); S147: 290 -> 412: see poison[1] |
 | `Skills/Hunter:[volley].breakpoints[10].b.values.dmg` | 20 | 9 | S90 | S90: 20 -> 9: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[volley].breakpoints[5].a.add.hits` | 3 | 1 | S90 | S90: 3 -> 1: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Hunter:[volley].breakpoints[5].b.values.dmg` | 15 | 4 | S144 | S144: 5B 5 -> 4: R4 0.176 -> 0.14 at 70 (rank 5 at 42 from 26) |
@@ -2909,11 +3001,11 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[ballLightning].values.dmg[2]` | – | 30 | nowy od S142 | S142: new (K2 of the lightning pool, 33): a ball flying 16 studs, 8 waves of 16-30 % in 4 studs every 0.5 s, the last knocks back 6 studs and stuns 1 s (bosses immune); 5B +3.5, 10A cooldown x0.8 / 10B +7 in the R4 bands, 5A radius (geometry) |
 | `Skills/Mage:[blink].unlock` | 14 | 4 | S140 | S140: 14 -> 4: C1 of the common ladder (DESIGN-18 §5) |
 | `Skills/Mage:[blizzard].breakpoints[10].a.add.radius` | – | 3 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
-| `Skills/Mage:[blizzard].breakpoints[10].b.values.dmg` | – | 3,5 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
+| `Skills/Mage:[blizzard].breakpoints[10].b.values.dmg` | – | 3,8 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage); S147: +3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18 |
 | `Skills/Mage:[blizzard].breakpoints[5].a.add.hits` | – | 1 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
 | `Skills/Mage:[blizzard].breakpoints[5].b.mul.cooldown` | – | 0,88 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
 | `Skills/Mage:[blizzard].cooldown` | – | 50 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
-| `Skills/Mage:[blizzard].cost` | – | 170 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
+| `Skills/Mage:[blizzard].cost` | – | 270 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage); S147: 170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve |
 | `Skills/Mage:[blizzard].effects[1].duration` | – | 2 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
 | `Skills/Mage:[blizzard].effects[1].maxStacks` | – | 8 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
 | `Skills/Mage:[blizzard].freezeWave` | – | 5 | nowy od S141 | S141: new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage) |
@@ -2931,7 +3023,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[cataclysm].breakpoints[10].a.lingering.pct` | 25 | 34 | S90 | S90: 25 -> 34: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[cataclysm].breakpoints[10].b.echo.pct` | 100 | 136 | S90 | S90: 100 -> 136: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[cataclysm].breakpoints[5].b.values.dmg` | 7 | 6 | S90 | S90: 7 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
-| `Skills/Mage:[cataclysm].cost` | 90 | 119 | S90 | S90: 90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
+| `Skills/Mage:[cataclysm].cost` | 90 | 220 | S90 | S90: 90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); S147: 119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it) |
 | `Skills/Mage:[cataclysm].order` | 12 | 18 | S140 | S140: data order of the new file (not balance) |
 | `Skills/Mage:[cataclysm].values.dmg[1]` | 60 | 36,6 | S90 | S90: 60 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
 | `Skills/Mage:[cataclysm].values.dmg[2]` | 70 | 36,6 | S90 | S90: 70 -> 36.6: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
@@ -2966,9 +3058,9 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[conductor].values.conduct[1]` | – | 20 | nowy od S142 | S142: new (P2 of the lightning pool, 50): a single-target lightning spell's main hit jumps to a second enemy within 10 studs for 20-40 % (a secondary hit) |
 | `Skills/Mage:[conductor].values.conduct[2]` | – | 40 | nowy od S142 | S142: new (P2 of the lightning pool, 50): a single-target lightning spell's main hit jumps to a second enemy within 10 studs for 20-40 % (a secondary hit) |
 | `Skills/Mage:[deepFreeze].breakpoints[10].a.mul.cooldown` | – | 0,85 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
-| `Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg` | – | 30 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
+| `Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg` | – | 36 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control); S147: +30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base |
 | `Skills/Mage:[deepFreeze].breakpoints[5].a.add.effectDuration` | – | 1 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
-| `Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg` | – | 13 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
+| `Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg` | – | 15 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control); S147: +13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base |
 | `Skills/Mage:[deepFreeze].cooldown` | – | 20 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
 | `Skills/Mage:[deepFreeze].cost` | – | 45 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
 | `Skills/Mage:[deepFreeze].effects[1].duration` | – | 3 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
@@ -2978,8 +3070,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[deepFreeze].range` | – | 38 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
 | `Skills/Mage:[deepFreeze].unlock` | – | 33 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
 | `Skills/Mage:[deepFreeze].values.attackSlow` | – | 30 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
-| `Skills/Mage:[deepFreeze].values.dmg[1]` | – | 70 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
-| `Skills/Mage:[deepFreeze].values.dmg[2]` | – | 120 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control) |
+| `Skills/Mage:[deepFreeze].values.dmg[1]` | – | 80 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control); S147: 70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before) |
+| `Skills/Mage:[deepFreeze].values.dmg[2]` | – | 138 | nowy od S141 | S141: new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control); S147: 120 -> 138: see dmg[1] |
 | `Skills/Mage:[elementalVortex].breakpoints[5].b.values.dmg` | 2 | 1,2 | S90 | S90: 2 -> 1.2: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[elementalVortex].cost` | 40 | 12 | S90 | S90: 40 -> 12: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
 | `Skills/Mage:[elementalVortex].order` | 10 | 17 | S140 | S140: data order of the new file (not balance) |
@@ -3017,7 +3109,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[fireball].breakpoints[5].a.lingering.pct` | 15 | 5,5 | S91 | S91: 15 -> 5.5: E5 R4 of 5A 0.44 / 0.41 -> 0.16 / 0.15 at 20 / 45-100 (5B 0.16, |A - B| <= 0.05) |
 | `Skills/Mage:[fireball].values.dmg[1]` | 150 | 120 | S140 | S140: 128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band |
 | `Skills/Mage:[fireball].values.dmg[2]` | 270 | 221,8 | S90 | S90: 270 -> 221.8: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves) |
-| `Skills/Mage:[firebolt].breakpoints[10].a.splash.pct` | 50 | 12 | S90 | S90: 50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
+| `Skills/Mage:[firebolt].breakpoints[10].a.splash.pct` | 50 | 13 | S90 | S90: 50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7); S147: 12 -> 13: R4 of 10A at 45-100 0.16 -> 0.17 (1-20 unchanged) |
 | `Skills/Mage:[firebolt].breakpoints[10].b.values.dmg` | -124 | -75 | S90 | S90: -124 -> -104: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7); S142: -104 -> -75 (x0.72 with the ranks: two bolts still 18 % more in total) |
 | `Skills/Mage:[firebolt].breakpoints[5].a.pierce` | 40 | 17 | S91 | S91: 40 -> 17: E5 R4 of 5A 0.39 -> 0.165 at 20, 0.19 -> 0.083 at 45-100 (band 0.08-0.17) |
 | `Skills/Mage:[firebolt].burnStacks` | – | 1 | nowy od S142 | S142: new: Fire Bolt is the fire pool's S1 (no longer adaptive), one burn stack per hit (DESIGN-18 §6.1, the burn it had with a fire weapon) |
@@ -3092,7 +3184,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[glacialSpike].range` | – | 38 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
 | `Skills/Mage:[glacialSpike].unlock` | – | 15 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
 | `Skills/Mage:[glacialSpike].values.dmg[1]` | – | 70 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
-| `Skills/Mage:[glacialSpike].values.dmg[2]` | – | 330 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
+| `Skills/Mage:[glacialSpike].values.dmg[2]` | – | 360 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control); S147: 330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862 |
 | `Skills/Mage:[glacialSpike].values.vsDeepChill` | – | 25 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
 | `Skills/Mage:[glacialSpike].values.vsFrozen` | – | 50 | nowy od S141 | S141: new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control) |
 | `Skills/Mage:[hailstorm].breakpoints[10].a.lingering.duration` | – | 3 | nowy od S141 | S141: new (A1 of the ice pool, 3): three waves on a 7-stud circle, each slows 30 % (waveEffects); rank 1 18 % a wave for the ice variants' R1 at 20 in the S91 band; 5B +7 / 10B +16 in the R4 bands, A options control |
@@ -3161,7 +3253,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[immolate].range` | – | 38 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
 | `Skills/Mage:[immolate].unlock` | – | 40 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
 | `Skills/Mage:[immolate].values.dmg[1]` | – | 180 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
-| `Skills/Mage:[immolate].values.dmg[2]` | – | 300 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
+| `Skills/Mage:[immolate].values.dmg[2]` | – | 283,3 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands; S147: 300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10 |
 | `Skills/Mage:[immolate].values.vsBurning[1]` | – | 10 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
 | `Skills/Mage:[immolate].values.vsBurning[2]` | – | 16 | nowy od S140 | S140: new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands |
 | `Skills/Mage:[kindling].cooldown` | – | 0 | nowy od S140 | S140: new (P1 of the fire pool, 20): the burn stacks up to 3 (+2), +1..5 % fire damage per own stack (rank 1 low for the S91 band at 20) |
@@ -3189,9 +3281,9 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[lightningBolt].values.dmg[1]` | – | 112 | nowy od S142 | S142: new (S1 of the lightning pool, 1): Fire Bolt's shape, +10 crit points; rank 1 112 % (knots: rank 5 170, rank 6 265) for the lightning variants' R1 at 20 in the S91 band (2.63 / 2.70) and lightning 1.08-1.19 x fire on one target; 5A +25 crit / 5B cooldown x0.88, 10A splash 13 % / 10B two bolts in the R4 bands |
 | `Skills/Mage:[lightningBolt].values.dmg[2]` | – | 295 | nowy od S142 | S142: new (S1 of the lightning pool, 1): Fire Bolt's shape, +10 crit points; rank 1 112 % (knots: rank 5 170, rank 6 265) for the lightning variants' R1 at 20 in the S91 band (2.63 / 2.70) and lightning 1.08-1.19 x fire on one target; 5A +25 crit / 5B cooldown x0.88, 10A splash 13 % / 10B two bolts in the R4 bands |
 | `Skills/Mage:[lightningLance].breakpoints[10].a.mul.cooldown` | – | 0,8 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
-| `Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg` | – | 50 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
+| `Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg` | – | 65 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry); S147: +50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base |
 | `Skills/Mage:[lightningLance].breakpoints[5].a.add.width` | – | 2 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
-| `Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg` | – | 22 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
+| `Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg` | – | 30 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry); S147: +22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base |
 | `Skills/Mage:[lightningLance].cooldown` | – | 9 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
 | `Skills/Mage:[lightningLance].cost` | – | 35 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
 | `Skills/Mage:[lightningLance].finisher.hp` | – | 30 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
@@ -3201,20 +3293,21 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[lightningLance].order` | – | 39 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
 | `Skills/Mage:[lightningLance].unlock` | – | 40 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
 | `Skills/Mage:[lightningLance].values.dmg[1]` | – | 140 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
-| `Skills/Mage:[lightningLance].values.dmg[2]` | – | 200 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
+| `Skills/Mage:[lightningLance].values.dmg[2]` | – | 280 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry); S147: 200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10 |
 | `Skills/Mage:[lightningLance].width` | – | 3 | nowy od S142 | S142: new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry) |
 | `Skills/Mage:[manaShield].order` | 14 | 19 | S140 | S140: data order of the new file (not balance) |
 | `Skills/Mage:[manaShield].unlock` | 10 | 12 | S140 | S140: 10 (row 1 of the Arcanist) -> 12: C2 of the common ladder, a common skill now |
 | `Skills/Mage:[meteorStorm].breakpoints[10].a.add.radius` | 4 | -5 | S94 | S94: 4 -> -5: H4 R4: a wider storm spread the impacts (-0.04); a tighter one gives 0.21 at 84-100 (10B 0.18) |
-| `Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg` | 22 | 4,4 | S90 | S90: 22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
+| `Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg` | 22 | 24 | S90 | S90: 22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7); S147: +4.4 -> +24: R4 of 10B 0.035 -> 0.22 with the base 81-107 |
 | `Skills/Mage:[meteorStorm].breakpoints[5].a.add.hits` | 2 | 1 | S90 | S90: 2 -> 1: G1 R4: +4 / +2 hits were +40-50 %; one more hit fits 0.08-0.17 (as Volley 5A, ROZWOJ 11.7 point 4) |
 | `Skills/Mage:[meteorStorm].breakpoints[5].b.mul.cooldown` | 0,75 | 0,88 | S90 | S90: 0.75 -> 0.88: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[meteorStorm].burnStacks` | – | 1 | nowy od S140 | S140: new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon) |
-| `Skills/Mage:[meteorStorm].cost` | 120 | 174 | S90 | S90: 120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
+| `Skills/Mage:[meteorStorm].cost` | 120 | 460 | S90 | S90: 120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); S147: 174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm |
+| `Skills/Mage:[meteorStorm].hits` | 6 | 7 | S147 | S147: 6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148 |
 | `Skills/Mage:[meteorStorm].order` | 11 | 16 | S140 | S140: data order of the new file (not balance) |
 | `Skills/Mage:[meteorStorm].unlock` | 48 | 60 | S140 | S140: 48 (row 7 of the Destroyer) -> 60: U of the fire pool (Rain of Meteors) |
-| `Skills/Mage:[meteorStorm].values.dmg[1]` | 60 | 24 | S90 | S90: 60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
-| `Skills/Mage:[meteorStorm].values.dmg[2]` | 80 | 24 | S90 | S90: 80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7) |
+| `Skills/Mage:[meteorStorm].values.dmg[1]` | 60 | 81 | S90 | S90: 60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); S147: 24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02) |
+| `Skills/Mage:[meteorStorm].values.dmg[2]` | 80 | 107 | S90 | S90: 80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7); S147: 24 -> 107: see dmg[1] |
 | `Skills/Mage:[meteor].breakpoints[10].a.lingering.pct` | 20 | 6 | S90 | S90: 20 -> 6: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[meteor].breakpoints[10].b.values.dmg` | 100 | 45 | S90 | S90: 100 -> 45: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7) |
 | `Skills/Mage:[meteor].breakpoints[5].b.values.dmg` | 45 | 20 | S140 | S140: 23 -> 20: rank 5 now at 42, R4 at 45 0.182 -> 0.158 (band 0.08-0.17) |
@@ -3256,7 +3349,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[pyroblast].values.dmg[1]` | – | 90 | nowy od S140 | S140: new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands |
 | `Skills/Mage:[pyroblast].values.dmg[2]` | – | 380 | nowy od S140 | S140: new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands |
 | `Skills/Mage:[shatter].breakpoints[10].a.effect.duration` | – | 1 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
-| `Skills/Mage:[shatter].breakpoints[10].b.values.dmg` | – | 55 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
+| `Skills/Mage:[shatter].breakpoints[10].b.values.dmg` | – | 85 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control); S147: +55 -> +85: R4 of 10B at 100 0.131 -> 0.20 with the higher base |
 | `Skills/Mage:[shatter].breakpoints[5].a.splash.pct` | – | 12 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[shatter].breakpoints[5].a.splash.radius` | – | 5 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[shatter].breakpoints[5].b.values.shatter` | – | 30 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
@@ -3266,8 +3359,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[shatter].order` | – | 30 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[shatter].range` | – | 38 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[shatter].unlock` | – | 40 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
-| `Skills/Mage:[shatter].values.dmg[1]` | – | 160 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
-| `Skills/Mage:[shatter].values.dmg[2]` | – | 230 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
+| `Skills/Mage:[shatter].values.dmg[1]` | – | 184 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control); S147: 160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85 |
+| `Skills/Mage:[shatter].values.dmg[2]` | – | 420 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control); S147: 230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86 |
 | `Skills/Mage:[shatter].values.shatter` | – | 100 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[shatter].values.shatterDeep` | – | 60 | nowy od S141 | S141: new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control) |
 | `Skills/Mage:[staticShock].breakpoints[10].a.mul.cooldown` | – | 0,8 | nowy od S142 | S142: new (K1 of the lightning pool, 6): 70-150 % and a 0.8 s paralysis (stun, bosses immune), cooldown 12 below Frost Nova's 16; 5B +16 / 10A cooldown x0.8 / 10B +38 in the R4 bands, 5A +0.4 s (control) |
@@ -3305,7 +3398,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[tempest].breakpoints[5].a.add.hits` | – | 2 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].breakpoints[5].b.mul.cooldown` | – | 0,88 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].cooldown` | – | 50 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
-| `Skills/Mage:[tempest].cost` | – | 170 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
+| `Skills/Mage:[tempest].cost` | – | 360 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control); S147: 170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve |
 | `Skills/Mage:[tempest].hits` | – | 12 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].interval` | – | 0,35 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].maxLevel` | – | 10 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
@@ -3313,8 +3406,8 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[tempest].radius` | – | 12 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].range` | – | 38 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[tempest].unlock` | – | 60 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
-| `Skills/Mage:[tempest].values.dmg[1]` | – | 40 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
-| `Skills/Mage:[tempest].values.dmg[2]` | – | 48 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control) |
+| `Skills/Mage:[tempest].values.dmg[1]` | – | 29 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control); S147: 40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100 |
+| `Skills/Mage:[tempest].values.dmg[2]` | – | 34 | nowy od S142 | S142: new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control); S147: 48 -> 34: see dmg[1] |
 | `Skills/Mage:[thunderStrike].breakpoints[10].a.effect.duration` | – | 1 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[thunderStrike].breakpoints[10].b.values.dmg` | – | 90 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[thunderStrike].breakpoints[5].a.splash.pct` | – | 7 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
@@ -3328,7 +3421,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Skills/Mage:[thunderStrike].range` | – | 38 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[thunderStrike].unlock` | – | 15 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
 | `Skills/Mage:[thunderStrike].values.dmg[1]` | – | 100 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
-| `Skills/Mage:[thunderStrike].values.dmg[2]` | – | 400 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control) |
+| `Skills/Mage:[thunderStrike].values.dmg[2]` | – | 460 | nowy od S142 | S142: new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control); S147: 400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16) |
 | `Skills/Mage:[wintersGrip].cooldown` | – | 0 | nowy od S141 | S141: new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill) |
 | `Skills/Mage:[wintersGrip].cost` | – | 0 | nowy od S141 | S141: new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill) |
 | `Skills/Mage:[wintersGrip].maxLevel` | – | 5 | nowy od S141 | S141: new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill) |
@@ -3569,7 +3662,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | Quests/Contracts | 551 | S98: new module: the empty skeleton of the S99 hunting contracts (MAX_LEVEL 99); S99: S99: hunting contracts 1-99 generated from the hunting grounds (Logic/ContractGen), 12% expToNext(L) (QuestBudget.TARGET.contract), gold 20 + 4 L (12 per level broke G9.up3 at 25), kills 10 -> 30 on 1-20 and 30 -> 60 on 20-99, a fortune blessing and stones every 10th; DESIGN-15 §3.3; S98: new module: the empty skeleton of the S99 hunting contracts (MAX_LEVEL 99); S99: S99: hunting contracts 1-99 generated from the hunting grounds (Logic/ContractGen), 12% expToNext(L) (QuestBudget.TARGET.contract), gold 20 + 4 L (12 per level broke G9.up3 at 25), kills 10 -> 30 on 1-20 and 30 -> 60 on 20-99, a fortune blessing and stones every 10th; DESIGN-15 §3.3; S109: S109 audit (D3): contracts 1-3 give gold only; the tutorial pays levels 1-2 in full (no grinding in the S94 base), so their EXP (12 + 25 + 45) only carried into level 3 and clamped monsterExpMul(3) at MUL_MIN (raw 0.14); now 0.875 as in S98; S134k: new: Hunter's Marks per contract base 2 + 1 per 10 levels + 10 on every 10th (2 / 13 / 14 / 6 / 19 / 11 at L1 / 10 / 20 / 45 / 70 / 99, 738 over 1-99): 10-15 marks an hour of contracts of the own level (decade mean), the shop's value of that hour 6-13% of its gold (Balance.targetsS134k value); S98: new module: the empty skeleton of the S99 hunting contracts (MAX_LEVEL 99); S99: S99: hunting contracts 1-99 generated from the hunting grounds (Logic/ContractGen), 12% expToNext(L) (QuestBudget.TARGET.contract), gold 20 + 4 L (12 per level broke G9.up3 at 25), kills 10 -> 30 on 1-20 and 30 -> 60 on 20-99, a fortune blessing and stones every 10th; DESIGN-15 §3.3; S134k: new: at least 4 kills of the kind (6, the start, made contracts 5 and 8 1.8-4.3 x as long as in S99; 4 keeps every level 4-99 <= 1.2 x); S98: new module: the empty skeleton of the S99 hunting contracts (MAX_LEVEL 99); S99: S99: hunting contracts 1-99 generated from the hunting grounds (Logic/ContractGen), 12% expToNext(L) (QuestBudget.TARGET.contract), gold 20 + 4 L (12 per level broke G9.up3 at 25), kills 10 -> 30 on 1-20 and 30 -> 60 on 20-99, a fortune blessing and stones every 10th; DESIGN-15 §3.3; S134k: new: a kind under 20% of the area's normal monsters is not the target while the area has another (the Bandit of the Crow Field, 8%: 2 kills took 25 kills of the area); S134k: regenerated list: n = the kills of one monster kind (max(minKindKills, round(killsAt x the kind's share of the area))), a contract takes 0.95-1.19 x the S99 time on 4-99 (Balance.targetsS134k time); reward.marks = Logic/Contracts.marksFor(L) (2-11, +10 on every 10th, 738 over 1-99); EXP and gold unchanged; S109: S109 audit (D3): contracts below RULES.expFrom give no EXP (L3 was clamped at MUL_MIN); S134k: regenerated list: n = the kills of one monster kind (max(minKindKills, round(killsAt x the kind's share of the area))), a contract takes 0.95-1.19 x the S99 time on 4-99 (Balance.targetsS134k time); reward.marks = Logic/Contracts.marksFor(L) (2-11, +10 on every 10th, 738 over 1-99); EXP and gold unchanged |
 | Quests/Weekly | 117 | S98: new module: 3 weekly contracts (0.30 of expToNext = 2x the daily, gold 2x, a blessing one rarity above the daily, essences) and the boss contract (2 wins, 0.50 of expToNext, gold 5x the daily, a fortune blessing 3 / 4, essences; no Legend Cores or dungeon stones), outside the quest EXP budget |
 | ScheduledEvents | 29 | S129: new module (DESIGN-17 §7): the Blood Moon Tuesday and Thursday 19:00 UTC (weekday 2 / 4, hour 19, minute 0), 30 min, warnings 10 min and 1 min before; quietBefore 600 s = no S101 world event in the 10 min before (S129 decision); points: player 10, Elite 1, Elite II 5, 0 for a victim 8+ levels lower, the same victim at most 2 times; rewards: participation from 5 points = 20 Arena Tokens (3.3% of the 600 week cap, outside it) + a Unique blessing (rarity 2), title for the region top 100 for 7 days, frame for the top 10, 100 Dragon Shards for the 1st place (the smallest shop pack); eliteChance 0.15 (S129 decision, odejście from eliteMul 1.5): open regions have no Elites, so a normal group respawning during the event comes back as one Elite with 0.15; a group killed at every respawn (30-45 s) brings about 7 Elites in 30 min, see BALANS.md Blood Moon; S130: the Champion's Tournament slot (DESIGN-17 §8): Saturday 19:00 UTC (weekday 6, hour 19, minute 0), an upper bound of 3 h for a bracket of 32 on 4 fields (usually 45-90 min), no general warnings (the tournament announces its signups itself), no block of S101 world events (quietBefore 0) |
-| SkillCurves | 62 | S91: 232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20); S91: new, 232.38 pinned (rank 6 before S91); S144: new: Arrow Rain unlocks at 3, rank 5 (19) keeps the old rank 3 (18); S143: new: Bloodlust unlocks at 10, rank 3 (18) and rank 4 (22) keep the old ranks 1 and 2; S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S146: new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia; S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S146: new: rank 8 (43) 270 -> 237 with dmg[8]; S143: new: Brutal Strike on Mighty Strike's S91 knots (rank 5 187, rank 6 pinned); S142: Chain Lightning unlocks at 3: rank 5 (level 19) 140 (the old rank 3 at 18 was 129: lightning's area at 20), rank 6 (level 23) keeps the old rank 4 (level 22); S91: 160 -> 136 (x0.85, R1 Fury at L20); S91: new, 161 pinned (rank 6 before S91); S145: new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18); S143: Cleave unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 164.4; S143: new: Crushing Blow unlocks at 15, rank 9 (47) keeps the old rank 1 (300); S90: - -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20; S145: new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30); S145: new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30); S146: new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22; S144: Double Shot unlocks at 15: the S91 knots move from ranks 5 / 6 (19 / 23) to ranks 2 / 3 (19 / 23), the same numbers; S144: new: the Drive unlocks at 60 (row 8), rank 6 (79) keeps the old rank 1 at 80; S143: new: Earthquake unlocks at 26, rank 2 (30) keeps the old rank 1; S140: 173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned; S91: new, 207.03 pinned (rank 6 before S91); S140: 174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned; S142: 160 -> 115: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70; S91: new, 236.92 pinned (rank 6 before S91); S142: 236.9 -> 170.6 (x0.72): Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70; S142: new: Thunderstorm unlocks at 26, rank 6 (level 46) 32 near the old rank 1 at 45 x 1.3; S141: new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2; S92: new, 16.89 pinned (rank 5 at 19 before S92); S92: new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30; S92: new, 9.78 pinned (rank 5 at 19 before S92); S92: new 11.6 (G2): rank 6 (L23) with the heal knot of 25; S144: new: Heartseeker unlocks at 40, rank 6 (60) keeps the old rank 1; S144: new: Heavy Bolt on Aimed Shot's S91 knots x1.3; S91: new, 226 (x0.88 of 256.7, R1 Inquisitor at L20); S145: 226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4); S91: new, 273.33 pinned (rank 6 before S91); S145: 273.33 -> 240: no jump at 21 after the lower rank 5 (190); S91: new, 182.72 pinned (rank 5 before S91); S142: rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned; S142: rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned; S143: new: Intercept unlocks at 10, ranks 5 and 6 (26, 30) keep the old ranks 1 and 2; S145: new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45); S146: 320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45); S145: new: Light Ray on Holy Strike's knots before S145 x0.85; S142: new: Lightning Bolt's ranks <= 20 cut like Fire Bolt's (rank 5 170 at 17 for the S91 band), rank 6 265 near rank 10; S140: new: Meteor unlocks at 26, rank 2 (level 30) keeps the old rank 1 (98); S91: 220 -> 187 (x0.85, R1 Fury at L20); S91: new, 220.4 pinned (rank 6 before S91); S146: 220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26); S144: Piercing Arrow unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 235.6; S145: new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22); S145: new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1; S144: new: Volley unlocks at 26, rank 2 (30) keeps the old rank 1 |
+| SkillCurves | 70 | S91: 232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20); S91: new, 232.38 pinned (rank 6 before S91); S144: new: Arrow Rain unlocks at 3, rank 5 (19) keeps the old rank 3 (18); S143: new: Bloodlust unlocks at 10, rank 3 (18) and rank 4 (22) keep the old ranks 1 and 2; S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S146: new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia; S145: new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26); S146: new: rank 8 (43) 270 -> 237 with dmg[8]; S143: new: Brutal Strike on Mighty Strike's S91 knots (rank 5 187, rank 6 pinned); S142: Chain Lightning unlocks at 3: rank 5 (level 19) 140 (the old rank 3 at 18 was 129: lightning's area at 20), rank 6 (level 23) keeps the old rank 4 (level 22); S91: 160 -> 136 (x0.85, R1 Fury at L20); S91: new, 161 pinned (rank 6 before S91); S145: new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18); S143: Cleave unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 164.4; S143: new: Crushing Blow unlocks at 15, rank 9 (47) keeps the old rank 1 (300); S147: new: rank 8 (level 68) pinned for the rank 10 260 -> 248; S90: - -> 30: C3 / F1: rank 4 pinned at today's 30 so rank 10 can move without changing 1-20; S145: new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30); S145: new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30); S146: new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22; S144: Double Shot unlocks at 15: the S91 knots move from ranks 5 / 6 (19 / 23) to ranks 2 / 3 (19 / 23), the same numbers; S144: new: the Drive unlocks at 60 (row 8), rank 6 (79) keeps the old rank 1 at 80; S143: new: Earthquake unlocks at 26, rank 2 (30) keeps the old rank 1; S140: 173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned; S91: new, 207.03 pinned (rank 6 before S91); S140: 174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned; S142: 160 -> 115: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70; S91: new, 236.92 pinned (rank 6 before S91); S142: 236.9 -> 170.6 (x0.72): Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70; S142: new: Thunderstorm unlocks at 26, rank 6 (level 46) 32 near the old rank 1 at 45 x 1.3; S141: new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2; S147: new: rank 7 (level 39) pinned for the rank 10 330 -> 360; S92: new, 16.89 pinned (rank 5 at 19 before S92); S92: new 17.9 (G2): rank 6 (L23) near rank 10; T-SK5 0.249 -> 0.269 at 30; S92: new, 9.78 pinned (rank 5 at 19 before S92); S92: new 11.6 (G2): rank 6 (L23) with the heal knot of 25; S144: new: Heartseeker unlocks at 40, rank 6 (60) keeps the old rank 1; S144: new: Heavy Bolt on Aimed Shot's S91 knots x1.3; S144: new: Heavy Bolt on Aimed Shot's S91 knots x1.3; S147: x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100); S91: new, 226 (x0.88 of 256.7, R1 Inquisitor at L20); S145: 226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4); S91: new, 273.33 pinned (rank 6 before S91); S145: 273.33 -> 240: no jump at 21 after the lower rank 5 (190); S91: new, 182.72 pinned (rank 5 before S91); S142: rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned; S142: rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned; S147: new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3; S143: new: Intercept unlocks at 10, ranks 5 and 6 (26, 30) keep the old ranks 1 and 2; S145: new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45); S146: 320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45); S145: new: Light Ray on Holy Strike's knots before S145 x0.85; S142: new: Lightning Bolt's ranks <= 20 cut like Fire Bolt's (rank 5 170 at 17 for the S91 band), rank 6 265 near rank 10; S147: new: rank 8 (level 68) pinned for the rank 10 200 -> 280; S140: new: Meteor unlocks at 26, rank 2 (level 30) keeps the old rank 1 (98); S91: 220 -> 187 (x0.85, R1 Fury at L20); S91: new, 220.4 pinned (rank 6 before S91); S146: 220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26); S144: Piercing Arrow unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 235.6; S145: new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22); S147: new: rank 8 (level 68) of the x1.15 pair pinned for the rank 10 265 -> 420; S145: new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1; S147: new: rank 7 (level 39) pinned for the rank 10 400 -> 460; S147: new: rank 2 (level 19) pinned (1-20 frozen) for the rank 10 152 -> 137; S147: new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10; S144: new: Volley unlocks at 26, rank 2 (30) keeps the old rank 1 |
 | SkillPools/Cleric | 1 | S137: new module (DESIGN-18 §4.2): pool version 1 (light, hammer; transitional); S145: 2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset |
 | SkillPools/Hunter | 1 | S137: new module (DESIGN-18 §4.2): pool version 1 (bow, crossbow; transitional); S144: 2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset |
 | SkillPools/Mage | 1 | S137: new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional); S142: 4 -> 5 (DESIGN-18 §10): the lightning pool, Fire Bolt fire only, a free reset |
@@ -6804,7 +6897,7 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Morvane: tank HP na minutę (bossFight, z Polem Klątwy; 3 / 4 / 5) | – | 622% / 592% / 573% | raport |
 | Morvane: fala tarczy, HP na członka (3 / 4 / 5; pomocnicy bez redukcji grupy) | 239% / 158% / 154% | 40% / 19% / 17% | ≤ 110% |
 | Morvane: T-SK6 Uzdrowiciela lochowego | 2,70 | 3,45 | 1,0–2,70 |
-| Morvane bez wsparcia 3 / 4 / 5: s | 107 / 109 / 103 | 122,8 / 100,5 / 76,8 | ≤ 480 |
+| Morvane bez wsparcia 3 / 4 / 5: s | 107 / 109 / 103 | 121,2 / 99,4 / 71,0 | ≤ 480 |
 | Morvane bez wsparcia 3 / 4 / 5: przyjmowane / podtrzymanie (najgorszy) | 0,99 / 0,97 / 0,96 | 0,78 / 0,75 / 0,72 | ≤ 1,0 |
 | Morvane bez wsparcia: największy cios / HP członka | 110% | 98% | ≤ 100% |
 | Morvane: G11 (najmniejsze tempo ataku) | 53% | 54% | ≥ 50% |
@@ -6823,7 +6916,7 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S92 (`Balance.targetsS92`)
 
-559/855 w paśmie (z wierszami raportu). Strażniki T-SK i mikstury łańcuchowe w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (20–45)”.
+552/855 w paśmie (z wierszami raportu). Strażniki T-SK i mikstury łańcuchowe w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (20–45)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -6840,15 +6933,15 @@ Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danyc
 | Morvane (bossFight): tank HP na minutę, 5 graczy | 5,73 | ≤  | w paśmie | tylko raport: z Polem Klątwy w tanka (miara S32 liczy atak podstawowy i threat) |
 | Morvane ma hpMul | 1,00 | ≥ 1,00 | w paśmie | S92 (asertowane) |
 | T-SK6 Morvane: Uzdrowiciel lochowy na Obrońcy | 3,45 | 1,00–2,70 | **poza** | poza zasięgiem dźwigni S134: ok. 3,5 > 2,7 (wielkie ciosy do unikania nie trafiają tanka; Pole Klątwy trzyma noSupport.hit ≤ 1,0, atak podstawowy wiersz tanka S32 ≤ 3,5); dla właściciela |
-| Morvane bez wsparcia, 3 graczy: s | 122,83 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 3 graczy: s | 121,17 | ≤ 480,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,78 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 3 graczy: największy cios / HP | 0,98 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,09 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 4 graczy: s | 100,51 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 4 graczy: s | 99,40 | ≤ 480,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,75 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 4 graczy: największy cios / HP | 0,98 | ≤ 1,00 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,08 | ≤ 1,10 | w paśmie | S92 (asertowane) |
-| Morvane bez wsparcia, 5 graczy: s | 76,80 | ≤ 480,00 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,07 | ≤ 1,10 | w paśmie | S92 (asertowane) |
+| Morvane bez wsparcia, 5 graczy: s | 70,98 | ≤ 480,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,72 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, 5 graczy: największy cios / HP | 0,98 | ≤ 1,00 | w paśmie | S92 (asertowane) |
 | Morvane bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S92 (asertowane) |
@@ -7095,22 +7188,22 @@ T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (�
 | Hunter base | 1,12 / 1,12 / 0,65 | 1,19 / 1,29 / 0,54* | 1,28 / 1,39 / 0,64 | 1,31 / 1,44 / 0,65 | 1,27 / 1,18 / 0,52* | 1,27 / 1,18 / 0,52 |
 | Hunter marksman.kingslayer | 1,13 / 1,12 / 0,61 | 1,23 / 1,59 / 0,58* | 1,33 / 1,76 / 0,59 | 1,38 / 1,56 / 0,61 | 1,38 / 1,51 / 0,49* | 1,27 / 1,36 / 0,49 |
 | Hunter marksman.eliteHunter | 1,11 / 1,13 / 0,75 | 1,29 / 1,42 / 0,72* | 1,41 / 1,60 / 0,70 | 1,41 / 1,49 / 0,68 | 1,45 / 1,52 / 0,76* | 1,32 / 1,38 / 0,75 |
-| Hunter trapper.poacher | 1,05 / 1,08 / 0,65 | 1,28 / 1,46 / 0,85* | 1,31 / 1,39 / 0,92* | 1,40 / 1,60 / 0,92* | 1,41 / 1,63 / 0,92* | 1,44 / 1,61 / 0,92 |
-| Hunter trapper.poisoner | 1,05 / 1,08 / 0,65 | 1,30 / 1,41 / 0,86* | 1,40 / 1,47 / 0,90* | 1,48 / 1,71 / 0,88* | 1,49 / 1,73 / 0,87* | 1,49 / 1,73 / 0,87 |
+| Hunter trapper.poacher | 1,03 / 1,06 / 0,65 | 1,27 / 1,43 / 0,85* | 1,29 / 1,38 / 0,92* | 1,40 / 1,59 / 0,92* | 1,41 / 1,62 / 0,92* | 1,44 / 1,60 / 0,92 |
+| Hunter trapper.poisoner | 1,03 / 1,06 / 0,66 | 1,28 / 1,39 / 0,86* | 1,38 / 1,44 / 0,91* | 1,48 / 1,69 / 0,89* | 1,50 / 1,71 / 0,88* | 1,49 / 1,71 / 0,88 |
 | Hunter scout.partyHunter | 1,10 / 1,12 / 0,76 | 1,10 / 1,11 / 0,78 | 1,21 / 1,24 / 0,78* | 1,28 / 1,23 / 0,80* | 1,28 / 1,28 / 0,80* | 1,28 / 1,28 / 0,80 |
 | Hunter scout.tracker | 1,10 / 1,11 / 0,75 | 1,10 / 1,10 / 0,78 | 1,22 / 1,23 / 0,79* | 1,26 / 1,20 / 0,82* | 1,24 / 1,22 / 0,80* | 1,24 / 1,22 / 0,80 |
-| Mage base | 1,24 / 1,24 / 0,68* | 1,34 / 1,44 / 0,71* | 1,46 / 1,62 / 0,75* | 1,71 / 1,90 / 0,80 | 1,69 / 1,91 / 0,80* | 1,69 / 1,92 / 0,80 |
-| Mage base.loadout | 1,23 / 1,23 / 0,69* | 1,33 / 1,40 / 0,73* | 1,44 / 1,57 / 0,77* | 1,67 / 1,85 / 0,82 | 1,66 / 1,86 / 0,82* | 1,66 / 1,86 / 0,82 |
+| Mage base | 1,24 / 1,24 / 0,68* | 1,36 / 1,44 / 0,71* | 1,49 / 1,62 / 0,75* | 1,73 / 1,92 / 0,80* | 1,73 / 1,94 / 0,80* | 1,73 / 1,95 / 0,80 |
+| Mage base.loadout | 1,23 / 1,23 / 0,69* | 1,33 / 1,40 / 0,73* | 1,46 / 1,58 / 0,77* | 1,69 / 1,86 / 0,82 | 1,69 / 1,88 / 0,82* | 1,69 / 1,89 / 0,82 |
 | Mage destroyer.destroyerExp | 1,23 / 1,23 / 0,44* | 1,41 / 1,46 / 0,46* | 1,44 / 1,50 / 0,54* | 1,49 / 1,55 / 0,60* | 1,49 / 1,57 / 0,61* | 1,49 / 1,57 / 0,61 |
-| Mage destroyer.destroyerBoss | 1,23 / 1,22 / 0,42* | 1,44 / 1,48 / 0,43* | 1,55 / 1,60 / 0,48* | 1,74 / 1,81 / 0,49* | 1,80 / 1,90 / 0,51* | 1,80 / 1,90 / 0,51 |
-| Mage destroyer.destroyerFire | 1,24 / 1,23 / 0,51* | 1,37 / 1,54 / 0,55* | 1,43 / 1,51 / 0,74* | 1,60 / 1,75 / 0,61* | 1,72 / 1,86 / 0,61 | 1,61 / 1,69 / 0,77 |
-| Mage destroyer.destroyerIce | 1,17 / 1,18 / 0,46* | 1,32 / 1,25 / 0,59* | 1,48 / 1,47 / 0,62* | 1,65 / 1,69 / 0,59* | 1,68 / 1,74 / 0,61* | 1,71 / 1,84 / 0,59 |
-| Mage destroyer.destroyerLightning | 1,29 / 1,26 / 0,39* | 1,50 / 1,65 / 0,39* | 1,56 / 1,81 / 0,48* | 1,89 / 2,16 / 0,49* | 1,95 / 2,26 / 0,49 | 1,92 / 2,32 / 0,44 |
-| Mage arcanist.arcanistBoss | 1,26 / 1,26 / 0,60* | 1,39 / 1,47 / 0,61* | 1,43 / 1,51 / 0,61* | 1,63 / 1,69 / 0,67* | 1,66 / 1,73 / 0,68* | 1,66 / 1,73 / 0,68 |
-| Mage arcanist.arcanistOverload | 1,26 / 1,26 / 0,60* | 1,40 / 1,47 / 0,61* | 1,45 / 1,51 / 0,61* | 1,65 / 1,69 / 0,67* | 1,67 / 1,73 / 0,68* | 1,67 / 1,73 / 0,68 |
-| Mage arcanist.arcanistFire | 1,27 / 1,26 / 0,63* | 1,41 / 1,47 / 0,67* | 1,51 / 1,61 / 0,72* | 1,79 / 1,85 / 0,68* | 1,85 / 1,93 / 0,68* | 1,96 / 2,10 / 0,67 |
-| Mage arcanist.arcanistIce | 1,16 / 1,16 / 0,69* | 1,28 / 1,38 / 0,73* | 1,46 / 1,70 / 0,70* | 1,82 / 2,02 / 0,66* | 1,94 / 2,12 / 0,67* | 1,94 / 2,13 / 0,67 |
-| Mage arcanist.arcanistLightning | 1,30 / 1,30 / 0,57* | 1,39 / 1,63 / 0,57* | 1,52 / 1,77 / 0,57* | 1,84 / 2,01 / 0,57* | 1,95 / 2,10 / 0,57* | 2,03 / 2,28 / 0,63 |
+| Mage destroyer.destroyerBoss | 1,23 / 1,22 / 0,42* | 1,44 / 1,48 / 0,43* | 1,55 / 1,60 / 0,48* | 1,74 / 1,81 / 0,49* | 1,81 / 1,91 / 0,50* | 1,81 / 1,91 / 0,50 |
+| Mage destroyer.destroyerFire | 1,24 / 1,23 / 0,51* | 1,46 / 1,54 / 0,55* | 1,59 / 1,51 / 0,74* | 1,65 / 1,75 / 0,61* | 1,72 / 1,86 / 0,61* | 1,73 / 1,69 / 0,77 |
+| Mage destroyer.destroyerIce | 1,17 / 1,18 / 0,46* | 1,32 / 1,25 / 0,59* | 1,49 / 1,48 / 0,62* | 1,65 / 1,69 / 0,59* | 1,69 / 1,75 / 0,61* | 1,72 / 1,86 / 0,59 |
+| Mage destroyer.destroyerLightning | 1,29 / 1,26 / 0,39* | 1,52 / 1,65 / 0,39* | 1,64 / 1,81 / 0,48* | 1,89 / 2,16 / 0,49* | 1,96 / 2,27 / 0,49* | 1,99 / 2,33 / 0,44 |
+| Mage arcanist.arcanistBoss | 1,26 / 1,26 / 0,60* | 1,41 / 1,47 / 0,61* | 1,45 / 1,51 / 0,61* | 1,65 / 1,69 / 0,67* | 1,67 / 1,73 / 0,68* | 1,67 / 1,73 / 0,68 |
+| Mage arcanist.arcanistOverload | 1,26 / 1,26 / 0,60* | 1,41 / 1,47 / 0,61* | 1,45 / 1,51 / 0,61* | 1,65 / 1,69 / 0,67* | 1,67 / 1,73 / 0,68* | 1,67 / 1,73 / 0,68 |
+| Mage arcanist.arcanistFire | 1,29 / 1,26 / 0,63* | 1,43 / 1,47 / 0,67* | 1,56 / 1,61 / 0,72* | 1,83 / 1,85 / 0,68* | 1,90 / 1,93 / 0,68* | 2,01 / 2,10 / 0,67 |
+| Mage arcanist.arcanistIce | 1,18 / 1,16 / 0,69* | 1,32 / 1,38 / 0,73* | 1,51 / 1,72 / 0,71* | 1,94 / 2,15 / 0,69* | 2,02 / 2,19 / 0,66* | 2,03 / 2,19 / 0,66 |
+| Mage arcanist.arcanistLightning | 1,31 / 1,30 / 0,57* | 1,45 / 1,63 / 0,57* | 1,58 / 1,77 / 0,57* | 1,88 / 2,01 / 0,57* | 2,00 / 2,11 / 0,57* | 2,07 / 2,30 / 0,63 |
 | Cleric base | 1,21 / 1,22 / 0,89* | 1,31 / 1,33 / 0,88* | 1,45 / 1,50 / 0,84* | 1,64 / 1,78 / 0,77* | 1,67 / 1,82 / 0,76* | 1,67 / 1,82 / 0,77 |
 | Cleric healer.dungeon | 1,13 / 1,14 / 0,50 | 1,16 / 1,17 / 0,50* | 1,19 / 1,21 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50 |
 | Cleric healer.solo | 1,12 / 1,13 / 0,74 | 1,16 / 1,17 / 0,75* | 1,20 / 1,21 / 0,78* | 1,37 / 1,39 / 0,76* | 1,39 / 1,39 / 0,76* | 1,39 / 1,39 / 0,76 |
@@ -7126,7 +7219,7 @@ T-SK3 bazy (Mag z projektu 2,1–2,4, S90 I3) i T-SK4 bazy Maga (ROZWOJ 8: ok. 1
 | --- | --: | --: | --: | --: | --: |
 | Warrior base: T-SK3 | 1,18 | 1,21 | 1,09 | 0,97 | 1,10 |
 | Hunter base: T-SK3 | 1,31 | 1,08 | 1,28 | 1,30 | 1,04 |
-| Mage base: T-SK3 / T-SK4 | 1,36 / 3,48 | 1,41 / 3,39 | 1,50 / 3,15 | 1,60 / 3,35 | 1,60 / 3,39 |
+| Mage base: T-SK3 / T-SK4 | 1,36 / 2,59 | 1,41 / 2,40 | 1,50 / 2,03 | 1,60 / 1,99 | 1,60 / 2,16 |
 | Cleric base: T-SK3 | 1,78 | 1,75 | 1,68 | 1,53 | 1,52 |
 
 ### Tempo 19 → 45 (model okna S91, Wojownik; S92)
@@ -7230,10 +7323,10 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 
 | liczba | wartość |
 | --- | --: |
-| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 16,6, marksman.kingslayer 3,1, arcanist.arcanistBoss 2,8 |
-| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 12,9, marksman.kingslayer 1,8, arcanist.arcanistBoss 1,7, inquisitor.solo 1,5 |
-| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 9,6, marksman.kingslayer 1,1, arcanist.arcanistBoss 1,0, inquisitor.solo 0,9, destroyer.destroyerBoss 1,0 |
-| trapper.poisoner na Morvane: DPS 300 s ÷ DPS 60 s | 0,92 (1925 → 1780) |
+| bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 16,4, marksman.kingslayer 3,0, arcanist.arcanistBoss 2,7 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 12,8, marksman.kingslayer 1,8, arcanist.arcanistBoss 1,7, inquisitor.solo 1,5 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 8,9, marksman.kingslayer 1,0, arcanist.arcanistBoss 0,9, inquisitor.solo 0,8, destroyer.destroyerBoss 0,9 |
+| trapper.poisoner na Morvane: DPS 300 s ÷ DPS 60 s | 0,93 (1929 → 1795) |
 | inquisitor.solo na Morvane: DPS 300 s ÷ DPS 60 s | 0,93 (1542 → 1437) |
 | fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 9,4 / 11,0 s, 4: 7,8 / 9,1 s, 5: 6,4 / 7,5 s |
 
@@ -7274,8 +7367,8 @@ R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.opt
 | pinningShot 5 (marksman.kingslayer) | 22 | użyteczność | 0,14 |
 | pinningShot 10 (marksman.kingslayer) | 42 | 0,25 | 0,22 |
 | windstep 5 (marksman.kingslayer) | 26 | użyteczność | użyteczność |
-| heavyBolt 10 (trapper.poacher) | 37 | użyteczność | 0,18 |
-| firebolt 10 (arcanist.arcanistBoss) | 37 | 0,17 | 0,19 |
+| heavyBolt 10 (trapper.poacher) | 37 | użyteczność | 0,19 |
+| firebolt 10 (arcanist.arcanistBoss) | 37 | 0,19 | 0,19 |
 | fireball 10 (arcanist.arcanistBoss) | 39 | użyteczność | 0,25 |
 | iceShard 10 (arcanist.arcanistIce) | 37 | 0,26 | 0,27 |
 | chainLightning 10 (destroyer.destroyerLightning) | 39 | użyteczność | 0,25 |
@@ -7331,7 +7424,7 @@ S92 nie przestawiło żadnej kotwicy 45 (`monsterHp`, `monsterAtk`, `eliteHp`, `
 | eliteHp | 1,08 | 1,09 |
 | expToNext | 1,00 | 1,00 |
 | heal | 2,33 | 0,93 |
-| manaCost.Mage | 1,89 | 2,25 |
+| manaCost.Mage | 1,10 | 1,40 |
 | monsterAtk | 1,07 | 1,09 |
 | monsterHp | 1,20 | 1,25 |
 | potionCooldown | 4,00 | 5,05 |
@@ -8004,7 +8097,7 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 | Azgor: fala tarczy, HP na członka (3 / 4 / 5) | 275% / 183% / 179% | 37% / 17% / 15% | ≤ 110% |
 | Azgor: G11 (najmniejsze tempo ataku; inferno w fazie 3) | 53% (inferno 68%) | 63% | ≥ 50% |
 | Azgor: T-SK6 Uzdrowiciela lochowego | 5,23 | 12,36 | 1,0–2,50 |
-| Azgor bez wsparcia 3 / 4 / 5: s | 108 / 107 / 101 | 114,5 / 91,6 / 70,6 | ≤ 480 |
+| Azgor bez wsparcia 3 / 4 / 5: s | 108 / 107 / 101 | 114,3 / 91,5 / 69,3 | ≤ 480 |
 | Azgor bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,79 / 0,81 / 0,83 | 0,41 / 0,39 / 0,37 | ≤ 1,0 |
 | Azgor bez wsparcia: największy cios / HP członka | 111% | 38% | ≤ 100% |
 | Elity: spotkanie Wojownik / Mag (najgorsze) | 158% / 163% | 106% / 117% | ≤ 110% / ≤ 125% |
@@ -8024,7 +8117,7 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S93 (`Balance.targetsS93`)
 
-585/1067 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.
+581/1067 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (45–70)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -8046,15 +8139,15 @@ Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danyc
 | Azgor, 4 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | Azgor, 5 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S93 (asertowane) |
 | T-SK6 Azgor: Uzdrowiciel lochowy na Obrońcy | 12,36 | 1,00–2,50 | **poza** | NIEDOKOŃCZONE S93: T-SK6 12,8 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S93 (Leczenie z rang ≤ 45 samo daje ok. 4, tank S32 346%/min); decyzja właściciela |
-| Azgor bez wsparcia, 3 graczy: s | 114,49 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 3 graczy: s | 114,30 | ≤ 480,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,41 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 3 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 4 graczy: s | 91,64 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 4 graczy: s | 91,52 | ≤ 480,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,39 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 4 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S93 (asertowane) |
-| Azgor bez wsparcia, 5 graczy: s | 70,55 | ≤ 480,00 | w paśmie | S93 (asertowane) |
+| Azgor bez wsparcia, 5 graczy: s | 69,26 | ≤ 480,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,37 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, 5 graczy: największy cios / HP | 0,38 | ≤ 1,00 | w paśmie | S93 (asertowane) |
 | Azgor bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,05 | ≤ 1,10 | w paśmie | S93 (asertowane) |
@@ -8168,22 +8261,22 @@ T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (�
 | Hunter base | 1,30 / 1,36 / 0,54 | 1,33 / 1,41 / 0,54 | 1,31 / 1,42 / 0,57 | 1,32 / 1,46 / 0,57* | 1,34 / 1,35 / 0,55 | 1,34 / 1,35 / 0,55 |
 | Hunter marksman.kingslayer | 1,31 / 1,43 / 0,49* | 1,30 / 1,42 / 0,49* | 1,29 / 1,53 / 0,52* | 1,28 / 1,52 / 0,52* | 1,36 / 1,66 / 0,52* | 1,35 / 1,66 / 0,52* |
 | Hunter marksman.eliteHunter | 1,37 / 1,46 / 0,74* | 1,38 / 1,44 / 0,74* | 1,29 / 1,66 / 0,61* | 1,27 / 1,66 / 0,61* | 1,34 / 1,80 / 0,60* | 1,34 / 1,79 / 0,60* |
-| Hunter trapper.poacher | 1,42 / 1,65 / 0,93* | 1,47 / 1,67 / 0,94* | 1,53 / 1,73 / 0,93* | 1,59 / 1,95 / 0,99* | 1,58 / 2,01 / 1,01* | 1,44 / 1,81 / 1,00* |
-| Hunter trapper.poisoner | 1,53 / 1,75 / 0,89* | 1,54 / 1,79 / 0,89* | 1,59 / 1,83 / 0,88* | 1,67 / 1,80 / 0,99* | 1,70 / 1,84 / 1,02* | 1,54 / 1,68 / 0,99* |
+| Hunter trapper.poacher | 1,44 / 1,65 / 0,93* | 1,48 / 1,67 / 0,94* | 1,55 / 1,73 / 0,93* | 1,61 / 1,94 / 0,98* | 1,60 / 1,99 / 1,00* | 1,46 / 1,79 / 0,99* |
+| Hunter trapper.poisoner | 1,54 / 1,74 / 0,90* | 1,54 / 1,77 / 0,89* | 1,62 / 1,82 / 0,89* | 1,69 / 1,79 / 0,99* | 1,73 / 1,83 / 1,02* | 1,57 / 1,67 / 0,99* |
 | Hunter scout.partyHunter | 1,32 / 1,31 / 0,79 | 1,33 / 1,33 / 0,79 | 1,35 / 1,36 / 0,78 | 1,38 / 1,36 / 0,78 | 1,40 / 1,46 / 0,76 | 1,41 / 1,46 / 0,76 |
 | Hunter scout.tracker | 1,24 / 1,23 / 0,79 | 1,26 / 1,25 / 0,79 | 1,28 / 1,28 / 0,78 | 1,30 / 1,28 / 0,78 | 1,32 / 1,35 / 0,77 | 1,34 / 1,35 / 0,77 |
-| Mage base | 1,75 / 2,01 / 0,80* | 1,82 / 2,09 / 0,80* | 1,91 / 2,31 / 0,82* | 1,95 / 2,39 / 0,83* | 1,97 / 2,42 / 0,83* | 1,97 / 2,42 / 0,83* |
-| Mage base.loadout | 1,71 / 1,95 / 0,83* | 1,79 / 2,02 / 0,82* | 1,86 / 2,25 / 0,83* | 1,90 / 2,32 / 0,84* | 1,91 / 2,34 / 0,84* | 1,91 / 2,34 / 0,84* |
-| Mage destroyer.destroyerExp | 1,53 / 1,62 / 0,63* | 1,54 / 1,64 / 0,64* | 1,61 / 1,97 / 0,71* | 1,65 / 2,07 / 0,71* | 1,65 / 2,07 / 0,72* | 1,65 / 2,07 / 0,72* |
-| Mage destroyer.destroyerBoss | 1,87 / 1,99 / 0,52* | 1,96 / 2,08 / 0,52* | 1,99 / 2,18 / 0,61* | 2,09 / 2,28 / 0,62* | 2,10 / 2,28 / 0,62* | 2,10 / 2,29 / 0,62* |
-| Mage destroyer.destroyerFire | 1,80 / 1,95 / 0,62 | 1,78 / 1,88 / 0,77 | 1,93 / 1,93 / 0,79 | 1,98 / 2,03 / 0,82 | 2,03 / 2,32 / 0,77 | 2,07 / 2,34 / 0,77 |
-| Mage destroyer.destroyerIce | 1,72 / 1,79 / 0,61* | 1,88 / 2,04 / 0,59 | 1,89 / 2,06 / 0,59 | 1,92 / 2,12 / 0,61 | 2,08 / 2,21 / 0,63 | 2,09 / 2,22 / 0,63 |
-| Mage destroyer.destroyerLightning | 2,02 / 2,39 / 0,49 | 2,11 / 2,61 / 0,44 | 2,18 / 2,72 / 0,45 | 2,33 / 2,97 / 0,47 | 2,36 / 3,09 / 0,52 | 2,38 / 3,10 / 0,52 |
-| Mage arcanist.arcanistBoss | 1,70 / 1,78 / 0,69* | 1,71 / 1,81 / 0,69* | 1,77 / 2,08 / 0,64* | 1,82 / 2,17 / 0,64* | 1,83 / 2,18 / 0,64* | 1,83 / 2,21 / 0,64* |
-| Mage arcanist.arcanistOverload | 1,71 / 1,78 / 0,69* | 1,72 / 1,80 / 0,69* | 1,76 / 2,08 / 0,64* | 1,81 / 2,17 / 0,64* | 1,81 / 2,18 / 0,64* | 1,81 / 2,21 / 0,64* |
-| Mage arcanist.arcanistFire | 1,97 / 2,01 / 0,68* | 2,18 / 2,34 / 0,66 | 2,26 / 2,41 / 0,66 | 2,37 / 2,55 / 0,67 | 2,38 / 2,31 / 0,73 | 2,39 / 2,32 / 0,74 |
-| Mage arcanist.arcanistIce | 1,99 / 2,18 / 0,66 | 2,12 / 2,35 / 0,65 | 2,15 / 2,44 / 0,64 | 2,19 / 2,48 / 0,64 | 2,21 / 2,53 / 0,64 | 2,21 / 2,53 / 0,64 |
-| Mage arcanist.arcanistLightning | 1,99 / 2,21 / 0,56* | 2,25 / 2,55 / 0,63 | 2,32 / 2,65 / 0,63 | 2,45 / 2,88 / 0,64 | 2,38 / 2,89 / 0,64 | 2,43 / 2,89 / 0,64 |
+| Mage base | 1,80 / 2,05 / 0,80* | 1,88 / 2,13 / 0,80* | 1,95 / 2,40 / 0,85* | 1,99 / 2,49 / 0,86* | 2,02 / 2,51 / 0,86* | 2,03 / 2,51 / 0,86* |
+| Mage base.loadout | 1,75 / 1,98 / 0,82* | 1,83 / 2,06 / 0,82* | 1,89 / 2,33 / 0,86* | 1,93 / 2,41 / 0,87* | 1,96 / 2,43 / 0,87* | 1,97 / 2,43 / 0,87* |
+| Mage destroyer.destroyerExp | 1,53 / 1,62 / 0,63* | 1,54 / 1,64 / 0,64* | 1,63 / 2,10 / 0,73* | 1,67 / 2,20 / 0,74* | 1,67 / 2,21 / 0,74* | 1,67 / 2,21 / 0,75* |
+| Mage destroyer.destroyerBoss | 1,88 / 2,01 / 0,52* | 1,98 / 2,11 / 0,52* | 2,09 / 2,31 / 0,63* | 2,15 / 2,41 / 0,64* | 2,15 / 2,42 / 0,64* | 2,15 / 2,43 / 0,65* |
+| Mage destroyer.destroyerFire | 1,80 / 1,95 / 0,62 | 1,90 / 1,88 / 0,77 | 1,95 / 1,93 / 0,79 | 2,01 / 2,03 / 0,82 | 2,25 / 2,32 / 0,77 | 2,26 / 2,34 / 0,77 |
+| Mage destroyer.destroyerIce | 1,74 / 1,82 / 0,61* | 1,91 / 2,09 / 0,58 | 1,92 / 2,11 / 0,58 | 1,96 / 2,17 / 0,60 | 2,18 / 2,31 / 0,62 | 2,19 / 2,32 / 0,62 |
+| Mage destroyer.destroyerLightning | 2,05 / 2,42 / 0,49 | 2,21 / 2,65 / 0,44 | 2,27 / 2,76 / 0,45 | 2,37 / 3,02 / 0,47 | 2,59 / 3,14 / 0,52 | 2,60 / 3,14 / 0,52 |
+| Mage arcanist.arcanistBoss | 1,71 / 1,78 / 0,69* | 1,72 / 1,81 / 0,69* | 1,79 / 2,08 / 0,64* | 1,85 / 2,17 / 0,64* | 1,84 / 2,18 / 0,64* | 1,85 / 2,21 / 0,64* |
+| Mage arcanist.arcanistOverload | 1,71 / 1,78 / 0,69* | 1,72 / 1,80 / 0,69* | 1,77 / 2,08 / 0,64* | 1,83 / 2,17 / 0,64* | 1,83 / 2,18 / 0,64* | 1,83 / 2,21 / 0,64* |
+| Mage arcanist.arcanistFire | 2,02 / 2,01 / 0,68* | 2,22 / 2,34 / 0,66 | 2,31 / 2,41 / 0,66 | 2,42 / 2,55 / 0,67 | 2,42 / 2,31 / 0,73 | 2,42 / 2,32 / 0,74 |
+| Mage arcanist.arcanistIce | 2,08 / 2,26 / 0,66 | 2,23 / 2,45 / 0,64 | 2,26 / 2,55 / 0,64 | 2,31 / 2,60 / 0,64 | 2,33 / 2,65 / 0,63 | 2,35 / 2,85 / 0,65 |
+| Mage arcanist.arcanistLightning | 2,06 / 2,24 / 0,56* | 2,33 / 2,59 / 0,62 | 2,40 / 2,69 / 0,63 | 2,54 / 2,94 / 0,64 | 2,55 / 2,95 / 0,64 | 2,55 / 2,95 / 0,69 |
 | Cleric base | 1,74 / 1,90 / 0,78* | 1,80 / 1,99 / 0,79* | 1,83 / 2,04 / 0,80* | 1,85 / 2,07 / 0,80* | 1,87 / 2,10 / 0,80* | 1,87 / 2,10 / 0,80* |
 | Cleric healer.dungeon | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* |
 | Cleric healer.solo | 1,40 / 1,39 / 0,76* | 1,40 / 1,39 / 0,76* | 1,40 / 1,39 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* |
@@ -8197,7 +8290,7 @@ T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (�
 | --- | --: | --: | --: | --: | --: | --: |
 | Warrior base: T-SK3 | 1,13 | 1,04 | 1,03 | 1,14 | 1,14 | 1,14 |
 | Hunter base: T-SK3 | 1,08 | 1,08 | 1,14 | 1,13 | 1,10 | 1,10 |
-| Mage base: T-SK3 / T-SK4 | 1,61 / 3,55 | 1,60 / 3,98 | 1,63 / 4,20 | 1,65 / 3,42 | 1,65 / 3,39 | 1,65 / 3,38 |
+| Mage base: T-SK3 / T-SK4 | 1,60 / 2,26 | 1,59 / 2,48 | 1,69 / 2,78 | 1,71 / 2,61 | 1,71 / 2,66 | 1,71 / 2,67 |
 | Cleric base: T-SK3 | 1,56 | 1,59 | 1,61 | 1,60 | 1,59 | 1,59 |
 
 ### Leczenie Fortuny wobec „Lochowego” (tylko raport, S93; ROZWOJ 9.6: ok. 21% słabiej)
@@ -8324,7 +8417,7 @@ Unikaty dla klasy na h expienia / Heroiki na h Elit: K0, K1, K1 z Kapłanem Fort
 | bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 2,6, marksman.kingslayer 0,7, arcanist.arcanistBoss 0,6, inquisitor.solo 0,5, destroyer.destroyerBoss 0,6 |
 | lawa przy hazardShare = 1: tank HP na minutę w fazie 3 (z lawą / bez) | 1448% / 291% |
 | faza 3: sekundy, przez które bezpieczny krąg mieści walczących z dystansu poza inferno (promień ≥ zasięg inferno) | 80 s z 79 s fazy 3 (5 graczy) |
-| trapper.poisoner na Azgorze: DPS 300 s ÷ DPS 60 s | 0,91 (4757 → 4337) |
+| trapper.poisoner na Azgorze: DPS 300 s ÷ DPS 60 s | 0,92 (4853 → 4461) |
 | inquisitor.solo na Azgorze: DPS 300 s ÷ DPS 60 s | 0,92 (4410 → 4078) |
 | fale tarczy: czas fali 2 / 3 (drużyna S32) | 3: 11,7 / 13,2 s, 4: 9,8 / 11,1 s, 5: 8,1 / 9,1 s |
 | harmonogram fazy 1 | fireWave 4,2/min (70%), flameCleave 4,2/min (63%), meteor 2,4/min (72%), eruption 2,4/min (64%), volcanoHeart 1,8/min (78%) |
@@ -8353,12 +8446,12 @@ R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.opt
 | warStomp 10 (berserker.fury) | 69 | użyteczność | – |
 | execute 5 (berserker.fury) | 56 | – | – |
 | doubleShot 10 (marksman.kingslayer) | 51 | użyteczność | 0,25 |
-| venomArrow 10 (trapper.poacher) | 51 | 0,19 | 0,22 |
+| venomArrow 10 (trapper.poacher) | 51 | 0,18 | 0,22 |
 | volley 10 (marksman.kingslayer) | 62 | użyteczność | – |
 | drawBead 5 (marksman.kingslayer) | 46 | użyteczność | użyteczność |
 | drawBead 10 (marksman.kingslayer) | 66 | użyteczność | użyteczność |
 | heartseeker 5 (marksman.kingslayer) | 56 | 0,18 | 0,11 |
-| venomSnare 10 (trapper.poacher) | 62 | 0,20 | 0,19 |
+| venomSnare 10 (trapper.poacher) | 62 | 0,22 | 0,20 |
 | camouflage 10 (trapper.poacher) | 46 | użyteczność | użyteczność |
 | falcon 5 (scout.partyHunter) | 49 | – | użyteczność |
 | falcon 10 (scout.partyHunter) | 69 | – | – |
@@ -8380,13 +8473,13 @@ R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.opt
 | evocation 10 (arcanist.arcanistBoss) | 66 | użyteczność | użyteczność |
 | arcaneDischarge 10 (arcanist.arcanistBoss) | 62 | 0,18 | 0,21 |
 | iceBarrier 10 (arcanist.arcanistBoss) | 46 | użyteczność | użyteczność |
-| glacialSpike 10 (arcanist.arcanistIce) | 51 | użyteczność | 0,20 |
+| glacialSpike 10 (arcanist.arcanistIce) | 51 | użyteczność | 0,19 |
 | frozenOrb 10 (destroyer.destroyerIce) | 62 | użyteczność | 0,21 |
 | deepFreeze 5 (arcanist.arcanistIce) | 49 | użyteczność | 0,14 |
-| deepFreeze 10 (arcanist.arcanistIce) | 69 | 0,25 | 0,23 |
+| deepFreeze 10 (arcanist.arcanistIce) | 69 | 0,25 | 0,24 |
 | shatter 5 (arcanist.arcanistIce) | 56 | – | – |
 | stormArmor 10 (arcanist.arcanistBoss) | 46 | użyteczność | użyteczność |
-| thunderStrike 10 (arcanist.arcanistLightning) | 51 | użyteczność | 0,20 |
+| thunderStrike 10 (arcanist.arcanistLightning) | 51 | użyteczność | 0,18 |
 | ballLightning 5 (destroyer.destroyerLightning) | 49 | użyteczność | – |
 | ballLightning 10 (destroyer.destroyerLightning) | 69 | 0,25 | 0,23 |
 | lightningLance 5 (arcanist.arcanistLightning) | 56 | użyteczność | – |
@@ -8422,7 +8515,7 @@ S93 nie przestawiło żadnej kotwicy 70 (`monsterHp`, `monsterAtk`, `eliteHp`, `
 | eliteHp | 1,11 | 1,12 |
 | expToNext | 1,00 | 1,00 |
 | heal | 0,31 | 0,41 |
-| manaCost.Mage | 2,59 | 2,90 |
+| manaCost.Mage | 1,86 | 1,95 |
 | monsterAtk | 1,11 | 1,12 |
 | monsterHp | 1,32 | 1,37 |
 | potionCooldown | 6,67 | 6,67 |
@@ -9199,7 +9292,7 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Vaelgrath: nietykalność fazy 2 / max(lot, fala) (3 / 4 / 5) | 1,00 (model) | 1,00 / 1,00 / 1,00 | 1,00 |
 | Vaelgrath: G11 (najmniejsze tempo ataku; pierścień w fazie 3) | 53% (pierścień 53%) | 56% | ≥ 50% |
 | Vaelgrath: T-SK6 Uzdrowiciela lochowego | 5,98 | 22,08 | 1,0–2,0 |
-| Vaelgrath bez wsparcia 3 / 4 / 5: s | 89 / 90 / 89 | 116,9 / 96,1 / 77,5 | ≤ 480 |
+| Vaelgrath bez wsparcia 3 / 4 / 5: s | 89 / 90 / 89 | 114,9 / 94,8 / 73,9 | ≤ 480 |
 | Vaelgrath bez wsparcia: przyjmowane / podtrzymanie (najgorszy, 3 / 4 / 5) | 0,60 / 0,61 / 0,63 | 0,22 / 0,21 / 0,20 | ≤ 1,0 |
 | Vaelgrath bez wsparcia: największy cios / HP członka | 117% | 44% | ≤ 100% |
 | Vaelgrath: Mityki nieużyteczne (4 klasy) | 0% | 0%–0% | 0% |
@@ -9227,7 +9320,7 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 
 ### Cele S94 (`Balance.targetsS94`)
 
-666/1260 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (70–100)”.
+655/1260 w paśmie (z wierszami raportu). Strażniki T-SK, złoto i tempo w tabelach niżej; pozostałe wiersze regionu (Elity, Elity II, rodzaje, harmonogram, D5) w „Cele (70–100)”.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -9252,15 +9345,15 @@ Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danyc
 | Vaelgrath, 5 graczy: nietykalność fazy 2 / max(lot, fala) | 1,00 | 1,00–1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath, 5 graczy: wściekłość | 0,00 | ≤ 0,00 | w paśmie | S94 (asertowane) |
 | T-SK6 Vaelgrath: Uzdrowiciel lochowy na Obrońcy | 22,08 | 1,00–2,00 | **poza** | NIEDOKOŃCZONE S94: T-SK6 15,9 wobec ≤ 2,5 (C6) nieosiągalne dźwigniami S94 (tank S32 3,45 / min ≤ 3,5, leczenie od maks. HP celu, S69); decyzja właściciela jak dla Azgora (S93) |
-| Vaelgrath bez wsparcia, 3 graczy: s | 116,92 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 3 graczy: s | 114,95 | ≤ 480,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 3 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,22 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 3 graczy: największy cios / HP | 0,44 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, fala tarczy, 3 graczy: HP na członka | 0,06 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 4 graczy: s | 96,06 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 4 graczy: s | 94,79 | ≤ 480,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 4 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,21 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 4 graczy: największy cios / HP | 0,44 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, fala tarczy, 4 graczy: HP na członka | 0,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
-| Vaelgrath bez wsparcia, 5 graczy: s | 77,51 | ≤ 480,00 | w paśmie | S94 (asertowane) |
+| Vaelgrath bez wsparcia, 5 graczy: s | 73,91 | ≤ 480,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 5 graczy: przyjmowane / podtrzymanie (najgorszy) | 0,20 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, 5 graczy: największy cios / HP | 0,44 | ≤ 1,00 | w paśmie | S94 (asertowane) |
 | Vaelgrath bez wsparcia, fala tarczy, 5 graczy: HP na członka | 0,04 | ≤ 1,10 | w paśmie | S94 (asertowane) |
@@ -9385,22 +9478,22 @@ T-SK1 / T-SK2 względem własnego L20 (limity 1,15 / 1,25) i T-SK3 / areaCap (�
 | Hunter base | 1,36 / 1,38 / 0,55 | 1,36 / 1,57 / 0,56 | 1,38 / 1,60 / 0,56* | 1,38 / 1,59 / 0,56 | 1,43 / 1,65 / 0,56* | 1,32 / 1,38 / 0,54* | 1,31 / 1,36 / 0,54* |
 | Hunter marksman.kingslayer | 1,32 / 1,63 / 0,52* | 1,43 / 1,81 / 0,52 | 1,41 / 1,83 / 0,52 | 1,42 / 1,89 / 0,53 | 1,42 / 2,05 / 0,58* | 1,42 / 2,09 / 0,58* | 1,42 / 2,10 / 0,58* |
 | Hunter marksman.eliteHunter | 1,31 / 1,76 / 0,49* | 1,41 / 1,96 / 0,50 | 1,41 / 2,17 / 0,45 | 1,43 / 2,18 / 0,51 | 1,43 / 2,20 / 0,51 | 1,44 / 2,22 / 0,52 | 1,44 / 2,24 / 0,52* |
-| Hunter trapper.poacher | 1,39 / 1,72 / 0,98* | 1,49 / 1,82 / 0,98 | 1,46 / 1,78 / 0,99* | 1,49 / 1,80 / 1,00* | 1,49 / 1,80 / 1,00* | 1,49 / 1,82 / 1,00* | 1,50 / 1,83 / 1,01* |
-| Hunter trapper.poisoner | 1,45 / 1,57 / 0,99* | 1,59 / 1,84 / 0,94* | 1,56 / 1,80 / 0,94* | 1,59 / 1,83 / 0,95* | 1,59 / 1,83 / 0,95* | 1,61 / 1,85 / 0,95* | 1,61 / 1,86 / 0,96* |
-| Hunter scout.partyHunter | 1,43 / 1,49 / 0,76 | 1,46 / 1,54 / 0,78 | 1,46 / 1,54 / 0,77* | 1,63 / 1,54 / 0,82* | 1,62 / 1,54 / 0,84* | 1,52 / 1,42 / 0,82* | 1,56 / 1,45 / 0,80* |
-| Hunter scout.tracker | 1,36 / 1,38 / 0,76 | 1,38 / 1,42 / 0,80 | 1,39 / 1,44 / 0,78* | 1,61 / 1,48 / 0,81* | 1,62 / 1,48 / 0,83* | 1,52 / 1,36 / 0,82* | 1,58 / 1,39 / 0,80* |
-| Mage base | 1,98 / 2,43 / 0,83* | 2,14 / 2,59 / 0,84* | 2,25 / 2,70 / 0,84* | 2,24 / 2,71 / 0,84* | 2,26 / 2,73 / 0,86* | 2,26 / 2,73 / 0,88* | 2,26 / 2,73 / 0,88* |
-| Mage base.loadout | 1,92 / 2,36 / 0,84* | 2,06 / 2,52 / 0,85* | 2,18 / 2,63 / 0,86* | 2,18 / 2,63 / 0,86* | 2,20 / 2,65 / 0,88* | 2,20 / 2,65 / 0,89* | 2,20 / 2,65 / 0,89* |
-| Mage destroyer.destroyerExp | 1,65 / 2,07 / 0,73* | 1,66 / 2,08 / 0,75* | 1,66 / 2,08 / 0,75* | 1,67 / 2,12 / 0,76* | 1,70 / 2,24 / 0,78* | 1,70 / 2,25 / 0,78* | 1,70 / 2,25 / 0,79* |
-| Mage destroyer.destroyerBoss | 2,11 / 2,30 / 0,63* | 2,12 / 2,33 / 0,65* | 2,12 / 2,33 / 0,65* | 2,13 / 2,37 / 0,66* | 2,16 / 2,47 / 0,69* | 2,16 / 2,48 / 0,69* | 2,16 / 2,49 / 0,69* |
-| Mage destroyer.destroyerFire | 2,17 / 2,46 / 0,76 | 2,44 / 2,63 / 0,75 | 2,47 / 2,63 / 0,75 | 2,37 / 2,91 / 0,71 | 2,40 / 2,93 / 0,71 | 2,20 / 3,22 / 0,74 | 2,20 / 3,22 / 0,74 |
-| Mage destroyer.destroyerIce | 2,17 / 2,29 / 0,64 | 2,28 / 2,43 / 0,63 | 2,28 / 2,43 / 0,63 | 2,29 / 2,53 / 0,66 | 2,17 / 2,57 / 0,67 | 2,18 / 2,87 / 0,71 | 2,22 / 2,87 / 0,71 |
-| Mage destroyer.destroyerLightning | 2,45 / 3,18 / 0,55 | 2,57 / 3,28 / 0,57 | 2,67 / 3,28 / 0,61 | 2,60 / 3,38 / 0,65 | 2,60 / 3,50 / 0,64 | 2,37 / 3,90 / 0,69* | 2,37 / 3,90 / 0,69* |
-| Mage arcanist.arcanistBoss | 1,86 / 2,27 / 0,63* | 1,91 / 2,43 / 0,63* | 1,92 / 2,44 / 0,63* | 1,92 / 2,46 / 0,63* | 1,99 / 2,75 / 0,62* | 1,97 / 2,74 / 0,60* | 2,00 / 2,82 / 0,60* |
-| Mage arcanist.arcanistOverload | 1,82 / 2,27 / 0,63* | 1,87 / 2,42 / 0,63* | 1,87 / 2,44 / 0,63* | 1,88 / 2,46 / 0,63* | 1,93 / 2,75 / 0,62* | 1,92 / 2,74 / 0,60* | 1,94 / 2,82 / 0,60* |
-| Mage arcanist.arcanistFire | 2,46 / 2,42 / 0,75 | 2,54 / 2,55 / 0,74 | 2,54 / 2,55 / 0,74 | 2,54 / 2,55 / 0,74 | 2,54 / 2,55 / 0,74 | 2,61 / 2,73 / 0,65 | 2,57 / 2,64 / 0,57 |
-| Mage arcanist.arcanistIce | 2,22 / 2,54 / 0,64 | 2,30 / 2,67 / 0,63 | 2,35 / 2,88 / 0,65 | 2,37 / 2,94 / 0,67 | 2,40 / 2,99 / 0,68 | 2,38 / 2,89 / 0,54 | 2,38 / 3,01 / 0,54 |
-| Mage arcanist.arcanistLightning | 2,44 / 2,90 / 0,64 | 2,55 / 2,98 / 0,66 | 2,56 / 2,99 / 0,72 | 2,56 / 2,99 / 0,76 | 2,56 / 2,99 / 0,76 | 2,50 / 2,76 / 0,75* | 2,43 / 2,51 / 0,75* |
+| Hunter trapper.poacher | 1,40 / 1,70 / 0,97* | 1,51 / 1,80 / 0,98 | 1,49 / 1,77 / 0,98* | 1,53 / 1,79 / 0,99 | 1,53 / 1,79 / 0,99 | 1,53 / 1,81 / 0,99* | 1,53 / 1,82 / 1,00* |
+| Hunter trapper.poisoner | 1,46 / 1,56 / 0,98* | 1,61 / 1,82 / 0,95* | 1,58 / 1,78 / 0,95* | 1,61 / 1,81 / 0,95* | 1,62 / 1,82 / 0,95* | 1,64 / 1,83 / 0,96* | 1,64 / 1,84 / 0,96* |
+| Hunter scout.partyHunter | 1,43 / 1,49 / 0,76 | 1,46 / 1,54 / 0,75 | 1,46 / 1,54 / 0,75* | 1,63 / 1,54 / 0,75* | 1,62 / 1,54 / 0,75* | 1,52 / 1,42 / 0,74* | 1,56 / 1,45 / 0,72* |
+| Hunter scout.tracker | 1,36 / 1,38 / 0,76 | 1,38 / 1,42 / 0,76 | 1,39 / 1,44 / 0,75* | 1,61 / 1,48 / 0,75* | 1,62 / 1,48 / 0,75* | 1,52 / 1,36 / 0,73* | 1,58 / 1,39 / 0,72* |
+| Mage base | 2,08 / 2,58 / 0,86* | 2,31 / 2,83 / 0,87* | 2,43 / 2,97 / 0,88* | 2,43 / 2,98 / 0,88* | 2,46 / 3,03 / 0,91* | 2,46 / 3,03 / 0,92* | 2,46 / 3,03 / 0,92* |
+| Mage base.loadout | 2,02 / 2,51 / 0,87* | 2,23 / 2,75 / 0,89* | 2,35 / 2,88 / 0,89* | 2,35 / 2,89 / 0,90* | 2,37 / 2,94 / 0,93* | 2,38 / 2,94 / 0,94* | 2,37 / 2,94 / 0,94* |
+| Mage destroyer.destroyerExp | 1,67 / 2,21 / 0,76* | 1,69 / 2,25 / 0,78* | 1,71 / 2,26 / 0,78* | 1,72 / 2,31 / 0,79* | 1,77 / 2,49 / 0,81* | 1,77 / 2,50 / 0,82* | 1,77 / 2,51 / 0,82* |
+| Mage destroyer.destroyerBoss | 2,17 / 2,45 / 0,65* | 2,18 / 2,49 / 0,67* | 2,18 / 2,49 / 0,67* | 2,20 / 2,54 / 0,69* | 2,24 / 2,68 / 0,72* | 2,24 / 2,69 / 0,72* | 2,24 / 2,70 / 0,72* |
+| Mage destroyer.destroyerFire | 2,35 / 2,46 / 0,77 | 2,45 / 2,60 / 0,75 | 2,45 / 2,60 / 0,75 | 1,93 / 2,92 / 0,77* | 1,98 / 3,07 / 0,78* | 1,72 / 3,04 / 0,90* | 1,72 / 3,04 / 0,90* |
+| Mage destroyer.destroyerIce | 2,25 / 2,40 / 0,62 | 2,61 / 2,87 / 0,59 | 2,61 / 2,87 / 0,59 | 1,98 / 2,56 / 0,67* | 1,99 / 2,59 / 0,67* | 1,46 / 2,02 / 0,85* | 1,46 / 2,02 / 0,85* |
+| Mage destroyer.destroyerLightning | 2,68 / 3,24 / 0,55 | 2,89 / 3,48 / 0,60 | 2,89 / 3,48 / 0,63 | 1,96 / 2,86 / 0,73* | 1,98 / 2,94 / 0,72* | 1,97 / 3,16 / 0,78* | 1,98 / 3,17 / 0,78* |
+| Mage arcanist.arcanistBoss | 1,87 / 2,27 / 0,63* | 1,93 / 2,43 / 0,63* | 1,94 / 2,44 / 0,63* | 1,96 / 2,46 / 0,63* | 2,08 / 2,75 / 0,62* | 2,09 / 2,74 / 0,60* | 2,13 / 2,82 / 0,60* |
+| Mage arcanist.arcanistOverload | 1,84 / 2,27 / 0,63* | 1,91 / 2,42 / 0,63* | 1,92 / 2,44 / 0,63* | 1,92 / 2,46 / 0,63* | 2,00 / 2,75 / 0,62* | 2,03 / 2,74 / 0,60* | 2,04 / 2,82 / 0,60* |
+| Mage arcanist.arcanistFire | 2,49 / 2,41 / 0,75 | 2,56 / 2,53 / 0,74 | 2,59 / 2,53 / 0,74 | 2,65 / 2,80 / 0,64 | 2,68 / 2,99 / 0,63 | 2,73 / 3,29 / 0,62 | 2,70 / 3,29 / 0,56 |
+| Mage arcanist.arcanistIce | 2,50 / 3,06 / 0,65 | 2,77 / 3,46 / 0,64 | 2,81 / 3,50 / 0,66 | 2,56 / 3,56 / 0,54 | 2,59 / 3,77 / 0,54 | 2,64 / 4,04 / 0,53 | 2,67 / 4,25 / 0,53 |
+| Mage arcanist.arcanistLightning | 2,62 / 3,01 / 0,73 | 2,76 / 3,16 / 0,78 | 2,79 / 3,16 / 0,78 | 2,77 / 2,92 / 0,79* | 2,80 / 3,10 / 0,77 | 2,79 / 3,47 / 0,74 | 2,72 / 3,30 / 0,74 |
 | Cleric base | 1,88 / 2,13 / 0,89* | 1,96 / 2,26 / 0,95* | 1,96 / 2,26 / 0,97* | 1,96 / 2,26 / 1,00* | 1,96 / 2,26 / 1,09* | 1,96 / 2,26 / 1,10* | 1,96 / 2,26 / 1,11* |
 | Cleric healer.dungeon | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* | 1,37 / 1,39 / 0,50* |
 | Cleric healer.solo | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* | 1,40 / 1,40 / 0,76* |
@@ -9530,11 +9623,11 @@ Legendarne z obozowania przy Elicie II (Serce Lodowca, poziom 95, odrodzenie 9,7
 | liczba | wartość |
 | --- | --: |
 | bez wsparcia, 3 graczy: mikstury na walkę | berserker.fury 2,5, marksman.kingslayer 0,8, arcanist.arcanistBoss 0,7 |
-| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 2,0, marksman.kingslayer 0,5, arcanist.arcanistBoss 0,5, inquisitor.solo 0,5 |
-| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 1,5, marksman.kingslayer 0,4, arcanist.arcanistBoss 0,3, inquisitor.solo 0,4, destroyer.destroyerBoss 0,3 |
+| bez wsparcia, 4 graczy: mikstury na walkę | berserker.fury 1,9, marksman.kingslayer 0,5, arcanist.arcanistBoss 0,5, inquisitor.solo 0,5 |
+| bez wsparcia, 5 graczy: mikstury na walkę | berserker.fury 1,5, marksman.kingslayer 0,4, arcanist.arcanistBoss 0,3, inquisitor.solo 0,3, destroyer.destroyerBoss 0,3 |
 | burza przy hazardShare 0 / 0,5 / 1 (faza 3) | 0,0: tank 277%/min, 0,5: tank 634%/min, 1,0: tank 990%/min |
 | fale tarczy i okno bez obrażeń w fazie 2 (drużyna S32) | 3: fale 7,4 / 8,2 s, okno fazy 2 12,0 s (lot po fali 4,6 s); 4: fale 6,3 / 7,0 s, okno fazy 2 12,0 s (lot po fali 5,7 s); 5: fale 5,1 / 5,7 s, okno fazy 2 12,0 s (lot po fali 6,9 s) |
-| trapper.poisoner na Vaelgracie: DPS 300 s ÷ DPS 60 s | 0,92 (1,142e+04 → 1,046e+04) |
+| trapper.poisoner na Vaelgracie: DPS 300 s ÷ DPS 60 s | 0,92 (1,168e+04 → 1,074e+04) |
 | inquisitor.solo na Vaelgracie: DPS 300 s ÷ DPS 60 s | 0,97 (9364 → 9118) |
 | harmonogram fazy 1 | frostBreath 4,4/min (73%), wingBuffet 3,3/min (77%), tailSwipe 3,3/min (77%), iceComet 2,2/min (95%), frostTomb 2,2/min (88%) |
 | harmonogram fazy 2 | frostBreath 4,1/min (68%), tailSwipe 3,2/min (75%), blizzard 3,1/min (83%), avalanche 3,1/min (72%), frostTomb 2,0/min (80%) |
@@ -9566,21 +9659,21 @@ R4 = zysk opcji w roli umiejętności na poziomie rangi (S89 E1, `SkillModel.opt
 | stormArrow 10 (marksman.kingslayer) | 95 | użyteczność | 0,25 |
 | heartseeker 10 (marksman.kingslayer) | 76 | 0,25 | 0,29 |
 | snarefield 5 (trapper.poacher) | 76 | użyteczność | użyteczność |
-| snarefield 10 (trapper.poacher) | 95 | 0,37 | użyteczność |
+| snarefield 10 (trapper.poacher) | 95 | 0,43 | użyteczność |
 | drive 5 (scout.partyHunter) | 76 | użyteczność | – |
 | drive 10 (scout.partyHunter) | 95 | 0,19 | użyteczność |
-| deadlyBolt 10 (trapper.poacher) | 76 | 0,21 | 0,20 |
-| immolate 10 (arcanist.arcanistFire) | 76 | 0,22 | 0,20 |
-| meteorStorm 5 (destroyer.destroyerExp) | 76 | 0,17 | 0,17 |
-| meteorStorm 10 (destroyer.destroyerExp) | 95 | 0,21 | 0,18 |
+| deadlyBolt 10 (trapper.poacher) | 76 | 0,21 | 0,21 |
+| immolate 10 (arcanist.arcanistFire) | 76 | 0,22 | 0,21 |
+| meteorStorm 5 (destroyer.destroyerExp) | 76 | 0,15 | 0,17 |
+| meteorStorm 10 (destroyer.destroyerExp) | 95 | 0,21 | 0,22 |
 | cataclysm 5 (destroyer.destroyerExp) | 76 | użyteczność | 0,16 |
 | cataclysm 10 (destroyer.destroyerExp) | 95 | 0,17 | 0,19 |
 | arcaneTorrent 5 (arcanist.arcanistBoss) | 76 | 0,13 | użyteczność |
 | arcaneTorrent 10 (arcanist.arcanistBoss) | 95 | 0,23 | 0,19 |
-| shatter 10 (arcanist.arcanistIce) | 76 | użyteczność | 0,24 |
+| shatter 10 (arcanist.arcanistIce) | 76 | użyteczność | 0,20 |
 | blizzard 5 (destroyer.destroyerIce) | 76 | – | – |
 | blizzard 10 (destroyer.destroyerIce) | 95 | użyteczność | – |
-| lightningLance 10 (arcanist.arcanistLightning) | 76 | 0,25 | 0,23 |
+| lightningLance 10 (arcanist.arcanistLightning) | 76 | 0,25 | 0,21 |
 | tempest 5 (destroyer.destroyerLightning) | 76 | – | – |
 | tempest 10 (destroyer.destroyerLightning) | 95 | użyteczność | – |
 | judgement 10 (inquisitor.solo) | 76 | użyteczność | 0,17 |
@@ -9606,7 +9699,7 @@ S94 nie przestawiło żadnej kotwicy 100 (`monsterHp`, `monsterAtk`, `eliteHp`, 
 | eliteHp | 1,12 | 1,13 |
 | expToNext | 1,00 | 1,00 |
 | heal | 0,47 | 0,67 |
-| manaCost.Mage | 3,05 | 3,49 |
+| manaCost.Mage | 1,99 | 2,10 |
 | monsterAtk | 1,13 | 1,14 |
 | monsterHp | 1,40 | 1,47 |
 | potionCooldown | 6,67 | 6,67 |
@@ -13343,33 +13436,33 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | base · axe2h · 70 | 1398 | 4591 | 5591 | 4050 | 6375 | 4030 | 2,90 | **1,42** | 4,00 | **1,58** | 1,14 | 2,0 |
 | base · axe2h · 100 | 2735 | 10 831 | 12 800 | 7770 | 17 360 | 10 083 | 2,84 | **1,39** | 4,68 | **1,84** | 1,36 | 2,0 |
 | base.loadout · sword1h + shield · 20 | 140 | 330 | 372 | 273 | 438 | 317 | 1,95 | 1,00 | 2,65 | 1,00 | 1,18 | 2,0 |
-| base.loadout · sword1h + shield · 45 | 527 | 1518 → 1477 | 1753 → 1709 | 1234 → 1199 | 2527 → 2441 | 1903 → 1834 | 2,34 → 2,27 | **1,20 → 1,17** | 3,32 → 3,24 | 1,25 → 1,22 | 1,44 → 1,43 | 2,0 |
-| base.loadout · sword1h + shield · 70 | 1164 | 3624 → 3533 | 4329 → 4230 | 2754 → 2677 | 6855 → 6665 | 4134 → 3981 | 2,37 → 2,30 | **1,21 → 1,18** | 3,72 → 3,63 | **1,40 → 1,37** | 1,58 | 2,0 |
-| base.loadout · sword1h + shield · 100 | 2274 | 8273 → 8095 | 9378 → 9185 | 5421 → 5271 | 15 522 → 15 150 | 7971 → 7672 | 2,38 → 2,32 | **1,22 → 1,19** | 4,12 → 4,04 | **1,55 → 1,52** | 1,66 → 1,65 | 2,0 |
+| base.loadout · sword1h + shield · 45 | 527 | 1477 | 1709 | 1199 | 2441 | 1834 | 2,27 | **1,17** | 3,24 | 1,22 | 1,43 | 2,0 |
+| base.loadout · sword1h + shield · 70 | 1164 | 3533 | 4230 | 2677 | 6665 | 3981 | 2,30 | **1,18** | 3,63 | **1,37** | 1,58 | 2,0 |
+| base.loadout · sword1h + shield · 100 | 2274 | 8095 | 9185 | 5271 | 15 150 | 7672 | 2,32 | **1,19** | 4,04 | **1,52** | 1,65 | 2,0 |
 | guardian.defender · sword1h + shield · 20 | 118 | 266 | 292 | 233 | 355 | 301 | 1,96 | 1,00 | 2,46 | 1,00 | 1,22 | 2,0 |
-| guardian.defender · sword1h + shield · 45 | 420 | 1083 → 1053 | 1187 → 1156 | 949 → 922 | 1812 → 1752 | 1533 → 1479 | 2,26 → 2,19 | 1,15 → 1,12 | 2,83 → 2,75 | 1,15 → 1,12 | 1,53 → 1,52 | 2,0 |
-| guardian.defender · sword1h + shield · 70 | 959 | 3058 → 2733 | 3748 → 3190 | 2459 → 2093 | 7639 → 6532 | 4582 → 3785 | 2,57 → 2,18 | 1,31 → 1,11 | 3,91 → 3,33 | **1,59 → 1,35** | **2,04 → 2,05** | 2,0 |
-| guardian.defender · sword1h + shield · 100 | 1845 | 6402 → 5265 | 7950 → 6149 | 4657 → 4108 | 15 503 → 12 587 | 8424 → 7460 | 2,52 → 2,23 | 1,28 → 1,13 | 4,31 → 3,33 | **1,75 → 1,35** | **1,95 → 2,05** | 2,0 |
+| guardian.defender · sword1h + shield · 45 | 420 | 1053 | 1156 | 922 | 1752 | 1479 | 2,19 | 1,12 | 2,75 | 1,12 | 1,52 | 2,0 |
+| guardian.defender · sword1h + shield · 70 | 959 | 2733 | 3190 | 2093 | 6532 | 3785 | 2,18 | 1,11 | 3,33 | **1,35** | **2,05** | 2,0 |
+| guardian.defender · sword1h + shield · 100 | 1845 | 5265 | 6149 | 4108 | 12 587 | 7460 | 2,23 | 1,13 | 3,33 | **1,35** | **2,05** | 2,0 |
 | guardian.loner · sword1h + shield · 20 | 118 | 266 | 292 | 220 | 355 | 262 | 1,86 | 1,00 | 2,46 | 1,00 | 1,22 | 2,0 |
-| guardian.loner · sword1h + shield · 45 | 420 | 1083 → 1053 | 1187 → 1156 | 866 → 838 | 1812 → 1752 | 1360 → 1306 | 2,06 → 2,00 | 1,11 → 1,07 | 2,83 → 2,75 | 1,15 → 1,12 | 1,53 → 1,52 | 2,0 |
-| guardian.loner · sword1h + shield · 70 | 959 | 3059 → 2733 | 3731 → 2791 | 2200 → 1918 | 7620 → 5273 | 3865 → 3293 | 2,30 → 2,00 | 1,24 → 1,08 | 3,89 → 2,91 | 1,58 → 1,18 | 2,04 → 1,89 | 2,0 |
-| guardian.loner · sword1h + shield · 100 | 1845 | 6402 → 5265 | 7083 → 6143 | 4171 → 3800 | 12 809 → 12 580 | 6940 → 6679 | 2,26 → 2,06 | 1,22 → 1,11 | 3,84 → 3,33 | **1,56 → 1,35** | **1,81 → 2,05** | 2,0 |
+| guardian.loner · sword1h + shield · 45 | 420 | 1053 | 1156 | 838 | 1752 | 1306 | 2,00 | 1,07 | 2,75 | 1,12 | 1,52 | 2,0 |
+| guardian.loner · sword1h + shield · 70 | 959 | 2733 | 2791 | 1918 | 5273 | 3293 | 2,00 | 1,08 | 2,91 | 1,18 | 1,89 | 2,0 |
+| guardian.loner · sword1h + shield · 100 | 1845 | 5265 | 6143 | 3800 | 12 580 | 6679 | 2,06 | 1,11 | 3,33 | **1,35** | **2,05** | 2,0 |
 | berserker.fury · axe2h · 20 | 185 | 467 | 509 | 391 | 616 | 416 | 2,11 | 1,00 | 2,75 | 1,00 | 1,21 | 2,0 |
-| berserker.fury · axe2h · 45 | 849 → 827 | 2349 → 2370 | 2461 → 2436 | 1883 → 1858 | 3137 → 3088 | 2185 → 2171 | 2,22 → 2,25 | 1,05 → 1,07 | 2,90 → 2,95 | 1,06 → 1,07 | 1,27 | 2,0 |
-| berserker.fury · axe2h · 70 | 1978 | 6718 → 6487 | 6723 → 5954 | 5064 → 4753 | 8514 → 8732 | 5964 → 5303 | 2,56 → 2,40 | 1,21 → 1,14 | 3,40 → 3,01 | 1,24 → 1,10 | 1,27 → 1,47 | 2,0 |
-| berserker.fury · axe2h · 100 | 3876 | 13 681 → 12 851 | 13 175 → 11 108 | 10 040 → 10 089 | 23 276 → 20 652 | 12 360 → 11 306 | 2,59 → 2,60 | **1,23** | 3,40 → 2,87 | 1,24 → 1,04 | 1,77 → 1,86 | 2,0 |
+| berserker.fury · axe2h · 45 | 827 | 2370 | 2436 | 1858 | 3088 | 2171 | 2,25 | 1,07 | 2,95 | 1,07 | 1,27 | 2,0 |
+| berserker.fury · axe2h · 70 | 1978 | 6487 | 5954 | 4753 | 8732 | 5303 | 2,40 | 1,14 | 3,01 | 1,10 | 1,47 | 2,0 |
+| berserker.fury · axe2h · 100 | 3876 | 12 851 | 11 108 | 10 089 | 20 652 | 11 306 | 2,60 | **1,23** | 2,87 | 1,04 | 1,86 | 2,0 |
 | berserker.butcher · axe2h · 20 | 185 | 467 | 509 | 391 | 616 | 416 | 2,11 | 1,00 | 2,75 | 1,00 | 1,21 | 2,0 |
-| berserker.butcher · axe2h · 45 | 804 → 786 | 2396 → 2419 | 2541 → 2516 | 1964 → 1941 | 3194 → 3147 | 2280 → 2268 | 2,44 → 2,47 | **1,16 → 1,17** | 3,16 → 3,20 | 1,15 → 1,17 | 1,26 → 1,25 | 2,0 |
-| berserker.butcher · axe2h · 70 | 1869 | 6706 → 6365 | 6811 → 5983 | 5142 → 4746 | 8715 → 8945 | 5895 → 5450 | 2,75 → 2,54 | **1,30 → 1,20** | 3,64 → 3,20 | 1,33 → 1,17 | 1,28 → 1,50 | 2,0 |
-| berserker.butcher · axe2h · 100 | 3663 | 14 199 → 12 855 | 13 346 → 10 945 | 10 665 → 9808 | 23 942 → 21 085 | 12 112 → 11 404 | 2,91 → 2,68 | **1,38 → 1,27** | 3,64 → 2,99 | 1,33 → 1,09 | 1,79 → 1,93 | 2,0 |
+| berserker.butcher · axe2h · 45 | 786 | 2419 | 2516 | 1941 | 3147 | 2268 | 2,47 | **1,17** | 3,20 | 1,17 | 1,25 | 2,0 |
+| berserker.butcher · axe2h · 70 | 1869 | 6365 | 5983 | 4746 | 8945 | 5450 | 2,54 | **1,20** | 3,20 | 1,17 | 1,50 | 2,0 |
+| berserker.butcher · axe2h · 100 | 3663 | 12 855 | 10 945 | 9808 | 21 085 | 11 404 | 2,68 | **1,27** | 2,99 | 1,09 | 1,93 | 2,0 |
 | standard.commander · sword1h + shield · 20 | 120 | 271 | 297 | 246 | 362 | 315 | 2,04 | 1,00 | 2,46 | 1,00 | 1,22 | 2,0 |
-| standard.commander · sword1h + shield · 45 | 429 | 1167 → 1616 | 1311 → 2023 | 1081 → 1165 | 1950 → 3136 | 1723 → 1753 | 2,52 → 2,72 | **1,23 → 1,33** | 3,06 → 4,72 | **1,24 → 1,91** | 1,49 → 1,55 | 2,0 |
-| standard.commander · sword1h + shield · 70 | 925 | 3420 → 4015 | 4124 → 5030 | 2807 → 2806 | 6775 → 7767 | 4601 → 4187 | 3,03 | **1,48** | 4,46 → 5,44 | **1,81 → 2,21** | 1,64 → 1,54 | 2,0 |
-| standard.commander · sword1h + shield · 100 | 1780 | 8436 → 8311 | 11 029 → 11 257 | 6561 → 6948 | 17 608 → 18 916 | 9667 → 10 832 | 3,69 → 3,90 | **1,80 → 1,91** | 6,20 → 6,32 | **2,51 → 2,57** | 1,60 → 1,68 | 2,0 |
+| standard.commander · sword1h + shield · 45 | 429 | 1616 | 2023 | 1165 | 3136 | 1753 | 2,72 | **1,33** | 4,72 | **1,91** | 1,55 | 2,0 |
+| standard.commander · sword1h + shield · 70 | 925 | 4015 | 5030 | 2806 | 7767 | 4187 | 3,03 | **1,48** | 5,44 | **2,21** | 1,54 | 2,0 |
+| standard.commander · sword1h + shield · 100 | 1780 | 8311 | 11 257 | 6948 | 18 916 | 10 832 | 3,90 | **1,91** | 6,32 | **2,57** | 1,68 | 2,0 |
 | standard.warden · saber1h + shield · 20 | 133 | 282 | 306 | 257 | 370 | 326 | 1,94 | 1,00 | 2,30 | 1,00 | 1,21 | 2,0 |
-| standard.warden · saber1h + shield · 45 | 474 | 1208 → 1529 | 1347 → 1859 | 1123 → 1117 | 1982 → 2849 | 1761 → 1651 | 2,37 → 2,36 | **1,22** | 2,84 → 3,92 | **1,23 → 1,70** | 1,47 → 1,53 | 2,0 |
-| standard.warden · saber1h + shield · 70 | 1015 | 3279 → 3712 | 3852 → 4516 | 2695 → 2629 | 6246 → 6909 | 4342 → 3854 | 2,65 → 2,59 | **1,37 → 1,34** | 3,79 → 4,45 | **1,65 → 1,93** | 1,62 → 1,53 | 2,0 |
-| standard.warden · saber1h + shield · 100 | 1955 | 7950 → 7694 | 10 246 → 10 260 | 6242 → 6489 | 16 215 → 17 069 | 9073 → 9966 | 3,19 → 3,32 | **1,65 → 1,71** | 5,24 → 5,25 | **2,27 → 2,28** | 1,58 → 1,66 | 2,0 |
+| standard.warden · saber1h + shield · 45 | 474 | 1529 | 1859 | 1117 | 2849 | 1651 | 2,36 | **1,22** | 3,92 | **1,70** | 1,53 | 2,0 |
+| standard.warden · saber1h + shield · 70 | 1015 | 3712 | 4516 | 2629 | 6909 | 3854 | 2,59 | **1,34** | 4,45 | **1,93** | 1,53 | 2,0 |
+| standard.warden · saber1h + shield · 100 | 1955 | 7694 | 10 260 | 6489 | 17 069 | 9966 | 3,32 | **1,71** | 5,25 | **2,28** | 1,66 | 2,0 |
 
 ### T-SK1–3: Łowca
 
@@ -13390,21 +13483,21 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | marksman.eliteHunter · longbow + quiver · 70 | 2181 | 7068 | 8781 | 6178 | 10 525 | 6965 | 2,83 | **1,34** | 4,03 | **1,79** | 1,20 | 2,0 |
 | marksman.eliteHunter · longbow + quiver · 100 | 4612 | 17 684 | 23 149 | 14 062 | 23 952 | 15 160 | 3,05 | **1,44** | 5,02 | **2,24** | 1,03 | 2,0 |
 | trapper.poacher · crossbow + quiver · 20 | 165 | 395 | 415 | 359 | 525 | 417 | 2,17 | 1,00 | 2,51 | 1,00 | 1,27 | 2,0 |
-| trapper.poacher · crossbow + quiver · 45 | 624 | 2422 | 2524 | 1947 | 4653 | 2939 | 3,12 | **1,44** | 4,05 | **1,61** | 1,84 | 2,0 |
-| trapper.poacher · crossbow + quiver · 70 | 1585 | 6239 | 7196 | 4972 | 14 324 | 8608 | 3,14 | **1,44** | 4,54 | **1,81** | 1,99 | 2,0 |
-| trapper.poacher · crossbow + quiver · 100 | 3493 | 14 606 | 16 068 | 11 378 | 32 402 | 19 291 | 3,26 | **1,50** | 4,60 | **1,83** | **2,02** | 2,0 |
+| trapper.poacher · crossbow + quiver · 45 | 624 | 2422 → 2425 | 2524 → 2515 | 1947 → 1950 | 4653 → 4639 | 2939 → 2911 | 3,12 → 3,13 | **1,44** | 4,05 → 4,03 | **1,61 → 1,60** | 1,84 | 2,0 |
+| trapper.poacher · crossbow + quiver · 70 | 1585 | 6239 → 6304 | 7196 → 7128 | 4972 → 5029 | 14 324 → 14 054 | 8608 → 8669 | 3,14 → 3,17 | **1,44 → 1,46** | 4,54 → 4,50 | **1,81 → 1,79** | 1,99 → 1,97 | 2,0 |
+| trapper.poacher · crossbow + quiver · 100 | 3493 | 14 606 → 14 802 | 16 068 → 15 969 | 11 378 → 11 633 | 32 402 → 31 880 | 19 291 → 19 764 | 3,26 → 3,33 | **1,50 → 1,53** | 4,60 → 4,57 | **1,83 → 1,82** | 2,02 → 2,00 | 2,0 |
 | trapper.poisoner · crossbow + quiver · 20 | 165 | 395 | 430 | 360 | 550 | 419 | 2,18 | 1,00 | 2,61 | 1,00 | 1,28 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 45 | 624 | 2465 | 2809 | 2026 | 4889 | 2799 | 3,25 | **1,49** | 4,50 | **1,73** | 1,74 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 70 | 1585 | 6454 | 6922 | 5337 | 13 761 | 7892 | 3,37 | **1,54** | 4,37 | **1,68** | 1,99 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 100 | 3493 | 15 661 | 16 927 | 12 302 | 32 382 | 18 899 | 3,52 | **1,61** | 4,85 | **1,86** | 1,91 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 45 | 624 | 2465 → 2468 | 2809 → 2778 | 2026 → 2027 | 4889 → 4880 | 2799 → 2787 | 3,25 | **1,49** | 4,50 → 4,45 | **1,73 → 1,71** | 1,74 → 1,76 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 70 | 1585 | 6454 → 6531 | 6922 → 6885 | 5337 → 5419 | 13 761 → 13 606 | 7892 → 7926 | 3,37 → 3,42 | **1,54 → 1,57** | 4,37 → 4,34 | **1,68 → 1,67** | 1,99 → 1,98 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 100 | 3493 | 15 661 → 15 795 | 16 927 → 16 781 | 12 302 → 12 520 | 32 382 → 32 314 | 18 899 → 19 306 | 3,52 → 3,58 | **1,61 → 1,64** | 4,85 → 4,80 | **1,86 → 1,84** | 1,91 → 1,93 | 2,0 |
 | scout.partyHunter · bow + quiver · 20 | 159 | 338 | 360 | 338 | 545 | 396 | 2,12 | 1,00 | 2,26 | 1,00 | 1,51 | 2,0 |
 | scout.partyHunter · bow + quiver · 45 | 607 | 1689 | 1764 | 1655 | 2820 | 2014 | 2,72 | **1,28** | 2,91 | **1,28** | 1,60 | 2,0 |
 | scout.partyHunter · bow + quiver · 70 | 1327 | 4035 | 4396 | 3965 | 6717 | 4728 | 2,99 | **1,41** | 3,31 | **1,46** | 1,53 | 2,0 |
-| scout.partyHunter · bow + quiver · 100 | 3066 | 10 297 | 10 056 | 10 160 | 16 112 | 10 847 | 3,31 | **1,56** | 3,28 | **1,45** | 1,60 | 2,0 |
+| scout.partyHunter · bow + quiver · 100 | 3066 | 10 297 | 10 056 | 10 160 | 16 112 → 14 535 | 10 847 → 11 525 | 3,31 | **1,56** | 3,28 | **1,45** | 1,60 → 1,45 | 2,0 |
 | scout.tracker · shortbow + quiver · 20 | 155 | 332 | 373 | 333 | 559 | 389 | 2,15 | 1,00 | 2,41 | 1,00 | 1,50 | 2,0 |
 | scout.tracker · shortbow + quiver · 45 | 618 | 1678 | 1820 | 1651 | 2912 | 1995 | 2,67 | **1,24** | 2,95 | 1,22 | 1,60 | 2,0 |
 | scout.tracker · shortbow + quiver · 70 | 1382 | 4040 | 4509 | 3975 | 6924 | 4705 | 2,88 | **1,34** | 3,26 | **1,35** | 1,54 | 2,0 |
-| scout.tracker · shortbow + quiver · 100 | 3145 | 10 690 | 10 538 | 10 690 | 16 884 | 11 428 | 3,40 | **1,58** | 3,35 | **1,39** | 1,60 | 2,0 |
+| scout.tracker · shortbow + quiver · 100 | 3145 | 10 690 | 10 538 | 10 690 | 16 884 → 15 233 | 11 428 → 12 426 | 3,40 | **1,58** | 3,35 | **1,39** | 1,60 → 1,45 | 2,0 |
 
 ### T-SK1–3: Mag
 
@@ -13413,53 +13506,53 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | build · broń · poziom | atak podst. | na odnowieniu | wybuch 8 s | 60 s | obszar 3 · 8 s | obszar 3 · 60 s | T-SK1 | T-SK1 / L20 | T-SK2 | T-SK2 / L20 | T-SK3 | areaCap |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · staff · 20 | 173 | 435 | 443 | 435 | 614 | 584 | 2,51 | 1,00 | 2,56 | 1,00 | 1,38 | 2,0 |
-| base · staff · 45 | 680 | 2930 | 3345 | 2893 | 5362 | 4497 | 4,25 | **1,69** | 4,92 | **1,92** | 1,60 | 2,0 |
-| base · staff · 70 | 1548 | 7716 | 9578 | 7667 | 15 826 | 11 939 | 4,95 | **1,97** | 6,19 | **2,42** | 1,65 | 2,0 |
-| base · staff · 100 | 3051 | 17 454 | 21 301 | 17 299 | 37 279 | 28 624 | 5,67 | **2,26** | 6,98 | **2,73** | 1,75 | 2,0 |
+| base · staff · 45 | 680 | 2930 → 2959 | 3345 → 3389 | 2893 → 2959 | 5362 → 5413 | 4497 → 4563 | 4,25 → 4,35 | **1,69 → 1,73** | 4,92 → 4,98 | **1,92 → 1,95** | 1,60 | 2,0 |
+| base · staff · 70 | 1548 | 7716 → 7928 | 9578 → 9962 | 7667 → 7899 | 15 826 → 17 082 | 11 939 → 12 340 | 4,95 → 5,10 | **1,97 → 2,03** | 6,19 → 6,43 | **2,42 → 2,51** | 1,65 → 1,71 | 2,0 |
+| base · staff · 100 | 3051 | 17 454 → 18 882 | 21 301 → 23 661 | 17 299 → 18 846 | 37 279 → 43 751 | 28 624 → 31 782 | 5,67 → 6,18 | **2,26 → 2,46** | 6,98 → 7,75 | **2,73 → 3,03** | 1,75 → 1,85 | 2,0 |
 | base.loadout · wand + orb · 20 | 205 | 476 | 481 | 476 | 680 | 646 | 2,32 | 1,00 | 2,35 | 1,00 | 1,41 | 2,0 |
-| base.loadout · wand + orb · 45 | 807 | 3132 | 3528 | 3110 | 5800 | 4854 | 3,85 | **1,66** | 4,37 | **1,86** | 1,64 | 2,0 |
-| base.loadout · wand + orb · 70 | 1848 | 8231 | 10 171 | 8195 | 17 151 | 12 923 | 4,43 | **1,91** | 5,50 | **2,34** | 1,69 | 2,0 |
-| base.loadout · wand + orb · 100 | 3671 | 18 769 | 22 812 | 18 700 | 40 629 | 31 058 | 5,09 | **2,20** | 6,21 | **2,65** | 1,78 | 2,0 |
+| base.loadout · wand + orb · 45 | 807 | 3132 → 3162 | 3528 → 3573 | 3110 → 3162 | 5800 → 5855 | 4854 → 4922 | 3,85 → 3,92 | **1,66 → 1,69** | 4,37 → 4,43 | **1,86 → 1,89** | 1,64 | 2,0 |
+| base.loadout · wand + orb · 70 | 1848 | 8231 → 8445 | 10 171 → 10 559 | 8195 → 8466 | 17 151 → 18 469 | 12 923 → 13 309 | 4,43 → 4,58 | **1,91 → 1,97** | 5,50 → 5,71 | **2,34 → 2,43** | 1,69 → 1,75 | 2,0 |
+| base.loadout · wand + orb · 100 | 3671 | 18 769 → 20 242 | 22 812 → 25 313 | 18 700 → 20 204 | 40 629 → 47 540 | 31 058 → 34 410 | 5,09 → 5,50 | **2,20 → 2,37** | 6,21 → 6,89 | **2,65 → 2,94** | 1,78 → 1,88 | 2,0 |
 | destroyer.destroyerExp · staff · 20 | 173 | 352 | 349 | 352 | 458 | 448 | 2,04 | 1,00 | 2,01 | 1,00 | 1,31 | 3,0 |
-| destroyer.destroyerExp · staff · 45 | 755 | 2294 | 2379 | 2294 | 4338 | 3751 | 3,04 | **1,49** | 3,15 | **1,57** | 1,82 | 3,0 |
-| destroyer.destroyerExp · staff · 70 | 1691 | 5690 | 7043 | 5690 | 15 269 | 11 264 | 3,37 | **1,65** | 4,17 | **2,07** | 2,17 | 3,0 |
-| destroyer.destroyerExp · staff · 100 | 3327 | 11 540 | 15 104 | 11 540 | 35 589 | 24 587 | 3,47 | **1,70** | 4,54 | **2,25** | 2,36 | 3,0 |
+| destroyer.destroyerExp · staff · 45 | 755 | 2294 | 2379 | 2294 | 4338 → 4344 | 3751 → 3757 | 3,04 | **1,49** | 3,15 | **1,57** | 1,82 → 1,83 | 3,0 |
+| destroyer.destroyerExp · staff · 70 | 1691 | 5690 → 5818 | 7043 → 7514 | 5690 → 5735 | 15 269 → 16 796 | 11 264 → 11 494 | 3,37 → 3,39 | **1,65 → 1,67** | 4,17 → 4,44 | **2,07 → 2,21** | 2,17 → 2,24 | 3,0 |
+| destroyer.destroyerExp · staff · 100 | 3327 | 11 540 → 12 008 | 15 104 → 16 816 | 11 540 → 12 008 | 35 589 → 41 237 | 24 587 → 26 198 | 3,47 → 3,61 | **1,70 → 1,77** | 4,54 → 5,05 | **2,25 → 2,51** | 2,36 → 2,45 | 3,0 |
 | destroyer.destroyerBoss · staff · 20 | 173 | 414 | 431 | 414 | 546 | 515 | 2,39 | 1,00 | 2,49 | 1,00 | 1,27 | 3,0 |
-| destroyer.destroyerBoss · staff · 45 | 755 | 3259 | 3565 | 3259 | 5406 | 4719 | 4,32 | **1,80** | 4,72 | **1,90** | 1,52 | 3,0 |
-| destroyer.destroyerBoss · staff · 70 | 1691 | 8504 | 9634 | 8504 | 18 046 | 14 554 | 5,03 | **2,10** | 5,70 | **2,29** | 1,87 | 3,0 |
-| destroyer.destroyerBoss · staff · 100 | 3327 | 17 234 | 20 614 | 17 234 | 42 617 | 31 768 | 5,18 | **2,16** | 6,20 | **2,49** | 2,07 | 3,0 |
+| destroyer.destroyerBoss · staff · 45 | 755 | 3259 → 3273 | 3565 → 3582 | 3259 → 3273 | 5406 → 5425 | 4719 → 4735 | 4,32 → 4,34 | **1,80 → 1,81** | 4,72 → 4,75 | **1,90 → 1,91** | 1,52 → 1,51 | 3,0 |
+| destroyer.destroyerBoss · staff · 70 | 1691 | 8504 → 8729 | 9634 → 10 216 | 8504 → 8702 | 18 046 → 19 774 | 14 554 → 15 126 | 5,03 → 5,15 | **2,10 → 2,15** | 5,70 → 6,04 | **2,29 → 2,43** | 1,87 → 1,94 | 3,0 |
+| destroyer.destroyerBoss · staff · 100 | 3327 | 17 234 → 17 833 | 20 614 → 22 331 | 17 234 → 17 833 | 42 617 → 48 088 | 31 768 → 33 495 | 5,18 → 5,36 | **2,16 → 2,24** | 6,20 → 6,71 | **2,49 → 2,70** | 2,07 → 2,15 | 3,0 |
 | destroyer.destroyerFire · staff · 20 | 173 | 412 | 411 | 412 | 611 | 599 | 2,38 | 1,00 | 2,37 | 1,00 | 1,49 | 3,0 |
-| destroyer.destroyerFire · staff · 45 | 755 | 3110 | 3022 | 2887 | 6976 | 5196 | 3,83 | **1,61** | 4,01 | **1,69** | 2,31 | 3,0 |
-| destroyer.destroyerFire · staff · 70 | 1691 | 9114 | 9400 | 8320 | 21 781 | 15 600 | 4,92 | **2,07** | 5,56 | **2,34** | 2,32 | 3,0 |
-| destroyer.destroyerFire · staff · 100 | 3327 | 20 198 | 25 446 | 17 428 | 56 660 | 32 553 | 5,24 | **2,20** | 7,65 | **3,22** | 2,23 | 3,0 |
+| destroyer.destroyerFire · staff · 45 | 755 | 3110 | 3022 | 2887 → 3110 | 6976 → 6988 | 5196 → 5945 | 3,83 → 4,12 | **1,61 → 1,73** | 4,01 | **1,69** | 2,31 | 3,0 |
+| destroyer.destroyerFire · staff · 70 | 1691 | 9114 | 9400 | 8320 → 9114 | 21 781 → 21 810 | 15 600 → 18 049 | 4,92 → 5,39 | **2,07 → 2,26** | 5,56 | **2,34** | 2,32 | 3,0 |
+| destroyer.destroyerFire · staff · 100 | 3327 | 20 198 → 13 660 | 25 446 → 24 017 | 17 428 → 13 660 | 56 660 → 64 533 | 32 553 → 35 915 | 5,24 → 4,11 | **2,20 → 1,72** | 7,65 → 7,22 | **3,22 → 3,04** | 2,23 → 2,69 | 3,0 |
 | destroyer.destroyerIce · staff · 20 | 173 | 383 | 399 | 383 | 571 | 538 | 2,21 | 1,00 | 2,31 | 1,00 | 1,43 | 3,0 |
-| destroyer.destroyerIce · staff · 45 | 755 | 2850 | 3194 | 2850 | 5665 | 4379 | 3,78 | **1,71** | 4,23 | **1,84** | 1,77 | 3,0 |
-| destroyer.destroyerIce · staff · 70 | 1691 | 7927 | 8664 | 7817 | 16 420 | 12 285 | 4,62 | **2,09** | 5,12 | **2,22** | 1,90 | 3,0 |
-| destroyer.destroyerIce · staff · 100 | 3327 | 17 800 | 22 054 | 16 317 | 46 673 | 26 392 | 4,90 | **2,22** | 6,63 | **2,87** | 2,12 | 3,0 |
+| destroyer.destroyerIce · staff · 45 | 755 | 2850 → 2872 | 3194 → 3232 | 2850 → 2872 | 5665 → 5706 | 4379 → 4926 | 3,78 → 3,81 | **1,71 → 1,72** | 4,23 → 4,28 | **1,84 → 1,86** | 1,77 | 3,0 |
+| destroyer.destroyerIce · staff · 70 | 1691 | 7927 → 8191 | 8664 → 9056 | 7817 → 8191 | 16 420 → 16 833 | 12 285 → 14 406 | 4,62 → 4,84 | **2,09 → 2,19** | 5,12 → 5,36 | **2,22 → 2,32** | 1,90 → 1,86 | 3,0 |
+| destroyer.destroyerIce · staff · 100 | 3327 | 17 800 → 10 775 | 22 054 → 15 532 | 16 317 → 10 775 | 46 673 → 39 723 | 26 392 → 25 521 | 4,90 → 3,24 | **2,22 → 1,46** | 6,63 → 4,67 | **2,87 → 2,02** | 2,12 → 2,56 | 3,0 |
 | destroyer.destroyerLightning · staff · 20 | 173 | 456 | 434 | 456 | 507 | 534 | 2,63 | 1,00 | 2,51 | 1,00 | 1,17 | 3,0 |
-| destroyer.destroyerLightning · staff · 45 | 755 | 3931 | 4387 | 3814 | 5791 | 4938 | 5,05 | **1,92** | 5,81 | **2,32** | 1,32 | 3,0 |
-| destroyer.destroyerLightning · staff · 70 | 1691 | 11 370 | 13 129 | 10 616 | 20 636 | 15 882 | 6,28 | **2,38** | 7,76 | **3,10** | 1,57 | 3,0 |
-| destroyer.destroyerLightning · staff · 100 | 3327 | 25 534 | 32 566 | 20 799 | 67 636 | 40 696 | 6,25 | **2,37** | 9,79 | **3,90** | 2,08 | 3,0 |
+| destroyer.destroyerLightning · staff · 45 | 755 | 3931 → 3958 | 4387 → 4416 | 3814 → 3958 | 5791 → 5824 | 4938 → 5361 | 5,05 → 5,25 | **1,92 → 1,99** | 5,81 → 5,85 | **2,32 → 2,33** | 1,32 | 3,0 |
+| destroyer.destroyerLightning · staff · 70 | 1691 | 11 370 → 11 556 | 13 129 → 13 329 | 10 616 → 11 556 | 20 636 → 20 866 | 15 882 → 18 795 | 6,28 → 6,83 | **2,38 → 2,60** | 7,76 → 7,88 | **3,10 → 3,14** | 1,57 | 3,0 |
+| destroyer.destroyerLightning · staff · 100 | 3327 | 25 534 → 17 319 | 32 566 → 26 406 | 20 799 → 17 319 | 67 636 → 61 668 | 40 696 → 43 067 | 6,25 → 5,21 | **2,37 → 1,98** | 9,79 → 7,94 | **3,90 → 3,17** | 2,08 → 2,34 | 3,0 |
 | arcanist.arcanistBoss · runestaff · 20 | 213 | 459 | 459 | 459 | 558 | 554 | 2,15 | 1,00 | 2,15 | 1,00 | 1,22 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 45 | 873 | 3143 | 3261 | 3119 | 4406 | 3996 | 3,57 | **1,66** | 3,73 | **1,73** | 1,35 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 70 | 2004 | 8141 | 9528 | 7894 | 12 159 | 10 352 | 3,94 | **1,83** | 4,75 | **2,21** | 1,28 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 100 | 4021 | 19 065 | 24 451 | 17 270 | 29 213 | 22 383 | 4,29 | **2,00** | 6,08 | **2,82** | 1,19 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 45 | 873 | 3143 | 3261 | 3119 → 3143 | 4406 | 3996 → 4030 | 3,57 → 3,60 | **1,66 → 1,67** | 3,73 | **1,73** | 1,35 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 70 | 2004 | 8141 | 9528 | 7894 → 7991 | 12 159 | 10 352 → 10 318 | 3,94 → 3,99 | **1,83 → 1,85** | 4,75 | **2,21** | 1,28 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 100 | 4021 | 19 065 | 24 451 | 17 270 → 18 416 | 29 213 | 22 383 → 23 370 | 4,29 → 4,58 | **2,00 → 2,13** | 6,08 | **2,82** | 1,19 | 2,0 |
 | arcanist.arcanistOverload · runestaff · 20 | 213 | 459 | 459 | 459 | 558 | 554 | 2,15 | 1,00 | 2,15 | 1,00 | 1,22 | 2,0 |
 | arcanist.arcanistOverload · runestaff · 45 | 873 | 3140 | 3258 | 3140 | 4403 | 4027 | 3,60 | **1,67** | 3,73 | **1,73** | 1,35 | 2,0 |
-| arcanist.arcanistOverload · runestaff · 70 | 2004 | 8132 | 9517 | 7824 | 12 149 | 10 287 | 3,90 | **1,81** | 4,75 | **2,21** | 1,28 | 2,0 |
-| arcanist.arcanistOverload · runestaff · 100 | 4021 | 19 043 | 24 420 | 16 755 | 29 182 | 21 866 | 4,17 | **1,94** | 6,07 | **2,82** | 1,19 | 2,0 |
+| arcanist.arcanistOverload · runestaff · 70 | 2004 | 8132 | 9517 | 7824 → 7908 | 12 149 | 10 287 → 10 371 | 3,90 → 3,95 | **1,81 → 1,83** | 4,75 | **2,21** | 1,28 | 2,0 |
+| arcanist.arcanistOverload · runestaff · 100 | 4021 | 19 043 | 24 420 | 16 755 → 17 639 | 29 182 | 21 866 → 22 586 | 4,17 → 4,39 | **1,94 → 2,04** | 6,07 | **2,82** | 1,19 | 2,0 |
 | arcanist.arcanistFire · runestaff · 20 | 213 | 521 | 489 | 519 | 614 | 655 | 2,44 | 1,00 | 2,29 | 1,00 | 1,26 | 2,0 |
-| arcanist.arcanistFire · runestaff · 45 | 873 | 4299 | 4213 | 4180 | 5639 | 5234 | 4,79 | **1,96** | 4,82 | **2,10** | 1,34 | 2,0 |
-| arcanist.arcanistFire · runestaff · 70 | 2004 | 12 023 | 10 672 | 11 676 | 15 720 | 15 099 | 5,83 | **2,39** | 5,32 | **2,32** | 1,47 | 2,0 |
-| arcanist.arcanistFire · runestaff · 100 | 4021 | 24 529 | 24 352 | 25 209 | 27 871 | 32 971 | 6,27 | **2,57** | 6,06 | **2,64** | 1,14 | 2,0 |
+| arcanist.arcanistFire · runestaff · 45 | 873 | 4299 | 4213 | 4180 → 4277 | 5639 | 5234 → 5357 | 4,79 → 4,90 | **1,96 → 2,01** | 4,82 | **2,10** | 1,34 | 2,0 |
+| arcanist.arcanistFire · runestaff · 70 | 2004 | 12 023 | 10 672 | 11 676 → 11 835 | 15 720 | 15 099 → 15 325 | 5,83 → 5,91 | **2,39 → 2,42** | 5,32 | **2,32** | 1,47 | 2,0 |
+| arcanist.arcanistFire · runestaff · 100 | 4021 | 24 529 → 26 894 | 24 352 → 30 303 | 25 209 → 26 497 | 27 871 → 33 821 | 32 971 → 34 467 | 6,27 → 6,59 | **2,57 → 2,70** | 6,06 → 7,54 | **2,64 → 3,29** | 1,14 → 1,12 | 2,0 |
 | arcanist.arcanistIce · runestaff · 20 | 213 | 463 | 453 | 461 | 629 | 606 | 2,16 | 1,00 | 2,13 | 1,00 | 1,39 | 2,0 |
-| arcanist.arcanistIce · runestaff · 45 | 873 | 3781 | 3951 | 3673 | 5262 | 4658 | 4,21 | **1,94** | 4,52 | **2,13** | 1,33 | 2,0 |
-| arcanist.arcanistIce · runestaff · 70 | 2004 | 9848 | 10 772 | 9586 | 13 784 | 11 832 | 4,78 | **2,21** | 5,37 | **2,53** | 1,28 | 2,0 |
-| arcanist.arcanistIce · runestaff · 100 | 4021 | 21 596 | 25 734 | 20 730 | 27 674 | 26 695 | 5,15 | **2,38** | 6,40 | **3,01** | 1,08 | 2,0 |
+| arcanist.arcanistIce · runestaff · 45 | 873 | 3781 → 3868 | 3951 → 4077 | 3673 → 3832 | 5262 → 5388 | 4658 → 4845 | 4,21 → 4,39 | **1,94 → 2,03** | 4,52 → 4,67 | **2,13 → 2,19** | 1,33 → 1,32 | 2,0 |
+| arcanist.arcanistIce · runestaff · 70 | 2004 | 9848 → 10 413 | 10 772 → 12 168 | 9586 → 10 218 | 13 784 → 15 813 | 11 832 → 12 866 | 4,78 → 5,10 | **2,21 → 2,35** | 5,37 → 6,07 | **2,53 → 2,85** | 1,28 → 1,30 | 2,0 |
+| arcanist.arcanistIce · runestaff · 100 | 4021 | 21 596 → 25 796 | 25 734 → 36 389 | 20 730 → 23 220 | 27 674 → 38 329 | 26 695 → 26 234 | 5,15 → 5,77 | **2,38 → 2,67** | 6,40 → 9,05 | **3,01 → 4,25** | 1,08 → 1,05 | 2,0 |
 | arcanist.arcanistLightning · runestaff · 20 | 213 | 579 | 541 | 575 | 634 | 678 | 2,70 | 1,00 | 2,54 | 1,00 | 1,17 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 45 | 873 | 4944 | 5064 | 4778 | 6413 | 6203 | 5,47 | **2,03** | 5,80 | **2,28** | 1,27 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 70 | 2004 | 13 756 | 14 728 | 13 148 | 18 858 | 17 410 | 6,56 | **2,43** | 7,35 | **2,89** | 1,28 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 100 | 4021 | 26 475 | 25 602 | 26 397 | 38 460 | 40 483 | 6,56 | **2,43** | 6,37 | **2,51** | 1,50 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 45 | 873 | 4944 → 4974 | 5064 → 5094 | 4778 → 4893 | 6413 → 6443 | 6203 → 6351 | 5,47 → 5,60 | **2,03 → 2,07** | 5,80 → 5,83 | **2,28 → 2,30** | 1,27 → 1,26 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 70 | 2004 | 13 756 → 14 025 | 14 728 → 14 998 | 13 148 → 13 811 | 18 858 → 20 691 | 17 410 → 19 735 | 6,56 → 6,89 | **2,43 → 2,55** | 7,35 → 7,48 | **2,89 → 2,95** | 1,28 → 1,38 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 100 | 4021 | 26 475 → 30 579 | 25 602 → 33 701 | 26 397 → 29 544 | 38 460 → 49 663 | 40 483 → 46 601 | 6,56 → 7,35 | **2,43 → 2,72** | 6,37 → 8,38 | **2,51 → 3,30** | 1,50 → 1,47 | 2,0 |
 
 ### T-SK1–3: Kapłan
 
@@ -13468,8 +13561,8 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | build · broń · poziom | atak podst. | na odnowieniu | wybuch 8 s | 60 s | obszar 3 · 8 s | obszar 3 · 60 s | T-SK1 | T-SK1 / L20 | T-SK2 | T-SK2 / L20 | T-SK3 | areaCap |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · mace1h + shield · 20 | 122 | 239 | 256 | 239 | 457 | 408 | 1,96 | 1,00 | 2,10 | 1,00 | 1,79 | 2,0 |
-| base · mace1h + shield · 45 | 450 | 1521 → 1477 | 1784 → 1722 | 1521 → 1477 | 2719 → 2656 | 2320 → 2276 | 3,38 → 3,28 | **1,72 → 1,67** | 3,96 → 3,82 | **1,89 → 1,82** | 1,52 → 1,54 | 2,0 |
-| base · mace1h + shield · 70 | 976 | 3578 → 3572 | 4318 → 4307 | 3578 → 3572 | 6862 → 6850 | 5724 → 5718 | 3,67 → 3,66 | **1,87** | 4,43 → 4,41 | **2,10** | 1,59 | 2,0 |
+| base · mace1h + shield · 45 | 450 | 1477 | 1722 | 1477 | 2656 | 2276 | 3,28 | **1,67** | 3,82 | **1,82** | 1,54 | 2,0 |
+| base · mace1h + shield · 70 | 976 | 3572 | 4307 | 3572 | 6850 | 5718 | 3,66 | **1,87** | 4,41 | **2,10** | 1,59 | 2,0 |
 | base · mace1h + shield · 100 | 1878 | 7225 | 8941 | 7225 | 19 802 | 13 876 | 3,85 | **1,96** | 4,76 | **2,26** | **2,21** | 2,0 |
 | healer.dungeon · scepter + shield · 20 | 120 | 217 | 229 | 217 | 229 | 217 | 1,80 | 1,00 | 1,90 | 1,00 | 1,00 | 2,0 |
 | healer.dungeon · scepter + shield · 45 | 450 | 1108 | 1190 | 1108 | 1190 | 1108 | 2,46 | **1,37** | 2,65 | **1,39** | 1,00 | 2,0 |
@@ -13480,17 +13573,17 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | healer.solo · holystaff · 70 | 1060 | 2784 | 2990 | 2784 | 4559 | 3859 | 2,63 | **1,40** | 2,82 | **1,40** | 1,52 | 2,0 |
 | healer.solo · holystaff · 100 | 2043 | 5369 | 5767 | 5369 | 8792 | 7442 | 2,63 | **1,40** | 2,82 | **1,40** | 1,52 | 2,0 |
 | fortune.plunder · mace1h + relic · 20 | 132 | 261 | 280 | 261 | 518 | 441 | 1,98 | 1,00 | 2,12 | 1,00 | 1,85 | 2,0 |
-| fortune.plunder · mace1h + relic · 45 | 481 | 1576 → 1540 | 1753 → 1709 | 1576 → 1540 | 3307 → 3263 | 2742 → 2706 | 3,27 → 3,20 | **1,65 → 1,62** | 3,64 → 3,55 | **1,72 → 1,67** | 1,89 → 1,91 | 2,0 |
-| fortune.plunder · mace1h + relic · 70 | 1049 | 4004 → 4430 | 4488 → 5209 | 4004 → 4430 | 8575 → 8011 | 7068 → 7947 | 3,82 → 4,22 | **1,93 → 2,13** | 4,28 → 4,97 | **2,02 → 2,34** | 1,91 → 1,54 | 2,0 |
-| fortune.plunder · mace1h + relic · 100 | 2031 | 8603 → 9890 | 10 108 → 11 718 | 8603 → 9890 | 15 451 → 17 300 | 15 331 → 17 674 | 4,24 → 4,87 | **2,14 → 2,46** | 4,98 → 5,77 | **2,34 → 2,72** | 1,53 → 1,48 | 2,0 |
+| fortune.plunder · mace1h + relic · 45 | 481 | 1540 | 1709 | 1540 | 3263 | 2706 | 3,20 | **1,62** | 3,55 | **1,67** | 1,91 | 2,0 |
+| fortune.plunder · mace1h + relic · 70 | 1049 | 4430 | 5209 | 4430 | 8011 | 7947 | 4,22 | **2,13** | 4,97 | **2,34** | 1,54 | 2,0 |
+| fortune.plunder · mace1h + relic · 100 | 2031 | 9890 | 11 718 | 9890 | 17 300 | 17 674 | 4,87 | **2,46** | 5,77 | **2,72** | 1,48 | 2,0 |
 | inquisitor.solo · mace1h + relic · 20 | 110 | 231 | 248 | 231 | 366 | 325 | 2,09 | 1,00 | 2,25 | 1,00 | 1,48 | 2,0 |
-| inquisitor.solo · mace1h + relic · 45 | 365 | 1632 → 1589 | 1915 → 1854 | 1632 → 1589 | 2772 → 2711 | 2317 → 2275 | 4,47 → 4,35 | **2,14 → 2,08** | 5,25 → 5,08 | **2,33 → 2,26** | 1,45 → 1,46 | 2,0 |
-| inquisitor.solo · mace1h + relic · 70 | 788 | 4193 → 4228 | 5086 → 5125 | 4193 → 4228 | 8941 → 9019 | 6917 → 6982 | 5,32 → 5,37 | **2,55 → 2,57** | 6,46 → 6,51 | **2,87 → 2,90** | 1,76 | 2,0 |
-| inquisitor.solo · mace1h + relic · 100 | 1488 | 8790 → 9202 | 10 487 → 10 595 | 8790 → 9202 | 25 468 → 19 864 | 18 234 → 15 553 | 5,91 → 6,18 | **2,83 → 2,96** | 7,05 → 7,12 | **3,14 → 3,17** | 2,43 → 1,87 | 2,0 |
+| inquisitor.solo · mace1h + relic · 45 | 365 | 1589 | 1854 | 1589 | 2711 | 2275 | 4,35 | **2,08** | 5,08 | **2,26** | 1,46 | 2,0 |
+| inquisitor.solo · mace1h + relic · 70 | 788 | 4228 | 5125 | 4228 | 9019 | 6982 | 5,37 | **2,57** | 6,51 | **2,90** | 1,76 | 2,0 |
+| inquisitor.solo · mace1h + relic · 100 | 1488 | 9202 | 10 595 | 9202 | 19 864 | 15 553 | 6,18 | **2,96** | 7,12 | **3,17** | 1,87 | 2,0 |
 | inquisitor.bulwark · mace1h + shield · 20 | 105 | 220 | 237 | 220 | 350 | 311 | 2,09 | 1,00 | 2,25 | 1,00 | 1,48 | 2,0 |
-| inquisitor.bulwark · mace1h + shield · 45 | 346 | 1468 → 1429 | 1719 → 1665 | 1468 → 1429 | 2471 → 2417 | 2070 → 2031 | 4,24 → 4,13 | **2,03 → 1,98** | 4,97 → 4,81 | **2,21 → 2,14** | 1,44 → 1,45 | 2,0 |
-| inquisitor.bulwark · mace1h + shield · 70 | 743 | 3772 → 3805 | 4563 → 4601 | 3772 → 3805 | 7957 → 8033 | 6169 → 6232 | 5,07 → 5,12 | **2,43 → 2,45** | 6,14 → 6,19 | **2,73 → 2,75** | 1,74 → 1,75 | 2,0 |
-| inquisitor.bulwark · mace1h + shield · 100 | 1396 | 7859 → 8231 | 9359 → 9460 | 7859 → 8231 | 22 538 → 17 636 | 16 173 → 13 844 | 5,63 → 5,90 | **2,69 → 2,82** | 6,70 → 6,78 | **2,98 → 3,01** | 2,41 → 1,86 | 2,0 |
+| inquisitor.bulwark · mace1h + shield · 45 | 346 | 1429 | 1665 | 1429 | 2417 | 2031 | 4,13 | **1,98** | 4,81 | **2,14** | 1,45 | 2,0 |
+| inquisitor.bulwark · mace1h + shield · 70 | 743 | 3805 | 4601 | 3805 | 8033 | 6232 | 5,12 | **2,45** | 6,19 | **2,75** | 1,75 | 2,0 |
+| inquisitor.bulwark · mace1h + shield · 100 | 1396 | 8231 | 9460 | 8231 | 17 636 | 13 844 | 5,90 | **2,82** | 6,78 | **3,01** | 1,86 | 2,0 |
 
 ### Mag: żywioły broni
 
@@ -13501,75 +13594,75 @@ Rozbicie średniej Maga na żywioł broni (`GearOpts.element`, pula `SkillPools.
 | base · 20 · fire | 451 | 444 | 667 | 2,60 | 2,57 | 1,50 | 3,40 |
 | base · 20 · ice | 377 | 403 | 611 | 2,18 | 2,33 | 1,51 | 2,60 |
 | base · 20 · lightning | 477 | 482 | 565 | 2,75 | 2,79 | 1,17 | 3,37 |
-| base · 45 · fire | 2900 | 3181 | 5473 | 4,26 | 4,68 | 1,72 | 3,41 |
-| base · 45 · ice | 2509 | 3160 | 5105 | 3,69 | 4,65 | 1,62 | 3,10 |
-| base · 45 · lightning | 3269 | 3694 | 5507 | 4,81 | 5,43 | 1,49 | 3,51 |
-| base · 70 · fire | 7456 | 8486 | 15 389 | 4,82 | 5,48 | 1,81 | 3,73 |
-| base · 70 · ice | 6911 | 8697 | 15 109 | 4,46 | 5,62 | 1,74 | 2,82 |
-| base · 70 · lightning | 8634 | 11 549 | 16 980 | 5,58 | 7,46 | 1,47 | 3,71 |
-| base · 100 · fire | 17 929 | 19 994 | 38 326 | 5,88 | 6,55 | 1,92 | 2,58 |
-| base · 100 · ice | 14 207 | 17 647 | 30 565 | 4,66 | 5,78 | 1,73 | 2,54 |
-| base · 100 · lightning | 19 760 | 26 262 | 42 947 | 6,48 | 8,61 | 1,64 | 3,44 |
+| base · 45 · fire | 2900 → 2916 | 3181 | 5473 → 5488 | 4,26 → 4,29 | 4,68 | 1,72 → 1,73 | 3,41 → 1,98 |
+| base · 45 · ice | 2509 → 2613 | 3160 → 3268 | 5105 → 5216 | 3,69 → 3,84 | 4,65 → 4,81 | 1,62 → 1,60 | 3,10 → 2,42 |
+| base · 45 · lightning | 3269 → 3347 | 3694 → 3719 | 5507 → 5536 | 4,81 → 4,92 | 5,43 → 5,47 | 1,49 | 3,51 → 2,04 |
+| base · 70 · fire | 7456 → 7700 | 8486 → 9486 | 15 389 → 18 959 | 4,82 → 4,97 | 5,48 → 6,13 | 1,81 → 2,00 | 3,73 → 2,63 |
+| base · 70 · ice | 6911 → 7316 | 8697 → 9100 | 15 109 → 15 555 | 4,46 → 4,73 | 5,62 → 5,88 | 1,74 → 1,71 | 2,82 → 2,26 |
+| base · 70 · lightning | 8634 → 8682 | 11 549 → 11 300 | 16 980 → 16 732 | 5,58 → 5,61 | 7,46 → 7,30 | 1,47 → 1,48 | 3,71 → 3,22 |
+| base · 100 · fire | 17 929 → 18 973 | 19 994 → 24 342 | 38 326 → 52 651 | 5,88 → 6,22 | 6,55 → 7,98 | 1,92 → 2,16 | 2,58 → 1,92 |
+| base · 100 · ice | 14 207 → 16 567 | 17 647 → 20 393 | 30 565 → 33 637 | 4,66 → 5,43 | 5,78 → 6,68 | 1,73 → 1,65 | 2,54 → 2,18 |
+| base · 100 · lightning | 19 760 → 20 998 | 26 262 → 26 247 | 42 947 → 44 965 | 6,48 → 6,88 | 8,61 → 8,60 | 1,64 → 1,71 | 3,44 → 2,47 |
 | base.loadout · 20 · fire | 513 | 519 | 754 | 2,32 | 2,34 | 1,45 | 3,40 |
 | base.loadout · 20 · ice | 384 | 391 | 634 | 2,06 | 2,09 | 1,62 | 2,60 |
 | base.loadout · 20 · lightning | 530 | 534 | 652 | 2,56 | 2,58 | 1,22 | 3,37 |
-| base.loadout · 45 · fire | 3186 | 3463 | 5884 | 3,65 | 3,97 | 1,70 | 3,41 |
-| base.loadout · 45 · ice | 2577 | 3116 | 5455 | 3,51 | 4,24 | 1,75 | 4,17 |
-| base.loadout · 45 · lightning | 3568 | 4006 | 6060 | 4,39 | 4,92 | 1,51 | 2,75 |
-| base.loadout · 70 · fire | 8228 | 9423 | 16 742 | 4,12 | 4,72 | 1,78 | 2,81 |
-| base.loadout · 70 · ice | 6940 | 8628 | 16 188 | 4,13 | 5,13 | 1,88 | 3,54 |
-| base.loadout · 70 · lightning | 9417 | 12 461 | 18 524 | 5,05 | 6,69 | 1,49 | 3,71 |
-| base.loadout · 100 · fire | 19 807 | 22 245 | 41 881 | 4,99 | 5,60 | 1,88 | 3,27 |
-| base.loadout · 100 · ice | 14 631 | 17 681 | 32 993 | 4,38 | 5,29 | 1,87 | 3,25 |
-| base.loadout · 100 · lightning | 21 663 | 28 509 | 47 013 | 5,85 | 7,70 | 1,65 | 5,00 |
+| base.loadout · 45 · fire | 3186 → 3177 | 3463 | 5884 → 5899 | 3,65 → 3,64 | 3,97 | 1,70 | 3,41 → 1,98 |
+| base.loadout · 45 · ice | 2577 → 2659 | 3116 → 3224 | 5455 → 5574 | 3,51 → 3,62 | 4,24 → 4,39 | 1,75 → 1,73 | 4,17 → 2,42 |
+| base.loadout · 45 · lightning | 3568 → 3651 | 4006 → 4033 | 6060 → 6090 | 4,39 → 4,49 | 4,92 → 4,96 | 1,51 | 2,75 → 1,60 |
+| base.loadout · 70 · fire | 8228 → 8465 | 9423 → 10 462 | 16 742 → 20 469 | 4,12 → 4,24 | 4,72 → 5,23 | 1,78 → 1,96 | 2,81 → 2,57 |
+| base.loadout · 70 · ice | 6940 → 7462 | 8628 → 9012 | 16 188 → 16 669 | 4,13 → 4,44 | 5,13 → 5,36 | 1,88 → 1,85 | 3,54 → 2,84 |
+| base.loadout · 70 · lightning | 9417 → 9470 | 12 461 → 12 203 | 18 524 → 18 268 | 5,05 → 5,08 | 6,69 → 6,55 | 1,49 → 1,50 | 3,71 → 3,22 |
+| base.loadout · 100 · fire | 19 807 → 20 823 | 22 245 → 26 845 | 41 881 → 57 062 | 4,99 → 5,24 | 5,60 → 6,76 | 1,88 → 2,13 | 3,27 → 2,55 |
+| base.loadout · 100 · ice | 14 631 → 16 783 | 17 681 → 20 572 | 32 993 → 36 340 | 4,38 → 5,02 | 5,29 → 6,16 | 1,87 → 1,77 | 3,25 → 2,18 |
+| base.loadout · 100 · lightning | 21 663 → 23 006 | 28 509 → 28 520 | 47 013 → 49 219 | 5,85 → 6,22 | 7,70 → 7,71 | 1,65 → 1,73 | 5,00 → 3,60 |
 | destroyer.destroyerExp · 20 · fire | 365 | 352 | 489 | 2,11 | 2,03 | 1,39 | 1,90 |
 | destroyer.destroyerExp · 20 · ice | 297 | 305 | 423 | 1,72 | 1,76 | 1,39 | 0,82 |
 | destroyer.destroyerExp · 20 · lightning | 395 | 389 | 462 | 2,28 | 2,25 | 1,19 | 1,90 |
-| destroyer.destroyerExp · 45 · fire | 2334 | 2265 | 4655 | 3,09 | 3,00 | 2,06 | 2,78 |
-| destroyer.destroyerExp · 45 · ice | 1685 | 1757 | 3451 | 2,23 | 2,33 | 1,96 | 0,72 |
-| destroyer.destroyerExp · 45 · lightning | 2863 | 3115 | 4908 | 3,79 | 4,13 | 1,58 | 2,44 |
-| destroyer.destroyerExp · 70 · fire | 5805 | 6963 | 16 555 | 3,43 | 4,12 | 2,38 | 2,11 |
-| destroyer.destroyerExp · 70 · ice | 3955 | 4602 | 10 617 | 2,34 | 2,72 | 2,31 | 0,86 |
-| destroyer.destroyerExp · 70 · lightning | 7310 | 9565 | 18 637 | 4,32 | 5,66 | 1,95 | 2,13 |
-| destroyer.destroyerExp · 100 · fire | 11 840 | 15 186 | 38 420 | 3,56 | 4,56 | 2,53 | 1,87 |
-| destroyer.destroyerExp · 100 · ice | 8061 | 10 092 | 24 976 | 2,42 | 3,03 | 2,47 | 0,77 |
-| destroyer.destroyerExp · 100 · lightning | 14 718 | 20 033 | 43 372 | 4,42 | 6,02 | 2,17 | 1,51 |
+| destroyer.destroyerExp · 45 · fire | 2334 | 2265 | 4655 → 4674 | 3,09 | 3,00 | 2,06 | 2,78 → 1,61 |
+| destroyer.destroyerExp · 45 · ice | 1685 | 1757 | 3451 | 2,23 | 2,33 | 1,96 | 0,72 → 0,42 |
+| destroyer.destroyerExp · 45 · lightning | 2863 | 3115 | 4908 | 3,79 | 4,13 | 1,58 | 2,44 → 1,41 |
+| destroyer.destroyerExp · 70 · fire | 5805 → 5939 | 6963 → 8376 | 16 555 → 21 136 | 3,43 → 3,51 | 4,12 → 4,95 | 2,38 → 2,52 | 2,11 → 2,40 |
+| destroyer.destroyerExp · 70 · ice | 3955 | 4602 | 10 617 | 2,34 | 2,72 | 2,31 | 0,86 → 0,92 |
+| destroyer.destroyerExp · 70 · lightning | 7310 | 9565 | 18 637 | 4,32 | 5,66 | 1,95 | 2,13 → 1,90 |
+| destroyer.destroyerExp · 100 · fire | 11 840 → 13 244 | 15 186 → 20 322 | 38 420 → 55 364 | 3,56 → 3,98 | 4,56 → 6,11 | 2,53 → 2,72 | 1,87 → 2,21 |
+| destroyer.destroyerExp · 100 · ice | 8061 | 10 092 | 24 976 | 2,42 | 3,03 | 2,47 | 0,77 → 0,69 |
+| destroyer.destroyerExp · 100 · lightning | 14 718 | 20 033 | 43 372 | 4,42 | 6,02 | 2,17 | 1,51 → 1,12 |
 | destroyer.destroyerBoss · 20 · fire | 429 | 423 | 605 | 2,48 | 2,44 | 1,43 | 3,48 |
 | destroyer.destroyerBoss · 20 · ice | 358 | 409 | 487 | 2,07 | 2,36 | 1,19 | 2,19 |
 | destroyer.destroyerBoss · 20 · lightning | 456 | 461 | 546 | 2,64 | 2,66 | 1,18 | 3,37 |
-| destroyer.destroyerBoss · 45 · fire | 3638 | 3839 | 6664 | 4,82 | 5,09 | 1,74 | 3,60 |
-| destroyer.destroyerBoss · 45 · ice | 2541 | 2867 | 3859 | 3,37 | 3,80 | 1,35 | 2,14 |
-| destroyer.destroyerBoss · 45 · lightning | 3598 | 3988 | 5695 | 4,77 | 5,28 | 1,43 | 3,53 |
-| destroyer.destroyerBoss · 70 · fire | 9649 | 10 439 | 21 862 | 5,71 | 6,17 | 2,09 | 2,13 |
-| destroyer.destroyerBoss · 70 · ice | 6178 | 7784 | 12 453 | 3,65 | 4,60 | 1,60 | 1,82 |
-| destroyer.destroyerBoss · 70 · lightning | 9685 | 10 679 | 19 821 | 5,73 | 6,32 | 1,86 | 2,12 |
-| destroyer.destroyerBoss · 100 · fire | 19 606 | 22 352 | 50 038 | 5,89 | 6,72 | 2,24 | 1,90 |
-| destroyer.destroyerBoss · 100 · ice | 12 442 | 16 674 | 29 512 | 3,74 | 5,01 | 1,77 | 1,66 |
-| destroyer.destroyerBoss · 100 · lightning | 19 653 | 22 818 | 48 299 | 5,91 | 6,86 | 2,12 | 1,54 |
+| destroyer.destroyerBoss · 45 · fire | 3638 | 3839 | 6664 | 4,82 | 5,09 | 1,74 | 3,60 → 2,09 |
+| destroyer.destroyerBoss · 45 · ice | 2541 → 2556 | 2867 → 2889 | 3859 → 3884 | 3,37 → 3,39 | 3,80 → 3,83 | 1,35 → 1,34 | 2,14 → 1,24 |
+| destroyer.destroyerBoss · 45 · lightning | 3598 → 3625 | 3988 → 4016 | 5695 → 5728 | 4,77 → 4,80 | 5,28 → 5,32 | 1,43 | 3,53 → 2,04 |
+| destroyer.destroyerBoss · 70 · fire | 9649 → 9954 | 10 439 → 11 832 | 21 862 → 26 577 | 5,71 → 5,89 | 6,17 → 7,00 | 2,09 → 2,25 | 2,13 → 2,61 |
+| destroyer.destroyerBoss · 70 · ice | 6178 → 6280 | 7784 → 7937 | 12 453 → 12 627 | 3,65 → 3,71 | 4,60 → 4,69 | 1,60 → 1,59 | 1,82 → 1,56 |
+| destroyer.destroyerBoss · 70 · lightning | 9685 → 9872 | 10 679 → 10 879 | 19 821 → 20 119 | 5,73 → 5,84 | 6,32 → 6,43 | 1,86 → 1,85 | 2,12 → 1,72 |
+| destroyer.destroyerBoss · 100 · fire | 19 606 → 20 850 | 22 352 → 26 808 | 50 038 → 65 471 | 5,89 → 6,27 | 6,72 → 8,06 | 2,24 → 2,44 | 1,90 → 1,60 |
+| destroyer.destroyerBoss · 100 · ice | 12 442 → 12 629 | 16 674 → 16 975 | 29 512 → 29 855 | 3,74 → 3,80 | 5,01 → 5,10 | 1,77 → 1,76 | 1,66 → 1,19 |
+| destroyer.destroyerBoss · 100 · lightning | 19 653 → 20 020 | 22 818 → 23 212 | 48 299 → 48 936 | 5,91 → 6,02 | 6,86 → 6,98 | 2,12 → 2,11 | 1,54 → 1,04 |
 | arcanist.arcanistBoss · 20 · fire | 479 | 469 | 594 | 2,25 | 2,20 | 1,27 | 1,78 |
 | arcanist.arcanistBoss · 20 · ice | 394 | 424 | 503 | 1,85 | 1,99 | 1,19 | 1,18 |
 | arcanist.arcanistBoss · 20 · lightning | 502 | 484 | 577 | 2,36 | 2,27 | 1,19 | 1,64 |
-| arcanist.arcanistBoss · 45 · fire | 3370 | 3374 | 4718 | 3,86 | 3,86 | 1,40 | 2,37 |
-| arcanist.arcanistBoss · 45 · ice | 2449 | 2476 | 2959 | 2,80 | 2,84 | 1,19 | 1,32 |
-| arcanist.arcanistBoss · 45 · lightning | 3539 | 3932 | 5540 | 4,05 | 4,50 | 1,41 | 2,11 |
-| arcanist.arcanistBoss · 70 · fire | 8300 | 9227 | 12 939 | 4,14 | 4,60 | 1,40 | 2,33 |
-| arcanist.arcanistBoss · 70 · ice | 6142 | 7972 | 9149 | 3,06 | 3,98 | 1,15 | 1,62 |
-| arcanist.arcanistBoss · 70 · lightning | 9240 | 11 384 | 14 390 | 4,61 | 5,68 | 1,26 | 2,12 |
-| arcanist.arcanistBoss · 100 · fire | 17 875 | 24 753 | 31 859 | 4,44 | 6,16 | 1,29 | 2,41 |
-| arcanist.arcanistBoss · 100 · ice | 14 414 | 21 349 | 23 713 | 3,58 | 5,31 | 1,11 | 1,75 |
-| arcanist.arcanistBoss · 100 · lightning | 19 520 | 27 252 | 32 067 | 4,85 | 6,78 | 1,18 | 2,17 |
+| arcanist.arcanistBoss · 45 · fire | 3370 → 3415 | 3374 | 4718 | 3,86 → 3,91 | 3,86 | 1,40 | 2,37 → 1,38 |
+| arcanist.arcanistBoss · 45 · ice | 2449 | 2476 | 2959 | 2,80 | 2,84 | 1,19 | 1,32 → 0,77 |
+| arcanist.arcanistBoss · 45 · lightning | 3539 → 3565 | 3932 | 5540 | 4,05 → 4,08 | 4,50 | 1,41 | 2,11 → 1,22 |
+| arcanist.arcanistBoss · 70 · fire | 8300 → 8369 | 9227 | 12 939 | 4,14 → 4,18 | 4,60 | 1,40 | 2,33 → 1,87 |
+| arcanist.arcanistBoss · 70 · ice | 6142 → 6450 | 7972 | 9149 | 3,06 → 3,22 | 3,98 | 1,15 | 1,62 → 1,36 |
+| arcanist.arcanistBoss · 70 · lightning | 9240 → 9155 | 11 384 | 14 390 | 4,61 → 4,57 | 5,68 | 1,26 | 2,12 → 1,71 |
+| arcanist.arcanistBoss · 100 · fire | 17 875 → 18 698 | 24 753 | 31 859 | 4,44 → 4,65 | 6,16 | 1,29 | 2,41 → 1,80 |
+| arcanist.arcanistBoss · 100 · ice | 14 414 → 15 865 | 21 349 | 23 713 | 3,58 → 3,95 | 5,31 | 1,11 | 1,75 → 1,41 |
+| arcanist.arcanistBoss · 100 · lightning | 19 520 → 20 685 | 27 252 | 32 067 | 4,85 → 5,14 | 6,78 | 1,18 | 2,17 → 1,65 |
 | arcanist.arcanistOverload · 20 · fire | 479 | 469 | 593 | 2,25 | 2,20 | 1,27 | 1,95 |
 | arcanist.arcanistOverload · 20 · ice | 394 | 424 | 503 | 1,85 | 1,99 | 1,19 | 1,29 |
 | arcanist.arcanistOverload · 20 · lightning | 502 | 484 | 577 | 2,36 | 2,27 | 1,19 | 1,79 |
-| arcanist.arcanistOverload · 45 · fire | 3412 | 3371 | 4715 | 3,91 | 3,86 | 1,40 | 3,01 |
-| arcanist.arcanistOverload · 45 · ice | 2447 | 2474 | 2957 | 2,80 | 2,83 | 1,20 | 1,68 |
-| arcanist.arcanistOverload · 45 · lightning | 3562 | 3929 | 5537 | 4,08 | 4,50 | 1,41 | 2,68 |
-| arcanist.arcanistOverload · 70 · fire | 8358 | 9218 | 12 929 | 4,17 | 4,60 | 1,40 | 2,96 |
-| arcanist.arcanistOverload · 70 · ice | 5882 | 7962 | 9139 | 2,93 | 3,97 | 1,15 | 2,06 |
-| arcanist.arcanistOverload · 70 · lightning | 9231 | 11 373 | 14 378 | 4,61 | 5,67 | 1,26 | 2,69 |
-| arcanist.arcanistOverload · 100 · fire | 17 856 | 24 722 | 31 828 | 4,44 | 6,15 | 1,29 | 3,06 |
-| arcanist.arcanistOverload · 100 · ice | 12 908 | 21 319 | 23 684 | 3,21 | 5,30 | 1,11 | 2,22 |
-| arcanist.arcanistOverload · 100 · lightning | 19 501 | 27 219 | 32 034 | 4,85 | 6,77 | 1,18 | 2,76 |
+| arcanist.arcanistOverload · 45 · fire | 3412 | 3371 | 4715 | 3,91 | 3,86 | 1,40 | 3,01 → 1,75 |
+| arcanist.arcanistOverload · 45 · ice | 2447 | 2474 | 2957 | 2,80 | 2,83 | 1,20 | 1,68 → 0,97 |
+| arcanist.arcanistOverload · 45 · lightning | 3562 | 3929 | 5537 | 4,08 | 4,50 | 1,41 | 2,68 → 1,55 |
+| arcanist.arcanistOverload · 70 · fire | 8358 | 9218 | 12 929 | 4,17 | 4,60 | 1,40 | 2,96 → 2,38 |
+| arcanist.arcanistOverload · 70 · ice | 5882 → 6136 | 7962 | 9139 | 2,93 → 3,06 | 3,97 | 1,15 | 2,06 → 1,72 |
+| arcanist.arcanistOverload · 70 · lightning | 9231 | 11 373 | 14 378 | 4,61 | 5,67 | 1,26 | 2,69 → 2,17 |
+| arcanist.arcanistOverload · 100 · fire | 17 856 | 24 722 | 31 828 | 4,44 | 6,15 | 1,29 | 3,06 → 2,29 |
+| arcanist.arcanistOverload · 100 · ice | 12 908 → 14 398 | 21 319 | 23 684 | 3,21 → 3,58 | 5,30 | 1,11 | 2,22 → 1,79 |
+| arcanist.arcanistOverload · 100 · lightning | 19 501 → 20 663 | 27 219 | 32 034 | 4,85 → 5,14 | 6,77 | 1,18 | 2,76 → 2,10 |
 
 ### Zasoby: Wojownik
 
@@ -13582,33 +13675,33 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | base · 70 | 170 | 8,0 | 12,4 | 1,55 | 4050 | 4591 | 1,0 | 12 | 23 |
 | base · 100 | 200 | 8,0 | 19,9 | 2,49 | 7770 | 10 831 | 3,0 | 12 | 38 |
 | base.loadout · 20 | 120 | 8,0 | 14,2 | 1,77 | 273 | 330 | 4,0 | 10 | 0 |
-| base.loadout · 45 | 145 | 8,0 | 14,2 | 1,77 | 1234 → 1199 | 1518 → 1477 | 2,0 | 12 | 10 |
-| base.loadout · 70 | 170 | 8,0 | 16,1 | 2,01 | 2754 → 2677 | 3624 → 3533 | 3,0 | 12 | 23 |
-| base.loadout · 100 | 200 | 8,0 | 21,1 | 2,64 | 5421 → 5271 | 8272 → 8094 | 4,0 | 12 | 38 |
+| base.loadout · 45 | 145 | 8,0 | 14,2 | 1,77 | 1199 | 1477 | 2,0 | 12 | 10 |
+| base.loadout · 70 | 170 | 8,0 | 16,1 | 2,01 | 2677 | 3533 | 3,0 | 12 | 23 |
+| base.loadout · 100 | 200 | 8,0 | 21,1 | 2,64 | 5271 | 8094 | 4,0 | 12 | 38 |
 | guardian.defender · 20 | 120 | 8,0 | 12,5 | 1,56 | 233 | 266 | 3,0 | 10 | 0 |
-| guardian.defender · 45 | 145 | 8,0 | 12,5 | 1,56 | 949 → 922 | 1083 → 1053 | 2,0 | 22 | 0 |
-| guardian.defender · 70 | 170 | 8,0 | 15,8 → 16,5 | 1,98 → 2,06 | 2459 → 2093 | 3058 → 2733 | 3,0 | 35 | 0 |
-| guardian.defender · 100 | 200 | 8,0 | 19,8 → 17,2 | 2,47 → 2,15 | 4657 → 4108 | 6402 → 5265 | 4,0 → 3,0 | 50 | 0 |
+| guardian.defender · 45 | 145 | 8,0 | 12,5 | 1,56 | 922 | 1053 | 2,0 | 22 | 0 |
+| guardian.defender · 70 | 170 | 8,0 | 16,5 | 2,06 | 2093 | 2733 | 3,0 | 35 | 0 |
+| guardian.defender · 100 | 200 | 8,0 | 17,2 | 2,15 | 4108 | 5265 | 3,0 | 50 | 0 |
 | guardian.loner · 20 | 120 | 8,0 | 13,8 | 1,73 | 220 | 266 | 4,0 | 10 | 0 |
-| guardian.loner · 45 | 145 | 8,0 | 14,2 | 1,77 | 866 → 838 | 1083 → 1053 | 2,0 | 22 | 0 |
-| guardian.loner · 70 | 170 | 8,0 | 17,5 → 18,2 | 2,19 → 2,27 | 2200 → 1918 | 3059 → 2733 | 3,0 | 35 | 0 |
-| guardian.loner · 100 | 200 | 8,0 | 21,4 → 18,8 | 2,68 → 2,35 | 4171 → 3800 | 6402 → 5265 | 4,0 → 3,0 | 50 | 0 |
+| guardian.loner · 45 | 145 | 8,0 | 14,2 | 1,77 | 838 | 1053 | 2,0 | 22 | 0 |
+| guardian.loner · 70 | 170 | 8,0 | 18,2 | 2,27 | 1918 | 2733 | 3,0 | 35 | 0 |
+| guardian.loner · 100 | 200 | 8,0 | 18,8 | 2,35 | 3800 | 5265 | 3,0 | 50 | 0 |
 | berserker.fury · 20 | 120 | 8,0 | 14,8 | 1,84 | 391 | 467 | 4,0 | 10 | 0 |
-| berserker.fury · 45 | 145 | 8,0 | 17,1 | 2,14 | 1883 → 1858 | 2361 → 2381 | 4,0 | 22 | 0 |
-| berserker.fury · 70 | 170 | 8,0 | 19,0 → 19,2 | 2,38 → 2,40 | 5064 → 4753 | 6632 → 6486 | 4,0 | 35 | 0 |
-| berserker.fury · 100 | 200 | 8,0 | 19,1 → 19,0 | 2,39 → 2,38 | 10 040 → 10 089 | 14 225 → 12 937 | 3,0 | 50 | 0 |
+| berserker.fury · 45 | 145 | 8,0 | 17,1 | 2,14 | 1858 | 2381 | 4,0 | 22 | 0 |
+| berserker.fury · 70 | 170 | 8,0 | 19,2 | 2,40 | 4753 | 6486 | 4,0 | 35 | 0 |
+| berserker.fury · 100 | 200 | 8,0 | 19,0 | 2,38 | 10 089 | 12 937 | 3,0 | 50 | 0 |
 | berserker.butcher · 20 | 120 | 8,0 | 14,8 | 1,84 | 391 | 467 | 4,0 | 10 | 0 |
-| berserker.butcher · 45 | 145 | 8,0 | 17,1 | 2,14 | 1964 → 1941 | 2381 → 2404 | 4,0 | 22 | 0 |
-| berserker.butcher · 70 | 170 | 8,0 | 19,0 → 19,2 | 2,38 → 2,40 | 5142 → 4746 | 6722 → 6226 | 4,0 | 35 | 0 |
-| berserker.butcher · 100 | 200 | 8,0 | 19,1 → 18,5 | 2,39 → 2,31 | 10 665 → 9808 | 14 161 → 12 851 | 3,0 | 50 | 0 |
+| berserker.butcher · 45 | 145 | 8,0 | 17,1 | 2,14 | 1941 | 2404 | 4,0 | 22 | 0 |
+| berserker.butcher · 70 | 170 | 8,0 | 19,2 | 2,40 | 4746 | 6226 | 4,0 | 35 | 0 |
+| berserker.butcher · 100 | 200 | 8,0 | 18,5 | 2,31 | 9808 | 12 851 | 3,0 | 50 | 0 |
 | standard.commander · 20 | 120 | 8,0 | 11,5 | 1,44 | 246 | 271 | 2,0 | 10 | 0 |
-| standard.commander · 45 | 145 | 8,0 | 11,5 → 17,8 | 1,44 → 2,23 | 1081 → 1165 | 1166 → 1616 | 1,0 → 4,0 | 22 | 0 |
-| standard.commander · 70 | 170 | 8,0 | 16,2 → 18,2 | 2,02 → 2,28 | 2807 → 2806 | 3420 → 4014 | 3,0 → 4,0 | 35 | 0 |
-| standard.commander · 100 | 200 | 9,5 | 19,0 → 17,3 | 2,00 → 1,82 | 6561 → 6948 | 8436 → 8311 | 3,0 → 2,0 | 50 | 0 |
+| standard.commander · 45 | 145 | 8,0 | 17,8 | 2,23 | 1165 | 1616 | 4,0 | 22 | 0 |
+| standard.commander · 70 | 170 | 8,0 | 18,2 | 2,28 | 2806 | 4014 | 4,0 | 35 | 0 |
+| standard.commander · 100 | 200 | 9,5 | 17,3 | 1,82 | 6948 | 8311 | 2,0 | 50 | 0 |
 | standard.warden · 20 | 120 | 8,0 | 11,5 | 1,44 | 257 | 282 | 2,0 | 10 | 0 |
-| standard.warden · 45 | 145 | 8,0 | 11,5 → 17,8 | 1,44 → 2,23 | 1123 → 1117 | 1208 → 1529 | 1,0 → 4,0 | 22 | 0 |
-| standard.warden · 70 | 170 | 8,0 | 16,2 → 18,2 | 2,02 → 2,28 | 2695 → 2629 | 3279 → 3710 | 3,0 → 4,0 | 35 | 0 |
-| standard.warden · 100 | 200 | 9,5 | 19,0 → 17,3 | 2,00 → 1,82 | 6242 → 6489 | 7950 → 7694 | 3,0 → 2,0 | 50 | 0 |
+| standard.warden · 45 | 145 | 8,0 | 17,8 | 2,23 | 1117 | 1529 | 4,0 | 22 | 0 |
+| standard.warden · 70 | 170 | 8,0 | 18,2 | 2,28 | 2629 | 3710 | 4,0 | 35 | 0 |
+| standard.warden · 100 | 200 | 9,5 | 17,3 | 1,82 | 6489 | 7694 | 2,0 | 50 | 0 |
 
 ### Zasoby: Łowca
 
@@ -13629,13 +13722,13 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | marksman.eliteHunter · 70 | 170 | 8,0 | 14,6 | 1,82 | 6178 | 7144 | 2,0 | 35 | 0 |
 | marksman.eliteHunter · 100 | 200 | 8,0 | 18,0 | 2,25 | 14 062 | 17 684 | 3,0 | 50 | 0 |
 | trapper.poacher · 20 | 120 | 8,0 | 12,3 | 1,54 | 359 | 395 | 2,0 | 10 | 0 |
-| trapper.poacher · 45 | 145 | 8,0 | 16,9 | 2,12 | 1947 | 2417 | 4,0 | 22 | 0 |
-| trapper.poacher · 70 | 170 | 8,0 | 17,5 | 2,09 | 4972 | 6230 | 3,0 | 35 | 0 |
-| trapper.poacher · 100 | 200 | 8,0 | 19,6 | 2,35 | 11 378 | 14 606 | 3,0 | 50 | 0 |
+| trapper.poacher · 45 | 145 | 8,0 | 16,9 | 2,12 | 1947 → 1950 | 2417 → 2421 | 4,0 | 22 | 0 |
+| trapper.poacher · 70 | 170 | 8,0 | 17,5 | 2,09 | 4972 → 5029 | 6230 → 6295 | 3,0 | 35 | 0 |
+| trapper.poacher · 100 | 200 | 8,0 | 19,6 | 2,35 | 11 378 → 11 633 | 14 606 → 14 802 | 3,0 | 50 | 0 |
 | trapper.poisoner · 20 | 120 | 8,0 | 12,3 | 1,54 | 360 | 395 | 2,0 | 10 | 0 |
-| trapper.poisoner · 45 | 145 | 8,0 | 15,3 | 1,91 | 2026 | 2465 | 3,0 | 22 | 0 |
-| trapper.poisoner · 70 | 170 | 8,0 | 16,3 | 1,95 | 5337 | 6454 | 3,0 | 35 | 0 |
-| trapper.poisoner · 100 | 200 | 8,0 | 18,1 | 2,17 | 12 302 | 15 642 | 3,0 | 50 | 0 |
+| trapper.poisoner · 45 | 145 | 8,0 | 15,3 | 1,91 | 2026 → 2027 | 2465 → 2468 | 3,0 | 22 | 0 |
+| trapper.poisoner · 70 | 170 | 8,0 | 16,3 | 1,95 | 5337 → 5419 | 6454 → 6531 | 3,0 | 35 | 0 |
+| trapper.poisoner · 100 | 200 | 8,0 | 18,1 | 2,17 | 12 302 → 12 520 | 15 642 → 15 776 | 3,0 | 50 | 0 |
 | scout.partyHunter · 20 | 120 | 8,0 | 9,8 | 1,22 | 338 | 338 | 1,0 | 10 | 0 |
 | scout.partyHunter · 45 | 145 | 8,0 | 10,5 | 1,31 | 1655 | 1689 | 1,0 | 22 | 0 |
 | scout.partyHunter · 70 | 170 | 8,0 | 11,0 | 1,38 | 3965 | 4035 | 1,0 | 35 | 0 |
@@ -13652,53 +13745,53 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | build · poziom | pula | regeneracja / s | na odnowieniu / s | T-SK4 | 60 s | 60 s z miksturami | mikstury / min | punkty wydane | punkty wolne |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · 20 | 976 | 4,9 | 15,2 | 3,12 | 435 | 435 | 0,0 | 10 | 0 |
-| base · 45 | 2336 | 10,4 | 47,4 | **3,34** | 2893 | 2893 | 0,0 | 22 | 0 |
-| base · 70 | 3578 | 16,0 | 79,5 | **3,38** | 7667 | 7667 | 0,0 | 28 | 7 |
-| base · 100 | 5766 | 22,6 | 108,7 | **2,81** | 17 299 | 17 299 | 0,0 | 28 | 22 |
+| base · 45 | 2336 | 10,4 | 47,4 → 27,5 | **3,34 → 2,12** | 2893 → 2959 | 2893 → 2959 | 0,0 | 22 | 0 |
+| base · 70 | 3578 | 16,0 | 79,5 → 69,2 | **3,38 → 2,67** | 7667 → 7899 | 7667 → 7899 | 0,0 | 28 | 7 |
+| base · 100 | 5766 | 22,6 | 108,7 → 78,9 | **2,81 → 2,16** | 17 299 → 18 846 | 17 299 → 18 846 | 0,0 | 28 | 22 |
 | base.loadout · 20 | 976 | 4,9 | 15,2 | 3,12 | 476 | 476 | 0,0 | 10 | 0 |
-| base.loadout · 45 | 2336 | 10,4 | 47,4 | **3,32** | 3110 | 3110 | 0,0 | 22 | 0 |
-| base.loadout · 70 | 3578 | 16,0 | 79,5 | **3,30** | 8195 | 8195 | 0,0 | 28 | 7 |
-| base.loadout · 100 | 5766 | 22,6 | 108,7 | **3,71** | 18 700 | 18 700 | 0,0 | 28 | 22 |
+| base.loadout · 45 | 2336 | 10,4 | 47,4 → 27,5 | **3,32 → 1,93** | 3110 → 3162 | 3110 → 3162 | 0,0 | 22 | 0 |
+| base.loadout · 70 | 3578 | 16,0 | 79,5 → 69,2 | **3,30 → 2,84** | 8195 → 8466 | 8195 → 8466 | 0,0 | 28 | 7 |
+| base.loadout · 100 | 5766 | 22,6 | 108,7 → 78,9 | **3,71 → 2,69** | 18 700 → 20 204 | 18 700 → 20 204 | 0,0 | 28 | 22 |
 | destroyer.destroyerExp · 20 | 976 | 4,9 | 7,5 | 1,54 | 352 | 352 | 0,0 | 10 | 0 |
-| destroyer.destroyerExp · 45 | 2150 | 10,4 | 20,7 | **1,98** | 2294 | 2294 | 0,0 | 22 | 0 |
-| destroyer.destroyerExp · 70 | 3490 | 16,0 | 47,8 | **1,71** | 5690 | 5690 | 0,0 | 35 | 0 |
-| destroyer.destroyerExp · 100 | 5223 | 22,6 | 63,1 | **1,42** | 11 540 | 11 540 | 0,0 | 50 | 0 |
+| destroyer.destroyerExp · 45 | 2150 | 10,4 | 20,7 → 12,0 | **1,98 → 1,15** | 2294 | 2294 | 0,0 | 22 | 0 |
+| destroyer.destroyerExp · 70 | 3490 | 16,0 | 47,8 → 50,3 | **1,71 → 1,79** | 5690 → 5735 | 5690 → 5818 | 0,0 → 0,3 | 35 | 0 |
+| destroyer.destroyerExp · 100 | 5223 | 22,6 | 63,1 → 55,3 | **1,42 → 1,34** | 11 540 → 12 008 | 11 540 → 12 008 | 0,0 | 50 | 0 |
 | destroyer.destroyerBoss · 20 | 976 | 4,9 | 14,7 | 3,01 | 414 | 414 | 0,0 | 10 | 0 |
-| destroyer.destroyerBoss · 45 | 2150 | 10,4 | 32,2 | **3,09** | 3259 | 3259 | 0,0 | 22 | 0 |
-| destroyer.destroyerBoss · 70 | 3490 | 16,0 | 58,1 | 2,05 | 8504 | 8504 | 0,0 | 35 | 0 |
-| destroyer.destroyerBoss · 100 | 5223 | 22,6 | 76,4 | 1,71 | 17 234 | 17 234 | 0,0 | 50 | 0 |
+| destroyer.destroyerBoss · 45 | 2150 | 10,4 | 32,2 → 18,7 | 3,09 → 1,79 | 3259 → 3273 | 3259 → 3273 | 0,0 | 22 | 0 |
+| destroyer.destroyerBoss · 70 | 3490 | 16,0 | 58,1 → 52,6 | 2,05 → 2,00 | 8504 → 8702 | 8504 → 8729 | 0,0 → 0,3 | 35 | 0 |
+| destroyer.destroyerBoss · 100 | 5223 | 22,6 | 76,4 → 57,6 | **1,71 → 1,29** | 17 234 → 17 833 | 17 234 → 17 833 | 0,0 | 50 | 0 |
 | destroyer.destroyerFire · 20 | 976 | 4,9 | 16,4 | 3,36 | 412 | 412 | 0,0 | 10 | 0 |
-| destroyer.destroyerFire · 45 | 2086 | 10,4 | 50,0 | **4,80** | 2887 | 3110 | 1,0 | 22 | 0 |
-| destroyer.destroyerFire · 70 | 3195 | 16,0 | 79,6 | **3,60** | 8320 | 9075 | 1,0 | 35 | 0 |
-| destroyer.destroyerFire · 100 | 5223 | 22,6 | 147,4 | **3,61** | 17 428 | 20 198 | 1,0 | 50 | 0 |
+| destroyer.destroyerFire · 45 | 2086 | 10,4 | 50,0 → 29,0 | 4,80 → 2,78 | 2887 → 3110 | 3110 | 1,0 → 0,0 | 22 | 0 |
+| destroyer.destroyerFire · 70 | 3195 | 16,0 | 79,6 → 57,3 | 3,60 → 2,59 | 8320 → 9114 | 9075 → 9114 | 1,0 → 0,0 | 35 | 0 |
+| destroyer.destroyerFire · 100 | 5223 | 22,6 | 147,4 → 107,2 | 3,61 → 2,11 | 17 428 → 13 660 | 20 198 → 13 660 | 1,0 → 0,0 | 50 | 0 |
 | destroyer.destroyerIce · 20 | 976 | 4,9 | 12,7 | 2,60 | 383 | 383 | 0,0 | 10 | 0 |
-| destroyer.destroyerIce · 45 | 2086 | 10,4 | 41,4 | **3,97** | 2850 | 2850 | 0,0 | 22 | 0 |
-| destroyer.destroyerIce · 70 | 3195 | 16,0 | 69,3 | 2,05 | 7817 | 7927 | 1,0 | 35 | 0 |
-| destroyer.destroyerIce · 100 | 5223 | 22,6 | 134,7 | **3,34** | 16 317 | 17 800 | 1,0 | 50 | 0 |
+| destroyer.destroyerIce · 45 | 2086 | 10,4 | 41,4 → 24,0 | 3,97 → 2,30 | 2850 → 2872 | 2850 → 2872 | 0,0 | 22 | 0 |
+| destroyer.destroyerIce · 70 | 3195 | 16,0 | 69,3 → 49,9 | **2,05 → 1,48** | 7817 → 8191 | 7927 → 8191 | 1,0 → 0,0 | 35 | 0 |
+| destroyer.destroyerIce · 100 | 5223 | 22,6 | 134,7 → 81,0 | 3,34 → 2,01 | 16 317 → 10 775 | 17 800 → 10 775 | 1,0 → 0,0 | 50 | 0 |
 | destroyer.destroyerLightning · 20 | 976 | 4,9 | 17,2 | 3,53 | 456 | 456 | 0,0 | 10 | 0 |
-| destroyer.destroyerLightning · 45 | 2086 | 10,4 | 48,9 | **4,69** | 3814 | 3931 | 1,0 | 22 | 0 |
-| destroyer.destroyerLightning · 70 | 3195 | 16,0 | 80,8 | 2,96 | 10 616 | 11 370 | 1,0 | 35 | 0 |
-| destroyer.destroyerLightning · 100 | 5223 | 22,6 | 148,8 | 2,98 | 20 799 | 25 534 | 1,0 | 50 | 0 |
+| destroyer.destroyerLightning · 45 | 2086 | 10,4 | 48,9 → 28,4 | 4,69 → 2,72 | 3814 → 3958 | 3931 → 3958 | 1,0 → 0,0 | 22 | 0 |
+| destroyer.destroyerLightning · 70 | 3195 | 16,0 | 80,8 → 58,2 | 2,96 → 2,13 | 10 616 → 11 556 | 11 370 → 11 556 | 1,0 → 0,0 | 35 | 0 |
+| destroyer.destroyerLightning · 100 | 5223 | 22,6 | 148,8 → 99,5 | 2,98 → 2,02 | 20 799 → 17 319 | 25 534 → 17 319 | 1,0 → 0,0 | 50 | 0 |
 | arcanist.arcanistBoss · 20 | 1263 | 5,6 | 8,7 | 1,54 | 459 | 459 | 0,0 | 10 | 0 |
-| arcanist.arcanistBoss · 45 | 2806 | 12,2 | 23,6 | **1,93** | 3119 | 3119 | 0,0 | 22 | 0 |
-| arcanist.arcanistBoss · 70 | 4543 | 18,7 | 42,8 | 2,03 | 7894 | 7894 | 0,0 | 35 | 0 |
-| arcanist.arcanistBoss · 100 | 6775 | 26,6 | 62,9 | 2,11 | 17 270 | 17 270 | 0,0 | 50 | 0 |
+| arcanist.arcanistBoss · 45 | 2806 | 12,2 | 23,6 → 13,7 | **1,93 → 1,12** | 3119 → 3143 | 3119 → 3143 | 0,0 | 22 | 0 |
+| arcanist.arcanistBoss · 70 | 4543 | 18,7 | 42,8 → 34,7 | **2,03 → 1,65** | 7894 → 7991 | 7894 → 7991 | 0,0 | 35 | 0 |
+| arcanist.arcanistBoss · 100 | 6775 | 26,6 | 62,9 → 48,2 | **2,11 → 1,62** | 17 270 → 18 416 | 17 270 → 18 416 | 0,0 | 50 | 0 |
 | arcanist.arcanistOverload · 20 | 1263 | 5,6 | 9,4 | 1,67 | 459 | 459 | 0,0 | 10 | 0 |
-| arcanist.arcanistOverload · 45 | 2806 | 12,2 | 29,9 | **2,45** | 3140 | 3140 | 0,0 | 22 | 0 |
-| arcanist.arcanistOverload · 70 | 4543 | 18,7 | 54,3 | **2,58** | 7824 | 7824 | 0,0 | 35 | 0 |
-| arcanist.arcanistOverload · 100 | 6775 | 26,6 | 79,8 | 2,68 | 16 755 | 16 755 | 0,0 | 50 | 0 |
+| arcanist.arcanistOverload · 45 | 2806 | 12,2 | 29,9 → 17,4 | **2,45 → 1,42** | 3140 | 3140 | 0,0 | 22 | 0 |
+| arcanist.arcanistOverload · 70 | 4543 | 18,7 | 54,3 → 44,1 | **2,58 → 2,09** | 7824 → 7908 | 7824 → 7908 | 0,0 | 35 | 0 |
+| arcanist.arcanistOverload · 100 | 6775 | 26,6 | 79,8 → 61,3 | **2,68 → 2,06** | 16 755 → 17 639 | 16 755 → 17 639 | 0,0 | 50 | 0 |
 | arcanist.arcanistFire · 20 | 1263 | 5,6 | 13,9 | 2,46 | 519 | 519 | 0,0 | 10 | 0 |
-| arcanist.arcanistFire · 45 | 2730 | 12,2 | 42,3 | **3,47** | 4180 | 4180 | 0,0 | 22 | 0 |
-| arcanist.arcanistFire · 70 | 4196 | 18,7 | 66,3 | **3,02** | 11 676 | 11 676 | 0,0 | 35 | 0 |
-| arcanist.arcanistFire · 100 | 6775 | 26,6 | 105,6 | **3,42** | 25 209 | 25 209 | 0,0 | 50 | 0 |
+| arcanist.arcanistFire · 45 | 2730 | 12,2 | 42,3 → 24,5 | 3,47 → 2,01 | 4180 → 4277 | 4180 → 4277 | 0,0 | 22 | 0 |
+| arcanist.arcanistFire · 70 | 4196 | 18,7 | 66,3 → 47,8 | 3,02 → 2,17 | 11 676 → 11 835 | 11 676 → 11 835 | 0,0 | 35 | 0 |
+| arcanist.arcanistFire · 100 | 6775 | 26,6 | 105,6 → 73,8 | 3,42 → 2,39 | 25 209 → 26 497 | 25 209 → 26 497 | 0,0 | 50 | 0 |
 | arcanist.arcanistIce · 20 | 1263 | 5,6 | 15,1 | 2,68 | 461 | 461 | 0,0 | 10 | 0 |
-| arcanist.arcanistIce · 45 | 2730 | 12,2 | 45,4 | **3,72** | 3673 | 3673 | 0,0 | 22 | 0 |
-| arcanist.arcanistIce · 70 | 4196 | 18,7 | 60,9 | 2,77 | 9586 | 9586 | 0,0 | 35 | 0 |
-| arcanist.arcanistIce · 100 | 6775 | 26,6 | 111,8 | **3,62** | 20 730 | 20 730 | 0,0 | 50 | 0 |
+| arcanist.arcanistIce · 45 | 2730 | 12,2 | 45,4 → 26,3 | 3,72 → 2,16 | 3673 → 3832 | 3673 → 3832 | 0,0 | 22 | 0 |
+| arcanist.arcanistIce · 70 | 4196 → 4543 | 18,7 | 60,9 → 52,6 | 2,77 → 2,37 | 9586 → 10 218 | 9586 → 10 218 | 0,0 | 35 | 0 |
+| arcanist.arcanistIce · 100 | 6775 | 26,6 | 111,8 → 68,4 | 3,62 → 2,22 | 20 730 → 23 220 | 20 730 → 23 220 | 0,0 | 50 | 0 |
 | arcanist.arcanistLightning · 20 | 1263 | 5,6 | 17,2 | 3,06 | 575 | 575 | 0,0 | 10 | 0 |
-| arcanist.arcanistLightning · 45 | 2730 | 12,2 | 50,1 | **4,11** | 4778 | 4778 | 0,0 | 22 | 0 |
-| arcanist.arcanistLightning · 70 | 4196 | 18,7 | 68,7 | **3,13** | 13 148 | 13 148 | 0,0 | 35 | 0 |
-| arcanist.arcanistLightning · 100 | 6775 | 26,6 | 103,8 | **3,36** | 26 397 | 26 397 | 0,0 | 50 | 0 |
+| arcanist.arcanistLightning · 45 | 2730 | 12,2 | 50,1 → 29,0 | 4,11 → 2,38 | 4778 → 4893 | 4778 → 4893 | 0,0 | 22 | 0 |
+| arcanist.arcanistLightning · 70 | 4196 → 4543 | 18,7 | 68,7 → 49,5 | 3,13 → 2,23 | 13 148 → 13 811 | 13 148 → 13 811 | 0,0 | 35 | 0 |
+| arcanist.arcanistLightning · 100 | 6775 | 26,6 | 103,8 → 73,2 | 3,36 → 2,37 | 26 397 → 29 544 | 26 397 → 29 544 | 0,0 | 50 | 0 |
 
 ### Zasoby: Kapłan
 
@@ -13707,8 +13800,8 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | build · poziom | pula | regeneracja / s | na odnowieniu / s | zapotrzebowanie / regeneracja | 60 s | 60 s z miksturami | mikstury / min | punkty wydane | punkty wolne |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · 20 | 616 | 3,1 | 7,7 | 2,49 | 239 | 239 | 0,0 | 10 | 0 |
-| base · 45 | 1262 | 6,3 | 10,7 | 1,69 | 1521 → 1477 | 1521 → 1477 | 0,0 | 12 | 10 |
-| base · 70 | 1916 | 9,6 | 11,3 | 1,18 | 3578 → 3572 | 3578 → 3572 | 0,0 | 12 | 23 |
+| base · 45 | 1262 | 6,3 | 10,7 | 1,69 | 1477 | 1477 | 0,0 | 12 | 10 |
+| base · 70 | 1916 | 9,6 | 11,3 | 1,18 | 3572 | 3572 | 0,0 | 12 | 23 |
 | base · 100 | 2696 | 13,5 | 11,3 | 0,84 | 7225 | 7225 | 0,0 | 12 | 38 |
 | healer.dungeon · 20 | 616 | 3,1 | 4,0 | 1,30 | 217 | 217 | 0,0 | 10 | 0 |
 | healer.dungeon · 45 | 1262 | 7,9 | 4,0 | 0,51 | 1108 | 1108 | 0,0 | 22 | 0 |
@@ -13719,17 +13812,17 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | healer.solo · 70 | 1916 | 12,0 | 6,9 | 0,58 | 2784 | 2784 | 0,0 | 35 | 0 |
 | healer.solo · 100 | 2696 | 18,9 | 6,9 | 0,37 | 5369 | 5369 | 0,0 | 50 | 0 |
 | fortune.plunder · 20 | 616 | 3,1 | 7,0 | 2,27 | 261 | 261 | 0,0 | 10 | 0 |
-| fortune.plunder · 45 | 1262 | 6,3 | 7,0 | 1,11 | 1576 → 1540 | 1576 → 1540 | 0,0 | 22 | 0 |
-| fortune.plunder · 70 | 1916 | 9,6 | 9,7 → 13,3 | 1,01 → 1,39 | 4004 → 4430 | 4004 → 4430 | 0,0 | 35 | 0 |
-| fortune.plunder · 100 | 2696 | 13,5 | 13,3 → 14,6 | 0,99 → 1,08 | 8603 → 9890 | 8603 → 9890 | 0,0 | 50 | 0 |
+| fortune.plunder · 45 | 1262 | 6,3 | 7,0 | 1,11 | 1540 | 1540 | 0,0 | 22 | 0 |
+| fortune.plunder · 70 | 1916 | 9,6 | 13,3 | 1,39 | 4430 | 4430 | 0,0 | 35 | 0 |
+| fortune.plunder · 100 | 2696 | 13,5 | 14,6 | 1,08 | 9890 | 9890 | 0,0 | 50 | 0 |
 | inquisitor.solo · 20 | 488 | 2,4 | 7,7 | 3,14 | 231 | 231 | 0,0 | 10 | 0 |
-| inquisitor.solo · 45 | 966 | 4,8 | 10,7 | 2,21 | 1632 → 1589 | 1632 → 1589 | 0,0 | 22 | 0 |
-| inquisitor.solo · 70 | 1452 | 7,3 | 11,3 | 1,56 | 4193 → 4228 | 4193 → 4228 | 0,0 | 35 | 0 |
-| inquisitor.solo · 100 | 2032 | 10,2 | 12,2 → 14,3 | 1,21 → 1,41 | 8790 → 9202 | 8790 → 9202 | 0,0 | 50 | 0 |
+| inquisitor.solo · 45 | 966 | 4,8 | 10,7 | 2,21 | 1589 | 1589 | 0,0 | 22 | 0 |
+| inquisitor.solo · 70 | 1452 | 7,3 | 11,3 | 1,56 | 4228 | 4228 | 0,0 | 35 | 0 |
+| inquisitor.solo · 100 | 2032 | 10,2 | 14,3 | 1,41 | 9202 | 9202 | 0,0 | 50 | 0 |
 | inquisitor.bulwark · 20 | 488 | 2,4 | 7,7 | 3,14 | 220 | 220 | 0,0 | 10 | 0 |
-| inquisitor.bulwark · 45 | 966 | 4,8 | 10,7 | 2,21 | 1468 → 1429 | 1468 → 1429 | 0,0 | 22 | 0 |
-| inquisitor.bulwark · 70 | 1452 | 7,3 | 11,3 | 1,56 | 3772 → 3805 | 3772 → 3805 | 0,0 | 35 | 0 |
-| inquisitor.bulwark · 100 | 2032 | 10,2 | 12,2 → 14,3 | 1,21 → 1,41 | 7859 → 8231 | 7859 → 8231 | 0,0 | 50 | 0 |
+| inquisitor.bulwark · 45 | 966 | 4,8 | 10,7 | 2,21 | 1429 | 1429 | 0,0 | 22 | 0 |
+| inquisitor.bulwark · 70 | 1452 | 7,3 | 11,3 | 1,56 | 3805 | 3805 | 0,0 | 35 | 0 |
+| inquisitor.bulwark · 100 | 2032 | 10,2 | 14,3 | 1,41 | 8231 | 8231 | 0,0 | 50 | 0 |
 
 ### Brak do S86 (liczby)
 
@@ -13749,10 +13842,10 @@ Ile mechanik model jeszcze nie liczy (lista w sekcji „Brak do S86”); pomini�
 | Warrior · berserker.fury · 100 | 0 | 0 | 0 |
 | Warrior · berserker.butcher · 45 | 0 | 0 | 0 |
 | Warrior · berserker.butcher · 100 | 0 | 0 | 0 |
-| Warrior · standard.commander · 45 | 0 | 0 | 2 → 0 |
-| Warrior · standard.commander · 100 | 0 | 0 | 2 → 1 |
-| Warrior · standard.warden · 45 | 0 | 0 | 2 → 0 |
-| Warrior · standard.warden · 100 | 0 | 0 | 2 → 1 |
+| Warrior · standard.commander · 45 | 0 | 0 | 0 |
+| Warrior · standard.commander · 100 | 0 | 0 | 1 |
+| Warrior · standard.warden · 45 | 0 | 0 | 0 |
+| Warrior · standard.warden · 100 | 0 | 0 | 1 |
 | Hunter · base · 45 | 0 | 0 | 0 |
 | Hunter · base · 100 | 0 | 0 | 0 |
 | Hunter · marksman.kingslayer · 45 | 0 | 0 | 0 |
@@ -13786,11 +13879,11 @@ Ile mechanik model jeszcze nie liczy (lista w sekcji „Brak do S86”); pomini�
 | Mage · arcanist.arcanistOverload · 45 | 0 | 0 | 4 |
 | Mage · arcanist.arcanistOverload · 100 | 0 | 0 | 9 |
 | Mage · arcanist.arcanistFire · 45 | 0 | 0 | 1 |
-| Mage · arcanist.arcanistFire · 100 | 0 | 0 | 1 |
+| Mage · arcanist.arcanistFire · 100 | 0 | 0 | 1 → 2 |
 | Mage · arcanist.arcanistIce · 45 | 0 | 0 | 0 |
-| Mage · arcanist.arcanistIce · 100 | 0 | 0 | 0 |
+| Mage · arcanist.arcanistIce · 100 | 0 | 0 | 0 → 1 |
 | Mage · arcanist.arcanistLightning · 45 | 0 | 0 | 0 |
-| Mage · arcanist.arcanistLightning · 100 | 0 | 0 | 1 |
+| Mage · arcanist.arcanistLightning · 100 | 0 | 0 | 1 → 2 |
 | Cleric · base · 45 | 0 | 0 | 0 |
 | Cleric · base · 100 | 0 | 0 | 0 |
 | Cleric · healer.dungeon · 45 | 0 | 0 | 1 |
@@ -13798,11 +13891,11 @@ Ile mechanik model jeszcze nie liczy (lista w sekcji „Brak do S86”); pomini�
 | Cleric · healer.solo · 45 | 0 | 0 | 2 |
 | Cleric · healer.solo · 100 | 0 | 0 | 6 |
 | Cleric · fortune.plunder · 45 | 0 | 0 | 0 |
-| Cleric · fortune.plunder · 100 | 0 | 0 | 3 → 1 |
+| Cleric · fortune.plunder · 100 | 0 | 0 | 1 |
 | Cleric · inquisitor.solo · 45 | 0 | 0 | 0 |
-| Cleric · inquisitor.solo · 100 | 0 | 0 | 1 → 0 |
+| Cleric · inquisitor.solo · 100 | 0 | 0 | 0 |
 | Cleric · inquisitor.bulwark · 45 | 0 | 0 | 0 |
-| Cleric · inquisitor.bulwark · 100 | 0 | 0 | 1 → 0 |
+| Cleric · inquisitor.bulwark · 100 | 0 | 0 | 0 |
 
 ### Udziały w obrażeniach 60 s
 
@@ -13825,110 +13918,110 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Warrior base · 100 · rend | 17% |
 | Warrior base · 100 · item | 7% |
 | Warrior base · 100 · execute | 6% |
-| Warrior base.loadout · 45 · basic | 47% → 48% |
-| Warrior base.loadout · 45 · mightyStrike | 28% → 26% |
-| Warrior base.loadout · 45 · shieldSweep | 13% → 14% |
-| Warrior base.loadout · 45 · vindicate | 8% → 9% |
+| Warrior base.loadout · 45 · basic | 48% |
+| Warrior base.loadout · 45 · mightyStrike | 26% |
+| Warrior base.loadout · 45 · shieldSweep | 14% |
+| Warrior base.loadout · 45 · vindicate | 9% |
 | Warrior base.loadout · 45 · crushingBlow | 3% |
-| Warrior base.loadout · 70 · basic | 47% → 48% |
-| Warrior base.loadout · 70 · mightyStrike | 28% → 26% |
-| Warrior base.loadout · 70 · shieldSweep | 9% → 10% |
+| Warrior base.loadout · 70 · basic | 48% |
+| Warrior base.loadout · 70 · mightyStrike | 26% |
+| Warrior base.loadout · 70 · shieldSweep | 10% |
 | Warrior base.loadout · 70 · vindicate | 8% |
 | Warrior base.loadout · 70 · shieldBash | 4% |
-| Warrior base.loadout · 100 · basic | 46% → 48% |
-| Warrior base.loadout · 100 · mightyStrike | 28% → 26% |
-| Warrior base.loadout · 100 · shieldBash | 6% → 7% |
-| Warrior base.loadout · 100 · charge | 6% → 7% |
+| Warrior base.loadout · 100 · basic | 48% |
+| Warrior base.loadout · 100 · mightyStrike | 26% |
+| Warrior base.loadout · 100 · shieldBash | 7% |
+| Warrior base.loadout · 100 · charge | 7% |
 | Warrior base.loadout · 100 · shieldSweep | 4% |
-| Warrior guardian.defender · 45 · basic | 45% → 46% |
-| Warrior guardian.defender · 45 · mightyStrike | 29% → 27% |
+| Warrior guardian.defender · 45 · basic | 46% |
+| Warrior guardian.defender · 45 · mightyStrike | 27% |
 | Warrior guardian.defender · 45 · shieldSweep | 17% |
 | Warrior guardian.defender · 45 · crushingBlow | 5% |
 | Warrior guardian.defender · 45 · shieldBash | 4% |
-| Warrior guardian.defender · 70 · basic | 43% → 46% |
-| Warrior guardian.defender · 70 · mightyStrike | 28% → 25% |
-| Warrior guardian.defender · 70 · shieldSweep | 16% → 15% |
+| Warrior guardian.defender · 70 · basic | 46% |
+| Warrior guardian.defender · 70 · mightyStrike | 25% |
+| Warrior guardian.defender · 70 · shieldSweep | 15% |
 | Warrior guardian.defender · 70 · shieldBash | 8% |
 | Warrior guardian.defender · 70 · crushingBlow | 3% |
-| Warrior guardian.defender · 100 · basic | 44% → 45% |
+| Warrior guardian.defender · 100 · basic | 45% |
 | Warrior guardian.defender · 100 · mightyStrike | 26% |
-| Warrior guardian.defender · 100 · shieldSweep | 14% → 15% |
+| Warrior guardian.defender · 100 · shieldSweep | 15% |
 | Warrior guardian.defender · 100 · shieldBash | 8% |
 | Warrior guardian.defender · 100 · crushingBlow | 3% |
-| Warrior guardian.loner · 45 · basic | 49% → 50% |
-| Warrior guardian.loner · 45 · mightyStrike | 32% → 29% |
-| Warrior guardian.loner · 45 · shieldSweep | 13% → 14% |
-| Warrior guardian.loner · 45 · shieldBash | 3% → 4% |
+| Warrior guardian.loner · 45 · basic | 50% |
+| Warrior guardian.loner · 45 · mightyStrike | 29% |
+| Warrior guardian.loner · 45 · shieldSweep | 14% |
+| Warrior guardian.loner · 45 · shieldBash | 4% |
 | Warrior guardian.loner · 45 · crushingBlow | 3% |
-| Warrior guardian.loner · 70 · basic | 48% → 50% |
+| Warrior guardian.loner · 70 · basic | 50% |
 | Warrior guardian.loner · 70 · mightyStrike | 29% |
-| Warrior guardian.loner · 70 · shieldSweep | 10% → 8% |
-| Warrior guardian.loner · 70 · shieldBash | 7% → 6% |
+| Warrior guardian.loner · 70 · shieldSweep | 8% |
+| Warrior guardian.loner · 70 · shieldBash | 6% |
 | Warrior guardian.loner · 70 · crushingBlow | 3% |
 | Warrior guardian.loner · 100 · basic | 49% |
-| Warrior guardian.loner · 100 · mightyStrike | 30% → 29% |
-| Warrior guardian.loner · 100 · shieldSweep | 6% → 11% |
-| Warrior guardian.loner · 100 · shieldBash | 7% → 6% |
+| Warrior guardian.loner · 100 · mightyStrike | 29% |
+| Warrior guardian.loner · 100 · shieldSweep | 11% |
+| Warrior guardian.loner · 100 · shieldBash | 6% |
 | Warrior guardian.loner · 100 · crushingBlow | 3% |
 | Warrior berserker.fury · 45 · basic | 42% |
 | Warrior berserker.fury · 45 · brutalStrike | 27% |
 | Warrior berserker.fury · 45 · rend | 13% |
 | Warrior berserker.fury · 45 · cleave | 7% |
 | Warrior berserker.fury · 45 · sunder | 5% |
-| Warrior berserker.fury · 70 · basic | 39% → 38% |
-| Warrior berserker.fury · 70 · brutalStrike | 24% → 25% |
-| Warrior berserker.fury · 70 · rend | 16% → 15% |
+| Warrior berserker.fury · 70 · basic | 38% |
+| Warrior berserker.fury · 70 · brutalStrike | 25% |
+| Warrior berserker.fury · 70 · rend | 15% |
 | Warrior berserker.fury · 70 · execute | 6% |
-| Warrior berserker.fury · 70 · cleave | 7% → 6% |
-| Warrior berserker.fury · 100 · basic | 39% → 33% |
+| Warrior berserker.fury · 70 · cleave | 6% |
+| Warrior berserker.fury · 100 · basic | 33% |
 | Warrior berserker.fury · 100 · brutalStrike | 23% |
 | Warrior berserker.fury · 100 · rend | 16% |
 | Warrior berserker.fury · 100 · execute | 10% |
-| Warrior berserker.fury · 100 · cleave | 7% → 6% |
-| Warrior berserker.butcher · 45 · basic | 39% → 38% |
+| Warrior berserker.fury · 100 · cleave | 6% |
+| Warrior berserker.butcher · 45 · basic | 38% |
 | Warrior berserker.butcher · 45 · brutalStrike | 28% |
-| Warrior berserker.butcher · 45 · rend | 12% → 13% |
+| Warrior berserker.butcher · 45 · rend | 13% |
 | Warrior berserker.butcher · 45 · cleave | 7% |
 | Warrior berserker.butcher · 45 · item | 7% |
 | Warrior berserker.butcher · 70 · basic | 37% |
-| Warrior berserker.butcher · 70 · brutalStrike | 25% → 27% |
-| Warrior berserker.butcher · 70 · rend | 16% → 15% |
-| Warrior berserker.butcher · 70 · item | 7% → 6% |
-| Warrior berserker.butcher · 70 · cleave | 7% → 6% |
-| Warrior berserker.butcher · 100 · basic | 35% → 33% |
-| Warrior berserker.butcher · 100 · brutalStrike | 23% → 25% |
-| Warrior berserker.butcher · 100 · rend | 15% → 14% |
+| Warrior berserker.butcher · 70 · brutalStrike | 27% |
+| Warrior berserker.butcher · 70 · rend | 15% |
+| Warrior berserker.butcher · 70 · item | 6% |
+| Warrior berserker.butcher · 70 · cleave | 6% |
+| Warrior berserker.butcher · 100 · basic | 33% |
+| Warrior berserker.butcher · 100 · brutalStrike | 25% |
+| Warrior berserker.butcher · 100 · rend | 14% |
 | Warrior berserker.butcher · 100 · cleave | 7% |
 | Warrior berserker.butcher · 100 · execute | 7% |
-| Warrior standard.commander · 45 · basic | 41% → 45% |
-| Warrior standard.commander · 45 · mightyStrike | 26% → 23% |
-| Warrior standard.commander · 45 · shieldSweep | 17% → 12% |
+| Warrior standard.commander · 45 · basic | 45% |
+| Warrior standard.commander · 45 · mightyStrike | 23% |
+| Warrior standard.commander · 45 · shieldSweep | 12% |
 | Warrior standard.commander · 45 · vindicate | 8% |
 | Warrior standard.commander · 45 · shieldBash | 7% |
-| Warrior standard.commander · 70 · basic | 40% → 43% |
-| Warrior standard.commander · 70 · mightyStrike | 26% → 21% |
-| Warrior standard.commander · 70 · shieldSweep | 17% → 12% |
+| Warrior standard.commander · 70 · basic | 43% |
+| Warrior standard.commander · 70 · mightyStrike | 21% |
+| Warrior standard.commander · 70 · shieldSweep | 12% |
 | Warrior standard.commander · 70 · vindicate | 11% |
-| Warrior standard.commander · 70 · shieldBash | 8% → 7% |
+| Warrior standard.commander · 70 · shieldBash | 7% |
 | Warrior standard.commander · 100 · basic | 37% |
-| Warrior standard.commander · 100 · mightyStrike | 23% → 21% |
-| Warrior standard.commander · 100 · shieldSweep | 10% → 15% |
+| Warrior standard.commander · 100 · mightyStrike | 21% |
+| Warrior standard.commander · 100 · shieldSweep | 15% |
 | Warrior standard.commander · 100 · vindicate | 15% |
 | Warrior standard.commander · 100 · crushingBlow | 9% |
-| Warrior standard.warden · 45 · basic | 43% → 48% |
-| Warrior standard.warden · 45 · mightyStrike | 25% → 22% |
-| Warrior standard.warden · 45 · shieldSweep | 16% → 12% |
+| Warrior standard.warden · 45 · basic | 48% |
+| Warrior standard.warden · 45 · mightyStrike | 22% |
+| Warrior standard.warden · 45 · shieldSweep | 12% |
 | Warrior standard.warden · 45 · vindicate | 7% |
-| Warrior standard.warden · 45 · shieldBash | 7% → 6% |
-| Warrior standard.warden · 70 · basic | 43% → 46% |
-| Warrior standard.warden · 70 · mightyStrike | 25% → 20% |
-| Warrior standard.warden · 70 · shieldSweep | 17% → 11% |
+| Warrior standard.warden · 45 · shieldBash | 6% |
+| Warrior standard.warden · 70 · basic | 46% |
+| Warrior standard.warden · 70 · mightyStrike | 20% |
+| Warrior standard.warden · 70 · shieldSweep | 11% |
 | Warrior standard.warden · 70 · vindicate | 10% |
-| Warrior standard.warden · 70 · shieldBash | 7% → 6% |
+| Warrior standard.warden · 70 · shieldBash | 6% |
 | Warrior standard.warden · 100 · basic | 39% |
-| Warrior standard.warden · 100 · mightyStrike | 22% → 20% |
+| Warrior standard.warden · 100 · mightyStrike | 20% |
 | Warrior standard.warden · 100 · vindicate | 14% |
-| Warrior standard.warden · 100 · shieldSweep | 10% → 14% |
+| Warrior standard.warden · 100 · shieldSweep | 14% |
 | Warrior standard.warden · 100 · crushingBlow | 8% |
 | Hunter base · 45 · basic | 46% |
 | Hunter base · 45 · aimedShot | 23% |
@@ -13976,34 +14069,34 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Hunter marksman.eliteHunter · 100 · pinningShot | 4% |
 | Hunter marksman.eliteHunter · 100 · heartseeker | 3% |
 | Hunter trapper.poacher · 45 · basic | 38% |
-| Hunter trapper.poacher · 45 · heavyBolt | 21% |
+| Hunter trapper.poacher · 45 · heavyBolt | 21% → 19% |
 | Hunter trapper.poacher · 45 · venomSnare | 16% |
 | Hunter trapper.poacher · 45 · venomArrow | 9% |
-| Hunter trapper.poacher · 45 · deadlyBolt | 7% |
+| Hunter trapper.poacher · 45 · toxicTips | 8% |
 | Hunter trapper.poacher · 70 · basic | 38% |
-| Hunter trapper.poacher · 70 · venomSnare | 16% |
-| Hunter trapper.poacher · 70 · heavyBolt | 16% |
+| Hunter trapper.poacher · 70 · venomSnare | 16% → 15% |
+| Hunter trapper.poacher · 70 · heavyBolt | 16% → 15% |
 | Hunter trapper.poacher · 70 · deadlyBolt | 11% |
-| Hunter trapper.poacher · 70 · venomArrow | 8% |
-| Hunter trapper.poacher · 100 · basic | 37% |
+| Hunter trapper.poacher · 70 · toxicTips | 10% |
+| Hunter trapper.poacher · 100 · basic | 37% → 36% |
 | Hunter trapper.poacher · 100 · venomSnare | 17% |
-| Hunter trapper.poacher · 100 · heavyBolt | 17% |
-| Hunter trapper.poacher · 100 · deadlyBolt | 10% |
-| Hunter trapper.poacher · 100 · venomArrow | 7% |
+| Hunter trapper.poacher · 100 · heavyBolt | 17% → 16% |
+| Hunter trapper.poacher · 100 · toxicTips | 10% |
+| Hunter trapper.poacher · 100 · deadlyBolt | 10% → 9% |
 | Hunter trapper.poisoner · 45 · basic | 37% |
-| Hunter trapper.poisoner · 45 · heavyBolt | 23% |
-| Hunter trapper.poisoner · 45 · venomSnare | 16% |
+| Hunter trapper.poisoner · 45 · heavyBolt | 23% → 21% |
+| Hunter trapper.poisoner · 45 · venomSnare | 16% → 15% |
 | Hunter trapper.poisoner · 45 · deadlyBolt | 8% |
 | Hunter trapper.poisoner · 45 · venomArrow | 8% |
-| Hunter trapper.poisoner · 70 · basic | 36% |
-| Hunter trapper.poisoner · 70 · heavyBolt | 19% |
-| Hunter trapper.poisoner · 70 · venomSnare | 17% |
+| Hunter trapper.poisoner · 70 · basic | 36% → 35% |
+| Hunter trapper.poisoner · 70 · heavyBolt | 19% → 18% |
+| Hunter trapper.poisoner · 70 · venomSnare | 17% → 16% |
 | Hunter trapper.poisoner · 70 · deadlyBolt | 10% |
-| Hunter trapper.poisoner · 70 · venomArrow | 8% |
-| Hunter trapper.poisoner · 100 · basic | 36% |
-| Hunter trapper.poisoner · 100 · heavyBolt | 18% |
-| Hunter trapper.poisoner · 100 · venomSnare | 17% |
-| Hunter trapper.poisoner · 100 · deadlyBolt | 9% |
+| Hunter trapper.poisoner · 70 · toxicTips | 10% |
+| Hunter trapper.poisoner · 100 · basic | 36% → 35% |
+| Hunter trapper.poisoner · 100 · heavyBolt | 18% → 16% |
+| Hunter trapper.poisoner · 100 · venomSnare | 17% → 16% |
+| Hunter trapper.poisoner · 100 · toxicTips | 9% |
 | Hunter trapper.poisoner · 100 · venomArrow | 9% |
 | Hunter scout.partyHunter · 45 · basic | 41% |
 | Hunter scout.partyHunter · 45 · aimedShot | 29% |
@@ -14039,30 +14132,30 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage base · 45 · iceShard | 10% |
 | Mage base · 45 · firebolt | 8% |
 | Mage base · 45 · glacialSpike | 5% |
-| Mage base · 70 · basic | 21% |
+| Mage base · 70 · basic | 21% → 20% |
 | Mage base · 70 · lightningBolt | 11% |
 | Mage base · 70 · iceShard | 8% |
 | Mage base · 70 · firebolt | 7% |
 | Mage base · 70 · shatter | 6% |
-| Mage base · 100 · basic | 18% |
+| Mage base · 100 · basic | 18% → 17% |
 | Mage base · 100 · lightningBolt | 11% |
-| Mage base · 100 · iceShard | 8% |
+| Mage base · 100 · shatter | 6% → 9% |
+| Mage base · 100 · iceShard | 8% → 7% |
 | Mage base · 100 · firebolt | 6% |
-| Mage base · 100 · shatter | 6% |
 | Mage base.loadout · 45 · basic | 23% |
 | Mage base.loadout · 45 · lightningBolt | 13% |
-| Mage base.loadout · 45 · iceShard | 11% |
+| Mage base.loadout · 45 · iceShard | 11% → 10% |
 | Mage base.loadout · 45 · firebolt | 8% |
-| Mage base.loadout · 45 · glacialSpike | 4% |
+| Mage base.loadout · 45 · shatter | 4% |
 | Mage base.loadout · 70 · basic | 20% |
 | Mage base.loadout · 70 · lightningBolt | 11% |
 | Mage base.loadout · 70 · iceShard | 9% |
 | Mage base.loadout · 70 · firebolt | 7% |
 | Mage base.loadout · 70 · shatter | 6% |
-| Mage base.loadout · 100 · basic | 18% |
+| Mage base.loadout · 100 · basic | 18% → 16% |
 | Mage base.loadout · 100 · lightningBolt | 11% |
-| Mage base.loadout · 100 · iceShard | 9% |
-| Mage base.loadout · 100 · shatter | 6% |
+| Mage base.loadout · 100 · shatter | 6% → 9% |
+| Mage base.loadout · 100 · iceShard | 9% → 8% |
 | Mage base.loadout · 100 · firebolt | 6% |
 | Mage destroyer.destroyerExp · 45 · basic | 36% |
 | Mage destroyer.destroyerExp · 45 · lightningBolt | 19% |
@@ -14074,150 +14167,150 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage destroyer.destroyerExp · 70 · iceShard | 16% |
 | Mage destroyer.destroyerExp · 70 · firebolt | 11% |
 | Mage destroyer.destroyerExp · 70 · fireball | 6% |
-| Mage destroyer.destroyerExp · 100 · basic | 32% |
+| Mage destroyer.destroyerExp · 100 · basic | 32% → 31% |
 | Mage destroyer.destroyerExp · 100 · lightningBolt | 16% |
 | Mage destroyer.destroyerExp · 100 · iceShard | 16% |
-| Mage destroyer.destroyerExp · 100 · firebolt | 11% |
+| Mage destroyer.destroyerExp · 100 · firebolt | 11% → 10% |
 | Mage destroyer.destroyerExp · 100 · cataclysm | 6% |
 | Mage destroyer.destroyerBoss · 45 · basic | 24% |
 | Mage destroyer.destroyerBoss · 45 · iceShard | 14% |
 | Mage destroyer.destroyerBoss · 45 · lightningBolt | 14% |
 | Mage destroyer.destroyerBoss · 45 · firebolt | 10% |
 | Mage destroyer.destroyerBoss · 45 · burn | 6% |
-| Mage destroyer.destroyerBoss · 70 · basic | 21% |
+| Mage destroyer.destroyerBoss · 70 · basic | 21% → 20% |
 | Mage destroyer.destroyerBoss · 70 · lightningBolt | 13% |
-| Mage destroyer.destroyerBoss · 70 · iceShard | 13% |
+| Mage destroyer.destroyerBoss · 70 · iceShard | 13% → 12% |
 | Mage destroyer.destroyerBoss · 70 · firebolt | 8% |
 | Mage destroyer.destroyerBoss · 70 · burn | 7% |
 | Mage destroyer.destroyerBoss · 100 · basic | 20% |
-| Mage destroyer.destroyerBoss · 100 · lightningBolt | 13% |
+| Mage destroyer.destroyerBoss · 100 · lightningBolt | 13% → 12% |
 | Mage destroyer.destroyerBoss · 100 · iceShard | 12% |
-| Mage destroyer.destroyerBoss · 100 · firebolt | 8% |
+| Mage destroyer.destroyerBoss · 100 · firebolt | 8% → 7% |
 | Mage destroyer.destroyerBoss · 100 · burn | 7% |
-| Mage destroyer.destroyerFire · 45 · firebolt | 27% |
-| Mage destroyer.destroyerFire · 45 · basic | 25% |
-| Mage destroyer.destroyerFire · 45 · burn | 13% |
-| Mage destroyer.destroyerFire · 45 · fireball | 11% |
-| Mage destroyer.destroyerFire · 45 · pyroblast | 11% |
-| Mage destroyer.destroyerFire · 70 · firebolt | 23% |
-| Mage destroyer.destroyerFire · 70 · basic | 19% |
-| Mage destroyer.destroyerFire · 70 · burn | 14% |
-| Mage destroyer.destroyerFire · 70 · pyroblast | 10% |
-| Mage destroyer.destroyerFire · 70 · combustion | 10% |
-| Mage destroyer.destroyerFire · 100 · firebolt | 19% |
-| Mage destroyer.destroyerFire · 100 · basic | 18% |
-| Mage destroyer.destroyerFire · 100 · immolate | 16% |
-| Mage destroyer.destroyerFire · 100 · burn | 12% |
-| Mage destroyer.destroyerFire · 100 · combustion | 10% |
+| Mage destroyer.destroyerFire · 45 · firebolt | 27% → 26% |
+| Mage destroyer.destroyerFire · 45 · basic | 25% → 23% |
+| Mage destroyer.destroyerFire · 45 · burn | 13% → 14% |
+| Mage destroyer.destroyerFire · 45 · fireball | 11% → 13% |
+| Mage destroyer.destroyerFire · 45 · pyroblast | 11% → 12% |
+| Mage destroyer.destroyerFire · 70 · firebolt | 23% → 21% |
+| Mage destroyer.destroyerFire · 70 · basic | 19% → 17% |
+| Mage destroyer.destroyerFire · 70 · burn | 14% → 13% |
+| Mage destroyer.destroyerFire · 70 · pyroblast | 10% → 11% |
+| Mage destroyer.destroyerFire · 70 · combustion | 10% → 11% |
+| Mage destroyer.destroyerFire · 100 · basic | 18% → 23% |
+| Mage destroyer.destroyerFire · 100 · pyroblast | 15% |
+| Mage destroyer.destroyerFire · 100 · burn | 12% → 14% |
+| Mage destroyer.destroyerFire · 100 · fireball | 13% |
+| Mage destroyer.destroyerFire · 100 · combustion | 10% → 13% |
 | Mage destroyer.destroyerIce · 45 · iceShard | 37% |
 | Mage destroyer.destroyerIce · 45 · basic | 28% |
-| Mage destroyer.destroyerIce · 45 · glacialSpike | 15% |
+| Mage destroyer.destroyerIce · 45 · glacialSpike | 15% → 16% |
 | Mage destroyer.destroyerIce · 45 · hailstorm | 15% |
 | Mage destroyer.destroyerIce · 45 · frozenOrb | 3% |
 | Mage destroyer.destroyerIce · 70 · iceShard | 29% |
-| Mage destroyer.destroyerIce · 70 · basic | 23% |
+| Mage destroyer.destroyerIce · 70 · basic | 23% → 22% |
 | Mage destroyer.destroyerIce · 70 · glacialSpike | 18% |
+| Mage destroyer.destroyerIce · 70 · shatter | 11% → 12% |
 | Mage destroyer.destroyerIce · 70 · hailstorm | 12% |
-| Mage destroyer.destroyerIce · 70 · shatter | 11% |
-| Mage destroyer.destroyerIce · 100 · iceShard | 28% |
-| Mage destroyer.destroyerIce · 100 · basic | 22% |
-| Mage destroyer.destroyerIce · 100 · shatter | 16% |
-| Mage destroyer.destroyerIce · 100 · glacialSpike | 14% |
-| Mage destroyer.destroyerIce · 100 · hailstorm | 10% |
-| Mage destroyer.destroyerLightning · 45 · lightningBolt | 51% |
-| Mage destroyer.destroyerLightning · 45 · basic | 20% |
-| Mage destroyer.destroyerLightning · 45 · thunderStrike | 10% |
-| Mage destroyer.destroyerLightning · 45 · chainLightning | 8% |
+| Mage destroyer.destroyerIce · 100 · basic | 22% → 32% |
+| Mage destroyer.destroyerIce · 100 · glacialSpike | 14% → 31% |
+| Mage destroyer.destroyerIce · 100 · hailstorm | 10% → 17% |
+| Mage destroyer.destroyerIce · 100 · frozenOrb | 7% |
+| Mage destroyer.destroyerIce · 100 · deepFreeze | 5% |
+| Mage destroyer.destroyerLightning · 45 · lightningBolt | 51% → 49% |
+| Mage destroyer.destroyerLightning · 45 · basic | 20% → 19% |
+| Mage destroyer.destroyerLightning · 45 · thunderStrike | 10% → 12% |
+| Mage destroyer.destroyerLightning · 45 · chainLightning | 8% → 9% |
 | Mage destroyer.destroyerLightning · 45 · firewall | 5% |
-| Mage destroyer.destroyerLightning · 70 · lightningBolt | 42% |
-| Mage destroyer.destroyerLightning · 70 · basic | 16% |
-| Mage destroyer.destroyerLightning · 70 · thunderStrike | 12% |
+| Mage destroyer.destroyerLightning · 70 · lightningBolt | 42% → 39% |
+| Mage destroyer.destroyerLightning · 70 · thunderStrike | 12% → 15% |
+| Mage destroyer.destroyerLightning · 70 · basic | 16% → 15% |
 | Mage destroyer.destroyerLightning · 70 · firewall | 10% |
-| Mage destroyer.destroyerLightning · 70 · chainLightning | 6% |
-| Mage destroyer.destroyerLightning · 100 · lightningBolt | 39% |
-| Mage destroyer.destroyerLightning · 100 · basic | 16% |
-| Mage destroyer.destroyerLightning · 100 · thunderStrike | 10% |
-| Mage destroyer.destroyerLightning · 100 · lightningLance | 8% |
-| Mage destroyer.destroyerLightning · 100 · firewall | 7% |
+| Mage destroyer.destroyerLightning · 70 · lightningLance | 7% |
+| Mage destroyer.destroyerLightning · 100 · lightningLance | 8% → 24% |
+| Mage destroyer.destroyerLightning · 100 · thunderStrike | 10% → 19% |
+| Mage destroyer.destroyerLightning · 100 · basic | 16% → 19% |
+| Mage destroyer.destroyerLightning · 100 · firewall | 7% → 13% |
+| Mage destroyer.destroyerLightning · 100 · chainLightning | 9% |
 | Mage arcanist.arcanistBoss · 45 · basic | 29% |
 | Mage arcanist.arcanistBoss · 45 · lightningBolt | 18% |
 | Mage arcanist.arcanistBoss · 45 · iceShard | 17% |
 | Mage arcanist.arcanistBoss · 45 · firebolt | 13% |
 | Mage arcanist.arcanistBoss · 45 · arcaneDischarge | 5% |
-| Mage arcanist.arcanistBoss · 70 · basic | 25% |
-| Mage arcanist.arcanistBoss · 70 · lightningBolt | 15% |
-| Mage arcanist.arcanistBoss · 70 · iceShard | 14% |
-| Mage arcanist.arcanistBoss · 70 · firebolt | 12% |
-| Mage arcanist.arcanistBoss · 70 · arcaneTorrent | 9% |
-| Mage arcanist.arcanistBoss · 100 · basic | 22% |
-| Mage arcanist.arcanistBoss · 100 · arcaneTorrent | 18% |
-| Mage arcanist.arcanistBoss · 100 · lightningBolt | 15% |
-| Mage arcanist.arcanistBoss · 100 · firebolt | 11% |
-| Mage arcanist.arcanistBoss · 100 · iceShard | 11% |
+| Mage arcanist.arcanistBoss · 70 · basic | 25% → 23% |
+| Mage arcanist.arcanistBoss · 70 · arcaneTorrent | 9% → 16% |
+| Mage arcanist.arcanistBoss · 70 · lightningBolt | 15% → 14% |
+| Mage arcanist.arcanistBoss · 70 · iceShard | 14% → 12% |
+| Mage arcanist.arcanistBoss · 70 · firebolt | 12% → 11% |
+| Mage arcanist.arcanistBoss · 100 · arcaneTorrent | 18% → 29% |
+| Mage arcanist.arcanistBoss · 100 · basic | 22% → 19% |
+| Mage arcanist.arcanistBoss · 100 · lightningBolt | 15% → 12% |
+| Mage arcanist.arcanistBoss · 100 · firebolt | 11% → 9% |
+| Mage arcanist.arcanistBoss · 100 · iceShard | 11% → 9% |
 | Mage arcanist.arcanistOverload · 45 · basic | 29% |
 | Mage arcanist.arcanistOverload · 45 · lightningBolt | 18% |
 | Mage arcanist.arcanistOverload · 45 · iceShard | 17% |
 | Mage arcanist.arcanistOverload · 45 · firebolt | 13% |
 | Mage arcanist.arcanistOverload · 45 · arcaneDischarge | 5% |
-| Mage arcanist.arcanistOverload · 70 · basic | 26% |
+| Mage arcanist.arcanistOverload · 70 · basic | 26% → 25% |
 | Mage arcanist.arcanistOverload · 70 · lightningBolt | 15% |
-| Mage arcanist.arcanistOverload · 70 · iceShard | 15% |
+| Mage arcanist.arcanistOverload · 70 · iceShard | 15% → 14% |
 | Mage arcanist.arcanistOverload · 70 · firebolt | 12% |
-| Mage arcanist.arcanistOverload · 70 · arcaneDischarge | 7% |
-| Mage arcanist.arcanistOverload · 100 · basic | 24% |
-| Mage arcanist.arcanistOverload · 100 · lightningBolt | 15% |
-| Mage arcanist.arcanistOverload · 100 · iceShard | 14% |
-| Mage arcanist.arcanistOverload · 100 · arcaneTorrent | 13% |
+| Mage arcanist.arcanistOverload · 70 · arcaneTorrent | 9% |
+| Mage arcanist.arcanistOverload · 100 · arcaneTorrent | 13% → 21% |
+| Mage arcanist.arcanistOverload · 100 · basic | 24% → 21% |
+| Mage arcanist.arcanistOverload · 100 · lightningBolt | 15% → 12% |
 | Mage arcanist.arcanistOverload · 100 · firebolt | 11% |
-| Mage arcanist.arcanistFire · 45 · firebolt | 27% |
+| Mage arcanist.arcanistOverload · 100 · iceShard | 14% → 11% |
+| Mage arcanist.arcanistFire · 45 · firebolt | 27% → 28% |
 | Mage arcanist.arcanistFire · 45 · basic | 20% |
 | Mage arcanist.arcanistFire · 45 · burn | 14% |
 | Mage arcanist.arcanistFire · 45 · fireball | 11% |
 | Mage arcanist.arcanistFire · 45 · pyroblast | 11% |
-| Mage arcanist.arcanistFire · 70 · firebolt | 22% |
+| Mage arcanist.arcanistFire · 70 · firebolt | 22% → 23% |
 | Mage arcanist.arcanistFire · 70 · basic | 17% |
 | Mage arcanist.arcanistFire · 70 · pyroblast | 13% |
 | Mage arcanist.arcanistFire · 70 · immolate | 13% |
 | Mage arcanist.arcanistFire · 70 · burn | 11% |
 | Mage arcanist.arcanistFire · 100 · firebolt | 18% |
-| Mage arcanist.arcanistFire · 100 · immolate | 17% |
-| Mage arcanist.arcanistFire · 100 · basic | 15% |
-| Mage arcanist.arcanistFire · 100 · pyroblast | 13% |
+| Mage arcanist.arcanistFire · 100 · immolate | 17% → 16% |
+| Mage arcanist.arcanistFire · 100 · basic | 15% → 14% |
+| Mage arcanist.arcanistFire · 100 · pyroblast | 13% → 12% |
 | Mage arcanist.arcanistFire · 100 · burn | 9% |
-| Mage arcanist.arcanistIce · 45 · iceShard | 29% |
-| Mage arcanist.arcanistIce · 45 · basic | 25% |
+| Mage arcanist.arcanistIce · 45 · iceShard | 29% → 28% |
+| Mage arcanist.arcanistIce · 45 · basic | 25% → 24% |
 | Mage arcanist.arcanistIce · 45 · glacialSpike | 15% |
-| Mage arcanist.arcanistIce · 45 · shatter | 11% |
+| Mage arcanist.arcanistIce · 45 · shatter | 11% → 12% |
 | Mage arcanist.arcanistIce · 45 · hailstorm | 10% |
-| Mage arcanist.arcanistIce · 70 · iceShard | 24% |
-| Mage arcanist.arcanistIce · 70 · basic | 21% |
-| Mage arcanist.arcanistIce · 70 · glacialSpike | 21% |
-| Mage arcanist.arcanistIce · 70 · shatter | 12% |
-| Mage arcanist.arcanistIce · 70 · hailstorm | 9% |
+| Mage arcanist.arcanistIce · 70 · iceShard | 24% → 23% |
+| Mage arcanist.arcanistIce · 70 · basic | 21% → 20% |
+| Mage arcanist.arcanistIce · 70 · glacialSpike | 21% → 20% |
+| Mage arcanist.arcanistIce · 70 · shatter | 12% → 15% |
+| Mage arcanist.arcanistIce · 70 · hailstorm | 9% → 8% |
+| Mage arcanist.arcanistIce · 100 · shatter | 14% → 22% |
 | Mage arcanist.arcanistIce · 100 · iceShard | 20% |
-| Mage arcanist.arcanistIce · 100 · basic | 18% |
 | Mage arcanist.arcanistIce · 100 · glacialSpike | 18% |
-| Mage arcanist.arcanistIce · 100 · shatter | 14% |
-| Mage arcanist.arcanistIce · 100 · hailstorm | 8% |
+| Mage arcanist.arcanistIce · 100 · basic | 18% → 17% |
+| Mage arcanist.arcanistIce · 100 · arcaneTorrent | 9% |
 | Mage arcanist.arcanistLightning · 45 · lightningBolt | 41% |
 | Mage arcanist.arcanistLightning · 45 · basic | 18% |
 | Mage arcanist.arcanistLightning · 45 · thunderStrike | 12% |
 | Mage arcanist.arcanistLightning · 45 · chainLightning | 9% |
 | Mage arcanist.arcanistLightning · 45 · lightningLance | 8% |
 | Mage arcanist.arcanistLightning · 70 · lightningBolt | 36% |
+| Mage arcanist.arcanistLightning · 70 · thunderStrike | 14% → 15% |
 | Mage arcanist.arcanistLightning · 70 · basic | 15% |
-| Mage arcanist.arcanistLightning · 70 · thunderStrike | 14% |
 | Mage arcanist.arcanistLightning · 70 · lightningLance | 10% |
 | Mage arcanist.arcanistLightning · 70 · firewall | 8% |
-| Mage arcanist.arcanistLightning · 100 · lightningBolt | 33% |
-| Mage arcanist.arcanistLightning · 100 · basic | 14% |
+| Mage arcanist.arcanistLightning · 100 · lightningBolt | 33% → 31% |
+| Mage arcanist.arcanistLightning · 100 · lightningLance | 11% → 14% |
 | Mage arcanist.arcanistLightning · 100 · thunderStrike | 13% |
-| Mage arcanist.arcanistLightning · 100 · lightningLance | 11% |
-| Mage arcanist.arcanistLightning · 100 · firewall | 8% |
-| Cleric base · 45 · holyStrike | 42% → 43% |
+| Mage arcanist.arcanistLightning · 100 · basic | 14% → 13% |
+| Mage arcanist.arcanistLightning · 100 · arcaneTorrent | 7% |
+| Cleric base · 45 · holyStrike | 43% |
 | Cleric base · 45 · basic | 30% |
-| Cleric base · 45 · brandOfLight | 20% → 19% |
-| Cleric base · 45 · judgement | 8% → 7% |
+| Cleric base · 45 · brandOfLight | 19% |
+| Cleric base · 45 · judgement | 7% |
 | Cleric base · 70 · holyStrike | 39% |
 | Cleric base · 70 · basic | 27% |
 | Cleric base · 70 · brandOfLight | 22% |
@@ -14241,41 +14334,41 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Cleric healer.solo · 100 · lightRay | 56% |
 | Cleric healer.solo · 100 · basic | 38% |
 | Cleric healer.solo · 100 · blindingLight | 6% |
-| Cleric fortune.plunder · 45 · holyStrike | 49% → 50% |
+| Cleric fortune.plunder · 45 · holyStrike | 50% |
 | Cleric fortune.plunder · 45 · basic | 31% |
-| Cleric fortune.plunder · 45 · brandOfLight | 21% → 19% |
-| Cleric fortune.plunder · 70 · holyStrike | 50% → 47% |
-| Cleric fortune.plunder · 70 · basic | 27% → 25% |
-| Cleric fortune.plunder · 70 · brandOfLight | 23% → 21% |
+| Cleric fortune.plunder · 45 · brandOfLight | 19% |
+| Cleric fortune.plunder · 70 · holyStrike | 47% |
+| Cleric fortune.plunder · 70 · basic | 25% |
+| Cleric fortune.plunder · 70 · brandOfLight | 21% |
 | Cleric fortune.plunder · 70 · judgement | 7% |
-| Cleric fortune.plunder · 100 · holyStrike | 46% → 40% |
-| Cleric fortune.plunder · 100 · basic | 26% → 23% |
+| Cleric fortune.plunder · 100 · holyStrike | 40% |
+| Cleric fortune.plunder · 100 · basic | 23% |
 | Cleric fortune.plunder · 100 · brandOfLight | 21% |
-| Cleric fortune.plunder · 100 · judgement | 8% → 16% |
-| Cleric inquisitor.solo · 45 · holyStrike | 53% → 55% |
-| Cleric inquisitor.solo · 45 · basic | 22% → 23% |
-| Cleric inquisitor.solo · 45 · brandOfLight | 17% → 16% |
+| Cleric fortune.plunder · 100 · judgement | 16% |
+| Cleric inquisitor.solo · 45 · holyStrike | 55% |
+| Cleric inquisitor.solo · 45 · basic | 23% |
+| Cleric inquisitor.solo · 45 · brandOfLight | 16% |
 | Cleric inquisitor.solo · 45 · judgement | 7% |
 | Cleric inquisitor.solo · 70 · holyStrike | 50% |
 | Cleric inquisitor.solo · 70 · basic | 20% |
 | Cleric inquisitor.solo · 70 · brandOfLight | 18% |
 | Cleric inquisitor.solo · 70 · judgement | 12% |
-| Cleric inquisitor.solo · 100 · holyStrike | 47% → 43% |
-| Cleric inquisitor.solo · 100 · judgement | 19% → 22% |
-| Cleric inquisitor.solo · 100 · brandOfLight | 17% → 19% |
-| Cleric inquisitor.solo · 100 · basic | 18% → 17% |
-| Cleric inquisitor.bulwark · 45 · holyStrike | 52% → 53% |
+| Cleric inquisitor.solo · 100 · holyStrike | 43% |
+| Cleric inquisitor.solo · 100 · judgement | 22% |
+| Cleric inquisitor.solo · 100 · brandOfLight | 19% |
+| Cleric inquisitor.solo · 100 · basic | 17% |
+| Cleric inquisitor.bulwark · 45 · holyStrike | 53% |
 | Cleric inquisitor.bulwark · 45 · basic | 24% |
-| Cleric inquisitor.bulwark · 45 · brandOfLight | 17% → 16% |
+| Cleric inquisitor.bulwark · 45 · brandOfLight | 16% |
 | Cleric inquisitor.bulwark · 45 · judgement | 7% |
 | Cleric inquisitor.bulwark · 70 · holyStrike | 49% |
 | Cleric inquisitor.bulwark · 70 · basic | 21% |
 | Cleric inquisitor.bulwark · 70 · brandOfLight | 19% |
 | Cleric inquisitor.bulwark · 70 · judgement | 12% |
-| Cleric inquisitor.bulwark · 100 · holyStrike | 46% → 42% |
-| Cleric inquisitor.bulwark · 100 · judgement | 18% → 21% |
-| Cleric inquisitor.bulwark · 100 · brandOfLight | 17% → 19% |
-| Cleric inquisitor.bulwark · 100 · basic | 19% → 18% |
+| Cleric inquisitor.bulwark · 100 · holyStrike | 42% |
+| Cleric inquisitor.bulwark · 100 · judgement | 21% |
+| Cleric inquisitor.bulwark · 100 · brandOfLight | 19% |
+| Cleric inquisitor.bulwark · 100 · basic | 18% |
 
 ### T-SK5: jedno Leczenie / maks. HP tanka
 
@@ -14290,23 +14383,23 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | healer.dungeon · 20 | **23%** | **22%** |
 | healer.dungeon · 45 | 32% | 28% |
 | healer.dungeon · 70 | 30% | 29% |
-| healer.dungeon · 100 | **42% → 38%** | 38% → 34% |
+| healer.dungeon · 100 | **38%** | 34% |
 | healer.solo · 20 | **22%** | **21%** |
 | healer.solo · 45 | 34% | 29% |
-| healer.solo · 70 | 30% → 29% | 28% |
-| healer.solo · 100 | **43% → 38%** | 38% → 34% |
+| healer.solo · 70 | 29% | 28% |
+| healer.solo · 100 | **38%** | 34% |
 | fortune.plunder · 20 | **19%** | **18%** |
 | fortune.plunder · 45 | 26% | **23%** |
 | fortune.plunder · 70 | **21%** | **20%** |
-| fortune.plunder · 100 | 23% → 25% | **21% → 23%** |
+| fortune.plunder · 100 | 25% | **23%** |
 | inquisitor.solo · 20 | **20%** | **20%** |
 | inquisitor.solo · 45 | 26% | **23%** |
 | inquisitor.solo · 70 | **21%** | **21%** |
-| inquisitor.solo · 100 | 23% → 25% | **22% → 23%** |
+| inquisitor.solo · 100 | 25% | **23%** |
 | inquisitor.bulwark · 20 | **20%** | **19%** |
 | inquisitor.bulwark · 45 | 26% | **23%** |
 | inquisitor.bulwark · 70 | **21%** | **21%** |
-| inquisitor.bulwark · 100 | **23% → 25%** | **21% → 23%** |
+| inquisitor.bulwark · 100 | **25%** | **23%** |
 
 ### T-SK6: leczenie na tanku / obrażenia tanka na bossie
 
@@ -14315,29 +14408,29 @@ Rotacja buildu Kapłana z ograniczeniem many przez czas `Balance.bossFight`, lec
 | build · boss (poziom drużyny) | drużyna domyślna | drużyna S92 | leczenie / s (domyślna) | obrażenia tanka / s | czas walki s | mana: zapotrzebowanie / regeneracja |
 | --- | --: | --: | --: | --: | --: | --: |
 | base · grimrok (19) | 1,09 | 1,52 | 50 | 46 | 247,1 | 5,83 |
-| base · morvane (44) | **0,84** | 1,28 → 1,25 | 163 | 195 | 228,1 | 3,31 |
-| base · azgor (69) | 1,49 | **2,93 → 2,79** | 228 | 153 | 242,7 | 2,24 |
-| base · vaelgrath (99) | 1,88 | **3,65 → 3,50** | 382 | 204 | 252,6 | 1,59 |
+| base · morvane (44) | **0,84** | 1,25 | 163 | 195 | 228,1 | 3,31 |
+| base · azgor (69) | 1,49 | **2,79** | 228 | 153 | 242,7 | 2,24 |
+| base · vaelgrath (99) | 1,88 | **3,50** | 382 | 204 | 252,6 | 1,59 |
 | healer.dungeon · grimrok (19) | 1,38 | 1,79 | 63 | 46 | 246,5 | 5,55 |
-| healer.dungeon · morvane (44) | **2,80 → 2,78** | **3,52 → 3,45** | 548 → 544 | 195 | 228,0 | 2,10 |
-| healer.dungeon · azgor (69) | **8,73 → 8,62** | **12,89 → 12,36** | 1336 → 1319 | 153 | 242,6 | 1,84 |
-| healer.dungeon · vaelgrath (99) | **15,97 → 14,40** | **25,22 → 22,08** | 3254 → 2934 | 204 | 252,6 | 1,22 |
+| healer.dungeon · morvane (44) | **2,78** | **3,45** | 544 | 195 | 228,0 | 2,10 |
+| healer.dungeon · azgor (69) | **8,62** | **12,36** | 1319 | 153 | 242,6 | 1,84 |
+| healer.dungeon · vaelgrath (99) | **14,40** | **22,08** | 2934 | 204 | 252,6 | 1,22 |
 | healer.solo · grimrok (19) | **0,88** | **0,81** | 40 | 46 | 243,6 | 2,08 |
-| healer.solo · morvane (44) | 1,70 → 1,69 | 1,74 → 1,73 | 332 → 330 | 195 | 225,0 | 0,89 |
-| healer.solo · azgor (69) | **5,82 → 5,74** | **6,40 → 6,32** | 891 → 879 | 153 | 239,7 | 0,59 |
-| healer.solo · vaelgrath (99) | **9,63 → 8,66** | **10,36 → 9,31** | 1962 → 1763 | 204 | 249,8 | 0,37 |
+| healer.solo · morvane (44) | 1,69 | 1,73 | 330 | 195 | 225,0 | 0,89 |
+| healer.solo · azgor (69) | **5,74** | **6,32** | 879 | 153 | 239,7 | 0,59 |
+| healer.solo · vaelgrath (99) | **8,66** | **9,31** | 1763 | 204 | 249,8 | 0,37 |
 | fortune.plunder · grimrok (19) | 1,01 | 1,41 | 46 | 46 | 243,0 | 5,60 |
-| fortune.plunder · morvane (44) | **0,86** | 1,29 → 1,26 | 168 | 195 | 225,9 | 2,65 |
-| fortune.plunder · azgor (69) | 1,55 → 1,53 | **2,98 → 2,81** | 237 → 234 | 153 | 240,3 | 1,98 → 2,37 |
-| fortune.plunder · vaelgrath (99) | **2,04 → 2,22** | **3,96 → 4,15** | 415 → 452 | 204 | 250,2 | 1,68 → 1,74 |
+| fortune.plunder · morvane (44) | **0,86** | 1,26 | 168 | 195 | 225,9 | 2,65 |
+| fortune.plunder · azgor (69) | 1,53 | **2,81** | 234 | 153 | 240,3 | 2,37 |
+| fortune.plunder · vaelgrath (99) | **2,22** | **4,15** | 452 | 204 | 250,2 | 1,74 |
 | inquisitor.solo · grimrok (19) | **0,00** | **0,00** | 0 | 46 | 249,3 | 4,18 |
 | inquisitor.solo · morvane (44) | **0,00** | **0,00** | 0 | 195 | 234,1 | 1,91 |
 | inquisitor.solo · azgor (69) | **0,00** | **0,00** | 0 | 153 | 249,2 | 1,88 |
-| inquisitor.solo · vaelgrath (99) | **0,00** | **0,00** | 0 | 204 | 259,2 | 1,43 → 1,67 |
+| inquisitor.solo · vaelgrath (99) | **0,00** | **0,00** | 0 | 204 | 259,2 | 1,67 |
 | inquisitor.bulwark · grimrok (19) | **0,00** | **0,00** | 0 | 46 | 250,9 | 4,18 |
 | inquisitor.bulwark · morvane (44) | **0,00** | **0,00** | 0 | 195 | 235,5 | 1,91 |
 | inquisitor.bulwark · azgor (69) | **0,00** | **0,00** | 0 | 153 | 250,8 | 1,88 |
-| inquisitor.bulwark · vaelgrath (99) | **0,00** | **0,00** | 0 | 204 | 260,8 | 1,43 → 1,67 |
+| inquisitor.bulwark · vaelgrath (99) | **0,00** | **0,00** | 0 | 204 | 260,8 | 1,67 |
 
 ### Porównanie z diagnozą i ROZWOJ
 
@@ -14367,21 +14460,21 @@ L20: baza z bronią `Balance.LOADOUT` wobec diagnozy `3f935c1` (plan balansu D1)
 | ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L20 (węzły) | 0,23 | 0,21 | 8% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L20 (węzły) | 0,19 | 0,20 | -7% |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L20 (węzły) | 1,30 | 1,52 | **-14%** |
-| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L45 (węzły) | 0,32 | 0,30 | 7% → 6% |
+| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L45 (węzły) | 0,32 | 0,30 | 6% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L45 (węzły) | 0,26 | 0,26 | 2% |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L45 (węzły) | 1,04 | 1,40 | **-26%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L45 (żywioły) | 3,34 | 1,28 | **161%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L45 (żywioły) | 3,34 | 1,38 | **142%** |
-| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L70 (węzły) | 0,30 | 0,33 | -8% → -9% |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L45 (żywioły) | 3,34 → 2,12 | 1,28 | **161% → 65%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L45 (żywioły) | 3,34 → 2,12 | 1,38 | **142% → 53%** |
+| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L70 (węzły) | 0,30 | 0,33 | -9% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L70 (węzły) | 0,21 | 0,28 | **-27%** |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L70 (węzły) | 1,10 | 1,40 | **-22%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L70 (żywioły) | 3,38 | 1,13 | **199%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L70 (żywioły) | 3,38 | 1,27 | **166%** |
-| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L100 (węzły) | 0,42 → 0,38 | 0,38 | 11% → -1% |
-| ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L100 (węzły) | 0,23 → 0,25 | 0,30 | **-22% → -15%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L70 (żywioły) | 3,38 → 2,67 | 1,13 | **199% → 136%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L70 (żywioły) | 3,38 → 2,67 | 1,27 | **166% → 110%** |
+| ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L100 (węzły) | 0,38 | 0,38 | -1% |
+| ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L100 (węzły) | 0,25 | 0,30 | **-15%** |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L100 (węzły) | 1,08 | 1,30 | **-17%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L100 (żywioły) | 2,81 | 1,05 | **167%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L100 (żywioły) | 2,81 | 1,18 | **138%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L100 (żywioły) | 2,81 → 2,16 | 1,05 | **167% → 106%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L100 (żywioły) | 2,81 → 2,16 | 1,18 | **138% → 83%** |
 
 ### Poza modelem (na build, poziom 100)
 
@@ -14411,9 +14504,9 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 - Mag `destroyer.destroyerLightning`: –; pominięte: –; poza rotacją: –.
 - Mag `arcanist.arcanistBoss`: –; pominięte: –; poza rotacją: blink, emberShield, flameWave, glacialSpike, hailstorm, iceBarrier, manaShield, staticShock, stormArmor.
 - Mag `arcanist.arcanistOverload`: –; pominięte: –; poza rotacją: blink, emberShield, flameWave, glacialSpike, hailstorm, iceBarrier, manaShield, staticShock, stormArmor.
-- Mag `arcanist.arcanistFire`: –; pominięte: –; poza rotacją: flameWave.
-- Mag `arcanist.arcanistIce`: –; pominięte: –; poza rotacją: –.
-- Mag `arcanist.arcanistLightning`: –; pominięte: –; poza rotacją: ballLightning.
+- Mag `arcanist.arcanistFire`: –; pominięte: –; poza rotacją: flameWave, meteorStorm.
+- Mag `arcanist.arcanistIce`: –; pominięte: –; poza rotacją: blizzard.
+- Mag `arcanist.arcanistLightning`: –; pominięte: –; poza rotacją: ballLightning, tempest.
 - Kapłan `base`: –; pominięte: –; poza rotacją: –.
 - Kapłan `healer.dungeon`: –; pominięte: –; poza rotacją: radiance, blindingLight.
 - Kapłan `healer.solo`: –; pominięte: –; poza rotacją: circleOfLight, shieldOfFaith, renew, sanctuary, purify, miracle.
@@ -14423,7 +14516,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 
 ### Cele G10 (T-SK4, T-SK5; asertowane od S87 poza `GLOBAL_REPORT_ONLY`)
 
-116/348 w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny `balance.spec` drukuje je razem z G). Poza pasmem:
+129/348 w paśmie (T-SK4 Maga od 45., T-SK5 Kapłana na tanku Wojowniku konwencji i Strażniku „Obrońcy”, co 5 poziomów; blok globalny `balance.spec` drukuje je razem z G). Poza pasmem:
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -14467,33 +14560,21 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 40 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 40 | 0,25 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 40 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 45 | 3,34 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 45 | 3,32 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 45 | 1,98 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerBoss 45 | 3,09 | 1,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerFire 45 | 4,80 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 45 | 3,97 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerLightning 45 | 4,69 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistBoss 45 | 1,93 | 2,00–2,40 | **poza** | raport → S142 |
-| T-SK4 Mage arcanist.arcanistOverload 45 | 2,45 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 45 | 3,47 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 45 | 3,72 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 45 | 4,11 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 45 | 2,12 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 45 | 1,93 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 45 | 1,15 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistBoss 45 | 1,12 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 45 | 1,42 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 45 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na guardian.defender 45 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 45 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 45 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 50 | 3,55 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 50 | 3,95 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 50 | 1,93 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerBoss 50 | 3,01 | 1,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerFire 50 | 4,15 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 50 | 3,51 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerLightning 50 | 3,88 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistBoss 50 | 1,81 | 2,00–2,40 | **poza** | raport → S142 |
-| T-SK4 Mage arcanist.arcanistOverload 50 | 2,30 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 50 | 3,36 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 50 | 3,16 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 50 | 2,26 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 50 | 2,52 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 50 | 1,23 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistBoss 50 | 1,15 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 50 | 1,46 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistFire 50 | 1,78 | 2,00–3,00 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 50 | 0,25 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 50 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 50 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14502,18 +14583,12 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 50 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 50 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 50 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 55 | 3,98 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 55 | 3,98 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 55 | 1,95 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerBoss 55 | 3,09 | 1,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerFire 55 | 4,71 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 55 | 3,90 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerLightning 55 | 4,60 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistBoss 55 | 1,82 | 2,00–2,40 | **poza** | raport → S142 |
-| T-SK4 Mage arcanist.arcanistOverload 55 | 2,31 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 55 | 3,21 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 55 | 3,38 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 55 | 3,81 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 55 | 2,48 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 55 | 2,48 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 55 | 1,21 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistBoss 55 | 1,13 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 55 | 1,44 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistFire 55 | 2,00 | 2,00–3,00 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 55 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 55 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 55 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14522,14 +14597,14 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 55 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 55 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 55 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 60 | 4,20 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 60 | 3,44 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 60 | 3,12 | 2,00–2,80 | **poza** | raport → S140 |
-| T-SK4 Mage destroyer.destroyerBoss 60 | 3,78 | 1,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerFire 60 | 4,47 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 60 | 3,70 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerLightning 60 | 4,37 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 60 | 3,26 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 60 | 2,78 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 60 | 3,02 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 60 | 3,04 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 60 | 3,18 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 60 | 1,60 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 60 | 2,03 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistFire 60 | 1,85 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistIce 60 | 1,93 | 2,00–3,00 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 60 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 60 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 60 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14538,10 +14613,13 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 60 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 60 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 60 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 65 | 3,42 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 65 | 3,37 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerFire 65 | 3,48 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 65 | 3,19 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 65 | 2,61 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 65 | 2,78 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerIce 65 | 1,45 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 65 | 1,63 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 65 | 2,07 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistFire 65 | 1,88 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistIce 65 | 1,96 | 2,00–3,00 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 65 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 65 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 65 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14550,13 +14628,12 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 65 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 65 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 65 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 70 | 3,38 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 70 | 3,30 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 70 | 1,71 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerFire 70 | 3,60 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 70 | 2,58 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 70 | 3,02 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 70 | 3,13 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 70 | 2,67 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 70 | 2,84 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 70 | 1,79 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerIce 70 | 1,48 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 70 | 1,65 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 70 | 2,09 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14565,12 +14642,12 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 70 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 75 | 3,35 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 75 | 3,26 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 75 | 1,67 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerFire 75 | 3,56 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 75 | 2,58 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 75 | 3,10 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 75 | 2,55 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 75 | 2,72 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 75 | 1,69 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerIce 75 | 1,42 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 75 | 1,62 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 75 | 2,05 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 75 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 75 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 75 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14579,14 +14656,14 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 75 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 75 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 75 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 80 | 3,36 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 80 | 3,27 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 80 | 1,54 | 2,00–2,80 | **poza** | raport → S142 |
-| T-SK4 Mage destroyer.destroyerFire 80 | 3,47 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 80 | 1,95 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 80 | 2,56 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 80 | 3,07 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 80 | 3,04 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 80 | 2,67 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 80 | 2,63 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 80 | 1,51 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 80 | 1,55 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerIce 80 | 1,32 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerLightning 80 | 1,90 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 80 | 1,58 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 80 | 2,00 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 80 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 80 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 80 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14595,14 +14672,16 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 80 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 80 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 80 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 85 | 3,07 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 85 | 3,55 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 85 | 1,48 | 2,00–2,80 | **poza** | raport → S140 |
-| T-SK4 Mage destroyer.destroyerFire 85 | 3,33 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 85 | 1,84 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 85 | 2,56 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 85 | 3,04 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 85 | 3,17 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 85 | 2,53 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 85 | 2,53 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 85 | 1,41 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 85 | 1,44 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerIce 85 | 1,20 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerLightning 85 | 1,74 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 85 | 1,56 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 85 | 1,98 | 2,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistFire 85 | 1,95 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistLightning 85 | 1,95 | 2,00–3,00 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 85 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 85 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric fortune.plunder na Warrior 85 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14611,12 +14690,14 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 85 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 85 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 85 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 90 | 2,92 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 90 | 3,42 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 90 | 1,46 | 2,00–2,80 | **poza** | raport → S140 |
-| T-SK4 Mage destroyer.destroyerLightning 90 | 3,25 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistOverload 90 | 2,54 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 90 | 3,14 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 90 | 2,35 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 90 | 2,35 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 90 | 1,34 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 90 | 1,38 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerFire 90 | 1,97 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerIce 90 | 1,82 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 90 | 1,52 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 90 | 1,94 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 90 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 90 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric healer.solo na Warrior 90 | 0,36 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14626,13 +14707,14 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 90 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 90 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 90 | 0,21 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 95 | 2,84 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 95 | 3,74 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 95 | 1,44 | 2,00–2,80 | **poza** | raport → S140 |
-| T-SK4 Mage destroyer.destroyerLightning 95 | 3,22 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistBoss 95 | 1,99 | 2,00–2,40 | **poza** | raport → S142 |
-| T-SK4 Mage arcanist.arcanistOverload 95 | 2,53 | 2,60–2,80 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 95 | 3,12 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 95 | 2,25 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 95 | 2,78 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 95 | 1,40 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 95 | 1,33 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerFire 95 | 1,90 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerIce 95 | 1,76 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 95 | 1,50 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 95 | 1,90 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 95 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 95 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric healer.dungeon na Warrior 95 | 0,36 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14643,14 +14725,12 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK5 Cleric inquisitor.solo na guardian.defender 95 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 95 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 95 | 0,23 | 0,25–0,35 | **poza** | S87 (raport) |
-| T-SK4 Mage base 100 | 2,81 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage base.loadout 100 | 3,71 | 1,10–1,40 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerExp 100 | 1,42 | 2,00–2,80 | **poza** | raport → S140 |
-| T-SK4 Mage destroyer.destroyerFire 100 | 3,61 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage destroyer.destroyerIce 100 | 3,34 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistFire 100 | 3,42 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistIce 100 | 3,62 | 2,00–3,00 | **poza** | S87 (raport) |
-| T-SK4 Mage arcanist.arcanistLightning 100 | 3,36 | 2,00–3,00 | **poza** | S87 (raport) |
+| T-SK4 Mage base 100 | 2,16 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage base.loadout 100 | 2,69 | 1,10–1,40 | **poza** | S87 (raport) |
+| T-SK4 Mage destroyer.destroyerExp 100 | 1,34 | 2,00–2,80 | **poza** | raport → S147 |
+| T-SK4 Mage destroyer.destroyerBoss 100 | 1,29 | 1,60–2,80 | **poza** | S87 (raport) |
+| T-SK4 Mage arcanist.arcanistBoss 100 | 1,62 | 2,00–2,40 | **poza** | raport → S147 |
+| T-SK4 Mage arcanist.arcanistOverload 100 | 2,06 | 2,60–2,80 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na Warrior 100 | 0,24 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric base na guardian.defender 100 | 0,22 | 0,25–0,35 | **poza** | S87 (raport) |
 | T-SK5 Cleric healer.dungeon na Warrior 100 | 0,38 | 0,25–0,35 | **poza** | S87 (raport) |
@@ -14706,7 +14786,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 3,4 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 3,3 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -14719,9 +14799,9 @@ Od S89 to liczby zamrożone: dane Berserkera i wspólnej podstawy Wojownika się
 | poziom | 1 cel 60 s | atak podst. | R1 | wybuch 8 s | grupa 3 · 8 s | maks. HP | EHP | EHP czerwone | Furia 1 cel | Furia grupa | Furia ROZWOJ | kradzież / obrażenia w grupie | × baza (topór) |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | L20 | 391 | 185 | 2,11 | 509 | 616 | 1159 | 38 | 38 | 7,27 | 7,27 | 7,5 | 0,76 | **1,14** |
-| L45 | 1883 → 1858 | 849 → 827 | 2,22 → 2,25 | 2461 → 2436 | 3137 → 3088 | 2401 → 2601 | 40 → 44 | 40 → 44 | 7,41 | 7,41 | 7,5 | 2,41 → 2,39 | **1,05 → 1,04** |
-| L70 | 5064 → 4753 | 1978 | 2,56 → 2,40 | 6723 → 5954 | 8514 → 8732 | 3641 → 4248 | 41 → 49 | 41 → 49 | 6,89 → 6,58 | 6,89 → 6,61 | 7,5 | 5,14 → 5,28 | **1,13 → 1,06** |
-| L100 | 10 040 → 10 089 | 3876 | 2,59 → 2,60 | 13 175 → 11 108 | 23 276 → 20 652 | 5431 → 6286 | 44 → 55 | 44 → 55 | 6,89 → 5,99 | 7,16 → 6,83 | 7,5 | 7,69 → 2,45 | **1,17 → 1,18** |
+| L45 | 1858 | 827 | 2,25 | 2436 | 3088 | 2601 | 44 | 44 | 7,41 | 7,41 | 7,5 | 2,39 | **1,04** |
+| L70 | 4753 | 1978 | 2,40 | 5954 | 8732 | 4248 | 49 | 49 | 6,58 | 6,61 | 7,5 | 5,28 | **1,06** |
+| L100 | 10 089 | 3876 | 2,60 | 11 108 | 20 652 | 6286 | 55 | 55 | 5,99 | 6,83 | 7,5 | 2,45 | **1,18** |
 
 ### Cele ścieżek: podsumowanie
 
@@ -14730,21 +14810,21 @@ Wiersze `SkillModel.PATH_TARGETS` (bez R4–R6) na 20 / 45 / 70 / 100; na 20 cel
 | klasa · poziom | w paśmie | wierszy |
 | --- | --: | --: |
 | Wojownik · 20 | 14 | 21 |
-| Wojownik · 45 | 32 → 35 | 58 → 60 |
-| Wojownik · 70 | 36 → 44 | 81 → 82 |
-| Wojownik · 100 | 48 → 53 | 116 → 112 |
+| Wojownik · 45 | 35 | 60 |
+| Wojownik · 70 | 44 | 82 |
+| Wojownik · 100 | 53 | 112 |
 | Łowca · 20 | 39 | 47 |
 | Łowca · 45 | 57 | 86 |
 | Łowca · 70 | 75 | 113 |
-| Łowca · 100 | 86 | 148 |
+| Łowca · 100 | 86 → 88 | 148 |
 | Mag · 20 | 9 | 19 |
-| Mag · 45 | 59 | 92 |
+| Mag · 45 | 59 → 63 | 92 |
 | Mag · 70 | 93 | 137 |
 | Mag · 100 | 124 | 179 |
 | Kapłan · 20 | 12 | 20 |
-| Kapłan · 45 | 23 → 25 | 57 |
-| Kapłan · 70 | 28 → 31 | 75 → 79 |
-| Kapłan · 100 | 35 → 36 | 108 |
+| Kapłan · 45 | 25 | 57 |
+| Kapłan · 70 | 31 | 79 |
+| Kapłan · 100 | 36 | 108 |
 
 ### Cele ścieżek: Wojownik
 
@@ -14757,9 +14837,9 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | berserker.base · berserker.fury · 70 [raport: S146] | **1,06** | 0 | 0 | 1,30 | **-19%** | 10,6 |
 | berserker.base · berserker.fury · 100 [raport: S146] | **1,18** | 0 | 0 | 1,37 | **-14%** | 10,6 |
 | guardian.dps · guardian.defender · 20 [raport: właściciel (F4)] | **0,59** | 0 | 0 | 0,80 | **-26%** | 10,6 |
-| guardian.dps · guardian.defender · 45 [raport: właściciel (F4)] | **0,50** | 0 | 0 | 0,72 | **-30% → -31%** | 10,6 |
-| guardian.dps · guardian.defender · 70 [raport: właściciel (F4)] | **0,49 → 0,44** | 0 | 0 | 0,70 | **-31% → -37%** | 10,6 |
-| guardian.dps · guardian.defender · 100 [raport: właściciel (F4)] | **0,46 → 0,41** | 0 | 0 | 0,67 | **-31% → -39%** | 10,6 |
+| guardian.dps · guardian.defender · 45 [raport: właściciel (F4)] | **0,50** | 0 | 0 | 0,72 | **-31%** | 10,6 |
+| guardian.dps · guardian.defender · 70 [raport: właściciel (F4)] | **0,44** | 0 | 0 | 0,70 | **-37%** | 10,6 |
+| guardian.dps · guardian.defender · 100 [raport: właściciel (F4)] | **0,41** | 0 | 0 | 0,67 | **-39%** | 10,6 |
 | guardian.ehp · guardian.defender (3 wrogów w 10 st.) · 20 | **1,57** | 0 | 0 | – | – | 10,6 |
 | guardian.ehp · guardian.defender (3 wrogów w 10 st.) · 45 | 1,68 | 1 | 1 | 1,57 | 7% | 10,6 |
 | guardian.ehp · guardian.defender (3 wrogów w 10 st.) · 70 | 1,71 | 1 | 1 | 1,57 | 9% | 10,6 |
@@ -14769,43 +14849,43 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | guardian.ehpRed · guardian.defender · 70 | 1,30 | 1 | 1 | – | – | 10,6 |
 | guardian.ehpRed · guardian.defender · 100 | 1,32 | 1 | 1 | – | – | 10,6 |
 | guardian.group · guardian.loner · 20 | 0,58 | 1 | 0 | 0,83 | **-30%** | 10,6 |
-| guardian.group · guardian.loner · 45 | 0,58 → 0,57 | 1 | 1 | 0,78 | **-26% → -27%** | 10,6 |
-| guardian.group · guardian.loner · 70 | 0,90 → 0,60 | 1 | 1 | 0,83 | **8% → -27%** | 10,6 |
-| guardian.group · guardian.loner · 100 | 0,55 → 0,61 | 1 | 1 | 0,61 | -10% → 0% | 10,6 |
+| guardian.group · guardian.loner · 45 | 0,57 | 1 | 1 | 0,78 | **-27%** | 10,6 |
+| guardian.group · guardian.loner · 70 | 0,60 | 1 | 1 | 0,83 | **-27%** | 10,6 |
+| guardian.group · guardian.loner · 100 | 0,61 | 1 | 1 | 0,61 | 0% | 10,6 |
 | guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 20 | 0,59 | 1 | 0 | 0,93 | **-37%** | 10,6 |
-| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 45 | 0,62 → 1,02 | 1 | 1 | 0,82 | **-24% → 24%** | 10,6 |
-| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 70 | 0,80 → 0,89 | 1 | 1 | 0,74 | **8% → 20%** | 10,6 |
-| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 100 | 0,76 → 0,92 | 1 | 1 | 0,73 | **4% → 25%** | 10,6 |
+| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 45 | 1,02 | 1 | 1 | 0,82 | **24%** | 10,6 |
+| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 70 | 0,89 | 1 | 1 | 0,74 | **20%** | 10,6 |
+| guardian.group · standard.commander (10.6 stawia ten próg Strażnikowi i Chorążemu) · 100 | 0,92 | 1 | 1 | 0,73 | **25%** | 10,6 |
 | standard.support · standard.commander · 20 | **4,65** | 0 | 0 | – | – | 7,5 |
-| standard.support · standard.commander · 45 [raport: F4] | **4,60 → 4,70** | 0 | 0 | 4,90 | -6% → -4% | 7,5 |
-| standard.support · standard.commander · 70 [raport: F4] | **4,64 → 4,71** | 0 | 0 | 5,00 | -7% → -6% | 7,5 |
+| standard.support · standard.commander · 45 [raport: F4] | **4,70** | 0 | 0 | 4,90 | -4% | 7,5 |
+| standard.support · standard.commander · 70 [raport: F4] | **4,71** | 0 | 0 | 5,00 | -6% | 7,5 |
 | standard.support · standard.commander · 100 | 5,07 | 1 | 1 | 5,08 | 0% | 7,5 |
 | standard.support · standard.commander@saber1h+shield · 20 | **4,67** | 0 | 0 | – | – | 7,5 |
-| standard.support · standard.commander@saber1h+shield · 45 [raport: F4] | **4,62 → 4,73** | 0 | 0 | 4,90 | -6% → -3% | 7,5 |
-| standard.support · standard.commander@saber1h+shield · 70 [raport: F4] | **4,66 → 4,73** | 0 | 0 | 5,00 | -7% → -5% | 7,5 |
+| standard.support · standard.commander@saber1h+shield · 45 [raport: F4] | **4,73** | 0 | 0 | 4,90 | -3% | 7,5 |
+| standard.support · standard.commander@saber1h+shield · 70 [raport: F4] | **4,73** | 0 | 0 | 5,00 | -5% | 7,5 |
 | standard.support · standard.commander@saber1h+shield · 100 | 5,09 | 1 | 1 | 5,08 | 0% | 7,5 |
 | standard.S · standard.commander · 20 | 0,63 | 1 | 0 | – | – | 7,5 |
-| standard.S · standard.commander · 45 | 0,57 → 0,63 | 1 | 1 | – | – | 7,5 |
-| standard.S · standard.commander · 70 | 0,55 → 0,59 | 1 | 1 | – | – | 7,5 |
-| standard.S · standard.commander · 100 | 0,65 → 0,69 | 1 | 1 | 0,74 | -12% → -7% | 7,5 |
+| standard.S · standard.commander · 45 | 0,63 | 1 | 1 | – | – | 7,5 |
+| standard.S · standard.commander · 70 | 0,59 | 1 | 1 | – | – | 7,5 |
+| standard.S · standard.commander · 100 | 0,69 | 1 | 1 | 0,74 | -7% | 7,5 |
 | warrior.solo · guardian.loner · 20 | 1,42 | 1 | 0 | 1,12 | **27%** | 1,0 |
-| warrior.solo · guardian.loner · 45 | 1,42 → 1,44 | 1 | 1 | 1,16 | **22% → 24%** | 1,0 |
-| warrior.solo · guardian.loner · 70 | 1,07 → 1,37 | 1 | 1 | 1,12 | **-5% → 23%** | 1,0 |
-| warrior.solo · guardian.loner · 100 | 1,47 → 1,37 | 1 | 1 | 1,37 | 7% → 0% | 1,0 |
+| warrior.solo · guardian.loner · 45 | 1,44 | 1 | 1 | 1,16 | **24%** | 1,0 |
+| warrior.solo · guardian.loner · 70 | 1,37 | 1 | 1 | 1,12 | **23%** | 1,0 |
+| warrior.solo · guardian.loner · 100 | 1,37 | 1 | 1 | 1,37 | 0% | 1,0 |
 | warrior.solo · standard.commander · 20 | 1,40 | 1 | 0 | 1,04 | **35%** | 1,0 |
-| warrior.solo · standard.commander · 45 | 1,35 → 0,99 | 1 | 1 | 1,12 | **20% → -11%** | 1,0 |
-| warrior.solo · standard.commander · 70 | 1,15 → 1,07 | 1 | 1 | 1,20 | **-4% → -11%** | 1,0 |
-| warrior.solo · standard.commander · 100 | 1,18 → 1,05 | 1 | 1 | 1,21 | **-2% → -13%** | 1,0 |
+| warrior.solo · standard.commander · 45 | 0,99 | 1 | 1 | 1,12 | **-11%** | 1,0 |
+| warrior.solo · standard.commander · 70 | 1,07 | 1 | 1 | 1,20 | **-11%** | 1,0 |
+| warrior.solo · standard.commander · 100 | 1,05 | 1 | 1 | 1,21 | **-13%** | 1,0 |
 | all.r1 · berserker.fury · 20 | 2,11 | 1 | 0 | – | – | 0,0 |
-| all.r1 · berserker.fury · 45 | 2,22 → 2,25 | 1 | 1 | – | – | 0,0 |
-| all.r1 · berserker.fury · 70 | 2,56 → 2,40 | 1 | 1 | – | – | 0,0 |
-| all.r1 · berserker.fury · 100 | 2,59 → 2,60 | 1 | 1 | – | – | 0,0 |
+| all.r1 · berserker.fury · 45 | 2,25 | 1 | 1 | – | – | 0,0 |
+| all.r1 · berserker.fury · 70 | 2,40 | 1 | 1 | – | – | 0,0 |
+| all.r1 · berserker.fury · 100 | 2,60 | 1 | 1 | – | – | 0,0 |
 | support.elites · guardian.loner · 20 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · guardian.loner · 45 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · guardian.loner · 70 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · guardian.loner · 100 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · standard.commander · 20 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
-| support.elites · standard.commander · 45 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **1,00 → 0,00** | 1 → 0 | 0 | – | – | 7,5 |
+| support.elites · standard.commander · 45 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · standard.commander · 70 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · standard.commander · 100 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | all.tsk3 · base · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,00 | 1 | 0 | – | – | 0,0 |
@@ -14813,29 +14893,29 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,14 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,36 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · guardian.defender · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,22 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.defender · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 → 1,52 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.defender · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **2,04 → 2,05** | 0 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.defender · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **1,95 → 2,05** | 1 → 0 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.defender · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,52 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.defender · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **2,05** | 0 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.defender · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **2,05** | 0 | 0 | – | – | 0,0 |
 | all.tsk3 · guardian.loner · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,22 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.loner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 → 1,52 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.loner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 2,04 → 1,89 | 0 → 1 | 0 | – | – | 0,0 |
-| all.tsk3 · guardian.loner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **1,81 → 2,05** | 1 → 0 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.loner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,52 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.loner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,89 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · guardian.loner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **2,05** | 0 | 0 | – | – | 0,0 |
 | all.tsk3 · berserker.fury · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,21 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · berserker.fury · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,27 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · berserker.fury · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,27 → 1,47 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · berserker.fury · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,77 → 1,86 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · berserker.fury · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,47 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · berserker.fury · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,86 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · berserker.butcher · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,21 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · berserker.butcher · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,26 → 1,25 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · berserker.butcher · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,28 → 1,50 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · berserker.butcher · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,79 → 1,93 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · berserker.butcher · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,25 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · berserker.butcher · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,50 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · berserker.butcher · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,93 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · standard.commander · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,22 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.commander · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,49 → 1,55 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.commander · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,64 → 1,54 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.commander · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 → 1,68 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.commander · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,55 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.commander · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,54 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.commander · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,68 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · standard.warden · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,21 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.warden · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,47 → 1,53 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.warden · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,62 → 1,53 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · standard.warden · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,58 → 1,66 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.warden · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.warden · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · standard.warden · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,66 | 1 | 0 | – | – | 0,0 |
 | r4.mightyStrike.5 · standard.commander (a: odrzucenie (kontrola)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.mightyStrike.5 · standard.commander (a: odrzucenie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.mightyStrike.5 · standard.commander (a: odrzucenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -14845,9 +14925,9 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.mightyStrike.10 · standard.commander (a: obszar przy roli 1 cel (bez metryki)) · 45 [raport: użyteczność (R4_UTILITY)] | **1,00** | 0 | 0 | – | – | 0,0 |
 | r4.mightyStrike.10 · standard.commander (a: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **1,00** | 0 | 0 | – | – | 0,0 |
 | r4.mightyStrike.10 · standard.commander (a: obszar przy roli 1 cel (bez metryki)) · 100 [raport: użyteczność (R4_UTILITY)] | **1,00** | 0 | 0 | – | – | 0,0 |
-| r4.mightyStrike.10 · standard.commander (b) · 45 | 0,17 → 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.mightyStrike.10 · standard.commander (b) · 70 | 0,18 → 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.mightyStrike.10 · standard.commander (b) · 100 | 0,18 → 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.mightyStrike.10 · standard.commander (b) · 45 | 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.mightyStrike.10 · standard.commander (b) · 70 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.mightyStrike.10 · standard.commander (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
 | r4.bladeWhirl.5 · berserker.fury (a: ruch w trakcie rzutu) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.bladeWhirl.5 · berserker.fury (a: ruch w trakcie rzutu) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.bladeWhirl.5 · berserker.fury (b: kradzież życia (podtrzymanie, bez metryki w roli)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -14925,7 +15005,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.rend.10 · berserker.fury (b: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,86** | 0 | 0 | – | – | 0,0 |
 | r4.rend.10 · berserker.fury (b: obszar przy roli 1 cel (bez metryki)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,86** | 0 | 0 | – | – | 0,0 |
 | r4.titansWrath.5 · berserker.fury (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.titansWrath.5 · berserker.fury (b) · 100 | 0,13 → 0,12 | 1 | 1 | – | – | 0,0 |
+| r4.titansWrath.5 · berserker.fury (b) · 100 | 0,12 | 1 | 1 | – | – | 0,0 |
 | r4.titansWrath.10 · berserker.fury (a: ogłuszenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.titansWrath.10 · berserker.fury (b) · 100 | 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.carnage.5 · berserker.fury (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15019,14 +15099,14 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.execute.10 · berserker.fury (a: kradzież życia (podtrzymanie, bez metryki w roli)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.execute.10 · berserker.fury (b) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r5.berserker · berserker.fury (miecz, topór, młot, włócznia dwuręczne) · 45 | 0,04 | 1 | 1 | – | – | 0,0 |
-| r5.berserker · berserker.fury (miecz, topór, młot, włócznia dwuręczne) · 70 | 0,05 → 0,04 | 1 | 1 | – | – | 0,0 |
-| r5.berserker · berserker.fury (miecz, topór, młot, włócznia dwuręczne) · 100 | 0,07 → 0,04 | 1 | 1 | – | – | 0,0 |
-| r6.berserker · berserker.fury (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,14 → 0,64 | 0 → 1 | 0 | – | – | 0,0 |
-| r6.berserker · berserker.fury (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,95 → 1,36 | 0 → 1 | 0 | – | – | 0,0 |
+| r5.berserker · berserker.fury (miecz, topór, młot, włócznia dwuręczne) · 70 | 0,04 | 1 | 1 | – | – | 0,0 |
+| r5.berserker · berserker.fury (miecz, topór, młot, włócznia dwuręczne) · 100 | 0,04 | 1 | 1 | – | – | 0,0 |
+| r6.berserker · berserker.fury (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,64 | 1 | 0 | – | – | 0,0 |
+| r6.berserker · berserker.fury (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,36 | 1 | 0 | – | – | 0,0 |
 | r6.standard · standard.commander (najsłabsza trzecia część / średnia) · 100 | 0,62 | 1 | 1 | – | – | 0,0 |
 | r6.standard · standard.commander (najmocniejsza trzecia część / średnia) · 100 | 1,22 | 1 | 1 | – | – | 0,0 |
-| r6.guardian · guardian.defender (najsłabsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **-1,60 → 0,00** | 0 | 0 | – | – | 0,0 |
-| r6.guardian · guardian.defender (najmocniejsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **3,24 → 2,15** | 0 | 0 | – | – | 0,0 |
+| r6.guardian · guardian.defender (najsłabsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **0,00** | 0 | 0 | – | – | 0,0 |
+| r6.guardian · guardian.defender (najmocniejsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **2,15** | 0 | 0 | – | – | 0,0 |
 
 ### Cele ścieżek: Łowca
 
@@ -15035,37 +15115,37 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | cel · build · poziom | wartość | mieści się | asertowany | projekt (ROZWOJ) | różnica | źródło |
 | --- | --: | --: | --: | --: | --: | --: |
 | marksman.base · marksman.kingslayer@heavycrossbow+quiver · 20 | **1,04** | 0 | 0 | 1,16 | **-11%** | 11,6 |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 [raport: S144] | **1,14** | 0 | 0 | 1,29 | **-12%** | 11,6 |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 [raport: S144] | **1,21** | 0 | 0 | 1,37 | **-12%** | 11,6 |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 [raport: S144] | **1,18** | 0 | 0 | 1,36 | **-14%** | 11,6 |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 [raport: S147] | **1,16** | 0 | 0 | 1,29 | -10% | 11,6 |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 [raport: S147] | **1,25** | 0 | 0 | 1,37 | -9% | 11,6 |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 [raport: S147] | **1,17** | 0 | 0 | 1,36 | **-14%** | 11,6 |
 | marksman.base · marksman.kingslayer · 20 | **1,00** | 0 | 0 | 1,15 | **-13%** | 11,6 |
-| marksman.base · marksman.kingslayer · 45 [raport: S137] | **1,22** | 0 | 0 | 1,29 | -5% | 11,6 |
-| marksman.base · marksman.kingslayer · 70 [raport: S137] | 1,33 | 1 | 0 | 1,36 | -2% | 11,6 |
-| marksman.base · marksman.kingslayer · 100 [raport: S144] | **1,24** | 0 | 0 | 1,35 | -8% | 11,6 |
+| marksman.base · marksman.kingslayer · 45 [raport: S147] | **1,22** | 0 | 0 | 1,29 | -5% | 11,6 |
+| marksman.base · marksman.kingslayer · 70 | 1,33 | 1 | 1 | 1,36 | -2% | 11,6 |
+| marksman.base · marksman.kingslayer · 100 [raport: S147] | **1,24** | 0 | 0 | 1,35 | -8% | 11,6 |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 20 | **1,01** | 0 | 0 | 1,16 | **-13%** | 0,0 |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 | 1,17 → 1,18 | 1 | 1 | 1,29 | -10% → -8% | 0,0 |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 | 1,18 → 1,26 | 1 | 1 | 1,38 | -15% → -9% | 0,0 |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 | 1,35 → 1,34 | 1 | 1 | 1,35 | 0% → -1% | 0,0 |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 | 1,18 | 1 | 1 | 1,29 | -8% | 0,0 |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 | 1,26 → 1,27 | 1 | 1 | 1,38 | -9% → -8% | 0,0 |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 | 1,34 | 1 | 1 | 1,35 | -1% | 0,0 |
 | marksman.r7 · marksman.kingslayer · 20 | **1,01** | 0 | 0 | 1,15 | **-13%** | 0,0 |
-| marksman.r7 · marksman.kingslayer · 45 [raport: S137] | 1,22 → 1,24 | 1 | 0 | 1,29 | -5% → -4% | 0,0 |
+| marksman.r7 · marksman.kingslayer · 45 | 1,24 | 1 | 1 | 1,29 | -4% | 0,0 |
 | marksman.r7 · marksman.kingslayer · 70 | 1,26 | 1 | 1 | 1,37 | -8% | 0,0 |
-| marksman.r7 · marksman.kingslayer · 100 | 1,33 → 1,32 | 1 | 1 | 1,34 | -1% | 0,0 |
+| marksman.r7 · marksman.kingslayer · 100 | 1,32 | 1 | 1 | 1,34 | -1% | 0,0 |
 | trapper.aoe · trapper.poacher · 20 | **0,91** | 0 | 0 | – | – | 11,6 |
-| trapper.aoe · trapper.poacher · 45 | 1,24 | 1 | 1 | 1,18 | 5% | 11,6 |
-| trapper.aoe · trapper.poacher · 70 | 1,43 | 1 | 1 | 1,11 | **29%** | 11,6 |
-| trapper.aoe · trapper.poacher · 100 | 1,18 | 1 | 1 | 1,29 | -8% | 11,6 |
+| trapper.aoe · trapper.poacher · 45 | 1,24 → 1,25 | 1 | 1 | 1,18 | 5% → 6% | 11,6 |
+| trapper.aoe · trapper.poacher · 70 | 1,43 → 1,41 | 1 | 1 | 1,11 | **29% → 27%** | 11,6 |
+| trapper.aoe · trapper.poacher · 100 | 1,18 → 1,16 | 1 | 1 | 1,29 | -8% → -10% | 11,6 |
 | trapper.aoe · trapper.poacher@bow+quiver · 20 | **0,98** | 0 | 0 | – | – | 11,6 |
-| trapper.aoe · trapper.poacher@bow+quiver · 45 [raport: S144] | **0,91** | 0 | 0 | 1,24 | **-26%** | 11,6 |
-| trapper.aoe · trapper.poacher@bow+quiver · 70 [raport: S144] | **0,82** | 0 | 0 | 1,17 | **-30%** | 11,6 |
-| trapper.aoe · trapper.poacher@bow+quiver · 100 [raport: S144] | **0,61** | 0 | 0 | 1,35 | **-55%** | 11,6 |
+| trapper.aoe · trapper.poacher@bow+quiver · 45 [raport: S147] | **0,92** | 0 | 0 | 1,24 | **-26%** | 11,6 |
+| trapper.aoe · trapper.poacher@bow+quiver · 70 [raport: S147] | **0,83** | 0 | 0 | 1,17 | **-29%** | 11,6 |
+| trapper.aoe · trapper.poacher@bow+quiver · 100 [raport: S147] | **0,61** | 0 | 0 | 1,35 | **-55%** | 11,6 |
 | trapper.single · trapper.poacher (bez R7) · 20 | **0,95** | 0 | 0 | 0,98 | -3% | 11,6 |
-| trapper.single · trapper.poacher (bez R7) · 45 [raport: S137] | 1,07 | 1 | 0 | 1,01 | 6% | 11,6 |
-| trapper.single · trapper.poacher (bez R7) · 70 [raport: S137] | **1,16** | 0 | 0 | 1,05 | **10%** | 11,6 |
-| trapper.single · trapper.poacher (bez R7) · 100 [raport: S144] | **1,04** | 0 | 0 | 1,05 | -1% | 11,6 |
+| trapper.single · trapper.poacher (bez R7) · 45 | 1,10 | 1 | 1 | 1,01 | 9% | 11,6 |
+| trapper.single · trapper.poacher (bez R7) · 70 [raport: S147] | **1,20** | 0 | 0 | 1,05 | **14%** | 11,6 |
+| trapper.single · trapper.poacher (bez R7) · 100 | 1,06 | 1 | 1 | 1,05 | 1% | 11,6 |
 | trapper.single · trapper.poacher@bow+quiver (bez R7) · 20 | **0,97** | 0 | 0 | 1,02 | -5% | 11,6 |
-| trapper.single · trapper.poacher@bow+quiver (bez R7) · 45 [raport: S144] | **1,02** | 0 | 0 | 1,06 | -3% | 11,6 |
-| trapper.single · trapper.poacher@bow+quiver (bez R7) · 70 [raport: S137] | 1,09 | 1 | 0 | 1,09 | 0% | 11,6 |
-| trapper.single · trapper.poacher@bow+quiver (bez R7) · 100 [raport: S144] | **0,94** | 0 | 0 | 1,10 | **-14%** | 11,6 |
+| trapper.single · trapper.poacher@bow+quiver (bez R7) · 45 [raport: S147] | **1,02** | 0 | 0 | 1,06 | -3% | 11,6 |
+| trapper.single · trapper.poacher@bow+quiver (bez R7) · 70 | 1,09 | 1 | 1 | 1,09 | 0% | 11,6 |
+| trapper.single · trapper.poacher@bow+quiver (bez R7) · 100 [raport: S147] | **0,94** | 0 | 0 | 1,10 | **-14%** | 11,6 |
 | scout.support · scout.partyHunter · 20 | 5,06 | 1 | 0 | – | – | 7,5 |
 | scout.support · scout.partyHunter · 45 | 4,99 | 1 | 1 | 5,08 | -2% | 7,5 |
 | scout.support · scout.partyHunter · 70 | 4,95 | 1 | 1 | 5,10 | -3% | 7,5 |
@@ -15083,25 +15163,25 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | scout.S · scout.partyHunter@shortbow+quiver · 70 | 0,64 | 1 | 1 | – | – | 7,5 |
 | scout.S · scout.partyHunter@shortbow+quiver · 100 | 0,74 | 1 | 1 | – | – | 7,5 |
 | scout.solo · scout.partyHunter ((a) grupa 8 s) · 20 | 1,03 | 1 | 0 | 1,03 | 0% | 1,0 |
-| scout.solo · scout.partyHunter ((a) grupa 8 s) · 45 [raport: S144] | 1,37 | 1 | 0 | 1,23 | **11%** | 1,0 |
-| scout.solo · scout.partyHunter ((a) grupa 8 s) · 70 [raport: S144] | **1,65** | 0 | 0 | 1,24 | **33%** | 1,0 |
-| scout.solo · scout.partyHunter ((a) grupa 8 s) · 100 [raport: S144] | **1,58** | 0 | 0 | 1,33 | **19%** | 1,0 |
+| scout.solo · scout.partyHunter ((a) grupa 8 s) · 45 | 1,37 | 1 | 1 | 1,23 | **11%** | 1,0 |
+| scout.solo · scout.partyHunter ((a) grupa 8 s) · 70 [raport: S147] | **1,62** | 0 | 0 | 1,24 | **31%** | 1,0 |
+| scout.solo · scout.partyHunter ((a) grupa 8 s) · 100 [raport: S147] | **1,68** | 0 | 0 | 1,33 | **26%** | 1,0 |
 | scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 20 | 1,02 | 1 | 0 | 1,01 | 1% | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 45 [raport: S144] | 1,36 | 1 | 0 | 1,21 | **12%** | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 70 [raport: S144] | **1,65** | 0 | 0 | 1,23 | **34%** | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 100 [raport: S144] | **1,58** | 0 | 0 | 1,32 | **20%** | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 45 | 1,36 | 1 | 1 | 1,21 | **12%** | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 70 [raport: S147] | **1,62** | 0 | 0 | 1,23 | **32%** | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((a) grupa 8 s) · 100 [raport: S147] | **1,71** | 0 | 0 | 1,32 | **29%** | 1,0 |
 | scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 20 | 1,10 | 1 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 45 [raport: S144] | **2,18** | 0 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 70 [raport: S144] | **1,92** | 0 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 100 [raport: S144] | **1,82** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 45 [raport: S147] | **2,16** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 70 [raport: S147] | **1,79** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter ((b) 3 potwory, które oddają) · 100 [raport: S147] | **1,68** | 0 | 0 | – | – | 1,0 |
 | scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 20 | 1,10 | 1 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 45 [raport: S144] | **2,18** | 0 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 70 [raport: S144] | **1,92** | 0 | 0 | – | – | 1,0 |
-| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 100 [raport: S144] | **1,81** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 45 [raport: S147] | **2,16** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 70 [raport: S147] | **1,79** | 0 | 0 | – | – | 1,0 |
+| scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 100 [raport: S147] | **1,66** | 0 | 0 | – | – | 1,0 |
 | trapper.r3 · trapper.poacher · 20 | 1,27 | 1 | 0 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher · 45 | 1,84 | 1 | 1 | – | – | 11,6 |
-| trapper.r3 · trapper.poacher · 70 | 1,99 | 1 | 1 | – | – | 11,6 |
-| trapper.r3 · trapper.poacher · 100 [raport: S144] | **2,02** | 0 | 0 | – | – | 11,6 |
+| trapper.r3 · trapper.poacher · 70 | 1,99 → 1,97 | 1 | 1 | – | – | 11,6 |
+| trapper.r3 · trapper.poacher · 100 | 2,00 | 1 | 1 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher@bow+quiver · 20 | 1,32 | 1 | 0 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher@bow+quiver · 45 | 1,39 | 1 | 1 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher@bow+quiver · 70 | 1,40 | 1 | 1 | – | – | 11,6 |
@@ -15115,12 +15195,12 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.r1 · marksman.kingslayer · 70 [raport: właściciel (S90, S91)] | **2,94** | 0 | 0 | – | – | 0,0 |
 | all.r1 · marksman.kingslayer · 100 [raport: właściciel (S90, S91)] | **3,09** | 0 | 0 | – | – | 0,0 |
 | all.r1 · trapper.poacher · 20 [raport: właściciel (S90, S91)] | 2,17 | 1 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 45 [raport: właściciel (S90, S91)] | **3,12** | 0 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 70 [raport: właściciel (S90, S91)] | **3,14** | 0 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 100 [raport: właściciel (S90, S91)] | **3,26** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 45 [raport: właściciel (S90, S91)] | **3,12 → 3,13** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 70 [raport: właściciel (S90, S91)] | **3,14 → 3,17** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 100 [raport: właściciel (S90, S91)] | **3,26 → 3,33** | 0 | 0 | – | – | 0,0 |
 | all.r1 · trapper.poacher@bow+quiver · 20 | 2,15 | 1 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher@bow+quiver · 45 [raport: S137] | 2,53 | 1 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher@bow+quiver · 70 [raport: S137] | 2,51 | 1 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher@bow+quiver · 45 | 2,53 | 1 | 1 | – | – | 0,0 |
+| all.r1 · trapper.poacher@bow+quiver · 70 | 2,51 | 1 | 1 | – | – | 0,0 |
 | all.r1 · trapper.poacher@bow+quiver · 100 | 2,46 | 1 | 1 | – | – | 0,0 |
 | support.elites · scout.partyHunter · 20 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | 1,00 | 1 | 0 | – | – | 7,5 |
 | support.elites · scout.partyHunter · 45 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | 1,00 | 1 | 0 | – | – | 7,5 |
@@ -15139,17 +15219,17 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.tsk3 · marksman.eliteHunter · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,20 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · marksman.eliteHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,03 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · trapper.poisoner · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,28 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,74 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,99 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,91 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,74 → 1,76 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,99 → 1,98 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,91 → 1,93 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,51 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · scout.partyHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · scout.partyHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 → 1,45 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,50 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,54 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · scout.tracker · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · scout.tracker · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 → 1,45 | 1 | 0 | – | – | 0,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 20 | -45,70 | 1 | 0 | – | – | 8,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 45 | -22,65 | 1 | 1 | – | – | 8,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 70 | -18,51 | 1 | 1 | – | – | 8,0 |
@@ -15259,13 +15339,13 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.venomArrow.5 · trapper.poacher (a) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (a) · 70 | 0,13 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.venomArrow.5 · trapper.poacher (b) · 45 | 0,11 | 1 | 1 | – | – | 0,0 |
+| r4.venomArrow.5 · trapper.poacher (b) · 45 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (b) · 70 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.venomArrow.10 · trapper.poacher (a) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.venomArrow.10 · trapper.poacher (a) · 70 | 0,19 → 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (b) · 70 | 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (b) · 100 | 0,22 | 1 | 1 | – | – | 0,0 |
@@ -15330,19 +15410,19 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (a) · 70 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (a) · 70 | 0,20 → 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.venomSnare.10 · trapper.poacher (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (b) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (b) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (b) · 70 | 0,19 → 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (b) · 100 | 0,21 → 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (|A − B|) · 70 | 0,01 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.camouflage.5 · trapper.poacher (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.5 · trapper.poacher (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.10 · trapper.poacher (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.10 · trapper.poacher (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.snarefield.5 · trapper.poacher (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.snarefield.5 · trapper.poacher (b: kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.snarefield.10 · trapper.poacher (a) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
+| r4.snarefield.10 · trapper.poacher (a) · 100 | 0,25 → 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.snarefield.10 · trapper.poacher (b: przyciąganie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.falcon.5 · scout.partyHunter (a: z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)) · 100 [raport: właściciel (F4)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.falcon.5 · scout.partyHunter (b: spowolnienie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15378,21 +15458,21 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 45 | 0,12 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 70 | 0,12 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 45 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 70 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 45 | 0,12 → 0,13 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 70 | 0,12 → 0,13 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 100 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 45 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 70 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 100 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 45 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 45 | 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 70 | 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 45 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 70 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 100 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
@@ -15406,28 +15486,28 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.deadlyBolt.5 · trapper.poacher (b) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.5 · trapper.poacher (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,01 → 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.10 · trapper.poacher (a) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.10 · trapper.poacher (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.10 · trapper.poacher (|A − B|) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.10 · trapper.poacher (b) · 100 | 0,20 → 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.10 · trapper.poacher (|A − B|) · 100 | 0,01 → 0,00 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 45 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 70 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
-| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 45 [raport: S144] | **0,15** | 0 | 0 | – | – | 0,0 |
-| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 70 [raport: S144] | **0,27** | 0 | 0 | – | – | 0,0 |
-| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 100 [raport: S144] | **0,32** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 45 [raport: S137] | **0,11** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 70 [raport: S144] | **0,10** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 100 [raport: S144] | **0,12** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 45 [raport: S137] | **0,11** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 70 [raport: S144] | **0,10** | 0 | 0 | – | – | 0,0 |
-| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 100 [raport: S144] | **0,12** | 0 | 0 | – | – | 0,0 |
+| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 45 [raport: S147] | **0,15** | 0 | 0 | – | – | 0,0 |
+| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 70 [raport: S147] | **0,26** | 0 | 0 | – | – | 0,0 |
+| r5.trapper · trapper.poacher (Kusza, Łuk (obszar 3 cele 8 s)) · 100 [raport: S147] | **0,31** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 45 [raport: S147] | **0,11** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 70 [raport: S147] | **0,11** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · marksman.kingslayer (Strzelec 1 cel / baza) · 100 [raport: S147] | **0,12** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 45 [raport: S147] | **0,11** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 70 [raport: S147] | **0,11** | 0 | 0 | – | – | 0,0 |
+| r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 100 [raport: S147] | **0,12** | 0 | 0 | – | – | 0,0 |
 | r6.marksman · marksman.kingslayer (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,24** | 0 | 0 | – | – | 0,0 |
 | r6.marksman · marksman.kingslayer (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,57** | 0 | 0 | – | – | 0,0 |
-| r6.trapper · trapper.poacher (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,26** | 0 | 0 | – | – | 0,0 |
-| r6.trapper · trapper.poacher (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,75** | 0 | 0 | – | – | 0,0 |
-| r6.scout · scout.partyHunter (najsłabsza trzecia część / średnia) · 100 [raport: S144] | **-7713666798,46** | 0 | 0 | – | – | 0,0 |
-| r6.scout · scout.partyHunter (najmocniejsza trzecia część / średnia) · 100 [raport: S144] | **1516770031,87** | 0 | 0 | – | – | 0,0 |
+| r6.trapper · trapper.poacher (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,26 → 0,22** | 0 | 0 | – | – | 0,0 |
+| r6.trapper · trapper.poacher (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,75 → 1,66** | 0 | 0 | – | – | 0,0 |
+| r6.scout · scout.partyHunter (najsłabsza trzecia część / średnia) · 100 [raport: S147] | **-7713666798,46** | 0 | 0 | – | – | 0,0 |
+| r6.scout · scout.partyHunter (najmocniejsza trzecia część / średnia) · 100 [raport: S147] | **1516770031,87** | 0 | 0 | – | – | 0,0 |
 
 ### Cele ścieżek: Mag
 
@@ -15436,57 +15516,57 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | cel · build · poziom | wartość | mieści się | asertowany | projekt (ROZWOJ) | różnica | źródło |
 | --- | --: | --: | --: | --: | --: | --: |
 | destroyer.aoe · destroyer.destroyerExp · 20 | **0,77** | 0 | 0 | – | – | 12,7 |
-| destroyer.aoe · destroyer.destroyerExp · 45 [raport: S140] | **0,83** | 0 | 0 | 1,21 | **-31%** | 12,7 |
-| destroyer.aoe · destroyer.destroyerExp · 70 [raport: S140] | **0,94** | 0 | 0 | 1,38 | **-32%** | 12,7 |
-| destroyer.aoe · destroyer.destroyerExp · 100 [raport: F4] | **0,86** | 0 | 0 | 1,46 | **-41%** | 12,7 |
+| destroyer.aoe · destroyer.destroyerExp · 45 [raport: S147] | **0,82** | 0 | 0 | 1,21 | **-32%** | 12,7 |
+| destroyer.aoe · destroyer.destroyerExp · 70 [raport: S147] | **0,93** | 0 | 0 | 1,38 | **-33%** | 12,7 |
+| destroyer.aoe · destroyer.destroyerExp · 100 [raport: F4] | **0,86 → 0,82** | 0 | 0 | 1,46 | **-41% → -44%** | 12,7 |
 | destroyer.single · destroyer.destroyerBoss · 20 | **0,95** | 0 | 0 | 0,98 | -4% | 12,7 |
-| destroyer.single · destroyer.destroyerBoss · 45 | 1,10 | 1 | 1 | 1,07 | 2% | 12,7 |
-| destroyer.single · destroyer.destroyerBoss · 70 [raport: F4] | 1,06 | 1 | 0 | 1,14 | -7% | 12,7 |
-| destroyer.single · destroyer.destroyerBoss · 100 [raport: S140] | **0,84** | 0 | 0 | 1,19 | **-29%** | 12,7 |
+| destroyer.single · destroyer.destroyerBoss · 45 | 1,10 → 1,07 | 1 | 1 | 1,07 | 2% → 0% | 12,7 |
+| destroyer.single · destroyer.destroyerBoss · 70 [raport: F4] | **1,06 → 1,01** | 1 → 0 | 0 | 1,14 | **-7% → -12%** | 12,7 |
+| destroyer.single · destroyer.destroyerBoss · 100 [raport: S147] | **0,85** | 0 | 0 | 1,19 | **-28%** | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 20 [raport: właściciel (H4)] | **1,27** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 45 [raport: właściciel (H4)] | 0,94 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (2 wrogów) · 70 [raport: właściciel (H4)] | **1,19** | 0 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (2 wrogów) · 70 [raport: właściciel (H4)] | **1,19 → 1,16** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 100 [raport: właściciel (H4)] | **1,14** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 20 [raport: właściciel (H4)] | **1,30** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 45 [raport: właściciel (H4)] | 0,87 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (3 wrogów) · 70 [raport: właściciel (H4)] | 0,64 | 1 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (3 wrogów) · 70 [raport: właściciel (H4)] | 0,64 → 0,62 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 100 [raport: właściciel (H4)] | 0,66 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 20 [raport: właściciel (H4)] | **1,31** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 45 [raport: właściciel (H4)] | 0,80 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (4 wrogów) · 70 [raport: właściciel (H4)] | 0,58 | 1 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (4 wrogów) · 70 [raport: właściciel (H4)] | 0,58 → 0,57 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 100 [raport: właściciel (H4)] | 0,57 | 1 | 0 | – | – | 12,7 |
 | arcanist.single · arcanist.arcanistBoss · 20 | **1,15** | 0 | 0 | 1,02 | **13%** | 12,7 |
-| arcanist.single · arcanist.arcanistBoss · 45 [raport: S142] | **1,18** | 0 | 0 | 1,23 | -4% | 12,7 |
-| arcanist.single · arcanist.arcanistBoss · 70 [raport: S140] | **1,08** | 0 | 0 | 1,36 | **-20%** | 12,7 |
-| arcanist.single · arcanist.arcanistBoss · 100 [raport: S140] | **0,93** | 0 | 0 | 1,47 | **-37%** | 12,7 |
+| arcanist.single · arcanist.arcanistBoss · 45 [raport: S147] | **1,01** | 0 | 0 | 1,23 | **-18%** | 12,7 |
+| arcanist.single · arcanist.arcanistBoss · 70 [raport: S147] | **1,00** | 0 | 0 | 1,36 | **-27%** | 12,7 |
+| arcanist.single · arcanist.arcanistBoss · 100 [raport: S147] | **0,89** | 0 | 0 | 1,47 | **-40%** | 12,7 |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 20 | 1,22 | 1 | 0 | 1,04 | **17%** | 12,7 |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 [raport: S140] | **1,09** | 0 | 0 | 1,15 | -5% | 12,7 |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 [raport: F4] | **1,12** | 0 | 0 | 1,20 | -7% | 12,7 |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 [raport: S140] | **1,10** | 0 | 0 | 1,24 | **-11%** | 12,7 |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 [raport: S147] | **0,95** | 0 | 0 | 1,15 | **-18%** | 12,7 |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 [raport: F4] | **1,12 → 1,07** | 0 | 0 | 1,20 | **-7% → -10%** | 12,7 |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 [raport: S147] | **1,03** | 0 | 0 | 1,24 | **-17%** | 12,7 |
 | mage.tsk4 · destroyer.destroyerExp · 20 | **1,54** | 0 | 0 | – | – | 8,0 |
-| mage.tsk4 · destroyer.destroyerExp · 45 [raport: S142] | **1,98** | 0 | 0 | 1,97 | 1% | 8,0 |
-| mage.tsk4 · destroyer.destroyerExp · 70 [raport: S142] | **1,71** | 0 | 0 | 2,48 | **-31%** | 8,0 |
-| mage.tsk4 · destroyer.destroyerExp · 100 [raport: S140] | **1,42** | 0 | 0 | 2,18 | **-35%** | 8,0 |
+| mage.tsk4 · destroyer.destroyerExp · 45 [raport: S147] | **1,15** | 0 | 0 | 1,97 | **-42%** | 8,0 |
+| mage.tsk4 · destroyer.destroyerExp · 70 [raport: S147] | **1,79** | 0 | 0 | 2,48 | **-28%** | 8,0 |
+| mage.tsk4 · destroyer.destroyerExp · 100 [raport: S147] | **1,34** | 0 | 0 | 2,18 | **-38%** | 8,0 |
 | mage.tsk4 · arcanist.arcanistBoss · 20 | **1,54** | 0 | 0 | – | – | 8,0 |
-| mage.tsk4 · arcanist.arcanistBoss · 45 [raport: S142] | **1,93** | 0 | 0 | 2,02 | -4% | 8,0 |
-| mage.tsk4 · arcanist.arcanistBoss · 70 | 2,03 | 1 | 1 | 2,32 | **-12%** | 8,0 |
-| mage.tsk4 · arcanist.arcanistBoss · 100 | 2,11 | 1 | 1 | 2,40 | **-12%** | 8,0 |
+| mage.tsk4 · arcanist.arcanistBoss · 45 [raport: S147] | **1,12** | 0 | 0 | 2,02 | **-45%** | 8,0 |
+| mage.tsk4 · arcanist.arcanistBoss · 70 [raport: S147] | **1,65** | 0 | 0 | 2,32 | **-29%** | 8,0 |
+| mage.tsk4 · arcanist.arcanistBoss · 100 [raport: S147] | **1,62** | 0 | 0 | 2,40 | **-32%** | 8,0 |
 | mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 20 | **3,01** | 0 | 0 | – | – | 12,0 |
-| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 45 [raport: S142] | **3,09** | 0 | 0 | 1,64 | **88%** | 12,0 |
-| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 70 | 2,05 | 1 | 1 | 2,11 | -3% | 12,0 |
-| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 100 | 1,71 | 1 | 1 | 1,82 | -6% | 12,0 |
+| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 45 | 1,79 | 1 | 1 | 1,64 | 9% | 12,0 |
+| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 70 | 2,05 → 2,00 | 1 | 1 | 2,11 | -3% → -5% | 12,0 |
+| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 100 [raport: S147] | **1,29** | 0 | 0 | 1,82 | **-29%** | 12,0 |
 | mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 20 | **1,67** | 0 | 0 | – | – | 12,0 |
-| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 45 [raport: S142] | **2,45** | 0 | 0 | 2,62 | -6% | 12,0 |
-| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 70 [raport: S142] | **2,58** | 0 | 0 | 2,75 | -6% | 12,0 |
-| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 100 | 2,68 | 1 | 1 | 2,79 | -4% | 12,0 |
+| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 45 [raport: S147] | **1,42** | 0 | 0 | 2,62 | **-46%** | 12,0 |
+| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 70 [raport: S147] | **2,09** | 0 | 0 | 2,75 | **-24%** | 12,0 |
+| mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 100 [raport: S147] | **2,06** | 0 | 0 | 2,79 | **-26%** | 12,0 |
 | mage.tsk3 · destroyer.destroyerExp · 20 | 1,31 | 1 | 0 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 45 | 1,82 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 70 | 2,17 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 100 | 2,36 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 45 | 1,82 → 1,83 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 70 | 2,17 → 2,24 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 100 | 2,36 → 2,45 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · destroyer.destroyerBoss · 20 | 1,27 | 1 | 0 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 45 | 1,52 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 70 | 1,87 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 100 | 2,07 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 45 | 1,52 → 1,51 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 70 | 1,87 → 1,94 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 100 | 2,07 → 2,15 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 20 | 1,22 | 1 | 0 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 45 | 1,35 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 70 | 1,28 | 1 | 1 | – | – | 8,0 |
@@ -15497,38 +15577,38 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | mage.tsk3 · arcanist.arcanistOverload · 100 | 1,19 | 1 | 1 | – | – | 8,0 |
 | all.r1 · destroyer.destroyerExp · 20 [raport: właściciel (S90, S91)] | 2,04 | 1 | 0 | – | – | 0,0 |
 | all.r1 · destroyer.destroyerExp · 45 [raport: właściciel (S90, S91)] | **3,04** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerExp · 70 [raport: właściciel (S90, S91)] | **3,37** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerExp · 100 [raport: właściciel (S90, S91)] | **3,47** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerExp · 70 [raport: właściciel (S90, S91)] | **3,37 → 3,39** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerExp · 100 [raport: właściciel (S90, S91)] | **3,47 → 3,61** | 0 | 0 | – | – | 0,0 |
 | all.r1 · destroyer.destroyerBoss · 20 [raport: właściciel (S90, S91)] | 2,39 | 1 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 45 [raport: właściciel (S90, S91)] | **4,32** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 70 [raport: właściciel (S90, S91)] | **5,03** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 100 [raport: właściciel (S90, S91)] | **5,18** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 45 [raport: właściciel (S90, S91)] | **4,32 → 4,34** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 70 [raport: właściciel (S90, S91)] | **5,03 → 5,15** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 100 [raport: właściciel (S90, S91)] | **5,18 → 5,36** | 0 | 0 | – | – | 0,0 |
 | all.r1 · arcanist.arcanistBoss · 20 [raport: właściciel (S90, S91)] | 2,15 | 1 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 45 [raport: właściciel (S90, S91)] | **3,57** | 0 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 70 [raport: właściciel (S90, S91)] | **3,94** | 0 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 100 [raport: właściciel (S90, S91)] | **4,29** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 45 [raport: właściciel (S90, S91)] | **3,57 → 3,60** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 70 [raport: właściciel (S90, S91)] | **3,94 → 3,99** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 100 [raport: właściciel (S90, S91)] | **4,29 → 4,58** | 0 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,38 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,65 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,75 | 1 | 0 | – | – | 0,0 |
-| r4.firebolt.5 · arcanist.arcanistBoss (a) · 45 [raport: S142] | **0,06** | 0 | 0 | – | – | 0,0 |
-| r4.firebolt.5 · arcanist.arcanistBoss (a) · 70 [raport: S142] | **0,06** | 0 | 0 | – | – | 0,0 |
-| r4.firebolt.5 · arcanist.arcanistBoss (a) · 100 [raport: S142] | **0,06** | 0 | 0 | – | – | 0,0 |
+| all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,65 → 1,71 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,75 → 1,85 | 1 | 0 | – | – | 0,0 |
+| r4.firebolt.5 · arcanist.arcanistBoss (a) · 45 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
+| r4.firebolt.5 · arcanist.arcanistBoss (a) · 70 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
+| r4.firebolt.5 · arcanist.arcanistBoss (a) · 100 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (b) · 45 | 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (b) · 70 | 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (b) · 100 | 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (|A − B|) · 45 [raport: właściciel (F4)] | **0,10** | 0 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (|A − B|) · 70 [raport: właściciel (F4)] | **0,10** | 0 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (|A − B|) · 100 [raport: właściciel (F4)] | **0,10** | 0 | 0 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (a) · 45 [raport: S142] | **0,17** | 0 | 0 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (a) · 70 [raport: S142] | **0,16** | 0 | 0 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (a) · 100 [raport: S142] | **0,16** | 0 | 0 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (a) · 45 | 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (a) · 70 | 0,17 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (a) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 45 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 45 | 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 45 | 0,02 → 0,00 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 45 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 70 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 100 | 0,15 | 1 | 1 | – | – | 0,0 |
@@ -15639,7 +15719,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.flameWave.10 · destroyer.destroyerFire (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.flameWave.10 · destroyer.destroyerFire (|A − B|) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.emberShield.5 · arcanist.arcanistBoss (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.emberShield.5 · arcanist.arcanistBoss (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | 0,16 → 0,15 | 1 | 0 | – | – | 0,0 |
+| r4.emberShield.5 · arcanist.arcanistBoss (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | 0,15 | 1 | 0 | – | – | 0,0 |
 | r4.emberShield.10 · arcanist.arcanistBoss (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.emberShield.10 · arcanist.arcanistBoss (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,33** | 0 | 0 | – | – | 0,0 |
 | r4.pyroblast.5 · arcanist.arcanistFire (a) · 45 | 0,15 | 1 | 1 | – | – | 0,0 |
@@ -15672,14 +15752,14 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.immolate.5 · arcanist.arcanistFire (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.immolate.5 · arcanist.arcanistFire (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.immolate.10 · arcanist.arcanistFire (a) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
-| r4.immolate.10 · arcanist.arcanistFire (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.immolate.10 · arcanist.arcanistFire (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.5 · destroyer.destroyerExp (a) · 100 [raport: S140] | **0,17** | 0 | 0 | – | – | 0,0 |
+| r4.immolate.10 · arcanist.arcanistFire (b) · 100 | 0,20 → 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.immolate.10 · arcanist.arcanistFire (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.5 · destroyer.destroyerExp (a) · 100 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.meteorStorm.5 · destroyer.destroyerExp (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.5 · destroyer.destroyerExp (|A − B|) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.5 · destroyer.destroyerExp (|A − B|) · 100 | 0,01 → 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.meteorStorm.10 · destroyer.destroyerExp (a) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.10 · destroyer.destroyerExp (b) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.10 · destroyer.destroyerExp (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.10 · destroyer.destroyerExp (b) · 100 | 0,18 → 0,22 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.10 · destroyer.destroyerExp (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15733,18 +15813,18 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.hailstorm.10 · destroyer.destroyerIce (b) · 70 | 0,24 | 1 | 1 | – | – | 0,0 |
 | r4.hailstorm.10 · destroyer.destroyerIce (b) · 100 | 0,24 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.5 · arcanist.arcanistIce (a) · 45 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (a) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (a) · 70 | 0,11 → 0,12 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.5 · arcanist.arcanistIce (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 45 | 0,17 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 100 | 0,11 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 45 | 0,04 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,00 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 45 | 0,17 → 0,16 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 70 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 100 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 45 | 0,04 → 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,00 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 → 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.glacialSpike.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 70 | 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 70 | 0,20 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 100 | 0,20 → 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15761,23 +15841,23 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.deepFreeze.5 · arcanist.arcanistIce (b) · 100 | 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.deepFreeze.10 · arcanist.arcanistIce (a) · 70 | 0,25 | 1 | 1 | – | – | 0,0 |
 | r4.deepFreeze.10 · arcanist.arcanistIce (a) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 70 | 0,23 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.shatter.5 · arcanist.arcanistIce (a) · 70 | 0,16 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 70 | 0,23 → 0,24 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 100 | 0,23 → 0,24 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.5 · arcanist.arcanistIce (a) · 70 | 0,16 → 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (a) · 100 | 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.shatter.5 · arcanist.arcanistIce (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.5 · arcanist.arcanistIce (b) · 70 | 0,09 → 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (b) · 100 | 0,12 | 1 | 1 | – | – | 0,0 |
-| r4.shatter.5 · arcanist.arcanistIce (|A − B|) · 70 [raport: S142] | **0,07** | 0 | 0 | – | – | 0,0 |
+| r4.shatter.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.shatter.10 · arcanist.arcanistIce (b) · 100 | 0,24 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.10 · arcanist.arcanistIce (b) · 100 | 0,24 → 0,20 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (|A − B|) · 100 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.10 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.blizzard.10 · destroyer.destroyerIce (b) · 100 [raport: S142] | **0,17** | 0 | 0 | – | – | 0,0 |
+| r4.blizzard.10 · destroyer.destroyerIce (b) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.5 · arcanist.arcanistLightning (a) · 45 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.5 · arcanist.arcanistLightning (a) · 70 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.5 · arcanist.arcanistLightning (a) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
@@ -15788,13 +15868,13 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.lightningBolt.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 45 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 70 | 0,25 | 1 | 1 | – | – | 0,0 |
+| r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 70 | 0,25 → 0,21 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 45 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 70 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,05 | 1 | 1 | – | – | 0,0 |
 | r4.staticShock.5 · arcanist.arcanistLightning (a: paraliż (kontrola)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.staticShock.5 · arcanist.arcanistLightning (a: paraliż (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15812,18 +15892,18 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.staticShock.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.staticShock.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 70 | 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 70 | 0,14 → 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 45 | 0,15 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 70 | 0,10 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 45 | 0,15 → 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 70 | 0,10 → 0,09 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 100 | 0,10 → 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 45 | 0,01 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,00 → 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.10 · arcanist.arcanistLightning (a: ogłuszenie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.thunderStrike.10 · arcanist.arcanistLightning (a: ogłuszenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 70 | 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 70 | 0,20 → 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 100 | 0,20 → 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,51** | 0 | 0 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,52** | 0 | 0 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
@@ -15836,32 +15916,32 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.ballLightning.10 · destroyer.destroyerLightning (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.lightningLance.5 · arcanist.arcanistLightning (b) · 70 | 0,12 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.5 · arcanist.arcanistLightning (b) · 70 | 0,12 → 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (b) · 100 | 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.10 · arcanist.arcanistLightning (a) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.lightningLance.10 · arcanist.arcanistLightning (b) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
-| r4.lightningLance.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.10 · arcanist.arcanistLightning (b) · 100 | 0,23 → 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,03 → 0,04 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (a) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.10 · destroyer.destroyerLightning (a: ogłuszenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.tempest.10 · destroyer.destroyerLightning (b) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.tempest.10 · destroyer.destroyerLightning (b) · 100 | 0,18 → 0,25 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 45 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r5.arcanist · arcanist.arcanistBoss (kostur runiczny, różdżka z księgą (boss 180 s)) · 45 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r5.arcanist · arcanist.arcanistBoss (kostur runiczny, różdżka z księgą (boss 180 s)) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r5.arcanist · arcanist.arcanistBoss (kostur runiczny, różdżka z księgą (boss 180 s)) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 45 [raport: S142] | **0,15** | 0 | 0 | – | – | 0,0 |
-| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 70 | 0,05 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 45 [raport: S142] | **0,15** | 0 | 0 | – | – | 0,0 |
-| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 70 | 0,05 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r6.destroyer · destroyer.destroyerExp (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,42** | 0 | 0 | – | – | 0,0 |
-| r6.destroyer · destroyer.destroyerExp (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,47 | 1 | 0 | – | – | 0,0 |
-| r6.arcanist · arcanist.arcanistBoss (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,72 | 1 | 0 | – | – | 0,0 |
-| r6.arcanist · arcanist.arcanistBoss (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,48 | 1 | 0 | – | – | 0,0 |
+| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 45 | 0,07 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 70 | 0,05 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 45 | 0,07 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 70 | 0,05 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r6.destroyer · destroyer.destroyerExp (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,42 → 0,43** | 0 | 0 | – | – | 0,0 |
+| r6.destroyer · destroyer.destroyerExp (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,47 → 1,48 | 1 | 0 | – | – | 0,0 |
+| r6.arcanist · arcanist.arcanistBoss (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,72 → 0,83 | 1 | 0 | – | – | 0,0 |
+| r6.arcanist · arcanist.arcanistBoss (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,48 → 1,12 | 1 | 0 | – | – | 0,0 |
 
 ### Cele ścieżek: Kapłan
 
@@ -15878,45 +15958,45 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | inquisitor.hp · inquisitor.solo · 70 | 1,40 | 1 | 1 | – | – | 9,0 |
 | inquisitor.hp · inquisitor.solo · 100 | 1,34 | 1 | 1 | – | – | 9,0 |
 | healer.dps · healer.dungeon (berło + tarcza) · 20 [raport: tylko raport (healer.S, tempo solo)] | **0,55** | 0 | 0 | 0,54 | 3% | 9,6 |
-| healer.dps · healer.dungeon (berło + tarcza) · 45 [raport: tylko raport (healer.S, tempo solo)] | **0,59 → 0,60** | 0 | 0 | 0,46 | **28% → 30%** | 9,6 |
-| healer.dps · healer.dungeon (berło + tarcza) · 70 [raport: tylko raport (healer.S, tempo solo)] | 0,47 → 0,50 | 1 | 0 | 0,45 | **5% → 12%** | 9,6 |
+| healer.dps · healer.dungeon (berło + tarcza) · 45 [raport: tylko raport (healer.S, tempo solo)] | **0,60** | 0 | 0 | 0,46 | **30%** | 9,6 |
+| healer.dps · healer.dungeon (berło + tarcza) · 70 [raport: tylko raport (healer.S, tempo solo)] | 0,50 | 1 | 0 | 0,45 | **12%** | 9,6 |
 | healer.dps · healer.dungeon (berło + tarcza) · 100 [raport: tylko raport (healer.S, tempo solo)] | 0,46 | 1 | 0 | 0,48 | -4% | 9,6 |
 | healer.dps · healer.solo (kostur) · 20 [raport: tylko raport (healer.S, tempo solo)] | 0,63 | 1 | 0 | 0,66 | -5% | 9,6 |
-| healer.dps · healer.solo (kostur) · 45 [raport: tylko raport (healer.S, tempo solo)] | **0,68 → 0,69** | 0 | 0 | 0,58 | **18% → 19%** | 9,6 |
-| healer.dps · healer.solo (kostur) · 70 [raport: tylko raport (healer.S, tempo solo)] | 0,55 → 0,59 | 0 → 1 | 0 | 0,58 | -5% → 1% | 9,6 |
-| healer.dps · healer.solo (kostur) · 100 [raport: tylko raport (healer.S, tempo solo)] | **0,53** | 0 | 0 | 0,61 | **-12% → -13%** | 9,6 |
+| healer.dps · healer.solo (kostur) · 45 [raport: tylko raport (healer.S, tempo solo)] | **0,69** | 0 | 0 | 0,58 | **19%** | 9,6 |
+| healer.dps · healer.solo (kostur) · 70 [raport: tylko raport (healer.S, tempo solo)] | 0,59 | 1 | 0 | 0,58 | 1% | 9,6 |
+| healer.dps · healer.solo (kostur) · 100 [raport: tylko raport (healer.S, tempo solo)] | **0,53** | 0 | 0 | 0,61 | **-13%** | 9,6 |
 | healer.S · healer.solo (kostur) · 20 | 1,07 | 1 | 0 | – | – | 7,5 |
-| healer.S · healer.solo (kostur) · 45 | 0,79 → 0,81 | 1 | 1 | – | – | 7,5 |
+| healer.S · healer.solo (kostur) · 45 | 0,81 | 1 | 1 | – | – | 7,5 |
 | healer.S · healer.solo (kostur) · 70 | 0,66 | 1 | 1 | – | – | 7,5 |
-| healer.S · healer.solo (kostur) · 100 | 0,61 → 0,58 | 1 | 1 | – | – | 7,5 |
+| healer.S · healer.solo (kostur) · 100 | 0,58 | 1 | 1 | – | – | 7,5 |
 | fortune.dps · fortune.plunder · 20 [raport: tylko raport (tempo solo)] | **0,67** | 0 | 0 | 0,55 | **22%** | 9,6 |
-| fortune.dps · fortune.plunder · 45 [raport: tylko raport (tempo solo)] | **0,84 → 0,83** | 0 | 0 | 0,49 | **71% → 69%** | 9,6 |
-| fortune.dps · fortune.plunder · 70 [raport: tylko raport (tempo solo)] | **0,79 → 0,93** | 0 | 0 | 0,50 | **58% → 86%** | 9,6 |
-| fortune.dps · fortune.plunder · 100 [raport: tylko raport (tempo solo)] | **0,86 → 0,98** | 0 | 0 | 0,55 | **56% → 78%** | 9,6 |
+| fortune.dps · fortune.plunder · 45 [raport: tylko raport (tempo solo)] | **0,83** | 0 | 0 | 0,49 | **69%** | 9,6 |
+| fortune.dps · fortune.plunder · 70 [raport: tylko raport (tempo solo)] | **0,93** | 0 | 0 | 0,50 | **86%** | 9,6 |
+| fortune.dps · fortune.plunder · 100 [raport: tylko raport (tempo solo)] | **0,98** | 0 | 0 | 0,55 | **78%** | 9,6 |
 | healer.tsk5 · healer.dungeon (tank Obrońca) · 20 | **0,22** | 0 | 0 | – | – | 7,5 |
 | healer.tsk5 · healer.dungeon (tank Obrońca) · 45 | 0,28 | 1 | 1 | – | – | 7,5 |
 | healer.tsk5 · healer.dungeon (tank Obrońca) · 70 | 0,29 | 1 | 1 | – | – | 7,5 |
 | healer.tsk5 · healer.dungeon (tank Obrońca) · 100 | 0,34 | 1 | 1 | – | – | 7,5 |
 | fortune.healLess · fortune.plunder · 20 | **0,18** | 0 | 0 | – | – | 9,0 |
-| fortune.healLess · fortune.plunder · 45 [raport: F4] | **0,17** | 0 | 0 | 0,21 | **-17% → -20%** | 9,0 |
+| fortune.healLess · fortune.plunder · 45 [raport: F4] | **0,17** | 0 | 0 | 0,21 | **-20%** | 9,0 |
 | fortune.healLess · fortune.plunder · 70 [raport: S146] | **0,31** | 0 | 0 | 0,21 | **49%** | 9,0 |
 | fortune.healLess · fortune.plunder · 100 [raport: S146] | **0,32** | 0 | 0 | 0,21 | **55%** | 9,0 |
 | cleric.solo · healer.solo (9.0 mówi 1,35) · 20 | 0,47 | 1 | 0 | 0,92 | **-49%** | 7,5 |
-| cleric.solo · healer.solo (9.0 mówi 1,35) · 45 | 0,99 → 0,96 | 1 | 1 | 1,06 | -7% → -10% | 7,5 |
+| cleric.solo · healer.solo (9.0 mówi 1,35) · 45 | 0,96 | 1 | 1 | 1,06 | -10% | 7,5 |
 | cleric.solo · healer.solo (9.0 mówi 1,35) · 70 | 1,45 | 1 | 1 | 1,16 | **25%** | 7,5 |
 | cleric.solo · healer.solo (9.0 mówi 1,35) · 100 [raport: S146] | **1,68** | 0 | 0 | 1,07 | **57%** | 7,5 |
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 20 | 0,88 | 1 | 0 | 1,11 | **-21%** | 7,5 |
 | cleric.solo · fortune.plunder (9.0 mówi 1,35) · 45 | 0,59 | 1 | 1 | 1,14 | **-48%** | 7,5 |
-| cleric.solo · fortune.plunder (9.0 mówi 1,35) · 70 | 0,79 → 0,74 | 1 | 1 | 1,35 | **-42% → -45%** | 7,5 |
-| cleric.solo · fortune.plunder (9.0 mówi 1,35) · 100 | 0,90 → 0,81 | 1 | 1 | 1,11 | **-19% → -27%** | 7,5 |
+| cleric.solo · fortune.plunder (9.0 mówi 1,35) · 70 | 0,74 | 1 | 1 | 1,35 | **-45%** | 7,5 |
+| cleric.solo · fortune.plunder (9.0 mówi 1,35) · 100 | 0,81 | 1 | 1 | 1,11 | **-27%** | 7,5 |
 | healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 20 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | 1,79 | 1 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **3,52 → 3,45** | 0 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **12,89 → 12,36** | 0 | 0 | – | – | 0,0 |
-| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 100 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **25,22 → 22,08** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 45 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **3,45** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 70 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **12,36** | 0 | 0 | – | – | 0,0 |
+| healer.tsk6 · healer.dungeon (tank Obrońca, drużyna S92) · 100 [raport: poza zasięgiem dźwigni S94: T-SK6 Azgora 12,8 i Vaelgratha 15,9 (decyzja właściciela; wiersze regionów)] | **22,08** | 0 | 0 | – | – | 0,0 |
 | all.r1 · inquisitor.solo · 20 [raport: właściciel (F4)] | 2,09 | 1 | 0 | – | – | 0,0 |
-| all.r1 · inquisitor.solo · 45 [raport: właściciel (F4)] | **4,47 → 4,35** | 0 | 0 | – | – | 0,0 |
-| all.r1 · inquisitor.solo · 70 [raport: właściciel (F4)] | **5,32 → 5,37** | 0 | 0 | – | – | 0,0 |
-| all.r1 · inquisitor.solo · 100 [raport: właściciel (F4)] | **5,91 → 6,18** | 0 | 0 | – | – | 0,0 |
+| all.r1 · inquisitor.solo · 45 [raport: właściciel (F4)] | **4,35** | 0 | 0 | – | – | 0,0 |
+| all.r1 · inquisitor.solo · 70 [raport: właściciel (F4)] | **5,37** | 0 | 0 | – | – | 0,0 |
+| all.r1 · inquisitor.solo · 100 [raport: właściciel (F4)] | **6,18** | 0 | 0 | – | – | 0,0 |
 | support.elites · healer.solo · 20 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · healer.solo · 45 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · healer.solo · 70 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
@@ -15926,7 +16006,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | support.elites · fortune.plunder · 70 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | support.elites · fortune.plunder · 100 [raport: poza zasięgiem dźwigni S94: wygrywa Elitę II solo z miksturami (wiersze regionów R.<map>.support.*)] | **0,00** | 0 | 0 | – | – | 7,5 |
 | all.tsk3 · base · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,79 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · base · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,52 → 1,54 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · base · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,54 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,59 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | **2,21** | 0 | 0 | – | – | 0,0 |
 | all.tsk3 · healer.dungeon · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,00 | 1 | 0 | – | – | 0,0 |
@@ -15938,17 +16018,17 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.tsk3 · healer.solo · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,52 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · healer.solo · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,52 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · fortune.plunder · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,85 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · fortune.plunder · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,89 → 1,91 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · fortune.plunder · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,91 → 1,54 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · fortune.plunder · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 → 1,48 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · fortune.plunder · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,91 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · fortune.plunder · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,54 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · fortune.plunder · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,48 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · inquisitor.solo · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,48 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · inquisitor.solo · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,45 → 1,46 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · inquisitor.solo · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,46 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · inquisitor.solo · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,76 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · inquisitor.solo · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 2,43 → 1,87 | 0 → 1 | 0 | – | – | 0,0 |
+| all.tsk3 · inquisitor.solo · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,87 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · inquisitor.bulwark · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,48 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · inquisitor.bulwark · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,44 → 1,45 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · inquisitor.bulwark · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,74 → 1,75 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · inquisitor.bulwark · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 2,41 → 1,86 | 0 → 1 | 0 | – | – | 0,0 |
+| all.tsk3 · inquisitor.bulwark · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,45 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · inquisitor.bulwark · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,75 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · inquisitor.bulwark · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,86 | 1 | 0 | – | – | 0,0 |
 | r4.holyStrike.5 · inquisitor.solo (a: S91: odprysk 40% na 3 manekinach daje 0,80; 6,5% (0,13) psuje cleric.solo Fortuny na 100 (1,36 → 1,59 > 1,50)) · 45 [raport: właściciel (F4)] | **0,80** | 0 | 0 | – | – | 0,0 |
 | r4.holyStrike.5 · inquisitor.solo (a: S91: odprysk 40% na 3 manekinach daje 0,80; 6,5% (0,13) psuje cleric.solo Fortuny na 100 (1,36 → 1,59 > 1,50)) · 70 [raport: właściciel (F4)] | **0,80** | 0 | 0 | – | – | 0,0 |
 | r4.holyStrike.5 · inquisitor.solo (a: S91: odprysk 40% na 3 manekinach daje 0,80; 6,5% (0,13) psuje cleric.solo Fortuny na 100 (1,36 → 1,59 > 1,50)) · 100 [raport: właściciel (F4)] | **0,80** | 0 | 0 | – | – | 0,0 |
@@ -16020,7 +16100,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.renew.10 · healer.dungeon (a: oczyszczenie) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.renew.10 · healer.dungeon (a: oczyszczenie) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.renew.10 · healer.dungeon (b) · 70 | 0,24 | 1 | 1 | – | – | 0,0 |
-| r4.renew.10 · healer.dungeon (b) · 100 | 0,23 → 0,22 | 1 | 1 | – | – | 0,0 |
+| r4.renew.10 · healer.dungeon (b) · 100 | 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.sanctuary.5 · healer.dungeon (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.sanctuary.5 · healer.dungeon (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.sanctuary.5 · healer.dungeon (b: oczyszczenie) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -16045,11 +16125,11 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.wheelOfFortune.5 · fortune.plunder (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.wheelOfFortune.10 · fortune.plunder (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.wheelOfFortune.10 · fortune.plunder (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.brandOfLight.5 · inquisitor.solo (a) · 45 | 0,14 → 0,16 | 1 | 1 | – | – | 0,0 |
+| r4.brandOfLight.5 · inquisitor.solo (a) · 45 | 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.brandOfLight.5 · inquisitor.solo (a) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.brandOfLight.5 · inquisitor.solo (a) · 100 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.brandOfLight.5 · inquisitor.solo (b: obszar przy roli 1 cel (bez metryki)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,42** | 0 | 0 | – | – | 0,0 |
-| r4.brandOfLight.5 · inquisitor.solo (b: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,44 → 0,45** | 0 | 0 | – | – | 0,0 |
+| r4.brandOfLight.5 · inquisitor.solo (b: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,45** | 0 | 0 | – | – | 0,0 |
 | r4.brandOfLight.5 · inquisitor.solo (b: obszar przy roli 1 cel (bez metryki)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,35** | 0 | 0 | – | – | 0,0 |
 | r4.brandOfLight.10 · inquisitor.solo (a: kradzież życia (podtrzymanie, bez metryki w roli)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.brandOfLight.10 · inquisitor.solo (a: kradzież życia (podtrzymanie, bez metryki w roli)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -16127,12 +16207,12 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r5.inquisitor · inquisitor.solo (buława i korbacz z relikwią) · 45 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r5.inquisitor · inquisitor.solo (buława i korbacz z relikwią) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r5.inquisitor · inquisitor.solo (buława i korbacz z relikwią) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
-| r6.inquisitor · inquisitor.solo (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **-0,08 → 0,43** | 0 | 0 | – | – | 0,0 |
-| r6.inquisitor · inquisitor.solo (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,64 → 1,53** | 0 | 0 | – | – | 0,0 |
-| r6.healer · healer.dungeon (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,28 → 0,27** | 0 | 0 | – | – | 0,0 |
-| r6.healer · healer.dungeon (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,45 → 1,51** | 1 → 0 | 0 | – | – | 0,0 |
-| r6.fortune · fortune.plunder (najsłabsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **-5,23 → -6,85** | 0 | 0 | – | – | 0,0 |
-| r6.fortune · fortune.plunder (najmocniejsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **7,60 → 7,54** | 0 | 0 | – | – | 0,0 |
+| r6.inquisitor · inquisitor.solo (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,43** | 0 | 0 | – | – | 0,0 |
+| r6.inquisitor · inquisitor.solo (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,53** | 0 | 0 | – | – | 0,0 |
+| r6.healer · healer.dungeon (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,27** | 0 | 0 | – | – | 0,0 |
+| r6.healer · healer.dungeon (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,51** | 0 | 0 | – | – | 0,0 |
+| r6.fortune · fortune.plunder (najsłabsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **-6,85** | 0 | 0 | – | – | 0,0 |
+| r6.fortune · fortune.plunder (najmocniejsza trzecia część / średnia) · 100 [raport: tylko raport (E3)] | **7,54** | 0 | 0 | – | – | 0,0 |
 
 ### Mechaniki: przypadki kontrolne
 
@@ -16144,14 +16224,14 @@ Liczby kontrolne mechanik B (testy w bloku „SkillModel: class mechanics (S86)�
 | B2 kości: ściana (bez rollDouble) | 0,33 |
 | B2 kości: ściana (rollDouble 30) | 0,43 |
 | B2 koło: ściana (boost 50) | 1,17 |
-| B3 Piętno Światła: udział w 1 cel 60 s L45 | 17% → 16% |
+| B3 Piętno Światła: udział w 1 cel 60 s L45 | 16% |
 | B5 średnia Furia „Furia” L45 (ROZWOJ 7,5) | 7,41 |
-| B5 średnia Furia „Furia” L70 (ROZWOJ 7,5) | 6,89 → 6,58 |
-| B5 średnia Furia „Furia” L100 (ROZWOJ 7,5) | 6,89 → 5,99 |
+| B5 średnia Furia „Furia” L70 (ROZWOJ 7,5) | 6,58 |
+| B5 średnia Furia „Furia” L100 (ROZWOJ 7,5) | 5,99 |
 | B8 Kłusownik L70: pułapki na minutę | 10,0 |
 | B8 Kłusownik L70: kontrola celu | 39% |
 | B9 Łowczy drużyny L70: uderzenia sokoła na minutę | 13,0 |
-| B12 Arkanista L70: średnio Ładunków | 1,70 |
+| B12 Arkanista L70: średnio Ładunków | 1,70 → 1,80 |
 | B12 koszt czaru przy 4 Ładunkach / bez (Skills.chargeCostFactor) | 1,17 |
 | B12 Wyładowanie przy 4 Ładunkach (Skills.dischargeFactor) | 1,16 |
 | B13 kumulowanie: 100 i 100 po 1 s (suma) | 200 |
@@ -16163,47 +16243,47 @@ Założenia S84 (Balance.SITUATIONS) w kolumnach obok: atak podst. 0.5 (Mag 0.4)
 | build · poziom | atak podst. 1 cel | atak podst. grupa | odstęp rzutów s | żywioł broni | lód: kontrola | obszar w grupie | kontrola 1 cel | kontrola boss | bez ruchu | bez ruchu boss | mana (boss 180 s) | leczenie / s tanka |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | berserker.fury · 45 | 42% | 36% | 2,1 | 0% | 25% | 21% | 25% | 25% | 97% | 28% | – | – |
-| berserker.fury · 70 | 39% → 38% | 33% → 34% | 2,1 | 0% | 20% → 25% | 20% | 20% → 25% | 20% → 25% | 97% | 28% | – | – |
-| berserker.fury · 100 | 39% → 33% | 32% → 30% | 2,1 → 1,9 | 0% | 20% → 25% | 25% → 27% | 20% → 25% | 20% → 25% | 97% | 29% | – | – |
-| guardian.defender · 45 | 45% → 46% | 28% → 29% | 1,9 | 0% | 15% | 31% → 32% | 15% | 2% | 97% | 28% | – | – |
-| guardian.defender · 70 | 43% → 46% | 26% → 28% | 1,9 → 2,0 | 0% | 18% → 22% | 33% → 32% | 18% → 22% | 6% | 97% | 28% | – | – |
-| guardian.defender · 100 | 44% → 45% | 27% → 28% | 2,0 → 1,9 | 0% | 22% → 24% | 31% | 22% → 24% | 6% | 97% | 29% | – | – |
-| guardian.loner · 45 | 49% → 50% | 31% → 32% | 2,2 | 0% | 11% | 25% → 26% | 11% | 1% | 97% | 28% | – | – |
-| guardian.loner · 70 | 48% → 50% | 30% → 33% | 2,3 | 0% | 15% → 16% | 25% → 21% | 15% → 16% | 6% | 97% | 28% | – | – |
-| guardian.loner · 100 | 49% | 33% → 31% | 2,4 → 2,2 | 0% | 20% → 17% | 16% → 25% | 20% → 17% | 6% | 97% | 29% | – | – |
-| standard.commander · 45 | 41% → 45% | 25% → 30% | 2,0 → 2,2 | 0% | 12% → 15% | 32% → 28% | 12% → 15% | 0% → 5% | 97% | 28% | – | – |
-| standard.commander · 70 | 40% → 43% | 24% → 29% | 2,0 → 2,2 | 0% | 16% → 14% | 35% → 29% | 16% → 14% | 5% | 97% | 28% | – | – |
-| standard.commander · 100 | 37% | 25% → 23% | 1,8 → 1,9 | 0% | 16% → 5% | 26% → 35% | 16% → 5% | 5% | 97% | 29% | – | – |
+| berserker.fury · 70 | 38% | 34% | 2,1 | 0% | 25% | 20% | 25% | 25% | 97% | 28% | – | – |
+| berserker.fury · 100 | 33% | 30% | 1,9 | 0% | 25% | 27% | 25% | 25% | 97% | 29% | – | – |
+| guardian.defender · 45 | 46% | 29% | 1,9 | 0% | 15% | 32% | 15% | 2% | 97% | 28% | – | – |
+| guardian.defender · 70 | 46% | 28% | 2,0 | 0% | 22% | 32% | 22% | 6% | 97% | 28% | – | – |
+| guardian.defender · 100 | 45% | 28% | 1,9 | 0% | 24% | 31% | 24% | 6% | 97% | 29% | – | – |
+| guardian.loner · 45 | 50% | 32% | 2,2 | 0% | 11% | 26% | 11% | 1% | 97% | 28% | – | – |
+| guardian.loner · 70 | 50% | 33% | 2,3 | 0% | 16% | 21% | 16% | 6% | 97% | 28% | – | – |
+| guardian.loner · 100 | 49% | 31% | 2,2 | 0% | 17% | 25% | 17% | 6% | 97% | 29% | – | – |
+| standard.commander · 45 | 45% | 30% | 2,2 | 0% | 15% | 28% | 15% | 5% | 97% | 28% | – | – |
+| standard.commander · 70 | 43% | 29% | 2,2 | 0% | 14% | 29% | 14% | 5% | 97% | 28% | – | – |
+| standard.commander · 100 | 37% | 23% | 1,9 | 0% | 5% | 35% | 5% | 5% | 97% | 29% | – | – |
 | marksman.kingslayer · 45 | 46% | 46% | 1,9 | 0% | 13% | 1% | 13% | 13% | 97% | 28% | – | – |
 | marksman.kingslayer · 70 | 46% | 46% | 1,9 | 0% | 38% | 0% | 38% | 38% | 97% | 28% | – | – |
 | marksman.kingslayer · 100 | 44% | 43% | 1,8 | 0% | 39% | 5% | 39% | 39% | 97% | 29% | – | – |
-| trapper.poacher · 45 | 38% | 25% | 2,0 | 0% | 41% | 39% | 41% | 41% | 97% | 28% | – | – |
-| trapper.poacher · 70 | 38% | 22% | 1,9 | 0% | 39% | 44% | 39% | 38% | 97% | 28% | – | – |
-| trapper.poacher · 100 | 37% | 22% | 1,8 | 0% | 46% | 44% | 46% | 46% | 97% | 29% | – | – |
+| trapper.poacher · 45 | 38% | 25% → 26% | 2,0 | 0% | 41% | 39% → 38% | 41% | 41% | 97% | 28% | – | – |
+| trapper.poacher · 70 | 38% | 22% | 1,9 | 0% | 39% | 44% → 42% | 39% | 38% | 97% | 28% | – | – |
+| trapper.poacher · 100 | 37% → 36% | 22% → 21% | 1,8 | 0% | 46% | 44% → 43% | 46% | 46% | 97% | 29% | – | – |
 | scout.partyHunter · 45 | 41% | 34% | 1,7 | 0% | 17% | 11% | 17% | 17% | 97% | 28% | – | – |
 | scout.partyHunter · 70 | 39% | 33% | 1,7 | 0% | 41% | 10% | 41% | 41% | 97% | 28% | – | – |
-| scout.partyHunter · 100 | 35% | 32% | 1,6 | 0% | 46% | 7% | 46% | 41% | 97% | 29% | – | – |
-| destroyer.destroyerExp · 45 | 36% | 22% | 2,2 | 1% | 99% | 38% | 33% | 33% | 97% | 28% | 97% | – |
-| destroyer.destroyerExp · 70 | 33% | 17% | 2,0 | 1% | 99% | 48% | 33% | 33% | 97% | 28% | 91% | – |
-| destroyer.destroyerExp · 100 | 32% | 15% | 2,0 | 3% | 99% | 51% | 33% | 33% | 97% | 29% | 92% | – |
-| destroyer.destroyerBoss · 45 | 24% | 17% | 1,3 | 4% | 99% | 36% | 37% | 33% | 97% | 28% | 85% | – |
-| destroyer.destroyerBoss · 70 | 21% | 13% | 1,2 | 5% | 99% | 44% | 40% | 33% | 97% | 28% | 80% | – |
-| destroyer.destroyerBoss · 100 | 20% | 12% | 1,2 | 6% | 99% | 47% | 40% | 33% | 97% | 29% | 83% | – |
-| arcanist.arcanistBoss · 45 | 29% | 24% | 1,5 | 0% | 99% | 28% | 33% | 33% | 97% | 28% | 97% | – |
-| arcanist.arcanistBoss · 70 | 25% | 20% | 1,5 | 0% | 89% | 27% | 30% | 30% | 97% | 28% | 94% | – |
-| arcanist.arcanistBoss · 100 | 22% | 18% | 1,5 | 0% | 84% | 25% | 28% | 28% | 97% | 29% | 86% | – |
-| inquisitor.solo · 45 | 22% → 23% | 16% | 2,0 | 0% | 32% | 30% | 32% | 42% | 97% | 28% | – | – |
+| scout.partyHunter · 100 | 35% | 32% → 30% | 1,6 | 0% | 46% | 7% → 8% | 46% | 41% | 97% | 29% | – | – |
+| destroyer.destroyerExp · 45 | 36% | 22% | 2,2 | 1% | 99% | 38% | 33% | 33% | 97% | 28% | 97% → 100% | – |
+| destroyer.destroyerExp · 70 | 33% | 17% | 2,0 | 1% | 99% | 48% | 33% | 33% | 97% | 28% | 91% → 95% | – |
+| destroyer.destroyerExp · 100 | 32% → 31% | 15% | 2,0 | 3% | 99% | 51% → 52% | 33% | 33% | 97% | 29% | 92% → 97% | – |
+| destroyer.destroyerBoss · 45 | 24% | 17% | 1,3 | 4% | 99% | 36% | 37% | 33% | 97% | 28% | 85% → 100% | – |
+| destroyer.destroyerBoss · 70 | 21% → 20% | 13% → 12% | 1,2 | 5% | 99% | 44% | 40% | 33% | 97% | 28% | 80% → 84% | – |
+| destroyer.destroyerBoss · 100 | 20% | 12% → 11% | 1,2 | 6% | 99% | 47% → 48% | 40% | 33% | 97% | 29% | 83% → 94% | – |
+| arcanist.arcanistBoss · 45 | 29% | 24% | 1,5 | 0% | 99% | 28% | 33% | 33% | 97% | 28% | 97% → 100% | – |
+| arcanist.arcanistBoss · 70 | 25% → 23% | 20% → 19% | 1,5 → 1,6 | 0% | 89% → 86% | 27% → 26% | 30% → 29% | 30% → 28% | 97% | 28% | 94% → 97% | – |
+| arcanist.arcanistBoss · 100 | 22% → 19% | 18% → 15% | 1,5 → 1,6 | 0% | 84% → 78% | 25% → 24% | 28% → 26% | 28% → 26% | 97% | 29% | 86% → 93% | – |
+| inquisitor.solo · 45 | 23% | 16% | 2,0 | 0% | 32% | 30% | 32% | 42% | 97% | 28% | – | – |
 | inquisitor.solo · 70 | 20% | 12% | 2,0 | 0% | 31% | 32% | 31% | 41% | 97% | 29% | – | – |
-| inquisitor.solo · 100 | 18% → 17% | 9% → 10% | 1,9 → 1,8 | 0% | 33% → 32% | 40% → 23% | 33% → 32% | 40% → 42% | 97% | 29% | – | – |
-| healer.dungeon · 45 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 28% | – | 548 → 544 |
-| healer.dungeon · 70 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 29% | – | 1336 → 1319 |
-| healer.dungeon · 100 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 29% | – | 3254 → 2934 |
-| healer.solo · 45 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 28% | – | 332 → 330 |
-| healer.solo · 70 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 29% | – | 891 → 879 |
-| healer.solo · 100 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 29% | – | 1962 → 1763 |
-| fortune.plunder · 45 | 31% | 18% | 2,3 | 0% | 27% | 25% → 26% | 27% | 37% | 97% | 28% | – | 168 |
-| fortune.plunder · 70 | 27% → 25% | 15% → 14% | 2,3 → 2,0 | 0% | 27% → 31% | 26% → 23% | 27% → 31% | 37% → 41% | 97% | 29% | – | 237 → 234 |
-| fortune.plunder · 100 | 26% → 23% | 14% → 13% | 2,0 → 1,9 | 0% | 31% → 30% | 23% → 24% | 31% → 30% | 41% → 30% | 97% | 29% | – | 415 → 452 |
+| inquisitor.solo · 100 | 17% | 10% | 1,8 | 0% | 32% | 23% | 32% | 42% | 97% | 29% | – | – |
+| healer.dungeon · 45 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 28% | – | 544 |
+| healer.dungeon · 70 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 29% | – | 1319 |
+| healer.dungeon · 100 | 41% | 41% | 3,0 | 0% | 0% | 0% | 0% | 0% | 97% | 29% | – | 2934 |
+| healer.solo · 45 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 28% | – | 330 |
+| healer.solo · 70 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 29% | – | 879 |
+| healer.solo · 100 | 38% | 27% | 2,2 | 0% | 0% | 36% | 0% | 0% | 97% | 29% | – | 1763 |
+| fortune.plunder · 45 | 31% | 18% | 2,3 | 0% | 27% | 26% | 27% | 37% | 97% | 28% | – | 168 |
+| fortune.plunder · 70 | 25% | 14% | 2,0 | 0% | 31% | 23% | 31% | 41% | 97% | 29% | – | 234 |
+| fortune.plunder · 100 | 23% | 13% | 1,9 | 0% | 30% | 24% | 30% | 30% | 97% | 29% | – | 452 |
 
 ### Cechy w modelu umiejętności (C6)
 
@@ -16224,19 +16304,19 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Zwykły +0 | 13% | 14% | 8% | 5% | **3%** |
 | criticalForce · marksman.kingslayer · single · 45 · Zwykły +0 | 2% | 2% | 5% | 5% | 0% |
 | easyPrey · trapper.poacher · controlled · 45 · Zwykły +0 | 5% | 3% | 3% | 6% | **-3%** |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Zwykły +0 | 6% | 6% | 6% | 5% | 1% |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Zwykły +0 | 6% | 6% | 6% → 5% | 5% | 1% → 0% |
 | fullDraw · trapper.poacher@bow+quiver · single · 45 · Zwykły +0 | 7% | 7% | 6% | 5% | 1% |
 | elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Zwykły +0 | 8% | 8% | 7% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 45 · Zwykły +0 | 5% | 1% | 2% | 7% | **-5%** |
 | runicSeal · arcanist.arcanistBoss · still · 45 · Zwykły +0 | 4% | 5% | 5% | 6% | 0% |
-| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 45 · Zwykły +0 | 0% | 0% | 1% | 2% | -1% |
+| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 45 · Zwykły +0 | 0% | 0% | 1% → 0% | 2% | **-1% → -2%** |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 45 · Zwykły +0 | 3% | 4% | 4% | 5% | -1% |
 | anointment · healer.dungeon · dungeon · 45 · Zwykły +0 | 0% | 0% | 5% | 5% | 0% |
 | savingBlow · healer.dungeon@holystaff · solo · 45 · Zwykły +0 | 60% | 60% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 45 · Zwykły +0 | 4% | 4% | 4% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 45 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 45 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 45 · Mityczny +9 | 11% | 10% → 11% | 9% | 4% | **5%** |
+| twinCut · guardian.defender@saber1h+shield · single · 45 · Mityczny +9 | 11% | 11% | 9% | 4% | **5%** |
 | reaping · guardian.defender@axe1h+shield · solo · 45 · Mityczny +9 | 53% | 53% | 53% | 5% | **48%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 45 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
 | beheading · berserker.fury@sword2h · single · 45 · Mityczny +9 | 8% | 8% | 9% | 5% | **5%** |
@@ -16247,8 +16327,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | harrying · scout.partyHunter@shortbow+quiver · solo · 45 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 21% | 21% | 11% | 5% | **6%** |
 | criticalForce · marksman.kingslayer · single · 45 · Mityczny +9 | 4% | 4% | 9% | 5% | **5%** |
-| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 6% | 5% | 6% | -1% |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Mityczny +9 | 12% | 12% | 12% | 5% | **7%** |
+| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 6% | 5% → 4% | 6% | **-1% → -2%** |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Mityczny +9 | 12% | 12% | 12% → 11% | 5% | **7% → 6%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 12% | 12% | 11% | 5% | **6%** |
 | elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Mityczny +9 | 9% | 9% | 7% | 5% | **3%** |
 | elementalMight · destroyer.destroyerExp · single · 45 · Mityczny +9 | 9% | 2% | 2% | 7% | **-5%** |
@@ -16260,11 +16340,11 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | concussion · inquisitor.solo@flail1h+shield · group · 45 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
 | prosperity · fortune.plunder@scepter+relic · - · 45 · Mityczny +9 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 70 · Zwykły +0 | 6% | 3% | 3% | 4% | -1% |
-| twinCut · guardian.defender@saber1h+shield · single · 70 · Zwykły +0 | 6% | 5% → 6% | 5% | 4% | 1% |
+| twinCut · guardian.defender@saber1h+shield · single · 70 · Zwykły +0 | 6% | 6% | 5% | 4% | 1% |
 | reaping · guardian.defender@axe1h+shield · solo · 70 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 70 · Zwykły +0 | 5% | 5% | 5% | 6% | -1% |
 | beheading · berserker.fury@sword2h · single · 70 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
-| rendingGash · berserker.fury · single · 70 · Zwykły +0 | 5% | 5% | 6% | 5% | 2% → 1% |
+| rendingGash · berserker.fury · single · 70 · Zwykły +0 | 5% | 5% | 6% | 5% | 1% |
 | sundering · berserker.fury@hammer2h · armored · 70 · Zwykły +0 | 8% | 8% | 8% | 5% | **3%** |
 | runThrough · berserker.fury@spear2h · group · 70 · Zwykły +0 | 8% | 7% | 6% | 5% | 1% |
 | parry · guardian.defender · tank · 70 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
@@ -16283,38 +16363,38 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | savingBlow · healer.dungeon@holystaff · solo · 70 · Zwykły +0 | 118% | 118% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 70 · Zwykły +0 | 4% | 4% | 4% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 70 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
-| swordplay · guardian.defender · group · 70 · Mityczny +9 | 8% | 4% → 5% | 4% → 5% | 4% | 0% → 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 70 · Mityczny +9 | 11% | 10% → 11% | 9% | 4% | **5%** |
+| swordplay · guardian.defender · group · 70 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
+| twinCut · guardian.defender@saber1h+shield · single · 70 · Mityczny +9 | 11% | 11% | 9% | 4% | **5%** |
 | reaping · guardian.defender@axe1h+shield · solo · 70 · Mityczny +9 | 57% | 57% | 57% | 5% | **52%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 70 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
 | beheading · berserker.fury@sword2h · single · 70 · Mityczny +9 | 8% | 8% | 9% | 5% | **4%** |
-| rendingGash · berserker.fury · single · 70 · Mityczny +9 | 14% | 14% | 14% → 15% | 5% | **10% → 11%** |
+| rendingGash · berserker.fury · single · 70 · Mityczny +9 | 14% | 14% | 15% | 5% | **11%** |
 | sundering · berserker.fury@hammer2h · armored · 70 · Mityczny +9 | 12% | 12% | 10% | 5% | **5%** |
-| runThrough · berserker.fury@spear2h · group · 70 · Mityczny +9 | 16% | 13% → 12% | 11% | 5% | **6%** |
+| runThrough · berserker.fury@spear2h · group · 70 · Mityczny +9 | 16% | 12% | 11% | 5% | **6%** |
 | parry · guardian.defender · tank · 70 · Mityczny +9 | 6% | 6% | 6% | 5% | 1% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 70 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 21% | 21% | 13% | 5% | **8%** |
 | criticalForce · marksman.kingslayer · single · 70 · Mityczny +9 | 4% | 4% | 10% | 5% | **5%** |
 | easyPrey · trapper.poacher · controlled · 70 · Mityczny +9 | 10% | 6% | 5% | 6% | -1% |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 70 · Mityczny +9 | 13% | 13% | 12% | 5% | **7%** |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 70 · Mityczny +9 | 13% | 13% | 12% → 11% | 5% | **7% → 6%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 12% | 13% | 10% | 5% | **6%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 9% | 8% | 7% | 5% | **2%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 9% | 8% | 7% → 6% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 70 · Mityczny +9 | 9% | 2% | 2% | 7% | **-4%** |
 | runicSeal · arcanist.arcanistBoss · still · 70 · Mityczny +9 | 7% | 10% | 10% | 6% | **4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 70 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
-| powerLens · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 6% | 7% | 7% | 5% | **2%** |
+| powerLens · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 6% | 7% | 7% | 5% | **2% → 3%** |
 | anointment · healer.dungeon · dungeon · 70 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
 | savingBlow · healer.dungeon@holystaff · solo · 70 · Mityczny +9 | 304% | 304% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 70 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
 | prosperity · fortune.plunder@scepter+relic · - · 70 · Mityczny +9 | 0% | 0% | 0% | 0% | 0% |
 | swordplay · guardian.defender · group · 100 · Zwykły +0 | 6% | 3% | 3% | 4% | -1% |
-| twinCut · guardian.defender@saber1h+shield · single · 100 · Zwykły +0 | 6% | 5% → 6% | 5% | 4% | 1% |
+| twinCut · guardian.defender@saber1h+shield · single · 100 · Zwykły +0 | 6% | 6% | 5% | 4% | 1% |
 | reaping · guardian.defender@axe1h+shield · solo · 100 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 100 · Zwykły +0 | 5% | 5% | 5% | 6% | -1% |
 | beheading · berserker.fury@sword2h · single · 100 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
-| rendingGash · berserker.fury · single · 100 · Zwykły +0 | 5% | 5% | 5% → 6% | 5% | 0% → 1% |
+| rendingGash · berserker.fury · single · 100 · Zwykły +0 | 5% | 5% | 6% | 5% | 1% |
 | sundering · berserker.fury@hammer2h · armored · 100 · Zwykły +0 | 8% | 8% | 8% | 5% | **3%** |
-| runThrough · berserker.fury@spear2h · group · 100 · Zwykły +0 | 8% | 6% | 6% → 5% | 5% | 1% → 0% |
+| runThrough · berserker.fury@spear2h · group · 100 · Zwykły +0 | 8% | 6% | 5% | 5% | 0% |
 | parry · guardian.defender · tank · 100 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 100 · Zwykły +0 | 5% | 5% | 5% | 5% | 0% |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 100 · Zwykły +0 | 13% | 14% | 7% | 5% | **2%** |
@@ -16322,35 +16402,35 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | easyPrey · trapper.poacher · controlled · 100 · Zwykły +0 | 5% | 4% | 3% | 6% | **-3%** |
 | bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 100 · Zwykły +0 | 6% | 6% | 6% | 5% | 1% |
 | fullDraw · trapper.poacher@bow+quiver · single · 100 · Zwykły +0 | 7% | 8% | 6% | 5% | 1% |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 8% | 7% | 6% | 5% | **2%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 8% | 7% | 6% | 5% | 2% → 1% |
 | elementalMight · destroyer.destroyerExp · single · 100 · Zwykły +0 | 5% | 2% | 2% | 7% | **-5%** |
 | runicSeal · arcanist.arcanistBoss · still · 100 · Zwykły +0 | 4% | 5% | 5% | 6% | 0% |
-| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Zwykły +0 | 0% | 0% | 2% | 2% | 0% |
+| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Zwykły +0 | 0% | 0% | 2% → 1% | 2% | 0% → -1% |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 3% | 4% | 4% | 5% | -1% |
 | anointment · healer.dungeon · dungeon · 100 · Zwykły +0 | 0% | 0% | 5% | 5% | 0% |
 | savingBlow · healer.dungeon@holystaff · solo · 100 · Zwykły +0 | 308% | 308% | 0% | 4% | **-4%** |
-| concussion · inquisitor.solo@flail1h+shield · group · 100 · Zwykły +0 | 4% | 4% → 5% | 4% → 5% | 5% | 0% |
+| concussion · inquisitor.solo@flail1h+shield · group · 100 · Zwykły +0 | 4% | 5% | 5% | 5% | 0% |
 | prosperity · fortune.plunder@scepter+relic · - · 100 · Zwykły +0 | 0% | 0% | 0% | 0% | 0% |
-| swordplay · guardian.defender · group · 100 · Mityczny +9 | 8% | 4% → 5% | 4% → 5% | 4% | 0% → 1% |
-| twinCut · guardian.defender@saber1h+shield · single · 100 · Mityczny +9 | 11% | 10% → 11% | 9% | 4% | **5%** |
+| swordplay · guardian.defender · group · 100 · Mityczny +9 | 8% | 5% | 5% | 4% | 1% |
+| twinCut · guardian.defender@saber1h+shield · single · 100 · Mityczny +9 | 11% | 11% | 9% | 4% | **5%** |
 | reaping · guardian.defender@axe1h+shield · solo · 100 · Mityczny +9 | 61% | 61% | 61% | 5% | **56%** |
 | bonebreaker · guardian.defender@mace1h+shield · tank · 100 · Mityczny +9 | 11% | 11% | 11% | 6% | **5%** |
 | beheading · berserker.fury@sword2h · single · 100 · Mityczny +9 | 8% | 8% | 9% | 5% | **4%** |
-| rendingGash · berserker.fury · single · 100 · Mityczny +9 | 14% | 14% | 16% → 17% | 5% | **12% → 13%** |
+| rendingGash · berserker.fury · single · 100 · Mityczny +9 | 14% | 14% | 17% | 5% | **13%** |
 | sundering · berserker.fury@hammer2h · armored · 100 · Mityczny +9 | 12% | 12% | 10% | 5% | **5%** |
-| runThrough · berserker.fury@spear2h · group · 100 · Mityczny +9 | 16% | 12% → 11% | 10% → 9% | 5% | **5% → 4%** |
+| runThrough · berserker.fury@spear2h · group · 100 · Mityczny +9 | 16% | 11% | 9% | 5% | **4%** |
 | parry · guardian.defender · tank · 100 · Mityczny +9 | 6% | 6% | 6% | 5% | 1% |
 | harrying · scout.partyHunter@shortbow+quiver · solo · 100 · Mityczny +9 | 10% | 11% | 11% | 5% | **6%** |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 21% | 21% | 13% | 5% | **9%** |
 | criticalForce · marksman.kingslayer · single · 100 · Mityczny +9 | 4% | 4% | 11% | 5% | **6%** |
-| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 7% | 6% | 6% | 0% |
+| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 7% | 6% → 5% | 6% | 0% → -1% |
 | bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 100 · Mityczny +9 | 13% | 13% | 12% | 5% | **7%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 12% | 13% | 12% | 5% | **8%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 9% | 8% | 7% | 5% | **2%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 9% | 8% | 7% → 6% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 100 · Mityczny +9 | 9% | 3% | 3% | 7% | **-4%** |
 | runicSeal · arcanist.arcanistBoss · still · 100 · Mityczny +9 | 7% | 10% | 10% | 6% | **4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
-| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 7% | 7% | 5% | **2%** |
+| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 7% | 7% | 5% | **2% → 3%** |
 | anointment · healer.dungeon · dungeon · 100 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
 | savingBlow · healer.dungeon@holystaff · solo · 100 · Mityczny +9 | 302% | 302% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 100 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
@@ -16379,69 +16459,69 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Warrior base · 95 | **1,39** | **1,84** | 0,68 | 2,05 | 2,54 |
 | Warrior base · 100 | **1,39** | **1,84** | 0,68 | 2,05 | 2,54 |
 | Warrior berserker.fury · 25 | 1,06 | 1,08 | 0,60 | 2,11 | 2,75 |
-| Warrior berserker.fury · 30 | 1,15 → 1,07 | 1,22 → 1,01 | 0,66 → 0,67 | 2,11 | 2,75 |
-| Warrior berserker.fury · 35 | 1,08 → 0,99 | 1,15 → 1,02 | 0,64 → 0,65 | 2,11 | 2,75 |
-| Warrior berserker.fury · 40 | 1,11 → 1,09 | 1,06 → 1,04 | 0,57 | 2,11 | 2,75 |
-| Warrior berserker.fury · 45 | 1,05 → 1,07 | 1,06 → 1,07 | 0,64 → 0,63 | 2,11 | 2,75 |
-| Warrior berserker.fury · 50 | 1,07 → 1,08 | 1,07 | 0,64 → 0,63 | 2,11 | 2,75 |
-| Warrior berserker.fury · 55 | 1,09 → 1,10 | 1,10 | 0,63 | 2,11 | 2,75 |
-| Warrior berserker.fury · 60 | **1,24 → 1,16** | 1,23 → 1,09 | 0,63 | 2,11 | 2,75 |
-| Warrior berserker.fury · 65 | **1,19** | 1,23 → 1,10 | 0,63 | 2,11 | 2,75 |
-| Warrior berserker.fury · 70 | 1,21 → 1,14 | 1,24 → 1,10 | 0,63 → 0,73 | 2,11 | 2,75 |
-| Warrior berserker.fury · 75 | 1,25 → 1,13 | 1,24 → 1,10 | 0,63 → 0,74 | 2,11 | 2,75 |
-| Warrior berserker.fury · 80 | **1,28 → 1,19** | 1,24 → 1,04 | 0,65 → 0,91 | 2,11 | 2,75 |
-| Warrior berserker.fury · 85 | **1,22 → 1,18** | 1,24 → 1,04 | 0,67 → 0,91 | 2,11 | 2,75 |
-| Warrior berserker.fury · 90 | **1,24 → 1,20** | 1,24 → 1,04 | 0,71 → 0,92 | 2,11 | 2,75 |
-| Warrior berserker.fury · 95 | **1,23 → 1,20** | 1,24 → 1,04 | 0,79 → 0,93 | 2,11 | 2,75 |
-| Warrior berserker.fury · 100 | **1,23** | 1,24 → 1,04 | 0,88 → 0,93 | 2,11 | 2,75 |
-| Warrior guardian.defender · 25 | 1,07 → 1,04 | 1,07 → 1,04 | 0,61 | 1,96 | 2,46 |
-| Warrior guardian.defender · 30 | 1,08 → 1,05 | 1,09 → 1,06 | 0,61 | 1,96 | 2,46 |
-| Warrior guardian.defender · 35 | 1,08 → 1,05 | 1,10 → 1,07 | 0,62 | 1,96 | 2,46 |
-| Warrior guardian.defender · 40 | 1,14 → 1,11 | 1,13 → 1,10 | 0,77 → 0,76 | 1,96 | 2,46 |
-| Warrior guardian.defender · 45 | 1,15 → 1,12 | 1,15 → 1,12 | 0,76 | 1,96 | 2,46 |
-| Warrior guardian.defender · 50 | 1,16 → 1,12 | 1,16 → 1,13 | 0,76 | 1,96 | 2,46 |
-| Warrior guardian.defender · 55 | **1,20 → 1,16** | 1,20 → 1,17 | 0,92 | 1,96 | 2,46 |
-| Warrior guardian.defender · 60 | 1,18 → 1,12 | **1,34 → 1,28** | 0,99 → 1,00 | 1,96 | 2,46 |
-| Warrior guardian.defender · 65 | 1,20 → 1,13 | **1,36 → 1,31** | **1,00 → 1,01** | 1,96 | 2,46 |
-| Warrior guardian.defender · 70 | 1,31 → 1,11 | **1,59 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 75 | 1,29 → 1,11 | **1,59 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 80 | 1,31 → 1,11 | **1,59 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 85 | 1,32 → 1,13 | **1,60 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 90 | 1,27 → 1,13 | **1,59 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 95 | 1,29 → 1,13 | **1,59 → 1,35** | **1,02** | 1,96 | 2,46 |
-| Warrior guardian.defender · 100 | 1,28 → 1,13 | **1,75 → 1,35** | **0,97 → 1,02** | 1,96 | 2,46 |
-| Warrior guardian.loner · 25 | 1,06 → 1,02 | 1,07 → 1,04 | 0,61 | 1,86 | 2,46 |
-| Warrior guardian.loner · 30 | 1,08 → 1,04 | 1,09 → 1,06 | 0,61 | 1,86 | 2,46 |
-| Warrior guardian.loner · 35 | 1,08 → 1,04 | 1,10 → 1,07 | 0,62 | 1,86 | 2,46 |
-| Warrior guardian.loner · 40 | 1,10 → 1,07 | 1,13 → 1,10 | 0,77 → 0,76 | 1,86 | 2,46 |
-| Warrior guardian.loner · 45 | 1,11 → 1,07 | 1,15 → 1,12 | 0,76 | 1,86 | 2,46 |
-| Warrior guardian.loner · 50 | 1,11 → 1,08 | 1,16 → 1,13 | 0,76 | 1,86 | 2,46 |
-| Warrior guardian.loner · 55 | 1,14 → 1,10 | 1,20 → 1,17 | 0,85 | 1,86 | 2,46 |
-| Warrior guardian.loner · 60 | 1,15 → 1,10 | **1,34 → 1,28** | 0,96 | 1,86 | 2,46 |
-| Warrior guardian.loner · 65 | 1,15 → 1,10 | **1,36 → 1,31** | **1,00 → 1,01** | 1,86 | 2,46 |
-| Warrior guardian.loner · 70 | 1,24 → 1,08 | 1,58 → 1,18 | 1,02 → 0,94 | 1,86 | 2,46 |
-| Warrior guardian.loner · 75 | 1,27 → 1,06 | **1,59 → 1,34** | **1,02** | 1,86 | 2,46 |
-| Warrior guardian.loner · 80 | 1,26 → 1,09 | **1,59 → 1,34** | **1,02** | 1,86 | 2,46 |
-| Warrior guardian.loner · 85 | 1,29 → 1,09 | **1,59 → 1,35** | **1,02** | 1,86 | 2,46 |
-| Warrior guardian.loner · 90 | 1,22 → 1,09 | **1,58 → 1,35** | **1,02** | 1,86 | 2,46 |
-| Warrior guardian.loner · 95 | 1,22 → 1,11 | **1,58 → 1,35** | **1,02** | 1,86 | 2,46 |
-| Warrior guardian.loner · 100 | 1,22 → 1,11 | **1,56 → 1,35** | **0,90 → 1,02** | 1,86 | 2,46 |
-| Warrior standard.commander · 25 | 1,07 → 1,04 | 1,07 → 1,04 | 0,61 | 2,04 | 2,46 |
-| Warrior standard.commander · 30 | 1,11 → 1,13 | **1,10 → 1,35** | 0,61 → 0,68 | 2,04 | 2,46 |
-| Warrior standard.commander · 35 | **1,14 → 1,17** | **1,16 → 1,46** | 0,61 → 0,68 | 2,04 | 2,46 |
-| Warrior standard.commander · 40 | **1,21 → 1,27** | **1,21 → 1,76** | 0,75 → 0,78 | 2,04 | 2,46 |
-| Warrior standard.commander · 45 | **1,23 → 1,33** | **1,24 → 1,91** | 0,74 → 0,78 | 2,04 | 2,46 |
-| Warrior standard.commander · 50 | **1,24 → 1,35** | **1,25 → 1,94** | 0,74 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 55 | **1,24 → 1,38** | **1,26 → 2,02** | 0,74 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 60 | **1,22 → 1,43** | **1,37 → 2,07** | 0,79 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 65 | **1,22 → 1,43** | **1,39 → 2,17** | 0,80 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 70 | **1,48** | **1,81 → 2,21** | 0,82 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 75 | **1,53** | **1,86 → 2,23** | 0,82 → 0,77 | 2,04 | 2,46 |
-| Warrior standard.commander · 80 | **1,55 → 1,63** | **1,92 → 2,35** | 0,82 | 2,04 | 2,46 |
-| Warrior standard.commander · 85 | **1,58 → 1,67** | **1,93 → 2,45** | 0,81 → 0,83 | 2,04 | 2,46 |
-| Warrior standard.commander · 90 | **1,63 → 1,85** | **2,13 → 2,47** | 0,78 → 0,83 | 2,04 | 2,46 |
-| Warrior standard.commander · 95 | **1,72 → 1,88** | **2,21 → 2,57** | 0,77 → 0,84 | 2,04 | 2,46 |
-| Warrior standard.commander · 100 | **1,80 → 1,91** | **2,51 → 2,57** | 0,80 → 0,84 | 2,04 | 2,46 |
+| Warrior berserker.fury · 30 | 1,07 | 1,01 | 0,67 | 2,11 | 2,75 |
+| Warrior berserker.fury · 35 | 0,99 | 1,02 | 0,65 | 2,11 | 2,75 |
+| Warrior berserker.fury · 40 | 1,09 | 1,04 | 0,57 | 2,11 | 2,75 |
+| Warrior berserker.fury · 45 | 1,07 | 1,07 | 0,63 | 2,11 | 2,75 |
+| Warrior berserker.fury · 50 | 1,08 | 1,07 | 0,63 | 2,11 | 2,75 |
+| Warrior berserker.fury · 55 | 1,10 | 1,10 | 0,63 | 2,11 | 2,75 |
+| Warrior berserker.fury · 60 | **1,16** | 1,09 | 0,63 | 2,11 | 2,75 |
+| Warrior berserker.fury · 65 | **1,19** | 1,10 | 0,63 | 2,11 | 2,75 |
+| Warrior berserker.fury · 70 | 1,14 | 1,10 | 0,73 | 2,11 | 2,75 |
+| Warrior berserker.fury · 75 | 1,13 | 1,10 | 0,74 | 2,11 | 2,75 |
+| Warrior berserker.fury · 80 | **1,19** | 1,04 | 0,91 | 2,11 | 2,75 |
+| Warrior berserker.fury · 85 | **1,18** | 1,04 | 0,91 | 2,11 | 2,75 |
+| Warrior berserker.fury · 90 | **1,20** | 1,04 | 0,92 | 2,11 | 2,75 |
+| Warrior berserker.fury · 95 | **1,20** | 1,04 | 0,93 | 2,11 | 2,75 |
+| Warrior berserker.fury · 100 | **1,23** | 1,04 | 0,93 | 2,11 | 2,75 |
+| Warrior guardian.defender · 25 | 1,04 | 1,04 | 0,61 | 1,96 | 2,46 |
+| Warrior guardian.defender · 30 | 1,05 | 1,06 | 0,61 | 1,96 | 2,46 |
+| Warrior guardian.defender · 35 | 1,05 | 1,07 | 0,62 | 1,96 | 2,46 |
+| Warrior guardian.defender · 40 | 1,11 | 1,10 | 0,76 | 1,96 | 2,46 |
+| Warrior guardian.defender · 45 | 1,12 | 1,12 | 0,76 | 1,96 | 2,46 |
+| Warrior guardian.defender · 50 | 1,12 | 1,13 | 0,76 | 1,96 | 2,46 |
+| Warrior guardian.defender · 55 | **1,16** | 1,17 | 0,92 | 1,96 | 2,46 |
+| Warrior guardian.defender · 60 | 1,12 | **1,28** | 1,00 | 1,96 | 2,46 |
+| Warrior guardian.defender · 65 | 1,13 | **1,31** | **1,01** | 1,96 | 2,46 |
+| Warrior guardian.defender · 70 | 1,11 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 75 | 1,11 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 80 | 1,11 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 85 | 1,13 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 90 | 1,13 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 95 | 1,13 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.defender · 100 | 1,13 | **1,35** | **1,02** | 1,96 | 2,46 |
+| Warrior guardian.loner · 25 | 1,02 | 1,04 | 0,61 | 1,86 | 2,46 |
+| Warrior guardian.loner · 30 | 1,04 | 1,06 | 0,61 | 1,86 | 2,46 |
+| Warrior guardian.loner · 35 | 1,04 | 1,07 | 0,62 | 1,86 | 2,46 |
+| Warrior guardian.loner · 40 | 1,07 | 1,10 | 0,76 | 1,86 | 2,46 |
+| Warrior guardian.loner · 45 | 1,07 | 1,12 | 0,76 | 1,86 | 2,46 |
+| Warrior guardian.loner · 50 | 1,08 | 1,13 | 0,76 | 1,86 | 2,46 |
+| Warrior guardian.loner · 55 | 1,10 | 1,17 | 0,85 | 1,86 | 2,46 |
+| Warrior guardian.loner · 60 | 1,10 | **1,28** | 0,96 | 1,86 | 2,46 |
+| Warrior guardian.loner · 65 | 1,10 | **1,31** | **1,01** | 1,86 | 2,46 |
+| Warrior guardian.loner · 70 | 1,08 | 1,18 | 0,94 | 1,86 | 2,46 |
+| Warrior guardian.loner · 75 | 1,06 | **1,34** | **1,02** | 1,86 | 2,46 |
+| Warrior guardian.loner · 80 | 1,09 | **1,34** | **1,02** | 1,86 | 2,46 |
+| Warrior guardian.loner · 85 | 1,09 | **1,35** | **1,02** | 1,86 | 2,46 |
+| Warrior guardian.loner · 90 | 1,09 | **1,35** | **1,02** | 1,86 | 2,46 |
+| Warrior guardian.loner · 95 | 1,11 | **1,35** | **1,02** | 1,86 | 2,46 |
+| Warrior guardian.loner · 100 | 1,11 | **1,35** | **1,02** | 1,86 | 2,46 |
+| Warrior standard.commander · 25 | 1,04 | 1,04 | 0,61 | 2,04 | 2,46 |
+| Warrior standard.commander · 30 | 1,13 | **1,35** | 0,68 | 2,04 | 2,46 |
+| Warrior standard.commander · 35 | **1,17** | **1,46** | 0,68 | 2,04 | 2,46 |
+| Warrior standard.commander · 40 | **1,27** | **1,76** | 0,78 | 2,04 | 2,46 |
+| Warrior standard.commander · 45 | **1,33** | **1,91** | 0,78 | 2,04 | 2,46 |
+| Warrior standard.commander · 50 | **1,35** | **1,94** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 55 | **1,38** | **2,02** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 60 | **1,43** | **2,07** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 65 | **1,43** | **2,17** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 70 | **1,48** | **2,21** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 75 | **1,53** | **2,23** | 0,77 | 2,04 | 2,46 |
+| Warrior standard.commander · 80 | **1,63** | **2,35** | 0,82 | 2,04 | 2,46 |
+| Warrior standard.commander · 85 | **1,67** | **2,45** | 0,83 | 2,04 | 2,46 |
+| Warrior standard.commander · 90 | **1,85** | **2,47** | 0,83 | 2,04 | 2,46 |
+| Warrior standard.commander · 95 | **1,88** | **2,57** | 0,84 | 2,04 | 2,46 |
+| Warrior standard.commander · 100 | **1,91** | **2,57** | 0,84 | 2,04 | 2,46 |
 | Hunter base · 25 | 1,12 | 1,12 | 0,65 | 2,09 | 2,64 |
 | Hunter base · 30 | **1,19** | **1,29** | 0,54 | 2,09 | 2,64 |
 | Hunter base · 35 | **1,28** | **1,39** | 0,64 | 2,09 | 2,64 |
@@ -16474,22 +16554,22 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Hunter marksman.kingslayer · 90 | **1,42** | **1,89** | 0,53 | 2,17 | 2,61 |
 | Hunter marksman.kingslayer · 95 | **1,42** | **2,05** | 0,58 | 2,17 | 2,61 |
 | Hunter marksman.kingslayer · 100 | **1,42** | **2,10** | 0,58 | 2,17 | 2,61 |
-| Hunter trapper.poacher · 25 | 1,05 | 1,08 | 0,65 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 30 | **1,28** | **1,46** | 0,85 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 35 | **1,31** | **1,39** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 40 | **1,40** | **1,60** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 45 | **1,44** | **1,61** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 50 | **1,42** | **1,65** | 0,93 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 55 | **1,47** | **1,67** | 0,94 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 60 | **1,53** | **1,73** | 0,93 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 65 | **1,59** | **1,95** | 0,99 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 70 | **1,44** | **1,81** | 1,00 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 75 | **1,39** | **1,72** | 0,98 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 80 | **1,49** | **1,82** | 0,98 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 85 | **1,46** | **1,78** | 0,99 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 90 | **1,49** | **1,80** | 1,00 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 95 | **1,49** | **1,80** | **1,00** | 2,17 | 2,51 |
-| Hunter trapper.poacher · 100 | **1,50** | **1,83** | **1,01** | 2,17 | 2,51 |
+| Hunter trapper.poacher · 25 | 1,05 → 1,03 | 1,08 → 1,06 | 0,65 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 30 | **1,28 → 1,27** | **1,46 → 1,43** | 0,85 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 35 | **1,31 → 1,29** | **1,39 → 1,38** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 40 | **1,40** | **1,60 → 1,59** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 45 | **1,44** | **1,61 → 1,60** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 50 | **1,42 → 1,44** | **1,65** | 0,93 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 55 | **1,47 → 1,48** | **1,67** | 0,94 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 60 | **1,53 → 1,55** | **1,73** | 0,93 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 65 | **1,59 → 1,61** | **1,95 → 1,94** | 0,99 → 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 70 | **1,44 → 1,46** | **1,81 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 75 | **1,39 → 1,40** | **1,72 → 1,70** | 0,98 → 0,97 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 80 | **1,49 → 1,51** | **1,82 → 1,80** | 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 85 | **1,46 → 1,49** | **1,78 → 1,77** | 0,99 → 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 90 | **1,49 → 1,53** | **1,80 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 95 | **1,49 → 1,53** | **1,80 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 100 | **1,50 → 1,53** | **1,83 → 1,82** | 1,01 → 1,00 | 2,17 | 2,51 |
 | Hunter scout.partyHunter · 25 | 1,10 | 1,12 | 0,76 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 30 | 1,10 | 1,11 | 0,78 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 35 | **1,21** | 1,24 | 0,78 | 2,12 | 2,26 |
@@ -16501,27 +16581,27 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Hunter scout.partyHunter · 65 | **1,38** | **1,36** | 0,78 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 70 | **1,41** | **1,46** | 0,76 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 75 | **1,43** | **1,49** | 0,76 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 80 | **1,46** | **1,54** | 0,78 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 85 | **1,46** | **1,54** | 0,77 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 90 | **1,63** | **1,54** | 0,82 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 95 | **1,62** | **1,54** | 0,84 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 100 | **1,56** | **1,45** | 0,80 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 80 | **1,46** | **1,54** | 0,78 → 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 85 | **1,46** | **1,54** | 0,77 → 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 90 | **1,63** | **1,54** | 0,82 → 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 95 | **1,62** | **1,54** | 0,84 → 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 100 | **1,56** | **1,45** | 0,80 → 0,72 | 2,12 | 2,26 |
 | Mage base · 25 | **1,24** | 1,24 | 0,68 | 2,51 | 2,56 |
-| Mage base · 30 | **1,34** | **1,44** | 0,71 | 2,51 | 2,56 |
-| Mage base · 35 | **1,46** | **1,62** | 0,75 | 2,51 | 2,56 |
-| Mage base · 40 | **1,71** | **1,90** | 0,80 | 2,51 | 2,56 |
-| Mage base · 45 | **1,69** | **1,92** | 0,80 | 2,51 | 2,56 |
-| Mage base · 50 | **1,75** | **2,01** | 0,80 | 2,51 | 2,56 |
-| Mage base · 55 | **1,82** | **2,09** | 0,80 | 2,51 | 2,56 |
-| Mage base · 60 | **1,91** | **2,31** | 0,82 | 2,51 | 2,56 |
-| Mage base · 65 | **1,95** | **2,39** | 0,83 | 2,51 | 2,56 |
-| Mage base · 70 | **1,97** | **2,42** | 0,83 | 2,51 | 2,56 |
-| Mage base · 75 | **1,98** | **2,43** | 0,83 | 2,51 | 2,56 |
-| Mage base · 80 | **2,14** | **2,59** | 0,84 | 2,51 | 2,56 |
-| Mage base · 85 | **2,25** | **2,70** | 0,84 | 2,51 | 2,56 |
-| Mage base · 90 | **2,24** | **2,71** | 0,84 | 2,51 | 2,56 |
-| Mage base · 95 | **2,26** | **2,73** | 0,86 | 2,51 | 2,56 |
-| Mage base · 100 | **2,26** | **2,73** | 0,88 | 2,51 | 2,56 |
+| Mage base · 30 | **1,34 → 1,36** | **1,44** | 0,71 | 2,51 | 2,56 |
+| Mage base · 35 | **1,46 → 1,49** | **1,62** | 0,75 | 2,51 | 2,56 |
+| Mage base · 40 | **1,71 → 1,73** | **1,90 → 1,92** | 0,80 | 2,51 | 2,56 |
+| Mage base · 45 | **1,69 → 1,73** | **1,92 → 1,95** | 0,80 | 2,51 | 2,56 |
+| Mage base · 50 | **1,75 → 1,80** | **2,01 → 2,05** | 0,80 | 2,51 | 2,56 |
+| Mage base · 55 | **1,82 → 1,88** | **2,09 → 2,13** | 0,80 | 2,51 | 2,56 |
+| Mage base · 60 | **1,91 → 1,95** | **2,31 → 2,40** | 0,82 → 0,85 | 2,51 | 2,56 |
+| Mage base · 65 | **1,95 → 1,99** | **2,39 → 2,49** | 0,83 → 0,86 | 2,51 | 2,56 |
+| Mage base · 70 | **1,97 → 2,03** | **2,42 → 2,51** | 0,83 → 0,86 | 2,51 | 2,56 |
+| Mage base · 75 | **1,98 → 2,08** | **2,43 → 2,58** | 0,83 → 0,86 | 2,51 | 2,56 |
+| Mage base · 80 | **2,14 → 2,31** | **2,59 → 2,83** | 0,84 → 0,87 | 2,51 | 2,56 |
+| Mage base · 85 | **2,25 → 2,43** | **2,70 → 2,97** | 0,84 → 0,88 | 2,51 | 2,56 |
+| Mage base · 90 | **2,24 → 2,43** | **2,71 → 2,98** | 0,84 → 0,88 | 2,51 | 2,56 |
+| Mage base · 95 | **2,26 → 2,46** | **2,73 → 3,03** | 0,86 → 0,91 | 2,51 | 2,56 |
+| Mage base · 100 | **2,26 → 2,46** | **2,73 → 3,03** | 0,88 → 0,92 | 2,51 | 2,56 |
 | Mage destroyer.destroyerExp · 25 | **1,23** | 1,23 | 0,44 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 30 | **1,41** | **1,46** | 0,46 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 35 | **1,44** | **1,50** | 0,54 | 2,04 | 2,01 |
@@ -16529,57 +16609,57 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Mage destroyer.destroyerExp · 45 | **1,49** | **1,57** | 0,61 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 50 | **1,53** | **1,62** | 0,63 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 55 | **1,54** | **1,64** | 0,64 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 60 | **1,61** | **1,97** | 0,71 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 65 | **1,65** | **2,07** | 0,71 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 70 | **1,65** | **2,07** | 0,72 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 75 | **1,65** | **2,07** | 0,73 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 80 | **1,66** | **2,08** | 0,75 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 85 | **1,66** | **2,08** | 0,75 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 90 | **1,67** | **2,12** | 0,76 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 95 | **1,70** | **2,24** | 0,78 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 100 | **1,70** | **2,25** | 0,79 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 60 | **1,61 → 1,63** | **1,97 → 2,10** | 0,71 → 0,73 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 65 | **1,65 → 1,67** | **2,07 → 2,20** | 0,71 → 0,74 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 70 | **1,65 → 1,67** | **2,07 → 2,21** | 0,72 → 0,75 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 75 | **1,65 → 1,67** | **2,07 → 2,21** | 0,73 → 0,76 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 80 | **1,66 → 1,69** | **2,08 → 2,25** | 0,75 → 0,78 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 85 | **1,66 → 1,71** | **2,08 → 2,26** | 0,75 → 0,78 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 90 | **1,67 → 1,72** | **2,12 → 2,31** | 0,76 → 0,79 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 95 | **1,70 → 1,77** | **2,24 → 2,49** | 0,78 → 0,81 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 100 | **1,70 → 1,77** | **2,25 → 2,51** | 0,79 → 0,82 | 2,04 | 2,01 |
 | Mage destroyer.destroyerBoss · 25 | **1,23** | 1,22 | 0,42 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 30 | **1,44** | **1,48** | 0,43 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 35 | **1,55** | **1,60** | 0,48 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 40 | **1,74** | **1,81** | 0,49 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 45 | **1,80** | **1,90** | 0,51 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 50 | **1,87** | **1,99** | 0,52 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 55 | **1,96** | **2,08** | 0,52 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 60 | **1,99** | **2,18** | 0,61 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 65 | **2,09** | **2,28** | 0,62 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 70 | **2,10** | **2,29** | 0,62 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 75 | **2,11** | **2,30** | 0,63 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 80 | **2,12** | **2,33** | 0,65 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 85 | **2,12** | **2,33** | 0,65 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 90 | **2,13** | **2,37** | 0,66 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 95 | **2,16** | **2,47** | 0,69 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 100 | **2,16** | **2,49** | 0,69 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 45 | **1,80 → 1,81** | **1,90 → 1,91** | 0,51 → 0,50 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 50 | **1,87 → 1,88** | **1,99 → 2,01** | 0,52 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 55 | **1,96 → 1,98** | **2,08 → 2,11** | 0,52 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 60 | **1,99 → 2,09** | **2,18 → 2,31** | 0,61 → 0,63 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 65 | **2,09 → 2,15** | **2,28 → 2,41** | 0,62 → 0,64 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 70 | **2,10 → 2,15** | **2,29 → 2,43** | 0,62 → 0,65 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 75 | **2,11 → 2,17** | **2,30 → 2,45** | 0,63 → 0,65 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 80 | **2,12 → 2,18** | **2,33 → 2,49** | 0,65 → 0,67 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 85 | **2,12 → 2,18** | **2,33 → 2,49** | 0,65 → 0,67 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 90 | **2,13 → 2,20** | **2,37 → 2,54** | 0,66 → 0,69 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 95 | **2,16 → 2,24** | **2,47 → 2,68** | 0,69 → 0,72 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 100 | **2,16 → 2,24** | **2,49 → 2,70** | 0,69 → 0,72 | 2,39 | 2,49 |
 | Mage arcanist.arcanistBoss · 25 | **1,26** | **1,26** | 0,60 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 30 | **1,39** | **1,47** | 0,61 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 35 | **1,43** | **1,51** | 0,61 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 40 | **1,63** | **1,69** | 0,67 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 45 | **1,66** | **1,73** | 0,68 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 50 | **1,70** | **1,78** | 0,69 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 55 | **1,71** | **1,81** | 0,69 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 60 | **1,77** | **2,08** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 65 | **1,82** | **2,17** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 70 | **1,83** | **2,21** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 75 | **1,86** | **2,27** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 80 | **1,91** | **2,43** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 85 | **1,92** | **2,44** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 90 | **1,92** | **2,46** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 95 | **1,99** | **2,75** | 0,62 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 100 | **2,00** | **2,82** | 0,60 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 30 | **1,39 → 1,41** | **1,47** | 0,61 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 35 | **1,43 → 1,45** | **1,51** | 0,61 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 40 | **1,63 → 1,65** | **1,69** | 0,67 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 45 | **1,66 → 1,67** | **1,73** | 0,68 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 50 | **1,70 → 1,71** | **1,78** | 0,69 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 55 | **1,71 → 1,72** | **1,81** | 0,69 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 60 | **1,77 → 1,79** | **2,08** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 65 | **1,82 → 1,85** | **2,17** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 70 | **1,83 → 1,85** | **2,21** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 75 | **1,86 → 1,87** | **2,27** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 80 | **1,91 → 1,93** | **2,43** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 85 | **1,92 → 1,94** | **2,44** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 90 | **1,92 → 1,96** | **2,46** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 95 | **1,99 → 2,08** | **2,75** | 0,62 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 100 | **2,00 → 2,13** | **2,82** | 0,60 | 2,15 | 2,15 |
 | Cleric base · 25 | **1,21** | 1,22 | 0,89 | 1,96 | 2,10 |
 | Cleric base · 30 | **1,31** | **1,33** | 0,88 | 1,96 | 2,10 |
-| Cleric base · 35 | **1,47 → 1,45** | **1,52 → 1,50** | 0,83 → 0,84 | 1,96 | 2,10 |
-| Cleric base · 40 | **1,68 → 1,64** | **1,83 → 1,78** | 0,76 → 0,77 | 1,96 | 2,10 |
-| Cleric base · 45 | **1,72 → 1,67** | **1,89 → 1,82** | 0,76 → 0,77 | 1,96 | 2,10 |
-| Cleric base · 50 | **1,77 → 1,74** | **1,95 → 1,90** | 0,77 → 0,78 | 1,96 | 2,10 |
-| Cleric base · 55 | **1,81 → 1,80** | **2,01 → 1,99** | 0,79 | 1,96 | 2,10 |
-| Cleric base · 60 | **1,84 → 1,83** | **2,06 → 2,04** | 0,80 | 1,96 | 2,10 |
-| Cleric base · 65 | **1,86 → 1,85** | **2,08 → 2,07** | 0,80 | 1,96 | 2,10 |
-| Cleric base · 70 | **1,87** | **2,10** | 0,79 → 0,80 | 1,96 | 2,10 |
+| Cleric base · 35 | **1,45** | **1,50** | 0,84 | 1,96 | 2,10 |
+| Cleric base · 40 | **1,64** | **1,78** | 0,77 | 1,96 | 2,10 |
+| Cleric base · 45 | **1,67** | **1,82** | 0,77 | 1,96 | 2,10 |
+| Cleric base · 50 | **1,74** | **1,90** | 0,78 | 1,96 | 2,10 |
+| Cleric base · 55 | **1,80** | **1,99** | 0,79 | 1,96 | 2,10 |
+| Cleric base · 60 | **1,83** | **2,04** | 0,80 | 1,96 | 2,10 |
+| Cleric base · 65 | **1,85** | **2,07** | 0,80 | 1,96 | 2,10 |
+| Cleric base · 70 | **1,87** | **2,10** | 0,80 | 1,96 | 2,10 |
 | Cleric base · 75 | **1,88** | **2,13** | 0,89 | 1,96 | 2,10 |
 | Cleric base · 80 | **1,96** | **2,26** | 0,95 | 1,96 | 2,10 |
 | Cleric base · 85 | **1,96** | **2,26** | 0,97 | 1,96 | 2,10 |
@@ -16588,20 +16668,20 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Cleric base · 100 | **1,96** | **2,26** | **1,11** | 1,96 | 2,10 |
 | Cleric inquisitor.solo · 25 | **1,22** | 1,23 | 0,71 | 2,09 | 2,25 |
 | Cleric inquisitor.solo · 30 | **1,42** | **1,45** | 0,71 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 35 | **1,67 → 1,65** | **1,72 → 1,70** | 0,70 → 0,71 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 40 | **1,85 → 1,82** | **1,92 → 1,88** | 0,75 → 0,76 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 45 | **2,14 → 2,08** | **2,33 → 2,26** | 0,72 → 0,73 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 50 | **2,24 → 2,21** | **2,47 → 2,42** | 0,72 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 55 | **2,29 → 2,28** | **2,54 → 2,52** | 0,76 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 60 | **2,39 → 2,41** | **2,68 → 2,69** | 0,79 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 65 | **2,53 → 2,55** | **2,84 → 2,86** | 0,80 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 70 | **2,55 → 2,57** | **2,87 → 2,90** | 0,88 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 75 | **2,57 → 2,59** | **2,91 → 2,93** | 0,90 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 80 | **2,82 → 2,85** | **3,13 → 3,16** | 1,02 → 0,86 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 85 | **2,82 → 2,85** | **3,13 → 3,16** | 1,04 → 0,89 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 90 | **2,83 → 2,96** | **3,14 → 3,17** | 1,14 → 0,89 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 95 | **2,83 → 2,96** | **3,14 → 3,17** | 1,16 → 0,94 | 2,09 | 2,25 |
-| Cleric inquisitor.solo · 100 | **2,83 → 2,96** | **3,14 → 3,17** | 1,21 → 0,94 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 35 | **1,65** | **1,70** | 0,71 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 40 | **1,82** | **1,88** | 0,76 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 45 | **2,08** | **2,26** | 0,73 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 50 | **2,21** | **2,42** | 0,72 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 55 | **2,28** | **2,52** | 0,76 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 60 | **2,41** | **2,69** | 0,79 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 65 | **2,55** | **2,86** | 0,80 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 70 | **2,57** | **2,90** | 0,88 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 75 | **2,59** | **2,93** | 0,90 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 80 | **2,85** | **3,16** | 0,86 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 85 | **2,85** | **3,16** | 0,89 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 90 | **2,96** | **3,17** | 0,89 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 95 | **2,96** | **3,17** | 0,94 | 2,09 | 2,25 |
+| Cleric inquisitor.solo · 100 | **2,96** | **3,17** | 0,94 | 2,09 | 2,25 |
 | Cleric healer.dungeon · 25 | 1,13 | 1,14 | 0,50 | 1,80 | 1,90 |
 | Cleric healer.dungeon · 30 | **1,16** | 1,17 | 0,50 | 1,80 | 1,90 |
 | Cleric healer.dungeon · 35 | **1,19** | 1,21 | 0,50 | 1,80 | 1,90 |
@@ -16636,20 +16716,20 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Cleric healer.solo · 100 | **1,40** | **1,40** | 0,76 | 1,88 | 2,02 |
 | Cleric fortune.plunder · 25 | **1,21** | 1,22 | 0,92 | 1,98 | 2,12 |
 | Cleric fortune.plunder · 30 | **1,29** | **1,32** | 0,91 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 35 | **1,51 → 1,49** | **1,56 → 1,54** | 0,90 → 0,91 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 40 | **1,62 → 1,60** | **1,68 → 1,65** | 0,95 → 0,96 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 45 | **1,65 → 1,62** | **1,72 → 1,67** | 0,94 → 0,95 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 50 | **1,68 → 1,67** | **1,75 → 1,73** | 0,93 → 0,94 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 35 | **1,49** | **1,54** | 0,91 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 40 | **1,60** | **1,65** | 0,96 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 45 | **1,62** | **1,67** | 0,95 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 50 | **1,67** | **1,73** | 0,94 | 1,98 | 2,12 |
 | Cleric fortune.plunder · 55 | **1,75** | **1,83** | 0,93 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 60 | **1,91 → 1,94** | **1,99 → 2,03** | 0,96 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 65 | **1,91 → 1,96** | **1,99 → 2,05** | 0,96 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 70 | **1,93 → 2,13** | **2,02 → 2,34** | 0,96 → 0,77 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 75 | **1,95 → 2,23** | **2,03 → 2,51** | 0,95 → 0,75 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 80 | **1,97 → 2,21** | **2,05 → 2,47** | 0,95 → 0,75 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 85 | **1,97 → 2,37** | **2,05 → 2,72** | 0,95 → 0,74 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 90 | **1,97 → 2,37** | **2,05 → 2,72** | 0,95 → 0,74 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 95 | **1,97 → 2,49** | **2,05 → 2,72** | 0,95 → 0,74 | 1,98 | 2,12 |
-| Cleric fortune.plunder · 100 | **2,14 → 2,46** | **2,34 → 2,72** | 0,76 → 0,74 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 60 | **1,94** | **2,03** | 0,96 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 65 | **1,96** | **2,05** | 0,96 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 70 | **2,13** | **2,34** | 0,77 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 75 | **2,23** | **2,51** | 0,75 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 80 | **2,21** | **2,47** | 0,75 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 85 | **2,37** | **2,72** | 0,74 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 90 | **2,37** | **2,72** | 0,74 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 95 | **2,49** | **2,72** | 0,74 | 1,98 | 2,12 |
+| Cleric fortune.plunder · 100 | **2,46** | **2,72** | 0,74 | 1,98 | 2,12 |
 
 ### G10 w modelu S86 (F3)
 
@@ -16683,7 +16763,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 25 | **0,22** | 0 |
 | T-SK5 Cleric base na Warrior 30 | **0,25** | 0 |
 | T-SK5 Cleric base na guardian.defender 30 | **0,23** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 30 | 0,29 → 0,28 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 30 | 0,28 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 30 | 0,26 | 1 |
 | T-SK5 Cleric healer.solo na Warrior 30 | 0,29 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 30 | 0,26 | 0 |
@@ -16695,16 +16775,16 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 30 | **0,22** | 0 |
 | T-SK5 Cleric base na Warrior 35 | 0,25 | 0 |
 | T-SK5 Cleric base na guardian.defender 35 | **0,23** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 35 | 0,30 → 0,29 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 35 | 0,29 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 35 | 0,27 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 35 | 0,31 → 0,30 | 0 |
+| T-SK5 Cleric healer.solo na Warrior 35 | 0,30 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 35 | 0,27 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 35 | **0,24** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 35 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 35 | **0,25** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 35 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 35 | **0,24** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 35 | **0,22 → 0,23** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 35 | **0,23** | 0 |
 | T-SK5 Cleric base na Warrior 40 | 0,26 | 0 |
 | T-SK5 Cleric base na guardian.defender 40 | **0,24** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 40 | 0,31 | 0 |
@@ -16717,18 +16797,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 40 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 40 | **0,25** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 40 | **0,23** | 0 |
-| T-SK4 Mage base 45 | **3,34** | 0 |
-| T-SK4 Mage base.loadout 45 | **3,32** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 45 | **1,98** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 45 | **3,09** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 45 | **4,80** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 45 | **3,97** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 45 | **4,69** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 45 | **1,93** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 45 | **2,45** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 45 | **3,47** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 45 | **3,72** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 45 | **4,11** | 0 |
+| T-SK4 Mage base 45 | **3,34 → 2,12** | 0 |
+| T-SK4 Mage base.loadout 45 | **3,32 → 1,93** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 45 | **1,98 → 1,15** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 45 | 3,09 → 1,79 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 45 | 4,80 → 2,78 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 45 | 3,97 → 2,30 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 45 | 4,69 → 2,72 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 45 | **1,93 → 1,12** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 45 | **2,45 → 1,42** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 45 | 3,47 → 2,01 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 45 | 3,72 → 2,16 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 45 | 4,11 → 2,38 | 0 |
 | T-SK5 Cleric base na Warrior 45 | 0,27 | 0 |
 | T-SK5 Cleric base na guardian.defender 45 | **0,24** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 45 | 0,32 | 0 |
@@ -16741,95 +16821,95 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 45 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 45 | 0,26 | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 45 | **0,23** | 0 |
-| T-SK4 Mage base 50 | **3,55** | 0 |
-| T-SK4 Mage base.loadout 50 | **3,95** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 50 | **1,93** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 50 | **3,01** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 50 | **4,15** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 50 | **3,51** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 50 | **3,88** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 50 | **1,81** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 50 | **2,30** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 50 | 2,79 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 50 | **3,36** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 50 | **3,16** | 0 |
+| T-SK4 Mage base 50 | **3,55 → 2,26** | 0 |
+| T-SK4 Mage base.loadout 50 | **3,95 → 2,52** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 50 | **1,93 → 1,23** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 50 | 3,01 → 1,92 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 50 | 4,15 → 2,65 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 50 | 3,51 → 2,24 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 50 | 3,88 → 2,48 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 50 | **1,81 → 1,15** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 50 | **2,30 → 1,46** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 50 | **2,79 → 1,78** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 50 | 3,36 → 2,14 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 50 | 3,16 → 2,02 | 0 |
 | T-SK5 Cleric base na Warrior 50 | **0,25** | 0 |
 | T-SK5 Cleric base na guardian.defender 50 | **0,23** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 50 | 0,30 → 0,29 | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 50 | 0,29 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 50 | 0,27 | 1 |
 | T-SK5 Cleric healer.solo na Warrior 50 | 0,30 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 50 | 0,27 → 0,26 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 50 | 0,26 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 50 | **0,24** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 50 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 50 | **0,24** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 50 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 50 | **0,24** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 50 | **0,22** | 0 |
-| T-SK4 Mage base 55 | **3,98** | 0 |
-| T-SK4 Mage base.loadout 55 | **3,98** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 55 | **1,95** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 55 | **3,09** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 55 | **4,71** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 55 | **3,90** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 55 | **4,60** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 55 | **1,82** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 55 | **2,31** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 55 | **3,21** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 55 | **3,38** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 55 | **3,81** | 0 |
+| T-SK4 Mage base 55 | **3,98 → 2,48** | 0 |
+| T-SK4 Mage base.loadout 55 | **3,98 → 2,48** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 55 | **1,95 → 1,21** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 55 | 3,09 → 1,92 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 55 | 4,71 → 2,93 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 55 | 3,90 → 2,43 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 55 | 4,60 → 2,86 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 55 | **1,82 → 1,13** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 55 | **2,31 → 1,44** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 55 | **3,21 → 2,00** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 55 | 3,38 → 2,10 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 55 | 3,81 → 2,37 | 0 |
 | T-SK5 Cleric base na Warrior 55 | **0,23** | 0 |
 | T-SK5 Cleric base na guardian.defender 55 | **0,22** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 55 | 0,28 → 0,27 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 55 | 0,26 → 0,25 | 1 |
+| T-SK5 Cleric healer.dungeon na Warrior 55 | 0,27 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 55 | 0,25 | 1 |
 | T-SK5 Cleric healer.solo na Warrior 55 | 0,28 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 55 | 0,25 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 55 | **0,23** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 55 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 55 | **0,23** | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 55 | **0,21 → 0,22** | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 55 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 55 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 55 | **0,21** | 0 |
-| T-SK4 Mage base 60 | **4,20** | 0 |
-| T-SK4 Mage base.loadout 60 | **3,44** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 60 | **3,12** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 60 | **3,78** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 60 | **4,47** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 60 | **3,70** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 60 | **4,37** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 60 | 2,08 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 60 | 2,64 | 0 |
-| T-SK4 Mage arcanist.arcanistFire 60 | 2,77 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 60 | 2,89 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 60 | **3,26** | 0 |
+| T-SK4 Mage base 60 | **4,20 → 2,78** | 0 |
+| T-SK4 Mage base.loadout 60 | **3,44 → 3,02** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 60 | **3,12 → 3,04** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 60 | **3,78 → 3,18** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 60 | 4,47 → 2,98 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 60 | 3,70 → 2,47 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 60 | 4,37 → 2,92 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 60 | **2,08 → 1,60** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 60 | **2,64 → 2,03** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 60 | **2,77 → 1,85** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 60 | **2,89 → 1,93** | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 60 | 3,26 → 2,18 | 0 |
 | T-SK5 Cleric base na Warrior 60 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 60 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 60 | 0,30 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 60 | 0,29 → 0,28 | 1 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 60 | 0,28 | 1 |
 | T-SK5 Cleric healer.solo na Warrior 60 | 0,30 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 60 | 0,28 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 60 | **0,22** | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 60 | **0,20 → 0,21** | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 60 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 60 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 60 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 60 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 60 | **0,21** | 0 |
-| T-SK4 Mage base 65 | **3,42** | 0 |
-| T-SK4 Mage base.loadout 65 | **3,37** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 65 | 2,04 | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 65 | 2,31 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 65 | **3,48** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 65 | 2,08 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 65 | 2,90 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 65 | 2,06 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 65 | 2,61 | 0 |
-| T-SK4 Mage arcanist.arcanistFire 65 | 2,71 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 65 | 2,83 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 65 | **3,19** | 0 |
+| T-SK4 Mage base 65 | **3,42 → 2,61** | 0 |
+| T-SK4 Mage base.loadout 65 | **3,37 → 2,78** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 65 | 2,04 → 2,06 | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 65 | 2,31 → 2,13 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 65 | 3,48 → 2,42 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 65 | **2,08 → 1,45** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 65 | 2,90 → 2,02 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 65 | **2,06 → 1,63** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 65 | **2,61 → 2,07** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 65 | **2,71 → 1,88** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 65 | **2,83 → 1,96** | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 65 | 3,19 → 2,22 | 0 |
 | T-SK5 Cleric base na Warrior 65 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 65 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 65 | 0,31 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 65 | 0,30 → 0,29 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 65 | 0,31 → 0,30 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 65 | 0,29 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 65 | 0,30 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 65 | 0,29 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 65 | **0,21** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 65 | **0,20** | 0 |
@@ -16837,23 +16917,23 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 65 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 65 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 65 | **0,21** | 0 |
-| T-SK4 Mage base 70 | **3,38** | 0 |
-| T-SK4 Mage base.loadout 70 | **3,30** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 70 | **1,71** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 70 | 2,05 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 70 | **3,60** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 70 | 2,05 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 70 | 2,96 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 70 | 2,03 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 70 | **2,58** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 70 | **3,02** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 70 | 2,77 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 70 | **3,13** | 0 |
+| T-SK4 Mage base 70 | **3,38 → 2,67** | 0 |
+| T-SK4 Mage base.loadout 70 | **3,30 → 2,84** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 70 | **1,71 → 1,79** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 70 | 2,05 → 2,00 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 70 | 3,60 → 2,59 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 70 | **2,05 → 1,48** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 70 | 2,96 → 2,13 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 70 | **2,03 → 1,65** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 70 | **2,58 → 2,09** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 70 | 3,02 → 2,17 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 70 | 2,77 → 2,37 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 70 | 3,13 → 2,23 | 0 |
 | T-SK5 Cleric base na Warrior 70 | **0,21** | 0 |
 | T-SK5 Cleric base na guardian.defender 70 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 70 | 0,30 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 70 | 0,29 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 70 | 0,30 → 0,29 | 0 |
+| T-SK5 Cleric healer.solo na Warrior 70 | 0,29 | 0 |
 | T-SK5 Cleric healer.solo na guardian.defender 70 | 0,28 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 70 | **0,21** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 70 | **0,20** | 0 |
@@ -16861,42 +16941,42 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 70 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 70 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 70 | **0,21** | 0 |
-| T-SK4 Mage base 75 | **3,35** | 0 |
-| T-SK4 Mage base.loadout 75 | **3,26** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 75 | **1,67** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 75 | 1,86 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 75 | **3,56** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 75 | 2,03 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 75 | 2,93 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 75 | 2,03 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 75 | **2,58** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 75 | 2,99 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 75 | 2,75 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 75 | **3,10** | 0 |
+| T-SK4 Mage base 75 | **3,35 → 2,55** | 0 |
+| T-SK4 Mage base.loadout 75 | **3,26 → 2,72** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 75 | **1,67 → 1,69** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 75 | 1,86 → 1,75 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 75 | 3,56 → 2,48 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 75 | **2,03 → 1,42** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 75 | 2,93 → 2,04 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 75 | **2,03 → 1,62** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 75 | **2,58 → 2,05** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 75 | 2,99 → 2,08 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 75 | 2,75 → 2,25 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 75 | 3,10 → 2,12 | 0 |
 | T-SK5 Cleric base na Warrior 75 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 75 | **0,21** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 75 | 0,31 → 0,30 | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 75 | 0,30 → 0,29 | 1 |
+| T-SK5 Cleric healer.dungeon na Warrior 75 | 0,30 | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 75 | 0,29 | 1 |
 | T-SK5 Cleric healer.solo na Warrior 75 | 0,30 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 75 | 0,29 → 0,28 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 75 | 0,28 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 75 | **0,21** | 0 |
 | T-SK5 Cleric fortune.plunder na guardian.defender 75 | **0,20** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 75 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 75 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 75 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 75 | **0,21** | 0 |
-| T-SK4 Mage base 80 | **3,36** | 0 |
-| T-SK4 Mage base.loadout 80 | **3,27** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 80 | **1,54** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 80 | 1,83 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 80 | **3,47** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 80 | **1,95** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 80 | 2,82 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 80 | 2,02 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 80 | **2,56** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 80 | **3,07** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 80 | 2,70 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 80 | **3,04** | 0 |
+| T-SK4 Mage base 80 | **3,36 → 2,67** | 0 |
+| T-SK4 Mage base.loadout 80 | **3,27 → 2,63** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 80 | **1,54 → 1,51** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 80 | **1,83 → 1,55** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 80 | 3,47 → 2,34 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 80 | **1,95 → 1,32** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 80 | **2,82 → 1,90** | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 80 | **2,02 → 1,58** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 80 | **2,56 → 2,00** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 80 | 3,07 → 2,05 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 80 | 2,70 → 2,16 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 80 | 3,04 → 2,03 | 0 |
 | T-SK5 Cleric base na Warrior 80 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 80 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 80 | 0,31 | 0 |
@@ -16909,102 +16989,102 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 80 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 80 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 80 | **0,21** | 0 |
-| T-SK4 Mage base 85 | **3,07** | 0 |
-| T-SK4 Mage base.loadout 85 | **3,55** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 85 | **1,48** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 85 | 1,76 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 85 | **3,33** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 85 | **1,84** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 85 | 2,67 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 85 | 2,01 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 85 | **2,56** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 85 | **3,04** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 85 | **3,17** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 85 | 2,98 | 0 |
+| T-SK4 Mage base 85 | **3,07 → 2,53** | 0 |
+| T-SK4 Mage base.loadout 85 | **3,55 → 2,53** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 85 | **1,48 → 1,41** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 85 | **1,76 → 1,44** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 85 | 3,33 → 2,17 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 85 | **1,84 → 1,20** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 85 | **2,67 → 1,74** | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 85 | **2,01 → 1,56** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 85 | **2,56 → 1,98** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 85 | **3,04 → 1,95** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 85 | 3,17 → 2,07 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 85 | **2,98 → 1,95** | 0 |
 | T-SK5 Cleric base na Warrior 85 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 85 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 85 | 0,32 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 85 | 0,30 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 85 | 0,37 → 0,33 | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 85 | 0,34 → 0,31 | 0 |
+| T-SK5 Cleric healer.solo na Warrior 85 | 0,33 | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 85 | 0,31 | 0 |
 | T-SK5 Cleric fortune.plunder na Warrior 85 | **0,22** | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 85 | **0,20 → 0,21** | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 85 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 85 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 85 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 85 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 85 | **0,21** | 0 |
-| T-SK4 Mage base 90 | **2,92** | 0 |
-| T-SK4 Mage base.loadout 90 | **3,42** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 90 | **1,46** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 90 | 1,73 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 90 | 2,61 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 90 | 2,89 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 90 | **3,25** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 90 | 2,00 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 90 | **2,54** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 90 | 2,99 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 90 | **3,14** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 90 | 2,96 | 0 |
+| T-SK4 Mage base 90 | **2,92 → 2,35** | 0 |
+| T-SK4 Mage base.loadout 90 | **3,42 → 2,35** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 90 | **1,46 → 1,34** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 90 | **1,73 → 1,38** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 90 | **2,61 → 1,97** | 0 |
+| T-SK4 Mage destroyer.destroyerIce 90 | **2,89 → 1,82** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 90 | 3,25 → 2,22 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 90 | **2,00 → 1,52** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 90 | **2,54 → 1,94** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 90 | 2,99 → 2,47 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 90 | 3,14 → 2,26 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 90 | 2,96 → 2,41 | 0 |
 | T-SK5 Cleric base na Warrior 90 | **0,23** | 0 |
 | T-SK5 Cleric base na guardian.defender 90 | **0,22** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 90 | 0,34 | 0 |
 | T-SK5 Cleric healer.dungeon na guardian.defender 90 | 0,32 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 90 | **0,40 → 0,36** | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 90 | 0,36 → 0,33 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 90 | **0,22 → 0,24** | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 90 | **0,21 → 0,22** | 0 |
+| T-SK5 Cleric healer.solo na Warrior 90 | **0,36** | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 90 | 0,33 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 90 | **0,24** | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 90 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.solo na Warrior 90 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.solo na guardian.defender 90 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 90 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 90 | **0,21** | 0 |
-| T-SK4 Mage base 95 | **2,84** | 0 |
-| T-SK4 Mage base.loadout 95 | **3,74** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 95 | **1,44** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 95 | 1,72 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 95 | 2,59 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 95 | 2,87 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 95 | **3,22** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 95 | **1,99** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 95 | **2,53** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 95 | 2,93 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 95 | **3,12** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 95 | 2,93 | 0 |
+| T-SK4 Mage base 95 | **2,84 → 2,25** | 0 |
+| T-SK4 Mage base.loadout 95 | **3,74 → 2,78** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 95 | **1,44 → 1,40** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 95 | **1,72 → 1,33** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 95 | **2,59 → 1,90** | 0 |
+| T-SK4 Mage destroyer.destroyerIce 95 | **2,87 → 1,76** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 95 | 3,22 → 2,14 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 95 | **1,99 → 1,50** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 95 | **2,53 → 1,90** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 95 | 2,93 → 2,41 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 95 | 3,12 → 2,20 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 95 | 2,93 → 2,35 | 0 |
 | T-SK5 Cleric base na Warrior 95 | **0,24** | 0 |
 | T-SK5 Cleric base na guardian.defender 95 | **0,22** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 95 | **0,40 → 0,36** | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 95 | 0,37 → 0,33 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 95 | **0,41 → 0,37** | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 95 | 0,37 → 0,33 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 95 | **0,23 → 0,25** | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 95 | **0,21 → 0,23** | 0 |
-| T-SK5 Cleric inquisitor.solo na Warrior 95 | **0,23 → 0,24** | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 95 | **0,21 → 0,23** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 95 | **0,23 → 0,24** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 95 | **0,21 → 0,23** | 0 |
-| T-SK4 Mage base 100 | **2,81** | 0 |
-| T-SK4 Mage base.loadout 100 | **3,71** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 100 | **1,42** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 100 | 1,71 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 100 | **3,61** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 100 | **3,34** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 100 | 2,98 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 100 | 2,11 | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 100 | 2,68 | 0 |
-| T-SK4 Mage arcanist.arcanistFire 100 | **3,42** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 100 | **3,62** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 100 | **3,36** | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 95 | **0,36** | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 95 | 0,33 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 95 | **0,37** | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 95 | 0,33 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 95 | **0,25** | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 95 | **0,23** | 0 |
+| T-SK5 Cleric inquisitor.solo na Warrior 95 | **0,24** | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 95 | **0,23** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 95 | **0,24** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 95 | **0,23** | 0 |
+| T-SK4 Mage base 100 | **2,81 → 2,16** | 0 |
+| T-SK4 Mage base.loadout 100 | **3,71 → 2,69** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 100 | **1,42 → 1,34** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 100 | **1,71 → 1,29** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 100 | 3,61 → 2,11 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 100 | 3,34 → 2,01 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 100 | 2,98 → 2,02 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 100 | **2,11 → 1,62** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 100 | **2,68 → 2,06** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 100 | 3,42 → 2,39 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 100 | 3,62 → 2,22 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 100 | 3,36 → 2,37 | 0 |
 | T-SK5 Cleric base na Warrior 100 | **0,24** | 0 |
 | T-SK5 Cleric base na guardian.defender 100 | **0,22** | 0 |
-| T-SK5 Cleric healer.dungeon na Warrior 100 | **0,42 → 0,38** | 0 |
-| T-SK5 Cleric healer.dungeon na guardian.defender 100 | 0,38 → 0,34 | 1 |
-| T-SK5 Cleric healer.solo na Warrior 100 | **0,43 → 0,38** | 0 |
-| T-SK5 Cleric healer.solo na guardian.defender 100 | 0,38 → 0,34 | 0 |
-| T-SK5 Cleric fortune.plunder na Warrior 100 | 0,23 → 0,25 | 0 |
-| T-SK5 Cleric fortune.plunder na guardian.defender 100 | **0,21 → 0,23** | 0 |
-| T-SK5 Cleric inquisitor.solo na Warrior 100 | 0,23 → 0,25 | 0 |
-| T-SK5 Cleric inquisitor.solo na guardian.defender 100 | **0,22 → 0,23** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na Warrior 100 | **0,23 → 0,25** | 0 |
-| T-SK5 Cleric inquisitor.bulwark na guardian.defender 100 | **0,21 → 0,23** | 0 |
+| T-SK5 Cleric healer.dungeon na Warrior 100 | **0,38** | 0 |
+| T-SK5 Cleric healer.dungeon na guardian.defender 100 | 0,34 | 1 |
+| T-SK5 Cleric healer.solo na Warrior 100 | **0,38** | 0 |
+| T-SK5 Cleric healer.solo na guardian.defender 100 | 0,34 | 0 |
+| T-SK5 Cleric fortune.plunder na Warrior 100 | 0,25 | 0 |
+| T-SK5 Cleric fortune.plunder na guardian.defender 100 | **0,23** | 0 |
+| T-SK5 Cleric inquisitor.solo na Warrior 100 | 0,25 | 0 |
+| T-SK5 Cleric inquisitor.solo na guardian.defender 100 | **0,23** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na Warrior 100 | **0,25** | 0 |
+| T-SK5 Cleric inquisitor.bulwark na guardian.defender 100 | **0,23** | 0 |
 
 ### Łąki na L20 w modelu S86 (F4)
 
@@ -17071,16 +17151,16 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | berserker.fury · execute · 10 · a · 100 | **0%** | 0 |
 | berserker.fury · execute · 10 · b · 100 | 19% | 1 |
 | berserker.fury · titansWrath · 5 · a · 100 | **0%** | 0 |
-| berserker.fury · titansWrath · 5 · b · 100 | 13% → 12% | 1 |
-| berserker.fury · titansWrath · 10 · a · 100 | **0%** | 0 → 1 |
-| berserker.fury · titansWrath · 10 · b · 100 | 22% | 1 → 0 |
+| berserker.fury · titansWrath · 5 · b · 100 | 12% | 1 |
+| berserker.fury · titansWrath · 10 · a · 100 | **0%** | 1 |
+| berserker.fury · titansWrath · 10 · b · 100 | 22% | 0 |
 | berserker.fury · brutalStrike · 5 · a · 45 | 14% | 0 |
 | berserker.fury · brutalStrike · 5 · b · 45 | 10% | 1 |
 | berserker.fury · brutalStrike · 10 · a · 45 | **100%** | 0 |
 | berserker.fury · brutalStrike · 10 · b · 45 | 20% | 1 |
 | berserker.fury · cleave · 5 · a · 45 | **0%** | 1 |
-| berserker.fury · cleave · 5 · b · 45 | 11% → 17% | 0 |
-| berserker.fury · cleave · 10 · a · 45 | 0% → 26% | 1 |
+| berserker.fury · cleave · 5 · b · 45 | 17% | 0 |
+| berserker.fury · cleave · 10 · a · 45 | 26% | 1 |
 | berserker.fury · cleave · 10 · b · 45 | **0%** | 0 |
 | berserker.fury · bladeWhirl · 5 · a · 70 | **0%** | 0 |
 | berserker.fury · bladeWhirl · 5 · b · 70 | **0%** | 1 |
@@ -17090,7 +17170,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | inquisitor.solo · heal · 5 · b · 45 | **0%** | 1 |
 | inquisitor.solo · heal · 10 · a · 45 | **0%** | 1 |
 | inquisitor.solo · heal · 10 · b · 45 | **0%** | 0 |
-| inquisitor.solo · brandOfLight · 5 · a · 45 | 14% → 16% | 1 |
+| inquisitor.solo · brandOfLight · 5 · a · 45 | 16% | 1 |
 | inquisitor.solo · brandOfLight · 5 · b · 45 | **42%** | 0 |
 | inquisitor.solo · brandOfLight · 10 · a · 70 | **0%** | 1 |
 | inquisitor.solo · brandOfLight · 10 · b · 70 | **0%** | 0 |
@@ -17176,12 +17256,12 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | marksman.kingslayer · arrowRain · 10 · b · 45 | 25% | 0 |
 | trapper.poacher · snarefield · 5 · a · 100 | **0%** | 1 |
 | trapper.poacher · snarefield · 5 · b · 100 | **0%** | 0 |
-| trapper.poacher · snarefield · 10 · a · 100 | 25% | 0 |
+| trapper.poacher · snarefield · 10 · a · 100 | 25% → 19% | 0 |
 | trapper.poacher · snarefield · 10 · b · 100 | **0%** | 1 |
 | trapper.poacher · venomSnare · 5 · a · 45 | **0%** | 0 |
 | trapper.poacher · venomSnare · 5 · b · 45 | **0%** | 1 |
-| trapper.poacher · venomSnare · 10 · a · 70 | 20% | 1 |
-| trapper.poacher · venomSnare · 10 · b · 70 | 19% | 0 |
+| trapper.poacher · venomSnare · 10 · a · 70 | 20% → 22% | 1 |
+| trapper.poacher · venomSnare · 10 · b · 70 | 19% → 20% | 0 |
 | trapper.poacher · piercingArrow · 5 · a · 45 | **0%** | 1 |
 | trapper.poacher · piercingArrow · 5 · b · 45 | 9% | 0 |
 | trapper.poacher · piercingArrow · 10 · a · 45 | **0%** | 1 |
@@ -17191,17 +17271,17 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | trapper.poacher · netShot · 10 · a · 70 | **0%** | 0 |
 | trapper.poacher · netShot · 10 · b · 70 | 21% | 1 |
 | trapper.poacher · venomArrow · 5 · a · 45 | 14% | 1 |
-| trapper.poacher · venomArrow · 5 · b · 45 | 11% | 0 |
-| trapper.poacher · venomArrow · 10 · a · 70 | 19% | 1 |
+| trapper.poacher · venomArrow · 5 · b · 45 | 11% → 10% | 0 |
+| trapper.poacher · venomArrow · 10 · a · 70 | 19% → 18% | 1 |
 | trapper.poacher · venomArrow · 10 · b · 70 | 22% | 0 |
 | trapper.poacher · deadlyBolt · 5 · a · 70 | 13% | 1 |
 | trapper.poacher · deadlyBolt · 5 · b · 70 | 11% | 0 |
 | trapper.poacher · deadlyBolt · 10 · a · 100 | 21% | 1 |
-| trapper.poacher · deadlyBolt · 10 · b · 100 | 20% | 0 |
-| trapper.poacher · heavyBolt · 5 · a · 45 | 12% | 1 |
-| trapper.poacher · heavyBolt · 5 · b · 45 | 13% | 0 |
+| trapper.poacher · deadlyBolt · 10 · b · 100 | 20% → 21% | 0 |
+| trapper.poacher · heavyBolt · 5 · a · 45 | 12% → 13% | 1 |
+| trapper.poacher · heavyBolt · 5 · b · 45 | 13% → 14% | 0 |
 | trapper.poacher · heavyBolt · 10 · a · 45 | **53%** | 1 |
-| trapper.poacher · heavyBolt · 10 · b · 45 | 18% | 0 |
+| trapper.poacher · heavyBolt · 10 · b · 45 | 18% → 19% | 0 |
 | destroyer.destroyerExp · elementalVortex · 5 · a · 45 | **0%** | 1 |
 | destroyer.destroyerExp · elementalVortex · 5 · b · 45 | 17% | 0 |
 | destroyer.destroyerExp · elementalVortex · 10 · a · 70 | 22% | 1 |
@@ -17210,10 +17290,10 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | destroyer.destroyerExp · cataclysm · 5 · b · 100 | 16% | 0 |
 | destroyer.destroyerExp · cataclysm · 10 · a · 100 | 18% | 1 |
 | destroyer.destroyerExp · cataclysm · 10 · b · 100 | 19% | 0 |
-| destroyer.destroyerExp · meteorStorm · 5 · a · 100 | **17%** | 1 |
+| destroyer.destroyerExp · meteorStorm · 5 · a · 100 | 17% → 15% | 1 |
 | destroyer.destroyerExp · meteorStorm · 5 · b · 100 | 17% | 0 |
 | destroyer.destroyerExp · meteorStorm · 10 · a · 100 | 21% | 0 |
-| destroyer.destroyerExp · meteorStorm · 10 · b · 100 | 18% | 1 |
+| destroyer.destroyerExp · meteorStorm · 10 · b · 100 | 18% → 22% | 1 |
 | destroyer.destroyerExp · meteor · 5 · a · 45 | **0%** | 1 |
 | destroyer.destroyerExp · meteor · 5 · b · 45 | 16% | 0 |
 | destroyer.destroyerExp · meteor · 10 · a · 70 | 20% | 1 |
@@ -17224,7 +17304,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | destroyer.destroyerExp · fireball · 10 · b · 45 | 25% | 0 |
 | destroyer.destroyerExp · firebolt · 5 · a · 45 | 11% | 1 |
 | destroyer.destroyerExp · firebolt · 5 · b · 45 | 16% | 0 |
-| destroyer.destroyerExp · firebolt · 10 · a · 45 | **17%** | 1 |
+| destroyer.destroyerExp · firebolt · 10 · a · 45 | 17% → 18% | 1 |
 | destroyer.destroyerExp · firebolt · 10 · b · 45 | 19% | 0 |
 | arcanist.arcanistBoss · arcaneDischarge · 5 · a · 45 | 13% | 1 |
 | arcanist.arcanistBoss · arcaneDischarge · 5 · b · 45 | **0%** | 0 |
@@ -17244,7 +17324,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | arcanist.arcanistBoss · fireball · 10 · b · 45 | 25% | 1 |
 | arcanist.arcanistBoss · firebolt · 5 · a · 45 | **6%** | 0 |
 | arcanist.arcanistBoss · firebolt · 5 · b · 45 | 16% | 1 |
-| arcanist.arcanistBoss · firebolt · 10 · a · 45 | **17%** | 0 |
+| arcanist.arcanistBoss · firebolt · 10 · a · 45 | 17% → 18% | 0 |
 | arcanist.arcanistBoss · firebolt · 10 · b · 45 | 19% | 1 |
 
 ### R5: rozrzut ścieżek i broni
@@ -17255,8 +17335,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | --- | --: |
 | a single60 · marksman.kingslayer · longbow+quiver · 45 | 8% |
 | a aoe3burst · trapper.poacher · crossbow+quiver · 45 | **23%** |
-| a aoe3sus · destroyer.destroyerExp · staff · 45 | -3% |
-| a boss180 · arcanist.arcanistBoss · runestaff · 45 | **16%** |
+| a aoe3sus · destroyer.destroyerExp · staff · 45 | -3% → -4% |
+| a boss180 · arcanist.arcanistBoss · runestaff · 45 | **16% → 15%** |
 | b single60 · berserker.fury · sword2h · 45 | 2% |
 | b single60 · berserker.fury · axe2h · 45 | 1% |
 | b single60 · berserker.fury · hammer2h · 45 | 2% |
@@ -17272,37 +17352,37 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | b boss180 · arcanist.arcanistBoss · runestaff · 45 | 4% |
 | b boss180 · arcanist.arcanistBoss · wand · 45 | -4% |
 | a single60 · marksman.kingslayer · longbow+quiver · 70 | 9% |
-| a aoe3burst · trapper.poacher · crossbow+quiver · 70 | **22%** |
-| a aoe3sus · destroyer.destroyerExp · staff · 70 | 4% |
-| a boss180 · arcanist.arcanistBoss · runestaff · 70 | **19%** |
+| a aoe3burst · trapper.poacher · crossbow+quiver · 70 | **22% → 21%** |
+| a aoe3sus · destroyer.destroyerExp · staff · 70 | 4% → 5% |
+| a boss180 · arcanist.arcanistBoss · runestaff · 70 | **19% → 18%** |
 | b single60 · berserker.fury · sword2h · 70 | 1% |
 | b single60 · berserker.fury · axe2h · 70 | 2% |
-| b single60 · berserker.fury · hammer2h · 70 | 1% → 0% |
-| b single60 · berserker.fury · spear2h · 70 | -5% → -4% |
+| b single60 · berserker.fury · hammer2h · 70 | 0% |
+| b single60 · berserker.fury · spear2h · 70 | -4% |
 | b single60 · inquisitor.solo · mace1h+relic · 70 | -2% |
 | b single60 · inquisitor.solo · flail1h+relic · 70 | 2% |
 | b single60 · marksman.kingslayer · longbow+quiver · 70 | 0% |
 | b single60 · marksman.kingslayer · heavycrossbow+quiver · 70 | 0% |
-| b aoe3burst · trapper.poacher · crossbow+quiver · 70 | **27%** |
-| b aoe3burst · trapper.poacher · bow+quiver · 70 | **-27%** |
+| b aoe3burst · trapper.poacher · crossbow+quiver · 70 | **27% → 26%** |
+| b aoe3burst · trapper.poacher · bow+quiver · 70 | **-27% → -26%** |
 | b aoe3sus · destroyer.destroyerExp · staff · 70 | 3% |
 | b aoe3sus · destroyer.destroyerExp · wand · 70 | -3% |
 | b boss180 · arcanist.arcanistBoss · runestaff · 70 | 5% |
 | b boss180 · arcanist.arcanistBoss · wand · 70 | -5% |
-| a single60 · marksman.kingslayer · longbow+quiver · 100 | 8% |
+| a single60 · marksman.kingslayer · longbow+quiver · 100 | 8% → 7% |
 | a aoe3burst · trapper.poacher · crossbow+quiver · 100 | 8% |
-| a aoe3sus · destroyer.destroyerExp · staff · 100 | 5% |
+| a aoe3sus · destroyer.destroyerExp · staff · 100 | 5% → 6% |
 | a boss180 · arcanist.arcanistBoss · runestaff · 100 | **20%** |
-| b single60 · berserker.fury · sword2h · 100 | -1% → -2% |
-| b single60 · berserker.fury · axe2h · 100 | -2% → 4% |
-| b single60 · berserker.fury · hammer2h · 100 | 7% → -2% |
-| b single60 · berserker.fury · spear2h · 100 | -4% → -1% |
+| b single60 · berserker.fury · sword2h · 100 | -2% |
+| b single60 · berserker.fury · axe2h · 100 | 4% |
+| b single60 · berserker.fury · hammer2h · 100 | -2% |
+| b single60 · berserker.fury · spear2h · 100 | -1% |
 | b single60 · inquisitor.solo · mace1h+relic · 100 | -2% |
 | b single60 · inquisitor.solo · flail1h+relic · 100 | 2% |
 | b single60 · marksman.kingslayer · longbow+quiver · 100 | -1% |
 | b single60 · marksman.kingslayer · heavycrossbow+quiver · 100 | 1% |
-| b aoe3burst · trapper.poacher · crossbow+quiver · 100 | **32%** |
-| b aoe3burst · trapper.poacher · bow+quiver · 100 | **-32%** |
+| b aoe3burst · trapper.poacher · crossbow+quiver · 100 | **32% → 31%** |
+| b aoe3burst · trapper.poacher · bow+quiver · 100 | **-32% → -31%** |
 | b aoe3sus · destroyer.destroyerExp · staff · 100 | 4% |
 | b aoe3sus · destroyer.destroyerExp · wand · 100 | -4% |
 | b boss180 · arcanist.arcanistBoss · runestaff · 100 | 5% |
@@ -17314,27 +17394,27 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 
 | build · węzeł | rangi | zysk na punkt | × średnia ścieżki |
 | --- | --: | --: | --: |
-| berserker.fury · berserker_rendingCuts | 3 | 0% | 0,40 → 0,97 |
-| berserker.fury · berserker_frenzy | 1 | 1% | 5,33 → 3,80 |
-| berserker.fury · berserker_executioner | 3 | 0% | 1,54 → 1,43 |
-| berserker.fury · berserker_might | 3 | 1% | 2,97 → 3,03 |
+| berserker.fury · berserker_rendingCuts | 3 | 0% | 0,97 |
+| berserker.fury · berserker_frenzy | 1 | 1% | 3,80 |
+| berserker.fury · berserker_executioner | 3 | 0% | 1,43 |
+| berserker.fury · berserker_might | 3 | 1% | 3,03 |
 | berserker.fury · berserker_bloodfury | 3 | 0% | 0,00 |
-| berserker.fury · berserker_reaper | 1 | 0% | 0,52 → 1,54 |
+| berserker.fury · berserker_reaper | 1 | 0% | 1,54 |
 | berserker.fury · berserker_thunder | 3 | 0% | 0,00 |
 | berserker.fury · berserker_giantSlayer | 3 | 0% | 0,00 |
-| berserker.fury · berserker_openWounds | 3 | 0% | 0,24 → 0,25 |
+| berserker.fury · berserker_openWounds | 3 | 0% | 0,25 |
 | berserker.fury · berserker_hardened | 3 | 0% | 0,00 |
 | berserker.fury · berserker_carnage2 | 2 | 0% | 0,00 |
-| inquisitor.solo · inquisitor_conviction | 1 | 0% | 0,43 → 0,44 |
-| inquisitor.solo · inquisitor_ember | 3 | 1% | 1,77 → 1,81 |
+| inquisitor.solo · inquisitor_conviction | 1 | 0% | 0,44 |
+| inquisitor.solo · inquisitor_ember | 3 | 1% | 1,81 |
 | inquisitor.solo · inquisitor_finalVerdict | 3 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_grit | 3 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_holyWrath | 3 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_enduring | 1 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_faithArmor | 3 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_wanderingBrand | 1 | 3% | 6,35 |
-| inquisitor.solo · inquisitor_inquisition | 3 | 1% | 3,19 → 3,12 |
-| inquisitor.solo · inquisitor_truth | 3 | 0% | 0,26 → 0,27 |
+| inquisitor.solo · inquisitor_inquisition | 3 | 1% | 3,12 |
+| inquisitor.solo · inquisitor_truth | 3 | 0% | 0,27 |
 | inquisitor.solo · inquisitor_retribution | 3 | 0% | 0,00 |
 | inquisitor.solo · inquisitor_thunder | 2 | 0% | 0,00 |
 | marksman.kingslayer · marksman_patience | 1 | 0% | 0,44 |
@@ -17349,40 +17429,40 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | marksman.kingslayer · marksman_grit | 3 | 0% | 0,00 |
 | marksman.kingslayer · marksman_coldBlood | 3 | 0% | 0,00 |
 | marksman.kingslayer · marksman_heartseeker2 | 2 | 0% | 0,22 |
-| trapper.poacher · trapper_bait | 1 | 0% | 0,55 |
-| trapper.poacher · trapper_huntingGround | 3 | 1% | 0,82 |
+| trapper.poacher · trapper_bait | 1 | 0% | 0,55 → 0,48 |
+| trapper.poacher · trapper_huntingGround | 3 | 1% | 0,82 → 0,56 |
 | trapper.poacher · trapper_bitingRain | 3 | 0% | 0,00 |
 | trapper.poacher · trapper_spoils | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_blastTrap | 3 | 1% | 1,46 |
+| trapper.poacher · trapper_blastTrap | 3 | 1% | 1,46 → 1,39 |
 | trapper.poacher · trapper_stalker | 1 | 0% | 0,00 |
 | trapper.poacher · trapper_ambush | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_masterTrapper | 1 | 6% | 6,77 |
-| trapper.poacher · trapper_denseSnares | 3 | 1% | 0,61 |
-| trapper.poacher · trapper_basilisk | 3 | 0% | 0,48 |
+| trapper.poacher · trapper_masterTrapper | 1 | 6% → 8% | 6,77 → 7,65 |
+| trapper.poacher · trapper_denseSnares | 3 | 1% → 0% | 0,61 → 0,19 |
+| trapper.poacher · trapper_basilisk | 3 | 0% → 1% | 0,48 → 0,57 |
 | trapper.poacher · trapper_woodsman | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_snarefield2 | 2 | 1% | 1,32 |
-| destroyer.destroyerExp · destroyer_eye | 3 | 1% | 1,04 |
-| destroyer.destroyerExp · destroyer_might | 3 | 4% | 3,51 |
+| trapper.poacher · trapper_snarefield2 | 2 | 1% | 1,32 → 1,15 |
+| destroyer.destroyerExp · destroyer_eye | 3 | 1% | 1,04 → 1,00 |
+| destroyer.destroyerExp · destroyer_might | 3 | 4% | 3,51 → 3,63 |
 | destroyer.destroyerExp · destroyer_mantle | 3 | 0% | 0,00 |
-| destroyer.destroyerExp · destroyer_echo | 1 | 1% | 0,93 |
-| destroyer.destroyerExp · destroyer_wrath | 3 | 2% | 1,52 |
-| destroyer.destroyerExp · destroyer_raging | 3 | 1% | 0,93 |
-| destroyer.destroyerExp · destroyer_surge | 1 | 2% | 1,54 |
+| destroyer.destroyerExp · destroyer_echo | 1 | 1% | 0,93 → 0,90 |
+| destroyer.destroyerExp · destroyer_wrath | 3 | 2% → 1% | 1,52 → 1,44 |
+| destroyer.destroyerExp · destroyer_raging | 3 | 1% | 0,93 → 0,90 |
+| destroyer.destroyerExp · destroyer_surge | 1 | 2% | 1,54 → 1,65 |
 | destroyer.destroyerExp · destroyer_flow | 3 | 0% | 0,00 |
-| destroyer.destroyerExp · destroyer_cataclysm2 | 2 | 1% | 1,24 |
+| destroyer.destroyerExp · destroyer_cataclysm2 | 2 | 1% | 1,24 → 1,20 |
 | destroyer.destroyerExp · destroyer_grit | 2 | 0% | 0,00 |
 | destroyer.destroyerExp · destroyer_veins | 3 | 0% | 0,28 |
-| arcanist.arcanistBoss · arcanist_fullDischarge | 3 | 0% | 4,51 |
-| arcanist.arcanistBoss · arcanist_might | 3 | 0% | 2,67 |
-| arcanist.arcanistBoss · arcanist_mounting | 3 | 0% | 1,45 |
-| arcanist.arcanistBoss · arcanist_quickening | 1 | 0% | 2,82 |
+| arcanist.arcanistBoss · arcanist_fullDischarge | 3 | 0% | 4,51 → 1,71 |
+| arcanist.arcanistBoss · arcanist_might | 3 | 0% | 2,67 → 1,10 |
+| arcanist.arcanistBoss · arcanist_mounting | 3 | 0% | 1,45 → 0,62 |
+| arcanist.arcanistBoss · arcanist_quickening | 1 | 0% | 2,82 → 1,04 |
 | arcanist.arcanistBoss · arcanist_invocation | 3 | 0% | 0,00 |
-| arcanist.arcanistBoss · arcanist_rending | 3 | 0% | 1,54 |
-| arcanist.arcanistBoss · arcanist_arcaneMind | 3 | 0% | 2,94 |
+| arcanist.arcanistBoss · arcanist_rending | 3 | 0% | 1,54 → 1,78 |
+| arcanist.arcanistBoss · arcanist_arcaneMind | 3 | 0% | 2,94 → 1,19 |
 | arcanist.arcanistBoss · arcanist_archmage | 3 | 0% | 0,00 |
 | arcanist.arcanistBoss · arcanist_masterMind | 3 | 0% | 0,00 |
-| arcanist.arcanistBoss · arcanist_torrent2 | 2 | 0% | -1,05 |
-| arcanist.arcanistBoss · arcanist_reclaim | 3 | 0% | -2,88 |
+| arcanist.arcanistBoss · arcanist_torrent2 | 2 | 0% | -1,05 → 1,64 |
+| arcanist.arcanistBoss · arcanist_reclaim | 3 | 0% → 1% | -2,88 → 2,93 |
 | arcanist.arcanistBoss · arcanist_will | 1 | 0% | 0,00 |
 
 ### Elity i Elity II (E3)
@@ -17392,21 +17472,21 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | build · poziom | Elita wygrana | Elita czas s | Elita HP na końcu | Elita II wygrana | Elita II czas s | Elita II HP na końcu |
 | --- | --: | --: | --: | --: | --: | --: |
 | guardian.loner · 20 | 1 | 19,9 | 78% | 1 | 82,3 | 45% |
-| guardian.loner · 45 | 1 | 23,2 → 24,2 | 91% | 1 | 83,7 → 87,2 | 42% → 36% |
-| guardian.loner · 70 | 1 | 16,8 → 18,4 | 91% → 90% | 1 | 56,6 → 63,2 | 67% → 68% |
-| guardian.loner · 100 | 1 | 16,2 → 18,9 | 93% → 92% | 1 | 50,5 → 61,2 | 72% → 70% |
+| guardian.loner · 45 | 1 | 24,2 | 91% | 1 | 87,2 | 36% |
+| guardian.loner · 70 | 1 | 18,4 | 90% | 1 | 63,2 | 68% |
+| guardian.loner · 100 | 1 | 18,9 | 92% | 1 | 61,2 | 70% |
 | standard.commander · 20 | 1 | 19,1 | 76% | 1 | 80,4 | 41% |
-| standard.commander · 45 | 1 | 21,6 → 14,8 | 79% → 84% | 0 → 1 | 72,0 → 54,9 | 0% → 21% |
-| standard.commander · 70 | 1 | 14,2 → 11,9 | 86% → 89% | 1 | 52,5 → 42,1 | 35% → 45% |
-| standard.commander · 100 | 1 | 10,8 → 10,2 | 92% → 90% | 1 | 38,8 → 38,1 | 54% → 53% |
+| standard.commander · 45 | 1 | 14,8 | 84% | 1 | 54,9 | 21% |
+| standard.commander · 70 | 1 | 11,9 | 89% | 1 | 42,1 | 45% |
+| standard.commander · 100 | 1 | 10,2 | 90% | 1 | 38,1 | 53% |
 | healer.solo · 20 | 1 | 22,4 | 97% | 1 | 90,8 | 100% |
 | healer.solo · 45 | 1 | 18,8 | 100% | 1 | 66,1 | 97% |
 | healer.solo · 70 | 1 | 19,9 | 100% | 1 | 64,2 | 100% |
 | healer.solo · 100 | 1 | 20,1 | 100% | 1 | 64,2 | 100% |
 | fortune.plunder · 20 | 1 | 20,2 | 97% | 1 | 82,2 | 97% |
-| fortune.plunder · 45 | 1 | 13,8 → 14,6 | 100% | 1 | 50,2 → 52,6 | 100% |
-| fortune.plunder · 70 | 1 | 13,2 → 11,8 | 100% | 1 | 41,8 → 38,0 | 100% |
-| fortune.plunder · 100 | 1 | 11,8 → 11,4 | 100% | 1 | 35,8 → 33,9 | 100% |
+| fortune.plunder · 45 | 1 | 14,6 | 100% | 1 | 52,6 | 100% |
+| fortune.plunder · 70 | 1 | 11,8 | 100% | 1 | 38,0 | 100% |
+| fortune.plunder · 100 | 1 | 11,4 | 100% | 1 | 33,9 | 100% |
 | scout.partyHunter · 20 | 1 | 16,9 | 71% | 0 | 44,1 | 0% |
 | scout.partyHunter · 45 | 1 | 16,1 | 78% | 0 | 55,4 | 0% |
 | scout.partyHunter · 70 | 1 | 13,7 | 80% | 1 | 44,2 | 25% |
@@ -17419,9 +17499,9 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | boss pasma (poziom) | cios w Maga / HP | z Przechwyceniem | z Przechwyceniem i Osłoną | część Strażnika / jego HP | Mur Tarcz bez limitu | Mur Tarcz z limitem |
 | --- | --: | --: | --: | --: | --: | --: |
 | grimrok (20) | 75% | 63% | 63% | 6% | 35% | 35% |
-| morvane (45) | 80% | 57% | 52% | 10% | 64% → 65% | 64% → 65% |
-| azgor (70) | 80% | 56% | 51% | 10% → 11% | 29% → 51% | 29% → 51% |
-| vaelgrath (100) | 85% | 60% | 54% | 7% → 8% | 60% → 63% | 53% → 55% |
+| morvane (45) | 80% | 57% | 52% | 10% | 65% | 65% |
+| azgor (70) | 80% | 56% | 51% | 11% | 51% | 51% |
+| vaelgrath (100) | 85% | 60% | 54% | 8% | 63% | 55% |
 
 ### Premia Fortuny dla drużyny (B2)
 
@@ -17431,8 +17511,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | --- | --: | --: | --: | --: |
 | L20 | 0% | 0% | 99% | 0,7 |
 | L45 | 0% | 0% | 99% | 6,0 |
-| L70 | 3% → 7% | 0% | 99% | 6,0 |
-| L100 | 9% → 8% | 0% → 2% | 99% → 100% | 6,0 → 6,8 |
+| L70 | 7% | 0% | 99% | 6,0 |
+| L100 | 8% | 2% | 100% | 6,8 |
 
 ### Pułapki: model a natychmiastowe koła (B8)
 
@@ -17440,9 +17520,9 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 
 | build · poziom | obszar 8 s | obszar 8 s: koła | 1 cel 60 s | 1 cel 60 s: koła |
 | --- | --: | --: | --: | --: |
-| trapper.poacher · 45 | 4653 | 4655 | 1947 | 1955 |
-| trapper.poacher · 70 | 14 324 | 14 324 | 4972 | 5021 |
-| trapper.poacher · 100 | 32 402 | 32 495 | 11 378 | 11 395 |
+| trapper.poacher · 45 | 4653 → 4639 | 4655 → 4641 | 1947 → 1950 | 1955 → 1961 |
+| trapper.poacher · 70 | 14 324 → 14 054 | 14 324 → 14 054 | 4972 → 5029 | 5021 → 5089 |
+| trapper.poacher · 100 | 32 402 → 31 880 | 32 495 → 31 973 | 11 378 → 11 633 | 11 395 → 11 657 |
 
 ### Wsparcie: B na źródła
 
@@ -17451,19 +17531,19 @@ Chorąży (`SkillModel.standardSupport`): średnie w czasie premii drużynowych 
 | build · poziom · źródło | B |
 | --- | --: |
 | standard.commander · 45 · allyAttack|battleCry | 2% |
-| standard.commander · 45 · armor|crushingBlow | 1% → 0% |
-| standard.commander · 45 · razem | 1% → 2% |
+| standard.commander · 45 · armor|crushingBlow | 0% |
+| standard.commander · 45 · razem | 2% |
 | standard.commander · 70 · allyAttack|battleCry | 2% |
 | standard.commander · 70 · allyCrit|warBanner | 0% |
 | standard.commander · 70 · allyHaste|warBanner | 1% |
 | standard.commander · 70 · armor|crushingBlow | 0% |
-| standard.commander · 70 · razem | 2% → 3% |
+| standard.commander · 70 · razem | 3% |
 | standard.commander · 100 · allyAttack|battleCry | 2% |
-| standard.commander · 100 · allyCrit|advanceOrder | 1% → 3% |
+| standard.commander · 100 · allyCrit|advanceOrder | 3% |
 | standard.commander · 100 · allyCrit|warBanner | 0% |
 | standard.commander · 100 · allyHaste|warBanner | 1% |
-| standard.commander · 100 · armor|crushingBlow | 1% → 3% |
-| standard.commander · 100 · razem | 6% → 10% |
+| standard.commander · 100 · armor|crushingBlow | 3% |
+| standard.commander · 100 · razem | 10% |
 | scout.partyHunter · 45 · huntersMark | 3% |
 | scout.partyHunter · 45 · scout_spotting | 3% |
 | scout.partyHunter · 45 · razem | 7% |
@@ -17511,21 +17591,21 @@ Chorąży (`SkillModel.standardSupport`): średnie w czasie premii drużynowych 
 
 | build · poziom | zapotrzebowanie / s | regeneracja / s | bierne zwroty / s | T-SK4 | Inwokacja / s | T-SK4 z Inwokacją |
 | --- | --: | --: | --: | --: | --: | --: |
-| base · 45 | 47,4 | 10,4 | 3,74 | **3,34** | 5,9 | 2,36 |
-| base · 70 | 79,5 | 16,0 | 7,55 | **3,38** | 15,2 | 2,05 |
-| base · 100 | 108,7 | 22,6 | 16,09 | **2,81** | 41,0 | 1,36 |
-| destroyer.destroyerExp · 45 | 20,7 | 10,4 | 0,00 | **1,98** | 0,0 | 1,98 |
-| destroyer.destroyerExp · 70 | 47,8 | 16,0 | 12,03 | **1,71** | 0,0 | 1,71 |
-| destroyer.destroyerExp · 100 | 63,1 | 22,6 | 21,70 | **1,42** | 0,0 | 1,42 |
-| destroyer.destroyerBoss · 45 | 32,2 | 10,4 | 0,00 | **3,09** | 0,0 | 3,09 |
-| destroyer.destroyerBoss · 70 | 58,1 | 16,0 | 12,42 | 2,05 | 0,0 | 2,05 |
-| destroyer.destroyerBoss · 100 | 76,4 | 22,6 | 22,17 | 1,71 | 0,0 | 1,71 |
-| arcanist.arcanistBoss · 45 | 23,6 | 12,2 | 0,00 | **1,93** | 7,7 | 1,18 |
-| arcanist.arcanistBoss · 70 | 42,8 | 18,7 | 2,33 | 2,03 | 32,3 | 0,80 |
-| arcanist.arcanistBoss · 100 | 62,9 | 26,6 | 3,16 | 2,11 | 48,2 | 0,81 |
-| arcanist.arcanistOverload · 45 | 29,9 | 12,2 | 0,00 | **2,45** | 7,7 | 1,50 |
-| arcanist.arcanistOverload · 70 | 54,3 | 18,7 | 2,33 | **2,58** | 32,3 | 1,02 |
-| arcanist.arcanistOverload · 100 | 79,8 | 26,6 | 3,16 | 2,68 | 48,2 | 1,02 |
+| base · 45 | 47,4 → 27,5 | 10,4 | 3,74 → 2,54 | **3,34 → 2,12** | 5,9 | 2,36 → 1,46 |
+| base · 70 | 79,5 → 69,2 | 16,0 | 7,55 → 9,97 | **3,38 → 2,67** | 15,2 | 2,05 → 1,68 |
+| base · 100 | 108,7 → 78,9 | 22,6 | 16,09 → 13,86 | **2,81 → 2,16** | 41,0 | 1,36 → 1,02 |
+| destroyer.destroyerExp · 45 | 20,7 → 12,0 | 10,4 | 0,00 | **1,98 → 1,15** | 0,0 | 1,98 → 1,15 |
+| destroyer.destroyerExp · 70 | 47,8 → 50,3 | 16,0 | 12,03 → 12,17 | **1,71 → 1,79** | 0,0 | 1,71 → 1,79 |
+| destroyer.destroyerExp · 100 | 63,1 → 55,3 | 22,6 | 21,70 → 18,59 | **1,42 → 1,34** | 0,0 | 1,42 → 1,34 |
+| destroyer.destroyerBoss · 45 | 32,2 → 18,7 | 10,4 | 0,00 | 3,09 → 1,79 | 0,0 | 3,09 → 1,79 |
+| destroyer.destroyerBoss · 70 | 58,1 → 52,6 | 16,0 | 12,42 → 10,34 | 2,05 → 2,00 | 0,0 | 2,05 → 2,00 |
+| destroyer.destroyerBoss · 100 | 76,4 → 57,6 | 22,6 | 22,17 | **1,71 → 1,29** | 0,0 | 1,71 → 1,29 |
+| arcanist.arcanistBoss · 45 | 23,6 → 13,7 | 12,2 | 0,00 | **1,93 → 1,12** | 7,7 | 1,18 → 0,69 |
+| arcanist.arcanistBoss · 70 | 42,8 → 34,7 | 18,7 | 2,33 | **2,03 → 1,65** | 32,3 | 0,80 → 0,65 |
+| arcanist.arcanistBoss · 100 | 62,9 → 48,2 | 26,6 | 3,16 | **2,11 → 1,62** | 48,2 | 0,81 → 0,62 |
+| arcanist.arcanistOverload · 45 | 29,9 → 17,4 | 12,2 | 0,00 | **2,45 → 1,42** | 7,7 | 1,50 → 0,87 |
+| arcanist.arcanistOverload · 70 | 54,3 → 44,1 | 18,7 | 2,33 | **2,58 → 2,09** | 32,3 | 1,02 → 0,83 |
+| arcanist.arcanistOverload · 100 | 79,8 → 61,3 | 26,6 | 3,16 | **2,68 → 2,06** | 48,2 | 1,02 → 0,79 |
 
 ### Baza na L20 dla S91 (S90)
 
@@ -17568,56 +17648,56 @@ Pozycje „Tylko raport” S90 (kto asertuje w etykiecie): moc √(1 cel 60 s ×
 | EHP Zwiadowcy / bazy · 20 [raport] | 1,21 | 1,20 |
 | Przeciążenie / baza, boss 180 s · 20 [raport] | 1,16 | – |
 | Przeciążenie / Niszczyciel (boss) · 20 [raport] | 1,22 | – |
-| moc Strzelca (longbow) / Furia · 45 [raport: S92–S94] | 1,02 → 0,99 | – |
-| moc Strzelca (heavycrossbow) / Furia · 45 [raport: S92–S94] | 1,00 → 0,96 | – |
-| Traper (crossbow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,03 → 1,05 | – |
-| Traper (bow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,06 → 1,08 | – |
-| Truciciel / baza, boss 60 s · 45 [raport] | 1,07 | – |
-| Truciciel / baza, boss 180 s · 45 [raport] | 1,03 | – |
+| moc Strzelca (longbow) / Furia · 45 [raport: S92–S94] | 0,99 | – |
+| moc Strzelca (heavycrossbow) / Furia · 45 [raport: S92–S94] | 0,96 | – |
+| Traper (crossbow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,05 | – |
+| Traper (bow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,08 | – |
+| Truciciel / baza, boss 60 s · 45 [raport] | 1,07 → 1,08 | – |
+| Truciciel / baza, boss 180 s · 45 [raport] | 1,03 → 1,06 | – |
 | EHP Zwiadowcy / bazy · 45 [raport] | 1,29 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 45 [raport] | 1,20 | – |
-| Przeciążenie / Niszczyciel (boss) · 45 [raport] | 1,10 | – |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 45 [raport] | 8,2 | – |
+| Przeciążenie / baza, boss 180 s · 45 [raport] | 1,20 → 1,01 | – |
+| Przeciążenie / Niszczyciel (boss) · 45 [raport] | 1,10 → 0,95 | – |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 45 [raport] | 8,2 → 6,9 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 45 [raport] | 9,0 | – |
 | czas na potwora z odpoczynkiem: baza · 45 [raport] | 8,5 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 45 [właściciel] | **70%** | – |
 | rozrzut żywiołów destroyer.destroyerExp aoe3sus · 45 [właściciel] | **59%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 45 [właściciel] | **44%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 45 [właściciel] | **74%** | – |
-| moc Strzelca (longbow) / Furia · 70 [raport: S92–S94] | 1,08 → 1,01 | – |
-| moc Strzelca (heavycrossbow) / Furia · 70 [raport: S92–S94] | **1,01 → 0,94** | – |
-| Traper (crossbow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | 0,98 → 1,05 | – |
-| Traper (bow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | **0,93 → 0,99** | – |
-| Truciciel / baza, boss 60 s · 70 [raport] | 1,13 | – |
-| Truciciel / baza, boss 180 s · 70 [raport] | 1,12 | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 45 [właściciel] | **44% → 46%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 45 [właściciel] | **74% → 75%** | – |
+| moc Strzelca (longbow) / Furia · 70 [raport: S92–S94] | 1,01 | – |
+| moc Strzelca (heavycrossbow) / Furia · 70 [raport: S92–S94] | **0,94 → 0,95** | – |
+| Traper (crossbow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | 1,05 → 1,06 | – |
+| Traper (bow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | **0,99** | – |
+| Truciciel / baza, boss 60 s · 70 [raport] | 1,13 → 1,17 | – |
+| Truciciel / baza, boss 180 s · 70 [raport] | 1,12 → 1,17 | – |
 | EHP Zwiadowcy / bazy · 70 [raport] | 1,36 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 70 [raport] | 1,10 | – |
-| Przeciążenie / Niszczyciel (boss) · 70 [raport] | 1,14 | – |
-| udział Strumienia (z / bez), boss 180 s · 70 [raport] | 1,01 | 1,03 |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 70 [raport] | 9,9 | – |
+| Przeciążenie / baza, boss 180 s · 70 [raport] | 1,10 → 0,99 | – |
+| Przeciążenie / Niszczyciel (boss) · 70 [raport] | 1,14 → 1,07 | – |
+| udział Strumienia (z / bez), boss 180 s · 70 [raport] | 1,01 → 1,02 | 1,03 |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 70 [raport] | 9,9 → 8,1 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 70 [raport] | 19,6 | – |
-| czas na potwora z odpoczynkiem: baza · 70 [raport] | 10,8 | – |
+| czas na potwora z odpoczynkiem: baza · 70 [raport] | 10,8 → 8,0 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 70 [właściciel] | **85%** | – |
 | rozrzut żywiołów destroyer.destroyerExp aoe3sus · 70 [właściciel] | **86%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 70 [właściciel] | **50%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 70 [właściciel] | **96%** | – |
-| moc Strzelca (longbow) / Furia · 100 [raport: S92–S94] | 1,20 → 1,07 | – |
-| moc Strzelca (heavycrossbow) / Furia · 100 [raport: S92–S94] | 1,13 → 1,00 | – |
-| Traper (crossbow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **1,13** | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 70 [właściciel] | **50% → 42%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 70 [właściciel] | **96% → 81%** | – |
+| moc Strzelca (longbow) / Furia · 100 [raport: S92–S94] | 1,07 | – |
+| moc Strzelca (heavycrossbow) / Furia · 100 [raport: S92–S94] | 1,00 | – |
+| Traper (crossbow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **1,13 → 1,15** | – |
 | Traper (bow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **0,96** | – |
-| Truciciel / baza, boss 60 s · 100 [raport] | 1,06 | – |
-| Truciciel / baza, boss 180 s · 100 [raport] | 1,05 | – |
+| Truciciel / baza, boss 60 s · 100 [raport] | 1,06 → 1,07 | – |
+| Truciciel / baza, boss 180 s · 100 [raport] | 1,05 → 1,06 | – |
 | EHP Zwiadowcy / bazy · 100 [raport] | 1,37 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 100 [raport] | 0,95 | 1,52 |
-| Przeciążenie / Niszczyciel (boss) · 100 [raport] | 1,12 | 1,28 |
-| udział Strumienia (z / bez), boss 180 s · 100 [raport] | 1,03 | 1,08 |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 100 [raport] | 11,4 | – |
+| Przeciążenie / baza, boss 180 s · 100 [raport] | 0,95 → 0,85 | 1,52 |
+| Przeciążenie / Niszczyciel (boss) · 100 [raport] | 1,12 → 0,99 | 1,28 |
+| udział Strumienia (z / bez), boss 180 s · 100 [raport] | 1,03 → 1,11 | 1,08 |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 100 [raport] | 11,4 → 9,8 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 100 [raport] | 16,9 | – |
-| czas na potwora z odpoczynkiem: baza · 100 [raport] | 12,9 | – |
+| czas na potwora z odpoczynkiem: baza · 100 [raport] | 12,9 → 9,7 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 100 [właściciel] | **83%** | – |
-| rozrzut żywiołów destroyer.destroyerExp aoe3sus · 100 [właściciel] | **88%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 100 [właściciel] | **35%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 100 [właściciel] | **79%** | – |
+| rozrzut żywiołów destroyer.destroyerExp aoe3sus · 100 [właściciel] | **88% → 91%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 100 [właściciel] | **35% → 30%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 100 [właściciel] | **79% → 68%** | – |
 
 ### Model a ROZWOJ (D10)
 
@@ -17626,92 +17706,92 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | cel · build · poziom (przyczyna) | model | projekt | różnica |
 | --- | --: | --: | --: |
 | berserker.base · berserker.fury · 20 (Furia krok po kroku, baza z przełomami buildu) | 1,14 | 1,12 | 2% |
-| berserker.base · berserker.fury · 45 (Furia krok po kroku, baza z przełomami buildu) | 1,05 → 1,04 | 1,25 | **-16% → -17%** |
-| berserker.base · berserker.fury · 70 (Furia krok po kroku, baza z przełomami buildu) | 1,13 → 1,06 | 1,30 | **-13% → -19%** |
-| berserker.base · berserker.fury · 100 (Furia krok po kroku, baza z przełomami buildu) | 1,17 → 1,18 | 1,37 | **-14%** |
+| berserker.base · berserker.fury · 45 (Furia krok po kroku, baza z przełomami buildu) | 1,04 | 1,25 | **-17%** |
+| berserker.base · berserker.fury · 70 (Furia krok po kroku, baza z przełomami buildu) | 1,06 | 1,30 | **-19%** |
+| berserker.base · berserker.fury · 100 (Furia krok po kroku, baza z przełomami buildu) | 1,18 | 1,37 | **-14%** |
 | guardian.dps · guardian.defender · 20 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,59 | 0,80 | **-26%** |
-| guardian.dps · guardian.defender · 45 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,50 | 0,72 | **-30% → -31%** |
-| guardian.dps · guardian.defender · 70 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,49 → 0,44 | 0,70 | **-31% → -37%** |
-| guardian.dps · guardian.defender · 100 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,46 → 0,41 | 0,67 | **-31% → -39%** |
-| guardian.ehp · guardian.defender · 45 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 1,87 → 1,68 | 1,57 | 19% → 7% |
-| guardian.ehp · guardian.defender · 70 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 2,18 → 1,71 | 1,57 | 39% → 9% |
-| guardian.ehp · guardian.defender · 100 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 2,17 → 1,73 | 1,80 | 20% → -4% |
+| guardian.dps · guardian.defender · 45 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,50 | 0,72 | **-31%** |
+| guardian.dps · guardian.defender · 70 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,44 | 0,70 | **-37%** |
+| guardian.dps · guardian.defender · 100 (rotacja z danych: okrzyki i ochrona zjadają energię) | 0,41 | 0,67 | **-39%** |
+| guardian.ehp · guardian.defender · 45 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 1,68 | 1,57 | 7% |
+| guardian.ehp · guardian.defender · 70 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 1,71 | 1,57 | 9% |
+| guardian.ehp · guardian.defender · 100 (3 wrogów w 10 st.) (węzły i Furia Strażnika w EHP) | 1,73 | 1,80 | -4% |
 | guardian.group · guardian.loner · 20 (Furia Berserkera w grupie, rotacja z danych) | 0,58 | 0,83 | **-30%** |
-| guardian.group · guardian.loner · 45 (Furia Berserkera w grupie, rotacja z danych) | 0,58 → 0,57 | 0,78 | **-26% → -27%** |
-| guardian.group · guardian.loner · 70 (Furia Berserkera w grupie, rotacja z danych) | 0,90 → 0,60 | 0,83 | **8% → -27%** |
-| guardian.group · guardian.loner · 100 (Furia Berserkera w grupie, rotacja z danych) | 0,55 → 0,61 | 0,61 | -10% → 0% |
+| guardian.group · guardian.loner · 45 (Furia Berserkera w grupie, rotacja z danych) | 0,57 | 0,78 | **-27%** |
+| guardian.group · guardian.loner · 70 (Furia Berserkera w grupie, rotacja z danych) | 0,60 | 0,83 | **-27%** |
+| guardian.group · guardian.loner · 100 (Furia Berserkera w grupie, rotacja z danych) | 0,61 | 0,61 | 0% |
 | guardian.group · standard.commander · 20 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,59 | 0,93 | **-37%** |
-| guardian.group · standard.commander · 45 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,62 → 1,02 | 0,82 | **-24% → 24%** |
-| guardian.group · standard.commander · 70 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,80 → 0,89 | 0,74 | **8% → 20%** |
-| guardian.group · standard.commander · 100 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,76 → 0,92 | 0,73 | **4% → 25%** |
-| standard.support · standard.commander · 45 (sztandar raz (opener), Rozkaz bez energii) | 4,60 → 4,70 | 4,90 | -6% → -4% |
-| standard.support · standard.commander · 70 (sztandar raz (opener), Rozkaz bez energii) | 4,64 → 4,71 | 5,00 | -7% → -6% |
-| standard.support · standard.commander · 100 (sztandar raz (opener), Rozkaz bez energii) | 4,87 → 5,07 | 5,08 | -4% → 0% |
-| standard.support · standard.commander@saber1h+shield · 45 (sztandar raz (opener), Rozkaz bez energii) | 4,62 → 4,73 | 4,90 | -6% → -3% |
-| standard.support · standard.commander@saber1h+shield · 70 (sztandar raz (opener), Rozkaz bez energii) | 4,66 → 4,73 | 5,00 | -7% → -5% |
-| standard.support · standard.commander@saber1h+shield · 100 (sztandar raz (opener), Rozkaz bez energii) | 4,89 → 5,09 | 5,08 | -4% → 0% |
-| standard.S · standard.commander · 100 (Furia Berserkera) | 0,65 → 0,69 | 0,74 | -12% → -7% |
+| guardian.group · standard.commander · 45 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 1,02 | 0,82 | **24%** |
+| guardian.group · standard.commander · 70 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,89 | 0,74 | **20%** |
+| guardian.group · standard.commander · 100 (10.6 stawia ten próg Strażnikowi i Chorążemu) (Furia Berserkera w grupie, rotacja z danych) | 0,92 | 0,73 | **25%** |
+| standard.support · standard.commander · 45 (sztandar raz (opener), Rozkaz bez energii) | 4,70 | 4,90 | -4% |
+| standard.support · standard.commander · 70 (sztandar raz (opener), Rozkaz bez energii) | 4,71 | 5,00 | -6% |
+| standard.support · standard.commander · 100 (sztandar raz (opener), Rozkaz bez energii) | 5,07 | 5,08 | 0% |
+| standard.support · standard.commander@saber1h+shield · 45 (sztandar raz (opener), Rozkaz bez energii) | 4,73 | 4,90 | -3% |
+| standard.support · standard.commander@saber1h+shield · 70 (sztandar raz (opener), Rozkaz bez energii) | 4,73 | 5,00 | -5% |
+| standard.support · standard.commander@saber1h+shield · 100 (sztandar raz (opener), Rozkaz bez energii) | 5,09 | 5,08 | 0% |
+| standard.S · standard.commander · 100 (Furia Berserkera) | 0,69 | 0,74 | -7% |
 | warrior.solo · guardian.loner · 20 (grupa Furii po S86) | 1,42 | 1,12 | **27%** |
-| warrior.solo · guardian.loner · 45 (grupa Furii po S86) | 1,42 → 1,44 | 1,16 | **22% → 24%** |
-| warrior.solo · guardian.loner · 70 (grupa Furii po S86) | 1,07 → 1,37 | 1,12 | **-5% → 23%** |
-| warrior.solo · guardian.loner · 100 (grupa Furii po S86) | 1,47 → 1,37 | 1,37 | 7% → 0% |
+| warrior.solo · guardian.loner · 45 (grupa Furii po S86) | 1,44 | 1,16 | **24%** |
+| warrior.solo · guardian.loner · 70 (grupa Furii po S86) | 1,37 | 1,12 | **23%** |
+| warrior.solo · guardian.loner · 100 (grupa Furii po S86) | 1,37 | 1,37 | 0% |
 | warrior.solo · standard.commander · 20 (grupa Furii po S86) | 1,40 | 1,04 | **35%** |
-| warrior.solo · standard.commander · 45 (grupa Furii po S86) | 1,35 → 0,99 | 1,12 | **20% → -11%** |
-| warrior.solo · standard.commander · 70 (grupa Furii po S86) | 1,15 → 1,07 | 1,20 | **-4% → -11%** |
-| warrior.solo · standard.commander · 100 (grupa Furii po S86) | 1,18 → 1,05 | 1,21 | **-2% → -13%** |
+| warrior.solo · standard.commander · 45 (grupa Furii po S86) | 0,99 | 1,12 | **-11%** |
+| warrior.solo · standard.commander · 70 (grupa Furii po S86) | 1,07 | 1,20 | **-11%** |
+| warrior.solo · standard.commander · 100 (grupa Furii po S86) | 1,05 | 1,21 | **-13%** |
 | inquisitor.ratio · inquisitor.solo · 20 (normalizacja broni, Piętno jako podpalenie) | 0,59 | 0,78 | **-24%** |
-| inquisitor.ratio · inquisitor.solo · 45 (normalizacja broni, Piętno jako podpalenie) | 0,87 → 0,85 | 0,83 | 4% → 3% |
-| inquisitor.ratio · inquisitor.solo · 70 (normalizacja broni, Piętno jako podpalenie) | 0,83 → 0,89 | 0,88 | -6% → 1% |
-| inquisitor.ratio · inquisitor.solo · 100 (normalizacja broni, Piętno jako podpalenie) | 0,88 → 0,91 | 0,90 | -3% → 1% |
+| inquisitor.ratio · inquisitor.solo · 45 (normalizacja broni, Piętno jako podpalenie) | 0,85 | 0,83 | 3% |
+| inquisitor.ratio · inquisitor.solo · 70 (normalizacja broni, Piętno jako podpalenie) | 0,89 | 0,88 | 1% |
+| inquisitor.ratio · inquisitor.solo · 100 (normalizacja broni, Piętno jako podpalenie) | 0,91 | 0,90 | 1% |
 | healer.dps · healer.dungeon · 20 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,55 | 0,54 | 3% |
-| healer.dps · healer.dungeon · 45 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,59 → 0,60 | 0,46 | **28% → 30%** |
-| healer.dps · healer.dungeon · 70 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,47 → 0,50 | 0,45 | **5% → 12%** |
+| healer.dps · healer.dungeon · 45 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,60 | 0,46 | **30%** |
+| healer.dps · healer.dungeon · 70 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,50 | 0,45 | **12%** |
 | healer.dps · healer.dungeon · 100 (berło + tarcza) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,46 | 0,48 | -4% |
 | healer.dps · healer.solo · 20 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,63 | 0,66 | -5% |
-| healer.dps · healer.solo · 45 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,68 → 0,69 | 0,58 | **18% → 19%** |
-| healer.dps · healer.solo · 70 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,55 → 0,59 | 0,58 | -5% → 1% |
-| healer.dps · healer.solo · 100 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,53 | 0,61 | **-12% → -13%** |
+| healer.dps · healer.solo · 45 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,69 | 0,58 | **19%** |
+| healer.dps · healer.solo · 70 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,59 | 0,58 | 1% |
+| healer.dps · healer.solo · 100 (kostur) (rotacja z danych (Sanktuarium tylko w drużynie)) | 0,53 | 0,61 | **-13%** |
 | fortune.dps · fortune.plunder · 20 (kości w rotacji, normalizacja) | 0,67 | 0,55 | **22%** |
-| fortune.dps · fortune.plunder · 45 (kości w rotacji, normalizacja) | 0,84 → 0,83 | 0,49 | **71% → 69%** |
-| fortune.dps · fortune.plunder · 70 (kości w rotacji, normalizacja) | 0,79 → 0,93 | 0,50 | **58% → 86%** |
-| fortune.dps · fortune.plunder · 100 (kości w rotacji, normalizacja) | 0,86 → 0,98 | 0,55 | **56% → 78%** |
-| fortune.healLess · fortune.plunder · 45 (węzły leczenia tej kolejności) | 0,17 | 0,21 | **-17% → -20%** |
-| fortune.healLess · fortune.plunder · 70 (węzły leczenia tej kolejności) | 0,32 → 0,31 | 0,21 | **54% → 49%** |
-| fortune.healLess · fortune.plunder · 100 (węzły leczenia tej kolejności) | 0,44 → 0,32 | 0,21 | **110% → 55%** |
+| fortune.dps · fortune.plunder · 45 (kości w rotacji, normalizacja) | 0,83 | 0,49 | **69%** |
+| fortune.dps · fortune.plunder · 70 (kości w rotacji, normalizacja) | 0,93 | 0,50 | **86%** |
+| fortune.dps · fortune.plunder · 100 (kości w rotacji, normalizacja) | 0,98 | 0,55 | **78%** |
+| fortune.healLess · fortune.plunder · 45 (węzły leczenia tej kolejności) | 0,17 | 0,21 | **-20%** |
+| fortune.healLess · fortune.plunder · 70 (węzły leczenia tej kolejności) | 0,31 | 0,21 | **49%** |
+| fortune.healLess · fortune.plunder · 100 (węzły leczenia tej kolejności) | 0,32 | 0,21 | **55%** |
 | cleric.solo · healer.solo · 20 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,47 | 0,92 | **-49%** |
-| cleric.solo · healer.solo · 45 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,99 → 0,96 | 1,06 | -7% → -10% |
+| cleric.solo · healer.solo · 45 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,96 | 1,06 | -10% |
 | cleric.solo · healer.solo · 70 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 1,45 | 1,16 | **25%** |
-| cleric.solo · healer.solo · 100 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 1,79 → 1,68 | 1,07 | **67% → 57%** |
+| cleric.solo · healer.solo · 100 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 1,68 | 1,07 | **57%** |
 | cleric.solo · fortune.plunder · 20 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,88 | 1,11 | **-21%** |
 | cleric.solo · fortune.plunder · 45 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,59 | 1,14 | **-48%** |
-| cleric.solo · fortune.plunder · 70 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,79 → 0,74 | 1,35 | **-42% → -45%** |
-| cleric.solo · fortune.plunder · 100 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,90 → 0,81 | 1,11 | **-19% → -27%** |
+| cleric.solo · fortune.plunder · 70 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,74 | 1,35 | **-45%** |
+| cleric.solo · fortune.plunder · 100 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,81 | 1,11 | **-27%** |
 | marksman.base · marksman.kingslayer@heavycrossbow+quiver · 20 (baza z przełomami Strzelca, cechy broni) | 1,04 | 1,16 | **-11%** |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 (baza z przełomami Strzelca, cechy broni) | 1,14 | 1,29 | **-12%** |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 (baza z przełomami Strzelca, cechy broni) | 1,21 | 1,37 | **-12%** |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 (baza z przełomami Strzelca, cechy broni) | 1,18 | 1,36 | **-14%** |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 (baza z przełomami Strzelca, cechy broni) | 1,14 → 1,16 | 1,29 | -12% → -10% |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 (baza z przełomami Strzelca, cechy broni) | 1,21 → 1,25 | 1,37 | -12% → -9% |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 (baza z przełomami Strzelca, cechy broni) | 1,18 → 1,17 | 1,36 | **-14%** |
 | marksman.base · marksman.kingslayer · 20 (baza z przełomami Strzelca, cechy broni) | 1,00 | 1,15 | **-13%** |
 | marksman.base · marksman.kingslayer · 45 (baza z przełomami Strzelca, cechy broni) | 1,22 | 1,29 | -5% |
 | marksman.base · marksman.kingslayer · 70 (baza z przełomami Strzelca, cechy broni) | 1,33 | 1,36 | -2% |
 | marksman.base · marksman.kingslayer · 100 (baza z przełomami Strzelca, cechy broni) | 1,24 | 1,35 | -8% |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 20 (Furia krok po kroku) | 1,01 | 1,16 | **-13%** |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 (Furia krok po kroku) | 1,17 → 1,18 | 1,29 | -10% → -8% |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 (Furia krok po kroku) | 1,18 → 1,26 | 1,38 | -15% → -9% |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 (Furia krok po kroku) | 1,35 → 1,34 | 1,35 | 0% → -1% |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 (Furia krok po kroku) | 1,18 | 1,29 | -8% |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 (Furia krok po kroku) | 1,26 → 1,27 | 1,38 | -9% → -8% |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 (Furia krok po kroku) | 1,34 | 1,35 | -1% |
 | marksman.r7 · marksman.kingslayer · 20 (Furia krok po kroku) | 1,01 | 1,15 | **-13%** |
-| marksman.r7 · marksman.kingslayer · 45 (Furia krok po kroku) | 1,22 → 1,24 | 1,29 | -5% → -4% |
-| marksman.r7 · marksman.kingslayer · 70 (Furia krok po kroku) | 1,19 → 1,26 | 1,37 | -13% → -8% |
-| marksman.r7 · marksman.kingslayer · 100 (Furia krok po kroku) | 1,33 → 1,32 | 1,34 | -1% |
-| trapper.aoe · trapper.poacher · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,24 | 1,18 | 5% |
-| trapper.aoe · trapper.poacher · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,43 | 1,11 | **29%** |
-| trapper.aoe · trapper.poacher · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,18 | 1,29 | -8% |
-| trapper.aoe · trapper.poacher@bow+quiver · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,91 | 1,24 | **-26%** |
-| trapper.aoe · trapper.poacher@bow+quiver · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,82 | 1,17 | **-30%** |
+| marksman.r7 · marksman.kingslayer · 45 (Furia krok po kroku) | 1,24 | 1,29 | -4% |
+| marksman.r7 · marksman.kingslayer · 70 (Furia krok po kroku) | 1,26 | 1,37 | -8% |
+| marksman.r7 · marksman.kingslayer · 100 (Furia krok po kroku) | 1,32 | 1,34 | -1% |
+| trapper.aoe · trapper.poacher · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,24 → 1,25 | 1,18 | 5% → 6% |
+| trapper.aoe · trapper.poacher · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,43 → 1,41 | 1,11 | **29% → 27%** |
+| trapper.aoe · trapper.poacher · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,18 → 1,16 | 1,29 | -8% → -10% |
+| trapper.aoe · trapper.poacher@bow+quiver · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,91 → 0,92 | 1,24 | **-26%** |
+| trapper.aoe · trapper.poacher@bow+quiver · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,82 → 0,83 | 1,17 | **-30% → -29%** |
 | trapper.aoe · trapper.poacher@bow+quiver · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,61 | 1,35 | **-55%** |
 | trapper.single · trapper.poacher · 20 (bez R7) (pułapki z obrażeniami na jednym celu) | 0,95 | 0,98 | -3% |
-| trapper.single · trapper.poacher · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,07 | 1,01 | 6% |
-| trapper.single · trapper.poacher · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,16 | 1,05 | **10%** |
-| trapper.single · trapper.poacher · 100 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,04 | 1,05 | -1% |
+| trapper.single · trapper.poacher · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,07 → 1,10 | 1,01 | 6% → 9% |
+| trapper.single · trapper.poacher · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,16 → 1,20 | 1,05 | **10% → 14%** |
+| trapper.single · trapper.poacher · 100 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,04 → 1,06 | 1,05 | -1% → 1% |
 | trapper.single · trapper.poacher@bow+quiver · 20 (bez R7) (pułapki z obrażeniami na jednym celu) | 0,97 | 1,02 | -5% |
 | trapper.single · trapper.poacher@bow+quiver · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,02 | 1,06 | -3% |
 | trapper.single · trapper.poacher@bow+quiver · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,09 | 1,09 | 0% |
@@ -17727,39 +17807,39 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | scout.S · scout.partyHunter · 100 (Królobójca z cechami) | 0,76 | 0,86 | **-12%** |
 | scout.solo · scout.partyHunter · 20 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,03 | 1,03 | 0% |
 | scout.solo · scout.partyHunter · 45 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,37 | 1,23 | **11%** |
-| scout.solo · scout.partyHunter · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 | 1,24 | **33%** |
-| scout.solo · scout.partyHunter · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 | 1,33 | **19%** |
+| scout.solo · scout.partyHunter · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 → 1,62 | 1,24 | **33% → 31%** |
+| scout.solo · scout.partyHunter · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 → 1,68 | 1,33 | **19% → 26%** |
 | scout.solo · scout.partyHunter@shortbow+quiver · 20 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,02 | 1,01 | 1% |
 | scout.solo · scout.partyHunter@shortbow+quiver · 45 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,36 | 1,21 | **12%** |
-| scout.solo · scout.partyHunter@shortbow+quiver · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 | 1,23 | **34%** |
-| scout.solo · scout.partyHunter@shortbow+quiver · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 | 1,32 | **20%** |
-| destroyer.aoe · destroyer.destroyerExp · 45 (próg obszaru i Kaskada w modelu) | 0,83 | 1,21 | **-31%** |
-| destroyer.aoe · destroyer.destroyerExp · 70 (próg obszaru i Kaskada w modelu) | 0,94 | 1,38 | **-32%** |
-| destroyer.aoe · destroyer.destroyerExp · 100 (próg obszaru i Kaskada w modelu) | 0,86 | 1,46 | **-41%** |
+| scout.solo · scout.partyHunter@shortbow+quiver · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 → 1,62 | 1,23 | **34% → 32%** |
+| scout.solo · scout.partyHunter@shortbow+quiver · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 → 1,71 | 1,32 | **20% → 29%** |
+| destroyer.aoe · destroyer.destroyerExp · 45 (próg obszaru i Kaskada w modelu) | 0,83 → 0,82 | 1,21 | **-31% → -32%** |
+| destroyer.aoe · destroyer.destroyerExp · 70 (próg obszaru i Kaskada w modelu) | 0,94 → 0,93 | 1,38 | **-32% → -33%** |
+| destroyer.aoe · destroyer.destroyerExp · 100 (próg obszaru i Kaskada w modelu) | 0,86 → 0,82 | 1,46 | **-41% → -44%** |
 | destroyer.single · destroyer.destroyerBoss · 20 (baza z przełomami buildu) | 0,95 | 0,98 | -4% |
-| destroyer.single · destroyer.destroyerBoss · 45 (baza z przełomami buildu) | 1,10 | 1,07 | 2% |
-| destroyer.single · destroyer.destroyerBoss · 70 (baza z przełomami buildu) | 1,06 | 1,14 | -7% |
-| destroyer.single · destroyer.destroyerBoss · 100 (baza z przełomami buildu) | 0,84 | 1,19 | **-29%** |
+| destroyer.single · destroyer.destroyerBoss · 45 (baza z przełomami buildu) | 1,10 → 1,07 | 1,07 | 2% → 0% |
+| destroyer.single · destroyer.destroyerBoss · 70 (baza z przełomami buildu) | 1,06 → 1,01 | 1,14 | **-7% → -12%** |
+| destroyer.single · destroyer.destroyerBoss · 100 (baza z przełomami buildu) | 0,84 → 0,85 | 1,19 | **-29% → -28%** |
 | arcanist.single · arcanist.arcanistBoss · 20 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,15 | 1,02 | **13%** |
-| arcanist.single · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,18 | 1,23 | -4% |
-| arcanist.single · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,08 | 1,36 | **-20%** |
-| arcanist.single · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 0,93 | 1,47 | **-37%** |
+| arcanist.single · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,18 → 1,01 | 1,23 | **-4% → -18%** |
+| arcanist.single · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,08 → 1,00 | 1,36 | **-20% → -27%** |
+| arcanist.single · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 0,93 → 0,89 | 1,47 | **-37% → -40%** |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 20 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,22 | 1,04 | **17%** |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,09 | 1,15 | -5% |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,12 | 1,20 | -7% |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,10 | 1,24 | **-11%** |
-| mage.tsk4 · destroyer.destroyerExp · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,98 | 1,97 | 1% |
-| mage.tsk4 · destroyer.destroyerExp · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 | 2,48 | **-31%** |
-| mage.tsk4 · destroyer.destroyerExp · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,42 | 2,18 | **-35%** |
-| mage.tsk4 · arcanist.arcanistBoss · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,93 | 2,02 | -4% |
-| mage.tsk4 · arcanist.arcanistBoss · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,03 | 2,32 | **-12%** |
-| mage.tsk4 · arcanist.arcanistBoss · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,11 | 2,40 | **-12%** |
-| mage.tsk4 · destroyer.destroyerBoss · 45 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 3,09 | 1,64 | **88%** |
-| mage.tsk4 · destroyer.destroyerBoss · 70 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,05 | 2,11 | -3% |
-| mage.tsk4 · destroyer.destroyerBoss · 100 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 | 1,82 | -6% |
-| mage.tsk4 · arcanist.arcanistOverload · 45 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,45 | 2,62 | -6% |
-| mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,58 | 2,75 | -6% |
-| mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,68 | 2,79 | -4% |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,09 → 0,95 | 1,15 | **-5% → -18%** |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,12 → 1,07 | 1,20 | **-7% → -10%** |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,10 → 1,03 | 1,24 | **-11% → -17%** |
+| mage.tsk4 · destroyer.destroyerExp · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,98 → 1,15 | 1,97 | **1% → -42%** |
+| mage.tsk4 · destroyer.destroyerExp · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 → 1,79 | 2,48 | **-31% → -28%** |
+| mage.tsk4 · destroyer.destroyerExp · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,42 → 1,34 | 2,18 | **-35% → -38%** |
+| mage.tsk4 · arcanist.arcanistBoss · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,93 → 1,12 | 2,02 | **-4% → -45%** |
+| mage.tsk4 · arcanist.arcanistBoss · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,03 → 1,65 | 2,32 | **-12% → -29%** |
+| mage.tsk4 · arcanist.arcanistBoss · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,11 → 1,62 | 2,40 | **-12% → -32%** |
+| mage.tsk4 · destroyer.destroyerBoss · 45 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 3,09 → 1,79 | 1,64 | 88% → 9% |
+| mage.tsk4 · destroyer.destroyerBoss · 70 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,05 → 2,00 | 2,11 | -3% → -5% |
+| mage.tsk4 · destroyer.destroyerBoss · 100 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 → 1,29 | 1,82 | **-6% → -29%** |
+| mage.tsk4 · arcanist.arcanistOverload · 45 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,45 → 1,42 | 2,62 | **-6% → -46%** |
+| mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,58 → 2,09 | 2,75 | **-6% → -24%** |
+| mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,68 → 2,06 | 2,79 | **-4% → -26%** |
 
 Tabele S86 liczą się 25,8 s.
 
@@ -17774,22 +17854,22 @@ Krzywe liczą się od poziomu końcowego potwora (Elita +2, Elita II +4); 1 do 2
 | poziom | `monsterHp` | `monsterAtk` | `eliteHp` | `eliteDmg` | `elite2Hp` | `elite2Dmg` | `expToNext` | `manaCost.Mage` | `heal` |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | 20 | 1,00 | 1,00 | 1,00 | 1,00 | 1,00 | 1,00 | 1,00 | 1,00 | 1,00 |
-| 25 | 1,05 | 1,02 | 1,02 | 1,01 | 1,00 | 1,00 | 1,00 | 1,37 | 2,05 |
-| 30 | 1,10 | 1,03 | 1,04 | 1,02 | 1,00 | 1,00 | 1,00 | 1,47 | 2,13 |
-| 35 | 1,13 | 1,05 | 1,05 | 1,03 | 1,00 | 1,00 | 1,00 | 1,65 | 2,21 |
-| 40 | 1,17 | 1,06 | 1,07 | 1,04 | 1,00 | 1,00 | 1,00 | 1,82 | 2,27 |
-| 45 | 1,20 | 1,07 | 1,08 | 1,05 | 1,00 | 1,00 | 1,00 | 1,89 | 2,33 |
-| 50 | 1,23 | 1,08 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 2,04 | 1,44 |
-| 55 | 1,25 | 1,09 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 2,25 | 0,93 |
-| 60 | 1,28 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 2,32 | 0,63 |
-| 65 | 1,30 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 2,46 | 0,43 |
-| 70 | 1,32 | 1,11 | 1,11 | 1,06 | 1,00 | 1,00 | 1,00 | 2,59 | 0,31 |
-| 75 | 1,35 | 1,12 | 1,11 | 1,06 | 1,00 | 1,00 | 1,00 | 2,74 | 0,36 |
-| 80 | 1,37 | 1,12 | 1,12 | 1,06 | 1,00 | 1,00 | 1,00 | 2,90 | 0,41 |
-| 85 | 1,40 | 1,13 | 1,12 | 1,07 | 1,00 | 1,00 | 1,00 | 3,05 | 0,47 |
-| 90 | 1,42 | 1,13 | 1,12 | 1,07 | 1,00 | 1,00 | 1,00 | 3,20 | 0,53 |
-| 95 | 1,45 | 1,14 | 1,13 | 1,07 | 1,00 | 1,00 | 1,00 | 3,34 | 0,60 |
-| 100 | 1,47 | 1,14 | 1,13 | 1,07 | 1,00 | 1,00 | 1,00 | 3,49 | 0,67 |
+| 25 | 1,05 | 1,02 | 1,02 | 1,01 | 1,00 | 1,00 | 1,00 | 1,02 | 2,05 |
+| 30 | 1,10 | 1,03 | 1,04 | 1,02 | 1,00 | 1,00 | 1,00 | 1,04 | 2,13 |
+| 35 | 1,13 | 1,05 | 1,05 | 1,03 | 1,00 | 1,00 | 1,00 | 1,06 | 2,21 |
+| 40 | 1,17 | 1,06 | 1,07 | 1,04 | 1,00 | 1,00 | 1,00 | 1,08 | 2,27 |
+| 45 | 1,20 | 1,07 | 1,08 | 1,05 | 1,00 | 1,00 | 1,00 | 1,10 | 2,33 |
+| 50 | 1,23 | 1,08 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 1,30 | 1,44 |
+| 55 | 1,25 | 1,09 | 1,09 | 1,05 | 1,00 | 1,00 | 1,00 | 1,40 | 0,93 |
+| 60 | 1,28 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 1,55 | 0,63 |
+| 65 | 1,30 | 1,10 | 1,10 | 1,06 | 1,00 | 1,00 | 1,00 | 1,71 | 0,43 |
+| 70 | 1,32 | 1,11 | 1,11 | 1,06 | 1,00 | 1,00 | 1,00 | 1,86 | 0,31 |
+| 75 | 1,35 | 1,12 | 1,11 | 1,06 | 1,00 | 1,00 | 1,00 | 1,91 | 0,36 |
+| 80 | 1,37 | 1,12 | 1,12 | 1,06 | 1,00 | 1,00 | 1,00 | 1,95 | 0,41 |
+| 85 | 1,40 | 1,13 | 1,12 | 1,07 | 1,00 | 1,00 | 1,00 | 1,99 | 0,47 |
+| 90 | 1,42 | 1,13 | 1,12 | 1,07 | 1,00 | 1,00 | 1,00 | 2,03 | 0,53 |
+| 95 | 1,45 | 1,14 | 1,13 | 1,07 | 1,00 | 1,00 | 1,00 | 2,06 | 0,60 |
+| 100 | 1,47 | 1,14 | 1,13 | 1,07 | 1,00 | 1,00 | 1,00 | 2,10 | 0,67 |
 
 ### (b) G1–G3 i G6 na 20 / 45 / 70 / 100
 
@@ -18041,41 +18121,41 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | T-SK5 Cleric healer.dungeon na guardian.defender 30 | 0,26 | 0,25–0,35 | w paśmie |
 | T-SK5 Cleric healer.dungeon na guardian.defender 35 | 0,27 | 0,25–0,35 | w paśmie |
 | T-SK5 Cleric healer.dungeon na guardian.defender 40 | 0,28 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 45 | 1,98 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 45 | 1,93 | 2,00–2,40 | **poza** |
+| T-SK4 Mage destroyer.destroyerExp 45 | 1,15 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 45 | 1,12 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 45 | 0,28 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 50 | 1,93 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 50 | 1,81 | 2,00–2,40 | **poza** |
+| T-SK4 Mage destroyer.destroyerExp 50 | 1,23 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 50 | 1,15 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 50 | 0,27 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 55 | 1,95 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 55 | 1,82 | 2,00–2,40 | **poza** |
+| T-SK4 Mage destroyer.destroyerExp 55 | 1,21 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 55 | 1,13 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 55 | 0,25 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 60 | 3,12 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 60 | 2,08 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 60 | 3,04 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 60 | 1,60 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 60 | 0,28 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 65 | 2,04 | 2,00–2,80 | w paśmie |
-| T-SK4 Mage arcanist.arcanistBoss 65 | 2,06 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 65 | 2,06 | 2,00–2,80 | w paśmie |
+| T-SK4 Mage arcanist.arcanistBoss 65 | 1,63 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 65 | 0,29 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 70 | 1,71 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 70 | 2,03 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 70 | 1,79 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 70 | 1,65 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 70 | 0,29 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 75 | 1,67 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 75 | 2,03 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 75 | 1,69 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 75 | 1,62 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 75 | 0,29 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 80 | 1,54 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 80 | 2,02 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 80 | 1,51 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 80 | 1,58 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 80 | 0,30 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 85 | 1,48 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 85 | 2,01 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 85 | 1,41 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 85 | 1,56 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 85 | 0,30 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 90 | 1,46 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 90 | 2,00 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 90 | 1,34 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 90 | 1,52 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 90 | 0,32 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 95 | 1,44 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 95 | 1,99 | 2,00–2,40 | **poza** |
+| T-SK4 Mage destroyer.destroyerExp 95 | 1,40 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 95 | 1,50 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 95 | 0,33 | 0,25–0,35 | w paśmie |
-| T-SK4 Mage destroyer.destroyerExp 100 | 1,42 | 2,00–2,80 | **poza** |
-| T-SK4 Mage arcanist.arcanistBoss 100 | 2,11 | 2,00–2,40 | w paśmie |
+| T-SK4 Mage destroyer.destroyerExp 100 | 1,34 | 2,00–2,80 | **poza** |
+| T-SK4 Mage arcanist.arcanistBoss 100 | 1,62 | 2,00–2,40 | **poza** |
 | T-SK5 Cleric healer.dungeon na guardian.defender 100 | 0,34 | 0,25–0,35 | w paśmie |
 
 ### (i) Mityk z bossa: nazwany i wylosowany dla klasy
@@ -18104,8 +18184,7 @@ Mikstura HP/s tanka wobec obrażeń tanka bossa (drużyna 3):
 | G9.up9 | 4 | 0 | S92 | poza zasięgiem dźwigni S92: 11.36 < 12 at 25 (Config.Upgrade global, an owner decision) |
 | G9.up9 | 4 | 4 | S103 | poza zasięgiem dźwigni S103: 11.06 < 12 at 40 (11.91 with the window kills before S103; the gold of the new story quests of 20-44; Config.Upgrade global, an owner decision) |
 | G10 | 1 | 1 | S91 | poza zasięgiem dźwigni S91: 0.221 < 0.25 (Heal ranks <= 20 under the pinned rank 6, heal curve 1 at 20) |
-| G10 | 10 | 10 | S142 | przebudowa umiejętności DESIGN-18, wraca w S146/S147 |
-| G10 | 5 | 5 | S140 | przebudowa umiejętności DESIGN-18, wraca w S146/S147 |
+| G10 | 23 | 23 | S147 | S147: T-SK4 średniej trzech żywiołów (rotacja sprzed pul, po S142 żywioł rzuca tylko swoją pulę) poniżej pasma po krzywej manaCost.Mage S147; T-SK4 wariantów żywiołów na 45–100 asertuje blok S147 (wiersze poza zasięgiem z powodem zasady 5 w Balance.S147_REPORT; pasmo ROZWOJ 12.7 od 45.) |
 
 ## Przedmioty, cechy i obrona (S88)
 
@@ -18137,24 +18216,24 @@ Zwykły +0 na 20 / 45 / 70 / 100 (20. tylko raport: S91 nie zmienia przedmiotów
 | toxicBarbs | trapper.poacher@bow + quiver | single, elite | 5,1% | 6,0% | 5,3% | 4,8% | 8,5% / 9,9% / 9,4% | 7,7% / 6,9% / 6,9% | – | S88 |
 | toxicBarbs | scout.partyHunter@bow + quiver | single, elite | 5,4% | 5,0% | 4,2% | 4,5% | 13,4% / 13,0% / 10,0% | – | – | S88; raport → S90 (45) |
 | criticalForce | marksman.kingslayer@longbow + quiver | single, group | 2,6% | 4,6% | 5,2% | 5,6% | 9,1% / 9,8% / 10,6% | – | – | S88 |
-| easyPrey | trapper.poacher@crossbow + quiver | controlled | 1,1% | **3,0%** | **2,9%** | **3,4%** | 4,6% / 5,2% / 5,7% | – | – | S88 |
-| bodkinBolt | marksman.kingslayer@heavycrossbow + quiver | single, armored | 4,2% | 4,6% | 4,7% | 4,8% | 9,3% / 9,5% / 9,8% | – | – | S88 |
+| easyPrey | trapper.poacher@crossbow + quiver | controlled | 1,1% | **2,9%** | **2,7%** | **3,1%** | 4,4% / 4,9% / 5,3% | – | – | S88 |
+| bodkinBolt | marksman.kingslayer@heavycrossbow + quiver | single, armored | 4,2% | 4,5% | 4,5% | 4,7% | 9,1% / 9,2% / 9,5% | – | – | S88 |
 | fullDraw | marksman.kingslayer@longbow + quiver | single, group | 7,7% | **7,1%** | **6,7%** | **6,3%** | 13,4% / 12,7% / 11,9% | – | – | raport → S90 |
-| fullDraw | marksman.kingslayer@heavycrossbow + quiver | single, group | 5,3% | 5,0% | 5,0% | 4,7% | 10,3% / 10,3% / 9,5% | – | – | raport → S90 |
+| fullDraw | marksman.kingslayer@heavycrossbow + quiver | single, group | 5,3% | 5,0% | 5,0% | 4,7% | 10,3% / 10,2% / 9,5% | – | – | raport → S90 |
 | fullDraw | trapper.poacher@bow + quiver | single, group | 7,4% | 5,0% | 4,9% | 4,8% | 9,3% / 9,2% / 10,2% | – | – | S88 |
-| fullDraw | scout.partyHunter@shortbow + quiver | single, group | 9,3% | **7,5%** | **7,1%** | 5,8% | 14,0% / 13,2% / 11,0% | – | – | S88; raport → S90 (45) |
-| elementalSpark fire | destroyer.destroyerExp@wand + orb | mana, group | 11,0% | **7,1%** | **6,5%** | **7,0%** | 7,9% / 6,7% / 7,3% | – | – | raport → S90 |
+| fullDraw | scout.partyHunter@shortbow + quiver | single, group | 9,3% | **7,5%** | **7,1%** | 5,7% | 14,0% / 13,2% / 10,6% | – | – | S88; raport → S90 (45) |
+| elementalSpark fire | destroyer.destroyerExp@wand + orb | mana, group | 11,0% | **6,7%** | **6,1%** | 6,0% | 7,9% / 6,4% / 6,5% | – | – | raport → S90 |
 | elementalSpark ice | destroyer.destroyerExp@wand + orb | mana, group | 4,6% | 4,5% | 4,3% | 4,3% | 4,5% / 4,3% / 4,3% | – | – | S88 |
-| elementalSpark lightning | destroyer.destroyerExp@wand + orb | mana, group | 10,8% | 5,7% | 4,6% | 4,9% | 6,4% / 4,9% / 5,2% | – | – | raport → S90 |
-| elementalSpark fire | arcanist.arcanistBoss@wand + tome | mana, group | 11,0% | **6,4%** | 5,8% | 5,5% | 7,5% / 5,9% / 5,0% | – | – | S88 |
-| elementalSpark ice | arcanist.arcanistBoss@wand + tome | mana, group | 6,5% | 4,3% | 4,4% | **3,5%** | 4,3% / 4,1% / 3,3% | – | – | S88 |
-| elementalSpark lightning | arcanist.arcanistBoss@wand + tome | mana, group | 10,8% | 6,0% | 4,9% | 4,3% | 6,9% / 4,9% / 4,3% | – | – | S88; raport → S90 (45) |
-| elementalMight fire | destroyer.destroyerExp@staff | single, group | 0,5% | **0,8%** | **1,2%** | **1,7%** | 1,5% / 2,4% / 3,2% | – | – | S88 |
+| elementalSpark lightning | destroyer.destroyerExp@wand + orb | mana, group | 10,8% | 5,7% | 4,4% | 4,7% | 6,4% / 4,9% / 5,2% | – | – | raport → S90 |
+| elementalSpark fire | arcanist.arcanistBoss@wand + tome | mana, group | 11,0% | **6,2%** | 5,4% | 4,5% | 7,5% / 5,9% / 5,0% | – | – | S88 |
+| elementalSpark ice | arcanist.arcanistBoss@wand + tome | mana, group | 6,5% | 4,3% | 5,0% | **3,2%** | 4,3% / 4,1% / 3,3% | – | – | S88 |
+| elementalSpark lightning | arcanist.arcanistBoss@wand + tome | mana, group | 10,8% | 5,9% | 4,5% | **3,8%** | 6,9% / 4,9% / 4,3% | – | – | S88; raport → S90 (45) |
+| elementalMight fire | destroyer.destroyerExp@staff | single, group | 0,5% | **0,8%** | **1,3%** | **1,7%** | 1,5% / 2,5% / 3,3% | – | – | S88 |
 | elementalMight ice | destroyer.destroyerExp@staff | single, group | 5,3% | 5,8% | 5,4% | 4,8% | 5,8% / 5,7% / 5,6% | – | – | S88 |
 | elementalMight lightning | destroyer.destroyerExp@staff | single, group | 0,0% | **0,7%** | **1,7%** | **2,3%** | 1,4% / 3,2% / 4,2% | – | – | S88; raport → S90 (100) |
 | runicSeal | arcanist.arcanistBoss@runestaff | still, boss | 5,2% | 5,2% | 5,3% | 5,3% | 9,5% / 9,6% / 9,6% | – | – | S88 |
-| learnedFormulae | arcanist.arcanistBoss@wand + tome | mana | 0,1% | **0,3%** | **0,7%** | **1,3%** | 0,0% / 0,0% / 0,0% | – | – | raport → S90 |
-| powerLens | destroyer.destroyerExp@wand + orb | single, group | 3,0% | 4,1% | 4,4% | 4,5% | 7,5% / 8,1% / 8,2% | – | – | S88 |
+| learnedFormulae | arcanist.arcanistBoss@wand + tome | mana | 0,1% | **0,0%** | **1,1%** | **1,9%** | 0,0% / 0,0% / 0,0% | – | – | raport → S90 |
+| powerLens | destroyer.destroyerExp@wand + orb | single, group | 3,0% | 4,1% | 4,4% | 4,5% | 7,5% / 8,2% / 8,3% | – | – | S88 |
 | anointment | healer.dungeon@scepter + shield | dungeon | 5,0% | 5,0% | 5,2% | 5,1% | 9,2% / 9,4% / 9,4% | – | – | S88 |
 | anointment | fortune.plunder@scepter + relic | dungeon | 5,0% | 4,8% | 4,6% | 4,5% | 8,8% / 8,3% / 8,2% | – | – | S88 |
 | savingBlow | healer.dungeon@holystaff | dungeon | 3,9% | 4,6% | 4,9% | 4,3% | 12,0% / 13,8% / 12,4% | – | solo -0,0% (70) | S88 |
@@ -18192,21 +18271,21 @@ Zestawy broni jednej ścieżki w `Balance.MIX` (grupa 0,5, Elita 0,3, boss 0,2) 
 | standard · 45 | sword1h + shield 1,00, saber1h + shield 1,02 | 2,1% | S88 |
 | standard · 70 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,2% | S88 |
 | standard · 100 | sword1h + shield 1,00, saber1h + shield 1,01 | 1,0% | S88 |
-| marksman · 45 | longbow + quiver 1,00, heavycrossbow + quiver 0,99 | 0,6% | S88 |
-| marksman · 70 | longbow + quiver 1,00, heavycrossbow + quiver 1,03 | 2,8% | S88 |
-| marksman · 100 | longbow + quiver 1,00, heavycrossbow + quiver 1,03 | 2,7% | S88 |
-| trapper · 45 | crossbow + quiver 1,00, bow + quiver 0,97 | 3,3% | S88 |
-| trapper · 70 | crossbow + quiver 1,00, bow + quiver 0,83 | **19,9%** | S88 |
-| trapper · 100 | crossbow + quiver 1,00, bow + quiver 0,77 | **30,5%** | S88 |
+| marksman · 45 | longbow + quiver 1,00, heavycrossbow + quiver 0,99 | 0,7% | S88 |
+| marksman · 70 | longbow + quiver 1,00, heavycrossbow + quiver 1,04 | 3,9% | S88 |
+| marksman · 100 | longbow + quiver 1,00, heavycrossbow + quiver 1,03 | 2,8% | S88 |
+| trapper · 45 | crossbow + quiver 1,00, bow + quiver 0,97 | 3,1% | S88 |
+| trapper · 70 | crossbow + quiver 1,00, bow + quiver 0,82 | **21,5%** | S88 |
+| trapper · 100 | crossbow + quiver 1,00, bow + quiver 0,75 | **33,6%** | S88 |
 | scout · 45 | shortbow + quiver 1,00, bow + quiver 1,01 | 0,8% | S88 |
 | scout · 70 | shortbow + quiver 1,00, bow + quiver 1,01 | 1,0% | S88 |
-| scout · 100 | shortbow + quiver 1,00, bow + quiver 1,01 | 0,6% | S88 |
-| destroyer · 45 | staff 1,00, wand + orb 1,10 | **10,4%** | raport → S90 |
-| destroyer · 70 | staff 1,00, wand + orb 1,10 | **9,9%** | raport → S90 |
-| destroyer · 100 | staff 1,00, wand + orb 1,11 | **10,8%** | raport → S90 |
-| arcanist · 45 | runestaff 1,00, wand + tome 0,98 | 1,6% | S88 |
-| arcanist · 70 | runestaff 1,00, wand + tome 0,98 | 2,0% | S88 |
-| arcanist · 100 | runestaff 1,00, wand + tome 0,98 | 2,5% | S88 |
+| scout · 100 | shortbow + quiver 1,00, bow + quiver 1,01 | 0,8% | S88 |
+| destroyer · 45 | staff 1,00, wand + orb 1,10 | **10,3%** | raport → S90 |
+| destroyer · 70 | staff 1,00, wand + orb 1,10 | **9,6%** | raport → S90 |
+| destroyer · 100 | staff 1,00, wand + orb 1,10 | **10,0%** | raport → S90 |
+| arcanist · 45 | runestaff 1,00, wand + tome 0,98 | 2,2% | S88 |
+| arcanist · 70 | runestaff 1,00, wand + tome 0,98 | 1,6% | S88 |
+| arcanist · 100 | runestaff 1,00, wand + tome 1,01 | 1,0% | S88 |
 | inquisitor · 45 | mace1h + shield 1,00, flail1h + shield 1,03 | 3,5% | S88 |
 | inquisitor · 70 | mace1h + shield 1,00, flail1h + shield 1,04 | 3,5% | S88 |
 | inquisitor · 100 | mace1h + shield 1,00, flail1h + shield 1,03 | 3,5% | S88 |
@@ -18530,12 +18609,12 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T1 · criticalForce · marksman.kingslayer@longbow · L45 | 4,6% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · criticalForce · marksman.kingslayer@longbow · L70 | 5,2% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · criticalForce · marksman.kingslayer@longbow · L100 | 5,6% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · easyPrey · trapper.poacher@crossbow · L45 | 3,0% | 4,0%–6,0% | **poza** | S88 (asertowane) |
-| T1 · easyPrey · trapper.poacher@crossbow · L70 | 2,9% | 4,0%–6,0% | **poza** | S88 (asertowane) |
-| T1 · easyPrey · trapper.poacher@crossbow · L100 | 3,4% | 4,0%–6,0% | **poza** | S88 (asertowane) |
-| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L45 | 4,6% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L70 | 4,7% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L100 | 4,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · easyPrey · trapper.poacher@crossbow · L45 | 2,9% | 4,0%–6,0% | **poza** | S88 (asertowane) |
+| T1 · easyPrey · trapper.poacher@crossbow · L70 | 2,7% | 4,0%–6,0% | **poza** | S88 (asertowane) |
+| T1 · easyPrey · trapper.poacher@crossbow · L100 | 3,1% | 4,0%–6,0% | **poza** | S88 (asertowane) |
+| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L45 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L70 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · bodkinBolt · marksman.kingslayer@heavycrossbow · L100 | 4,7% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · fullDraw · marksman.kingslayer@longbow · L45 | 7,1% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · fullDraw · marksman.kingslayer@longbow · L70 | 6,7% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · fullDraw · marksman.kingslayer@longbow · L100 | 6,3% | 4,0%–6,0% | **poza** | raport → S90 |
@@ -18547,29 +18626,29 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T1 · fullDraw · trapper.poacher@bow · L100 | 4,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · fullDraw · scout.partyHunter@shortbow · L45 | 7,5% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · fullDraw · scout.partyHunter@shortbow · L70 | 7,1% | 4,0%–6,0% | **poza** | S88 (asertowane) |
-| T1 · fullDraw · scout.partyHunter@shortbow · L100 | 5,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L45 | 7,1% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · fullDraw · scout.partyHunter@shortbow · L100 | 5,7% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L45 | 6,7% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · elementalSpark ice · destroyer.destroyerExp@wand · L45 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · elementalSpark lightning · destroyer.destroyerExp@wand · L45 | 5,7% | 4,0%–6,0% | w paśmie | raport → S90 |
-| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L70 | 6,5% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L70 | 6,1% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · elementalSpark ice · destroyer.destroyerExp@wand · L70 | 4,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark lightning · destroyer.destroyerExp@wand · L70 | 4,6% | 4,0%–6,0% | w paśmie | raport → S90 |
-| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L100 | 7,0% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · elementalSpark lightning · destroyer.destroyerExp@wand · L70 | 4,4% | 4,0%–6,0% | w paśmie | raport → S90 |
+| T1 · elementalSpark fire · destroyer.destroyerExp@wand · L100 | 6,0% | 4,0%–6,0% | w paśmie | raport → S90 |
 | T1 · elementalSpark ice · destroyer.destroyerExp@wand · L100 | 4,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark lightning · destroyer.destroyerExp@wand · L100 | 4,9% | 4,0%–6,0% | w paśmie | raport → S90 |
-| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L45 | 6,4% | 4,0%–6,0% | **poza** | S88 (asertowane) |
+| T1 · elementalSpark lightning · destroyer.destroyerExp@wand · L100 | 4,7% | 4,0%–6,0% | w paśmie | raport → S90 |
+| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L45 | 6,2% | 4,0%–6,0% | **poza** | S88 (asertowane) |
 | T1 · elementalSpark ice · arcanist.arcanistBoss@wand · L45 | 4,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L45 | 6,0% | 4,0%–6,0% | w paśmie | raport → S90 |
-| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L70 | 5,8% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark ice · arcanist.arcanistBoss@wand · L70 | 4,4% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L70 | 4,9% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L100 | 5,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · elementalSpark ice · arcanist.arcanistBoss@wand · L100 | 3,5% | 4,0%–6,0% | **poza** | S88 (asertowane) |
-| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L100 | 4,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L45 | 5,9% | 4,0%–6,0% | w paśmie | raport → S90 |
+| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L70 | 5,4% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark ice · arcanist.arcanistBoss@wand · L70 | 5,0% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L70 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark fire · arcanist.arcanistBoss@wand · L100 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
+| T1 · elementalSpark ice · arcanist.arcanistBoss@wand · L100 | 3,2% | 4,0%–6,0% | **poza** | S88 (asertowane) |
+| T1 · elementalSpark lightning · arcanist.arcanistBoss@wand · L100 | 3,8% | 4,0%–6,0% | **poza** | S88 (asertowane) |
 | T1 · elementalMight fire · destroyer.destroyerExp@staff · L45 | 0,8% | 4,0%–9,0% | **poza** | S88 (asertowane) |
 | T1 · elementalMight ice · destroyer.destroyerExp@staff · L45 | 5,8% | 4,0%–9,0% | w paśmie | S88 (asertowane) |
 | T1 · elementalMight lightning · destroyer.destroyerExp@staff · L45 | 0,7% | 4,0%–9,0% | **poza** | S88 (asertowane) |
-| T1 · elementalMight fire · destroyer.destroyerExp@staff · L70 | 1,2% | 4,0%–9,0% | **poza** | S88 (asertowane) |
+| T1 · elementalMight fire · destroyer.destroyerExp@staff · L70 | 1,3% | 4,0%–9,0% | **poza** | S88 (asertowane) |
 | T1 · elementalMight ice · destroyer.destroyerExp@staff · L70 | 5,4% | 4,0%–9,0% | w paśmie | S88 (asertowane) |
 | T1 · elementalMight lightning · destroyer.destroyerExp@staff · L70 | 1,7% | 4,0%–9,0% | **poza** | S88 (asertowane) |
 | T1 · elementalMight fire · destroyer.destroyerExp@staff · L100 | 1,7% | 4,0%–9,0% | **poza** | S88 (asertowane) |
@@ -18578,9 +18657,9 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T1 · runicSeal · arcanist.arcanistBoss@runestaff · L45 | 5,2% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · runicSeal · arcanist.arcanistBoss@runestaff · L70 | 5,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · runicSeal · arcanist.arcanistBoss@runestaff · L100 | 5,3% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
-| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L45 | 0,3% | 4,0%–6,0% | **poza** | raport → S90 |
-| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L70 | 0,7% | 4,0%–6,0% | **poza** | raport → S90 |
-| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L100 | 1,3% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L45 | 0,0% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L70 | 1,1% | 4,0%–6,0% | **poza** | raport → S90 |
+| T1 · learnedFormulae · arcanist.arcanistBoss@wand · L100 | 1,9% | 4,0%–6,0% | **poza** | raport → S90 |
 | T1 · powerLens · destroyer.destroyerExp@wand · L45 | 4,1% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · powerLens · destroyer.destroyerExp@wand · L70 | 4,4% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
 | T1 · powerLens · destroyer.destroyerExp@wand · L100 | 4,5% | 4,0%–6,0% | w paśmie | S88 (asertowane) |
@@ -18608,21 +18687,21 @@ Pomyślność (relikwia Kapłana Fortuny): +8,0% (Zwykła) do +15,0% (Mityczna +
 | T2 · standard · L45 | 2,1% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · standard · L70 | 1,2% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · standard · L100 | 1,0% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · marksman · L45 | 0,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · marksman · L70 | 2,8% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · marksman · L100 | 2,7% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · trapper · L45 | 3,3% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · trapper · L70 | 19,9% | ≤ 5,0% | **poza** | S88 (asertowane) |
-| T2 · trapper · L100 | 30,5% | ≤ 5,0% | **poza** | S88 (asertowane) |
+| T2 · marksman · L45 | 0,7% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · marksman · L70 | 3,9% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · marksman · L100 | 2,8% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · trapper · L45 | 3,1% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · trapper · L70 | 21,5% | ≤ 5,0% | **poza** | S88 (asertowane) |
+| T2 · trapper · L100 | 33,6% | ≤ 5,0% | **poza** | S88 (asertowane) |
 | T2 · scout · L45 | 0,8% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · scout · L70 | 1,0% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · scout · L100 | 0,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · destroyer · L45 | 10,4% | ≤ 5,0% | **poza** | raport → S90 |
-| T2 · destroyer · L70 | 9,9% | ≤ 5,0% | **poza** | raport → S90 |
-| T2 · destroyer · L100 | 10,8% | ≤ 5,0% | **poza** | raport → S90 |
-| T2 · arcanist · L45 | 1,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · arcanist · L70 | 2,0% | ≤ 5,0% | w paśmie | S88 (asertowane) |
-| T2 · arcanist · L100 | 2,5% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · scout · L100 | 0,8% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · destroyer · L45 | 10,3% | ≤ 5,0% | **poza** | raport → S90 |
+| T2 · destroyer · L70 | 9,6% | ≤ 5,0% | **poza** | raport → S90 |
+| T2 · destroyer · L100 | 10,0% | ≤ 5,0% | **poza** | raport → S90 |
+| T2 · arcanist · L45 | 2,2% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · arcanist · L70 | 1,6% | ≤ 5,0% | w paśmie | S88 (asertowane) |
+| T2 · arcanist · L100 | 1,0% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · inquisitor · L45 | 3,5% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · inquisitor · L70 | 3,5% | ≤ 5,0% | w paśmie | S88 (asertowane) |
 | T2 · inquisitor · L100 | 3,5% | ≤ 5,0% | w paśmie | S88 (asertowane) |
@@ -19229,6 +19308,225 @@ R8 (punkty puli na 45 i 100), R9 (tożsamość pul: dwuręczna / jednoręczna, E
 | R6 fortune.plunder: najmocniejsza trzecia część / średnia L100 | 7,54 | ≤ 1,50 | **poza** | właściciel (E3, S89): rzędy 4–11 Fortuny to szczęście i łup (poza metryką) |
 | R6 inquisitor.solo: najsłabsza trzecia część / średnia L100 | 0,43 | ≥ 0,60 | **poza** | właściciel (F4, S89): środkowa część Inkwizytora to przeżycie i odwet (poza metryką) |
 | R6 inquisitor.solo: najmocniejsza trzecia część / średnia L100 | 1,53 | ≤ 1,50 | **poza** | właściciel (F4, S89): środkowa część Inkwizytora to przeżycie i odwet (poza metryką) |
+
+
+## Umiejętności 2.0: Łowca i Mag po przebudowie (S147)
+
+R8 (punkty puli na 45 i 100), R9 (tożsamość żywiołów: błyskawica / ogień 1,10–1,20 i lód / ogień 0,85–0,95 w jeden cel, ogień z podpaleniem ≥ błyskawica na 3 cele 8 s, kontrola lodu, obrażenia przyjmowane lód < ogień < błyskawica; Łowca: łuk / kusza ±10%, obrażenia w czasie kuszy ≥ 25%), R7 Strzelca z obiema pulami, R5 (typy broni puli), T-SK3, T-SK4 wariantów żywiołów, R1 (raport, właściciel). Pasek: 8 aktywnych (`ReferenceBuild.bar`). Asertuje `balance.spec` („Balance S147: Hunter, Mage and bosses”).
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| R8 bow: 8 aktywnych na 10 + pasywki / punkty na 100 | 0,89 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R8 bow: najwięcej aktywnych z rangą 10 na 100 | 10,00 | 8,00–10,00 | w paśmie | S147 (asertowane) |
+| R8 bow: punkty na 45 / suma limitów rang puli | 0,61 | ≤ 0,75 | w paśmie | S147 (asertowane) |
+| R8 crossbow: 8 aktywnych na 10 + pasywki / punkty na 100 | 0,89 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R8 crossbow: najwięcej aktywnych z rangą 10 na 100 | 10,00 | 8,00–10,00 | w paśmie | S147 (asertowane) |
+| R8 crossbow: punkty na 45 / suma limitów rang puli | 0,61 | ≤ 0,75 | w paśmie | S147 (asertowane) |
+| R8 fire: 8 aktywnych na 10 + pasywki / punkty na 100 | 0,89 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R8 fire: najwięcej aktywnych z rangą 10 na 100 | 10,00 | 8,00–10,00 | w paśmie | S147 (asertowane) |
+| R8 fire: punkty na 45 / suma limitów rang puli | 0,55 | ≤ 0,75 | w paśmie | S147 (asertowane) |
+| R8 ice: 8 aktywnych na 10 + pasywki / punkty na 100 | 0,89 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R8 ice: najwięcej aktywnych z rangą 10 na 100 | 10,00 | 8,00–10,00 | w paśmie | S147 (asertowane) |
+| R8 ice: punkty na 45 / suma limitów rang puli | 0,55 | ≤ 0,75 | w paśmie | S147 (asertowane) |
+| R8 lightning: 8 aktywnych na 10 + pasywki / punkty na 100 | 0,89 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R8 lightning: najwięcej aktywnych z rangą 10 na 100 | 10,00 | 8,00–10,00 | w paśmie | S147 (asertowane) |
+| R8 lightning: punkty na 45 / suma limitów rang puli | 0,55 | ≤ 0,75 | w paśmie | S147 (asertowane) |
+| R9 błyskawica / ogień (Arkanista): jeden cel 60 s L20 | 1,11 | 1,10–1,20 | w paśmie | S147 (asertowane) |
+| R9 lód / ogień (Arkanista): jeden cel 60 s L20 | 0,89 | 0,85–0,95 | w paśmie | S147 (asertowane) |
+| R9 ogień z podpaleniem / błyskawica (Niszczyciel): 3 cele 8 s L20 | 1,20 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): Elita spowolniona albo zamrożona, udział walki L20 | 0,99 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): boss pod Głębokim Chłodem, udział okna L20 | 0,79 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (destroyer, Elita) L20 | 0,86 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (destroyer, Elita) L20 | 0,97 | ≥ 1,00 | **poza** | 1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,97 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku |
+| R9 lód (arcanist): Elita spowolniona albo zamrożona, udział walki L20 | 0,96 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): boss pod Głębokim Chłodem, udział okna L20 | 0,53 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (arcanist, Elita) L20 | 0,90 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (arcanist, Elita) L20 | 1,00 | ≥ 1,00 | **poza** | 1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,995 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku |
+| R9 łuk / kusza (Strzelec): jeden cel 60 s L20 | 1,00 | 0,90–1,10 | w paśmie | S147 (asertowane) |
+| R9 błyskawica / ogień (Arkanista): jeden cel 60 s L45 | 1,14 | 1,10–1,20 | w paśmie | S147 (asertowane) |
+| R9 lód / ogień (Arkanista): jeden cel 60 s L45 | 0,90 | 0,85–0,95 | w paśmie | S147 (asertowane) |
+| R9 ogień z podpaleniem / błyskawica (Niszczyciel): 3 cele 8 s L45 | 1,20 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): Elita spowolniona albo zamrożona, udział walki L45 | 0,99 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): boss pod Głębokim Chłodem, udział okna L45 | 0,94 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (destroyer, Elita) L45 | 0,64 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (destroyer, Elita) L45 | 1,01 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): Elita spowolniona albo zamrożona, udział walki L45 | 0,98 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): boss pod Głębokim Chłodem, udział okna L45 | 0,77 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (arcanist, Elita) L45 | 0,85 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (arcanist, Elita) L45 | 0,99 | ≥ 1,00 | **poza** | poza zasięgiem dźwigni S147: bez paraliżu Porażenia błyskawica i ogień przyjmują na 45. tyle samo (ten sam pancerz i HP); 0,991; dla właściciela (osłona żywiołu na pasku albo Elity w połowie odporne na paraliż) |
+| R9 łuk / kusza (Strzelec): jeden cel 60 s L45 | 1,05 | 0,90–1,10 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poacher L45 | 0,28 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poisoner L45 | 0,26 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R7 Łowca z łukiem (Strzelec) / Wojownik dwuręczny: jeden cel L45 | 1,24 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R7 Łowca z kuszą (Strzelec) / Wojownik dwuręczny: jeden cel L45 | 1,18 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R5 bow (marksman.kingslayer): najdalszy typ broni od średniej L45 | 0,03 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 crossbow (trapper.poacher): najdalszy typ broni od średniej L45 | 0,02 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 fire (arcanist.arcanistFire): najdalszy typ broni od średniej L45 | 0,05 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 ice (arcanist.arcanistIce): najdalszy typ broni od średniej L45 | 0,04 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 lightning (arcanist.arcanistLightning): najdalszy typ broni od średniej L45 | 0,04 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerFire L45 | 2,31 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerIce L45 | 1,77 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerLightning L45 | 1,32 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistFire L45 | 1,34 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistIce L45 | 1,32 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistLightning L45 | 1,26 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 trapper.poacher L45 | 1,84 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| R9 błyskawica / ogień (Arkanista): jeden cel 60 s L70 | 1,17 | 1,10–1,20 | w paśmie | S147 (asertowane) |
+| R9 lód / ogień (Arkanista): jeden cel 60 s L70 | 0,86 | 0,85–0,95 | w paśmie | S147 (asertowane) |
+| R9 ogień z podpaleniem / błyskawica (Niszczyciel): 3 cele 8 s L70 | 1,05 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): Elita spowolniona albo zamrożona, udział walki L70 | 0,99 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): boss pod Głębokim Chłodem, udział okna L70 | 0,73 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (destroyer, Elita) L70 | 0,55 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (destroyer, Elita) L70 | 1,02 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): Elita spowolniona albo zamrożona, udział walki L70 | 0,98 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): boss pod Głębokim Chłodem, udział okna L70 | 0,80 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (arcanist, Elita) L70 | 0,68 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (arcanist, Elita) L70 | 1,00 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 łuk / kusza (Strzelec): jeden cel 60 s L70 | 1,00 | 0,90–1,10 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poacher L70 | 0,26 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poisoner L70 | 0,31 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R7 Łowca z łukiem (Strzelec) / Wojownik dwuręczny: jeden cel L70 | 1,26 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R7 Łowca z kuszą (Strzelec) / Wojownik dwuręczny: jeden cel L70 | 1,27 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R5 bow (marksman.kingslayer): najdalszy typ broni od średniej L70 | 0,03 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 crossbow (trapper.poacher): najdalszy typ broni od średniej L70 | 0,02 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 fire (arcanist.arcanistFire): najdalszy typ broni od średniej L70 | 0,05 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 ice (arcanist.arcanistIce): najdalszy typ broni od średniej L70 | 0,04 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 lightning (arcanist.arcanistLightning): najdalszy typ broni od średniej L70 | 0,05 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerFire L70 | 2,32 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerIce L70 | 1,86 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerLightning L70 | 1,57 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistFire L70 | 1,47 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistIce L70 | 1,30 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistLightning L70 | 1,38 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 trapper.poacher L70 | 1,97 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| R9 błyskawica / ogień (Arkanista): jeden cel 60 s L100 | 1,12 | 1,10–1,20 | w paśmie | S147 (asertowane) |
+| R9 lód / ogień (Arkanista): jeden cel 60 s L100 | 0,88 | 0,85–0,95 | w paśmie | S147 (asertowane) |
+| R9 ogień z podpaleniem / błyskawica (Niszczyciel): 3 cele 8 s L100 | 1,05 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): Elita spowolniona albo zamrożona, udział walki L100 | 0,83 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (destroyer): boss pod Głębokim Chłodem, udział okna L100 | 0,70 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (destroyer, Elita) L100 | 0,50 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (destroyer, Elita) L100 | 1,06 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): Elita spowolniona albo zamrożona, udział walki L100 | 0,88 | ≥ 0,60 | w paśmie | S147 (asertowane) |
+| R9 lód (arcanist): boss pod Głębokim Chłodem, udział okna L100 | 0,77 | ≥ 0,50 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane lód / ogień (arcanist, Elita) L100 | 0,70 | ≤ 1,00 | w paśmie | S147 (asertowane) |
+| R9 obrażenia przyjmowane błyskawica / ogień (arcanist, Elita) L100 | 1,11 | ≥ 1,00 | w paśmie | S147 (asertowane) |
+| R9 łuk / kusza (Strzelec): jeden cel 60 s L100 | 0,99 | 0,90–1,10 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poacher L100 | 0,30 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R9 kusza: udział obrażeń w czasie trapper.poisoner L100 | 0,32 | ≥ 0,25 | w paśmie | S147 (asertowane) |
+| R7 Łowca z łukiem (Strzelec) / Wojownik dwuręczny: jeden cel L100 | 1,32 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R7 Łowca z kuszą (Strzelec) / Wojownik dwuręczny: jeden cel L100 | 1,34 | 1,15–1,35 | w paśmie | S147 (asertowane) |
+| R5 bow (marksman.kingslayer): najdalszy typ broni od średniej L100 | 0,03 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 crossbow (trapper.poacher): najdalszy typ broni od średniej L100 | 0,02 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 fire (arcanist.arcanistFire): najdalszy typ broni od średniej L100 | 0,06 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 ice (arcanist.arcanistIce): najdalszy typ broni od średniej L100 | 0,05 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| R5 lightning (arcanist.arcanistLightning): najdalszy typ broni od średniej L100 | 0,05 | ≤ 0,10 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerFire L100 | 2,69 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerIce L100 | 2,56 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 destroyer.destroyerLightning L100 | 2,34 | ≤ 3,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistFire L100 | 1,12 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistIce L100 | 1,05 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 arcanist.arcanistLightning L100 | 1,47 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK3 trapper.poacher L100 | 2,00 | ≤ 2,00 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L45 | 2,78 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L50 | 2,65 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L55 | 2,93 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 destroyer.destroyerFire L60 | 2,98 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 destroyer.destroyerFire L65 | 2,42 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L69 | 2,58 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L70 | 2,59 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L75 | 2,48 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L80 | 2,34 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L85 | 2,17 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L90 | 1,97 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 destroyer.destroyerFire L95 | 1,90 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 destroyer.destroyerFire L99 | 2,12 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerFire L100 | 2,11 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L45 | 2,30 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L50 | 2,24 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L55 | 2,43 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L60 | 2,47 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L65 | 1,45 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L69 | 1,47 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L70 | 1,48 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L75 | 1,42 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L80 | 1,32 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L85 | 1,20 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L90 | 1,82 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L95 | 1,76 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4 |
+| T-SK4 destroyer.destroyerIce L99 | 2,02 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerIce L100 | 2,01 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L45 | 2,72 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L50 | 2,48 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L55 | 2,86 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 destroyer.destroyerLightning L60 | 2,92 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 destroyer.destroyerLightning L65 | 2,02 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L69 | 2,12 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L70 | 2,13 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L75 | 2,04 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L80 | 1,90 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 destroyer.destroyerLightning L85 | 1,74 | 2,00–2,80 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 destroyer.destroyerLightning L90 | 2,22 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L95 | 2,14 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L99 | 2,03 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 destroyer.destroyerLightning L100 | 2,02 | 2,00–2,80 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L45 | 2,01 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L50 | 1,78 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistFire L55 | 2,00 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistFire L60 | 1,85 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistFire L65 | 1,88 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistFire L69 | 2,17 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L70 | 2,17 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L75 | 2,08 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L80 | 2,05 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistFire L85 | 1,95 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistFire L90 | 2,47 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistFire L95 | 2,41 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistFire L99 | 2,46 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistFire L100 | 2,39 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L45 | 2,16 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L50 | 2,14 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L55 | 2,10 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L60 | 1,93 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistIce L65 | 1,96 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistIce L69 | 1,97 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8 |
+| T-SK4 arcanist.arcanistIce L70 | 2,37 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L75 | 2,25 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L80 | 2,16 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L85 | 2,07 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L90 | 2,26 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L95 | 2,20 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L99 | 2,19 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistIce L100 | 2,22 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L45 | 2,38 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L50 | 2,02 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L55 | 2,37 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L60 | 2,18 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L65 | 2,22 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L69 | 2,22 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L70 | 2,23 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L75 | 2,12 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L80 | 2,03 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L85 | 1,95 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistLightning L90 | 2,41 | 2,00–2,40 | **poza** | poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100 |
+| T-SK4 arcanist.arcanistLightning L95 | 2,35 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L99 | 2,32 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| T-SK4 arcanist.arcanistLightning L100 | 2,37 | 2,00–2,40 | w paśmie | S147 (asertowane) |
+| R1 bow (marksman.kingslayer) L45 | 2,77 | 1,60–2,62 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 bow (marksman.kingslayer) L100 | 3,09 | 1,60–2,62 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 crossbow (trapper.poacher) L45 | 3,13 | 1,60–2,55 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 crossbow (trapper.poacher) L100 | 3,33 | 1,60–2,55 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 fire (destroyer.destroyerFire) L45 | 4,12 | 1,60–2,74 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 fire (destroyer.destroyerFire) L100 | 4,11 | 1,60–2,74 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 fire (arcanist.arcanistFire) L45 | 4,90 | 1,60–2,80 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 fire (arcanist.arcanistFire) L100 | 6,59 | 1,60–2,80 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 ice (destroyer.destroyerIce) L45 | 3,81 | 1,60–2,54 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 ice (destroyer.destroyerIce) L100 | 3,24 | 1,60–2,54 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 ice (arcanist.arcanistIce) L45 | 4,39 | 1,60–2,49 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 ice (arcanist.arcanistIce) L100 | 5,77 | 1,60–2,49 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 lightning (destroyer.destroyerLightning) L45 | 5,25 | 1,60–3,03 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 lightning (destroyer.destroyerLightning) L100 | 5,21 | 1,60–3,03 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 lightning (arcanist.arcanistLightning) L45 | 5,60 | 1,60–3,10 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
+| R1 lightning (arcanist.arcanistLightning) L100 | 7,35 | 1,60–3,10 | **poza** | właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga) |
 
 
 ## Wzory (stan obecny)

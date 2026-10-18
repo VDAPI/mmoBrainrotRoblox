@@ -318,6 +318,8 @@ do
 	block("20–100: cechy, linie, obrona (S88)", SkillModel.targetsS88())
 	-- S146: the Warrior's and the Cleric's targets after the rework of DESIGN-18 (R8, R9, R1, R5, R6, T-SK5, T-SK6)
 	block("20–100: umiejętności 2.0, Wojownik i Kapłan (S146)", B.targetsS146())
+	-- S147: the Hunter's and the Mage's targets after the rework (R8, R9, R7, R5, T-SK3, T-SK4, R1)
+	block("20–100: umiejętności 2.0, Łowca i Mag (S147)", B.targetsS147())
 	local paths: { any } = {}
 	for _, r in SkillModel.evaluateTargets() do
 		if r.asserted then
@@ -4588,6 +4590,19 @@ do
 	)
 	add()
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS146(), "S146 (asertowane)"))
+	add()
+end
+
+-- S147 (DESIGN-18 §13): the Hunter and the Mage after the rework (Balance.targetsS147): every row with its band and
+-- who asserts it (rows of Balance.S147_REPORT carry the reason).
+do
+	add("## Umiejętności 2.0: Łowca i Mag po przebudowie (S147)")
+	add()
+	add(
+		"R8 (punkty puli na 45 i 100), R9 (tożsamość żywiołów: błyskawica / ogień 1,10–1,20 i lód / ogień 0,85–0,95 w jeden cel, ogień z podpaleniem ≥ błyskawica na 3 cele 8 s, kontrola lodu, obrażenia przyjmowane lód < ogień < błyskawica; Łowca: łuk / kusza ±10%, obrażenia w czasie kuszy ≥ 25%), R7 Strzelca z obiema pulami, R5 (typy broni puli), T-SK3, T-SK4 wariantów żywiołów, R1 (raport, właściciel). Pasek: 8 aktywnych (`ReferenceBuild.bar`). Asertuje `balance.spec` („Balance S147: Hunter, Mage and bosses”)."
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS147(), "S147 (asertowane)"))
 	add()
 end
 

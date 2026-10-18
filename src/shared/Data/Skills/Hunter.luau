@@ -148,12 +148,12 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 8,
 		range = 38,
 		element = "poison",
-		values = { dmg = { 120, 152 }, poison = { 50, 50 } },
+		values = { dmg = { 120, 137 }, poison = { 50, 57.5 } }, -- S147: ranks 3-10 dmg x0.9, poison up to 57.5 (rank 2 pinned; the Crossbow's damage over time >= 25 %)
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
 		-- S144: 5A 21 -> 15 and 10B 60 -> 28 (R4 on the Crossbow's Trapper, whose nodes stack and strengthen the poison)
 		breakpoints = Build.bp2(
 			{ a = { values = { poison = 15 } }, b = { values = { dmg = 28 } } },
-			{ a = { splash = { radius = 5, pct = 19 } }, b = { values = { poison = 28 } } }
+			{ a = { splash = { radius = 5, pct = 21 } }, b = { values = { poison = 28 } } } -- S147: 10A 19 -> 21 (R4)
 		),
 		glyph = "☠",
 		vfx = "arrow",
@@ -312,14 +312,14 @@ return Build.class("Hunter", "energy", "phys", {
 		radius = 6,
 		duration = 20,
 		element = "poison",
-		values = { dmg = { 232, 236 }, poison = { 285, 290 }, slow = 30 },
+		values = { dmg = { 80, 82 }, poison = { 405, 412 }, slow = 30 }, -- S147: dmg 232-236 -> 80-82, poison x1.42 (the Crossbow's damage over time >= 25 %)
 		effects = {
 			{ kind = "poison", duration = 6, value = "poison" },
 			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
 		},
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 2 } }, b = { pull = 8 } },
-			{ a = { echo = { delay = 1, pct = 44 } }, b = { values = { poison = 98 } } } -- S144: 10A 38 -> 44 (R4)
+			{ a = { echo = { delay = 1, pct = 135 } }, b = { values = { poison = 98 } } } -- S144: 10A 38 -> 44 (R4). S147: 44 -> 135 (the hit is a third of what it was)
 		),
 		glyph = "☣",
 	},
@@ -371,11 +371,11 @@ return Build.class("Hunter", "energy", "phys", {
 		ringRadius = 8,
 		hits = 5,
 		duration = 15,
-		values = { dmg = { 30, 38 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } },
+		values = { dmg = { 12, 14 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } }, -- S147: dmg 30-38 -> 12-14 (R3 of the Trapper <= 2.0 at 100)
 		effects = SNAREFIELD_EFFECTS,
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 1 } }, b = { values = { vuln = 1 } } }, -- 5B: at most the Mark with 10B (ROZWOJ 11.4)
-			{ a = { values = { dmg = 14 } }, b = { pull = 6 } }
+			{ a = { values = { dmg = 6 } }, b = { pull = 6 } } -- S147: 10A 14 -> 6 (R4 with dmg 12-14)
 		),
 		glyph = "⁂",
 	},
@@ -519,7 +519,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cost = 20,
 		cooldown = 5.2,
 		range = 38,
-		values = { dmg = { 187.2, 302.9 } }, -- Aimed Shot's numbers and S91 knots x1.3 (Data/SkillCurves)
+		values = { dmg = { 187.2, 281.7 } }, -- Aimed Shot's numbers and S91 knots x1.3 (Data/SkillCurves). S147: ranks 6-10 x0.93 (the Crossbow's damage moves to its poison)
 		breakpoints = Build.bp2({
 			-- no category, like every DoT (ROZWOJ 7.1); % of the attack over 6 s
 			a = { effect = { kind = "poison", duration = 6, value = 30 } },
@@ -534,7 +534,7 @@ return Build.class("Hunter", "energy", "phys", {
 		unlock = 20,
 		maxLevel = 5,
 		type = "passive",
-		values = { tip = { 10, 20 } }, -- % of the attack over CROSSBOW.tipDuration per stack
+		values = { tip = { 10, 30 } }, -- S147: rank 5 20 -> 30 (ranks 2-5 from level 29). % of the attack over CROSSBOW.tipDuration per stack
 		passive = { hooks = { toxicTips = "tip" } },
 		glyph = "⚗",
 	},
@@ -570,7 +570,7 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 10,
 		range = 38,
 		-- venomMul % more on a target with at least venomStacks stacks of the caster's poisons
-		values = { dmg = { 180, 260 }, venomMul = 50, venomStacks = 3 },
+		values = { dmg = { 180, 248 }, venomMul = 50, venomStacks = 3 }, -- S147: rank 10 260 -> 248 (rank 8 pinned; R7 of the Marksman with a heavy crossbow <= 1.35 at 100)
 		breakpoints = Build.bp2(
 			{ a = { values = { venomMul = 20 } }, b = { values = { dmg = 26 } } },
 			{ a = { values = { venomMul = 35 } }, b = { values = { dmg = 52 } } }

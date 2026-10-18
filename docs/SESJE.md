@@ -12449,3 +12449,67 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/shared/Data/SkillCurves.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance}.luau`,
   `tests/{balance,paths,skills}.spec.luau`, `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`,
   `tools/balance_before.json`, `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S147: Balans po przebudowie, Łowca, Mag i bossowie
+
+- **Nowe cele** (`Balance.targetsS147`, blok „Balance S147: Hunter, Mage and bosses” w `balance.spec`, sekcja w
+  `docs/BALANS.md`): R8 pięciu pul Łowcy i Maga, R9 Maga (błyskawica / ogień i lód / ogień w jeden cel, ogień z
+  podpaleniem / błyskawica na 3 cele 8 s, kontrola lodu na Elicie, Głęboki Chłód na bossie, obrażenia przyjmowane lód <
+  ogień < błyskawica, oba kierunki, 20–100), R9 Łowcy (łuk / kusza ±10%, obrażenia w czasie kuszy ≥ 25% od 45.), R7
+  Strzelca z obiema pulami, R5 typów broni każdej puli, T-SK3 wariantów żywiołów i Trapera, T-SK4 wariantów żywiołów na
+  45–100 (poziomy wierszy regionów); R1 i wiersze poza zasięgiem w `Balance.S147_REPORT` z powodem; testy: żaden wpis
+  `GLOBAL_REPORT_ONLY` z S137–S145, żaden wiersz R4 w raporcie poza Ognistym Pociskiem 5A.
+- **Pasek 8** także dla Łowcy i Maga (`SkillModel.BAR_CLASSES`), paski wariantów żywiołów (`ReferenceBuild.bar` w
+  `Data/Paths/Mage`), Inwokacja Arkanistów po Strumieniu Arkanów w `ranks`; `SkillModel.withWeapon` zachowuje żywioł.
+- **Przed / po** (model, 45 / 70 / 100; „przed” = commit S146):
+
+  | cel | przed | po | pasmo |
+  |---|---|---|---|
+  | R9 błyskawica / ogień, 1 cel (Arkanista) | 1,143 / 1,126 / 1,047 | 1,144 / 1,167 / 1,115 | 1,10–1,20 |
+  | R9 lód / ogień, 1 cel (Arkanista) | 0,879 / 0,821 / 0,822 | 0,896 / 0,863 / 0,876 | 0,85–0,95 |
+  | R9 ogień z podpaleniem / błyskawica, 3 cele 8 s | 1,205 / 1,056 / 0,838 | 1,200 / 1,045 / 1,046 | ≥ 1,0 |
+  | R9 przyjmowane lód / ogień (Niszczyciel, Arkanista) | 0,65 / 0,59 / 0,52; 0,85 / 0,71 / 0,70 | 0,65 / 0,55 / 0,50; 0,85 / 0,68 / 0,70 | ≤ 1 |
+  | R9 przyjmowane błyskawica / ogień (N, A) | 1,006 / 1,020 / 1,069; 0,991 / 1,000 / 1,107 | 1,006 / 1,020 / 1,062; 0,991 / 1,000 / 1,107 | ≥ 1 (A na 45 raport) |
+  | R9 łuk / kusza (Strzelec), 1 cel | 1,046 / 1,007 / 0,987 | 1,047 / 0,997 / 0,986 | 0,9–1,1 |
+  | R9 obrażenia w czasie kuszy (Kłusownik / Truciciel) | 0,22 / 0,21; 0,20 / 0,24; 0,23 / 0,25 | 0,29 / 0,26; 0,26 / 0,31; 0,30 / 0,32 | ≥ 0,25 |
+  | R7 łuk / kusza wobec Furii | 1,24 / 1,18; 1,27 / 1,26; 1,32 / 1,34 | 1,24 / 1,18; 1,27 / 1,27; 1,32 / 1,34 | 1,15–1,35 |
+  | T-SK4 Niszczyciel (ogień / lód / błyskawica) | 4,80 / 3,97 / 4,69; 3,60 / 2,05 / 2,96; 3,61 / 3,34 / 2,98 | 2,78 / 2,30 / 2,72; 2,59 / 1,48 / 2,13; 2,11 / 2,01 / 2,02 | 2,0–2,8 (poza pasmem na 55–95: 16 z 42 wierszy, raport) |
+  | T-SK4 Arkanista (ogień / lód / błyskawica) | 3,47 / 3,72 / 4,11; 3,02 / 2,77 / 3,13; 3,42 / 3,62 / 3,36 | 2,01 / 2,16 / 2,38; 2,17 / 2,37 / 2,23; 2,39 / 2,22 / 2,37 | 2,0–2,4 (poza pasmem na 50–99: 13 z 42 wierszy, raport) |
+  | R4 przestrojonych przełomów Maga (ścieżki, 70 / 100) | Głęboki Mróz 5B 0,087, 10B 0,226; Roztrzaskanie 10B 0,239; Lanca 5B 0,118 / 0,088, 10B 0,225; Zamieć 10B 0,167; Deszcz Meteorów 10B 0,183; Ognisty Pocisk 10A 0,168 / 0,160 / 0,160 (45 / 70 / 100) | 0,086; 0,235; 0,202; 0,161 / 0,087, 0,210; 0,181; 0,224; 0,182 / 0,173 / 0,173 | 0,08–0,17 (5) / 0,17–0,28 (10) |
+  | R4 przestrojonych przełomów Łowcy (Kłusownik, 70 / 100) | Zatruta Strzała 10A 0,186 / 0,184; Trujące Sidła 10A 0,200 / 0,175; Pole Sideł 10A – / 0,254 | 0,183 / 0,182; 0,221 / 0,183; – / 0,193 | 0,17–0,28 |
+  | R4 Ognisty Pocisk 5A (Arkanista, 45 / 70 / 100) | 0,059 / 0,056 / 0,056 | bez zmian | 0,08–0,17 (raport: 1–20 zamrożone) |
+  | R3 / T-SK3 Trapera | 1,84 / 1,99 / 2,02 | 1,85 / 1,97 / 2,00 | ≤ 2,0 |
+  | R8 (każda pula) | – | 0,888 punktów na 100, 10 aktywnych, 0,55–0,61 na 45 | ≤ 1 / ≤ 10 / ≤ 0,75 |
+  | R5 pul (najdalszy typ broni) | – | ≤ 0,056 | ≤ 0,10 |
+  | R1 (Łowca, Mag) | 2,8–3,3; 3,8–7,2 | 2,8–3,3; 3,2–7,3 | raport (właściciel S90, S91) |
+  | bossowie S134: 3 / 5 graczy | 5,2–6,2 / 3,7–4,2 min | bez zmian | 5–7,5 / 3–4,5 |
+
+- **Dane:** Mag: krzywa `manaCost.Mage` od 25. niżej (1,02 … 2,1), koszt Deszczu Meteorów 460, Zamieci 270, Nawałnicy
+  360, Kataklizmu 220; Deszcz Meteorów 81–107 i 7 uderzeń (10B +24), Nawałnica 29–34, Spopielenie ranga 10 283,3,
+  Roztrzaskanie 184–420 (10B +85), Głęboki Mróz 80–138 (5B +15, 10B +36), Lodowa Włócznia ranga 10 360, Lanca Błyskawic
+  ranga 10 280 (5B +30, 10B +65), Grom ranga 10 460, Zamieć 10B +3,8, Ognisty Pocisk 10A 13%; węzły `Data/SkillCurves`
+  dla rang ≤ 70. Teksty przełomów (`skill.<id>.bp*`, PL i EN) z nowymi liczbami. Łowca: Trujące Sidła 80–82 / trucizna 405–412 (10A echo 135%), Zatrute Groty 10–30%, Zatruta Strzała
+  120–137 / trucizna 50–57,5 (10A 21%), Ciężki Bełt od 21. ×0,93, Bełt Egzekutora ranga 10 248, Pole Sideł 12–14 (10A
+  +6). Księga: wpisy S147 w `tools/balance_reasons.luau`.
+- **`GLOBAL_REPORT_ONLY`:** usunięte 390 kluczy Łowcy i Maga (S137: 51, S140: 77, S141: 54, S142: 101, S144: 107);
+  zostało 0 wpisów z S137–S145. 392 klucze z powodem S147: 248 strażników T-SK1 / T-SK2 / T-SK3, 87 T-SK4 średnich
+  trzech żywiołów, 14 cech broni (S88) na buildach sprzed pul, 20 celów względem bazy klasy (S85), 10 tempa solo
+  Zwiadowcy, 8 Trapera z łukiem, 2 R6 Zwiadowcy, 3 Ognisty Pocisk 5A (1–20 zamrożone). `Balance.S134_REPORT` pusty.
+- **Fixture ścieżek** przepisany (`--fixture-paths "S147 Łowca i Mag po przebudowie" S147`); `balance1_20.spec` bez
+  różnic; `docs/BALANS.md` wygenerowany (blok i sekcja S147).
+- **Dla właściciela:** (1) „błyskawica przyjmuje więcej niż ogień” u Arkanisty na 45. (0,991) i na 20.: bez paraliżu
+  Porażenia oba żywioły przyjmują tyle samo; propozycja: osłona żywiołu (O1) na pasku buildów wzorcowych albo Elity w
+  połowie odporne na paraliż; (2) T-SK4 wariantów na 50–99 (29 z 84 wierszy poza pasmem: Niszczyciel lodu 1,20–1,82 na
+  65–95 bez Zamieci, skoki rang przy jednej krzywej many): koszty czarów osobno dla żywiołów albo kolejność rang tak, by
+  wydatek many rósł równo, albo pasmo od 1,4 dla lodu; (3) cele S85–S90 względem bazy klasy (Strzelec × baza, Niszczyciel / Arkanista × baza, R5a) i tempo solo
+  Zwiadowcy liczą buildy sprzed pul: propozycja przepisać je na warianty pul (jak blok S147) albo wycofać; (4) R1 Łowcy i
+  Maga (2,8–7,3) dalej tylko raport (S90, S91).
+- **Testy:** `balance.spec` (blok S147, test paska dla wszystkich klas, brak wpisów S137–S145 w `GLOBAL_REPORT_ONLY`,
+  brak wierszy R4 w raporcie poza Ognistym Pociskiem 5A),
+  `skills.spec` (krzywa many, Deszcz Meteorów, trucizna Zatrutej Strzały).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Data/Skills/{Hunter,Mage}.luau`, `src/shared/Data/Paths/Mage.luau`,
+  `src/shared/Data/{SkillCurves,LevelCurves}.luau`, `tests/{SkillModel,Balance}.luau`, `tests/{balance,skills}.spec.luau`,
+  `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`,
+  `src/shared/Data/Localization/{pl,en}.luau`,
+  `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.

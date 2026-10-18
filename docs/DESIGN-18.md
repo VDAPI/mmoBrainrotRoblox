@@ -248,6 +248,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   (żywioł broni = pula, `cast.error.wrongPool`).
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
+- S147 (stan, asertowane w `Balance.targetsS147` na 20–100): błyskawica / ogień w jeden cel 1,11–1,17, lód / ogień
+  0,86–0,90, ogień z podpaleniem / błyskawica na 3 cele 8 s 1,05–1,21, Elita pod kontrolą lodu ≥ 0,83, boss pod
+  Głębokim Chłodem ≥ 0,53, przyjmowane lód 0,50–0,90 ognia, błyskawica ≥ ogień (Arkanista na 45. i oba na 20. 0,97–0,99:
+  paraliż Porażenia, raport z powodem); T-SK4 wariantów żywiołów 2,0–2,8 / 2,0–2,4 przez krzywą `manaCost.Mage`
+  (DECYZJE S147).
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia
   (`burnStacks`), detonacja podpaleń (`detonate`), licznik chłodu do zamrożenia (`chillToFreeze`), premia na
   zamrożonych / podpalonych (`vsFrozen`, `vsBurning`), kończenie zamrożenia (`shatter`), przeskok czaru
@@ -314,6 +319,9 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   jeden cel na celu z ≥ 80% życia, `Logic/DeadEye`) i Mistrz Sideł (każde trafienie pułapki daje stos trucizny grotu bez
   odstępu); rzędy 4 bez umiejętności. Po S144 łuk / kusza (Strzelec) w jeden cel 0,99–1,05, udział obrażeń w czasie
   kuszy 0,20–0,25 (raport `S144.hunter.*`).
+- S147 (stan, asertowane): łuk / kusza (Strzelec) w jeden cel 0,99–1,05, udział obrażeń w czasie kuszy 0,26–0,32 od
+  45. (trucizna Trujących Sideł, Zatrutych Grotów i Zatrutej Strzały kosztem bezpośrednich obrażeń), R7 łuk / kusza
+  1,18–1,34.
 
 ### 6.4 Kapłan (wspólne: `C1` Leczenie `heal`, `C2` Krąg Światła `circleOfLight`, `C3` Wskrzeszenie `resurrection`, `C4` Pobożność `devotion`; wszystkie istn.)
 
@@ -492,6 +500,8 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   - Wpisy `GLOBAL_REPORT_ONLY` z sesji S137–S145 znikają.
   - S146: build wzorcowy rzuca tylko 8 aktywnych swojego poziomu (`ReferenceBuild.bar`, `SkillModel.barOf`; Wojownik i
     Kapłan, Łowca i Mag w S147); blok `Balance.targetsS146` (R8, R9, R1, R5, R6, T-SK5) Wojownika i Kapłana.
+  - S147: pasek także Łowcy i Maga (warianty żywiołów z `ReferenceBuild.bar`); blok `Balance.targetsS147` (R8, R9
+    Maga i Łowcy, R7, R5, T-SK3, T-SK4); `GLOBAL_REPORT_ONLY` bez wpisów S137–S145 (pozostałe z powodem S147).
 - Efekty przedmiotów w modelu tylko przez `score` w `Data/ItemEffects` (`ItemScore`); S146–S147 przeliczają `score` z
   nowymi umiejętnościami (wiersze `S134g.*` w `balance.spec`).
 - **Fixtures:** `tests/fixtures/balance_paths.json` (`--fixture-paths`) i `balance_1_20.json` przepisane świadomie z

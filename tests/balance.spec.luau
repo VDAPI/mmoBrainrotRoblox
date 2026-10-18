@@ -325,9 +325,9 @@ T.describe("Balance S146: Warrior and Cleric", function()
 			T.expect({ key, found }).toEqual({ key, true })
 		end
 	end)
-	T.it("the bar: every Warrior and Cleric reference build casts at most 8 actives at each metric level", function()
+	T.it("the bar: every reference build casts at most 8 actives at each metric level", function()
 		local SkillData = require("../src/shared/Data/Skills")
-		for _, classId in { "Warrior", "Cleric" } do
+		for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
 			T.expect(SkillModel.BAR_CLASSES[classId]).toBe(true)
 			for _, build in SkillModel.builds(classId) do
 				if build.ref == nil then
@@ -350,9 +350,97 @@ T.describe("Balance S146: Warrior and Cleric", function()
 				end
 			end
 		end
-		-- the Hunter and the Mage keep their whole rotation until S147
-		T.expect(SkillModel.BAR_CLASSES.Hunter).toBe(nil)
-		T.expect(SkillModel.BAR_CLASSES.Mage).toBe(nil)
+		-- S147: the Hunter and the Mage have their bar too (the block "Balance S147")
+		T.expect(SkillModel.BAR_CLASSES.Hunter).toBe(true)
+		T.expect(SkillModel.BAR_CLASSES.Mage).toBe(true)
+	end)
+end)
+
+-- S147 (DESIGN-18 §13): balance 21-100 after the rework, the Hunter, the Mage and the bosses (Balance.targetsS147): R8
+-- of every pool, R9 of the Mage (lightning hits hardest, fire wins groups with its burn, ice controls and takes the
+-- least) and of the Hunter (the Bow and the Crossbow equal on one target, the Crossbow's damage over time), R7 of both
+-- Marksman pools, R5 of every pool, T-SK3 and T-SK4 asserted; the rows of Balance.S147_REPORT printed with the reason.
+-- The bosses of S134 (block "Balance: bosses 2.0 (S134)") and S91-S94 (regions) stay asserted with the new builds.
+T.describe("Balance S147: Hunter, Mage and bosses", function()
+	local rows = B.targetsS147()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`{describeRow(row)} (S147)`, 0)
+				end
+			end)
+		end
+	end
+	T.it(
+		"S147 targets (printed), never an R8 or R7 row in the report, R9 of the Mage only at 20 or with a reason",
+		function()
+			printReport("S147", rows, 60)
+			local ids: { [string]: boolean } = {}
+			for _, row in rows do
+				ids[row.id] = true
+				local prefix = string.sub(row.id, 1, 8)
+				if prefix == "S147.r8." or prefix == "S147.r7." then
+					T.expect({ row.id, row.report }).toEqual({ row.id, nil })
+				end
+				if string.sub(row.id, 1, 13) == "S147.r9.mage." and row.report ~= nil then
+					-- session rule 5: the only Mage identity rows out of reach (docs/DECYZJE.md S147)
+					T.expect({ row.id, string.find(row.id, "taken.lightning", 1, true) ~= nil })
+						.toEqual({ row.id, true })
+				end
+			end
+			for _, pool in { "bow", "crossbow", "fire", "ice", "lightning" } do
+				T.expect(ids[`S147.r8.{pool}.bar100`]).toBe(true)
+				T.expect(ids[`S147.r5.{pool}.70`]).toBe(true)
+			end
+			for _, L in { 20, 45, 70, 100 } do
+				T.expect(ids[`S147.r9.mage.single.lightning.{L}`]).toBe(true)
+				T.expect(ids[`S147.r9.mage.single.ice.{L}`]).toBe(true)
+				T.expect(ids[`S147.r9.mage.area.{L}`]).toBe(true)
+				T.expect(ids[`S147.r9.mage.control.destroyer.{L}`]).toBe(true)
+				T.expect(ids[`S147.r9.hunter.single.{L}`]).toBe(true)
+			end
+			T.expect(ids["S147.r9.hunter.dot.trapper.poacher.45"]).toBe(true)
+			T.expect(ids["S147.r7.crossbow.100"]).toBe(true)
+			T.expect(ids["S147.tsk4.arcanist.arcanistFire.70"]).toBe(true)
+			T.expect(ids["S147.tsk3.trapper.poacher.100"]).toBe(true)
+			-- every report key names a row
+			for key in B.S147_REPORT do
+				local found = false
+				for _, row in rows do
+					if
+						row.id == key
+						or (string.sub(key, -1) == "*" and string.sub(row.id, 1, #key - 1) == string.sub(key, 1, -2))
+					then
+						found = true
+						break
+					end
+				end
+				T.expect({ key, found }).toEqual({ key, true })
+			end
+		end
+	)
+	-- session rule 5: R4 of every active is never printed only; the one exception is the frozen Fire Bolt 5A (rank 5 at
+	-- level 17 moves the Destroyer's L20 anchor, docs/DECYZJE.md S147)
+	T.it("no R4 row in the report but the frozen Fire Bolt 5A", function()
+		local allowed: { [string]: boolean } = {
+			["path.arcanist.arcanistBoss.L45.r4.firebolt.5|a"] = true,
+			["path.arcanist.arcanistBoss.L70.r4.firebolt.5|a"] = true,
+			["path.arcanist.arcanistBoss.L100.r4.firebolt.5|a"] = true,
+		}
+		for key in GLOBAL_REPORT_ONLY do
+			local r4 = string.find(key, ".r4.", 1, true) ~= nil
+			T.expect({ key, r4 and not allowed[key] }).toEqual({ key, false })
+		end
+		for key in B.S147_REPORT do
+			T.expect({ key, string.find(key, ".r4.", 1, true) ~= nil }).toEqual({ key, false })
+		end
+	end)
+	T.it("GLOBAL_REPORT_ONLY: no entry of the rework sessions S137-S145 (DESIGN-18 §13)", function()
+		for key, entry in GLOBAL_REPORT_ONLY do
+			local n = B.sessionNumber(entry.session) or 0
+			T.expect({ key, entry.session, n >= 137 and n <= 145 }).toEqual({ key, entry.session, false })
+		end
 	end)
 end)
 

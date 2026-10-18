@@ -219,18 +219,21 @@ return {
 				session = "S87",
 				why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls)" },
 		},
 		["LevelCurves:curves.manaCost.Mage[3][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04" },
 		},
 		["LevelCurves:curves.manaCost.Mage[4][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08" },
 		},
 		["LevelCurves:curves.heal[2][2]"] = {
 			{ session = "S87", why = "G10 / T-SK5: 1 -> 2.33, Healer dungeon on Defender 0.272 -> 0.300 at 45" },
@@ -1646,6 +1649,7 @@ return {
 				session = "S90",
 				why = "25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "+14 -> +6: R4 of 10A 0.34 -> 0.19 with the base 12-14" },
 		},
 		["Skills/Hunter:[snarefield].breakpoints[5].b.values.vuln"] = {
 			{
@@ -1664,12 +1668,14 @@ return {
 				session = "S90",
 				why = "90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison" },
 		},
 		["Skills/Hunter:[snarefield].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "38 -> 14: see dmg[1]" },
 		},
 		["Skills/Hunter:[stormArrow].breakpoints[5].b.values.dmg"] = {
 			{
@@ -1694,6 +1700,7 @@ return {
 				session = "S90",
 				why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "19 -> 21: R4 of 10A 0.166 -> 0.18 with the lower dmg (|A - B| <= 0.05)" },
 		},
 		["Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison"] = {
 			{
@@ -1718,12 +1725,14 @@ return {
 				session = "S90",
 				why = "210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
 			},
+			{ session = "S147", why = "152 -> 137 (rank 2 pinned): the Crossbow's damage moves to its poison (R9)" },
 		},
 		["Skills/Hunter:[venomArrow].values.poison[2]"] = {
 			{
 				session = "S90",
 				why = "120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
 			},
+			{ session = "S147", why = "50 -> 57.5 (rank 2 pinned): R9 of the Crossbow, damage over time >= 25 %" },
 		},
 		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = {
 			{
@@ -1754,24 +1763,28 @@ return {
 				session = "S90",
 				why = "130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper)" },
 		},
 		["Skills/Hunter:[venomSnare].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "236 -> 82: see dmg[1]" },
 		},
 		["Skills/Hunter:[venomSnare].values.poison[1]"] = {
 			{
 				session = "S90",
 				why = "60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70)" },
 		},
 		["Skills/Hunter:[venomSnare].values.poison[2]"] = {
 			{
 				session = "S90",
 				why = "110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "290 -> 412: see poison[1]" },
 		},
 		["Skills/Hunter:[volley].breakpoints[10].b.values.dmg"] = {
 			{
@@ -1934,6 +1947,7 @@ return {
 				session = "S90",
 				why = "90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it)" },
 		},
 		["Skills/Mage:[cataclysm].values.dmg[1]"] = {
 			{
@@ -2012,6 +2026,7 @@ return {
 				session = "S90",
 				why = "50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "12 -> 13: R4 of 10A at 45-100 0.16 -> 0.17 (1-20 unchanged)" },
 		},
 		["Skills/Mage:[firebolt].breakpoints[10].b.values.dmg"] = {
 			{ session = "S142", why = "-104 -> -75 (x0.72 with the ranks: two bolts still 18 % more in total)" },
@@ -2122,6 +2137,7 @@ return {
 				session = "S90",
 				why = "22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "+4.4 -> +24: R4 of 10B 0.035 -> 0.22 with the base 81-107" },
 		},
 		["Skills/Mage:[meteorStorm].breakpoints[5].a.add.hits"] = {
 			{
@@ -2140,18 +2156,21 @@ return {
 				session = "S90",
 				why = "120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm" },
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[1]"] = {
 			{
 				session = "S90",
 				why = "60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02)" },
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "24 -> 107: see dmg[1]" },
 		},
 		["Skills/Mage:[meteor].breakpoints[10].a.lingering.pct"] = {
 			{
@@ -5653,7 +5672,9 @@ return {
 		["Skills/Hunter:[heartseeker].values.dmg[1]"] = { { session = "S144", why = "220 -> 170 at 40: rank 6 (60) keeps the old rank 1 (knot)" } },
 		["Skills/Hunter:[frostTrap].unlock"] = { { session = "S144", why = "the Trapper's row 1 (10) -> 6: K1 of the Crossbow (the root grows with the rank: no drop at 10)" } },
 		["Skills/Hunter:[camouflage].unlock"] = { { session = "S144", why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)" } },
-		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S144", why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)" } },
+		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S144", why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)" },
+			{ session = "S147", why = "44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22)" },
+		},
 		["Skills/Hunter:[agility].unlock"] = { { session = "S144", why = "the Scout's row 1 (10) -> 50: P2 of the Bow" } },
 		["Skills/Hunter:[agility].values*"] = { { session = "S144", why = "dodge 2-10 -> 10-12, move 3-15 -> 15-18: rank 1 at 50 keeps the old rank 5 at 46" } },
 		["Skills/Hunter:[falcon].unlock"] = { { session = "S144", why = "the Scout's row 4 (26) -> 33: K2 of the Bow" } },
@@ -5894,6 +5915,118 @@ return {
 		},
 		["SkillCurves:knots.judgement.dmg[2]"] = {
 			{ session = "S146", why = "320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45)" },
+		},
+		-- S147 (DESIGN-18 §13): balance 21-100 after the rework, the Hunter, the Mage and the bosses (docs/SESJE.md S147)
+		["LevelCurves:curves.manaCost.Mage[5][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire)" },
+		},
+		["LevelCurves:curves.manaCost.Mage[6][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3" },
+		},
+		["LevelCurves:curves.manaCost.Mage[7][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4" },
+		},
+		["LevelCurves:curves.manaCost.Mage[8][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55" },
+		},
+		["LevelCurves:curves.manaCost.Mage[9][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865" },
+		},
+		["LevelCurves:curves.manaCost.Mage[10][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most)" },
+		},
+		["SkillCurves:knots.deadlyBolt.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 260 -> 248" },
+		},
+		["SkillCurves:knots.glacialSpike.dmg[7]"] = {
+			{ session = "S147", why = "new: rank 7 (level 39) pinned for the rank 10 330 -> 360" },
+		},
+		["SkillCurves:knots.heavyBolt.dmg[6]"] = {
+			{ session = "S147", why = "x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100)" },
+		},
+		["SkillCurves:knots.immolate.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3" },
+		},
+		["SkillCurves:knots.lightningLance.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 200 -> 280" },
+		},
+		["SkillCurves:knots.shatter.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) of the x1.15 pair pinned for the rank 10 265 -> 420" },
+		},
+		["SkillCurves:knots.thunderStrike.dmg[7]"] = {
+			{ session = "S147", why = "new: rank 7 (level 39) pinned for the rank 10 400 -> 460" },
+		},
+		["SkillCurves:knots.venomArrow.dmg[2]"] = {
+			{ session = "S147", why = "new: rank 2 (level 19) pinned (1-20 frozen) for the rank 10 152 -> 137" },
+		},
+		["SkillCurves:knots.venomArrow.poison[2]"] = {
+			{ session = "S147", why = "new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10" },
+		},
+		["Skills/Hunter:[deadlyBolt].values.dmg[2]"] = {
+			{ session = "S147", why = "260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips" },
+		},
+		["Skills/Hunter:[heavyBolt].values.dmg[2]"] = {
+			{ session = "S147", why = "302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow)" },
+		},
+		["Skills/Hunter:[toxicTips].values.tip[2]"] = {
+			{ session = "S147", why = "20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100" },
+		},
+		["Skills/Mage:[blizzard].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18" },
+		},
+		["Skills/Mage:[blizzard].cost"] = {
+			{ session = "S147", why = "170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve" },
+		},
+		["Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base" },
+		},
+		["Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg"] = {
+			{ session = "S147", why = "+13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base" },
+		},
+		["Skills/Mage:[deepFreeze].values.dmg[1]"] = {
+			{ session = "S147", why = "70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before)" },
+		},
+		["Skills/Mage:[deepFreeze].values.dmg[2]"] = {
+			{ session = "S147", why = "120 -> 138: see dmg[1]" },
+		},
+		["Skills/Mage:[glacialSpike].values.dmg[2]"] = {
+			{ session = "S147", why = "330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862" },
+		},
+		["Skills/Mage:[immolate].values.dmg[2]"] = {
+			{ session = "S147", why = "300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10" },
+		},
+		["Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base" },
+		},
+		["Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg"] = {
+			{ session = "S147", why = "+22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base" },
+		},
+		["Skills/Mage:[lightningLance].values.dmg[2]"] = {
+			{ session = "S147", why = "200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10" },
+		},
+		["Skills/Mage:[meteorStorm].hits"] = {
+			{ session = "S147", why = "6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148" },
+		},
+		["Skills/Mage:[shatter].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+55 -> +85: R4 of 10B at 100 0.131 -> 0.20 with the higher base" },
+		},
+		["Skills/Mage:[shatter].values.dmg[1]"] = {
+			{ session = "S147", why = "160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85" },
+		},
+		["Skills/Mage:[shatter].values.dmg[2]"] = {
+			{ session = "S147", why = "230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86" },
+		},
+		["Skills/Mage:[tempest].cost"] = {
+			{ session = "S147", why = "170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve" },
+		},
+		["Skills/Mage:[tempest].values.dmg[1]"] = {
+			{ session = "S147", why = "40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100" },
+		},
+		["Skills/Mage:[tempest].values.dmg[2]"] = {
+			{ session = "S147", why = "48 -> 34: see dmg[1]" },
+		},
+		["Skills/Mage:[thunderStrike].values.dmg[2]"] = {
+			{ session = "S147", why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)" },
 		},
 	} :: { [string]: { Reason } },
 }

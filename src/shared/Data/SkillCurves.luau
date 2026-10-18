@@ -79,9 +79,17 @@ return table.freeze({
 		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned
 		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 196, [6] = AIMED5 + (233 - AIMED5) * 1 / 5 }) }),
 		-- S144 (DESIGN-18 §6.3): Heavy Bolt, the Crossbow's S1, on Aimed Shot's knots x1.3 (its cooldown x1.3)
+		-- S147 (the Crossbow's damage over time >= 25 %, DESIGN-18 §6.3): ranks 6-10 (level 21+) x0.93
 		heavyBolt = table.freeze({
-			dmg = table.freeze({ [5] = 196 * 1.3, [6] = (AIMED5 + (233 - AIMED5) * 1 / 5) * 1.3 }),
+			dmg = table.freeze({ [5] = 196 * 1.3, [6] = (AIMED5 + (233 - AIMED5) * 1 / 5) * 1.3 * 0.93 }),
 		}),
+		-- S147: Venom Arrow rank 2 (level 19) keeps its numbers, ranks 3-10 move (dmg x0.9 at 10, poison 50 -> 57.5)
+		venomArrow = table.freeze({
+			dmg = table.freeze({ [2] = 120 + 32 / 9 }),
+			poison = table.freeze({ [2] = 50 }),
+		}),
+		-- S147: the Executioner's Bolt rank 8 (level 68) keeps its value, rank 10 260 -> 248
+		deadlyBolt = table.freeze({ dmg = table.freeze({ [8] = 180 + 80 * 7 / 9 }) }),
 		-- S144: Double Shot unlocks at 15 (was 3): rank 2 (level 19) keeps the old rank 5, rank 3 (23) the old rank 6
 		doubleShot = table.freeze({ dmg = table.freeze({ [2] = 83, [3] = DOUBLE5 + (114 - DOUBLE5) * 1 / 5 }) }),
 		disengage = table.freeze({ bonus = table.freeze({ [4] = 20 + 30 * 3 / 9 }) }),
@@ -120,6 +128,15 @@ return table.freeze({
 		-- S140 (DESIGN-18 §6.1): Meteor unlocks at 26 (was 30), so its rank r + 1 comes at the old rank r's level: rank 2
 		-- (level 30) keeps the old rank 1 (98), rank 1 is one step lower (pair 89.6 - 174)
 		meteor = table.freeze({ dmg = table.freeze({ [2] = 98 }) }),
+		-- S147 (the elements' identity at 100, DESIGN-18 §6.1): rank 8 (level 68) keeps its value, only ranks 9-10 (72, 76)
+		-- move: Immolate 300 -> 283.3, Shatter (x1.15 below) 265 -> 420, Lightning Lance 200 -> 280
+		immolate = table.freeze({ dmg = table.freeze({ [8] = 180 + 120 * 7 / 9 }) }),
+		shatter = table.freeze({ dmg = table.freeze({ [8] = 184 + 81 * 7 / 9 }) }),
+		lightningLance = table.freeze({ dmg = table.freeze({ [8] = 140 + 60 * 7 / 9 }) }),
+		-- S147: Thunder Strike rank 10 400 -> 460, rank 7 (level 39) keeps its value (ranks 8-10 at 43, 47, 51)
+		thunderStrike = table.freeze({ dmg = table.freeze({ [7] = 100 + 300 * 6 / 9 }) }),
+		-- S147: Glacial Spike rank 10 330 -> 360, rank 7 (level 39) keeps its value
+		glacialSpike = table.freeze({ dmg = table.freeze({ [7] = 70 + 260 * 6 / 9 }) }),
 		-- S92 (G2, T-SK5 >= 0.25 at 25-30): Heal's rank 6 (level 23) near rank 10, rank 5 (level 19) pinned
 		heal = table.freeze({
 			healHp = table.freeze({ [5] = 16 + 2 * 4 / 9, [6] = 17.9 }),
